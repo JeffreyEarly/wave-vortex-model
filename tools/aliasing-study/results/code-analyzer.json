@@ -1,0 +1,149 @@
+[
+  {
+    "file": "TestProductProjection.m",
+    "messages": []
+  },
+  {
+    "file": "TestSourceProjection.m",
+    "messages": []
+  },
+  {
+    "file": "TestSparseStudyPolicies.m",
+    "messages": []
+  },
+  {
+    "file": "compareProductReferences.m",
+    "messages": []
+  },
+  {
+    "file": "configureStudyPath.m",
+    "messages": []
+  },
+  {
+    "file": "enumerateStudyInteractions.m",
+    "messages": []
+  },
+  {
+    "file": "evaluateStudyModes.m",
+    "messages": []
+  },
+  {
+    "file": "measureProductProjection.m",
+    "messages": []
+  },
+  {
+    "file": "plotStudyComparison.m",
+    "messages": []
+  },
+  {
+    "file": "prepareProductProjection.m",
+    "messages": []
+  },
+  {
+    "file": "prepareSourceStudy.m",
+    "messages": {
+      "id": "FNDSB",
+      "message": "For array or cell array, performance can be improved using logical indexing instead of 'find'.",
+      "fix": 1,
+      "line": 60,
+      "column": [
+        15,
+        22
+      ]
+    }
+  },
+  {
+    "file": "resolveStudyCase.m",
+    "messages": []
+  },
+  {
+    "file": "runCostStudy.m",
+    "messages": {
+      "id": "FNDSB",
+      "message": "For array or cell array, performance can be improved using logical indexing instead of 'find'.",
+      "fix": 1,
+      "line": 17,
+      "column": [
+        120,
+        127
+      ]
+    }
+  },
+  {
+    "file": "runPilot.m",
+    "messages": []
+  },
+  {
+    "file": "runReferenceRefinements.m",
+    "messages": []
+  },
+  {
+    "file": "runSourceSurvey.m",
+    "messages": [
+      {
+        "id": "FNDSB",
+        "message": "For array or cell array, performance can be improved using logical indexing instead of 'find'.",
+        "fix": 1,
+        "line": 51,
+        "column": [
+          21,
+          24
+        ]
+      },
+      {
+        "id": "FNDSB",
+        "message": "For array or cell array, performance can be improved using logical indexing instead of 'find'.",
+        "fix": 1,
+        "line": 51,
+        "column": [
+          54,
+          57
+        ]
+      }
+    ]
+  },
+  {
+    "file": "runStudyCases.m",
+    "messages": []
+  },
+  {
+    "file": "scoreQuadraticDiagnostics.m",
+    "messages": []
+  },
+  {
+    "file": "scoreSourcePolicies.m",
+    "messages": []
+  },
+  {
+    "file": "selectStudyInteractions.m",
+    "messages": []
+  },
+  {
+    "file": "sourceChannelInventory.m",
+    "messages": []
+  },
+  {
+    "file": "sourceProjectionContext.m",
+    "messages": []
+  },
+  {
+    "file": "sourceStudyFields.m",
+    "messages": []
+  },
+  {
+    "file": "studyModePairMask.m",
+    "messages": []
+  },
+  {
+    "file": "studyProfile.m",
+    "messages": []
+  },
+  {
+    "file": "verifySparseReplay.m",
+    "messages": []
+  },
+  {
+    "file": "verifyStudyResults.m",
+    "messages": []
+  }
+]

@@ -1,0 +1,84 @@
+{
+  "familyModeLabels": {
+    "wave": [
+      1,
+      2,
+      3,
+      4,
+      5,
+      6,
+      7,
+      8,
+      9,
+      10,
+      11,
+      12,
+      13,
+      14,
+      15,
+      16
+    ],
+    "apv": [
+      -1,
+      1,
+      2
+    ],
+    "mda": [
+      -1,
+      0,
+      1
+    ],
+    "inertial": [
+      1,
+      2,
+      3,
+      4
+    ],
+    "boundary": [
+      "surface",
+      "bottom"
+    ]
+  },
+  "caseId": "withheld-pycnocline-33",
+  "policy": "linear",
+  "scope": "linear-only; no wave quadratic reference check",
+  "configuration": {
+    "Lz": 1000,
+    "f": 0.0001,
+    "g": 9.81,
+    "evpOrders": [
+      192,
+      256
+    ],
+    "referenceOrders": [
+      513,
+      1025
+    ],
+    "referenceAllowance": 0.0001,
+    "eigenAllowance": 1E-6,
+    "gramTolerance": 1E-7,
+    "id": "withheld-pycnocline-33",
+    "profile": "pycnocline",
+    "Lxy": [
+      140000,
+      100000
+    ],
+    "Nxy": [
+      8,
+      8
+    ],
+    "Nz": 33,
+    "waveCount": 16,
+    "apvCount": 3,
+    "mdaCount": 3,
+    "inertialCount": 4
+  },
+  "constructionSeconds": 6.3115088333333329,
+  "assessmentSeconds": 5.5208333333333331E-5,
+  "nonzeroProductEvaluations": 0,
+  "largestLinearCount": 1,
+  "eigenConvergence": 5.18507276584785E-7,
+  "fixedFamiliesGramAccepted": false,
+  "matlabVersion": "25.2.0.3150157 (R2025b) Update 4",
+  "computer": "MACA64"
+}

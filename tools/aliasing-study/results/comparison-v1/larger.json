@@ -1,0 +1,3217 @@
+{
+  "linear": {
+    "familyModeLabels": {
+      "wave": [
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        7,
+        8,
+        9,
+        10,
+        11,
+        12,
+        13,
+        14,
+        15,
+        16,
+        17,
+        18,
+        19,
+        20,
+        21,
+        22,
+        23,
+        24
+      ],
+      "apv": [
+        -1,
+        1,
+        2,
+        3,
+        4,
+        5
+      ],
+      "mda": [
+        -1,
+        0,
+        1,
+        2
+      ],
+      "inertial": [
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        7,
+        8
+      ],
+      "boundary": [
+        "surface",
+        "bottom"
+      ]
+    },
+    "caseId": "larger-exponential-97",
+    "policy": "linear",
+    "scope": "linear-only; no wave quadratic reference check",
+    "configuration": {
+      "Lz": 1000,
+      "f": 0.0001,
+      "g": 9.81,
+      "evpOrders": [
+        128,
+        192
+      ],
+      "referenceOrders": [
+        257,
+        513
+      ],
+      "referenceAllowance": 0.0001,
+      "eigenAllowance": 1e-06,
+      "gramTolerance": 1e-07,
+      "id": "larger-exponential-97",
+      "profile": "exponential",
+      "Lxy": [
+        400000,
+        400000
+      ],
+      "Nxy": [
+        32,
+        32
+      ],
+      "Nz": 97,
+      "waveCount": 24,
+      "apvCount": 6,
+      "mdaCount": 4,
+      "inertialCount": 8,
+      "independentSampleSeed": 400,
+      "independentSampleCount": 64
+    },
+    "constructionSeconds": 32.22629429166667,
+    "assessmentSeconds": 7.970833333333334e-05,
+    "nonzeroProductEvaluations": 0,
+    "largestLinearCount": 24,
+    "eigenConvergence": 6.9562860468366e-08,
+    "fixedFamiliesGramAccepted": true,
+    "matlabVersion": "25.2.0.3150157 (R2025b) Update 4",
+    "computer": "MACA64",
+    "processWallSeconds": 35.58,
+    "peakResidentBytes": 1006010368
+  },
+  "fixed": {
+    "status": "survey-complete",
+    "policy": "fixed",
+    "pageDifficulty": [
+      4.847641455003425e-06,
+      4.426953454584133e-06,
+      3.4344064165793448e-06,
+      5.046010852911648e-06,
+      5.3673361123252555e-06,
+      5.7116856938679135e-06,
+      6.916209353340543e-06,
+      7.5448244057376154e-06,
+      6.931442619599764e-06,
+      6.866682414957916e-06,
+      6.719220104688101e-06,
+      9.283683525620228e-06,
+      7.52133308680059e-06,
+      9.659772203978587e-06,
+      9.730430254877097e-06,
+      1.4026627295666802e-05,
+      1.4759959074399538e-05,
+      1.5134510006960339e-05,
+      1.294662353395478e-05,
+      1.4006963240624568e-05,
+      1.4111571041454986e-05,
+      1.3638555994127517e-05,
+      1.000681417722122e-05,
+      9.553007744165584e-06,
+      8.446173073490383e-06,
+      7.438032275618893e-06,
+      8.048876448285687e-06,
+      6.716286517079982e-06,
+      5.895246188853122e-06,
+      5.788698001292749e-06,
+      4.7516784320134e-06,
+      4.3846664539438335e-06,
+      4.6772594677993566e-06,
+      3.4768086842477453e-06,
+      4.060205484919354e-06,
+      3.2304533676986838e-06,
+      3.5514156007921e-06,
+      2.6523728042275997e-06,
+      2.982989987638774e-06,
+      3.4661198318916027e-06,
+      2.445964941877876e-06,
+      2.503809406588122e-06,
+      1.981334396306481e-06,
+      2.5481992806501367e-06,
+      2.2874705195078047e-06,
+      2.228208548910772e-06,
+      2.1147344094998177e-06,
+      2.3873864425485207e-06,
+      2.073258153913867e-06
+    ],
+    "configuration": {
+      "Lz": 1000,
+      "f": 0.0001,
+      "g": 9.81,
+      "evpOrders": [
+        128,
+        192
+      ],
+      "referenceOrders": [
+        257,
+        513
+      ],
+      "referenceAllowance": 0.0001,
+      "eigenAllowance": 1e-06,
+      "gramTolerance": 1e-07,
+      "id": "larger-exponential-97",
+      "profile": "exponential",
+      "Lxy": [
+        400000,
+        400000
+      ],
+      "Nxy": [
+        32,
+        32
+      ],
+      "Nz": 97,
+      "waveCount": 24,
+      "apvCount": 6,
+      "mdaCount": 4,
+      "inertialCount": 8,
+      "independentSampleSeed": 400,
+      "independentSampleCount": 64
+    },
+    "constructionSeconds": 34.58598725,
+    "assessmentSeconds": 27.465800416666667,
+    "interactionCount": 24,
+    "nonzeroProductEvaluations": 371760,
+    "structuralZeroProducts": 172728,
+    "referenceStability": 6.489356032203729e-14,
+    "eigenConvergence": 6.9562860468366e-08,
+    "allModeDerivativeConvergence": 5.0983437907271476e-05,
+    "eigenProductStability": 6.8634879724661786e-06,
+    "eigenConvergenceByMetric": [
+      1.48113692416487e-10,
+      1.4849896383358799e-10,
+      3.360357869880696e-11,
+      5.0983437907271476e-05,
+      2.6265937143262687e-08
+    ],
+    "sobolevConvergenceByMetric": [
+      1.48113692416487e-10,
+      6.9562860468366e-08,
+      2.0106281579552775e-08
+    ],
+    "boundaryInterpolationError": 4.3290626484446763e-14,
+    "waveGram": [
+      1.7763568394002505e-15,
+      5.310614105960735e-13,
+      5.375015679486864e-13,
+      5.389078104009507e-13,
+      5.389094279199658e-13,
+      5.398156806924327e-13,
+      5.403613132871707e-13,
+      5.408995062033512e-13,
+      5.40984940981673e-13,
+      5.412853832883681e-13,
+      5.412911061389958e-13,
+      5.41297480224048e-13,
+      5.42130578946814e-13,
+      5.4274583286659e-13,
+      5.432956083271286e-13,
+      5.435278423708385e-13,
+      5.475583601420606e-13,
+      5.482183607353609e-13,
+      5.484229286501942e-13,
+      5.484296400508473e-13,
+      5.491316160811399e-13,
+      5.494608127995118e-13,
+      5.495453959483737e-13,
+      5.502289240799879e-13
+    ],
+    "apvGram": 2.097919124844831e-15,
+    "mdaGram": 2.649363600362107e-15,
+    "inertialGram": 5.204013785652366e-11,
+    "apvControl": [
+      {
+        "modeCount": 1,
+        "lastModeNumber": -1,
+        "gramError": 1.0941213699739576e-15,
+        "gramLimitingVariable": "G",
+        "leakageError": null,
+        "leakageLimitingVariable": "",
+        "leakageLimitingModeNumber": null,
+        "quadraticAliasingError": 2.1193085478143717e-15,
+        "quadraticLimitingChannel": "FG->G",
+        "quadraticLimitingModeNumberI": -1,
+        "quadraticLimitingModeNumberJ": -1,
+        "gramAccepted": true,
+        "leakageAccepted": true,
+        "quadraticAccepted": true,
+        "combinedAccepted": true
+      },
+      {
+        "modeCount": 2,
+        "lastModeNumber": 1,
+        "gramError": 1.8705227586116002e-15,
+        "gramLimitingVariable": "G",
+        "leakageError": null,
+        "leakageLimitingVariable": "",
+        "leakageLimitingModeNumber": null,
+        "quadraticAliasingError": 5.7737516701477506e-15,
+        "quadraticLimitingChannel": "FG->G",
+        "quadraticLimitingModeNumberI": 1,
+        "quadraticLimitingModeNumberJ": -1,
+        "gramAccepted": true,
+        "leakageAccepted": true,
+        "quadraticAccepted": true,
+        "combinedAccepted": true
+      },
+      {
+        "modeCount": 3,
+        "lastModeNumber": 2,
+        "gramError": 1.8765560555931605e-15,
+        "gramLimitingVariable": "G",
+        "leakageError": null,
+        "leakageLimitingVariable": "",
+        "leakageLimitingModeNumber": null,
+        "quadraticAliasingError": 6.0666477339377835e-15,
+        "quadraticLimitingChannel": "FG->G",
+        "quadraticLimitingModeNumberI": 2,
+        "quadraticLimitingModeNumberJ": -1,
+        "gramAccepted": true,
+        "leakageAccepted": true,
+        "quadraticAccepted": true,
+        "combinedAccepted": true
+      },
+      {
+        "modeCount": 4,
+        "lastModeNumber": 3,
+        "gramError": 1.8970060838416433e-15,
+        "gramLimitingVariable": "G",
+        "leakageError": null,
+        "leakageLimitingVariable": "",
+        "leakageLimitingModeNumber": null,
+        "quadraticAliasingError": 6.421106924968412e-15,
+        "quadraticLimitingChannel": "FG->G",
+        "quadraticLimitingModeNumberI": 3,
+        "quadraticLimitingModeNumberJ": 2,
+        "gramAccepted": true,
+        "leakageAccepted": true,
+        "quadraticAccepted": true,
+        "combinedAccepted": true
+      },
+      {
+        "modeCount": 5,
+        "lastModeNumber": 4,
+        "gramError": 2.091074319524743e-15,
+        "gramLimitingVariable": "G",
+        "leakageError": null,
+        "leakageLimitingVariable": "",
+        "leakageLimitingModeNumber": null,
+        "quadraticAliasingError": 6.323975936209853e-15,
+        "quadraticLimitingChannel": "FG->G",
+        "quadraticLimitingModeNumberI": 3,
+        "quadraticLimitingModeNumberJ": 2,
+        "gramAccepted": true,
+        "leakageAccepted": true,
+        "quadraticAccepted": true,
+        "combinedAccepted": true
+      },
+      {
+        "modeCount": 6,
+        "lastModeNumber": 5,
+        "gramError": 2.097919124844831e-15,
+        "gramLimitingVariable": "G",
+        "leakageError": null,
+        "leakageLimitingVariable": "",
+        "leakageLimitingModeNumber": null,
+        "quadraticAliasingError": 6.811984475086647e-15,
+        "quadraticLimitingChannel": "FG->G",
+        "quadraticLimitingModeNumberI": 5,
+        "quadraticLimitingModeNumberJ": -1,
+        "gramAccepted": true,
+        "leakageAccepted": true,
+        "quadraticAccepted": true,
+        "combinedAccepted": true
+      }
+    ],
+    "matlabVersion": "25.2.0.3150157 (R2025b) Update 4",
+    "computer": "MACA64",
+    "referencesStable": true,
+    "fixedFamiliesGramAccepted": true,
+    "caseId": "larger-exponential-97",
+    "largestLinearCount": 24,
+    "largestSampledCounts": [
+      24,
+      24,
+      24
+    ],
+    "largestQuadraticOnlyCounts": [
+      24,
+      24,
+      24
+    ],
+    "scope": "maximum over the selected individual source products; no full-survey count is implied",
+    "independentInteractionIndices": [],
+    "limiting": [
+      {
+        "interaction": 9683,
+        "inputA": "wave",
+        "inputB": "wave",
+        "output": "inertial",
+        "channel": "w*dz(u)",
+        "modeA": 1,
+        "signA": 1,
+        "modeB": 1,
+        "signB": 1,
+        "integerWavevectors": [
+          [
+            -6,
+            -2
+          ],
+          [
+            6,
+            2
+          ],
+          [
+            0,
+            0
+          ]
+        ],
+        "error": 2.9075517549159713e-09
+      },
+      {
+        "interaction": 9683,
+        "inputA": "wave",
+        "inputB": "wave",
+        "output": "inertial",
+        "channel": "w*dz(u)",
+        "modeA": 1,
+        "signA": 1,
+        "modeB": 1,
+        "signB": 1,
+        "integerWavevectors": [
+          [
+            -6,
+            -2
+          ],
+          [
+            6,
+            2
+          ],
+          [
+            0,
+            0
+          ]
+        ],
+        "error": 2.9075517549159713e-09
+      },
+      {
+        "interaction": 9683,
+        "inputA": "wave",
+        "inputB": "wave",
+        "output": "inertial",
+        "channel": "w*dz(u)",
+        "modeA": 1,
+        "signA": 1,
+        "modeB": 1,
+        "signB": 1,
+        "integerWavevectors": [
+          [
+            -6,
+            -2
+          ],
+          [
+            6,
+            2
+          ],
+          [
+            0,
+            0
+          ]
+        ],
+        "error": 2.9075517549159713e-09
+      },
+      {
+        "interaction": 9534,
+        "inputA": "wave",
+        "inputB": "wave",
+        "output": "wave",
+        "channel": "w*dz(u)",
+        "modeA": 1,
+        "signA": 1,
+        "modeB": 1,
+        "signB": 1,
+        "integerWavevectors": [
+          [
+            -6,
+            -2
+          ],
+          [
+            -2,
+            -5
+          ],
+          [
+            -8,
+            -7
+          ]
+        ],
+        "error": 3.4748037780474306e-09
+      },
+      {
+        "interaction": 9534,
+        "inputA": "wave",
+        "inputB": "wave",
+        "output": "wave",
+        "channel": "w*dz(u)",
+        "modeA": 1,
+        "signA": 1,
+        "modeB": 1,
+        "signB": 1,
+        "integerWavevectors": [
+          [
+            -6,
+            -2
+          ],
+          [
+            -2,
+            -5
+          ],
+          [
+            -8,
+            -7
+          ]
+        ],
+        "error": 4.064459435682011e-09
+      },
+      {
+        "interaction": 9534,
+        "inputA": "wave",
+        "inputB": "wave",
+        "output": "wave",
+        "channel": "w*dz(u)",
+        "modeA": 1,
+        "signA": 1,
+        "modeB": 1,
+        "signB": 1,
+        "integerWavevectors": [
+          [
+            -6,
+            -2
+          ],
+          [
+            -2,
+            -5
+          ],
+          [
+            -8,
+            -7
+          ]
+        ],
+        "error": 4.6051362723176226e-09
+      },
+      {
+        "interaction": 9534,
+        "inputA": "wave",
+        "inputB": "wave",
+        "output": "wave",
+        "channel": "w*dz(u)",
+        "modeA": 1,
+        "signA": 1,
+        "modeB": 1,
+        "signB": 1,
+        "integerWavevectors": [
+          [
+            -6,
+            -2
+          ],
+          [
+            -2,
+            -5
+          ],
+          [
+            -8,
+            -7
+          ]
+        ],
+        "error": 5.104937805811005e-09
+      },
+      {
+        "interaction": 9534,
+        "inputA": "wave",
+        "inputB": "wave",
+        "output": "wave",
+        "channel": "w*dz(u)",
+        "modeA": 1,
+        "signA": 1,
+        "modeB": 1,
+        "signB": 1,
+        "integerWavevectors": [
+          [
+            -6,
+            -2
+          ],
+          [
+            -2,
+            -5
+          ],
+          [
+            -8,
+            -7
+          ]
+        ],
+        "error": 5.570972572144228e-09
+      },
+      {
+        "interaction": 9534,
+        "inputA": "wave",
+        "inputB": "wave",
+        "output": "wave",
+        "channel": "w*dz(u)",
+        "modeA": 1,
+        "signA": 1,
+        "modeB": 1,
+        "signB": 1,
+        "integerWavevectors": [
+          [
+            -6,
+            -2
+          ],
+          [
+            -2,
+            -5
+          ],
+          [
+            -8,
+            -7
+          ]
+        ],
+        "error": 6.007828456944253e-09
+      },
+      {
+        "interaction": 9534,
+        "inputA": "wave",
+        "inputB": "wave",
+        "output": "wave",
+        "channel": "w*dz(u)",
+        "modeA": 1,
+        "signA": 1,
+        "modeB": 1,
+        "signB": 1,
+        "integerWavevectors": [
+          [
+            -6,
+            -2
+          ],
+          [
+            -2,
+            -5
+          ],
+          [
+            -8,
+            -7
+          ]
+        ],
+        "error": 6.420162623754777e-09
+      },
+      {
+        "interaction": 9534,
+        "inputA": "wave",
+        "inputB": "wave",
+        "output": "wave",
+        "channel": "w*dz(u)",
+        "modeA": 1,
+        "signA": 1,
+        "modeB": 1,
+        "signB": 1,
+        "integerWavevectors": [
+          [
+            -6,
+            -2
+          ],
+          [
+            -2,
+            -5
+          ],
+          [
+            -8,
+            -7
+          ]
+        ],
+        "error": 6.810815467162001e-09
+      },
+      {
+        "interaction": 9534,
+        "inputA": "wave",
+        "inputB": "wave",
+        "output": "wave",
+        "channel": "w*dz(u)",
+        "modeA": 1,
+        "signA": 1,
+        "modeB": 1,
+        "signB": 1,
+        "integerWavevectors": [
+          [
+            -6,
+            -2
+          ],
+          [
+            -2,
+            -5
+          ],
+          [
+            -8,
+            -7
+          ]
+        ],
+        "error": 7.182950678696898e-09
+      },
+      {
+        "interaction": 9534,
+        "inputA": "wave",
+        "inputB": "wave",
+        "output": "wave",
+        "channel": "w*dz(u)",
+        "modeA": 1,
+        "signA": 1,
+        "modeB": 1,
+        "signB": 1,
+        "integerWavevectors": [
+          [
+            -6,
+            -2
+          ],
+          [
+            -2,
+            -5
+          ],
+          [
+            -8,
+            -7
+          ]
+        ],
+        "error": 7.538345059288076e-09
+      },
+      {
+        "interaction": 9534,
+        "inputA": "wave",
+        "inputB": "wave",
+        "output": "wave",
+        "channel": "w*dz(u)",
+        "modeA": 1,
+        "signA": 1,
+        "modeB": 1,
+        "signB": 1,
+        "integerWavevectors": [
+          [
+            -6,
+            -2
+          ],
+          [
+            -2,
+            -5
+          ],
+          [
+            -8,
+            -7
+          ]
+        ],
+        "error": 7.879275010225228e-09
+      },
+      {
+        "interaction": 9534,
+        "inputA": "wave",
+        "inputB": "wave",
+        "output": "wave",
+        "channel": "w*dz(u)",
+        "modeA": 1,
+        "signA": 1,
+        "modeB": 1,
+        "signB": 1,
+        "integerWavevectors": [
+          [
+            -6,
+            -2
+          ],
+          [
+            -2,
+            -5
+          ],
+          [
+            -8,
+            -7
+          ]
+        ],
+        "error": 8.206866297655324e-09
+      },
+      {
+        "interaction": 9534,
+        "inputA": "wave",
+        "inputB": "wave",
+        "output": "wave",
+        "channel": "w*dz(u)",
+        "modeA": 1,
+        "signA": 1,
+        "modeB": 1,
+        "signB": 1,
+        "integerWavevectors": [
+          [
+            -6,
+            -2
+          ],
+          [
+            -2,
+            -5
+          ],
+          [
+            -8,
+            -7
+          ]
+        ],
+        "error": 8.522821559608929e-09
+      },
+      {
+        "interaction": 9534,
+        "inputA": "wave",
+        "inputB": "wave",
+        "output": "wave",
+        "channel": "w*dz(u)",
+        "modeA": 1,
+        "signA": 1,
+        "modeB": 1,
+        "signB": 1,
+        "integerWavevectors": [
+          [
+            -6,
+            -2
+          ],
+          [
+            -2,
+            -5
+          ],
+          [
+            -8,
+            -7
+          ]
+        ],
+        "error": 8.827876207817553e-09
+      },
+      {
+        "interaction": 9534,
+        "inputA": "wave",
+        "inputB": "wave",
+        "output": "wave",
+        "channel": "w*dz(u)",
+        "modeA": 1,
+        "signA": 1,
+        "modeB": 1,
+        "signB": 1,
+        "integerWavevectors": [
+          [
+            -6,
+            -2
+          ],
+          [
+            -2,
+            -5
+          ],
+          [
+            -8,
+            -7
+          ]
+        ],
+        "error": 9.123349187234453e-09
+      },
+      {
+        "interaction": 9534,
+        "inputA": "wave",
+        "inputB": "wave",
+        "output": "wave",
+        "channel": "w*dz(u)",
+        "modeA": 1,
+        "signA": 1,
+        "modeB": 1,
+        "signB": 1,
+        "integerWavevectors": [
+          [
+            -6,
+            -2
+          ],
+          [
+            -2,
+            -5
+          ],
+          [
+            -8,
+            -7
+          ]
+        ],
+        "error": 9.409694357032095e-09
+      },
+      {
+        "interaction": 3984,
+        "inputA": "wave",
+        "inputB": "wave",
+        "output": "wave",
+        "channel": "w*dz(u)",
+        "modeA": 19,
+        "signA": 1,
+        "modeB": 20,
+        "signB": 1,
+        "integerWavevectors": [
+          [
+            -8,
+            0
+          ],
+          [
+            -1,
+            0
+          ],
+          [
+            -9,
+            0
+          ]
+        ],
+        "error": 1.7414642172752792e-08
+      },
+      {
+        "interaction": 3984,
+        "inputA": "wave",
+        "inputB": "wave",
+        "output": "wave",
+        "channel": "w*dz(u)",
+        "modeA": 21,
+        "signA": 1,
+        "modeB": 21,
+        "signB": 1,
+        "integerWavevectors": [
+          [
+            -8,
+            0
+          ],
+          [
+            -1,
+            0
+          ],
+          [
+            -9,
+            0
+          ]
+        ],
+        "error": 1.7207092639637267e-07
+      },
+      {
+        "interaction": 3984,
+        "inputA": "wave",
+        "inputB": "wave",
+        "output": "wave",
+        "channel": "w*dz(u)",
+        "modeA": 21,
+        "signA": 1,
+        "modeB": 22,
+        "signB": 1,
+        "integerWavevectors": [
+          [
+            -8,
+            0
+          ],
+          [
+            -1,
+            0
+          ],
+          [
+            -9,
+            0
+          ]
+        ],
+        "error": 4.55547223054964e-07
+      },
+      {
+        "interaction": 32027,
+        "inputA": "wave",
+        "inputB": "wave",
+        "output": "wave",
+        "channel": "w*dz(u)",
+        "modeA": 23,
+        "signA": 1,
+        "modeB": 22,
+        "signB": 1,
+        "integerWavevectors": [
+          [
+            -1,
+            0
+          ],
+          [
+            -1,
+            0
+          ],
+          [
+            -2,
+            0
+          ]
+        ],
+        "error": 6.75991714160773e-07
+      },
+      {
+        "interaction": 32027,
+        "inputA": "wave",
+        "inputB": "wave",
+        "output": "wave",
+        "channel": "w*dz(u)",
+        "modeA": 24,
+        "signA": 1,
+        "modeB": 23,
+        "signB": 1,
+        "integerWavevectors": [
+          [
+            -1,
+            0
+          ],
+          [
+            -1,
+            0
+          ],
+          [
+            -2,
+            0
+          ]
+        ],
+        "error": 7.864813937885629e-07
+      }
+    ],
+    "processWallSeconds": 85.59,
+    "peakResidentBytes": 1753251840,
+    "prefixes": [
+      {
+        "waveCount": "1",
+        "gramError": "1.77635683940025e-15",
+        "sampledQuadraticError": "2.90755175491597e-09"
+      },
+      {
+        "waveCount": "2",
+        "gramError": "5.31061410596074e-13",
+        "sampledQuadraticError": "2.90755175491597e-09"
+      },
+      {
+        "waveCount": "3",
+        "gramError": "5.37501567948686e-13",
+        "sampledQuadraticError": "2.90755175491597e-09"
+      },
+      {
+        "waveCount": "4",
+        "gramError": "5.38907810400951e-13",
+        "sampledQuadraticError": "3.47480377804743e-09"
+      },
+      {
+        "waveCount": "5",
+        "gramError": "5.38909427919966e-13",
+        "sampledQuadraticError": "4.06445943568201e-09"
+      },
+      {
+        "waveCount": "6",
+        "gramError": "5.39815680692433e-13",
+        "sampledQuadraticError": "4.60513627231762e-09"
+      },
+      {
+        "waveCount": "7",
+        "gramError": "5.40361313287171e-13",
+        "sampledQuadraticError": "5.10493780581101e-09"
+      },
+      {
+        "waveCount": "8",
+        "gramError": "5.40899506203351e-13",
+        "sampledQuadraticError": "5.57097257214423e-09"
+      },
+      {
+        "waveCount": "9",
+        "gramError": "5.40984940981673e-13",
+        "sampledQuadraticError": "6.00782845694425e-09"
+      },
+      {
+        "waveCount": "10",
+        "gramError": "5.41285383288368e-13",
+        "sampledQuadraticError": "6.42016262375478e-09"
+      },
+      {
+        "waveCount": "11",
+        "gramError": "5.41291106138996e-13",
+        "sampledQuadraticError": "6.810815467162e-09"
+      },
+      {
+        "waveCount": "12",
+        "gramError": "5.41297480224048e-13",
+        "sampledQuadraticError": "7.1829506786969e-09"
+      },
+      {
+        "waveCount": "13",
+        "gramError": "5.42130578946814e-13",
+        "sampledQuadraticError": "7.53834505928808e-09"
+      },
+      {
+        "waveCount": "14",
+        "gramError": "5.4274583286659e-13",
+        "sampledQuadraticError": "7.87927501022523e-09"
+      },
+      {
+        "waveCount": "15",
+        "gramError": "5.43295608327129e-13",
+        "sampledQuadraticError": "8.20686629765532e-09"
+      },
+      {
+        "waveCount": "16",
+        "gramError": "5.43527842370838e-13",
+        "sampledQuadraticError": "8.52282155960893e-09"
+      },
+      {
+        "waveCount": "17",
+        "gramError": "5.47558360142061e-13",
+        "sampledQuadraticError": "8.82787620781755e-09"
+      },
+      {
+        "waveCount": "18",
+        "gramError": "5.48218360735361e-13",
+        "sampledQuadraticError": "9.12334918723445e-09"
+      },
+      {
+        "waveCount": "19",
+        "gramError": "5.48422928650194e-13",
+        "sampledQuadraticError": "9.40969435703209e-09"
+      },
+      {
+        "waveCount": "20",
+        "gramError": "5.48429640050847e-13",
+        "sampledQuadraticError": "1.74146421727528e-08"
+      },
+      {
+        "waveCount": "21",
+        "gramError": "5.4913161608114e-13",
+        "sampledQuadraticError": "1.72070926396373e-07"
+      },
+      {
+        "waveCount": "22",
+        "gramError": "5.49460812799512e-13",
+        "sampledQuadraticError": "4.55547223054964e-07"
+      },
+      {
+        "waveCount": "23",
+        "gramError": "5.49545395948374e-13",
+        "sampledQuadraticError": "6.75991714160773e-07"
+      },
+      {
+        "waveCount": "24",
+        "gramError": "5.50228924079988e-13",
+        "sampledQuadraticError": "7.86481393788563e-07"
+      }
+    ]
+  },
+  "targeted": {
+    "status": "survey-complete",
+    "policy": "targeted",
+    "pageDifficulty": [
+      4.847641455003425e-06,
+      4.426953454584133e-06,
+      3.4344064165793448e-06,
+      5.046010852911648e-06,
+      5.3673361123252555e-06,
+      5.7116856938679135e-06,
+      6.916209353340543e-06,
+      7.5448244057376154e-06,
+      6.931442619599764e-06,
+      6.866682414957916e-06,
+      6.719220104688101e-06,
+      9.283683525620228e-06,
+      7.52133308680059e-06,
+      9.659772203978587e-06,
+      9.730430254877097e-06,
+      1.4026627295666802e-05,
+      1.4759959074399538e-05,
+      1.5134510006960339e-05,
+      1.294662353395478e-05,
+      1.4006963240624568e-05,
+      1.4111571041454986e-05,
+      1.3638555994127517e-05,
+      1.000681417722122e-05,
+      9.553007744165584e-06,
+      8.446173073490383e-06,
+      7.438032275618893e-06,
+      8.048876448285687e-06,
+      6.716286517079982e-06,
+      5.895246188853122e-06,
+      5.788698001292749e-06,
+      4.7516784320134e-06,
+      4.3846664539438335e-06,
+      4.6772594677993566e-06,
+      3.4768086842477453e-06,
+      4.060205484919354e-06,
+      3.2304533676986838e-06,
+      3.5514156007921e-06,
+      2.6523728042275997e-06,
+      2.982989987638774e-06,
+      3.4661198318916027e-06,
+      2.445964941877876e-06,
+      2.503809406588122e-06,
+      1.981334396306481e-06,
+      2.5481992806501367e-06,
+      2.2874705195078047e-06,
+      2.228208548910772e-06,
+      2.1147344094998177e-06,
+      2.3873864425485207e-06,
+      2.073258153913867e-06
+    ],
+    "configuration": {
+      "Lz": 1000,
+      "f": 0.0001,
+      "g": 9.81,
+      "evpOrders": [
+        128,
+        192
+      ],
+      "referenceOrders": [
+        257,
+        513
+      ],
+      "referenceAllowance": 0.0001,
+      "eigenAllowance": 1e-06,
+      "gramTolerance": 1e-07,
+      "id": "larger-exponential-97",
+      "profile": "exponential",
+      "Lxy": [
+        400000,
+        400000
+      ],
+      "Nxy": [
+        32,
+        32
+      ],
+      "Nz": 97,
+      "waveCount": 24,
+      "apvCount": 6,
+      "mdaCount": 4,
+      "inertialCount": 8,
+      "independentSampleSeed": 400,
+      "independentSampleCount": 64
+    },
+    "constructionSeconds": 34.919842375,
+    "assessmentSeconds": 40.46108666666667,
+    "interactionCount": 36,
+    "nonzeroProductEvaluations": 608804,
+    "structuralZeroProducts": 224596,
+    "referenceStability": 6.489356032203729e-14,
+    "eigenConvergence": 6.9562860468366e-08,
+    "allModeDerivativeConvergence": 5.0983437907271476e-05,
+    "eigenProductStability": 8.883258401540202e-06,
+    "eigenConvergenceByMetric": [
+      1.48113692416487e-10,
+      1.4849896383358799e-10,
+      3.360357869880696e-11,
+      5.0983437907271476e-05,
+      2.6265937143262687e-08
+    ],
+    "sobolevConvergenceByMetric": [
+      1.48113692416487e-10,
+      6.9562860468366e-08,
+      2.0106281579552775e-08
+    ],
+    "boundaryInterpolationError": 4.3290626484446763e-14,
+    "waveGram": [
+      1.7763568394002505e-15,
+      5.310614105960735e-13,
+      5.375015679486864e-13,
+      5.389078104009507e-13,
+      5.389094279199658e-13,
+      5.398156806924327e-13,
+      5.403613132871707e-13,
+      5.408995062033512e-13,
+      5.40984940981673e-13,
+      5.412853832883681e-13,
+      5.412911061389958e-13,
+      5.41297480224048e-13,
+      5.42130578946814e-13,
+      5.4274583286659e-13,
+      5.432956083271286e-13,
+      5.435278423708385e-13,
+      5.475583601420606e-13,
+      5.482183607353609e-13,
+      5.484229286501942e-13,
+      5.484296400508473e-13,
+      5.491316160811399e-13,
+      5.494608127995118e-13,
+      5.495453959483737e-13,
+      5.502289240799879e-13
+    ],
+    "apvGram": 2.097919124844831e-15,
+    "mdaGram": 2.649363600362107e-15,
+    "inertialGram": 5.204013785652366e-11,
+    "apvControl": [
+      {
+        "modeCount": 1,
+        "lastModeNumber": -1,
+        "gramError": 1.0941213699739576e-15,
+        "gramLimitingVariable": "G",
+        "leakageError": null,
+        "leakageLimitingVariable": "",
+        "leakageLimitingModeNumber": null,
+        "quadraticAliasingError": 2.1193085478143717e-15,
+        "quadraticLimitingChannel": "FG->G",
+        "quadraticLimitingModeNumberI": -1,
+        "quadraticLimitingModeNumberJ": -1,
+        "gramAccepted": true,
+        "leakageAccepted": true,
+        "quadraticAccepted": true,
+        "combinedAccepted": true
+      },
+      {
+        "modeCount": 2,
+        "lastModeNumber": 1,
+        "gramError": 1.8705227586116002e-15,
+        "gramLimitingVariable": "G",
+        "leakageError": null,
+        "leakageLimitingVariable": "",
+        "leakageLimitingModeNumber": null,
+        "quadraticAliasingError": 5.7737516701477506e-15,
+        "quadraticLimitingChannel": "FG->G",
+        "quadraticLimitingModeNumberI": 1,
+        "quadraticLimitingModeNumberJ": -1,
+        "gramAccepted": true,
+        "leakageAccepted": true,
+        "quadraticAccepted": true,
+        "combinedAccepted": true
+      },
+      {
+        "modeCount": 3,
+        "lastModeNumber": 2,
+        "gramError": 1.8765560555931605e-15,
+        "gramLimitingVariable": "G",
+        "leakageError": null,
+        "leakageLimitingVariable": "",
+        "leakageLimitingModeNumber": null,
+        "quadraticAliasingError": 6.0666477339377835e-15,
+        "quadraticLimitingChannel": "FG->G",
+        "quadraticLimitingModeNumberI": 2,
+        "quadraticLimitingModeNumberJ": -1,
+        "gramAccepted": true,
+        "leakageAccepted": true,
+        "quadraticAccepted": true,
+        "combinedAccepted": true
+      },
+      {
+        "modeCount": 4,
+        "lastModeNumber": 3,
+        "gramError": 1.8970060838416433e-15,
+        "gramLimitingVariable": "G",
+        "leakageError": null,
+        "leakageLimitingVariable": "",
+        "leakageLimitingModeNumber": null,
+        "quadraticAliasingError": 6.421106924968412e-15,
+        "quadraticLimitingChannel": "FG->G",
+        "quadraticLimitingModeNumberI": 3,
+        "quadraticLimitingModeNumberJ": 2,
+        "gramAccepted": true,
+        "leakageAccepted": true,
+        "quadraticAccepted": true,
+        "combinedAccepted": true
+      },
+      {
+        "modeCount": 5,
+        "lastModeNumber": 4,
+        "gramError": 2.091074319524743e-15,
+        "gramLimitingVariable": "G",
+        "leakageError": null,
+        "leakageLimitingVariable": "",
+        "leakageLimitingModeNumber": null,
+        "quadraticAliasingError": 6.323975936209853e-15,
+        "quadraticLimitingChannel": "FG->G",
+        "quadraticLimitingModeNumberI": 3,
+        "quadraticLimitingModeNumberJ": 2,
+        "gramAccepted": true,
+        "leakageAccepted": true,
+        "quadraticAccepted": true,
+        "combinedAccepted": true
+      },
+      {
+        "modeCount": 6,
+        "lastModeNumber": 5,
+        "gramError": 2.097919124844831e-15,
+        "gramLimitingVariable": "G",
+        "leakageError": null,
+        "leakageLimitingVariable": "",
+        "leakageLimitingModeNumber": null,
+        "quadraticAliasingError": 6.811984475086647e-15,
+        "quadraticLimitingChannel": "FG->G",
+        "quadraticLimitingModeNumberI": 5,
+        "quadraticLimitingModeNumberJ": -1,
+        "gramAccepted": true,
+        "leakageAccepted": true,
+        "quadraticAccepted": true,
+        "combinedAccepted": true
+      }
+    ],
+    "matlabVersion": "25.2.0.3150157 (R2025b) Update 4",
+    "computer": "MACA64",
+    "referencesStable": true,
+    "fixedFamiliesGramAccepted": true,
+    "caseId": "larger-exponential-97",
+    "largestLinearCount": 24,
+    "largestSampledCounts": [
+      24,
+      24,
+      24
+    ],
+    "largestQuadraticOnlyCounts": [
+      24,
+      24,
+      24
+    ],
+    "scope": "maximum over the selected individual source products; no full-survey count is implied",
+    "independentInteractionIndices": [],
+    "limiting": [
+      {
+        "interaction": 9683,
+        "inputA": "wave",
+        "inputB": "wave",
+        "output": "inertial",
+        "channel": "w*dz(u)",
+        "modeA": 1,
+        "signA": 1,
+        "modeB": 1,
+        "signB": 1,
+        "integerWavevectors": [
+          [
+            -6,
+            -2
+          ],
+          [
+            6,
+            2
+          ],
+          [
+            0,
+            0
+          ]
+        ],
+        "error": 2.9075517549159713e-09
+      },
+      {
+        "interaction": 9683,
+        "inputA": "wave",
+        "inputB": "wave",
+        "output": "inertial",
+        "channel": "w*dz(u)",
+        "modeA": 1,
+        "signA": 1,
+        "modeB": 1,
+        "signB": 1,
+        "integerWavevectors": [
+          [
+            -6,
+            -2
+          ],
+          [
+            6,
+            2
+          ],
+          [
+            0,
+            0
+          ]
+        ],
+        "error": 2.9075517549159713e-09
+      },
+      {
+        "interaction": 1903,
+        "inputA": "wave",
+        "inputB": "wave",
+        "output": "wave",
+        "channel": "w*dz(u)",
+        "modeA": 1,
+        "signA": 1,
+        "modeB": 1,
+        "signB": 1,
+        "integerWavevectors": [
+          [
+            -9,
+            0
+          ],
+          [
+            4,
+            -4
+          ],
+          [
+            -5,
+            -4
+          ]
+        ],
+        "error": 3.029606565618792e-09
+      },
+      {
+        "interaction": 31801,
+        "inputA": "wave",
+        "inputB": "wave",
+        "output": "wave",
+        "channel": "w*dz(u)",
+        "modeA": 1,
+        "signA": 1,
+        "modeB": 1,
+        "signB": 1,
+        "integerWavevectors": [
+          [
+            -1,
+            -1
+          ],
+          [
+            4,
+            4
+          ],
+          [
+            3,
+            3
+          ]
+        ],
+        "error": 3.756410293931367e-09
+      },
+      {
+        "interaction": 31801,
+        "inputA": "wave",
+        "inputB": "wave",
+        "output": "wave",
+        "channel": "w*dz(u)",
+        "modeA": 1,
+        "signA": 1,
+        "modeB": 1,
+        "signB": 1,
+        "integerWavevectors": [
+          [
+            -1,
+            -1
+          ],
+          [
+            4,
+            4
+          ],
+          [
+            3,
+            3
+          ]
+        ],
+        "error": 4.387552099416325e-09
+      },
+      {
+        "interaction": 31801,
+        "inputA": "wave",
+        "inputB": "wave",
+        "output": "wave",
+        "channel": "w*dz(u)",
+        "modeA": 1,
+        "signA": 1,
+        "modeB": 1,
+        "signB": 1,
+        "integerWavevectors": [
+          [
+            -1,
+            -1
+          ],
+          [
+            4,
+            4
+          ],
+          [
+            3,
+            3
+          ]
+        ],
+        "error": 4.947803500243708e-09
+      },
+      {
+        "interaction": 31801,
+        "inputA": "wave",
+        "inputB": "wave",
+        "output": "wave",
+        "channel": "w*dz(u)",
+        "modeA": 1,
+        "signA": 1,
+        "modeB": 1,
+        "signB": 1,
+        "integerWavevectors": [
+          [
+            -1,
+            -1
+          ],
+          [
+            4,
+            4
+          ],
+          [
+            3,
+            3
+          ]
+        ],
+        "error": 5.4553628281439615e-09
+      },
+      {
+        "interaction": 31801,
+        "inputA": "wave",
+        "inputB": "wave",
+        "output": "wave",
+        "channel": "w*dz(u)",
+        "modeA": 1,
+        "signA": 1,
+        "modeB": 1,
+        "signB": 1,
+        "integerWavevectors": [
+          [
+            -1,
+            -1
+          ],
+          [
+            4,
+            4
+          ],
+          [
+            3,
+            3
+          ]
+        ],
+        "error": 5.922266232971651e-09
+      },
+      {
+        "interaction": 31801,
+        "inputA": "wave",
+        "inputB": "wave",
+        "output": "wave",
+        "channel": "w*dz(u)",
+        "modeA": 1,
+        "signA": 1,
+        "modeB": 1,
+        "signB": 1,
+        "integerWavevectors": [
+          [
+            -1,
+            -1
+          ],
+          [
+            4,
+            4
+          ],
+          [
+            3,
+            3
+          ]
+        ],
+        "error": 6.356463799761514e-09
+      },
+      {
+        "interaction": 31801,
+        "inputA": "wave",
+        "inputB": "wave",
+        "output": "wave",
+        "channel": "w*dz(u)",
+        "modeA": 1,
+        "signA": 1,
+        "modeB": 1,
+        "signB": 1,
+        "integerWavevectors": [
+          [
+            -1,
+            -1
+          ],
+          [
+            4,
+            4
+          ],
+          [
+            3,
+            3
+          ]
+        ],
+        "error": 6.7639054357471196e-09
+      },
+      {
+        "interaction": 31801,
+        "inputA": "wave",
+        "inputB": "wave",
+        "output": "wave",
+        "channel": "w*dz(u)",
+        "modeA": 1,
+        "signA": 1,
+        "modeB": 1,
+        "signB": 1,
+        "integerWavevectors": [
+          [
+            -1,
+            -1
+          ],
+          [
+            4,
+            4
+          ],
+          [
+            3,
+            3
+          ]
+        ],
+        "error": 7.148743375040567e-09
+      },
+      {
+        "interaction": 31801,
+        "inputA": "wave",
+        "inputB": "wave",
+        "output": "wave",
+        "channel": "w*dz(u)",
+        "modeA": 1,
+        "signA": 1,
+        "modeB": 1,
+        "signB": 1,
+        "integerWavevectors": [
+          [
+            -1,
+            -1
+          ],
+          [
+            4,
+            4
+          ],
+          [
+            3,
+            3
+          ]
+        ],
+        "error": 7.514366018313012e-09
+      },
+      {
+        "interaction": 31801,
+        "inputA": "wave",
+        "inputB": "wave",
+        "output": "wave",
+        "channel": "w*dz(u)",
+        "modeA": 1,
+        "signA": 1,
+        "modeB": 1,
+        "signB": 1,
+        "integerWavevectors": [
+          [
+            -1,
+            -1
+          ],
+          [
+            4,
+            4
+          ],
+          [
+            3,
+            3
+          ]
+        ],
+        "error": 7.863208750791273e-09
+      },
+      {
+        "interaction": 31801,
+        "inputA": "wave",
+        "inputB": "wave",
+        "output": "wave",
+        "channel": "w*dz(u)",
+        "modeA": 1,
+        "signA": 1,
+        "modeB": 1,
+        "signB": 1,
+        "integerWavevectors": [
+          [
+            -1,
+            -1
+          ],
+          [
+            4,
+            4
+          ],
+          [
+            3,
+            3
+          ]
+        ],
+        "error": 8.197436507373368e-09
+      },
+      {
+        "interaction": 31801,
+        "inputA": "wave",
+        "inputB": "wave",
+        "output": "wave",
+        "channel": "w*dz(u)",
+        "modeA": 1,
+        "signA": 1,
+        "modeB": 1,
+        "signB": 1,
+        "integerWavevectors": [
+          [
+            -1,
+            -1
+          ],
+          [
+            4,
+            4
+          ],
+          [
+            3,
+            3
+          ]
+        ],
+        "error": 8.518589389439057e-09
+      },
+      {
+        "interaction": 31801,
+        "inputA": "wave",
+        "inputB": "wave",
+        "output": "wave",
+        "channel": "w*dz(u)",
+        "modeA": 1,
+        "signA": 1,
+        "modeB": 1,
+        "signB": 1,
+        "integerWavevectors": [
+          [
+            -1,
+            -1
+          ],
+          [
+            4,
+            4
+          ],
+          [
+            3,
+            3
+          ]
+        ],
+        "error": 8.828155984019759e-09
+      },
+      {
+        "interaction": 31801,
+        "inputA": "wave",
+        "inputB": "wave",
+        "output": "wave",
+        "channel": "w*dz(u)",
+        "modeA": 1,
+        "signA": 1,
+        "modeB": 1,
+        "signB": 1,
+        "integerWavevectors": [
+          [
+            -1,
+            -1
+          ],
+          [
+            4,
+            4
+          ],
+          [
+            3,
+            3
+          ]
+        ],
+        "error": 9.1271790125802e-09
+      },
+      {
+        "interaction": 31801,
+        "inputA": "wave",
+        "inputB": "wave",
+        "output": "wave",
+        "channel": "w*dz(u)",
+        "modeA": 1,
+        "signA": 1,
+        "modeB": 1,
+        "signB": 1,
+        "integerWavevectors": [
+          [
+            -1,
+            -1
+          ],
+          [
+            4,
+            4
+          ],
+          [
+            3,
+            3
+          ]
+        ],
+        "error": 9.416733171008218e-09
+      },
+      {
+        "interaction": 31801,
+        "inputA": "wave",
+        "inputB": "wave",
+        "output": "wave",
+        "channel": "w*dz(u)",
+        "modeA": 1,
+        "signA": 1,
+        "modeB": 1,
+        "signB": 1,
+        "integerWavevectors": [
+          [
+            -1,
+            -1
+          ],
+          [
+            4,
+            4
+          ],
+          [
+            3,
+            3
+          ]
+        ],
+        "error": 9.697528113861154e-09
+      },
+      {
+        "interaction": 17353,
+        "inputA": "wave",
+        "inputB": "wave",
+        "output": "wave",
+        "channel": "w*dz(u)",
+        "modeA": 20,
+        "signA": 1,
+        "modeB": 19,
+        "signB": 1,
+        "integerWavevectors": [
+          [
+            -4,
+            -1
+          ],
+          [
+            -6,
+            1
+          ],
+          [
+            -10,
+            0
+          ]
+        ],
+        "error": 1.741465105453699e-08
+      },
+      {
+        "interaction": 17353,
+        "inputA": "wave",
+        "inputB": "wave",
+        "output": "wave",
+        "channel": "w*dz(u)",
+        "modeA": 21,
+        "signA": 1,
+        "modeB": 21,
+        "signB": 1,
+        "integerWavevectors": [
+          [
+            -4,
+            -1
+          ],
+          [
+            -6,
+            1
+          ],
+          [
+            -10,
+            0
+          ]
+        ],
+        "error": 1.7207094060722739e-07
+      },
+      {
+        "interaction": 3984,
+        "inputA": "wave",
+        "inputB": "wave",
+        "output": "wave",
+        "channel": "w*dz(u)",
+        "modeA": 21,
+        "signA": 1,
+        "modeB": 22,
+        "signB": 1,
+        "integerWavevectors": [
+          [
+            -8,
+            0
+          ],
+          [
+            -1,
+            0
+          ],
+          [
+            -9,
+            0
+          ]
+        ],
+        "error": 4.55547223054964e-07
+      },
+      {
+        "interaction": 32027,
+        "inputA": "wave",
+        "inputB": "wave",
+        "output": "wave",
+        "channel": "w*dz(u)",
+        "modeA": 23,
+        "signA": 1,
+        "modeB": 22,
+        "signB": 1,
+        "integerWavevectors": [
+          [
+            -1,
+            0
+          ],
+          [
+            -1,
+            0
+          ],
+          [
+            -2,
+            0
+          ]
+        ],
+        "error": 6.75991714160773e-07
+      },
+      {
+        "interaction": 32027,
+        "inputA": "wave",
+        "inputB": "wave",
+        "output": "wave",
+        "channel": "w*dz(u)",
+        "modeA": 24,
+        "signA": 1,
+        "modeB": 23,
+        "signB": 1,
+        "integerWavevectors": [
+          [
+            -1,
+            0
+          ],
+          [
+            -1,
+            0
+          ],
+          [
+            -2,
+            0
+          ]
+        ],
+        "error": 7.864813937885629e-07
+      }
+    ],
+    "processWallSeconds": 111.38,
+    "peakResidentBytes": 2058846208,
+    "prefixes": [
+      {
+        "waveCount": "1",
+        "gramError": "1.77635683940025e-15",
+        "sampledQuadraticError": "2.90755175491597e-09"
+      },
+      {
+        "waveCount": "2",
+        "gramError": "5.31061410596074e-13",
+        "sampledQuadraticError": "2.90755175491597e-09"
+      },
+      {
+        "waveCount": "3",
+        "gramError": "5.37501567948686e-13",
+        "sampledQuadraticError": "3.02960656561879e-09"
+      },
+      {
+        "waveCount": "4",
+        "gramError": "5.38907810400951e-13",
+        "sampledQuadraticError": "3.75641029393137e-09"
+      },
+      {
+        "waveCount": "5",
+        "gramError": "5.38909427919966e-13",
+        "sampledQuadraticError": "4.38755209941633e-09"
+      },
+      {
+        "waveCount": "6",
+        "gramError": "5.39815680692433e-13",
+        "sampledQuadraticError": "4.94780350024371e-09"
+      },
+      {
+        "waveCount": "7",
+        "gramError": "5.40361313287171e-13",
+        "sampledQuadraticError": "5.45536282814396e-09"
+      },
+      {
+        "waveCount": "8",
+        "gramError": "5.40899506203351e-13",
+        "sampledQuadraticError": "5.92226623297165e-09"
+      },
+      {
+        "waveCount": "9",
+        "gramError": "5.40984940981673e-13",
+        "sampledQuadraticError": "6.35646379976151e-09"
+      },
+      {
+        "waveCount": "10",
+        "gramError": "5.41285383288368e-13",
+        "sampledQuadraticError": "6.76390543574712e-09"
+      },
+      {
+        "waveCount": "11",
+        "gramError": "5.41291106138996e-13",
+        "sampledQuadraticError": "7.14874337504057e-09"
+      },
+      {
+        "waveCount": "12",
+        "gramError": "5.41297480224048e-13",
+        "sampledQuadraticError": "7.51436601831301e-09"
+      },
+      {
+        "waveCount": "13",
+        "gramError": "5.42130578946814e-13",
+        "sampledQuadraticError": "7.86320875079127e-09"
+      },
+      {
+        "waveCount": "14",
+        "gramError": "5.4274583286659e-13",
+        "sampledQuadraticError": "8.19743650737337e-09"
+      },
+      {
+        "waveCount": "15",
+        "gramError": "5.43295608327129e-13",
+        "sampledQuadraticError": "8.51858938943906e-09"
+      },
+      {
+        "waveCount": "16",
+        "gramError": "5.43527842370838e-13",
+        "sampledQuadraticError": "8.82815598401976e-09"
+      },
+      {
+        "waveCount": "17",
+        "gramError": "5.47558360142061e-13",
+        "sampledQuadraticError": "9.1271790125802e-09"
+      },
+      {
+        "waveCount": "18",
+        "gramError": "5.48218360735361e-13",
+        "sampledQuadraticError": "9.41673317100822e-09"
+      },
+      {
+        "waveCount": "19",
+        "gramError": "5.48422928650194e-13",
+        "sampledQuadraticError": "9.69752811386115e-09"
+      },
+      {
+        "waveCount": "20",
+        "gramError": "5.48429640050847e-13",
+        "sampledQuadraticError": "1.7414651054537e-08"
+      },
+      {
+        "waveCount": "21",
+        "gramError": "5.4913161608114e-13",
+        "sampledQuadraticError": "1.72070940607227e-07"
+      },
+      {
+        "waveCount": "22",
+        "gramError": "5.49460812799512e-13",
+        "sampledQuadraticError": "4.55547223054964e-07"
+      },
+      {
+        "waveCount": "23",
+        "gramError": "5.49545395948374e-13",
+        "sampledQuadraticError": "6.75991714160773e-07"
+      },
+      {
+        "waveCount": "24",
+        "gramError": "5.50228924079988e-13",
+        "sampledQuadraticError": "7.86481393788563e-07"
+      }
+    ]
+  },
+  "independent": {
+    "status": "survey-complete",
+    "policy": "independent",
+    "pageDifficulty": [
+      4.847641455003425e-06,
+      4.426953454584133e-06,
+      3.4344064165793448e-06,
+      5.046010852911648e-06,
+      5.3673361123252555e-06,
+      5.7116856938679135e-06,
+      6.916209353340543e-06,
+      7.5448244057376154e-06,
+      6.931442619599764e-06,
+      6.866682414957916e-06,
+      6.719220104688101e-06,
+      9.283683525620228e-06,
+      7.52133308680059e-06,
+      9.659772203978587e-06,
+      9.730430254877097e-06,
+      1.4026627295666802e-05,
+      1.4759959074399538e-05,
+      1.5134510006960339e-05,
+      1.294662353395478e-05,
+      1.4006963240624568e-05,
+      1.4111571041454986e-05,
+      1.3638555994127517e-05,
+      1.000681417722122e-05,
+      9.553007744165584e-06,
+      8.446173073490383e-06,
+      7.438032275618893e-06,
+      8.048876448285687e-06,
+      6.716286517079982e-06,
+      5.895246188853122e-06,
+      5.788698001292749e-06,
+      4.7516784320134e-06,
+      4.3846664539438335e-06,
+      4.6772594677993566e-06,
+      3.4768086842477453e-06,
+      4.060205484919354e-06,
+      3.2304533676986838e-06,
+      3.5514156007921e-06,
+      2.6523728042275997e-06,
+      2.982989987638774e-06,
+      3.4661198318916027e-06,
+      2.445964941877876e-06,
+      2.503809406588122e-06,
+      1.981334396306481e-06,
+      2.5481992806501367e-06,
+      2.2874705195078047e-06,
+      2.228208548910772e-06,
+      2.1147344094998177e-06,
+      2.3873864425485207e-06,
+      2.073258153913867e-06
+    ],
+    "configuration": {
+      "Lz": 1000,
+      "f": 0.0001,
+      "g": 9.81,
+      "evpOrders": [
+        128,
+        192
+      ],
+      "referenceOrders": [
+        257,
+        513
+      ],
+      "referenceAllowance": 0.0001,
+      "eigenAllowance": 1e-06,
+      "gramTolerance": 1e-07,
+      "id": "larger-exponential-97",
+      "profile": "exponential",
+      "Lxy": [
+        400000,
+        400000
+      ],
+      "Nxy": [
+        32,
+        32
+      ],
+      "Nz": 97,
+      "waveCount": 24,
+      "apvCount": 6,
+      "mdaCount": 4,
+      "inertialCount": 8,
+      "independentSampleSeed": 400,
+      "independentSampleCount": 64
+    },
+    "constructionSeconds": 35.511338625,
+    "assessmentSeconds": 105.63252891666667,
+    "interactionCount": 64,
+    "nonzeroProductEvaluations": 2290348.0,
+    "structuralZeroProducts": 279552,
+    "referenceStability": 7.499061327436002e-14,
+    "eigenConvergence": 6.9562860468366e-08,
+    "allModeDerivativeConvergence": 5.0983437907271476e-05,
+    "eigenProductStability": 9.052604736740685e-06,
+    "eigenConvergenceByMetric": [
+      1.48113692416487e-10,
+      1.4849896383358799e-10,
+      3.360357869880696e-11,
+      5.0983437907271476e-05,
+      2.6265937143262687e-08
+    ],
+    "sobolevConvergenceByMetric": [
+      1.48113692416487e-10,
+      6.9562860468366e-08,
+      2.0106281579552775e-08
+    ],
+    "boundaryInterpolationError": 4.3290626484446763e-14,
+    "waveGram": [
+      1.7763568394002505e-15,
+      5.310614105960735e-13,
+      5.375015679486864e-13,
+      5.389078104009507e-13,
+      5.389094279199658e-13,
+      5.398156806924327e-13,
+      5.403613132871707e-13,
+      5.408995062033512e-13,
+      5.40984940981673e-13,
+      5.412853832883681e-13,
+      5.412911061389958e-13,
+      5.41297480224048e-13,
+      5.42130578946814e-13,
+      5.4274583286659e-13,
+      5.432956083271286e-13,
+      5.435278423708385e-13,
+      5.475583601420606e-13,
+      5.482183607353609e-13,
+      5.484229286501942e-13,
+      5.484296400508473e-13,
+      5.491316160811399e-13,
+      5.494608127995118e-13,
+      5.495453959483737e-13,
+      5.502289240799879e-13
+    ],
+    "apvGram": 2.097919124844831e-15,
+    "mdaGram": 2.649363600362107e-15,
+    "inertialGram": 5.204013785652366e-11,
+    "apvControl": [
+      {
+        "modeCount": 1,
+        "lastModeNumber": -1,
+        "gramError": 1.0941213699739576e-15,
+        "gramLimitingVariable": "G",
+        "leakageError": null,
+        "leakageLimitingVariable": "",
+        "leakageLimitingModeNumber": null,
+        "quadraticAliasingError": 2.1193085478143717e-15,
+        "quadraticLimitingChannel": "FG->G",
+        "quadraticLimitingModeNumberI": -1,
+        "quadraticLimitingModeNumberJ": -1,
+        "gramAccepted": true,
+        "leakageAccepted": true,
+        "quadraticAccepted": true,
+        "combinedAccepted": true
+      },
+      {
+        "modeCount": 2,
+        "lastModeNumber": 1,
+        "gramError": 1.8705227586116002e-15,
+        "gramLimitingVariable": "G",
+        "leakageError": null,
+        "leakageLimitingVariable": "",
+        "leakageLimitingModeNumber": null,
+        "quadraticAliasingError": 5.7737516701477506e-15,
+        "quadraticLimitingChannel": "FG->G",
+        "quadraticLimitingModeNumberI": 1,
+        "quadraticLimitingModeNumberJ": -1,
+        "gramAccepted": true,
+        "leakageAccepted": true,
+        "quadraticAccepted": true,
+        "combinedAccepted": true
+      },
+      {
+        "modeCount": 3,
+        "lastModeNumber": 2,
+        "gramError": 1.8765560555931605e-15,
+        "gramLimitingVariable": "G",
+        "leakageError": null,
+        "leakageLimitingVariable": "",
+        "leakageLimitingModeNumber": null,
+        "quadraticAliasingError": 6.0666477339377835e-15,
+        "quadraticLimitingChannel": "FG->G",
+        "quadraticLimitingModeNumberI": 2,
+        "quadraticLimitingModeNumberJ": -1,
+        "gramAccepted": true,
+        "leakageAccepted": true,
+        "quadraticAccepted": true,
+        "combinedAccepted": true
+      },
+      {
+        "modeCount": 4,
+        "lastModeNumber": 3,
+        "gramError": 1.8970060838416433e-15,
+        "gramLimitingVariable": "G",
+        "leakageError": null,
+        "leakageLimitingVariable": "",
+        "leakageLimitingModeNumber": null,
+        "quadraticAliasingError": 6.421106924968412e-15,
+        "quadraticLimitingChannel": "FG->G",
+        "quadraticLimitingModeNumberI": 3,
+        "quadraticLimitingModeNumberJ": 2,
+        "gramAccepted": true,
+        "leakageAccepted": true,
+        "quadraticAccepted": true,
+        "combinedAccepted": true
+      },
+      {
+        "modeCount": 5,
+        "lastModeNumber": 4,
+        "gramError": 2.091074319524743e-15,
+        "gramLimitingVariable": "G",
+        "leakageError": null,
+        "leakageLimitingVariable": "",
+        "leakageLimitingModeNumber": null,
+        "quadraticAliasingError": 6.323975936209853e-15,
+        "quadraticLimitingChannel": "FG->G",
+        "quadraticLimitingModeNumberI": 3,
+        "quadraticLimitingModeNumberJ": 2,
+        "gramAccepted": true,
+        "leakageAccepted": true,
+        "quadraticAccepted": true,
+        "combinedAccepted": true
+      },
+      {
+        "modeCount": 6,
+        "lastModeNumber": 5,
+        "gramError": 2.097919124844831e-15,
+        "gramLimitingVariable": "G",
+        "leakageError": null,
+        "leakageLimitingVariable": "",
+        "leakageLimitingModeNumber": null,
+        "quadraticAliasingError": 6.811984475086647e-15,
+        "quadraticLimitingChannel": "FG->G",
+        "quadraticLimitingModeNumberI": 5,
+        "quadraticLimitingModeNumberJ": -1,
+        "gramAccepted": true,
+        "leakageAccepted": true,
+        "quadraticAccepted": true,
+        "combinedAccepted": true
+      }
+    ],
+    "matlabVersion": "25.2.0.3150157 (R2025b) Update 4",
+    "computer": "MACA64",
+    "referencesStable": true,
+    "fixedFamiliesGramAccepted": true,
+    "caseId": "larger-exponential-97",
+    "largestLinearCount": 24,
+    "largestSampledCounts": [
+      24,
+      24,
+      24
+    ],
+    "largestQuadraticOnlyCounts": [
+      24,
+      24,
+      24
+    ],
+    "scope": "maximum over the selected individual source products; no full-survey count is implied",
+    "independentInteractionIndices": [
+      893,
+      1849,
+      2624,
+      3839,
+      7276,
+      7580,
+      10340,
+      10375,
+      10977,
+      11313,
+      12743,
+      14176,
+      14805,
+      15350,
+      16386,
+      16738,
+      21506,
+      24104,
+      26027,
+      27825,
+      29163,
+      29972,
+      31882,
+      33341,
+      36975,
+      37743,
+      38502,
+      39898,
+      40637,
+      40707,
+      41023,
+      41321,
+      42109,
+      44765,
+      44940,
+      45785,
+      46599,
+      47235,
+      48552,
+      49527,
+      49544,
+      51029,
+      52647,
+      53594,
+      54131,
+      55790,
+      56813,
+      57478,
+      58769,
+      59536,
+      61295,
+      61372,
+      62200,
+      62691,
+      63386,
+      63638,
+      68429,
+      69402,
+      69806,
+      70199,
+      70717,
+      71577,
+      71784,
+      73827
+    ],
+    "limiting": [
+      {
+        "interaction": 63386,
+        "inputA": "wave",
+        "inputB": "wave",
+        "output": "wave",
+        "channel": "w*dz(u)",
+        "modeA": 1,
+        "signA": 1,
+        "modeB": 1,
+        "signB": 1,
+        "integerWavevectors": [
+          [
+            6,
+            -3
+          ],
+          [
+            2,
+            5
+          ],
+          [
+            8,
+            2
+          ]
+        ],
+        "error": 1.269821470195609e-09
+      },
+      {
+        "interaction": 63386,
+        "inputA": "wave",
+        "inputB": "wave",
+        "output": "wave",
+        "channel": "w*dz(u)",
+        "modeA": 1,
+        "signA": 1,
+        "modeB": 1,
+        "signB": 1,
+        "integerWavevectors": [
+          [
+            6,
+            -3
+          ],
+          [
+            2,
+            5
+          ],
+          [
+            8,
+            2
+          ]
+        ],
+        "error": 2.6105793082820128e-09
+      },
+      {
+        "interaction": 58769,
+        "inputA": "wave",
+        "inputB": "wave",
+        "output": "wave",
+        "channel": "w*dz(v)",
+        "modeA": 1,
+        "signA": 1,
+        "modeB": 1,
+        "signB": 1,
+        "integerWavevectors": [
+          [
+            5,
+            -7
+          ],
+          [
+            -4,
+            4
+          ],
+          [
+            1,
+            -3
+          ]
+        ],
+        "error": 3.4776352908494346e-09
+      },
+      {
+        "interaction": 58769,
+        "inputA": "wave",
+        "inputB": "wave",
+        "output": "wave",
+        "channel": "w*dz(v)",
+        "modeA": 1,
+        "signA": 1,
+        "modeB": 1,
+        "signB": 1,
+        "integerWavevectors": [
+          [
+            5,
+            -7
+          ],
+          [
+            -4,
+            4
+          ],
+          [
+            1,
+            -3
+          ]
+        ],
+        "error": 4.180302770606659e-09
+      },
+      {
+        "interaction": 58769,
+        "inputA": "wave",
+        "inputB": "wave",
+        "output": "wave",
+        "channel": "w*dz(v)",
+        "modeA": 1,
+        "signA": 1,
+        "modeB": 1,
+        "signB": 1,
+        "integerWavevectors": [
+          [
+            5,
+            -7
+          ],
+          [
+            -4,
+            4
+          ],
+          [
+            1,
+            -3
+          ]
+        ],
+        "error": 4.78252726310302e-09
+      },
+      {
+        "interaction": 58769,
+        "inputA": "wave",
+        "inputB": "wave",
+        "output": "wave",
+        "channel": "w*dz(v)",
+        "modeA": 1,
+        "signA": 1,
+        "modeB": 1,
+        "signB": 1,
+        "integerWavevectors": [
+          [
+            5,
+            -7
+          ],
+          [
+            -4,
+            4
+          ],
+          [
+            1,
+            -3
+          ]
+        ],
+        "error": 5.317827955764187e-09
+      },
+      {
+        "interaction": 58769,
+        "inputA": "wave",
+        "inputB": "wave",
+        "output": "wave",
+        "channel": "w*dz(v)",
+        "modeA": 1,
+        "signA": 1,
+        "modeB": 1,
+        "signB": 1,
+        "integerWavevectors": [
+          [
+            5,
+            -7
+          ],
+          [
+            -4,
+            4
+          ],
+          [
+            1,
+            -3
+          ]
+        ],
+        "error": 5.804249969543207e-09
+      },
+      {
+        "interaction": 58769,
+        "inputA": "wave",
+        "inputB": "wave",
+        "output": "wave",
+        "channel": "w*dz(v)",
+        "modeA": 1,
+        "signA": 1,
+        "modeB": 1,
+        "signB": 1,
+        "integerWavevectors": [
+          [
+            5,
+            -7
+          ],
+          [
+            -4,
+            4
+          ],
+          [
+            1,
+            -3
+          ]
+        ],
+        "error": 6.253175310888537e-09
+      },
+      {
+        "interaction": 58769,
+        "inputA": "wave",
+        "inputB": "wave",
+        "output": "wave",
+        "channel": "w*dz(v)",
+        "modeA": 1,
+        "signA": 1,
+        "modeB": 1,
+        "signB": 1,
+        "integerWavevectors": [
+          [
+            5,
+            -7
+          ],
+          [
+            -4,
+            4
+          ],
+          [
+            1,
+            -3
+          ]
+        ],
+        "error": 6.671945662617418e-09
+      },
+      {
+        "interaction": 58769,
+        "inputA": "wave",
+        "inputB": "wave",
+        "output": "wave",
+        "channel": "w*dz(v)",
+        "modeA": 1,
+        "signA": 1,
+        "modeB": 1,
+        "signB": 1,
+        "integerWavevectors": [
+          [
+            5,
+            -7
+          ],
+          [
+            -4,
+            4
+          ],
+          [
+            1,
+            -3
+          ]
+        ],
+        "error": 7.0660064466210315e-09
+      },
+      {
+        "interaction": 58769,
+        "inputA": "wave",
+        "inputB": "wave",
+        "output": "wave",
+        "channel": "w*dz(v)",
+        "modeA": 1,
+        "signA": 1,
+        "modeB": 1,
+        "signB": 1,
+        "integerWavevectors": [
+          [
+            5,
+            -7
+          ],
+          [
+            -4,
+            4
+          ],
+          [
+            1,
+            -3
+          ]
+        ],
+        "error": 7.439127536201795e-09
+      },
+      {
+        "interaction": 58769,
+        "inputA": "wave",
+        "inputB": "wave",
+        "output": "wave",
+        "channel": "w*dz(v)",
+        "modeA": 1,
+        "signA": 1,
+        "modeB": 1,
+        "signB": 1,
+        "integerWavevectors": [
+          [
+            5,
+            -7
+          ],
+          [
+            -4,
+            4
+          ],
+          [
+            1,
+            -3
+          ]
+        ],
+        "error": 7.794395351368166e-09
+      },
+      {
+        "interaction": 58769,
+        "inputA": "wave",
+        "inputB": "wave",
+        "output": "wave",
+        "channel": "w*dz(v)",
+        "modeA": 1,
+        "signA": 1,
+        "modeB": 1,
+        "signB": 1,
+        "integerWavevectors": [
+          [
+            5,
+            -7
+          ],
+          [
+            -4,
+            4
+          ],
+          [
+            1,
+            -3
+          ]
+        ],
+        "error": 8.13401523913626e-09
+      },
+      {
+        "interaction": 58769,
+        "inputA": "wave",
+        "inputB": "wave",
+        "output": "wave",
+        "channel": "w*dz(v)",
+        "modeA": 1,
+        "signA": 1,
+        "modeB": 1,
+        "signB": 1,
+        "integerWavevectors": [
+          [
+            5,
+            -7
+          ],
+          [
+            -4,
+            4
+          ],
+          [
+            1,
+            -3
+          ]
+        ],
+        "error": 8.45996606102517e-09
+      },
+      {
+        "interaction": 58769,
+        "inputA": "wave",
+        "inputB": "wave",
+        "output": "wave",
+        "channel": "w*dz(v)",
+        "modeA": 1,
+        "signA": 1,
+        "modeB": 1,
+        "signB": 1,
+        "integerWavevectors": [
+          [
+            5,
+            -7
+          ],
+          [
+            -4,
+            4
+          ],
+          [
+            1,
+            -3
+          ]
+        ],
+        "error": 8.773646698045923e-09
+      },
+      {
+        "interaction": 58769,
+        "inputA": "wave",
+        "inputB": "wave",
+        "output": "wave",
+        "channel": "w*dz(v)",
+        "modeA": 1,
+        "signA": 1,
+        "modeB": 1,
+        "signB": 1,
+        "integerWavevectors": [
+          [
+            5,
+            -7
+          ],
+          [
+            -4,
+            4
+          ],
+          [
+            1,
+            -3
+          ]
+        ],
+        "error": 9.076425833143276e-09
+      },
+      {
+        "interaction": 58769,
+        "inputA": "wave",
+        "inputB": "wave",
+        "output": "wave",
+        "channel": "w*dz(v)",
+        "modeA": 1,
+        "signA": 1,
+        "modeB": 1,
+        "signB": 1,
+        "integerWavevectors": [
+          [
+            5,
+            -7
+          ],
+          [
+            -4,
+            4
+          ],
+          [
+            1,
+            -3
+          ]
+        ],
+        "error": 9.369253817226308e-09
+      },
+      {
+        "interaction": 58769,
+        "inputA": "wave",
+        "inputB": "wave",
+        "output": "wave",
+        "channel": "w*dz(v)",
+        "modeA": 1,
+        "signA": 1,
+        "modeB": 1,
+        "signB": 1,
+        "integerWavevectors": [
+          [
+            5,
+            -7
+          ],
+          [
+            -4,
+            4
+          ],
+          [
+            1,
+            -3
+          ]
+        ],
+        "error": 9.653125410125085e-09
+      },
+      {
+        "interaction": 58769,
+        "inputA": "wave",
+        "inputB": "wave",
+        "output": "wave",
+        "channel": "w*dz(v)",
+        "modeA": 1,
+        "signA": 1,
+        "modeB": 1,
+        "signB": 1,
+        "integerWavevectors": [
+          [
+            5,
+            -7
+          ],
+          [
+            -4,
+            4
+          ],
+          [
+            1,
+            -3
+          ]
+        ],
+        "error": 9.928688093907567e-09
+      },
+      {
+        "interaction": 893,
+        "inputA": "wave",
+        "inputB": "wave",
+        "output": "wave",
+        "channel": "w*dz(v)",
+        "modeA": 20,
+        "signA": 1,
+        "modeB": 19,
+        "signB": 1,
+        "integerWavevectors": [
+          [
+            -10,
+            2
+          ],
+          [
+            10,
+            3
+          ],
+          [
+            0,
+            5
+          ]
+        ],
+        "error": 1.741482691386409e-08
+      },
+      {
+        "interaction": 893,
+        "inputA": "wave",
+        "inputB": "wave",
+        "output": "wave",
+        "channel": "w*dz(v)",
+        "modeA": 21,
+        "signA": 1,
+        "modeB": 21,
+        "signB": 1,
+        "integerWavevectors": [
+          [
+            -10,
+            2
+          ],
+          [
+            10,
+            3
+          ],
+          [
+            0,
+            5
+          ]
+        ],
+        "error": 1.7207206326474989e-07
+      },
+      {
+        "interaction": 893,
+        "inputA": "wave",
+        "inputB": "wave",
+        "output": "wave",
+        "channel": "w*dz(v)",
+        "modeA": 22,
+        "signA": 1,
+        "modeB": 21,
+        "signB": 1,
+        "integerWavevectors": [
+          [
+            -10,
+            2
+          ],
+          [
+            10,
+            3
+          ],
+          [
+            0,
+            5
+          ]
+        ],
+        "error": 4.5554952521342784e-07
+      },
+      {
+        "interaction": 2624,
+        "inputA": "wave",
+        "inputB": "wave",
+        "output": "wave",
+        "channel": "w*dz(u)",
+        "modeA": 23,
+        "signA": 1,
+        "modeB": 22,
+        "signB": 1,
+        "integerWavevectors": [
+          [
+            -9,
+            4
+          ],
+          [
+            8,
+            -4
+          ],
+          [
+            -1,
+            0
+          ]
+        ],
+        "error": 6.759926236554747e-07
+      },
+      {
+        "interaction": 2624,
+        "inputA": "wave",
+        "inputB": "wave",
+        "output": "wave",
+        "channel": "w*dz(u)",
+        "modeA": 24,
+        "signA": 1,
+        "modeB": 23,
+        "signB": 1,
+        "integerWavevectors": [
+          [
+            -9,
+            4
+          ],
+          [
+            8,
+            -4
+          ],
+          [
+            -1,
+            0
+          ]
+        ],
+        "error": 7.864827011871967e-07
+      }
+    ],
+    "processWallSeconds": 153.3,
+    "peakResidentBytes": 3421110272,
+    "prefixes": [
+      {
+        "waveCount": "1",
+        "gramError": "1.77635683940025e-15",
+        "sampledQuadraticError": "1.26982147019561e-09"
+      },
+      {
+        "waveCount": "2",
+        "gramError": "5.31061410596074e-13",
+        "sampledQuadraticError": "2.61057930828201e-09"
+      },
+      {
+        "waveCount": "3",
+        "gramError": "5.37501567948686e-13",
+        "sampledQuadraticError": "3.47763529084943e-09"
+      },
+      {
+        "waveCount": "4",
+        "gramError": "5.38907810400951e-13",
+        "sampledQuadraticError": "4.18030277060666e-09"
+      },
+      {
+        "waveCount": "5",
+        "gramError": "5.38909427919966e-13",
+        "sampledQuadraticError": "4.78252726310302e-09"
+      },
+      {
+        "waveCount": "6",
+        "gramError": "5.39815680692433e-13",
+        "sampledQuadraticError": "5.31782795576419e-09"
+      },
+      {
+        "waveCount": "7",
+        "gramError": "5.40361313287171e-13",
+        "sampledQuadraticError": "5.80424996954321e-09"
+      },
+      {
+        "waveCount": "8",
+        "gramError": "5.40899506203351e-13",
+        "sampledQuadraticError": "6.25317531088854e-09"
+      },
+      {
+        "waveCount": "9",
+        "gramError": "5.40984940981673e-13",
+        "sampledQuadraticError": "6.67194566261742e-09"
+      },
+      {
+        "waveCount": "10",
+        "gramError": "5.41285383288368e-13",
+        "sampledQuadraticError": "7.06600644662103e-09"
+      },
+      {
+        "waveCount": "11",
+        "gramError": "5.41291106138996e-13",
+        "sampledQuadraticError": "7.4391275362018e-09"
+      },
+      {
+        "waveCount": "12",
+        "gramError": "5.41297480224048e-13",
+        "sampledQuadraticError": "7.79439535136817e-09"
+      },
+      {
+        "waveCount": "13",
+        "gramError": "5.42130578946814e-13",
+        "sampledQuadraticError": "8.13401523913626e-09"
+      },
+      {
+        "waveCount": "14",
+        "gramError": "5.4274583286659e-13",
+        "sampledQuadraticError": "8.45996606102517e-09"
+      },
+      {
+        "waveCount": "15",
+        "gramError": "5.43295608327129e-13",
+        "sampledQuadraticError": "8.77364669804592e-09"
+      },
+      {
+        "waveCount": "16",
+        "gramError": "5.43527842370838e-13",
+        "sampledQuadraticError": "9.07642583314328e-09"
+      },
+      {
+        "waveCount": "17",
+        "gramError": "5.47558360142061e-13",
+        "sampledQuadraticError": "9.36925381722631e-09"
+      },
+      {
+        "waveCount": "18",
+        "gramError": "5.48218360735361e-13",
+        "sampledQuadraticError": "9.65312541012509e-09"
+      },
+      {
+        "waveCount": "19",
+        "gramError": "5.48422928650194e-13",
+        "sampledQuadraticError": "9.92868809390757e-09"
+      },
+      {
+        "waveCount": "20",
+        "gramError": "5.48429640050847e-13",
+        "sampledQuadraticError": "1.74148269138641e-08"
+      },
+      {
+        "waveCount": "21",
+        "gramError": "5.4913161608114e-13",
+        "sampledQuadraticError": "1.7207206326475e-07"
+      },
+      {
+        "waveCount": "22",
+        "gramError": "5.49460812799512e-13",
+        "sampledQuadraticError": "4.55549525213428e-07"
+      },
+      {
+        "waveCount": "23",
+        "gramError": "5.49545395948374e-13",
+        "sampledQuadraticError": "6.75992623655475e-07"
+      },
+      {
+        "waveCount": "24",
+        "gramError": "5.50228924079988e-13",
+        "sampledQuadraticError": "7.86482701187197e-07"
+      }
+    ]
+  },
+  "coverage": {
+    "totalValidInteractions": 74060,
+    "selectedCounts": {
+      "fixed": 24,
+      "targeted": 36,
+      "independent": 64
+    },
+    "independentOverlap": {
+      "fixed": 0,
+      "targeted": 0
+    },
+    "independentSeed": 400
+  }
+}

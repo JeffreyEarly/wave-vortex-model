@@ -1,0 +1,9 @@
+{
+  "cpu": "Apple M4 Max",
+  "installedMemoryBytes": 137438953472,
+  "macOSVersion": "26.6.1",
+  "matlabVersion": "25.2.0.3150157 (R2025b) Update 4",
+  "architecture": "MACA64",
+  "recordedAtUTC": "2026-09-08T17:53:15.949997+00:00",
+  "costMethod": "One fresh MATLAB process per candidate policy/case, measured with /usr/bin/time -l; phase times recorded in MATLAB."
+}

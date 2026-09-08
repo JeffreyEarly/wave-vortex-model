@@ -16,14 +16,18 @@ classdef TestSourceProjection < matlab.unittest.TestCase
             kl=[wvt.kNonzero(1),wvt.lNonzero(1)];
             [distance,v]=min(vecnorm(data.inventory.physicalVectors-kl,2,2));
             testCase.verifyLessThan(distance,1e-14)
-            [context,counts]=sourceProjectionContext(data,v,"u","Q");
             q=@(z)exp(z/1000);
-            result=measureProductProjection(context,q(data.z),q(data.zQ),zeros(2,1),counts);
             [x,y]=ndgrid(wvt.x,wvt.y); source=2*cos(kl(1)*x+kl(2)*y).*reshape(q(wvt.z),1,1,[]);
-            zero=zeros(size(source)); tendency=wvt.projectSources(struct(u=source,v=zero,w=zero,eta=zero));
-            coefficients=result.sampleCoefficients{end};
-            testCase.verifyEqual(coefficients(1:2:end),tendency.Aw_p(:,1),AbsTol=2e-11)
-            testCase.verifyEqual(coefficients(2:2:end),tendency.Aw_m(:,1),AbsTol=2e-11)
+            zero=zeros(size(source));
+            for component=["u","v","w","eta"]
+                [context,counts]=sourceProjectionContext(data,v,component,"Q");
+                result=measureProductProjection(context,q(data.z),q(data.zQ),zeros(2,1),counts);
+                sources=struct(u=zero,v=zero,w=zero,eta=zero); sources.(component)=source;
+                tendency=wvt.projectSources(sources);
+                coefficients=result.sampleCoefficients{end};
+                testCase.verifyEqual(coefficients(1:2:end),tendency.Aw_p(:,1),AbsTol=2e-11)
+                testCase.verifyEqual(coefficients(2:2:end),tendency.Aw_m(:,1),AbsTol=2e-11)
+            end
         end
 
         function meanSourceDualsMatchActualModel(testCase)

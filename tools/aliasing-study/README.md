@@ -1,42 +1,46 @@
 # Sparse quadratic-product assessment (issue 400)
 
-This authoring study is in progress. `PLAN.md` records the initial choices before observing the pilot. There is no runtime-default change or sparse-policy recommendation yet.
+This reproducible authoring study compares linear, fixed sparse, and targeted sparse checks against a bounded dense survey of physical wave and mixed-family source products. See `REPORT.md` for findings, `API-PROPOSAL.md` for the proposed advisory interface, and `results/comparison-v1` for consolidated machine-readable evidence. Runtime defaults, coefficient shapes, physical grids, and package dependencies are unchanged.
 
-## Reproduce the initial pilot
+## Reproduce
 
-Use the WVM study worktree based on `9fefcc9a528de65e2f348706c45b13f741754a78` and the OceanKit export at `80006f5040da787465860249f975def9831624c8`. From the common parent directory, with those worktrees named `wvm-issue-400` and `wvm400-oceankit`:
+Use this authoring branch, based on WVM `9fefcc9a528de65e2f348706c45b13f741754a78`, alongside the OceanKit export at `80006f5040da787465860249f975def9831624c8` (InternalModes source `4086f978b36a4100e7419688ab355591c8253ef1`). The commands below run from the WVM repository with the export named `../wvm400-oceankit`. `configureStudyPath` adds only the pinned packages and their manifest-listed folders. On this local Apple Silicon host, MATLAB must run outside the Codex sandbox under the shared workspace policy.
+
+For a full reproduction, first use a disposable checkout and move its published result tables aside. A fresh Git checkout contains those tables but omits the large MAT files, so it is not an empty numerical output directory. The following two setup commands preserve the published tables; do not run them in the original study working copy.
 
 ```sh
-matlab -batch "restoredefaultpath; addpath('wvm-issue-400/tools/aliasing-study'); configureStudyPath('wvm400-oceankit'); results=runtests('wvm-issue-400/tools/aliasing-study/TestProductProjection.m'); assertSuccess(results);"
-matlab -batch "restoredefaultpath; addpath('wvm-issue-400/tools/aliasing-study'); configureStudyPath('wvm400-oceankit'); runPilot('wvm-issue-400/tools/aliasing-study/results/pilot-02');"
+mv tools/aliasing-study/results tools/aliasing-study/results-published
+mkdir tools/aliasing-study/results
 ```
 
-On the local Apple Silicon host, run MATLAB outside the Codex sandbox as specified by the shared workspace instructions. Use a new output directory for each run; preserve previous outputs. Only the explicit exported dependency packages and their manifest-listed folders are added to the path. The authoring helpers are excluded from the runtime package manifest.
+```sh
+matlab -batch "restoredefaultpath; addpath('tools/aliasing-study'); configureStudyPath('../wvm400-oceankit'); runStudyCases('calibration','tools/aliasing-study/results/calibration-v1');"
+matlab -batch "restoredefaultpath; addpath('tools/aliasing-study'); configureStudyPath('../wvm400-oceankit'); runStudyCases('withheld','tools/aliasing-study/results/withheld-v1');"
+matlab -batch "restoredefaultpath; addpath('tools/aliasing-study'); configureStudyPath('../wvm400-oceankit'); runReferenceRefinements('tools/aliasing-study/results/withheld-refined-v1');"
+python3 tools/aliasing-study/runCostMatrix.py
+matlab -batch "restoredefaultpath; addpath('tools/aliasing-study'); configureStudyPath('../wvm400-oceankit'); verifyStudyResults();"
+python3 tools/aliasing-study/captureStudyProvenance.py
+python3 tools/aliasing-study/assembleStudyResults.py
+```
 
-## Initial result and limits
+The calibration score paths have suffix `-scores-v2`; withheld and refined paths use `-scores`. Version 2 separates the quadratic-only dense count from the joint Gram/quadratic count. Historical version-1 calibration score files are preserved as superseded diagnostics; the reproduction driver writes the final version-2 paths.
 
-`results/pilot-01` contains the complete 224-row vector interaction inventory, 930 channel summaries, and per-product errors for each output prefix. The scalar inventory has 31 distinct magnitude triples and 26,040 unique product evaluations. The same products are integrated with two reference rules; those repeated integrations are additional work beyond this unique-product count. Every actual vector interaction maps to a listed magnitude triple. Direction-independent scalar factors allow this reuse; this does not justify collapsing direction-dependent full vector source projections.
+On the recorded host, `verifyStudyResults` reports 12/12 study tests and 3/4 existing wave controls passing, then exits unsuccessfully on the known baseline differentiated-pressure residual check. Its replay evidence and diagnostics are written before that assertion. See `REPORT.md` and the preserved `baseline-control` logs for the identical baseline reproduction; do not interpret that exit as a successful test suite.
 
-The initial constant-profile run took 2.906 seconds for construction (including the APV control) and 3.628 seconds for assessment. Its maximum reference-integration discrepancy was 2.577e-14 and maximum eigenvalue/F/G shape discrepancy was 4.319e-10. These are pilot feasibility results. The summary's `referencesStable` flag concerns those implemented checks only. Independent derivative-convergence evidence, complete source-channel coverage, and process peak memory are still pending.
+Run into fresh result directories as described above. Survey drivers preserve completed outputs and can resume missing scoring; cost runs refuse to overwrite partial output. Investigate any failed run before resuming. The cost matrix runs each case/policy in a fresh MATLAB process and uses macOS `/usr/bin/time -l` for process wall time and peak RSS. Run it without other numerical jobs. Assessment timings include independent validation references and measure one observation, not a statistical benchmark or optimized production implementation. The reproduction covers the final physical comparison; historical pilots remain in the preserved published tables and are described separately in `SOURCE-PILOT.md`.
 
-The error engine reproduces the provider's trigonometric two-thirds cutoff and signed-APV errors. It also has independent checks for complex products, exact zero products, and exclusion of exterior/truncated content from the aliasing numerator. Projection uses signed Gram solves; magnitudes use the target's positive Hilbert majorant. Zero-wavenumber F outputs use WVM's actual fixed inertial dual and G outputs use the MDA family. This differs from replacing zero outputs with a wave page.
+## Evidence map
 
-Pilot channels are F*G->G, G*dG->G, G*dF->F, F*F->F, and G*G->F. Nonzero G targets are scalar wave-G projections; nonzero F targets are APV-F projections. Inputs include wave-wave, both orders of wave-APV and wave-boundary, and APV-boundary. Boundary labels 1 and 2 mean surface and bottom. Derivatives in this first pilot use the governing mode relations. The extra GG->F channel is a provider control. This is explicitly an adapter pilot, not the final physical channel inventory. In particular, it does not yet include both signed wave polarizations in the generalized-energy source dual, the stratification-factor term, or boundary output projections. It cannot be used to score or recommend a physical retained-count policy yet.
+- `case-inventory.json`, `POLICIES.md`, and `policy-freeze.json`: predeclared cases, deterministic rules, budgets, zero count margin, and hashes frozen before withheld access.
+- `reference-refinements.json`: reference-only resolution changes for two withheld pycnocline cases and a separately identified model-resolution follow-up. Original inconclusive results remain preserved.
+- `results/comparison-v1`: effective case configurations, actual policy decisions, quadratic-only diagnostics, reference gates, APV controls, measured costs, larger independent-sample comparisons, and provenance.
+- `results/prefix-comparison.png`: per-prefix dense/fixed/targeted errors with the common wave Gram boundary.
+- `results/calibration-v1`, `results/withheld-v1`, `results/withheld-refined-v1`: original complete inventories, summary CSV/JSON, per-channel maxima, limiting input labels/signs/wavevectors, and prefix scores. Use the effective paths in `results/comparison-v1/cases.json` for final scoring.
+- `results/cost-matrix-v1`: actual sparse replays, comparisons against every matching saved dense error, and fresh-process timing/memory logs. The larger independent sample uses seed 400 and 64 vector interactions without consulting sparse selections or errors.
+- `SOURCE-PILOT.md`, `PLAN.md`, and `VERIFICATION.md`: scientific decisions, initial plan, and chronological verification ledger. Earlier pending statements in the ledger describe earlier checkpoints.
 
-## Next work
+Full per-product MAT files are retained locally and listed with SHA-256 checksums in `results/mat-artifact-manifest.json`. Large MAT files are excluded from Git; a fresh checkout recreates them with the commands above. The source, complete bounded interaction inventories, CSV/JSON result tables, and original small scalar-control MAT are versioned. Exact numerical logs are preserved as gzip files under `results/raw-logs`; readable copies remove trailing whitespace only. `archiveStudyLogs.py` performs that archival step after runs terminate.
 
-1. Completed: physical source inventory, independent derivative/product references, pilot cost, and case/policy freeze.
-2. Calibration and policy freeze are complete. Evaluate the untouched withheld cases next.
-3. Perform the larger sparse/independent-sample cost check and produce comparison tables, recommendation, and API proposal.
+## Scope
 
-The full acceptance criteria remain in `PLAN.md` and GitHub issue 400. No issue closure or runtime adoption is warranted by this pilot.
-
-## Physical-source study checkpoint
-
-The physical source engine and four calibration cases are now complete. `SOURCE-PILOT.md` documents reference controls and the short-domain inconclusive finding. `case-inventory.json` fixes calibration, withheld, and larger cases. `POLICIES.md` specifies the three candidates, and `policy-freeze.json` records the final pre-withheld rule hashes and zero count margin.
-
-Both sparse selectors match all 12 calibration quadratic count decisions. The actual current Gram gate is more conservative: it retains 3 or 8 wave modes while the quadratic-only dense band contains 6–7 or 12–14 modes, depending on tolerance. Version-2 tables under `results/calibration-v1/*-scores-v2` report both effects. Withheld validation and actual sparse cost replays remain required before a recommendation.
-
-To run the declared splits, call `runStudyCases("calibration",freshOutputRoot)` or `runStudyCases("withheld",freshOutputRoot)` after `configureStudyPath`. Every completed survey is preserved; a missing scoring stage can resume from its existing saved errors. `runSourceSurvey` also supports `policy="fixed"` or `policy="targeted"` for actual sparse replays, and explicit interaction indices for an independent spot sample.
-
-Full per-product MAT files are preserved in this working copy and listed with SHA-256 checksums in `results/mat-artifact-manifest.json`. Large MAT files are intentionally excluded from Git fixtures; the CSV/JSON result tables, code, case inventory, and reproduction commands are versioned. A fresh checkout can recreate the MAT data by running the declared studies. Preserved inconclusive runs must not be used as validation scores.
+The metric measures aliasing into retained coefficients with physical signed projections and positive error norms. It excludes exterior product content and explicitly handles structural zeros. The physical inventory contains 13 individual volume terms, eight ordered input-family pairs, both wave signs, and actual mean/inertial outputs. APV same-family assessment remains a separate control. APV/boundary output source coefficients, boundary sheet evolution, arbitrary superpositions, and full nonlinear-operator/trajectory qualification are outside the inventory. Counts are bounded by the declared candidate band and cannot certify all possible interactions.

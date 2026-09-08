@@ -1,0 +1,10 @@
+policy,tolerance,status,largestDenseQuadraticCount,largestSampledQuadraticCount,falseAcceptance,retainedCountLoss,worstMissedError,limitingInteraction
+linear,0.1,inconclusive-reference,13,16,NaN,NaN,0.593369543552399,"wave mode 16 sign 1 [-1,-1] x wave mode 15 sign 1 [2,1] -> wave [1,0], w*dz(u)"
+fixed,0.1,inconclusive-reference,13,13,NaN,NaN,0.0324976705014706,"wave mode 3 sign 1 [2,0] x wave mode 1 sign 1 [-1,0] -> wave [1,0], w*dz(u)"
+targeted,0.1,inconclusive-reference,13,13,NaN,NaN,0.0324976705014706,"wave mode 3 sign 1 [2,0] x wave mode 1 sign 1 [-1,0] -> wave [1,0], w*dz(u)"
+linear,0.03,inconclusive-reference,6,16,NaN,NaN,0.593369543552399,"wave mode 16 sign 1 [-1,-1] x wave mode 15 sign 1 [2,1] -> wave [1,0], w*dz(u)"
+fixed,0.03,inconclusive-reference,6,6,NaN,NaN,0.0284921657294035,"wave mode 3 sign 1 [2,0] x wave mode 1 sign 1 [-1,0] -> wave [1,0], w*dz(u)"
+targeted,0.03,inconclusive-reference,6,6,NaN,NaN,0.0284921657294035,"wave mode 3 sign 1 [2,0] x wave mode 1 sign 1 [-1,0] -> wave [1,0], w*dz(u)"
+linear,0.01,inconclusive-reference,0,16,NaN,NaN,0.593369543552399,"wave mode 16 sign 1 [-1,-1] x wave mode 15 sign 1 [2,1] -> wave [1,0], w*dz(u)"
+fixed,0.01,inconclusive-reference,0,0,NaN,NaN,0,""
+targeted,0.01,inconclusive-reference,0,0,NaN,NaN,0,""

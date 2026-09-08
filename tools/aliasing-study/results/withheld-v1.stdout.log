@@ -1,0 +1,160 @@
+[Warning: Directory access failure: /Users/jearly/Documents/MATLAB]
+[Warning: Directory access failure: /Users/jearly/Documents/MATLAB]
+[> In restoredefaultpath (line 81)]
+BLAS: trying environment BLAS_VERSION...
+BLAS: loading libmwAF_BLAS_ilp64.dylib
+BLAS: loaded libmwAF_BLAS_ilp64.dylib@0x973578b0
+Source construction 4.01 s; 104 vector interactions.
+Source interactions 20/104; 148728 nonzero products; 5.3 s.
+Source interactions 40/104; 299336 nonzero products; 9.9 s.
+Source interactions 60/104; 448736 nonzero products; 14.6 s.
+Source interactions 80/104; 601312 nonzero products; 19.2 s.
+Source interactions 100/104; 748072 nonzero products; 23.6 s.
+Source survey: 776704 nonzero products in 24.59 s; reference 3.51e-14; eigen/derivatives 5.31e-08.
+      policy      tolerance     status     largestDenseCount    largestJointCount    largestSampledCount    falseAcceptance    retainedCountLoss
+    __________    _________    ________    _________________    _________________    ___________________    _______________    _________________
+
+    "linear"         0.1       "scored"           10                    6                     6                  false                 4
+    "fixed"          0.1       "scored"           10                    6                     6                  false                 4
+    "targeted"       0.1       "scored"           10                    6                     6                  false                 4
+    "linear"        0.03       "scored"           10                    6                     6                  false                 4
+    "fixed"         0.03       "scored"           10                    6                     6                  false                 4
+    "targeted"      0.03       "scored"           10                    6                     6                  false                 4
+    "linear"        0.01       "scored"            9                    6                     6                  false                 3
+    "fixed"         0.01       "scored"            9                    6                     6                  false                 3
+    "targeted"      0.01       "scored"            9                    6                     6                  false                 3
+
+      policy      tolerance                 status                 largestDenseQuadraticCount    largestSampledQuadraticCount    falseAcceptance    retainedCountLoss
+    __________    _________    ________________________________    __________________________    ____________________________    _______________    _________________
+
+    "linear"         0.1       "diagnostic-linear-gate-ignored"                10                             12                      true                  0
+    "fixed"          0.1       "diagnostic-linear-gate-ignored"                10                             10                      false                 0
+    "targeted"       0.1       "diagnostic-linear-gate-ignored"                10                             10                      false                 0
+    "linear"        0.03       "diagnostic-linear-gate-ignored"                10                             12                      true                  0
+    "fixed"         0.03       "diagnostic-linear-gate-ignored"                10                             10                      false                 0
+    "targeted"      0.03       "diagnostic-linear-gate-ignored"                10                             10                      false                 0
+    "linear"        0.01       "diagnostic-linear-gate-ignored"                 9                             12                      true                  0
+    "fixed"         0.01       "diagnostic-linear-gate-ignored"                 9                              9                      false                 0
+    "targeted"      0.01       "diagnostic-linear-gate-ignored"                 9                              9                      false                 0
+
+Source construction 2.78 s; 104 vector interactions.
+Source interactions 20/104; 258928 nonzero products; 10.0 s.
+Source interactions 40/104; 521296 nonzero products; 19.7 s.
+Source interactions 60/104; 781776 nonzero products; 29.1 s.
+Source interactions 80/104; 1047600 nonzero products; 38.8 s.
+Source interactions 100/104; 1303072 nonzero products; 48.7 s.
+Source survey: 1352912 nonzero products in 50.50 s; reference 3.84e-14; eigen/derivatives 5.31e-08.
+      policy      tolerance     status     largestDenseCount    largestJointCount    largestSampledCount    falseAcceptance    retainedCountLoss
+    __________    _________    ________    _________________    _________________    ___________________    _______________    _________________
+
+    "linear"         0.1       "scored"           16                   13                    13                  false                 3
+    "fixed"          0.1       "scored"           16                   13                    13                  false                 3
+    "targeted"       0.1       "scored"           16                   13                    13                  false                 3
+    "linear"        0.03       "scored"           16                   13                    13                  false                 3
+    "fixed"         0.03       "scored"           16                   13                    13                  false                 3
+    "targeted"      0.03       "scored"           16                   13                    13                  false                 3
+    "linear"        0.01       "scored"           16                   13                    13                  false                 3
+    "fixed"         0.01       "scored"           16                   13                    13                  false                 3
+    "targeted"      0.01       "scored"           16                   13                    13                  false                 3
+
+      policy      tolerance                 status                 largestDenseQuadraticCount    largestSampledQuadraticCount    falseAcceptance    retainedCountLoss
+    __________    _________    ________________________________    __________________________    ____________________________    _______________    _________________
+
+    "linear"         0.1       "diagnostic-linear-gate-ignored"                16                             16                      false                 0
+    "fixed"          0.1       "diagnostic-linear-gate-ignored"                16                             16                      false                 0
+    "targeted"       0.1       "diagnostic-linear-gate-ignored"                16                             16                      false                 0
+    "linear"        0.03       "diagnostic-linear-gate-ignored"                16                             16                      false                 0
+    "fixed"         0.03       "diagnostic-linear-gate-ignored"                16                             16                      false                 0
+    "targeted"      0.03       "diagnostic-linear-gate-ignored"                16                             16                      false                 0
+    "linear"        0.01       "diagnostic-linear-gate-ignored"                16                             16                      false                 0
+    "fixed"         0.01       "diagnostic-linear-gate-ignored"                16                             16                      false                 0
+    "targeted"      0.01       "diagnostic-linear-gate-ignored"                16                             16                      false                 0
+
+Source construction 2.83 s; 104 vector interactions.
+Source interactions 20/104; 251232 nonzero products; 8.6 s.
+Source interactions 40/104; 506016 nonzero products; 17.1 s.
+Source interactions 60/104; 759232 nonzero products; 25.6 s.
+Source interactions 80/104; 1017408 nonzero products; 34.6 s.
+Source interactions 100/104; 1265248 nonzero products; 42.2 s.
+Source survey: 1313600 nonzero products in 43.94 s; reference 2.87e-05; eigen/derivatives 0.000217.
+      policy      tolerance             status             largestDenseCount    largestJointCount    largestSampledCount    falseAcceptance    retainedCountLoss
+    __________    _________    ________________________    _________________    _________________    ___________________    _______________    _________________
+
+    "linear"         0.1       "inconclusive-reference"           13                    1                     1                   NaN                 NaN
+    "fixed"          0.1       "inconclusive-reference"           13                    1                     1                   NaN                 NaN
+    "targeted"       0.1       "inconclusive-reference"           13                    1                     1                   NaN                 NaN
+    "linear"        0.03       "inconclusive-reference"            6                    1                     1                   NaN                 NaN
+    "fixed"         0.03       "inconclusive-reference"            6                    1                     1                   NaN                 NaN
+    "targeted"      0.03       "inconclusive-reference"            6                    1                     1                   NaN                 NaN
+    "linear"        0.01       "inconclusive-reference"            0                    0                     1                   NaN                 NaN
+    "fixed"         0.01       "inconclusive-reference"            0                    0                     0                   NaN                 NaN
+    "targeted"      0.01       "inconclusive-reference"            0                    0                     0                   NaN                 NaN
+
+      policy      tolerance             status             largestDenseQuadraticCount    largestSampledQuadraticCount    falseAcceptance    retainedCountLoss
+    __________    _________    ________________________    __________________________    ____________________________    _______________    _________________
+
+    "linear"         0.1       "inconclusive-reference"                13                             16                       NaN                 NaN
+    "fixed"          0.1       "inconclusive-reference"                13                             13                       NaN                 NaN
+    "targeted"       0.1       "inconclusive-reference"                13                             13                       NaN                 NaN
+    "linear"        0.03       "inconclusive-reference"                 6                             16                       NaN                 NaN
+    "fixed"         0.03       "inconclusive-reference"                 6                              6                       NaN                 NaN
+    "targeted"      0.03       "inconclusive-reference"                 6                              6                       NaN                 NaN
+    "linear"        0.01       "inconclusive-reference"                 0                             16                       NaN                 NaN
+    "fixed"         0.01       "inconclusive-reference"                 0                              0                       NaN                 NaN
+    "targeted"      0.01       "inconclusive-reference"                 0                              0                       NaN                 NaN
+
+Source construction 4.23 s; 578 vector interactions.
+Source interactions 20/578; 284528 nonzero products; 9.6 s.
+Source interactions 40/578; 562552 nonzero products; 18.9 s.
+Source interactions 60/578; 844304 nonzero products; 28.1 s.
+Source interactions 80/578; 1119568 nonzero products; 38.2 s.
+Source interactions 100/578; 1391560 nonzero products; 48.1 s.
+Source interactions 120/578; 1674432 nonzero products; 59.3 s.
+Source interactions 140/578; 1967408 nonzero products; 79.5 s.
+Source interactions 160/578; 2245120 nonzero products; 91.8 s.
+Source interactions 180/578; 2532192 nonzero products; 101.8 s.
+Source interactions 200/578; 2807768 nonzero products; 112.1 s.
+Source interactions 220/578; 3098200 nonzero products; 122.1 s.
+Source interactions 240/578; 3385272 nonzero products; 138.0 s.
+Source interactions 260/578; 3652732 nonzero products; 148.2 s.
+Source interactions 280/578; 3933928 nonzero products; 157.8 s.
+Source interactions 300/578; 4218788 nonzero products; 168.0 s.
+Source interactions 320/578; 4492860 nonzero products; 177.8 s.
+Source interactions 340/578; 4769080 nonzero products; 188.0 s.
+Source interactions 360/578; 5056152 nonzero products; 201.3 s.
+Source interactions 380/578; 5350832 nonzero products; 211.3 s.
+Source interactions 400/578; 5622160 nonzero products; 224.9 s.
+Source interactions 420/578; 5915136 nonzero products; 234.9 s.
+Source interactions 440/578; 6192848 nonzero products; 244.8 s.
+Source interactions 460/578; 6474016 nonzero products; 254.7 s.
+Source interactions 480/578; 6756888 nonzero products; 265.6 s.
+Source interactions 500/578; 7028880 nonzero products; 281.2 s.
+Source interactions 520/578; 7310048 nonzero products; 291.2 s.
+Source interactions 540/578; 7596048 nonzero products; 301.3 s.
+Source interactions 560/578; 7875728 nonzero products; 311.8 s.
+Source survey: 8126480 nonzero products in 321.54 s; reference 2.87e-05; eigen/derivatives 0.000217.
+      policy      tolerance             status             largestDenseCount    largestJointCount    largestSampledCount    falseAcceptance    retainedCountLoss
+    __________    _________    ________________________    _________________    _________________    ___________________    _______________    _________________
+
+    "linear"         0.1       "inconclusive-reference"           16                    4                     4                   NaN                 NaN
+    "fixed"          0.1       "inconclusive-reference"           16                    4                     4                   NaN                 NaN
+    "targeted"       0.1       "inconclusive-reference"           16                    4                     4                   NaN                 NaN
+    "linear"        0.03       "inconclusive-reference"            6                    4                     4                   NaN                 NaN
+    "fixed"         0.03       "inconclusive-reference"            6                    4                     4                   NaN                 NaN
+    "targeted"      0.03       "inconclusive-reference"            6                    4                     4                   NaN                 NaN
+    "linear"        0.01       "inconclusive-reference"            0                    0                     4                   NaN                 NaN
+    "fixed"         0.01       "inconclusive-reference"            0                    0                     0                   NaN                 NaN
+    "targeted"      0.01       "inconclusive-reference"            0                    0                     0                   NaN                 NaN
+
+      policy      tolerance             status             largestDenseQuadraticCount    largestSampledQuadraticCount    falseAcceptance    retainedCountLoss
+    __________    _________    ________________________    __________________________    ____________________________    _______________    _________________
+
+    "linear"         0.1       "inconclusive-reference"                16                             16                       NaN                 NaN
+    "fixed"          0.1       "inconclusive-reference"                16                             16                       NaN                 NaN
+    "targeted"       0.1       "inconclusive-reference"                16                             16                       NaN                 NaN
+    "linear"        0.03       "inconclusive-reference"                 6                             16                       NaN                 NaN
+    "fixed"         0.03       "inconclusive-reference"                 6                              6                       NaN                 NaN
+    "targeted"      0.03       "inconclusive-reference"                 6                              6                       NaN                 NaN
+    "linear"        0.01       "inconclusive-reference"                 0                             16                       NaN                 NaN
+    "fixed"         0.01       "inconclusive-reference"                 0                              0                       NaN                 NaN
+    "targeted"      0.01       "inconclusive-reference"                 0                              0                       NaN                 NaN

@@ -19,7 +19,8 @@ for j=1:length(cases)
     else
         runSourceSurvey(config,destination);
     end
-    scoreDirectory=fullfile(outputRoot,config.id+"-scores");
+    if split=="calibration", suffix="-scores-v2"; else, suffix="-scores"; end
+    scoreDirectory=fullfile(outputRoot,config.id+suffix);
     if ~isfile(fullfile(scoreDirectory,'scores.csv'))
         scoreSourcePolicies(destination,scoreDirectory);
     end

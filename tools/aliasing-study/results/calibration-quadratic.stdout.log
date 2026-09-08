@@ -52,4 +52,3 @@
     "linear"        0.01       "diagnostic-linear-gate-ignored"                12                             16                      true                  0
     "fixed"         0.01       "diagnostic-linear-gate-ignored"                12                             12                      false                 0
     "targeted"      0.01       "diagnostic-linear-gate-ignored"                12                             12                      false                 0
-

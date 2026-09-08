@@ -72,6 +72,132 @@
     "storage": "preserved local MAT file; CSV/JSON results and reproduction code versioned"
   },
   {
+    "path": "results/cost-matrix-v1/cal-constant-17--fixed/products.mat",
+    "bytes": 590286,
+    "sha256": "12e880902a5f62f16adc7adc1e9ec399713aea1afb531de4f709c313824d52b8",
+    "storage": "preserved local MAT file; CSV/JSON results and reproduction code versioned"
+  },
+  {
+    "path": "results/cost-matrix-v1/cal-constant-17--targeted/products.mat",
+    "bytes": 1157047,
+    "sha256": "f4a767fca0958180795823e7f2f445afed1678d0e27633aadb1a296eecc8f47b",
+    "storage": "preserved local MAT file; CSV/JSON results and reproduction code versioned"
+  },
+  {
+    "path": "results/cost-matrix-v1/cal-constant-33--fixed/products.mat",
+    "bytes": 2365497,
+    "sha256": "33931edf829c0c05f507fd106b89363b5a6a3b6445d040c16b432ea1925b1cff",
+    "storage": "preserved local MAT file; CSV/JSON results and reproduction code versioned"
+  },
+  {
+    "path": "results/cost-matrix-v1/cal-constant-33--targeted/products.mat",
+    "bytes": 4837246,
+    "sha256": "b7fee4257a32142b980e1e576b6fc7eaae3299d9feed1ca59e48533df53a11a9",
+    "storage": "preserved local MAT file; CSV/JSON results and reproduction code versioned"
+  },
+  {
+    "path": "results/cost-matrix-v1/cal-exponential-17--fixed/products.mat",
+    "bytes": 655857,
+    "sha256": "a42de597eba6ae806129c5f8ca6f9cba9b817d67a97e8953c77fb82aacb1497f",
+    "storage": "preserved local MAT file; CSV/JSON results and reproduction code versioned"
+  },
+  {
+    "path": "results/cost-matrix-v1/cal-exponential-17--targeted/products.mat",
+    "bytes": 1293556,
+    "sha256": "1becaa0a1292900bf22caf0168a83c99ac920d29862b37689b01fcf1198d7832",
+    "storage": "preserved local MAT file; CSV/JSON results and reproduction code versioned"
+  },
+  {
+    "path": "results/cost-matrix-v1/cal-exponential-33--fixed/products.mat",
+    "bytes": 2785842,
+    "sha256": "c2fce71c4311e84d3888befe0612ccda815149d895c8b26c0bed2cc12c3f6e83",
+    "storage": "preserved local MAT file; CSV/JSON results and reproduction code versioned"
+  },
+  {
+    "path": "results/cost-matrix-v1/cal-exponential-33--targeted/products.mat",
+    "bytes": 5716254,
+    "sha256": "4c536decf8f63a0e781c98f719d5ed28d3f0382e922778eb50ab08a57f2c209c",
+    "storage": "preserved local MAT file; CSV/JSON results and reproduction code versioned"
+  },
+  {
+    "path": "results/cost-matrix-v1/followup-pycnocline-129--fixed/products.mat",
+    "bytes": 4566880,
+    "sha256": "85d4ec245f6c1dc299635decf392484d5aed2f9a64b45f3094ecf835bd95e0cc",
+    "storage": "preserved local MAT file; CSV/JSON results and reproduction code versioned"
+  },
+  {
+    "path": "results/cost-matrix-v1/followup-pycnocline-129--targeted/products.mat",
+    "bytes": 7302249,
+    "sha256": "21f7725cce7519112d49348de43aa0a91f41a282ac06796cf6854e83f556433e",
+    "storage": "preserved local MAT file; CSV/JSON results and reproduction code versioned"
+  },
+  {
+    "path": "results/cost-matrix-v1/larger-exponential-97--fixed/products.mat",
+    "bytes": 12364058,
+    "sha256": "d74eb226930f935d6427258383f73ef97cd1ecb1db4c7425d0d1b70b3b83afec",
+    "storage": "preserved local MAT file; CSV/JSON results and reproduction code versioned"
+  },
+  {
+    "path": "results/cost-matrix-v1/larger-exponential-97--independent/products.mat",
+    "bytes": 104192304,
+    "sha256": "0a8de70b8524b3d428364f46dd7c302adbb609c7279493528569f07b46cb7cdb",
+    "storage": "preserved local MAT file; CSV/JSON results and reproduction code versioned"
+  },
+  {
+    "path": "results/cost-matrix-v1/larger-exponential-97--targeted/products.mat",
+    "bytes": 22164729,
+    "sha256": "9fdd3f1616996f104f95d6eff5a1947ea81cdbdf2aed0df40aa22f811a8510af",
+    "storage": "preserved local MAT file; CSV/JSON results and reproduction code versioned"
+  },
+  {
+    "path": "results/cost-matrix-v1/withheld-exponential-25--fixed/products.mat",
+    "bytes": 1620177,
+    "sha256": "6df5e59ece9ac320e43f97515e0fbf0b06a9a84bc9dbfae595140b0051d6d945",
+    "storage": "preserved local MAT file; CSV/JSON results and reproduction code versioned"
+  },
+  {
+    "path": "results/cost-matrix-v1/withheld-exponential-25--targeted/products.mat",
+    "bytes": 3215992,
+    "sha256": "2846746bb61cd5387b393beece9b4fff6a78fe471259e2ecb89e89f4c242bc5a",
+    "storage": "preserved local MAT file; CSV/JSON results and reproduction code versioned"
+  },
+  {
+    "path": "results/cost-matrix-v1/withheld-exponential-49--fixed/products.mat",
+    "bytes": 3061288,
+    "sha256": "0f8e4a547117b4586090cd75360c9ce7c8486ea649d8c9e4ba9638fd03257931",
+    "storage": "preserved local MAT file; CSV/JSON results and reproduction code versioned"
+  },
+  {
+    "path": "results/cost-matrix-v1/withheld-exponential-49--targeted/products.mat",
+    "bytes": 6153252,
+    "sha256": "fa7a46413d16f02c3476d63d96e5b1347611f1978495cdd2d1935eb21a393990",
+    "storage": "preserved local MAT file; CSV/JSON results and reproduction code versioned"
+  },
+  {
+    "path": "results/cost-matrix-v1/withheld-pycnocline-33--fixed/products.mat",
+    "bytes": 2885102,
+    "sha256": "d3f7bd678c26304e052694795cfabbecb03e1a7a8f4ee9af70c088b7e809d3c0",
+    "storage": "preserved local MAT file; CSV/JSON results and reproduction code versioned"
+  },
+  {
+    "path": "results/cost-matrix-v1/withheld-pycnocline-33--targeted/products.mat",
+    "bytes": 5792334,
+    "sha256": "935febbd06194a12ee706f8aedfd716a88502430afad08c7c66dbe7a769ede89",
+    "storage": "preserved local MAT file; CSV/JSON results and reproduction code versioned"
+  },
+  {
+    "path": "results/cost-matrix-v1/withheld-pycnocline-65--fixed/products.mat",
+    "bytes": 4307982,
+    "sha256": "c616d7e1e3790ebb8af738c80508ab5b4a55076a9a06bcfc1a3553962c3bfb9c",
+    "storage": "preserved local MAT file; CSV/JSON results and reproduction code versioned"
+  },
+  {
+    "path": "results/cost-matrix-v1/withheld-pycnocline-65--targeted/products.mat",
+    "bytes": 7203042,
+    "sha256": "315d19eb8b394c90593fcd9a7cbac604cf13f4c4f748dddd2ea962eb29ad9344",
+    "storage": "preserved local MAT file; CSV/JSON results and reproduction code versioned"
+  },
+  {
     "path": "results/pilot-01/pilot-products.mat",
     "bytes": 1090122,
     "sha256": "f2f835a7eab801f753de05805e8fba6e689626c7fe62a47f7a32c37923d334cf",
@@ -99,6 +225,90 @@
     "path": "results/source-pilot-05/products.mat",
     "bytes": 10504765,
     "sha256": "dea5f3f9d8ff59a28765de5a7c55da88b5444f74d85cd51ab6b0fd33fa3aecc2",
+    "storage": "preserved local MAT file; CSV/JSON results and reproduction code versioned"
+  },
+  {
+    "path": "results/withheld-refined-v1/followup-pycnocline-129/products.mat",
+    "bytes": 200691069,
+    "sha256": "8d3032c029962442f981a3ceac9ad181b7c1dae177620809bbf45578a9a1158c",
+    "storage": "preserved local MAT file; CSV/JSON results and reproduction code versioned"
+  },
+  {
+    "path": "results/withheld-refined-v1/followup-pycnocline-129-scores/scores.mat",
+    "bytes": 3439,
+    "sha256": "1d9029911c76d2c63aed837f78860897491ca956dbba2ae15bf907283c7bbcad",
+    "storage": "preserved local MAT file; CSV/JSON results and reproduction code versioned"
+  },
+  {
+    "path": "results/withheld-refined-v1/withheld-pycnocline-33/products.mat",
+    "bytes": 28461461,
+    "sha256": "a5c20d4357b1ac61a3785547637a4e24a020f27060d060ca4316f80ad9f0e9c9",
+    "storage": "preserved local MAT file; CSV/JSON results and reproduction code versioned"
+  },
+  {
+    "path": "results/withheld-refined-v1/withheld-pycnocline-33-scores/scores.mat",
+    "bytes": 3348,
+    "sha256": "cbc96e49b004445f9f1c222d2f679427f7a6d2836a8bc143df95f5d4078cbcd0",
+    "storage": "preserved local MAT file; CSV/JSON results and reproduction code versioned"
+  },
+  {
+    "path": "results/withheld-refined-v1/withheld-pycnocline-65/products.mat",
+    "bytes": 187793674,
+    "sha256": "cf56c65d2d8d09e43b064606caa644a4b20364bc29aff6359031b3077a38dcc5",
+    "storage": "preserved local MAT file; CSV/JSON results and reproduction code versioned"
+  },
+  {
+    "path": "results/withheld-refined-v1/withheld-pycnocline-65-scores/scores.mat",
+    "bytes": 3467,
+    "sha256": "7d2c914b36286f7d14715d10ce4b22102d09a9fd58878876ab671fbc5f96b19c",
+    "storage": "preserved local MAT file; CSV/JSON results and reproduction code versioned"
+  },
+  {
+    "path": "results/withheld-v1/withheld-exponential-25/products.mat",
+    "bytes": 13350561,
+    "sha256": "f830abd3ed88ea4a57bb9c63f5c78cf56f8012f9a60981c1bcd98605d4374ba4",
+    "storage": "preserved local MAT file; CSV/JSON results and reproduction code versioned"
+  },
+  {
+    "path": "results/withheld-v1/withheld-exponential-25-scores/scores.mat",
+    "bytes": 3189,
+    "sha256": "f9ca7dac0ea3b95f3a6b31954c299a4469aea463c30270aff310c9507c034eb5",
+    "storage": "preserved local MAT file; CSV/JSON results and reproduction code versioned"
+  },
+  {
+    "path": "results/withheld-v1/withheld-exponential-49/products.mat",
+    "bytes": 30534521,
+    "sha256": "2767080c7722fbf52edbf3202580230e786896e79b199a94362704a9956238b0",
+    "storage": "preserved local MAT file; CSV/JSON results and reproduction code versioned"
+  },
+  {
+    "path": "results/withheld-v1/withheld-exponential-49-scores/scores.mat",
+    "bytes": 3418,
+    "sha256": "b63e9fd1b186849933cab3b2e02a22b625090d23225a9a0b65da7d8d44e940bc",
+    "storage": "preserved local MAT file; CSV/JSON results and reproduction code versioned"
+  },
+  {
+    "path": "results/withheld-v1/withheld-pycnocline-33/products.mat",
+    "bytes": 28462401,
+    "sha256": "ad78ddacb0634adc11d3ae26fc9ea3b3628554a0275090deda46ca213da4156e",
+    "storage": "preserved local MAT file; CSV/JSON results and reproduction code versioned"
+  },
+  {
+    "path": "results/withheld-v1/withheld-pycnocline-33-scores/scores.mat",
+    "bytes": 3304,
+    "sha256": "afc7cff3ce6acce0e6dce796f603c9e1a1b7538d6fb2b510b3eefc9231df53c9",
+    "storage": "preserved local MAT file; CSV/JSON results and reproduction code versioned"
+  },
+  {
+    "path": "results/withheld-v1/withheld-pycnocline-65/products.mat",
+    "bytes": 186795582,
+    "sha256": "e1f7e427721c7770298591eabbf3bdfb9b6c7588a47fa90202b317c0de46eedb",
+    "storage": "preserved local MAT file; CSV/JSON results and reproduction code versioned"
+  },
+  {
+    "path": "results/withheld-v1/withheld-pycnocline-65-scores/scores.mat",
+    "bytes": 3495,
+    "sha256": "9d927679f9fa2524a3be5bbbb8322131a0f065debe1e964c580c28233b6e85ab",
     "storage": "preserved local MAT file; CSV/JSON results and reproduction code versioned"
   }
 ]

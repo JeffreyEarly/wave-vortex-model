@@ -1,0 +1,160 @@
+{
+  "status": "survey-complete",
+  "policy": "dense",
+  "pageDifficulty": [
+    6.3161533076053295E-6,
+    7.3739575308761505E-6,
+    1.326946950244201E-5,
+    2.5444468386336958E-5,
+    1.492894686750454E-5,
+    5.6928193472594495E-6
+  ],
+  "configuration": {
+    "Lz": 1000,
+    "f": 0.0001,
+    "g": 9.81,
+    "evpOrders": [
+      128,
+      192
+    ],
+    "referenceOrders": [
+      257,
+      513
+    ],
+    "referenceAllowance": 0.0001,
+    "eigenAllowance": 1E-6,
+    "gramTolerance": 1E-7,
+    "id": "withheld-exponential-49",
+    "profile": "exponential-withheld",
+    "Lxy": [
+      140000,
+      100000
+    ],
+    "Nxy": [
+      8,
+      8
+    ],
+    "Nz": 49,
+    "waveCount": 16,
+    "apvCount": 4,
+    "mdaCount": 3,
+    "inertialCount": 6
+  },
+  "constructionSeconds": 3.254886375,
+  "assessmentSeconds": 50.496836208333335,
+  "interactionCount": 104,
+  "nonzeroProductEvaluations": 1.352912E+6,
+  "structuralZeroProducts": 517768,
+  "referenceStability": 3.8395909155683016E-14,
+  "eigenConvergence": 5.3130986092490204E-8,
+  "allModeDerivativeConvergence": 6.33709435383212E-5,
+  "eigenProductStability": 7.4132450930334006E-6,
+  "eigenConvergenceByMetric": [
+    9.224589945354699E-11,
+    9.2790755718019564E-11,
+    4.1502154984830124E-11,
+    6.33709435383212E-5,
+    4.1734737289214968E-8
+  ],
+  "sobolevConvergenceByMetric": [
+    9.224589945354699E-11,
+    5.3130986092490204E-8,
+    3.1091879143206864E-8
+  ],
+  "boundaryInterpolationError": 1.6186662907334936E-14,
+  "waveGram": [
+    5.5511151231257827E-16,
+    4.4044684543035663E-14,
+    1.4666815631411267E-13,
+    1.5151624470897647E-13,
+    1.9095282613643544E-13,
+    2.6968962013892709E-13,
+    2.9356659772730838E-13,
+    2.9775485199515433E-13,
+    2.9852860758313464E-13,
+    2.9965161350172104E-13,
+    1.4981694491451006E-11,
+    5.2567404895792619E-10,
+    1.0365750906684964E-8,
+    1.2018425019623106E-7,
+    8.3724110618785374E-7,
+    3.4953480682457049E-6
+  ],
+  "apvGram": 6.1860049386337761E-14,
+  "mdaGram": 1.2614652483424845E-15,
+  "inertialGram": 4.2250814214503779E-11,
+  "apvControl": [
+    {
+      "modeCount": 1,
+      "lastModeNumber": -1,
+      "gramError": 4.6655113444061022E-15,
+      "gramLimitingVariable": "G",
+      "leakageError": null,
+      "leakageLimitingVariable": "",
+      "leakageLimitingModeNumber": null,
+      "quadraticAliasingError": 1.0263198594134045E-14,
+      "quadraticLimitingChannel": "FG->G",
+      "quadraticLimitingModeNumberI": -1,
+      "quadraticLimitingModeNumberJ": -1,
+      "gramAccepted": true,
+      "leakageAccepted": true,
+      "quadraticAccepted": true,
+      "combinedAccepted": true
+    },
+    {
+      "modeCount": 2,
+      "lastModeNumber": 1,
+      "gramError": 3.5131648308950126E-14,
+      "gramLimitingVariable": "G",
+      "leakageError": null,
+      "leakageLimitingVariable": "",
+      "leakageLimitingModeNumber": null,
+      "quadraticAliasingError": 8.4793776764271467E-14,
+      "quadraticLimitingChannel": "FG->G",
+      "quadraticLimitingModeNumberI": 1,
+      "quadraticLimitingModeNumberJ": -1,
+      "gramAccepted": true,
+      "leakageAccepted": true,
+      "quadraticAccepted": true,
+      "combinedAccepted": true
+    },
+    {
+      "modeCount": 3,
+      "lastModeNumber": 2,
+      "gramError": 6.0853710929811241E-14,
+      "gramLimitingVariable": "G",
+      "leakageError": null,
+      "leakageLimitingVariable": "",
+      "leakageLimitingModeNumber": null,
+      "quadraticAliasingError": 1.02532355633844E-13,
+      "quadraticLimitingChannel": "GG->F",
+      "quadraticLimitingModeNumberI": -1,
+      "quadraticLimitingModeNumberJ": -1,
+      "gramAccepted": true,
+      "leakageAccepted": true,
+      "quadraticAccepted": true,
+      "combinedAccepted": true
+    },
+    {
+      "modeCount": 4,
+      "lastModeNumber": 3,
+      "gramError": 6.1860049386337761E-14,
+      "gramLimitingVariable": "G",
+      "leakageError": null,
+      "leakageLimitingVariable": "",
+      "leakageLimitingModeNumber": null,
+      "quadraticAliasingError": 1.057626012599615E-13,
+      "quadraticLimitingChannel": "GG->F",
+      "quadraticLimitingModeNumberI": -1,
+      "quadraticLimitingModeNumberJ": -1,
+      "gramAccepted": true,
+      "leakageAccepted": true,
+      "quadraticAccepted": true,
+      "combinedAccepted": true
+    }
+  ],
+  "matlabVersion": "25.2.0.3150157 (R2025b) Update 4",
+  "computer": "MACA64",
+  "referencesStable": true,
+  "fixedFamiliesGramAccepted": true
+}

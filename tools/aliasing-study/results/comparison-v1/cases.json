@@ -1,0 +1,688 @@
+[
+  {
+    "caseId": "cal-constant-17",
+    "split": "calibration",
+    "dense": "calibration-v1/cal-constant-17",
+    "scores": "calibration-v1/cal-constant-17-scores-v2",
+    "configuration": {
+      "Lz": 1000,
+      "f": 0.0001,
+      "g": 9.81,
+      "evpOrders": [
+        128,
+        192
+      ],
+      "referenceOrders": [
+        257,
+        513
+      ],
+      "referenceAllowance": 0.0001,
+      "eigenAllowance": 1e-06,
+      "gramTolerance": 1e-07,
+      "id": "cal-constant-17",
+      "profile": "constant",
+      "Lxy": [
+        100000,
+        100000
+      ],
+      "Nxy": [
+        8,
+        8
+      ],
+      "Nz": 17,
+      "waveCount": 8,
+      "apvCount": 3,
+      "mdaCount": 3,
+      "inertialCount": 3
+    },
+    "familyModeLabels": {
+      "wave": [
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        7,
+        8
+      ],
+      "apv": [
+        -1,
+        1,
+        2
+      ],
+      "mda": [
+        -1,
+        0,
+        1
+      ],
+      "inertial": [
+        1,
+        2,
+        3
+      ],
+      "boundary": [
+        "surface",
+        "bottom"
+      ]
+    }
+  },
+  {
+    "caseId": "cal-constant-33",
+    "split": "calibration",
+    "dense": "calibration-v1/cal-constant-33",
+    "scores": "calibration-v1/cal-constant-33-scores-v2",
+    "configuration": {
+      "Lz": 1000,
+      "f": 0.0001,
+      "g": 9.81,
+      "evpOrders": [
+        128,
+        192
+      ],
+      "referenceOrders": [
+        257,
+        513
+      ],
+      "referenceAllowance": 0.0001,
+      "eigenAllowance": 1e-06,
+      "gramTolerance": 1e-07,
+      "id": "cal-constant-33",
+      "profile": "constant",
+      "Lxy": [
+        100000,
+        100000
+      ],
+      "Nxy": [
+        8,
+        8
+      ],
+      "Nz": 33,
+      "waveCount": 16,
+      "apvCount": 4,
+      "mdaCount": 3,
+      "inertialCount": 6
+    },
+    "familyModeLabels": {
+      "wave": [
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        7,
+        8,
+        9,
+        10,
+        11,
+        12,
+        13,
+        14,
+        15,
+        16
+      ],
+      "apv": [
+        -1,
+        1,
+        2,
+        3
+      ],
+      "mda": [
+        -1,
+        0,
+        1
+      ],
+      "inertial": [
+        1,
+        2,
+        3,
+        4,
+        5,
+        6
+      ],
+      "boundary": [
+        "surface",
+        "bottom"
+      ]
+    }
+  },
+  {
+    "caseId": "cal-exponential-17",
+    "split": "calibration",
+    "dense": "calibration-v1/cal-exponential-17",
+    "scores": "calibration-v1/cal-exponential-17-scores-v2",
+    "configuration": {
+      "Lz": 1000,
+      "f": 0.0001,
+      "g": 9.81,
+      "evpOrders": [
+        128,
+        192
+      ],
+      "referenceOrders": [
+        257,
+        513
+      ],
+      "referenceAllowance": 0.0001,
+      "eigenAllowance": 1e-06,
+      "gramTolerance": 1e-07,
+      "id": "cal-exponential-17",
+      "profile": "exponential",
+      "Lxy": [
+        100000,
+        100000
+      ],
+      "Nxy": [
+        8,
+        8
+      ],
+      "Nz": 17,
+      "waveCount": 8,
+      "apvCount": 3,
+      "mdaCount": 3,
+      "inertialCount": 3
+    },
+    "familyModeLabels": {
+      "wave": [
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        7,
+        8
+      ],
+      "apv": [
+        -1,
+        1,
+        2
+      ],
+      "mda": [
+        -1,
+        0,
+        1
+      ],
+      "inertial": [
+        1,
+        2,
+        3
+      ],
+      "boundary": [
+        "surface",
+        "bottom"
+      ]
+    }
+  },
+  {
+    "caseId": "cal-exponential-33",
+    "split": "calibration",
+    "dense": "calibration-v1/cal-exponential-33",
+    "scores": "calibration-v1/cal-exponential-33-scores-v2",
+    "configuration": {
+      "Lz": 1000,
+      "f": 0.0001,
+      "g": 9.81,
+      "evpOrders": [
+        128,
+        192
+      ],
+      "referenceOrders": [
+        257,
+        513
+      ],
+      "referenceAllowance": 0.0001,
+      "eigenAllowance": 1e-06,
+      "gramTolerance": 1e-07,
+      "id": "cal-exponential-33",
+      "profile": "exponential",
+      "Lxy": [
+        100000,
+        100000
+      ],
+      "Nxy": [
+        8,
+        8
+      ],
+      "Nz": 33,
+      "waveCount": 16,
+      "apvCount": 4,
+      "mdaCount": 3,
+      "inertialCount": 6
+    },
+    "familyModeLabels": {
+      "wave": [
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        7,
+        8,
+        9,
+        10,
+        11,
+        12,
+        13,
+        14,
+        15,
+        16
+      ],
+      "apv": [
+        -1,
+        1,
+        2,
+        3
+      ],
+      "mda": [
+        -1,
+        0,
+        1
+      ],
+      "inertial": [
+        1,
+        2,
+        3,
+        4,
+        5,
+        6
+      ],
+      "boundary": [
+        "surface",
+        "bottom"
+      ]
+    }
+  },
+  {
+    "caseId": "withheld-exponential-25",
+    "split": "withheld",
+    "dense": "withheld-v1/withheld-exponential-25",
+    "scores": "withheld-v1/withheld-exponential-25-scores",
+    "configuration": {
+      "Lz": 1000,
+      "f": 0.0001,
+      "g": 9.81,
+      "evpOrders": [
+        128,
+        192
+      ],
+      "referenceOrders": [
+        257,
+        513
+      ],
+      "referenceAllowance": 0.0001,
+      "eigenAllowance": 1e-06,
+      "gramTolerance": 1e-07,
+      "id": "withheld-exponential-25",
+      "profile": "exponential-withheld",
+      "Lxy": [
+        140000,
+        100000
+      ],
+      "Nxy": [
+        8,
+        8
+      ],
+      "Nz": 25,
+      "waveCount": 12,
+      "apvCount": 3,
+      "mdaCount": 3,
+      "inertialCount": 4
+    },
+    "familyModeLabels": {
+      "wave": [
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        7,
+        8,
+        9,
+        10,
+        11,
+        12
+      ],
+      "apv": [
+        -1,
+        1,
+        2
+      ],
+      "mda": [
+        -1,
+        0,
+        1
+      ],
+      "inertial": [
+        1,
+        2,
+        3,
+        4
+      ],
+      "boundary": [
+        "surface",
+        "bottom"
+      ]
+    }
+  },
+  {
+    "caseId": "withheld-exponential-49",
+    "split": "withheld",
+    "dense": "withheld-v1/withheld-exponential-49",
+    "scores": "withheld-v1/withheld-exponential-49-scores",
+    "configuration": {
+      "Lz": 1000,
+      "f": 0.0001,
+      "g": 9.81,
+      "evpOrders": [
+        128,
+        192
+      ],
+      "referenceOrders": [
+        257,
+        513
+      ],
+      "referenceAllowance": 0.0001,
+      "eigenAllowance": 1e-06,
+      "gramTolerance": 1e-07,
+      "id": "withheld-exponential-49",
+      "profile": "exponential-withheld",
+      "Lxy": [
+        140000,
+        100000
+      ],
+      "Nxy": [
+        8,
+        8
+      ],
+      "Nz": 49,
+      "waveCount": 16,
+      "apvCount": 4,
+      "mdaCount": 3,
+      "inertialCount": 6
+    },
+    "familyModeLabels": {
+      "wave": [
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        7,
+        8,
+        9,
+        10,
+        11,
+        12,
+        13,
+        14,
+        15,
+        16
+      ],
+      "apv": [
+        -1,
+        1,
+        2,
+        3
+      ],
+      "mda": [
+        -1,
+        0,
+        1
+      ],
+      "inertial": [
+        1,
+        2,
+        3,
+        4,
+        5,
+        6
+      ],
+      "boundary": [
+        "surface",
+        "bottom"
+      ]
+    }
+  },
+  {
+    "caseId": "withheld-pycnocline-33",
+    "split": "withheld",
+    "dense": "withheld-refined-v1/withheld-pycnocline-33",
+    "scores": "withheld-refined-v1/withheld-pycnocline-33-scores",
+    "configuration": {
+      "Lz": 1000,
+      "f": 0.0001,
+      "g": 9.81,
+      "evpOrders": [
+        192,
+        256
+      ],
+      "referenceOrders": [
+        513,
+        1025
+      ],
+      "referenceAllowance": 0.0001,
+      "eigenAllowance": 1e-06,
+      "gramTolerance": 1e-07,
+      "id": "withheld-pycnocline-33",
+      "profile": "pycnocline",
+      "Lxy": [
+        140000,
+        100000
+      ],
+      "Nxy": [
+        8,
+        8
+      ],
+      "Nz": 33,
+      "waveCount": 16,
+      "apvCount": 3,
+      "mdaCount": 3,
+      "inertialCount": 4
+    },
+    "familyModeLabels": {
+      "wave": [
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        7,
+        8,
+        9,
+        10,
+        11,
+        12,
+        13,
+        14,
+        15,
+        16
+      ],
+      "apv": [
+        -1,
+        1,
+        2
+      ],
+      "mda": [
+        -1,
+        0,
+        1
+      ],
+      "inertial": [
+        1,
+        2,
+        3,
+        4
+      ],
+      "boundary": [
+        "surface",
+        "bottom"
+      ]
+    }
+  },
+  {
+    "caseId": "withheld-pycnocline-65",
+    "split": "withheld",
+    "dense": "withheld-refined-v1/withheld-pycnocline-65",
+    "scores": "withheld-refined-v1/withheld-pycnocline-65-scores",
+    "configuration": {
+      "Lz": 1000,
+      "f": 0.0001,
+      "g": 9.81,
+      "evpOrders": [
+        192,
+        256
+      ],
+      "referenceOrders": [
+        513,
+        1025
+      ],
+      "referenceAllowance": 0.0001,
+      "eigenAllowance": 1e-06,
+      "gramTolerance": 1e-07,
+      "id": "withheld-pycnocline-65",
+      "profile": "pycnocline",
+      "Lxy": [
+        140000,
+        100000
+      ],
+      "Nxy": [
+        12,
+        8
+      ],
+      "Nz": 65,
+      "waveCount": 16,
+      "apvCount": 4,
+      "mdaCount": 3,
+      "inertialCount": 6
+    },
+    "familyModeLabels": {
+      "wave": [
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        7,
+        8,
+        9,
+        10,
+        11,
+        12,
+        13,
+        14,
+        15,
+        16
+      ],
+      "apv": [
+        -1,
+        1,
+        2,
+        3
+      ],
+      "mda": [
+        -1,
+        0,
+        1
+      ],
+      "inertial": [
+        1,
+        2,
+        3,
+        4,
+        5,
+        6
+      ],
+      "boundary": [
+        "surface",
+        "bottom"
+      ]
+    }
+  },
+  {
+    "caseId": "followup-pycnocline-129",
+    "split": "resolution-followup",
+    "dense": "withheld-refined-v1/followup-pycnocline-129",
+    "scores": "withheld-refined-v1/followup-pycnocline-129-scores",
+    "configuration": {
+      "Lz": 1000,
+      "f": 0.0001,
+      "g": 9.81,
+      "evpOrders": [
+        192,
+        256
+      ],
+      "referenceOrders": [
+        513,
+        1025
+      ],
+      "referenceAllowance": 0.0001,
+      "eigenAllowance": 1e-06,
+      "gramTolerance": 1e-07,
+      "id": "followup-pycnocline-129",
+      "profile": "pycnocline",
+      "Lxy": [
+        140000,
+        100000
+      ],
+      "Nxy": [
+        12,
+        8
+      ],
+      "Nz": 129,
+      "waveCount": 16,
+      "apvCount": 4,
+      "mdaCount": 3,
+      "inertialCount": 6
+    },
+    "familyModeLabels": {
+      "wave": [
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        7,
+        8,
+        9,
+        10,
+        11,
+        12,
+        13,
+        14,
+        15,
+        16
+      ],
+      "apv": [
+        -1,
+        1,
+        2,
+        3
+      ],
+      "mda": [
+        -1,
+        0,
+        1
+      ],
+      "inertial": [
+        1,
+        2,
+        3,
+        4,
+        5,
+        6
+      ],
+      "boundary": [
+        "surface",
+        "bottom"
+      ]
+    }
+  }
+]
