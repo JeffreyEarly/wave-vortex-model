@@ -143,6 +143,12 @@ Branch: `issue-315-forcing-tendency-diagnostics`, based on v4 main `866f66ed4198
 - All five engine fixtures now reject unknown class, unsupported version, mismatched stage, unknown transform and duplicate ordinal through data-only observer preflight, with no FFT execution. Existing tests cover unavailable names, sanitization collisions, unqualified custom implementations, wrong sampling/shape and nonfinite/aliased prepared data.
 - Release forcing-tendencies and Apple ASan/UBSan forcing-tendencies plus observer-output-evaluation passed. An initial compile assumed QG forcing interfaces inherited the wave interface; the final binding uses a stack-only identity value from each engine's existing interface instead. No MATLAB source changed and no optional Full CI ran.
 
+### Matched integration nonregression checkpoint
+
+- Built a clean native FFTW/Accelerate Release baseline at v4 main 26dcfb5a and compared candidate 2ac22731 using the existing MATLAB-authored constant, Hydrostatic and Boussinesq fixtures. These run 64 nonlinear RK4 steps with adaptive damping, normal/dense output and the same ordinary diagnostic fields. Eight measured pairs followed an excluded warmup, alternating execution order.
+- Median complete-integration runtime changed by -10.631%, -5.680% and -4.623%; retained memory changed by +0.009%, +0.018% and +0.029%, respectively. All pass the 3% regression budget. Steps and RHS counts match. Every numeric variable in the resulting files was compared recursively; the maximum normalized difference is 5.124e-16. Scheduled coefficients/fields/times are finite. Nonfinite metadata such as finalTime=Inf agrees between files.
+- The evidence JSON preserves all samples, input/executable hashes, source revisions and numerical comparisons. This is the established matched workload regression budget; it does not claim that arbitrarily frequent additional forcing outputs are free. Their sharing and trajectory invariance are qualified separately.
+
 ## Diagnostic semantics established from MATLAB
 
 `Operations/SpatialForcingOperation.m` reports the difference before and after each operation in stage/priority order. Spatial diagnostics expose the raw spatial contribution; spectral and amplitude diagnostics reconstruct the difference in the accumulated spectral tendency. Filters and fixed-amplitude operations therefore require the preceding accumulated tendency. Evaluating each forcing independently from a zero accumulator is incorrect.
