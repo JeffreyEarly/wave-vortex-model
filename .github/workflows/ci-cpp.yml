@@ -1,6 +1,9 @@
 name: Shared C++ build and contracts
 on:
   workflow_call:
+    outputs:
+      artifact-id:
+        value: ${{ jobs.build.outputs.artifact-id }}
     inputs:
       configuration:
         required: true
@@ -9,6 +12,8 @@ permissions:
   contents: read
 jobs:
   build:
+    outputs:
+      artifact-id: ${{ steps.artifact-upload.outputs.artifact-id || steps.artifact-retry.outputs.artifact-id }}
     runs-on: ubuntu-latest
     timeout-minutes: 15
     env:
@@ -32,7 +37,8 @@ jobs:
           fingerprint=$("$compiler" --version | sha256sum | cut -d ' ' -f 1)
           echo "identity=$fingerprint" >> "$GITHUB_OUTPUT"
       - name: Restore compiler objects
-        uses: actions/cache@v4
+        id: compiler-cache
+        uses: actions/cache/restore@v4
         with:
           path: ${{ runner.temp }}/ccache
           key: wvm-ccache-v1-${{ runner.os }}-${{ inputs.configuration }}-${{ steps.compiler.outputs.identity }}-${{ github.sha }}
@@ -62,6 +68,12 @@ jobs:
           ASAN_OPTIONS: detect_leaks=1:alloc_dealloc_mismatch=1:halt_on_error=1
           UBSAN_OPTIONS: print_stacktrace=1:halt_on_error=1
         run: ctest --test-dir "$RUNNER_TEMP/build" --output-on-failure
+      - name: Save verified compiler objects
+        if: steps.compiler-cache.outputs.cache-hit != 'true'
+        uses: actions/cache/save@v4
+        with:
+          path: ${{ runner.temp }}/ccache
+          key: ${{ steps.compiler-cache.outputs.cache-primary-key }}
       - name: Package exact-revision probes
         env:
           CONFIGURATION: ${{ inputs.configuration }}
@@ -84,7 +96,7 @@ jobs:
         timeout-minutes: 3
         uses: actions/upload-artifact@v4
         with:
-          name: ci-binaries-${{ inputs.configuration }}
+          name: ci-binaries-${{ inputs.configuration }}-retry
           path: ${{ runner.temp }}/binaries
           overwrite: true
           retention-days: 7

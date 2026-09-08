@@ -24,7 +24,7 @@ Selected classes are balanced into at most four concurrent batches per MATLAB re
 
 Package validation deliberately uses isolated MATLAB preferences, a separate release candidate/export, and an independently built exported runtime. It does not consume the authoring checkout's binary artifact.
 
-Ubuntu downloads have bounded connection timeouts and one apt retry. MATLAB provisioning has a five-minute step limit and at most one retry; the workflow explicitly requires successful setup. Artifact uploads also have one bounded retry with identical contents and identity; a successful upload is required. Tests, analyzer, documentation generation and qualification have no automatic retry or continue-on-error.
+Ubuntu downloads have bounded connection timeouts and one apt retry. MATLAB provisioning has a five-minute step limit and at most one retry; the workflow explicitly requires successful setup. Artifact uploads also have one bounded retry with identical contents under a distinct retry name; a successful upload is required. Selection and binary consumers download the successful artifact ID, avoiding unfinished-name conflicts. The aggregate rejects ambiguous duplicate MATLAB reports. Tests, analyzer, documentation generation and qualification have no automatic retry or continue-on-error.
 
 ## Broader qualification
 
