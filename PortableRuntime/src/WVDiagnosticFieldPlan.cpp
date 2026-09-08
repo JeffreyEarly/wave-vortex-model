@@ -388,7 +388,7 @@ WVKernelStatus WVDiagnosticFieldPlan::evaluate(WVFieldEvaluationService& service
         double maximum=0;
         for(std::size_t point=0;point<first.size();++point) {
           const double value=output.variable==Variable::uvMax ?
-              (constant_ ? std::sqrt(first[point]*first[point]+fields[0][output.auxiliaries[1]][point]*fields[0][output.auxiliaries[1]][point]) : std::hypot(first[point],fields[0][output.auxiliaries[1]][point])) : std::abs(first[point]);
+              (constant_ || isBarotropic_ ? std::sqrt(first[point]*first[point]+fields[0][output.auxiliaries[1]][point]*fields[0][output.auxiliaries[1]][point]) : std::hypot(first[point],fields[0][output.auxiliaries[1]][point])) : std::abs(first[point]);
           maximum=std::max(maximum,value);
         }
         outputs[index].data[0]=maximum;
