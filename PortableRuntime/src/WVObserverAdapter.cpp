@@ -1,4 +1,5 @@
 #include "WVObserverAdapter.hpp"
+#include "WaveVortexRuntime/generated/WVPortableVariableContracts.hpp"
 #include "WaveVortexRuntime/WVExtensionCatalog.hpp"
 #include "WaveVortexRuntime/WVObserverOutputProvider.hpp"
 #include "WVLegacyObserverCompatibility.hpp"
@@ -247,7 +248,7 @@ WVObservationVariable fieldVariable(
   WVObservationVariable variable;
   variable.identifier = std::move(identifier);
   variable.name = std::move(name);
-  variable.scalarType = metadata.kind == WVPortableVariableKind::coefficient
+  variable.scalarType = metadata.isComplex
                             ? WVObservationScalarType::complex64
                             : WVObservationScalarType::real64;
   variable.dimensionIdentifiers = std::move(dimensions);
@@ -296,8 +297,13 @@ WVKernelStatus buildLegacyOutputPlan(
   };
   const auto addFullField = [&](const std::string &field) {
     const auto *metadata = findExecutablePortableVariable(field);
-    if (metadata == nullptr)
+    if (metadata == nullptr) {
+      const auto* known=findPortableVariable(field);
+      if(known) for(const auto& contract:WVPortableVariableContracts)
+        if(contract.metadata.identifier==known->identifier && contract.runtime==WVPortableDiagnosticRuntime::intentionalIncompatibility)
+          return invalid(std::string(contract.configurationRestriction)+": "+field);
       return invalid("Unsupported observer field: " + field + ".");
+    }
     std::vector<std::string> names;
     std::vector<std::size_t> dimensions;
     WVObserverOutputChannel channel;
@@ -325,8 +331,15 @@ WVKernelStatus buildLegacyOutputPlan(
              ++dimension)
           names.emplace_back("coefficient_dimension_" +
                              std::to_string(dimension + 1));
-    } else if (metadata->kind == WVPortableVariableKind::field) {
-      if (metadata->naturalRank == WVPortableNaturalRank::scalar) {
+    } else if (metadata->kind == WVPortableVariableKind::field || metadata->kind == WVPortableVariableKind::diagnostic) {
+      if (metadata->naturalRank == WVPortableNaturalRank::coefficient) {
+        const auto canonical=field=="Apt" ? "Ap" : field=="Amt" ? "Am" : "A0";
+        const auto family=std::find_if(context.stateLayout->coefficientFamilies().begin(),context.stateLayout->coefficientFamilies().end(),
+            [&](const auto& value) {return value.identifier==canonical;});
+        if(family==context.stateLayout->coefficientFamilies().end()) return invalid("Diagnostic coefficient family is absent: "+field);
+        dimensions=family->spectralDimensions;
+        names=dimensions.size()==1 ? std::vector<std::string>{"kl"} : std::vector<std::string>{"j","kl"};
+      } else if (metadata->naturalRank == WVPortableNaturalRank::scalar) {
         dimensions = {};
       } else if (spatialDimensions.size() == 2) {
         dimensions = spatialDimensions;

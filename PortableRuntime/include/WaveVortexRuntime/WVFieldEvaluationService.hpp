@@ -23,6 +23,7 @@ class WVIntegrationStateLayout;
 namespace detail {
 class WVBarotropicQGFieldEvaluationAdapter;
 class WVStratifiedFieldEvaluationAdapter;
+class WVDiagnosticFieldPlan;
 }
 
 enum class WVFieldSamplingKind : std::uint8_t {
@@ -54,11 +55,13 @@ struct WVFieldOutputSpecification {
   WVFieldSamplingKind samplingKind = WVFieldSamplingKind::fullGrid;
   std::vector<std::size_t> dimensions;
   std::size_t elementCount = 0;
+  bool isComplex = false;
 };
 
 struct WVFieldOutputView {
   double *data = nullptr;
   std::size_t elementCount = 0;
+  WVComplex64 *complexData = nullptr;
 };
 
 // One field sampled from a caller-supplied moving-position array. Offsets and
@@ -149,6 +152,7 @@ private:
   friend class WVFieldEvaluationService;
   friend class detail::WVBarotropicQGFieldEvaluationAdapter;
   friend class detail::WVStratifiedFieldEvaluationAdapter;
+
 };
 
 class WVMovingFieldEvaluationPlan final {
@@ -177,6 +181,7 @@ private:
   friend class WVFieldEvaluationService;
   friend class detail::WVBarotropicQGFieldEvaluationAdapter;
   friend class detail::WVStratifiedFieldEvaluationAdapter;
+
 };
 
 class WVFieldEvaluationPlan final {
@@ -217,6 +222,8 @@ private:
     std::size_t persistentBytes() const noexcept;
   };
 
+  friend class WVObserverOutputEvaluationService;
+  std::shared_ptr<const detail::WVDiagnosticFieldPlan> diagnosticPlan_;
   WVTransformConstantStratificationConfiguration configuration_;
   std::vector<ResolvedRequest> requests_;
   std::vector<WVFieldOutputSpecification> outputs_;
@@ -228,6 +235,7 @@ private:
   friend class WVFieldEvaluationService;
   friend class detail::WVBarotropicQGFieldEvaluationAdapter;
   friend class detail::WVStratifiedFieldEvaluationAdapter;
+  friend class detail::WVDiagnosticFieldPlan;
 };
 
 struct WVPreparedFieldOutputSpecification {
@@ -293,6 +301,7 @@ private:
   friend class WVFieldEvaluationService;
   friend class detail::WVBarotropicQGFieldEvaluationAdapter;
   friend class detail::WVStratifiedFieldEvaluationAdapter;
+
 };
 
 // One independently keyed occurrence in a coarse same-state evaluation.
@@ -344,6 +353,12 @@ struct WVFieldEvaluationMetrics {
   std::size_t maximumPreparedGeometryRetainedBytes = 0;
   std::size_t lastPreparedGeometryLiveBytes = 0;
   std::size_t maximumPreparedGeometryLiveBytes = 0;
+  std::size_t diagnosticEvaluationCount = 0;
+  // Unique underlying field requests, and repeated references served by them.
+  std::size_t diagnosticPrimitiveOutputCount = 0;
+  std::size_t diagnosticIntermediateReuseCount = 0;
+  std::size_t diagnosticWorkspaceLiveBytes = 0;
+  std::size_t diagnosticWorkspaceHighWaterBytes = 0;
   std::size_t catalogBytes = portableVariableCatalogBytes();
 };
 
@@ -461,6 +476,7 @@ private:
     WVFieldOutputView *outputs = nullptr;
     std::size_t outputCount = 0;
   };
+  friend class detail::WVDiagnosticFieldPlan;
   WVFieldEvaluationService() = default;
   WVKernelStatus initializeScratch();
   WVKernelStatus evaluatePlanBatch(const PlanInvocation *invocations,

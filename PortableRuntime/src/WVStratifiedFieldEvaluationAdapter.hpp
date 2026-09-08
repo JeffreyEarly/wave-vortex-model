@@ -63,6 +63,7 @@ public:
   std::size_t persistentBytes() const noexcept;
 
 private:
+  friend class WVDiagnosticFieldPlan;
   WVKernelStatus transformField(const WVState&,WVHydrostaticField,WVRealVolumeView);
   WVKernelStatus scalarValue(const WVState&,unsigned,double&);
   struct MovingInterpolationWorkspace;

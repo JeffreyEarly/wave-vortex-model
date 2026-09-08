@@ -90,7 +90,9 @@ int main() {
   require(resolve("energy_w") == WVPortableVariableStatus::supported);
   require(plan.primitiveMask == 128);
   options.requireEvaluator = true;
-  require(resolve("eta_true") == WVPortableVariableStatus::pendingEvaluation);
+  require(resolve("eta_true") == WVPortableVariableStatus::intentionalIncompatibility);
+  require(resolve("energy_w") == WVPortableVariableStatus::supported);
+  require(findExecutablePortableVariable("energy_w") != nullptr);
   require(findExecutablePortableVariable("eta_true") == nullptr);
   require(findExecutablePortableVariable("u") != nullptr);
   options.requireEvaluator = false;

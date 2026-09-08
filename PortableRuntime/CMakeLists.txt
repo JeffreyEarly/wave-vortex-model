@@ -52,6 +52,7 @@ add_library(WaveVortexPortableRuntime STATIC
     src/WVLegacyObserverCompatibility.hpp
     src/WVObserverContracts.cpp
     src/WVObserverSampleSource.cpp
+    src/WVDiagnosticFieldPlan.cpp
     src/WVFieldEvaluationService.cpp
     src/WVConstantStratificationIntegrationSystem.cpp
     src/WVObserverOutputEvaluationService.cpp
@@ -395,6 +396,18 @@ if(BUILD_TESTING)
     endif()
     if(CMAKE_CXX_COMPILER_ID MATCHES "AppleClang|Clang|GNU")
         target_compile_options(WVStratifiedQGFieldDump PRIVATE -Wall -Wextra -Wpedantic -Werror)
+    endif()
+    add_executable(WVDiagnosticFieldDump tests/WVDiagnosticFieldDump.cpp)
+    target_include_directories(WVDiagnosticFieldDump PRIVATE third_party)
+    target_link_libraries(WVDiagnosticFieldDump PRIVATE WaveVortex::PortableRuntime WaveVortex::ReferenceFFT)
+    if(WV_RUNTIME_ENABLE_NATIVE_FFTW)
+        target_link_libraries(WVDiagnosticFieldDump PRIVATE WaveVortexNativeFFTW)
+        target_compile_definitions(WVDiagnosticFieldDump PRIVATE WV_TEST_NATIVE_FFTW=1)
+    else()
+        target_compile_definitions(WVDiagnosticFieldDump PRIVATE WV_TEST_NATIVE_FFTW=0)
+    endif()
+    if(CMAKE_CXX_COMPILER_ID MATCHES "AppleClang|Clang|GNU")
+        target_compile_options(WVDiagnosticFieldDump PRIVATE -Wall -Wextra -Wpedantic -Werror)
     endif()
 endif()
 

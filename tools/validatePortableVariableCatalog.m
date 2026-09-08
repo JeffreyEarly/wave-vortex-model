@@ -19,7 +19,14 @@ if ~isequal(intermediateIds,0:numel(intermediateIds)-1) || numel(intermediateIds
         numel(unique(string({catalog.intermediates.name})))~=numel(intermediateIds)
     invalid("Intermediate names and ordinals must be unique and contiguous.");
 end
+excluded = string({catalog.exclusions.name});
+if numel(unique(excluded))~=numel(excluded) || any(ismember(excluded,names))
+    invalid("Exclusions must be unique and cannot hide registered catalog identities.");
+end
 for row = reshape(rows,1,[])
+    if string(row.runtimeStatus)=="intentional-incompatibility" && isempty(row.configurationRestriction)
+        invalid("An intentional incompatibility requires an explicit reason.");
+    end
     m = row.metadata;
     if string(row.catalogStatus)~="supported" || ~isequal(string(row.netCDF.dimensionNames),string(m.dimensions)) || ...
             ~isequal(string(row.netCDF.coordinateRoles),string(m.dimensions))
@@ -30,7 +37,7 @@ for row = reshape(rows,1,[])
         invalid("A configuration row contradicts its catalog identity.");
     end
     if isempty(m.units) || isempty(m.description) || numel(m.dimensions)>3 || ...
-            ~ismember(string(row.runtimeStatus),["implemented","pending-305","pending-315"])
+            ~ismember(string(row.runtimeStatus),["implemented","pending-305","pending-315","intentional-incompatibility"])
         invalid("Incomplete diagnostic metadata or runtime status.");
     end
     modes = string(m.samplingModes);

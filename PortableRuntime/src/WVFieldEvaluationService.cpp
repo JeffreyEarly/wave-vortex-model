@@ -1,3 +1,4 @@
+#include "WVDiagnosticFieldPlan.hpp"
 #include "WaveVortexRuntime/WVFieldEvaluationService.hpp"
 #include "WaveVortexRuntime/WVIntegrationState.hpp"
 #include "WVBarotropicQGFieldEvaluationAdapter.hpp"
@@ -380,7 +381,7 @@ std::size_t WVFieldEvaluationPlan::persistentBytes() const noexcept {
     value += output.identifier.capacity() + output.fieldName.capacity() +
              output.dimensions.capacity() * sizeof(std::size_t);
   }
-  return value + transformPlanBytes_;
+  return value + transformPlanBytes_ + (diagnosticPlan_ ? diagnosticPlan_->persistentBytes() : 0);
 }
 
 WVEventPositionSetView
@@ -632,7 +633,7 @@ std::vector<std::string> WVFieldEvaluationService::supportedFieldNames() {
   std::vector<std::string> result;
   result.reserve(WVPortableVariableCatalog.size());
   for (const auto &variable : WVPortableVariableCatalog)
-    if (variable.kind == WVPortableVariableKind::field)
+    if (variable.kind != WVPortableVariableKind::coefficient && findExecutablePortableVariable(variable.name))
       result.emplace_back(variable.name);
   return result;
 }
@@ -640,6 +641,8 @@ std::vector<std::string> WVFieldEvaluationService::supportedFieldNames() {
 WVKernelStatus WVFieldEvaluationService::createPlan(
     const std::vector<WVFieldRequest> &requests,
     WVFieldEvaluationPlan &plan) const {
+  if (detail::WVDiagnosticFieldPlan::required(requests,stratified_ != nullptr))
+    return detail::WVDiagnosticFieldPlan::create(*this,requests,plan);
   if (barotropicQG_)
     return barotropicQG_->createPlan(requests, plan);
   if (stratified_)
@@ -870,6 +873,7 @@ WVKernelStatus WVFieldEvaluationService::createPlan(
 WVKernelStatus WVFieldEvaluationService::evaluate(
     const WVFieldEvaluationPlan &plan, const WVState &state,
     WVFieldOutputView *outputs, std::size_t outputCount) {
+  if (plan.diagnosticPlan_) return plan.diagnosticPlan_->evaluate(*this,{state},outputs,outputCount);
   if (!transform_) return {WVKernelStatusCode::unsupportedOperation,"This transform requires coefficient-family state views."};
   const PlanInvocation invocation{&plan, outputs, outputCount};
   return evaluatePlanBatch(&invocation, 1, state);
@@ -878,6 +882,7 @@ WVKernelStatus WVFieldEvaluationService::evaluate(
 WVKernelStatus WVFieldEvaluationService::evaluate(
     const WVFieldEvaluationPlan &plan, const WVIntegrationState &state,
     WVFieldOutputView *outputs, std::size_t outputCount) {
+  if (plan.diagnosticPlan_) return plan.diagnosticPlan_->evaluate(*this,state,outputs,outputCount);
   if (barotropicQG_)
     return barotropicQG_->evaluate(plan, state, outputs, outputCount);
   if (stratified_)

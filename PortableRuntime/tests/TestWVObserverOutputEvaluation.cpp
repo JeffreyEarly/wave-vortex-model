@@ -218,7 +218,7 @@ OwnedState state(const WVTransformConstantStratificationConfiguration &config) {
   return result;
 }
 
-WVPortableObserverDescriptor descriptor() {
+WVPortableObserverDescriptor descriptor(bool diagnostics=false) {
   WVPortableObserverRecord record;
   for (const char *name : {"Ap", "Am", "A0"})
     record.stateBlocks.push_back(
@@ -246,9 +246,10 @@ WVPortableObserverDescriptor descriptor() {
   fields.name = "WVEulerianFields";
   fields.typeIdentifier = "WVEulerianFields";
   fields.fieldNames = {"Ap", "u", "psi"};
+  if(diagnostics) for(const char* name:{"Apt","Amt","A0t","u_w","ssu_w","energy_w","totalEnergySpatiallyIntegrated"}) fields.fieldNames.emplace_back(name);
   record.observers.push_back(fields);
   fields.identifier = "fields-b";
-  fields.fieldNames = {"u"};
+  fields.fieldNames = diagnostics ? std::vector<std::string>{"u","Apt","u_w"} : std::vector<std::string>{"u"};
   record.observers.push_back(fields);
   WVObserverRecord mooring;
   mooring.identifier = "mooring";
@@ -329,9 +330,9 @@ const WVObservationValue &findValue(const WVObservationSchema &schema,
   return *found;
 }
 
-void testService(bool linear) {
+void testService(bool linear,bool diagnostics=false) {
   auto config = configuration();
-  auto observers = descriptor();
+  auto observers = descriptor(diagnostics);
   std::unique_ptr<WVObserverOutputEvaluationService> service;
   auto status = WVObserverOutputEvaluationService::create(
       config, linear, observers, std::make_unique<WVReferenceFFTEngine>(),
@@ -368,9 +369,9 @@ void testService(bool linear) {
   requireRejectedConfiguration(
       [](auto &value) { value.latitude += 1.0; },
       "borrowed field service accepted a different latitude");
-  require(service->metrics().uniqueFieldOutputCount == 5,
+  require(service->metrics().uniqueFieldOutputCount == (diagnostics ? 12U : 5U),
           "field requests were not deduplicated");
-  require(service->metrics().sharedFieldReuseCount == 1,
+  require(service->metrics().sharedFieldReuseCount == (diagnostics ? 3U : 1U),
           "shared full-grid field was not recorded");
 
   WVObservationSchema fieldSchema;
@@ -518,6 +519,35 @@ void testService(bool linear) {
               fieldValue.elementCount() == config.Nx * config.Ny * config.Nz,
           "Eulerian field shape mismatch");
 
+  if(diagnostics) {
+    require(sharedFields->metrics().diagnosticEvaluationCount==(linear ? 2U : 1U),"Diagnostic plans did not evaluate once per initial or record event: "+std::to_string(sharedFields->metrics().diagnosticEvaluationCount));
+    require(sharedFields->metrics().diagnosticWorkspaceLiveBytes==0,"Event diagnostic scratch was retained.");
+    for(const char* name:{"Apt","Amt","A0t","u_w","ssu_w","energy_w","totalEnergySpatiallyIntegrated"}) {
+      const auto& variable=findVariable(fieldSchema,name);
+      WVObservationBatch initial;
+      if(variable.layout==WVObservationValueLayout::initialValue) {
+        status=service->initialObservationBatch(observers.observers()[1],initial);
+        require(static_cast<bool>(status),status.message);
+      }
+      const auto& value=findValue(fieldSchema,variable.layout==WVObservationValueLayout::initialValue ? initial : fieldsBatch,variable);
+      WVFieldEvaluationPlan plan;
+      status=sharedFields->createPlan({{name,name,{}}},plan);
+      require(static_cast<bool>(status),status.message);
+      std::vector<double> real(plan.outputs()[0].isComplex ? 0 : plan.outputs()[0].elementCount);
+      std::vector<WVComplex64> complex(plan.outputs()[0].isComplex ? plan.outputs()[0].elementCount : 0);
+      WVFieldOutputView view{real.data(),plan.outputs()[0].elementCount,complex.data()};
+      status=sharedFields->evaluate(plan,owned.view(),&view,1);require(static_cast<bool>(status),status.message);
+      if(!complex.empty()) {
+        require(variable.scalarType==WVObservationScalarType::complex64 && value.complex64Data(),"Complex diagnostic was encoded as real.");
+        for(std::size_t i=0;i<complex.size();++i)
+          require(complex[i].real==value.complex64Data()[i].real && complex[i].imag==value.complex64Data()[i].imag,"Complex observer diagnostic differs from direct evaluation.");
+      } else {
+        require(value.real64Data()!=nullptr,"Missing real diagnostic.");
+        for(std::size_t i=0;i<real.size();++i) require(real[i]==value.real64Data()[i],"Observer diagnostic differs from direct evaluation.");
+      }
+    }
+  }
+
   WVObservationBatch mooringBatch;
   eventBatch(1, mooringBatch);
   const auto &mooringValue =
@@ -592,6 +622,8 @@ int main() {
   try {
     testService(false);
     testService(true);
+    testService(false,true);
+    testService(true,true);
     std::cout << "Passive observer output evaluation contracts passed.\n";
     return 0;
   } catch (const std::exception &error) {

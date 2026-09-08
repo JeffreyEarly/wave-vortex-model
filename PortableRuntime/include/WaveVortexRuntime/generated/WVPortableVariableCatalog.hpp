@@ -224,7 +224,75 @@ findPortableVariable(std::string_view name) noexcept {
 inline constexpr const WVPortableVariableMetadata *
 findExecutablePortableVariable(std::string_view name) noexcept {
   const auto *entry = findPortableVariable(name);
-  return entry && entry->kind != WVPortableVariableKind::diagnostic ? entry : nullptr;
+  if (!entry) return nullptr;
+  switch (entry->identifier) {
+    case WVPortableVariable::Ap: return entry;
+    case WVPortableVariable::Am: return entry;
+    case WVPortableVariable::A0: return entry;
+    case WVPortableVariable::u: return entry;
+    case WVPortableVariable::v: return entry;
+    case WVPortableVariable::w: return entry;
+    case WVPortableVariable::eta: return entry;
+    case WVPortableVariable::pi: return entry;
+    case WVPortableVariable::p: return entry;
+    case WVPortableVariable::psi: return entry;
+    case WVPortableVariable::qgpv: return entry;
+    case WVPortableVariable::rhoE: return entry;
+    case WVPortableVariable::rhoTotal: return entry;
+    case WVPortableVariable::rhoBar: return entry;
+    case WVPortableVariable::zetaX: return entry;
+    case WVPortableVariable::zetaY: return entry;
+    case WVPortableVariable::zetaZ: return entry;
+    case WVPortableVariable::ssu: return entry;
+    case WVPortableVariable::ssv: return entry;
+    case WVPortableVariable::ssh: return entry;
+    case WVPortableVariable::energy: return entry;
+    case WVPortableVariable::uvMax: return entry;
+    case WVPortableVariable::wMax: return entry;
+    case WVPortableVariable::A0t: return entry;
+    case WVPortableVariable::Amt: return entry;
+    case WVPortableVariable::Apt: return entry;
+    case WVPortableVariable::energy_g: return entry;
+    case WVPortableVariable::energy_io: return entry;
+    case WVPortableVariable::energy_mda: return entry;
+    case WVPortableVariable::energy_w: return entry;
+    case WVPortableVariable::eta_g: return entry;
+    case WVPortableVariable::eta_io: return entry;
+    case WVPortableVariable::eta_mda: return entry;
+    case WVPortableVariable::eta_w: return entry;
+    case WVPortableVariable::geostrophicEnergy: return entry;
+    case WVPortableVariable::p_g: return entry;
+    case WVPortableVariable::p_io: return entry;
+    case WVPortableVariable::p_mda: return entry;
+    case WVPortableVariable::p_w: return entry;
+    case WVPortableVariable::ssh_g: return entry;
+    case WVPortableVariable::ssh_io: return entry;
+    case WVPortableVariable::ssh_mda: return entry;
+    case WVPortableVariable::ssh_w: return entry;
+    case WVPortableVariable::ssu_g: return entry;
+    case WVPortableVariable::ssu_io: return entry;
+    case WVPortableVariable::ssu_mda: return entry;
+    case WVPortableVariable::ssu_w: return entry;
+    case WVPortableVariable::ssv_g: return entry;
+    case WVPortableVariable::ssv_io: return entry;
+    case WVPortableVariable::ssv_mda: return entry;
+    case WVPortableVariable::ssv_w: return entry;
+    case WVPortableVariable::totalEnergy: return entry;
+    case WVPortableVariable::totalEnergySpatiallyIntegrated: return entry;
+    case WVPortableVariable::u_g: return entry;
+    case WVPortableVariable::u_io: return entry;
+    case WVPortableVariable::u_mda: return entry;
+    case WVPortableVariable::u_w: return entry;
+    case WVPortableVariable::v_g: return entry;
+    case WVPortableVariable::v_io: return entry;
+    case WVPortableVariable::v_mda: return entry;
+    case WVPortableVariable::v_w: return entry;
+    case WVPortableVariable::w_g: return entry;
+    case WVPortableVariable::w_io: return entry;
+    case WVPortableVariable::w_mda: return entry;
+    case WVPortableVariable::w_w: return entry;
+    default: return nullptr;
+  }
 }
 
 inline constexpr std::size_t portableVariableCatalogBytes() noexcept {

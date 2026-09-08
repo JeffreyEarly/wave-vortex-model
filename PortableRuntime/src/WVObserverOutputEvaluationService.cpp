@@ -1,3 +1,4 @@
+#include "WVDiagnosticFieldPlan.hpp"
 #include "WaveVortexRuntime/WVObserverOutputEvaluationService.hpp"
 #include "WaveVortexRuntime/WVObserverOutputProvider.hpp"
 
@@ -293,6 +294,8 @@ public:
   WVFieldEvaluationService *fields = nullptr;
   WVFieldEvaluationPlan initialFieldPlan;
   WVFieldEvaluationPlan timeSeriesFieldPlan;
+  std::vector<std::vector<WVComplex64>> initialComplexFieldStorage;
+  std::vector<std::vector<WVComplex64>> timeSeriesComplexFieldStorage;
   std::vector<std::vector<double>> initialFieldStorage;
   std::vector<std::vector<double>> timeSeriesFieldStorage;
   std::vector<WVFieldOutputView> initialFieldViews;
@@ -531,6 +534,14 @@ public:
       if (block.realData == nullptr)
         return invalid("Observer state output is not real-valued.");
       value.real64 = block.realData;
+      return WVKernelStatus::ok();
+    }
+    if(entry.source==WVObserverOutputChannelSource::sampledField && entry.scalarType==WVObservationScalarType::complex64) {
+      const auto& storage=entry.initialField ? initialComplexFieldStorage : timeSeriesComplexFieldStorage;
+      if(entry.fieldOutput>=storage.size() || entry.scale!=1.0 || entry.offset!=0.0)
+        return invalid("Complex diagnostic output binding or affine conversion is unsupported.");
+      value.complex64=storage[entry.fieldOutput].data();
+      value.elementCount=storage[entry.fieldOutput].size();
       return WVKernelStatus::ok();
     }
     const auto &storage =
@@ -820,6 +831,9 @@ WVKernelStatus WVObserverOutputEvaluationService::create(
             !additionalBlockIndex(channel.sourceIdentifier,
                                   output.additionalStateBlockIndex))
           return invalid("Observer state output has no resolved block slot.");
+        if(channel.source==WVObserverOutputChannelSource::sampledField && variable->scalarType==WVObservationScalarType::complex64 &&
+            (channel.scale!=1.0 || channel.offset!=0.0))
+          return invalid("Affine conversion of complex diagnostic channels is unsupported.");
         output.scale = channel.scale;
         output.offset = channel.offset;
         if (channel.source == WVObserverOutputChannelSource::sampledField) {
@@ -902,6 +916,7 @@ WVKernelStatus WVObserverOutputEvaluationService::create(
     const auto buildPlan = [&](const std::vector<WVFieldRequest> &requests,
                                WVFieldEvaluationPlan &plan,
                                std::vector<std::vector<double>> &storage,
+                               std::vector<std::vector<WVComplex64>> &complexStorage,
                                std::vector<WVFieldOutputView> &views) {
       if (requests.empty())
         return WVKernelStatus::ok();
@@ -909,22 +924,29 @@ WVKernelStatus WVObserverOutputEvaluationService::create(
       if (!planStatus)
         return planStatus;
       storage.resize(plan.outputCount());
+      if(std::any_of(plan.outputs().begin(),plan.outputs().end(),[](const auto& output) {return output.isComplex;}))
+        complexStorage.resize(plan.outputCount());
       views.resize(plan.outputCount());
       for (std::size_t index = 0; index < plan.outputCount(); ++index) {
         const auto count = plan.outputs()[index].elementCount;
-        storage[index].resize(count);
-        views[index] = {storage[index].data(), count};
-        candidate->metrics_.outputCapacityBytes +=
-            storage[index].capacity() * sizeof(double);
+        if(plan.outputs()[index].isComplex) {
+          complexStorage[index].resize(count);
+          views[index]={nullptr,count,complexStorage[index].data()};
+          candidate->metrics_.outputCapacityBytes+=complexStorage[index].capacity()*sizeof(WVComplex64);
+        } else {
+          storage[index].resize(count);
+          views[index] = {storage[index].data(), count};
+          candidate->metrics_.outputCapacityBytes += storage[index].capacity() * sizeof(double);
+        }
       }
       return WVKernelStatus::ok();
     };
     status = buildPlan(initialRequests, impl.initialFieldPlan,
-                       impl.initialFieldStorage, impl.initialFieldViews);
+                       impl.initialFieldStorage, impl.initialComplexFieldStorage, impl.initialFieldViews);
     if (!status)
       return status;
     status = buildPlan(timeSeriesRequests, impl.timeSeriesFieldPlan,
-                       impl.timeSeriesFieldStorage,
+                       impl.timeSeriesFieldStorage, impl.timeSeriesComplexFieldStorage,
                        impl.timeSeriesFieldViews);
     if (!status)
       return status;
@@ -1100,6 +1122,17 @@ WVKernelStatus WVObserverOutputEvaluationService::useFieldEvaluationService(
   if (!compatible)
     return invalid("Borrowed field-evaluation service uses an incompatible "
                    "resolved transform layout.");
+  WVFieldEvaluationPlan initial,records;
+  if(impl_->initialFieldPlan.diagnosticPlan_) {
+    const auto status=impl_->initialFieldPlan.diagnosticPlan_->rebind(fieldEvaluationService,initial);
+    if(!status) return status;
+  }
+  if(impl_->timeSeriesFieldPlan.diagnosticPlan_) {
+    const auto status=impl_->timeSeriesFieldPlan.diagnosticPlan_->rebind(fieldEvaluationService,records);
+    if(!status) return status;
+  }
+  if(initial.diagnosticPlan_) impl_->initialFieldPlan=std::move(initial);
+  if(records.diagnosticPlan_) impl_->timeSeriesFieldPlan=std::move(records);
   impl_->ownedFields.reset();
   impl_->fields = &fieldEvaluationService;
   metrics_.retainedStorageBytes = persistentBytes();
@@ -1386,6 +1419,19 @@ std::size_t WVObserverOutputEvaluationService::occurrenceWorkspaceLiveBytes()
   return metrics_.occurrenceWorkspaceLiveBytes;
 }
 
+WVObserverOutputEvaluationMetrics WVObserverOutputEvaluationService::metrics() const noexcept {
+  auto result=metrics_;
+  if(impl_ && impl_->fields) {
+    const auto& fields=impl_->fields->metrics();
+    result.diagnosticEvaluationCount=fields.diagnosticEvaluationCount;
+    result.diagnosticPrimitiveOutputCount=fields.diagnosticPrimitiveOutputCount;
+    result.diagnosticIntermediateReuseCount=fields.diagnosticIntermediateReuseCount;
+    result.diagnosticWorkspaceLiveBytes=fields.diagnosticWorkspaceLiveBytes;
+    result.diagnosticWorkspaceHighWaterBytes=fields.diagnosticWorkspaceHighWaterBytes;
+  }
+  return result;
+}
+
 std::size_t WVObserverOutputEvaluationService::persistentBytes() const noexcept {
   if (!impl_)
     return sizeof(*this);
@@ -1399,6 +1445,7 @@ std::size_t WVObserverOutputEvaluationService::persistentBytes() const noexcept 
           sizeof(impl_->timeSeriesFieldPlan) +
       impl_->movingFieldPlan.persistentBytes() -
           sizeof(impl_->movingFieldPlan) +
+      (impl_->initialComplexFieldStorage.capacity()+impl_->timeSeriesComplexFieldStorage.capacity())*sizeof(std::vector<WVComplex64>) +
       impl_->initialFieldStorage.capacity() *
           sizeof(std::vector<double>) +
       impl_->timeSeriesFieldStorage.capacity() *
@@ -1418,6 +1465,8 @@ std::size_t WVObserverOutputEvaluationService::persistentBytes() const noexcept 
           sizeof(Impl::PreparedOccurrence) +
       impl_->eventFieldBatchEntries.capacity() *
           sizeof(WVEventFieldEvaluationBatchEntry);
+  for(const auto& storage:impl_->initialComplexFieldStorage) bytes+=storage.capacity()*sizeof(WVComplex64);
+  for(const auto& storage:impl_->timeSeriesComplexFieldStorage) bytes+=storage.capacity()*sizeof(WVComplex64);
   for (const auto &storage : impl_->initialFieldStorage)
     bytes += storage.capacity() * sizeof(double);
   for (const auto &storage : impl_->timeSeriesFieldStorage)
