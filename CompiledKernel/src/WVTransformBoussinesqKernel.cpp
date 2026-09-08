@@ -477,3 +477,5 @@ WVKernelStatus WVTransformBoussinesqKernel::advectScalarWithAdvectionFields(WVRe
     return s;
 }
 } // namespace wavevortex
+
+// Disposable CI route timing probe for issue 395; do not merge.
