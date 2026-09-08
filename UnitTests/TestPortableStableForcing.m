@@ -30,6 +30,111 @@ classdef TestPortableStableForcing < matlab.unittest.TestCase
         end
     end
     methods (Test,TestTags="full")
+        function isolatedWaveWrapperRejectsScalarAccumulators(testCase)
+            % #406: preserve an explicit regression for the existing defect.
+            wvt = diagnosticWaveTransform("constant-hydrostatic",[8 6 9],false);
+            wvt.setForcing(WVAdaptiveDamping(wvt));
+            operation = SpatialForcingOperation(wvt);
+            testCase.verifyError(@()operation.compute(wvt),'MATLAB:getReshapeDims:notDivisible');
+        end
+        function isolatedQGWrapperRejectsSingleOutputName(testCase)
+            % #406: preserve an explicit regression for the existing defect.
+            wvt = WVTransformBarotropicQG([17000 11000],[8 6],shouldAntialias=false);
+            wvt.setForcing(WVAdaptiveDamping(wvt));
+            rejected = false;
+            try
+                SpatialForcingOperation(wvt);
+            catch cause
+                rejected = contains(string(cause.message),"An operation with only one output variable must have the same name");
+            end
+            testCase.verifyTrue(rejected,"Expected the single-output operation-name contract failure.");
+        end
+        function isolatedTendenciesMatchMatlab(testCase)
+            matrix = jsondecode(fileread(fullfile(testCase.root,"PortableRuntime","contracts","portable-forcing-compatibility-v1.json")));
+            for config = reshape(matrix.configurations,1,[])
+                family = extractBefore(string(config.id),"-aa");
+                if family == "barotropic"
+                    wvt = WVTransformBarotropicQG([17000 11000],[8 6],j=1,shouldAntialias=config.shouldAntialias);
+                elseif family == "stratified-qg"
+                    wvt = WVTransformStratifiedQG([17000 11000 1000],[8 6 9],Nj=4,N2Function=@(z)1e-4*exp(z/700),shouldAntialias=config.shouldAntialias);
+                else
+                    wvt = diagnosticWaveTransform(family,[8 6 9],config.shouldAntialias);
+                end
+                if family == "barotropic" || family == "stratified-qg"
+                    n = reshape(1:numel(wvt.A0),size(wvt.A0));
+                    wvt.A0 = 1e-6*complex(sin(.17*n),cos(.23*n)).*(wvt.Kh>0);
+                    wvt.t = 37;
+                end
+                rows = matrix.rows(string({matrix.rows.configuration}) == string(config.id));
+                for row = reshape(rows,1,[])
+                    if string(row.matlab.applicability) ~= "applicable", continue; end
+                    force = testCase.forcing(wvt,string(row.forcing));
+                    if string(row.forcing) == "WVPseudoTopographicWaveGeneration"
+                        % A two-dimensional terrain avoids an analytically
+                        % vanishing Fu channel from one-dimensional symmetry.
+                        terrain = 2*cos(2*pi*reshape(wvt.x,[],1)/wvt.Lx)+sin(2*pi*reshape(wvt.y,1,[])/wvt.Ly);
+                        force = WVPseudoTopographicWaveGeneration(wvt,topographicHeight=terrain,barotropicVelocityAmplitude=[.01;.005],frequency=1e-4,rampDuration=0);
+                    end
+                    wvt.setForcing(force);
+                    before = {wvt.Ap,wvt.Am,wvt.A0};
+                    if family == "stratified-qg" || family == "barotropic"
+                        % #404 and #406 (single-output name) above
+                        % require comparing the existing MATLAB primitives.
+                        expected = stratifiedForcingPrimitives(wvt);
+                        expectedChannels = "Fqgpv";
+                    else
+                        % #406: the wave wrapper initializes scalar accumulators;
+                        % isolated forcing can leave some channels scalar.
+                        expected = isolatedWaveForcingPrimitives(wvt);
+                        expectedChannels = ["Fu","Fv","Feta"];
+                        if ~wvt.isHydrostatic, expectedChannels = ["Fu","Fv","Fw","Feta"]; end
+                    end
+                    names = expectedChannels+"_"+replace(string(force.name),[" ","-"],"_");
+                    cancellationScale = 0;
+                    if ~wvt.isHydrostatic && string(row.forcing) == "WVPseudoTopographicWaveGeneration"
+                        zero = zeros(size(wvt.Ap));
+                        [Fp,Fm,~] = force.addSpectralForcing(wvt,zero,zero,zero);
+                        plus = wvt.transformToSpatialDomainWithG(Apm=wvt.WAp.*wvt.phase.*Fp);
+                        minus = wvt.transformToSpatialDomainWithG(Apm=wvt.WAm.*wvt.conjPhase.*Fm);
+                        cancellationScale = max(abs([plus(:);minus(:)]));
+                        testCase.assertGreaterThan(cancellationScale,0);
+                        testCase.verifyLessThanOrEqual(max(abs(plus(:)+minus(:))),1e-12*cancellationScale);
+                    end
+                    source = testCase.writeInitialModel(wvt);
+                    resultPath = fullfile(testCase.folder,"isolated-tendencies.json");
+                    for provider = testCase.providers
+                        [status,output] = cleanSystem(shellQuote(testCase.executable)+" "+shellQuote(source)+" "+shellQuote(resultPath)+" "+provider+" tendencies");
+                        testCase.assertEqual(status,0,string(row.id)+" "+provider+": "+output);
+                        actual = jsondecode(fileread(resultPath));
+                        testCase.assertNumElements(actual.tendencies,1,string(row.id));
+                        testCase.verifyEqual(actual.diagnosticWorkspaceLiveBytes,0);
+                        testCase.verifyEqual(actual.diagnosticForcingEvaluationCount,1);
+                        instance = actual.tendencies;
+                        maximumError = 0;
+                        channels = string(fieldnames(instance.fields))';
+                        testCase.verifyEqual(numel(channels),numel(expectedChannels));
+                        for channel = channels
+                            name = channel+"_"+replace(string(instance.name),[" ","-"],"_");
+                            index = find(names==name);
+                            testCase.assertNumElements(index,1,name);
+                            reference = expected{index};
+                            values = instance.fields.(channel);
+                            scale = max(abs(reference(:)));
+                            if channel == "Fw" && cancellationScale > 0
+                                testCase.verifyLessThanOrEqual(scale,1e-12*cancellationScale);
+                                testCase.verifyLessThanOrEqual(max(abs(values(:))),1e-12*cancellationScale);
+                                scale = cancellationScale;
+                            end
+                            error = max(abs(values(:)-reference(:)))/max(scale,realmin);
+                            testCase.verifyLessThanOrEqual(error,1e-12,string(row.id)+" "+provider+" "+name);
+                            maximumError = max(maximumError,error);
+                        end
+                        fprintf('ISOLATED_FORCING_DIAGNOSTICS %s provider=%s comparisons=%d max_relative=%.17g\n',row.id,provider,numel(channels),maximumError);
+                    end
+                    testCase.verifyEqual({wvt.Ap,wvt.Am,wvt.A0},before);
+                end
+            end
+        end
         function fullGridWaveTendenciesMatchMatlab(testCase)
             for family = ["constant-hydrostatic","constant-nonhydrostatic","hydrostatic","boussinesq"]
                 for antialias = [false true]
@@ -38,7 +143,7 @@ classdef TestPortableStableForcing < matlab.unittest.TestCase
                         fixed = WVFixedAmplitudeForcing(wvt,name="held-coefficients",Ap_indices=uint64(2),Apbar=wvt.Ap(2),A0_indices=uint64(2),A0bar=wvt.A0(2));
                         terrain = 2*cos(2*pi*reshape(wvt.x,[],1)/wvt.Lx)+sin(2*pi*reshape(wvt.y,1,[])/wvt.Ly);
                         tidal = WVPseudoTopographicWaveGeneration(wvt,topographicHeight=terrain,barotropicVelocityAmplitude=[.01;.005],frequency=1e-4,rampDuration=0);
-                        forces = [WVNonlinearAdvection(wvt),WVBottomFrictionLinear(wvt,r=2.5e-7),WVBottomFrictionQuadratic(wvt,Cd=.002),WVHorizontalDamping(wvt,nu=.125,kappa=.002),WVVerticalDamping(wvt,nu=.125,kappa=.002),WVVerticalDiffusivity(wvt,kappa_z=.002),WVAdaptiveDamping(wvt),WVBetaPlanePVAdvection(wvt),tidal,fixed];
+                        forces = [WVNonlinearAdvection(wvt),WVBottomFrictionLinear(wvt,r=2.5e-7),WVBottomFrictionQuadratic(wvt,Cd=.002),WVHorizontalDamping(wvt,nu=.125,kappa=.002),WVVerticalDamping(wvt,nu=.125,kappa=.002),WVVerticalDiffusivity(wvt,kappa_z=.002),WVAdaptiveDamping(wvt),WVBetaPlanePVAdvection(wvt),tidal,testCase.forcing(wvt,"WVNarrowBandGeostrophicForcing"),fixed];
                         if ~antialias, forces = [forces,WVAntialiasing(wvt,Nj=3)]; end %#ok<AGROW>
                         wvt.setForcing(forces);
                         before = {wvt.Ap,wvt.Am,wvt.A0};
@@ -111,7 +216,7 @@ classdef TestPortableStableForcing < matlab.unittest.TestCase
                         wvt.A0 = 1e-6*complex(sin(.17*n),cos(.23*n)).*(wvt.Kh>0);
                         wvt.t = 37;
                         fixed = WVFixedAmplitudeForcing(wvt,name="held-pv",A0_indices=uint64((1:numel(wvt.A0))'),A0bar=wvt.A0(:));
-                        forces = [WVNonlinearAdvection(wvt),WVBottomFrictionLinear(wvt,r=2.5e-7),WVBottomFrictionQuadratic(wvt,Cd=.002),WVBetaPlanePVAdvection(wvt),WVAdaptiveDamping(wvt),fixed];
+                        forces = [WVNonlinearAdvection(wvt),WVBottomFrictionLinear(wvt,r=2.5e-7),WVBottomFrictionQuadratic(wvt,Cd=.002),WVBetaPlanePVAdvection(wvt),WVAdaptiveDamping(wvt),WVNarrowBandGeostrophicForcing(wvt,initialPV="none",k_f=2*wvt.dk,j_f=j),fixed];
                         if ~antialias, forces = [forces,WVAntialiasing(wvt)]; end %#ok<AGROW>
                         wvt.setForcing(forces);
                         before = wvt.A0;
@@ -154,7 +259,7 @@ classdef TestPortableStableForcing < matlab.unittest.TestCase
                     wvt.A0 = 1e-6*complex(sin(.17*n),cos(.23*n)).*(wvt.Kh>0);
                     wvt.t = 37;
                     fixed = WVFixedAmplitudeForcing(wvt,name="held-pv",A0_indices=uint64((1:numel(wvt.A0))'),A0bar=wvt.A0(:));
-                    forces = [WVNonlinearAdvection(wvt),WVBottomFrictionLinear(wvt,r=2.5e-7),WVBottomFrictionQuadratic(wvt,Cd=.002),WVVerticalDiffusivity(wvt,kappa_z=.002),WVBetaPlanePVAdvection(wvt),WVAdaptiveDamping(wvt),fixed];
+                    forces = [WVNonlinearAdvection(wvt),WVBottomFrictionLinear(wvt,r=2.5e-7),WVBottomFrictionQuadratic(wvt,Cd=.002),WVVerticalDiffusivity(wvt,kappa_z=.002),WVBetaPlanePVAdvection(wvt),WVAdaptiveDamping(wvt),testCase.forcing(wvt,"WVNarrowBandGeostrophicForcing"),fixed];
                     if ~antialias, forces = [forces,WVAntialiasing(wvt,Nj=3)]; end %#ok<AGROW>
                     wvt.setForcing(forces);
                     before = wvt.A0;
@@ -546,4 +651,28 @@ for force = wvt.spectralAmplitudeForcing
     index = index+1;
     outputs{index} = wvt.transformToSpatialDomainWithF(A0=spectral-before);
 end
+end
+
+function outputs = isolatedWaveForcingPrimitives(wvt)
+spatial = zeros(wvt.spatialMatrixSize);
+if ~isempty(wvt.spatialFluxForcing)
+    outputs = cell(1,4-double(wvt.isHydrostatic));
+    if wvt.isHydrostatic
+        [outputs{:}] = wvt.spatialFluxForcing.addHydrostaticSpatialForcing(wvt,spatial,spatial,spatial);
+    else
+        [outputs{:}] = wvt.spatialFluxForcing.addNonhydrostaticSpatialForcing(wvt,spatial,spatial,spatial,spatial);
+    end
+    return
+end
+zero = zeros(size(wvt.Ap));
+if ~isempty(wvt.spectralFluxForcing)
+    [Fp,Fm,F0] = wvt.spectralFluxForcing.addSpectralForcing(wvt,zero,zero,zero);
+else
+    [Fp,Fm,F0] = wvt.spectralAmplitudeForcing.setSpectralForcing(wvt,zero,zero,zero);
+end
+outputs = {wvt.transformToSpatialDomainWithF(Apm=wvt.UAp.*wvt.phase.*Fp+wvt.UAm.*wvt.conjPhase.*Fm,A0=wvt.UA0.*F0),wvt.transformToSpatialDomainWithF(Apm=wvt.VAp.*wvt.phase.*Fp+wvt.VAm.*wvt.conjPhase.*Fm,A0=wvt.VA0.*F0)};
+if ~wvt.isHydrostatic
+    outputs{end+1} = wvt.transformToSpatialDomainWithG(Apm=wvt.WAp.*wvt.phase.*Fp+wvt.WAm.*wvt.conjPhase.*Fm);
+end
+outputs{end+1} = wvt.transformToSpatialDomainWithG(Apm=wvt.NAp.*wvt.phase.*Fp+wvt.NAm.*wvt.conjPhase.*Fm,A0=wvt.NA0.*F0);
 end

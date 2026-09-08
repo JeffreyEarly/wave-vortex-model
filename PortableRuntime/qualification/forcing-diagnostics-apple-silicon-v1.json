@@ -1,0 +1,2231 @@
+{
+  "schema": "portable-forcing-diagnostic-qualification-v1",
+  "issue": 315,
+  "status": "in-progress",
+  "platform": "Apple Silicon macOS",
+  "matlabRelease": "R2025b",
+  "cppSourceCommit": "a47639511c494ae029cd01ded1ddebc849ef234c",
+  "testFile": "UnitTests/TestPortableStableForcing.m",
+  "testSourceSha256": "a5dd8bffded2279544fe144147398e21b60551c7005889e9cd633c636d2a250c",
+  "executableSha256": "1937904cc884ad90db166be57a42885daa4d1ead8e3c410280c6c95c56ca75bc",
+  "compatibilityMatrixSha256": "2a4729a76d048cca9c9a74f5768cd6bbd5ca96d2e58a4c35290a45e309bfec1e",
+  "acceptanceThreshold": 1e-12,
+  "isolation": {
+    "reference": "Existing MATLAB forcing and transform primitives with correctly shaped zero accumulators",
+    "grids": {
+      "barotropic": [
+        8,
+        6
+      ],
+      "other": [
+        8,
+        6,
+        9
+      ]
+    },
+    "barotropicJ": 1,
+    "applicableCompatibilityRows": 124,
+    "fieldComparisons": 708,
+    "rows": [
+      {
+        "compatibilityRow": "constant-hydrostatic-aa0/WVAdaptiveDamping",
+        "provider": "reference",
+        "fieldComparisons": 3,
+        "maximumNormalizedError": 1.349857458509185e-15
+      },
+      {
+        "compatibilityRow": "constant-hydrostatic-aa0/WVAdaptiveDamping",
+        "provider": "native",
+        "fieldComparisons": 3,
+        "maximumNormalizedError": 1.0023884870596077e-15
+      },
+      {
+        "compatibilityRow": "constant-hydrostatic-aa0/WVAntialiasing",
+        "provider": "reference",
+        "fieldComparisons": 3,
+        "maximumNormalizedError": 0.0
+      },
+      {
+        "compatibilityRow": "constant-hydrostatic-aa0/WVAntialiasing",
+        "provider": "native",
+        "fieldComparisons": 3,
+        "maximumNormalizedError": 0.0
+      },
+      {
+        "compatibilityRow": "constant-hydrostatic-aa0/WVBetaPlanePVAdvection",
+        "provider": "reference",
+        "fieldComparisons": 3,
+        "maximumNormalizedError": 1.7479909053894727e-15
+      },
+      {
+        "compatibilityRow": "constant-hydrostatic-aa0/WVBetaPlanePVAdvection",
+        "provider": "native",
+        "fieldComparisons": 3,
+        "maximumNormalizedError": 5.70772540535338e-16
+      },
+      {
+        "compatibilityRow": "constant-hydrostatic-aa0/WVBottomFrictionLinear",
+        "provider": "reference",
+        "fieldComparisons": 3,
+        "maximumNormalizedError": 1.9690915780785817e-15
+      },
+      {
+        "compatibilityRow": "constant-hydrostatic-aa0/WVBottomFrictionLinear",
+        "provider": "native",
+        "fieldComparisons": 3,
+        "maximumNormalizedError": 2.4769817881009576e-16
+      },
+      {
+        "compatibilityRow": "constant-hydrostatic-aa0/WVBottomFrictionQuadratic",
+        "provider": "reference",
+        "fieldComparisons": 3,
+        "maximumNormalizedError": 2.016736290355957e-15
+      },
+      {
+        "compatibilityRow": "constant-hydrostatic-aa0/WVBottomFrictionQuadratic",
+        "provider": "native",
+        "fieldComparisons": 3,
+        "maximumNormalizedError": 3.965751939496147e-16
+      },
+      {
+        "compatibilityRow": "constant-hydrostatic-aa0/WVFixedAmplitudeForcing",
+        "provider": "reference",
+        "fieldComparisons": 3,
+        "maximumNormalizedError": 0.0
+      },
+      {
+        "compatibilityRow": "constant-hydrostatic-aa0/WVFixedAmplitudeForcing",
+        "provider": "native",
+        "fieldComparisons": 3,
+        "maximumNormalizedError": 0.0
+      },
+      {
+        "compatibilityRow": "constant-hydrostatic-aa0/WVHorizontalDamping",
+        "provider": "reference",
+        "fieldComparisons": 3,
+        "maximumNormalizedError": 2.176236939881193e-15
+      },
+      {
+        "compatibilityRow": "constant-hydrostatic-aa0/WVHorizontalDamping",
+        "provider": "native",
+        "fieldComparisons": 3,
+        "maximumNormalizedError": 1.5409462210243704e-15
+      },
+      {
+        "compatibilityRow": "constant-hydrostatic-aa0/WVNarrowBandGeostrophicForcing",
+        "provider": "reference",
+        "fieldComparisons": 3,
+        "maximumNormalizedError": 0.0
+      },
+      {
+        "compatibilityRow": "constant-hydrostatic-aa0/WVNarrowBandGeostrophicForcing",
+        "provider": "native",
+        "fieldComparisons": 3,
+        "maximumNormalizedError": 0.0
+      },
+      {
+        "compatibilityRow": "constant-hydrostatic-aa0/WVNonlinearAdvection",
+        "provider": "reference",
+        "fieldComparisons": 3,
+        "maximumNormalizedError": 2.8706358311554016e-15
+      },
+      {
+        "compatibilityRow": "constant-hydrostatic-aa0/WVNonlinearAdvection",
+        "provider": "native",
+        "fieldComparisons": 3,
+        "maximumNormalizedError": 9.842179992532806e-16
+      },
+      {
+        "compatibilityRow": "constant-hydrostatic-aa0/WVPseudoTopographicWaveGeneration",
+        "provider": "reference",
+        "fieldComparisons": 3,
+        "maximumNormalizedError": 3.0658415453259734e-15
+      },
+      {
+        "compatibilityRow": "constant-hydrostatic-aa0/WVPseudoTopographicWaveGeneration",
+        "provider": "native",
+        "fieldComparisons": 3,
+        "maximumNormalizedError": 2.867964945686013e-15
+      },
+      {
+        "compatibilityRow": "constant-hydrostatic-aa0/WVVerticalDamping",
+        "provider": "reference",
+        "fieldComparisons": 3,
+        "maximumNormalizedError": 5.64082843352892e-14
+      },
+      {
+        "compatibilityRow": "constant-hydrostatic-aa0/WVVerticalDamping",
+        "provider": "native",
+        "fieldComparisons": 3,
+        "maximumNormalizedError": 5.597433073768976e-14
+      },
+      {
+        "compatibilityRow": "constant-hydrostatic-aa0/WVVerticalDiffusivity",
+        "provider": "reference",
+        "fieldComparisons": 3,
+        "maximumNormalizedError": 1.5042750193236494e-15
+      },
+      {
+        "compatibilityRow": "constant-hydrostatic-aa0/WVVerticalDiffusivity",
+        "provider": "native",
+        "fieldComparisons": 3,
+        "maximumNormalizedError": 1.3397449390851253e-15
+      },
+      {
+        "compatibilityRow": "constant-hydrostatic-aa1/WVAdaptiveDamping",
+        "provider": "reference",
+        "fieldComparisons": 3,
+        "maximumNormalizedError": 2.5454911673987498e-15
+      },
+      {
+        "compatibilityRow": "constant-hydrostatic-aa1/WVAdaptiveDamping",
+        "provider": "native",
+        "fieldComparisons": 3,
+        "maximumNormalizedError": 1.4270177756629353e-15
+      },
+      {
+        "compatibilityRow": "constant-hydrostatic-aa1/WVBetaPlanePVAdvection",
+        "provider": "reference",
+        "fieldComparisons": 3,
+        "maximumNormalizedError": 1.8749532014115783e-15
+      },
+      {
+        "compatibilityRow": "constant-hydrostatic-aa1/WVBetaPlanePVAdvection",
+        "provider": "native",
+        "fieldComparisons": 3,
+        "maximumNormalizedError": 5.134992499088533e-16
+      },
+      {
+        "compatibilityRow": "constant-hydrostatic-aa1/WVBottomFrictionLinear",
+        "provider": "reference",
+        "fieldComparisons": 3,
+        "maximumNormalizedError": 1.1345020624928236e-15
+      },
+      {
+        "compatibilityRow": "constant-hydrostatic-aa1/WVBottomFrictionLinear",
+        "provider": "native",
+        "fieldComparisons": 3,
+        "maximumNormalizedError": 1.7807287751362397e-16
+      },
+      {
+        "compatibilityRow": "constant-hydrostatic-aa1/WVBottomFrictionQuadratic",
+        "provider": "reference",
+        "fieldComparisons": 3,
+        "maximumNormalizedError": 1.79615875546459e-15
+      },
+      {
+        "compatibilityRow": "constant-hydrostatic-aa1/WVBottomFrictionQuadratic",
+        "provider": "native",
+        "fieldComparisons": 3,
+        "maximumNormalizedError": 3.848911618852693e-16
+      },
+      {
+        "compatibilityRow": "constant-hydrostatic-aa1/WVFixedAmplitudeForcing",
+        "provider": "reference",
+        "fieldComparisons": 3,
+        "maximumNormalizedError": 0.0
+      },
+      {
+        "compatibilityRow": "constant-hydrostatic-aa1/WVFixedAmplitudeForcing",
+        "provider": "native",
+        "fieldComparisons": 3,
+        "maximumNormalizedError": 0.0
+      },
+      {
+        "compatibilityRow": "constant-hydrostatic-aa1/WVHorizontalDamping",
+        "provider": "reference",
+        "fieldComparisons": 3,
+        "maximumNormalizedError": 4.459022243774584e-15
+      },
+      {
+        "compatibilityRow": "constant-hydrostatic-aa1/WVHorizontalDamping",
+        "provider": "native",
+        "fieldComparisons": 3,
+        "maximumNormalizedError": 4.399962346506047e-15
+      },
+      {
+        "compatibilityRow": "constant-hydrostatic-aa1/WVNarrowBandGeostrophicForcing",
+        "provider": "reference",
+        "fieldComparisons": 3,
+        "maximumNormalizedError": 0.0
+      },
+      {
+        "compatibilityRow": "constant-hydrostatic-aa1/WVNarrowBandGeostrophicForcing",
+        "provider": "native",
+        "fieldComparisons": 3,
+        "maximumNormalizedError": 0.0
+      },
+      {
+        "compatibilityRow": "constant-hydrostatic-aa1/WVNonlinearAdvection",
+        "provider": "reference",
+        "fieldComparisons": 3,
+        "maximumNormalizedError": 3.142806165342876e-15
+      },
+      {
+        "compatibilityRow": "constant-hydrostatic-aa1/WVNonlinearAdvection",
+        "provider": "native",
+        "fieldComparisons": 3,
+        "maximumNormalizedError": 7.482708036940661e-16
+      },
+      {
+        "compatibilityRow": "constant-hydrostatic-aa1/WVPseudoTopographicWaveGeneration",
+        "provider": "reference",
+        "fieldComparisons": 3,
+        "maximumNormalizedError": 1.6016390779492639e-15
+      },
+      {
+        "compatibilityRow": "constant-hydrostatic-aa1/WVPseudoTopographicWaveGeneration",
+        "provider": "native",
+        "fieldComparisons": 3,
+        "maximumNormalizedError": 1.1062882493835728e-15
+      },
+      {
+        "compatibilityRow": "constant-hydrostatic-aa1/WVVerticalDamping",
+        "provider": "reference",
+        "fieldComparisons": 3,
+        "maximumNormalizedError": 1.7567597711938733e-14
+      },
+      {
+        "compatibilityRow": "constant-hydrostatic-aa1/WVVerticalDamping",
+        "provider": "native",
+        "fieldComparisons": 3,
+        "maximumNormalizedError": 1.7593356652865326e-14
+      },
+      {
+        "compatibilityRow": "constant-hydrostatic-aa1/WVVerticalDiffusivity",
+        "provider": "reference",
+        "fieldComparisons": 3,
+        "maximumNormalizedError": 8.712087032176164e-16
+      },
+      {
+        "compatibilityRow": "constant-hydrostatic-aa1/WVVerticalDiffusivity",
+        "provider": "native",
+        "fieldComparisons": 3,
+        "maximumNormalizedError": 6.969669625740931e-16
+      },
+      {
+        "compatibilityRow": "constant-nonhydrostatic-aa0/WVAdaptiveDamping",
+        "provider": "reference",
+        "fieldComparisons": 4,
+        "maximumNormalizedError": 1.6600798589312664e-15
+      },
+      {
+        "compatibilityRow": "constant-nonhydrostatic-aa0/WVAdaptiveDamping",
+        "provider": "native",
+        "fieldComparisons": 4,
+        "maximumNormalizedError": 1.0406812145038968e-15
+      },
+      {
+        "compatibilityRow": "constant-nonhydrostatic-aa0/WVAntialiasing",
+        "provider": "reference",
+        "fieldComparisons": 4,
+        "maximumNormalizedError": 0.0
+      },
+      {
+        "compatibilityRow": "constant-nonhydrostatic-aa0/WVAntialiasing",
+        "provider": "native",
+        "fieldComparisons": 4,
+        "maximumNormalizedError": 0.0
+      },
+      {
+        "compatibilityRow": "constant-nonhydrostatic-aa0/WVBetaPlanePVAdvection",
+        "provider": "reference",
+        "fieldComparisons": 4,
+        "maximumNormalizedError": 1.7479909053894727e-15
+      },
+      {
+        "compatibilityRow": "constant-nonhydrostatic-aa0/WVBetaPlanePVAdvection",
+        "provider": "native",
+        "fieldComparisons": 4,
+        "maximumNormalizedError": 5.70772540535338e-16
+      },
+      {
+        "compatibilityRow": "constant-nonhydrostatic-aa0/WVBottomFrictionLinear",
+        "provider": "reference",
+        "fieldComparisons": 4,
+        "maximumNormalizedError": 1.9686280870536496e-15
+      },
+      {
+        "compatibilityRow": "constant-nonhydrostatic-aa0/WVBottomFrictionLinear",
+        "provider": "native",
+        "fieldComparisons": 4,
+        "maximumNormalizedError": 3.303560632957627e-16
+      },
+      {
+        "compatibilityRow": "constant-nonhydrostatic-aa0/WVBottomFrictionQuadratic",
+        "provider": "reference",
+        "fieldComparisons": 4,
+        "maximumNormalizedError": 2.0195532303282455e-15
+      },
+      {
+        "compatibilityRow": "constant-nonhydrostatic-aa0/WVBottomFrictionQuadratic",
+        "provider": "native",
+        "fieldComparisons": 4,
+        "maximumNormalizedError": 8.078212921312983e-16
+      },
+      {
+        "compatibilityRow": "constant-nonhydrostatic-aa0/WVFixedAmplitudeForcing",
+        "provider": "reference",
+        "fieldComparisons": 4,
+        "maximumNormalizedError": 0.0
+      },
+      {
+        "compatibilityRow": "constant-nonhydrostatic-aa0/WVFixedAmplitudeForcing",
+        "provider": "native",
+        "fieldComparisons": 4,
+        "maximumNormalizedError": 0.0
+      },
+      {
+        "compatibilityRow": "constant-nonhydrostatic-aa0/WVHorizontalDamping",
+        "provider": "reference",
+        "fieldComparisons": 4,
+        "maximumNormalizedError": 2.512183943961175e-15
+      },
+      {
+        "compatibilityRow": "constant-nonhydrostatic-aa0/WVHorizontalDamping",
+        "provider": "native",
+        "fieldComparisons": 4,
+        "maximumNormalizedError": 1.6243474532836354e-15
+      },
+      {
+        "compatibilityRow": "constant-nonhydrostatic-aa0/WVNarrowBandGeostrophicForcing",
+        "provider": "reference",
+        "fieldComparisons": 4,
+        "maximumNormalizedError": 0.0
+      },
+      {
+        "compatibilityRow": "constant-nonhydrostatic-aa0/WVNarrowBandGeostrophicForcing",
+        "provider": "native",
+        "fieldComparisons": 4,
+        "maximumNormalizedError": 0.0
+      },
+      {
+        "compatibilityRow": "constant-nonhydrostatic-aa0/WVNonlinearAdvection",
+        "provider": "reference",
+        "fieldComparisons": 4,
+        "maximumNormalizedError": 3.209891499683188e-15
+      },
+      {
+        "compatibilityRow": "constant-nonhydrostatic-aa0/WVNonlinearAdvection",
+        "provider": "native",
+        "fieldComparisons": 4,
+        "maximumNormalizedError": 1.2932677539169664e-15
+      },
+      {
+        "compatibilityRow": "constant-nonhydrostatic-aa0/WVPseudoTopographicWaveGeneration",
+        "provider": "reference",
+        "fieldComparisons": 4,
+        "maximumNormalizedError": 2.7730110057546384e-15
+      },
+      {
+        "compatibilityRow": "constant-nonhydrostatic-aa0/WVPseudoTopographicWaveGeneration",
+        "provider": "native",
+        "fieldComparisons": 4,
+        "maximumNormalizedError": 2.773011005754639e-15
+      },
+      {
+        "compatibilityRow": "constant-nonhydrostatic-aa0/WVVerticalDamping",
+        "provider": "reference",
+        "fieldComparisons": 4,
+        "maximumNormalizedError": 5.866805108796484e-14
+      },
+      {
+        "compatibilityRow": "constant-nonhydrostatic-aa0/WVVerticalDamping",
+        "provider": "native",
+        "fieldComparisons": 4,
+        "maximumNormalizedError": 5.831671383558909e-14
+      },
+      {
+        "compatibilityRow": "constant-nonhydrostatic-aa0/WVVerticalDiffusivity",
+        "provider": "reference",
+        "fieldComparisons": 4,
+        "maximumNormalizedError": 9.399675436565863e-16
+      },
+      {
+        "compatibilityRow": "constant-nonhydrostatic-aa0/WVVerticalDiffusivity",
+        "provider": "native",
+        "fieldComparisons": 4,
+        "maximumNormalizedError": 1.3629529383020501e-15
+      },
+      {
+        "compatibilityRow": "constant-nonhydrostatic-aa1/WVAdaptiveDamping",
+        "provider": "reference",
+        "fieldComparisons": 4,
+        "maximumNormalizedError": 2.70060523163487e-15
+      },
+      {
+        "compatibilityRow": "constant-nonhydrostatic-aa1/WVAdaptiveDamping",
+        "provider": "native",
+        "fieldComparisons": 4,
+        "maximumNormalizedError": 1.466042840030358e-15
+      },
+      {
+        "compatibilityRow": "constant-nonhydrostatic-aa1/WVBetaPlanePVAdvection",
+        "provider": "reference",
+        "fieldComparisons": 4,
+        "maximumNormalizedError": 1.8749532014115783e-15
+      },
+      {
+        "compatibilityRow": "constant-nonhydrostatic-aa1/WVBetaPlanePVAdvection",
+        "provider": "native",
+        "fieldComparisons": 4,
+        "maximumNormalizedError": 5.134992499088533e-16
+      },
+      {
+        "compatibilityRow": "constant-nonhydrostatic-aa1/WVBottomFrictionLinear",
+        "provider": "reference",
+        "fieldComparisons": 4,
+        "maximumNormalizedError": 1.093537059261762e-15
+      },
+      {
+        "compatibilityRow": "constant-nonhydrostatic-aa1/WVBottomFrictionLinear",
+        "provider": "native",
+        "fieldComparisons": 4,
+        "maximumNormalizedError": 1.7809795857239563e-16
+      },
+      {
+        "compatibilityRow": "constant-nonhydrostatic-aa1/WVBottomFrictionQuadratic",
+        "provider": "reference",
+        "fieldComparisons": 4,
+        "maximumNormalizedError": 1.4116941246529273e-15
+      },
+      {
+        "compatibilityRow": "constant-nonhydrostatic-aa1/WVBottomFrictionQuadratic",
+        "provider": "native",
+        "fieldComparisons": 4,
+        "maximumNormalizedError": 3.8500748854170747e-16
+      },
+      {
+        "compatibilityRow": "constant-nonhydrostatic-aa1/WVFixedAmplitudeForcing",
+        "provider": "reference",
+        "fieldComparisons": 4,
+        "maximumNormalizedError": 0.0
+      },
+      {
+        "compatibilityRow": "constant-nonhydrostatic-aa1/WVFixedAmplitudeForcing",
+        "provider": "native",
+        "fieldComparisons": 4,
+        "maximumNormalizedError": 0.0
+      },
+      {
+        "compatibilityRow": "constant-nonhydrostatic-aa1/WVHorizontalDamping",
+        "provider": "reference",
+        "fieldComparisons": 4,
+        "maximumNormalizedError": 3.507751582083829e-15
+      },
+      {
+        "compatibilityRow": "constant-nonhydrostatic-aa1/WVHorizontalDamping",
+        "provider": "native",
+        "fieldComparisons": 4,
+        "maximumNormalizedError": 4.040718147896135e-15
+      },
+      {
+        "compatibilityRow": "constant-nonhydrostatic-aa1/WVNarrowBandGeostrophicForcing",
+        "provider": "reference",
+        "fieldComparisons": 4,
+        "maximumNormalizedError": 0.0
+      },
+      {
+        "compatibilityRow": "constant-nonhydrostatic-aa1/WVNarrowBandGeostrophicForcing",
+        "provider": "native",
+        "fieldComparisons": 4,
+        "maximumNormalizedError": 0.0
+      },
+      {
+        "compatibilityRow": "constant-nonhydrostatic-aa1/WVNonlinearAdvection",
+        "provider": "reference",
+        "fieldComparisons": 4,
+        "maximumNormalizedError": 2.971833742688161e-15
+      },
+      {
+        "compatibilityRow": "constant-nonhydrostatic-aa1/WVNonlinearAdvection",
+        "provider": "native",
+        "fieldComparisons": 4,
+        "maximumNormalizedError": 9.340048905591362e-16
+      },
+      {
+        "compatibilityRow": "constant-nonhydrostatic-aa1/WVPseudoTopographicWaveGeneration",
+        "provider": "reference",
+        "fieldComparisons": 4,
+        "maximumNormalizedError": 1.6182785414949429e-15
+      },
+      {
+        "compatibilityRow": "constant-nonhydrostatic-aa1/WVPseudoTopographicWaveGeneration",
+        "provider": "native",
+        "fieldComparisons": 4,
+        "maximumNormalizedError": 1.4397483601905155e-15
+      },
+      {
+        "compatibilityRow": "constant-nonhydrostatic-aa1/WVVerticalDamping",
+        "provider": "reference",
+        "fieldComparisons": 4,
+        "maximumNormalizedError": 1.738713001764164e-14
+      },
+      {
+        "compatibilityRow": "constant-nonhydrostatic-aa1/WVVerticalDamping",
+        "provider": "native",
+        "fieldComparisons": 4,
+        "maximumNormalizedError": 1.7464064221259523e-14
+      },
+      {
+        "compatibilityRow": "constant-nonhydrostatic-aa1/WVVerticalDiffusivity",
+        "provider": "reference",
+        "fieldComparisons": 4,
+        "maximumNormalizedError": 6.972128058330618e-16
+      },
+      {
+        "compatibilityRow": "constant-nonhydrostatic-aa1/WVVerticalDiffusivity",
+        "provider": "native",
+        "fieldComparisons": 4,
+        "maximumNormalizedError": 6.972128058330618e-16
+      },
+      {
+        "compatibilityRow": "barotropic-aa0/WVAdaptiveDamping",
+        "provider": "reference",
+        "fieldComparisons": 1,
+        "maximumNormalizedError": 6.645816357221758e-16
+      },
+      {
+        "compatibilityRow": "barotropic-aa0/WVAdaptiveDamping",
+        "provider": "native",
+        "fieldComparisons": 1,
+        "maximumNormalizedError": 2.0448665714528485e-16
+      },
+      {
+        "compatibilityRow": "barotropic-aa0/WVAntialiasing",
+        "provider": "reference",
+        "fieldComparisons": 1,
+        "maximumNormalizedError": 0.0
+      },
+      {
+        "compatibilityRow": "barotropic-aa0/WVAntialiasing",
+        "provider": "native",
+        "fieldComparisons": 1,
+        "maximumNormalizedError": 0.0
+      },
+      {
+        "compatibilityRow": "barotropic-aa0/WVBetaPlanePVAdvection",
+        "provider": "reference",
+        "fieldComparisons": 1,
+        "maximumNormalizedError": 1.1953554936347253e-15
+      },
+      {
+        "compatibilityRow": "barotropic-aa0/WVBetaPlanePVAdvection",
+        "provider": "native",
+        "fieldComparisons": 1,
+        "maximumNormalizedError": 1.600475974741055e-16
+      },
+      {
+        "compatibilityRow": "barotropic-aa0/WVBottomFrictionLinear",
+        "provider": "reference",
+        "fieldComparisons": 1,
+        "maximumNormalizedError": 5.65219188221705e-16
+      },
+      {
+        "compatibilityRow": "barotropic-aa0/WVBottomFrictionLinear",
+        "provider": "native",
+        "fieldComparisons": 1,
+        "maximumNormalizedError": 1.5072511685912132e-16
+      },
+      {
+        "compatibilityRow": "barotropic-aa0/WVBottomFrictionQuadratic",
+        "provider": "reference",
+        "fieldComparisons": 1,
+        "maximumNormalizedError": 7.365285986219222e-16
+      },
+      {
+        "compatibilityRow": "barotropic-aa0/WVBottomFrictionQuadratic",
+        "provider": "native",
+        "fieldComparisons": 1,
+        "maximumNormalizedError": 2.839628332036327e-16
+      },
+      {
+        "compatibilityRow": "barotropic-aa0/WVFixedAmplitudeForcing",
+        "provider": "reference",
+        "fieldComparisons": 1,
+        "maximumNormalizedError": 0.0
+      },
+      {
+        "compatibilityRow": "barotropic-aa0/WVFixedAmplitudeForcing",
+        "provider": "native",
+        "fieldComparisons": 1,
+        "maximumNormalizedError": 0.0
+      },
+      {
+        "compatibilityRow": "barotropic-aa0/WVNarrowBandGeostrophicForcing",
+        "provider": "reference",
+        "fieldComparisons": 1,
+        "maximumNormalizedError": 0.0
+      },
+      {
+        "compatibilityRow": "barotropic-aa0/WVNarrowBandGeostrophicForcing",
+        "provider": "native",
+        "fieldComparisons": 1,
+        "maximumNormalizedError": 0.0
+      },
+      {
+        "compatibilityRow": "barotropic-aa0/WVNonlinearAdvection",
+        "provider": "reference",
+        "fieldComparisons": 1,
+        "maximumNormalizedError": 1.1299355840156842e-15
+      },
+      {
+        "compatibilityRow": "barotropic-aa0/WVNonlinearAdvection",
+        "provider": "native",
+        "fieldComparisons": 1,
+        "maximumNormalizedError": 1.9940039717923838e-16
+      },
+      {
+        "compatibilityRow": "barotropic-aa1/WVAdaptiveDamping",
+        "provider": "reference",
+        "fieldComparisons": 1,
+        "maximumNormalizedError": 1.908922767830785e-15
+      },
+      {
+        "compatibilityRow": "barotropic-aa1/WVAdaptiveDamping",
+        "provider": "native",
+        "fieldComparisons": 1,
+        "maximumNormalizedError": 4.454153124938497e-16
+      },
+      {
+        "compatibilityRow": "barotropic-aa1/WVBetaPlanePVAdvection",
+        "provider": "reference",
+        "fieldComparisons": 1,
+        "maximumNormalizedError": 1.880206076206515e-15
+      },
+      {
+        "compatibilityRow": "barotropic-aa1/WVBetaPlanePVAdvection",
+        "provider": "native",
+        "fieldComparisons": 1,
+        "maximumNormalizedError": 1.1395188340645545e-16
+      },
+      {
+        "compatibilityRow": "barotropic-aa1/WVBottomFrictionLinear",
+        "provider": "reference",
+        "fieldComparisons": 1,
+        "maximumNormalizedError": 9.62170451565792e-16
+      },
+      {
+        "compatibilityRow": "barotropic-aa1/WVBottomFrictionLinear",
+        "provider": "native",
+        "fieldComparisons": 1,
+        "maximumNormalizedError": 1.9270938944093116e-16
+      },
+      {
+        "compatibilityRow": "barotropic-aa1/WVBottomFrictionQuadratic",
+        "provider": "reference",
+        "fieldComparisons": 1,
+        "maximumNormalizedError": 1.5473745112940398e-15
+      },
+      {
+        "compatibilityRow": "barotropic-aa1/WVBottomFrictionQuadratic",
+        "provider": "native",
+        "fieldComparisons": 1,
+        "maximumNormalizedError": 1.8247340935071224e-16
+      },
+      {
+        "compatibilityRow": "barotropic-aa1/WVFixedAmplitudeForcing",
+        "provider": "reference",
+        "fieldComparisons": 1,
+        "maximumNormalizedError": 0.0
+      },
+      {
+        "compatibilityRow": "barotropic-aa1/WVFixedAmplitudeForcing",
+        "provider": "native",
+        "fieldComparisons": 1,
+        "maximumNormalizedError": 0.0
+      },
+      {
+        "compatibilityRow": "barotropic-aa1/WVNarrowBandGeostrophicForcing",
+        "provider": "reference",
+        "fieldComparisons": 1,
+        "maximumNormalizedError": 0.0
+      },
+      {
+        "compatibilityRow": "barotropic-aa1/WVNarrowBandGeostrophicForcing",
+        "provider": "native",
+        "fieldComparisons": 1,
+        "maximumNormalizedError": 0.0
+      },
+      {
+        "compatibilityRow": "barotropic-aa1/WVNonlinearAdvection",
+        "provider": "reference",
+        "fieldComparisons": 1,
+        "maximumNormalizedError": 1.0866436906374118e-15
+      },
+      {
+        "compatibilityRow": "barotropic-aa1/WVNonlinearAdvection",
+        "provider": "native",
+        "fieldComparisons": 1,
+        "maximumNormalizedError": 5.680182928331925e-16
+      },
+      {
+        "compatibilityRow": "stratified-qg-aa0/WVAdaptiveDamping",
+        "provider": "reference",
+        "fieldComparisons": 1,
+        "maximumNormalizedError": 1.3026469755353205e-15
+      },
+      {
+        "compatibilityRow": "stratified-qg-aa0/WVAdaptiveDamping",
+        "provider": "native",
+        "fieldComparisons": 1,
+        "maximumNormalizedError": 4.135387223921652e-16
+      },
+      {
+        "compatibilityRow": "stratified-qg-aa0/WVAntialiasing",
+        "provider": "reference",
+        "fieldComparisons": 1,
+        "maximumNormalizedError": 0.0
+      },
+      {
+        "compatibilityRow": "stratified-qg-aa0/WVAntialiasing",
+        "provider": "native",
+        "fieldComparisons": 1,
+        "maximumNormalizedError": 0.0
+      },
+      {
+        "compatibilityRow": "stratified-qg-aa0/WVBetaPlanePVAdvection",
+        "provider": "reference",
+        "fieldComparisons": 1,
+        "maximumNormalizedError": 1.2448944393179219e-15
+      },
+      {
+        "compatibilityRow": "stratified-qg-aa0/WVBetaPlanePVAdvection",
+        "provider": "native",
+        "fieldComparisons": 1,
+        "maximumNormalizedError": 3.1122360982948047e-16
+      },
+      {
+        "compatibilityRow": "stratified-qg-aa0/WVBottomFrictionLinear",
+        "provider": "reference",
+        "fieldComparisons": 1,
+        "maximumNormalizedError": 1.5049623992572512e-15
+      },
+      {
+        "compatibilityRow": "stratified-qg-aa0/WVBottomFrictionLinear",
+        "provider": "native",
+        "fieldComparisons": 1,
+        "maximumNormalizedError": 2.702789614992614e-16
+      },
+      {
+        "compatibilityRow": "stratified-qg-aa0/WVBottomFrictionQuadratic",
+        "provider": "reference",
+        "fieldComparisons": 1,
+        "maximumNormalizedError": 2.3501631307635548e-15
+      },
+      {
+        "compatibilityRow": "stratified-qg-aa0/WVBottomFrictionQuadratic",
+        "provider": "native",
+        "fieldComparisons": 1,
+        "maximumNormalizedError": 2.0813252818570226e-16
+      },
+      {
+        "compatibilityRow": "stratified-qg-aa0/WVFixedAmplitudeForcing",
+        "provider": "reference",
+        "fieldComparisons": 1,
+        "maximumNormalizedError": 0.0
+      },
+      {
+        "compatibilityRow": "stratified-qg-aa0/WVFixedAmplitudeForcing",
+        "provider": "native",
+        "fieldComparisons": 1,
+        "maximumNormalizedError": 0.0
+      },
+      {
+        "compatibilityRow": "stratified-qg-aa0/WVNarrowBandGeostrophicForcing",
+        "provider": "reference",
+        "fieldComparisons": 1,
+        "maximumNormalizedError": 0.0
+      },
+      {
+        "compatibilityRow": "stratified-qg-aa0/WVNarrowBandGeostrophicForcing",
+        "provider": "native",
+        "fieldComparisons": 1,
+        "maximumNormalizedError": 0.0
+      },
+      {
+        "compatibilityRow": "stratified-qg-aa0/WVNonlinearAdvection",
+        "provider": "reference",
+        "fieldComparisons": 1,
+        "maximumNormalizedError": 2.35615136449668e-15
+      },
+      {
+        "compatibilityRow": "stratified-qg-aa0/WVNonlinearAdvection",
+        "provider": "native",
+        "fieldComparisons": 1,
+        "maximumNormalizedError": 7.561288046522296e-16
+      },
+      {
+        "compatibilityRow": "stratified-qg-aa0/WVVerticalDiffusivity",
+        "provider": "reference",
+        "fieldComparisons": 1,
+        "maximumNormalizedError": 1.8531063333930258e-15
+      },
+      {
+        "compatibilityRow": "stratified-qg-aa0/WVVerticalDiffusivity",
+        "provider": "native",
+        "fieldComparisons": 1,
+        "maximumNormalizedError": 2.7796595000895387e-16
+      },
+      {
+        "compatibilityRow": "stratified-qg-aa1/WVAdaptiveDamping",
+        "provider": "reference",
+        "fieldComparisons": 1,
+        "maximumNormalizedError": 2.4194515480641263e-15
+      },
+      {
+        "compatibilityRow": "stratified-qg-aa1/WVAdaptiveDamping",
+        "provider": "native",
+        "fieldComparisons": 1,
+        "maximumNormalizedError": 1.4927207494483042e-15
+      },
+      {
+        "compatibilityRow": "stratified-qg-aa1/WVBetaPlanePVAdvection",
+        "provider": "reference",
+        "fieldComparisons": 1,
+        "maximumNormalizedError": 1.0872713322654683e-15
+      },
+      {
+        "compatibilityRow": "stratified-qg-aa1/WVBetaPlanePVAdvection",
+        "provider": "native",
+        "fieldComparisons": 1,
+        "maximumNormalizedError": 3.182257557850151e-16
+      },
+      {
+        "compatibilityRow": "stratified-qg-aa1/WVBottomFrictionLinear",
+        "provider": "reference",
+        "fieldComparisons": 1,
+        "maximumNormalizedError": 1.7731141950135347e-15
+      },
+      {
+        "compatibilityRow": "stratified-qg-aa1/WVBottomFrictionLinear",
+        "provider": "native",
+        "fieldComparisons": 1,
+        "maximumNormalizedError": 2.67639878492609e-16
+      },
+      {
+        "compatibilityRow": "stratified-qg-aa1/WVBottomFrictionQuadratic",
+        "provider": "reference",
+        "fieldComparisons": 1,
+        "maximumNormalizedError": 2.279871782785028e-15
+      },
+      {
+        "compatibilityRow": "stratified-qg-aa1/WVBottomFrictionQuadratic",
+        "provider": "native",
+        "fieldComparisons": 1,
+        "maximumNormalizedError": 4.053105391617827e-16
+      },
+      {
+        "compatibilityRow": "stratified-qg-aa1/WVFixedAmplitudeForcing",
+        "provider": "reference",
+        "fieldComparisons": 1,
+        "maximumNormalizedError": 0.0
+      },
+      {
+        "compatibilityRow": "stratified-qg-aa1/WVFixedAmplitudeForcing",
+        "provider": "native",
+        "fieldComparisons": 1,
+        "maximumNormalizedError": 0.0
+      },
+      {
+        "compatibilityRow": "stratified-qg-aa1/WVNarrowBandGeostrophicForcing",
+        "provider": "reference",
+        "fieldComparisons": 1,
+        "maximumNormalizedError": 0.0
+      },
+      {
+        "compatibilityRow": "stratified-qg-aa1/WVNarrowBandGeostrophicForcing",
+        "provider": "native",
+        "fieldComparisons": 1,
+        "maximumNormalizedError": 0.0
+      },
+      {
+        "compatibilityRow": "stratified-qg-aa1/WVNonlinearAdvection",
+        "provider": "reference",
+        "fieldComparisons": 1,
+        "maximumNormalizedError": 4.106363854376337e-15
+      },
+      {
+        "compatibilityRow": "stratified-qg-aa1/WVNonlinearAdvection",
+        "provider": "native",
+        "fieldComparisons": 1,
+        "maximumNormalizedError": 8.411958300070124e-16
+      },
+      {
+        "compatibilityRow": "stratified-qg-aa1/WVVerticalDiffusivity",
+        "provider": "reference",
+        "fieldComparisons": 1,
+        "maximumNormalizedError": 2.162455042894898e-15
+      },
+      {
+        "compatibilityRow": "stratified-qg-aa1/WVVerticalDiffusivity",
+        "provider": "native",
+        "fieldComparisons": 1,
+        "maximumNormalizedError": 3.9317364416270873e-16
+      },
+      {
+        "compatibilityRow": "hydrostatic-aa0/WVAdaptiveDamping",
+        "provider": "reference",
+        "fieldComparisons": 3,
+        "maximumNormalizedError": 1.5777729742119028e-15
+      },
+      {
+        "compatibilityRow": "hydrostatic-aa0/WVAdaptiveDamping",
+        "provider": "native",
+        "fieldComparisons": 3,
+        "maximumNormalizedError": 4.376852868947628e-16
+      },
+      {
+        "compatibilityRow": "hydrostatic-aa0/WVAntialiasing",
+        "provider": "reference",
+        "fieldComparisons": 3,
+        "maximumNormalizedError": 0.0
+      },
+      {
+        "compatibilityRow": "hydrostatic-aa0/WVAntialiasing",
+        "provider": "native",
+        "fieldComparisons": 3,
+        "maximumNormalizedError": 0.0
+      },
+      {
+        "compatibilityRow": "hydrostatic-aa0/WVBetaPlanePVAdvection",
+        "provider": "reference",
+        "fieldComparisons": 3,
+        "maximumNormalizedError": 1.8949065024259257e-15
+      },
+      {
+        "compatibilityRow": "hydrostatic-aa0/WVBetaPlanePVAdvection",
+        "provider": "native",
+        "fieldComparisons": 3,
+        "maximumNormalizedError": 3.41135327244614e-16
+      },
+      {
+        "compatibilityRow": "hydrostatic-aa0/WVBottomFrictionLinear",
+        "provider": "reference",
+        "fieldComparisons": 3,
+        "maximumNormalizedError": 1.136736853831648e-15
+      },
+      {
+        "compatibilityRow": "hydrostatic-aa0/WVBottomFrictionLinear",
+        "provider": "native",
+        "fieldComparisons": 3,
+        "maximumNormalizedError": 2.3661279461198496e-16
+      },
+      {
+        "compatibilityRow": "hydrostatic-aa0/WVBottomFrictionQuadratic",
+        "provider": "reference",
+        "fieldComparisons": 3,
+        "maximumNormalizedError": 1.4694142804033244e-15
+      },
+      {
+        "compatibilityRow": "hydrostatic-aa0/WVBottomFrictionQuadratic",
+        "provider": "native",
+        "fieldComparisons": 3,
+        "maximumNormalizedError": 2.2041214206049867e-16
+      },
+      {
+        "compatibilityRow": "hydrostatic-aa0/WVFixedAmplitudeForcing",
+        "provider": "reference",
+        "fieldComparisons": 3,
+        "maximumNormalizedError": 0.0
+      },
+      {
+        "compatibilityRow": "hydrostatic-aa0/WVFixedAmplitudeForcing",
+        "provider": "native",
+        "fieldComparisons": 3,
+        "maximumNormalizedError": 0.0
+      },
+      {
+        "compatibilityRow": "hydrostatic-aa0/WVHorizontalDamping",
+        "provider": "reference",
+        "fieldComparisons": 3,
+        "maximumNormalizedError": 4.113809849007557e-15
+      },
+      {
+        "compatibilityRow": "hydrostatic-aa0/WVHorizontalDamping",
+        "provider": "native",
+        "fieldComparisons": 3,
+        "maximumNormalizedError": 7.203031005415481e-16
+      },
+      {
+        "compatibilityRow": "hydrostatic-aa0/WVNarrowBandGeostrophicForcing",
+        "provider": "reference",
+        "fieldComparisons": 3,
+        "maximumNormalizedError": 0.0
+      },
+      {
+        "compatibilityRow": "hydrostatic-aa0/WVNarrowBandGeostrophicForcing",
+        "provider": "native",
+        "fieldComparisons": 3,
+        "maximumNormalizedError": 0.0
+      },
+      {
+        "compatibilityRow": "hydrostatic-aa0/WVNonlinearAdvection",
+        "provider": "reference",
+        "fieldComparisons": 3,
+        "maximumNormalizedError": 2.9244974792241562e-15
+      },
+      {
+        "compatibilityRow": "hydrostatic-aa0/WVNonlinearAdvection",
+        "provider": "native",
+        "fieldComparisons": 3,
+        "maximumNormalizedError": 8.369895919108758e-16
+      },
+      {
+        "compatibilityRow": "hydrostatic-aa0/WVPseudoTopographicWaveGeneration",
+        "provider": "reference",
+        "fieldComparisons": 3,
+        "maximumNormalizedError": 2.656196853508913e-15
+      },
+      {
+        "compatibilityRow": "hydrostatic-aa0/WVPseudoTopographicWaveGeneration",
+        "provider": "native",
+        "fieldComparisons": 3,
+        "maximumNormalizedError": 2.6341708864684786e-15
+      },
+      {
+        "compatibilityRow": "hydrostatic-aa0/WVVerticalDamping",
+        "provider": "reference",
+        "fieldComparisons": 3,
+        "maximumNormalizedError": 6.335117179898743e-15
+      },
+      {
+        "compatibilityRow": "hydrostatic-aa0/WVVerticalDamping",
+        "provider": "native",
+        "fieldComparisons": 3,
+        "maximumNormalizedError": 3.3820202254821455e-15
+      },
+      {
+        "compatibilityRow": "hydrostatic-aa0/WVVerticalDiffusivity",
+        "provider": "reference",
+        "fieldComparisons": 3,
+        "maximumNormalizedError": 1.4743666797136443e-16
+      },
+      {
+        "compatibilityRow": "hydrostatic-aa0/WVVerticalDiffusivity",
+        "provider": "native",
+        "fieldComparisons": 3,
+        "maximumNormalizedError": 1.4743666797136443e-16
+      },
+      {
+        "compatibilityRow": "hydrostatic-aa1/WVAdaptiveDamping",
+        "provider": "reference",
+        "fieldComparisons": 3,
+        "maximumNormalizedError": 2.814403433202276e-15
+      },
+      {
+        "compatibilityRow": "hydrostatic-aa1/WVAdaptiveDamping",
+        "provider": "native",
+        "fieldComparisons": 3,
+        "maximumNormalizedError": 2.400100389735951e-15
+      },
+      {
+        "compatibilityRow": "hydrostatic-aa1/WVBetaPlanePVAdvection",
+        "provider": "reference",
+        "fieldComparisons": 3,
+        "maximumNormalizedError": 1.9673768072222624e-15
+      },
+      {
+        "compatibilityRow": "hydrostatic-aa1/WVBetaPlanePVAdvection",
+        "provider": "native",
+        "fieldComparisons": 3,
+        "maximumNormalizedError": 3.79663836197546e-16
+      },
+      {
+        "compatibilityRow": "hydrostatic-aa1/WVBottomFrictionLinear",
+        "provider": "reference",
+        "fieldComparisons": 3,
+        "maximumNormalizedError": 1.4371816300487296e-15
+      },
+      {
+        "compatibilityRow": "hydrostatic-aa1/WVBottomFrictionLinear",
+        "provider": "native",
+        "fieldComparisons": 3,
+        "maximumNormalizedError": 2.6964363960433144e-16
+      },
+      {
+        "compatibilityRow": "hydrostatic-aa1/WVBottomFrictionQuadratic",
+        "provider": "reference",
+        "fieldComparisons": 3,
+        "maximumNormalizedError": 9.638325847315795e-16
+      },
+      {
+        "compatibilityRow": "hydrostatic-aa1/WVBottomFrictionQuadratic",
+        "provider": "native",
+        "fieldComparisons": 3,
+        "maximumNormalizedError": 3.212775282438598e-16
+      },
+      {
+        "compatibilityRow": "hydrostatic-aa1/WVFixedAmplitudeForcing",
+        "provider": "reference",
+        "fieldComparisons": 3,
+        "maximumNormalizedError": 0.0
+      },
+      {
+        "compatibilityRow": "hydrostatic-aa1/WVFixedAmplitudeForcing",
+        "provider": "native",
+        "fieldComparisons": 3,
+        "maximumNormalizedError": 0.0
+      },
+      {
+        "compatibilityRow": "hydrostatic-aa1/WVHorizontalDamping",
+        "provider": "reference",
+        "fieldComparisons": 3,
+        "maximumNormalizedError": 9.913570855545078e-15
+      },
+      {
+        "compatibilityRow": "hydrostatic-aa1/WVHorizontalDamping",
+        "provider": "native",
+        "fieldComparisons": 3,
+        "maximumNormalizedError": 1.9888336592914508e-15
+      },
+      {
+        "compatibilityRow": "hydrostatic-aa1/WVNarrowBandGeostrophicForcing",
+        "provider": "reference",
+        "fieldComparisons": 3,
+        "maximumNormalizedError": 0.0
+      },
+      {
+        "compatibilityRow": "hydrostatic-aa1/WVNarrowBandGeostrophicForcing",
+        "provider": "native",
+        "fieldComparisons": 3,
+        "maximumNormalizedError": 0.0
+      },
+      {
+        "compatibilityRow": "hydrostatic-aa1/WVNonlinearAdvection",
+        "provider": "reference",
+        "fieldComparisons": 3,
+        "maximumNormalizedError": 2.8883995575886465e-15
+      },
+      {
+        "compatibilityRow": "hydrostatic-aa1/WVNonlinearAdvection",
+        "provider": "native",
+        "fieldComparisons": 3,
+        "maximumNormalizedError": 6.711281324985384e-16
+      },
+      {
+        "compatibilityRow": "hydrostatic-aa1/WVPseudoTopographicWaveGeneration",
+        "provider": "reference",
+        "fieldComparisons": 3,
+        "maximumNormalizedError": 1.6995190323278045e-15
+      },
+      {
+        "compatibilityRow": "hydrostatic-aa1/WVPseudoTopographicWaveGeneration",
+        "provider": "native",
+        "fieldComparisons": 3,
+        "maximumNormalizedError": 1.3280984267544565e-15
+      },
+      {
+        "compatibilityRow": "hydrostatic-aa1/WVVerticalDamping",
+        "provider": "reference",
+        "fieldComparisons": 3,
+        "maximumNormalizedError": 6.674554362743977e-15
+      },
+      {
+        "compatibilityRow": "hydrostatic-aa1/WVVerticalDamping",
+        "provider": "native",
+        "fieldComparisons": 3,
+        "maximumNormalizedError": 8.006594459222776e-15
+      },
+      {
+        "compatibilityRow": "hydrostatic-aa1/WVVerticalDiffusivity",
+        "provider": "reference",
+        "fieldComparisons": 3,
+        "maximumNormalizedError": 1.475381733533436e-16
+      },
+      {
+        "compatibilityRow": "hydrostatic-aa1/WVVerticalDiffusivity",
+        "provider": "native",
+        "fieldComparisons": 3,
+        "maximumNormalizedError": 1.475381733533436e-16
+      },
+      {
+        "compatibilityRow": "boussinesq-aa0/WVAdaptiveDamping",
+        "provider": "reference",
+        "fieldComparisons": 4,
+        "maximumNormalizedError": 1.5747365343506407e-15
+      },
+      {
+        "compatibilityRow": "boussinesq-aa0/WVAdaptiveDamping",
+        "provider": "native",
+        "fieldComparisons": 4,
+        "maximumNormalizedError": 4.724209603051923e-16
+      },
+      {
+        "compatibilityRow": "boussinesq-aa0/WVAntialiasing",
+        "provider": "reference",
+        "fieldComparisons": 4,
+        "maximumNormalizedError": 0.0
+      },
+      {
+        "compatibilityRow": "boussinesq-aa0/WVAntialiasing",
+        "provider": "native",
+        "fieldComparisons": 4,
+        "maximumNormalizedError": 0.0
+      },
+      {
+        "compatibilityRow": "boussinesq-aa0/WVBetaPlanePVAdvection",
+        "provider": "reference",
+        "fieldComparisons": 4,
+        "maximumNormalizedError": 1.8949065024259257e-15
+      },
+      {
+        "compatibilityRow": "boussinesq-aa0/WVBetaPlanePVAdvection",
+        "provider": "native",
+        "fieldComparisons": 4,
+        "maximumNormalizedError": 3.41135327244614e-16
+      },
+      {
+        "compatibilityRow": "boussinesq-aa0/WVBottomFrictionLinear",
+        "provider": "reference",
+        "fieldComparisons": 4,
+        "maximumNormalizedError": 1.2803748618505322e-15
+      },
+      {
+        "compatibilityRow": "boussinesq-aa0/WVBottomFrictionLinear",
+        "provider": "native",
+        "fieldComparisons": 4,
+        "maximumNormalizedError": 2.8452774707789603e-16
+      },
+      {
+        "compatibilityRow": "boussinesq-aa0/WVBottomFrictionQuadratic",
+        "provider": "reference",
+        "fieldComparisons": 4,
+        "maximumNormalizedError": 1.7666599314157178e-15
+      },
+      {
+        "compatibilityRow": "boussinesq-aa0/WVBottomFrictionQuadratic",
+        "provider": "native",
+        "fieldComparisons": 4,
+        "maximumNormalizedError": 4.898852845694133e-16
+      },
+      {
+        "compatibilityRow": "boussinesq-aa0/WVFixedAmplitudeForcing",
+        "provider": "reference",
+        "fieldComparisons": 4,
+        "maximumNormalizedError": 0.0
+      },
+      {
+        "compatibilityRow": "boussinesq-aa0/WVFixedAmplitudeForcing",
+        "provider": "native",
+        "fieldComparisons": 4,
+        "maximumNormalizedError": 0.0
+      },
+      {
+        "compatibilityRow": "boussinesq-aa0/WVHorizontalDamping",
+        "provider": "reference",
+        "fieldComparisons": 4,
+        "maximumNormalizedError": 4.4242356905938e-15
+      },
+      {
+        "compatibilityRow": "boussinesq-aa0/WVHorizontalDamping",
+        "provider": "native",
+        "fieldComparisons": 4,
+        "maximumNormalizedError": 9.982582262291065e-16
+      },
+      {
+        "compatibilityRow": "boussinesq-aa0/WVNarrowBandGeostrophicForcing",
+        "provider": "reference",
+        "fieldComparisons": 4,
+        "maximumNormalizedError": 0.0
+      },
+      {
+        "compatibilityRow": "boussinesq-aa0/WVNarrowBandGeostrophicForcing",
+        "provider": "native",
+        "fieldComparisons": 4,
+        "maximumNormalizedError": 0.0
+      },
+      {
+        "compatibilityRow": "boussinesq-aa0/WVNonlinearAdvection",
+        "provider": "reference",
+        "fieldComparisons": 4,
+        "maximumNormalizedError": 3.0724203004103992e-15
+      },
+      {
+        "compatibilityRow": "boussinesq-aa0/WVNonlinearAdvection",
+        "provider": "native",
+        "fieldComparisons": 4,
+        "maximumNormalizedError": 8.00428147206957e-16
+      },
+      {
+        "compatibilityRow": "boussinesq-aa0/WVPseudoTopographicWaveGeneration",
+        "provider": "reference",
+        "fieldComparisons": 4,
+        "maximumNormalizedError": 2.4900082916323807e-15
+      },
+      {
+        "compatibilityRow": "boussinesq-aa0/WVPseudoTopographicWaveGeneration",
+        "provider": "native",
+        "fieldComparisons": 4,
+        "maximumNormalizedError": 2.4900082916323815e-15
+      },
+      {
+        "compatibilityRow": "boussinesq-aa0/WVVerticalDamping",
+        "provider": "reference",
+        "fieldComparisons": 4,
+        "maximumNormalizedError": 2.044482869476978e-14
+      },
+      {
+        "compatibilityRow": "boussinesq-aa0/WVVerticalDamping",
+        "provider": "native",
+        "fieldComparisons": 4,
+        "maximumNormalizedError": 5.7081364786492275e-15
+      },
+      {
+        "compatibilityRow": "boussinesq-aa0/WVVerticalDiffusivity",
+        "provider": "reference",
+        "fieldComparisons": 4,
+        "maximumNormalizedError": 0.0
+      },
+      {
+        "compatibilityRow": "boussinesq-aa0/WVVerticalDiffusivity",
+        "provider": "native",
+        "fieldComparisons": 4,
+        "maximumNormalizedError": 0.0
+      },
+      {
+        "compatibilityRow": "boussinesq-aa1/WVAdaptiveDamping",
+        "provider": "reference",
+        "fieldComparisons": 4,
+        "maximumNormalizedError": 2.863117716088835e-15
+      },
+      {
+        "compatibilityRow": "boussinesq-aa1/WVAdaptiveDamping",
+        "provider": "native",
+        "fieldComparisons": 4,
+        "maximumNormalizedError": 2.462281235836398e-15
+      },
+      {
+        "compatibilityRow": "boussinesq-aa1/WVBetaPlanePVAdvection",
+        "provider": "reference",
+        "fieldComparisons": 4,
+        "maximumNormalizedError": 1.9673768072222624e-15
+      },
+      {
+        "compatibilityRow": "boussinesq-aa1/WVBetaPlanePVAdvection",
+        "provider": "native",
+        "fieldComparisons": 4,
+        "maximumNormalizedError": 3.79663836197546e-16
+      },
+      {
+        "compatibilityRow": "boussinesq-aa1/WVBottomFrictionLinear",
+        "provider": "reference",
+        "fieldComparisons": 4,
+        "maximumNormalizedError": 1.4377191624386213e-15
+      },
+      {
+        "compatibilityRow": "boussinesq-aa1/WVBottomFrictionLinear",
+        "provider": "native",
+        "fieldComparisons": 4,
+        "maximumNormalizedError": 2.69736460484009e-16
+      },
+      {
+        "compatibilityRow": "boussinesq-aa1/WVBottomFrictionQuadratic",
+        "provider": "reference",
+        "fieldComparisons": 4,
+        "maximumNormalizedError": 9.37292101215168e-16
+      },
+      {
+        "compatibilityRow": "boussinesq-aa1/WVBottomFrictionQuadratic",
+        "provider": "native",
+        "fieldComparisons": 4,
+        "maximumNormalizedError": 4.109886961219042e-16
+      },
+      {
+        "compatibilityRow": "boussinesq-aa1/WVFixedAmplitudeForcing",
+        "provider": "reference",
+        "fieldComparisons": 4,
+        "maximumNormalizedError": 0.0
+      },
+      {
+        "compatibilityRow": "boussinesq-aa1/WVFixedAmplitudeForcing",
+        "provider": "native",
+        "fieldComparisons": 4,
+        "maximumNormalizedError": 0.0
+      },
+      {
+        "compatibilityRow": "boussinesq-aa1/WVHorizontalDamping",
+        "provider": "reference",
+        "fieldComparisons": 4,
+        "maximumNormalizedError": 1.2193307604835675e-14
+      },
+      {
+        "compatibilityRow": "boussinesq-aa1/WVHorizontalDamping",
+        "provider": "native",
+        "fieldComparisons": 4,
+        "maximumNormalizedError": 2.262675638010744e-15
+      },
+      {
+        "compatibilityRow": "boussinesq-aa1/WVNarrowBandGeostrophicForcing",
+        "provider": "reference",
+        "fieldComparisons": 4,
+        "maximumNormalizedError": 0.0
+      },
+      {
+        "compatibilityRow": "boussinesq-aa1/WVNarrowBandGeostrophicForcing",
+        "provider": "native",
+        "fieldComparisons": 4,
+        "maximumNormalizedError": 0.0
+      },
+      {
+        "compatibilityRow": "boussinesq-aa1/WVNonlinearAdvection",
+        "provider": "reference",
+        "fieldComparisons": 4,
+        "maximumNormalizedError": 2.7401446644729655e-15
+      },
+      {
+        "compatibilityRow": "boussinesq-aa1/WVNonlinearAdvection",
+        "provider": "native",
+        "fieldComparisons": 4,
+        "maximumNormalizedError": 6.127031547889861e-16
+      },
+      {
+        "compatibilityRow": "boussinesq-aa1/WVPseudoTopographicWaveGeneration",
+        "provider": "reference",
+        "fieldComparisons": 4,
+        "maximumNormalizedError": 1.5833468612390859e-15
+      },
+      {
+        "compatibilityRow": "boussinesq-aa1/WVPseudoTopographicWaveGeneration",
+        "provider": "native",
+        "fieldComparisons": 4,
+        "maximumNormalizedError": 9.385902222815882e-16
+      },
+      {
+        "compatibilityRow": "boussinesq-aa1/WVVerticalDamping",
+        "provider": "reference",
+        "fieldComparisons": 4,
+        "maximumNormalizedError": 6.998328995661805e-15
+      },
+      {
+        "compatibilityRow": "boussinesq-aa1/WVVerticalDamping",
+        "provider": "native",
+        "fieldComparisons": 4,
+        "maximumNormalizedError": 4.612535019868008e-15
+      },
+      {
+        "compatibilityRow": "boussinesq-aa1/WVVerticalDiffusivity",
+        "provider": "reference",
+        "fieldComparisons": 4,
+        "maximumNormalizedError": 0.0
+      },
+      {
+        "compatibilityRow": "boussinesq-aa1/WVVerticalDiffusivity",
+        "provider": "native",
+        "fieldComparisons": 4,
+        "maximumNormalizedError": 1.4753835659093528e-16
+      }
+    ]
+  },
+  "compositions": {
+    "description": "All applicable stable forcings, including narrow-band geostrophic forcing, in ordered compositions; odd/even rectangular grids and both antialias settings.",
+    "fieldComparisons": 1476,
+    "rows": [
+      {
+        "configuration": "constant-hydrostatic-aa0",
+        "grid": [
+          8,
+          6,
+          9
+        ],
+        "provider": "reference",
+        "fieldComparisons": 36,
+        "maximumNormalizedError": 5.6085342633434894e-14,
+        "reference": "MATLAB SpatialForcingOperation"
+      },
+      {
+        "configuration": "constant-hydrostatic-aa0",
+        "grid": [
+          8,
+          6,
+          9
+        ],
+        "provider": "native",
+        "fieldComparisons": 36,
+        "maximumNormalizedError": 5.6085342633434894e-14,
+        "reference": "MATLAB SpatialForcingOperation"
+      },
+      {
+        "configuration": "constant-hydrostatic-aa0",
+        "grid": [
+          9,
+          7,
+          10
+        ],
+        "provider": "reference",
+        "fieldComparisons": 36,
+        "maximumNormalizedError": 1.63235169272712e-13,
+        "reference": "MATLAB SpatialForcingOperation"
+      },
+      {
+        "configuration": "constant-hydrostatic-aa0",
+        "grid": [
+          9,
+          7,
+          10
+        ],
+        "provider": "native",
+        "fieldComparisons": 36,
+        "maximumNormalizedError": 1.63235169272712e-13,
+        "reference": "MATLAB SpatialForcingOperation"
+      },
+      {
+        "configuration": "constant-hydrostatic-aa1",
+        "grid": [
+          8,
+          6,
+          9
+        ],
+        "provider": "reference",
+        "fieldComparisons": 33,
+        "maximumNormalizedError": 1.6485722193021684e-14,
+        "reference": "MATLAB SpatialForcingOperation"
+      },
+      {
+        "configuration": "constant-hydrostatic-aa1",
+        "grid": [
+          8,
+          6,
+          9
+        ],
+        "provider": "native",
+        "fieldComparisons": 33,
+        "maximumNormalizedError": 1.6485722193021684e-14,
+        "reference": "MATLAB SpatialForcingOperation"
+      },
+      {
+        "configuration": "constant-hydrostatic-aa1",
+        "grid": [
+          9,
+          7,
+          10
+        ],
+        "provider": "reference",
+        "fieldComparisons": 33,
+        "maximumNormalizedError": 4.006183866367507e-13,
+        "reference": "MATLAB SpatialForcingOperation"
+      },
+      {
+        "configuration": "constant-hydrostatic-aa1",
+        "grid": [
+          9,
+          7,
+          10
+        ],
+        "provider": "native",
+        "fieldComparisons": 33,
+        "maximumNormalizedError": 4.006183866367507e-13,
+        "reference": "MATLAB SpatialForcingOperation"
+      },
+      {
+        "configuration": "constant-nonhydrostatic-aa0",
+        "grid": [
+          8,
+          6,
+          9
+        ],
+        "provider": "reference",
+        "fieldComparisons": 48,
+        "maximumNormalizedError": 5.828263412210864e-14,
+        "reference": "MATLAB SpatialForcingOperation"
+      },
+      {
+        "configuration": "constant-nonhydrostatic-aa0",
+        "grid": [
+          8,
+          6,
+          9
+        ],
+        "provider": "native",
+        "fieldComparisons": 48,
+        "maximumNormalizedError": 6.160488119120037e-14,
+        "reference": "MATLAB SpatialForcingOperation"
+      },
+      {
+        "configuration": "constant-nonhydrostatic-aa0",
+        "grid": [
+          9,
+          7,
+          10
+        ],
+        "provider": "reference",
+        "fieldComparisons": 48,
+        "maximumNormalizedError": 1.889658651382367e-13,
+        "reference": "MATLAB SpatialForcingOperation"
+      },
+      {
+        "configuration": "constant-nonhydrostatic-aa0",
+        "grid": [
+          9,
+          7,
+          10
+        ],
+        "provider": "native",
+        "fieldComparisons": 48,
+        "maximumNormalizedError": 1.889658651382367e-13,
+        "reference": "MATLAB SpatialForcingOperation"
+      },
+      {
+        "configuration": "constant-nonhydrostatic-aa1",
+        "grid": [
+          8,
+          6,
+          9
+        ],
+        "provider": "reference",
+        "fieldComparisons": 44,
+        "maximumNormalizedError": 6.192995896644568e-14,
+        "reference": "MATLAB SpatialForcingOperation"
+      },
+      {
+        "configuration": "constant-nonhydrostatic-aa1",
+        "grid": [
+          8,
+          6,
+          9
+        ],
+        "provider": "native",
+        "fieldComparisons": 44,
+        "maximumNormalizedError": 3.096497948322284e-14,
+        "reference": "MATLAB SpatialForcingOperation"
+      },
+      {
+        "configuration": "constant-nonhydrostatic-aa1",
+        "grid": [
+          9,
+          7,
+          10
+        ],
+        "provider": "reference",
+        "fieldComparisons": 44,
+        "maximumNormalizedError": 1.0301981124880139e-13,
+        "reference": "MATLAB SpatialForcingOperation"
+      },
+      {
+        "configuration": "constant-nonhydrostatic-aa1",
+        "grid": [
+          9,
+          7,
+          10
+        ],
+        "provider": "native",
+        "fieldComparisons": 44,
+        "maximumNormalizedError": 1.0301981124880139e-13,
+        "reference": "MATLAB SpatialForcingOperation"
+      },
+      {
+        "configuration": "hydrostatic-aa0",
+        "grid": [
+          8,
+          6,
+          9
+        ],
+        "provider": "reference",
+        "fieldComparisons": 36,
+        "maximumNormalizedError": 5.182397938468078e-14,
+        "reference": "MATLAB SpatialForcingOperation"
+      },
+      {
+        "configuration": "hydrostatic-aa0",
+        "grid": [
+          8,
+          6,
+          9
+        ],
+        "provider": "native",
+        "fieldComparisons": 36,
+        "maximumNormalizedError": 4.701496970294347e-15,
+        "reference": "MATLAB SpatialForcingOperation"
+      },
+      {
+        "configuration": "hydrostatic-aa0",
+        "grid": [
+          9,
+          7,
+          10
+        ],
+        "provider": "reference",
+        "fieldComparisons": 36,
+        "maximumNormalizedError": 5.213752879205505e-14,
+        "reference": "MATLAB SpatialForcingOperation"
+      },
+      {
+        "configuration": "hydrostatic-aa0",
+        "grid": [
+          9,
+          7,
+          10
+        ],
+        "provider": "native",
+        "fieldComparisons": 36,
+        "maximumNormalizedError": 5.213752879205505e-14,
+        "reference": "MATLAB SpatialForcingOperation"
+      },
+      {
+        "configuration": "hydrostatic-aa1",
+        "grid": [
+          8,
+          6,
+          9
+        ],
+        "provider": "reference",
+        "fieldComparisons": 33,
+        "maximumNormalizedError": 1.253271179762733e-13,
+        "reference": "MATLAB SpatialForcingOperation"
+      },
+      {
+        "configuration": "hydrostatic-aa1",
+        "grid": [
+          8,
+          6,
+          9
+        ],
+        "provider": "native",
+        "fieldComparisons": 33,
+        "maximumNormalizedError": 1.253271179762733e-13,
+        "reference": "MATLAB SpatialForcingOperation"
+      },
+      {
+        "configuration": "hydrostatic-aa1",
+        "grid": [
+          9,
+          7,
+          10
+        ],
+        "provider": "reference",
+        "fieldComparisons": 33,
+        "maximumNormalizedError": 2.551496087248539e-13,
+        "reference": "MATLAB SpatialForcingOperation"
+      },
+      {
+        "configuration": "hydrostatic-aa1",
+        "grid": [
+          9,
+          7,
+          10
+        ],
+        "provider": "native",
+        "fieldComparisons": 33,
+        "maximumNormalizedError": 2.551496087248539e-13,
+        "reference": "MATLAB SpatialForcingOperation"
+      },
+      {
+        "configuration": "boussinesq-aa0",
+        "grid": [
+          8,
+          6,
+          9
+        ],
+        "provider": "reference",
+        "fieldComparisons": 48,
+        "maximumNormalizedError": 5.5620007930640395e-14,
+        "reference": "MATLAB SpatialForcingOperation"
+      },
+      {
+        "configuration": "boussinesq-aa0",
+        "grid": [
+          8,
+          6,
+          9
+        ],
+        "provider": "native",
+        "fieldComparisons": 48,
+        "maximumNormalizedError": 5.969293049567822e-15,
+        "reference": "MATLAB SpatialForcingOperation"
+      },
+      {
+        "configuration": "boussinesq-aa0",
+        "grid": [
+          9,
+          7,
+          10
+        ],
+        "provider": "reference",
+        "fieldComparisons": 48,
+        "maximumNormalizedError": 6.005260781855157e-14,
+        "reference": "MATLAB SpatialForcingOperation"
+      },
+      {
+        "configuration": "boussinesq-aa0",
+        "grid": [
+          9,
+          7,
+          10
+        ],
+        "provider": "native",
+        "fieldComparisons": 48,
+        "maximumNormalizedError": 5.966401382014818e-15,
+        "reference": "MATLAB SpatialForcingOperation"
+      },
+      {
+        "configuration": "boussinesq-aa1",
+        "grid": [
+          8,
+          6,
+          9
+        ],
+        "provider": "reference",
+        "fieldComparisons": 44,
+        "maximumNormalizedError": 5.148844118495552e-13,
+        "reference": "MATLAB SpatialForcingOperation"
+      },
+      {
+        "configuration": "boussinesq-aa1",
+        "grid": [
+          8,
+          6,
+          9
+        ],
+        "provider": "native",
+        "fieldComparisons": 44,
+        "maximumNormalizedError": 3.21802757405972e-14,
+        "reference": "MATLAB SpatialForcingOperation"
+      },
+      {
+        "configuration": "boussinesq-aa1",
+        "grid": [
+          9,
+          7,
+          10
+        ],
+        "provider": "reference",
+        "fieldComparisons": 44,
+        "maximumNormalizedError": 2.614566589006708e-13,
+        "reference": "MATLAB SpatialForcingOperation"
+      },
+      {
+        "configuration": "boussinesq-aa1",
+        "grid": [
+          9,
+          7,
+          10
+        ],
+        "provider": "native",
+        "fieldComparisons": 44,
+        "maximumNormalizedError": 3.268208236258385e-14,
+        "reference": "MATLAB SpatialForcingOperation"
+      },
+      {
+        "configuration": "stratified-qg-aa0",
+        "grid": [
+          8,
+          6,
+          9
+        ],
+        "provider": "reference",
+        "fieldComparisons": 9,
+        "maximumNormalizedError": 2.6557748038782344e-14,
+        "reference": "MATLAB forcing primitives with existing modal transforms; wrapper failure asserted (#404)"
+      },
+      {
+        "configuration": "stratified-qg-aa0",
+        "grid": [
+          8,
+          6,
+          9
+        ],
+        "provider": "native",
+        "fieldComparisons": 9,
+        "maximumNormalizedError": 2.6557748038782344e-14,
+        "reference": "MATLAB forcing primitives with existing modal transforms; wrapper failure asserted (#404)"
+      },
+      {
+        "configuration": "stratified-qg-aa0",
+        "grid": [
+          9,
+          7,
+          10
+        ],
+        "provider": "reference",
+        "fieldComparisons": 9,
+        "maximumNormalizedError": 4.586255563042732e-14,
+        "reference": "MATLAB forcing primitives with existing modal transforms; wrapper failure asserted (#404)"
+      },
+      {
+        "configuration": "stratified-qg-aa0",
+        "grid": [
+          9,
+          7,
+          10
+        ],
+        "provider": "native",
+        "fieldComparisons": 9,
+        "maximumNormalizedError": 2.293127781521366e-14,
+        "reference": "MATLAB forcing primitives with existing modal transforms; wrapper failure asserted (#404)"
+      },
+      {
+        "configuration": "stratified-qg-aa1",
+        "grid": [
+          8,
+          6,
+          9
+        ],
+        "provider": "reference",
+        "fieldComparisons": 8,
+        "maximumNormalizedError": 6.788816123413665e-15,
+        "reference": "MATLAB forcing primitives with existing modal transforms; wrapper failure asserted (#404)"
+      },
+      {
+        "configuration": "stratified-qg-aa1",
+        "grid": [
+          8,
+          6,
+          9
+        ],
+        "provider": "native",
+        "fieldComparisons": 8,
+        "maximumNormalizedError": 6.788816123413665e-15,
+        "reference": "MATLAB forcing primitives with existing modal transforms; wrapper failure asserted (#404)"
+      },
+      {
+        "configuration": "stratified-qg-aa1",
+        "grid": [
+          9,
+          7,
+          10
+        ],
+        "provider": "reference",
+        "fieldComparisons": 8,
+        "maximumNormalizedError": 1.3074784542084579e-14,
+        "reference": "MATLAB forcing primitives with existing modal transforms; wrapper failure asserted (#404)"
+      },
+      {
+        "configuration": "stratified-qg-aa1",
+        "grid": [
+          9,
+          7,
+          10
+        ],
+        "provider": "native",
+        "fieldComparisons": 8,
+        "maximumNormalizedError": 6.5373922710422895e-15,
+        "reference": "MATLAB forcing primitives with existing modal transforms; wrapper failure asserted (#404)"
+      },
+      {
+        "configuration": "barotropic-aa0",
+        "j": 0,
+        "grid": [
+          8,
+          6
+        ],
+        "provider": "reference",
+        "fieldComparisons": 8,
+        "maximumNormalizedError": 5.109417257075248e-15,
+        "reference": "MATLAB SpatialForcingOperation"
+      },
+      {
+        "configuration": "barotropic-aa0",
+        "j": 0,
+        "grid": [
+          8,
+          6
+        ],
+        "provider": "native",
+        "fieldComparisons": 8,
+        "maximumNormalizedError": 1.277354314268812e-15,
+        "reference": "MATLAB SpatialForcingOperation"
+      },
+      {
+        "configuration": "barotropic-aa0",
+        "j": 0,
+        "grid": [
+          9,
+          7
+        ],
+        "provider": "reference",
+        "fieldComparisons": 8,
+        "maximumNormalizedError": 9.168236392845277e-15,
+        "reference": "MATLAB SpatialForcingOperation"
+      },
+      {
+        "configuration": "barotropic-aa0",
+        "j": 0,
+        "grid": [
+          9,
+          7
+        ],
+        "provider": "native",
+        "fieldComparisons": 8,
+        "maximumNormalizedError": 2.041204034349376e-15,
+        "reference": "MATLAB SpatialForcingOperation"
+      },
+      {
+        "configuration": "barotropic-aa1",
+        "j": 0,
+        "grid": [
+          8,
+          6
+        ],
+        "provider": "reference",
+        "fieldComparisons": 7,
+        "maximumNormalizedError": 7.438885886543478e-15,
+        "reference": "MATLAB SpatialForcingOperation"
+      },
+      {
+        "configuration": "barotropic-aa1",
+        "j": 0,
+        "grid": [
+          8,
+          6
+        ],
+        "provider": "native",
+        "fieldComparisons": 7,
+        "maximumNormalizedError": 1.8175280063678297e-15,
+        "reference": "MATLAB SpatialForcingOperation"
+      },
+      {
+        "configuration": "barotropic-aa1",
+        "j": 0,
+        "grid": [
+          9,
+          7
+        ],
+        "provider": "reference",
+        "fieldComparisons": 7,
+        "maximumNormalizedError": 1.4145019065512158e-14,
+        "reference": "MATLAB SpatialForcingOperation"
+      },
+      {
+        "configuration": "barotropic-aa1",
+        "j": 0,
+        "grid": [
+          9,
+          7
+        ],
+        "provider": "native",
+        "fieldComparisons": 7,
+        "maximumNormalizedError": 1.4145019065512158e-14,
+        "reference": "MATLAB SpatialForcingOperation"
+      },
+      {
+        "configuration": "barotropic-aa0",
+        "j": 1,
+        "grid": [
+          8,
+          6
+        ],
+        "provider": "reference",
+        "fieldComparisons": 8,
+        "maximumNormalizedError": 2.0486092476685436e-14,
+        "reference": "MATLAB SpatialForcingOperation"
+      },
+      {
+        "configuration": "barotropic-aa0",
+        "j": 1,
+        "grid": [
+          8,
+          6
+        ],
+        "provider": "native",
+        "fieldComparisons": 8,
+        "maximumNormalizedError": 5.121523119171359e-15,
+        "reference": "MATLAB SpatialForcingOperation"
+      },
+      {
+        "configuration": "barotropic-aa0",
+        "j": 1,
+        "grid": [
+          9,
+          7
+        ],
+        "provider": "reference",
+        "fieldComparisons": 8,
+        "maximumNormalizedError": 2.341958084660095e-14,
+        "reference": "MATLAB SpatialForcingOperation"
+      },
+      {
+        "configuration": "barotropic-aa0",
+        "j": 1,
+        "grid": [
+          9,
+          7
+        ],
+        "provider": "native",
+        "fieldComparisons": 8,
+        "maximumNormalizedError": 2.341958084660095e-14,
+        "reference": "MATLAB SpatialForcingOperation"
+      },
+      {
+        "configuration": "barotropic-aa1",
+        "j": 1,
+        "grid": [
+          8,
+          6
+        ],
+        "provider": "reference",
+        "fieldComparisons": 7,
+        "maximumNormalizedError": 7.474110847005184e-15,
+        "reference": "MATLAB SpatialForcingOperation"
+      },
+      {
+        "configuration": "barotropic-aa1",
+        "j": 1,
+        "grid": [
+          8,
+          6
+        ],
+        "provider": "native",
+        "fieldComparisons": 7,
+        "maximumNormalizedError": 7.292920538013143e-15,
+        "reference": "MATLAB SpatialForcingOperation"
+      },
+      {
+        "configuration": "barotropic-aa1",
+        "j": 1,
+        "grid": [
+          9,
+          7
+        ],
+        "provider": "reference",
+        "fieldComparisons": 7,
+        "maximumNormalizedError": 1.421735584601627e-14,
+        "reference": "MATLAB SpatialForcingOperation"
+      },
+      {
+        "configuration": "barotropic-aa1",
+        "j": 1,
+        "grid": [
+          9,
+          7
+        ],
+        "provider": "native",
+        "fieldComparisons": 7,
+        "maximumNormalizedError": 1.8316446815268216e-15,
+        "reference": "MATLAB SpatialForcingOperation"
+      }
+    ]
+  },
+  "explicitReferenceLimitations": [
+    {
+      "issue": 404,
+      "scope": "Stratified-QG wrapper modal boundaries",
+      "evidence": "fullGridStratifiedTendenciesMatchMatlabPrimitives asserts the wrapper dimension error, then compares existing MATLAB forcing and vertical modal primitives."
+    },
+    {
+      "issue": 406,
+      "scope": "Isolated wave scalar accumulators and single-forcing QG operation naming",
+      "evidence": "isolatedWaveWrapperRejectsScalarAccumulators and isolatedQGWrapperRejectsSingleOutputName pass; isolated tendencies compare individual MATLAB primitives."
+    },
+    {
+      "scope": "Analytically cancelling tidal Fw channel",
+      "evidence": "The sum of separately reconstructed Ap/Am contributions is asserted to cancel within 1e-12 of their maximum magnitude; both implementations and their difference use that same conditioning scale. Other channels use per-channel maximum reference magnitude."
+    }
+  ],
+  "verification": {
+    "isolatedMethodsPassed": 3,
+    "compositionMethodsPassed": 3,
+    "codeAnalyzerFindings": 0,
+    "notes": [
+      "Wave and stratified composition methods passed in a batch whose barotropic method exposed a fixture selecting absent vertical mode j=1 in j=0. Only barotropic was corrected and rerun successfully.",
+      "The isolated tidal fixture uses two-dimensional terrain to avoid an additional symmetry-zero Fu channel.",
+      "No MATLAB runtime files changed. Source test comments and composition fixtures were updated after the successful isolation run; the isolated numerical test body is otherwise unchanged."
+    ]
+  },
+  "remaining": [
+    "MATLAB/native saved-output and dense-value matrix",
+    "Force-specific sink failure/retry qualification",
+    "Remaining derived/derivative intermediate sharing audit",
+    "Representative integration runtime and retained-memory 3% budgets",
+    "Final catalog delivery status, required hosted checks and integration"
+  ]
+}
