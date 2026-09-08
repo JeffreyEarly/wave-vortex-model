@@ -27,7 +27,8 @@ classdef TestPortableDiagnostics < matlab.unittest.TestCase
         function allTransformDiagnosticsMatchMatlab(testCase)
             catalog = jsondecode(fileread(fullfile(testCase.root,"PortableRuntime","contracts","portable-variable-catalog-v1.json")));
             families = ["constant-hydrostatic","constant-nonhydrostatic","barotropic","stratified-qg","hydrostatic","boussinesq"];
-            evidenceRows = struct([]);
+            evidenceRows = struct(configuration={},grid={},provider={},maximumRelativeError={},variableCount={}, ...
+                retainedBytes={},scratchHighWaterBytes={},scratchLiveBytes={},primitiveOutputCount={});
             for family = families
                 for antialias = [false true]
                     for odd = [false true]
