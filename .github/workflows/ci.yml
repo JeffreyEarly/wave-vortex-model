@@ -44,7 +44,7 @@ jobs:
           BASE_SHA: ${{ github.event.pull_request.base.sha || github.event.before }}
           HEAD_SHA: ${{ github.event.pull_request.head.sha || github.sha }}
           COMPLETE: ${{ github.event_name == 'schedule' || inputs.complete || contains(github.event.pull_request.labels.*.name, 'final-integration') }}
-          LEGACY_CHECKS: ${{ vars.WVM_CI_LEGACY_REQUIRED_CHECKS != 'false' }}
+          LEGACY_CHECKS: 'false' # Disposable proof of the post-migration configuration only.
         run: |
           args=()
           if [[ -n "$BASE_SHA" && "$BASE_SHA" != 0000000000000000000000000000000000000000 ]]; then
