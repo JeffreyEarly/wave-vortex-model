@@ -18,6 +18,8 @@ public:
   struct Output {
     const WVPortableVariableContract* contract=nullptr;
     std::size_t executionIndex=0,channel=0,physicalChannels=0;
+    std::string_view instanceName;
+    std::uint32_t instanceOrdinal=0;
   };
   template<class Engine,bool QG>
   static WVKernelStatus create(Engine& engine,std::unique_ptr<WVForcingDiagnosticBinding>& result) {
@@ -59,6 +61,7 @@ public:
       return {WVKernelStatusCode::unsupportedOperation,"Forcing diagnostic identity, sampling, or instance binding is unsupported or ambiguous: "+std::string(name)};
     for(std::size_t index=0;index<bindings_.size();++index) if(bindings_[index].instanceOrdinal==plan.forcingInstanceOrdinal) {
       output.contract=plan.output; output.executionIndex=index;
+      output.instanceName=bindings_[index].instanceName; output.instanceOrdinal=bindings_[index].instanceOrdinal;
       output.physicalChannels=physicalPrefix_[index] ? physicalChannels_ : 0;
       switch(plan.output->metadata.identifier) {
         case WVPortableVariable::Fu_portable_catalog_forcing: case WVPortableVariable::Fqgpv_portable_catalog_forcing: output.channel=0; break;
@@ -76,6 +79,7 @@ public:
     return evaluate_(engine_,state,outputs,count,prepared);
   }
   const WVForcingTendencyMetrics& metrics() const {return metrics_(engine_);}
+  const std::vector<WVPortableForcingVariableBinding>& bindings() const noexcept {return bindings_;}
   std::size_t persistentBytes() const noexcept {
     return sizeof(*this)+bindings_.capacity()*sizeof(WVPortableForcingVariableBinding)+physicalPrefix_.capacity()*sizeof(std::uint8_t);
   }

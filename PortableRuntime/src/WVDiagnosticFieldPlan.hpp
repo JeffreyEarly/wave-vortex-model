@@ -10,6 +10,7 @@ namespace wavevortex::runtime::detail {
 // fields are owned by one evaluate() invocation and released before it returns.
 class WVDiagnosticFieldPlan final {
 public:
+  static std::string configurationIdentifier(const WVFieldEvaluationService&);
   static bool required(const std::vector<WVFieldRequest>&, bool stratified = false) noexcept;
   static WVKernelStatus create(const WVFieldEvaluationService&,
       const std::vector<WVFieldRequest>&, WVFieldEvaluationPlan&);
@@ -17,6 +18,7 @@ public:
   WVKernelStatus evaluate(WVFieldEvaluationService&, const WVIntegrationState&,
       WVFieldOutputView*, std::size_t) const;
   std::size_t persistentBytes() const noexcept;
+  bool hasForcingDiagnostics() const noexcept {return !forcingIndices_.empty();}
 
 private:
   struct Output {

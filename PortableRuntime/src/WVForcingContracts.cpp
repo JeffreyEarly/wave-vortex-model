@@ -194,6 +194,7 @@ std::vector<WVForcingFactoryRegistration> builtInForcingFactories() {
        WVForcingStage::spectralAmplitude, detail::preflightStratifiedQGFixedAmplitude,
        detail::createStratifiedQGFixedAmplitude}};
   for (auto& registration:factories) {
+    registration.supportsTendencyDiagnostics=true;
     if (registration.matlabClassName=="WVNonlinearAdvection") registration.hydrostaticFactory=detail::createHydrostaticNonlinearAdvectionForcing;
     if (registration.matlabClassName=="WVNonlinearAdvection") registration.boussinesqFactory=detail::createBoussinesqNonlinearAdvectionForcing;
     if (registration.matlabClassName=="WVAntialiasing") { registration.hydrostaticFactory=detail::createHydrostaticExplicitAntialiasing; registration.prepareHydrostaticResolution=detail::prepareHydrostaticExplicitAntialiasing; }

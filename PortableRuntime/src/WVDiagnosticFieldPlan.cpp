@@ -38,9 +38,7 @@ bool overlap(const void* a,std::size_t n,const void* b,std::size_t m) {
 
 bool WVDiagnosticFieldPlan::required(const std::vector<WVFieldRequest>& requests,bool stratified) noexcept {
   for(const auto& request:requests) {
-    const auto& name=request.fieldName;
-    if(name.rfind("Fu_",0)==0 || name.rfind("Fv_",0)==0 || name.rfind("Fw_",0)==0 ||
-        name.rfind("Feta_",0)==0 || name.rfind("Fqgpv_",0)==0) return true;
+    if(isPortableForcingVariableName(request.fieldName)) return true;
     const auto* metadata=findPortableVariable(request.fieldName);
     if(metadata && (metadata->ordinal>=23 || (stratified && metadata->identifier==Variable::rhoBar))) return true;
   }
@@ -75,6 +73,11 @@ WVKernelStatus WVDiagnosticFieldPlan::configure(const WVFieldEvaluationService& 
   } else return invalid("Diagnostic evaluation has no resolved transform.");
   configuration_+=antialias ? "-aa1" : "-aa0";
   return WVKernelStatus::ok();
+}
+
+std::string WVDiagnosticFieldPlan::configurationIdentifier(const WVFieldEvaluationService& service) {
+  WVDiagnosticFieldPlan plan;
+  return plan.configure(service) ? plan.configuration_ : std::string{};
 }
 
 WVKernelStatus WVDiagnosticFieldPlan::create(const WVFieldEvaluationService& service,
@@ -215,6 +218,16 @@ WVKernelStatus WVDiagnosticFieldPlan::rebind(const WVFieldEvaluationService& ser
     std::vector<WVFieldRequest> requests;
     requests.reserve(outputs_.size());
     for(const auto& output:outputs_) {
+      if(output.forcing) {
+        if(!owner_->forcing_ || !service.forcing_) return unsupported("Rebinding forcing diagnostics requires a resolved forcing schedule.");
+        WVForcingDiagnosticBinding::Output original,replacement;
+        auto status=owner_->forcing_->resolve(output.specification.fieldName,configuration_,portableFullGridSampling,original);
+        if(!status) return status;
+        status=service.forcing_->resolve(output.specification.fieldName,configuration_,portableFullGridSampling,replacement);
+        if(!status) return status;
+        if(original.instanceName!=replacement.instanceName || original.instanceOrdinal!=replacement.instanceOrdinal)
+          return invalid("Rebinding would change forcing-instance identity or persisted metadata.");
+      }
       WVFieldSamplingRequest sampling;
       if(!output.forcing && !output.specification.isComplex && !output.extrema && output.variable!=Variable::totalEnergySpatiallyIntegrated)
         sampling=groups_[output.group].requests[output.dependency].sampling;

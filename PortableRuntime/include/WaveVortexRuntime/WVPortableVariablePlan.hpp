@@ -1,8 +1,26 @@
 #pragma once
 
 #include "WaveVortexRuntime/generated/WVPortableVariableContracts.hpp"
+#include <string>
 
 namespace wavevortex::runtime {
+
+inline bool isPortableForcingVariableName(std::string_view name) noexcept {
+  return name.rfind("Fu_",0)==0 || name.rfind("Fv_",0)==0 || name.rfind("Fw_",0)==0 ||
+      name.rfind("Feta_",0)==0 || name.rfind("Fqgpv_",0)==0;
+}
+
+inline std::string portableVariableConfigurationIdentifier(std::string_view transform,
+    bool isHydrostatic,bool shouldAntialias) {
+  std::string prefix;
+  if(transform=="WVTransformConstantStratification") prefix=isHydrostatic ? "constant-hydrostatic" : "constant-nonhydrostatic";
+  else if(transform=="WVTransformHydrostatic") prefix="hydrostatic";
+  else if(transform=="WVTransformBoussinesq") prefix="boussinesq";
+  else if(transform=="WVTransformBarotropicQG") prefix="barotropic";
+  else if(transform=="WVTransformStratifiedQG") prefix="stratified-qg";
+  else return {};
+  return prefix+(shouldAntialias ? "-aa1" : "-aa0");
+}
 
 // Construction-time contracts only. This plan neither allocates fields nor
 // evaluates operations. Numerical consumers retain their existing evaluators.

@@ -7,6 +7,7 @@
 #include "WaveVortexKernel/WVTransformBoussinesqKernel.hpp"
 #include "WaveVortexRuntime/WVObserverContracts.hpp"
 #include "WaveVortexRuntime/generated/WVPortableVariableCatalog.hpp"
+#include "WaveVortexRuntime/WVPortableVariablePlan.hpp"
 
 #include <array>
 #include <cstddef>
@@ -411,6 +412,8 @@ public:
   ~WVFieldEvaluationService();
 
   static std::vector<std::string> supportedFieldNames();
+  const std::vector<WVPortableForcingVariableBinding>& forcingVariableBindings() const noexcept;
+  std::string portableVariableConfiguration() const;
   WVKernelStatus createPlan(const std::vector<WVFieldRequest> &requests,
                             WVFieldEvaluationPlan &plan) const;
   WVKernelStatus evaluate(const WVFieldEvaluationPlan &plan,

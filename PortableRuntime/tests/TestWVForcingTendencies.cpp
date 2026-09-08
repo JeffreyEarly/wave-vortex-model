@@ -1,6 +1,8 @@
 #include "WaveVortexRuntime/WVForcingEngine.hpp"
 #include "WaveVortexRuntime/WVFieldEvaluationService.hpp"
 #include "WaveVortexRuntime/WVIntegrationState.hpp"
+#include "WaveVortexRuntime/WVObserverOutputEvaluationService.hpp"
+#include "WaveVortexRuntime/WVObserverOutputProvider.hpp"
 #include "WaveVortexRuntime/WVBarotropicQGForcingEngine.hpp"
 #include "WaveVortexRuntime/WVStratifiedQGForcingEngine.hpp"
 #include "WaveVortexRuntime/WVHydrostaticForcingEngine.hpp"
@@ -91,6 +93,98 @@ void relative(const std::vector<double>& a,const std::vector<double>& b,const ch
     }
     if (error>1e-12*std::max(scale,1e-30)) std::cerr<<label<<": error="<<error<<" scale="<<scale<<" relative="<<error/std::max(scale,1e-30)<<"\n";
     require(error<=1e-12*std::max(scale,1e-30),"Forcing stage difference does not match its accumulated tendency");
+}
+
+template<class Engine>
+void observerService(Engine& engine,WVFieldEvaluationService& fields,const WVIntegrationStateLayout& layout,
+    const WVIntegrationState& state,const std::vector<WVFieldRequest>& requests,std::size_t forcingCount,
+    const std::vector<std::vector<double>>& expected,const std::shared_ptr<FailureCounter>& counter) {
+    auto catalog=wavevortex::runtime::test::extensionCatalog();
+    WVPortableObserverRecord record;
+    for(const auto& family:layout.coefficientFamilies())
+        record.stateBlocks.push_back({family.identifier,WVStateScalarType::complex64,family.spectralDimensions,
+            WVToleranceKind::coefficientEnergyScaled,1e-6,WVStateOwnership::integratorOwned,WVRestartRequirement::requiredDynamicState});
+    WVObserverRecord first; first.identifier="forcing-fields"; first.name="forcing fields"; first.typeIdentifier="WVEulerianFields";
+    for(std::size_t index=0;index<forcingCount;++index) first.fieldNames.push_back(requests[index].fieldName);
+    first.fieldNames.push_back("u"); record.observers.push_back(first);
+    auto second=first; second.identifier="shared-fields"; second.name="shared fields";
+    second.fieldNames={requests[0].fieldName,"v"}; record.observers.push_back(second);
+    WVPortableObserverDescriptor descriptor;
+    auto status=WVPortableObserverDescriptor::create(record,catalog,descriptor);
+    if(!status) throw std::runtime_error("Forcing observer descriptor: "+status.message);
+    std::unique_ptr<WVFieldEvaluationService> rebound;
+    std::unique_ptr<WVObserverOutputEvaluationService> service;
+    status=WVObserverOutputEvaluationService::create(false,descriptor,fields,service);
+    if(!status) throw std::runtime_error("Forcing observer service: "+status.message);
+    WVObservationSchema schema;
+    require(bool(service->observationSchema(descriptor.observers()[0],schema)),"Forcing observer schema");
+    require(service->metrics().sharedFieldReuseCount==1,"Forcing observer outputs were not shared");
+    WVFrozenForcingSchedule scheduleValue;
+    for(std::size_t index=0;index<engine.forcingCount();++index) {
+        const auto* instance=engine.forcingInstance(index);
+        scheduleValue.entries.push_back({instance->typeIdentifier(),instance->contractVersion(),instance->name(),
+            instance->stage(),instance->priority(),instance->ordinal(),"",{}});
+    }
+    std::vector<WVPortableForcingVariableBinding> bindings;
+    const auto preflightCalls=counter->calls;
+    require(bool(catalog->forcings().diagnosticBindings(scheduleValue,fields.portableVariableConfiguration(),bindings)),
+        "Data-only forcing metadata binding");
+    WVObserverOutputPlanningContext context;
+    context.configuration=fields.hasLegacyConfiguration() ? &fields.configuration() : nullptr;
+    context.stratifiedGeometry=fields.stratifiedGeometry(); context.stateLayout=&layout;
+    context.stateBlocks=record.stateBlocks.data(); context.stateBlockCount=record.stateBlocks.size();
+    context.forcingConfiguration=fields.portableVariableConfiguration(); context.forcingBindings=bindings.data(); context.forcingBindingCount=bindings.size();
+    WVObserverOutputPlan preflight;
+    require(bool(catalog->observers().resolveOutputPlan(descriptor.observers()[0],context,preflight)),"Data-only forcing observer preflight");
+    std::vector<std::uint8_t> runtimeManifest,preflightManifest;
+    require(bool(encodeObservationSchemaManifest(schema,runtimeManifest)) && bool(encodeObservationSchemaManifest(preflight.schema,preflightManifest)) &&
+        runtimeManifest==preflightManifest && counter->calls==preflightCalls,"Forcing runtime/preflight schemas differ or preflight executed FFTs");
+    for(std::size_t index=0;index<forcingCount;++index) {
+        const auto& variable=schema.variables[index];
+        const auto& instance=fields.forcingVariableBindings()[index/(forcingCount/engine.forcingCount())];
+        require(variable.name==requests[index].fieldName && variable.description.find(instance.instanceName)!=std::string::npos &&
+            variable.description.find("portable_catalog_forcing")==std::string::npos && variable.layout==WVObservationValueLayout::record,
+            "Observer forcing metadata did not preserve actual instance identity");
+    }
+    WVOutputSchedulePayload payload; require(bool(payload.reset(emptyOutputSchedulePayloadSchema())),"Forcing observer payload");
+    WVPortableTypedRecord cursor;
+    WVOutputGroupRecord group; group.identifier="forcing-occurrence"; group.observerIdentifiers={first.identifier,second.identifier};
+    std::array<WVOutputObserverView,2> observers{{{0,&descriptor.observers()[0],descriptor.resolvedObserver(descriptor.observers()[0])},
+        {1,&descriptor.observers()[1],descriptor.resolvedObserver(descriptor.observers()[1])}}};
+    WVOutputRouteView route; route.observers=observers.data(); route.observerCount=observers.size(); route.scheduleOrdinal=1;
+    route.proposedScheduleCursor=&cursor; route.schedulePayloadSchema=&emptyOutputSchedulePayloadSchema(); route.schedulePayload=&payload;
+    route.scheduleCursorIdentity=1; route.semanticScheduleRecord=&group;
+    WVOutputEvent event; event.eventOrdinal=1; event.scheduledTime=state.waveVortex.t; event.state=state; event.routes=&route; event.routeCount=1;
+    const auto calls=engine.tendencyMetrics().forcingEvaluationCount,fftStart=counter->calls;
+    require(service->metrics().outputCapacityBytes==0,"Forcing observer retained state-sized output arrays before an event");
+    require(bool(service->prepare(event)),"Forcing observer event preparation");
+    const auto fftCalls=counter->calls-fftStart;
+    require(service->occurrenceWorkspaceLiveBytes()>=forcingCount*expected[0].size()*sizeof(double),"Live observer output workspace was not accounted");
+    require(!service->useFieldEvaluationService(fields),"Observer rebind accepted an unfinished event");
+    require(engine.tendencyMetrics().forcingEvaluationCount==calls+engine.forcingCount(),"Observers evaluated shared forcing contributions twice");
+    WVObservationOccurrenceIdentity identity;
+    require(bool(service->preparedOccurrenceIdentity(route,observers[0],identity)),"Forcing observer occurrence identity");
+    WVObservationBatch batch;
+    require(bool(service->observationBatch(identity,descriptor.observers()[0],batch)),"Forcing observer batch");
+    for(std::size_t index=0;index<forcingCount;++index) {
+        const auto found=std::find_if(batch.values.begin(),batch.values.end(),[&](const auto& value){return value.resolvedVariableIndex==index;});
+        require(found!=batch.values.end() && found->real64Data(),"Forcing observer omitted a contribution");
+        relative(std::vector<double>(found->real64Data(),found->real64Data()+found->elementCount()),expected[index],"Observer forcing field");
+    }
+    service->complete(event);
+    require(service->occurrenceWorkspaceLiveBytes()==0 && fields.metrics().diagnosticWorkspaceLiveBytes==0,"Observer completion retained live forcing scratch");
+    require(service->metrics().outputCapacityBytes==0,"Completed forcing observer retained output arrays");
+    counter->failAt=counter->calls+fftCalls;
+    require(service->prepare(event).code==WVKernelStatusCode::fftExecutionFailure,"Observer expected late forcing FFT failure");
+    require(service->occurrenceWorkspaceLiveBytes()==0 && service->metrics().outputCapacityBytes==0,
+        "Failed observer preparation retained forcing output arrays");
+    require(!service->preparedOccurrenceIdentity(route,observers[0],identity),"Failed observer exposed a stale occurrence");
+    counter->failAt=0;
+    require(bool(WVFieldEvaluationService::createBorrowing(engine,rebound)) && bool(service->useFieldEvaluationService(*rebound)),
+        "Equivalent forcing field service could not rebind after failed preparation");
+    require(bool(service->prepare(event)),"Observer forcing retry after rebind failed");
+    service->complete(event);
+    require(service->metrics().outputCapacityBytes==0,"Observer retry retained forcing output arrays");
 }
 
 template<class Engine,class Fields>
@@ -212,6 +306,7 @@ void fieldService(Engine& engine,const WVState& state,WVShape4D spatial,
     require(evaluatePrepared().code==WVKernelStatusCode::overlappingArrays,"Prepared fields may alias diagnostic output");
     require(counter->calls==rejectCalls,"Prepared input rejected after numerical execution");
     for(auto value:result) require(value==99,"Prepared input preflight changed output");
+    observerService(engine,*service,layout,integrationState,requests,forcingOutputCount,successful,counter);
 }
 
 template<class Engine,class Project,class Reconstruct>

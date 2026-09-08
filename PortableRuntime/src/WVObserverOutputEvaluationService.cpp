@@ -364,6 +364,45 @@ public:
     return found == preparedOccurrences.end() ? nullptr : &*found;
   }
 
+  bool hasForcingOutputs() const noexcept {
+    return timeSeriesFieldPlan.diagnosticPlan_ && timeSeriesFieldPlan.diagnosticPlan_->hasForcingDiagnostics();
+  }
+  void releaseForcingOutputs(WVObserverOutputEvaluationMetrics& metrics) noexcept {
+    if(!hasForcingOutputs()) return;
+    for(auto& storage:timeSeriesFieldStorage) {
+      metrics.outputCapacityBytes-=storage.capacity()*sizeof(double);
+      std::vector<double>{}.swap(storage);
+    }
+    for(auto& storage:timeSeriesComplexFieldStorage) {
+      metrics.outputCapacityBytes-=storage.capacity()*sizeof(WVComplex64);
+      std::vector<WVComplex64>{}.swap(storage);
+    }
+    for(auto& view:timeSeriesFieldViews) view={};
+  }
+  WVKernelStatus prepareForcingOutputs(WVObserverOutputEvaluationMetrics& metrics) {
+    if(!hasForcingOutputs()) return WVKernelStatus::ok();
+    releaseForcingOutputs(metrics);
+    try {
+      for(std::size_t index=0;index<timeSeriesFieldPlan.outputCount();++index) {
+        const auto& output=timeSeriesFieldPlan.outputs()[index];
+        if(output.isComplex) {
+          auto& storage=timeSeriesComplexFieldStorage[index]; storage.resize(output.elementCount);
+          metrics.outputCapacityBytes+=storage.capacity()*sizeof(WVComplex64);
+          timeSeriesFieldViews[index]={nullptr,output.elementCount,storage.data()};
+        } else {
+          auto& storage=timeSeriesFieldStorage[index]; storage.resize(output.elementCount);
+          metrics.outputCapacityBytes+=storage.capacity()*sizeof(double);
+          timeSeriesFieldViews[index]={storage.data(),output.elementCount};
+        }
+      }
+      updateOccurrenceMetrics(metrics);
+      return WVKernelStatus::ok();
+    } catch(const std::bad_alloc&) {
+      releaseForcingOutputs(metrics);
+      return {WVKernelStatusCode::allocationFailure,"Unable to allocate occurrence-scoped forcing output storage."};
+    }
+  }
+
   void updateOccurrenceMetrics(
       WVObserverOutputEvaluationMetrics &metrics) const noexcept {
     std::size_t retained =
@@ -378,6 +417,10 @@ public:
       retained += occurrence.retainedBytes() - sizeof(PreparedOccurrence);
       live += occurrence.liveBytes() - sizeof(PreparedOccurrence);
     }
+    if(hasForcingOutputs()) {
+      for(const auto& storage:timeSeriesFieldStorage) {retained+=storage.capacity()*sizeof(double); live+=storage.size()*sizeof(double);}
+      for(const auto& storage:timeSeriesComplexFieldStorage) {retained+=storage.capacity()*sizeof(WVComplex64); live+=storage.size()*sizeof(WVComplex64);}
+    }
     metrics.occurrenceWorkspaceRetainedBytes = retained;
     metrics.occurrenceWorkspaceLiveBytes = live;
     metrics.occurrenceWorkspaceMaximumLiveBytes =
@@ -390,6 +433,9 @@ public:
                           WVObserverOutputEvaluationMetrics &metrics) {
     if (running)
       return invalid("Observer evaluation is not reentrant.");
+    if(!initial) {
+      const auto status=prepareForcingOutputs(metrics); if(!status) return status;
+    }
     running = true;
     const auto finish = [this]() { running = false; };
     auto &views = initial ? initialFieldViews : timeSeriesFieldViews;
@@ -616,6 +662,9 @@ WVKernelStatus WVObserverOutputEvaluationService::create(
     planningContext.stateBlockCount = descriptorRecord.stateBlocks.size();
     planningContext.isDynamicsLinear = isDynamicsLinear;
     planningContext.stateLayout = &impl.stateLayout;
+    planningContext.forcingConfiguration=impl.fields->portableVariableConfiguration();
+    planningContext.forcingBindings=impl.fields->forcingVariableBindings().data();
+    planningContext.forcingBindingCount=impl.fields->forcingVariableBindings().size();
     std::vector<WVFieldRequest> initialRequests;
     std::vector<WVFieldRequest> timeSeriesRequests;
     std::map<std::string, std::size_t> initialRequestIndex;
@@ -927,7 +976,9 @@ WVKernelStatus WVObserverOutputEvaluationService::create(
       if(std::any_of(plan.outputs().begin(),plan.outputs().end(),[](const auto& output) {return output.isComplex;}))
         complexStorage.resize(plan.outputCount());
       views.resize(plan.outputCount());
+      const bool ephemeral=&plan==&impl.timeSeriesFieldPlan && plan.diagnosticPlan_ && plan.diagnosticPlan_->hasForcingDiagnostics();
       for (std::size_t index = 0; index < plan.outputCount(); ++index) {
+        if(ephemeral) continue;
         const auto count = plan.outputs()[index].elementCount;
         if(plan.outputs()[index].isComplex) {
           complexStorage[index].resize(count);
@@ -1115,6 +1166,7 @@ WVKernelStatus WVObserverOutputEvaluationService::preflight(
 
 WVKernelStatus WVObserverOutputEvaluationService::useFieldEvaluationService(
     WVFieldEvaluationService &fieldEvaluationService) {
+  if(impl_->preparedOutputEvent) return invalid("Cannot rebind fields while an observation event awaits completion.");
   const bool compatible =
       impl_->fields != nullptr &&
       impl_->fields->isCompatibleWith(fieldEvaluationService) &&
@@ -1146,6 +1198,7 @@ WVObserverOutputEvaluationService::prepareInitial(const WVState &state) {
 
 WVKernelStatus WVObserverOutputEvaluationService::prepareInitial(
     const WVIntegrationState &state) {
+  if(impl_->preparedOutputEvent) return invalid("Cannot prepare initial fields while an observation event awaits completion.");
   const auto started = std::chrono::steady_clock::now();
   impl_->preparedOccurrences.clear();
   impl_->eventFieldBatchEntries.clear();
@@ -1387,8 +1440,11 @@ WVKernelStatus WVObserverOutputEvaluationService::prepare(
   }
   if (status)
     impl_->preparedOutputEvent = true;
-  else
+  else {
     impl_->prepared = false;
+    impl_->releaseForcingOutputs(metrics_);
+    impl_->updateOccurrenceMetrics(metrics_);
+  }
   metrics_.evaluationSeconds +=
       std::chrono::duration<double>(std::chrono::steady_clock::now() - started)
           .count();
@@ -1402,6 +1458,7 @@ void WVObserverOutputEvaluationService::complete(
       impl_->preparedEventOrdinal != event.eventOrdinal ||
       impl_->preparedScheduledTime != event.scheduledTime)
     return;
+  impl_->releaseForcingOutputs(metrics_);
   impl_->preparedOccurrences.clear();
   impl_->eventFieldBatchEntries.clear();
   impl_->preparedOutputEvent = false;

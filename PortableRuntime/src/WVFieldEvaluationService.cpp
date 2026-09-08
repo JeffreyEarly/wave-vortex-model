@@ -644,6 +644,14 @@ std::vector<std::string> WVFieldEvaluationService::supportedFieldNames() {
   return result;
 }
 
+const std::vector<WVPortableForcingVariableBinding>& WVFieldEvaluationService::forcingVariableBindings() const noexcept {
+  static const std::vector<WVPortableForcingVariableBinding> empty;
+  return forcing_ ? forcing_->bindings() : empty;
+}
+std::string WVFieldEvaluationService::portableVariableConfiguration() const {
+  return detail::WVDiagnosticFieldPlan::configurationIdentifier(*this);
+}
+
 WVKernelStatus WVFieldEvaluationService::createBorrowing(WVConstantStratificationForcingEngine& engine,std::unique_ptr<WVFieldEvaluationService>& result) {
   std::unique_ptr<WVFieldEvaluationService> candidate;
   auto status=createBorrowing(engine.kernel(),candidate); if(!status) return status;

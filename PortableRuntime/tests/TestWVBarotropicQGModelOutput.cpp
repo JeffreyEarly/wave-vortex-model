@@ -46,8 +46,9 @@ std::shared_ptr<const WVExtensionCatalog> catalog() {
 
 WVTransformBarotropicQGConfiguration qgConfiguration() {
   WVTransformBarotropicQGConfiguration configuration;
-  configuration.Nx = 5;
-  configuration.Ny = 4;
+  // Retain different horizontal magnitudes so nonlinear forcing is nonzero.
+  configuration.Nx = 7;
+  configuration.Ny = 6;
   configuration.Lx = 15000.0;
   configuration.Ly = 9000.0;
   configuration.h = 0.8;
@@ -106,7 +107,7 @@ WVPortableObserverRecord observerRecord(
   fields.name = "WVEulerianFields";
   fields.typeIdentifier = "WVEulerianFields";
   fields.fieldNames = {"A0", "u", "v", "eta", "pi", "psi", "qgpv",
-                       "zeta_z", "ssh", "energy", "uvMax"};
+                       "zeta_z", "ssh", "energy", "uvMax", "Fqgpv_nonlinear_advection"};
 
   WVObserverRecord particles;
   particles.identifier = "floats";
@@ -280,16 +281,56 @@ void verifyCompactSchema(const std::filesystem::path &path) {
               !findVariable(file, "Am_real", owner, variable),
           "QG output persisted dummy Ap or Am arrays");
   for (const auto *name : {"u", "v", "eta", "pi", "psi", "qgpv",
-                           "zeta_z", "ssh", "energy", "uvMax", "dye"})
+                           "zeta_z", "ssh", "energy", "uvMax", "dye", "Fqgpv_nonlinear_advection"})
     require(findVariable(file, name, owner, variable),
             std::string("QG output is missing ") + name);
   require(nc_close(file) == NC_NOERR, "unable to close QG output schema");
+}
+
+void verifyStoredForcing(const std::filesystem::path& path,WVModelState& state) {
+  const auto configuration=qgConfiguration();
+  std::unique_ptr<WVTransformBarotropicQGKernel> kernel;
+  require(bool(WVTransformBarotropicQGKernel::create(configuration,std::make_unique<WVReferenceFFTEngine>(),kernel)),"Stored forcing reference kernel");
+  const auto shape=kernel->descriptor().spatialShape(); const auto R=shape.elementCount();
+  const WVComplexConstView A0{state.constView().coefficientFamilies[0].data,kernel->descriptor().spectralShape()};
+  std::vector<double> u(R),v(R),q(3*R),actual(R);
+  WVRealView uView{u.data(),shape},vView{v.data(),shape};
+  WVRealFieldBundleView derivatives{q.data(),{shape.rows,shape.columns,1,3}};
+  require(bool(kernel->transformA0ToField(A0,WVBarotropicQGField::u,uView)) &&
+      bool(kernel->transformA0ToField(A0,WVBarotropicQGField::v,vView)) &&
+      bool(kernel->transformA0ToFieldWithDerivatives(A0,WVBarotropicQGField::qgpv,derivatives)),"Stored forcing independent fields");
+  int file=-1,owner=-1,variable=-1;
+  require(nc_open(path.c_str(),NC_NOWRITE,&file)==NC_NOERR && findVariable(file,"Fqgpv_nonlinear_advection",owner,variable),"Stored forcing variable missing");
+  int dimensions[3]={},rank=0;
+  require(nc_inq_varndims(owner,variable,&rank)==NC_NOERR && rank==3 && nc_inq_vardimid(owner,variable,dimensions)==NC_NOERR,"Stored QG forcing rank");
+  std::size_t times=0; require(nc_inq_dimlen(owner,dimensions[0],&times)==NC_NOERR && times>0,"Stored QG forcing time extent");
+  const char* names[]={"t","y","x"};
+  for(int index=0;index<3;++index) {
+    char name[NC_MAX_NAME+1]={}; require(nc_inq_dimname(owner,dimensions[index],name)==NC_NOERR && std::string(name)==names[index],"Stored QG forcing dimension order");
+  }
+  const auto attribute=[&](const char* name) {
+    std::size_t length=0; require(nc_inq_attlen(owner,variable,name,&length)==NC_NOERR,"Stored forcing attribute missing");
+    std::string value(length,' '); require(nc_get_att_text(owner,variable,name,value.data())==NC_NOERR,"Stored forcing attribute read"); return value;
+  };
+  require(attribute("units")=="s-2" && attribute("long_name")=="spatial representation of qgpv forcing nonlinear advection","Stored forcing metadata differs from MATLAB annotation");
+  const std::size_t start[]={times-1,0,0},count[]={1,configuration.Ny,configuration.Nx};
+  require(nc_get_vara_double(owner,variable,start,count,actual.data())==NC_NOERR,"Stored QG forcing read");
+  require(nc_close(file)==NC_NOERR,"Stored forcing close");
+  double scale=0,error=0;
+  for(std::size_t index=0;index<R;++index) {
+    const auto expected=-(u[index]*q[R+index]+v[index]*q[2*R+index]);
+    scale=std::max(scale,std::abs(expected)); error=std::max(error,std::abs(actual[index]-expected));
+  }
+  if(!(scale>0 && error<=1e-12*scale)) std::cerr<<"Stored forcing "<<path<<" time="<<state.constView().waveVortex.t<<" scale="<<scale<<" error="<<error<<" relative="<<error/scale<<"\n";
+  require(scale>0 && error<=1e-12*scale,"NetCDF forcing differs from independent raw nonlinear tendency");
 }
 
 WVModelIntegratorConfiguration integratorConfiguration(
     WVModelIntegratorKind kind) {
   WVModelIntegratorConfiguration result;
   result.kind = kind;
+  result.fixed.retainDenseOutput = true;
+  result.adaptiveRK78.retainDenseOutput = true;
   result.adaptive.relativeTolerance = 1e-8;
   result.adaptive.maximumStepSize = 0.005;
   result.adaptiveRK45.relativeTolerance = 1e-8;
@@ -311,6 +352,7 @@ void exerciseIntegrator(WVModelIntegratorKind kind, std::size_t ordinal,
   // Persist a schedule that extends beyond the create run so the second model
   // exercises actual append output rather than state-only continuation.
   auto record = observerRecord(configuration, transform.Nkl(), path, 0.04);
+  record.outputFiles.front().groups.push_back({"dense-forcing","dense-forcing",{0.003,0.0,0.04},{"fields"},false});
   WVPortableObserverDescriptor descriptor;
   status = WVPortableObserverDescriptor::create(record, extensions, descriptor);
   require(static_cast<bool>(status), status.message);
@@ -327,6 +369,12 @@ void exerciseIntegrator(WVModelIntegratorKind kind, std::size_t ordinal,
       state);
   require(static_cast<bool>(status), status.message);
   initializeAdditionalState(model, state);
+  WVModel baseline;
+  status=WVModel::create(extensions,configuration,forcing,descriptor,std::make_unique<WVReferenceFFTEngine>(),integratorConfiguration(kind),baseline);
+  require(bool(status),status.message);
+  WVModelState baselineState;
+  status=WVModelState::create(checkpointFor(configuration,description,forcing),baseline.stateLayout(),baselineState);
+  require(bool(status),status.message); initializeAdditionalState(baseline,baselineState);
   require(state.constView().coefficientFamilyCount == 1 &&
               state.constView().waveVortex.coefficients.Ap.data == nullptr &&
               state.constView().waveVortex.coefficients.Am.data == nullptr,
@@ -344,6 +392,13 @@ void exerciseIntegrator(WVModelIntegratorKind kind, std::size_t ordinal,
   const auto closed = model.closeOutput();
   require(static_cast<bool>(closed) && !model.hasOutput(), closed.message);
   verifyCompactSchema(path);
+  verifyStoredForcing(path,state);
+  require(bool(baseline.advanceToTime(baselineState,0.02,0.005)),"Baseline integration without diagnostic output");
+  const auto withOutput=model.metrics(&state).integrator,withoutOutput=baseline.metrics(&baselineState).integrator;
+  require(relativeStateDifference(state,baselineState)==0 && withOutput.acceptedStepCount==withoutOutput.acceptedStepCount &&
+      withOutput.rejectedStepCount==withoutOutput.rejectedStepCount && withOutput.baseRightHandSideEvaluationCount==withoutOutput.baseRightHandSideEvaluationCount,
+      "Forcing output changed accepted trajectory or base integration work");
+  require(withOutput.denseOutputEvaluationCount>0,"Forcing output did not exercise dense states");
 
   WVModelOutputNetCDFInspection inspection;
   auto persistence = WVModelOutputNetCDFSink::inspect(
@@ -393,7 +448,7 @@ void exerciseIntegrator(WVModelIntegratorKind kind, std::size_t ordinal,
               liveMetrics.outputEvaluation.fieldEvaluationCount > 0 &&
               liveMetrics.outputEvaluation.occurrenceWorkspaceLiveBytes == 0 &&
               liveMetrics.outputEvaluation
-                      .occurrenceWorkspaceMaximumLiveBytes <=
+                      .occurrenceWorkspaceMaximumLiveBytes >
                   liveMetrics.outputEvaluation
                       .occurrenceWorkspaceRetainedBytes,
           "QG output storage or event-scoped field reuse is not exactly "
@@ -426,6 +481,7 @@ void exerciseIntegrator(WVModelIntegratorKind kind, std::size_t ordinal,
                                  .occurrenceWorkspaceRetainedBytes));
   persistence = continued.closeOutput();
   require(static_cast<bool>(persistence), persistence.message);
+  verifyStoredForcing(path,restored);
 
   const auto metrics = continued.metrics(&restored);
   require(metrics.barotropicQGKernel.planCount == 3 &&

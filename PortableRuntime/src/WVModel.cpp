@@ -129,6 +129,11 @@ WVKernelStatus compileOutputConfiguration(
       return invalid("The output destination map contains an unknown file "
                      "identifier.");
   }
+  const auto& restart=inspection.latestRestart;
+  const bool antialias=restart.stratifiedModalSource ? restart.stratifiedModalSource->geometry().shouldAntialias :
+      restart.transformKind==WVPersistedTransformKind::barotropicQG ? restart.barotropicQGConfiguration.shouldAntialias : restart.configuration.shouldAntialias;
+  const auto forcingConfiguration=portableVariableConfigurationIdentifier(restart.stateDescription.transformIdentifier,
+      restart.configuration.isHydrostatic,antialias);
   return WVModelOutputConfiguration::compile(
       std::move(observerRecord), inspection.observationSchemas,
       inspection.scheduleContinuations, request.policy, std::move(catalog),
@@ -137,7 +142,8 @@ WVKernelStatus compileOutputConfiguration(
           inspection.latestRestart),
       inspection.isDynamicsLinear,
       &inspection.latestRestart.stateDescription,
-      inspection.latestRestart.stratifiedModalSource ? &inspection.latestRestart.stratifiedModalSource->geometry() : nullptr);
+      inspection.latestRestart.stratifiedModalSource ? &inspection.latestRestart.stratifiedModalSource->geometry() : nullptr,
+      &restart.forcingSchedule,forcingConfiguration);
 }
 #endif
 
