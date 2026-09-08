@@ -4316,9 +4316,11 @@ void testWVModelRetainsFailedNetCDFRouteForRetry() {
       retried.baseRightHandSideEvaluationCount==progress.baseRightHandSideEvaluationCount,
       "Sink retry repeated integration work");
   const auto& acceptedAfter=state.checkpoint().state;
-  for(const auto pair:{std::make_pair(&accepted.coefficients.Ap,&acceptedAfter.coefficients.Ap),
-      std::make_pair(&accepted.coefficients.Am,&acceptedAfter.coefficients.Am),std::make_pair(&accepted.coefficients.A0,&acceptedAfter.coefficients.A0)})
-    require(pair.first->size()==pair.second->size() && std::equal(pair.first->begin(),pair.first->end(),pair.second->begin(),
+  const std::vector<WVComplex64>* beforeFamilies[]={&accepted.coefficients.Ap,&accepted.coefficients.Am,&accepted.coefficients.A0};
+  const std::vector<WVComplex64>* afterFamilies[]={&acceptedAfter.coefficients.Ap,&acceptedAfter.coefficients.Am,&acceptedAfter.coefficients.A0};
+  for(std::size_t family=0;family<3;++family)
+    require(beforeFamilies[family]->size()==afterFamilies[family]->size() &&
+        std::equal(beforeFamilies[family]->begin(),beforeFamilies[family]->end(),afterFamilies[family]->begin(),
         [](auto left,auto right){return left.real==right.real && left.imag==right.imag;}),"Sink retry changed accepted coefficients");
   require(static_cast<bool>(status) &&
               timeCount(primaryPath, "wave-vortex") == 1 &&

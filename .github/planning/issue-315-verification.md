@@ -164,6 +164,12 @@ Branch: `issue-315-forcing-tendency-diagnostics`, based on v4 main `866f66ed4198
 - After catalog promotion, Release and Apple ASan/UBSan passed catalog, forcing, field, observer and NetCDF checks. All six explicitly selected v4 MATLAB catalog methods and Code Analyzer passed; generated files and the 23 legacy records are unchanged except the intended forcing delivery status. The earlier seven focused kernel/output tests and the post-optimization MATLAB wave matrix also remain applicable.
 - Local implementation, numerical/output qualification, preflight/retry/sharing checks and the representative 3% runtime/retained-memory budgets are complete. The CI router selects the required C++ and sharded scientific MATLAB checks, with no website or packaging rebuild and no optional Full campaign. Required hosted CI and PR integration are tracked by #315.
 
+### Required CI compiler correction
+
+- PR #411's first required run (34291021330, d6cafb81) failed GCC Release compilation on a test-only range loop copying std::pair. The sanitizer build and all core/runtime contracts passed on that revision. Artifact-upload failures in the Release job were downstream of its failed build, not separate source defects.
+- Replaced the temporary pair list with explicit before/after coefficient-family pointer arrays, preserving every accepted-state equality assertion. A preliminary const-reference loop caused GCC 14 dangling-reference diagnostics; the final arrays compile cleanly under GCC 14 with -Wall -Wextra -Wpedantic -Werror. Release and Apple ASan/UBSan model-output-netcdf pass on the corrected test.
+- No runtime or MATLAB code changed in this correction, so numerical matrices and performance qualification were not repeated. The updated test hash is recorded in the evidence. Required hosted CI must still pass on the corrected PR head before integration.
+
 ## Diagnostic semantics established from MATLAB
 
 `Operations/SpatialForcingOperation.m` reports the difference before and after each operation in stage/priority order. Spatial diagnostics expose the raw spatial contribution; spectral and amplitude diagnostics reconstruct the difference in the accumulated spectral tendency. Filters and fixed-amplitude operations therefore require the preceding accumulated tendency. Evaluating each forcing independently from a zero accumulator is incorrect.

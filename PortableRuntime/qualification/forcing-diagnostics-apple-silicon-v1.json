@@ -3154,7 +3154,7 @@
   },
   "netcdfSinkRetry": {
     "test": "TestWVModelOutputNetCDF/testWVModelRetainsFailedNetCDFRouteForRetry",
-    "testSourceSha256": "763ae09b28a271c17cd3b36c02e18508fed1bbb0b671bedd946ab7828729e650",
+    "testSourceSha256": "c7ef11103cbbc68e3dd0c5f4c0283c3e8d0311004d2e3bef85ba479adc5297fd",
     "release": "passed",
     "appleASanUBSan": "passed; local leak detection unsupported",
     "assertions": [
@@ -4093,5 +4093,20 @@
     "verification": "Seven focused kernel/field/forcing/observer/NetCDF tests passed in Release and Apple ASan/UBSan. MATLAB ordered wave matrix and Code Analyzer passed.",
     "cppSourceCommit": "b5473525f3490a38422fd0da9ed362e8fc85c4f9"
   },
-  "integrationTracking": "https://github.com/JeffreyEarly/wave-vortex-model/issues/315"
+  "integrationTracking": "https://github.com/JeffreyEarly/wave-vortex-model/issues/315",
+  "ciCorrections": [
+    {
+      "run": 34291021330,
+      "head": "d6cafb815644d73f3dc3e95107a259eeea17dbf2",
+      "failure": "GCC -Werror=range-loop-construct in the test-only accepted coefficient comparison",
+      "correction": "Use explicit before/after coefficient-family pointer arrays; preserve all equality assertions. A preliminary const-reference edit triggered GCC 14 dangling-reference warnings and was replaced.",
+      "localVerification": [
+        "GCC 14 full test translation unit with -Wall -Wextra -Wpedantic -Werror -fsyntax-only",
+        "Release model-output-netcdf",
+        "Apple ASan/UBSan model-output-netcdf"
+      ],
+      "runtimeChanged": false,
+      "priorHostedSanitizedBuildAndContracts": "passed on d6cafb81"
+    }
+  ]
 }
