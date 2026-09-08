@@ -1,4 +1,5 @@
 #include "WVForcingDiagnosticBinding.hpp"
+#include "WVFieldEvaluationEventWorkspace.hpp"
 #include "WaveVortexRuntime/WVForcingEngine.hpp"
 #include "WaveVortexRuntime/WVBarotropicQGForcingEngine.hpp"
 #include "WaveVortexRuntime/WVStratifiedQGForcingEngine.hpp"
@@ -20,6 +21,34 @@
 #include <utility>
 
 namespace wavevortex::runtime {
+namespace detail {
+WVFieldEvaluationEventScope::WVFieldEvaluationEventScope(WVFieldEvaluationService& service,const WVIntegrationState& state,bool enabled)
+    : workspace_(state) {
+  if(!enabled) return;
+  if(service.eventWorkspace_) {
+    status_={WVKernelStatusCode::reentrantExecution,"An output field event is already active."};
+    return;
+  }
+  service_=&service;
+  service.eventWorkspace_=&workspace_;
+  if(service.stratified_) {
+    service.stratified_->eventWorkspace_=&workspace_;
+    workspace_.metrics_=&service.stratified_->metrics_;
+  } else if(service.barotropicQG_) {
+    service.barotropicQG_->eventWorkspace_=&workspace_;
+    workspace_.metrics_=&service.barotropicQG_->metrics_;
+  } else workspace_.metrics_=&service.metrics_;
+}
+void WVFieldEvaluationEventScope::release() noexcept {
+  if(!service_) return;
+  service_->eventWorkspace_=nullptr;
+  if(service_->stratified_) service_->stratified_->eventWorkspace_=nullptr;
+  if(service_->barotropicQG_) service_->barotropicQG_->eventWorkspace_=nullptr;
+  for(auto& field:workspace_.fields_) std::vector<double>{}.swap(field);
+  workspace_.metrics_->eventFieldWorkspaceLiveBytes=0;
+  service_=nullptr;
+}
+} // namespace detail
 namespace {
 
 enum Dependency : std::uint64_t {
@@ -1218,8 +1247,10 @@ WVFieldEvaluationService::evaluatePlanBatch(const PlanInvocation *invocations,
     WVRealFieldBundleView primitiveBundle{
         realScratch_.data(),
         {configuration.Nx, configuration.Ny, configuration.Nz, 4}};
-    auto status = invokeTransform(
-        [&]() { return transform_->transformWaveVortexToUVWEta(state, primitiveBundle); });
+    bool reused=false;
+    const auto operation=[&]() {return invokeTransform([&]() { return transform_->transformWaveVortexToUVWEta(state, primitiveBundle); });};
+    auto status = eventWorkspace_ ? eventWorkspace_->evaluate(0,state,primitiveBundle.data,4*fieldElements,operation,reused) : operation();
+    if(reused) ++metrics_.primitiveFieldReuseCount;
     if (!status)
       return status;
     const bool primitiveNeeded[] = {
@@ -1235,7 +1266,7 @@ WVFieldEvaluationService::evaluatePlanBatch(const PlanInvocation *invocations,
             fieldRequested(WVFieldEvaluationPlan::Field::rhoE) ||
             fieldRequested(WVFieldEvaluationPlan::Field::rhoTotal) ||
             fieldRequested(WVFieldEvaluationPlan::Field::rhoBar)};
-    metrics_.primitiveFieldEvaluationCount +=
+    if(!reused) metrics_.primitiveFieldEvaluationCount +=
         static_cast<std::size_t>(primitiveNeeded[0]) +
         static_cast<std::size_t>(primitiveNeeded[1]) +
         static_cast<std::size_t>(primitiveNeeded[2]) +
@@ -1374,7 +1405,9 @@ WVFieldEvaluationService::evaluatePlanBatch(const PlanInvocation *invocations,
     }
   };
 
+  bool fFieldReused=false;
   auto evaluateFField = [&](WVFieldEvaluationPlan::Field field) {
+    fFieldReused=false;
     fillFFieldCoefficients(field);
     updateScratchHighWater(4 * fieldElements, 2 * coefficientElements);
     WVRealFieldBundleView fieldAndDerivatives{
@@ -1383,17 +1416,20 @@ WVFieldEvaluationService::evaluatePlanBatch(const PlanInvocation *invocations,
     const WVComplexConstView wave{complexScratch_.data(), spectral};
     const WVComplexConstView zeroFrequency{
         complexScratch_.data() + coefficientElements, spectral};
-    return invokeTransform([&]() {
+    const auto operation=[&]() {return invokeTransform([&]() {
       return transform_->transformToSpatialDomainWithFAllDerivatives(
           wave, zeroFrequency, fieldAndDerivatives);
-    });
+    });};
+    const auto status=eventWorkspace_ ? eventWorkspace_->evaluate(static_cast<std::size_t>(field),state,realScratch_.data(),fieldElements,operation,fFieldReused) : operation();
+    if(fFieldReused) ++metrics_.primitiveFieldReuseCount;
+    return status;
   };
 
   if ((dependencyMask & pressureHeight) != 0) {
     auto status = evaluateFField(WVFieldEvaluationPlan::Field::pi);
     if (!status)
       return status;
-    ++metrics_.primitiveFieldEvaluationCount;
+    if(!fFieldReused) ++metrics_.primitiveFieldEvaluationCount;
     const double *pressureHeightField = realScratch_.data();
     if (fieldRequested(WVFieldEvaluationPlan::Field::pi))
       writeField(WVFieldEvaluationPlan::Field::pi,
@@ -1421,7 +1457,7 @@ WVFieldEvaluationService::evaluatePlanBatch(const PlanInvocation *invocations,
     auto status = evaluateFField(WVFieldEvaluationPlan::Field::psi);
     if (!status)
       return status;
-    ++metrics_.primitiveFieldEvaluationCount;
+    if(!fFieldReused) ++metrics_.primitiveFieldEvaluationCount;
     writeField(WVFieldEvaluationPlan::Field::psi,
                WVFieldEvaluationPlan::NativeRank::volume,
                realScratch_.data());
@@ -1431,7 +1467,7 @@ WVFieldEvaluationService::evaluatePlanBatch(const PlanInvocation *invocations,
     auto status = evaluateFField(WVFieldEvaluationPlan::Field::qgpv);
     if (!status)
       return status;
-    ++metrics_.primitiveFieldEvaluationCount;
+    if(!fFieldReused) ++metrics_.primitiveFieldEvaluationCount;
     writeField(WVFieldEvaluationPlan::Field::qgpv,
                WVFieldEvaluationPlan::NativeRank::volume,
                realScratch_.data());
@@ -2144,16 +2180,19 @@ WVKernelStatus WVFieldEvaluationService::evaluateMovingImpl(
   const auto R = spatial.elementCount();
   const auto horizontalCount = configuration.Nx * configuration.Ny;
   const double *primitiveFields = realScratch_.data();
+  bool primitiveReused=false;
   if (preparedAdvectionFields == nullptr) {
     WVRealFieldBundleView fields{
         realScratch_.data(),
         {configuration.Nx, configuration.Ny, configuration.Nz, 4}};
     const auto before = transform_->metrics().executionCount;
-    const auto status = transform_->transformWaveVortexToUVWEta(state, fields);
+    const auto operation=[&](){return transform_->transformWaveVortexToUVWEta(state, fields);};
+    const auto status = eventWorkspace_ ? eventWorkspace_->evaluate(0,state,fields.data,4*R,operation,primitiveReused) : operation();
     if (!status)
       return status;
     metrics_.fftExecutionCount += transform_->metrics().executionCount - before;
-    ++metrics_.movingPrimitiveTransformCount;
+    if(primitiveReused) ++metrics_.primitiveFieldReuseCount;
+    else ++metrics_.movingPrimitiveTransformCount;
   } else {
     if (preparedAdvectionFields->data == nullptr ||
         preparedAdvectionFields->shape.first != configuration.Nx ||
@@ -2173,8 +2212,10 @@ WVKernelStatus WVFieldEvaluationService::evaluateMovingImpl(
   ++metrics_.evaluationCount;
   ++metrics_.movingEvaluationCount;
   metrics_.movingPositionCount += positions.positionCount;
-  ++metrics_.transformCount;
-  metrics_.primitiveFieldEvaluationCount += preparedAdvectionFields == nullptr ? 4 : 3;
+  if(!primitiveReused) {
+    ++metrics_.transformCount;
+    metrics_.primitiveFieldEvaluationCount += preparedAdvectionFields == nullptr ? 4 : 3;
+  }
   metrics_.scratchHighWaterBytes =
       std::max(metrics_.scratchHighWaterBytes, 4 * R * sizeof(double));
 

@@ -1,3 +1,4 @@
+#include "WVFieldEvaluationEventWorkspace.hpp"
 #include "WVStratifiedFieldEvaluationAdapter.hpp"
 
 #include "WaveVortexRuntime/WVIntegrationState.hpp"
@@ -742,12 +743,13 @@ WVKernelStatus WVStratifiedFieldEvaluationAdapter::evaluate(
     const auto fieldIndex = static_cast<std::size_t>(request.field);
     if (!evaluated[fieldIndex]) {
       WVRealVolumeView view{fieldScratch_.data(),{spatial.first,spatial.second,surface(request.field)?1:spatial.third}};
-      status = transformField(amplitudes, request.field, view);
+      bool reused=false;
+      status = transformField(amplitudes, request.field, view,&reused);
       if (!status)
         return status;
 
-      ++metrics_.transformCount;
-      ++metrics_.primitiveFieldEvaluationCount;
+      if(reused) ++metrics_.primitiveFieldReuseCount;
+      else {++metrics_.transformCount; ++metrics_.primitiveFieldEvaluationCount;}
       evaluated[fieldIndex] = true;
       for (const auto &destination : plan->requests) {
         if (activeOutputs && !activeOutputs[destination.output]) continue;
@@ -895,8 +897,10 @@ WVKernelStatus WVStratifiedFieldEvaluationAdapter::evaluateMovingImpl(
     if(advectionFields && (request.field==WVHydrostaticField::u || request.field==WVHydrostaticField::v || request.field==WVHydrostaticField::w)) {
       values=advectionFields->data+static_cast<std::size_t>(request.field)*R; ++metrics_.primitiveFieldReuseCount;
     } else {
-      status=transformField(amplitudes,request.field,{fieldScratch_.data(),{g.Nx,g.Ny,surface(request.field)?1:g.Nz}});if(!status) return status;
-      ++metrics_.transformCount; ++metrics_.movingPrimitiveTransformCount;
+      bool reused=false;
+      status=transformField(amplitudes,request.field,{fieldScratch_.data(),{g.Nx,g.Ny,surface(request.field)?1:g.Nz}},&reused);if(!status) return status;
+      if(reused) ++metrics_.primitiveFieldReuseCount;
+      else {++metrics_.transformCount; ++metrics_.movingPrimitiveTransformCount;}
     }
     evaluated[fieldIndex]=true;
     for(const auto& destination:plan->requests) if(destination.field==request.field) {
@@ -1134,7 +1138,14 @@ WVStratifiedFieldEvaluationAdapter::persistentBytes() const noexcept {
          (movingInterpolation_ ? movingInterpolation_->persistentBytes() : 0);
 }
 
-WVKernelStatus WVStratifiedFieldEvaluationAdapter::transformField(const WVState& state,WVHydrostaticField field,WVRealVolumeView out) {
+WVKernelStatus WVStratifiedFieldEvaluationAdapter::transformField(const WVState& state,WVHydrostaticField field,WVRealVolumeView out,bool* wasReused) {
+  bool reused=false;
+  const auto operation=[&](){return transformUncachedField(state,field,out);};
+  const auto status=eventWorkspace_ ? eventWorkspace_->evaluate(static_cast<std::size_t>(field),state,out.data,out.shape.elementCount(),operation,reused) : operation();
+  if(wasReused) *wasReused=reused;
+  return status;
+}
+WVKernelStatus WVStratifiedFieldEvaluationAdapter::transformUncachedField(const WVState& state,WVHydrostaticField field,WVRealVolumeView out) {
   if (hydrostaticKernel_) return hydrostaticKernel_->transformStateField(state,field,out);
   if (boussinesqKernel_) {
     WVBoussinesqField mapped;

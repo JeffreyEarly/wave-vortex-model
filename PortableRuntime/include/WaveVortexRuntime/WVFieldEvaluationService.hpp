@@ -32,6 +32,8 @@ class WVBarotropicQGFieldEvaluationAdapter;
 class WVStratifiedFieldEvaluationAdapter;
 class WVDiagnosticFieldPlan;
 class WVForcingDiagnosticBinding;
+class WVFieldEvaluationEventWorkspace;
+class WVFieldEvaluationEventScope;
 }
 
 enum class WVFieldSamplingKind : std::uint8_t {
@@ -353,6 +355,9 @@ struct WVFieldEvaluationMetrics {
   std::size_t eventBatchEvaluationCount = 0;
   std::size_t eventBatchOccurrenceCount = 0;
   std::size_t eventBatchOutputCount = 0;
+  std::size_t eventFieldReuseCount = 0;
+  std::size_t eventFieldWorkspaceLiveBytes = 0;
+  std::size_t eventFieldWorkspaceHighWaterBytes = 0;
   std::size_t eventBatchInvocationWorkspaceBytes = 0;
   std::size_t eventPositionSetCount = 0;
   std::size_t eventPositionCount = 0;
@@ -500,6 +505,8 @@ private:
     const std::uint8_t *activeOutputs = nullptr;
   };
   friend class detail::WVDiagnosticFieldPlan;
+  friend class detail::WVFieldEvaluationEventScope;
+  detail::WVFieldEvaluationEventWorkspace* eventWorkspace_ = nullptr;
   WVFieldEvaluationService() = default;
   WVKernelStatus initializeScratch();
   WVKernelStatus evaluatePlanBatch(const PlanInvocation *invocations,

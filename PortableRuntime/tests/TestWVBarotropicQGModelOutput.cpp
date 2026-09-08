@@ -446,6 +446,9 @@ void exerciseIntegrator(WVModelIntegratorKind kind, std::size_t ordinal,
                       liveMetrics.outputSinkPersistentBytes &&
               liveMetrics.outputEvaluation.borrowedCoefficientViewCount > 0 &&
               liveMetrics.outputEvaluation.fieldEvaluationCount > 0 &&
+              liveMetrics.outputEvaluation.eventFieldReuseCount > 0 &&
+              liveMetrics.outputEvaluation.eventFieldWorkspaceHighWaterBytes > 0 &&
+              liveMetrics.outputEvaluation.eventFieldWorkspaceLiveBytes == 0 &&
               liveMetrics.outputEvaluation.occurrenceWorkspaceLiveBytes == 0 &&
               liveMetrics.outputEvaluation
                       .occurrenceWorkspaceMaximumLiveBytes >

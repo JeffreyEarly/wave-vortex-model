@@ -1,3 +1,4 @@
+#include "WVFieldEvaluationEventWorkspace.hpp"
 #include "WVBarotropicQGFieldEvaluationAdapter.hpp"
 
 #include "WaveVortexRuntime/WVIntegrationState.hpp"
@@ -559,6 +560,15 @@ WVKernelStatus WVBarotropicQGFieldEvaluationAdapter::createPlan(
   }
 }
 
+WVKernelStatus WVBarotropicQGFieldEvaluationAdapter::transformField(
+    const WVIntegrationState& state,const WVComplexConstView& A0,WVBarotropicQGField field,WVRealView output,bool& reused) {
+  reused=false;
+  const auto operation=[&](){return kernel_->transformA0ToField(A0,field,output);};
+  if(!eventWorkspace_) return operation();
+  return eventWorkspace_->evaluate(static_cast<std::size_t>(field),
+      {state.waveVortex.t,state.waveVortex.t0,{{},{},A0}},output.data,output.shape.elementCount(),operation,reused);
+}
+
 WVKernelStatus WVBarotropicQGFieldEvaluationAdapter::evaluate(
     const WVFieldEvaluationPlan &publicPlan,
     const WVIntegrationState &state, WVFieldOutputView *outputs,
@@ -609,13 +619,14 @@ WVKernelStatus WVBarotropicQGFieldEvaluationAdapter::evaluate(
     if (!evaluated[fieldIndex]) {
       const auto before = kernel_->metrics().executionCount;
       WVRealView view{fieldScratch_.data(), spatial};
-      status = kernel_->transformA0ToField(A0, request.field, view);
+      bool reused=false;
+      status = transformField(state,A0,request.field,view,reused);
       if (!status)
         return status;
       metrics_.fftExecutionCount +=
           kernel_->metrics().executionCount - before;
-      ++metrics_.transformCount;
-      ++metrics_.primitiveFieldEvaluationCount;
+      if(reused) ++metrics_.primitiveFieldReuseCount;
+      else {++metrics_.transformCount; ++metrics_.primitiveFieldEvaluationCount;}
       evaluated[fieldIndex] = true;
       for (const auto &destination : plan->requests) {
         if (activeOutputs && !activeOutputs[destination.output]) continue;
@@ -835,19 +846,20 @@ WVKernelStatus WVBarotropicQGFieldEvaluationAdapter::evaluateMovingImpl(
     if (advectionFields == nullptr) {
       const auto before = kernel_->metrics().executionCount;
       WVRealView field{fieldScratch_.data(), spatial};
-      status = kernel_->transformA0ToField(A0, request.field, field);
+      bool reused=false;
+      status = transformField(state,A0,request.field,field,reused);
       if (!status)
         return status;
       metrics_.fftExecutionCount += kernel_->metrics().executionCount - before;
-      ++metrics_.transformCount;
-      ++metrics_.movingPrimitiveTransformCount;
+      if(reused) ++metrics_.primitiveFieldReuseCount;
+      else {++metrics_.transformCount; ++metrics_.movingPrimitiveTransformCount; ++metrics_.primitiveFieldEvaluationCount;}
       sampleField = fieldScratch_.data();
     } else {
       const auto channel = request.field == WVBarotropicQGField::u ? 0 : 1;
       sampleField = advectionFields->data + channel * R;
       ++metrics_.primitiveFieldReuseCount;
+      ++metrics_.primitiveFieldEvaluationCount;
     }
-    ++metrics_.primitiveFieldEvaluationCount;
     evaluated[fieldIndex] = true;
     bool firstDestination = true;
     for (const auto &destination : plan->requests) {

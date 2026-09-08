@@ -64,7 +64,10 @@ public:
 
 private:
   friend class WVDiagnosticFieldPlan;
-  WVKernelStatus transformField(const WVState&,WVHydrostaticField,WVRealVolumeView);
+  friend class WVFieldEvaluationEventScope;
+  WVFieldEvaluationEventWorkspace* eventWorkspace_ = nullptr;
+  WVKernelStatus transformField(const WVState&,WVHydrostaticField,WVRealVolumeView,bool* reused = nullptr);
+  WVKernelStatus transformUncachedField(const WVState&,WVHydrostaticField,WVRealVolumeView);
   WVKernelStatus scalarValue(const WVState&,unsigned,double&);
   struct MovingInterpolationWorkspace;
   WVKernelStatus evaluateMovingImpl(

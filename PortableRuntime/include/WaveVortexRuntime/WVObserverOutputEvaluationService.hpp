@@ -30,6 +30,9 @@ struct WVObserverOutputEvaluationMetrics {
   std::size_t diagnosticIntermediateReuseCount = 0;
   std::size_t diagnosticWorkspaceLiveBytes = 0;
   std::size_t diagnosticWorkspaceHighWaterBytes = 0;
+  std::size_t eventFieldReuseCount = 0;
+  std::size_t eventFieldWorkspaceLiveBytes = 0;
+  std::size_t eventFieldWorkspaceHighWaterBytes = 0;
   double evaluationSeconds = 0.0;
 };
 

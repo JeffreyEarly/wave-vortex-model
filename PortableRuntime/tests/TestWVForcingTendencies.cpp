@@ -1,3 +1,4 @@
+#include "../src/WVFieldEvaluationEventWorkspace.hpp"
 #include "WaveVortexRuntime/WVForcingEngine.hpp"
 #include "WaveVortexRuntime/WVFieldEvaluationService.hpp"
 #include "WaveVortexRuntime/WVIntegrationState.hpp"
@@ -413,6 +414,100 @@ void fieldService(Engine& engine,const WVState& state,WVShape4D spatial,
         else require(mixedReal[selected]==expectedMixed[selected],"Selected primitive or masked field differs");
         for(std::size_t index=1;index<mixed.outputCount();++index) if(index!=selected)
             for(auto value:mixedReal[index]) require(value==99,"Mixed selection wrote an inactive output");
+    }
+    WVMovingFieldEvaluationPlan moving;
+    require(bool(service->createMovingPlan({{"moving-u","u",0,1,WVPositionInterpolation::linear},
+        {"moving-v","v",0,1,WVPositionInterpolation::linear}},moving)),"Shared moving plan");
+    double x=0,y=0,z=0; WVMovingPositionView positions{&x,&y,&z,1};
+    double movingU=0,movingV=0;
+    WVFieldOutputView movingViews[]={{&movingU,1},{&movingV,1}};
+    require(bool(service->evaluateMoving(moving,integrationState,positions,movingViews,2)),"Independent moving reference");
+    const double expectedMovingU=movingU,expectedMovingV=movingV;
+    WVEventFieldEvaluationPlan eventPlan;
+    require(bool(service->createEventPlan({{"event-u","u",0,WVPositionInterpolation::linear},
+        {"event-v","v",0,WVPositionInterpolation::linear},{"event-qgpv","qgpv",0,WVPositionInterpolation::linear}},eventPlan)),"Shared occurrence plan");
+    WVPreparedFieldGeometry geometry;
+    const WVEventPositionSetView positionSet{&x,&y,&z,1};
+    require(bool(service->prepareEventGeometry(eventPlan,&positionSet,1,geometry)),"Shared occurrence geometry");
+    std::array<std::array<double,3>,2> eventValues{};
+    std::array<std::array<WVFieldOutputView,3>,2> eventViews;
+    std::array<WVEventFieldEvaluationBatchEntry,2> eventEntries;
+    for(std::size_t entry=0;entry<2;++entry) {
+        for(std::size_t field=0;field<3;++field) eventViews[entry][field]={&eventValues[entry][field],1};
+        eventEntries[entry]={&eventPlan,&geometry,eventViews[entry].data(),3};
+    }
+    require(bool(service->evaluateEventBatch(integrationState,eventEntries.data(),eventEntries.size())),"Independent occurrence reference");
+    const auto expectedEvents=eventValues;
+    const auto retainedBefore=service->persistentBytes();
+    {
+        detail::WVFieldEvaluationEventScope scope(*service,integrationState);
+        require(bool(scope.status()),"Shared field event scope");
+        detail::WVFieldEvaluationEventScope nested(*service,integrationState);
+        require(nested.status().code==WVKernelStatusCode::reentrantExecution,"Nested field event scope accepted");
+        require(bool(service->evaluate(plan,integrationState,views.data(),views.size())) && data==successful,"Shared diagnostic evaluation differs");
+        const auto beforeMoving=counter->calls;
+        const auto reuseBefore=service->metrics().eventFieldReuseCount;
+        require(bool(service->evaluateMoving(moving,integrationState,positions,movingViews,2)) &&
+            movingU==expectedMovingU && movingV==expectedMovingV && counter->calls==beforeMoving &&
+            service->metrics().eventFieldReuseCount>reuseBefore,"Moving fields reconstructed shared diagnostic velocities");
+        const auto beforeEvents=service->metrics().primitiveFieldEvaluationCount;
+        require(bool(service->evaluateEventBatch(integrationState,eventEntries.data(),eventEntries.size())) && eventValues==expectedEvents &&
+            service->metrics().primitiveFieldEvaluationCount==beforeEvents+1,"Occurrence batch repeated shared fields or qgpv");
+        require(service->metrics().eventFieldWorkspaceLiveBytes==(qg ? 3u : 5u)*R*sizeof(double) && service->persistentBytes()==retainedBefore,
+            "Shared event fields are missing from live metrics or became persistent state");
+        // Masked coefficients must not reuse full-state fields in this event.
+        require(bool(service->evaluate(mixed,integrationState,mixedViews.data(),mixedViews.size())) &&
+            equal(phase,expectedPhase),"Shared complex coefficients differ");
+        for(std::size_t index=1;index<mixedReal.size();++index)
+            require(mixedReal[index]==expectedMixed[index],"Component masks reused full-state event fields");
+    }
+    require(service->metrics().eventFieldWorkspaceLiveBytes==0 && service->persistentBytes()==retainedBefore,
+        "Completed event retained shared fields");
+    // Reuse the same coefficient allocation after changing its contents between events.
+    std::vector<std::vector<WVComplex64>> changedCoefficients(families.size());
+    auto changedFamilies=families;
+    for(std::size_t family=0;family<families.size();++family) {
+        changedCoefficients[family].assign(families[family].data,families[family].data+families[family].layout->elementCount);
+        changedFamilies[family].data=changedCoefficients[family].data();
+    }
+    auto changedState=integrationState; changedState.coefficientFamilies=changedFamilies.data();
+    const auto changedShape=state.coefficients.A0.shape;
+    if(qg) changedState.waveVortex.coefficients={{},{},{changedCoefficients[0].data(),changedShape}};
+    else changedState.waveVortex.coefficients={{changedCoefficients[0].data(),changedShape},
+        {changedCoefficients[1].data(),changedShape},{changedCoefficients[2].data(),changedShape}};
+    std::vector<double> changedU(R);
+    WVFieldOutputView changedViews[]={{changedU.data(),R},{}};
+    const std::uint8_t onlyU[]={1,0};
+    for(double scale:{1.0,0.5}) {
+        if(scale==0.5) for(auto& family:changedCoefficients) for(auto& value:family) {value.real*=0.5; value.imag*=0.5;}
+        detail::WVFieldEvaluationEventScope scope(*service,changedState);
+        const auto before=counter->calls;
+        require(bool(service->evaluate(primitivePlan,changedState,changedViews,2,onlyU)) && counter->calls>before,
+            "A new event reused fields from an earlier state");
+        auto expected=successful[forcingOutputCount+1]; for(auto& value:expected) value*=scale;
+        relative(changedU,expected,"Changed event coefficients");
+        auto shifted=changedState; shifted.waveVortex.t+=1;
+        const auto shiftedBefore=counter->calls;
+        require(bool(service->evaluate(primitivePlan,shifted,changedViews,2,onlyU)) && counter->calls>shiftedBefore,
+            "Changed event time reused the original phase");
+        const auto originalBefore=counter->calls;
+        require(bool(service->evaluate(primitivePlan,changedState,changedViews,2,onlyU)) && counter->calls==originalBefore,
+            "A different phase replaced the original event fields");
+        relative(changedU,expected,"Original event fields after a phase change");
+    }
+    for(auto& field:data) std::fill(field.begin(),field.end(),99);
+    {
+        detail::WVFieldEvaluationEventScope scope(*service,integrationState);
+        counter->failAt=counter->calls+fftCalls;
+        require(service->evaluate(plan,integrationState,views.data(),views.size()).code==WVKernelStatusCode::fftExecutionFailure,
+            "Shared-field event expected late FFT failure");
+        for(const auto& field:data) for(auto value:field) require(value==99,"Shared-field failure exposed partial diagnostics");
+    }
+    counter->failAt=0;
+    require(service->metrics().eventFieldWorkspaceLiveBytes==0,"Failed event retained shared fields");
+    {
+        detail::WVFieldEvaluationEventScope scope(*service,integrationState);
+        require(bool(service->evaluate(plan,integrationState,views.data(),views.size())) && data==successful,"Shared event retry differs");
     }
     observerService(engine,*service,layout,integrationState,requests,forcingOutputCount,successful,counter);
 }

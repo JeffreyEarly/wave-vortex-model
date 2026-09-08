@@ -1,3 +1,4 @@
+#include "WVFieldEvaluationEventWorkspace.hpp"
 #include "WVDiagnosticFieldPlan.hpp"
 #include "WaveVortexRuntime/WVObserverOutputEvaluationService.hpp"
 #include "WaveVortexRuntime/WVObserverOutputProvider.hpp"
@@ -423,6 +424,8 @@ public:
       for(const auto& storage:timeSeriesFieldStorage) {retained+=storage.capacity()*sizeof(double); live+=storage.size()*sizeof(double);}
       for(const auto& storage:timeSeriesComplexFieldStorage) {retained+=storage.capacity()*sizeof(WVComplex64); live+=storage.size()*sizeof(WVComplex64);}
     }
+    const auto sharedFieldBytes=fields->metrics().eventFieldWorkspaceLiveBytes;
+    retained+=sharedFieldBytes; live+=sharedFieldBytes;
     metrics.occurrenceWorkspaceRetainedBytes = retained;
     metrics.occurrenceWorkspaceLiveBytes = live;
     metrics.occurrenceWorkspaceMaximumLiveBytes =
@@ -1287,6 +1290,11 @@ WVKernelStatus WVObserverOutputEvaluationService::prepare(
     }
   impl_->preparedEventOrdinal = event.eventOrdinal;
   impl_->preparedScheduledTime = event.scheduledTime;
+  const bool shareFields=impl_->hasForcingOutputs() &&
+      ((!impl_->movingFieldViews.empty() && needsMoving) ||
+       std::any_of(impl_->eventFieldPlans.begin(),impl_->eventFieldPlans.end(),[](const auto& plan){return plan.outputCount()!=0;}));
+  detail::WVFieldEvaluationEventScope sharedFields(*impl_->fields,event.state,shareFields);
+  if(!sharedFields.status()) return sharedFields.status();
   auto status = impl_->evaluate(event.state, false, needsMoving, metrics_);
   if (status) {
     std::size_t requestedOccurrenceCount = 0;
@@ -1462,6 +1470,9 @@ WVKernelStatus WVObserverOutputEvaluationService::prepare(
     impl_->eventFieldBatchEntries.clear();
     impl_->updateOccurrenceMetrics(metrics_);
   }
+  impl_->updateOccurrenceMetrics(metrics_);
+  sharedFields.release();
+  impl_->updateOccurrenceMetrics(metrics_);
   if (status)
     impl_->preparedOutputEvent = true;
   else {
@@ -1509,6 +1520,9 @@ WVObserverOutputEvaluationMetrics WVObserverOutputEvaluationService::metrics() c
     result.diagnosticIntermediateReuseCount=fields.diagnosticIntermediateReuseCount;
     result.diagnosticWorkspaceLiveBytes=fields.diagnosticWorkspaceLiveBytes;
     result.diagnosticWorkspaceHighWaterBytes=fields.diagnosticWorkspaceHighWaterBytes;
+    result.eventFieldReuseCount=fields.eventFieldReuseCount;
+    result.eventFieldWorkspaceLiveBytes=fields.eventFieldWorkspaceLiveBytes;
+    result.eventFieldWorkspaceHighWaterBytes=fields.eventFieldWorkspaceHighWaterBytes;
   }
   return result;
 }

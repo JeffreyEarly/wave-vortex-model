@@ -59,6 +59,9 @@ public:
 
 private:
   friend class WVDiagnosticFieldPlan;
+  friend class WVFieldEvaluationEventScope;
+  WVFieldEvaluationEventWorkspace* eventWorkspace_ = nullptr;
+  WVKernelStatus transformField(const WVIntegrationState&,const WVComplexConstView&,WVBarotropicQGField,WVRealView,bool&);
   struct MovingInterpolationWorkspace;
   WVKernelStatus evaluateMovingImpl(
       const WVMovingFieldEvaluationPlan &plan,
