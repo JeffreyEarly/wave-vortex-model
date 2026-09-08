@@ -249,12 +249,14 @@ if(BUILD_TESTING)
         target_compile_options(TestWVStratifiedModalRecord PRIVATE -Wall -Wextra -Wpedantic -Werror)
     endif()
     add_test(NAME stratified-modal-record COMMAND TestWVStratifiedModalRecord)
-    add_executable(TestWVAllocationProbe
-        ../tools/compiled-kernel/tests/TestWVAllocationProbe.cpp
-        ../tools/compiled-kernel/tests/WVAllocationProbe.cpp)
-    target_compile_features(TestWVAllocationProbe PRIVATE cxx_std_17)
-    if(CMAKE_CXX_COMPILER_ID MATCHES "AppleClang|Clang|GNU")
-        target_compile_options(TestWVAllocationProbe PRIVATE -Wall -Wextra -Wpedantic -Werror)
+    if(NOT TARGET TestWVAllocationProbe)
+        add_executable(TestWVAllocationProbe
+            ../tools/compiled-kernel/tests/TestWVAllocationProbe.cpp
+            ../tools/compiled-kernel/tests/WVAllocationProbe.cpp)
+        target_compile_features(TestWVAllocationProbe PRIVATE cxx_std_17)
+        if(CMAKE_CXX_COMPILER_ID MATCHES "AppleClang|Clang|GNU")
+            target_compile_options(TestWVAllocationProbe PRIVATE -Wall -Wextra -Wpedantic -Werror)
+        endif()
     endif()
     add_test(NAME allocation-probe COMMAND TestWVAllocationProbe)
     wv_add_runtime_test(TestWVCheckpointReader TestWVCheckpointReader.cpp checkpoint-reader)

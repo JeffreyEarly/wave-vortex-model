@@ -10,6 +10,12 @@ classdef TestPortableRuntimeCompatibility < matlab.unittest.TestCase
             testCase.RepositoryRoot = string(fileparts(fileparts(mfilename("fullpath"))));
             fixture = testCase.applyFixture(matlab.unittest.fixtures.TemporaryFolderFixture);
             testCase.TemporaryFolder = string(fixture.Folder);
+            binaryDirectory = string(getenv("WVM_CI_BINARY_DIR"));
+            if binaryDirectory ~= ""
+                testCase.Runner = fullfile(binaryDirectory,"wave-vortex-run");
+                testCase.assertTrue(isfile(testCase.Runner),"Missing supplied CI runtime.");
+                return
+            end
             buildDirectory = fullfile(testCase.TemporaryFolder,"build");
             configure = "cmake -S " + shellQuote(fullfile(testCase.RepositoryRoot,"PortableRuntime")) + ...
                 " -B " + shellQuote(buildDirectory) + ...

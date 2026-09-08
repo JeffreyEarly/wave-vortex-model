@@ -1,0 +1,811 @@
+{
+  "schema": "wvm-ci-route-validation-v1",
+  "method": "Local dependency routing and gate fault injection for existing representative paths; these are not hosted timing measurements.",
+  "cases": [
+    {
+      "case": "documentation",
+      "selection": {
+        "schema": "wvm-ci-selection-v1",
+        "sourceCommit": "c217264ff9663f910266cce335ea1f88623481ef",
+        "paths": [
+          "Documentation/WebsiteDocumentation/users-guide/netcdf-output.md"
+        ],
+        "complete": false,
+        "migration": false,
+        "cpp": false,
+        "diagnostics": false,
+        "documentation": true,
+        "analyzer": false,
+        "packaging": false,
+        "crossRelease": false,
+        "persistence": false,
+        "matlabCore": false,
+        "families": [],
+        "matlabTests": [],
+        "sanitizedTests": [],
+        "releases": [
+          "R2025b"
+        ],
+        "reasons": [
+          "Documentation/WebsiteDocumentation/users-guide/netcdf-output.md: documentation generation/rendering"
+        ],
+        "deferredMethods": [
+          "TestPortableStratifiedQGQualification/longerContinuationMatchesMatlab",
+          "TestPortableHydrostaticQualification/longerContinuationMatchesMatlab",
+          "TestPortableBoussinesqQualification/longerContinuationMatchesMatlab"
+        ]
+      },
+      "syntheticCompleteEvidenceAccepted": true,
+      "rejectedSelectedJobResults": [
+        {
+          "job": "route",
+          "result": "failure"
+        },
+        {
+          "job": "route",
+          "result": "cancelled"
+        },
+        {
+          "job": "route",
+          "result": "skipped"
+        },
+        {
+          "job": "route",
+          "result": null
+        },
+        {
+          "job": "repository",
+          "result": "failure"
+        },
+        {
+          "job": "repository",
+          "result": "cancelled"
+        },
+        {
+          "job": "repository",
+          "result": "skipped"
+        },
+        {
+          "job": "repository",
+          "result": null
+        },
+        {
+          "job": "matlab",
+          "result": "failure"
+        },
+        {
+          "job": "matlab",
+          "result": "cancelled"
+        },
+        {
+          "job": "matlab",
+          "result": "skipped"
+        },
+        {
+          "job": "matlab",
+          "result": null
+        }
+      ]
+    },
+    {
+      "case": "matlab",
+      "selection": {
+        "schema": "wvm-ci-selection-v1",
+        "sourceCommit": "c217264ff9663f910266cce335ea1f88623481ef",
+        "paths": [
+          "@WVTransformHydrostatic/WVTransformHydrostatic.m"
+        ],
+        "complete": false,
+        "migration": false,
+        "cpp": true,
+        "diagnostics": true,
+        "documentation": true,
+        "analyzer": true,
+        "packaging": false,
+        "crossRelease": true,
+        "persistence": false,
+        "matlabCore": false,
+        "families": [
+          "hydrostatic"
+        ],
+        "matlabTests": [
+          "TestCompiledKernelIntegration",
+          "TestHydrostaticCompiledKernel",
+          "TestPortableDiagnostics",
+          "TestPortableForcingCompatibility",
+          "TestPortableHydrostatic",
+          "TestPortableHydrostaticQualification",
+          "TestPortableStableForcing",
+          "TestPortableVariableCatalog",
+          "TestStratifiedModalRecord"
+        ],
+        "sanitizedTests": [
+          "TestCompiledKernelIntegration",
+          "TestHydrostaticCompiledKernel",
+          "TestPortableDiagnostics",
+          "TestPortableForcingCompatibility",
+          "TestPortableHydrostatic",
+          "TestPortableHydrostaticQualification",
+          "TestPortableStableForcing",
+          "TestPortableVariableCatalog",
+          "TestStratifiedModalRecord"
+        ],
+        "releases": [
+          "R2025b",
+          "R2026a"
+        ],
+        "reasons": [
+          "@WVTransformHydrostatic/WVTransformHydrostatic.m: hydrostatic numerical surface"
+        ],
+        "deferredMethods": [
+          "TestPortableStratifiedQGQualification/longerContinuationMatchesMatlab",
+          "TestPortableHydrostaticQualification/longerContinuationMatchesMatlab",
+          "TestPortableBoussinesqQualification/longerContinuationMatchesMatlab"
+        ]
+      },
+      "syntheticCompleteEvidenceAccepted": true,
+      "rejectedSelectedJobResults": [
+        {
+          "job": "route",
+          "result": "failure"
+        },
+        {
+          "job": "route",
+          "result": "cancelled"
+        },
+        {
+          "job": "route",
+          "result": "skipped"
+        },
+        {
+          "job": "route",
+          "result": null
+        },
+        {
+          "job": "repository",
+          "result": "failure"
+        },
+        {
+          "job": "repository",
+          "result": "cancelled"
+        },
+        {
+          "job": "repository",
+          "result": "skipped"
+        },
+        {
+          "job": "repository",
+          "result": null
+        },
+        {
+          "job": "matlab",
+          "result": "failure"
+        },
+        {
+          "job": "matlab",
+          "result": "cancelled"
+        },
+        {
+          "job": "matlab",
+          "result": "skipped"
+        },
+        {
+          "job": "matlab",
+          "result": null
+        },
+        {
+          "job": "cpp-release",
+          "result": "failure"
+        },
+        {
+          "job": "cpp-release",
+          "result": "cancelled"
+        },
+        {
+          "job": "cpp-release",
+          "result": "skipped"
+        },
+        {
+          "job": "cpp-release",
+          "result": null
+        },
+        {
+          "job": "cpp-sanitized",
+          "result": "failure"
+        },
+        {
+          "job": "cpp-sanitized",
+          "result": "cancelled"
+        },
+        {
+          "job": "cpp-sanitized",
+          "result": "skipped"
+        },
+        {
+          "job": "cpp-sanitized",
+          "result": null
+        },
+        {
+          "job": "matlab-sanitized",
+          "result": "failure"
+        },
+        {
+          "job": "matlab-sanitized",
+          "result": "cancelled"
+        },
+        {
+          "job": "matlab-sanitized",
+          "result": "skipped"
+        },
+        {
+          "job": "matlab-sanitized",
+          "result": null
+        }
+      ]
+    },
+    {
+      "case": "cpp",
+      "selection": {
+        "schema": "wvm-ci-selection-v1",
+        "sourceCommit": "c217264ff9663f910266cce335ea1f88623481ef",
+        "paths": [
+          "CompiledKernel/src/WVTransformBoussinesqKernel.cpp"
+        ],
+        "complete": false,
+        "migration": false,
+        "cpp": true,
+        "diagnostics": true,
+        "documentation": false,
+        "analyzer": false,
+        "packaging": false,
+        "crossRelease": true,
+        "persistence": false,
+        "matlabCore": false,
+        "families": [
+          "boussinesq"
+        ],
+        "matlabTests": [
+          "TestBoussinesqCompiledKernel",
+          "TestCompiledKernelIntegration",
+          "TestPortableBoussinesq",
+          "TestPortableBoussinesqQualification",
+          "TestPortableDiagnostics",
+          "TestPortableForcingCompatibility",
+          "TestPortableStableForcing",
+          "TestPortableVariableCatalog",
+          "TestStratifiedModalRecord"
+        ],
+        "sanitizedTests": [
+          "TestBoussinesqCompiledKernel",
+          "TestCompiledKernelIntegration",
+          "TestPortableBoussinesq",
+          "TestPortableBoussinesqQualification",
+          "TestPortableDiagnostics",
+          "TestPortableForcingCompatibility",
+          "TestPortableStableForcing",
+          "TestPortableVariableCatalog",
+          "TestStratifiedModalRecord"
+        ],
+        "releases": [
+          "R2025b",
+          "R2026a"
+        ],
+        "reasons": [
+          "CompiledKernel/src/WVTransformBoussinesqKernel.cpp: boussinesq numerical surface"
+        ],
+        "deferredMethods": [
+          "TestPortableStratifiedQGQualification/longerContinuationMatchesMatlab",
+          "TestPortableHydrostaticQualification/longerContinuationMatchesMatlab",
+          "TestPortableBoussinesqQualification/longerContinuationMatchesMatlab"
+        ]
+      },
+      "syntheticCompleteEvidenceAccepted": true,
+      "rejectedSelectedJobResults": [
+        {
+          "job": "route",
+          "result": "failure"
+        },
+        {
+          "job": "route",
+          "result": "cancelled"
+        },
+        {
+          "job": "route",
+          "result": "skipped"
+        },
+        {
+          "job": "route",
+          "result": null
+        },
+        {
+          "job": "repository",
+          "result": "failure"
+        },
+        {
+          "job": "repository",
+          "result": "cancelled"
+        },
+        {
+          "job": "repository",
+          "result": "skipped"
+        },
+        {
+          "job": "repository",
+          "result": null
+        },
+        {
+          "job": "matlab",
+          "result": "failure"
+        },
+        {
+          "job": "matlab",
+          "result": "cancelled"
+        },
+        {
+          "job": "matlab",
+          "result": "skipped"
+        },
+        {
+          "job": "matlab",
+          "result": null
+        },
+        {
+          "job": "cpp-release",
+          "result": "failure"
+        },
+        {
+          "job": "cpp-release",
+          "result": "cancelled"
+        },
+        {
+          "job": "cpp-release",
+          "result": "skipped"
+        },
+        {
+          "job": "cpp-release",
+          "result": null
+        },
+        {
+          "job": "cpp-sanitized",
+          "result": "failure"
+        },
+        {
+          "job": "cpp-sanitized",
+          "result": "cancelled"
+        },
+        {
+          "job": "cpp-sanitized",
+          "result": "skipped"
+        },
+        {
+          "job": "cpp-sanitized",
+          "result": null
+        },
+        {
+          "job": "matlab-sanitized",
+          "result": "failure"
+        },
+        {
+          "job": "matlab-sanitized",
+          "result": "cancelled"
+        },
+        {
+          "job": "matlab-sanitized",
+          "result": "skipped"
+        },
+        {
+          "job": "matlab-sanitized",
+          "result": null
+        }
+      ]
+    },
+    {
+      "case": "sharedPersistence",
+      "selection": {
+        "schema": "wvm-ci-selection-v1",
+        "sourceCommit": "c217264ff9663f910266cce335ea1f88623481ef",
+        "paths": [
+          "PortableRuntime/src/WVCheckpointWriter.cpp"
+        ],
+        "complete": false,
+        "migration": false,
+        "cpp": true,
+        "diagnostics": true,
+        "documentation": false,
+        "analyzer": false,
+        "packaging": false,
+        "crossRelease": true,
+        "persistence": true,
+        "matlabCore": false,
+        "families": [
+          "barotropic",
+          "boussinesq",
+          "constant",
+          "hydrostatic",
+          "sqg"
+        ],
+        "matlabTests": [
+          "TestBarotropicQGCompiledKernel",
+          "TestBoussinesqCompiledKernel",
+          "TestCompiledKernelContract",
+          "TestCompiledKernelIntegration",
+          "TestCoreTransformInvariants",
+          "TestHydrostaticCompiledKernel",
+          "TestNetCDF",
+          "TestNetCDFHandleOwnership",
+          "TestObservingSystems",
+          "TestPortableBoussinesq",
+          "TestPortableBoussinesqQualification",
+          "TestPortableDiagnostics",
+          "TestPortableForcingCompatibility",
+          "TestPortableForcingContracts",
+          "TestPortableHydrostatic",
+          "TestPortableHydrostaticQualification",
+          "TestPortableObserverContracts",
+          "TestPortableRunRequestWriter",
+          "TestPortableRuntimeCompatibility",
+          "TestPortableStableForcing",
+          "TestPortableStratifiedQG",
+          "TestPortableStratifiedQGQualification",
+          "TestPortableVariableCatalog",
+          "TestShouldExcludeConjugatesPersistence",
+          "TestStratifiedModalRecord",
+          "TestStratifiedQGCompiledKernel",
+          "TestWVModelIntegration",
+          "TestWVModelOutputPersistence"
+        ],
+        "sanitizedTests": [
+          "TestBarotropicQGCompiledKernel",
+          "TestBoussinesqCompiledKernel",
+          "TestCompiledKernelContract",
+          "TestCompiledKernelIntegration",
+          "TestCoreTransformInvariants",
+          "TestHydrostaticCompiledKernel",
+          "TestPortableBoussinesq",
+          "TestPortableBoussinesqQualification",
+          "TestPortableDiagnostics",
+          "TestPortableForcingCompatibility",
+          "TestPortableHydrostatic",
+          "TestPortableHydrostaticQualification",
+          "TestPortableRuntimeCompatibility",
+          "TestPortableStableForcing",
+          "TestPortableStratifiedQG",
+          "TestPortableStratifiedQGQualification",
+          "TestPortableVariableCatalog",
+          "TestStratifiedModalRecord",
+          "TestStratifiedQGCompiledKernel"
+        ],
+        "releases": [
+          "R2025b",
+          "R2026a"
+        ],
+        "reasons": [
+          "PortableRuntime/src/WVCheckpointWriter.cpp: shared state/forcing/persistence boundary"
+        ],
+        "deferredMethods": [
+          "TestPortableStratifiedQGQualification/longerContinuationMatchesMatlab",
+          "TestPortableHydrostaticQualification/longerContinuationMatchesMatlab",
+          "TestPortableBoussinesqQualification/longerContinuationMatchesMatlab"
+        ]
+      },
+      "syntheticCompleteEvidenceAccepted": true,
+      "rejectedSelectedJobResults": [
+        {
+          "job": "route",
+          "result": "failure"
+        },
+        {
+          "job": "route",
+          "result": "cancelled"
+        },
+        {
+          "job": "route",
+          "result": "skipped"
+        },
+        {
+          "job": "route",
+          "result": null
+        },
+        {
+          "job": "repository",
+          "result": "failure"
+        },
+        {
+          "job": "repository",
+          "result": "cancelled"
+        },
+        {
+          "job": "repository",
+          "result": "skipped"
+        },
+        {
+          "job": "repository",
+          "result": null
+        },
+        {
+          "job": "matlab",
+          "result": "failure"
+        },
+        {
+          "job": "matlab",
+          "result": "cancelled"
+        },
+        {
+          "job": "matlab",
+          "result": "skipped"
+        },
+        {
+          "job": "matlab",
+          "result": null
+        },
+        {
+          "job": "cpp-release",
+          "result": "failure"
+        },
+        {
+          "job": "cpp-release",
+          "result": "cancelled"
+        },
+        {
+          "job": "cpp-release",
+          "result": "skipped"
+        },
+        {
+          "job": "cpp-release",
+          "result": null
+        },
+        {
+          "job": "cpp-sanitized",
+          "result": "failure"
+        },
+        {
+          "job": "cpp-sanitized",
+          "result": "cancelled"
+        },
+        {
+          "job": "cpp-sanitized",
+          "result": "skipped"
+        },
+        {
+          "job": "cpp-sanitized",
+          "result": null
+        },
+        {
+          "job": "matlab-sanitized",
+          "result": "failure"
+        },
+        {
+          "job": "matlab-sanitized",
+          "result": "cancelled"
+        },
+        {
+          "job": "matlab-sanitized",
+          "result": "skipped"
+        },
+        {
+          "job": "matlab-sanitized",
+          "result": null
+        }
+      ]
+    },
+    {
+      "case": "ci",
+      "selection": {
+        "schema": "wvm-ci-selection-v1",
+        "sourceCommit": "c217264ff9663f910266cce335ea1f88623481ef",
+        "paths": [
+          ".github/workflows/ci.yml"
+        ],
+        "complete": false,
+        "migration": false,
+        "cpp": true,
+        "diagnostics": true,
+        "documentation": true,
+        "analyzer": true,
+        "packaging": true,
+        "crossRelease": true,
+        "persistence": true,
+        "matlabCore": true,
+        "families": [
+          "barotropic",
+          "boussinesq",
+          "constant",
+          "hydrostatic",
+          "sqg"
+        ],
+        "matlabTests": [
+          "TestBarotropicQGCompiledKernel",
+          "TestBoussinesqCompiledKernel",
+          "TestCompiledKernelContract",
+          "TestCompiledKernelIntegration",
+          "TestCoreTransformInvariants",
+          "TestEtaTrueOperation",
+          "TestFlowComponentSurfaceDiagnostics",
+          "TestForcingLifecycle",
+          "TestForcingMathematicalContracts",
+          "TestHydrostaticCompiledKernel",
+          "TestNarrowBandGeostrophicForcing",
+          "TestNetCDF",
+          "TestNetCDFHandleOwnership",
+          "TestNonlinearFlux",
+          "TestObservingSystems",
+          "TestOperationRegistrationAndCaching",
+          "TestPhysicalUnitMetadata",
+          "TestPortableBoussinesq",
+          "TestPortableBoussinesqQualification",
+          "TestPortableDiagnostics",
+          "TestPortableForcingCompatibility",
+          "TestPortableForcingContracts",
+          "TestPortableHydrostatic",
+          "TestPortableHydrostaticQualification",
+          "TestPortableObserverContracts",
+          "TestPortableRunRequestWriter",
+          "TestPortableRuntimeCompatibility",
+          "TestPortableStableForcing",
+          "TestPortableStratifiedQG",
+          "TestPortableStratifiedQGQualification",
+          "TestPortableVariableCatalog",
+          "TestPublicInterpolationContract",
+          "TestRandomFlow",
+          "TestShouldExcludeConjugatesPersistence",
+          "TestStratifiedModalRecord",
+          "TestStratifiedQGCompiledKernel",
+          "TestTotalFlowComponent",
+          "TestTraditionalDamping",
+          "TestVerticalCalculus",
+          "TestWVModelIntegration",
+          "TestWVModelOutputPersistence",
+          "TestWVTransformInitialization"
+        ],
+        "sanitizedTests": [
+          "TestBarotropicQGCompiledKernel",
+          "TestBoussinesqCompiledKernel",
+          "TestCompiledKernelContract",
+          "TestCompiledKernelIntegration",
+          "TestCoreTransformInvariants",
+          "TestHydrostaticCompiledKernel",
+          "TestPortableBoussinesq",
+          "TestPortableBoussinesqQualification",
+          "TestPortableDiagnostics",
+          "TestPortableForcingCompatibility",
+          "TestPortableHydrostatic",
+          "TestPortableHydrostaticQualification",
+          "TestPortableRuntimeCompatibility",
+          "TestPortableStableForcing",
+          "TestPortableStratifiedQG",
+          "TestPortableStratifiedQGQualification",
+          "TestPortableVariableCatalog",
+          "TestStratifiedModalRecord",
+          "TestStratifiedQGCompiledKernel"
+        ],
+        "releases": [
+          "R2025b",
+          "R2026a"
+        ],
+        "reasons": [
+          ".github/workflows/ci.yml: CI implementation exercises all routes"
+        ],
+        "deferredMethods": [
+          "TestPortableStratifiedQGQualification/longerContinuationMatchesMatlab",
+          "TestPortableHydrostaticQualification/longerContinuationMatchesMatlab",
+          "TestPortableBoussinesqQualification/longerContinuationMatchesMatlab"
+        ]
+      },
+      "syntheticCompleteEvidenceAccepted": true,
+      "rejectedSelectedJobResults": [
+        {
+          "job": "route",
+          "result": "failure"
+        },
+        {
+          "job": "route",
+          "result": "cancelled"
+        },
+        {
+          "job": "route",
+          "result": "skipped"
+        },
+        {
+          "job": "route",
+          "result": null
+        },
+        {
+          "job": "repository",
+          "result": "failure"
+        },
+        {
+          "job": "repository",
+          "result": "cancelled"
+        },
+        {
+          "job": "repository",
+          "result": "skipped"
+        },
+        {
+          "job": "repository",
+          "result": null
+        },
+        {
+          "job": "matlab",
+          "result": "failure"
+        },
+        {
+          "job": "matlab",
+          "result": "cancelled"
+        },
+        {
+          "job": "matlab",
+          "result": "skipped"
+        },
+        {
+          "job": "matlab",
+          "result": null
+        },
+        {
+          "job": "cpp-release",
+          "result": "failure"
+        },
+        {
+          "job": "cpp-release",
+          "result": "cancelled"
+        },
+        {
+          "job": "cpp-release",
+          "result": "skipped"
+        },
+        {
+          "job": "cpp-release",
+          "result": null
+        },
+        {
+          "job": "cpp-sanitized",
+          "result": "failure"
+        },
+        {
+          "job": "cpp-sanitized",
+          "result": "cancelled"
+        },
+        {
+          "job": "cpp-sanitized",
+          "result": "skipped"
+        },
+        {
+          "job": "cpp-sanitized",
+          "result": null
+        },
+        {
+          "job": "matlab-sanitized",
+          "result": "failure"
+        },
+        {
+          "job": "matlab-sanitized",
+          "result": "cancelled"
+        },
+        {
+          "job": "matlab-sanitized",
+          "result": "skipped"
+        },
+        {
+          "job": "matlab-sanitized",
+          "result": null
+        },
+        {
+          "job": "packages",
+          "result": "failure"
+        },
+        {
+          "job": "packages",
+          "result": "cancelled"
+        },
+        {
+          "job": "packages",
+          "result": "skipped"
+        },
+        {
+          "job": "packages",
+          "result": null
+        }
+      ]
+    }
+  ]
+}

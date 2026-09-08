@@ -1,0 +1,67 @@
+{
+  "schema": "wvm-ci-documentation-proof-v1",
+  "runId": 34248851726,
+  "pullRequest": 399,
+  "baseCommit": "c217264ff9663f910266cce335ea1f88623481ef",
+  "headCommit": "8f50c01b",
+  "aggregateElapsedSeconds": 354,
+  "reports": {
+    "ci-selection": {
+      "schema": "wvm-ci-selection-v1",
+      "sourceCommit": "ea2485efaedf00fd311297a923e6314727d87dd3",
+      "paths": [
+        ".github/CI.md"
+      ],
+      "complete": false,
+      "migration": true,
+      "cpp": false,
+      "diagnostics": false,
+      "documentation": true,
+      "analyzer": true,
+      "packaging": false,
+      "crossRelease": false,
+      "persistence": false,
+      "matlabCore": false,
+      "families": [],
+      "matlabTests": [],
+      "sanitizedTests": [],
+      "releases": [
+        "R2025b"
+      ],
+      "reasons": [
+        ".github/CI.md: prose/repository metadata; repository checks and smoke",
+        "Migration: execute all legacy required MATLAB phases"
+      ],
+      "deferredMethods": [
+        "TestPortableStratifiedQGQualification/longerContinuationMatchesMatlab",
+        "TestPortableHydrostaticQualification/longerContinuationMatchesMatlab",
+        "TestPortableBoussinesqQualification/longerContinuationMatchesMatlab"
+      ]
+    },
+    "ci-matlab-R2025b-release": {
+      "schema": "wvm-ci-matlab-v1",
+      "sourceCommit": "ea2485efaedf00fd311297a923e6314727d87dd3",
+      "matlabRelease": "R2025b",
+      "configuration": "release",
+      "passed": true,
+      "requestedClasses": [],
+      "expectedTests": [],
+      "deferredMethods": [
+        "TestPortableStratifiedQGQualification/longerContinuationMatchesMatlab",
+        "TestPortableHydrostaticQualification/longerContinuationMatchesMatlab",
+        "TestPortableBoussinesqQualification/longerContinuationMatchesMatlab"
+      ],
+      "phases": {
+        "smoke": true,
+        "analyzer": true,
+        "documentation": true
+      },
+      "phaseSeconds": {
+        "smoke": 57.605261,
+        "analyzer": 1.733712,
+        "documentation": 58.79988
+      },
+      "tests": []
+    }
+  }
+}

@@ -1,0 +1,109 @@
+name: Shared C++ build and contracts
+on:
+  workflow_call:
+    outputs:
+      artifact-id:
+        value: ${{ jobs.build.outputs.artifact-id }}
+    inputs:
+      configuration:
+        required: true
+        type: string
+permissions:
+  contents: read
+jobs:
+  build:
+    outputs:
+      artifact-id: ${{ steps.artifact-upload.outputs.artifact-id || steps.artifact-retry.outputs.artifact-id }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    env:
+      CCACHE_COMPILERCHECK: content
+      CCACHE_MAXSIZE: 500M
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          persist-credentials: false
+      - name: Install bounded build dependencies
+        timeout-minutes: 5
+        run: bash tools/ci/provision_ubuntu.sh build
+      - name: Identify compiler cache namespace
+        id: compiler
+        env:
+          CONFIGURATION: ${{ inputs.configuration }}
+        run: |
+          echo "CCACHE_DIR=$RUNNER_TEMP/ccache" >> "$GITHUB_ENV"
+          compiler=g++
+          if [[ "$CONFIGURATION" == sanitized ]]; then compiler=clang++; fi
+          fingerprint=$("$compiler" --version | sha256sum | cut -d ' ' -f 1)
+          echo "identity=$fingerprint" >> "$GITHUB_OUTPUT"
+      - name: Restore compiler objects
+        id: compiler-cache
+        uses: actions/cache/restore@v4
+        with:
+          path: ${{ runner.temp }}/ccache
+          key: wvm-ccache-v1-${{ runner.os }}-${{ inputs.configuration }}-${{ steps.compiler.outputs.identity }}-${{ github.sha }}
+          restore-keys: |
+            wvm-ccache-v1-${{ runner.os }}-${{ inputs.configuration }}-${{ steps.compiler.outputs.identity }}-
+      - name: Verify compiler-cache invalidation
+        env:
+          CONFIGURATION: ${{ inputs.configuration }}
+        run: python3 tools/ci/check_compiler_cache.py
+      - name: Build shared core and runtime once
+        env:
+          CONFIGURATION: ${{ inputs.configuration }}
+        run: |
+          ccache --zero-stats
+          flags=()
+          build_type=Release
+          if [[ "$CONFIGURATION" == sanitized ]]; then
+            export CC=clang CXX=clang++
+            build_type=RelWithDebInfo
+            flags+=('-DCMAKE_CXX_FLAGS=-fsanitize=address,undefined -fno-omit-frame-pointer' '-DCMAKE_EXE_LINKER_FLAGS=-fsanitize=address,undefined')
+          fi
+          cmake -S tools/ci -B "$RUNNER_TEMP/build" -DCMAKE_BUILD_TYPE="$build_type" -DWV_ENABLE_ACCELERATE=OFF -DCMAKE_CXX_COMPILER_LAUNCHER=ccache "${flags[@]}"
+          cmake --build "$RUNNER_TEMP/build" --parallel 4
+          ccache --show-stats
+      - name: Run all core and runtime contracts
+        env:
+          ASAN_OPTIONS: detect_leaks=1:alloc_dealloc_mismatch=1:halt_on_error=1
+          UBSAN_OPTIONS: print_stacktrace=1:halt_on_error=1
+        run: ctest --test-dir "$RUNNER_TEMP/build" --output-on-failure
+      - name: Save verified compiler objects
+        if: steps.compiler-cache.outputs.cache-hit != 'true'
+        uses: actions/cache/save@v4
+        with:
+          path: ${{ runner.temp }}/ccache
+          key: ${{ steps.compiler-cache.outputs.cache-primary-key }}
+      - name: Package exact-revision probes
+        env:
+          CONFIGURATION: ${{ inputs.configuration }}
+        run: python3 tools/ci/artifacts.py pack --build "$RUNNER_TEMP/build" --directory "$RUNNER_TEMP/binaries" --configuration "$CONFIGURATION"
+      - name: Upload CI artifact
+        id: artifact-upload
+        if: ${{ !cancelled() }}
+        continue-on-error: true
+        timeout-minutes: 3
+        uses: actions/upload-artifact@v4
+        with:
+          name: ci-binaries-${{ inputs.configuration }}
+          path: ${{ runner.temp }}/binaries
+          overwrite: true
+          retention-days: 7
+          if-no-files-found: error
+      - name: Retry artifact upload once
+        id: artifact-retry
+        if: ${{ !cancelled() && steps.artifact-upload.outcome == 'failure' }}
+        timeout-minutes: 3
+        uses: actions/upload-artifact@v4
+        with:
+          name: ci-binaries-${{ inputs.configuration }}-retry
+          path: ${{ runner.temp }}/binaries
+          overwrite: true
+          retention-days: 7
+          if-no-files-found: error
+      - name: Require successful artifact upload
+        if: ${{ !cancelled() }}
+        env:
+          FIRST: ${{ steps.artifact-upload.outcome }}
+          RETRY: ${{ steps.artifact-retry.outcome }}
+        run: test "$FIRST" = success || test "$RETRY" = success

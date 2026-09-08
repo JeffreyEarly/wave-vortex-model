@@ -1,0 +1,2549 @@
+{
+  "schema": "wvm-ci-timing-v1",
+  "repository": "JeffreyEarly/wave-vortex-model",
+  "capturedAt": "2026-09-08T15:56:33.227437+00:00",
+  "method": "All job attempts; successful results carried into later attempts are identified by identical name/start/end and counted only once. Elapsed runner seconds, not billing. Combined build/test steps remain explicitly combined. Incomplete jobs are not counted as zero cost.",
+  "runs": [
+    {
+      "id": 34240034364,
+      "name": "WaveVortexModel CI",
+      "sourceCommit": "8aa33b78a8419b2f132336924d70a3e6acabfd27",
+      "event": "pull_request",
+      "url": "https://github.com/JeffreyEarly/wave-vortex-model/actions/runs/34240034364",
+      "status": "completed",
+      "conclusion": "success",
+      "createdAt": "2026-09-08T14:42:52Z",
+      "startedAt": "2026-09-08T14:42:52Z",
+      "completedJobSeconds": 1142.0,
+      "incompleteJobs": 0,
+      "jobs": [
+        {
+          "carriedForward": false,
+          "id": 102107535081,
+          "name": "Smoke / MATLAB R2025b",
+          "attempt": 1,
+          "status": "completed",
+          "conclusion": "success",
+          "url": "https://github.com/JeffreyEarly/wave-vortex-model/actions/runs/34240034364/job/102107535081",
+          "startedAt": "2026-09-08T14:42:55Z",
+          "completedAt": "2026-09-08T14:44:50Z",
+          "seconds": 115.0,
+          "steps": [
+            {
+              "name": "Set up job",
+              "category": "setup",
+              "conclusion": "success",
+              "seconds": 2.0
+            },
+            {
+              "name": "Check out WaveVortexModel",
+              "category": "setup",
+              "conclusion": "success",
+              "seconds": 3.0
+            },
+            {
+              "name": "Check out pinned OceanKit packages",
+              "category": "setup",
+              "conclusion": "success",
+              "seconds": 2.0
+            },
+            {
+              "name": "Set up MATLAB R2025b",
+              "category": "setup",
+              "conclusion": "success",
+              "seconds": 42.0
+            },
+            {
+              "name": "Run smoke tests",
+              "category": "validation",
+              "conclusion": "success",
+              "seconds": 61.0
+            },
+            {
+              "name": "Verify clean source checkout",
+              "category": "setup",
+              "conclusion": "success",
+              "seconds": 0
+            },
+            {
+              "name": "Post Set up MATLAB R2025b",
+              "category": "setup",
+              "conclusion": "success",
+              "seconds": 0
+            },
+            {
+              "name": "Post Check out pinned OceanKit packages",
+              "category": "setup",
+              "conclusion": "success",
+              "seconds": 1.0
+            },
+            {
+              "name": "Post Check out WaveVortexModel",
+              "category": "setup",
+              "conclusion": "success",
+              "seconds": 0
+            },
+            {
+              "name": "Complete job",
+              "category": "other",
+              "conclusion": "success",
+              "seconds": 0
+            }
+          ]
+        },
+        {
+          "carriedForward": false,
+          "id": 102107535503,
+          "name": "Documentation / MATLAB R2025b",
+          "attempt": 1,
+          "status": "completed",
+          "conclusion": "success",
+          "url": "https://github.com/JeffreyEarly/wave-vortex-model/actions/runs/34240034364/job/102107535503",
+          "startedAt": "2026-09-08T14:42:54Z",
+          "completedAt": "2026-09-08T14:47:18Z",
+          "seconds": 264.0,
+          "steps": [
+            {
+              "name": "Set up job",
+              "category": "setup",
+              "conclusion": "success",
+              "seconds": 2.0
+            },
+            {
+              "name": "Pull ghcr.io/actions/jekyll-build-pages:v1.0.13",
+              "category": "build_or_combined_build_test",
+              "conclusion": "success",
+              "seconds": 10.0
+            },
+            {
+              "name": "Check out WaveVortexModel",
+              "category": "setup",
+              "conclusion": "success",
+              "seconds": 2.0
+            },
+            {
+              "name": "Check out pinned OceanKit packages",
+              "category": "setup",
+              "conclusion": "success",
+              "seconds": 2.0
+            },
+            {
+              "name": "Set up MATLAB R2025b",
+              "category": "setup",
+              "conclusion": "success",
+              "seconds": 32.0
+            },
+            {
+              "name": "Verify committed documentation",
+              "category": "validation",
+              "conclusion": "success",
+              "seconds": 73.0
+            },
+            {
+              "name": "Build rendered website",
+              "category": "build_or_combined_build_test",
+              "conclusion": "success",
+              "seconds": 134.0
+            },
+            {
+              "name": "Verify rendered website",
+              "category": "validation",
+              "conclusion": "success",
+              "seconds": 5.0
+            },
+            {
+              "name": "Upload generated documentation diagnostics",
+              "category": "other",
+              "conclusion": "skipped",
+              "seconds": 0
+            },
+            {
+              "name": "Upload rendered website diagnostics",
+              "category": "other",
+              "conclusion": "skipped",
+              "seconds": 0
+            },
+            {
+              "name": "Verify clean source checkout",
+              "category": "setup",
+              "conclusion": "success",
+              "seconds": 1.0
+            },
+            {
+              "name": "Post Set up MATLAB R2025b",
+              "category": "setup",
+              "conclusion": "success",
+              "seconds": 0
+            },
+            {
+              "name": "Post Check out pinned OceanKit packages",
+              "category": "setup",
+              "conclusion": "success",
+              "seconds": 0
+            },
+            {
+              "name": "Post Check out WaveVortexModel",
+              "category": "setup",
+              "conclusion": "success",
+              "seconds": 0
+            },
+            {
+              "name": "Complete job",
+              "category": "other",
+              "conclusion": "success",
+              "seconds": 0
+            }
+          ]
+        },
+        {
+          "carriedForward": false,
+          "id": 102107535549,
+          "name": "Portable C++ kernel contract",
+          "attempt": 1,
+          "status": "completed",
+          "conclusion": "success",
+          "url": "https://github.com/JeffreyEarly/wave-vortex-model/actions/runs/34240034364/job/102107535549",
+          "startedAt": "2026-09-08T14:42:54Z",
+          "completedAt": "2026-09-08T14:47:08Z",
+          "seconds": 254.0,
+          "steps": [
+            {
+              "name": "Set up job",
+              "category": "setup",
+              "conclusion": "success",
+              "seconds": 0
+            },
+            {
+              "name": "Check out WaveVortexModel",
+              "category": "setup",
+              "conclusion": "success",
+              "seconds": 3.0
+            },
+            {
+              "name": "Install NetCDF C development library",
+              "category": "setup",
+              "conclusion": "success",
+              "seconds": 21.0
+            },
+            {
+              "name": "Build and test without MATLAB headers",
+              "category": "build_or_combined_build_test",
+              "conclusion": "success",
+              "seconds": 24.0
+            },
+            {
+              "name": "Build and test portable checkpoint contracts",
+              "category": "build_or_combined_build_test",
+              "conclusion": "success",
+              "seconds": 167.0
+            },
+            {
+              "name": "Reject forbidden core dependencies and tracked build products",
+              "category": "build_or_combined_build_test",
+              "conclusion": "success",
+              "seconds": 0
+            },
+            {
+              "name": "Post Check out WaveVortexModel",
+              "category": "setup",
+              "conclusion": "success",
+              "seconds": 1.0
+            },
+            {
+              "name": "Complete job",
+              "category": "other",
+              "conclusion": "success",
+              "seconds": 0
+            }
+          ]
+        },
+        {
+          "carriedForward": false,
+          "id": 102107535702,
+          "name": "Portable C++ ASan and UBSan",
+          "attempt": 1,
+          "status": "completed",
+          "conclusion": "success",
+          "url": "https://github.com/JeffreyEarly/wave-vortex-model/actions/runs/34240034364/job/102107535702",
+          "startedAt": "2026-09-08T14:42:55Z",
+          "completedAt": "2026-09-08T14:50:29Z",
+          "seconds": 454.0,
+          "steps": [
+            {
+              "name": "Set up job",
+              "category": "setup",
+              "conclusion": "success",
+              "seconds": 0
+            },
+            {
+              "name": "Check out WaveVortexModel",
+              "category": "setup",
+              "conclusion": "success",
+              "seconds": 3.0
+            },
+            {
+              "name": "Install NetCDF C development library",
+              "category": "setup",
+              "conclusion": "success",
+              "seconds": 11.0
+            },
+            {
+              "name": "Build the portable runtime with Clang sanitizers",
+              "category": "build_or_combined_build_test",
+              "conclusion": "success",
+              "seconds": 380.0
+            },
+            {
+              "name": "Run the sanitized portable-runtime contracts",
+              "category": "other",
+              "conclusion": "success",
+              "seconds": 56.0
+            },
+            {
+              "name": "Post Check out WaveVortexModel",
+              "category": "setup",
+              "conclusion": "success",
+              "seconds": 0
+            },
+            {
+              "name": "Complete job",
+              "category": "other",
+              "conclusion": "success",
+              "seconds": 0
+            }
+          ]
+        },
+        {
+          "carriedForward": false,
+          "id": 102107535792,
+          "name": "Code Analyzer / MATLAB R2025b",
+          "attempt": 1,
+          "status": "completed",
+          "conclusion": "success",
+          "url": "https://github.com/JeffreyEarly/wave-vortex-model/actions/runs/34240034364/job/102107535792",
+          "startedAt": "2026-09-08T14:42:54Z",
+          "completedAt": "2026-09-08T14:43:46Z",
+          "seconds": 52.0,
+          "steps": [
+            {
+              "name": "Set up job",
+              "category": "setup",
+              "conclusion": "success",
+              "seconds": 1.0
+            },
+            {
+              "name": "Check out WaveVortexModel",
+              "category": "setup",
+              "conclusion": "success",
+              "seconds": 2.0
+            },
+            {
+              "name": "Check out pinned OceanKit packages",
+              "category": "setup",
+              "conclusion": "success",
+              "seconds": 2.0
+            },
+            {
+              "name": "Set up MATLAB R2025b",
+              "category": "setup",
+              "conclusion": "success",
+              "seconds": 32.0
+            },
+            {
+              "name": "Run Code Analyzer",
+              "category": "validation",
+              "conclusion": "success",
+              "seconds": 11.0
+            },
+            {
+              "name": "Verify clean source checkout",
+              "category": "setup",
+              "conclusion": "success",
+              "seconds": 0
+            },
+            {
+              "name": "Post Set up MATLAB R2025b",
+              "category": "setup",
+              "conclusion": "success",
+              "seconds": 0
+            },
+            {
+              "name": "Post Check out pinned OceanKit packages",
+              "category": "setup",
+              "conclusion": "success",
+              "seconds": 0
+            },
+            {
+              "name": "Post Check out WaveVortexModel",
+              "category": "setup",
+              "conclusion": "success",
+              "seconds": 1.0
+            },
+            {
+              "name": "Complete job",
+              "category": "other",
+              "conclusion": "success",
+              "seconds": 0
+            }
+          ]
+        },
+        {
+          "carriedForward": false,
+          "id": 102107536691,
+          "name": "Focused MATLAB / R2025b",
+          "attempt": 1,
+          "status": "completed",
+          "conclusion": "skipped",
+          "url": "https://github.com/JeffreyEarly/wave-vortex-model/actions/runs/34240034364/job/102107536691",
+          "startedAt": "2026-09-08T14:42:53Z",
+          "completedAt": "2026-09-08T14:42:52Z",
+          "seconds": 0,
+          "steps": []
+        },
+        {
+          "carriedForward": false,
+          "id": 102110389253,
+          "name": "Required / WaveVortexModel",
+          "attempt": 1,
+          "status": "completed",
+          "conclusion": "success",
+          "url": "https://github.com/JeffreyEarly/wave-vortex-model/actions/runs/34240034364/job/102110389253",
+          "startedAt": "2026-09-08T14:50:31Z",
+          "completedAt": "2026-09-08T14:50:34Z",
+          "seconds": 3.0,
+          "steps": [
+            {
+              "name": "Set up job",
+              "category": "setup",
+              "conclusion": "success",
+              "seconds": 0
+            },
+            {
+              "name": "Enforce the selected required gate",
+              "category": "other",
+              "conclusion": "success",
+              "seconds": 0
+            },
+            {
+              "name": "Complete job",
+              "category": "other",
+              "conclusion": "success",
+              "seconds": 0
+            }
+          ]
+        }
+      ],
+      "latestAttemptStartDelaySeconds": 0,
+      "firstJobQueueSeconds": 1.0
+    },
+    {
+      "id": 34240963152,
+      "name": "WaveVortexModel CI",
+      "sourceCommit": "87e83c272eb71c238154a6badc8479ba6714e557",
+      "event": "pull_request",
+      "url": "https://github.com/JeffreyEarly/wave-vortex-model/actions/runs/34240963152",
+      "status": "completed",
+      "conclusion": "success",
+      "createdAt": "2026-09-08T14:51:17Z",
+      "startedAt": "2026-09-08T15:09:25Z",
+      "completedJobSeconds": 2135.0,
+      "incompleteJobs": 0,
+      "jobs": [
+        {
+          "carriedForward": false,
+          "id": 102110695938,
+          "name": "Portable C++ ASan and UBSan",
+          "attempt": 1,
+          "status": "completed",
+          "conclusion": "success",
+          "url": "https://github.com/JeffreyEarly/wave-vortex-model/actions/runs/34240963152/job/102110695938",
+          "startedAt": "2026-09-08T14:51:20Z",
+          "completedAt": "2026-09-08T14:58:40Z",
+          "seconds": 440.0,
+          "steps": [
+            {
+              "name": "Set up job",
+              "category": "setup",
+              "conclusion": "success",
+              "seconds": 1.0
+            },
+            {
+              "name": "Check out WaveVortexModel",
+              "category": "setup",
+              "conclusion": "success",
+              "seconds": 2.0
+            },
+            {
+              "name": "Install NetCDF C development library",
+              "category": "setup",
+              "conclusion": "success",
+              "seconds": 11.0
+            },
+            {
+              "name": "Build the portable runtime with Clang sanitizers",
+              "category": "build_or_combined_build_test",
+              "conclusion": "success",
+              "seconds": 371.0
+            },
+            {
+              "name": "Run the sanitized portable-runtime contracts",
+              "category": "other",
+              "conclusion": "success",
+              "seconds": 52.0
+            },
+            {
+              "name": "Post Check out WaveVortexModel",
+              "category": "setup",
+              "conclusion": "success",
+              "seconds": 1.0
+            },
+            {
+              "name": "Complete job",
+              "category": "other",
+              "conclusion": "success",
+              "seconds": 0
+            }
+          ]
+        },
+        {
+          "carriedForward": false,
+          "id": 102110696228,
+          "name": "Code Analyzer / MATLAB R2025b",
+          "attempt": 1,
+          "status": "completed",
+          "conclusion": "cancelled",
+          "url": "https://github.com/JeffreyEarly/wave-vortex-model/actions/runs/34240963152/job/102110696228",
+          "startedAt": "2026-09-08T14:51:21Z",
+          "completedAt": "2026-09-08T15:08:53Z",
+          "seconds": 1052.0,
+          "steps": [
+            {
+              "name": "Set up job",
+              "category": "setup",
+              "conclusion": "success",
+              "seconds": 1.0
+            },
+            {
+              "name": "Check out WaveVortexModel",
+              "category": "setup",
+              "conclusion": "success",
+              "seconds": 2.0
+            },
+            {
+              "name": "Check out pinned OceanKit packages",
+              "category": "setup",
+              "conclusion": "success",
+              "seconds": 1.0
+            },
+            {
+              "name": "Set up MATLAB R2025b",
+              "category": "setup",
+              "conclusion": "cancelled",
+              "seconds": 1046.0
+            },
+            {
+              "name": "Run Code Analyzer",
+              "category": "validation",
+              "conclusion": "skipped",
+              "seconds": 0
+            },
+            {
+              "name": "Verify clean source checkout",
+              "category": "setup",
+              "conclusion": "success",
+              "seconds": 1.0
+            },
+            {
+              "name": "Post Set up MATLAB R2025b",
+              "category": "setup",
+              "conclusion": "success",
+              "seconds": 0
+            },
+            {
+              "name": "Post Check out pinned OceanKit packages",
+              "category": "setup",
+              "conclusion": "success",
+              "seconds": 0
+            },
+            {
+              "name": "Post Check out WaveVortexModel",
+              "category": "setup",
+              "conclusion": "success",
+              "seconds": 0
+            },
+            {
+              "name": "Complete job",
+              "category": "other",
+              "conclusion": "success",
+              "seconds": 0
+            }
+          ]
+        },
+        {
+          "carriedForward": false,
+          "id": 102110696285,
+          "name": "Documentation / MATLAB R2025b",
+          "attempt": 1,
+          "status": "completed",
+          "conclusion": "success",
+          "url": "https://github.com/JeffreyEarly/wave-vortex-model/actions/runs/34240963152/job/102110696285",
+          "startedAt": "2026-09-08T14:51:20Z",
+          "completedAt": "2026-09-08T14:56:04Z",
+          "seconds": 284.0,
+          "steps": [
+            {
+              "name": "Set up job",
+              "category": "setup",
+              "conclusion": "success",
+              "seconds": 3.0
+            },
+            {
+              "name": "Pull ghcr.io/actions/jekyll-build-pages:v1.0.13",
+              "category": "build_or_combined_build_test",
+              "conclusion": "success",
+              "seconds": 13.0
+            },
+            {
+              "name": "Check out WaveVortexModel",
+              "category": "setup",
+              "conclusion": "success",
+              "seconds": 3.0
+            },
+            {
+              "name": "Check out pinned OceanKit packages",
+              "category": "setup",
+              "conclusion": "success",
+              "seconds": 1.0
+            },
+            {
+              "name": "Set up MATLAB R2025b",
+              "category": "setup",
+              "conclusion": "success",
+              "seconds": 39.0
+            },
+            {
+              "name": "Verify committed documentation",
+              "category": "validation",
+              "conclusion": "success",
+              "seconds": 68.0
+            },
+            {
+              "name": "Build rendered website",
+              "category": "build_or_combined_build_test",
+              "conclusion": "success",
+              "seconds": 148.0
+            },
+            {
+              "name": "Verify rendered website",
+              "category": "validation",
+              "conclusion": "success",
+              "seconds": 5.0
+            },
+            {
+              "name": "Upload generated documentation diagnostics",
+              "category": "other",
+              "conclusion": "skipped",
+              "seconds": 0
+            },
+            {
+              "name": "Upload rendered website diagnostics",
+              "category": "other",
+              "conclusion": "skipped",
+              "seconds": 0
+            },
+            {
+              "name": "Verify clean source checkout",
+              "category": "setup",
+              "conclusion": "success",
+              "seconds": 0
+            },
+            {
+              "name": "Post Set up MATLAB R2025b",
+              "category": "setup",
+              "conclusion": "success",
+              "seconds": 0
+            },
+            {
+              "name": "Post Check out pinned OceanKit packages",
+              "category": "setup",
+              "conclusion": "success",
+              "seconds": 1.0
+            },
+            {
+              "name": "Post Check out WaveVortexModel",
+              "category": "setup",
+              "conclusion": "success",
+              "seconds": 0
+            },
+            {
+              "name": "Complete job",
+              "category": "other",
+              "conclusion": "success",
+              "seconds": 0
+            }
+          ]
+        },
+        {
+          "carriedForward": false,
+          "id": 102110696603,
+          "name": "Portable C++ kernel contract",
+          "attempt": 1,
+          "status": "completed",
+          "conclusion": "success",
+          "url": "https://github.com/JeffreyEarly/wave-vortex-model/actions/runs/34240963152/job/102110696603",
+          "startedAt": "2026-09-08T14:51:21Z",
+          "completedAt": "2026-09-08T14:54:00Z",
+          "seconds": 159.0,
+          "steps": [
+            {
+              "name": "Set up job",
+              "category": "setup",
+              "conclusion": "success",
+              "seconds": 1.0
+            },
+            {
+              "name": "Check out WaveVortexModel",
+              "category": "setup",
+              "conclusion": "success",
+              "seconds": 2.0
+            },
+            {
+              "name": "Install NetCDF C development library",
+              "category": "setup",
+              "conclusion": "success",
+              "seconds": 27.0
+            },
+            {
+              "name": "Build and test without MATLAB headers",
+              "category": "build_or_combined_build_test",
+              "conclusion": "success",
+              "seconds": 24.0
+            },
+            {
+              "name": "Build and test portable checkpoint contracts",
+              "category": "build_or_combined_build_test",
+              "conclusion": "success",
+              "seconds": 101.0
+            },
+            {
+              "name": "Reject forbidden core dependencies and tracked build products",
+              "category": "build_or_combined_build_test",
+              "conclusion": "success",
+              "seconds": 0
+            },
+            {
+              "name": "Post Check out WaveVortexModel",
+              "category": "setup",
+              "conclusion": "success",
+              "seconds": 0
+            },
+            {
+              "name": "Complete job",
+              "category": "other",
+              "conclusion": "success",
+              "seconds": 0
+            }
+          ]
+        },
+        {
+          "carriedForward": false,
+          "id": 102110696630,
+          "name": "Smoke / MATLAB R2025b",
+          "attempt": 1,
+          "status": "completed",
+          "conclusion": "success",
+          "url": "https://github.com/JeffreyEarly/wave-vortex-model/actions/runs/34240963152/job/102110696630",
+          "startedAt": "2026-09-08T14:51:21Z",
+          "completedAt": "2026-09-08T14:53:22Z",
+          "seconds": 121.0,
+          "steps": [
+            {
+              "name": "Set up job",
+              "category": "setup",
+              "conclusion": "success",
+              "seconds": 3.0
+            },
+            {
+              "name": "Check out WaveVortexModel",
+              "category": "setup",
+              "conclusion": "success",
+              "seconds": 3.0
+            },
+            {
+              "name": "Check out pinned OceanKit packages",
+              "category": "setup",
+              "conclusion": "success",
+              "seconds": 2.0
+            },
+            {
+              "name": "Set up MATLAB R2025b",
+              "category": "setup",
+              "conclusion": "success",
+              "seconds": 44.0
+            },
+            {
+              "name": "Run smoke tests",
+              "category": "validation",
+              "conclusion": "success",
+              "seconds": 66.0
+            },
+            {
+              "name": "Verify clean source checkout",
+              "category": "setup",
+              "conclusion": "success",
+              "seconds": 0
+            },
+            {
+              "name": "Post Set up MATLAB R2025b",
+              "category": "setup",
+              "conclusion": "success",
+              "seconds": 0
+            },
+            {
+              "name": "Post Check out pinned OceanKit packages",
+              "category": "setup",
+              "conclusion": "success",
+              "seconds": 0
+            },
+            {
+              "name": "Post Check out WaveVortexModel",
+              "category": "setup",
+              "conclusion": "success",
+              "seconds": 1.0
+            },
+            {
+              "name": "Complete job",
+              "category": "other",
+              "conclusion": "success",
+              "seconds": 0
+            }
+          ]
+        },
+        {
+          "carriedForward": false,
+          "id": 102110697347,
+          "name": "Focused MATLAB / R2025b",
+          "attempt": 1,
+          "status": "completed",
+          "conclusion": "skipped",
+          "url": "https://github.com/JeffreyEarly/wave-vortex-model/actions/runs/34240963152/job/102110697347",
+          "startedAt": "2026-09-08T14:51:18Z",
+          "completedAt": "2026-09-08T14:51:18Z",
+          "seconds": 0,
+          "steps": []
+        },
+        {
+          "carriedForward": false,
+          "id": 102117251713,
+          "name": "Required / WaveVortexModel",
+          "attempt": 1,
+          "status": "completed",
+          "conclusion": "failure",
+          "url": "https://github.com/JeffreyEarly/wave-vortex-model/actions/runs/34240963152/job/102117251713",
+          "startedAt": "2026-09-08T15:08:56Z",
+          "completedAt": "2026-09-08T15:08:59Z",
+          "seconds": 3.0,
+          "steps": [
+            {
+              "name": "Set up job",
+              "category": "setup",
+              "conclusion": "success",
+              "seconds": 0
+            },
+            {
+              "name": "Enforce the selected required gate",
+              "category": "other",
+              "conclusion": "failure",
+              "seconds": 0
+            },
+            {
+              "name": "Complete job",
+              "category": "other",
+              "conclusion": "success",
+              "seconds": 0
+            }
+          ]
+        },
+        {
+          "carriedForward": false,
+          "id": 102117457782,
+          "name": "Code Analyzer / MATLAB R2025b",
+          "attempt": 2,
+          "status": "completed",
+          "conclusion": "success",
+          "url": "https://github.com/JeffreyEarly/wave-vortex-model/actions/runs/34240963152/job/102117457782",
+          "startedAt": "2026-09-08T15:09:30Z",
+          "completedAt": "2026-09-08T15:10:42Z",
+          "seconds": 72.0,
+          "steps": [
+            {
+              "name": "Set up job",
+              "category": "setup",
+              "conclusion": "success",
+              "seconds": 3.0
+            },
+            {
+              "name": "Check out WaveVortexModel",
+              "category": "setup",
+              "conclusion": "success",
+              "seconds": 2.0
+            },
+            {
+              "name": "Check out pinned OceanKit packages",
+              "category": "setup",
+              "conclusion": "success",
+              "seconds": 1.0
+            },
+            {
+              "name": "Set up MATLAB R2025b",
+              "category": "setup",
+              "conclusion": "success",
+              "seconds": 50.0
+            },
+            {
+              "name": "Run Code Analyzer",
+              "category": "validation",
+              "conclusion": "success",
+              "seconds": 10.0
+            },
+            {
+              "name": "Verify clean source checkout",
+              "category": "setup",
+              "conclusion": "success",
+              "seconds": 0
+            },
+            {
+              "name": "Post Set up MATLAB R2025b",
+              "category": "setup",
+              "conclusion": "success",
+              "seconds": 0
+            },
+            {
+              "name": "Post Check out pinned OceanKit packages",
+              "category": "setup",
+              "conclusion": "success",
+              "seconds": 1.0
+            },
+            {
+              "name": "Post Check out WaveVortexModel",
+              "category": "setup",
+              "conclusion": "success",
+              "seconds": 0
+            },
+            {
+              "name": "Complete job",
+              "category": "other",
+              "conclusion": "success",
+              "seconds": 0
+            }
+          ]
+        },
+        {
+          "carriedForward": true,
+          "id": 102117459099,
+          "name": "Portable C++ ASan and UBSan",
+          "attempt": 2,
+          "status": "completed",
+          "conclusion": "success",
+          "url": "https://github.com/JeffreyEarly/wave-vortex-model/actions/runs/34240963152/job/102117459099",
+          "startedAt": "2026-09-08T14:51:20Z",
+          "completedAt": "2026-09-08T14:58:40Z",
+          "seconds": 440.0,
+          "steps": [
+            {
+              "name": "Set up job",
+              "category": "setup",
+              "conclusion": "success",
+              "seconds": 1.0
+            },
+            {
+              "name": "Check out WaveVortexModel",
+              "category": "setup",
+              "conclusion": "success",
+              "seconds": 2.0
+            },
+            {
+              "name": "Install NetCDF C development library",
+              "category": "setup",
+              "conclusion": "success",
+              "seconds": 11.0
+            },
+            {
+              "name": "Build the portable runtime with Clang sanitizers",
+              "category": "build_or_combined_build_test",
+              "conclusion": "success",
+              "seconds": 371.0
+            },
+            {
+              "name": "Run the sanitized portable-runtime contracts",
+              "category": "other",
+              "conclusion": "success",
+              "seconds": 52.0
+            },
+            {
+              "name": "Post Check out WaveVortexModel",
+              "category": "setup",
+              "conclusion": "success",
+              "seconds": 1.0
+            },
+            {
+              "name": "Complete job",
+              "category": "other",
+              "conclusion": "success",
+              "seconds": 0
+            }
+          ]
+        },
+        {
+          "carriedForward": false,
+          "id": 102117459655,
+          "name": "Focused MATLAB / R2025b",
+          "attempt": 2,
+          "status": "completed",
+          "conclusion": "skipped",
+          "url": "https://github.com/JeffreyEarly/wave-vortex-model/actions/runs/34240963152/job/102117459655",
+          "startedAt": "2026-09-08T15:09:28Z",
+          "completedAt": "2026-09-08T14:51:18Z",
+          "seconds": 0,
+          "steps": []
+        },
+        {
+          "carriedForward": true,
+          "id": 102117459944,
+          "name": "Documentation / MATLAB R2025b",
+          "attempt": 2,
+          "status": "completed",
+          "conclusion": "success",
+          "url": "https://github.com/JeffreyEarly/wave-vortex-model/actions/runs/34240963152/job/102117459944",
+          "startedAt": "2026-09-08T14:51:20Z",
+          "completedAt": "2026-09-08T14:56:04Z",
+          "seconds": 284.0,
+          "steps": [
+            {
+              "name": "Set up job",
+              "category": "setup",
+              "conclusion": "success",
+              "seconds": 3.0
+            },
+            {
+              "name": "Pull ghcr.io/actions/jekyll-build-pages:v1.0.13",
+              "category": "build_or_combined_build_test",
+              "conclusion": "success",
+              "seconds": 13.0
+            },
+            {
+              "name": "Check out WaveVortexModel",
+              "category": "setup",
+              "conclusion": "success",
+              "seconds": 3.0
+            },
+            {
+              "name": "Check out pinned OceanKit packages",
+              "category": "setup",
+              "conclusion": "success",
+              "seconds": 1.0
+            },
+            {
+              "name": "Set up MATLAB R2025b",
+              "category": "setup",
+              "conclusion": "success",
+              "seconds": 39.0
+            },
+            {
+              "name": "Verify committed documentation",
+              "category": "validation",
+              "conclusion": "success",
+              "seconds": 68.0
+            },
+            {
+              "name": "Build rendered website",
+              "category": "build_or_combined_build_test",
+              "conclusion": "success",
+              "seconds": 148.0
+            },
+            {
+              "name": "Verify rendered website",
+              "category": "validation",
+              "conclusion": "success",
+              "seconds": 5.0
+            },
+            {
+              "name": "Upload generated documentation diagnostics",
+              "category": "other",
+              "conclusion": "skipped",
+              "seconds": 0
+            },
+            {
+              "name": "Upload rendered website diagnostics",
+              "category": "other",
+              "conclusion": "skipped",
+              "seconds": 0
+            },
+            {
+              "name": "Verify clean source checkout",
+              "category": "setup",
+              "conclusion": "success",
+              "seconds": 0
+            },
+            {
+              "name": "Post Set up MATLAB R2025b",
+              "category": "setup",
+              "conclusion": "success",
+              "seconds": 0
+            },
+            {
+              "name": "Post Check out pinned OceanKit packages",
+              "category": "setup",
+              "conclusion": "success",
+              "seconds": 1.0
+            },
+            {
+              "name": "Post Check out WaveVortexModel",
+              "category": "setup",
+              "conclusion": "success",
+              "seconds": 0
+            },
+            {
+              "name": "Complete job",
+              "category": "other",
+              "conclusion": "success",
+              "seconds": 0
+            }
+          ]
+        },
+        {
+          "carriedForward": true,
+          "id": 102117503581,
+          "name": "Smoke / MATLAB R2025b",
+          "attempt": 2,
+          "status": "completed",
+          "conclusion": "success",
+          "url": "https://github.com/JeffreyEarly/wave-vortex-model/actions/runs/34240963152/job/102117503581",
+          "startedAt": "2026-09-08T14:51:21Z",
+          "completedAt": "2026-09-08T14:53:22Z",
+          "seconds": 121.0,
+          "steps": [
+            {
+              "name": "Set up job",
+              "category": "setup",
+              "conclusion": "success",
+              "seconds": 3.0
+            },
+            {
+              "name": "Check out WaveVortexModel",
+              "category": "setup",
+              "conclusion": "success",
+              "seconds": 3.0
+            },
+            {
+              "name": "Check out pinned OceanKit packages",
+              "category": "setup",
+              "conclusion": "success",
+              "seconds": 2.0
+            },
+            {
+              "name": "Set up MATLAB R2025b",
+              "category": "setup",
+              "conclusion": "success",
+              "seconds": 44.0
+            },
+            {
+              "name": "Run smoke tests",
+              "category": "validation",
+              "conclusion": "success",
+              "seconds": 66.0
+            },
+            {
+              "name": "Verify clean source checkout",
+              "category": "setup",
+              "conclusion": "success",
+              "seconds": 0
+            },
+            {
+              "name": "Post Set up MATLAB R2025b",
+              "category": "setup",
+              "conclusion": "success",
+              "seconds": 0
+            },
+            {
+              "name": "Post Check out pinned OceanKit packages",
+              "category": "setup",
+              "conclusion": "success",
+              "seconds": 0
+            },
+            {
+              "name": "Post Check out WaveVortexModel",
+              "category": "setup",
+              "conclusion": "success",
+              "seconds": 1.0
+            },
+            {
+              "name": "Complete job",
+              "category": "other",
+              "conclusion": "success",
+              "seconds": 0
+            }
+          ]
+        },
+        {
+          "carriedForward": true,
+          "id": 102117519649,
+          "name": "Portable C++ kernel contract",
+          "attempt": 2,
+          "status": "completed",
+          "conclusion": "success",
+          "url": "https://github.com/JeffreyEarly/wave-vortex-model/actions/runs/34240963152/job/102117519649",
+          "startedAt": "2026-09-08T14:51:21Z",
+          "completedAt": "2026-09-08T14:54:00Z",
+          "seconds": 159.0,
+          "steps": [
+            {
+              "name": "Set up job",
+              "category": "setup",
+              "conclusion": "success",
+              "seconds": 1.0
+            },
+            {
+              "name": "Check out WaveVortexModel",
+              "category": "setup",
+              "conclusion": "success",
+              "seconds": 2.0
+            },
+            {
+              "name": "Install NetCDF C development library",
+              "category": "setup",
+              "conclusion": "success",
+              "seconds": 27.0
+            },
+            {
+              "name": "Build and test without MATLAB headers",
+              "category": "build_or_combined_build_test",
+              "conclusion": "success",
+              "seconds": 24.0
+            },
+            {
+              "name": "Build and test portable checkpoint contracts",
+              "category": "build_or_combined_build_test",
+              "conclusion": "success",
+              "seconds": 101.0
+            },
+            {
+              "name": "Reject forbidden core dependencies and tracked build products",
+              "category": "build_or_combined_build_test",
+              "conclusion": "success",
+              "seconds": 0
+            },
+            {
+              "name": "Post Check out WaveVortexModel",
+              "category": "setup",
+              "conclusion": "success",
+              "seconds": 0
+            },
+            {
+              "name": "Complete job",
+              "category": "other",
+              "conclusion": "success",
+              "seconds": 0
+            }
+          ]
+        },
+        {
+          "carriedForward": false,
+          "id": 102117915503,
+          "name": "Required / WaveVortexModel",
+          "attempt": 2,
+          "status": "completed",
+          "conclusion": "success",
+          "url": "https://github.com/JeffreyEarly/wave-vortex-model/actions/runs/34240963152/job/102117915503",
+          "startedAt": "2026-09-08T15:10:45Z",
+          "completedAt": "2026-09-08T15:10:49Z",
+          "seconds": 4.0,
+          "steps": [
+            {
+              "name": "Set up job",
+              "category": "setup",
+              "conclusion": "success",
+              "seconds": 0
+            },
+            {
+              "name": "Enforce the selected required gate",
+              "category": "other",
+              "conclusion": "success",
+              "seconds": 0
+            },
+            {
+              "name": "Complete job",
+              "category": "other",
+              "conclusion": "success",
+              "seconds": 1.0
+            }
+          ]
+        }
+      ],
+      "latestAttemptStartDelaySeconds": 1088.0,
+      "firstJobQueueSeconds": 1.0
+    },
+    {
+      "id": 34240963189,
+      "name": "Portable variable catalog and diagnostics",
+      "sourceCommit": "87e83c272eb71c238154a6badc8479ba6714e557",
+      "event": "pull_request",
+      "url": "https://github.com/JeffreyEarly/wave-vortex-model/actions/runs/34240963189",
+      "status": "completed",
+      "conclusion": "success",
+      "createdAt": "2026-09-08T14:51:17Z",
+      "startedAt": "2026-09-08T14:51:17Z",
+      "completedJobSeconds": 558.0,
+      "incompleteJobs": 0,
+      "jobs": [
+        {
+          "carriedForward": false,
+          "id": 102110696981,
+          "name": "Variable catalog / R2025b",
+          "attempt": 1,
+          "status": "completed",
+          "conclusion": "success",
+          "url": "https://github.com/JeffreyEarly/wave-vortex-model/actions/runs/34240963189/job/102110696981",
+          "startedAt": "2026-09-08T14:51:40Z",
+          "completedAt": "2026-09-08T14:56:28Z",
+          "seconds": 288.0,
+          "steps": [
+            {
+              "name": "Set up job",
+              "category": "setup",
+              "conclusion": "success",
+              "seconds": 1.0
+            },
+            {
+              "name": "Run actions/checkout@v6",
+              "category": "setup",
+              "conclusion": "success",
+              "seconds": 2.0
+            },
+            {
+              "name": "Run actions/checkout@v6",
+              "category": "setup",
+              "conclusion": "success",
+              "seconds": 2.0
+            },
+            {
+              "name": "Install NetCDF",
+              "category": "setup",
+              "conclusion": "success",
+              "seconds": 9.0
+            },
+            {
+              "name": "Build diagnostic evaluator and output contracts",
+              "category": "build_or_combined_build_test",
+              "conclusion": "success",
+              "seconds": 100.0
+            },
+            {
+              "name": "Run matlab-actions/setup-matlab@v3",
+              "category": "setup",
+              "conclusion": "success",
+              "seconds": 27.0
+            },
+            {
+              "name": "Run matlab-actions/run-command@v3",
+              "category": "validation",
+              "conclusion": "success",
+              "seconds": 144.0
+            },
+            {
+              "name": "Verify clean checkout",
+              "category": "setup",
+              "conclusion": "success",
+              "seconds": 1.0
+            },
+            {
+              "name": "Post Run matlab-actions/setup-matlab@v3",
+              "category": "setup",
+              "conclusion": "success",
+              "seconds": 0
+            },
+            {
+              "name": "Post Run actions/checkout@v6",
+              "category": "setup",
+              "conclusion": "success",
+              "seconds": 0
+            },
+            {
+              "name": "Post Run actions/checkout@v6",
+              "category": "setup",
+              "conclusion": "success",
+              "seconds": 0
+            },
+            {
+              "name": "Complete job",
+              "category": "other",
+              "conclusion": "success",
+              "seconds": 0
+            }
+          ]
+        },
+        {
+          "carriedForward": false,
+          "id": 102110697286,
+          "name": "Variable catalog / R2026a",
+          "attempt": 1,
+          "status": "completed",
+          "conclusion": "success",
+          "url": "https://github.com/JeffreyEarly/wave-vortex-model/actions/runs/34240963189/job/102110697286",
+          "startedAt": "2026-09-08T14:51:20Z",
+          "completedAt": "2026-09-08T14:55:50Z",
+          "seconds": 270.0,
+          "steps": [
+            {
+              "name": "Set up job",
+              "category": "setup",
+              "conclusion": "success",
+              "seconds": 3.0
+            },
+            {
+              "name": "Run actions/checkout@v6",
+              "category": "setup",
+              "conclusion": "success",
+              "seconds": 3.0
+            },
+            {
+              "name": "Run actions/checkout@v6",
+              "category": "setup",
+              "conclusion": "success",
+              "seconds": 1.0
+            },
+            {
+              "name": "Install NetCDF",
+              "category": "setup",
+              "conclusion": "success",
+              "seconds": 30.0
+            },
+            {
+              "name": "Build diagnostic evaluator and output contracts",
+              "category": "build_or_combined_build_test",
+              "conclusion": "success",
+              "seconds": 68.0
+            },
+            {
+              "name": "Run matlab-actions/setup-matlab@v3",
+              "category": "setup",
+              "conclusion": "success",
+              "seconds": 58.0
+            },
+            {
+              "name": "Run matlab-actions/run-command@v3",
+              "category": "validation",
+              "conclusion": "success",
+              "seconds": 103.0
+            },
+            {
+              "name": "Verify clean checkout",
+              "category": "setup",
+              "conclusion": "success",
+              "seconds": 0
+            },
+            {
+              "name": "Post Run matlab-actions/setup-matlab@v3",
+              "category": "setup",
+              "conclusion": "success",
+              "seconds": 0
+            },
+            {
+              "name": "Post Run actions/checkout@v6",
+              "category": "setup",
+              "conclusion": "success",
+              "seconds": 0
+            },
+            {
+              "name": "Post Run actions/checkout@v6",
+              "category": "setup",
+              "conclusion": "success",
+              "seconds": 0
+            },
+            {
+              "name": "Complete job",
+              "category": "other",
+              "conclusion": "success",
+              "seconds": 0
+            }
+          ]
+        }
+      ],
+      "latestAttemptStartDelaySeconds": 0,
+      "firstJobQueueSeconds": 3.0
+    },
+    {
+      "id": 34240963126,
+      "name": "Boussinesq qualification",
+      "sourceCommit": "87e83c272eb71c238154a6badc8479ba6714e557",
+      "event": "pull_request",
+      "url": "https://github.com/JeffreyEarly/wave-vortex-model/actions/runs/34240963126",
+      "status": "completed",
+      "conclusion": "success",
+      "createdAt": "2026-09-08T14:51:17Z",
+      "startedAt": "2026-09-08T14:51:17Z",
+      "completedJobSeconds": 1514.0,
+      "incompleteJobs": 0,
+      "jobs": [
+        {
+          "carriedForward": false,
+          "id": 102110914314,
+          "name": "Boussinesq kernel and runtime / release",
+          "attempt": 1,
+          "status": "completed",
+          "conclusion": "success",
+          "url": "https://github.com/JeffreyEarly/wave-vortex-model/actions/runs/34240963126/job/102110914314",
+          "startedAt": "2026-09-08T14:51:56Z",
+          "completedAt": "2026-09-08T15:05:28Z",
+          "seconds": 812.0,
+          "steps": [
+            {
+              "name": "Set up job",
+              "category": "setup",
+              "conclusion": "success",
+              "seconds": 2.0
+            },
+            {
+              "name": "Run actions/checkout@v6",
+              "category": "setup",
+              "conclusion": "success",
+              "seconds": 2.0
+            },
+            {
+              "name": "Run actions/checkout@v6",
+              "category": "setup",
+              "conclusion": "success",
+              "seconds": 1.0
+            },
+            {
+              "name": "Install NetCDF",
+              "category": "setup",
+              "conclusion": "success",
+              "seconds": 10.0
+            },
+            {
+              "name": "Build reference runtime and probes",
+              "category": "build_or_combined_build_test",
+              "conclusion": "success",
+              "seconds": 145.0
+            },
+            {
+              "name": "Run kernel boundary contracts",
+              "category": "other",
+              "conclusion": "success",
+              "seconds": 4.0
+            },
+            {
+              "name": "Run matlab-actions/setup-matlab@v3",
+              "category": "setup",
+              "conclusion": "success",
+              "seconds": 27.0
+            },
+            {
+              "name": "Qualify Boussinesq contracts or full continuation",
+              "category": "validation",
+              "conclusion": "success",
+              "seconds": 618.0
+            },
+            {
+              "name": "Upload machine-readable qualification",
+              "category": "validation",
+              "conclusion": "success",
+              "seconds": 1.0
+            },
+            {
+              "name": "Verify clean checkout",
+              "category": "setup",
+              "conclusion": "success",
+              "seconds": 0
+            },
+            {
+              "name": "Post Run matlab-actions/setup-matlab@v3",
+              "category": "setup",
+              "conclusion": "success",
+              "seconds": 0
+            },
+            {
+              "name": "Post Run actions/checkout@v6",
+              "category": "setup",
+              "conclusion": "success",
+              "seconds": 0
+            },
+            {
+              "name": "Post Run actions/checkout@v6",
+              "category": "setup",
+              "conclusion": "success",
+              "seconds": 1.0
+            },
+            {
+              "name": "Complete job",
+              "category": "other",
+              "conclusion": "success",
+              "seconds": 0
+            }
+          ]
+        },
+        {
+          "carriedForward": false,
+          "id": 102110914797,
+          "name": "Boussinesq kernel and runtime / sanitized",
+          "attempt": 1,
+          "status": "completed",
+          "conclusion": "success",
+          "url": "https://github.com/JeffreyEarly/wave-vortex-model/actions/runs/34240963126/job/102110914797",
+          "startedAt": "2026-09-08T14:51:56Z",
+          "completedAt": "2026-09-08T15:03:38Z",
+          "seconds": 702.0,
+          "steps": [
+            {
+              "name": "Set up job",
+              "category": "setup",
+              "conclusion": "success",
+              "seconds": 3.0
+            },
+            {
+              "name": "Run actions/checkout@v6",
+              "category": "setup",
+              "conclusion": "success",
+              "seconds": 2.0
+            },
+            {
+              "name": "Run actions/checkout@v6",
+              "category": "setup",
+              "conclusion": "success",
+              "seconds": 1.0
+            },
+            {
+              "name": "Install NetCDF",
+              "category": "setup",
+              "conclusion": "success",
+              "seconds": 13.0
+            },
+            {
+              "name": "Build reference runtime and probes",
+              "category": "build_or_combined_build_test",
+              "conclusion": "success",
+              "seconds": 176.0
+            },
+            {
+              "name": "Run kernel boundary contracts",
+              "category": "other",
+              "conclusion": "success",
+              "seconds": 1.0
+            },
+            {
+              "name": "Run matlab-actions/setup-matlab@v3",
+              "category": "setup",
+              "conclusion": "success",
+              "seconds": 41.0
+            },
+            {
+              "name": "Qualify Boussinesq contracts or full continuation",
+              "category": "validation",
+              "conclusion": "success",
+              "seconds": 460.0
+            },
+            {
+              "name": "Upload machine-readable qualification",
+              "category": "validation",
+              "conclusion": "success",
+              "seconds": 1.0
+            },
+            {
+              "name": "Verify clean checkout",
+              "category": "setup",
+              "conclusion": "success",
+              "seconds": 0
+            },
+            {
+              "name": "Post Run matlab-actions/setup-matlab@v3",
+              "category": "setup",
+              "conclusion": "success",
+              "seconds": 0
+            },
+            {
+              "name": "Post Run actions/checkout@v6",
+              "category": "setup",
+              "conclusion": "success",
+              "seconds": 1.0
+            },
+            {
+              "name": "Post Run actions/checkout@v6",
+              "category": "setup",
+              "conclusion": "success",
+              "seconds": 0
+            },
+            {
+              "name": "Complete job",
+              "category": "other",
+              "conclusion": "success",
+              "seconds": 0
+            }
+          ]
+        }
+      ],
+      "latestAttemptStartDelaySeconds": 0,
+      "firstJobQueueSeconds": 39.0
+    },
+    {
+      "id": 34240963178,
+      "name": "Hydrostatic qualification",
+      "sourceCommit": "87e83c272eb71c238154a6badc8479ba6714e557",
+      "event": "pull_request",
+      "url": "https://github.com/JeffreyEarly/wave-vortex-model/actions/runs/34240963178",
+      "status": "completed",
+      "conclusion": "success",
+      "createdAt": "2026-09-08T14:51:17Z",
+      "startedAt": "2026-09-08T14:51:17Z",
+      "completedJobSeconds": 1552.0,
+      "incompleteJobs": 0,
+      "jobs": [
+        {
+          "carriedForward": false,
+          "id": 102111041210,
+          "name": "Hydrostatic kernel and runtime / sanitized",
+          "attempt": 1,
+          "status": "completed",
+          "conclusion": "success",
+          "url": "https://github.com/JeffreyEarly/wave-vortex-model/actions/runs/34240963178/job/102111041210",
+          "startedAt": "2026-09-08T14:52:18Z",
+          "completedAt": "2026-09-08T15:07:12Z",
+          "seconds": 894.0,
+          "steps": [
+            {
+              "name": "Set up job",
+              "category": "setup",
+              "conclusion": "success",
+              "seconds": 2.0
+            },
+            {
+              "name": "Run actions/checkout@v6",
+              "category": "setup",
+              "conclusion": "success",
+              "seconds": 3.0
+            },
+            {
+              "name": "Run actions/checkout@v6",
+              "category": "setup",
+              "conclusion": "success",
+              "seconds": 3.0
+            },
+            {
+              "name": "Install NetCDF",
+              "category": "setup",
+              "conclusion": "success",
+              "seconds": 11.0
+            },
+            {
+              "name": "Build reference runtime and probes",
+              "category": "build_or_combined_build_test",
+              "conclusion": "success",
+              "seconds": 235.0
+            },
+            {
+              "name": "Run kernel boundary contracts",
+              "category": "other",
+              "conclusion": "success",
+              "seconds": 1.0
+            },
+            {
+              "name": "Run matlab-actions/setup-matlab@v3",
+              "category": "setup",
+              "conclusion": "success",
+              "seconds": 32.0
+            },
+            {
+              "name": "Qualify Hydrostatic contracts or full continuation",
+              "category": "validation",
+              "conclusion": "success",
+              "seconds": 601.0
+            },
+            {
+              "name": "Upload machine-readable qualification",
+              "category": "validation",
+              "conclusion": "success",
+              "seconds": 2.0
+            },
+            {
+              "name": "Verify clean checkout",
+              "category": "setup",
+              "conclusion": "success",
+              "seconds": 0
+            },
+            {
+              "name": "Post Run matlab-actions/setup-matlab@v3",
+              "category": "setup",
+              "conclusion": "success",
+              "seconds": 0
+            },
+            {
+              "name": "Post Run actions/checkout@v6",
+              "category": "setup",
+              "conclusion": "success",
+              "seconds": 0
+            },
+            {
+              "name": "Post Run actions/checkout@v6",
+              "category": "setup",
+              "conclusion": "success",
+              "seconds": 0
+            },
+            {
+              "name": "Complete job",
+              "category": "other",
+              "conclusion": "success",
+              "seconds": 1.0
+            }
+          ]
+        },
+        {
+          "carriedForward": false,
+          "id": 102111041589,
+          "name": "Hydrostatic kernel and runtime / release",
+          "attempt": 1,
+          "status": "completed",
+          "conclusion": "success",
+          "url": "https://github.com/JeffreyEarly/wave-vortex-model/actions/runs/34240963178/job/102111041589",
+          "startedAt": "2026-09-08T14:52:18Z",
+          "completedAt": "2026-09-08T15:03:16Z",
+          "seconds": 658.0,
+          "steps": [
+            {
+              "name": "Set up job",
+              "category": "setup",
+              "conclusion": "success",
+              "seconds": 2.0
+            },
+            {
+              "name": "Run actions/checkout@v6",
+              "category": "setup",
+              "conclusion": "success",
+              "seconds": 3.0
+            },
+            {
+              "name": "Run actions/checkout@v6",
+              "category": "setup",
+              "conclusion": "success",
+              "seconds": 2.0
+            },
+            {
+              "name": "Install NetCDF",
+              "category": "setup",
+              "conclusion": "success",
+              "seconds": 10.0
+            },
+            {
+              "name": "Build reference runtime and probes",
+              "category": "build_or_combined_build_test",
+              "conclusion": "success",
+              "seconds": 121.0
+            },
+            {
+              "name": "Run kernel boundary contracts",
+              "category": "other",
+              "conclusion": "success",
+              "seconds": 1.0
+            },
+            {
+              "name": "Run matlab-actions/setup-matlab@v3",
+              "category": "setup",
+              "conclusion": "success",
+              "seconds": 26.0
+            },
+            {
+              "name": "Qualify Hydrostatic contracts or full continuation",
+              "category": "validation",
+              "conclusion": "success",
+              "seconds": 490.0
+            },
+            {
+              "name": "Upload machine-readable qualification",
+              "category": "validation",
+              "conclusion": "success",
+              "seconds": 1.0
+            },
+            {
+              "name": "Verify clean checkout",
+              "category": "setup",
+              "conclusion": "success",
+              "seconds": 0
+            },
+            {
+              "name": "Post Run matlab-actions/setup-matlab@v3",
+              "category": "setup",
+              "conclusion": "success",
+              "seconds": 0
+            },
+            {
+              "name": "Post Run actions/checkout@v6",
+              "category": "setup",
+              "conclusion": "success",
+              "seconds": 0
+            },
+            {
+              "name": "Post Run actions/checkout@v6",
+              "category": "setup",
+              "conclusion": "success",
+              "seconds": 1.0
+            },
+            {
+              "name": "Complete job",
+              "category": "other",
+              "conclusion": "success",
+              "seconds": 0
+            }
+          ]
+        }
+      ],
+      "latestAttemptStartDelaySeconds": 0,
+      "firstJobQueueSeconds": 61.0
+    },
+    {
+      "id": 34240963115,
+      "name": "Stratified QG qualification",
+      "sourceCommit": "87e83c272eb71c238154a6badc8479ba6714e557",
+      "event": "pull_request",
+      "url": "https://github.com/JeffreyEarly/wave-vortex-model/actions/runs/34240963115",
+      "status": "completed",
+      "conclusion": "success",
+      "createdAt": "2026-09-08T14:51:17Z",
+      "startedAt": "2026-09-08T14:51:17Z",
+      "completedJobSeconds": 3281.0,
+      "incompleteJobs": 0,
+      "jobs": [
+        {
+          "carriedForward": false,
+          "id": 102110920717,
+          "name": "SQG qualification / sanitized",
+          "attempt": 1,
+          "status": "completed",
+          "conclusion": "success",
+          "url": "https://github.com/JeffreyEarly/wave-vortex-model/actions/runs/34240963115/job/102110920717",
+          "startedAt": "2026-09-08T14:51:57Z",
+          "completedAt": "2026-09-08T15:23:19Z",
+          "seconds": 1882.0,
+          "steps": [
+            {
+              "name": "Set up job",
+              "category": "setup",
+              "conclusion": "success",
+              "seconds": 3.0
+            },
+            {
+              "name": "Run actions/checkout@v6",
+              "category": "setup",
+              "conclusion": "success",
+              "seconds": 3.0
+            },
+            {
+              "name": "Run actions/checkout@v6",
+              "category": "setup",
+              "conclusion": "success",
+              "seconds": 2.0
+            },
+            {
+              "name": "Install NetCDF",
+              "category": "setup",
+              "conclusion": "success",
+              "seconds": 10.0
+            },
+            {
+              "name": "Build reference runtime and probes",
+              "category": "build_or_combined_build_test",
+              "conclusion": "success",
+              "seconds": 214.0
+            },
+            {
+              "name": "Run matlab-actions/setup-matlab@v3",
+              "category": "setup",
+              "conclusion": "success",
+              "seconds": 38.0
+            },
+            {
+              "name": "Qualify MATLAB-C++-MATLAB continuation",
+              "category": "validation",
+              "conclusion": "success",
+              "seconds": 1607.0
+            },
+            {
+              "name": "Upload machine-readable qualification",
+              "category": "validation",
+              "conclusion": "success",
+              "seconds": 1.0
+            },
+            {
+              "name": "Verify clean checkout",
+              "category": "setup",
+              "conclusion": "success",
+              "seconds": 0
+            },
+            {
+              "name": "Post Run matlab-actions/setup-matlab@v3",
+              "category": "setup",
+              "conclusion": "success",
+              "seconds": 0
+            },
+            {
+              "name": "Post Run actions/checkout@v6",
+              "category": "setup",
+              "conclusion": "success",
+              "seconds": 0
+            },
+            {
+              "name": "Post Run actions/checkout@v6",
+              "category": "setup",
+              "conclusion": "success",
+              "seconds": 1.0
+            },
+            {
+              "name": "Complete job",
+              "category": "other",
+              "conclusion": "success",
+              "seconds": 0
+            }
+          ]
+        },
+        {
+          "carriedForward": false,
+          "id": 102110921032,
+          "name": "SQG qualification / release",
+          "attempt": 1,
+          "status": "completed",
+          "conclusion": "success",
+          "url": "https://github.com/JeffreyEarly/wave-vortex-model/actions/runs/34240963115/job/102110921032",
+          "startedAt": "2026-09-08T14:51:57Z",
+          "completedAt": "2026-09-08T15:15:16Z",
+          "seconds": 1399.0,
+          "steps": [
+            {
+              "name": "Set up job",
+              "category": "setup",
+              "conclusion": "success",
+              "seconds": 2.0
+            },
+            {
+              "name": "Run actions/checkout@v6",
+              "category": "setup",
+              "conclusion": "success",
+              "seconds": 1.0
+            },
+            {
+              "name": "Run actions/checkout@v6",
+              "category": "setup",
+              "conclusion": "success",
+              "seconds": 2.0
+            },
+            {
+              "name": "Install NetCDF",
+              "category": "setup",
+              "conclusion": "success",
+              "seconds": 10.0
+            },
+            {
+              "name": "Build reference runtime and probes",
+              "category": "build_or_combined_build_test",
+              "conclusion": "success",
+              "seconds": 109.0
+            },
+            {
+              "name": "Run matlab-actions/setup-matlab@v3",
+              "category": "setup",
+              "conclusion": "success",
+              "seconds": 27.0
+            },
+            {
+              "name": "Qualify MATLAB-C++-MATLAB continuation",
+              "category": "validation",
+              "conclusion": "success",
+              "seconds": 1245.0
+            },
+            {
+              "name": "Upload machine-readable qualification",
+              "category": "validation",
+              "conclusion": "success",
+              "seconds": 1.0
+            },
+            {
+              "name": "Verify clean checkout",
+              "category": "setup",
+              "conclusion": "success",
+              "seconds": 0
+            },
+            {
+              "name": "Post Run matlab-actions/setup-matlab@v3",
+              "category": "setup",
+              "conclusion": "success",
+              "seconds": 0
+            },
+            {
+              "name": "Post Run actions/checkout@v6",
+              "category": "setup",
+              "conclusion": "success",
+              "seconds": 0
+            },
+            {
+              "name": "Post Run actions/checkout@v6",
+              "category": "setup",
+              "conclusion": "success",
+              "seconds": 0
+            },
+            {
+              "name": "Complete job",
+              "category": "other",
+              "conclusion": "success",
+              "seconds": 1.0
+            }
+          ]
+        }
+      ],
+      "latestAttemptStartDelaySeconds": 0,
+      "firstJobQueueSeconds": 40.0
+    },
+    {
+      "id": 34240963118,
+      "name": "WaveVortexModel Extended CI",
+      "sourceCommit": "87e83c272eb71c238154a6badc8479ba6714e557",
+      "event": "pull_request",
+      "url": "https://github.com/JeffreyEarly/wave-vortex-model/actions/runs/34240963118",
+      "status": "completed",
+      "conclusion": "cancelled",
+      "createdAt": "2026-09-08T14:51:17Z",
+      "startedAt": "2026-09-08T14:51:17Z",
+      "completedJobSeconds": 4563.0,
+      "incompleteJobs": 0,
+      "jobs": [
+        {
+          "carriedForward": false,
+          "id": 102110812084,
+          "name": "Full / MATLAB R2025b",
+          "attempt": 1,
+          "status": "completed",
+          "conclusion": "cancelled",
+          "url": "https://github.com/JeffreyEarly/wave-vortex-model/actions/runs/34240963118/job/102110812084",
+          "startedAt": "2026-09-08T14:51:40Z",
+          "completedAt": "2026-09-08T15:36:48Z",
+          "seconds": 2708.0,
+          "steps": [
+            {
+              "name": "Set up job",
+              "category": "setup",
+              "conclusion": "success",
+              "seconds": 3.0
+            },
+            {
+              "name": "Install portable-runtime build dependencies",
+              "category": "setup",
+              "conclusion": "success",
+              "seconds": 11.0
+            },
+            {
+              "name": "Check out WaveVortexModel",
+              "category": "setup",
+              "conclusion": "success",
+              "seconds": 2.0
+            },
+            {
+              "name": "Check out pinned OceanKit packages",
+              "category": "setup",
+              "conclusion": "success",
+              "seconds": 2.0
+            },
+            {
+              "name": "Set up MATLAB R2025b",
+              "category": "setup",
+              "conclusion": "success",
+              "seconds": 45.0
+            },
+            {
+              "name": "Run full tests",
+              "category": "validation",
+              "conclusion": "cancelled",
+              "seconds": 2640.0
+            },
+            {
+              "name": "Verify clean source checkout",
+              "category": "setup",
+              "conclusion": "success",
+              "seconds": 1.0
+            },
+            {
+              "name": "Post Set up MATLAB R2025b",
+              "category": "setup",
+              "conclusion": "success",
+              "seconds": 1.0
+            },
+            {
+              "name": "Post Check out pinned OceanKit packages",
+              "category": "setup",
+              "conclusion": "success",
+              "seconds": 0
+            },
+            {
+              "name": "Post Check out WaveVortexModel",
+              "category": "setup",
+              "conclusion": "success",
+              "seconds": 0
+            },
+            {
+              "name": "Complete job",
+              "category": "other",
+              "conclusion": "success",
+              "seconds": 0
+            }
+          ]
+        },
+        {
+          "carriedForward": false,
+          "id": 102110812452,
+          "name": "Optional / MATLAB R2025b",
+          "attempt": 1,
+          "status": "completed",
+          "conclusion": "success",
+          "url": "https://github.com/JeffreyEarly/wave-vortex-model/actions/runs/34240963118/job/102110812452",
+          "startedAt": "2026-09-08T14:51:39Z",
+          "completedAt": "2026-09-08T15:20:45Z",
+          "seconds": 1746.0,
+          "steps": [
+            {
+              "name": "Set up job",
+              "category": "setup",
+              "conclusion": "success",
+              "seconds": 1.0
+            },
+            {
+              "name": "Check out WaveVortexModel",
+              "category": "setup",
+              "conclusion": "success",
+              "seconds": 2.0
+            },
+            {
+              "name": "Check out pinned OceanKit packages",
+              "category": "setup",
+              "conclusion": "success",
+              "seconds": 1.0
+            },
+            {
+              "name": "Set up MATLAB R2025b with Optimization Toolbox",
+              "category": "setup",
+              "conclusion": "success",
+              "seconds": 1705.0
+            },
+            {
+              "name": "Run optional tests when Optimization Toolbox is available",
+              "category": "validation",
+              "conclusion": "success",
+              "seconds": 34.0
+            },
+            {
+              "name": "Verify clean source checkout",
+              "category": "setup",
+              "conclusion": "success",
+              "seconds": 0
+            },
+            {
+              "name": "Post Set up MATLAB R2025b with Optimization Toolbox",
+              "category": "setup",
+              "conclusion": "success",
+              "seconds": 0
+            },
+            {
+              "name": "Post Check out pinned OceanKit packages",
+              "category": "setup",
+              "conclusion": "success",
+              "seconds": 0
+            },
+            {
+              "name": "Post Check out WaveVortexModel",
+              "category": "setup",
+              "conclusion": "success",
+              "seconds": 1.0
+            },
+            {
+              "name": "Complete job",
+              "category": "other",
+              "conclusion": "success",
+              "seconds": 0
+            }
+          ]
+        },
+        {
+          "carriedForward": false,
+          "id": 102110812618,
+          "name": "Exhaustive / MATLAB R2025b",
+          "attempt": 1,
+          "status": "completed",
+          "conclusion": "success",
+          "url": "https://github.com/JeffreyEarly/wave-vortex-model/actions/runs/34240963118/job/102110812618",
+          "startedAt": "2026-09-08T14:51:40Z",
+          "completedAt": "2026-09-08T14:53:29Z",
+          "seconds": 109.0,
+          "steps": [
+            {
+              "name": "Set up job",
+              "category": "setup",
+              "conclusion": "success",
+              "seconds": 3.0
+            },
+            {
+              "name": "Check out WaveVortexModel",
+              "category": "setup",
+              "conclusion": "success",
+              "seconds": 2.0
+            },
+            {
+              "name": "Check out pinned OceanKit packages",
+              "category": "setup",
+              "conclusion": "success",
+              "seconds": 2.0
+            },
+            {
+              "name": "Set up MATLAB R2025b",
+              "category": "setup",
+              "conclusion": "success",
+              "seconds": 59.0
+            },
+            {
+              "name": "Run exhaustive tests",
+              "category": "validation",
+              "conclusion": "success",
+              "seconds": 38.0
+            },
+            {
+              "name": "Verify clean source checkout",
+              "category": "setup",
+              "conclusion": "success",
+              "seconds": 1.0
+            },
+            {
+              "name": "Post Set up MATLAB R2025b",
+              "category": "setup",
+              "conclusion": "success",
+              "seconds": 0
+            },
+            {
+              "name": "Post Check out pinned OceanKit packages",
+              "category": "setup",
+              "conclusion": "success",
+              "seconds": 0
+            },
+            {
+              "name": "Post Check out WaveVortexModel",
+              "category": "setup",
+              "conclusion": "success",
+              "seconds": 0
+            },
+            {
+              "name": "Complete job",
+              "category": "other",
+              "conclusion": "success",
+              "seconds": 0
+            }
+          ]
+        }
+      ],
+      "latestAttemptStartDelaySeconds": 0,
+      "firstJobQueueSeconds": 22.0
+    },
+    {
+      "id": 34240963158,
+      "name": "WaveVortexModel Package Verification",
+      "sourceCommit": "87e83c272eb71c238154a6badc8479ba6714e557",
+      "event": "pull_request",
+      "url": "https://github.com/JeffreyEarly/wave-vortex-model/actions/runs/34240963158",
+      "status": "completed",
+      "conclusion": "success",
+      "createdAt": "2026-09-08T14:51:17Z",
+      "startedAt": "2026-09-08T14:51:17Z",
+      "completedJobSeconds": 302.0,
+      "incompleteJobs": 0,
+      "jobs": [
+        {
+          "carriedForward": false,
+          "id": 102110854512,
+          "name": "Exported package / MATLAB R2025b",
+          "attempt": 1,
+          "status": "completed",
+          "conclusion": "success",
+          "url": "https://github.com/JeffreyEarly/wave-vortex-model/actions/runs/34240963158/job/102110854512",
+          "startedAt": "2026-09-08T14:51:47Z",
+          "completedAt": "2026-09-08T14:55:51Z",
+          "seconds": 244.0,
+          "steps": [
+            {
+              "name": "Set up job",
+              "category": "setup",
+              "conclusion": "success",
+              "seconds": 4.0
+            },
+            {
+              "name": "Install portable-runtime build dependencies",
+              "category": "setup",
+              "conclusion": "success",
+              "seconds": 19.0
+            },
+            {
+              "name": "Check out WaveVortexModel",
+              "category": "setup",
+              "conclusion": "success",
+              "seconds": 3.0
+            },
+            {
+              "name": "Check out immutable OceanKit release tools and packages",
+              "category": "setup",
+              "conclusion": "success",
+              "seconds": 2.0
+            },
+            {
+              "name": "Set up MATLAB R2025b",
+              "category": "setup",
+              "conclusion": "success",
+              "seconds": 46.0
+            },
+            {
+              "name": "Create isolated release workspace",
+              "category": "other",
+              "conclusion": "success",
+              "seconds": 2.0
+            },
+            {
+              "name": "Prepare unpublished patch export",
+              "category": "other",
+              "conclusion": "success",
+              "seconds": 75.0
+            },
+            {
+              "name": "Install and verify the exported package",
+              "category": "setup",
+              "conclusion": "success",
+              "seconds": 15.0
+            },
+            {
+              "name": "Build and inspect the exported reference runtime",
+              "category": "build_or_combined_build_test",
+              "conclusion": "success",
+              "seconds": 74.0
+            },
+            {
+              "name": "Upload release-candidate diagnostics",
+              "category": "other",
+              "conclusion": "skipped",
+              "seconds": 0
+            },
+            {
+              "name": "Verify clean source checkout",
+              "category": "setup",
+              "conclusion": "success",
+              "seconds": 0
+            },
+            {
+              "name": "Post Set up MATLAB R2025b",
+              "category": "setup",
+              "conclusion": "success",
+              "seconds": 0
+            },
+            {
+              "name": "Post Check out immutable OceanKit release tools and packages",
+              "category": "setup",
+              "conclusion": "success",
+              "seconds": 1.0
+            },
+            {
+              "name": "Post Check out WaveVortexModel",
+              "category": "setup",
+              "conclusion": "success",
+              "seconds": 0
+            },
+            {
+              "name": "Complete job",
+              "category": "other",
+              "conclusion": "success",
+              "seconds": 0
+            }
+          ]
+        },
+        {
+          "carriedForward": false,
+          "id": 102110854795,
+          "name": "Clean install / MATLAB R2025b",
+          "attempt": 1,
+          "status": "completed",
+          "conclusion": "success",
+          "url": "https://github.com/JeffreyEarly/wave-vortex-model/actions/runs/34240963158/job/102110854795",
+          "startedAt": "2026-09-08T14:51:47Z",
+          "completedAt": "2026-09-08T14:52:45Z",
+          "seconds": 58.0,
+          "steps": [
+            {
+              "name": "Set up job",
+              "category": "setup",
+              "conclusion": "success",
+              "seconds": 1.0
+            },
+            {
+              "name": "Check out WaveVortexModel",
+              "category": "setup",
+              "conclusion": "success",
+              "seconds": 2.0
+            },
+            {
+              "name": "Check out immutable OceanKit packages",
+              "category": "setup",
+              "conclusion": "success",
+              "seconds": 1.0
+            },
+            {
+              "name": "Set up MATLAB R2025b",
+              "category": "setup",
+              "conclusion": "success",
+              "seconds": 32.0
+            },
+            {
+              "name": "Create isolated MATLAB preferences",
+              "category": "other",
+              "conclusion": "success",
+              "seconds": 0
+            },
+            {
+              "name": "Install and verify the authoring package",
+              "category": "setup",
+              "conclusion": "success",
+              "seconds": 19.0
+            },
+            {
+              "name": "Verify clean source checkout",
+              "category": "setup",
+              "conclusion": "success",
+              "seconds": 0
+            },
+            {
+              "name": "Post Set up MATLAB R2025b",
+              "category": "setup",
+              "conclusion": "success",
+              "seconds": 0
+            },
+            {
+              "name": "Post Check out immutable OceanKit packages",
+              "category": "setup",
+              "conclusion": "success",
+              "seconds": 1.0
+            },
+            {
+              "name": "Post Check out WaveVortexModel",
+              "category": "setup",
+              "conclusion": "success",
+              "seconds": 0
+            },
+            {
+              "name": "Complete job",
+              "category": "other",
+              "conclusion": "success",
+              "seconds": 0
+            }
+          ]
+        }
+      ],
+      "latestAttemptStartDelaySeconds": 0,
+      "firstJobQueueSeconds": 30.0
+    }
+  ]
+}

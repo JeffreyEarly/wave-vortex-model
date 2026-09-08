@@ -1,10 +1,6 @@
 name: Stratified QG qualification
 
 on:
-  pull_request:
-    types: [opened, synchronize, reopened]
-  push:
-    branches: [main]
   workflow_dispatch:
 
 permissions:
@@ -35,9 +31,9 @@ jobs:
           path: OceanKit
           persist-credentials: false
       - name: Install NetCDF
+        timeout-minutes: 5
         run: |
-          sudo apt-get -o Acquire::Retries=3 update
-          sudo apt-get -o Acquire::Retries=3 install --yes libnetcdf-dev pkg-config
+          bash source/tools/ci/provision_ubuntu.sh netcdf
       - name: Build reference runtime and probes
         working-directory: source
         env:
@@ -50,10 +46,30 @@ jobs:
           fi
           cmake -S PortableRuntime -B "$RUNNER_TEMP/sqg-build" -DCMAKE_BUILD_TYPE=RelWithDebInfo -DWV_ENABLE_ACCELERATE=OFF "${flags[@]}"
           cmake --build "$RUNNER_TEMP/sqg-build" --parallel 4 --target wave-vortex-run WVStableForcingDump WVStratifiedQGFieldDump WVStratifiedQGLifecycleProbe WVStratifiedModalDump
-      - uses: matlab-actions/setup-matlab@v3
+      - name: Configure bounded provisioning
+        timeout-minutes: 5
+        run: bash source/tools/ci/provision_ubuntu.sh matlab
+      - name: Provision MATLAB
+        id: setup
+        continue-on-error: true
+        timeout-minutes: 5
+        uses: matlab-actions/setup-matlab@v3
         with:
           release: R2025b
           cache: true
+      - name: Retry MATLAB provisioning once
+        id: retry
+        if: ${{ !cancelled() && steps.setup.outcome == 'failure' }}
+        timeout-minutes: 5
+        uses: matlab-actions/setup-matlab@v3
+        with:
+          release: R2025b
+          cache: true
+      - name: Require successful provisioning
+        env:
+          FIRST: ${{ steps.setup.outcome }}
+          RETRY: ${{ steps.retry.outcome }}
+        run: test "$FIRST" = success || test "$RETRY" = success
       - name: Qualify MATLAB-C++-MATLAB continuation
         uses: matlab-actions/run-command@v3
         env:

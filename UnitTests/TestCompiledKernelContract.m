@@ -1,6 +1,11 @@
 classdef TestCompiledKernelContract < matlab.unittest.TestCase
     methods (TestClassSetup)
         function buildStandaloneTools(testCase)
+            binaryDirectory = string(getenv("WVM_CI_BINARY_DIR"));
+            if binaryDirectory ~= ""
+                testCase.assertTrue(isfile(fullfile(binaryDirectory,"WVKernelDescriptorDump")),"Missing supplied CI descriptor probe.");
+                return
+            end
             repositoryRoot = fileparts(fileparts(mfilename("fullpath")));
             scriptPath = fullfile(repositoryRoot,"tools","compiled-kernel","run_contract_tests.sh");
             [status,output] = systemWithoutMatlabRuntime(sprintf('"%s"',scriptPath));
@@ -83,6 +88,7 @@ end
 function actual = descriptorDump(definition,Nj)
 repositoryRoot = fileparts(fileparts(mfilename("fullpath")));
 executable = fullfile(repositoryRoot,"tools","compiled-kernel","build","WVKernelDescriptorDump");
+if getenv("WVM_CI_BINARY_DIR") ~= "", executable = fullfile(getenv("WVM_CI_BINARY_DIR"),"WVKernelDescriptorDump"); end
 arguments = [definition.Nxyz(1:3) Nj definition.Lxyz 5.2e-3 definition.rho0 definition.g definition.rotationRate 33 definition.isHydrostatic definition.shouldAntialias definition.planetaryRadius];
 command = sprintf('"%s" %s',executable,strjoin(compose("%.17g",arguments)," "));
 [status,output] = systemWithoutMatlabRuntime(command);
