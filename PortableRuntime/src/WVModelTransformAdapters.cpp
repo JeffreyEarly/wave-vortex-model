@@ -27,6 +27,9 @@ public:
   const WVIntegrationSystem &integrationSystem() const noexcept override {
     return *system_;
   }
+  void setLinearDynamics(bool linear) noexcept override {
+    system_->setLinearDynamics(linear);
+  }
   const std::string &forcingScheduleIdentifier() const noexcept override {
     return system_->scheduleIdentifier();
   }
@@ -65,6 +68,9 @@ public:
   }
   const WVIntegrationSystem &integrationSystem() const noexcept override {
     return *system_;
+  }
+  void setLinearDynamics(bool linear) noexcept override {
+    system_->setLinearDynamics(linear);
   }
   const std::string &forcingScheduleIdentifier() const noexcept override {
     return system_->forcingScheduleIdentifier();
@@ -135,6 +141,9 @@ public:
   const WVIntegrationSystem &integrationSystem() const noexcept override {
     return *system_;
   }
+  void setLinearDynamics(bool linear) noexcept override {
+    system_->setLinearDynamics(linear);
+  }
   const std::string &forcingScheduleIdentifier() const noexcept override {
     return system_->forcingScheduleIdentifier();
   }
@@ -194,6 +203,9 @@ public:
   const WVIntegrationSystem &integrationSystem() const noexcept override {
     return *system_;
   }
+  void setLinearDynamics(bool linear) noexcept override {
+    system_->setLinearDynamics(linear);
+  }
   const std::string &forcingScheduleIdentifier() const noexcept override {
     return system_->scheduleIdentifier();
   }
@@ -252,6 +264,9 @@ public:
   }
   const WVIntegrationSystem &integrationSystem() const noexcept override {
     return *system_;
+  }
+  void setLinearDynamics(bool linear) noexcept override {
+    system_->setLinearDynamics(linear);
   }
   const std::string &forcingScheduleIdentifier() const noexcept override {
     return system_->scheduleIdentifier();

@@ -103,7 +103,7 @@ WVKernelStatus WVBoussinesqForcingEngine::nonlinearFlux(const WVState& state,WVF
     for (auto x:{flux.Fp,flux.Fm,flux.F0}) std::fill_n(x.data,x.shape.elementCount(),WVComplex64{});
     WVForcingExecutionContext context; bool initialized=true;
     context.boussinesq_=this; context.state_=&state; context.flux_=&flux; context.outputInitialized_=&initialized;
-    for (const auto& forcing:forcing_) { s=forcing->addRightHandSide(context); if (!s) return s; }
+    if (!linearDynamics_) for (const auto& forcing:forcing_) { s=forcing->addRightHandSide(context); if (!s) return s; }
     ++metrics_.evaluationCount; return WVKernelStatus::ok();
 }
 WVKernelStatus WVBoussinesqForcingEngine::physicalFields(const WVState& state,WVRealFieldBundleConstView& fields) {

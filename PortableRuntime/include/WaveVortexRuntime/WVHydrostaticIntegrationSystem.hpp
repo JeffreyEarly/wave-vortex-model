@@ -79,6 +79,8 @@ public:
   }
   std::size_t persistentBytes() const noexcept override;
 
+  void setLinearDynamics(bool linear) noexcept { forcing_->setLinearDynamics(linear); }
+
 private:
   static WVKernelStatus createImpl(
       std::shared_ptr<const WVStratifiedModalSource> source,

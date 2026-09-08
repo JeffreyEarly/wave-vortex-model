@@ -126,7 +126,12 @@ public:
       const WVForcingTendencyOutput*,std::size_t, const WVRealFieldBundleConstView* preparedPhysical = nullptr);
   const WVForcingTendencyMetrics& tendencyMetrics() const noexcept { return tendencyMetrics_; }
 
+  // Linear evolution retains instances for diagnostics and amplitude constraints.
+  // Only their ordinary coefficient RHS contributions are disabled.
+  void setLinearDynamics(bool linear) noexcept { linearDynamics_ = linear; }
+
 private:
+  bool linearDynamics_ = false;
   WVStratifiedQGForcingEngine() = default;
   WVKernelStatus initialize(const WVFrozenForcingSchedule &schedule);
   void initializeOutputWithZeros(WVComplexView &F0);

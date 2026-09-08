@@ -1565,7 +1565,7 @@ WVKernelStatus WVConstantStratificationForcingEngine::nonlinearFluxImpl(
     forcingContext.outputInitialized_ = &outputInitialized;
     forcingContext.externalFields_ = externalFields;
     forcingContext.externalFieldsPrepared_ = &externalFieldsPrepared;
-    for (const auto& forcing : forcing_) {
+    if (!linearDynamics_) for (const auto& forcing : forcing_) {
         const auto status = forcing->addRightHandSide(forcingContext);
         if (!status) return status;
     }

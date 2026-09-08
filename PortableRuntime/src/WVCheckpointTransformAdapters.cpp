@@ -757,8 +757,8 @@ WVCheckpointStatus inspectOpenFile(
     std::vector<GroupRecord> groups;
     result = inspectGroupTree(rootId, "/", groups);
     if (!result) return result;
-    bool linearSQG = false;
-    if (isStratifiedQG) {
+    bool linearQG = false;
+    if (isStratifiedQG || isBarotropicQG) {
         nc_type type; std::size_t length=0;
         const int code=nc_inq_att(rootId,NC_GLOBAL,"WVModelIsDynamicsLinear",&type,&length);
         if (code != NC_ENOTATT) {
@@ -766,11 +766,11 @@ WVCheckpointStatus inspectOpenFile(
                 return status(WVCheckpointStatusCode::invalidValue,"Linear dynamics metadata must be a scalar logical attribute.","/");
             unsigned char value=0; const int readCode=nc_get_att_uchar(rootId,NC_GLOBAL,"WVModelIsDynamicsLinear",&value);
             if (readCode != NC_NOERR || value>1) return status(WVCheckpointStatusCode::invalidValue,"Invalid linear dynamics metadata.","/");
-            linearSQG=value!=0;
+            linearQG=value!=0;
         }
     }
     result = (isConstant || isHydrostatic || isBoussinesq) ? findStateGroup(groups, stateGroup)
-                        : findQGStateGroup(groups, catalog, stateGroup, linearSQG);
+                        : findQGStateGroup(groups, catalog, stateGroup, linearQG);
     if (!result) return result;
     candidate.metadata.stateGroupPath = stateGroup.path;
     result = inspectTime(stateGroup.id, stateGroup.path, selection, candidate.metadata.selectedStateIndex, candidate.metadata.stateCount, candidate.t);

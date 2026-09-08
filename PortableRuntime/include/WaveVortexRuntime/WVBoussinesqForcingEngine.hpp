@@ -31,7 +31,12 @@ public:
     const std::string& scheduleIdentifier() const noexcept { return scheduleIdentifier_; }
     std::size_t persistentBytes() const noexcept;
     WVKernelStatus speedMaxima(const WVState&,double& uv,double& w);
+    // Linear evolution retains instances for diagnostics and amplitude constraints.
+    // Only their ordinary coefficient RHS contributions are disabled.
+    void setLinearDynamics(bool linear) noexcept { linearDynamics_ = linear; }
+
 private:
+    bool linearDynamics_ = false;
     WVBoussinesqForcingEngine()=default;
     WVKernelStatus initialize(const WVFrozenForcingSchedule&);
     WVKernelStatus addNonlinearFlux(const WVState&,WVFlux&);

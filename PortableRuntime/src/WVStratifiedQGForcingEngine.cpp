@@ -737,7 +737,7 @@ WVKernelStatus WVStratifiedQGForcingEngine::evaluateRightHandSide(
   context.engine_ = this;
   context.A0_ = A0;
   context.F0_ = F0;
-  for (const auto &forcing : forcing_) {
+  if (!linearDynamics_) for (const auto &forcing : forcing_) {
     ++metrics_.forcingCallCount;
     const auto status = forcing->addRightHandSide(context);
     if (!status)

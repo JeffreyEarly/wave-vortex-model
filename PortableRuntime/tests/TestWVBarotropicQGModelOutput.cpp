@@ -691,6 +691,82 @@ void rejectUnsupportedObservers(
                   "three-dimensional QG tracer");
 }
 
+void exerciseLinearRestart(
+    const std::shared_ptr<const WVExtensionCatalog> &extensions,
+    const std::filesystem::path &directory) {
+  const auto configuration = qgConfiguration();
+  WVTransformBarotropicQGDescriptor transform;
+  auto status = WVTransformBarotropicQGDescriptor::create(configuration, transform);
+  require(bool(status), status.message);
+  const auto path = directory / "qg-linear.nc";
+  auto record = observerRecord(configuration, transform.Nkl(), path, 0.04);
+  // MATLAB linear models retain the transform's forcing instances while their
+  // coefficients are observed, rather than registered as integrated fluxes.
+  record.observers.erase(record.observers.begin());
+  auto &observers = record.outputFiles.front().groups.front().observerIdentifiers;
+  observers.erase(observers.begin());
+  WVPortableObserverDescriptor descriptor;
+  status = WVPortableObserverDescriptor::create(record, extensions, descriptor);
+  require(bool(status), status.message);
+  const auto forcing = defaultNonlinearAdvectionSchedule();
+  const auto integrator = integratorConfiguration(WVModelIntegratorKind::fixedRK4);
+  WVModel seed;
+  status = WVModel::create(extensions, configuration, forcing, descriptor,
+      std::make_unique<WVReferenceFFTEngine>(), integrator, seed);
+  require(bool(status), status.message);
+  const auto description = descriptionFor(seed.stateLayout());
+  WVModelState initial;
+  status = WVModelState::create(checkpointFor(configuration, description, forcing),
+                               seed.stateLayout(), initial);
+  require(bool(status), status.message);
+  initializeAdditionalState(seed, initial);
+  WVModelOutputConfiguration output;
+  status = WVModelOutputConfiguration::compile(record, {}, {},
+      WVModelOutputPolicy::create, extensions, 0.0, 0.0, output, nullptr,
+      true, &description);
+  require(bool(status), status.message);
+  status = seed.openOutput(initial, std::move(output), true);
+  require(bool(status), status.message);
+  // Write only the initial state; the restored model performs the evolution.
+  status = seed.advanceToTime(initial, 0.0, 0.005);
+  require(bool(status), status.message);
+  require(bool(seed.closeOutput()), "Close initial linear output");
+  for (double finalTime : {0.02, 0.04}) {
+    WVModel model;
+    WVModelState state;
+    WVModelOutputRequest request;
+    request.policy = WVModelOutputPolicy::append;
+    request.finalTime = finalTime;
+    status = WVModel::createFromModelOutputFiles(extensions, {path.string()},
+        request, std::make_unique<WVReferenceFFTEngine>(), integrator, model, state);
+    require(bool(status), status.message);
+    status = model.prepareStateAfterRestart(state);
+    require(bool(status), status.message);
+    status = model.advanceToTime(state, finalTime, 0.005);
+    require(bool(status), status.message);
+    require(bool(model.closeOutput()), "Close linear continuation output");
+    const auto before = initial.constView();
+    const auto after = state.constView();
+    for (std::size_t i = 0; i < transform.Nkl(); ++i)
+      require(before.coefficientFamilies[0].data[i].real == after.coefficientFamilies[0].data[i].real &&
+              before.coefficientFamilies[0].data[i].imag == after.coefficientFamilies[0].data[i].imag,
+              "Linear restart evolved wave-vortex coefficients");
+    for (std::size_t block = 0; block < before.additionalBlockCount; ++block) {
+      bool changed = false;
+      for (std::size_t i = 0; i < before.additionalBlocks[block].layout->elementCount; ++i)
+        changed |= before.additionalBlocks[block].realData[i] != after.additionalBlocks[block].realData[i];
+      require(changed, "Linear evolution stopped an integrated observer block");
+    }
+    verifyStoredForcing(path, state);
+    WVModelOutputNetCDFInspection inspection;
+    require(bool(WVModelOutputNetCDFSink::inspect({path.string()}, *extensions, inspection)),
+            "Inspect linear continuation output");
+    require(inspection.isDynamicsLinear && inspection.latestRestart.forcingSchedule.entries.size() == 1 &&
+            inspection.latestRestart.forcingSchedule.entries[0].name == forcing.entries[0].name,
+            "Linear continuation discarded forcing identity or dynamics mode");
+  }
+}
+
 void inspectOptionalMatlabFixture(
     const std::shared_ptr<const WVExtensionCatalog> &extensions) {
   const char *path = std::getenv("WV_MATLAB_BAROTROPIC_QG_OUTPUT_FIXTURE");
@@ -723,6 +799,7 @@ int main() {
     for (std::size_t index = 0; index < integrators.size(); ++index)
       exerciseIntegrator(integrators[index], index, extensions,
                          directory.path);
+    exerciseLinearRestart(extensions, directory.path);
     exerciseSiblingSelection(extensions, directory.path);
     rejectUnsupportedObservers(extensions, directory.path);
     inspectOptionalMatlabFixture(extensions);

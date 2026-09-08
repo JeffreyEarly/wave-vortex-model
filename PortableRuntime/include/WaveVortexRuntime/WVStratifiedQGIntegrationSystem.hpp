@@ -75,6 +75,8 @@ public:
     return forcingEngine_->scheduleIdentifier();
   }
 
+  void setLinearDynamics(bool linear) noexcept { forcingEngine_->setLinearDynamics(linear); }
+
 private:
   static WVKernelStatus createImpl(
       std::shared_ptr<const WVStratifiedModalSource> source,

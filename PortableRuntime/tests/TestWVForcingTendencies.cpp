@@ -407,7 +407,29 @@ void exercise(Engine& engine,WVShape2D spectral,WVShape4D spatial,
     const WVForcingTendencyOutput single{3,{selected.data(),spatial}};
     require(bool(engine.evaluateForcingTendencies(state,&single,1)) && selected==reference[3],
         "Requesting only the amplitude contribution lost preceding stages");
+    engine.setLinearDynamics(true);
+    require(bool(engine.nonlinearFlux(state,flux)) &&
+        equal(rhs,std::vector<WVComplex64>(rhs.size())) && equal(coefficients,stateBefore),
+        "Linear coefficient RHS must vanish without discarding diagnostic instances");
+    auto constrained=coefficients;
+    WVMutableCoefficients constraintView{{constrained.data(),spectral},
+        {constrained.data()+S,spectral},{constrained.data()+2*S,spectral}};
+    const auto constraint=engine.restoreForcingAmplitudes(constraintView);
+    require(bool(constraint) && constraint.modifiedCoefficientCount>0 && !equal(constrained,coefficients),
+        "Linear evolution discarded fixed-amplitude constraints");
+    if constexpr (std::is_same_v<Engine,WVConstantStratificationForcingEngine>) {
+        const auto volume=engine.kernel().descriptor().spatialShape();
+        std::vector<double> velocity(3*volume.elementCount());
+        WVRealFieldBundleView view{velocity.data(),{volume.first,volume.second,volume.third,3}};
+        WVConstantStratificationRightHandSideContext context;
+        require(bool(engine.evaluateRightHandSideWithContext(state,flux,view,context)) &&
+            context.advectionFields().data==velocity.data() &&
+            equal(rhs,std::vector<WVComplex64>(rhs.size())) &&
+            std::any_of(velocity.begin(),velocity.end(),[](double value){ return value!=0; }),
+            "Linear evolution lost the shared advection context");
+    }
     fieldService(engine,state,spatial,reference,counter);
+    engine.setLinearDynamics(false);
     require(bool(engine.nonlinearFlux(state,flux)) && equal(rhs,rhsBefore) && equal(coefficients,stateBefore),
         "Field-service diagnostics changed subsequent RHS or scientific state");
 }
@@ -565,7 +587,19 @@ void barotropic() {
         counter->calls==beforeInvalid,"Nonfinite QG diagnostic state accepted");
     for (auto x:selected) require(x==99,"Invalid QG state changed output");
     a[0]=saved;
+    engine->setLinearDynamics(true);
+    const auto forcingCalls=engine->metrics().forcingCallCount;
+    require(bool(engine->evaluateRightHandSide(state,flux)) &&
+        equal(f,std::vector<WVComplex64>(f.size())) && equal(a,before) &&
+        engine->metrics().forcingCallCount==forcingCalls,
+        "Linear QG RHS executed forcing or changed coefficients");
+    auto constrained=a;
+    WVComplexView constraintView{constrained.data(),spectral};
+    const auto constraint=engine->restoreForcingAmplitudes(constraintView);
+    require(bool(constraint) && constraint.modifiedCoefficientCount>0 && !equal(constrained,a),
+        "Linear QG evolution discarded fixed-amplitude constraints");
     fieldService(*engine,WVState{0,0,{{},{},state}},spatial,successful,counter);
+    engine->setLinearDynamics(false);
     require(bool(engine->evaluateRightHandSide(state,flux)) && equal(f,rhs) && equal(a,before),
         "QG field-service diagnostics changed subsequent RHS or scientific state");
     // Raw inverse must preserve the mean, while ordinary qgpv retains its mask.
@@ -667,7 +701,19 @@ void stratifiedQG() {
     require(bool(engine->evaluateForcingTendencies(state,outputs.data(),outputs.size())) && values==successful,"Stratified QG retry mismatch");
     std::vector<double> selected(R); const WVForcingTendencyOutput request{7,{selected.data(),spatial}};
     require(bool(engine->evaluateForcingTendencies(state,&request,1)) && selected==successful[7],"Stratified QG selected-only prefix mismatch");
+    engine->setLinearDynamics(true);
+    const auto forcingCalls=engine->metrics().forcingCallCount;
+    require(bool(engine->evaluateRightHandSide(state,flux)) &&
+        equal(f,std::vector<WVComplex64>(f.size())) && equal(a,before) &&
+        engine->metrics().forcingCallCount==forcingCalls,
+        "Linear QG RHS executed forcing or changed coefficients");
+    auto constrained=a;
+    WVComplexView constraintView{constrained.data(),spectral};
+    const auto constraint=engine->restoreForcingAmplitudes(constraintView);
+    require(bool(constraint) && constraint.modifiedCoefficientCount>0 && !equal(constrained,a),
+        "Linear QG evolution discarded fixed-amplitude constraints");
     fieldService(*engine,WVState{0,0,{{},{},state}},spatial,successful,counter);
+    engine->setLinearDynamics(false);
     require(bool(engine->evaluateRightHandSide(state,flux)) && equal(f,rhs) && equal(a,before),
         "QG field-service diagnostics changed subsequent RHS or scientific state");
     std::fill(f.begin(),f.end(),WVComplex64{});
