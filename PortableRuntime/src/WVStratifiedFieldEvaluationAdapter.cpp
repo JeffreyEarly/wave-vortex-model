@@ -1155,6 +1155,18 @@ WVStratifiedFieldEvaluationAdapter::persistentBytes() const noexcept {
 }
 
 WVKernelStatus WVStratifiedFieldEvaluationAdapter::transformField(const WVState& state,WVHydrostaticField field,WVRealVolumeView out,bool* wasReused) {
+  if(eventWorkspace_ && surface(field)) {
+    // Surface operations select the upper plane of the same volume kernel.
+    // Keep that expensive volume in the event workspace, not another alias.
+    const auto base=field==WVHydrostaticField::ssu ? WVHydrostaticField::u :
+        field==WVHydrostaticField::ssv ? WVHydrostaticField::v : WVHydrostaticField::pi;
+    const auto& g=configuration();
+    const auto status=transformField(state,base,{fieldScratch_.data(),{g.Nx,g.Ny,g.Nz}},wasReused);
+    if(!status) return status;
+    const auto plane=g.Nx*g.Ny;
+    std::copy_n(fieldScratch_.data()+plane*(g.Nz-1),plane,out.data);
+    return WVKernelStatus::ok();
+  }
   bool reused=false;
   const auto operation=[&](){return transformUncachedField(state,field,out);};
   const auto status=eventWorkspace_ ? eventWorkspace_->evaluate(static_cast<std::size_t>(field),state,out.data,out.shape.elementCount(),operation,reused) : operation();

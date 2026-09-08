@@ -99,6 +99,13 @@ Branch: `issue-315-forcing-tendency-diagnostics`, based on v4 main `866f66ed4198
 - Release passed forcing tendencies, observer output evaluation, Lagrangian particles, hydrostatic runtime and Boussinesq runtime (5), plus four observer/forcing/runtime/barotropic source-policy checks. Apple ASan/UBSan passed the same five numerical/runtime tests. Earlier in this edit batch, field evaluation and barotropic model output also passed; subsequent edits only strengthened moving tests and the API comment. Whitespace checks passed. No MATLAB files changed and no optional Full CI ran.
 - Active moving selection is resolved. Remaining alias/derivative sharing, MATLAB/native saved-output and dense-value qualification, force-specific sink retry, per-force/per-row qualification (including #404), representative performance qualification, and final required CI/integration remain outstanding. #315 and the full combined goal remain active.
 
+### Surface alias sharing checkpoint
+
+- The alias audit found that stratified adapters reconstructed separate volume fields for ssu, ssv and ssh even when their u, v and pi bases were already available. During an output event, surface sampling now selects the upper plane from the shared base reconstruction. Barotropic ssh and pi use the same event entry. The ordinary kernel path remains the independent reference; no scientific formulas changed.
+- All five configurations compare surface aliases exactly against independent evaluation and require zero additional FFTs and zero additional shared-field capacity after their base fields are available. Existing time/state/mask isolation and scope cleanup tests remain passing.
+- Release passed forcing tendencies, field evaluation, observer output evaluation and barotropic model output, plus the four source-policy checks. Apple ASan/UBSan passed the same four numerical/runtime tests. Whitespace checks passed. No MATLAB files changed in this checkpoint.
+- Surface aliases now share their base fields across plans. Other derivative/derived intermediates and the remaining qualification recorded above still require review before #315 completion.
+
 ## Diagnostic semantics established from MATLAB
 
 `Operations/SpatialForcingOperation.m` reports the difference before and after each operation in stage/priority order. Spatial diagnostics expose the raw spatial contribution; spectral and amplitude diagnostics reconstruct the difference in the accumulated spectral tendency. Filters and fixed-amplitude operations therefore require the preceding accumulated tendency. Evaluating each forcing independently from a zero accumulator is incorrect.

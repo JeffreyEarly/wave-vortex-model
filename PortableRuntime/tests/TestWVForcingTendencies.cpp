@@ -482,6 +482,25 @@ void fieldService(Engine& engine,const WVState& state,WVShape4D spatial,
     }
     require(bool(service->evaluateEventBatch(integrationState,eventEntries.data(),eventEntries.size())),"Independent occurrence reference");
     const auto expectedEvents=eventValues;
+    WVFieldEvaluationPlan surfaceBases,surfaceAliases;
+    std::vector<WVFieldRequest> aliasRequests{{"surface-height","ssh",{}}};
+    if constexpr(!std::is_same_v<Engine,WVBarotropicQGForcingEngine>) {
+        aliasRequests.push_back({"surface-u","ssu",{}});
+        aliasRequests.push_back({"surface-v","ssv",{}});
+    }
+    require(bool(service->createPlan({{"base-u","u",{}},{"base-v","v",{}},{"base-pi","pi",{}}},surfaceBases)) &&
+        bool(service->createPlan(aliasRequests,surfaceAliases)),"Surface sharing plans");
+    std::array<std::vector<double>,3> baseValues;
+    std::array<WVFieldOutputView,3> baseViews;
+    for(std::size_t index=0;index<3;++index) {baseValues[index].resize(R); baseViews[index]={baseValues[index].data(),R};}
+    std::vector<std::vector<double>> aliasValues(aliasRequests.size());
+    std::vector<WVFieldOutputView> aliasViews(aliasRequests.size());
+    for(std::size_t index=0;index<aliasRequests.size();++index) {
+        aliasValues[index].resize(spatial.first*spatial.second);
+        aliasViews[index]={aliasValues[index].data(),aliasValues[index].size()};
+    }
+    require(bool(service->evaluate(surfaceAliases,integrationState,aliasViews.data(),aliasViews.size())),"Independent surface reference");
+    const auto expectedAliases=aliasValues;
     const auto retainedBefore=service->persistentBytes();
     {
         detail::WVFieldEvaluationEventScope scope(*service,integrationState);
@@ -499,6 +518,12 @@ void fieldService(Engine& engine,const WVState& state,WVShape4D spatial,
             service->metrics().primitiveFieldEvaluationCount==beforeEvents+1,"Occurrence batch repeated shared fields or qgpv");
         require(service->metrics().eventFieldWorkspaceLiveBytes==(qg ? 3u : 5u)*R*sizeof(double) && service->persistentBytes()==retainedBefore,
             "Shared event fields are missing from live metrics or became persistent state");
+        require(bool(service->evaluate(surfaceBases,integrationState,baseViews.data(),baseViews.size())),"Shared surface base fields");
+        const auto beforeAliases=counter->calls;
+        const auto bytesBeforeAliases=service->metrics().eventFieldWorkspaceLiveBytes;
+        require(bool(service->evaluate(surfaceAliases,integrationState,aliasViews.data(),aliasViews.size())) && aliasValues==expectedAliases &&
+            counter->calls==beforeAliases && service->metrics().eventFieldWorkspaceLiveBytes==bytesBeforeAliases,
+            "Surface aliases reconstructed or retained duplicate volume fields");
         // Masked coefficients must not reuse full-state fields in this event.
         require(bool(service->evaluate(mixed,integrationState,mixedViews.data(),mixedViews.size())) &&
             equal(phase,expectedPhase),"Shared complex coefficients differ");

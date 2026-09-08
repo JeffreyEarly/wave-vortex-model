@@ -565,7 +565,8 @@ WVKernelStatus WVBarotropicQGFieldEvaluationAdapter::transformField(
   reused=false;
   const auto operation=[&](){return kernel_->transformA0ToField(A0,field,output);};
   if(!eventWorkspace_) return operation();
-  return eventWorkspace_->evaluate(static_cast<std::size_t>(field),
+  const auto key=field==WVBarotropicQGField::ssh ? WVBarotropicQGField::pi : field;
+  return eventWorkspace_->evaluate(static_cast<std::size_t>(key),
       {state.waveVortex.t,state.waveVortex.t0,{{},{},A0}},output.data,output.shape.elementCount(),operation,reused);
 }
 
