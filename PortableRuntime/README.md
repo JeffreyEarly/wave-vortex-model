@@ -204,7 +204,7 @@ Explicit and CFL RK4, RK23 and RK78 use the common integrators and continuous-ou
 
 Create, replace, append and segmented restart preserve multi-file identities, independent group schedules, dense fields and integrated observer state. Fresh outputs preserve numeric scientific matrices and the opaque uint8 `N2Function` persistence payload so MATLAB can reopen them through `WVModel.modelFromFile`. The payload is copied without deserialization; it is not used as a numerical cache identity. Existing MATLAB validators and save formats remain unchanged; SQG request validation is additive.
 
-`TestPortableStratifiedQG` covers MATLAB-authored forcing pairs/compositions, samples, integrated observers, output policies, restart and preflight rejection with reference and native FFT providers. C++ kernel tests independently check full-grid tracer derivatives, retained projection, invalid buffers and allocation-free prepared calls. See `.github/planning/issue-297-verification.md` for the verification ledger. Issue #298 retains the broader complete-model qualification campaign.
+`TestPortableStratifiedQG` covers MATLAB-authored forcing pairs/compositions, samples, integrated observers, output policies, restart and preflight rejection with reference and native FFT providers. C++ kernel tests independently check full-grid tracer derivatives, retained projection, invalid buffers and allocation-free prepared calls. See `.github/planning/issue-297-verification.md` for the verification ledger. The [SQG qualification guide](QUALIFICATION.md) describes the complete-model evidence, reproducible reference/native runs, numerical tolerances, lifecycle/storage checks and the fixed-RK4 endpoint distinction.
 
 ## Stable forcing and compatibility catalog
 

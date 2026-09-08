@@ -50,6 +50,7 @@ classdef TestCompiledKernelIntegration < matlab.unittest.TestCase
             expectedInputs = [
                 "PortableRuntime/CMakeLists.txt"
                 "PortableRuntime/README.md"
+                "PortableRuntime/QUALIFICATION.md"
                 "PortableRuntime/buildWaveVortexRun.sh"
                 "PortableRuntime/source-selection.json"
                 "PortableRuntime/include"
@@ -153,6 +154,7 @@ classdef TestCompiledKernelIntegration < matlab.unittest.TestCase
                 "CompiledKernel/adapters/reference/WVReferenceFFTEngine.cpp"
                 "PortableRuntime/CMakeLists.txt"
                 "PortableRuntime/README.md"
+                "PortableRuntime/QUALIFICATION.md"
                 "PortableRuntime/source-selection.json"
                 "PortableRuntime/buildWaveVortexRun.sh"
                 "PortableRuntime/include/WaveVortexRuntime/WVExtensionCatalog.hpp"

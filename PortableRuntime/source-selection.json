@@ -24,10 +24,11 @@
   },
   "retained": {
     "compiledCore": "CompiledKernel",
-    "portableRuntime": "PortableRuntime/CMakeLists.txt, PortableRuntime/README.md, PortableRuntime/buildWaveVortexRun.sh, PortableRuntime/source-selection.json, PortableRuntime/include, PortableRuntime/src, PortableRuntime/app, PortableRuntime/contracts, PortableRuntime/examples, PortableRuntime/third_party/nlohmann",
+    "portableRuntime": "PortableRuntime/CMakeLists.txt, PortableRuntime/README.md, PortableRuntime/QUALIFICATION.md, PortableRuntime/buildWaveVortexRun.sh, PortableRuntime/source-selection.json, PortableRuntime/include, PortableRuntime/src, PortableRuntime/app, PortableRuntime/contracts, PortableRuntime/examples, PortableRuntime/third_party/nlohmann",
     "portableRuntimeInputs": [
       "PortableRuntime/CMakeLists.txt",
       "PortableRuntime/README.md",
+      "PortableRuntime/QUALIFICATION.md",
       "PortableRuntime/buildWaveVortexRun.sh",
       "PortableRuntime/source-selection.json",
       "PortableRuntime/include",
@@ -57,7 +58,8 @@
     "description": "Source-linked observer, output-schedule, and forcing implementations are resolved through an explicitly owned immutable typed catalog. Observation occurrences use construction-resolved schedule payloads, evaluator-owned event geometry, central resolved-field evaluation, and destination-independent retry identity. Source API v1 exposes no legacy persistence callbacks or WVModel internals.",
     "stratifiedModalRecords": "issue-295",
     "stableForcingCompatibility": "issues-290-294",
-    "stratifiedQGRuntime": "issue-297"
+    "stratifiedQGRuntime": "issue-297",
+    "stratifiedQGQualification": "issue-298"
   },
   "excluded": [
     "benchmark harnesses and payloads",
@@ -111,6 +113,7 @@
       "PortableRuntime/src/WVStratifiedQGIntegrationSystem.cpp": "2608eb1acf19f6759232fd42fba15dd31b337acecb80e13f8044a22388302488",
       "PortableRuntime/src/WVStratifiedQGFieldEvaluationAdapter.hpp": "e282d83f41765ff8389c942ed78014c2e40e160e127dfc30b01328649959fd42",
       "PortableRuntime/src/WVStratifiedQGFieldEvaluationAdapter.cpp": "9a84c399834f96bfe4de5405ea9102da9fc60d2a34300237bb45662921f9fba3"
-    }
+    },
+    "readinessQualification": "tools/qualifyPortableStratifiedQG.m"
   }
 }
