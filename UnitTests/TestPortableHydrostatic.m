@@ -142,9 +142,14 @@ classdef TestPortableHydrostatic < matlab.unittest.TestCase
                     [status,output] = cleanSystem(shellQuote(testCase.runner)+" --request "+shellQuote(request)); testCase.assertEqual(status,0,output);
                     % Check C++'s exact opaque payload before MATLAB opens a
                     % writable model and may serialize its function handle again.
+                    % New files use the selected restart's immutable source
+                    % (primary at equal times). Append preserves each file's
+                    % original payload; independent MATLAB serializations of
+                    % the same function need not have identical opaque bytes.
                     for index=1:2
-                        testCase.verifyEqual(ncread(outputs(index),"PF0inv"),scientific{index,1});
-                        testCase.verifyEqual(ncread(outputs(index),"N2Function"),scientific{index,2});
+                        sourceIndex=1; if policy=="append", sourceIndex=index; end
+                        testCase.verifyEqual(ncread(outputs(index),"PF0inv"),scientific{sourceIndex,1});
+                        testCase.verifyEqual(ncread(outputs(index),"N2Function"),scientific{sourceIndex,2});
                     end
                     actual = WVModel.modelFromFile(char(outputs(1))); cleanup = onCleanup(@()actual.closeNetCDFFile());
                     for i=1:3, names=["Ap","Am","A0"]; testCase.verifyEqual(actual.wvt.(names(i)),expected{i},RelTol=2e-11,AbsTol=1e-16); end

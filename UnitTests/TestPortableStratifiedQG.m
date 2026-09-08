@@ -94,6 +94,11 @@ classdef TestPortableStratifiedQG < matlab.unittest.TestCase
                 for policy = ["create","replace","append"]
                     inputs = [fullfile(testCase.folder,"policy-primary.nc"),fullfile(testCase.folder,"policy-secondary.nc")];
                     copyfile(primary,inputs(1)); copyfile(secondary,inputs(2));
+                    scientific = cell(2,2);
+                    for index=1:2
+                        scientific{index,1}=ncread(inputs(index),"PF0inv");
+                        scientific{index,2}=ncread(inputs(index),"N2Function");
+                    end
                     outputs = inputs; destinations = configureDictionary("string","string");
                     if policy ~= "append"
                         outputs = [fullfile(testCase.folder,"output-primary.nc"),fullfile(testCase.folder,"output-secondary.nc")];
@@ -108,13 +113,21 @@ classdef TestPortableStratifiedQG < matlab.unittest.TestCase
                     [status,output] = cleanSystem(shellQuote(testCase.runner)+" --request "+shellQuote(request)); testCase.assertEqual(status,0,output);
                     WVModel.writePortableRunRequest(request,outputs,method="fixed-rk4",finalTime=38,initialStep=.25,outputPolicy="append",fftProvider=replace(provider,"native","native-fftw"));
                     [status,output] = cleanSystem(shellQuote(testCase.runner)+" --request "+shellQuote(request)); testCase.assertEqual(status,0,output);
+                    % Compare C++ output before writable MATLAB reload can
+                    % serialize the opaque function handle again. Saved input
+                    % bytes also make the append assertion non-tautological.
+                    % New files use the selected restart's immutable source
+                    % (primary at equal times). Append preserves each file's
+                    % original payload; independent MATLAB serializations of
+                    % the same function need not have identical opaque bytes.
+                    for index=1:2
+                        sourceIndex=1; if policy=="append", sourceIndex=index; end
+                        testCase.verifyEqual(ncread(outputs(index),"PF0inv"),scientific{sourceIndex,1});
+                        testCase.verifyEqual(ncread(outputs(index),"N2Function"),scientific{sourceIndex,2});
+                    end
                     actual = WVModel.modelFromFile(char(outputs(1))); cleanup = onCleanup(@()actual.closeNetCDFFile());
                     testCase.verifyEqual(actual.wvt.A0,expected,RelTol=2e-11,AbsTol=1e-16);
                     testCase.verifyEqual(actual.tracer("dye"),expectedTracer,AbsTol=1e-12); clear cleanup
-                    for index=1:2
-                        testCase.verifyEqual(ncread(outputs(index),"PF0inv"),ncread(inputs(index),"PF0inv"));
-                        testCase.verifyEqual(ncread(outputs(index),"N2Function"),ncread(inputs(index),"N2Function"));
-                    end
                     times = ncread(outputs(1),"/dense/t");
                     controlTimes = ncread(controlPath,"/dense/t");
                     expectedTimes = controlTimes;
