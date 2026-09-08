@@ -142,6 +142,25 @@ void observerService(Engine& engine,WVFieldEvaluationService& fields,const WVInt
     std::vector<std::uint8_t> runtimeManifest,preflightManifest;
     require(bool(encodeObservationSchemaManifest(schema,runtimeManifest)) && bool(encodeObservationSchemaManifest(preflight.schema,preflightManifest)) &&
         runtimeManifest==preflightManifest && counter->calls==preflightCalls,"Forcing runtime/preflight schemas differ or preflight executed FFTs");
+    for(int invalidContract=0;invalidContract<5;++invalidContract) {
+        auto invalidSchedule=scheduleValue;
+        auto configuration=fields.portableVariableConfiguration();
+        if(invalidContract==0) invalidSchedule.entries.front().typeIdentifier="UnknownCustomForcing";
+        else if(invalidContract==1) ++invalidSchedule.entries.front().contractVersion;
+        else if(invalidContract==2) invalidSchedule.entries.front().stage=WVForcingStage::spectralAmplitude;
+        else if(invalidContract==3) configuration="unknown-transform";
+        else invalidSchedule.entries.back().ordinal=invalidSchedule.entries.front().ordinal;
+        std::vector<WVPortableForcingVariableBinding> invalidBindings;
+        const auto bindingStatus=catalog->forcings().diagnosticBindings(invalidSchedule,configuration,invalidBindings);
+        if(bindingStatus) {
+            auto invalidContext=context;
+            invalidContext.forcingBindings=invalidBindings.data(); invalidContext.forcingBindingCount=invalidBindings.size();
+            WVObserverOutputPlan invalidPlan;
+            require(!catalog->observers().resolveOutputPlan(descriptor.observers()[0],invalidContext,invalidPlan),
+                "Forcing preflight accepted an unqualified identity, version, stage or transform");
+        }
+        require(counter->calls==preflightCalls,"Rejected forcing metadata preflight executed FFTs");
+    }
     for(std::size_t index=0;index<forcingCount;++index) {
         const auto& variable=schema.variables[index];
         const auto& instance=fields.forcingVariableBindings()[index/(forcingCount/engine.forcingCount())];
@@ -767,6 +786,40 @@ void constant(bool hydrostatic) {
     require(collisionService->createPlan({{"ambiguous","Fu_same_name",{}}},rejected).code==WVKernelStatusCode::unsupportedOperation,
         "Sanitized forcing-name collision resolved arbitrarily");
     require(bool(collisionService->createPlan({{"ordinary","u",{}}},rejected)),"Forcing ambiguity disabled ordinary fields");
+
+    std::unique_ptr<WVFieldEvaluationService> originalFields;
+    require(bool(WVFieldEvaluationService::createBorrowing(*engine,originalFields)),"Original rebind fields");
+    WVPortableObserverRecord bindingRecord;
+    WVObserverRecord bindingObserver;
+    bindingObserver.identifier="filter-diagnostic"; bindingObserver.name="filter diagnostic";
+    bindingObserver.typeIdentifier="WVEulerianFields"; bindingObserver.fieldNames={"Fu_mode_filter"};
+    bindingRecord.observers.push_back(bindingObserver);
+    WVPortableObserverDescriptor bindingDescriptor;
+    require(bool(WVPortableObserverDescriptor::create(bindingRecord,catalog,bindingDescriptor)),"Rebind descriptor");
+    std::unique_ptr<WVObserverOutputEvaluationService> boundObserver;
+    require(bool(WVObserverOutputEvaluationService::create(false,bindingDescriptor,*originalFields,boundObserver)),"Rebind observer");
+    for(int change=0;change<3;++change) {
+        auto replacement=schedule(S);
+        if(change==0) {
+            // Preserve the requested filter and every graph name/ordinal,
+            // but replace an earlier contribution with a different class.
+            replacement.entries.back().typeIdentifier="WVBottomFrictionLinear";
+            replacement.entries.back().configuration=replacement.entries[2].configuration;
+        } else if(change==1) {
+            replacement.entries.back().priority=126;
+        } else {
+            replacement.entries.erase(replacement.entries.begin()+2);
+        }
+        std::unique_ptr<WVConstantStratificationForcingEngine> replacementEngine;
+        require(bool(WVConstantStratificationForcingEngine::create(c,replacement,catalog,
+            std::make_unique<FailingEngine>(counter),replacementEngine)),"Replacement forcing schedule");
+        std::unique_ptr<WVFieldEvaluationService> replacementFields;
+        require(bool(WVFieldEvaluationService::createBorrowing(*replacementEngine,replacementFields)),"Replacement fields");
+        const auto callsBefore=counter->calls;
+        require(!boundObserver->useFieldEvaluationService(*replacementFields) && counter->calls==callsBefore,
+            "Observer rebind accepted a changed forcing class, priority, or ordered prefix");
+        require(bool(boundObserver->useFieldEvaluationService(*originalFields)),"Rejected rebind changed the original observer plan");
+    }
 
     WVFrozenForcingSchedule filterOnly; filterOnly.entries={schedule(S).entries[1]};
     std::unique_ptr<WVConstantStratificationForcingEngine> filterEngine;

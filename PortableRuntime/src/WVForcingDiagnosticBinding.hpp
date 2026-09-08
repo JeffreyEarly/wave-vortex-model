@@ -1,5 +1,6 @@
 #pragma once
 #include "WaveVortexRuntime/WVForcingTendency.hpp"
+#include "WaveVortexRuntime/WVForcing.hpp"
 #include "WaveVortexRuntime/WVPortableVariablePlan.hpp"
 #include <limits>
 #include <memory>
@@ -15,6 +16,13 @@ namespace wavevortex::runtime::detail {
 // instances. This is a coarse service binding, never a second forcing registry.
 class WVForcingDiagnosticBinding final {
 public:
+  struct Identity {
+    std::string_view type,name;
+    std::uint32_t version;
+    WVForcingStage stage;
+    std::uint8_t priority;
+    std::size_t ordinal;
+  };
   struct Output {
     const WVPortableVariableContract* contract=nullptr;
     std::size_t executionIndex=0,channel=0,physicalChannels=0;
@@ -45,6 +53,11 @@ public:
         else return resolved.evaluateForcingTendencies(state,outputs,count,prepared);
       };
       candidate->metrics_=[](const void* pointer)->const WVForcingTendencyMetrics& {return static_cast<const Engine*>(pointer)->tendencyMetrics();};
+      candidate->instance_=[](const void* pointer,std::size_t index)->Identity {
+        const auto* instance=static_cast<const Engine*>(pointer)->forcingInstance(index);
+        return {instance->typeIdentifier(),instance->name(),instance->contractVersion(),
+            instance->stage(),instance->priority(),instance->ordinal()};
+      };
       result=std::move(candidate);
       return WVKernelStatus::ok();
     } catch(const std::bad_alloc&) {
@@ -78,6 +91,16 @@ public:
   WVKernelStatus evaluate(const WVState& state,const WVForcingTendencyOutput* outputs,std::size_t count,const WVRealFieldBundleConstView* prepared) const {
     return evaluate_(engine_,state,outputs,count,prepared);
   }
+  bool hasSamePrefix(const WVForcingDiagnosticBinding& other,std::size_t index,std::size_t otherIndex) const noexcept {
+    if(index!=otherIndex || index>=bindings_.size() || otherIndex>=other.bindings_.size()) return false;
+    for(std::size_t position=0;position<=index;++position) {
+      const auto first=instance_(engine_,position);
+      const auto second=other.instance_(other.engine_,position);
+      if(first.type!=second.type || first.version!=second.version || first.stage!=second.stage ||
+          first.priority!=second.priority || first.ordinal!=second.ordinal || first.name!=second.name) return false;
+    }
+    return true;
+  }
   const WVForcingTendencyMetrics& metrics() const {return metrics_(engine_);}
   const std::vector<WVPortableForcingVariableBinding>& bindings() const noexcept {return bindings_;}
   std::size_t persistentBytes() const noexcept {
@@ -87,6 +110,7 @@ private:
   void* engine_=nullptr;
   WVKernelStatus (*evaluate_)(void*,const WVState&,const WVForcingTendencyOutput*,std::size_t,const WVRealFieldBundleConstView*)=nullptr;
   const WVForcingTendencyMetrics& (*metrics_)(const void*)=nullptr;
+  Identity (*instance_)(const void*,std::size_t)=nullptr;
   std::vector<WVPortableForcingVariableBinding> bindings_;
   std::vector<std::uint8_t> physicalPrefix_;
   std::size_t physicalChannels_=0;

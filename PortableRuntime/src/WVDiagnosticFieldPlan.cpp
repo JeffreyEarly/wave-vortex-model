@@ -220,13 +220,15 @@ WVKernelStatus WVDiagnosticFieldPlan::rebind(const WVFieldEvaluationService& ser
     for(const auto& output:outputs_) {
       if(output.forcing) {
         if(!owner_->forcing_ || !service.forcing_) return unsupported("Rebinding forcing diagnostics requires a resolved forcing schedule.");
+        if(configuration_!=service.portableVariableConfiguration())
+          return invalid("Rebinding would change forcing diagnostic transform applicability.");
         WVForcingDiagnosticBinding::Output original,replacement;
         auto status=owner_->forcing_->resolve(output.specification.fieldName,configuration_,portableFullGridSampling,original);
         if(!status) return status;
         status=service.forcing_->resolve(output.specification.fieldName,configuration_,portableFullGridSampling,replacement);
         if(!status) return status;
-        if(original.instanceName!=replacement.instanceName || original.instanceOrdinal!=replacement.instanceOrdinal)
-          return invalid("Rebinding would change forcing-instance identity or persisted metadata.");
+        if(!owner_->forcing_->hasSamePrefix(*service.forcing_,original.executionIndex,replacement.executionIndex))
+          return invalid("Rebinding would change the resolved forcing identity, stage, or ordered prefix.");
       }
       WVFieldSamplingRequest sampling;
       if(!output.forcing && !output.specification.isComplex && !output.extrema && output.variable!=Variable::totalEnergySpatiallyIntegrated)
