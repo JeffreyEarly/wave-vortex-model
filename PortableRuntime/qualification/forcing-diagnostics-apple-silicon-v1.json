@@ -1,7 +1,7 @@
 {
   "schema": "portable-forcing-diagnostic-qualification-v1",
   "issue": 315,
-  "status": "in-progress",
+  "status": "locally-qualified",
   "platform": "Apple Silicon macOS",
   "matlabRelease": "R2025b",
   "cppSourceCommit": "a47639511c494ae029cd01ded1ddebc849ef234c",
@@ -2236,10 +2236,6 @@
       "No MATLAB runtime files changed. Source test comments and composition fixtures were updated after the successful isolation run; the isolated numerical test body is otherwise unchanged."
     ]
   },
-  "remaining": [
-    "Final matched integration benchmark after the projection optimization",
-    "Required hosted checks and integration"
-  ],
   "savedOutput": {
     "cppSourceCommit": "2c863661544e62d433e87f14dfd554ce42e92f8f",
     "testSourceSha256": "cb5b22e284c743703ecf809dcb784d8dac49e78bf80331e479aed2e7be4c0533",
@@ -3179,7 +3175,7 @@
     "method": "One excluded warmup pair, alternating process order, ratio of medians; complete integration includes scheduled output.",
     "executableSHA256": {
       "baseline": "c026068064e4f8e2707ee52dded0178c2b9bfe8ccad2f65a3e3f94d5c8f93093",
-      "candidate": "dc7b42d3d2657e502b8bf2a1c1ea46a2de85551a0d92dd98f866195318a66e80"
+      "candidate": "24116d40a7953f4d3a9a165d91235cbaf28c5ab9673d2c182487685719abcbfd"
     },
     "cases": [
       {
@@ -3189,64 +3185,64 @@
         "samples": {
           "baseline": [
             {
-              "integrationSeconds": 0.573522833,
-              "processSeconds": 1.7481975830160081,
+              "integrationSeconds": 0.576168291,
+              "processSeconds": 1.7260362498927861,
               "retainedBytes": 6605350,
               "maximumLiveBytes": 6748911,
               "stepCount": 64,
               "rhsEvaluationCount": 256
             },
             {
-              "integrationSeconds": 0.644654166,
-              "processSeconds": 1.7949710411485285,
+              "integrationSeconds": 0.570345917,
+              "processSeconds": 1.717919500079006,
               "retainedBytes": 6605350,
               "maximumLiveBytes": 6748911,
               "stepCount": 64,
               "rhsEvaluationCount": 256
             },
             {
-              "integrationSeconds": 0.564165958,
-              "processSeconds": 1.7152380000334233,
+              "integrationSeconds": 0.576502416,
+              "processSeconds": 1.7284991659689695,
               "retainedBytes": 6605350,
               "maximumLiveBytes": 6748911,
               "stepCount": 64,
               "rhsEvaluationCount": 256
             },
             {
-              "integrationSeconds": 0.634742334,
-              "processSeconds": 1.7791988751851022,
+              "integrationSeconds": 0.581002834,
+              "processSeconds": 1.730533208930865,
               "retainedBytes": 6605350,
               "maximumLiveBytes": 6748911,
               "stepCount": 64,
               "rhsEvaluationCount": 256
             },
             {
-              "integrationSeconds": 0.560105167,
-              "processSeconds": 1.7086256658658385,
+              "integrationSeconds": 0.576034208,
+              "processSeconds": 1.7261498339939862,
               "retainedBytes": 6605350,
               "maximumLiveBytes": 6748911,
               "stepCount": 64,
               "rhsEvaluationCount": 256
             },
             {
-              "integrationSeconds": 0.632594125,
-              "processSeconds": 1.7951788329519331,
+              "integrationSeconds": 0.573032042,
+              "processSeconds": 1.7213695829268545,
               "retainedBytes": 6605350,
               "maximumLiveBytes": 6748911,
               "stepCount": 64,
               "rhsEvaluationCount": 256
             },
             {
-              "integrationSeconds": 0.565093209,
-              "processSeconds": 1.7244028341956437,
+              "integrationSeconds": 0.576449459,
+              "processSeconds": 1.7290943330153823,
               "retainedBytes": 6605350,
               "maximumLiveBytes": 6748911,
               "stepCount": 64,
               "rhsEvaluationCount": 256
             },
             {
-              "integrationSeconds": 0.63406575,
-              "processSeconds": 1.8008167499210685,
+              "integrationSeconds": 0.571920625,
+              "processSeconds": 1.7355951669160277,
               "retainedBytes": 6605350,
               "maximumLiveBytes": 6748911,
               "stepCount": 64,
@@ -3255,64 +3251,64 @@
           ],
           "candidate": [
             {
-              "integrationSeconds": 0.548586875,
-              "processSeconds": 1.7038103751838207,
+              "integrationSeconds": 0.546904417,
+              "processSeconds": 1.701176250120625,
               "retainedBytes": 6605929,
               "maximumLiveBytes": 6749490,
               "stepCount": 64,
               "rhsEvaluationCount": 256
             },
             {
-              "integrationSeconds": 0.550341417,
-              "processSeconds": 1.7008809170220047,
+              "integrationSeconds": 0.6169985,
+              "processSeconds": 1.7697000410407782,
               "retainedBytes": 6605929,
               "maximumLiveBytes": 6749490,
               "stepCount": 64,
               "rhsEvaluationCount": 256
             },
             {
-              "integrationSeconds": 0.534336875,
-              "processSeconds": 1.6816542909946293,
+              "integrationSeconds": 0.546656042,
+              "processSeconds": 1.6946740001440048,
               "retainedBytes": 6605929,
               "maximumLiveBytes": 6749490,
               "stepCount": 64,
               "rhsEvaluationCount": 256
             },
             {
-              "integrationSeconds": 0.539332375,
-              "processSeconds": 1.687216707970947,
+              "integrationSeconds": 0.545423166,
+              "processSeconds": 1.6939011251088232,
               "retainedBytes": 6605929,
               "maximumLiveBytes": 6749490,
               "stepCount": 64,
               "rhsEvaluationCount": 256
             },
             {
-              "integrationSeconds": 0.534627958,
-              "processSeconds": 1.7099747499451041,
+              "integrationSeconds": 0.55243325,
+              "processSeconds": 1.7023588751908392,
               "retainedBytes": 6605929,
               "maximumLiveBytes": 6749490,
               "stepCount": 64,
               "rhsEvaluationCount": 256
             },
             {
-              "integrationSeconds": 0.606241792,
-              "processSeconds": 1.768861207878217,
+              "integrationSeconds": 0.549466416,
+              "processSeconds": 1.7003416668158025,
               "retainedBytes": 6605929,
               "maximumLiveBytes": 6749490,
               "stepCount": 64,
               "rhsEvaluationCount": 256
             },
             {
-              "integrationSeconds": 0.535021833,
-              "processSeconds": 1.6928742919117212,
+              "integrationSeconds": 0.547518167,
+              "processSeconds": 1.6960875841323286,
               "retainedBytes": 6605929,
               "maximumLiveBytes": 6749490,
               "stepCount": 64,
               "rhsEvaluationCount": 256
             },
             {
-              "integrationSeconds": 0.538557208,
-              "processSeconds": 1.7157890410162508,
+              "integrationSeconds": 0.541761708,
+              "processSeconds": 1.6977209579199553,
               "retainedBytes": 6605929,
               "maximumLiveBytes": 6749490,
               "stepCount": 64,
@@ -3322,15 +3318,15 @@
         },
         "medians": {
           "baseline": {
-            "integrationSeconds": 0.603058479,
+            "integrationSeconds": 0.5761012495,
             "retainedBytes": 6605350
           },
           "candidate": {
-            "integrationSeconds": 0.5389447915,
+            "integrationSeconds": 0.5472112920000001,
             "retainedBytes": 6605929
           }
         },
-        "runtimeChangeFraction": -0.10631421285430598,
+        "runtimeChangeFraction": -0.05014736129295605,
         "retainedMemoryChangeFraction": 8.765621806561263e-05,
         "passes": true
       },
@@ -3341,64 +3337,64 @@
         "samples": {
           "baseline": [
             {
-              "integrationSeconds": 0.663089667,
-              "processSeconds": 0.7082206669729203,
+              "integrationSeconds": 0.673274667,
+              "processSeconds": 0.7149648750200868,
               "retainedBytes": 3228218,
               "maximumLiveBytes": 3292003,
               "stepCount": 64,
               "rhsEvaluationCount": 256
             },
             {
-              "integrationSeconds": 0.662538667,
-              "processSeconds": 0.7120227499399334,
+              "integrationSeconds": 0.681465042,
+              "processSeconds": 0.7207879589404911,
               "retainedBytes": 3228218,
               "maximumLiveBytes": 3292003,
               "stepCount": 64,
               "rhsEvaluationCount": 256
             },
             {
-              "integrationSeconds": 0.6528495,
-              "processSeconds": 0.702755041886121,
+              "integrationSeconds": 0.678501791,
+              "processSeconds": 0.7182059581391513,
               "retainedBytes": 3228218,
               "maximumLiveBytes": 3292003,
               "stepCount": 64,
               "rhsEvaluationCount": 256
             },
             {
-              "integrationSeconds": 0.665546709,
-              "processSeconds": 0.7145992920268327,
+              "integrationSeconds": 0.683426833,
+              "processSeconds": 0.7227174169383943,
               "retainedBytes": 3228218,
               "maximumLiveBytes": 3292003,
               "stepCount": 64,
               "rhsEvaluationCount": 256
             },
             {
-              "integrationSeconds": 0.668061791,
-              "processSeconds": 0.7106039999052882,
+              "integrationSeconds": 0.680068375,
+              "processSeconds": 0.7191743329167366,
               "retainedBytes": 3228218,
               "maximumLiveBytes": 3292003,
               "stepCount": 64,
               "rhsEvaluationCount": 256
             },
             {
-              "integrationSeconds": 0.659273834,
-              "processSeconds": 0.7014603752177209,
+              "integrationSeconds": 0.677846375,
+              "processSeconds": 0.7173991668969393,
               "retainedBytes": 3228218,
               "maximumLiveBytes": 3292003,
               "stepCount": 64,
               "rhsEvaluationCount": 256
             },
             {
-              "integrationSeconds": 0.667453625,
-              "processSeconds": 0.7116055828519166,
+              "integrationSeconds": 0.679925125,
+              "processSeconds": 0.7189417090266943,
               "retainedBytes": 3228218,
               "maximumLiveBytes": 3292003,
               "stepCount": 64,
               "rhsEvaluationCount": 256
             },
             {
-              "integrationSeconds": 0.660852,
-              "processSeconds": 0.6992767499759793,
+              "integrationSeconds": 0.678060917,
+              "processSeconds": 0.7173882089555264,
               "retainedBytes": 3228218,
               "maximumLiveBytes": 3292003,
               "stepCount": 64,
@@ -3407,64 +3403,64 @@
           ],
           "candidate": [
             {
-              "integrationSeconds": 0.629542083,
-              "processSeconds": 0.6761614580173045,
+              "integrationSeconds": 0.639477375,
+              "processSeconds": 0.678951625013724,
               "retainedBytes": 3228797,
               "maximumLiveBytes": 3292662,
               "stepCount": 64,
               "rhsEvaluationCount": 256
             },
             {
-              "integrationSeconds": 0.626038333,
-              "processSeconds": 0.6731685840059072,
+              "integrationSeconds": 0.637567792,
+              "processSeconds": 0.6767600420862436,
               "retainedBytes": 3228797,
               "maximumLiveBytes": 3292662,
               "stepCount": 64,
               "rhsEvaluationCount": 256
             },
             {
-              "integrationSeconds": 0.616545125,
-              "processSeconds": 0.6666992921382189,
+              "integrationSeconds": 0.638934125,
+              "processSeconds": 0.678776582935825,
               "retainedBytes": 3228797,
               "maximumLiveBytes": 3292662,
               "stepCount": 64,
               "rhsEvaluationCount": 256
             },
             {
-              "integrationSeconds": 0.665904458,
-              "processSeconds": 0.7111989581026137,
+              "integrationSeconds": 0.92636275,
+              "processSeconds": 0.9658445420209318,
               "retainedBytes": 3228797,
               "maximumLiveBytes": 3292662,
               "stepCount": 64,
               "rhsEvaluationCount": 256
             },
             {
-              "integrationSeconds": 0.624682667,
-              "processSeconds": 0.6670504589565098,
+              "integrationSeconds": 0.640363041,
+              "processSeconds": 0.6792882909066975,
               "retainedBytes": 3228797,
               "maximumLiveBytes": 3292662,
               "stepCount": 64,
               "rhsEvaluationCount": 256
             },
             {
-              "integrationSeconds": 0.625495375,
-              "processSeconds": 0.6661850409582257,
+              "integrationSeconds": 0.641324125,
+              "processSeconds": 0.6802266251761466,
               "retainedBytes": 3228797,
               "maximumLiveBytes": 3292662,
               "stepCount": 64,
               "rhsEvaluationCount": 256
             },
             {
-              "integrationSeconds": 0.624833208,
-              "processSeconds": 0.6667607920244336,
+              "integrationSeconds": 0.635836125,
+              "processSeconds": 0.6757013339083642,
               "retainedBytes": 3228797,
               "maximumLiveBytes": 3292662,
               "stepCount": 64,
               "rhsEvaluationCount": 256
             },
             {
-              "integrationSeconds": 0.622470417,
-              "processSeconds": 0.6632165000773966,
+              "integrationSeconds": 0.639281792,
+              "processSeconds": 0.6788462498225272,
               "retainedBytes": 3228797,
               "maximumLiveBytes": 3292662,
               "stepCount": 64,
@@ -3474,15 +3470,15 @@
         },
         "medians": {
           "baseline": {
-            "integrationSeconds": 0.6628141670000001,
+            "integrationSeconds": 0.679213458,
             "retainedBytes": 3228218
           },
           "candidate": {
-            "integrationSeconds": 0.6251642915,
+            "integrationSeconds": 0.6393795835,
             "retainedBytes": 3228797
           }
         },
-        "runtimeChangeFraction": -0.056803063927268305,
+        "runtimeChangeFraction": -0.05864706305627998,
         "retainedMemoryChangeFraction": 0.0001793559171034964,
         "passes": true
       },
@@ -3493,64 +3489,64 @@
         "samples": {
           "baseline": [
             {
-              "integrationSeconds": 0.541154958,
-              "processSeconds": 0.5944126250687987,
+              "integrationSeconds": 0.540478541,
+              "processSeconds": 0.5937871250789613,
               "retainedBytes": 1586697,
               "maximumLiveBytes": 1623218,
               "stepCount": 64,
               "rhsEvaluationCount": 256
             },
             {
-              "integrationSeconds": 0.54386925,
-              "processSeconds": 0.598195250146091,
+              "integrationSeconds": 0.54888025,
+              "processSeconds": 0.6015697079710662,
               "retainedBytes": 1586697,
               "maximumLiveBytes": 1623218,
               "stepCount": 64,
               "rhsEvaluationCount": 256
             },
             {
-              "integrationSeconds": 0.541075,
-              "processSeconds": 0.5955541250295937,
+              "integrationSeconds": 0.560413792,
+              "processSeconds": 0.6131470419932157,
               "retainedBytes": 1586697,
               "maximumLiveBytes": 1623218,
               "stepCount": 64,
               "rhsEvaluationCount": 256
             },
             {
-              "integrationSeconds": 0.563510541,
-              "processSeconds": 0.6153392500709742,
+              "integrationSeconds": 0.538487459,
+              "processSeconds": 0.590398124884814,
               "retainedBytes": 1586697,
               "maximumLiveBytes": 1623218,
               "stepCount": 64,
               "rhsEvaluationCount": 256
             },
             {
-              "integrationSeconds": 0.537865458,
-              "processSeconds": 0.5892542919609696,
+              "integrationSeconds": 0.567085625,
+              "processSeconds": 0.6190515409689397,
               "retainedBytes": 1586697,
               "maximumLiveBytes": 1623218,
               "stepCount": 64,
               "rhsEvaluationCount": 256
             },
             {
-              "integrationSeconds": 0.540894166,
-              "processSeconds": 0.5929861250333488,
+              "integrationSeconds": 0.541997125,
+              "processSeconds": 0.5940960838925093,
               "retainedBytes": 1586697,
               "maximumLiveBytes": 1623218,
               "stepCount": 64,
               "rhsEvaluationCount": 256
             },
             {
-              "integrationSeconds": 0.540520875,
-              "processSeconds": 0.5924942919518799,
+              "integrationSeconds": 0.547068459,
+              "processSeconds": 0.5988495419733226,
               "retainedBytes": 1586697,
               "maximumLiveBytes": 1623218,
               "stepCount": 64,
               "rhsEvaluationCount": 256
             },
             {
-              "integrationSeconds": 0.542665625,
-              "processSeconds": 0.5951227080076933,
+              "integrationSeconds": 0.541503208,
+              "processSeconds": 0.5937286249827594,
               "retainedBytes": 1586697,
               "maximumLiveBytes": 1623218,
               "stepCount": 64,
@@ -3559,64 +3555,64 @@
           ],
           "candidate": [
             {
-              "integrationSeconds": 0.517371667,
-              "processSeconds": 0.5716806668788195,
+              "integrationSeconds": 0.515709833,
+              "processSeconds": 0.5681347500067204,
               "retainedBytes": 1587164,
               "maximumLiveBytes": 1623685,
               "stepCount": 64,
               "rhsEvaluationCount": 256
             },
             {
-              "integrationSeconds": 0.516265959,
-              "processSeconds": 0.569170166971162,
+              "integrationSeconds": 0.514664625,
+              "processSeconds": 0.5667413750197738,
               "retainedBytes": 1587164,
               "maximumLiveBytes": 1623685,
               "stepCount": 64,
               "rhsEvaluationCount": 256
             },
             {
-              "integrationSeconds": 0.514828625,
-              "processSeconds": 0.5671817499678582,
+              "integrationSeconds": 0.515698375,
+              "processSeconds": 0.568961292039603,
               "retainedBytes": 1587164,
               "maximumLiveBytes": 1623685,
               "stepCount": 64,
               "rhsEvaluationCount": 256
             },
             {
-              "integrationSeconds": 0.514931542,
-              "processSeconds": 0.5672227500472218,
+              "integrationSeconds": 0.51618,
+              "processSeconds": 0.5688770001288503,
               "retainedBytes": 1587164,
               "maximumLiveBytes": 1623685,
               "stepCount": 64,
               "rhsEvaluationCount": 256
             },
             {
-              "integrationSeconds": 0.530530292,
-              "processSeconds": 0.583559833932668,
+              "integrationSeconds": 0.516135875,
+              "processSeconds": 0.5701436251401901,
               "retainedBytes": 1587164,
               "maximumLiveBytes": 1623685,
               "stepCount": 64,
               "rhsEvaluationCount": 256
             },
             {
-              "integrationSeconds": 0.515813541,
-              "processSeconds": 0.5684795000124723,
+              "integrationSeconds": 0.515879959,
+              "processSeconds": 0.5689819161780179,
               "retainedBytes": 1587164,
               "maximumLiveBytes": 1623685,
               "stepCount": 64,
               "rhsEvaluationCount": 256
             },
             {
-              "integrationSeconds": 0.515937916,
-              "processSeconds": 0.5680107909720391,
+              "integrationSeconds": 0.518368417,
+              "processSeconds": 0.5704745829571038,
               "retainedBytes": 1587164,
               "maximumLiveBytes": 1623685,
               "stepCount": 64,
               "rhsEvaluationCount": 256
             },
             {
-              "integrationSeconds": 0.533426333,
-              "processSeconds": 0.585869540926069,
+              "integrationSeconds": 0.514933083,
+              "processSeconds": 0.5670587080530822,
               "retainedBytes": 1587164,
               "maximumLiveBytes": 1623685,
               "stepCount": 64,
@@ -3626,34 +3622,37 @@
         },
         "medians": {
           "baseline": {
-            "integrationSeconds": 0.541114979,
+            "integrationSeconds": 0.544532792,
             "retainedBytes": 1586697
           },
           "candidate": {
-            "integrationSeconds": 0.5161019375,
+            "integrationSeconds": 0.5157948960000001,
             "retainedBytes": 1587164
           }
         },
-        "runtimeChangeFraction": -0.04622500294895748,
+        "runtimeChangeFraction": -0.052775326706127834,
         "retainedMemoryChangeFraction": 0.0002943221043463229,
         "passes": true
       }
     ],
     "passes": true,
     "baselineSourceCommit": "26dcfb5afea596b54c3e71500546cd610ee96f4d",
-    "candidateSourceCommit": "2ac22731",
     "scope": "Matched established output workload, including nonlinear/adaptive damping, normal/dense output and 64 integration steps. Measures regressions introduced by the implementation; forcing-output correctness/cost-sharing is qualified separately.",
+    "numericOutputComparisonNotes": "All numeric variables were compared recursively. Scheduled fields, coefficients and time must be finite; matching nonfinite metadata (such as finalTime=Inf) is preserved.",
+    "benchmarkScript": "Benchmarks/comparePortableDiagnosticBaseline.py",
+    "benchmarkScriptSha256": "f5f45c643c7e89f6276e9d06c268614e718cce5f45627e9681bcd5a5796c88a7",
+    "candidateSourceCommit": "b5473525f3490a38422fd0da9ed362e8fc85c4f9",
     "numericOutputComparison": [
       {
         "family": "constant",
         "numericVariableCount": 43,
-        "maximumNormalizedError": 5.123075563666571e-16,
+        "maximumNormalizedError": 4.716229757222744e-16,
         "allNumericVariablesExactlyEqual": false
       },
       {
         "family": "hydrostatic",
         "numericVariableCount": 55,
-        "maximumNormalizedError": 4.517051777437907e-16,
+        "maximumNormalizedError": 5.934123282500313e-16,
         "allNumericVariablesExactlyEqual": false
       },
       {
@@ -3662,10 +3661,7 @@
         "maximumNormalizedError": 0.0,
         "allNumericVariablesExactlyEqual": true
       }
-    ],
-    "numericOutputComparisonNotes": "All numeric variables were compared recursively. Scheduled fields, coefficients and time must be finite; matching nonfinite metadata (such as finalTime=Inf) is preserved.",
-    "benchmarkScript": "Benchmarks/comparePortableDiagnosticBaseline.py",
-    "benchmarkScriptSha256": "f5f45c643c7e89f6276e9d06c268614e718cce5f45627e9681bcd5a5796c88a7"
+    ]
   },
   "catalogDelivery": {
     "implementedRows": 618,
@@ -3701,7 +3697,9 @@
       ]
     },
     "legacyIdentitiesPreserved": 23,
-    "codeAnalyzerFindings": 0
+    "codeAnalyzerFindings": 0,
+    "cppRelease": "passed",
+    "appleASanUBSan": "passed"
   },
   "spatialOnlyOptimization": {
     "rows": [
@@ -4092,6 +4090,8 @@
     ],
     "runnerSha256": "24116d40a7953f4d3a9a165d91235cbaf28c5ab9673d2c182487685719abcbfd",
     "description": "All three wave kernel families can return raw nonlinear spatial tendencies without projecting a discarded spectral flux. The default RHS still projects normally. Exact raw-value, unchanged spectral-destination, fewer FFTs, missing-storage preflight and unchanged retention tests pass in Release and ASan/UBSan.",
-    "verification": "Seven focused kernel/field/forcing/observer/NetCDF tests passed in Release and Apple ASan/UBSan. MATLAB ordered wave matrix and Code Analyzer passed."
-  }
+    "verification": "Seven focused kernel/field/forcing/observer/NetCDF tests passed in Release and Apple ASan/UBSan. MATLAB ordered wave matrix and Code Analyzer passed.",
+    "cppSourceCommit": "b5473525f3490a38422fd0da9ed362e8fc85c4f9"
+  },
+  "integrationTracking": "https://github.com/JeffreyEarly/wave-vortex-model/issues/315"
 }

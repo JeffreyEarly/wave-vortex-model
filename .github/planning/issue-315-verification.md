@@ -158,10 +158,16 @@ Branch: `issue-315-forcing-tendency-diagnostics`, based on v4 main `866f66ed4198
 - The initial catalog runtests call resolved a same-named class from the other checkout and ran four tests. A follow-up pinned the isolated v4 UnitTests directory, asserted the six-method inventory, and recorded all six passing results plus a clean analyzer. No files in the other checkout were edited. C++ catalog/forcing/field/observer/NetCDF tests passed after promotion. Required hosted CI will independently verify generation on both MATLAB releases.
 - No MATLAB runtime/source behavior changed. Remaining work is the final matched benchmark after the kernel projection change, required hosted checks and integration. The combined goal remains active until those pass and #315 is integrated.
 
+### Final local qualification
+
+- After the spatial-only optimization and catalog promotion, repeated the matched benchmark because the kernel entry point changed. Final candidate b5473525 passed all three cases: median runtime -5.015% constant, -5.865% Hydrostatic and -5.278% Boussinesq; retained memory +0.009%, +0.018% and +0.029%. Eight alternating measured pairs plus excluded warmup per case. Final saved numeric values again agree within 5.124e-16, with equal step/RHS counts. The JSON now records this final binary and source revision.
+- After catalog promotion, Release and Apple ASan/UBSan passed catalog, forcing, field, observer and NetCDF checks. All six explicitly selected v4 MATLAB catalog methods and Code Analyzer passed; generated files and the 23 legacy records are unchanged except the intended forcing delivery status. The earlier seven focused kernel/output tests and the post-optimization MATLAB wave matrix also remain applicable.
+- Local implementation, numerical/output qualification, preflight/retry/sharing checks and the representative 3% runtime/retained-memory budgets are complete. The CI router selects the required C++ and sharded scientific MATLAB checks, with no website or packaging rebuild and no optional Full campaign. Required hosted CI and PR integration are tracked by #315.
+
 ## Diagnostic semantics established from MATLAB
 
 `Operations/SpatialForcingOperation.m` reports the difference before and after each operation in stage/priority order. Spatial diagnostics expose the raw spatial contribution; spectral and amplitude diagnostics reconstruct the difference in the accumulated spectral tendency. Filters and fixed-amplitude operations therefore require the preceding accumulated tendency. Evaluating each forcing independently from a zero accumulator is incorrect.
 
 The diagnostic execution must use the existing resolved forcing instances and coarse operation services. Instance identity and output metadata must be bound before evaluation. Scratch belongs to the observation occurrence, and diagnostic execution must not restore constrained amplitudes or change accepted integration state. Projection must preserve the distinction between raw spatial contributions and reconstructed spectral contributions.
 
-#315 implementation and qualification remain in progress. This ledger is not completion evidence for #315.
+Local implementation and qualification are complete. Required hosted checks and integration are tracked by [#315](https://github.com/JeffreyEarly/wave-vortex-model/issues/315).
