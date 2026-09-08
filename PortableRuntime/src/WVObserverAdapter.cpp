@@ -295,7 +295,7 @@ WVKernelStatus buildLegacyOutputPlan(
                : WVObservationValueLayout::record;
   };
   const auto addFullField = [&](const std::string &field) {
-    const auto *metadata = findPortableVariable(field);
+    const auto *metadata = findExecutablePortableVariable(field);
     if (metadata == nullptr)
       return invalid("Unsupported observer field: " + field + ".");
     std::vector<std::string> names;
@@ -448,7 +448,7 @@ WVKernelStatus buildLegacyOutputPlan(
                     WVObservationValueLayout::staticValue, std::move(y), "m",
                     "y position of mooring", WVObservationCoordinateRole::y);
     for (const auto &field : execution.outputFields) {
-      const auto *metadata = findPortableVariable(field);
+      const auto *metadata = findExecutablePortableVariable(field);
       if (metadata == nullptr ||
           metadata->kind != WVPortableVariableKind::field)
         return invalid("Unsupported mooring field: " + field + ".");
@@ -497,7 +497,7 @@ WVKernelStatus buildLegacyOutputPlan(
                       std::string(suffix) + " position of fixed observation",
                       role);
     const auto &field = execution.outputFields.front();
-    const auto *metadata = findPortableVariable(field);
+    const auto *metadata = findExecutablePortableVariable(field);
     if (metadata == nullptr ||
         metadata->kind != WVPortableVariableKind::field)
       return invalid("Unsupported fixed-position field: " + field + ".");
@@ -589,7 +589,7 @@ WVKernelStatus buildLegacyOutputPlan(
     plan.movingPositions.interpolation =
         observer.trackedFieldInterpolation;
     for (const auto &field : execution.outputFields) {
-      const auto *metadata = findPortableVariable(field);
+      const auto *metadata = findExecutablePortableVariable(field);
       if (metadata == nullptr ||
           metadata->kind != WVPortableVariableKind::field)
         return invalid("Unsupported particle tracked field: " + field + ".");

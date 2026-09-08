@@ -24,7 +24,16 @@ headerPath = fullfile(repositoryRoot,"PortableRuntime","include", ...
 
 supplement = jsondecode(fileread(supplementPath));
 mustBeValidSupplement(supplement);
-annotations = authoritativeAnnotations(supplement.variables);
+annotations = authoritativeAnnotations(supplement.variables(1:23));
+
+inventory = portableVariableAnnotations();
+for iEntry = 1:numel(inventory)
+    a = inventory(iEntry).annotation;
+    if ~isKey(annotations,char(a.name)), annotations(char(a.name)) = a; end
+end
+if ~isequal(sort(string(keys(annotations))),sort(string({supplement.variables.name})))
+    error("WaveVortexModel:IncompletePortableVariableCatalog","The registered inventory and append-only supplement disagree.");
+end
 
 variables = repmat(emptyVariableRecord(),numel(supplement.variables),1);
 for iVariable = 1:numel(supplement.variables)
@@ -40,10 +49,17 @@ catalog = struct( ...
     authoritativeType="WVVariableAnnotation", ...
     portabilitySupplement="PortableRuntime/contracts/portable-variable-supplement-v1.json", ...
     variables=variables);
+catalog = addDiagnosticContracts(catalog,supplement,inventory);
+validatePortableVariableCatalog(catalog);
 
 writeText(catalogPath,string(jsonencode(catalog,PrettyPrint=true)) + newline);
 writeText(headerPath,renderHeader(variables));
-result = struct(catalogPath=catalogPath,headerPath=headerPath,catalog=catalog);
+contractHeaderPath = fullfile(fileparts(headerPath),"WVPortableVariableContracts.hpp");
+documentationPath = fullfile(repositoryRoot,"PortableRuntime","VARIABLES.md");
+writeText(contractHeaderPath,renderPortableVariableContracts(catalog));
+writeText(documentationPath,renderVariableDocumentation(catalog));
+result = struct(catalogPath=catalogPath,headerPath=headerPath, ...
+    contractHeaderPath=contractHeaderPath,documentationPath=documentationPath,catalog=catalog);
 end
 
 function root = defaultRepositoryRoot()
@@ -157,7 +173,7 @@ attributes = annotation.attributes;
 attributeNames = string(keys(attributes));
 supplementAttributes = definition.netCDFAttributes;
 if isstruct(supplementAttributes)
-    attributeNames = [attributeNames,string(fieldnames(supplementAttributes)).']; %#ok<AGROW>
+    attributeNames = [attributeNames,string(fieldnames(supplementAttributes)).'];
 end
 attributeNames = sort(unique(attributeNames));
 record.netCDFAttributes = repmat(struct(name="",value=""),numel(attributeNames),1);
@@ -165,6 +181,9 @@ for iAttribute = 1:numel(attributeNames)
     name = attributeNames(iAttribute);
     if isKey(attributes,char(name))
         value = string(attributes(char(name)));
+        if isstruct(supplementAttributes) && isfield(supplementAttributes,char(name)) && value ~= string(supplementAttributes.(char(name)))
+            error("WaveVortexModel:InvalidPortableVariableSupplement","Conflicting NetCDF attribute %s for %s.",name,record.name);
+        end
     else
         value = string(supplementAttributes.(char(name)));
     end
@@ -196,7 +215,7 @@ lines = [lines; ...
     "  invalid = 255"; ...
     "};"; ...
     ""; ...
-    "enum class WVPortableVariableKind : std::uint8_t { coefficient, field };"; ...
+    "enum class WVPortableVariableKind : std::uint8_t { coefficient, field, diagnostic };"; ...
     "enum class WVPortableNaturalRank : std::uint8_t { coefficient, scalar, vertical, horizontal, volume };"; ...
     ""; ...
     "enum WVPortableSamplingMode : std::uint8_t {"; ...
@@ -291,6 +310,12 @@ lines = [lines; ...
     "  return nullptr;"; ...
     "}"; ...
     ""; ...
+    "inline constexpr const WVPortableVariableMetadata *"; ...
+    "findExecutablePortableVariable(std::string_view name) noexcept {"; ...
+    "  const auto *entry = findPortableVariable(name);"; ...
+    "  return entry && entry->kind != WVPortableVariableKind::diagnostic ? entry : nullptr;"; ...
+    "}"; ...
+    ""; ...
     "inline constexpr std::size_t portableVariableCatalogBytes() noexcept {"; ...
     "  return sizeof(WVPortableVariableCatalog);"; ...
     "}"; ...
@@ -349,4 +374,141 @@ if fileId < 0
 end
 cleanup = onCleanup(@() fclose(fileId));
 fprintf(fileId,"%s",text);
+end
+
+function catalog = addDiagnosticContracts(catalog,supplement,inventory)
+% Portability facts augment, but never replace, the MATLAB annotations.
+names = string({catalog.variables.name});
+definitions = supplement.diagnosticContracts;
+if ~isequal(string({definitions.name}),names) || numel(unique(string({catalog.variables.cppIdentifier}))) ~= numel(names)
+    error("WaveVortexModel:InvalidPortableVariableSupplement","Every variable needs one ordered dependency contract and unique C++ identity.");
+end
+rows = struct(ordinal={},configuration={},authority={},operationClass={},operationExpression={}, ...
+    component={},metadata={},dependencies={},trueProfileDependencies={},intermediateMask={}, ...
+    runtimeStatus={},samplingRestriction={},configurationRestriction={},catalogStatus={},netCDF={});
+for iEntry = 1:numel(inventory)
+    entry = inventory(iEntry);
+    index = find(names == string(entry.annotation.name),1);
+    definition = supplement.variables(index);
+    contract = definitions(index);
+    metadata = normalizedRecord(definition,entry.annotation,supplement.primitiveDependencies);
+    if any(metadata.dimensions == "kl")
+        metadata.naturalRank = "coefficient";
+    else
+        ranks = ["scalar","vertical","horizontal","volume"];
+        metadata.naturalRank = ranks(numel(metadata.dimensions)+1);
+    end
+    if metadata.naturalRank == "horizontal"
+        metadata.samplingModes(metadata.samplingModes == "fixedVerticalProfiles") = [];
+    end
+    dependencies = reshape(string(contract.dependencies),1,[]);
+    isQG = ismember(entry.family,["barotropic","stratified-qg"]);
+    coefficients = "A0";
+    phasedCoefficients = "A0t";
+    if ~isQG
+        coefficients = ["Ap","Am","A0"];
+        phasedCoefficients = ["Apt","Amt","A0t"];
+    end
+    if ismember(entry.component,["geostrophic","mda"])
+        coefficients = "A0";
+        phasedCoefficients = "A0t";
+    elseif ismember(entry.component,["wave","inertial"])
+        coefficients = ["Ap","Am"];
+        phasedCoefficients = ["Apt","Amt"];
+    end
+    dependencies = expand(dependencies,"$coefficients",coefficients);
+    dependencies = expand(dependencies,"$phasedCoefficients",phasedCoefficients);
+    verticalVelocity = strings(1,0);
+    if ismember(entry.family,["constant-nonhydrostatic","boussinesq"]), verticalVelocity="w"; end
+    dependencies = expand(dependencies,"$nonhydrostaticW",verticalVelocity);
+    trueProfileDependencies = strings(1,0);
+    if any(dependencies == "$trueProfile"), trueProfileDependencies="rho_nm"; end
+    dependencies(dependencies == "$trueProfile") = [];
+    intermediateMask = uint64(0);
+    for name = reshape(string(contract.intermediates),1,[])
+        intermediateIndex = find(string({supplement.intermediates.name}) == name);
+        if numel(intermediateIndex) ~= 1
+            error("WaveVortexModel:InvalidPortableVariableSupplement","Unknown intermediate %s.",name);
+        end
+        intermediateMask = bitor(intermediateMask,bitshift(uint64(1),supplement.intermediates(intermediateIndex).ordinal));
+    end
+    operationClass = "dependent-property-or-method";
+    operationExpression = "";
+    if ~isempty(entry.annotation.modelOp)
+        operationClass = string(class(entry.annotation.modelOp));
+        if operationClass == "WVOperation"
+            operationExpression = string(func2str(entry.annotation.modelOp.f));
+        end
+    end
+    if strlength(metadata.units)==0 || strlength(metadata.description)==0 || numel(metadata.dimensions)>3
+        error("WaveVortexModel:InvalidPortableVariableMetadata","Missing or unsupported metadata for %s.",metadata.name);
+    end
+    role = "diagnostic";
+    if metadata.portableKind == "coefficient", role="state-coefficient"; end
+    complexLayout = "real";
+    if metadata.isComplex, complexLayout="split-real-imaginary"; end
+    netCDF = struct(role=role,dimensionNames=metadata.dimensions, ...
+        coordinateRoles=metadata.dimensions,complexLayout=complexLayout,spatialLayout="MATLAB-column-major", ...
+        spectralLayout="MATLAB-hermitian-j-kl-or-kl",timeDimension="observer-event", ...
+        attributes=metadata.netCDFAttributes);
+    rows(end+1) = struct(ordinal=metadata.ordinal,configuration=entry.configuration, ...
+        authority=entry.authority,operationClass=operationClass,operationExpression=operationExpression, ...
+        component=entry.component,metadata=metadata,dependencies=dependencies, ...
+        trueProfileDependencies=trueProfileDependencies,intermediateMask=intermediateMask, ...
+        runtimeStatus=string(contract.runtimeStatus),samplingRestriction=string(contract.samplingRestriction), ...
+        configurationRestriction=string(contract.configurationRestriction),catalogStatus="supported",netCDF=netCDF); %#ok<AGROW>
+end
+catalog.configurations = unique(string({rows.configuration}),"stable");
+catalog.intermediates = supplement.intermediates;
+catalog.contracts = rows;
+catalog.exclusions = supplement.exclusions;
+catalog.policy = struct(unknownOperation="intentional-incompatibility",customOperation="intentional-incompatibility", ...
+    forcingInstance="bind-template-and-verify-built-in-forcing-contract-before-evaluation", ...
+    noMotionSolvers=["lsqnonlin","fminsearch"],cache="event-scoped-scratch-no-new-persistent-state-sized-cache");
+end
+
+function names = expand(names,token,replacement)
+if any(names == token)
+    names(names == token) = [];
+    names = [names,replacement];
+end
+end
+
+function text = renderVariableDocumentation(catalog)
+lines = ["# Portable variable contracts";""; ...
+    "Generated by `tools/generatePortableVariableCatalog.m` from MATLAB annotations and the portability supplement. Do not edit this table.";""; ...
+    "Ordinals 0–22 and their canonical metadata retain the original output contract. Configuration rows carry the exact MATLAB dimensions and flags for each transform. A catalog contract does not enable numerical evaluation: new diagnostics wait for #305, forcing tendencies for #315. Runtime planners reject those entries before allocating field storage.";""; ...
+    "Both antialias modes are inventoried for each family. `shouldUseTrueNoMotionProfile` selects the conditional `rho_nm` dependency. No-motion solver identity (`lsqnonlin` or `fminsearch`) must be supplied explicitly. Metadata generation never runs either solver. Intermediates have event-scoped lifetimes; annotation cache flags describe existing MATLAB behavior.";""; ...
+    "NetCDF rows retain annotation attributes, MATLAB dimension order, split complex representation and observer-event time association. These are metadata contracts; they do not introduce an output schema for unevaluated diagnostics.";""; ...
+    "Forcing exemplar names ending in `_portable_catalog_forcing` define templates: bind the actual MATLAB-sanitized instance name, qualified forcing identity and stage at construction. Reject duplicate resulting names. Custom operations, unqualified forcing instances and unknown configurations are incompatible.";""; ...
+    "| Ordinal | MATLAB name | Units | Canonical dimensions | Runtime | Configurations | Dependencies |"; ...
+    "| --- | --- | --- | --- | --- | --- | --- |"];
+for variable = reshape(catalog.variables,1,[])
+    rows = catalog.contracts([catalog.contracts.ordinal] == variable.ordinal);
+    dependencies = strings(1,0);
+    for row = reshape(rows,1,[])
+        dependencies = [dependencies,row.dependencies,row.trueProfileDependencies + " (true profile)"]; %#ok<AGROW>
+    end
+    lines(end+1) = "| " + variable.ordinal + " | `" + variable.name + "` | " + variable.units + ...
+        " | " + joinNonempty(variable.dimensions,",") + " | " + rows(1).runtimeStatus + " | " + ...
+        join(unique(erase(string({rows.configuration}),["-aa0","-aa1"])),", ") + ...
+        " | " + joinNonempty(unique(dependencies),", ") + " |"; %#ok<AGROW>
+end
+lines = [lines;"";"## Intentional incompatibilities";""; ...
+    "These APIs lack a currently registered or callable variable annotation contract. Their mathematical methods remain available in MATLAB. Component energy is represented by the working `energy_<component>` factory.";""; ...
+    "| MATLAB API | Reason |";"| --- | --- |"];
+for row = reshape(catalog.exclusions,1,[])
+    lines(end+1) = "| `" + string(row.name) + "` | " + string(row.reason) + " |"; %#ok<AGROW>
+end
+lines = [lines;"";"## Sampling and reusable intermediates";""; ...
+    "Existing sampling modes are preserved. New fields support a full-grid contract only; new scalar reductions support scalar output, and phased coefficients retain spectral layout. Interpolation of new diagnostics requires separate numerical qualification in #305.";""; ...
+    "| Intermediate | Lifetime | Purpose |";"| --- | --- | --- |"];
+for row = reshape(catalog.intermediates,1,[])
+    lines(end+1) = "| `" + string(row.name) + "` | " + string(row.lifetime) + " | " + string(row.description) + " |"; %#ok<AGROW>
+end
+text = join([lines;""],newline);
+end
+
+function value = joinNonempty(values,delimiter)
+if isempty(values), value=""; else, value=join(reshape(values,1,[]),delimiter); end
 end

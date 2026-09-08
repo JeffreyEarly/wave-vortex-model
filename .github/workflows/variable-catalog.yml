@@ -1,0 +1,61 @@
+name: Portable variable catalog
+
+on:
+  pull_request:
+    paths:
+      - 'tools/*PortableVariableCatalog.m'
+      - 'tools/portableVariableAnnotations.m'
+      - 'tools/renderPortableVariableContracts.m'
+      - 'PortableRuntime/**'
+      - 'UnitTests/TestPortableVariableCatalog.m'
+      - 'UnitTests/fixtures/portable-variable-legacy-v1.json'
+      - '@WVTransform*/**'
+      - 'FlowComponents/**'
+      - 'Operations/**'
+      - '.github/workflows/variable-catalog.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: variable-catalog-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  catalog:
+    name: Variable catalog / ${{ matrix.release }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    strategy:
+      fail-fast: false
+      matrix:
+        release: [R2025b, R2026a]
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          path: source
+          persist-credentials: false
+      - uses: actions/checkout@v6
+        with:
+          repository: JeffreyEarly/OceanKit
+          ref: 96f0b801c565406dd5a4ba2480334a3a481c3e2c
+          path: OceanKit
+          persist-credentials: false
+      - uses: matlab-actions/setup-matlab@v3
+        with:
+          release: ${{ matrix.release }}
+          cache: true
+      - uses: matlab-actions/run-command@v3
+        with:
+          command: >-
+            sourceRoot=fullfile(pwd,"source");
+            addpath(fullfile(sourceRoot,"tools"));
+            configureCIEnvironment(sourceRoot,fullfile(pwd,"OceanKit"));
+            cd(sourceRoot);
+            results=runtests(fullfile(sourceRoot,"UnitTests","TestPortableVariableCatalog.m"));
+            assert(numel(results)==6);
+            assertSuccess(results);
+      - name: Verify clean checkout
+        working-directory: source
+        run: bash tools/checkCIWorkspaceCleanliness.sh

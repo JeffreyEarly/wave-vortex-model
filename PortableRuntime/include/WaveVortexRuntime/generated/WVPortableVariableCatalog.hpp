@@ -32,11 +32,64 @@ enum class WVPortableVariable : std::uint8_t {
   energy = 20,
   uvMax = 21,
   wMax = 22,
-  count = 23,
+  A0t = 23,
+  Amt = 24,
+  Apt = 25,
+  Feta_portable_catalog_forcing = 26,
+  Fqgpv_portable_catalog_forcing = 27,
+  Fu_portable_catalog_forcing = 28,
+  Fv_portable_catalog_forcing = 29,
+  Fw_portable_catalog_forcing = 30,
+  ape = 31,
+  apv = 32,
+  conjPhase = 33,
+  energy_g = 34,
+  energy_io = 35,
+  energy_mda = 36,
+  energy_w = 37,
+  eta_g = 38,
+  eta_io = 39,
+  eta_mda = 40,
+  eta_true = 41,
+  eta_w = 42,
+  geostrophicEnergy = 43,
+  p_g = 44,
+  p_io = 45,
+  p_mda = 46,
+  p_w = 47,
+  phase = 48,
+  rho_nm = 49,
+  ssh_g = 50,
+  ssh_io = 51,
+  ssh_mda = 52,
+  ssh_w = 53,
+  ssu_g = 54,
+  ssu_io = 55,
+  ssu_mda = 56,
+  ssu_w = 57,
+  ssv_g = 58,
+  ssv_io = 59,
+  ssv_mda = 60,
+  ssv_w = 61,
+  totalEnergy = 62,
+  totalEnergySpatiallyIntegrated = 63,
+  u_g = 64,
+  u_io = 65,
+  u_mda = 66,
+  u_w = 67,
+  v_g = 68,
+  v_io = 69,
+  v_mda = 70,
+  v_w = 71,
+  w_g = 72,
+  w_io = 73,
+  w_mda = 74,
+  w_w = 75,
+  count = 76,
   invalid = 255
 };
 
-enum class WVPortableVariableKind : std::uint8_t { coefficient, field };
+enum class WVPortableVariableKind : std::uint8_t { coefficient, field, diagnostic };
 enum class WVPortableNaturalRank : std::uint8_t { coefficient, scalar, vertical, horizontal, volume };
 
 enum WVPortableSamplingMode : std::uint8_t {
@@ -72,7 +125,7 @@ struct WVPortableVariableMetadata {
   std::uint8_t netCDFAttributeCount;
 };
 
-inline constexpr std::array<WVPortableVariableMetadata, 23>
+inline constexpr std::array<WVPortableVariableMetadata, 76>
     WVPortableVariableCatalog{{
         {WVPortableVariable::Ap, 0, "Ap", {{"j", "kl", ""}}, 2, "m s-1", "positive wave coefficients at reference time t0", true, false, true, true, WVPortableVariableKind::coefficient, WVPortableNaturalRank::coefficient, 1, 0, -1, {"", ""}, 0},
         {WVPortableVariable::Am, 1, "Am", {{"j", "kl", ""}}, 2, "m s-1", "negative wave coefficients at reference time t0", true, false, true, true, WVPortableVariableKind::coefficient, WVPortableNaturalRank::coefficient, 1, 0, -1, {"", ""}, 0},
@@ -96,7 +149,60 @@ inline constexpr std::array<WVPortableVariableMetadata, 23>
         {WVPortableVariable::ssh, 19, "ssh", {{"x", "y", ""}}, 2, "m", "sea-surface height", false, true, true, true, WVPortableVariableKind::field, WVPortableNaturalRank::horizontal, 10, 2, -1, {"", ""}, 0},
         {WVPortableVariable::energy, 20, "energy", {{"", "", ""}}, 0, "m3 s-2", "horizontally-averaged depth-integrated energy computed spectrally from wave-vortex coefficients", false, false, true, true, WVPortableVariableKind::field, WVPortableNaturalRank::scalar, 2, 128, -1, {"", ""}, 0},
         {WVPortableVariable::uvMax, 21, "uvMax", {{"", "", ""}}, 0, "m s-1", "max horizontal fluid speed", false, true, true, true, WVPortableVariableKind::field, WVPortableNaturalRank::scalar, 2, 1, -1, {"", ""}, 0},
-        {WVPortableVariable::wMax, 22, "wMax", {{"", "", ""}}, 0, "m s-1", "max vertical fluid speed", false, true, true, true, WVPortableVariableKind::field, WVPortableNaturalRank::scalar, 2, 1, -1, {"", ""}, 0}
+        {WVPortableVariable::wMax, 22, "wMax", {{"", "", ""}}, 0, "m s-1", "max vertical fluid speed", false, true, true, true, WVPortableVariableKind::field, WVPortableNaturalRank::scalar, 2, 1, -1, {"", ""}, 0},
+        {WVPortableVariable::A0t, 23, "A0t", {{"j", "kl", ""}}, 2, "m2 s-1", "zero-frequency coefficients at current time t", true, true, true, true, WVPortableVariableKind::diagnostic, WVPortableNaturalRank::coefficient, 1, 0, -1, {"", ""}, 0},
+        {WVPortableVariable::Amt, 24, "Amt", {{"j", "kl", ""}}, 2, "m s-1", "negative-frequency coefficients at current time t", true, true, true, true, WVPortableVariableKind::diagnostic, WVPortableNaturalRank::coefficient, 1, 0, -1, {"", ""}, 0},
+        {WVPortableVariable::Apt, 25, "Apt", {{"j", "kl", ""}}, 2, "m s-1", "positive-frequency coefficients at current time t", true, true, true, true, WVPortableVariableKind::diagnostic, WVPortableNaturalRank::coefficient, 1, 0, -1, {"", ""}, 0},
+        {WVPortableVariable::Feta_portable_catalog_forcing, 26, "Feta_portable_catalog_forcing", {{"x", "y", "z"}}, 3, "m s-1", "spatial representation of hydrostatic forcing on the scaled density perturbation equation portable_catalog_forcing", false, true, true, true, WVPortableVariableKind::diagnostic, WVPortableNaturalRank::volume, 2, 0, -1, {"", ""}, 0},
+        {WVPortableVariable::Fqgpv_portable_catalog_forcing, 27, "Fqgpv_portable_catalog_forcing", {{"x", "y", ""}}, 2, "s-2", "spatial representation of qgpv forcing portable_catalog_forcing", false, true, true, true, WVPortableVariableKind::diagnostic, WVPortableNaturalRank::volume, 2, 0, -1, {"", ""}, 0},
+        {WVPortableVariable::Fu_portable_catalog_forcing, 28, "Fu_portable_catalog_forcing", {{"x", "y", "z"}}, 3, "m s-2", "spatial representation of hydrostatic forcing on the x-momentum equation portable_catalog_forcing", false, true, true, true, WVPortableVariableKind::diagnostic, WVPortableNaturalRank::volume, 2, 0, -1, {"", ""}, 0},
+        {WVPortableVariable::Fv_portable_catalog_forcing, 29, "Fv_portable_catalog_forcing", {{"x", "y", "z"}}, 3, "m s-2", "spatial representation of hydrostatic forcing on the y-momentum equation portable_catalog_forcing", false, true, true, true, WVPortableVariableKind::diagnostic, WVPortableNaturalRank::volume, 2, 0, -1, {"", ""}, 0},
+        {WVPortableVariable::Fw_portable_catalog_forcing, 30, "Fw_portable_catalog_forcing", {{"x", "y", "z"}}, 3, "m s-2", "spatial representation of non-hydrostatic forcing on the z-momentum equation portable_catalog_forcing", false, true, true, true, WVPortableVariableKind::diagnostic, WVPortableNaturalRank::volume, 2, 0, -1, {"", ""}, 0},
+        {WVPortableVariable::ape, 31, "ape", {{"x", "y", "z"}}, 3, "m2 s-2", "available potential energy density", false, true, true, true, WVPortableVariableKind::diagnostic, WVPortableNaturalRank::volume, 2, 0, -1, {"", ""}, 0},
+        {WVPortableVariable::apv, 32, "apv", {{"x", "y", "z"}}, 3, "s-1", "available potential vorticity", false, true, true, true, WVPortableVariableKind::diagnostic, WVPortableNaturalRank::volume, 2, 0, -1, {"", ""}, 0},
+        {WVPortableVariable::conjPhase, 33, "conjPhase", {{"j", "kl", ""}}, 2, "1", "conjugate phase factor that advances `Am` from `t0` to `t`", false, true, true, false, WVPortableVariableKind::diagnostic, WVPortableNaturalRank::coefficient, 1, 0, -1, {"", ""}, 0},
+        {WVPortableVariable::energy_g, 34, "energy_g", {{"", "", ""}}, 0, "m3 s-2", "horizontally-averaged depth-integrated energy computed spectrally from wave-vortex coefficients, geostrophic component", false, true, true, true, WVPortableVariableKind::diagnostic, WVPortableNaturalRank::scalar, 2, 128, -1, {"", ""}, 0},
+        {WVPortableVariable::energy_io, 35, "energy_io", {{"", "", ""}}, 0, "m3 s-2", "horizontally-averaged depth-integrated energy computed spectrally from wave-vortex coefficients, inertial oscillation component", false, true, true, true, WVPortableVariableKind::diagnostic, WVPortableNaturalRank::scalar, 2, 128, -1, {"", ""}, 0},
+        {WVPortableVariable::energy_mda, 36, "energy_mda", {{"", "", ""}}, 0, "m3 s-2", "horizontally-averaged depth-integrated energy computed spectrally from wave-vortex coefficients, mean density anomaly component", false, true, true, true, WVPortableVariableKind::diagnostic, WVPortableNaturalRank::scalar, 2, 128, -1, {"", ""}, 0},
+        {WVPortableVariable::energy_w, 37, "energy_w", {{"", "", ""}}, 0, "m3 s-2", "horizontally-averaged depth-integrated energy computed spectrally from wave-vortex coefficients, internal gravity wave component", false, true, true, true, WVPortableVariableKind::diagnostic, WVPortableNaturalRank::scalar, 2, 128, -1, {"", ""}, 0},
+        {WVPortableVariable::eta_g, 38, "eta_g", {{"x", "y", "z"}}, 3, "m", "approximate isopycnal deviation, geostrophic component", false, true, true, true, WVPortableVariableKind::diagnostic, WVPortableNaturalRank::volume, 2, 1, -1, {"", ""}, 0},
+        {WVPortableVariable::eta_io, 39, "eta_io", {{"x", "y", "z"}}, 3, "m", "approximate isopycnal deviation, inertial oscillation component", false, true, true, true, WVPortableVariableKind::diagnostic, WVPortableNaturalRank::volume, 2, 1, -1, {"", ""}, 0},
+        {WVPortableVariable::eta_mda, 40, "eta_mda", {{"x", "y", "z"}}, 3, "m", "approximate isopycnal deviation, mean density anomaly component", false, true, true, true, WVPortableVariableKind::diagnostic, WVPortableNaturalRank::volume, 2, 1, -1, {"", ""}, 0},
+        {WVPortableVariable::eta_true, 41, "eta_true", {{"x", "y", "z"}}, 3, "m", "true isopycnal deviation", false, true, true, true, WVPortableVariableKind::diagnostic, WVPortableNaturalRank::volume, 2, 1, -1, {"", ""}, 0},
+        {WVPortableVariable::eta_w, 42, "eta_w", {{"x", "y", "z"}}, 3, "m", "approximate isopycnal deviation, internal gravity wave component", false, true, true, true, WVPortableVariableKind::diagnostic, WVPortableNaturalRank::volume, 2, 1, -1, {"", ""}, 0},
+        {WVPortableVariable::geostrophicEnergy, 43, "geostrophicEnergy", {{"", "", ""}}, 0, "m3 s-2", "total energy, geostrophic", false, false, true, true, WVPortableVariableKind::diagnostic, WVPortableNaturalRank::scalar, 2, 128, -1, {"", ""}, 0},
+        {WVPortableVariable::p_g, 44, "p_g", {{"x", "y", "z"}}, 3, "kg m-1 s-2", "pressure anomaly, geostrophic component", false, true, true, true, WVPortableVariableKind::diagnostic, WVPortableNaturalRank::volume, 2, 2, -1, {"", ""}, 0},
+        {WVPortableVariable::p_io, 45, "p_io", {{"x", "y", "z"}}, 3, "kg m-1 s-2", "pressure anomaly, inertial oscillation component", false, true, true, true, WVPortableVariableKind::diagnostic, WVPortableNaturalRank::volume, 2, 2, -1, {"", ""}, 0},
+        {WVPortableVariable::p_mda, 46, "p_mda", {{"x", "y", "z"}}, 3, "kg m-1 s-2", "pressure anomaly, mean density anomaly component", false, true, true, true, WVPortableVariableKind::diagnostic, WVPortableNaturalRank::volume, 2, 2, -1, {"", ""}, 0},
+        {WVPortableVariable::p_w, 47, "p_w", {{"x", "y", "z"}}, 3, "kg m-1 s-2", "pressure anomaly, internal gravity wave component", false, true, true, true, WVPortableVariableKind::diagnostic, WVPortableNaturalRank::volume, 2, 2, -1, {"", ""}, 0},
+        {WVPortableVariable::phase, 48, "phase", {{"j", "kl", ""}}, 2, "1", "unit-magnitude phase factor that advances `Ap` from `t0` to `t`", false, true, true, false, WVPortableVariableKind::diagnostic, WVPortableNaturalRank::coefficient, 1, 0, -1, {"", ""}, 0},
+        {WVPortableVariable::rho_nm, 49, "rho_nm", {{"z", "", ""}}, 1, "kg m-3", "no-motion density profile", false, true, true, true, WVPortableVariableKind::diagnostic, WVPortableNaturalRank::vertical, 2, 0, -1, {"", ""}, 0},
+        {WVPortableVariable::ssh_g, 50, "ssh_g", {{"x", "y", ""}}, 2, "m", "sea-surface height, geostrophic component", false, true, true, true, WVPortableVariableKind::diagnostic, WVPortableNaturalRank::horizontal, 2, 2, -1, {"", ""}, 0},
+        {WVPortableVariable::ssh_io, 51, "ssh_io", {{"x", "y", ""}}, 2, "m", "sea-surface height, inertial oscillation component", false, true, true, true, WVPortableVariableKind::diagnostic, WVPortableNaturalRank::horizontal, 2, 2, -1, {"", ""}, 0},
+        {WVPortableVariable::ssh_mda, 52, "ssh_mda", {{"x", "y", ""}}, 2, "m", "sea-surface height, mean density anomaly component", false, true, true, true, WVPortableVariableKind::diagnostic, WVPortableNaturalRank::horizontal, 2, 2, -1, {"", ""}, 0},
+        {WVPortableVariable::ssh_w, 53, "ssh_w", {{"x", "y", ""}}, 2, "m", "sea-surface height, internal gravity wave component", false, true, true, true, WVPortableVariableKind::diagnostic, WVPortableNaturalRank::horizontal, 2, 2, -1, {"", ""}, 0},
+        {WVPortableVariable::ssu_g, 54, "ssu_g", {{"x", "y", ""}}, 2, "m s-1", "x-component of the fluid velocity at the surface, geostrophic component", false, true, true, true, WVPortableVariableKind::diagnostic, WVPortableNaturalRank::horizontal, 2, 1, -1, {"", ""}, 0},
+        {WVPortableVariable::ssu_io, 55, "ssu_io", {{"x", "y", ""}}, 2, "m s-1", "x-component of the fluid velocity at the surface, inertial oscillation component", false, true, true, true, WVPortableVariableKind::diagnostic, WVPortableNaturalRank::horizontal, 2, 1, -1, {"", ""}, 0},
+        {WVPortableVariable::ssu_mda, 56, "ssu_mda", {{"x", "y", ""}}, 2, "m s-1", "x-component of the fluid velocity at the surface, mean density anomaly component", false, true, true, true, WVPortableVariableKind::diagnostic, WVPortableNaturalRank::horizontal, 2, 1, -1, {"", ""}, 0},
+        {WVPortableVariable::ssu_w, 57, "ssu_w", {{"x", "y", ""}}, 2, "m s-1", "x-component of the fluid velocity at the surface, internal gravity wave component", false, true, true, true, WVPortableVariableKind::diagnostic, WVPortableNaturalRank::horizontal, 2, 1, -1, {"", ""}, 0},
+        {WVPortableVariable::ssv_g, 58, "ssv_g", {{"x", "y", ""}}, 2, "m s-1", "y-component of the fluid velocity at the surface, geostrophic component", false, true, true, true, WVPortableVariableKind::diagnostic, WVPortableNaturalRank::horizontal, 2, 1, -1, {"", ""}, 0},
+        {WVPortableVariable::ssv_io, 59, "ssv_io", {{"x", "y", ""}}, 2, "m s-1", "y-component of the fluid velocity at the surface, inertial oscillation component", false, true, true, true, WVPortableVariableKind::diagnostic, WVPortableNaturalRank::horizontal, 2, 1, -1, {"", ""}, 0},
+        {WVPortableVariable::ssv_mda, 60, "ssv_mda", {{"x", "y", ""}}, 2, "m s-1", "y-component of the fluid velocity at the surface, mean density anomaly component", false, true, true, true, WVPortableVariableKind::diagnostic, WVPortableNaturalRank::horizontal, 2, 1, -1, {"", ""}, 0},
+        {WVPortableVariable::ssv_w, 61, "ssv_w", {{"x", "y", ""}}, 2, "m s-1", "y-component of the fluid velocity at the surface, internal gravity wave component", false, true, true, true, WVPortableVariableKind::diagnostic, WVPortableNaturalRank::horizontal, 2, 1, -1, {"", ""}, 0},
+        {WVPortableVariable::totalEnergy, 62, "totalEnergy", {{"", "", ""}}, 0, "m3 s-2", "horizontally-averaged depth-integrated energy computed spectrally from wave-vortex coefficients", false, false, true, true, WVPortableVariableKind::diagnostic, WVPortableNaturalRank::scalar, 2, 128, -1, {"", ""}, 0},
+        {WVPortableVariable::totalEnergySpatiallyIntegrated, 63, "totalEnergySpatiallyIntegrated", {{"", "", ""}}, 0, "m3 s-2", "horizontally-averaged depth-integrated energy computed in the spatial domain", false, false, true, true, WVPortableVariableKind::diagnostic, WVPortableNaturalRank::scalar, 2, 0, -1, {"", ""}, 0},
+        {WVPortableVariable::u_g, 64, "u_g", {{"x", "y", "z"}}, 3, "m s-1", "x-component of the fluid velocity, geostrophic component", false, true, true, true, WVPortableVariableKind::diagnostic, WVPortableNaturalRank::volume, 2, 1, -1, {"", ""}, 0},
+        {WVPortableVariable::u_io, 65, "u_io", {{"x", "y", "z"}}, 3, "m s-1", "x-component of the fluid velocity, inertial oscillation component", false, true, true, true, WVPortableVariableKind::diagnostic, WVPortableNaturalRank::volume, 2, 1, -1, {"", ""}, 0},
+        {WVPortableVariable::u_mda, 66, "u_mda", {{"x", "y", "z"}}, 3, "m s-1", "x-component of the fluid velocity, mean density anomaly component", false, true, true, true, WVPortableVariableKind::diagnostic, WVPortableNaturalRank::volume, 2, 1, -1, {"", ""}, 0},
+        {WVPortableVariable::u_w, 67, "u_w", {{"x", "y", "z"}}, 3, "m s-1", "x-component of the fluid velocity, internal gravity wave component", false, true, true, true, WVPortableVariableKind::diagnostic, WVPortableNaturalRank::volume, 2, 1, -1, {"", ""}, 0},
+        {WVPortableVariable::v_g, 68, "v_g", {{"x", "y", "z"}}, 3, "m s-1", "y-component of the fluid velocity, geostrophic component", false, true, true, true, WVPortableVariableKind::diagnostic, WVPortableNaturalRank::volume, 2, 1, -1, {"", ""}, 0},
+        {WVPortableVariable::v_io, 69, "v_io", {{"x", "y", "z"}}, 3, "m s-1", "y-component of the fluid velocity, inertial oscillation component", false, true, true, true, WVPortableVariableKind::diagnostic, WVPortableNaturalRank::volume, 2, 1, -1, {"", ""}, 0},
+        {WVPortableVariable::v_mda, 70, "v_mda", {{"x", "y", "z"}}, 3, "m s-1", "y-component of the fluid velocity, mean density anomaly component", false, true, true, true, WVPortableVariableKind::diagnostic, WVPortableNaturalRank::volume, 2, 1, -1, {"", ""}, 0},
+        {WVPortableVariable::v_w, 71, "v_w", {{"x", "y", "z"}}, 3, "m s-1", "y-component of the fluid velocity, internal gravity wave component", false, true, true, true, WVPortableVariableKind::diagnostic, WVPortableNaturalRank::volume, 2, 1, -1, {"", ""}, 0},
+        {WVPortableVariable::w_g, 72, "w_g", {{"x", "y", "z"}}, 3, "m s-1", "z-component of the fluid velocity, geostrophic component", false, true, true, true, WVPortableVariableKind::diagnostic, WVPortableNaturalRank::volume, 2, 1, -1, {"", ""}, 0},
+        {WVPortableVariable::w_io, 73, "w_io", {{"x", "y", "z"}}, 3, "m s-1", "z-component of the fluid velocity, inertial oscillation component", false, true, true, true, WVPortableVariableKind::diagnostic, WVPortableNaturalRank::volume, 2, 1, -1, {"", ""}, 0},
+        {WVPortableVariable::w_mda, 74, "w_mda", {{"x", "y", "z"}}, 3, "m s-1", "z-component of the fluid velocity, mean density anomaly component", false, true, true, true, WVPortableVariableKind::diagnostic, WVPortableNaturalRank::volume, 2, 1, -1, {"", ""}, 0},
+        {WVPortableVariable::w_w, 75, "w_w", {{"x", "y", "z"}}, 3, "m s-1", "z-component of the fluid velocity, internal gravity wave component", false, true, true, true, WVPortableVariableKind::diagnostic, WVPortableNaturalRank::volume, 2, 1, -1, {"", ""}, 0}
     }};
 
 inline constexpr const WVPortableVariableMetadata *
@@ -113,6 +219,12 @@ findPortableVariable(std::string_view name) noexcept {
     if (name == variable.name)
       return &variable;
   return nullptr;
+}
+
+inline constexpr const WVPortableVariableMetadata *
+findExecutablePortableVariable(std::string_view name) noexcept {
+  const auto *entry = findPortableVariable(name);
+  return entry && entry->kind != WVPortableVariableKind::diagnostic ? entry : nullptr;
 }
 
 inline constexpr std::size_t portableVariableCatalogBytes() noexcept {

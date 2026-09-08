@@ -676,7 +676,7 @@ WVKernelStatus WVFieldEvaluationService::createPlan(
       if (!identifiers.insert(request.identifier).second)
         return invalid("Field request identifiers must be unique: " +
                        request.identifier + ".");
-      const auto *metadata = findPortableVariable(request.fieldName);
+      const auto *metadata = findExecutablePortableVariable(request.fieldName);
       if (metadata == nullptr || metadata->kind != WVPortableVariableKind::field)
         return invalid("Unknown or unsupported field: " + request.fieldName + ".");
       const auto fieldIndex = static_cast<std::size_t>(metadata->ordinal);
@@ -1523,7 +1523,7 @@ WVKernelStatus WVFieldEvaluationService::createEventPlan(
       if (request.interpolation != WVPositionInterpolation::linear &&
           request.interpolation != WVPositionInterpolation::spline)
         return invalid("Event-field interpolation method is invalid.");
-      const auto *metadata = findPortableVariable(request.fieldName);
+      const auto *metadata = findExecutablePortableVariable(request.fieldName);
       if (metadata == nullptr ||
           metadata->kind != WVPortableVariableKind::field ||
           (metadata->samplingMask & portablePositionSampling) == 0)
@@ -1954,7 +1954,7 @@ WVKernelStatus WVFieldEvaluationService::createMovingPlan(
       if (request.interpolation != WVPositionInterpolation::linear &&
           request.interpolation != WVPositionInterpolation::spline)
         return invalid("Moving-field interpolation method is invalid.");
-      const auto *metadata = findPortableVariable(request.fieldName);
+      const auto *metadata = findExecutablePortableVariable(request.fieldName);
       if (metadata == nullptr ||
           metadata->kind != WVPortableVariableKind::field ||
           metadata->movingPrimitiveChannel < 0 ||

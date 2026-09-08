@@ -965,7 +965,7 @@ WVKernelStatus WVStratifiedFieldEvaluationAdapter::createEventPlan(
            requests[index].interpolation, index});
       candidate.outputs_.push_back(
           {requests[index].identifier, requests[index].fieldName,
-           findPortableVariable(requests[index].fieldName)->identifier, surface(field)?WVPortableNaturalRank::horizontal:WVPortableNaturalRank::volume, 0,
+           findExecutablePortableVariable(requests[index].fieldName)->identifier, surface(field)?WVPortableNaturalRank::horizontal:WVPortableNaturalRank::volume, 0,
            requests[index].positionSetSlot, requests[index].interpolation});
     }
     candidate.positionSetCount_ = implementation->positionSetCount;

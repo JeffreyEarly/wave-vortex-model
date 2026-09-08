@@ -205,6 +205,9 @@ void verifyPlanValidation() {
   status = service->createPlan({{"bad", "not_a_field", {}}}, plan);
   require(status.code == WVKernelStatusCode::invalidConfiguration,
           "unknown field was accepted");
+  status = service->createPlan({{"pending", "w_w", {}}}, plan);
+  require(status.code == WVKernelStatusCode::invalidConfiguration,
+          "catalog-only diagnostic was admitted to the legacy field mask");
   status = service->createPlan({full("u"), {"full_u", "v", {}}}, plan);
   require(status.code == WVKernelStatusCode::invalidConfiguration,
           "duplicate identifier was accepted");
