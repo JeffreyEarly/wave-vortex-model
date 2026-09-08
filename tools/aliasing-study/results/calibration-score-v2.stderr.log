@@ -4,5 +4,5 @@ At least one test failed in the test session.
 Error in matlab.unittest.internal.BaseTestResult/assertSuccess (line 126)
              assert(~any([resultArray.Failed]),message('MATLAB:unittest:TestResult:UnsuccessfulRun'));
              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-} 
+}
 BLAS: unloading libraries

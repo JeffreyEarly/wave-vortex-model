@@ -1,4 +1,4 @@
-[Warning: Directory access failure: /Users/jearly/Documents/MATLAB] 
+[Warning: Directory access failure: /Users/jearly/Documents/MATLAB]
 TestSourceProjection.m PROP line 15: There is a property named 'data'. Did you mean to reference it?
 TestSourceProjection.m PROP line 17: There is a property named 'data'. Did you mean to reference it?
 TestSourceProjection.m PROP line 19: There is a property named 'data'. Did you mean to reference it?

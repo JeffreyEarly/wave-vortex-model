@@ -28,3 +28,4 @@
 - Code Analyzer completed for the source/scoring batch. No correctness findings; three logical-indexing performance suggestions are retained. Test-property shadowing suggestions were addressed separately.
 - Policy selection and zero count margin are frozen in `policy-freeze.json` before accessing withheld nonlinear results. Withheld validation and the larger sparse/independent sample remain pending.
 - Full per-product MAT files are preserved locally and checksummed in `results/mat-artifact-manifest.json`. Large MAT files are not Git fixtures; reproducible source plus machine-readable CSV/JSON result tables are versioned. The original tracked scalar-pilot MAT remains unchanged.
+- Raw MATLAB table output contained trailing padding flagged by the whitespace check. Exact logs are preserved as gzip files under `results/raw-logs`; readable `.log` copies remove only trailing spaces/tabs/CR. No scientific results or source calculations changed.

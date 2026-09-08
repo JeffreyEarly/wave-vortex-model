@@ -1,6 +1,6 @@
-[Warning: Directory access failure: /Users/jearly/Documents/MATLAB] 
-[Warning: Directory access failure: /Users/jearly/Documents/MATLAB] 
-[> In restoredefaultpath (line 81)] 
+[Warning: Directory access failure: /Users/jearly/Documents/MATLAB]
+[Warning: Directory access failure: /Users/jearly/Documents/MATLAB]
+[> In restoredefaultpath (line 81)]
 BLAS: trying environment BLAS_VERSION...
 BLAS: loading libmwAF_BLAS_ilp64.dylib
 BLAS: loaded libmwAF_BLAS_ilp64.dylib@0x92e1f8b0
@@ -20,15 +20,15 @@ Source survey: 790592 nonzero products in 26.41 s; reference 6.28e-13; eigen/der
       policy      tolerance     status     largestDenseCount    largestSampledCount    falseAcceptance    retainedCountLoss    worstMissedError
     __________    _________    ________    _________________    ___________________    _______________    _________________    ________________
 
-    "linear"         0.1       "scored"            3                     3                  false                 0                1.13e-06    
-    "fixed"          0.1       "scored"            3                     3                  false                 0                1.13e-06    
-    "targeted"       0.1       "scored"            3                     3                  false                 0                1.13e-06    
-    "linear"        0.03       "scored"            3                     3                  false                 0                1.13e-06    
-    "fixed"         0.03       "scored"            3                     3                  false                 0                1.13e-06    
-    "targeted"      0.03       "scored"            3                     3                  false                 0                1.13e-06    
-    "linear"        0.01       "scored"            3                     3                  false                 0                1.13e-06    
-    "fixed"         0.01       "scored"            3                     3                  false                 0                1.13e-06    
-    "targeted"      0.01       "scored"            3                     3                  false                 0                1.13e-06    
+    "linear"         0.1       "scored"            3                     3                  false                 0                1.13e-06
+    "fixed"          0.1       "scored"            3                     3                  false                 0                1.13e-06
+    "targeted"       0.1       "scored"            3                     3                  false                 0                1.13e-06
+    "linear"        0.03       "scored"            3                     3                  false                 0                1.13e-06
+    "fixed"         0.03       "scored"            3                     3                  false                 0                1.13e-06
+    "targeted"      0.03       "scored"            3                     3                  false                 0                1.13e-06
+    "linear"        0.01       "scored"            3                     3                  false                 0                1.13e-06
+    "fixed"         0.01       "scored"            3                     3                  false                 0                1.13e-06
+    "targeted"      0.01       "scored"            3                     3                  false                 0                1.13e-06
 
 Source construction 1.86 s; 224 vector interactions.
 Source interactions 20/224; 248216 nonzero products; 8.9 s.
@@ -46,15 +46,15 @@ Source survey: 2799744 nonzero products in 97.42 s; reference 1e-12; eigen/deriv
       policy      tolerance     status     largestDenseCount    largestSampledCount    falseAcceptance    retainedCountLoss    worstMissedError
     __________    _________    ________    _________________    ___________________    _______________    _________________    ________________
 
-    "linear"         0.1       "scored"            8                     8                  false                 0               9.5923e-06   
-    "fixed"          0.1       "scored"            8                     8                  false                 0               9.5923e-06   
-    "targeted"       0.1       "scored"            8                     8                  false                 0               9.5923e-06   
-    "linear"        0.03       "scored"            8                     8                  false                 0               9.5923e-06   
-    "fixed"         0.03       "scored"            8                     8                  false                 0               9.5923e-06   
-    "targeted"      0.03       "scored"            8                     8                  false                 0               9.5923e-06   
-    "linear"        0.01       "scored"            8                     8                  false                 0               9.5923e-06   
-    "fixed"         0.01       "scored"            8                     8                  false                 0               9.5923e-06   
-    "targeted"      0.01       "scored"            8                     8                  false                 0               9.5923e-06   
+    "linear"         0.1       "scored"            8                     8                  false                 0               9.5923e-06
+    "fixed"          0.1       "scored"            8                     8                  false                 0               9.5923e-06
+    "targeted"       0.1       "scored"            8                     8                  false                 0               9.5923e-06
+    "linear"        0.03       "scored"            8                     8                  false                 0               9.5923e-06
+    "fixed"         0.03       "scored"            8                     8                  false                 0               9.5923e-06
+    "targeted"      0.03       "scored"            8                     8                  false                 0               9.5923e-06
+    "linear"        0.01       "scored"            8                     8                  false                 0               9.5923e-06
+    "fixed"         0.01       "scored"            8                     8                  false                 0               9.5923e-06
+    "targeted"      0.01       "scored"            8                     8                  false                 0               9.5923e-06
 
 Source construction 1.32 s; 224 vector interactions.
 Source interactions 20/224; 76656 nonzero products; 2.4 s.
@@ -72,15 +72,15 @@ Source survey: 865856 nonzero products in 26.89 s; reference 2.53e-14; eigen/der
       policy      tolerance     status     largestDenseCount    largestSampledCount    falseAcceptance    retainedCountLoss    worstMissedError
     __________    _________    ________    _________________    ___________________    _______________    _________________    ________________
 
-    "linear"         0.1       "scored"            3                     3                  false                 0               3.4086e-06   
-    "fixed"          0.1       "scored"            3                     3                  false                 0               3.4086e-06   
-    "targeted"       0.1       "scored"            3                     3                  false                 0               3.4086e-06   
-    "linear"        0.03       "scored"            3                     3                  false                 0               3.4086e-06   
-    "fixed"         0.03       "scored"            3                     3                  false                 0               3.4086e-06   
-    "targeted"      0.03       "scored"            3                     3                  false                 0               3.4086e-06   
-    "linear"        0.01       "scored"            3                     3                  false                 0               3.4086e-06   
-    "fixed"         0.01       "scored"            3                     3                  false                 0               3.4086e-06   
-    "targeted"      0.01       "scored"            3                     3                  false                 0               3.4086e-06   
+    "linear"         0.1       "scored"            3                     3                  false                 0               3.4086e-06
+    "fixed"          0.1       "scored"            3                     3                  false                 0               3.4086e-06
+    "targeted"       0.1       "scored"            3                     3                  false                 0               3.4086e-06
+    "linear"        0.03       "scored"            3                     3                  false                 0               3.4086e-06
+    "fixed"         0.03       "scored"            3                     3                  false                 0               3.4086e-06
+    "targeted"      0.03       "scored"            3                     3                  false                 0               3.4086e-06
+    "linear"        0.01       "scored"            3                     3                  false                 0               3.4086e-06
+    "fixed"         0.01       "scored"            3                     3                  false                 0               3.4086e-06
+    "targeted"      0.01       "scored"            3                     3                  false                 0               3.4086e-06
 
 Source construction 1.51 s; 224 vector interactions.
 Source interactions 20/224; 272536 nonzero products; 9.0 s.
@@ -98,13 +98,13 @@ Source survey: 3072128 nonzero products in 101.02 s; reference 5.27e-14; eigen/d
       policy      tolerance     status     largestDenseCount    largestSampledCount    falseAcceptance    retainedCountLoss    worstMissedError
     __________    _________    ________    _________________    ___________________    _______________    _________________    ________________
 
-    "linear"         0.1       "scored"            8                     8                  false                 0               9.6053e-06   
-    "fixed"          0.1       "scored"            8                     8                  false                 0               9.6053e-06   
-    "targeted"       0.1       "scored"            8                     8                  false                 0               9.6053e-06   
-    "linear"        0.03       "scored"            8                     8                  false                 0               9.6053e-06   
-    "fixed"         0.03       "scored"            8                     8                  false                 0               9.6053e-06   
-    "targeted"      0.03       "scored"            8                     8                  false                 0               9.6053e-06   
-    "linear"        0.01       "scored"            8                     8                  false                 0               9.6053e-06   
-    "fixed"         0.01       "scored"            8                     8                  false                 0               9.6053e-06   
-    "targeted"      0.01       "scored"            8                     8                  false                 0               9.6053e-06   
+    "linear"         0.1       "scored"            8                     8                  false                 0               9.6053e-06
+    "fixed"          0.1       "scored"            8                     8                  false                 0               9.6053e-06
+    "targeted"       0.1       "scored"            8                     8                  false                 0               9.6053e-06
+    "linear"        0.03       "scored"            8                     8                  false                 0               9.6053e-06
+    "fixed"         0.03       "scored"            8                     8                  false                 0               9.6053e-06
+    "targeted"      0.03       "scored"            8                     8                  false                 0               9.6053e-06
+    "linear"        0.01       "scored"            8                     8                  false                 0               9.6053e-06
+    "fixed"         0.01       "scored"            8                     8                  false                 0               9.6053e-06
+    "targeted"      0.01       "scored"            8                     8                  false                 0               9.6053e-06
 
