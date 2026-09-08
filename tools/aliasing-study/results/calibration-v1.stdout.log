@@ -1,0 +1,110 @@
+[Warning: Directory access failure: /Users/jearly/Documents/MATLAB] 
+[Warning: Directory access failure: /Users/jearly/Documents/MATLAB] 
+[> In restoredefaultpath (line 81)] 
+BLAS: trying environment BLAS_VERSION...
+BLAS: loading libmwAF_BLAS_ilp64.dylib
+BLAS: loaded libmwAF_BLAS_ilp64.dylib@0x92e1f8b0
+Source construction 3.31 s; 224 vector interactions.
+Source interactions 20/224; 69936 nonzero products; 2.9 s.
+Source interactions 40/224; 144176 nonzero products; 5.3 s.
+Source interactions 60/224; 211232 nonzero products; 7.6 s.
+Source interactions 80/224; 286384 nonzero products; 10.0 s.
+Source interactions 100/224; 355584 nonzero products; 12.3 s.
+Source interactions 120/224; 421600 nonzero products; 14.5 s.
+Source interactions 140/224; 490640 nonzero products; 16.8 s.
+Source interactions 160/224; 564512 nonzero products; 19.1 s.
+Source interactions 180/224; 633728 nonzero products; 21.3 s.
+Source interactions 200/224; 706160 nonzero products; 23.7 s.
+Source interactions 220/224; 777904 nonzero products; 25.9 s.
+Source survey: 790592 nonzero products in 26.41 s; reference 6.28e-13; eigen/derivatives 3.46e-08.
+      policy      tolerance     status     largestDenseCount    largestSampledCount    falseAcceptance    retainedCountLoss    worstMissedError
+    __________    _________    ________    _________________    ___________________    _______________    _________________    ________________
+
+    "linear"         0.1       "scored"            3                     3                  false                 0                1.13e-06    
+    "fixed"          0.1       "scored"            3                     3                  false                 0                1.13e-06    
+    "targeted"       0.1       "scored"            3                     3                  false                 0                1.13e-06    
+    "linear"        0.03       "scored"            3                     3                  false                 0                1.13e-06    
+    "fixed"         0.03       "scored"            3                     3                  false                 0                1.13e-06    
+    "targeted"      0.03       "scored"            3                     3                  false                 0                1.13e-06    
+    "linear"        0.01       "scored"            3                     3                  false                 0                1.13e-06    
+    "fixed"         0.01       "scored"            3                     3                  false                 0                1.13e-06    
+    "targeted"      0.01       "scored"            3                     3                  false                 0                1.13e-06    
+
+Source construction 1.86 s; 224 vector interactions.
+Source interactions 20/224; 248216 nonzero products; 8.9 s.
+Source interactions 40/224; 507512 nonzero products; 17.6 s.
+Source interactions 60/224; 745576 nonzero products; 26.1 s.
+Source interactions 80/224; 1010112 nonzero products; 35.2 s.
+Source interactions 100/224; 1256672 nonzero products; 43.7 s.
+Source interactions 120/224; 1494656 nonzero products; 52.2 s.
+Source interactions 140/224; 1742208 nonzero products; 60.9 s.
+Source interactions 160/224; 2000676 nonzero products; 69.7 s.
+Source interactions 180/224; 2247256 nonzero products; 78.3 s.
+Source interactions 200/224; 2500648 nonzero products; 87.0 s.
+Source interactions 220/224; 2754768 nonzero products; 95.6 s.
+Source survey: 2799744 nonzero products in 97.42 s; reference 1e-12; eigen/derivatives 3.46e-08.
+      policy      tolerance     status     largestDenseCount    largestSampledCount    falseAcceptance    retainedCountLoss    worstMissedError
+    __________    _________    ________    _________________    ___________________    _______________    _________________    ________________
+
+    "linear"         0.1       "scored"            8                     8                  false                 0               9.5923e-06   
+    "fixed"          0.1       "scored"            8                     8                  false                 0               9.5923e-06   
+    "targeted"       0.1       "scored"            8                     8                  false                 0               9.5923e-06   
+    "linear"        0.03       "scored"            8                     8                  false                 0               9.5923e-06   
+    "fixed"         0.03       "scored"            8                     8                  false                 0               9.5923e-06   
+    "targeted"      0.03       "scored"            8                     8                  false                 0               9.5923e-06   
+    "linear"        0.01       "scored"            8                     8                  false                 0               9.5923e-06   
+    "fixed"         0.01       "scored"            8                     8                  false                 0               9.5923e-06   
+    "targeted"      0.01       "scored"            8                     8                  false                 0               9.5923e-06   
+
+Source construction 1.32 s; 224 vector interactions.
+Source interactions 20/224; 76656 nonzero products; 2.4 s.
+Source interactions 40/224; 157616 nonzero products; 4.8 s.
+Source interactions 60/224; 231392 nonzero products; 7.2 s.
+Source interactions 80/224; 313264 nonzero products; 9.6 s.
+Source interactions 100/224; 389184 nonzero products; 12.0 s.
+Source interactions 120/224; 461920 nonzero products; 14.3 s.
+Source interactions 140/224; 537680 nonzero products; 16.7 s.
+Source interactions 160/224; 618272 nonzero products; 19.1 s.
+Source interactions 180/224; 694208 nonzero products; 21.5 s.
+Source interactions 200/224; 773360 nonzero products; 24.0 s.
+Source interactions 220/224; 851824 nonzero products; 26.4 s.
+Source survey: 865856 nonzero products in 26.89 s; reference 2.53e-14; eigen/derivatives 6.96e-08.
+      policy      tolerance     status     largestDenseCount    largestSampledCount    falseAcceptance    retainedCountLoss    worstMissedError
+    __________    _________    ________    _________________    ___________________    _______________    _________________    ________________
+
+    "linear"         0.1       "scored"            3                     3                  false                 0               3.4086e-06   
+    "fixed"          0.1       "scored"            3                     3                  false                 0               3.4086e-06   
+    "targeted"       0.1       "scored"            3                     3                  false                 0               3.4086e-06   
+    "linear"        0.03       "scored"            3                     3                  false                 0               3.4086e-06   
+    "fixed"         0.03       "scored"            3                     3                  false                 0               3.4086e-06   
+    "targeted"      0.03       "scored"            3                     3                  false                 0               3.4086e-06   
+    "linear"        0.01       "scored"            3                     3                  false                 0               3.4086e-06   
+    "fixed"         0.01       "scored"            3                     3                  false                 0               3.4086e-06   
+    "targeted"      0.01       "scored"            3                     3                  false                 0               3.4086e-06   
+
+Source construction 1.51 s; 224 vector interactions.
+Source interactions 20/224; 272536 nonzero products; 9.0 s.
+Source interactions 40/224; 556152 nonzero products; 18.0 s.
+Source interactions 60/224; 818536 nonzero products; 26.9 s.
+Source interactions 80/224; 1107392 nonzero products; 36.3 s.
+Source interactions 100/224; 1378272 nonzero products; 45.2 s.
+Source interactions 120/224; 1640576 nonzero products; 53.9 s.
+Source interactions 140/224; 1912448 nonzero products; 63.0 s.
+Source interactions 160/224; 2195236 nonzero products; 72.1 s.
+Source interactions 180/224; 2466136 nonzero products; 81.0 s.
+Source interactions 200/224; 2743848 nonzero products; 90.1 s.
+Source interactions 220/224; 3022288 nonzero products; 99.1 s.
+Source survey: 3072128 nonzero products in 101.02 s; reference 5.27e-14; eigen/derivatives 6.96e-08.
+      policy      tolerance     status     largestDenseCount    largestSampledCount    falseAcceptance    retainedCountLoss    worstMissedError
+    __________    _________    ________    _________________    ___________________    _______________    _________________    ________________
+
+    "linear"         0.1       "scored"            8                     8                  false                 0               9.6053e-06   
+    "fixed"          0.1       "scored"            8                     8                  false                 0               9.6053e-06   
+    "targeted"       0.1       "scored"            8                     8                  false                 0               9.6053e-06   
+    "linear"        0.03       "scored"            8                     8                  false                 0               9.6053e-06   
+    "fixed"         0.03       "scored"            8                     8                  false                 0               9.6053e-06   
+    "targeted"      0.03       "scored"            8                     8                  false                 0               9.6053e-06   
+    "linear"        0.01       "scored"            8                     8                  false                 0               9.6053e-06   
+    "fixed"         0.01       "scored"            8                     8                  false                 0               9.6053e-06   
+    "targeted"      0.01       "scored"            8                     8                  false                 0               9.6053e-06   
+

@@ -1,0 +1,18 @@
+{
+  "status": "case inventory frozen before calibration scoring",
+  "frozenOn": "2026-09-08",
+  "base": {"Lz":1000,"f":0.0001,"g":9.81,"evpOrders":[128,192],"referenceOrders":[257,513],"referenceAllowance":0.0001,"eigenAllowance":0.000001,"gramTolerance":0.0000001},
+  "calibration": [
+    {"id":"cal-constant-17","profile":"constant","Lxy":[100000,100000],"Nxy":[8,8],"Nz":17,"waveCount":8,"apvCount":3,"mdaCount":3,"inertialCount":3},
+    {"id":"cal-constant-33","profile":"constant","Lxy":[100000,100000],"Nxy":[8,8],"Nz":33,"waveCount":16,"apvCount":4,"mdaCount":3,"inertialCount":6},
+    {"id":"cal-exponential-17","profile":"exponential","Lxy":[100000,100000],"Nxy":[8,8],"Nz":17,"waveCount":8,"apvCount":3,"mdaCount":3,"inertialCount":3},
+    {"id":"cal-exponential-33","profile":"exponential","Lxy":[100000,100000],"Nxy":[8,8],"Nz":33,"waveCount":16,"apvCount":4,"mdaCount":3,"inertialCount":6}
+  ],
+  "withheld": [
+    {"id":"withheld-exponential-25","profile":"exponential-withheld","Lxy":[140000,100000],"Nxy":[8,8],"Nz":25,"waveCount":12,"apvCount":3,"mdaCount":3,"inertialCount":4},
+    {"id":"withheld-exponential-49","profile":"exponential-withheld","Lxy":[140000,100000],"Nxy":[8,8],"Nz":49,"waveCount":16,"apvCount":4,"mdaCount":3,"inertialCount":6},
+    {"id":"withheld-pycnocline-33","profile":"pycnocline","Lxy":[140000,100000],"Nxy":[8,8],"Nz":33,"waveCount":16,"apvCount":3,"mdaCount":3,"inertialCount":4},
+    {"id":"withheld-pycnocline-65","profile":"pycnocline","Lxy":[140000,100000],"Nxy":[12,8],"Nz":65,"waveCount":16,"apvCount":4,"mdaCount":3,"inertialCount":6}
+  ],
+  "larger": {"id":"larger-exponential-97","profile":"exponential","Lxy":[400000,400000],"Nxy":[32,32],"Nz":97,"waveCount":24,"apvCount":6,"mdaCount":4,"inertialCount":8,"independentSampleSeed":400,"independentSampleCount":64}
+}

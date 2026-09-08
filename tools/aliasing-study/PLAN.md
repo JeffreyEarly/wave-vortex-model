@@ -1,6 +1,6 @@
 # Issue 400: sparse quadratic-product assessment
 
-Status: pilot development; the case matrix and policies are not yet frozen.
+Status: historical pre-pilot plan. The current case inventory and final pre-withheld policy freeze are recorded in `case-inventory.json` and `policy-freeze.json`.
 
 ## Provenance and scope
 

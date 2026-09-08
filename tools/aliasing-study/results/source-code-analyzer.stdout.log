@@ -1,0 +1,23 @@
+[Warning: Directory access failure: /Users/jearly/Documents/MATLAB] 
+TestSourceProjection.m PROP line 15: There is a property named 'data'. Did you mean to reference it?
+TestSourceProjection.m PROP line 17: There is a property named 'data'. Did you mean to reference it?
+TestSourceProjection.m PROP line 19: There is a property named 'data'. Did you mean to reference it?
+TestSourceProjection.m PROP line 21: There is a property named 'data'. Did you mean to reference it?
+TestSourceProjection.m PROP line 21: There is a property named 'data'. Did you mean to reference it?
+TestSourceProjection.m PROP line 30: There is a property named 'data'. Did you mean to reference it?
+TestSourceProjection.m PROP line 31: There is a property named 'data'. Did you mean to reference it?
+TestSourceProjection.m PROP line 34: There is a property named 'data'. Did you mean to reference it?
+TestSourceProjection.m PROP line 36: There is a property named 'data'. Did you mean to reference it?
+TestSourceProjection.m PROP line 36: There is a property named 'data'. Did you mean to reference it?
+TestSourceProjection.m PROP line 45: There is a property named 'data'. Did you mean to reference it?
+TestSourceProjection.m PROP line 45: There is a property named 'data'. Did you mean to reference it?
+TestSourceProjection.m PROP line 46: There is a property named 'data'. Did you mean to reference it?
+TestSourceProjection.m PROP line 46: There is a property named 'data'. Did you mean to reference it?
+TestSourceProjection.m PROP line 47: There is a property named 'data'. Did you mean to reference it?
+TestSourceProjection.m PROP line 47: There is a property named 'data'. Did you mean to reference it?
+TestSourceProjection.m PROP line 47: There is a property named 'data'. Did you mean to reference it?
+TestSourceProjection.m PROP line 47: There is a property named 'data'. Did you mean to reference it?
+TestSourceProjection.m PROP line 51: There is a property named 'data'. Did you mean to reference it?
+prepareSourceStudy.m FNDSB line 60: For array or cell array, performance can be improved using logical indexing instead of 'find'.
+runSourceSurvey.m FNDSB line 51: For array or cell array, performance can be improved using logical indexing instead of 'find'.
+runSourceSurvey.m FNDSB line 51: For array or cell array, performance can be improved using logical indexing instead of 'find'.

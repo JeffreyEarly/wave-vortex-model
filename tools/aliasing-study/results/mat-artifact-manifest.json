@@ -1,0 +1,104 @@
+[
+  {
+    "path": "results/calibration-v1/cal-constant-17/products.mat",
+    "bytes": 10505239,
+    "sha256": "e2f4df36ec38885ee8dcfc8463dcfcb976115d03bf30fbf3f28dac0968b7eed1",
+    "storage": "preserved local MAT file; CSV/JSON results and reproduction code versioned"
+  },
+  {
+    "path": "results/calibration-v1/cal-constant-17-scores/scores.mat",
+    "bytes": 2878,
+    "sha256": "57c9154ef2242708a0c4c5ce8eba85c58942181b9f53c151043b5cd4e7a374d3",
+    "storage": "preserved local MAT file; CSV/JSON results and reproduction code versioned"
+  },
+  {
+    "path": "results/calibration-v1/cal-constant-17-scores-v2/scores.mat",
+    "bytes": 2933,
+    "sha256": "040519320441bdf20b90b7d908bf56eb55b231fde8261483caad96a2f104142f",
+    "storage": "preserved local MAT file; CSV/JSON results and reproduction code versioned"
+  },
+  {
+    "path": "results/calibration-v1/cal-constant-33/products.mat",
+    "bytes": 58296171,
+    "sha256": "bc539a07d62de7bf70148b584a553971a4b557e079935554a6b630ea7a6570f0",
+    "storage": "preserved local MAT file; CSV/JSON results and reproduction code versioned"
+  },
+  {
+    "path": "results/calibration-v1/cal-constant-33-scores/scores.mat",
+    "bytes": 3245,
+    "sha256": "316e193c32bfe8c1045a675977477677e9c001eea3ffcc4ebb8832461aaa294e",
+    "storage": "preserved local MAT file; CSV/JSON results and reproduction code versioned"
+  },
+  {
+    "path": "results/calibration-v1/cal-constant-33-scores-v2/scores.mat",
+    "bytes": 3414,
+    "sha256": "adcb1ccf41dc0fc4d4b732975abe3c0cea49ea387779b0dc020c8e6a123da5c6",
+    "storage": "preserved local MAT file; CSV/JSON results and reproduction code versioned"
+  },
+  {
+    "path": "results/calibration-v1/cal-exponential-17/products.mat",
+    "bytes": 11822748,
+    "sha256": "964b55ab7e033ac7e7817aaea3dd2d9470838d88e91a835bd8afa07cff5d0259",
+    "storage": "preserved local MAT file; CSV/JSON results and reproduction code versioned"
+  },
+  {
+    "path": "results/calibration-v1/cal-exponential-17-scores/scores.mat",
+    "bytes": 2915,
+    "sha256": "1ff989ee05da36da809e298e1b5b37ec1d1b61e0075b019145e97992dba6e497",
+    "storage": "preserved local MAT file; CSV/JSON results and reproduction code versioned"
+  },
+  {
+    "path": "results/calibration-v1/cal-exponential-17-scores-v2/scores.mat",
+    "bytes": 2971,
+    "sha256": "a47a1a748dd7abc395741e77fea1b533ed2aca561a65dbdee5ef01df60dcf051",
+    "storage": "preserved local MAT file; CSV/JSON results and reproduction code versioned"
+  },
+  {
+    "path": "results/calibration-v1/cal-exponential-33/products.mat",
+    "bytes": 71601574,
+    "sha256": "fd8e2ecca1d693794b4775840ef470b53fd69b60cab8a1fcd0afa1e949402a49",
+    "storage": "preserved local MAT file; CSV/JSON results and reproduction code versioned"
+  },
+  {
+    "path": "results/calibration-v1/cal-exponential-33-scores/scores.mat",
+    "bytes": 3326,
+    "sha256": "4fb361fe732b6b932ed7c14cd5ac5baae336c15f54fc6b4e48d3e701d8b2fa58",
+    "storage": "preserved local MAT file; CSV/JSON results and reproduction code versioned"
+  },
+  {
+    "path": "results/calibration-v1/cal-exponential-33-scores-v2/scores.mat",
+    "bytes": 3470,
+    "sha256": "ca2f5297087329a9fe437896187bc75898baceb47d2c443b4ad990453f9e22ac",
+    "storage": "preserved local MAT file; CSV/JSON results and reproduction code versioned"
+  },
+  {
+    "path": "results/pilot-01/pilot-products.mat",
+    "bytes": 1090122,
+    "sha256": "f2f835a7eab801f753de05805e8fba6e689626c7fe62a47f7a32c37923d334cf",
+    "storage": "preserved local MAT file; CSV/JSON results and reproduction code versioned"
+  },
+  {
+    "path": "results/source-pilot-02/products.mat",
+    "bytes": 225105036,
+    "sha256": "5ad14e0ca9f17743b8397886e6a02980e51c5b2e31b34c10ddc3323839d6cb8b",
+    "storage": "preserved local MAT file; CSV/JSON results and reproduction code versioned"
+  },
+  {
+    "path": "results/source-pilot-03/products.mat",
+    "bytes": 99008,
+    "sha256": "bd3e8bba25e79a4041b0e6b4fb9ad6a4c53242d59cdf34242db622ef3cfa84c6",
+    "storage": "preserved local MAT file; CSV/JSON results and reproduction code versioned"
+  },
+  {
+    "path": "results/source-pilot-04/products.mat",
+    "bytes": 10504732,
+    "sha256": "e83bd7dff288339e5cfdfe16c934a74734ee6b70da8085447a6b9f4ce3c35d50",
+    "storage": "preserved local MAT file; CSV/JSON results and reproduction code versioned"
+  },
+  {
+    "path": "results/source-pilot-05/products.mat",
+    "bytes": 10504765,
+    "sha256": "dea5f3f9d8ff59a28765de5a7c55da88b5444f74d85cd51ab6b0fd33fa3aecc2",
+    "storage": "preserved local MAT file; CSV/JSON results and reproduction code versioned"
+  }
+]

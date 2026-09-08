@@ -1,0 +1,55 @@
+[Warning: Directory access failure: /Users/jearly/Documents/MATLAB] 
+[Warning: Directory access failure: /Users/jearly/Documents/MATLAB] 
+[> In restoredefaultpath (line 81)] 
+      policy      tolerance                 status                 largestDenseQuadraticCount    largestSampledQuadraticCount    falseAcceptance    retainedCountLoss
+    __________    _________    ________________________________    __________________________    ____________________________    _______________    _________________
+
+    "linear"         0.1       "diagnostic-linear-gate-ignored"                7                              8                       true                  0        
+    "fixed"          0.1       "diagnostic-linear-gate-ignored"                7                              7                       false                 0        
+    "targeted"       0.1       "diagnostic-linear-gate-ignored"                7                              7                       false                 0        
+    "linear"        0.03       "diagnostic-linear-gate-ignored"                6                              8                       true                  0        
+    "fixed"         0.03       "diagnostic-linear-gate-ignored"                6                              6                       false                 0        
+    "targeted"      0.03       "diagnostic-linear-gate-ignored"                6                              6                       false                 0        
+    "linear"        0.01       "diagnostic-linear-gate-ignored"                6                              8                       true                  0        
+    "fixed"         0.01       "diagnostic-linear-gate-ignored"                6                              6                       false                 0        
+    "targeted"      0.01       "diagnostic-linear-gate-ignored"                6                              6                       false                 0        
+
+      policy      tolerance                 status                 largestDenseQuadraticCount    largestSampledQuadraticCount    falseAcceptance    retainedCountLoss
+    __________    _________    ________________________________    __________________________    ____________________________    _______________    _________________
+
+    "linear"         0.1       "diagnostic-linear-gate-ignored"                14                             16                      true                  0        
+    "fixed"          0.1       "diagnostic-linear-gate-ignored"                14                             14                      false                 0        
+    "targeted"       0.1       "diagnostic-linear-gate-ignored"                14                             14                      false                 0        
+    "linear"        0.03       "diagnostic-linear-gate-ignored"                13                             16                      true                  0        
+    "fixed"         0.03       "diagnostic-linear-gate-ignored"                13                             13                      false                 0        
+    "targeted"      0.03       "diagnostic-linear-gate-ignored"                13                             13                      false                 0        
+    "linear"        0.01       "diagnostic-linear-gate-ignored"                12                             16                      true                  0        
+    "fixed"         0.01       "diagnostic-linear-gate-ignored"                12                             12                      false                 0        
+    "targeted"      0.01       "diagnostic-linear-gate-ignored"                12                             12                      false                 0        
+
+      policy      tolerance                 status                 largestDenseQuadraticCount    largestSampledQuadraticCount    falseAcceptance    retainedCountLoss
+    __________    _________    ________________________________    __________________________    ____________________________    _______________    _________________
+
+    "linear"         0.1       "diagnostic-linear-gate-ignored"                7                              8                       true                  0        
+    "fixed"          0.1       "diagnostic-linear-gate-ignored"                7                              7                       false                 0        
+    "targeted"       0.1       "diagnostic-linear-gate-ignored"                7                              7                       false                 0        
+    "linear"        0.03       "diagnostic-linear-gate-ignored"                6                              8                       true                  0        
+    "fixed"         0.03       "diagnostic-linear-gate-ignored"                6                              6                       false                 0        
+    "targeted"      0.03       "diagnostic-linear-gate-ignored"                6                              6                       false                 0        
+    "linear"        0.01       "diagnostic-linear-gate-ignored"                6                              8                       true                  0        
+    "fixed"         0.01       "diagnostic-linear-gate-ignored"                6                              6                       false                 0        
+    "targeted"      0.01       "diagnostic-linear-gate-ignored"                6                              6                       false                 0        
+
+      policy      tolerance                 status                 largestDenseQuadraticCount    largestSampledQuadraticCount    falseAcceptance    retainedCountLoss
+    __________    _________    ________________________________    __________________________    ____________________________    _______________    _________________
+
+    "linear"         0.1       "diagnostic-linear-gate-ignored"                14                             16                      true                  0        
+    "fixed"          0.1       "diagnostic-linear-gate-ignored"                14                             14                      false                 0        
+    "targeted"       0.1       "diagnostic-linear-gate-ignored"                14                             14                      false                 0        
+    "linear"        0.03       "diagnostic-linear-gate-ignored"                13                             16                      true                  0        
+    "fixed"         0.03       "diagnostic-linear-gate-ignored"                13                             13                      false                 0        
+    "targeted"      0.03       "diagnostic-linear-gate-ignored"                13                             13                      false                 0        
+    "linear"        0.01       "diagnostic-linear-gate-ignored"                12                             16                      true                  0        
+    "fixed"         0.01       "diagnostic-linear-gate-ignored"                12                             12                      false                 0        
+    "targeted"      0.01       "diagnostic-linear-gate-ignored"                12                             12                      false                 0        
+

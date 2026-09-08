@@ -25,8 +25,18 @@ Pilot channels are F*G->G, G*dG->G, G*dF->F, F*F->F, and G*G->F. Nonzero G targe
 
 ## Next work
 
-1. Complete the physical source-channel inventory and independent derivative convergence, then measure pilot peak memory and freeze the bounded case matrix.
-2. Implement and calibrate the three policies with independent coefficient-family counts, freeze their budgets and any margin, then evaluate withheld cases.
+1. Completed: physical source inventory, independent derivative/product references, pilot cost, and case/policy freeze.
+2. Calibration and policy freeze are complete. Evaluate the untouched withheld cases next.
 3. Perform the larger sparse/independent-sample cost check and produce comparison tables, recommendation, and API proposal.
 
 The full acceptance criteria remain in `PLAN.md` and GitHub issue 400. No issue closure or runtime adoption is warranted by this pilot.
+
+## Physical-source study checkpoint
+
+The physical source engine and four calibration cases are now complete. `SOURCE-PILOT.md` documents reference controls and the short-domain inconclusive finding. `case-inventory.json` fixes calibration, withheld, and larger cases. `POLICIES.md` specifies the three candidates, and `policy-freeze.json` records the final pre-withheld rule hashes and zero count margin.
+
+Both sparse selectors match all 12 calibration quadratic count decisions. The actual current Gram gate is more conservative: it retains 3 or 8 wave modes while the quadratic-only dense band contains 6–7 or 12–14 modes, depending on tolerance. Version-2 tables under `results/calibration-v1/*-scores-v2` report both effects. Withheld validation and actual sparse cost replays remain required before a recommendation.
+
+To run the declared splits, call `runStudyCases("calibration",freshOutputRoot)` or `runStudyCases("withheld",freshOutputRoot)` after `configureStudyPath`. Every completed survey is preserved; a missing scoring stage can resume from its existing saved errors. `runSourceSurvey` also supports `policy="fixed"` or `policy="targeted"` for actual sparse replays, and explicit interaction indices for an independent spot sample.
+
+Full per-product MAT files are preserved in this working copy and listed with SHA-256 checksums in `results/mat-artifact-manifest.json`. Large MAT files are intentionally excluded from Git fixtures; the CSV/JSON result tables, code, case inventory, and reproduction commands are versioned. A fresh checkout can recreate the MAT data by running the declared studies. Preserved inconclusive runs must not be used as validation scores.

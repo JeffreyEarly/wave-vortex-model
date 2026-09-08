@@ -1,0 +1,10 @@
+policy,tolerance,status,largestDenseCount,largestSampledCount,falseAcceptance,retainedCountLoss,worstMissedError,productEvaluations,candidatePlanEvaluations,densePlanEvaluations,limitingInteraction
+linear,0.1,scored,3,3,0,0,1.12996e-06,0,0,790592,"wave mode 1 sign 1 [-2,-1] x wave mode 1 sign 1 [1,1] -> wave [-1,0], w*dz(u)"
+fixed,0.1,scored,3,3,0,0,1.12996e-06,15168,43600,790592,"wave mode 1 sign 1 [-2,-1] x wave mode 1 sign 1 [1,1] -> wave [-1,0], w*dz(u)"
+targeted,0.1,scored,3,3,0,0,1.12996e-06,28608,82400,790592,"wave mode 1 sign 1 [-2,1] x wave mode 1 sign 1 [1,-1] -> wave [-1,0], w*dz(u)"
+linear,0.03,scored,3,3,0,0,1.12996e-06,0,0,790592,"wave mode 1 sign 1 [-2,-1] x wave mode 1 sign 1 [1,1] -> wave [-1,0], w*dz(u)"
+fixed,0.03,scored,3,3,0,0,1.12996e-06,15168,43600,790592,"wave mode 1 sign 1 [-2,-1] x wave mode 1 sign 1 [1,1] -> wave [-1,0], w*dz(u)"
+targeted,0.03,scored,3,3,0,0,1.12996e-06,28608,82400,790592,"wave mode 1 sign 1 [-2,1] x wave mode 1 sign 1 [1,-1] -> wave [-1,0], w*dz(u)"
+linear,0.01,scored,3,3,0,0,1.12996e-06,0,0,790592,"wave mode 1 sign 1 [-2,-1] x wave mode 1 sign 1 [1,1] -> wave [-1,0], w*dz(u)"
+fixed,0.01,scored,3,3,0,0,1.12996e-06,15168,43600,790592,"wave mode 1 sign 1 [-2,-1] x wave mode 1 sign 1 [1,1] -> wave [-1,0], w*dz(u)"
+targeted,0.01,scored,3,3,0,0,1.12996e-06,28608,82400,790592,"wave mode 1 sign 1 [-2,1] x wave mode 1 sign 1 [1,-1] -> wave [-1,0], w*dz(u)"

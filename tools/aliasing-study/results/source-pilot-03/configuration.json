@@ -1,0 +1,30 @@
+{
+  "profile": "constant",
+  "Lz": 1000,
+  "Lxy": [
+    10000,
+    10000
+  ],
+  "Nxy": [
+    8,
+    8
+  ],
+  "Nz": 17,
+  "f": 0.0001,
+  "g": 9.81,
+  "waveCount": 8,
+  "apvCount": 4,
+  "mdaCount": 3,
+  "inertialCount": 6,
+  "evpOrders": [
+    128,
+    192
+  ],
+  "referenceOrders": [
+    257,
+    513
+  ],
+  "referenceAllowance": 0.0001,
+  "eigenAllowance": 1E-6,
+  "gramTolerance": 1E-7
+}

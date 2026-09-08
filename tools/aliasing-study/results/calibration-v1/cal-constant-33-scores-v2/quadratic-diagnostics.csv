@@ -1,0 +1,10 @@
+policy,tolerance,status,largestDenseQuadraticCount,largestSampledQuadraticCount,falseAcceptance,retainedCountLoss,worstMissedError,limitingInteraction
+linear,0.1,diagnostic-linear-gate-ignored,14,16,1,0,0.480220913887024,"wave mode 16 sign 1 [-2,-1] x wave mode 15 sign 1 [1,1] -> wave [-1,0], w*dz(u)"
+fixed,0.1,diagnostic-linear-gate-ignored,14,14,0,0,0.065164141356945,"wave mode 14 sign 1 [-2,-1] x wave mode 13 sign 1 [1,1] -> wave [-1,0], w*dz(u)"
+targeted,0.1,diagnostic-linear-gate-ignored,14,14,0,0,0.065164141356945,"wave mode 14 sign 1 [-2,0] x wave mode 13 sign 1 [2,-1] -> wave [0,-1], w*dz(v)"
+linear,0.03,diagnostic-linear-gate-ignored,13,16,1,0,0.480220913887024,"wave mode 16 sign 1 [-2,-1] x wave mode 15 sign 1 [1,1] -> wave [-1,0], w*dz(u)"
+fixed,0.03,diagnostic-linear-gate-ignored,13,13,0,0,0.011722831055522,"wave mode 13 sign 1 [-2,-1] x wave mode 13 sign 1 [1,1] -> wave [-1,0], w*dz(u)"
+targeted,0.03,diagnostic-linear-gate-ignored,13,13,0,0,0.011722831055522,"wave mode 13 sign 1 [-2,0] x wave mode 13 sign 1 [2,-1] -> wave [0,-1], w*dz(v)"
+linear,0.01,diagnostic-linear-gate-ignored,12,16,1,0,0.480220913887024,"wave mode 16 sign 1 [-2,-1] x wave mode 15 sign 1 [1,1] -> wave [-1,0], w*dz(u)"
+fixed,0.01,diagnostic-linear-gate-ignored,12,12,0,0,0.000201289469259791,"wave mode 12 sign 1 [-2,-1] x wave mode 11 sign 1 [1,1] -> wave [-1,0], w*dz(u)"
+targeted,0.01,diagnostic-linear-gate-ignored,12,12,0,0,0.000201289469259791,"wave mode 12 sign 1 [-2,0] x wave mode 11 sign 1 [2,-1] -> wave [0,-1], w*dz(v)"
