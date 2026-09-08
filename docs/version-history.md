@@ -8,10 +8,14 @@ nav_order: 100
 
 ## [Unreleased]
 
+### InternalModes beta dependency
+
+- Require the exact packaged `InternalModes@2.0.0-beta.1` prerelease, containing the rotating-wave normalization, stretched-coordinate calculus, eigenproblem-conditioning and localized analytical APV-root corrections. Routine CI and package verification now use its immutable OceanKit snapshot. This adopts a beta provider; it does not publish WVM v5 or promise stable V2 APIs.
+
 ### Experimental free-surface Boussinesq transform
 
 - Added `WVTransformFreeSurfaceBoussinesq.fromStratification` with independently retained wave, APV, zero-APV endpoint, inertial, and mean-density-anomaly families, physical pressure/velocity/displacement/SSH reconstruction, admissible mixed-state projection and error assessment, positive physical-energy accounting, and exact reference-time phase evolution.
-- Shared the existing free-surface balanced scientific construction with QG; preserved its resolved Galerkin transforms and fixed-grid qualification. The prototype requires the corrected InternalModes authoring provider; released dependency adoption remains a v5 release gate.
+- Shared the existing free-surface balanced scientific construction with QG; preserved its resolved Galerkin transforms and fixed-grid qualification. The prototype requires the corrected InternalModes `2.0.0-beta.1` package; broader beta qualification remains under #354.
 - Changing `t0` now invalidates linearly evolving cached fields, matching the existing invalidation on `t` changes.
 
 ### Forced linear Boussinesq evolution and restart

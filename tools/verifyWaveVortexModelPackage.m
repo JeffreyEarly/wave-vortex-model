@@ -34,7 +34,7 @@ expectedNames = [
 expectedVersions = [
     "1.2.1"
     "2.0.0"
-    "1.3.0"
+    "2.0.0-beta.1"
     "1.0.2"
     "2.2.0"
     options.expectedVersion
@@ -43,7 +43,7 @@ expectedVersions = [
 expectedSnapshotFolders = [
     "ClassAnnotations-1.2.1"
     "Distributions-2.0.0"
-    "InternalModes-1.3.0"
+    "InternalModes-2.0.0-beta.1"
     "NetCDF-1.0.2"
     "SplineCore-2.2.0"
     ""
