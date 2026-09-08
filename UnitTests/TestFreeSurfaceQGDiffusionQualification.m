@@ -2,6 +2,22 @@ classdef TestFreeSurfaceQGDiffusionQualification < matlab.unittest.TestCase
     % Independent physical-depth qualification of two-active-boundary diffusion.
     % runStudy reports numerical errors without a universal acceptance threshold.
     methods (Test, TestTags="full")
+        function independentEndpointsHaveSeparateReferenceAllowances(testCase)
+            D=4000; scale=1300; f=2*7.2921e-5*sind(24); T=365.25*86400;
+            [z,weights]=studyGrid(1025,D);
+            N2=@(z)(5.2e-3)^2*exp(2*z/scale);
+            a=reference(257,z,weights,D,N2,scale,2*pi/100e3,f,9.81,1e-5);
+            b=reference(385,z,weights,D,N2,scale,2*pi/100e3,f,9.81,1e-5);
+            for time=[64*86400 T/4]
+                ac=10*pi/T*response(a.A,a.source,2*pi/T,time);
+                bc=10*pi/T*response(b.A,b.source,2*pi/T,time);
+                r=studyComparison(studyState(a,ac),studyState(b,bc),weights,D,"reference",257,385,time/86400);
+                % Each endpoint has its own absolute-plus-relative allowance;
+                % a large surface signal cannot mask a bottom discrepancy.
+                testCase.verifyTrue(all(r.withinTolerance))
+                testCase.verifyLessThan(r.referenceMagnitude(r.observable=="bottomAnomaly"),1e-3)
+            end
+        end
         function publicEstimatesAgreeWithIndependentFields(testCase)
             for scale = [Inf 1300]
                 w = newTransform(33,scale);
@@ -153,6 +169,145 @@ classdef TestFreeSurfaceQGDiffusionQualification < matlab.unittest.TestCase
     end
 
     methods (Static)
+        function result = runAnalyticalRetainedBandStudy(folder)
+            % Direct analytical APV bands are a diagnostic, not a new WVM basis.
+            arguments (Input)
+                folder (1,1) string
+            end
+            if ~isfolder(folder), mkdir(folder); end
+            D=4000; scale=1300; N0=5.2e-3; g=9.81; f=2*7.2921e-5*sind(24);
+            kh=2*pi/100e3; T=365.25*86400; times=[64*86400 T/4]; kappa=1e-5;
+            N2=@(z)N0^2*exp(2*z/scale); I=integral(N2,-D,0);
+            evp=IMInternalModes.geostrophicAPVModes(N2=N2,zDomain=[-D 0],g=g,g0=-I,gd=I,surfaceBoundary="freeSurface");
+            solution=IMExponentialStratificationSolution(N0=N0,b=scale,zDomain=[-D 0],g=g,f0=f);
+            basis=solution.internalModes(evp,nModes=1729);
+            % Avoid repeated all-mode evaluations in analytical normalization.
+            % A column rescaling leaves the physical response invariant; the
+            % existing diffusion page supplies well-conditioned coordinates.
+            basis=basis.addNormalization("raw",@(~,~)1); basis.normalization="raw";
+            zero=solution.geostrophicZeroAPVModesAtWavenumber(kh,endpoints=["surface","bottom"],surfaceBoundary="freeSurface");
+            fprintf('Analytical 1729-mode catalog ready\n');
+            rows=table();
+            for quadratureCount=[8193 16385]
+                [z,weights]=studyGrid(quadratureCount,D);
+                ref=reference(385,z,weights,D,N2,scale,kh,f,g,kappa);
+                F=basis.F(z); G=basis.G(z); ZF=zero.F(z); ZG=zero.G(z);
+                Fs=basis.F(0); Gs=basis.G(0); Gb=basis.G(-D);
+                bands=[84 217 325 433 865 1297 1729];
+                if quadratureCount==16385, bands=1729; end
+                for count=bands
+                    h=basis.h(1:count); mu=kh^2+f^2./(g*h);
+                    r.phi=[-F(:,1:count)./mu,-ZF/kh^2]; surf=[-Fs(1:count)./mu,-zero.F(0)/kh^2];
+                    eta=f/g*[-G(:,1:count)./mu,-ZG/kh^2]; etaZ=[-f/g*F(:,1:count)./(h.*mu),ZF/f];
+                    bZ=-2/scale*N2(z).*(eta-f/g*(1+z/D)*surf)-N2(z).*(etaZ-f/g/D*surf);
+                    page=WVInternal.densityDiffusionPage(r.phi,eta,etaZ,bZ,surf,weights,N2(z),kh,f,g,kappa);
+                    r.q=[F(:,1:count),zeros(length(z),2)]; r.ssh=f/g*surf;
+                    r.b=-N2(z).*(eta-f/g*(1+z/D)*surf);
+                    r.energy=[sqrt(weights)*kh.*r.phi;sqrt(weights.*N2(z)).*eta;f/sqrt(g)*surf];
+                    r.endpoint=[[-f/g*(Gs(1:count)-Fs(1:count))./mu;-f/g*Gb(1:count)./mu],-f/g/kh^2*eye(2)];
+                    source=zeros(count+2,1); source(count+1)=-g/f*kh^2*10*pi/T;
+                    for j=1:2
+                        c=page.fromEnergy*response(page.energyGenerator,page.toEnergy*source,2*pi/T,times(j));
+                        cr=10*pi/T*response(ref.A,ref.source,2*pi/T,times(j));
+                        a=studyState(r,c); b=studyState(ref,cr);
+                        if count==84 && j==1
+                            assert(abs(a.endpoint(2)+.00151079010900586)<1e-10,'Raw-column response must match the independently normalized 84-mode control.');
+                        end
+                        row=studyComparison(a,b,weights,D,"analyticalBand",count,385,times(j)/86400);
+                        row.quadratureCount=repmat(quadratureCount,6,1);
+                        if quadratureCount==8193 && count==1729
+                            previousCoefficients{j}=c; %#ok<AGROW>
+                        elseif quadratureCount==16385
+                            % Compare complete states on the fine physical
+                            % grid, using identical raw modal coordinates.
+                            row=studyComparison(a,studyState(r,previousCoefficients{j}),weights,D,"analyticalQuadrature",count,count,times(j)/86400);
+                            row.quadratureCount=repmat(quadratureCount,6,1);
+                            row.withinTolerance=row.absolute<=.2*row.allowance;
+                        end
+                        rows=[rows;row]; %#ok<AGROW>
+                    end
+                    fprintf('Analytical APV=%d, quadrature=%d complete\n',count,quadratureCount);
+                    writetable(rows,fullfile(folder,'issue-353-band-analytical.csv'));
+                end
+            end
+            result=struct(errors=rows,rootResidual=max(abs(basis.metadata.rootResiduals)));
+        end
+        function result = runRetainedBandStudy(folder)
+            % Hold the scientific solve and sampling fixed across APV prefixes.
+            arguments (Input)
+                folder (1,1) string
+            end
+            if ~isfolder(folder), mkdir(folder); end
+            D=4000; scale=1300; g=9.81; f=2*7.2921e-5*sind(24); kh=2*pi/100e3;
+            T=365.25*86400; times=[64*86400 T/4]; amplitude=10*pi/T; kappa=1e-5;
+            N2=@(z)(5.2e-3)^2*exp(2*z/scale);
+            [z,weights]=studyGrid(2049,D);
+            counts=[129 193 257 385]; referenceStates=cell(4,2); rows=table();
+            for i=1:4
+                ref=reference(counts(i),z,weights,D,N2,scale,kh,f,g,kappa);
+                for j=1:2
+                    c=amplitude*response(ref.A,ref.source,2*pi/T,times(j));
+                    referenceStates{i,j}=studyState(ref,c);
+                end
+            end
+            for i=1:3
+                for j=1:2
+                    rows=[rows;studyComparison(referenceStates{i,j},referenceStates{4,j},weights,D,"reference",counts(i),385,times(j)/86400)]; %#ok<AGROW>
+                end
+            end
+            % Change operator quadrature independently, then express the
+            % polynomial reference in the original reference coordinates.
+            [zf,wf]=studyGrid(4097,D);
+            refined=reference(385,zf,wf,D,N2,scale,kh,f,g,kappa);
+            for j=1:2
+                c=amplitude*response(refined.A,refined.source,2*pi/T,times(j));
+                commonC=ref.polynomialCoefficients\(refined.polynomialCoefficients*c);
+                rows=[rows;studyComparison(studyState(ref,commonC),referenceStates{4,j},weights,D,"referenceQuadrature",4097,2049,times(j)/86400)]; %#ok<AGROW>
+            end
+            writetable(rows,fullfile(folder,'issue-353-band-errors.csv'));
+            fprintf('Independent reference and doubled quadrature complete\n');
+            I=integral(N2,-D,0);
+            w=WVTransformFreeSurfaceQG([100e3 100e3 D],[4 4 1025], ...
+                apvModeCount=433,mdaModeCount=2,N2Function=N2,latitude=24, ...
+                g0=-I,gd=I,shouldAntialias=false);
+            [~,pageIndex]=min(abs(w.khUnique-kh));
+            bands=[84 217 325 433]; states=cell(4,2); consistency=table();
+            for i=1:4
+                [r,page,source]=modelPage(w,pageIndex,z,weights,scale,kappa,bands(i));
+                for j=1:2
+                    c=amplitude*page.fromEnergy*response(page.energyGenerator,page.toEnergy*source,2*pi/T,times(j));
+                    states{i,j}=studyState(r,c);
+                    % Modal QGPV is the evolved state; pressure derivatives
+                    % supply an independent consistency measurement.
+                    derivedQ=r.q*c; states{i,j}.q=r.qState*c;
+                    consistency=[consistency;table(bands(i),times(j)/86400,relative(derivedQ,states{i,j}.q,weights),VariableNames=["APV","day","qgpvConsistency"])]; %#ok<AGROW>
+                    rows=[rows;studyComparison(states{i,j},referenceStates{4,j},weights,D,"retainedBand",bands(i),385,times(j)/86400)]; %#ok<AGROW>
+                end
+                fprintf('Fixed 1025 samples, APV=%d complete\n',bands(i));
+            end
+            for j=1:2
+                rows=[rows;studyComparison(states{2,j},states{4,j},weights,D,"modalReference",217,433,times(j)/86400); ...
+                    studyComparison(states{3,j},states{4,j},weights,D,"modalReference",325,433,times(j)/86400)]; %#ok<AGROW>
+            end
+            % Double comparison quadrature without changing either evolution.
+            [rf,~,~]=modelPage(w,pageIndex,zf,wf,scale,kappa,433);
+            for j=1:2
+                c=amplitude*page.fromEnergy*response(page.energyGenerator,page.toEnergy*source,2*pi/T,times(j));
+                cr=amplitude*response(ref.A,ref.source,2*pi/T,times(j));
+                fineC=refined.polynomialCoefficients\(ref.polynomialCoefficients*cr);
+                fineState=studyState(rf,c); fineState.q=rf.qState*c;
+                doubled=studyComparison(fineState,studyState(refined,fineC),wf,D,"comparisonQuadrature",433,385,times(j)/86400);
+                baseline=rows(rows.study=="retainedBand" & rows.count==433 & rows.day==times(j)/86400,:);
+                doubled.absolute=abs(doubled.absolute-baseline.absolute);
+                doubled.relative=doubled.absolute./baseline.referenceMagnitude;
+                doubled.withinTolerance=doubled.absolute<=.2*baseline.allowance;
+                rows=[rows;doubled]; %#ok<AGROW>
+            end
+            result=struct(errors=rows,consistency=consistency);
+            writetable(rows,fullfile(folder,'issue-353-band-errors.csv'));
+            writetable(consistency,fullfile(folder,'issue-353-band-consistency.csv'));
+            save(fullfile(folder,'band-states.mat'),'states','referenceStates','bands','counts','z','weights');
+        end
         function results = runStudy(options)
             % Report seasonal errors at fixed physical parameters from rest.
             % Add UnitTests to the path, then call this method explicitly.
@@ -266,6 +421,7 @@ r.eta=E*Q; r.etaZ=Ez*Q;
 r.etaEndpoint=(-f./N2([0;-D]).*ends)*Q;
 r.endpoint=(-f./N2([0;-D]).*ends-[f/g*surface;zeros(size(bottom))])*Q;
 r.energy=field*Q;
+r.polynomialCoefficients=Q;
 end
 function r=sampled(C,w,zq,wq,scale,kh)
 D=w.Lz;
@@ -309,4 +465,27 @@ else
     s=2*(exp(z/scale)-exp(-D/scale))/(1-exp(-D/scale))-1;
     sz=2/scale*exp(z/scale)/(1-exp(-D/scale)); szz=sz/scale;
 end
+end
+
+function [z,weights]=studyGrid(count,D)
+[x,weights]=legpts(count);
+z=D*(x-1)/2; weights=weights(:)*D/2;
+end
+function state=studyState(r,c)
+state=struct(q=r.q*c,b=r.b*c,ssh=r.ssh*c,endpoint=r.endpoint*c,energy=r.energy*c);
+end
+function rows=studyComparison(a,b,weights,D,study,count,referenceCount,day)
+names=["qgpv","buoyancy","ssh","surfaceAnomaly","bottomAnomaly","physicalEnergyNorm"];
+absolute=[sqrt(sum(weights.*abs(a.q-b.q).^2)/(2*D)); ...
+    sqrt(sum(weights.*abs(a.b-b.b).^2)/(2*D));abs(a.ssh-b.ssh)/sqrt(2); ...
+    abs(a.endpoint-b.endpoint)/sqrt(2);norm(a.energy-b.energy)/2];
+referenceMagnitude=[sqrt(sum(weights.*abs(b.q).^2)/(2*D)); ...
+    sqrt(sum(weights.*abs(b.b).^2)/(2*D));abs(b.ssh)/sqrt(2); ...
+    abs(b.endpoint)/sqrt(2);norm(b.energy)/2];
+allowance=[1e-13;1e-10;1e-8;1e-8;1e-8;0]+[.05;.001;.0001;.001;.001;.0001].*referenceMagnitude;
+relative=absolute./referenceMagnitude; relative(absolute==0 & referenceMagnitude==0)=0;
+withinTolerance=absolute<=allowance;
+if study=="reference" || study=="referenceQuadrature", withinTolerance=absolute<=.2*allowance; end
+rows=table(repmat(study,6,1),repmat(count,6,1),repmat(referenceCount,6,1),repmat(day,6,1),names.',absolute,relative,referenceMagnitude,allowance,withinTolerance, ...
+    VariableNames=["study","count","referenceCount","day","observable","absolute","relative","referenceMagnitude","allowance","withinTolerance"]);
 end

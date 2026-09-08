@@ -21,6 +21,8 @@
 
 ### Short seasonal QG composition
 
+- Added a corrected-provider retained-band study with an independently refined physical-depth reference, separate endpoint allowances, fixed-sampling APV prefixes and intended-resolution linear comparisons.
+
 - Isolated high-band QG endpoint sensitivity to InternalModes eigenproblem conditioning with fixed-basis controls, analytical resolved-mode references, and a three-grid nonlinear confirmation; added a regression requiring the corrected provider.
 
 - Added a bounded spatial-accuracy study separating sampling, retained APV bandwidth, horizontal refinement, time error and resolution-dependent damping. Common-grid physical comparisons retain unresolved Fourier content, report observable-specific tolerances and reference differences, and use the existing public linear seasonal preflight for intended vertical resolution.
