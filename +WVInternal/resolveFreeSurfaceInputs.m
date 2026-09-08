@@ -1,4 +1,4 @@
-function inputs = resolveScientificInputs(Lz,options)
+function inputs = resolveFreeSurfaceInputs(Lz,options)
 % Resolve stratification, endpoint parameters, and rotation for construction.
 arguments
     Lz (1,1) double {mustBePositive}

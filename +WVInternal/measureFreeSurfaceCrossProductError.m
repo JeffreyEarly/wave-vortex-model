@@ -1,4 +1,4 @@
-function result = measureAPVZeroAPVQuadraticError(apvBasis,apvTransform,zeroModes,pageIndex,referenceOrder)
+function result = measureFreeSurfaceCrossProductError(apvBasis,apvTransform,zeroModes,pageIndex,referenceOrder)
 % Compare fixed-grid APV/zero-APV products with direct spectral integration.
 arguments
     apvBasis (1,1) IMInternalModesBasis

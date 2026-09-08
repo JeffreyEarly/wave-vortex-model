@@ -600,6 +600,11 @@ classdef WVTransform < matlab.mixin.indexing.RedefinesDot & CAAnnotatedClass
             self.clearVariableCacheOfTimeDependentVariables();
         end
 
+        function set.t0(self,value)
+            self.t0 = value;
+            self.clearVariableCacheOfTimeDependentVariables();
+        end
+
         function set.Ap(self,value)
             self.Ap = value;
             self.clearVariableCacheOfApAmA0DependentVariables();

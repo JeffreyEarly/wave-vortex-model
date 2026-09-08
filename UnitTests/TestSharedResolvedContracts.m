@@ -148,6 +148,9 @@ classdef TestSharedResolvedContracts < matlab.unittest.TestCase
             testCase.verifyGreaterThan(norm(evolved.u(:)-wave.u(:)),1e-7)
             testCase.verifyEqual(w.variableWithName(char("u_"+w.waveComponent.abbreviatedName)),evolved.u)
             testCase.verifyEqual(w.coefficientState(),original)
+            w.t0 = w.t;
+            testCase.verifyFalse(isKey(w.variableCache,'u'))
+            testCase.verifyEqual(w.u,full.u,AbsTol=1e-12)
             positive = WVFlowComponent(w,coefficientMasks=struct(Ap=true));
             negative = WVFlowComponent(w,coefficientMasks=struct(Am=true));
             testCase.verifyFalse(negative.contains(positive))

@@ -440,7 +440,7 @@ classdef WVTransformFreeSurfaceQG < WVGeometryDoublyPeriodicStratified & WVTrans
                     state.apvZeroAPVLimitingModeNumber = NaN;
                 end
             else
-                state = WVTransformFreeSurfaceQG.buildScientificState(Lxyz,Nxyz,options);
+                state = WVInternal.buildFreeSurfaceBalancedState(Lxyz,Nxyz,options);
             end
 
             geometryOptions = struct(shouldAntialias=options.shouldAntialias,z=state.z,j=state.apvModeNumber,Nj=length(state.apvMode),N2Function=state.N2Function,rhoFunction=state.rhoFunction,rho0=options.rho0,planetaryRadius=options.planetaryRadius,rotationRate=options.rotationRate,latitude=options.latitude,g=options.g,dLnN2=state.dLnN2,PF0inv=state.PF0inv,QG0inv=state.QG0inv,PF0=state.PF0,QG0=state.QG0,P0=state.P0,Q0=state.Q0,h_0=state.h_0,z_int=state.z_int);
@@ -898,11 +898,6 @@ classdef WVTransformFreeSurfaceQG < WVGeometryDoublyPeriodicStratified & WVTrans
     end
 
     methods (Static, Access = private)
-        state = buildScientificState(Lxyz,Nxyz,options)
-        inputs = resolveScientificInputs(Lz,options)
-        vertical = buildVerticalModes(Lz,Nz,N2Function,options)
-        result = measureAPVZeroAPVQuadraticError(apvBasis,apvTransform,zeroModes,pageIndex,referenceOrder)
-        assessment = supportedHorizontalWavenumber(apvBasis,apvTransform,N2Function,f0,g,endpoints,nEVP,tolerance,options)
 
         function names = directConstructionPropertyNames()
             names = [WVTransformFreeSurfaceQG.persistedScientificPropertyNames(),{'Ag_q','Amda','rhoFunction','N2Function','z','dLnN2','PF0inv','QG0inv','PF0','QG0','P0','Q0','h_0','z_int'}];

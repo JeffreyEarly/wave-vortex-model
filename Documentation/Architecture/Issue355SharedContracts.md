@@ -1,6 +1,6 @@
 # Shared resolved-mode contracts for v5
 
-Status: implementation proposal for #355; contracts remain provisional until the free-surface linear Boussinesq demonstration in #366. Baseline: `e1b217b4` on `feature/v5.0-free-surface-qg`.
+Status: shared interfaces are merged; the peer free-surface Boussinesq mixed-state transform is implemented in the next #366 increment. Source-driven integration and stored-state continuation remain before these contracts are frozen. Original comparison baseline: `e1b217b4`; mixed-state increment baseline: `08992b9d` on `feature/v5.0-free-surface-qg`.
 
 ## Retain the hierarchy
 
@@ -58,3 +58,11 @@ The manuscript inspected at `0a2edf4199aed1a195778c2ae66dea41118c9265`, equation
 On MATLAB R2025b Update 4, 118 affected tests passed: the new shared-contract tests plus existing total-component enumeration, operation registration/caching, component surface diagnostics, QG transform/persistence, invariant diagnostics/conservation, density forcing, and ordinary/exponential integration. Five shared-contract tests passed again after analyzer-only local-variable/scalar-check corrections. Production Code Analyzer has no blocking findings; the two new test files have no `checkcode` findings. API documentation generation and consistency checks passed (2357 files, 4817 routes, zero validation failures or drift).
 
 The new controls use a 100 km square, 1000 m deep domain at latitude 30 degrees. QG uses an 8 × 8 × 33 grid with constant `N2=1e-4 s^-2`, `g0=.02 m s^-2`, `gd=.03 m s^-2`, and one/both inactive endpoint controls. It verifies independent APV/MDA counts, real MDA, component field sums to absolute tolerance `2e-12`, physical energy against quadrature to relative tolerance `1e-7`, and energy polarization to relative tolerance `1e-13`. The existing Boussinesq control uses an 8 × 8 × 17 grid and `N2=1e-4*exp(z/1000) s^-2`, all four physical components, and a 1234 s phase advance; component field sums agree to `1e-12` absolute tolerance. These are architectural regression tolerances, not a resolution-accuracy claim or a substitute for #351's error estimates.
+
+## Peer-transform evidence from the mixed-state increment
+
+`WVTransformFreeSurfaceBoussinesq` now uses the shared coefficient, operation, component, and cache contracts with independent wave, APV, active-endpoint, inertial, and MDA counts. It reconstructs pressure and vertical velocity, projects admissible pure/mixed states, accounts for positive physical energy with balanced cross terms, and evolves exact reference-time phases. The common free-surface balanced scientific construction and assessment helpers are extracted to `+WVInternal`; QG's public behavior and automatic selection remain intact. Legacy physical-family mixins remain intact for their existing layouts; their rigid-lid/common-Nj initializers are not installed in the new peer.
+
+No new generic projection hook was necessary: the new model owns `projectFields`, with APV-first and residual-endpoint balanced recovery followed by the manuscript's observable wave projector. `t0` changes now invalidate time-dependent fields through the existing base cache mechanism. The new transform's stationary component fields preserve their caches when time changes. Stored scientific operators are unchanged by state/time mutations and support direct in-memory construction without a mode solve.
+
+The quantitative study, retained-design decisions, public factory/field/projection contract, and limitations are in `Documentation/Validation/Issue366MixedBoussinesqTransform.md`. Seven new tests and 129 affected regression tests passed. This is executable mixed-state transform evidence; a controlled source, actual model integration, and annotated file continuation are still required to complete #366 and close #355. The existing source/tendency and persistence contracts therefore remain provisional.

@@ -8,6 +8,12 @@ nav_order: 100
 
 ## [Unreleased]
 
+### Experimental free-surface Boussinesq transform
+
+- Added `WVTransformFreeSurfaceBoussinesq.fromStratification` with independently retained wave, APV, zero-APV endpoint, inertial, and mean-density-anomaly families, physical pressure/velocity/displacement/SSH reconstruction, admissible mixed-state projection and error assessment, positive physical-energy accounting, and exact reference-time phase evolution.
+- Shared the existing free-surface balanced scientific construction with QG; preserved its resolved Galerkin transforms and fixed-grid qualification. The prototype requires the corrected InternalModes authoring provider; released dependency adoption remains a v5 release gate. Source-driven model integration and annotated file continuation remain separate qualification increments.
+- Changing `t0` now invalidates linearly evolving cached fields, matching the existing invalidation on `t` changes.
+
 ### Free-surface QG vertical calculus
 
 - Added sampled-field `diffZ` and routed free-surface `diffZF`/`diffZG` through the persisted physical grid derivative, preserving zero-APV and MDA content instead of projecting through APV-only modes. Orders 1–4 apply the physical derivative successively, including the variable WKB metric. Gaussian initialization now uses the general derivative for its vertical flux; rigid-lid calculus is unchanged.

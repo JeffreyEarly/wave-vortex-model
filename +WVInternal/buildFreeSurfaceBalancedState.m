@@ -1,5 +1,5 @@
-function state = buildScientificState(Lxyz,Nxyz,options)
-% Build the complete persisted free-surface QG representation.
+function state = buildFreeSurfaceBalancedState(Lxyz,Nxyz,options)
+% Build stored balanced operators shared by free-surface QG and Boussinesq.
 arguments
     Lxyz (1,3) double
     Nxyz (1,3) double
@@ -11,7 +11,7 @@ if ~isempty(options.z)
     error('WVTransformFreeSurfaceQG:CustomVerticalGridUnavailable', ...
         'Scientific construction uses the WKB-stretched Chebyshev-Lobatto rule determined by Nz. Restore custom points only through complete persisted-state construction.');
 end
-inputs = WVTransformFreeSurfaceQG.resolveScientificInputs(Lz,options);
+inputs = WVInternal.resolveFreeSurfaceInputs(Lz,options);
 N2Function = inputs.N2Function;
 rhoFunction = inputs.rhoFunction;
 g0 = inputs.g0;
@@ -30,7 +30,7 @@ khNonzero = kh(klNonzero);
 verticalOptions = options;
 verticalOptions.g0 = g0;
 verticalOptions.gd = gd;
-vertical = WVTransformFreeSurfaceQG.buildVerticalModes(Lz,Nxyz(3),N2Function,verticalOptions);
+vertical = WVInternal.buildFreeSurfaceBalancedModes(Lz,Nxyz(3),N2Function,verticalOptions);
 z = vertical.z;
 verticalQuadratureWeights = vertical.weights;
 verticalDerivativeMatrix = vertical.Dz;
@@ -76,12 +76,12 @@ if activeEndpointCount > 0
     apvEndpointResponse = geostrophicTransform.apvEndpointResponse;
     minimumRelativeMuSeparation = geostrophicTransform.compatibilityDiagnostics.minimumRelativeMuSeparation;
     if nKh > 0
-        crossAssessment = WVTransformFreeSurfaceQG.measureAPVZeroAPVQuadraticError(apvBasis,apvTransform,zeroModes,nKh,2*nEVP);
+        crossAssessment = WVInternal.measureFreeSurfaceCrossProductError(apvBasis,apvTransform,zeroModes,nKh,2*nEVP);
         apvZeroAPVQuadraticError = crossAssessment.error;
         apvZeroAPVLimitingEndpoint = crossAssessment.limitingEndpoint;
         apvZeroAPVLimitingModeNumber = crossAssessment.limitingModeNumber;
         if apvZeroAPVQuadraticError > options.quadraticAliasingTolerance
-            limit = WVTransformFreeSurfaceQG.supportedHorizontalWavenumber(apvBasis,apvTransform,N2Function,f0,options.g, ...
+            limit = WVInternal.supportedFreeSurfaceHorizontalWavenumber(apvBasis,apvTransform,N2Function,f0,options.g, ...
                 endpointNames(activeMask),nEVP,options.quadraticAliasingTolerance,rejectedKh=khUnique(end));
             error('WVTransformFreeSurfaceQG:UnderresolvedVerticalGrid', ...
                 ['Nz=%d resolves APV/zero-APV products through kh approximately %.6g rad m^-1 at tolerance %.3g, ' ...
@@ -159,6 +159,7 @@ apvGDiagnostics = apvTransform.channelDiagnostics(variable="G");
 mdaDiagnostics = mdaTransform.channelDiagnostics(variable="G");
 
 state = struct();
+state.balancedNEVP = nEVP;
 state.N2Function = N2Function;
 state.rhoFunction = rhoFunction;
 state.z = z;
