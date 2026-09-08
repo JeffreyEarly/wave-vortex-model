@@ -8,9 +8,12 @@ classdef WVTransformFreeSurfaceBoussinesq < WVGeometryDoublyPeriodicStratified &
     % columns represent a Hermitian half plane; real fields include conjugates.
     % Waves use exp(+/-i*omega*(t-t0)); Aio uses exp(i*f*(t-t0)).
     %
-    % This experimental transform qualifies admissible-state projection and
-    % exact linear phase evolution. Source projection, model integration,
-    % annotated file restart, and resolution transfer are subsequent gates.
+    % This experimental transform supports observable and volume-source
+    % projection, exact linear phases, fixed-step forced WVModel evolution,
+    % and annotated restart using stored scientific operators. Use WVModel(wvt)
+    % and an explicit fixed deltaT to integrate registered sources;
+    % shouldUseLinearDynamics=true advances unforced analytical phases only.
+    % Nonlinear dynamics and cross-resolution transfer remain unqualified.
     % Legacy rigid-lid Ap/Am/A0 initialization is not supported here.
     %
     % ```matlab
@@ -22,6 +25,8 @@ classdef WVTransformFreeSurfaceBoussinesq < WVGeometryDoublyPeriodicStratified &
     % - Topic: Inspect coefficient families
     % - Topic: Inspect scientific operators
     % - Topic: Reconstruct and project fields
+    % - Topic: Project physical sources
+    % - Topic: Save transform state
     % - Topic: Analyze physical energy
     % - Declaration: classdef WVTransformFreeSurfaceBoussinesq < WVTransform
 
@@ -119,6 +124,21 @@ classdef WVTransformFreeSurfaceBoussinesq < WVGeometryDoublyPeriodicStratified &
         % Stored boundary-normalized zero-APV displacement modes.
         % - Topic: Inspect scientific operators
         zeroAPVG
+        % Stored resolved balanced source operator apvFSourcePairing.
+        % - Topic: Inspect scientific operators
+        apvFSourcePairing
+        % Stored resolved balanced source operator apvGSourcePairing.
+        % - Topic: Inspect scientific operators
+        apvGSourcePairing
+        % Stored resolved balanced source operator zeroAPVFPairing.
+        % - Topic: Inspect scientific operators
+        zeroAPVFPairing
+        % Stored resolved balanced source operator zeroAPVGPairing.
+        % - Topic: Inspect scientific operators
+        zeroAPVGPairing
+        % Stored resolved balanced source operator zeroAPVSourceSolve.
+        % - Topic: Inspect scientific operators
+        zeroAPVSourceSolve
         % Stored mean-density-anomaly displacement modes.
         % - Topic: Inspect scientific operators
         mdaG
@@ -188,6 +208,9 @@ classdef WVTransformFreeSurfaceBoussinesq < WVGeometryDoublyPeriodicStratified &
         % Alias for totalEnergy, in m3 s-2.
         % - Topic: Analyze physical energy
         totalEnergySpatiallyIntegrated
+        % Number of active balanced boundaries.
+        % - Topic: Inspect scientific operators
+        activeEndpointCount
         % False: waves satisfy the nonhydrostatic vertical momentum equation.
         % - Topic: Inspect scientific operators
         isHydrostatic
@@ -218,8 +241,8 @@ classdef WVTransformFreeSurfaceBoussinesq < WVGeometryDoublyPeriodicStratified &
             end
             nc = length(state.klNonzero); np = length(state.khUnique); ne = length(state.activeEndpoint);
             nm = length(state.mdaMode); ni = length(state.inertialMode);
-            shapeNames = ["apvF","apvG","apvFForward","apvMu","apvEndpointResponse","zeroAPVF","zeroAPVG","mdaG","mdaGForward","mdaPressureMode","waveF","waveG","waveGForward","waveEquivalentDepth","waveFrequency","inertialF","inertialFForward","inertialEquivalentDepth","verticalQuadratureWeights","verticalDerivativeMatrix"];
-            shapes = {[nz nq],[nz nq],[nq nz],[nq np],[ne nq np],[nz ne np],[nz ne np],[nz nm],[nm nz],[nz nm],[nz nw np],[nz nw np],[nw nz np],[nw np],[nw np],[nz ni],[ni nz],[ni 1],[nz 1],[nz nz]};
+            shapeNames = ["apvF","apvG","apvFForward","apvMu","apvEndpointResponse","zeroAPVF","zeroAPVG","mdaG","mdaGForward","mdaPressureMode","waveF","waveG","waveGForward","waveEquivalentDepth","waveFrequency","inertialF","inertialFForward","inertialEquivalentDepth","verticalQuadratureWeights","verticalDerivativeMatrix","apvFSourcePairing","apvGSourcePairing","zeroAPVFPairing","zeroAPVGPairing","zeroAPVSourceSolve"];
+            shapes = {[nz nq],[nz nq],[nq nz],[nq np],[ne nq np],[nz ne np],[nz ne np],[nz nm],[nm nz],[nz nm],[nz nw np],[nz nw np],[nw nz np],[nw np],[nw np],[nz ni],[ni nz],[ni 1],[nz 1],[nz nz],[nq nz],[nq nz],[ne nz np],[ne nz np],[ne ne np]};
             for iShape=1:length(shapeNames)
                 value=state.(shapeNames(iShape)); expected=shapes{iShape}; actual=size(value,1:length(expected));
                 if ~isa(value,'double') || ~isreal(value) || any(~isfinite(value),'all') || ~isequal(actual,expected) || ndims(value)>max(2,length(expected))
@@ -232,7 +255,7 @@ classdef WVTransformFreeSurfaceBoussinesq < WVGeometryDoublyPeriodicStratified &
             geometry = struct(shouldAntialias=state.shouldAntialias,z=state.z,j=state.apvModeNumber,Nj=nq,N2Function=state.N2Function,rhoFunction=state.rhoFunction,rho0=state.rho0,planetaryRadius=state.planetaryRadius,rotationRate=state.rotationRate,latitude=state.latitude,g=state.g,dLnN2=state.dLnN2,PF0inv=state.PF0inv,QG0inv=state.QG0inv,PF0=state.PF0,QG0=state.QG0,P0=state.P0,Q0=state.Q0,h_0=state.h_0,z_int=state.z_int);
             geometryArguments = namedargs2cell(geometry);
             self@WVGeometryDoublyPeriodicStratified(state.Lxyz,state.Nxyz,geometryArguments{:});
-            self@WVTransform(WVForcingType("SpectralAmplitude"));
+            self@WVTransform(WVForcingType("NonhydrostaticSpatial"));
             for name = string(self.scientificPropertyNames()), self.(name) = state.(name); end
             self.hasWaveComponent = true; self.hasPVComponent = true;
             nc = length(self.klNonzero);
@@ -257,6 +280,7 @@ classdef WVTransformFreeSurfaceBoussinesq < WVGeometryDoublyPeriodicStratified &
         operation = operationForKnownVariable(self,variableName,options)
         diagnostics = physicalEnergy(self,options)
 
+        function value = get.activeEndpointCount(self), value = length(self.activeEndpoint); end
         function value = get.isHydrostatic(~), value = false; end
         function value = get.totalEnergy(self), d = self.physicalEnergy(); value = d.totalEnergy; end
         function value = get.totalEnergySpatiallyIntegrated(self), value = self.totalEnergy; end
@@ -320,12 +344,6 @@ classdef WVTransformFreeSurfaceBoussinesq < WVGeometryDoublyPeriodicStratified &
         function other = waveVortexTransformWithResolution(~,~)
             other=[]; WVTransformFreeSurfaceBoussinesq.throwUnavailable('WVTransformFreeSurfaceBoussinesq:ResolutionTransferUnavailable','Cross-resolution transfer is qualified separately in issue 352.')
         end
-        function writeToFile(~,varargin)
-            error('WVTransformFreeSurfaceBoussinesq:PersistenceNotQualified','Annotated file restart is the next architecture gate; use scientificState for an in-memory operator copy.')
-        end
-        function writeToGroup(~,varargin)
-            error('WVTransformFreeSurfaceBoussinesq:PersistenceNotQualified','Annotated file restart is the next architecture gate; use scientificState for an in-memory operator copy.')
-        end
     end
 
     methods (Access = private)
@@ -348,13 +366,13 @@ classdef WVTransformFreeSurfaceBoussinesq < WVGeometryDoublyPeriodicStratified &
         function names = namesOfTransformVariables()
             names = {'u','v','w','eta','eta_i','p','ssh','ssu','ssv','qgpv'};
         end
-        function annotations = classDefinedPropertyAnnotations()
-            annotations = WVGeometryDoublyPeriodicStratified.propertyAnnotationsForGeometry();
-            annotations = cat(2,annotations,WVTransform.propertyAnnotationsForTransform());
-            for name = ["waveMode","inertialMode","apvMode","mdaMode","activeEndpoint","klNonzero","khUnique"]
-                annotations(end+1) = CADimensionProperty(char(name),'1',char(name));
-            end
-            annotations = cat(2,annotations,WVTransformFreeSurfaceBoussinesq.coefficientAnnotations());
+        annotations = classDefinedPropertyAnnotations()
+        [wvt,ncfile] = waveVortexTransformFromFile(path,options)
+        wvt = transformFromGroup(group)
+        function names = classRequiredPropertyNames()
+            names = union(WVGeometryDoublyPeriodicStratified.namesOfRequiredPropertiesForGeometry(),WVTransformFreeSurfaceBoussinesq.scientificPropertyNames());
+            names = union(names,{'activeEndpointCount','rhoFunction','Aw_p','Aw_m','Ag_q','Aio','Amda','t','t0','forcing'});
+            names = setdiff(names,WVTransformFreeSurfaceBoussinesq.optionalEndpointPropertyNames());
         end
     end
 
@@ -374,8 +392,11 @@ classdef WVTransformFreeSurfaceBoussinesq < WVGeometryDoublyPeriodicStratified &
             annotations(end+1) = WVCoefficientAnnotation('Aio',{'inertialMode'},'m s-1','inertial oscillations',canonicalBasis="free-surface zero-wavenumber F modes",isComplex=true);
             annotations(end+1) = WVCoefficientAnnotation('Amda',{'mdaMode'},'m','mean density anomaly',canonicalBasis="signed-normalized MDA modes",isComplex=false);
         end
+        function names = optionalEndpointPropertyNames()
+            names = {'activeEndpoint','Ag_0','apvEndpointResponse','zeroAPVF','zeroAPVG','zeroAPVFPairing','zeroAPVGPairing','zeroAPVSourceSolve'};
+        end
         function names = scientificPropertyNames()
-            names = {'g0','gd','apvMode','mdaMode','waveMode','inertialMode','apvModeNumber','mdaModeNumber','waveModeNumber','inertialModeNumber','activeEndpoint','klNonzero','kNonzero','lNonzero','khNonzero','khUnique','klNonzeroKhUniqueIndex','apvF','apvG','apvFForward','apvMu','apvEndpointResponse','zeroAPVF','zeroAPVG','mdaG','mdaGForward','mdaPressureMode','waveF','waveG','waveGForward','waveEquivalentDepth','waveFrequency','inertialF','inertialFForward','inertialEquivalentDepth','verticalQuadratureWeights','verticalDerivativeMatrix','waveGramError','inertialGramError','apvGramError','mdaGramError','balancedNEVP','nEVP','projectionTolerance'};
+            names = {'g0','gd','apvMode','mdaMode','waveMode','inertialMode','apvModeNumber','mdaModeNumber','waveModeNumber','inertialModeNumber','activeEndpoint','klNonzero','kNonzero','lNonzero','khNonzero','khUnique','klNonzeroKhUniqueIndex','apvF','apvG','apvFForward','apvMu','apvEndpointResponse','apvFSourcePairing','apvGSourcePairing','zeroAPVFPairing','zeroAPVGPairing','zeroAPVSourceSolve','zeroAPVF','zeroAPVG','mdaG','mdaGForward','mdaPressureMode','waveF','waveG','waveGForward','waveEquivalentDepth','waveFrequency','inertialF','inertialFForward','inertialEquivalentDepth','verticalQuadratureWeights','verticalDerivativeMatrix','waveGramError','inertialGramError','apvGramError','mdaGramError','balancedNEVP','nEVP','projectionTolerance'};
         end
         function names = geometryStateNames()
             names = {'Lxyz','Nxyz','shouldAntialias','z','N2Function','rhoFunction','rho0','planetaryRadius','rotationRate','latitude','g','dLnN2','PF0inv','QG0inv','PF0','QG0','P0','Q0','h_0','z_int'};
