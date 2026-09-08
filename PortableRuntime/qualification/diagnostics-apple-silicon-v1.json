@@ -7,7 +7,7 @@
     "nativeBuild": {
       "schema": "portable-diagnostic-numerical-v1",
       "issue": 305,
-      "sourceCommit": "0fabf4b647c299a27f20eb3838608bd822915dc9",
+      "sourceCommit": "ffc15ebaae09e83cb24c4b1d804607c41d82103a",
       "matlabRelease": "2025b",
       "rows": [
         {
@@ -63,7 +63,7 @@
             10
           ],
           "provider": "native",
-          "maximumRelativeError": 1.0909247961368642e-13,
+          "maximumRelativeError": 1.090716857360826e-13,
           "variableCount": 61,
           "retainedBytes": 195514,
           "scratchHighWaterBytes": 205960,
@@ -243,7 +243,7 @@
             10
           ],
           "provider": "native",
-          "maximumRelativeError": 4.8066914521423494e-14,
+          "maximumRelativeError": 4.8058307834052084e-14,
           "variableCount": 61,
           "retainedBytes": 146642,
           "scratchHighWaterBytes": 190600,
@@ -736,7 +736,7 @@
     "asanUbsanBuild": {
       "schema": "portable-diagnostic-numerical-v1",
       "issue": 305,
-      "sourceCommit": "0fabf4b647c299a27f20eb3838608bd822915dc9",
+      "sourceCommit": "ffc15ebaae09e83cb24c4b1d804607c41d82103a",
       "matlabRelease": "2025b",
       "rows": [
         {
