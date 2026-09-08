@@ -73,7 +73,7 @@ jobs:
             setenv("WV_BOUSS_KERNEL_DUMP",fullfile(getenv("RUNNER_TEMP"),"boussinesq-build","WVBoussinesqKernelDump"));
             setenv("WV_STABLE_FORCING_DUMP",fullfile(getenv("RUNNER_TEMP"),"boussinesq-build","WVStableForcingDump"));
             setenv("WV_STABLE_FORCING_RUNNER",fullfile(getenv("RUNNER_TEMP"),"boussinesq-build","wave-vortex-run"));
-            results=runtests({"UnitTests/TestBoussinesqCompiledKernel.m","UnitTests/TestPortableBoussinesq.m"});
+            results=runtests({'UnitTests/TestBoussinesqCompiledKernel.m','UnitTests/TestPortableBoussinesq.m'});
             assertSuccess(results);
       - name: Verify clean checkout
         if: always()

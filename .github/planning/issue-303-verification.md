@@ -31,3 +31,11 @@ Adding Boussinesq changes the shared catalog's whole-file digest even though all
 ## Remaining gates
 
 Existing MATLAB run-request, Hydrostatic and SQG regression suites passed. The wave-mismatch test initially expected the generic request-contract error, while MATLAB correctly reported its established inconsistent-bundle error; the corrected focused test passed under ASan/UBSan (`/private/tmp/wvm-303-mismatch-final.log`). Final native and instrumented ownership-release checks passed. Source export and docs:check passed (2,026 files / 4,145 routes, zero differences). Code Analyzer is clean for all new/changed test and tooling files; the request helper retains its pre-existing NASGU diagnostic at line 28 (`/private/tmp/wvm-303-authoring.log`). The full instrumented Boussinesq run completed with only that expected-error-identifier failure; all other methods passed (`/private/tmp/wvm-303-sanitized-models.log`). The corrected single-method rerun resolves it. Pending: focused hosted release/sanitizer plus required branch checks. Optional Full CI and long SQG/Hydrostatic trajectories are not additional integration gates. Apple Silicon sanitizer runs disable unsupported LeakSanitizer; Linux CI enables it. No required local assets are missing.
+
+## Hosted test discovery correction
+
+The first hosted smoke run rejected the new historical-catalog test because it lacked a primary test-category tag. Added `TestTags="full"`, matching the existing qualification-evidence tests. The test had already passed when run directly; numerical/runtime code is unchanged.
+
+The focused hosted MATLAB command also required a cell array of character vectors rather than a cell array of string scalars for its two test paths. Corrected that invocation; its C++ release build and both boundary tests had passed.
+
+Local `test:smoke` then passed all 137 tests (`/private/tmp/wvm-303-smoke-final.log`).

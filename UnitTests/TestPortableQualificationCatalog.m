@@ -1,5 +1,5 @@
 classdef TestPortableQualificationCatalog < matlab.unittest.TestCase
-    methods (Test)
+    methods (Test,TestTags="full")
         function archivedEvidenceRequiresExactOwnSlice(testCase)
             root = string(fileparts(fileparts(mfilename("fullpath"))));
             testCase.applyFixture(matlab.unittest.fixtures.PathFixture(fullfile(root,"tools")));
