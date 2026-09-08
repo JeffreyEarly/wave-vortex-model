@@ -19,6 +19,12 @@ nav_order: 100
 - Added `projectSources` for volume momentum/total-displacement sources and `WVPrescribedBoussinesqSource` for persistent cosine-modulated spatial patterns. Source-driven reference-time amplitudes use the existing `WVModel` fixed-step path with independent families.
 - Added annotated scientific-state, coefficient, time, and forcing restoration without a new eigensolve, including inactive endpoint omission. Constant/variable-stratification controls verify forced equations, physical work, fourth-order time convergence, and interrupted continuation. Adaptive tolerance and cross-resolution transfer qualification remain separate.
 
+### Free-surface resolution transfer
+
+- Added `waveVortexTransformWithResolution` and pure `coefficientStateForTransform` for free-surface QG and Boussinesq. Transfers match physical Fourier/mode identities, align individual mode normalization and reference phase, preserve means and active endpoints, and report positive physical reconstruction and discarded-field errors including cross terms.
+- Sampling-grid changes preserve each retained family count by default. QG accepts optional strict APV/MDA counts while preserving automatic selection when omitted. An unqualified target or incompatible matched mode rejects the request.
+- Rebuild supported forcing on the target and reject unsupported conversions explicitly. Prescribed Boussinesq volume sources preserve their absolute clock and reject unresolved spatial patterns. Transferred QG and Boussinesq states continue through the existing annotated restart path without a provider solve on restoration.
+
 ### Free-surface QG vertical calculus
 
 - Added sampled-field `diffZ` and routed free-surface `diffZF`/`diffZG` through the persisted physical grid derivative, preserving zero-APV and MDA content instead of projecting through APV-only modes. Orders 1–4 apply the physical derivative successively, including the variable WKB metric. Gaussian initialization now uses the general derivative for its vertical flux; rigid-lid calculus is unchanged.

@@ -13,7 +13,9 @@ classdef WVTransformFreeSurfaceBoussinesq < WVGeometryDoublyPeriodicStratified &
     % and annotated restart using stored scientific operators. Use WVModel(wvt)
     % and an explicit fixed deltaT to integrate registered sources;
     % shouldUseLinearDynamics=true advances unforced analytical phases only.
-    % Nonlinear dynamics and cross-resolution transfer remain unqualified.
+    % Resolution transfer preserves matching physical modes with independent
+    % retained counts and reports positive physical reconstruction errors.
+    % Nonlinear dynamics remain unqualified.
     % Legacy rigid-lid Ap/Am/A0 initialization is not supported here.
     %
     % ```matlab
@@ -27,6 +29,7 @@ classdef WVTransformFreeSurfaceBoussinesq < WVGeometryDoublyPeriodicStratified &
     % - Topic: Reconstruct and project fields
     % - Topic: Project physical sources
     % - Topic: Save transform state
+    % - Topic: Transfer resolution
     % - Topic: Analyze physical energy
     % - Declaration: classdef WVTransformFreeSurfaceBoussinesq < WVTransform
 
@@ -341,9 +344,7 @@ classdef WVTransformFreeSurfaceBoussinesq < WVGeometryDoublyPeriodicStratified &
         function [Fp,Fm,F0] = nonlinearFlux(~)
             Fp=[]; Fm=[]; F0=[]; WVTransformFreeSurfaceBoussinesq.throwUnavailable('WVTransformFreeSurfaceBoussinesq:NonlinearDynamicsUnavailable','This transform currently qualifies exact linear evolution only.')
         end
-        function other = waveVortexTransformWithResolution(~,~)
-            other=[]; WVTransformFreeSurfaceBoussinesq.throwUnavailable('WVTransformFreeSurfaceBoussinesq:ResolutionTransferUnavailable','Cross-resolution transfer is qualified separately in issue 352.')
-        end
+
     end
 
     methods (Access = private)

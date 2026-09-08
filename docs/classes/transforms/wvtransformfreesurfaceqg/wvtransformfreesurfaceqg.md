@@ -26,6 +26,8 @@ Create a free-surface QG transform scientifically or directly.
 + `options.g0`  surface acceleration; default negative stratification integral
 + `options.gd`  bottom acceleration; default positive stratification integral
 + `options.latitude`  latitude in degrees; default 24
++ `options.apvModeCount`  strict retained APV prefix; empty preserves automatic selection
++ `options.mdaModeCount`  strict retained MDA prefix; empty preserves automatic selection
 + `options.apvGramTolerance`  APV normalized-Gram tolerance
 + `options.mdaGramTolerance`  MDA normalized-Gram tolerance
 + `options.quadraticAliasingTolerance`  APV quadratic-product tolerance in the induced Hilbert majorant
