@@ -177,14 +177,6 @@ WVKernelStatus WVHydrostaticIntegrationSystem::createImpl(
             "Tracer state block is absent from the integration layout.");
       const auto &dimensions =
           candidate->layout_.additionalBlocks()[block].dimensions;
-      if (observer.isXYOnly) {
-        if (dimensions != std::vector<std::size_t>(
-                              {configuration.Nx, configuration.Ny}))
-          return {WVKernelStatusCode::invalidShape,
-                  "A two-dimensional tracer must have shape [Nx,Ny]."};
-        return {WVKernelStatusCode::unsupportedOperation,
-                "Two-dimensional tracer integration requires a future barotropic runtime; the Hydrostatic runtime supports three-dimensional tracers only."};
-      }
       if (dimensions != std::vector<std::size_t>(
                             {configuration.Nx, configuration.Ny,
                              configuration.Nz}))
@@ -370,7 +362,7 @@ WVHydrostaticIntegrationSystem::evaluateRightHandSide(
     WVRealVolumeView tracerFlux{
         output.realData, {spatial.first, spatial.second, spatial.third}};
     status = forcing_->kernel().advectScalarWithAdvectionFields(
-        scalar, advection, tracer.shouldAntialias(), tracerFlux);
+        scalar, advection, tracer.shouldAntialias(), tracerFlux, tracer.record().isXYOnly);
     if (!status)
       return status;
     ++metrics_.tracerEvaluationCount;

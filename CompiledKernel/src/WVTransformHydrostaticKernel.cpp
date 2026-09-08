@@ -407,7 +407,7 @@ WVKernelStatus WVTransformHydrostaticKernel::differentiateHorizontal(WVRealVolum
     ActiveCall guard(active_); if (!guard.entered) return reentrant();
     return horizontal_->spatialDerivative(*horizontalWorkspace_,{a.data,R_*sizeof(double)},{b.data,R_*sizeof(double)},xDerivative);
 }
-WVKernelStatus WVTransformHydrostaticKernel::advectScalarWithAdvectionFields(WVRealVolumeConstView a,WVRealFieldBundleConstView fields,bool antialias,WVRealVolumeView b) {
+WVKernelStatus WVTransformHydrostaticKernel::advectScalarWithAdvectionFields(WVRealVolumeConstView a,WVRealFieldBundleConstView fields,bool antialias,WVRealVolumeView b,bool xyOnly) {
     auto s=volume(a); if (!s) return s; s=volume({b.data,b.shape}); if (!s) return s;
     const auto& g=geometry();
     if (fields.shape.first!=g.Nx || fields.shape.second!=g.Ny || fields.shape.third!=g.Nz || fields.shape.fourth!=3)
@@ -418,8 +418,8 @@ WVKernelStatus WVTransformHydrostaticKernel::advectScalarWithAdvectionFields(WVR
     ActiveCall guard(active_); if (!guard.entered) return reentrant();
     s=horizontal_->spatialDerivative(*horizontalWorkspace_,{a.data,R_*sizeof(double)},{real_.data(),R_*sizeof(double)},true); if (!s) return s;
     s=horizontal_->spatialDerivative(*horizontalWorkspace_,{a.data,R_*sizeof(double)},{real_.data()+R_,R_*sizeof(double)},false); if (!s) return s;
-    s=verticalCalculus(a.data,WVHydrostaticFamily::F,1,false,real_.data()+2*R_); if (!s) return s;
-    for (std::size_t i=0;i<R_;++i) b.data[i]=-fields.data[i]*real_[i]-fields.data[R_+i]*real_[R_+i]-fields.data[2*R_+i]*real_[2*R_+i];
+    if (!xyOnly) { s=verticalCalculus(a.data,WVHydrostaticFamily::F,1,false,real_.data()+2*R_); if (!s) return s; }
+    for (std::size_t i=0;i<R_;++i) b.data[i]=-fields.data[i]*real_[i]-fields.data[R_+i]*real_[R_+i]-(xyOnly ? 0.0 : fields.data[2*R_+i]*real_[2*R_+i]);
     if (antialias) {
         s=horizontal_->forward(*horizontalWorkspace_,{b.data,R_*sizeof(double)},output(gridSpectral_.data(),H_)); if (!s) return s;
         s=horizontal_->inverse(*horizontalWorkspace_,input(gridSpectral_.data(),H_),{b.data,R_*sizeof(double)});

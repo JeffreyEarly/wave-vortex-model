@@ -69,7 +69,7 @@ public:
         unsigned order, WVRealVolumeView);
     // Full-grid horizontal derivatives and three-dimensional passive advection.
     WVKernelStatus differentiateHorizontal(WVRealVolumeConstView, bool xDerivative, WVRealVolumeView);
-    WVKernelStatus advectScalarWithAdvectionFields(WVRealVolumeConstView, WVRealFieldBundleConstView, bool antialias, WVRealVolumeView);
+    WVKernelStatus advectScalarWithAdvectionFields(WVRealVolumeConstView, WVRealFieldBundleConstView, bool antialias, WVRealVolumeView, bool xyOnly = false);
     WVKernelStatus integrateVertical(WVRealVolumeConstView, WVHydrostaticFamily, WVRealVolumeView);
 private:
     WVTransformHydrostaticKernel() = default;

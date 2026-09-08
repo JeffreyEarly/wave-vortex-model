@@ -47,6 +47,28 @@ classdef TestPortableHydrostatic < matlab.unittest.TestCase
                 testCase.verifyEqual(actual.tracer("dye"),expectedTracer,AbsTol=1e-12); clear cleanup
             end
         end
+        function horizontalOnlyObserversMatchMatlab(testCase)
+            for antialias = [false true]
+                wvt = testCase.transform([8 6 9],antialias);
+                wvt.setForcing([WVNonlinearAdvection(wvt),WVAdaptiveDamping(wvt)]);
+                source = testCase.writeInitialModel(wvt,true,false,true);
+                controlPath = fullfile(testCase.folder,"xy-control.nc"); copyfile(source,controlPath);
+                control = WVModel.modelFromFile(char(controlPath)); cleanup = onCleanup(@()control.closeNetCDFFile());
+                control.setupIntegrator(integratorType="fixed",deltaT=.25);
+                control.integrateToTime(38,shouldShowIntegrationDiagnostics=false,callback=@(~)[]);
+                expectedTracer = control.tracer("dye"); [x,y,z] = control.drifterPositions(); clear cleanup
+                for provider = testCase.providers
+                    path = fullfile(testCase.folder,"xy.nc"); copyfile(source,path);
+                    request = fullfile(testCase.folder,"xy.json");
+                    WVModel.writePortableRunRequest(request,path,method="fixed-rk4",finalTime=38,initialStep=.25,fftProvider=replace(provider,"native","native-fftw"));
+                    [status,output] = cleanSystem(shellQuote(testCase.runner)+" --request "+shellQuote(request)); testCase.assertEqual(status,0,output);
+                    actual = WVModel.modelFromFile(char(path)); cleanup = onCleanup(@()actual.closeNetCDFFile());
+                    testCase.verifyEqual(actual.tracer("dye"),expectedTracer,AbsTol=1e-12);
+                    [ax,ay,az] = actual.drifterPositions();
+                    testCase.verifyEqual(ax,x,AbsTol=1e-9); testCase.verifyEqual(ay,y,AbsTol=1e-9); testCase.verifyEqual(az,z); clear cleanup
+                end
+            end
+        end
         function cflAndDefaultSteppingMatchMatlab(testCase)
             wvt = testCase.transform([9 7 9],false);
             wvt.setForcing([WVNonlinearAdvection(wvt),WVAdaptiveDamping(wvt),testCase.forcing(wvt,"WVFixedAmplitudeForcing")]);
@@ -349,7 +371,7 @@ classdef TestPortableHydrostatic < matlab.unittest.TestCase
             model = WVModel(wvt,shouldUseLinearDynamics=linear);
             if withObservers
                 model.eulerianObservingSystem.addNetCDFOutputVariables('u','v','w','eta','p','rho_e','qgpv','zeta_x','zeta_y','zeta_z','ssu','ssv','ssh');
-                model.setDrifterPositions([500 16500],[300 10900],[-750 -100],'u','qgpv',advectionInterpolation="linear",trackedVarInterpolation="spline");
+                model.addParticles('drifter',tracerIsXYOnly,[500 16500],[300 10900],[-750 -100],'u','qgpv',advectionInterpolation="linear",trackedVarInterpolation="spline");
                 tracer = WVTracer(model,name="dye",phi=.3+.2*sin(2*pi*wvt.X/wvt.Lx).*cos(2*pi*wvt.Y/wvt.Ly).*exp(wvt.Z/1000),isXYOnly=tracerIsXYOnly);
                 model.addFluxedObservingSystem(tracer);
             end
