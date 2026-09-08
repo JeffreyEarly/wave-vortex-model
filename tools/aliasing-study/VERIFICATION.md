@@ -46,3 +46,7 @@
 - Original WVM, OceanKit, InternalModes, pinned dependency worktrees, and the detached baseline check are clean. The package manifest does not export `tools`; this study changes only `tools/aliasing-study`. Runtime defaults, versioned snapshots, dependency manifests, and website artifacts are unchanged. No required local asset remains missing.
 - Final source-control whitespace, scope, package-manifest, and generated-artifact checks are recorded by the handoff commands. The failed baseline test is retained in the report and PR; it is not represented as an all-green suite.
 - Final staged whitespace and repository-scope checks passed after normalizing CSV line endings and readable log endings; exact raw logs remain preserved. All 510 branch files are confined to `tools/aliasing-study`, and no large MAT binary was added in the final commit.
+
+## PR merge verification
+
+- Hosted CI passed all 139 smoke tests and Code Analyzer, but its workspace-artifact gate rejected the tracked scalar-pilot MAT. Removed that binary from the Git index while preserving the original local file and existing SHA-256 record, consistent with the other raw numerical files. The CI artifact restriction is unchanged. Earlier statements that this one MAT was versioned describe the pre-merge checkpoint.

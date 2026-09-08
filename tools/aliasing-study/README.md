@@ -39,7 +39,7 @@ Run into fresh result directories as described above. Survey drivers preserve co
 - `results/cost-matrix-v1`: actual sparse replays, comparisons against every matching saved dense error, and fresh-process timing/memory logs. The larger independent sample uses seed 400 and 64 vector interactions without consulting sparse selections or errors.
 - `SOURCE-PILOT.md`, `PLAN.md`, and `VERIFICATION.md`: scientific decisions, initial plan, and chronological verification ledger. Earlier pending statements in the ledger describe earlier checkpoints.
 
-Full per-product MAT files are retained locally and listed with SHA-256 checksums in `results/mat-artifact-manifest.json`. Large MAT files are excluded from Git; a fresh checkout recreates them with the commands above. The source, complete bounded interaction inventories, CSV/JSON result tables, and original small scalar-control MAT are versioned. Exact numerical logs are preserved as gzip files under `results/raw-logs`; readable copies remove trailing whitespace only. `archiveStudyLogs.py` performs that archival step after runs terminate.
+Full per-product MAT files are retained locally and listed with SHA-256 checksums in `results/mat-artifact-manifest.json`. Large MAT files are excluded from Git; a fresh checkout recreates them with the commands above. The source, complete bounded interaction inventories, CSV/JSON result tables, are versioned; the original scalar-control MAT is also retained locally. Exact numerical logs are preserved as gzip files under `results/raw-logs`; readable copies remove trailing whitespace only. `archiveStudyLogs.py` performs that archival step after runs terminate.
 
 ## Scope
 
