@@ -21,6 +21,8 @@
 
 ### Short seasonal QG composition
 
+- Added a bounded spatial-accuracy study separating sampling, retained APV bandwidth, horizontal refinement, time error and resolution-dependent damping. Common-grid physical comparisons retain unresolved Fourier content, report observable-specific tolerances and reference differences, and use the existing public linear seasonal preflight for intended vertical resolution.
+
 - Added an authoring example composing the complete seasonal QG case through existing transform, forcing, exponential integration, output, and model-file restart interfaces. No runtime hierarchy or persistence changes are required.
 - Added short process-accounting, mechanism-sensitivity, actual timestep-refinement and provider-free restart evidence, with explicit retained counts and limits on spatial-accuracy claims.
 
