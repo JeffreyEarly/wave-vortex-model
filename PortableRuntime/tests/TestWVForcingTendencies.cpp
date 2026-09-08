@@ -109,6 +109,8 @@ void observerService(Engine& engine,WVFieldEvaluationService& fields,const WVInt
     first.fieldNames.push_back("u"); record.observers.push_back(first);
     auto second=first; second.identifier="shared-fields"; second.name="shared fields";
     second.fieldNames={requests[0].fieldName,"v"}; record.observers.push_back(second);
+    auto ordinary=first; ordinary.identifier="ordinary-only"; ordinary.name="ordinary only";
+    ordinary.fieldNames={"u"}; record.observers.push_back(ordinary);
     WVPortableObserverDescriptor descriptor;
     auto status=WVPortableObserverDescriptor::create(record,catalog,descriptor);
     if(!status) throw std::runtime_error("Forcing observer descriptor: "+status.message);
@@ -118,7 +120,7 @@ void observerService(Engine& engine,WVFieldEvaluationService& fields,const WVInt
     if(!status) throw std::runtime_error("Forcing observer service: "+status.message);
     WVObservationSchema schema;
     require(bool(service->observationSchema(descriptor.observers()[0],schema)),"Forcing observer schema");
-    require(service->metrics().sharedFieldReuseCount==1,"Forcing observer outputs were not shared");
+    require(service->metrics().sharedFieldReuseCount==2,"Forcing observer outputs were not shared");
     WVFrozenForcingSchedule scheduleValue;
     for(std::size_t index=0;index<engine.forcingCount();++index) {
         const auto* instance=engine.forcingInstance(index);
@@ -174,6 +176,36 @@ void observerService(Engine& engine,WVFieldEvaluationService& fields,const WVInt
     service->complete(event);
     require(service->occurrenceWorkspaceLiveBytes()==0 && fields.metrics().diagnosticWorkspaceLiveBytes==0,"Observer completion retained live forcing scratch");
     require(service->metrics().outputCapacityBytes==0,"Completed forcing observer retained output arrays");
+    // Only the second observer is due: the first nonlinear contribution and v.
+    route.observers=observers.data()+1; route.observerCount=1;
+    const auto selectedCalls=engine.tendencyMetrics().forcingEvaluationCount;
+    require(bool(service->prepare(event)),"Selected forcing observer preparation");
+    require(engine.tendencyMetrics().forcingEvaluationCount==selectedCalls+1 &&
+        service->metrics().outputCapacityBytes==2*expected[0].size()*sizeof(double),
+        "Inactive forcing observers allocated output or evaluated contributions");
+    require(!service->preparedOccurrenceIdentity(route,observers[0],identity),"Inactive observer exposed an occurrence");
+    require(bool(service->preparedOccurrenceIdentity(route,observers[1],identity)) &&
+        bool(service->observationBatch(identity,descriptor.observers()[1],batch)),"Selected forcing observer batch");
+    const auto selectedValue=std::find_if(batch.values.begin(),batch.values.end(),[](const auto& value){return value.resolvedVariableIndex==0;});
+    require(selectedValue!=batch.values.end() && selectedValue->real64Data(),"Selected forcing field missing");
+    relative(std::vector<double>(selectedValue->real64Data(),selectedValue->real64Data()+selectedValue->elementCount()),expected[0],"Selected observer forcing");
+    service->complete(event);
+    WVOutputObserverView ordinaryView{2,&descriptor.observers()[2],descriptor.resolvedObserver(descriptor.observers()[2])};
+    route.observers=&ordinaryView;
+    const auto ordinaryCalls=engine.tendencyMetrics().forcingEvaluationCount;
+    const auto ordinaryPrimitives=fields.metrics().primitiveFieldEvaluationCount;
+    require(bool(service->prepare(event)),"Ordinary-only event preparation");
+    require(engine.tendencyMetrics().forcingEvaluationCount==ordinaryCalls &&
+        fields.metrics().primitiveFieldEvaluationCount==ordinaryPrimitives+1 &&
+        service->metrics().outputCapacityBytes==expected[0].size()*sizeof(double),
+        "Ordinary event evaluated inactive forcing or unrelated fields");
+    service->complete(event);
+    route.observerCount=0;
+    const auto emptyCalls=counter->calls;
+    require(bool(service->prepare(event)) && counter->calls==emptyCalls && service->metrics().outputCapacityBytes==0,
+        "An event with no observers performed field work");
+    service->complete(event);
+    route.observers=observers.data(); route.observerCount=observers.size();
     counter->failAt=counter->calls+fftCalls;
     require(service->prepare(event).code==WVKernelStatusCode::fftExecutionFailure,"Observer expected late forcing FFT failure");
     require(service->occurrenceWorkspaceLiveBytes()==0 && service->metrics().outputCapacityBytes==0,
@@ -274,6 +306,56 @@ void fieldService(Engine& engine,const WVState& state,WVShape4D spatial,
         service->metrics().servicePersistentBytes==persistent && service->metrics().diagnosticWorkspaceLiveBytes==0,
         "Bound field service retained diagnostic workspace or miscounted persistent bytes");
     const auto successful=data;
+    std::vector<std::uint8_t> active(plan.outputCount());
+    std::vector<WVFieldOutputView> selectedViews(plan.outputCount());
+    active[0]=1; selectedViews[0]=views[0];
+    for(auto& field:data) std::fill(field.begin(),field.end(),99);
+    const auto selectedCalls=engine.tendencyMetrics().forcingEvaluationCount;
+    require(bool(service->evaluate(plan,integrationState,selectedViews.data(),selectedViews.size(),active.data())),
+        "Selected diagnostic field evaluation");
+    require(engine.tendencyMetrics().forcingEvaluationCount==selectedCalls+1 && data[0]==successful[0],
+        "Selected field lost its contribution or evaluated unrelated forcings");
+    for(std::size_t index=1;index<data.size();++index)
+        for(auto value:data[index]) require(value==99,"Inactive diagnostic output was written");
+    active[0]=0;
+    const auto emptyCalls=counter->calls;
+    require(bool(service->evaluate(plan,integrationState,selectedViews.data(),selectedViews.size(),active.data())) &&
+        counter->calls==emptyCalls,"Empty diagnostic selection performed FFT work");
+    // A scalar selection shares just its u/v dependencies and no forcing work.
+    active.back()=1; selectedViews.back()=views.back();
+    const auto scalarCalls=engine.tendencyMetrics().forcingEvaluationCount;
+    const auto scalarPrimitives=service->metrics().primitiveFieldEvaluationCount;
+    require(bool(service->evaluate(plan,integrationState,selectedViews.data(),selectedViews.size(),active.data())) &&
+        data.back()==successful.back() && engine.tendencyMetrics().forcingEvaluationCount==scalarCalls &&
+        service->metrics().primitiveFieldEvaluationCount==scalarPrimitives+2,
+        "Selected scalar evaluated unrelated dependencies or forcing");
+    active.back()=0; active[forcingOutputCount-1]=1;
+    selectedViews[forcingOutputCount-1]=views[forcingOutputCount-1];
+    const auto lastCalls=engine.tendencyMetrics().forcingEvaluationCount;
+    const auto selectedFftStart=counter->calls;
+    require(bool(service->evaluate(plan,integrationState,selectedViews.data(),selectedViews.size(),active.data())) &&
+        data[forcingOutputCount-1]==successful[forcingOutputCount-1] &&
+        engine.tendencyMetrics().forcingEvaluationCount==lastCalls+engine.forcingCount(),
+        "Selecting a late forcing lost the necessary preceding stages");
+    const auto selectedFftCount=counter->calls-selectedFftStart;
+    for(auto& field:data) std::fill(field.begin(),field.end(),99);
+    counter->failAt=counter->calls+selectedFftCount;
+    require(service->evaluate(plan,integrationState,selectedViews.data(),selectedViews.size(),active.data()).code==WVKernelStatusCode::fftExecutionFailure,
+        "Selected forcing expected late FFT failure");
+    for(const auto& field:data) for(auto value:field) require(value==99,"Selected diagnostic exposed partial output on failure");
+    counter->failAt=0;
+    require(bool(service->evaluate(plan,integrationState,selectedViews.data(),selectedViews.size(),active.data())) &&
+        data[forcingOutputCount-1]==successful[forcingOutputCount-1] && service->metrics().diagnosticWorkspaceLiveBytes==0,
+        "Selected diagnostic retry differed or retained live scratch");
+    WVFieldEvaluationPlan primitivePlan;
+    require(bool(service->createPlan({{"selected-u","u",{}},{"inactive-v","v",{}}},primitivePlan)),"Primitive selection plan");
+    std::vector<double> primitiveU(R,99);
+    WVFieldOutputView primitiveViews[]={{primitiveU.data(),R},{}};
+    const std::uint8_t primitiveSelection[]={1,0};
+    const auto primitiveBefore=service->metrics().primitiveFieldEvaluationCount;
+    require(bool(service->evaluate(primitivePlan,integrationState,primitiveViews,2,primitiveSelection)) &&
+        service->metrics().primitiveFieldEvaluationCount==primitiveBefore+1 && primitiveU==successful[forcingOutputCount+1],
+        "Primitive plan selection performed unrelated reconstruction or produced incorrect values");
     for(auto& field:data) std::fill(field.begin(),field.end(),99);
     counter->failAt=counter->calls+fftCalls;
     require(service->evaluate(plan,integrationState,views.data(),views.size()).code==WVKernelStatusCode::fftExecutionFailure,
@@ -306,6 +388,32 @@ void fieldService(Engine& engine,const WVState& state,WVShape4D spatial,
     require(evaluatePrepared().code==WVKernelStatusCode::overlappingArrays,"Prepared fields may alias diagnostic output");
     require(counter->calls==rejectCalls,"Prepared input rejected after numerical execution");
     for(auto value:result) require(value==99,"Prepared input preflight changed output");
+    std::vector<WVFieldRequest> mixedRequests{{"phase",qg ? "A0t" : "Apt",{}},{"velocity","u",{}},requests[0]};
+    if(!qg) mixedRequests.push_back({"masked-velocity","u_w",{}});
+    WVFieldEvaluationPlan mixed;
+    require(bool(service->createPlan(mixedRequests,mixed)),"Mixed selected diagnostic plan");
+    std::vector<WVComplex64> phase(mixed.outputs()[0].elementCount);
+    std::vector<std::vector<double>> mixedReal(mixed.outputCount(),std::vector<double>(R));
+    std::vector<WVFieldOutputView> mixedViews(mixed.outputCount());
+    mixedViews[0]={nullptr,phase.size(),phase.data()};
+    for(std::size_t index=1;index<mixedViews.size();++index) mixedViews[index]={mixedReal[index].data(),R};
+    status=service->evaluate(mixed,integrationState,mixedViews.data(),mixedViews.size());
+    if(!status) throw std::runtime_error("Mixed reference evaluation: "+status.message);
+    const auto expectedPhase=phase; const auto expectedMixed=mixedReal;
+    for(std::size_t selected=0;selected<mixed.outputCount();++selected) {
+        std::vector<std::uint8_t> selection(mixed.outputCount()); selection[selected]=1;
+        std::vector<WVFieldOutputView> destinations(mixed.outputCount()); destinations[selected]=mixedViews[selected];
+        std::fill(phase.begin(),phase.end(),WVComplex64{99,99});
+        for(auto& values:mixedReal) std::fill(values.begin(),values.end(),99);
+        const auto callsBefore=engine.tendencyMetrics().forcingEvaluationCount,fftBefore=counter->calls;
+        require(bool(service->evaluate(mixed,integrationState,destinations.data(),destinations.size(),selection.data())),"Mixed selected evaluation");
+        require(engine.tendencyMetrics().forcingEvaluationCount==callsBefore+(selected==2 ? 1 : 0),
+            "Mixed selection evaluated an inactive forcing");
+        if(selected==0) require(equal(phase,expectedPhase) && counter->calls==fftBefore,"Complex-only selection reconstructed physical fields");
+        else require(mixedReal[selected]==expectedMixed[selected],"Selected primitive or masked field differs");
+        for(std::size_t index=1;index<mixed.outputCount();++index) if(index!=selected)
+            for(auto value:mixedReal[index]) require(value==99,"Mixed selection wrote an inactive output");
+    }
     observerService(engine,*service,layout,integrationState,requests,forcingOutputCount,successful,counter);
 }
 

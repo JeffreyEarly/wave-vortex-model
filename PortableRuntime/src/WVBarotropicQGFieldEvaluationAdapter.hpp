@@ -24,7 +24,7 @@ public:
   WVKernelStatus evaluate(const WVFieldEvaluationPlan &plan,
                           const WVIntegrationState &state,
                           WVFieldOutputView *outputs,
-                          std::size_t outputCount);
+                          std::size_t outputCount, const std::uint8_t *activeOutputs = nullptr);
   WVKernelStatus createMovingPlan(
       const std::vector<WVMovingFieldRequest> &requests,
       WVMovingFieldEvaluationPlan &plan) const;

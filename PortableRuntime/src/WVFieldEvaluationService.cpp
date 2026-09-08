@@ -898,6 +898,7 @@ WVKernelStatus WVFieldEvaluationService::createPlan(
         return {WVKernelStatusCode::unsupportedOperation,
                 "Streamfunction evaluation is undefined when the Coriolis "
                 "frequency is zero."};
+      resolved.dependencyMask = metadata->primitiveDependencyMask;
       candidate.dependencyMask_ |= metadata->primitiveDependencyMask;
       candidate.requests_.push_back(std::move(resolved));
       candidate.outputs_.push_back(std::move(output));
@@ -916,22 +917,22 @@ WVKernelStatus WVFieldEvaluationService::createPlan(
 
 WVKernelStatus WVFieldEvaluationService::evaluate(
     const WVFieldEvaluationPlan &plan, const WVState &state,
-    WVFieldOutputView *outputs, std::size_t outputCount) {
-  if (plan.diagnosticPlan_) return plan.diagnosticPlan_->evaluate(*this,{state},outputs,outputCount);
+    WVFieldOutputView *outputs, std::size_t outputCount, const std::uint8_t *activeOutputs) {
+  if (plan.diagnosticPlan_) return plan.diagnosticPlan_->evaluate(*this,{state},outputs,outputCount,activeOutputs);
   if (!transform_) return {WVKernelStatusCode::unsupportedOperation,"This transform requires coefficient-family state views."};
-  const PlanInvocation invocation{&plan, outputs, outputCount};
+  const PlanInvocation invocation{&plan, outputs, outputCount, activeOutputs};
   return evaluatePlanBatch(&invocation, 1, state);
 }
 
 WVKernelStatus WVFieldEvaluationService::evaluate(
     const WVFieldEvaluationPlan &plan, const WVIntegrationState &state,
-    WVFieldOutputView *outputs, std::size_t outputCount) {
-  if (plan.diagnosticPlan_) return plan.diagnosticPlan_->evaluate(*this,state,outputs,outputCount);
+    WVFieldOutputView *outputs, std::size_t outputCount, const std::uint8_t *activeOutputs) {
+  if (plan.diagnosticPlan_) return plan.diagnosticPlan_->evaluate(*this,state,outputs,outputCount,activeOutputs);
   if (barotropicQG_)
-    return barotropicQG_->evaluate(plan, state, outputs, outputCount);
+    return barotropicQG_->evaluate(plan, state, outputs, outputCount, activeOutputs);
   if (stratified_)
-    return stratified_->evaluate(plan, state, outputs, outputCount);
-  return evaluate(plan, state.waveVortex, outputs, outputCount);
+    return stratified_->evaluate(plan, state, outputs, outputCount, activeOutputs);
+  return evaluate(plan, state.waveVortex, outputs, outputCount, activeOutputs);
 }
 
 WVKernelStatus
@@ -976,10 +977,17 @@ WVFieldEvaluationService::evaluatePlanBatch(const PlanInvocation *invocations,
                                 invocationPlanBytes
                     ? std::numeric_limits<std::size_t>::max()
                     : planBytes + invocationPlanBytes;
-    requestedFieldMask |= plan.requestedFieldMask_;
-    dependencyMask |= plan.dependencyMask_;
-    for (const auto &output : plan.outputs_)
-      allOutputsEmpty = allOutputsEmpty && output.elementCount == 0;
+    if (!invocation.activeOutputs) {
+      requestedFieldMask |= plan.requestedFieldMask_;
+      dependencyMask |= plan.dependencyMask_;
+    } else for (const auto &request : plan.requests_) {
+      if (!invocation.activeOutputs[request.outputIndex]) continue;
+      requestedFieldMask |= 1ULL << static_cast<std::size_t>(request.field);
+      dependencyMask |= request.dependencyMask;
+    }
+    for (std::size_t output = 0; output < plan.outputs_.size(); ++output)
+      if (!invocation.activeOutputs || invocation.activeOutputs[output])
+        allOutputsEmpty = allOutputsEmpty && plan.outputs_[output].elementCount == 0;
   }
   if (!std::isfinite(state.t) || !std::isfinite(state.t0))
     return invalid("Field-evaluation state times must be finite.");
@@ -1005,6 +1013,7 @@ WVFieldEvaluationService::evaluatePlanBatch(const PlanInvocation *invocations,
     const auto &plan = *invocation.plan;
     for (std::size_t outputIndex = 0; outputIndex < invocation.outputCount;
          ++outputIndex) {
+      if (invocation.activeOutputs && !invocation.activeOutputs[outputIndex]) continue;
       const auto &output = invocation.outputs[outputIndex];
       if (output.elementCount != plan.outputs_[outputIndex].elementCount)
         return {WVKernelStatusCode::invalidShape,
@@ -1026,7 +1035,7 @@ WVFieldEvaluationService::evaluatePlanBatch(const PlanInvocation *invocations,
             otherInvocation == invocationIndex ? outputIndex + 1 : 0;
         for (std::size_t otherOutput = firstOther;
              otherOutput < other.outputCount; ++otherOutput)
-          if (memoryOverlaps(
+          if ((!other.activeOutputs || other.activeOutputs[otherOutput]) && memoryOverlaps(
                   output.data, bytes, other.outputs[otherOutput].data,
                   other.outputs[otherOutput].elementCount * sizeof(double)))
             return {WVKernelStatusCode::overlappingArrays,
@@ -1092,6 +1101,7 @@ WVFieldEvaluationService::evaluatePlanBatch(const PlanInvocation *invocations,
          ++invocationIndex) {
       const auto &invocation = invocations[invocationIndex];
       for (const auto &request : invocation.plan->requests_) {
+        if (invocation.activeOutputs && !invocation.activeOutputs[request.outputIndex]) continue;
         if (request.field != field)
           continue;
         if (request.samplingKind == WVFieldSamplingKind::fullGrid &&
@@ -1113,6 +1123,7 @@ WVFieldEvaluationService::evaluatePlanBatch(const PlanInvocation *invocations,
          ++invocationIndex) {
       const auto &invocation = invocations[invocationIndex];
       for (const auto &request : invocation.plan->requests_) {
+        if (invocation.activeOutputs && !invocation.activeOutputs[request.outputIndex]) continue;
         if (request.field != field)
           continue;
         auto &output = invocation.outputs[request.outputIndex];
@@ -1759,6 +1770,7 @@ WVKernelStatus WVFieldEvaluationService::prepareEventGeometry(
           candidate.positionSets_[eventRequest.positionSetSlot];
       WVFieldEvaluationPlan::ResolvedRequest request;
       request.field = eventRequest.field;
+      request.dependencyMask = eventRequest.dependencyMask;
       request.nativeRank = eventRequest.nativeRank;
       request.samplingKind = WVFieldSamplingKind::positions;
       request.interpolation = eventRequest.interpolation;

@@ -220,6 +220,7 @@ private:
 
   struct ResolvedRequest {
     Field field = Field::u;
+    std::uint64_t dependencyMask = 0;
     NativeRank nativeRank = NativeRank::volume;
     WVFieldSamplingKind samplingKind = WVFieldSamplingKind::fullGrid;
     WVPositionInterpolation interpolation = WVPositionInterpolation::linear;
@@ -416,13 +417,17 @@ public:
   std::string portableVariableConfiguration() const;
   WVKernelStatus createPlan(const std::vector<WVFieldRequest> &requests,
                             WVFieldEvaluationPlan &plan) const;
+  // A null selection evaluates every output. Otherwise one byte per output
+  // selects its dependencies and writes; inactive output views are untouched.
   WVKernelStatus evaluate(const WVFieldEvaluationPlan &plan,
                           const WVState &state, WVFieldOutputView *outputs,
-                          std::size_t outputCount);
+                          std::size_t outputCount,
+                          const std::uint8_t *activeOutputs = nullptr);
   WVKernelStatus evaluate(const WVFieldEvaluationPlan &plan,
                           const WVIntegrationState &state,
                           WVFieldOutputView *outputs,
-                          std::size_t outputCount);
+                          std::size_t outputCount,
+                          const std::uint8_t *activeOutputs = nullptr);
   WVKernelStatus
   createMovingPlan(const std::vector<WVMovingFieldRequest> &requests,
                    WVMovingFieldEvaluationPlan &plan) const;
@@ -492,6 +497,7 @@ private:
     const WVFieldEvaluationPlan *plan = nullptr;
     WVFieldOutputView *outputs = nullptr;
     std::size_t outputCount = 0;
+    const std::uint8_t *activeOutputs = nullptr;
   };
   friend class detail::WVDiagnosticFieldPlan;
   WVFieldEvaluationService() = default;

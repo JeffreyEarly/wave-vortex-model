@@ -109,7 +109,7 @@ WVKernelStatus WVDiagnosticFieldPlan::create(const WVFieldEvaluationService& ser
         const auto slot=static_cast<std::size_t>(found-plan->forcingIndices_.begin());
         if(found==plan->forcingIndices_.end()) plan->forcingIndices_.push_back(bound.executionIndex);
         Output output; output.variable=bound.contract->metadata.identifier; output.forcing=true;
-        output.forcingSlot=slot; output.forcingChannel=bound.channel;
+        output.forcingSlot=slot; output.forcingChannel=bound.channel; output.forcingPhysicalChannels=bound.physicalChannels;
         output.specification.identifier=request.identifier; output.specification.fieldName=request.fieldName;
         output.specification.samplingKind=request.sampling.kind;
         output.specification.dimensions=plan->isBarotropic_ ? std::vector<std::size_t>{plan->spatial_.first,plan->spatial_.second} :
@@ -270,9 +270,10 @@ double WVDiagnosticFieldPlan::stratification(std::size_t z) const noexcept {
 }
 
 WVKernelStatus WVDiagnosticFieldPlan::evaluate(WVFieldEvaluationService& service,const WVIntegrationState& input,
-    WVFieldOutputView* outputs,std::size_t count) const {
+    WVFieldOutputView* outputs,std::size_t count,const std::uint8_t* activeOutputs) const {
   if(owner_!=&service) return invalid("The diagnostic plan belongs to a different field service.");
   if(count!=outputs_.size() || (count && !outputs)) return invalid("Diagnostic output-view count is invalid.");
+  const auto active=[&](std::size_t index) {return !activeOutputs || activeOutputs[index];};
   WVState amplitudes=input.waveVortex;
   if(input.coefficientFamilyCount) {
     if(input.coefficientFamilyCount!=(isQG_ ? 1u : 3u) || !input.coefficientFamilies)
@@ -308,6 +309,7 @@ WVKernelStatus WVDiagnosticFieldPlan::evaluate(WVFieldEvaluationService& service
         return invalid("Diagnostic coefficients must be finite.");
   }
   for(std::size_t index=0;index<count;++index) {
+    if(!active(index)) continue;
     const auto& spec=outputs_[index].specification;
     const void* pointer=spec.isComplex ? static_cast<void*>(outputs[index].complexData) : outputs[index].data;
     const auto bytes=spec.elementCount*(spec.isComplex ? sizeof(WVComplex64) : sizeof(double));
@@ -331,6 +333,29 @@ WVKernelStatus WVDiagnosticFieldPlan::evaluate(WVFieldEvaluationService& service
   auto& metrics=service.stratified_ ? service.stratified_->metrics_ : service.barotropicQG_ ? service.barotropicQG_->metrics_ : service.metrics_;
   struct ResetLive { WVFieldEvaluationMetrics& metrics; ~ResetLive() {metrics.diagnosticWorkspaceLiveBytes=0;} } reset{metrics};
   try {
+    std::array<std::vector<std::uint8_t>,5> activeDependencies;
+    for(std::size_t group=0;group<groups_.size();++group)
+      activeDependencies[group].resize(groups_[group].fields.outputCount());
+    std::vector<std::uint8_t> activeForcing(forcingIndices_.size());
+    std::size_t physicalChannels=0;
+    for(std::size_t index=0;index<count;++index) {
+      if(!active(index)) continue;
+      const auto& output=outputs_[index];
+      if(output.forcing) {
+        activeForcing[output.forcingSlot]=1;
+        physicalChannels=std::max(physicalChannels,output.forcingPhysicalChannels);
+      } else if(!output.specification.isComplex) {
+        if(output.variable==Variable::totalEnergySpatiallyIntegrated)
+          for(std::size_t channel=0;channel<(isHydrostatic_ ? 3u : 4u);++channel)
+            activeDependencies[0][output.auxiliaries[channel]]=1;
+        else if(output.extrema) {
+          activeDependencies[0][output.auxiliaries[0]]=1;
+          if(output.variable==Variable::uvMax) activeDependencies[0][output.auxiliaries[1]]=1;
+        } else activeDependencies[output.group][output.dependency]=1;
+      }
+    }
+    for(std::size_t channel=0;channel<physicalChannels;++channel)
+      activeDependencies[0][forcingPhysicalDependencies_[channel]]=1;
     std::array<std::vector<std::vector<double>>,5> fields;
     std::array<std::vector<WVComplex64>,3> masked;
     std::vector<WVComplex64> phases;
@@ -339,7 +364,8 @@ WVKernelStatus WVDiagnosticFieldPlan::evaluate(WVFieldEvaluationService& service
     std::vector<double> forcingPhysical;
     std::size_t primitiveCount=0;
     const auto account=[&](std::size_t viewBytes) {
-      std::size_t bytes=viewBytes;
+      std::size_t bytes=viewBytes+activeForcing.capacity()*sizeof(std::uint8_t);
+      for(const auto& selection:activeDependencies) bytes+=selection.capacity()*sizeof(std::uint8_t);
       for(const auto& group:fields) {
         bytes+=group.capacity()*sizeof(std::vector<double>);
         for(const auto& buffer:group) bytes+=buffer.capacity()*sizeof(double);
@@ -354,12 +380,14 @@ WVKernelStatus WVDiagnosticFieldPlan::evaluate(WVFieldEvaluationService& service
     };
     for(std::size_t group=0;group<groups_.size();++group) {
       const auto& plan=groups_[group].fields;
-      if(!plan.outputCount()) continue;
-      std::vector<WVFieldOutputView> views;
+      if(std::none_of(activeDependencies[group].begin(),activeDependencies[group].end(),[](auto value){return value!=0;})) continue;
+      std::vector<WVFieldOutputView> views(plan.outputCount());
       fields[group].resize(plan.outputCount());
       for(std::size_t output=0;output<plan.outputCount();++output) {
+        if(!activeDependencies[group][output]) continue;
         auto& buffer=fields[group][output]; buffer.resize(plan.outputs()[output].elementCount);
-        views.push_back({buffer.data(),buffer.size()});
+        views[output]={buffer.data(),buffer.size()};
+        ++primitiveCount;
       }
       WVIntegrationState selected=input;
       selected.waveVortex=amplitudes;
@@ -377,32 +405,33 @@ WVKernelStatus WVDiagnosticFieldPlan::evaluate(WVFieldEvaluationService& service
         }
       }
       account(views.capacity()*sizeof(WVFieldOutputView));
-      const auto status=service.evaluate(plan,selected,views.data(),views.size()); if(!status) return status;
-      primitiveCount+=views.size();
+      const auto status=service.evaluate(plan,selected,views.data(),views.size(),activeDependencies[group].data()); if(!status) return status;
     }
-    if(!forcingIndices_.empty()) {
+    if(std::any_of(activeForcing.begin(),activeForcing.end(),[](auto value){return value!=0;})) {
       const std::size_t channels=isQG_ ? 1 : isHydrostatic_ ? 3 : 4;
       forcingFields.resize(forcingIndices_.size());
       for(std::size_t slot=0;slot<forcingIndices_.size();++slot) {
+        if(!activeForcing[slot]) continue;
         auto& buffer=forcingFields[slot]; buffer.resize(channels*spatial_.elementCount());
         forcingViews.push_back({forcingIndices_[slot],{buffer.data(),{spatial_.first,spatial_.second,spatial_.third,channels}}});
       }
       WVRealFieldBundleConstView prepared;
-      if(forcingPhysicalChannels_) {
+      if(physicalChannels) {
         const auto R=spatial_.elementCount();
-        forcingPhysical.resize(forcingPhysicalChannels_*R);
-        for(std::size_t channel=0;channel<forcingPhysicalChannels_;++channel)
+        forcingPhysical.resize(physicalChannels*R);
+        for(std::size_t channel=0;channel<physicalChannels;++channel)
           std::copy_n(fields[0][forcingPhysicalDependencies_[channel]].data(),R,forcingPhysical.data()+channel*R);
-        prepared={forcingPhysical.data(),{spatial_.first,spatial_.second,spatial_.third,forcingPhysicalChannels_}};
+        prepared={forcingPhysical.data(),{spatial_.first,spatial_.second,spatial_.third,physicalChannels}};
       }
       account(0);
-      const auto status=service.forcing_->evaluate(amplitudes,forcingViews.data(),forcingViews.size(),forcingPhysicalChannels_ ? &prepared : nullptr);
+      const auto status=service.forcing_->evaluate(amplitudes,forcingViews.data(),forcingViews.size(),physicalChannels ? &prepared : nullptr);
       metrics.diagnosticWorkspaceHighWaterBytes=std::max(metrics.diagnosticWorkspaceHighWaterBytes,
           metrics.diagnosticWorkspaceLiveBytes+service.forcing_->metrics().workspaceLastPeakBytes);
       if(!status) return status;
     }
     bool needsPhase=false;
-    for(const auto& output:outputs_) needsPhase|=output.variable==Variable::Apt || output.variable==Variable::Amt;
+    for(std::size_t index=0;index<count;++index) if(active(index))
+      needsPhase|=outputs_[index].variable==Variable::Apt || outputs_[index].variable==Variable::Amt;
     if(needsPhase) {
       phases.resize(n);
       for(std::size_t index=0;index<n;++index) {
@@ -412,6 +441,7 @@ WVKernelStatus WVDiagnosticFieldPlan::evaluate(WVFieldEvaluationService& service
     }
     account(0);
     for(std::size_t index=0;index<count;++index) {
+      if(!active(index)) continue;
       const auto& output=outputs_[index];
       if(output.forcing) {
         const auto R=spatial_.elementCount();
@@ -468,8 +498,10 @@ WVKernelStatus WVDiagnosticFieldPlan::evaluate(WVFieldEvaluationService& service
     }
     ++metrics.diagnosticEvaluationCount;
     metrics.diagnosticPrimitiveOutputCount+=primitiveCount;
-    std::size_t primitiveReferences=forcingPhysicalChannels_,phaseReferences=0;
-    for(const auto& output:outputs_) {
+    std::size_t primitiveReferences=physicalChannels,phaseReferences=0;
+    for(std::size_t index=0;index<count;++index) {
+      if(!active(index)) continue;
+      const auto& output=outputs_[index];
       if(output.forcing) continue;
       if(output.specification.isComplex) {
         if(output.variable!=Variable::A0t) ++phaseReferences;

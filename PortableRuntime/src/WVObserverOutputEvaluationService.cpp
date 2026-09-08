@@ -294,6 +294,7 @@ public:
   WVFieldEvaluationService *fields = nullptr;
   WVFieldEvaluationPlan initialFieldPlan;
   WVFieldEvaluationPlan timeSeriesFieldPlan;
+  std::vector<std::uint8_t> activeTimeSeriesOutputs;
   std::vector<std::vector<WVComplex64>> initialComplexFieldStorage;
   std::vector<std::vector<WVComplex64>> timeSeriesComplexFieldStorage;
   std::vector<std::vector<double>> initialFieldStorage;
@@ -384,6 +385,7 @@ public:
     releaseForcingOutputs(metrics);
     try {
       for(std::size_t index=0;index<timeSeriesFieldPlan.outputCount();++index) {
+        if(!activeTimeSeriesOutputs[index]) continue;
         const auto& output=timeSeriesFieldPlan.outputs()[index];
         if(output.isComplex) {
           auto& storage=timeSeriesComplexFieldStorage[index]; storage.resize(output.elementCount);
@@ -440,8 +442,9 @@ public:
     const auto finish = [this]() { running = false; };
     auto &views = initial ? initialFieldViews : timeSeriesFieldViews;
     const auto &plan = initial ? initialFieldPlan : timeSeriesFieldPlan;
-    if (!views.empty()) {
-      const auto status = fields->evaluate(plan, state, views.data(), views.size());
+    if (!views.empty() && (initial || std::any_of(activeTimeSeriesOutputs.begin(),activeTimeSeriesOutputs.end(),[](auto value){return value!=0;}))) {
+      const auto status = fields->evaluate(plan, state, views.data(), views.size(),
+                                           initial ? nullptr : activeTimeSeriesOutputs.data());
       if (!status) {
         finish();
         return status;
@@ -1001,6 +1004,7 @@ WVKernelStatus WVObserverOutputEvaluationService::create(
                        impl.timeSeriesFieldViews);
     if (!status)
       return status;
+    impl.activeTimeSeriesOutputs.resize(impl.timeSeriesFieldPlan.outputCount());
     if (!movingRequests.empty()) {
       status = impl.fields->createMovingPlan(movingRequests,
                                              impl.movingFieldPlan);
@@ -1203,6 +1207,7 @@ WVKernelStatus WVObserverOutputEvaluationService::prepareInitial(
   impl_->preparedOccurrences.clear();
   impl_->eventFieldBatchEntries.clear();
   impl_->preparedOutputEvent = false;
+  impl_->releaseForcingOutputs(metrics_);
   ++impl_->preparationGeneration;
   if (impl_->preparationGeneration == 0)
     ++impl_->preparationGeneration;
@@ -1220,6 +1225,11 @@ WVKernelStatus WVObserverOutputEvaluationService::prepareInitial(
 WVKernelStatus WVObserverOutputEvaluationService::prepare(
     const WVOutputEvent &event) {
   const auto started = std::chrono::steady_clock::now();
+  if (event.routeCount && !event.routes)
+    return invalid("Output route storage is missing.");
+  for(std::size_t route=0;route<event.routeCount;++route)
+    if(event.routes[route].observerCount && !event.routes[route].observers)
+      return invalid("Output route observer storage is missing.");
   if (!sameTime(event.state.waveVortex.t, event.scheduledTime))
     return invalid("Observation occurrence state is not evaluated at its "
                    "scheduled trigger time.");
@@ -1245,6 +1255,7 @@ WVKernelStatus WVObserverOutputEvaluationService::prepare(
   impl_->preparedOccurrences.clear();
   impl_->eventFieldBatchEntries.clear();
   impl_->preparedOutputEvent = false;
+  impl_->releaseForcingOutputs(metrics_);
   ++impl_->preparationGeneration;
   if (impl_->preparationGeneration == 0)
     ++impl_->preparationGeneration;
@@ -1260,6 +1271,19 @@ WVKernelStatus WVObserverOutputEvaluationService::prepare(
         needsMoving = true;
         break;
       }
+    }
+  std::fill(impl_->activeTimeSeriesOutputs.begin(),impl_->activeTimeSeriesOutputs.end(),event.routes ? 0 : 1);
+  for(std::size_t route=0;route<event.routeCount;++route)
+    for(std::size_t observer=0;observer<event.routes[route].observerCount;++observer) {
+      const auto& view=event.routes[route].observers[observer];
+      if(view.observerOrdinal>=impl_->observerBindings.size())
+        return invalid("An output route has an invalid observer ordinal.");
+      const auto& binding=impl_->observerBindings[view.observerOrdinal];
+      if(binding.record!=view.record || !binding.outputs)
+        return invalid("An output route has an incompatible observer binding.");
+      for(const auto& output:*binding.outputs)
+        if(output.source==WVObserverOutputChannelSource::sampledField && !output.initialField)
+          impl_->activeTimeSeriesOutputs[output.fieldOutput]=1;
     }
   impl_->preparedEventOrdinal = event.eventOrdinal;
   impl_->preparedScheduledTime = event.scheduledTime;
@@ -1510,6 +1534,7 @@ std::size_t WVObserverOutputEvaluationService::persistentBytes() const noexcept 
       impl_->movingFieldStorage.capacity() * sizeof(std::vector<double>) +
       impl_->initialFieldViews.capacity() * sizeof(WVFieldOutputView) +
       impl_->timeSeriesFieldViews.capacity() * sizeof(WVFieldOutputView) +
+      impl_->activeTimeSeriesOutputs.capacity() * sizeof(std::uint8_t) +
       impl_->movingFieldViews.capacity() * sizeof(WVFieldOutputView) +
       impl_->movingCoordinates.capacity() * sizeof(Impl::MovingCoordinates) +
       impl_->observerPlans.capacity() * sizeof(WVObserverOutputPlan) +

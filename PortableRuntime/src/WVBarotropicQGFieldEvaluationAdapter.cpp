@@ -562,7 +562,7 @@ WVKernelStatus WVBarotropicQGFieldEvaluationAdapter::createPlan(
 WVKernelStatus WVBarotropicQGFieldEvaluationAdapter::evaluate(
     const WVFieldEvaluationPlan &publicPlan,
     const WVIntegrationState &state, WVFieldOutputView *outputs,
-    std::size_t outputCount) {
+    std::size_t outputCount, const std::uint8_t *activeOutputs) {
   const auto plan =
       std::static_pointer_cast<const Plan>(publicPlan.transformPlan_);
   if (!plan || plan->fingerprint != configurationFingerprint(configuration()))
@@ -572,9 +572,9 @@ WVKernelStatus WVBarotropicQGFieldEvaluationAdapter::evaluate(
     return {WVKernelStatusCode::invalidShape,
             "Barotropic QG outputs do not match the resolved plan."};
   for (std::size_t output = 0; output < outputCount; ++output)
-    if (outputs[output].data == nullptr ||
+    if ((!activeOutputs || activeOutputs[output]) && (outputs[output].data == nullptr ||
         outputs[output].elementCount !=
-            publicPlan.outputs_[output].elementCount)
+            publicPlan.outputs_[output].elementCount))
       return {WVKernelStatusCode::invalidShape,
               "A Barotropic QG output has the wrong shape."};
   WVComplexConstView A0;
@@ -593,6 +593,7 @@ WVKernelStatus WVBarotropicQGFieldEvaluationAdapter::evaluate(
   std::array<bool, 8> evaluated{};
   const auto spatial = kernel_->descriptor().spatialShape();
   for (const auto &request : plan->requests) {
+    if (activeOutputs && !activeOutputs[request.output]) continue;
     if (request.scalar != ScalarField::none) {
       double value = 0.0;
       status = request.scalar == ScalarField::energy
@@ -617,6 +618,7 @@ WVKernelStatus WVBarotropicQGFieldEvaluationAdapter::evaluate(
       ++metrics_.primitiveFieldEvaluationCount;
       evaluated[fieldIndex] = true;
       for (const auto &destination : plan->requests) {
+        if (activeOutputs && !activeOutputs[destination.output]) continue;
         if (destination.scalar != ScalarField::none ||
             destination.field != request.field)
           continue;
