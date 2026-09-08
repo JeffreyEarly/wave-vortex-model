@@ -1,0 +1,97 @@
+{
+  "schema": "wvm-ci-coverage-review-v1",
+  "workflows": {
+    "hydrostatic-kernel.yml": {
+      "scientificStepsPreservedExactly": true,
+      "beforeTriggers": [
+        "pull_request",
+        "push",
+        "workflow_dispatch"
+      ],
+      "afterTriggers": [
+        "workflow_dispatch"
+      ],
+      "proposedSha256": "9dc3ed1c97b348bce5a82f79e776159addd64171975477b4b39702c9870546df"
+    },
+    "boussinesq-kernel.yml": {
+      "scientificStepsPreservedExactly": true,
+      "beforeTriggers": [
+        "pull_request",
+        "push",
+        "workflow_dispatch"
+      ],
+      "afterTriggers": [
+        "workflow_dispatch"
+      ],
+      "proposedSha256": "4b30fcaef92b61172bbe95f034f391eafaa35a2fec77523e7f23a41df85a5ae2"
+    },
+    "sqg-qualification.yml": {
+      "scientificStepsPreservedExactly": true,
+      "beforeTriggers": [
+        "pull_request",
+        "push",
+        "workflow_dispatch"
+      ],
+      "afterTriggers": [
+        "workflow_dispatch"
+      ],
+      "proposedSha256": "471cc7198b96fc8bf8334714ba569b3cfe8baf53965ea9143433842e3419a0e9"
+    },
+    "extended-ci.yml": {
+      "scientificStepsPreservedExactly": true,
+      "beforeTriggers": [
+        "schedule",
+        "pull_request",
+        "workflow_dispatch"
+      ],
+      "afterTriggers": [
+        "schedule",
+        "workflow_dispatch"
+      ],
+      "proposedSha256": "9a9a744b6cfab896b611cc2832c2ec3c561337bd6742843bd32a83c30acbbd7d"
+    },
+    "release-verification.yml": {
+      "scientificStepsPreservedExactly": true,
+      "beforeTriggers": [
+        "workflow_dispatch",
+        "pull_request"
+      ],
+      "afterTriggers": [
+        "workflow_dispatch",
+        "workflow_call"
+      ],
+      "proposedSha256": "51751eea48eab2b3916fad05b5848958d2ed1e073cb9a611d61ec7dfda5a4fec"
+    }
+  },
+  "standaloneRuntimeCTestCount": 39,
+  "consolidatedCTestCount": 44,
+  "allRuntimeTestsRetained": true,
+  "additionalCoreContracts": [
+    "WVAllocationProbe",
+    "WVBarotropicQGKernel",
+    "WVKernelContract",
+    "WVPreparedModeExecutor",
+    "WVSpectralOperators"
+  ],
+  "catalogReplacement": {
+    "classes": [
+      "TestPortableVariableCatalog",
+      "TestPortableDiagnostics"
+    ],
+    "releases": [
+      "R2025b",
+      "R2026a"
+    ],
+    "ctestNames": [
+      "portable-variable-catalog",
+      "field-evaluation",
+      "observer-output-evaluation"
+    ]
+  },
+  "deferredMethods": [
+    "TestPortableStratifiedQGQualification/longerContinuationMatchesMatlab",
+    "TestPortableHydrostaticQualification/longerContinuationMatchesMatlab",
+    "TestPortableBoussinesqQualification/longerContinuationMatchesMatlab"
+  ],
+  "completeDeferrals": []
+}

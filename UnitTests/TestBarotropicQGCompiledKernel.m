@@ -6,6 +6,15 @@ classdef TestBarotropicQGCompiledKernel < matlab.unittest.TestCase
 
     methods (TestClassSetup)
         function buildStandaloneKernel(testCase)
+            binaryDirectory = string(getenv("WVM_CI_BINARY_DIR"));
+            if binaryDirectory ~= ""
+                testCase.ToleranceDump = fullfile(binaryDirectory,"WVBarotropicQGToleranceDump");
+                testCase.ForcingDump = fullfile(binaryDirectory,"WVBarotropicQGForcingDump");
+                for name = ["WVBarotropicQGToleranceDump","WVBarotropicQGForcingDump","WVBarotropicQGFixtureDump"]
+                    testCase.assertTrue(isfile(fullfile(binaryDirectory,name)),"Missing supplied CI probe: "+name);
+                end
+                return
+            end
             repositoryRoot = fileparts(fileparts(mfilename("fullpath")));
             scriptPath = fullfile(repositoryRoot,"tools","compiled-kernel","run_contract_tests.sh");
             [status,output] = systemWithoutMatlabRuntime(sprintf('"%s"',scriptPath));
@@ -235,6 +244,7 @@ end
 function actual = barotropicFixtureDump(definition)
 repositoryRoot = fileparts(fileparts(mfilename("fullpath")));
 executable = fullfile(repositoryRoot,"tools","compiled-kernel","build","WVBarotropicQGFixtureDump");
+if getenv("WVM_CI_BINARY_DIR") ~= "", executable = fullfile(getenv("WVM_CI_BINARY_DIR"),"WVBarotropicQGFixtureDump"); end
 arguments = [definition.Nxy definition.Lxy definition.h definition.j definition.g definition.rotationRate definition.latitude definition.shouldAntialias definition.planetaryRadius];
 command = sprintf('"%s" %s',executable,strjoin(compose("%.17g",arguments)," "));
 [status,output] = systemWithoutMatlabRuntime(command);

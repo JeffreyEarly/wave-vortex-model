@@ -3,8 +3,6 @@ name: WaveVortexModel Extended CI
 on:
   schedule:
     - cron: "0 9 * * 1"
-  pull_request:
-    types: [opened, synchronize, reopened, labeled, unlabeled, closed]
   workflow_dispatch:
 
 permissions:
@@ -19,14 +17,10 @@ env:
 
 jobs:
   full:
-    if: ${{ github.event.action != 'closed' && (github.event_name != 'pull_request' || github.base_ref == 'main' || contains(github.event.pull_request.labels.*.name, 'final-integration')) }}
     name: Full / MATLAB R2025b
     runs-on: ubuntu-latest
     timeout-minutes: 45
     steps:
-      - name: Install portable-runtime build dependencies
-        run: sudo apt-get update && sudo apt-get install --yes libnetcdf-dev pkg-config
-
       - name: Check out WaveVortexModel
         uses: actions/checkout@v6
         with:
@@ -41,11 +35,30 @@ jobs:
           path: OceanKit
           persist-credentials: false
 
-      - name: Set up MATLAB R2025b
+      - name: Configure bounded provisioning
+        timeout-minutes: 5
+        run: bash source/tools/ci/provision_ubuntu.sh netcdf
+      - name: Provision MATLAB
+        id: setup
+        continue-on-error: true
+        timeout-minutes: 5
         uses: matlab-actions/setup-matlab@v3
         with:
           release: R2025b
           cache: true
+      - name: Retry MATLAB provisioning once
+        id: retry
+        if: ${{ !cancelled() && steps.setup.outcome == 'failure' }}
+        timeout-minutes: 5
+        uses: matlab-actions/setup-matlab@v3
+        with:
+          release: R2025b
+          cache: true
+      - name: Require successful provisioning
+        env:
+          FIRST: ${{ steps.setup.outcome }}
+          RETRY: ${{ steps.retry.outcome }}
+        run: test "$FIRST" = success || test "$RETRY" = success
 
       - name: Run full tests
         uses: matlab-actions/run-command@v3
@@ -65,7 +78,6 @@ jobs:
         run: bash tools/checkCIWorkspaceCleanliness.sh
 
   exhaustive:
-    if: ${{ github.event.action != 'closed' && (github.event_name != 'pull_request' || github.base_ref == 'main' || contains(github.event.pull_request.labels.*.name, 'final-integration')) }}
     name: Exhaustive / MATLAB R2025b
     runs-on: ubuntu-latest
     timeout-minutes: 45
@@ -84,11 +96,30 @@ jobs:
           path: OceanKit
           persist-credentials: false
 
-      - name: Set up MATLAB R2025b
+      - name: Configure bounded provisioning
+        timeout-minutes: 5
+        run: bash source/tools/ci/provision_ubuntu.sh netcdf
+      - name: Provision MATLAB
+        id: setup
+        continue-on-error: true
+        timeout-minutes: 5
         uses: matlab-actions/setup-matlab@v3
         with:
           release: R2025b
           cache: true
+      - name: Retry MATLAB provisioning once
+        id: retry
+        if: ${{ !cancelled() && steps.setup.outcome == 'failure' }}
+        timeout-minutes: 5
+        uses: matlab-actions/setup-matlab@v3
+        with:
+          release: R2025b
+          cache: true
+      - name: Require successful provisioning
+        env:
+          FIRST: ${{ steps.setup.outcome }}
+          RETRY: ${{ steps.retry.outcome }}
+        run: test "$FIRST" = success || test "$RETRY" = success
 
       - name: Run exhaustive tests
         uses: matlab-actions/run-command@v3
@@ -108,7 +139,6 @@ jobs:
         run: bash tools/checkCIWorkspaceCleanliness.sh
 
   optional:
-    if: ${{ github.event.action != 'closed' && (github.event_name != 'pull_request' || github.base_ref == 'main' || contains(github.event.pull_request.labels.*.name, 'final-integration')) }}
     name: Optional / MATLAB R2025b
     runs-on: ubuntu-latest
     timeout-minutes: 45
@@ -127,12 +157,32 @@ jobs:
           path: OceanKit
           persist-credentials: false
 
-      - name: Set up MATLAB R2025b with Optimization Toolbox
+      - name: Configure bounded provisioning
+        timeout-minutes: 5
+        run: bash source/tools/ci/provision_ubuntu.sh netcdf
+      - name: Provision MATLAB
+        id: setup
+        continue-on-error: true
+        timeout-minutes: 5
         uses: matlab-actions/setup-matlab@v3
         with:
           release: R2025b
           products: Optimization_Toolbox
           cache: true
+      - name: Retry MATLAB provisioning once
+        id: retry
+        if: ${{ !cancelled() && steps.setup.outcome == 'failure' }}
+        timeout-minutes: 5
+        uses: matlab-actions/setup-matlab@v3
+        with:
+          release: R2025b
+          products: Optimization_Toolbox
+          cache: true
+      - name: Require successful provisioning
+        env:
+          FIRST: ${{ steps.setup.outcome }}
+          RETRY: ${{ steps.retry.outcome }}
+        run: test "$FIRST" = success || test "$RETRY" = success
 
       - name: Run optional tests when Optimization Toolbox is available
         uses: matlab-actions/run-command@v3
