@@ -1,6 +1,7 @@
 #pragma once
 
 #include "WaveVortexRuntime/WVForcingSchedule.hpp"
+#include "WaveVortexRuntime/WVForcingTendency.hpp"
 #include "WaveVortexRuntime/WVIntegrationContracts.hpp"
 #include "WaveVortexKernel/WVTransformStratifiedQGKernel.hpp"
 
@@ -71,6 +72,7 @@ public:
   virtual std::uint8_t priority() const noexcept = 0;
   virtual std::size_t ordinal() const noexcept = 0;
   virtual std::size_t persistentBytes() const noexcept = 0;
+  virtual bool supportsTendencyDiagnostics() const noexcept { return false; }
   virtual std::size_t constraintWriteCount() const noexcept { return 0; }
   virtual WVKernelStatus addRightHandSide(
       WVStratifiedQGForcingExecutionContext &context) const = 0;
@@ -113,6 +115,13 @@ public:
     return scheduleIdentifier_;
   }
   std::size_t persistentBytes() const noexcept;
+  std::size_t forcingCount() const noexcept { return forcing_.size(); }
+  const WVStratifiedQGForcing* forcingInstance(std::size_t index) const noexcept {
+    return index<forcing_.size() ? forcing_[index].get() : nullptr;
+  }
+  WVKernelStatus evaluateForcingTendencies(const WVComplexConstView&,
+      const WVForcingTendencyOutput*,std::size_t);
+  const WVForcingTendencyMetrics& tendencyMetrics() const noexcept { return tendencyMetrics_; }
 
 private:
   WVStratifiedQGForcingEngine() = default;
@@ -125,6 +134,9 @@ private:
   WVStratifiedQGForcingEngineMetrics metrics_;
   std::string scheduleIdentifier_;
   std::vector<WVComplex64> tendencyScratch_;
+  detail::WVForcingDiagnosticWorkspace* diagnosticWorkspace_ = nullptr;
+  WVForcingTendencyMetrics tendencyMetrics_;
+  WVKernelStatus diagnosticVelocity(WVComplexConstView,WVRealFieldBundleConstView&);
   bool executing_ = false;
   friend class WVStratifiedQGForcingExecutionContext;
 };

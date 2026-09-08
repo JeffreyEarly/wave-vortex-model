@@ -1,5 +1,6 @@
 #include "WaveVortexRuntime/WVForcingEngine.hpp"
 #include "WaveVortexRuntime/WVBarotropicQGForcingEngine.hpp"
+#include "WaveVortexRuntime/WVStratifiedQGForcingEngine.hpp"
 #include "WaveVortexRuntime/WVHydrostaticForcingEngine.hpp"
 #include "WaveVortexRuntime/WVBoussinesqForcingEngine.hpp"
 #include "WaveVortexRuntime/WVStratifiedModalRecord.hpp"
@@ -81,11 +82,12 @@ bool equal(const std::vector<WVComplex64>& a,const std::vector<WVComplex64>& b) 
         if (a[i].real!=b[i].real || a[i].imag!=b[i].imag) return false;
     return true;
 }
-void relative(const std::vector<double>& a,const std::vector<double>& b) {
+void relative(const std::vector<double>& a,const std::vector<double>& b,const char* label="Forcing stage difference") {
     double scale=0,error=0;
     for (std::size_t i=0;i<a.size();++i) {
         scale=std::max(scale,std::abs(b[i])); error=std::max(error,std::abs(a[i]-b[i]));
     }
+    if (error>1e-12*std::max(scale,1e-30)) std::cerr<<label<<": error="<<error<<" scale="<<scale<<" relative="<<error/std::max(scale,1e-30)<<"\n";
     require(error<=1e-12*std::max(scale,1e-30),"Forcing stage difference does not match its accumulated tendency");
 }
 
@@ -326,6 +328,117 @@ void barotropic() {
         counter->calls==beforeReject,"QG raw overlap accepted or rejected after FFT");
 }
 
+void stratifiedQG() {
+    Temporary file; fixture(file.path); change(file.path,"shouldAntialias",0);
+    std::shared_ptr<const WVStratifiedModalRecord> source;
+    require(bool(WVStratifiedModalReader::read(file.path.string(),source)),"QG diagnostic modal source");
+    const auto& g=source->geometry();
+    const WVShape2D spectral{g.Nj,g.Nkl}; const WVShape3D volume{g.Nx,g.Ny,g.Nz};
+    const WVShape4D spatial{g.Nx,g.Ny,g.Nz,1}; const auto S=spectral.elementCount(),R=volume.elementCount();
+    auto scheduleValue=schedule(S);
+    auto& entries=scheduleValue.entries;
+    entries[0].configuration.values.erase(entries[0].configuration.values.begin(),entries[0].configuration.values.begin()+6);
+    entries.push_back({"WVBottomFrictionQuadratic",1,"quadratic drag",WVForcingStage::spatial,255,4,"",
+        {"wave-vortex-forcing-configuration-v1",1,{{"Cd",{},std::vector<double>{.002}}}}});
+    entries.push_back({"WVVerticalDiffusivity",1,"vertical mixing",WVForcingStage::spatial,255,5,"",
+        {"wave-vortex-forcing-configuration-v1",1,{{"kappa_z",{},std::vector<double>{.002}},
+            {"shouldForceMeanDensityAnomaly",{},std::vector<std::uint8_t>{0}}}}});
+    const WVPortableTypedRecord empty{"wave-vortex-forcing-configuration-v1",1,{}};
+    entries.push_back({"WVBetaPlanePVAdvection",1,"beta advection",WVForcingStage::spatial,255,6,"",empty});
+    entries.push_back({"WVAdaptiveDamping",1,"adaptive damping",WVForcingStage::spectral,255,7,"",empty});
+    auto counter=std::make_shared<FailureCounter>();
+    std::unique_ptr<WVStratifiedQGForcingEngine> engine;
+    auto status=WVStratifiedQGForcingEngine::create(source,scheduleValue,wavevortex::runtime::test::extensionCatalog(),
+        std::make_unique<FailingEngine>(counter),engine);
+    if (!status) throw std::runtime_error("Stratified QG schedule: "+status.message);
+    std::vector<WVComplex64> a(S),f(S);
+    for (std::size_t i=0;i<S;++i) if (g.k[i/g.Nj]!=0 || g.l[i/g.Nj]!=0)
+        a[i]={1e-6*std::sin(.17*i),1e-6*std::cos(.23*i)};
+    const WVComplexConstView state{a.data(),spectral}; WVComplexView flux{f.data(),spectral};
+    require(bool(engine->evaluateRightHandSide(state,flux)),"Stratified QG baseline RHS");
+    const auto before=a,rhs=f; const auto bytes=engine->persistentBytes(),calls=engine->metrics().evaluationCount;
+    const auto reconstructions=engine->metrics().physicalFieldReconstructionCount;
+    const auto reuse=engine->metrics().physicalFieldReuseCount;
+    std::vector<std::vector<double>> values(8,std::vector<double>(R,99));
+    std::vector<WVForcingTendencyOutput> outputs;
+    for (std::size_t i=0;i<values.size();++i) outputs.push_back({i,{values[i].data(),spatial}});
+    const auto start=counter->calls;
+    status=engine->evaluateForcingTendencies(state,outputs.data(),outputs.size());
+    if (!status) throw std::runtime_error("Stratified QG diagnostics: "+status.message);
+    const auto fftCalls=counter->calls-start;
+    require(engine->forcingInstance(0)->name()=="nonlinear advection" && engine->forcingInstance(7)->name()=="held amplitudes" &&
+        !engine->forcingInstance(8),"Stratified QG instance binding");
+    require(engine->tendencyMetrics().forcingEvaluationCount==8 && engine->tendencyMetrics().spatialProjectionCount==1 &&
+        engine->tendencyMetrics().spectralReconstructionCount==3 && engine->tendencyMetrics().workspaceLiveBytes==0 &&
+        engine->persistentBytes()==bytes && engine->metrics().evaluationCount==calls && equal(a,before),"Stratified QG diagnostic state/metrics");
+    require(engine->metrics().physicalFieldReconstructionCount==reconstructions+5 &&
+        engine->metrics().physicalFieldReuseCount==reuse+3,"Stratified QG did not share velocity fields across stages");
+    std::vector<double> u(R),v(R),qx(R),qy(R),expected(R),sum(R);
+    require(bool(engine->kernel().transformA0ToField(state,WVStratifiedQGField::u,{u.data(),volume})) &&
+        bool(engine->kernel().transformA0ToField(state,WVStratifiedQGField::v,{v.data(),volume})) &&
+        bool(engine->kernel().transformA0ToField(state,WVStratifiedQGField::qgpv,{qx.data(),volume},WVStratifiedQGDerivative::x)) &&
+        bool(engine->kernel().transformA0ToField(state,WVStratifiedQGField::qgpv,{qy.data(),volume},WVStratifiedQGDerivative::y)),"Independent QG derivative fields");
+    for (std::size_t i=0;i<R;++i) expected[i]=-(u[i]*qx[i]+v[i]*qy[i]);
+    relative(values[0],expected,"Stratified QG nonlinear");
+    for (std::size_t n=0;n<5;++n) for (std::size_t i=0;i<R;++i) sum[i]+=values[n][i];
+    require(bool(engine->kernel().transformQGPVToA0({sum.data(),volume},flux)),"QG cumulative modal projection");
+    const double cutoff=(2.0/3.0)*2*std::acos(-1.0)*(g.Nx/2)/g.Lx;
+    for (std::size_t i=0;i<S;++i)
+        if (i%g.Nj!=0 || std::hypot(g.k[i/g.Nj],g.l[i/g.Nj])>cutoff) f[i]={};
+    // The modal fixture intentionally has non-inverse projection matrices.
+    // Build the expected accumulator in coefficient space; inverse-transforming
+    // a spectral delta and projecting it again is not an identity here.
+    WVFrozenForcingSchedule spectralSchedule;
+    spectralSchedule.entries={entries[1],entries.back()};
+    std::unique_ptr<WVStratifiedQGForcingEngine> spectralEngine;
+    require(bool(WVStratifiedQGForcingEngine::create(source,spectralSchedule,wavevortex::runtime::test::extensionCatalog(),
+        std::make_unique<WVReferenceFFTEngine>(),spectralEngine)),"Independent spectral schedule");
+    std::vector<WVComplex64> spectralContribution(S); WVComplexView spectralFlux{spectralContribution.data(),spectral};
+    require(bool(spectralEngine->evaluateRightHandSide(state,spectralFlux)),"Independent adaptive contribution");
+    for (std::size_t i=0;i<S;++i) { f[i].real+=spectralContribution[i].real; f[i].imag+=spectralContribution[i].imag; }
+    require(bool(engine->kernel().transformSpectralTendencyToSpatial({f.data(),spectral},{expected.data(),volume})),"QG cumulative modal inverse");
+    for (auto& x:expected) x=-x;
+    relative(values[7],expected,"Stratified QG cumulative fixed");
+    // Raw bottom drag stays at the bottom cell; inverse-projecting its modal
+    // flux would instead spread the profile through the truncated basis.
+    for (std::size_t i=g.Nx*g.Ny;i<R;++i) require(values[1][i]==0 && values[2][i]==0,"QG raw bottom drag leaked vertically");
+    require(bool(engine->evaluateRightHandSide(state,flux)) && equal(f,rhs) && equal(a,before),"Stratified QG later RHS changed");
+    const auto successful=values;
+    for (auto& field:values) std::fill(field.begin(),field.end(),99);
+    counter->failAt=counter->calls+fftCalls;
+    require(engine->evaluateForcingTendencies(state,outputs.data(),outputs.size()).code==WVKernelStatusCode::fftExecutionFailure,"Stratified QG late failure");
+    for (const auto& field:values) for (auto x:field) require(x==99,"Stratified QG partial output escaped failure");
+    require(equal(a,before) && engine->persistentBytes()==bytes && engine->tendencyMetrics().workspaceLiveBytes==0,"Stratified QG failure changed state/storage");
+    counter->failAt=0;
+    require(bool(engine->evaluateForcingTendencies(state,outputs.data(),outputs.size())) && values==successful,"Stratified QG retry mismatch");
+    std::vector<double> selected(R); const WVForcingTendencyOutput request{7,{selected.data(),spatial}};
+    require(bool(engine->evaluateForcingTendencies(state,&request,1)) && selected==successful[7],"Stratified QG selected-only prefix mismatch");
+    std::fill(f.begin(),f.end(),WVComplex64{});
+    for (std::size_t i=0;i<S;++i) if (g.k[i/g.Nj]==0 && g.l[i/g.Nj]==0) f[i]={.25,7};
+    const auto meanBefore=f;
+    require(bool(engine->kernel().transformSpectralTendencyToSpatial({f.data(),spectral},{expected.data(),volume})),"Stratified QG mean inverse");
+    require(std::any_of(expected.begin(),expected.end(),[](double x){return std::abs(x)>1e-3;}) && equal(f,meanBefore),"Stratified QG mean masked or input mutated");
+    require(bool(engine->kernel().transformA0ToField({f.data(),spectral},WVStratifiedQGField::qgpv,{expected.data(),volume})),"Stratified QG ordinary mean inverse");
+    for (auto x:expected) require(x==0,"Stratified QG ordinary mean mask changed");
+    std::vector<double> prepared(2*R),captured(R);
+    std::copy(u.begin(),u.end(),prepared.begin()); std::copy(v.begin(),v.end(),prepared.begin()+R);
+    const auto preparedBefore=prepared; const auto fluxBefore=f;
+    WVRealFieldBundleConstView uv{prepared.data(),{g.Nx,g.Ny,g.Nz,2}};
+    WVRealVolumeView capture{captured.data(),volume};
+    require(bool(engine->kernel().nonlinearFlux(state,flux,0,&capture,&uv)),"Stratified raw prepared nonlinear capture");
+    for (std::size_t i=0;i<R;++i) expected[i]=-(u[i]*qx[i]+v[i]*qy[i]);
+    relative(captured,expected,"Stratified prepared nonlinear capture");
+    require(prepared==preparedBefore && equal(f,fluxBefore),"Raw capture changed prepared velocity or spectral output");
+    uv.shape.fourth=3;
+    const auto badShapeCalls=counter->calls;
+    require(engine->kernel().nonlinearFlux(state,flux,0,&capture,&uv).code==WVKernelStatusCode::invalidShape && counter->calls==badShapeCalls,
+        "Invalid prepared QG velocity accepted or rejected after FFT");
+    WVRealVolumeView raw{reinterpret_cast<double*>(a.data()),volume};
+    const auto rejectCalls=counter->calls;
+    require(engine->kernel().nonlinearFlux(state,flux,0,&raw).code==WVKernelStatusCode::overlappingArrays && counter->calls==rejectCalls,
+        "Stratified QG raw alias accepted or rejected after FFT");
+}
+
 template<bool Hydrostatic> void stratified(bool unpairedMean=false) {
     Temporary file;
     if constexpr (Hydrostatic) {
@@ -366,7 +479,7 @@ template<bool Hydrostatic> void stratified(bool unpairedMean=false) {
 }
 int main() {
     try {
-        barotropic(); constant(false); constant(true); stratified<true>(); stratified<false>(); stratified<true>(true); stratified<false>(true);
+        stratifiedQG(); barotropic(); constant(false); constant(true); stratified<true>(); stratified<false>(); stratified<true>(true); stratified<false>(true);
         std::cout<<"PASS: ordered forcing diagnostics, state isolation, and transactional retry\n";
         return 0;
     } catch(const std::exception& error) { std::cerr<<error.what()<<'\n'; return 1; }

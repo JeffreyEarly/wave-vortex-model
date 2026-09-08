@@ -91,7 +91,6 @@ int main(int argc,char** argv) {
         tendencies(*engine,input,{plane.rows,plane.columns,1,1},result);
       }
     } else if (checkpoint.transformKind==WVPersistedTransformKind::stratifiedQG) {
-      if (diagnostics) throw std::runtime_error("Stratified QG forcing diagnostics are not implemented yet.");
       std::unique_ptr<WVStratifiedQGForcingEngine> engine;
       require(WVStratifiedQGForcingEngine::create(checkpoint.stratifiedModalSource,checkpoint.forcingSchedule,catalog,std::move(fft),engine));
       auto& a=checkpoint.transformState.coefficientFamilies.at(0).values;
@@ -102,6 +101,10 @@ int main(int argc,char** argv) {
       const auto status=engine->evaluateRightHandSide(input,output);
       allocationProbe::counting=false; require(status);
       result["F0"]=values(f);
+      if (diagnostics) {
+        const auto volume=engine->kernel().spatialShape();
+        tendencies(*engine,input,{volume.first,volume.second,volume.third,1},result);
+      }
     } else if (checkpoint.transformKind==WVPersistedTransformKind::hydrostatic) {
       std::unique_ptr<WVHydrostaticForcingEngine> engine;
       require(WVHydrostaticForcingEngine::create(checkpoint.stratifiedModalSource,checkpoint.forcingSchedule,catalog,std::move(fft),engine));

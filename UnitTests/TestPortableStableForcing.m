@@ -146,6 +146,52 @@ classdef TestPortableStableForcing < matlab.unittest.TestCase
                 end
             end
         end
+        function fullGridStratifiedTendenciesMatchMatlabPrimitives(testCase)
+            for antialias = [false true]
+                for grid = {[8 6 9],[9 7 10]}
+                    wvt = WVTransformStratifiedQG([17000 11000 1000],grid{1},Nj=4,N2Function=@(z)1e-4*exp(z/700),shouldAntialias=antialias);
+                    n = reshape(1:numel(wvt.A0),size(wvt.A0));
+                    wvt.A0 = 1e-6*complex(sin(.17*n),cos(.23*n)).*(wvt.Kh>0);
+                    wvt.t = 37;
+                    fixed = WVFixedAmplitudeForcing(wvt,name="held-pv",A0_indices=uint64((1:numel(wvt.A0))'),A0bar=wvt.A0(:));
+                    forces = [WVNonlinearAdvection(wvt),WVBottomFrictionLinear(wvt,r=2.5e-7),WVBottomFrictionQuadratic(wvt,Cd=.002),WVVerticalDiffusivity(wvt,kappa_z=.002),WVBetaPlanePVAdvection(wvt),WVAdaptiveDamping(wvt),fixed];
+                    if ~antialias, forces = [forces,WVAntialiasing(wvt,Nj=3)]; end %#ok<AGROW>
+                    wvt.setForcing(forces);
+                    before = wvt.A0;
+                    operation = SpatialForcingOperation(wvt);
+                    % Issue #404: the diagnostic wrapper omits vertical basis
+                    % transforms. Keep that incompatibility explicit while
+                    % comparing the C++ result with MATLAB forcing primitives
+                    % and the same modal boundary used by nonlinearFlux.
+                    testCase.verifyError(@()operation.compute(wvt),'MATLAB:sizeDimensionsMustMatch');
+                    expected = stratifiedForcingPrimitives(wvt);
+                    names = string({operation.outputVariables.name});
+                    source = testCase.writeInitialModel(wvt);
+                    resultPath = fullfile(testCase.folder,"stratified-tendencies.json");
+                    for provider = testCase.providers
+                        [status,output] = cleanSystem(shellQuote(testCase.executable)+" "+shellQuote(source)+" "+shellQuote(resultPath)+" "+provider+" tendencies");
+                        testCase.assertEqual(status,0,provider+": "+output);
+                        actual = jsondecode(fileread(resultPath));
+                        testCase.verifyEqual(actual.diagnosticWorkspaceLiveBytes,0);
+                        testCase.verifyEqual(actual.diagnosticForcingEvaluationCount,numel(wvt.forcing));
+                        maximumError = 0;
+                        for instance = reshape(actual.tendencies,1,[])
+                            name = "Fqgpv_"+replace(string(instance.name),[" ","-"],"_");
+                            index = find(names==name);
+                            testCase.assertNumElements(index,1,name);
+                            reference = expected{index};
+                            values = instance.fields.Fqgpv;
+                            error = max(abs(values(:)-reference(:)))/max(max(abs(reference(:))),realmin);
+                            testCase.verifyLessThanOrEqual(error,1e-12,"aa="+antialias+" "+provider+" "+name);
+                            maximumError = max(maximumError,error);
+                        end
+                        testCase.verifyEqual(numel(actual.tendencies),operation.nVarOut);
+                        fprintf('STRATIFIED_FORCING_DIAGNOSTICS aa=%d grid=%s provider=%s comparisons=%d max_relative=%.17g wrapper_incompatibility=404\n',antialias,mat2str(grid{1}),provider,operation.nVarOut,maximumError);
+                    end
+                    testCase.verifyEqual(wvt.A0,before);
+                end
+            end
+        end
         function explicitAntialiasingMatchesMatlab(testCase)
             for family = ["hydrostatic","nonhydrostatic","barotropic"]
                 for grid = {[8 6 5],[9 7 7]}
@@ -475,4 +521,29 @@ wvt.A0(inertial) = .003*sin(n(inertial)).*(wvt.J(inertial)>0);
 wvt.t0 = 17;
 wvt.t = 37;
 wvt.removeAllForcing();
+end
+
+function outputs = stratifiedForcingPrimitives(wvt)
+outputs = cell(1,numel(wvt.forcing));
+spatial = zeros(wvt.spatialMatrixSize);
+index = 0;
+for force = wvt.spatialFluxForcing
+    before = spatial;
+    spatial = force.addPotentialVorticitySpatialForcing(wvt,spatial);
+    index = index+1;
+    outputs{index} = spatial-before;
+end
+spectral = wvt.transformQGPVToWaveVortex(spatial);
+for force = wvt.spectralFluxForcing
+    before = spectral;
+    spectral = force.addPotentialVorticitySpectralForcing(wvt,spectral);
+    index = index+1;
+    outputs{index} = wvt.transformToSpatialDomainWithF(A0=spectral-before);
+end
+for force = wvt.spectralAmplitudeForcing
+    before = spectral;
+    spectral = force.setPotentialVorticitySpectralForcing(wvt,spectral);
+    index = index+1;
+    outputs{index} = wvt.transformToSpatialDomainWithF(A0=spectral-before);
+end
 end
