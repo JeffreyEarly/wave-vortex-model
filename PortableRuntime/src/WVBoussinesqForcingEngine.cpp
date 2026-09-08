@@ -154,7 +154,7 @@ WVKernelStatus WVBoussinesqForcingEngine::addNonlinearFlux(const WVState& state,
         diagnosticWorkspace_->spatialCaptured=true;
         auto raw=diagnosticWorkspace_->rawView();
         auto temporary=diagnosticWorkspace_->temporaryView();
-        return kernel().nonlinearFlux(state,temporary,&raw,&fields);
+        return kernel().nonlinearFlux(state,temporary,&raw,&fields,false);
     }
     const auto S=kernel().spectralShape().elementCount(); const auto shape=kernel().spectralShape();
     WVFlux tmp{{temporary_.data(),shape},{temporary_.data()+S,shape},{temporary_.data()+2*S,shape}};

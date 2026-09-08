@@ -2237,9 +2237,8 @@
     ]
   },
   "remaining": [
-    "Remaining derived/derivative intermediate sharing and identity/preflight audit",
-    "Representative integration runtime and retained-memory 3% budgets",
-    "Final catalog delivery status, required hosted checks and integration"
+    "Final matched integration benchmark after the projection optimization",
+    "Required hosted checks and integration"
   ],
   "savedOutput": {
     "cppSourceCommit": "2c863661544e62d433e87f14dfd554ce42e92f8f",
@@ -3667,5 +3666,432 @@
     "numericOutputComparisonNotes": "All numeric variables were compared recursively. Scheduled fields, coefficients and time must be finite; matching nonfinite metadata (such as finalTime=Inf) is preserved.",
     "benchmarkScript": "Benchmarks/comparePortableDiagnosticBaseline.py",
     "benchmarkScriptSha256": "f5f45c643c7e89f6276e9d06c268614e718cce5f45627e9681bcd5a5796c88a7"
+  },
+  "catalogDelivery": {
+    "implementedRows": 618,
+    "intentionalIncompatibilityRows": 48,
+    "pendingRows": 0,
+    "newForcingRows": 32,
+    "newForcingTemplates": 5,
+    "catalogSha256": "f0b4d0269b38c7501d85bc76ebc1b654bcc0beb94b85be11a4398588e4445d56",
+    "matlabTests": {
+      "names": [
+        "TestPortableVariableCatalog/testGeneratedCatalogMatchesCommittedFiles",
+        "TestPortableVariableCatalog/testCatalogIdentityAndAnnotationMetadata",
+        "TestPortableVariableCatalog/testLegacyMetadataAndGraphFailures",
+        "TestPortableVariableCatalog/testConfigurationAndConditionalDependencies",
+        "TestPortableVariableCatalog/testEvaluationLoopsDoNotCompareFieldNames",
+        "TestPortableVariableCatalog/testHydrostaticAndNonhydrostaticAnnotationsAgree"
+      ],
+      "passed": [
+        true,
+        true,
+        true,
+        true,
+        true,
+        true
+      ],
+      "duration": [
+        18.634350791666666,
+        0.045670583333333334,
+        0.31635825,
+        0.035953791666666665,
+        0.011893541666666667,
+        0.21159666666666666
+      ]
+    },
+    "legacyIdentitiesPreserved": 23,
+    "codeAnalyzerFindings": 0
+  },
+  "spatialOnlyOptimization": {
+    "rows": [
+      {
+        "transform": "constant-hydrostatic",
+        "antialias": false,
+        "grid": [
+          8,
+          6,
+          9
+        ],
+        "provider": "reference",
+        "fieldComparisons": 36,
+        "maximumNormalizedError": 5.6085342633434894e-14
+      },
+      {
+        "transform": "constant-hydrostatic",
+        "antialias": false,
+        "grid": [
+          8,
+          6,
+          9
+        ],
+        "provider": "native",
+        "fieldComparisons": 36,
+        "maximumNormalizedError": 5.6085342633434894e-14
+      },
+      {
+        "transform": "constant-hydrostatic",
+        "antialias": false,
+        "grid": [
+          9,
+          7,
+          10
+        ],
+        "provider": "reference",
+        "fieldComparisons": 36,
+        "maximumNormalizedError": 1.63235169272712e-13
+      },
+      {
+        "transform": "constant-hydrostatic",
+        "antialias": false,
+        "grid": [
+          9,
+          7,
+          10
+        ],
+        "provider": "native",
+        "fieldComparisons": 36,
+        "maximumNormalizedError": 1.63235169272712e-13
+      },
+      {
+        "transform": "constant-hydrostatic",
+        "antialias": true,
+        "grid": [
+          8,
+          6,
+          9
+        ],
+        "provider": "reference",
+        "fieldComparisons": 33,
+        "maximumNormalizedError": 1.6485722193021684e-14
+      },
+      {
+        "transform": "constant-hydrostatic",
+        "antialias": true,
+        "grid": [
+          8,
+          6,
+          9
+        ],
+        "provider": "native",
+        "fieldComparisons": 33,
+        "maximumNormalizedError": 1.6485722193021684e-14
+      },
+      {
+        "transform": "constant-hydrostatic",
+        "antialias": true,
+        "grid": [
+          9,
+          7,
+          10
+        ],
+        "provider": "reference",
+        "fieldComparisons": 33,
+        "maximumNormalizedError": 4.006183866367507e-13
+      },
+      {
+        "transform": "constant-hydrostatic",
+        "antialias": true,
+        "grid": [
+          9,
+          7,
+          10
+        ],
+        "provider": "native",
+        "fieldComparisons": 33,
+        "maximumNormalizedError": 4.006183866367507e-13
+      },
+      {
+        "transform": "constant-nonhydrostatic",
+        "antialias": false,
+        "grid": [
+          8,
+          6,
+          9
+        ],
+        "provider": "reference",
+        "fieldComparisons": 48,
+        "maximumNormalizedError": 5.828263412210864e-14
+      },
+      {
+        "transform": "constant-nonhydrostatic",
+        "antialias": false,
+        "grid": [
+          8,
+          6,
+          9
+        ],
+        "provider": "native",
+        "fieldComparisons": 48,
+        "maximumNormalizedError": 6.160488119120037e-14
+      },
+      {
+        "transform": "constant-nonhydrostatic",
+        "antialias": false,
+        "grid": [
+          9,
+          7,
+          10
+        ],
+        "provider": "reference",
+        "fieldComparisons": 48,
+        "maximumNormalizedError": 1.889658651382367e-13
+      },
+      {
+        "transform": "constant-nonhydrostatic",
+        "antialias": false,
+        "grid": [
+          9,
+          7,
+          10
+        ],
+        "provider": "native",
+        "fieldComparisons": 48,
+        "maximumNormalizedError": 1.889658651382367e-13
+      },
+      {
+        "transform": "constant-nonhydrostatic",
+        "antialias": true,
+        "grid": [
+          8,
+          6,
+          9
+        ],
+        "provider": "reference",
+        "fieldComparisons": 44,
+        "maximumNormalizedError": 6.192995896644568e-14
+      },
+      {
+        "transform": "constant-nonhydrostatic",
+        "antialias": true,
+        "grid": [
+          8,
+          6,
+          9
+        ],
+        "provider": "native",
+        "fieldComparisons": 44,
+        "maximumNormalizedError": 3.096497948322284e-14
+      },
+      {
+        "transform": "constant-nonhydrostatic",
+        "antialias": true,
+        "grid": [
+          9,
+          7,
+          10
+        ],
+        "provider": "reference",
+        "fieldComparisons": 44,
+        "maximumNormalizedError": 1.0301981124880139e-13
+      },
+      {
+        "transform": "constant-nonhydrostatic",
+        "antialias": true,
+        "grid": [
+          9,
+          7,
+          10
+        ],
+        "provider": "native",
+        "fieldComparisons": 44,
+        "maximumNormalizedError": 1.0301981124880139e-13
+      },
+      {
+        "transform": "hydrostatic",
+        "antialias": false,
+        "grid": [
+          8,
+          6,
+          9
+        ],
+        "provider": "reference",
+        "fieldComparisons": 36,
+        "maximumNormalizedError": 5.182397938468078e-14
+      },
+      {
+        "transform": "hydrostatic",
+        "antialias": false,
+        "grid": [
+          8,
+          6,
+          9
+        ],
+        "provider": "native",
+        "fieldComparisons": 36,
+        "maximumNormalizedError": 4.701496970294347e-15
+      },
+      {
+        "transform": "hydrostatic",
+        "antialias": false,
+        "grid": [
+          9,
+          7,
+          10
+        ],
+        "provider": "reference",
+        "fieldComparisons": 36,
+        "maximumNormalizedError": 5.213752879205505e-14
+      },
+      {
+        "transform": "hydrostatic",
+        "antialias": false,
+        "grid": [
+          9,
+          7,
+          10
+        ],
+        "provider": "native",
+        "fieldComparisons": 36,
+        "maximumNormalizedError": 5.213752879205505e-14
+      },
+      {
+        "transform": "hydrostatic",
+        "antialias": true,
+        "grid": [
+          8,
+          6,
+          9
+        ],
+        "provider": "reference",
+        "fieldComparisons": 33,
+        "maximumNormalizedError": 1.253271179762733e-13
+      },
+      {
+        "transform": "hydrostatic",
+        "antialias": true,
+        "grid": [
+          8,
+          6,
+          9
+        ],
+        "provider": "native",
+        "fieldComparisons": 33,
+        "maximumNormalizedError": 1.253271179762733e-13
+      },
+      {
+        "transform": "hydrostatic",
+        "antialias": true,
+        "grid": [
+          9,
+          7,
+          10
+        ],
+        "provider": "reference",
+        "fieldComparisons": 33,
+        "maximumNormalizedError": 2.551496087248539e-13
+      },
+      {
+        "transform": "hydrostatic",
+        "antialias": true,
+        "grid": [
+          9,
+          7,
+          10
+        ],
+        "provider": "native",
+        "fieldComparisons": 33,
+        "maximumNormalizedError": 2.551496087248539e-13
+      },
+      {
+        "transform": "boussinesq",
+        "antialias": false,
+        "grid": [
+          8,
+          6,
+          9
+        ],
+        "provider": "reference",
+        "fieldComparisons": 48,
+        "maximumNormalizedError": 5.5620007930640395e-14
+      },
+      {
+        "transform": "boussinesq",
+        "antialias": false,
+        "grid": [
+          8,
+          6,
+          9
+        ],
+        "provider": "native",
+        "fieldComparisons": 48,
+        "maximumNormalizedError": 5.969293049567822e-15
+      },
+      {
+        "transform": "boussinesq",
+        "antialias": false,
+        "grid": [
+          9,
+          7,
+          10
+        ],
+        "provider": "reference",
+        "fieldComparisons": 48,
+        "maximumNormalizedError": 6.005260781855157e-14
+      },
+      {
+        "transform": "boussinesq",
+        "antialias": false,
+        "grid": [
+          9,
+          7,
+          10
+        ],
+        "provider": "native",
+        "fieldComparisons": 48,
+        "maximumNormalizedError": 5.966401382014818e-15
+      },
+      {
+        "transform": "boussinesq",
+        "antialias": true,
+        "grid": [
+          8,
+          6,
+          9
+        ],
+        "provider": "reference",
+        "fieldComparisons": 44,
+        "maximumNormalizedError": 5.148844118495552e-13
+      },
+      {
+        "transform": "boussinesq",
+        "antialias": true,
+        "grid": [
+          8,
+          6,
+          9
+        ],
+        "provider": "native",
+        "fieldComparisons": 44,
+        "maximumNormalizedError": 3.21802757405972e-14
+      },
+      {
+        "transform": "boussinesq",
+        "antialias": true,
+        "grid": [
+          9,
+          7,
+          10
+        ],
+        "provider": "reference",
+        "fieldComparisons": 44,
+        "maximumNormalizedError": 2.614566589006708e-13
+      },
+      {
+        "transform": "boussinesq",
+        "antialias": true,
+        "grid": [
+          9,
+          7,
+          10
+        ],
+        "provider": "native",
+        "fieldComparisons": 44,
+        "maximumNormalizedError": 3.268208236258385e-14
+      }
+    ],
+    "runnerSha256": "24116d40a7953f4d3a9a165d91235cbaf28c5ab9673d2c182487685719abcbfd",
+    "description": "All three wave kernel families can return raw nonlinear spatial tendencies without projecting a discarded spectral flux. The default RHS still projects normally. Exact raw-value, unchanged spectral-destination, fewer FFTs, missing-storage preflight and unchanged retention tests pass in Release and ASan/UBSan.",
+    "verification": "Seven focused kernel/field/forcing/observer/NetCDF tests passed in Release and Apple ASan/UBSan. MATLAB ordered wave matrix and Code Analyzer passed."
   }
 }

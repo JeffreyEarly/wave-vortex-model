@@ -1531,14 +1531,23 @@ WVFieldEvaluationService::evaluatePlanBatch(const PlanInvocation *invocations,
     WVRealFieldBundleView derivativeBundle{
         derivatives,
         {configuration.Nx, configuration.Ny, configuration.Nz, 3}};
+    const auto evaluateDerivatives=[&](WVDynamicalField field) {
+      bool reused=false;
+      const auto operation=[&]() {return invokeTransform([&]() {
+        return transform_->transformStateFieldDerivatives(state,field,derivativeBundle);
+      });};
+      const auto key=detail::WVFieldEvaluationEventWorkspace::dynamicalDerivativeKeyBase+static_cast<std::size_t>(field);
+      const auto status=eventWorkspace_ ? eventWorkspace_->evaluate(key,state,derivatives,3*fieldElements,operation,reused) : operation();
+      if(status) {
+        if(reused) ++metrics_.primitiveFieldReuseCount;
+        else ++metrics_.primitiveFieldEvaluationCount;
+      }
+      return status;
+    };
     if ((dependencyMask & uDerivatives) != 0) {
-      auto status = invokeTransform([&]() {
-        return transform_->transformStateFieldDerivatives(
-            state, WVDynamicalField::u, derivativeBundle);
-      });
+      auto status = evaluateDerivatives(WVDynamicalField::u);
       if (!status)
         return status;
-      ++metrics_.primitiveFieldEvaluationCount;
       const double *uy = derivatives + fieldElements;
       const double *uz = uy + fieldElements;
       for (std::size_t index = 0; index < fieldElements; ++index) {
@@ -1547,13 +1556,9 @@ WVFieldEvaluationService::evaluatePlanBatch(const PlanInvocation *invocations,
       }
     }
     if ((dependencyMask & vDerivatives) != 0) {
-      auto status = invokeTransform([&]() {
-        return transform_->transformStateFieldDerivatives(
-            state, WVDynamicalField::v, derivativeBundle);
-      });
+      auto status = evaluateDerivatives(WVDynamicalField::v);
       if (!status)
         return status;
-      ++metrics_.primitiveFieldEvaluationCount;
       const double *vx = derivatives;
       const double *vz = derivatives + 2 * fieldElements;
       for (std::size_t index = 0; index < fieldElements; ++index) {
@@ -1562,13 +1567,9 @@ WVFieldEvaluationService::evaluatePlanBatch(const PlanInvocation *invocations,
       }
     }
     if ((dependencyMask & wDerivatives) != 0) {
-      auto status = invokeTransform([&]() {
-        return transform_->transformStateFieldDerivatives(
-            state, WVDynamicalField::w, derivativeBundle);
-      });
+      auto status = evaluateDerivatives(WVDynamicalField::w);
       if (!status)
         return status;
-      ++metrics_.primitiveFieldEvaluationCount;
       const double *wx = derivatives;
       const double *wy = derivatives + fieldElements;
       for (std::size_t index = 0; index < fieldElements; ++index) {

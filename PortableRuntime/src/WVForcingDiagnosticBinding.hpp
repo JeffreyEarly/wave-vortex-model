@@ -67,7 +67,7 @@ public:
   WVKernelStatus resolve(std::string_view name,std::string_view configuration,std::uint8_t sampling,Output& output) const {
     WVPortableVariableOptions options; options.source=WVPortableOperationSource::builtIn;
     // The source-linked engine implementation qualifies numerical execution.
-    // Catalog delivery status remains pending until full output qualification.
+    // Catalog delivery status records the qualified output implementation.
     WVPortableVariablePlan plan;
     const auto status=resolvePortableForcingVariablePlan(name,configuration,sampling,bindings_.data(),bindings_.size(),options,plan);
     if(status!=WVPortableVariableStatus::supported)

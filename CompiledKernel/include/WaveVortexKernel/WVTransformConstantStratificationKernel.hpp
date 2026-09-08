@@ -87,8 +87,9 @@ public:
     WVKernelStatus nonlinearFluxWithAdvectionFields(const WVState& state, WVFlux& flux, WVRealFieldBundleView& advectionFields);
     // Optional observation output receives raw spatial tendencies before modal
     // projection, in [u,v,eta] or [u,v,w,eta] order. Storage is caller owned.
+    // With projectFlux=false, spatialTendency is required and flux is untouched.
     WVKernelStatus nonlinearFluxUsingAdvectionFields(const WVState& state, WVFlux& flux, const WVRealFieldBundleConstView& advectionFields,
-        WVRealFieldBundleView* spatialTendency = nullptr);
+        WVRealFieldBundleView* spatialTendency = nullptr, bool projectFlux = true);
     // Call at setup when scalar advection is configured, before repeated RHS calls.
     WVKernelStatus prepareScalarAdvection();
     WVKernelStatus advectFGridScalar(const WVRealVolumeConstView& scalar, const WVRealFieldBundleConstView& advectionFields, bool shouldAntialias, WVRealVolumeView& rightHandSide);
@@ -104,7 +105,7 @@ private:
     WVKernelStatus transformToSpatialDomainWithDerivativesFromStateImpl(const WVState& state, WVComplexConstView phaseValues, std::size_t target, WVRealFieldBundleView& derivatives);
     WVKernelStatus projectSingleFluxTargetImpl(const WVRealFieldBundleConstView& field, std::size_t target, WVComplexConstView phaseValues, WVFlux& flux);
     WVKernelStatus nonlinearFluxImpl(const WVState& state, WVFlux& flux, WVRealFieldBundleView* advectionFields, bool advectionFieldsPrepared = false,
-        WVRealFieldBundleView* spatialTendency = nullptr);
+        WVRealFieldBundleView* spatialTendency = nullptr, bool projectFlux = true);
     WVKernelStatus ensureScalarInversePlan();
     WVKernelStatus antialiasScalarInPlace(WVRealVolumeView& scalar);
     WVTransformConstantStratificationDescriptor descriptor_;

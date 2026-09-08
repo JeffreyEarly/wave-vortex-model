@@ -107,9 +107,9 @@ int main() {
   require(resolve("Fu_portable_catalog_forcing") == WVPortableVariableStatus::requiresForcingBinding);
   options.hasQualifiedForcingBinding = true;
   require(resolve("Fu_portable_catalog_forcing") == WVPortableVariableStatus::supported);
-  require(plan.output->runtime == WVPortableDiagnosticRuntime::pending315);
+  require(plan.output->runtime == WVPortableDiagnosticRuntime::implemented);
   options.requireEvaluator = true;
-  require(resolve("Fu_portable_catalog_forcing") == WVPortableVariableStatus::pendingEvaluation);
+  require(resolve("Fu_portable_catalog_forcing") == WVPortableVariableStatus::supported);
   options.requireEvaluator = false;
   options.source = WVPortableOperationSource::custom;
   require(resolve("u") == WVPortableVariableStatus::customOperation);

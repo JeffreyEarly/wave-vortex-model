@@ -1317,7 +1317,7 @@ WVKernelStatus WVConstantStratificationForcingEngine::addNonlinearFlux(
         diagnosticWorkspace_->spatialCaptured=true;
         auto raw=diagnosticWorkspace_->rawView();
         auto temporary=diagnosticWorkspace_->temporaryView();
-        return kernel_->nonlinearFluxUsingAdvectionFields(state,temporary,fields,&raw);
+        return kernel_->nonlinearFluxUsingAdvectionFields(state,temporary,fields,&raw,false);
     }
     const auto evaluate = [&](WVFlux& destination) {
         if (externalFields == nullptr) return kernel_->nonlinearFlux(state,destination);

@@ -441,8 +441,10 @@ void testNonlinearFlux(bool hydrostatic) {
     const auto velocityBefore = velocity;
     const auto retainedBytes = kernel->persistentBytes();
     const auto reconstructionCount = kernel->metrics().advectionVelocityReconstructionCount;
+    const auto fullStart=kernel->metrics().executionCount;
     require(bool(kernel->nonlinearFluxUsingAdvectionFields(state,flux,
                 {velocity.data(),velocityView.shape},&rawView)),"capture raw nonlinear tendency");
+    const auto fullExecutions=kernel->metrics().executionCount-fullStart;
     for (std::size_t i=0;i<count;++i)
         require(Fp[i].real==beforeFp[i].real && Fp[i].imag==beforeFp[i].imag &&
                     Fm[i].real==beforeFm[i].real && Fm[i].imag==beforeFm[i].imag &&
@@ -461,6 +463,19 @@ void testNonlinearFlux(bool hydrostatic) {
                     "observed spatial contribution differs before projection");
         }
     }
+    const auto rawBefore=raw;
+    for(auto* values:{&Fp,&Fm,&F0}) std::fill(values->begin(),values->end(),WVComplex64{17,19});
+    const auto rawStart=kernel->metrics().executionCount;
+    require(bool(kernel->nonlinearFluxUsingAdvectionFields(state,flux,
+                {velocity.data(),velocityView.shape},&rawView,false)),"spatial-only nonlinear tendency");
+    require(raw==rawBefore && velocity==velocityBefore && kernel->metrics().executionCount-rawStart<fullExecutions,
+            "spatial-only evaluation changed tendencies or retained projection work");
+    for(const auto* values:{&Fp,&Fm,&F0}) for(const auto value:*values)
+        require(value.real==17 && value.imag==19,"spatial-only evaluation wrote spectral flux");
+    const auto rejectedStart=kernel->metrics().executionCount;
+    require(kernel->nonlinearFluxUsingAdvectionFields(state,flux,
+                {velocity.data(),velocityView.shape},nullptr,false).code==WVKernelStatusCode::invalidConfiguration &&
+                kernel->metrics().executionCount==rejectedStart,"missing spatial output was accepted or rejected after FFT work");
     auto badRaw=rawView; badRaw.data=velocity.data();
     require(kernel->nonlinearFluxUsingAdvectionFields(state,flux,
                 {velocity.data(),velocityView.shape},&badRaw).code==WVKernelStatusCode::overlappingArrays,

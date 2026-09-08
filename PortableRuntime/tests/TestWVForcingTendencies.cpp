@@ -597,6 +597,34 @@ void fieldService(Engine& engine,const WVState& state,WVShape4D spatial,
         detail::WVFieldEvaluationEventScope scope(*service,integrationState);
         require(bool(service->evaluate(plan,integrationState,views.data(),views.size())) && data==successful,"Shared event retry differs");
     }
+    if constexpr(std::is_same_v<Engine,WVConstantStratificationForcingEngine>) {
+        WVFieldEvaluationPlan vorticity;
+        require(bool(service->createPlan({{"zx","zeta_x",{}},{"zy","zeta_y",{}},{"zz","zeta_z",{}}},vorticity)),"Vorticity sharing plan");
+        std::array<std::vector<double>,3> values;
+        std::array<WVFieldOutputView,3> destinations;
+        for(std::size_t channel=0;channel<3;++channel) {
+            values[channel].resize(R); destinations[channel]={values[channel].data(),R};
+        }
+        require(bool(service->evaluate(vorticity,integrationState,destinations.data(),3)),"Independent vorticity reference");
+        const auto reference=values;
+        const auto retained=service->persistentBytes();
+        {
+            detail::WVFieldEvaluationEventScope scope(*service,integrationState);
+            const std::uint8_t verticalOnly[]={0,0,1},horizontalOnly[]={1,1,0};
+            require(bool(service->evaluate(vorticity,integrationState,destinations.data(),3,verticalOnly)),"Shared vertical vorticity");
+            require(service->metrics().eventFieldWorkspaceLiveBytes==6*R*sizeof(double),"Vertical vorticity derivative storage is not exact");
+            const auto reuse=service->metrics().eventFieldReuseCount;
+            require(bool(service->evaluate(vorticity,integrationState,destinations.data(),3,horizontalOnly)) &&
+                service->metrics().eventFieldReuseCount==reuse+2 && values==reference,
+                "Horizontal vorticity did not reuse the same-event u/v derivatives");
+            const auto calls=counter->calls;
+            require(bool(service->evaluate(vorticity,integrationState,destinations.data(),3)) && counter->calls==calls && values==reference &&
+                service->metrics().eventFieldWorkspaceLiveBytes==9*R*sizeof(double),
+                "Repeated vorticity reconstructed derivatives or retained unexpected storage");
+        }
+        require(service->metrics().eventFieldWorkspaceLiveBytes==0 && service->persistentBytes()==retained,
+            "Vorticity derivatives survived their output event");
+    }
     observerService(engine,*service,layout,integrationState,requests,forcingOutputCount,successful,counter);
 }
 

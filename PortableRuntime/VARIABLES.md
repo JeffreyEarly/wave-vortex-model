@@ -38,11 +38,11 @@ Forcing exemplar names ending in `_portable_catalog_forcing` define templates: b
 | 23 | `A0t` | m2 s-1 | j,kl | implemented | barotropic, boussinesq, constant-hydrostatic, constant-nonhydrostatic, hydrostatic, stratified-qg | A0 |
 | 24 | `Amt` | m s-1 | j,kl | implemented | boussinesq, constant-hydrostatic, constant-nonhydrostatic, hydrostatic | Am, conjPhase |
 | 25 | `Apt` | m s-1 | j,kl | implemented | boussinesq, constant-hydrostatic, constant-nonhydrostatic, hydrostatic | Ap, phase |
-| 26 | `Feta_portable_catalog_forcing` | m s-1 | x,y,z | pending-315 | boussinesq, constant-hydrostatic, constant-nonhydrostatic, hydrostatic | A0, Am, Ap |
-| 27 | `Fqgpv_portable_catalog_forcing` | s-2 | x,y | pending-315 | barotropic, stratified-qg | A0 |
-| 28 | `Fu_portable_catalog_forcing` | m s-2 | x,y,z | pending-315 | boussinesq, constant-hydrostatic, constant-nonhydrostatic, hydrostatic | A0, Am, Ap |
-| 29 | `Fv_portable_catalog_forcing` | m s-2 | x,y,z | pending-315 | boussinesq, constant-hydrostatic, constant-nonhydrostatic, hydrostatic | A0, Am, Ap |
-| 30 | `Fw_portable_catalog_forcing` | m s-2 | x,y,z | pending-315 | boussinesq, constant-nonhydrostatic | A0, Am, Ap |
+| 26 | `Feta_portable_catalog_forcing` | m s-1 | x,y,z | implemented | boussinesq, constant-hydrostatic, constant-nonhydrostatic, hydrostatic | A0, Am, Ap |
+| 27 | `Fqgpv_portable_catalog_forcing` | s-2 | x,y | implemented | barotropic, stratified-qg | A0 |
+| 28 | `Fu_portable_catalog_forcing` | m s-2 | x,y,z | implemented | boussinesq, constant-hydrostatic, constant-nonhydrostatic, hydrostatic | A0, Am, Ap |
+| 29 | `Fv_portable_catalog_forcing` | m s-2 | x,y,z | implemented | boussinesq, constant-hydrostatic, constant-nonhydrostatic, hydrostatic | A0, Am, Ap |
+| 30 | `Fw_portable_catalog_forcing` | m s-2 | x,y,z | implemented | boussinesq, constant-nonhydrostatic | A0, Am, Ap |
 | 31 | `ape` | m2 s-2 | x,y,z | intentional-incompatibility | boussinesq, constant-hydrostatic, constant-nonhydrostatic, hydrostatic | eta_true, rho_nm |
 | 32 | `apv` | s-1 | x,y,z | intentional-incompatibility | boussinesq, constant-hydrostatic, constant-nonhydrostatic, hydrostatic | eta_true, zeta_x, zeta_y, zeta_z |
 | 33 | `conjPhase` | 1 | j,kl | intentional-incompatibility | boussinesq, constant-hydrostatic, constant-nonhydrostatic, hydrostatic | phase |

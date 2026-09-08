@@ -330,7 +330,9 @@ WVKernelStatus WVTransformBoussinesqKernel::constrainCoefficients(WVMutableCoeff
     return WVKernelStatus::ok();
 }
 WVKernelStatus WVTransformBoussinesqKernel::nonlinearFlux(const WVState& a,WVFlux& b,
-    WVRealFieldBundleView* spatialTendency,const WVRealFieldBundleConstView* preparedFields) {
+    WVRealFieldBundleView* spatialTendency,const WVRealFieldBundleConstView* preparedFields,bool projectFlux) {
+    if (!projectFlux && !spatialTendency)
+        return {WVKernelStatusCode::invalidConfiguration,"Spatial-only nonlinear evaluation requires output storage."};
     auto s=state(a); if (!s) return s; WVMutableCoefficients target{b.Fp,b.Fm,b.F0}; s=outputs(target); if (!s) return s;
     for (auto x : {a.coefficients.Ap,a.coefficients.Am,a.coefficients.A0}) for (auto y : {b.Fp,b.Fm,b.F0}) { s=disjoint(x.data,S_*sizeof(WVComplex64),y.data,S_*sizeof(WVComplex64)); if (!s) return s; }
     const auto validateBundle = [&](const double* data,WVShape4D shape,std::size_t count) {
@@ -378,6 +380,7 @@ WVKernelStatus WVTransformBoussinesqKernel::nonlinearFlux(const WVState& a,WVFlu
         }
     }
     if (spatialTendency) std::copy_n(real_.data()+4*R_,4*R_,spatialTendency->data);
+    if (!projectFlux) return WVKernelStatus::ok();
     return projectFields(real_.data()+4*R_,real_.data()+5*R_,real_.data()+6*R_,real_.data()+7*R_,target);
 }
 WVKernelStatus WVTransformBoussinesqKernel::totalEnergy(const WVCoefficients& a,double& value,WVBoussinesqComponent component) const {

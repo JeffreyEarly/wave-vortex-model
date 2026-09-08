@@ -1193,7 +1193,9 @@ WVKernelStatus WVTransformConstantStratificationKernel::nonlinearFluxWithAdvecti
 
 WVKernelStatus WVTransformConstantStratificationKernel::nonlinearFluxUsingAdvectionFields(
     const WVState& state, WVFlux& flux, const WVRealFieldBundleConstView& advectionFields,
-    WVRealFieldBundleView* spatialTendency) {
+    WVRealFieldBundleView* spatialTendency, bool projectFlux) {
+    if (!projectFlux && !spatialTendency)
+        return {WVKernelStatusCode::invalidConfiguration,"Spatial-only nonlinear evaluation requires output storage."};
     auto status = validateStateAndFlux(descriptor_,state,flux);
     if (!status) return status;
     status = validateBundle(advectionFields,descriptor_.spatialShape(),3,"Prepared advection fields");
@@ -1217,12 +1219,12 @@ WVKernelStatus WVTransformConstantStratificationKernel::nonlinearFluxUsingAdvect
     }
     ExecutionGuard guard(executing_);
     if (!guard.entered()) return {WVKernelStatusCode::reentrantExecution,"Kernel operations are not reentrant."};
-    return nonlinearFluxImpl(state,flux,&mutableView,true,spatialTendency);
+    return nonlinearFluxImpl(state,flux,&mutableView,true,spatialTendency,projectFlux);
 }
 
 WVKernelStatus WVTransformConstantStratificationKernel::nonlinearFluxImpl(
     const WVState& state, WVFlux& flux, WVRealFieldBundleView* retainedAdvectionFields, bool advectionFieldsPrepared,
-    WVRealFieldBundleView* spatialTendency) {
+    WVRealFieldBundleView* spatialTendency, bool projectFlux) {
     WVKernelStatus status = WVKernelStatus::ok();
 
     const auto spectral = descriptor_.spectralShape();
@@ -1236,9 +1238,11 @@ WVKernelStatus WVTransformConstantStratificationKernel::nonlinearFluxImpl(
     const double elapsed = state.t - state.t0;
     for (std::size_t index = 0; index < phaseEvaluationCount; ++index) {
         phaseStorage[index] = phase(modes.omega[index] * elapsed);
-        flux.Fp.data[index] = {};
-        flux.Fm.data[index] = {};
-        flux.F0.data[index] = {};
+        if (projectFlux) {
+            flux.Fp.data[index] = {};
+            flux.Fm.data[index] = {};
+            flux.F0.data[index] = {};
+        }
     }
     if (stageInstrumentationEnabled_) metrics_.phaseSeconds = std::chrono::duration<double>(Clock::now() - stageStart).count();
     ++metrics_.nonlinearFluxCallCount;
@@ -1284,8 +1288,10 @@ WVKernelStatus WVTransformConstantStratificationKernel::nonlinearFluxImpl(
         if (stageInstrumentationEnabled_) productSeconds += std::chrono::duration<double>(Clock::now() - stageStart).count();
         const WVRealFieldBundleConstView field{dx,{spatial.first,spatial.second,spatial.third,1}};
         stageStart = Clock::now();
-        status = projectSingleFluxTargetImpl(field,targets[iTarget],phaseValues,flux);
-        if (!status) return status;
+        if (projectFlux) {
+            status = projectSingleFluxTargetImpl(field,targets[iTarget],phaseValues,flux);
+            if (!status) return status;
+        }
         if (stageInstrumentationEnabled_) projectionSeconds += std::chrono::duration<double>(Clock::now() - stageStart).count();
     }
     if (stageInstrumentationEnabled_) {

@@ -16,6 +16,7 @@ namespace wavevortex::runtime::detail {
 // survives its scope, so later events cannot reuse an in-place state mutation.
 class WVFieldEvaluationEventWorkspace final {
 public:
+  static constexpr std::size_t dynamicalDerivativeKeyBase=32;
   explicit WVFieldEvaluationEventWorkspace(const WVIntegrationState& state)
       : t_(state.waveVortex.t), t0_(state.waveVortex.t0) {
     coefficients_={state.waveVortex.coefficients.Ap.data,state.waveVortex.coefficients.Am.data,state.waveVortex.coefficients.A0.data};
@@ -58,7 +59,7 @@ private:
   friend class WVFieldEvaluationEventScope;
   double t_=0,t0_=0;
   std::array<const WVComplex64*,3> coefficients_{};
-  std::array<std::vector<double>,32> fields_;
+  std::array<std::vector<double>,dynamicalDerivativeKeyBase+3> fields_;
   WVFieldEvaluationMetrics* metrics_=nullptr;
 };
 

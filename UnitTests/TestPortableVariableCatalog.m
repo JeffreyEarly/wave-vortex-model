@@ -108,7 +108,7 @@ classdef TestPortableVariableCatalog < matlab.unittest.TestCase
             forcing = rows(names=="Fqgpv_portable_catalog_forcing" & string({rows.configuration}).'=="barotropic-aa0");
             testCase.verifyEqual(string(forcing.metadata.units),"s-2");
             testCase.verifyEqual(string(forcing.authority),"forcing-instance-template");
-            testCase.verifyEqual(string(forcing.runtimeStatus),"pending-315");
+            testCase.verifyEqual(string(forcing.runtimeStatus),"implemented");
             testCase.verifyTrue(ismember("totalEnstrophy",string({catalog.exclusions.name})));
         end
 
