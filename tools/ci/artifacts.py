@@ -7,6 +7,14 @@ from pathlib import Path
 import shutil
 import subprocess
 
+PROBES = ('wave-vortex-run', 'WVStableForcingDump', 'WVStratifiedQGFieldDump',
+          'WVStratifiedQGLifecycleProbe', 'WVHydrostaticLifecycleProbe',
+          'WVBoussinesqLifecycleProbe', 'WVStratifiedModalDump',
+          'WVStratifiedQGKernelDump', 'WVHydrostaticKernelDump',
+          'WVBoussinesqKernelDump', 'WVDiagnosticFieldDump',
+          'WVKernelDescriptorDump', 'WVBarotropicQGFixtureDump',
+          'WVBarotropicQGToleranceDump', 'WVBarotropicQGForcingDump')
+
 
 def digest(path):
     return hashlib.sha256(path.read_bytes()).hexdigest()
@@ -31,6 +39,20 @@ def verify(directory, source, configuration):
     return actual
 
 
+def pack(build, directory, source, configuration):
+    # CTest executables stay in the build job. MATLAB needs only these probes.
+    for name in PROBES:
+        path = build / 'bin' / name
+        if not path.is_file() or not path.stat().st_mode & 0o111:
+            raise ValueError(f'Missing executable probe: {name}')
+    directory.mkdir(parents=True, exist_ok=False)
+    for name in PROBES:
+        shutil.copy2(build / 'bin' / name, directory / name)
+    result = manifest(directory, source, configuration)
+    (directory / 'manifest.json').write_text(json.dumps(result, indent=2) + '\n')
+    return result
+
+
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument('mode', choices=('pack', 'verify'))
@@ -42,12 +64,7 @@ def main():
     if args.mode == 'pack':
         if not args.build:
             parser.error('--build is required to package artifacts')
-        args.directory.mkdir(parents=True, exist_ok=False)
-        for path in sorted((args.build / 'bin').iterdir()):
-            if path.is_file() and path.stat().st_mode & 0o111:
-                shutil.copy2(path, args.directory / path.name)
-        result = manifest(args.directory, source, args.configuration)
-        (args.directory / 'manifest.json').write_text(json.dumps(result, indent=2) + '\n')
+        result = pack(args.build, args.directory, source, args.configuration)
     else:
         result = verify(args.directory, source, args.configuration)
     print(f"Verified {len(result['files'])} binaries for {source}/{args.configuration}")

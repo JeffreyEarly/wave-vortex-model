@@ -1,4 +1,4 @@
-function report = runFocusedCI(selectionPath,binaryDirectory,outputPath,configuration)
+function report = runFocusedCI(selectionPath,binaryDirectory,outputPath,configuration,shard)
 % Run the resolved CI suite using the exact-revision portable binary artifact.
 % The caller configures pinned dependencies before entering this function.
 arguments (Input)
@@ -6,6 +6,7 @@ arguments (Input)
     binaryDirectory (1,1) string
     outputPath (1,1) string
     configuration (1,1) string {mustBeMember(configuration,["release","sanitized"])} = "release"
+    shard (1,1) double {mustBeInteger,mustBeNonnegative} = 0
 end
 arguments (Output)
     report (1,1) struct
@@ -30,16 +31,20 @@ if binaryDirectory ~= ""
     end
 end
 report = struct(schema="wvm-ci-matlab-v1",sourceCommit=string(selection.sourceCommit), ...
-    matlabRelease=release,configuration=configuration,passed=false, ...
+    matlabRelease=release,configuration=configuration,shard=shard,passed=false, ...
     requestedClasses={cell(0,1)},expectedTests={cell(0,1)},deferredMethods={selection.deferredMethods}, ...
     phases=struct(smoke=false,analyzer=false,documentation=false), ...
     phaseSeconds=struct,tests=struct(name={},passed={},incomplete={},seconds={}));
 if configuration=="release"
-    started = tic; buildtool test:smoke; report.phaseSeconds.smoke = toc(started); report.phases.smoke = true;
-    classes = string(selection.matlabTests);
+    groups = selection.matlabShards;
+    if shard==0
+        started = tic; buildtool test:smoke; report.phaseSeconds.smoke = toc(started); report.phases.smoke = true;
+    end
 else
-    classes = string(selection.sanitizedTests);
+    groups = selection.sanitizedShards;
 end
+assert(shard<numel(groups) && groups(shard+1).id==shard,"WaveVortexModel:CIShard","Unselected CI test batch.");
+classes = string(groups(shard+1).classes);
 classes = reshape(classes,[],1);
 report.requestedClasses = cellstr(classes);
 suite = matlab.unittest.Test.empty;
@@ -62,7 +67,7 @@ if ~isempty(suite)
     writeReport(outputPath,report);
     assertSuccess(results);
 end
-if configuration=="release" && release=="R2025b"
+if configuration=="release" && release=="R2025b" && shard==0
     if selection.analyzer
         started = tic; buildtool analyze; report.phaseSeconds.analyzer = toc(started); report.phases.analyzer = true;
     end

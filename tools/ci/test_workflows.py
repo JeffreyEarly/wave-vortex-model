@@ -66,14 +66,47 @@ class WorkflowContracts(unittest.TestCase):
             for job in workflow(name)['jobs'].values():
                 for step in job.get('steps', []):
                     if 'continue-on-error' in step:
-                        self.assertEqual(step.get('uses'), 'matlab-actions/setup-matlab@v3')
-                        self.assertEqual(step['id'], 'setup')
+                        self.assertIn(step.get('uses'), ['matlab-actions/setup-matlab@v3', 'actions/upload-artifact@v4'])
+                        self.assertIn(step['id'], ['setup', 'artifact-upload'])
                     if step.get('uses') == 'matlab-actions/setup-matlab@v3':
                         self.assertEqual(step['timeout-minutes'], '5')
                     if step.get('id') == 'retry':
                         self.assertEqual(step['uses'], 'matlab-actions/setup-matlab@v3')
                         self.assertIn("steps.setup.outcome == 'failure'", step['if'])
                         self.assertIn('!cancelled()', step['if'])
+
+    def test_artifact_retry_preserves_identity_and_requires_success(self):
+        for name in ['ci.yml', 'ci-cpp.yml', 'ci-matlab.yml']:
+            for job in workflow(name)['jobs'].values():
+                steps = job.get('steps', [])
+                upload = next((step for step in steps if step.get('id') == 'artifact-upload'), None)
+                if upload is None:
+                    continue
+                retry = next(step for step in steps if step.get('id') == 'artifact-retry')
+                self.assertEqual(upload['with'], retry['with'])
+                self.assertEqual(upload['with']['if-no-files-found'], 'error')
+                self.assertEqual(retry['uses'], 'actions/upload-artifact@v4')
+                self.assertNotIn('continue-on-error', retry)
+                self.assertEqual(upload['timeout-minutes'], '3')
+                self.assertEqual(retry['timeout-minutes'], '3')
+                self.assertIn("steps.artifact-upload.outcome == 'failure'", retry['if'])
+                self.assertIn('!cancelled()', retry['if'])
+                gate = steps[steps.index(retry)+1]
+                self.assertEqual(gate['name'], 'Require successful artifact upload')
+                self.assertEqual(gate['run'], 'test "$FIRST" = success || test "$RETRY" = success')
+
+    def test_compiler_cache_cannot_skip_contracts_or_reuse_a_binary_artifact(self):
+        job = workflow('ci-cpp.yml')['jobs']['build']
+        cache = next(step for step in job['steps'] if step.get('uses') == 'actions/cache@v4')
+        self.assertIn('inputs.configuration', cache['with']['key'])
+        self.assertIn('steps.compiler.outputs.identity', cache['with']['key'])
+        self.assertIn('github.sha', cache['with']['key'])
+        self.assertEqual(cache['with']['path'], '${{ runner.temp }}/ccache')
+        self.assertEqual(job['env']['CCACHE_COMPILERCHECK'], 'content')
+        self.assertIn('check_compiler_cache.py', str(job['steps']))
+        contracts = next(step for step in job['steps'] if step.get('name') == 'Run all core and runtime contracts')
+        self.assertNotIn('if', contracts)
+        self.assertIn('ctest', contracts['run'])
 
     def test_legacy_required_names_depend_on_the_real_gate(self):
         jobs = workflow('ci.yml')['jobs']

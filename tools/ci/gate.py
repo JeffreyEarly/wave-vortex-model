@@ -18,20 +18,23 @@ def validate(plan, jobs, reports):
         allowed = {'success'} if required else {'skipped'}
         if result not in allowed:
             raise ValueError(f'{name}: expected {sorted(allowed)}, got {result!r}')
-    expected_reports = [(release, 'release') for release in plan['releases']]
+    expected_reports = {(release, 'release', group['id']): group['classes']
+                        for release in plan['releases'] for group in plan['matlabShards']}
     if plan['cpp']:
-        expected_reports.append(('R2025b', 'sanitized'))
+        expected_reports.update({('R2025b', 'sanitized', group['id']): group['classes']
+                                 for group in plan['sanitizedShards']})
     by_identity = {}
     for report in reports:
-        identity = (report.get('matlabRelease'), report.get('configuration'))
+        identity = (report.get('matlabRelease'), report.get('configuration'), report.get('shard'))
         if identity in by_identity:
             raise ValueError(f'Duplicate MATLAB report: {identity}')
         by_identity[identity] = report
     if set(by_identity) != set(expected_reports):
         raise ValueError('Missing or unexpected MATLAB release/configuration evidence')
+    executed_by_configuration = {}
     for identity, report in by_identity.items():
-        release, configuration = identity
-        tests = plan['matlabTests'] if configuration == 'release' else plan['sanitizedTests']
+        release, configuration, shard = identity
+        tests = expected_reports[identity]
         if report.get('schema') != 'wvm-ci-matlab-v1' or report.get('sourceCommit') != plan['sourceCommit']:
             raise ValueError(f'{identity}: stale or malformed MATLAB evidence')
         if report.get('requestedClasses') != tests or report.get('deferredMethods') != plan['deferredMethods']:
@@ -39,9 +42,9 @@ def validate(plan, jobs, reports):
         if report.get('passed') is not True:
             raise ValueError(f'{identity}: validation did not pass')
         phases = report.get('phases', {})
-        expected_phases = {'smoke': configuration == 'release',
-                           'analyzer': configuration == 'release' and release == 'R2025b' and plan['analyzer'],
-                           'documentation': configuration == 'release' and release == 'R2025b' and plan['documentation']}
+        expected_phases = {'smoke': configuration == 'release' and shard == 0,
+                           'analyzer': configuration == 'release' and release == 'R2025b' and shard == 0 and plan['analyzer'],
+                           'documentation': configuration == 'release' and release == 'R2025b' and shard == 0 and plan['documentation']}
         if any(phases.get(key) is not value for key, value in expected_phases.items()):
             raise ValueError(f'{identity}: missing selected MATLAB phase')
         actual_tests = report.get('tests', [])
@@ -52,8 +55,12 @@ def validate(plan, jobs, reports):
             raise ValueError(f'{identity}: tests were duplicated')
         if names != report.get('expectedTests'):
             raise ValueError(f'{identity}: discovered test methods are missing from the results')
+        previously_executed = executed_by_configuration.setdefault((release, configuration), set())
+        if previously_executed.intersection(names):
+            raise ValueError(f'{identity}: test methods were repeated across batches')
+        previously_executed.update(names)
         for name in tests:
-            if not any(test_name.startswith(name + '/') for test_name in names):
+            if not any(test_name.split('/')[0].split('[')[0] == name for test_name in names):
                 raise ValueError(f'{identity}: no executed tests for {name}')
         if any(test.get('passed') is not True or test.get('incomplete') is not False for test in actual_tests):
             raise ValueError(f'{identity}: failed or incomplete numerical tests')
