@@ -28,7 +28,7 @@ Ubuntu downloads have bounded connection timeouts and one apt retry. MATLAB prov
 
 ## Broader qualification
 
-The central workflow runs complete focused qualification weekly, or explicitly with `complete=true`, or on a `final-integration` PR. This includes all transform groups and the three `longerContinuationMatchesMatlab` methods. Ordinary focused runs retain lifecycle/storage checks and shorter MATLAB–C++–MATLAB continuation fixtures. Hydrostatic and Boussinesq long continuation was already explicit; SQG's long continuation moves off ordinary PRs.
+The focused driver excludes the existing `optional` and `exhaustive` test categories; their dedicated Extended jobs retain them. An assumption failure in any selected test fails both its MATLAB job and the aggregate. The central workflow runs complete focused qualification weekly, or explicitly with `complete=true`, or on a `final-integration` PR. This includes all transform groups and the three `longerContinuationMatchesMatlab` methods. Ordinary focused runs retain lifecycle/storage checks and shorter MATLAB–C++–MATLAB continuation fixtures. Hydrostatic and Boussinesq long continuation was already explicit; SQG's long continuation moves off ordinary PRs.
 
 The existing transform qualification workflows remain available for explicit campaigns with their original machine-readable qualification reports. Extended full, exhaustive and optional suites remain scheduled and manually dispatchable. They are not ordinary merge requirements. Package/release work selects isolated package verification; publication continues through the existing release workflow.
 

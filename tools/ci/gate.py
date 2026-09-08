@@ -37,7 +37,8 @@ def validate(plan, jobs, reports):
         tests = expected_reports[identity]
         if report.get('schema') != 'wvm-ci-matlab-v1' or report.get('sourceCommit') != plan['sourceCommit']:
             raise ValueError(f'{identity}: stale or malformed MATLAB evidence')
-        if report.get('requestedClasses') != tests or report.get('deferredMethods') != plan['deferredMethods']:
+        if (report.get('requestedClasses') != tests or report.get('deferredMethods') != plan['deferredMethods']
+                or report.get('excludedTags') != plan['excludedTags']):
             raise ValueError(f'{identity}: requested coverage differs from selection')
         if report.get('passed') is not True:
             raise ValueError(f'{identity}: validation did not pass')

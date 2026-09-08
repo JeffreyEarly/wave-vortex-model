@@ -33,6 +33,15 @@ class WorkflowContracts(unittest.TestCase):
         self.assertIn('matlab_matrix', jobs['matlab']['strategy']['matrix'])
         self.assertEqual(jobs['matlab-sanitized']['with']['configuration'], 'sanitized')
 
+    def test_focused_driver_respects_existing_optional_and_exhaustive_categories(self):
+        for complete in [False, True]:
+            self.assertEqual(select(['buildfile.m'], complete=complete)['excludedTags'], ['optional', 'exhaustive'])
+        driver = (ROOT / 'tools/runFocusedCI.m').read_text()
+        self.assertIn('part.selectIf(~matlab.unittest.selectors.HasTag(tag))', driver)
+        self.assertIn('all([results.Passed]) && ~any([results.Incomplete])', driver)
+        self.assertIn('buildtool test:optional', str(workflow('extended-ci.yml')))
+        self.assertIn('buildtool test:exhaustive', str(workflow('extended-ci.yml')))
+
     def test_full_qualification_is_retained_outside_ordinary_prs(self):
         main = workflow('ci.yml')
         self.assertIn('schedule', main['on'])

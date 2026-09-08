@@ -149,7 +149,7 @@ def select(paths, *, complete=False, migration=False, source_commit=''):
     return dict(schema='wvm-ci-selection-v1', sourceCommit=source_commit,
                 paths=sorted(set(paths)), complete=complete, migration=migration,
                 **flags, families=sorted(families), matlabTests=sorted(tests), sanitizedTests=sorted(sanitized_tests),
-                releases=releases, reasons=reasons,
+                releases=releases, reasons=reasons, excludedTags=['optional', 'exhaustive'],
                 matlabShards=partition_tests(tests, 60 + (210 if flags['documentation'] else 0)),
                 sanitizedShards=partition_tests(sanitized_tests),
                 deferredMethods=[] if complete else [

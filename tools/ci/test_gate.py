@@ -13,7 +13,7 @@ def evidence(plan):
         classes, shard = group['classes'], group['id']
         reports.append(dict(schema='wvm-ci-matlab-v1', sourceCommit=plan['sourceCommit'],
                             matlabRelease=release, configuration=configuration, shard=shard, passed=True,
-                            requestedClasses=classes, deferredMethods=plan['deferredMethods'],
+                            requestedClasses=classes, deferredMethods=plan['deferredMethods'], excludedTags=plan['excludedTags'],
                             expectedTests=[name+'/parity' for name in classes],
                             phases=dict(smoke=configuration == 'release' and shard == 0,
                                         analyzer=configuration == 'release' and release == 'R2025b' and shard == 0 and plan['analyzer'],
@@ -66,7 +66,7 @@ class GateTests(unittest.TestCase):
         mutations = [lambda r: r.update(sourceCommit='old'), lambda r: r.update(passed=False),
                      lambda r: r['phases'].update(analyzer=False), lambda r: r.update(tests=[]),
                      lambda r: r['tests'][0].update(passed=False), lambda r: r['tests'][0].update(incomplete=True),
-                     lambda r: r.update(requestedClasses=[])]
+                     lambda r: r.update(requestedClasses=[]), lambda r: r.update(excludedTags=[])]
         for mutate in mutations:
             reports = copy.deepcopy(self.reports); mutate(reports[0])
             with self.assertRaises(ValueError):
