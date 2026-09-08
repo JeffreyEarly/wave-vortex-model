@@ -1,4 +1,4 @@
-function vertical = buildVerticalModes(Lz,Nz,N2Function,options)
+function vertical = buildFreeSurfaceBalancedModes(Lz,Nz,N2Function,options)
 % Build APV and MDA transforms on one fixed WKB quadrature rule.
 arguments
     Lz (1,1) double {mustBePositive}
@@ -31,9 +31,12 @@ if length(N2Values) ~= length(z) || any(~isfinite(N2Values)) || any(N2Values <= 
     error('WVTransformFreeSurfaceQG:InvalidStratification','N2Function must return one finite positive value per z point.');
 end
 
+apvCount = []; mdaCount = [];
+if isfield(options,"apvModeCount"), apvCount = options.apvModeCount; end
+if isfield(options,"mdaModeCount"), mdaCount = options.mdaModeCount; end
 [apvTransform,apvAssessment] = apvBasis.discreteTransform(z=z,weights=weights,variables=["F","G"], ...
-    gramTolerance=options.apvGramTolerance,quadraticAliasingTolerance=options.quadraticAliasingTolerance);
-[mdaTransform,mdaAssessment] = mdaBasis.discreteTransform(z=z,weights=weights,variables="G",gramTolerance=options.mdaGramTolerance);
+    gramTolerance=options.apvGramTolerance,quadraticAliasingTolerance=options.quadraticAliasingTolerance,nModes=apvCount);
+[mdaTransform,mdaAssessment] = mdaBasis.discreteTransform(z=z,weights=weights,variables="G",gramTolerance=options.mdaGramTolerance,nModes=mdaCount);
 quadraticPolicy = apvAssessment.quadraticAliasingPolicy;
 hasProjectionContract = isfield(quadraticPolicy,'projectionPairing') && isequal(string(quadraticPolicy.projectionPairing),"signedPontryagin");
 hasErrorContract = isfield(quadraticPolicy,'errorNorm') && isequal(string(quadraticPolicy.errorNorm),"inducedHilbertMajorant");

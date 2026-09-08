@@ -35,16 +35,16 @@ arguments
     options.quadraticAliasingTolerance (1,1) double {mustBeReal,mustBeFinite,mustBePositive} = 0.1
 end
 
-inputs = WVTransformFreeSurfaceQG.resolveScientificInputs(Lz,options);
+inputs = WVInternal.resolveFreeSurfaceInputs(Lz,options);
 verticalOptions = options;
 verticalOptions.g0 = inputs.g0;
 verticalOptions.gd = inputs.gd;
-vertical = WVTransformFreeSurfaceQG.buildVerticalModes(Lz,Nz,inputs.N2Function,verticalOptions);
+vertical = WVInternal.buildFreeSurfaceBalancedModes(Lz,Nz,inputs.N2Function,verticalOptions);
 activeMask = [isfinite(inputs.g0),isfinite(inputs.gd)];
 endpointNames = ["surface","bottom"];
 integratedN = integral(@(z) sqrt(inputs.N2Function(z)),-Lz,0);
 horizontalWavenumberScale = abs(inputs.f0)*(Nz-1)^2/integratedN;
-limit = WVTransformFreeSurfaceQG.supportedHorizontalWavenumber(vertical.apvBasis,vertical.apvTransform,inputs.N2Function, ...
+limit = WVInternal.supportedFreeSurfaceHorizontalWavenumber(vertical.apvBasis,vertical.apvTransform,inputs.N2Function, ...
     inputs.f0,options.g,endpointNames(activeMask),vertical.nEVP,options.quadraticAliasingTolerance,seedKh=horizontalWavenumberScale);
 
 apvModeCount = length(vertical.apvTransform.modeNumber);

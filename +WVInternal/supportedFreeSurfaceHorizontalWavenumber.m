@@ -1,4 +1,4 @@
-function assessment = supportedHorizontalWavenumber(apvBasis,apvTransform,N2Function,f0,g,endpoints,nEVP,tolerance,options)
+function assessment = supportedFreeSurfaceHorizontalWavenumber(apvBasis,apvTransform,N2Function,f0,g,endpoints,nEVP,tolerance,options)
 % Find a conservative APV/zero-APV horizontal-wavenumber limit.
 arguments
     apvBasis (1,1) IMInternalModesBasis
@@ -97,6 +97,6 @@ assessment = struct(isApplicable=true,maximumSupportedKh=lowerKh,firstRejectedKh
     function result = evaluate(kh)
         problem = IMGeostrophicZeroAPVModes.atWavenumber(N2=N2Function,zDomain=apvBasis.zDomain,f0=f0,g=g,k=kh,endpoints=endpoints,surfaceBoundary="freeSurface");
         zeroModes = IMSolverSpectral(nEVP=nEVP).solveGeostrophicZeroAPVModes(problem);
-        result = WVTransformFreeSurfaceQG.measureAPVZeroAPVQuadraticError(apvBasis,apvTransform,zeroModes,1,2*nEVP);
+        result = WVInternal.measureFreeSurfaceCrossProductError(apvBasis,apvTransform,zeroModes,1,2*nEVP);
     end
 end
