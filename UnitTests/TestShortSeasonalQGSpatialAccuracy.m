@@ -43,6 +43,39 @@ classdef TestShortSeasonalQGSpatialAccuracy < matlab.unittest.TestCase
         end
     end
     methods (Static)
+        function errors=runEndpointConfirmation(folder)
+            % Repeat only the three high-band cases implicated by #380.
+            arguments (Input)
+                folder (1,1) string
+            end
+            if ~isfolder(folder), mkdir(folder); end
+            originalPath=path;
+            restorePath=onCleanup(@()path(originalPath));
+            addpath(fullfile(fileparts(fileparts(mfilename('fullpath'))),'Documentation','Examples'));
+            grids=[257 385 513]; snapshots=cell(3,2);
+            for i=1:3
+                model=makeShortSeasonalQGModel(gridSize=[24 24 grids(i)],apvModeCount=84,timeStep=86400);
+                w=model.wvt; w.removeForcing(w.forcingWithName('adaptive damping'));
+                model.setupIntegrator(integratorType="exponential",initialStep=86400,maximumStep=86400,exponentialAdaptive=false);
+                assert(isequal(w.activeEndpoint,[1;2]) && w.mdaModeCount==2);
+                for j=1:2
+                    model.integrateToTime(j*32*86400,shouldShowIntegrationDiagnostics=false);
+                    assert(all(model.exponentialStatistics.acceptedStepSeconds==86400) && all(w.Amda==0));
+                    snapshots{i,j}=observe(w);
+                end
+                fprintf('Endpoint confirmation Nz=%d complete\n',grids(i));
+            end
+            errors=table();
+            for i=1:2
+                for j=1:2
+                    rows=compare(snapshots{i,j},snapshots{3,j});
+                    rows.Nz=repmat(grids(i),height(rows),1); rows.referenceNz=repmat(513,height(rows),1); rows.day=repmat(32*j,height(rows),1);
+                    errors=[errors;rows]; %#ok<AGROW>
+                end
+            end
+            writetable(errors,fullfile(folder,'issue-353-endpoint-nonlinear.csv'));
+            save(fullfile(folder,'endpoint-snapshots.mat'),'snapshots');
+        end
         function result=runStudy(folder)
             arguments (Input)
                 folder (1,1) string
