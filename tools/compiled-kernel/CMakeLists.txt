@@ -59,6 +59,13 @@ if(CMAKE_CXX_COMPILER_ID MATCHES "AppleClang|Clang|GNU")
 endif()
 add_test(NAME WVPreparedModeExecutor COMMAND TestWVPreparedModeExecutor)
 
+add_executable(TestWVAllocationProbe tests/TestWVAllocationProbe.cpp tests/WVAllocationProbe.cpp)
+target_compile_features(TestWVAllocationProbe PRIVATE cxx_std_17)
+if(CMAKE_CXX_COMPILER_ID MATCHES "AppleClang|Clang|GNU")
+    target_compile_options(TestWVAllocationProbe PRIVATE -Wall -Wextra -Wpedantic -Werror)
+endif()
+add_test(NAME WVAllocationProbe COMMAND TestWVAllocationProbe)
+
 set(WV_KERNEL_FFTW_ROOT "" CACHE PATH "Optional native FFTW prefix for ownership and prepared execution tests")
 if(WV_KERNEL_FFTW_ROOT)
     find_path(WV_TEST_FFTW_INCLUDE fftw3.h PATHS ${WV_KERNEL_FFTW_ROOT}/include NO_DEFAULT_PATH REQUIRED)
