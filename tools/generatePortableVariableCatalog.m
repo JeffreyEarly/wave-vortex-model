@@ -459,6 +459,13 @@ for iEntry = 1:numel(inventory)
         configurationRestriction=string(contract.configurationRestriction),catalogStatus="supported",netCDF=netCDF); %#ok<AGROW>
 end
 catalog.configurations = unique(string({rows.configuration}),"stable");
+catalog.configurationMetadata = struct(id={},transformClass={},isHydrostatic={},shouldAntialias={});
+for configuration = reshape(catalog.configurations,1,[])
+    entry = inventory(find(string({inventory.configuration})==configuration,1));
+    catalog.configurationMetadata(end+1) = struct(id=configuration,transformClass=entry.transformClass, ...
+        isHydrostatic=~ismember(entry.family,["constant-nonhydrostatic","boussinesq"]), ...
+        shouldAntialias=endsWith(configuration,"aa1"));
+end
 catalog.intermediates = supplement.intermediates;
 catalog.contracts = rows;
 catalog.exclusions = supplement.exclusions;

@@ -4,7 +4,7 @@ function inventory = portableVariableAnnotations()
 % antialias settings. No numerical results from these fixtures are exported.
 families = ["constant-hydrostatic","constant-nonhydrostatic","barotropic", ...
     "stratified-qg","hydrostatic","boussinesq"];
-inventory = struct(configuration={},family={},annotation={},authority={},component={});
+inventory = struct(configuration={},family={},transformClass={},annotation={},authority={},component={});
 for family = families
     for antialias = [false true]
         switch family
@@ -52,7 +52,7 @@ for family = families
 end
 
     function append(annotation,authority,component)
-        inventory(end+1) = struct(configuration=configuration,family=family, ...
+        inventory(end+1) = struct(configuration=configuration,family=family,transformClass=string(class(wvt)), ...
             annotation=annotation,authority=authority,component=component);
     end
 end

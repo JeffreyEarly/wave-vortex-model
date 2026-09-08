@@ -1692,6 +1692,80 @@
     "boussinesq-aa0",
     "boussinesq-aa1"
   ],
+  "configurationMetadata": [
+    {
+      "id": "constant-hydrostatic-aa0",
+      "transformClass": "WVTransformConstantStratification",
+      "isHydrostatic": true,
+      "shouldAntialias": false
+    },
+    {
+      "id": "constant-hydrostatic-aa1",
+      "transformClass": "WVTransformConstantStratification",
+      "isHydrostatic": true,
+      "shouldAntialias": true
+    },
+    {
+      "id": "constant-nonhydrostatic-aa0",
+      "transformClass": "WVTransformConstantStratification",
+      "isHydrostatic": false,
+      "shouldAntialias": false
+    },
+    {
+      "id": "constant-nonhydrostatic-aa1",
+      "transformClass": "WVTransformConstantStratification",
+      "isHydrostatic": false,
+      "shouldAntialias": true
+    },
+    {
+      "id": "barotropic-aa0",
+      "transformClass": "WVTransformBarotropicQG",
+      "isHydrostatic": true,
+      "shouldAntialias": false
+    },
+    {
+      "id": "barotropic-aa1",
+      "transformClass": "WVTransformBarotropicQG",
+      "isHydrostatic": true,
+      "shouldAntialias": true
+    },
+    {
+      "id": "stratified-qg-aa0",
+      "transformClass": "WVTransformStratifiedQG",
+      "isHydrostatic": true,
+      "shouldAntialias": false
+    },
+    {
+      "id": "stratified-qg-aa1",
+      "transformClass": "WVTransformStratifiedQG",
+      "isHydrostatic": true,
+      "shouldAntialias": true
+    },
+    {
+      "id": "hydrostatic-aa0",
+      "transformClass": "WVTransformHydrostatic",
+      "isHydrostatic": true,
+      "shouldAntialias": false
+    },
+    {
+      "id": "hydrostatic-aa1",
+      "transformClass": "WVTransformHydrostatic",
+      "isHydrostatic": true,
+      "shouldAntialias": true
+    },
+    {
+      "id": "boussinesq-aa0",
+      "transformClass": "WVTransformBoussinesq",
+      "isHydrostatic": false,
+      "shouldAntialias": false
+    },
+    {
+      "id": "boussinesq-aa1",
+      "transformClass": "WVTransformBoussinesq",
+      "isHydrostatic": false,
+      "shouldAntialias": true
+    }
+  ],
   "intermediates": [
     {
       "name": "phaseEvolution",

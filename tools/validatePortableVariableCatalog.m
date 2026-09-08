@@ -6,6 +6,9 @@ if ~isequal(ids,0:numel(names)-1) || numel(unique(names))~=numel(names) || numel
     invalid("Variable names and byte ordinals must be unique, contiguous and below 255.");
 end
 configurations = reshape(string(catalog.configurations),1,[]);
+if ~isequal(reshape(string({catalog.configurationMetadata.id}),1,[]),configurations)
+    invalid("Missing or contradictory transform configuration metadata.");
+end
 rows = catalog.contracts;
 rowKeys = string({rows.configuration}) + "/" + string([rows.ordinal]);
 if numel(unique(rowKeys))~=numel(rowKeys) || numel(unique(configurations))~=numel(configurations)

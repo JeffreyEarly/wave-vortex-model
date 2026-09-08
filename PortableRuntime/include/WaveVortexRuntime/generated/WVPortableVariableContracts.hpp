@@ -23,6 +23,21 @@ struct WVPortableVariableContract {
 inline constexpr std::array<std::string_view, 12> WVPortableVariableConfigurations{{
   "constant-hydrostatic-aa0", "constant-hydrostatic-aa1", "constant-nonhydrostatic-aa0", "constant-nonhydrostatic-aa1", "barotropic-aa0", "barotropic-aa1", "stratified-qg-aa0", "stratified-qg-aa1", "hydrostatic-aa0", "hydrostatic-aa1", "boussinesq-aa0", "boussinesq-aa1"
 }};
+struct WVPortableVariableConfiguration { std::string_view id; std::string_view transformClass; bool isHydrostatic; bool shouldAntialias; };
+inline constexpr std::array<WVPortableVariableConfiguration, 12> WVPortableVariableConfigurationMetadata{{
+  {"constant-hydrostatic-aa0", "WVTransformConstantStratification", true, false},
+  {"constant-hydrostatic-aa1", "WVTransformConstantStratification", true, true},
+  {"constant-nonhydrostatic-aa0", "WVTransformConstantStratification", false, false},
+  {"constant-nonhydrostatic-aa1", "WVTransformConstantStratification", false, true},
+  {"barotropic-aa0", "WVTransformBarotropicQG", true, false},
+  {"barotropic-aa1", "WVTransformBarotropicQG", true, true},
+  {"stratified-qg-aa0", "WVTransformStratifiedQG", true, false},
+  {"stratified-qg-aa1", "WVTransformStratifiedQG", true, true},
+  {"hydrostatic-aa0", "WVTransformHydrostatic", true, false},
+  {"hydrostatic-aa1", "WVTransformHydrostatic", true, true},
+  {"boussinesq-aa0", "WVTransformBoussinesq", false, false},
+  {"boussinesq-aa1", "WVTransformBoussinesq", false, true},
+}};
 inline constexpr std::array<WVPortableVariableContract, 666> WVPortableVariableContracts{{
   {"constant-hydrostatic-aa0", {WVPortableVariable::A0, 2, "A0", {{"j", "kl", ""}}, 2, "m2 s-1", "geostrophic coefficients at reference time t0", true, false, true, true, WVPortableVariableKind::coefficient, WVPortableNaturalRank::coefficient, 1, 0, -1, {"", ""}, 0}, {{WVPortableVariable::invalid, WVPortableVariable::invalid, WVPortableVariable::invalid, WVPortableVariable::invalid, WVPortableVariable::invalid, WVPortableVariable::invalid, WVPortableVariable::invalid, WVPortableVariable::invalid}}, 0, WVPortableVariable::invalid, 0, WVPortableDiagnosticRuntime::implemented, "registered", "dependent-property-or-method", "", WVPortableFlowComponent::total, {{"j", "kl", ""}}, "Legacy sampling contract.", "Applies only to the enumerated transform configurations and built-in component masks."},
   {"constant-hydrostatic-aa0", {WVPortableVariable::A0t, 23, "A0t", {{"j", "kl", ""}}, 2, "m2 s-1", "zero-frequency coefficients at current time t", true, true, true, true, WVPortableVariableKind::diagnostic, WVPortableNaturalRank::coefficient, 1, 0, -1, {"", ""}, 0}, {{WVPortableVariable::A0, WVPortableVariable::invalid, WVPortableVariable::invalid, WVPortableVariable::invalid, WVPortableVariable::invalid, WVPortableVariable::invalid, WVPortableVariable::invalid, WVPortableVariable::invalid}}, 1, WVPortableVariable::invalid, 0, WVPortableDiagnosticRuntime::pending305, "registered", "WVOperation", "@(wvt)wvt.A0", WVPortableFlowComponent::total, {{"j", "kl", ""}}, "Spectral coefficient layout only; spatial interpolation is undefined.", "Applies only to the enumerated transform configurations and built-in component masks."},
@@ -730,6 +745,6 @@ portableVariableContract(WVPortableVariable id, std::string_view configuration) 
 }
 inline constexpr std::size_t portableVariableContractBytes() noexcept {
   return sizeof(WVPortableVariableContracts) + sizeof(WVPortableVariableConfigurations) +
-         sizeof(WVPortableVariableExclusions) + sizeof(WVPortableIntermediates);
+         sizeof(WVPortableVariableExclusions) + sizeof(WVPortableIntermediates) + sizeof(WVPortableVariableConfigurationMetadata);
 }
 } // namespace wavevortex::runtime
