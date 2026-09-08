@@ -111,6 +111,11 @@ classdef WVTracer < WVObservingSystem
         function os = observingSystemFromGroup(group,model,outputGroup)
             %initialize a WVObservingSystem instance from NetCDF file
             %
+            % Restore only committed records. A group with no committed
+            % records contributes configuration and empty state; model-file
+            % restoration reconciles shared observers with a saved state at
+            % the coefficient restart time, or rejects the restart.
+            %
             % Subclasses to should override this method to enable model
             % restarts. This method works in conjunction with -writeToFile
             % to provide restart capability.
@@ -129,8 +134,11 @@ classdef WVTracer < WVObservingSystem
             vars = CAAnnotatedClass.requiredPropertiesFromGroup(group);
 
             parentGroup = outputGroup.group;
-            nPoints = parentGroup.dimensionWithName("t").nPoints;
-            vars.phi = parentGroup.readVariablesAtIndexAlongDimension('t',nPoints,vars.name);
+            nPoints = WVModelOutputGroup.committedRecordCountForGroup(parentGroup);
+            vars.phi = [];
+            if nPoints > 0
+                vars.phi = parentGroup.readVariablesAtIndexAlongDimension('t',nPoints,vars.name);
+            end
 
             options = namedargs2cell(vars);
             os = WVTracer(model,options{:});
