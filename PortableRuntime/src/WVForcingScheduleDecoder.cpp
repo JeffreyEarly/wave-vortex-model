@@ -433,6 +433,7 @@ WVCheckpointStatus decodeForcingSchedule(
                                         catalog, schedule);
     if (!result)
         return result;
+    if (configuration.transformClass=="WVTransformHydrostatic") return result;
     // MATLAB persists forcing identity and construction order, but not the
     // transform-specific execution stage. Resolve the QG stage from the
     // frozen registration before the schedule reaches the QG engine.

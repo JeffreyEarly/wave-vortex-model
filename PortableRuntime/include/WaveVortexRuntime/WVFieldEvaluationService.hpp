@@ -3,6 +3,7 @@
 #include "WaveVortexKernel/WVTransformConstantStratificationKernel.hpp"
 #include "WaveVortexKernel/WVTransformBarotropicQGKernel.hpp"
 #include "WaveVortexKernel/WVTransformStratifiedQGKernel.hpp"
+#include "WaveVortexKernel/WVTransformHydrostaticKernel.hpp"
 #include "WaveVortexRuntime/WVObserverContracts.hpp"
 #include "WaveVortexRuntime/generated/WVPortableVariableCatalog.hpp"
 
@@ -20,7 +21,7 @@ class WVIntegrationStateLayout;
 
 namespace detail {
 class WVBarotropicQGFieldEvaluationAdapter;
-class WVStratifiedQGFieldEvaluationAdapter;
+class WVStratifiedFieldEvaluationAdapter;
 }
 
 enum class WVFieldSamplingKind : std::uint8_t {
@@ -146,7 +147,7 @@ private:
 
   friend class WVFieldEvaluationService;
   friend class detail::WVBarotropicQGFieldEvaluationAdapter;
-  friend class detail::WVStratifiedQGFieldEvaluationAdapter;
+  friend class detail::WVStratifiedFieldEvaluationAdapter;
 };
 
 class WVMovingFieldEvaluationPlan final {
@@ -174,7 +175,7 @@ private:
   std::size_t transformPlanBytes_ = 0;
   friend class WVFieldEvaluationService;
   friend class detail::WVBarotropicQGFieldEvaluationAdapter;
-  friend class detail::WVStratifiedQGFieldEvaluationAdapter;
+  friend class detail::WVStratifiedFieldEvaluationAdapter;
 };
 
 class WVFieldEvaluationPlan final {
@@ -225,7 +226,7 @@ private:
 
   friend class WVFieldEvaluationService;
   friend class detail::WVBarotropicQGFieldEvaluationAdapter;
-  friend class detail::WVStratifiedQGFieldEvaluationAdapter;
+  friend class detail::WVStratifiedFieldEvaluationAdapter;
 };
 
 struct WVPreparedFieldOutputSpecification {
@@ -290,7 +291,7 @@ private:
 
   friend class WVFieldEvaluationService;
   friend class detail::WVBarotropicQGFieldEvaluationAdapter;
-  friend class detail::WVStratifiedQGFieldEvaluationAdapter;
+  friend class detail::WVStratifiedFieldEvaluationAdapter;
 };
 
 // One independently keyed occurrence in a coarse same-state evaluation.
@@ -365,6 +366,8 @@ public:
   create(std::shared_ptr<const WVStratifiedModalSource> source,
          std::unique_ptr<WVFFTEngine> engine,
          std::unique_ptr<WVFieldEvaluationService> &service);
+  static WVKernelStatus
+  createBorrowing(WVTransformHydrostaticKernel &transform,std::unique_ptr<WVFieldEvaluationService> &service);
   static WVKernelStatus
   createBorrowing(WVTransformStratifiedQGKernel &transform,
                   std::unique_ptr<WVFieldEvaluationService> &service);
@@ -471,7 +474,7 @@ private:
   WVTransformConstantStratificationKernel *transform_ = nullptr;
   std::unique_ptr<detail::WVBarotropicQGFieldEvaluationAdapter>
       barotropicQG_;
-  std::unique_ptr<detail::WVStratifiedQGFieldEvaluationAdapter> stratifiedQG_;
+  std::unique_ptr<detail::WVStratifiedFieldEvaluationAdapter> stratified_;
   std::unique_ptr<MovingWorkspace> movingWorkspace_;
   std::vector<double> realScratch_;
   std::vector<WVComplex64> complexScratch_;

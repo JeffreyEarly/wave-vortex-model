@@ -114,7 +114,8 @@ struct WVCheckpointMetadata {
 enum class WVPersistedTransformKind : std::uint8_t {
     constantStratification,
     barotropicQG,
-    stratifiedQG
+    stratifiedQG,
+    hydrostatic
 };
 
 // Complete owning result needed to rebuild the portable constant-stratification core.

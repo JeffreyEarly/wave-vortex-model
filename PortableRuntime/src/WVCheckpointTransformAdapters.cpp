@@ -731,7 +731,9 @@ WVCheckpointStatus inspectOpenFile(
     const bool isBarotropicQG = candidate.metadata.transformClass ==
                                 "WVTransformBarotropicQG";
     const bool isStratifiedQG = candidate.metadata.transformClass == "WVTransformStratifiedQG";
-    if (!isConstant && !isBarotropicQG && !isStratifiedQG)
+    const bool isHydrostatic=candidate.metadata.transformClass=="WVTransformHydrostatic";
+    const bool isStratified=isStratifiedQG || isHydrostatic;
+    if (!isConstant && !isBarotropicQG && !isStratified)
         return status(WVCheckpointStatusCode::unsupportedTransform,
                       "The portable runtime profile does not support transform '" +
                           candidate.metadata.transformClass + "'.", "/");
@@ -739,8 +741,8 @@ WVCheckpointStatus inspectOpenFile(
                                   ? WVPersistedTransformKind::barotropicQG
                                   : WVPersistedTransformKind::constantStratification;
 
-    if (isStratifiedQG) {
-        candidate.transformKind=WVPersistedTransformKind::stratifiedQG;
+    if (isStratified) {
+        candidate.transformKind=isHydrostatic ? WVPersistedTransformKind::hydrostatic : WVPersistedTransformKind::stratifiedQG;
         result=WVStratifiedModalReader::read(path,candidate.stratifiedModalSource);
     } else {
         result = isConstant ? readConfiguration(rootId,candidate.configuration)
@@ -766,7 +768,7 @@ WVCheckpointStatus inspectOpenFile(
             linearSQG=value!=0;
         }
     }
-    result = isConstant ? findStateGroup(groups, stateGroup)
+    result = (isConstant || isHydrostatic) ? findStateGroup(groups, stateGroup)
                         : findQGStateGroup(groups, catalog, stateGroup, linearSQG);
     if (!result) return result;
     candidate.metadata.stateGroupPath = stateGroup.path;
@@ -781,7 +783,7 @@ WVCheckpointStatus inspectOpenFile(
                       "Checkpoint spectral dimensions must be nonempty.",
                       stateGroup.path);
     std::size_t coefficientCount = Nkl;
-    if (isConstant || isStratifiedQG) {
+    if (isConstant || isStratified) {
         std::size_t Nj = 0;
         result = detail::dimensionLength(stateGroup.id, "j", Nj,
                                          stateGroup.path);
@@ -791,7 +793,7 @@ WVCheckpointStatus inspectOpenFile(
                           "Checkpoint j dimension must be nonempty.",
                           stateGroup.path);
         candidate.configuration.Nj = Nj;
-        if (isStratifiedQG) {
+        if (isStratified) {
             const auto& g=candidate.stratifiedModalSource->geometry();
             if (Nj!=g.Nj || Nkl!=g.Nkl) return status(WVCheckpointStatusCode::shapeMismatch,"SQG coefficients disagree with the authoritative modal record.",stateGroup.path);
         }
@@ -808,6 +810,7 @@ WVCheckpointStatus inspectOpenFile(
             const auto& g=candidate.stratifiedModalSource->geometry();
             candidate.stateDescription={candidate.metadata.transformClass,{g.Nx,g.Ny,g.Nz},{{"A0",{Nj,Nkl},WVToleranceKind::coefficientEnergyScaled}},true};
         }
+        if (isHydrostatic) { const auto& g=candidate.stratifiedModalSource->geometry(); candidate.stateDescription.spatialDimensions={g.Nx,g.Ny,g.Nz}; }
         coefficientCount = Nj * Nkl;
         for (const char* family : {"Ap", "Am", "A0"}) {
             if (isStratifiedQG && std::string(family)!="A0") continue;
@@ -834,7 +837,7 @@ WVCheckpointStatus inspectOpenFile(
     std::vector<detail::WVForcingGroupSource> forcingSources;
     result = readForcingHeaders(groups, candidate.metadata.forcingHeaders, forcingSources);
     if (!result) return result;
-    result = isStratifiedQG
+    result = isStratified
                  ? detail::decodeForcingSchedule(forcingSources,candidate.stratifiedModalSource->geometry(),coefficientCount,catalog,candidate.forcingSchedule)
                  : isConstant
                      ? detail::decodeForcingSchedule(forcingSources,candidate.configuration,coefficientCount,catalog,candidate.forcingSchedule)
@@ -919,21 +922,13 @@ WVCheckpointStatus WVCheckpointReader::read(const std::string& path, const WVExt
             inspection.stateDescription.spatialDimensions;
         candidate.transformState.t = inspection.t;
         candidate.transformState.t0 = inspection.t0;
-        candidate.transformState.coefficientFamilies.push_back(
-            {"A0", inspection.stateDescription.coefficientFamilies[0]
-                       .spectralDimensions,
-             {}});
-        if (inspection.transformKind==WVPersistedTransformKind::stratifiedQG) {
-            result=readComplexCoefficient(stateGroup.id,stateGroup.path,"A0",candidate.metadata.selectedStateIndex,candidate.metadata.stateCount,inspection.coefficientShape.rows,inspection.coefficientShape.columns,&candidate.transformState.coefficientFamilies[0].values);
-        } else {
-        result = readCompactComplexCoefficient(
-            stateGroup.id, stateGroup.path, "A0",
-            candidate.metadata.selectedStateIndex,
-            candidate.metadata.stateCount,
-            inspection.coefficientShape.columns,
-            &candidate.transformState.coefficientFamilies[0].values);
+        for (const auto& family:inspection.stateDescription.coefficientFamilies) {
+            candidate.transformState.coefficientFamilies.push_back({family.identifier,family.spectralDimensions,{}});
+            auto& values=candidate.transformState.coefficientFamilies.back().values;
+            if (inspection.stratifiedModalSource) result=readComplexCoefficient(stateGroup.id,stateGroup.path,family.identifier.c_str(),candidate.metadata.selectedStateIndex,candidate.metadata.stateCount,inspection.coefficientShape.rows,inspection.coefficientShape.columns,&values);
+            else result=readCompactComplexCoefficient(stateGroup.id,stateGroup.path,family.identifier.c_str(),candidate.metadata.selectedStateIndex,candidate.metadata.stateCount,inspection.coefficientShape.columns,&values);
+            if (!result) return result;
         }
-        if (!result) return result;
     }
 
     checkpoint = std::move(candidate);

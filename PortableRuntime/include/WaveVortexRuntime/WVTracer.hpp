@@ -20,6 +20,7 @@ private:
   WVObserverRecord record_;
   std::size_t stateBlock_ = 0;
   friend class WVConstantStratificationIntegrationSystem;
+  friend class WVHydrostaticIntegrationSystem;
 };
 
 } // namespace wavevortex::runtime

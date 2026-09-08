@@ -1,4 +1,4 @@
-#include "WVStratifiedQGFieldEvaluationAdapter.hpp"
+#include "WVStratifiedFieldEvaluationAdapter.hpp"
 
 #include "WaveVortexRuntime/WVIntegrationState.hpp"
 
@@ -43,6 +43,7 @@ std::uint64_t configurationFingerprint(
       result *= 1099511628211ULL;
     }
   };
+  for (char c:configuration.transformClass) append(c);
   append(configuration.Nz);
   append(configuration.Nj);
   append(configuration.Nkl);
@@ -245,7 +246,7 @@ private:
   std::vector<double> z_,second_;
 };
 
-bool surface(WVStratifiedQGField field) {return field==WVStratifiedQGField::ssh || field==WVStratifiedQGField::ssu || field==WVStratifiedQGField::ssv;}
+bool surface(WVHydrostaticField field) {return field==WVHydrostaticField::ssh || field==WVHydrostaticField::ssu || field==WVHydrostaticField::ssv;}
 
 enum class ScalarField : std::uint8_t { none, energy, uvMax, wMax };
 
@@ -263,7 +264,7 @@ struct Weight {
 };
 
 struct Request {
-  WVStratifiedQGField field = WVStratifiedQGField::u;
+  WVHydrostaticField field = WVHydrostaticField::u;
   ScalarField scalar = ScalarField::none;
   WVFieldSamplingKind sampling = WVFieldSamplingKind::fullGrid;
   WVPositionInterpolation interpolation = WVPositionInterpolation::linear;
@@ -288,7 +289,7 @@ struct Plan {
 };
 
 struct MovingRequest {
-  WVStratifiedQGField field = WVStratifiedQGField::u;
+  WVHydrostaticField field = WVHydrostaticField::u;
   std::size_t offset = 0;
   std::size_t count = 0;
   WVPositionInterpolation interpolation = WVPositionInterpolation::linear;
@@ -305,7 +306,7 @@ struct MovingPlan {
 };
 
 struct EventRequest {
-  WVStratifiedQGField field = WVStratifiedQGField::u;
+  WVHydrostaticField field = WVHydrostaticField::u;
   std::size_t positionSet = 0;
   WVPositionInterpolation interpolation = WVPositionInterpolation::linear;
   std::size_t output = 0;
@@ -329,37 +330,41 @@ struct EventGeometry {
 };
 
 WVKernelStatus resolveField(const std::string &name,
-                            WVStratifiedQGField &field,
-                            ScalarField &scalar) {
+                            WVHydrostaticField &field,
+                            ScalarField &scalar, bool hydrostatic) {
   scalar = ScalarField::none;
   if (name == "u")
-    field = WVStratifiedQGField::u;
+    field = WVHydrostaticField::u;
   else if (name == "v")
-    field = WVStratifiedQGField::v;
-  else if (name == "p") field = WVStratifiedQGField::p;
-  else if (name == "rho_e") field = WVStratifiedQGField::rhoE;
-  else if (name == "rho_total") field = WVStratifiedQGField::rhoTotal;
-  else if (name == "ssu") field = WVStratifiedQGField::ssu;
-  else if (name == "ssv") field = WVStratifiedQGField::ssv;
+    field = WVHydrostaticField::v;
+  else if (name == "w" && hydrostatic) field=WVHydrostaticField::w;
+  else if (name == "wMax" && hydrostatic) scalar=ScalarField::wMax;
+  else if (name == "zeta_x" && hydrostatic) field=WVHydrostaticField::zetaX;
+  else if (name == "zeta_y" && hydrostatic) field=WVHydrostaticField::zetaY;
+  else if (name == "p") field = WVHydrostaticField::p;
+  else if (name == "rho_e") field = WVHydrostaticField::rhoE;
+  else if (name == "rho_total") field = WVHydrostaticField::rhoTotal;
+  else if (name == "ssu") field = WVHydrostaticField::ssu;
+  else if (name == "ssv") field = WVHydrostaticField::ssv;
   else if (name == "eta")
-    field = WVStratifiedQGField::eta;
+    field = WVHydrostaticField::eta;
   else if (name == "pi")
-    field = WVStratifiedQGField::pi;
+    field = WVHydrostaticField::pi;
   else if (name == "psi")
-    field = WVStratifiedQGField::psi;
+    field = WVHydrostaticField::psi;
   else if (name == "qgpv")
-    field = WVStratifiedQGField::qgpv;
+    field = WVHydrostaticField::qgpv;
   else if (name == "zeta_z")
-    field = WVStratifiedQGField::zetaZ;
+    field = WVHydrostaticField::zetaZ;
   else if (name == "ssh")
-    field = WVStratifiedQGField::ssh;
+    field = WVHydrostaticField::ssh;
   else if (name == "energy")
     scalar = ScalarField::energy;
   else if (name == "uvMax")
     scalar = ScalarField::uvMax;
   else
     return {WVKernelStatusCode::unsupportedOperation,
-            "WVTransformStratifiedQG does not support field " + name + "."};
+            "This stratified transform does not support field " + name + "."};
   return WVKernelStatus::ok();
 }
 
@@ -428,26 +433,24 @@ double interpolate(const double *field,const Weight& weight,WVPositionInterpolat
   return value;
 }
 
-WVKernelStatus coefficientView(const WVIntegrationState &state,
-                               const WVTransformStratifiedQGKernel &kernel,
-                               WVComplexConstView &A0) {
-  if (state.coefficientFamilyCount != 1 ||
-      state.coefficientFamilies == nullptr ||
-      state.coefficientFamilies[0].layout == nullptr ||
-      state.coefficientFamilies[0].layout->identifier != "A0" ||
-      state.coefficientFamilies[0].layout->elementCount !=
-          kernel.geometry().Nj*kernel.geometry().Nkl ||
-      state.coefficientFamilies[0].data == nullptr)
-    return {WVKernelStatusCode::invalidShape,
-            "Stratified QG field evaluation requires compact A0 state."};
-  A0 = {state.coefficientFamilies[0].data,
-        kernel.spectralShape()};
+WVKernelStatus coefficientView(const WVIntegrationState& state,const WVStratifiedModalGeometry& g,WVState& result) {
+  const bool hydro=g.transformClass=="WVTransformHydrostatic";
+  const auto count=hydro ? 3U : 1U;
+  if (state.coefficientFamilyCount!=count || !state.coefficientFamilies) return invalid("Wrong stratified coefficient family count.");
+  const char* names[]={"Ap","Am","A0"};
+  WVComplexConstView views[3]{};
+  for (std::size_t i=0;i<count;++i) {
+    const auto& f=state.coefficientFamilies[i]; const auto family=hydro ? i : 2;
+    if (!f.data || !f.layout || f.layout->identifier!=names[family] || (f.layout->spectralDimensions.size()!=2 || f.layout->spectralDimensions[0]!=g.Nj || f.layout->spectralDimensions[1]!=g.Nkl)) return invalid("Invalid stratified field coefficient storage.");
+    views[family]={f.data,{g.Nj,g.Nkl}};
+  }
+  result={state.waveVortex.t,state.waveVortex.t0,{views[0],views[1],views[2]}};
   return WVKernelStatus::ok();
 }
 
 } // namespace
 
-struct WVStratifiedQGFieldEvaluationAdapter::MovingInterpolationWorkspace {
+struct WVStratifiedFieldEvaluationAdapter::MovingInterpolationWorkspace {
   MovingInterpolationWorkspace(std::size_t Nx, std::size_t Ny,const std::vector<double>& z)
       : xSpline(Nx), ySpline(Ny), zSpline(z), xWeights(Nx), yWeights(Ny), zWeights(z.size()),
         xShifted(Nx), yShifted(Ny), xRhs(Nx), yRhs(Ny) {}
@@ -480,31 +483,37 @@ struct WVStratifiedQGFieldEvaluationAdapter::MovingInterpolationWorkspace {
   std::vector<double> yRhs;
 };
 
-WVStratifiedQGFieldEvaluationAdapter::~WVStratifiedQGFieldEvaluationAdapter() =
+WVStratifiedFieldEvaluationAdapter::~WVStratifiedFieldEvaluationAdapter() =
     default;
 
-WVKernelStatus WVStratifiedQGFieldEvaluationAdapter::create(
+WVKernelStatus WVStratifiedFieldEvaluationAdapter::create(
     std::shared_ptr<const WVStratifiedModalSource> source,
     std::unique_ptr<WVFFTEngine> engine,
-    std::unique_ptr<WVStratifiedQGFieldEvaluationAdapter> &adapter) {
+    std::unique_ptr<WVStratifiedFieldEvaluationAdapter> &adapter) {
   adapter.reset();
   try {
-    auto candidate = std::unique_ptr<WVStratifiedQGFieldEvaluationAdapter>(
-        new WVStratifiedQGFieldEvaluationAdapter());
-    auto status = WVTransformStratifiedQGKernel::create(
-        source, std::move(engine), candidate->ownedKernel_);
-    if (!status)
-      return status;
-    candidate->kernel_ = candidate->ownedKernel_.get();
-    candidate->fieldScratch_.resize(
-        candidate->kernel_->spatialShape().elementCount());
+    auto candidate = std::unique_ptr<WVStratifiedFieldEvaluationAdapter>(
+        new WVStratifiedFieldEvaluationAdapter());
+    if (!source) return invalid("A stratified scientific source is required.");
+    WVKernelStatus status;
+    if (source->geometry().transformClass=="WVTransformHydrostatic") {
+      status=WVTransformHydrostaticKernel::create(source,std::move(engine),candidate->ownedHydrostatic_);
+      candidate->hydrostaticKernel_=candidate->ownedHydrostatic_.get();
+    } else {
+      status=WVTransformStratifiedQGKernel::create(source,std::move(engine),candidate->ownedKernel_);
+      candidate->kernel_=candidate->ownedKernel_.get();
+    }
+    if (!status) return status;
+    const auto& g=source->geometry();
+    candidate->fieldScratch_.resize(g.Nx*g.Ny*g.Nz);
+    if (candidate->hydrostaticKernel_) candidate->speedScratch_.resize(candidate->fieldScratch_.size());
     candidate->movingInterpolation_ =
         std::make_unique<MovingInterpolationWorkspace>(
             source->geometry().Nx, source->geometry().Ny, source->geometry().z);
     candidate->metrics_.transformPersistentBytes =
-        candidate->kernel_->persistentBytes();
+        candidate->hydrostaticKernel_ ? candidate->hydrostaticKernel_->persistentBytes() : candidate->kernel_->persistentBytes();
     candidate->metrics_.scratchCapacityBytes =
-        candidate->fieldScratch_.capacity() * sizeof(double) +
+        (candidate->fieldScratch_.capacity()+candidate->speedScratch_.capacity()) * sizeof(double) +
         candidate->movingInterpolation_->scratchBytes();
     candidate->metrics_.servicePersistentBytes = candidate->persistentBytes();
     adapter = std::move(candidate);
@@ -515,13 +524,13 @@ WVKernelStatus WVStratifiedQGFieldEvaluationAdapter::create(
   }
 }
 
-WVKernelStatus WVStratifiedQGFieldEvaluationAdapter::createBorrowing(
+WVKernelStatus WVStratifiedFieldEvaluationAdapter::createBorrowing(
     WVTransformStratifiedQGKernel &kernel,
-    std::unique_ptr<WVStratifiedQGFieldEvaluationAdapter> &adapter) {
+    std::unique_ptr<WVStratifiedFieldEvaluationAdapter> &adapter) {
   adapter.reset();
   try {
-    auto candidate = std::unique_ptr<WVStratifiedQGFieldEvaluationAdapter>(
-        new WVStratifiedQGFieldEvaluationAdapter());
+    auto candidate = std::unique_ptr<WVStratifiedFieldEvaluationAdapter>(
+        new WVStratifiedFieldEvaluationAdapter());
     candidate->kernel_ = &kernel;
     candidate->fieldScratch_.resize(
         kernel.spatialShape().elementCount());
@@ -530,7 +539,7 @@ WVKernelStatus WVStratifiedQGFieldEvaluationAdapter::createBorrowing(
             kernel.geometry().Nx, kernel.geometry().Ny, kernel.geometry().z);
     candidate->metrics_.transformPersistentBytes = kernel.persistentBytes();
     candidate->metrics_.scratchCapacityBytes =
-        candidate->fieldScratch_.capacity() * sizeof(double) +
+        (candidate->fieldScratch_.capacity()+candidate->speedScratch_.capacity()) * sizeof(double) +
         candidate->movingInterpolation_->scratchBytes();
     candidate->metrics_.servicePersistentBytes = candidate->persistentBytes();
     adapter = std::move(candidate);
@@ -541,7 +550,34 @@ WVKernelStatus WVStratifiedQGFieldEvaluationAdapter::createBorrowing(
   }
 }
 
-WVKernelStatus WVStratifiedQGFieldEvaluationAdapter::createPlan(
+WVKernelStatus WVStratifiedFieldEvaluationAdapter::createBorrowing(
+    WVTransformHydrostaticKernel &kernel,
+    std::unique_ptr<WVStratifiedFieldEvaluationAdapter> &adapter) {
+  adapter.reset();
+  try {
+    auto candidate = std::unique_ptr<WVStratifiedFieldEvaluationAdapter>(
+        new WVStratifiedFieldEvaluationAdapter());
+    candidate->hydrostaticKernel_ = &kernel;
+    candidate->speedScratch_.resize(kernel.spatialShape().elementCount());
+    candidate->fieldScratch_.resize(
+        kernel.spatialShape().elementCount());
+    candidate->movingInterpolation_ =
+        std::make_unique<MovingInterpolationWorkspace>(
+            kernel.geometry().Nx, kernel.geometry().Ny, kernel.geometry().z);
+    candidate->metrics_.transformPersistentBytes = kernel.persistentBytes();
+    candidate->metrics_.scratchCapacityBytes =
+        (candidate->fieldScratch_.capacity()+candidate->speedScratch_.capacity()) * sizeof(double) +
+        candidate->movingInterpolation_->scratchBytes();
+    candidate->metrics_.servicePersistentBytes = candidate->persistentBytes();
+    adapter = std::move(candidate);
+    return WVKernelStatus::ok();
+  } catch (const std::bad_alloc &) {
+    return {WVKernelStatusCode::allocationFailure,
+            "Unable to allocate borrowed Stratified QG field service."};
+  }
+}
+
+WVKernelStatus WVStratifiedFieldEvaluationAdapter::createPlan(
     const std::vector<WVFieldRequest> &requests,
     WVFieldEvaluationPlan &plan) const {
   try {
@@ -570,7 +606,7 @@ WVKernelStatus WVStratifiedQGFieldEvaluationAdapter::createPlan(
       if (input.identifier.empty() || !identifiers.insert(input.identifier).second)
         return invalid("Stratified QG field identifiers must be nonempty and unique.");
       Request request;
-      auto status = resolveField(input.fieldName, request.field, request.scalar);
+      auto status = resolveField(input.fieldName, request.field, request.scalar,hydrostaticKernel_!=nullptr);
       if (!status)
         return status;
       request.sampling = input.sampling.kind;
@@ -629,7 +665,7 @@ WVKernelStatus WVStratifiedQGFieldEvaluationAdapter::createPlan(
   }
 }
 
-WVKernelStatus WVStratifiedQGFieldEvaluationAdapter::evaluate(
+WVKernelStatus WVStratifiedFieldEvaluationAdapter::evaluate(
     const WVFieldEvaluationPlan &publicPlan,
     const WVIntegrationState &state, WVFieldOutputView *outputs,
     std::size_t outputCount) {
@@ -647,8 +683,8 @@ WVKernelStatus WVStratifiedQGFieldEvaluationAdapter::evaluate(
             publicPlan.outputs_[output].elementCount)
       return {WVKernelStatusCode::invalidShape,
               "A Stratified QG output has the wrong shape."};
-  WVComplexConstView A0;
-  auto status = coefficientView(state, *kernel_, A0);
+  WVState amplitudes;
+  auto status = coefficientView(state, configuration(), amplitudes);
   if (!status)
     return status;
   if (executing_)
@@ -660,14 +696,12 @@ WVKernelStatus WVStratifiedQGFieldEvaluationAdapter::evaluate(
     ~Guard() { executing = false; }
   } guard{executing_};
 
-  std::array<bool, 14> evaluated{};
-  const auto spatial = kernel_->spatialShape();
+  std::array<bool, 16> evaluated{};
+  const WVShape3D spatial{configuration().Nx,configuration().Ny,configuration().Nz};
   for (const auto &request : plan->requests) {
     if (request.scalar != ScalarField::none) {
       double value = 0.0;
-      status = request.scalar == ScalarField::energy
-                   ? kernel_->totalEnergy(A0, value)
-                   : request.scalar==ScalarField::wMax ? WVKernelStatus::ok() : kernel_->uvMax(A0, value);
+      status=scalarValue(amplitudes,static_cast<unsigned>(request.scalar),value);
       if (!status)
         return status;
       outputs[request.output].data[0] = value;
@@ -677,7 +711,7 @@ WVKernelStatus WVStratifiedQGFieldEvaluationAdapter::evaluate(
     const auto fieldIndex = static_cast<std::size_t>(request.field);
     if (!evaluated[fieldIndex]) {
       WVRealVolumeView view{fieldScratch_.data(),{spatial.first,spatial.second,surface(request.field)?1:spatial.third}};
-      status = kernel_->transformA0ToField(A0, request.field, view);
+      status = transformField(amplitudes, request.field, view);
       if (!status)
         return status;
 
@@ -722,7 +756,7 @@ WVKernelStatus WVStratifiedQGFieldEvaluationAdapter::evaluate(
   return WVKernelStatus::ok();
 }
 
-WVKernelStatus WVStratifiedQGFieldEvaluationAdapter::createMovingPlan(
+WVKernelStatus WVStratifiedFieldEvaluationAdapter::createMovingPlan(
     const std::vector<WVMovingFieldRequest> &requests,
     WVMovingFieldEvaluationPlan &plan) const {
   try {
@@ -732,9 +766,9 @@ WVKernelStatus WVStratifiedQGFieldEvaluationAdapter::createMovingPlan(
     std::set<std::string> identifiers;
     for (std::size_t index = 0; index < requests.size(); ++index) {
       const auto &input = requests[index];
-      WVStratifiedQGField field;
+      WVHydrostaticField field;
       ScalarField scalar;
-      auto status = resolveField(input.fieldName, field, scalar);
+      auto status = resolveField(input.fieldName, field, scalar,hydrostaticKernel_!=nullptr);
       if (!status || scalar != ScalarField::none)
         return status ? invalid("A scalar field cannot be sampled at moving positions.") : status;
       if (input.identifier.empty() || !identifiers.insert(input.identifier).second ||
@@ -765,7 +799,7 @@ WVKernelStatus WVStratifiedQGFieldEvaluationAdapter::createMovingPlan(
   }
 }
 
-WVKernelStatus WVStratifiedQGFieldEvaluationAdapter::evaluateMoving(
+WVKernelStatus WVStratifiedFieldEvaluationAdapter::evaluateMoving(
     const WVMovingFieldEvaluationPlan &publicPlan,
     const WVIntegrationState &state, WVMovingPositionView positions,
     WVFieldOutputView *outputs, std::size_t outputCount) {
@@ -774,7 +808,7 @@ WVKernelStatus WVStratifiedQGFieldEvaluationAdapter::evaluateMoving(
 }
 
 WVKernelStatus
-WVStratifiedQGFieldEvaluationAdapter::evaluateMovingFromAdvectionFields(
+WVStratifiedFieldEvaluationAdapter::evaluateMovingFromAdvectionFields(
     const WVMovingFieldEvaluationPlan &publicPlan,
     const WVIntegrationState &state,
     const WVRealFieldBundleConstView &advectionFields,
@@ -784,7 +818,7 @@ WVStratifiedQGFieldEvaluationAdapter::evaluateMovingFromAdvectionFields(
                             outputs, outputCount);
 }
 
-WVKernelStatus WVStratifiedQGFieldEvaluationAdapter::evaluateMovingImpl(
+WVKernelStatus WVStratifiedFieldEvaluationAdapter::evaluateMovingImpl(
     const WVMovingFieldEvaluationPlan &publicPlan,
     const WVIntegrationState &state,
     const WVRealFieldBundleConstView *advectionFields,
@@ -812,8 +846,8 @@ WVKernelStatus WVStratifiedQGFieldEvaluationAdapter::evaluateMovingImpl(
     if (!std::isfinite(positions.x[position]) ||
         !std::isfinite(positions.y[position]))
       return invalid("Stratified QG moving positions must be finite.");
-  WVComplexConstView A0;
-  auto status = coefficientView(state, *kernel_, A0);
+  WVState amplitudes;
+  auto status = coefficientView(state, configuration(), amplitudes);
   if (!status)
     return status;
   const auto& g=configuration();
@@ -822,14 +856,14 @@ WVKernelStatus WVStratifiedQGFieldEvaluationAdapter::evaluateMovingImpl(
   const auto R=g.Nx*g.Ny*g.Nz; auto& workspace=*movingInterpolation_;
   if(advectionFields && (advectionFields->data==nullptr || advectionFields->shape.first!=g.Nx || advectionFields->shape.second!=g.Ny || advectionFields->shape.third!=g.Nz || advectionFields->shape.fourth!=3)) return invalid("SQG advection fields require [Nx,Ny,Nz,3].");
   for(const auto& request:plan->requests) if(!surface(request.field) && !positions.z) return invalid("SQG volume samples require z coordinates.");
-  std::array<bool,14> evaluated{};
+  std::array<bool,16> evaluated{};
   for(const auto& request:plan->requests) {
     const auto fieldIndex=static_cast<std::size_t>(request.field);if(evaluated[fieldIndex]) continue;
     const double* values=fieldScratch_.data();
-    if(advectionFields && (request.field==WVStratifiedQGField::u || request.field==WVStratifiedQGField::v || request.field==WVStratifiedQGField::w)) {
+    if(advectionFields && (request.field==WVHydrostaticField::u || request.field==WVHydrostaticField::v || request.field==WVHydrostaticField::w)) {
       values=advectionFields->data+static_cast<std::size_t>(request.field)*R; ++metrics_.primitiveFieldReuseCount;
     } else {
-      status=kernel_->transformA0ToField(A0,request.field,{fieldScratch_.data(),{g.Nx,g.Ny,surface(request.field)?1:g.Nz}});if(!status) return status;
+      status=transformField(amplitudes,request.field,{fieldScratch_.data(),{g.Nx,g.Ny,surface(request.field)?1:g.Nz}});if(!status) return status;
       ++metrics_.transformCount; ++metrics_.movingPrimitiveTransformCount;
     }
     evaluated[fieldIndex]=true;
@@ -873,7 +907,7 @@ WVKernelStatus WVStratifiedQGFieldEvaluationAdapter::evaluateMovingImpl(
   return WVKernelStatus::ok();
 }
 
-WVKernelStatus WVStratifiedQGFieldEvaluationAdapter::createEventPlan(
+WVKernelStatus WVStratifiedFieldEvaluationAdapter::createEventPlan(
     const std::vector<WVEventFieldRequest> &requests,
     WVEventFieldEvaluationPlan &plan) {
   try {
@@ -887,9 +921,9 @@ WVKernelStatus WVStratifiedQGFieldEvaluationAdapter::createEventPlan(
         return invalid("SQG event output identifiers must be nonempty and unique.");
       if (requests[index].positionSetSlot == std::numeric_limits<std::size_t>::max())
         return invalid("SQG event position-set slot exceeds the supported range.");
-      WVStratifiedQGField field;
+      WVHydrostaticField field;
       ScalarField scalar;
-      auto status = resolveField(requests[index].fieldName, field, scalar);
+      auto status = resolveField(requests[index].fieldName, field, scalar,hydrostaticKernel_!=nullptr);
       if (!status)
         return status;
       if (scalar != ScalarField::none)
@@ -918,7 +952,7 @@ WVKernelStatus WVStratifiedQGFieldEvaluationAdapter::createEventPlan(
   }
 }
 
-WVKernelStatus WVStratifiedQGFieldEvaluationAdapter::prepareEventGeometry(
+WVKernelStatus WVStratifiedFieldEvaluationAdapter::prepareEventGeometry(
     const WVEventFieldEvaluationPlan &publicPlan,
     const WVEventPositionSetView *positionSets,
     std::size_t positionSetCount, WVPreparedFieldGeometry &geometry) {
@@ -1021,7 +1055,7 @@ WVKernelStatus WVStratifiedQGFieldEvaluationAdapter::prepareEventGeometry(
   }
 }
 
-WVKernelStatus WVStratifiedQGFieldEvaluationAdapter::evaluateEventBatch(
+WVKernelStatus WVStratifiedFieldEvaluationAdapter::evaluateEventBatch(
     const WVIntegrationState &state,
     const WVEventFieldEvaluationBatchEntry *entries,
     std::size_t entryCount) {
@@ -1047,28 +1081,56 @@ WVKernelStatus WVStratifiedQGFieldEvaluationAdapter::evaluateEventBatch(
   return WVKernelStatus::ok();
 }
 
-bool WVStratifiedQGFieldEvaluationAdapter::isCompatibleWith(
-    const WVIntegrationStateLayout &layout) const noexcept {
-  const auto &spatial = layout.spatialDimensions();
-  return spatial == std::vector<std::size_t>{configuration().Nx,
-                                             configuration().Ny,configuration().Nz} &&
-         layout.coefficientFamilyCount() == 1 &&
-         layout.coefficientFamilies()[0].identifier == "A0" &&
-         layout.coefficientFamilies()[0].elementCount ==
-             kernel_->geometry().Nj*kernel_->geometry().Nkl;
+bool WVStratifiedFieldEvaluationAdapter::isCompatibleWith(const WVIntegrationStateLayout& layout) const noexcept {
+  const auto& g=configuration(); const bool hydro=hydrostaticKernel_!=nullptr;
+  if (layout.transformIdentifier()!=g.transformClass || layout.spatialDimensions()!=std::vector<std::size_t>{g.Nx,g.Ny,g.Nz} || layout.coefficientFamilyCount()!=(hydro?3U:1U)) return false;
+  const char* names[]={"Ap","Am","A0"};
+  for (std::size_t i=0;i<layout.coefficientFamilyCount();++i) if (layout.coefficientFamilies()[i].identifier!=names[hydro?i:2] || layout.coefficientFamilies()[i].elementCount!=g.Nj*g.Nkl) return false;
+  return true;
 }
 
 const WVStratifiedModalGeometry &
-WVStratifiedQGFieldEvaluationAdapter::configuration() const noexcept {
-  return kernel_->geometry();
+WVStratifiedFieldEvaluationAdapter::configuration() const noexcept {
+  return hydrostaticKernel_ ? hydrostaticKernel_->geometry() : kernel_->geometry();
 }
 
 std::size_t
-WVStratifiedQGFieldEvaluationAdapter::persistentBytes() const noexcept {
+WVStratifiedFieldEvaluationAdapter::persistentBytes() const noexcept {
   return sizeof(*this) +
-         (ownedKernel_ ? kernel_->persistentBytes() : 0) +
+         (ownedKernel_ ? kernel_->persistentBytes() : 0) + (ownedHydrostatic_ ? ownedHydrostatic_->persistentBytes() : 0) + speedScratch_.capacity()*sizeof(double) +
          fieldScratch_.capacity() * sizeof(double) +
          (movingInterpolation_ ? movingInterpolation_->persistentBytes() : 0);
 }
 
+WVKernelStatus WVStratifiedFieldEvaluationAdapter::transformField(const WVState& state,WVHydrostaticField field,WVRealVolumeView out) {
+  if (hydrostaticKernel_) return hydrostaticKernel_->transformStateField(state,field,out);
+  WVStratifiedQGField qg;
+  switch(field) {
+    case WVHydrostaticField::u: qg=WVStratifiedQGField::u; break;
+    case WVHydrostaticField::v: qg=WVStratifiedQGField::v; break;
+    case WVHydrostaticField::w: qg=WVStratifiedQGField::w; break;
+    case WVHydrostaticField::eta: qg=WVStratifiedQGField::eta; break;
+    case WVHydrostaticField::pi: qg=WVStratifiedQGField::pi; break;
+    case WVHydrostaticField::p: qg=WVStratifiedQGField::p; break;
+    case WVHydrostaticField::psi: qg=WVStratifiedQGField::psi; break;
+    case WVHydrostaticField::qgpv: qg=WVStratifiedQGField::qgpv; break;
+    case WVHydrostaticField::rhoE: qg=WVStratifiedQGField::rhoE; break;
+    case WVHydrostaticField::rhoTotal: qg=WVStratifiedQGField::rhoTotal; break;
+    case WVHydrostaticField::zetaZ: qg=WVStratifiedQGField::zetaZ; break;
+    case WVHydrostaticField::ssh: qg=WVStratifiedQGField::ssh; break;
+    case WVHydrostaticField::ssu: qg=WVStratifiedQGField::ssu; break;
+    case WVHydrostaticField::ssv: qg=WVStratifiedQGField::ssv; break;
+    default: return invalid("Unsupported Stratified QG field.");
+  }
+  return kernel_->transformA0ToField(state.coefficients.A0,qg,out);
+}
+WVKernelStatus WVStratifiedFieldEvaluationAdapter::scalarValue(const WVState& state,unsigned scalar,double& value) {
+  if (!hydrostaticKernel_) return scalar==static_cast<unsigned>(ScalarField::energy) ? kernel_->totalEnergy(state.coefficients.A0,value) : kernel_->uvMax(state.coefficients.A0,value);
+  if (scalar==static_cast<unsigned>(ScalarField::energy)) return hydrostaticKernel_->totalEnergy(state.coefficients,value);
+  const auto shape=hydrostaticKernel_->spatialShape();
+  auto s=transformField(state,scalar==static_cast<unsigned>(ScalarField::wMax) ? WVHydrostaticField::w : WVHydrostaticField::u,{fieldScratch_.data(),shape}); if (!s) return s;
+  if (scalar==static_cast<unsigned>(ScalarField::uvMax)) { s=transformField(state,WVHydrostaticField::v,{speedScratch_.data(),shape}); if (!s) return s; }
+  value=0; for (std::size_t i=0;i<fieldScratch_.size();++i) value=std::max(value,scalar==static_cast<unsigned>(ScalarField::wMax) ? std::abs(fieldScratch_[i]) : std::hypot(fieldScratch_[i],speedScratch_[i]));
+  return WVKernelStatus::ok();
+}
 } // namespace wavevortex::runtime::detail

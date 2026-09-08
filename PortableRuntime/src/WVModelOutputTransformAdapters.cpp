@@ -337,9 +337,9 @@ WVCheckpointStatus defineModelOutputRoot(
     std::vector<const WVFrozenForcingEntry *> &forcingEntries) {
   const bool isBarotropicQG =
       checkpoint.transformKind == WVPersistedTransformKind::barotropicQG;
-  const bool isStratifiedQG = checkpoint.transformKind == WVPersistedTransformKind::stratifiedQG;
+  const bool isStratified = checkpoint.transformKind == WVPersistedTransformKind::stratifiedQG || checkpoint.transformKind == WVPersistedTransformKind::hydrostatic;
   auto legacy = checkpoint.configuration;
-  if (isStratifiedQG) {
+  if (isStratified) {
     if (!checkpoint.stratifiedModalSource) return failed(WVCheckpointStatusCode::schemaMismatch,"SQG scientific source is absent.","/");
     const auto& g = checkpoint.stratifiedModalSource->geometry();
     legacy.Nx=g.Nx; legacy.Ny=g.Ny; legacy.Nz=g.Nz; legacy.Nj=g.Nj;
@@ -348,7 +348,7 @@ WVCheckpointStatus defineModelOutputRoot(
   const std::size_t Nkl = isBarotropicQG
                               ? checkpoint.transformState.coefficientFamilies
                                     .front().values.size()
-                              : isStratifiedQG ? checkpoint.stratifiedModalSource->geometry().Nkl : checkpoint.state.coefficients.shape.columns;
+                              : isStratified ? checkpoint.stratifiedModalSource->geometry().Nkl : checkpoint.state.coefficients.shape.columns;
   const std::array<std::pair<const char *, std::size_t>, 5> definitions =
       isBarotropicQG
           ? std::array<std::pair<const char *, std::size_t>, 5>{
@@ -381,7 +381,7 @@ WVCheckpointStatus defineModelOutputRoot(
           : std::vector<const char *>{"Lx", "Ly", "Lz", "N0", "g",
                                       "latitude", "planetaryRadius", "rho0",
                                       "rotationRate", "t0"};
-  if (isStratifiedQG) scalars.erase(std::remove(scalars.begin(),scalars.end(),std::string("N0")),scalars.end());
+  if (isStratified) scalars.erase(std::remove(scalars.begin(),scalars.end(),std::string("N0")),scalars.end());
   for (const char *name : scalars) {
     int variable = -1;
     const auto result = defineDoubleVariable(root, name, {}, variable, "/");
@@ -389,7 +389,7 @@ WVCheckpointStatus defineModelOutputRoot(
       return result;
   }
   const std::vector<const char *> logicals =
-      (isBarotropicQG || isStratifiedQG) ? std::vector<const char *>{"shouldAntialias"}
+      (isBarotropicQG || isStratified) ? std::vector<const char *>{"shouldAntialias"}
                      : std::vector<const char *>{"isHydrostatic",
                                                  "shouldAntialias"};
   for (const char *name : logicals) {
@@ -398,7 +398,7 @@ WVCheckpointStatus defineModelOutputRoot(
     if (!result)
       return result;
   }
-  if (isStratifiedQG) {
+  if (isStratified) {
     const auto& payload = checkpoint.stratifiedModalSource->N2FunctionPayload();
     if (!payload.empty()) {
       int dimension=-1, variable=-1;
@@ -414,7 +414,7 @@ WVCheckpointStatus defineModelOutputRoot(
     }
   }
   const std::string transformClass =
-      isStratifiedQG ? "WVTransformStratifiedQG" : isBarotropicQG ? "WVTransformBarotropicQG"
+      isStratified ? checkpoint.stratifiedModalSource->geometry().transformClass : isBarotropicQG ? "WVTransformBarotropicQG"
                      : "WVTransformConstantStratification";
   auto result = putTextAttribute(root, NC_GLOBAL, "AnnotatedClass",
                                  transformClass, "/");
@@ -502,7 +502,7 @@ WVCheckpointStatus writeModelOutputRoot(
       checkpoint.transformKind == WVPersistedTransformKind::barotropicQG;
   const auto &configuration = checkpoint.configuration;
   const auto &qg = checkpoint.barotropicQGConfiguration;
-  if (checkpoint.transformKind == WVPersistedTransformKind::stratifiedQG) {
+  if (checkpoint.transformKind == WVPersistedTransformKind::stratifiedQG || checkpoint.transformKind == WVPersistedTransformKind::hydrostatic) {
     const auto& record = *checkpoint.stratifiedModalSource; const auto& g=record.geometry();
     if (!record.N2FunctionPayload().empty()) {
       int variable=-1; auto result=variableId(root,"N2Function",variable,"/"); if (!result) return result;
@@ -812,17 +812,17 @@ private:
   WVTransformBarotropicQGConfiguration configuration_;
 };
 
-class StratifiedQGOutputTransformAdapter final
+class StratifiedOutputTransformAdapter final
     : public WVModelOutputTransformAdapter {
 public:
-  explicit StratifiedQGOutputTransformAdapter(
+  explicit StratifiedOutputTransformAdapter(
       std::shared_ptr<const WVStratifiedModalRecord> source)
       : source_(std::move(source)) {}
 
   WVCheckpointStatus validate(
       const WVCheckpoint &checkpoint,
       const WVIntegrationStateLayout &layout) const override {
-    if (checkpoint.transformKind != WVPersistedTransformKind::stratifiedQG ||
+    if ((checkpoint.transformKind != WVPersistedTransformKind::stratifiedQG && checkpoint.transformKind != WVPersistedTransformKind::hydrostatic) ||
         checkpoint.stateDescription.transformIdentifier !=
             layout.transformIdentifier())
       return failed(WVCheckpointStatusCode::shapeMismatch,
@@ -831,17 +831,10 @@ public:
     if (!sameStratifiedSource(source_.get(),checkpoint.stratifiedModalSource.get()))
       return failed(WVCheckpointStatusCode::schemaMismatch,"SQG scientific source differs.","/");
     const auto& g = source_->geometry();
-    if (layout.coefficientFamilyCount() != 1 ||
-        layout.coefficientFamilies()[0].identifier != "A0" ||
-        layout.coefficientFamilies()[0].spectralDimensions !=
-            std::vector<std::size_t>{g.Nj,g.Nkl} ||
-        checkpoint.transformState.coefficientFamilies.size() != 1 ||
-        checkpoint.transformState.coefficientFamilies[0].values.size() !=
-            g.Nj*g.Nkl)
-      return failed(WVCheckpointStatusCode::shapeMismatch,
-                    "Compact Stratified QG output state does not match its "
-                    "transform.",
-                    "/");
+    const bool hydro=g.transformClass=="WVTransformHydrostatic"; const auto count=hydro?3U:1U;
+    if (layout.coefficientFamilyCount()!=count || checkpoint.transformState.coefficientFamilies.size()!=count) return failed(WVCheckpointStatusCode::shapeMismatch,"Stratified output coefficient count differs.","/");
+    const char* names[]={"Ap","Am","A0"};
+    for (std::size_t i=0;i<count;++i) if (layout.coefficientFamilies()[i].identifier!=names[hydro?i:2] || layout.coefficientFamilies()[i].spectralDimensions!=std::vector<std::size_t>{g.Nj,g.Nkl} || checkpoint.transformState.coefficientFamilies[i].values.size()!=g.Nj*g.Nkl) return failed(WVCheckpointStatusCode::shapeMismatch,"Stratified output coefficient shape differs.","/");
     return WVCheckpointStatus::ok();
   }
 
@@ -883,8 +876,7 @@ public:
 
   bool sameConfiguration(
       const WVCheckpointInspection &inspection) const noexcept override {
-    return inspection.transformKind ==
-               WVPersistedTransformKind::stratifiedQG &&
+    return (inspection.transformKind == WVPersistedTransformKind::stratifiedQG || inspection.transformKind == WVPersistedTransformKind::hydrostatic) &&
            sameStratifiedSource(source_.get(),inspection.stratifiedModalSource.get());
   }
 
@@ -903,8 +895,8 @@ WVCheckpointStatus createModelOutputTransformAdapter(
     std::unique_ptr<WVModelOutputTransformAdapter> &adapter) {
   adapter.reset();
   try {
-    if (checkpoint.transformKind == WVPersistedTransformKind::stratifiedQG)
-      adapter = std::make_unique<StratifiedQGOutputTransformAdapter>(checkpoint.stratifiedModalSource);
+    if (checkpoint.transformKind == WVPersistedTransformKind::stratifiedQG || checkpoint.transformKind == WVPersistedTransformKind::hydrostatic)
+      adapter = std::make_unique<StratifiedOutputTransformAdapter>(checkpoint.stratifiedModalSource);
     else if (checkpoint.transformKind == WVPersistedTransformKind::barotropicQG)
       adapter = std::make_unique<BarotropicQGOutputTransformAdapter>(
           checkpoint.barotropicQGConfiguration);
@@ -925,7 +917,7 @@ bool sameModelOutputTransformConfiguration(
     const WVCheckpointInspection &right) noexcept {
   if (left.transformKind != right.transformKind)
     return false;
-  if (left.transformKind == WVPersistedTransformKind::stratifiedQG) return sameStratifiedSource(left.stratifiedModalSource.get(),right.stratifiedModalSource.get());
+  if (left.transformKind == WVPersistedTransformKind::stratifiedQG || left.transformKind == WVPersistedTransformKind::hydrostatic) return sameStratifiedSource(left.stratifiedModalSource.get(),right.stratifiedModalSource.get());
   return left.transformKind == WVPersistedTransformKind::barotropicQG
              ? sameTransformConfiguration(left.barotropicQGConfiguration,
                                           right.barotropicQGConfiguration)

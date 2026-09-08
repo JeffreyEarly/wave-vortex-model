@@ -60,7 +60,8 @@
     "stableForcingCompatibility": "issues-290-294",
     "stratifiedQGRuntime": "issue-297",
     "stratifiedQGQualification": "issue-298",
-    "hydrostaticKernel": "issue-299"
+    "hydrostaticKernel": "issue-299",
+    "hydrostaticRuntime": "issue-300"
   },
   "excluded": [
     "benchmark harnesses and payloads",
@@ -116,5 +117,14 @@
       "PortableRuntime/src/WVStratifiedQGFieldEvaluationAdapter.cpp": "9a84c399834f96bfe4de5405ea9102da9fc60d2a34300237bb45662921f9fba3"
     },
     "readinessQualification": "tools/qualifyPortableStratifiedQG.m"
+  },
+  "hydrostaticRuntime": {
+    "transform": "WVTransformHydrostatic",
+    "executionCapabilityAdded": true,
+    "issue": 300,
+    "scientificSource": "wave-vortex-stratified-modal-record-v1",
+    "forcingCatalog": "portable-forcing-compatibility-v1.json",
+    "numericalParity": "UnitTests/TestPortableHydrostatic.m",
+    "performanceQualificationIssue": 301
   }
 }

@@ -44,7 +44,7 @@ void bindLegacyOutputStateView(
 
 WVKernelStatus validateOutputCheckpointTemplate(
     const WVIntegrationStateLayout &layout, const WVCheckpoint &checkpoint) {
-  if (layout.hasLegacyCoefficientTriple()) {
+  if (checkpoint.transformKind==WVPersistedTransformKind::constantStratification) {
     const auto shape = layout.coefficientShape();
     if (checkpoint.state.coefficients.shape.rows != shape.rows ||
         checkpoint.state.coefficients.shape.columns != shape.columns)
@@ -84,7 +84,7 @@ WVKernelStatus stageOutputCheckpointState(
   auto status = validateOutputCheckpointTemplate(layout, checkpoint);
   if (!status)
     return status;
-  if (!layout.hasLegacyCoefficientTriple()) {
+  if (checkpoint.transformKind!=WVPersistedTransformKind::constantStratification) {
     status = captureTransformStateCheckpoint(layout, state,
                                              checkpoint.transformState);
     if (!status)

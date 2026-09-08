@@ -327,7 +327,7 @@ dynamicsMode = numericAttribute(information.Attributes,"WVModelIsDynamicsLinear"
 switch transformClass
     case "WVTransformConstantStratification"
         bundleSignature = inspectConstantStratificationMetadata(path,information,transformClass,modelVersion,dynamicsMode);
-    case "WVTransformStratifiedQG"
+    case {"WVTransformStratifiedQG","WVTransformHydrostatic"}
         bundleSignature = inspectStratifiedQGMetadata(path,information,transformClass,modelVersion,dynamicsMode);
     case "WVTransformBarotropicQG"
         bundleSignature = inspectBarotropicQGMetadata(path,information,transformClass,modelVersion,dynamicsMode);
@@ -425,7 +425,7 @@ for index = 1:numel(information.Groups)
     group = information.Groups(index);
     if textAttribute(group.Attributes,"AnnotatedClass","") ~= "WVModelOutputGroupEvenlySpaced", continue; end
     validatePortableGroupContracts(group);
-    completeRestartGroups = completeRestartGroups + validateStratifiedQGRestartGroup(group,dimensionLengths(4:5),logical(dynamicsMode));
+    completeRestartGroups = completeRestartGroups + validateStratifiedQGRestartGroup(group,dimensionLengths(4:5),logical(dynamicsMode),transformClass=="WVTransformHydrostatic");
 end
 if completeRestartGroups ~= 1
     error("WaveVortexModel:PortableRunRequestContract","Each Stratified QG source file must declare exactly one complete A0 restart stream.");
@@ -572,49 +572,59 @@ if allowTimeSeries
 end
 end
 
-function isComplete = validateStratifiedQGRestartGroup(group,compactLength,isLinear)
+function isComplete = validateStratifiedQGRestartGroup(group,compactLength,isLinear,isHydrostatic)
 isComplete = false;
 variableNames = string({group.Variables.Name});
-hasPlain = any(variableNames == "A0");
-hasReal = any(variableNames == "A0_real");
-hasImaginary = any(variableNames == "A0_imag");
-if ~hasPlain && ~hasReal && ~hasImaginary
-    return
+families = "A0";
+if isHydrostatic
+    families = ["Ap","Am","A0"];
 end
-coefficientObservers = declaredObserverCount(group,"WVCoefficients");
-if coefficientObservers == 0 && ~isLinear
-    return
-elseif coefficientObservers > 1
-    error("WaveVortexModel:PortableRunRequestContract", ...
-        "A Stratified QG output group declares an ambiguous WVCoefficients observer contract in %s.",group.Name);
-end
-if hasPlain && (hasReal || hasImaginary) || xor(hasReal,hasImaginary)
-    error("WaveVortexModel:PortableRunRequestContract", ...
-        "Stratified QG A0 has ambiguous or incomplete compact storage in %s.",group.Name);
-end
-for forbidden = ["Ap","Ap_real","Ap_imag","Am","Am_real","Am_imag"]
-    if any(variableNames == forbidden)
-        error("WaveVortexModel:PortableRunRequestContract", ...
-            "Stratified QG compact state must not contain dummy %s storage in %s.",forbidden,group.Name);
+for family = families
+    hasPlain = any(variableNames == family);
+    hasReal = any(variableNames == family+"_real");
+    hasImaginary = any(variableNames == family+"_imag");
+    if ~hasPlain && ~hasReal && ~hasImaginary
+        return
     end
-end
-if hasPlain
-    validateStratifiedVariable(group,"A0",compactLength,false);
-else
-    validateStratifiedVariable(group,"A0_real",compactLength,true);
-    validateStratifiedVariable(group,"A0_imag",compactLength,true);
-    realVariable = group.Variables(find(variableNames == "A0_real",1));
-    imaginaryVariable = group.Variables(find(variableNames == "A0_imag",1));
-    if ~isequal(realVariable.Size,imaginaryVariable.Size) || ...
-            ~isequal(arrayfun(@dimensionLeafName,realVariable.Dimensions), ...
-            arrayfun(@dimensionLeafName,imaginaryVariable.Dimensions))
+    coefficientObservers = declaredObserverCount(group,"WVCoefficients");
+    if coefficientObservers == 0 && ~isLinear
+        return
+    elseif coefficientObservers > 1
         error("WaveVortexModel:PortableRunRequestContract", ...
-            "Stratified QG compact A0 components must have identical dimensions in %s.",group.Name);
+            "A Stratified QG output group declares an ambiguous WVCoefficients observer contract in %s.",group.Name);
     end
-    validateComplexMarker(realVariable,"isRealPart",1,group.Name);
-    validateComplexMarker(realVariable,"isImaginaryPart",0,group.Name);
-    validateComplexMarker(imaginaryVariable,"isRealPart",0,group.Name);
-    validateComplexMarker(imaginaryVariable,"isImaginaryPart",1,group.Name);
+    if hasPlain && (hasReal || hasImaginary) || xor(hasReal,hasImaginary)
+        error("WaveVortexModel:PortableRunRequestContract", ...
+            "Stratified QG A0 has ambiguous or incomplete compact storage in %s.",group.Name);
+    end
+
+    if ~isHydrostatic
+        for forbidden = ["Ap","Ap_real","Ap_imag","Am","Am_real","Am_imag"]
+            if any(variableNames == forbidden)
+                error("WaveVortexModel:PortableRunRequestContract", ...
+                    "Stratified QG compact state must not contain dummy %s storage in %s.",forbidden,group.Name);
+            end
+        end
+    end
+
+    if hasPlain
+        validateStratifiedVariable(group,family,compactLength,false);
+    else
+        validateStratifiedVariable(group,family+"_real",compactLength,true);
+        validateStratifiedVariable(group,family+"_imag",compactLength,true);
+        realVariable = group.Variables(find(variableNames == family+"_real",1));
+        imaginaryVariable = group.Variables(find(variableNames == family+"_imag",1));
+        if ~isequal(realVariable.Size,imaginaryVariable.Size) || ...
+                ~isequal(arrayfun(@dimensionLeafName,realVariable.Dimensions), ...
+                arrayfun(@dimensionLeafName,imaginaryVariable.Dimensions))
+            error("WaveVortexModel:PortableRunRequestContract", ...
+                "Stratified QG compact A0 components must have identical dimensions in %s.",group.Name);
+        end
+        validateComplexMarker(realVariable,"isRealPart",1,group.Name);
+        validateComplexMarker(realVariable,"isImaginaryPart",0,group.Name);
+        validateComplexMarker(imaginaryVariable,"isRealPart",0,group.Name);
+        validateComplexMarker(imaginaryVariable,"isImaginaryPart",1,group.Name);
+    end
 end
 isComplete = true;
 end

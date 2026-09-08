@@ -33,8 +33,9 @@ int main(int argc,char** argv) {
     }
     std::unique_ptr<WVFieldEvaluationService> fields;require(WVFieldEvaluationService::create(checkpoint.stratifiedModalSource,std::move(fft),fields));
     WVIntegrationStateLayout layout;require(WVIntegrationStateLayout::createCoefficientOnly(checkpoint.stateDescription,layout));
-    WVCoefficientFamilyConstView a0{&layout.coefficientFamilies()[0],checkpoint.transformState.coefficientFamilies[0].values.data()};
-    WVIntegrationState state;state.coefficientFamilies=&a0;state.coefficientFamilyCount=1;state.waveVortex.t=checkpoint.state.t;state.waveVortex.t0=checkpoint.state.t0;
+    std::vector<WVCoefficientFamilyConstView> families;
+    for (std::size_t i=0;i<layout.coefficientFamilyCount();++i) families.push_back({&layout.coefficientFamilies()[i],checkpoint.transformState.coefficientFamilies[i].values.data()});
+    WVIntegrationState state;state.coefficientFamilies=families.data();state.coefficientFamilyCount=families.size();state.waveVortex.t=checkpoint.state.t;state.waveVortex.t0=checkpoint.state.t0;
     json result;
     for(auto interpolation:{WVPositionInterpolation::linear,WVPositionInterpolation::spline}) {
       const std::string method=interpolation==WVPositionInterpolation::linear?"linear":"spline";

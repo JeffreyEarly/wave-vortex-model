@@ -2,7 +2,7 @@
 
 `WVTransformStratifiedQG` supports complete MATLAB-authored portable model continuation with A0-only state, the nine applicable stable forcings, Eulerian and surface fields, three-dimensional fixed/moving/event sampling, fixed-depth XY drifters, rank-three XY tracers, moorings and linear passive observers. Model graphs retain multi-file/group identities, schedules, dense output, create/replace/append and restart. MATLAB reopens the output directly. See [README.md](README.md#stratified-qg-model-integration) for the execution surface and scientific persistence contract.
 
-A three-dimensional SQG tracer must use `WVTracer(...,isXYOnly=true)`. This describes its horizontal advection on `[Nx,Ny,Nz]`; it does not flatten the tracer. MATLAB SQG has no `w`, so vertical tracer advection is an intentional preflight incompatibility. Hydrostatic and other unimplemented transform model graphs remain outside this SQG qualification. Existing MATLAB constructors, readers, required properties and save behavior remain unchanged.
+A three-dimensional SQG tracer must use `WVTracer(...,isXYOnly=true)`. This describes its horizontal advection on `[Nx,Ny,Nz]`; it does not flatten the tracer. MATLAB SQG has no `w`, so vertical tracer advection is an intentional preflight incompatibility. Hydrostatic models have separate focused runtime parity coverage under #300; they remain outside this SQG performance qualification. Existing MATLAB constructors, readers, required properties and save behavior remain unchanged.
 
 ## Run and inspect the evidence
 

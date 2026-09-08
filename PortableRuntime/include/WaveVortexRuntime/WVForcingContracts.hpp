@@ -5,6 +5,8 @@
 #include "WaveVortexKernel/WVTransformBarotropicQGKernel.hpp"
 #include "WaveVortexKernel/WVStratifiedModalSource.hpp"
 
+#include "WaveVortexKernel/WVTransformHydrostaticKernel.hpp"
+
 #include <cstdint>
 #include <functional>
 #include <memory>
@@ -68,6 +70,8 @@ using WVStratifiedQGForcingFactory = std::function<WVKernelStatus(
     const WVFrozenForcingEntry &, const WVStratifiedModalGeometry &, bool,
     std::unique_ptr<WVStratifiedQGForcing> &)>;
 
+using WVHydrostaticForcingFactory = std::function<WVKernelStatus(const WVFrozenForcingEntry&, WVTransformHydrostaticKernel&, const WVForcingPreparation&, std::unique_ptr<WVForcing>&)>;
+
 struct WVForcingFactoryRegistration {
   std::string matlabClassName;
   std::uint32_t contractVersion = WVPortablePairContractVersion;
@@ -91,6 +95,10 @@ struct WVForcingFactoryRegistration {
   WVForcingStage stratifiedQGStage = WVForcingStage::spatial;
   WVBarotropicQGForcingPreflight stratifiedQGPreflight = {};
   WVStratifiedQGForcingFactory stratifiedQGFactory = {};
+  WVHydrostaticForcingFactory hydrostaticFactory = {};
+  std::function<WVKernelStatus(const WVFrozenForcingEntry &,
+      const WVTransformHydrostaticKernel &, WVForcingPreparation &)>
+      prepareHydrostaticResolution = {};
 };
 
 std::vector<WVForcingFactoryRegistration> builtInForcingFactories();
