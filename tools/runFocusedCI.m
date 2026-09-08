@@ -33,7 +33,7 @@ end
 report = struct(schema="wvm-ci-matlab-v1",sourceCommit=string(selection.sourceCommit), ...
     matlabRelease=release,configuration=configuration,shard=shard,passed=false, ...
     requestedClasses={cell(0,1)},expectedTests={cell(0,1)},deferredMethods={selection.deferredMethods}, ...
-    excludedTags={selection.excludedTags},excludedTests={cell(0,1)}, ...
+    excludedTags={selection.excludedTags},excludedTests={cell(0,1)},excludedClasses={cell(0,1)}, ...
     phases=struct(smoke=false,analyzer=false,documentation=false), ...
     phaseSeconds=struct,tests=struct(name={},passed={},incomplete={},seconds={}));
 if configuration=="release"
@@ -53,12 +53,17 @@ for name = reshape(classes,1,[])
     testPath = fullfile(root,"UnitTests",name+".m");
     assert(isfile(testPath),"WaveVortexModel:CIMissingTest","Missing selected test class: %s",name);
     part = testsuite(testPath);
+    assert(~isempty(part),"WaveVortexModel:CIEmptyTest","No test methods discovered for %s",name);
     originalNames = string({part.Name});
     for tag = reshape(string(selection.excludedTags),1,[])
         part = part.selectIf(~matlab.unittest.selectors.HasTag(tag));
     end
     excluded = originalNames(~ismember(originalNames,string({part.Name})));
     report.excludedTests = [report.excludedTests;reshape(cellstr(excluded),[],1)];
+    if isempty(part)
+        report.excludedClasses{end+1,1} = char(name);
+        continue
+    end
     deferred = ismember(string({part.Name}),string(selection.deferredMethods));
     part = part(~deferred);
     assert(~isempty(part),"WaveVortexModel:CIEmptyTest","No selected methods for %s",name);

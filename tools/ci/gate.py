@@ -60,7 +60,18 @@ def validate(plan, jobs, reports):
         if previously_executed.intersection(names):
             raise ValueError(f'{identity}: test methods were repeated across batches')
         previously_executed.update(names)
+        excluded_classes = report.get('excludedClasses', [])
+        excluded_tests = report.get('excludedTests', [])
+        if (len(excluded_classes) != len(set(excluded_classes)) or not set(excluded_classes) <= set(tests)
+                or len(excluded_tests) != len(set(excluded_tests)) or set(excluded_tests).intersection(names)):
+            raise ValueError(f'{identity}: malformed category exclusions')
+        for name in excluded_classes:
+            belongs = lambda test_name: test_name.split('/')[0].split('[')[0] == name
+            if any(belongs(test_name) for test_name in names) or not any(belongs(test_name) for test_name in excluded_tests):
+                raise ValueError(f'{identity}: excluded class lacks category evidence or was executed')
         for name in tests:
+            if name in excluded_classes:
+                continue
             if not any(test_name.split('/')[0].split('[')[0] == name for test_name in names):
                 raise ValueError(f'{identity}: no executed tests for {name}')
         if any(test.get('passed') is not True or test.get('incomplete') is not False for test in actual_tests):

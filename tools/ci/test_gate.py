@@ -14,7 +14,7 @@ def evidence(plan):
         reports.append(dict(schema='wvm-ci-matlab-v1', sourceCommit=plan['sourceCommit'],
                             matlabRelease=release, configuration=configuration, shard=shard, passed=True,
                             requestedClasses=classes, deferredMethods=plan['deferredMethods'], excludedTags=plan['excludedTags'],
-                            expectedTests=[name+'/parity' for name in classes],
+                            excludedClasses=[], excludedTests=[], expectedTests=[name+'/parity' for name in classes],
                             phases=dict(smoke=configuration == 'release' and shard == 0,
                                         analyzer=configuration == 'release' and release == 'R2025b' and shard == 0 and plan['analyzer'],
                                         documentation=configuration == 'release' and release == 'R2025b' and shard == 0 and plan['documentation']),
@@ -91,6 +91,24 @@ class GateTests(unittest.TestCase):
         report['tests'][0]['name'] = new
         report['expectedTests'][0] = new
         self.assertTrue(validate(self.plan, self.jobs, reports))
+
+    def test_wholly_exhaustive_class_requires_explicit_category_evidence(self):
+        reports = copy.deepcopy(self.reports)
+        report = reports[0]
+        name = report['requestedClasses'][0]
+        method = report['tests'].pop(0)['name']
+        report['expectedTests'].remove(method)
+        with self.assertRaises(ValueError):
+            validate(self.plan, self.jobs, reports)
+        report['excludedClasses'] = [name]
+        with self.assertRaises(ValueError):
+            validate(self.plan, self.jobs, reports)
+        report['excludedTests'] = [method]
+        self.assertTrue(validate(self.plan, self.jobs, reports))
+        report['tests'].append(dict(name=method, passed=True, incomplete=False))
+        report['expectedTests'].append(method)
+        with self.assertRaises(ValueError):
+            validate(self.plan, self.jobs, reports)
 
     def test_changed_batch_identity_and_cross_batch_duplicates_fail(self):
         reports = copy.deepcopy(self.reports)
