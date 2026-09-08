@@ -153,7 +153,6 @@ classdef TestFreeSurfaceBoussinesqTransform < matlab.unittest.TestCase
             testCase.verifyError(@()assignFamily(w,'Aw_p',zeros(1,1)),'WVTransformFreeSurfaceBoussinesq:InvalidCoefficient')
             testCase.verifyError(@()assignFamily(w,'Amda',1i*ones(size(w.Amda))),'WVTransformFreeSurfaceBoussinesq:InvalidCoefficient')
             testCase.verifyError(@()w.projectFields(struct()),'WVTransformFreeSurfaceBoussinesq:InvalidFields')
-            testCase.verifyError(@()w.writeToFile('unused.nc'),'WVTransformFreeSurfaceBoussinesq:PersistenceNotQualified')
             testCase.verifyError(@()w.nonlinearFlux(),'WVTransformFreeSurfaceBoussinesq:NonlinearDynamicsUnavailable')
             testCase.verifyError(@()WVTransformFreeSurfaceBoussinesq.fromStratification([1e5 1e5 1000],[8 8 33],N2Function=@(z)1e-10*ones(size(z))),'WVTransformFreeSurfaceBoussinesq:UnsupportedStratification')
         end

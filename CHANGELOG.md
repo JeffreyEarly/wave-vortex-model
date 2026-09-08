@@ -5,8 +5,13 @@
 ### Experimental free-surface Boussinesq transform
 
 - Added `WVTransformFreeSurfaceBoussinesq.fromStratification` with independently retained wave, APV, zero-APV endpoint, inertial, and mean-density-anomaly families, physical pressure/velocity/displacement/SSH reconstruction, admissible mixed-state projection and error assessment, positive physical-energy accounting, and exact reference-time phase evolution.
-- Shared the existing free-surface balanced scientific construction with QG; preserved its resolved Galerkin transforms and fixed-grid qualification. The prototype requires the corrected InternalModes authoring provider; released dependency adoption remains a v5 release gate. Source-driven model integration and annotated file continuation remain separate qualification increments.
+- Shared the existing free-surface balanced scientific construction with QG; preserved its resolved Galerkin transforms and fixed-grid qualification. The prototype requires the corrected InternalModes authoring provider; released dependency adoption remains a v5 release gate.
 - Changing `t0` now invalidates linearly evolving cached fields, matching the existing invalidation on `t` changes.
+
+### Forced linear Boussinesq evolution and restart
+
+- Added `projectSources` for volume momentum/total-displacement sources and `WVPrescribedBoussinesqSource` for persistent cosine-modulated spatial patterns. Source-driven reference-time amplitudes use the existing `WVModel` fixed-step path with independent families.
+- Added annotated scientific-state, coefficient, time, and forcing restoration without a new eigensolve, including inactive endpoint omission. Constant/variable-stratification controls verify forced equations, physical work, fourth-order time convergence, and interrupted continuation. Adaptive tolerance and cross-resolution transfer qualification remain separate.
 
 ### Free-surface QG vertical calculus
 

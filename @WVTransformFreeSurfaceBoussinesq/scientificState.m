@@ -3,8 +3,8 @@ function state = scientificState(self)
 %
 % The structure contains flat geometry, profile, quadrature, and resolved
 % modal arrays. It excludes coefficients, time, registered operations, and
-% state-dependent caches. It is an in-memory construction contract; annotated
-% file continuation is qualified in the subsequent architecture increment.
+% state-dependent caches. Annotated file continuation restores these same
+% operators directly without a new scientific mode solve.
 %
 % - Topic: Create a transform
 % - Declaration: state = scientificState()

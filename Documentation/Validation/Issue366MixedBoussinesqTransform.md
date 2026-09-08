@@ -97,3 +97,7 @@ Provenance: WVM integration baseline `08992b9d4b8ffde7c55ef6bb6b9ace598e5db7b8`;
 ## Next increment
 
 Add a controlled linear source with the manuscript's generic source semantics, advance it through the existing `WVModel`/coefficient tendency and integrator paths, then qualify uninterrupted versus stored-state continuation using the stored scientific operators. Reuse annotated persistence rather than introducing a second file format. #352 owns broader output and resolution-transfer coverage. This increment provides no qualified nonlinear flux, arbitrary-source projection, file restart, resolution transfer, legacy random-mode initialization, or full primary-component enumeration.
+
+## Subsequent forced-evolution increment
+
+The source, model-integration, and annotated restart gaps described above are now exercised by `Issue366ForcedBoussinesqEvolution.md`. It adds the model-specific volume-source projector, a persistent controlled source, fixed-step model evolution, and operator-based file continuation. The original transform-only evidence and its scope remain recorded above.
