@@ -1,0 +1,19 @@
+{
+  "policyFreezeVerified": true,
+  "machine": {
+    "cpu": "Apple M4 Max",
+    "installedMemoryBytes": 137438953472,
+    "macOSVersion": "26.6.1",
+    "matlabVersion": "25.2.0.3150157 (R2025b) Update 4",
+    "architecture": "MACA64",
+    "recordedAtUTC": "2026-09-08T17:53:15.949997+00:00",
+    "costMethod": "One fresh MATLAB process per candidate policy/case, measured with /usr/bin/time -l; phase times recorded in MATLAB."
+  },
+  "wvmBase": "9fefcc9a528de65e2f348706c45b13f741754a78",
+  "oceanKit": "80006f5040da787465860249f975def9831624c8",
+  "internalModes": "4086f978b36a4100e7419688ab355591c8253ef1",
+  "scalarMetricControl": "../pilot-01",
+  "timingReplicates": 1,
+  "timingScope": "fresh process per case/policy; shared mode/reference construction reported separately; includes validation references",
+  "rawProducts": "Local products.mat files are reproducible and listed in ../mat-artifact-manifest.json; large binaries are excluded from Git."
+}

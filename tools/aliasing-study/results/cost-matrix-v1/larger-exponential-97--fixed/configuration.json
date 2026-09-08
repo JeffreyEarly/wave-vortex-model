@@ -1,0 +1,33 @@
+{
+  "Lz": 1000,
+  "f": 0.0001,
+  "g": 9.81,
+  "evpOrders": [
+    128,
+    192
+  ],
+  "referenceOrders": [
+    257,
+    513
+  ],
+  "referenceAllowance": 0.0001,
+  "eigenAllowance": 1E-6,
+  "gramTolerance": 1E-7,
+  "id": "larger-exponential-97",
+  "profile": "exponential",
+  "Lxy": [
+    400000,
+    400000
+  ],
+  "Nxy": [
+    32,
+    32
+  ],
+  "Nz": 97,
+  "waveCount": 24,
+  "apvCount": 6,
+  "mdaCount": 4,
+  "inertialCount": 8,
+  "independentSampleSeed": 400,
+  "independentSampleCount": 64
+}

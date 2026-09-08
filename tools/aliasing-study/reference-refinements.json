@@ -1,0 +1,12 @@
+{
+  "purpose": "Resolve failed eigenfunction/product references without changing the frozen sparse policies, profiles, physical grids, or original independent counts.",
+  "diagnosis": "The 128/192 pycnocline solves differ by 2.17e-4 in the required positive mode/derivative norm and about 8.9e-3 in normalized product references. A 192/256 diagnostic reduces the mode/derivative discrepancy below 5.2e-7; 256/384 is no better. Use the first converged pair and independently refine quadrature.",
+  "cases": [
+    {"id":"withheld-pycnocline-33","evpOrders":[192,256],"referenceOrders":[513,1025]},
+    {"id":"withheld-pycnocline-65","evpOrders":[192,256],"referenceOrders":[513,1025]}
+  ],
+  "followup": {
+    "id":"followup-pycnocline-129","profile":"pycnocline","Lxy":[140000,100000],"Nxy":[12,8],"Nz":129,"waveCount":16,"apvCount":4,"mdaCount":3,"inertialCount":6,"evpOrders":[192,256],"referenceOrders":[513,1025]
+  },
+  "followupRole": "A separately declared resolution follow-up after both original pycnocline fixed-family configurations failed their strict Gram gates. It supplements, and does not replace, the original withheld cases. No selection rule or count margin is retuned."
+}

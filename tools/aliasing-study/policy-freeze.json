@@ -1,0 +1,22 @@
+{
+  "frozenAtUTC": "2026-09-08T17:22:45.400334+00:00",
+  "status": "frozen-before-withheld-access",
+  "caseInventory": "case-inventory.json",
+  "calibrationCaseIds": [
+    "cal-constant-17",
+    "cal-constant-33",
+    "cal-exponential-17",
+    "cal-exponential-33"
+  ],
+  "calibrationScores": "results/calibration-v1/*-scores-v2",
+  "countMargin": 0,
+  "fixedInteractionBudget": 24,
+  "targetedAdditionalBudget": 12,
+  "selectionRuleFiles": {
+    "selectStudyInteractions.m": "d3cfc9702e66cf77912b5dc511684c62d14c341bedbfb894e6f29f263be24b04",
+    "studyModePairMask.m": "f2dcafeda996dafd2edbc6861d0710326d02a384457582bd2131c9537ddcfdeb",
+    "POLICIES.md": "e4c7fa4a2821c5016b8598e862ed67b920a19ffb17222903e304a87e220317a3",
+    "case-inventory.json": "057616f038e54dc51241358c30e30ea50fd5452c60051c12165d60b9a3f49d1e"
+  },
+  "calibrationFinding": "Both sparse policies matched every bounded dense quadratic count at all 12 calibration case/tolerance combinations. Actual joint counts remain limited by the existing linear Gram gate."
+}

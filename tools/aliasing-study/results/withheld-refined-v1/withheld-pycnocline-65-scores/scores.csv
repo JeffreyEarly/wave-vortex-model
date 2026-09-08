@@ -1,0 +1,10 @@
+policy,tolerance,status,largestDenseCount,largestJointCount,largestSampledCount,falseAcceptance,retainedCountLoss,additionalQuadraticLoss,worstMissedError,productEvaluations,candidatePlanEvaluations,densePlanEvaluations,limitingInteraction
+linear,0.1,explicit-fixed-family-rejected,16,4,4,NaN,NaN,NaN,1.322033e-06,0,0,8126480,"wave mode 1 sign 1 [-4,0] x wave mode 1 sign 1 [1,0] -> wave [-3,0], w*dz(u)"
+fixed,0.1,explicit-fixed-family-rejected,16,4,4,NaN,NaN,NaN,1.322033e-06,43200,213528,8126480,"wave mode 1 sign 1 [4,0] x wave mode 1 sign 1 [-1,0] -> wave [3,0], w*dz(u)"
+targeted,0.1,explicit-fixed-family-rejected,16,4,4,NaN,NaN,NaN,1.322033e-06,66060,328704,8126480,"wave mode 1 sign 1 [4,0] x wave mode 1 sign 1 [-1,0] -> wave [3,0], w*dz(u)"
+linear,0.03,explicit-fixed-family-rejected,16,4,4,NaN,NaN,NaN,1.322033e-06,0,0,8126480,"wave mode 1 sign 1 [-4,0] x wave mode 1 sign 1 [1,0] -> wave [-3,0], w*dz(u)"
+fixed,0.03,explicit-fixed-family-rejected,16,4,4,NaN,NaN,NaN,1.322033e-06,43200,213528,8126480,"wave mode 1 sign 1 [4,0] x wave mode 1 sign 1 [-1,0] -> wave [3,0], w*dz(u)"
+targeted,0.03,explicit-fixed-family-rejected,16,4,4,NaN,NaN,NaN,1.322033e-06,66060,328704,8126480,"wave mode 1 sign 1 [4,0] x wave mode 1 sign 1 [-1,0] -> wave [3,0], w*dz(u)"
+linear,0.01,explicit-fixed-family-rejected,16,4,4,NaN,NaN,NaN,1.322033e-06,0,0,8126480,"wave mode 1 sign 1 [-4,0] x wave mode 1 sign 1 [1,0] -> wave [-3,0], w*dz(u)"
+fixed,0.01,explicit-fixed-family-rejected,16,4,4,NaN,NaN,NaN,1.322033e-06,43200,213528,8126480,"wave mode 1 sign 1 [4,0] x wave mode 1 sign 1 [-1,0] -> wave [3,0], w*dz(u)"
+targeted,0.01,explicit-fixed-family-rejected,16,4,4,NaN,NaN,NaN,1.322033e-06,66060,328704,8126480,"wave mode 1 sign 1 [4,0] x wave mode 1 sign 1 [-1,0] -> wave [3,0], w*dz(u)"

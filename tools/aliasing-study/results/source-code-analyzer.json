@@ -1,0 +1,244 @@
+{
+  "TestProductProjection": [],
+  "TestSourceProjection": [
+    {
+      "id": "PROP",
+      "message": "There is a property named 'data'. Did you mean to reference it?",
+      "fix": 1,
+      "line": 15,
+      "column": [
+        13,
+        16
+      ]
+    },
+    {
+      "id": "PROP",
+      "message": "There is a property named 'data'. Did you mean to reference it?",
+      "fix": 1,
+      "line": 17,
+      "column": [
+        38,
+        41
+      ]
+    },
+    {
+      "id": "PROP",
+      "message": "There is a property named 'data'. Did you mean to reference it?",
+      "fix": 1,
+      "line": 19,
+      "column": [
+        54,
+        57
+      ]
+    },
+    {
+      "id": "PROP",
+      "message": "There is a property named 'data'. Did you mean to reference it?",
+      "fix": 1,
+      "line": 21,
+      "column": [
+        55,
+        58
+      ]
+    },
+    {
+      "id": "PROP",
+      "message": "There is a property named 'data'. Did you mean to reference it?",
+      "fix": 1,
+      "line": 21,
+      "column": [
+        65,
+        68
+      ]
+    },
+    {
+      "id": "PROP",
+      "message": "There is a property named 'data'. Did you mean to reference it?",
+      "fix": 1,
+      "line": 30,
+      "column": [
+        13,
+        16
+      ]
+    },
+    {
+      "id": "PROP",
+      "message": "There is a property named 'data'. Did you mean to reference it?",
+      "fix": 1,
+      "line": 31,
+      "column": [
+        24,
+        27
+      ]
+    },
+    {
+      "id": "PROP",
+      "message": "There is a property named 'data'. Did you mean to reference it?",
+      "fix": 1,
+      "line": 34,
+      "column": [
+        58,
+        61
+      ]
+    },
+    {
+      "id": "PROP",
+      "message": "There is a property named 'data'. Did you mean to reference it?",
+      "fix": 1,
+      "line": 36,
+      "column": [
+        59,
+        62
+      ]
+    },
+    {
+      "id": "PROP",
+      "message": "There is a property named 'data'. Did you mean to reference it?",
+      "fix": 1,
+      "line": 36,
+      "column": [
+        69,
+        72
+      ]
+    },
+    {
+      "id": "PROP",
+      "message": "There is a property named 'data'. Did you mean to reference it?",
+      "fix": 1,
+      "line": 45,
+      "column": [
+        13,
+        16
+      ]
+    },
+    {
+      "id": "PROP",
+      "message": "There is a property named 'data'. Did you mean to reference it?",
+      "fix": 1,
+      "line": 45,
+      "column": [
+        40,
+        43
+      ]
+    },
+    {
+      "id": "PROP",
+      "message": "There is a property named 'data'. Did you mean to reference it?",
+      "fix": 1,
+      "line": 46,
+      "column": [
+        15,
+        18
+      ]
+    },
+    {
+      "id": "PROP",
+      "message": "There is a property named 'data'. Did you mean to reference it?",
+      "fix": 1,
+      "line": 46,
+      "column": [
+        31,
+        34
+      ]
+    },
+    {
+      "id": "PROP",
+      "message": "There is a property named 'data'. Did you mean to reference it?",
+      "fix": 1,
+      "line": 47,
+      "column": [
+        32,
+        35
+      ]
+    },
+    {
+      "id": "PROP",
+      "message": "There is a property named 'data'. Did you mean to reference it?",
+      "fix": 1,
+      "line": 47,
+      "column": [
+        48,
+        51
+      ]
+    },
+    {
+      "id": "PROP",
+      "message": "There is a property named 'data'. Did you mean to reference it?",
+      "fix": 1,
+      "line": 47,
+      "column": [
+        57,
+        60
+      ]
+    },
+    {
+      "id": "PROP",
+      "message": "There is a property named 'data'. Did you mean to reference it?",
+      "fix": 1,
+      "line": 47,
+      "column": [
+        74,
+        77
+      ]
+    },
+    {
+      "id": "PROP",
+      "message": "There is a property named 'data'. Did you mean to reference it?",
+      "fix": 1,
+      "line": 51,
+      "column": [
+        41,
+        44
+      ]
+    }
+  ],
+  "TestSparseStudyPolicies": [],
+  "compareProductReferences": [],
+  "configureStudyPath": [],
+  "enumerateStudyInteractions": [],
+  "evaluateStudyModes": [],
+  "measureProductProjection": [],
+  "prepareProductProjection": [],
+  "prepareSourceStudy": {
+    "id": "FNDSB",
+    "message": "For array or cell array, performance can be improved using logical indexing instead of 'find'.",
+    "fix": 1,
+    "line": 60,
+    "column": [
+      15,
+      22
+    ]
+  },
+  "runPilot": [],
+  "runSourceSurvey": [
+    {
+      "id": "FNDSB",
+      "message": "For array or cell array, performance can be improved using logical indexing instead of 'find'.",
+      "fix": 1,
+      "line": 51,
+      "column": [
+        21,
+        24
+      ]
+    },
+    {
+      "id": "FNDSB",
+      "message": "For array or cell array, performance can be improved using logical indexing instead of 'find'.",
+      "fix": 1,
+      "line": 51,
+      "column": [
+        54,
+        57
+      ]
+    }
+  ],
+  "runStudyCases": [],
+  "scoreQuadraticDiagnostics": [],
+  "scoreSourcePolicies": [],
+  "selectStudyInteractions": [],
+  "sourceChannelInventory": [],
+  "sourceProjectionContext": [],
+  "sourceStudyFields": [],
+  "studyModePairMask": [],
+  "studyProfile": []
+}

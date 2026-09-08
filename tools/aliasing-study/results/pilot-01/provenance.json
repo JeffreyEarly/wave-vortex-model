@@ -1,0 +1,22 @@
+{
+  "baseWvmRevision": "9fefcc9a528de65e2f348706c45b13f741754a78",
+  "oceanKitRevision": "80006f5040da787465860249f975def9831624c8",
+  "providerRevision": "4086f978b36a4100e7419688ab355591c8253ef1",
+  "sourceSha256": {
+    "TestProductProjection.m": "3988b1fbb66a1f5c15bea7b938936d0cd338d2888e8d3af7fccf1504d2dd053e",
+    "configureStudyPath.m": "25d5d12968d92ad70db0bd251eb094c7e2c9858896331c595fe208db245263c7",
+    "enumerateStudyInteractions.m": "0f01666b462b6469004ef54c81f16069801397fab3f38c8b6d0dbbca789c59a9",
+    "measureProductProjection.m": "5904f71b3452921ca466b119347a5ffc555d86ecc08df52c284f2601a5876407",
+    "prepareProductProjection.m": "99c17c1a1d1695d4a8e2ace46f7a766321c773e08fa8120967d15c97d9fe044a",
+    "runPilot.m": "dc55de58f9454a727f839a42adfe43d3704c51ca557e5562263b220f9541d94b"
+  },
+  "postRunChanges": "Removed two obsolete Code Analyzer suppression comments; numerical code unchanged.",
+  "checkpointSourceSha256": {
+    "TestProductProjection.m": "3988b1fbb66a1f5c15bea7b938936d0cd338d2888e8d3af7fccf1504d2dd053e",
+    "configureStudyPath.m": "25d5d12968d92ad70db0bd251eb094c7e2c9858896331c595fe208db245263c7",
+    "enumerateStudyInteractions.m": "0f01666b462b6469004ef54c81f16069801397fab3f38c8b6d0dbbca789c59a9",
+    "measureProductProjection.m": "5904f71b3452921ca466b119347a5ffc555d86ecc08df52c284f2601a5876407",
+    "prepareProductProjection.m": "99c17c1a1d1695d4a8e2ace46f7a766321c773e08fa8120967d15c97d9fe044a",
+    "runPilot.m": "64f41b2fc604ea6df388fa2d72be7332d4d0ca0e204c00bebf8f3a24c9aab930"
+  }
+}

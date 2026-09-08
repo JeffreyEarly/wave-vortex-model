@@ -1,0 +1,102 @@
+{
+  "familyModeLabels": {
+    "wave": [
+      1,
+      2,
+      3,
+      4,
+      5,
+      6,
+      7,
+      8,
+      9,
+      10,
+      11,
+      12,
+      13,
+      14,
+      15,
+      16,
+      17,
+      18,
+      19,
+      20,
+      21,
+      22,
+      23,
+      24
+    ],
+    "apv": [
+      -1,
+      1,
+      2,
+      3,
+      4,
+      5
+    ],
+    "mda": [
+      -1,
+      0,
+      1,
+      2
+    ],
+    "inertial": [
+      1,
+      2,
+      3,
+      4,
+      5,
+      6,
+      7,
+      8
+    ],
+    "boundary": [
+      "surface",
+      "bottom"
+    ]
+  },
+  "caseId": "larger-exponential-97",
+  "policy": "linear",
+  "scope": "linear-only; no wave quadratic reference check",
+  "configuration": {
+    "Lz": 1000,
+    "f": 0.0001,
+    "g": 9.81,
+    "evpOrders": [
+      128,
+      192
+    ],
+    "referenceOrders": [
+      257,
+      513
+    ],
+    "referenceAllowance": 0.0001,
+    "eigenAllowance": 1E-6,
+    "gramTolerance": 1E-7,
+    "id": "larger-exponential-97",
+    "profile": "exponential",
+    "Lxy": [
+      400000,
+      400000
+    ],
+    "Nxy": [
+      32,
+      32
+    ],
+    "Nz": 97,
+    "waveCount": 24,
+    "apvCount": 6,
+    "mdaCount": 4,
+    "inertialCount": 8,
+    "independentSampleSeed": 400,
+    "independentSampleCount": 64
+  },
+  "constructionSeconds": 32.226294291666669,
+  "assessmentSeconds": 7.9708333333333337E-5,
+  "nonzeroProductEvaluations": 0,
+  "largestLinearCount": 24,
+  "eigenConvergence": 6.9562860468366E-8,
+  "fixedFamiliesGramAccepted": true,
+  "matlabVersion": "25.2.0.3150157 (R2025b) Update 4",
+  "computer": "MACA64"
+}

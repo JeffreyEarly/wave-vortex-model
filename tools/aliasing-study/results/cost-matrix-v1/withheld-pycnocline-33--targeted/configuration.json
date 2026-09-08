@@ -1,0 +1,31 @@
+{
+  "Lz": 1000,
+  "f": 0.0001,
+  "g": 9.81,
+  "evpOrders": [
+    192,
+    256
+  ],
+  "referenceOrders": [
+    513,
+    1025
+  ],
+  "referenceAllowance": 0.0001,
+  "eigenAllowance": 1E-6,
+  "gramTolerance": 1E-7,
+  "id": "withheld-pycnocline-33",
+  "profile": "pycnocline",
+  "Lxy": [
+    140000,
+    100000
+  ],
+  "Nxy": [
+    8,
+    8
+  ],
+  "Nz": 33,
+  "waveCount": 16,
+  "apvCount": 3,
+  "mdaCount": 3,
+  "inertialCount": 4
+}

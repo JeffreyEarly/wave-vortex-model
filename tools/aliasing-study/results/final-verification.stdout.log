@@ -1,0 +1,209 @@
+[Warning: Directory access failure: /Users/jearly/Documents/MATLAB]
+[Warning: Directory access failure: /Users/jearly/Documents/MATLAB]
+[> In restoredefaultpath (line 81)]
+                         policy: "fixed"
+    coefficientErrorComparisons: 639744
+         maximumErrorDifference: 0
+        maximumPrefixDifference: 1.6653e-16
+                         status: "passed"
+
+                         policy: "targeted"
+    coefficientErrorComparisons: 1148928
+         maximumErrorDifference: 0
+        maximumPrefixDifference: 3.8858e-16
+                         status: "passed"
+
+                         policy: "fixed"
+    coefficientErrorComparisons: 3273984
+         maximumErrorDifference: 0
+        maximumPrefixDifference: 2.2204e-16
+                         status: "passed"
+
+                         policy: "targeted"
+    coefficientErrorComparisons: 5879808
+         maximumErrorDifference: 0
+        maximumPrefixDifference: 1.6653e-16
+                         status: "passed"
+
+                         policy: "fixed"
+    coefficientErrorComparisons: 639744
+         maximumErrorDifference: 0
+        maximumPrefixDifference: 3.3307e-16
+                         status: "passed"
+
+                         policy: "targeted"
+    coefficientErrorComparisons: 1148928
+         maximumErrorDifference: 0
+        maximumPrefixDifference: 5.5511e-17
+                         status: "passed"
+
+                         policy: "fixed"
+    coefficientErrorComparisons: 3273984
+         maximumErrorDifference: 0
+        maximumPrefixDifference: 2.7756e-16
+                         status: "passed"
+
+                         policy: "targeted"
+    coefficientErrorComparisons: 5879808
+         maximumErrorDifference: 0
+        maximumPrefixDifference: 3.8858e-16
+                         status: "passed"
+
+                         policy: "fixed"
+    coefficientErrorComparisons: 1997952
+         maximumErrorDifference: 0
+        maximumPrefixDifference: 3.3307e-16
+                         status: "passed"
+
+                         policy: "targeted"
+    coefficientErrorComparisons: 3285888
+         maximumErrorDifference: 0
+        maximumPrefixDifference: 8.3267e-17
+                         status: "passed"
+
+                         policy: "fixed"
+    coefficientErrorComparisons: 4042368
+         maximumErrorDifference: 0
+        maximumPrefixDifference: 1.1858e-20
+                         status: "passed"
+
+                         policy: "targeted"
+    coefficientErrorComparisons: 6648192
+         maximumErrorDifference: 0
+        maximumPrefixDifference: 1.1858e-20
+                         status: "passed"
+
+                         policy: "fixed"
+    coefficientErrorComparisons: 3779072
+         maximumErrorDifference: 0
+        maximumPrefixDifference: 2.2204e-16
+                         status: "passed"
+
+                         policy: "targeted"
+    coefficientErrorComparisons: 6215168
+         maximumErrorDifference: 0
+        maximumPrefixDifference: 3.3307e-16
+                         status: "passed"
+
+                         policy: "fixed"
+    coefficientErrorComparisons: 4860864
+         maximumErrorDifference: 0
+        maximumPrefixDifference: 4.7434e-20
+                         status: "passed"
+
+                         policy: "targeted"
+    coefficientErrorComparisons: 7466688
+         maximumErrorDifference: 0
+        maximumPrefixDifference: 4.7434e-20
+                         status: "passed"
+
+                         policy: "fixed"
+    coefficientErrorComparisons: 4860864
+         maximumErrorDifference: 0
+        maximumPrefixDifference: 2.7529e-21
+                         status: "passed"
+
+                         policy: "targeted"
+    coefficientErrorComparisons: 7466688
+         maximumErrorDifference: 0
+        maximumPrefixDifference: 2.7529e-21
+                         status: "passed"
+
+Running TestProductProjection
+BLAS: trying environment BLAS_VERSION...
+BLAS: loading libmwAF_BLAS_ilp64.dylib
+BLAS: loaded libmwAF_BLAS_ilp64.dylib@0x9553f8b0
+....
+Done TestProductProjection
+__________
+
+Running TestSourceProjection
+....
+Done TestSourceProjection
+__________
+
+Running TestSparseStudyPolicies
+      policy      tolerance     status     largestDenseCount    largestJointCount    largestSampledCount    falseAcceptance    retainedCountLoss
+    __________    _________    ________    _________________    _________________    ___________________    _______________    _________________
+
+    "linear"         0.1       "scored"            2                    2                     3                  true                  0
+    "fixed"          0.1       "scored"            2                    2                     3                  true                  0
+    "targeted"       0.1       "scored"            2                    2                     3                  true                  0
+    "linear"        0.03       "scored"            1                    1                     3                  true                  0
+    "fixed"         0.03       "scored"            1                    1                     3                  true                  0
+    "targeted"      0.03       "scored"            1                    1                     3                  true                  0
+    "linear"        0.01       "scored"            1                    1                     3                  true                  0
+    "fixed"         0.01       "scored"            1                    1                     3                  true                  0
+    "targeted"      0.01       "scored"            1                    1                     3                  true                  0
+
+.      policy      tolerance     status     largestDenseCount    largestJointCount    largestSampledCount    falseAcceptance    retainedCountLoss
+    __________    _________    ________    _________________    _________________    ___________________    _______________    _________________
+
+    "linear"         0.1       "scored"            3                    1                     1                  false                 2
+    "fixed"          0.1       "scored"            3                    1                     1                  false                 2
+    "targeted"       0.1       "scored"            3                    1                     1                  false                 2
+    "linear"        0.03       "scored"            3                    1                     1                  false                 2
+    "fixed"         0.03       "scored"            3                    1                     1                  false                 2
+    "targeted"      0.03       "scored"            3                    1                     1                  false                 2
+    "linear"        0.01       "scored"            3                    1                     1                  false                 2
+    "fixed"         0.01       "scored"            3                    1                     1                  false                 2
+    "targeted"      0.01       "scored"            3                    1                     1                  false                 2
+
+.      policy      tolerance             status             largestDenseCount    largestJointCount    largestSampledCount    falseAcceptance    retainedCountLoss
+    __________    _________    ________________________    _________________    _________________    ___________________    _______________    _________________
+
+    "linear"         0.1       "inconclusive-reference"            2                    2                     3                   NaN                 NaN
+    "fixed"          0.1       "inconclusive-reference"            2                    2                     3                   NaN                 NaN
+    "targeted"       0.1       "inconclusive-reference"            2                    2                     3                   NaN                 NaN
+    "linear"        0.03       "inconclusive-reference"            1                    1                     3                   NaN                 NaN
+    "fixed"         0.03       "inconclusive-reference"            1                    1                     3                   NaN                 NaN
+    "targeted"      0.03       "inconclusive-reference"            1                    1                     3                   NaN                 NaN
+    "linear"        0.01       "inconclusive-reference"            1                    1                     3                   NaN                 NaN
+    "fixed"         0.01       "inconclusive-reference"            1                    1                     3                   NaN                 NaN
+    "targeted"      0.01       "inconclusive-reference"            1                    1                     3                   NaN                 NaN
+
+..
+Done TestSparseStudyPolicies
+__________
+
+Running TestFreeSurfaceWaveModes
+.
+================================================================================
+Verification failed in TestFreeSurfaceWaveModes/variableModesAgreeWithIndependentShooting.
+    ---------------------
+    Framework Diagnostic:
+    ---------------------
+    verifyLessThan failed.
+    --> The value must be less than the maximum value.
+
+    Actual Value:
+         2.412088576663186e-07
+    Maximum Value (Exclusive):
+         2.000000000000000e-07
+    ------------------
+    Stack Information:
+    ------------------
+    In /Users/jearly/Documents/OceanKitRepositories/wvm-issue-400/UnitTests/TestFreeSurfaceWaveModes.m (verifyQualified) at 88
+    In /Users/jearly/Documents/OceanKitRepositories/wvm-issue-400/UnitTests/TestFreeSurfaceWaveModes.m (TestFreeSurfaceWaveModes.variableModesAgreeWithIndependentShooting) at 16
+================================================================================
+...
+Done TestFreeSurfaceWaveModes
+__________
+
+Failure Summary:
+
+     Name                                                                Failed  Incomplete  Reason(s)
+    =================================================================================================================
+     TestFreeSurfaceWaveModes/variableModesAgreeWithIndependentShooting    X                 Failed by verification.
+  1×16 TestResult array with properties:
+
+    Name
+    Passed
+    Failed
+    Incomplete
+    Duration
+    Details
+
+Totals:
+   15 Passed, 1 Failed, 0 Incomplete.
+   11.1179 seconds testing time.

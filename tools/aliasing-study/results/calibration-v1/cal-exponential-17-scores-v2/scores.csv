@@ -1,0 +1,10 @@
+policy,tolerance,status,largestDenseCount,largestJointCount,largestSampledCount,falseAcceptance,retainedCountLoss,additionalQuadraticLoss,worstMissedError,productEvaluations,candidatePlanEvaluations,densePlanEvaluations,limitingInteraction
+linear,0.1,scored,7,3,3,0,4,0,3.408557e-06,0,0,865856,"wave mode 1 sign 1 [-2,-1] x wave mode 1 sign 1 [1,1] -> wave [-1,0], w*dz(u)"
+fixed,0.1,scored,7,3,3,0,4,0,3.408557e-06,16832,48592,865856,"wave mode 1 sign 1 [-2,-1] x wave mode 1 sign 1 [1,1] -> wave [-1,0], w*dz(u)"
+targeted,0.1,scored,7,3,3,0,4,0,3.408557e-06,31520,91136,865856,"wave mode 1 sign 1 [-2,1] x wave mode 1 sign 1 [1,-1] -> wave [-1,0], w*dz(u)"
+linear,0.03,scored,6,3,3,0,3,0,3.408557e-06,0,0,865856,"wave mode 1 sign 1 [-2,-1] x wave mode 1 sign 1 [1,1] -> wave [-1,0], w*dz(u)"
+fixed,0.03,scored,6,3,3,0,3,0,3.408557e-06,16832,48592,865856,"wave mode 1 sign 1 [-2,-1] x wave mode 1 sign 1 [1,1] -> wave [-1,0], w*dz(u)"
+targeted,0.03,scored,6,3,3,0,3,0,3.408557e-06,31520,91136,865856,"wave mode 1 sign 1 [-2,1] x wave mode 1 sign 1 [1,-1] -> wave [-1,0], w*dz(u)"
+linear,0.01,scored,6,3,3,0,3,0,3.408557e-06,0,0,865856,"wave mode 1 sign 1 [-2,-1] x wave mode 1 sign 1 [1,1] -> wave [-1,0], w*dz(u)"
+fixed,0.01,scored,6,3,3,0,3,0,3.408557e-06,16832,48592,865856,"wave mode 1 sign 1 [-2,-1] x wave mode 1 sign 1 [1,1] -> wave [-1,0], w*dz(u)"
+targeted,0.01,scored,6,3,3,0,3,0,3.408557e-06,31520,91136,865856,"wave mode 1 sign 1 [-2,1] x wave mode 1 sign 1 [1,-1] -> wave [-1,0], w*dz(u)"

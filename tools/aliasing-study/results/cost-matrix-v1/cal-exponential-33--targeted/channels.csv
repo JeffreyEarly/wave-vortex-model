@@ -1,0 +1,14 @@
+name,advecting,advected,factor
+u*dx(u),u,u,x
+v*dy(u),v,u,y
+w*dz(u),w,u,z
+u*dx(v),u,v,x
+v*dy(v),v,v,y
+w*dz(v),w,v,z
+u*dx(w),u,w,x
+v*dy(w),v,w,y
+w*dz(w),w,w,z
+u*dx(eta),u,eta,x
+v*dy(eta),v,eta,y
+w*dz(eta),w,eta,z
+w*eta*dlogN2,w,eta,stratification

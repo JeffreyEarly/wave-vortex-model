@@ -1,0 +1,10 @@
+policy,tolerance,status,largestDenseCount,largestJointCount,largestSampledCount,falseAcceptance,retainedCountLoss,additionalQuadraticLoss,worstMissedError,productEvaluations,candidatePlanEvaluations,densePlanEvaluations,limitingInteraction
+linear,0.1,inconclusive-reference,13,1,1,NaN,NaN,NaN,0.01172715,0,0,1313600,"wave mode 1 sign 1 [-1,0] x wave mode 1 sign 1 [1,0] -> inertial [0,0], w*dz(u)"
+fixed,0.1,inconclusive-reference,13,1,1,NaN,NaN,NaN,0.009703401,6956,142528,1313600,"wave mode 1 sign 1 [0,1] x wave mode 1 sign 1 [0,-1] -> inertial [0,0], w*dz(u)"
+targeted,0.1,inconclusive-reference,13,1,1,NaN,NaN,NaN,0.009703401,12992,260400,1313600,"wave mode 1 sign 1 [0,1] x wave mode 1 sign 1 [0,-1] -> inertial [0,0], w*dz(u)"
+linear,0.03,inconclusive-reference,6,1,1,NaN,NaN,NaN,0.01172715,0,0,1313600,"wave mode 1 sign 1 [-1,0] x wave mode 1 sign 1 [1,0] -> inertial [0,0], w*dz(u)"
+fixed,0.03,inconclusive-reference,6,1,1,NaN,NaN,NaN,0.009703401,6956,142528,1313600,"wave mode 1 sign 1 [0,1] x wave mode 1 sign 1 [0,-1] -> inertial [0,0], w*dz(u)"
+targeted,0.03,inconclusive-reference,6,1,1,NaN,NaN,NaN,0.009703401,12992,260400,1313600,"wave mode 1 sign 1 [0,1] x wave mode 1 sign 1 [0,-1] -> inertial [0,0], w*dz(u)"
+linear,0.01,inconclusive-reference,0,0,1,NaN,NaN,NaN,0.01172715,0,0,1313600,"wave mode 1 sign 1 [-1,0] x wave mode 1 sign 1 [1,0] -> inertial [0,0], w*dz(u)"
+fixed,0.01,inconclusive-reference,0,0,0,NaN,NaN,NaN,0,3070,142528,1313600,""
+targeted,0.01,inconclusive-reference,0,0,0,NaN,NaN,NaN,0,5808,260400,1313600,""

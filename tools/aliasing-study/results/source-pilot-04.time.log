@@ -1,0 +1,19 @@
+BLAS: unloading libraries
+       35.09 real        82.81 user        63.88 sys
+          1377026048  maximum resident set size
+                   0  average shared memory size
+                   0  average unshared data size
+                   0  average unshared stack size
+              229757  page reclaims
+                  25  page faults
+                   0  swaps
+                   0  block input operations
+                   0  block output operations
+                 334  messages sent
+                 355  messages received
+                   0  signals received
+                  68  voluntary context switches
+             3993074  involuntary context switches
+       1122214228036  instructions retired
+        519863923795  cycles elapsed
+          1001703656  peak memory footprint

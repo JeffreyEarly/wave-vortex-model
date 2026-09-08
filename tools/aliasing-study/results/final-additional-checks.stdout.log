@@ -1,0 +1,9 @@
+[Warning: Directory access failure: /Users/jearly/Documents/MATLAB]
+[Warning: Directory access failure: /Users/jearly/Documents/MATLAB]
+[> In restoredefaultpath (line 81)]
+BLAS: trying environment BLAS_VERSION...
+BLAS: loading libmwAF_BLAS_ilp64.dylib
+BLAS: loaded libmwAF_BLAS_ilp64.dylib@0x933fb8b0
+Documentation dependency: ClassDocumentation 1.3.2 (/Users/jearly/Documents/OceanKitRepositories/wvm400-oceankit/ClassDocumentation-1.3.2)
+Documentation validation: files=2358, routes=4819, failures=0
+Documentation comparison: added=0, removed=0, modified=0, whitespace-only=0, substantive=0

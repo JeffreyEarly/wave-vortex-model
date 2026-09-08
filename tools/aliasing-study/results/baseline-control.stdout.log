@@ -1,0 +1,47 @@
+[Warning: Directory access failure: /Users/jearly/Documents/MATLAB]
+[Warning: Directory access failure: /Users/jearly/Documents/MATLAB]
+[> In restoredefaultpath (line 81)]
+Running TestFreeSurfaceWaveModes
+BLAS: trying environment BLAS_VERSION...
+BLAS: loading libmwAF_BLAS_ilp64.dylib
+BLAS: loaded libmwAF_BLAS_ilp64.dylib@0x92bbb8b0
+
+================================================================================
+Verification failed in TestFreeSurfaceWaveModes/variableModesAgreeWithIndependentShooting.
+    ---------------------
+    Framework Diagnostic:
+    ---------------------
+    verifyLessThan failed.
+    --> The value must be less than the maximum value.
+
+    Actual Value:
+         2.412088576663186e-07
+    Maximum Value (Exclusive):
+         2.000000000000000e-07
+    ------------------
+    Stack Information:
+    ------------------
+    In /private/tmp/wvm400-baseline-check/UnitTests/TestFreeSurfaceWaveModes.m (verifyQualified) at 88
+    In /private/tmp/wvm400-baseline-check/UnitTests/TestFreeSurfaceWaveModes.m (TestFreeSurfaceWaveModes.variableModesAgreeWithIndependentShooting) at 16
+================================================================================
+.
+Done TestFreeSurfaceWaveModes
+__________
+
+Failure Summary:
+
+     Name                                                                Failed  Incomplete  Reason(s)
+    =================================================================================================================
+     TestFreeSurfaceWaveModes/variableModesAgreeWithIndependentShooting    X                 Failed by verification.
+  TestResult with properties:
+
+          Name: 'TestFreeSurfaceWaveModes/variableModesAgreeWithIndependentShooting'
+        Passed: 0
+        Failed: 1
+    Incomplete: 0
+      Duration: 2.3083
+       Details: [1×1 struct]
+
+Totals:
+   0 Passed, 1 Failed, 0 Incomplete.
+   2.3083 seconds testing time.

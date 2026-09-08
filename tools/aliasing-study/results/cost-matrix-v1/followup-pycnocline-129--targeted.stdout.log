@@ -1,0 +1,8 @@
+[Warning: Directory access failure: /Users/jearly/Documents/MATLAB]
+[Warning: Directory access failure: /Users/jearly/Documents/MATLAB]
+[> In restoredefaultpath (line 81)]
+BLAS: trying environment BLAS_VERSION...
+BLAS: loading libmwAF_BLAS_ilp64.dylib
+BLAS: loaded libmwAF_BLAS_ilp64.dylib@0x932db8b0
+Source construction 13.09 s; 578 vector interactions.
+Source survey: 321892 nonzero products in 22.55 s; reference 3.49e-12; eigen/derivatives 5.19e-07.

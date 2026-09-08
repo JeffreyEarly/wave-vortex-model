@@ -1,0 +1,7 @@
+{
+  "policy": "fixed",
+  "coefficientErrorComparisons": 3.273984E+6,
+  "maximumErrorDifference": 0,
+  "maximumPrefixDifference": 2.7755575615628914E-16,
+  "status": "passed"
+}

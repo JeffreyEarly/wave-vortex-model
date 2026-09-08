@@ -1,0 +1,10 @@
+policy,tolerance,status,largestDenseCount,largestJointCount,largestSampledCount,falseAcceptance,retainedCountLoss,additionalQuadraticLoss,worstMissedError,productEvaluations,candidatePlanEvaluations,densePlanEvaluations,limitingInteraction
+linear,0.1,explicit-fixed-family-rejected,13,1,1,NaN,NaN,NaN,0.000252738,0,0,1313600,"wave mode 1 sign 1 [-2,-1] x boundary mode 2 sign 0 [2,1] -> mda [0,0], w*eta*dlogN2"
+fixed,0.1,explicit-fixed-family-rejected,13,1,1,NaN,NaN,NaN,0.000252738,6956,142528,1313600,"wave mode 1 sign 1 [-2,1] x boundary mode 2 sign 0 [2,-1] -> mda [0,0], w*eta*dlogN2"
+targeted,0.1,explicit-fixed-family-rejected,13,1,1,NaN,NaN,NaN,0.000252738,12992,260400,1313600,"wave mode 1 sign 1 [-2,1] x boundary mode 2 sign 0 [2,-1] -> mda [0,0], w*eta*dlogN2"
+linear,0.03,explicit-fixed-family-rejected,13,1,1,NaN,NaN,NaN,0.000252738,0,0,1313600,"wave mode 1 sign 1 [-2,-1] x boundary mode 2 sign 0 [2,1] -> mda [0,0], w*eta*dlogN2"
+fixed,0.03,explicit-fixed-family-rejected,13,1,1,NaN,NaN,NaN,0.000252738,6956,142528,1313600,"wave mode 1 sign 1 [-2,1] x boundary mode 2 sign 0 [2,-1] -> mda [0,0], w*eta*dlogN2"
+targeted,0.03,explicit-fixed-family-rejected,13,1,1,NaN,NaN,NaN,0.000252738,12992,260400,1313600,"wave mode 1 sign 1 [-2,1] x boundary mode 2 sign 0 [2,-1] -> mda [0,0], w*eta*dlogN2"
+linear,0.01,explicit-fixed-family-rejected,10,1,1,NaN,NaN,NaN,0.000252738,0,0,1313600,"wave mode 1 sign 1 [-2,-1] x boundary mode 2 sign 0 [2,1] -> mda [0,0], w*eta*dlogN2"
+fixed,0.01,explicit-fixed-family-rejected,10,1,1,NaN,NaN,NaN,0.000252738,6956,142528,1313600,"wave mode 1 sign 1 [-2,1] x boundary mode 2 sign 0 [2,-1] -> mda [0,0], w*eta*dlogN2"
+targeted,0.01,explicit-fixed-family-rejected,10,1,1,NaN,NaN,NaN,0.000252738,12992,260400,1313600,"wave mode 1 sign 1 [-2,1] x boundary mode 2 sign 0 [2,-1] -> mda [0,0], w*eta*dlogN2"

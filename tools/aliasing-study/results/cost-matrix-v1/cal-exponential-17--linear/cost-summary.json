@@ -1,0 +1,75 @@
+{
+  "familyModeLabels": {
+    "wave": [
+      1,
+      2,
+      3,
+      4,
+      5,
+      6,
+      7,
+      8
+    ],
+    "apv": [
+      -1,
+      1,
+      2
+    ],
+    "mda": [
+      -1,
+      0,
+      1
+    ],
+    "inertial": [
+      1,
+      2,
+      3
+    ],
+    "boundary": [
+      "surface",
+      "bottom"
+    ]
+  },
+  "caseId": "cal-exponential-17",
+  "policy": "linear",
+  "scope": "linear-only; no wave quadratic reference check",
+  "configuration": {
+    "Lz": 1000,
+    "f": 0.0001,
+    "g": 9.81,
+    "evpOrders": [
+      128,
+      192
+    ],
+    "referenceOrders": [
+      257,
+      513
+    ],
+    "referenceAllowance": 0.0001,
+    "eigenAllowance": 1E-6,
+    "gramTolerance": 1E-7,
+    "id": "cal-exponential-17",
+    "profile": "exponential",
+    "Lxy": [
+      100000,
+      100000
+    ],
+    "Nxy": [
+      8,
+      8
+    ],
+    "Nz": 17,
+    "waveCount": 8,
+    "apvCount": 3,
+    "mdaCount": 3,
+    "inertialCount": 3
+  },
+  "constructionSeconds": 3.1678042916666667,
+  "assessmentSeconds": 4.625E-5,
+  "nonzeroProductEvaluations": 0,
+  "largestLinearCount": 3,
+  "eigenConvergence": 6.9562860468366E-8,
+  "fixedFamiliesGramAccepted": true,
+  "matlabVersion": "25.2.0.3150157 (R2025b) Update 4",
+  "computer": "MACA64"
+}

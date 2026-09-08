@@ -1,0 +1,13 @@
+policy,gate,tolerance,largestSampledCount,independentMaximumThroughCount,qualified,observedFailure
+fixed,joint,0.1,24,7.86482701187197e-07,True,False
+fixed,quadratic-only-diagnostic,0.1,24,7.86482701187197e-07,True,False
+fixed,joint,0.03,24,7.86482701187197e-07,True,False
+fixed,quadratic-only-diagnostic,0.03,24,7.86482701187197e-07,True,False
+fixed,joint,0.01,24,7.86482701187197e-07,True,False
+fixed,quadratic-only-diagnostic,0.01,24,7.86482701187197e-07,True,False
+targeted,joint,0.1,24,7.86482701187197e-07,True,False
+targeted,quadratic-only-diagnostic,0.1,24,7.86482701187197e-07,True,False
+targeted,joint,0.03,24,7.86482701187197e-07,True,False
+targeted,quadratic-only-diagnostic,0.03,24,7.86482701187197e-07,True,False
+targeted,joint,0.01,24,7.86482701187197e-07,True,False
+targeted,quadratic-only-diagnostic,0.01,24,7.86482701187197e-07,True,False

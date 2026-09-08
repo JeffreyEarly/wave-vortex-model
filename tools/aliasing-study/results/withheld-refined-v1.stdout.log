@@ -1,0 +1,150 @@
+[Warning: Directory access failure: /Users/jearly/Documents/MATLAB]
+[Warning: Directory access failure: /Users/jearly/Documents/MATLAB]
+[> In restoredefaultpath (line 81)]
+BLAS: trying environment BLAS_VERSION...
+BLAS: loading libmwAF_BLAS_ilp64.dylib
+BLAS: loaded libmwAF_BLAS_ilp64.dylib@0x94ca38b0
+Source construction 5.59 s; 104 vector interactions.
+Source interactions 20/104; 251232 nonzero products; 10.1 s.
+Source interactions 40/104; 506016 nonzero products; 19.3 s.
+Source interactions 60/104; 759232 nonzero products; 28.7 s.
+Source interactions 80/104; 1017408 nonzero products; 38.1 s.
+Source interactions 100/104; 1265248 nonzero products; 46.7 s.
+Source survey: 1313600 nonzero products in 48.67 s; reference 3.49e-12; eigen/derivatives 5.19e-07.
+      policy      tolerance                 status                 largestDenseCount    largestJointCount    largestSampledCount    falseAcceptance    retainedCountLoss
+    __________    _________    ________________________________    _________________    _________________    ___________________    _______________    _________________
+
+    "linear"         0.1       "explicit-fixed-family-rejected"           13                    1                     1                   NaN                 NaN
+    "fixed"          0.1       "explicit-fixed-family-rejected"           13                    1                     1                   NaN                 NaN
+    "targeted"       0.1       "explicit-fixed-family-rejected"           13                    1                     1                   NaN                 NaN
+    "linear"        0.03       "explicit-fixed-family-rejected"           13                    1                     1                   NaN                 NaN
+    "fixed"         0.03       "explicit-fixed-family-rejected"           13                    1                     1                   NaN                 NaN
+    "targeted"      0.03       "explicit-fixed-family-rejected"           13                    1                     1                   NaN                 NaN
+    "linear"        0.01       "explicit-fixed-family-rejected"           10                    1                     1                   NaN                 NaN
+    "fixed"         0.01       "explicit-fixed-family-rejected"           10                    1                     1                   NaN                 NaN
+    "targeted"      0.01       "explicit-fixed-family-rejected"           10                    1                     1                   NaN                 NaN
+
+      policy      tolerance                 status                 largestDenseQuadraticCount    largestSampledQuadraticCount    falseAcceptance    retainedCountLoss
+    __________    _________    ________________________________    __________________________    ____________________________    _______________    _________________
+
+    "linear"         0.1       "diagnostic-linear-gate-ignored"                13                             16                      true                  0
+    "fixed"          0.1       "diagnostic-linear-gate-ignored"                13                             13                      false                 0
+    "targeted"       0.1       "diagnostic-linear-gate-ignored"                13                             13                      false                 0
+    "linear"        0.03       "diagnostic-linear-gate-ignored"                13                             16                      true                  0
+    "fixed"         0.03       "diagnostic-linear-gate-ignored"                13                             13                      false                 0
+    "targeted"      0.03       "diagnostic-linear-gate-ignored"                13                             13                      false                 0
+    "linear"        0.01       "diagnostic-linear-gate-ignored"                10                             16                      true                  0
+    "fixed"         0.01       "diagnostic-linear-gate-ignored"                10                             10                      false                 0
+    "targeted"      0.01       "diagnostic-linear-gate-ignored"                10                             10                      false                 0
+
+Source construction 7.05 s; 578 vector interactions.
+Source interactions 20/578; 284528 nonzero products; 11.1 s.
+Source interactions 40/578; 562552 nonzero products; 21.7 s.
+Source interactions 60/578; 844304 nonzero products; 32.1 s.
+Source interactions 80/578; 1119568 nonzero products; 42.7 s.
+Source interactions 100/578; 1391560 nonzero products; 53.2 s.
+Source interactions 120/578; 1674432 nonzero products; 63.9 s.
+Source interactions 140/578; 1967408 nonzero products; 75.1 s.
+Source interactions 160/578; 2245120 nonzero products; 86.7 s.
+Source interactions 180/578; 2532192 nonzero products; 98.6 s.
+Source interactions 200/578; 2807768 nonzero products; 110.1 s.
+Source interactions 220/578; 3098200 nonzero products; 121.9 s.
+Source interactions 240/578; 3385272 nonzero products; 133.8 s.
+Source interactions 260/578; 3652732 nonzero products; 145.8 s.
+Source interactions 280/578; 3933928 nonzero products; 157.3 s.
+Source interactions 300/578; 4218788 nonzero products; 168.7 s.
+Source interactions 320/578; 4492860 nonzero products; 180.2 s.
+Source interactions 340/578; 4769080 nonzero products; 191.9 s.
+Source interactions 360/578; 5056152 nonzero products; 203.8 s.
+Source interactions 380/578; 5350832 nonzero products; 216.0 s.
+Source interactions 400/578; 5622160 nonzero products; 227.3 s.
+Source interactions 420/578; 5915136 nonzero products; 239.2 s.
+Source interactions 440/578; 6192848 nonzero products; 250.4 s.
+Source interactions 460/578; 6474016 nonzero products; 261.1 s.
+Source interactions 480/578; 6756888 nonzero products; 271.7 s.
+Source interactions 500/578; 7028880 nonzero products; 282.1 s.
+Source interactions 520/578; 7310048 nonzero products; 292.8 s.
+Source interactions 540/578; 7596048 nonzero products; 303.4 s.
+Source interactions 560/578; 7875728 nonzero products; 314.2 s.
+Source survey: 8126480 nonzero products in 324.36 s; reference 3.49e-12; eigen/derivatives 5.19e-07.
+      policy      tolerance                 status                 largestDenseCount    largestJointCount    largestSampledCount    falseAcceptance    retainedCountLoss
+    __________    _________    ________________________________    _________________    _________________    ___________________    _______________    _________________
+
+    "linear"         0.1       "explicit-fixed-family-rejected"           16                    4                     4                   NaN                 NaN
+    "fixed"          0.1       "explicit-fixed-family-rejected"           16                    4                     4                   NaN                 NaN
+    "targeted"       0.1       "explicit-fixed-family-rejected"           16                    4                     4                   NaN                 NaN
+    "linear"        0.03       "explicit-fixed-family-rejected"           16                    4                     4                   NaN                 NaN
+    "fixed"         0.03       "explicit-fixed-family-rejected"           16                    4                     4                   NaN                 NaN
+    "targeted"      0.03       "explicit-fixed-family-rejected"           16                    4                     4                   NaN                 NaN
+    "linear"        0.01       "explicit-fixed-family-rejected"           16                    4                     4                   NaN                 NaN
+    "fixed"         0.01       "explicit-fixed-family-rejected"           16                    4                     4                   NaN                 NaN
+    "targeted"      0.01       "explicit-fixed-family-rejected"           16                    4                     4                   NaN                 NaN
+
+      policy      tolerance                 status                 largestDenseQuadraticCount    largestSampledQuadraticCount    falseAcceptance    retainedCountLoss
+    __________    _________    ________________________________    __________________________    ____________________________    _______________    _________________
+
+    "linear"         0.1       "diagnostic-linear-gate-ignored"                16                             16                      false                 0
+    "fixed"          0.1       "diagnostic-linear-gate-ignored"                16                             16                      false                 0
+    "targeted"       0.1       "diagnostic-linear-gate-ignored"                16                             16                      false                 0
+    "linear"        0.03       "diagnostic-linear-gate-ignored"                16                             16                      false                 0
+    "fixed"         0.03       "diagnostic-linear-gate-ignored"                16                             16                      false                 0
+    "targeted"      0.03       "diagnostic-linear-gate-ignored"                16                             16                      false                 0
+    "linear"        0.01       "diagnostic-linear-gate-ignored"                16                             16                      false                 0
+    "fixed"         0.01       "diagnostic-linear-gate-ignored"                16                             16                      false                 0
+    "targeted"      0.01       "diagnostic-linear-gate-ignored"                16                             16                      false                 0
+
+Source construction 6.74 s; 578 vector interactions.
+Source interactions 20/578; 284528 nonzero products; 11.0 s.
+Source interactions 40/578; 562552 nonzero products; 21.5 s.
+Source interactions 60/578; 844304 nonzero products; 34.7 s.
+Source interactions 80/578; 1119568 nonzero products; 45.5 s.
+Source interactions 100/578; 1391560 nonzero products; 56.1 s.
+Source interactions 120/578; 1674432 nonzero products; 66.8 s.
+Source interactions 140/578; 1967408 nonzero products; 77.7 s.
+Source interactions 160/578; 2245120 nonzero products; 88.1 s.
+Source interactions 180/578; 2532192 nonzero products; 98.9 s.
+Source interactions 200/578; 2807768 nonzero products; 109.8 s.
+Source interactions 220/578; 3098200 nonzero products; 120.7 s.
+Source interactions 240/578; 3385272 nonzero products; 131.5 s.
+Source interactions 260/578; 3652732 nonzero products; 141.6 s.
+Source interactions 280/578; 3933928 nonzero products; 152.1 s.
+Source interactions 300/578; 4218788 nonzero products; 162.8 s.
+Source interactions 320/578; 4492860 nonzero products; 172.9 s.
+Source interactions 340/578; 4769080 nonzero products; 183.4 s.
+Source interactions 360/578; 5056152 nonzero products; 194.3 s.
+Source interactions 380/578; 5350832 nonzero products; 205.1 s.
+Source interactions 400/578; 5622160 nonzero products; 216.0 s.
+Source interactions 420/578; 5915136 nonzero products; 226.9 s.
+Source interactions 440/578; 6192848 nonzero products; 237.3 s.
+Source interactions 460/578; 6474016 nonzero products; 248.1 s.
+Source interactions 480/578; 6756888 nonzero products; 258.6 s.
+Source interactions 500/578; 7028880 nonzero products; 269.3 s.
+Source interactions 520/578; 7310048 nonzero products; 280.1 s.
+Source interactions 540/578; 7596048 nonzero products; 290.5 s.
+Source interactions 560/578; 7875728 nonzero products; 301.1 s.
+Source survey: 8126480 nonzero products in 310.70 s; reference 3.49e-12; eigen/derivatives 5.19e-07.
+      policy      tolerance     status     largestDenseCount    largestJointCount    largestSampledCount    falseAcceptance    retainedCountLoss
+    __________    _________    ________    _________________    _________________    ___________________    _______________    _________________
+
+    "linear"         0.1       "scored"           16                   16                    16                  false                 0
+    "fixed"          0.1       "scored"           16                   16                    16                  false                 0
+    "targeted"       0.1       "scored"           16                   16                    16                  false                 0
+    "linear"        0.03       "scored"           16                   16                    16                  false                 0
+    "fixed"         0.03       "scored"           16                   16                    16                  false                 0
+    "targeted"      0.03       "scored"           16                   16                    16                  false                 0
+    "linear"        0.01       "scored"           16                   16                    16                  false                 0
+    "fixed"         0.01       "scored"           16                   16                    16                  false                 0
+    "targeted"      0.01       "scored"           16                   16                    16                  false                 0
+
+      policy      tolerance                 status                 largestDenseQuadraticCount    largestSampledQuadraticCount    falseAcceptance    retainedCountLoss
+    __________    _________    ________________________________    __________________________    ____________________________    _______________    _________________
+
+    "linear"         0.1       "diagnostic-linear-gate-ignored"                16                             16                      false                 0
+    "fixed"          0.1       "diagnostic-linear-gate-ignored"                16                             16                      false                 0
+    "targeted"       0.1       "diagnostic-linear-gate-ignored"                16                             16                      false                 0
+    "linear"        0.03       "diagnostic-linear-gate-ignored"                16                             16                      false                 0
+    "fixed"         0.03       "diagnostic-linear-gate-ignored"                16                             16                      false                 0
+    "targeted"      0.03       "diagnostic-linear-gate-ignored"                16                             16                      false                 0
+    "linear"        0.01       "diagnostic-linear-gate-ignored"                16                             16                      false                 0
+    "fixed"         0.01       "diagnostic-linear-gate-ignored"                16                             16                      false                 0
+    "targeted"      0.01       "diagnostic-linear-gate-ignored"                16                             16                      false                 0
