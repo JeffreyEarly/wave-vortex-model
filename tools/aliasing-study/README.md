@@ -2,6 +2,8 @@
 
 This reproducible authoring study compares linear, fixed sparse, and targeted sparse checks against a bounded dense survey of physical wave and mixed-family source products. See `REPORT.md` for findings, `API-PROPOSAL.md` for the proposed advisory interface, and `results/comparison-v1` for consolidated machine-readable evidence. Runtime defaults, coefficient shapes, physical grids, and package dependencies are unchanged.
 
+The first working advisory API is documented in [ADVISORY-API.md](ADVISORY-API.md). It reuses prepared modes and returns strict-count, reference, coverage, and budget diagnostics in memory.
+
 ## Reproduce
 
 Use this authoring branch, based on WVM `9fefcc9a528de65e2f348706c45b13f741754a78`, alongside the OceanKit export at `80006f5040da787465860249f975def9831624c8` (InternalModes source `4086f978b36a4100e7419688ab355591c8253ef1`). The commands below run from the WVM repository with the export named `../wvm400-oceankit`. `configureStudyPath` adds only the pinned packages and their manifest-listed folders. On this local Apple Silicon host, MATLAB must run outside the Codex sandbox under the shared workspace policy.

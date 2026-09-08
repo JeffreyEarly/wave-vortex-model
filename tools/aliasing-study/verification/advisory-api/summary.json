@@ -1,0 +1,22 @@
+{
+  "integrationBase": "6299ba351e65c8c104436cdc675a33b70eddb610",
+  "advisoryTestsPassed": 7,
+  "sharedScientificTestsPassed": 12,
+  "offlineWriterReplay": {
+    "policy": "fixed",
+    "coefficientErrorComparisons": 639744,
+    "maximumErrorDifference": 0,
+    "maximumPrefixDifference": 1.6653345369377348e-16,
+    "status": "passed"
+  },
+  "documentationCheck": {
+    "files": 2358,
+    "routes": 4819,
+    "failures": 0,
+    "added": 0,
+    "removed": 0,
+    "modified": 0
+  },
+  "codeAnalyzer": "two inherited FNDSB performance suggestions; no other findings",
+  "testCommandNote": "The final seven tests passed before an ancillary command typo attempted checkcode on a character. The subsequent checks log contains the successful analyzer, replay, and docs check."
+}
