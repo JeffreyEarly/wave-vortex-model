@@ -2,6 +2,30 @@ classdef TestFreeSurfaceQGDiffusionQualification < matlab.unittest.TestCase
     % Independent physical-depth qualification of two-active-boundary diffusion.
     % runStudy reports numerical errors without a universal acceptance threshold.
     methods (Test, TestTags="full")
+        function endpointEvolutionIdentifiesCancellation(testCase)
+            folder=string(tempname); mkdir(folder);
+            cleanup=onCleanup(@()rmdir(folder,'s'));
+            result=TestFreeSurfaceQGDiffusionQualification.runEndpointEvolutionStudy(folder,bands=[433 865 1297],days=64,quadratureCount=4097,referenceCount=257);
+            r=result.rows; bottom=r(r.endpoint=="bottom",:);
+            % An isolated surface source has no direct bottom action. Its
+            % bottom response is accumulated diffusion, including sign.
+            testCase.verifyLessThan(max(abs(bottom.sourceTendency)),1e-20)
+            testCase.verifyLessThan(max(abs(bottom.state-bottom.diffusionIntegral)),1e-9)
+            testCase.verifyLessThan(max(abs(r.referenceBudgetResidual)),1e-8)
+            surface=r(r.endpoint=="surface",:); omega=2*pi/(365.25*86400);
+            testCase.verifyEqual(surface.sourceIntegral,5*(1-cos(omega*64*86400))*ones(3,1),AbsTol=1e-8)
+            % The favorable 865-mode error is not monotone band convergence.
+            error=abs(bottom.state-bottom.referenceState);
+            testCase.verifyLessThan(error(2),error(1)/10)
+            testCase.verifyLessThan(error(2),error(3)/5)
+            testCase.verifyLessThan(bottom.representationError(2),-1e-5)
+            testCase.verifyGreaterThan(bottom.evolutionError(2),1e-5)
+            testCase.verifyLessThan(max(abs(r.decompositionResidual)),1e-10)
+            % Missing surface-layer gradients dominate the bottom action of
+            % the projected-reference operator residual at this time.
+            testCase.verifyGreaterThan(bottom.surfaceLayerGradientResidual,.9*bottom.operatorResidualTendencyError)
+            testCase.verifyLessThan(max(abs(bottom.referenceWeakResidual)),1e-15)
+        end
         function independentEndpointsHaveSeparateReferenceAllowances(testCase)
             D=4000; scale=1300; f=2*7.2921e-5*sind(24); T=365.25*86400;
             [z,weights]=studyGrid(1025,D);
@@ -169,6 +193,92 @@ classdef TestFreeSurfaceQGDiffusionQualification < matlab.unittest.TestCase
     end
 
     methods (Static)
+        function result = runEndpointEvolutionStudy(folder,options)
+            % Diagnose endpoint error without changing the resolved model basis.
+            arguments (Input)
+                folder (1,1) string
+                options.bands (1,:) double {mustBeInteger,mustBePositive} = [217 433 865 1297 1729]
+                options.days (1,:) double {mustBeNonnegative} = [1 8 32 64 91.3125]
+                options.quadratureCount (1,1) double {mustBeInteger,mustBePositive} = 8193
+                options.referenceCount (1,1) double {mustBeInteger,mustBePositive} = 385
+            end
+            if ~isfolder(folder), mkdir(folder); end
+            D=4000; scale=1300; N0=5.2e-3; g=9.81; f=2*7.2921e-5*sind(24);
+            kh=2*pi/100e3; T=365.25*86400; omega=2*pi/T; amplitude=10*pi/T; kappa=1e-5;
+            N2=@(z)N0^2*exp(2*z/scale); I=integral(N2,-D,0);
+            evp=IMInternalModes.geostrophicAPVModes(N2=N2,zDomain=[-D 0],g=g,g0=-I,gd=I,surfaceBoundary="freeSurface");
+            solution=IMExponentialStratificationSolution(N0=N0,b=scale,zDomain=[-D 0],g=g,f0=f);
+            basis=solution.internalModes(evp,nModes=max(options.bands));
+            basis=basis.addNormalization("raw",@(~,~)1); basis.normalization="raw";
+            zero=solution.geostrophicZeroAPVModesAtWavenumber(kh,endpoints=["surface","bottom"],surfaceBoundary="freeSurface");
+            [z,weights]=studyGrid(options.quadratureCount,D);
+            ref=reference(options.referenceCount,z,weights,D,N2,scale,kh,f,g,kappa);
+            F=basis.F(z); G=basis.G(z); ZF=zero.F(z); ZG=zero.G(z);
+            Fs=basis.F(0); Gs=basis.G(0); Gb=basis.G(-D);
+            referenceResponses=cell(size(options.days));
+            for j=1:length(options.days)
+                referenceResponses{j}=endpointResponse(ref.A,amplitude*ref.source,ref.endpoint,omega,options.days(j)*86400);
+            end
+            rows=table();
+            for count=options.bands
+                h=basis.h(1:count); mu=kh^2+f^2./(g*h);
+                phi=[-F(:,1:count)./mu,-ZF/kh^2]; surf=[-Fs(1:count)./mu,-zero.F(0)/kh^2];
+                eta=f/g*[-G(:,1:count)./mu,-ZG/kh^2]; etaZ=[-f/g*F(:,1:count)./(h.*mu),ZF/f];
+                bZ=-2/scale*N2(z).*(eta-f/g*(1+z/D)*surf)-N2(z).*(etaZ-f/g/D*surf);
+                page=WVInternal.densityDiffusionPage(phi,eta,etaZ,bZ,surf,weights,N2(z),kh,f,g,kappa);
+                field=[sqrt(weights)*kh.*phi;sqrt(weights.*N2(z)).*eta;f/sqrt(g)*surf];
+                endpoint=[[-f/g*(Gs(1:count)-Fs(1:count))./mu;-f/g*Gb(1:count)./mu],-f/g/kh^2*eye(2)];
+                E=endpoint*page.fromEnergy; A=page.energyGenerator;
+                source=zeros(count+2,1); source(count+1)=-g/f*kh^2*amplitude;
+                source=page.toEnergy*source;
+                % A diagnostic positive-energy projection of reference states
+                % onto existing columns, not a production transform or basis fit.
+                V=field*page.fromEnergy; P=(V'*V)\(V'*ref.energy);
+                residual=A*P-P*ref.A; sourceResidual=source-P*(amplitude*ref.source);
+                % Localize the operator residual to physical buoyancy-gradient
+                % representation, with reference weak consistency kept separate.
+                kernel=(E/(V'*V))*(etaZ*page.fromEnergy)';
+                kernel=kernel.*(kappa*weights');
+                gradientDifference=bZ*page.fromEnergy*P-ref.bZ;
+                layers=[z>-100,z>=-D+100 & z<=-100,z<-D+100];
+                gradientResidual=cell(1,3);
+                for layer=1:3
+                    gradientResidual{layer}=(kernel.*layers(:,layer)')*gradientDifference;
+                end
+                referenceWeakResidual=kernel*ref.bZ-E*P*ref.A;
+                for j=1:length(options.days)
+                    day=options.days(j); t=day*86400;
+                    a=endpointResponse(A,source,E,omega,t); b=referenceResponses{j};
+                    projected=P*b.state; evolution=a.state-projected;
+                    c=page.fromEnergy*a.state; dc=page.fromEnergy*(A*a.state);
+                    directSource=E*source*sin(omega*t); refSource=ref.endpoint*(amplitude*ref.source)*sin(omega*t);
+                    values=[E*a.state,ref.endpoint*b.state, ...
+                        (E*P-ref.endpoint)*b.state,E*evolution, ...
+                        E*A*a.state,ref.endpoint*ref.A*b.state,directSource,refSource, ...
+                        endpoint(:,1:count)*c(1:count),endpoint(:,count+1:end)*c(count+1:end), ...
+                        endpoint(:,1:count)*dc(1:count),endpoint(:,count+1:end)*dc(count+1:end), ...
+                        a.diffusionIntegral,b.diffusionIntegral,a.sourceIntegral,b.sourceIntegral, ...
+                        E*A*evolution,E*residual*b.state,(E*P-ref.endpoint)*ref.A*b.state, ...
+                        E*sourceResidual*sin(omega*t),gradientResidual{1}*b.state, ...
+                        gradientResidual{2}*b.state,gradientResidual{3}*b.state,referenceWeakResidual*b.state];
+                    row=array2table(values,VariableNames=["state","referenceState","representationError","evolutionError", ...
+                        "diffusionTendency","referenceDiffusionTendency","sourceTendency","referenceSourceTendency", ...
+                        "apvState","boundaryState","apvDiffusionTendency","boundaryDiffusionTendency", ...
+                        "diffusionIntegral","referenceDiffusionIntegral","sourceIntegral","referenceSourceIntegral", ...
+                        "feedbackTendencyError","operatorResidualTendencyError","representationTendencyError","projectedSourceResidual", ...
+                        "surfaceLayerGradientResidual","interiorGradientResidual","bottomLayerGradientResidual","referenceWeakResidual"]);
+                    row.APV=repmat(count,2,1); row.day=repmat(day,2,1); row.endpoint=["surface";"bottom"];
+                    row.quadratureCount=repmat(options.quadratureCount,2,1); row.referenceCount=repmat(options.referenceCount,2,1);
+                    row.budgetResidual=row.state-row.diffusionIntegral-row.sourceIntegral;
+                    row.referenceBudgetResidual=row.referenceState-row.referenceDiffusionIntegral-row.referenceSourceIntegral;
+                    row.decompositionResidual=row.state-row.referenceState-row.representationError-row.evolutionError;
+                    rows=[rows;row]; %#ok<AGROW>
+                    fprintf('Endpoint evolution APV=%d day=%.4f complete\n',count,day);
+                    writetable(rows,fullfile(folder,'issue-353-endpoint-evolution.csv'));
+                end
+            end
+            result=struct(rows=rows,rootResidual=max(abs(basis.metadata.rootResiduals)));
+        end
         function result = runAnalyticalRetainedBandStudy(folder)
             % Direct analytical APV bands are a diagnostic, not a new WVM basis.
             arguments (Input)
@@ -422,6 +532,7 @@ r.etaEndpoint=(-f./N2([0;-D]).*ends)*Q;
 r.endpoint=(-f./N2([0;-D]).*ends-[f/g*surface;zeros(size(bottom))])*Q;
 r.energy=field*Q;
 r.polynomialCoefficients=Q;
+r.bZ=Bz*Q;
 end
 function r=sampled(C,w,zq,wq,scale,kh)
 D=w.Lz;
@@ -488,4 +599,14 @@ withinTolerance=absolute<=allowance;
 if study=="reference" || study=="referenceQuadrature", withinTolerance=absolute<=.2*allowance; end
 rows=table(repmat(study,6,1),repmat(count,6,1),repmat(referenceCount,6,1),repmat(day,6,1),names.',absolute,relative,referenceMagnitude,allowance,withinTolerance, ...
     VariableNames=["study","count","referenceCount","day","observable","absolute","relative","referenceMagnitude","allowance","withinTolerance"]);
+end
+
+function result=endpointResponse(A,source,E,omega,t)
+% Independently accumulate signed source and diffusion endpoint integrals.
+n=length(source);
+H=zeros(n+6); H(1:n,1:n)=A; H(1:n,n+1)=source;
+H(n+1,n+2)=omega; H(n+2,n+1)=-omega;
+H(n+(3:4),1:n)=E*A; H(n+(5:6),n+1)=E*source;
+y0=zeros(n+6,1); y0(n+2)=1; y=expm(t*H)*y0;
+result=struct(state=y(1:n),diffusionIntegral=y(n+(3:4)),sourceIntegral=y(n+(5:6)));
 end
