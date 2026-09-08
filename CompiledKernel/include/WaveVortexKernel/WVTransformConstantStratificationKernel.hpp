@@ -85,7 +85,10 @@ public:
         WVLaplacianDirection direction, WVFlux& flux);
     WVKernelStatus nonlinearFlux(const WVState& state, WVFlux& flux);
     WVKernelStatus nonlinearFluxWithAdvectionFields(const WVState& state, WVFlux& flux, WVRealFieldBundleView& advectionFields);
-    WVKernelStatus nonlinearFluxUsingAdvectionFields(const WVState& state, WVFlux& flux, const WVRealFieldBundleConstView& advectionFields);
+    // Optional observation output receives raw spatial tendencies before modal
+    // projection, in [u,v,eta] or [u,v,w,eta] order. Storage is caller owned.
+    WVKernelStatus nonlinearFluxUsingAdvectionFields(const WVState& state, WVFlux& flux, const WVRealFieldBundleConstView& advectionFields,
+        WVRealFieldBundleView* spatialTendency = nullptr);
     // Call at setup when scalar advection is configured, before repeated RHS calls.
     WVKernelStatus prepareScalarAdvection();
     WVKernelStatus advectFGridScalar(const WVRealVolumeConstView& scalar, const WVRealFieldBundleConstView& advectionFields, bool shouldAntialias, WVRealVolumeView& rightHandSide);
@@ -100,7 +103,8 @@ private:
     WVKernelStatus transformToSpatialDomainWithDerivativesImpl(const WVCoefficients& evolvedCoefficients, std::size_t target, WVRealFieldBundleView& derivatives);
     WVKernelStatus transformToSpatialDomainWithDerivativesFromStateImpl(const WVState& state, WVComplexConstView phaseValues, std::size_t target, WVRealFieldBundleView& derivatives);
     WVKernelStatus projectSingleFluxTargetImpl(const WVRealFieldBundleConstView& field, std::size_t target, WVComplexConstView phaseValues, WVFlux& flux);
-    WVKernelStatus nonlinearFluxImpl(const WVState& state, WVFlux& flux, WVRealFieldBundleView* advectionFields, bool advectionFieldsPrepared = false);
+    WVKernelStatus nonlinearFluxImpl(const WVState& state, WVFlux& flux, WVRealFieldBundleView* advectionFields, bool advectionFieldsPrepared = false,
+        WVRealFieldBundleView* spatialTendency = nullptr);
     WVKernelStatus ensureScalarInversePlan();
     WVKernelStatus antialiasScalarInPlace(WVRealVolumeView& scalar);
     WVTransformConstantStratificationDescriptor descriptor_;

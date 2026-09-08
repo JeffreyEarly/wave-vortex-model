@@ -1192,20 +1192,37 @@ WVKernelStatus WVTransformConstantStratificationKernel::nonlinearFluxWithAdvecti
 }
 
 WVKernelStatus WVTransformConstantStratificationKernel::nonlinearFluxUsingAdvectionFields(
-    const WVState& state, WVFlux& flux, const WVRealFieldBundleConstView& advectionFields) {
+    const WVState& state, WVFlux& flux, const WVRealFieldBundleConstView& advectionFields,
+    WVRealFieldBundleView* spatialTendency) {
     auto status = validateStateAndFlux(descriptor_,state,flux);
     if (!status) return status;
     status = validateBundle(advectionFields,descriptor_.spatialShape(),3,"Prepared advection fields");
     if (!status) return status;
     WVRealFieldBundleView mutableView{const_cast<double*>(advectionFields.data),advectionFields.shape};
     if (const auto ownership = validateInverseOwnership(state,mutableView,descriptor_.spectralShape()); !ownership) return ownership;
+    if (spatialTendency) {
+        status = validateBundle(*spatialTendency,descriptor_.spatialShape(),
+            descriptor_.configuration().isHydrostatic ? 3 : 4,"Observed spatial tendency");
+        if (!status) return status;
+        status = validateInverseOwnership(state,*spatialTendency,descriptor_.spectralShape());
+        if (!status) return status;
+        const auto bytes = spatialTendency->shape.elementCount()*sizeof(double);
+        if (memoryOverlaps(spatialTendency->data,bytes,advectionFields.data,
+                advectionFields.shape.elementCount()*sizeof(double)))
+            return {WVKernelStatusCode::overlappingArrays,"Observed tendency overlaps advection fields."};
+        for (const auto output : {flux.Fp,flux.Fm,flux.F0})
+            if (memoryOverlaps(spatialTendency->data,bytes,output.data,
+                    descriptor_.spectralShape().elementCount()*sizeof(WVComplex64)))
+                return {WVKernelStatusCode::overlappingArrays,"Observed tendency overlaps spectral output."};
+    }
     ExecutionGuard guard(executing_);
     if (!guard.entered()) return {WVKernelStatusCode::reentrantExecution,"Kernel operations are not reentrant."};
-    return nonlinearFluxImpl(state,flux,&mutableView,true);
+    return nonlinearFluxImpl(state,flux,&mutableView,true,spatialTendency);
 }
 
 WVKernelStatus WVTransformConstantStratificationKernel::nonlinearFluxImpl(
-    const WVState& state, WVFlux& flux, WVRealFieldBundleView* retainedAdvectionFields, bool advectionFieldsPrepared) {
+    const WVState& state, WVFlux& flux, WVRealFieldBundleView* retainedAdvectionFields, bool advectionFieldsPrepared,
+    WVRealFieldBundleView* spatialTendency) {
     WVKernelStatus status = WVKernelStatus::ok();
 
     const auto spectral = descriptor_.spectralShape();
@@ -1262,6 +1279,8 @@ WVKernelStatus WVTransformConstantStratificationKernel::nonlinearFluxImpl(
         const double* WV_KERNEL_RESTRICT dz = dy + fieldElements;
         stageStart = Clock::now();
         for (std::size_t i = 0; i < fieldElements; ++i) dx[i] = -(U[i] * dx[i] + V[i] * dy[i] + W[i] * dz[i]);
+        if (spatialTendency)
+            std::copy_n(dx,fieldElements,spatialTendency->data+iTarget*fieldElements);
         if (stageInstrumentationEnabled_) productSeconds += std::chrono::duration<double>(Clock::now() - stageStart).count();
         const WVRealFieldBundleConstView field{dx,{spatial.first,spatial.second,spatial.third,1}};
         stageStart = Clock::now();

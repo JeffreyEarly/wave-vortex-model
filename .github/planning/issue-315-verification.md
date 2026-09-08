@@ -8,6 +8,10 @@ Branch: `issue-315-forcing-tendency-diagnostics`, based on v4 main `866f66ed4198
 - #396: Apple Clang ASan/UBSan `output-orchestration` passed, including the pre-existing lazy extension, transactional retry, and accepted-trajectory comparison. Build: `/private/tmp/wvm395-standalone-sanitized`, rebuilt from this branch. Leak detection is disabled locally because this macOS sanitizer does not support it; address and undefined-behavior checks remain enabled.
 - #396: Release `output-orchestration` passed using the combined CI build in `/private/tmp/wvm395-release`.
 - No MATLAB source or scientific formulas changed in the RK78 fix.
+- #396 is isolated in PR #403 with auto-merge enabled behind required checks; #315 work continues on the goal branch.
+- #315 kernel foundation: constant-stratification, Hydrostatic and Boussinesq nonlinear kernels can copy their raw spatial tendencies into caller-owned output before projection. Hydrostatic and Boussinesq can also consume an event's prepared physical fields; constant stratification uses its existing prepared-advection-field path. Default calls preserve their existing arithmetic and storage.
+- Release `WVKernelContract`, `hydrostatic-kernel`, and `boussinesq-kernel` passed. Matching Apple ASan/UBSan tests passed (3/3). Tests compare raw products to independently requested derivatives, require unchanged projected flux and input state, reject invalid output shapes/aliases, and verify field reuse and unchanged retained kernel storage. Hydrostatic/Boussinesq allocation probes also observe zero allocations during prepared capture.
+- These kernel tests do not qualify MATLAB forcing-diagnostic parity or the observer/NetCDF path. Runtime binding, ordered contribution capture, QG support, sampling/output, and numerical/performance qualification remain outstanding.
 
 ## Diagnostic semantics established from MATLAB
 

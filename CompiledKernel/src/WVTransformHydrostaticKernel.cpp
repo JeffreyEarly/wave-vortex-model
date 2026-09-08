@@ -293,13 +293,43 @@ WVKernelStatus WVTransformHydrostaticKernel::constrainCoefficients(WVMutableCoef
     }
     return WVKernelStatus::ok();
 }
-WVKernelStatus WVTransformHydrostaticKernel::nonlinearFlux(const WVState& a,WVFlux& b) {
+WVKernelStatus WVTransformHydrostaticKernel::nonlinearFlux(const WVState& a,WVFlux& b,
+    WVRealFieldBundleView* spatialTendency,const WVRealFieldBundleConstView* preparedFields) {
     auto s=state(a); if (!s) return s; WVMutableCoefficients target{b.Fp,b.Fm,b.F0}; s=outputs(target); if (!s) return s;
     for (auto x : {a.coefficients.Ap,a.coefficients.Am,a.coefficients.A0}) for (auto y : {b.Fp,b.Fm,b.F0}) { s=disjoint(x.data,S_*sizeof(WVComplex64),y.data,S_*sizeof(WVComplex64)); if (!s) return s; }
+    const auto validateBundle = [&](const double* data,WVShape4D shape,std::size_t count) {
+        if (shape.first!=geometry().Nx || shape.second!=geometry().Ny ||
+            shape.third!=geometry().Nz || shape.fourth!=count)
+            return WVKernelStatus{WVKernelStatusCode::invalidShape,"Forcing field bundle shape mismatch."};
+        for (std::size_t channel=0;channel<count;++channel) {
+            auto status=volume({data ? data+channel*R_ : nullptr,spatialShape()});
+            if (!status) return status;
+        }
+        return WVKernelStatus::ok();
+    };
+    if (preparedFields) {
+        s=validateBundle(preparedFields->data,preparedFields->shape,4); if (!s) return s;
+        for (auto output:{b.Fp,b.Fm,b.F0}) {
+            s=disjoint(preparedFields->data,4*R_*sizeof(double),output.data,S_*sizeof(WVComplex64)); if (!s) return s;
+        }
+    }
+    if (spatialTendency) {
+        s=validateBundle(spatialTendency->data,spatialTendency->shape,3); if (!s) return s;
+        for (auto input:{a.coefficients.Ap,a.coefficients.Am,a.coefficients.A0}) {
+            s=disjoint(spatialTendency->data,3*R_*sizeof(double),input.data,S_*sizeof(WVComplex64)); if (!s) return s;
+        }
+        for (auto output:{b.Fp,b.Fm,b.F0}) {
+            s=disjoint(spatialTendency->data,3*R_*sizeof(double),output.data,S_*sizeof(WVComplex64)); if (!s) return s;
+        }
+        if (preparedFields) {
+            s=disjoint(spatialTendency->data,3*R_*sizeof(double),preparedFields->data,4*R_*sizeof(double)); if (!s) return s;
+        }
+    }
     ActiveCall guard(active_); if (!guard.entered) return reentrant();
     s=preparePhase(a.t,a.t0); if (!s) return s;
     const WVHydrostaticField fields[]={WVHydrostaticField::u,WVHydrostaticField::v,WVHydrostaticField::w,WVHydrostaticField::eta};
-    for (std::size_t i=0;i<4;++i) { s=reconstruct(a.coefficients,fields[i],WVHydrostaticDerivative::value,WVHydrostaticComponent::all,real_.data()+i*R_); if (!s) return s; }
+    if (preparedFields) std::copy_n(preparedFields->data,4*R_,real_.data());
+    else for (std::size_t i=0;i<4;++i) { s=reconstruct(a.coefficients,fields[i],WVHydrostaticDerivative::value,WVHydrostaticComponent::all,real_.data()+i*R_); if (!s) return s; }
     for (std::size_t targetIndex=0;targetIndex<3;++targetIndex) {
         const auto field=fields[targetIndex==2 ? 3 : targetIndex]; auto* flux=real_.data()+(4+targetIndex)*R_;
         std::fill_n(flux,R_,0);
@@ -311,6 +341,7 @@ WVKernelStatus WVTransformHydrostaticKernel::nonlinearFlux(const WVState& a,WVFl
             }
         }
     }
+    if (spatialTendency) std::copy_n(real_.data()+4*R_,3*R_,spatialTendency->data);
     return projectFields(real_.data()+4*R_,real_.data()+5*R_,real_.data()+6*R_,target);
 }
 WVKernelStatus WVTransformHydrostaticKernel::totalEnergy(const WVCoefficients& a,double& value,WVHydrostaticComponent component) const {
