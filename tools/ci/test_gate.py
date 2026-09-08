@@ -5,19 +5,19 @@ from route import select
 
 
 def evidence(plan):
-    identities = [(release, 'release') for release in plan['releases']]
+    identities = [(release, 'release', group) for release in plan['releases'] for group in plan['matlabShards']]
     if plan['cpp']:
-        identities.append(('R2025b', 'sanitized'))
+        identities.extend(('R2025b', 'sanitized', group) for group in plan['sanitizedShards'])
     reports = []
-    for release, configuration in identities:
-        classes = plan['matlabTests'] if configuration == 'release' else plan['sanitizedTests']
+    for release, configuration, group in identities:
+        classes, shard = group['classes'], group['id']
         reports.append(dict(schema='wvm-ci-matlab-v1', sourceCommit=plan['sourceCommit'],
-                            matlabRelease=release, configuration=configuration, passed=True,
+                            matlabRelease=release, configuration=configuration, shard=shard, passed=True,
                             requestedClasses=classes, deferredMethods=plan['deferredMethods'],
                             expectedTests=[name+'/parity' for name in classes],
-                            phases=dict(smoke=configuration == 'release',
-                                        analyzer=configuration == 'release' and release == 'R2025b' and plan['analyzer'],
-                                        documentation=configuration == 'release' and release == 'R2025b' and plan['documentation']),
+                            phases=dict(smoke=configuration == 'release' and shard == 0,
+                                        analyzer=configuration == 'release' and release == 'R2025b' and shard == 0 and plan['analyzer'],
+                                        documentation=configuration == 'release' and release == 'R2025b' and shard == 0 and plan['documentation']),
                             tests=[dict(name=name+'/parity', passed=True, incomplete=False) for name in classes]))
     jobs = {name: {'result': 'success' if selected else 'skipped'} for name, selected in
             dict(route=True, repository=True, matlab=True,
@@ -80,6 +80,26 @@ class GateTests(unittest.TestCase):
     def test_missing_method_fails_even_when_its_class_has_another_result(self):
         reports = copy.deepcopy(self.reports)
         reports[0]['expectedTests'].append(reports[0]['requestedClasses'][0]+'/secondMethod')
+        with self.assertRaises(ValueError):
+            validate(self.plan, self.jobs, reports)
+
+    def test_parameterized_class_names_are_recognized(self):
+        reports = copy.deepcopy(self.reports)
+        report = next(r for r in reports if r['requestedClasses'])
+        old = report['tests'][0]['name']
+        new = old.replace('/parity', '[grid=even,transform=hydrostatic]/parity')
+        report['tests'][0]['name'] = new
+        report['expectedTests'][0] = new
+        self.assertTrue(validate(self.plan, self.jobs, reports))
+
+    def test_changed_batch_identity_and_cross_batch_duplicates_fail(self):
+        reports = copy.deepcopy(self.reports)
+        reports[0]['shard'] = 99
+        with self.assertRaises(ValueError):
+            validate(self.plan, self.jobs, reports)
+        reports = copy.deepcopy(self.reports)
+        reports[1]['tests'].append(reports[0]['tests'][0])
+        reports[1]['expectedTests'].append(reports[0]['tests'][0]['name'])
         with self.assertRaises(ValueError):
             validate(self.plan, self.jobs, reports)
 

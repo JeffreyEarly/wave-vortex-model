@@ -33,6 +33,7 @@ jobs:
       packaging: ${{ steps.select.outputs.packaging }}
       migration: ${{ steps.select.outputs.migration }}
       matlab_matrix: ${{ steps.select.outputs.matlab_matrix }}
+      sanitized_matrix: ${{ steps.select.outputs.sanitized_matrix }}
     steps:
       - uses: actions/checkout@v6
         with:
@@ -54,12 +55,35 @@ jobs:
           if [[ "$LEGACY_CHECKS" == true ]]; then args+=(--migration); fi
           python3 tools/ci/route.py "${args[@]}" --output "$RUNNER_TEMP/selection.json"
           cat "$RUNNER_TEMP/selection.json" >> "$GITHUB_STEP_SUMMARY"
-      - uses: actions/upload-artifact@v4
+      - name: Upload CI artifact
+        id: artifact-upload
+        if: ${{ !cancelled() }}
+        continue-on-error: true
+        timeout-minutes: 3
+        uses: actions/upload-artifact@v4
         with:
           name: ci-selection
           path: ${{ runner.temp }}/selection.json
           overwrite: true
           retention-days: 14
+          if-no-files-found: error
+      - name: Retry artifact upload once
+        id: artifact-retry
+        if: ${{ !cancelled() && steps.artifact-upload.outcome == 'failure' }}
+        timeout-minutes: 3
+        uses: actions/upload-artifact@v4
+        with:
+          name: ci-selection
+          path: ${{ runner.temp }}/selection.json
+          overwrite: true
+          retention-days: 14
+          if-no-files-found: error
+      - name: Require successful artifact upload
+        if: ${{ !cancelled() }}
+        env:
+          FIRST: ${{ steps.artifact-upload.outcome }}
+          RETRY: ${{ steps.artifact-retry.outcome }}
+        run: test "$FIRST" = success || test "$RETRY" = success
 
   repository:
     name: Repository and CI policy contracts
@@ -91,7 +115,7 @@ jobs:
       configuration: sanitized
 
   matlab:
-    name: MATLAB / ${{ matrix.release }}
+    name: MATLAB / ${{ matrix.release }} / batch ${{ matrix.shard }}
     needs: [route, cpp-release]
     if: ${{ always() && needs.route.result == 'success' && (needs.cpp-release.result == 'success' || needs.route.outputs.cpp == 'false') }}
     strategy:
@@ -101,17 +125,22 @@ jobs:
     with:
       release: ${{ matrix.release }}
       configuration: release
+      shard: ${{ matrix.shard }}
       binaries: ${{ needs.route.outputs.cpp == 'true' }}
-      render: ${{ needs.route.outputs.documentation == 'true' && matrix.release == 'R2025b' }}
+      render: ${{ needs.route.outputs.documentation == 'true' && matrix.release == 'R2025b' && matrix.shard == 0 }}
 
   matlab-sanitized:
-    name: MATLAB / sanitized probes
+    name: MATLAB / sanitized probes / batch ${{ matrix.shard }}
     needs: [route, cpp-sanitized]
     if: ${{ needs.route.outputs.cpp == 'true' }}
+    strategy:
+      fail-fast: false
+      matrix: ${{ fromJSON(needs.route.outputs.sanitized_matrix) }}
     uses: ./.github/workflows/ci-matlab.yml
     with:
       release: R2025b
       configuration: sanitized
+      shard: ${{ matrix.shard }}
       binaries: true
       render: false
 

@@ -2,6 +2,7 @@
 """Resolve conservative CI work from changed paths; no GitHub API is required."""
 import argparse
 import json
+import math
 import os
 from pathlib import Path, PurePosixPath
 import subprocess
@@ -27,6 +28,22 @@ MATLAB_CORE_TESTS = ['TestWVTransformInitialization', 'TestCoreTransformInvarian
                      'TestVerticalCalculus', 'TestNonlinearFlux', 'TestForcingLifecycle',
                      'TestForcingMathematicalContracts', 'TestTraditionalDamping',
                      'TestNarrowBandGeostrophicForcing']
+
+
+TEST_COSTS = json.loads(Path(__file__).with_name('test_costs.json').read_text())['seconds']
+
+
+def partition_tests(classes, phase_seconds=0):
+    """Balance unchanged class inventories; estimates affect placement, not coverage."""
+    count = max(1, min(4, math.ceil((phase_seconds + sum(TEST_COSTS.get(c, 60) for c in classes)) / 300)))
+    groups = [dict(id=index, classes=[], estimatedSeconds=phase_seconds if index == 0 else 0) for index in range(count)]
+    for name in sorted(classes, key=lambda c: (-TEST_COSTS.get(c, 60), c)):
+        group = min(groups, key=lambda g: (g['estimatedSeconds'], g['id']))
+        group['classes'].append(name)
+        group['estimatedSeconds'] += TEST_COSTS.get(name, 60)
+    for group in groups:
+        group['classes'].sort()
+    return groups
 
 
 def select(paths, *, complete=False, migration=False, source_commit=''):
@@ -133,6 +150,8 @@ def select(paths, *, complete=False, migration=False, source_commit=''):
                 paths=sorted(set(paths)), complete=complete, migration=migration,
                 **flags, families=sorted(families), matlabTests=sorted(tests), sanitizedTests=sorted(sanitized_tests),
                 releases=releases, reasons=reasons,
+                matlabShards=partition_tests(tests, 60 + (210 if flags['documentation'] else 0)),
+                sanitizedShards=partition_tests(sanitized_tests),
                 deferredMethods=[] if complete else [
                     'TestPortableStratifiedQGQualification/longerContinuationMatchesMatlab',
                     'TestPortableHydrostaticQualification/longerContinuationMatchesMatlab',
@@ -162,7 +181,8 @@ def main():
         with open(os.environ['GITHUB_OUTPUT'], 'a') as stream:
             for name in ('cpp', 'diagnostics', 'documentation', 'analyzer', 'packaging', 'crossRelease', 'complete', 'migration'):
                 stream.write(f'{name}={str(result[name]).lower()}\n')
-            stream.write('matlab_matrix=' + json.dumps({'release': result['releases']}) + '\n')
+            stream.write('matlab_matrix=' + json.dumps({'include': [dict(release=release, shard=group['id']) for release in result['releases'] for group in result['matlabShards']]}) + '\n')
+            stream.write('sanitized_matrix=' + json.dumps({'include': [dict(shard=group['id']) for group in result['sanitizedShards']]}) + '\n')
     print(json.dumps(result, indent=2))
 
 

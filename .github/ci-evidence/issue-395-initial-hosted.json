@@ -1,0 +1,1428 @@
+{
+  "schema": "wvm-ci-timing-v1",
+  "repository": "JeffreyEarly/wave-vortex-model",
+  "capturedAt": "2026-09-08T16:59:33.820689+00:00",
+  "method": "All job attempts; successful results carried into later attempts are identified by identical name/start/end and counted only once. Elapsed runner seconds, not billing. Combined build/test steps remain explicitly combined. Incomplete jobs are not counted as zero cost.",
+  "runs": [
+    {
+      "id": 34248386552,
+      "name": "WaveVortexModel CI",
+      "sourceCommit": "c217264ff9663f910266cce335ea1f88623481ef",
+      "event": "pull_request",
+      "url": "https://github.com/JeffreyEarly/wave-vortex-model/actions/runs/34248386552",
+      "status": "completed",
+      "conclusion": "failure",
+      "createdAt": "2026-09-08T16:00:32Z",
+      "startedAt": "2026-09-08T16:00:32Z",
+      "firstJobQueueSeconds": 3.0,
+      "latestAttemptStartDelaySeconds": 0,
+      "completedJobSeconds": 4667.0,
+      "incompleteJobs": 0,
+      "jobs": [
+        {
+          "carriedForward": false,
+          "id": 102136184920,
+          "name": "Select CI coverage",
+          "attempt": 1,
+          "status": "completed",
+          "conclusion": "success",
+          "url": "https://github.com/JeffreyEarly/wave-vortex-model/actions/runs/34248386552/job/102136184920",
+          "startedAt": "2026-09-08T16:00:35Z",
+          "completedAt": "2026-09-08T16:00:44Z",
+          "seconds": 9.0,
+          "steps": [
+            {
+              "name": "Set up job",
+              "category": "setup",
+              "conclusion": "success",
+              "seconds": 1.0
+            },
+            {
+              "name": "Run actions/checkout@v6",
+              "category": "setup",
+              "conclusion": "success",
+              "seconds": 5.0
+            },
+            {
+              "name": "Resolve changed paths and dependency coverage",
+              "category": "other",
+              "conclusion": "success",
+              "seconds": 0
+            },
+            {
+              "name": "Run actions/upload-artifact@v4",
+              "category": "other",
+              "conclusion": "success",
+              "seconds": 1.0
+            },
+            {
+              "name": "Post Run actions/checkout@v6",
+              "category": "setup",
+              "conclusion": "success",
+              "seconds": 0
+            },
+            {
+              "name": "Complete job",
+              "category": "other",
+              "conclusion": "success",
+              "seconds": 0
+            }
+          ]
+        },
+        {
+          "carriedForward": false,
+          "id": 102136185238,
+          "name": "Repository and CI policy contracts",
+          "attempt": 1,
+          "status": "completed",
+          "conclusion": "success",
+          "url": "https://github.com/JeffreyEarly/wave-vortex-model/actions/runs/34248386552/job/102136185238",
+          "startedAt": "2026-09-08T16:00:35Z",
+          "completedAt": "2026-09-08T16:00:41Z",
+          "seconds": 6.0,
+          "steps": [
+            {
+              "name": "Set up job",
+              "category": "setup",
+              "conclusion": "success",
+              "seconds": 1.0
+            },
+            {
+              "name": "Run actions/checkout@v6",
+              "category": "setup",
+              "conclusion": "success",
+              "seconds": 2.0
+            },
+            {
+              "name": "Run python3 -m pip install --disable-pip-version-check --retries 1 --timeout 20 -r tools/ci/requirements.txt",
+              "category": "setup",
+              "conclusion": "success",
+              "seconds": 1.0
+            },
+            {
+              "name": "Run python3 -m unittest discover -s tools/ci -p 'test_*.py' -v",
+              "category": "validation",
+              "conclusion": "success",
+              "seconds": 0
+            },
+            {
+              "name": "Verify source boundaries and tracked artifacts",
+              "category": "validation",
+              "conclusion": "success",
+              "seconds": 0
+            },
+            {
+              "name": "Post Run actions/checkout@v6",
+              "category": "setup",
+              "conclusion": "success",
+              "seconds": 0
+            },
+            {
+              "name": "Complete job",
+              "category": "other",
+              "conclusion": "success",
+              "seconds": 0
+            }
+          ]
+        },
+        {
+          "carriedForward": false,
+          "id": 102136258201,
+          "name": "C++ / release / build",
+          "attempt": 1,
+          "status": "completed",
+          "conclusion": "success",
+          "url": "https://github.com/JeffreyEarly/wave-vortex-model/actions/runs/34248386552/job/102136258201",
+          "startedAt": "2026-09-08T16:00:47Z",
+          "completedAt": "2026-09-08T16:03:25Z",
+          "seconds": 158.0,
+          "steps": [
+            {
+              "name": "Set up job",
+              "category": "setup",
+              "conclusion": "success",
+              "seconds": 1.0
+            },
+            {
+              "name": "Run actions/checkout@v6",
+              "category": "setup",
+              "conclusion": "success",
+              "seconds": 2.0
+            },
+            {
+              "name": "Install bounded build dependencies",
+              "category": "setup",
+              "conclusion": "success",
+              "seconds": 20.0
+            },
+            {
+              "name": "Build shared core and runtime once",
+              "category": "build_or_combined_build_test",
+              "conclusion": "success",
+              "seconds": 108.0
+            },
+            {
+              "name": "Run all core and runtime contracts",
+              "category": "validation",
+              "conclusion": "success",
+              "seconds": 19.0
+            },
+            {
+              "name": "Package exact-revision probes",
+              "category": "other",
+              "conclusion": "success",
+              "seconds": 0
+            },
+            {
+              "name": "Run actions/upload-artifact@v4",
+              "category": "other",
+              "conclusion": "success",
+              "seconds": 5.0
+            },
+            {
+              "name": "Post Run actions/checkout@v6",
+              "category": "setup",
+              "conclusion": "success",
+              "seconds": 0
+            },
+            {
+              "name": "Complete job",
+              "category": "other",
+              "conclusion": "success",
+              "seconds": 0
+            }
+          ]
+        },
+        {
+          "carriedForward": false,
+          "id": 102136258444,
+          "name": "Isolated package verification / Clean install / MATLAB R2025b",
+          "attempt": 1,
+          "status": "completed",
+          "conclusion": "success",
+          "url": "https://github.com/JeffreyEarly/wave-vortex-model/actions/runs/34248386552/job/102136258444",
+          "startedAt": "2026-09-08T16:00:47Z",
+          "completedAt": "2026-09-08T16:02:24Z",
+          "seconds": 97.0,
+          "steps": [
+            {
+              "name": "Set up job",
+              "category": "setup",
+              "conclusion": "success",
+              "seconds": 2.0
+            },
+            {
+              "name": "Check out WaveVortexModel",
+              "category": "setup",
+              "conclusion": "success",
+              "seconds": 2.0
+            },
+            {
+              "name": "Check out immutable OceanKit packages",
+              "category": "setup",
+              "conclusion": "success",
+              "seconds": 1.0
+            },
+            {
+              "name": "Configure bounded provisioning",
+              "category": "setup",
+              "conclusion": "success",
+              "seconds": 22.0
+            },
+            {
+              "name": "Provision MATLAB",
+              "category": "setup",
+              "conclusion": "success",
+              "seconds": 47.0
+            },
+            {
+              "name": "Retry MATLAB provisioning once",
+              "category": "setup",
+              "conclusion": "skipped",
+              "seconds": 0
+            },
+            {
+              "name": "Require successful provisioning",
+              "category": "setup",
+              "conclusion": "success",
+              "seconds": 0
+            },
+            {
+              "name": "Create isolated MATLAB preferences",
+              "category": "other",
+              "conclusion": "success",
+              "seconds": 1.0
+            },
+            {
+              "name": "Install and verify the authoring package",
+              "category": "setup",
+              "conclusion": "success",
+              "seconds": 18.0
+            },
+            {
+              "name": "Verify clean source checkout",
+              "category": "setup",
+              "conclusion": "success",
+              "seconds": 0
+            },
+            {
+              "name": "Post Provision MATLAB",
+              "category": "setup",
+              "conclusion": "success",
+              "seconds": 0
+            },
+            {
+              "name": "Post Check out immutable OceanKit packages",
+              "category": "setup",
+              "conclusion": "success",
+              "seconds": 1.0
+            },
+            {
+              "name": "Post Check out WaveVortexModel",
+              "category": "setup",
+              "conclusion": "success",
+              "seconds": 0
+            },
+            {
+              "name": "Complete job",
+              "category": "other",
+              "conclusion": "success",
+              "seconds": 0
+            }
+          ]
+        },
+        {
+          "carriedForward": false,
+          "id": 102136258521,
+          "name": "C++ / sanitized / build",
+          "attempt": 1,
+          "status": "completed",
+          "conclusion": "failure",
+          "url": "https://github.com/JeffreyEarly/wave-vortex-model/actions/runs/34248386552/job/102136258521",
+          "startedAt": "2026-09-08T16:00:47Z",
+          "completedAt": "2026-09-08T16:08:06Z",
+          "seconds": 439.0,
+          "steps": [
+            {
+              "name": "Set up job",
+              "category": "setup",
+              "conclusion": "success",
+              "seconds": 1.0
+            },
+            {
+              "name": "Run actions/checkout@v6",
+              "category": "setup",
+              "conclusion": "success",
+              "seconds": 2.0
+            },
+            {
+              "name": "Install bounded build dependencies",
+              "category": "setup",
+              "conclusion": "success",
+              "seconds": 20.0
+            },
+            {
+              "name": "Build shared core and runtime once",
+              "category": "build_or_combined_build_test",
+              "conclusion": "success",
+              "seconds": 355.0
+            },
+            {
+              "name": "Run all core and runtime contracts",
+              "category": "validation",
+              "conclusion": "failure",
+              "seconds": 57.0
+            },
+            {
+              "name": "Package exact-revision probes",
+              "category": "other",
+              "conclusion": "skipped",
+              "seconds": 0
+            },
+            {
+              "name": "Run actions/upload-artifact@v4",
+              "category": "other",
+              "conclusion": "skipped",
+              "seconds": 0
+            },
+            {
+              "name": "Post Run actions/checkout@v6",
+              "category": "setup",
+              "conclusion": "success",
+              "seconds": 0
+            },
+            {
+              "name": "Complete job",
+              "category": "other",
+              "conclusion": "success",
+              "seconds": 0
+            }
+          ]
+        },
+        {
+          "carriedForward": false,
+          "id": 102136258646,
+          "name": "Isolated package verification / Exported package / MATLAB R2025b",
+          "attempt": 1,
+          "status": "completed",
+          "conclusion": "success",
+          "url": "https://github.com/JeffreyEarly/wave-vortex-model/actions/runs/34248386552/job/102136258646",
+          "startedAt": "2026-09-08T16:00:46Z",
+          "completedAt": "2026-09-08T16:04:21Z",
+          "seconds": 215.0,
+          "steps": [
+            {
+              "name": "Set up job",
+              "category": "setup",
+              "conclusion": "success",
+              "seconds": 1.0
+            },
+            {
+              "name": "Check out WaveVortexModel",
+              "category": "setup",
+              "conclusion": "success",
+              "seconds": 2.0
+            },
+            {
+              "name": "Check out immutable OceanKit release tools and packages",
+              "category": "setup",
+              "conclusion": "success",
+              "seconds": 2.0
+            },
+            {
+              "name": "Configure bounded provisioning",
+              "category": "setup",
+              "conclusion": "success",
+              "seconds": 11.0
+            },
+            {
+              "name": "Provision MATLAB",
+              "category": "setup",
+              "conclusion": "success",
+              "seconds": 31.0
+            },
+            {
+              "name": "Retry MATLAB provisioning once",
+              "category": "setup",
+              "conclusion": "skipped",
+              "seconds": 0
+            },
+            {
+              "name": "Require successful provisioning",
+              "category": "setup",
+              "conclusion": "success",
+              "seconds": 0
+            },
+            {
+              "name": "Create isolated release workspace",
+              "category": "other",
+              "conclusion": "success",
+              "seconds": 2.0
+            },
+            {
+              "name": "Prepare unpublished patch export",
+              "category": "other",
+              "conclusion": "success",
+              "seconds": 80.0
+            },
+            {
+              "name": "Install and verify the exported package",
+              "category": "setup",
+              "conclusion": "success",
+              "seconds": 16.0
+            },
+            {
+              "name": "Build and inspect the exported reference runtime",
+              "category": "build_or_combined_build_test",
+              "conclusion": "success",
+              "seconds": 65.0
+            },
+            {
+              "name": "Upload release-candidate diagnostics",
+              "category": "other",
+              "conclusion": "skipped",
+              "seconds": 0
+            },
+            {
+              "name": "Verify clean source checkout",
+              "category": "setup",
+              "conclusion": "success",
+              "seconds": 1.0
+            },
+            {
+              "name": "Post Provision MATLAB",
+              "category": "setup",
+              "conclusion": "success",
+              "seconds": 0
+            },
+            {
+              "name": "Post Check out immutable OceanKit release tools and packages",
+              "category": "setup",
+              "conclusion": "success",
+              "seconds": 0
+            },
+            {
+              "name": "Post Check out WaveVortexModel",
+              "category": "setup",
+              "conclusion": "success",
+              "seconds": 0
+            },
+            {
+              "name": "Complete job",
+              "category": "other",
+              "conclusion": "success",
+              "seconds": 0
+            }
+          ]
+        },
+        {
+          "carriedForward": false,
+          "id": 102137228754,
+          "name": "MATLAB / R2026a / validate",
+          "attempt": 1,
+          "status": "completed",
+          "conclusion": "success",
+          "url": "https://github.com/JeffreyEarly/wave-vortex-model/actions/runs/34248386552/job/102137228754",
+          "startedAt": "2026-09-08T16:03:28Z",
+          "completedAt": "2026-09-08T16:33:49Z",
+          "seconds": 1821.0,
+          "steps": [
+            {
+              "name": "Set up job",
+              "category": "setup",
+              "conclusion": "success",
+              "seconds": 3.0
+            },
+            {
+              "name": "Pull ghcr.io/actions/jekyll-build-pages:v1.0.13",
+              "category": "build_or_combined_build_test",
+              "conclusion": "success",
+              "seconds": 12.0
+            },
+            {
+              "name": "Run actions/checkout@v6",
+              "category": "setup",
+              "conclusion": "success",
+              "seconds": 2.0
+            },
+            {
+              "name": "Run actions/checkout@v6",
+              "category": "setup",
+              "conclusion": "success",
+              "seconds": 1.0
+            },
+            {
+              "name": "Run actions/download-artifact@v4",
+              "category": "setup",
+              "conclusion": "success",
+              "seconds": 1.0
+            },
+            {
+              "name": "Configure bounded Ubuntu package downloads",
+              "category": "setup",
+              "conclusion": "success",
+              "seconds": 21.0
+            },
+            {
+              "name": "Provision MATLAB",
+              "category": "setup",
+              "conclusion": "success",
+              "seconds": 64.0
+            },
+            {
+              "name": "Retry MATLAB provisioning once",
+              "category": "setup",
+              "conclusion": "skipped",
+              "seconds": 0
+            },
+            {
+              "name": "Require successful provisioning",
+              "category": "setup",
+              "conclusion": "success",
+              "seconds": 0
+            },
+            {
+              "name": "Run actions/download-artifact@v4",
+              "category": "setup",
+              "conclusion": "success",
+              "seconds": 6.0
+            },
+            {
+              "name": "Verify exact-revision binary artifact",
+              "category": "validation",
+              "conclusion": "success",
+              "seconds": 0
+            },
+            {
+              "name": "Run selected MATLAB phases and numerical tests",
+              "category": "validation",
+              "conclusion": "success",
+              "seconds": 1681.0
+            },
+            {
+              "name": "Build rendered website",
+              "category": "build_or_combined_build_test",
+              "conclusion": "skipped",
+              "seconds": 0
+            },
+            {
+              "name": "Verify rendered website",
+              "category": "validation",
+              "conclusion": "skipped",
+              "seconds": 0
+            },
+            {
+              "name": "Verify clean source checkout",
+              "category": "setup",
+              "conclusion": "success",
+              "seconds": 0
+            },
+            {
+              "name": "Upload phase and test evidence",
+              "category": "validation",
+              "conclusion": "success",
+              "seconds": 2.0
+            },
+            {
+              "name": "Post Provision MATLAB",
+              "category": "setup",
+              "conclusion": "success",
+              "seconds": 24.0
+            },
+            {
+              "name": "Post Run actions/checkout@v6",
+              "category": "setup",
+              "conclusion": "success",
+              "seconds": 1.0
+            },
+            {
+              "name": "Post Run actions/checkout@v6",
+              "category": "setup",
+              "conclusion": "success",
+              "seconds": 0
+            },
+            {
+              "name": "Complete job",
+              "category": "other",
+              "conclusion": "success",
+              "seconds": 0
+            }
+          ]
+        },
+        {
+          "carriedForward": false,
+          "id": 102137228803,
+          "name": "MATLAB / R2025b / validate",
+          "attempt": 1,
+          "status": "completed",
+          "conclusion": "success",
+          "url": "https://github.com/JeffreyEarly/wave-vortex-model/actions/runs/34248386552/job/102137228803",
+          "startedAt": "2026-09-08T16:03:27Z",
+          "completedAt": "2026-09-08T16:35:09Z",
+          "seconds": 1902.0,
+          "steps": [
+            {
+              "name": "Set up job",
+              "category": "setup",
+              "conclusion": "success",
+              "seconds": 2.0
+            },
+            {
+              "name": "Pull ghcr.io/actions/jekyll-build-pages:v1.0.13",
+              "category": "build_or_combined_build_test",
+              "conclusion": "success",
+              "seconds": 10.0
+            },
+            {
+              "name": "Run actions/checkout@v6",
+              "category": "setup",
+              "conclusion": "success",
+              "seconds": 2.0
+            },
+            {
+              "name": "Run actions/checkout@v6",
+              "category": "setup",
+              "conclusion": "success",
+              "seconds": 1.0
+            },
+            {
+              "name": "Run actions/download-artifact@v4",
+              "category": "setup",
+              "conclusion": "success",
+              "seconds": 1.0
+            },
+            {
+              "name": "Configure bounded Ubuntu package downloads",
+              "category": "setup",
+              "conclusion": "success",
+              "seconds": 13.0
+            },
+            {
+              "name": "Provision MATLAB",
+              "category": "setup",
+              "conclusion": "success",
+              "seconds": 31.0
+            },
+            {
+              "name": "Retry MATLAB provisioning once",
+              "category": "setup",
+              "conclusion": "skipped",
+              "seconds": 0
+            },
+            {
+              "name": "Require successful provisioning",
+              "category": "setup",
+              "conclusion": "success",
+              "seconds": 0
+            },
+            {
+              "name": "Run actions/download-artifact@v4",
+              "category": "setup",
+              "conclusion": "success",
+              "seconds": 1.0
+            },
+            {
+              "name": "Verify exact-revision binary artifact",
+              "category": "validation",
+              "conclusion": "success",
+              "seconds": 0
+            },
+            {
+              "name": "Run selected MATLAB phases and numerical tests",
+              "category": "validation",
+              "conclusion": "success",
+              "seconds": 1693.0
+            },
+            {
+              "name": "Build rendered website",
+              "category": "build_or_combined_build_test",
+              "conclusion": "success",
+              "seconds": 140.0
+            },
+            {
+              "name": "Verify rendered website",
+              "category": "validation",
+              "conclusion": "success",
+              "seconds": 5.0
+            },
+            {
+              "name": "Verify clean source checkout",
+              "category": "setup",
+              "conclusion": "success",
+              "seconds": 0
+            },
+            {
+              "name": "Upload phase and test evidence",
+              "category": "validation",
+              "conclusion": "success",
+              "seconds": 1.0
+            },
+            {
+              "name": "Post Provision MATLAB",
+              "category": "setup",
+              "conclusion": "success",
+              "seconds": 0
+            },
+            {
+              "name": "Post Run actions/checkout@v6",
+              "category": "setup",
+              "conclusion": "success",
+              "seconds": 0
+            },
+            {
+              "name": "Post Run actions/checkout@v6",
+              "category": "setup",
+              "conclusion": "success",
+              "seconds": 0
+            },
+            {
+              "name": "Complete job",
+              "category": "other",
+              "conclusion": "success",
+              "seconds": 0
+            }
+          ]
+        },
+        {
+          "carriedForward": false,
+          "id": 102138901934,
+          "name": "MATLAB / sanitized probes",
+          "attempt": 1,
+          "status": "completed",
+          "conclusion": "skipped",
+          "url": "https://github.com/JeffreyEarly/wave-vortex-model/actions/runs/34248386552/job/102138901934",
+          "startedAt": "2026-09-08T16:08:07Z",
+          "completedAt": "2026-09-08T16:08:06Z",
+          "seconds": 0,
+          "steps": []
+        },
+        {
+          "carriedForward": false,
+          "id": 102148278963,
+          "name": "Required / WaveVortexModel",
+          "attempt": 1,
+          "status": "completed",
+          "conclusion": "failure",
+          "url": "https://github.com/JeffreyEarly/wave-vortex-model/actions/runs/34248386552/job/102148278963",
+          "startedAt": "2026-09-08T16:35:12Z",
+          "completedAt": "2026-09-08T16:35:21Z",
+          "seconds": 9.0,
+          "steps": [
+            {
+              "name": "Set up job",
+              "category": "setup",
+              "conclusion": "success",
+              "seconds": 1.0
+            },
+            {
+              "name": "Run actions/checkout@v6",
+              "category": "setup",
+              "conclusion": "success",
+              "seconds": 3.0
+            },
+            {
+              "name": "Run actions/download-artifact@v4",
+              "category": "setup",
+              "conclusion": "success",
+              "seconds": 1.0
+            },
+            {
+              "name": "Run actions/download-artifact@v4",
+              "category": "setup",
+              "conclusion": "success",
+              "seconds": 1.0
+            },
+            {
+              "name": "Require all selected work and evidence",
+              "category": "other",
+              "conclusion": "failure",
+              "seconds": 0
+            },
+            {
+              "name": "Post Run actions/checkout@v6",
+              "category": "setup",
+              "conclusion": "success",
+              "seconds": 0
+            },
+            {
+              "name": "Complete job",
+              "category": "other",
+              "conclusion": "success",
+              "seconds": 0
+            }
+          ]
+        },
+        {
+          "carriedForward": false,
+          "id": 102148347236,
+          "name": "Documentation / MATLAB R2025b",
+          "attempt": 1,
+          "status": "completed",
+          "conclusion": "failure",
+          "url": "https://github.com/JeffreyEarly/wave-vortex-model/actions/runs/34248386552/job/102148347236",
+          "startedAt": "2026-09-08T16:35:24Z",
+          "completedAt": "2026-09-08T16:35:28Z",
+          "seconds": 4.0,
+          "steps": [
+            {
+              "name": "Set up job",
+              "category": "setup",
+              "conclusion": "success",
+              "seconds": 0
+            },
+            {
+              "name": "Run test \"$RESULT\" = success",
+              "category": "validation",
+              "conclusion": "failure",
+              "seconds": 0
+            },
+            {
+              "name": "Complete job",
+              "category": "other",
+              "conclusion": "success",
+              "seconds": 0
+            }
+          ]
+        },
+        {
+          "carriedForward": false,
+          "id": 102148347275,
+          "name": "Code Analyzer / MATLAB R2025b",
+          "attempt": 1,
+          "status": "completed",
+          "conclusion": "failure",
+          "url": "https://github.com/JeffreyEarly/wave-vortex-model/actions/runs/34248386552/job/102148347275",
+          "startedAt": "2026-09-08T16:35:24Z",
+          "completedAt": "2026-09-08T16:35:28Z",
+          "seconds": 4.0,
+          "steps": [
+            {
+              "name": "Set up job",
+              "category": "setup",
+              "conclusion": "success",
+              "seconds": 0
+            },
+            {
+              "name": "Run test \"$RESULT\" = success",
+              "category": "validation",
+              "conclusion": "failure",
+              "seconds": 1.0
+            },
+            {
+              "name": "Complete job",
+              "category": "other",
+              "conclusion": "success",
+              "seconds": 0
+            }
+          ]
+        },
+        {
+          "carriedForward": false,
+          "id": 102148347358,
+          "name": "Smoke / MATLAB R2025b",
+          "attempt": 1,
+          "status": "completed",
+          "conclusion": "failure",
+          "url": "https://github.com/JeffreyEarly/wave-vortex-model/actions/runs/34248386552/job/102148347358",
+          "startedAt": "2026-09-08T16:35:24Z",
+          "completedAt": "2026-09-08T16:35:27Z",
+          "seconds": 3.0,
+          "steps": [
+            {
+              "name": "Set up job",
+              "category": "setup",
+              "conclusion": "success",
+              "seconds": 0
+            },
+            {
+              "name": "Run test \"$RESULT\" = success",
+              "category": "validation",
+              "conclusion": "failure",
+              "seconds": 0
+            },
+            {
+              "name": "Complete job",
+              "category": "other",
+              "conclusion": "success",
+              "seconds": 0
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": 34251242238,
+      "name": "WaveVortexModel CI",
+      "sourceCommit": "48345609abc3a4969637601aa4b075b226ffab29",
+      "event": "pull_request",
+      "url": "https://github.com/JeffreyEarly/wave-vortex-model/actions/runs/34251242238",
+      "status": "completed",
+      "conclusion": "failure",
+      "createdAt": "2026-09-08T16:28:17Z",
+      "startedAt": "2026-09-08T16:28:17Z",
+      "firstJobQueueSeconds": 3.0,
+      "latestAttemptStartDelaySeconds": 0,
+      "completedJobSeconds": 1643.0,
+      "incompleteJobs": 0,
+      "jobs": [
+        {
+          "carriedForward": false,
+          "id": 102145920221,
+          "name": "Repository and CI policy contracts",
+          "attempt": 1,
+          "status": "completed",
+          "conclusion": "success",
+          "url": "https://github.com/JeffreyEarly/wave-vortex-model/actions/runs/34251242238/job/102145920221",
+          "startedAt": "2026-09-08T16:28:20Z",
+          "completedAt": "2026-09-08T16:28:28Z",
+          "seconds": 8.0,
+          "steps": [
+            {
+              "name": "Set up job",
+              "category": "setup",
+              "conclusion": "success",
+              "seconds": 1.0
+            },
+            {
+              "name": "Run actions/checkout@v6",
+              "category": "setup",
+              "conclusion": "success",
+              "seconds": 2.0
+            },
+            {
+              "name": "Run python3 -m pip install --disable-pip-version-check --retries 1 --timeout 20 -r tools/ci/requirements.txt",
+              "category": "setup",
+              "conclusion": "success",
+              "seconds": 1.0
+            },
+            {
+              "name": "Run python3 -m unittest discover -s tools/ci -p 'test_*.py' -v",
+              "category": "validation",
+              "conclusion": "success",
+              "seconds": 0
+            },
+            {
+              "name": "Verify source boundaries and tracked artifacts",
+              "category": "validation",
+              "conclusion": "success",
+              "seconds": 0
+            },
+            {
+              "name": "Post Run actions/checkout@v6",
+              "category": "setup",
+              "conclusion": "success",
+              "seconds": 0
+            },
+            {
+              "name": "Complete job",
+              "category": "other",
+              "conclusion": "success",
+              "seconds": 1.0
+            }
+          ]
+        },
+        {
+          "carriedForward": false,
+          "id": 102145920630,
+          "name": "Select CI coverage",
+          "attempt": 1,
+          "status": "completed",
+          "conclusion": "success",
+          "url": "https://github.com/JeffreyEarly/wave-vortex-model/actions/runs/34251242238/job/102145920630",
+          "startedAt": "2026-09-08T16:28:20Z",
+          "completedAt": "2026-09-08T16:28:29Z",
+          "seconds": 9.0,
+          "steps": [
+            {
+              "name": "Set up job",
+              "category": "setup",
+              "conclusion": "success",
+              "seconds": 1.0
+            },
+            {
+              "name": "Run actions/checkout@v6",
+              "category": "setup",
+              "conclusion": "success",
+              "seconds": 4.0
+            },
+            {
+              "name": "Resolve changed paths and dependency coverage",
+              "category": "other",
+              "conclusion": "success",
+              "seconds": 0
+            },
+            {
+              "name": "Run actions/upload-artifact@v4",
+              "category": "other",
+              "conclusion": "success",
+              "seconds": 1.0
+            },
+            {
+              "name": "Post Run actions/checkout@v6",
+              "category": "setup",
+              "conclusion": "success",
+              "seconds": 0
+            },
+            {
+              "name": "Complete job",
+              "category": "other",
+              "conclusion": "success",
+              "seconds": 0
+            }
+          ]
+        },
+        {
+          "carriedForward": false,
+          "id": 102145985853,
+          "name": "C++ / sanitized / build",
+          "attempt": 1,
+          "status": "completed",
+          "conclusion": "success",
+          "url": "https://github.com/JeffreyEarly/wave-vortex-model/actions/runs/34251242238/job/102145985853",
+          "startedAt": "2026-09-08T16:28:31Z",
+          "completedAt": "2026-09-08T16:35:51Z",
+          "seconds": 440.0,
+          "steps": [
+            {
+              "name": "Set up job",
+              "category": "setup",
+              "conclusion": "success",
+              "seconds": 1.0
+            },
+            {
+              "name": "Run actions/checkout@v6",
+              "category": "setup",
+              "conclusion": "success",
+              "seconds": 2.0
+            },
+            {
+              "name": "Install bounded build dependencies",
+              "category": "setup",
+              "conclusion": "success",
+              "seconds": 18.0
+            },
+            {
+              "name": "Build shared core and runtime once",
+              "category": "build_or_combined_build_test",
+              "conclusion": "success",
+              "seconds": 325.0
+            },
+            {
+              "name": "Run all core and runtime contracts",
+              "category": "validation",
+              "conclusion": "success",
+              "seconds": 53.0
+            },
+            {
+              "name": "Package exact-revision probes",
+              "category": "other",
+              "conclusion": "success",
+              "seconds": 1.0
+            },
+            {
+              "name": "Run actions/upload-artifact@v4",
+              "category": "other",
+              "conclusion": "success",
+              "seconds": 38.0
+            },
+            {
+              "name": "Post Run actions/checkout@v6",
+              "category": "setup",
+              "conclusion": "success",
+              "seconds": 0
+            },
+            {
+              "name": "Complete job",
+              "category": "other",
+              "conclusion": "success",
+              "seconds": 0
+            }
+          ]
+        },
+        {
+          "carriedForward": false,
+          "id": 102145985919,
+          "name": "C++ / release / build",
+          "attempt": 1,
+          "status": "completed",
+          "conclusion": "failure",
+          "url": "https://github.com/JeffreyEarly/wave-vortex-model/actions/runs/34251242238/job/102145985919",
+          "startedAt": "2026-09-08T16:28:31Z",
+          "completedAt": "2026-09-08T16:31:35Z",
+          "seconds": 184.0,
+          "steps": [
+            {
+              "name": "Set up job",
+              "category": "setup",
+              "conclusion": "success",
+              "seconds": 1.0
+            },
+            {
+              "name": "Run actions/checkout@v6",
+              "category": "setup",
+              "conclusion": "success",
+              "seconds": 2.0
+            },
+            {
+              "name": "Install bounded build dependencies",
+              "category": "setup",
+              "conclusion": "success",
+              "seconds": 23.0
+            },
+            {
+              "name": "Build shared core and runtime once",
+              "category": "build_or_combined_build_test",
+              "conclusion": "success",
+              "seconds": 127.0
+            },
+            {
+              "name": "Run all core and runtime contracts",
+              "category": "validation",
+              "conclusion": "success",
+              "seconds": 22.0
+            },
+            {
+              "name": "Package exact-revision probes",
+              "category": "other",
+              "conclusion": "success",
+              "seconds": 1.0
+            },
+            {
+              "name": "Run actions/upload-artifact@v4",
+              "category": "other",
+              "conclusion": "failure",
+              "seconds": 4.0
+            },
+            {
+              "name": "Post Run actions/checkout@v6",
+              "category": "setup",
+              "conclusion": "success",
+              "seconds": 0
+            },
+            {
+              "name": "Complete job",
+              "category": "other",
+              "conclusion": "success",
+              "seconds": 0
+            }
+          ]
+        },
+        {
+          "carriedForward": false,
+          "id": 102145987240,
+          "name": "Isolated package verification",
+          "attempt": 1,
+          "status": "completed",
+          "conclusion": "skipped",
+          "url": "https://github.com/JeffreyEarly/wave-vortex-model/actions/runs/34251242238/job/102145987240",
+          "startedAt": "2026-09-08T16:28:29Z",
+          "completedAt": "2026-09-08T16:28:29Z",
+          "seconds": 0,
+          "steps": []
+        },
+        {
+          "carriedForward": false,
+          "id": 102147004733,
+          "name": "MATLAB / ${{ matrix.release }}",
+          "attempt": 1,
+          "status": "completed",
+          "conclusion": "skipped",
+          "url": "https://github.com/JeffreyEarly/wave-vortex-model/actions/runs/34251242238/job/102147004733",
+          "startedAt": "2026-09-08T16:31:36Z",
+          "completedAt": "2026-09-08T16:31:35Z",
+          "seconds": 0,
+          "steps": []
+        },
+        {
+          "carriedForward": false,
+          "id": 102148521126,
+          "name": "MATLAB / sanitized probes / validate",
+          "attempt": 1,
+          "status": "completed",
+          "conclusion": "success",
+          "url": "https://github.com/JeffreyEarly/wave-vortex-model/actions/runs/34251242238/job/102148521126",
+          "startedAt": "2026-09-08T16:35:54Z",
+          "completedAt": "2026-09-08T16:52:28Z",
+          "seconds": 994.0,
+          "steps": [
+            {
+              "name": "Set up job",
+              "category": "setup",
+              "conclusion": "success",
+              "seconds": 3.0
+            },
+            {
+              "name": "Pull ghcr.io/actions/jekyll-build-pages:v1.0.13",
+              "category": "build_or_combined_build_test",
+              "conclusion": "success",
+              "seconds": 15.0
+            },
+            {
+              "name": "Run actions/checkout@v6",
+              "category": "setup",
+              "conclusion": "success",
+              "seconds": 2.0
+            },
+            {
+              "name": "Run actions/checkout@v6",
+              "category": "setup",
+              "conclusion": "success",
+              "seconds": 1.0
+            },
+            {
+              "name": "Run actions/download-artifact@v4",
+              "category": "setup",
+              "conclusion": "success",
+              "seconds": 1.0
+            },
+            {
+              "name": "Configure bounded Ubuntu package downloads",
+              "category": "setup",
+              "conclusion": "success",
+              "seconds": 19.0
+            },
+            {
+              "name": "Provision MATLAB",
+              "category": "setup",
+              "conclusion": "success",
+              "seconds": 50.0
+            },
+            {
+              "name": "Retry MATLAB provisioning once",
+              "category": "setup",
+              "conclusion": "skipped",
+              "seconds": 0
+            },
+            {
+              "name": "Require successful provisioning",
+              "category": "setup",
+              "conclusion": "success",
+              "seconds": 0
+            },
+            {
+              "name": "Run actions/download-artifact@v4",
+              "category": "setup",
+              "conclusion": "success",
+              "seconds": 23.0
+            },
+            {
+              "name": "Verify exact-revision binary artifact",
+              "category": "validation",
+              "conclusion": "success",
+              "seconds": 1.0
+            },
+            {
+              "name": "Run selected MATLAB phases and numerical tests",
+              "category": "validation",
+              "conclusion": "success",
+              "seconds": 873.0
+            },
+            {
+              "name": "Build rendered website",
+              "category": "build_or_combined_build_test",
+              "conclusion": "skipped",
+              "seconds": 0
+            },
+            {
+              "name": "Verify rendered website",
+              "category": "validation",
+              "conclusion": "skipped",
+              "seconds": 0
+            },
+            {
+              "name": "Verify clean source checkout",
+              "category": "setup",
+              "conclusion": "success",
+              "seconds": 0
+            },
+            {
+              "name": "Upload phase and test evidence",
+              "category": "validation",
+              "conclusion": "success",
+              "seconds": 1.0
+            },
+            {
+              "name": "Post Provision MATLAB",
+              "category": "setup",
+              "conclusion": "success",
+              "seconds": 0
+            },
+            {
+              "name": "Post Run actions/checkout@v6",
+              "category": "setup",
+              "conclusion": "success",
+              "seconds": 1.0
+            },
+            {
+              "name": "Post Run actions/checkout@v6",
+              "category": "setup",
+              "conclusion": "success",
+              "seconds": 0
+            },
+            {
+              "name": "Complete job",
+              "category": "other",
+              "conclusion": "success",
+              "seconds": 0
+            }
+          ]
+        },
+        {
+          "carriedForward": false,
+          "id": 102154070925,
+          "name": "Required / WaveVortexModel",
+          "attempt": 1,
+          "status": "completed",
+          "conclusion": "failure",
+          "url": "https://github.com/JeffreyEarly/wave-vortex-model/actions/runs/34251242238/job/102154070925",
+          "startedAt": "2026-09-08T16:52:31Z",
+          "completedAt": "2026-09-08T16:52:39Z",
+          "seconds": 8.0,
+          "steps": [
+            {
+              "name": "Set up job",
+              "category": "setup",
+              "conclusion": "success",
+              "seconds": 2.0
+            },
+            {
+              "name": "Run actions/checkout@v6",
+              "category": "setup",
+              "conclusion": "success",
+              "seconds": 2.0
+            },
+            {
+              "name": "Run actions/download-artifact@v4",
+              "category": "setup",
+              "conclusion": "success",
+              "seconds": 1.0
+            },
+            {
+              "name": "Run actions/download-artifact@v4",
+              "category": "setup",
+              "conclusion": "success",
+              "seconds": 0
+            },
+            {
+              "name": "Require all selected work and evidence",
+              "category": "other",
+              "conclusion": "failure",
+              "seconds": 1.0
+            },
+            {
+              "name": "Post Run actions/checkout@v6",
+              "category": "setup",
+              "conclusion": "success",
+              "seconds": 0
+            },
+            {
+              "name": "Complete job",
+              "category": "other",
+              "conclusion": "success",
+              "seconds": 0
+            }
+          ]
+        },
+        {
+          "carriedForward": false,
+          "id": 102154130652,
+          "name": "Documentation / MATLAB R2025b",
+          "attempt": 1,
+          "status": "completed",
+          "conclusion": "skipped",
+          "url": "https://github.com/JeffreyEarly/wave-vortex-model/actions/runs/34251242238/job/102154130652",
+          "startedAt": "2026-09-08T16:52:39Z",
+          "completedAt": "2026-09-08T16:52:39Z",
+          "seconds": 0,
+          "steps": []
+        },
+        {
+          "carriedForward": false,
+          "id": 102154131223,
+          "name": "Smoke / MATLAB R2025b",
+          "attempt": 1,
+          "status": "completed",
+          "conclusion": "skipped",
+          "url": "https://github.com/JeffreyEarly/wave-vortex-model/actions/runs/34251242238/job/102154131223",
+          "startedAt": "2026-09-08T16:52:39Z",
+          "completedAt": "2026-09-08T16:52:39Z",
+          "seconds": 0,
+          "steps": []
+        },
+        {
+          "carriedForward": false,
+          "id": 102154131323,
+          "name": "Code Analyzer / MATLAB R2025b",
+          "attempt": 1,
+          "status": "completed",
+          "conclusion": "skipped",
+          "url": "https://github.com/JeffreyEarly/wave-vortex-model/actions/runs/34251242238/job/102154131323",
+          "startedAt": "2026-09-08T16:52:39Z",
+          "completedAt": "2026-09-08T16:52:39Z",
+          "seconds": 0,
+          "steps": []
+        }
+      ]
+    }
+  ]
+}

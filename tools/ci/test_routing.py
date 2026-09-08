@@ -74,6 +74,18 @@ class RoutingTests(unittest.TestCase):
             with self.assertRaises(ValueError):
                 select([path])
 
+    def test_batches_preserve_each_selected_class_exactly_once(self):
+        for paths in [['README.md'], ['CompiledKernel/src/WVTransformBoussinesqKernel.cpp'], ['.github/workflows/ci.yml']]:
+            plan = select(paths)
+            for classes, groups in [('matlabTests', 'matlabShards'), ('sanitizedTests', 'sanitizedShards')]:
+                flattened = [name for group in plan[groups] for name in group['classes']]
+                self.assertEqual(sorted(flattened), plan[classes])
+                self.assertEqual(len(flattened), len(set(flattened)))
+                self.assertLessEqual(len(plan[groups]), 4)
+                self.assertEqual([group['id'] for group in plan[groups]], list(range(len(plan[groups]))))
+        self.assertEqual(len(select(['README.md'])['matlabShards']), 1)
+        self.assertGreater(len(select(['CompiledKernel/src/WVTransformBoussinesqKernel.cpp'])['matlabShards']), 1)
+
 
 if __name__ == '__main__':
     unittest.main()
