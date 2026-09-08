@@ -38,7 +38,8 @@
     "forcingInterfaceSHA256": "0e08bd27b5e069fdee2de7b1428ab549051580e943ce576dde090a705cd8e56f",
     "preparedSpectralOperators": "issue-357",
     "stableForcingCompatibility": "issues-290-294",
-    "stratifiedQGRuntime": "issue-297"
+    "stratifiedQGRuntime": "issue-297",
+    "hydrostaticKernel": "issue-299"
   },
   "contract": {
     "version": 4,

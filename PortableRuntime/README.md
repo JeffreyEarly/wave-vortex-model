@@ -192,6 +192,10 @@ For the MATLAB parity test, optionally set `WV_MODAL_DUMP_EXECUTABLE` to a previ
 
 The modal record now implements the pure numerical `WVStratifiedModalSource` interface in `CompiledKernel`. Pass its shared owner directly to `WVTransformStratifiedQGKernel::create` with an FFT engine to use the #296 standalone kernel. The core's [Stratified QG documentation](../CompiledKernel/README.md#stratified-qg-numerical-kernel) describes fields, projections, derivatives, diagnostics and explicit beta behavior. The SQG runtime adapters added in #297 connect this kernel to `wave-vortex-run`, forcing, observers, output and restart. MATLAB APIs and the additive default-save behavior integrated with #295 are unchanged.
 
+## Hydrostatic standalone kernel
+
+The modal record also supplies `WVTransformHydrostaticKernel` (#299). Its [numerical contract](../CompiledKernel/README.md#hydrostatic-numerical-kernel) covers Ap/Am/A0 transforms, fields and components, vertical calculus, nonlinear advection, phases, constraints and diagnostics using prepared F/G operators. `WVHydrostaticKernelDump` reads MATLAB-authored files to qualify this boundary with reference/native FFT and scalar/Accelerate matrices. This does not enable Hydrostatic runner dispatch: complete model graphs, forcing, observers and persistence are #300, followed by end-to-end qualification in #301. Existing MATLAB output and public MATLAB behavior are unchanged.
+
 ## Stratified QG model integration
 
 `WVModel.writePortableRunRequest` accepts default v4 SQG model-output files. The C++ runtime restores only `A0[Nj,Nkl]`, retaining one immutable scientific owner shared by the kernel, model state and output adapters. Model graph inspection retains the scientific matrices; the standalone `WVStratifiedModalReader::inspect` API retains its bounded matrix scan. Restore revalidates the file before sharing the selected owner. No vertical eigenproblem or MATLAB function execution occurs in C++.
