@@ -10,6 +10,10 @@ struct WVStratifiedModalGeometry {
     double latitude = 0, rotationRate = 0, planetaryRadius = 0;
     bool shouldAntialias = false;
     std::vector<double> x, y, z, j, k, l, N2, rho_nm0, dLnN2, P0, Q0, h_0, z_int;
+    // Boussinesq-only data. Group membership is persisted, never inferred by
+    // rounding radii. h_pm is [Nj,Nkl]; Ppm/Qpm are [Nj,K2unique].
+    std::vector<double> K2unique, h_pm, Ppm, Qpm;
+    std::vector<std::size_t> waveGroup;
     std::vector<WVRetainedModeKey> modes;
 };
 
@@ -22,7 +26,9 @@ struct WVStratifiedModalInspection {
 
 // Names refer to unpreconditioned scientific F/G operations. Matrix storage is
 // column-major. Reconstruction maps modal to vertical grid; projection reverses it.
-enum class WVStratifiedModalOperator { reconstructF, projectF, reconstructG, projectG, GToF, FToG };
+enum class WVStratifiedModalOperator { reconstructF, projectF, reconstructG, projectG, GToF, FToG,
+    reconstructFw, projectFw, reconstructGw, projectGw, balancedGToWaveG,
+    projectWaveDivergence, projectWaveVerticalVelocity };
 
 enum class WVStratifiedScientificMatrix { PF0inv, QG0inv, PF0, QG0 };
 struct WVScientificModalGroup {

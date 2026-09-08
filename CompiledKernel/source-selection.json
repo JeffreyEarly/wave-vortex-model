@@ -40,7 +40,8 @@
     "stableForcingCompatibility": "issues-290-294",
     "stratifiedQGRuntime": "issue-297",
     "hydrostaticKernel": "issue-299",
-    "hydrostaticRuntime": "issue-300"
+    "hydrostaticRuntime": "issue-300",
+    "boussinesqKernel": "issue-302"
   },
   "contract": {
     "version": 4,
@@ -116,5 +117,13 @@
       "CompiledKernel/include/WaveVortexKernel/WVTransformStratifiedQGKernel.hpp": "d54a21e4b86731fe11a9ea625f94f13e9b91cff12207bb241ab42a922fcb37bc",
       "CompiledKernel/src/WVTransformStratifiedQGKernel.cpp": "f5c9d4334902139fd16ecfad83eac2c64edc249f2ae815dfca4ecdfcdf595ef5"
     }
+  },
+  "boussinesqKernel": {
+    "identity": "wave-vortex-boussinesq-kernel-v1",
+    "scientificSource": "wave-vortex-stratified-modal-record-v1",
+    "groupIdentity": "persisted-K2unique-and-iK2unique",
+    "coefficientLayout": "canonical-interleaved-Nj-Nkl",
+    "runtimeExecutionCapabilityAdded": false,
+    "qualification": "UnitTests/TestBoussinesqCompiledKernel.m"
   }
 }

@@ -29,9 +29,8 @@ public:
     const std::string& sourceIdentity() const noexcept { return sourceIdentity_; }
     const std::string& modeSetIdentity() const noexcept { return modeSetIdentity_; }
     std::size_t persistentBytes() const noexcept;
-    // Exact source group membership, shared across this record's F/G family.
-    // The initial shared-matrix slice has one group; grouped wave records can
-    // retain discontiguous membership in the same vocabulary in a later decoder.
+    // Exact persisted wave-group membership for Boussinesq; one shared group
+    // for Hydrostatic/SQG. Balanced operators always cover all columns.
     const std::vector<WVScientificModalGroup>& groups() const noexcept { return groups_; }
     // Borrowed const view of persisted preconditioned values, valid while this
     // scientific record lives. No normalization conversion or derived product.
@@ -51,6 +50,10 @@ private:
     WVStratifiedModalGeometry geometry_;
     std::vector<unsigned char> N2FunctionPayload_;
     std::vector<double> PF0inv_, QG0inv_, PF0_, QG0_;
+    std::vector<double> PFpmInv_, QGpmInv_, PFpm_, QGpm_, QGwg_;
+    WVKernelStatus prepareWaveVertical(WVStratifiedModalOperator, WVComplexLayout,
+        WVComplexLayout, std::unique_ptr<WVVerticalMatrixBackend>,
+        std::unique_ptr<WVPreparedVerticalOperator>&, WVAccumulation) const;
     std::string sourceIdentity_, modeSetIdentity_;
     std::vector<WVScientificModalGroup> groups_;
 };
