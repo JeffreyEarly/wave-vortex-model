@@ -123,22 +123,34 @@ classdef TestPortableDiagnostics < matlab.unittest.TestCase
                 dense = file.addNewEvenlySpacedOutputGroup("dense",outputInterval=.125,initialTime=37,finalTime=38);
                 denseNames = names(~ismember(names,["Apt","Amt","A0t"]));
                 dense.addObservingSystem(WVEulerianFields(model,fieldNames=cellstr(denseNames)));
-                file.outputTimesForIntegrationPeriod(37,38);
-                file.writeTimeStepToOutputFile(37);
+                secondSource = fullfile(testCase.folder,"lifecycle-second-source.nc");
+                model.createNetCDFFileForModelOutput(secondSource,outputInterval=.5,shouldOverwriteExisting=true);
+                for outputFile = reshape(model.outputFiles,1,[])
+                    outputFile.outputTimesForIntegrationPeriod(37,38);
+                    outputFile.writeTimeStepToOutputFile(37);
+                end
                 model.closeNetCDFFile();
+                ncwriteatt(source,"/","portableFileIdentifier","diagnostic-primary");
+                ncwriteatt(secondSource,"/","portableFileIdentifier","diagnostic-secondary");
                 controlPath = fullfile(testCase.folder,"lifecycle-matlab.nc"); copyfile(source,controlPath);
                 control = WVModel.modelFromFile(char(controlPath));
                 control.setupIntegrator(integratorType="fixed",deltaT=.25);
                 control.integrateToTime(38,shouldShowIntegrationDiagnostics=false,callback=@(~)[]);
                 control.closeNetCDFFile();
                 for provider = testCase.providers
-                    for segmented = [false true]
+                    for scenario = 1:3
+                        segmented = scenario==2;
                         outputPath = fullfile(testCase.folder,"lifecycle-runtime.nc"); copyfile(source,outputPath);
+                        secondOutput = fullfile(testCase.folder,"lifecycle-second-runtime.nc"); copyfile(secondSource,secondOutput);
                         times = 38;
                         if segmented, times = [37.5 38]; end
                         for finalTime = times
                             requestPath = fullfile(testCase.folder,"lifecycle-request.json");
-                            WVModel.writePortableRunRequest(requestPath,outputPath,method="fixed-rk4",finalTime=finalTime,initialStep=.25,fftProvider=replace(provider,"native","native-fftw"),reportPath="lifecycle-report.json");
+                            if scenario==3
+                                WVModel.writePortableRunRequest(requestPath,[outputPath,secondOutput],method="adaptive-rk45",finalTime=finalTime,initialStep=.25,maximumStep=.25,fftProvider=replace(provider,"native","native-fftw"),reportPath="lifecycle-report.json");
+                            else
+                                WVModel.writePortableRunRequest(requestPath,[outputPath,secondOutput],method="fixed-rk4",finalTime=finalTime,initialStep=.25,fftProvider=replace(provider,"native","native-fftw"),reportPath="lifecycle-report.json");
+                            end
                             [status,output] = cleanSystem(shellQuote(runner)+" --request "+shellQuote(requestPath));
                             testCase.assertEqual(status,0,family+" "+provider+" segmented="+segmented+": "+output);
                             report = jsondecode(fileread(fullfile(testCase.folder,"lifecycle-report.json")));
@@ -160,7 +172,12 @@ classdef TestPortableDiagnostics < matlab.unittest.TestCase
                                 actual = ncread(outputPath,"/"+groupName+"/"+name);
                                 testCase.verifySize(actual,size(expected),family+" "+name);
                                 error = max(abs(actual(:)-expected(:)))/max(max(abs(expected(:))),realmin);
-                                testCase.verifyLessThanOrEqual(error,1e-12,family+" "+provider+" segmented="+segmented+" "+groupName+" "+name);
+                                testCase.verifyLessThanOrEqual(error,1e-12,family+" "+provider+" scenario="+scenario+" "+groupName+" "+name);
+                                if groupName=="wave-vortex"
+                                    second = ncread(secondOutput,"/wave-vortex/"+name);
+                                    error = max(abs(second(:)-expected(:)))/max(max(abs(expected(:))),realmin);
+                                    testCase.verifyLessThanOrEqual(error,1e-12,family+" "+provider+" scenario="+scenario+" second file "+name);
+                                end
                             end
                         end
                     end
@@ -240,7 +257,7 @@ cleanup = onCleanup(@()fclose(file));
 fprintf(file,'%s\n',text);
 end
 function [status,output] = cleanSystem(command)
-[status,output] = system("env -u DYLD_LIBRARY_PATH -u DYLD_FRAMEWORK_PATH "+command);
+[status,output] = system("env -u LD_LIBRARY_PATH -u DYLD_LIBRARY_PATH -u DYLD_FRAMEWORK_PATH -u DYLD_FALLBACK_LIBRARY_PATH "+command);
 end
 function value = shellQuote(value)
 value = "'"+replace(string(value),"'","'""'""'")+"'";

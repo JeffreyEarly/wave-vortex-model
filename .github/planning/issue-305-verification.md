@@ -15,7 +15,7 @@ Six output identities have explicit, tested intentional incompatibilities, as pe
 - `eta_true`: `shouldUseTrueNoMotionProfile` is intentionally runtime-only and resets during MATLAB save/reload.
 - `ape`, `apv`: depend on the preceding unpersisted numerical choices.
 
-These are preflight rejections, not replacement algorithms or silent defaults. Forcing diagnostics remain #315. A future backward-compatible persistence extension and separately qualified solver/profile implementation is needed to remove the density incompatibilities.
+These are preflight rejections, not replacement algorithms or silent defaults. Forcing diagnostics remain #315. Issue #391 tracks the backward-compatible persistence extension and separately qualified solver/profile implementation needed to remove these incompatibilities.
 
 ## Verification ledger
 
@@ -29,7 +29,11 @@ These are preflight rejections, not replacement algorithms or silent defaults. F
 - Final MATLAB catalog generation and 6 catalog methods passed. The full numerical matrix and the MATLAB operation-preservation/contract methods passed. Corrected continuation instrumentation passed. Code Analyzer covered all 7 touched MATLAB files: zero blocking findings.
 - Documentation check passed in a fresh process: 2,026 files, 4,145 routes, zero differences or validation failures. The initial attempt crashed inside MATLAB after dependency switching in a process that had already run the test suite; no source fix was needed.
 - The final native suite passed again (40/40) after the metrics/report and applicability changes. This repeat was needed to verify the changed report and public field-name inventory.
-- Expanded vertical grid parity and final performance measurements are in progress.
+- Final expanded matrix passed 3,348 comparisons: 2,232 reference/native comparisons and 1,116 reference comparisons under ASan/UBSan, across six transform families, both antialias settings, and grids `[8,6,9]` / `[9,7,10]`. Maximum relative error: `1.2222953475043186e-13`. Diagnostic scratch returns to zero after each evaluation.
+- Two-file output graphs passed for all six families and both providers with fixed RK4, segmented continuation and adaptive RK45, including dense output. The final test-file Code Analyzer pass had zero blocking findings.
+- Matched before/after nonlinear integrations (64 steps, adaptive damping, primary and dense output) passed the 3% runtime and retained-memory budgets. Eight measured runs per executable followed an excluded warmup, with alternating process order. Median runtime changes: constant -5.585%, hydrostatic +0.099%, Boussinesq +0.165%. Retained-memory changes: +0.005%, +0.016%, +0.025%, respectively. Steps and RHS evaluation counts agree; all numeric output values agree within `4.52e-16`.
+- Evidence is committed in `PortableRuntime/qualification/diagnostics-apple-silicon-v1.json`, including source commits, executable/input hashes, numerical rows, all performance samples and memory measurements. Numerical and performance source is `0fabf4b`; later changes extend lifecycle tests and clean their subprocess environment.
+- The first hosted diagnostic matrix failed before numerical evaluation because the new test helper retained MATLAB's Linux library path. The helper now uses the same clean subprocess environment as the existing portable tests; both hosted releases must pass before integration.
 
 ## Fixture findings
 
