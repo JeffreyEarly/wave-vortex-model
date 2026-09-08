@@ -79,6 +79,31 @@ classdef WVPrescribedBoussinesqSource < WVForcing
             u=u+scale*self.uRate; v=v+scale*self.vRate;
             w=w+scale*self.wRate; eta=eta+scale*self.etaRate;
         end
+        function force = forcingWithResolutionOfTransform(self,target)
+            % Regrid prescribed rates when the target preserves their sampled content.
+            %
+            % Fourier identities and the stored WKB maps transfer each pattern.
+            % A relative round-trip L2 residual above 1e-8 rejects the conversion;
+            % an unrepresented forcing must be changed explicitly by the caller.
+            %
+            % - Topic: Forcing persistence
+            % - Declaration: force = forcingWithResolutionOfTransform(target)
+            % - Parameter target: compatible free-surface Boussinesq target
+            % - Returns force: target-owned source with unchanged absolute clock
+            arguments (Input)
+                self WVPrescribedBoussinesqSource
+                target WVTransformFreeSurfaceBoussinesq
+            end
+            options=struct(frequency=self.frequency,referenceTime=self.referenceTime,phase=self.phase);
+            for name=["uRate","vRate","wRate","etaRate"]
+                [options.(name),residual]=WVInternal.freeSurfaceSpatialTransfer(self.wvt,target,self.(name));
+                if residual>1e-8
+                    error('WVPrescribedBoussinesqSource:UnresolvedTransfer','Target cannot preserve %s: sampled round-trip L2 residual %.3g exceeds 1e-8.',name,residual)
+                end
+            end
+            args=namedargs2cell(options);
+            force=WVPrescribedBoussinesqSource(target,args{:});
+        end
         function writeToGroup(self,group,annotations,attributes)
             % Write source arrays using the parent transform's spatial dimensions.
             % - Topic: Forcing persistence

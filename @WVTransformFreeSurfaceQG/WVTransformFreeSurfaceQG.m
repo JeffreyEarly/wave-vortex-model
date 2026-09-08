@@ -8,6 +8,8 @@ classdef WVTransformFreeSurfaceQG < WVGeometryDoublyPeriodicStratified & WVTrans
     % APV and MDA select independent mode counts on the same
     % physical vertical grid. The inherited `Nj` value equals
     % `apvModeCount`; `mdaModeCount` may differ.
+    % Optional strict counts preserve a chosen modal band when changing Nz;
+    % omitted counts retain automatic fixed-grid qualification.
     % Omitted endpoints use $$g_0=-\int_{-D}^{0}N^2\,dz$$ and
     % $$g_d=+\int_{-D}^{0}N^2\,dz$$, activating both endpoints.
     % Use `gd=Inf` for an inactive bottom. The APV family normally includes
@@ -32,6 +34,7 @@ classdef WVTransformFreeSurfaceQG < WVGeometryDoublyPeriodicStratified & WVTrans
     % - Topic: Transform coefficient state
     % - Topic: Evaluate physical fields
     % - Topic: Save transform state
+    % - Topic: Transfer resolution
     % - Declaration: classdef WVTransformFreeSurfaceQG < WVTransform
 
     properties (GetAccess = public, SetAccess = public)
@@ -320,6 +323,8 @@ classdef WVTransformFreeSurfaceQG < WVGeometryDoublyPeriodicStratified & WVTrans
             % - Parameter options.g0: surface acceleration; default negative stratification integral
             % - Parameter options.gd: bottom acceleration; default positive stratification integral
             % - Parameter options.latitude: latitude in degrees; default 24
+            % - Parameter options.apvModeCount: strict retained APV prefix; empty preserves automatic selection
+            % - Parameter options.mdaModeCount: strict retained MDA prefix; empty preserves automatic selection
             % - Parameter options.apvGramTolerance: APV normalized-Gram tolerance
             % - Parameter options.mdaGramTolerance: MDA normalized-Gram tolerance
             % - Parameter options.quadraticAliasingTolerance: APV quadratic-product tolerance in the induced Hilbert majorant
@@ -339,6 +344,8 @@ classdef WVTransformFreeSurfaceQG < WVGeometryDoublyPeriodicStratified & WVTrans
                 options.g0 (1,1) double = NaN
                 options.gd (1,1) double = NaN
                 options.z (:,1) double = zeros(0,1)
+                options.apvModeCount double {mustBeInteger,mustBePositive} = []
+                options.mdaModeCount double {mustBeInteger,mustBePositive} = []
                 options.j (:,1) double
                 options.apvGramTolerance (1,1) double {mustBeReal,mustBeFinite,mustBeNonnegative} = 1e-2
                 options.mdaGramTolerance (1,1) double {mustBeReal,mustBeFinite,mustBeNonnegative} = 1e-2
@@ -410,6 +417,9 @@ classdef WVTransformFreeSurfaceQG < WVGeometryDoublyPeriodicStratified & WVTrans
                 options.modeSelectionMethod (1,1) string
             end
 
+            if (~isempty(options.apvModeCount) && ~isscalar(options.apvModeCount)) || (~isempty(options.mdaModeCount) && ~isscalar(options.mdaModeCount))
+                error('WVTransformFreeSurfaceQG:InvalidModeCount','Retained counts must be positive scalars or empty for automatic selection.')
+            end
             directNames = WVTransformFreeSurfaceQG.directConstructionPropertyNames();
             isDirect = all(isfield(options,directNames));
             if isDirect
@@ -649,11 +659,6 @@ classdef WVTransformFreeSurfaceQG < WVGeometryDoublyPeriodicStratified & WVTrans
             value = true;
         end
 
-        function wvtX2 = waveVortexTransformWithResolution(~,~)
-            % Defer free-surface resolution transfer to milestone issue #352.
-            wvtX2 = WVTransformFreeSurfaceQG.empty(0,0);
-            WVTransformFreeSurfaceQG.throwUnavailable('WVTransformFreeSurfaceQG:ResolutionTransferUnavailable','Resolution transfer is not yet implemented for WVTransformFreeSurfaceQG.');
-        end
 
         function values = transformFromSpatialDomainWithFg(self,values)
             values = self.apvFForward*values;

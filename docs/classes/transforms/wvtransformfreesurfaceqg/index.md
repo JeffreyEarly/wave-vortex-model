@@ -29,6 +29,8 @@ by real mean-density-anomaly coefficients `Amda`.
 APV and MDA select independent mode counts on the same
 physical vertical grid. The inherited `Nj` value equals
 `apvModeCount`; `mdaModeCount` may differ.
+Optional strict counts preserve a chosen modal band when changing Nz;
+omitted counts retain automatic fixed-grid qualification.
 Omitted endpoints use $$g_0=-\int_{-D}^{0}N^2\,dz$$ and
 $$g_d=+\int_{-D}^{0}N^2\,dz$$, activating both endpoints.
 Use `gd=Inf` for an inactive bottom. The APV family normally includes
@@ -237,6 +239,11 @@ wvt = WVTransformFreeSurfaceQG([100e3 100e3 4000],[32 32 33],N2Function=N2,latit
     + [`hasClosure`](/classes/transforms/wvtransformfreesurfaceqg/hasclosure.html) Whether a closure is currently attached to the transform.
   + Summarize forcing
     + [`summarizeForcing`](/classes/transforms/wvtransformfreesurfaceqg/summarizeforcing.html) Print a table of registered forcing and closure objects.
++ Create a related transform
+  + [`coefficientStateForTransform`](/classes/transforms/wvtransformfreesurfaceqg/coefficientstatefortransform.html) Express compatible resolved content in a target transform's coefficient convention.
+  + [`spectralVariableWithResolution`](/classes/transforms/wvtransformfreesurfaceqg/spectralvariablewithresolution.html) create a new variable with different resolution
+  + [`waveVortexTransformWithDoubleResolution`](/classes/transforms/wvtransformfreesurfaceqg/wavevortextransformwithdoubleresolution.html) create a new WVTransform with double resolution
+  + [`waveVortexTransformWithResolution`](/classes/transforms/wvtransformfreesurfaceqg/wavevortextransformwithresolution.html) Construct a qualified target and transfer matching resolved QG content.
 + Analyze the flow
   + Spectra
     + Spectral fields
@@ -295,10 +302,6 @@ wvt = WVTransformFreeSurfaceQG([100e3 100e3 4000],[32 32 33],N2Function=N2,latit
     + [`transformMDAForward`](/classes/transforms/wvtransformfreesurfaceqg/transformmdaforward.html) Project horizontal-mean displacement onto the MDA family.
     + [`transformStateBack`](/classes/transforms/wvtransformfreesurfaceqg/transformstateback.html) Reconstruct sampled APV and active endpoint anomalies.
     + [`transformStateForward`](/classes/transforms/wvtransformfreesurfaceqg/transformstateforward.html) Project sampled APV first and residual endpoint anomalies second.
-+ Create a related transform
-  + [`spectralVariableWithResolution`](/classes/transforms/wvtransformfreesurfaceqg/spectralvariablewithresolution.html) create a new variable with different resolution
-  + [`waveVortexTransformWithDoubleResolution`](/classes/transforms/wvtransformfreesurfaceqg/wavevortextransformwithdoubleresolution.html) create a new WVTransform with double resolution
-  + [`waveVortexTransformWithResolution`](/classes/transforms/wvtransformfreesurfaceqg/wavevortextransformwithresolution.html) Defer free-surface resolution transfer to milestone issue #352.
 + Get package information
   + [`version`](/classes/transforms/wvtransformfreesurfaceqg/version.html) Installed WaveVortexModel version.
 
