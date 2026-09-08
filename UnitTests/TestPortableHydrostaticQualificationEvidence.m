@@ -30,6 +30,23 @@ classdef TestPortableHydrostaticQualificationEvidence < matlab.unittest.TestCase
             bad = referenceReport; bad.continuations(end)=[]; testCase.verifyInvalid(bad);
             bad = referenceReport; bad.lifecycle(end)=[]; testCase.verifyInvalid(bad);
         end
+        function contractsCannotClaimCompleteContinuationQualification(testCase)
+            referenceReport = testCase.report;
+            referenceReport.providers = "reference";
+            referenceReport.tests = referenceReport.tests(string({referenceReport.tests.name})~="TestPortableStratifiedQGQualification/lifecycleAndStorageRemainBounded");
+            referenceReport.rows = referenceReport.rows(string({referenceReport.rows.provider})=="reference");
+            referenceReport.continuations = referenceReport.continuations(string({referenceReport.continuations.provider})=="reference");
+            grids = reshape([referenceReport.lifecycle.grid],3,[])';
+            referenceReport.lifecycle = referenceReport.lifecycle(string({referenceReport.lifecycle.provider})=="reference" & ismember(grids,[8 6 9;12 10 13],"rows")');
+            referenceReport.schemaIdentifier = "wave-vortex-hydrostatic-contracts-v1";
+            referenceReport.tests = referenceReport.tests(string({referenceReport.tests.name})~="TestPortableHydrostaticQualification/longerContinuationMatchesMatlab");
+            completeContinuations = referenceReport.continuations;
+            referenceReport.continuations = [];
+            validatePortableHydrostaticQualification(referenceReport);
+            bad = referenceReport; bad.schemaIdentifier="wave-vortex-hydrostatic-qualification-v1"; testCase.verifyInvalid(bad);
+            bad = referenceReport; bad.continuations=completeContinuations; testCase.verifyInvalid(bad);
+            bad = referenceReport; bad.tests(end)=[]; testCase.verifyInvalid(bad);
+        end
         function missingOrContradictoryEvidenceIsRejected(testCase)
             original = testCase.report;
             bad = original; bad.rows(end)=[]; testCase.verifyInvalid(bad);

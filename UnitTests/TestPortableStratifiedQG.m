@@ -116,9 +116,14 @@ classdef TestPortableStratifiedQG < matlab.unittest.TestCase
                     % Compare C++ output before writable MATLAB reload can
                     % serialize the opaque function handle again. Saved input
                     % bytes also make the append assertion non-tautological.
+                    % New files use the selected restart's immutable source
+                    % (primary at equal times). Append preserves each file's
+                    % original payload; independent MATLAB serializations of
+                    % the same function need not have identical opaque bytes.
                     for index=1:2
-                        testCase.verifyEqual(ncread(outputs(index),"PF0inv"),scientific{index,1});
-                        testCase.verifyEqual(ncread(outputs(index),"N2Function"),scientific{index,2});
+                        sourceIndex=1; if policy=="append", sourceIndex=index; end
+                        testCase.verifyEqual(ncread(outputs(index),"PF0inv"),scientific{sourceIndex,1});
+                        testCase.verifyEqual(ncread(outputs(index),"N2Function"),scientific{sourceIndex,2});
                     end
                     actual = WVModel.modelFromFile(char(outputs(1))); cleanup = onCleanup(@()actual.closeNetCDFFile());
                     testCase.verifyEqual(actual.wvt.A0,expected,RelTol=2e-11,AbsTol=1e-16);

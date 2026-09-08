@@ -6,10 +6,16 @@ arguments (Input)
     outputPath (1,1) string
     options.runner (1,1) string = string(getenv("WV_STABLE_FORCING_RUNNER"))
     options.native (1,1) logical = getenv("WV_STABLE_FORCING_NATIVE") == "1"
+    options.scope (1,1) string {mustBeMember(options.scope,["complete","contracts"])} = "complete"
 end
 arguments (Output)
     report (1,1) struct
 end
+if options.scope=="contracts" && options.native
+    error("WaveVortexModel:QualificationScope","Contract-only reports use the reference provider; native qualification requires complete scope.");
+end
+schemaIdentifier = "wave-vortex-hydrostatic-qualification-v1";
+if options.scope=="contracts", schemaIdentifier="wave-vortex-hydrostatic-contracts-v1"; end
 root = string(fileparts(fileparts(mfilename("fullpath"))));
 folder = string(tempname); mkdir(folder); folderCleanup = onCleanup(@()rmdir(folder,"s"));
 originalPath = path; pathCleanup = onCleanup(@()path(originalPath)); addpath(fullfile(root,"UnitTests"));
@@ -37,6 +43,9 @@ setenv("WV_HYDRO_TEST_NATIVE",string(double(options.native)));
 classes = ["TestPortableHydrostatic","TestPortableHydrostaticQualification","TestPortableStableForcing","TestPortableForcingCompatibility","TestCompiledKernelIntegration","TestStratifiedModalRecord","TestHydrostaticCompiledKernel"];
 parts = arrayfun(@testsuite,classes,UniformOutput=false);
 suite = [parts{:}];
+if options.scope=="contracts"
+    suite = suite(string({suite.Name})~="TestPortableHydrostaticQualification/longerContinuationMatchesMatlab");
+end
 if options.native
     suite = [suite,testsuite("TestPortableStratifiedQGQualification",Name="*lifecycleAndStorageRemainBounded")];
 end
@@ -68,7 +77,7 @@ lifecycle = readEvidence(folder,"lifecycle-*.json");
 if status~=0, error("WaveVortexModel:QualificationSource","Cannot identify the qualification source commit."); end
 [status,dirty] = system("git -C "+shellQuote(root)+" status --porcelain");
 if status~=0, error("WaveVortexModel:QualificationSource","Cannot inspect qualification source status."); end
-report = struct(schemaIdentifier="wave-vortex-hydrostatic-qualification-v1",schemaVersion=1,status="incomplete",sourceCommit=strtrim(string(commit)),workingTreeDirty=strlength(strtrim(string(dirty)))>0,matlabRelease=string(version("-release")),platform=string(computer),providers=providers,catalogPath="PortableRuntime/contracts/portable-forcing-compatibility-v1.json",catalogSHA256=sha256File(catalogPath),elapsedSeconds=toc(started),tests=tests,rows=rows,continuations={cases},lifecycle={lifecycle});
+report = struct(schemaIdentifier=schemaIdentifier,schemaVersion=1,status="incomplete",sourceCommit=strtrim(string(commit)),workingTreeDirty=strlength(strtrim(string(dirty)))>0,matlabRelease=string(version("-release")),platform=string(computer),providers=providers,catalogPath="PortableRuntime/contracts/portable-forcing-compatibility-v1.json",catalogSHA256=sha256File(catalogPath),elapsedSeconds=toc(started),tests=tests,rows=rows,continuations={cases},lifecycle={lifecycle});
 if all([tests.passed]) && ~any([tests.incomplete])
     report.status = "complete";
 end

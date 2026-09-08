@@ -4,10 +4,12 @@ arguments (Input)
     report (1,1) struct
     options.repositoryRoot (1,1) string = string(fileparts(fileparts(mfilename("fullpath"))))
 end
-require(string(report.schemaIdentifier)=="wave-vortex-hydrostatic-qualification-v1" && report.schemaVersion==1,"Unknown qualification schema.");
+contractsOnly=string(report.schemaIdentifier)=="wave-vortex-hydrostatic-contracts-v1";
+require((string(report.schemaIdentifier)=="wave-vortex-hydrostatic-qualification-v1" || contractsOnly) && report.schemaVersion==1,"Unknown qualification schema.");
 require(string(report.status)=="complete","Qualification is incomplete.");
 providers = reshape(string(report.providers),1,[]);
 require(isequal(providers,"reference") || isequal(providers,["reference","native-fftw"]),"Qualification requires the reference provider and optionally native FFTW.");
+require(~contractsOnly || isequal(providers,"reference"),"Contract-only evidence requires the reference provider.");
 require(~isempty(report.tests) && all([report.tests.passed]) && ~any([report.tests.failed]) && ~any([report.tests.incomplete]),"Failed or incomplete test evidence.");
 testNames = string({report.tests.name});
 require(numel(unique(testNames))==numel(testNames),"Duplicate test evidence.");
@@ -18,6 +20,7 @@ for name=requiredClasses
     suite=testsuite(fullfile(options.repositoryRoot,"UnitTests",name+".m"));
     expectedNames=[expectedNames,string({suite.Name})]; %#ok<AGROW>
 end
+if contractsOnly, expectedNames=expectedNames(expectedNames~="TestPortableHydrostaticQualification/longerContinuationMatchesMatlab"); end
 require(isequal(sort(testNames),sort(expectedNames)),"Missing or unexpected qualification tests.");
 catalogPath = fullfile(options.repositoryRoot,"PortableRuntime","contracts","portable-forcing-compatibility-v1.json");
 file=fopen(catalogPath,"rb"); cleanup=onCleanup(@()fclose(file)); bytes=fread(file,Inf,"*uint8");
@@ -46,7 +49,9 @@ actualKeys=string({report.rows.id})+"/"+string({report.rows.provider});
 require(isequal(sort(keys),sort(actualKeys)),"Unexpected or duplicate catalog rows.");
 manifest=jsondecode(fileread(fullfile(options.repositoryRoot,"PortableRuntime","contracts","hydrostatic-qualification-cases-v1.json")));
 continuations=report.continuations; if isstruct(continuations), continuations=num2cell(continuations); end
-require(numel(continuations)==numel(manifest.cases)*numel(providers),"Incomplete continuation matrix.");
+expectedContinuations=numel(manifest.cases)*numel(providers);
+if contractsOnly, expectedContinuations=0; end
+require(numel(continuations)==expectedContinuations,"Incomplete or unexpected continuation matrix for this report scope.");
 keys=strings(1,0);
 for index=1:numel(continuations)
     row=continuations{index}; keys(end+1)=string(row.definition.id)+"/"+string(row.provider); %#ok<AGROW>
