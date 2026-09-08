@@ -4,6 +4,7 @@
 #include "WaveVortexRuntime/WVForcingTendency.hpp"
 
 #include <algorithm>
+#include <cmath>
 #include <limits>
 #include <memory>
 #include <vector>
@@ -76,6 +77,28 @@ void projectRealMeanTendency(std::vector<WVComplex64>& difference,const Geometry
 inline bool forcingArraysOverlap(const void* a,std::size_t n,const void* b,std::size_t m) {
   const auto x=reinterpret_cast<std::uintptr_t>(a),y=reinterpret_cast<std::uintptr_t>(b);
   return a && b && n && m && (x<=y ? y-x<n : x-y<m);
+}
+
+inline WVKernelStatus validatePreparedDiagnosticFields(
+    const WVRealFieldBundleConstView* prepared,WVShape4D spatial,std::size_t channels,
+    const WVState& state,const WVForcingTendencyOutput* outputs,std::size_t count) {
+  if (!prepared) return WVKernelStatus::ok();
+  const auto shape=prepared->shape;
+  if(shape.first!=spatial.first || shape.second!=spatial.second || shape.third!=spatial.third || shape.fourth!=channels)
+    return {WVKernelStatusCode::invalidShape,"Prepared forcing diagnostic fields have the wrong channels."};
+  const auto bytes=shape.elementCount()*sizeof(double),address=reinterpret_cast<std::uintptr_t>(prepared->data);
+  if(!address || address%alignof(double) || bytes>UINTPTR_MAX-address)
+    return {WVKernelStatusCode::invalidPointer,"Invalid prepared forcing diagnostic field storage."};
+  for(const auto input:{state.coefficients.Ap,state.coefficients.Am,state.coefficients.A0})
+    if(forcingArraysOverlap(prepared->data,bytes,input.data,input.shape.elementCount()*sizeof(WVComplex64)))
+      return {WVKernelStatusCode::overlappingArrays,"Prepared forcing fields overlap coefficient state."};
+  for(std::size_t index=0;index<count;++index)
+    if(forcingArraysOverlap(prepared->data,bytes,outputs[index].fields.data,spatial.elementCount()*sizeof(double)))
+      return {WVKernelStatusCode::overlappingArrays,"Prepared forcing fields overlap diagnostic output."};
+  for(std::size_t index=0;index<shape.elementCount();++index)
+    if(!std::isfinite(prepared->data[index]))
+      return {WVKernelStatusCode::invalidConfiguration,"Prepared forcing fields must be finite."};
+  return WVKernelStatus::ok();
 }
 
 template<class Forcing>

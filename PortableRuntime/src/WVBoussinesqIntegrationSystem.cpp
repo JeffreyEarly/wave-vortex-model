@@ -253,7 +253,7 @@ WVKernelStatus WVBoussinesqIntegrationSystem::createImpl(
     // not retain the field-evaluation scratch used by observing systems.
     if (!observers.empty()) {
       status = WVFieldEvaluationService::createBorrowing(
-          candidate->forcing_->kernel(), candidate->fields_);
+          *candidate->forcing_, candidate->fields_);
       if (!status)
         return status;
       status = candidate->fields_->createMovingPlan(

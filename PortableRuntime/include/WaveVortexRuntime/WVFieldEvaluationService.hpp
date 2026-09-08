@@ -19,11 +19,18 @@ namespace wavevortex::runtime {
 
 struct WVIntegrationState;
 class WVIntegrationStateLayout;
+class WVConstantStratificationForcingEngine;
+class WVBarotropicQGForcingEngine;
+class WVStratifiedQGForcingEngine;
+class WVHydrostaticForcingEngine;
+class WVBoussinesqForcingEngine;
+
 
 namespace detail {
 class WVBarotropicQGFieldEvaluationAdapter;
 class WVStratifiedFieldEvaluationAdapter;
 class WVDiagnosticFieldPlan;
+class WVForcingDiagnosticBinding;
 }
 
 enum class WVFieldSamplingKind : std::uint8_t {
@@ -389,6 +396,13 @@ public:
   createBorrowing(WVTransformStratifiedQGKernel &transform,
                   std::unique_ptr<WVFieldEvaluationService> &service);
 
+  // The borrowed engine and its resolved schedule must outlive the service.
+  static WVKernelStatus createBorrowing(WVConstantStratificationForcingEngine&, std::unique_ptr<WVFieldEvaluationService>&);
+  static WVKernelStatus createBorrowing(WVBarotropicQGForcingEngine&, std::unique_ptr<WVFieldEvaluationService>&);
+  static WVKernelStatus createBorrowing(WVStratifiedQGForcingEngine&, std::unique_ptr<WVFieldEvaluationService>&);
+  static WVKernelStatus createBorrowing(WVHydrostaticForcingEngine&, std::unique_ptr<WVFieldEvaluationService>&);
+  static WVKernelStatus createBorrowing(WVBoussinesqForcingEngine&, std::unique_ptr<WVFieldEvaluationService>&);
+
   WVFieldEvaluationService(const WVFieldEvaluationService &) = delete;
   WVFieldEvaluationService &
   operator=(const WVFieldEvaluationService &) = delete;
@@ -493,11 +507,12 @@ private:
   std::unique_ptr<detail::WVBarotropicQGFieldEvaluationAdapter>
       barotropicQG_;
   std::unique_ptr<detail::WVStratifiedFieldEvaluationAdapter> stratified_;
+  std::unique_ptr<detail::WVForcingDiagnosticBinding> forcing_;
   std::unique_ptr<MovingWorkspace> movingWorkspace_;
   std::vector<double> realScratch_;
   std::vector<WVComplex64> complexScratch_;
   std::vector<PlanInvocation> eventBatchInvocations_;
-  WVFieldEvaluationMetrics metrics_;
+  mutable WVFieldEvaluationMetrics metrics_;
   bool executing_ = false;
 };
 

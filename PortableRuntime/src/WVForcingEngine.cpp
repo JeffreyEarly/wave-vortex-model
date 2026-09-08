@@ -267,6 +267,7 @@ private:
 
 class NonlinearAdvectionForcing final : public ResolvedForcing {
 public:
+  bool requiresDiagnosticPhysicalFields() const noexcept override { return true; }
     using ResolvedForcing::ResolvedForcing;
     bool producesCompleteFlux() const noexcept override { return true; }
     WVKernelStatus addRightHandSide(WVForcingExecutionContext& context) const override { return context.nonlinearAdvection(); }
@@ -1475,20 +1476,28 @@ WVKernelStatus WVConstantStratificationForcingEngine::diagnosticLaplacian(
 }
 
 WVKernelStatus WVConstantStratificationForcingEngine::evaluateForcingTendencies(
-    const WVState& state,const WVForcingTendencyOutput* outputs,std::size_t count) {
+    const WVState& state,const WVForcingTendencyOutput* outputs,std::size_t count, const WVRealFieldBundleConstView* preparedPhysical) {
     if (executing_) return {WVKernelStatusCode::reentrantExecution,"Forcing diagnostics require an idle engine."};
+    tendencyMetrics_.workspaceLastPeakBytes=0;
     const auto& c=kernel_->descriptor().configuration();
     const WVShape4D spatial{c.Nx,c.Ny,c.Nz,c.isHydrostatic ? 3U : 4U};
     auto status=detail::validateForcingTendencyOutputs(forcing_,stateShape(),spatial,state,outputs,count);
     if (!status || !count) return status;
+    status=detail::validatePreparedDiagnosticFields(preparedPhysical,spatial,3,state,outputs,count);
+    if (!status) return status;
     try {
         detail::WVForcingDiagnosticWorkspace work(stateShape(),spatial);
+        if (preparedPhysical) {
+            std::copy_n(preparedPhysical->data,preparedPhysical->shape.elementCount(),work.physical.data());
+            work.physicalPrepared=true;
+        }
         auto flux=work.fluxView();
         status=validateStateAndFlux(kernel_->descriptor(),state,flux); if (!status) return status;
         executing_=true; diagnosticWorkspace_=&work; ++evaluationGeneration_;
         struct Guard {
             WVConstantStratificationForcingEngine& engine;
             ~Guard() {
+                engine.tendencyMetrics_.workspaceLastPeakBytes=engine.diagnosticWorkspace_->bytes();
                 engine.tendencyMetrics_.workspaceHighWaterBytes=std::max(engine.tendencyMetrics_.workspaceHighWaterBytes,engine.diagnosticWorkspace_->bytes());
                 engine.tendencyMetrics_.workspaceLiveBytes=0;
                 engine.diagnosticWorkspace_=nullptr; engine.executing_=false;

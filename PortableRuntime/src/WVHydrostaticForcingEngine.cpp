@@ -246,15 +246,22 @@ std::size_t WVHydrostaticForcingEngine::persistentBytes() const noexcept {
     return sizeof(*this)+(kernel_ ? kernel_->persistentBytes() : 0)+metrics_.scheduleBytes+metrics_.derivedOperatorBytes+metrics_.workspaceCapacityBytes;
 }
 WVKernelStatus WVHydrostaticForcingEngine::evaluateForcingTendencies(
-    const WVState& state,const WVForcingTendencyOutput* outputs,std::size_t count) {
+    const WVState& state,const WVForcingTendencyOutput* outputs,std::size_t count, const WVRealFieldBundleConstView* preparedPhysical) {
     if (executing_) return {WVKernelStatusCode::reentrantExecution,"Forcing diagnostics require an idle engine."};
+    tendencyMetrics_.workspaceLastPeakBytes=0;
     const auto shape=kernel().spatialShape();
     const auto R=shape.elementCount();
     const WVShape4D spatial{shape.first,shape.second,shape.third,3};
     auto status=detail::validateForcingTendencyOutputs(forcing_,kernel().spectralShape(),spatial,state,outputs,count);
     if (!status || !count) return status;
+    status=detail::validatePreparedDiagnosticFields(preparedPhysical,spatial,4,state,outputs,count);
+    if (!status) return status;
     try {
         detail::WVForcingDiagnosticWorkspace work(kernel().spectralShape(),spatial);
+        if (preparedPhysical) {
+            std::copy_n(preparedPhysical->data,preparedPhysical->shape.elementCount(),work.physical.data());
+            work.physicalPrepared=true;
+        }
         auto flux=work.fluxView();
         status=kernel().evolveCoefficients(state,{flux.Fp,flux.Fm,flux.F0}); if (!status) return status;
         std::fill(work.flux.begin(),work.flux.end(),WVComplex64{});
@@ -262,6 +269,7 @@ WVKernelStatus WVHydrostaticForcingEngine::evaluateForcingTendencies(
         struct Guard {
             WVHydrostaticForcingEngine& engine;
             ~Guard() {
+                engine.tendencyMetrics_.workspaceLastPeakBytes=engine.diagnosticWorkspace_->bytes();
                 engine.tendencyMetrics_.workspaceHighWaterBytes=std::max(engine.tendencyMetrics_.workspaceHighWaterBytes,engine.diagnosticWorkspace_->bytes());
                 engine.tendencyMetrics_.workspaceLiveBytes=0;
                 engine.diagnosticWorkspace_=nullptr; engine.executing_=false; engine.physicalValid_=false;

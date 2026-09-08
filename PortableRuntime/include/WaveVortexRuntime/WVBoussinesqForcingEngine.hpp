@@ -12,8 +12,10 @@ public:
     const WVForcing* forcingInstance(std::size_t index) const noexcept {
         return index<forcing_.size() ? forcing_[index].get() : nullptr;
     }
+    // Optional u/v/w/eta fields must describe this exact state and time.
+    // They are borrowed for this invocation and must not alias state or outputs.
     WVKernelStatus evaluateForcingTendencies(const WVState&,
-        const WVForcingTendencyOutput*,std::size_t);
+        const WVForcingTendencyOutput*,std::size_t, const WVRealFieldBundleConstView* preparedPhysical = nullptr);
     const WVForcingTendencyMetrics& tendencyMetrics() const noexcept { return tendencyMetrics_; }
 
     static WVKernelStatus validateSchedule(const WVStratifiedModalGeometry&,const WVFrozenForcingSchedule&,WVShape2D,const WVExtensionCatalog&);

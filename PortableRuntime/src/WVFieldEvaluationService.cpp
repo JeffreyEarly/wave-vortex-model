@@ -1,3 +1,9 @@
+#include "WVForcingDiagnosticBinding.hpp"
+#include "WaveVortexRuntime/WVForcingEngine.hpp"
+#include "WaveVortexRuntime/WVBarotropicQGForcingEngine.hpp"
+#include "WaveVortexRuntime/WVStratifiedQGForcingEngine.hpp"
+#include "WaveVortexRuntime/WVHydrostaticForcingEngine.hpp"
+#include "WaveVortexRuntime/WVBoussinesqForcingEngine.hpp"
 #include "WVDiagnosticFieldPlan.hpp"
 #include "WaveVortexRuntime/WVFieldEvaluationService.hpp"
 #include "WaveVortexRuntime/WVIntegrationState.hpp"
@@ -638,6 +644,36 @@ std::vector<std::string> WVFieldEvaluationService::supportedFieldNames() {
   return result;
 }
 
+WVKernelStatus WVFieldEvaluationService::createBorrowing(WVConstantStratificationForcingEngine& engine,std::unique_ptr<WVFieldEvaluationService>& result) {
+  std::unique_ptr<WVFieldEvaluationService> candidate;
+  auto status=createBorrowing(engine.kernel(),candidate); if(!status) return status;
+  status=detail::WVForcingDiagnosticBinding::create<WVConstantStratificationForcingEngine,false>(engine,candidate->forcing_); if(!status) return status;
+  result=std::move(candidate); return WVKernelStatus::ok();
+}
+WVKernelStatus WVFieldEvaluationService::createBorrowing(WVBarotropicQGForcingEngine& engine,std::unique_ptr<WVFieldEvaluationService>& result) {
+  std::unique_ptr<WVFieldEvaluationService> candidate;
+  auto status=createBorrowing(engine.kernel(),candidate); if(!status) return status;
+  status=detail::WVForcingDiagnosticBinding::create<WVBarotropicQGForcingEngine,true>(engine,candidate->forcing_); if(!status) return status;
+  result=std::move(candidate); return WVKernelStatus::ok();
+}
+WVKernelStatus WVFieldEvaluationService::createBorrowing(WVStratifiedQGForcingEngine& engine,std::unique_ptr<WVFieldEvaluationService>& result) {
+  std::unique_ptr<WVFieldEvaluationService> candidate;
+  auto status=createBorrowing(engine.kernel(),candidate); if(!status) return status;
+  status=detail::WVForcingDiagnosticBinding::create<WVStratifiedQGForcingEngine,true>(engine,candidate->forcing_); if(!status) return status;
+  result=std::move(candidate); return WVKernelStatus::ok();
+}
+WVKernelStatus WVFieldEvaluationService::createBorrowing(WVHydrostaticForcingEngine& engine,std::unique_ptr<WVFieldEvaluationService>& result) {
+  std::unique_ptr<WVFieldEvaluationService> candidate;
+  auto status=createBorrowing(engine.kernel(),candidate); if(!status) return status;
+  status=detail::WVForcingDiagnosticBinding::create<WVHydrostaticForcingEngine,false>(engine,candidate->forcing_); if(!status) return status;
+  result=std::move(candidate); return WVKernelStatus::ok();
+}
+WVKernelStatus WVFieldEvaluationService::createBorrowing(WVBoussinesqForcingEngine& engine,std::unique_ptr<WVFieldEvaluationService>& result) {
+  std::unique_ptr<WVFieldEvaluationService> candidate;
+  auto status=createBorrowing(engine.kernel(),candidate); if(!status) return status;
+  status=detail::WVForcingDiagnosticBinding::create<WVBoussinesqForcingEngine,false>(engine,candidate->forcing_); if(!status) return status;
+  result=std::move(candidate); return WVKernelStatus::ok();
+}
 WVKernelStatus WVFieldEvaluationService::createPlan(
     const std::vector<WVFieldRequest> &requests,
     WVFieldEvaluationPlan &plan) const {
@@ -2337,14 +2373,18 @@ bool WVFieldEvaluationService::isCompatibleWith(
 
 const WVFieldEvaluationMetrics &
 WVFieldEvaluationService::metrics() const noexcept {
-  return stratified_ ? stratified_->metrics() : barotropicQG_ ? barotropicQG_->metrics() : metrics_;
+  if (stratified_) metrics_ = stratified_->metrics();
+  else if (barotropicQG_) metrics_ = barotropicQG_->metrics();
+  metrics_.servicePersistentBytes = persistentBytes();
+  return metrics_;
 }
 
 std::size_t WVFieldEvaluationService::persistentBytes() const noexcept {
-  if(stratified_) return sizeof(*this)+stratified_->persistentBytes();
+  const auto forcingBytes=forcing_ ? forcing_->persistentBytes() : 0;
+  if(stratified_) return sizeof(*this)+stratified_->persistentBytes()+forcingBytes;
   if (barotropicQG_)
-    return sizeof(*this) + barotropicQG_->persistentBytes();
-  return sizeof(*this) +
+    return sizeof(*this) + barotropicQG_->persistentBytes()+forcingBytes;
+  return sizeof(*this) + forcingBytes +
          (ownedTransform_ ? transform_->persistentBytes() : 0) +
          realScratch_.capacity() * sizeof(double) +
          complexScratch_.capacity() * sizeof(WVComplex64) +

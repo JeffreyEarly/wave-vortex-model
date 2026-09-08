@@ -1,4 +1,6 @@
 #include "WaveVortexRuntime/WVForcingEngine.hpp"
+#include "WaveVortexRuntime/WVFieldEvaluationService.hpp"
+#include "WaveVortexRuntime/WVIntegrationState.hpp"
 #include "WaveVortexRuntime/WVBarotropicQGForcingEngine.hpp"
 #include "WaveVortexRuntime/WVStratifiedQGForcingEngine.hpp"
 #include "WaveVortexRuntime/WVHydrostaticForcingEngine.hpp"
@@ -69,10 +71,10 @@ WVFrozenForcingSchedule schedule(std::size_t S,bool unpairedMean=false) {
         {{"Nj",{},std::vector<double>{unpairedMean?2.0:1.0}}}};
     WVFrozenForcingSchedule result;
     // Deliberately not in execution order, with actual user instance names.
-    result.entries={{"WVFixedAmplitudeForcing",1,"held amplitudes",WVForcingStage::spectralAmplitude,255,3,"",fixed},
-        {"WVAntialiasing",1,"mode filter",WVForcingStage::spectral,127,2,"",filter},
-        {"WVBottomFrictionLinear",1,"bottom-drag",WVForcingStage::spatial,255,1,"",friction},
-        {"WVNonlinearAdvection",1,"nonlinear advection",WVForcingStage::spatial,127,0,"",empty}};
+    result.entries={{"WVFixedAmplitudeForcing",1,"held amplitudes",WVForcingStage::spectralAmplitude,255,0,"",fixed},
+        {"WVAntialiasing",1,"mode filter",WVForcingStage::spectral,127,1,"",filter},
+        {"WVBottomFrictionLinear",1,"bottom-drag",WVForcingStage::spatial,255,2,"",friction},
+        {"WVNonlinearAdvection",1,"nonlinear advection",WVForcingStage::spatial,127,3,"",empty}};
     return result;
 }
 
@@ -89,6 +91,127 @@ void relative(const std::vector<double>& a,const std::vector<double>& b,const ch
     }
     if (error>1e-12*std::max(scale,1e-30)) std::cerr<<label<<": error="<<error<<" scale="<<scale<<" relative="<<error/std::max(scale,1e-30)<<"\n";
     require(error<=1e-12*std::max(scale,1e-30),"Forcing stage difference does not match its accumulated tendency");
+}
+
+template<class Engine,class Fields>
+void fieldService(Engine& engine,const WVState& state,WVShape4D spatial,
+    const Fields& reference,const std::shared_ptr<FailureCounter>& counter) {
+    const bool qg=spatial.fourth==1;
+    const auto R=spatial.first*spatial.second*spatial.third;
+    const std::array<const char*,4> prefixes=qg ? std::array<const char*,4>{"Fqgpv_","","",""} :
+        spatial.fourth==3 ? std::array<const char*,4>{"Fu_","Fv_","Feta_",""} :
+        std::array<const char*,4>{"Fu_","Fv_","Fw_","Feta_"};
+    std::unique_ptr<WVFieldEvaluationService> service,unbound;
+    require(bool(WVFieldEvaluationService::createBorrowing(engine,service)),"Bind forcing field service");
+    require(bool(WVFieldEvaluationService::createBorrowing(engine.kernel(),unbound)),"Unbound kernel service");
+    WVIntegrationStateLayout layout;
+    require(bool(service->createStateLayout({},layout)),"Forcing field state layout");
+    std::vector<WVCoefficientFamilyConstView> families;
+    const WVComplex64* statePointers[]={state.coefficients.Ap.data,state.coefficients.Am.data,state.coefficients.A0.data};
+    for(std::size_t index=0;index<layout.coefficientFamilyCount();++index)
+        families.push_back({&layout.coefficientFamilies()[index],statePointers[qg ? 2 : index]});
+    WVIntegrationState integrationState{state,nullptr,0,families.data(),families.size()};
+    std::vector<WVFieldRequest> requests;
+    for(std::size_t index=0;index<engine.forcingCount();++index) {
+        std::string name(engine.forcingInstance(index)->name());
+        for(auto& c:name) if(c==' ' || c=='-') c='_';
+        for(std::size_t channel=0;channel<spatial.fourth;++channel)
+            requests.push_back({"output-"+std::to_string(requests.size()),prefixes[channel]+name,{}});
+    }
+    const auto forcingOutputCount=requests.size();
+    requests.push_back({"repeated",requests.front().fieldName,{}});
+    requests.push_back({"ordinary-u","u",{}});
+    requests.push_back({"ordinary-v","v",{}});
+    WVFieldSamplingRequest profile; profile.kind=WVFieldSamplingKind::fixedVerticalProfiles;
+    profile.xIndices={1}; profile.yIndices={1};
+    if constexpr(!std::is_same_v<Engine,WVBarotropicQGForcingEngine>)
+        requests.push_back({"ordinary-profile","u",profile});
+    WVFieldSamplingRequest position; position.kind=WVFieldSamplingKind::positions;
+    position.x={0}; position.y={0}; position.z={0};
+    requests.push_back({"ordinary-position","u",position});
+    requests.push_back({"ordinary-scalar","uvMax",{}});
+    WVFieldEvaluationPlan plan,rejected;
+    auto status=service->createPlan(requests,plan);
+    if(!status) throw std::runtime_error("Forcing field plan: "+status.message);
+    require(!unbound->createPlan({requests.front()},rejected),"Kernel-only service accepted an unbound forcing");
+    auto bad=requests.front(); bad.fieldName+="_missing";
+    require(!service->createPlan({bad},rejected),"Unknown forcing instance accepted");
+    for(auto kind:{WVFieldSamplingKind::positions,WVFieldSamplingKind::fixedVerticalProfiles}) {
+        bad=requests.front(); bad.sampling.kind=kind;
+        bad.sampling.x={0}; bad.sampling.y={0}; bad.sampling.z={0};
+        bad.sampling.xIndices={1}; bad.sampling.yIndices={1};
+        require(service->createPlan({bad},rejected).code==WVKernelStatusCode::unsupportedOperation,
+            "Forcing diagnostic accepted unqualified profile/position sampling");
+    }
+    require(plan.outputCount()==requests.size(),"Forcing field output count");
+    std::vector<std::vector<double>> data(plan.outputCount());
+    std::vector<WVFieldOutputView> views;
+    for(std::size_t index=0;index<plan.outputCount();++index) {
+        const auto& output=plan.outputs()[index];
+        require(output.fieldName==requests[index].fieldName && output.samplingKind==requests[index].sampling.kind,
+            "Actual forcing output identity/sampling lost");
+        if(index<=forcingOutputCount) require(output.elementCount==R,"Forcing output natural shape lost");
+        data[index].resize(output.elementCount,99);
+        views.push_back({data[index].data(),data[index].size()});
+    }
+    const auto persistent=service->persistentBytes(),planBytes=plan.persistentBytes();
+    const auto count=engine.tendencyMetrics().forcingEvaluationCount,start=counter->calls;
+    const auto reconstructions=engine.metrics().physicalFieldReconstructionCount;
+    const auto primitiveEvaluations=service->metrics().primitiveFieldEvaluationCount;
+    status=service->evaluate(plan,integrationState,views.data(),views.size());
+    if(!status) throw std::runtime_error("Forcing field evaluation: "+status.message);
+    const auto fftCalls=counter->calls-start;
+    constexpr bool stratifiedQG=std::is_same_v<Engine,WVStratifiedQGForcingEngine>;
+    require(engine.metrics().physicalFieldReconstructionCount==reconstructions+(stratifiedQG ? 3 : 0),
+        "Forcing diagnostics reconstructed velocity already prepared for field outputs");
+    const auto expectedPhysical=qg ? 2 : std::is_same_v<Engine,WVConstantStratificationForcingEngine> ? 3 : 4;
+    require(service->metrics().primitiveFieldEvaluationCount==primitiveEvaluations+expectedPhysical &&
+        service->metrics().diagnosticIntermediateReuseCount==4,
+        "Ordinary and forcing outputs failed to share their physical dependencies");
+    for(std::size_t index=0;index<forcingOutputCount;++index) {
+        const auto instance=index/spatial.fourth,channel=index%spatial.fourth;
+        relative(data[index],std::vector<double>(reference[instance].begin()+channel*R,
+            reference[instance].begin()+(channel+1)*R),"Bound forcing field");
+    }
+    require(data[forcingOutputCount]==data.front(),"Repeated forcing channel differs");
+    require(engine.tendencyMetrics().forcingEvaluationCount==count+engine.forcingCount(),
+        "Field service repeated a contribution across channels/outputs");
+    require(service->persistentBytes()==persistent && plan.persistentBytes()==planBytes &&
+        service->metrics().servicePersistentBytes==persistent && service->metrics().diagnosticWorkspaceLiveBytes==0,
+        "Bound field service retained diagnostic workspace or miscounted persistent bytes");
+    const auto successful=data;
+    for(auto& field:data) std::fill(field.begin(),field.end(),99);
+    counter->failAt=counter->calls+fftCalls;
+    require(service->evaluate(plan,integrationState,views.data(),views.size()).code==WVKernelStatusCode::fftExecutionFailure,
+        "Bound field service expected late FFT failure");
+    for(const auto& field:data) for(auto value:field) require(value==99,"Partial mixed field output escaped failure");
+    require(service->metrics().diagnosticWorkspaceLiveBytes==0 && service->persistentBytes()==persistent,
+        "Bound field failure retained workspace");
+    counter->failAt=0;
+    require(bool(service->evaluate(plan,integrationState,views.data(),views.size())) && data==successful,
+        "Bound field retry differs from successful evaluation");
+    const auto preparedChannels=static_cast<std::size_t>(expectedPhysical);
+    std::vector<double> preparedValues(preparedChannels*R),result(spatial.elementCount(),99);
+    WVRealFieldBundleConstView prepared{preparedValues.data(),{spatial.first,spatial.second,spatial.third,preparedChannels}};
+    WVForcingTendencyOutput output{0,{result.data(),spatial}};
+    const auto evaluatePrepared=[&]() {
+        if constexpr(std::is_same_v<Engine,WVBarotropicQGForcingEngine> || std::is_same_v<Engine,WVStratifiedQGForcingEngine>)
+            return engine.evaluateForcingTendencies(state.coefficients.A0,&output,1,&prepared);
+        else return engine.evaluateForcingTendencies(state,&output,1,&prepared);
+    };
+    const auto rejectCalls=counter->calls;
+    prepared.shape.fourth++;
+    require(evaluatePrepared().code==WVKernelStatusCode::invalidShape,"Wrong prepared channel shape accepted");
+    prepared.shape.fourth--;
+    preparedValues[0]=std::numeric_limits<double>::quiet_NaN();
+    require(evaluatePrepared().code==WVKernelStatusCode::invalidConfiguration,"Nonfinite prepared fields accepted");
+    preparedValues[0]=0;
+    prepared.data=reinterpret_cast<const double*>(state.coefficients.A0.data);
+    require(evaluatePrepared().code==WVKernelStatusCode::overlappingArrays,"Prepared fields may alias scientific state");
+    prepared.data=result.data();
+    require(evaluatePrepared().code==WVKernelStatusCode::overlappingArrays,"Prepared fields may alias diagnostic output");
+    require(counter->calls==rejectCalls,"Prepared input rejected after numerical execution");
+    for(auto value:result) require(value==99,"Prepared input preflight changed output");
 }
 
 template<class Engine,class Project,class Reconstruct>
@@ -189,6 +312,9 @@ void exercise(Engine& engine,WVShape2D spectral,WVShape4D spatial,
     const WVForcingTendencyOutput single{3,{selected.data(),spatial}};
     require(bool(engine.evaluateForcingTendencies(state,&single,1)) && selected==reference[3],
         "Requesting only the amplitude contribution lost preceding stages");
+    fieldService(engine,state,spatial,reference,counter);
+    require(bool(engine.nonlinearFlux(state,flux)) && equal(rhs,rhsBefore) && equal(coefficients,stateBefore),
+        "Field-service diagnostics changed subsequent RHS or scientific state");
 }
 
 void constant(bool hydrostatic) {
@@ -236,6 +362,36 @@ void constant(bool hydrostatic) {
         counter->calls==calls && unsupported->tendencyMetrics().workspaceHighWaterBytes==0,
         "Unqualified extension was not rejected before evaluation and allocation");
     for (auto value:output) require(value==99,"Preflight rejection changed output");
+    std::unique_ptr<WVFieldEvaluationService> customService;
+    require(bool(WVFieldEvaluationService::createBorrowing(*unsupported,customService)),"Bind custom forcing service");
+    WVFieldEvaluationPlan rejected;
+    require(customService->createPlan({{"unsupported","Fu_unqualified",{}}},rejected).code==WVKernelStatusCode::unsupportedOperation,
+        "Field service accepted an unqualified custom forcing");
+    auto collisionSchedule=schedule(S);
+    collisionSchedule.entries[2].name="same-name";
+    collisionSchedule.entries[3].name="same name";
+    std::unique_ptr<WVConstantStratificationForcingEngine> collision;
+    require(bool(WVConstantStratificationForcingEngine::create(c,collisionSchedule,catalog,
+        std::make_unique<FailingEngine>(counter),collision)),"Colliding forcing names fixture");
+    std::unique_ptr<WVFieldEvaluationService> collisionService;
+    require(bool(WVFieldEvaluationService::createBorrowing(*collision,collisionService)),"Bind colliding forcing names");
+    require(collisionService->createPlan({{"ambiguous","Fu_same_name",{}}},rejected).code==WVKernelStatusCode::unsupportedOperation,
+        "Sanitized forcing-name collision resolved arbitrarily");
+    require(bool(collisionService->createPlan({{"ordinary","u",{}}},rejected)),"Forcing ambiguity disabled ordinary fields");
+
+    WVFrozenForcingSchedule filterOnly; filterOnly.entries={schedule(S).entries[1]};
+    std::unique_ptr<WVConstantStratificationForcingEngine> filterEngine;
+    require(bool(WVConstantStratificationForcingEngine::create(c,filterOnly,catalog,
+        std::make_unique<FailingEngine>(counter),filterEngine)),"Spectral-only forcing fixture");
+    std::unique_ptr<WVFieldEvaluationService> filterService;
+    require(bool(WVFieldEvaluationService::createBorrowing(*filterEngine,filterService)) &&
+        bool(filterService->createPlan({{"filter","Fu_mode_filter",{}}},rejected)),"Spectral-only forcing field plan");
+    WVFieldOutputView filtered{output.data(),R};
+    require(bool(filterService->evaluate(rejected,state,&filtered,1)),"Spectral-only forcing field evaluation");
+    require(filterEngine->metrics().physicalFieldReconstructionCount==0 &&
+        filterService->metrics().primitiveFieldEvaluationCount==0 && filterService->metrics().diagnosticIntermediateReuseCount==0,
+        "Spectral-only diagnostic unnecessarily reconstructed physical state");
+    for(std::size_t index=0;index<R;++index) require(output[index]==0,"Filtering an empty accumulator produced forcing");
 
 }
 
@@ -314,6 +470,9 @@ void barotropic() {
         counter->calls==beforeInvalid,"Nonfinite QG diagnostic state accepted");
     for (auto x:selected) require(x==99,"Invalid QG state changed output");
     a[0]=saved;
+    fieldService(*engine,WVState{0,0,{{},{},state}},spatial,successful,counter);
+    require(bool(engine->evaluateRightHandSide(state,flux)) && equal(f,rhs) && equal(a,before),
+        "QG field-service diagnostics changed subsequent RHS or scientific state");
     // Raw inverse must preserve the mean, while ordinary qgpv retains its mask.
     std::fill(f.begin(),f.end(),WVComplex64{});
     for (std::size_t i=0;i<S;++i) if (engine->kernel().descriptor().fourierModes()[i].Kh==0) f[i]={.25,7};
@@ -413,6 +572,9 @@ void stratifiedQG() {
     require(bool(engine->evaluateForcingTendencies(state,outputs.data(),outputs.size())) && values==successful,"Stratified QG retry mismatch");
     std::vector<double> selected(R); const WVForcingTendencyOutput request{7,{selected.data(),spatial}};
     require(bool(engine->evaluateForcingTendencies(state,&request,1)) && selected==successful[7],"Stratified QG selected-only prefix mismatch");
+    fieldService(*engine,WVState{0,0,{{},{},state}},spatial,successful,counter);
+    require(bool(engine->evaluateRightHandSide(state,flux)) && equal(f,rhs) && equal(a,before),
+        "QG field-service diagnostics changed subsequent RHS or scientific state");
     std::fill(f.begin(),f.end(),WVComplex64{});
     for (std::size_t i=0;i<S;++i) if (g.k[i/g.Nj]==0 && g.l[i/g.Nj]==0) f[i]={.25,7};
     const auto meanBefore=f;

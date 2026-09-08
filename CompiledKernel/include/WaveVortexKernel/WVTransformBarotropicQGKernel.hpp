@@ -116,6 +116,7 @@ struct WVBarotropicQGOperationWorkspace {
     // instead of projecting; the caller projects the cumulative stage once.
     WVRealView* spatialTendency = nullptr;
     bool spatialTendencyCaptured = false;
+    const WVRealFieldBundleConstView* preparedVelocity = nullptr;
     bool physicalFieldsPrepared = false;
     bool qgpvDerivativesPrepared = false;
     std::size_t physicalFieldReconstructionCount = 0;
@@ -238,7 +239,8 @@ private:
     WVKernelStatus antialiasScalarInPlace(WVRealView& scalar);
     WVKernelStatus validateForcingOperation(
         const WVComplexConstView& A0, const WVComplexView& F0,
-        const WVRealView* spatialTendency = nullptr) const;
+        const WVRealView* spatialTendency = nullptr,
+        const WVRealFieldBundleConstView* preparedVelocity = nullptr) const;
     WVKernelStatus fillHalfSpectrum(const WVComplexConstView& input,
                                     const WVComplex64* factors,
                                     std::size_t field, std::size_t fields);

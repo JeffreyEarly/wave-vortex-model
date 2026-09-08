@@ -322,7 +322,7 @@ WVKernelStatus WVStratifiedQGIntegrationSystem::createImpl(
                              .identifier +
                          " must resolve exactly once.");
       status = WVFieldEvaluationService::createBorrowing(
-          candidate->kernel(), candidate->fields_);
+          *candidate->forcingEngine_, candidate->fields_);
       if (!status)
         return status;
       status = candidate->fields_->createMovingPlan(

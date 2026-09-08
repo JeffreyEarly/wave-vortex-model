@@ -1,4 +1,5 @@
 #include "WVDiagnosticFieldPlan.hpp"
+#include "WVForcingDiagnosticBinding.hpp"
 #include "WVBarotropicQGFieldEvaluationAdapter.hpp"
 #include "WVStratifiedFieldEvaluationAdapter.hpp"
 
@@ -37,6 +38,9 @@ bool overlap(const void* a,std::size_t n,const void* b,std::size_t m) {
 
 bool WVDiagnosticFieldPlan::required(const std::vector<WVFieldRequest>& requests,bool stratified) noexcept {
   for(const auto& request:requests) {
+    const auto& name=request.fieldName;
+    if(name.rfind("Fu_",0)==0 || name.rfind("Fv_",0)==0 || name.rfind("Fw_",0)==0 ||
+        name.rfind("Feta_",0)==0 || name.rfind("Fqgpv_",0)==0) return true;
     const auto* metadata=findPortableVariable(request.fieldName);
     if(metadata && (metadata->ordinal>=23 || (stratified && metadata->identifier==Variable::rhoBar))) return true;
   }
@@ -91,8 +95,26 @@ WVKernelStatus WVDiagnosticFieldPlan::create(const WVFieldEvaluationService& ser
       if(request.identifier.empty() || !identifiers.insert(request.identifier).second)
         return invalid("Diagnostic output identifiers must be nonempty and unique.");
       const auto* m=findPortableVariable(request.fieldName);
-      if(!m) return unsupported("Unknown diagnostic: "+request.fieldName);
-      const auto* contract=portableVariableContract(m->identifier,plan->configuration_);
+      const auto* contract=m ? portableVariableContract(m->identifier,plan->configuration_) : nullptr;
+      if(!m || (contract && std::string_view(contract->authority)=="forcing-instance-template")) {
+        if(!service.forcing_) return unsupported("Field service has no resolved forcing schedule: "+request.fieldName);
+        WVForcingDiagnosticBinding::Output bound;
+        auto binding=service.forcing_->resolve(request.fieldName,plan->configuration_,static_cast<std::uint8_t>(samplingBit(request.sampling.kind)),bound);
+        if(!binding) return binding;
+        plan->forcingPhysicalChannels_=std::max(plan->forcingPhysicalChannels_,bound.physicalChannels);
+        const auto found=std::find(plan->forcingIndices_.begin(),plan->forcingIndices_.end(),bound.executionIndex);
+        const auto slot=static_cast<std::size_t>(found-plan->forcingIndices_.begin());
+        if(found==plan->forcingIndices_.end()) plan->forcingIndices_.push_back(bound.executionIndex);
+        Output output; output.variable=bound.contract->metadata.identifier; output.forcing=true;
+        output.forcingSlot=slot; output.forcingChannel=bound.channel;
+        output.specification.identifier=request.identifier; output.specification.fieldName=request.fieldName;
+        output.specification.samplingKind=request.sampling.kind;
+        output.specification.dimensions=plan->isBarotropic_ ? std::vector<std::size_t>{plan->spatial_.first,plan->spatial_.second} :
+            std::vector<std::size_t>{plan->spatial_.first,plan->spatial_.second,plan->spatial_.third};
+        output.specification.elementCount=plan->spatial_.elementCount();
+        plan->outputs_.push_back(std::move(output));
+        continue;
+      }
       // Mixing legacy and diagnostic fields must preserve configuration applicability.
       if(!contract) return unsupported("Diagnostic is unavailable on this transform: "+request.fieldName);
       if(m->ordinal>=23 && (contract->metadata.samplingMask & (m->naturalRank==WVPortableNaturalRank::coefficient && request.sampling.kind==WVFieldSamplingKind::fullGrid ? static_cast<std::size_t>(portableCoefficientSampling) : samplingBit(request.sampling.kind)))==0)
@@ -156,13 +178,16 @@ WVKernelStatus WVDiagnosticFieldPlan::create(const WVFieldEvaluationService& ser
       }
       plan->outputs_.push_back(std::move(output));
     }
+    const char* physicalNames[]={"u","v","w","eta"};
+    for(std::size_t channel=0;channel<plan->forcingPhysicalChannels_;++channel)
+      plan->forcingPhysicalDependencies_[channel]=dependency(0,physicalNames[channel],{});
     for(auto& group:plan->groups_) {
       if(group.requests.empty()) continue;
       status=service.createPlan(group.requests,group.fields); if(!status) return status;
     }
     WVFieldEvaluationPlan candidate;
     for(auto& output:plan->outputs_) {
-      if(!output.specification.isComplex && !output.extrema && output.variable!=Variable::totalEnergySpatiallyIntegrated) {
+      if(!output.forcing && !output.specification.isComplex && !output.extrema && output.variable!=Variable::totalEnergySpatiallyIntegrated) {
         const auto& primitive=plan->groups_[output.group].fields.outputs()[output.dependency];
         output.specification.dimensions=primitive.dimensions;
         output.specification.elementCount=primitive.elementCount;
@@ -191,7 +216,7 @@ WVKernelStatus WVDiagnosticFieldPlan::rebind(const WVFieldEvaluationService& ser
     requests.reserve(outputs_.size());
     for(const auto& output:outputs_) {
       WVFieldSamplingRequest sampling;
-      if(!output.specification.isComplex && !output.extrema && output.variable!=Variable::totalEnergySpatiallyIntegrated)
+      if(!output.forcing && !output.specification.isComplex && !output.extrema && output.variable!=Variable::totalEnergySpatiallyIntegrated)
         sampling=groups_[output.group].requests[output.dependency].sampling;
       requests.push_back({output.specification.identifier,output.specification.fieldName,std::move(sampling)});
     }
@@ -296,6 +321,9 @@ WVKernelStatus WVDiagnosticFieldPlan::evaluate(WVFieldEvaluationService& service
     std::array<std::vector<std::vector<double>>,5> fields;
     std::array<std::vector<WVComplex64>,3> masked;
     std::vector<WVComplex64> phases;
+    std::vector<std::vector<double>> forcingFields;
+    std::vector<WVForcingTendencyOutput> forcingViews;
+    std::vector<double> forcingPhysical;
     std::size_t primitiveCount=0;
     const auto account=[&](std::size_t viewBytes) {
       std::size_t bytes=viewBytes;
@@ -305,6 +333,9 @@ WVKernelStatus WVDiagnosticFieldPlan::evaluate(WVFieldEvaluationService& service
       }
       for(const auto& buffer:masked) bytes+=buffer.capacity()*sizeof(WVComplex64);
       bytes+=phases.capacity()*sizeof(WVComplex64);
+      bytes+=forcingPhysical.capacity()*sizeof(double);
+      bytes+=forcingFields.capacity()*sizeof(std::vector<double>)+forcingViews.capacity()*sizeof(WVForcingTendencyOutput);
+      for(const auto& buffer:forcingFields) bytes+=buffer.capacity()*sizeof(double);
       metrics.diagnosticWorkspaceLiveBytes=bytes;
       metrics.diagnosticWorkspaceHighWaterBytes=std::max(metrics.diagnosticWorkspaceHighWaterBytes,bytes);
     };
@@ -336,6 +367,27 @@ WVKernelStatus WVDiagnosticFieldPlan::evaluate(WVFieldEvaluationService& service
       const auto status=service.evaluate(plan,selected,views.data(),views.size()); if(!status) return status;
       primitiveCount+=views.size();
     }
+    if(!forcingIndices_.empty()) {
+      const std::size_t channels=isQG_ ? 1 : isHydrostatic_ ? 3 : 4;
+      forcingFields.resize(forcingIndices_.size());
+      for(std::size_t slot=0;slot<forcingIndices_.size();++slot) {
+        auto& buffer=forcingFields[slot]; buffer.resize(channels*spatial_.elementCount());
+        forcingViews.push_back({forcingIndices_[slot],{buffer.data(),{spatial_.first,spatial_.second,spatial_.third,channels}}});
+      }
+      WVRealFieldBundleConstView prepared;
+      if(forcingPhysicalChannels_) {
+        const auto R=spatial_.elementCount();
+        forcingPhysical.resize(forcingPhysicalChannels_*R);
+        for(std::size_t channel=0;channel<forcingPhysicalChannels_;++channel)
+          std::copy_n(fields[0][forcingPhysicalDependencies_[channel]].data(),R,forcingPhysical.data()+channel*R);
+        prepared={forcingPhysical.data(),{spatial_.first,spatial_.second,spatial_.third,forcingPhysicalChannels_}};
+      }
+      account(0);
+      const auto status=service.forcing_->evaluate(amplitudes,forcingViews.data(),forcingViews.size(),forcingPhysicalChannels_ ? &prepared : nullptr);
+      metrics.diagnosticWorkspaceHighWaterBytes=std::max(metrics.diagnosticWorkspaceHighWaterBytes,
+          metrics.diagnosticWorkspaceLiveBytes+service.forcing_->metrics().workspaceLastPeakBytes);
+      if(!status) return status;
+    }
     bool needsPhase=false;
     for(const auto& output:outputs_) needsPhase|=output.variable==Variable::Apt || output.variable==Variable::Amt;
     if(needsPhase) {
@@ -348,7 +400,10 @@ WVKernelStatus WVDiagnosticFieldPlan::evaluate(WVFieldEvaluationService& service
     account(0);
     for(std::size_t index=0;index<count;++index) {
       const auto& output=outputs_[index];
-      if(output.specification.isComplex) {
+      if(output.forcing) {
+        const auto R=spatial_.elementCount();
+        std::copy_n(forcingFields[output.forcingSlot].data()+output.forcingChannel*R,R,outputs[index].data);
+      } else if(output.specification.isComplex) {
         const auto family=output.variable==Variable::Apt ? 0 : output.variable==Variable::Amt ? 1 : 2;
         for(std::size_t coefficient=0;coefficient<n;++coefficient) {
           const auto a=coefficients[family][coefficient];
@@ -400,8 +455,9 @@ WVKernelStatus WVDiagnosticFieldPlan::evaluate(WVFieldEvaluationService& service
     }
     ++metrics.diagnosticEvaluationCount;
     metrics.diagnosticPrimitiveOutputCount+=primitiveCount;
-    std::size_t primitiveReferences=0,phaseReferences=0;
+    std::size_t primitiveReferences=forcingPhysicalChannels_,phaseReferences=0;
     for(const auto& output:outputs_) {
+      if(output.forcing) continue;
       if(output.specification.isComplex) {
         if(output.variable!=Variable::A0t) ++phaseReferences;
       } else if(output.variable==Variable::totalEnergySpatiallyIntegrated) primitiveReferences+=isHydrostatic_ ? 3 : 4;
@@ -417,7 +473,7 @@ WVKernelStatus WVDiagnosticFieldPlan::evaluate(WVFieldEvaluationService& service
 }
 
 std::size_t WVDiagnosticFieldPlan::persistentBytes() const noexcept {
-  std::size_t bytes=sizeof(*this)+configuration_.capacity()+outputs_.capacity()*sizeof(Output);
+  std::size_t bytes=sizeof(*this)+configuration_.capacity()+outputs_.capacity()*sizeof(Output)+forcingIndices_.capacity()*sizeof(std::size_t);
   for(const auto& output:outputs_)
     bytes+=output.specification.identifier.capacity()+output.specification.fieldName.capacity()+
         output.specification.dimensions.capacity()*sizeof(std::size_t);

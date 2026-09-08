@@ -110,6 +110,7 @@ public:
   // Source-linked opt-in: observation must be supported by the same coarse
   // operations used by this implementation, including ordered stage effects.
   virtual bool supportsTendencyDiagnostics() const noexcept { return false; }
+  virtual bool requiresDiagnosticPhysicalFields() const noexcept { return requiresPhysicalFields(); }
   virtual std::size_t constraintWriteCount() const noexcept { return 0; }
 
   virtual WVKernelStatus addRightHandSide(

@@ -874,7 +874,7 @@ WVKernelStatus WVTransformBarotropicQGKernel::inverseNonlinearFields(
 
 WVKernelStatus WVTransformBarotropicQGKernel::validateForcingOperation(
     const WVComplexConstView& A0, const WVComplexView& F0,
-    const WVRealView* spatialTendency) const {
+    const WVRealView* spatialTendency, const WVRealFieldBundleConstView* preparedVelocity) const {
     auto status = validateSpectral(A0, descriptor_.spectralShape(), "A0");
     if (!status) return status;
     status = validateSpectral(F0, descriptor_.spectralShape(), "F0");
@@ -893,6 +893,18 @@ WVKernelStatus WVTransformBarotropicQGKernel::validateForcingOperation(
             return {WVKernelStatusCode::invalidPointer,"Invalid raw tendency storage."};
         if (overlaps(spatialTendency->data,R,A0.data,bytes) || overlaps(spatialTendency->data,R,F0.data,bytes))
             return {WVKernelStatusCode::overlappingArrays,"Raw tendency overlaps model coefficients or flux."};
+    }
+    if (preparedVelocity) {
+        const auto& v=*preparedVelocity;
+        const auto shape=descriptor_.spatialShape();
+        if (v.shape.first!=shape.rows || v.shape.second!=shape.columns || v.shape.third!=1 || v.shape.fourth!=2)
+            return {WVKernelStatusCode::invalidShape,"Prepared QG velocity has the wrong channels."};
+        const auto n=v.shape.elementCount()*sizeof(double),address=reinterpret_cast<std::uintptr_t>(v.data);
+        if (!address || address%alignof(double) || n>UINTPTR_MAX-address)
+            return {WVKernelStatusCode::invalidPointer,"Invalid prepared QG velocity storage."};
+        if (overlaps(v.data,n,A0.data,bytes) || overlaps(v.data,n,F0.data,bytes) ||
+            (spatialTendency && overlaps(v.data,n,spatialTendency->data,n/2)))
+            return {WVKernelStatusCode::overlappingArrays,"Prepared QG velocity overlaps state, flux or raw output."};
     }
     return WVKernelStatus::ok();
 }
@@ -934,12 +946,28 @@ WVKernelStatus WVTransformBarotropicQGKernel::ensureForcingFields(
     const WVComplexConstView& A0, bool requireQGPVDerivatives,
     WVBarotropicQGOperationWorkspace& workspace) {
     if (!workspace.physicalFieldsPrepared) {
-        auto status = inverseNonlinearFields(A0);
-        if (!status) return status;
+        if (workspace.preparedVelocity) {
+            const auto& v=*workspace.preparedVelocity;
+            const auto shape=descriptor_.spatialShape();
+            if (!v.data || v.shape.first!=shape.rows || v.shape.second!=shape.columns || v.shape.third!=1 || v.shape.fourth!=2)
+                return {WVKernelStatusCode::invalidShape,"Invalid prepared QG velocity."};
+            const auto bytes=v.shape.elementCount()*sizeof(double),address=reinterpret_cast<std::uintptr_t>(v.data);
+            if (address%alignof(double) || bytes>UINTPTR_MAX-address)
+                return {WVKernelStatusCode::invalidPointer,"Invalid prepared QG velocity storage."};
+            for (std::size_t index=0;index<v.shape.elementCount();++index)
+                if (!std::isfinite(v.data[index])) return {WVKernelStatusCode::invalidConfiguration,"Prepared QG velocity must be finite."};
+            if (v.data!=realScratch_.data())
+                std::copy_n(v.data,2*shape.elementCount(),realScratch_.data());
+            ++workspace.physicalFieldReuseCount;
+            ++metrics_.forcingFieldReuseCount;
+        } else {
+            auto status = inverseNonlinearFields(A0);
+            if (!status) return status;
+            workspace.qgpvDerivativesPrepared = true;
+            ++workspace.physicalFieldReconstructionCount;
+            ++metrics_.forcingFieldReconstructionCount;
+        }
         workspace.physicalFieldsPrepared = true;
-        workspace.qgpvDerivativesPrepared = true;
-        ++workspace.physicalFieldReconstructionCount;
-        ++metrics_.forcingFieldReconstructionCount;
     } else {
         ++workspace.physicalFieldReuseCount;
         ++metrics_.forcingFieldReuseCount;
@@ -1057,7 +1085,7 @@ WVKernelStatus WVTransformBarotropicQGKernel::addPotentialVorticityAdvection(
     if (executing_)
         return {WVKernelStatusCode::reentrantExecution,
                 "The Barotropic QG kernel is not reentrant."};
-    auto status = validateForcingOperation(A0, F0, workspace.spatialTendency);
+    auto status = validateForcingOperation(A0, F0, workspace.spatialTendency, workspace.preparedVelocity);
     if (!status) return status;
     ExecutionGuard guard(executing_);
     status = ensureForcingFields(A0, true, workspace);
@@ -1093,7 +1121,7 @@ WVKernelStatus WVTransformBarotropicQGKernel::addAdaptiveDamping(
     if (executing_)
         return {WVKernelStatusCode::reentrantExecution,
                 "The Barotropic QG kernel is not reentrant."};
-    auto status = validateForcingOperation(A0, F0, workspace.spatialTendency);
+    auto status = validateForcingOperation(A0, F0, workspace.spatialTendency, workspace.preparedVelocity);
     if (!status) return status;
     if (dampingOperator.size() != descriptor_.Nkl())
         return {WVKernelStatusCode::invalidShape,
@@ -1126,7 +1154,7 @@ WVKernelStatus WVTransformBarotropicQGKernel::addLinearBottomFriction(
     if (executing_)
         return {WVKernelStatusCode::reentrantExecution,
                 "The Barotropic QG kernel is not reentrant."};
-    auto status = validateForcingOperation(A0, F0, workspace.spatialTendency);
+    auto status = validateForcingOperation(A0, F0, workspace.spatialTendency, workspace.preparedVelocity);
     if (!status) return status;
     if (!std::isfinite(rate) || rate < 0.0)
         return {WVKernelStatusCode::invalidConfiguration,
@@ -1161,7 +1189,7 @@ WVKernelStatus WVTransformBarotropicQGKernel::addQuadraticBottomFriction(
     if (executing_)
         return {WVKernelStatusCode::reentrantExecution,
                 "The Barotropic QG kernel is not reentrant."};
-    auto status = validateForcingOperation(A0, F0, workspace.spatialTendency);
+    auto status = validateForcingOperation(A0, F0, workspace.spatialTendency, workspace.preparedVelocity);
     if (!status) return status;
     if (!std::isfinite(drag) || drag < 0.0)
         return {WVKernelStatusCode::invalidConfiguration,
@@ -1209,7 +1237,7 @@ WVKernelStatus WVTransformBarotropicQGKernel::addBetaPlanePVAdvection(
     if (executing_)
         return {WVKernelStatusCode::reentrantExecution,
                 "The Barotropic QG kernel is not reentrant."};
-    auto status = validateForcingOperation(A0, F0, workspace.spatialTendency);
+    auto status = validateForcingOperation(A0, F0, workspace.spatialTendency, workspace.preparedVelocity);
     if (!status) return status;
     if (!std::isfinite(beta))
         return {WVKernelStatusCode::invalidConfiguration,

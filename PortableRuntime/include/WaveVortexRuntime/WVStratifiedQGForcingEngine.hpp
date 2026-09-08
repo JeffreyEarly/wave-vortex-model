@@ -73,6 +73,7 @@ public:
   virtual std::size_t ordinal() const noexcept = 0;
   virtual std::size_t persistentBytes() const noexcept = 0;
   virtual bool supportsTendencyDiagnostics() const noexcept { return false; }
+  virtual bool requiresDiagnosticPhysicalFields() const noexcept { return false; }
   virtual std::size_t constraintWriteCount() const noexcept { return 0; }
   virtual WVKernelStatus addRightHandSide(
       WVStratifiedQGForcingExecutionContext &context) const = 0;
@@ -119,8 +120,10 @@ public:
   const WVStratifiedQGForcing* forcingInstance(std::size_t index) const noexcept {
     return index<forcing_.size() ? forcing_[index].get() : nullptr;
   }
+  // Optional u/v fields must describe this exact state and time.
+  // They are borrowed for this invocation and must not alias state or outputs.
   WVKernelStatus evaluateForcingTendencies(const WVComplexConstView&,
-      const WVForcingTendencyOutput*,std::size_t);
+      const WVForcingTendencyOutput*,std::size_t, const WVRealFieldBundleConstView* preparedPhysical = nullptr);
   const WVForcingTendencyMetrics& tendencyMetrics() const noexcept { return tendencyMetrics_; }
 
 private:

@@ -192,6 +192,7 @@ private:
 
 class QGNonlinearAdvection final : public ResolvedBarotropicQGForcing {
 public:
+  bool requiresDiagnosticPhysicalFields() const noexcept override { return true; }
   using ResolvedBarotropicQGForcing::ResolvedBarotropicQGForcing;
   WVKernelStatus addRightHandSide(
       WVBarotropicQGForcingExecutionContext &context) const override {
@@ -201,6 +202,7 @@ public:
 
 class QGAdaptiveDamping final : public ResolvedBarotropicQGForcing {
 public:
+  bool requiresDiagnosticPhysicalFields() const noexcept override { return true; }
   QGAdaptiveDamping(WVFrozenForcingEntry entry, std::vector<double> damping)
       : ResolvedBarotropicQGForcing(entry), damping_(std::move(damping)) {}
   WVKernelStatus addRightHandSide(
@@ -217,6 +219,7 @@ private:
 
 class QGLinearBottomFriction final : public ResolvedBarotropicQGForcing {
 public:
+  bool requiresDiagnosticPhysicalFields() const noexcept override { return true; }
   QGLinearBottomFriction(WVFrozenForcingEntry entry, double rate)
       : ResolvedBarotropicQGForcing(entry), rate_(rate) {}
   WVKernelStatus addRightHandSide(
@@ -230,6 +233,7 @@ private:
 
 class QGQuadraticBottomFriction final : public ResolvedBarotropicQGForcing {
 public:
+  bool requiresDiagnosticPhysicalFields() const noexcept override { return true; }
   QGQuadraticBottomFriction(WVFrozenForcingEntry entry, double drag)
       : ResolvedBarotropicQGForcing(entry), drag_(drag) {}
   WVKernelStatus addRightHandSide(
@@ -243,6 +247,7 @@ private:
 
 class QGBetaPlanePVAdvection final : public ResolvedBarotropicQGForcing {
 public:
+  bool requiresDiagnosticPhysicalFields() const noexcept override { return true; }
   QGBetaPlanePVAdvection(WVFrozenForcingEntry entry, double beta)
       : ResolvedBarotropicQGForcing(entry), beta_(beta) {}
   WVKernelStatus addRightHandSide(
@@ -773,14 +778,17 @@ WVKernelStatus WVBarotropicQGForcingEngine::evaluateRightHandSide(
 }
 
 WVKernelStatus WVBarotropicQGForcingEngine::evaluateForcingTendencies(
-    const WVComplexConstView& A0,const WVForcingTendencyOutput* outputs,std::size_t count) {
+    const WVComplexConstView& A0,const WVForcingTendencyOutput* outputs,std::size_t count, const WVRealFieldBundleConstView* preparedPhysical) {
   if (executing_) return {WVKernelStatusCode::reentrantExecution,"Forcing diagnostics require an idle engine."};
+  tendencyMetrics_.workspaceLastPeakBytes=0;
   const auto spectral=kernel().descriptor().spectralShape();
   const auto plane=kernel().descriptor().spatialShape();
   const WVShape4D spatial{plane.rows,plane.columns,1,1};
   const WVState state{0,0,{{},{},A0}};
   auto status=detail::validateForcingTendencyOutputs(forcing_,spectral,spatial,state,outputs,count);
   if (!status || !count) return status;
+  status=detail::validatePreparedDiagnosticFields(preparedPhysical,spatial,2,state,outputs,count);
+  if (!status) return status;
   if (A0.shape.rows!=spectral.rows || A0.shape.columns!=spectral.columns)
     return {WVKernelStatusCode::invalidShape,"Expected compact QG diagnostic state."};
   const auto address=reinterpret_cast<std::uintptr_t>(A0.data);
@@ -796,12 +804,14 @@ WVKernelStatus WVBarotropicQGForcingEngine::evaluateForcingTendencies(
     std::fill(work.flux.begin(),work.flux.end(),WVComplex64{});
     WVBarotropicQGForcingExecutionContext context;
     context.engine_=this; context.A0_=A0; context.outputInitialized_=true;
+    context.workspace_.preparedVelocity=preparedPhysical;
     executing_=true;
     struct Guard {
       WVBarotropicQGForcingEngine& engine;
       detail::WVForcingDiagnosticWorkspace& work;
       WVBarotropicQGOperationWorkspace& physical;
       ~Guard() {
+        engine.tendencyMetrics_.workspaceLastPeakBytes=work.bytes();
         engine.tendencyMetrics_.workspaceHighWaterBytes=std::max(engine.tendencyMetrics_.workspaceHighWaterBytes,work.bytes());
         engine.tendencyMetrics_.workspaceLiveBytes=0;
         engine.metrics_.physicalFieldReconstructionCount+=physical.physicalFieldReconstructionCount;

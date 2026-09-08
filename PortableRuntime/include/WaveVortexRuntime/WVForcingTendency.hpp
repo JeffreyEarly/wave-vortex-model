@@ -21,6 +21,7 @@ struct WVForcingTendencyMetrics {
   std::size_t spatialProjectionCount = 0;
   std::size_t spectralReconstructionCount = 0;
   std::size_t workspaceLiveBytes = 0;
+  std::size_t workspaceLastPeakBytes = 0;
   std::size_t workspaceHighWaterBytes = 0;
 };
 
