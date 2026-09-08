@@ -7,6 +7,7 @@ add_library(WaveVortexKernel STATIC
     src/WVPreparedVerticalOperator.cpp
     src/WVTransformStratifiedQGKernel.cpp
     src/WVTransformHydrostaticKernel.cpp
+    src/WVTransformBoussinesqKernel.cpp
     src/WVKernelTypes.cpp
     src/WVTransformBarotropicQGKernel.cpp
     src/WVTransformConstantStratificationKernel.cpp
