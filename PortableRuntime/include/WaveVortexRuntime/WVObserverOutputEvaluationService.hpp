@@ -25,6 +25,11 @@ struct WVObserverOutputEvaluationMetrics {
   std::size_t occurrenceWorkspaceRetainedBytes = 0;
   std::size_t occurrenceWorkspaceLiveBytes = 0;
   std::size_t occurrenceWorkspaceMaximumLiveBytes = 0;
+  std::size_t diagnosticEvaluationCount = 0;
+  std::size_t diagnosticPrimitiveOutputCount = 0;
+  std::size_t diagnosticIntermediateReuseCount = 0;
+  std::size_t diagnosticWorkspaceLiveBytes = 0;
+  std::size_t diagnosticWorkspaceHighWaterBytes = 0;
   double evaluationSeconds = 0.0;
 };
 
@@ -70,9 +75,7 @@ public:
   std::size_t occurrenceWorkspaceRetainedBytes() const noexcept override;
   std::size_t occurrenceWorkspaceLiveBytes() const noexcept override;
 
-  const WVObserverOutputEvaluationMetrics &metrics() const noexcept {
-    return metrics_;
-  }
+  WVObserverOutputEvaluationMetrics metrics() const noexcept;
   std::size_t persistentBytes() const noexcept;
 
 private:

@@ -58,6 +58,7 @@ public:
   std::size_t persistentBytes() const noexcept;
 
 private:
+  friend class WVDiagnosticFieldPlan;
   struct MovingInterpolationWorkspace;
   WVKernelStatus evaluateMovingImpl(
       const WVMovingFieldEvaluationPlan &plan,

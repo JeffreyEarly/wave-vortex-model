@@ -1,4 +1,4 @@
-name: Portable variable catalog
+name: Portable variable catalog and diagnostics
 
 on:
   pull_request:
@@ -8,6 +8,8 @@ on:
       - 'tools/renderPortableVariableContracts.m'
       - 'PortableRuntime/**'
       - 'UnitTests/TestPortableVariableCatalog.m'
+      - 'UnitTests/TestPortableDiagnostics.m'
+      - 'ObservingSystems/WVEulerianFields.m'
       - 'UnitTests/fixtures/portable-variable-legacy-v1.json'
       - '@WVTransform*/**'
       - 'FlowComponents/**'
@@ -26,7 +28,7 @@ jobs:
   catalog:
     name: Variable catalog / ${{ matrix.release }}
     runs-on: ubuntu-latest
-    timeout-minutes: 20
+    timeout-minutes: 30
     strategy:
       fail-fast: false
       matrix:
@@ -42,6 +44,16 @@ jobs:
           ref: 96f0b801c565406dd5a4ba2480334a3a481c3e2c
           path: OceanKit
           persist-credentials: false
+      - name: Install NetCDF
+        run: |
+          sudo apt-get -o Acquire::Retries=3 update
+          sudo apt-get -o Acquire::Retries=3 install --yes libnetcdf-dev pkg-config
+      - name: Build diagnostic evaluator and output contracts
+        working-directory: source
+        run: |
+          cmake -S PortableRuntime -B "$RUNNER_TEMP/diagnostic-build" -DCMAKE_BUILD_TYPE=Release -DWV_ENABLE_ACCELERATE=OFF
+          cmake --build "$RUNNER_TEMP/diagnostic-build" --parallel 4 --target WVDiagnosticFieldDump TestWVPortableVariableCatalog TestWVFieldEvaluation TestWVObserverOutputEvaluation wave-vortex-run
+          ctest --test-dir "$RUNNER_TEMP/diagnostic-build" -R '^(portable-variable-catalog|field-evaluation|observer-output-evaluation)$' --output-on-failure
       - uses: matlab-actions/setup-matlab@v3
         with:
           release: ${{ matrix.release }}
@@ -55,6 +67,10 @@ jobs:
             cd(sourceRoot);
             results=runtests(fullfile(sourceRoot,"UnitTests","TestPortableVariableCatalog.m"));
             assert(numel(results)==6);
+            assertSuccess(results);
+            setenv("WV_DIAGNOSTIC_DUMP",fullfile(getenv("RUNNER_TEMP"),"diagnostic-build","WVDiagnosticFieldDump"));
+            results=runtests(fullfile(sourceRoot,"UnitTests","TestPortableDiagnostics.m"));
+            assert(numel(results)==4);
             assertSuccess(results);
       - name: Verify clean checkout
         working-directory: source

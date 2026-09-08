@@ -73,6 +73,8 @@ inline WVPortableVariableStatus resolvePortableVariablePlan(
   if (std::string_view(contract->authority) == "forcing-instance-template" &&
       !options.hasQualifiedForcingBinding)
     return WVPortableVariableStatus::requiresForcingBinding;
+  if (options.requireEvaluator && contract->runtime == WVPortableDiagnosticRuntime::intentionalIncompatibility)
+    return WVPortableVariableStatus::intentionalIncompatibility;
   if (options.requireEvaluator &&
       contract->runtime != WVPortableDiagnosticRuntime::implemented)
     return WVPortableVariableStatus::pendingEvaluation;

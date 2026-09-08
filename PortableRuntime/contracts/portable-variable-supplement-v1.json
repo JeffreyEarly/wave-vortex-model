@@ -1511,7 +1511,7 @@
         "A0"
       ],
       "intermediates": [],
-      "runtimeStatus": "pending-305",
+      "runtimeStatus": "implemented",
       "samplingRestriction": "Spectral coefficient layout only; spatial interpolation is undefined.",
       "configurationRestriction": "Applies only to the enumerated transform configurations and built-in component masks."
     },
@@ -1522,7 +1522,7 @@
         "conjPhase"
       ],
       "intermediates": [],
-      "runtimeStatus": "pending-305",
+      "runtimeStatus": "implemented",
       "samplingRestriction": "Spectral coefficient layout only; spatial interpolation is undefined.",
       "configurationRestriction": "Applies only to the enumerated transform configurations and built-in component masks."
     },
@@ -1533,7 +1533,7 @@
         "phase"
       ],
       "intermediates": [],
-      "runtimeStatus": "pending-305",
+      "runtimeStatus": "implemented",
       "samplingRestriction": "Spectral coefficient layout only; spatial interpolation is undefined.",
       "configurationRestriction": "Applies only to the enumerated transform configurations and built-in component masks."
     },
@@ -1606,9 +1606,9 @@
       "intermediates": [
         "apeQuadrature"
       ],
-      "runtimeStatus": "pending-305",
+      "runtimeStatus": "intentional-incompatibility",
       "samplingRestriction": "Full natural grid or scalar only; interpolation requires a separately qualified evaluator.",
-      "configurationRestriction": "Resolve shouldUseTrueNoMotionProfile and the no-motion solver explicitly; no implicit solver substitution."
+      "configurationRestriction": "unpersisted-density-profile-contract: this diagnostic depends on the unsaved no-motion solver identity and true-profile selection."
     },
     {
       "name": "apv",
@@ -1621,9 +1621,9 @@
       "intermediates": [
         "etaTrueGradients"
       ],
-      "runtimeStatus": "pending-305",
+      "runtimeStatus": "intentional-incompatibility",
       "samplingRestriction": "Full natural grid or scalar only; interpolation requires a separately qualified evaluator.",
-      "configurationRestriction": "Resolve shouldUseTrueNoMotionProfile and the no-motion solver explicitly; no implicit solver substitution."
+      "configurationRestriction": "unpersisted-true-profile-selection: this diagnostic depends on eta_true and its unsaved reference/true-profile choice."
     },
     {
       "name": "conjPhase",
@@ -1631,9 +1631,9 @@
         "phase"
       ],
       "intermediates": [],
-      "runtimeStatus": "pending-305",
+      "runtimeStatus": "intentional-incompatibility",
       "samplingRestriction": "Spectral coefficient layout only; spatial interpolation is undefined.",
-      "configurationRestriction": "Applies only to the enumerated transform configurations and built-in component masks."
+      "configurationRestriction": "matlab-phase-complexity-metadata-mismatch: MATLAB declares this variable real but computes complex values; portable output cannot preserve both the annotation and the value."
     },
     {
       "name": "energy_g",
@@ -1643,7 +1643,7 @@
       "intermediates": [
         "spectralReduction"
       ],
-      "runtimeStatus": "pending-305",
+      "runtimeStatus": "implemented",
       "samplingRestriction": "Full natural grid or scalar only; interpolation requires a separately qualified evaluator.",
       "configurationRestriction": "Applies only to the enumerated transform configurations and built-in component masks."
     },
@@ -1655,7 +1655,7 @@
       "intermediates": [
         "spectralReduction"
       ],
-      "runtimeStatus": "pending-305",
+      "runtimeStatus": "implemented",
       "samplingRestriction": "Full natural grid or scalar only; interpolation requires a separately qualified evaluator.",
       "configurationRestriction": "Applies only to the enumerated transform configurations and built-in component masks."
     },
@@ -1667,7 +1667,7 @@
       "intermediates": [
         "spectralReduction"
       ],
-      "runtimeStatus": "pending-305",
+      "runtimeStatus": "implemented",
       "samplingRestriction": "Full natural grid or scalar only; interpolation requires a separately qualified evaluator.",
       "configurationRestriction": "Applies only to the enumerated transform configurations and built-in component masks."
     },
@@ -1679,7 +1679,7 @@
       "intermediates": [
         "spectralReduction"
       ],
-      "runtimeStatus": "pending-305",
+      "runtimeStatus": "implemented",
       "samplingRestriction": "Full natural grid or scalar only; interpolation requires a separately qualified evaluator.",
       "configurationRestriction": "Applies only to the enumerated transform configurations and built-in component masks."
     },
@@ -1691,7 +1691,7 @@
       "intermediates": [
         "componentReconstruction"
       ],
-      "runtimeStatus": "pending-305",
+      "runtimeStatus": "implemented",
       "samplingRestriction": "Full natural grid or scalar only; interpolation requires a separately qualified evaluator.",
       "configurationRestriction": "Applies only to the enumerated transform configurations and built-in component masks."
     },
@@ -1703,7 +1703,7 @@
       "intermediates": [
         "componentReconstruction"
       ],
-      "runtimeStatus": "pending-305",
+      "runtimeStatus": "implemented",
       "samplingRestriction": "Full natural grid or scalar only; interpolation requires a separately qualified evaluator.",
       "configurationRestriction": "Applies only to the enumerated transform configurations and built-in component masks."
     },
@@ -1715,7 +1715,7 @@
       "intermediates": [
         "componentReconstruction"
       ],
-      "runtimeStatus": "pending-305",
+      "runtimeStatus": "implemented",
       "samplingRestriction": "Full natural grid or scalar only; interpolation requires a separately qualified evaluator.",
       "configurationRestriction": "Applies only to the enumerated transform configurations and built-in component masks."
     },
@@ -1729,9 +1729,9 @@
         "referenceDensity",
         "inverseDensitySpline"
       ],
-      "runtimeStatus": "pending-305",
+      "runtimeStatus": "intentional-incompatibility",
       "samplingRestriction": "Full natural grid or scalar only; interpolation requires a separately qualified evaluator.",
-      "configurationRestriction": "Resolve shouldUseTrueNoMotionProfile and the no-motion solver explicitly; no implicit solver substitution."
+      "configurationRestriction": "unpersisted-true-profile-selection: shouldUseTrueNoMotionProfile is deliberately runtime-only in MATLAB v4; a portable continuation cannot recover the authored reference/true-profile choice."
     },
     {
       "name": "eta_w",
@@ -1741,7 +1741,7 @@
       "intermediates": [
         "componentReconstruction"
       ],
-      "runtimeStatus": "pending-305",
+      "runtimeStatus": "implemented",
       "samplingRestriction": "Full natural grid or scalar only; interpolation requires a separately qualified evaluator.",
       "configurationRestriction": "Applies only to the enumerated transform configurations and built-in component masks."
     },
@@ -1753,7 +1753,7 @@
       "intermediates": [
         "spectralReduction"
       ],
-      "runtimeStatus": "pending-305",
+      "runtimeStatus": "implemented",
       "samplingRestriction": "Full natural grid or scalar only; interpolation requires a separately qualified evaluator.",
       "configurationRestriction": "Applies only to the enumerated transform configurations and built-in component masks."
     },
@@ -1765,7 +1765,7 @@
       "intermediates": [
         "componentReconstruction"
       ],
-      "runtimeStatus": "pending-305",
+      "runtimeStatus": "implemented",
       "samplingRestriction": "Full natural grid or scalar only; interpolation requires a separately qualified evaluator.",
       "configurationRestriction": "Applies only to the enumerated transform configurations and built-in component masks."
     },
@@ -1777,7 +1777,7 @@
       "intermediates": [
         "componentReconstruction"
       ],
-      "runtimeStatus": "pending-305",
+      "runtimeStatus": "implemented",
       "samplingRestriction": "Full natural grid or scalar only; interpolation requires a separately qualified evaluator.",
       "configurationRestriction": "Applies only to the enumerated transform configurations and built-in component masks."
     },
@@ -1789,7 +1789,7 @@
       "intermediates": [
         "componentReconstruction"
       ],
-      "runtimeStatus": "pending-305",
+      "runtimeStatus": "implemented",
       "samplingRestriction": "Full natural grid or scalar only; interpolation requires a separately qualified evaluator.",
       "configurationRestriction": "Applies only to the enumerated transform configurations and built-in component masks."
     },
@@ -1801,7 +1801,7 @@
       "intermediates": [
         "componentReconstruction"
       ],
-      "runtimeStatus": "pending-305",
+      "runtimeStatus": "implemented",
       "samplingRestriction": "Full natural grid or scalar only; interpolation requires a separately qualified evaluator.",
       "configurationRestriction": "Applies only to the enumerated transform configurations and built-in component masks."
     },
@@ -1811,9 +1811,9 @@
       "intermediates": [
         "phaseEvolution"
       ],
-      "runtimeStatus": "pending-305",
+      "runtimeStatus": "intentional-incompatibility",
       "samplingRestriction": "Spectral coefficient layout only; spatial interpolation is undefined.",
-      "configurationRestriction": "Applies only to the enumerated transform configurations and built-in component masks."
+      "configurationRestriction": "matlab-phase-complexity-metadata-mismatch: MATLAB declares this variable real but computes complex values; portable output cannot preserve both the annotation and the value."
     },
     {
       "name": "rho_nm",
@@ -1824,9 +1824,9 @@
         "densityMoments",
         "noMotionProfile"
       ],
-      "runtimeStatus": "pending-305",
+      "runtimeStatus": "intentional-incompatibility",
       "samplingRestriction": "Full natural grid or scalar only; interpolation requires a separately qualified evaluator.",
-      "configurationRestriction": "Resolve shouldUseTrueNoMotionProfile and the no-motion solver explicitly; no implicit solver substitution."
+      "configurationRestriction": "unpersisted-no-motion-solver: MATLAB selects lsqnonlin or fminsearch from the local toolbox environment; saved v4 models do not carry that numerical solver identity."
     },
     {
       "name": "ssh_g",
@@ -1836,7 +1836,7 @@
       "intermediates": [
         "componentReconstruction"
       ],
-      "runtimeStatus": "pending-305",
+      "runtimeStatus": "implemented",
       "samplingRestriction": "Full natural grid or scalar only; interpolation requires a separately qualified evaluator.",
       "configurationRestriction": "Applies only to the enumerated transform configurations and built-in component masks."
     },
@@ -1848,7 +1848,7 @@
       "intermediates": [
         "componentReconstruction"
       ],
-      "runtimeStatus": "pending-305",
+      "runtimeStatus": "implemented",
       "samplingRestriction": "Full natural grid or scalar only; interpolation requires a separately qualified evaluator.",
       "configurationRestriction": "Applies only to the enumerated transform configurations and built-in component masks."
     },
@@ -1860,7 +1860,7 @@
       "intermediates": [
         "componentReconstruction"
       ],
-      "runtimeStatus": "pending-305",
+      "runtimeStatus": "implemented",
       "samplingRestriction": "Full natural grid or scalar only; interpolation requires a separately qualified evaluator.",
       "configurationRestriction": "Applies only to the enumerated transform configurations and built-in component masks."
     },
@@ -1872,7 +1872,7 @@
       "intermediates": [
         "componentReconstruction"
       ],
-      "runtimeStatus": "pending-305",
+      "runtimeStatus": "implemented",
       "samplingRestriction": "Full natural grid or scalar only; interpolation requires a separately qualified evaluator.",
       "configurationRestriction": "Applies only to the enumerated transform configurations and built-in component masks."
     },
@@ -1884,7 +1884,7 @@
       "intermediates": [
         "componentReconstruction"
       ],
-      "runtimeStatus": "pending-305",
+      "runtimeStatus": "implemented",
       "samplingRestriction": "Full natural grid or scalar only; interpolation requires a separately qualified evaluator.",
       "configurationRestriction": "Applies only to the enumerated transform configurations and built-in component masks."
     },
@@ -1896,7 +1896,7 @@
       "intermediates": [
         "componentReconstruction"
       ],
-      "runtimeStatus": "pending-305",
+      "runtimeStatus": "implemented",
       "samplingRestriction": "Full natural grid or scalar only; interpolation requires a separately qualified evaluator.",
       "configurationRestriction": "Applies only to the enumerated transform configurations and built-in component masks."
     },
@@ -1908,7 +1908,7 @@
       "intermediates": [
         "componentReconstruction"
       ],
-      "runtimeStatus": "pending-305",
+      "runtimeStatus": "implemented",
       "samplingRestriction": "Full natural grid or scalar only; interpolation requires a separately qualified evaluator.",
       "configurationRestriction": "Applies only to the enumerated transform configurations and built-in component masks."
     },
@@ -1920,7 +1920,7 @@
       "intermediates": [
         "componentReconstruction"
       ],
-      "runtimeStatus": "pending-305",
+      "runtimeStatus": "implemented",
       "samplingRestriction": "Full natural grid or scalar only; interpolation requires a separately qualified evaluator.",
       "configurationRestriction": "Applies only to the enumerated transform configurations and built-in component masks."
     },
@@ -1932,7 +1932,7 @@
       "intermediates": [
         "componentReconstruction"
       ],
-      "runtimeStatus": "pending-305",
+      "runtimeStatus": "implemented",
       "samplingRestriction": "Full natural grid or scalar only; interpolation requires a separately qualified evaluator.",
       "configurationRestriction": "Applies only to the enumerated transform configurations and built-in component masks."
     },
@@ -1944,7 +1944,7 @@
       "intermediates": [
         "componentReconstruction"
       ],
-      "runtimeStatus": "pending-305",
+      "runtimeStatus": "implemented",
       "samplingRestriction": "Full natural grid or scalar only; interpolation requires a separately qualified evaluator.",
       "configurationRestriction": "Applies only to the enumerated transform configurations and built-in component masks."
     },
@@ -1956,7 +1956,7 @@
       "intermediates": [
         "componentReconstruction"
       ],
-      "runtimeStatus": "pending-305",
+      "runtimeStatus": "implemented",
       "samplingRestriction": "Full natural grid or scalar only; interpolation requires a separately qualified evaluator.",
       "configurationRestriction": "Applies only to the enumerated transform configurations and built-in component masks."
     },
@@ -1968,7 +1968,7 @@
       "intermediates": [
         "componentReconstruction"
       ],
-      "runtimeStatus": "pending-305",
+      "runtimeStatus": "implemented",
       "samplingRestriction": "Full natural grid or scalar only; interpolation requires a separately qualified evaluator.",
       "configurationRestriction": "Applies only to the enumerated transform configurations and built-in component masks."
     },
@@ -1980,7 +1980,7 @@
       "intermediates": [
         "spectralReduction"
       ],
-      "runtimeStatus": "pending-305",
+      "runtimeStatus": "implemented",
       "samplingRestriction": "Full natural grid or scalar only; interpolation requires a separately qualified evaluator.",
       "configurationRestriction": "Applies only to the enumerated transform configurations and built-in component masks."
     },
@@ -1995,7 +1995,7 @@
       "intermediates": [
         "spatialQuadrature"
       ],
-      "runtimeStatus": "pending-305",
+      "runtimeStatus": "implemented",
       "samplingRestriction": "Full natural grid or scalar only; interpolation requires a separately qualified evaluator.",
       "configurationRestriction": "Applies only to the enumerated transform configurations and built-in component masks."
     },
@@ -2007,7 +2007,7 @@
       "intermediates": [
         "componentReconstruction"
       ],
-      "runtimeStatus": "pending-305",
+      "runtimeStatus": "implemented",
       "samplingRestriction": "Full natural grid or scalar only; interpolation requires a separately qualified evaluator.",
       "configurationRestriction": "Applies only to the enumerated transform configurations and built-in component masks."
     },
@@ -2019,7 +2019,7 @@
       "intermediates": [
         "componentReconstruction"
       ],
-      "runtimeStatus": "pending-305",
+      "runtimeStatus": "implemented",
       "samplingRestriction": "Full natural grid or scalar only; interpolation requires a separately qualified evaluator.",
       "configurationRestriction": "Applies only to the enumerated transform configurations and built-in component masks."
     },
@@ -2031,7 +2031,7 @@
       "intermediates": [
         "componentReconstruction"
       ],
-      "runtimeStatus": "pending-305",
+      "runtimeStatus": "implemented",
       "samplingRestriction": "Full natural grid or scalar only; interpolation requires a separately qualified evaluator.",
       "configurationRestriction": "Applies only to the enumerated transform configurations and built-in component masks."
     },
@@ -2043,7 +2043,7 @@
       "intermediates": [
         "componentReconstruction"
       ],
-      "runtimeStatus": "pending-305",
+      "runtimeStatus": "implemented",
       "samplingRestriction": "Full natural grid or scalar only; interpolation requires a separately qualified evaluator.",
       "configurationRestriction": "Applies only to the enumerated transform configurations and built-in component masks."
     },
@@ -2055,7 +2055,7 @@
       "intermediates": [
         "componentReconstruction"
       ],
-      "runtimeStatus": "pending-305",
+      "runtimeStatus": "implemented",
       "samplingRestriction": "Full natural grid or scalar only; interpolation requires a separately qualified evaluator.",
       "configurationRestriction": "Applies only to the enumerated transform configurations and built-in component masks."
     },
@@ -2067,7 +2067,7 @@
       "intermediates": [
         "componentReconstruction"
       ],
-      "runtimeStatus": "pending-305",
+      "runtimeStatus": "implemented",
       "samplingRestriction": "Full natural grid or scalar only; interpolation requires a separately qualified evaluator.",
       "configurationRestriction": "Applies only to the enumerated transform configurations and built-in component masks."
     },
@@ -2079,7 +2079,7 @@
       "intermediates": [
         "componentReconstruction"
       ],
-      "runtimeStatus": "pending-305",
+      "runtimeStatus": "implemented",
       "samplingRestriction": "Full natural grid or scalar only; interpolation requires a separately qualified evaluator.",
       "configurationRestriction": "Applies only to the enumerated transform configurations and built-in component masks."
     },
@@ -2091,7 +2091,7 @@
       "intermediates": [
         "componentReconstruction"
       ],
-      "runtimeStatus": "pending-305",
+      "runtimeStatus": "implemented",
       "samplingRestriction": "Full natural grid or scalar only; interpolation requires a separately qualified evaluator.",
       "configurationRestriction": "Applies only to the enumerated transform configurations and built-in component masks."
     },
@@ -2103,7 +2103,7 @@
       "intermediates": [
         "componentReconstruction"
       ],
-      "runtimeStatus": "pending-305",
+      "runtimeStatus": "implemented",
       "samplingRestriction": "Full natural grid or scalar only; interpolation requires a separately qualified evaluator.",
       "configurationRestriction": "Applies only to the enumerated transform configurations and built-in component masks."
     },
@@ -2115,7 +2115,7 @@
       "intermediates": [
         "componentReconstruction"
       ],
-      "runtimeStatus": "pending-305",
+      "runtimeStatus": "implemented",
       "samplingRestriction": "Full natural grid or scalar only; interpolation requires a separately qualified evaluator.",
       "configurationRestriction": "Applies only to the enumerated transform configurations and built-in component masks."
     },
@@ -2127,7 +2127,7 @@
       "intermediates": [
         "componentReconstruction"
       ],
-      "runtimeStatus": "pending-305",
+      "runtimeStatus": "implemented",
       "samplingRestriction": "Full natural grid or scalar only; interpolation requires a separately qualified evaluator.",
       "configurationRestriction": "Applies only to the enumerated transform configurations and built-in component masks."
     },
@@ -2139,7 +2139,7 @@
       "intermediates": [
         "componentReconstruction"
       ],
-      "runtimeStatus": "pending-305",
+      "runtimeStatus": "implemented",
       "samplingRestriction": "Full natural grid or scalar only; interpolation requires a separately qualified evaluator.",
       "configurationRestriction": "Applies only to the enumerated transform configurations and built-in component masks."
     }

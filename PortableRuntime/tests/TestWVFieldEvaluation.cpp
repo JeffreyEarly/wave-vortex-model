@@ -186,11 +186,13 @@ private:
 };
 
 void verifyCatalog() {
-  const std::vector<std::string> expected = {
+  std::vector<std::string> expected = {
       "u",       "v",         "w",       "eta",    "pi",
       "p",       "psi",       "qgpv",    "rho_e",  "rho_total",
       "rho_bar", "zeta_x",    "zeta_y",  "zeta_z", "ssu",
       "ssv",     "ssh",       "energy",  "uvMax",  "wMax"};
+  for(const auto& metadata:WVPortableVariableCatalog)
+    if(metadata.ordinal>=23 && findExecutablePortableVariable(metadata.name)) expected.emplace_back(metadata.name);
   require(WVFieldEvaluationService::supportedFieldNames() == expected,
           "field catalog changed");
 }
@@ -206,8 +208,7 @@ void verifyPlanValidation() {
   require(status.code == WVKernelStatusCode::invalidConfiguration,
           "unknown field was accepted");
   status = service->createPlan({{"pending", "w_w", {}}}, plan);
-  require(status.code == WVKernelStatusCode::invalidConfiguration,
-          "catalog-only diagnostic was admitted to the legacy field mask");
+  require(static_cast<bool>(status), "qualified diagnostic plan was rejected");
   status = service->createPlan({full("u"), {"full_u", "v", {}}}, plan);
   require(status.code == WVKernelStatusCode::invalidConfiguration,
           "duplicate identifier was accepted");
@@ -279,8 +280,8 @@ void verifyEvaluation(std::size_t nx, std::size_t ny, bool hydrostatic,
   require(static_cast<bool>(status), "field service creation failed");
 
   std::vector<WVFieldRequest> requests;
-  for (const auto &name : WVFieldEvaluationService::supportedFieldNames())
-    requests.push_back(full(name));
+  for (const auto &metadata : WVPortableVariableCatalog)
+    if(metadata.ordinal>=3 && metadata.ordinal<23) requests.push_back(full(metadata.name));
   WVFieldSamplingRequest profiles;
   profiles.kind = WVFieldSamplingKind::fixedVerticalProfiles;
   profiles.xIndices = {1, nx};

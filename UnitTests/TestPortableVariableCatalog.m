@@ -85,6 +85,12 @@ classdef TestPortableVariableCatalog < matlab.unittest.TestCase
             broken.contracts(1).intermediateMask = 2^30;
             testCase.verifyError(@()validatePortableVariableCatalog(broken),"WaveVortexModel:InvalidPortableVariableCatalog");
             broken = catalog;
+            broken.exclusions(2) = broken.exclusions(1);
+            testCase.verifyError(@()validatePortableVariableCatalog(broken),"WaveVortexModel:InvalidPortableVariableCatalog");
+            broken = catalog;
+            broken.exclusions(1).name = 'u';
+            testCase.verifyError(@()validatePortableVariableCatalog(broken),"WaveVortexModel:InvalidPortableVariableCatalog");
+            broken = catalog;
             broken.contracts(1).metadata.samplingModes = {'positions'};
             testCase.verifyError(@()validatePortableVariableCatalog(broken),"WaveVortexModel:InvalidPortableVariableCatalog");
         end
@@ -98,7 +104,7 @@ classdef TestPortableVariableCatalog < matlab.unittest.TestCase
             testCase.verifyEqual(string(barotropic.metadata.dimensions),["x";"y"]);
             hydrostatic = rows(names=="eta_true" & string({rows.configuration}).'=="hydrostatic-aa0");
             testCase.verifyEqual(string(hydrostatic.trueProfileDependencies),"rho_nm");
-            testCase.verifyEqual(string(hydrostatic.runtimeStatus),"pending-305");
+            testCase.verifyEqual(string(hydrostatic.runtimeStatus),"intentional-incompatibility");
             forcing = rows(names=="Fqgpv_portable_catalog_forcing" & string({rows.configuration}).'=="barotropic-aa0");
             testCase.verifyEqual(string(forcing.metadata.units),"s-2");
             testCase.verifyEqual(string(forcing.authority),"forcing-instance-template");
