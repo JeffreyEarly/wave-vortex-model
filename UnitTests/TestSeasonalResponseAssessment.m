@@ -14,6 +14,30 @@ classdef TestSeasonalResponseAssessment < matlab.unittest.TestCase
         end
     end
     methods (Test, TestTags="full")
+        function highBandResponseMatchesIndependentAnalyticalModes(testCase)
+            D = 4000; N0 = 5.2e-3; b = 1300;
+            I = N0^2*b*(1-exp(-2*D/b))/2;
+            w = WVTransformFreeSurfaceQG([100e3 100e3 D],[4 4 513], ...
+                N2Function=@(z)N0^2*exp(2*z/b),latitude=24,g0=-I,gd=I, ...
+                apvModeCount=84,mdaModeCount=2,shouldAntialias=false);
+            diffusion = WVVerticalDiffusivity(w,kappa_z=1e-5);
+            operators = diffusion.densityDiffusionOperators();
+            kh = 2*pi/100e3;
+            index = find(abs(w.khUnique-kh)<1e-15,1);
+            page = operators.pages{index};
+            T = 365.25*86400; omega = 2*pi/T;
+            source = zeros(86,1); source(85) = -w.g/w.f*kh^2*10*pi/T;
+            H = [page.energyGenerator,page.toEnergy*source,zeros(86,1); ...
+                zeros(1,86),0,omega;zeros(1,86),-omega,0];
+            y = expm(64*86400*H)*[zeros(87,1);1];
+            endpoint = [w.apvEndpointResponse(:,:,index),-w.f/w.g/kh^2*eye(2)] ...
+                *page.fromEnergy*y(1:86);
+            % Independent Bessel modes and doubled analytic quadrature,
+            % recorded by runQGEndpointSensitivityStudy. Sine amplitudes,
+            % not RMS values or an infinite-band continuum reference.
+            expected = [2.66531682392831;-0.00151079010900586];
+            testCase.verifyEqual(endpoint,expected,AbsTol=1e-8)
+        end
         function decompositionAndReferenceEvidence(testCase)
             [d,f] = testCase.problem();
             r = d.assessSeasonalResponse(f,[0 .25 .7]*f.period,referenceTransforms=testCase.transforms(2:3));
