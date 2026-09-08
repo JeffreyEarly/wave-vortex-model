@@ -58,21 +58,22 @@ The initial localized-weight investigation also exposed a separate analytical ca
 
 ## Reproduction and verification
 
-With the corrected authoring dependencies and `UnitTests` on the path:
+With the corrected authoring dependencies available, explicitly add the optional research folder:
 
 ```matlab
-a = TestFreeSurfaceQGDiffusionQualification.runCompleteThermalStudy(baseFolder);
-b = TestFreeSurfaceQGDiffusionQualification.runCompleteThermalStudy(quadratureFolder,counts=257,assemblyQuadratureCount=4097);
-q = TestFreeSurfaceQGDiffusionQualification.compareCompleteThermalStudies(a,b);
-c = TestFreeSurfaceQGDiffusionQualification.runCompleteThermalStudy(referenceFolder,counts=257,referenceCount=513);
-r = TestFreeSurfaceQGDiffusionQualification.compareCompleteThermalStudies(a,c);
+addpath("Documentation/Experiments/Diffusion")
+a = TestCompleteThermalModes.runCompleteThermalStudy(baseFolder);
+b = TestCompleteThermalModes.runCompleteThermalStudy(quadratureFolder,counts=257,assemblyQuadratureCount=4097);
+q = TestCompleteThermalModes.compareCompleteThermalStudies(a,b);
+c = TestCompleteThermalModes.runCompleteThermalStudy(referenceFolder,counts=257,referenceCount=513);
+r = TestCompleteThermalModes.compareCompleteThermalStudies(a,c);
 ```
 
 The baseline writes `issue-353-complete-wkb-errors.csv` and `issue-353-complete-wkb-checks.csv`. Save `q` and `r` using `writetable` with the committed `-quadrature-control.csv` and `-reference-control.csv` filenames. The comparison helper compares reference states when reference counts differ, otherwise candidate states. All comparisons use the same physical observation quadrature.
 
 The weight CSV is reproduced with `runSurfaceWeightStudy`: defaults for lengths `[5 10 20 50 100 650]`, APV counts `[217 433]` and quadrature 4097; lengths `[2 5 10]`, counts `[433 865]` and quadrature 8193 for each of `bottomWeight=0` and `bottomWeight=N2(-4000)*10`; then lengths `[0 -5 -20 9.81/N2(0)]`, counts `[433 865]` and quadrature 8193 with the default bottom weight. Reference count is 385 throughout.
 
-All 11 affected diffusion-qualification tests pass locally in MATLAB R2026a, including the new complete-mode and small-time/null-mode regressions. Code Analyzer's unused local output was removed. WVM documentation validation passed with zero generated differences; no website source changed. Provider documentation generation succeeded, but that repository has no separate `docs:check` helper. Full/exhaustive scientific and clean-install/export suites are deferred to their existing integration/release gates. No missing task assets prevented this proof of concept.
+The original 11 affected tests passed locally in MATLAB R2026a. Before merge, the two thermal-specific regressions and their study helpers were moved into `Documentation/Experiments/Diffusion/TestCompleteThermalModes.m`, leaving nine adiabatic diffusion-qualification tests in `UnitTests`. Both suites were checked independently after the move. Code Analyzer's unused local output was removed. WVM documentation validation passed with zero generated differences; no website source changed. Provider documentation generation succeeded, but that repository has no separate `docs:check` helper. Full/exhaustive scientific and clean-install/export suites are deferred to their existing integration/release gates. No missing task assets prevented this proof of concept.
 
 The WVM baseline is `013f9a74` (PR #387, stacked on #385). Provider native-grid behavior uses the corrected `425e603e` baseline; the analytical weight trials additionally use `58d8a12`. Released packages, dependency manifests, experiment pins, saved trajectories and snapshots remain untouched.
 
@@ -80,6 +81,6 @@ The WVM baseline is `013f9a74` (PR #387, stacked on #385). Provider native-grid 
 
 The bounded diffusion proof of concept succeeds. A complete 257-direction thermal representation is a credible separate-solver candidate where 217 APV modes plus two boundary modes were insufficient for the stated seasonal target. This is a response-resolution result, not a global mode-count prescription, a whole-model performance benchmark or a reason to change WVM's coordinate families.
 
-PR #388 is a research draft under #389. Before any code adoption, select an independent experiment/optional-code location and isolate its thermal-specific tests from required core WVM qualification. Preserve this report and its data as scientific evidence. Further thermal evolution, nonlinear coupling and performance work can proceed if separately prioritized; they are not the next core v5 increment.
+PR #388 preserves optional research under #389 in `Documentation/Experiments/Diffusion`. Its thermal-specific tests are outside core `UnitTests` discovery and the released package payload; they run only when explicitly requested. Preserve this report and its data as scientific evidence. Further thermal evolution, nonlinear coupling and performance work can proceed if separately prioritized; they are not the next core v5 increment.
 
 For the primary model, #353 owns the audit of adiabatic reconstruction, dynamics, projected-closure correctness, bounded refinement and restart evidence. Its existing response API must disclose unresolved seasonal accuracy; removing the seasonal research target from a release gate does not make that simulation continuum-qualified. #354 retains corrected-provider release/export, supported-example adoption and full scientific CI. #367 retains the optional long adiabatic seasonal experiment; a thermal-coordinate solver would be a distinctly identified experiment. Review the independent analytical APV correction in InternalModes #17 on its own numerical merits.
