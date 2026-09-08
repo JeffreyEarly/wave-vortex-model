@@ -36,7 +36,7 @@ int main(int argc,char** argv) {
     std::size_t maximumGrowth=0,maximumAllocations=0,completed=0;
     json lifecycles=json::array();
     json grid;
-    bool hydrostatic=false;
+    WVPersistedTransformKind transformKind=WVPersistedTransformKind::stratifiedQG;
     std::size_t modes=0;
     const std::filesystem::path path=std::string(argv[2])+".nc";
     struct Cleanup { std::filesystem::path path; ~Cleanup(){std::error_code error;std::filesystem::remove(path,error);} } cleanup{path};
@@ -48,7 +48,7 @@ int main(int argc,char** argv) {
         WVModelOutputRequest output;output.finalTime=617;
         require(WVModel::createFromModelOutputFiles(catalog,{path.string()},output,provider(argv[3]),{},model,state));
         const double setupSeconds=std::chrono::duration<double>(std::chrono::steady_clock::now()-setupStart).count();
-        hydrostatic=state.checkpoint().transformKind==WVPersistedTransformKind::hydrostatic;
+        transformKind=state.checkpoint().transformKind;
         sourceOwner=state.checkpoint().stratifiedModalSource;
         const auto& geometry=state.checkpoint().stratifiedModalSource->geometry();
         grid={geometry.Nx,geometry.Ny,geometry.Nz};
@@ -84,7 +84,7 @@ int main(int argc,char** argv) {
       check(sourceOwner.expired(),"Scientific modal owner survived model/state destruction.");
       ++completed;
     }
-    json report={{"grid",grid},{"Nj",modes},{"finalStateFinite",true},{"schemaIdentifier",hydrostatic ? "wave-vortex-hydrostatic-lifecycle-v1" : "wave-vortex-sqg-lifecycle-v1"},{"provider",argv[3]},{"completedLifecycles",completed},{"scientificOwnersReleased",sourceOwner.expired()},{"retainedGrowthBytes",maximumGrowth},{"preparedStepAllocations",maximumAllocations},{"measurements",lifecycles},{"accountingScope","reported C++ capacities; excludes allocator metadata and opaque provider/NetCDF internals"}};
+    json report={{"grid",grid},{"Nj",modes},{"finalStateFinite",true},{"schemaIdentifier",transformKind==WVPersistedTransformKind::boussinesq ? "wave-vortex-boussinesq-lifecycle-v1" : (transformKind==WVPersistedTransformKind::hydrostatic ? "wave-vortex-hydrostatic-lifecycle-v1" : "wave-vortex-sqg-lifecycle-v1")},{"provider",argv[3]},{"completedLifecycles",completed},{"scientificOwnersReleased",sourceOwner.expired()},{"retainedGrowthBytes",maximumGrowth},{"preparedStepAllocations",maximumAllocations},{"measurements",lifecycles},{"accountingScope","reported C++ capacities; excludes allocator metadata and opaque provider/NetCDF internals"}};
     std::ofstream out(argv[2]);out<<report.dump(2)<<'\n';check(static_cast<bool>(out),"Unable to write lifecycle evidence.");
   } catch(const std::exception& e) {allocationProbe::counting=false;std::cerr<<e.what()<<'\n';return 1;}
 }

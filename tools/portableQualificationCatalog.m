@@ -4,7 +4,7 @@ function [catalog,compatible] = portableQualificationCatalog(report,family,root)
 % unrelated transform does not invalidate them; changing their own rows does.
 arguments
     report (1,1) struct
-    family (1,1) string {mustBeMember(family,["hydrostatic","stratified-qg"])}
+    family (1,1) string {mustBeMember(family,["hydrostatic","stratified-qg","boussinesq"])}
     root (1,1) string
 end
 currentPath = "PortableRuntime/contracts/portable-forcing-compatibility-v1.json";
