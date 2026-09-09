@@ -1,0 +1,40 @@
+{
+  "productReferenceScale_m": [],
+  "qualifyProductReferences_m": [],
+  "TestProductReferenceQualification_m": [],
+  "prepareSourceStudy_m": {
+    "id": "FNDSB",
+    "message": "For array or cell array, performance can be improved using logical indexing instead of 'find'.",
+    "fix": 1,
+    "line": 66,
+    "column": [
+      15,
+      22
+    ]
+  },
+  "measureSourceProducts_m": [
+    {
+      "id": "FNDSB",
+      "message": "For array or cell array, performance can be improved using logical indexing instead of 'find'.",
+      "fix": 1,
+      "line": 54,
+      "column": [
+        21,
+        24
+      ]
+    },
+    {
+      "id": "FNDSB",
+      "message": "For array or cell array, performance can be improved using logical indexing instead of 'find'.",
+      "fix": 1,
+      "line": 54,
+      "column": [
+        54,
+        57
+      ]
+    }
+  ],
+  "prepareWaveQuadraticAssessment_m": [],
+  "assessWaveCountMap_m": [],
+  "waveQuadraticResolutionExample_m": []
+}

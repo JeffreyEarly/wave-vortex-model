@@ -15,8 +15,8 @@ if ~all(isfield(prepared,required)) || prepared.kind~="waveQuadraticEvidence-v1"
     error('WVStudy:InvalidPreparation','Use the unchanged snapshot from prepareWaveQuadraticAssessment.')
 end
 timer=tic; config=prepared.configuration;
-if config.referenceAllowance>options.quadraticTolerance/100
-    error('WVStudy:ReferenceAllowanceTooLarge','Prepare reference errors below one percent of the requested product tolerance.')
+if config.referenceAllowance>options.quadraticTolerance/100 || (isfield(config,'referenceAbsoluteAllowance') && config.referenceAbsoluteAllowance>options.quadraticTolerance/100)
+    error('WVStudy:ReferenceAllowanceTooLarge','Prepare both reference allowances below one percent of the requested product tolerance.')
 end
 if prepared.cost.reservedProducts>options.productBudget
     error('WVStudy:ProductBudgetExceeded','The snapshot reserved %d products; the supplied productBudget is %d.',prepared.cost.reservedProducts,options.productBudget)

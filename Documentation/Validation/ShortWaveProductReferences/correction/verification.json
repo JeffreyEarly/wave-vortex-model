@@ -1,0 +1,22 @@
+{
+  "testCount": 34,
+  "failedTests": 0,
+  "originalLinearCountsExact": true,
+  "originalQuadraticErrorsPreserved": true,
+  "shortWaveMixedReferencesPass": true,
+  "relativeOnlyReferencesStillFail": true,
+  "strictZeroAbsoluteAllowanceFails": true,
+  "fullMapStillRejected": true,
+  "reducedTestedPagesPass": true,
+  "missingCoverageStillInconclusive": true,
+  "longWaveControlUnchanged": true,
+  "providerAndRuntimeUnchanged": true,
+  "absoluteBudgetToleranceGuardPassed": true,
+  "documentationFiles": 2358,
+  "documentationRoutes": 4819,
+  "documentationFailures": 0,
+  "documentationDrift": 0,
+  "preparationAndReuseTargetsPassed": true,
+  "sparseDenseDecisionsAgree": 16,
+  "updatedFigureVisuallyInspected": true
+}

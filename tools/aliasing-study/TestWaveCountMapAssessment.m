@@ -12,6 +12,15 @@ classdef TestWaveCountMapAssessment < matlab.unittest.TestCase
         end
     end
     methods (Test)
+        function absoluteReferenceBudgetMustBeSmallRelativeToSamplingTolerance(testCase)
+            p=testCase.covered; p.configuration.referenceAllowance=1e-14;
+            p.configuration.referenceAbsoluteAllowance=1e-10;
+            testCase.verifyError(@()assessWaveQuadraticResolution(p,quadraticTolerance=1e-12),'WVStudy:ReferenceAllowanceTooLarge')
+            sourceData=testCase.data; sourceData.config.referenceAllowance=1e-14;
+            sourceData.config.referenceAbsoluteAllowance=1e-10;
+            testCase.verifyError(@()assessWaveQuadraticResolution(sourceData,quadraticTolerance=1e-12),'WVStudy:ReferenceAllowanceTooLarge')
+        end
+
         function uniformMapsPreserveHistoricalProductErrors(testCase)
             old=assessWaveQuadraticResolution(testCase.data);
             p=testCase.prepared;
