@@ -15,6 +15,64 @@ classdef TestWVModelOutputPersistence < matlab.unittest.TestCase
     end
 
     methods (Test, TestTags="full")
+        function complexPhasesSurviveOutputAndRestart(testCase,integratorType)
+            transforms = {
+                WVTransformConstantStratification([17000 11000 1000],[8 6 9],N0=5.2e-3,isHydrostatic=true)
+                WVTransformConstantStratification([17000 11000 1000],[8 6 9],N0=5.2e-3,isHydrostatic=false)
+                WVTransformHydrostatic([17000 11000 1000],[8 6 9],Nj=4,N2Function=@(z)1e-4*exp(z/700))
+                WVTransformBoussinesq([17000 11000 1000],[8 6 9],Nj=4,N2Function=@(z)1e-4*exp(z/700))
+                };
+            for index = 1:numel(transforms)
+                wvt = transforms{index};
+                wvt.initWithInertialMotions(@(z)0.1*ones(size(z)),@(z)zeros(size(z)));
+                wvt.t0 = 17;
+                wvt.t = 123;
+                coefficients = {wvt.Ap,wvt.Am,wvt.A0};
+                model = WVModel(wvt,shouldUseLinearDynamics=true);
+                model.eulerianObservingSystem.addNetCDFOutputVariables('phase','conjPhase');
+                filePath = fullfile(testCase.tempFolder,"phases-"+index+".nc");
+                output = model.createNetCDFFileForModelOutput(filePath,outputInterval=.5,shouldOverwriteExisting=true);
+                dense = output.addNewEvenlySpacedOutputGroup("dense",outputInterval=.125,initialTime=123,finalTime=125);
+                dense.addObservingSystem(WVEulerianFields(model,fieldNames={'phase','conjPhase'}));
+                if integratorType == "fixed"
+                    model.setupIntegrator(integratorType="fixed",deltaT=.5);
+                else
+                    model.setupIntegrator(integratorType="adaptive",relTolerance=1e-10);
+                end
+                model.integrateToTime(124,shouldShowIntegrationDiagnostics=false,callback=@(~)[]);
+                model.closeNetCDFFile();
+                restored = WVModel.modelFromFile(filePath);
+                cleanup = onCleanup(@()restored.closeNetCDFFile());
+                testCase.verifyEqual({restored.wvt.Ap,restored.wvt.Am,restored.wvt.A0},coefficients);
+                testCase.verifyEqual(restored.wvt.t0,17);
+                testCase.verifyEqual(restored.wvt.phase,exp(wvt.iOmega*(124-17)),AbsTol=2e-15);
+                if integratorType == "fixed"
+                    restored.setupIntegrator(integratorType="fixed",deltaT=.5);
+                else
+                    restored.setupIntegrator(integratorType="adaptive",relTolerance=1e-10);
+                end
+                restored.integrateToTime(125,shouldShowIntegrationDiagnostics=false,callback=@(~)[]);
+                restored.closeNetCDFFile();
+                clear cleanup
+                for group = ["wave-vortex","dense"]
+                    times = ncread(filePath,"/"+group+"/t");
+                    testCase.verifyNumElements(times,5+12*double(group=="dense"));
+                    expected = exp(wvt.iOmega(:)*(times(:).'-17));
+                    testCase.verifyGreaterThan(max(abs(imag(expected)),[],"all"),.01);
+                    for name = ["phase","conjPhase"]
+                        variable = "/"+group+"/"+name;
+                        actual = complex(ncread(filePath,variable+"_real"),ncread(filePath,variable+"_imag"));
+                        actual = reshape(actual,[],numel(times));
+                        reference = expected;
+                        if name == "conjPhase", reference = conj(reference); end
+                        testCase.verifyEqual(actual,reference,AbsTol=2e-15);
+                        testCase.verifyEqual(ncreadatt(filePath,variable+"_real","isComplex"),uint8(1));
+                        testCase.verifyEqual(ncreadatt(filePath,variable+"_imag","isImaginaryPart"),uint8(1));
+                    end
+                end
+            end
+        end
+
         function forcingDiagnosticsSurviveSegmentedMatlabContinuation(testCase)
             transforms = {
                 WVTransformConstantStratification([17000 11000 1000],[8 6 9],N0=5.2e-3,isHydrostatic=true,shouldAntialias=false)

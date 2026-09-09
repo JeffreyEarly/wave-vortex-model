@@ -8,6 +8,10 @@ nav_order: 100
 
 ## [Unreleased]
 
+### MATLAB phase output
+
+- Corrected `phase` and `conjPhase` annotations to declare complex values. Explicitly requested phase diagnostics now use the standard `_real`/`_imag` NetCDF variables, preserving both components in ordinary and dense output across restart and append. This replaces the malformed real-only diagnostic encoding; existing files are not migrated. Normal coefficient-based restart already reconstructs the phases from `t`, `t0`, and the modal frequencies and is unchanged.
+
 ### MATLAB integration performance
 
 - Added an authoring benchmark that separates integrated tracer and particle state from dense-output delivery, with matched fixed-RK4 work, output-record validation, and fresh-process timing and RSS measurements.

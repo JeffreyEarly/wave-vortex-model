@@ -91,15 +91,15 @@ Forcing exemplar names ending in `_portable_catalog_forcing` define templates: b
 
 ## Intentional incompatibilities
 
-The registered outputs below cannot preserve their MATLAB value and persistence contracts simultaneously. Their MATLAB operations remain unchanged. Method-only and unregistered exclusions follow in the same table. Component energy uses the `energy_<component>` factory.
+The registered outputs below remain unavailable in the portable runtime for the recorded contract or qualification reasons. MATLAB phase output uses complex storage; its portable evaluator remains unqualified. Method-only and unregistered exclusions follow in the same table. Component energy uses the `energy_<component>` factory.
 
 | MATLAB API | Reason |
 | --- | --- |
 | `ape` | unpersisted-density-profile-contract: this diagnostic depends on the unsaved no-motion solver identity and true-profile selection. |
 | `apv` | unpersisted-true-profile-selection: this diagnostic depends on eta_true and its unsaved reference/true-profile choice. |
-| `conjPhase` | matlab-phase-complexity-metadata-mismatch: MATLAB declares this variable real but computes complex values; portable output cannot preserve both the annotation and the value. |
+| `conjPhase` | phase-output-evaluation-pending-391: MATLAB complex output metadata is corrected; portable phase evaluation and persistence remain unqualified. |
 | `eta_true` | unpersisted-true-profile-selection: shouldUseTrueNoMotionProfile is deliberately runtime-only in MATLAB v4; a portable continuation cannot recover the authored reference/true-profile choice. |
-| `phase` | matlab-phase-complexity-metadata-mismatch: MATLAB declares this variable real but computes complex values; portable output cannot preserve both the annotation and the value. |
+| `phase` | phase-output-evaluation-pending-391: MATLAB complex output metadata is corrected; portable phase evaluation and persistence remain unqualified. |
 | `rho_nm` | unpersisted-no-motion-solver: MATLAB selects lsqnonlin or fminsearch from the local toolbox environment; saved v4 models do not carry that numerical solver identity. |
 | `totalEnstrophy` | method-without-variable-annotation |
 | `totalEnstrophySpatiallyIntegrated` | method-without-variable-annotation |

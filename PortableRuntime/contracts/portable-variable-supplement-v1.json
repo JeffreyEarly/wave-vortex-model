@@ -1633,7 +1633,7 @@
       "intermediates": [],
       "runtimeStatus": "intentional-incompatibility",
       "samplingRestriction": "Spectral coefficient layout only; spatial interpolation is undefined.",
-      "configurationRestriction": "matlab-phase-complexity-metadata-mismatch: MATLAB declares this variable real but computes complex values; portable output cannot preserve both the annotation and the value."
+      "configurationRestriction": "phase-output-evaluation-pending-391: MATLAB complex output metadata is corrected; portable phase evaluation and persistence remain unqualified."
     },
     {
       "name": "energy_g",
@@ -1813,7 +1813,7 @@
       ],
       "runtimeStatus": "intentional-incompatibility",
       "samplingRestriction": "Spectral coefficient layout only; spatial interpolation is undefined.",
-      "configurationRestriction": "matlab-phase-complexity-metadata-mismatch: MATLAB declares this variable real but computes complex values; portable output cannot preserve both the annotation and the value."
+      "configurationRestriction": "phase-output-evaluation-pending-391: MATLAB complex output metadata is corrected; portable phase evaluation and persistence remain unqualified."
     },
     {
       "name": "rho_nm",
