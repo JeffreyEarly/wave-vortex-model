@@ -59,7 +59,7 @@ inputVectors=size(unique([vectors(:,1:2);vectors(:,3:4)],'rows'),1);
 outputVectors=size(unique(vectors(:,5:6),'rows'),1);
 fieldBytes=inputVectors*8*sum([numel(data.z),numel(data.zR),2*numel(data.zQ),4])*(2*n+config.apvCount+2)*16;
 contextBytes=outputVectors*4*3*(2*n)*numel(data.allZ)*16;
-workingBytes=reserved*(8*n+256)+rows*8192+largestBatch*(16*8*numel(data.allZ)+128*n^2)+2*(fieldBytes+contextBytes);
+workingBytes=reserved*(8*n+320)+rows*8192+largestBatch*(16*10*numel(data.allZ)+128*n^2)+2*(fieldBytes+contextBytes);
 if workingBytes>options.workingMemoryBudget
     error('WVStudy:WorkingMemoryBudgetExceeded','Estimated preparation workspace is %.1f MiB; budget is %.1f MiB. Reduce the band/inventory or increase the explicit budget.',workingBytes/1024^2,options.workingMemoryBudget/1024^2)
 end
@@ -67,7 +67,7 @@ reservationSeconds=toc(timer);
 evidence=measureSourceProducts(data,interactionIndices=indices,policy=options.policy);
 assert(evidence.summary.nonzeroProductEvaluations+evidence.summary.structuralZeroProducts==reserved);
 products=struct();
-for field=["positionA","positionB","labelA","labelB","signA","signB","error","isZero"]
+for field=["positionA","positionB","labelA","labelB","signA","signB","error","isZero","referenceQualificationFraction","relativeReferenceError","referenceUsesAbsolute","referenceFactorScale"]
     values=cellfun(@(r)r.(field),evidence.raw,UniformOutput=false);
     products.(field)=cat(2,values{:});
 end

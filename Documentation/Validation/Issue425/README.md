@@ -1,5 +1,7 @@
 # Explicit count-map quadratic assessment
 
+The historical figures below preserve their original relative-only reference qualification. See the subsequent [mixed-reference correction and updated kappa-dependent example](../ShortWaveProductReferences/README.md#implemented-reference-correction) for the current behavior.
+
 ## Performance contract established before expansion
 
 The initial Apple Silicon / MATLAB R2025b timing trial used the unchanged beta.4 advisory on `cal-constant-17` and `cal-exponential-17`: eight candidate waves, independent three-mode APV/MDA/inertial families, both boundaries, an 8 by 8 horizontal grid and 17 vertical points. The [baseline measurements](baseline-costs.csv) record approximately 2.3–3.2 seconds of mode/reference preparation, 4–5 seconds for the first advisory, and 3.5–4.3 seconds for another common-prefix request. Each request repeats 79,968 reserved products and retains about 9.7 MB of evidence.

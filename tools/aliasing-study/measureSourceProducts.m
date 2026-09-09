@@ -59,19 +59,16 @@ for t=indices
             source=channels.advected(c); component=find(components==source);
             target=targetNames(v3,component);
             if target=="null-mean-w", continue; end
-            products=struct();
+            products=struct(); scales=zeros(3,numel(i));
             for setName=["S","R","Q","E","H","J"]
-                av=a.(setName).(channels.advecting(c))(:,i);
-                bv=b.(setName).(source)(:,j);
-                switch channels.factor(c)
-                    case "x", bv=1i*inventory.physicalVectors(v2,1)*bv;
-                    case "y", bv=1i*inventory.physicalVectors(v2,2)*bv;
-                    case "z", bv=b.(setName).("d"+source)(:,j);
-                    case "stratification"
-                        if setName=="H", zz=data.zQ; elseif setName=="J", zz=[-config.Lz;0]; else, zz=data.allZ(data.sets.(setName)); end
-                        bv=bv.*data.profile.dLogN2(zz);
-                end
+                [av,bv]=channelFactors(data,a,b,i,j,channels(c,:),v2,setName);
                 products.(setName)=-av.*bv;
+                reference=find(["R","Q","H"]==setName,1);
+                if ~isempty(reference)
+                    endpointName="E"; if reference==3, endpointName="J"; end
+                    [ea,eb]=channelFactors(data,a,b,i,j,channels(c,:),v2,endpointName);
+                    scales(reference,:)=productReferenceScale(contexts{v3,component,reference},av,bv,ea,eb);
+                end
             end
             % Every individual channel has a real vertical shape times a
             % scalar phase. At zero output align that phase to represent a
@@ -90,12 +87,18 @@ for t=indices
             endpointsHigh=zeros(size(products.J)); if target=="mda", endpointsHigh=products.J; end
             independent=measureProductProjection(contexts{v3,component,3},zeros(size(products.S)),products.H,endpointsHigh,counts,projections=projections{v3,component,3});
             eigenProductStability=compareProductReferences(context2,high,independent,counts);
+            scale=max(scales,[],1);
+            q=qualifyProductReferences(context2,low,high,counts,scale,config.referenceAllowance,config.referenceAbsoluteAllowance);
+            e=qualifyProductReferences(context2,high,independent,counts,scale,config.referenceAllowance,config.referenceAbsoluteAllowance);
+            qualification=max(q.allowanceFraction,e.allowanceFraction);
+            relativeReferenceError=max(q.relativeError,e.relativeError);
+            usesAbsolute=qualification<=1 & relativeReferenceError>config.referenceAllowance;
             errors=high.error;
             if target~="wave", errors=repmat(errors,config.waveCount,1); end
             r=r+1; evaluated=evaluated+nnz(~high.isZero); zeroProducts=zeroProducts+nnz(high.isZero);
             [worst,limiting]=max(errors(end,:));
-            records{r}=struct(interaction=t,inputA=aName,inputB=bName,output=target,channel=channels.name(c),error=worst,modeA=a.labels(i(limiting)),signA=a.signs(i(limiting)),modeB=b.labels(j(limiting)),signB=b.signs(j(limiting)),referenceStability=stability,eigenProductStability=eigenProductStability,productCount=nnz(~high.isZero),zeroProductCount=nnz(high.isZero));
-            raw{r}=struct(positionA=a.positions(i),positionB=b.positions(j),labelA=a.labels(i),labelB=b.labels(j),signA=a.signs(i),signB=b.signs(j),tail=max(a.tail(i),b.tail(j)),error=single(errors),isZero=high.isZero);
+            records{r}=struct(interaction=t,inputA=aName,inputB=bName,output=target,channel=channels.name(c),error=worst,modeA=a.labels(i(limiting)),signA=a.signs(i(limiting)),modeB=b.labels(j(limiting)),signB=b.signs(j(limiting)),referenceStability=stability,eigenProductStability=eigenProductStability,referenceQualificationFraction=max(qualification),absoluteReferenceProductCount=nnz(usesAbsolute),productCount=nnz(~high.isZero),zeroProductCount=nnz(high.isZero));
+            raw{r}=struct(positionA=a.positions(i),positionB=b.positions(j),labelA=a.labels(i),labelB=b.labels(j),signA=a.signs(i),signB=b.signs(j),tail=max(a.tail(i),b.tail(j)),error=single(errors),isZero=high.isZero,referenceQualificationFraction=qualification,relativeReferenceError=relativeReferenceError,referenceUsesAbsolute=usesAbsolute,referenceFactorScale=scale);
         end
     end
     if options.showProgress && mod(t,20)==0, fprintf('Source interactions %d/%d; %d nonzero products; %.1f s.\n',t,height(inventory.interactions),evaluated,toc(timer)); end
@@ -103,7 +106,23 @@ end
 assessmentSeconds=toc(timer);
 records=records(1:r); raw=raw(1:r); rows=struct2table(vertcat(records{:}));
 summary=struct(status="survey-complete",policy=options.policy,pageDifficulty=data.pageDifficulty,configuration=config,constructionSeconds=setupSeconds,projectionPreparationSeconds=projectionPreparationSeconds,projectionCount=projectionCount,assessmentSeconds=assessmentSeconds,interactionCount=length(indices),nonzeroProductEvaluations=evaluated,structuralZeroProducts=zeroProducts,referenceStability=max(rows.referenceStability),eigenConvergence=max(data.requiredConvergence,[],'all'),allModeDerivativeConvergence=max(data.convergence,[],'all'),eigenProductStability=max(rows.eigenProductStability),eigenConvergenceByMetric=max(data.convergence,[],1),sobolevConvergenceByMetric=max(data.requiredConvergence,[],1),boundaryInterpolationError=data.boundaryInterpolationError,waveGram=max(data.waveGram,[],2),apvGram=data.apv.assessment.prefixDiagnostics.gramError(end),mdaGram=data.mda.assessment.prefixDiagnostics.gramError(end),inertialGram=data.inertialGram,apvControl=data.apv.assessment.prefixDiagnostics,matlabVersion=string(version),computer=string(computer));
-summary.referencesStable=summary.referenceStability<=config.referenceAllowance && summary.eigenConvergence<=config.eigenAllowance && summary.eigenProductStability<=config.referenceAllowance && summary.boundaryInterpolationError<=config.eigenAllowance;
+summary.relativeReferencesStable=summary.referenceStability<=config.referenceAllowance && summary.eigenConvergence<=config.eigenAllowance && summary.eigenProductStability<=config.referenceAllowance && summary.boundaryInterpolationError<=config.eigenAllowance;
+summary.referenceQualificationFraction=max(rows.referenceQualificationFraction);
+summary.absoluteReferenceProductCount=sum(rows.absoluteReferenceProductCount);
+summary.referencePolicy=struct(name="mixed-physical-factor-v1",relativeAllowance=config.referenceAllowance,absoluteAllowance=config.referenceAbsoluteAllowance,scale="Maximum across reference grids/solves of min(sup(a)*norm_mu(b),sup(b)*norm_mu(a)); mu uses positive volume and absolute endpoint weights",scope="Individual sampled products and all prepared output prefixes; no coherent-sum guarantee; raw quadratic sampling test unchanged");
+summary.referencesStable=summary.referenceQualificationFraction<=1 && summary.eigenConvergence<=config.eigenAllowance && summary.boundaryInterpolationError<=config.eigenAllowance;
 summary.fixedFamiliesGramAccepted=max([summary.apvGram summary.mdaGram summary.inertialGram])<=config.gramTolerance;
 evidence=struct(raw={raw},inventory=inventory,summary=summary,rows=rows,channels=channels,selection=selection);
+end
+
+function [av,bv]=channelFactors(data,a,b,i,j,channel,vectorIndex,setName)
+av=a.(setName).(channel.advecting)(:,i); bv=b.(setName).(channel.advected)(:,j);
+switch channel.factor
+    case "x", bv=1i*data.inventory.physicalVectors(vectorIndex,1)*bv;
+    case "y", bv=1i*data.inventory.physicalVectors(vectorIndex,2)*bv;
+    case "z", bv=b.(setName).("d"+channel.advected)(:,j);
+    case "stratification"
+        if setName=="H", zz=data.zQ; elseif setName=="J", zz=[-data.config.Lz;0]; else, zz=data.allZ(data.sets.(setName)); end
+        bv=bv.*data.profile.dLogN2(zz);
+end
 end

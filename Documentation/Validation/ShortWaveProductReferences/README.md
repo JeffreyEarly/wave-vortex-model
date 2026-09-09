@@ -1,8 +1,16 @@
-# Short-wave product-reference diagnosis
+# Short-wave product-reference diagnosis and correction
 
 The restored 1 km example's large reference discrepancies are caused by **opposite-boundary products dominated by small spectral tail errors**. The boundary modes themselves agree closely with independent analytical solutions. Their physical surface–bottom overlap is so small that normalizing by the product's own norm demands relative accuracy far beyond what the spectral representation supplies in those tails.
 
-This investigation changes no numerical solver, mode, count-map decision or acceptance threshold. It adds a reproducible per-product diagnosis with separate normalization and coefficient discrepancies. The original linear 13-to-8 count curve and the existing reference-inconclusive outcome remain valid statements of their respective tests.
+The original investigation below changed no numerical solver, mode, count-map decision or acceptance threshold. Its historical evidence is preserved. The subsequent correction changes reference qualification as described next. It adds a reproducible per-product diagnosis with separate normalization and coefficient discrepancies. The original linear 13-to-8 count curve and the existing reference-inconclusive outcome remain valid statements of their respective tests.
+
+## Implemented reference correction
+
+Reference qualification now uses the separately declared mixed criterion `delta <= relativeAllowance*P + absoluteAllowance*B`, for both norm changes and retained-coefficient changes. P is the smaller reference product norm. B is a homogeneous physical factor bound, including derivative factors, positive volume weights and absolute endpoint weights, evaluated on the reference grids. The default absolute fraction is **1e-10** and the original relative allowance remains **1e-4** for this case. The absolute fraction is configurable as `referenceAbsoluteAllowance` before source preparation; zero disables it. The [advisory contract](../../../tools/aliasing-study/ADVISORY-API.md#mixed-reference-qualification) defines the exact scale and reporting semantics.
+
+Raw relative errors and all products remain in the evidence. The mixed-budget fraction and counts of products requiring absolute qualification are exposed separately. The original quadratic sampling-error test, mode/derivative convergence requirements, complete candidate-inventory reference scope and missing-coverage rules remain unchanged. No modes, boundaries or runtime operators are removed or modified. This bounded correction does not supply an arbitrary-superposition or model-trajectory guarantee.
+
+The original diagnosis and evidence below are historical. Updated qualification, tests and the kappa-dependent figure are recorded separately in [correction/](correction/).
 
 ## Isolated cause
 
@@ -37,9 +45,9 @@ The existing constant-stratification analytical evaluator also loses relative ta
 
 Increasing EVP resolution until every negligible product passes the current relative gate is not a useful resolution-selection strategy. Nor should we delete opposite-boundary interactions or introduce an arbitrary denominator floor. The actual resolved modes and both boundary families should remain in the model.
 
-The next policy increment should retain the product-relative error as a diagnostic and add an explicitly defined absolute/bilinear-scale criterion for reference qualification and negligible interactions. That criterion must be tied to the model's physical state and tendency norms, cover derivatives and endpoint terms, and be tested against perturbations and assembled tendencies. Small products must not be silently exempted when a coherent sum or state amplitude makes their effect important. The factor scale reported here is evidence for designing that criterion, not a finished certification API.
+The original investigation recommended that the next policy increment retain the product-relative error as a diagnostic and add an explicitly defined absolute/bilinear-scale criterion for reference qualification and negligible interactions. That criterion must be tied to the model's physical state and tendency norms, cover derivatives and endpoint terms, and be tested against perturbations and assembled tendencies. Small products must not be silently exempted when a coherent sum or state amplitude makes their effect important. The factor scale reported here is evidence for designing that criterion, not a finished certification API.
 
-The direct core-model work remains assembled-tendency convergence and APV/both-boundary output qualification (#426). This investigation supplies a concrete reason to keep mode convergence, grid support and nonlinear evidence distinct rather than reducing wave counts to accommodate an unrelated reference-normalization failure.
+The direct core-model work remains assembled-tendency convergence and APV/both-boundary output qualification (#426). This diagnosis supplies a concrete reason to keep mode convergence, grid support and nonlinear evidence distinct rather than reducing wave counts to accommodate an unrelated reference-normalization failure.
 
 ## Reproduce
 
