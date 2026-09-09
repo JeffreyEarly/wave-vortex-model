@@ -199,6 +199,65 @@ classdef TestPortableRunRequestWriter < matlab.unittest.TestCase
             end
         end
 
+        function acceptsLinearBarotropicInitialState(testCase)
+            for complexState = [false true]
+                for addField = [false true]
+                    path = fullfile(testCase.TemporaryFolder,"qg-linear-"+complexState+"-"+addField+".nc");
+                    testCase.createBarotropicQGFixture(path,[7 6],1,false,shouldUseLinearDynamics=true,shouldAddA0Field=addField,shouldAddSecondGroup=true,shouldUseComplexState=complexState);
+                    before = testCase.fileBytes(path);
+                    request = fullfile(testCase.TemporaryFolder,"qg-linear.json");
+                    testCase.writeFixedQGRequest(request,path);
+                    document = jsondecode(fileread(request));
+                    testCase.verifyEqual(string(document.modelFiles),path);
+                    testCase.verifyEqual(testCase.fileBytes(path),before);
+                    testCase.verifyEqual(document.schemaVersion,2);
+                end
+            end
+        end
+
+        function rejectsMalformedLinearBarotropicStateTransactionally(testCase)
+            source = fullfile(testCase.TemporaryFolder,"qg-linear-valid.nc");
+            testCase.createBarotropicQGFixture(source,[7 6],1,false,shouldUseLinearDynamics=true,shouldUseComplexState=true);
+            request = fullfile(testCase.TemporaryFolder,"qg-linear-request.json");
+            testCase.writeFixedQGRequest(request,source);
+            requestBytes = testCase.fileBytes(request);
+            for defect = ["ambiguous","missing-imaginary","unowned-timeseries","nonlinear"]
+                path = fullfile(testCase.TemporaryFolder,"qg-linear-"+defect+".nc");
+                copyfile(source,path);
+                kl = ncinfo(path,"kl").Size;
+                switch defect
+                    case "ambiguous"
+                        nccreate(path,"/wave-vortex/A0",Dimensions={"kl",kl},Datatype="double");
+                    case {"missing-imaginary","unowned-timeseries"}
+                        file = netcdf.open(path,'WRITE');
+                        group = netcdf.inqNcid(file,'wave-vortex');
+                        netcdf.reDef(file);
+                        netcdf.renameVar(group,netcdf.inqVarID(group,'A0_imag'),'old_A0_imag');
+                        if defect == "unowned-timeseries"
+                            netcdf.renameVar(group,netcdf.inqVarID(group,'A0_real'),'old_A0_real');
+                        end
+                        netcdf.endDef(file);
+                        netcdf.close(file);
+                        if defect == "unowned-timeseries"
+                            for part = ["real","imag"]
+                                name = "/wave-vortex/A0_"+part;
+                                nccreate(path,name,Dimensions={"kl",kl,"t",Inf},Datatype="double");
+                                ncwrite(path,name,zeros(kl,2));
+                                ncwriteatt(path,name,"isComplex",1);
+                                ncwriteatt(path,name,"isRealPart",double(part=="real"));
+                                ncwriteatt(path,name,"isImaginaryPart",double(part=="imag"));
+                            end
+                        end
+                    case "nonlinear"
+                        ncwriteatt(path,"/","WVModelIsDynamicsLinear",int32(0));
+                end
+                before = testCase.fileBytes(path);
+                testCase.verifyError(@()testCase.writeFixedQGRequest(request,path),"WaveVortexModel:PortableRunRequestContract");
+                testCase.verifyEqual(testCase.fileBytes(path),before);
+                testCase.verifyEqual(testCase.fileBytes(request),requestBytes);
+            end
+        end
+
         function rejectsInvalidBarotropicQGMetadataAndStateOwnership(testCase)
             request = fullfile(testCase.TemporaryFolder,"qg-invalid.json");
             missing = fullfile(testCase.TemporaryFolder,"qg-missing.nc");
@@ -207,6 +266,8 @@ classdef TestPortableRunRequestWriter < matlab.unittest.TestCase
             testCase.createBarotropicQGFixture(fieldsOnly,[6 5],1,false, ...
                 shouldUseLinearDynamics=true,shouldAddA0Field=true);
             for path = [missing fieldsOnly]
+                % Initial-only files cannot serve as nonlinear restart streams.
+                ncwriteatt(path,"/","WVModelIsDynamicsLinear",int32(0));
                 testCase.verifyError(@()testCase.writeFixedQGRequest(request,path), ...
                     "WaveVortexModel:PortableRunRequestContract")
             end
@@ -420,10 +481,15 @@ classdef TestPortableRunRequestWriter < matlab.unittest.TestCase
                 options.shouldUseLinearDynamics (1,1) logical = false
                 options.shouldAddA0Field (1,1) logical = false
                 options.shouldAddSecondGroup (1,1) logical = false
+                options.shouldUseComplexState (1,1) logical = false
             end
             wvt = WVTransformBarotropicQG([15000 9000],Nxy,h=.8,j=j, ...
                 g=9.80665,planetaryRadius=6.3712e6,rotationRate=7.292115e-5, ...
                 latitude=33,shouldAntialias=shouldAntialias);
+            if options.shouldUseComplexState
+                n = reshape(1:numel(wvt.A0),size(wvt.A0));
+                wvt.A0 = 1e-6*complex(sin(.17*n),cos(.23*n)).*(wvt.Kh>0);
+            end
             model = WVModel(wvt,shouldUseLinearDynamics=options.shouldUseLinearDynamics);
             if options.shouldAddA0Field
                 model.eulerianObservingSystem.addNetCDFOutputVariables('A0');

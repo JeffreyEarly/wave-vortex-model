@@ -4,6 +4,42 @@ classdef TestObservingSystems < matlab.unittest.TestCase
     end
 
     methods (Test, TestTags = "full")
+        function restoresForcingDiagnosticsWithoutReplacingOperations(testCase)
+            for partialOverride = [false true]
+                model = TestObservingSystems.linearModel3D();
+                wvt = model.wvt;
+                wvt.setForcing([WVNonlinearAdvection(wvt),WVBetaPlanePVAdvection(wvt)]);
+                standard = SpatialForcingOperation(wvt);
+                names = string({standard.outputVariables.name});
+                if partialOverride
+                    existing = WVOperation(names(1),standard.outputVariables(1),@(wvt)17*ones(wvt.spatialMatrixSize));
+                else
+                    existing = standard;
+                end
+                wvt.addOperation(existing);
+                observer = testCase.verifyWarningFree(@()WVEulerianFields(model,fieldNames=names));
+                testCase.verifyTrue(wvt.operationWithName(existing.name)==existing);
+                testCase.verifyEqual(observer.fieldNames,names);
+                testCase.verifyEqual(sort(string([observer.initialConditionOnlyVariables observer.timeSeriesVariables])),sort(names));
+                if partialOverride
+                    testCase.verifyEqual(wvt.variableWithName(names(1)),17*ones(wvt.spatialMatrixSize));
+                    expected = cell(1,standard.nVarOut);
+                    [expected{:}] = standard.compute(wvt);
+                    for index = 2:numel(names)
+                        testCase.verifyEqual(wvt.variableWithName(names(index)),expected{index});
+                    end
+                end
+            end
+        end
+
+        function ordinaryObserverDoesNotRegisterForcingDiagnostics(testCase)
+            model = TestObservingSystems.linearModel3D();
+            operationNames = model.wvt.operationNameMap.keys;
+            observer = WVEulerianFields(model,fieldNames={'u','v'});
+            testCase.verifyEqual(model.wvt.operationNameMap.keys,operationNames);
+            testCase.verifyEqual(observer.fieldNames,["u","v"]);
+        end
+
         function modelRegistryUsesIdentityAndAtomicMutations(testCase)
             model = TestObservingSystems.linearModel3D();
             particles = TestObservingSystems.particles(model,"particles",0);
