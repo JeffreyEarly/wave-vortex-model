@@ -1,0 +1,88 @@
+{
+  "stateKind": "surface",
+  "velocityScale": 0.03,
+  "maximumVelocity": 0.029999999999999995,
+  "energyNormRelativeError": 1.2444640466032329E-12,
+  "energyNormAbsoluteError": 1.8464899404131749E-20,
+  "errorOverStateAdvectionScale": 3.63211996711875E-14,
+  "referenceEnergyNorm": 1.4837631874164407E-8,
+  "referenceFraction": 4.1225758227686033E-9,
+  "apvRelativeError": 0,
+  "endpointRelativeError": [
+    1.2444490601696209E-12,
+    0
+  ],
+  "cancellationRatio": 0.066249192932856624,
+  "meanSourceNorm": 0,
+  "diagnostics": {
+    "kineticEnergy": 0.0090796984796231647,
+    "kineticEnergyTendency": [
+      5.0345887164044159E-25,
+      -2.1096103578469435E-25
+    ],
+    "interiorPotentialEnergy": 0.0090786333529775491,
+    "interiorPotentialEnergyTendency": [
+      5.034584680220477E-25,
+      -2.1096088944192326E-25
+    ],
+    "surfacePotentialEnergy": 2.658357877570408E-5,
+    "surfacePotentialEnergyTendency": [
+      1.0845568617389187E-27,
+      -6.506885143186132E-28
+    ],
+    "surfaceAnomalyVariance": 1.3021494317349056,
+    "surfaceAnomalyVarianceTendency": [
+      7.2695016852452833E-23,
+      -2.5776989300079961E-23
+    ],
+    "bottomAnomalyVariance": 0,
+    "bottomAnomalyVarianceTendency": [
+      0,
+      0
+    ],
+    "potentialEnstrophy": 0,
+    "potentialEnstrophyTendency": [
+      0,
+      0
+    ],
+    "totalEnergy": 0.018184915411376418,
+    "generalizedEnergy": -0.11203002776211414,
+    "totalEnergyTendency": [
+      1.0080018965242282E-24,
+      -4.2257261374093619E-25
+    ],
+    "generalizedEnergyTendency": [
+      -6.2614997887210551E-24,
+      2.1551263162670602E-24
+    ]
+  },
+  "referenceWork": {
+    "termNormBound": 2.2396698310261219E-7,
+    "meanSourceNorm": 0,
+    "enstrophyWorkFraction": 0,
+    "endpointWorkFraction": [
+      1.2534655036964628E-16,
+      0
+    ],
+    "enstrophyWork": 0,
+    "endpointWork": [
+      -2.5776989300079981E-23,
+      0
+    ],
+    "endpointAbsoluteTermBound": [
+      1.9030911486059234E-6,
+      0
+    ],
+    "enstrophyWorkOverTermBound": 0,
+    "endpointWorkOverTermBound": [
+      1.3544800163125381E-17,
+      0
+    ]
+  },
+  "cost": {
+    "modelConstructionSeconds": 0.21910083333333333,
+    "rhsSeconds": 0.013205041666666667,
+    "referenceSeconds": 0.018918291666666667
+  },
+  "coverage": "One manufactured state and instantaneous QG RHS; no trajectory or arbitrary-superposition guarantee"
+}

@@ -1,0 +1,5 @@
+profile,Nz,sampledStatus,denseStatus,sampledMaximumError,denseMaximumError,sampledMeasurements,denseMeasurements,denseSeconds
+constant,9,rejected,rejected,0.0372270044499747,0.0372270044499747,2250,9000,0.381276333333333
+constant,33,assessed,assessed,6.6698557289924e-09,6.6698557289924e-09,2250,9000,0.188061083333333
+exponential,9,rejected,rejected,0.0347667714534314,0.0347667714534314,2250,9000,0.157069666666667
+exponential,33,assessed,assessed,1.11313519223741e-11,1.11313519223741e-11,2250,9000,0.114183958333333

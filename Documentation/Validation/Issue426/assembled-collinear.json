@@ -1,0 +1,88 @@
+{
+  "stateKind": "collinear",
+  "velocityScale": 0.03,
+  "maximumVelocity": 0.030000000000000002,
+  "energyNormRelativeError": 0,
+  "energyNormAbsoluteError": 0,
+  "errorOverStateAdvectionScale": 0,
+  "referenceEnergyNorm": 0,
+  "referenceFraction": 0,
+  "apvRelativeError": 0,
+  "endpointRelativeError": [
+    0,
+    0
+  ],
+  "cancellationRatio": 0,
+  "meanSourceNorm": 0,
+  "diagnostics": {
+    "kineticEnergy": 0.045939726447351947,
+    "kineticEnergyTendency": [
+      0,
+      0
+    ],
+    "interiorPotentialEnergy": 0.0105166065461983,
+    "interiorPotentialEnergyTendency": [
+      0,
+      0
+    ],
+    "surfacePotentialEnergy": 6.1040624644081521E-5,
+    "surfacePotentialEnergyTendency": [
+      0,
+      0
+    ],
+    "surfaceAnomalyVariance": 0.25189783927770382,
+    "surfaceAnomalyVarianceTendency": [
+      0,
+      0
+    ],
+    "bottomAnomalyVariance": 0.079216562785938818,
+    "bottomAnomalyVarianceTendency": [
+      0,
+      0
+    ],
+    "potentialEnstrophy": 1.7817167321030937E-10,
+    "potentialEnstrophyTendency": [
+      0,
+      0
+    ],
+    "totalEnergy": 0.056517373618194332,
+    "generalizedEnergy": 0.039249245969017833,
+    "totalEnergyTendency": [
+      0,
+      0
+    ],
+    "generalizedEnergyTendency": [
+      0,
+      0
+    ]
+  },
+  "referenceWork": {
+    "termNormBound": 0,
+    "meanSourceNorm": 0,
+    "enstrophyWorkFraction": 0,
+    "endpointWorkFraction": [
+      0,
+      0
+    ],
+    "enstrophyWork": 0,
+    "endpointWork": [
+      0,
+      0
+    ],
+    "endpointAbsoluteTermBound": [
+      0,
+      0
+    ],
+    "enstrophyWorkOverTermBound": 0,
+    "endpointWorkOverTermBound": [
+      0,
+      0
+    ]
+  },
+  "cost": {
+    "modelConstructionSeconds": 0.18235275,
+    "rhsSeconds": 0.0094497083333333325,
+    "referenceSeconds": 0.0043882083333333334
+  },
+  "coverage": "One manufactured state and instantaneous QG RHS; no trajectory or arbitrary-superposition guarantee"
+}
