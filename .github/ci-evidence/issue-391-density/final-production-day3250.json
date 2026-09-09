@@ -1,0 +1,300 @@
+{
+  "schema": "wave-vortex-production-density-qualification-v1",
+  "status": "passed",
+  "input": {
+    "path": "/Users/jearly/Documents/OceanKitRepositories/along-track-velocity-decomp/data/run18_restart_day3250.nc",
+    "bytes": 1.764709355E+9,
+    "sha256": "5d062ca5b375772fe9ddd05b7916bd1e40f588a982b3629a942c5d8a7455657c"
+  },
+  "matlabRelease": "2025b",
+  "platform": "MACA64",
+  "sourceCommit": "bf5ef8e34d1be4cf97beed4fd51eee75d1e68eac",
+  "sourceSHA256": [
+    {
+      "path": "Operations/WVNoMotionProfileOperation.m",
+      "bytes": 17857,
+      "sha256": "c6e521114c56b1450c39016f58731d05b1d8b7a9768efd95f78b39aec7fcc16f"
+    },
+    {
+      "path": "Operations/EtaTrueOperation.m",
+      "bytes": 1972,
+      "sha256": "560caed0a98b19be47f8996474e1a40ddf95a28051761de4c8d9edd7b143dfc1"
+    },
+    {
+      "path": "Operations/APEOperation.m",
+      "bytes": 718,
+      "sha256": "2949a0df7676b34425a0e4fb6d650afb2026eb61a8c24a52f92a7d7434126020"
+    },
+    {
+      "path": "Operations/APVOperation.m",
+      "bytes": 996,
+      "sha256": "07f7d2ea070ef7a38b0dd199c9b7e2bee2a8b10a0e919c940cab02defee9d3f0"
+    },
+    {
+      "path": "Operations/@WVNoMotionProfile/WVNoMotionProfile.m",
+      "bytes": 6104,
+      "sha256": "91660779e1d06e449230838915bc4c100df4ab9b564a51517e0650278bfa913e"
+    },
+    {
+      "path": "@WVTransform/WVTransform.m",
+      "bytes": 53415,
+      "sha256": "4fdd84029eab8ac235424829c6fa50d4c4625711a17875cd894940e4cb727d32"
+    },
+    {
+      "path": "@WVTransform/removeFromVariableCache.m",
+      "bytes": 189,
+      "sha256": "6896327e7edd69959aa7fe8764700b418b505a9541952a3df3a83e18be7a5b42"
+    },
+    {
+      "path": "@WVTransform/waveVortexTransformFromFile.m",
+      "bytes": 4274,
+      "sha256": "f133a193224c6e7cdf9dace974f6cde239a130dc08a152e36e0b12357a1f81a0"
+    },
+    {
+      "path": "@WVTransformHydrostatic/WVTransformHydrostatic.m",
+      "bytes": 29811,
+      "sha256": "1b7411234bea5fa09b5a328eebbb0cf5a1621b67b3930701e05940debe3d6562"
+    },
+    {
+      "path": "@WVTransformBoussinesq/WVTransformBoussinesq.m",
+      "bytes": 27091,
+      "sha256": "a203112df4b060aff7cf48bb1e837d154ed3667493e9b2afa5020c430f6872ef"
+    },
+    {
+      "path": "@WVTransformConstantStratification/WVTransformConstantStratification.m",
+      "bytes": 32434,
+      "sha256": "74b867853a77bd26ddc793d59f79afb5c7c1444aa84dd64f80a779d093a4027e"
+    },
+    {
+      "path": "tools/density-diagnostics/qualifyProductionDensityDiagnostics.m",
+      "bytes": 9294,
+      "sha256": "efbb054150b51c5cd87a5ae449fa9fb9d37faabf5e4292834bd0e55a551eeba0"
+    }
+  ],
+  "scope": "Restored captured states using the production default rho_nm, eta_true, ape and apv operations. No profile injection, flag override or integrations. Source hashes describe the actual files even when sourceCommit is a parent of uncommitted changes.",
+  "timings": {
+    "loadAndDensitySeconds": 1.9122002083333334,
+    "noMotionProfileSeconds": 0.47938420833333334,
+    "etaTrueSeconds": 1.15503125,
+    "apeSeconds": 3.522065625,
+    "apvSeconds": 0.55340183333333337,
+    "densityDiagnosticsSeconds": 5.7098829166666665
+  },
+  "lastLoadWarning": {
+    "identifier": "MATLAB:dispatcher:UnresolvedFunctionHandle",
+    "message": "Could not find appropriate function on path loading function handle /Users/jearly/Documents/ProjectRepositories/garrett-munk-spin-up/CimRuns/GMSpinUpExperiment.m>@(z)N0*N0*exp(2*z/L_gm)"
+  },
+  "transform": "WVTransformBoussinesq",
+  "grid": [
+    512,
+    512,
+    86
+  ],
+  "time": 2.808E+8,
+  "actualReferenceDefault": true,
+  "selectedSolver": "dampedLeastSquares",
+  "solver": {
+    "algorithm": "damped-least-squares",
+    "reason": "gradient-tolerance",
+    "iterations": 295,
+    "evaluations": 295,
+    "acceptedSteps": 288,
+    "rejectedSteps": 6,
+    "initialCost": 3.6435790905479115E-5,
+    "finalCost": 1.3604316116026669E-21,
+    "maximumResidual": 2.1248003356788558E-11,
+    "gradientNorm": 9.93038067217672E-13,
+    "damping": 4.4914531018101025E-14,
+    "parameters": {
+      "maximumIterations": 2000,
+      "maximumEvaluations": 5000,
+      "gradientTolerance": 1E-12,
+      "stepTolerance": 1E-12,
+      "relativeCostTolerance": 1E-12
+    },
+    "exitflag": 1,
+    "solver": "dampedLeastSquares"
+  },
+  "densityRange": [
+    1025.0000000000005,
+    1026.8579818814135
+  ],
+  "noMotionRange": [
+    1025.0000000000005,
+    1026.8579818814135
+  ],
+  "materialHeightRange": [
+    -3999.999999996362,
+    -1.1368683772161603E-10
+  ],
+  "densityClosureMaximum": 0,
+  "meanDisplacement": 0.0036454738287704726,
+  "maximumAbsoluteDisplacement": 134.68440264195465,
+  "noMotionProfile": [
+    1026.8579818814135,
+    1026.8558479401631,
+    1026.8532584543789,
+    1026.8502064878526,
+    1026.8466834697294,
+    1026.842682021397,
+    1026.8381978298803,
+    1026.8332303016273,
+    1026.8277817278422,
+    1026.8218556789773,
+    1026.8154553533207,
+    1026.8085827141579,
+    1026.8012387794558,
+    1026.793424960993,
+    1026.7851448779013,
+    1026.7764058009564,
+    1026.767218944764,
+    1026.7575981725081,
+    1026.7475573259057,
+    1026.7371068485011,
+    1026.7262507066646,
+    1026.7149843464706,
+    1026.7032941770858,
+    1026.6911585709827,
+    1026.6785501903951,
+    1026.6654392742457,
+    1026.651797450249,
+    1026.6376016338652,
+    1026.6228374132381,
+    1026.6075014322948,
+    1026.5916022234121,
+    1026.5751593448992,
+    1026.5582008857734,
+    1026.5407598622237,
+    1026.5228701415313,
+    1026.5045625650816,
+    1026.4858617675429,
+    1026.4667839158781,
+    1026.4473354494176,
+    1026.4275126837233,
+    1026.4073021851,
+    1026.3866817319145,
+    1026.3656217989649,
+    1026.344087477406,
+    1026.3220408173047,
+    1026.2994435776957,
+    1026.276260326111,
+    1026.2524618112859,
+    1026.2280283443524,
+    1026.2029528838318,
+    1026.1772432723658,
+    1026.1509231359782,
+    1026.1240309126317,
+    1026.0966168373429,
+    1026.0687380258983,
+    1026.0404522848962,
+    1026.0118115737473,
+    1025.9828560914882,
+    1025.953609836251,
+    1025.9240780384059,
+    1025.8942466092053,
+    1025.8640833459485,
+    1025.8335406368342,
+    1025.8025593090681,
+    1025.7710734365492,
+    1025.7390159610834,
+    1025.7063250280205,
+    1025.672950889197,
+    1025.6388629482094,
+    1025.6040562911408,
+    1025.5685565330186,
+    1025.5324216828335,
+    1025.495739657325,
+    1025.4586207814175,
+    1025.421185638711,
+    1025.3835499468098,
+    1025.3458091478658,
+    1025.3080254450304,
+    1025.2702195979307,
+    1025.2323684659382,
+    1025.1944088291907,
+    1025.1562475645217,
+    1025.1177795018582,
+    1025.0789156500716,
+    1025.0396268838626,
+    1025.0000000000005
+  ],
+  "weightSum": 1.0000000000000004,
+  "firstFourMomentResiduals": [
+    -5.28355137419112E-13,
+    -1.0466072453141351E-12,
+    2.3275825711266407E-12,
+    -1.2512435532130439E-11
+  ],
+  "ape": {
+    "allFinite": true,
+    "minimum": 0,
+    "maximum": 0.091397282055279153,
+    "mean": 0.0013588309707344376,
+    "rms": 0.0050253188370877316,
+    "negativeCount": 0
+  },
+  "apv": {
+    "allFinite": true,
+    "minimum": -4.7958762253894929E-5,
+    "maximum": 4.8590982408290189E-5,
+    "mean": 2.8835339729764644E-12,
+    "rms": 3.0964419272652126E-6,
+    "negativeCount": 1.159256E+7
+  },
+  "acceptance": {
+    "maximumMomentResidual": 1E-8,
+    "densityClosureTolerance": 1.8189894035458565E-12,
+    "materialHeightTolerance": 1.4551915228366852E-11
+  },
+  "checks": [
+    {
+      "name": "actual-reference-default",
+      "passed": true
+    },
+    {
+      "name": "damped-solver-success",
+      "passed": true
+    },
+    {
+      "name": "ordered-profile",
+      "passed": true
+    },
+    {
+      "name": "bounded-material-height",
+      "passed": true
+    },
+    {
+      "name": "density-closure",
+      "passed": true
+    },
+    {
+      "name": "finite-nonnegative-ape",
+      "passed": true
+    },
+    {
+      "name": "finite-apv",
+      "passed": true
+    }
+  ],
+  "historicalComparison": {
+    "sources": [
+      {
+        "path": "/Users/jearly/Documents/OceanKitRepositories/wvm-v4-cpp-adoption-audit/.github/ci-evidence/issue-391-density/calculus-3250.json",
+        "bytes": 1054,
+        "sha256": "533bc699e81582edd0fef5272aeb70712eea9cd10dafaf5cf34f3eb45823c9a1"
+      },
+      {
+        "path": "/Users/jearly/Documents/OceanKitRepositories/wvm-v4-cpp-adoption-audit/.github/ci-evidence/issue-391-density/run18_restart_day3250-report.json",
+        "bytes": 25981,
+        "sha256": "266e960ab3b77551fc37a852da0edb2a8a9f20f8da783a4b12ac2599468ba20c"
+      }
+    ],
+    "scope": "Saved legacy calculus used an explicitly selected actual-reference branch with a fixed lsqnonlin profile. It does not represent the former false-flag default. Only saved aggregate differences are reported; no legacy full-field APV comparison was captured.",
+    "noMotionProfileMaximumDifference": 0.0030549178454748471,
+    "meanDisplacementDifference": -0.027415499258733406,
+    "maximumAPEDifference": 0.00030584184671129944,
+    "negativeAPECountDifference": -262158,
+    "etaAndAPESeconds": 25.756319208333334,
+    "productionEtaAndAPESeconds": 4.677096875
+  }
+}

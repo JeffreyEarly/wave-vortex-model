@@ -1,0 +1,416 @@
+{
+  "schema": "wave-vortex-captured-displacement-performance-v1",
+  "status": "passed",
+  "referenceCommit": "7c26eca05561e1fda4e99f641080efc5f6a7a449",
+  "baselineCommit": "414eae4b527454024b09eb02f852fc986891fdbb",
+  "inverseSourceEquivalenceVerified": true,
+  "input": {
+    "path": "/Users/jearly/Documents/OceanKitRepositories/along-track-velocity-decomp/data/run18_restart_day3250.nc",
+    "sha256": "5d062ca5b375772fe9ddd05b7916bd1e40f588a982b3629a942c5d8a7455657c"
+  },
+  "sourceSHA256": [
+    {
+      "path": "Operations/@WVNoMotionProfile/WVNoMotionProfile.m",
+      "sha256": "e4f90cbbf6bed361fd797ed98e4231febf0d3d3870c645f6220c7b184073b7fa"
+    },
+    {
+      "path": "Operations/EtaTrueOperation.m",
+      "sha256": "560caed0a98b19be47f8996474e1a40ddf95a28051761de4c8d9edd7b143dfc1"
+    },
+    {
+      "path": "Operations/APEOperation.m",
+      "sha256": "2949a0df7676b34425a0e4fb6d650afb2026eb61a8c24a52f92a7d7434126020"
+    },
+    {
+      "path": "Operations/WVNoMotionProfileOperation.m",
+      "sha256": "c6e521114c56b1450c39016f58731d05b1d8b7a9768efd95f78b39aec7fcc16f"
+    },
+    {
+      "path": "@WVTransform/removeFromVariableCache.m",
+      "sha256": "6896327e7edd69959aa7fe8764700b418b505a9541952a3df3a83e18be7a5b42"
+    },
+    {
+      "path": "tools/density-diagnostics/APEReference7c26.m",
+      "sha256": "143e47027df4fd69f8b02b606ca6d9d55e01126816ad3e28fd3b571ce0ab5bd1"
+    },
+    {
+      "path": "tools/density-diagnostics/benchmarkCapturedDisplacement.m",
+      "sha256": "830af87b374f6885894c0ef2d4a2d84eaad03a81e628cfd70d35edc789f9984f"
+    }
+  ],
+  "matlabRelease": "2025b",
+  "platform": "MACA64",
+  "scope": "Three alternating paired trials after one warmup per implementation and stage. Kernel uses fixed profiles/density. Operation includes profile construction and cached rho_nm/rho_total; only eta_true is cleared outside timers. No integrations or concurrent MATLAB workloads.",
+  "referenceOperationInterpretation": "Frozen constructor/inverse with original EtaTrueOperation expressions versus real public wvt.eta_true dispatch. The reference wrapper omits public variable-dispatch overhead.",
+  "grid": [
+    512,
+    512,
+    86
+  ],
+  "actualReferenceDefault": true,
+  "trialOrders": [
+    [
+      1,
+      2
+    ],
+    [
+      2,
+      1
+    ],
+    [
+      1,
+      2
+    ]
+  ],
+  "trialColumns": [
+    "original414eae4b",
+    "currentProduction"
+  ],
+  "kernel": {
+    "trialSeconds": [
+      [
+        0.96921558333333335,
+        0.876214125
+      ],
+      [
+        1.0173429583333333,
+        0.89520995833333339
+      ],
+      [
+        1.0356041666666667,
+        0.93751391666666661
+      ]
+    ],
+    "medianSeconds": [
+      1.0173429583333333,
+      0.89520995833333339
+    ],
+    "pairedSpeedups": [
+      1.1061401039766774,
+      1.1364294474866905,
+      1.1046280468547711
+    ],
+    "medianSpeedup": 1.1364294474866905
+  },
+  "operation": {
+    "trialSeconds": [
+      [
+        1.0724407916666667,
+        1.0317675
+      ],
+      [
+        1.0448135833333334,
+        1.0465840833333333
+      ],
+      [
+        0.94799929166666663,
+        0.93260266666666669
+      ]
+    ],
+    "medianSeconds": [
+      1.0448135833333334,
+      1.0317675
+    ],
+    "pairedSpeedups": [
+      1.039420985509494,
+      0.9983083060136354,
+      1.0165093083585435
+    ],
+    "medianSpeedup": 1.0126444022837833
+  },
+  "heightComparison": {
+    "bitwiseEqual": true,
+    "maximumAbsoluteDifference": 0,
+    "maximumScaledRelativeDifference": 0,
+    "relativeFloor": 3.9999999999963623E-9,
+    "absoluteTolerance": 7.2759576141834259E-12,
+    "allFinite": true,
+    "accepted": true
+  },
+  "displacementComparison": {
+    "bitwiseEqual": true,
+    "maximumAbsoluteDifference": 0,
+    "maximumScaledRelativeDifference": 0,
+    "relativeFloor": 1.3468440264195465E-10,
+    "absoluteTolerance": 7.2759576141834259E-12,
+    "allFinite": true,
+    "accepted": true
+  },
+  "originalReconstruction": {
+    "bitwiseEqual": true,
+    "maximumAbsoluteDifference": 0,
+    "maximumScaledRelativeDifference": 0,
+    "relativeFloor": 3.9999999999963623E-9,
+    "absoluteTolerance": 7.2759576141834259E-12,
+    "allFinite": true,
+    "accepted": true
+  },
+  "currentReconstruction": {
+    "bitwiseEqual": true,
+    "maximumAbsoluteDifference": 0,
+    "maximumScaledRelativeDifference": 0,
+    "relativeFloor": 3.9999999999963623E-9,
+    "absoluteTolerance": 7.2759576141834259E-12,
+    "allFinite": true,
+    "accepted": true
+  },
+  "originalOperationMatchesKernel": true,
+  "currentOperationMatchesKernel": true,
+  "densityClosure": {
+    "originalMaximum": 0,
+    "currentMaximum": 0,
+    "tolerance": 1.8189894035458565E-12
+  },
+  "materialHeightRange": [
+    -3999.999999996362,
+    -1.1368683772161603E-10
+  ],
+  "materialHeightBounded": true,
+  "sameInputAPEComparison": {
+    "bitwiseEqual": true,
+    "maximumAbsoluteDifference": 0,
+    "maximumScaledRelativeDifference": 0,
+    "relativeFloor": 9.1397282055279148E-14,
+    "absoluteTolerance": 1.7763568394002505E-15,
+    "allFinite": true,
+    "accepted": true
+  },
+  "publicAPEComparison": {
+    "bitwiseEqual": true,
+    "maximumAbsoluteDifference": 0,
+    "maximumScaledRelativeDifference": 0,
+    "relativeFloor": 9.1397282055279148E-14,
+    "absoluteTolerance": 1.7763568394002505E-15,
+    "allFinite": true,
+    "accepted": true
+  },
+  "apeReconstructionComparison": {
+    "bitwiseEqual": true,
+    "maximumAbsoluteDifference": 0,
+    "maximumScaledRelativeDifference": 0,
+    "relativeFloor": 9.1397282055279148E-14,
+    "absoluteTolerance": 1.7763568394002505E-15,
+    "allFinite": true,
+    "accepted": true
+  },
+  "negativeAPECounts": [
+    0,
+    0,
+    0
+  ],
+  "fixedDensityPreserved": true,
+  "samples": {
+    "linearIndex": [
+      1,
+      704513,
+      1.409025E+6,
+      2.113537E+6,
+      2.818049E+6,
+      3.522561E+6,
+      4.227073E+6,
+      4.931585E+6,
+      5.636097E+6,
+      6.340609E+6,
+      7.045121E+6,
+      7.749633E+6,
+      8.454145E+6,
+      9.158657E+6,
+      9.863169E+6,
+      1.0567681E+7,
+      1.1272193E+7,
+      1.1976704E+7,
+      1.2681216E+7,
+      1.3385728E+7,
+      1.409024E+7,
+      1.4794752E+7,
+      1.5499264E+7,
+      1.6203776E+7,
+      1.6908288E+7,
+      1.76128E+7,
+      1.8317312E+7,
+      1.9021824E+7,
+      1.9726336E+7,
+      2.0430848E+7,
+      2.113536E+7,
+      2.1839872E+7,
+      2.2544384E+7
+    ],
+    "density": [
+      1026.8579818814135,
+      1026.8529995693052,
+      1026.841365461476,
+      1026.8264657439274,
+      1026.8138340492474,
+      1026.7926843769135,
+      1026.7601485412029,
+      1026.7453140847765,
+      1026.716667891877,
+      1026.6611746463936,
+      1026.6495931827149,
+      1026.6037955471131,
+      1026.5190823031085,
+      1026.5123134765111,
+      1026.4674883264424,
+      1026.3656684691277,
+      1026.3124999273689,
+      1026.2880881212616,
+      1026.1982968343268,
+      1026.1175298829376,
+      1026.0700925356416,
+      1025.9814637057607,
+      1025.8552228733354,
+      1025.8411636005933,
+      1025.7653046222235,
+      1025.5447513891588,
+      1025.5988314023411,
+      1025.4805689823975,
+      1025.2598026203923,
+      1025.2992668330521,
+      1025.1927317365567,
+      1025.0697742421869,
+      1025.0000000000005
+    ],
+    "originalHeight": [
+      -3999.999999996362,
+      -3465.0404350030121,
+      -2922.21547473411,
+      -2570.5474243842996,
+      -2374.0522121967069,
+      -2138.5716529290958,
+      -1888.5490234665467,
+      -1799.4317094257244,
+      -1654.4016361854349,
+      -1440.4873627073007,
+      -1403.8496358604154,
+      -1277.9167883431232,
+      -1097.2027587015975,
+      -1084.6920994485781,
+      -1006.9458758473968,
+      -856.62193110613,
+      -789.91388831333859,
+      -761.621523000919,
+      -668.3352999035709,
+      -595.8441798249703,
+      -556.91214039366378,
+      -489.37028772645448,
+      -402.15125218524008,
+      -393.03422193526029,
+      -345.93752725553969,
+      -228.09525440017475,
+      -254.65756109779466,
+      -198.02759785735691,
+      -102.00857591907454,
+      -118.58283017684413,
+      -74.39332870845837,
+      -26.029770465936018,
+      -1.1368683772161603E-10
+    ],
+    "currentHeight": [
+      -3999.999999996362,
+      -3465.0404350030121,
+      -2922.21547473411,
+      -2570.5474243842996,
+      -2374.0522121967069,
+      -2138.5716529290958,
+      -1888.5490234665467,
+      -1799.4317094257244,
+      -1654.4016361854349,
+      -1440.4873627073007,
+      -1403.8496358604154,
+      -1277.9167883431232,
+      -1097.2027587015975,
+      -1084.6920994485781,
+      -1006.9458758473968,
+      -856.62193110613,
+      -789.91388831333859,
+      -761.621523000919,
+      -668.3352999035709,
+      -595.8441798249703,
+      -556.91214039366378,
+      -489.37028772645448,
+      -402.15125218524008,
+      -393.03422193526029,
+      -345.93752725553969,
+      -228.09525440017475,
+      -254.65756109779466,
+      -198.02759785735691,
+      -102.00857591907454,
+      -118.58283017684413,
+      -74.39332870845837,
+      -26.029770465936018,
+      -1.1368683772161603E-10
+    ],
+    "originalEta": [
+      0,
+      -19.491717332292865,
+      -42.910681810901224,
+      -24.422340877039915,
+      -22.159202663156066,
+      -6.9681190073597463,
+      -46.926301607092682,
+      -12.763259511822525,
+      7.6430839603974619,
+      -59.5304262341765,
+      -6.8031258582502687,
+      -9.2471259946019018,
+      -77.191560409745534,
+      -19.614628728529169,
+      1.157739201790946,
+      -57.590525735011852,
+      -38.751327893561779,
+      -12.987770423045163,
+      -29.184295419203067,
+      -28.902299764732788,
+      -21.487908816240179,
+      -22.468197459762962,
+      -46.36832430164759,
+      -14.92369130054459,
+      -3.4564274214582724,
+      -65.259650753871966,
+      -2.6365521188359935,
+      -6.9842090909208991,
+      -52.742520790713272,
+      -3.7092036322730024,
+      -0.68090331714111585,
+      -3.4817309323107466,
+      0
+    ],
+    "currentEta": [
+      0,
+      -19.491717332292865,
+      -42.910681810901224,
+      -24.422340877039915,
+      -22.159202663156066,
+      -6.9681190073597463,
+      -46.926301607092682,
+      -12.763259511822525,
+      7.6430839603974619,
+      -59.5304262341765,
+      -6.8031258582502687,
+      -9.2471259946019018,
+      -77.191560409745534,
+      -19.614628728529169,
+      1.157739201790946,
+      -57.590525735011852,
+      -38.751327893561779,
+      -12.987770423045163,
+      -29.184295419203067,
+      -28.902299764732788,
+      -21.487908816240179,
+      -22.468197459762962,
+      -46.36832430164759,
+      -14.92369130054459,
+      -3.4564274214582724,
+      -65.259650753871966,
+      -2.6365521188359935,
+      -6.9842090909208991,
+      -52.742520790713272,
+      -3.7092036322730024,
+      -0.68090331714111585,
+      -3.4817309323107466,
+      0
+    ]
+  },
+  "numericalStatus": "passed",
+  "performanceStatus": "improved"
+}

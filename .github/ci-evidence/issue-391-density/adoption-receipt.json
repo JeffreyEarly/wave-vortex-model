@@ -1,0 +1,85 @@
+{
+  "schema": "wave-vortex-matlab-density-adoption-receipt-v1",
+  "status": "passed",
+  "scope": "Approved MATLAB actual-profile default and consistent diagnostics, with a reviewable PR handoff. C++ diagnostic evaluation remains unsupported.",
+  "sourceParentCommit": "bf5ef8e34d1be4cf97beed4fd51eee75d1e68eac",
+  "matlabFocusedMethods": 40,
+  "matlabBatches": {
+    "densityReference": 16,
+    "solver": 9,
+    "transformDefaultsOutputAndRestart": 11,
+    "metadata": 2,
+    "documentation": 1,
+    "spatialFluxConservation": 1
+  },
+  "analyzer": {
+    "blockingFindings": 0,
+    "affectedBatchFiles": 12,
+    "nonblockingFindings": 152,
+    "additionalContinuousTestAndQualifierFindings": 0
+  },
+  "routingTestsPassed": 15,
+  "generatedCppPlanner": "passed",
+  "documentation": {
+    "files": 2026,
+    "routes": 4145,
+    "differences": 0
+  },
+  "optionalFullSuitesRun": false,
+  "sources": [
+    {
+      "path": "Operations/EtaTrueOperation.m",
+      "sha256": "560caed0a98b19be47f8996474e1a40ddf95a28051761de4c8d9edd7b143dfc1"
+    },
+    {
+      "path": "Operations/APEOperation.m",
+      "sha256": "2949a0df7676b34425a0e4fb6d650afb2026eb61a8c24a52f92a7d7434126020"
+    },
+    {
+      "path": "Operations/WVNoMotionProfileOperation.m",
+      "sha256": "c6e521114c56b1450c39016f58731d05b1d8b7a9768efd95f78b39aec7fcc16f"
+    },
+    {
+      "path": "UnitTests/TestDensityDiagnosticReference.m",
+      "sha256": "c6889572566080ed4741c1f7411879281f2c2116585e93ea4fd49d568ab619b5"
+    },
+    {
+      "path": "UnitTests/TestEtaTrueOperation.m",
+      "sha256": "556c55ea4b893b66e54cf4fa7d4e669c4ff92dad918320a8253b61b0b60d1e02"
+    },
+    {
+      "path": "UnitTests/TestNoMotionProfileSolver.m",
+      "sha256": "0bb60b79926be28358b139f80eb341b08840c078793e7984d9991ad6e066a389"
+    },
+    {
+      "path": "tools/ci/route.py",
+      "sha256": "a0dd67b292051317fdc353d4ce052ba6822613ed7de2bec34aa87961a104ba0f"
+    },
+    {
+      "path": "tools/ci/test_routing.py",
+      "sha256": "e988ff4026c77fb30385d96d8006c2d5521d8ac29d2f33e4b70dac3a8ec0e215"
+    },
+    {
+      "path": "tools/density-diagnostics/qualifyContinuousDensityDiagnostics.m",
+      "sha256": "41523e11a11bba644e8c24892ca407c2d3cf6ecae32ee407e6365033f53b418d"
+    },
+    {
+      "path": "tools/density-diagnostics/qualifyProductionDensityDiagnostics.m",
+      "sha256": "efbb054150b51c5cd87a5ae449fa9fb9d37faabf5e4292834bd0e55a551eeba0"
+    }
+  ],
+  "reports": [
+    {
+      "path": "final-production-day3000.json",
+      "sha256": "9b65926b41fff5070f7c0ee40cf7714fcbeed7c92fefac12ffe54d4d3ff81d28"
+    },
+    {
+      "path": "final-production-day3250.json",
+      "sha256": "c36a08010ecb32547174cf67f12387e365433c56b545a978672349a0f4a8117d"
+    },
+    {
+      "path": "final-continuous-twist.json",
+      "sha256": "aebc28e8747d9362668e8c058203acff9b80bda088df6b02b45762e109cb619b"
+    }
+  ]
+}

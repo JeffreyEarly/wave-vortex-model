@@ -2,6 +2,14 @@
 
 ## [Unreleased]
 
+### MATLAB density diagnostics
+
+- Bounded displacement inversion to blocks of 1,048,576 parcels, reducing its expanded coefficient array from 688 MiB to at most 32 MiB on the large JAMES state while preserving the solver and bitwise diagnostic results. Three paired local trials measured displacement operation medians of 0.142→0.122 seconds on 256×256×43 and 1.045→1.032 seconds on 512×512×86; the latter is within timing variation.
+- Accelerated exact APE integration by locating each parcel interval once and visiting only crossed intervals in bounded blocks. Three paired local trials on the JAMES 256×256×43 and 512×512×86 states reduced operation medians from 0.304 to 0.108 seconds and 3.578 to 0.756 seconds, with bitwise-identical APE arrays and unchanged small-displacement precision.
+- Density diagnostics now use the diagnosed current `rho_nm` by default. Displacement and APE share a monotone cubic profile and consistent material height; APV uses the corrected displacement. Explicit `shouldUseTrueNoMotionProfile=false` selects the original-profile approximation for both displacement and APE, using the corrected calculus rather than reproducing the old algorithm.
+- The default no-motion solver is bounded, toolbox-free `dampedLeastSquares`. It reports termination and residuals and rejects unqualified results before caching. Nonuniform fits use current density extrema; horizontally uniform stable density is recovered exactly, including changed extrema. Density moments use recurrence to avoid repeated full-grid powers. Explicit `lsqnonlin` and `fminsearch` remain available for legacy solver comparisons.
+- Corrected invalidation of all four density diagnostics when changing the reference flag. Copies preserve the flag; it remains runtime-only and existing restart files remain readable. Loaded transforms adopt the new default, so recomputed diagnostics can differ from previously saved values. Density plateaus and out-of-range inverse targets now produce explicit errors.
+
 ### MATLAB phase output
 
 - Corrected `phase` and `conjPhase` annotations to declare complex values. Explicitly requested phase diagnostics now use the standard `_real`/`_imag` NetCDF variables, preserving both components in ordinary and dense output across restart and append. This replaces the malformed real-only diagnostic encoding; existing files are not migrated. Normal coefficient-based restart already reconstructs the phases from `t`, `t0`, and the modal frequencies and is unchanged.

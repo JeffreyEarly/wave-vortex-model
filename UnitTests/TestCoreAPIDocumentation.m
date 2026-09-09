@@ -440,7 +440,7 @@ classdef TestCoreAPIDocumentation < matlab.unittest.TestCase
                 "g.md", ["9.81","\mathrm{m\,s^{-2}}"]
                 "rho0.md", ["1025","\mathrm{kg\,m^{-3}}"]
                 "shouldantialias.md", ["default is `true`","two-thirds"]
-                "shouldusetruenomotionprofile.md", ["default is `false`","rhoFunction"]
+                "shouldusetruenomotionprofile.md", ["default is `true`","rho_nm","Optimization Toolbox"]
                 "h_0.md", ["Nj`-by-1","meters"]
                 "h_pm.md", ["[Nj Nkl]","Omega"]
                 "lr2.md", ["g h_0/f^2","square meters"]

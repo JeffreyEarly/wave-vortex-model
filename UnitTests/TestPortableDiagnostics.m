@@ -199,14 +199,19 @@ classdef TestPortableDiagnostics < matlab.unittest.TestCase
             end
             testCase.verifyFalse(ismember('shouldUseTrueNoMotionProfile',wvt.annotatedPropertyNames));
             solver = WVNoMotionProfileOperation();
-            testCase.verifyTrue(ismember(solver.solver,["lsqnonlin","fminsearch"]));
+            testCase.verifyEqual(solver.solver,"dampedLeastSquares");
+            for legacySolver = ["lsqnonlin","fminsearch"]
+                legacy = WVNoMotionProfileOperation(solver=legacySolver);
+                testCase.verifyEqual(legacy.solver,legacySolver);
+            end
             testCase.verifyFalse(ismember('solver',wvt.annotatedPropertyNames));
-            wvt.shouldUseTrueNoMotionProfile = true;
+            testCase.verifyTrue(wvt.shouldUseTrueNoMotionProfile);
+            wvt.shouldUseTrueNoMotionProfile = false;
             filePath = fullfile(testCase.folder,"profile-contract.nc");
             file = wvt.writeToFile(filePath,shouldOverwriteExisting=true); file.close();
             [restored,file] = WVTransform.waveVortexTransformFromFile(filePath);
             cleanup = onCleanup(@()file.close());
-            testCase.verifyFalse(restored.shouldUseTrueNoMotionProfile);
+            testCase.verifyTrue(restored.shouldUseTrueNoMotionProfile);
         end
     end
     methods (Static,Access=private)

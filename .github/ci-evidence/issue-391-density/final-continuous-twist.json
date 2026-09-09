@@ -1,0 +1,199 @@
+{
+  "schema": "wave-vortex-default-continuous-twist-qualification-v1",
+  "cases": [
+    {
+      "grid": [
+        16,
+        16,
+        17
+      ],
+      "status": "returned",
+      "actualReferenceDefault": true,
+      "densityMagnitude": 1033.3588175331295,
+      "spectralDensityMaximumError": 0.0008257556712578662,
+      "spectralDensityRMSError": 0.000358723549269688,
+      "initialProfileMaximumMomentResidual": 8.016207122818475E-7,
+      "firstFourInitialMomentResiduals": [
+        -5.5511151231257827E-17,
+        1.9568563436322961E-9,
+        2.9352846819818978E-9,
+        -1.5071358680507352E-7
+      ],
+      "rhoProfileMaximumError": 0.0027271352580555686,
+      "etaRMSError": 0.0003826542330087377,
+      "apeRMSError": 1.0816467177340869E-6,
+      "apvRMSError": 0.00087631641802266892,
+      "apvRelativeRMSError": 0.013604686760500953,
+      "minimumAPE": 0,
+      "apvAllFinite": true,
+      "meanDisplacement": 1.5285487889185947E-7,
+      "densityClosureMaximum": 0,
+      "seconds": 0.058966625,
+      "solver": {
+        "algorithm": "damped-least-squares",
+        "reason": "gradient-tolerance",
+        "iterations": 411,
+        "evaluations": 411,
+        "acceptedSteps": 409,
+        "rejectedSteps": 1,
+        "initialCost": 2.032312988779047E-12,
+        "finalCost": 4.9740064481684704E-21,
+        "maximumResidual": 4.8543183361893227E-11,
+        "gradientNorm": 9.9164877355463014E-13,
+        "damping": 8.1173728897490025E-14,
+        "parameters": {
+          "maximumIterations": 2000,
+          "maximumEvaluations": 5000,
+          "gradientTolerance": 1E-12,
+          "stepTolerance": 1E-12,
+          "relativeCostTolerance": 1E-12
+        },
+        "exitflag": 1,
+        "solver": "dampedLeastSquares"
+      }
+    },
+    {
+      "grid": [
+        32,
+        32,
+        33
+      ],
+      "status": "returned",
+      "actualReferenceDefault": true,
+      "densityMagnitude": 1033.3588175331295,
+      "spectralDensityMaximumError": 2.6201882974419277E-6,
+      "spectralDensityRMSError": 1.0464455063399056E-6,
+      "initialProfileMaximumMomentResidual": 1.3560427503112038E-9,
+      "firstFourInitialMomentResiduals": [
+        5.5511151231257827E-17,
+        1.6209256159527285E-14,
+        2.4147350785597155E-14,
+        -2.2468923943641528E-10
+      ],
+      "rhoProfileMaximumError": 5.1428060032776557E-8,
+      "etaRMSError": 2.5046631909671733E-7,
+      "apeRMSError": 1.6617192955220686E-9,
+      "apvRMSError": 0.00012319023502574422,
+      "apvRelativeRMSError": 0.0019285958267137827,
+      "minimumAPE": 0,
+      "apvAllFinite": true,
+      "meanDisplacement": -1.2388416675964894E-10,
+      "densityClosureMaximum": 0,
+      "seconds": 0.05293445833333333,
+      "solver": {
+        "algorithm": "damped-least-squares",
+        "reason": "gradient-tolerance",
+        "iterations": 3,
+        "evaluations": 3,
+        "acceptedSteps": 2,
+        "rejectedSteps": 0,
+        "initialCost": 8.8927179134982025E-18,
+        "finalCost": 7.2148977598149755E-20,
+        "maximumResidual": 1.8036161453238719E-10,
+        "gradientNorm": 1.1580407480392013E-13,
+        "damping": 1.6841643798870218E-6,
+        "parameters": {
+          "maximumIterations": 2000,
+          "maximumEvaluations": 5000,
+          "gradientTolerance": 1E-12,
+          "stepTolerance": 1E-12,
+          "relativeCostTolerance": 1E-12
+        },
+        "exitflag": 1,
+        "solver": "dampedLeastSquares"
+      }
+    },
+    {
+      "grid": [
+        64,
+        64,
+        65
+      ],
+      "status": "returned",
+      "actualReferenceDefault": true,
+      "densityMagnitude": 1033.3588175331295,
+      "spectralDensityMaximumError": 2.203910298703704E-8,
+      "spectralDensityRMSError": 8.8377822928732016E-9,
+      "initialProfileMaximumMomentResidual": 6.0186022832198205E-12,
+      "firstFourInitialMomentResiduals": [
+        -5.5511151231257827E-16,
+        -7.7715611723760958E-16,
+        -9.9920072216264089E-16,
+        -1.0295375663105233E-12
+      ],
+      "rhoProfileMaximumError": 1.7416823538951576E-10,
+      "etaRMSError": 2.11473316557034E-9,
+      "apeRMSError": 1.3761608469327118E-11,
+      "apvRMSError": 2.1525021152040688E-5,
+      "apvRelativeRMSError": 0.00033847689501718872,
+      "minimumAPE": 0,
+      "apvAllFinite": true,
+      "meanDisplacement": 4.7177710245100823E-13,
+      "densityClosureMaximum": 0,
+      "seconds": 0.12126233333333333,
+      "solver": {
+        "algorithm": "damped-least-squares",
+        "reason": "gradient-tolerance",
+        "iterations": 2,
+        "evaluations": 2,
+        "acceptedSteps": 1,
+        "rejectedSteps": 0,
+        "initialCost": 1.654405845875004E-22,
+        "finalCost": 4.8867935173425822E-24,
+        "maximumResidual": 1.1921019726912618E-12,
+        "gradientNorm": 2.6340435439306784E-15,
+        "damping": 2.7760388579890346E-6,
+        "parameters": {
+          "maximumIterations": 2000,
+          "maximumEvaluations": 5000,
+          "gradientTolerance": 1E-12,
+          "stepTolerance": 1E-12,
+          "relativeCostTolerance": 1E-12
+        },
+        "exitflag": 1,
+        "solver": "dampedLeastSquares"
+      }
+    }
+  ],
+  "interpretation": "Continuous area-preserving polar twist with analytic inverse and APE/APV truth, then public spectral state initialization. Finite grids approximate the continuous density distribution; spectral initialization error is reported separately. No rho_nm or eta_true cache injection.",
+  "matlabRelease": "2025b",
+  "sources": [
+    {
+      "path": "Operations/WVNoMotionProfileOperation.m",
+      "sha256": "c6e521114c56b1450c39016f58731d05b1d8b7a9768efd95f78b39aec7fcc16f"
+    },
+    {
+      "path": "Operations/EtaTrueOperation.m",
+      "sha256": "560caed0a98b19be47f8996474e1a40ddf95a28051761de4c8d9edd7b143dfc1"
+    },
+    {
+      "path": "Operations/APEOperation.m",
+      "sha256": "2949a0df7676b34425a0e4fb6d650afb2026eb61a8c24a52f92a7d7434126020"
+    },
+    {
+      "path": "Operations/APVOperation.m",
+      "sha256": "07f7d2ea070ef7a38b0dd199c9b7e2bee2a8b10a0e919c940cab02defee9d3f0"
+    },
+    {
+      "path": "Operations/@WVNoMotionProfile/WVNoMotionProfile.m",
+      "sha256": "91660779e1d06e449230838915bc4c100df4ab9b564a51517e0650278bfa913e"
+    },
+    {
+      "path": "@WVTransformConstantStratification/WVTransformConstantStratification.m",
+      "sha256": "74b867853a77bd26ddc793d59f79afb5c7c1444aa84dd64f80a779d093a4027e"
+    },
+    {
+      "path": "UnitTests/DensityDiagnosticReference.m",
+      "sha256": "6f9aac8c1fe551c2c806f878003e29bbc660d4042ac514bd2d6a4b39867c4e0d"
+    },
+    {
+      "path": "UnitTests/TestDensityDiagnosticReference.m",
+      "sha256": "c6889572566080ed4741c1f7411879281f2c2116585e93ea4fd49d568ab619b5"
+    },
+    {
+      "path": "tools/density-diagnostics/qualifyContinuousDensityDiagnostics.m",
+      "sha256": "41523e11a11bba644e8c24892ca407c2d3cf6ecae32ee407e6365033f53b418d"
+    }
+  ],
+  "platform": "MACA64"
+}

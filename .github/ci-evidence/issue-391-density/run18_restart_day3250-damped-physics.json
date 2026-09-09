@@ -1,0 +1,58 @@
+{
+  "day": 3250,
+  "momentRecurrenceSeconds": 0.36341558333333335,
+  "momentRecurrenceMaximumDifference": 1.1102230246251565E-16,
+  "firstFourMomentRecurrenceDifferences": [
+    0,
+    0,
+    0,
+    0
+  ],
+  "momentSource": {
+    "path": "/Users/jearly/Documents/OceanKitRepositories/wvm-v4-cpp-adoption-audit/Operations/WVNoMotionProfileOperation.m",
+    "bytes": 11823,
+    "sha256": "e017bdf72d42e3366881cdd48868cd52581edc582f0b235146487ebb2af32fc4"
+  },
+  "profileSource": {
+    "path": "/Users/jearly/Documents/OceanKitRepositories/wvm-v4-cpp-adoption-audit/Operations/@WVNoMotionProfile/WVNoMotionProfile.m",
+    "bytes": 6104,
+    "sha256": "91660779e1d06e449230838915bc4c100df4ab9b564a51517e0650278bfa913e"
+  },
+  "input": {
+    "path": "/Users/jearly/Documents/OceanKitRepositories/along-track-velocity-decomp/data/run18_restart_day3250.nc",
+    "bytes": 1.764709355E+9,
+    "sha256": "5d062ca5b375772fe9ddd05b7916bd1e40f588a982b3629a942c5d8a7455657c"
+  },
+  "physical": [
+    {
+      "inverseSeconds": 1.110183375,
+      "apeSeconds": 3.6243828333333332,
+      "meanDisplacement": 0.032241546974583715,
+      "meanAPE": 0.0013612489706074089,
+      "minimumAPE": 0,
+      "minimumStratificationGradient": 5.5726895268045995E-6,
+      "maximumStratificationGradient": 0.0027050754056760842,
+      "maximumRelativeGradientChange": 0
+    },
+    {
+      "inverseSeconds": 1.1132072083333333,
+      "apeSeconds": 3.568988875,
+      "meanDisplacement": 0.0036153755808734757,
+      "meanAPE": 0.0013588309665454401,
+      "minimumAPE": 0,
+      "minimumStratificationGradient": 5.5576958301519624E-6,
+      "maximumStratificationGradient": 0.0027272809357490021,
+      "maximumRelativeGradientChange": 0.027017437084292915
+    }
+  ],
+  "distribution": {
+    "discreteCDFMaximumDifference": 0.032445657916724935,
+    "discreteWassersteinDensity": 0.0028902951618529067,
+    "linearInverseEmpiricalHeightMaximumInterior": 90.768640827145646,
+    "linearInverseEmpiricalHeightRMSInterior": 4.2785823291820062,
+    "densityVolumeOutsideFittedSupport": 0,
+    "linearInverseMeanDisplacement": 0.714410778937463
+  },
+  "optimalDiscreteWasserstein": 0.0028897809165363566,
+  "wassersteinRelativeExcess": 0.00017795304606216256
+}

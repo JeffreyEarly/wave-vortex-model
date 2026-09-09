@@ -1,0 +1,40 @@
+{
+  "schema": "wave-vortex-density-apv-qualification-v1",
+  "parentCommit": "b5483a212219de115135263e526a7961ef0a9247",
+  "test": "UnitTests/TestDensityDiagnosticReference.m/apvConvergesToAnalyticMaterialHeightVorticity",
+  "sourceSHA256": {
+    "UnitTests/TestDensityDiagnosticReference.m": "4196cef079991bbcbffede9ef96086f3415c8e4ce5e30089d39d7fa9c747f4bf",
+    "Operations/APVOperation.m": "07f7d2ea070ef7a38b0dd199c9b7e2bee2a8b10a0e919c940cab02defee9d3f0",
+    "Operations/@WVNoMotionProfile/WVNoMotionProfile.m": "91660779e1d06e449230838915bc4c100df4ab9b564a51517e0650278bfa913e"
+  },
+  "horizontalGridSizes": [
+    16,
+    32,
+    64
+  ],
+  "verticalGridSizes": [
+    17,
+    33,
+    65
+  ],
+  "xZAbsoluteRMSError": [
+    0.000816806282,
+    0.000123189885,
+    2.15250207e-05
+  ],
+  "yZAbsoluteRMSError": [
+    0.000945607311,
+    0.000154461906,
+    2.75177196e-05
+  ],
+  "finestRelativeRMSError": [
+    0.000338476888,
+    0.000422970318
+  ],
+  "requiredRefinementFactor": 20,
+  "requiredFinestRelativeRMSError": 0.001,
+  "status": "passed",
+  "newCodeAnalyzerFindings": 0,
+  "scope": "Existing APV operation with physical spectral velocity reconstruction and explicitly supplied displacement from the shared monotone inverse. Does not qualify default operation selection, no-motion fitting or persistence.",
+  "verificationHistory": "Initial trial met refinement criterion but exceeded provisional 2e-14 velocity-roundtrip and 1e-5 absolute APV bounds. Final test explicitly budgets 1e-12 spectral-roundtrip error and sub-0.1% relative RMS differentiated C2-field error. Both axes pass. No production algorithm or scientific fixture was changed to achieve this."
+}

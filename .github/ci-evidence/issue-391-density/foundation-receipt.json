@@ -1,0 +1,27 @@
+{
+  "schema": "wave-vortex-density-foundations-v1",
+  "baseCommit": "6fed53701480d031fcc1d495fbd6cfe2dc7cd593",
+  "status": "foundations-qualified-adoption-pending",
+  "automaticSolverSelectionChanged": false,
+  "profileSelectionDefaultChanged": false,
+  "CPPCompatibilityPromoted": false,
+  "focusedMatlabMethods": 30,
+  "routingTests": 14,
+  "sourceSHA256": {
+    "Operations/WVNoMotionProfileOperation.m": "8220cf8fd3cbb32b24c7712f0f85b24e707e2fbb95f81a9b730cc9ad1d04d5dc",
+    "Operations/@WVNoMotionProfile/WVNoMotionProfile.m": "91660779e1d06e449230838915bc4c100df4ab9b564a51517e0650278bfa913e",
+    "UnitTests/TestDensityDiagnosticReference.m": "ac8b2f699ab029299fbbf3c9fe0b4c6802f1368ebd7633ccc8a3f0f7ff462e04",
+    "UnitTests/DensityDiagnosticReference.m": "6f9aac8c1fe551c2c806f878003e29bbc660d4042ac514bd2d6a4b39867c4e0d",
+    "UnitTests/TestNoMotionProfileSolver.m": "137214a5cedc2ef6dfbf3d0a19c38d62cd0fcba2374f462036d3bc2828ce71bc",
+    "UnitTests/TestEtaTrueOperation.m": "9ea2d519b99bf475a188ea57f79066accbb11714df259d841303b9d8f009453f",
+    "tools/density-diagnostics/qualifyCapturedDensity.m": "1d5bf88f96e04031b79a71415bfb89fcb535fd74c7fae4544fd75f75b2adc6e3",
+    "tools/density-diagnostics/qualifyDensityCalculus.m": "0d67c43dbb171e610bf02a52692e2a3d0832b1728a7a6019489e5ee115d8ff88"
+  },
+  "limitations": [
+    "The shared cubic primitive is not wired into EtaTrueOperation or APEOperation.",
+    "Nonuniform profile fits retain initial reference endpoints.",
+    "A small moment residual is not a proof of exact continuous rearrangement.",
+    "Full-state timings are individual local observations tied to the archived measured source hashes.",
+    "Default migration, transform-level APV qualification and C++ implementation remain outstanding."
+  ]
+}

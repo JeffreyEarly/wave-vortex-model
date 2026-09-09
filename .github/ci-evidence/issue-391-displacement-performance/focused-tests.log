@@ -1,0 +1,51 @@
+[Warning: Directory access failure: /Users/jearly/Documents/MATLAB]
+[Warning: Directory access failure: /Users/jearly/Documents/MATLAB]
+[> In restoredefaultpath (line 81)
+In wvm391ValidateDisplacement (line 1)
+In run (line 112)]
+CI package: Distributions 2.0.0 (/Users/jearly/Documents/OceanKitRepositories/OceanKit/Distributions-2.0.0)
+CI package: SplineCore 2.2.0 (/Users/jearly/Documents/OceanKitRepositories/OceanKit/SplineCore-2.2.0)
+CI package: chebfun 5.7.0 (/Users/jearly/Documents/OceanKitRepositories/OceanKit/chebfun-5.7.0)
+CI package: InternalModes 1.3.0 (/Users/jearly/Documents/OceanKitRepositories/OceanKit/InternalModes-1.3.0)
+CI package: NetCDF 1.0.2 (/Users/jearly/Documents/OceanKitRepositories/OceanKit/NetCDF-1.0.2)
+CI package: ClassAnnotations 1.2.1 (/Users/jearly/Documents/OceanKitRepositories/OceanKit/ClassAnnotations-1.2.1)
+CI package: WaveVortexModel 4.3.0 (/Users/jearly/Documents/OceanKitRepositories/wvm-v4-cpp-adoption-audit)
+Running TestDensityDiagnosticReference
+BLAS: trying environment BLAS_VERSION...
+BLAS: loading libmwAF_BLAS_ilp64.dylib
+BLAS: loaded libmwAF_BLAS_ilp64.dylib@0x9751b8b0
+CONTINUOUS_DEFAULT n=16 status=returned residual=4.85432e-11 spectralRhoError=0.000825756
+CONTINUOUS_DEFAULT n=32 status=returned residual=1.80362e-10 spectralRhoError=2.62019e-06
+CONTINUOUS_DEFAULT n=64 status=returned residual=1.1921e-12 spectralRhoError=2.20391e-08
+Default density pipeline eta/APE/APV RMS errors by grid: [0.000382654233 1.08164672e-06 0.000876316418;2.50466319e-07 1.6617193e-09 0.000123190235;2.11473317e-09 1.37616085e-11 2.15250212e-05]
+.APV x-z RMS errors: 0.000816806282 0.000123189885 2.15250207e-05; relative finest 0.000338476888
+APV y-z RMS errors: 0.000945607311 0.000154461906 2.75177196e-05; relative finest 0.000422970318
+......... ..........
+Done TestDensityDiagnosticReference
+__________
+
+Running TestEtaTrueOperation
+.building 10 boussinesq transformation matrices...1...finished.
+.building 10 boussinesq transformation matrices...1...finished.
+.building 10 boussinesq transformation matrices...1...finished.
+....Ending simulation. Wrote 3 time points to wave-vortex group
+WVTransformConstantStratification initialized from Ap, Am, A0.
+Ending simulation. Wrote 4 time points to wave-vortex group
+.building 5 boussinesq transformation matrices...1...finished.
+building 5 boussinesq transformation matrices...1...finished.
+building 10 boussinesq transformation matrices...1...finished.
+building 10 boussinesq transformation matrices...1...finished.
+.building 10 boussinesq transformation matrices...1...finished.
+WVTransformConstantStratification initialized from Ap, Am, A0.
+WVTransformHydrostatic initialized from Ap, Am, A0.
+WVTransformBoussinesq initialized from Ap, Am, A0.
+. building 10 boussinesq transformation matrices...1...finished.
+.
+Done TestEtaTrueOperation
+__________
+
+DISPLACEMENT_TESTS passed=31 failed=0 incomplete=0
+ANALYZER /Users/jearly/Documents/OceanKitRepositories/wvm-v4-cpp-adoption-audit/Operations/@WVNoMotionProfile/WVNoMotionProfile.m findings=0
+ANALYZER /Users/jearly/Documents/OceanKitRepositories/wvm-v4-cpp-adoption-audit/UnitTests/TestDensityDiagnosticReference.m findings=0
+ANALYZER /Users/jearly/Documents/OceanKitRepositories/wvm-v4-cpp-adoption-audit/tools/density-diagnostics/benchmarkCapturedDisplacement.m findings=0
+BLAS: unloading libraries

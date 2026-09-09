@@ -1,0 +1,128 @@
+{
+  "schema": "wave-vortex-ape-performance-receipt-v1",
+  "status": "passed",
+  "scope": "Captured APE performance only; compares exact frozen7c26 class arithmetic against current production. Does not relabel earlier density qualification.",
+  "sourceParentCommit": "7c26eca05561e1fda4e99f641080efc5f6a7a449",
+  "sourceSHA256": [
+    {
+      "path": "Operations/@WVNoMotionProfile/WVNoMotionProfile.m",
+      "sha256": "17e3e69b4ace0fd3cc4596f57697a951f2a3ac5c123ad46588ff9242282ab675"
+    },
+    {
+      "path": "Operations/APEOperation.m",
+      "sha256": "2949a0df7676b34425a0e4fb6d650afb2026eb61a8c24a52f92a7d7434126020"
+    },
+    {
+      "path": "Operations/EtaTrueOperation.m",
+      "sha256": "560caed0a98b19be47f8996474e1a40ddf95a28051761de4c8d9edd7b143dfc1"
+    },
+    {
+      "path": "Operations/WVNoMotionProfileOperation.m",
+      "sha256": "c6e521114c56b1450c39016f58731d05b1d8b7a9768efd95f78b39aec7fcc16f"
+    },
+    {
+      "path": "tools/density-diagnostics/APEReference7c26.m",
+      "sha256": "143e47027df4fd69f8b02b606ca6d9d55e01126816ad3e28fd3b571ce0ab5bd1"
+    },
+    {
+      "path": "tools/density-diagnostics/benchmarkCapturedAPE.m",
+      "sha256": "c66703992d5a7c842ee882bf4f223d38ea811bdb2707a8d800db0d599775ce1e"
+    }
+  ],
+  "matlabRelease": "2025b",
+  "platform": "MACA64",
+  "pairedTrialsPerStagePerState": 3,
+  "warmupCallsPerImplementationPerStage": 1,
+  "trialOrders": [
+    [
+      1,
+      2
+    ],
+    [
+      2,
+      1
+    ],
+    [
+      1,
+      2
+    ]
+  ],
+  "timingIsolation": "Coordinated exclusive MATLAB worker; no concurrent MATLAB tests, integrations, profiling or benchmarks during paired timings. Normal system background activity was not controlled.",
+  "operationComparisonLimit": "Current public wvt.ape dispatch versus frozen reference operation expressions. Both construct a profile and use cached rho_nm/eta_true; only ape is cleared before operation timers. Reference wrapper omits public variable-dispatch overhead.",
+  "newCodeAnalyzerFindings": 0,
+  "rows": [
+    {
+      "day": 3000,
+      "grid": [
+        256,
+        256,
+        43
+      ],
+      "kernelMedianSeconds": [
+        0.26766616666666665,
+        0.10134166666666666
+      ],
+      "operationMedianSeconds": [
+        0.30354945833333336,
+        0.10773845833333333
+      ],
+      "operationSpeedup": 2.8174661400312413,
+      "fullArraysAndProbesBitwiseEqual": true
+    },
+    {
+      "day": 3250,
+      "grid": [
+        512,
+        512,
+        86
+      ],
+      "kernelMedianSeconds": [
+        3.57147025,
+        0.745704
+      ],
+      "operationMedianSeconds": [
+        3.5781272083333335,
+        0.7555295416666666
+      ],
+      "operationSpeedup": 4.7359196576749785,
+      "fullArraysAndProbesBitwiseEqual": true
+    }
+  ],
+  "artifacts": [
+    {
+      "path": ".github/ci-evidence/issue-391-ape-performance/day3000.json",
+      "sha256": "565643eebf16cc73583ce3a01a5d92b9c2434f9dda621ecf565b8210be101c62"
+    },
+    {
+      "path": ".github/ci-evidence/issue-391-ape-performance/day3250.json",
+      "sha256": "155f813c21ad7b773b958b3104403cbb643d69e2b83f0644e90e0347e7f11d09"
+    },
+    {
+      "path": ".github/ci-evidence/issue-391-ape-performance/before-hotspots.json",
+      "sha256": "e210c89be9d90020354091fc111a5fde92cc679600dea0fe8f147f139ee1185a"
+    },
+    {
+      "path": ".github/ci-evidence/issue-391-ape-performance/after-hotspots.json",
+      "sha256": "497cac44f3ea17390228e74e9752cbade8294d55def865215d29f72db04e43fc"
+    },
+    {
+      "path": ".github/ci-evidence/issue-391-ape-performance/before-hotspots.log",
+      "sha256": "e0c25bdd48c9f7d7550f858a264a43342b457bfaec71c84174f1508a79ae4deb"
+    },
+    {
+      "path": ".github/ci-evidence/issue-391-ape-performance/paired-benchmark.log",
+      "sha256": "6cf5ee20f4cd9ab4485281610b34f3ec8b8a9aa6bd04e84147737b73e00978cc"
+    }
+  ],
+  "reproduction": "Configure v4 package dependencies, add tools/density-diagnostics, call benchmarkCapturedAPE(inputPath,outputPath) for each source-hashed captured file. profileCurrentAPE(inputPath,outputPath) records one warmed production kernel under profiling. Snapshot NetCDF inputs are external local assets, not included.",
+  "verificationHistory": "One pre-edit hotspot capture; exactly3 paired trials per stage per state; one post-edit hotspot capture; all3 added authoring files analyzed once. All passed, no retry/extra benchmark variants.",
+  "logNormalization": "Trailing line whitespace removed from retained MATLAB transcripts; timings and numerical results unchanged.",
+  "affectedMatlabTestsPassed": 29,
+  "additionalValidation": {
+    "primitiveAndTestCodeAnalyzerFindings": 0,
+    "documentationFiles": 2026,
+    "documentationRoutes": 4145,
+    "documentationDifferences": 0,
+    "optionalFullSuitesRun": false
+  }
+}

@@ -1,0 +1,29 @@
+{
+  "legacyInverseSeconds": 25.128552458333335,
+  "legacyAPESeconds": 0.62776675,
+  "legacyAPE": {
+    "minimum": -7.1054273576010019E-15,
+    "maximum": 0.091091440208567853,
+    "negativeCount": 262158
+  },
+  "cubicInverseSeconds": 1.0589059583333333,
+  "cubicAPESeconds": 3.5304484166666668,
+  "cubicAPE": {
+    "minimum": 0,
+    "maximum": 0.091091448399966912,
+    "negativeCount": 0
+  },
+  "legacyMeanDisplacement": 0.031060973087503878,
+  "cubicMeanDisplacement": 0.032241546974583736,
+  "inverseDifferenceMaximum": 0.5340804164175097,
+  "inverseDifferenceRMS": 0.081111894725385367,
+  "cubicDensityResidualMaximum": 0,
+  "inputPath": "/Users/jearly/Documents/OceanKitRepositories/along-track-velocity-decomp/data/run18_restart_day3250.nc",
+  "solverReportPath": "/private/tmp/wvm391-density-qualification/run18_restart_day3250-report.json",
+  "grid": [
+    512,
+    512,
+    86
+  ],
+  "interpretation": "Calculus comparison on a fixed lsqnonlin profile. Neither inverse establishes that the fitted profile is the true rearranged distribution."
+}

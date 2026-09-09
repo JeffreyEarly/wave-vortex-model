@@ -75,6 +75,9 @@ int main() {
                            std::uint8_t sampling = portableFullGridSampling) {
     return resolvePortableVariablePlan(name, configuration, sampling, options, plan);
   };
+  require(options.shouldUseTrueNoMotionProfile);
+  require(resolve("eta_true") == WVPortableVariableStatus::requiresNoMotionSolver);
+  options.shouldUseTrueNoMotionProfile = false;
   require(resolve("eta_true") == WVPortableVariableStatus::supported);
   require(plan.primitiveMask == 1);
   require(plan.order[plan.count - 1] == WVPortableVariable::eta_true);
@@ -85,6 +88,10 @@ int main() {
   options.noMotionSolver = WVPortableNoMotionSolver::fminsearch;
   require(resolve("eta_true") == WVPortableVariableStatus::supported);
   require(plan.count > referenceCount);
+  options.noMotionSolver = WVPortableNoMotionSolver::dampedLeastSquares;
+  require(resolve("eta_true") == WVPortableVariableStatus::supported);
+  require(plan.noMotionSolver == WVPortableNoMotionSolver::dampedLeastSquares);
+  require(plan.order[plan.count - 2] == WVPortableVariable::rho_nm);
   require(resolve("apv") == WVPortableVariableStatus::supported);
   require(plan.primitiveMask == (1 | 16 | 32 | 64));
   require(resolve("energy_w") == WVPortableVariableStatus::supported);

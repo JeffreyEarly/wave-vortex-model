@@ -61,7 +61,7 @@ classdef TestNonlinearFlux < matlab.unittest.TestCase
 
             totalEnergyFlux = int_vol(F_density);
             absoluteEnergyFlux = int_vol(abs(F_density));
-            % EtaTrueOperation's spline inversion is accurate to roughly 1e-3.
+            % This coarse grid includes profile-fit and cubic-interpolation error.
             self.verifyLessThanOrEqual(abs(totalEnergyFlux)/absoluteEnergyFlux,5e-4)
         end
 

@@ -107,7 +107,7 @@ classdef WVTransformConstantStratification < WVGeometryDoublyPeriodicStratifiedC
         totalEnergy
     end
     properties (GetAccess=public, SetAccess=public)
-        shouldUseTrueNoMotionProfile (1,1) logical = false
+        shouldUseTrueNoMotionProfile (1,1) logical = true
     end
     properties (GetAccess=public, SetAccess=private)
         % Active nonlinear-flux implementation.
@@ -276,6 +276,9 @@ classdef WVTransformConstantStratification < WVGeometryDoublyPeriodicStratifiedC
             end
             self.shouldUseTrueNoMotionProfile = value;
             self.removeFromVariableCache("rho_nm");
+            self.removeFromVariableCache("eta_true");
+            self.removeFromVariableCache("ape");
+            self.removeFromVariableCache("apv");
         end
 
         function wvtX2 = waveVortexTransformWithResolution(self,m)

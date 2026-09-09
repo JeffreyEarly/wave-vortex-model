@@ -112,7 +112,7 @@ classdef WVTransformBoussinesq < WVGeometryDoublyPeriodicStratifiedBoussinesq & 
         volumeIntegral
     end
     properties (GetAccess=public, SetAccess=public)
-        shouldUseTrueNoMotionProfile (1,1) logical = false
+        shouldUseTrueNoMotionProfile (1,1) logical = true
     end
     properties
         Fu, Fv, Feta
@@ -235,6 +235,9 @@ classdef WVTransformBoussinesq < WVGeometryDoublyPeriodicStratifiedBoussinesq & 
             end
             self.shouldUseTrueNoMotionProfile = value;
             self.removeFromVariableCache("rho_nm");
+            self.removeFromVariableCache("eta_true");
+            self.removeFromVariableCache("ape");
+            self.removeFromVariableCache("apv");
         end
 
         function wvtX2 = waveVortexTransformWithResolution(self,m)

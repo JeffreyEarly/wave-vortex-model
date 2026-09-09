@@ -32,7 +32,7 @@ enum class WVPortableVariableStatus : std::uint8_t {
 };
 
 enum class WVPortableNoMotionSolver : std::uint8_t {
-  unspecified, lsqnonlin, fminsearch
+  unspecified, lsqnonlin, fminsearch, dampedLeastSquares
 };
 
 enum class WVPortableOperationSource : std::uint8_t {
@@ -43,7 +43,7 @@ struct WVPortableVariableOptions {
   // Set builtIn only after validating the operation identity/provenance during
   // graph ingestion. Matching a user-supplied name does not establish identity.
   WVPortableOperationSource source = WVPortableOperationSource::unverified;
-  bool shouldUseTrueNoMotionProfile = false;
+  bool shouldUseTrueNoMotionProfile = true;
   WVPortableNoMotionSolver noMotionSolver = WVPortableNoMotionSolver::unspecified;
   // The existing forcing registry must qualify identity, version, configuration,
   // stage and unique sanitized instance name before this can be true.
@@ -71,7 +71,8 @@ inline WVPortableVariableStatus resolvePortableVariablePlan(
     return WVPortableVariableStatus::customOperation;
   if (options.noMotionSolver != WVPortableNoMotionSolver::unspecified &&
       options.noMotionSolver != WVPortableNoMotionSolver::lsqnonlin &&
-      options.noMotionSolver != WVPortableNoMotionSolver::fminsearch)
+      options.noMotionSolver != WVPortableNoMotionSolver::fminsearch &&
+      options.noMotionSolver != WVPortableNoMotionSolver::dampedLeastSquares)
     return WVPortableVariableStatus::invalidContract;
   bool knownConfiguration = false;
   for (const auto candidate : WVPortableVariableConfigurations)

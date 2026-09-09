@@ -5,7 +5,7 @@
 ## Contents
 
 - `Test*.m` contains `matlab.unittest.TestCase` classes.
-- `EtaTrueOperationToolboxUnavailable.m` is a test double used to exercise the no-Optimization-Toolbox path.
+- `DensityDiagnosticReference.m` supplies independent analytic and weighted-distribution references for density tests.
 - `IsSameSolutionAs.m` provides a custom test constraint.
 - `private/` contains functions shared by formal tests without placing them on the public test path.
 - `RunAllUnitTests.m` is a compatibility wrapper for the canonical full test task.

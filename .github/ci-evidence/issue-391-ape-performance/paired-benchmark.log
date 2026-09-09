@@ -1,0 +1,81 @@
+[Warning: Directory access failure: /Users/jearly/Documents/MATLAB]
+CI package: Distributions 2.0.0 (/Users/jearly/Documents/OceanKitRepositories/OceanKit/Distributions-2.0.0)
+CI package: SplineCore 2.2.0 (/Users/jearly/Documents/OceanKitRepositories/OceanKit/SplineCore-2.2.0)
+CI package: chebfun 5.7.0 (/Users/jearly/Documents/OceanKitRepositories/OceanKit/chebfun-5.7.0)
+CI package: InternalModes 1.3.0 (/Users/jearly/Documents/OceanKitRepositories/OceanKit/InternalModes-1.3.0)
+CI package: NetCDF 1.0.2 (/Users/jearly/Documents/OceanKitRepositories/OceanKit/NetCDF-1.0.2)
+CI package: ClassAnnotations 1.2.1 (/Users/jearly/Documents/OceanKitRepositories/OceanKit/ClassAnnotations-1.2.1)
+CI package: WaveVortexModel 4.3.0 (/Users/jearly/Documents/OceanKitRepositories/wvm-v4-cpp-adoption-audit)
+APE_BENCHMARK_BEGIN /Users/jearly/Documents/OceanKitRepositories/along-track-velocity-decomp/data/run18_restart_day3000.nc
+BLAS: trying environment BLAS_VERSION...
+BLAS: loading libmwAF_BLAS_ilp64.dylib
+BLAS: loaded libmwAF_BLAS_ilp64.dylib@0x965378b0
+WVTransformBoussinesq initialized from Ap, Am, A0.
+APE_BENCHMARK_COMPLETE grid=[256 256 43] status=passed kernelMedians=[0.267666 0.101342] operationMedians=[0.303549 0.107738] operationSpeedup=2.81747 maxAbs=0 scaledRelative=0
+APE_BENCHMARK_BEGIN /Users/jearly/Documents/OceanKitRepositories/along-track-velocity-decomp/data/run18_restart_day3250.nc
+[Warning: Could not find appropriate function on path loading function handle
+/Users/jearly/Documents/ProjectRepositories/garrett-munk-spin-up/CimRuns/GMSpinUpExperiment.m>@(z)N0*N0*exp(2*z/L_gm)]
+[> In NetCDFRealVariable.get.value (line 173)
+In NetCDFGroup/readVariables (line 448)
+In CAAnnotatedClass.propertyValuesFromGroup (line 229)
+In WVStratification.requiredPropertiesForStratificationFromGroup (line 324)
+In WVGeometryDoublyPeriodicStratified.requiredPropertiesForGeometryFromGroup (line 347)
+In WVGeometryDoublyPeriodicStratifiedBoussinesq.requiredPropertiesForGeometryFromGroup (line 466)
+In WVTransformBoussinesq.requiredPropertiesForTransformFromGroup (line 487)
+In WVTransformBoussinesq.transformFromGroup (line 539)
+In WVTransformBoussinesq.waveVortexTransformFromFile (line 517)
+In WVTransform.waveVortexTransformFromFile (line 54)
+In benchmarkCapturedAPE (line 34)]
+WVTransformBoussinesq initialized from Ap, Am, A0.
+APE_BENCHMARK_COMPLETE grid=[512 512 86] status=passed kernelMedians=[3.57147 0.745704] operationMedians=[3.57813 0.75553] operationSpeedup=4.73592 maxAbs=0 scaledRelative=0
+[Warning: Could not find appropriate function on path loading function handle
+/Users/jearly/Documents/ProjectRepositories/garrett-munk-spin-up/CimRuns/GMSpinUpExperiment.m>@(z)N0*N0*exp(2*z/L_gm)]
+[> In NetCDFRealVariable.get.value (line 173)
+In NetCDFGroup/readVariables (line 448)
+In CAAnnotatedClass.propertyValuesFromGroup (line 229)
+In WVStratification.requiredPropertiesForStratificationFromGroup (line 324)
+In WVGeometryDoublyPeriodicStratified.requiredPropertiesForGeometryFromGroup (line 347)
+In WVGeometryDoublyPeriodicStratifiedBoussinesq.requiredPropertiesForGeometryFromGroup (line 466)
+In WVTransformBoussinesq.requiredPropertiesForTransformFromGroup (line 487)
+In WVTransformBoussinesq.transformFromGroup (line 539)
+In WVTransformBoussinesq.waveVortexTransformFromFile (line 517)
+In WVTransform.waveVortexTransformFromFile (line 54)
+In profileCurrentAPE (line 14)]
+WVTransformBoussinesq initialized from Ap, Am, A0.
+APE_HOTSPOTS grid=[512 512 86] seconds=0.985507 output=/Users/jearly/Documents/OceanKitRepositories/wvm-v4-cpp-adoption-audit/.github/ci-evidence/issue-391-ape-performance/after-hotspots.json
+     selfTime     totalTime    numCalls                                                                                       completeName
+    __________    _________    ________    ___________________________________________________________________________________________________________________________________________________________________________________
+
+       0.93865     0.98509        1        "/Users/jearly/Documents/OceanKitRepositories/wvm-v4-cpp-adoption-audit/Operations/@WVNoMotionProfile/WVNoMotionProfile.m>WVNoMotionProfile.availablePotentialEnergy"
+      0.011369    0.011369        2        "/Users/jearly/Documents/OceanKitRepositories/wvm-v4-cpp-adoption-audit/Operations/@WVNoMotionProfile/WVNoMotionProfile.m>WVNoMotionProfile.validateHeight"
+    0.00029596     0.98539        1        "/Users/jearly/Documents/OceanKitRepositories/wvm-v4-cpp-adoption-audit/tools/density-diagnostics/profileCurrentAPE.m>@()profile.availablePotentialEnergy(Z,materialHeight,g,rho0)"
+    3.7083e-05      0.9901        1        "/Users/jearly/Documents/OceanKitRepositories/wvm-v4-cpp-adoption-audit/tools/density-diagnostics/profileCurrentAPE.m>profileCurrentAPE"
+
+    lineTime    lineNumber                                      functionName                                                                        lineText
+    ________    __________    ________________________________________________________________________________    ____________________________________________________________________________
+
+     0.19637       131        "WVNoMotionProfile.WVNoMotionProfile>WVNoMotionProfile.availablePotentialEnergy"    "piece = -D.*A.*d + (A-D.*B).*d.^2/2 + (B-D.*C).*d.^3/3 + C.*d.^4/4;"
+    0.095513       123        "WVNoMotionProfile.WVNoMotionProfile>WVNoMotionProfile.availablePotentialEnergy"    "b = min(high(active),self.z(index+1));"
+    0.074383       132        "WVNoMotionProfile.WVNoMotionProfile>WVNoMotionProfile.availablePotentialEnergy"    "integral(active) = integral(active)+piece;"
+    0.051828       124        "WVNoMotionProfile.WVNoMotionProfile>WVNoMotionProfile.availablePotentialEnergy"    "t = a-self.z(index);"
+    0.051474       130        "WVNoMotionProfile.WVNoMotionProfile>WVNoMotionProfile.availablePotentialEnergy"    "D = height(active)-a;"
+    0.048466       126        "WVNoMotionProfile.WVNoMotionProfile>WVNoMotionProfile.availablePotentialEnergy"    "c = self.coefficients(index,:);"
+     0.04696       133        "WVNoMotionProfile.WVNoMotionProfile>WVNoMotionProfile.availablePotentialEnergy"    "remaining = b < high(active);"
+    0.040891       138        "WVNoMotionProfile.WVNoMotionProfile>WVNoMotionProfile.availablePotentialEnergy"    "ape(positions) = (g*self.densityScale/rho0)*sign(height-target).*integral;"
+    0.035604       117        "WVNoMotionProfile.WVNoMotionProfile>WVNoMotionProfile.availablePotentialEnergy"    "interval = discretize(low,self.z);"
+    0.034237       127        "WVNoMotionProfile.WVNoMotionProfile>WVNoMotionProfile.availablePotentialEnergy"    "A = (3*c(:,1).*t+2*c(:,2)).*t+c(:,3);"
+    0.026872       119        "WVNoMotionProfile.WVNoMotionProfile>WVNoMotionProfile.availablePotentialEnergy"    "active = find(high > low);"
+    0.025791       128        "WVNoMotionProfile.WVNoMotionProfile>WVNoMotionProfile.availablePotentialEnergy"    "B = 6*c(:,1).*t+2*c(:,2);"
+     0.02506       125        "WVNoMotionProfile.WVNoMotionProfile>WVNoMotionProfile.availablePotentialEnergy"    "d = b-a;"
+    0.024315       122        "WVNoMotionProfile.WVNoMotionProfile>WVNoMotionProfile.availablePotentialEnergy"    "a = low(active);"
+    0.024139       135        "WVNoMotionProfile.WVNoMotionProfile>WVNoMotionProfile.availablePotentialEnergy"    "low(active) = b(remaining);"
+    0.023957       121        "WVNoMotionProfile.WVNoMotionProfile>WVNoMotionProfile.availablePotentialEnergy"    "index = interval(active);"
+    0.021576       129        "WVNoMotionProfile.WVNoMotionProfile>WVNoMotionProfile.availablePotentialEnergy"    "C = 3*c(:,1);"
+    0.020411       134        "WVNoMotionProfile.WVNoMotionProfile>WVNoMotionProfile.availablePotentialEnergy"    "active = active(remaining);"
+    0.019941       113        "WVNoMotionProfile.WVNoMotionProfile>WVNoMotionProfile.availablePotentialEnergy"    "height = reshape(z(positions),[],1);"
+    0.019539       114        "WVNoMotionProfile.WVNoMotionProfile>WVNoMotionProfile.availablePotentialEnergy"    "target = reshape(materialHeight(positions),[],1);"
+
+ANALYZER APEReference7c26.m findings=0
+ANALYZER benchmarkCapturedAPE.m findings=0
+ANALYZER profileCurrentAPE.m findings=0
+BLAS: unloading libraries

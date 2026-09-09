@@ -61,7 +61,7 @@ views are `Apt`, `Amt`, and `A0t`.
       + [`dLnN2`](/classes/transforms/wvtransformboussinesq/dlnn2.html) $$\partial_z \ln N^2$$, vertical derivative of the logarithm of squared buoyancy frequency
       + [`rho0`](/classes/transforms/wvtransformboussinesq/rho0.html) Boussinesq reference density in kilograms per cubic meter.
       + [`rhoFunction`](/classes/transforms/wvtransformboussinesq/rhofunction.html) Function returning the no-motion density profile at requested depths.
-      + [`shouldUseTrueNoMotionProfile`](/classes/transforms/wvtransformboussinesq/shouldusetruenomotionprofile.html) Whether density diagnostics use the supplied no-motion profile directly.
+      + [`shouldUseTrueNoMotionProfile`](/classes/transforms/wvtransformboussinesq/shouldusetruenomotionprofile.html) Whether density diagnostics use the diagnosed current no-motion profile.
     + Gravity
       + [`g`](/classes/transforms/wvtransformboussinesq/g.html) Gravitational acceleration in meters per second squared.
   + Spatial grid

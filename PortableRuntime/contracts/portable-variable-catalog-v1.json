@@ -2200,11 +2200,8 @@
         "movingPrimitiveChannel": -1,
         "netCDFAttributes": []
       },
-      "dependencies": [
-        "eta_true",
-        "rho_nm"
-      ],
-      "trueProfileDependencies": [],
+      "dependencies": "eta_true",
+      "trueProfileDependencies": "rho_nm",
       "intermediateMask": 256,
       "runtimeStatus": "intentional-incompatibility",
       "samplingRestriction": "Full natural grid or scalar only; interpolation requires a separately qualified evaluator.",
@@ -2601,7 +2598,7 @@
         "movingPrimitiveChannel": -1,
         "netCDFAttributes": []
       },
-      "dependencies": "rho_e",
+      "dependencies": "rho_total",
       "trueProfileDependencies": "rho_nm",
       "intermediateMask": 8256,
       "runtimeStatus": "intentional-incompatibility",
@@ -3339,7 +3336,7 @@
       "intermediateMask": 48,
       "runtimeStatus": "intentional-incompatibility",
       "samplingRestriction": "Full natural grid or scalar only; interpolation requires a separately qualified evaluator.",
-      "configurationRestriction": "unpersisted-no-motion-solver: MATLAB selects lsqnonlin or fminsearch from the local toolbox environment; saved v4 models do not carry that numerical solver identity.",
+      "configurationRestriction": "unpersisted-no-motion-solver: MATLAB defaults to dampedLeastSquares and supports explicit lsqnonlin or fminsearch; saved v4 models do not carry that numerical solver identity.",
       "catalogStatus": "supported",
       "netCDF": {
         "role": "diagnostic",
@@ -6239,11 +6236,8 @@
         "movingPrimitiveChannel": -1,
         "netCDFAttributes": []
       },
-      "dependencies": [
-        "eta_true",
-        "rho_nm"
-      ],
-      "trueProfileDependencies": [],
+      "dependencies": "eta_true",
+      "trueProfileDependencies": "rho_nm",
       "intermediateMask": 256,
       "runtimeStatus": "intentional-incompatibility",
       "samplingRestriction": "Full natural grid or scalar only; interpolation requires a separately qualified evaluator.",
@@ -6640,7 +6634,7 @@
         "movingPrimitiveChannel": -1,
         "netCDFAttributes": []
       },
-      "dependencies": "rho_e",
+      "dependencies": "rho_total",
       "trueProfileDependencies": "rho_nm",
       "intermediateMask": 8256,
       "runtimeStatus": "intentional-incompatibility",
@@ -7378,7 +7372,7 @@
       "intermediateMask": 48,
       "runtimeStatus": "intentional-incompatibility",
       "samplingRestriction": "Full natural grid or scalar only; interpolation requires a separately qualified evaluator.",
-      "configurationRestriction": "unpersisted-no-motion-solver: MATLAB selects lsqnonlin or fminsearch from the local toolbox environment; saved v4 models do not carry that numerical solver identity.",
+      "configurationRestriction": "unpersisted-no-motion-solver: MATLAB defaults to dampedLeastSquares and supports explicit lsqnonlin or fminsearch; saved v4 models do not carry that numerical solver identity.",
       "catalogStatus": "supported",
       "netCDF": {
         "role": "diagnostic",
@@ -10278,11 +10272,8 @@
         "movingPrimitiveChannel": -1,
         "netCDFAttributes": []
       },
-      "dependencies": [
-        "eta_true",
-        "rho_nm"
-      ],
-      "trueProfileDependencies": [],
+      "dependencies": "eta_true",
+      "trueProfileDependencies": "rho_nm",
       "intermediateMask": 256,
       "runtimeStatus": "intentional-incompatibility",
       "samplingRestriction": "Full natural grid or scalar only; interpolation requires a separately qualified evaluator.",
@@ -10679,7 +10670,7 @@
         "movingPrimitiveChannel": -1,
         "netCDFAttributes": []
       },
-      "dependencies": "rho_e",
+      "dependencies": "rho_total",
       "trueProfileDependencies": "rho_nm",
       "intermediateMask": 8256,
       "runtimeStatus": "intentional-incompatibility",
@@ -11417,7 +11408,7 @@
       "intermediateMask": 48,
       "runtimeStatus": "intentional-incompatibility",
       "samplingRestriction": "Full natural grid or scalar only; interpolation requires a separately qualified evaluator.",
-      "configurationRestriction": "unpersisted-no-motion-solver: MATLAB selects lsqnonlin or fminsearch from the local toolbox environment; saved v4 models do not carry that numerical solver identity.",
+      "configurationRestriction": "unpersisted-no-motion-solver: MATLAB defaults to dampedLeastSquares and supports explicit lsqnonlin or fminsearch; saved v4 models do not carry that numerical solver identity.",
       "catalogStatus": "supported",
       "netCDF": {
         "role": "diagnostic",
@@ -14377,11 +14368,8 @@
         "movingPrimitiveChannel": -1,
         "netCDFAttributes": []
       },
-      "dependencies": [
-        "eta_true",
-        "rho_nm"
-      ],
-      "trueProfileDependencies": [],
+      "dependencies": "eta_true",
+      "trueProfileDependencies": "rho_nm",
       "intermediateMask": 256,
       "runtimeStatus": "intentional-incompatibility",
       "samplingRestriction": "Full natural grid or scalar only; interpolation requires a separately qualified evaluator.",
@@ -14778,7 +14766,7 @@
         "movingPrimitiveChannel": -1,
         "netCDFAttributes": []
       },
-      "dependencies": "rho_e",
+      "dependencies": "rho_total",
       "trueProfileDependencies": "rho_nm",
       "intermediateMask": 8256,
       "runtimeStatus": "intentional-incompatibility",
@@ -15516,7 +15504,7 @@
       "intermediateMask": 48,
       "runtimeStatus": "intentional-incompatibility",
       "samplingRestriction": "Full natural grid or scalar only; interpolation requires a separately qualified evaluator.",
-      "configurationRestriction": "unpersisted-no-motion-solver: MATLAB selects lsqnonlin or fminsearch from the local toolbox environment; saved v4 models do not carry that numerical solver identity.",
+      "configurationRestriction": "unpersisted-no-motion-solver: MATLAB defaults to dampedLeastSquares and supports explicit lsqnonlin or fminsearch; saved v4 models do not carry that numerical solver identity.",
       "catalogStatus": "supported",
       "netCDF": {
         "role": "diagnostic",
@@ -22432,11 +22420,8 @@
         "movingPrimitiveChannel": -1,
         "netCDFAttributes": []
       },
-      "dependencies": [
-        "eta_true",
-        "rho_nm"
-      ],
-      "trueProfileDependencies": [],
+      "dependencies": "eta_true",
+      "trueProfileDependencies": "rho_nm",
       "intermediateMask": 256,
       "runtimeStatus": "intentional-incompatibility",
       "samplingRestriction": "Full natural grid or scalar only; interpolation requires a separately qualified evaluator.",
@@ -22833,7 +22818,7 @@
         "movingPrimitiveChannel": -1,
         "netCDFAttributes": []
       },
-      "dependencies": "rho_e",
+      "dependencies": "rho_total",
       "trueProfileDependencies": "rho_nm",
       "intermediateMask": 8256,
       "runtimeStatus": "intentional-incompatibility",
@@ -23614,7 +23599,7 @@
       "intermediateMask": 48,
       "runtimeStatus": "intentional-incompatibility",
       "samplingRestriction": "Full natural grid or scalar only; interpolation requires a separately qualified evaluator.",
-      "configurationRestriction": "unpersisted-no-motion-solver: MATLAB selects lsqnonlin or fminsearch from the local toolbox environment; saved v4 models do not carry that numerical solver identity.",
+      "configurationRestriction": "unpersisted-no-motion-solver: MATLAB defaults to dampedLeastSquares and supports explicit lsqnonlin or fminsearch; saved v4 models do not carry that numerical solver identity.",
       "catalogStatus": "supported",
       "netCDF": {
         "role": "diagnostic",
@@ -26514,11 +26499,8 @@
         "movingPrimitiveChannel": -1,
         "netCDFAttributes": []
       },
-      "dependencies": [
-        "eta_true",
-        "rho_nm"
-      ],
-      "trueProfileDependencies": [],
+      "dependencies": "eta_true",
+      "trueProfileDependencies": "rho_nm",
       "intermediateMask": 256,
       "runtimeStatus": "intentional-incompatibility",
       "samplingRestriction": "Full natural grid or scalar only; interpolation requires a separately qualified evaluator.",
@@ -26915,7 +26897,7 @@
         "movingPrimitiveChannel": -1,
         "netCDFAttributes": []
       },
-      "dependencies": "rho_e",
+      "dependencies": "rho_total",
       "trueProfileDependencies": "rho_nm",
       "intermediateMask": 8256,
       "runtimeStatus": "intentional-incompatibility",
@@ -27696,7 +27678,7 @@
       "intermediateMask": 48,
       "runtimeStatus": "intentional-incompatibility",
       "samplingRestriction": "Full natural grid or scalar only; interpolation requires a separately qualified evaluator.",
-      "configurationRestriction": "unpersisted-no-motion-solver: MATLAB selects lsqnonlin or fminsearch from the local toolbox environment; saved v4 models do not carry that numerical solver identity.",
+      "configurationRestriction": "unpersisted-no-motion-solver: MATLAB defaults to dampedLeastSquares and supports explicit lsqnonlin or fminsearch; saved v4 models do not carry that numerical solver identity.",
       "catalogStatus": "supported",
       "netCDF": {
         "role": "diagnostic",
@@ -30596,11 +30578,8 @@
         "movingPrimitiveChannel": -1,
         "netCDFAttributes": []
       },
-      "dependencies": [
-        "eta_true",
-        "rho_nm"
-      ],
-      "trueProfileDependencies": [],
+      "dependencies": "eta_true",
+      "trueProfileDependencies": "rho_nm",
       "intermediateMask": 256,
       "runtimeStatus": "intentional-incompatibility",
       "samplingRestriction": "Full natural grid or scalar only; interpolation requires a separately qualified evaluator.",
@@ -30997,7 +30976,7 @@
         "movingPrimitiveChannel": -1,
         "netCDFAttributes": []
       },
-      "dependencies": "rho_e",
+      "dependencies": "rho_total",
       "trueProfileDependencies": "rho_nm",
       "intermediateMask": 8256,
       "runtimeStatus": "intentional-incompatibility",
@@ -31778,7 +31757,7 @@
       "intermediateMask": 48,
       "runtimeStatus": "intentional-incompatibility",
       "samplingRestriction": "Full natural grid or scalar only; interpolation requires a separately qualified evaluator.",
-      "configurationRestriction": "unpersisted-no-motion-solver: MATLAB selects lsqnonlin or fminsearch from the local toolbox environment; saved v4 models do not carry that numerical solver identity.",
+      "configurationRestriction": "unpersisted-no-motion-solver: MATLAB defaults to dampedLeastSquares and supports explicit lsqnonlin or fminsearch; saved v4 models do not carry that numerical solver identity.",
       "catalogStatus": "supported",
       "netCDF": {
         "role": "diagnostic",
@@ -34738,11 +34717,8 @@
         "movingPrimitiveChannel": -1,
         "netCDFAttributes": []
       },
-      "dependencies": [
-        "eta_true",
-        "rho_nm"
-      ],
-      "trueProfileDependencies": [],
+      "dependencies": "eta_true",
+      "trueProfileDependencies": "rho_nm",
       "intermediateMask": 256,
       "runtimeStatus": "intentional-incompatibility",
       "samplingRestriction": "Full natural grid or scalar only; interpolation requires a separately qualified evaluator.",
@@ -35139,7 +35115,7 @@
         "movingPrimitiveChannel": -1,
         "netCDFAttributes": []
       },
-      "dependencies": "rho_e",
+      "dependencies": "rho_total",
       "trueProfileDependencies": "rho_nm",
       "intermediateMask": 8256,
       "runtimeStatus": "intentional-incompatibility",
@@ -35920,7 +35896,7 @@
       "intermediateMask": 48,
       "runtimeStatus": "intentional-incompatibility",
       "samplingRestriction": "Full natural grid or scalar only; interpolation requires a separately qualified evaluator.",
-      "configurationRestriction": "unpersisted-no-motion-solver: MATLAB selects lsqnonlin or fminsearch from the local toolbox environment; saved v4 models do not carry that numerical solver identity.",
+      "configurationRestriction": "unpersisted-no-motion-solver: MATLAB defaults to dampedLeastSquares and supports explicit lsqnonlin or fminsearch; saved v4 models do not carry that numerical solver identity.",
       "catalogStatus": "supported",
       "netCDF": {
         "role": "diagnostic",
@@ -38585,9 +38561,12 @@
     "customOperation": "intentional-incompatibility",
     "forcingInstance": "bind-template-and-verify-built-in-forcing-contract-before-evaluation",
     "noMotionSolvers": [
+      "dampedLeastSquares",
       "lsqnonlin",
       "fminsearch"
     ],
+    "defaultNoMotionSolver": "dampedLeastSquares",
+    "shouldUseTrueNoMotionProfileDefault": true,
     "cache": "event-scoped-scratch-no-new-persistent-state-sized-cache"
   }
 }
