@@ -2,6 +2,14 @@
 
 ## [Unreleased]
 
+### Linear mode qualification
+
+- The experimental linear Boussinesq constructor defaults to `shouldCheckQuadraticAliasing=false` and `shouldAntialias=false`; QG retains both nonlinear defaults. Linear selection preserves the independently converged, physical-grid-supported prefixes without APV, cross-family or wave-product filtering.
+- Quadratic qualification is an explicit persisted construction choice. Unrequested products are not computed and are reported as unassessed. Configured endpoint-resolution checks and strict explicit counts remain active.
+- Bound automatic APV quadratic candidate growth, stopping after a measured cumulative prefix rejection instead of evaluating an unusable high-mode tail.
+- Avoid normalizing an unusable MDA candidate tail when a shorter physical-grid-qualified prefix exists. A bounded candidate search must establish a measured Gram cutoff; independent references cover the selected balanced prefixes. The provider normalization guard and scientific tolerances are unchanged.
+
+
 ### Automatic resolved-mode initialization
 
 - Select omitted free-surface family counts automatically: shared QG/Boussinesq APV and MDA policy, per-wavenumber wave prefixes, and independent inertial modes. Explicit counts remain strict.

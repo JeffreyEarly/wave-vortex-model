@@ -31,6 +31,7 @@ Create a free-surface QG transform scientifically or directly.
 + `options.gramTolerance`  shared normalized-Gram tolerance; default 1e-2
 + `options.modeConvergenceTolerance`  independent physical H1 and equivalent-depth agreement; default 1e-6
 + `options.boundaryResolutionTolerance`  fixed zero-APV physical derivative and energy tolerance; default 1e-2
++ `options.shouldCheckQuadraticAliasing`  qualify quadratic products during construction; default true
 + `options.quadraticAliasingTolerance`  APV quadratic-product tolerance in the induced Hilbert majorant
 + `options.muTolerance`  APV inversion singularity tolerance
 

@@ -3,10 +3,11 @@ function assessment = assessVerticalResolution(Lz,Nz,options)
 %
 % This method performs the scientific vertical solve without constructing a
 % complete horizontal transform. For active endpoint families it returns a
-% conservative maximum horizontal wavenumber whose APV/zero-APV product
-% error satisfies `quadraticAliasingTolerance` and whose fixed boundary
-% responses satisfy `boundaryResolutionTolerance`. The two errors retain
-% their separate units of relative error and separate tolerances.
+% conservative maximum horizontal wavenumber whose fixed boundary responses
+% satisfy `boundaryResolutionTolerance`. When `shouldCheckQuadraticAliasing`
+% is true, APV/zero-APV products must also satisfy `quadraticAliasingTolerance`.
+% The two relative errors and their tolerances remain separate; unrequested
+% quadratic errors are NaN.
 %
 % - Topic: Create and restore a transform
 % - Declaration: assessment = WVTransformFreeSurfaceQG.assessVerticalResolution(Lz,Nz,options)
@@ -20,6 +21,7 @@ function assessment = assessVerticalResolution(Lz,Nz,options)
 % - Parameter options.gramTolerance: shared normalized-Gram tolerance; default 1e-2
 % - Parameter options.modeConvergenceTolerance: independent physical H1 and equivalent-depth agreement; default 1e-6
 % - Parameter options.boundaryResolutionTolerance: fixed zero-APV physical derivative and energy tolerance; default 1e-2
+% - Parameter options.shouldCheckQuadraticAliasing: qualify quadratic products during construction; default true
 % - Parameter options.quadraticAliasingTolerance: APV quadratic-product tolerance
 % - Returns assessment: data-only vertical-resolution diagnostics
 arguments
@@ -36,6 +38,7 @@ arguments
     options.gramTolerance (1,1) double {mustBeReal,mustBeFinite,mustBeNonnegative} = 1e-2
     options.modeConvergenceTolerance (1,1) double {mustBeReal,mustBeFinite,mustBePositive} = 1e-6
     options.boundaryResolutionTolerance (1,1) double {mustBeReal,mustBeFinite,mustBePositive} = 1e-2
+    options.shouldCheckQuadraticAliasing (1,1) logical = true
     options.quadraticAliasingTolerance (1,1) double {mustBeReal,mustBeFinite,mustBePositive} = 0.1
 end
 
@@ -49,7 +52,7 @@ endpointNames = ["surface","bottom"];
 integratedN = integral(@(z) sqrt(inputs.N2Function(z)),-Lz,0);
 horizontalWavenumberScale = abs(inputs.f0)*(Nz-1)^2/integratedN;
 limit = WVInternal.supportedFreeSurfaceHorizontalWavenumber(vertical.apvBasis,vertical.apvTransform,inputs.N2Function, ...
-    inputs.f0,options.g,endpointNames(activeMask),vertical.nEVP,options.quadraticAliasingTolerance,seedKh=horizontalWavenumberScale,vertical=vertical,inputs=inputs,boundaryResolutionTolerance=options.boundaryResolutionTolerance,modeConvergenceTolerance=options.modeConvergenceTolerance);
+    inputs.f0,options.g,endpointNames(activeMask),vertical.nEVP,options.quadraticAliasingTolerance,seedKh=horizontalWavenumberScale,shouldCheckQuadraticAliasing=options.shouldCheckQuadraticAliasing,vertical=vertical,inputs=inputs,boundaryResolutionTolerance=options.boundaryResolutionTolerance,modeConvergenceTolerance=options.modeConvergenceTolerance);
 
 apvModeCount = length(vertical.apvTransform.modeNumber);
 mdaModeCount = length(vertical.mdaTransform.modeNumber);
@@ -58,7 +61,7 @@ mdaDiagnostics = vertical.mdaAssessment.prefixDiagnostics(mdaModeCount,:);
 assessment = struct(z=vertical.z,weights=vertical.weights,apvModeCount=apvModeCount,mdaModeCount=mdaModeCount, ...
     apvGramError=apvDiagnostics.gramError,mdaGramError=mdaDiagnostics.gramError, ...
     quadraticAliasingError=apvDiagnostics.quadraticAliasingError,gramTolerance=options.gramTolerance, ...
-    quadraticAliasingTolerance=options.quadraticAliasingTolerance, ...
+    quadraticAliasingTolerance=options.quadraticAliasingTolerance,shouldCheckQuadraticAliasing=options.shouldCheckQuadraticAliasing, ...
     horizontalWavenumberScale=horizontalWavenumberScale,isHorizontalLimitApplicable=limit.isApplicable, ...
     maximumSupportedKh=limit.maximumSupportedKh,firstRejectedKh=limit.firstRejectedKh, ...
     maximumSupportedError=limit.maximumSupportedError,firstRejectedError=limit.firstRejectedError, ...

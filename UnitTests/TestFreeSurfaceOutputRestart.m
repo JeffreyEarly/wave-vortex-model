@@ -177,7 +177,7 @@ if type=="qg"
     w=WVTransformFreeSurfaceQG([1e5 1e5 1000],[8 6 65],N2Function=N2,latitude=30,apvModeCount=3,mdaModeCount=2);
     w.addForcing(WVVerticalDiffusivity(w,kappa_z=1e-5));
 else
-    w=WVTransformFreeSurfaceBoussinesq.fromStratification([1e5 1e5 1000],[8 6 65],N2Function=N2,apvModeCount=3,mdaModeCount=2,waveModeCount=4,inertialModeCount=3);
+    w=WVTransformFreeSurfaceBoussinesq.fromStratification([1e5 1e5 1000],[8 6 65],shouldAntialias=true,N2Function=N2,apvModeCount=3,mdaModeCount=2,waveModeCount=4,inertialModeCount=3);
     [X,~,Z]=ndgrid(w.x,w.y,w.z);
     w.addForcing(WVPrescribedBoussinesqSource(w,uRate=1e-7*cos(2*pi*X/w.Lx).*(1+Z/w.Lz),frequency=.0003,referenceTime=17,phase=.4));
 end

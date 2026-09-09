@@ -1,7 +1,7 @@
 function [state,assessment] = selectFreeSurfaceWaveCounts(state,bases,reference,vertical,counts,inertialCount,assessment,options,autoWave,autoInertial)
 % Test complete maps against one bounded snapshot; never mix pagewise optima.
 assessment=withSelectedConvergence(assessment,counts,inertialCount);
-if any(counts>0)
+if options.shouldCheckQuadraticAliasing && any(counts>0)
     data=WVInternal.prepareConstructionProducts(state,bases,reference,vertical,counts,inertialCount,assessment,options);
     prepared=WVInternal.prepareWaveQuadraticAssessment(data,interactionIndices=1:height(data.inventory.interactions),ensureOutputCoverage=true);
     levels=arrayfun(@WVInternal.constructionModeLevels,counts,UniformOutput=false);
@@ -51,9 +51,12 @@ if any(counts>0)
     assessment.quadratic.trials=vertcat(trials{1:trial});
     assessment.cost.selectionTrials=trial;
     assessment.cost.quadratic=report.cost;
-else
+elseif options.shouldCheckQuadraticAliasing
     assessment.quadratic=struct(status="not-applicable",coverage="No propagating wave modes requested; shared APV/zero-APV checks still apply. Mean-family nonlinear interactions are outside this sampled wave policy.");
+else
+    assessment.quadratic=struct(status="not-requested",coverage="Linear qualification only; no quadratic products were prepared or measured.");
 end
+assessment.shouldCheckQuadraticAliasing=options.shouldCheckQuadraticAliasing;
 assessment=withSelectedConvergence(assessment,counts,inertialCount);
 assessment.pages.selectedCount=counts;
 assessment.pages.status=repmat("accepted",numel(counts),1);
@@ -74,7 +77,12 @@ if autoInertial, assessment.inertial.requestedCount=NaN; end
 assessment.inertial.selectedCount=inertialCount;
 assessment.inertial.candidateGramError=assessment.inertial.gramError;
 assessment.inertial.gramError=assessment.inertial.prefixGramError(inertialCount);
-assessment.coverage="Selected resolved prefixes. Linear evidence covers every retained mode and kappa; quadratic evidence covers the stated finite interaction inventory, not every triad or coherent superposition. Fixed boundary resolution is checked separately.";
+assessment.coverage="Selected resolved prefixes. Linear evidence covers every retained mode and kappa. Fixed configured boundary resolution is checked separately.";
+if options.shouldCheckQuadraticAliasing
+    assessment.coverage=assessment.coverage+" Quadratic evidence covers the stated finite interaction inventory, not every triad or coherent superposition.";
+else
+    assessment.coverage=assessment.coverage+" Quadratic interactions were not assessed.";
+end
 state.waveModeCountByKh=counts; nw=max([counts;0]); state.waveMode=(1:nw).';
 state.waveModeNumber=state.waveModeNumber(1:nw);
 state.waveF=state.waveF(:,1:nw,:); state.waveG=state.waveG(:,1:nw,:);

@@ -2,8 +2,10 @@ function [self,assessment] = fromStratification(Lxyz,Nxyz,options)
 % Solve independent resolved families on one WKB-Chebyshev physical grid.
 %
 % Omitted counts select independent resolved prefixes on the prescribed grid.
-% Explicit counts are strict: failure of convergence, Gram or sampled quadratic
-% checks rejects construction. No basis or quadrature weights are fitted.
+% Linear qualification is the default: convergence and fixed-grid Gram checks
+% determine each prefix. Set shouldCheckQuadraticAliasing=true to additionally
+% qualify sampled nonlinear products. Explicit counts are strict under the
+% requested policy. No basis or quadrature weights are fitted.
 % Wave/inertial references are always computed, independently of nargout.
 % This experimental implementation requires N2>f^2.
 %
@@ -21,6 +23,7 @@ function [self,assessment] = fromStratification(Lxyz,Nxyz,options)
 % - Parameter options.referenceNEVP: optional fixed higher reference resolution; empty uses a bounded automatically refined reference
 % - Parameter options.modeConvergenceTolerance: equivalent-depth and joint field/derivative convergence tolerance
 % - Parameter options.gramTolerance: shared fixed-quadrature normalized-Gram tolerance; default 1e-2
+% - Parameter options.shouldCheckQuadraticAliasing: qualify quadratic products during construction; default false
 % - Parameter options.quadraticAliasingTolerance: bounded physical-product sampling tolerance; default 0.1
 % - Parameter options.boundaryResolutionTolerance: fixed zero-APV physical derivative and energy tolerance; default 1e-2
 % - Parameter options.g0: surface acceleration for balanced basis; default negative stratification integral
@@ -30,7 +33,7 @@ function [self,assessment] = fromStratification(Lxyz,Nxyz,options)
 % - Parameter options.rho0: reference density
 % - Parameter options.rotationRate: planetary rotation rate
 % - Parameter options.planetaryRadius: planetary radius in meters
-% - Parameter options.shouldAntialias: apply existing horizontal antialiasing rule
+% - Parameter options.shouldAntialias: restrict horizontal bandwidth for nonlinear products; default false for linear dynamics
 % - Returns self: zero-state experimental free-surface Boussinesq transform
 % - Returns assessment: candidate and selected counts, convergence, Gram, fixed-boundary and bounded quadratic evidence, coverage and construction costs
 arguments (Input)
@@ -46,6 +49,7 @@ arguments (Input)
     options.referenceNEVP (:,1) double {mustBeInteger,mustBePositive,mustBeFinite} = zeros(0,1)
     options.modeConvergenceTolerance (1,1) double {mustBeReal,mustBeFinite,mustBePositive} = 1e-6
     options.gramTolerance (1,1) double {mustBeReal,mustBeFinite,mustBePositive} = 1e-2
+    options.shouldCheckQuadraticAliasing (1,1) logical = false
     options.quadraticAliasingTolerance (1,1) double {mustBeReal,mustBeFinite,mustBePositive} = .1
     options.boundaryResolutionTolerance (1,1) double {mustBeReal,mustBeFinite,mustBePositive} = 1e-2
     options.g0 (1,1) double = NaN
@@ -55,14 +59,14 @@ arguments (Input)
     options.rho0 (1,1) double {mustBeReal,mustBeFinite,mustBePositive} = 1025
     options.rotationRate (1,1) double {mustBeReal,mustBeFinite,mustBePositive} = 7.2921e-5
     options.planetaryRadius (1,1) double {mustBeReal,mustBeFinite,mustBePositive} = 6.371e6
-    options.shouldAntialias (1,1) logical = true
+    options.shouldAntialias (1,1) logical = false
 end
 arguments (Output)
     self (1,1) WVTransformFreeSurfaceBoussinesq
     assessment (1,1) struct
 end
 if numel(options.referenceNEVP)>1 || any(options.referenceNEVP<=options.nEVP)
-    error('WVTransformFreeSurfaceBoussinesq:InvalidReferenceResolution','Supply one referenceNEVP greater than nEVP, or leave it empty to avoid an additional solve.')
+    error('WVTransformFreeSurfaceBoussinesq:InvalidReferenceResolution','Supply one referenceNEVP greater than nEVP, or leave it empty for an automatically chosen independent reference.')
 end
 if any([numel(options.apvModeCount),numel(options.mdaModeCount),numel(options.inertialModeCount)]>1)
     error('WV:InvalidModeCount','APV, MDA and inertial counts must be scalar or empty for automatic selection.')
@@ -86,7 +90,7 @@ balancedOptions.quadraticAliasingTolerance = options.quadraticAliasingTolerance;
 balancedOptions.muTolerance = sqrt(eps);
 [state,balancedAssessment,vertical] = WVInternal.buildFreeSurfaceBalancedState(Lxyz,Nxyz,balancedOptions);
 state.Lxyz = Lxyz; state.Nxyz = Nxyz;
-for name = ["shouldAntialias","rho0","planetaryRadius","rotationRate","latitude","g","nEVP","gramTolerance","modeConvergenceTolerance","quadraticAliasingTolerance","boundaryResolutionTolerance"]
+for name = ["shouldAntialias","rho0","planetaryRadius","rotationRate","latitude","g","nEVP","gramTolerance","modeConvergenceTolerance","shouldCheckQuadraticAliasing","quadraticAliasingTolerance","boundaryResolutionTolerance"]
     state.(name) = options.(name);
 end
 if autoWave && ~isempty(options.waveModeKappa)

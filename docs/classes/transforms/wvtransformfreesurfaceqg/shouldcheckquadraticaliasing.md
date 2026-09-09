@@ -1,15 +1,15 @@
 ---
 layout: default
-title: shouldExcludeConjugates
+title: shouldCheckQuadraticAliasing
 parent: WVTransformFreeSurfaceQG
 grand_parent: Transforms
-nav_order: 208
+nav_order: 207
 mathjax: true
 ---
 
-#  shouldExcludeConjugates
+#  shouldCheckQuadraticAliasing
 
-whether the WV grid excludes redundant Hermitian-conjugate wavenumbers
+Whether scientific construction checks quadratic products.
 
 > Developer documentation: this item describes internal implementation details.
 
@@ -18,5 +18,3 @@ whether the WV grid excludes redundant Hermitian-conjugate wavenumbers
 
 ## Description
 Real valued property with no dimensions and is dimensionless.
-
-## Discussion

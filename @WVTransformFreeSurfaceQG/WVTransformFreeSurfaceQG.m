@@ -207,6 +207,9 @@ classdef WVTransformFreeSurfaceQG < WVGeometryDoublyPeriodicStratified & WVTrans
         % measured with the induced positive Hilbert majorant.
         % - Topic: Inspect modes and operators
         quadraticAliasingTolerance
+        % Whether scientific construction checks quadratic products.
+        % - Topic: Inspect modes and operators
+        shouldCheckQuadraticAliasing
         % Coupled quadratic-aliasing error at the selected APV count.
         %
         % This is a positive relative error in the induced Hilbert
@@ -340,6 +343,7 @@ classdef WVTransformFreeSurfaceQG < WVGeometryDoublyPeriodicStratified & WVTrans
             % - Parameter options.gramTolerance: shared normalized-Gram tolerance; default 1e-2
             % - Parameter options.modeConvergenceTolerance: independent physical H1 and equivalent-depth agreement; default 1e-6
             % - Parameter options.boundaryResolutionTolerance: fixed zero-APV physical derivative and energy tolerance; default 1e-2
+            % - Parameter options.shouldCheckQuadraticAliasing: qualify quadratic products during construction; default true
             % - Parameter options.quadraticAliasingTolerance: APV quadratic-product tolerance in the induced Hilbert majorant
             % - Parameter options.muTolerance: APV inversion singularity tolerance
             % - Returns wvt: new `WVTransformFreeSurfaceQG` instance
@@ -363,6 +367,7 @@ classdef WVTransformFreeSurfaceQG < WVGeometryDoublyPeriodicStratified & WVTrans
                 options.gramTolerance (1,1) double {mustBeReal,mustBeFinite,mustBeNonnegative} = 1e-2
                 options.modeConvergenceTolerance (1,1) double {mustBeReal,mustBeFinite,mustBePositive} = 1e-6
                 options.boundaryResolutionTolerance (1,1) double {mustBeReal,mustBeFinite,mustBePositive} = 1e-2
+                options.shouldCheckQuadraticAliasing (1,1) logical = true
                 options.quadraticAliasingTolerance (1,1) double {mustBeReal,mustBeFinite,mustBePositive} = 0.1
                 options.muTolerance (1,1) double {mustBeReal,mustBeFinite,mustBePositive} = sqrt(eps)
 
@@ -858,6 +863,7 @@ classdef WVTransformFreeSurfaceQG < WVGeometryDoublyPeriodicStratified & WVTrans
             propertyAnnotations(end+1) = CANumericProperty('apvZeroAPVQuadraticError',{},'1','APV/zero-APV quadratic-product error at maximum horizontal wavenumber');
             propertyAnnotations(end+1) = CAPropertyAnnotation('apvZeroAPVLimitingEndpoint','active endpoint limiting the APV/zero-APV quadratic-product error');
             propertyAnnotations(end+1) = CANumericProperty('apvZeroAPVLimitingModeNumber',{},'1','APV physical mode label limiting the APV/zero-APV quadratic-product error');
+            propertyAnnotations(end+1) = CANumericProperty('shouldCheckQuadraticAliasing',{},'1','whether construction qualifies quadratic products');
             propertyAnnotations(end+1) = CAPropertyAnnotation('modeSelectionMethod','mode-selection method identifier');
         end
 
@@ -926,7 +932,7 @@ classdef WVTransformFreeSurfaceQG < WVGeometryDoublyPeriodicStratified & WVTrans
         end
 
         function names = persistedScientificPropertyNames()
-            names = {'g0','gd','activeEndpointCount','activeEndpoint','sourceEndpoint','apvMode','apvModeNumber','mdaMode','mdaModeNumber','klNonzero','kNonzero','lNonzero','khNonzero','khUnique','klNonzeroKhUniqueIndex','apvF','apvG','apvFForward','apvGForward','apvEquivalentDepth','apvMu','apvEndpointResponse','apvFSourcePairing','apvGSourcePairing','mdaF','mdaG','mdaGForward','mdaEquivalentDepth','verticalQuadratureWeights','verticalDerivativeMatrix','verticalGridKind','verticalGridCoordinate','zeroAPVF','zeroAPVG','zeroAPVFPairing','zeroAPVGPairing','zeroAPVSourceSolve','apvGramError','apvRoundTripError','mdaGramError','mdaRoundTripError','gramTolerance','modeConvergenceTolerance','boundaryResolutionTolerance','quadraticAliasingTolerance','quadraticAliasingError','quadraticAliasingLimitingChannel','quadraticAliasingLimitingModeNumberI','quadraticAliasingLimitingModeNumberJ','minimumRelativeMuSeparation','muTolerance','zeroAPVGramReciprocalCondition','zeroAPVGramRelativeSeparation','apvZeroAPVQuadraticError','apvZeroAPVLimitingEndpoint','apvZeroAPVLimitingModeNumber','modeSelectionMethod'};
+            names = {'g0','gd','activeEndpointCount','activeEndpoint','sourceEndpoint','apvMode','apvModeNumber','mdaMode','mdaModeNumber','klNonzero','kNonzero','lNonzero','khNonzero','khUnique','klNonzeroKhUniqueIndex','apvF','apvG','apvFForward','apvGForward','apvEquivalentDepth','apvMu','apvEndpointResponse','apvFSourcePairing','apvGSourcePairing','mdaF','mdaG','mdaGForward','mdaEquivalentDepth','verticalQuadratureWeights','verticalDerivativeMatrix','verticalGridKind','verticalGridCoordinate','zeroAPVF','zeroAPVG','zeroAPVFPairing','zeroAPVGPairing','zeroAPVSourceSolve','apvGramError','apvRoundTripError','mdaGramError','mdaRoundTripError','gramTolerance','modeConvergenceTolerance','boundaryResolutionTolerance','shouldCheckQuadraticAliasing','quadraticAliasingTolerance','quadraticAliasingError','quadraticAliasingLimitingChannel','quadraticAliasingLimitingModeNumberI','quadraticAliasingLimitingModeNumberJ','minimumRelativeMuSeparation','muTolerance','zeroAPVGramReciprocalCondition','zeroAPVGramRelativeSeparation','apvZeroAPVQuadraticError','apvZeroAPVLimitingEndpoint','apvZeroAPVLimitingModeNumber','modeSelectionMethod'};
         end
 
         function names = optionalZeroAPVPropertyNames()

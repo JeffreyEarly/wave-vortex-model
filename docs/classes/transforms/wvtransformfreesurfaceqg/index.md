@@ -388,6 +388,7 @@ These items document internal implementation details and are not part of the pri
   + [`quadraticAliasingTolerance`](/classes/transforms/wvtransformfreesurfaceqg/quadraticaliasingtolerance.html) Coupled quadratic-aliasing tolerance used for APV selection.
   + [`quadraturePointsForStratifiedFlow`](/classes/transforms/wvtransformfreesurfaceqg/quadraturepointsforstratifiedflow.html) return the quadrature points for a given stratification
   + [`quasigeostrophicSpatialState`](/classes/transforms/wvtransformfreesurfaceqg/quasigeostrophicspatialstate.html) Reconstruct the physical state used by QG spatial forcing.
+  + [`shouldCheckQuadraticAliasing`](/classes/transforms/wvtransformfreesurfaceqg/shouldcheckquadraticaliasing.html) Whether scientific construction checks quadratic products.
   + [`throwErrorIfDensityViolation`](/classes/transforms/wvtransformfreesurfaceqg/throwerrorifdensityviolation.html) checks if the proposed coefficients are a valid adiabatic re-arrangement of the base state
   + [`verticalProjectionOperatorsWithRigidLid`](/classes/transforms/wvtransformfreesurfaceqg/verticalprojectionoperatorswithrigidlid.html) return the normalized projection operators with prefactors
 + Persistence internals
