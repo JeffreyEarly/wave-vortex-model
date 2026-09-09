@@ -4,6 +4,7 @@ arguments (Input)
     prepared (1,1) struct
     options.waveModeKappa (:,1) double {mustBeReal,mustBeFinite} = zeros(0,1)
     options.waveModeCount (:,1) double {mustBeReal,mustBeFinite,mustBeInteger,mustBeNonnegative} = zeros(0,1)
+    options.inertialModeCount (:,1) double {mustBeInteger,mustBePositive} = zeros(0,1)
     options.quadraticTolerance (1,1) double {mustBeReal,mustBeFinite,mustBePositive} = 0.1
     options.productBudget (1,1) double {mustBeReal,mustBeFinite,mustBeInteger,mustBePositive} = 500000
 end
@@ -15,6 +16,13 @@ if ~all(isfield(prepared,required)) || prepared.kind~="waveQuadraticEvidence-v1"
     error('WVStudy:InvalidPreparation','Use the unchanged snapshot from prepareWaveQuadraticAssessment.')
 end
 timer=tic; config=prepared.configuration;
+inertialCount=config.inertialCount;
+if ~isempty(options.inertialModeCount)
+    if ~isscalar(options.inertialModeCount) || options.inertialModeCount>config.inertialCount || ~isfield(config,'selectInertial')
+        error('WV:InvalidInertialCount','An inertial trial must lie within an explicitly prepared prefix inventory.')
+    end
+    inertialCount=options.inertialModeCount;
+end
 if config.referenceAllowance>options.quadraticTolerance/100 || (isfield(config,'referenceAbsoluteAllowance') && config.referenceAbsoluteAllowance>options.quadraticTolerance/100)
     error('WVStudy:ReferenceAllowanceTooLarge','Prepare both reference allowances below one percent of the requested product tolerance.')
 end
@@ -54,8 +62,13 @@ na=reshape(counts(p.pageA),1,[]); nb=reshape(counts(p.pageB),1,[]); no=reshape(c
 stressBand=max(1,max(na.*p.waveA,nb.*p.waveB));
 selected=(~p.waveA | p.positionA<=na) & (~p.waveB | p.positionB<=nb) & (~p.waveOut | no>0) & p.firstCount<=stressBand;
 columns=find(selected); outputCount=max(1,no(columns));
+if isfield(config,'selectInertial')
+    inertialOutput=prepared.rows.output(p.row(columns))=="inertial";
+    outputCount(inertialOutput)=inertialCount;
+end
 errors=double(p.error(sub2ind(size(p.error),outputCount,columns)));
 out=p.pageOut(columns);
+unmeasuredPrefix=accumarray(out(:),double(~isfinite(errors(:))),[np 1],@max,0)>0;
 tested=accumarray(out(:),1,[np 1]);
 nonzero=accumarray(out(:),double(~p.isZero(columns)).',[np 1]);
 quadraticError=accumarray(out(:),errors(:),[np 1],@max,0); quadraticError(tested==0)=NaN;
@@ -73,7 +86,7 @@ for page=1:np
         gramError(page)=max(prepared.waveGram(1:counts(page),page));
     end
     measurements=prepared.modeConvergence{page}.measurements;
-    count=counts(page); if kappa(page)==0, count=config.inertialCount; end
+    count=counts(page); if kappa(page)==0, count=inertialCount; end
     labels=string(prepared.waveLabels{page}(1:count));
     required=ismember(measurements.columnLabel,labels) & ismember(measurements.quantity,["equivalentDepth","h1"]);
     if count>0 && nnz(required)==3*count && all(measurements.status(required)=="measured")
@@ -96,7 +109,10 @@ end
 status=repmat("accepted",np,1);
 requestedPage=kappa==0 | counts>0;
 status(~requestedPage)="not-requested";
-status(requestedPage & tested==0)="inconclusive";
+structuralZero=false(np,1);
+if isfield(prepared.inventory,'structurallyZeroOutputs'), structuralZero=prepared.inventory.structurallyZeroOutputs; end
+quadraticError(structuralZero)=0;
+status(requestedPage & (tested==0 | unmeasuredPrefix) & ~structuralZero)="inconclusive";
 status(requestedPage & isnan(convergenceError))="reference-inconclusive";
 status(requestedPage & (gramError>config.gramTolerance | (prepared.referenceDiagnostics.referencesStable & quadraticError>options.quadraticTolerance)))="rejected";
 if ~prepared.referenceDiagnostics.fixedFamiliesGramAccepted
@@ -112,7 +128,9 @@ else, overall="assessed";
 end
 cost=prepared.cost; cost.selectedProducts=nnz(selected); cost.selectedNonzeroProducts=nnz(selected & ~p.isZero); cost.reusedPreparation=true; cost.newEigensolves=0; cost.newProductEvaluations=0; cost.assessmentSeconds=toc(timer);
 coverage=prepared.coverage; coverage.countMapScope="One complete map; per-output errors cannot be combined into independently selectable count recommendations.";
-coverage.missingOutputKappa=kappa(requestedPage & tested==0);
+coverage.missingOutputKappa=kappa(requestedPage & tested==0 & ~structuralZero);
+coverage.structurallyZeroOutputKappa=kappa(requestedPage & structuralZero);
+coverage.unmeasuredOutputPrefixKappa=kappa(requestedPage & unmeasuredPrefix);
 coverage.fixedInputSelection="Candidate-band cumulative low/middle/cutoff stresses, filtered by actual input counts and their maximum stress band; all fixed-family columns remain eligible.";
-report=struct(configuration=config,physicalGrid=prepared.physicalGrid,waveModeLabels={prepared.waveLabels},status=overall,requestedCountAccepted=overall=="assessed",pages=table(kappa,counts,convergenceError,gramError,quadraticError,tested,nonzero,absoluteReferenceProductCount,relativeReferenceError,status,limiting,VariableNames=["kappa","requestedWaveCount","modeConvergenceError","gramError","quadraticError","testedProductCount","nonzeroProductCount","absoluteReferenceProductCount","relativeReferenceError","status","limitingInteraction"]),fixedFamilyCounts=prepared.fixedFamilyCounts,referenceDiagnostics=prepared.referenceDiagnostics,quadraticTolerance=options.quadraticTolerance,gramTolerance=config.gramTolerance,modeConvergenceTolerance=config.eigenAllowance,cost=cost,coverage=coverage);
+report=struct(configuration=config,physicalGrid=prepared.physicalGrid,waveModeLabels={prepared.waveLabels},status=overall,requestedCountAccepted=overall=="assessed",pages=table(kappa,counts,convergenceError,gramError,quadraticError,tested,nonzero,absoluteReferenceProductCount,relativeReferenceError,status,limiting,VariableNames=["kappa","requestedWaveCount","modeConvergenceError","gramError","quadraticError","testedProductCount","nonzeroProductCount","absoluteReferenceProductCount","relativeReferenceError","status","limitingInteraction"]),fixedFamilyCounts=prepared.fixedFamilyCounts,selectedInertialCount=inertialCount,referenceDiagnostics=prepared.referenceDiagnostics,quadraticTolerance=options.quadraticTolerance,gramTolerance=config.gramTolerance,modeConvergenceTolerance=config.eigenAllowance,cost=cost,coverage=coverage);
 end

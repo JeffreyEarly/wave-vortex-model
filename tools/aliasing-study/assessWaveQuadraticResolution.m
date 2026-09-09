@@ -8,7 +8,7 @@ function [report,evidence] = assessWaveQuadraticResolution(data,options)
 % per-page errors as independently selectable nonlinear count limits.
 %
 % data = prepareSourceStudy(resolveStudyCase("cal-constant-17"));
-% prepared = prepareWaveQuadraticAssessment(data,ensureOutputCoverage=true);
+% prepared = WVInternal.prepareWaveQuadraticAssessment(data,ensureOutputCoverage=true);
 % report = assessWaveQuadraticResolution(prepared,waveModeCount=3);
 %
 % - Declaration: [report,evidence] = assessWaveQuadraticResolution(data,options)
@@ -36,7 +36,7 @@ if isfield(data,"kind") && data.kind=="waveQuadraticEvidence-v1"
     if ~isempty(options.requestedWaveCount)
         error('WVStudy:InvalidWaveCountMap','Use waveModeCount with an evidence snapshot; requestedWaveCount belongs to the legacy common-prefix report.')
     end
-    report=assessWaveCountMap(data,waveModeKappa=options.waveModeKappa,waveModeCount=options.waveModeCount,quadraticTolerance=options.quadraticTolerance,productBudget=options.productBudget);
+    report=WVInternal.assessWaveCountMap(data,waveModeKappa=options.waveModeKappa,waveModeCount=options.waveModeCount,quadraticTolerance=options.quadraticTolerance,productBudget=options.productBudget);
     evidence=data;
     return
 elseif ~isempty(options.waveModeKappa) || ~isempty(options.waveModeCount)
@@ -53,7 +53,7 @@ end
 if numel(requested)>1 || any(requested>n)
     error('WVStudy:InvalidRequestedCount','requestedWaveCount must be empty or one count within the prepared band 1:%d.',n)
 end
-selection=selectStudyInteractions(data.inventory,data.pageDifficulty);
+selection=WVInternal.selectStudyInteractions(data.inventory,data.pageDifficulty);
 indices=selection.fixed(:).';
 % Reserve the entire candidate plan before preparing polarizations or doing
 % any product projection. Structural zeros consume the reservation too.
@@ -62,7 +62,7 @@ positions=struct(wave=repelem(1:n,2),apv=1:config.apvCount,boundary=1:2);
 pairsPerChannel=0;
 for j=1:size(pairs,1)
     [a,b]=ndgrid(positions.(pairs(j,1)),positions.(pairs(j,2)));
-    pairsPerChannel=pairsPerChannel+nnz(studyModePairMask(a(:).',b(:).',pairs(j,1),pairs(j,2),n,"fixed"));
+    pairsPerChannel=pairsPerChannel+nnz(WVInternal.studyModePairMask(a(:).',b(:).',pairs(j,1),pairs(j,2),n,"fixed"));
 end
 vectors=table2array(data.inventory.interactions(indices,1:6));
 meanOutputs=all(vectors(:,5:6)==0,2);
@@ -71,7 +71,7 @@ if reservedProducts>options.productBudget
     error('WVStudy:ProductBudgetExceeded','The fixed plan requires %d products including structural zeros; productBudget is %d. Increase the explicit budget or prepare a smaller candidate band.',reservedProducts,options.productBudget)
 end
 timer=tic;
-evidence=measureSourceProducts(data,policy="fixed");
+evidence=WVInternal.measureSourceProducts(data,policy="fixed");
 summary=evidence.summary;
 assert(summary.nonzeroProductEvaluations+summary.structuralZeroProducts==reservedProducts,'The executed inventory differs from the reserved product plan.');
 errors=zeros(n,1); evaluations=zeros(n,1); limiting=cell(n,1);
@@ -81,7 +81,7 @@ for r=1:height(evidence.rows)
     row=evidence.rows(r,:); record=evidence.raw{r};
     outputPage=data.inventory.interactions.page3(row.interaction);
     for count=1:n
-        mask=studyModePairMask(record.positionA,record.positionB,row.inputA,row.inputB,count,"fixed");
+        mask=WVInternal.studyModePairMask(record.positionA,record.positionB,row.inputA,row.inputB,count,"fixed");
         evaluations(count)=evaluations(count)+nnz(mask & ~record.isZero);
         pageEvaluations(count,outputPage)=pageEvaluations(count,outputPage)+nnz(mask & ~record.isZero);
         candidates=find(mask);

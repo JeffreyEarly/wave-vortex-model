@@ -23,7 +23,9 @@ end
 active=weights>0; a=a(active,:); b=b(active,:); weights=weights(active);
 sa=max(abs(a),[],1); sb=max(abs(b),[],1);
 na=zeros(size(sa)); nb=zeros(size(sb));
-selected=sa>0; na(selected)=sa(selected).*sqrt(sum(weights.*abs(a(:,selected)./sa(selected)).^2,1));
-selected=sb>0; nb(selected)=sb(selected).*sqrt(sum(weights.*abs(b(:,selected)./sb(selected)).^2,1));
+selected=sa>0;
+if any(selected), na(selected)=sa(selected).*sqrt(sum(weights.*abs(a(:,selected)./sa(selected)).^2,1)); end
+selected=sb>0;
+if any(selected), nb(selected)=sb(selected).*sqrt(sum(weights.*abs(b(:,selected)./sb(selected)).^2,1)); end
 scale=min(sa.*nb,sb.*na);
 end

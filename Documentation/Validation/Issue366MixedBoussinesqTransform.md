@@ -75,7 +75,7 @@ Parameters: 100 km × 100 km × 1000 m domain, 8 × 8 horizontal grid with the e
 
 Each case retains 4 modes per wave sign, 3 APV modes, 2 endpoint modes, 3 inertial modes, and 2 MDA modes. Wave/inertial EVP resolution is 64 coefficients. Balanced construction retains the QG policy `max(96,3*(Nz+4))`, giving 111 and 207 coefficients for the accepted 33- and 65-point grids. Thus the sampling sweep also changes the balanced solve's numerical resolution, but never the retained family counts. Both resolutions are recorded in the CSV.
 
-The 17-point grid is rejected for both profiles at the default `projectionTolerance=1e-7`: maximum wave/inertial Gram errors are `2.17e-7` and `2.11e-7`. Those rejections are recorded explicitly. For accepted grids, the table gives maxima over both profiles, every pure family and the mixed state, and times 0, 1234, and 100000 s:
+In this historical qualification, the 17-point grid was rejected for both profiles at the then-default normalized-Gram tolerance of `1e-7` (the current API uses `gramTolerance`): maximum wave/inertial Gram errors are `2.17e-7` and `2.11e-7`. Those rejections are recorded explicitly. For accepted grids, the table gives maxima over both profiles, every pure family and the mixed state, and times 0, 1234, and 100000 s:
 
 | Vertical samples | Field-energy projection error | Family coefficient-energy error | Continuity residual | Relative energy variation |
 | ---: | ---: | ---: | ---: | ---: |

@@ -69,8 +69,8 @@ for t = 1:size(inventory.pageTriples,1)
             context2=prepareContext(target,targetVariable,z2,w2);
             S=a.S.(av)(:,i).*b.S.(bv)(:,j); R=a.R.(av)(:,i).*b.R.(bv)(:,j); Q=a.Q.(av)(:,i).*b.Q.(bv)(:,j); E=a.E.(av)(:,i).*b.E.(bv)(:,j);
             counts=1:length(target.labels);
-            low=measureProductProjection(context1,S,R,E,counts);
-            high=measureProductProjection(context2,S,Q,E,counts);
+            low=WVInternal.measureProductProjection(context1,S,R,E,counts);
+            high=WVInternal.measureProductProjection(context2,S,Q,E,counts);
             stability=referenceStability(context2,low,high,counts);
             r=r+1; productCount=productCount+length(i);
             [worst,index]=max(high.error(end,:));
@@ -108,7 +108,7 @@ disp(summary)
 
     function context=prepareContext(target,variable,zReference,weightsReference)
         if ~isempty(target.transform)
-            context=prepareProductProjection(target.basis,target.transform,variable,zReference,weightsReference);
+            context=WVInternal.prepareProductProjection(target.basis,target.transform,variable,zReference,weightsReference);
             return
         end
         % Match fromStratification's fixed inertial F dual, including its

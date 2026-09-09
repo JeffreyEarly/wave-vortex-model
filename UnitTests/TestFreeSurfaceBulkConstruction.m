@@ -13,7 +13,7 @@ classdef TestFreeSurfaceBulkConstruction < matlab.unittest.TestCase
                 N2 = @(z) 1e-4*exp(2*z/700);
                 waveCount = 4; inertialCount = 2;
             end
-            bulk = WVTransformFreeSurfaceBoussinesq.fromStratification([1e5 8e4 1000],[16 12 65],N2Function=N2,waveModeCount=waveCount,inertialModeCount=inertialCount);
+            bulk = WVTransformFreeSurfaceBoussinesq.fromStratification([1e5 8e4 1000],[16 12 65],N2Function=N2,waveModeCount=waveCount,inertialModeCount=inertialCount,apvModeCount=3,mdaModeCount=2);
             testCase.verifyGreaterThan(numel(bulk.khUnique),16)
             testCase.verifySize(bulk.Aw_p,[waveCount numel(bulk.klNonzero)])
             testCase.verifySize(bulk.Aio,[inertialCount 1])

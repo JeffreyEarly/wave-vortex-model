@@ -7,7 +7,7 @@ arguments (Input)
     options.velocityScale (1,1) double {mustBePositive,mustBeFinite} = .03
 end
 timer=tic; c=data.config; n=c.apvCount;
-w=WVTransformFreeSurfaceQG([c.Lxy c.Lz],[c.Nxy c.Nz],N2Function=data.profile.N2,g=c.g,rotationRate=c.f,latitude=30,apvModeCount=n,mdaModeCount=c.mdaCount,apvGramTolerance=1e30,mdaGramTolerance=1e30,quadraticAliasingTolerance=1e30);
+w=WVTransformFreeSurfaceQG([c.Lxy c.Lz],[c.Nxy c.Nz],N2Function=data.profile.N2,g=c.g,rotationRate=c.f,latitude=30,apvModeCount=n,mdaModeCount=c.mdaCount,gramTolerance=1e30,boundaryResolutionTolerance=1e30,quadraticAliasingTolerance=1e30);
 % Deliberately allow unresolved controls to construct; this driver measures
 % their error, never changes production admission tolerances or mode counts.
 orientation=sign(sum(data.w.*w.apvF.*data.apv.S.F,1));

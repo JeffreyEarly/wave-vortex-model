@@ -9,7 +9,7 @@ mathjax: true
 
 #  hermitianSourceRows
 
-Stored rows whose conjugates fill hermitianCompletionRows.
+
 
 > Developer documentation: this item describes internal implementation details.
 

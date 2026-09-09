@@ -18,7 +18,7 @@ p=jsondecode(fileread(fullfile(record,'provenance.json'))); config=p.configurati
 for name=["Lxy","Nxy","evpOrders","referenceOrders"], config.(name)=reshape(config.(name),1,[]); end
 triads=readtable(fullfile(record,'selected-triads.csv'));
 started=tic; data=prepareSourceStudy(config);
-evidence=measureSourceProducts(data,interactionIndices=triads.interactionIndex.',policy="fixed");
+evidence=WVInternal.measureSourceProducts(data,interactionIndices=triads.interactionIndex.',policy="fixed");
 failed=evidence.rows(evidence.rows.referenceStability>config.referenceAllowance | evidence.rows.eigenProductStability>config.referenceAllowance,:);
 assert(~isempty(failed) && all(failed.inputA=="boundary" & failed.inputB=="boundary"),'Recheck the diagnosis if another family fails.');
 allFailures=table();

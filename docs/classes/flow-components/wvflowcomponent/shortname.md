@@ -9,11 +9,7 @@ mathjax: true
 
 #  shortName
 
-name of the flow feature
+
 
 
 ---
-
-## Discussion
-
-camel-case version of the feature name, e.g., "internalGravityWave"

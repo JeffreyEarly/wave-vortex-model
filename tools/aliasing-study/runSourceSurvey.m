@@ -11,7 +11,7 @@ mkdir(outputDirectory);
 writeJSON(fullfile(outputDirectory,'configuration.json'),config);
 data=prepareSourceStudy(config);
 fprintf('Source construction %.2f s; %d vector interactions.\n',data.constructionSeconds,height(data.inventory.interactions));
-evidence=measureSourceProducts(data,interactionIndices=options.interactionIndices,policy=options.policy,showProgress=true);
+evidence=WVInternal.measureSourceProducts(data,interactionIndices=options.interactionIndices,policy=options.policy,showProgress=true);
 raw=evidence.raw; inventory=evidence.inventory; summary=evidence.summary; rows=evidence.rows;
 writetable(inventory.interactions,fullfile(outputDirectory,'interactions.csv'));
 writetable(evidence.channels,fullfile(outputDirectory,'channels.csv'));

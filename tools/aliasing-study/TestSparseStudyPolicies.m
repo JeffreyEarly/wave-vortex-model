@@ -32,7 +32,7 @@ classdef TestSparseStudyPolicies < matlab.unittest.TestCase
             [i,j]=ndgrid(1:16); i=i(:).'; j=j(:).';
             previous=false(size(i));
             for count=1:16
-                mask=studyModePairMask(i,j,"wave","wave",count,"fixed");
+                mask=WVInternal.studyModePairMask(i,j,"wave","wave",count,"fixed");
                 testCase.verifyTrue(all(mask(previous)))
                 testCase.verifyTrue(mask(i==1 & j==count))
                 testCase.verifyTrue(mask(i==count & j==count))
@@ -47,7 +47,7 @@ function [root,cleanup]=syntheticSurvey(errors,gram,stable)
 root=string(tempname); mkdir(root); cleanup=onCleanup(@()rmdir(root,'s'));
 inventory=enumerateStudyInteractions([1e5 1e5],[8 8]);
 pageDifficulty=zeros(length(inventory.magnitudes),1);
-selection=selectStudyInteractions(inventory,pageDifficulty);
+selection=WVInternal.selectStudyInteractions(inventory,pageDifficulty);
 unseen=setdiff(1:height(inventory.interactions),selection.targeted);
 interaction=unseen(1);
 rows=table(interaction,"wave","wave","wave","u*dx(u)",VariableNames=["interaction","inputA","inputB","output","channel"]);

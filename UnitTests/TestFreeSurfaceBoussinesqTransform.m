@@ -126,7 +126,7 @@ classdef TestFreeSurfaceBoussinesqTransform < matlab.unittest.TestCase
 
         function inactiveEndpointsAndSouthernHemisphereRemainConsistent(testCase)
             for boundary=[Inf Inf;-.1 Inf].'
-                w=WVTransformFreeSurfaceBoussinesq.fromStratification([1e5 1e5 1000],[8 8 33],N2Function=@(z)1e-4*ones(size(z)),g0=boundary(1),gd=boundary(2),latitude=-30);
+                w=WVTransformFreeSurfaceBoussinesq.fromStratification([1e5 1e5 1000],[8 8 33],N2Function=@(z)1e-4*ones(size(z)),g0=boundary(1),gd=boundary(2),latitude=-30,apvModeCount=3,mdaModeCount=2,waveModeCount=4,inertialModeCount=3);
                 assignState(w,mixedState(w));
                 testCase.verifySize(w.Ag_0,[sum(isfinite(boundary)),length(w.klNonzero)])
                 fields=w.reconstructFields(["u","v","w","eta","ssh"]);
@@ -198,7 +198,7 @@ end
 
 function w=newTransform(profile,nz)
 if profile=="constant", N2=@(z)1e-4*ones(size(z)); else, N2=@(z)1e-4*exp(2*z/700); end
-w=WVTransformFreeSurfaceBoussinesq.fromStratification([1e5 1e5 1000],[8 8 nz],N2Function=N2);
+w=WVTransformFreeSurfaceBoussinesq.fromStratification([1e5 1e5 1000],[8 8 nz],N2Function=N2,apvModeCount=3,mdaModeCount=2,waveModeCount=4,inertialModeCount=3);
 end
 function state=mixedState(w)
 state=w.coefficientState();

@@ -20,8 +20,8 @@ classdef TestSourceProjection < matlab.unittest.TestCase
             [x,y]=ndgrid(wvt.x,wvt.y); source=2*cos(kl(1)*x+kl(2)*y).*reshape(q(wvt.z),1,1,[]);
             zero=zeros(size(source));
             for component=["u","v","w","eta"]
-                [context,counts]=sourceProjectionContext(data,v,component,"Q");
-                result=measureProductProjection(context,q(data.z),q(data.zQ),zeros(2,1),counts);
+                [context,counts]=WVInternal.sourceProjectionContext(data,v,component,"Q");
+                result=WVInternal.measureProductProjection(context,q(data.z),q(data.zQ),zeros(2,1),counts);
                 sources=struct(u=zero,v=zero,w=zero,eta=zero); sources.(component)=source;
                 tendency=wvt.projectSources(sources);
                 coefficients=result.sampleCoefficients{end};
@@ -35,9 +35,9 @@ classdef TestSourceProjection < matlab.unittest.TestCase
             v=find(all(data.inventory.vectors==0,2)); q=@(z)exp(z/1000);
             values=repmat(reshape(q(wvt.z),1,1,[]),wvt.Nx,wvt.Ny,1); zero=zeros(size(values));
             for component=["u","v","eta"]
-                [context,counts]=sourceProjectionContext(data,v,component,"Q");
+                [context,counts]=WVInternal.sourceProjectionContext(data,v,component,"Q");
                 endpoints=zeros(2,1); if component=="eta", endpoints=q([-1000;0]); end
-                result=measureProductProjection(context,q(data.z),q(data.zQ),endpoints,counts);
+                result=WVInternal.measureProductProjection(context,q(data.z),q(data.zQ),endpoints,counts);
                 sources=struct(u=zero,v=zero,w=zero,eta=zero); sources.(component)=values;
                 tendency=wvt.projectSources(sources);
                 if component=="eta", expected=tendency.Amda; else, expected=tendency.Aio; end
@@ -68,12 +68,12 @@ classdef TestSourceProjection < matlab.unittest.TestCase
         end
 
         function channelInventoryIncludesEveryDeclaredVolumeTerm(testCase)
-            channels=sourceChannelInventory();
+            channels=WVInternal.sourceChannelInventory();
             testCase.verifyEqual(height(channels),13)
             testCase.verifyEqual(nnz(channels.factor=="z"),4)
             testCase.verifyTrue(any(channels.name=="w*eta*dlogN2"))
             v=find(all(testCase.studyData.inventory.vectors==0,2));
-            [context,counts,name]=sourceProjectionContext(testCase.studyData,v,"w","Q");
+            [context,counts,name]=WVInternal.sourceProjectionContext(testCase.studyData,v,"w","Q");
             testCase.verifyEmpty(context); testCase.verifyEmpty(counts);
             testCase.verifyEqual(name,"null-mean-w")
         end

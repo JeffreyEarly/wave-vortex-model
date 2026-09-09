@@ -9,13 +9,13 @@ mkdir(outputDirectory);
 loaded=load(fullfile(surveyDirectory,'products.mat'),'raw','rows','summary','inventory');
 raw=loaded.raw; rows=loaded.rows; summary=loaded.summary; inventory=loaded.inventory;
 config=summary.configuration; n=config.waveCount;
-selection=selectStudyInteractions(inventory,summary.pageDifficulty(:));
+selection=WVInternal.selectStudyInteractions(inventory,summary.pageDifficulty(:));
 policies=["linear","fixed","targeted"]; errors=zeros(n,4); evaluations=zeros(n,4);
 limitingRow=zeros(n,4); limitingPair=zeros(n,4);
 for r=1:height(rows)
     record=raw{r};
     for count=1:n
-        denseMask=studyModePairMask(record.positionA,record.positionB,rows.inputA(r),rows.inputB(r),count,"dense");
+        denseMask=WVInternal.studyModePairMask(record.positionA,record.positionB,rows.inputA(r),rows.inputB(r),count,"dense");
         for policyIndex=1:4
             if policyIndex==1
                 mask=denseMask;
@@ -24,7 +24,7 @@ for r=1:height(rows)
             else
                 policy=policies(policyIndex-1);
                 if ~ismember(rows.interaction(r),selection.(policy)), continue; end
-                mask=studyModePairMask(record.positionA,record.positionB,rows.inputA(r),rows.inputB(r),count,policy);
+                mask=WVInternal.studyModePairMask(record.positionA,record.positionB,rows.inputA(r),rows.inputB(r),count,policy);
             end
             evaluations(count,policyIndex)=evaluations(count,policyIndex)+nnz(mask & ~record.isZero);
             candidates=find(mask);
@@ -50,10 +50,10 @@ for tolerance=[.1 .03 .01]
         worstMissed=0; missedRow=0; missedPair=0;
         if count>0
             for j=1:height(rows)
-                record=raw{j}; allowed=studyModePairMask(record.positionA,record.positionB,rows.inputA(j),rows.inputB(j),count,"dense");
+                record=raw{j}; allowed=WVInternal.studyModePairMask(record.positionA,record.positionB,rows.inputA(j),rows.inputB(j),count,"dense");
                 tested=false(size(allowed));
                 if p>1 && ismember(rows.interaction(j),selection.(policies(p)))
-                    tested=studyModePairMask(record.positionA,record.positionB,rows.inputA(j),rows.inputB(j),count,policies(p));
+                    tested=WVInternal.studyModePairMask(record.positionA,record.positionB,rows.inputA(j),rows.inputB(j),count,policies(p));
                 end
                 candidates=find(allowed & ~tested);
                 if isempty(candidates), continue; end

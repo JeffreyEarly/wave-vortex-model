@@ -207,12 +207,12 @@ classdef TestFreeSurfaceQGDensityForcing < matlab.unittest.TestCase
 
         function wvt = variableTransform(g0,gd,Nz)
             N2 = @(z) 2e-5*exp(z/4000);
-            wvt = WVTransformFreeSurfaceQG([100e3 100e3 1000],[8 8 Nz],N2Function=N2,latitude=30,g0=g0,gd=gd,mdaGramTolerance=0.1);
+            wvt = WVTransformFreeSurfaceQG([100e3 100e3 1000],[8 8 Nz],N2Function=N2,latitude=30,g0=g0,gd=gd,gramTolerance=0.1);
         end
 
         function wvt = constantTransform(g0,gd,Nz)
             N2 = @(z) 2e-5*ones(size(z));
-            wvt = WVTransformFreeSurfaceQG([100e3 100e3 1000],[8 8 Nz],N2Function=N2,latitude=30,g0=g0,gd=gd,mdaGramTolerance=0.1);
+            wvt = WVTransformFreeSurfaceQG([100e3 100e3 1000],[8 8 Nz],N2Function=N2,latitude=30,g0=g0,gd=gd,gramTolerance=0.1);
         end
 
         function tendency = zeroTendency(wvt)

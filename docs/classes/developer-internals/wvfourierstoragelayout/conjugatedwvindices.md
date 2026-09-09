@@ -9,7 +9,7 @@ mathjax: true
 
 #  conjugatedWVIndices
 
-WV-grid indices recovered by conjugating stored Fourier rows.
+
 
 > Developer documentation: this item describes internal implementation details.
 

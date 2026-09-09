@@ -9,11 +9,7 @@ mathjax: true
 
 #  name
 
-of the flow feature
+
 
 
 ---
-
-## Discussion
-
-long-form version of the feature name, e.g., "internal gravity wave"

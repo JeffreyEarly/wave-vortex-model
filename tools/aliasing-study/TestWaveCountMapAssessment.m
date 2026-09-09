@@ -7,11 +7,21 @@ classdef TestWaveCountMapAssessment < matlab.unittest.TestCase
     methods (TestClassSetup)
         function prepare(testCase)
             testCase.data=prepareSourceStudy(resolveStudyCase("cal-constant-17"));
-            testCase.prepared=prepareWaveQuadraticAssessment(testCase.data);
-            testCase.covered=prepareWaveQuadraticAssessment(testCase.data,ensureOutputCoverage=true);
+            testCase.prepared=WVInternal.prepareWaveQuadraticAssessment(testCase.data);
+            testCase.covered=WVInternal.prepareWaveQuadraticAssessment(testCase.data,ensureOutputCoverage=true);
         end
     end
     methods (Test)
+        function unmeasuredConstructionPrefixRemainsInconclusive(testCase)
+            sourceData=testCase.data;
+            sourceData.config.constructionPolicy=true; sourceData.config.selectInertial=true;
+            snapshot=WVInternal.prepareWaveQuadraticAssessment(sourceData,ensureOutputCoverage=true);
+            report=WVInternal.assessWaveCountMap(snapshot,waveModeCount=3);
+            testCase.verifyFalse(report.requestedCountAccepted)
+            testCase.verifyEqual(report.status,"inconclusive")
+            testCase.verifyNotEmpty(report.coverage.unmeasuredOutputPrefixKappa)
+        end
+
         function absoluteReferenceBudgetMustBeSmallRelativeToSamplingTolerance(testCase)
             p=testCase.covered; p.configuration.referenceAllowance=1e-14;
             p.configuration.referenceAbsoluteAllowance=1e-10;
@@ -71,13 +81,13 @@ classdef TestWaveCountMapAssessment < matlab.unittest.TestCase
             row=p.rows(products.row(selected),:); triad=p.inventory.interactions(row.interaction,:);
             integers=reshape(table2array(triad(1,1:6)),2,3).';
             [~,v]=ismember(integers,p.inventory.vectors,'rows');
-            a=sourceStudyFields(testCase.data,"wave",v(1)); b=sourceStudyFields(testCase.data,"wave",v(2));
+            a=WVInternal.sourceStudyFields(testCase.data,"wave",v(1)); b=WVInternal.sourceStudyFields(testCase.data,"wave",v(2));
             ia=find(a.positions==products.positionA(selected) & a.signs==products.signA(selected));
             ib=find(b.positions==products.positionB(selected) & b.signs==products.signB(selected));
             sample=-a.S.u(:,ia).*(1i*p.inventory.physicalVectors(v(2),1)*b.S.u(:,ib));
             reference=-a.Q.u(:,ia).*(1i*p.inventory.physicalVectors(v(2),1)*b.Q.u(:,ib));
-            context=sourceProjectionContext(testCase.data,v(3),"u","Q");
-            direct=measureProductProjection(context,sample,reference,zeros(2,1),6);
+            context=WVInternal.sourceProjectionContext(testCase.data,v(3),"u","Q");
+            direct=WVInternal.measureProductProjection(context,sample,reference,zeros(2,1),6);
             testCase.verifyEqual(double(products.error(3,selected)),direct.error,RelTol=1e-6,AbsTol=1e-12)
             testCase.verifyEqual(sort(unique(products.signA(products.waveA))),[-1 1])
         end
@@ -120,16 +130,16 @@ classdef TestWaveCountMapAssessment < matlab.unittest.TestCase
 
         function budgetsPrecedeProductPreparation(testCase)
             data=testCase.data; data.wave={};
-            testCase.verifyError(@()prepareWaveQuadraticAssessment(data,productBudget=1),'WVStudy:ProductBudgetExceeded')
-            testCase.verifyError(@()prepareWaveQuadraticAssessment(data,workingMemoryBudget=1),'WVStudy:WorkingMemoryBudgetExceeded')
-            testCase.verifyError(@()prepareWaveQuadraticAssessment(data,interactionIndices=[1 1]),'WVStudy:InvalidInteractions')
+            testCase.verifyError(@()WVInternal.prepareWaveQuadraticAssessment(data,productBudget=1),'WVStudy:ProductBudgetExceeded')
+            testCase.verifyError(@()WVInternal.prepareWaveQuadraticAssessment(data,workingMemoryBudget=1),'WVStudy:WorkingMemoryBudgetExceeded')
+            testCase.verifyError(@()WVInternal.prepareWaveQuadraticAssessment(data,interactionIndices=[1 1]),'WVStudy:InvalidInteractions')
         end
 
         function smallDenseControlContainsSparseEvidence(testCase)
             config=resolveStudyCase("cal-constant-17"); config.Nxy=[6 6];
             data=prepareSourceStudy(config);
-            sparse=prepareWaveQuadraticAssessment(data,ensureOutputCoverage=true);
-            dense=prepareWaveQuadraticAssessment(data,policy="dense");
+            sparse=WVInternal.prepareWaveQuadraticAssessment(data,ensureOutputCoverage=true);
+            dense=WVInternal.prepareWaveQuadraticAssessment(data,policy="dense");
             testCase.verifyTrue(any(dense.products.waveOut))
             for count=[3 8]
                 a=assessWaveQuadraticResolution(sparse,waveModeCount=count);
@@ -144,7 +154,7 @@ classdef TestWaveCountMapAssessment < matlab.unittest.TestCase
         function changedGridRequiresFreshEvidence(testCase)
             config=testCase.data.config; config.Nz=25;
             data=prepareSourceStudy(config);
-            fresh=prepareWaveQuadraticAssessment(data);
+            fresh=WVInternal.prepareWaveQuadraticAssessment(data);
             a=assessWaveQuadraticResolution(testCase.prepared,waveModeCount=3);
             b=assessWaveQuadraticResolution(fresh,waveModeCount=3);
             testCase.verifySize(a.physicalGrid.z,[17 1])

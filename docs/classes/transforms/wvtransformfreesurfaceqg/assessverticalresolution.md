@@ -3,7 +3,7 @@ layout: default
 title: assessVerticalResolution
 parent: WVTransformFreeSurfaceQG
 grand_parent: Transforms
-nav_order: 56
+nav_order: 55
 mathjax: true
 ---
 
@@ -26,8 +26,9 @@ Assess vertical-mode accuracy and the active-endpoint horizontal limit.
 + `options.g0`  surface acceleration; default negative stratification integral
 + `options.gd`  bottom acceleration; default positive stratification integral; use Inf to omit the bottom endpoint
 + `options.latitude`  latitude in degrees; default 24
-+ `options.apvGramTolerance`  APV normalized-Gram tolerance
-+ `options.mdaGramTolerance`  MDA normalized-Gram tolerance
++ `options.gramTolerance`  shared normalized-Gram tolerance; default 1e-2
++ `options.modeConvergenceTolerance`  independent physical H1 and equivalent-depth agreement; default 1e-6
++ `options.boundaryResolutionTolerance`  fixed zero-APV physical derivative and energy tolerance; default 1e-2
 + `options.quadraticAliasingTolerance`  APV quadratic-product tolerance
 
 ## Returns
@@ -38,4 +39,6 @@ Assess vertical-mode accuracy and the active-endpoint horizontal limit.
 This method performs the scientific vertical solve without constructing a
 complete horizontal transform. For active endpoint families it returns a
 conservative maximum horizontal wavenumber whose APV/zero-APV product
-error satisfies `quadraticAliasingTolerance`.
+error satisfies `quadraticAliasingTolerance` and whose fixed boundary
+responses satisfy `boundaryResolutionTolerance`. The two errors retain
+their separate units of relative error and separate tolerances.

@@ -120,7 +120,7 @@ arguments (Input)
     options.waveModeKappa (:,1) double = zeros(0,1)
 end
 args = namedargs2cell(options);
-w = WVTransformFreeSurfaceBoussinesq.fromStratification([1e5 1e5 1000],[8 8 65],args{:},N2Function=@(z)1e-4*exp(2*z/700));
+w = WVTransformFreeSurfaceBoussinesq.fromStratification([1e5 1e5 1000],[8 8 65],args{:},N2Function=@(z)1e-4*exp(2*z/700),apvModeCount=3,mdaModeCount=2,inertialModeCount=3);
 end
 
 function state = initialState(w)

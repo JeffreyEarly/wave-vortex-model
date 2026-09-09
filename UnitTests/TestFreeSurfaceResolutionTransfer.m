@@ -233,7 +233,7 @@ if nargin<3, endpoints=[NaN NaN]; end
 if profile=="constant", N2=@(z)1e-4+0*z; else, N2=@(z)1e-4*exp(2*z/700); end
 args=namedargs2cell(struct(N2Function=N2,g0=endpoints(1),gd=endpoints(2),apvModeCount=3,mdaModeCount=2));
 if type=="qg", w=WVTransformFreeSurfaceQG([1e5 1e5 1000],[8 8 65],args{:});
-else, w=WVTransformFreeSurfaceBoussinesq.fromStratification([1e5 1e5 1000],[8 8 65],args{:}); end
+else, w=WVTransformFreeSurfaceBoussinesq.fromStratification([1e5 1e5 1000],[8 8 65],args{:},waveModeCount=4,inertialModeCount=3); end
 end
 function populate(w)
 w.t=1234; w.t0=31;

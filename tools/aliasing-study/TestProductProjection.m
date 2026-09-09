@@ -25,17 +25,17 @@ classdef TestProductProjection < matlab.unittest.TestCase
 
         function zeroAndComplexProductsUsePositiveNorm(testCase)
             context = struct(sampleValues=1,sampleMetric=1,sampleGram=1,targetGram=1,majorantGram=1,active=true,referenceValues=1,volumeWeights=1,endpointValues=zeros(2,1),endpointMetric=[0;0]);
-            result = measureProductProjection(context,[0 2i],[0 1i],zeros(2,2),1);
+            result = WVInternal.measureProductProjection(context,[0 2i],[0 1i],zeros(2,2),1);
             testCase.verifyEqual(result.error,[0 1])
             testCase.verifyEqual(result.isZero,[true false])
-            testCase.verifyError(@()measureProductProjection(context,1,0,zeros(2,1),1),'WVStudy:InvalidReferenceNorm')
+            testCase.verifyError(@()WVInternal.measureProductProjection(context,1,0,zeros(2,1),1),'WVStudy:InvalidReferenceNorm')
         end
 
         function exteriorContentIsNotAliasing(testCase)
             z = linspace(-1,1,5).';
             weights = [.25;.5;.5;.5;.25];
             context = struct(sampleValues=ones(5,1),sampleMetric=diag(weights),sampleGram=2,targetGram=2,majorantGram=2,active=true,referenceValues=ones(5,1),volumeWeights=weights,endpointValues=ones(2,1),endpointMetric=[0;0]);
-            result = measureProductProjection(context,z,z,[-1;1],1);
+            result = WVInternal.measureProductProjection(context,z,z,[-1;1],1);
             testCase.verifyEqual(result.error,0,AbsTol=1e-15)
             testCase.verifyGreaterThan(result.productNormSquared,0)
         end
@@ -54,8 +54,8 @@ channels = ["F" "F" "F";"G" "G" "F";"F" "G" "G"];
 errors = zeros(n,1);
 for c = 1:3
     a=channels(c,1); b=channels(c,2); target=channels(c,3);
-    context = prepareProductProjection(basis,transform,target,z,w);
-    result = measureProductProjection(context,S.(a)(:,i).*S.(b)(:,j),R.(a)(:,i).*R.(b)(:,j),E.(a)(:,i).*E.(b)(:,j),1:n);
+    context = WVInternal.prepareProductProjection(basis,transform,target,z,w);
+    result = WVInternal.measureProductProjection(context,S.(a)(:,i).*S.(b)(:,j),R.(a)(:,i).*R.(b)(:,j),E.(a)(:,i).*E.(b)(:,j),1:n);
     for count = 1:n
         errors(count) = max(errors(count),max(result.error(count,max(i,j)<=count)));
     end

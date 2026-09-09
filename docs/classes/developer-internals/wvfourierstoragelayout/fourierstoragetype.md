@@ -9,7 +9,7 @@ mathjax: true
 
 #  fourierStorageType
 
-Fourier storage representation, "full-complex" or "hermitian-half".
+
 
 > Developer documentation: this item describes internal implementation details.
 

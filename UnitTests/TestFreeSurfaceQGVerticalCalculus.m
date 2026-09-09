@@ -1,7 +1,7 @@
 classdef TestFreeSurfaceQGVerticalCalculus < matlab.unittest.TestCase
     methods (Test, TestTags="full")
         function zeroAPVModesDifferentiateWithoutAPVProjection(testCase)
-            w = WVTransformFreeSurfaceQG([100e3 100e3 1000],[8 8 33],N2Function=@(z)1e-4*ones(size(z)),g0=.02,gd=.03,mdaGramTolerance=.1);
+            w = WVTransformFreeSurfaceQG([100e3 100e3 1000],[8 8 33],N2Function=@(z)1e-4*ones(size(z)),g0=.02,gd=.03,gramTolerance=.1);
             for endpoint = 1:w.activeEndpointCount
                 F = w.zeroAPVF(:,endpoint,1);
                 expected = -(w.N2/w.g).*w.zeroAPVG(:,endpoint,1);
@@ -20,7 +20,7 @@ classdef TestFreeSurfaceQGVerticalCalculus < matlab.unittest.TestCase
                 else
                     N2 = @(z) 1e-4*ones(size(z));
                 end
-                w = WVTransformFreeSurfaceQG([100e3 100e3 1000],[8 6 33],N2Function=N2,g0=.02,gd=.03,mdaGramTolerance=.1);
+                w = WVTransformFreeSurfaceQG([100e3 100e3 1000],[8 6 33],N2Function=N2,g0=.02,gd=.03,gramTolerance=.1);
                 apv = 3;
                 mda = 3;
                 profiles = [w.apvF(:,apv),w.apvG(:,apv),w.zeroAPVF(:,1,1),w.zeroAPVG(:,1,1),w.mdaG(:,mda)];
@@ -49,7 +49,7 @@ classdef TestFreeSurfaceQGVerticalCalculus < matlab.unittest.TestCase
             % exp(3*z/B) is a cubic polynomial in the exact native coordinate,
             % yet all its physical derivatives, including the fourth, are nonzero.
             B = 4000;
-            w = WVTransformFreeSurfaceQG([500e3 500e3 1000],[8 6 9],N2Function=@(z)1e-4*exp(2*z/B),g0=.02,gd=.03,mdaGramTolerance=.1);
+            w = WVTransformFreeSurfaceQG([500e3 500e3 1000],[8 6 9],N2Function=@(z)1e-4*exp(2*z/B),g0=.02,gd=.03,gramTolerance=.1);
             [X,Y] = ndgrid(w.x,w.y);
             horizontal = cos(2*pi*X/w.Lx)+1i*sin(2*pi*Y/w.Ly);
             values = horizontal.*reshape(exp(3*w.z/B),1,1,[]);
@@ -63,7 +63,7 @@ classdef TestFreeSurfaceQGVerticalCalculus < matlab.unittest.TestCase
         end
 
         function constantStratificationPolynomialsHavePhysicalDerivatives(testCase)
-            w = WVTransformFreeSurfaceQG([100e3 100e3 1000],[8 6 17],N2Function=@(z)1e-4*ones(size(z)),g0=.02,gd=.03,mdaGramTolerance=.1);
+            w = WVTransformFreeSurfaceQG([100e3 100e3 1000],[8 6 17],N2Function=@(z)1e-4*ones(size(z)),g0=.02,gd=.03,gramTolerance=.1);
             [X,Y] = ndgrid(w.x,w.y);
             horizontal = cos(2*pi*X/w.Lx)+1i*sin(2*pi*Y/w.Ly);
             s = (w.z+w.Lz)/w.Lz;
@@ -82,7 +82,7 @@ classdef TestFreeSurfaceQGVerticalCalculus < matlab.unittest.TestCase
             for iGrid = 1:2
                 nz = [13 33];
                 B = 4000;
-                w = WVTransformFreeSurfaceQG([100e3 100e3 1000],[8 8 nz(iGrid)],N2Function=@(z)1e-4*exp(2*z/B),g0=.02,gd=.03,mdaGramTolerance=.1);
+                w = WVTransformFreeSurfaceQG([100e3 100e3 1000],[8 8 nz(iGrid)],N2Function=@(z)1e-4*exp(2*z/B),g0=.02,gd=.03,gramTolerance=.1);
                 U = .05; Le = 20e3; He = 250; zc = 75;
                 center = [.35*w.Lx .65*w.Ly];
                 w.initWithGaussianEddy(maximumSpeed=U,horizontalRadius=Le,verticalScale=He,zCenter=zc,center=center);
@@ -109,7 +109,7 @@ classdef TestFreeSurfaceQGVerticalCalculus < matlab.unittest.TestCase
 
         function restoredRuleDifferentiatesWithoutModeConstruction(testCase)
             fixture = testCase.applyFixture(matlab.unittest.fixtures.TemporaryFolderFixture);
-            w = WVTransformFreeSurfaceQG([100e3 100e3 1000],[8 6 17],N2Function=@(z)1e-4*exp(z/4000),g0=.02,gd=.03,mdaGramTolerance=.1);
+            w = WVTransformFreeSurfaceQG([100e3 100e3 1000],[8 6 17],N2Function=@(z)1e-4*exp(z/4000),g0=.02,gd=.03,gramTolerance=.1);
             file = fullfile(fixture.Folder,'vertical-calculus.nc');
             nc = w.writeToFile(file); nc.close();
             restored = WVTransformFreeSurfaceQG.waveVortexTransformFromFile(file);
@@ -124,7 +124,7 @@ classdef TestFreeSurfaceQGVerticalCalculus < matlab.unittest.TestCase
         end
 
         function validationPreservesGridAndOrderContract(testCase)
-            w = WVTransformFreeSurfaceQG([100e3 100e3 1000],[8 6 17],N2Function=@(z)1e-4*ones(size(z)),g0=.02,gd=.03,mdaGramTolerance=.1);
+            w = WVTransformFreeSurfaceQG([100e3 100e3 1000],[8 6 17],N2Function=@(z)1e-4*ones(size(z)),g0=.02,gd=.03,gramTolerance=.1);
             values = zeros(w.Nx,w.Ny,w.Nz);
             testCase.verifyError(@()w.diffZ(values,n=0),'MATLAB:validators:mustBeMember')
             testCase.verifyError(@()w.diffZF(values,n=5),'MATLAB:validators:mustBeMember')

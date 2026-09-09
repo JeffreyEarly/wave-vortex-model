@@ -9,7 +9,7 @@ mathjax: true
 
 #  fourierRowsForDirectWVIndices
 
-Fourier rows copied directly to the corresponding WV indices.
+
 
 > Developer documentation: this item describes internal implementation details.
 

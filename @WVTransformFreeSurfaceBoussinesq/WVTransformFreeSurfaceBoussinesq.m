@@ -54,6 +54,15 @@ classdef WVTransformFreeSurfaceBoussinesq < WVGeometryDoublyPeriodicStratified &
         Amda
     end
 
+    properties (Transient, SetAccess=private)
+        % Evidence produced by scientific construction; empty after canonical restore.
+        %
+        % Selected counts, sampled operators and tolerances are persisted separately.
+        % Inspect this report before saving when full construction provenance is needed.
+        % - Topic: Inspect modes and operators
+        constructionAssessment (1,1) struct = struct()
+    end
+
     properties (SetAccess = private)
         % Effective surface acceleration for the balanced basis.
         % - Topic: Inspect scientific operators
@@ -204,7 +213,16 @@ classdef WVTransformFreeSurfaceBoussinesq < WVGeometryDoublyPeriodicStratified &
         nEVP
         % Requested per-family quadrature qualification tolerance.
         % - Topic: Inspect scientific operators
-        projectionTolerance
+        gramTolerance
+        % Allowed bounded physical-product sampling error.
+        % - Topic: Inspect scientific operators
+        quadraticAliasingTolerance
+        % Physical H1 and equivalent-depth agreement between independent solves.
+        % - Topic: Inspect scientific operators
+        modeConvergenceTolerance
+        % Fixed zero-APV derivative and energy accuracy.
+        % - Topic: Inspect scientific operators
+        boundaryResolutionTolerance
     end
 
     properties (Dependent)
@@ -427,7 +445,7 @@ classdef WVTransformFreeSurfaceBoussinesq < WVGeometryDoublyPeriodicStratified &
             names = {'activeEndpoint','Ag_0','apvEndpointResponse','zeroAPVF','zeroAPVG','zeroAPVFPairing','zeroAPVGPairing','zeroAPVSourceSolve'};
         end
         function names = scientificPropertyNames()
-            names = {'g0','gd','apvMode','mdaMode','waveMode','waveModeCountByKh','inertialMode','apvModeNumber','mdaModeNumber','waveModeNumber','inertialModeNumber','activeEndpoint','klNonzero','kNonzero','lNonzero','khNonzero','khUnique','klNonzeroKhUniqueIndex','apvF','apvG','apvFForward','apvMu','apvEndpointResponse','apvFSourcePairing','apvGSourcePairing','zeroAPVFPairing','zeroAPVGPairing','zeroAPVSourceSolve','zeroAPVF','zeroAPVG','mdaG','mdaGForward','mdaPressureMode','waveF','waveG','waveGForward','waveEquivalentDepth','waveFrequency','inertialF','inertialFForward','inertialEquivalentDepth','verticalQuadratureWeights','verticalDerivativeMatrix','waveGramError','inertialGramError','apvGramError','mdaGramError','balancedNEVP','nEVP','projectionTolerance'};
+            names = {'g0','gd','apvMode','mdaMode','waveMode','waveModeCountByKh','inertialMode','apvModeNumber','mdaModeNumber','waveModeNumber','inertialModeNumber','activeEndpoint','klNonzero','kNonzero','lNonzero','khNonzero','khUnique','klNonzeroKhUniqueIndex','apvF','apvG','apvFForward','apvMu','apvEndpointResponse','apvFSourcePairing','apvGSourcePairing','zeroAPVFPairing','zeroAPVGPairing','zeroAPVSourceSolve','zeroAPVF','zeroAPVG','mdaG','mdaGForward','mdaPressureMode','waveF','waveG','waveGForward','waveEquivalentDepth','waveFrequency','inertialF','inertialFForward','inertialEquivalentDepth','verticalQuadratureWeights','verticalDerivativeMatrix','waveGramError','inertialGramError','apvGramError','mdaGramError','balancedNEVP','nEVP','gramTolerance','quadraticAliasingTolerance','modeConvergenceTolerance','boundaryResolutionTolerance'};
         end
         function names = geometryStateNames()
             names = {'Lxyz','Nxyz','shouldAntialias','z','N2Function','rhoFunction','rho0','planetaryRadius','rotationRate','latitude','g','dLnN2','PF0inv','QG0inv','PF0','QG0','P0','Q0','h_0','z_int'};

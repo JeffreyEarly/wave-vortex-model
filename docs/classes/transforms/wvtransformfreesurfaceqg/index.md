@@ -127,7 +127,6 @@ wvt = WVTransformFreeSurfaceQG([100e3 100e3 4000],[32 32 33],N2Function=N2,latit
       + [`apvGForward`](/classes/transforms/wvtransformfreesurfaceqg/apvgforward.html) APV G projection matrix.
       + [`apvGSourcePairing`](/classes/transforms/wvtransformfreesurfaceqg/apvgsourcepairing.html) APV G source-pairing operator.
       + [`apvGramError`](/classes/transforms/wvtransformfreesurfaceqg/apvgramerror.html) Worst retained APV Gram error.
-      + [`apvGramTolerance`](/classes/transforms/wvtransformfreesurfaceqg/apvgramtolerance.html) Normalized Gram tolerance used for APV selection.
       + [`apvMode`](/classes/transforms/wvtransformfreesurfaceqg/apvmode.html) Ordinal APV family coordinate.
       + [`apvModeCount`](/classes/transforms/wvtransformfreesurfaceqg/apvmodecount.html) Number of retained APV modes.
       + [`apvModeNumber`](/classes/transforms/wvtransformfreesurfaceqg/apvmodenumber.html) Physical APV mode labels.
@@ -149,7 +148,6 @@ wvt = WVTransformFreeSurfaceQG([100e3 100e3 4000],[32 32 33],N2Function=N2,latit
       + [`mdaG`](/classes/transforms/wvtransformfreesurfaceqg/mdag.html) Sampled MDA G modes.
       + [`mdaGForward`](/classes/transforms/wvtransformfreesurfaceqg/mdagforward.html) MDA G projection matrix.
       + [`mdaGramError`](/classes/transforms/wvtransformfreesurfaceqg/mdagramerror.html) Retained MDA Gram error.
-      + [`mdaGramTolerance`](/classes/transforms/wvtransformfreesurfaceqg/mdagramtolerance.html) Normalized Gram tolerance used for MDA selection.
       + [`mdaMode`](/classes/transforms/wvtransformfreesurfaceqg/mdamode.html) Ordinal MDA family coordinate.
       + [`mdaModeCount`](/classes/transforms/wvtransformfreesurfaceqg/mdamodecount.html) Number of retained MDA modes.
       + [`mdaModeNumber`](/classes/transforms/wvtransformfreesurfaceqg/mdamodenumber.html) Physical MDA mode labels.
@@ -353,6 +351,7 @@ These items document internal implementation details and are not part of the pri
     + [`lMode_wv`](/classes/transforms/wvtransformfreesurfaceqg/lmode_wv.html) l mode number on the WV grid
     + [`primaryKLModeNumberFromKLModeNumber`](/classes/transforms/wvtransformfreesurfaceqg/primaryklmodenumberfromklmodenumber.html) takes any valid WV mode number and returns the primary mode number
   + Additional geometry utilities
+    + [`modeConvergenceTolerance`](/classes/transforms/wvtransformfreesurfaceqg/modeconvergencetolerance.html) Physical H1 and equivalent-depth agreement between independent solves.
     + [`quadraticAliasingLimitingModeNumberI`](/classes/transforms/wvtransformfreesurfaceqg/quadraticaliasinglimitingmodenumberi.html) First physical mode label in the limiting product.
     + [`quadraticAliasingLimitingModeNumberJ`](/classes/transforms/wvtransformfreesurfaceqg/quadraticaliasinglimitingmodenumberj.html) Second physical mode label in the limiting product.
 + Spectral transforms and operators
@@ -375,7 +374,10 @@ These items document internal implementation details and are not part of the pri
   + [`boundaryBuoyancyFluxTendency`](/classes/transforms/wvtransformfreesurfaceqg/boundarybuoyancyfluxtendency.html) Project prescribed inward buoyancy fluxes onto the canonical families.
 + Class internals
   + [`boundaryMomentumTendency`](/classes/transforms/wvtransformfreesurfaceqg/boundarymomentumtendency.html) Project momentum stress per unit density onto the signed balanced basis.
+  + [`boundaryResolutionTolerance`](/classes/transforms/wvtransformfreesurfaceqg/boundaryresolutiontolerance.html) Physical derivative and energy accuracy of fixed zero-APV responses.
   + [`chebfunForZArray`](/classes/transforms/wvtransformfreesurfaceqg/chebfunforzarray.html)
+  + [`constructionAssessment`](/classes/transforms/wvtransformfreesurfaceqg/constructionassessment.html) Evidence produced by scientific construction; empty after canonical restore.
+  + [`gramTolerance`](/classes/transforms/wvtransformfreesurfaceqg/gramtolerance.html) Normalized Gram tolerance shared by all retained mode families.
   + [`maxFg`](/classes/transforms/wvtransformfreesurfaceqg/maxfg.html)
   + [`maxFw`](/classes/transforms/wvtransformfreesurfaceqg/maxfw.html)
   + [`muTolerance`](/classes/transforms/wvtransformfreesurfaceqg/mutolerance.html) Relative singularity tolerance used for APV inversion.

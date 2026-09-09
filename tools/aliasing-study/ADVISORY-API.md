@@ -1,5 +1,7 @@
 # Fixed sparse advisory API: first implementation increment
 
+The reusable numerical functions are now packaged under `WVInternal`; the study scripts remain in this authoring directory. For ordinary model initialization, use the v5 constructors and their `constructionAssessment` report; see [automatic mode selection](../../Documentation/Validation/AutomaticModeSelection.md).
+
 `assessWaveQuadraticResolution` assesses already prepared modes in memory and returns an advisory report. It uses the fixed policy supported by issue 400. This first implementation is an authoring API under `tools/aliasing-study`; it is excluded from the runtime package. Constructor defaults, model state, persistence, and the independent family counts are unchanged.
 
 ```matlab
@@ -40,7 +42,7 @@ For fast trials, prepare a fixed evidence snapshot once:
 
 ```matlab
 data = prepareSourceStudy(resolveStudyCase("cal-constant-17"));
-prepared = prepareWaveQuadraticAssessment(data,ensureOutputCoverage=true);
+prepared = WVInternal.prepareWaveQuadraticAssessment(data,ensureOutputCoverage=true);
 kappa = prepared.inventory.magnitudes;
 kappa = kappa(kappa > 0);
 counts = mod((1:numel(kappa)).',4); % An explicit demonstration map, including zero.
@@ -54,7 +56,7 @@ Preparation retains the existing single-precision per-product error evidence, al
 
 The snapshot is a fixed value result, with no live source-study/provider/model objects or global cache. Pass it alone to assessment. It has no mutation API: editing its internal fields or the derived `prepareSourceStudy` result is outside the contract. A changed grid, candidate/reference basis, normalization or inventory requires fresh source/evidence preparation; reports identify the configuration and physical grid they actually assess. Changing only counts or tolerance reuses the unchanged snapshot. Saved WVM models are not silently re-solved to create this preparation.
 
-`prepareWaveQuadraticAssessment` reserves products before source polarizations/projections, with explicit `productBudget` and `workingMemoryBudget`. The default fixed selection preserves historical geometry and cumulative mode stresses. Unequal maps filter those stresses using actual input counts and the maximum input wave-count band; this is a declared sparse selection, not all possible pairs. `ensureOutputCoverage=true` appends the first valid triad for any missing output kappa before reservation. This addition covers pages, not all triad geometries. `policy="dense"` provides a budgeted small all-products control; optional explicit interaction indices support bounded studies.
+`WVInternal.prepareWaveQuadraticAssessment` reserves products before source polarizations/projections, with explicit `productBudget` and `workingMemoryBudget`. The default fixed selection preserves historical geometry and cumulative mode stresses. Unequal maps filter those stresses using actual input counts and the maximum input wave-count band; this is a declared sparse selection, not all possible pairs. `ensureOutputCoverage=true` appends the first valid triad for any missing output kappa before reservation. This addition covers pages, not all triad geometries. `policy="dense"` provides a budgeted small all-products control; optional explicit interaction indices support bounded studies.
 
 Page status combines grid and sampled-product evidence. Untested requested pages are `inconclusive`, zero-wave pages are `not-requested`, and unqualified product references are `reference-inconclusive`; a directly measured Gram or fixed-family failure can still reject. Product-error values accompanied by unqualified references are estimates, not acceptance evidence. The reference gate conservatively covers the entire prepared candidate inventory, even when a smaller map excludes some of those products. Missing coverage prevents the complete map from being accepted. Limiting interactions preserve actual input ordinals/labels/signs, endpoint names, wavevectors, output labels and source channels.
 

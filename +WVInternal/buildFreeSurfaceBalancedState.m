@@ -1,4 +1,4 @@
-function state = buildFreeSurfaceBalancedState(Lxyz,Nxyz,options)
+function [state,assessment,vertical] = buildFreeSurfaceBalancedState(Lxyz,Nxyz,options)
 % Build stored balanced operators shared by free-surface QG and Boussinesq.
 arguments
     Lxyz (1,3) double
@@ -214,8 +214,9 @@ state.apvRoundTripError = max(apvFDiagnostics.roundTripError,apvGDiagnostics.rou
 state.mdaGramError = mdaDiagnostics.relativeGramOperatorError;
 state.mdaRoundTripError = mdaDiagnostics.roundTripError;
 quadraticDiagnostics = apvAssessment.prefixDiagnostics(apvModeCount,:);
-state.apvGramTolerance = options.apvGramTolerance;
-state.mdaGramTolerance = options.mdaGramTolerance;
+state.gramTolerance = options.gramTolerance;
+state.modeConvergenceTolerance=options.modeConvergenceTolerance;
+state.boundaryResolutionTolerance=options.boundaryResolutionTolerance;
 state.quadraticAliasingTolerance = options.quadraticAliasingTolerance;
 state.quadraticAliasingError = quadraticDiagnostics.quadraticAliasingError;
 state.quadraticAliasingLimitingChannel = quadraticDiagnostics.quadraticLimitingChannel;
@@ -228,7 +229,14 @@ state.zeroAPVGramRelativeSeparation = zeroAPVGramRelativeSeparation;
 state.apvZeroAPVQuadraticError = apvZeroAPVQuadraticError;
 state.apvZeroAPVLimitingEndpoint = apvZeroAPVLimitingEndpoint;
 state.apvZeroAPVLimitingModeNumber = apvZeroAPVLimitingModeNumber;
-state.modeSelectionMethod = "fixed-native-quadrature-v1";
+state.modeSelectionMethod = "resolved-prefix-selection";
+assessment=struct(apv=struct(selectedCount=apvModeCount,prefixDiagnostics=apvAssessment.prefixDiagnostics,convergence=vertical.apvConvergence),mda=struct(selectedCount=mdaModeCount,prefixDiagnostics=mdaAssessment.prefixDiagnostics,convergence=vertical.mdaConvergence),boundary=struct(status="not-applicable"),gramTolerance=options.gramTolerance,modeConvergenceTolerance=options.modeConvergenceTolerance,boundaryResolutionTolerance=options.boundaryResolutionTolerance);
+vertical.zeroReference=[];
+if activeEndpointCount>0 && nKh>0
+    [assessment.boundary,vertical.zeroReference]=WVInternal.assessFreeSurfaceBoundaryGrid(zeroModes,zeroProblem,vertical,inputs,options);
+end
+vertical.zeroModes=[];
+if activeEndpointCount>0, vertical.zeroModes=zeroModes; end
 state.Ag_q = complex(zeros(apvModeCount,length(klNonzero)));
 state.Ag_0 = Ag_0;
 state.Amda = zeros(mdaModeCount,1);

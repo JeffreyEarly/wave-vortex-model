@@ -27,7 +27,7 @@ classdef TestPerKappaWavePersistence < matlab.unittest.TestCase
 
         function legacyUniformFileDefaultsToFullPrefixes(testCase)
             fixture=testCase.applyFixture(matlab.unittest.fixtures.TemporaryFolderFixture);
-            w=WVTransformFreeSurfaceBoussinesq.fromStratification([1e5 1e5 1000],[8 8 65],N2Function=@(z)1e-4+0*z);
+            w=WVTransformFreeSurfaceBoussinesq.fromStratification([1e5 1e5 1000],[8 8 65],N2Function=@(z)1e-4+0*z,apvModeCount=3,mdaModeCount=2,waveModeCount=4,inertialModeCount=3);
             populate(w);
             file=fullfile(fixture.Folder,'legacy-uniform.nc');
             properties=setdiff(w.requiredProperties,{'waveModeCountByKh'});
@@ -122,10 +122,10 @@ end
 
 function w=makeTransform(zeroWaves)
 Lxyz=[1e5 1e5 1000]; Nxyz=[8 8 65]; N2=@(z)1e-4+0*z;
-base=WVTransformFreeSurfaceBoussinesq.fromStratification(Lxyz,Nxyz,N2Function=N2);
+base=WVTransformFreeSurfaceBoussinesq.fromStratification(Lxyz,Nxyz,N2Function=N2,apvModeCount=3,mdaModeCount=2,waveModeCount=4,inertialModeCount=3);
 counts=mod((1:length(base.khUnique)).',5);
 if zeroWaves, counts(:)=0; end
-w=WVTransformFreeSurfaceBoussinesq.fromStratification(Lxyz,Nxyz,N2Function=N2,waveModeKappa=base.khUnique,waveModeCount=counts,inertialModeCount=2);
+w=WVTransformFreeSurfaceBoussinesq.fromStratification(Lxyz,Nxyz,N2Function=N2,waveModeKappa=base.khUnique,waveModeCount=counts,inertialModeCount=2,apvModeCount=3,mdaModeCount=2);
 end
 
 function populate(w)

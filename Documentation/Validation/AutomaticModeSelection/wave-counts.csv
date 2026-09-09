@@ -1,0 +1,5 @@
+kappa,candidateCount,convergedCount,gridSupportedCount,selectedCount,limitingMetric
+6.28318530717959e-05,64,51,38,10,sampled-quadratic
+8.88576587631673e-05,64,51,38,19,sampled-quadratic
+0.000125663706143592,64,51,38,19,sampled-quadratic
+0.000140496294620815,64,51,38,10,sampled-quadratic

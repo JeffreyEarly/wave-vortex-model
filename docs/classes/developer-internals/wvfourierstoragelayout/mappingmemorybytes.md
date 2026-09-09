@@ -9,7 +9,7 @@ mathjax: true
 
 #  mappingMemoryBytes
 
-Exact bytes occupied by all one-based uint64 mapping arrays.
+
 
 > Developer documentation: this item describes internal implementation details.
 

@@ -10,7 +10,7 @@ if reference=="R", zRef=data.zR; wRef=data.wR; else, zRef=data.zQ; wRef=data.wQ;
 kl=data.inventory.physicalVectors(vectorIndex,:); kh=hypot(kl(1),kl(2));
 [~,page]=min(abs(data.inventory.magnitudes-kh));
 if kh==0 && component=="eta"
-    context=prepareProductProjection(data.mda.basis,data.mda.transform,"G",zRef,wRef);
+    context=WVInternal.prepareProductProjection(data.mda.basis,data.mda.transform,"G",zRef,wRef);
     if reference=="H"
         context.referenceValues=data.mda.H.G;
         context.endpointValues=data.mda.J.G;
@@ -22,15 +22,22 @@ end
 if kh==0 && component=="w"
     context=[]; counts=[]; targetName="null-mean-w"; return
 end
-B=data.wave{page}; h=B.basis.h(:); if reference=="H", h=B.checkh; end
+B=data.wave{page}; h=B.basis.h(1:numel(B.labels)); h=h(:); if reference=="H", h=B.checkh; end
+if isempty(h)
+    context=[]; counts=[]; targetName="null-mean-w"; return
+end
 if kh==0
     sampleValues=B.S.F; referenceValues=B.(reference).F;
     if component=="v", sampleValues=1i*sampleValues; referenceValues=1i*referenceValues; end
-    metric=2*h; counts=data.config.inertialCount; targetName="inertial";
+    metric=2*h; counts=data.config.inertialCount;
+    if isfield(data.config,"selectInertial"), counts=WVInternal.constructionModeLevels(data.config.inertialCount); end
+    targetName="inertial";
 else
-    fields=sourceStudyFields(data,"wave",vectorIndex);
+    fields=WVInternal.sourceStudyFields(data,"wave",vectorIndex);
     sampleValues=fields.S.(component); referenceValues=fields.(reference).(component);
-    metric=repelem(2*h,2); counts=2*(1:data.config.waveCount); targetName="wave";
+    metric=repelem(2*h,2); counts=2*(1:numel(h));
+    if isfield(data.config,"constructionPolicy"), counts=2*WVInternal.constructionModeLevels(numel(h)); end
+    targetName="wave";
 end
 sampleWeight=data.w; referenceWeight=wRef;
 if component=="eta"

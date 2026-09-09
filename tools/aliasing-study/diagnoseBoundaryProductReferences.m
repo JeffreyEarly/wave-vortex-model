@@ -12,7 +12,7 @@ end
 arguments (Output)
     result (1,1) struct
 end
-config=data.config; channels=sourceChannelInventory(); channel=channels(channels.name==channelName,:);
+config=data.config; channels=WVInternal.sourceChannelInventory(); channel=channels(channels.name==channelName,:);
 if height(channel)~=1 || ~ismember(channel.factor,["x","y"])
     error('WVStudy:UnsupportedDiagnosticChannel','Choose one horizontal boundary-advection channel from sourceChannelInventory.');
 end
@@ -26,20 +26,20 @@ switch string(config.profile)
 end
 row=data.inventory.interactions(interactionIndex,:); vectors=reshape(table2array(row(:,1:6)),2,3).';
 [~,indices]=ismember(vectors,data.inventory.vectors,'rows');
-a=sourceStudyFields(data,"boundary",indices(1)); b=sourceStudyFields(data,"boundary",indices(2));
+a=WVInternal.sourceStudyFields(data,"boundary",indices(1)); b=WVInternal.sourceStudyFields(data,"boundary",indices(2));
 [i,j]=ndgrid(1:2,1:2); i=i(:).'; j=j(:).'; products=struct();
 kl=data.inventory.physicalVectors(indices(2),:);
 if channel.factor=="x", multiplier=1i*kl(1); else, multiplier=1i*kl(2); end
 for name=["S","R","Q","E","H","J"]
     products.(name)=-a.(name).(channel.advecting)(:,i).*(multiplier*b.(name).(channel.advected)(:,j));
 end
-[context,counts,target]=sourceProjectionContext(data,indices(3),channel.advected,"Q");
+[context,counts,target]=WVInternal.sourceProjectionContext(data,indices(3),channel.advected,"Q");
 assert(target=="wave",'This diagnostic uses a nonzero wave output.');
-lowContext=sourceProjectionContext(data,indices(3),channel.advected,"R");
-highContext=sourceProjectionContext(data,indices(3),channel.advected,"H");
-low=measureProductProjection(lowContext,products.S,products.R,zeros(2,4),counts);
-high=measureProductProjection(context,products.S,products.Q,zeros(2,4),counts);
-independent=measureProductProjection(highContext,zeros(size(products.S)),products.H,zeros(2,4),counts);
+lowContext=WVInternal.sourceProjectionContext(data,indices(3),channel.advected,"R");
+highContext=WVInternal.sourceProjectionContext(data,indices(3),channel.advected,"H");
+low=WVInternal.measureProductProjection(lowContext,products.S,products.R,zeros(2,4),counts);
+high=WVInternal.measureProductProjection(context,products.S,products.Q,zeros(2,4),counts);
+independent=WVInternal.measureProductProjection(highContext,zeros(size(products.S)),products.H,zeros(2,4),counts);
 exactA=exactField(solution,data,indices(1),channel.advecting,data.zQ);
 exactB=multiplier*exactField(solution,data,indices(2),channel.advected,data.zQ);
 exactProduct=-exactA(:,i).*exactB(:,j);
@@ -65,7 +65,7 @@ for variableIndex=1:2
         fieldErrors(input,variableIndex)=max(weightedNorm(data.boundary{page}.Q.(variable)-reference,data.wQ)./weightedNorm(reference,data.wQ));
     end
 end
-result=struct(rows=rows,interactionIndex=interactionIndex,channel=channelName,vectors=vectors,configuration=config,referenceStability=compareProductReferences(context,low,high,counts),eigenProductStability=compareProductReferences(context,high,independent,counts),targetGramReciprocalCondition=rcond(context.targetGram),fieldRelativeErrors=fieldErrors,z=data.zQ,candidateProducts=products.Q,independentProducts=products.H,analyticalProducts=exactProduct,interpretation="Unchanged product-relative gates; analytical/factor-scaled quantities diagnose causes only");
+result=struct(rows=rows,interactionIndex=interactionIndex,channel=channelName,vectors=vectors,configuration=config,referenceStability=WVInternal.compareProductReferences(context,low,high,counts),eigenProductStability=WVInternal.compareProductReferences(context,high,independent,counts),targetGramReciprocalCondition=rcond(context.targetGram),fieldRelativeErrors=fieldErrors,z=data.zQ,candidateProducts=products.Q,independentProducts=products.H,analyticalProducts=exactProduct,interpretation="Unchanged product-relative gates; analytical/factor-scaled quantities diagnose causes only");
 end
 
 function values=exactField(solution,data,index,variable,z)

@@ -15,7 +15,7 @@ for id=["cal-constant-17","cal-exponential-17"]
     for repetition=1:options.repetitions
         config=resolveStudyCase(id);
         timer=tic; data=prepareSourceStudy(config); sourceSeconds=toc(timer);
-        timer=tic; prepared=prepareWaveQuadraticAssessment(data,ensureOutputCoverage=true); evidenceSeconds=toc(timer);
+        timer=tic; prepared=WVInternal.prepareWaveQuadraticAssessment(data,ensureOutputCoverage=true); evidenceSeconds=toc(timer);
         k=prepared.inventory.magnitudes; k=k(k>0);
         timer=tic; first=assessWaveQuadraticResolution(prepared,waveModeKappa=k,waveModeCount=3); firstSeconds=toc(timer);
         timer=tic; second=assessWaveQuadraticResolution(prepared,waveModeKappa=flipud(k),waveModeCount=flipud(mod((1:numel(k)).',4))); secondSeconds=toc(timer);
@@ -26,8 +26,8 @@ for id=["cal-constant-17","cal-exponential-17"]
     % This intentionally small all-products control changes neither the
     % scientific modes nor reference rules between sparse/dense measurements.
     config.Nxy=[6 6]; data=prepareSourceStudy(config);
-    sparse=prepareWaveQuadraticAssessment(data,ensureOutputCoverage=true);
-    dense=prepareWaveQuadraticAssessment(data,policy="dense");
+    sparse=WVInternal.prepareWaveQuadraticAssessment(data,ensureOutputCoverage=true);
+    dense=WVInternal.prepareWaveQuadraticAssessment(data,policy="dense");
     for count=1:config.waveCount
         a=assessWaveQuadraticResolution(sparse,waveModeCount=count);
         b=assessWaveQuadraticResolution(dense,waveModeCount=count);

@@ -9,7 +9,7 @@ mathjax: true
 
 #  Nkl
 
-Number of horizontal coefficients in the canonical WV grid.
+
 
 > Developer documentation: this item describes internal implementation details.
 

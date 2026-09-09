@@ -1,25 +1,28 @@
 function [self,assessment] = fromStratification(Lxyz,Nxyz,options)
 % Solve independent resolved families on one WKB-Chebyshev physical grid.
 %
-% Explicit family counts are strict retained prefixes. The provider rejects
-% a balanced band that does not meet its fixed-grid qualification. Wave and
-% inertial Gram errors are checked separately without fitting weights or
-% changing the basis. This initial wave implementation requires N2>f^2.
+% Omitted counts select independent resolved prefixes on the prescribed grid.
+% Explicit counts are strict: failure of convergence, Gram or sampled quadratic
+% checks rejects construction. No basis or quadrature weights are fitted.
+% Wave/inertial references are always computed, independently of nargout.
+% This experimental implementation requires N2>f^2.
 %
 % - Topic: Create a transform
 % - Declaration: [self,assessment] = fromStratification(Lxyz,Nxyz,options)
 % - Parameter Lxyz: positive domain lengths in meters
 % - Parameter Nxyz: horizontal Fourier sizes and vertical sample count
 % - Parameter options.N2Function: positive squared buoyancy frequency versus depth
-% - Parameter options.waveModeCount: nonnegative retained prefixes per sign; scalar or counts keyed by waveModeKappa
-% - Parameter options.waveModeKappa: physical positive wavenumbers in radians per meter for explicit counts; empty uses a uniform scalar
-% - Parameter options.apvModeCount: independent APV mode count
-% - Parameter options.mdaModeCount: independent mean-density-anomaly count
-% - Parameter options.inertialModeCount: independent inertial mode count
-% - Parameter options.nEVP: wave/inertial spectral solve resolution
-% - Parameter options.referenceNEVP: optional higher resolution for explicit mode-convergence assessment
+% - Parameter options.waveModeCount: strict nonnegative prefixes per sign; empty selects automatically; scalar or keyed counts
+% - Parameter options.waveModeKappa: physical positive wavenumbers in radians per meter for an explicit complete count map
+% - Parameter options.apvModeCount: strict APV count; empty uses the shared QG automatic policy
+% - Parameter options.mdaModeCount: strict MDA count; empty uses the shared QG automatic policy
+% - Parameter options.inertialModeCount: strict inertial count; empty selects its own qualified prefix
+% - Parameter options.nEVP: initial wave/inertial EVP resolution; automatic candidates require at least Nz+4; at most three resolution pairs
+% - Parameter options.referenceNEVP: optional fixed higher reference resolution; empty uses a bounded automatically refined reference
 % - Parameter options.modeConvergenceTolerance: equivalent-depth and joint field/derivative convergence tolerance
-% - Parameter options.projectionTolerance: per-family fixed-quadrature Gram tolerance
+% - Parameter options.gramTolerance: shared fixed-quadrature normalized-Gram tolerance; default 1e-2
+% - Parameter options.quadraticAliasingTolerance: bounded physical-product sampling tolerance; default 0.1
+% - Parameter options.boundaryResolutionTolerance: fixed zero-APV physical derivative and energy tolerance; default 1e-2
 % - Parameter options.g0: surface acceleration for balanced basis; default negative stratification integral
 % - Parameter options.gd: bottom acceleration for balanced basis; default positive stratification integral
 % - Parameter options.latitude: nonzero latitude in degrees
@@ -29,20 +32,22 @@ function [self,assessment] = fromStratification(Lxyz,Nxyz,options)
 % - Parameter options.planetaryRadius: planetary radius in meters
 % - Parameter options.shouldAntialias: apply existing horizontal antialiasing rule
 % - Returns self: zero-state experimental free-surface Boussinesq transform
-% - Returns assessment: per-kappa linear convergence and sampled-grid evidence for the actual constructed modes; no additional solve unless referenceNEVP is supplied
+% - Returns assessment: candidate and selected counts, convergence, Gram, fixed-boundary and bounded quadratic evidence, coverage and construction costs
 arguments (Input)
     Lxyz (1,3) double {mustBeReal,mustBeFinite,mustBePositive}
     Nxyz (1,3) double {mustBeInteger,mustBePositive}
     options.N2Function function_handle
-    options.waveModeCount (:,1) double {mustBeReal,mustBeInteger,mustBeNonnegative,mustBeFinite} = 4
+    options.waveModeCount (:,1) double {mustBeReal,mustBeInteger,mustBeNonnegative,mustBeFinite} = zeros(0,1)
     options.waveModeKappa (:,1) double {mustBeReal,mustBeFinite,mustBePositive} = zeros(0,1)
-    options.apvModeCount (1,1) double {mustBeInteger,mustBePositive} = 3
-    options.mdaModeCount (1,1) double {mustBeInteger,mustBePositive} = 2
-    options.inertialModeCount (1,1) double {mustBeInteger,mustBePositive} = 3
+    options.apvModeCount (:,1) double {mustBeInteger,mustBePositive} = zeros(0,1)
+    options.mdaModeCount (:,1) double {mustBeInteger,mustBePositive} = zeros(0,1)
+    options.inertialModeCount (:,1) double {mustBeInteger,mustBePositive} = zeros(0,1)
     options.nEVP (1,1) double {mustBeInteger,mustBePositive} = 64
     options.referenceNEVP (:,1) double {mustBeInteger,mustBePositive,mustBeFinite} = zeros(0,1)
     options.modeConvergenceTolerance (1,1) double {mustBeReal,mustBeFinite,mustBePositive} = 1e-6
-    options.projectionTolerance (1,1) double {mustBeReal,mustBeFinite,mustBePositive} = 1e-7
+    options.gramTolerance (1,1) double {mustBeReal,mustBeFinite,mustBePositive} = 1e-2
+    options.quadraticAliasingTolerance (1,1) double {mustBeReal,mustBeFinite,mustBePositive} = .1
+    options.boundaryResolutionTolerance (1,1) double {mustBeReal,mustBeFinite,mustBePositive} = 1e-2
     options.g0 (1,1) double = NaN
     options.gd (1,1) double = NaN
     options.latitude (1,1) double {mustBeSupportedLatitude} = 30
@@ -59,6 +64,11 @@ end
 if numel(options.referenceNEVP)>1 || any(options.referenceNEVP<=options.nEVP)
     error('WVTransformFreeSurfaceBoussinesq:InvalidReferenceResolution','Supply one referenceNEVP greater than nEVP, or leave it empty to avoid an additional solve.')
 end
+if any([numel(options.apvModeCount),numel(options.mdaModeCount),numel(options.inertialModeCount)]>1)
+    error('WV:InvalidModeCount','APV, MDA and inertial counts must be scalar or empty for automatic selection.')
+end
+constructionTimer=tic;
+autoWave=isempty(options.waveModeCount); autoInertial=isempty(options.inertialModeCount);
 counts = [options.waveModeCount; options.apvModeCount; options.mdaModeCount; options.inertialModeCount];
 if any(counts >= Nxyz(3)) || any([options.waveModeCount; options.inertialModeCount] >= options.nEVP)
     error('WVTransformFreeSurfaceBoussinesq:InvalidModeCount','Each retained count must be smaller than Nz; wave and inertial counts must also be smaller than nEVP.')
@@ -71,15 +81,26 @@ end
 balancedOptions = options;
 balancedOptions.rhoFunction = @isempty;
 balancedOptions.z = zeros(0,1);
-balancedOptions.apvGramTolerance = options.projectionTolerance;
-balancedOptions.mdaGramTolerance = options.projectionTolerance;
-balancedOptions.quadraticAliasingTolerance = .1;
+balancedOptions.gramTolerance = options.gramTolerance;
+balancedOptions.quadraticAliasingTolerance = options.quadraticAliasingTolerance;
 balancedOptions.muTolerance = sqrt(eps);
-state = WVInternal.buildFreeSurfaceBalancedState(Lxyz,Nxyz,balancedOptions);
+[state,balancedAssessment,vertical] = WVInternal.buildFreeSurfaceBalancedState(Lxyz,Nxyz,balancedOptions);
 state.Lxyz = Lxyz; state.Nxyz = Nxyz;
-for name = ["shouldAntialias","rho0","planetaryRadius","rotationRate","latitude","g","nEVP","projectionTolerance"]
+for name = ["shouldAntialias","rho0","planetaryRadius","rotationRate","latitude","g","nEVP","gramTolerance","modeConvergenceTolerance","quadraticAliasingTolerance","boundaryResolutionTolerance"]
     state.(name) = options.(name);
 end
+if autoWave && ~isempty(options.waveModeKappa)
+    error('WVTransformFreeSurfaceBoussinesq:InvalidWaveCountMap','Supply waveModeCount with waveModeKappa, or omit both for automatic selection.')
+end
+candidateCount=Nxyz(3)-1;
+if autoWave || autoInertial
+    options.nEVP=max(options.nEVP,Nxyz(3)+4);
+    if ~isempty(options.referenceNEVP) && options.referenceNEVP<=options.nEVP
+        error('WVTransformFreeSurfaceBoussinesq:InvalidReferenceResolution','referenceNEVP must exceed the candidate solve resolution, at least Nz+4 for automatic counts.')
+    end
+end
+if autoWave, options.waveModeCount=candidateCount; end
+if autoInertial, options.inertialModeCount=candidateCount; end
 % Explicit physical keys make the count map independent of Fourier ordering.
 if isempty(options.waveModeKappa)
     if ~isscalar(options.waveModeCount)
@@ -112,71 +133,51 @@ else
         error('WVTransformFreeSurfaceBoussinesq:InvalidWaveCountMap','The explicit count map must cover every supported positive horizontal wavenumber.')
     end
 end
-state.waveMode = (1:max([state.waveModeCountByKh;0])).';
-state.inertialMode = (1:options.inertialModeCount).';
-nz = length(state.z); nw = length(state.waveMode); np = length(state.khUnique);
-state.waveF = zeros(nz,nw,np); state.waveG = zeros(nz,nw,np);
-state.waveGForward = zeros(nw,nz,np); state.waveEquivalentDepth = zeros(nw,np);
-state.waveFrequency = zeros(nw,np); state.waveGramError = zeros(np,1);
-solver = IMSolverSpectral(nEVP=options.nEVP,coordinateKind="wkb");
-% Share coordinate preparation across the exact requested wave pencils.
-% Zero wavenumber has its own count and must be evaluated separately.
-activePages = find(state.waveModeCountByKh > 0);
-bases = solver.solveWaveModesAtWavenumbers([0 state.khUnique(activePages).'],N2=state.N2Function,zDomain=[-Lxyz(3) 0],f0=f,g=options.g,surfaceBoundary=IMBoundaryCondition(a=0,b=1,c=1,d=0),nModes=state.waveModeCountByKh(activePages).',nInertialModes=options.inertialModeCount);
-for iPage = 1:numel(activePages)+1
-    if iPage == 1, p = 0; else, p = activePages(iPage-1); end
-    basis = bases.bases{bases.basisIndex(iPage)};
-    h = basis.h(:);
-    if p == 0, count = options.inertialModeCount; else, count = state.waveModeCountByKh(p); end
-    if any(h<=0) || length(h)~=count
-        error('WVTransformFreeSurfaceBoussinesq:InvalidWaveBand','The requested wave/inertial prefix must contain only finite positive equivalent depths.')
-    end
-    if p == 0
-        state.inertialEquivalentDepth = h;
-        state.inertialModeNumber = basis.modeNumber(:);
-    else
-        state.waveEquivalentDepth(1:count,p) = h;
-        state.waveFrequency(1:count,p) = sqrt(f^2+options.g*h*state.khUnique(p)^2);
-        if count == nw, state.waveModeNumber = basis.modeNumber(:); end
-    end
+requestedMap=state.waveModeCountByKh;
+requestedInertial=options.inertialModeCount;
+waveTimer=tic; solveCount=0;
+for attempt=1:3
+    state.nEVP=options.nEVP;
+    [state,bases]=WVInternal.buildFreeSurfaceWaveState(state,options);
+    activePages=find(state.waveModeCountByKh>0);
+    referenceNEVP=options.referenceNEVP;
+    if isempty(referenceNEVP), referenceNEVP=max(options.nEVP+16,ceil(1.5*options.nEVP)); end
+    [assessment,reference]=WVInternal.assessWaveModeConstruction(state,bases,activePages,referenceNEVP,options.modeConvergenceTolerance);
+    solveCount=solveCount+2*(numel(activePages)+1);
+    desired=assessment.pages.gridSupportedCount;
+    if ~autoWave, desired=requestedMap; end
+    desiredInertial=assessment.inertial.gridSupportedCount;
+    if ~autoInertial, desiredInertial=requestedInertial; end
+    converged=all(assessment.pages.convergedCount>=desired) && assessment.inertial.convergedCount>=desiredInertial;
+    if converged || attempt==3 || ~isempty(options.referenceNEVP), break; end
+    options.nEVP=referenceNEVP;
 end
-state.inertialF = bases.evaluate(state.z,variable="F",pages=1);
-state.inertialFForward = (state.inertialF'.*state.verticalQuadratureWeights.')./state.inertialEquivalentDepth;
-state.inertialGramError = norm(state.inertialFForward*state.inertialF-eye(options.inertialModeCount),2);
-% Homogeneous count groups share evaluation while preserving exact prefixes.
-for count = unique(state.waveModeCountByKh(activePages)).'
-    collectionPages = find(state.waveModeCountByKh(activePages) == count).'+1;
-    bases.evaluateChunks(state.z,@acceptWaveF,variable="F",pages=collectionPages);
-    bases.evaluateChunks(state.z,@acceptWaveG,variable="G",pages=collectionPages);
+waveSeconds=toc(waveTimer);
+counts=assessment.pages.usableCount;
+if any(isnan(counts)) || isnan(assessment.inertial.usableCount)
+    error('WV:InconclusiveModeResolution','Independent EVP comparison did not establish a leading prefix. No automatic count is accepted without a measured reference.')
 end
-% Preserve the prescribed physical pairing, including the surface term.
-for p = 1:np
-    count = state.waveModeCountByKh(p);
-    if count == 0, continue; end
-    G = state.waveG(:,1:count,p);
-    forward = G'.*(state.verticalQuadratureWeights.*((state.N2Function(state.z)-f^2)/options.g)).';
-    forward(:,end) = forward(:,end)+G(end,:).';
-    state.waveGForward(1:count,:,p) = forward;
-    state.waveGramError(p) = norm(forward*G-eye(count),2);
+if ~autoWave && any(counts<requestedMap)
+    error('WV:StrictWaveModeCountRejected','The explicit wave count map exceeds its converged or fixed-grid Gram prefix. Increase Nz/nEVP or reduce the requested counts; explicit counts are never truncated.')
 end
-if nw == 0, state.waveModeNumber = state.waveMode; end
-if max([state.waveGramError;state.inertialGramError]) > options.projectionTolerance
-    error('WVTransformFreeSurfaceBoussinesq:UnderresolvedWaveGrid','Wave/inertial Gram error %.3g exceeds %.3g. Increase Nz or reduce retained counts; the resolved modes have not been changed.',max([state.waveGramError;state.inertialGramError]),options.projectionTolerance)
+if ~autoInertial && assessment.inertial.usableCount<requestedInertial
+    error('WV:StrictInertialModeCountRejected','The explicit inertial count exceeds its converged or fixed-grid Gram prefix. Increase Nz/nEVP or reduce inertialModeCount.')
 end
-% MDA pressure has zero surface gauge and follows the stored G modes:
-% dp/dz=-rho0*N2*eta. The provider F differs only by its surface constant.
-state.mdaPressureMode = options.g*(state.mdaF-state.mdaF(end,:));
-self = WVTransformFreeSurfaceBoussinesq(state);
-assessment=struct();
-if nargout>1 || ~isempty(options.referenceNEVP)
-    assessment=WVInternal.assessWaveModeConstruction(state,bases,activePages,options.referenceNEVP,options.modeConvergenceTolerance);
+if autoInertial, options.inertialModeCount=assessment.inertial.usableCount; end
+if options.inertialModeCount<1
+    error('WV:NoResolvedInertialModes','No inertial mode passes the physical-grid and independent convergence checks. Increase Nz/nEVP.')
 end
-
-    function acceptWaveF(values,rows,~,pages)
-        state.waveF(rows,1:size(values,2),activePages(pages-1)) = values;
-    end
-
-    function acceptWaveG(values,rows,~,pages)
-        state.waveG(rows,1:size(values,2),activePages(pages-1)) = values;
-    end
+if ~autoWave, counts=requestedMap; end
+assessment.pages.candidateCount=requestedMap;
+assessment.pages.selectedCount=counts;
+assessment.inertial.selectedCount=options.inertialModeCount;
+assessment.apv=balancedAssessment.apv; assessment.mda=balancedAssessment.mda;
+assessment.boundary=balancedAssessment.boundary;
+assessment.cost=struct(waveEigensolves=solveCount,waveConstructionSeconds=waveSeconds,selectionTrials=0);
+% The bounded interaction policy operates on the candidate snapshot once.
+[state,assessment]=WVInternal.selectFreeSurfaceWaveCounts(state,bases,reference,vertical,counts,options.inertialModeCount,assessment,options,autoWave,autoInertial);
+state.mdaPressureMode=options.g*(state.mdaF-state.mdaF(end,:));
+self=WVTransformFreeSurfaceBoussinesq(state);
+assessment.cost.constructionSeconds=toc(constructionTimer);
+self.constructionAssessment=assessment;
 end
