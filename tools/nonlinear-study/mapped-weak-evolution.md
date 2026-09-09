@@ -178,6 +178,14 @@ $$
 
 These formulas use the same scaling for $K,b,\lambda$ as the actual KKT system. If constraints are rescaled for conditioning, transform the multipliers consistently. The physical surface quadrature is already included in the definitions of $H,f,\Psi$; $K$ can use any independent equivalent coordinate representation.
 
+For a nonzero linear-solve residual $e=Hv+K^T\lambda-f$ and a nonzero SSH residual, the general identity to check is
+
+$$
+(\nabla_a\mathcal E)^Tv-\mathcal W=\mathcal D+\Psi^TV(Cv-s)-(Ka)^T\lambda+a^Te.
+$$
+
+The shorter constrained formula assumes both residual terms are negligible; the experiment should record them rather than assume that solver tolerances made them zero.
+
 Thus enforcing kinematics removes one energy-defect term but can introduce reaction work. Endpoint constraints introduce additional components of the same reaction work. Nothing in full row rank or small kinematic residual makes this work vanish. The preceding constant-stratification study already demonstrates this issue for the quadratic source-work budget: satisfying all three boundary source constraints changes the mixed-state work rate and does not eliminate its defect.
 
 The thermodynamic weight $m_\eta$ is justified by the APE derivative, and $R$ by physical kinetic energy. These are not coefficients selected to cancel a measured energy drift. In contrast, appending an energy equation, changing multipliers to force one global power to zero, or rescaling tendencies after each solve would require a separate physical/variational justification. A scalar energy correction alone cannot establish the intended momentum and density equations.
@@ -193,6 +201,10 @@ There is no dimensional argument here proving that exact energy conservation is 
 ## 6. Reference-domain and small-amplitude qualifications
 
 The manuscript extends the reference density as a constant above physical height zero. It does not thereby authorize arbitrary evaluation of the parcel-label density below the reference bottom. Active bottom modes can produce $r<-D$. A study must either restrict its state and perturbations to a stated reference-density label domain or supply an explicitly chosen physical extension. It must report violations rather than silently extrapolating an interpolant or polynomial.
+
+If labels are restricted to $-D\leq r\leq0$, both inequalities matter. Since $r=\xi-\eta_i$, the pointwise requirement is $\xi\leq\eta_i\leq\xi+D$. Thus the surface requires $0\leq\theta_s\leq D$, and the bottom requires $-D\leq\theta_b\leq0$. A nonzero boundary anomaly with zero horizontal mean necessarily violates one of these sign conditions somewhere, however small its amplitude. Mixed boundary controls therefore need suitable mean offsets, for example from the retained MDA family. Check the full interior and oversampled horizontal/vertical label field, not only endpoint signs.
+
+Choosing instead to extend parcel-label density with $\rho_{\rm nm}^{+}(r)$ changes the derivative domain: the APE must then also use $p_{\rm nm}^{+}(r)$, and $m_\eta=\gamma N_+^2(r)$ can degenerate above zero. That is a separate specification. Do not combine a clipped label density with the unextended label pressure or a nonzero extrapolated label $N^2$.
 
 The upper extension also makes a naive pointwise amplitude test invalid. For a wave at the surface with $\eta_s=\zeta>0$, one has $r_s=0$, $z_s=\zeta$, and $B_s=0$, whereas the formal reference-domain linear buoyancy is $-N^2(0)\eta_s$. Their difference is pointwise $O(\epsilon)$ in a layer of thickness $O(\epsilon)$ near the surface. It need not be uniformly $O(\epsilon^2)$ at the endpoint.
 
@@ -222,3 +234,5 @@ This experiment can decide whether the candidate is a useful convergent weak mod
 The manuscript anchors are `eq:projection-ready-map-wi`, `eq:projection-ready-geometric-identities`, `eq:projection-ready-horizontal-momentum-tendency`, `eq:projection-ready-exact-vertical-momentum`, `eq:projection-ready-displacement-advection`, `eq:rho-nm-plus-definition`, `eq:physical-height-ape-density`, `eq:available-energy`, and `eq:projection-ready-surface-pressure`. The code anchors are `reconstructSpectralState.m`, `projectSources.m`, `physicalEnergy.m`, and `freeSurfaceWavePolarization.m` in the free-surface Boussinesq implementation.
 
 The preceding source/KKT feasibility study was executed and committed with its CSV. This note changes no executable or generated API source. The new nonlinear weak evolution, full energy derivative, pressure-adjoint matrix, and refinement experiment have not yet been implemented or numerically qualified. Algebraic consistency and the explicit remaining assumptions are the deliverable of this note.
+
+An independent review checked the weak-budget algebra and sharpened the two-sided label-domain conditions and solver-residual accounting above. This review is not numerical qualification of the proposed model.
