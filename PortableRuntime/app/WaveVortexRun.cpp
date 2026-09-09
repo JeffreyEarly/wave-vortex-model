@@ -1192,10 +1192,14 @@ int wavevortex::runtime::runWaveVortex(
         termination.finalAcceptedTime = state.waveVortex.t;
         return status;
     };
+    const auto recordTermination = [&](WVIntegrationTermination next) {
+        next.callbackEvaluationCount += termination.callbackEvaluationCount;
+        termination = next;
+    };
     const auto advanceControlled = [&](double finalTime) {
         auto result = model.advanceToTime(modelState, finalTime,
                                           integrationInitialStep, control);
-        termination = result.termination;
+        recordTermination(result.termination);
         return result.status;
     };
 #if WV_RUNTIME_HAS_DENSE_OUTPUT
@@ -1219,10 +1223,12 @@ int wavevortex::runtime::runWaveVortex(
         auto result = model.advanceToTime(modelState,finalTime,integrationInitialStep,
                                      plan,sink, control);
         status = result.status;
-        termination = result.termination;
+        recordTermination(result.termination);
         state = modelState.mutableView();
         const auto metrics = model.metrics(&modelState).outputDriver;
         outputDriverMetrics.acceptedStepCount += metrics.acceptedStepCount;
+        outputDriverMetrics.committedDeliveryCount += metrics.committedDeliveryCount;
+        outputDriverMetrics.failureCount += metrics.failureCount;
         outputDriverMetrics.outputStateEvaluationCount += metrics.outputStateEvaluationCount;
         outputDriverMetrics.initialStateEventCount += metrics.initialStateEventCount;
         outputDriverMetrics.interpolatedStateEvaluationCount += metrics.interpolatedStateEvaluationCount;
@@ -1273,58 +1279,7 @@ int wavevortex::runtime::runWaveVortex(
         return {WVKernelStatusCode::unsupportedOperation,"This archived baseline does not implement dense output."};
 #endif
     };
-    if (options.benchmarkWarmupSteps != 0) {
-        kernelStatus = advanceBenchmarkSteps(options.benchmarkWarmupSteps);
-        if (!kernelStatus) {
-            emit(failureJSON(ExitCode::integration,"warmup",kernelStatus.message),options.report,std::cerr);
-            return static_cast<int>(ExitCode::integration);
-        }
-    }
-    phase(options,"integrate");
-    if (!waitForPhaseSample("integrate")) {
-        emit(failureJSON(ExitCode::integration,"memory-phase","The external RSS sampler did not acknowledge the integration phase."),options.report,std::cerr);
-        return static_cast<int>(ExitCode::integration);
-    }
-    start = Clock::now();
-    if (options.benchmarkWarmupSteps != 0 || options.benchmarkDenseOutputsPerStep != 0) {
-        kernelStatus = advanceBenchmarkSteps(options.steps);
-    } else if (options.scheduledOutput()) {
-#if WV_RUNTIME_HAS_DENSE_OUTPUT
-        kernelStatus = runOutput(scheduledPlan.targets,options.finalTime,*scheduledSink);
-#else
-        kernelStatus = {WVKernelStatusCode::unsupportedOperation,"This archived baseline does not implement scheduled output."};
-#endif
-    } else if (options.restartMode == "model") {
-        kernelStatus = advanceControlled(options.finalTime);
-        state = modelState.mutableView();
-        outputDriverMetrics = model.metrics(&modelState).outputDriver;
-        outputOrchestrationMaximumLiveBytes =
-            outputDriverMetrics.retainedStorageBytes;
-    } else if (options.benchmarkOutputCount != 0) {
-#if WV_RUNTIME_HAS_DENSE_OUTPUT
-        kernelStatus = runOutput(benchmarkTargets(uniformInteriorOutputTimes(state.waveVortex.t,options.finalTime,options.benchmarkOutputCount)),options.finalTime,benchmarkSink);
-#else
-        kernelStatus = {WVKernelStatusCode::unsupportedOperation,"This archived baseline does not implement dense output."};
-#endif
-    } else if (options.hasSteps) {
-        kernelStatus = pollControl(WVIntegrationBoundary::initialState);
-        for (std::size_t step = 0; step < options.steps && kernelStatus && !termination.stopped(); ++step) {
-            kernelStatus = model.step(modelState,proposedStepSize);
-            if (kernelStatus) {
-                state = modelState.mutableView();
-                proposedStepSize = model.nextStepSize();
-                kernelStatus = pollControl(WVIntegrationBoundary::acceptedStep);
-            }
-        }
-    } else {
-        kernelStatus = advanceControlled(options.finalTime);
-        state = modelState.mutableView();
-    }
-    outputOrchestrationMaximumLiveBytes +=
-        outputDriverMetrics.controlledStopWorkspaceMaximumLiveBytes;
-    timings.integrate = seconds(start);
-    const auto integrationPeakRSS = peakRSSBytes();
-    if (!kernelStatus) {
+    const auto emitIntegrationFailure = [&](const char *numericalPhase) {
         const bool callbackFailure =
             termination.completion == WVIntegrationCompletion::callbackFailure;
         const bool outputFailure =
@@ -1333,7 +1288,7 @@ int wavevortex::runtime::runWaveVortex(
                           : outputFailure ? ExitCode::output : ExitCode::integration;
         const char *failurePhase = callbackFailure ? "stop-callback"
                                    : outputFailure ? "output"
-                                                   : "integrate";
+                                                   : numericalPhase;
         auto failedReport =
             failureJSON(code, failurePhase,kernelStatus.message,{},options.scheduledOutput() ? scheduledOutputJSON(options,scheduledPlan,&scheduledSink->sink()) : std::string{});
         failedReport.pop_back();
@@ -1353,12 +1308,63 @@ int wavevortex::runtime::runWaveVortex(
                << ",\"rightHandSideEvaluationCount\":"
                << metrics.integrator.rightHandSideEvaluationCount
                << ",\"committedDeliveryCount\":"
-               << metrics.outputDriver.committedDeliveryCount
-               << ",\"outputFailureCount\":" << metrics.outputDriver.failureCount
+               << outputDriverMetrics.committedDeliveryCount
+               << ",\"outputFailureCount\":" << outputDriverMetrics.failureCount
                << "}}";
         emit(failedReport + suffix.str(),options.report,std::cerr);
         return static_cast<int>(code);
+    };
+    if (options.benchmarkWarmupSteps != 0) {
+        kernelStatus = advanceBenchmarkSteps(options.benchmarkWarmupSteps);
+        if (!kernelStatus) return emitIntegrationFailure("warmup");
     }
+    phase(options,"integrate");
+    if (!waitForPhaseSample("integrate")) {
+        emit(failureJSON(ExitCode::integration,"memory-phase","The external RSS sampler did not acknowledge the integration phase."),options.report,std::cerr);
+        return static_cast<int>(ExitCode::integration);
+    }
+    start = Clock::now();
+    if (!termination.stopped()) {
+        if (options.benchmarkWarmupSteps != 0 || options.benchmarkDenseOutputsPerStep != 0) {
+            kernelStatus = advanceBenchmarkSteps(options.steps);
+        } else if (options.scheduledOutput()) {
+#if WV_RUNTIME_HAS_DENSE_OUTPUT
+            kernelStatus = runOutput(scheduledPlan.targets,options.finalTime,*scheduledSink);
+#else
+            kernelStatus = {WVKernelStatusCode::unsupportedOperation,"This archived baseline does not implement scheduled output."};
+#endif
+        } else if (options.restartMode == "model") {
+            kernelStatus = advanceControlled(options.finalTime);
+            state = modelState.mutableView();
+            outputDriverMetrics = model.metrics(&modelState).outputDriver;
+            outputOrchestrationMaximumLiveBytes =
+                outputDriverMetrics.retainedStorageBytes;
+        } else if (options.benchmarkOutputCount != 0) {
+#if WV_RUNTIME_HAS_DENSE_OUTPUT
+            kernelStatus = runOutput(benchmarkTargets(uniformInteriorOutputTimes(state.waveVortex.t,options.finalTime,options.benchmarkOutputCount)),options.finalTime,benchmarkSink);
+#else
+            kernelStatus = {WVKernelStatusCode::unsupportedOperation,"This archived baseline does not implement dense output."};
+#endif
+        } else if (options.hasSteps) {
+            kernelStatus = pollControl(WVIntegrationBoundary::initialState);
+            for (std::size_t step = 0; step < options.steps && kernelStatus && !termination.stopped(); ++step) {
+                kernelStatus = model.step(modelState,proposedStepSize);
+                if (kernelStatus) {
+                    state = modelState.mutableView();
+                    proposedStepSize = model.nextStepSize();
+                    kernelStatus = pollControl(WVIntegrationBoundary::acceptedStep);
+                }
+            }
+        } else {
+            kernelStatus = advanceControlled(options.finalTime);
+            state = modelState.mutableView();
+        }
+    }
+    outputOrchestrationMaximumLiveBytes +=
+        outputDriverMetrics.controlledStopWorkspaceMaximumLiveBytes;
+    timings.integrate = seconds(start);
+    const auto integrationPeakRSS = peakRSSBytes();
+    if (!kernelStatus) return emitIntegrationFailure("integrate");
     if (!termination.stopped() && options.scheduledOutput() && scheduledSink->sink().metrics().checkpointWriteCount != scheduledPlan.targets.size()) {
         emit(failureJSON(ExitCode::output,"scheduled-output","Integration completed before every requested checkpoint was written.",{},scheduledOutputJSON(options,scheduledPlan,&scheduledSink->sink())),options.report,std::cerr);
         return static_cast<int>(ExitCode::output);

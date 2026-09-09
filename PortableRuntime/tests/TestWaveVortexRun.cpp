@@ -160,6 +160,70 @@ int main() {
                   "reusable runner must report callback failure separately "
                   "from integration and output failure");
         }
+        // Warmup and measured phases share one invocation-level stop result.
+        for (const auto denseOutputs : {0, 1}) {
+            for (const auto scenario : {"stop", "continue", "throw"}) {
+                const auto stem = std::string("warmup-") + scenario + "-" +
+                                  std::to_string(denseOutputs);
+                const auto warmupReport = directory / (stem + ".json");
+                const auto warmupOutput = directory / (stem + ".nc");
+                std::vector<std::string> arguments{
+                    "wave-vortex-run", input.string(), warmupOutput.string(),
+                    "--restart-mode", "coefficients", "--output-policy", "create",
+                    "--delta-t", "1e-5", "--steps", "2", "--fft-provider",
+                    "reference", "--benchmark-warmup-steps", "1",
+                    "--report", warmupReport.string()};
+                if (denseOutputs != 0) {
+                    arguments.push_back("--benchmark-dense-outputs-per-step");
+                    arguments.push_back(std::to_string(denseOutputs));
+                }
+                std::vector<char *> argv;
+                for (auto &argument : arguments) argv.push_back(argument.data());
+                std::size_t callbackCount = 0;
+                bool requested = false;
+                double requestTime = 0.0;
+                const int code = runWaveVortex(
+                    static_cast<int>(argv.size()), argv.data(),
+                    test::extensionCatalog(), {[&](const auto &progress) {
+                        ++callbackCount;
+                        if (progress.boundary != WVIntegrationBoundary::acceptedStep ||
+                            requested || std::string(scenario) == "continue") return false;
+                        requested = true;
+                        requestTime = progress.acceptedTime;
+                        if (std::string(scenario) == "throw")
+                            throw std::runtime_error("injected warmup callback failure");
+                        return true; // A one-shot request must survive phase transitions.
+                    }});
+                const auto reportText = text(warmupReport);
+                require(jsonNumber(reportText, "callbackEvaluationCount") == callbackCount,
+                        "runner must aggregate callback counts across warmup and measurement");
+                if (std::string(scenario) == "throw") {
+                    require(code == 7 &&
+                                reportText.find("\"stage\":\"stop-callback\"") != std::string::npos &&
+                                reportText.find("\"reason\":\"callback-failure\"") != std::string::npos &&
+                                jsonNumber(reportText, "acceptedStepCount") == 1.0 &&
+                                jsonNumber(reportText, "finalAcceptedTime") == requestTime &&
+                                !std::filesystem::exists(warmupOutput),
+                            "warmup callback failure must retain structured classification and state metrics");
+                } else {
+                    require(code == 0, "controlled benchmark warmup run failed");
+                    WVCheckpoint stopped;
+                    const auto status = WVCheckpointReader::read(
+                        warmupOutput.string(), *test::extensionCatalog(), stopped);
+                    require(static_cast<bool>(status), status.message);
+                    if (std::string(scenario) == "stop") {
+                        require(reportText.find("\"status\":\"stopped\"") != std::string::npos &&
+                                    jsonNumber(reportText, "stepCount") == 1.0 &&
+                                    jsonNumber(reportText, "requestedAtAcceptedTime") == requestTime &&
+                                    stopped.state.t == requestTime,
+                                "a warmup stop must preserve its request and skip all measured steps");
+                    } else {
+                        require(jsonNumber(reportText, "stepCount") == 3.0,
+                                "continuing warmup must complete warmup and measured steps");
+                    }
+                }
+            }
+        }
         const auto output = directory/"output.nc";
         const auto report = directory/"report.json";
         require(run(quote(input)+" "+quote(output)+" --delta-t 0.037 --steps 2 --fft-provider reference --report "+quote(report)) == 0,"runner step execution failed");
