@@ -1,0 +1,29 @@
+{
+  "date": "2026-09-09",
+  "wvm_physics_baseline": "81987767956fae5aadcb53a9df16482221f5f3e4",
+  "internal_modes": "2.0.0-beta.4",
+  "runtime": "MATLAB R2026a on local Apple Silicon",
+  "source_probe_sha256": "b08b3013f15a7cac5c69ec551e5938ba6bdfea79c80a21b46f4f357cfb9e166f",
+  "constrained_study_commit": "a043a61af9a3595da1b17e823b2b6bdf5445b17f",
+  "domain_m": [
+    100000,
+    100000,
+    1000
+  ],
+  "grid": [
+    8,
+    8,
+    65
+  ],
+  "wave_counts": [
+    4,
+    8,
+    16
+  ],
+  "apv_count": 3,
+  "mda_count": 2,
+  "inertial_count": 3,
+  "endpoints": "both active; constructor defaults",
+  "initial_wave_evp_resolution": 128,
+  "qualification": "diagnostic source projection controls; not nonlinear model qualification"
+}

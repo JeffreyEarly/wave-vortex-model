@@ -217,7 +217,7 @@ wvt = WVTransformFreeSurfaceQG([100e3 100e3 4000],[32 32 33],N2Function=N2,latit
     + [`shouldAntialias`](/classes/transforms/wvtransformfreesurfaceqg/shouldantialias.html) Whether the spectral grid excludes modes that alias quadratic products.
 + Extend a transform
   + Flow components
-    + [`addFlowComponent`](/classes/transforms/wvtransformfreesurfaceqg/addflowcomponent.html) add a flow component and its standard variables
+    + [`addFlowComponent`](/classes/transforms/wvtransformfreesurfaceqg/addflowcomponent.html) Register QG component fields, including interior displacement.
     + [`addPrimaryFlowComponent`](/classes/transforms/wvtransformfreesurfaceqg/addprimaryflowcomponent.html) add a primary flow component, automatically added to the flow
   + Operations and variables
     + [`addOperation`](/classes/transforms/wvtransformfreesurfaceqg/addoperation.html) Register one or more operations and their output variables.
@@ -377,6 +377,7 @@ These items document internal implementation details and are not part of the pri
   + [`boundaryResolutionTolerance`](/classes/transforms/wvtransformfreesurfaceqg/boundaryresolutiontolerance.html) Physical derivative and energy accuracy of fixed zero-APV responses.
   + [`chebfunForZArray`](/classes/transforms/wvtransformfreesurfaceqg/chebfunforzarray.html)
   + [`constructionAssessment`](/classes/transforms/wvtransformfreesurfaceqg/constructionassessment.html) Evidence produced by scientific construction; empty after canonical restore.
+  + [`eta_i`](/classes/transforms/wvtransformfreesurfaceqg/eta_i.html) Interior displacement on the fixed reference grid, including MDA.
   + [`gramTolerance`](/classes/transforms/wvtransformfreesurfaceqg/gramtolerance.html) Normalized Gram tolerance shared by all retained mode families.
   + [`maxFg`](/classes/transforms/wvtransformfreesurfaceqg/maxfg.html)
   + [`maxFw`](/classes/transforms/wvtransformfreesurfaceqg/maxfw.html)

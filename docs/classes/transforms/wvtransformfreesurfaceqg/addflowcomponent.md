@@ -9,7 +9,7 @@ mathjax: true
 
 #  addFlowComponent
 
-add a flow component and its standard variables
+Register QG component fields, including interior displacement.
 
 
 ---
@@ -19,10 +19,6 @@ add a flow component and its standard variables
  addFlowComponent(flowComponent)
 ```
 ## Parameters
-+ `flowComponent`  one or more WVFlowComponent objects
++ `flowComponent`  one or more components owned by this transform
 
 ## Discussion
-
-The standard variables supported by the concrete transform are
-registered for each component. These include the three-dimensional state
-variables and the sea-surface variables.
