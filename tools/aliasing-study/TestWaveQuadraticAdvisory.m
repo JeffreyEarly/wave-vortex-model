@@ -8,12 +8,18 @@ classdef TestWaveQuadraticAdvisory < matlab.unittest.TestCase
         end
     end
     methods (Test)
-        function matchesFrozenStudyAndPreservesPreparation(testCase)
+        function matchesReleasedProviderReferenceAndPreservesPreparation(testCase)
             data=testCase.prepared; z=data.z; weights=data.w;
             [report,evidence]=assessWaveQuadraticResolution(data,requestedWaveCount=3);
             root=fileparts(mfilename('fullpath'));
-            expected=readtable(fullfile(root,'results','calibration-v1','cal-constant-17-scores-v2','prefix-errors.csv'));
-            testCase.verifyEqual(report.prefixDiagnostics.quadraticError,expected.fixedError,AbsTol=1e-7)
+            referenceRoot=fullfile(root,'results','provider-regressions','internal-modes-2.0.0-beta.3','cal-constant-17');
+            expected=readtable(fullfile(referenceRoot,'prefix-errors.csv'));
+            provenance=jsondecode(fileread(fullfile(referenceRoot,'provenance.json')));
+            providerRoot=fileparts(fileparts(which('IMInternalModes')));
+            providerManifest=jsondecode(fileread(fullfile(providerRoot,'resources','mpackage.json')));
+            testCase.verifyEqual(provenance.internalModesVersion,providerManifest.version)
+            testCase.verifyEqual(report.prefixDiagnostics.waveCount,expected.waveCount)
+            testCase.verifyEqual(report.prefixDiagnostics.quadraticError,expected.quadraticError,AbsTol=1e-7)
             testCase.verifyEqual(report.largestSampledCount,3)
             testCase.verifyTrue(report.requestedCountAccepted)
             testCase.verifyEqual(report.status,"assessed")
