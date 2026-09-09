@@ -1,0 +1,29 @@
+[
+  {
+    "family": "constant",
+    "numericVariableCount": 43,
+    "timeDependentVariableCount": 19,
+    "savedCoefficientVariableCount": 6,
+    "maximumNormalizedError": 4.1738519467333654e-16,
+    "savedCoefficientMaximumNormalizedError": 8.414874303858383e-17,
+    "allNumericVariablesExactlyEqual": false
+  },
+  {
+    "family": "hydrostatic",
+    "numericVariableCount": 55,
+    "timeDependentVariableCount": 19,
+    "savedCoefficientVariableCount": 6,
+    "maximumNormalizedError": 5.646314721797384e-16,
+    "savedCoefficientMaximumNormalizedError": 1.0843936236057385e-16,
+    "allNumericVariablesExactlyEqual": false
+  },
+  {
+    "family": "boussinesq",
+    "numericVariableCount": 65,
+    "timeDependentVariableCount": 19,
+    "savedCoefficientVariableCount": 6,
+    "maximumNormalizedError": 0.0,
+    "savedCoefficientMaximumNormalizedError": 0.0,
+    "allNumericVariablesExactlyEqual": true
+  }
+]

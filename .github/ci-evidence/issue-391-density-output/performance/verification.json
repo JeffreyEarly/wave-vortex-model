@@ -1,0 +1,73 @@
+{
+  "schemaVersion": 1,
+  "sourceCommit": "8d6248c0273d603e29e6e5ca904a40cf339a5261",
+  "scope": "unchanged standard-output workload nonregression; density outputs are not requested",
+  "idleHost": true,
+  "buildsOrMatlabDuringMeasurement": false,
+  "baselineCompiledSource": "be09fe47 equivalent to main4c95835e (compiled-source diff independently verified by coordinator)",
+  "candidateSHA256": "6f57eba3d803c79898a63856d9e6c91b7a0b7907ae045fcd3c8ff1473de2f8d1",
+  "baselineSHA256": "990de02d401caa4bb6c05f5b832c331e81f6aa8dffede058c42c49097f60b8fe",
+  "passes": true,
+  "savedNumericOutputMaximumNormalizedError": 5.646314721797384e-16,
+  "savedOutputParity": [
+    {
+      "family": "constant",
+      "numericVariableCount": 43,
+      "timeDependentVariableCount": 19,
+      "savedCoefficientVariableCount": 6,
+      "maximumNormalizedError": 4.1738519467333654e-16,
+      "savedCoefficientMaximumNormalizedError": 8.414874303858383e-17,
+      "allNumericVariablesExactlyEqual": false
+    },
+    {
+      "family": "hydrostatic",
+      "numericVariableCount": 55,
+      "timeDependentVariableCount": 19,
+      "savedCoefficientVariableCount": 6,
+      "maximumNormalizedError": 5.646314721797384e-16,
+      "savedCoefficientMaximumNormalizedError": 1.0843936236057385e-16,
+      "allNumericVariablesExactlyEqual": false
+    },
+    {
+      "family": "boussinesq",
+      "numericVariableCount": 65,
+      "timeDependentVariableCount": 19,
+      "savedCoefficientVariableCount": 6,
+      "maximumNormalizedError": 0.0,
+      "savedCoefficientMaximumNormalizedError": 0.0,
+      "allNumericVariablesExactlyEqual": true
+    }
+  ],
+  "artifacts": [
+    {
+      "path": "performance.json",
+      "originalSHA256": "23f6bf5db4fe630afa00a6445bebb2b40cb2294ba9fccf77c9836f978183ae5c",
+      "retainedSHA256": "23f6bf5db4fe630afa00a6445bebb2b40cb2294ba9fccf77c9836f978183ae5c",
+      "normalization": "Trailing whitespace only."
+    },
+    {
+      "path": "performance.log",
+      "originalSHA256": "4591ecaf4cf3b959060871955decd6b410fac64625cd41f792205fbffaf4671c",
+      "retainedSHA256": "4591ecaf4cf3b959060871955decd6b410fac64625cd41f792205fbffaf4671c",
+      "normalization": "Trailing whitespace only."
+    },
+    {
+      "path": "output-parity.json",
+      "originalSHA256": "ef05c3f6214a8665707daba59035ca5e87c0f3765462b855a5f2d36c07f27e96",
+      "retainedSHA256": "ef05c3f6214a8665707daba59035ca5e87c0f3765462b855a5f2d36c07f27e96",
+      "normalization": "Trailing whitespace only."
+    },
+    {
+      "path": "output-parity.log",
+      "originalSHA256": "ef05c3f6214a8665707daba59035ca5e87c0f3765462b855a5f2d36c07f27e96",
+      "retainedSHA256": "ef05c3f6214a8665707daba59035ca5e87c0f3765462b855a5f2d36c07f27e96",
+      "normalization": "Trailing whitespace only."
+    },
+    {
+      "path": "final-build.log",
+      "originalSHA256": "d6f67637ac31f0002a248aa522366e9201ea22a199d37b7185f27d9b3d937a56",
+      "retainedSHA256": "d6f67637ac31f0002a248aa522366e9201ea22a199d37b7185f27d9b3d937a56",
+      "normalization": "Trailing whitespace only."
+    }
+  ]
+}
