@@ -25,7 +25,6 @@ end
 try
     written = fwrite(fileIdentifier,bytes,"uint8");
     closeStatus = fclose(fileIdentifier);
-    fileIdentifier = -1;
 catch exception
     if fileIdentifier >= 0
         fclose(fileIdentifier);
@@ -497,11 +496,11 @@ for iGroup = 1:numel(information.Groups)
     end
     supportedGroups(iGroup) = true;
     validatePortableGroupContracts(group);
-    completeRestartGroups = completeRestartGroups + validateBarotropicQGRestartGroup(group,compactLength);
+    completeRestartGroups = completeRestartGroups + validateBarotropicQGRestartGroup(group,compactLength,logical(dynamicsMode));
 end
 if ~any(supportedGroups) || completeRestartGroups ~= 1
     error("WaveVortexModel:PortableRunRequestContract", ...
-        "Each Barotropic QG source file must contain supported output and exactly one declared compact WVCoefficients A0 stream.");
+        "Each Barotropic QG source file must contain supported output and exactly one complete compact A0 restart state (a declared WVCoefficients stream for nonlinear dynamics).");
 end
 
 signature = struct("transformClass",transformClass,"modelVersion",modelVersion, ...
@@ -509,7 +508,7 @@ signature = struct("transformClass",transformClass,"modelVersion",modelVersion, 
     "scalarValues",scalarValues,"t0",t0,"compactLength",compactLength,"dynamicsMode",dynamicsMode);
 end
 
-function isComplete = validateBarotropicQGRestartGroup(group,compactLength)
+function isComplete = validateBarotropicQGRestartGroup(group,compactLength,isLinear)
 isComplete = false;
 variableNames = string({group.Variables.Name});
 hasPlain = any(variableNames == "A0");
@@ -519,9 +518,9 @@ if ~hasPlain && ~hasReal && ~hasImaginary
     return
 end
 coefficientObservers = declaredObserverCount(group,"WVCoefficients");
-if coefficientObservers == 0
+if coefficientObservers == 0 && ~isLinear
     return
-elseif coefficientObservers ~= 1
+elseif coefficientObservers > 1
     error("WaveVortexModel:PortableRunRequestContract", ...
         "A Barotropic QG output group declares an ambiguous WVCoefficients observer contract in %s.",group.Name);
 end
@@ -536,10 +535,10 @@ for forbidden = ["Ap","Ap_real","Ap_imag","Am","Am_real","Am_imag"]
     end
 end
 if hasPlain
-    validateCompactVariable(group,"A0",compactLength,false);
+    validateCompactVariable(group,"A0",compactLength,false,false);
 else
-    validateCompactVariable(group,"A0_real",compactLength,true);
-    validateCompactVariable(group,"A0_imag",compactLength,true);
+    validateCompactVariable(group,"A0_real",compactLength,true,coefficientObservers>0);
+    validateCompactVariable(group,"A0_imag",compactLength,true,coefficientObservers>0);
     realVariable = group.Variables(find(variableNames == "A0_real",1));
     imaginaryVariable = group.Variables(find(variableNames == "A0_imag",1));
     if ~isequal(realVariable.Size,imaginaryVariable.Size) || ...
@@ -556,7 +555,7 @@ end
 isComplete = true;
 end
 
-function validateCompactVariable(group,name,compactLength,allowTimeSeries)
+function validateCompactVariable(group,name,compactLength,isComplex,allowTimeSeries)
 variableNames = string({group.Variables.Name});
 variable = group.Variables(find(variableNames == name,1));
 dimensionNames = arrayfun(@dimensionLeafName,variable.Dimensions);
@@ -571,7 +570,7 @@ if string(variable.Datatype) ~= "double" || ~validDimensions || ...
     error("WaveVortexModel:PortableRunRequestContract", ...
         "Barotropic QG compact variable %s has an incompatible type or shape in %s.",name,group.Name);
 end
-if allowTimeSeries
+if isComplex
     validateComplexMarker(variable,"isComplex",1,group.Name);
 end
 end

@@ -10,6 +10,45 @@ classdef TestForcingMathematicalContracts < matlab.unittest.TestCase
     end
 
     methods (Test, TestTags="full")
+        function stratifiedForcingDiagnosticsUseTheModalBasis(testCase)
+            for grid = {[8 6 9],[9 7 8]}
+                for modeCount = [4 grid{1}(3)-1]
+                    wvt = WVTransformStratifiedQG([17000 11000 1000],grid{1},Nj=modeCount,N2Function=@(z)1e-4*exp(z/700),shouldAntialias=false);
+                    testCase.verifyEqual(wvt.Nj,modeCount);
+                    n = reshape(1:numel(wvt.A0),size(wvt.A0));
+                    wvt.A0 = 1e-6*complex(sin(.17*n),cos(.23*n)).*(wvt.Kh>0);
+                    fixed = WVFixedAmplitudeForcing(wvt,name="held-pv",A0_indices=uint64((1:numel(wvt.A0))'),A0bar=wvt.A0(:));
+                    wvt.setForcing([WVNonlinearAdvection(wvt),WVBetaPlanePVAdvection(wvt),WVAdaptiveDamping(wvt),WVAntialiasing(wvt,Nj=3),fixed]);
+                    before = wvt.A0;
+                    operation = SpatialForcingOperation(wvt);
+                    values = cell(1,operation.nVarOut);
+                    [values{:}] = operation.compute(wvt);
+                    testCase.verifyEqual(wvt.A0,before);
+                    modalContributions = wvt.fluxForForcing();
+                    index = numel(wvt.spatialFluxForcing);
+                    for force = [wvt.spectralFluxForcing wvt.spectralAmplitudeForcing]
+                        index = index+1;
+                        modal = modalContributions{force.name};
+                        % Check the basis values independently of shape,
+                        % including the largest supported modal count.
+                        expected = wvt.transformToSpatialDomainWithFourier(wvt.PF0inv*(wvt.P0.*modal));
+                        scale = max(abs(expected),[],"all");
+                        testCase.verifyEqual(values{index},expected,AbsTol=1e-12*max(scale,realmin));
+                        testCase.verifySize(values{index},wvt.spatialMatrixSize);
+                    end
+                    testCase.verifyEqual(wvt.A0,before);
+                    meanMode = zeros(wvt.spectralMatrixSize);
+                    meanMode(wvt.J==0 & wvt.Kh==0) = 1e-8;
+                    wvt.setForcing(WVTestForcing(wvt,"mean diagnostic",WVForcingType.PVSpectral,0,meanMode));
+                    operation = SpatialForcingOperation(wvt);
+                    actual = operation.compute(wvt);
+                    expected = wvt.transformToSpatialDomainWithFourier(wvt.PF0inv*(wvt.P0.*meanMode));
+                    testCase.verifyGreaterThan(max(abs(actual),[],"all"),0);
+                    testCase.verifyEqual(actual,expected,AbsTol=1e-20);
+                end
+            end
+        end
+
         function pseudoTopographicDocumentationDescribesProjection(testCase)
             page = testCase.generatedPage("forcing/wvpseudotopographicwavegeneration/index.md");
             requiredText = [

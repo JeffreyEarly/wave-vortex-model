@@ -55,6 +55,22 @@ classdef WVEulerianFields < WVObservingSystem
                     model.wvt.addOperation(model.wvt.operationForKnownVariable('energy',flowComponent=component));
                 end
             end
+            if ~isempty(model.wvt.forcing) && any(startsWith(missingNames,["Fu_","Fv_","Fw_","Feta_","Fqgpv_"]))
+                forcingOperation = SpatialForcingOperation(model.wvt);
+                forcingNames = string({forcingOperation.outputVariables.name});
+                if any(ismember(missingNames,forcingNames))
+                    missingIndices = find(~ismember(forcingNames,string(model.wvt.variableNames)));
+                    if numel(missingIndices) == forcingOperation.nVarOut && ~isKey(model.wvt.operationNameMap,forcingOperation.name)
+                        model.wvt.addOperation(forcingOperation);
+                    else
+                        % Preserve existing user operations, including a
+                        % partial override of the standard forcing outputs.
+                        annotations = forcingOperation.outputVariables(missingIndices);
+                        operation = WVOperation(annotations(1).name,annotations,@(wvt)missingForcingOutputs(forcingOperation,missingIndices,wvt));
+                        model.wvt.addOperation(operation);
+                    end
+                end
+            end
             addlistener(self,'netCDFOutputVariables','PostSet',@(src,evnt) self.updateNetCDFVariableCategorization);
             self.netCDFOutputVariables = options.fieldNames;
         end
@@ -261,4 +277,10 @@ classdef WVEulerianFields < WVObservingSystem
             propertyAnnotations(end+1) = CAPropertyAnnotation('fieldNames','eulerian field names');
         end
     end
+end
+
+function varargout = missingForcingOutputs(operation,indices,wvt)
+outputs = cell(1,operation.nVarOut);
+[outputs{:}] = operation.compute(wvt);
+varargout = outputs(indices);
 end

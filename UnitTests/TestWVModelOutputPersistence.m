@@ -15,6 +15,63 @@ classdef TestWVModelOutputPersistence < matlab.unittest.TestCase
     end
 
     methods (Test, TestTags="full")
+        function forcingDiagnosticsSurviveSegmentedMatlabContinuation(testCase)
+            transforms = {
+                WVTransformConstantStratification([17000 11000 1000],[8 6 9],N0=5.2e-3,isHydrostatic=true,shouldAntialias=false)
+                WVTransformBarotropicQG([17000 11000],[8 6],j=1,shouldAntialias=false)
+                WVTransformStratifiedQG([17000 11000 1000],[8 6 9],Nj=4,N2Function=@(z)1e-4*exp(z/700),shouldAntialias=false)
+                };
+            for index = 1:numel(transforms)
+                wvt = transforms{index};
+                n = reshape(1:numel(wvt.A0),size(wvt.A0));
+                wvt.A0 = 1e-6*complex(sin(.17*n),cos(.23*n)).*(wvt.Kh>0);
+                wvt.t = 17;
+                wvt.setForcing([WVNonlinearAdvection(wvt),WVBetaPlanePVAdvection(wvt),WVAdaptiveDamping(wvt)]);
+                operation = SpatialForcingOperation(wvt);
+                wvt.addOperation(operation);
+                names = string({operation.outputVariables.name});
+                model = WVModel(wvt);
+                model.eulerianObservingSystem.addNetCDFOutputVariables(names{:});
+                source = fullfile(testCase.tempFolder,"forcing-source-"+index+".nc");
+                output = model.createNetCDFFileForModelOutput(source,outputInterval=.5,shouldOverwriteExisting=true);
+                dense = output.addNewEvenlySpacedOutputGroup("dense",outputInterval=.125,initialTime=17,finalTime=18);
+                dense.addObservingSystem(WVEulerianFields(model,fieldNames=names));
+                output.outputTimesForIntegrationPeriod(17,18);
+                output.writeTimeStepToOutputFile(17);
+                model.closeNetCDFFile();
+                paths = fullfile(testCase.tempFolder,["forcing-full-","forcing-segmented-"]+index+".nc");
+                for scenario = 1:2
+                    copyfile(source,paths(scenario));
+                    times = 18;
+                    if scenario == 2, times = [17.5 18]; end
+                    for finalTime = times
+                        restored = testCase.verifyWarningFree(@()WVModel.modelFromFile(paths(scenario)));
+                        cleanup = onCleanup(@()restored.closeNetCDFFile());
+                        testCase.verifyClass(restored.wvt.propertyAnnotationWithName(names(1)).modelOp,"SpatialForcingOperation");
+                        restored.setupIntegrator(integratorType="fixed",deltaT=.25);
+                        restored.integrateToTime(finalTime,shouldShowIntegrationDiagnostics=false,callback=@(~)[]);
+                        restored.closeNetCDFFile();
+                        clear cleanup
+                    end
+                end
+                for group = ["wave-vortex","dense"]
+                    expectedTimes = ncread(paths(1),"/"+group+"/t");
+                    testCase.verifyEqual(ncread(paths(2),"/"+group+"/t"),expectedTimes);
+                    testCase.verifyNumElements(expectedTimes,3+6*double(group=="dense"));
+                    for name = names
+                        variable = "/"+group+"/"+name;
+                        expected = ncread(paths(1),variable);
+                        actual = ncread(paths(2),variable);
+                        testCase.verifyTrue(all(isfinite(actual),"all"));
+                        testCase.verifyEqual(actual,expected,AbsTol=1e-12*max(max(abs(expected),[],"all"),realmin));
+                        for attribute = ["units","long_name"]
+                            testCase.verifyEqual(ncreadatt(paths(2),variable,attribute),ncreadatt(paths(1),variable,attribute));
+                        end
+                    end
+                end
+            end
+        end
+
         function outputRegistrationIsIdentityBasedAndAtomic(testCase)
             model = TestWVModelOutputPersistence.linearModel();
             otherModel = TestWVModelOutputPersistence.linearModel();
