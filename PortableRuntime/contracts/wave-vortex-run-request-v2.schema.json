@@ -84,7 +84,15 @@
       "additionalProperties": false,
       "properties": {
         "fftProvider": {"enum": ["native-fftw", "reference"]},
-        "threads": {"type": "integer", "minimum": 1}
+        "threads": {"type": "integer", "minimum": 1},
+        "densityDiagnostics": {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "contract": {"const": "wave-vortex-density-diagnostics-v1"},
+            "reference": {"enum": ["actual", "initial"]}
+          }
+        }
       }
     },
     "report": {"type": "string", "minLength": 1}

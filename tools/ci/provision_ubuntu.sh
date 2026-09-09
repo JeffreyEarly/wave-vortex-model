@@ -2,6 +2,13 @@
 # Bound network infrastructure work independently of numerical test execution.
 set -euo pipefail
 case "${1:-}" in netcdf|matlab|build) ;; *) echo 'Usage: provision_ubuntu.sh netcdf|matlab|build' >&2; exit 2 ;; esac
+# CI needs Ubuntu packages only. Disable the runner's unused Chrome repository
+# before either our apt calls or setup-matlab refreshes package indexes.
+for source_file in /etc/apt/sources.list.d/google-chrome*.list /etc/apt/sources.list.d/google-chrome*.sources; do
+    if [[ -f "$source_file" ]]; then
+        sudo mv "$source_file" "$source_file.disabled"
+    fi
+done
 for source_file in /etc/apt/sources.list.d/ubuntu.sources /etc/apt/apt-mirrors.txt; do
     if [[ -f "$source_file" ]]; then
         sudo sed -i 's|http://azure.archive.ubuntu.com/ubuntu|https://archive.ubuntu.com/ubuntu|g' "$source_file"

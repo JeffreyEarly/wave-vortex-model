@@ -11,7 +11,7 @@ PROBES = ('wave-vortex-run', 'WVForwardIntegrationProbe', 'WVStableForcingDump',
           'WVStratifiedQGLifecycleProbe', 'WVHydrostaticLifecycleProbe',
           'WVBoussinesqLifecycleProbe', 'WVStratifiedModalDump',
           'WVStratifiedQGKernelDump', 'WVHydrostaticKernelDump',
-          'WVBoussinesqKernelDump', 'WVDiagnosticFieldDump',
+          'WVBoussinesqKernelDump', 'WVDiagnosticFieldDump', 'WVNoMotionProfileDump',
           'WVKernelDescriptorDump', 'WVBarotropicQGFixtureDump',
           'WVBarotropicQGToleranceDump', 'WVBarotropicQGForcingDump')
 

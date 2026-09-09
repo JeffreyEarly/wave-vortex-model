@@ -70,6 +70,8 @@ struct Options {
         cli::WVRunRequestTimeStepConstraint::notApplicable;
     std::string requestSchemaIdentifier;
     int requestSchemaVersion = 0;
+    WVDensityDiagnosticContract densityDiagnostics;
+    bool hasDensityDiagnostics = false;
     std::string restartMode = "model";
     std::string outputPolicy;
     double deltaT = 0.0;
@@ -436,6 +438,8 @@ bool parseOptions(int argc, char** argv, Options& options, std::string& error) {
     options.timeStepConstraint = request.integration.timeStepConstraint;
     options.requestSchemaIdentifier = request.schemaIdentifier;
     options.requestSchemaVersion = request.schemaVersion;
+    options.densityDiagnostics = request.densityDiagnostics;
+    options.hasDensityDiagnostics = request.hasDensityDiagnostics;
     options.restartMode = "model";
     options.outputPolicy = request.outputPolicy;
     options.deltaT = request.integration.initialStep;
@@ -1603,6 +1607,12 @@ int wavevortex::runtime::runWaveVortex(
                       selectedFixedStep,integrationInitialStep,
                       effectiveMaximumStep)
                << ',';
+    report << "\"densityDiagnosticContract\":{\"identifier\":"
+           << quoted(WVDensityDiagnosticContract::identifier)
+           << ",\"reference\":" << quoted(options.densityDiagnostics.referenceIdentifier())
+           << ",\"profileRecovery\":" << quoted(options.densityDiagnostics.recoveryIdentifier())
+           << ",\"selectionSource\":" << quoted(options.hasDensityDiagnostics ? "request" : "default")
+           << ",\"outputEvaluation\":\"unavailable\"},";
     report << "\"integratorStorageLedger\":{\"scope\":\"exact portable integrator-owned storage\",\"exact\":true,\"persistentBytes\":"
            << modelMetrics.integratorPersistentBytes
            << ",\"workspaceCapacityBytes\":"

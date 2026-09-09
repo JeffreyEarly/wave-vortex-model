@@ -1,0 +1,19 @@
+{
+  "schema": "wave-vortex-supplied-no-motion-profile-parity-v1",
+  "caseName": "captured-day3000",
+  "knotCount": 43,
+  "queryCount": 187,
+  "matlabRelease": "2025b",
+  "maximumError": {
+    "density": 0,
+    "inverse": 3.4106051316484809E-13,
+    "ape": 2.1316282072803006E-14,
+    "apeRelative": 6.5904871715614171E-16,
+    "densityClosure": 0
+  },
+  "tolerance": {
+    "density": 1.8189894035458565E-12,
+    "inverse": 5.8207660913467407E-11,
+    "apeRelative": 2E-11
+  }
+}

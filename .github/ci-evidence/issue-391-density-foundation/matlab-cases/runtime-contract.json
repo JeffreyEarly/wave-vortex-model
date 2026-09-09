@@ -1,0 +1,38 @@
+{
+  "schema": "wave-vortex-density-reference-request-parity-v1",
+  "rows": [
+    {
+      "selection": "absent",
+      "contract": {
+        "identifier": "wave-vortex-density-diagnostics-v1",
+        "reference": "actual",
+        "profileRecovery": "dampedLeastSquares",
+        "selectionSource": "default",
+        "outputEvaluation": "unavailable"
+      },
+      "coefficientMaximumDifference": 0
+    },
+    {
+      "selection": "empty",
+      "contract": {
+        "identifier": "wave-vortex-density-diagnostics-v1",
+        "reference": "actual",
+        "profileRecovery": "dampedLeastSquares",
+        "selectionSource": "request",
+        "outputEvaluation": "unavailable"
+      },
+      "coefficientMaximumDifference": 0
+    },
+    {
+      "selection": "initial",
+      "contract": {
+        "identifier": "wave-vortex-density-diagnostics-v1",
+        "reference": "initial",
+        "profileRecovery": "not-required",
+        "selectionSource": "request",
+        "outputEvaluation": "unavailable"
+      },
+      "coefficientMaximumDifference": 0
+    }
+  ]
+}

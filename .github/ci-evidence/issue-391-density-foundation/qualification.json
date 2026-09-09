@@ -1,0 +1,180 @@
+{
+  "schema": "portable-density-foundation-qualification-v1",
+  "status": "passed",
+  "baselineCommit": "c298dfde3784afabdee67d89670c5c0d0e283c4d",
+  "scope": "Given-profile density/inverse/APE primitive and reported runtime reference contract only; no profile recovery, APV or density output promotion.",
+  "sourceSHA256": [
+    {
+      "path": "CHANGELOG.md",
+      "sha256": "7645cbf897bc0b58718d06d847723ba4f73d097b9c296baf16bcf215661ee01e"
+    },
+    {
+      "path": "PortableRuntime/CMakeLists.txt",
+      "sha256": "03b4874e2c243f3d8c3fac2e76f97d317ee7bdd4e116aa28f3217d8ffc5fb9c7"
+    },
+    {
+      "path": "PortableRuntime/README.md",
+      "sha256": "f1bfac33dfb8b9240fdb5ed8f6a33568e0cd0de073220b80c6e25bd726e23d22"
+    },
+    {
+      "path": "PortableRuntime/app/WVRunRequest.cpp",
+      "sha256": "a1c08d13a88dcfd0b0bb2e2164ed3476cfe0781835cc602c4ff2a167ffdced94"
+    },
+    {
+      "path": "PortableRuntime/app/WVRunRequest.hpp",
+      "sha256": "943bfc293d24e15f9cbef7eceadd4db664ab91f8f9f464cf7c84b421e6e28440"
+    },
+    {
+      "path": "PortableRuntime/app/WaveVortexRun.cpp",
+      "sha256": "88def2cbc90800c9fe9a1cb9af701531d51c4fe64b31b3d918f2fecfb6a06564"
+    },
+    {
+      "path": "PortableRuntime/contracts/wave-vortex-run-request-v2.schema.json",
+      "sha256": "9e54932418a46b260de2c6cd4f29b2353058a4d031ef8acd209e21c961b65797"
+    },
+    {
+      "path": "PortableRuntime/include/WaveVortexRuntime/WVDensityDiagnosticContract.hpp",
+      "sha256": "150c8ae5d1a732a22bee0c6ce4c765a4e440cda12f520319671337229f2633a0"
+    },
+    {
+      "path": "PortableRuntime/include/WaveVortexRuntime/WVNoMotionProfile.hpp",
+      "sha256": "9d37c99dbb7dc14e6ff0b7c9d8a01860c51bf54248ef9c589c508f1cca14a7ce"
+    },
+    {
+      "path": "PortableRuntime/src/WVNoMotionProfile.cpp",
+      "sha256": "df1b40af6d1ec1786861b1dcd7f9b82c13344776c77f156bcfeeb25b91cc3d24"
+    },
+    {
+      "path": "PortableRuntime/tests/TestWVNoMotionProfile.cpp",
+      "sha256": "71c952be1247018dce7b4488a8e6ae7536d3a732bb08bbbe30b3dc49f6631ed2"
+    },
+    {
+      "path": "PortableRuntime/tests/TestWVRunRequest.cpp",
+      "sha256": "45061e1b04dc4f9bebcb567807d37ce17bf67ecd054da9091aa2470389187a53"
+    },
+    {
+      "path": "PortableRuntime/tests/WVNoMotionProfileDump.cpp",
+      "sha256": "6840007c13ebb0f4ae650036f66e5c5fc109d09d1295a52b31d3925abe27763a"
+    },
+    {
+      "path": "UnitTests/TestPortableNoMotionProfile.m",
+      "sha256": "b9f597939b96fc67ab6403c510f0995ef607a44dac7bd2521e74359169bd107f"
+    },
+    {
+      "path": "UnitTests/fixtures/portable-no-motion-profile-day3000.json",
+      "sha256": "4efb254e61ff9073941c588d8fb3c056ce063add9dc28e4566aa97df6cce6f76"
+    },
+    {
+      "path": "UnitTests/fixtures/portable-no-motion-profile-day3250.json",
+      "sha256": "34d8c92554822788e0ea7ccc617cec212b036a87be3688fe58d909c4605b25bf"
+    },
+    {
+      "path": "tools/ci/artifacts.py",
+      "sha256": "d0cdd3c670910d6c37bd435ca7c0155af85d8e85d748a9f5926c4e88fac5392b"
+    },
+    {
+      "path": "tools/ci/route.py",
+      "sha256": "30ea53f84b5456beb6120f51a7d23b26795ad1e4170e42454cfb81228647c8d8"
+    },
+    {
+      "path": "tools/ci/test_routing.py",
+      "sha256": "9ebc02fa9bae4701014ec0d1859fc25801b834c70e29b1b3bccfca2b8e0c24f5"
+    },
+    {
+      "path": "tools/density-diagnostics/generatePortableNoMotionProfileFixtures.m",
+      "sha256": "055c0df0fe78a0bf0b2d9bd5e0cc83a590910f723eef649d0097b386994b0cc2"
+    }
+  ],
+  "catalog": {
+    "identities": 76,
+    "rows": 666,
+    "implemented": 634,
+    "intentional-incompatibility": 32,
+    "unchanged": true
+  },
+  "verification": {
+    "releaseTestsPassed": 3,
+    "sanitizedTestsPassed": 3,
+    "finalProfileRetestPassed": true,
+    "matlabMethodsPassed": 5,
+    "matlabPrimitiveCasesPassed": 12,
+    "runtimeContractRequestsPassed": 3,
+    "runtimeContractCoefficientMaximumDifference": 0,
+    "successfulQueryTripletsWithoutAllocations": 70000,
+    "matlabAnalyzerFindings": 0,
+    "ciArtifactTestsPassed": 2,
+    "ciRoutingTestsPassed": 16,
+    "documentation": {
+      "files": 2026,
+      "routes": 4145,
+      "failures": 0,
+      "comparisonDifferences": 0
+    },
+    "independentReview": "No numerical or execution-contract blocker. Added persistent MATLAB parity CI registration and routing regression after review identified omission.",
+    "repositoryBoundaries": "Unchanged production MATLAB, package manifest/dependencies, snapshots, v5 and density catalog."
+  },
+  "limitations": [
+    "Given profiles reused from historical qualified MATLAB solver records; no new full-state solver qualification.",
+    "Density reference metadata currently reports intended behavior only; outputEvaluation remains unavailable.",
+    "No new production integration performance claim; primitive is not invoked by the integration/output path.",
+    "Full suite deferred to required PR CI; focused local verification only."
+  ],
+  "artifacts": [
+    {
+      "path": "ci-routing.log",
+      "sha256": "f70474bb9d3d4b78369d133e47904bb1ef43bd0a69dec6649003a49c7b092484"
+    },
+    {
+      "path": "cpp-release-final-profile.log",
+      "sha256": "3dc682013882c30306bd9cbdf153537aed6bfbd95aba0351500bc41a2c318200"
+    },
+    {
+      "path": "cpp-release.log",
+      "sha256": "dfa251100f41db7f6364a50d090eb485de05cd4517432e44c2273aa4090fbb82"
+    },
+    {
+      "path": "cpp-sanitized.log",
+      "sha256": "e3baaaa8e9d1a8e9d5c334100ad7f788d9221ac85049115daa0ff2c0ac019474"
+    },
+    {
+      "path": "documentation.log",
+      "sha256": "21532e1435627c1728eb9e83ef819cc7609435d56fd847ce99605cb3d21d77de"
+    },
+    {
+      "path": "fixture-generation.log",
+      "sha256": "f51d01c2d1c95df447ced631dddbfc9de6b17f806aab738d7f559f50badd192e"
+    },
+    {
+      "path": "matlab-contract-initial-failure.log",
+      "sha256": "8bd60c269cbb87a132db82796654fb13f4f6350eaece771f92682f1103d16204"
+    },
+    {
+      "path": "matlab-contract.log",
+      "sha256": "1246d4548eb4f86207a48e7aef211e0a19adf6a5e2a12e027fd578fd7b3fb1fa"
+    },
+    {
+      "path": "matlab-parity.log",
+      "sha256": "38504bc5806e086a97589e05a2cb7d9df9bfcbe199546260e9692c7ea92a85d1"
+    },
+    {
+      "path": "matlab-receipt.json",
+      "sha256": "06a56d92a4c83255ebc42db557fe5c9ab04fe917d9a058378eb87f56687f8336"
+    }
+  ],
+  "logNormalization": {
+    "documentation.log": {
+      "rawSHA256": "34fe0fd9da8e3d5fbd58ce2703f31a71f60a62cd4e86637cd7fc021e5664d962",
+      "change": "Removed trailing whitespace and final blank line only."
+    }
+  },
+  "ciCorrections": [
+    {
+      "path": "UnitTests/TestPortableNoMotionProfile.m",
+      "executedSourceSHA256": "b9f597939b96fc67ab6403c510f0995ef607a44dac7bd2521e74359169bd107f",
+      "correctedSourceSHA256": "cba70302ce10e28775f793e0868ad0d7dae461dde81c4a46bd7e6f38f60d296d",
+      "reason": "Replace two Statistics and Machine Learning Toolbox range calls with identical max-minus-min arithmetic. No tolerance, scientific production source, fixture or numerical oracle changes.",
+      "failedRun": "https://github.com/JeffreyEarly/wave-vortex-model/actions/runs/34386552721",
+      "validation": "Static diff and whitespace checks passed. The original local execution receipts and hashes above remain historical, not a rerun of this corrected test. Required hosted CI and a focused local MATLAB rerun are pending; follow-up results will be recorded on PR 430."
+    }
+  ]
+}

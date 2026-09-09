@@ -103,6 +103,16 @@ class RoutingTests(unittest.TestCase):
         self.assertTrue(plan['documentation'])
         self.assertTrue(plan['analyzer'])
 
+    def test_density_profile_parity_follows_production_and_complete_changes(self):
+        for plan in [select(['PortableRuntime/src/WVNoMotionProfile.cpp']),
+                     select(['Operations/@WVNoMotionProfile/WVNoMotionProfile.m']),
+                     select(['README.md'], complete=True)]:
+            for inventory, shards in [('matlabTests', 'matlabShards'),
+                                      ('sanitizedTests', 'sanitizedShards')]:
+                self.assertIn('TestPortableNoMotionProfile', plan[inventory])
+                flattened = [name for group in plan[shards] for name in group['classes']]
+                self.assertEqual(flattened.count('TestPortableNoMotionProfile'), 1)
+
     def test_invalid_paths_are_rejected(self):
         for path in ['/tmp/code.cpp', '../code.cpp', 'a/../../code.cpp', 'a\nb.cpp']:
             with self.assertRaises(ValueError):

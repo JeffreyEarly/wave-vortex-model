@@ -1,0 +1,109 @@
+{
+  "schema": "forward-integration-refresh-history-v1",
+  "historicalReceipts": [
+    {
+      "provider": "reference",
+      "path": ".github/ci-evidence/issue-391-density-foundation/forward-integration-refresh/historical-reference.json",
+      "sha256": "d638d62fd00cdfe1b9944a6465d69a1ee8615c14b2c5fda6408af30a6393a749",
+      "classification": "historical-execution",
+      "reason": "Superseded current-readiness aggregate; original source commit, binary provenance and measured outcomes preserved exactly."
+    },
+    {
+      "provider": "native-fftw",
+      "path": ".github/ci-evidence/issue-391-density-foundation/forward-integration-refresh/historical-native-fftw.json",
+      "sha256": "fbd7d8fb3fce168bf01a70b5808a05e0376ef81b07daee58bc709d930ad6e31c",
+      "classification": "historical-execution",
+      "reason": "Superseded current-readiness aggregate; original source commit, binary provenance and measured outcomes preserved exactly."
+    }
+  ],
+  "staleSource": "PortableRuntime/app/WaveVortexRun.cpp",
+  "replacementPolicy": "Existing strict validator and six freshly executed representative cases per provider; no source compatibility exception.",
+  "status": "fresh-requalification-passed",
+  "currentReceipts": [
+    {
+      "provider": "reference",
+      "path": "PortableRuntime/qualification/forward-integration-reference-v1.json",
+      "sha256": "85d9c0f5eac9a7801d50cf15bbe5654e52184019d31c40ea18a5af9d0aee79f5",
+      "sourceCommit": "275c553f8fc99404204e10790a7f6edf583aadc6",
+      "buildSource": {
+        "root": "/Users/jearly/Documents/OceanKitRepositories/wvm-v4-cpp-adoption-audit",
+        "commit": "ce0b55289ec6346f2af8f8d6b0246570d6f9a7b3"
+      },
+      "executionBinaries": [
+        {
+          "role": "runner",
+          "path": "/private/tmp/wvm-v4-audit-runtime/wave-vortex-run",
+          "sha256": "82e9e1c79a9b8fecc0ece070a0986c73a42d5825345c9a3ca07dadf3c09566e4",
+          "sourceCommit": "ce0b55289ec6346f2af8f8d6b0246570d6f9a7b3"
+        },
+        {
+          "role": "probe",
+          "path": "/private/tmp/wvm-v4-audit-runtime/WVForwardIntegrationProbe",
+          "sha256": "c84acf14c62f0a63ae72e57776c94f1306f3dc0a8472817ea198c8326e977dc6",
+          "sourceCommit": "ce0b55289ec6346f2af8f8d6b0246570d6f9a7b3"
+        }
+      ],
+      "casesPassed": 6
+    },
+    {
+      "provider": "native-fftw",
+      "path": "PortableRuntime/qualification/forward-integration-native-fftw-v1.json",
+      "sha256": "eb720b7371630bd22785eedfdf96c124d2cb6a13a9b11d573b0d284900690b78",
+      "sourceCommit": "275c553f8fc99404204e10790a7f6edf583aadc6",
+      "buildSource": {
+        "root": "/Users/jearly/Documents/OceanKitRepositories/wvm-v4-cpp-adoption-audit",
+        "commit": "ce0b55289ec6346f2af8f8d6b0246570d6f9a7b3"
+      },
+      "executionBinaries": [
+        {
+          "role": "runner",
+          "path": "/private/tmp/wvm-v4-audit-runtime/wave-vortex-run",
+          "sha256": "82e9e1c79a9b8fecc0ece070a0986c73a42d5825345c9a3ca07dadf3c09566e4",
+          "sourceCommit": "ce0b55289ec6346f2af8f8d6b0246570d6f9a7b3"
+        },
+        {
+          "role": "probe",
+          "path": "/private/tmp/wvm-v4-audit-runtime/WVForwardIntegrationProbe",
+          "sha256": "c84acf14c62f0a63ae72e57776c94f1306f3dc0a8472817ea198c8326e977dc6",
+          "sourceCommit": "ce0b55289ec6346f2af8f8d6b0246570d6f9a7b3"
+        }
+      ],
+      "casesPassed": 6
+    }
+  ],
+  "validation": {
+    "representativeMethodsPassed": 6,
+    "providerCasesPassed": 12,
+    "testDurationSeconds": 254.043573375,
+    "committedReceiptValidatorPassed": true,
+    "validatorUnchanged": true,
+    "matlabProductionUnchanged": true,
+    "scope": "Fresh representative forward-integration lifecycle qualification after density-report metadata changed the runner source. No compatibility exception, historical promotion, or full-suite rerun."
+  },
+  "artifacts": [
+    {
+      "path": ".github/ci-evidence/issue-391-density-foundation/forward-integration-refresh/execution.log",
+      "sha256": "917fb3c58ad51eb00501adffdd38ece3402f0d6b508d3ac99ee9020c4052645c",
+      "rawSHA256": "23d94c0b4bad2eeab52655b334696cb7b48ccf15c5c39b8505437ead5cdeba3b",
+      "normalization": "Trailing whitespace and final blank lines only."
+    },
+    {
+      "path": ".github/ci-evidence/issue-391-density-foundation/forward-integration-refresh/collector.log",
+      "sha256": "8bebee5058ae85950cfc388cf8f393a1da8cff35b182999f85f5f7b586db866a",
+      "rawSHA256": "1ab0f18d0d6df61398a4309bd686315fe001833296ddf14a03309384554d1fad",
+      "normalization": "Trailing whitespace and final blank lines only."
+    },
+    {
+      "path": ".github/ci-evidence/issue-391-density-foundation/forward-integration-refresh/results.json",
+      "sha256": "47c798ada4433259adc0eb651d60ffebc09c99179712dbf95f02872a75b7ce10",
+      "rawSHA256": "8232462b5b7c980dabfa0262de05989be09b9e3d8238ee89150d470057b3542f",
+      "normalization": "Trailing whitespace and final blank lines only."
+    },
+    {
+      "path": ".github/ci-evidence/issue-391-density-foundation/forward-integration-refresh/reproduce.m",
+      "sha256": "13914baf58f100f3d7d501a3cf9649f986fed413b94a913cb8679cacfce508a3",
+      "rawSHA256": "13914baf58f100f3d7d501a3cf9649f986fed413b94a913cb8679cacfce508a3",
+      "normalization": "Trailing whitespace and final blank lines only."
+    }
+  ]
+}

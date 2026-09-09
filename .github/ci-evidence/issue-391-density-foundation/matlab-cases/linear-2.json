@@ -1,0 +1,19 @@
+{
+  "schema": "wave-vortex-supplied-no-motion-profile-parity-v1",
+  "caseName": "linear-2",
+  "knotCount": 2,
+  "queryCount": 10,
+  "matlabRelease": "2025b",
+  "maximumError": {
+    "density": 0,
+    "inverse": 0,
+    "ape": 0,
+    "apeRelative": 0,
+    "densityClosure": 1.1102230246251565E-16
+  },
+  "tolerance": {
+    "density": 1.7763568394002505E-15,
+    "inverse": 2.8421709430404007E-14,
+    "apeRelative": 2E-11
+  }
+}
