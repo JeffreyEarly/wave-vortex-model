@@ -1,0 +1,8 @@
+Internal ctest changing into directory: /tmp/wvm-v4-audit-runtime
+Test project /tmp/wvm-v4-audit-runtime
+    Start 6: no-motion-profile-recovery
+1/1 Test #6: no-motion-profile-recovery .......   Passed    0.28 sec
+
+100% tests passed, 0 tests failed out of 1
+
+Total Test time (real) =   0.29 sec

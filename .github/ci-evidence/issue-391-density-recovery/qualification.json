@@ -1,0 +1,327 @@
+{
+  "schema": "portable-no-motion-recovery-qualification-v1",
+  "status": "passed",
+  "baselineCommit": "275c553f8fc99404204e10790a7f6edf583aadc6",
+  "scope": "Current-distribution density moment extraction and actual no-motion profile recovery primitives only. Density output availability and MATLAB production remain unchanged.",
+  "sourceSHA256": [
+    {
+      "path": "CHANGELOG.md",
+      "sha256": "dd0b1cf91e937e19e2b1a5fe71fd2dc863dc7e3e65bedfd1ddbc7b43f2043287"
+    },
+    {
+      "path": "PortableRuntime/CMakeLists.txt",
+      "sha256": "9c1c131170aed451e7146c5bcbc7a278f060c91a9c759b37a204bf84f37e095f"
+    },
+    {
+      "path": "PortableRuntime/README.md",
+      "sha256": "97afa6a6070766e9589ede415de10ac4b7aa91bbe5e978fed52dab1f5cbe4c51"
+    },
+    {
+      "path": "PortableRuntime/include/WaveVortexRuntime/WVNoMotionProfileRecovery.hpp",
+      "sha256": "246843db8a1bae5b47664412d4a75c291bdca8c9c3bd7942399f5e80fee7edff"
+    },
+    {
+      "path": "PortableRuntime/src/WVNoMotionDensityMoments.cpp",
+      "sha256": "e407f8e187eb922155b67bd69fbd105d9e4a3b4bc6f40b1649c31020a6af129d"
+    },
+    {
+      "path": "PortableRuntime/src/WVNoMotionProfileRecovery.cpp",
+      "sha256": "725c00b4c0611dc0e3569049a693553f86c7d0854cd56c3ce45e112a1c646105"
+    },
+    {
+      "path": "PortableRuntime/tests/TestWVNoMotionProfileRecovery.cpp",
+      "sha256": "dfdd41b968270f9cbe6abe948dc1a5fee671ac4f525b580819f5c72c5a80592c"
+    },
+    {
+      "path": "PortableRuntime/tests/WVNoMotionRecoveryDump.cpp",
+      "sha256": "33364b05837d38c0d48d4704b1d011da74b4348c02a0514a17ff0dcbb8e4be56"
+    },
+    {
+      "path": "UnitTests/TestPortableNoMotionRecovery.m",
+      "sha256": "4a1789e11019e9d86cfcafdfb308605f9b2eea5cb9033d612fd65a9cb804f7cf"
+    },
+    {
+      "path": "tools/ci/artifacts.py",
+      "sha256": "00269316f5a3dbf16a2db4d119741b2ce55d1c149dd0c452576b5a162a6d58f1"
+    },
+    {
+      "path": "tools/ci/route.py",
+      "sha256": "d5e695f24bccf6385c8060bbe00c8a373a3e99d9958dd2b88938b49afeadaf7c"
+    },
+    {
+      "path": "tools/ci/test_routing.py",
+      "sha256": "8db3e8e5b28a24636d79a603c39d21341734c73bbb25912d4f74aff541cf1cf5"
+    },
+    {
+      "path": "tools/density-diagnostics/benchmarkCapturedNoMotionRecovery.m",
+      "sha256": "ae469cff8c6029a78f6c69d1601af8721bb6adac2bb45c718621d6b3f34860ed"
+    }
+  ],
+  "verification": {
+    "releaseRecoveryTest": "passed",
+    "asanUbsanRecoveryTest": "passed",
+    "matlabMethodsCoveredByPassingScopedRuns": 6,
+    "ciPolicyTestsPassed": 42,
+    "codeAnalyzerFindings": 0,
+    "capturedFullStatesPassed": 2,
+    "warmedAlternatingTrialsPerStagePerState": 3,
+    "independentReview": "Solver, moment normalization/traversal, SIMD bounds, report/storage contracts and failure preservation reviewed. Two numerical-weight edge defects corrected and tested; arithmetic-sensitivity diagnosis retained.",
+    "documentation": {
+      "files": 2026,
+      "routes": 4145,
+      "failures": 0,
+      "comparisonDifferences": 0
+    }
+  },
+  "catalog": {
+    "identities": 76,
+    "rows": 666,
+    "implemented": 634,
+    "intentionalIncompatibilities": 32,
+    "unchanged": true
+  },
+  "limitations": [
+    "Raw-moment inverse is ill-conditioned: qualified physical cross-implementation bounds replace bitwise or unjustifiably tight nodal parity. Original failed bounds and arithmetic experiment are retained.",
+    "Full-state recovery comparisons use identical qualified MATLAB inverse/APE calculus to isolate profile-recovery differences; no claim of exact continuous sorted-state truth.",
+    "Three-trial stage timings exclude C++ IO/startup and do not establish whole-model speedup. The larger C++ fit remains 7.7% slower than MATLAB.",
+    "Required hosted CI and prerequisite integration tracked in PRs; no branch-protection bypass."
+  ],
+  "artifacts": [
+    {
+      "path": "arithmetic-sensitivity/analysis.json",
+      "sha256": "89aecc4e217385b1bb3f1d3cb08817d8ff4ce29d82d3e59e7aa49f7d569cdb70"
+    },
+    {
+      "path": "arithmetic-sensitivity/default3000.json",
+      "sha256": "1b6d7ef15088e0d5520bedfbb88af02b1c680823c1663553c8679412ff2385cf"
+    },
+    {
+      "path": "arithmetic-sensitivity/default3250.json",
+      "sha256": "8e9496ab5e3b44bdb292e71df5fcd22b2af52e7c1ed7655516fed2b170dd0983"
+    },
+    {
+      "path": "arithmetic-sensitivity/fit.cpp",
+      "sha256": "d8396e34ed9279f03ca15986b55217fcecd715f95fc0f685180b32fc9227c885"
+    },
+    {
+      "path": "arithmetic-sensitivity/uncontracted3000.json",
+      "sha256": "61d29fad424a4752c1453b88e6845c7c9227cea4ccd26d7e7b9d066152480192"
+    },
+    {
+      "path": "arithmetic-sensitivity/uncontracted3250.json",
+      "sha256": "fe21df00b683fb214f61332f24df233c1ee606624bb0dbb42cb777bbff344e69"
+    },
+    {
+      "path": "arithmetic-sensitivity.json",
+      "sha256": "89aecc4e217385b1bb3f1d3cb08817d8ff4ce29d82d3e59e7aa49f7d569cdb70"
+    },
+    {
+      "path": "baseline-scalar-moments/WVNoMotionDensityMoments.cpp",
+      "sha256": "201970bccdb2eb56a1bf5cbefa0f81175078dc8620205c8e3a9ac829d91daa94"
+    },
+    {
+      "path": "baseline-scalar-moments/day3000.json",
+      "sha256": "3730c815621e350cd45750bc468e363edbcad1892203d85167d35ae4b49c9e75"
+    },
+    {
+      "path": "baseline-scalar-moments/day3250.json",
+      "sha256": "c90829a02787c1d2b45198ee84991d4dbd62bb0027bf819f1d626dfabaf8ae2a"
+    },
+    {
+      "path": "baseline-scalar-moments/paired-benchmark.log",
+      "sha256": "599c85aa771d8719ddb631b43a032a24bd77757543ad73ab67c349198507b491"
+    },
+    {
+      "path": "baseline-scalar-moments/receipt.json",
+      "sha256": "5367d2a3441cab5134233323517df956c434854c366753371d0b0f2cc9c19ff0"
+    },
+    {
+      "path": "ci-policy.log",
+      "sha256": "0f3953c7c821c48c76a3708d07ee5b7b99ece67beed0851d8d13da2633986df9"
+    },
+    {
+      "path": "compact-affected.log",
+      "sha256": "7e52ff6d80415c5610a3487ee07798066ca39c8d18d02e51a576438113e9b46e"
+    },
+    {
+      "path": "compact-captured-final.log",
+      "sha256": "1cd6f9f39b6c7433a39a82b7eb8c9577b949c225bd7351c0f07d6c9ed22a00b0"
+    },
+    {
+      "path": "compact-cases/captured-3000-physical.json",
+      "sha256": "b1402bdd7e778a613e03bd8943e75a9c1d15650cb11e3fafde890f75fb6bcf9b"
+    },
+    {
+      "path": "compact-cases/captured-3000.json",
+      "sha256": "052df42430d3948b2f63e72b9000753ad7fa4682830d0a71c8be2553b1446dc5"
+    },
+    {
+      "path": "compact-cases/captured-3250-physical.json",
+      "sha256": "0bd33462666f89234b3e20d8e9b0537d497bd2a9c8720909362f5f34d02e9530"
+    },
+    {
+      "path": "compact-cases/captured-3250.json",
+      "sha256": "82661cd46b9b20e7a7cf8b26f381fff2fab4487d8a17ce0c9b2f370bc80c7beb"
+    },
+    {
+      "path": "compact-cases/constant-density.json",
+      "sha256": "5f13c1e63fe5512ebacc69e61435eb678022f600165d83cbfe94356650efd73c"
+    },
+    {
+      "path": "compact-cases/exhausted-maximumEvaluations.json",
+      "sha256": "651c8bc7681aaad1f984cf99a335c3f41f4a6768ef8b507f6c3b683f922ce161"
+    },
+    {
+      "path": "compact-cases/exhausted-maximumIterations.json",
+      "sha256": "5fbe14cada553adc16cfd4a9bc1afa3ab1e14ad2203aaf226b6c7c95e1e2b830"
+    },
+    {
+      "path": "compact-cases/outlier.json",
+      "sha256": "fc57fe2f409155692f288229428e8bd9e09fcc3d121b4195d96e00fd2406c0af"
+    },
+    {
+      "path": "compact-cases/rearranged-0.3.json",
+      "sha256": "0745c490da387b372f8623ee6e315a7821c3aa81198de3c7f86a0170a1b6c005"
+    },
+    {
+      "path": "compact-cases/rearranged-0.json",
+      "sha256": "dce2a13b2989b568a5d6bcc2f46f87bc08e9db72d6c23f8ade2c4738264c4810"
+    },
+    {
+      "path": "compact-cases/stable-rest.json",
+      "sha256": "a4694bf1bdf9d21d71b41ba8625e591170488598d82f0d58116f276c7201c6d4"
+    },
+    {
+      "path": "compact-cases/weighted-moments.json",
+      "sha256": "f5373f7ee4426c466c3c302241c2f84600c88a526930f61f95ed50e152a387f8"
+    },
+    {
+      "path": "cpp-final-release.log",
+      "sha256": "2889b9ab17decbf21c641fb6868f5cc83edeb9ad326438aa4b591997e87bdfd6"
+    },
+    {
+      "path": "cpp-final-sanitized.log",
+      "sha256": "eed146d0bc34fcb37709fb21c48fb1a8681260e5def77487d2abe5912306b56a"
+    },
+    {
+      "path": "cpp-initial.log",
+      "sha256": "e2e7a7f54754dd8e449ebc3fd9153f4b8ee2887f3e67606c947c65d4a805e080"
+    },
+    {
+      "path": "day3000.json",
+      "sha256": "3730c815621e350cd45750bc468e363edbcad1892203d85167d35ae4b49c9e75"
+    },
+    {
+      "path": "day3250.json",
+      "sha256": "c90829a02787c1d2b45198ee84991d4dbd62bb0027bf819f1d626dfabaf8ae2a"
+    },
+    {
+      "path": "documentation.log",
+      "sha256": "21532e1435627c1728eb9e83ef819cc7609435d56fd847ce99605cb3d21d77de"
+    },
+    {
+      "path": "final-simd-moments/day3000.json",
+      "sha256": "17196412338d863ac003aa89348f8424718158a066892b3055d776d7c3fef76f"
+    },
+    {
+      "path": "final-simd-moments/day3250.json",
+      "sha256": "8c0e4469d7f4744d7928d2a845dde88422123fd5f9a141e4cf73f28de01a6139"
+    },
+    {
+      "path": "final-simd-moments/paired-benchmark.log",
+      "sha256": "e459eb12f97b629a1673cea6357e0ec6dfa283552a5d0369947370d1b0515a66"
+    },
+    {
+      "path": "foundation-matlab-repair.log",
+      "sha256": "e97b638126f257763106ba7df789b699afff2b0c5b181eafc27cf8dd52b329ff"
+    },
+    {
+      "path": "initial-compact-cases/captured-3000-physical.json",
+      "sha256": "2304bb952cd5a6052dcb2804f23c807e0d87be2d3d32ecbe58987ed251495a67"
+    },
+    {
+      "path": "initial-compact-cases/captured-3000.json",
+      "sha256": "24108d650372acd41af73e2aa06000e862086cdecc0f909469081d4134fc42aa"
+    },
+    {
+      "path": "initial-compact-cases/captured-3250-physical.json",
+      "sha256": "499afc9943f95f2bb2642fd79975c63247bc864012931eb87959f4688c906b77"
+    },
+    {
+      "path": "initial-compact-cases/captured-3250.json",
+      "sha256": "6d9d7be0284a495fe3c99a3ed96374b658fd15c1c393d53a65d9f3097f6aeef1"
+    },
+    {
+      "path": "initial-compact-cases/constant-density.json",
+      "sha256": "57a71a092b7b648c36958ca69b5755aec28648e02b4753f800940750a5eff3d6"
+    },
+    {
+      "path": "initial-compact-cases/exhausted-maximumEvaluations.json",
+      "sha256": "651c8bc7681aaad1f984cf99a335c3f41f4a6768ef8b507f6c3b683f922ce161"
+    },
+    {
+      "path": "initial-compact-cases/exhausted-maximumIterations.json",
+      "sha256": "5fbe14cada553adc16cfd4a9bc1afa3ab1e14ad2203aaf226b6c7c95e1e2b830"
+    },
+    {
+      "path": "initial-compact-cases/outlier.json",
+      "sha256": "493d803853426bc836f0557b3157f630dd3d02f05aa7c02cf8809eee8b434ddd"
+    },
+    {
+      "path": "initial-compact-cases/rearranged-0.3.json",
+      "sha256": "be9de8efbe9bf7165c3d6589fe185588fdb9423e109f08e654d7a669780dc8ff"
+    },
+    {
+      "path": "initial-compact-cases/rearranged-0.json",
+      "sha256": "c9efd1c70d068420898ada33f45065e2857c21dfa11d2c85c2adfc1ab7273510"
+    },
+    {
+      "path": "initial-compact-cases/stable-rest.json",
+      "sha256": "b50d28826c7deac51a1d449d147d9cd2ffa42f8a19a5cd90d255cd2241ac5fe9"
+    },
+    {
+      "path": "initial-compact-cases/weighted-moments.json",
+      "sha256": "2996f2316544eafc9c8989693b2a1cbe73c3479e7ed6cd4ff65a0ccfaa2e5f7d"
+    },
+    {
+      "path": "initial-compact-source.json",
+      "sha256": "c5df77d5a9829bd9f882e383563ceeebf921517c91c307ff93a7698cd418a859"
+    },
+    {
+      "path": "initial-compact.log",
+      "sha256": "f1ae54cf4f4564a5af365999701c496087025c563fa77ce24aae2a1d296b7597"
+    },
+    {
+      "path": "log-normalization.json",
+      "sha256": "b913e92215a4a60609ea3b33b39ab876dcbe4b45ec2198a97ff6cc01886de535"
+    },
+    {
+      "path": "matlab-initial-failure.log",
+      "sha256": "f1ae54cf4f4564a5af365999701c496087025c563fa77ce24aae2a1d296b7597"
+    },
+    {
+      "path": "matlab-initial-source.json",
+      "sha256": "c5df77d5a9829bd9f882e383563ceeebf921517c91c307ff93a7698cd418a859"
+    },
+    {
+      "path": "matlab-physical-diagnosis.json",
+      "sha256": "0d01744d53eb38936acf1541215f7c3ed4c2c8a6e7d13ac085fc7d3de761a00a"
+    },
+    {
+      "path": "matlab-physical-diagnosis.log",
+      "sha256": "cb5e701256368b09a674a046380b12e256293d55b9fb3144047e8e4983ea9ab4"
+    },
+    {
+      "path": "matlab-receipt.json",
+      "sha256": "1566147024003174282d62d7e8ae96814594c160c5f4ca0f0fc17e75d87f3bee"
+    },
+    {
+      "path": "recovery-diagnosis.json",
+      "sha256": "0d01744d53eb38936acf1541215f7c3ed4c2c8a6e7d13ac085fc7d3de761a00a"
+    },
+    {
+      "path": "recovery-diagnosis.log",
+      "sha256": "cb5e701256368b09a674a046380b12e256293d55b9fb3144047e8e4983ea9ab4"
+    }
+  ]
+}

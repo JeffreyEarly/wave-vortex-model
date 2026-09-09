@@ -1,0 +1,24 @@
+{
+  "code": 9,
+  "elapsedSeconds": 1.833E-6,
+  "message": "Current density distribution has no representable invertible range.",
+  "profile": [],
+  "report": {
+    "acceptedSteps": 0,
+    "algorithm": "damped-least-squares",
+    "damping": [],
+    "evaluations": 0,
+    "exitFlag": 0,
+    "finalCost": [],
+    "gradientNorm": [],
+    "initialCost": [],
+    "iterations": 0,
+    "maximumResidual": [],
+    "qualified": false,
+    "reason": "invalid-density-distribution",
+    "rejectedSteps": 0,
+    "workspaceBytes": 0
+  },
+  "schema": "wv-no-motion-recovery-dump-v1",
+  "status": "failed"
+}

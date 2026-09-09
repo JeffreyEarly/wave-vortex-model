@@ -18,7 +18,8 @@ FAMILY_TESTS = {
 SHARED_TESTS = ['TestPortableStableForcing', 'TestPortableForcingCompatibility',
                 'TestCompiledKernelIntegration', 'TestStratifiedModalRecord',
                 'TestPortableQualificationCatalog', 'TestPortableForwardIntegration',
-                'TestPortableForwardIntegrationCatalog', 'TestPortableNoMotionProfile']
+                'TestPortableForwardIntegrationCatalog', 'TestPortableNoMotionProfile',
+                'TestPortableNoMotionRecovery']
 PERSISTENCE_TESTS = ['TestPortableRuntimeCompatibility', 'TestPortableRunRequestWriter',
                      'TestPortableObserverContracts', 'TestPortableForcingContracts',
                      'TestWVModelOutputPersistence', 'TestNetCDF', 'TestNetCDFHandleOwnership',

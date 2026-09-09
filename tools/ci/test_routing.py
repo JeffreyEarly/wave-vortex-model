@@ -109,9 +109,10 @@ class RoutingTests(unittest.TestCase):
                      select(['README.md'], complete=True)]:
             for inventory, shards in [('matlabTests', 'matlabShards'),
                                       ('sanitizedTests', 'sanitizedShards')]:
-                self.assertIn('TestPortableNoMotionProfile', plan[inventory])
                 flattened = [name for group in plan[shards] for name in group['classes']]
-                self.assertEqual(flattened.count('TestPortableNoMotionProfile'), 1)
+                for name in ['TestPortableNoMotionProfile', 'TestPortableNoMotionRecovery']:
+                    self.assertIn(name, plan[inventory])
+                    self.assertEqual(flattened.count(name), 1)
 
     def test_invalid_paths_are_rejected(self):
         for path in ['/tmp/code.cpp', '../code.cpp', 'a/../../code.cpp', 'a\nb.cpp']:

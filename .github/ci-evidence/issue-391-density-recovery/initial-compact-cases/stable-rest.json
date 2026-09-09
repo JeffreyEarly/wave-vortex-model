@@ -1,0 +1,42 @@
+{
+  "code": 0,
+  "elapsedSeconds": 9.58E-7,
+  "message": "",
+  "profile": [
+    1026.7,
+    1026.611328125,
+    1026.5203125,
+    1026.426953125,
+    1026.33125,
+    1026.233203125,
+    1026.1328125,
+    1026.030078125,
+    1025.925,
+    1025.817578125,
+    1025.7078125,
+    1025.595703125,
+    1025.48125,
+    1025.364453125,
+    1025.2453125,
+    1025.123828125,
+    1025
+  ],
+  "report": {
+    "acceptedSteps": 0,
+    "algorithm": "stable-rest-profile",
+    "damping": 0,
+    "evaluations": 0,
+    "exitFlag": 1,
+    "finalCost": 0,
+    "gradientNorm": 0,
+    "initialCost": 0,
+    "iterations": 0,
+    "maximumResidual": 0,
+    "qualified": true,
+    "reason": "stable-rest-profile",
+    "rejectedSteps": 0,
+    "workspaceBytes": 136
+  },
+  "schema": "wv-no-motion-recovery-dump-v1",
+  "status": "complete"
+}
