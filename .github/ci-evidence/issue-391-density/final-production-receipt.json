@@ -1,0 +1,101 @@
+{
+  "schema": "wave-vortex-production-density-receipt-v1",
+  "status": "passed",
+  "scope": "Two captured full-resolution states through final production default diagnostics; no manual profile injection, flag override, or integrations. Historical fixed-profile comparisons remain separately labeled.",
+  "sourceCommit": "bf5ef8e34d1be4cf97beed4fd51eee75d1e68eac",
+  "sourceSHA256": [
+    {
+      "path": "Operations/WVNoMotionProfileOperation.m",
+      "bytes": 17857,
+      "sha256": "c6e521114c56b1450c39016f58731d05b1d8b7a9768efd95f78b39aec7fcc16f"
+    },
+    {
+      "path": "Operations/EtaTrueOperation.m",
+      "bytes": 1972,
+      "sha256": "560caed0a98b19be47f8996474e1a40ddf95a28051761de4c8d9edd7b143dfc1"
+    },
+    {
+      "path": "Operations/APEOperation.m",
+      "bytes": 718,
+      "sha256": "2949a0df7676b34425a0e4fb6d650afb2026eb61a8c24a52f92a7d7434126020"
+    },
+    {
+      "path": "Operations/APVOperation.m",
+      "bytes": 996,
+      "sha256": "07f7d2ea070ef7a38b0dd199c9b7e2bee2a8b10a0e919c940cab02defee9d3f0"
+    },
+    {
+      "path": "Operations/@WVNoMotionProfile/WVNoMotionProfile.m",
+      "bytes": 6104,
+      "sha256": "91660779e1d06e449230838915bc4c100df4ab9b564a51517e0650278bfa913e"
+    },
+    {
+      "path": "@WVTransform/WVTransform.m",
+      "bytes": 53415,
+      "sha256": "4fdd84029eab8ac235424829c6fa50d4c4625711a17875cd894940e4cb727d32"
+    },
+    {
+      "path": "@WVTransform/removeFromVariableCache.m",
+      "bytes": 189,
+      "sha256": "6896327e7edd69959aa7fe8764700b418b505a9541952a3df3a83e18be7a5b42"
+    },
+    {
+      "path": "@WVTransform/waveVortexTransformFromFile.m",
+      "bytes": 4274,
+      "sha256": "f133a193224c6e7cdf9dace974f6cde239a130dc08a152e36e0b12357a1f81a0"
+    },
+    {
+      "path": "@WVTransformHydrostatic/WVTransformHydrostatic.m",
+      "bytes": 29811,
+      "sha256": "1b7411234bea5fa09b5a328eebbb0cf5a1621b67b3930701e05940debe3d6562"
+    },
+    {
+      "path": "@WVTransformBoussinesq/WVTransformBoussinesq.m",
+      "bytes": 27091,
+      "sha256": "a203112df4b060aff7cf48bb1e837d154ed3667493e9b2afa5020c430f6872ef"
+    },
+    {
+      "path": "@WVTransformConstantStratification/WVTransformConstantStratification.m",
+      "bytes": 32434,
+      "sha256": "74b867853a77bd26ddc793d59f79afb5c7c1444aa84dd64f80a779d093a4027e"
+    },
+    {
+      "path": "tools/density-diagnostics/qualifyProductionDensityDiagnostics.m",
+      "bytes": 9294,
+      "sha256": "efbb054150b51c5cd87a5ae449fa9fb9d37faabf5e4292834bd0e55a551eeba0"
+    }
+  ],
+  "matlabRelease": "2025b",
+  "platform": "MACA64",
+  "newCodeAnalyzerFindings": 0,
+  "passedChecks": 14,
+  "reports": [
+    {
+      "path": ".github/ci-evidence/issue-391-density/final-production-day3000.json",
+      "sha256": "9b65926b41fff5070f7c0ee40cf7714fcbeed7c92fefac12ffe54d4d3ff81d28",
+      "grid": [
+        256,
+        256,
+        43
+      ],
+      "passedChecks": 7
+    },
+    {
+      "path": ".github/ci-evidence/issue-391-density/final-production-day3250.json",
+      "sha256": "c36a08010ecb32547174cf67f12387e365433c56b545a978672349a0f4a8117d",
+      "grid": [
+        512,
+        512,
+        86
+      ],
+      "passedChecks": 7
+    }
+  ],
+  "executionLog": {
+    "path": ".github/ci-evidence/issue-391-density/final-production-qualification.log",
+    "sha256": "2dbdce352cb8d12d5ed107439b24cc87a29ea5ae25a8c0891ebaccc02fda101e"
+  },
+  "timingInterpretation": "Single local measurements, not an isolated performance benchmark.",
+  "reproduction": "Configure the v4 package and dependencies with tools/configureCIEnvironment, add tools/density-diagnostics, then call qualifyProductionDensityDiagnostics(inputPath,baselineDirectory,outputPath) for each source-hashed snapshot. Captured NetCDF inputs are local external assets, not included in the repository.",
+  "codeAnalyzerScope": "qualifyProductionDensityDiagnostics.m only; production and affected tests are covered separately by the final adoption ledger."
+}

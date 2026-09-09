@@ -1,8 +1,41 @@
 classdef TestDensityDiagnosticReference < matlab.unittest.TestCase
     methods (Test, TestTags="full")
+        function actualDefaultPipelineConvergesForContinuousRearrangement(testCase)
+            % Initialize physical velocity and displacement through the
+            % transform, then use its actual default fitter and diagnostics.
+            % The independent polar map supplies continuum truth; finite
+            % spectral projection error is measured separately.
+            root = fileparts(fileparts(mfilename('fullpath')));
+            originalPath = path;
+            pathCleanup = onCleanup(@()path(originalPath));
+            addpath(fullfile(root,'tools','density-diagnostics'));
+            report = qualifyContinuousDensityDiagnostics();
+            errors = zeros(3,3);
+            spectralErrors = zeros(3,1);
+            for index = 1:3
+                result = report.cases{index};
+                testCase.assertEqual(result.status,"returned");
+                testCase.verifyTrue(result.actualReferenceDefault);
+                testCase.verifyEqual(result.solver.solver,"dampedLeastSquares");
+                testCase.verifyGreaterThan(result.solver.exitflag,0);
+                testCase.verifyLessThanOrEqual(result.solver.maximumResidual,1e-8);
+                testCase.verifyLessThanOrEqual(result.densityClosureMaximum,8*eps(result.densityMagnitude));
+                testCase.verifyGreaterThanOrEqual(result.minimumAPE,0);
+                testCase.verifyTrue(result.apvAllFinite);
+                errors(index,:) = [result.etaRMSError,result.apeRMSError,result.apvRMSError];
+                spectralErrors(index) = result.spectralDensityMaximumError;
+            end
+            testCase.verifyGreaterThan(errors(1,:),[1e-5,1e-8,1e-4]);
+            testCase.verifyLessThan(errors(3,:),errors(1,:)./[1000,1000,20]);
+            testCase.verifyLessThan(errors(3,1:2),[1e-7,1e-9]);
+            testCase.verifyLessThan(report.cases{3}.apvRelativeRMSError,1e-3);
+            testCase.verifyLessThan(spectralErrors(3),spectralErrors(1)/1000);
+            fprintf('Default density pipeline eta/APE/APV RMS errors by grid: %s\n',mat2str(errors,9));
+        end
+
         function apvConvergesToAnalyticMaterialHeightVorticity(testCase)
-            % Qualify APV's existing displacement-input boundary, without
-            % changing the pending default profile/operation selection.
+            % Isolate APV's displacement-input boundary from the separately
+            % qualified default fitter.
             % The reference is (curl(u)+f*e_z).grad(materialHeight)-f.
             errors = zeros(2,3);
             referenceRMS = zeros(2,3);

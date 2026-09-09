@@ -70,15 +70,35 @@ classdef TestNoMotionProfileSolver < matlab.unittest.TestCase
             wvt = WVTransformConstantStratification([4000 4000 1000],[8 8 5],shouldAntialias=false);
             operation = WVNoMotionProfileOperation(solver="dampedLeastSquares");
             wvt.addOperation(operation,shouldOverwriteExisting=true,shouldSuppressWarning=true);
-            % These parcel densities cannot be represented with the fixed
-            % reference endpoints. A small step must not certify the fit.
-            density = repmat(reshape(wvt.rho_nm0,1,1,[]),wvt.Nx,wvt.Ny,1)+10;
-            density(1,1,3) = density(1,1,3)+1;
+            % A single outlying parcel has less volume than the endpoint
+            % quadrature weight. The fixed-node profile cannot represent its
+            % distribution: a small step must not certify the fit.
+            density = repmat(reshape(wvt.rho_nm0,1,1,[]),wvt.Nx,wvt.Ny,1);
+            density(1,1,3) = max(density,[],"all")+10;
             wvt.addToVariableCache('rho_total',density);
             testCase.verifyError(@()wvt.performOperationWithName('rho_nm'),'WVNoMotionProfileOperation:UnqualifiedFit');
             testCase.verifyFalse(isKey(wvt.variableCache,'rho_nm'));
             testCase.verifyGreaterThan(operation.lastSolverOutput.maximumResidual,1e-8);
             testCase.verifyEqual(operation.lastSolverOutput.solver,"dampedLeastSquares");
+        end
+
+        function changedExtremaAreRecoveredAfterEqualVolumeRearrangement(testCase)
+            z = linspace(-1,0,17).';
+            reference = 1025-z;
+            changed = 1026-2*z;
+            weights = ones(size(z))/16;
+            weights([1 end]) = weights([1 end])/2;
+            density = repmat(reshape(changed,1,1,[]),4,3,1);
+            density(1,1,[3 12]) = density(1,1,[12 3]);
+            [actual,exitflag,output] = WVNoMotionProfileOperation.find_rho_nm(weights,1,density,reference);
+            testCase.verifyGreaterThan(exitflag,0);
+            testCase.verifyLessThan(output.maximumResidual,1e-12);
+            testCase.verifyEqual(actual,changed,AbsTol=2e-12);
+            testCase.verifyEqual(actual([1 end]),[max(density,[],"all");min(density,[],"all")]);
+        end
+
+        function constantDensityHasNoUniqueMaterialHeight(testCase)
+            testCase.verifyError(@()WVNoMotionProfileOperation.find_rho_nm([.25;.5;.25],1,ones(2,2,3),[3;2;1]),'WVNoMotionProfileOperation:NonInvertibleDistribution');
         end
 
         function qualifiedParcelRearrangementReportsItsSolver(testCase)

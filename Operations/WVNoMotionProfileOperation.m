@@ -20,10 +20,8 @@ classdef WVNoMotionProfileOperation < WVOperation
 
             if options.solver ~= "auto"
                 self.solver = options.solver;
-            elseif WVNoMotionProfileOperation.hasOptimizationToolboxSupport()
-                self.solver = "lsqnonlin";
             else
-                self.solver = "fminsearch";
+                self.solver = "dampedLeastSquares";
             end
         end
 
@@ -52,9 +50,10 @@ classdef WVNoMotionProfileOperation < WVOperation
             % Fit a stably ordered profile to volume-weighted density moments.
             %
             % Horizontally uniform stable density is returned exactly. For
-            % other states, the initial profile fixes the endpoint densities;
-            % interior nodes use strictly ordered log-gap parameters. The
-            % residuals are normalized raw moments of orders 1 through Nz.
+            % other states, the default solver uses the extrema of the current
+            % density field. Explicit legacy solvers retain the initial
+            % profile endpoints. Interior nodes use strictly ordered log-gap
+            % parameters; residuals are normalized raw moments 1 through Nz.
             %
             % lsqnonlin requires Optimization Toolbox; fminsearch retains the
             % legacy toolbox-free fit. dampedLeastSquares uses augmented QR
@@ -70,7 +69,7 @@ classdef WVNoMotionProfileOperation < WVOperation
                 Lz (1,1) double {mustBeFinite, mustBePositive}
                 rho_total (:,:,:) double {mustBeFinite}
                 rho_nm0 (:,1) double {mustBeFinite, mustBeNonnegative}
-                options.solver (1,1) string {mustBeMember(options.solver, ["lsqnonlin","fminsearch","dampedLeastSquares"])} = "fminsearch"
+                options.solver (1,1) string {mustBeMember(options.solver, ["lsqnonlin","fminsearch","dampedLeastSquares"])} = "dampedLeastSquares"
             end
 
             n = numel(z_int);
@@ -98,9 +97,16 @@ classdef WVNoMotionProfileOperation < WVOperation
             rho0 = rho_nm0(end);
             rhoD = rho_nm0(1);
 
-            rho_moment = WVNoMotionProfileOperation.moments_from_rho_tot(rho_total, rho0, rhoD, z_int, Lz);
-            % Initial u from m0 (log-gaps between nodes 2..n)
+            % Use the initial profile's normalized shape as the initial guess.
             u0 = WVNoMotionProfileOperation.rho_to_u(rho_nm0, rho0, rhoD);
+            if options.solver == "dampedLeastSquares"
+                rho0 = min(rho_total,[],"all");
+                rhoD = max(rho_total,[],"all");
+                if rhoD <= rho0
+                    error('WVNoMotionProfileOperation:NonInvertibleDistribution','The current density distribution is constant and has no unique inverse material height.');
+                end
+            end
+            rho_moment = WVNoMotionProfileOperation.moments_from_rho_tot(rho_total, rho0, rhoD, z_int, Lz);
 
             switch options.solver
                 case "dampedLeastSquares"

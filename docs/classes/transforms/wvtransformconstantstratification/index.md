@@ -61,7 +61,7 @@ views are `Apt`, `Amt`, and `A0t`.
       + [`dLnN2`](/classes/transforms/wvtransformconstantstratification/dlnn2.html) $$\partial_z \ln N^2$$, vertical derivative of the logarithm of squared buoyancy frequency
       + [`rho0`](/classes/transforms/wvtransformconstantstratification/rho0.html) Boussinesq reference density in kilograms per cubic meter.
       + [`rhoFunction`](/classes/transforms/wvtransformconstantstratification/rhofunction.html) Function returning the no-motion density profile at requested depths.
-      + [`shouldUseTrueNoMotionProfile`](/classes/transforms/wvtransformconstantstratification/shouldusetruenomotionprofile.html) Whether displacement uses the diagnosed current no-motion profile.
+      + [`shouldUseTrueNoMotionProfile`](/classes/transforms/wvtransformconstantstratification/shouldusetruenomotionprofile.html) Whether density diagnostics use the diagnosed current no-motion profile.
     + Gravity
       + [`g`](/classes/transforms/wvtransformconstantstratification/g.html) Gravitational acceleration in meters per second squared.
   + Spatial grid

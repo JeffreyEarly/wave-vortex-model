@@ -91,8 +91,12 @@ def select(paths, *, complete=False, migration=False, source_commit=''):
             continue
         if path.startswith('UnitTests/') and path.endswith('.m'):
             flags['analyzer'] = flags['crossRelease'] = True
-            tests.add(PurePosixPath(path).stem)
-            # Test edits still exercise their numerical dependencies.
+            # UnitTests also contains fixtures and helper classes. Only the
+            # repository's top-level Test*.m entries are executable suites.
+            test_path = PurePosixPath(path)
+            if test_path.parent == PurePosixPath('UnitTests') and test_path.stem.startswith('Test'):
+                tests.add(test_path.stem)
+            # Tests and helpers still exercise their numerical dependencies.
         if path.endswith('.m') and not path.startswith('UnitTests/'):
             flags['analyzer'] = flags['documentation'] = True
         if any(word in lower for word in ('model', 'observer', 'observing', 'checkpoint', 'netcdf', 'runrequest', 'runge', 'integrator', 'integrationstate', 'output', 'forcing', 'modalrecord')):

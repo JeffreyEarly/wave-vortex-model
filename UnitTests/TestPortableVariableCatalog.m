@@ -104,6 +104,13 @@ classdef TestPortableVariableCatalog < matlab.unittest.TestCase
             testCase.verifyEqual(string(barotropic.metadata.dimensions),["x";"y"]);
             hydrostatic = rows(names=="eta_true" & string({rows.configuration}).'=="hydrostatic-aa0");
             testCase.verifyEqual(string(hydrostatic.trueProfileDependencies),"rho_nm");
+            testCase.verifyEqual(string(hydrostatic.dependencies),"rho_total");
+            ape = rows(names=="ape" & string({rows.configuration}).'=="hydrostatic-aa0");
+            testCase.verifyEqual(string(ape.dependencies),"eta_true");
+            testCase.verifyEqual(string(ape.trueProfileDependencies),"rho_nm");
+            testCase.verifyEqual(string(catalog.policy.defaultNoMotionSolver),"dampedLeastSquares");
+            testCase.verifyTrue(catalog.policy.shouldUseTrueNoMotionProfileDefault);
+            testCase.verifyEqual(string(catalog.policy.noMotionSolvers),["dampedLeastSquares";"lsqnonlin";"fminsearch"]);
             testCase.verifyEqual(string(hydrostatic.runtimeStatus),"intentional-incompatibility");
             forcing = rows(names=="Fqgpv_portable_catalog_forcing" & string({rows.configuration}).'=="barotropic-aa0");
             testCase.verifyEqual(string(forcing.metadata.units),"s-2");

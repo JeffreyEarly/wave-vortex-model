@@ -1601,7 +1601,7 @@
       "name": "ape",
       "dependencies": [
         "eta_true",
-        "rho_nm"
+        "$trueProfile"
       ],
       "intermediates": [
         "apeQuadrature"
@@ -1722,7 +1722,7 @@
     {
       "name": "eta_true",
       "dependencies": [
-        "rho_e",
+        "rho_total",
         "$trueProfile"
       ],
       "intermediates": [
@@ -1826,7 +1826,7 @@
       ],
       "runtimeStatus": "intentional-incompatibility",
       "samplingRestriction": "Full natural grid or scalar only; interpolation requires a separately qualified evaluator.",
-      "configurationRestriction": "unpersisted-no-motion-solver: MATLAB selects lsqnonlin or fminsearch from the local toolbox environment; saved v4 models do not carry that numerical solver identity."
+      "configurationRestriction": "unpersisted-no-motion-solver: MATLAB defaults to dampedLeastSquares and supports explicit lsqnonlin or fminsearch; saved v4 models do not carry that numerical solver identity."
     },
     {
       "name": "ssh_g",

@@ -2,11 +2,11 @@
 
 ## [Unreleased]
 
-### MATLAB density diagnostic foundations
+### MATLAB density diagnostics
 
-- Corrected cache invalidation when changing `shouldUseTrueNoMotionProfile` and fixed its reversed documentation. MATLAB's default profile-selection flag and saved-file behavior remain unchanged.
-- Recover horizontally uniform stable density exactly as its own no-motion profile, including changed endpoint densities. Form density moments by recurrence, avoiding repeated full-grid powers.
-- Added an explicit `dampedLeastSquares` no-motion solver option that uses no Optimization Toolbox, reports its termination and residual, and rejects unqualified operation results before caching. Existing automatic solver selection remains unchanged.
+- Density diagnostics now use the diagnosed current `rho_nm` by default. Displacement and APE share a monotone cubic profile and consistent material height; APV uses the corrected displacement. Explicit `shouldUseTrueNoMotionProfile=false` selects the original-profile approximation for both displacement and APE, using the corrected calculus rather than reproducing the old algorithm.
+- The default no-motion solver is bounded, toolbox-free `dampedLeastSquares`. It reports termination and residuals and rejects unqualified results before caching. Nonuniform fits use current density extrema; horizontally uniform stable density is recovered exactly, including changed extrema. Density moments use recurrence to avoid repeated full-grid powers. Explicit `lsqnonlin` and `fminsearch` remain available for legacy solver comparisons.
+- Corrected invalidation of all four density diagnostics when changing the reference flag. Copies preserve the flag; it remains runtime-only and existing restart files remain readable. Loaded transforms adopt the new default, so recomputed diagnostics can differ from previously saved values. Density plateaus and out-of-range inverse targets now produce explicit errors.
 
 ### MATLAB phase output
 

@@ -108,6 +108,22 @@ class RoutingTests(unittest.TestCase):
             with self.assertRaises(ValueError):
                 select([path])
 
+    def test_matlab_helpers_select_consumers_without_becoming_test_suites(self):
+        for helper in ['DensityDiagnosticReference', 'WVCountingOperation',
+                       'WVTestForcing', 'EtaTrueOperationToolboxUnavailable']:
+            with self.subTest(helper=helper):
+                plan = select([f'UnitTests/{helper}.m'])
+                self.assertNotIn(helper, plan['matlabTests'])
+                flattened = [name for group in plan['matlabShards'] for name in group['classes']]
+                self.assertNotIn(helper, flattened)
+                self.assertTrue(plan['matlabCore'])
+                self.assertTrue(plan['analyzer'])
+                self.assertEqual(plan['releases'], ['R2025b', 'R2026a'])
+                self.assertIn('TestDensityDiagnosticReference', plan['matlabTests'])
+                self.assertIn('TestOperationRegistrationAndCaching', plan['matlabTests'])
+        plan = select(['UnitTests/TestDensityDiagnosticReference.m'])
+        self.assertEqual(plan['matlabTests'].count('TestDensityDiagnosticReference'), 1)
+
     def test_batches_preserve_each_selected_class_exactly_once(self):
         for paths in [['README.md'], ['CompiledKernel/src/WVTransformBoussinesqKernel.cpp'], ['.github/workflows/ci.yml']]:
             plan = select(paths)

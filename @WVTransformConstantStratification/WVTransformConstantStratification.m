@@ -107,7 +107,7 @@ classdef WVTransformConstantStratification < WVGeometryDoublyPeriodicStratifiedC
         totalEnergy
     end
     properties (GetAccess=public, SetAccess=public)
-        shouldUseTrueNoMotionProfile (1,1) logical = false
+        shouldUseTrueNoMotionProfile (1,1) logical = true
     end
     properties (GetAccess=public, SetAccess=private)
         % Active nonlinear-flux implementation.
