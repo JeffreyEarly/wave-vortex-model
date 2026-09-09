@@ -1438,6 +1438,52 @@
         "durationSeconds": 2.2
       },
       "retainedEvidence": "Initial source hashes remain bound to original passing local qualification. Production binaries and numerical/performance results are unchanged."
+    },
+    {
+      "initialRun": "https://github.com/JeffreyEarly/wave-vortex-model/actions/runs/34308166199",
+      "failure": "Both MATLAB releases detect stale generated energy-operation expression provenance",
+      "correction": "Regenerate exactly44 operationExpression strings; all other catalog JSON values unchanged",
+      "sourceSHA256": {
+        "PortableRuntime/contracts/portable-variable-catalog-v1.json": "40af912b318b2d05b91f09f5cd8aa11c0afe1ca261d33055cf658675a927aa61",
+        "PortableRuntime/include/WaveVortexRuntime/generated/WVPortableVariableContracts.hpp": "64bdf97945f92e65552701d7ba1883de5dd75fc5458b1f870b5d74142a4933a6"
+      },
+      "matlabCatalogTests": {
+        "names": [
+          "TestPortableVariableCatalog/testGeneratedCatalogMatchesCommittedFiles",
+          "TestPortableVariableCatalog/testCatalogIdentityAndAnnotationMetadata",
+          "TestPortableVariableCatalog/testLegacyMetadataAndGraphFailures",
+          "TestPortableVariableCatalog/testConfigurationAndConditionalDependencies",
+          "TestPortableVariableCatalog/testEvaluationLoopsDoNotCompareFieldNames",
+          "TestPortableVariableCatalog/testHydrostaticAndNonhydrostaticAnnotationsAgree"
+        ],
+        "passed": [
+          true,
+          true,
+          true,
+          true,
+          true,
+          true
+        ],
+        "duration": [
+          17.44928841666667,
+          0.051365208333333336,
+          0.3304183333333333,
+          0.03780658333333333,
+          0.015141833333333334,
+          0.21890979166666666
+        ]
+      },
+      "nativeCatalogTest": {
+        "name": "portable-variable-catalog",
+        "passed": true,
+        "durationSeconds": 0.3
+      },
+      "semanticChanges": false,
+      "precedingHostedCpp": {
+        "releasePassed": 45,
+        "sanitizedPassed": 45
+      },
+      "retainedEvidence": "Operation-expression strings have no runtime evaluator; the numerical and performance receipts retain their original exact executable hashes."
     }
   ]
 }
