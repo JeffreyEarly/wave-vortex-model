@@ -1,0 +1,207 @@
+{
+  "current": [
+    {
+      "id": "PROP",
+      "message": "There is a property named 'data'. Did you mean to reference it?",
+      "fix": 1,
+      "line": 122,
+      "column": [
+        13,
+        16
+      ]
+    },
+    {
+      "id": "PROP",
+      "message": "There is a property named 'data'. Did you mean to reference it?",
+      "fix": 1,
+      "line": 122,
+      "column": [
+        33,
+        36
+      ]
+    },
+    {
+      "id": "PROP",
+      "message": "There is a property named 'data'. Did you mean to reference it?",
+      "fix": 1,
+      "line": 123,
+      "column": [
+        68,
+        71
+      ]
+    },
+    {
+      "id": "PROP",
+      "message": "There is a property named 'data'. Did you mean to reference it?",
+      "fix": 1,
+      "line": 124,
+      "column": [
+        68,
+        71
+      ]
+    },
+    {
+      "id": "PROP",
+      "message": "There is a property named 'data'. Did you mean to reference it?",
+      "fix": 1,
+      "line": 125,
+      "column": [
+        68,
+        71
+      ]
+    },
+    {
+      "id": "PROP",
+      "message": "There is a property named 'data'. Did you mean to reference it?",
+      "fix": 1,
+      "line": 130,
+      "column": [
+        13,
+        16
+      ]
+    },
+    {
+      "id": "PROP",
+      "message": "There is a property named 'data'. Did you mean to reference it?",
+      "fix": 1,
+      "line": 131,
+      "column": [
+        51,
+        54
+      ]
+    },
+    {
+      "id": "PROP",
+      "message": "There is a property named 'data'. Did you mean to reference it?",
+      "fix": 1,
+      "line": 132,
+      "column": [
+        50,
+        53
+      ]
+    },
+    {
+      "id": "PROP",
+      "message": "There is a property named 'data'. Did you mean to reference it?",
+      "fix": 1,
+      "line": 146,
+      "column": [
+        13,
+        16
+      ]
+    },
+    {
+      "id": "PROP",
+      "message": "There is a property named 'data'. Did you mean to reference it?",
+      "fix": 1,
+      "line": 147,
+      "column": [
+        50,
+        53
+      ]
+    }
+  ],
+  "baseline": [
+    {
+      "id": "PROP",
+      "message": "There is a property named 'data'. Did you mean to reference it?",
+      "fix": 1,
+      "line": 113,
+      "column": [
+        13,
+        16
+      ]
+    },
+    {
+      "id": "PROP",
+      "message": "There is a property named 'data'. Did you mean to reference it?",
+      "fix": 1,
+      "line": 113,
+      "column": [
+        33,
+        36
+      ]
+    },
+    {
+      "id": "PROP",
+      "message": "There is a property named 'data'. Did you mean to reference it?",
+      "fix": 1,
+      "line": 114,
+      "column": [
+        68,
+        71
+      ]
+    },
+    {
+      "id": "PROP",
+      "message": "There is a property named 'data'. Did you mean to reference it?",
+      "fix": 1,
+      "line": 115,
+      "column": [
+        68,
+        71
+      ]
+    },
+    {
+      "id": "PROP",
+      "message": "There is a property named 'data'. Did you mean to reference it?",
+      "fix": 1,
+      "line": 116,
+      "column": [
+        68,
+        71
+      ]
+    },
+    {
+      "id": "PROP",
+      "message": "There is a property named 'data'. Did you mean to reference it?",
+      "fix": 1,
+      "line": 121,
+      "column": [
+        13,
+        16
+      ]
+    },
+    {
+      "id": "PROP",
+      "message": "There is a property named 'data'. Did you mean to reference it?",
+      "fix": 1,
+      "line": 122,
+      "column": [
+        51,
+        54
+      ]
+    },
+    {
+      "id": "PROP",
+      "message": "There is a property named 'data'. Did you mean to reference it?",
+      "fix": 1,
+      "line": 123,
+      "column": [
+        50,
+        53
+      ]
+    },
+    {
+      "id": "PROP",
+      "message": "There is a property named 'data'. Did you mean to reference it?",
+      "fix": 1,
+      "line": 137,
+      "column": [
+        13,
+        16
+      ]
+    },
+    {
+      "id": "PROP",
+      "message": "There is a property named 'data'. Did you mean to reference it?",
+      "fix": 1,
+      "line": 138,
+      "column": [
+        50,
+        53
+      ]
+    }
+  ],
+  "unchangedMessages": true
+}

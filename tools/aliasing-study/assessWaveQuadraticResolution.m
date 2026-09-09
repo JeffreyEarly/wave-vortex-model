@@ -47,8 +47,8 @@ if ~all(isfield(data,required))
     error('WVStudy:InvalidPreparation','Use the complete preparation returned by prepareSourceStudy.')
 end
 config=data.config; n=config.waveCount; requested=options.requestedWaveCount;
-if config.referenceAllowance>options.quadraticTolerance/100
-    error('WVStudy:ReferenceAllowanceTooLarge','The prepared reference allowance %.3g exceeds one percent of quadraticTolerance %.3g. Prepare references with a smaller declared allowance.',config.referenceAllowance,options.quadraticTolerance)
+if config.referenceAllowance>options.quadraticTolerance/100 || (isfield(config,'referenceAbsoluteAllowance') && config.referenceAbsoluteAllowance>options.quadraticTolerance/100)
+    error('WVStudy:ReferenceAllowanceTooLarge','Prepare both reference allowances below one percent of quadraticTolerance %.3g.',options.quadraticTolerance)
 end
 if numel(requested)>1 || any(requested>n)
     error('WVStudy:InvalidRequestedCount','requestedWaveCount must be empty or one count within the prepared band 1:%d.',n)

@@ -3,6 +3,8 @@ function data = prepareSourceStudy(config)
 arguments
     config (1,1) struct
 end
+if ~isfield(config,'referenceAbsoluteAllowance'), config.referenceAbsoluteAllowance=1e-10; end
+validateattributes(config.referenceAbsoluteAllowance,{'double'},{'scalar','real','finite','nonnegative'});
 timer=tic;
 preparationCost=struct(candidateSolveSeconds=0,referenceSolveSeconds=0,candidateSolves=0,referenceSolves=0);
 D=config.Lz; f=config.f; g=config.g;

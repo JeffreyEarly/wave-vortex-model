@@ -15,8 +15,8 @@ if ~all(isfield(prepared,required)) || prepared.kind~="waveQuadraticEvidence-v1"
     error('WVStudy:InvalidPreparation','Use the unchanged snapshot from prepareWaveQuadraticAssessment.')
 end
 timer=tic; config=prepared.configuration;
-if config.referenceAllowance>options.quadraticTolerance/100
-    error('WVStudy:ReferenceAllowanceTooLarge','Prepare reference errors below one percent of the requested product tolerance.')
+if config.referenceAllowance>options.quadraticTolerance/100 || (isfield(config,'referenceAbsoluteAllowance') && config.referenceAbsoluteAllowance>options.quadraticTolerance/100)
+    error('WVStudy:ReferenceAllowanceTooLarge','Prepare both reference allowances below one percent of the requested product tolerance.')
 end
 if prepared.cost.reservedProducts>options.productBudget
     error('WVStudy:ProductBudgetExceeded','The snapshot reserved %d products; the supplied productBudget is %d.',prepared.cost.reservedProducts,options.productBudget)
@@ -59,6 +59,12 @@ out=p.pageOut(columns);
 tested=accumarray(out(:),1,[np 1]);
 nonzero=accumarray(out(:),double(~p.isZero(columns)).',[np 1]);
 quadraticError=accumarray(out(:),errors(:),[np 1],@max,0); quadraticError(tested==0)=NaN;
+absoluteReferenceProductCount=nan(np,1); relativeReferenceError=nan(np,1);
+if isfield(p,'referenceUsesAbsolute')
+    absoluteReferenceProductCount=accumarray(out(:),double(p.referenceUsesAbsolute(columns)).',[np 1]);
+    relativeReferenceError=accumarray(out(:),p.relativeReferenceError(columns).',[np 1],@max,0);
+    relativeReferenceError(tested==0)=NaN;
+end
 gramError=nan(np,1); convergenceError=nan(np,1); limiting=cell(np,1);
 for page=1:np
     if kappa(page)==0
@@ -108,5 +114,5 @@ cost=prepared.cost; cost.selectedProducts=nnz(selected); cost.selectedNonzeroPro
 coverage=prepared.coverage; coverage.countMapScope="One complete map; per-output errors cannot be combined into independently selectable count recommendations.";
 coverage.missingOutputKappa=kappa(requestedPage & tested==0);
 coverage.fixedInputSelection="Candidate-band cumulative low/middle/cutoff stresses, filtered by actual input counts and their maximum stress band; all fixed-family columns remain eligible.";
-report=struct(configuration=config,physicalGrid=prepared.physicalGrid,waveModeLabels={prepared.waveLabels},status=overall,requestedCountAccepted=overall=="assessed",pages=table(kappa,counts,convergenceError,gramError,quadraticError,tested,nonzero,status,limiting,VariableNames=["kappa","requestedWaveCount","modeConvergenceError","gramError","quadraticError","testedProductCount","nonzeroProductCount","status","limitingInteraction"]),fixedFamilyCounts=prepared.fixedFamilyCounts,referenceDiagnostics=prepared.referenceDiagnostics,quadraticTolerance=options.quadraticTolerance,gramTolerance=config.gramTolerance,modeConvergenceTolerance=config.eigenAllowance,cost=cost,coverage=coverage);
+report=struct(configuration=config,physicalGrid=prepared.physicalGrid,waveModeLabels={prepared.waveLabels},status=overall,requestedCountAccepted=overall=="assessed",pages=table(kappa,counts,convergenceError,gramError,quadraticError,tested,nonzero,absoluteReferenceProductCount,relativeReferenceError,status,limiting,VariableNames=["kappa","requestedWaveCount","modeConvergenceError","gramError","quadraticError","testedProductCount","nonzeroProductCount","absoluteReferenceProductCount","relativeReferenceError","status","limitingInteraction"]),fixedFamilyCounts=prepared.fixedFamilyCounts,referenceDiagnostics=prepared.referenceDiagnostics,quadraticTolerance=options.quadraticTolerance,gramTolerance=config.gramTolerance,modeConvergenceTolerance=config.eigenAllowance,cost=cost,coverage=coverage);
 end

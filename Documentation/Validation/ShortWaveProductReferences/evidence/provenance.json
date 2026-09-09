@@ -1,0 +1,144 @@
+{
+  "sourceRevision": "80bef2ffcfe0707d32e5ef2a794b971cad3e8649",
+  "hasTrackedChanges": false,
+  "configurations": [
+    {
+      "Lz": 1000,
+      "f": 0.0001,
+      "g": 9.81,
+      "evpOrders": [
+        192,
+        256
+      ],
+      "referenceOrders": [
+        257,
+        513
+      ],
+      "referenceAllowance": 0.0001,
+      "eigenAllowance": 1E-6,
+      "gramTolerance": 0.01,
+      "id": "kappa-dependent-exponential-25",
+      "profile": "exponential-surface",
+      "Lxy": [
+        1000,
+        1000
+      ],
+      "Nxy": [
+        16,
+        16
+      ],
+      "Nz": 25,
+      "waveCount": 24,
+      "apvCount": 3,
+      "mdaCount": 3,
+      "inertialCount": 3
+    },
+    {
+      "Lz": 1000,
+      "f": 0.0001,
+      "g": 9.81,
+      "evpOrders": [
+        256,
+        384
+      ],
+      "referenceOrders": [
+        257,
+        513
+      ],
+      "referenceAllowance": 0.0001,
+      "eigenAllowance": 1E-6,
+      "gramTolerance": 0.01,
+      "id": "kappa-dependent-exponential-25",
+      "profile": "exponential-surface",
+      "Lxy": [
+        1000,
+        1000
+      ],
+      "Nxy": [
+        16,
+        16
+      ],
+      "Nz": 25,
+      "waveCount": 24,
+      "apvCount": 3,
+      "mdaCount": 3,
+      "inertialCount": 3
+    },
+    {
+      "Lz": 1000,
+      "f": 0.0001,
+      "g": 9.81,
+      "evpOrders": [
+        192,
+        256
+      ],
+      "referenceOrders": [
+        513,
+        1025
+      ],
+      "referenceAllowance": 0.0001,
+      "eigenAllowance": 1E-6,
+      "gramTolerance": 0.01,
+      "id": "kappa-dependent-exponential-25",
+      "profile": "exponential-surface",
+      "Lxy": [
+        1000,
+        1000
+      ],
+      "Nxy": [
+        16,
+        16
+      ],
+      "Nz": 25,
+      "waveCount": 24,
+      "apvCount": 3,
+      "mdaCount": 3,
+      "inertialCount": 3
+    },
+    {
+      "Lz": 1000,
+      "f": 0.0001,
+      "g": 9.81,
+      "evpOrders": [
+        192,
+        256
+      ],
+      "referenceOrders": [
+        257,
+        513
+      ],
+      "referenceAllowance": 0.0001,
+      "eigenAllowance": 1E-6,
+      "gramTolerance": 0.01,
+      "id": "kappa-dependent-exponential-25",
+      "profile": "constant",
+      "Lxy": [
+        1000,
+        1000
+      ],
+      "Nxy": [
+        16,
+        16
+      ],
+      "Nz": 25,
+      "waveCount": 24,
+      "apvCount": 3,
+      "mdaCount": 3,
+      "inertialCount": 3
+    }
+  ],
+  "baselineInteractions": [
+    1562,
+    996,
+    590
+  ],
+  "failedRowCount": 11,
+  "maxOtherFamilyReferenceError": 2.8623954804137015E-6,
+  "elapsedSeconds": 29.783791458333333,
+  "matlabVersion": "25.2.0.3150157 (R2025b) Update 4",
+  "computer": "MACA64",
+  "internalModesVersion": "2.0.0-beta.4",
+  "internalModesRevision": "f2ce3c143744ae00fbb25bd9d7b8c73fb358ca51",
+  "oceanKitRevision": "65d9aa2c3de941406dc6bf2cf1937ba5b3dcd1d5",
+  "interpretation": "Diagnostic factor scale only; no new acceptance rule. Constant control uses independent localized exponentials; exact tails may underflow to zero."
+}

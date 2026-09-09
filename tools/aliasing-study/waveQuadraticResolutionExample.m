@@ -24,7 +24,7 @@ if isempty(fieldnames(config))
     result=kappaDependentExample(outputDirectory,options);
     return
 end
-started=tic; data=prepareSourceStudy(config);
+started=tic; data=prepareSourceStudy(config); config=data.config;
 prepared=prepareWaveQuadraticAssessment(data,ensureOutputCoverage=true,productBudget=options.productBudget,workingMemoryBudget=options.workingMemoryBudget);
 preparationSeconds=toc(started);
 kappa=prepared.inventory.magnitudes; positive=find(kappa>0); kappa=kappa(positive);
@@ -87,7 +87,7 @@ config=resolveStudyCase("cal-exponential-17");
 config.id="kappa-dependent-exponential-25"; config.profile="exponential-surface";
 config.Lxy=[1000 1000]; config.Nxy=[16 16]; config.Nz=25;
 config.waveCount=24; config.evpOrders=[192 256]; config.gramTolerance=.01;
-started=tic; data=prepareSourceStudy(config);
+started=tic; data=prepareSourceStudy(config); config=data.config;
 assert(max(abs(data.z-linearResult.z))<1e-9 && max(abs(data.w-linearResult.weights))<1e-9,'The linear and product studies must use the same physical sampling.');
 kappa=data.inventory.magnitudes; positive=find(kappa>0);
 counts=zeros(numel(positive),1);
@@ -124,7 +124,7 @@ names=["Linear count map","Counts capped at 3"];
 for j=1:2
     pages=reports{j}; qualified=ismember(pages.status,["accepted","rejected"]);
     if any(qualified)
-        plot(ax2,pages.kappa(qualified),max(pages.quadraticError(qualified),realmin),markers(j),Color=colors(j,:),MarkerFaceColor=colors(j,:),MarkerSize=8,DisplayName=names(j)+" — qualified sampled error");
+        plot(ax2,pages.kappa(qualified),max(pages.quadraticError(qualified),realmin),markers(j),Color=colors(j,:),MarkerFaceColor=colors(j,:),MarkerSize=8,DisplayName=names(j)+" — mixed reference check passed");
     end
     if any(~qualified)
         plot(ax2,pages.kappa(~qualified),max(pages.quadraticError(~qualified),realmin),markers(j),Color=colors(j,:),MarkerSize=9,LineWidth=1.5,DisplayName=names(j)+" — UNQUALIFIED estimate");
@@ -139,7 +139,7 @@ end
 linkaxes([ax1 ax2],'x');
 title(layout,'1 × 1 km; 16 × 16 horizontal points; 25 WKB–Chebyshev samples; 24 candidates');
 referenceStatus="inconclusive";
-if assessment.referenceDiagnostics.referencesStable, referenceStatus="stable"; end
+if assessment.referenceDiagnostics.referencesStable, referenceStatus="mixed-qualified"; end
 subtitle(layout,sprintf('Full FFT linear sweep; 3 selected quadratic triads; quadratic references: %s',referenceStatus));
 exportgraphics(fig,fullfile(outputDirectory,'count-map-quadratic.png'),Resolution=160);
 exportgraphics(fig,fullfile(outputDirectory,'count-map-quadratic.pdf'),ContentType="vector");
