@@ -58,7 +58,7 @@ if isempty(options.waveModeCount)
         configuration.waveModeCount=counts;
     end
 end
-for name=["shouldAntialias","N2Function","rho0","planetaryRadius","rotationRate","latitude","g","g0","gd","nEVP","projectionTolerance"]
+for name=["shouldAntialias","N2Function","rho0","planetaryRadius","rotationRate","latitude","g","g0","gd","nEVP","gramTolerance","quadraticAliasingTolerance","modeConvergenceTolerance","boundaryResolutionTolerance"]
     configuration.(name)=self.(name);
 end
 args=namedargs2cell(configuration);

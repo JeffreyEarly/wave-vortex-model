@@ -19,8 +19,12 @@ if familyName=="wave"
 end
 for setName=["S","R","Q","E","H","J"]
     values=B.(setName);
+    if familyName=="wave" && isempty(B.labels)
+        for name=["u","v","w","eta","du","dv","dw","deta"], fields.(setName).(name)=zeros(size(values.F,1),0); end
+        continue
+    end
     if familyName=="wave"
-        h=B.basis.h(:); if ismember(setName,["H","J"]), h=B.checkh; end
+        h=B.basis.h(1:numel(B.labels)); h=h(:); if ismember(setName,["H","J"]), h=B.checkh; end
         pol=WVInternal.freeSurfaceWavePolarization(values.F,values.G,h,kl(1),kl(2),f=data.config.f,g=data.config.g);
         derivative=WVInternal.freeSurfaceWavePolarization(values.dF,values.dG,h,kl(1),kl(2),f=data.config.f,g=data.config.g);
         for name=["u","v","w","eta"]

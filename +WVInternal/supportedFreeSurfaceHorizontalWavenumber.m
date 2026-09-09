@@ -11,6 +11,10 @@ arguments
     tolerance (1,1) double {mustBePositive}
     options.seedKh (1,1) double {mustBePositive} = 1
     options.rejectedKh double {mustBePositive} = zeros(0,1)
+    options.vertical (1,1) struct = struct()
+    options.inputs (1,1) struct = struct()
+    options.boundaryResolutionTolerance (1,1) double = 1e-2
+    options.modeConvergenceTolerance (1,1) double = 1e-6
 end
 
 if isempty(endpoints)
@@ -24,19 +28,19 @@ maximumBracketSteps = 24;
 if isempty(options.rejectedKh)
     trialKh = options.seedKh;
     trial = evaluate(trialKh);
-    if trial.error <= tolerance
+    if trial.accepted
         lowerKh = trialKh;
         lower = trial;
         for iStep = 1:maximumBracketSteps
             upperKh = 2*lowerKh;
             upper = evaluate(upperKh);
-            if upper.error > tolerance
+            if ~upper.accepted
                 break
             end
             lowerKh = upperKh;
             lower = upper;
         end
-        if upper.error <= tolerance
+        if upper.accepted
             error('WVTransformFreeSurfaceQG:HorizontalLimitNotBracketed','The APV/zero-APV error did not exceed tolerance after %d wavenumber doublings.',maximumBracketSteps);
         end
     else
@@ -45,32 +49,32 @@ if isempty(options.rejectedKh)
         for iStep = 1:maximumBracketSteps
             lowerKh = upperKh/2;
             lower = evaluate(lowerKh);
-            if lower.error <= tolerance
+            if lower.accepted
                 break
             end
             upperKh = lowerKh;
             upper = lower;
         end
-        if lower.error > tolerance
+        if ~lower.accepted
             error('WVTransformFreeSurfaceQG:NoSupportedHorizontalWavenumber','No passing APV/zero-APV wavenumber was found after %d halvings.',maximumBracketSteps);
         end
     end
 else
     upperKh = options.rejectedKh;
     upper = evaluate(upperKh);
-    if upper.error <= tolerance
+    if upper.accepted
         error('WVTransformFreeSurfaceQG:InvalidRejectedHorizontalWavenumber','The supplied rejected wavenumber does not exceed the APV/zero-APV tolerance.');
     end
     for iStep = 1:maximumBracketSteps
         lowerKh = upperKh/2;
         lower = evaluate(lowerKh);
-        if lower.error <= tolerance
+        if lower.accepted
             break
         end
         upperKh = lowerKh;
         upper = lower;
     end
-    if lower.error > tolerance
+    if ~lower.accepted
         error('WVTransformFreeSurfaceQG:NoSupportedHorizontalWavenumber','No passing APV/zero-APV wavenumber was found after %d halvings.',maximumBracketSteps);
     end
 end
@@ -81,7 +85,7 @@ for iStep = 1:20
     end
     trialKh = sqrt(lowerKh*upperKh);
     trial = evaluate(trialKh);
-    if trial.error <= tolerance
+    if trial.accepted
         lowerKh = trialKh;
         lower = trial;
     else
@@ -92,11 +96,24 @@ end
 
 assessment = struct(isApplicable=true,maximumSupportedKh=lowerKh,firstRejectedKh=upperKh, ...
     maximumSupportedError=lower.error,firstRejectedError=upper.error,minimumHorizontalWavelength=2*pi/lowerKh, ...
-    limitingEndpoint=upper.limitingEndpoint,limitingModeNumber=upper.limitingModeNumber);
+    limitingEndpoint=upper.limitingEndpoint,limitingModeNumber=upper.limitingModeNumber, ...
+    maximumSupportedBoundaryError=lower.boundaryError,firstRejectedBoundaryError=upper.boundaryError,limitingMetric=upper.limitingMetric);
 
     function result = evaluate(kh)
         problem = IMGeostrophicZeroAPVModes.atWavenumber(N2=N2Function,zDomain=apvBasis.zDomain,f0=f0,g=g,k=kh,endpoints=endpoints,surfaceBoundary="freeSurface");
         zeroModes = IMSolverSpectral(nEVP=nEVP).solveGeostrophicZeroAPVModes(problem);
         result = WVInternal.measureFreeSurfaceCrossProductError(apvBasis,apvTransform,zeroModes,1,2*nEVP);
+        result.accepted=result.error<=tolerance; result.boundaryError=NaN; result.limitingMetric="quadratic-product";
+        if ~isempty(fieldnames(options.vertical))
+            settings=struct(g=g,boundaryResolutionTolerance=options.boundaryResolutionTolerance,modeConvergenceTolerance=options.modeConvergenceTolerance,boundaryReportOnly=true);
+            boundary=WVInternal.assessFreeSurfaceBoundaryGrid(zeroModes,problem,options.vertical,options.inputs,settings);
+            [result.boundaryError,index]=max(boundary.pages.gridError);
+            result.accepted=result.accepted && boundary.status=="accepted";
+            if result.boundaryError/options.boundaryResolutionTolerance>result.error/tolerance
+                result.limitingMetric="boundary-resolution";
+                result.limitingEndpoint=boundary.pages.endpoint(index);
+                result.limitingModeNumber=NaN;
+            end
+        end
     end
 end

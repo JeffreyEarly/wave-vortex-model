@@ -2,11 +2,17 @@
 
 ## [Unreleased]
 
+### Automatic resolved-mode initialization
+
+- Select omitted free-surface family counts automatically: shared QG/Boussinesq APV and MDA policy, per-wavenumber wave prefixes, and independent inertial modes. Explicit counts remain strict.
+- Use `gramTolerance` throughout the unreleased API and canonical saved fields, without renamed-tolerance aliases or migration. Always check independent mode convergence, and qualify fixed zero-APV derivatives and energy separately from scalar Gram matrices.
+- Reuse packaged internal product measurements for bounded complete-map quadratic checks. Stream output pages, reuse evidence across count trials, report unknown coverage explicitly, and expose construction evidence and costs. Add a reproducible mode-count example; this does not qualify full nonlinear Boussinesq dynamics.
+
 ### Per-kappa retained wave counts
 
 - Accept explicit physical-wavenumber/count maps in the experimental free-surface Boussinesq transform, including zero-wave pages. Keep scalar counts, independent inertial/balanced families and the existing rectangular coefficient arrays; inactive entries remain zero and do not enter polarization or projection.
 - Preserve count maps through output, restart and resolution transfer. Older uniform-count files load as full prefixes. New horizontal wavenumbers require explicit counts when transferring a nonuniform source map; discarded content is reported through the existing physical transfer assessment.
-- Add optional construction-time convergence reports with explicitly requested reference solves, reusing the provider's per-mode assessment. Separate linear mode/grid evidence from the authoring advisory's sampled quadratic output-page breakdown; no automatic truncation or new mode families are introduced.
+- Expose candidate and selected counts with independent-reference, fixed-grid and bounded quadratic evidence. Preserve the resolved adiabatic families and reject explicit counts that fail their qualification.
 
 ### InternalModes beta dependency
 

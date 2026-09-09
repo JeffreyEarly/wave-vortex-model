@@ -90,7 +90,7 @@ classdef TestSharedResolvedContracts < matlab.unittest.TestCase
         end
 
         function qgCachesInvalidateAndRHSReconstructsOnce(testCase)
-            w = WVCountingFreeSurfaceQG([1e5 1e5 1000],[8 8 33],N2Function=@(z)1e-4*ones(size(z)),latitude=30,g0=.02,gd=.03,mdaGramTolerance=.1);
+            w = WVCountingFreeSurfaceQG([1e5 1e5 1000],[8 8 33],N2Function=@(z)1e-4*ones(size(z)),latitude=30,g0=.02,gd=.03,gramTolerance=.1);
             setMixedQG(w);
             metric = w.physicalMetricOperators();
             [u,eta,q] = w.variableWithName('u','eta','qgpv');
@@ -161,7 +161,7 @@ classdef TestSharedResolvedContracts < matlab.unittest.TestCase
 end
 
 function w = newQG(g0,gd)
-w = WVTransformFreeSurfaceQG([1e5 1e5 1000],[8 8 33],N2Function=@(z)1e-4*ones(size(z)),latitude=30,g0=g0,gd=gd,mdaGramTolerance=.1);
+w = WVTransformFreeSurfaceQG([1e5 1e5 1000],[8 8 33],N2Function=@(z)1e-4*ones(size(z)),latitude=30,g0=g0,gd=gd,gramTolerance=.1);
 end
 
 function setMixedQG(w)

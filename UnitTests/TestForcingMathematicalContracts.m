@@ -235,7 +235,7 @@ classdef TestForcingMathematicalContracts < matlab.unittest.TestCase
         end
 
         function wvt = freeSurfaceQGTransform(g0,gd)
-            wvt = WVTransformFreeSurfaceQG([100e3 100e3 1000],[8 8 33],N2Function=@(z)1e-4*ones(size(z)),latitude=30,g0=g0,gd=gd,mdaGramTolerance=0.1);
+            wvt = WVTransformFreeSurfaceQG([100e3 100e3 1000],[8 8 33],N2Function=@(z)1e-4*ones(size(z)),latitude=30,g0=g0,gd=gd,gramTolerance=0.1);
         end
 
         function coefficients = deterministicCoefficients(matrixSize)

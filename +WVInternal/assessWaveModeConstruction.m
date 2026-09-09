@@ -1,4 +1,4 @@
-function assessment = assessWaveModeConstruction(state,bases,activePages,referenceNEVP,tolerance)
+function [assessment,reference] = assessWaveModeConstruction(state,bases,activePages,referenceNEVP,tolerance)
 % Compare the actual constructed wave bases with an explicitly requested solve.
 % Zero-count pages contain no tested waves. A full passing prefix reaches
 % the candidate ceiling; it is not a measured maximum available mode count.
@@ -33,7 +33,7 @@ for p=1:np
     errors=zeros(count,1);
     for n=1:count, errors(n)=norm(gram(1:n,1:n)-eye(n),2); end
     prefixGramError{p}=errors;
-    gridSupportedCount(p)=sum(cumprod(errors<=state.projectionTolerance));
+    gridSupportedCount(p)=sum(cumprod(errors<=state.gramTolerance));
     if isempty(reference), continue; end
     page=find(activePages==p)+1;
     basis=bases.bases{bases.basisIndex(page)};
@@ -49,11 +49,17 @@ for p=1:np
         status(p)="rejected";
     end
 end
-inertial=struct(requestedCount=length(state.inertialMode),gramError=state.inertialGramError,convergence=[]);
+count=length(state.inertialMode);
+gram=state.inertialFForward*state.inertialF;
+errors=zeros(count,1);
+for n=1:count, errors(n)=norm(gram(1:n,1:n)-eye(n),2); end
+inertial=struct(requestedCount=count,gramError=state.inertialGramError,prefixGramError=errors,gridSupportedCount=sum(cumprod(errors<=state.gramTolerance)),convergence=[],convergedCount=NaN,usableCount=NaN);
 if ~isempty(reference)
     inertial.convergence=compare(bases.bases{bases.basisIndex(1)},reference.bases{reference.basisIndex(1)},0);
+    [inertial.convergedCount,complete]=acceptedPrefix(inertial.convergence,count,tolerance);
+    if complete, inertial.usableCount=min(inertial.convergedCount,inertial.gridSupportedCount); end
 end
-assessment=struct(pages=table(kappa,requestedCount,convergedCount,gridSupportedCount,usableCount,status,candidateLimitReached),modeConvergence={modeConvergence},prefixGramError={prefixGramError},inertial=inertial,modeConvergenceTolerance=tolerance,projectionTolerance=state.projectionTolerance,nEVP=state.nEVP,referenceNEVP=referenceNEVP,coverage="Actual constructed modes at every supported kappa; linear convergence and fixed-grid Gram evidence only. Quadratic products are assessed separately. Two-resolution agreement is not a rigorous error bound.");
+assessment=struct(pages=table(kappa,requestedCount,convergedCount,gridSupportedCount,usableCount,status,candidateLimitReached),modeConvergence={modeConvergence},prefixGramError={prefixGramError},inertial=inertial,modeConvergenceTolerance=tolerance,gramTolerance=state.gramTolerance,nEVP=state.nEVP,referenceNEVP=referenceNEVP,coverage="Actual constructed modes at every supported kappa; linear convergence and fixed-grid Gram evidence only. Quadratic products are assessed separately. Two-resolution agreement is not a rigorous error bound.");
 
     function report=compare(basis,check,kh)
         nQuadrature=2*max(state.nEVP,referenceNEVP)+1;

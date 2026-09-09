@@ -1,0 +1,46 @@
+{
+  "Nxyz": [
+    8,
+    8,
+    65
+  ],
+  "Lxyz": [
+    100000,
+    100000,
+    1000
+  ],
+  "N2": "constant 1e-4 s^-2",
+  "latitude": 30,
+  "matlabVersion": "25.2.0.3150157 (R2025b) Update 4",
+  "internalModesVersion": "2.0.0-beta.4",
+  "waveEigenproblems": 20,
+  "waveConstructionSeconds": 0.5828575,
+  "constructionSeconds": 7.415665875,
+  "quadraticCost": {
+    "reservedProducts": 75888,
+    "productBudget": 500000,
+    "workingMemoryEstimateBytes": 2.27231872E+8,
+    "workingMemoryBudget": 5.36870912E+8,
+    "largestProductBatch": 256,
+    "sourcePreparationSeconds": 0.122821125,
+    "reservationSeconds": 0.031552375,
+    "projectionPreparationSeconds": 0.372135,
+    "productEvaluationSeconds": 4.659078375,
+    "evidencePreparationSeconds": 5.14096875,
+    "projectionCount": 435,
+    "retainedBytes": 2.1477616E+7,
+    "selectedProducts": 35100,
+    "selectedNonzeroProducts": 16476,
+    "reusedPreparation": true,
+    "newEigensolves": 0,
+    "newProductEvaluations": 0,
+    "assessmentSeconds": 0.0056575416666666666
+  },
+  "selectedWaveCounts": [
+    10,
+    19,
+    19,
+    10
+  ],
+  "selectedInertialCount": 38
+}

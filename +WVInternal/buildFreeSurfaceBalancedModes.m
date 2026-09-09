@@ -10,6 +10,7 @@ end
 zDomain = [-Lz 0];
 nSolve = Nz+4;
 nEVP = max(96,3*nSolve);
+if isfield(options,"balancedNEVP"), nEVP=options.balancedNEVP; end
 solver = IMSolverSpectral(nEVP=nEVP);
 apvProblem = IMInternalModes.geostrophicAPVModes(N2=N2Function,zDomain=zDomain,g=options.g,g0=options.g0,gd=options.gd,surfaceBoundary="freeSurface");
 mdaProblem = IMInternalModes.meanDensityAnomalyModes(N2=N2Function,zDomain=zDomain,g=options.g,g0=options.g0,gd=options.gd);
@@ -35,8 +36,24 @@ apvCount = []; mdaCount = [];
 if isfield(options,"apvModeCount"), apvCount = options.apvModeCount; end
 if isfield(options,"mdaModeCount"), mdaCount = options.mdaModeCount; end
 [apvTransform,apvAssessment] = apvBasis.discreteTransform(z=z,weights=weights,variables=["F","G"], ...
-    gramTolerance=options.apvGramTolerance,quadraticAliasingTolerance=options.quadraticAliasingTolerance,nModes=apvCount);
-[mdaTransform,mdaAssessment] = mdaBasis.discreteTransform(z=z,weights=weights,variables="G",gramTolerance=options.mdaGramTolerance,nModes=mdaCount);
+    gramTolerance=options.gramTolerance,quadraticAliasingTolerance=options.quadraticAliasingTolerance,nModes=apvCount);
+[mdaTransform,mdaAssessment] = mdaBasis.discreteTransform(z=z,weights=weights,variables="G",gramTolerance=options.gramTolerance,nModes=mdaCount);
+referenceNEVP=ceil(1.5*nEVP);
+referenceSolver=IMSolverSpectral(nEVP=referenceNEVP);
+apvReference=referenceSolver.solveEVP(apvProblem,nModes=nSolve);
+mdaReference=referenceSolver.solveEVP(mdaProblem,nModes=nSolve);
+[apvConvergence,apvErrors]=WVInternal.compareResolvedModes(apvBasis,apvReference,N2Function,2*referenceNEVP+1);
+[mdaConvergence,mdaErrors]=WVInternal.compareResolvedModes(mdaBasis,mdaReference,N2Function,2*referenceNEVP+1);
+if any(apvErrors(1:numel(apvTransform.h))>options.modeConvergenceTolerance) || any(mdaErrors(1:numel(mdaTransform.h))>options.modeConvergenceTolerance)
+    attempt=1; if isfield(options,'balancedAttempt'), attempt=options.balancedAttempt; end
+    if attempt<3
+        options.balancedAttempt=attempt+1; options.balancedNEVP=referenceNEVP;
+        vertical=WVInternal.buildFreeSurfaceBalancedModes(Lz,Nz,N2Function,options);
+        return
+    end
+    error('WV:UnconvergedBalancedModes','The retained APV/MDA band did not converge after three EVP resolutions (last %d/%d) at modeConvergenceTolerance %.3g.',nEVP,referenceNEVP,options.modeConvergenceTolerance)
+end
+
 quadraticPolicy = apvAssessment.quadraticAliasingPolicy;
 hasProjectionContract = isfield(quadraticPolicy,'projectionPairing') && isequal(string(quadraticPolicy.projectionPairing),"signedPontryagin");
 hasErrorContract = isfield(quadraticPolicy,'errorNorm') && isequal(string(quadraticPolicy.errorNorm),"inducedHilbertMajorant");
@@ -53,5 +70,5 @@ if ~isempty(apvAssessment.weightFit) || ~isempty(mdaAssessment.weightFit)
 end
 
 vertical = struct(z=z,weights=weights,Dz=Dz,N2Values=N2Values,nEVP=nEVP,solver=solver,apvProblem=apvProblem,mdaProblem=mdaProblem, ...
-    apvBasis=apvBasis,mdaBasis=mdaBasis,apvTransform=apvTransform,mdaTransform=mdaTransform,apvAssessment=apvAssessment,mdaAssessment=mdaAssessment);
+    apvBasis=apvBasis,mdaBasis=mdaBasis,apvConvergence=apvConvergence,mdaConvergence=mdaConvergence,apvReference=apvReference,mdaReference=mdaReference,referenceNEVP=referenceNEVP,apvTransform=apvTransform,mdaTransform=mdaTransform,apvAssessment=apvAssessment,mdaAssessment=mdaAssessment);
 end

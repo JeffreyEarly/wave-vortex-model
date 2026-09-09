@@ -4,7 +4,7 @@ classdef TestFreeSurfaceQGDiagnostics < matlab.unittest.TestCase
             endpoints = [Inf Inf;0.02 Inf;Inf 0.03;0.02 0.03];
             for endpoint = endpoints.'
                 w = WVTransformFreeSurfaceQG([100e3 100e3 1000],[8 8 33], ...
-                    N2Function=@(z)1e-4*ones(size(z)),latitude=30,g0=endpoint(1),gd=endpoint(2),mdaGramTolerance=.1);
+                    N2Function=@(z)1e-4*ones(size(z)),latitude=30,g0=endpoint(1),gd=endpoint(2),gramTolerance=.1);
                 w.removeAllForcing();
                 w.Ag_q(1:3,1) = 1e-8*[1;2i;-1];
                 w.Ag_0(:,1) = 1e-11*(1:w.activeEndpointCount).';
@@ -40,7 +40,7 @@ classdef TestFreeSurfaceQGDiagnostics < matlab.unittest.TestCase
             for scale = [Inf 700]
                 for endpoints = [Inf Inf;.02 Inf;Inf .03;.02 .03].'
                     w = WVTransformFreeSurfaceQG([100e3 100e3 1000],[8 8 65], ...
-                        N2Function=@(z)1e-4*exp(2*z/scale),latitude=30,g0=endpoints(1),gd=endpoints(2),mdaGramTolerance=.1);
+                        N2Function=@(z)1e-4*exp(2*z/scale),latitude=30,g0=endpoints(1),gd=endpoints(2),gramTolerance=.1);
                     w.removeAllForcing();
                     w.Amda(1:3) = [.1;-.02;.03];
                     eta = w.eta;

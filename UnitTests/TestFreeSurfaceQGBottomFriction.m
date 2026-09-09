@@ -34,7 +34,7 @@ classdef TestFreeSurfaceQGBottomFriction < matlab.unittest.TestCase
 
         function nondiffusiveSignedProjection(testCase)
             for weights=[-.1 .1;Inf .1;-.1 Inf;Inf Inf].'
-                w=WVTransformFreeSurfaceQG([100e3 100e3 1000],[8 8 33],N2Function=@(z)1e-4*ones(size(z)),latitude=30,g0=weights(1),gd=weights(2),mdaGramTolerance=.1);
+                w=WVTransformFreeSurfaceQG([100e3 100e3 1000],[8 8 33],N2Function=@(z)1e-4*ones(size(z)),latitude=30,g0=weights(1),gd=weights(2),gramTolerance=.1);
                 w.removeAllForcing();
                 tx=zeros(1,length(w.klNonzero)); ty=tx; index=find(w.kNonzero~=0,1); ty(index)=1;
                 for endpoint=["surface" "bottom"]

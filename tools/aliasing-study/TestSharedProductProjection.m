@@ -7,23 +7,23 @@ classdef TestSharedProductProjection < matlab.unittest.TestCase
             endpoints = [0 1i 2;0 2i 1];
             counts = [1 2 3];
             expected = originalProjection(context,sampled,reference,endpoints,counts);
-            prepared = prepareProductProjections(context,counts);
-            actual = measureProductProjection(context,sampled,reference,endpoints,counts,projections=prepared);
+            prepared = WVInternal.prepareProductProjections(context,counts);
+            actual = WVInternal.measureProductProjection(context,sampled,reference,endpoints,counts,projections=prepared);
             testCase.verifyEqual(actual,expected,AbsTol=1e-13)
-            testCase.verifyEqual(measureProductProjection(context,sampled,reference,endpoints,counts),actual)
+            testCase.verifyEqual(WVInternal.measureProductProjection(context,sampled,reference,endpoints,counts),actual)
             testCase.verifyEqual(prepared{end}.projectionKind,"prescribedDual")
             testCase.verifyFalse(prepared{end}.supportsGramAssessment)
             testCase.verifyEqual(prepared{end}.activeColumnMask,[true true false])
             testCase.verifyEqual(prepared{end}.provenance.kind,"wvmStudyPrescribedDual")
             changed = context; changed.sampleMetric = 2*context.sampleMetric;
-            rebuilt = measureProductProjection(changed,sampled,reference,endpoints,counts);
+            rebuilt = WVInternal.measureProductProjection(changed,sampled,reference,endpoints,counts);
             testCase.verifyEqual(rebuilt,originalProjection(changed,sampled,reference,endpoints,counts),AbsTol=1e-13)
             testCase.verifyNotEqual(rebuilt.sampleCoefficients{end},actual.sampleCoefficients{end})
         end
 
         function illConditionedPrefixesRetainRejectionSentinels(testCase)
             context = exampleContext(); context.sampleGram(2,2) = 1e-14;
-            result = measureProductProjection(context,ones(3,1),ones(4,1),zeros(2,1),[1 2 3]);
+            result = WVInternal.measureProductProjection(context,ones(3,1),ones(4,1),zeros(2,1),[1 2 3]);
             testCase.verifyTrue(isfinite(result.error(1)))
             testCase.verifyEqual(result.error(2:3),[Inf;Inf])
             testCase.verifyTrue(all(isnan(result.sampleCoefficients{2})))
@@ -32,14 +32,14 @@ classdef TestSharedProductProjection < matlab.unittest.TestCase
 
         function referenceComparisonUsesSameNormalization(testCase)
             context = exampleContext();
-            low = measureProductProjection(context,ones(3,1),ones(4,1),zeros(2,1),[1 2]);
-            high = measureProductProjection(context,ones(3,1),2*ones(4,1),zeros(2,1),[1 2]);
+            low = WVInternal.measureProductProjection(context,ones(3,1),ones(4,1),zeros(2,1),[1 2]);
+            high = WVInternal.measureProductProjection(context,ones(3,1),2*ones(4,1),zeros(2,1),[1 2]);
             expected = abs(sqrt(low.productNormSquared/high.productNormSquared)-1);
             for j = 1:2
                 delta = low.referenceCoefficients{j}-high.referenceCoefficients{j};
                 expected = max(expected,sqrt(real(delta'*context.majorantGram(1:j,1:j)*delta)/high.productNormSquared));
             end
-            testCase.verifyEqual(compareProductReferences(context,low,high,[1 2]),expected,AbsTol=1e-14)
+            testCase.verifyEqual(WVInternal.compareProductReferences(context,low,high,[1 2]),expected,AbsTol=1e-14)
         end
     end
 end

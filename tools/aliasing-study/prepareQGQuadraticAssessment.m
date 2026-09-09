@@ -10,7 +10,7 @@ arguments (Input)
 end
 timer=tic; config=data.config; inventory=data.inventory;
 if ~isfield(config,'referenceAbsoluteAllowance'), error('WVStudy:InvalidPreparation','Prepare modes with explicit reference allowances.'); end
-selection=selectStudyInteractions(inventory,data.pageDifficulty);
+selection=WVInternal.selectStudyInteractions(inventory,data.pageDifficulty);
 indices=options.interactionIndices;
 if isempty(indices)
     if options.policy=="dense", indices=1:height(inventory.interactions); else, indices=selection.fixed.'; end
@@ -29,9 +29,9 @@ if workingBytes>options.workingMemoryBudget, error('WVStudy:WorkingMemoryBudgetE
 contexts=cell(1,3); projections=cell(1,3);
 for s=1:3
     if s==1, zr=data.zR; wr=data.wR; else, zr=data.zQ; wr=data.wQ; end
-    contexts{s}=prepareProductProjection(data.apv.basis,data.apv.transform,"F",zr,wr);
+    contexts{s}=WVInternal.prepareProductProjection(data.apv.basis,data.apv.transform,"F",zr,wr);
     if s==3, contexts{s}.referenceValues=data.apv.H.F; end
-    projections{s}=prepareProductProjections(contexts{s},config.apvCount);
+    projections{s}=WVInternal.prepareProductProjections(contexts{s},config.apvCount);
 end
 projectionSeconds=toc(timer); records=cell(numel(indices)*15,1); index=0;
 [a,b]=ndgrid(1:n,1:n); a=a(:).'; b=b(:).';
@@ -52,7 +52,7 @@ for t=indices
             endpoints{s}=factors(channel)*A.psiEndpoint(:,a).*B.b(:,b);
             if s>1
                 context=contexts{s-1};
-                scales=max(scales,productReferenceScale(context,x,y,zeros(2,numel(a)),zeros(2,numel(a))));
+                scales=max(scales,WVInternal.productReferenceScale(context,x,y,zeros(2,numel(a)),zeros(2,numel(a))));
                 endpointScale=max(endpointScale,abs(factors(channel))*max(abs(A.psi(:,a)),[],1).*abs(B.b(:,b)));
                 if inventory.magnitudes(p3)>0
                     O=qgStudyFields(data,p3,setName); response{s-1}=O.apvEndpointResponse;
@@ -63,11 +63,11 @@ for t=indices
         end
         measurements=cell(1,3);
         for s=1:3
-            measurements{s}=measureProductProjection(contexts{s},samples{1},samples{s+1},zeros(2,numel(a)),config.apvCount,projections=projections{s});
+            measurements{s}=WVInternal.measureProductProjection(contexts{s},samples{1},samples{s+1},zeros(2,numel(a)),config.apvCount,projections=projections{s});
         end
         low=measurements{1}; high=measurements{2}; independent=measurements{3};
-        qr=qualifyProductReferences(contexts{2},low,high,config.apvCount,scales,config.referenceAllowance,config.referenceAbsoluteAllowance);
-        er=qualifyProductReferences(contexts{2},high,independent,config.apvCount,scales,config.referenceAllowance,config.referenceAbsoluteAllowance);
+        qr=WVInternal.qualifyProductReferences(contexts{2},low,high,config.apvCount,scales,config.referenceAllowance,config.referenceAbsoluteAllowance);
+        er=WVInternal.qualifyProductReferences(contexts{2},high,independent,config.apvCount,scales,config.referenceAllowance,config.referenceAbsoluteAllowance);
         qualification=max(qr.allowanceFraction,er.allowanceFraction); relative=max(qr.relativeError,er.relativeError);
         addRows("apv",high.error,qualification,relative,high.isZero);
         for e=1:2

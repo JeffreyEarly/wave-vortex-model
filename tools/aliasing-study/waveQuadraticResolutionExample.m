@@ -25,7 +25,7 @@ if isempty(fieldnames(config))
     return
 end
 started=tic; data=prepareSourceStudy(config); config=data.config;
-prepared=prepareWaveQuadraticAssessment(data,ensureOutputCoverage=true,productBudget=options.productBudget,workingMemoryBudget=options.workingMemoryBudget);
+prepared=WVInternal.prepareWaveQuadraticAssessment(data,ensureOutputCoverage=true,productBudget=options.productBudget,workingMemoryBudget=options.workingMemoryBudget);
 preparationSeconds=toc(started);
 kappa=prepared.inventory.magnitudes; positive=find(kappa>0); kappa=kappa(positive);
 converged=zeros(numel(positive),1); gridSupported=converged;
@@ -106,7 +106,7 @@ for j=1:numel(selectedPages)
     difficulty=max(kappa(triads.page1(rows)),kappa(triads.page2(rows)));
     [~,first]=min(difficulty); indices(j)=rows(first);
 end
-prepared=prepareWaveQuadraticAssessment(data,interactionIndices=indices,productBudget=options.productBudget,workingMemoryBudget=options.workingMemoryBudget);
+prepared=WVInternal.prepareWaveQuadraticAssessment(data,interactionIndices=indices,productBudget=options.productBudget,workingMemoryBudget=options.workingMemoryBudget);
 preparationSeconds=toc(started);
 assessment=assessWaveQuadraticResolution(prepared,waveModeKappa=kappa(positive),waveModeCount=counts,quadraticTolerance=options.quadraticTolerance,productBudget=options.productBudget);
 repeat=assessWaveQuadraticResolution(prepared,waveModeKappa=kappa(positive),waveModeCount=min(counts,3),quadraticTolerance=options.quadraticTolerance,productBudget=options.productBudget);

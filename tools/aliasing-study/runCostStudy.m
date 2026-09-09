@@ -36,7 +36,7 @@ if policy=="independent", maskPolicy="dense"; else, maskPolicy=policy; end
 for r=1:height(loaded.rows)
     record=loaded.raw{r};
     for count=1:config.waveCount
-        mask=studyModePairMask(record.positionA,record.positionB,loaded.rows.inputA(r),loaded.rows.inputB(r),count,maskPolicy);
+        mask=WVInternal.studyModePairMask(record.positionA,record.positionB,loaded.rows.inputA(r),loaded.rows.inputB(r),count,maskPolicy);
         pairs=find(mask);
         if isempty(pairs), continue; end
         [value,j]=max(record.error(count,pairs));

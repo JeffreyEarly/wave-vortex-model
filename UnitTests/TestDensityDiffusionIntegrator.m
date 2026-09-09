@@ -241,7 +241,7 @@ classdef TestDensityDiffusionIntegrator < matlab.unittest.TestCase
 
         function endpointScopeIsExplicit(testCase)
             for endpoint=[-.1 Inf;Inf .1;Inf Inf].'
-                w=WVTransformFreeSurfaceQG([100e3 100e3 1000],[8 8 33],N2Function=@(z)1e-4*ones(size(z)),g0=endpoint(1),gd=endpoint(2),mdaGramTolerance=.1);
+                w=WVTransformFreeSurfaceQG([100e3 100e3 1000],[8 8 33],N2Function=@(z)1e-4*ones(size(z)),g0=endpoint(1),gd=endpoint(2),gramTolerance=.1);
                 testCase.verifyError(@()TestDensityDiffusionIntegrator.integrator(w,0),'WV:DensityDiffusionEndpoints')
             end
         end
@@ -306,7 +306,7 @@ classdef TestDensityDiffusionIntegrator < matlab.unittest.TestCase
         end
 
         function constantStratificationConservationCorrectionIsNeutral(testCase)
-            w=WVTransformFreeSurfaceQG([100e3 100e3 1000],[8 8 33],N2Function=@(z)1e-4*ones(size(z)),mdaGramTolerance=.1);
+            w=WVTransformFreeSurfaceQG([100e3 100e3 1000],[8 8 33],N2Function=@(z)1e-4*ones(size(z)),gramTolerance=.1);
             e=TestDensityDiffusionIntegrator.integrator(w,1e-5); o=e.operators; m=o.mda;
             derivative=m.reconstruction.q/(-w.f);
             Bz=-o.N2.*derivative;

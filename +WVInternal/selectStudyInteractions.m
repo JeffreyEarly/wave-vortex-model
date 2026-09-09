@@ -5,7 +5,7 @@ arguments
     pageDifficulty (:,1) double {mustBeNonnegative}
 end
 rows=inventory.interactions; pages=table2array(rows(:,7:9));
-k=inventory.magnitudes(pages); maximum=max(k(:,1:2),[],2); minimum=min(k(:,1:2),[],2);
+k=reshape(inventory.magnitudes(pages),size(pages)); maximum=max(k(:,1:2),[],2); minimum=min(k(:,1:2),[],2);
 positive=inventory.magnitudes(inventory.magnitudes>0);
 anchors=positive(unique(round(linspace(1,length(positive),min(6,length(positive))))));
 % Integer closure was established by the inventory. The physical cross

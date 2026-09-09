@@ -16,10 +16,10 @@ for tolerance=[.1 .03 .01]
         count=countPassing(errors(:,p+1)<=tolerance); worstMissed=0; limiting="";
         if count>0
             for r=1:height(rows)
-                record=raw{r}; allowed=studyModePairMask(record.positionA,record.positionB,rows.inputA(r),rows.inputB(r),count,"dense");
+                record=raw{r}; allowed=WVInternal.studyModePairMask(record.positionA,record.positionB,rows.inputA(r),rows.inputB(r),count,"dense");
                 tested=false(size(allowed));
                 if p>1 && ismember(rows.interaction(r),selection.(policies(p)))
-                    tested=studyModePairMask(record.positionA,record.positionB,rows.inputA(r),rows.inputB(r),count,policies(p));
+                    tested=WVInternal.studyModePairMask(record.positionA,record.positionB,rows.inputA(r),rows.inputB(r),count,policies(p));
                 end
                 candidates=find(allowed & ~tested);
                 if isempty(candidates), continue; end

@@ -5,7 +5,7 @@ classdef TestFreeSurfaceQGPerformance < matlab.unittest.TestCase
             for endpoints=[Inf Inf;-.1 Inf;Inf .1;-.1 .1].'
                 for antialias=[true false]
                     w=WVTransformFreeSurfaceQG([100e3 120e3 1000],[8 12 33],N2Function=@(z)1e-4*ones(size(z)), ...
-                        g0=endpoints(1),gd=endpoints(2),mdaGramTolerance=.1,shouldAntialias=antialias);
+                        g0=endpoints(1),gd=endpoints(2),gramTolerance=.1,shouldAntialias=antialias);
                     state=TestFreeSurfaceQGPerformance.mixedState(w);
                     for multiplier=[1 -2]
                         w.Ag_q=multiplier*state.Ag_q; w.Ag_0=multiplier*state.Ag_0; w.Amda=state.Amda;

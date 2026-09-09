@@ -3,7 +3,7 @@ layout: default
 title: removeOperation
 parent: WVTransformFreeSurfaceQG
 grand_parent: Transforms
-nav_order: 195
+nav_order: 197
 mathjax: true
 ---
 

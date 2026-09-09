@@ -1,5 +1,7 @@
 # Sparse quadratic-product assessment (issue 400)
 
+The reusable numerical functions are now packaged under `WVInternal`; the study scripts remain in this authoring directory. For ordinary model initialization, use the v5 constructors and their `constructionAssessment` report; see [automatic mode selection](../../Documentation/Validation/AutomaticModeSelection.md).
+
 This reproducible authoring study compares linear, fixed sparse, and targeted sparse checks against a bounded dense survey of physical wave and mixed-family source products. See `REPORT.md` for findings, `API-PROPOSAL.md` for the proposed advisory interface, and `results/comparison-v1` for consolidated machine-readable evidence. Runtime defaults, coefficient shapes, and physical grids are unchanged. The current authoring code uses the released InternalModes beta dependency declared by WVM.
 
 The first working advisory API is documented in [ADVISORY-API.md](ADVISORY-API.md). It reuses prepared modes and returns strict-count, reference, coverage, and budget diagnostics in memory.
@@ -51,4 +53,4 @@ The metric measures aliasing into retained coefficients with physical signed pro
 
 ## Fast trials of explicit wave-count maps
 
-The [advisory API](ADVISORY-API.md#repeated-explicit-count-map-assessment) supports a fixed evidence snapshot for repeated per-kappa count-map assessments. Start with `prepareWaveQuadraticAssessment`, then reuse the result with `assessWaveQuadraticResolution`. Run `waveQuadraticResolutionExample` to preserve the original 1 km, 24-candidate linear count curve and add quadratic samples at three explicitly selected outputs; `benchmarkWaveQuadraticAssessment` records preparation/reuse costs and small dense controls. See the [performance and verification record](../../Documentation/Validation/Issue425/README.md). These authoring functions do not add runtime dependencies or trigger assessment during ordinary model construction.
+The [advisory API](ADVISORY-API.md#repeated-explicit-count-map-assessment) supports a fixed evidence snapshot for repeated per-kappa count-map assessments. Start with `WVInternal.prepareWaveQuadraticAssessment`, then reuse the result with `assessWaveQuadraticResolution`. Run `waveQuadraticResolutionExample` to preserve the original 1 km, 24-candidate linear count curve and add quadratic samples at three explicitly selected outputs; `benchmarkWaveQuadraticAssessment` records preparation/reuse costs and small dense controls. See the [performance and verification record](../../Documentation/Validation/Issue425/README.md). These authoring functions do not add runtime dependencies or trigger assessment during ordinary model construction.

@@ -23,7 +23,7 @@ if size(referenceProducts,2)~=nProducts || size(endpointProducts,2)~=nProducts |
     error('WVStudy:InvalidProductLayout','Product columns must agree and output counts must fit the target basis.')
 end
 projections = options.projections;
-if isempty(projections), projections = prepareProductProjections(context,counts); end
+if isempty(projections), projections = WVInternal.prepareProductProjections(context,counts); end
 if numel(projections) ~= numel(counts)
     error('WVStudy:InvalidProductLayout','Prepared projections must match the requested output prefixes.')
 end

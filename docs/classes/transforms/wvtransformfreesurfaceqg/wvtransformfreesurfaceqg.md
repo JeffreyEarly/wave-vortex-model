@@ -28,8 +28,9 @@ Create a free-surface QG transform scientifically or directly.
 + `options.latitude`  latitude in degrees; default 24
 + `options.apvModeCount`  strict retained APV prefix; empty preserves automatic selection
 + `options.mdaModeCount`  strict retained MDA prefix; empty preserves automatic selection
-+ `options.apvGramTolerance`  APV normalized-Gram tolerance
-+ `options.mdaGramTolerance`  MDA normalized-Gram tolerance
++ `options.gramTolerance`  shared normalized-Gram tolerance; default 1e-2
++ `options.modeConvergenceTolerance`  independent physical H1 and equivalent-depth agreement; default 1e-6
++ `options.boundaryResolutionTolerance`  fixed zero-APV physical derivative and energy tolerance; default 1e-2
 + `options.quadraticAliasingTolerance`  APV quadratic-product tolerance in the induced Hilbert majorant
 + `options.muTolerance`  APV inversion singularity tolerance
 

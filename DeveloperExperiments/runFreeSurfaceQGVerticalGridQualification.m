@@ -20,8 +20,7 @@ arguments
     options.g (1,1) double {mustBePositive} = 9.81
     options.surfaceAcceleration double = NaN
     options.bottomAcceleration (1,1) double = 0.03
-    options.apvGramTolerance (1,1) double {mustBeNonnegative} = 1e-2
-    options.mdaGramTolerance (1,1) double {mustBeNonnegative} = 1e-2
+    options.gramTolerance (1,1) double {mustBeNonnegative} = 1e-2
     options.quadraticAliasingTolerance (1,1) double {mustBePositive} = 0.1
     options.shouldPrint (1,1) logical = true
 end
@@ -53,7 +52,7 @@ for profileId = options.profileIds
             timer = tic;
             try
                 assessment = WVTransformFreeSurfaceQG.assessVerticalResolution(options.Lz,Nz,N2Function=N2,latitude=options.latitude, ...
-                    g=options.g,g0=g0,gd=gd,apvGramTolerance=options.apvGramTolerance,mdaGramTolerance=options.mdaGramTolerance, ...
+                    g=options.g,g0=g0,gd=gd,gramTolerance=options.gramTolerance, ...
                     quadraticAliasingTolerance=options.quadraticAliasingTolerance);
                 record.elapsedSeconds = toc(timer);
                 record.apvModeCount = assessment.apvModeCount;

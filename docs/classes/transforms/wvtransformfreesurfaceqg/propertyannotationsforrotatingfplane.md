@@ -3,7 +3,7 @@ layout: default
 title: propertyAnnotationsForRotatingFPlane
 parent: WVTransformFreeSurfaceQG
 grand_parent: Transforms
-nav_order: 180
+nav_order: 182
 mathjax: true
 ---
 

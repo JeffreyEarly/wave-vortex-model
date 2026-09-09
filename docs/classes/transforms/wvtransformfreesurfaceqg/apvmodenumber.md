@@ -3,7 +3,7 @@ layout: default
 title: apvModeNumber
 parent: WVTransformFreeSurfaceQG
 grand_parent: Transforms
-nav_order: 50
+nav_order: 49
 mathjax: true
 ---
 

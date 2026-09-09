@@ -1,31 +1,13 @@
 classdef TestPerKappaWaveAssessment < matlab.unittest.TestCase
     methods (Test, TestTags="full")
-        function unrequestedReferenceRemainsExplicitlyUnverified(testCase)
-            calls = 0;
-            single = WVTransformFreeSurfaceBoussinesq.fromStratification([1e5 1e5 1000],[8 8 65],N2Function=@profile);
-            singleOutputCalls = calls;
-            calls = 0;
-            [w,a] = WVTransformFreeSurfaceBoussinesq.fromStratification([1e5 1e5 1000],[8 8 65],N2Function=@profile);
-            testCase.verifyEqual(calls,singleOutputCalls)
-            testCase.verifyEqual(w.waveF,single.waveF)
-            testCase.verifyEqual(w.waveG,single.waveG)
-            testCase.verifyEqual(a.pages.kappa,w.khUnique)
+        function defaultReferenceChecksEveryRequestedPrefix(testCase)
+            [w,a]=newTransform();
             testCase.verifyEqual(a.pages.requestedCount,w.waveModeCountByKh)
-            testCase.verifyEqual(a.pages.gridSupportedCount,w.waveModeCountByKh)
-            testCase.verifyEqual(a.pages.status,repmat("reference-not-requested",numel(w.khUnique),1))
-            testCase.verifyTrue(all(isnan(a.pages.convergedCount)))
-            testCase.verifyTrue(all(isnan(a.pages.usableCount)))
-            testCase.verifyFalse(any(a.pages.candidateLimitReached))
-            testCase.verifyEmpty(a.referenceNEVP)
-            testCase.verifyTrue(all(cellfun(@isempty,a.modeConvergence)))
-            testCase.verifyEmpty(a.inertial.convergence)
-            for p = 1:numel(w.khUnique)
-                testCase.verifyEqual(a.prefixGramError{p}(end),w.waveGramError(p))
-            end
-            function values = profile(z)
-                calls = calls+1;
-                values = 1e-4*exp(2*z/700);
-            end
+            testCase.verifyEqual(a.pages.selectedCount,w.waveModeCountByKh)
+            testCase.verifyEqual(a.pages.status,repmat("accepted",numel(w.khUnique),1))
+            testCase.verifyEqual(a.pages.convergedCount,w.waveModeCountByKh)
+            testCase.verifyNotEmpty(a.referenceNEVP)
+            testCase.verifyNotEmpty(a.inertial.convergence)
         end
 
         function explicitReferenceAssessesActualPageIdentities(testCase)
@@ -61,19 +43,12 @@ classdef TestPerKappaWaveAssessment < matlab.unittest.TestCase
             testCase.verifyLessThan(max(a.inertial.convergence.measurements.value(rows)),1e-6)
         end
 
-        function assessmentPreservesStoredOperatorsAndSeparatesTolerance(testCase)
-            [w,a] = newTransform(referenceNEVP=128);
-            [strict,b] = newTransform(referenceNEVP=128,modeConvergenceTolerance=1e-16);
-            original = w.scientificState(); compared = strict.scientificState();
-            testCase.verifyEqual(rmfield(original,{'N2Function','rhoFunction'}),rmfield(compared,{'N2Function','rhoFunction'}))
-            testCase.verifyEqual(w.coefficientState(),strict.coefficientState())
-            testCase.verifyEqual(a.pages.gridSupportedCount,b.pages.gridSupportedCount)
-            testCase.verifyGreaterThan(sum(a.pages.usableCount),sum(b.pages.usableCount))
-            testCase.verifyTrue(any(b.pages.status=="rejected"))
-            testCase.verifyEqual(b.pages.requestedCount,strict.waveModeCountByKh)
-            plain = newTransform();
-            without = plain.scientificState();
+        function convergenceToleranceIsAConstructionRequirement(testCase)
+            testCase.verifyError(@()newTransform(referenceNEVP=128,modeConvergenceTolerance=1e-16),'WV:UnconvergedBalancedModes')
+            [w,a]=newTransform(referenceNEVP=128); plain=newTransform();
+            original=w.scientificState(); without=plain.scientificState();
             testCase.verifyEqual(rmfield(original,{'N2Function','rhoFunction'}),rmfield(without,{'N2Function','rhoFunction'}))
+            testCase.verifyTrue(all(a.pages.status=="accepted"))
         end
 
         function absentWavesStillAssessIndependentInertialFamily(testCase)
@@ -101,5 +76,5 @@ arguments (Input)
     options.modeConvergenceTolerance (1,1) double = 1e-6
 end
 args = namedargs2cell(options);
-[w,a] = WVTransformFreeSurfaceBoussinesq.fromStratification([1e5 1e5 1000],[8 8 65],args{:},N2Function=@(z)1e-4*exp(2*z/700));
+[w,a] = WVTransformFreeSurfaceBoussinesq.fromStratification([1e5 1e5 1000],[8 8 65],args{:},N2Function=@(z)1e-4*exp(2*z/700),apvModeCount=3,mdaModeCount=2,inertialModeCount=3);
 end

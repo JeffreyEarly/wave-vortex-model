@@ -3,7 +3,7 @@ layout: default
 title: propertyAnnotationsForGeometry
 parent: WVTransformFreeSurfaceQG
 grand_parent: Transforms
-nav_order: 179
+nav_order: 181
 mathjax: true
 ---
 
