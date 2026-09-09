@@ -45,12 +45,16 @@ void contracts(const std::shared_ptr<const WVStratifiedModalRecord>& source) {
     require(b[0].real==17 && spatial[0]==29,"Invalid call mutated output");
     status=kernel->transformA0ToField(input,static_cast<WVStratifiedQGField>(99),{spatial.data(),kernel->spatialShape()}); require(status.code==WVKernelStatusCode::unsupportedOperation,"Unknown field accepted");
     status=kernel->transformA0ToField(input,WVStratifiedQGField::u,{nullptr,kernel->spatialShape()}); require(status.code==WVKernelStatusCode::invalidPointer,"Null field accepted");
-    for (auto operation : {&WVTransformStratifiedQGKernel::verticalDiffusivityFlux,&WVTransformStratifiedQGKernel::linearBottomFrictionFlux,&WVTransformStratifiedQGKernel::quadraticBottomFrictionFlux}) {
-        status=(kernel.get()->*operation)(input,-1,output); require(status.code==WVKernelStatusCode::invalidConfiguration,"Negative closure coefficient accepted");
-        status=(kernel.get()->*operation)(input,std::numeric_limits<double>::infinity(),output); require(status.code==WVKernelStatusCode::invalidConfiguration,"Infinite closure coefficient accepted");
-        status=(kernel.get()->*operation)(input,1,{a.data(),input.shape}); require(status.code==WVKernelStatusCode::overlappingArrays,"Aliased closure accepted");
+    using Closure=std::function<WVKernelStatus(WVComplexConstView,double,WVComplexView)>;
+    for (const auto& operation : std::array<Closure,3>{
+        [&](WVComplexConstView a,double value,WVComplexView b){return kernel->verticalDiffusivityFlux(a,value,b);},
+        [&](WVComplexConstView a,double value,WVComplexView b){return kernel->linearBottomFrictionFlux(a,value,b);},
+        [&](WVComplexConstView a,double value,WVComplexView b){return kernel->quadraticBottomFrictionFlux(a,value,b);}}) {
+        status=operation(input,-1,output); require(status.code==WVKernelStatusCode::invalidConfiguration,"Negative closure coefficient accepted");
+        status=operation(input,std::numeric_limits<double>::infinity(),output); require(status.code==WVKernelStatusCode::invalidConfiguration,"Infinite closure coefficient accepted");
+        status=operation(input,1,{a.data(),input.shape}); require(status.code==WVKernelStatusCode::overlappingArrays,"Aliased closure accepted");
         require(b[0].real==17,"Invalid closure mutated output");
-        require(bool((kernel.get()->*operation)(input,0,output)),"Zero closure failed");
+        require(bool(operation(input,0,output)),"Zero closure failed");
         for (const auto x:b) require(x.real==0 && x.imag==0,"Zero closure has a tendency");
         std::fill(b.begin(),b.end(),WVComplex64{17,19});
     }

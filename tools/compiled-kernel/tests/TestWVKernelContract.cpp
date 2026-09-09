@@ -430,6 +430,61 @@ void testNonlinearFlux(bool hydrostatic) {
     require(kernel->descriptor().spectralShape().elementCount() * sizeof(WVComplex64) <= kernel->phaseReservationBytes(),"streamed phase values do not fit inside their H-sized reservation");
     require(kernel->metrics().planCount == 17,"unexpected streamed target plan count");
 
+    const auto R = kernel->descriptor().spatialShape().elementCount();
+    const std::size_t channels = hydrostatic ? 3 : 4;
+    const auto beforeFp = Fp, beforeFm = Fm, beforeF0 = F0;
+    std::vector<double> velocity(3*R), raw(channels*R), derivatives(3*R);
+    WVRealFieldBundleView velocityView{velocity.data(),{config.Nx,config.Ny,config.Nz,3}};
+    WVRealFieldBundleView rawView{raw.data(),{config.Nx,config.Ny,config.Nz,channels}};
+    WVRealFieldBundleView derivativeView{derivatives.data(),velocityView.shape};
+    require(bool(kernel->transformWaveVortexToUVW(state,velocityView)),"prepare shared velocity");
+    const auto velocityBefore = velocity;
+    const auto retainedBytes = kernel->persistentBytes();
+    const auto reconstructionCount = kernel->metrics().advectionVelocityReconstructionCount;
+    const auto fullStart=kernel->metrics().executionCount;
+    require(bool(kernel->nonlinearFluxUsingAdvectionFields(state,flux,
+                {velocity.data(),velocityView.shape},&rawView)),"capture raw nonlinear tendency");
+    const auto fullExecutions=kernel->metrics().executionCount-fullStart;
+    for (std::size_t i=0;i<count;++i)
+        require(Fp[i].real==beforeFp[i].real && Fp[i].imag==beforeFp[i].imag &&
+                    Fm[i].real==beforeFm[i].real && Fm[i].imag==beforeFm[i].imag &&
+                    F0[i].real==beforeF0[i].real && F0[i].imag==beforeF0[i].imag,
+                "raw observation changed the projected flux");
+    require(velocity==velocityBefore && kernel->persistentBytes()==retainedBytes &&
+                kernel->metrics().advectionVelocityReconstructionCount==reconstructionCount,
+            "raw observation preserves shared fields and reuses their reconstruction");
+    for (std::size_t channel=0;channel<channels;++channel) {
+        const auto target=hydrostatic && channel==2 ? 3 : channel;
+        require(bool(kernel->transformStateFieldDerivatives(state,
+                    static_cast<WVDynamicalField>(target),derivativeView)),"independent tendency derivatives");
+        for (std::size_t i=0;i<R;++i) {
+            const auto expected=-(velocity[i]*derivatives[i]+velocity[R+i]*derivatives[R+i]+velocity[2*R+i]*derivatives[2*R+i]);
+            require(std::abs(raw[channel*R+i]-expected)<=1e-12*std::max(1e-30,std::abs(expected)),
+                    "observed spatial contribution differs before projection");
+        }
+    }
+    const auto rawBefore=raw;
+    for(auto* values:{&Fp,&Fm,&F0}) std::fill(values->begin(),values->end(),WVComplex64{17,19});
+    const auto rawStart=kernel->metrics().executionCount;
+    require(bool(kernel->nonlinearFluxUsingAdvectionFields(state,flux,
+                {velocity.data(),velocityView.shape},&rawView,false)),"spatial-only nonlinear tendency");
+    require(raw==rawBefore && velocity==velocityBefore && kernel->metrics().executionCount-rawStart<fullExecutions,
+            "spatial-only evaluation changed tendencies or retained projection work");
+    for(const auto* values:{&Fp,&Fm,&F0}) for(const auto value:*values)
+        require(value.real==17 && value.imag==19,"spatial-only evaluation wrote spectral flux");
+    const auto rejectedStart=kernel->metrics().executionCount;
+    require(kernel->nonlinearFluxUsingAdvectionFields(state,flux,
+                {velocity.data(),velocityView.shape},nullptr,false).code==WVKernelStatusCode::invalidConfiguration &&
+                kernel->metrics().executionCount==rejectedStart,"missing spatial output was accepted or rejected after FFT work");
+    auto badRaw=rawView; badRaw.data=velocity.data();
+    require(kernel->nonlinearFluxUsingAdvectionFields(state,flux,
+                {velocity.data(),velocityView.shape},&badRaw).code==WVKernelStatusCode::overlappingArrays,
+            "raw tendency may not alias shared velocity");
+    badRaw=rawView; badRaw.shape.fourth=channels+1;
+    require(kernel->nonlinearFluxUsingAdvectionFields(state,flux,
+                {velocity.data(),velocityView.shape},&badRaw).code==WVKernelStatusCode::invalidShape,
+            "raw tendency rejects incorrect channel count");
+
     WVFlux overlapping{{Ap.data(),shape},{Fm.data(),shape},{F0.data(),shape}};
     status = kernel->nonlinearFlux(state,overlapping);
     require(status.code == WVKernelStatusCode::overlappingArrays,"overlapping nonlinear-flux arrays were accepted");

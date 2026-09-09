@@ -1545,7 +1545,7 @@
       "intermediates": [
         "forcingTendency"
       ],
-      "runtimeStatus": "pending-315",
+      "runtimeStatus": "implemented",
       "samplingRestriction": "Full natural grid or scalar only; interpolation requires a separately qualified evaluator.",
       "configurationRestriction": "Bind an authenticated built-in forcing identity, stage and unique instance name before evaluation."
     },
@@ -1557,7 +1557,7 @@
       "intermediates": [
         "forcingTendency"
       ],
-      "runtimeStatus": "pending-315",
+      "runtimeStatus": "implemented",
       "samplingRestriction": "Full natural grid or scalar only; interpolation requires a separately qualified evaluator.",
       "configurationRestriction": "Bind an authenticated built-in forcing identity, stage and unique instance name before evaluation."
     },
@@ -1569,7 +1569,7 @@
       "intermediates": [
         "forcingTendency"
       ],
-      "runtimeStatus": "pending-315",
+      "runtimeStatus": "implemented",
       "samplingRestriction": "Full natural grid or scalar only; interpolation requires a separately qualified evaluator.",
       "configurationRestriction": "Bind an authenticated built-in forcing identity, stage and unique instance name before evaluation."
     },
@@ -1581,7 +1581,7 @@
       "intermediates": [
         "forcingTendency"
       ],
-      "runtimeStatus": "pending-315",
+      "runtimeStatus": "implemented",
       "samplingRestriction": "Full natural grid or scalar only; interpolation requires a separately qualified evaluator.",
       "configurationRestriction": "Bind an authenticated built-in forcing identity, stage and unique instance name before evaluation."
     },
@@ -1593,7 +1593,7 @@
       "intermediates": [
         "forcingTendency"
       ],
-      "runtimeStatus": "pending-315",
+      "runtimeStatus": "implemented",
       "samplingRestriction": "Full natural grid or scalar only; interpolation requires a separately qualified evaluator.",
       "configurationRestriction": "Bind an authenticated built-in forcing identity, stage and unique instance name before evaluation."
     },

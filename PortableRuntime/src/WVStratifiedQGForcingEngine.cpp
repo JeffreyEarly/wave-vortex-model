@@ -3,6 +3,7 @@
 #include "WaveVortexRuntime/WVExtensionCatalog.hpp"
 #include "WaveVortexRuntime/WVForcingContracts.hpp"
 #include "WVForcingImplementations.hpp"
+#include "WVForcingDiagnosticWorkspace.hpp"
 
 #include <algorithm>
 #include <cmath>
@@ -93,6 +94,7 @@ public:
   WVForcingStage stage() const noexcept override { return stage_; }
   std::uint8_t priority() const noexcept override { return priority_; }
   std::size_t ordinal() const noexcept override { return ordinal_; }
+  bool supportsTendencyDiagnostics() const noexcept override { return true; }
   std::size_t persistentBytes() const noexcept override {
     return sizeof(*this) + metadataDynamicBytes();
   }
@@ -113,6 +115,7 @@ private:
 
 class QGNonlinearAdvection final : public ResolvedStratifiedQGForcing {
 public:
+  bool requiresDiagnosticPhysicalFields() const noexcept override { return true; }
   using ResolvedStratifiedQGForcing::ResolvedStratifiedQGForcing;
   WVKernelStatus addRightHandSide(
       WVStratifiedQGForcingExecutionContext &context) const override {
@@ -122,6 +125,7 @@ public:
 
 class QGAdaptiveDamping final : public ResolvedStratifiedQGForcing {
 public:
+  bool requiresDiagnosticPhysicalFields() const noexcept override { return true; }
   QGAdaptiveDamping(WVFrozenForcingEntry entry, std::vector<double> damping)
       : ResolvedStratifiedQGForcing(entry), damping_(std::move(damping)) {}
   WVKernelStatus addRightHandSide(
@@ -151,6 +155,7 @@ private:
 
 class QGQuadraticBottomFriction final : public ResolvedStratifiedQGForcing {
 public:
+  bool requiresDiagnosticPhysicalFields() const noexcept override { return true; }
   QGQuadraticBottomFriction(WVFrozenForcingEntry entry, double drag)
       : ResolvedStratifiedQGForcing(entry), drag_(drag) {}
   WVKernelStatus addRightHandSide(
@@ -164,6 +169,7 @@ private:
 
 class QGBetaPlanePVAdvection final : public ResolvedStratifiedQGForcing {
 public:
+  bool requiresDiagnosticPhysicalFields() const noexcept override { return true; }
   QGBetaPlanePVAdvection(WVFrozenForcingEntry entry, double beta)
       : ResolvedStratifiedQGForcing(entry), beta_(beta) {}
   WVKernelStatus addRightHandSide(
@@ -450,6 +456,16 @@ WVKernelStatus WVStratifiedQGForcingExecutionContext::accumulate(WVKernelStatus 
   return WVKernelStatus::ok();
 }
 WVKernelStatus WVStratifiedQGForcingExecutionContext::nonlinearAdvection() {
+  if (engine_->diagnosticWorkspace_) {
+    auto& work=*engine_->diagnosticWorkspace_;
+    WVRealVolumeView raw{work.raw.data(),engine_->kernel().spatialShape()};
+    WVRealFieldBundleConstView fields;
+    auto prepared=engine_->diagnosticVelocity(A0_,fields); if (!prepared) return prepared;
+    const auto result=engine_->kernel().nonlinearFlux(A0_,{engine_->tendencyScratch_.data(),F0_.shape},0,&raw,&fields);
+    work.spatialCaptured=bool(result);
+    if (result) engine_->metrics_.physicalFieldReconstructionCount+=2;
+    return result;
+  }
   const auto status = engine_->kernel().nonlinearFlux(A0_,{engine_->tendencyScratch_.data(),F0_.shape});
   if (status) {
     engine_->metrics_.physicalFieldReconstructionCount += 4;
@@ -458,8 +474,16 @@ WVKernelStatus WVStratifiedQGForcingExecutionContext::nonlinearAdvection() {
   return accumulate(status);
 }
 WVKernelStatus WVStratifiedQGForcingExecutionContext::adaptiveDamping(const std::vector<double> &damping) {
-  double speed=0; auto status=engine_->kernel().uvMax(A0_,speed); if (!status) return status;
-  engine_->metrics_.physicalFieldReconstructionCount += 2;
+  double speed=0;
+  if (engine_->diagnosticWorkspace_) {
+    WVRealFieldBundleConstView fields;
+    auto status=engine_->diagnosticVelocity(A0_,fields); if (!status) return status;
+    const auto R=engine_->kernel().spatialShape().elementCount();
+    for (std::size_t i=0;i<R;++i) speed=std::max(speed,std::hypot(fields.data[i],fields.data[R+i]));
+  } else {
+    auto status=engine_->kernel().uvMax(A0_,speed); if (!status) return status;
+    engine_->metrics_.physicalFieldReconstructionCount+=2;
+  }
   if (!outputInitialized_) { engine_->initializeOutputWithZeros(F0_); outputInitialized_=true; }
   for (std::size_t i=0;i<damping.size();++i) {
     F0_.data[i].real+=speed*damping[i]*A0_.data[i].real;
@@ -468,6 +492,14 @@ WVKernelStatus WVStratifiedQGForcingExecutionContext::adaptiveDamping(const std:
   return WVKernelStatus::ok();
 }
 WVKernelStatus WVStratifiedQGForcingExecutionContext::linearBottomFriction(double rate) {
+  if (engine_->diagnosticWorkspace_) {
+    auto& work=*engine_->diagnosticWorkspace_;
+    WVRealVolumeView raw{work.raw.data(),engine_->kernel().spatialShape()};
+    const auto result=engine_->kernel().linearBottomFrictionFlux(A0_,rate,{engine_->tendencyScratch_.data(),F0_.shape},&raw);
+    work.spatialCaptured=bool(result);
+    if (result) ++engine_->metrics_.physicalFieldReconstructionCount;
+    return result;
+  }
   const auto status = engine_->kernel().linearBottomFrictionFlux(A0_,rate,{engine_->tendencyScratch_.data(),F0_.shape});
   if (status) {
     engine_->metrics_.physicalFieldReconstructionCount += 1;
@@ -476,6 +508,15 @@ WVKernelStatus WVStratifiedQGForcingExecutionContext::linearBottomFriction(doubl
   return accumulate(status);
 }
 WVKernelStatus WVStratifiedQGForcingExecutionContext::quadraticBottomFriction(double drag) {
+  if (engine_->diagnosticWorkspace_) {
+    auto& work=*engine_->diagnosticWorkspace_;
+    WVRealVolumeView raw{work.raw.data(),engine_->kernel().spatialShape()};
+    WVRealFieldBundleConstView fields;
+    auto prepared=engine_->diagnosticVelocity(A0_,fields); if (!prepared) return prepared;
+    const auto result=engine_->kernel().quadraticBottomFrictionFlux(A0_,drag,{engine_->tendencyScratch_.data(),F0_.shape},&raw,&fields);
+    work.spatialCaptured=bool(result);
+    return result;
+  }
   const auto status = engine_->kernel().quadraticBottomFrictionFlux(A0_,drag,{engine_->tendencyScratch_.data(),F0_.shape});
   if (status) {
     engine_->metrics_.physicalFieldReconstructionCount += 2;
@@ -484,9 +525,25 @@ WVKernelStatus WVStratifiedQGForcingExecutionContext::quadraticBottomFriction(do
   return accumulate(status);
 }
 WVKernelStatus WVStratifiedQGForcingExecutionContext::verticalDiffusivity(double kappaZ) {
+  if (engine_->diagnosticWorkspace_) {
+    auto& work=*engine_->diagnosticWorkspace_;
+    WVRealVolumeView raw{work.raw.data(),engine_->kernel().spatialShape()};
+    const auto result=engine_->kernel().verticalDiffusivityFlux(A0_,kappaZ,{engine_->tendencyScratch_.data(),F0_.shape},&raw);
+    work.spatialCaptured=bool(result);
+    return result;
+  }
   return accumulate(engine_->kernel().verticalDiffusivityFlux(A0_,kappaZ,{engine_->tendencyScratch_.data(),F0_.shape}));
 }
 WVKernelStatus WVStratifiedQGForcingExecutionContext::betaPlanePVAdvection(double beta) {
+  if (engine_->diagnosticWorkspace_) {
+    WVRealFieldBundleConstView fields;
+    auto status=engine_->diagnosticVelocity(A0_,fields); if (!status) return status;
+    auto& work=*engine_->diagnosticWorkspace_;
+    const auto R=engine_->kernel().spatialShape().elementCount();
+    for (std::size_t i=0;i<R;++i) work.raw[i]=-beta*fields.data[R+i];
+    work.spatialCaptured=true;
+    return WVKernelStatus::ok();
+  }
   return accumulate(engine_->kernel().linearFlux(A0_,{engine_->tendencyScratch_.data(),F0_.shape},beta));
 }
 
@@ -680,7 +737,7 @@ WVKernelStatus WVStratifiedQGForcingEngine::evaluateRightHandSide(
   context.engine_ = this;
   context.A0_ = A0;
   context.F0_ = F0;
-  for (const auto &forcing : forcing_) {
+  if (!linearDynamics_) for (const auto &forcing : forcing_) {
     ++metrics_.forcingCallCount;
     const auto status = forcing->addRightHandSide(context);
     if (!status)
@@ -690,6 +747,71 @@ WVKernelStatus WVStratifiedQGForcingEngine::evaluateRightHandSide(
     initializeOutputWithZeros(F0);
   ++metrics_.evaluationCount;
   return WVKernelStatus::ok();
+}
+
+WVKernelStatus WVStratifiedQGForcingEngine::diagnosticVelocity(WVComplexConstView a,WVRealFieldBundleConstView& fields) {
+  auto& work=*diagnosticWorkspace_;
+  const auto shape=kernel().spatialShape(); const auto R=shape.elementCount();
+  if (!work.physicalPrepared) {
+    auto status=kernel().transformA0ToField(a,WVStratifiedQGField::u,{work.physical.data(),shape}); if (!status) return status;
+    status=kernel().transformA0ToField(a,WVStratifiedQGField::v,{work.physical.data()+R,shape}); if (!status) return status;
+    work.physicalPrepared=true; metrics_.physicalFieldReconstructionCount+=2;
+  } else ++metrics_.physicalFieldReuseCount;
+  fields={work.physical.data(),{shape.first,shape.second,shape.third,2}};
+  return WVKernelStatus::ok();
+}
+WVKernelStatus WVStratifiedQGForcingEngine::evaluateForcingTendencies(
+    const WVComplexConstView& A0,const WVForcingTendencyOutput* outputs,std::size_t count, const WVRealFieldBundleConstView* preparedPhysical) {
+  if (executing_) return {WVKernelStatusCode::reentrantExecution,"Forcing diagnostics require an idle engine."};
+  tendencyMetrics_.workspaceLastPeakBytes=0;
+  const auto spectral=kernel().spectralShape(); const auto volume=kernel().spatialShape();
+  const WVShape4D spatial{volume.first,volume.second,volume.third,1};
+  const WVState state{0,0,{{},{},A0}};
+  auto status=detail::validateForcingTendencyOutputs(forcing_,spectral,spatial,state,outputs,count);
+  if (!status || !count) return status;
+  status=detail::validatePreparedDiagnosticFields(preparedPhysical,spatial,2,state,outputs,count);
+  if (!status) return status;
+  if (A0.shape.rows!=spectral.rows || A0.shape.columns!=spectral.columns)
+    return {WVKernelStatusCode::invalidShape,"Expected compact QG diagnostic state."};
+  const auto address=reinterpret_cast<std::uintptr_t>(A0.data);
+  if (!address || address%alignof(WVComplex64) || spectral.elementCount()*sizeof(WVComplex64)>UINTPTR_MAX-address)
+    return {WVKernelStatusCode::invalidPointer,"Invalid QG diagnostic state storage."};
+  for (std::size_t i=0;i<spectral.elementCount();++i)
+    if (!std::isfinite(A0.data[i].real) || !std::isfinite(A0.data[i].imag))
+      return {WVKernelStatusCode::invalidConfiguration,"QG diagnostic state must be finite."};
+  try {
+    detail::WVForcingDiagnosticWorkspace work(spectral,spatial,1,2);
+    if (preparedPhysical) {
+      std::copy_n(preparedPhysical->data,preparedPhysical->shape.elementCount(),work.physical.data());
+      work.physicalPrepared=true;
+    }
+    WVStratifiedQGForcingExecutionContext context;
+    context.engine_=this; context.A0_=A0; context.outputInitialized_=true;
+    executing_=true; diagnosticWorkspace_=&work;
+    struct Guard {
+      WVStratifiedQGForcingEngine& engine;
+      ~Guard() {
+        engine.tendencyMetrics_.workspaceLastPeakBytes=engine.diagnosticWorkspace_->bytes();
+        engine.tendencyMetrics_.workspaceHighWaterBytes=std::max(engine.tendencyMetrics_.workspaceHighWaterBytes,engine.diagnosticWorkspace_->bytes());
+        engine.tendencyMetrics_.workspaceLiveBytes=0;
+        engine.diagnosticWorkspace_=nullptr; engine.executing_=false;
+      }
+    } guard{*this};
+    tendencyMetrics_.workspaceLiveBytes=work.bytes();
+    return detail::evaluateForcingTendencySequence(forcing_,work,outputs,count,tendencyMetrics_,
+      [&](const WVStratifiedQGForcing& forcing,WVFlux& destination) {
+        context.F0_=destination.F0;
+        return forcing.addRightHandSide(context);
+      },
+      [&](WVRealFieldBundleConstView fields,WVFlux& destination) {
+        return kernel().transformQGPVToA0({fields.data,volume},destination.F0);
+      },
+      [&](const std::vector<WVComplex64>& difference,WVRealFieldBundleView destination) {
+        return kernel().transformSpectralTendencyToSpatial({difference.data(),spectral},{destination.data,volume});
+      });
+  } catch (const std::bad_alloc&) {
+    return {WVKernelStatusCode::allocationFailure,"Unable to allocate event forcing diagnostic workspace."};
+  }
 }
 
 WVStateConstraintResult

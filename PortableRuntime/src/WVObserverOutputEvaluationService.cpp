@@ -1,3 +1,4 @@
+#include "WVFieldEvaluationEventWorkspace.hpp"
 #include "WVDiagnosticFieldPlan.hpp"
 #include "WaveVortexRuntime/WVObserverOutputEvaluationService.hpp"
 #include "WaveVortexRuntime/WVObserverOutputProvider.hpp"
@@ -285,6 +286,7 @@ public:
     std::size_t offset = 0;
     std::size_t count = 0;
     bool isXYOnly = false;
+    std::size_t firstOutput = 0, outputCount = 0;
   };
 
   WVIntegrationStateLayout stateLayout;
@@ -294,6 +296,7 @@ public:
   WVFieldEvaluationService *fields = nullptr;
   WVFieldEvaluationPlan initialFieldPlan;
   WVFieldEvaluationPlan timeSeriesFieldPlan;
+  std::vector<std::uint8_t> activeTimeSeriesOutputs;
   std::vector<std::vector<WVComplex64>> initialComplexFieldStorage;
   std::vector<std::vector<WVComplex64>> timeSeriesComplexFieldStorage;
   std::vector<std::vector<double>> initialFieldStorage;
@@ -301,6 +304,7 @@ public:
   std::vector<WVFieldOutputView> initialFieldViews;
   std::vector<WVFieldOutputView> timeSeriesFieldViews;
   WVMovingFieldEvaluationPlan movingFieldPlan;
+  std::vector<std::uint8_t> activeMovingOutputs;
   std::vector<std::vector<double>> movingFieldStorage;
   std::vector<WVFieldOutputView> movingFieldViews;
   std::vector<MovingCoordinates> movingCoordinates;
@@ -364,6 +368,46 @@ public:
     return found == preparedOccurrences.end() ? nullptr : &*found;
   }
 
+  bool hasForcingOutputs() const noexcept {
+    return timeSeriesFieldPlan.diagnosticPlan_ && timeSeriesFieldPlan.diagnosticPlan_->hasForcingDiagnostics();
+  }
+  void releaseForcingOutputs(WVObserverOutputEvaluationMetrics& metrics) noexcept {
+    if(!hasForcingOutputs()) return;
+    for(auto& storage:timeSeriesFieldStorage) {
+      metrics.outputCapacityBytes-=storage.capacity()*sizeof(double);
+      std::vector<double>{}.swap(storage);
+    }
+    for(auto& storage:timeSeriesComplexFieldStorage) {
+      metrics.outputCapacityBytes-=storage.capacity()*sizeof(WVComplex64);
+      std::vector<WVComplex64>{}.swap(storage);
+    }
+    for(auto& view:timeSeriesFieldViews) view={};
+  }
+  WVKernelStatus prepareForcingOutputs(WVObserverOutputEvaluationMetrics& metrics) {
+    if(!hasForcingOutputs()) return WVKernelStatus::ok();
+    releaseForcingOutputs(metrics);
+    try {
+      for(std::size_t index=0;index<timeSeriesFieldPlan.outputCount();++index) {
+        if(!activeTimeSeriesOutputs[index]) continue;
+        const auto& output=timeSeriesFieldPlan.outputs()[index];
+        if(output.isComplex) {
+          auto& storage=timeSeriesComplexFieldStorage[index]; storage.resize(output.elementCount);
+          metrics.outputCapacityBytes+=storage.capacity()*sizeof(WVComplex64);
+          timeSeriesFieldViews[index]={nullptr,output.elementCount,storage.data()};
+        } else {
+          auto& storage=timeSeriesFieldStorage[index]; storage.resize(output.elementCount);
+          metrics.outputCapacityBytes+=storage.capacity()*sizeof(double);
+          timeSeriesFieldViews[index]={storage.data(),output.elementCount};
+        }
+      }
+      updateOccurrenceMetrics(metrics);
+      return WVKernelStatus::ok();
+    } catch(const std::bad_alloc&) {
+      releaseForcingOutputs(metrics);
+      return {WVKernelStatusCode::allocationFailure,"Unable to allocate occurrence-scoped forcing output storage."};
+    }
+  }
+
   void updateOccurrenceMetrics(
       WVObserverOutputEvaluationMetrics &metrics) const noexcept {
     std::size_t retained =
@@ -378,6 +422,12 @@ public:
       retained += occurrence.retainedBytes() - sizeof(PreparedOccurrence);
       live += occurrence.liveBytes() - sizeof(PreparedOccurrence);
     }
+    if(hasForcingOutputs()) {
+      for(const auto& storage:timeSeriesFieldStorage) {retained+=storage.capacity()*sizeof(double); live+=storage.size()*sizeof(double);}
+      for(const auto& storage:timeSeriesComplexFieldStorage) {retained+=storage.capacity()*sizeof(WVComplex64); live+=storage.size()*sizeof(WVComplex64);}
+    }
+    const auto sharedFieldBytes=fields->metrics().eventFieldWorkspaceLiveBytes;
+    retained+=sharedFieldBytes; live+=sharedFieldBytes;
     metrics.occurrenceWorkspaceRetainedBytes = retained;
     metrics.occurrenceWorkspaceLiveBytes = live;
     metrics.occurrenceWorkspaceMaximumLiveBytes =
@@ -390,12 +440,16 @@ public:
                           WVObserverOutputEvaluationMetrics &metrics) {
     if (running)
       return invalid("Observer evaluation is not reentrant.");
+    if(!initial) {
+      const auto status=prepareForcingOutputs(metrics); if(!status) return status;
+    }
     running = true;
     const auto finish = [this]() { running = false; };
     auto &views = initial ? initialFieldViews : timeSeriesFieldViews;
     const auto &plan = initial ? initialFieldPlan : timeSeriesFieldPlan;
-    if (!views.empty()) {
-      const auto status = fields->evaluate(plan, state, views.data(), views.size());
+    if (!views.empty() && (initial || std::any_of(activeTimeSeriesOutputs.begin(),activeTimeSeriesOutputs.end(),[](auto value){return value!=0;}))) {
+      const auto status = fields->evaluate(plan, state, views.data(), views.size(),
+                                           initial ? nullptr : activeTimeSeriesOutputs.data());
       if (!status) {
         finish();
         return status;
@@ -404,6 +458,7 @@ public:
     }
     if (!initial && !movingFieldViews.empty() && evaluateMoving) {
       for (const auto &coordinates : movingCoordinates) {
+        if(std::none_of(activeMovingOutputs.begin()+coordinates.firstOutput,activeMovingOutputs.begin()+coordinates.firstOutput+coordinates.outputCount,[](auto value){return value!=0;})) continue;
         if (coordinates.xBlockIndex >=
                 state.additionalBlockCount ||
             coordinates.yBlockIndex >=
@@ -437,7 +492,7 @@ public:
       const auto status = fields->evaluateMoving(
           movingFieldPlan, state,
           {movingX.data(), movingY.data(), movingZ.data(), movingX.size()},
-          movingFieldViews.data(), movingFieldViews.size());
+          movingFieldViews.data(), movingFieldViews.size(), activeMovingOutputs.data());
       if (!status) {
         finish();
         return status;
@@ -616,6 +671,9 @@ WVKernelStatus WVObserverOutputEvaluationService::create(
     planningContext.stateBlockCount = descriptorRecord.stateBlocks.size();
     planningContext.isDynamicsLinear = isDynamicsLinear;
     planningContext.stateLayout = &impl.stateLayout;
+    planningContext.forcingConfiguration=impl.fields->portableVariableConfiguration();
+    planningContext.forcingBindings=impl.fields->forcingVariableBindings().data();
+    planningContext.forcingBindingCount=impl.fields->forcingVariableBindings().size();
     std::vector<WVFieldRequest> initialRequests;
     std::vector<WVFieldRequest> timeSeriesRequests;
     std::map<std::string, std::size_t> initialRequestIndex;
@@ -796,7 +854,8 @@ WVKernelStatus WVObserverOutputEvaluationService::create(
           return invalid("Moving observer coordinate state was not resolved.");
         impl.movingCoordinates.push_back(
             {xBlockIndex, yBlockIndex, zBlockIndex, positions.fixedZ,
-             movingOffset, positions.positionCount, positions.isXYOnly});
+             movingOffset, positions.positionCount, positions.isXYOnly,
+             impl.movingFieldViews.size(),static_cast<std::size_t>(std::count_if(storedPlan.channels.begin(),storedPlan.channels.end(),[](const auto& channel){return channel.source==WVObserverOutputChannelSource::movingField;}))});
       }
 
       for (auto &channel : storedPlan.channels) {
@@ -927,7 +986,9 @@ WVKernelStatus WVObserverOutputEvaluationService::create(
       if(std::any_of(plan.outputs().begin(),plan.outputs().end(),[](const auto& output) {return output.isComplex;}))
         complexStorage.resize(plan.outputCount());
       views.resize(plan.outputCount());
+      const bool ephemeral=&plan==&impl.timeSeriesFieldPlan && plan.diagnosticPlan_ && plan.diagnosticPlan_->hasForcingDiagnostics();
       for (std::size_t index = 0; index < plan.outputCount(); ++index) {
+        if(ephemeral) continue;
         const auto count = plan.outputs()[index].elementCount;
         if(plan.outputs()[index].isComplex) {
           complexStorage[index].resize(count);
@@ -950,11 +1011,13 @@ WVKernelStatus WVObserverOutputEvaluationService::create(
                        impl.timeSeriesFieldViews);
     if (!status)
       return status;
+    impl.activeTimeSeriesOutputs.resize(impl.timeSeriesFieldPlan.outputCount());
     if (!movingRequests.empty()) {
       status = impl.fields->createMovingPlan(movingRequests,
                                              impl.movingFieldPlan);
       if (!status)
         return status;
+      impl.activeMovingOutputs.resize(impl.movingFieldPlan.outputCount());
       for (const auto &storage : impl.movingFieldStorage)
         candidate->metrics_.outputCapacityBytes +=
             storage.capacity() * sizeof(double);
@@ -1115,6 +1178,7 @@ WVKernelStatus WVObserverOutputEvaluationService::preflight(
 
 WVKernelStatus WVObserverOutputEvaluationService::useFieldEvaluationService(
     WVFieldEvaluationService &fieldEvaluationService) {
+  if(impl_->preparedOutputEvent) return invalid("Cannot rebind fields while an observation event awaits completion.");
   const bool compatible =
       impl_->fields != nullptr &&
       impl_->fields->isCompatibleWith(fieldEvaluationService) &&
@@ -1146,10 +1210,12 @@ WVObserverOutputEvaluationService::prepareInitial(const WVState &state) {
 
 WVKernelStatus WVObserverOutputEvaluationService::prepareInitial(
     const WVIntegrationState &state) {
+  if(impl_->preparedOutputEvent) return invalid("Cannot prepare initial fields while an observation event awaits completion.");
   const auto started = std::chrono::steady_clock::now();
   impl_->preparedOccurrences.clear();
   impl_->eventFieldBatchEntries.clear();
   impl_->preparedOutputEvent = false;
+  impl_->releaseForcingOutputs(metrics_);
   ++impl_->preparationGeneration;
   if (impl_->preparationGeneration == 0)
     ++impl_->preparationGeneration;
@@ -1167,6 +1233,11 @@ WVKernelStatus WVObserverOutputEvaluationService::prepareInitial(
 WVKernelStatus WVObserverOutputEvaluationService::prepare(
     const WVOutputEvent &event) {
   const auto started = std::chrono::steady_clock::now();
+  if (event.routeCount && !event.routes)
+    return invalid("Output route storage is missing.");
+  for(std::size_t route=0;route<event.routeCount;++route)
+    if(event.routes[route].observerCount && !event.routes[route].observers)
+      return invalid("Output route observer storage is missing.");
   if (!sameTime(event.state.waveVortex.t, event.scheduledTime))
     return invalid("Observation occurrence state is not evaluated at its "
                    "scheduled trigger time.");
@@ -1192,6 +1263,7 @@ WVKernelStatus WVObserverOutputEvaluationService::prepare(
   impl_->preparedOccurrences.clear();
   impl_->eventFieldBatchEntries.clear();
   impl_->preparedOutputEvent = false;
+  impl_->releaseForcingOutputs(metrics_);
   ++impl_->preparationGeneration;
   if (impl_->preparationGeneration == 0)
     ++impl_->preparationGeneration;
@@ -1208,8 +1280,29 @@ WVKernelStatus WVObserverOutputEvaluationService::prepare(
         break;
       }
     }
+  std::fill(impl_->activeTimeSeriesOutputs.begin(),impl_->activeTimeSeriesOutputs.end(),event.routes ? 0 : 1);
+  std::fill(impl_->activeMovingOutputs.begin(),impl_->activeMovingOutputs.end(),event.routes ? 0 : 1);
+  for(std::size_t route=0;route<event.routeCount;++route)
+    for(std::size_t observer=0;observer<event.routes[route].observerCount;++observer) {
+      const auto& view=event.routes[route].observers[observer];
+      if(view.observerOrdinal>=impl_->observerBindings.size())
+        return invalid("An output route has an invalid observer ordinal.");
+      const auto& binding=impl_->observerBindings[view.observerOrdinal];
+      if(binding.record!=view.record || !binding.outputs)
+        return invalid("An output route has an incompatible observer binding.");
+      for(const auto& output:*binding.outputs)
+        if(output.source==WVObserverOutputChannelSource::sampledField && !output.initialField)
+          impl_->activeTimeSeriesOutputs[output.fieldOutput]=1;
+        else if(output.source==WVObserverOutputChannelSource::movingField)
+          impl_->activeMovingOutputs[output.fieldOutput]=1;
+    }
   impl_->preparedEventOrdinal = event.eventOrdinal;
   impl_->preparedScheduledTime = event.scheduledTime;
+  const bool shareFields=impl_->hasForcingOutputs() &&
+      ((!impl_->movingFieldViews.empty() && needsMoving) ||
+       std::any_of(impl_->eventFieldPlans.begin(),impl_->eventFieldPlans.end(),[](const auto& plan){return plan.outputCount()!=0;}));
+  detail::WVFieldEvaluationEventScope sharedFields(*impl_->fields,event.state,shareFields);
+  if(!sharedFields.status()) return sharedFields.status();
   auto status = impl_->evaluate(event.state, false, needsMoving, metrics_);
   if (status) {
     std::size_t requestedOccurrenceCount = 0;
@@ -1385,10 +1478,16 @@ WVKernelStatus WVObserverOutputEvaluationService::prepare(
     impl_->eventFieldBatchEntries.clear();
     impl_->updateOccurrenceMetrics(metrics_);
   }
+  impl_->updateOccurrenceMetrics(metrics_);
+  sharedFields.release();
+  impl_->updateOccurrenceMetrics(metrics_);
   if (status)
     impl_->preparedOutputEvent = true;
-  else
+  else {
     impl_->prepared = false;
+    impl_->releaseForcingOutputs(metrics_);
+    impl_->updateOccurrenceMetrics(metrics_);
+  }
   metrics_.evaluationSeconds +=
       std::chrono::duration<double>(std::chrono::steady_clock::now() - started)
           .count();
@@ -1402,6 +1501,7 @@ void WVObserverOutputEvaluationService::complete(
       impl_->preparedEventOrdinal != event.eventOrdinal ||
       impl_->preparedScheduledTime != event.scheduledTime)
     return;
+  impl_->releaseForcingOutputs(metrics_);
   impl_->preparedOccurrences.clear();
   impl_->eventFieldBatchEntries.clear();
   impl_->preparedOutputEvent = false;
@@ -1428,6 +1528,9 @@ WVObserverOutputEvaluationMetrics WVObserverOutputEvaluationService::metrics() c
     result.diagnosticIntermediateReuseCount=fields.diagnosticIntermediateReuseCount;
     result.diagnosticWorkspaceLiveBytes=fields.diagnosticWorkspaceLiveBytes;
     result.diagnosticWorkspaceHighWaterBytes=fields.diagnosticWorkspaceHighWaterBytes;
+    result.eventFieldReuseCount=fields.eventFieldReuseCount;
+    result.eventFieldWorkspaceLiveBytes=fields.eventFieldWorkspaceLiveBytes;
+    result.eventFieldWorkspaceHighWaterBytes=fields.eventFieldWorkspaceHighWaterBytes;
   }
   return result;
 }
@@ -1453,7 +1556,9 @@ std::size_t WVObserverOutputEvaluationService::persistentBytes() const noexcept 
       impl_->movingFieldStorage.capacity() * sizeof(std::vector<double>) +
       impl_->initialFieldViews.capacity() * sizeof(WVFieldOutputView) +
       impl_->timeSeriesFieldViews.capacity() * sizeof(WVFieldOutputView) +
+      impl_->activeTimeSeriesOutputs.capacity() * sizeof(std::uint8_t) +
       impl_->movingFieldViews.capacity() * sizeof(WVFieldOutputView) +
+      impl_->activeMovingOutputs.capacity() * sizeof(std::uint8_t) +
       impl_->movingCoordinates.capacity() * sizeof(Impl::MovingCoordinates) +
       impl_->observerPlans.capacity() * sizeof(WVObserverOutputPlan) +
       impl_->eventFieldPlans.capacity() *

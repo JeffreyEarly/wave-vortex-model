@@ -1,6 +1,7 @@
 #pragma once
 
 #include "WaveVortexRuntime/WVForcingContracts.hpp"
+#include "WaveVortexRuntime/WVPortableVariablePlan.hpp"
 #include "WaveVortexRuntime/WVObserverContracts.hpp"
 #include "WaveVortexRuntime/WVOutputSchedule.hpp"
 
@@ -139,6 +140,10 @@ public:
       std::unique_ptr<WVStratifiedQGForcing> &forcing) const;
   WVKernelStatus
   validateConfiguration(const WVFrozenForcingEntry &entry) const;
+  // Borrowed names remain owned by schedule. No forcing or FFT is instantiated.
+  WVKernelStatus diagnosticBindings(const WVFrozenForcingSchedule& schedule,
+      std::string_view configuration,std::vector<WVPortableForcingVariableBinding>& bindings) const;
+
   std::size_t persistentBytes() const noexcept;
 
 private:

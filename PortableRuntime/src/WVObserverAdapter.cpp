@@ -296,7 +296,19 @@ WVKernelStatus buildLegacyOutputPlan(
                : WVObservationValueLayout::record;
   };
   const auto addFullField = [&](const std::string &field) {
-    const auto *metadata = findExecutablePortableVariable(field);
+    const auto *metadata = isPortableForcingVariableName(field) ? nullptr : findExecutablePortableVariable(field);
+    WVPortableVariablePlan forcingPlan;
+    std::string_view forcingName;
+    if (!metadata) {
+      WVPortableVariableOptions options; options.source=WVPortableOperationSource::builtIn;
+      if(resolvePortableForcingVariablePlan(field,context.forcingConfiguration,portableFullGridSampling,
+          context.forcingBindings,context.forcingBindingCount,options,forcingPlan)==WVPortableVariableStatus::supported) {
+        metadata=&forcingPlan.output->metadata;
+        for(std::size_t index=0;index<context.forcingBindingCount;++index)
+          if(context.forcingBindings[index].instanceOrdinal==forcingPlan.forcingInstanceOrdinal)
+            forcingName=context.forcingBindings[index].instanceName;
+      }
+    }
     if (metadata == nullptr) {
       const auto* known=findPortableVariable(field);
       if(known) for(const auto& contract:WVPortableVariableContracts)
@@ -362,10 +374,15 @@ WVKernelStatus buildLegacyOutputPlan(
     for (std::size_t index = 0; index < names.size(); ++index)
       addAxis(plan.schema, names[index], dimensions[index],
               WVObservationCoordinateRole::none);
-    addChannel(plan,
-               fieldVariable(*metadata, "derived-" + field, field, names,
-                             outputLayout(*metadata)),
-               std::move(channel));
+    auto variable=fieldVariable(*metadata,"derived-"+field,field,names,outputLayout(*metadata));
+    if(forcingPlan.output) {
+      constexpr std::string_view exemplar="portable_catalog_forcing";
+      const auto suffix=variable.description.rfind(exemplar);
+      if(forcingName.empty() || suffix==std::string::npos || suffix+exemplar.size()!=variable.description.size())
+        return invalid("Forcing diagnostic metadata template or instance is invalid: "+field);
+      variable.description.replace(suffix,exemplar.size(),forcingName);
+    }
+    addChannel(plan,std::move(variable),std::move(channel));
     return WVKernelStatus::ok();
   };
 

@@ -101,6 +101,8 @@ public:
   }
   std::size_t persistentBytes() const noexcept override;
 
+  void setLinearDynamics(bool linear) noexcept { forcing_->setLinearDynamics(linear); }
+
 private:
   static WVKernelStatus createImpl(
       const WVTransformConstantStratificationConfiguration &configuration,

@@ -252,6 +252,11 @@ findExecutablePortableVariable(std::string_view name) noexcept {
     case WVPortableVariable::A0t: return entry;
     case WVPortableVariable::Amt: return entry;
     case WVPortableVariable::Apt: return entry;
+    case WVPortableVariable::Feta_portable_catalog_forcing: return entry;
+    case WVPortableVariable::Fqgpv_portable_catalog_forcing: return entry;
+    case WVPortableVariable::Fu_portable_catalog_forcing: return entry;
+    case WVPortableVariable::Fv_portable_catalog_forcing: return entry;
+    case WVPortableVariable::Fw_portable_catalog_forcing: return entry;
     case WVPortableVariable::energy_g: return entry;
     case WVPortableVariable::energy_io: return entry;
     case WVPortableVariable::energy_mda: return entry;

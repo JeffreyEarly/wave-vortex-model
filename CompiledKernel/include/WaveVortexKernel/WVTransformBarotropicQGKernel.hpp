@@ -109,9 +109,14 @@ struct WVBarotropicQGKernelMetrics {
 };
 
 // RHS-scoped transform workspace state. The numerical storage remains owned
-// by the kernel's bounded 4H+5R scratch; this record only tracks which
-// reconstructed fields are valid between coarse forcing operations.
+// by the kernel's bounded 4H+5R scratch. This record tracks valid fields
+// between coarse operations and can borrow caller-owned diagnostic output.
 struct WVBarotropicQGOperationWorkspace {
+    // Optional invocation-owned raw output. Spatial operations capture here
+    // instead of projecting; the caller projects the cumulative stage once.
+    WVRealView* spatialTendency = nullptr;
+    bool spatialTendencyCaptured = false;
+    const WVRealFieldBundleConstView* preparedVelocity = nullptr;
     bool physicalFieldsPrepared = false;
     bool qgpvDerivativesPrepared = false;
     std::size_t physicalFieldReconstructionCount = 0;
@@ -158,6 +163,9 @@ public:
                                      WVComplexView& A0);
     WVKernelStatus transformA0ToQGPV(const WVComplexConstView& A0,
                                      WVRealView& qgpv);
+    // Raw Fourier inverse for diagnostic contributions, including the mean.
+    // Ordinary model fields retain their existing mean mask.
+    WVKernelStatus transformSpectralTendencyToSpatial(const WVComplexConstView&, WVRealView&);
     WVKernelStatus transformA0ToField(const WVComplexConstView& A0,
                                      WVBarotropicQGField field,
                                      WVRealView& output);
@@ -230,7 +238,9 @@ private:
                                      WVRealView& output);
     WVKernelStatus antialiasScalarInPlace(WVRealView& scalar);
     WVKernelStatus validateForcingOperation(
-        const WVComplexConstView& A0, const WVComplexView& F0) const;
+        const WVComplexConstView& A0, const WVComplexView& F0,
+        const WVRealView* spatialTendency = nullptr,
+        const WVRealFieldBundleConstView* preparedVelocity = nullptr) const;
     WVKernelStatus fillHalfSpectrum(const WVComplexConstView& input,
                                     const WVComplex64* factors,
                                     std::size_t field, std::size_t fields);

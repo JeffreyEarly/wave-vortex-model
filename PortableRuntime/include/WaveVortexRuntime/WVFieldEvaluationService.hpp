@@ -7,6 +7,7 @@
 #include "WaveVortexKernel/WVTransformBoussinesqKernel.hpp"
 #include "WaveVortexRuntime/WVObserverContracts.hpp"
 #include "WaveVortexRuntime/generated/WVPortableVariableCatalog.hpp"
+#include "WaveVortexRuntime/WVPortableVariablePlan.hpp"
 
 #include <array>
 #include <cstddef>
@@ -19,11 +20,20 @@ namespace wavevortex::runtime {
 
 struct WVIntegrationState;
 class WVIntegrationStateLayout;
+class WVConstantStratificationForcingEngine;
+class WVBarotropicQGForcingEngine;
+class WVStratifiedQGForcingEngine;
+class WVHydrostaticForcingEngine;
+class WVBoussinesqForcingEngine;
+
 
 namespace detail {
 class WVBarotropicQGFieldEvaluationAdapter;
 class WVStratifiedFieldEvaluationAdapter;
 class WVDiagnosticFieldPlan;
+class WVForcingDiagnosticBinding;
+class WVFieldEvaluationEventWorkspace;
+class WVFieldEvaluationEventScope;
 }
 
 enum class WVFieldSamplingKind : std::uint8_t {
@@ -212,6 +222,7 @@ private:
 
   struct ResolvedRequest {
     Field field = Field::u;
+    std::uint64_t dependencyMask = 0;
     NativeRank nativeRank = NativeRank::volume;
     WVFieldSamplingKind samplingKind = WVFieldSamplingKind::fullGrid;
     WVPositionInterpolation interpolation = WVPositionInterpolation::linear;
@@ -344,6 +355,9 @@ struct WVFieldEvaluationMetrics {
   std::size_t eventBatchEvaluationCount = 0;
   std::size_t eventBatchOccurrenceCount = 0;
   std::size_t eventBatchOutputCount = 0;
+  std::size_t eventFieldReuseCount = 0;
+  std::size_t eventFieldWorkspaceLiveBytes = 0;
+  std::size_t eventFieldWorkspaceHighWaterBytes = 0;
   std::size_t eventBatchInvocationWorkspaceBytes = 0;
   std::size_t eventPositionSetCount = 0;
   std::size_t eventPositionCount = 0;
@@ -389,6 +403,13 @@ public:
   createBorrowing(WVTransformStratifiedQGKernel &transform,
                   std::unique_ptr<WVFieldEvaluationService> &service);
 
+  // The borrowed engine and its resolved schedule must outlive the service.
+  static WVKernelStatus createBorrowing(WVConstantStratificationForcingEngine&, std::unique_ptr<WVFieldEvaluationService>&);
+  static WVKernelStatus createBorrowing(WVBarotropicQGForcingEngine&, std::unique_ptr<WVFieldEvaluationService>&);
+  static WVKernelStatus createBorrowing(WVStratifiedQGForcingEngine&, std::unique_ptr<WVFieldEvaluationService>&);
+  static WVKernelStatus createBorrowing(WVHydrostaticForcingEngine&, std::unique_ptr<WVFieldEvaluationService>&);
+  static WVKernelStatus createBorrowing(WVBoussinesqForcingEngine&, std::unique_ptr<WVFieldEvaluationService>&);
+
   WVFieldEvaluationService(const WVFieldEvaluationService &) = delete;
   WVFieldEvaluationService &
   operator=(const WVFieldEvaluationService &) = delete;
@@ -397,39 +418,46 @@ public:
   ~WVFieldEvaluationService();
 
   static std::vector<std::string> supportedFieldNames();
+  const std::vector<WVPortableForcingVariableBinding>& forcingVariableBindings() const noexcept;
+  std::string portableVariableConfiguration() const;
   WVKernelStatus createPlan(const std::vector<WVFieldRequest> &requests,
                             WVFieldEvaluationPlan &plan) const;
+  // A null selection evaluates every output. Otherwise one byte per output
+  // selects its dependencies and writes; inactive output views are untouched.
   WVKernelStatus evaluate(const WVFieldEvaluationPlan &plan,
                           const WVState &state, WVFieldOutputView *outputs,
-                          std::size_t outputCount);
+                          std::size_t outputCount,
+                          const std::uint8_t *activeOutputs = nullptr);
   WVKernelStatus evaluate(const WVFieldEvaluationPlan &plan,
                           const WVIntegrationState &state,
                           WVFieldOutputView *outputs,
-                          std::size_t outputCount);
+                          std::size_t outputCount,
+                          const std::uint8_t *activeOutputs = nullptr);
   WVKernelStatus
   createMovingPlan(const std::vector<WVMovingFieldRequest> &requests,
                    WVMovingFieldEvaluationPlan &plan) const;
+  // Selection also skips coordinate values belonging only to inactive requests.
   WVKernelStatus evaluateMoving(const WVMovingFieldEvaluationPlan &plan,
                                 const WVState &state,
                                 WVMovingPositionView positions,
                                 WVFieldOutputView *outputs,
-                                std::size_t outputCount);
+                                std::size_t outputCount, const std::uint8_t *activeOutputs = nullptr);
   WVKernelStatus evaluateMoving(const WVMovingFieldEvaluationPlan &plan,
                                 const WVIntegrationState &state,
                                 WVMovingPositionView positions,
                                 WVFieldOutputView *outputs,
-                                std::size_t outputCount);
+                                std::size_t outputCount, const std::uint8_t *activeOutputs = nullptr);
   WVKernelStatus evaluateMovingFromAdvectionFields(
       const WVMovingFieldEvaluationPlan &plan, const WVState &state,
       const WVRealFieldBundleConstView &advectionFields,
       WVMovingPositionView positions, WVFieldOutputView *outputs,
-      std::size_t outputCount);
+      std::size_t outputCount, const std::uint8_t *activeOutputs = nullptr);
   WVKernelStatus evaluateMovingFromAdvectionFields(
       const WVMovingFieldEvaluationPlan &plan,
       const WVIntegrationState &state,
       const WVRealFieldBundleConstView &advectionFields,
       WVMovingPositionView positions, WVFieldOutputView *outputs,
-      std::size_t outputCount);
+      std::size_t outputCount, const std::uint8_t *activeOutputs = nullptr);
   WVKernelStatus
   createEventPlan(const std::vector<WVEventFieldRequest> &requests,
                   WVEventFieldEvaluationPlan &plan);
@@ -475,8 +503,11 @@ private:
     const WVFieldEvaluationPlan *plan = nullptr;
     WVFieldOutputView *outputs = nullptr;
     std::size_t outputCount = 0;
+    const std::uint8_t *activeOutputs = nullptr;
   };
   friend class detail::WVDiagnosticFieldPlan;
+  friend class detail::WVFieldEvaluationEventScope;
+  detail::WVFieldEvaluationEventWorkspace* eventWorkspace_ = nullptr;
   WVFieldEvaluationService() = default;
   WVKernelStatus initializeScratch();
   WVKernelStatus evaluatePlanBatch(const PlanInvocation *invocations,
@@ -486,18 +517,19 @@ private:
       const WVMovingFieldEvaluationPlan &plan, const WVState &state,
       const WVRealFieldBundleConstView *advectionFields,
       WVMovingPositionView positions, WVFieldOutputView *outputs,
-      std::size_t outputCount);
+      std::size_t outputCount, const std::uint8_t *activeOutputs = nullptr);
   class MovingWorkspace;
   std::unique_ptr<WVTransformConstantStratificationKernel> ownedTransform_;
   WVTransformConstantStratificationKernel *transform_ = nullptr;
   std::unique_ptr<detail::WVBarotropicQGFieldEvaluationAdapter>
       barotropicQG_;
   std::unique_ptr<detail::WVStratifiedFieldEvaluationAdapter> stratified_;
+  std::unique_ptr<detail::WVForcingDiagnosticBinding> forcing_;
   std::unique_ptr<MovingWorkspace> movingWorkspace_;
   std::vector<double> realScratch_;
   std::vector<WVComplex64> complexScratch_;
   std::vector<PlanInvocation> eventBatchInvocations_;
-  WVFieldEvaluationMetrics metrics_;
+  mutable WVFieldEvaluationMetrics metrics_;
   bool executing_ = false;
 };
 

@@ -11,13 +11,13 @@ using namespace wavevortex::test_fixture;
 static_assert(!std::is_copy_assignable<WVStratifiedModalRecord>::value,"Published scientific records must not be reassigned.");
 static_assert(!std::is_move_assignable<WVStratifiedModalRecord>::value,"Published scientific records must not be moved over.");
 namespace {
-struct Counters { int plans=0,engines=0,created=0,failAt=-1; };
+struct Counters { int plans=0,engines=0,created=0,failAt=-1,executed=0; };
 class Plan final : public WVFFTPlan {
     std::unique_ptr<WVFFTPlan> plan_; Counters& counters_;
 public:
     Plan(std::unique_ptr<WVFFTPlan> p,Counters& c):plan_(std::move(p)),counters_(c) { ++counters_.plans; }
     ~Plan() override { --counters_.plans; }
-    WVKernelStatus execute(const void* a,void* b) override { return plan_->execute(a,b); }
+    WVKernelStatus execute(const void* a,void* b) override { ++counters_.executed; return plan_->execute(a,b); }
     std::size_t persistentBytes() const noexcept override { return plan_->persistentBytes(); }
 };
 class Engine final : public WVFFTEngine {
@@ -34,8 +34,9 @@ public:
     }
 };
 void contracts(const std::shared_ptr<const WVStratifiedModalRecord>& source) {
+    Counters counters;
     std::unique_ptr<WVTransformBoussinesqKernel> kernel;
-    require(bool(WVTransformBoussinesqKernel::create(source,std::make_unique<WVReferenceFFTEngine>(),kernel)),"Create failed");
+    require(bool(WVTransformBoussinesqKernel::create(source,std::make_unique<Engine>(counters),kernel)),"Create failed");
     const auto& g=source->geometry(); const auto S=g.Nj*g.Nkl,R=g.Nx*g.Ny*g.Nz;
     const auto shape=kernel->spectralShape(); const auto volume=kernel->spatialShape();
     std::array<std::vector<WVComplex64>,3> a,b;
@@ -48,6 +49,53 @@ void contracts(const std::shared_ptr<const WVStratifiedModalRecord>& source) {
     WVFlux flux{out.Ap,out.Am,out.A0};
     std::vector<double> spatial(R,29),scratch(R,31); WVRealVolumeView field{spatial.data(),volume};
     auto status=kernel->nonlinearFlux(state,flux); require(bool(status),status.message.c_str());
+    const auto referenceFlux=b,referenceState=a;
+    const auto retainedBytes=kernel->persistentBytes();
+    std::vector<double> raw(4*R),physical(4*R),gradient(R),expected(4*R,0);
+    WVRealFieldBundleView rawView{raw.data(),{g.Nx,g.Ny,g.Nz,4}};
+    const WVBoussinesqField dynamical[]={WVBoussinesqField::u,WVBoussinesqField::v,WVBoussinesqField::w,WVBoussinesqField::eta};
+    for(std::size_t channel=0;channel<4;++channel)
+        require(bool(kernel->transformStateField(state,dynamical[channel],{physical.data()+channel*R,volume})),"Prepare shared physical fields");
+    const WVRealFieldBundleConstView prepared{physical.data(),{g.Nx,g.Ny,g.Nz,4}};
+    const auto physicalBefore=physical;
+    const auto fullStart=counters.executed;
+    require(bool(kernel->nonlinearFlux(state,flux,&rawView,&prepared)),"Observe raw nonlinear tendency");
+    const auto fullExecutions=counters.executed-fullStart;
+    for(std::size_t channel=0;channel<4;++channel) {
+        const auto target=channel;
+        for(std::size_t axis=0;axis<3;++axis) {
+            require(bool(kernel->transformStateField(state,dynamical[target],{gradient.data(),volume},static_cast<WVBoussinesqDerivative>(axis+1))),"Independent tendency derivative");
+            for(std::size_t i=0;i<R;++i) {
+                const double correction=target==3 && axis==2 ? physical[3*R+i]*g.dLnN2[i/(g.Nx*g.Ny)] : 0;
+                expected[channel*R+i]-=physical[axis*R+i]*(gradient[i]+correction);
+            }
+        }
+    }
+    require(raw==expected && physical==physicalBefore,"Raw tendencies precede projection and preserve borrowed fields");
+    for(std::size_t channel=0;channel<3;++channel) for(std::size_t i=0;i<S;++i)
+        require(b[channel][i].real==referenceFlux[channel][i].real && b[channel][i].imag==referenceFlux[channel][i].imag &&
+                a[channel][i].real==referenceState[channel][i].real && a[channel][i].imag==referenceState[channel][i].imag,"Observation changed flux or input state");
+    for (auto& values:b) std::fill(values.begin(),values.end(),WVComplex64{17,19});
+    const auto rawStart=counters.executed;
+    require(bool(kernel->nonlinearFlux(state,flux,&rawView,&prepared,false)),"Spatial-only nonlinear tendency");
+    require(raw==expected && physical==physicalBefore && counters.executed-rawStart<fullExecutions,
+        "Spatial-only evaluation changed the tendency or retained redundant projection work");
+    for(const auto& values:b) for(const auto value:values)
+        require(value.real==17 && value.imag==19,"Spatial-only evaluation wrote spectral flux");
+    const auto rejectedStart=counters.executed;
+    require(kernel->nonlinearFlux(state,flux,nullptr,&prepared,false).code==WVKernelStatusCode::invalidConfiguration &&
+        counters.executed==rejectedStart,"Spatial-only evaluation accepted missing output or rejected after FFT work");
+    auto badRaw=rawView; badRaw.data=physical.data();
+    require(kernel->nonlinearFlux(state,flux,&badRaw,&prepared).code==WVKernelStatusCode::overlappingArrays,"Observed tendency aliases shared fields");
+    badRaw=rawView; badRaw.shape.fourth=5;
+    require(kernel->nonlinearFlux(state,flux,&badRaw,&prepared).code==WVKernelStatusCode::invalidShape,"Wrong tendency channel count accepted");
+    badRaw=rawView; badRaw.data=nullptr;
+    require(kernel->nonlinearFlux(state,flux,&badRaw,&prepared).code==WVKernelStatusCode::invalidPointer,"Null tendency output accepted");
+    require(raw==expected && physical==physicalBefore,"Invalid observation mutated output");
+    allocationProbe::calls=0; allocationProbe::counting=true;
+    require(bool(kernel->nonlinearFlux(state,flux,&rawView,&prepared)),"Prepared observation failed");
+    allocationProbe::counting=false;
+    require(allocationProbe::calls==0 && kernel->persistentBytes()==retainedBytes,"Observation allocated persistent storage");
     for (auto& x:b) std::fill(x.begin(),x.end(),WVComplex64{17,19});
     auto badFlux=flux; badFlux.Fp=amplitudes.Ap;
     status=kernel->nonlinearFlux(state,badFlux); require(status.code==WVKernelStatusCode::overlappingArrays,"Aliased flux accepted");

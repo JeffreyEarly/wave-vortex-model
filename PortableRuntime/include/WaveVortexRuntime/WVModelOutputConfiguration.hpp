@@ -155,7 +155,9 @@ public:
           *planningConfiguration = nullptr,
       bool isDynamicsLinear = false,
       const WVTransformStateDescription *planningStateDescription = nullptr,
-      const WVStratifiedModalGeometry *stratifiedGeometry = nullptr);
+      const WVStratifiedModalGeometry *stratifiedGeometry = nullptr,
+      const WVFrozenForcingSchedule *forcingSchedule = nullptr,
+      std::string_view forcingConfiguration = {});
 
   // Construct the existing NetCDF sink according to the compiled graph-wide
   // policy. The sample source is preflighted against the compiled plan before

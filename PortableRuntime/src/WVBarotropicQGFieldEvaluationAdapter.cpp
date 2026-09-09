@@ -1,3 +1,4 @@
+#include "WVFieldEvaluationEventWorkspace.hpp"
 #include "WVBarotropicQGFieldEvaluationAdapter.hpp"
 
 #include "WaveVortexRuntime/WVIntegrationState.hpp"
@@ -559,10 +560,20 @@ WVKernelStatus WVBarotropicQGFieldEvaluationAdapter::createPlan(
   }
 }
 
+WVKernelStatus WVBarotropicQGFieldEvaluationAdapter::transformField(
+    const WVIntegrationState& state,const WVComplexConstView& A0,WVBarotropicQGField field,WVRealView output,bool& reused) {
+  reused=false;
+  const auto operation=[&](){return kernel_->transformA0ToField(A0,field,output);};
+  if(!eventWorkspace_) return operation();
+  const auto key=field==WVBarotropicQGField::ssh ? WVBarotropicQGField::pi : field;
+  return eventWorkspace_->evaluate(static_cast<std::size_t>(key),
+      {state.waveVortex.t,state.waveVortex.t0,{{},{},A0}},output.data,output.shape.elementCount(),operation,reused);
+}
+
 WVKernelStatus WVBarotropicQGFieldEvaluationAdapter::evaluate(
     const WVFieldEvaluationPlan &publicPlan,
     const WVIntegrationState &state, WVFieldOutputView *outputs,
-    std::size_t outputCount) {
+    std::size_t outputCount, const std::uint8_t *activeOutputs) {
   const auto plan =
       std::static_pointer_cast<const Plan>(publicPlan.transformPlan_);
   if (!plan || plan->fingerprint != configurationFingerprint(configuration()))
@@ -572,9 +583,9 @@ WVKernelStatus WVBarotropicQGFieldEvaluationAdapter::evaluate(
     return {WVKernelStatusCode::invalidShape,
             "Barotropic QG outputs do not match the resolved plan."};
   for (std::size_t output = 0; output < outputCount; ++output)
-    if (outputs[output].data == nullptr ||
+    if ((!activeOutputs || activeOutputs[output]) && (outputs[output].data == nullptr ||
         outputs[output].elementCount !=
-            publicPlan.outputs_[output].elementCount)
+            publicPlan.outputs_[output].elementCount))
       return {WVKernelStatusCode::invalidShape,
               "A Barotropic QG output has the wrong shape."};
   WVComplexConstView A0;
@@ -593,6 +604,7 @@ WVKernelStatus WVBarotropicQGFieldEvaluationAdapter::evaluate(
   std::array<bool, 8> evaluated{};
   const auto spatial = kernel_->descriptor().spatialShape();
   for (const auto &request : plan->requests) {
+    if (activeOutputs && !activeOutputs[request.output]) continue;
     if (request.scalar != ScalarField::none) {
       double value = 0.0;
       status = request.scalar == ScalarField::energy
@@ -608,15 +620,17 @@ WVKernelStatus WVBarotropicQGFieldEvaluationAdapter::evaluate(
     if (!evaluated[fieldIndex]) {
       const auto before = kernel_->metrics().executionCount;
       WVRealView view{fieldScratch_.data(), spatial};
-      status = kernel_->transformA0ToField(A0, request.field, view);
+      bool reused=false;
+      status = transformField(state,A0,request.field,view,reused);
       if (!status)
         return status;
       metrics_.fftExecutionCount +=
           kernel_->metrics().executionCount - before;
-      ++metrics_.transformCount;
-      ++metrics_.primitiveFieldEvaluationCount;
+      if(reused) ++metrics_.primitiveFieldReuseCount;
+      else {++metrics_.transformCount; ++metrics_.primitiveFieldEvaluationCount;}
       evaluated[fieldIndex] = true;
       for (const auto &destination : plan->requests) {
+        if (activeOutputs && !activeOutputs[destination.output]) continue;
         if (destination.scalar != ScalarField::none ||
             destination.field != request.field)
           continue;
@@ -696,9 +710,9 @@ WVKernelStatus WVBarotropicQGFieldEvaluationAdapter::createMovingPlan(
 WVKernelStatus WVBarotropicQGFieldEvaluationAdapter::evaluateMoving(
     const WVMovingFieldEvaluationPlan &publicPlan,
     const WVIntegrationState &state, WVMovingPositionView positions,
-    WVFieldOutputView *outputs, std::size_t outputCount) {
+    WVFieldOutputView *outputs, std::size_t outputCount, const std::uint8_t *activeOutputs) {
   return evaluateMovingImpl(publicPlan, state, nullptr, positions, outputs,
-                            outputCount);
+                            outputCount, activeOutputs);
 }
 
 WVKernelStatus
@@ -707,9 +721,9 @@ WVBarotropicQGFieldEvaluationAdapter::evaluateMovingFromAdvectionFields(
     const WVIntegrationState &state,
     const WVRealFieldBundleConstView &advectionFields,
     WVMovingPositionView positions, WVFieldOutputView *outputs,
-    std::size_t outputCount) {
+    std::size_t outputCount, const std::uint8_t *activeOutputs) {
   return evaluateMovingImpl(publicPlan, state, &advectionFields, positions,
-                            outputs, outputCount);
+                            outputs, outputCount, activeOutputs);
 }
 
 WVKernelStatus WVBarotropicQGFieldEvaluationAdapter::evaluateMovingImpl(
@@ -717,7 +731,7 @@ WVKernelStatus WVBarotropicQGFieldEvaluationAdapter::evaluateMovingImpl(
     const WVIntegrationState &state,
     const WVRealFieldBundleConstView *advectionFields,
     WVMovingPositionView positions, WVFieldOutputView *outputs,
-    std::size_t outputCount) {
+    std::size_t outputCount, const std::uint8_t *activeOutputs) {
   const auto plan =
       std::static_pointer_cast<const MovingPlan>(publicPlan.transformPlan_);
   if (!plan || plan->fingerprint != configurationFingerprint(configuration()))
@@ -730,16 +744,25 @@ WVKernelStatus WVBarotropicQGFieldEvaluationAdapter::evaluateMovingImpl(
     return {WVKernelStatusCode::invalidShape,
             "Barotropic QG moving positions or outputs have the wrong shape."};
   for (std::size_t output = 0; output < outputCount; ++output)
-    if (outputs[output].data == nullptr ||
+    if ((!activeOutputs || activeOutputs[output]) && (outputs[output].data == nullptr ||
         outputs[output].elementCount !=
-            publicPlan.outputs_[output].elementCount)
+            publicPlan.outputs_[output].elementCount))
       return {WVKernelStatusCode::invalidShape,
               "A Barotropic QG moving-field output has the wrong shape."};
-  for (std::size_t position = 0; position < positions.positionCount;
-       ++position)
-    if (!std::isfinite(positions.x[position]) ||
-        !std::isfinite(positions.y[position]))
-      return invalid("Barotropic QG moving positions must be finite.");
+  const auto finitePosition=[&](std::size_t index) {return std::isfinite(positions.x[index]) && std::isfinite(positions.y[index]);};
+  if(!activeOutputs) {
+    for(std::size_t index=0;index<positions.positionCount;++index)
+      if(!finitePosition(index)) return invalid("Barotropic QG moving positions must be finite.");
+  } else {
+    bool anyActive=false;
+    for(const auto& request:plan->requests) if(activeOutputs[request.output]) {
+      anyActive=true;
+      for(std::size_t index=request.offset;index<request.offset+request.count;++index)
+        if(!finitePosition(index)) return invalid("Barotropic QG moving positions must be finite.");
+    }
+    if(!anyActive) return WVKernelStatus::ok();
+  }
+
   WVComplexConstView A0;
   auto status = coefficientView(state, *kernel_, A0);
   if (!status)
@@ -755,8 +778,8 @@ WVKernelStatus WVBarotropicQGFieldEvaluationAdapter::evaluateMovingImpl(
               "Prepared Barotropic QG advection fields must have shape "
               "[Nx,Ny,1,2]."};
     if (std::any_of(plan->requests.begin(), plan->requests.end(),
-                    [](const auto &request) {
-                      return request.field != WVBarotropicQGField::u &&
+                    [&](const auto &request) {
+                      return (!activeOutputs || activeOutputs[request.output]) && request.field != WVBarotropicQGField::u &&
                              request.field != WVBarotropicQGField::v;
                     }))
       return {WVKernelStatusCode::unsupportedOperation,
@@ -827,28 +850,31 @@ WVKernelStatus WVBarotropicQGFieldEvaluationAdapter::evaluateMovingImpl(
 
   std::array<bool, 8> evaluated{};
   for (const auto &request : plan->requests) {
+    if(activeOutputs && !activeOutputs[request.output]) continue;
     const auto fieldIndex = static_cast<std::size_t>(request.field);
     if (evaluated[fieldIndex])
       continue;
     if (advectionFields == nullptr) {
       const auto before = kernel_->metrics().executionCount;
       WVRealView field{fieldScratch_.data(), spatial};
-      status = kernel_->transformA0ToField(A0, request.field, field);
+      bool reused=false;
+      status = transformField(state,A0,request.field,field,reused);
       if (!status)
         return status;
       metrics_.fftExecutionCount += kernel_->metrics().executionCount - before;
-      ++metrics_.transformCount;
-      ++metrics_.movingPrimitiveTransformCount;
+      if(reused) ++metrics_.primitiveFieldReuseCount;
+      else {++metrics_.transformCount; ++metrics_.movingPrimitiveTransformCount; ++metrics_.primitiveFieldEvaluationCount;}
       sampleField = fieldScratch_.data();
     } else {
       const auto channel = request.field == WVBarotropicQGField::u ? 0 : 1;
       sampleField = advectionFields->data + channel * R;
       ++metrics_.primitiveFieldReuseCount;
+      ++metrics_.primitiveFieldEvaluationCount;
     }
-    ++metrics_.primitiveFieldEvaluationCount;
     evaluated[fieldIndex] = true;
     bool firstDestination = true;
     for (const auto &destination : plan->requests) {
+      if(activeOutputs && !activeOutputs[destination.output]) continue;
       if (destination.field != request.field)
         continue;
       auto &output = outputs[destination.output];

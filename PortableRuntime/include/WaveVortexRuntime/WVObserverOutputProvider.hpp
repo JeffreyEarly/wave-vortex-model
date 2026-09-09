@@ -26,6 +26,9 @@ struct WVObserverOutputPlanningContext {
   // observer implementations that require its physical parameters.
   const WVIntegrationStateLayout *stateLayout = nullptr;
   const WVStratifiedModalGeometry *stratifiedGeometry = nullptr;
+  std::string forcingConfiguration;
+  const WVPortableForcingVariableBinding* forcingBindings = nullptr;
+  std::size_t forcingBindingCount = 0;
 
   const WVStateBlockRecord *
   stateBlock(const std::string &identifier) const noexcept;

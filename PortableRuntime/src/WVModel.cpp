@@ -129,6 +129,11 @@ WVKernelStatus compileOutputConfiguration(
       return invalid("The output destination map contains an unknown file "
                      "identifier.");
   }
+  const auto& restart=inspection.latestRestart;
+  const bool antialias=restart.stratifiedModalSource ? restart.stratifiedModalSource->geometry().shouldAntialias :
+      restart.transformKind==WVPersistedTransformKind::barotropicQG ? restart.barotropicQGConfiguration.shouldAntialias : restart.configuration.shouldAntialias;
+  const auto forcingConfiguration=portableVariableConfigurationIdentifier(restart.stateDescription.transformIdentifier,
+      restart.configuration.isHydrostatic,antialias);
   return WVModelOutputConfiguration::compile(
       std::move(observerRecord), inspection.observationSchemas,
       inspection.scheduleContinuations, request.policy, std::move(catalog),
@@ -137,7 +142,8 @@ WVKernelStatus compileOutputConfiguration(
           inspection.latestRestart),
       inspection.isDynamicsLinear,
       &inspection.latestRestart.stateDescription,
-      inspection.latestRestart.stratifiedModalSource ? &inspection.latestRestart.stratifiedModalSource->geometry() : nullptr);
+      inspection.latestRestart.stratifiedModalSource ? &inspection.latestRestart.stratifiedModalSource->geometry() : nullptr,
+      &restart.forcingSchedule,forcingConfiguration);
 }
 #endif
 
@@ -491,9 +497,7 @@ WVKernelStatus WVModel::createFromModelOutputInspection(
 
   if (!catalog || outputConfiguration.catalog() != catalog)
     return invalid("Prepared output and model must share one extension catalog.");
-  auto forcingSchedule = inspection.latestRestart.forcingSchedule;
-  if (inspection.isDynamicsLinear)
-    forcingSchedule.entries.clear();
+  const auto &forcingSchedule = inspection.latestRestart.forcingSchedule;
   const auto &descriptor = outputConfiguration.descriptor();
 
   WVModel candidate;
@@ -501,8 +505,10 @@ WVKernelStatus WVModel::createFromModelOutputInspection(
   auto status = detail::createPersistedModelSystem(
       inspection.latestRestart, forcingSchedule, &descriptor, catalog,
       std::move(engine), candidateImpl->resolvedSystem);
-  if (status)
+  if (status) {
+    candidateImpl->resolvedSystem->setLinearDynamics(inspection.isDynamicsLinear);
     status = candidateImpl->configureIntegrator(integratorConfiguration);
+  }
   if (status) {
     candidateImpl->catalog = catalog;
     candidate.impl_ = std::move(candidateImpl);

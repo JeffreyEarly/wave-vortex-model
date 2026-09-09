@@ -41,17 +41,25 @@ public:
     // Projection preserves the horizontal mean just as MATLAB's raw transform
     // does. Reconstructed QG fields mask all horizontal means as MATLAB does.
     WVKernelStatus transformQGPVToA0(WVRealVolumeConstView, WVComplexView);
+    // Diagnostic modal inverse preserves the mean and projects self-conjugate
+    // Fourier values to their real part; ordinary field masks are unchanged.
+    WVKernelStatus transformSpectralTendencyToSpatial(WVComplexConstView, WVRealVolumeView);
     WVKernelStatus transformUVEtaToA0(WVRealVolumeConstView u, WVRealVolumeConstView v,
         WVRealVolumeConstView eta, WVComplexView);
     WVKernelStatus transformA0ToField(WVComplexConstView, WVStratifiedQGField,
         WVRealVolumeView, WVStratifiedQGDerivative = WVStratifiedQGDerivative::value);
     // Surface fields use [Nx,Ny,1]; other fields use [Nx,Ny,Nz].
-    WVKernelStatus nonlinearFlux(WVComplexConstView, WVComplexView, double beta = 0);
-    // Configured physical closures projected to A0. These overwrite the output
-    // and reuse the kernel's prepared operators and mutable workspace.
-    WVKernelStatus verticalDiffusivityFlux(WVComplexConstView, double kappaZ, WVComplexView);
-    WVKernelStatus linearBottomFrictionFlux(WVComplexConstView, double rate, WVComplexView);
-    WVKernelStatus quadraticBottomFrictionFlux(WVComplexConstView, double dragCoefficient, WVComplexView);
+    // Optional raw output captures the spatial contribution instead of projecting
+    // it. Prepared [u,v] fields may be borrowed for one diagnostic invocation.
+    WVKernelStatus nonlinearFlux(WVComplexConstView, WVComplexView, double beta = 0,
+        WVRealVolumeView* raw = nullptr, const WVRealFieldBundleConstView* preparedUV = nullptr);
+    // Configured physical closures normally overwrite A0 output. With raw
+    // output they capture before projection and leave A0 output untouched.
+    // Both paths reuse the prepared operators and mutable workspace.
+    WVKernelStatus verticalDiffusivityFlux(WVComplexConstView, double kappaZ, WVComplexView, WVRealVolumeView* raw = nullptr);
+    WVKernelStatus linearBottomFrictionFlux(WVComplexConstView, double rate, WVComplexView, WVRealVolumeView* raw = nullptr);
+    WVKernelStatus quadraticBottomFrictionFlux(WVComplexConstView, double dragCoefficient, WVComplexView, WVRealVolumeView* raw = nullptr,
+        const WVRealFieldBundleConstView* preparedUV = nullptr);
     WVKernelStatus linearFlux(WVComplexConstView, WVComplexView, double beta = 0) const;
     // F-plane A0 is stationary. An explicit beta gives exact linear Rossby evolution.
     WVKernelStatus evolveA0(WVComplexConstView, double elapsedTime, WVComplexView, double beta = 0) const;
@@ -67,6 +75,8 @@ private:
     WVKernelStatus spectral(WVComplexConstView) const;
     WVKernelStatus volume(WVRealVolumeConstView, bool surface = false) const;
     WVKernelStatus disjoint(const void*, std::size_t, const void*, std::size_t) const;
+    WVKernelStatus validateDiagnosticBuffers(WVComplexConstView, WVComplexView,
+        const WVRealVolumeView*, const WVRealFieldBundleConstView* = nullptr) const;
     WVKernelStatus project(const double*, WVComplex64*, std::size_t operation = 1);
     WVKernelStatus reconstruct(WVComplexConstView, WVStratifiedQGField, WVStratifiedQGDerivative, double*);
     WVKernelStatus vertical(std::size_t operation, const WVComplex64*, WVComplex64*);

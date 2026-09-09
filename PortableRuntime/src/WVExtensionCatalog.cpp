@@ -456,6 +456,46 @@ WVKernelStatus WVForcingCatalog::validateConfiguration(
   return WVKernelStatus::ok();
 }
 
+WVKernelStatus WVForcingCatalog::diagnosticBindings(const WVFrozenForcingSchedule& schedule,
+    std::string_view configuration,std::vector<WVPortableForcingVariableBinding>& bindings) const {
+  if(schedule.profileIdentifier!=WVForcingScheduleProfileIdentifier || schedule.profileVersion!=WVForcingScheduleProfileVersion)
+    return invalid("Unsupported forcing schedule for diagnostic metadata.");
+  try {
+    std::vector<const WVFrozenForcingEntry*> ordered;
+    std::set<std::size_t> ordinals;
+    for(const auto& entry:schedule.entries) {
+      if(entry.ordinal>std::numeric_limits<std::uint32_t>::max() || !ordinals.insert(entry.ordinal).second)
+        return invalid("Forcing graph ordinals must be unique and fit the diagnostic contract.");
+      ordered.push_back(&entry);
+    }
+    std::stable_sort(ordered.begin(),ordered.end(),[](const auto* a,const auto* b) {
+      if(a->stage!=b->stage) return a->stage<b->stage;
+      if(a->priority!=b->priority) return a->priority<b->priority;
+      return a->ordinal<b->ordinal;
+    });
+    std::vector<WVPortableForcingVariableBinding> result;
+    bool qualified=true;
+    for(const auto* entry:ordered) {
+      const auto* value=registration(entry->typeIdentifier,entry->contractVersion);
+      bool supported=value && value->isSupported && value->supportsTendencyDiagnostics;
+      if(supported) {
+        if(configuration.rfind("barotropic-",0)==0) supported=bool(value->barotropicQGFactory) && entry->stage==value->barotropicQGStage;
+        else if(configuration.rfind("stratified-qg-",0)==0) supported=bool(value->stratifiedQGFactory) && entry->stage==value->stratifiedQGStage;
+        else if(configuration.rfind("hydrostatic-",0)==0) supported=bool(value->hydrostaticFactory) && entry->stage==value->stage;
+        else if(configuration.rfind("boussinesq-",0)==0) supported=bool(value->boussinesqFactory) && entry->stage==value->stage;
+        else if(configuration.rfind("constant-",0)==0) supported=bool(value->factory) && entry->stage==value->stage;
+        else supported=false;
+      }
+      qualified &= supported;
+      result.push_back({entry->name,static_cast<std::uint32_t>(entry->ordinal),qualified});
+    }
+    bindings=std::move(result);
+    return WVKernelStatus::ok();
+  } catch(const std::bad_alloc&) {
+    return {WVKernelStatusCode::allocationFailure,"Unable to bind forcing diagnostic metadata."};
+  }
+}
+
 std::size_t WVForcingCatalog::persistentBytes() const noexcept {
   std::size_t bytes = sizeof(*this) +
                       registrations_.capacity() * sizeof(Registration);

@@ -106,6 +106,8 @@ public:
     return forcingEngine_->scheduleIdentifier();
   }
 
+  void setLinearDynamics(bool linear) noexcept { forcingEngine_->setLinearDynamics(linear); }
+
 private:
   static WVKernelStatus createImpl(
       const WVTransformBarotropicQGConfiguration &configuration,

@@ -953,8 +953,8 @@ bool modelOutputGroupCarriesCompleteCoefficientRestart(
     bool hasCoefficientObserver, bool isDynamicsLinear) noexcept {
   if (!hasDeclaredCoefficientFamilies)
     return false;
-  if (description.transformIdentifier == "WVTransformStratifiedQG" && isDynamicsLinear) return true;
-  // In the compact QG contract A0 is also a valid Eulerian field name, so its
+  if (isDynamicsLinear) return true;
+  // In nonlinear compact QG output A0 is also an Eulerian field name, so its
   // variable alone cannot identify restart ownership. The legacy constant-
   // stratification contract historically treats a complete Ap/Am/A0 field
   // triple as restart state, including linear passive-field output.

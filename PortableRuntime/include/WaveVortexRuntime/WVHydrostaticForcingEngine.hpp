@@ -1,4 +1,5 @@
 #pragma once
+#include "WVForcingTendency.hpp"
 #include "WVForcingEngine.hpp"
 #include "WaveVortexKernel/WVTransformHydrostaticKernel.hpp"
 namespace wavevortex::runtime {
@@ -6,6 +7,17 @@ namespace wavevortex::runtime {
 // the immutable Hydrostatic source and prepared once at construction.
 class WVHydrostaticForcingEngine final {
 public:
+    // Indices refer to the already resolved stage/priority order.
+    std::size_t forcingCount() const noexcept { return forcing_.size(); }
+    const WVForcing* forcingInstance(std::size_t index) const noexcept {
+        return index<forcing_.size() ? forcing_[index].get() : nullptr;
+    }
+    // Optional u/v/w/eta fields must describe this exact state and time.
+    // They are borrowed for this invocation and must not alias state or outputs.
+    WVKernelStatus evaluateForcingTendencies(const WVState&,
+        const WVForcingTendencyOutput*,std::size_t, const WVRealFieldBundleConstView* preparedPhysical = nullptr);
+    const WVForcingTendencyMetrics& tendencyMetrics() const noexcept { return tendencyMetrics_; }
+
     static WVKernelStatus validateSchedule(const WVStratifiedModalGeometry&,const WVFrozenForcingSchedule&,WVShape2D,const WVExtensionCatalog&);
     static WVKernelStatus create(std::shared_ptr<const WVStratifiedModalSource>,const WVFrozenForcingSchedule&,std::shared_ptr<const WVExtensionCatalog>,std::unique_ptr<WVFFTEngine>,std::unique_ptr<WVHydrostaticForcingEngine>&);
     WVKernelStatus nonlinearFlux(const WVState&,WVFlux&);
@@ -19,7 +31,12 @@ public:
     const std::string& scheduleIdentifier() const noexcept { return scheduleIdentifier_; }
     std::size_t persistentBytes() const noexcept;
     WVKernelStatus speedMaxima(const WVState&,double& uv,double& w);
+    // Linear evolution retains instances for diagnostics and amplitude constraints.
+    // Only their ordinary coefficient RHS contributions are disabled.
+    void setLinearDynamics(bool linear) noexcept { linearDynamics_ = linear; }
+
 private:
+    bool linearDynamics_ = false;
     WVHydrostaticForcingEngine()=default;
     WVKernelStatus initialize(const WVFrozenForcingSchedule&);
     WVKernelStatus addNonlinearFlux(const WVState&,WVFlux&);
@@ -38,6 +55,8 @@ private:
     WVForcingEngineMetrics metrics_;
     std::string scheduleIdentifier_;
     bool physicalValid_=false,executing_=false;
+    detail::WVForcingDiagnosticWorkspace* diagnosticWorkspace_=nullptr;
+    WVForcingTendencyMetrics tendencyMetrics_;
     friend class WVForcingExecutionContext;
 };
 }

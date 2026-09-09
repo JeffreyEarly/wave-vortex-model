@@ -2,6 +2,7 @@
 #include "WaveVortexRuntime/WVExtensionCatalog.hpp"
 #include "WaveVortexRuntime/WVForcingContracts.hpp"
 #include "WVForcingImplementations.hpp"
+#include "WVForcingDiagnosticWorkspace.hpp"
 #include "WaveVortexRuntime/WVHydrostaticForcingEngine.hpp"
 #include "WaveVortexRuntime/WVBoussinesqForcingEngine.hpp"
 
@@ -222,6 +223,7 @@ public:
     WVForcingStage stage() const noexcept override { return stage_; }
     std::uint8_t priority() const noexcept override { return priority_; }
     std::size_t ordinal() const noexcept override { return ordinal_; }
+    bool supportsTendencyDiagnostics() const noexcept override { return true; }
     std::size_t persistentBytes() const noexcept override {
         return sizeof(*this)+metadataDynamicBytes();
     }
@@ -265,6 +267,7 @@ private:
 
 class NonlinearAdvectionForcing final : public ResolvedForcing {
 public:
+  bool requiresDiagnosticPhysicalFields() const noexcept override { return true; }
     using ResolvedForcing::ResolvedForcing;
     bool producesCompleteFlux() const noexcept override { return true; }
     WVKernelStatus addRightHandSide(WVForcingExecutionContext& context) const override { return context.nonlinearAdvection(); }
@@ -1224,6 +1227,9 @@ WVKernelStatus WVConstantStratificationForcingEngine::projectSpatialTendency(
 WVKernelStatus WVConstantStratificationForcingEngine::addProjectedSpatialTendency(
     const WVState& state, const WVRealFieldBundleConstView& tendency,
     WVFlux& flux, bool& outputInitialized) {
+    if (diagnosticWorkspace_) {
+        return diagnosticWorkspace_->addSpatial(tendency);
+    }
     if (!outputInitialized) {
         const auto status = projectSpatialTendency(state,tendency,flux);
         if (status) outputInitialized = true;
@@ -1304,6 +1310,15 @@ void WVConstantStratificationForcingEngine::initializeOutputWithZeros(WVFlux& fl
 WVKernelStatus WVConstantStratificationForcingEngine::addNonlinearFlux(
     const WVState& state, WVFlux& flux, bool& outputInitialized,
     WVRealFieldBundleView* externalFields, bool& externalFieldsPrepared) {
+    if (diagnosticWorkspace_) {
+        WVRealFieldBundleConstView fields;
+        auto status=ensurePhysicalFields(state,fields,externalFields,externalFieldsPrepared);
+        if (!status) return status;
+        diagnosticWorkspace_->spatialCaptured=true;
+        auto raw=diagnosticWorkspace_->rawView();
+        auto temporary=diagnosticWorkspace_->temporaryView();
+        return kernel_->nonlinearFluxUsingAdvectionFields(state,temporary,fields,&raw,false);
+    }
     const auto evaluate = [&](WVFlux& destination) {
         if (externalFields == nullptr) return kernel_->nonlinearFlux(state,destination);
         const bool reconstructsFields = !externalFieldsPrepared;
@@ -1341,6 +1356,8 @@ void WVForcingExecutionContext::filterTendency(const std::vector<std::size_t>& i
 WVKernelStatus WVForcingExecutionContext::laplacianDamping(double nu, double kappa, WVLaplacianDirection direction) {
     if (hydrostatic_) return hydrostatic_->addLaplacianDamping(*state_,nu,kappa,direction,*flux_);
     if (boussinesq_) return boussinesq_->addLaplacianDamping(*state_,nu,kappa,direction,*flux_);
+    if (engine_->diagnosticWorkspace_)
+        return engine_->diagnosticLaplacian(*state_,nu,kappa,direction,*flux_,*outputInitialized_);
     if (!*outputInitialized_) engine_->initializeOutputWithZeros(*flux_,*outputInitialized_);
     return engine_->kernel().addLaplacianDamping(*state_,nu,kappa,direction,*flux_);
 }
@@ -1424,6 +1441,103 @@ WVKernelStatus WVConstantStratificationForcingEngine::nonlinearFlux(const WVStat
     return nonlinearFluxImpl(state,flux,nullptr,nullptr);
 }
 
+WVKernelStatus WVConstantStratificationForcingEngine::diagnosticLaplacian(
+    const WVState& state,double nu,double kappa,WVLaplacianDirection direction,
+    WVFlux& flux,bool& initialized) {
+    auto& work=*diagnosticWorkspace_;
+    const auto S=work.spectral.elementCount();
+    const auto R=work.spatial.first*work.spatial.second*work.spatial.third;
+    work.laplacianCoefficients.resize(3*S);
+    work.laplacianFields.resize(4*R);
+    const auto& descriptor=kernel_->descriptor();
+    const auto Nj=descriptor.configuration().Nj;
+    const WVComplexConstView inputs[]={state.coefficients.Ap,state.coefficients.Am,state.coefficients.A0};
+    for (std::size_t i=0;i<S;++i) {
+        const double waveNumber=direction==WVLaplacianDirection::horizontal ?
+            descriptor.fourierModes()[i/Nj].Kh : descriptor.verticalModes().verticalWavenumber[i%Nj];
+        for (std::size_t family=0;family<3;++family)
+            work.laplacianCoefficients[family*S+i]=multiply(inputs[family].data[i],-waveNumber*waveNumber);
+    }
+    const WVState derivative{state.t,state.t0,
+        {{work.laplacianCoefficients.data(),work.spectral},
+         {work.laplacianCoefficients.data()+S,work.spectral},
+         {work.laplacianCoefficients.data()+2*S,work.spectral}}};
+    WVRealFieldBundleView fields{work.laplacianFields.data(),{work.spatial.first,work.spatial.second,work.spatial.third,4}};
+    auto status=kernel_->transformWaveVortexToUVWEta(derivative,fields);
+    if (!status) return status;
+    for (std::size_t channel=0;channel<work.spatial.fourth;++channel) {
+        const bool density=channel==work.spatial.fourth-1;
+        const auto source=density ? 3 : channel;
+        for (std::size_t i=0;i<R;++i)
+            fields.data[channel*R+i]=(density ? kappa : nu)*fields.data[source*R+i];
+    }
+    fields.shape.fourth=work.spatial.fourth;
+    return addProjectedSpatialTendency(state,{fields.data,fields.shape},flux,initialized);
+}
+
+WVKernelStatus WVConstantStratificationForcingEngine::evaluateForcingTendencies(
+    const WVState& state,const WVForcingTendencyOutput* outputs,std::size_t count, const WVRealFieldBundleConstView* preparedPhysical) {
+    if (executing_) return {WVKernelStatusCode::reentrantExecution,"Forcing diagnostics require an idle engine."};
+    tendencyMetrics_.workspaceLastPeakBytes=0;
+    const auto& c=kernel_->descriptor().configuration();
+    const WVShape4D spatial{c.Nx,c.Ny,c.Nz,c.isHydrostatic ? 3U : 4U};
+    auto status=detail::validateForcingTendencyOutputs(forcing_,stateShape(),spatial,state,outputs,count);
+    if (!status || !count) return status;
+    status=detail::validatePreparedDiagnosticFields(preparedPhysical,spatial,3,state,outputs,count);
+    if (!status) return status;
+    try {
+        detail::WVForcingDiagnosticWorkspace work(stateShape(),spatial);
+        if (preparedPhysical) {
+            std::copy_n(preparedPhysical->data,preparedPhysical->shape.elementCount(),work.physical.data());
+            work.physicalPrepared=true;
+        }
+        auto flux=work.fluxView();
+        status=validateStateAndFlux(kernel_->descriptor(),state,flux); if (!status) return status;
+        executing_=true; diagnosticWorkspace_=&work; ++evaluationGeneration_;
+        struct Guard {
+            WVConstantStratificationForcingEngine& engine;
+            ~Guard() {
+                engine.tendencyMetrics_.workspaceLastPeakBytes=engine.diagnosticWorkspace_->bytes();
+                engine.tendencyMetrics_.workspaceHighWaterBytes=std::max(engine.tendencyMetrics_.workspaceHighWaterBytes,engine.diagnosticWorkspace_->bytes());
+                engine.tendencyMetrics_.workspaceLiveBytes=0;
+                engine.diagnosticWorkspace_=nullptr; engine.executing_=false;
+                engine.physicalFieldsValid_=false;
+            }
+        } guard{*this};
+        tendencyMetrics_.workspaceLiveBytes=work.bytes();
+        WVRealFieldBundleView physical{work.physical.data(),{c.Nx,c.Ny,c.Nz,3}};
+        bool initialized=true;
+        WVForcingExecutionContext context;
+        context.engine_=this; context.state_=&state; context.outputInitialized_=&initialized;
+        context.externalFields_=&physical; context.externalFieldsPrepared_=&work.physicalPrepared;
+        return detail::evaluateForcingTendencySequence(forcing_,work,outputs,count,tendencyMetrics_,
+            [&](const WVForcing& forcing,WVFlux& destination) {
+                context.flux_=&destination;
+                return forcing.addRightHandSide(context);
+            },
+            [&](WVRealFieldBundleConstView fields,WVFlux& destination) {
+                return projectSpatialTendency(state,fields,destination);
+            },
+            [&](const std::vector<WVComplex64>& difference,WVRealFieldBundleView destination) {
+                const auto S=stateShape().elementCount();
+                const WVState delta{state.t,state.t0,{{difference.data(),stateShape()},
+                    {difference.data()+S,stateShape()},{difference.data()+2*S,stateShape()}}};
+                if (!c.isHydrostatic) return kernel_->transformWaveVortexToUVWEta(delta,destination);
+                const auto R=kernel_->descriptor().spatialShape().elementCount();
+                work.laplacianFields.resize(4*R);
+                WVRealFieldBundleView fields{work.laplacianFields.data(),{c.Nx,c.Ny,c.Nz,4}};
+                auto result=kernel_->transformWaveVortexToUVWEta(delta,fields);
+                if (result) {
+                    std::copy_n(fields.data,2*R,destination.data);
+                    std::copy_n(fields.data+3*R,R,destination.data+2*R);
+                }
+                return result;
+            });
+    } catch (const std::bad_alloc&) {
+        return {WVKernelStatusCode::allocationFailure,"Unable to allocate event forcing diagnostic workspace."};
+    }
+}
+
 WVKernelStatus WVConstantStratificationForcingEngine::evaluateRightHandSideWithContext(
     const WVState& state, WVFlux& flux,
     WVRealFieldBundleView& advectionFieldStorage,
@@ -1451,7 +1565,7 @@ WVKernelStatus WVConstantStratificationForcingEngine::nonlinearFluxImpl(
     forcingContext.outputInitialized_ = &outputInitialized;
     forcingContext.externalFields_ = externalFields;
     forcingContext.externalFieldsPrepared_ = &externalFieldsPrepared;
-    for (const auto& forcing : forcing_) {
+    if (!linearDynamics_) for (const auto& forcing : forcing_) {
         const auto status = forcing->addRightHandSide(forcingContext);
         if (!status) return status;
     }

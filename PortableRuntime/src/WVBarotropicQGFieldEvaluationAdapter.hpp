@@ -24,7 +24,7 @@ public:
   WVKernelStatus evaluate(const WVFieldEvaluationPlan &plan,
                           const WVIntegrationState &state,
                           WVFieldOutputView *outputs,
-                          std::size_t outputCount);
+                          std::size_t outputCount, const std::uint8_t *activeOutputs = nullptr);
   WVKernelStatus createMovingPlan(
       const std::vector<WVMovingFieldRequest> &requests,
       WVMovingFieldEvaluationPlan &plan) const;
@@ -32,13 +32,13 @@ public:
                                 const WVIntegrationState &state,
                                 WVMovingPositionView positions,
                                 WVFieldOutputView *outputs,
-                                std::size_t outputCount);
+                                std::size_t outputCount, const std::uint8_t *activeOutputs = nullptr);
   WVKernelStatus evaluateMovingFromAdvectionFields(
       const WVMovingFieldEvaluationPlan &plan,
       const WVIntegrationState &state,
       const WVRealFieldBundleConstView &advectionFields,
       WVMovingPositionView positions, WVFieldOutputView *outputs,
-      std::size_t outputCount);
+      std::size_t outputCount, const std::uint8_t *activeOutputs = nullptr);
   WVKernelStatus createEventPlan(
       const std::vector<WVEventFieldRequest> &requests,
       WVEventFieldEvaluationPlan &plan);
@@ -59,13 +59,16 @@ public:
 
 private:
   friend class WVDiagnosticFieldPlan;
+  friend class WVFieldEvaluationEventScope;
+  WVFieldEvaluationEventWorkspace* eventWorkspace_ = nullptr;
+  WVKernelStatus transformField(const WVIntegrationState&,const WVComplexConstView&,WVBarotropicQGField,WVRealView,bool&);
   struct MovingInterpolationWorkspace;
   WVKernelStatus evaluateMovingImpl(
       const WVMovingFieldEvaluationPlan &plan,
       const WVIntegrationState &state,
       const WVRealFieldBundleConstView *advectionFields,
       WVMovingPositionView positions, WVFieldOutputView *outputs,
-      std::size_t outputCount);
+      std::size_t outputCount, const std::uint8_t *activeOutputs = nullptr);
   WVBarotropicQGFieldEvaluationAdapter() = default;
   std::unique_ptr<WVTransformBarotropicQGKernel> ownedKernel_;
   WVTransformBarotropicQGKernel *kernel_ = nullptr;

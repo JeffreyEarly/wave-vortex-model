@@ -468,7 +468,8 @@ WVKernelStatus WVModelOutputConfiguration::compile(
         *planningConfiguration,
     bool isDynamicsLinear,
     const WVTransformStateDescription *planningStateDescription,
-    const WVStratifiedModalGeometry *stratifiedGeometry) {
+    const WVStratifiedModalGeometry *stratifiedGeometry,
+    const WVFrozenForcingSchedule *forcingSchedule,std::string_view forcingConfiguration) {
   if (!catalog)
     return invalid("Output configuration requires an extension catalog.");
   if (!std::isfinite(initialTime) || !std::isfinite(finalTime) ||
@@ -553,6 +554,14 @@ WVKernelStatus WVModelOutputConfiguration::compile(
       planningContext.stateBlockCount = observerRecord.stateBlocks.size();
       planningContext.isDynamicsLinear = isDynamicsLinear;
       planningContext.stateLayout = &rawLayout;
+      std::vector<WVPortableForcingVariableBinding> forcingBindings;
+      if(forcingSchedule) {
+        status=catalog->forcings().diagnosticBindings(*forcingSchedule,forcingConfiguration,forcingBindings);
+        if(!status) return status;
+      }
+      planningContext.forcingConfiguration=forcingConfiguration;
+      planningContext.forcingBindings=forcingBindings.data();
+      planningContext.forcingBindingCount=forcingBindings.size();
       for (const auto &observer : observerRecord.observers) {
         const auto declared = std::find_if(
             observationSchemas.begin(), observationSchemas.end(),

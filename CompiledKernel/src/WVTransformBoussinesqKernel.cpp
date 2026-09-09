@@ -329,13 +329,45 @@ WVKernelStatus WVTransformBoussinesqKernel::constrainCoefficients(WVMutableCoeff
     }
     return WVKernelStatus::ok();
 }
-WVKernelStatus WVTransformBoussinesqKernel::nonlinearFlux(const WVState& a,WVFlux& b) {
+WVKernelStatus WVTransformBoussinesqKernel::nonlinearFlux(const WVState& a,WVFlux& b,
+    WVRealFieldBundleView* spatialTendency,const WVRealFieldBundleConstView* preparedFields,bool projectFlux) {
+    if (!projectFlux && !spatialTendency)
+        return {WVKernelStatusCode::invalidConfiguration,"Spatial-only nonlinear evaluation requires output storage."};
     auto s=state(a); if (!s) return s; WVMutableCoefficients target{b.Fp,b.Fm,b.F0}; s=outputs(target); if (!s) return s;
     for (auto x : {a.coefficients.Ap,a.coefficients.Am,a.coefficients.A0}) for (auto y : {b.Fp,b.Fm,b.F0}) { s=disjoint(x.data,S_*sizeof(WVComplex64),y.data,S_*sizeof(WVComplex64)); if (!s) return s; }
+    const auto validateBundle = [&](const double* data,WVShape4D shape,std::size_t count) {
+        if (shape.first!=geometry().Nx || shape.second!=geometry().Ny ||
+            shape.third!=geometry().Nz || shape.fourth!=count)
+            return WVKernelStatus{WVKernelStatusCode::invalidShape,"Forcing field bundle shape mismatch."};
+        for (std::size_t channel=0;channel<count;++channel) {
+            auto status=volume({data ? data+channel*R_ : nullptr,spatialShape()});
+            if (!status) return status;
+        }
+        return WVKernelStatus::ok();
+    };
+    if (preparedFields) {
+        s=validateBundle(preparedFields->data,preparedFields->shape,4); if (!s) return s;
+        for (auto output:{b.Fp,b.Fm,b.F0}) {
+            s=disjoint(preparedFields->data,4*R_*sizeof(double),output.data,S_*sizeof(WVComplex64)); if (!s) return s;
+        }
+    }
+    if (spatialTendency) {
+        s=validateBundle(spatialTendency->data,spatialTendency->shape,4); if (!s) return s;
+        for (auto input:{a.coefficients.Ap,a.coefficients.Am,a.coefficients.A0}) {
+            s=disjoint(spatialTendency->data,4*R_*sizeof(double),input.data,S_*sizeof(WVComplex64)); if (!s) return s;
+        }
+        for (auto output:{b.Fp,b.Fm,b.F0}) {
+            s=disjoint(spatialTendency->data,4*R_*sizeof(double),output.data,S_*sizeof(WVComplex64)); if (!s) return s;
+        }
+        if (preparedFields) {
+            s=disjoint(spatialTendency->data,4*R_*sizeof(double),preparedFields->data,4*R_*sizeof(double)); if (!s) return s;
+        }
+    }
     ActiveCall guard(active_); if (!guard.entered) return reentrant();
     s=preparePhase(a.t,a.t0); if (!s) return s;
     const WVBoussinesqField fields[]={WVBoussinesqField::u,WVBoussinesqField::v,WVBoussinesqField::w,WVBoussinesqField::eta};
-    for (std::size_t i=0;i<4;++i) { s=reconstruct(a.coefficients,fields[i],WVBoussinesqDerivative::value,WVBoussinesqComponent::all,real_.data()+i*R_); if (!s) return s; }
+    if (preparedFields) std::copy_n(preparedFields->data,4*R_,real_.data());
+    else for (std::size_t i=0;i<4;++i) { s=reconstruct(a.coefficients,fields[i],WVBoussinesqDerivative::value,WVBoussinesqComponent::all,real_.data()+i*R_); if (!s) return s; }
     for (std::size_t targetIndex=0;targetIndex<4;++targetIndex) {
         const auto field=fields[targetIndex]; auto* flux=real_.data()+(4+targetIndex)*R_;
         std::fill_n(flux,R_,0);
@@ -347,6 +379,8 @@ WVKernelStatus WVTransformBoussinesqKernel::nonlinearFlux(const WVState& a,WVFlu
             }
         }
     }
+    if (spatialTendency) std::copy_n(real_.data()+4*R_,4*R_,spatialTendency->data);
+    if (!projectFlux) return WVKernelStatus::ok();
     return projectFields(real_.data()+4*R_,real_.data()+5*R_,real_.data()+6*R_,real_.data()+7*R_,target);
 }
 WVKernelStatus WVTransformBoussinesqKernel::totalEnergy(const WVCoefficients& a,double& value,WVBoussinesqComponent component) const {

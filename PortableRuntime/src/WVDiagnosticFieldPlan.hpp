@@ -10,19 +10,22 @@ namespace wavevortex::runtime::detail {
 // fields are owned by one evaluate() invocation and released before it returns.
 class WVDiagnosticFieldPlan final {
 public:
+  static std::string configurationIdentifier(const WVFieldEvaluationService&);
   static bool required(const std::vector<WVFieldRequest>&, bool stratified = false) noexcept;
   static WVKernelStatus create(const WVFieldEvaluationService&,
       const std::vector<WVFieldRequest>&, WVFieldEvaluationPlan&);
   WVKernelStatus rebind(const WVFieldEvaluationService&, WVFieldEvaluationPlan&) const;
   WVKernelStatus evaluate(WVFieldEvaluationService&, const WVIntegrationState&,
-      WVFieldOutputView*, std::size_t) const;
+      WVFieldOutputView*, std::size_t, const std::uint8_t* activeOutputs = nullptr) const;
   std::size_t persistentBytes() const noexcept;
+  bool hasForcingDiagnostics() const noexcept {return !forcingIndices_.empty();}
 
 private:
   struct Output {
     WVPortableVariable variable = WVPortableVariable::invalid;
     std::size_t group = 0, dependency = 0;
-    bool surface = false, extrema = false, verticalMean = false;
+    bool surface = false, extrema = false, verticalMean = false, forcing = false;
+    std::size_t forcingSlot=0,forcingChannel=0,forcingPhysicalChannels=0;
     std::array<std::size_t,4> auxiliaries{};
     WVFieldOutputSpecification specification;
   };
@@ -47,6 +50,9 @@ private:
   double Lz_ = 0, constantN2_ = 0, barotropicG_ = 0;
   std::array<Group,5> groups_;
   std::vector<Output> outputs_;
+  std::vector<std::size_t> forcingIndices_;
+  std::size_t forcingPhysicalChannels_=0;
+  std::array<std::size_t,4> forcingPhysicalDependencies_{};
 };
 
 } // namespace wavevortex::runtime::detail

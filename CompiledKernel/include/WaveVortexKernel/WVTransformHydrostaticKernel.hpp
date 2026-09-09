@@ -57,7 +57,12 @@ public:
     WVKernelStatus evolveCoefficients(const WVState&, WVMutableCoefficients);
     // Remove inactive modes and enforce real A0 means / conjugate inertial Am.
     WVKernelStatus constrainCoefficients(WVMutableCoefficients) const;
-    WVKernelStatus nonlinearFlux(const WVState&, WVFlux&);
+    // Caller-owned observation output captures the raw spatial contribution.
+    // Prepared [u,v,w,eta] fields may be shared within one observation event.
+    // With projectFlux=false, spatialTendency is required and flux is untouched.
+    WVKernelStatus nonlinearFlux(const WVState&, WVFlux&,
+        WVRealFieldBundleView* spatialTendency = nullptr,
+        const WVRealFieldBundleConstView* preparedFields = nullptr, bool projectFlux = true);
     WVKernelStatus totalEnergy(const WVCoefficients&, double&,
         WVHydrostaticComponent = WVHydrostaticComponent::all) const;
     WVKernelStatus totalEnstrophy(const WVCoefficients&, double&) const;

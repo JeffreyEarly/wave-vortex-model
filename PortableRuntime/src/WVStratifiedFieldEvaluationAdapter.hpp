@@ -29,7 +29,7 @@ public:
   WVKernelStatus evaluate(const WVFieldEvaluationPlan &plan,
                           const WVIntegrationState &state,
                           WVFieldOutputView *outputs,
-                          std::size_t outputCount);
+                          std::size_t outputCount, const std::uint8_t *activeOutputs = nullptr);
   WVKernelStatus createMovingPlan(
       const std::vector<WVMovingFieldRequest> &requests,
       WVMovingFieldEvaluationPlan &plan) const;
@@ -37,13 +37,13 @@ public:
                                 const WVIntegrationState &state,
                                 WVMovingPositionView positions,
                                 WVFieldOutputView *outputs,
-                                std::size_t outputCount);
+                                std::size_t outputCount, const std::uint8_t *activeOutputs = nullptr);
   WVKernelStatus evaluateMovingFromAdvectionFields(
       const WVMovingFieldEvaluationPlan &plan,
       const WVIntegrationState &state,
       const WVRealFieldBundleConstView &advectionFields,
       WVMovingPositionView positions, WVFieldOutputView *outputs,
-      std::size_t outputCount);
+      std::size_t outputCount, const std::uint8_t *activeOutputs = nullptr);
   WVKernelStatus createEventPlan(
       const std::vector<WVEventFieldRequest> &requests,
       WVEventFieldEvaluationPlan &plan);
@@ -64,7 +64,10 @@ public:
 
 private:
   friend class WVDiagnosticFieldPlan;
-  WVKernelStatus transformField(const WVState&,WVHydrostaticField,WVRealVolumeView);
+  friend class WVFieldEvaluationEventScope;
+  WVFieldEvaluationEventWorkspace* eventWorkspace_ = nullptr;
+  WVKernelStatus transformField(const WVState&,WVHydrostaticField,WVRealVolumeView,bool* reused = nullptr);
+  WVKernelStatus transformUncachedField(const WVState&,WVHydrostaticField,WVRealVolumeView);
   WVKernelStatus scalarValue(const WVState&,unsigned,double&);
   struct MovingInterpolationWorkspace;
   WVKernelStatus evaluateMovingImpl(
@@ -72,7 +75,7 @@ private:
       const WVIntegrationState &state,
       const WVRealFieldBundleConstView *advectionFields,
       WVMovingPositionView positions, WVFieldOutputView *outputs,
-      std::size_t outputCount);
+      std::size_t outputCount, const std::uint8_t *activeOutputs = nullptr);
   WVStratifiedFieldEvaluationAdapter() = default;
   std::unique_ptr<WVTransformStratifiedQGKernel> ownedKernel_;
   WVTransformStratifiedQGKernel *kernel_ = nullptr;

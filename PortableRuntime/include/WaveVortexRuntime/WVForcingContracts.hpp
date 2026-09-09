@@ -105,6 +105,8 @@ struct WVForcingFactoryRegistration {
   std::function<WVKernelStatus(const WVFrozenForcingEntry &,
       const WVTransformBoussinesqKernel &, WVForcingPreparation &)>
       prepareBoussinesqResolution = {};
+  // Data-only diagnostic metadata may be resolved before creating FFT plans.
+  bool supportsTendencyDiagnostics = false;
 };
 
 std::vector<WVForcingFactoryRegistration> builtInForcingFactories();
