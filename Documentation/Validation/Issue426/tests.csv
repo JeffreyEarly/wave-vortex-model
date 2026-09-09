@@ -1,0 +1,10 @@
+Name,Passed,Failed,Incomplete,Duration,Details
+TestQGQuadraticAssessment/physicalOutputsKeepBothEndpointsAndExactZeros,1,0,0,3.410978125,
+TestQGQuadraticAssessment/signedEndpointResponsesAndLocalizedAnalyticalModesAgree,1,0,0,0.0179977916666667,
+TestQGQuadraticAssessment/underresolvedFixedBoundariesCannotHideBehindProducts,1,0,0,1.70726233333333,
+TestQGQuadraticAssessment/preparationBudgetsAndReferenceAllowancesAreExplicit,1,0,0,3.44983466666667,
+TestQGQuadraticAssessment/snapshotReuseAndMissingCoverageAreReported,1,0,0,0.182575291666667,
+TestQGQuadraticAssessment/materialReferenceErrorsAreInconclusive,1,0,0,0.153085708333333,
+TestQGQuadraticAssessment/physicalVelocityScalingPreservesErrorsAndQuadraticLaw,1,0,0,5.07210916666667,
+TestQGQuadraticAssessment/collinearAndSingleEndpointStatesRespectPhysicalZeros,1,0,0,1.52644020833333,
+TestQGQuadraticAssessment/tinyEndpointOverlapUsesDeclaredAbsoluteReferenceBudget,1,0,0,5.13150691666667,

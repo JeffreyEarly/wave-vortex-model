@@ -1,0 +1,32 @@
+{
+  "Lz": 1000,
+  "f": 0.0001,
+  "g": 9.81,
+  "evpOrders": [
+    128,
+    192
+  ],
+  "referenceOrders": [
+    257,
+    513
+  ],
+  "referenceAllowance": 0.0001,
+  "eigenAllowance": 1E-6,
+  "gramTolerance": 1E-7,
+  "id": "cal-constant-17",
+  "profile": "exponential",
+  "Lxy": [
+    10000,
+    10000
+  ],
+  "Nxy": [
+    6,
+    6
+  ],
+  "Nz": 33,
+  "waveCount": 3,
+  "apvCount": 3,
+  "mdaCount": 3,
+  "inertialCount": 3,
+  "referenceAbsoluteAllowance": 1E-10
+}

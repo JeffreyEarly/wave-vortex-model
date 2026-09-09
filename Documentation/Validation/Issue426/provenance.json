@@ -1,0 +1,17 @@
+{
+  "wvmRevision": "3063e69e821544a58143e4851b8dc67287f0e119",
+  "oceanKitRevision": "65d9aa2c3de941406dc6bf2cf1937ba5b3dcd1d5",
+  "internalModesRevision": "f2ce3c143744ae00fbb25bd9d7b8c73fb358ca51",
+  "packages": [
+    "ClassAnnotations-1.2.1",
+    "SplineCore-2.2.0",
+    "Distributions-2.0.0",
+    "chebfun-5.7.0",
+    "NetCDF-1.0.2",
+    "InternalModes-2.0.0-beta.4"
+  ],
+  "matlabVersion": "25.2.0.3150157 (R2025b) Update 4",
+  "computer": "MACA64",
+  "internalModesPath": "/Users/jearly/Documents/OceanKitRepositories/wvm-v5-qg-audit/oceankit-beta-publish/InternalModes-2.0.0-beta.4/@IMInternalModes/IMInternalModes.m",
+  "generatedAt": "09-Sep-2026 17:59:55"
+}

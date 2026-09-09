@@ -1,0 +1,31 @@
+{
+  "policy": "fixed",
+  "selectedInteractionIndices": [
+    4,
+    5,
+    12,
+    1,
+    2,
+    6
+  ],
+  "inputFamilies": [
+    "apv",
+    "surface",
+    "bottom"
+  ],
+  "outputs": [
+    "apv",
+    "surface",
+    "bottom",
+    "surfaceResidual",
+    "bottomResidual"
+  ],
+  "omittedDynamics": [
+    "wave-coupled",
+    "MDA inputs",
+    "individual mean-output channels",
+    "finite-amplitude free-surface corrections"
+  ],
+  "superpositionGuarantee": false,
+  "exhaustiveGuarantee": false
+}

@@ -1,0 +1,3 @@
+profile,sourcePreparationSeconds,incrementalPreparationSeconds,repeatAssessmentSeconds,retainedBytes,workingMemoryEstimateBytes,scalarMeasurements
+constant,1.479188375,0.11356625,0.000573375,1183097,8395200,4500
+exponential,1.50090558333333,0.0945152083333333,0.00083175,1183107,8395200,4500
