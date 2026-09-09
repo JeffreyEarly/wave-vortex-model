@@ -365,6 +365,49 @@ classdef TestDensityDiagnosticReference < matlab.unittest.TestCase
             testCase.verifyGreaterThanOrEqual(actual,zeros(size(actual)));
         end
 
+        function productionLargeInverseUsesAnalyticNonlinearDensityAcrossChunks(testCase)
+            profile = WVNoMotionProfile([-1;0;1],[4;3;0]);
+            % These two cubic formulas independently describe this PCHIP.
+            % The first has zero derivative at -1, so near-endpoint queries
+            % take a different inversion path from exact knots and interiors.
+            densityForHeight = @(h) (h<0).*(4-1.5*(h+1).^2+.5*(h+1).^3) + ...
+                (h>=0).*(3-1.5*h-2*h.^2+.5*h.^3);
+            shape = [129 129 65];
+            index = (1:prod(shape)).';
+            expectedHeight = -1+2*mod(73*index,1025)/1024;
+            selected = [1 1048575 1048576 1048577 numel(index)];
+            expectedHeight(selected) = [-1 -1+1e-4 0 1 -.2];
+            expectedHeight = reshape(expectedHeight,shape);
+            density = densityForHeight(expectedHeight);
+            actual = profile.inverse(density);
+            testCase.verifyEqual(size(actual),shape);
+            testCase.verifyEqual(actual,expectedHeight,AbsTol=2e-11);
+            testCase.verifyEqual(densityForHeight(actual),density,AbsTol=1e-13);
+            testCase.verifyEqual(actual(selected([1 3 4])),[-1 0 1]);
+            % Grouping invariance supplements the analytic-height oracle;
+            % matching a scalar call alone would not establish correctness.
+            for element = selected
+                testCase.verifyEqual(actual(element),profile.inverse(density(element)),AbsTol=2e-14);
+            end
+        end
+
+        function productionInversePreservesRowAndEmptyShapes(testCase)
+            knots = [-2;-1.7;-.8;-.79;-.1;.25;1];
+            densities = [9;8.99;8.7;6;5.9;3;1];
+            profile = WVNoMotionProfile(knots,densities);
+            expectedHeight = [-2 -1.99 -1.7 -.795 -.1 .07 .25 .9 1];
+            reference = pchip(knots,densities);
+            density = ppval(reference,expectedHeight);
+            actual = profile.inverse(density);
+            testCase.verifyEqual(size(actual),size(expectedHeight));
+            testCase.verifyEqual(actual,expectedHeight,AbsTol=2e-10);
+            testCase.verifyEqual(ppval(reference,actual),density,AbsTol=1e-13);
+            for shape = {[0 3],[2 0 4],[1 0]}
+                emptyDensity = zeros(shape{1});
+                testCase.verifyEqual(profile.inverse(emptyDensity),emptyDensity);
+            end
+        end
+
         function productionRejectsPlateausAndOutOfRangeQueries(testCase)
             testCase.verifyError(@()WVNoMotionProfile([-1;0;1],[3;2;2]),'WVNoMotionProfile:NonInvertibleDensity');
             testCase.verifyError(@()WVNoMotionProfile([-1;0;1],[1;2;3]),'WVNoMotionProfile:NonInvertibleDensity');

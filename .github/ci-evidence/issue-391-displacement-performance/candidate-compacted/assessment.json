@@ -1,0 +1,39 @@
+{
+  "schema": "wave-vortex-displacement-candidate-assessment-v1",
+  "candidate": "chunked-compacted-active-arrays",
+  "numericalStatus": "passed",
+  "performanceStatus": "rejected",
+  "reason": "Both warmed paired public-operation medians are slower than the frozen baseline.",
+  "trialsPerMethod": 3,
+  "concurrentMatlabJobs": false,
+  "artifacts": [
+    {
+      "path": "day3000.json",
+      "sha256": "a5a3851f3bc8694543643b9a3a89ba152ef10682d492d65f1c6ea0c97b4c7720"
+    },
+    {
+      "path": "day3250.json",
+      "sha256": "86401a99de9b4674c4853f774752d7bff2241dbbb773c3aeb41eaf00deb5f9b2"
+    },
+    {
+      "path": "paired-benchmark.log",
+      "sha256": "9be859277fad98eb580037647d7beded357f77f312984dcef7f8c76e9780fbb0"
+    },
+    {
+      "path": "hotspots.json",
+      "sha256": "17c314ee44f436f57945b65232e2b7fd0963523c9d420b4eac5a78b384b5c929"
+    },
+    {
+      "path": "hotspots.log",
+      "sha256": "7dc3bd7ba9f104da00048c5cbdd4a9455892d6e9f092a012eaf7908514b46ef6"
+    },
+    {
+      "path": "WVNoMotionProfile.m.txt",
+      "sha256": "6d982bde597e30078764bab4bd8210d5a317f3100cd84aec1b753c35ec2eba2e"
+    },
+    {
+      "path": "benchmarkCapturedDisplacement.m.txt",
+      "sha256": "01835f46e96be84e8708e727de08382f7c2ca71011d42da49ac08866c94ecd61"
+    }
+  ]
+}

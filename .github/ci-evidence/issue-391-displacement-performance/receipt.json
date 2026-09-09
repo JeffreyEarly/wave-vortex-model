@@ -1,0 +1,178 @@
+{
+  "schema": "wave-vortex-displacement-performance-receipt-v1",
+  "scope": "Same-formula displacement inverse optimization on captured JAMES states; no integrations.",
+  "baselineCommit": "414eae4b527454024b09eb02f852fc986891fdbb",
+  "frozenReferenceCommit": "7c26eca05561e1fda4e99f641080efc5f6a7a449",
+  "inverseSourceEquivalenceVerified": true,
+  "status": "accepted",
+  "performanceInterpretation": "Accepted for bounded coefficient/iteration workspace and modest, state-dependent runtime improvement. Day3000 public operation is 1.164x faster (14.1% less elapsed time); day3250 is effectively unchanged at 1.013x, within observed timing variation. The isolated inverse kernel gains 1.062x and 1.136x. No general end-to-end speedup is claimed.",
+  "implementation": "Original safeguarded Newton/bisection inner loop; blockSize1048576; no active-array compaction.",
+  "matlabRelease": "2025b",
+  "platform": "MACA64",
+  "timingConditions": {
+    "trialsPerImplementationPerStage": 3,
+    "alternatingOrder": [
+      [
+        1,
+        2
+      ],
+      [
+        2,
+        1
+      ],
+      [
+        1,
+        2
+      ]
+    ],
+    "warmupCallsPerImplementationPerStage": 1,
+    "concurrentMatlabJobs": false,
+    "cachedState": "rho_nm and rho_total fixed; eta_true cleared outside operation timer",
+    "referenceOperationLimitation": "Frozen constructor/inverse with original EtaTrueOperation expressions versus real public wvt.eta_true dispatch. The reference wrapper omits public variable-dispatch overhead.",
+    "retainedArrayInterpretation": "Kernel outputs are retained for full-array comparison during public-operation timing, as are paired operation outputs. Both implementations see this correctness-harness workload; isolated screening has lower retained-array pressure."
+  },
+  "sourceSHA256": [
+    {
+      "path": "Operations/@WVNoMotionProfile/WVNoMotionProfile.m",
+      "sha256": "e4f90cbbf6bed361fd797ed98e4231febf0d3d3870c645f6220c7b184073b7fa"
+    },
+    {
+      "path": "Operations/EtaTrueOperation.m",
+      "sha256": "560caed0a98b19be47f8996474e1a40ddf95a28051761de4c8d9edd7b143dfc1"
+    },
+    {
+      "path": "Operations/APEOperation.m",
+      "sha256": "2949a0df7676b34425a0e4fb6d650afb2026eb61a8c24a52f92a7d7434126020"
+    },
+    {
+      "path": "Operations/WVNoMotionProfileOperation.m",
+      "sha256": "c6e521114c56b1450c39016f58731d05b1d8b7a9768efd95f78b39aec7fcc16f"
+    },
+    {
+      "path": "@WVTransform/removeFromVariableCache.m",
+      "sha256": "6896327e7edd69959aa7fe8764700b418b505a9541952a3df3a83e18be7a5b42"
+    },
+    {
+      "path": "tools/density-diagnostics/APEReference7c26.m",
+      "sha256": "143e47027df4fd69f8b02b606ca6d9d55e01126816ad3e28fd3b571ce0ab5bd1"
+    },
+    {
+      "path": "tools/density-diagnostics/benchmarkCapturedDisplacement.m",
+      "sha256": "830af87b374f6885894c0ef2d4a2d84eaad03a81e628cfd70d35edc789f9984f"
+    }
+  ],
+  "verification": {
+    "benchmarkCasesPassed": 2,
+    "benchmarkAnalyzerFindings": 0,
+    "heightEtaAPEBitwiseEqual": true,
+    "maximumDensityClosureError": 0,
+    "negativeAPECount": 0,
+    "sourceHashesUnchangedDuringEachCase": true,
+    "focusedTestMethodsPassed": 31,
+    "focusedTestMethodsFailed": 0,
+    "focusedTestMethodsIncomplete": 0,
+    "productionTestAndBenchmarkAnalyzerFindings": 0,
+    "independentReadOnlyReview": "No correctness issues: block loop preserves arithmetic, bounds, shapes, convergence and failure semantics.",
+    "testSourceSHA256": "36bb478fc12b28b9f41fbfc613bea264f89a63acd85a93deca6aa23237e347b6",
+    "documentation": {
+      "files": 2026,
+      "routes": 4145,
+      "failures": 0,
+      "comparisonDifferences": 0
+    }
+  },
+  "memoryBound": {
+    "coefficientColumns": 4,
+    "doubleBytes": 8,
+    "blockValues": 1048576,
+    "candidateCoefficientMatrixMiB": 32,
+    "baselineDay3250CoefficientMatrixMiB": 688,
+    "interpretation": "Analytical coefficient-array size only, not measured peak process memory; full input/output arrays remain allocated."
+  },
+  "results": [
+    {
+      "grid": [
+        256,
+        256,
+        43
+      ],
+      "kernelMedianSeconds": [
+        0.14038879166666668,
+        0.13217620833333332
+      ],
+      "kernelMedianSpeedup": 1.0621335975429267,
+      "publicOperationMedianSeconds": [
+        0.14209675,
+        0.12204725
+      ],
+      "publicOperationMedianSpeedup": 1.1642765404382318,
+      "publicOperationPairedSpeedups": [
+        1.1307358704517876,
+        1.1658776962747353,
+        1.1543573215622884
+      ]
+    },
+    {
+      "grid": [
+        512,
+        512,
+        86
+      ],
+      "kernelMedianSeconds": [
+        1.0173429583333333,
+        0.8952099583333334
+      ],
+      "kernelMedianSpeedup": 1.1364294474866905,
+      "publicOperationMedianSeconds": [
+        1.0448135833333334,
+        1.0317675
+      ],
+      "publicOperationMedianSpeedup": 1.0126444022837833,
+      "publicOperationPairedSpeedups": [
+        1.039420985509494,
+        0.9983083060136354,
+        1.0165093083585435
+      ]
+    }
+  ],
+  "artifacts": [
+    {
+      "path": "day3000.json",
+      "sha256": "c1b97db199eb8ea8fa628d91201e10547c3940108d78f009f4a3fde89fc6a89b"
+    },
+    {
+      "path": "day3250.json",
+      "sha256": "06c66e05f67b42092348eab5d8151347cd341018130fa496e64faebb2b73e6d5"
+    },
+    {
+      "path": "paired-benchmark.log",
+      "sha256": "c7c9b78407955a0d5d93de17180ab0cc3dfd7a56f48ba08b5bc6c6ffbd82da2c"
+    },
+    {
+      "path": "before-hotspots.json",
+      "sha256": "bca0272cd01ec3dd6e10bc72a3c0ec24cee23897b13a187eb42ed875e11e7b88"
+    },
+    {
+      "path": "before-hotspots.log",
+      "sha256": "0834bbe33682c68acc6721f9ea563aee95887029b4a1216e750902ad8e0f03fc"
+    },
+    {
+      "path": "candidate-compacted/assessment.json",
+      "sha256": "5fbf57a2f777b180ab876223c8b39a387616bf95dfd88e2db1192c1f356ee39a"
+    },
+    {
+      "path": "focused-tests.log",
+      "sha256": "a3172d8fe2d0a1097ef6219bd0b3450d636f8e564559ce736f105c91a0db4fa8"
+    },
+    {
+      "path": "documentation.log",
+      "sha256": "b1116465d28c01ec9be0513aa0b43f2d10ea84d9b56fc88541036bc87ea01e3f"
+    }
+  ],
+  "warnings": [
+    "day3250 retains a serialized GMSpinUpExperiment function handle whose original path is absent; density load and all measurements succeeded."
+  ],
+  "baselineProfileInterpretation": "before-hotspots.json is the unchanged historical inspection report from before this task; its retained log has only trailing whitespace normalized. These are not new paired timings or a profile of final code.",
+  "rejectedCandidate": "candidate-compacted/assessment.json preserves slower first candidate, its exact source snapshots, two paired reports and profile.",
+  "logNormalization": "Trailing whitespace and line endings normalized in retained log copies; execution values and warning text preserved. Raw /private/tmp logs remain unchanged."
+}

@@ -1,0 +1,204 @@
+function report = benchmarkCapturedDisplacement(inputPath,outputPath)
+% Compare the frozen inverse and production displacement on fixed density.
+% Configure dependencies first; run with no concurrent MATLAB workloads.
+arguments (Input)
+    inputPath (1,1) string {mustBeFile}
+    outputPath (1,1) string
+end
+arguments (Output)
+    report (1,1) struct
+end
+root = string(fileparts(fileparts(fileparts(mfilename("fullpath")))));
+referenceCommit = "7c26eca05561e1fda4e99f641080efc5f6a7a449";
+baselineCommit = "414eae4b527454024b09eb02f852fc986891fdbb";
+classPath = "Operations/@WVNoMotionProfile/WVNoMotionProfile.m";
+oldText = gitSource(root,referenceCommit,classPath);
+baselineText = gitSource(root,baselineCommit,classPath);
+start = "        function z = inverse(self,rho)";
+finish = "        function ape = availablePotentialEnergy";
+assert(isequal(extractBetween(oldText,start,finish),extractBetween(baselineText,start,finish)), ...
+    "The inverse at the baseline revision differs from the frozen reference.");
+frozen = string(fileread(fullfile(root,"tools","density-diagnostics","APEReference7c26.m")));
+frozen = replace(frozen,"classdef APEReference7c26","classdef WVNoMotionProfile");
+frozen = replace(frozen,"function self = APEReference7c26(z,rho)","function self = WVNoMotionProfile(z,rho)");
+frozen = erase(frozen,"    % Frozen benchmark reference from commit "+referenceCommit+"."+newline);
+frozen = erase(frozen,"    % Only the class and constructor names differ from the original source."+newline);
+assert(frozen==oldText,"The frozen reference is not an exact renamed copy of its pinned revision.");
+paths = [classPath,"Operations/EtaTrueOperation.m","Operations/APEOperation.m", ...
+    "Operations/WVNoMotionProfileOperation.m","@WVTransform/removeFromVariableCache.m", ...
+    "tools/density-diagnostics/APEReference7c26.m","tools/density-diagnostics/benchmarkCapturedDisplacement.m"];
+sources = sourceProvenance(root,paths);
+report = struct(schema="wave-vortex-captured-displacement-performance-v1",status="incomplete", ...
+    referenceCommit=referenceCommit,baselineCommit=baselineCommit,inverseSourceEquivalenceVerified=true);
+report.input = provenance(inputPath);
+report.sourceSHA256 = sources;
+report.matlabRelease = string(version("-release"));
+report.platform = string(computer);
+report.scope = "Three alternating paired trials after one warmup per implementation and stage. Kernel uses fixed profiles/density. Operation includes profile construction and cached rho_nm/rho_total; only eta_true is cleared outside timers. No integrations or concurrent MATLAB workloads.";
+report.referenceOperationInterpretation = "Frozen constructor/inverse with original EtaTrueOperation expressions versus real public wvt.eta_true dispatch. The reference wrapper omits public variable-dispatch overhead.";
+fprintf("DISPLACEMENT_BENCHMARK_BEGIN %s\n",inputPath);
+[wvt,file] = WVTransform.waveVortexTransformFromFile(char(inputPath),iTime=Inf,shouldReadOnly=true);
+fileCleanup = onCleanup(@()file.close());
+rho = wvt.rho_nm;
+density = wvt.rho_total;
+Z = wvt.Z;
+report.grid = size(Z);
+report.actualReferenceDefault = wvt.shouldUseTrueNoMotionProfile;
+assert(report.actualReferenceDefault,"The captured benchmark requires the actual-reference default.");
+original = APEReference7c26(wvt.z,rho);
+current = WVNoMotionProfile(wvt.z,rho);
+original.inverse(density);
+current.inverse(density);
+referenceOperation(wvt);
+wvt.removeFromVariableCache('eta_true');
+warmEta = wvt.eta_true; %#ok<NASGU>
+orders = [1,2;2,1;1,2];
+kernelSeconds = zeros(3,2);
+operationSeconds = zeros(3,2);
+oldHeight = [];
+newHeight = [];
+oldEta = [];
+newEta = [];
+for trial = 1:3
+    for implementation = orders(trial,:)
+        started = tic;
+        if implementation==1
+            oldHeight = original.inverse(density);
+        else
+            newHeight = current.inverse(density);
+        end
+        kernelSeconds(trial,implementation) = toc(started);
+    end
+end
+for trial = 1:3
+    for implementation = orders(trial,:)
+        wvt.removeFromVariableCache('eta_true');
+        started = tic;
+        if implementation==1
+            oldEta = referenceOperation(wvt);
+        else
+            newEta = wvt.eta_true;
+        end
+        operationSeconds(trial,implementation) = toc(started);
+    end
+end
+heightTolerance = 8*eps(max(abs(wvt.z))+wvt.Lz);
+report.trialOrders = orders;
+report.trialColumns = ["original414eae4b","currentProduction"];
+report.kernel = timingSummary(kernelSeconds);
+report.operation = timingSummary(operationSeconds);
+report.heightComparison = compareArrays(newHeight,oldHeight,heightTolerance);
+report.displacementComparison = compareArrays(newEta,oldEta,heightTolerance);
+report.originalReconstruction = compareArrays(Z-oldEta,oldHeight,heightTolerance);
+report.currentReconstruction = compareArrays(Z-newEta,newHeight,heightTolerance);
+report.originalOperationMatchesKernel = isequal(oldEta,Z-oldHeight);
+report.currentOperationMatchesKernel = isequal(newEta,Z-newHeight);
+report.densityClosure = struct(originalMaximum=max(abs(original.density(oldHeight)-density),[],"all"), ...
+    currentMaximum=max(abs(current.density(newHeight)-density),[],"all"),tolerance=8*eps(max(abs(density),[],"all")));
+report.materialHeightRange = [min(newHeight,[],"all"),max(newHeight,[],"all")];
+report.materialHeightBounded = report.materialHeightRange(1)>=min(wvt.z)-heightTolerance ...
+    && report.materialHeightRange(2)<=max(wvt.z)+heightTolerance;
+
+% Keep the APE kernel identical while changing only the inverse result.
+oldAPE = current.availablePotentialEnergy(Z,oldHeight,wvt.g,wvt.rho0);
+newAPE = current.availablePotentialEnergy(Z,newHeight,wvt.g,wvt.rho0);
+apeTolerance = 128*eps(max(max(abs(oldAPE),[],"all"),realmin));
+report.sameInputAPEComparison = compareArrays(newAPE,oldAPE,apeTolerance);
+oldReconstructedAPE = current.availablePotentialEnergy(Z,Z-oldEta,wvt.g,wvt.rho0);
+wvt.removeFromVariableCache('ape');
+publicAPE = wvt.ape;
+report.publicAPEComparison = compareArrays(publicAPE,oldReconstructedAPE,apeTolerance);
+report.apeReconstructionComparison = compareArrays(publicAPE,newAPE,apeTolerance);
+report.negativeAPECounts = [nnz(oldAPE<0),nnz(newAPE<0),nnz(publicAPE<0)];
+report.fixedDensityPreserved = isequal(wvt.rho_nm,rho) && isequal(wvt.rho_total,density);
+indices = unique(round(linspace(1,numel(Z),33))).';
+report.samples = struct(linearIndex=indices,density=density(indices),originalHeight=oldHeight(indices), ...
+    currentHeight=newHeight(indices),originalEta=oldEta(indices),currentEta=newEta(indices));
+assert(isequal(sources,sourceProvenance(root,paths)),"Displacement sources changed during timing.");
+comparisons = [report.heightComparison,report.displacementComparison,report.originalReconstruction, ...
+    report.currentReconstruction,report.sameInputAPEComparison,report.publicAPEComparison,report.apeReconstructionComparison];
+passed = all([comparisons.accepted]) && report.fixedDensityPreserved && report.materialHeightBounded ...
+    && report.originalOperationMatchesKernel && report.currentOperationMatchesKernel ...
+    && report.densityClosure.originalMaximum<=report.densityClosure.tolerance ...
+    && report.densityClosure.currentMaximum<=report.densityClosure.tolerance && all(report.negativeAPECounts==0);
+if passed
+    report.numericalStatus = "passed";
+else
+    report.numericalStatus = "failed";
+end
+if report.kernel.medianSpeedup>1 && report.operation.medianSpeedup>1
+    report.performanceStatus = "improved";
+else
+    report.performanceStatus = "regressed-or-unchanged";
+end
+if passed && report.performanceStatus=="improved"
+    report.status = "passed";
+elseif passed
+    report.status = "performance-regression";
+else
+    report.status = "numerical-failure";
+end
+folder = fileparts(outputPath);
+if ~isfolder(folder)
+    mkdir(folder);
+end
+stream = fopen(outputPath,"w");
+assert(stream>=0,"Cannot open the displacement benchmark report.");
+streamCleanup = onCleanup(@()fclose(stream));
+fprintf(stream,"%s\n",jsonencode(report,PrettyPrint=true));
+fprintf("DISPLACEMENT_BENCHMARK_COMPLETE grid=%s status=%s kernelMedians=%s operationMedians=%s speedup=%.6g heightError=%.6g etaError=%.6g apeError=%.6g\n", ...
+    mat2str(report.grid),report.status,mat2str(report.kernel.medianSeconds,6),mat2str(report.operation.medianSeconds,6), ...
+    report.operation.medianSpeedup,report.heightComparison.maximumAbsoluteDifference, ...
+    report.displacementComparison.maximumAbsoluteDifference,report.publicAPEComparison.maximumAbsoluteDifference);
+assert(passed,"Displacement benchmark numerical acceptance failed; inspect the retained report.");
+end
+
+function eta = referenceOperation(wvt)
+if wvt.shouldUseTrueNoMotionProfile
+    rho = wvt.rho_nm;
+else
+    rho = wvt.rho_nm0;
+end
+profile = APEReference7c26(wvt.z,rho);
+eta = wvt.Z-profile.inverse(wvt.rho_total);
+end
+
+function value = compareArrays(current,reference,tolerance)
+difference = abs(current-reference);
+relativeFloor = max(1e-24,max(abs(reference),[],"all")*1e-12);
+value = struct(bitwiseEqual=isequal(current,reference),maximumAbsoluteDifference=max(difference,[],"all"), ...
+    maximumScaledRelativeDifference=max(difference./max(abs(reference),relativeFloor),[],"all"), ...
+    relativeFloor=relativeFloor,absoluteTolerance=tolerance,allFinite=all(isfinite(current),"all") && all(isfinite(reference),"all"));
+value.accepted = value.allFinite && value.maximumAbsoluteDifference<=tolerance;
+end
+
+function value = timingSummary(seconds)
+value = struct(trialSeconds=seconds,medianSeconds=median(seconds,1),pairedSpeedups=seconds(:,1)./seconds(:,2));
+value.medianSpeedup = value.medianSeconds(1)/value.medianSeconds(2);
+end
+
+function text = gitSource(root,revision,path)
+[status,value] = system("git -C "+shellQuote(root)+" show "+revision+":"+path);
+assert(status==0,"Cannot read the pinned inverse source.");
+text = string(value);
+end
+
+function entries = sourceProvenance(root,paths)
+entries = repmat(struct(path="",sha256=""),numel(paths),1);
+for index = 1:numel(paths)
+    entry = provenance(fullfile(root,paths(index)));
+    entry.path = paths(index);
+    entries(index) = entry;
+end
+end
+
+function entry = provenance(path)
+[status,digest] = system("shasum -a 256 "+shellQuote(path));
+assert(status==0,"Cannot hash the displacement benchmark input or source.");
+entry = struct(path=path,sha256=string(extractBefore(digest," ")));
+end
+
+function quoted = shellQuote(value)
+quote = string(char(39));
+quoted = quote+replace(value,quote,string(char([39,34,39,34,39])))+quote;
+end

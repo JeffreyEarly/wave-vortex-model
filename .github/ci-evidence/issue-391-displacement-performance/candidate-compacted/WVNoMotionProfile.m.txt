@@ -59,10 +59,10 @@ classdef WVNoMotionProfile
             end
             heightTolerance = 8*eps(max(abs(self.z))+diff(self.z([1 end])));
             z = zeros(shape);
-            % Bound coefficient and iteration arrays while keeping contiguous
-            % arithmetic within each block. Converged heights stay frozen
-            % under the same safeguarded Newton steps and stopping criteria.
-            blockSize = 1048576;
+            % Keep coefficient and iteration arrays bounded. Each converged
+            % parcel leaves the solve; the remaining parcels retain exactly
+            % the same safeguarded Newton steps and stopping criteria.
+            blockSize = 65536;
             for first = 1:blockSize:numel(rho)
                 positions = first:min(first+blockSize-1,numel(rho));
                 values = reshape(rho(positions),[],1);
@@ -73,26 +73,37 @@ classdef WVNoMotionProfile
                 lower = zeros(size(target));
                 upper = self.z(interval+1)-base;
                 height = upper .* (self.normalizedDensity(interval)-target) ./ (self.normalizedDensity(interval)-self.normalizedDensity(interval+1));
-                active = true(size(target));
+                solvedHeight = zeros(size(target));
+                active = (1:numel(target)).';
                 for iteration = 1:64
                     residual = ((c(:,1).*height+c(:,2)).*height+c(:,3)).*height+c(:,4)-target;
                     lower(residual > 0) = height(residual > 0);
                     upper(residual < 0) = height(residual < 0);
+                    converged = residual == 0 | upper-lower <= heightTolerance;
+                    if any(converged)
+                        solvedHeight(active(converged)) = height(converged);
+                        remaining = ~converged;
+                        active = active(remaining);
+                        if isempty(active)
+                            break
+                        end
+                        c = c(remaining,:);
+                        target = target(remaining);
+                        lower = lower(remaining);
+                        upper = upper(remaining);
+                        height = height(remaining);
+                        residual = residual(remaining);
+                    end
                     derivative = (3*c(:,1).*height+2*c(:,2)).*height+c(:,3);
                     next = height-residual./derivative;
                     useMidpoint = ~isfinite(next) | next <= lower | next >= upper;
                     next(useMidpoint) = (lower(useMidpoint)+upper(useMidpoint))/2;
-                    converged = residual == 0 | upper-lower <= heightTolerance;
-                    active = active & ~converged;
-                    if ~any(active)
-                        break
-                    end
-                    height(active) = next(active);
+                    height = next;
                 end
-                if any(active)
+                if ~isempty(active)
                     error('WVNoMotionProfile:InverseDidNotConverge','Density inversion failed to reach the height tolerance.');
                 end
-                z(positions) = base+height;
+                z(positions) = base+solvedHeight;
             end
         end
 
