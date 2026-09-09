@@ -1,0 +1,16 @@
+{
+  "sourceCommit": "be09fe473cec08677c608174f523ae93aa79ef58",
+  "buildCommand": "cmake --build /private/tmp/wvm-v4-audit-runtime --target wave-vortex-run WVForwardIntegrationProbe -j 4",
+  "binaries": [
+    {
+      "role": "runner",
+      "path": "/private/tmp/wvm-v4-audit-runtime/wave-vortex-run",
+      "sha256": "990de02d401caa4bb6c05f5b832c331e81f6aa8dffede058c42c49097f60b8fe"
+    },
+    {
+      "role": "probe",
+      "path": "/private/tmp/wvm-v4-audit-runtime/WVForwardIntegrationProbe",
+      "sha256": "9a8ab8a657f858c772e684da2efc294aa6a992421dcc17781e22903f5f58fa65"
+    }
+  ]
+}
