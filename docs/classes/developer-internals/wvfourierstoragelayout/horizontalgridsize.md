@@ -9,7 +9,7 @@ mathjax: true
 
 #  horizontalGridSize
 
-
+Physical horizontal grid shape [Nx,Ny].
 
 > Developer documentation: this item describes internal implementation details.
 

@@ -9,7 +9,7 @@ mathjax: true
 
 #  hermitianCompletionRows
 
-
+Destination rows filled from Hermitian partners before an inverse FFT.
 
 > Developer documentation: this item describes internal implementation details.
 

@@ -9,7 +9,7 @@ mathjax: true
 
 #  hasWaveComponent
 
-
+Whether the legacy Ap or Am mask selects any coefficients.
 
 > Developer documentation: this item describes internal implementation details.
 
@@ -18,3 +18,6 @@ mathjax: true
 
 ## Type
 + Class: `logical`
+
+## Discussion
+Use coefficientMasks for models with other canonical families.

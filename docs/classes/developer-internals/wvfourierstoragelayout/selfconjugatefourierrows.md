@@ -9,7 +9,7 @@ mathjax: true
 
 #  selfConjugateFourierRows
 
-
+Fourier rows representing modes equal to their own Hermitian partner.
 
 > Developer documentation: this item describes internal implementation details.
 
@@ -18,3 +18,6 @@ mathjax: true
 
 ## Type
 + Class: `uint64`
+
+## Discussion
+These rows are forced real during WV-to-Fourier insertion.

@@ -9,7 +9,7 @@ mathjax: true
 
 #  directWVIndices
 
-
+WV-grid indices supplied directly by stored Fourier rows.
 
 > Developer documentation: this item describes internal implementation details.
 

@@ -9,7 +9,11 @@ mathjax: true
 
 #  coefficientMasks
 
-
+Masks keyed by the transform's canonical coefficient families.
 
 
 ---
+
+## Discussion
+
+Omitted families select zero. Legacy masks remain live aliases.

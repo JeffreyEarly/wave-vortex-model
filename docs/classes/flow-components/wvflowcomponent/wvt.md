@@ -9,7 +9,11 @@ mathjax: true
 
 #  wvt
 
-
+reference to the wave vortex transform
 
 
 ---
+
+## Discussion
+
+reference to the WVTransform instance
