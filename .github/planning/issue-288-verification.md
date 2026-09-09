@@ -22,7 +22,7 @@ Reference Release build: `/private/tmp/wvm288-build`. ASan/UBSan RelWithDebInfo 
 | Final low-memory lookahead regression | Release and ASan/UBSan passed; `/private/tmp/wvm288-allocation-test.log` and `/private/tmp/wvm288-allocation-sanitize-test.log`. |
 | Source and architecture policies | 6/6 passed; `/private/tmp/wvm288-source-policy-final.log`. |
 | Source consumer and extension contracts | 2/2 passed after final public API edits; `/private/tmp/wvm288-final-source-contracts.log`. |
-| Whitespace and scope | `git diff --check` passed; changes confined to PortableRuntime and this ledger. |
+| Whitespace and scope | `git diff --check` passed; changes confined to PortableRuntime and the verification ledger/receipt. |
 
 Regression coverage includes exact callback-free versus always-continue coefficients, additional state blocks, step/rejection/RHS counts and retained state workspace for all four methods; no stop lookahead allocation on continuing runs; initial and dense stops; unequal checkpoint/dynamic-block rates across multiple files; bounded no-match search; source-defined typed schedule cursors; sink termination and failed sibling retry; callback exceptions, including nonstandard exceptions; numerical failure; and injected allocation failure during lookahead followed by successful retry. Actual CLI signal tests cover initial and dense requests, repeated SIGINT and unchanged SIGTERM behavior.
 
