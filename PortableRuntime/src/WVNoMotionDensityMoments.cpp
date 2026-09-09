@@ -26,7 +26,8 @@ std::size_t retainedBytes(const WVDensityDistribution &distribution) {
 
 WVKernelStatus WVNoMotionProfileRecovery::moments(
     WVRealVolumeConstView density, const std::vector<double> &integrationWeights,
-    double depth, WVDensityDistribution &output) {
+    double depth, WVDensityDistribution &output, std::size_t *workspaceBytes) {
+  if(workspaceBytes) *workspaceBytes=0;
   const auto nx = density.shape.first, ny = density.shape.second;
   const auto nz = density.shape.third;
   if (!nx || !ny || nz < 2 || integrationWeights.size() != nz)
@@ -48,6 +49,7 @@ WVKernelStatus WVNoMotionProfileRecovery::moments(
     WVDensityDistribution candidate;
     candidate.sampleCount = nx * ny * nz;
     candidate.stableProfile.resize(nz);
+    if(workspaceBytes) *workspaceBytes=retainedBytes(candidate);
     candidate.minimumDensity = std::numeric_limits<double>::infinity();
     candidate.maximumDensity = -std::numeric_limits<double>::infinity();
     const auto plane = nx * ny;
@@ -78,10 +80,18 @@ WVKernelStatus WVNoMotionProfileRecovery::moments(
     if (!(range > 0.0) || !std::isfinite(range))
       return numerical("Current density distribution has no representable invertible range.");
     candidate.moments.assign(nz, 0.0);
-    std::vector<double> compensation(nz, 0.0);
-    std::vector<double> planeMoments(nz, 0.0), planeCompensation(nz, 0.0);
+    if(workspaceBytes) *workspaceBytes=retainedBytes(candidate);
+    std::vector<double> compensation, planeMoments, planeCompensation, tile;
+    const auto account=[&]() {
+      candidate.workspaceBytes=retainedBytes(candidate)+sizeof(double)*
+          (compensation.capacity()+planeMoments.capacity()+planeCompensation.capacity()+tile.capacity());
+      if(workspaceBytes) *workspaceBytes=candidate.workspaceBytes;
+    };
+    compensation.resize(nz); account();
+    planeMoments.resize(nz); account();
+    planeCompensation.resize(nz); account();
     const auto tileSize = std::min(plane, tileCapacity);
-    std::vector<double> tile(2 * tileSize);
+    tile.resize(2 * tileSize); account();
     double *normalized = tile.data(), *power = tile.data() + tileSize;
     candidate.workspaceBytes = retainedBytes(candidate) +
         sizeof(double) * (compensation.capacity() + planeMoments.capacity() +
@@ -165,7 +175,7 @@ WVKernelStatus WVNoMotionProfileRecovery::recover(
     }
   }
   WVDensityDistribution distribution;
-  auto status = moments(density, integrationWeights, depth, distribution);
+  auto status = moments(density, integrationWeights, depth, distribution,&report.workspaceBytes);
   if (!status) {
     report.reason = "invalid-density-distribution";
     return status;

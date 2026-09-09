@@ -1,0 +1,239 @@
+{
+  "schema": "density-event-matlab-qualification-v1",
+  "scope": "private-given-event-density-evaluation",
+  "sourceCommit": "472729bf151dfb0244704ab3e08aa1dca970a5c4",
+  "status": "passed",
+  "matlabRelease": "R2025b",
+  "providerCoverage": [
+    "reference",
+    "native"
+  ],
+  "sourceSHA256": [
+    {
+      "path": "PortableRuntime/tests/WVDensityEventDump.cpp",
+      "sha256": "7d9754faf97e414c94146c64fe5c9d62ebe478a20295f172efc7d8a2d850767f"
+    },
+    {
+      "path": "UnitTests/TestPortableDensityEventEvaluation.m",
+      "sha256": "f06dd915b3f628b22f3c95e58e190874169398b12e7fbbd0878027a11dcd9e80"
+    },
+    {
+      "path": "PortableRuntime/src/WVDensityEventEvaluation.hpp",
+      "sha256": "aee0f0201ade9da3d76f4f3e499a31bc1683c0c1c87086d93825e6066fda0bf0"
+    },
+    {
+      "path": "PortableRuntime/src/WVDensityEventEvaluation.cpp",
+      "sha256": "6ed862d0470a18f52ed5530342bf187326bfd4a9c8b72b8fa5392371cb978916"
+    },
+    {
+      "path": "PortableRuntime/src/WVDiagnosticFieldPlan.hpp",
+      "sha256": "e7abd55d6cbeb383eb373311164bb6dfbd5d0de95a861cb7c167231255dad7d5"
+    },
+    {
+      "path": "PortableRuntime/src/WVDiagnosticFieldPlan.cpp",
+      "sha256": "8507021bcd6f55d14e568f75823a29eb23ab8c982e762ac1af22bfb60a2366df"
+    },
+    {
+      "path": "PortableRuntime/src/WVFieldEvaluationEventWorkspace.hpp",
+      "sha256": "21fa6286c9ec3913379b9734304a267612945a27fb95eb0e962988ef7253cc95"
+    },
+    {
+      "path": "PortableRuntime/src/WVFieldEvaluationService.cpp",
+      "sha256": "5e27d6eee575b78539419cd212bafed2ce7a924cd5dfcccdcd9fb802adac72ca"
+    },
+    {
+      "path": "PortableRuntime/src/WVNoMotionProfile.cpp",
+      "sha256": "0999b4d571a2a1deab55ff554b3af6a265506e5382c28d02127382cf6893340d"
+    },
+    {
+      "path": "PortableRuntime/src/WVNoMotionProfileRecovery.cpp",
+      "sha256": "725c00b4c0611dc0e3569049a693553f86c7d0854cd56c3ce45e112a1c646105"
+    },
+    {
+      "path": "PortableRuntime/src/WVNoMotionDensityMoments.cpp",
+      "sha256": "c00438f55038f38f8de91b2a6781041adf17221dd6e8fbd0e50cf5c3d40b1a19"
+    },
+    {
+      "path": "Operations/EtaTrueOperation.m",
+      "sha256": "560caed0a98b19be47f8996474e1a40ddf95a28051761de4c8d9edd7b143dfc1"
+    },
+    {
+      "path": "Operations/APEOperation.m",
+      "sha256": "2949a0df7676b34425a0e4fb6d650afb2026eb61a8c24a52f92a7d7434126020"
+    },
+    {
+      "path": "Operations/WVNoMotionProfileOperation.m",
+      "sha256": "c6e521114c56b1450c39016f58731d05b1d8b7a9768efd95f78b39aec7fcc16f"
+    },
+    {
+      "path": "PortableRuntime/include/WaveVortexRuntime/WVFieldEvaluationService.hpp",
+      "sha256": "dfdad3672c85a2e5edfb03927ab3377cf262e4dc2b26349f21e1d9f57bdd47ca"
+    },
+    {
+      "path": "PortableRuntime/include/WaveVortexRuntime/WVNoMotionProfile.hpp",
+      "sha256": "fa9ee897d232e39bda85cc2c9af8c4dd20ed9d7540b192414eb616be121f0177"
+    },
+    {
+      "path": "PortableRuntime/include/WaveVortexRuntime/WVNoMotionProfileRecovery.hpp",
+      "sha256": "ee9f3745e1f376fac3032c139bb27e056bd0d66287adc55f38a19bc2a23326f8"
+    },
+    {
+      "path": "PortableRuntime/include/WaveVortexRuntime/WVDensityDiagnosticContract.hpp",
+      "sha256": "150c8ae5d1a732a22bee0c6ce4c765a4e440cda12f520319671337229f2633a0"
+    },
+    {
+      "path": "PortableRuntime/src/WVStratifiedFieldEvaluationAdapter.cpp",
+      "sha256": "07d60940074708686a36c85ddc1d27377b3bd1c531b1f4c1dc8be7a26a1fc31f"
+    },
+    {
+      "path": "CompiledKernel/src/WVTransformConstantStratificationKernel.cpp",
+      "sha256": "61dfb8f7c8ac2d91c90f509efda733884530fe84321bdd5f66210e31ec31c376"
+    },
+    {
+      "path": "Operations/@WVNoMotionProfile/WVNoMotionProfile.m",
+      "sha256": "e4f90cbbf6bed361fd797ed98e4231febf0d3d3870c645f6220c7b184073b7fa"
+    }
+  ],
+  "initialSourceSHA256": [
+    {
+      "path": "PortableRuntime/tests/WVDensityEventDump.cpp",
+      "sha256": "7d9754faf97e414c94146c64fe5c9d62ebe478a20295f172efc7d8a2d850767f"
+    },
+    {
+      "path": "UnitTests/TestPortableDensityEventEvaluation.m",
+      "sha256": "adcc011dc99093b5db6f2286ac2ac05dba80789e4a0d74014d37707ac38331d6"
+    },
+    {
+      "path": "PortableRuntime/src/WVDensityEventEvaluation.hpp",
+      "sha256": "aee0f0201ade9da3d76f4f3e499a31bc1683c0c1c87086d93825e6066fda0bf0"
+    },
+    {
+      "path": "PortableRuntime/src/WVDensityEventEvaluation.cpp",
+      "sha256": "6ed862d0470a18f52ed5530342bf187326bfd4a9c8b72b8fa5392371cb978916"
+    },
+    {
+      "path": "PortableRuntime/src/WVDiagnosticFieldPlan.hpp",
+      "sha256": "e7abd55d6cbeb383eb373311164bb6dfbd5d0de95a861cb7c167231255dad7d5"
+    },
+    {
+      "path": "PortableRuntime/src/WVDiagnosticFieldPlan.cpp",
+      "sha256": "8507021bcd6f55d14e568f75823a29eb23ab8c982e762ac1af22bfb60a2366df"
+    },
+    {
+      "path": "PortableRuntime/src/WVFieldEvaluationEventWorkspace.hpp",
+      "sha256": "21fa6286c9ec3913379b9734304a267612945a27fb95eb0e962988ef7253cc95"
+    },
+    {
+      "path": "PortableRuntime/src/WVFieldEvaluationService.cpp",
+      "sha256": "5e27d6eee575b78539419cd212bafed2ce7a924cd5dfcccdcd9fb802adac72ca"
+    },
+    {
+      "path": "PortableRuntime/src/WVNoMotionProfile.cpp",
+      "sha256": "0999b4d571a2a1deab55ff554b3af6a265506e5382c28d02127382cf6893340d"
+    },
+    {
+      "path": "PortableRuntime/src/WVNoMotionProfileRecovery.cpp",
+      "sha256": "725c00b4c0611dc0e3569049a693553f86c7d0854cd56c3ce45e112a1c646105"
+    },
+    {
+      "path": "PortableRuntime/src/WVNoMotionDensityMoments.cpp",
+      "sha256": "c00438f55038f38f8de91b2a6781041adf17221dd6e8fbd0e50cf5c3d40b1a19"
+    },
+    {
+      "path": "Operations/EtaTrueOperation.m",
+      "sha256": "560caed0a98b19be47f8996474e1a40ddf95a28051761de4c8d9edd7b143dfc1"
+    },
+    {
+      "path": "Operations/APEOperation.m",
+      "sha256": "2949a0df7676b34425a0e4fb6d650afb2026eb61a8c24a52f92a7d7434126020"
+    },
+    {
+      "path": "Operations/WVNoMotionProfileOperation.m",
+      "sha256": "c6e521114c56b1450c39016f58731d05b1d8b7a9768efd95f78b39aec7fcc16f"
+    }
+  ],
+  "executionBinary": {
+    "path": "/private/tmp/wvm-v4-audit-runtime/WVDensityEventDump",
+    "sha256": "abd6d175d98f585fdc6603a02c370069bfd37ff8aa7ced18522f865e3caff3de",
+    "sourceRoot": "/Users/jearly/Documents/OceanKitRepositories/wvm-v4-cpp-adoption-audit",
+    "sourceCommit": "472729bf151dfb0244704ab3e08aa1dca970a5c4",
+    "build": "Release with native FFTW and Accelerate; uncommitted increment source hashes above"
+  },
+  "ledger": [
+    {
+      "gate": "initial two-method class",
+      "passedMethods": 1,
+      "failedMethods": 1,
+      "detail": "All four independent stable-rest rows passed. First coefficient-driven numerical row passed; report accumulator then raised heterogeneousStructAssignment. No numerical or production defect."
+    },
+    {
+      "gate": "affected coefficient-driven method after fixture accumulator fix",
+      "passedMethods": 1,
+      "failedMethods": 0,
+      "caseRows": 32,
+      "durationSeconds": 9.1104
+    },
+    {
+      "gate": "Code Analyzer final changed MATLAB class",
+      "findings": 0
+    },
+    {
+      "gate": "Distinct RelWithDebInfo address+undefined sanitizer build, reference FFT",
+      "passedMethods": 2,
+      "failedMethods": 0,
+      "nontrivialRows": 16,
+      "independentRestRows": 2,
+      "codeAnalyzerFindings": 0,
+      "detail": "Separate binary and evidence; accepted Release/native results remain unchanged."
+    }
+  ],
+  "maxima": {
+    "profileMaximumError": 6.912159733474255e-11,
+    "etaMaximumError": 2.4439032131340355e-08,
+    "apeMaximumError": 9.686208602387847e-14,
+    "densityClosureMaximum": 0
+  },
+  "workspaceMaximumLiveBytes": 21008,
+  "metrics": "Every case performed one actual recovery, one selected profile construction, one inverse pass, and one APE pass across separate then combined coincident requests. Event live bytes returned to zero, and replay recovered again. Temporary plans were destroyed between consumers.",
+  "limitations": "Private qualification factory only: no public density output catalog promotion, solver change, full-state timing campaign, or new MATLAB behavior. rho_nm remains actual under initial-reference eta/APE selection. Raw-moment recovery parity does not establish distribution truth.",
+  "logNormalization": [
+    {
+      "path": ".github/ci-evidence/issue-391-density-event/matlab-initial.log",
+      "originalSHA256": "9cf96a1aedd960ccd37033bb6c7d921c233e22cfe7fd7aae7d593bc705fd7493",
+      "sha256": "d4a70f88261c7697f1d8cdb84fcb4b350479e3345dda2e50f70e730d8b319009",
+      "normalization": "Trailing whitespace and final blank lines only; numerical data and failure diagnostics preserved."
+    },
+    {
+      "path": ".github/ci-evidence/issue-391-density-event/matlab-retry.log",
+      "originalSHA256": "83dc61ec5f831067c33e82ae19dc0dbf1b36767905543bdfe7a5588560f7c4dd",
+      "sha256": "88d167aff7b1960f776908a3048626856df10bcfc4f6e2cbe0bc79de55f21759",
+      "normalization": "Trailing whitespace and final blank lines only; numerical data and failure diagnostics preserved."
+    }
+  ],
+  "artifacts": [
+    {
+      "path": ".github/ci-evidence/issue-391-density-event/initial-test-source.m.txt",
+      "sha256": "adcc011dc99093b5db6f2286ac2ac05dba80789e4a0d74014d37707ac38331d6"
+    },
+    {
+      "path": ".github/ci-evidence/issue-391-density-event/matlab-initial.log",
+      "sha256": "d4a70f88261c7697f1d8cdb84fcb4b350479e3345dda2e50f70e730d8b319009"
+    },
+    {
+      "path": ".github/ci-evidence/issue-391-density-event/matlab-parity.json",
+      "sha256": "73192011f752d7e8544dbde4bdfc1ce8b50cf686b324c6b01f814c7fbad61ab0"
+    },
+    {
+      "path": ".github/ci-evidence/issue-391-density-event/matlab-results.json",
+      "sha256": "0c282a39162fc96f21ddd001fae7ea442d6db3a6d333cf86cc9402b6162a7872"
+    },
+    {
+      "path": ".github/ci-evidence/issue-391-density-event/matlab-retry.log",
+      "sha256": "88d167aff7b1960f776908a3048626856df10bcfc4f6e2cbe0bc79de55f21759"
+    },
+    {
+      "path": ".github/ci-evidence/issue-391-density-event/matlab-sanitized-receipt.json",
+      "sha256": "b871fd5e38cb03b514a90b4ba3485b8fd9cb2ddca65df1a7afa69f28c6ec169b"
+    }
+  ]
+}

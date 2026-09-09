@@ -1,0 +1,10 @@
+Internal ctest changing into directory: /tmp/wvm395-standalone-sanitized
+Test project /tmp/wvm395-standalone-sanitized
+    Start 27: field-evaluation
+1/2 Test #27: field-evaluation .................   Passed    0.35 sec
+    Start 28: observer-output-evaluation
+2/2 Test #28: observer-output-evaluation .......   Passed    0.33 sec
+
+100% tests passed, 0 tests failed out of 2
+
+Total Test time (real) =   0.69 sec

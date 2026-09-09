@@ -22,7 +22,7 @@
 
 namespace wavevortex::runtime {
 namespace detail {
-WVFieldEvaluationEventScope::WVFieldEvaluationEventScope(WVFieldEvaluationService& service,const WVIntegrationState& state,bool enabled)
+WVFieldEvaluationEventScope::WVFieldEvaluationEventScope(WVFieldEvaluationService& service,const WVIntegrationState& state,bool enabled,bool retainPrimitiveFields)
     : workspace_(state) {
   if(!enabled) return;
   if(service.eventWorkspace_) {
@@ -30,6 +30,7 @@ WVFieldEvaluationEventScope::WVFieldEvaluationEventScope(WVFieldEvaluationServic
     return;
   }
   service_=&service;
+  workspace_.retainPrimitiveFields_=retainPrimitiveFields;
   service.eventWorkspace_=&workspace_;
   if(service.stratified_) {
     service.stratified_->eventWorkspace_=&workspace_;
@@ -45,10 +46,20 @@ void WVFieldEvaluationEventScope::release() noexcept {
   if(service_->stratified_) service_->stratified_->eventWorkspace_=nullptr;
   if(service_->barotropicQG_) service_->barotropicQG_->eventWorkspace_=nullptr;
   for(auto& field:workspace_.fields_) std::vector<double>{}.swap(field);
+  workspace_.density_.release();
+  std::vector<double>{}.swap(workspace_.densitySource_);
+  std::vector<double>{}.swap(workspace_.densityHeights_);
+  std::vector<double>{}.swap(workspace_.densityWeights_);
+  std::vector<double>{}.swap(workspace_.densityInitial_);
+  workspace_.metrics_->densityWorkspaceLiveBytes=0;
   workspace_.metrics_->eventFieldWorkspaceLiveBytes=0;
   service_=nullptr;
 }
 } // namespace detail
+
+bool WVFieldEvaluationPlan::hasDensityDiagnostics() const noexcept {
+  return diagnosticPlan_ && diagnosticPlan_->hasDensityDiagnostics();
+}
 namespace {
 
 enum Dependency : std::uint64_t {

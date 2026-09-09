@@ -1298,10 +1298,11 @@ WVKernelStatus WVObserverOutputEvaluationService::prepare(
     }
   impl_->preparedEventOrdinal = event.eventOrdinal;
   impl_->preparedScheduledTime = event.scheduledTime;
-  const bool shareFields=impl_->hasForcingOutputs() &&
+  const bool sharePrimitiveFields=impl_->hasForcingOutputs() &&
       ((!impl_->movingFieldViews.empty() && needsMoving) ||
        std::any_of(impl_->eventFieldPlans.begin(),impl_->eventFieldPlans.end(),[](const auto& plan){return plan.outputCount()!=0;}));
-  detail::WVFieldEvaluationEventScope sharedFields(*impl_->fields,event.state,shareFields);
+  const bool shareFields=sharePrimitiveFields || impl_->timeSeriesFieldPlan.hasDensityDiagnostics();
+  detail::WVFieldEvaluationEventScope sharedFields(*impl_->fields,event.state,shareFields,sharePrimitiveFields);
   if(!sharedFields.status()) return sharedFields.status();
   auto status = impl_->evaluate(event.state, false, needsMoving, metrics_);
   if (status) {

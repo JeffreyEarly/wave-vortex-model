@@ -201,6 +201,7 @@ public:
   }
   std::size_t outputCount() const noexcept { return outputs_.size(); }
   std::size_t persistentBytes() const noexcept;
+  bool hasDensityDiagnostics() const noexcept;
 
 private:
   using Field = WVPortableVariable;
@@ -373,6 +374,13 @@ struct WVFieldEvaluationMetrics {
   std::size_t diagnosticIntermediateReuseCount = 0;
   std::size_t diagnosticWorkspaceLiveBytes = 0;
   std::size_t diagnosticWorkspaceHighWaterBytes = 0;
+  std::size_t densityRecoveryCount = 0;
+  std::size_t densityProfileConstructionCount = 0;
+  std::size_t densityInversePassCount = 0;
+  std::size_t densityAPEPassCount = 0;
+  std::size_t densityReuseCount = 0;
+  std::size_t densityWorkspaceLiveBytes = 0;
+  std::size_t densityWorkspaceHighWaterBytes = 0;
   std::size_t catalogBytes = portableVariableCatalogBytes();
 };
 
