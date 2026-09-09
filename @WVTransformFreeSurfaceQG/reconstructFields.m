@@ -3,6 +3,8 @@ function fields = reconstructFields(self,variableNames,options)
 %
 % Displacement and QGPV include their MDA horizontal means. Surface height
 % is in the zero-mean gauge. Selecting a component never mutates the state.
+% Interior displacement is eta_i=eta-(1+z/Lz)*ssh, with z the fixed
+% reference depth. The same linear surface correction applies to components.
 %
 % - Topic: Evaluate physical fields
 % - Declaration: fields = reconstructFields(variableNames,options)
@@ -37,6 +39,7 @@ for name = variableNames
         case "u", value = u;
         case "v", value = v;
         case "eta", value = self.transformToSpatialDomainWithFourier(etaHat);
+        case "eta_i", value = self.transformToSpatialDomainWithFourier(etaHat-(1+self.z/self.Lz).*((self.f/self.g)*psiHat(end,:)));
         case "qgpv", value = self.transformToSpatialDomainWithFourier(qHat);
         case "ssh", value = (self.f/self.g)*psi(:,:,end);
         case "ssu", value = u(:,:,end);
