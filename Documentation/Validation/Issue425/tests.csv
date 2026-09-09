@@ -24,6 +24,6 @@ TestWaveCountMapAssessment/emptyWaveFamilyRetainsMeanAndBoundaryInputChecks,1,0,
 TestWaveCountMapAssessment/badReferencesAndFixedFamiliesDoNotPass,1,0,0,0.0464309166666667
 TestWaveCountMapAssessment/invalidRequestsFailBeforeAssessment,1,0,0,0.0472085
 TestWaveCountMapAssessment/budgetsPrecedeProductPreparation,1,0,0,0.0420795833333333
-TestWaveCountMapAssessment/smallDenseControlContainsSparseEvidence,1,0,0,2.42366795833333
+TestWaveCountMapAssessment/smallDenseControlContainsSparseEvidence,1,0,0,29.3767034583333
 TestWaveCountMapAssessment/changedGridRequiresFreshEvidence,1,0,0,6.17832904166667
 TestWaveCountMapAssessment/evidenceSnapshotNeedsNoLivePreparation,1,0,0,0.0985612083333333

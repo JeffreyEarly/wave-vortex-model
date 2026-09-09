@@ -1,0 +1,1069 @@
+[
+  {
+    "inputEndpointLabels": [
+      "",
+      "bottom"
+    ],
+    "interaction": 35,
+    "inputFamilies": [
+      "wave",
+      "boundary"
+    ],
+    "inputModeLabels": [
+      1,
+      2
+    ],
+    "inputFrequencySigns": [
+      1,
+      0
+    ],
+    "integerWavevectors": [
+      [
+        -5,
+        -1
+      ],
+      [
+        5,
+        1
+      ],
+      [
+        0,
+        0
+      ]
+    ],
+    "physicalWavevectors": [
+      [
+        -0.031415926535897934,
+        -0.0062831853071795866
+      ],
+      [
+        0.031415926535897934,
+        0.0062831853071795866
+      ],
+      [
+        0,
+        0
+      ]
+    ],
+    "inputWaveCounts": [
+      10,
+      10
+    ],
+    "outputFamily": "inertial",
+    "outputModeLabels": [
+      1,
+      2,
+      3
+    ],
+    "outputFrequencySigns": 0,
+    "outputWaveCount": 0,
+    "channel": "w*dz(u)",
+    "error": 0.29005327820777893
+  },
+  {
+    "inputEndpointLabels": [
+      "",
+      ""
+    ],
+    "interaction": 30,
+    "inputFamilies": [
+      "wave",
+      "wave"
+    ],
+    "inputModeLabels": [
+      10,
+      11
+    ],
+    "inputFrequencySigns": [
+      1,
+      1
+    ],
+    "integerWavevectors": [
+      [
+        -5,
+        -1
+      ],
+      [
+        4,
+        1
+      ],
+      [
+        -1,
+        0
+      ]
+    ],
+    "physicalWavevectors": [
+      [
+        -0.031415926535897934,
+        -0.0062831853071795866
+      ],
+      [
+        0.025132741228718346,
+        0.0062831853071795866
+      ],
+      [
+        -0.0062831853071795866,
+        0
+      ]
+    ],
+    "inputWaveCounts": [
+      10,
+      11
+    ],
+    "outputFamily": "wave",
+    "outputModeLabels": [
+      1,
+      2,
+      3,
+      4,
+      5,
+      6,
+      7,
+      8,
+      9,
+      10,
+      11
+    ],
+    "outputFrequencySigns": [
+      1,
+      -1
+    ],
+    "outputWaveCount": 11,
+    "channel": "u*dx(eta)",
+    "error": 0.61991792917251587
+  },
+  {
+    "inputEndpointLabels": [
+      "",
+      ""
+    ],
+    "interaction": 1636,
+    "inputFamilies": [
+      "wave",
+      "wave"
+    ],
+    "inputModeLabels": [
+      11,
+      11
+    ],
+    "inputFrequencySigns": [
+      1,
+      1
+    ],
+    "integerWavevectors": [
+      [
+        -1,
+        0
+      ],
+      [
+        0,
+        -1
+      ],
+      [
+        -1,
+        -1
+      ]
+    ],
+    "physicalWavevectors": [
+      [
+        -0.0062831853071795866,
+        0
+      ],
+      [
+        0,
+        -0.0062831853071795866
+      ],
+      [
+        -0.0062831853071795866,
+        -0.0062831853071795866
+      ]
+    ],
+    "inputWaveCounts": [
+      11,
+      11
+    ],
+    "outputFamily": "wave",
+    "outputModeLabels": [
+      1,
+      2,
+      3,
+      4,
+      5,
+      6,
+      7,
+      8,
+      9,
+      10,
+      11
+    ],
+    "outputFrequencySigns": [
+      1,
+      -1
+    ],
+    "outputWaveCount": 11,
+    "channel": "v*dy(eta)",
+    "error": 0.30636638402938843
+  },
+  {
+    "inputEndpointLabels": [
+      "",
+      ""
+    ],
+    "interaction": 1627,
+    "inputFamilies": [
+      "wave",
+      "wave"
+    ],
+    "inputModeLabels": [
+      11,
+      11
+    ],
+    "inputFrequencySigns": [
+      1,
+      1
+    ],
+    "integerWavevectors": [
+      [
+        -1,
+        0
+      ],
+      [
+        -1,
+        0
+      ],
+      [
+        -2,
+        0
+      ]
+    ],
+    "physicalWavevectors": [
+      [
+        -0.0062831853071795866,
+        0
+      ],
+      [
+        -0.0062831853071795866,
+        0
+      ],
+      [
+        -0.012566370614359173,
+        0
+      ]
+    ],
+    "inputWaveCounts": [
+      11,
+      11
+    ],
+    "outputFamily": "wave",
+    "outputModeLabels": [
+      1,
+      2,
+      3,
+      4,
+      5,
+      6,
+      7,
+      8,
+      9,
+      10,
+      11
+    ],
+    "outputFrequencySigns": [
+      1,
+      -1
+    ],
+    "outputWaveCount": 11,
+    "channel": "u*dx(eta)",
+    "error": 0.44033610820770264
+  },
+  {
+    "inputEndpointLabels": [
+      "",
+      ""
+    ],
+    "interaction": 21,
+    "inputFamilies": [
+      "wave",
+      "wave"
+    ],
+    "inputModeLabels": [
+      9,
+      11
+    ],
+    "inputFrequencySigns": [
+      1,
+      1
+    ],
+    "integerWavevectors": [
+      [
+        -5,
+        -1
+      ],
+      [
+        3,
+        0
+      ],
+      [
+        -2,
+        -1
+      ]
+    ],
+    "physicalWavevectors": [
+      [
+        -0.031415926535897934,
+        -0.0062831853071795866
+      ],
+      [
+        0.018849555921538759,
+        0
+      ],
+      [
+        -0.012566370614359173,
+        -0.0062831853071795866
+      ]
+    ],
+    "inputWaveCounts": [
+      10,
+      11
+    ],
+    "outputFamily": "wave",
+    "outputModeLabels": [
+      1,
+      2,
+      3,
+      4,
+      5,
+      6,
+      7,
+      8,
+      9,
+      10,
+      11
+    ],
+    "outputFrequencySigns": [
+      1,
+      -1
+    ],
+    "outputWaveCount": 11,
+    "channel": "u*dx(eta)",
+    "error": 0.593638002872467
+  },
+  {
+    "inputEndpointLabels": [
+      "",
+      ""
+    ],
+    "interaction": 20,
+    "inputFamilies": [
+      "wave",
+      "wave"
+    ],
+    "inputModeLabels": [
+      10,
+      11
+    ],
+    "inputFrequencySigns": [
+      1,
+      1
+    ],
+    "integerWavevectors": [
+      [
+        -5,
+        -1
+      ],
+      [
+        3,
+        -1
+      ],
+      [
+        -2,
+        -2
+      ]
+    ],
+    "physicalWavevectors": [
+      [
+        -0.031415926535897934,
+        -0.0062831853071795866
+      ],
+      [
+        0.018849555921538759,
+        -0.0062831853071795866
+      ],
+      [
+        -0.012566370614359173,
+        -0.012566370614359173
+      ]
+    ],
+    "inputWaveCounts": [
+      10,
+      11
+    ],
+    "outputFamily": "wave",
+    "outputModeLabels": [
+      1,
+      2,
+      3,
+      4,
+      5,
+      6,
+      7,
+      8,
+      9,
+      10,
+      11
+    ],
+    "outputFrequencySigns": [
+      1,
+      -1
+    ],
+    "outputWaveCount": 11,
+    "channel": "u*dx(eta)",
+    "error": 0.62961316108703613
+  },
+  {
+    "inputEndpointLabels": [
+      "",
+      "bottom"
+    ],
+    "interaction": 14,
+    "inputFamilies": [
+      "wave",
+      "boundary"
+    ],
+    "inputModeLabels": [
+      1,
+      2
+    ],
+    "inputFrequencySigns": [
+      1,
+      0
+    ],
+    "integerWavevectors": [
+      [
+        -5,
+        -1
+      ],
+      [
+        2,
+        1
+      ],
+      [
+        -3,
+        0
+      ]
+    ],
+    "physicalWavevectors": [
+      [
+        -0.031415926535897934,
+        -0.0062831853071795866
+      ],
+      [
+        0.012566370614359173,
+        0.0062831853071795866
+      ],
+      [
+        -0.018849555921538759,
+        0
+      ]
+    ],
+    "inputWaveCounts": [
+      10,
+      11
+    ],
+    "outputFamily": "wave",
+    "outputModeLabels": [
+      1,
+      2,
+      3,
+      4,
+      5,
+      6,
+      7,
+      8,
+      9,
+      10,
+      11
+    ],
+    "outputFrequencySigns": [
+      1,
+      -1
+    ],
+    "outputWaveCount": 11,
+    "channel": "w*dz(u)",
+    "error": 1.0441968441009521
+  },
+  {
+    "inputEndpointLabels": [
+      "",
+      ""
+    ],
+    "interaction": 999,
+    "inputFamilies": [
+      "wave",
+      "wave"
+    ],
+    "inputModeLabels": [
+      11,
+      11
+    ],
+    "inputFrequencySigns": [
+      1,
+      1
+    ],
+    "integerWavevectors": [
+      [
+        -2,
+        -1
+      ],
+      [
+        -1,
+        2
+      ],
+      [
+        -3,
+        1
+      ]
+    ],
+    "physicalWavevectors": [
+      [
+        -0.012566370614359173,
+        -0.0062831853071795866
+      ],
+      [
+        -0.0062831853071795866,
+        0.012566370614359173
+      ],
+      [
+        -0.018849555921538759,
+        0.0062831853071795866
+      ]
+    ],
+    "inputWaveCounts": [
+      11,
+      11
+    ],
+    "outputFamily": "wave",
+    "outputModeLabels": [
+      1,
+      2,
+      3,
+      4,
+      5,
+      6,
+      7,
+      8,
+      9,
+      10,
+      11
+    ],
+    "outputFrequencySigns": [
+      1,
+      -1
+    ],
+    "outputWaveCount": 11,
+    "channel": "u*dx(eta)",
+    "error": 0.71011638641357422
+  },
+  {
+    "inputEndpointLabels": [
+      "",
+      "bottom"
+    ],
+    "interaction": 12,
+    "inputFamilies": [
+      "wave",
+      "boundary"
+    ],
+    "inputModeLabels": [
+      1,
+      2
+    ],
+    "inputFrequencySigns": [
+      1,
+      0
+    ],
+    "integerWavevectors": [
+      [
+        -5,
+        -1
+      ],
+      [
+        2,
+        -1
+      ],
+      [
+        -3,
+        -2
+      ]
+    ],
+    "physicalWavevectors": [
+      [
+        -0.031415926535897934,
+        -0.0062831853071795866
+      ],
+      [
+        0.012566370614359173,
+        -0.0062831853071795866
+      ],
+      [
+        -0.018849555921538759,
+        -0.012566370614359173
+      ]
+    ],
+    "inputWaveCounts": [
+      10,
+      11
+    ],
+    "outputFamily": "wave",
+    "outputModeLabels": [
+      1,
+      2,
+      3,
+      4,
+      5,
+      6,
+      7,
+      8,
+      9,
+      10,
+      11
+    ],
+    "outputFrequencySigns": [
+      1,
+      -1
+    ],
+    "outputWaveCount": 11,
+    "channel": "w*dz(u)",
+    "error": 0.85286545753479
+  },
+  {
+    "inputEndpointLabels": [
+      "",
+      ""
+    ],
+    "interaction": 596,
+    "inputFamilies": [
+      "wave",
+      "wave"
+    ],
+    "inputModeLabels": [
+      11,
+      11
+    ],
+    "inputFrequencySigns": [
+      1,
+      1
+    ],
+    "integerWavevectors": [
+      [
+        -3,
+        0
+      ],
+      [
+        -1,
+        0
+      ],
+      [
+        -4,
+        0
+      ]
+    ],
+    "physicalWavevectors": [
+      [
+        -0.018849555921538759,
+        0
+      ],
+      [
+        -0.0062831853071795866,
+        0
+      ],
+      [
+        -0.025132741228718346,
+        0
+      ]
+    ],
+    "inputWaveCounts": [
+      11,
+      11
+    ],
+    "outputFamily": "wave",
+    "outputModeLabels": [
+      1,
+      2,
+      3,
+      4,
+      5,
+      6,
+      7,
+      8,
+      9,
+      10,
+      11
+    ],
+    "outputFrequencySigns": [
+      1,
+      -1
+    ],
+    "outputWaveCount": 11,
+    "channel": "u*dx(eta)",
+    "error": 0.51922440528869629
+  },
+  {
+    "inputEndpointLabels": [
+      "",
+      ""
+    ],
+    "interaction": 5,
+    "inputFamilies": [
+      "wave",
+      "wave"
+    ],
+    "inputModeLabels": [
+      10,
+      11
+    ],
+    "inputFrequencySigns": [
+      1,
+      1
+    ],
+    "integerWavevectors": [
+      [
+        -5,
+        -1
+      ],
+      [
+        1,
+        0
+      ],
+      [
+        -4,
+        -1
+      ]
+    ],
+    "physicalWavevectors": [
+      [
+        -0.031415926535897934,
+        -0.0062831853071795866
+      ],
+      [
+        0.0062831853071795866,
+        0
+      ],
+      [
+        -0.025132741228718346,
+        -0.0062831853071795866
+      ]
+    ],
+    "inputWaveCounts": [
+      10,
+      11
+    ],
+    "outputFamily": "wave",
+    "outputModeLabels": [
+      1,
+      2,
+      3,
+      4,
+      5,
+      6,
+      7,
+      8,
+      9,
+      10,
+      11
+    ],
+    "outputFrequencySigns": [
+      1,
+      -1
+    ],
+    "outputWaveCount": 11,
+    "channel": "u*dx(eta)",
+    "error": 0.538057267665863
+  },
+  {
+    "inputEndpointLabels": [
+      "",
+      ""
+    ],
+    "interaction": 601,
+    "inputFamilies": [
+      "wave",
+      "wave"
+    ],
+    "inputModeLabels": [
+      10,
+      10
+    ],
+    "inputFrequencySigns": [
+      1,
+      1
+    ],
+    "integerWavevectors": [
+      [
+        -3,
+        0
+      ],
+      [
+        0,
+        -3
+      ],
+      [
+        -3,
+        -3
+      ]
+    ],
+    "physicalWavevectors": [
+      [
+        -0.018849555921538759,
+        0
+      ],
+      [
+        0,
+        -0.018849555921538759
+      ],
+      [
+        -0.018849555921538759,
+        -0.018849555921538759
+      ]
+    ],
+    "inputWaveCounts": [
+      11,
+      11
+    ],
+    "outputFamily": "wave",
+    "outputModeLabels": [
+      1,
+      2,
+      3,
+      4,
+      5,
+      6,
+      7,
+      8,
+      9,
+      10,
+      11
+    ],
+    "outputFrequencySigns": [
+      1,
+      -1
+    ],
+    "outputWaveCount": 11,
+    "channel": "v*dy(eta)",
+    "error": 0.71275568008422852
+  },
+  {
+    "inputEndpointLabels": [
+      "",
+      ""
+    ],
+    "interaction": 988,
+    "inputFamilies": [
+      "wave",
+      "wave"
+    ],
+    "inputModeLabels": [
+      11,
+      11
+    ],
+    "inputFrequencySigns": [
+      1,
+      1
+    ],
+    "integerWavevectors": [
+      [
+        -2,
+        -1
+      ],
+      [
+        -2,
+        -1
+      ],
+      [
+        -4,
+        -2
+      ]
+    ],
+    "physicalWavevectors": [
+      [
+        -0.012566370614359173,
+        -0.0062831853071795866
+      ],
+      [
+        -0.012566370614359173,
+        -0.0062831853071795866
+      ],
+      [
+        -0.025132741228718346,
+        -0.012566370614359173
+      ]
+    ],
+    "inputWaveCounts": [
+      11,
+      11
+    ],
+    "outputFamily": "wave",
+    "outputModeLabels": [
+      1,
+      2,
+      3,
+      4,
+      5,
+      6,
+      7,
+      8,
+      9,
+      10,
+      11
+    ],
+    "outputFrequencySigns": [
+      1,
+      -1
+    ],
+    "outputWaveCount": 11,
+    "channel": "u*dx(eta)",
+    "error": 0.70941817760467529
+  },
+  {
+    "inputEndpointLabels": [
+      "",
+      ""
+    ],
+    "interaction": 235,
+    "inputFamilies": [
+      "wave",
+      "wave"
+    ],
+    "inputModeLabels": [
+      10,
+      11
+    ],
+    "inputFrequencySigns": [
+      1,
+      1
+    ],
+    "integerWavevectors": [
+      [
+        -4,
+        0
+      ],
+      [
+        0,
+        -3
+      ],
+      [
+        -4,
+        -3
+      ]
+    ],
+    "physicalWavevectors": [
+      [
+        -0.025132741228718346,
+        0
+      ],
+      [
+        0,
+        -0.018849555921538759
+      ],
+      [
+        -0.025132741228718346,
+        -0.018849555921538759
+      ]
+    ],
+    "inputWaveCounts": [
+      11,
+      11
+    ],
+    "outputFamily": "wave",
+    "outputModeLabels": [
+      1,
+      2,
+      3,
+      4,
+      5,
+      6,
+      7,
+      8,
+      9,
+      10
+    ],
+    "outputFrequencySigns": [
+      1,
+      -1
+    ],
+    "outputWaveCount": 10,
+    "channel": "v*dy(eta)",
+    "error": 0.64568591117858887
+  },
+  {
+    "inputEndpointLabels": [
+      "",
+      ""
+    ],
+    "interaction": 439,
+    "inputFamilies": [
+      "wave",
+      "wave"
+    ],
+    "inputModeLabels": [
+      10,
+      11
+    ],
+    "inputFrequencySigns": [
+      1,
+      1
+    ],
+    "integerWavevectors": [
+      [
+        -3,
+        -3
+      ],
+      [
+        -2,
+        2
+      ],
+      [
+        -5,
+        -1
+      ]
+    ],
+    "physicalWavevectors": [
+      [
+        -0.018849555921538759,
+        -0.018849555921538759
+      ],
+      [
+        -0.012566370614359173,
+        0.012566370614359173
+      ],
+      [
+        -0.031415926535897934,
+        -0.0062831853071795866
+      ]
+    ],
+    "inputWaveCounts": [
+      11,
+      11
+    ],
+    "outputFamily": "wave",
+    "outputModeLabels": [
+      1,
+      2,
+      3,
+      4,
+      5,
+      6,
+      7,
+      8,
+      9,
+      10
+    ],
+    "outputFrequencySigns": [
+      1,
+      -1
+    ],
+    "outputWaveCount": 10,
+    "channel": "u*dx(eta)",
+    "error": 0.69139593839645386
+  }
+]
