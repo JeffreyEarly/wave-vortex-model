@@ -41,7 +41,8 @@
     "stratifiedQGRuntime": "issue-297",
     "hydrostaticKernel": "issue-299",
     "hydrostaticRuntime": "issue-300",
-    "boussinesqKernel": "issue-302"
+    "boussinesqKernel": "issue-302",
+    "resolvedForcingTendencyDiagnostics": "issue-315"
   },
   "contract": {
     "version": 4,
@@ -69,8 +70,8 @@
   "keySourceSHA256": {
     "preparedModeExecutor": "817d2a3cd791b51a38e0e427a1d6800d376aaa976ca7100f438599841fabce93",
     "coefficientFormulas": "78d647608d8919b33c278c280eb6d2b253dfb0acd8d3330141fbdc845e00864a",
-    "kernel": "058019cc65c615fd38e890d6e823349b551e3669e78b2adebe3cdc465e8c21ef",
-    "integrationSystem": "4f68056403c89405610f2721b73fe3e6b3b8cdd4b5d49a3364bc0351d66cc234",
+    "kernel": "c04bcc5421ebad4a62b960da4d5ec2134340f0b140b84c99a740fc53e878e656",
+    "integrationSystem": "b8e35f304ad53b1f536ebecee235b5ccef95373d79a039c776d41f801944d7ec",
     "nativeEngine": "43dae9c58e67ccb6e2d7eceb9371a2c09117569cc5dd9e942004b38b7f7eb7fc",
     "mexGateway": "fc9827e29d8da083c9170e761fc42f4e2a3aa88cf810bc76ac28395d7b4ef8b2",
     "buildOrchestrator": "f2c8d71e3e078d467c7cd508596a143c665f469116917b2870da67001b12b371"

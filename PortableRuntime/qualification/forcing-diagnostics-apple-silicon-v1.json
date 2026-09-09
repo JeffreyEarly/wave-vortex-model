@@ -4120,6 +4120,30 @@
       "coverage": "All six transform configurations, reference/native providers, fixed/segmented/adaptive continuation, primary/dense and sibling files.",
       "codeAnalyzerFindings": 0,
       "runtimeChanged": false
+    },
+    {
+      "run": 34292317366,
+      "head": "4d700874",
+      "failure": "Required MATLAB smoke and batch 3 source-selection checks found stale hashes for the changed constant-stratification kernel and integration system.",
+      "correction": "Refresh the two live keySourceSHA256 entries and record issue-315 as a post-selection extension in both manifests; preserve historical snapshot provenance and all test assertions.",
+      "localVerification": {
+        "names": [
+          "TestCompiledKernelIntegration/selectionRecordsTheAcceptedContract",
+          "TestCompiledKernelIntegration/runtimeSelectionRecordsStableSourceAPI",
+          "TestCompiledKernelIntegration/keyRuntimeHashesMatchTheSelection"
+        ],
+        "passed": [
+          true,
+          true,
+          true
+        ],
+        "duration": [
+          0.08893583333333334,
+          0.047340291666666666,
+          0.234007
+        ]
+      },
+      "runtimeChanged": false
     }
   ]
 }

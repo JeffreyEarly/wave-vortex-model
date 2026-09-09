@@ -63,7 +63,8 @@
     "hydrostaticKernel": "issue-299",
     "hydrostaticRuntime": "issue-300",
     "boussinesqKernel": "issue-302",
-    "boussinesqRuntime": "issue-303"
+    "boussinesqRuntime": "issue-303",
+    "resolvedForcingTendencyDiagnostics": "issue-315"
   },
   "excluded": [
     "benchmark harnesses and payloads",

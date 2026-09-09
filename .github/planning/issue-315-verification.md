@@ -176,6 +176,12 @@ Branch: `issue-315-forcing-tendency-diagnostics`, based on v4 main `866f66ed4198
 - The affected continuation method passed on the isolated v4 checkout with both reference/native providers across all six transforms, fixed/segmented/adaptive scenarios, normal/dense output and sibling files. Code Analyzer is clean. This is a test-only selection correction; MATLAB runtime behavior and existing numerical/performance evidence are unchanged.
 - Hosted C++ Release and sanitizer build/contracts passed on 10b3c406, confirming the GCC correction. Required CI will rerun for this final test adjustment before integration.
 
+### Source-selection provenance correction
+
+- Required CI on 4d700874 passed C++ Release/sanitizer builds and contracts. MATLAB R2025b and R2026a smoke/batch 3 failed because the live selection hashes still described the pre-diagnostic constant-stratification kernel and integration system. Both releases reported the same two mismatches; the other batch 3 methods passed.
+- Refreshed those two live hashes and recorded issue-315 in both source-selection extension maps. Historical snapshot and benchmark provenance, numerical code and test assertions remain unchanged. All three explicitly selected TestCompiledKernelIntegration smoke methods passed locally.
+- Required CI remains the integration gate; no optional Full campaign or repeated numerical/performance matrix was run for this metadata-only correction.
+
 ## Diagnostic semantics established from MATLAB
 
 `Operations/SpatialForcingOperation.m` reports the difference before and after each operation in stage/priority order. Spatial diagnostics expose the raw spatial contribution; spectral and amplitude diagnostics reconstruct the difference in the accumulated spectral tendency. Filters and fixed-amplitude operations therefore require the preceding accumulated tendency. Evaluating each forcing independently from a zero accumulator is incorrect.
