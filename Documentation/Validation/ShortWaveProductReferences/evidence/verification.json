@@ -1,0 +1,16 @@
+{
+  "allFailedRowsAreBoundaryPairs": true,
+  "sameBoundaryProductsPassOriginalReferenceAllowance": true,
+  "allBoundaryModeControlsPassOriginalModeAllowance": true,
+  "allProductErrorsSmallOnSeparateFactorScale": true,
+  "sampledFactorBoundHolds": true,
+  "otherFamiliesPassOriginalReferenceAllowance": true,
+  "originalReferenceAllowance": 0.0001,
+  "originalModeAllowance": 1e-06,
+  "acceptancePolicyChanged": false,
+  "codeAnalyzerMessages": 0,
+  "documentationFiles": 2358,
+  "documentationRoutes": 4819,
+  "documentationFailures": 0,
+  "documentationDrift": 0
+}

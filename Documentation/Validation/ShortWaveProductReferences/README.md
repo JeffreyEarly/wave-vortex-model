@@ -23,7 +23,7 @@ These norms use the study's existing physical source metric and canonical unit e
 
 The largest quadrature-reference discrepancy, about 0.00402, occurs in interaction 590's `v*dy(eta)` bottom–surface product. Its analytical product norm is about 4.18e-242; the numerical norm is about 4.51e-32. Here too, relative comparisons measure changes in numerical tails rather than resolve the extraordinarily small physical overlap. The analytical norm calculation scales columns before squaring to avoid premature underflow.
 
-Every reference-failing row in the original three-triad survey is a boundary–boundary row. The independently checked same-boundary products pass the original reference allowance. The other input-family pairs pass that allowance as well. This is a diagnosis of this bounded survey, not a claim about untested triads or full nonlinear dynamics.
+All **11** reference-failing rows in the original three-triad survey are boundary–boundary rows. Across their 44 endpoint-product records, the maximum absolute analytical error divided by the sampled factor bound is **1.58e-12**. The independently checked same-boundary products pass the original reference allowance. The other input-family pairs pass that allowance as well; their largest reference discrepancy is **2.86e-6**, below the existing 1e-4 allowance. This is a diagnosis of this bounded survey, not a claim about untested triads or full nonlinear dynamics.
 
 ## Independent checks
 
@@ -52,3 +52,8 @@ investigateShortWaveProductReferences("new-investigation-directory");
 The function refuses an existing directory, reproduces the original three-triad survey, diagnoses every failing boundary row, and runs the two worst channels through the four baseline/refinement/profile configurations. It writes the complete baseline row gates, per-endpoint diagnostics, refinement table, configurations/provenance and focused verification results. Source and measurement artifacts are separate so the recorded source revision can be replayed.
 
 The authoring functions do not change the core advisory or provider. Historical controls and count-map evidence are preserved. See [evidence/](evidence/) for recorded results and [verification.json](evidence/verification.json) for the scientific checks; these checks use the existing mode/reference tolerances without changing acceptance behavior.
+
+
+## Verification ledger
+
+The final recorded run uses clean source `80bef2ffcfe0707d32e5ef2a794b971cad3e8649` and completes the bounded numerical investigation in **29.78 seconds**. Its focused assertions pass for all failing baseline products, independent mode controls, other-family checks and factor bounds. The two new authoring functions are Code Analyzer clean. The documentation check passes with 2,358 files, 4,819 routes and zero drift. Core advisory tests are not repeated because no core code, threshold, historical reference, package manifest or runtime behavior changed. The report's interpretation remains deliberately narrower than nonlinear model qualification.
