@@ -283,6 +283,41 @@ int main() {
         R"({"schemaIdentifier":"wave-vortex-run-request-v1","schemaVersion":1,"modelFiles":["model.nc"],"integration":{"method":"fixed-rk4","finalTime":12,"initialStep":1},"output":{"policy":"create","destinations":{"primary":"output.nc"}},"execution":{"fftProvider":"reference","threads":2},"report":"report.json"})",
         "reference provider accepted multiple threads");
 
+    const auto densityRequest = [&](const std::string &selection, bool legacy = false) {
+      auto document = legacy ? fixedRequest() : v2Request(R"({"finalTime":12})");
+      const std::string original = R"("execution":{"fftProvider":"reference","threads":1})";
+      const auto position = document.find(original);
+      require(position != std::string::npos, "density request fixture has no execution object");
+      document.replace(position, original.size(),
+          R"("execution":{"fftProvider":"reference","threads":1,"densityDiagnostics":)" + selection + "}");
+      return document;
+    };
+    write(root / "density-default.json", v2Request(R"({"finalTime":12})"));
+    status = decodeRunRequest((root / "density-default.json").string(), request);
+    require(static_cast<bool>(status) && !request.hasDensityDiagnostics &&
+                std::string(request.densityDiagnostics.referenceIdentifier()) == "actual" &&
+                std::string(request.densityDiagnostics.recoveryIdentifier()) == "dampedLeastSquares",
+            "omitted density contract did not select the corrected actual-profile default");
+    for (const auto &selection : {std::string("{}"),
+            std::string(R"({"contract":"wave-vortex-density-diagnostics-v1","reference":"actual"})"),
+            std::string(R"({"reference":"initial"})")}) {
+      write(root / "density-selection.json", densityRequest(selection));
+      status = decodeRunRequest((root / "density-selection.json").string(), request);
+      const bool initial = selection.find("initial") != std::string::npos;
+      require(static_cast<bool>(status) && request.hasDensityDiagnostics &&
+                  std::string(request.densityDiagnostics.referenceIdentifier()) == (initial ? "initial" : "actual") &&
+                  std::string(request.densityDiagnostics.recoveryIdentifier()) == (initial ? "not-required" : "dampedLeastSquares"),
+              "explicit density contract selection was not retained");
+    }
+    for (const auto *selection : {"null", "[]", R"({"reference":false})",
+            R"({"reference":"legacy"})", R"({"contract":"unknown-v2"})",
+            R"({"contract":1})", R"({"solver":"lsqnonlin"})",
+            R"({"solver":"fminsearch"})", R"({"unexpected":true})"})
+      expectFailure("density-invalid.json", densityRequest(selection),
+                    "unsupported density diagnostic selection was accepted");
+    expectFailure("density-v1.json", densityRequest("{}", true),
+                  "v1 accepted a v2 density diagnostic selection");
+
     std::filesystem::remove_all(root);
     std::cout << "Run-request decoder tests passed.\n";
     return 0;

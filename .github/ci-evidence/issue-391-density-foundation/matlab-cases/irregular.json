@@ -1,0 +1,19 @@
+{
+  "schema": "wave-vortex-supplied-no-motion-profile-parity-v1",
+  "caseName": "irregular",
+  "knotCount": 7,
+  "queryCount": 12,
+  "matlabRelease": "2025b",
+  "maximumError": {
+    "density": 0,
+    "inverse": 1.1102230246251565E-16,
+    "ape": 3.2526065174565133E-19,
+    "apeRelative": 7.6134662128638991E-16,
+    "densityClosure": 2.2204460492503131E-16
+  },
+  "tolerance": {
+    "density": 1.4210854715202004E-14,
+    "inverse": 5.6843418860808015E-14,
+    "apeRelative": 2E-11
+  }
+}

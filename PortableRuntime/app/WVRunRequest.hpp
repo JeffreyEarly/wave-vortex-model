@@ -1,5 +1,7 @@
 #pragma once
 
+#include "WaveVortexRuntime/WVDensityDiagnosticContract.hpp"
+
 #include <cstddef>
 #include <cstdint>
 #include <string>
@@ -59,7 +61,9 @@ struct WVRunRequestIntegration {
 
 // A compact execution request. Scientific configuration, state, forcing,
 // observers, schedules, and restart progress remain authoritative in the
-// referenced NetCDF model bundle.
+// referenced NetCDF model bundle. The runtime-only density diagnostic
+// contract is an explicit exception: unsaved MATLAB selections are not
+// inferred from that bundle, and omission selects the corrected default.
 struct WVRunRequest {
   static constexpr const char *schemaV1Identifier =
       "wave-vortex-run-request-v1";
@@ -79,6 +83,8 @@ struct WVRunRequest {
   std::size_t threads = 0;
   bool hasFFTProvider = false;
   bool hasThreads = false;
+  WVDensityDiagnosticContract densityDiagnostics;
+  bool hasDensityDiagnostics = false;
   std::string report;
 };
 

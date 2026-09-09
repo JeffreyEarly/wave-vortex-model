@@ -85,6 +85,31 @@ PortableRuntime/buildWaveVortexRun.sh
 
 The script verifies the pinned FFTW 3.3.11 archive, builds it in the ignored `.compiled-backend-cache`, and writes the executable to `.compiled-backend-cache/runtime-build/wave-vortex-run`. WaveVortexModel distributes no FFTW archive, library, MEX file, or executable. Redistributing a locally linked executable requires compliance with FFTW's GPL license.
 
+## Density diagnostic foundation
+
+`WVNoMotionProfile` provides density, inverse material height and APE for an explicitly supplied strictly monotone density profile. It does not fit a profile to a three-dimensional model state. Include [`WVNoMotionProfile.hpp`](include/WaveVortexRuntime/WVNoMotionProfile.hpp) and link the existing portable runtime library. Successful construction owns the knots and normalized shape-preserving cubic coefficients; failed construction preserves the previous object. Scalar queries allocate no workspace and leave their caller-owned result unchanged on failure. Retained storage scales with the number of vertical knots, not the number of parcel queries.
+
+Density must strictly decrease as height increases. Plateaus have no unique inverse and are rejected. Heights remain inside the profile domain; density inversion permits and clamps only the same eight-ulp endpoint allowance as MATLAB. Nonfinite inputs and finite inputs whose normalization or cubic arithmetic cannot be represented fail explicitly. An uninitialized object rejects queries.
+
+For total parcel density, `inverse` returns material height $s$, giving displacement $\eta_{\mathrm{true}}=z-s$. `availablePotentialEnergy` retains the derivative-integral form
+
+$$\mathrm{APE}(z,s)=\frac{g}{\rho_0}\int_s^z(r-z)\rho'_{\mathrm{nm}}(r)\,dr.$$
+
+It integrates the local cubic over only the crossed intervals. This avoids subtracting nearby densities or large hydrostatic-pressure terms, preserving tiny-displacement energy. With heights in metres, density in kg m-3 and gravity in m s-2, the result is energy per reference mass in m2 s-2.
+
+Run-request v2 accepts an optional runtime selection inside `execution`:
+
+```json
+"densityDiagnostics": {
+  "contract": "wave-vortex-density-diagnostics-v1",
+  "reference": "actual"
+}
+```
+
+The object and either member may be omitted. Omission selects `actual`: the corrected current-distribution `rho_nm` contract, whose recovery algorithm is fixed to `dampedLeastSquares` by this contract version. Explicit `reference: "initial"` selects the coherent initial-profile approximation, which needs no current-profile recovery. Unknown contract versions, reference names and solver fields are rejected; legacy MATLAB solver choices are never inferred from restart files. V1 request syntax is unchanged and rejects this v2 extension. MATLAB's existing request writer needs no change to obtain the corrected default; an explicit alternative is authored in the v2 JSON request.
+
+This selection currently declares and reports the intended numerical contract only. The runner's `densityDiagnosticContract` report identifies the selected reference, recovery method and default/request provenance, and explicitly reports `outputEvaluation: "unavailable"`. It does not fit `rho_nm`, call the new primitive during model output or activate any density diagnostic. All four outputs (`rho_nm`, `eta_true`, `ape`, `apv`) remain catalog-enforced incompatibilities until their full execution chain is qualified. The selection is runtime-only and must be supplied again on a later run to preserve an explicit alternative; no MATLAB restart schema or saved flag is changed.
+
 ## MATLAB-authored run bundles
 
 A portable run has two parts:

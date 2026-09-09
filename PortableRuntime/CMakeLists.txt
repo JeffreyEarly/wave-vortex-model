@@ -34,6 +34,7 @@ add_library(WaveVortexPortableRuntime STATIC
     src/WVCheckpointWriter.cpp
     src/WVForcingEngine.cpp
     src/WVIntegrationState.cpp
+    src/WVNoMotionProfile.cpp
     src/WVRungeKutta.cpp
     include/WaveVortexRuntime/WVBarotropicQGForcingEngine.hpp
     src/WVBarotropicQGForcingEngine.cpp
@@ -238,6 +239,9 @@ if(BUILD_TESTING)
     wv_add_runtime_test(TestWVPortableVariableCatalog TestWVPortableVariableCatalog.cpp portable-variable-catalog)
     target_sources(TestWVPortableVariableCatalog PRIVATE ../tools/compiled-kernel/tests/WVAllocationProbe.cpp)
     target_include_directories(TestWVPortableVariableCatalog PRIVATE ../tools/compiled-kernel/tests)
+    wv_add_runtime_test(TestWVNoMotionProfile TestWVNoMotionProfile.cpp no-motion-profile)
+    target_sources(TestWVNoMotionProfile PRIVATE ../tools/compiled-kernel/tests/WVAllocationProbe.cpp)
+    target_include_directories(TestWVNoMotionProfile PRIVATE ../tools/compiled-kernel/tests)
     wv_add_runtime_test(TestWVObserverAdapter TestWVObserverAdapter.cpp observer-adapter)
     wv_add_runtime_test(TestWVExtensionCatalog TestWVExtensionCatalog.cpp extension-catalog)
     wv_add_runtime_test(TestWVForcingCompatibility TestWVForcingCompatibility.cpp forcing-compatibility-catalog)
@@ -335,7 +339,7 @@ if(BUILD_TESTING)
         app/WVRunRequest.cpp
     )
     target_compile_features(TestWVRunRequest PRIVATE cxx_std_17)
-    target_include_directories(TestWVRunRequest PRIVATE app third_party)
+    target_include_directories(TestWVRunRequest PRIVATE app third_party include)
     target_compile_definitions(TestWVRunRequest PRIVATE
         WV_RUNTIME_FIXTURE_DIR="${CMAKE_CURRENT_LIST_DIR}/tests/fixtures"
     )
@@ -426,6 +430,12 @@ if(BUILD_TESTING)
     endif()
     if(CMAKE_CXX_COMPILER_ID MATCHES "AppleClang|Clang|GNU")
         target_compile_options(WVDiagnosticFieldDump PRIVATE -Wall -Wextra -Wpedantic -Werror)
+    endif()
+    add_executable(WVNoMotionProfileDump tests/WVNoMotionProfileDump.cpp)
+    target_include_directories(WVNoMotionProfileDump PRIVATE third_party)
+    target_link_libraries(WVNoMotionProfileDump PRIVATE WaveVortex::PortableRuntime)
+    if(CMAKE_CXX_COMPILER_ID MATCHES "AppleClang|Clang|GNU")
+        target_compile_options(WVNoMotionProfileDump PRIVATE -Wall -Wextra -Wpedantic -Werror)
     endif()
 endif()
 

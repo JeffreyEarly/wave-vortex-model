@@ -1,0 +1,464 @@
+{
+  "schema": "wave-vortex-density-foundation-matlab-qualification-v1",
+  "status": "passed",
+  "scope": "Supplied-profile C++ density, inverse and APE primitives plus explicit runtime density-reference contract reporting. No C++ profile solver, full-density recovery or density-output availability is qualified.",
+  "sourceCommit": "c298dfde3784afabdee67d89670c5c0d0e283c4d",
+  "sourceCommitInterpretation": "Checkout base revision; source hashes bind the reviewed worktree implementation.",
+  "sourceSHA256": [
+    {
+      "path": "PortableRuntime/include/WaveVortexRuntime/WVNoMotionProfile.hpp",
+      "sha256": "9d37c99dbb7dc14e6ff0b7c9d8a01860c51bf54248ef9c589c508f1cca14a7ce"
+    },
+    {
+      "path": "PortableRuntime/src/WVNoMotionProfile.cpp",
+      "sha256": "df1b40af6d1ec1786861b1dcd7f9b82c13344776c77f156bcfeeb25b91cc3d24"
+    },
+    {
+      "path": "PortableRuntime/tests/WVNoMotionProfileDump.cpp",
+      "sha256": "6840007c13ebb0f4ae650036f66e5c5fc109d09d1295a52b31d3925abe27763a"
+    },
+    {
+      "path": "UnitTests/TestPortableNoMotionProfile.m",
+      "sha256": "b9f597939b96fc67ab6403c510f0995ef607a44dac7bd2521e74359169bd107f"
+    },
+    {
+      "path": "UnitTests/DensityDiagnosticReference.m",
+      "sha256": "6f9aac8c1fe551c2c806f878003e29bbc660d4042ac514bd2d6a4b39867c4e0d"
+    },
+    {
+      "path": "Operations/@WVNoMotionProfile/WVNoMotionProfile.m",
+      "sha256": "e4f90cbbf6bed361fd797ed98e4231febf0d3d3870c645f6220c7b184073b7fa"
+    },
+    {
+      "path": "tools/density-diagnostics/generatePortableNoMotionProfileFixtures.m",
+      "sha256": "055c0df0fe78a0bf0b2d9bd5e0cc83a590910f723eef649d0097b386994b0cc2"
+    },
+    {
+      "path": "UnitTests/fixtures/portable-no-motion-profile-day3000.json",
+      "sha256": "4efb254e61ff9073941c588d8fb3c056ce063add9dc28e4566aa97df6cce6f76"
+    },
+    {
+      "path": "UnitTests/fixtures/portable-no-motion-profile-day3250.json",
+      "sha256": "34d8c92554822788e0ea7ccc617cec212b036a87be3688fe58d909c4605b25bf"
+    },
+    {
+      "path": "PortableRuntime/include/WaveVortexRuntime/WVDensityDiagnosticContract.hpp",
+      "sha256": "150c8ae5d1a732a22bee0c6ce4c765a4e440cda12f520319671337229f2633a0"
+    },
+    {
+      "path": "PortableRuntime/app/WVRunRequest.hpp",
+      "sha256": "943bfc293d24e15f9cbef7eceadd4db664ab91f8f9f464cf7c84b421e6e28440"
+    },
+    {
+      "path": "PortableRuntime/app/WVRunRequest.cpp",
+      "sha256": "a1c08d13a88dcfd0b0bb2e2164ed3476cfe0781835cc602c4ff2a167ffdced94"
+    },
+    {
+      "path": "PortableRuntime/app/WaveVortexRun.cpp",
+      "sha256": "88def2cbc90800c9fe9a1cb9af701531d51c4fe64b31b3d918f2fecfb6a06564"
+    },
+    {
+      "path": "PortableRuntime/contracts/wave-vortex-run-request-v2.schema.json",
+      "sha256": "9e54932418a46b260de2c6cd4f29b2353058a4d031ef8acd209e21c961b65797"
+    }
+  ],
+  "executionBinaries": [
+    {
+      "path": "/private/tmp/wvm-v4-audit-runtime/WVNoMotionProfileDump",
+      "sha256": "aa44ea192029d55cf162e105918ea42a46904ee2eee02d8beb0350494209123b"
+    },
+    {
+      "path": "/private/tmp/wvm-v4-audit-runtime/wave-vortex-run",
+      "sha256": "e96b1882d6748cd991221d9776548b471f8f1af7cdca2900d6d9361c6e7fb2c3"
+    }
+  ],
+  "matlabRelease": "2025b",
+  "cases": [
+    {
+      "schema": "wave-vortex-supplied-no-motion-profile-parity-v1",
+      "caseName": "captured-day3000",
+      "knotCount": 43,
+      "queryCount": 187,
+      "matlabRelease": "2025b",
+      "maximumError": {
+        "density": 0,
+        "inverse": 3.410605131648481e-13,
+        "ape": 2.1316282072803006e-14,
+        "apeRelative": 6.590487171561417e-16,
+        "densityClosure": 0
+      },
+      "tolerance": {
+        "density": 1.8189894035458565e-12,
+        "inverse": 5.820766091346741e-11,
+        "apeRelative": 2e-11
+      }
+    },
+    {
+      "schema": "wave-vortex-supplied-no-motion-profile-parity-v1",
+      "caseName": "captured-day3250",
+      "knotCount": 86,
+      "queryCount": 273,
+      "matlabRelease": "2025b",
+      "maximumError": {
+        "density": 0,
+        "inverse": 1.7763568394002505e-15,
+        "ape": 1.4210854715202004e-14,
+        "apeRelative": 3.428030833087663e-16,
+        "densityClosure": 0
+      },
+      "tolerance": {
+        "density": 1.8189894035458565e-12,
+        "inverse": 5.820766091346741e-11,
+        "apeRelative": 2e-11
+      }
+    },
+    {
+      "schema": "wave-vortex-supplied-no-motion-profile-parity-v1",
+      "caseName": "irregular",
+      "knotCount": 7,
+      "queryCount": 12,
+      "matlabRelease": "2025b",
+      "maximumError": {
+        "density": 0,
+        "inverse": 1.1102230246251565e-16,
+        "ape": 3.2526065174565133e-19,
+        "apeRelative": 7.613466212863899e-16,
+        "densityClosure": 2.220446049250313e-16
+      },
+      "tolerance": {
+        "density": 1.4210854715202004e-14,
+        "inverse": 5.684341886080802e-14,
+        "apeRelative": 2e-11
+      }
+    },
+    {
+      "schema": "wave-vortex-supplied-no-motion-profile-parity-v1",
+      "caseName": "linear-2",
+      "knotCount": 2,
+      "queryCount": 10,
+      "matlabRelease": "2025b",
+      "maximumError": {
+        "density": 0,
+        "inverse": 0,
+        "ape": 0,
+        "apeRelative": 0,
+        "densityClosure": 1.1102230246251565e-16
+      },
+      "tolerance": {
+        "density": 1.7763568394002505e-15,
+        "inverse": 2.842170943040401e-14,
+        "apeRelative": 2e-11
+      }
+    },
+    {
+      "schema": "wave-vortex-supplied-no-motion-profile-parity-v1",
+      "caseName": "linear-6",
+      "knotCount": 6,
+      "queryCount": 10,
+      "matlabRelease": "2025b",
+      "maximumError": {
+        "density": 0,
+        "inverse": 0,
+        "ape": 0,
+        "apeRelative": 0,
+        "densityClosure": 0
+      },
+      "tolerance": {
+        "density": 1.7763568394002505e-15,
+        "inverse": 2.842170943040401e-14,
+        "apeRelative": 2e-11
+      }
+    },
+    {
+      "schema": "wave-vortex-supplied-no-motion-profile-parity-v1",
+      "caseName": "nonlinear-0.04-17",
+      "knotCount": 17,
+      "queryCount": 361,
+      "matlabRelease": "2025b",
+      "maximumError": {
+        "density": 0,
+        "inverse": 3.3306690738754696e-16,
+        "ape": 1.0842021724855044e-19,
+        "apeRelative": 3.3365785136476726e-16,
+        "densityClosure": 0
+      },
+      "tolerance": {
+        "density": 1.8189894035458565e-12,
+        "inverse": 2.842170943040401e-14,
+        "apeRelative": 2e-11
+      }
+    },
+    {
+      "schema": "wave-vortex-supplied-no-motion-profile-parity-v1",
+      "caseName": "nonlinear-0.04-257",
+      "knotCount": 257,
+      "queryCount": 361,
+      "matlabRelease": "2025b",
+      "maximumError": {
+        "density": 2.2737367544323206e-13,
+        "inverse": 2.220446049250313e-16,
+        "ape": 1.0842021724855044e-19,
+        "apeRelative": 2.9649411871416926e-16,
+        "densityClosure": 0
+      },
+      "tolerance": {
+        "density": 1.8189894035458565e-12,
+        "inverse": 2.842170943040401e-14,
+        "apeRelative": 2e-11
+      }
+    },
+    {
+      "schema": "wave-vortex-supplied-no-motion-profile-parity-v1",
+      "caseName": "nonlinear-0.04-65",
+      "knotCount": 65,
+      "queryCount": 361,
+      "matlabRelease": "2025b",
+      "maximumError": {
+        "density": 0,
+        "inverse": 0,
+        "ape": 1.0842021724855044e-19,
+        "apeRelative": 3.350294647257762e-16,
+        "densityClosure": 0
+      },
+      "tolerance": {
+        "density": 1.8189894035458565e-12,
+        "inverse": 2.842170943040401e-14,
+        "apeRelative": 2e-11
+      }
+    },
+    {
+      "schema": "wave-vortex-supplied-no-motion-profile-parity-v1",
+      "caseName": "nonlinear-0.07-17",
+      "knotCount": 17,
+      "queryCount": 361,
+      "matlabRelease": "2025b",
+      "maximumError": {
+        "density": 2.2737367544323206e-13,
+        "inverse": 2.220446049250313e-16,
+        "ape": 2.168404344971009e-19,
+        "apeRelative": 3.934208090454514e-16,
+        "densityClosure": 0
+      },
+      "tolerance": {
+        "density": 1.8189894035458565e-12,
+        "inverse": 2.842170943040401e-14,
+        "apeRelative": 2e-11
+      }
+    },
+    {
+      "schema": "wave-vortex-supplied-no-motion-profile-parity-v1",
+      "caseName": "nonlinear-0.07-257",
+      "knotCount": 257,
+      "queryCount": 361,
+      "matlabRelease": "2025b",
+      "maximumError": {
+        "density": 0,
+        "inverse": 0,
+        "ape": 2.168404344971009e-19,
+        "apeRelative": 2.4876767890538333e-16,
+        "densityClosure": 0
+      },
+      "tolerance": {
+        "density": 1.8189894035458565e-12,
+        "inverse": 2.842170943040401e-14,
+        "apeRelative": 2e-11
+      }
+    },
+    {
+      "schema": "wave-vortex-supplied-no-motion-profile-parity-v1",
+      "caseName": "nonlinear-0.07-65",
+      "knotCount": 65,
+      "queryCount": 361,
+      "matlabRelease": "2025b",
+      "maximumError": {
+        "density": 0,
+        "inverse": 1.3877787807814457e-16,
+        "ape": 5.421010862427522e-20,
+        "apeRelative": 3.2426016788381247e-16,
+        "densityClosure": 0
+      },
+      "tolerance": {
+        "density": 1.8189894035458565e-12,
+        "inverse": 2.842170943040401e-14,
+        "apeRelative": 2e-11
+      }
+    },
+    {
+      "schema": "wave-vortex-supplied-no-motion-profile-parity-v1",
+      "caseName": "weak-gradient",
+      "knotCount": 4,
+      "queryCount": 3,
+      "matlabRelease": "2025b",
+      "maximumError": {
+        "density": 0,
+        "inverse": 0,
+        "ape": 0,
+        "apeRelative": 0,
+        "densityClosure": 0
+      },
+      "tolerance": {
+        "density": 1.8189894035458565e-12,
+        "inverse": 1.4551915228366852e-11,
+        "apeRelative": 2e-11
+      }
+    }
+  ],
+  "runtimeContract": {
+    "schema": "wave-vortex-density-reference-request-parity-v1",
+    "rows": [
+      {
+        "selection": "absent",
+        "contract": {
+          "identifier": "wave-vortex-density-diagnostics-v1",
+          "reference": "actual",
+          "profileRecovery": "dampedLeastSquares",
+          "selectionSource": "default",
+          "outputEvaluation": "unavailable"
+        },
+        "coefficientMaximumDifference": 0
+      },
+      {
+        "selection": "empty",
+        "contract": {
+          "identifier": "wave-vortex-density-diagnostics-v1",
+          "reference": "actual",
+          "profileRecovery": "dampedLeastSquares",
+          "selectionSource": "request",
+          "outputEvaluation": "unavailable"
+        },
+        "coefficientMaximumDifference": 0
+      },
+      {
+        "selection": "initial",
+        "contract": {
+          "identifier": "wave-vortex-density-diagnostics-v1",
+          "reference": "initial",
+          "profileRecovery": "not-required",
+          "selectionSource": "request",
+          "outputEvaluation": "unavailable"
+        },
+        "coefficientMaximumDifference": 0
+      }
+    ]
+  },
+  "aggregateMaximumError": {
+    "density": 2.2737367544323206e-13,
+    "inverse": 3.410605131648481e-13,
+    "ape": 2.1316282072803006e-14,
+    "apeRelative": 7.613466212863899e-16,
+    "densityClosure": 2.220446049250313e-16
+  },
+  "errorInterpretation": {
+    "density": "Absolute kg/m^3; maximum2.2737367544323206e-13 is one binary64 ulp near1025kg/m^3. Acceptance is8eps(maxabs profile density).",
+    "inverse": "Absolute meters; largest supplied-profile parity difference3.410605131648481e-13m. Acceptance64eps(maxabs height+depth).",
+    "ape": "Absolute J/kg and elementwise relative error; no coarse absolute floor hides tiny nonzero energies. Exact-rest APE is explicitly zero and all APE nonnegative.",
+    "densityClosure": "MATLAB profile evaluated at C++ inverse height compared to targetdensity; both captured-case maxima0."
+  },
+  "independentReferences": {
+    "linear": "DensityDiagnosticReference.linearReference, including\u2248eps displacements and full-depth crossings, two-node and irregular multi-node profiles.",
+    "nonlinear": "Two analytic nonlinear profiles with17/65/257-node refinement and inverse polar twist material heights; inverse/APE errors each decrease more than100x. Finest N2=.04 errors1.654829717701034e-9m and9.249518143593372e-12J/kg; N2=.07 errors2.8033484422707033e-9m and2.3453010583943112e-11J/kg.",
+    "irregular": "Independent numerical quadrature of unnormalized MATLAB density PCHIP derivative across irregular knot intervals.",
+    "weakGradient": "N2=1e-10s^-2, with independent inverse-height bound from density resolution and analytic quadratic APE."
+  },
+  "capturedFixtureInterpretation": "Historical actual-default fitted JAMES profiles with43/86nodes are taken from retained qualified MATLAB records, using matching saved vertical grids and original snapshot SHA256. Queries are deterministic synthetic calculus queries; no snapshot reload/refit, empirical sorting truth claim, or full-state diagnostic qualification.",
+  "verificationLedger": [
+    {
+      "gate": "Fixture generation and generator Code Analyzer",
+      "result": "passed;zero findings;no full snapshots or optimizer"
+    },
+    {
+      "gate": "Initial four MATLAB primitive methods",
+      "result": "4/4 passed first run;12cases;1.3535seconds"
+    },
+    {
+      "gate": "New runtime contract method initial run",
+      "result": "failed in test reader assuming split-complex coefficients; valid real coefficient NetCDF storage was present; no runtime failure or tolerance change"
+    },
+    {
+      "gate": "Only corrected runtime contract method",
+      "result": "1/1 passed;3.0631seconds;absent/empty/initial requests produce equal primary coefficients"
+    },
+    {
+      "gate": "Changed MATLAB class Code Analyzer",
+      "result": "Final class:zero findings, confirmed by coordinator final analyzer batch exit0 (assert isempty passed). Generator:zero findings in initial generation batch."
+    },
+    {
+      "gate": "Scope/whitespace",
+      "result": "git diff --check passed; no production MATLAB changes or repeated passing primitive methods"
+    }
+  ],
+  "sourceRevisionNote": "The first four executed test methods and helpers are byte-identical in the final class: removing the new fifth method and reverting only the unexecuted fresh-build target-list addition reproduces the initial class SHA256. Supplied executable setup branch used for all runs is unchanged.",
+  "initialFourMethodClassSHA256": "f48653c1c4084ae2025dfa809ef5019ca81cf3827db931ee72fc6c546c0d704e",
+  "timingInterpretation": "Durations are functional-test receipts, not performance measurements; a sanitizer build ran concurrently.",
+  "artifacts": [
+    {
+      "path": "fixture-generation.log",
+      "sha256": "f51d01c2d1c95df447ced631dddbfc9de6b17f806aab738d7f559f50badd192e"
+    },
+    {
+      "path": "matlab-cases/captured-day3000.json",
+      "sha256": "4dc3a7dfcf33f70c7967c724ade343b2bee34c420e71a88106787f0bc084034e"
+    },
+    {
+      "path": "matlab-cases/captured-day3250.json",
+      "sha256": "5139adaeb659e036910a394a4f8b25477b2ac605a9f93489089a14b26c42e86c"
+    },
+    {
+      "path": "matlab-cases/irregular.json",
+      "sha256": "32523921b297f1f3c56922ae803d2883bf4f920e6e15a619fade77bcf46ad505"
+    },
+    {
+      "path": "matlab-cases/linear-2.json",
+      "sha256": "da56208a99d3eeb645f5bf887fa6cf0607efb62c7fc72df9fc573104aa55a7b0"
+    },
+    {
+      "path": "matlab-cases/linear-6.json",
+      "sha256": "a2c43a2079424ccab0909022584688475ab41d1b7461b65cbde0ca2e9cd88a0a"
+    },
+    {
+      "path": "matlab-cases/nonlinear-0.04-17.json",
+      "sha256": "065b3fee8b4e5b08dc7c4a8111c785d647a7a9c9c057a04044e00f9ebc17cb75"
+    },
+    {
+      "path": "matlab-cases/nonlinear-0.04-257.json",
+      "sha256": "e336eef635184448ac6124ffc44945920ce2ce02bb2c05a53505c94c8f5815c1"
+    },
+    {
+      "path": "matlab-cases/nonlinear-0.04-65.json",
+      "sha256": "c3d66fa6c83bd0963e2b76257d3043062ebd9dc20fecc6ce07030af40efd2d54"
+    },
+    {
+      "path": "matlab-cases/nonlinear-0.07-17.json",
+      "sha256": "f7b888145b53dbb97f2faed67311ee7158226e643715b65f59ebad719fdac4a9"
+    },
+    {
+      "path": "matlab-cases/nonlinear-0.07-257.json",
+      "sha256": "1c3ac13aafc05ab1e322edea8bae3dc66011469d95b86ebec9b588779aeb5a59"
+    },
+    {
+      "path": "matlab-cases/nonlinear-0.07-65.json",
+      "sha256": "1014aa7add12cdf7ef952468ce4d9fcf2609cdc424c545e731496637ad107d49"
+    },
+    {
+      "path": "matlab-cases/runtime-contract.json",
+      "sha256": "a17ac9d3b9206d2abe353b29a18cc594f71b04076cee6864d42a5c4a0126babf"
+    },
+    {
+      "path": "matlab-cases/weak-gradient.json",
+      "sha256": "3c16196b7e7cc84b9ad950b89515e47795571eb53cc451e73cdf8e246e782d53"
+    },
+    {
+      "path": "matlab-contract-initial-failure.log",
+      "sha256": "8bd60c269cbb87a132db82796654fb13f4f6350eaece771f92682f1103d16204"
+    },
+    {
+      "path": "matlab-contract.log",
+      "sha256": "1246d4548eb4f86207a48e7aef211e0a19adf6a5e2a12e027fd578fd7b3fb1fa"
+    },
+    {
+      "path": "matlab-parity.log",
+      "sha256": "38504bc5806e086a97589e05a2cb7d9df9bfcbe199546260e9692c7ea92a85d1"
+    }
+  ],
+  "finalAnalyzerEvidence": "Coordinator /private/tmp/wvm391-density-foundation-docs.log; retained separately as documentation.log by coordinator."
+}

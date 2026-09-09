@@ -2,6 +2,10 @@
 
 ## [Unreleased]
 
+### Portable density foundation
+
+- Added a C++ supplied-profile primitive for monotone cubic density, safeguarded inverse material height and stable APE integration, with storage bounded by the vertical profile and no successful-query allocations. Added the optional v2 density diagnostic execution contract: omitted options select actual `rho_nm`, and explicit initial-profile selection is reported without changing MATLAB restart files. Profile recovery and the four density outputs remain unavailable pending their separate implementation and qualification.
+
 ### Portable phase diagnostics
 
 - Added C++ `phase` and `conjPhase` evaluation and split-complex NetCDF output for all four wave-bearing transform configurations with antialiasing on or off. Both reuse the existing event-time phase calculation, preserving `t0` through dense output, restart, append and MATLAB/C++ continuation. Sixteen phase rows are implemented; the four density diagnostics remain explicitly unsupported pending their separate C++ implementation.

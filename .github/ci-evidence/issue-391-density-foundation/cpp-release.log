@@ -1,0 +1,12 @@
+Internal ctest changing into directory: /tmp/wvm-v4-audit-runtime
+Test project /tmp/wvm-v4-audit-runtime
+    Start  4: portable-variable-catalog
+1/3 Test  #4: portable-variable-catalog ........   Passed    0.27 sec
+    Start  5: no-motion-profile
+2/3 Test  #5: no-motion-profile ................   Passed    0.20 sec
+    Start 32: run-request
+3/3 Test #32: run-request ......................   Passed    0.35 sec
+
+100% tests passed, 0 tests failed out of 3
+
+Total Test time (real) =   0.83 sec

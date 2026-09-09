@@ -325,9 +325,39 @@ WVRunRequestStatus parseExecution(const json &value, bool isV1,
   auto status = requireObject(value,
                               isV1 ? std::set<std::string>{"fftProvider", "threads"}
                                    : std::set<std::string>{},
-                              {"fftProvider", "threads"}, "execution");
+                              isV1 ? std::set<std::string>{"fftProvider", "threads"}
+                                   : std::set<std::string>{"fftProvider", "threads", "densityDiagnostics"},
+                              "execution");
   if (!status)
     return status;
+  if (value.contains("densityDiagnostics")) {
+    const auto &density = value.at("densityDiagnostics");
+    const std::string location = "execution.densityDiagnostics";
+    status = requireObject(density, {}, {"contract", "reference"}, location);
+    if (!status)
+      return status;
+    if (density.contains("contract")) {
+      std::string contract;
+      status = stringValue(density, "contract", location, contract);
+      if (!status)
+        return status;
+      if (contract != WVDensityDiagnosticContract::identifier)
+        return invalid(location + ".contract is unsupported.");
+    }
+    if (density.contains("reference")) {
+      std::string reference;
+      status = stringValue(density, "reference", location, reference);
+      if (!status)
+        return status;
+      if (reference == "actual")
+        request.densityDiagnostics.reference = WVNoMotionReference::actual;
+      else if (reference == "initial")
+        request.densityDiagnostics.reference = WVNoMotionReference::initial;
+      else
+        return invalid(location + ".reference must be actual or initial.");
+    }
+    request.hasDensityDiagnostics = true;
+  }
   request.fftProvider = isV1 ? "reference" : "native-fftw";
   if (value.contains("fftProvider")) {
     status = stringValue(value, "fftProvider", "execution",
