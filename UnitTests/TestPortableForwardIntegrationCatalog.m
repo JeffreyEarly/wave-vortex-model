@@ -71,6 +71,10 @@ classdef TestPortableForwardIntegrationCatalog < matlab.unittest.TestCase
             testCase.verifyInvalidReceipt(bad,root);
             bad = receipt; bad.sourceSHA256(end) = [];
             testCase.verifyInvalidReceipt(bad,root);
+            bad = receipt;
+            sampler = string({bad.sourceSHA256.path})=="PortableRuntime/src/WVFieldEvaluationService.cpp";
+            bad.sourceSHA256(sampler) = [];
+            testCase.verifyInvalidReceipt(bad,root);
             artifact = "PortableRuntime/qualification/fixture.json";
             writeText(fullfile(root,artifact),"{}");
             receipt.artifacts(end+1) = struct(path=artifact,sha256=portableForwardIntegrationSHA256(fullfile(root,artifact)));
@@ -168,7 +172,9 @@ classdef TestPortableForwardIntegrationCatalog < matlab.unittest.TestCase
                 "PortableRuntime/src/WVOutputOrchestration.cpp","PortableRuntime/src/WVModelOutputNetCDFWriter.cpp", ...
                 "PortableRuntime/tests/WVForwardIntegrationProbe.cpp","UnitTests/TestPortableForwardIntegration.m", ...
                 "PortableRuntime/app/WaveVortexRun.cpp","PortableRuntime/include/WaveVortexRuntime/WVIntegrationContracts.hpp", ...
-                "CompiledKernel/src/WVTransformConstantStratificationKernel.cpp"];
+                "CompiledKernel/src/WVTransformConstantStratificationKernel.cpp", ...
+                "PortableRuntime/src/WVFieldEvaluationService.cpp","PortableRuntime/src/WVStratifiedFieldEvaluationAdapter.cpp", ...
+                "PortableRuntime/src/WVBarotropicQGFieldEvaluationAdapter.cpp"];
             hashes = struct(path={},sha256={});
             for path = required
                 writeText(fullfile(root,path),"function representativeLifecycleMatchesMatlab(testCase,configuration)"+newline+"end"+newline);
