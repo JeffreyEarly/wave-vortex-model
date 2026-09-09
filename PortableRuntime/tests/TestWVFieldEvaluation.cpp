@@ -1,6 +1,9 @@
 #include "WaveVortexRuntime/WVFieldEvaluationService.hpp"
 
 #include "WVReferenceFFTEngine.hpp"
+#include "WVStratifiedModalTestFixture.hpp"
+#include "WaveVortexRuntime/WVStratifiedModalRecord.hpp"
+#include "WaveVortexRuntime/WVIntegrationState.hpp"
 
 #include <algorithm>
 #include <array>
@@ -907,10 +910,136 @@ void verifyEventFieldEvaluation() {
           "event batch omitted physical invocation workspace storage");
 }
 
+// MATLAB's three-dimensional transform explicitly supplies extrapval=0 to
+// interpn after circular shifts. On a six-point y grid the four-cell shift
+// can still leave a query beyond the final grid knot.
+void verifyShiftedSplineZero(WVFieldEvaluationService &service,
+                             const WVIntegrationState &state,
+                             double lx, double ly, double depth) {
+  WVFieldSamplingRequest sampling;
+  sampling.kind = WVFieldSamplingKind::positions;
+  sampling.interpolation = WVPositionInterpolation::spline;
+  sampling.x = {0.0, 0.0, lx, 0.0};
+  sampling.y = {0.0, 1.75 * ly / 6.0, 0.0, 1.75 * ly / 6.0 + ly};
+  sampling.z.assign(4, -depth);
+  sampling.z[2] = 1.0;
+  WVFieldEvaluationPlan fixed;
+  auto status = service.createPlan({{"density", "rho_total", sampling}}, fixed);
+  require(bool(status), status.message);
+  std::array<double, 4> values{};
+  WVFieldOutputView output{values.data(), values.size()};
+  auto verify = [&] {
+    require(values[0] > 1000.0, "in-grid spline control lost background density");
+    for (std::size_t i = 1; i < values.size(); ++i)
+      require(values[i] == 0.0, "shifted spline extrapolation must be zero");
+  };
+  status = service.evaluate(fixed, state, &output, 1);
+  require(bool(status), status.message);
+  verify();
+  WVMovingFieldEvaluationPlan moving;
+  status = service.createMovingPlan({{"density", "rho_total", 0, 4,
+                                      WVPositionInterpolation::spline}}, moving);
+  require(bool(status), status.message);
+  status = service.evaluateMoving(moving, state,
+      {sampling.x.data(), sampling.y.data(), sampling.z.data(), 4}, &output, 1);
+  require(bool(status), status.message);
+  verify();
+  WVEventFieldEvaluationPlan event;
+  status = service.createEventPlan({{"density", "rho_total", 0,
+                                     WVPositionInterpolation::spline}}, event);
+  require(bool(status), status.message);
+  const std::size_t extent = 4;
+  WVEventPositionSetView positions{sampling.x.data(), sampling.y.data(),
+                                  sampling.z.data(), 4, &extent, 1};
+  WVPreparedFieldGeometry geometry;
+  status = service.prepareEventGeometry(event, &positions, 1, geometry);
+  require(bool(status), status.message);
+  status = service.evaluateEvent(event, geometry, state, &output, 1);
+  require(bool(status), status.message);
+  verify();
+}
+
+void verifyBarotropicSplineExtrapolation() {
+  WVTransformBarotropicQGConfiguration config;
+  config.Nx = 8; config.Ny = 6; config.Lx = 8; config.Ly = 6;
+  config.h = 0.8; config.g = 9.81; config.planetaryRadius = 6.371e6;
+  config.rotationRate = 7.2921e-5; config.latitude = 33;
+  WVTransformBarotropicQGDescriptor descriptor;
+  auto status = WVTransformBarotropicQGDescriptor::create(config, descriptor);
+  require(bool(status), status.message);
+  std::unique_ptr<WVFieldEvaluationService> service;
+  status = WVFieldEvaluationService::create(
+      config, std::make_unique<WVReferenceFFTEngine>(), service);
+  require(bool(status), status.message);
+  std::vector<WVComplex64> a0(descriptor.Nkl());
+  WVCoefficientFamilyLayout family{"A0", {descriptor.Nkl()}};
+  family.elementCount = descriptor.Nkl();
+  WVCoefficientFamilyConstView coefficients{&family, a0.data()};
+  WVIntegrationState state;
+  state.coefficientFamilies = &coefficients;
+  state.coefficientFamilyCount = 1;
+  WVMovingFieldEvaluationPlan plan;
+  status = service->createMovingPlan({{"u", "u", 0, 3,
+                                      WVPositionInterpolation::spline}}, plan);
+  require(bool(status), status.message);
+  // Inverse circular shift of X^3+2Y^3, so the actual four-cell shifted
+  // interpolation grid is an exact cubic with an independent analytic oracle.
+  std::vector<double> velocity(8 * 6 * 2);
+  for (std::size_t y = 0; y < 6; ++y)
+    for (std::size_t x = 0; x < 8; ++x) {
+      const double xx = (x + 4) % 8, yy = (y + 4) % 6;
+      velocity[x + 8 * y] = xx * xx * xx + 2 * yy * yy * yy;
+    }
+  const std::array<double, 3> x{6.5, 6.5, 6.5}, y{1.75, 1.0, 7.75};
+  std::array<double, 3> values{};
+  WVFieldOutputView output{values.data(), values.size()};
+  status = service->evaluateMovingFromAdvectionFields(plan, state,
+      {velocity.data(), {8, 6, 1, 2}}, {x.data(), y.data(), nullptr, 3},
+      &output, 1);
+  require(bool(status), status.message);
+  // MATLAB BQG omits extrapval: interpn(...,'spline') extends the end cubic.
+  requireClose(values[0], 395.84375, "BQG spline end-piece extrapolation");
+  requireClose(values[1], 265.625, "BQG spline final-knot control");
+  requireClose(values[2], values[0], "BQG extrapolation periodic wrapping");
+}
+
+void verifySmallGridSplineBoundaries() {
+  auto config = configuration(8, 6, true, true);
+  auto constantState = stateFor(config);
+  std::fill(constantState.Ap.begin(), constantState.Ap.end(), WVComplex64{});
+  std::fill(constantState.Am.begin(), constantState.Am.end(), WVComplex64{});
+  std::fill(constantState.A0.begin(), constantState.A0.end(), WVComplex64{});
+  std::unique_ptr<WVFieldEvaluationService> service;
+  auto status = WVFieldEvaluationService::create(
+      config, std::make_unique<WVReferenceFFTEngine>(), service);
+  require(bool(status), status.message);
+  verifyShiftedSplineZero(*service, {constantState.view()}, config.Lx,
+                          config.Ly, config.Lz);
+
+  wavevortex::test_fixture::Temporary file;
+  wavevortex::test_fixture::fixture(file.path);
+  std::shared_ptr<const WVStratifiedModalRecord> source;
+  const auto readStatus = WVStratifiedModalReader::read(file.path.string(), source);
+  require(bool(readStatus), readStatus.message);
+  status = WVFieldEvaluationService::create(
+      source, std::make_unique<WVReferenceFFTEngine>(), service);
+  require(bool(status), status.message);
+  const auto &g = source->geometry();
+  std::vector<WVComplex64> a0(g.Nj * g.Nkl);
+  WVCoefficientFamilyLayout family{"A0", {g.Nj, g.Nkl}};
+  WVCoefficientFamilyConstView coefficients{&family, a0.data()};
+  WVIntegrationState state;
+  state.coefficientFamilies = &coefficients;
+  state.coefficientFamilyCount = 1;
+  verifyShiftedSplineZero(*service, state, g.Lx, g.Ly, g.Lz);
+}
+
 } // namespace
 
 int main() {
   try {
+    verifyBarotropicSplineExtrapolation();
+    verifySmallGridSplineBoundaries();
     verifyCatalog();
     verifyPlanValidation();
     verifyFailureAndLifecycleContracts();

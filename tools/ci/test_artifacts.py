@@ -18,7 +18,8 @@ class ArtifactTests(unittest.TestCase):
             pack(build, root/'bundle', 'revision', 'sanitized')
             result = verify(root/'bundle', 'revision', 'sanitized')
             self.assertNotIn('UnusedCTestExecutable', result['files'])
-            (build/'bin'/'WVHydrostaticLifecycleProbe').unlink()
+            self.assertIn('WVForwardIntegrationProbe', result['files'])
+            (build/'bin'/'WVForwardIntegrationProbe').unlink()
             with self.assertRaisesRegex(ValueError, 'Missing executable probe'):
                 pack(build, root/'incomplete', 'revision', 'sanitized')
 

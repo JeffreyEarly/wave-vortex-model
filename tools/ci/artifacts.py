@@ -7,7 +7,7 @@ from pathlib import Path
 import shutil
 import subprocess
 
-PROBES = ('wave-vortex-run', 'WVStableForcingDump', 'WVStratifiedQGFieldDump',
+PROBES = ('wave-vortex-run', 'WVForwardIntegrationProbe', 'WVStableForcingDump', 'WVStratifiedQGFieldDump',
           'WVStratifiedQGLifecycleProbe', 'WVHydrostaticLifecycleProbe',
           'WVBoussinesqLifecycleProbe', 'WVStratifiedModalDump',
           'WVStratifiedQGKernelDump', 'WVHydrostaticKernelDump',

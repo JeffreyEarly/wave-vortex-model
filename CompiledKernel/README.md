@@ -4,6 +4,8 @@ The v4 constant-stratification kernel prepares its FFT plans, scratch arenas and
 
 The seventeen base plans and `4H+6R` numerical scratch bound are unchanged. Call `prepareScalarAdvection()` during setup when scalar advection is configured. It prepares one additional inverse plan, is idempotent, and can be retried after setup failure. The portable integration system already does this for its configured tracers. Ordinary RHS, RHS that returns velocity, and RHS that consumes prepared velocity retain their existing interfaces and shared particle/tracer velocity behavior.
 
+The constant-stratification tracer operator differentiates horizontally at every grid depth. Its vertical derivative projects onto the retained `Nj` cosine modes before differentiation, matching MATLAB `diffZF`; omitted vertical modes contribute no vertical derivative. Optional tracer antialiasing remains a separate horizontal projection.
+
 Successful prepared native execution performs no application C++ allocations or thread launches. This covers forward/inverse transforms, F/G derivatives, the three RHS forms, and scalar advection with and without antialiasing. Failure reporting can allocate diagnostic strings. The reference FFT provider still allocates for vertical real-to-real execution. Its horizontal real/complex execution is allocation-free after preparation.
 
 ## Native FFTW ownership

@@ -112,8 +112,8 @@ public:
                                  : static_cast<std::size_t>(
                                        std::floor(normalized));
       interval = std::min(interval, count_ - 2);
-      const double fraction = std::clamp(
-          normalized - static_cast<double>(interval), 0.0, 1.0);
+      // MATLAB BQG omits extrapval, extending the end spline polynomial.
+      const double fraction = normalized - static_cast<double>(interval);
       const double first = 1.0 - fraction;
       const double second = fraction;
       rhs[interval] =

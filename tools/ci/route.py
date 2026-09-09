@@ -10,13 +10,15 @@ import subprocess
 FAMILIES = ('constant', 'barotropic', 'sqg', 'hydrostatic', 'boussinesq')
 FAMILY_TESTS = {
     'constant': ['TestCompiledKernelContract', 'TestCoreTransformInvariants'],
-    'barotropic': ['TestBarotropicQGCompiledKernel'],
+    'barotropic': ['TestBarotropicQGCompiledKernel', 'TestBarotropicQGPortableQualificationEvidence'],
     'sqg': ['TestPortableStratifiedQG', 'TestPortableStratifiedQGQualification', 'TestStratifiedQGCompiledKernel'],
     'hydrostatic': ['TestPortableHydrostatic', 'TestPortableHydrostaticQualification', 'TestHydrostaticCompiledKernel'],
     'boussinesq': ['TestPortableBoussinesq', 'TestPortableBoussinesqQualification', 'TestBoussinesqCompiledKernel'],
 }
 SHARED_TESTS = ['TestPortableStableForcing', 'TestPortableForcingCompatibility',
-                'TestCompiledKernelIntegration', 'TestStratifiedModalRecord']
+                'TestCompiledKernelIntegration', 'TestStratifiedModalRecord',
+                'TestPortableQualificationCatalog', 'TestPortableForwardIntegration',
+                'TestPortableForwardIntegrationCatalog']
 PERSISTENCE_TESTS = ['TestPortableRuntimeCompatibility', 'TestPortableRunRequestWriter',
                      'TestPortableObserverContracts', 'TestPortableForcingContracts',
                      'TestWVModelOutputPersistence', 'TestNetCDF', 'TestNetCDFHandleOwnership',

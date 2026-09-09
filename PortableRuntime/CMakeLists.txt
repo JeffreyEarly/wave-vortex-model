@@ -281,6 +281,18 @@ if(BUILD_TESTING)
     wv_add_runtime_test(TestWaveVortexRun TestWaveVortexRun.cpp standalone-runner)
     target_link_libraries(TestWaveVortexRun PRIVATE WaveVortex::Runner)
 
+    add_executable(WVForwardIntegrationProbe tests/WVForwardIntegrationProbe.cpp)
+    target_link_libraries(WVForwardIntegrationProbe PRIVATE WaveVortex::Runner)
+    add_test(NAME forward-integration-probe COMMAND ${CMAKE_COMMAND}
+        -DPROBE=$<TARGET_FILE:WVForwardIntegrationProbe>
+        -DFIXTURE=${CMAKE_CURRENT_LIST_DIR}/tests/fixtures/forcing-mixed-hydrostatic.nc
+        -DWORK=${CMAKE_CURRENT_BINARY_DIR}/forward-integration-probe-contract
+        -P ${CMAKE_CURRENT_LIST_DIR}/tests/CheckWVForwardIntegrationProbe.cmake)
+    if(CMAKE_CXX_COMPILER_ID MATCHES "AppleClang|Clang|GNU")
+        target_compile_options(WVForwardIntegrationProbe PRIVATE
+            -Wall -Wextra -Wpedantic -Werror)
+    endif()
+
     if(TARGET WaveVortexNativeFFTW)
         add_executable(TestWVBarotropicQGNativeFFTW
             tests/TestWVBarotropicQGNativeFFTW.cpp)

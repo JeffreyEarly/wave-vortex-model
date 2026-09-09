@@ -24,11 +24,12 @@
   },
   "retained": {
     "compiledCore": "CompiledKernel",
-    "portableRuntime": "PortableRuntime/CMakeLists.txt, PortableRuntime/README.md, PortableRuntime/QUALIFICATION.md, PortableRuntime/buildWaveVortexRun.sh, PortableRuntime/source-selection.json, PortableRuntime/include, PortableRuntime/src, PortableRuntime/app, PortableRuntime/contracts, PortableRuntime/examples, PortableRuntime/third_party/nlohmann",
+    "portableRuntime": "PortableRuntime/CMakeLists.txt, PortableRuntime/README.md, PortableRuntime/QUALIFICATION.md, PortableRuntime/INTEGRATION.md, PortableRuntime/buildWaveVortexRun.sh, PortableRuntime/source-selection.json, PortableRuntime/include, PortableRuntime/src, PortableRuntime/app, PortableRuntime/contracts, PortableRuntime/examples, PortableRuntime/third_party/nlohmann",
     "portableRuntimeInputs": [
       "PortableRuntime/CMakeLists.txt",
       "PortableRuntime/README.md",
       "PortableRuntime/QUALIFICATION.md",
+      "PortableRuntime/INTEGRATION.md",
       "PortableRuntime/buildWaveVortexRun.sh",
       "PortableRuntime/source-selection.json",
       "PortableRuntime/include",
@@ -66,6 +67,7 @@
     "boussinesqRuntime": "issue-303",
     "resolvedForcingTendencyDiagnostics": "issue-315",
     "controlledEarlyTermination": "issue-288",
+    "standardForwardIntegrationQualification": "issue-289",
     "adaptiveDampingEffectiveResolution": "issue-409"
   },
   "excluded": [

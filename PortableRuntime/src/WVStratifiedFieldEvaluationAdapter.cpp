@@ -102,6 +102,10 @@ public:
     std::fill(shifted.begin(), shifted.end(), 0.0);
     std::fill(rhs.begin(), rhs.end(), 0.0);
     std::fill(result.begin(), result.end(), 0.0);
+    // MATLAB supplies extrapval=0 even after periodic boundary shifts.
+    // On small grids a shifted query can still lie past the final knot.
+    if (query < 0.0 || query > static_cast<double>(count_ - 1) * spacing)
+      return;
     if (count_ == 2) {
       shifted[0] = 1.0 - normalized;
       shifted[1] = normalized;
