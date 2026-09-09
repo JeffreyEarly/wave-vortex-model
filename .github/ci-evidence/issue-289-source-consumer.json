@@ -1,0 +1,63 @@
+{
+  "schema": "wave-vortex-source-consumer-qualification-v1",
+  "issue": 289,
+  "status": "passed",
+  "platform": "Apple Silicon macOS; AppleClang Release; reference FFT provider",
+  "waveVortexBaseCommit": "2e1cc19975a5c812223a19be06b9976f57444504",
+  "consumerRepository": "satmapkit/AlongTrackSimulator",
+  "consumerCommit": "511aa6af9c60353b3de4d371dfe0df43159027cf",
+  "consumerWorktreeClean": true,
+  "sourceIdentityAlgorithm": "SHA256 of sorted UTF-8 lines <file-sha256><two spaces><repository-relative path><LF>; tracked .cpp/.hpp/.h/.c and CMakeLists.txt under the listed prefixes",
+  "waveVortexSource": {
+    "prefixes": [
+      "CompiledKernel",
+      "PortableRuntime/include",
+      "PortableRuntime/src",
+      "PortableRuntime/app",
+      "PortableRuntime/third_party"
+    ],
+    "files": 130,
+    "sha256": "6d3f94029ff866966438c6e06beb2844c29df073b68e59e23c4340710da41169"
+  },
+  "consumerSource": {
+    "prefixes": [
+      "cpp",
+      "CMakeLists.txt"
+    ],
+    "files": 11,
+    "sha256": "a7100443ccc2db4647aba08cdf7f794bd90efe0e97162ccb02baff7babaf24af"
+  },
+  "configuration": {
+    "CMAKE_BUILD_TYPE": "Release",
+    "ALONGTRACK_BUILD_WAVEVORTEX_EXTENSION": "ON",
+    "ALONGTRACK_WARNINGS_AS_ERRORS": "ON",
+    "ALONGTRACK_WAVEVORTEX_SOURCE_DIR": "/Users/jearly/Documents/OceanKitRepositories/wvm-v4-cpp-adoption-audit",
+    "WV_ENABLE_ACCELERATE": "OFF"
+  },
+  "testCount": 7,
+  "testFailures": 0,
+  "ctestSeconds": 13.38,
+  "tests": [
+    "alongtrack_portable_core",
+    "alongtrack_portable_core_source_policy",
+    "alongtrack_wavevortex_runner_composition",
+    "alongtrack_wavevortex_runner_end_to_end",
+    "alongtrack_wavevortex_extension",
+    "alongtrack_wavevortex_extension_routing",
+    "alongtrack_wavevortex_extension_source_policy"
+  ],
+  "logs": {
+    "/private/tmp/wvm289-ats-build.log": "c5ec05805544424fed7ffb3947b804782af93fa48e9d98433a18c8222d491a62",
+    "/private/tmp/wvm289-ats-configure.log": "84b0aff9d9b957705778c0dcfce05f64bc488639395bd64fda4a9674ef9c12a5",
+    "/private/tmp/wvm289-ats-tests.log": "f9adc711c32c7fa79cedd5a8610755cffb729e587e4d7c4fc723f657f974adc3"
+  },
+  "executables": {
+    "alongtrack_portable_core_tests": "6a9dd396dc7d878fa0e332ac47f4de59864e784d4313927bbbc5eeb411a97cb2",
+    "cpp/extensions/wavevortex/alongtrack-wave-vortex-run": "e21f42ecd1f814f4856f0fb6d23d79cf8f5401685e478ecb78dcb80101dca388",
+    "cpp/extensions/wavevortex/alongtrack_wavevortex_extension_routing_tests": "718ca4b98a655388f21f7dba4d7c169c46174cfd2023ab6c72052b2bb954d237",
+    "cpp/extensions/wavevortex/alongtrack_wavevortex_extension_tests": "4f1772b3b1cbb64caff487e783c24c868aaac9b1f69922329a6ae0398f9fe84a",
+    "cpp/extensions/wavevortex/alongtrack_wavevortex_runner_end_to_end_tests": "194c64356a17e10a3885233a19ca7cbb2b0ce7d1b89450f792e594ea8014166c",
+    "wavevortex-portable-runtime/wave-vortex-run": "9d3da343f8970b9addc0e3e88a7fc99b853fe996f03fa2228b4d4a2aadc5f873"
+  },
+  "scope": "Fresh current source-linked consumer build and all seven consumer tests. No ATS source edits. This is not a package export or cross-platform execution receipt."
+}

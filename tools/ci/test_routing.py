@@ -83,6 +83,24 @@ class RoutingTests(unittest.TestCase):
                 batches = [name for group in plan['matlabShards'] for name in group['classes']]
                 self.assertEqual(batches.count(regression), 1)
 
+    def test_integration_qualification_follows_runtime_and_complete_changes(self):
+        evidence = {'TestPortableForwardIntegration', 'TestPortableForwardIntegrationCatalog',
+                    'TestPortableQualificationCatalog', 'TestBarotropicQGPortableQualificationEvidence',
+                    'TestPortableStratifiedQGQualificationEvidence',
+                    'TestPortableHydrostaticQualificationEvidence',
+                    'TestPortableBoussinesqQualificationEvidence'}
+        for plan in [select(['PortableRuntime/src/WVRungeKutta.cpp']),
+                     select(['README.md'], complete=True)]:
+            for inventory, shards in [('matlabTests', 'matlabShards'),
+                                      ('sanitizedTests', 'sanitizedShards')]:
+                self.assertTrue(evidence <= set(plan[inventory]))
+                flattened = [name for group in plan[shards] for name in group['classes']]
+                for name in evidence:
+                    self.assertEqual(flattened.count(name), 1)
+        family = select(['CompiledKernel/src/WVTransformBoussinesqKernel.cpp'])
+        self.assertIn('TestPortableBoussinesqQualificationEvidence', family['matlabTests'])
+        self.assertNotIn('TestPortableHydrostaticQualificationEvidence', family['matlabTests'])
+
     def test_legacy_migration_executes_required_phases(self):
         plan = select(['README.md'], migration=True)
         self.assertTrue(plan['documentation'])

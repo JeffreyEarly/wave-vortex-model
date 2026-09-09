@@ -1,0 +1,111 @@
+{
+  "schema": "wave-vortex-forward-integration-cpp-v1",
+  "issue": 289,
+  "status": "passed",
+  "platform": "Apple Silicon macOS; AppleClang",
+  "sourceCommit": "db42b2ef44fe633b8202590882f1b3086f3078c0",
+  "integrationCommit": "7e0115aa",
+  "sourceSHA256": [
+    {
+      "path": "PortableRuntime/CMakeLists.txt",
+      "sha256": "3a0c266449d94fb9655c329b9d62a792ceeece7cb27411bd13697863f92e6070"
+    },
+    {
+      "path": "PortableRuntime/tests/TestWVUnifiedIntegration.cpp",
+      "sha256": "90b2ab9eedaa55c97fd8a94b8f60d5eb05ffac8758dc4a57ef42f2bc00ab3149"
+    },
+    {
+      "path": "PortableRuntime/tests/WVForwardIntegrationProbe.cpp",
+      "sha256": "8a7b800a5cf6140e89242d4989a0a1ec81bc8e496737cb4dafe830a52068de3a"
+    },
+    {
+      "path": "PortableRuntime/tests/CheckWVForwardIntegrationProbe.cmake",
+      "sha256": "0d4e96d71d7453a2e9d2eecaa17bd804f21ba5b5a78956375bff1a4f67354311"
+    },
+    {
+      "path": "PortableRuntime/include/WaveVortexRuntime/WVRungeKutta.hpp",
+      "sha256": "24e5494ee76993439a364f9f3dac868c19756ed781e9077e80d16241b2149405"
+    },
+    {
+      "path": "PortableRuntime/src/WVRungeKutta.cpp",
+      "sha256": "b5c57a5632a1211835d3801dc02c05bfbb0102d4f760c30ae5a65e30008028d9"
+    },
+    {
+      "path": "PortableRuntime/src/WVIntegrationState.cpp",
+      "sha256": "336f05fc957bf2c2e6c83900246e935cda15a5ac6ae456d552d7ee9c8f1d57c1"
+    },
+    {
+      "path": "PortableRuntime/app/WaveVortexRun.cpp",
+      "sha256": "77d0d60dfe86e0348b2e9db23e88bd52bb99acaebf09804c5480dd56ca0827a0"
+    }
+  ],
+  "checks": [
+    {
+      "configuration": "reference",
+      "testCount": 2,
+      "passed": 2,
+      "failed": 0,
+      "seconds": 0.54,
+      "tests": [
+        "unified-integration",
+        "forward-integration-probe"
+      ],
+      "logSHA256": "e0912fea288f54f2aef88d0a5c5ca10c415490948e3b41be10a538cbce638732",
+      "observations": [
+        "ORDER step=0.2 rk4=17.3957 rk23=8.66854 rk4_dense=15.9904 rk23_dense=15.994",
+        "ORDER step=0.1 rk4=16.682 rk23=8.32717 rk4_dense=15.9952 rk23_dense=15.997",
+        "DYNAMIC method=RK4 cycle=0 retained=10650 rejected=0",
+        "DYNAMIC method=RK4 cycle=1 retained=10650 rejected=0",
+        "DYNAMIC method=RK4 cycle=2 retained=10650 rejected=0",
+        "DYNAMIC method=RK23 cycle=0 retained=12122 rejected=10",
+        "DYNAMIC method=RK23 cycle=1 retained=12122 rejected=10",
+        "DYNAMIC method=RK23 cycle=2 retained=12122 rejected=10",
+        "DYNAMIC method=RK45 cycle=0 retained=13890 rejected=3",
+        "DYNAMIC method=RK45 cycle=1 retained=13890 rejected=3",
+        "DYNAMIC method=RK45 cycle=2 retained=13890 rejected=3",
+        "DYNAMIC method=RK78 cycle=0 retained=20938 rejected=1",
+        "DYNAMIC method=RK78 cycle=1 retained=20938 rejected=1",
+        "DYNAMIC method=RK78 cycle=2 retained=20938 rejected=1",
+        "PASS: portable observer contracts and unified RK4/RK23/RK45/RK78 integration"
+      ],
+      "executables": {
+        "TestWVUnifiedIntegration": "9d100e963794162e2fc886e713bbe1dadd0ec246da9afd3f43ad038020860849",
+        "WVForwardIntegrationProbe": "cff970d2d066f6c7e3b837920d9434f0e21f341534d00a1ef408280fbb57f9fe"
+      }
+    },
+    {
+      "configuration": "sanitized",
+      "testCount": 2,
+      "passed": 2,
+      "failed": 0,
+      "seconds": 1.26,
+      "tests": [
+        "unified-integration",
+        "forward-integration-probe"
+      ],
+      "logSHA256": "88a550ab28ef8fe04c0b30f90bc65b7f184056dab79d48d7a5ebd436f91fb6d6",
+      "observations": [
+        "ORDER step=0.2 rk4=17.3957 rk23=8.66854 rk4_dense=15.9904 rk23_dense=15.994",
+        "ORDER step=0.1 rk4=16.682 rk23=8.32717 rk4_dense=15.9952 rk23_dense=15.997",
+        "DYNAMIC method=RK4 cycle=0 retained=10650 rejected=0",
+        "DYNAMIC method=RK4 cycle=1 retained=10650 rejected=0",
+        "DYNAMIC method=RK4 cycle=2 retained=10650 rejected=0",
+        "DYNAMIC method=RK23 cycle=0 retained=12122 rejected=10",
+        "DYNAMIC method=RK23 cycle=1 retained=12122 rejected=10",
+        "DYNAMIC method=RK23 cycle=2 retained=12122 rejected=10",
+        "DYNAMIC method=RK45 cycle=0 retained=13890 rejected=3",
+        "DYNAMIC method=RK45 cycle=1 retained=13890 rejected=3",
+        "DYNAMIC method=RK45 cycle=2 retained=13890 rejected=3",
+        "DYNAMIC method=RK78 cycle=0 retained=20938 rejected=1",
+        "DYNAMIC method=RK78 cycle=1 retained=20938 rejected=1",
+        "DYNAMIC method=RK78 cycle=2 retained=20938 rejected=1",
+        "PASS: portable observer contracts and unified RK4/RK23/RK45/RK78 integration"
+      ],
+      "executables": {
+        "TestWVUnifiedIntegration": "0651c351c2dbce8a9b0525c4e2f9fb319e91f57fd921fb52fdd9c16b9e1ab8f6",
+        "WVForwardIntegrationProbe": "971de24cc47c2f34b9387aae5ca8a969ecb4aad156666282f1f67f63ac551b42"
+      }
+    }
+  ],
+  "scope": "Analytic RK4/RK23 accepted and dense convergence; real source-registered required complex dynamic state through rejection, dense output, accepted stop, owning typed-record reconstruction and bounded repeated lifecycle for all four methods. Test-only public runner stop launcher contract. Complex reconstruction is a source-owned typed record, not MATLAB serialization of an arbitrary class. Existing generic controller, RK45/RK78 order and failure contracts also execute in unified-integration. No production code changed."
+}

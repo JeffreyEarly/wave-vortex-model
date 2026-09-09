@@ -1,5 +1,7 @@
 # Portable transform qualification
 
+The [forward-integration slice](INTEGRATION.md) records current method support across all six transform configurations and links representative cross-feature continuation evidence. Its execution receipt separates new qualification from source-bound inherited results. The transform-specific reports below retain their original methods, workloads, revisions, and tolerances; their historical case descriptions are not expanded when a later method is qualified.
+
 ## Boussinesq qualification
 
 `qualifyPortableBoussinesq(outputPath,runner=runner,native=true)` records complete MATLAB-C++-MATLAB continuation after `configureCIEnvironment`. A supplied runner needs matching `WVStableForcingDump`, `WVStratifiedQGFieldDump`, `WVBoussinesqLifecycleProbe`, `WVStratifiedModalDump`, `WVBoussinesqKernelDump` and `WVHydrostaticKernelDump` probes beside it. With no runner it builds the reference configuration. Native qualification runs both reference and native FFTW. Complete model execution uses scalar matrix multiplication; standalone kernel tests separately cover scalar/Accelerate parity.
