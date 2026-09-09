@@ -1494,6 +1494,325 @@ void testRK78OrdersFailuresSegmentationAndRestart() {
           "RK78 segmentation and restart reconstruction preserve trajectory");
 }
 
+// Order evidence uses a fixed final time for the accepted solution and a
+// fractional first-step time for the cubic continuous extensions. The latter
+// has local O(h^4) error even though RK4's accepted solution is fourth order.
+template <class Integrator, class Options>
+std::pair<double, double> lowOrderErrors(double h, Options options) {
+  WVIntegrationStateLayout layout;
+  require(static_cast<bool>(WVIntegrationStateLayout::createCoefficientOnly(
+              {2, 3}, layout)), "low-order analytic layout");
+  LinearIntegrationSystem system(std::move(layout));
+  StateFixture state(system.stateLayout());
+  Integrator integrator(system, options);
+  require(static_cast<bool>(integrator.prepareStateAfterRestart(state.state)) &&
+              static_cast<bool>(integrator.step(state.state, h)) &&
+              static_cast<bool>(integrator.evaluateDenseOutput(0.37 * h, state.output)),
+          "low-order analytic first step and dense evaluation");
+  const double denseError = std::abs(state.outputCoefficients[0].real -
+                                     std::exp(-0.37 * h));
+  // An integer count avoids a floating-point terminal microstep changing the
+  // intended fixed-step order experiment.
+  const auto steps = static_cast<std::size_t>(std::llround(1.0 / h));
+  for (std::size_t step = 1; step < steps; ++step)
+    require(static_cast<bool>(integrator.step(state.state, h)),
+            "low-order analytic advance");
+  require(integrator.metrics().acceptedStepCount == steps &&
+              integrator.metrics().rejectedStepCount == 0,
+          "order experiment must use the requested fixed mesh");
+  return {std::abs(state.coefficients[0].real - std::exp(-1.0)), denseError};
+}
+
+void testRK4AndRK23Convergence() {
+  for (const double coarseStep : {0.2, 0.1}) {
+    const auto rk4Coarse = lowOrderErrors<WVFixedStepRK4>(coarseStep, WVFixedStepRK4Options{true});
+    const auto rk4Fine = lowOrderErrors<WVFixedStepRK4>(coarseStep / 2, WVFixedStepRK4Options{true});
+    WVAdaptiveRK23Options options;
+    options.relativeTolerance = 1.0;
+    options.maximumStepSize = coarseStep;
+    const auto rk23Coarse = lowOrderErrors<WVAdaptiveRK23>(coarseStep, options);
+    const auto rk23Fine = lowOrderErrors<WVAdaptiveRK23>(coarseStep / 2, options);
+    const auto ratio = [](double coarse, double fine) {
+      require(fine > 32 * std::numeric_limits<double>::epsilon() &&
+                  std::isfinite(coarse), "order evidence must exceed roundoff");
+      return coarse / fine;
+    };
+    const auto rk4Accepted = ratio(rk4Coarse.first, rk4Fine.first);
+    const auto rk23Accepted = ratio(rk23Coarse.first, rk23Fine.first);
+    const auto rk4Dense = ratio(rk4Coarse.second, rk4Fine.second);
+    const auto rk23Dense = ratio(rk23Coarse.second, rk23Fine.second);
+    require(rk4Accepted > 14 && rk4Accepted < 20 &&
+                rk23Accepted > 7 && rk23Accepted < 11,
+            "RK4 fourth-order and RK23 third-order global convergence");
+    require(rk4Dense > 12 && rk4Dense < 21 &&
+                rk23Dense > 12 && rk23Dense < 21,
+            "RK4/RK23 cubic extensions have fourth-order local convergence");
+    std::cout << "ORDER step=" << coarseStep << " rk4=" << rk4Accepted
+              << " rk23=" << rk23Accepted << " rk4_dense=" << rk4Dense
+              << " rk23_dense=" << rk23Dense << '\n';
+  }
+}
+
+class ComplexDynamicObserver final : public WVObservingSystem {
+public:
+  const std::string &typeIdentifier() const noexcept override {
+    static const std::string id = "WVTestComplexDynamicState";
+    return id;
+  }
+  std::uint32_t contractVersion() const noexcept override { return 1; }
+  WVKernelStatus validate(
+      const WVObserverRecord &observer,
+      const std::map<std::string, const WVStateBlockRecord *> &blocks,
+      std::map<std::string, std::size_t> &owners) const override {
+    if (observer.stateBlockIdentifiers != std::vector<std::string>{"rotating-state"})
+      return {WVKernelStatusCode::invalidConfiguration, "Missing complex state binding."};
+    const auto found = blocks.find("rotating-state");
+    if (found == blocks.end() || found->second->scalarType != WVStateScalarType::complex64 ||
+        found->second->ownership != WVStateOwnership::integratorOwned ||
+        found->second->restartRequirement != WVRestartRequirement::requiredDynamicState)
+      return {WVKernelStatusCode::invalidConfiguration, "Complex state must be required and integrated."};
+    ++owners["rotating-state"];
+    return WVKernelStatus::ok();
+  }
+  WVKernelStatus executionPlan(const WVObserverRecord &,
+                               WVObserverExecutionPlan &plan) const override {
+    plan = {};
+    return WVKernelStatus::ok();
+  }
+  std::size_t persistentBytes() const noexcept override { return sizeof(*this); }
+};
+
+std::shared_ptr<const WVExtensionCatalog> complexStateCatalog() {
+  WVExtensionCatalogBuilder builder;
+  require(static_cast<bool>(addBuiltInExtensions(builder)) &&
+              static_cast<bool>(builder.addObserverFactory(
+                  {"WVTestComplexDynamicState", 1,
+                   [](const WVObserverRecord &, const WVPortableTypedRecord &,
+                      std::shared_ptr<const WVObservingSystem> &result) {
+                     result = std::make_shared<ComplexDynamicObserver>();
+                     return WVKernelStatus::ok();
+                   }})), "register actual source-linked complex-state owner");
+  std::shared_ptr<const WVExtensionCatalog> catalog;
+  require(static_cast<bool>(builder.freeze(catalog)), "freeze complex-state catalog");
+  return catalog;
+}
+
+WVPortableObserverRecord complexStateRecord() {
+  auto source = record();
+  source.stateBlocks.push_back({"rotating-state", WVStateScalarType::complex64,
+                               {2, 2}, WVToleranceKind::uniformAbsolute, 1e-10,
+                               WVStateOwnership::integratorOwned,
+                               WVRestartRequirement::requiredDynamicState});
+  WVObserverRecord owner;
+  owner.identifier = "rotating-observer";
+  owner.name = "Source-defined rotating state";
+  owner.typeIdentifier = "WVTestComplexDynamicState";
+  owner.stateBlockIdentifiers = {"rotating-state"};
+  source.observers.push_back(owner);
+  return source;
+}
+
+// This source-defined test system owns its checkpoint encoding. Exercise the
+// public typed-record codec and reconstruction into new runtime storage; this
+// is not a claim of MATLAB/NetCDF support for an unregistered MATLAB class.
+std::vector<double> dynamicSnapshot(const StateFixture &fixture) {
+  std::vector<double> values{fixture.state.waveVortex.t, fixture.state.waveVortex.t0};
+  for (const auto value : fixture.coefficients) {
+    values.push_back(value.real);
+    values.push_back(value.imag);
+  }
+  for (std::size_t b = 0; b < fixture.state.additionalBlockCount; ++b) {
+    const auto &block = fixture.state.additionalBlocks[b];
+    for (std::size_t i = 0; i < block.layout->elementCount; ++i) {
+      if (block.layout->scalarType == WVStateScalarType::real64)
+        values.push_back(block.realData[i]);
+      else {
+        values.push_back(block.complexData[i].real);
+        values.push_back(block.complexData[i].imag);
+      }
+    }
+  }
+  return values;
+}
+
+void restoreDynamicSnapshot(const std::vector<std::uint8_t> &encoded,
+                            StateFixture &fixture) {
+  WVPortableTypedRecord decoded;
+  require(static_cast<bool>(decodePortableTypedRecord(encoded, decoded)) &&
+              decoded.schemaIdentifier == "test-complex-state-checkpoint-v1" &&
+              decoded.schemaVersion == 1 && decoded.value("state") != nullptr,
+          "decode source-defined owning checkpoint");
+  const auto &values = std::get<std::vector<double>>(decoded.value("state")->storage);
+  require(values.size() == dynamicSnapshot(fixture).size(), "checkpoint layout size");
+  std::size_t cursor = 0;
+  fixture.state.waveVortex.t = values[cursor++];
+  fixture.state.waveVortex.t0 = values[cursor++];
+  for (auto &value : fixture.coefficients) {
+    value.real = values[cursor++];
+    value.imag = values[cursor++];
+  }
+  for (std::size_t b = 0; b < fixture.state.additionalBlockCount; ++b) {
+    auto &block = fixture.state.additionalBlocks[b];
+    for (std::size_t i = 0; i < block.layout->elementCount; ++i) {
+      if (block.layout->scalarType == WVStateScalarType::real64)
+        block.realData[i] = values[cursor++];
+      else {
+        block.complexData[i].real = values[cursor++];
+        block.complexData[i].imag = values[cursor++];
+      }
+    }
+  }
+}
+
+template <class Integrator, class Options>
+void testComplexDynamicStateAndLifecycle(Options options, double initialStep,
+                                         bool adaptive, const char *name) {
+  std::size_t qualifiedBytes = 0;
+  for (std::size_t cycle = 0; cycle < 3; ++cycle) {
+    std::weak_ptr<const WVExtensionCatalog> weakCatalog;
+    {
+      auto catalog = complexStateCatalog();
+      weakCatalog = catalog;
+      WVPortableObserverDescriptor descriptor;
+      require(static_cast<bool>(WVPortableObserverDescriptor::create(
+                  complexStateRecord(), catalog, descriptor)),
+              "source-linked dynamic descriptor");
+      WVIntegrationStateLayout layout;
+      require(static_cast<bool>(WVIntegrationStateLayout::create({2, 3}, descriptor, layout)) &&
+                  layout.additionalBlocks().size() == 4 && layout.complexElementCount() == 4,
+              "custom complex state is integrated; derived auxiliary remains excluded");
+      LinearIntegrationSystem system(std::move(layout));
+      StateFixture stopped(system.stateLayout()), ordinary(system.stateLayout());
+      // Only the custom complex block evolves in this case, so adaptive
+      // rejection cannot be supplied by a built-in coefficient or real block.
+      for (auto *fixture : {&stopped, &ordinary}) {
+        std::fill(fixture->coefficients.begin(), fixture->coefficients.end(), WVComplex64{});
+        for (std::size_t b = 0; b < 3; ++b)
+          std::fill_n(fixture->state.additionalBlocks[b].realData,
+                      fixture->state.additionalBlocks[b].layout->elementCount, 0.0);
+      }
+      Integrator integrator(system, options), baseline(system, options);
+      require(static_cast<bool>(integrator.prepareStateAfterRestart(stopped.state)) &&
+                  static_cast<bool>(baseline.prepareStateAfterRestart(ordinary.state)),
+              "dynamic system preparation");
+      WVIntegrationTermination termination;
+      std::size_t calls = 0;
+      require(static_cast<bool>(integrator.advanceToTime(
+                  stopped.state, 1.0, initialStep,
+                  {[&](const auto &progress) {
+                    ++calls;
+                    return progress.boundary == WVIntegrationBoundary::acceptedStep;
+                  }}, termination)) && termination.stopped() && calls == 2 &&
+                  integrator.metrics().acceptedStepCount == 1 &&
+                  (!adaptive || integrator.metrics().rejectedStepCount > 0),
+              "complex state participates in adaptive rejection and accepted-boundary control");
+      const auto saved = dynamicSnapshot(stopped);
+      const auto *accepted = integrator.lastAcceptedStep();
+      const double sampleTime = (accepted->initialTime + accepted->finalTime) / 2;
+      const auto denseStatus = integrator.evaluateDenseOutput(sampleTime, stopped.output);
+      require(static_cast<bool>(denseStatus), "complex dense interpolation: " + denseStatus.message);
+      require(dynamicSnapshot(stopped) == saved,
+              "complex dense interpolation preserves accepted storage");
+      const auto &dense = stopped.output.additionalBlocks[3];
+      require(dense.layout->identifier == "rotating-state" &&
+                  std::abs(dense.complexData[0].real - std::cos(sampleTime)) < 2e-6 &&
+                  std::abs(dense.complexData[0].imag - std::sin(sampleTime)) < 2e-6,
+              "complex continuous extension follows independent rotation solution");
+      WVPortableTypedRecord checkpoint{"test-complex-state-checkpoint-v1", 1,
+                                       {{"state", {saved.size()}, saved}}};
+      std::vector<std::uint8_t> encoded;
+      require(static_cast<bool>(encodePortableTypedRecord(checkpoint, encoded)),
+              "encode complete source checkpoint");
+      WVIntegrationStateLayout reconstructedLayout;
+      require(static_cast<bool>(WVIntegrationStateLayout::create(
+                  {2, 3}, descriptor, reconstructedLayout)),
+              "rebuild source-linked state layout from the owning descriptor");
+      LinearIntegrationSystem reconstructedSystem(std::move(reconstructedLayout));
+      StateFixture restored(reconstructedSystem.stateLayout());
+      restoreDynamicSnapshot(encoded, restored);
+      require(dynamicSnapshot(restored) == saved &&
+                  restored.state.additionalBlocks[3].complexData !=
+                      stopped.state.additionalBlocks[3].complexData,
+              "required complex state reconstructs exactly in independent storage");
+      Integrator rebuilt(reconstructedSystem, options);
+      require(static_cast<bool>(rebuilt.prepareStateAfterRestart(restored.state)) &&
+                  rebuilt.lastAcceptedStep() == nullptr &&
+                  dynamicSnapshot(restored) == saved,
+              "reconstructed integrator restores state without stale step history");
+      const auto next = integrator.nextStepSize();
+      require(static_cast<bool>(integrator.advanceToTime(stopped.state, 1.0, next)) &&
+                  static_cast<bool>(rebuilt.advanceToTime(restored.state, 1.0, next)) &&
+                  static_cast<bool>(baseline.advanceToTime(ordinary.state, 1.0, initialStep)),
+              "complex stopped/reconstructed/uninterrupted continuation");
+      const auto actual = dynamicSnapshot(stopped), expected = dynamicSnapshot(ordinary);
+      const auto reconstructed = dynamicSnapshot(restored);
+      require(actual == expected &&
+                  integrator.metrics().acceptedStepCount == baseline.metrics().acceptedStepCount &&
+                  integrator.metrics().rejectedStepCount == baseline.metrics().rejectedStepCount &&
+                  integrator.metrics().rightHandSideEvaluationCount -
+                      integrator.metrics().continuousExtensionRightHandSideEvaluationCount ==
+                      baseline.metrics().rightHandSideEvaluationCount -
+                          baseline.metrics().continuousExtensionRightHandSideEvaluationCount,
+              "complex stop/resume preserves exact uninterrupted accepted trajectory");
+      for (std::size_t i = 0; i < actual.size(); ++i)
+        require(std::abs(reconstructed[i] - actual[i]) < 2e-10,
+                "fresh controller reconstruction preserves complex/real/coefficient state");
+      const auto value = stopped.state.additionalBlocks[3].complexData[0];
+      require(std::abs(value.real - std::cos(1.0)) < 2e-8 &&
+                  std::abs(value.imag - std::sin(1.0)) < 2e-8,
+              "required complex state evolves along the independent exact trajectory");
+      // Warm method-owned dense buffers and the explicitly bounded diagnostic
+      // history, then compare the same storage point for sixteen more steps.
+      const auto warmStep = std::min(0.01, integrator.nextStepSize());
+      std::size_t retained = 0, highWater = 0;
+      for (std::size_t step = 0; step < 24; ++step) {
+        require(static_cast<bool>(integrator.step(stopped.state, warmStep)),
+                "prepared lifecycle step");
+        const auto *history = integrator.lastAcceptedStep();
+        require(static_cast<bool>(integrator.evaluateDenseOutput(
+                    (history->initialTime + history->finalTime) / 2, stopped.output)),
+                "prepared lifecycle dense evaluation");
+        if (step == 7) {
+          retained = integrator.persistentBytes();
+          highWater = integrator.metrics().workspaceMaximumLiveBytes;
+        } else if (step > 7) {
+          require(integrator.persistentBytes() == retained &&
+                      integrator.metrics().workspaceMaximumLiveBytes == highWater,
+                  "prepared adaptive/fixed lifecycle has bounded retained and peak storage");
+        }
+      }
+      const auto bytes = retained + system.stateLayout().persistentBytes() +
+                         stopped.extra.capacityBytes() + stopped.outputExtra.capacityBytes();
+      if (cycle == 0) qualifiedBytes = bytes;
+      require(bytes == qualifiedBytes, "repeated model-neutral lifecycle retained storage");
+      std::cout << "DYNAMIC method=" << name << " cycle=" << cycle
+                << " retained=" << bytes << " rejected="
+                << integrator.metrics().rejectedStepCount << '\n';
+    }
+    require(weakCatalog.expired(), "source catalog ownership released after lifecycle");
+  }
+}
+
+void testComplexDynamicState() {
+  testComplexDynamicStateAndLifecycle<WVFixedStepRK4>(WVFixedStepRK4Options{true}, .01, false, "RK4");
+  WVAdaptiveRK23Options rk23;
+  rk23.relativeTolerance = 1e-10;
+  rk23.maximumStepSize = 1;
+  rk23.maximumRecordedStepDiagnostics = 4;
+  testComplexDynamicStateAndLifecycle<WVAdaptiveRK23>(rk23, 1.0, true, "RK23");
+  WVAdaptiveRK45Options rk45;
+  rk45.relativeTolerance = 1e-10;
+  rk45.maximumStepSize = 1;
+  rk45.maximumRecordedStepDiagnostics = 4;
+  testComplexDynamicStateAndLifecycle<WVAdaptiveRK45>(rk45, 1.0, true, "RK45");
+  WVAdaptiveRK78Options rk78;
+  rk78.relativeTolerance = 1e-10;
+  rk78.maximumStepSize = 1;
+  rk78.retainDenseOutput = true;
+  rk78.maximumRecordedStepDiagnostics = 4;
+  testComplexDynamicStateAndLifecycle<WVAdaptiveRK78>(rk78, 1.0, true, "RK78");
+}
+
 } // namespace
 
 int main() {
@@ -1501,6 +1820,8 @@ int main() {
   WVIntegrationStateLayout layout;
   testContracts(descriptor, layout);
   LinearIntegrationSystem system(std::move(layout));
+  testRK4AndRK23Convergence();
+  testComplexDynamicState();
   testRK4(system);
   testRK23(system);
   testRK45(system);
