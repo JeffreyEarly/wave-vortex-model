@@ -83,8 +83,8 @@ std::string WVDiagnosticFieldPlan::configurationIdentifier(const WVFieldEvaluati
 }
 
 WVKernelStatus WVDiagnosticFieldPlan::create(const WVFieldEvaluationService& service,
-    const std::vector<WVFieldRequest>& requests,WVFieldEvaluationPlan& result) {
-  return createImpl(service,requests,result,false,{});
+    const std::vector<WVFieldRequest>& requests,WVFieldEvaluationPlan& result,WVDensityDiagnosticContract contract) {
+  return createImpl(service,requests,result,false,contract);
 }
 
 WVKernelStatus WVDiagnosticFieldPlan::createDensityQualification(
@@ -92,8 +92,8 @@ WVKernelStatus WVDiagnosticFieldPlan::createDensityQualification(
     WVDensityDiagnosticContract contract,WVFieldEvaluationPlan& result) {
   if(requests.empty()) return invalid("Density qualification requires at least one output.");
   for(const auto& request:requests)
-    if(request.fieldName!="rho_nm" && request.fieldName!="eta_true" && request.fieldName!="ape")
-      return unsupported("Density qualification accepts only rho_nm, eta_true and ape.");
+    if(request.fieldName!="rho_nm" && request.fieldName!="eta_true" && request.fieldName!="ape" && request.fieldName!="apv")
+      return unsupported("Density qualification accepts only rho_nm, eta_true, ape and apv.");
   if(contract.reference!=WVNoMotionReference::actual && contract.reference!=WVNoMotionReference::initial)
     return invalid("Density reference selection is invalid.");
   return createImpl(service,requests,result,true,contract);
@@ -102,12 +102,17 @@ WVKernelStatus WVDiagnosticFieldPlan::createDensityQualification(
 WVKernelStatus WVDiagnosticFieldPlan::createImpl(const WVFieldEvaluationService& service,
     const std::vector<WVFieldRequest>& requests,WVFieldEvaluationPlan& result,
     bool densityQualification,WVDensityDiagnosticContract densityContract) {
+  if(densityContract.reference!=WVNoMotionReference::actual && densityContract.reference!=WVNoMotionReference::initial)
+    return invalid("Density reference selection is invalid.");
   try {
     auto plan=std::shared_ptr<WVDiagnosticFieldPlan>(new WVDiagnosticFieldPlan);
     auto status=plan->configure(service); if(!status) return status;
     plan->densityQualification_=densityQualification;
     plan->densityContract_=densityContract;
-    if(densityQualification) {
+    plan->hasDensity_=std::any_of(requests.begin(),requests.end(),[](const auto& request) {
+      return request.fieldName=="rho_nm" || request.fieldName=="eta_true" || request.fieldName=="ape" || request.fieldName=="apv";
+    });
+    if(plan->hasDensity_) {
       if(plan->isQG_) return unsupported("Density evaluation requires a wave-bearing transform.");
       if(plan->modal_) {
         plan->densityHeights_=plan->modal_->z;
@@ -168,6 +173,8 @@ WVKernelStatus WVDiagnosticFieldPlan::createImpl(const WVFieldEvaluationService&
       if(m->ordinal>=23 && !densityQualification) {
         WVPortableVariablePlan resolved;
         WVPortableVariableOptions options; options.source=WVPortableOperationSource::builtIn; options.requireEvaluator=true;
+        options.noMotionSolver=WVPortableNoMotionSolver::dampedLeastSquares;
+        options.shouldUseTrueNoMotionProfile=densityContract.reference==WVNoMotionReference::actual;
         const auto sampling=m->naturalRank==WVPortableNaturalRank::coefficient ? static_cast<std::size_t>(portableCoefficientSampling) : samplingBit(request.sampling.kind);
         const auto resolution=resolvePortableVariablePlan(request.fieldName,plan->configuration_,static_cast<std::uint8_t>(sampling),options,resolved);
         if(resolution!=WVPortableVariableStatus::supported)
@@ -177,11 +184,17 @@ WVKernelStatus WVDiagnosticFieldPlan::createImpl(const WVFieldEvaluationService&
       output.specification.identifier=request.identifier; output.specification.fieldName=request.fieldName;
       output.specification.samplingKind=request.sampling.kind;
       switch(m->identifier) {
-        case Variable::rho_nm: case Variable::eta_true: case Variable::ape:
-          if(!densityQualification || request.sampling.kind!=WVFieldSamplingKind::fullGrid)
+        case Variable::rho_nm: case Variable::eta_true: case Variable::ape: case Variable::apv:
+          if(request.sampling.kind!=WVFieldSamplingKind::fullGrid)
             return unsupported("Density qualification requires its full natural grid.");
           output.density=true;
           output.dependency=dependency(0,"rho_total",{});
+          plan->densityDependency_=output.dependency;
+          if(m->identifier==Variable::apv) {
+            output.auxiliaries[0]=dependency(0,"zeta_x",{});
+            output.auxiliaries[1]=dependency(0,"zeta_y",{});
+            output.auxiliaries[2]=dependency(0,"zeta_z",{});
+          }
           output.specification.dimensions=m->identifier==Variable::rho_nm ?
               std::vector<std::size_t>{plan->spatial_.third} :
               std::vector<std::size_t>{plan->spatial_.first,plan->spatial_.second,plan->spatial_.third};
@@ -204,7 +217,8 @@ WVKernelStatus WVDiagnosticFieldPlan::createImpl(const WVFieldEvaluationService&
         default: {
           if(m->identifier==Variable::rhoBar && plan->modal_) {
             if(request.sampling.kind!=WVFieldSamplingKind::fullGrid) return unsupported("rho_bar requires its full vertical grid.");
-            output.verticalMean=true; output.dependency=dependency(0,"rho_total",{}); break;
+            output.verticalMean=true; output.dependency=dependency(0,"rho_total",{});
+          plan->densityDependency_=output.dependency; break;
           }
           std::string base=request.fieldName;
           if(m->identifier==Variable::totalEnergy) base="energy";
@@ -289,7 +303,7 @@ WVKernelStatus WVDiagnosticFieldPlan::rebind(const WVFieldEvaluationService& ser
         sampling=groups_[output.group].requests[output.dependency].sampling;
       requests.push_back({output.specification.identifier,output.specification.fieldName,std::move(sampling)});
     }
-    return densityQualification_ ? createDensityQualification(service,requests,densityContract_,result) : create(service,requests,result);
+    return densityQualification_ ? createDensityQualification(service,requests,densityContract_,result) : create(service,requests,result,densityContract_);
   } catch(const std::bad_alloc&) {
     return {WVKernelStatusCode::allocationFailure,"Unable to rebind the diagnostic plan."};
   }
@@ -389,10 +403,12 @@ WVKernelStatus WVDiagnosticFieldPlan::evaluate(WVFieldEvaluationService& service
   auto& metrics=service.stratified_ ? service.stratified_->metrics_ : service.barotropicQG_ ? service.barotropicQG_->metrics_ : service.metrics_;
   struct ResetLive { WVFieldEvaluationMetrics& metrics; ~ResetLive() {metrics.diagnosticWorkspaceLiveBytes=0;} } reset{metrics};
   std::uint8_t densityDemands=0;
+  bool needsAPV=false;
   for(std::size_t index=0;index<count;++index) if(active(index) && outputs_[index].density) {
     const auto variable=outputs_[index].variable;
+    needsAPV|=variable==Variable::apv;
     densityDemands|=variable==Variable::rho_nm ? WVDensityEventEvaluation::rhoNmDemand :
-        variable==Variable::eta_true ? WVDensityEventEvaluation::etaTrueDemand : WVDensityEventEvaluation::apeDemand;
+        (variable==Variable::eta_true || variable==Variable::apv) ? WVDensityEventEvaluation::etaTrueDemand : WVDensityEventEvaluation::apeDemand;
   }
   WVFieldEvaluationEventScope densityScope(service,input,densityDemands && !service.eventWorkspace_,false);
   if(!densityScope.status()) return densityScope.status();
@@ -411,6 +427,8 @@ WVKernelStatus WVDiagnosticFieldPlan::evaluate(WVFieldEvaluationService& service
       const auto& output=outputs_[index];
       if(output.density) {
         if(!service.eventWorkspace_->hasDensitySource()) activeDependencies[0][output.dependency]=1;
+        if(output.variable==Variable::apv && !service.eventWorkspace_->hasAPV())
+          for(std::size_t axis=0;axis<3;++axis) activeDependencies[0][output.auxiliaries[axis]]=1;
       } else if(output.forcing) {
         activeForcing[output.forcingSlot]=1;
         physicalChannels=std::max(physicalChannels,output.forcingPhysicalChannels);
@@ -432,6 +450,7 @@ WVKernelStatus WVDiagnosticFieldPlan::evaluate(WVFieldEvaluationService& service
     std::vector<std::vector<double>> forcingFields;
     std::vector<WVForcingTendencyOutput> forcingViews;
     std::vector<double> forcingPhysical;
+    std::vector<double> densityDerivatives;
     std::size_t primitiveCount=0;
     const auto account=[&](std::size_t viewBytes) {
       std::size_t bytes=viewBytes+activeForcing.capacity()*sizeof(std::uint8_t);
@@ -442,7 +461,7 @@ WVKernelStatus WVDiagnosticFieldPlan::evaluate(WVFieldEvaluationService& service
       }
       for(const auto& buffer:masked) bytes+=buffer.capacity()*sizeof(WVComplex64);
       bytes+=phases.capacity()*sizeof(WVComplex64);
-      bytes+=forcingPhysical.capacity()*sizeof(double);
+      bytes+=(forcingPhysical.capacity()+densityDerivatives.capacity())*sizeof(double);
       bytes+=forcingFields.capacity()*sizeof(std::vector<double>)+forcingViews.capacity()*sizeof(WVForcingTendencyOutput);
       for(const auto& buffer:forcingFields) bytes+=buffer.capacity()*sizeof(double);
       metrics.diagnosticWorkspaceLiveBytes=bytes;
@@ -481,11 +500,50 @@ WVKernelStatus WVDiagnosticFieldPlan::evaluate(WVFieldEvaluationService& service
       auto* workspace=service.eventWorkspace_;
       if(!workspace->hasDensitySource()) {
         const WVDensityEventGeometry geometry{&densityHeights_,&densityWeights_,&densityInitial_,Lz_,densityGravity_,densityReference_};
-        const auto status=workspace->bindDensity(fields[0][outputs_.front().dependency],spatial_,geometry,densityContract_);
+        bool preserveSource=false;
+        for(std::size_t index=0;index<count;++index) {
+          const auto& output=outputs_[index];
+          preserveSource|=active(index) && !output.density && !output.forcing && !output.specification.isComplex &&
+              output.group==0 && output.dependency==densityDependency_;
+        }
+        const auto status=workspace->bindDensity(fields[0][densityDependency_],spatial_,geometry,densityContract_,preserveSource);
         if(!status) return status;
       }
-      const auto status=workspace->prepareDensity(densityDemands);
+      auto status=workspace->prepareDensity(densityDemands);
       if(!status) return status;
+      if(needsAPV) {
+        const auto R=spatial_.elementCount();
+        status=workspace->prepareAPV(R,[&](WVDensityEventView eta,double* apv) {
+          densityDerivatives.resize(3*R); account(0);
+          WVRealVolumeConstView displacement{eta.data,spatial_};
+          if(constant_) {
+            WVRealFieldBundleView derivatives{densityDerivatives.data(),{spatial_.first,spatial_.second,spatial_.third,3}};
+            const auto derivativeStatus=service.transform_->transformGGridScalarDerivatives(displacement,derivatives);
+            if(!derivativeStatus) return derivativeStatus;
+          } else {
+            for(std::size_t axis=0;axis<3;++axis) {
+              WVRealVolumeView derivative{densityDerivatives.data()+axis*R,spatial_};
+              const auto derivativeStatus=hydrostatic_ ?
+                (axis<2 ? service.stratified_->hydrostaticKernel_->differentiateHorizontal(displacement,axis==0,derivative) :
+                  service.stratified_->hydrostaticKernel_->differentiateVertical(displacement,WVHydrostaticFamily::G,1,derivative)) :
+                (axis<2 ? service.stratified_->boussinesqKernel_->differentiateHorizontal(displacement,axis==0,derivative) :
+                  service.stratified_->boussinesqKernel_->differentiateVertical(displacement,WVBoussinesqFamily::G,1,derivative));
+              if(!derivativeStatus) return derivativeStatus;
+            }
+          }
+          const auto found=std::find_if(outputs_.begin(),outputs_.end(),[](const auto& output){return output.variable==Variable::apv;});
+          const auto& zx=fields[0][found->auxiliaries[0]];
+          const auto& zy=fields[0][found->auxiliaries[1]];
+          const auto& zz=fields[0][found->auxiliaries[2]];
+          const double f=constant_ ? constant_->descriptor().verticalModes().coriolisFrequency : 2*modal_->rotationRate*std::sin(modal_->latitude*std::acos(-1.0)/180.0);
+          for(std::size_t i=0;i<R;++i) {
+            apv[i]=zz[i]-zx[i]*densityDerivatives[i]-zy[i]*densityDerivatives[R+i]-(zz[i]+f)*densityDerivatives[2*R+i];
+            if(!std::isfinite(apv[i])) return WVKernelStatus{WVKernelStatusCode::numericalFailure,"Available potential vorticity is not finite."};
+          }
+          return WVKernelStatus::ok();
+        });
+        if(!status) return status;
+      }
     }
     if(std::any_of(activeForcing.begin(),activeForcing.end(),[](auto value){return value!=0;})) {
       const std::size_t channels=isQG_ ? 1 : isHydrostatic_ ? 3 : 4;
@@ -527,7 +585,7 @@ WVKernelStatus WVDiagnosticFieldPlan::evaluate(WVFieldEvaluationService& service
       if(output.density) {
         const auto field=output.variable==Variable::rho_nm ? WVDensityEventField::rhoNm :
             output.variable==Variable::eta_true ? WVDensityEventField::etaTrue : WVDensityEventField::ape;
-        const auto values=service.eventWorkspace_->densityView(field);
+        const auto values=output.variable==Variable::apv ? service.eventWorkspace_->apvView() : service.eventWorkspace_->densityView(field);
         std::copy_n(values.data,values.elementCount,outputs[index].data);
       } else if(output.forcing) {
         const auto R=spatial_.elementCount();

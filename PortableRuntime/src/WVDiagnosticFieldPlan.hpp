@@ -14,7 +14,7 @@ public:
   static std::string configurationIdentifier(const WVFieldEvaluationService&);
   static bool required(const std::vector<WVFieldRequest>&, bool stratified = false) noexcept;
   static WVKernelStatus create(const WVFieldEvaluationService&,
-      const std::vector<WVFieldRequest>&, WVFieldEvaluationPlan&);
+      const std::vector<WVFieldRequest>&, WVFieldEvaluationPlan&, WVDensityDiagnosticContract = {});
   // Private implementation qualification seam. Public field-plan construction
   // continues to enforce the catalog's unavailable density-output contracts.
   static WVKernelStatus createDensityQualification(const WVFieldEvaluationService&,
@@ -25,7 +25,7 @@ public:
       WVFieldOutputView*, std::size_t, const std::uint8_t* activeOutputs = nullptr) const;
   std::size_t persistentBytes() const noexcept;
   bool hasForcingDiagnostics() const noexcept {return !forcingIndices_.empty();}
-  bool hasDensityDiagnostics() const noexcept {return densityQualification_;}
+  bool hasDensityDiagnostics() const noexcept {return hasDensity_;}
 
 private:
   struct Output {
@@ -58,7 +58,8 @@ private:
   WVShape2D spectral_{};
   bool isHydrostatic_ = true, isBarotropic_ = false, isQG_ = false;
   double Lz_ = 0, constantN2_ = 0, barotropicG_ = 0;
-  bool densityQualification_ = false;
+  bool densityQualification_ = false, hasDensity_ = false;
+  std::size_t densityDependency_=0;
   WVDensityDiagnosticContract densityContract_;
   std::vector<double> densityHeights_, densityWeights_, densityInitial_;
   double densityGravity_ = 0, densityReference_ = 0;

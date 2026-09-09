@@ -64,9 +64,9 @@ public:
   }
   bool hasDensitySource() const noexcept {return density_.initialized();}
   WVKernelStatus bindDensity(std::vector<double>& source,WVShape3D shape,
-      WVDensityEventGeometry geometry,WVDensityDiagnosticContract contract) {
+      WVDensityEventGeometry geometry,WVDensityDiagnosticContract contract,bool preserveSource=false) {
     if(density_.initialized()) return WVKernelStatus::ok();
-    densitySource_=std::move(source);
+    if(preserveSource) densitySource_=source; else densitySource_=std::move(source);
     account();
     densityHeights_=*geometry.heights; account();
     densityWeights_=*geometry.integrationWeights; account();
@@ -93,6 +93,22 @@ public:
     return status;
   }
   WVDensityEventView densityView(WVDensityEventField field) const noexcept {return density_.view(field);}
+  bool hasAPV() const noexcept {return apvReady_;}
+  WVDensityEventView apvView() const noexcept {
+    return apvReady_ ? WVDensityEventView{apv_.data(),apv_.size()} : WVDensityEventView{};
+  }
+  template<class Operation>
+  WVKernelStatus prepareAPV(std::size_t count,Operation&& operation) {
+    if(apvReady_) {++metrics_->densityAPVReuseCount; return WVKernelStatus::ok();}
+    apv_.resize(count); account();
+    const auto status=operation(density_.view(WVDensityEventField::etaTrue),apv_.data());
+    if(!status) return status;
+    apvReady_=true;
+    ++metrics_->densityAPVPassCount;
+    return WVKernelStatus::ok();
+  }
+  void releaseAPV() noexcept {std::vector<double>{}.swap(apv_); apvReady_=false;}
+
 
 private:
   friend class WVFieldEvaluationEventScope;
@@ -106,9 +122,11 @@ private:
   WVDensityDiagnosticContract densityContract_;
   WVDensityEventEvaluation density_;
   WVDensityEventMetrics densityMetrics_;
+  std::vector<double> apv_;
+  bool apvReady_=false;
   void account() noexcept {
     const auto sourceBytes=(densitySource_.capacity()+densityHeights_.capacity()+
-        densityWeights_.capacity()+densityInitial_.capacity())*sizeof(double);
+        densityWeights_.capacity()+densityInitial_.capacity()+apv_.capacity())*sizeof(double);
     const auto live=sourceBytes+density_.metrics().liveBytes;
     const auto peak=sourceBytes+density_.metrics().highWaterBytes;
     metrics_->densityWorkspaceLiveBytes=live;

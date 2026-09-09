@@ -4237,17 +4237,19 @@ void testCoincidentRoutesKeepDistinctLogicalBatches() {
           "raw inspection accepted metadata-only shared-schema drift");
 }
 
-void testWVModelRetainsFailedNetCDFRouteForRetry() {
+void testWVModelRetainsFailedNetCDFRouteForRetry(bool densityOutputs=false) {
   TemporaryDirectory directory;
   auto checkpoint = checkpointTemplate();
   // Keep this persistence fixture stable over its one-second RK4 steps while
   // retaining nonzero nonlinear diagnostics at the failed output event.
+  // The independent density retry uses exact stable rest: arbitrary tiny
+  // checkpoint coefficients are not a qualified empirical-density fixture.
   for (auto *family : {&checkpoint.state.coefficients.Ap,
                        &checkpoint.state.coefficients.Am,
                        &checkpoint.state.coefficients.A0})
     for (auto &value : *family) {
-      value.real *= 1e-6;
-      value.imag *= 1e-6;
+      value.real = densityOutputs ? 0.0 : value.real*1e-6;
+      value.imag = densityOutputs ? 0.0 : value.imag*1e-6;
     }
   const auto initialTime = checkpoint.state.t;
   const auto sourcePath = directory.path / "retry-algorithmic-source.nc";
@@ -4298,6 +4300,7 @@ void testWVModelRetainsFailedNetCDFRouteForRetry() {
   diagnostic.identifier="forcing-diagnostics"; diagnostic.name="forcing diagnostics";
   diagnostic.typeIdentifier="WVEulerianFields";
   diagnostic.fieldNames={"Fu_"+suffix,"Fv_"+suffix,"Feta_"+suffix};
+  if(densityOutputs) diagnostic.fieldNames.insert(diagnostic.fieldNames.end(),{"rho_nm","eta_true","ape","apv"});
   record.observers.push_back(diagnostic);
   record.outputFiles[0].groups[0].observerIdentifiers.push_back(diagnostic.identifier);
   auto secondary = record.outputFiles[0];
@@ -4374,7 +4377,8 @@ void testWVModelRetainsFailedNetCDFRouteForRetry() {
     return count;
   };
 
-  const auto beforeDiagnostic=fields->metrics().diagnosticEvaluationCount;
+  const auto beforeDensity=fields->metrics();
+  const auto beforeDiagnostic=beforeDensity.diagnosticEvaluationCount;
   status = model.advanceToTime(state, finalTime, 1.0, plan, sink);
   require(!status && state.checkpoint().state.t == finalTime &&
               timeCount(primaryPath, "wave-vortex") == 1 &&
@@ -4389,7 +4393,26 @@ void testWVModelRetainsFailedNetCDFRouteForRetry() {
   require(fields->metrics().diagnosticEvaluationCount==beforeDiagnostic+1 &&
       evaluation->metrics().outputCapacityBytes>0 && fields->metrics().diagnosticWorkspaceLiveBytes==0,
       "Failed sink route did not retain exactly one prepared diagnostic occurrence");
+  const auto pendingDensity=fields->metrics();
+  if(densityOutputs) require(pendingDensity.densityRecoveryCount==beforeDensity.densityRecoveryCount+1 &&
+      pendingDensity.densityProfileConstructionCount==beforeDensity.densityProfileConstructionCount+1 &&
+      pendingDensity.densityInversePassCount==beforeDensity.densityInversePassCount+1 &&
+      pendingDensity.densityAPEPassCount==beforeDensity.densityAPEPassCount+1 &&
+      pendingDensity.densityAPVPassCount==beforeDensity.densityAPVPassCount+1,
+      "Coincident density routes did not share one recovery/inverse/APE/APV evaluation");
+  require(pendingDensity.densityWorkspaceLiveBytes==0 &&
+      pendingDensity.eventFieldWorkspaceLiveBytes==0 && evaluation->metrics().outputCapacityBytes>0,
+      "Pending retry must retain prepared outputs while releasing density helper workspace");
   status = model.advanceToTime(state, finalTime, 1.0, plan, sink);
+  const auto completedDensity=fields->metrics();
+  require(completedDensity.densityRecoveryCount==pendingDensity.densityRecoveryCount &&
+      completedDensity.densityProfileConstructionCount==pendingDensity.densityProfileConstructionCount &&
+      completedDensity.densityInversePassCount==pendingDensity.densityInversePassCount &&
+      completedDensity.densityAPEPassCount==pendingDensity.densityAPEPassCount &&
+      completedDensity.densityAPVPassCount==pendingDensity.densityAPVPassCount,
+      "Retry repeated an already prepared density evaluation");
+  require(completedDensity.densityWorkspaceLiveBytes==0 && completedDensity.eventFieldWorkspaceLiveBytes==0,
+      "Successful density retry retained event workspace");
   require(fields->metrics().diagnosticEvaluationCount==beforeDiagnostic+1 && fields->metrics().fftExecutionCount==fftCalls,
       "Sink retry repeated forcing diagnostics or field reconstruction");
   const auto retried=model.metrics(&state).integrator;
@@ -4431,7 +4454,7 @@ void testWVModelRetainsFailedNetCDFRouteForRetry() {
     require(nc_open(path.c_str(),NC_NOWRITE,&file)==NC_NOERR && nc_inq_ncid(file,groupName,&group)==NC_NOERR &&
         nc_inq_varid(group,name.c_str(),&variable)==NC_NOERR,"Read saved retry diagnostic");
     const auto& c=checkpoint.configuration;
-    std::vector<double> values(c.Nx*c.Ny*c.Nz);
+    std::vector<double> values(name=="rho_nm" ? c.Nz : c.Nx*c.Ny*c.Nz);
     require(nc_get_var_double(group,variable,values.data())==NC_NOERR && nc_close(file)==NC_NOERR,"Read saved retry diagnostic values");
     return values;
   };
@@ -4439,8 +4462,12 @@ void testWVModelRetainsFailedNetCDFRouteForRetry() {
   for(const auto& name:diagnostic.fieldNames) {
     const auto primary=readDiagnostic(primaryPath,"wave-vortex",name);
     const auto secondary=readDiagnostic(secondaryPath,"wave-vortex-secondary",name);
-    require(primary==secondary,"Sink retry wrote different forcing fields to sibling routes");
-    for(auto value:primary) {require(std::isfinite(value),"Sink retry wrote nonfinite forcing output"); nonzero|=value!=0;}
+    require(primary==secondary,"Sink retry wrote different diagnostic fields to sibling routes");
+    for(auto value:primary) {
+      require(std::isfinite(value),"Sink retry wrote nonfinite diagnostic output"); nonzero|=value!=0;
+      if(densityOutputs && (name=="eta_true" || name=="ape" || name=="apv"))
+        require(std::abs(value)<=1e-8,"Stable-rest retry wrote nonzero displacement/energy/APV");
+    }
   }
   require(nonzero,"Sink retry fixture must carry nonzero diagnostic values");
   require(evaluation->metrics().outputCapacityBytes==0,"Completed sink retry retained diagnostic output arrays");
@@ -4709,6 +4736,7 @@ int main(int argc, char **argv) {
     testObservationGraphCollisionPreflight();
     testCoincidentRoutesKeepDistinctLogicalBatches();
     testWVModelRetainsFailedNetCDFRouteForRetry();
+    testWVModelRetainsFailedNetCDFRouteForRetry(true);
     std::cout << "PASS: MATLAB-compatible model-output persistence\n";
     return 0;
   } catch (const std::exception &exception) {

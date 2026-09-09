@@ -1,0 +1,35 @@
+{
+  "baselineCommit": "4c95835e",
+  "baselineExecutable": "/private/tmp/wvm391-density-output-baseline/wave-vortex-run",
+  "baselineSHA256": "990de02d401caa4bb6c05f5b832c331e81f6aa8dffede058c42c49097f60b8fe",
+  "sourceProvenance": "Existing MATLAB-authored #305 standard-output workload fixtures, reused unchanged.",
+  "fixtures": [
+    {
+      "path": "/private/tmp/wvm305-performance/constant-source.nc",
+      "sha256": "0cd2aa70695b407673c09e5e135e9f720e622d6a1e92eacc3d1e8252704e5490"
+    },
+    {
+      "path": "/private/tmp/wvm305-performance/constant-request.json",
+      "sha256": "3dfade6400a63198fe2f00f26329cbaff38e1ce149cc5a87bb18228314d043d6"
+    },
+    {
+      "path": "/private/tmp/wvm305-performance/hydrostatic-source.nc",
+      "sha256": "b1c797e746116db899867d6214f74839e718367548c7f4e130c0f702092508d8"
+    },
+    {
+      "path": "/private/tmp/wvm305-performance/hydrostatic-request.json",
+      "sha256": "81c962ce8362f60b580d43ac134d974cf6bd07dff2ae432f3c6c01dade1990ec"
+    },
+    {
+      "path": "/private/tmp/wvm305-performance/boussinesq-source.nc",
+      "sha256": "5abd22e797538c0ec41ee00be916c1f151fc0378005eaa97102f1eec7987ba3b"
+    },
+    {
+      "path": "/private/tmp/wvm305-performance/boussinesq-request.json",
+      "sha256": "0ea1aad6c8f484c1d80612427607bfe99addd73f4b4bebee753f52b93954ab4c"
+    }
+  ],
+  "baselineBuildSourceCommit": "be09fe473cec08677c608174f523ae93aa79ef58",
+  "baselineEquivalentMainCommit": "4c95835ef4a956e5320d5ffee11802a9bdd89067",
+  "baselineEquivalence": "git diff be09fe47 4c95835e -- CompiledKernel PortableRuntime/src PortableRuntime/app PortableRuntime/include tools/compiled-kernel is empty. The preserved executable hash matches the retained shared-density-event build receipt; this is an equivalent baseline, not a newly rebuilt binary."
+}

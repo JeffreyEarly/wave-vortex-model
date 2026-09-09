@@ -1606,9 +1606,9 @@
       "intermediates": [
         "apeQuadrature"
       ],
-      "runtimeStatus": "intentional-incompatibility",
-      "samplingRestriction": "Full natural grid or scalar only; interpolation requires a separately qualified evaluator.",
-      "configurationRestriction": "unpersisted-density-profile-contract: this diagnostic depends on the unsaved no-motion solver identity and true-profile selection."
+      "runtimeStatus": "implemented",
+      "samplingRestriction": "Full natural grid only; interpolation and reductions are not supported.",
+      "configurationRestriction": "The wave-vortex-density-diagnostics-v1 runtime contract defaults to actual density with dampedLeastSquares recovery. Explicit initial reference applies to displacement, APE and APV; rho_nm always describes current density. Legacy MATLAB solver choices are not inferred from saved files."
     },
     {
       "name": "apv",
@@ -1621,9 +1621,9 @@
       "intermediates": [
         "etaTrueGradients"
       ],
-      "runtimeStatus": "intentional-incompatibility",
-      "samplingRestriction": "Full natural grid or scalar only; interpolation requires a separately qualified evaluator.",
-      "configurationRestriction": "unpersisted-true-profile-selection: this diagnostic depends on eta_true and its unsaved reference/true-profile choice."
+      "runtimeStatus": "implemented",
+      "samplingRestriction": "Full natural grid only; interpolation and reductions are not supported.",
+      "configurationRestriction": "The wave-vortex-density-diagnostics-v1 runtime contract defaults to actual density with dampedLeastSquares recovery. Explicit initial reference applies to displacement, APE and APV; rho_nm always describes current density. Legacy MATLAB solver choices are not inferred from saved files."
     },
     {
       "name": "conjPhase",
@@ -1729,9 +1729,9 @@
         "referenceDensity",
         "inverseDensitySpline"
       ],
-      "runtimeStatus": "intentional-incompatibility",
-      "samplingRestriction": "Full natural grid or scalar only; interpolation requires a separately qualified evaluator.",
-      "configurationRestriction": "unpersisted-true-profile-selection: shouldUseTrueNoMotionProfile is deliberately runtime-only in MATLAB v4; a portable continuation cannot recover the authored reference/true-profile choice."
+      "runtimeStatus": "implemented",
+      "samplingRestriction": "Full natural grid only; interpolation and reductions are not supported.",
+      "configurationRestriction": "The wave-vortex-density-diagnostics-v1 runtime contract defaults to actual density with dampedLeastSquares recovery. Explicit initial reference applies to displacement, APE and APV; rho_nm always describes current density. Legacy MATLAB solver choices are not inferred from saved files."
     },
     {
       "name": "eta_w",
@@ -1824,9 +1824,9 @@
         "densityMoments",
         "noMotionProfile"
       ],
-      "runtimeStatus": "intentional-incompatibility",
-      "samplingRestriction": "Full natural grid or scalar only; interpolation requires a separately qualified evaluator.",
-      "configurationRestriction": "unpersisted-no-motion-solver: MATLAB defaults to dampedLeastSquares and supports explicit lsqnonlin or fminsearch; saved v4 models do not carry that numerical solver identity."
+      "runtimeStatus": "implemented",
+      "samplingRestriction": "Full natural grid only; interpolation and reductions are not supported.",
+      "configurationRestriction": "The wave-vortex-density-diagnostics-v1 runtime contract defaults to actual density with dampedLeastSquares recovery. Explicit initial reference applies to displacement, APE and APV; rho_nm always describes current density. Legacy MATLAB solver choices are not inferred from saved files."
     },
     {
       "name": "ssh_g",

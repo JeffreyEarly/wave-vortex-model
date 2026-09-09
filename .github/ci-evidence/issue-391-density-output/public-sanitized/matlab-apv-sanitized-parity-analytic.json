@@ -1,0 +1,89 @@
+{
+  "schema": "density-apv-analytic-v1",
+  "rows": [
+    {
+      "axis": 1,
+      "antialias": false,
+      "provider": "reference",
+      "reference": "initial",
+      "etaMaximumError": 3.1613600626201332E-14,
+      "apvMaximumError": 9.5312646664069689E-14,
+      "absoluteTolerance": 1E-10,
+      "metrics": {
+        "apePassCount": 0,
+        "apvPassCount": 1,
+        "apvReuseCount": 1,
+        "eventLiveBytes": 0,
+        "highWaterBytes": 140592,
+        "inversePassCount": 1,
+        "liveBytes": 0,
+        "profileConstructionCount": 1,
+        "recoveryCount": 0,
+        "reuseCount": 2
+      }
+    },
+    {
+      "axis": 2,
+      "antialias": false,
+      "provider": "reference",
+      "reference": "initial",
+      "etaMaximumError": 3.1613600626201332E-14,
+      "apvMaximumError": 9.37860900052101E-14,
+      "absoluteTolerance": 1E-10,
+      "metrics": {
+        "apePassCount": 0,
+        "apvPassCount": 1,
+        "apvReuseCount": 1,
+        "eventLiveBytes": 0,
+        "highWaterBytes": 140592,
+        "inversePassCount": 1,
+        "liveBytes": 0,
+        "profileConstructionCount": 1,
+        "recoveryCount": 0,
+        "reuseCount": 2
+      }
+    },
+    {
+      "axis": 1,
+      "antialias": true,
+      "provider": "reference",
+      "reference": "initial",
+      "etaMaximumError": 3.1613600626201332E-14,
+      "apvMaximumError": 2.3814283878209608E-14,
+      "absoluteTolerance": 1E-10,
+      "metrics": {
+        "apePassCount": 0,
+        "apvPassCount": 1,
+        "apvReuseCount": 1,
+        "eventLiveBytes": 0,
+        "highWaterBytes": 140592,
+        "inversePassCount": 1,
+        "liveBytes": 0,
+        "profileConstructionCount": 1,
+        "recoveryCount": 0,
+        "reuseCount": 2
+      }
+    },
+    {
+      "axis": 2,
+      "antialias": true,
+      "provider": "reference",
+      "reference": "initial",
+      "etaMaximumError": 3.1613600626201332E-14,
+      "apvMaximumError": 2.1163626406917047E-14,
+      "absoluteTolerance": 1E-10,
+      "metrics": {
+        "apePassCount": 0,
+        "apvPassCount": 1,
+        "apvReuseCount": 1,
+        "eventLiveBytes": 0,
+        "highWaterBytes": 140592,
+        "inversePassCount": 1,
+        "liveBytes": 0,
+        "profileConstructionCount": 1,
+        "recoveryCount": 0,
+        "reuseCount": 2
+      }
+    }
+  ]
+}

@@ -257,6 +257,8 @@ findExecutablePortableVariable(std::string_view name) noexcept {
     case WVPortableVariable::Fu_portable_catalog_forcing: return entry;
     case WVPortableVariable::Fv_portable_catalog_forcing: return entry;
     case WVPortableVariable::Fw_portable_catalog_forcing: return entry;
+    case WVPortableVariable::ape: return entry;
+    case WVPortableVariable::apv: return entry;
     case WVPortableVariable::conjPhase: return entry;
     case WVPortableVariable::energy_g: return entry;
     case WVPortableVariable::energy_io: return entry;
@@ -265,6 +267,7 @@ findExecutablePortableVariable(std::string_view name) noexcept {
     case WVPortableVariable::eta_g: return entry;
     case WVPortableVariable::eta_io: return entry;
     case WVPortableVariable::eta_mda: return entry;
+    case WVPortableVariable::eta_true: return entry;
     case WVPortableVariable::eta_w: return entry;
     case WVPortableVariable::geostrophicEnergy: return entry;
     case WVPortableVariable::p_g: return entry;
@@ -272,6 +275,7 @@ findExecutablePortableVariable(std::string_view name) noexcept {
     case WVPortableVariable::p_mda: return entry;
     case WVPortableVariable::p_w: return entry;
     case WVPortableVariable::phase: return entry;
+    case WVPortableVariable::rho_nm: return entry;
     case WVPortableVariable::ssh_g: return entry;
     case WVPortableVariable::ssh_io: return entry;
     case WVPortableVariable::ssh_mda: return entry;

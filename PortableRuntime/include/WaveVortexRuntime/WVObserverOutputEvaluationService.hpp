@@ -33,6 +33,15 @@ struct WVObserverOutputEvaluationMetrics {
   std::size_t eventFieldReuseCount = 0;
   std::size_t eventFieldWorkspaceLiveBytes = 0;
   std::size_t eventFieldWorkspaceHighWaterBytes = 0;
+  std::size_t densityRecoveryCount = 0;
+  std::size_t densityProfileConstructionCount = 0;
+  std::size_t densityInversePassCount = 0;
+  std::size_t densityAPEPassCount = 0;
+  std::size_t densityAPVPassCount = 0;
+  std::size_t densityAPVReuseCount = 0;
+  std::size_t densityReuseCount = 0;
+  std::size_t densityWorkspaceLiveBytes = 0;
+  std::size_t densityWorkspaceHighWaterBytes = 0;
   double evaluationSeconds = 0.0;
 };
 
@@ -48,12 +57,14 @@ public:
          const WVPortableObserverDescriptor &descriptor,
          std::unique_ptr<WVFFTEngine> engine,
          std::unique_ptr<WVObserverOutputEvaluationService> &service,
-         WVFieldEvaluationService *borrowedFieldEvaluationService = nullptr);
+         WVFieldEvaluationService *borrowedFieldEvaluationService = nullptr,
+         WVDensityDiagnosticContract densityContract = {});
   static WVKernelStatus
   create(bool isDynamicsLinear,
          const WVPortableObserverDescriptor &descriptor,
          WVFieldEvaluationService &fieldEvaluationService,
-         std::unique_ptr<WVObserverOutputEvaluationService> &service);
+         std::unique_ptr<WVObserverOutputEvaluationService> &service,
+         WVDensityDiagnosticContract densityContract = {});
 
   WVKernelStatus observationSchema(
       const WVObserverRecord &observer,

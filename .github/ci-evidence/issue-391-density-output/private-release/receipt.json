@@ -1,0 +1,93 @@
+{
+  "sourceCommit": "4c95835ef4a956e5320d5ffee11802a9bdd89067",
+  "sourceSHA256": [
+    {
+      "path": "PortableRuntime/tests/WVDensityEventDump.cpp",
+      "sha256": "f099dd7ca12d1c80e09d8171ea42b5553ec71ba5d54f0884d031fd80efa1f92e"
+    },
+    {
+      "path": "UnitTests/TestPortableDensityEventEvaluation.m",
+      "sha256": "5d6b4e143d21af70563986119abf463d2b5c9531c33378a0c9585f2905a83b71"
+    },
+    {
+      "path": "PortableRuntime/src/WVDiagnosticFieldPlan.cpp",
+      "sha256": "8abd1a9bd690ed2cd4d39c2584b132772d6d0e1f2abd1b10683996af6e443e05"
+    },
+    {
+      "path": "PortableRuntime/src/WVDiagnosticFieldPlan.hpp",
+      "sha256": "84c6d75c675a1c6afac6386b310191467eeef4c7a01fa62133fed5f73146b77d"
+    },
+    {
+      "path": "PortableRuntime/src/WVFieldEvaluationEventWorkspace.hpp",
+      "sha256": "b6c2c9b78eb75a35dfa3625fb3e60503f04835f0a34a3d007ee79b59c16e3a56"
+    },
+    {
+      "path": "PortableRuntime/src/WVDensityEventEvaluation.cpp",
+      "sha256": "6ed862d0470a18f52ed5530342bf187326bfd4a9c8b72b8fa5392371cb978916"
+    },
+    {
+      "path": "PortableRuntime/src/WVFieldEvaluationService.cpp",
+      "sha256": "7e3977c816164eaa88ee527adb99c87657bfbba4406c5eb78db3ad781a68b54b"
+    },
+    {
+      "path": "CompiledKernel/src/WVTransformConstantStratificationKernel.cpp",
+      "sha256": "2aed16e2b0c2edf6157a3085ac809852f01e80f9d35a73cbac4d71e5065236d4"
+    },
+    {
+      "path": "Operations/APVOperation.m",
+      "sha256": "07f7d2ea070ef7a38b0dd199c9b7e2bee2a8b10a0e919c940cab02defee9d3f0"
+    }
+  ],
+  "schema": "density-apv-private-qualification-v1",
+  "scope": "private-density-apv-event",
+  "status": "passed",
+  "methods": 3,
+  "matrixRows": 32,
+  "analyticRows": 8,
+  "stableRestRows": 4,
+  "codeAnalyzerFindings": 0,
+  "providers": [
+    "reference",
+    "native"
+  ],
+  "matlabRelease": "R2025b",
+  "note": "Private factory passed while the public catalog still rejects density outputs. No public-availability claim. Same eta operator and independent initial-reference analytic controls isolate APV calculus.",
+  "logNormalization": {
+    "originalSHA256": "f68385f274f951c77c34fb1fc5f51e28d220088ec93aca15a6d8d4da2c6eb316",
+    "normalizedSHA256": "3d9bef95f7fd0fbcde938e6334304088220cb9b65ca58e44cbb1549c33b7d23c",
+    "note": "Trailing whitespace/final blank lines only."
+  },
+  "executionBinary": {
+    "path": "/private/tmp/wvm-v4-audit-runtime/WVDensityEventDump",
+    "sha256": "a1d4b282fb3ad11c4a6389036db6fc8f2be1f23faff1d95f64807b8ace11b561",
+    "sourceRoot": "/Users/jearly/Documents/OceanKitRepositories/wvm-v4-cpp-adoption-audit",
+    "sourceCommit": "4c95835ef4a956e5320d5ffee11802a9bdd89067",
+    "configuration": "Release, native FFTW+Accelerate enabled; uncommitted source bound by hashes"
+  },
+  "artifacts": [
+    {
+      "path": ".github/ci-evidence/issue-391-density-output/private-release/TestPortableDensityEventEvaluation.m.txt",
+      "sha256": "5d6b4e143d21af70563986119abf463d2b5c9531c33378a0c9585f2905a83b71"
+    },
+    {
+      "path": ".github/ci-evidence/issue-391-density-output/private-release/WVDensityEventDump.cpp.txt",
+      "sha256": "f099dd7ca12d1c80e09d8171ea42b5553ec71ba5d54f0884d031fd80efa1f92e"
+    },
+    {
+      "path": ".github/ci-evidence/issue-391-density-output/private-release/matlab-apv-parity-analytic.json",
+      "sha256": "3c0bfc2b0f7089317612d07f4d4a8a40991771da150578081be9a1903b6f5900"
+    },
+    {
+      "path": ".github/ci-evidence/issue-391-density-output/private-release/matlab-apv-parity.json",
+      "sha256": "9b5f0344c3e8cdff3b7fa60f4dd407d86aea67340c7f1abc9d90fa8170c38b1b"
+    },
+    {
+      "path": ".github/ci-evidence/issue-391-density-output/private-release/matlab-results.json",
+      "sha256": "742ca221a12dd374a2109ae17c6ad6a4f82a0ddb44c6bb708f6c38059a0d67bb"
+    },
+    {
+      "path": ".github/ci-evidence/issue-391-density-output/private-release/matlab.log",
+      "sha256": "3d9bef95f7fd0fbcde938e6334304088220cb9b65ca58e44cbb1549c33b7d23c"
+    }
+  ]
+}

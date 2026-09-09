@@ -1,5 +1,7 @@
 #pragma once
 
+#include "WaveVortexRuntime/WVDensityDiagnosticContract.hpp"
+
 #include "WaveVortexKernel/WVTransformConstantStratificationKernel.hpp"
 #include "WaveVortexKernel/WVTransformBarotropicQGKernel.hpp"
 #include "WaveVortexKernel/WVTransformStratifiedQGKernel.hpp"
@@ -378,6 +380,8 @@ struct WVFieldEvaluationMetrics {
   std::size_t densityProfileConstructionCount = 0;
   std::size_t densityInversePassCount = 0;
   std::size_t densityAPEPassCount = 0;
+  std::size_t densityAPVPassCount = 0;
+  std::size_t densityAPVReuseCount = 0;
   std::size_t densityReuseCount = 0;
   std::size_t densityWorkspaceLiveBytes = 0;
   std::size_t densityWorkspaceHighWaterBytes = 0;
@@ -429,7 +433,8 @@ public:
   const std::vector<WVPortableForcingVariableBinding>& forcingVariableBindings() const noexcept;
   std::string portableVariableConfiguration() const;
   WVKernelStatus createPlan(const std::vector<WVFieldRequest> &requests,
-                            WVFieldEvaluationPlan &plan) const;
+                            WVFieldEvaluationPlan &plan,
+                            WVDensityDiagnosticContract densityContract = {}) const;
   // A null selection evaluates every output. Otherwise one byte per output
   // selects its dependencies and writes; inactive output views are untouched.
   WVKernelStatus evaluate(const WVFieldEvaluationPlan &plan,

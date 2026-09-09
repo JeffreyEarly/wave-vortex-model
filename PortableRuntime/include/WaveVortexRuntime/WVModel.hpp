@@ -188,7 +188,8 @@ public:
       WVModelOutputConfiguration outputConfiguration,
       std::unique_ptr<WVFFTEngine> engine,
       const WVModelIntegratorConfiguration &integratorConfiguration,
-      WVModel &model, WVModelState &state);
+      WVModel &model, WVModelState &state,
+      WVDensityDiagnosticContract densityContract = {});
 
   static WVKernelStatus create(
       std::shared_ptr<const WVExtensionCatalog> catalog,
@@ -217,7 +218,8 @@ public:
   WVKernelStatus openOutput(
       WVModelState &state,
       WVModelOutputConfiguration outputConfiguration,
-      bool isDynamicsLinear = false);
+      bool isDynamicsLinear = false,
+      WVDensityDiagnosticContract densityContract = {});
   WVKernelStatus evaluateRightHandSide(const WVIntegrationState &state,
                                        WVIntegrationFlux &rightHandSide);
   bool supportsFixedTimeStepSelection() const noexcept;

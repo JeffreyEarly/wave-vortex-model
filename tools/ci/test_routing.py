@@ -124,7 +124,7 @@ class RoutingTests(unittest.TestCase):
                                       ('sanitizedTests', 'sanitizedShards')]:
                 flattened = [name for group in plan[shards] for name in group['classes']]
                 for name in ['TestPortableNoMotionProfile', 'TestPortableNoMotionRecovery',
-                             'TestPortableDensityEventEvaluation']:
+                             'TestPortableDensityEventEvaluation', 'TestPortableDensityOutput']:
                     self.assertIn(name, plan[inventory])
                     self.assertEqual(flattened.count(name), 1)
 

@@ -1,0 +1,125 @@
+{
+  "schema": "density-apv-matlab-qualification-v1",
+  "status": "passed",
+  "scope": "private qualification followed by locally authorized public Release/sanitized qualification",
+  "sourceCommit": "4c95835ef4a956e5320d5ffee11802a9bdd89067",
+  "sourceSHA256": [
+    {
+      "path": "PortableRuntime/tests/WVDensityEventDump.cpp",
+      "sha256": "d1bf07cbc747f7067b3f5f79bc34cd7dae2befea00bbc50675a83acaf8f58386"
+    },
+    {
+      "path": "UnitTests/TestPortableDensityEventEvaluation.m",
+      "sha256": "5d6b4e143d21af70563986119abf463d2b5c9531c33378a0c9585f2905a83b71"
+    },
+    {
+      "path": "PortableRuntime/src/WVDiagnosticFieldPlan.cpp",
+      "sha256": "2066d40e657f3354385872699ce27b98ef43442d0fdb3b4cb685b45073780bfd"
+    },
+    {
+      "path": "PortableRuntime/src/WVDiagnosticFieldPlan.hpp",
+      "sha256": "84c6d75c675a1c6afac6386b310191467eeef4c7a01fa62133fed5f73146b77d"
+    },
+    {
+      "path": "PortableRuntime/src/WVFieldEvaluationEventWorkspace.hpp",
+      "sha256": "14e8b74e3cde5f3aee6e92728d26c031d0041d9df3d3a45acf82aef57125d4f0"
+    },
+    {
+      "path": "PortableRuntime/src/WVDensityEventEvaluation.cpp",
+      "sha256": "6ed862d0470a18f52ed5530342bf187326bfd4a9c8b72b8fa5392371cb978916"
+    },
+    {
+      "path": "PortableRuntime/src/WVFieldEvaluationService.cpp",
+      "sha256": "7e3977c816164eaa88ee527adb99c87657bfbba4406c5eb78db3ad781a68b54b"
+    },
+    {
+      "path": "CompiledKernel/src/WVTransformConstantStratificationKernel.cpp",
+      "sha256": "2aed16e2b0c2edf6157a3085ac809852f01e80f9d35a73cbac4d71e5065236d4"
+    },
+    {
+      "path": "Operations/APVOperation.m",
+      "sha256": "07f7d2ea070ef7a38b0dd199c9b7e2bee2a8b10a0e919c940cab02defee9d3f0"
+    },
+    {
+      "path": "PortableRuntime/contracts/portable-variable-catalog-v1.json",
+      "sha256": "b3232a68798257b026add0a1c128c85f7012589643339e2166e57f00b10b3925"
+    },
+    {
+      "path": "PortableRuntime/src/WVNoMotionProfile.cpp",
+      "sha256": "0999b4d571a2a1deab55ff554b3af6a265506e5382c28d02127382cf6893340d"
+    },
+    {
+      "path": "PortableRuntime/src/WVNoMotionProfileRecovery.cpp",
+      "sha256": "725c00b4c0611dc0e3569049a693553f86c7d0854cd56c3ce45e112a1c646105"
+    },
+    {
+      "path": "PortableRuntime/src/WVNoMotionDensityMoments.cpp",
+      "sha256": "c00438f55038f38f8de91b2a6781041adf17221dd6e8fbd0e50cf5c3d40b1a19"
+    },
+    {
+      "path": "PortableRuntime/src/WVStratifiedFieldEvaluationAdapter.cpp",
+      "sha256": "07d60940074708686a36c85ddc1d27377b3bd1c531b1f4c1dc8be7a26a1fc31f"
+    },
+    {
+      "path": "PortableRuntime/include/WaveVortexRuntime/WVFieldEvaluationService.hpp",
+      "sha256": "aee6e64f9af0ac293bfecb4df5d44cab68e08c0bed1b96906f3b0153407df529"
+    },
+    {
+      "path": "PortableRuntime/include/WaveVortexRuntime/WVDensityDiagnosticContract.hpp",
+      "sha256": "150c8ae5d1a732a22bee0c6ce4c765a4e440cda12f520319671337229f2633a0"
+    },
+    {
+      "path": "Operations/@WVNoMotionProfile/WVNoMotionProfile.m",
+      "sha256": "e4f90cbbf6bed361fd797ed98e4231febf0d3d3870c645f6220c7b184073b7fa"
+    },
+    {
+      "path": "Operations/WVNoMotionProfileOperation.m",
+      "sha256": "c6e521114c56b1450c39016f58731d05b1d8b7a9768efd95f78b39aec7fcc16f"
+    },
+    {
+      "path": "Operations/EtaTrueOperation.m",
+      "sha256": "560caed0a98b19be47f8996474e1a40ddf95a28051761de4c8d9edd7b143dfc1"
+    },
+    {
+      "path": "Operations/APEOperation.m",
+      "sha256": "2949a0df7676b34425a0e4fb6d650afb2026eb61a8c24a52f92a7d7434126020"
+    }
+  ],
+  "ledger": [
+    {
+      "phase": "private Release reference/native",
+      "methods": 3,
+      "passed": true,
+      "cases": 44,
+      "analyzerFindings": 0
+    },
+    {
+      "phase": "public Release reference/native",
+      "methods": 3,
+      "passed": true,
+      "cases": 44,
+      "analyzerFindings": 0
+    },
+    {
+      "phase": "public address/undefined sanitizer reference",
+      "methods": 3,
+      "passed": true,
+      "cases": 22,
+      "analyzerFindings": 0
+    }
+  ],
+  "artifacts": [
+    {
+      "path": ".github/ci-evidence/issue-391-density-output/private-release/receipt.json",
+      "sha256": "6d4fdc14305ad2950298f42db438f6fc852e1577b06a62caed2a67a2493e857c"
+    },
+    {
+      "path": ".github/ci-evidence/issue-391-density-output/public-release/receipt.json",
+      "sha256": "0b4e758c63b51b897c09a813ea643b63114ab6aeadc760c4bb9532550e9770bf"
+    },
+    {
+      "path": ".github/ci-evidence/issue-391-density-output/public-sanitized/receipt.json",
+      "sha256": "a35f59ba5f08046fc2437db6c889fcfbe9301cd9867be5cbca93f0a1a04102a2"
+    }
+  ]
+}
