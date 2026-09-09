@@ -103,7 +103,7 @@ classdef TestPortableNoMotionProfile < matlab.unittest.TestCase
                 testCase.assertEqual(sha256(fullfile(testCase.root,fixture.generator.path)),string(fixture.generator.sha256));
                 actual = testCase.compareWithMatlab(fixture.request,"captured-day"+day);
                 testCase.verifyEqual(actual.density,fixture.expected.density,AbsTol=8*eps(max(abs(fixture.request.rho))));
-                testCase.verifyEqual(actual.inverse,fixture.expected.inverse,AbsTol=64*eps(max(abs(fixture.request.z))+range(fixture.request.z)));
+                testCase.verifyEqual(actual.inverse,fixture.expected.inverse,AbsTol=64*eps(max(abs(fixture.request.z))+(max(fixture.request.z)-min(fixture.request.z))));
                 testCase.verifyEqual(actual.ape,fixture.expected.ape,RelTol=2e-11);
             end
         end
@@ -198,7 +198,7 @@ classdef TestPortableNoMotionProfile < matlab.unittest.TestCase
                 testCase.assertTrue(all(isfinite(actual.(name))),label+" "+name);
             end
             densityTolerance = 8*eps(max(abs(request.rho)));
-            heightTolerance = 64*eps(max(abs(request.z))+range(request.z));
+            heightTolerance = 64*eps(max(abs(request.z))+(max(request.z)-min(request.z)));
             testCase.verifyEqual(actual.density,expected.density,AbsTol=densityTolerance);
             testCase.verifyEqual(actual.inverse,expected.inverse,AbsTol=heightTolerance);
             testCase.verifyEqual(actual.ape,expected.ape,RelTol=2e-11);

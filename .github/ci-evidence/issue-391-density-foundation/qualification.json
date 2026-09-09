@@ -166,5 +166,15 @@
       "rawSHA256": "34fe0fd9da8e3d5fbd58ce2703f31a71f60a62cd4e86637cd7fc021e5664d962",
       "change": "Removed trailing whitespace and final blank line only."
     }
-  }
+  },
+  "ciCorrections": [
+    {
+      "path": "UnitTests/TestPortableNoMotionProfile.m",
+      "executedSourceSHA256": "b9f597939b96fc67ab6403c510f0995ef607a44dac7bd2521e74359169bd107f",
+      "correctedSourceSHA256": "cba70302ce10e28775f793e0868ad0d7dae461dde81c4a46bd7e6f38f60d296d",
+      "reason": "Replace two Statistics and Machine Learning Toolbox range calls with identical max-minus-min arithmetic. No tolerance, scientific production source, fixture or numerical oracle changes.",
+      "failedRun": "https://github.com/JeffreyEarly/wave-vortex-model/actions/runs/34386552721",
+      "validation": "Static diff and whitespace checks passed. The original local execution receipts and hashes above remain historical, not a rerun of this corrected test. Required hosted CI and a focused local MATLAB rerun are pending; follow-up results will be recorded on PR 430."
+    }
+  ]
 }
