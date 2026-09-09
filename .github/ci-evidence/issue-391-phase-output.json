@@ -1,0 +1,92 @@
+{
+  "schema": "matlab-complex-phase-output-repair-v1",
+  "issue": 391,
+  "scope": "MATLAB phase diagnostic metadata and output only",
+  "baseCommit": "3c1d598ecc18899c4b3c53465e38049c67cecff9",
+  "matlabRelease": "R2025b",
+  "sourceChanges": [
+    {
+      "path": "@WVTransform/classDefinedOperationForKnownVariable.m",
+      "beforeSHA256": "72c192d2f0b8c33b02f591aeeecccac66095718f6391d035cecef089a7f9eed5",
+      "afterSHA256": "5c73b9a2d3609a2dedacc9a7287b949bb6156fc4bc4d0d3c3f15a4ef783f01f4"
+    },
+    {
+      "path": "UnitTests/TestPortableDiagnostics.m",
+      "beforeSHA256": "8ecbde82fad99e9f25c29dfbb06e6c3bdfb6f52d1453aff713de6eff92aeb493",
+      "afterSHA256": "aeb2602071d5219eefdabca2c004f863bdd412d26d0ce7babb36ea61eeea0c1b"
+    },
+    {
+      "path": "UnitTests/TestWVModelOutputPersistence.m",
+      "beforeSHA256": "959f1ccf4eec435ed9d2edd985053825984844ade1f5a62f79f98d7bcbd83356",
+      "afterSHA256": "43fd286ea831adccf9b393078fb927b8f80a6ce3ec8e55b2c46921cbe4627149"
+    },
+    {
+      "path": "tools/generatePortableVariableCatalog.m",
+      "beforeSHA256": "e317c3358effe2b9cee148a1789058338b23e77f5f41c986739fc84feb23ac60",
+      "afterSHA256": "4b0210569bbf419763e70391b7ac00e7aed1631216d602d618f2ea654be5c2b5"
+    },
+    {
+      "path": "PortableRuntime/contracts/portable-variable-supplement-v1.json",
+      "beforeSHA256": "89cb289d548d18e2cb6a2646e18117fb553058191141c16141e238d24455ad18",
+      "afterSHA256": "4cb3d6df59ae2bb3fabca9cf10e84c391c6482b624f45e7426977477578af990"
+    },
+    {
+      "path": "PortableRuntime/contracts/portable-variable-catalog-v1.json",
+      "beforeSHA256": "40af912b318b2d05b91f09f5cd8aa11c0afe1ca261d33055cf658675a927aa61",
+      "afterSHA256": "c80c5583d95c10805fae8ffa238e0b47d57fe80587cbfa329aabe2e0625375ed"
+    },
+    {
+      "path": "PortableRuntime/include/WaveVortexRuntime/generated/WVPortableVariableCatalog.hpp",
+      "beforeSHA256": "69a088927987e6bc74aa84320a50ab32072dd7e8b2726786f6383ee70ca6ba6c",
+      "afterSHA256": "870739074364eb8f3c2694bbe3836c16d3bea5c521a9be39f6bdd8fb6776ed17"
+    },
+    {
+      "path": "PortableRuntime/include/WaveVortexRuntime/generated/WVPortableVariableContracts.hpp",
+      "beforeSHA256": "64bdf97945f92e65552701d7ba1883de5dd75fc5458b1f870b5d74142a4933a6",
+      "afterSHA256": "90195efe0d2682b1b861c81e039f1ac7a173da9e2038b9a57d2f521645c349d2"
+    }
+  ],
+  "verification": {
+    "regression": "TestWVModelOutputPersistence/complexPhasesSurviveOutputAndRestart",
+    "failedBeforeCorrection": true,
+    "fixedAndAdaptivePassed": true,
+    "transformConfigurations": 4,
+    "savedGroups": [
+      "wave-vortex",
+      "dense"
+    ],
+    "savedTimesPerConfiguration": [
+      5,
+      17
+    ],
+    "absoluteTolerance": 2e-15,
+    "minimumImaginaryMagnitude": 0.01,
+    "unchangedRestartCoefficients": true,
+    "restoredReferenceTime": 17,
+    "continuationInterval": [
+      123,
+      125
+    ],
+    "restartTime": 124,
+    "variableCatalogTestsPassed": 6,
+    "forwardIntegrationCatalogTestsPassed": 8,
+    "cppVariableCatalogPassed": true,
+    "cppCatalogSeconds": 0.37,
+    "codeAnalyzerFindings": 0,
+    "matlabDiagnosticContractPassed": true,
+    "documentationRebuilt": true,
+    "documentationPagesChanged": 7
+  },
+  "limits": [
+    "C++ phase evaluation and persistence remain unqualified and rejected under #391.",
+    "Historical real-only phase diagnostic files are not migrated.",
+    "Normal coefficient-based restart and phase formulas are unchanged.",
+    "No new source-consumer or performance measurement is claimed."
+  ],
+  "historicalEvidence": [
+    "PortableRuntime/qualification/matlab-energy-adaptive-repairs-v1.json",
+    "PortableRuntime/qualification/coordinated-termination-repairs-apple-silicon-v1.json",
+    ".github/ci-evidence/issue-289-source-consumer.json"
+  ],
+  "provenanceNote": "This scoped successor records changed metadata/test/catalog hashes. Historical execution records retain their original hashes and measurements; the changed generated-header tree is not relabeled as the previously tested consumer tree. The strict #289 integration receipts bind none of the changed files and pass unchanged."
+}

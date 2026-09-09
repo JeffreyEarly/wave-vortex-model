@@ -33,12 +33,12 @@ for iOp = 1:length(variableName)
         otherwise
             switch name
                 case 'phase'
-                    varAnnotation = WVVariableAnnotation(name,options.spectralDimensionNames,'1', 'unit-magnitude phase factor that advances `Ap` from `t0` to `t`');
+                    varAnnotation = WVVariableAnnotation(name,options.spectralDimensionNames,'1', 'unit-magnitude phase factor that advances `Ap` from `t0` to `t`',isComplex=true);
                     varAnnotation.isDependentOnApAmA0 = false;
                     f = @(wvt) exp(wvt.iOmega*(wvt.t-wvt.t0));
 
                 case 'conjPhase'
-                    varAnnotation = WVVariableAnnotation(name,options.spectralDimensionNames,'1', 'conjugate phase factor that advances `Am` from `t0` to `t`');
+                    varAnnotation = WVVariableAnnotation(name,options.spectralDimensionNames,'1', 'conjugate phase factor that advances `Am` from `t0` to `t`',isComplex=true);
                     varAnnotation.isDependentOnApAmA0 = false;
                     f = @(wvt) conj(wvt.phase);
 

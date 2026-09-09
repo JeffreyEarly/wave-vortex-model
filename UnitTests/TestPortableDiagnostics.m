@@ -194,7 +194,7 @@ classdef TestPortableDiagnostics < matlab.unittest.TestCase
         function incompatibilitiesPreserveMatlabContracts(testCase)
             wvt = testCase.transform("hydrostatic",[8 6 9],false);
             for name = ["phase","conjPhase"]
-                testCase.verifyFalse(wvt.propertyAnnotationWithName(name).isComplex);
+                testCase.verifyTrue(wvt.propertyAnnotationWithName(name).isComplex);
                 testCase.verifyFalse(isreal(wvt.(name)));
             end
             testCase.verifyFalse(ismember('shouldUseTrueNoMotionProfile',wvt.annotatedPropertyNames));
