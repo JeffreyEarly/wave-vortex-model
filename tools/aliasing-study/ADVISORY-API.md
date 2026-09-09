@@ -33,3 +33,31 @@ The output-page breakdown does not recommend independently selectable counts at 
 The existing constructor currently retains sampled mode arrays rather than the complete continuous basis/reference preparation used by this calculation. An instance-method adapter therefore remains a separate integration step: it must preserve or expose the resolved continuous modes and verify exact grid/count correspondence before using this API. This increment supplies the working authoring API and shared engine without introducing an implicit re-solve or claiming that a reconstructed preparation is an existing model's state.
 
 The inherited coverage limits still apply: individual volume-source products; wave, inertial, and MDA outputs; no APV/boundary source-output qualification, boundary-sheet dynamics, arbitrary-superposition bound, or full nonlinear-operator certification.
+
+## Repeated explicit count-map assessment
+
+For fast trials, prepare a fixed evidence snapshot once:
+
+```matlab
+data = prepareSourceStudy(resolveStudyCase("cal-constant-17"));
+prepared = prepareWaveQuadraticAssessment(data,ensureOutputCoverage=true);
+kappa = prepared.inventory.magnitudes;
+kappa = kappa(kappa > 0);
+counts = mod((1:numel(kappa)).',4); % An explicit demonstration map, including zero.
+report = assessWaveQuadraticResolution(prepared,waveModeKappa=kappa,waveModeCount=counts);
+second = assessWaveQuadraticResolution(prepared,waveModeCount=3);
+```
+
+The source-data overload and its historical common-prefix report remain unchanged. The snapshot overload returns `pages` for one complete map, `requestedCountAccepted`, configuration and physical grid, fixed family counts, reference diagnostics, and cost/coverage. Physical keys accept reordering and consistent duplicates, with exact matches preferred before a 64-ulp roundoff allowance. Every positive prepared page must have a count; unsupported/ambiguous keys and counts beyond the prepared band reject. Zero-wave pages omit wave outputs, but independent mean outputs and fixed boundary inputs remain represented. At zero kappa `requestedWaveCount` is zero; its output measurements concern the independent inertial/MDA families.
+
+Preparation retains the existing single-precision per-product error evidence, all candidate output prefixes, input identities/signs and selection thresholds. It prepares physical projections and independent reference comparisons once. Later calls filter actual input prefixes and select the actual output prefix with no solves, polarizations, reference integration or new product evaluations. `cost` separates source preparation, logical candidate/reference solve calls, projection preparation, product measurement, evidence assembly, retained bytes, the conservative workspace estimate, and repeat assessment time. The workspace estimate is not a measured process-RSS peak; product batches are bounded by the declared candidate inventory and its preflight estimate.
+
+The snapshot is a fixed value result, with no live source-study/provider/model objects or global cache. Pass it alone to assessment. It has no mutation API: editing its internal fields or the derived `prepareSourceStudy` result is outside the contract. A changed grid, candidate/reference basis, normalization or inventory requires fresh source/evidence preparation; reports identify the configuration and physical grid they actually assess. Changing only counts or tolerance reuses the unchanged snapshot. Saved WVM models are not silently re-solved to create this preparation.
+
+`prepareWaveQuadraticAssessment` reserves products before source polarizations/projections, with explicit `productBudget` and `workingMemoryBudget`. The default fixed selection preserves historical geometry and cumulative mode stresses. Unequal maps filter those stresses using actual input counts and the maximum input wave-count band; this is a declared sparse selection, not all possible pairs. `ensureOutputCoverage=true` appends the first valid triad for any missing output kappa before reservation. This addition covers pages, not all triad geometries. `policy="dense"` provides a budgeted small all-products control; optional explicit interaction indices support bounded studies.
+
+Page status combines grid and sampled-product evidence. Untested requested pages are `inconclusive`, zero-wave pages are `not-requested`, and unqualified product references are `reference-inconclusive`; a directly measured Gram or fixed-family failure can still reject. Product-error values accompanied by unqualified references are estimates, not acceptance evidence. The reference gate conservatively covers the entire prepared candidate inventory, even when a smaller map excludes some of those products. Missing coverage prevents the complete map from being accepted. Limiting interactions preserve actual input ordinals/labels/signs, endpoint names, wavevectors, output labels and source channels.
+
+The snapshot retains the established source scope: wave/APV/boundary inputs, and wave/inertial/MDA outputs. Inertial and MDA inputs, APV/boundary outputs, boundary-sheet evolution, arbitrary-superposition bounds and full nonlinear dynamics are not certified. Do not combine per-page results from different maps into an untested retention recommendation. Reference convergence, linear grid support and sampled nonlinear accuracy remain separate evidence.
+
+Run `waveQuadraticResolutionExample` for the companion count/error figure or `benchmarkWaveQuadraticAssessment` for unprofiled preparation/reuse timing and a small sparse-versus-dense control. Both require the authoring study and released dependencies on the path, use a new output directory, and write CSV/JSON evidence. The [issue #425 record](../../Documentation/Validation/Issue425/README.md) documents measured budgets and scientific limits.

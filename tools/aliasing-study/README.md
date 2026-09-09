@@ -48,3 +48,7 @@ Full per-product MAT files are retained locally and listed with SHA-256 checksum
 ## Scope
 
 The metric measures aliasing into retained coefficients with physical signed projections and positive error norms. It excludes exterior product content and explicitly handles structural zeros. The physical inventory contains 13 individual volume terms, eight ordered input-family pairs, both wave signs, and actual mean/inertial outputs. APV same-family assessment remains a separate control. APV/boundary output source coefficients, boundary sheet evolution, arbitrary superpositions, and full nonlinear-operator/trajectory qualification are outside the inventory. Counts are bounded by the declared candidate band and cannot certify all possible interactions.
+
+## Fast trials of explicit wave-count maps
+
+The [advisory API](ADVISORY-API.md#repeated-explicit-count-map-assessment) supports a fixed evidence snapshot for repeated per-kappa count-map assessments. Start with `prepareWaveQuadraticAssessment`, then reuse the result with `assessWaveQuadraticResolution`. Run `waveQuadraticResolutionExample` to plot the counts and sampled quadratic errors of complete maps; `benchmarkWaveQuadraticAssessment` records preparation/reuse costs and small dense controls. See the [performance and verification record](../../Documentation/Validation/Issue425/README.md). These authoring functions do not add runtime dependencies or trigger assessment during ordinary model construction.

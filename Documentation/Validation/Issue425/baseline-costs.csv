@@ -1,0 +1,3 @@
+caseId,preparationSeconds,firstSeconds,secondSeconds,products,dataBytes,evidenceBytes,status
+cal-constant-17,3.23340608333333,5.046442375,4.30311241666667,79968,6058068,9724497,assessed
+cal-exponential-17,2.31376845833333,3.9698015,3.46411745833333,79968,6059994,9724509,assessed

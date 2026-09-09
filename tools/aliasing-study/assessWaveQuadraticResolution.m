@@ -1,31 +1,46 @@
 function [report,evidence] = assessWaveQuadraticResolution(data,options)
-% Assess a fixed sparse inventory using already prepared scientific modes.
+% Assess common prefixes or an explicit count map using prepared evidence.
 %
-% This authoring API accepts the immutable preparation returned by
-% prepareSourceStudy. It reuses its modes, grid, weights and reference samples;
-% it neither solves modes nor changes a model's retained counts. A requested
-% count is reported as accepted or rejected without replacing that request.
-% The maximum is over individual products within the documented inventory.
-% outputPageDiagnostics breaks this same inventory down by prepared output
-% kappa. Every row still applies one common wave prefix to all nonzero input
-% and output pages; it does not assess an independently varying count map.
+% With prepareSourceStudy data, preserve the historical common-prefix report.
+% With prepareWaveQuadraticAssessment's fixed snapshot, select actual input
+% and output counts without repeating any solves or product calculations.
+% The snapshot overload returns pages for one complete map; it never treats
+% per-page errors as independently selectable nonlinear count limits.
+%
+% data = prepareSourceStudy(resolveStudyCase("cal-constant-17"));
+% prepared = prepareWaveQuadraticAssessment(data,ensureOutputCoverage=true);
+% report = assessWaveQuadraticResolution(prepared,waveModeCount=3);
 %
 % - Declaration: [report,evidence] = assessWaveQuadraticResolution(data,options)
-% - Parameter data: preparation returned by prepareSourceStudy
+% - Parameter data: source-study data or a prepareWaveQuadraticAssessment snapshot
 % - Parameter options.quadraticTolerance: positive normalized product tolerance
 % - Parameter options.requestedWaveCount: optional strict count within the prepared band
+% - Parameter options.waveModeKappa: positive physical keys for a snapshot count map
+% - Parameter options.waveModeCount: scalar or counts aligned with physical keys, including zero
 % - Parameter options.productBudget: maximum individual products, including structural zeros
 % - Returns report: status, sampled count, prefix/output-page diagnostics, coverage and costs
-% - Returns evidence: full sampled mode-pair errors and physical source records
+% - Returns evidence: source-product evidence, or the unchanged input snapshot for a count map
 arguments (Input)
     data (1,1) struct
     options.quadraticTolerance (1,1) double {mustBeReal,mustBeFinite,mustBePositive} = 0.1
     options.requestedWaveCount (1,:) double {mustBeReal,mustBeFinite,mustBeInteger,mustBePositive} = []
+    options.waveModeKappa (:,1) double {mustBeReal,mustBeFinite} = zeros(0,1)
+    options.waveModeCount (:,1) double {mustBeReal,mustBeFinite,mustBeInteger,mustBeNonnegative} = zeros(0,1)
     options.productBudget (1,1) double {mustBeReal,mustBeFinite,mustBeInteger,mustBePositive} = 500000
 end
 arguments (Output)
     report (1,1) struct
     evidence (1,1) struct
+end
+if isfield(data,"kind") && data.kind=="waveQuadraticEvidence-v1"
+    if ~isempty(options.requestedWaveCount)
+        error('WVStudy:InvalidWaveCountMap','Use waveModeCount with an evidence snapshot; requestedWaveCount belongs to the legacy common-prefix report.')
+    end
+    report=assessWaveCountMap(data,waveModeKappa=options.waveModeKappa,waveModeCount=options.waveModeCount,quadraticTolerance=options.quadraticTolerance,productBudget=options.productBudget);
+    evidence=data;
+    return
+elseif ~isempty(options.waveModeKappa) || ~isempty(options.waveModeCount)
+    error('WVStudy:InvalidPreparation','Call prepareWaveQuadraticAssessment explicitly before assessing a count map.')
 end
 required=["config","inventory","wave","apv","mda","boundary","z","w","pageDifficulty","requiredConvergence"];
 if ~all(isfield(data,required))

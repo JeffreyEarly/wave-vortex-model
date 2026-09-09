@@ -39,7 +39,9 @@ for j=unique(outputIndices).'
         end
     end
 end
-setupSeconds=data.constructionSeconds+toc(constructionTimer);
+projectionPreparationSeconds=toc(constructionTimer);
+projectionCount=sum(cellfun(@(x)nnz(~cellfun(@isempty,x)),projections(~cellfun(@isempty,projections))));
+setupSeconds=data.constructionSeconds+projectionPreparationSeconds;
 records=cell(length(indices)*height(channels)*size(familyPairs,1),1); raw=records;
 r=0; evaluated=0; zeroProducts=0; timer=tic;
 for t=indices
@@ -100,7 +102,7 @@ for t=indices
 end
 assessmentSeconds=toc(timer);
 records=records(1:r); raw=raw(1:r); rows=struct2table(vertcat(records{:}));
-summary=struct(status="survey-complete",policy=options.policy,pageDifficulty=data.pageDifficulty,configuration=config,constructionSeconds=setupSeconds,assessmentSeconds=assessmentSeconds,interactionCount=length(indices),nonzeroProductEvaluations=evaluated,structuralZeroProducts=zeroProducts,referenceStability=max(rows.referenceStability),eigenConvergence=max(data.requiredConvergence,[],'all'),allModeDerivativeConvergence=max(data.convergence,[],'all'),eigenProductStability=max(rows.eigenProductStability),eigenConvergenceByMetric=max(data.convergence,[],1),sobolevConvergenceByMetric=max(data.requiredConvergence,[],1),boundaryInterpolationError=data.boundaryInterpolationError,waveGram=max(data.waveGram,[],2),apvGram=data.apv.assessment.prefixDiagnostics.gramError(end),mdaGram=data.mda.assessment.prefixDiagnostics.gramError(end),inertialGram=data.inertialGram,apvControl=data.apv.assessment.prefixDiagnostics,matlabVersion=string(version),computer=string(computer));
+summary=struct(status="survey-complete",policy=options.policy,pageDifficulty=data.pageDifficulty,configuration=config,constructionSeconds=setupSeconds,projectionPreparationSeconds=projectionPreparationSeconds,projectionCount=projectionCount,assessmentSeconds=assessmentSeconds,interactionCount=length(indices),nonzeroProductEvaluations=evaluated,structuralZeroProducts=zeroProducts,referenceStability=max(rows.referenceStability),eigenConvergence=max(data.requiredConvergence,[],'all'),allModeDerivativeConvergence=max(data.convergence,[],'all'),eigenProductStability=max(rows.eigenProductStability),eigenConvergenceByMetric=max(data.convergence,[],1),sobolevConvergenceByMetric=max(data.requiredConvergence,[],1),boundaryInterpolationError=data.boundaryInterpolationError,waveGram=max(data.waveGram,[],2),apvGram=data.apv.assessment.prefixDiagnostics.gramError(end),mdaGram=data.mda.assessment.prefixDiagnostics.gramError(end),inertialGram=data.inertialGram,apvControl=data.apv.assessment.prefixDiagnostics,matlabVersion=string(version),computer=string(computer));
 summary.referencesStable=summary.referenceStability<=config.referenceAllowance && summary.eigenConvergence<=config.eigenAllowance && summary.eigenProductStability<=config.referenceAllowance && summary.boundaryInterpolationError<=config.eigenAllowance;
 summary.fixedFamiliesGramAccepted=max([summary.apvGram summary.mdaGram summary.inertialGram])<=config.gramTolerance;
 evidence=struct(raw={raw},inventory=inventory,summary=summary,rows=rows,channels=channels,selection=selection);
