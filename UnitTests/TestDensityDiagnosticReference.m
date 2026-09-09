@@ -1,5 +1,67 @@
 classdef TestDensityDiagnosticReference < matlab.unittest.TestCase
     methods (Test, TestTags="full")
+        function apvConvergesToAnalyticMaterialHeightVorticity(testCase)
+            % Qualify APV's existing displacement-input boundary, without
+            % changing the pending default profile/operation selection.
+            % The reference is (curl(u)+f*e_z).grad(materialHeight)-f.
+            errors = zeros(2,3);
+            referenceRMS = zeros(2,3);
+            for axis = 1:2
+                for level = 1:3
+                    n = 16*2^(level-1);
+                    wvt = WVTransformConstantStratification([2 2 2],[n n n+1],N0=.2,shouldAntialias=false);
+                    X = wvt.X;
+                    Y = wvt.Y;
+                    Z = wvt.Z;
+                    u = .03*sin(pi*Y).*cos(pi*Z/2);
+                    v = .02*sin(pi*X).*cos(pi*Z/2);
+                    wvt.initWithUVEta(u,v,zeros(size(Z)));
+                    zetaX = .02*(pi/2)*sin(pi*X).*sin(pi*Z/2);
+                    zetaY = -.03*(pi/2)*sin(pi*Y).*sin(pi*Z/2);
+                    zetaZ = pi*(.02*cos(pi*X)-.03*cos(pi*Y)).*cos(pi*Z/2);
+                    if axis == 1
+                        coordinate = X;
+                        horizontalVorticity = zetaX;
+                    else
+                        coordinate = Y;
+                        horizontalVorticity = zetaY;
+                    end
+                    radius = .7;
+                    angle = 3;
+                    dx = coordinate-1;
+                    dz = Z+1;
+                    q = max(0,1-(dx.^2+dz.^2)/radius^2);
+                    theta = angle*q.^3;
+                    thetaH = -6*angle*dx.*q.^2/radius^2;
+                    thetaZ = -6*angle*dz.*q.^2/radius^2;
+                    horizontalArm = cos(theta).*dx+sin(theta).*dz;
+                    gradientH = -sin(theta)-horizontalArm.*thetaH;
+                    gradientZ = cos(theta)-horizontalArm.*thetaZ;
+                    [~,materialHeight] = DensityDiagnosticReference.inversePolarTwist(coordinate,Z,[1 -1],radius,angle);
+                    profile = WVNoMotionProfile(wvt.z,1025-4*wvt.z);
+                    recoveredHeight = profile.inverse(1025-4*materialHeight);
+                    testCase.verifyEqual(recoveredHeight,materialHeight,AbsTol=6e-14);
+                    wvt.addToVariableCache('eta_true',Z-recoveredHeight);
+                    actual = wvt.apv;
+                    expected = horizontalVorticity.*gradientH+(zetaZ+wvt.f).*gradientZ-wvt.f;
+                    errors(axis,level) = sqrt(mean((actual-expected).^2,'all'));
+                    referenceRMS(axis,level) = sqrt(mean(expected.^2,'all'));
+                    testCase.verifyLessThan(max(abs(wvt.zeta_x-zetaX),[],'all'),1e-12);
+                    testCase.verifyLessThan(max(abs(wvt.zeta_y-zetaY),[],'all'),1e-12);
+                    testCase.verifyLessThan(max(abs(wvt.zeta_z-zetaZ),[],'all'),1e-12);
+                    testCase.verifyLessThan(min(gradientZ,[],'all'),0);
+                    testCase.verifyGreaterThan(max(abs(expected-zetaZ),[],'all'),.01);
+                end
+            end
+            testCase.verifyLessThan(errors(:,3),errors(:,1)/20);
+            % The compact-support map is C2, so its differentiated field
+            % converges algebraically. Require sub-0.1% relative RMS APV
+            % error at the finest grid as well as the refinement factor.
+            testCase.verifyLessThan(errors(:,3)./referenceRMS(:,3),1e-3);
+            fprintf('APV x-z RMS errors: %.9g %.9g %.9g; relative finest %.9g\n',errors(1,:),errors(1,3)/referenceRMS(1,3));
+            fprintf('APV y-z RMS errors: %.9g %.9g %.9g; relative finest %.9g\n',errors(2,:),errors(2,3)/referenceRMS(2,3));
+        end
+
         function unequalParcelVolumesDefineTheEmpiricalDistribution(testCase)
             z = [-1;-.5;.8];
             weights = DensityDiagnosticReference.verticalCellWeights(z,[-1 1]);

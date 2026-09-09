@@ -46,3 +46,11 @@ The shared profile primitive is qualified independently and on fixed fitted JAME
 - Canonical flag documentation and changelog were regenerated once. The final documentation comparison reports 2,026 files, 4,145 routes and no differences or validation failures.
 - Dependencies and package metadata are unchanged. No released OceanKit snapshot or v5 checkout was edited.
 - Captured baseline and experimental reports are in `.github/ci-evidence/issue-391-density/`. Their source hashes remain tied to the measured versions; newer edits are not relabeled as fresh full-state measurements. The detailed chronological ledger is `issue-391-density-qualification.md` beside this plan.
+
+## APV boundary qualification successor
+
+After the foundation commit, one additional focused method qualifies the existing APV operation with the new inverse at its displacement-input boundary. A disk-supported, volume-preserving polar twist generates overturning material-height fields in the x–z and y–z planes. Analytic divergence-free velocity is projected through the actual WV transform; all three reconstructed vorticity components are checked. APV is compared against the independent absolute-vorticity dot analytic material-height-gradient definition, not a copy of the production eta-derivative expression.
+
+On 16/32/64 horizontal grids (17/33/65 vertical nodes), APV RMS errors decrease from 8.17e-4 to 2.15e-5 s^-1 and from 9.46e-4 to 2.75e-5 s^-1. Finest relative RMS errors are 0.0338% and 0.0423%. The compact-support map is C2, so convergence is algebraic. The final test explicitly budgets spectral-roundtrip roundoff separately from differentiated-field accuracy. It passes, and the changed test class has zero Code Analyzer findings.
+
+This brings focused coverage to 31 methods across the affected batches. `apv-receipt.json` records the successor's scope and hashes; the original foundation receipt is preserved as historical evidence. No production source changed in this successor, and the prior successful documentation check does not need repetition. Default selection, consistent transform-level operation adoption and their persistence qualification remain pending the owner's compatibility answer.
