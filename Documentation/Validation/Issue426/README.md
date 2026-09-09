@@ -4,6 +4,8 @@ Generated from WVM source `3063e69e821544a58143e4851b8dc67287f0e119`, with the p
 
 ![QG vertical refinement](qg-refinement.png)
 
+The legend distinguishes the worst sampled quadratic error, the zero-APV mode resolution error, and the nonlinear flux error. The nonlinear flux curve compares the complete instantaneous tendency of the chosen example flow with an independent reference in the physical energy norm. The three curves use distinct error measures; the dashed 1% tolerance applies to zero-APV mode resolution. Legend wording was updated from the recorded CSV data without rerunning or changing the scientific measurements.
+
 ## Scientific results
 
 For the 10 km domain, three retained APV modes, both endpoints, and fixed physical parameters:

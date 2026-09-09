@@ -50,7 +50,7 @@ for profile=["constant","exponential"]
     nexttile; rows=result.refinement(result.refinement.profile==profile,:);
     semilogy(rows.Nz,rows.productError,'o-',rows.Nz,rows.boundaryError,'s-',rows.Nz,rows.assembledError,'^-',LineWidth=1.5);
     yline(.01,':','Boundary tolerance'); grid on; xlabel('Vertical grid points'); ylabel('Relative error');
-    title(profile+" stratification"); legend('Sampled APV/endpoint products','Fixed boundary representation','Assembled QG tendency',Location='southwest');
+    title(profile+" stratification"); legend('Worst sampled quadratic error','Zero-APV mode resolution error','Nonlinear flux error',Location='southwest');
 end
 sgtitle('QG assessment: 10 km domain, 3 APV modes, both active boundaries');
 exportgraphics(figureHandle,fullfile(outputDirectory,'qg-refinement.png'),Resolution=160);
