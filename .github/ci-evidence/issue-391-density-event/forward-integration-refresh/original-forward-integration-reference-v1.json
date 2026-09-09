@@ -3,8 +3,8 @@
   "schemaVersion": 1,
   "scope": "forward-integration",
   "status": "complete",
-  "sourceCommit": "be09fe473cec08677c608174f523ae93aa79ef58",
-  "provider": "native-fftw",
+  "sourceCommit": "275c553f8fc99404204e10790a7f6edf583aadc6",
+  "provider": "reference",
   "matlabRelease": "2025b",
   "platform": "MACA64",
   "cases": [
@@ -16,7 +16,7 @@
       "passed": true,
       "failed": false,
       "incomplete": false,
-      "provider": "native-fftw",
+      "provider": "reference",
       "scope": "forward-integration",
       "controls": {
         "id": "forward-constant-hydrostatic-cfl-rk4",
@@ -45,120 +45,120 @@
       "outcomes": {
         "whole": [
           {
-            "coefficients": 1.4130865092808159E-16,
-            "fields": 1.2099550303047091E-16,
+            "coefficients": 3.5814456961346891E-16,
+            "fields": 2.4199100606094182E-16,
             "tracer": 0,
             "particlePosition": 0,
-            "savedOutput": 5.6695977382966044E-16,
+            "savedOutput": 1.2779510375149604E-15,
             "heldAmplitude": 0,
             "restoredStateExact": true
           },
           {
-            "coefficients": 1.4130865092808159E-16,
-            "fields": 1.2099550303047091E-16,
+            "coefficients": 3.5814456961346891E-16,
+            "fields": 2.4199100606094182E-16,
             "tracer": 0,
             "particlePosition": 0,
-            "savedOutput": 4.9608980210095291E-16,
+            "savedOutput": 1.2779510375149604E-15,
             "heldAmplitude": 0,
             "restoredStateExact": true
           }
         ],
         "split": [
           {
-            "coefficients": 1.4130865092808159E-16,
-            "fields": 1.2099550303047091E-16,
+            "coefficients": 3.5814456961346891E-16,
+            "fields": 2.4199100606094182E-16,
             "tracer": 0,
             "particlePosition": 0,
-            "savedOutput": 5.6695977382966044E-16,
+            "savedOutput": 1.2779510375149604E-15,
             "heldAmplitude": 0,
             "restoredStateExact": true
           },
           {
-            "coefficients": 1.4130865092808159E-16,
-            "fields": 1.2099550303047091E-16,
+            "coefficients": 3.5814456961346891E-16,
+            "fields": 2.4199100606094182E-16,
             "tracer": 0,
             "particlePosition": 0,
-            "savedOutput": 4.9608980210095291E-16,
+            "savedOutput": 1.2779510375149604E-15,
             "heldAmplitude": 0,
             "restoredStateExact": true
           }
         ],
         "matlabToCpp": [
           {
-            "coefficients": 9.420576728538772E-17,
-            "fields": 1.2099550303047091E-16,
+            "coefficients": 2.0966075011848289E-16,
+            "fields": 2.4199100606094182E-16,
             "tracer": 0,
             "particlePosition": 0,
-            "savedOutput": 5.6695977382966044E-16,
+            "savedOutput": 1.2779510375149604E-15,
             "heldAmplitude": 0,
             "restoredStateExact": true
           },
           {
-            "coefficients": 9.420576728538772E-17,
-            "fields": 1.2099550303047091E-16,
+            "coefficients": 2.0966075011848289E-16,
+            "fields": 2.4199100606094182E-16,
             "tracer": 0,
             "particlePosition": 0,
-            "savedOutput": 4.8398201212188364E-16,
+            "savedOutput": 1.2779510375149604E-15,
             "heldAmplitude": 0,
             "restoredStateExact": true
           }
         ],
         "cppToMatlab": [
           {
-            "coefficients": 9.420576728538772E-17,
-            "fields": 7.8690168428822576E-17,
+            "coefficients": 1.5080280795275616E-16,
+            "fields": 1.7097824531498811E-16,
             "tracer": 0,
             "particlePosition": 0,
-            "savedOutput": 5.6695977382966044E-16,
+            "savedOutput": 1.2779510375149604E-15,
             "heldAmplitude": 0,
             "restoredStateExact": true
           },
           {
-            "coefficients": 9.420576728538772E-17,
-            "fields": 7.8690168428822576E-17,
+            "coefficients": 1.5080280795275616E-16,
+            "fields": 1.7097824531498811E-16,
             "tracer": 0,
             "particlePosition": 0,
-            "savedOutput": 4.9608980210095291E-16,
+            "savedOutput": 1.2779510375149604E-15,
             "heldAmplitude": 0,
             "restoredStateExact": true
           }
         ],
         "stoppedCpp": [
           {
-            "coefficients": 1.4130865092808159E-16,
-            "fields": 1.2099550303047091E-16,
+            "coefficients": 3.5814456961346891E-16,
+            "fields": 2.4199100606094182E-16,
             "tracer": 0,
             "particlePosition": 0,
-            "savedOutput": 5.6695977382966044E-16,
+            "savedOutput": 1.2779510375149604E-15,
             "heldAmplitude": 0,
             "restoredStateExact": true
           },
           {
-            "coefficients": 1.4130865092808159E-16,
-            "fields": 1.2099550303047091E-16,
+            "coefficients": 3.5814456961346891E-16,
+            "fields": 2.4199100606094182E-16,
             "tracer": 0,
             "particlePosition": 0,
-            "savedOutput": 4.9608980210095291E-16,
+            "savedOutput": 1.2779510375149604E-15,
             "heldAmplitude": 0,
             "restoredStateExact": true
           }
         ],
         "stoppedMatlab": [
           {
-            "coefficients": 4.710288364269386E-17,
-            "fields": 3.0248875757617728E-17,
+            "coefficients": 9.420576728538772E-17,
+            "fields": 1.5738033685764515E-16,
             "tracer": 0,
             "particlePosition": 0,
-            "savedOutput": 4.2856968932424842E-16,
+            "savedOutput": 1.2779510375149604E-15,
             "heldAmplitude": 0,
             "restoredStateExact": true
           },
           {
-            "coefficients": 4.710288364269386E-17,
-            "fields": 3.0248875757617728E-17,
+            "coefficients": 9.420576728538772E-17,
+            "fields": 1.5738033685764515E-16,
             "tracer": 0,
             "particlePosition": 0,
-            "savedOutput": 4.2856968932424842E-16,
+            "savedOutput": 1.2779510375149604E-15,
             "heldAmplitude": 0,
             "restoredStateExact": true
           }
@@ -209,8 +209,8 @@
         }
       ],
       "timingSeconds": {
-        "sharedMatlabPreparation": 12.770370041666666,
-        "providerLifecycle": 22.581909416666665
+        "sharedMatlabPreparation": 8.7561612916666665,
+        "providerLifecycle": 20.241440666666666
       },
       "runs": {
         "whole": {
@@ -231,18 +231,18 @@
             "cfl": 0.00098567529984992688,
             "initialStepPolicy": "cfl-requested",
             "candidates": {
-              "horizontalAdvective": 371.56904596640783,
-              "verticalAdvective": 3315.4294694664882,
-              "advective": 371.56904596640783,
+              "horizontalAdvective": 371.56904596640777,
+              "verticalAdvective": 3315.42946946649,
+              "advective": 371.56904596640777,
               "oscillatory": 4,
               "effectiveHorizontalGridResolution": 4250,
-              "maximumHorizontalSpeed": 0.011274136179634598,
+              "maximumHorizontalSpeed": 0.0112741361796346,
               "highestActiveWaveFrequency": 0.0015482951404167235
             },
             "selectedStep": 4,
             "effectiveIntegrationStep": 4,
             "transientWorkspaceMaximumLiveBytes": 10368,
-            "candidateEvaluationSeconds": 0.000502625,
+            "candidateEvaluationSeconds": 0.000386167,
             "noFallback": true
           },
           "termination": {
@@ -288,18 +288,18 @@
             "cfl": 0.00098567529984992688,
             "initialStepPolicy": "cfl-requested",
             "candidates": {
-              "horizontalAdvective": 371.56904596640783,
-              "verticalAdvective": 3315.4294694664882,
-              "advective": 371.56904596640783,
+              "horizontalAdvective": 371.56904596640777,
+              "verticalAdvective": 3315.42946946649,
+              "advective": 371.56904596640777,
               "oscillatory": 4,
               "effectiveHorizontalGridResolution": 4250,
-              "maximumHorizontalSpeed": 0.011274136179634598,
+              "maximumHorizontalSpeed": 0.0112741361796346,
               "highestActiveWaveFrequency": 0.0015482951404167235
             },
             "selectedStep": 4,
             "effectiveIntegrationStep": 4,
             "transientWorkspaceMaximumLiveBytes": 10368,
-            "candidateEvaluationSeconds": 0.013641792,
+            "candidateEvaluationSeconds": 0.00032425,
             "noFallback": true
           },
           "termination": {
@@ -345,18 +345,18 @@
             "cfl": 0.00098567529984992688,
             "initialStepPolicy": "cfl-requested",
             "candidates": {
-              "horizontalAdvective": 371.4093814084523,
+              "horizontalAdvective": 371.40938140845213,
               "verticalAdvective": 3258.9340052596895,
-              "advective": 371.4093814084523,
+              "advective": 371.40938140845213,
               "oscillatory": 4,
               "effectiveHorizontalGridResolution": 4250,
-              "maximumHorizontalSpeed": 0.011278982799185848,
+              "maximumHorizontalSpeed": 0.011278982799185853,
               "highestActiveWaveFrequency": 0.0015482951404167235
             },
             "selectedStep": 4,
             "effectiveIntegrationStep": 4,
             "transientWorkspaceMaximumLiveBytes": 10368,
-            "candidateEvaluationSeconds": 0.000483542,
+            "candidateEvaluationSeconds": 0.000328667,
             "noFallback": true
           },
           "termination": {
@@ -402,18 +402,18 @@
             "cfl": 0.00098567529984992688,
             "initialStepPolicy": "cfl-requested",
             "candidates": {
-              "horizontalAdvective": 371.4093814084523,
+              "horizontalAdvective": 371.40938140845213,
               "verticalAdvective": 3258.9340052596895,
-              "advective": 371.4093814084523,
+              "advective": 371.40938140845213,
               "oscillatory": 4,
               "effectiveHorizontalGridResolution": 4250,
-              "maximumHorizontalSpeed": 0.011278982799185848,
+              "maximumHorizontalSpeed": 0.011278982799185853,
               "highestActiveWaveFrequency": 0.0015482951404167235
             },
             "selectedStep": 4,
             "effectiveIntegrationStep": 4,
             "transientWorkspaceMaximumLiveBytes": 10368,
-            "candidateEvaluationSeconds": 0.000369375,
+            "candidateEvaluationSeconds": 0.000323625,
             "noFallback": true
           },
           "termination": {
@@ -459,18 +459,18 @@
             "cfl": 0.00098567529984992688,
             "initialStepPolicy": "cfl-requested",
             "candidates": {
-              "horizontalAdvective": 371.56904596640783,
-              "verticalAdvective": 3315.4294694664882,
-              "advective": 371.56904596640783,
+              "horizontalAdvective": 371.56904596640777,
+              "verticalAdvective": 3315.42946946649,
+              "advective": 371.56904596640777,
               "oscillatory": 4,
               "effectiveHorizontalGridResolution": 4250,
-              "maximumHorizontalSpeed": 0.011274136179634598,
+              "maximumHorizontalSpeed": 0.0112741361796346,
               "highestActiveWaveFrequency": 0.0015482951404167235
             },
             "selectedStep": 4,
             "effectiveIntegrationStep": 4,
             "transientWorkspaceMaximumLiveBytes": 10368,
-            "candidateEvaluationSeconds": 0.009442834,
+            "candidateEvaluationSeconds": 0.000373917,
             "noFallback": true
           },
           "termination": {
@@ -516,18 +516,18 @@
             "cfl": 0.00098567529984992688,
             "initialStepPolicy": "cfl-requested",
             "candidates": {
-              "horizontalAdvective": 371.51687556966067,
-              "verticalAdvective": 3294.073848894986,
-              "advective": 371.51687556966067,
+              "horizontalAdvective": 371.5168755696605,
+              "verticalAdvective": 3294.0738488949878,
+              "advective": 371.5168755696605,
               "oscillatory": 4,
               "effectiveHorizontalGridResolution": 4250,
-              "maximumHorizontalSpeed": 0.011275719354440779,
+              "maximumHorizontalSpeed": 0.011275719354440784,
               "highestActiveWaveFrequency": 0.0015482951404167235
             },
             "selectedStep": 4,
             "effectiveIntegrationStep": 4,
             "transientWorkspaceMaximumLiveBytes": 10368,
-            "candidateEvaluationSeconds": 0.000363,
+            "candidateEvaluationSeconds": 0.000324125,
             "noFallback": true
           },
           "termination": {
@@ -565,7 +565,7 @@
       "passed": true,
       "failed": false,
       "incomplete": false,
-      "provider": "native-fftw",
+      "provider": "reference",
       "scope": "forward-integration",
       "controls": {
         "id": "forward-constant-nonhydrostatic-rk23",
@@ -593,40 +593,40 @@
       "outcomes": {
         "whole": [
           {
-            "coefficients": 8.8330562210586167E-16,
+            "coefficients": 7.8073924406407095E-16,
             "fields": 1.0257066405618069E-15,
             "tracer": 8.8819898526261742E-16,
             "particlePosition": 2.2737367544323206E-13,
-            "savedOutput": 2.3408572599209439E-15,
+            "savedOutput": 2.6396901016129792E-15,
             "heldAmplitude": 0,
             "restoredStateExact": true
           },
           {
-            "coefficients": 8.8330562210586167E-16,
+            "coefficients": 7.8073924406407095E-16,
             "fields": 1.0257066405618069E-15,
             "tracer": 8.8819898526261742E-16,
             "particlePosition": 2.2737367544323206E-13,
-            "savedOutput": 2.3408572599209439E-15,
+            "savedOutput": 2.4902736807669616E-15,
             "heldAmplitude": 0,
             "restoredStateExact": true
           }
         ],
         "split": [
           {
-            "coefficients": 8.8330562210586167E-16,
+            "coefficients": 7.8073924406407095E-16,
             "fields": 1.0257066405618069E-15,
             "tracer": 8.8819898526261742E-16,
             "particlePosition": 2.2737367544323206E-13,
-            "savedOutput": 2.3408572599209439E-15,
+            "savedOutput": 2.6396901016129792E-15,
             "heldAmplitude": 0,
             "restoredStateExact": true
           },
           {
-            "coefficients": 8.8330562210586167E-16,
+            "coefficients": 7.8073924406407095E-16,
             "fields": 1.0257066405618069E-15,
             "tracer": 8.8819898526261742E-16,
             "particlePosition": 2.2737367544323206E-13,
-            "savedOutput": 2.3408572599209439E-15,
+            "savedOutput": 2.4902736807669616E-15,
             "heldAmplitude": 0,
             "restoredStateExact": true
           }
@@ -637,7 +637,7 @@
             "fields": 5.1285332028090344E-16,
             "tracer": 5.5512436578913586E-16,
             "particlePosition": 1.1368683772161603E-13,
-            "savedOutput": 9.0826628109196152E-16,
+            "savedOutput": 1.4481666120377169E-15,
             "heldAmplitude": 0,
             "restoredStateExact": true
           },
@@ -646,7 +646,7 @@
             "fields": 5.1285332028090344E-16,
             "tracer": 5.5512436578913586E-16,
             "particlePosition": 1.1368683772161603E-13,
-            "savedOutput": 9.0826628109196152E-16,
+            "savedOutput": 1.4481666120377169E-15,
             "heldAmplitude": 0,
             "restoredStateExact": true
           }
@@ -657,7 +657,7 @@
             "fields": 6.8380442704120449E-16,
             "tracer": 5.5512436578913586E-16,
             "particlePosition": 1.1368683772161603E-13,
-            "savedOutput": 2.0420244182289083E-15,
+            "savedOutput": 1.8926079973828906E-15,
             "heldAmplitude": 0,
             "restoredStateExact": true
           },
@@ -666,27 +666,27 @@
             "fields": 6.8380442704120449E-16,
             "tracer": 5.5512436578913586E-16,
             "particlePosition": 1.1368683772161603E-13,
-            "savedOutput": 2.0420244182289083E-15,
+            "savedOutput": 1.8926079973828906E-15,
             "heldAmplitude": 0,
             "restoredStateExact": true
           }
         ],
         "stoppedCpp": [
           {
-            "coefficients": 8.8330562210586167E-16,
+            "coefficients": 7.8073924406407095E-16,
             "fields": 1.0257066405618069E-15,
             "tracer": 8.8819898526261742E-16,
             "particlePosition": 2.2737367544323206E-13,
-            "savedOutput": 2.3408572599209439E-15,
+            "savedOutput": 2.6396901016129792E-15,
             "heldAmplitude": 0,
             "restoredStateExact": true
           },
           {
-            "coefficients": 8.8330562210586167E-16,
+            "coefficients": 7.8073924406407095E-16,
             "fields": 1.0257066405618069E-15,
             "tracer": 8.8819898526261742E-16,
             "particlePosition": 2.2737367544323206E-13,
-            "savedOutput": 2.3408572599209439E-15,
+            "savedOutput": 2.4902736807669616E-15,
             "heldAmplitude": 0,
             "restoredStateExact": true
           }
@@ -697,7 +697,7 @@
             "fields": 4.2934637577590438E-16,
             "tracer": 3.3307461947348156E-16,
             "particlePosition": 1.1368683772161603E-13,
-            "savedOutput": 1.1953313667681416E-15,
+            "savedOutput": 1.2980663516272586E-15,
             "heldAmplitude": 0,
             "restoredStateExact": true
           },
@@ -706,7 +706,7 @@
             "fields": 4.2934637577590438E-16,
             "tracer": 3.3307461947348156E-16,
             "particlePosition": 1.1368683772161603E-13,
-            "savedOutput": 1.1953313667681416E-15,
+            "savedOutput": 1.192607798148708E-15,
             "heldAmplitude": 0,
             "restoredStateExact": true
           }
@@ -757,8 +757,8 @@
         }
       ],
       "timingSeconds": {
-        "sharedMatlabPreparation": 5.8612565416666671,
-        "providerLifecycle": 46.396165083333337
+        "sharedMatlabPreparation": 4.9431557916666664,
+        "providerLifecycle": 16.038235333333333
       },
       "runs": {
         "whole": {
@@ -1113,7 +1113,7 @@
       "passed": true,
       "failed": false,
       "incomplete": false,
-      "provider": "native-fftw",
+      "provider": "reference",
       "scope": "forward-integration",
       "controls": {
         "id": "forward-barotropic-qg-rk45",
@@ -1145,7 +1145,7 @@
             "fields": 6.6207186851837E-16,
             "tracer": 1.3322725864145818E-15,
             "particlePosition": 1.8189894035458565E-12,
-            "savedOutput": 1.4432899320127035E-15,
+            "savedOutput": 2.5124320840007638E-15,
             "heldAmplitude": 0,
             "restoredStateExact": true
           },
@@ -1154,7 +1154,7 @@
             "fields": 6.6207186851837E-16,
             "tracer": 1.3322725864145818E-15,
             "particlePosition": 1.8189894035458565E-12,
-            "savedOutput": 1.3322676295501878E-15,
+            "savedOutput": 2.5124320840007638E-15,
             "heldAmplitude": 0,
             "restoredStateExact": true
           }
@@ -1165,7 +1165,7 @@
             "fields": 6.6207186851837E-16,
             "tracer": 1.3322725864145818E-15,
             "particlePosition": 1.8189894035458565E-12,
-            "savedOutput": 1.4432899320127035E-15,
+            "savedOutput": 2.5124320840007638E-15,
             "heldAmplitude": 0,
             "restoredStateExact": true
           },
@@ -1174,7 +1174,7 @@
             "fields": 6.6207186851837E-16,
             "tracer": 1.3322725864145818E-15,
             "particlePosition": 1.8189894035458565E-12,
-            "savedOutput": 1.3322676295501878E-15,
+            "savedOutput": 2.5124320840007638E-15,
             "heldAmplitude": 0,
             "restoredStateExact": true
           }
@@ -1185,7 +1185,7 @@
             "fields": 5.2965749481469605E-16,
             "tracer": 7.771590087418394E-16,
             "particlePosition": 5.6843418860808015E-14,
-            "savedOutput": 1.2893092181336626E-15,
+            "savedOutput": 2.3801988164217764E-15,
             "heldAmplitude": 0,
             "restoredStateExact": true
           },
@@ -1194,7 +1194,7 @@
             "fields": 5.2965749481469605E-16,
             "tracer": 7.771590087418394E-16,
             "particlePosition": 5.6843418860808015E-14,
-            "savedOutput": 1.0744243484447189E-15,
+            "savedOutput": 2.3801988164217764E-15,
             "heldAmplitude": 0,
             "restoredStateExact": true
           }
@@ -1205,7 +1205,7 @@
             "fields": 2.6009387726167067E-16,
             "tracer": 7.771590087418394E-16,
             "particlePosition": 1.8189894035458565E-12,
-            "savedOutput": 9.976296852406829E-16,
+            "savedOutput": 2.0165573305795606E-15,
             "heldAmplitude": 0,
             "restoredStateExact": true
           },
@@ -1214,7 +1214,7 @@
             "fields": 2.6009387726167067E-16,
             "tracer": 7.771590087418394E-16,
             "particlePosition": 1.8189894035458565E-12,
-            "savedOutput": 9.976296852406829E-16,
+            "savedOutput": 2.0165573305795606E-15,
             "heldAmplitude": 0,
             "restoredStateExact": true
           }
@@ -1225,7 +1225,7 @@
             "fields": 6.6207186851837E-16,
             "tracer": 1.3322725864145818E-15,
             "particlePosition": 1.8189894035458565E-12,
-            "savedOutput": 1.4432899320127035E-15,
+            "savedOutput": 2.5124320840007638E-15,
             "heldAmplitude": 0,
             "restoredStateExact": true
           },
@@ -1234,7 +1234,7 @@
             "fields": 6.6207186851837E-16,
             "tracer": 1.3322725864145818E-15,
             "particlePosition": 1.8189894035458565E-12,
-            "savedOutput": 1.3322676295501878E-15,
+            "savedOutput": 2.5124320840007638E-15,
             "heldAmplitude": 0,
             "restoredStateExact": true
           }
@@ -1245,7 +1245,7 @@
             "fields": 3.3936397403578836E-16,
             "tracer": 3.3306814660364545E-16,
             "particlePosition": 9.0949470177292824E-13,
-            "savedOutput": 4.8917775001666252E-16,
+            "savedOutput": 1.8843240630005727E-15,
             "heldAmplitude": 0,
             "restoredStateExact": true
           },
@@ -1254,7 +1254,7 @@
             "fields": 3.3936397403578836E-16,
             "tracer": 3.3306814660364545E-16,
             "particlePosition": 9.0949470177292824E-13,
-            "savedOutput": 4.8917775001666252E-16,
+            "savedOutput": 1.8843240630005727E-15,
             "heldAmplitude": 0,
             "restoredStateExact": true
           }
@@ -1305,8 +1305,8 @@
         }
       ],
       "timingSeconds": {
-        "sharedMatlabPreparation": 8.78609025,
-        "providerLifecycle": 23.910497666666668
+        "sharedMatlabPreparation": 3.5499881666666666,
+        "providerLifecycle": 10.312931208333334
       },
       "runs": {
         "whole": {
@@ -1643,7 +1643,7 @@
       "passed": true,
       "failed": false,
       "incomplete": false,
-      "provider": "native-fftw",
+      "provider": "reference",
       "scope": "forward-integration",
       "controls": {
         "id": "forward-stratified-qg-rk45",
@@ -1675,7 +1675,7 @@
             "fields": 1.1229037321661902E-15,
             "tracer": 1.4432625275453682E-15,
             "particlePosition": 3.979039320256561E-13,
-            "savedOutput": 1.9197105382685439E-15,
+            "savedOutput": 2.2041441183469735E-15,
             "heldAmplitude": 0,
             "restoredStateExact": true
           },
@@ -1684,7 +1684,7 @@
             "fields": 1.1229037321661902E-15,
             "tracer": 1.4432625275453682E-15,
             "particlePosition": 3.979039320256561E-13,
-            "savedOutput": 1.6943054076486255E-15,
+            "savedOutput": 2.2041441183469735E-15,
             "heldAmplitude": 0,
             "restoredStateExact": true
           }
@@ -1695,7 +1695,7 @@
             "fields": 1.1229037321661902E-15,
             "tracer": 1.4432625275453682E-15,
             "particlePosition": 3.979039320256561E-13,
-            "savedOutput": 1.9197105382685439E-15,
+            "savedOutput": 2.2041441183469735E-15,
             "heldAmplitude": 0,
             "restoredStateExact": true
           },
@@ -1704,7 +1704,7 @@
             "fields": 1.1229037321661902E-15,
             "tracer": 1.4432625275453682E-15,
             "particlePosition": 3.979039320256561E-13,
-            "savedOutput": 1.6943054076486255E-15,
+            "savedOutput": 2.2041441183469735E-15,
             "heldAmplitude": 0,
             "restoredStateExact": true
           }
@@ -1715,7 +1715,7 @@
             "fields": 7.145751022875756E-16,
             "tracer": 7.7714136098596756E-16,
             "particlePosition": 1.1368683772161603E-13,
-            "savedOutput": 1.7064093673498166E-15,
+            "savedOutput": 2.0152174796315188E-15,
             "heldAmplitude": 0,
             "restoredStateExact": true
           },
@@ -1724,7 +1724,7 @@
             "fields": 7.145751022875756E-16,
             "tracer": 7.7714136098596756E-16,
             "particlePosition": 1.1368683772161603E-13,
-            "savedOutput": 1.0665058545936355E-15,
+            "savedOutput": 2.0152174796315188E-15,
             "heldAmplitude": 0,
             "restoredStateExact": true
           }
@@ -1735,7 +1735,7 @@
             "fields": 5.10931992600757E-16,
             "tracer": 1.1102019442656679E-15,
             "particlePosition": 2.8421709430404007E-13,
-            "savedOutput": 1.3322423331188015E-15,
+            "savedOutput": 1.9522419333930339E-15,
             "heldAmplitude": 0,
             "restoredStateExact": true
           },
@@ -1744,7 +1744,7 @@
             "fields": 5.10931992600757E-16,
             "tracer": 1.1102019442656679E-15,
             "particlePosition": 2.8421709430404007E-13,
-            "savedOutput": 1.1102019442656679E-15,
+            "savedOutput": 1.9522419333930339E-15,
             "heldAmplitude": 0,
             "restoredStateExact": true
           }
@@ -1755,7 +1755,7 @@
             "fields": 1.1229037321661902E-15,
             "tracer": 1.4432625275453682E-15,
             "particlePosition": 3.979039320256561E-13,
-            "savedOutput": 1.9197105382685439E-15,
+            "savedOutput": 2.2041441183469735E-15,
             "heldAmplitude": 0,
             "restoredStateExact": true
           },
@@ -1764,7 +1764,7 @@
             "fields": 1.1229037321661902E-15,
             "tracer": 1.4432625275453682E-15,
             "particlePosition": 3.979039320256561E-13,
-            "savedOutput": 1.6943054076486255E-15,
+            "savedOutput": 2.2041441183469735E-15,
             "heldAmplitude": 0,
             "restoredStateExact": true
           }
@@ -1775,7 +1775,7 @@
             "fields": 4.0832862987861464E-16,
             "tracer": 4.4408077770626718E-16,
             "particlePosition": 0,
-            "savedOutput": 6.3536452786823456E-16,
+            "savedOutput": 1.8892663871545486E-15,
             "heldAmplitude": 0,
             "restoredStateExact": true
           },
@@ -1784,7 +1784,7 @@
             "fields": 4.0832862987861464E-16,
             "tracer": 4.4408077770626718E-16,
             "particlePosition": 0,
-            "savedOutput": 6.3536452786823456E-16,
+            "savedOutput": 1.8892663871545486E-15,
             "heldAmplitude": 0,
             "restoredStateExact": true
           }
@@ -1835,8 +1835,8 @@
         }
       ],
       "timingSeconds": {
-        "sharedMatlabPreparation": 10.77424375,
-        "providerLifecycle": 36.428849458333332
+        "sharedMatlabPreparation": 5.4858950416666667,
+        "providerLifecycle": 17.636245625
       },
       "runs": {
         "whole": {
@@ -2191,7 +2191,7 @@
       "passed": true,
       "failed": false,
       "incomplete": false,
-      "provider": "native-fftw",
+      "provider": "reference",
       "scope": "forward-integration",
       "controls": {
         "id": "forward-hydrostatic-rk45",
@@ -2263,7 +2263,7 @@
             "fields": 6.4319328990530386E-16,
             "tracer": 9.9918281918806835E-16,
             "particlePosition": 2.8421709430404007E-13,
-            "savedOutput": 1.5200972982402384E-15,
+            "savedOutput": 1.6010131165645184E-15,
             "heldAmplitude": 0,
             "restoredStateExact": true
           },
@@ -2272,7 +2272,7 @@
             "fields": 6.4319328990530386E-16,
             "tracer": 9.9918281918806835E-16,
             "particlePosition": 2.8421709430404007E-13,
-            "savedOutput": 1.5200972982402384E-15,
+            "savedOutput": 1.6010131165645184E-15,
             "heldAmplitude": 0,
             "restoredStateExact": true
           }
@@ -2283,7 +2283,7 @@
             "fields": 6.8961884266903116E-16,
             "tracer": 6.6612187945871226E-16,
             "particlePosition": 4.5474735088646412E-13,
-            "savedOutput": 1.5542843854036618E-15,
+            "savedOutput": 1.76111442822097E-15,
             "heldAmplitude": 0,
             "restoredStateExact": true
           },
@@ -2292,7 +2292,7 @@
             "fields": 6.8961884266903116E-16,
             "tracer": 6.6612187945871226E-16,
             "particlePosition": 4.5474735088646412E-13,
-            "savedOutput": 1.4308218285896718E-15,
+            "savedOutput": 1.76111442822097E-15,
             "heldAmplitude": 0,
             "restoredStateExact": true
           }
@@ -2323,7 +2323,7 @@
             "fields": 5.3047603282233164E-16,
             "tracer": 4.4408125297247481E-16,
             "particlePosition": 2.2737367544323206E-13,
-            "savedOutput": 8.678524343377665E-16,
+            "savedOutput": 1.7077473243354861E-15,
             "heldAmplitude": 0,
             "restoredStateExact": true
           },
@@ -2332,7 +2332,7 @@
             "fields": 5.3047603282233164E-16,
             "tracer": 4.4408125297247481E-16,
             "particlePosition": 2.2737367544323206E-13,
-            "savedOutput": 8.678524343377665E-16,
+            "savedOutput": 1.7077473243354861E-15,
             "heldAmplitude": 0,
             "restoredStateExact": true
           }
@@ -2383,8 +2383,8 @@
         }
       ],
       "timingSeconds": {
-        "sharedMatlabPreparation": 15.266396583333334,
-        "providerLifecycle": 26.966323208333332
+        "sharedMatlabPreparation": 7.201424375,
+        "providerLifecycle": 21.906949375
       },
       "runs": {
         "whole": {
@@ -2739,7 +2739,7 @@
       "passed": true,
       "failed": false,
       "incomplete": false,
-      "provider": "native-fftw",
+      "provider": "reference",
       "scope": "forward-integration",
       "controls": {
         "id": "forward-boussinesq-rk45",
@@ -2767,7 +2767,7 @@
       "outcomes": {
         "whole": [
           {
-            "coefficients": 1.567668816421573E-15,
+            "coefficients": 1.5514471209425781E-15,
             "fields": 7.500610107253097E-16,
             "tracer": 1.5542843697317047E-15,
             "particlePosition": 4.5474735088646412E-13,
@@ -2776,7 +2776,7 @@
             "restoredStateExact": true
           },
           {
-            "coefficients": 1.567668816421573E-15,
+            "coefficients": 1.5514471209425781E-15,
             "fields": 7.500610107253097E-16,
             "tracer": 1.5542843697317047E-15,
             "particlePosition": 4.5474735088646412E-13,
@@ -2787,7 +2787,7 @@
         ],
         "split": [
           {
-            "coefficients": 1.567668816421573E-15,
+            "coefficients": 1.5514471209425781E-15,
             "fields": 7.500610107253097E-16,
             "tracer": 1.5542843697317047E-15,
             "particlePosition": 4.5474735088646412E-13,
@@ -2796,7 +2796,7 @@
             "restoredStateExact": true
           },
           {
-            "coefficients": 1.567668816421573E-15,
+            "coefficients": 1.5514471209425781E-15,
             "fields": 7.500610107253097E-16,
             "tracer": 1.5542843697317047E-15,
             "particlePosition": 4.5474735088646412E-13,
@@ -2811,7 +2811,7 @@
             "fields": 8.5721258368606825E-16,
             "tracer": 8.8816249698954562E-16,
             "particlePosition": 2.2737367544323206E-13,
-            "savedOutput": 1.3017786515066499E-15,
+            "savedOutput": 1.6006287989914011E-15,
             "heldAmplitude": 0,
             "restoredStateExact": true
           },
@@ -2820,7 +2820,7 @@
             "fields": 8.5721258368606825E-16,
             "tracer": 8.8816249698954562E-16,
             "particlePosition": 2.2737367544323206E-13,
-            "savedOutput": 1.0848155429222082E-15,
+            "savedOutput": 1.6006287989914011E-15,
             "heldAmplitude": 0,
             "restoredStateExact": true
           }
@@ -2831,7 +2831,7 @@
             "fields": 5.3575786480379259E-16,
             "tracer": 7.7714218486585237E-16,
             "particlePosition": 2.2737367544323206E-13,
-            "savedOutput": 9.5304679180235169E-16,
+            "savedOutput": 1.8674002654899677E-15,
             "heldAmplitude": 0,
             "restoredStateExact": true
           },
@@ -2840,14 +2840,14 @@
             "fields": 5.3575786480379259E-16,
             "tracer": 7.7714218486585237E-16,
             "particlePosition": 2.2737367544323206E-13,
-            "savedOutput": 8.678524343377665E-16,
+            "savedOutput": 1.8674002654899677E-15,
             "heldAmplitude": 0,
             "restoredStateExact": true
           }
         ],
         "stoppedCpp": [
           {
-            "coefficients": 1.567668816421573E-15,
+            "coefficients": 1.5514471209425781E-15,
             "fields": 7.500610107253097E-16,
             "tracer": 1.5542843697317047E-15,
             "particlePosition": 4.5474735088646412E-13,
@@ -2856,7 +2856,7 @@
             "restoredStateExact": true
           },
           {
-            "coefficients": 1.567668816421573E-15,
+            "coefficients": 1.5514471209425781E-15,
             "fields": 7.500610107253097E-16,
             "tracer": 1.5542843697317047E-15,
             "particlePosition": 4.5474735088646412E-13,
@@ -2871,7 +2871,7 @@
             "fields": 5.257825384230616E-16,
             "tracer": 4.4408124849477281E-16,
             "particlePosition": 1.1368683772161603E-13,
-            "savedOutput": 6.3536452786823456E-16,
+            "savedOutput": 1.6006287989914011E-15,
             "heldAmplitude": 0,
             "restoredStateExact": true
           },
@@ -2880,7 +2880,7 @@
             "fields": 5.257825384230616E-16,
             "tracer": 4.4408124849477281E-16,
             "particlePosition": 1.1368683772161603E-13,
-            "savedOutput": 6.3357260355126857E-16,
+            "savedOutput": 1.6006287989914011E-15,
             "heldAmplitude": 0,
             "restoredStateExact": true
           }
@@ -2931,8 +2931,8 @@
         }
       ],
       "timingSeconds": {
-        "sharedMatlabPreparation": 10.128464375,
-        "providerLifecycle": 30.974039625
+        "sharedMatlabPreparation": 7.883782375,
+        "providerLifecycle": 24.21751175
       },
       "runs": {
         "whole": {
@@ -3311,7 +3311,7 @@
     },
     {
       "path": "PortableRuntime/src/WVFieldEvaluationService.cpp",
-      "sha256": "5e27d6eee575b78539419cd212bafed2ce7a924cd5dfcccdcd9fb802adac72ca"
+      "sha256": "a4ab050de655e7a36fa2f9e6b7580e1a9b84e6953c4c54e421b7fd3514968c80"
     },
     {
       "path": "PortableRuntime/src/WVStratifiedFieldEvaluationAdapter.cpp",
@@ -3336,46 +3336,46 @@
   ],
   "buildSource": {
     "root": "/Users/jearly/Documents/OceanKitRepositories/wvm-v4-cpp-adoption-audit",
-    "commit": "be09fe473cec08677c608174f523ae93aa79ef58"
+    "commit": "ce0b55289ec6346f2af8f8d6b0246570d6f9a7b3"
   },
   "executionBinaries": [
     {
       "role": "runner",
       "path": "/private/tmp/wvm-v4-audit-runtime/wave-vortex-run",
-      "sha256": "990de02d401caa4bb6c05f5b832c331e81f6aa8dffede058c42c49097f60b8fe",
-      "sourceCommit": "be09fe473cec08677c608174f523ae93aa79ef58"
+      "sha256": "82e9e1c79a9b8fecc0ece070a0986c73a42d5825345c9a3ca07dadf3c09566e4",
+      "sourceCommit": "ce0b55289ec6346f2af8f8d6b0246570d6f9a7b3"
     },
     {
       "role": "probe",
       "path": "/private/tmp/wvm-v4-audit-runtime/WVForwardIntegrationProbe",
-      "sha256": "9a8ab8a657f858c772e684da2efc294aa6a992421dcc17781e22903f5f58fa65",
-      "sourceCommit": "be09fe473cec08677c608174f523ae93aa79ef58"
+      "sha256": "c84acf14c62f0a63ae72e57776c94f1306f3dc0a8472817ea198c8326e977dc6",
+      "sourceCommit": "ce0b55289ec6346f2af8f8d6b0246570d6f9a7b3"
     }
   ],
   "artifacts": [
     {
-      "path": "PortableRuntime/qualification/forward-integration-evidence-v1/forward-constant-hydrostatic-cfl-rk4-native-fftw-6a88a4eb58a34a09e7d4568730eb50c1f88c00d97b0bdd4720dcbf7f26188f4f.json",
-      "sha256": "6a88a4eb58a34a09e7d4568730eb50c1f88c00d97b0bdd4720dcbf7f26188f4f"
+      "path": "PortableRuntime/qualification/forward-integration-evidence-v1/forward-constant-hydrostatic-cfl-rk4-reference-9dc1fbbe648c5adc3b388b904820932b981bfd7b717cd34b8a7b0f83a8f56fcc.json",
+      "sha256": "9dc1fbbe648c5adc3b388b904820932b981bfd7b717cd34b8a7b0f83a8f56fcc"
     },
     {
-      "path": "PortableRuntime/qualification/forward-integration-evidence-v1/forward-constant-nonhydrostatic-rk23-native-fftw-6a677487435c54757346700de6626b27592a1fab3be0cc1a0b0dbb398eb7e38d.json",
-      "sha256": "6a677487435c54757346700de6626b27592a1fab3be0cc1a0b0dbb398eb7e38d"
+      "path": "PortableRuntime/qualification/forward-integration-evidence-v1/forward-constant-nonhydrostatic-rk23-reference-34896268285e1b5ea9f7f773a2404fdbb7fd947ab6aea5316081150a9ca5b848.json",
+      "sha256": "34896268285e1b5ea9f7f773a2404fdbb7fd947ab6aea5316081150a9ca5b848"
     },
     {
-      "path": "PortableRuntime/qualification/forward-integration-evidence-v1/forward-barotropic-qg-rk45-native-fftw-2d34b5f7859219643dfacac7cfa28dc907dc6a3f6b37a70a03bbd79fd773d9cb.json",
-      "sha256": "2d34b5f7859219643dfacac7cfa28dc907dc6a3f6b37a70a03bbd79fd773d9cb"
+      "path": "PortableRuntime/qualification/forward-integration-evidence-v1/forward-barotropic-qg-rk45-reference-9f66c3ef11fae3c8286addd561dad2b11463b8c86e08ed0c975d1b4e1e385d75.json",
+      "sha256": "9f66c3ef11fae3c8286addd561dad2b11463b8c86e08ed0c975d1b4e1e385d75"
     },
     {
-      "path": "PortableRuntime/qualification/forward-integration-evidence-v1/forward-stratified-qg-rk45-native-fftw-094a32a3f2e182f524bd1c7f9ae4ed5e199ea57c5c2763c38196ed86abd8ea50.json",
-      "sha256": "094a32a3f2e182f524bd1c7f9ae4ed5e199ea57c5c2763c38196ed86abd8ea50"
+      "path": "PortableRuntime/qualification/forward-integration-evidence-v1/forward-stratified-qg-rk45-reference-b6ac93bf186eca9e3bea17ccc21511ed640f31a7261d72ca90208a67064a9a76.json",
+      "sha256": "b6ac93bf186eca9e3bea17ccc21511ed640f31a7261d72ca90208a67064a9a76"
     },
     {
-      "path": "PortableRuntime/qualification/forward-integration-evidence-v1/forward-hydrostatic-rk45-native-fftw-55a390c21d67b6f96387cacc16a4195e6e05bbaaf9a601ff9707d40ceb910523.json",
-      "sha256": "55a390c21d67b6f96387cacc16a4195e6e05bbaaf9a601ff9707d40ceb910523"
+      "path": "PortableRuntime/qualification/forward-integration-evidence-v1/forward-hydrostatic-rk45-reference-7f479975c323a974f11028dddfe2778d8b37413d19e7d02011b721efae03b07d.json",
+      "sha256": "7f479975c323a974f11028dddfe2778d8b37413d19e7d02011b721efae03b07d"
     },
     {
-      "path": "PortableRuntime/qualification/forward-integration-evidence-v1/forward-boussinesq-rk45-native-fftw-d0c74c29435bae0d0a1cf0554330b4a479deb2073be1531089069a229358bbb0.json",
-      "sha256": "d0c74c29435bae0d0a1cf0554330b4a479deb2073be1531089069a229358bbb0"
+      "path": "PortableRuntime/qualification/forward-integration-evidence-v1/forward-boussinesq-rk45-reference-52febf1b02721706839b6c5e8e918a06b212a9104519b628ce50d1bbf185eb3a.json",
+      "sha256": "52febf1b02721706839b6c5e8e918a06b212a9104519b628ce50d1bbf185eb3a"
     }
   ],
   "catalogSHA256": "c9b669fa92d5556526ce9cefac8b9847f52c1ea15c8ab3b00db0f3454adfaef9"

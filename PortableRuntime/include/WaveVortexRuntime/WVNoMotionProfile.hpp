@@ -16,9 +16,13 @@ public:
   // owns the inputs and derived cubic coefficients; failure leaves output
   // unchanged. Finite inputs whose normalization or interpolation arithmetic
   // is not representable are rejected with numericalFailure.
+  // Optional workspace reporting records the peak candidate and temporary
+  // vector capacities, including partial allocation before failure. It excludes
+  // borrowed inputs, the previous output object, and allocator/object metadata.
   static WVKernelStatus create(const std::vector<double> &heights,
                                const std::vector<double> &densities,
-                               WVNoMotionProfile &output);
+                               WVNoMotionProfile &output,
+                               std::size_t *creationWorkspaceBytes = nullptr);
 
   // Queries allocate no workspace and leave their output unchanged on failure.
   // Heights are restricted to the closed profile domain. Inverse density may

@@ -34,7 +34,10 @@ double polynomial(const std::array<double, 4> &c, double x) {
 
 WVKernelStatus WVNoMotionProfile::create(const std::vector<double> &heights,
                                          const std::vector<double> &densities,
-                                         WVNoMotionProfile &output) {
+                                         WVNoMotionProfile &output,
+                                         std::size_t *creationWorkspaceBytes) {
+  if (creationWorkspaceBytes)
+    *creationWorkspaceBytes = 0;
   const auto count = heights.size();
   if (count < 2 || count != densities.size())
     return {WVKernelStatusCode::invalidShape,
@@ -48,6 +51,13 @@ WVKernelStatus WVNoMotionProfile::create(const std::vector<double> &heights,
   }
   try {
     WVNoMotionProfile candidate;
+    std::vector<double> widths, secants, slopes;
+    const auto account = [&]() {
+      if (creationWorkspaceBytes)
+        *creationWorkspaceBytes = std::max(*creationWorkspaceBytes,
+            candidate.retainedBytes() - sizeof(candidate) + sizeof(double) *
+                (widths.capacity() + secants.capacity() + slopes.capacity()));
+    };
     candidate.densityOffset_ = densities.back();
     candidate.densityScale_ = densities.front() - densities.back();
     const double span = heights.back() - heights.front();
@@ -61,10 +71,19 @@ WVKernelStatus WVNoMotionProfile::create(const std::vector<double> &heights,
                                std::abs(densities.back())));
     candidate.heightTolerance_ = 8.0 * spacing(heightMagnitude);
     candidate.heights_ = heights;
+    account();
     candidate.densities_ = densities;
+    account();
     candidate.normalizedDensity_.resize(count);
+    account();
     candidate.coefficients_.resize(count - 1);
-    std::vector<double> widths(count - 1), secants(count - 1), slopes(count);
+    account();
+    widths.resize(count - 1);
+    account();
+    secants.resize(count - 1);
+    account();
+    slopes.resize(count);
+    account();
     for (std::size_t i = 0; i < count; ++i) {
       const double normalized =
           (densities[i] - candidate.densityOffset_) / candidate.densityScale_;

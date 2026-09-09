@@ -1,0 +1,974 @@
+[Warning: Directory access failure: /Users/jearly/Documents/MATLAB]
+CI package: Distributions 2.0.0 (/Users/jearly/Documents/OceanKitRepositories/OceanKit/Distributions-2.0.0)
+CI package: SplineCore 2.2.0 (/Users/jearly/Documents/OceanKitRepositories/OceanKit/SplineCore-2.2.0)
+CI package: chebfun 5.7.0 (/Users/jearly/Documents/OceanKitRepositories/OceanKit/chebfun-5.7.0)
+CI package: InternalModes 1.3.0 (/Users/jearly/Documents/OceanKitRepositories/OceanKit/InternalModes-1.3.0)
+CI package: NetCDF 1.0.2 (/Users/jearly/Documents/OceanKitRepositories/OceanKit/NetCDF-1.0.2)
+CI package: ClassAnnotations 1.2.1 (/Users/jearly/Documents/OceanKitRepositories/OceanKit/ClassAnnotations-1.2.1)
+CI package: ClassDocumentation 1.3.2 (/Users/jearly/Documents/OceanKitRepositories/OceanKit/ClassDocumentation-1.3.2)
+CI package: WaveVortexModel 4.3.0 (/Users/jearly/Documents/OceanKitRepositories/wvm-v4-cpp-adoption-audit)
+Running TestPortableForwardIntegration
+BLAS: trying environment BLAS_VERSION...
+BLAS: loading libmwAF_BLAS_ilp64.dylib
+BLAS: loaded libmwAF_BLAS_ilp64.dylib@0x927ab8b0
+dX/U = 376969.0 s (6282.8 min). dZ/W = 3363612.2 s (56060.2 min). The highest frequency resolved IGW has period of 4058.1 s (67.6 min).
+Ending simulation. Wrote 1 time points to wave-vortex group
+Ending simulation. Wrote 1 time points to dense group
+Ending simulation. Wrote 1 time points to wave-vortex group
+Ending simulation. Wrote 1 time points to dense group
+WVTransformConstantStratification initialized from Ap, Am, A0.
+Ending simulation. Wrote 25 time points to wave-vortex group
+Ending simulation. Wrote 25 time points to dense group
+WVTransformConstantStratification initialized from Ap, Am, A0.
+Ending simulation. Wrote 13 time points to wave-vortex group
+Ending simulation. Wrote 13 time points to dense group
+WVTransformConstantStratification initialized from Ap, Am, A0.
+Ending simulation. Wrote 25 time points to wave-vortex group
+Ending simulation. Wrote 25 time points to dense group
+WVTransformConstantStratification initialized from Ap, Am, A0.
+Ending simulation. Wrote 7 time points to wave-vortex group
+Ending simulation. Wrote 25 time points to dense group
+WVTransformConstantStratification initialized from Ap, Am, A0.
+Ending simulation. Wrote 4 time points to wave-vortex group
+Ending simulation. Wrote 13 time points to dense group
+WVTransformConstantStratification initialized from Ap, Am, A0.
+Ending simulation. Wrote 7 time points to wave-vortex group
+Ending simulation. Wrote 25 time points to dense group
+WVTransformConstantStratification initialized from Ap, Am, A0.
+Ending simulation. Wrote 25 time points to wave-vortex group
+Ending simulation. Wrote 25 time points to dense group
+WARNING: package sun.awt.X11 not in java.desktop
+WARNING: package sun.awt.X11 not in java.desktop
+WVTransformConstantStratification initialized from Ap, Am, A0.
+Ending simulation. Wrote 13 time points to wave-vortex group
+Ending simulation. Wrote 13 time points to dense group
+WVTransformConstantStratification initialized from Ap, Am, A0.
+Ending simulation. Wrote 25 time points to wave-vortex group
+Ending simulation. Wrote 25 time points to dense group
+WVTransformConstantStratification initialized from Ap, Am, A0.
+Ending simulation. Wrote 4 time points to wave-vortex group
+Ending simulation. Wrote 13 time points to dense group
+WVTransformConstantStratification initialized from Ap, Am, A0.
+Ending simulation. Wrote 7 time points to wave-vortex group
+Ending simulation. Wrote 25 time points to dense group
+WVTransformConstantStratification initialized from Ap, Am, A0.
+Ending simulation. Wrote 5 time points to wave-vortex group
+Ending simulation. Wrote 5 time points to dense group
+WVTransformConstantStratification initialized from Ap, Am, A0.
+Ending simulation. Wrote 25 time points to wave-vortex group
+Ending simulation. Wrote 25 time points to dense group
+WVTransformConstantStratification initialized from Ap, Am, A0.
+Ending simulation. Wrote 2 time points to wave-vortex group
+Ending simulation. Wrote 5 time points to dense group
+WVTransformConstantStratification initialized from Ap, Am, A0.
+Ending simulation. Wrote 7 time points to wave-vortex group
+Ending simulation. Wrote 25 time points to dense group
+WVTransformConstantStratification initialized from Ap, Am, A0.
+Ending simulation. Wrote 25 time points to wave-vortex group
+Ending simulation. Wrote 25 time points to dense group
+WVTransformConstantStratification initialized from Ap, Am, A0.
+Ending simulation. Wrote 7 time points to wave-vortex group
+Ending simulation. Wrote 25 time points to dense group
+WVTransformConstantStratification initialized from Ap, Am, A0.
+Ending simulation. Wrote 25 time points to wave-vortex group
+Ending simulation. Wrote 25 time points to dense group
+WVTransformConstantStratification initialized from Ap, Am, A0.
+Ending simulation. Wrote 7 time points to wave-vortex group
+Ending simulation. Wrote 25 time points to dense group
+WVTransformConstantStratification initialized from Ap, Am, A0.
+Ending simulation. Wrote 25 time points to wave-vortex group
+Ending simulation. Wrote 25 time points to dense group
+WVTransformConstantStratification initialized from Ap, Am, A0.
+Ending simulation. Wrote 7 time points to wave-vortex group
+Ending simulation. Wrote 25 time points to dense group
+WVTransformConstantStratification initialized from Ap, Am, A0.
+Ending simulation. Wrote 25 time points to wave-vortex group
+Ending simulation. Wrote 25 time points to dense group
+WVTransformConstantStratification initialized from Ap, Am, A0.
+Ending simulation. Wrote 7 time points to wave-vortex group
+Ending simulation. Wrote 25 time points to dense group
+WVTransformConstantStratification initialized from Ap, Am, A0.
+Ending simulation. Wrote 25 time points to wave-vortex group
+Ending simulation. Wrote 25 time points to dense group
+WVTransformConstantStratification initialized from Ap, Am, A0.
+Ending simulation. Wrote 7 time points to wave-vortex group
+Ending simulation. Wrote 25 time points to dense group
+WVTransformConstantStratification initialized from Ap, Am, A0.
+Ending simulation. Wrote 25 time points to wave-vortex group
+Ending simulation. Wrote 25 time points to dense group
+WVTransformConstantStratification initialized from Ap, Am, A0.
+Ending simulation. Wrote 7 time points to wave-vortex group
+Ending simulation. Wrote 25 time points to dense group
+FORWARD_INTEGRATION_PASS constant-hydrostatic provider=reference coefficientEvolution=0.16053670891225835 particleEvolution=0.27216133922883046 tracerEvolution=0.00018448966482570439 stopTime=37
+WVTransformConstantStratification initialized from Ap, Am, A0.
+Ending simulation. Wrote 13 time points to wave-vortex group
+Ending simulation. Wrote 13 time points to dense group
+WVTransformConstantStratification initialized from Ap, Am, A0.
+Ending simulation. Wrote 25 time points to wave-vortex group
+Ending simulation. Wrote 25 time points to dense group
+WVTransformConstantStratification initialized from Ap, Am, A0.
+Ending simulation. Wrote 4 time points to wave-vortex group
+Ending simulation. Wrote 13 time points to dense group
+WVTransformConstantStratification initialized from Ap, Am, A0.
+Ending simulation. Wrote 7 time points to wave-vortex group
+Ending simulation. Wrote 25 time points to dense group
+WVTransformConstantStratification initialized from Ap, Am, A0.
+Ending simulation. Wrote 5 time points to wave-vortex group
+Ending simulation. Wrote 5 time points to dense group
+WVTransformConstantStratification initialized from Ap, Am, A0.
+Ending simulation. Wrote 25 time points to wave-vortex group
+Ending simulation. Wrote 25 time points to dense group
+WVTransformConstantStratification initialized from Ap, Am, A0.
+Ending simulation. Wrote 2 time points to wave-vortex group
+Ending simulation. Wrote 5 time points to dense group
+WVTransformConstantStratification initialized from Ap, Am, A0.
+Ending simulation. Wrote 7 time points to wave-vortex group
+Ending simulation. Wrote 25 time points to dense group
+WVTransformConstantStratification initialized from Ap, Am, A0.
+Ending simulation. Wrote 25 time points to wave-vortex group
+Ending simulation. Wrote 25 time points to dense group
+WVTransformConstantStratification initialized from Ap, Am, A0.
+Ending simulation. Wrote 7 time points to wave-vortex group
+Ending simulation. Wrote 25 time points to dense group
+WVTransformConstantStratification initialized from Ap, Am, A0.
+Ending simulation. Wrote 25 time points to wave-vortex group
+Ending simulation. Wrote 25 time points to dense group
+WVTransformConstantStratification initialized from Ap, Am, A0.
+Ending simulation. Wrote 7 time points to wave-vortex group
+Ending simulation. Wrote 25 time points to dense group
+WVTransformConstantStratification initialized from Ap, Am, A0.
+Ending simulation. Wrote 25 time points to wave-vortex group
+Ending simulation. Wrote 25 time points to dense group
+WVTransformConstantStratification initialized from Ap, Am, A0.
+Ending simulation. Wrote 7 time points to wave-vortex group
+Ending simulation. Wrote 25 time points to dense group
+WVTransformConstantStratification initialized from Ap, Am, A0.
+Ending simulation. Wrote 25 time points to wave-vortex group
+Ending simulation. Wrote 25 time points to dense group
+WVTransformConstantStratification initialized from Ap, Am, A0.
+Ending simulation. Wrote 7 time points to wave-vortex group
+Ending simulation. Wrote 25 time points to dense group
+WVTransformConstantStratification initialized from Ap, Am, A0.
+Ending simulation. Wrote 25 time points to wave-vortex group
+Ending simulation. Wrote 25 time points to dense group
+WVTransformConstantStratification initialized from Ap, Am, A0.
+Ending simulation. Wrote 7 time points to wave-vortex group
+Ending simulation. Wrote 25 time points to dense group
+WVTransformConstantStratification initialized from Ap, Am, A0.
+Ending simulation. Wrote 25 time points to wave-vortex group
+Ending simulation. Wrote 25 time points to dense group
+WVTransformConstantStratification initialized from Ap, Am, A0.
+Ending simulation. Wrote 7 time points to wave-vortex group
+Ending simulation. Wrote 25 time points to dense group
+FORWARD_INTEGRATION_PASS constant-hydrostatic provider=native-fftw coefficientEvolution=0.16053670891225835 particleEvolution=0.27216133922883046 tracerEvolution=0.00018448966482570439 stopTime=37
+.Ending simulation. Wrote 1 time points to wave-vortex group
+Ending simulation. Wrote 1 time points to dense group
+Ending simulation. Wrote 1 time points to wave-vortex group
+Ending simulation. Wrote 1 time points to dense group
+WVTransformConstantStratification initialized from Ap, Am, A0.
+dX/U = 376861.4 s (6281.0 min). dZ/W = 3583169.5 s (59719.5 min). The highest frequency resolved IGW has period of 4233.7 s (70.6 min).
+Ending simulation. Wrote 25 time points to wave-vortex group
+Ending simulation. Wrote 25 time points to dense group
+WVTransformConstantStratification initialized from Ap, Am, A0.
+dX/U = 376861.4 s (6281.0 min). dZ/W = 3583169.5 s (59719.5 min). The highest frequency resolved IGW has period of 4233.7 s (70.6 min).
+Ending simulation. Wrote 13 time points to wave-vortex group
+Ending simulation. Wrote 13 time points to dense group
+WVTransformConstantStratification initialized from Ap, Am, A0.
+Ending simulation. Wrote 25 time points to wave-vortex group
+Ending simulation. Wrote 25 time points to dense group
+WVTransformConstantStratification initialized from Ap, Am, A0.
+dX/U = 376861.4 s (6281.0 min). dZ/W = 3583169.5 s (59719.5 min). The highest frequency resolved IGW has period of 4233.7 s (70.6 min).
+Ending simulation. Wrote 7 time points to wave-vortex group
+Ending simulation. Wrote 25 time points to dense group
+WVTransformConstantStratification initialized from Ap, Am, A0.
+dX/U = 376861.4 s (6281.0 min). dZ/W = 3583169.5 s (59719.5 min). The highest frequency resolved IGW has period of 4233.7 s (70.6 min).
+Ending simulation. Wrote 4 time points to wave-vortex group
+Ending simulation. Wrote 13 time points to dense group
+WVTransformConstantStratification initialized from Ap, Am, A0.
+Ending simulation. Wrote 7 time points to wave-vortex group
+Ending simulation. Wrote 25 time points to dense group
+WVTransformConstantStratification initialized from Ap, Am, A0.
+Ending simulation. Wrote 25 time points to wave-vortex group
+Ending simulation. Wrote 25 time points to dense group
+WVTransformConstantStratification initialized from Ap, Am, A0.
+Ending simulation. Wrote 13 time points to wave-vortex group
+Ending simulation. Wrote 13 time points to dense group
+WVTransformConstantStratification initialized from Ap, Am, A0.
+dX/U = 376693.1 s (6278.2 min). dZ/W = 3523862.5 s (58731.0 min). The highest frequency resolved IGW has period of 4233.7 s (70.6 min).
+Ending simulation. Wrote 25 time points to wave-vortex group
+Ending simulation. Wrote 25 time points to dense group
+WVTransformConstantStratification initialized from Ap, Am, A0.
+Ending simulation. Wrote 4 time points to wave-vortex group
+Ending simulation. Wrote 13 time points to dense group
+WVTransformConstantStratification initialized from Ap, Am, A0.
+dX/U = 376693.1 s (6278.2 min). dZ/W = 3523862.5 s (58731.0 min). The highest frequency resolved IGW has period of 4233.7 s (70.6 min).
+Ending simulation. Wrote 7 time points to wave-vortex group
+Ending simulation. Wrote 25 time points to dense group
+WVTransformConstantStratification initialized from Ap, Am, A0.
+Ending simulation. Wrote 5 time points to wave-vortex group
+Ending simulation. Wrote 5 time points to dense group
+WVTransformConstantStratification initialized from Ap, Am, A0.
+dX/U = 376806.2 s (6280.1 min). dZ/W = 3560879.4 s (59348.0 min). The highest frequency resolved IGW has period of 4233.7 s (70.6 min).
+Ending simulation. Wrote 25 time points to wave-vortex group
+Ending simulation. Wrote 25 time points to dense group
+WVTransformConstantStratification initialized from Ap, Am, A0.
+Ending simulation. Wrote 2 time points to wave-vortex group
+Ending simulation. Wrote 5 time points to dense group
+WVTransformConstantStratification initialized from Ap, Am, A0.
+dX/U = 376806.2 s (6280.1 min). dZ/W = 3560879.4 s (59348.0 min). The highest frequency resolved IGW has period of 4233.7 s (70.6 min).
+Ending simulation. Wrote 7 time points to wave-vortex group
+Ending simulation. Wrote 25 time points to dense group
+WVTransformConstantStratification initialized from Ap, Am, A0.
+Ending simulation. Wrote 25 time points to wave-vortex group
+Ending simulation. Wrote 25 time points to dense group
+WVTransformConstantStratification initialized from Ap, Am, A0.
+Ending simulation. Wrote 7 time points to wave-vortex group
+Ending simulation. Wrote 25 time points to dense group
+WVTransformConstantStratification initialized from Ap, Am, A0.
+Ending simulation. Wrote 25 time points to wave-vortex group
+Ending simulation. Wrote 25 time points to dense group
+WVTransformConstantStratification initialized from Ap, Am, A0.
+Ending simulation. Wrote 7 time points to wave-vortex group
+Ending simulation. Wrote 25 time points to dense group
+WVTransformConstantStratification initialized from Ap, Am, A0.
+Ending simulation. Wrote 25 time points to wave-vortex group
+Ending simulation. Wrote 25 time points to dense group
+WVTransformConstantStratification initialized from Ap, Am, A0.
+Ending simulation. Wrote 7 time points to wave-vortex group
+Ending simulation. Wrote 25 time points to dense group
+WVTransformConstantStratification initialized from Ap, Am, A0.
+Ending simulation. Wrote 25 time points to wave-vortex group
+Ending simulation. Wrote 25 time points to dense group
+WVTransformConstantStratification initialized from Ap, Am, A0.
+Ending simulation. Wrote 7 time points to wave-vortex group
+Ending simulation. Wrote 25 time points to dense group
+WVTransformConstantStratification initialized from Ap, Am, A0.
+Ending simulation. Wrote 25 time points to wave-vortex group
+Ending simulation. Wrote 25 time points to dense group
+WVTransformConstantStratification initialized from Ap, Am, A0.
+Ending simulation. Wrote 7 time points to wave-vortex group
+Ending simulation. Wrote 25 time points to dense group
+WVTransformConstantStratification initialized from Ap, Am, A0.
+Ending simulation. Wrote 25 time points to wave-vortex group
+Ending simulation. Wrote 25 time points to dense group
+WVTransformConstantStratification initialized from Ap, Am, A0.
+Ending simulation. Wrote 7 time points to wave-vortex group
+Ending simulation. Wrote 25 time points to dense group
+FORWARD_INTEGRATION_PASS constant-nonhydrostatic provider=reference coefficientEvolution=0.16055559809397177 particleEvolution=0.2723208203637455 tracerEvolution=0.0001844535533704339 stopTime=37
+WVTransformConstantStratification initialized from Ap, Am, A0.
+Ending simulation. Wrote 13 time points to wave-vortex group
+Ending simulation. Wrote 13 time points to dense group
+WVTransformConstantStratification initialized from Ap, Am, A0.
+dX/U = 376693.1 s (6278.2 min). dZ/W = 3523862.5 s (58731.0 min). The highest frequency resolved IGW has period of 4233.7 s (70.6 min).
+Ending simulation. Wrote 25 time points to wave-vortex group
+Ending simulation. Wrote 25 time points to dense group
+WVTransformConstantStratification initialized from Ap, Am, A0.
+Ending simulation. Wrote 4 time points to wave-vortex group
+Ending simulation. Wrote 13 time points to dense group
+WVTransformConstantStratification initialized from Ap, Am, A0.
+dX/U = 376693.1 s (6278.2 min). dZ/W = 3523862.5 s (58731.0 min). The highest frequency resolved IGW has period of 4233.7 s (70.6 min).
+Ending simulation. Wrote 7 time points to wave-vortex group
+Ending simulation. Wrote 25 time points to dense group
+WVTransformConstantStratification initialized from Ap, Am, A0.
+Ending simulation. Wrote 5 time points to wave-vortex group
+Ending simulation. Wrote 5 time points to dense group
+WVTransformConstantStratification initialized from Ap, Am, A0.
+dX/U = 376806.2 s (6280.1 min). dZ/W = 3560879.4 s (59348.0 min). The highest frequency resolved IGW has period of 4233.7 s (70.6 min).
+Ending simulation. Wrote 25 time points to wave-vortex group
+Ending simulation. Wrote 25 time points to dense group
+WVTransformConstantStratification initialized from Ap, Am, A0.
+Ending simulation. Wrote 2 time points to wave-vortex group
+Ending simulation. Wrote 5 time points to dense group
+WVTransformConstantStratification initialized from Ap, Am, A0.
+dX/U = 376806.2 s (6280.1 min). dZ/W = 3560879.4 s (59348.0 min). The highest frequency resolved IGW has period of 4233.7 s (70.6 min).
+Ending simulation. Wrote 7 time points to wave-vortex group
+Ending simulation. Wrote 25 time points to dense group
+WVTransformConstantStratification initialized from Ap, Am, A0.
+Ending simulation. Wrote 25 time points to wave-vortex group
+Ending simulation. Wrote 25 time points to dense group
+WVTransformConstantStratification initialized from Ap, Am, A0.
+Ending simulation. Wrote 7 time points to wave-vortex group
+Ending simulation. Wrote 25 time points to dense group
+WVTransformConstantStratification initialized from Ap, Am, A0.
+Ending simulation. Wrote 25 time points to wave-vortex group
+Ending simulation. Wrote 25 time points to dense group
+WVTransformConstantStratification initialized from Ap, Am, A0.
+Ending simulation. Wrote 7 time points to wave-vortex group
+Ending simulation. Wrote 25 time points to dense group
+WVTransformConstantStratification initialized from Ap, Am, A0.
+Ending simulation. Wrote 25 time points to wave-vortex group
+Ending simulation. Wrote 25 time points to dense group
+WVTransformConstantStratification initialized from Ap, Am, A0.
+Ending simulation. Wrote 7 time points to wave-vortex group
+Ending simulation. Wrote 25 time points to dense group
+WVTransformConstantStratification initialized from Ap, Am, A0.
+Ending simulation. Wrote 25 time points to wave-vortex group
+Ending simulation. Wrote 25 time points to dense group
+WVTransformConstantStratification initialized from Ap, Am, A0.
+Ending simulation. Wrote 7 time points to wave-vortex group
+Ending simulation. Wrote 25 time points to dense group
+WVTransformConstantStratification initialized from Ap, Am, A0.
+Ending simulation. Wrote 25 time points to wave-vortex group
+Ending simulation. Wrote 25 time points to dense group
+WVTransformConstantStratification initialized from Ap, Am, A0.
+Ending simulation. Wrote 7 time points to wave-vortex group
+Ending simulation. Wrote 25 time points to dense group
+WVTransformConstantStratification initialized from Ap, Am, A0.
+Ending simulation. Wrote 25 time points to wave-vortex group
+Ending simulation. Wrote 25 time points to dense group
+WVTransformConstantStratification initialized from Ap, Am, A0.
+Ending simulation. Wrote 7 time points to wave-vortex group
+Ending simulation. Wrote 25 time points to dense group
+FORWARD_INTEGRATION_PASS constant-nonhydrostatic provider=native-fftw coefficientEvolution=0.16055559809397177 particleEvolution=0.2723208203637455 tracerEvolution=0.0001844535533704339 stopTime=37
+.Ending simulation. Wrote 1 time points to wave-vortex group
+Ending simulation. Wrote 1 time points to dense group
+Ending simulation. Wrote 1 time points to wave-vortex group
+Ending simulation. Wrote 1 time points to dense group
+WVTransformBarotropicQG initialized from A0.
+dX/U = 635266.3 s (10587.8 min). The highest frequency resolved IGW has period of Inf s (Inf min).
+Ending simulation. Wrote 25 time points to wave-vortex group
+Ending simulation. Wrote 25 time points to dense group
+WVTransformBarotropicQG initialized from A0.
+dX/U = 635266.3 s (10587.8 min). The highest frequency resolved IGW has period of Inf s (Inf min).
+Ending simulation. Wrote 13 time points to wave-vortex group
+Ending simulation. Wrote 13 time points to dense group
+WVTransformBarotropicQG initialized from A0.
+Ending simulation. Wrote 25 time points to wave-vortex group
+Ending simulation. Wrote 25 time points to dense group
+WVTransformBarotropicQG initialized from A0.
+dX/U = 635266.3 s (10587.8 min). The highest frequency resolved IGW has period of Inf s (Inf min).
+Ending simulation. Wrote 7 time points to wave-vortex group
+Ending simulation. Wrote 25 time points to dense group
+WVTransformBarotropicQG initialized from A0.
+dX/U = 635266.3 s (10587.8 min). The highest frequency resolved IGW has period of Inf s (Inf min).
+Ending simulation. Wrote 4 time points to wave-vortex group
+Ending simulation. Wrote 13 time points to dense group
+WVTransformBarotropicQG initialized from A0.
+Ending simulation. Wrote 7 time points to wave-vortex group
+Ending simulation. Wrote 25 time points to dense group
+WVTransformBarotropicQG initialized from A0.
+Ending simulation. Wrote 25 time points to wave-vortex group
+Ending simulation. Wrote 25 time points to dense group
+WVTransformBarotropicQG initialized from A0.
+Ending simulation. Wrote 13 time points to wave-vortex group
+Ending simulation. Wrote 13 time points to dense group
+WVTransformBarotropicQG initialized from A0.
+dX/U = 635485.2 s (10591.4 min). The highest frequency resolved IGW has period of Inf s (Inf min).
+Ending simulation. Wrote 25 time points to wave-vortex group
+Ending simulation. Wrote 25 time points to dense group
+WVTransformBarotropicQG initialized from A0.
+Ending simulation. Wrote 4 time points to wave-vortex group
+Ending simulation. Wrote 13 time points to dense group
+WVTransformBarotropicQG initialized from A0.
+dX/U = 635485.2 s (10591.4 min). The highest frequency resolved IGW has period of Inf s (Inf min).
+Ending simulation. Wrote 7 time points to wave-vortex group
+Ending simulation. Wrote 25 time points to dense group
+WVTransformBarotropicQG initialized from A0.
+Ending simulation. Wrote 5 time points to wave-vortex group
+Ending simulation. Wrote 5 time points to dense group
+WVTransformBarotropicQG initialized from A0.
+dX/U = 635339.3 s (10589.0 min). The highest frequency resolved IGW has period of Inf s (Inf min).
+Ending simulation. Wrote 25 time points to wave-vortex group
+Ending simulation. Wrote 25 time points to dense group
+WVTransformBarotropicQG initialized from A0.
+Ending simulation. Wrote 2 time points to wave-vortex group
+Ending simulation. Wrote 5 time points to dense group
+WVTransformBarotropicQG initialized from A0.
+dX/U = 635339.3 s (10589.0 min). The highest frequency resolved IGW has period of Inf s (Inf min).
+Ending simulation. Wrote 7 time points to wave-vortex group
+Ending simulation. Wrote 25 time points to dense group
+WVTransformBarotropicQG initialized from A0.
+Ending simulation. Wrote 25 time points to wave-vortex group
+Ending simulation. Wrote 25 time points to dense group
+WVTransformBarotropicQG initialized from A0.
+Ending simulation. Wrote 7 time points to wave-vortex group
+Ending simulation. Wrote 25 time points to dense group
+WVTransformBarotropicQG initialized from A0.
+Ending simulation. Wrote 25 time points to wave-vortex group
+Ending simulation. Wrote 25 time points to dense group
+WVTransformBarotropicQG initialized from A0.
+Ending simulation. Wrote 7 time points to wave-vortex group
+Ending simulation. Wrote 25 time points to dense group
+WVTransformBarotropicQG initialized from A0.
+Ending simulation. Wrote 25 time points to wave-vortex group
+Ending simulation. Wrote 25 time points to dense group
+WVTransformBarotropicQG initialized from A0.
+Ending simulation. Wrote 7 time points to wave-vortex group
+Ending simulation. Wrote 25 time points to dense group
+WVTransformBarotropicQG initialized from A0.
+Ending simulation. Wrote 25 time points to wave-vortex group
+Ending simulation. Wrote 25 time points to dense group
+WVTransformBarotropicQG initialized from A0.
+Ending simulation. Wrote 7 time points to wave-vortex group
+Ending simulation. Wrote 25 time points to dense group
+WVTransformBarotropicQG initialized from A0.
+Ending simulation. Wrote 25 time points to wave-vortex group
+Ending simulation. Wrote 25 time points to dense group
+WVTransformBarotropicQG initialized from A0.
+Ending simulation. Wrote 7 time points to wave-vortex group
+Ending simulation. Wrote 25 time points to dense group
+WVTransformBarotropicQG initialized from A0.
+Ending simulation. Wrote 25 time points to wave-vortex group
+Ending simulation. Wrote 25 time points to dense group
+WVTransformBarotropicQG initialized from A0.
+Ending simulation. Wrote 7 time points to wave-vortex group
+Ending simulation. Wrote 25 time points to dense group
+FORWARD_INTEGRATION_PASS barotropic-qg provider=reference coefficientEvolution=0.0015616555950100849 particleEvolution=0.2326754131022426 tracerEvolution=8.1251849432861789e-05 stopTime=37
+WVTransformBarotropicQG initialized from A0.
+Ending simulation. Wrote 13 time points to wave-vortex group
+Ending simulation. Wrote 13 time points to dense group
+WVTransformBarotropicQG initialized from A0.
+dX/U = 635485.2 s (10591.4 min). The highest frequency resolved IGW has period of Inf s (Inf min).
+Ending simulation. Wrote 25 time points to wave-vortex group
+Ending simulation. Wrote 25 time points to dense group
+WVTransformBarotropicQG initialized from A0.
+Ending simulation. Wrote 4 time points to wave-vortex group
+Ending simulation. Wrote 13 time points to dense group
+WVTransformBarotropicQG initialized from A0.
+dX/U = 635485.2 s (10591.4 min). The highest frequency resolved IGW has period of Inf s (Inf min).
+Ending simulation. Wrote 7 time points to wave-vortex group
+Ending simulation. Wrote 25 time points to dense group
+WVTransformBarotropicQG initialized from A0.
+Ending simulation. Wrote 5 time points to wave-vortex group
+Ending simulation. Wrote 5 time points to dense group
+WVTransformBarotropicQG initialized from A0.
+dX/U = 635339.3 s (10589.0 min). The highest frequency resolved IGW has period of Inf s (Inf min).
+Ending simulation. Wrote 25 time points to wave-vortex group
+Ending simulation. Wrote 25 time points to dense group
+WVTransformBarotropicQG initialized from A0.
+Ending simulation. Wrote 2 time points to wave-vortex group
+Ending simulation. Wrote 5 time points to dense group
+WVTransformBarotropicQG initialized from A0.
+dX/U = 635339.3 s (10589.0 min). The highest frequency resolved IGW has period of Inf s (Inf min).
+Ending simulation. Wrote 7 time points to wave-vortex group
+Ending simulation. Wrote 25 time points to dense group
+WVTransformBarotropicQG initialized from A0.
+Ending simulation. Wrote 25 time points to wave-vortex group
+Ending simulation. Wrote 25 time points to dense group
+WVTransformBarotropicQG initialized from A0.
+Ending simulation. Wrote 7 time points to wave-vortex group
+Ending simulation. Wrote 25 time points to dense group
+WVTransformBarotropicQG initialized from A0.
+Ending simulation. Wrote 25 time points to wave-vortex group
+Ending simulation. Wrote 25 time points to dense group
+WVTransformBarotropicQG initialized from A0.
+Ending simulation. Wrote 7 time points to wave-vortex group
+Ending simulation. Wrote 25 time points to dense group
+WVTransformBarotropicQG initialized from A0.
+Ending simulation. Wrote 25 time points to wave-vortex group
+Ending simulation. Wrote 25 time points to dense group
+WVTransformBarotropicQG initialized from A0.
+Ending simulation. Wrote 7 time points to wave-vortex group
+Ending simulation. Wrote 25 time points to dense group
+WVTransformBarotropicQG initialized from A0.
+Ending simulation. Wrote 25 time points to wave-vortex group
+Ending simulation. Wrote 25 time points to dense group
+WVTransformBarotropicQG initialized from A0.
+Ending simulation. Wrote 7 time points to wave-vortex group
+Ending simulation. Wrote 25 time points to dense group
+WVTransformBarotropicQG initialized from A0.
+Ending simulation. Wrote 25 time points to wave-vortex group
+Ending simulation. Wrote 25 time points to dense group
+WVTransformBarotropicQG initialized from A0.
+Ending simulation. Wrote 7 time points to wave-vortex group
+Ending simulation. Wrote 25 time points to dense group
+WVTransformBarotropicQG initialized from A0.
+Ending simulation. Wrote 25 time points to wave-vortex group
+Ending simulation. Wrote 25 time points to dense group
+WVTransformBarotropicQG initialized from A0.
+Ending simulation. Wrote 7 time points to wave-vortex group
+Ending simulation. Wrote 25 time points to dense group
+FORWARD_INTEGRATION_PASS barotropic-qg provider=native-fftw coefficientEvolution=0.0015616555950100849 particleEvolution=0.2326754131022426 tracerEvolution=8.1251849432861789e-05 stopTime=37
+.Ending simulation. Wrote 1 time points to wave-vortex group
+Ending simulation. Wrote 1 time points to dense group
+Ending simulation. Wrote 1 time points to wave-vortex group
+Ending simulation. Wrote 1 time points to dense group
+WVTransformStratifiedQG initialized from A0.
+dX/U = 478070.0 s (7967.8 min). The highest frequency resolved IGW has period of Inf s (Inf min).
+Ending simulation. Wrote 25 time points to wave-vortex group
+Ending simulation. Wrote 25 time points to dense group
+WVTransformStratifiedQG initialized from A0.
+dX/U = 478070.0 s (7967.8 min). The highest frequency resolved IGW has period of Inf s (Inf min).
+Ending simulation. Wrote 13 time points to wave-vortex group
+Ending simulation. Wrote 13 time points to dense group
+WVTransformStratifiedQG initialized from A0.
+Ending simulation. Wrote 25 time points to wave-vortex group
+Ending simulation. Wrote 25 time points to dense group
+WVTransformStratifiedQG initialized from A0.
+dX/U = 478070.0 s (7967.8 min). The highest frequency resolved IGW has period of Inf s (Inf min).
+Ending simulation. Wrote 7 time points to wave-vortex group
+Ending simulation. Wrote 25 time points to dense group
+WVTransformStratifiedQG initialized from A0.
+dX/U = 478070.0 s (7967.8 min). The highest frequency resolved IGW has period of Inf s (Inf min).
+Ending simulation. Wrote 4 time points to wave-vortex group
+Ending simulation. Wrote 13 time points to dense group
+WVTransformStratifiedQG initialized from A0.
+Ending simulation. Wrote 7 time points to wave-vortex group
+Ending simulation. Wrote 25 time points to dense group
+WVTransformStratifiedQG initialized from A0.
+Ending simulation. Wrote 25 time points to wave-vortex group
+Ending simulation. Wrote 25 time points to dense group
+WVTransformStratifiedQG initialized from A0.
+Ending simulation. Wrote 13 time points to wave-vortex group
+Ending simulation. Wrote 13 time points to dense group
+WVTransformStratifiedQG initialized from A0.
+dX/U = 477897.7 s (7965.0 min). The highest frequency resolved IGW has period of Inf s (Inf min).
+Ending simulation. Wrote 25 time points to wave-vortex group
+Ending simulation. Wrote 25 time points to dense group
+WVTransformStratifiedQG initialized from A0.
+Ending simulation. Wrote 4 time points to wave-vortex group
+Ending simulation. Wrote 13 time points to dense group
+WVTransformStratifiedQG initialized from A0.
+dX/U = 477897.7 s (7965.0 min). The highest frequency resolved IGW has period of Inf s (Inf min).
+Ending simulation. Wrote 7 time points to wave-vortex group
+Ending simulation. Wrote 25 time points to dense group
+WVTransformStratifiedQG initialized from A0.
+Ending simulation. Wrote 5 time points to wave-vortex group
+Ending simulation. Wrote 5 time points to dense group
+WVTransformStratifiedQG initialized from A0.
+dX/U = 478012.5 s (7966.9 min). The highest frequency resolved IGW has period of Inf s (Inf min).
+Ending simulation. Wrote 25 time points to wave-vortex group
+Ending simulation. Wrote 25 time points to dense group
+WVTransformStratifiedQG initialized from A0.
+Ending simulation. Wrote 2 time points to wave-vortex group
+Ending simulation. Wrote 5 time points to dense group
+WVTransformStratifiedQG initialized from A0.
+dX/U = 478012.5 s (7966.9 min). The highest frequency resolved IGW has period of Inf s (Inf min).
+Ending simulation. Wrote 7 time points to wave-vortex group
+Ending simulation. Wrote 25 time points to dense group
+WVTransformStratifiedQG initialized from A0.
+Ending simulation. Wrote 25 time points to wave-vortex group
+Ending simulation. Wrote 25 time points to dense group
+WVTransformStratifiedQG initialized from A0.
+Ending simulation. Wrote 7 time points to wave-vortex group
+Ending simulation. Wrote 25 time points to dense group
+WVTransformStratifiedQG initialized from A0.
+Ending simulation. Wrote 25 time points to wave-vortex group
+Ending simulation. Wrote 25 time points to dense group
+WVTransformStratifiedQG initialized from A0.
+Ending simulation. Wrote 7 time points to wave-vortex group
+Ending simulation. Wrote 25 time points to dense group
+WVTransformStratifiedQG initialized from A0.
+Ending simulation. Wrote 25 time points to wave-vortex group
+Ending simulation. Wrote 25 time points to dense group
+WVTransformStratifiedQG initialized from A0.
+Ending simulation. Wrote 7 time points to wave-vortex group
+Ending simulation. Wrote 25 time points to dense group
+WVTransformStratifiedQG initialized from A0.
+Ending simulation. Wrote 25 time points to wave-vortex group
+Ending simulation. Wrote 25 time points to dense group
+WVTransformStratifiedQG initialized from A0.
+Ending simulation. Wrote 7 time points to wave-vortex group
+Ending simulation. Wrote 25 time points to dense group
+WVTransformStratifiedQG initialized from A0.
+Ending simulation. Wrote 25 time points to wave-vortex group
+Ending simulation. Wrote 25 time points to dense group
+WVTransformStratifiedQG initialized from A0.
+Ending simulation. Wrote 7 time points to wave-vortex group
+Ending simulation. Wrote 25 time points to dense group
+WVTransformStratifiedQG initialized from A0.
+Ending simulation. Wrote 25 time points to wave-vortex group
+Ending simulation. Wrote 25 time points to dense group
+WVTransformStratifiedQG initialized from A0.
+Ending simulation. Wrote 7 time points to wave-vortex group
+Ending simulation. Wrote 25 time points to dense group
+FORWARD_INTEGRATION_PASS stratified-qg provider=reference coefficientEvolution=0.18320901374309845 particleEvolution=0.49115864147984212 tracerEvolution=0.0001011004941788296 stopTime=37
+WVTransformStratifiedQG initialized from A0.
+Ending simulation. Wrote 13 time points to wave-vortex group
+Ending simulation. Wrote 13 time points to dense group
+WVTransformStratifiedQG initialized from A0.
+dX/U = 477897.7 s (7965.0 min). The highest frequency resolved IGW has period of Inf s (Inf min).
+Ending simulation. Wrote 25 time points to wave-vortex group
+Ending simulation. Wrote 25 time points to dense group
+WVTransformStratifiedQG initialized from A0.
+Ending simulation. Wrote 4 time points to wave-vortex group
+Ending simulation. Wrote 13 time points to dense group
+WVTransformStratifiedQG initialized from A0.
+dX/U = 477897.7 s (7965.0 min). The highest frequency resolved IGW has period of Inf s (Inf min).
+Ending simulation. Wrote 7 time points to wave-vortex group
+Ending simulation. Wrote 25 time points to dense group
+WVTransformStratifiedQG initialized from A0.
+Ending simulation. Wrote 5 time points to wave-vortex group
+Ending simulation. Wrote 5 time points to dense group
+WVTransformStratifiedQG initialized from A0.
+dX/U = 478012.5 s (7966.9 min). The highest frequency resolved IGW has period of Inf s (Inf min).
+Ending simulation. Wrote 25 time points to wave-vortex group
+Ending simulation. Wrote 25 time points to dense group
+WVTransformStratifiedQG initialized from A0.
+Ending simulation. Wrote 2 time points to wave-vortex group
+Ending simulation. Wrote 5 time points to dense group
+WVTransformStratifiedQG initialized from A0.
+dX/U = 478012.5 s (7966.9 min). The highest frequency resolved IGW has period of Inf s (Inf min).
+Ending simulation. Wrote 7 time points to wave-vortex group
+Ending simulation. Wrote 25 time points to dense group
+WVTransformStratifiedQG initialized from A0.
+Ending simulation. Wrote 25 time points to wave-vortex group
+Ending simulation. Wrote 25 time points to dense group
+WVTransformStratifiedQG initialized from A0.
+Ending simulation. Wrote 7 time points to wave-vortex group
+Ending simulation. Wrote 25 time points to dense group
+WVTransformStratifiedQG initialized from A0.
+Ending simulation. Wrote 25 time points to wave-vortex group
+Ending simulation. Wrote 25 time points to dense group
+WVTransformStratifiedQG initialized from A0.
+Ending simulation. Wrote 7 time points to wave-vortex group
+Ending simulation. Wrote 25 time points to dense group
+WVTransformStratifiedQG initialized from A0.
+Ending simulation. Wrote 25 time points to wave-vortex group
+Ending simulation. Wrote 25 time points to dense group
+WVTransformStratifiedQG initialized from A0.
+Ending simulation. Wrote 7 time points to wave-vortex group
+Ending simulation. Wrote 25 time points to dense group
+WVTransformStratifiedQG initialized from A0.
+Ending simulation. Wrote 25 time points to wave-vortex group
+Ending simulation. Wrote 25 time points to dense group
+WVTransformStratifiedQG initialized from A0.
+Ending simulation. Wrote 7 time points to wave-vortex group
+Ending simulation. Wrote 25 time points to dense group
+WVTransformStratifiedQG initialized from A0.
+Ending simulation. Wrote 25 time points to wave-vortex group
+Ending simulation. Wrote 25 time points to dense group
+WVTransformStratifiedQG initialized from A0.
+Ending simulation. Wrote 7 time points to wave-vortex group
+Ending simulation. Wrote 25 time points to dense group
+WVTransformStratifiedQG initialized from A0.
+Ending simulation. Wrote 25 time points to wave-vortex group
+Ending simulation. Wrote 25 time points to dense group
+WVTransformStratifiedQG initialized from A0.
+Ending simulation. Wrote 7 time points to wave-vortex group
+Ending simulation. Wrote 25 time points to dense group
+FORWARD_INTEGRATION_PASS stratified-qg provider=native-fftw coefficientEvolution=0.18320901374309845 particleEvolution=0.49115864147984212 tracerEvolution=0.0001011004941788296 stopTime=37
+.Ending simulation. Wrote 1 time points to wave-vortex group
+Ending simulation. Wrote 1 time points to dense group
+Ending simulation. Wrote 1 time points to wave-vortex group
+Ending simulation. Wrote 1 time points to dense group
+WVTransformHydrostatic initialized from Ap, Am, A0.
+dX/U = 381116.1 s (6351.9 min). dZ/W = 2449817.8 s (40830.3 min). The highest frequency resolved IGW has period of 2936.2 s (48.9 min).
+Ending simulation. Wrote 25 time points to wave-vortex group
+Ending simulation. Wrote 25 time points to dense group
+WVTransformHydrostatic initialized from Ap, Am, A0.
+dX/U = 381116.1 s (6351.9 min). dZ/W = 2449817.8 s (40830.3 min). The highest frequency resolved IGW has period of 2936.2 s (48.9 min).
+Ending simulation. Wrote 13 time points to wave-vortex group
+Ending simulation. Wrote 13 time points to dense group
+WVTransformHydrostatic initialized from Ap, Am, A0.
+Ending simulation. Wrote 25 time points to wave-vortex group
+Ending simulation. Wrote 25 time points to dense group
+WVTransformHydrostatic initialized from Ap, Am, A0.
+dX/U = 381116.1 s (6351.9 min). dZ/W = 2449817.8 s (40830.3 min). The highest frequency resolved IGW has period of 2936.2 s (48.9 min).
+Ending simulation. Wrote 7 time points to wave-vortex group
+Ending simulation. Wrote 25 time points to dense group
+WVTransformHydrostatic initialized from Ap, Am, A0.
+dX/U = 381116.1 s (6351.9 min). dZ/W = 2449817.8 s (40830.3 min). The highest frequency resolved IGW has period of 2936.2 s (48.9 min).
+Ending simulation. Wrote 4 time points to wave-vortex group
+Ending simulation. Wrote 13 time points to dense group
+WVTransformHydrostatic initialized from Ap, Am, A0.
+Ending simulation. Wrote 7 time points to wave-vortex group
+Ending simulation. Wrote 25 time points to dense group
+WVTransformHydrostatic initialized from Ap, Am, A0.
+Ending simulation. Wrote 25 time points to wave-vortex group
+Ending simulation. Wrote 25 time points to dense group
+WVTransformHydrostatic initialized from Ap, Am, A0.
+Ending simulation. Wrote 13 time points to wave-vortex group
+Ending simulation. Wrote 13 time points to dense group
+WVTransformHydrostatic initialized from Ap, Am, A0.
+dX/U = 381919.9 s (6365.3 min). dZ/W = 2504214.4 s (41736.9 min). The highest frequency resolved IGW has period of 2936.2 s (48.9 min).
+Ending simulation. Wrote 25 time points to wave-vortex group
+Ending simulation. Wrote 25 time points to dense group
+WVTransformHydrostatic initialized from Ap, Am, A0.
+Ending simulation. Wrote 4 time points to wave-vortex group
+Ending simulation. Wrote 13 time points to dense group
+WVTransformHydrostatic initialized from Ap, Am, A0.
+dX/U = 381919.9 s (6365.3 min). dZ/W = 2504214.4 s (41736.9 min). The highest frequency resolved IGW has period of 2936.2 s (48.9 min).
+Ending simulation. Wrote 7 time points to wave-vortex group
+Ending simulation. Wrote 25 time points to dense group
+WVTransformHydrostatic initialized from Ap, Am, A0.
+Ending simulation. Wrote 5 time points to wave-vortex group
+Ending simulation. Wrote 5 time points to dense group
+WVTransformHydrostatic initialized from Ap, Am, A0.
+dX/U = 381382.5 s (6356.4 min). dZ/W = 2464899.6 s (41081.7 min). The highest frequency resolved IGW has period of 2936.2 s (48.9 min).
+Ending simulation. Wrote 25 time points to wave-vortex group
+Ending simulation. Wrote 25 time points to dense group
+WVTransformHydrostatic initialized from Ap, Am, A0.
+Ending simulation. Wrote 2 time points to wave-vortex group
+Ending simulation. Wrote 5 time points to dense group
+WVTransformHydrostatic initialized from Ap, Am, A0.
+dX/U = 381382.5 s (6356.4 min). dZ/W = 2464899.6 s (41081.7 min). The highest frequency resolved IGW has period of 2936.2 s (48.9 min).
+Ending simulation. Wrote 7 time points to wave-vortex group
+Ending simulation. Wrote 25 time points to dense group
+WVTransformHydrostatic initialized from Ap, Am, A0.
+Ending simulation. Wrote 25 time points to wave-vortex group
+Ending simulation. Wrote 25 time points to dense group
+WVTransformHydrostatic initialized from Ap, Am, A0.
+Ending simulation. Wrote 7 time points to wave-vortex group
+Ending simulation. Wrote 25 time points to dense group
+WVTransformHydrostatic initialized from Ap, Am, A0.
+Ending simulation. Wrote 25 time points to wave-vortex group
+Ending simulation. Wrote 25 time points to dense group
+WVTransformHydrostatic initialized from Ap, Am, A0.
+Ending simulation. Wrote 7 time points to wave-vortex group
+Ending simulation. Wrote 25 time points to dense group
+WVTransformHydrostatic initialized from Ap, Am, A0.
+Ending simulation. Wrote 25 time points to wave-vortex group
+Ending simulation. Wrote 25 time points to dense group
+WVTransformHydrostatic initialized from Ap, Am, A0.
+Ending simulation. Wrote 7 time points to wave-vortex group
+Ending simulation. Wrote 25 time points to dense group
+WVTransformHydrostatic initialized from Ap, Am, A0.
+Ending simulation. Wrote 25 time points to wave-vortex group
+Ending simulation. Wrote 25 time points to dense group
+WVTransformHydrostatic initialized from Ap, Am, A0.
+Ending simulation. Wrote 7 time points to wave-vortex group
+Ending simulation. Wrote 25 time points to dense group
+WVTransformHydrostatic initialized from Ap, Am, A0.
+Ending simulation. Wrote 25 time points to wave-vortex group
+Ending simulation. Wrote 25 time points to dense group
+WVTransformHydrostatic initialized from Ap, Am, A0.
+Ending simulation. Wrote 7 time points to wave-vortex group
+Ending simulation. Wrote 25 time points to dense group
+WVTransformHydrostatic initialized from Ap, Am, A0.
+Ending simulation. Wrote 25 time points to wave-vortex group
+Ending simulation. Wrote 25 time points to dense group
+WVTransformHydrostatic initialized from Ap, Am, A0.
+Ending simulation. Wrote 7 time points to wave-vortex group
+Ending simulation. Wrote 25 time points to dense group
+FORWARD_INTEGRATION_PASS hydrostatic provider=reference coefficientEvolution=0.077194933389519702 particleEvolution=0.63820751311033064 tracerEvolution=0.00014087915215243996 stopTime=37
+WVTransformHydrostatic initialized from Ap, Am, A0.
+Ending simulation. Wrote 13 time points to wave-vortex group
+Ending simulation. Wrote 13 time points to dense group
+WVTransformHydrostatic initialized from Ap, Am, A0.
+dX/U = 381919.9 s (6365.3 min). dZ/W = 2504214.4 s (41736.9 min). The highest frequency resolved IGW has period of 2936.2 s (48.9 min).
+Ending simulation. Wrote 25 time points to wave-vortex group
+Ending simulation. Wrote 25 time points to dense group
+WVTransformHydrostatic initialized from Ap, Am, A0.
+Ending simulation. Wrote 4 time points to wave-vortex group
+Ending simulation. Wrote 13 time points to dense group
+WVTransformHydrostatic initialized from Ap, Am, A0.
+dX/U = 381919.9 s (6365.3 min). dZ/W = 2504214.4 s (41736.9 min). The highest frequency resolved IGW has period of 2936.2 s (48.9 min).
+Ending simulation. Wrote 7 time points to wave-vortex group
+Ending simulation. Wrote 25 time points to dense group
+WVTransformHydrostatic initialized from Ap, Am, A0.
+Ending simulation. Wrote 5 time points to wave-vortex group
+Ending simulation. Wrote 5 time points to dense group
+WVTransformHydrostatic initialized from Ap, Am, A0.
+dX/U = 381382.5 s (6356.4 min). dZ/W = 2464899.6 s (41081.7 min). The highest frequency resolved IGW has period of 2936.2 s (48.9 min).
+Ending simulation. Wrote 25 time points to wave-vortex group
+Ending simulation. Wrote 25 time points to dense group
+WVTransformHydrostatic initialized from Ap, Am, A0.
+Ending simulation. Wrote 2 time points to wave-vortex group
+Ending simulation. Wrote 5 time points to dense group
+WVTransformHydrostatic initialized from Ap, Am, A0.
+dX/U = 381382.5 s (6356.4 min). dZ/W = 2464899.6 s (41081.7 min). The highest frequency resolved IGW has period of 2936.2 s (48.9 min).
+Ending simulation. Wrote 7 time points to wave-vortex group
+Ending simulation. Wrote 25 time points to dense group
+WVTransformHydrostatic initialized from Ap, Am, A0.
+Ending simulation. Wrote 25 time points to wave-vortex group
+Ending simulation. Wrote 25 time points to dense group
+WVTransformHydrostatic initialized from Ap, Am, A0.
+Ending simulation. Wrote 7 time points to wave-vortex group
+Ending simulation. Wrote 25 time points to dense group
+WVTransformHydrostatic initialized from Ap, Am, A0.
+Ending simulation. Wrote 25 time points to wave-vortex group
+Ending simulation. Wrote 25 time points to dense group
+WVTransformHydrostatic initialized from Ap, Am, A0.
+Ending simulation. Wrote 7 time points to wave-vortex group
+Ending simulation. Wrote 25 time points to dense group
+WVTransformHydrostatic initialized from Ap, Am, A0.
+Ending simulation. Wrote 25 time points to wave-vortex group
+Ending simulation. Wrote 25 time points to dense group
+WVTransformHydrostatic initialized from Ap, Am, A0.
+Ending simulation. Wrote 7 time points to wave-vortex group
+Ending simulation. Wrote 25 time points to dense group
+WVTransformHydrostatic initialized from Ap, Am, A0.
+Ending simulation. Wrote 25 time points to wave-vortex group
+Ending simulation. Wrote 25 time points to dense group
+WVTransformHydrostatic initialized from Ap, Am, A0.
+Ending simulation. Wrote 7 time points to wave-vortex group
+Ending simulation. Wrote 25 time points to dense group
+WVTransformHydrostatic initialized from Ap, Am, A0.
+Ending simulation. Wrote 25 time points to wave-vortex group
+Ending simulation. Wrote 25 time points to dense group
+WVTransformHydrostatic initialized from Ap, Am, A0.
+Ending simulation. Wrote 7 time points to wave-vortex group
+Ending simulation. Wrote 25 time points to dense group
+WVTransformHydrostatic initialized from Ap, Am, A0.
+Ending simulation. Wrote 25 time points to wave-vortex group
+Ending simulation. Wrote 25 time points to dense group
+WVTransformHydrostatic initialized from Ap, Am, A0.
+Ending simulation. Wrote 7 time points to wave-vortex group
+Ending simulation. Wrote 25 time points to dense group
+FORWARD_INTEGRATION_PASS hydrostatic provider=native-fftw coefficientEvolution=0.077194933389519702 particleEvolution=0.63820751311033064 tracerEvolution=0.00014087915215243996 stopTime=37
+.building 6 boussinesq transformation matrices...1...finished.
+Ending simulation. Wrote 1 time points to wave-vortex group
+Ending simulation. Wrote 1 time points to dense group
+Ending simulation. Wrote 1 time points to wave-vortex group
+Ending simulation. Wrote 1 time points to dense group
+WVTransformBoussinesq initialized from Ap, Am, A0.
+dX/U = 381165.8 s (6352.8 min). dZ/W = 2575236.6 s (42920.6 min). The highest frequency resolved IGW has period of 3060.4 s (51.0 min).
+Ending simulation. Wrote 25 time points to wave-vortex group
+Ending simulation. Wrote 25 time points to dense group
+WVTransformBoussinesq initialized from Ap, Am, A0.
+dX/U = 381165.8 s (6352.8 min). dZ/W = 2575236.6 s (42920.6 min). The highest frequency resolved IGW has period of 3060.4 s (51.0 min).
+Ending simulation. Wrote 13 time points to wave-vortex group
+Ending simulation. Wrote 13 time points to dense group
+WVTransformBoussinesq initialized from Ap, Am, A0.
+Ending simulation. Wrote 25 time points to wave-vortex group
+Ending simulation. Wrote 25 time points to dense group
+WVTransformBoussinesq initialized from Ap, Am, A0.
+dX/U = 381165.8 s (6352.8 min). dZ/W = 2575236.6 s (42920.6 min). The highest frequency resolved IGW has period of 3060.4 s (51.0 min).
+Ending simulation. Wrote 7 time points to wave-vortex group
+Ending simulation. Wrote 25 time points to dense group
+WVTransformBoussinesq initialized from Ap, Am, A0.
+dX/U = 381165.8 s (6352.8 min). dZ/W = 2575236.6 s (42920.6 min). The highest frequency resolved IGW has period of 3060.4 s (51.0 min).
+Ending simulation. Wrote 4 time points to wave-vortex group
+Ending simulation. Wrote 13 time points to dense group
+WVTransformBoussinesq initialized from Ap, Am, A0.
+Ending simulation. Wrote 7 time points to wave-vortex group
+Ending simulation. Wrote 25 time points to dense group
+WVTransformBoussinesq initialized from Ap, Am, A0.
+Ending simulation. Wrote 25 time points to wave-vortex group
+Ending simulation. Wrote 25 time points to dense group
+WVTransformBoussinesq initialized from Ap, Am, A0.
+Ending simulation. Wrote 13 time points to wave-vortex group
+Ending simulation. Wrote 13 time points to dense group
+WVTransformBoussinesq initialized from Ap, Am, A0.
+dX/U = 381899.0 s (6365.0 min). dZ/W = 2625787.7 s (43763.1 min). The highest frequency resolved IGW has period of 3060.4 s (51.0 min).
+Ending simulation. Wrote 25 time points to wave-vortex group
+Ending simulation. Wrote 25 time points to dense group
+WVTransformBoussinesq initialized from Ap, Am, A0.
+Ending simulation. Wrote 4 time points to wave-vortex group
+Ending simulation. Wrote 13 time points to dense group
+WVTransformBoussinesq initialized from Ap, Am, A0.
+dX/U = 381899.0 s (6365.0 min). dZ/W = 2625787.7 s (43763.1 min). The highest frequency resolved IGW has period of 3060.4 s (51.0 min).
+Ending simulation. Wrote 7 time points to wave-vortex group
+Ending simulation. Wrote 25 time points to dense group
+WVTransformBoussinesq initialized from Ap, Am, A0.
+Ending simulation. Wrote 5 time points to wave-vortex group
+Ending simulation. Wrote 5 time points to dense group
+WVTransformBoussinesq initialized from Ap, Am, A0.
+dX/U = 381408.9 s (6356.8 min). dZ/W = 2589137.7 s (43152.3 min). The highest frequency resolved IGW has period of 3060.4 s (51.0 min).
+Ending simulation. Wrote 25 time points to wave-vortex group
+Ending simulation. Wrote 25 time points to dense group
+WVTransformBoussinesq initialized from Ap, Am, A0.
+Ending simulation. Wrote 2 time points to wave-vortex group
+Ending simulation. Wrote 5 time points to dense group
+WVTransformBoussinesq initialized from Ap, Am, A0.
+dX/U = 381408.9 s (6356.8 min). dZ/W = 2589137.7 s (43152.3 min). The highest frequency resolved IGW has period of 3060.4 s (51.0 min).
+Ending simulation. Wrote 7 time points to wave-vortex group
+Ending simulation. Wrote 25 time points to dense group
+WVTransformBoussinesq initialized from Ap, Am, A0.
+Ending simulation. Wrote 25 time points to wave-vortex group
+Ending simulation. Wrote 25 time points to dense group
+WVTransformBoussinesq initialized from Ap, Am, A0.
+Ending simulation. Wrote 7 time points to wave-vortex group
+Ending simulation. Wrote 25 time points to dense group
+WVTransformBoussinesq initialized from Ap, Am, A0.
+Ending simulation. Wrote 25 time points to wave-vortex group
+Ending simulation. Wrote 25 time points to dense group
+WVTransformBoussinesq initialized from Ap, Am, A0.
+Ending simulation. Wrote 7 time points to wave-vortex group
+Ending simulation. Wrote 25 time points to dense group
+WVTransformBoussinesq initialized from Ap, Am, A0.
+Ending simulation. Wrote 25 time points to wave-vortex group
+Ending simulation. Wrote 25 time points to dense group
+WVTransformBoussinesq initialized from Ap, Am, A0.
+Ending simulation. Wrote 7 time points to wave-vortex group
+Ending simulation. Wrote 25 time points to dense group
+WVTransformBoussinesq initialized from Ap, Am, A0.
+Ending simulation. Wrote 25 time points to wave-vortex group
+Ending simulation. Wrote 25 time points to dense group
+WVTransformBoussinesq initialized from Ap, Am, A0.
+Ending simulation. Wrote 7 time points to wave-vortex group
+Ending simulation. Wrote 25 time points to dense group
+WVTransformBoussinesq initialized from Ap, Am, A0.
+Ending simulation. Wrote 25 time points to wave-vortex group
+Ending simulation. Wrote 25 time points to dense group
+WVTransformBoussinesq initialized from Ap, Am, A0.
+Ending simulation. Wrote 7 time points to wave-vortex group
+Ending simulation. Wrote 25 time points to dense group
+WVTransformBoussinesq initialized from Ap, Am, A0.
+Ending simulation. Wrote 25 time points to wave-vortex group
+Ending simulation. Wrote 25 time points to dense group
+WVTransformBoussinesq initialized from Ap, Am, A0.
+Ending simulation. Wrote 7 time points to wave-vortex group
+Ending simulation. Wrote 25 time points to dense group
+FORWARD_INTEGRATION_PASS boussinesq provider=reference coefficientEvolution=0.077197679786716725 particleEvolution=0.63832355325570234 tracerEvolution=0.00014092432052659198 stopTime=37
+WVTransformBoussinesq initialized from Ap, Am, A0.
+Ending simulation. Wrote 13 time points to wave-vortex group
+Ending simulation. Wrote 13 time points to dense group
+WVTransformBoussinesq initialized from Ap, Am, A0.
+dX/U = 381899.0 s (6365.0 min). dZ/W = 2625787.7 s (43763.1 min). The highest frequency resolved IGW has period of 3060.4 s (51.0 min).
+Ending simulation. Wrote 25 time points to wave-vortex group
+Ending simulation. Wrote 25 time points to dense group
+WVTransformBoussinesq initialized from Ap, Am, A0.
+Ending simulation. Wrote 4 time points to wave-vortex group
+Ending simulation. Wrote 13 time points to dense group
+WVTransformBoussinesq initialized from Ap, Am, A0.
+dX/U = 381899.0 s (6365.0 min). dZ/W = 2625787.7 s (43763.1 min). The highest frequency resolved IGW has period of 3060.4 s (51.0 min).
+Ending simulation. Wrote 7 time points to wave-vortex group
+Ending simulation. Wrote 25 time points to dense group
+WVTransformBoussinesq initialized from Ap, Am, A0.
+Ending simulation. Wrote 5 time points to wave-vortex group
+Ending simulation. Wrote 5 time points to dense group
+WVTransformBoussinesq initialized from Ap, Am, A0.
+dX/U = 381408.9 s (6356.8 min). dZ/W = 2589137.7 s (43152.3 min). The highest frequency resolved IGW has period of 3060.4 s (51.0 min).
+Ending simulation. Wrote 25 time points to wave-vortex group
+Ending simulation. Wrote 25 time points to dense group
+WVTransformBoussinesq initialized from Ap, Am, A0.
+Ending simulation. Wrote 2 time points to wave-vortex group
+Ending simulation. Wrote 5 time points to dense group
+WVTransformBoussinesq initialized from Ap, Am, A0.
+dX/U = 381408.9 s (6356.8 min). dZ/W = 2589137.7 s (43152.3 min). The highest frequency resolved IGW has period of 3060.4 s (51.0 min).
+Ending simulation. Wrote 7 time points to wave-vortex group
+Ending simulation. Wrote 25 time points to dense group
+WVTransformBoussinesq initialized from Ap, Am, A0.
+Ending simulation. Wrote 25 time points to wave-vortex group
+Ending simulation. Wrote 25 time points to dense group
+WVTransformBoussinesq initialized from Ap, Am, A0.
+Ending simulation. Wrote 7 time points to wave-vortex group
+Ending simulation. Wrote 25 time points to dense group
+WVTransformBoussinesq initialized from Ap, Am, A0.
+Ending simulation. Wrote 25 time points to wave-vortex group
+Ending simulation. Wrote 25 time points to dense group
+WVTransformBoussinesq initialized from Ap, Am, A0.
+Ending simulation. Wrote 7 time points to wave-vortex group
+Ending simulation. Wrote 25 time points to dense group
+WVTransformBoussinesq initialized from Ap, Am, A0.
+Ending simulation. Wrote 25 time points to wave-vortex group
+Ending simulation. Wrote 25 time points to dense group
+WVTransformBoussinesq initialized from Ap, Am, A0.
+Ending simulation. Wrote 7 time points to wave-vortex group
+Ending simulation. Wrote 25 time points to dense group
+WVTransformBoussinesq initialized from Ap, Am, A0.
+Ending simulation. Wrote 25 time points to wave-vortex group
+Ending simulation. Wrote 25 time points to dense group
+WVTransformBoussinesq initialized from Ap, Am, A0.
+Ending simulation. Wrote 7 time points to wave-vortex group
+Ending simulation. Wrote 25 time points to dense group
+WVTransformBoussinesq initialized from Ap, Am, A0.
+Ending simulation. Wrote 25 time points to wave-vortex group
+Ending simulation. Wrote 25 time points to dense group
+WVTransformBoussinesq initialized from Ap, Am, A0.
+Ending simulation. Wrote 7 time points to wave-vortex group
+Ending simulation. Wrote 25 time points to dense group
+WVTransformBoussinesq initialized from Ap, Am, A0.
+Ending simulation. Wrote 25 time points to wave-vortex group
+Ending simulation. Wrote 25 time points to dense group
+WVTransformBoussinesq initialized from Ap, Am, A0.
+Ending simulation. Wrote 7 time points to wave-vortex group
+Ending simulation. Wrote 25 time points to dense group
+FORWARD_INTEGRATION_PASS boussinesq provider=native-fftw coefficientEvolution=0.077197679786716725 particleEvolution=0.63832355325570234 tracerEvolution=0.00014092432052659198 stopTime=37
+.
+Done TestPortableForwardIntegration
+__________
+
+                                                        Name                                                         Passed    Failed    Incomplete    Duration      Details
+    _____________________________________________________________________________________________________________    ______    ______    __________    ________    ____________
+
+    {'TestPortableForwardIntegration/representativeLifecycleMatchesMatlab(configuration=constantHydrostatic)'   }    true      false       false        65.698     {1×1 struct}
+    {'TestPortableForwardIntegration/representativeLifecycleMatchesMatlab(configuration=constantNonhydrostatic)'}    true      false       false        77.763     {1×1 struct}
+    {'TestPortableForwardIntegration/representativeLifecycleMatchesMatlab(configuration=barotropic)'            }    true      false       false        62.262     {1×1 struct}
+    {'TestPortableForwardIntegration/representativeLifecycleMatchesMatlab(configuration=stratifiedQG)'          }    true      false       false        84.416     {1×1 struct}
+    {'TestPortableForwardIntegration/representativeLifecycleMatchesMatlab(configuration=hydrostatic)'           }    true      false       false        72.615     {1×1 struct}
+    {'TestPortableForwardIntegration/representativeLifecycleMatchesMatlab(configuration=boussinesq)'            }    true      false       false        70.002     {1×1 struct}
+
+BLAS: unloading libraries

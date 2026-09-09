@@ -2,6 +2,7 @@
 
 #include "WaveVortexRuntime/WVFieldEvaluationService.hpp"
 #include "WaveVortexRuntime/WVIntegrationState.hpp"
+#include "WVDensityEventEvaluation.hpp"
 
 #include <algorithm>
 #include <array>
@@ -32,7 +33,7 @@ public:
       std::size_t count,Operation&& operation,bool& reused) {
     reused=false;
     const std::array<const WVComplex64*,3> coefficients{state.coefficients.Ap.data,state.coefficients.Am.data,state.coefficients.A0.data};
-    if(state.t!=t_ || state.t0!=t0_ || coefficients!=coefficients_ || field>=fields_.size())
+    if(!retainPrimitiveFields_ || state.t!=t_ || state.t0!=t0_ || coefficients!=coefficients_ || field>=fields_.size())
       return operation();
     auto& values=fields_[field];
     if(!values.empty() && values.size()==count) {
@@ -48,12 +49,50 @@ public:
     } catch(const std::bad_alloc&) {
       return {WVKernelStatusCode::allocationFailure,"Unable to retain a reconstructed field for this output event."};
     }
-    std::size_t bytes=0;
-    for(const auto& fieldValues:fields_) bytes+=fieldValues.capacity()*sizeof(double);
-    metrics_->eventFieldWorkspaceLiveBytes=bytes;
-    metrics_->eventFieldWorkspaceHighWaterBytes=std::max(metrics_->eventFieldWorkspaceHighWaterBytes,bytes);
+    account();
     return WVKernelStatus::ok();
   }
+
+  WVKernelStatus validateDensityBinding(const WVState& state,
+      WVDensityDiagnosticContract contract) const {
+    const std::array<const WVComplex64*,3> coefficients{state.coefficients.Ap.data,state.coefficients.Am.data,state.coefficients.A0.data};
+    if(state.t!=t_ || state.t0!=t0_ || coefficients!=coefficients_)
+      return {WVKernelStatusCode::invalidConfiguration,"Density evaluation belongs to a different active event state."};
+    if(density_.initialized() && contract.reference!=densityContract_.reference)
+      return {WVKernelStatusCode::invalidConfiguration,"Density reference cannot change within an active event."};
+    return WVKernelStatus::ok();
+  }
+  bool hasDensitySource() const noexcept {return density_.initialized();}
+  WVKernelStatus bindDensity(std::vector<double>& source,WVShape3D shape,
+      WVDensityEventGeometry geometry,WVDensityDiagnosticContract contract) {
+    if(density_.initialized()) return WVKernelStatus::ok();
+    densitySource_=std::move(source);
+    account();
+    densityHeights_=*geometry.heights; account();
+    densityWeights_=*geometry.integrationWeights; account();
+    densityInitial_=*geometry.initialProfile; account();
+    geometry.heights=&densityHeights_;
+    geometry.integrationWeights=&densityWeights_;
+    geometry.initialProfile=&densityInitial_;
+    densityContract_=contract;
+    const auto status=WVDensityEventEvaluation::create(
+        {densitySource_.data(),shape},geometry,contract,density_);
+    account();
+    return status;
+  }
+  WVKernelStatus prepareDensity(std::uint8_t demands) {
+    const auto status=density_.prepare(demands);
+    const auto& now=density_.metrics();
+    metrics_->densityRecoveryCount+=now.recoveryCount-densityMetrics_.recoveryCount;
+    metrics_->densityProfileConstructionCount+=now.profileConstructionCount-densityMetrics_.profileConstructionCount;
+    metrics_->densityInversePassCount+=now.inversePassCount-densityMetrics_.inversePassCount;
+    metrics_->densityAPEPassCount+=now.apePassCount-densityMetrics_.apePassCount;
+    metrics_->densityReuseCount+=now.reuseCount-densityMetrics_.reuseCount;
+    densityMetrics_=now;
+    account();
+    return status;
+  }
+  WVDensityEventView densityView(WVDensityEventField field) const noexcept {return density_.view(field);}
 
 private:
   friend class WVFieldEvaluationEventScope;
@@ -61,11 +100,29 @@ private:
   std::array<const WVComplex64*,3> coefficients_{};
   std::array<std::vector<double>,dynamicalDerivativeKeyBase+3> fields_;
   WVFieldEvaluationMetrics* metrics_=nullptr;
+  bool retainPrimitiveFields_=true;
+  std::vector<double> densitySource_;
+  std::vector<double> densityHeights_, densityWeights_, densityInitial_;
+  WVDensityDiagnosticContract densityContract_;
+  WVDensityEventEvaluation density_;
+  WVDensityEventMetrics densityMetrics_;
+  void account() noexcept {
+    const auto sourceBytes=(densitySource_.capacity()+densityHeights_.capacity()+
+        densityWeights_.capacity()+densityInitial_.capacity())*sizeof(double);
+    const auto live=sourceBytes+density_.metrics().liveBytes;
+    const auto peak=sourceBytes+density_.metrics().highWaterBytes;
+    metrics_->densityWorkspaceLiveBytes=live;
+    metrics_->densityWorkspaceHighWaterBytes=std::max(metrics_->densityWorkspaceHighWaterBytes,peak);
+    std::size_t other=0;
+    for(const auto& field:fields_) other+=field.capacity()*sizeof(double);
+    metrics_->eventFieldWorkspaceLiveBytes=other+live;
+    metrics_->eventFieldWorkspaceHighWaterBytes=std::max(metrics_->eventFieldWorkspaceHighWaterBytes,other+peak);
+  }
 };
 
 class WVFieldEvaluationEventScope final {
 public:
-  WVFieldEvaluationEventScope(WVFieldEvaluationService&,const WVIntegrationState&,bool enabled=true);
+  WVFieldEvaluationEventScope(WVFieldEvaluationService&,const WVIntegrationState&,bool enabled=true,bool retainPrimitiveFields=true);
   ~WVFieldEvaluationEventScope() {release();}
   WVFieldEvaluationEventScope(const WVFieldEvaluationEventScope&)=delete;
   WVFieldEvaluationEventScope& operator=(const WVFieldEvaluationEventScope&)=delete;

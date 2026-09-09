@@ -3,6 +3,7 @@
 #include "WaveVortexRuntime/WVFieldEvaluationService.hpp"
 #include "WaveVortexRuntime/WVPortableVariablePlan.hpp"
 #include "WaveVortexRuntime/WVIntegrationState.hpp"
+#include "WaveVortexRuntime/WVDensityDiagnosticContract.hpp"
 
 namespace wavevortex::runtime::detail {
 
@@ -14,17 +15,23 @@ public:
   static bool required(const std::vector<WVFieldRequest>&, bool stratified = false) noexcept;
   static WVKernelStatus create(const WVFieldEvaluationService&,
       const std::vector<WVFieldRequest>&, WVFieldEvaluationPlan&);
+  // Private implementation qualification seam. Public field-plan construction
+  // continues to enforce the catalog's unavailable density-output contracts.
+  static WVKernelStatus createDensityQualification(const WVFieldEvaluationService&,
+      const std::vector<WVFieldRequest>&, WVDensityDiagnosticContract,
+      WVFieldEvaluationPlan&);
   WVKernelStatus rebind(const WVFieldEvaluationService&, WVFieldEvaluationPlan&) const;
   WVKernelStatus evaluate(WVFieldEvaluationService&, const WVIntegrationState&,
       WVFieldOutputView*, std::size_t, const std::uint8_t* activeOutputs = nullptr) const;
   std::size_t persistentBytes() const noexcept;
   bool hasForcingDiagnostics() const noexcept {return !forcingIndices_.empty();}
+  bool hasDensityDiagnostics() const noexcept {return densityQualification_;}
 
 private:
   struct Output {
     WVPortableVariable variable = WVPortableVariable::invalid;
     std::size_t group = 0, dependency = 0;
-    bool surface = false, extrema = false, verticalMean = false, forcing = false;
+    bool surface = false, extrema = false, verticalMean = false, forcing = false, density = false;
     std::size_t forcingSlot=0,forcingChannel=0,forcingPhysicalChannels=0;
     std::array<std::size_t,4> auxiliaries{};
     WVFieldOutputSpecification specification;
@@ -34,6 +41,9 @@ private:
     std::vector<WVFieldRequest> requests;
   };
   WVKernelStatus configure(const WVFieldEvaluationService&);
+  static WVKernelStatus createImpl(const WVFieldEvaluationService&,
+      const std::vector<WVFieldRequest>&, WVFieldEvaluationPlan&,
+      bool densityQualification, WVDensityDiagnosticContract);
   double omega(std::size_t) const noexcept;
   bool keep(std::size_t group, std::size_t family, std::size_t coefficient) const noexcept;
   double weight(std::size_t z) const noexcept;
@@ -48,6 +58,10 @@ private:
   WVShape2D spectral_{};
   bool isHydrostatic_ = true, isBarotropic_ = false, isQG_ = false;
   double Lz_ = 0, constantN2_ = 0, barotropicG_ = 0;
+  bool densityQualification_ = false;
+  WVDensityDiagnosticContract densityContract_;
+  std::vector<double> densityHeights_, densityWeights_, densityInitial_;
+  double densityGravity_ = 0, densityReference_ = 0;
   std::array<Group,5> groups_;
   std::vector<Output> outputs_;
   std::vector<std::size_t> forcingIndices_;

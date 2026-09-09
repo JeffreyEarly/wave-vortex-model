@@ -1,0 +1,131 @@
+{
+  "schemaVersion": 1,
+  "scope": "source-bound forward-integration receipt refresh after density-event implementation",
+  "sourceCommit": "be09fe473cec08677c608174f523ae93aa79ef58",
+  "providers": [
+    "reference",
+    "native-fftw"
+  ],
+  "parameterizedMethodsPassed": 6,
+  "providerCasesPassed": 12,
+  "methodDurationSeconds": 432.75625241666665,
+  "committedReceiptsMethodPassed": true,
+  "postExecutionSourceAndBinaryHashesVerified": true,
+  "originalReceipts": [
+    {
+      "path": ".github/ci-evidence/issue-391-density-event/forward-integration-refresh/original-forward-integration-reference-v1.json",
+      "sha256": "85d9c0f5eac9a7801d50cf15bbe5654e52184019d31c40ea18a5af9d0aee79f5"
+    },
+    {
+      "path": ".github/ci-evidence/issue-391-density-event/forward-integration-refresh/original-forward-integration-native-fftw-v1.json",
+      "sha256": "eb720b7371630bd22785eedfdf96c124d2cb6a13a9b11d573b0d284900690b78"
+    }
+  ],
+  "currentReceipts": [
+    {
+      "path": "PortableRuntime/qualification/forward-integration-reference-v1.json",
+      "sha256": "efafde94eb549f9d5894aea46585a0900d96688981477a70c3d07795b168c7e1"
+    },
+    {
+      "path": "PortableRuntime/qualification/forward-integration-native-fftw-v1.json",
+      "sha256": "859b277674fd83d2814e2161076be46e6690f26c2f7d86a5d65d4179bb265577"
+    }
+  ],
+  "maximumErrors": {
+    "coefficients": 2.066742935413747e-15,
+    "fields": 1.1229037321661902e-15,
+    "tracer": 1.5542843854036618e-15,
+    "particlePosition": 1.8189894035458565e-12,
+    "savedOutput": 2.6396901016129792e-15,
+    "heldAmplitude": 0
+  },
+  "cases": [
+    {
+      "id": "forward-constant-hydrostatic-cfl-rk4",
+      "provider": "reference",
+      "passed": true
+    },
+    {
+      "id": "forward-constant-nonhydrostatic-rk23",
+      "provider": "reference",
+      "passed": true
+    },
+    {
+      "id": "forward-barotropic-qg-rk45",
+      "provider": "reference",
+      "passed": true
+    },
+    {
+      "id": "forward-stratified-qg-rk45",
+      "provider": "reference",
+      "passed": true
+    },
+    {
+      "id": "forward-hydrostatic-rk45",
+      "provider": "reference",
+      "passed": true
+    },
+    {
+      "id": "forward-boussinesq-rk45",
+      "provider": "reference",
+      "passed": true
+    },
+    {
+      "id": "forward-constant-hydrostatic-cfl-rk4",
+      "provider": "native-fftw",
+      "passed": true
+    },
+    {
+      "id": "forward-constant-nonhydrostatic-rk23",
+      "provider": "native-fftw",
+      "passed": true
+    },
+    {
+      "id": "forward-barotropic-qg-rk45",
+      "provider": "native-fftw",
+      "passed": true
+    },
+    {
+      "id": "forward-stratified-qg-rk45",
+      "provider": "native-fftw",
+      "passed": true
+    },
+    {
+      "id": "forward-hydrostatic-rk45",
+      "provider": "native-fftw",
+      "passed": true
+    },
+    {
+      "id": "forward-boussinesq-rk45",
+      "provider": "native-fftw",
+      "passed": true
+    }
+  ],
+  "logs": {
+    "build.log": {
+      "originalSHA256": "218d3fb012cb07614c6c108f5be07528c59720d85259c067d69f3611f84571b8",
+      "retainedSHA256": "218d3fb012cb07614c6c108f5be07528c59720d85259c067d69f3611f84571b8",
+      "normalization": "Only trailing whitespace removed; final newline retained."
+    },
+    "execution.log": {
+      "originalSHA256": "be382286d7e14d2c3f1b7fc0528fe7d58eb096a1380bc49e12777e46b34eb7a3",
+      "retainedSHA256": "0aecdb333c5e9f28f0fc316f8fccd72f30d7afc2656d409346495cb3aaf41273",
+      "normalization": "Only trailing whitespace removed; final newline retained."
+    },
+    "results.json": {
+      "originalSHA256": "d276c0579da91c240d532d584b93125d97d699fe1c66949bd4906c1701a2bbb8",
+      "retainedSHA256": "4a3ecabbd40745c075d9586d9a536451caaa9ab48786744b106bfbba07736ff6",
+      "normalization": "Only trailing whitespace removed; final newline retained."
+    },
+    "collector.log": {
+      "originalSHA256": "de9fc1bbecbee5c395c21339d202a59c0730445461ebd52495f3b932ab12ba5a",
+      "retainedSHA256": "043817aea9040fe3bee70f4539e8a81fd5f788dc29ec9f2e8019ea53e212a483",
+      "normalization": "Only trailing whitespace removed; final newline retained."
+    },
+    "catalog-results.json": {
+      "originalSHA256": "d0ec3a06c9a1ce1d21554dfeb07ea325a9c2224399d4dfc3e9923a570d8edd8e",
+      "retainedSHA256": "f9e3c8b971bbd6dff53793df3aeccd91c6b74d980f60718b217d38f74b1aa673",
+      "normalization": "Only trailing whitespace removed; final newline retained."
+    }
+  }
+}

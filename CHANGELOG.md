@@ -4,6 +4,7 @@
 
 ### Portable density foundation
 
+- Added private qualification of shared C++ density-event evaluation through the existing field service: actual `rho_nm`, selected-reference displacement and APE reuse one recovery and material-height inversion. Demand-driven event storage is released on success or failure, and failed evaluation preserves caller outputs. Public density output and APV remain unavailable pending complete output/restart qualification.
 - Added bounded C++ recovery of the current no-motion density profile using volume-weighted moments and damped least squares, with an exact stable-rest shortcut, explicit convergence and qualification reporting, and failure preservation. Density outputs remain unavailable until model-event evaluation and persistence are qualified.
 - Added a C++ supplied-profile primitive for monotone cubic density, safeguarded inverse material height and stable APE integration, with storage bounded by the vertical profile and no successful-query allocations. Added the optional v2 density diagnostic execution contract: omitted options select actual `rho_nm`, and explicit initial-profile selection is reported without changing MATLAB restart files. The four density outputs remain unavailable pending complete execution-chain qualification.
 

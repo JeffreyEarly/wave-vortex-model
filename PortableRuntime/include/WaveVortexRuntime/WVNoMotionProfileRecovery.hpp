@@ -65,7 +65,10 @@ public:
   static WVKernelStatus moments(
       WVRealVolumeConstView density,
       const std::vector<double> &integrationWeights, double depth,
-      WVDensityDistribution &output);
+      WVDensityDistribution &output,
+      // Optional peak owned vector capacity, including partial failure work.
+      // Excludes borrowed inputs and the prior caller output.
+      std::size_t *workspaceBytes = nullptr);
 
   static WVKernelStatus recover(
       WVRealVolumeConstView density,

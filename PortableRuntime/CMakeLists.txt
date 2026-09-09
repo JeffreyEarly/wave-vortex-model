@@ -37,6 +37,7 @@ add_library(WaveVortexPortableRuntime STATIC
     src/WVNoMotionProfile.cpp
     src/WVNoMotionProfileRecovery.cpp
     src/WVNoMotionDensityMoments.cpp
+    src/WVDensityEventEvaluation.cpp
     src/WVRungeKutta.cpp
     include/WaveVortexRuntime/WVBarotropicQGForcingEngine.hpp
     src/WVBarotropicQGForcingEngine.cpp
@@ -247,6 +248,11 @@ if(BUILD_TESTING)
     wv_add_runtime_test(TestWVNoMotionProfileRecovery TestWVNoMotionProfileRecovery.cpp no-motion-profile-recovery)
     target_sources(TestWVNoMotionProfileRecovery PRIVATE ../tools/compiled-kernel/tests/WVAllocationProbe.cpp)
     target_include_directories(TestWVNoMotionProfileRecovery PRIVATE ../tools/compiled-kernel/tests)
+    wv_add_runtime_test(TestWVDensityEventEvaluation TestWVDensityEventEvaluation.cpp density-event-evaluation)
+    target_sources(TestWVDensityEventEvaluation PRIVATE ../tools/compiled-kernel/tests/WVAllocationProbe.cpp)
+    target_include_directories(TestWVDensityEventEvaluation PRIVATE src ../tools/compiled-kernel/tests)
+    wv_add_runtime_test(TestWVDensityFieldEvaluation TestWVDensityFieldEvaluation.cpp density-field-evaluation)
+    target_include_directories(TestWVDensityFieldEvaluation PRIVATE src)
     wv_add_runtime_test(TestWVObserverAdapter TestWVObserverAdapter.cpp observer-adapter)
     wv_add_runtime_test(TestWVExtensionCatalog TestWVExtensionCatalog.cpp extension-catalog)
     wv_add_runtime_test(TestWVForcingCompatibility TestWVForcingCompatibility.cpp forcing-compatibility-catalog)
@@ -445,6 +451,18 @@ if(BUILD_TESTING)
     add_executable(WVNoMotionRecoveryDump tests/WVNoMotionRecoveryDump.cpp)
     target_include_directories(WVNoMotionRecoveryDump PRIVATE third_party)
     target_link_libraries(WVNoMotionRecoveryDump PRIVATE WaveVortex::PortableRuntime)
+    add_executable(WVDensityEventDump tests/WVDensityEventDump.cpp)
+    target_include_directories(WVDensityEventDump PRIVATE src third_party)
+    target_link_libraries(WVDensityEventDump PRIVATE WaveVortex::PortableRuntime WaveVortex::ReferenceFFT)
+    if(WV_RUNTIME_ENABLE_NATIVE_FFTW)
+        target_link_libraries(WVDensityEventDump PRIVATE WaveVortexNativeFFTW)
+        target_compile_definitions(WVDensityEventDump PRIVATE WV_TEST_NATIVE_FFTW=1)
+    else()
+        target_compile_definitions(WVDensityEventDump PRIVATE WV_TEST_NATIVE_FFTW=0)
+    endif()
+    if(CMAKE_CXX_COMPILER_ID MATCHES "Clang|GNU")
+        target_compile_options(WVDensityEventDump PRIVATE -Wall -Wextra -Wpedantic -Werror)
+    endif()
     if(CMAKE_CXX_COMPILER_ID MATCHES "AppleClang|Clang|GNU")
         target_compile_options(WVNoMotionRecoveryDump PRIVATE -Wall -Wextra -Wpedantic -Werror)
     endif()

@@ -1,0 +1,901 @@
+{
+  "schema": "density-event-matlab-parity-v1",
+  "rows": [
+    {
+      "configuration": "constant-hydrostatic",
+      "antialias": false,
+      "grid": [
+        9,
+        7,
+        10
+      ],
+      "reference": "actual",
+      "provider": "reference",
+      "profileMaximumError": 6.9121597334742546E-11,
+      "profileTolerance": 2.8252803261977986E-6,
+      "etaMaximumError": 2.4439032131340355E-8,
+      "etaTolerance": 0.001,
+      "apeMaximumError": 9.6862086023878473E-14,
+      "apeTolerance": 6.0167113118580877E-12,
+      "densityClosureMaximum": 0,
+      "metrics": {
+        "apePassCount": 1,
+        "eventLiveBytes": 0,
+        "highWaterBytes": 21008,
+        "inversePassCount": 1,
+        "liveBytes": 0,
+        "profileConstructionCount": 1,
+        "recoveryCount": 1,
+        "reuseCount": 3
+      }
+    },
+    {
+      "configuration": "constant-hydrostatic",
+      "antialias": false,
+      "grid": [
+        9,
+        7,
+        10
+      ],
+      "reference": "actual",
+      "provider": "native",
+      "profileMaximumError": 6.9121597334742546E-11,
+      "profileTolerance": 2.8252803261977986E-6,
+      "etaMaximumError": 2.4439032131340355E-8,
+      "etaTolerance": 0.001,
+      "apeMaximumError": 9.6862086023878473E-14,
+      "apeTolerance": 6.0167113118580877E-12,
+      "densityClosureMaximum": 0,
+      "metrics": {
+        "apePassCount": 1,
+        "eventLiveBytes": 0,
+        "highWaterBytes": 21008,
+        "inversePassCount": 1,
+        "liveBytes": 0,
+        "profileConstructionCount": 1,
+        "recoveryCount": 1,
+        "reuseCount": 3
+      }
+    },
+    {
+      "configuration": "constant-hydrostatic",
+      "antialias": false,
+      "grid": [
+        9,
+        7,
+        10
+      ],
+      "reference": "initial",
+      "provider": "reference",
+      "profileMaximumError": 6.9121597334742546E-11,
+      "profileTolerance": 2.8252803261977986E-6,
+      "etaMaximumError": 2.8421709430404007E-14,
+      "etaTolerance": 0.001,
+      "apeMaximumError": 2.4923944472957787E-19,
+      "apeTolerance": 1.5270228042858743E-11,
+      "densityClosureMaximum": 0,
+      "metrics": {
+        "apePassCount": 1,
+        "eventLiveBytes": 0,
+        "highWaterBytes": 21008,
+        "inversePassCount": 1,
+        "liveBytes": 0,
+        "profileConstructionCount": 1,
+        "recoveryCount": 1,
+        "reuseCount": 3
+      }
+    },
+    {
+      "configuration": "constant-hydrostatic",
+      "antialias": false,
+      "grid": [
+        9,
+        7,
+        10
+      ],
+      "reference": "initial",
+      "provider": "native",
+      "profileMaximumError": 6.9121597334742546E-11,
+      "profileTolerance": 2.8252803261977986E-6,
+      "etaMaximumError": 2.8421709430404007E-14,
+      "etaTolerance": 0.001,
+      "apeMaximumError": 2.4923944472957787E-19,
+      "apeTolerance": 1.5270228042858743E-11,
+      "densityClosureMaximum": 0,
+      "metrics": {
+        "apePassCount": 1,
+        "eventLiveBytes": 0,
+        "highWaterBytes": 21008,
+        "inversePassCount": 1,
+        "liveBytes": 0,
+        "profileConstructionCount": 1,
+        "recoveryCount": 1,
+        "reuseCount": 3
+      }
+    },
+    {
+      "configuration": "constant-hydrostatic",
+      "antialias": true,
+      "grid": [
+        8,
+        6,
+        9
+      ],
+      "reference": "actual",
+      "provider": "reference",
+      "profileMaximumError": 2.2737367544323206E-13,
+      "profileTolerance": 2.8252803261977986E-6,
+      "etaMaximumError": 8.0603967944625765E-11,
+      "etaTolerance": 0.001,
+      "apeMaximumError": 7.6450467431874174E-17,
+      "apeTolerance": 1.4879109026339288E-12,
+      "densityClosureMaximum": 0,
+      "metrics": {
+        "apePassCount": 1,
+        "eventLiveBytes": 0,
+        "highWaterBytes": 14584,
+        "inversePassCount": 1,
+        "liveBytes": 0,
+        "profileConstructionCount": 1,
+        "recoveryCount": 1,
+        "reuseCount": 3
+      }
+    },
+    {
+      "configuration": "constant-hydrostatic",
+      "antialias": true,
+      "grid": [
+        8,
+        6,
+        9
+      ],
+      "reference": "actual",
+      "provider": "native",
+      "profileMaximumError": 2.2737367544323206E-13,
+      "profileTolerance": 2.8252803261977986E-6,
+      "etaMaximumError": 8.0603967944625765E-11,
+      "etaTolerance": 0.001,
+      "apeMaximumError": 7.6450467431874174E-17,
+      "apeTolerance": 1.4879109026339288E-12,
+      "densityClosureMaximum": 0,
+      "metrics": {
+        "apePassCount": 1,
+        "eventLiveBytes": 0,
+        "highWaterBytes": 14584,
+        "inversePassCount": 1,
+        "liveBytes": 0,
+        "profileConstructionCount": 1,
+        "recoveryCount": 1,
+        "reuseCount": 3
+      }
+    },
+    {
+      "configuration": "constant-hydrostatic",
+      "antialias": true,
+      "grid": [
+        8,
+        6,
+        9
+      ],
+      "reference": "initial",
+      "provider": "reference",
+      "profileMaximumError": 2.2737367544323206E-13,
+      "profileTolerance": 2.8252803261977986E-6,
+      "etaMaximumError": 2.8421709430404007E-14,
+      "etaTolerance": 0.001,
+      "apeMaximumError": 1.0296744265060088E-19,
+      "apeTolerance": 8.3612621848454961E-12,
+      "densityClosureMaximum": 0,
+      "metrics": {
+        "apePassCount": 1,
+        "eventLiveBytes": 0,
+        "highWaterBytes": 14584,
+        "inversePassCount": 1,
+        "liveBytes": 0,
+        "profileConstructionCount": 1,
+        "recoveryCount": 1,
+        "reuseCount": 3
+      }
+    },
+    {
+      "configuration": "constant-hydrostatic",
+      "antialias": true,
+      "grid": [
+        8,
+        6,
+        9
+      ],
+      "reference": "initial",
+      "provider": "native",
+      "profileMaximumError": 2.2737367544323206E-13,
+      "profileTolerance": 2.8252803261977986E-6,
+      "etaMaximumError": 2.8421709430404007E-14,
+      "etaTolerance": 0.001,
+      "apeMaximumError": 1.0296744265060088E-19,
+      "apeTolerance": 8.3612621848454961E-12,
+      "densityClosureMaximum": 0,
+      "metrics": {
+        "apePassCount": 1,
+        "eventLiveBytes": 0,
+        "highWaterBytes": 14584,
+        "inversePassCount": 1,
+        "liveBytes": 0,
+        "profileConstructionCount": 1,
+        "recoveryCount": 1,
+        "reuseCount": 3
+      }
+    },
+    {
+      "configuration": "constant-nonhydrostatic",
+      "antialias": false,
+      "grid": [
+        9,
+        7,
+        10
+      ],
+      "reference": "actual",
+      "provider": "reference",
+      "profileMaximumError": 3.2969182939268649E-11,
+      "profileTolerance": 2.8252803261977986E-6,
+      "etaMaximumError": 1.1656766218948178E-8,
+      "etaTolerance": 0.001,
+      "apeMaximumError": 4.2918579431564766E-14,
+      "apeTolerance": 5.4235201813051305E-12,
+      "densityClosureMaximum": 0,
+      "metrics": {
+        "apePassCount": 1,
+        "eventLiveBytes": 0,
+        "highWaterBytes": 21008,
+        "inversePassCount": 1,
+        "liveBytes": 0,
+        "profileConstructionCount": 1,
+        "recoveryCount": 1,
+        "reuseCount": 3
+      }
+    },
+    {
+      "configuration": "constant-nonhydrostatic",
+      "antialias": false,
+      "grid": [
+        9,
+        7,
+        10
+      ],
+      "reference": "actual",
+      "provider": "native",
+      "profileMaximumError": 3.2969182939268649E-11,
+      "profileTolerance": 2.8252803261977986E-6,
+      "etaMaximumError": 1.1656766218948178E-8,
+      "etaTolerance": 0.001,
+      "apeMaximumError": 4.2918579431564766E-14,
+      "apeTolerance": 5.4235201813051305E-12,
+      "densityClosureMaximum": 0,
+      "metrics": {
+        "apePassCount": 1,
+        "eventLiveBytes": 0,
+        "highWaterBytes": 21008,
+        "inversePassCount": 1,
+        "liveBytes": 0,
+        "profileConstructionCount": 1,
+        "recoveryCount": 1,
+        "reuseCount": 3
+      }
+    },
+    {
+      "configuration": "constant-nonhydrostatic",
+      "antialias": false,
+      "grid": [
+        9,
+        7,
+        10
+      ],
+      "reference": "initial",
+      "provider": "reference",
+      "profileMaximumError": 3.2969182939268649E-11,
+      "profileTolerance": 2.8252803261977986E-6,
+      "etaMaximumError": 5.6843418860808015E-14,
+      "etaTolerance": 0.001,
+      "apeMaximumError": 2.7311518593030847E-19,
+      "apeTolerance": 1.4789409837670665E-11,
+      "densityClosureMaximum": 0,
+      "metrics": {
+        "apePassCount": 1,
+        "eventLiveBytes": 0,
+        "highWaterBytes": 21008,
+        "inversePassCount": 1,
+        "liveBytes": 0,
+        "profileConstructionCount": 1,
+        "recoveryCount": 1,
+        "reuseCount": 3
+      }
+    },
+    {
+      "configuration": "constant-nonhydrostatic",
+      "antialias": false,
+      "grid": [
+        9,
+        7,
+        10
+      ],
+      "reference": "initial",
+      "provider": "native",
+      "profileMaximumError": 3.2969182939268649E-11,
+      "profileTolerance": 2.8252803261977986E-6,
+      "etaMaximumError": 5.6843418860808015E-14,
+      "etaTolerance": 0.001,
+      "apeMaximumError": 2.7311518593030847E-19,
+      "apeTolerance": 1.4789409837670665E-11,
+      "densityClosureMaximum": 0,
+      "metrics": {
+        "apePassCount": 1,
+        "eventLiveBytes": 0,
+        "highWaterBytes": 21008,
+        "inversePassCount": 1,
+        "liveBytes": 0,
+        "profileConstructionCount": 1,
+        "recoveryCount": 1,
+        "reuseCount": 3
+      }
+    },
+    {
+      "configuration": "constant-nonhydrostatic",
+      "antialias": true,
+      "grid": [
+        8,
+        6,
+        9
+      ],
+      "reference": "actual",
+      "provider": "reference",
+      "profileMaximumError": 2.2737367544323206E-13,
+      "profileTolerance": 2.8252803261977986E-6,
+      "etaMaximumError": 8.0603967944625765E-11,
+      "etaTolerance": 0.001,
+      "apeMaximumError": 1.1257334552039139E-16,
+      "apeTolerance": 1.47142915746418E-12,
+      "densityClosureMaximum": 0,
+      "metrics": {
+        "apePassCount": 1,
+        "eventLiveBytes": 0,
+        "highWaterBytes": 14584,
+        "inversePassCount": 1,
+        "liveBytes": 0,
+        "profileConstructionCount": 1,
+        "recoveryCount": 1,
+        "reuseCount": 3
+      }
+    },
+    {
+      "configuration": "constant-nonhydrostatic",
+      "antialias": true,
+      "grid": [
+        8,
+        6,
+        9
+      ],
+      "reference": "actual",
+      "provider": "native",
+      "profileMaximumError": 2.2737367544323206E-13,
+      "profileTolerance": 2.8252803261977986E-6,
+      "etaMaximumError": 8.0603967944625765E-11,
+      "etaTolerance": 0.001,
+      "apeMaximumError": 1.1257334552039139E-16,
+      "apeTolerance": 1.47142915746418E-12,
+      "densityClosureMaximum": 0,
+      "metrics": {
+        "apePassCount": 1,
+        "eventLiveBytes": 0,
+        "highWaterBytes": 14584,
+        "inversePassCount": 1,
+        "liveBytes": 0,
+        "profileConstructionCount": 1,
+        "recoveryCount": 1,
+        "reuseCount": 3
+      }
+    },
+    {
+      "configuration": "constant-nonhydrostatic",
+      "antialias": true,
+      "grid": [
+        8,
+        6,
+        9
+      ],
+      "reference": "initial",
+      "provider": "reference",
+      "profileMaximumError": 2.2737367544323206E-13,
+      "profileTolerance": 2.8252803261977986E-6,
+      "etaMaximumError": 2.8421709430404007E-14,
+      "etaTolerance": 0.001,
+      "apeMaximumError": 1.0275568441378731E-19,
+      "apeTolerance": 8.2968485232941214E-12,
+      "densityClosureMaximum": 0,
+      "metrics": {
+        "apePassCount": 1,
+        "eventLiveBytes": 0,
+        "highWaterBytes": 14584,
+        "inversePassCount": 1,
+        "liveBytes": 0,
+        "profileConstructionCount": 1,
+        "recoveryCount": 1,
+        "reuseCount": 3
+      }
+    },
+    {
+      "configuration": "constant-nonhydrostatic",
+      "antialias": true,
+      "grid": [
+        8,
+        6,
+        9
+      ],
+      "reference": "initial",
+      "provider": "native",
+      "profileMaximumError": 2.2737367544323206E-13,
+      "profileTolerance": 2.8252803261977986E-6,
+      "etaMaximumError": 2.8421709430404007E-14,
+      "etaTolerance": 0.001,
+      "apeMaximumError": 1.0275568441378731E-19,
+      "apeTolerance": 8.2968485232941214E-12,
+      "densityClosureMaximum": 0,
+      "metrics": {
+        "apePassCount": 1,
+        "eventLiveBytes": 0,
+        "highWaterBytes": 14584,
+        "inversePassCount": 1,
+        "liveBytes": 0,
+        "profileConstructionCount": 1,
+        "recoveryCount": 1,
+        "reuseCount": 3
+      }
+    },
+    {
+      "configuration": "hydrostatic",
+      "antialias": false,
+      "grid": [
+        9,
+        7,
+        10
+      ],
+      "reference": "actual",
+      "provider": "reference",
+      "profileMaximumError": 2.2737367544323206E-13,
+      "profileTolerance": 5.5611659669007168E-6,
+      "etaMaximumError": 6.0481397667899728E-11,
+      "etaTolerance": 0.001,
+      "apeMaximumError": 1.9734734764458245E-16,
+      "apeTolerance": 4.1509767558602579E-12,
+      "densityClosureMaximum": 0,
+      "metrics": {
+        "apePassCount": 1,
+        "eventLiveBytes": 0,
+        "highWaterBytes": 21008,
+        "inversePassCount": 1,
+        "liveBytes": 0,
+        "profileConstructionCount": 1,
+        "recoveryCount": 1,
+        "reuseCount": 3
+      }
+    },
+    {
+      "configuration": "hydrostatic",
+      "antialias": false,
+      "grid": [
+        9,
+        7,
+        10
+      ],
+      "reference": "actual",
+      "provider": "native",
+      "profileMaximumError": 2.2737367544323206E-13,
+      "profileTolerance": 5.5611659669007168E-6,
+      "etaMaximumError": 6.0481397667899728E-11,
+      "etaTolerance": 0.001,
+      "apeMaximumError": 1.9734734764458245E-16,
+      "apeTolerance": 4.1509767558602579E-12,
+      "densityClosureMaximum": 0,
+      "metrics": {
+        "apePassCount": 1,
+        "eventLiveBytes": 0,
+        "highWaterBytes": 21008,
+        "inversePassCount": 1,
+        "liveBytes": 0,
+        "profileConstructionCount": 1,
+        "recoveryCount": 1,
+        "reuseCount": 3
+      }
+    },
+    {
+      "configuration": "hydrostatic",
+      "antialias": false,
+      "grid": [
+        9,
+        7,
+        10
+      ],
+      "reference": "initial",
+      "provider": "reference",
+      "profileMaximumError": 2.2737367544323206E-13,
+      "profileTolerance": 5.5611659669007168E-6,
+      "etaMaximumError": 1.1652900866465643E-12,
+      "etaTolerance": 0.001,
+      "apeMaximumError": 2.8997643553658938E-19,
+      "apeTolerance": 1.0585821428039328E-11,
+      "densityClosureMaximum": 0,
+      "metrics": {
+        "apePassCount": 1,
+        "eventLiveBytes": 0,
+        "highWaterBytes": 21008,
+        "inversePassCount": 1,
+        "liveBytes": 0,
+        "profileConstructionCount": 1,
+        "recoveryCount": 1,
+        "reuseCount": 3
+      }
+    },
+    {
+      "configuration": "hydrostatic",
+      "antialias": false,
+      "grid": [
+        9,
+        7,
+        10
+      ],
+      "reference": "initial",
+      "provider": "native",
+      "profileMaximumError": 2.2737367544323206E-13,
+      "profileTolerance": 5.5611659669007168E-6,
+      "etaMaximumError": 1.1652900866465643E-12,
+      "etaTolerance": 0.001,
+      "apeMaximumError": 2.8997643553658938E-19,
+      "apeTolerance": 1.0585821428039328E-11,
+      "densityClosureMaximum": 0,
+      "metrics": {
+        "apePassCount": 1,
+        "eventLiveBytes": 0,
+        "highWaterBytes": 21008,
+        "inversePassCount": 1,
+        "liveBytes": 0,
+        "profileConstructionCount": 1,
+        "recoveryCount": 1,
+        "reuseCount": 3
+      }
+    },
+    {
+      "configuration": "hydrostatic",
+      "antialias": true,
+      "grid": [
+        8,
+        6,
+        9
+      ],
+      "reference": "actual",
+      "provider": "reference",
+      "profileMaximumError": 0,
+      "profileTolerance": 5.5611659669007168E-6,
+      "etaMaximumError": 1.3073986337985843E-12,
+      "etaTolerance": 0.001,
+      "apeMaximumError": 2.2711070898255928E-19,
+      "apeTolerance": 2.0524177149186225E-12,
+      "densityClosureMaximum": 0,
+      "metrics": {
+        "apePassCount": 1,
+        "eventLiveBytes": 0,
+        "highWaterBytes": 14584,
+        "inversePassCount": 1,
+        "liveBytes": 0,
+        "profileConstructionCount": 1,
+        "recoveryCount": 1,
+        "reuseCount": 3
+      }
+    },
+    {
+      "configuration": "hydrostatic",
+      "antialias": true,
+      "grid": [
+        8,
+        6,
+        9
+      ],
+      "reference": "actual",
+      "provider": "native",
+      "profileMaximumError": 0,
+      "profileTolerance": 5.5611659669007168E-6,
+      "etaMaximumError": 1.3073986337985843E-12,
+      "etaTolerance": 0.001,
+      "apeMaximumError": 2.2711070898255928E-19,
+      "apeTolerance": 2.0524177149186225E-12,
+      "densityClosureMaximum": 0,
+      "metrics": {
+        "apePassCount": 1,
+        "eventLiveBytes": 0,
+        "highWaterBytes": 14584,
+        "inversePassCount": 1,
+        "liveBytes": 0,
+        "profileConstructionCount": 1,
+        "recoveryCount": 1,
+        "reuseCount": 3
+      }
+    },
+    {
+      "configuration": "hydrostatic",
+      "antialias": true,
+      "grid": [
+        8,
+        6,
+        9
+      ],
+      "reference": "initial",
+      "provider": "reference",
+      "profileMaximumError": 0,
+      "profileTolerance": 5.5611659669007168E-6,
+      "etaMaximumError": 2.2737367544323206E-13,
+      "etaTolerance": 0.001,
+      "apeMaximumError": 2.4205951701261759E-19,
+      "apeTolerance": 5.8594881202947582E-12,
+      "densityClosureMaximum": 0,
+      "metrics": {
+        "apePassCount": 1,
+        "eventLiveBytes": 0,
+        "highWaterBytes": 14584,
+        "inversePassCount": 1,
+        "liveBytes": 0,
+        "profileConstructionCount": 1,
+        "recoveryCount": 1,
+        "reuseCount": 3
+      }
+    },
+    {
+      "configuration": "hydrostatic",
+      "antialias": true,
+      "grid": [
+        8,
+        6,
+        9
+      ],
+      "reference": "initial",
+      "provider": "native",
+      "profileMaximumError": 0,
+      "profileTolerance": 5.5611659669007168E-6,
+      "etaMaximumError": 2.2737367544323206E-13,
+      "etaTolerance": 0.001,
+      "apeMaximumError": 2.4205951701261759E-19,
+      "apeTolerance": 5.8594881202947582E-12,
+      "densityClosureMaximum": 0,
+      "metrics": {
+        "apePassCount": 1,
+        "eventLiveBytes": 0,
+        "highWaterBytes": 14584,
+        "inversePassCount": 1,
+        "liveBytes": 0,
+        "profileConstructionCount": 1,
+        "recoveryCount": 1,
+        "reuseCount": 3
+      }
+    },
+    {
+      "configuration": "boussinesq",
+      "antialias": false,
+      "grid": [
+        9,
+        7,
+        10
+      ],
+      "reference": "actual",
+      "provider": "reference",
+      "profileMaximumError": 0,
+      "profileTolerance": 5.5611659669007168E-6,
+      "etaMaximumError": 2.2737367544323206E-13,
+      "etaTolerance": 0.001,
+      "apeMaximumError": 3.2774881102821084E-19,
+      "apeTolerance": 3.852716568261606E-12,
+      "densityClosureMaximum": 0,
+      "metrics": {
+        "apePassCount": 1,
+        "eventLiveBytes": 0,
+        "highWaterBytes": 21008,
+        "inversePassCount": 1,
+        "liveBytes": 0,
+        "profileConstructionCount": 1,
+        "recoveryCount": 1,
+        "reuseCount": 3
+      }
+    },
+    {
+      "configuration": "boussinesq",
+      "antialias": false,
+      "grid": [
+        9,
+        7,
+        10
+      ],
+      "reference": "actual",
+      "provider": "native",
+      "profileMaximumError": 0,
+      "profileTolerance": 5.5611659669007168E-6,
+      "etaMaximumError": 2.2737367544323206E-13,
+      "etaTolerance": 0.001,
+      "apeMaximumError": 3.2774881102821084E-19,
+      "apeTolerance": 3.852716568261606E-12,
+      "densityClosureMaximum": 0,
+      "metrics": {
+        "apePassCount": 1,
+        "eventLiveBytes": 0,
+        "highWaterBytes": 21008,
+        "inversePassCount": 1,
+        "liveBytes": 0,
+        "profileConstructionCount": 1,
+        "recoveryCount": 1,
+        "reuseCount": 3
+      }
+    },
+    {
+      "configuration": "boussinesq",
+      "antialias": false,
+      "grid": [
+        9,
+        7,
+        10
+      ],
+      "reference": "initial",
+      "provider": "reference",
+      "profileMaximumError": 0,
+      "profileTolerance": 5.5611659669007168E-6,
+      "etaMaximumError": 1.1652900866465643E-12,
+      "etaTolerance": 0.001,
+      "apeMaximumError": 3.3541181222290209E-19,
+      "apeTolerance": 9.7639713893955466E-12,
+      "densityClosureMaximum": 0,
+      "metrics": {
+        "apePassCount": 1,
+        "eventLiveBytes": 0,
+        "highWaterBytes": 21008,
+        "inversePassCount": 1,
+        "liveBytes": 0,
+        "profileConstructionCount": 1,
+        "recoveryCount": 1,
+        "reuseCount": 3
+      }
+    },
+    {
+      "configuration": "boussinesq",
+      "antialias": false,
+      "grid": [
+        9,
+        7,
+        10
+      ],
+      "reference": "initial",
+      "provider": "native",
+      "profileMaximumError": 0,
+      "profileTolerance": 5.5611659669007168E-6,
+      "etaMaximumError": 1.1652900866465643E-12,
+      "etaTolerance": 0.001,
+      "apeMaximumError": 3.3541181222290209E-19,
+      "apeTolerance": 9.7639713893955466E-12,
+      "densityClosureMaximum": 0,
+      "metrics": {
+        "apePassCount": 1,
+        "eventLiveBytes": 0,
+        "highWaterBytes": 21008,
+        "inversePassCount": 1,
+        "liveBytes": 0,
+        "profileConstructionCount": 1,
+        "recoveryCount": 1,
+        "reuseCount": 3
+      }
+    },
+    {
+      "configuration": "boussinesq",
+      "antialias": true,
+      "grid": [
+        8,
+        6,
+        9
+      ],
+      "reference": "actual",
+      "provider": "reference",
+      "profileMaximumError": 2.2737367544323206E-13,
+      "profileTolerance": 5.5611659669007168E-6,
+      "etaMaximumError": 2.879119165299926E-11,
+      "etaTolerance": 0.001,
+      "apeMaximumError": 1.1313071305201942E-16,
+      "apeTolerance": 2.0244747073833488E-12,
+      "densityClosureMaximum": 0,
+      "metrics": {
+        "apePassCount": 1,
+        "eventLiveBytes": 0,
+        "highWaterBytes": 14584,
+        "inversePassCount": 1,
+        "liveBytes": 0,
+        "profileConstructionCount": 1,
+        "recoveryCount": 1,
+        "reuseCount": 3
+      }
+    },
+    {
+      "configuration": "boussinesq",
+      "antialias": true,
+      "grid": [
+        8,
+        6,
+        9
+      ],
+      "reference": "actual",
+      "provider": "native",
+      "profileMaximumError": 2.2737367544323206E-13,
+      "profileTolerance": 5.5611659669007168E-6,
+      "etaMaximumError": 2.879119165299926E-11,
+      "etaTolerance": 0.001,
+      "apeMaximumError": 1.1313071305201942E-16,
+      "apeTolerance": 2.0244747073833488E-12,
+      "densityClosureMaximum": 0,
+      "metrics": {
+        "apePassCount": 1,
+        "eventLiveBytes": 0,
+        "highWaterBytes": 14584,
+        "inversePassCount": 1,
+        "liveBytes": 0,
+        "profileConstructionCount": 1,
+        "recoveryCount": 1,
+        "reuseCount": 3
+      }
+    },
+    {
+      "configuration": "boussinesq",
+      "antialias": true,
+      "grid": [
+        8,
+        6,
+        9
+      ],
+      "reference": "initial",
+      "provider": "reference",
+      "profileMaximumError": 2.2737367544323206E-13,
+      "profileTolerance": 5.5611659669007168E-6,
+      "etaMaximumError": 1.1368683772161603E-13,
+      "etaTolerance": 0.001,
+      "apeMaximumError": 6.7626150979272778E-20,
+      "apeTolerance": 5.8205735730330725E-12,
+      "densityClosureMaximum": 0,
+      "metrics": {
+        "apePassCount": 1,
+        "eventLiveBytes": 0,
+        "highWaterBytes": 14584,
+        "inversePassCount": 1,
+        "liveBytes": 0,
+        "profileConstructionCount": 1,
+        "recoveryCount": 1,
+        "reuseCount": 3
+      }
+    },
+    {
+      "configuration": "boussinesq",
+      "antialias": true,
+      "grid": [
+        8,
+        6,
+        9
+      ],
+      "reference": "initial",
+      "provider": "native",
+      "profileMaximumError": 2.2737367544323206E-13,
+      "profileTolerance": 5.5611659669007168E-6,
+      "etaMaximumError": 1.1368683772161603E-13,
+      "etaTolerance": 0.001,
+      "apeMaximumError": 6.7626150979272778E-20,
+      "apeTolerance": 5.8205735730330725E-12,
+      "densityClosureMaximum": 0,
+      "metrics": {
+        "apePassCount": 1,
+        "eventLiveBytes": 0,
+        "highWaterBytes": 14584,
+        "inversePassCount": 1,
+        "liveBytes": 0,
+        "profileConstructionCount": 1,
+        "recoveryCount": 1,
+        "reuseCount": 3
+      }
+    }
+  ]
+}

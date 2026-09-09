@@ -1,0 +1,14 @@
+Internal ctest changing into directory: /tmp/wvm-v4-audit-runtime
+Test project /tmp/wvm-v4-audit-runtime
+    Start 5: no-motion-profile
+1/4 Test #5: no-motion-profile ................   Passed    0.30 sec
+    Start 6: no-motion-profile-recovery
+2/4 Test #6: no-motion-profile-recovery .......   Passed    0.20 sec
+    Start 7: density-event-evaluation
+3/4 Test #7: density-event-evaluation .........   Passed    0.19 sec
+    Start 8: density-field-evaluation
+4/4 Test #8: density-field-evaluation .........   Passed    0.22 sec
+
+100% tests passed, 0 tests failed out of 4
+
+Total Test time (real) =   0.94 sec

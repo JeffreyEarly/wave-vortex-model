@@ -19,7 +19,7 @@ SHARED_TESTS = ['TestPortableStableForcing', 'TestPortableForcingCompatibility',
                 'TestCompiledKernelIntegration', 'TestStratifiedModalRecord',
                 'TestPortableQualificationCatalog', 'TestPortableForwardIntegration',
                 'TestPortableForwardIntegrationCatalog', 'TestPortableNoMotionProfile',
-                'TestPortableNoMotionRecovery']
+                'TestPortableNoMotionRecovery', 'TestPortableDensityEventEvaluation']
 PERSISTENCE_TESTS = ['TestPortableRuntimeCompatibility', 'TestPortableRunRequestWriter',
                      'TestPortableObserverContracts', 'TestPortableForcingContracts',
                      'TestWVModelOutputPersistence', 'TestNetCDF', 'TestNetCDFHandleOwnership',

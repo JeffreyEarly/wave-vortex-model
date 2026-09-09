@@ -110,7 +110,8 @@ class RoutingTests(unittest.TestCase):
             for inventory, shards in [('matlabTests', 'matlabShards'),
                                       ('sanitizedTests', 'sanitizedShards')]:
                 flattened = [name for group in plan[shards] for name in group['classes']]
-                for name in ['TestPortableNoMotionProfile', 'TestPortableNoMotionRecovery']:
+                for name in ['TestPortableNoMotionProfile', 'TestPortableNoMotionRecovery',
+                             'TestPortableDensityEventEvaluation']:
                     self.assertIn(name, plan[inventory])
                     self.assertEqual(flattened.count(name), 1)
 
