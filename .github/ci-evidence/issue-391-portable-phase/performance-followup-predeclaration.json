@@ -1,0 +1,8 @@
+{
+  "predeclaredUTC": "2026-09-09T17:05:08.110668+00:00",
+  "reason": "First constant8-pair runtime +7.603% with nonstationary .557-.803sec samples; one followup allowed, no repeated selection of passing samples.",
+  "runs": 16,
+  "excludedWarmupPairs": 1,
+  "order": "Reverse first campaign initial ordering; subsequent pairs alternate.",
+  "interpretation": "Retain first8 and new16; combined24 ratio of medians plus paired ratio distribution, 3% aggregate budget and followup assessment."
+}

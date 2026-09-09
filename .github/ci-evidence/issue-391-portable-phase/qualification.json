@@ -1,0 +1,101 @@
+{
+  "schema": "portable-phase-qualification-v1",
+  "status": "passed",
+  "baselineCommit": "84a75ed017d797ca81b27c22e916972bb1ce70fc",
+  "scope": "C++ phase/conjPhase evaluation and output only; four density diagnostics remain unsupported.",
+  "sourceSHA256": [
+    {
+      "path": "PortableRuntime/src/WVDiagnosticFieldPlan.cpp",
+      "sha256": "6aea4edbd041cf4684e81369425482b0c3ccc16331f5c99fade53aa1b72ad9be"
+    },
+    {
+      "path": "PortableRuntime/contracts/portable-variable-supplement-v1.json",
+      "sha256": "893f9862ee5a37fa398fe9021fc6ddd62531b71798bc52d341deb3b7f9bd7579"
+    },
+    {
+      "path": "PortableRuntime/contracts/portable-variable-catalog-v1.json",
+      "sha256": "e6393b1c82208d66b2243cbc34e4f1e2461083969977c247ed6205087daa359f"
+    },
+    {
+      "path": "PortableRuntime/include/WaveVortexRuntime/generated/WVPortableVariableCatalog.hpp",
+      "sha256": "36184739398c63efdbb19eadcdbc90b7ebe8c0f4e94a1ec410b1221d5935f20f"
+    },
+    {
+      "path": "PortableRuntime/include/WaveVortexRuntime/generated/WVPortableVariableContracts.hpp",
+      "sha256": "dba30743624682e66a77e4d5087a6d38aaa547324d9968ee9b6dedb05200dce2"
+    },
+    {
+      "path": "PortableRuntime/tests/TestWVFieldEvaluation.cpp",
+      "sha256": "0608723d7093a73469f6f49799f266c65afc4487f49f4cb741dccf11570e2488"
+    },
+    {
+      "path": "PortableRuntime/tests/TestWVPortableVariableCatalog.cpp",
+      "sha256": "4a1d2c58446b2f1ee5431a01b03da862c0ad978d46e0603d2b9c490a44f6c630"
+    },
+    {
+      "path": "UnitTests/TestPortableDiagnostics.m",
+      "sha256": "0b3b6240bc3b363cbf9695f49d0196d289f91a1eb449232c77841bdb388742a3"
+    }
+  ],
+  "catalog": {
+    "identities": 76,
+    "rows": 666,
+    "phaseRowsPromoted": 16,
+    "implemented": 634,
+    "intentionalIncompatibility": 32,
+    "legacyMetadataUnchanged": true
+  },
+  "verification": {
+    "matlabCatalogMethodsPassed": 6,
+    "releaseFieldPassed": true,
+    "releaseCatalogPassed": true,
+    "sanitizedFieldPassed": true,
+    "sanitizedCatalogPassed": true,
+    "initialCatalogFailure": "The first Release test binary used an incorrect one-node expectation for conjPhase; its semantic dependency plan is phase then conjPhase. Corrected test and reran only the failed catalog. Production unchanged.",
+    "phaseConfigurationProviderRowsPassed": 16,
+    "phaseContinuationScenariosPassed": 64,
+    "phaseMaximumAbsoluteError": 1.1443916996305594e-16,
+    "allDiagnosticRowsPassed": 48,
+    "allDiagnosticMaximumRelativeError": 1.2222953475043186e-13,
+    "matlabAnalyzerFindings": 0,
+    "independentReview": "No material correctness or lifecycle issue; no additional test or implementation change required.",
+    "documentation": {
+      "files": 2026,
+      "routes": 4145,
+      "failures": 0,
+      "comparisonDifferences": 0
+    },
+    "matchedIntegrationPerformance": "Passed with first noisy constant failure retained and one predeclared follow-up; see performance.json.",
+    "savedIntegrationMaximumNormalizedError": 5.123075563666571e-16
+  },
+  "artifacts": [
+    {
+      "path": "catalog-matlab.log",
+      "sha256": "b57b4e0aff3dc45159799efe4d092725f7b8b52c4ce09af1c76219673c64766c"
+    },
+    {
+      "path": "cpp-release-first.log",
+      "sha256": "627fed81b7b2124ed4d6420872678e6d948b0bdd43fb3573c33cbdcbe77331b1"
+    },
+    {
+      "path": "cpp-release-catalog-retest.log",
+      "sha256": "7d777ab97b9486bb21aa47b9cdc4ff394ca7ba99a1205f6ede8d8d6eeb61ff49"
+    },
+    {
+      "path": "cpp-sanitized.log",
+      "sha256": "45501de124f05669c0bef875b3f78597fc54c3a737463c2c3659108facdf4d79"
+    },
+    {
+      "path": "receipt.json",
+      "sha256": "d29882bb28fa994335f58eaf2b37228c2ddfc48ab5a64fd54864073cf86d68dc"
+    },
+    {
+      "path": "documentation.log",
+      "sha256": "b1116465d28c01ec9be0513aa0b43f2d10ea84d9b56fc88541036bc87ea01e3f"
+    },
+    {
+      "path": "performance.json",
+      "sha256": "fce46c6d2c4ef0d1c9ca33d32fdffebabb16a3cf03b8dde8d2ea81697f9c74f1"
+    }
+  ]
+}

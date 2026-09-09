@@ -2,6 +2,10 @@
 
 ## [Unreleased]
 
+### Portable phase diagnostics
+
+- Added C++ `phase` and `conjPhase` evaluation and split-complex NetCDF output for all four wave-bearing transform configurations with antialiasing on or off. Both reuse the existing event-time phase calculation, preserving `t0` through dense output, restart, append and MATLAB/C++ continuation. Sixteen phase rows are implemented; the four density diagnostics remain explicitly unsupported pending their separate C++ implementation.
+
 ### MATLAB density diagnostics
 
 - Bounded displacement inversion to blocks of 1,048,576 parcels, reducing its expanded coefficient array from 688 MiB to at most 32 MiB on the large JAMES state while preserving the solver and bitwise diagnostic results. Three paired local trials measured displacement operation medians of 0.142→0.122 seconds on 256×256×43 and 1.045→1.032 seconds on 512×512×86; the latter is within timing variation.

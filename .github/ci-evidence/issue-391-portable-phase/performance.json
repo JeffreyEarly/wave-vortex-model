@@ -1,0 +1,172 @@
+{
+  "schema": "portable-phase-matched-performance-resolution-v1",
+  "issue": 391,
+  "status": "passed",
+  "assembledUTC": "2026-09-09T17:07:51.331570+00:00",
+  "maximumRegressionFraction": 0.03,
+  "interpretation": "All samples retained: initial constant 8 exceeded budget; one predeclared reversed-order 16-pair followup passed; combined 24 constant estimate passes. Substantial nonstationary variation prevents a speedup claim; evidence supports no reproducible >3% regression. No further timing campaigns run.",
+  "constant": {
+    "initial8": {
+      "samplesPerExecutable": 8,
+      "runtimeChangeFraction": 0.0760327217946426,
+      "medianPairedRuntimeChangeFraction": 0.03296745565488335,
+      "pairedRuntimeChangeRange": [
+        -0.05820850666360222,
+        0.27127419466505787
+      ],
+      "pairedRuntimeChangeIQR": [
+        -0.009713197686662844,
+        0.06399356946727824
+      ],
+      "seconds": {
+        "baseline": {
+          "median": 0.6718393119999999,
+          "range": [
+            0.557073541,
+            0.748482625
+          ]
+        },
+        "candidate": {
+          "median": 0.7229210835,
+          "range": [
+            0.558069458,
+            0.803342
+          ]
+        }
+      }
+    },
+    "followup16": {
+      "samplesPerExecutable": 16,
+      "runtimeChangeFraction": -0.02778949693060373,
+      "medianPairedRuntimeChangeFraction": -0.0055948872751712675,
+      "pairedRuntimeChangeRange": [
+        -0.22427820336442406,
+        0.11383800592044957
+      ],
+      "pairedRuntimeChangeIQR": [
+        -0.09433220954412183,
+        0.002520638719913204
+      ],
+      "seconds": {
+        "baseline": {
+          "median": 0.5730102290000001,
+          "range": [
+            0.549756125,
+            0.720242208
+          ]
+        },
+        "candidate": {
+          "median": 0.557086563,
+          "range": [
+            0.547116833,
+            0.657007833
+          ]
+        }
+      }
+    },
+    "combined24": {
+      "samplesPerExecutable": 24,
+      "runtimeChangeFraction": -0.01403086676318499,
+      "medianPairedRuntimeChangeFraction": -0.0011832348424564154,
+      "pairedRuntimeChangeRange": [
+        -0.22427820336442406,
+        0.27127419466505787
+      ],
+      "pairedRuntimeChangeIQR": [
+        -0.06560537656359025,
+        0.05020053349434511
+      ],
+      "seconds": {
+        "baseline": {
+          "median": 0.624904979,
+          "range": [
+            0.549756125,
+            0.748482625
+          ]
+        },
+        "candidate": {
+          "median": 0.6161370205000001,
+          "range": [
+            0.547116833,
+            0.803342
+          ]
+        }
+      }
+    }
+  },
+  "otherFamilies": [
+    {
+      "family": "hydrostatic",
+      "runtimeChangeFraction": 0.006580598373139512,
+      "retainedMemoryChangeFraction": 2.4776968567952196e-06,
+      "passes": true
+    },
+    {
+      "family": "boussinesq",
+      "runtimeChangeFraction": -0.04389651737676603,
+      "retainedMemoryChangeFraction": 0.0,
+      "passes": true
+    }
+  ],
+  "work": "All measured integrations completed 32 time units, 64 accepted RK4 steps, 256 RHS calls, zero rejections; final saved report states/providers agree.",
+  "memory": "Application/provider-reported retained storage: constant and Boussinesq identical; Hydrostatic candidate 8 bytes greater (0.000248%) in output sink, all state-sized workspace and diagnostic liveness identical. Opaque FFTW/NetCDF and allocator storage excluded as in existing gate.",
+  "outputComparisons": {
+    "initial": [
+      {
+        "family": "constant",
+        "numericVariableCount": 43,
+        "timeDependentVariableCount": 19,
+        "savedCoefficientVariableCount": 6,
+        "maximumNormalizedError": 2.5615377818332856e-16,
+        "savedCoefficientMaximumNormalizedError": 1.6829748607716765e-16,
+        "allNumericVariablesExactlyEqual": false
+      },
+      {
+        "family": "hydrostatic",
+        "numericVariableCount": 55,
+        "timeDependentVariableCount": 19,
+        "savedCoefficientVariableCount": 6,
+        "maximumNormalizedError": 4.1923547499112153e-16,
+        "savedCoefficientMaximumNormalizedError": 1.0843936236057385e-16,
+        "allNumericVariablesExactlyEqual": false
+      },
+      {
+        "family": "boussinesq",
+        "numericVariableCount": 65,
+        "timeDependentVariableCount": 19,
+        "savedCoefficientVariableCount": 6,
+        "maximumNormalizedError": 0.0,
+        "savedCoefficientMaximumNormalizedError": 0.0,
+        "allNumericVariablesExactlyEqual": true
+      }
+    ],
+    "followup": [
+      {
+        "family": "constant",
+        "numericVariableCount": 43,
+        "timeDependentVariableCount": 19,
+        "savedCoefficientVariableCount": 6,
+        "maximumNormalizedError": 5.123075563666571e-16,
+        "savedCoefficientMaximumNormalizedError": 6.311155727893787e-17,
+        "allNumericVariablesExactlyEqual": false
+      }
+    ]
+  },
+  "buildAudit": "Seven linked targets share compiler, ARM64 architecture, SDK, optimization and feature flags after path normalization. Only runner source-version macro differs: baseline archive truthfully embeds package-version fallback while external full source manifest binds baseline 84a75ed; candidate embeds checkout base. Both load the same pinned native FFTW and NetCDF libraries. Shared phase implementation changes only diagnostic plan and generated catalog headers.",
+  "harnessCorrection": "First receipt wrapper initially asserted every liveness field exactly equal; Hydrostatic +8 byte sink difference violated that unintended stronger condition. Assembly corrected to the predeclared 3% retained-memory gate using existing raw results, without rerunning timing or suppressing the initial runtime failure.",
+  "reproduction": "Initial: unchanged Benchmarks/comparePortableDiagnosticBaseline.py, --runs 8, retained identical #289 fixture bytes. Followup: same script limited to constant, initial order reversed, --runs 16; warmup pair excluded in each. Source/data/binary hashes and raw ordered samples retained.",
+  "limitations": [
+    "Three established native output workloads are a bounded non-regression gate, not a phase-output speed benchmark or full method/transform performance matrix.",
+    "Saved-output comparison checks final measured files for each campaign; intermediate repetition files are overwritten by the established harness.",
+    "Retained fixture NetCDF files are local assets under /private/tmp/wvm391-phase-performance; durable receipts bind their bytes but do not embed the large fixtures."
+  ],
+  "artifacts": {
+    "performance-initial.json": "536ea84e2ebab2e24082926f705f74e14110cbd4566aeadb1f16ed4118ebe3f8",
+    "performance-initial-receipt.json": "e861117c76a39a5405123993f4130fe22af103447f52cf5c5eb431d84c3f5a4d",
+    "performance-followup.json": "337f4658963bab28d4e72a0834cf2cea39122253762fcc09befa8aa32f987add",
+    "performance-followup-predeclaration.json": "195db117d2e20d6a7dc927c4400707e93d36df2c501ac4a7528d2e3bac51fc41",
+    "performance-build-flags.json": "9c77c45f88545025071274d8a79f5255f2b689727b0340f555fdd2da1845f068",
+    "performance-output-comparator.py": "02fcedb7aba389dd149464d09bed8a448bebc6be54627c7a51dc407c1d5fb575",
+    "performance-followup-runner.py": "16bcb2ef54e20ba364c969e7596d27111321c4b9cbd1d2be85f6420d9e6b44f9"
+  }
+}

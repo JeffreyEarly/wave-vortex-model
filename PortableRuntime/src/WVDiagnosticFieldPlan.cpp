@@ -135,6 +135,7 @@ WVKernelStatus WVDiagnosticFieldPlan::create(const WVFieldEvaluationService& ser
       output.specification.samplingKind=request.sampling.kind;
       switch(m->identifier) {
         case Variable::A0t: case Variable::Apt: case Variable::Amt:
+        case Variable::phase: case Variable::conjPhase:
           output.specification.isComplex=true;
           output.specification.dimensions=plan->isBarotropic_ ? std::vector<std::size_t>{plan->spectral_.columns} :
               std::vector<std::size_t>{plan->spectral_.rows,plan->spectral_.columns};
@@ -433,7 +434,8 @@ WVKernelStatus WVDiagnosticFieldPlan::evaluate(WVFieldEvaluationService& service
     }
     bool needsPhase=false;
     for(std::size_t index=0;index<count;++index) if(active(index))
-      needsPhase|=outputs_[index].variable==Variable::Apt || outputs_[index].variable==Variable::Amt;
+      needsPhase|=outputs_[index].variable==Variable::Apt || outputs_[index].variable==Variable::Amt ||
+          outputs_[index].variable==Variable::phase || outputs_[index].variable==Variable::conjPhase;
     if(needsPhase) {
       phases.resize(n);
       for(std::size_t index=0;index<n;++index) {
@@ -448,6 +450,14 @@ WVKernelStatus WVDiagnosticFieldPlan::evaluate(WVFieldEvaluationService& service
       if(output.forcing) {
         const auto R=spatial_.elementCount();
         std::copy_n(forcingFields[output.forcingSlot].data()+output.forcingChannel*R,R,outputs[index].data);
+      } else if(output.variable==Variable::phase || output.variable==Variable::conjPhase) {
+        // Reuse the same event-time phase as Apt/Amt; phase output does not
+        // depend on coefficient amplitudes or allocate another workspace.
+        for(std::size_t coefficient=0;coefficient<n;++coefficient) {
+          auto phase=phases[coefficient];
+          if(output.variable==Variable::conjPhase) phase.imag=-phase.imag;
+          outputs[index].complexData[coefficient]=phase;
+        }
       } else if(output.specification.isComplex) {
         const auto family=output.variable==Variable::Apt ? 0 : output.variable==Variable::Amt ? 1 : 2;
         for(std::size_t coefficient=0;coefficient<n;++coefficient) {

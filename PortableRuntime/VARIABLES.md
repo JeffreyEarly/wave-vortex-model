@@ -45,7 +45,7 @@ Forcing exemplar names ending in `_portable_catalog_forcing` define templates: b
 | 30 | `Fw_portable_catalog_forcing` | m s-2 | x,y,z | implemented | boussinesq, constant-nonhydrostatic | A0, Am, Ap |
 | 31 | `ape` | m2 s-2 | x,y,z | intentional-incompatibility | boussinesq, constant-hydrostatic, constant-nonhydrostatic, hydrostatic | eta_true, rho_nm (true profile) |
 | 32 | `apv` | s-1 | x,y,z | intentional-incompatibility | boussinesq, constant-hydrostatic, constant-nonhydrostatic, hydrostatic | eta_true, zeta_x, zeta_y, zeta_z |
-| 33 | `conjPhase` | 1 | j,kl | intentional-incompatibility | boussinesq, constant-hydrostatic, constant-nonhydrostatic, hydrostatic | phase |
+| 33 | `conjPhase` | 1 | j,kl | implemented | boussinesq, constant-hydrostatic, constant-nonhydrostatic, hydrostatic | phase |
 | 34 | `energy_g` | m3 s-2 |  | implemented | boussinesq, constant-hydrostatic, constant-nonhydrostatic, hydrostatic | A0 |
 | 35 | `energy_io` | m3 s-2 |  | implemented | boussinesq, constant-hydrostatic, constant-nonhydrostatic, hydrostatic | Am, Ap |
 | 36 | `energy_mda` | m3 s-2 |  | implemented | boussinesq, constant-hydrostatic, constant-nonhydrostatic, hydrostatic | A0 |
@@ -60,7 +60,7 @@ Forcing exemplar names ending in `_portable_catalog_forcing` define templates: b
 | 45 | `p_io` | kg m-1 s-2 | x,y,z | implemented | boussinesq, constant-hydrostatic, constant-nonhydrostatic, hydrostatic | Amt, Apt |
 | 46 | `p_mda` | kg m-1 s-2 | x,y,z | implemented | boussinesq, constant-hydrostatic, constant-nonhydrostatic, hydrostatic | A0t |
 | 47 | `p_w` | kg m-1 s-2 | x,y,z | implemented | boussinesq, constant-hydrostatic, constant-nonhydrostatic, hydrostatic | Amt, Apt |
-| 48 | `phase` | 1 | j,kl | intentional-incompatibility | boussinesq, constant-hydrostatic, constant-nonhydrostatic, hydrostatic |  |
+| 48 | `phase` | 1 | j,kl | implemented | boussinesq, constant-hydrostatic, constant-nonhydrostatic, hydrostatic |  |
 | 49 | `rho_nm` | kg m-3 | z | intentional-incompatibility | boussinesq, constant-hydrostatic, constant-nonhydrostatic, hydrostatic | rho_total |
 | 50 | `ssh_g` | m | x,y | implemented | boussinesq, constant-hydrostatic, constant-nonhydrostatic, hydrostatic | A0t |
 | 51 | `ssh_io` | m | x,y | implemented | boussinesq, constant-hydrostatic, constant-nonhydrostatic, hydrostatic | Amt, Apt |
@@ -97,9 +97,7 @@ The registered outputs below remain unavailable in the portable runtime for the 
 | --- | --- |
 | `ape` | unpersisted-density-profile-contract: this diagnostic depends on the unsaved no-motion solver identity and true-profile selection. |
 | `apv` | unpersisted-true-profile-selection: this diagnostic depends on eta_true and its unsaved reference/true-profile choice. |
-| `conjPhase` | phase-output-evaluation-pending-391: MATLAB complex output metadata is corrected; portable phase evaluation and persistence remain unqualified. |
 | `eta_true` | unpersisted-true-profile-selection: shouldUseTrueNoMotionProfile is deliberately runtime-only in MATLAB v4; a portable continuation cannot recover the authored reference/true-profile choice. |
-| `phase` | phase-output-evaluation-pending-391: MATLAB complex output metadata is corrected; portable phase evaluation and persistence remain unqualified. |
 | `rho_nm` | unpersisted-no-motion-solver: MATLAB defaults to dampedLeastSquares and supports explicit lsqnonlin or fminsearch; saved v4 models do not carry that numerical solver identity. |
 | `totalEnstrophy` | method-without-variable-annotation |
 | `totalEnstrophySpatiallyIntegrated` | method-without-variable-annotation |

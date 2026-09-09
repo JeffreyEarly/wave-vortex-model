@@ -17,7 +17,7 @@ classdef TestPortableDiagnostics < matlab.unittest.TestCase
                 build = fullfile(testCase.folder,"build");
                 [status,output] = cleanSystem("cmake -S "+shellQuote(fullfile(testCase.root,"PortableRuntime"))+" -B "+shellQuote(build)+" -DCMAKE_BUILD_TYPE=Release -DBUILD_TESTING=ON -DWV_ENABLE_ACCELERATE=OFF");
                 testCase.assertEqual(status,0,output);
-                [status,output] = cleanSystem("cmake --build "+shellQuote(build)+" --parallel 4 --target WVDiagnosticFieldDump");
+                [status,output] = cleanSystem("cmake --build "+shellQuote(build)+" --parallel 4 --target WVDiagnosticFieldDump wave-vortex-run");
                 testCase.assertEqual(status,0,output);
                 testCase.executable = fullfile(build,"WVDiagnosticFieldDump");
             end
@@ -37,7 +37,7 @@ classdef TestPortableDiagnostics < matlab.unittest.TestCase
                         configuration = family+"-aa"+double(antialias);
                         rows = catalog.contracts(string({catalog.contracts.configuration})==configuration);
                         names = reshape(arrayfun(@(row)string(row.metadata.name),rows),1,[]);
-                        rejected = intersect(names,["phase","conjPhase","rho_nm","eta_true","ape","apv"],"stable");
+                        rejected = intersect(names,["rho_nm","eta_true","ape","apv"],"stable");
                         names = names(~endsWith(names,"_portable_catalog_forcing") & ~ismember(names,["Ap","Am","A0",rejected]));
                         for row = reshape(rows,1,[])
                             if string(row.authority)=="known-variable-factory"
@@ -181,6 +181,88 @@ classdef TestPortableDiagnostics < matlab.unittest.TestCase
             end
         end
 
+        function phaseOutputContinuationMatchesMatlab(testCase)
+            runner = fullfile(fileparts(testCase.executable),"wave-vortex-run");
+            testCase.assertTrue(isfile(runner));
+            names = ["phase","conjPhase"];
+            rows = struct(configuration={},grid={},provider={},maximumAbsoluteError={},scenarios={},ordinaryRecords={},denseRecords={});
+            for family = ["constant-hydrostatic","constant-nonhydrostatic","hydrostatic","boussinesq"]
+                for antialias = [false true]
+                    grid = [8 6 9]+double(~antialias);
+                    wvt = testCase.transform(family,grid,antialias);
+                    model = WVModel(wvt,shouldUseLinearDynamics=true);
+                    model.eulerianObservingSystem.addNetCDFOutputVariables(names{:});
+                    source = fullfile(testCase.folder,"phase-source.nc");
+                    file = model.createNetCDFFileForModelOutput(source,outputInterval=.5,shouldOverwriteExisting=true);
+                    dense = file.addNewEvenlySpacedOutputGroup("dense",outputInterval=.125,initialTime=37,finalTime=38);
+                    dense.addObservingSystem(WVEulerianFields(model,fieldNames=cellstr(names)));
+                    file.outputTimesForIntegrationPeriod(37,38);
+                    file.writeTimeStepToOutputFile(37);
+                    model.closeNetCDFFile();
+                    control = fullfile(testCase.folder,"phase-matlab.nc"); copyfile(source,control);
+                    testCase.continuePhaseInMatlab(control,38);
+                    prefix = fullfile(testCase.folder,"phase-prefix.nc"); copyfile(source,prefix);
+                    testCase.continuePhaseInMatlab(prefix,37.5);
+                    for provider = testCase.providers
+                        dumpRequest = fullfile(testCase.folder,"phase-fields.json");
+                        dumpPath = fullfile(testCase.folder,"phase-fields-result.json");
+                        writeText(dumpRequest,jsonencode(struct(fields=names)));
+                        [status,output] = cleanSystem(shellQuote(testCase.executable)+" "+shellQuote(source)+" "+shellQuote(dumpRequest)+" "+shellQuote(dumpPath)+" "+provider);
+                        testCase.assertEqual(status,0,output);
+                        dump = jsondecode(fileread(dumpPath));
+                        maximumError = 0;
+                        for name = names
+                            actual = complex(dump.fields.(name).real,dump.fields.(name).imag);
+                            expected = wvt.(name);
+                            error = max(abs(actual(:)-expected(:)));
+                            testCase.verifyLessThanOrEqual(error,1e-12,family+" "+provider+" "+name);
+                            maximumError = max(maximumError,error);
+                        end
+                        scenarios = ["whole","cppRestart","matlabToCpp","cppToMatlab"];
+                        for scenario = scenarios
+                            destination = fullfile(testCase.folder,"phase-runtime.nc");
+                            if scenario=="matlabToCpp", copyfile(prefix,destination);
+                            else, copyfile(source,destination); end
+                            if ismember(scenario,["cppRestart","cppToMatlab"])
+                                testCase.continuePhaseInCpp(destination,provider,37.5,runner);
+                                testCase.verifyPhaseRecords(destination,wvt,37.5);
+                            end
+                            if scenario=="cppToMatlab"
+                                testCase.continuePhaseInMatlab(destination,38);
+                            else
+                                testCase.continuePhaseInCpp(destination,provider,38,runner);
+                            end
+                            maximumError = max(maximumError,testCase.verifyPhaseRecords(destination,wvt,38));
+                            for group = ["wave-vortex","dense"]
+                                expectedTimes = ncread(control,"/"+group+"/t");
+                                testCase.verifyEqual(ncread(destination,"/"+group+"/t"),expectedTimes);
+                                for name = names
+                                    for part = ["real","imag"]
+                                        variable = "/"+group+"/"+name+"_"+part;
+                                        expected = ncread(control,variable);
+                                        actual = ncread(destination,variable);
+                                        error = max(abs(actual(:)-expected(:)));
+                                        testCase.verifyLessThanOrEqual(error,1e-12,family+" "+provider+" "+scenario+" "+variable);
+                                        maximumError = max(maximumError,error);
+                                    end
+                                end
+                            end
+                        end
+                        rows(end+1) = struct(configuration=family+"-aa"+double(antialias),grid=grid,provider=provider, ...
+                            maximumAbsoluteError=maximumError,scenarios=scenarios,ordinaryRecords=3,denseRecords=9); %#ok<AGROW>
+                        fprintf("PHASE_OUTPUT_PASS %s aa=%d provider=%s maximumAbsoluteError=%.17g scenarios=4\n",family,antialias,provider,maximumError);
+                    end
+                end
+            end
+            reportPath = string(getenv("WV_PHASE_REPORT"));
+            if reportPath~=""
+                report = struct(schema="portable-phase-output-numerical-v1",rows=rows,matlabRelease=string(version('-release')), ...
+                    initialTime=37,referenceTime=17,finalTime=38,step=.25,denseInterval=.125, ...
+                    passes=all([rows.maximumAbsoluteError]<=1e-12));
+                writeText(reportPath,jsonencode(report,PrettyPrint=true));
+            end
+        end
+
         function existingComponentOperationIsPreserved(testCase)
             wvt = testCase.transform("constant-hydrostatic",[8 6 9],false);
             operation = wvt.operationForKnownVariable('energy',flowComponent=wvt.flowComponentWithName("wave"));
@@ -212,6 +294,68 @@ classdef TestPortableDiagnostics < matlab.unittest.TestCase
             [restored,file] = WVTransform.waveVortexTransformFromFile(filePath);
             cleanup = onCleanup(@()file.close());
             testCase.verifyTrue(restored.shouldUseTrueNoMotionProfile);
+        end
+    end
+    methods (Access=private)
+        function continuePhaseInMatlab(testCase,path,finalTime)
+            model = WVModel.modelFromFile(char(path));
+            cleanup = onCleanup(@()model.closeNetCDFFile());
+            testCase.assertEqual(model.wvt.t0,17);
+            testCase.assertEqual(model.wvt.conjPhase,conj(model.wvt.phase));
+            model.setupIntegrator(integratorType="fixed",deltaT=.25);
+            model.integrateToTime(finalTime,shouldShowIntegrationDiagnostics=false,callback=@(~)[]);
+            testCase.assertEqual(model.wvt.t,finalTime);
+        end
+        function continuePhaseInCpp(testCase,path,provider,finalTime,runner)
+            request = fullfile(testCase.folder,"phase-run.json");
+            reportPath = fullfile(testCase.folder,"phase-run-report.json");
+            WVModel.writePortableRunRequest(request,path,method="fixed-rk4",finalTime=finalTime,initialStep=.25, ...
+                fftProvider=replace(provider,"native","native-fftw"),reportPath=reportPath);
+            [status,output] = cleanSystem(shellQuote(runner)+" --request "+shellQuote(request));
+            testCase.assertEqual(status,0,output);
+            report = jsondecode(fileread(reportPath));
+            testCase.assertEqual(string(report.status),"complete");
+            testCase.assertTrue(report.integrationRequest.noFallback);
+            testCase.assertEqual(string(report.provider.id),replace(provider,"native","native-fftw"));
+            testCase.assertGreaterThan(report.integrator.denseOutputEvaluationCount,0);
+        end
+        function maximumError = verifyPhaseRecords(testCase,path,wvt,finalTime)
+            maximumError = 0;
+            for group = ["wave-vortex","dense"]
+                times = reshape(ncread(path,"/"+group+"/t"),1,[]);
+                interval = .5;
+                if group=="dense", interval=.125; end
+                testCase.assertEqual(times,37:interval:finalTime);
+                values = cell(1,2);
+                for index = 1:2
+                    names = ["phase","conjPhase"];
+                    name = names(index);
+                    realPath = "/"+group+"/"+name+"_real";
+                    imagPath = "/"+group+"/"+name+"_imag";
+                    realInfo = ncinfo(path,realPath);
+                    imagInfo = ncinfo(path,imagPath);
+                    testCase.assertEqual(realInfo.Size,[size(wvt.Ap),numel(times)]);
+                    testCase.assertEqual(realInfo.Dimensions,imagInfo.Dimensions);
+                    actual = complex(ncread(path,realPath),ncread(path,imagPath));
+                    actual = reshape(actual,numel(wvt.Ap),[]);
+                    expected = exp(wvt.iOmega(:).*(times-wvt.t0));
+                    if index==2, expected=conj(expected); end
+                    error = max(abs(actual-expected),[],"all");
+                    testCase.verifyLessThanOrEqual(error,1e-12,group+" "+name);
+                    testCase.verifyLessThanOrEqual(max(abs(abs(actual)-1),[],"all"),1e-12);
+                    testCase.verifyGreaterThan(max(abs(actual(:,end)-actual(:,1))),1e-8);
+                    maximumError = max(maximumError,error);
+                    values{index} = actual;
+                end
+                testCase.verifyEqual(values{2},conj(values{1}));
+            end
+            restored = WVModel.modelFromFile(char(path));
+            cleanup = onCleanup(@()restored.closeNetCDFFile());
+            testCase.assertEqual(restored.wvt.t,finalTime);
+            testCase.assertEqual(restored.wvt.t0,wvt.t0);
+            expected = exp(wvt.iOmega*(finalTime-wvt.t0));
+            testCase.verifyEqual(restored.wvt.phase,expected,AbsTol=1e-12);
+            testCase.verifyEqual(restored.wvt.conjPhase,conj(expected),AbsTol=1e-12);
         end
     end
     methods (Static,Access=private)

@@ -1,0 +1,15 @@
+Internal ctest changing into directory: /tmp/wvm-v4-audit-runtime
+Test project /tmp/wvm-v4-audit-runtime
+    Start  4: portable-variable-catalog
+1/2 Test  #4: portable-variable-catalog ........Subprocess aborted***Exception:   0.29 sec
+
+    Start 23: field-evaluation
+2/2 Test #23: field-evaluation .................   Passed    0.23 sec
+
+50% tests passed, 1 tests failed out of 2
+
+Total Test time (real) =   0.53 sec
+
+The following tests FAILED:
+	  4 - portable-variable-catalog (Subprocess aborted)
+Errors while running CTest

@@ -1,0 +1,159 @@
+{
+  "schema": "wave-vortex-portable-phase-qualification-v1",
+  "status": "passed",
+  "scope": "C++ phase/conjPhase adoption with MATLAB-compatible complex spectral metadata, event-time values, output/restart and continuation. No density diagnostics added.",
+  "sourceCommit": "84a75ed017d797ca81b27c22e916972bb1ce70fc",
+  "sourceCommitInterpretation": "Checkout base commit; sourceSHA256 binds the uncommitted reviewed implementation tested here.",
+  "matlabRelease": "2025b",
+  "sourceSHA256": [
+    {
+      "path": "UnitTests/TestPortableDiagnostics.m",
+      "sha256": "0b3b6240bc3b363cbf9695f49d0196d289f91a1eb449232c77841bdb388742a3"
+    },
+    {
+      "path": "PortableRuntime/src/WVDiagnosticFieldPlan.cpp",
+      "sha256": "6aea4edbd041cf4684e81369425482b0c3ccc16331f5c99fade53aa1b72ad9be"
+    },
+    {
+      "path": "PortableRuntime/tests/WVDiagnosticFieldDump.cpp",
+      "sha256": "ba34ca56fc7406546e437ad6b23f33c6b22c4258e31aa95f9a36f119d3d0748c"
+    },
+    {
+      "path": "PortableRuntime/src/WVFieldEvaluationService.cpp",
+      "sha256": "a4ab050de655e7a36fa2f9e6b7580e1a9b84e6953c4c54e421b7fd3514968c80"
+    },
+    {
+      "path": "PortableRuntime/src/WVStratifiedFieldEvaluationAdapter.cpp",
+      "sha256": "07d60940074708686a36c85ddc1d27377b3bd1c531b1f4c1dc8be7a26a1fc31f"
+    },
+    {
+      "path": "PortableRuntime/contracts/portable-variable-catalog-v1.json",
+      "sha256": "e6393b1c82208d66b2243cbc34e4f1e2461083969977c247ed6205087daa359f"
+    },
+    {
+      "path": "PortableRuntime/contracts/portable-variable-supplement-v1.json",
+      "sha256": "893f9862ee5a37fa398fe9021fc6ddd62531b71798bc52d341deb3b7f9bd7579"
+    },
+    {
+      "path": "PortableRuntime/include/WaveVortexRuntime/generated/WVPortableVariableCatalog.hpp",
+      "sha256": "36184739398c63efdbb19eadcdbc90b7ebe8c0f4e94a1ec410b1221d5935f20f"
+    },
+    {
+      "path": "PortableRuntime/include/WaveVortexRuntime/generated/WVPortableVariableContracts.hpp",
+      "sha256": "dba30743624682e66a77e4d5087a6d38aaa547324d9968ee9b6dedb05200dce2"
+    },
+    {
+      "path": "@WVTransform/classDefinedOperationForKnownVariable.m",
+      "sha256": "5c73b9a2d3609a2dedacc9a7287b949bb6156fc4bc4d0d3c3f15a4ef783f01f4"
+    }
+  ],
+  "executionBinaries": [
+    {
+      "path": "/private/tmp/wvm-v4-audit-runtime/WVDiagnosticFieldDump",
+      "sha256": "7841902562bd5077dd642a1a4ec6f920ee6b05258009538574e0a6927642df2d"
+    },
+    {
+      "path": "/private/tmp/wvm-v4-audit-runtime/wave-vortex-run",
+      "sha256": "902235ac61fd56eb197aa0717582a762f4efe37e8b27974d9487706b47969e48"
+    }
+  ],
+  "provenanceNote": "Coordinator confirmed the dump executable was built before three unused JSON metadata lines were added temporarily and reverted; current dump source is exactly HEAD, matching the build. Numerical runtime, catalog and MATLAB test sources did not change during runs.",
+  "tests": [
+    {
+      "name": "TestPortableDiagnostics/phaseOutputContinuationMatchesMatlab",
+      "passed": true,
+      "durationSeconds": 113.1443,
+      "configurationProviderRows": 16,
+      "continuationScenarios": 64,
+      "maximumAbsoluteError": 1.1443916996305594e-16,
+      "tolerance": 1e-12
+    },
+    {
+      "name": "TestPortableDiagnostics/allTransformDiagnosticsMatchMatlab",
+      "passed": true,
+      "durationSeconds": 18.7994,
+      "configurationGridProviderRows": 48,
+      "maximumRelativeError": 1.2222953475043186e-13,
+      "tolerance": 1e-12
+    }
+  ],
+  "phaseCoverage": {
+    "configurations": [
+      "constant-hydrostatic",
+      "constant-nonhydrostatic",
+      "hydrostatic",
+      "boussinesq"
+    ],
+    "antialias": [
+      false,
+      true
+    ],
+    "grids": [
+      [
+        9,
+        7,
+        10
+      ],
+      [
+        8,
+        6,
+        9
+      ]
+    ],
+    "providers": [
+      "reference",
+      "native-fftw"
+    ],
+    "providerSerializationNote": "The diagnostic probe calls native-fftw native; public runner requests and asserts native-fftw.",
+    "referenceTime": 17,
+    "initialTime": 37,
+    "finalTime": 38,
+    "integrationMethod": "fixed-rk4",
+    "step": 0.25,
+    "ordinaryOutputInterval": 0.5,
+    "denseOutputInterval": 0.125,
+    "scenarios": [
+      "whole",
+      "cppRestart",
+      "matlabToCpp",
+      "cppToMatlab"
+    ],
+    "checks": [
+      "Direct dump values agree with MATLAB phase/conjPhase",
+      "All saved records agree with exp(±iOmega*(t−t0))",
+      "Split real/imag dimensions and values match MATLAB control output",
+      "Conjugacy and unit magnitude",
+      "Nontrivial time evolution and genuine off-step dense evaluation",
+      "Checkpoint t/t0 preserved after reopen",
+      "No duplicated or missing appended output times",
+      "Actual MATLAB-to-C++ and C++-to-MATLAB continuation"
+    ]
+  },
+  "verificationLedger": [
+    "Focused phase lifecycle passed first execution (1 method).",
+    "Affected all-transform diagnostic regression passed first execution (1 method).",
+    "Code Analyzer TestPortableDiagnostics.m: zero findings.",
+    "git diff --check passed.",
+    "No broad full suite or historical output-continuation matrix rerun."
+  ],
+  "historicalReportInterpretation": "all-diagnostics.json uses the existing issue305 harness/schema but records this new source execution; older committed qualification reports were not changed.",
+  "logNormalization": "Retained logs normalize trailing whitespace only; raw execution logs remain in /private/tmp.",
+  "artifacts": [
+    {
+      "path": "phase-output.json",
+      "sha256": "3530752954d6323a7be2e9780d7180bb4a38374153314847ed0c58c133ff51d0"
+    },
+    {
+      "path": "all-diagnostics.json",
+      "sha256": "b976a4466db016b388958ac97993dab8c9b32683327f94140c83997d4773d980"
+    },
+    {
+      "path": "phase-output.log",
+      "sha256": "ae80de18d009087237b09d9ccf21e6ada900a1d643d8c7ddf9c07ee65cb51389"
+    },
+    {
+      "path": "all-diagnostics.log",
+      "sha256": "42753360910209d096d4cc51b658c9fc66687d6ee689275a43cffb6dc1ae614b"
+    }
+  ]
+}

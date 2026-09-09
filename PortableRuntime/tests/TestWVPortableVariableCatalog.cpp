@@ -102,6 +102,37 @@ int main() {
   require(findExecutablePortableVariable("energy_w") != nullptr);
   require(findExecutablePortableVariable("eta_true") == nullptr);
   require(findExecutablePortableVariable("u") != nullptr);
+  for (const auto *name : {"phase", "conjPhase"}) {
+    const auto *metadata = findExecutablePortableVariable(name);
+    require(metadata != nullptr && metadata->isComplex &&
+            !metadata->isDependentOnApAmA0 &&
+            metadata->naturalRank == WVPortableNaturalRank::coefficient &&
+            metadata->dimensionCount == 2 &&
+            std::string_view(metadata->dimensions[0]) == "j" &&
+            std::string_view(metadata->dimensions[1]) == "kl" &&
+            std::string_view(metadata->units) == "1" &&
+            metadata->samplingMask == portableCoefficientSampling &&
+            metadata->primitiveDependencyMask == 0);
+    for (const auto *configuration : {"constant-hydrostatic-aa0", "constant-hydrostatic-aa1",
+            "constant-nonhydrostatic-aa0", "constant-nonhydrostatic-aa1",
+            "hydrostatic-aa0", "hydrostatic-aa1", "boussinesq-aa0", "boussinesq-aa1"}) {
+      require(resolve(name, configuration, portableCoefficientSampling) == WVPortableVariableStatus::supported);
+      require(plan.primitiveMask == 0 &&
+              plan.count == (metadata->identifier == WVPortableVariable::phase ? 1U : 2U) &&
+              plan.order[0] == WVPortableVariable::phase &&
+              plan.order[plan.count - 1] == metadata->identifier && plan.output->metadata.isComplex &&
+              plan.output->runtime == WVPortableDiagnosticRuntime::implemented);
+      require(resolve(name, configuration, portableFullGridSampling) == WVPortableVariableStatus::unsupportedSampling);
+      require(resolve(name, configuration, portableFixedVerticalProfileSampling) == WVPortableVariableStatus::unsupportedSampling);
+      require(resolve(name, configuration, portablePositionSampling) == WVPortableVariableStatus::unsupportedSampling);
+    }
+    for (const auto *configuration : {"barotropic-aa0", "barotropic-aa1", "stratified-qg-aa0", "stratified-qg-aa1"})
+      require(resolve(name, configuration, portableCoefficientSampling) == WVPortableVariableStatus::notApplicable);
+  }
+  for (const auto *name : {"rho_nm", "eta_true", "ape", "apv"}) {
+    require(findExecutablePortableVariable(name) == nullptr);
+    require(resolve(name) == WVPortableVariableStatus::intentionalIncompatibility);
+  }
   options.requireEvaluator = false;
   require(resolve("eta_true", "barotropic-aa0") == WVPortableVariableStatus::notApplicable);
   require(resolve("u", "barotropic-aa0") == WVPortableVariableStatus::supported);

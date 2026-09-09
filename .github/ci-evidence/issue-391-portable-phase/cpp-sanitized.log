@@ -1,0 +1,10 @@
+Internal ctest changing into directory: /tmp/wvm395-standalone-sanitized
+Test project /tmp/wvm395-standalone-sanitized
+    Start  4: portable-variable-catalog
+1/2 Test  #4: portable-variable-catalog ........   Passed    0.29 sec
+    Start 23: field-evaluation
+2/2 Test #23: field-evaluation .................   Passed    0.34 sec
+
+100% tests passed, 0 tests failed out of 2
+
+Total Test time (real) =   0.66 sec
