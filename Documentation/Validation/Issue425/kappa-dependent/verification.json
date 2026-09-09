@@ -1,0 +1,16 @@
+{
+  "original41RadiusCountsExact": true,
+  "all24CandidatesPreserved": true,
+  "threeCoveredOutputs": true,
+  "unqualifiedReferencesNotAccepted": true,
+  "untestedOutputsHaveNoError": true,
+  "budgetsPassed": true,
+  "existingOutputGuardPassed": true,
+  "explicitLongWaveControlUnchanged": true,
+  "codeAnalyzerMessages": 0,
+  "documentationFiles": 2358,
+  "documentationRoutes": 4819,
+  "documentationFailures": 0,
+  "documentationDrift": 0,
+  "finalFigureVisuallyInspected": true
+}

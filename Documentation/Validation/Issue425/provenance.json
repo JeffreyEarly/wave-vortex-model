@@ -15,5 +15,7 @@
     "documentationFailures": 0,
     "newEigensolvesInRepeatProfile": 0,
     "newProductProjectionsInRepeatProfile": 0
-  }
+  },
+  "restoredKappaExampleRevision": "afb500ca985fd65f528d675ed71a00432a7bec3c",
+  "restoredKappaExampleVerification": "kappa-dependent/verification.json"
 }

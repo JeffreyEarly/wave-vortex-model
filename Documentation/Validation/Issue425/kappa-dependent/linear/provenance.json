@@ -1,0 +1,43 @@
+{
+  "configuration": {
+    "Lxy": [
+      1000,
+      1000
+    ],
+    "Nxy": [
+      16,
+      16
+    ],
+    "D": 1000,
+    "N0": 0.01,
+    "scaleDepth": 400,
+    "f0": 0.0001,
+    "g": 9.81,
+    "Nz": 25,
+    "candidateCount": 24,
+    "inertialCount": 12,
+    "nEVP": [
+      96,
+      144
+    ],
+    "convergenceTolerance": 1E-5,
+    "gramTolerance": 0.01,
+    "outputDirectory": "/Users/jearly/Documents/OceanKitRepositories/wvm-v5-qg-audit/wvm-quadratic-count-maps/Documentation/Validation/Issue425/kappa-dependent/linear",
+    "figureVisible": "off"
+  },
+  "profile": "N2(z)=N0^2 exp(2z/scaleDepth)",
+  "surfaceBoundary": "G(0)=h Gz(0)",
+  "bottomBoundary": "G(-D)=0",
+  "sampling": "fixed WKB-stretched Chebyshev-Lobatto physical quadrature",
+  "interpretation": "Linear mode convergence and sampled Gram evidence only; no quadratic aliasing certification",
+  "referenceQuadraturePointCount": 288,
+  "matlabVersion": "25.2.0.3150157 (R2025b) Update 4",
+  "computer": "MACA64",
+  "createdAtUTC": "09-Sep-2026 15:54:58",
+  "source": {
+    "packageVersion": "2.0.0-beta.4",
+    "revision": "unavailable",
+    "worktreeStatus": "unavailable",
+    "solverPath": "/Users/jearly/Documents/OceanKitRepositories/wvm-v5-qg-audit/oceankit-beta-publish/InternalModes-2.0.0-beta.4/@IMSolverSpectral/IMSolverSpectral.m"
+  }
+}
