@@ -75,7 +75,7 @@ for j=1:numel(fields)
     fields{j}=struct(psi=values.psi*a,q=values.q*a,b=values.b*a,psiEndpoint=values.psiEndpoint*a);
 end
 qdot=complex(zeros(nz,size(vectors,1))); bdot=complex(zeros(2,size(vectors,1))); meanQ=zeros(nz,1); meanB=zeros(2,1);
-termNormBound=0;
+termNormBound=0; qAbsoluteTerms=zeros(size(qdot)); bAbsoluteTerms=zeros(size(bdot));
 for a=1:numel(fields)
     for b=1:numel(fields)
         output=signedVectors(a,:)+signedVectors(b,:); [present,col]=ismember(output,vectors,'rows');
@@ -85,6 +85,7 @@ for a=1:numel(fields)
         qterm=factor*fields{a}.psi.*fields{b}.q; bterm=factor*fields{a}.psiEndpoint.*fields{b}.b;
         if ~present, meanQ=meanQ+qterm; meanB=meanB+bterm; continue; end
         qdot(:,col)=qdot(:,col)+qterm; bdot(:,col)=bdot(:,col)+bterm;
+        qAbsoluteTerms(:,col)=qAbsoluteTerms(:,col)+abs(qterm); bAbsoluteTerms(:,col)=bAbsoluteTerms(:,col)+abs(bterm);
         term=project(data,vectors(col,:),qterm,bterm,setName,weights);
         termNormBound=termNormBound+stateNorm(data,vectors(col,:),term,setName);
     end
@@ -93,15 +94,17 @@ coeff=complex(zeros(n+2,size(vectors,1)));
 for col=1:size(vectors,1), coeff(:,col)=project(data,vectors(col,:),qdot(:,col),bdot(:,col),setName,weights); end
 % Horizontal integration of q*q_t and b*b_t vanishes under incompressible
 % advection. The direct convolution uses no WVM FFT/differentiation operator.
-qWork=0; qWorkBound=0; endpointWork=zeros(2,1); endpointWorkBound=endpointWork;
+qWork=0; qWorkBound=0; endpointWork=zeros(2,1); endpointWorkBound=endpointWork; endpointTermBound=endpointWork; qTermBound=0;
 for j=1:numel(columns)
     col=columns(j); q=fields{j}.q; b=fields{j}.b;
     qWork=qWork+2*real(sum(weights.*conj(q).*qdot(:,col)));
     qWorkBound=qWorkBound+2*sum(weights.*abs(q).*abs(qdot(:,col)));
     endpointWork=endpointWork+2*real(conj(b).*bdot(:,col));
     endpointWorkBound=endpointWorkBound+2*abs(b).*abs(bdot(:,col));
+    endpointTermBound=endpointTermBound+2*abs(b).*bAbsoluteTerms(:,col);
+    qTermBound=qTermBound+2*sum(weights.*abs(q).*qAbsoluteTerms(:,col));
 end
-work=struct(termNormBound=termNormBound,meanSourceNorm=norm(meanQ)+norm(meanB),enstrophyWorkFraction=ratio(abs(qWork),qWorkBound),endpointWorkFraction=ratio(abs(endpointWork),endpointWorkBound));
+work=struct(termNormBound=termNormBound,meanSourceNorm=norm(meanQ)+norm(meanB),enstrophyWorkFraction=ratio(abs(qWork),qWorkBound),endpointWorkFraction=ratio(abs(endpointWork),endpointWorkBound),enstrophyWork=qWork,endpointWork=endpointWork,endpointAbsoluteTermBound=endpointTermBound,enstrophyWorkOverTermBound=ratio(abs(qWork),qTermBound),endpointWorkOverTermBound=ratio(abs(endpointWork),endpointTermBound));
 end
 function coeff=project(data,vector,q,b,setName,weights)
 c=data.config; k=norm(vector.*(2*pi./c.Lxy)); [~,p]=min(abs(data.inventory.magnitudes-k));

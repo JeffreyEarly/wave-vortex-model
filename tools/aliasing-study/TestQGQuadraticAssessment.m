@@ -94,12 +94,13 @@ classdef TestQGQuadraticAssessment < matlab.unittest.TestCase
             testCase.verifyLessThan(a.referenceFraction,1)
             testCase.verifyLessThan(a.cancellationRatio,.5)
             testCase.verifyLessThan(a.referenceWork.enstrophyWorkFraction,1e-12)
-            testCase.verifyLessThan(max(a.referenceWork.endpointWorkFraction),1e-12)
+            testCase.verifyLessThan(max(a.referenceWork.endpointWorkOverTermBound),1e-12)
         end
         function collinearAndSingleEndpointStatesRespectPhysicalZeros(testCase)
             for kind=["collinear","surface","bottom","apv"]
                 r=assessQGAssembledTendency(testCase.source,stateKind=kind);
                 testCase.verifyEqual(r.meanSourceNorm,0)
+                testCase.verifyLessThan(max(r.referenceWork.endpointWorkOverTermBound),1e-12)
                 testCase.verifyLessThan(r.errorOverStateAdvectionScale,1e-7)
                 if kind=="collinear"
                     testCase.verifyEqual(r.referenceEnergyNorm,0)
