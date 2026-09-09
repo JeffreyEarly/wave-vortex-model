@@ -96,6 +96,9 @@ classdef WVNonlinearAdvection < WVForcing
             arguments
                 wvt WVTransform {mustBeNonempty}
             end
+            if isa(wvt,'WVTransformFreeSurfaceBoussinesq')
+                error('WVNonlinearAdvection:UnsupportedTransform','WVNonlinearAdvection does not implement free-surface Boussinesq advection. Use linear evolution or WVPrescribedBoussinesqSource for prescribed sources.');
+            end
             self@WVForcing(wvt,"nonlinear advection",WVForcingType(["HydrostaticSpatial" "NonhydrostaticSpatial" "PVSpatial" "QGSpatial"]));
             self.priority = 127;
             if isa(wvt,'WVStratification') && isprop(wvt,'dLnN2')
