@@ -48,3 +48,21 @@ Forcing applicability and diagnostic availability remain in the [forcing slice](
 - **backward-integration** (unsupported): Backward execution is rejected before destination mutation.
 - **matlab-function-handle-execution** (unsupported): C++ does not execute arbitrary MATLAB function handles. Persisted opaque N2Function bytes remain supported scientific provenance and are preserved for MATLAB restoration.
 - **experimental-adaptive-cell** (under-development): Experimental adaptive-cell algorithms are outside this stable integration slice.
+
+## Collect reproducible execution evidence
+
+Use the runner and `WVForwardIntegrationProbe` built from the same selected checkout. After `configureCIEnvironment(checkoutRoot,oceanKitRoot)`, set a fresh fragment directory and the matching build paths. `WV_STABLE_FORCING_NATIVE=1` selects both reference and native FFTW; use `0` for a reference-only build. Native qualification requires the supported native build described in the runtime README.
+
+```matlab
+setenv("WV_FORWARD_INTEGRATION_EVIDENCE",evidenceDirectory);
+setenv("WV_FORWARD_INTEGRATION_RUNNER",fullfile(buildDirectory,"wave-vortex-run"));
+setenv("WV_FORWARD_INTEGRATION_PROBE",fullfile(buildDirectory,"WVForwardIntegrationProbe"));
+setenv("WV_FORWARD_INTEGRATION_SOURCE_ROOT",checkoutRoot);
+setenv("WV_STABLE_FORCING_NATIVE","1");
+results = run(testsuite(fullfile(checkoutRoot,"UnitTests","TestPortableForwardIntegration.m")));
+assert(all([results.Passed]) && ~any([results.Incomplete]));
+collectPortableForwardIntegrationQualification(evidenceDirectory,"reference",repositoryRoot=checkoutRoot);
+collectPortableForwardIntegrationQualification(evidenceDirectory,"native-fftw",repositoryRoot=checkoutRoot);
+```
+
+The test writes one `<case-id>-<provider>.json` fragment only after its assertions pass. For a reference-only run, omit the native collector call. The collector requires all six expected fragments in catalog order and identical recorded source hashes, source commit, build metadata and executable provenance. It retains the original JSON bytes under `qualification/forward-integration-evidence-v1/`, using content hashes in filenames, and validates the assembled `qualification/forward-integration-<provider>-v1.json` before writing it. It preserves the execution `sourceCommit` and `buildSource`; collection is not a new numerical run. Do not edit tested sources between execution and collection. The committed-receipt test requires both reference and native evidence for this integration slice.

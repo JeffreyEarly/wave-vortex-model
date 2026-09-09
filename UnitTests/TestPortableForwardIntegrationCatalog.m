@@ -26,6 +26,41 @@ classdef TestPortableForwardIntegrationCatalog < matlab.unittest.TestCase
                 validatePortableForwardIntegrationQualification(receipt,testCase.catalog,repositoryRoot=testCase.repositoryRoot);
             end
         end
+        function collectorRejectsMissingOrMixedExecutionSources(testCase)
+            [receipt,root] = testCase.receiptFixture();
+            evidenceDirectory = fullfile(root,"fragments");
+            mkdir(evidenceDirectory);
+            testCase.verifyError(@()collectPortableForwardIntegrationQualification(evidenceDirectory,"reference",repositoryRoot=root),"WaveVortexModel:InvalidForwardIntegrationAssembly");
+            receipt.buildSource = struct(root=root,commit=receipt.sourceCommit);
+            for item = reshape(receipt.cases,1,[])
+                fragment = receipt;
+                fragment.cases = item;
+                writeText(fullfile(evidenceDirectory,string(item.id)+"-reference.json"),jsonencode(fragment));
+            end
+            lastPath = fullfile(evidenceDirectory,string(receipt.cases(end).id)+"-reference.json");
+            original = jsondecode(fileread(lastPath));
+            mixed = original;
+            mixed.sourceSHA256(1).sha256 = repmat('0',1,64);
+            writeText(lastPath,jsonencode(mixed));
+            testCase.verifyError(@()collectPortableForwardIntegrationQualification(evidenceDirectory,"reference",repositoryRoot=root),"WaveVortexModel:InvalidForwardIntegrationAssembly");
+            mixed = original;
+            mixed.executionBinaries(1).sha256 = repmat('0',1,64);
+            writeText(lastPath,jsonencode(mixed));
+            testCase.verifyError(@()collectPortableForwardIntegrationQualification(evidenceDirectory,"reference",repositoryRoot=root),"WaveVortexModel:InvalidForwardIntegrationAssembly");
+            mixed = original;
+            mixed.buildSource.commit = repmat('b',1,40);
+            writeText(lastPath,jsonencode(mixed));
+            testCase.verifyError(@()collectPortableForwardIntegrationQualification(evidenceDirectory,"reference",repositoryRoot=root),"WaveVortexModel:InvalidForwardIntegrationAssembly");
+            writeText(lastPath,jsonencode(original));
+            assembled = collectPortableForwardIntegrationQualification(evidenceDirectory,"reference",repositoryRoot=root);
+            testCase.verifyEqual(string(assembled.sourceCommit),string(receipt.sourceCommit));
+            testCase.verifyEqual(assembled.buildSource,jsondecode(jsonencode(receipt.buildSource)));
+            testCase.verifyEqual(numel(assembled.artifacts),6);
+            testCase.verifyTrue(isfile(fullfile(root,"PortableRuntime","qualification","forward-integration-reference-v1.json")));
+            for artifact = reshape(assembled.artifacts,1,[])
+                testCase.verifyEqual(portableForwardIntegrationSHA256(fullfile(root,string(artifact.path))),string(artifact.sha256));
+            end
+        end
         function supportRowsAndExclusionsAreComplete(testCase)
             validatePortableForwardIntegrationCatalog(testCase.catalog);
             testCase.verifyEqual(numel(testCase.catalog.rows),30);
