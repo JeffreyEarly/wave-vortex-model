@@ -7,7 +7,7 @@ classdef TestSourceProjection < matlab.unittest.TestCase
         function prepareIndependentAdapterAndModel(testCase)
             config=struct(profile="constant",Lz=1000,Lxy=[1e4 1e4],Nxy=[8 8],Nz=65,f=1e-4,g=9.81,waveCount=3,apvCount=2,mdaCount=2,inertialCount=3,evpOrders=[128 192],referenceOrders=[257 513],referenceAllowance=1e-4,eigenAllowance=1e-6,gramTolerance=1e-7);
             testCase.studyData=prepareSourceStudy(config);
-            testCase.transform=WVTransformFreeSurfaceBoussinesq.fromStratification([1e4 1e4 1000],[8 8 65],N2Function=@(z)1e-4*ones(size(z)),waveModeCount=3,apvModeCount=2,mdaModeCount=2,inertialModeCount=3,nEVP=128,latitude=asind(1e-4/(2*7.2921e-5)));
+            testCase.transform=WVTransformFreeSurfaceBoussinesq.fromStratification([1e4 1e4 1000],[8 8 65],shouldAntialias=true,N2Function=@(z)1e-4*ones(size(z)),waveModeCount=3,apvModeCount=2,mdaModeCount=2,inertialModeCount=3,nEVP=128,latitude=asind(1e-4/(2*7.2921e-5)));
         end
     end
     methods (Test)

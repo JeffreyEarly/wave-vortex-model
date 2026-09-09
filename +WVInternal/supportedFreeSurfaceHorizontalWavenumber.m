@@ -9,6 +9,7 @@ arguments
     endpoints (1,:) string
     nEVP (1,1) double {mustBeInteger,mustBeGreaterThanOrEqual(nEVP,4)}
     tolerance (1,1) double {mustBePositive}
+    options.shouldCheckQuadraticAliasing (1,1) logical = true
     options.seedKh (1,1) double {mustBePositive} = 1
     options.rejectedKh double {mustBePositive} = zeros(0,1)
     options.vertical (1,1) struct = struct()
@@ -102,14 +103,19 @@ assessment = struct(isApplicable=true,maximumSupportedKh=lowerKh,firstRejectedKh
     function result = evaluate(kh)
         problem = IMGeostrophicZeroAPVModes.atWavenumber(N2=N2Function,zDomain=apvBasis.zDomain,f0=f0,g=g,k=kh,endpoints=endpoints,surfaceBoundary="freeSurface");
         zeroModes = IMSolverSpectral(nEVP=nEVP).solveGeostrophicZeroAPVModes(problem);
-        result = WVInternal.measureFreeSurfaceCrossProductError(apvBasis,apvTransform,zeroModes,1,2*nEVP);
-        result.accepted=result.error<=tolerance; result.boundaryError=NaN; result.limitingMetric="quadratic-product";
+        if options.shouldCheckQuadraticAliasing
+            result = WVInternal.measureFreeSurfaceCrossProductError(apvBasis,apvTransform,zeroModes,1,2*nEVP);
+            result.accepted=result.error<=tolerance;
+        else
+            result=struct(error=NaN,accepted=true,limitingEndpoint="",limitingModeNumber=NaN);
+        end
+        result.boundaryError=NaN; result.limitingMetric="quadratic-product";
         if ~isempty(fieldnames(options.vertical))
             settings=struct(g=g,boundaryResolutionTolerance=options.boundaryResolutionTolerance,modeConvergenceTolerance=options.modeConvergenceTolerance,boundaryReportOnly=true);
             boundary=WVInternal.assessFreeSurfaceBoundaryGrid(zeroModes,problem,options.vertical,options.inputs,settings);
             [result.boundaryError,index]=max(boundary.pages.gridError);
             result.accepted=result.accepted && boundary.status=="accepted";
-            if result.boundaryError/options.boundaryResolutionTolerance>result.error/tolerance
+            if ~options.shouldCheckQuadraticAliasing || result.boundaryError/options.boundaryResolutionTolerance>result.error/tolerance
                 result.limitingMetric="boundary-resolution";
                 result.limitingEndpoint=boundary.pages.endpoint(index);
                 result.limitingModeNumber=NaN;

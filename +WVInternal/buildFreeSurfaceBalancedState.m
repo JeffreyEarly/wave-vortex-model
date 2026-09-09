@@ -75,7 +75,7 @@ if activeEndpointCount > 0
     zeroAPVG = zeroModes.G(z);
     apvEndpointResponse = geostrophicTransform.apvEndpointResponse;
     minimumRelativeMuSeparation = geostrophicTransform.compatibilityDiagnostics.minimumRelativeMuSeparation;
-    if nKh > 0
+    if nKh > 0 && options.shouldCheckQuadraticAliasing
         crossAssessment = WVInternal.measureFreeSurfaceCrossProductError(apvBasis,apvTransform,zeroModes,nKh,2*nEVP);
         apvZeroAPVQuadraticError = crossAssessment.error;
         apvZeroAPVLimitingEndpoint = crossAssessment.limitingEndpoint;
@@ -217,6 +217,7 @@ quadraticDiagnostics = apvAssessment.prefixDiagnostics(apvModeCount,:);
 state.gramTolerance = options.gramTolerance;
 state.modeConvergenceTolerance=options.modeConvergenceTolerance;
 state.boundaryResolutionTolerance=options.boundaryResolutionTolerance;
+state.shouldCheckQuadraticAliasing = options.shouldCheckQuadraticAliasing;
 state.quadraticAliasingTolerance = options.quadraticAliasingTolerance;
 state.quadraticAliasingError = quadraticDiagnostics.quadraticAliasingError;
 state.quadraticAliasingLimitingChannel = quadraticDiagnostics.quadraticLimitingChannel;
@@ -231,6 +232,13 @@ state.apvZeroAPVLimitingEndpoint = apvZeroAPVLimitingEndpoint;
 state.apvZeroAPVLimitingModeNumber = apvZeroAPVLimitingModeNumber;
 state.modeSelectionMethod = "resolved-prefix-selection";
 assessment=struct(apv=struct(selectedCount=apvModeCount,prefixDiagnostics=apvAssessment.prefixDiagnostics,convergence=vertical.apvConvergence),mda=struct(selectedCount=mdaModeCount,prefixDiagnostics=mdaAssessment.prefixDiagnostics,convergence=vertical.mdaConvergence),boundary=struct(status="not-applicable"),gramTolerance=options.gramTolerance,modeConvergenceTolerance=options.modeConvergenceTolerance,boundaryResolutionTolerance=options.boundaryResolutionTolerance);
+assessment.apv.candidateConstruction=vertical.apvCandidateConstruction;
+assessment.mda.candidateConstruction=vertical.mdaCandidateConstruction;
+assessment.shouldCheckQuadraticAliasing=options.shouldCheckQuadraticAliasing;
+assessment.quadratic=struct(status="not-requested");
+if options.shouldCheckQuadraticAliasing
+    assessment.quadratic=struct(status="accepted",coverage="APV self-products and APV/zero-APV cross-products; broader assembled QG checks remain separate.");
+end
 vertical.zeroReference=[];
 if activeEndpointCount>0 && nKh>0
     [assessment.boundary,vertical.zeroReference]=WVInternal.assessFreeSurfaceBoundaryGrid(zeroModes,zeroProblem,vertical,inputs,options);

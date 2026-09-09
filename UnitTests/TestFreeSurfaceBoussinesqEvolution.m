@@ -105,7 +105,7 @@ classdef TestFreeSurfaceBoussinesqEvolution < matlab.unittest.TestCase
         function endpointConfigurationsRoundTrip(testCase)
             fixture=testCase.applyFixture(matlab.unittest.fixtures.TemporaryFolderFixture);
             for endpoints=[Inf Inf;.02 Inf;Inf .03;.02 .03].'
-                w=WVTransformFreeSurfaceBoussinesq.fromStratification([1e5 1e5 1000],[8 8 65],N2Function=@(z)1e-4+0*z,g0=endpoints(1),gd=endpoints(2),apvModeCount=3,mdaModeCount=2,waveModeCount=4,inertialModeCount=3);
+                w=WVTransformFreeSurfaceBoussinesq.fromStratification([1e5 1e5 1000],[8 8 65],shouldAntialias=true,N2Function=@(z)1e-4+0*z,g0=endpoints(1),gd=endpoints(2),apvModeCount=3,mdaModeCount=2,waveModeCount=4,inertialModeCount=3);
                 w.t0=29; w.t=123; setState(w,initialState(w));
                 file=fullfile(fixture.Folder,'state.nc'); nc=w.writeToFile(file,shouldOverwriteExisting=true); nc.close();
                 r=WVTransform.waveVortexTransformFromFile(file);
@@ -187,7 +187,7 @@ classdef TestFreeSurfaceBoussinesqEvolution < matlab.unittest.TestCase
         end
         function w=newTransform(profile)
             if profile=="constant", N2=@(z)1e-4+0*z; else, N2=@(z)1e-4*exp(2*z/700); end
-            w=WVTransformFreeSurfaceBoussinesq.fromStratification([1e5 1e5 1000],[8 8 65],N2Function=N2,apvModeCount=3,mdaModeCount=2,waveModeCount=4,inertialModeCount=3);
+            w=WVTransformFreeSurfaceBoussinesq.fromStratification([1e5 1e5 1000],[8 8 65],shouldAntialias=true,N2Function=N2,apvModeCount=3,mdaModeCount=2,waveModeCount=4,inertialModeCount=3);
         end
         function [sources,B]=resolvedSource(w)
             B=initialState(w);

@@ -29,6 +29,7 @@ Assess vertical-mode accuracy and the active-endpoint horizontal limit.
 + `options.gramTolerance`  shared normalized-Gram tolerance; default 1e-2
 + `options.modeConvergenceTolerance`  independent physical H1 and equivalent-depth agreement; default 1e-6
 + `options.boundaryResolutionTolerance`  fixed zero-APV physical derivative and energy tolerance; default 1e-2
++ `options.shouldCheckQuadraticAliasing`  qualify quadratic products during construction; default true
 + `options.quadraticAliasingTolerance`  APV quadratic-product tolerance
 
 ## Returns
@@ -38,7 +39,8 @@ Assess vertical-mode accuracy and the active-endpoint horizontal limit.
 
 This method performs the scientific vertical solve without constructing a
 complete horizontal transform. For active endpoint families it returns a
-conservative maximum horizontal wavenumber whose APV/zero-APV product
-error satisfies `quadraticAliasingTolerance` and whose fixed boundary
-responses satisfy `boundaryResolutionTolerance`. The two errors retain
-their separate units of relative error and separate tolerances.
+conservative maximum horizontal wavenumber whose fixed boundary responses
+satisfy `boundaryResolutionTolerance`. When `shouldCheckQuadraticAliasing`
+is true, APV/zero-APV products must also satisfy `quadraticAliasingTolerance`.
+The two relative errors and their tolerances remain separate; unrequested
+quadratic errors are NaN.

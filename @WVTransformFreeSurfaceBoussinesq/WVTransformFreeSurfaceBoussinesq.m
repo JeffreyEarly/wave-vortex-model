@@ -217,6 +217,9 @@ classdef WVTransformFreeSurfaceBoussinesq < WVGeometryDoublyPeriodicStratified &
         % Allowed bounded physical-product sampling error.
         % - Topic: Inspect scientific operators
         quadraticAliasingTolerance
+        % Whether scientific construction checks quadratic products.
+        % - Topic: Inspect scientific operators
+        shouldCheckQuadraticAliasing
         % Physical H1 and equivalent-depth agreement between independent solves.
         % - Topic: Inspect scientific operators
         modeConvergenceTolerance
@@ -445,7 +448,7 @@ classdef WVTransformFreeSurfaceBoussinesq < WVGeometryDoublyPeriodicStratified &
             names = {'activeEndpoint','Ag_0','apvEndpointResponse','zeroAPVF','zeroAPVG','zeroAPVFPairing','zeroAPVGPairing','zeroAPVSourceSolve'};
         end
         function names = scientificPropertyNames()
-            names = {'g0','gd','apvMode','mdaMode','waveMode','waveModeCountByKh','inertialMode','apvModeNumber','mdaModeNumber','waveModeNumber','inertialModeNumber','activeEndpoint','klNonzero','kNonzero','lNonzero','khNonzero','khUnique','klNonzeroKhUniqueIndex','apvF','apvG','apvFForward','apvMu','apvEndpointResponse','apvFSourcePairing','apvGSourcePairing','zeroAPVFPairing','zeroAPVGPairing','zeroAPVSourceSolve','zeroAPVF','zeroAPVG','mdaG','mdaGForward','mdaPressureMode','waveF','waveG','waveGForward','waveEquivalentDepth','waveFrequency','inertialF','inertialFForward','inertialEquivalentDepth','verticalQuadratureWeights','verticalDerivativeMatrix','waveGramError','inertialGramError','apvGramError','mdaGramError','balancedNEVP','nEVP','gramTolerance','quadraticAliasingTolerance','modeConvergenceTolerance','boundaryResolutionTolerance'};
+            names = {'g0','gd','apvMode','mdaMode','waveMode','waveModeCountByKh','inertialMode','apvModeNumber','mdaModeNumber','waveModeNumber','inertialModeNumber','activeEndpoint','klNonzero','kNonzero','lNonzero','khNonzero','khUnique','klNonzeroKhUniqueIndex','apvF','apvG','apvFForward','apvMu','apvEndpointResponse','apvFSourcePairing','apvGSourcePairing','zeroAPVFPairing','zeroAPVGPairing','zeroAPVSourceSolve','zeroAPVF','zeroAPVG','mdaG','mdaGForward','mdaPressureMode','waveF','waveG','waveGForward','waveEquivalentDepth','waveFrequency','inertialF','inertialFForward','inertialEquivalentDepth','verticalQuadratureWeights','verticalDerivativeMatrix','waveGramError','inertialGramError','apvGramError','mdaGramError','balancedNEVP','nEVP','gramTolerance','shouldCheckQuadraticAliasing','quadraticAliasingTolerance','modeConvergenceTolerance','boundaryResolutionTolerance'};
         end
         function names = geometryStateNames()
             names = {'Lxyz','Nxyz','shouldAntialias','z','N2Function','rhoFunction','rho0','planetaryRadius','rotationRate','latitude','g','dLnN2','PF0inv','QG0inv','PF0','QG0','P0','Q0','h_0','z_int'};

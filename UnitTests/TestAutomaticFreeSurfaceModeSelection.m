@@ -2,8 +2,8 @@ classdef TestAutomaticFreeSurfaceModeSelection < matlab.unittest.TestCase
     methods (Test, TestTags="full")
         function automaticFamiliesShareBalancedPolicyAndExposeEvidence(testCase)
             N2=@(z)1e-4*ones(size(z));
-            qg=WVTransformFreeSurfaceQG([1e5 1e5 1000],[8 8 33],N2Function=N2,latitude=30);
-            [w,a]=WVTransformFreeSurfaceBoussinesq.fromStratification([1e5 1e5 1000],[8 8 33],N2Function=N2,latitude=30);
+            qg=WVTransformFreeSurfaceQG([1e5 1e5 1000],[8 8 33],shouldCheckQuadraticAliasing=true,shouldAntialias=true,N2Function=N2,latitude=30);
+            [w,a]=WVTransformFreeSurfaceBoussinesq.fromStratification([1e5 1e5 1000],[8 8 33],shouldCheckQuadraticAliasing=true,shouldAntialias=true,N2Function=N2,latitude=30);
             testCase.verifyEqual(w.apvMode,qg.apvMode)
             testCase.verifyEqual(w.mdaMode,qg.mdaMode)
             testCase.verifyEqual(w.apvF,qg.apvF)
@@ -34,7 +34,7 @@ classdef TestAutomaticFreeSurfaceModeSelection < matlab.unittest.TestCase
         end
 
         function finerGridSupportsANonuniformAutomaticMap(testCase)
-            [w,a]=WVTransformFreeSurfaceBoussinesq.fromStratification([1e5 1e5 1000],[8 8 65],N2Function=@(z)1e-4+0*z,latitude=30);
+            [w,a]=WVTransformFreeSurfaceBoussinesq.fromStratification([1e5 1e5 1000],[8 8 65],shouldCheckQuadraticAliasing=true,shouldAntialias=true,N2Function=@(z)1e-4+0*z,latitude=30);
             testCase.verifyGreaterThan(numel(unique(w.waveModeCountByKh)),1)
             testCase.verifyGreaterThan(min(w.waveModeCountByKh),4)
             testCase.verifyGreaterThan(a.nEVP,64)
@@ -50,23 +50,23 @@ classdef TestAutomaticFreeSurfaceModeSelection < matlab.unittest.TestCase
         end
 
         function explicitCountsAreStrictAndIndependent(testCase)
-            [w,a]=WVTransformFreeSurfaceBoussinesq.fromStratification([1e5 1e5 1000],[8 8 33],N2Function=@(z)1e-4+0*z,waveModeCount=3,inertialModeCount=2,apvModeCount=3,mdaModeCount=2);
+            [w,a]=WVTransformFreeSurfaceBoussinesq.fromStratification([1e5 1e5 1000],[8 8 33],shouldCheckQuadraticAliasing=true,shouldAntialias=true,N2Function=@(z)1e-4+0*z,waveModeCount=3,inertialModeCount=2,apvModeCount=3,mdaModeCount=2);
             testCase.verifyEqual(w.waveModeCountByKh,3*ones(size(w.khUnique)))
             testCase.verifyEqual([numel(w.apvMode),numel(w.mdaMode),numel(w.inertialMode)],[3 2 2])
             testCase.verifyEqual(a.pages.requestedCount,a.pages.selectedCount)
-            testCase.verifyError(@()WVTransformFreeSurfaceBoussinesq.fromStratification([1e5 1e5 1000],[8 8 33],N2Function=@(z)1e-4+0*z,waveModeCount=32,inertialModeCount=2,apvModeCount=3,mdaModeCount=2),'WV:StrictWaveModeCountRejected')
+            testCase.verifyError(@()WVTransformFreeSurfaceBoussinesq.fromStratification([1e5 1e5 1000],[8 8 33],shouldCheckQuadraticAliasing=true,shouldAntialias=true,N2Function=@(z)1e-4+0*z,waveModeCount=32,inertialModeCount=2,apvModeCount=3,mdaModeCount=2),'WV:StrictWaveModeCountRejected')
         end
 
         function fixedBoundariesCannotBeHiddenBySmallWaveCounts(testCase)
-            testCase.verifyError(@()WVTransformFreeSurfaceQG([1e4 1e4 1000],[8 8 17],N2Function=@(z)1e-4+0*z,latitude=30,apvModeCount=3,mdaModeCount=2),'WV:UnderresolvedBoundaryGrid')
-            testCase.verifyError(@()WVTransformFreeSurfaceBoussinesq.fromStratification([1e4 1e4 1000],[8 8 17],N2Function=@(z)1e-4+0*z,latitude=30,waveModeCount=0,inertialModeCount=1,apvModeCount=3,mdaModeCount=2),'WV:UnderresolvedBoundaryGrid')
+            testCase.verifyError(@()WVTransformFreeSurfaceQG([1e4 1e4 1000],[8 8 17],shouldCheckQuadraticAliasing=true,shouldAntialias=true,N2Function=@(z)1e-4+0*z,latitude=30,apvModeCount=3,mdaModeCount=2),'WV:UnderresolvedBoundaryGrid')
+            testCase.verifyError(@()WVTransformFreeSurfaceBoussinesq.fromStratification([1e4 1e4 1000],[8 8 17],shouldCheckQuadraticAliasing=true,shouldAntialias=true,N2Function=@(z)1e-4+0*z,latitude=30,waveModeCount=0,inertialModeCount=1,apvModeCount=3,mdaModeCount=2),'WV:UnderresolvedBoundaryGrid')
         end
 
         function productBudgetPrecedesReferenceFieldEvaluation(testCase)
             geometry=WVGeometryDoublyPeriodic([1e5 1e5],[64 64],shouldAntialias=true,Nz=65,shouldExcludeNyquist=true,shouldExcludeConjugates=true,conjugateDimension=2);
             k=geometry.k(:); l=geometry.l(:); nonzero=hypot(k,l)>0;
             k=k(nonzero); l=l(nonzero); kh=uniquetol(hypot(k,l),64*eps,DataScale=max(hypot(k,l)));
-            state=struct(Lxyz=[1e5 1e5 1000],Nxyz=[64 64 65],kNonzero=k,lNonzero=l,khUnique=kh,N2Function=@unavailableProfile,rotationRate=1e-4,latitude=30,activeEndpointCount=2,apvMode=(1:8).',mdaMode=(1:3).');
+            state=struct(Lxyz=[1e5 1e5 1000],Nxyz=[64 64 65],kNonzero=k,lNonzero=l,khUnique=kh,shouldCheckQuadraticAliasing=true,shouldAntialias=true,N2Function=@unavailableProfile,rotationRate=1e-4,latitude=30,activeEndpointCount=2,apvMode=(1:8).',mdaMode=(1:3).');
             counts=8*ones(numel(kh),1);
             testCase.verifyError(@()WVInternal.prepareConstructionProducts(state,[],[],[],counts,3,struct(),struct()),'WV:QuadraticConstructionBudget')
             function value=unavailableProfile(~) %#ok<STOUT>
@@ -75,7 +75,7 @@ classdef TestAutomaticFreeSurfaceModeSelection < matlab.unittest.TestCase
         end
 
         function requestingAReportDoesNotChangeConstruction(testCase)
-            args=namedargs2cell(struct(N2Function=@(z)1e-4*exp(2*z/700),waveModeCount=3,inertialModeCount=2,apvModeCount=3,mdaModeCount=2));
+            args=namedargs2cell(struct(shouldCheckQuadraticAliasing=true,shouldAntialias=true,N2Function=@(z)1e-4*exp(2*z/700),waveModeCount=3,inertialModeCount=2,apvModeCount=3,mdaModeCount=2));
             first=WVTransformFreeSurfaceBoussinesq.fromStratification([1e5 1e5 1000],[8 8 33],args{:});
             [second,a]=WVTransformFreeSurfaceBoussinesq.fromStratification([1e5 1e5 1000],[8 8 33],args{:});
             A=first.scientificState(); B=second.scientificState();

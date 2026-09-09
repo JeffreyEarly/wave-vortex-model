@@ -76,5 +76,5 @@ arguments (Input)
     options.modeConvergenceTolerance (1,1) double = 1e-6
 end
 args = namedargs2cell(options);
-[w,a] = WVTransformFreeSurfaceBoussinesq.fromStratification([1e5 1e5 1000],[8 8 65],args{:},N2Function=@(z)1e-4*exp(2*z/700),apvModeCount=3,mdaModeCount=2,inertialModeCount=3);
+[w,a] = WVTransformFreeSurfaceBoussinesq.fromStratification([1e5 1e5 1000],[8 8 65],args{:},shouldAntialias=true,N2Function=@(z)1e-4*exp(2*z/700),apvModeCount=3,mdaModeCount=2,inertialModeCount=3);
 end
