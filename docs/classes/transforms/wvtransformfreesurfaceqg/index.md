@@ -217,7 +217,7 @@ wvt = WVTransformFreeSurfaceQG([100e3 100e3 4000],[32 32 33],N2Function=N2,latit
     + [`shouldAntialias`](/classes/transforms/wvtransformfreesurfaceqg/shouldantialias.html) Whether the spectral grid excludes modes that alias quadratic products.
 + Extend a transform
   + Flow components
-    + [`addFlowComponent`](/classes/transforms/wvtransformfreesurfaceqg/addflowcomponent.html) Register QG component fields, including interior displacement.
+    + [`addFlowComponent`](/classes/transforms/wvtransformfreesurfaceqg/addflowcomponent.html) add a flow component and its standard variables
     + [`addPrimaryFlowComponent`](/classes/transforms/wvtransformfreesurfaceqg/addprimaryflowcomponent.html) add a primary flow component, automatically added to the flow
   + Operations and variables
     + [`addOperation`](/classes/transforms/wvtransformfreesurfaceqg/addoperation.html) Register one or more operations and their output variables.

@@ -47,6 +47,19 @@ classdef TestFreeSurfaceBoussinesqTransform < matlab.unittest.TestCase
             testCase.verifyEqual(full.p(:,:,end),w.rho0*w.g*full.ssh,AbsTol=1e-10)
         end
 
+        function customComponentsRegisterInteriorDisplacement(testCase)
+            w = newTransform("constant",33); assignState(w,mixedState(w));
+            component = WVFlowComponent(w,coefficientMasks=struct(Aw_p=true,Aw_m=true,Ag_0=true));
+            component.name = 'waves and boundary modes';
+            component.shortName = 'waveboundary';
+            component.abbreviatedName = 'waveboundary';
+            w.addFlowComponent(component);
+            expected = w.reconstructFields(["u","eta_i","ssh"],flowComponent=component);
+            testCase.verifyEqual(w.eta_i_waveboundary,expected.eta_i)
+            testCase.verifyEqual(w.u_waveboundary,expected.u)
+            testCase.verifyEqual(w.ssh_waveboundary,expected.ssh)
+        end
+
         function energyIncludesBalancedCrossTermsAndConserves(testCase)
             w = newTransform("exponential",65); assignState(w,mixedState(w));
             fields=w.reconstructFields(["u","v","w","eta","ssh"]);

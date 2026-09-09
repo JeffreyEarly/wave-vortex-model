@@ -26,12 +26,23 @@ The coefficient constraint multiplier is not an ordinary pressure field. Product
 
 Configure the authoring WVM and pinned dependencies with `configureCIEnvironment`, add `tools/nonlinear-study` to the path, then run `runFreeSurfaceKinematicProbe(outputFolder)` and `runFreeSurfaceConstrainedProjectionStudy(outputFolder)`. The exact study settings and source-probe digest are in [provenance](projection-probe-provenance.json). Both studies are tiny-grid mathematical controls, not production benchmarks.
 
+## Instantaneous mapped equations and pressure oracle
+
+`WVInternal.freeSurfaceMappedTendency` evaluates the full unforced hatted equations given exact buoyancy and the complete diagnostic pressure. It includes pressure inside the horizontal acceleration that contributes to the vertical equation. It supplies neither a pressure solve nor modal evolution. Three independent controls check the physical material equations by differentiating the inverse map, pressure acceleration on a sloping surface, and the flat inertial/hydrostatic limit.
+
+The [dense pressure oracle](../../../tools/nonlinear-study/solveFreeSurfacePressureReference.m) separately assembles $\nabla_\xi\cdot(M\nabla_\xi\pi)=\nabla_\xi\cdot F$, with bottom normal acceleration zero and prescribed surface pressure. Here $F$ is the pressure-free mapped acceleration and $\pi$ is pressure divided by reference density. The matrix $M$ includes the complete geometric pressure response. This authoring-only routine is limited to 1500 samples and is not a proposed production solver.
+
+The oracle replaces the two endpoint rows with boundary conditions; it reports endpoint divergence separately from interior divergence. An analytic nonflat manufactured-pressure test also adds a known divergence-free acceleration, checking pressure recovery within $2\times10^{-11}$ m²/s² and the remaining acceleration within $2\times10^{-12}$ m/s². A second test compares its independently assembled pressure response with the mapped-RHS helper, checking interior continuity, bottom acceleration and the dynamic surface condition. These tests establish an instantaneous grid-level diagnostic. They do not establish the surface-kinematic compatibility of a projected modal tendency.
+
 ## Verification ledger
 
 - QG `eta_i`: three new tests passed across constant/exponential profiles, all endpoint configurations, built-in/custom components and coefficient cache invalidation. Three selected existing QG reconstruction, nonlinear-advection and stored-construction tests passed.
+- Shared component registration: QG and Boussinesq now register `eta_i` through the existing supported-variable filter, removing the QG override and Boussinesq special case. The QG displacement tests, selected Boussinesq operations/custom-component/cache tests and existing surface-component diagnostics passed after consolidation. Code Analyzer reported no findings in the changed registration source and test files.
 - Unsupported v4 advection guard: three new tests and ten existing forcing/evolution cases passed, covering registry preservation, conversion, restoration and v4/QG controls.
 - Physical-coordinate helper: three analytic tests passed, including physical streamfunction reconstruction, material reference-coordinate velocity, displacement identities, endpoints, flat-surface instantaneous motion and invalid geometry rejection. Code Analyzer reported no findings in the helper or test class.
+- Full mapped tendency: three analytic tests passed; Code Analyzer reported no findings in the helper and test class.
+- Dense pressure reference: both manufactured and mapped-RHS tests passed; Code Analyzer reported no findings in the oracle and test class.
 - Source audit: thirty generic-source controls generated the corrected source-scaled diagnostics.
 - Constrained study: thirty-six rows generated; Code Analyzer and whitespace checks passed.
-- Integrated API documentation: build and check passed with 2362 files, 4827 routes and zero generated drift. The added QG field shifts generated navigation ordering.
+- Integrated API documentation: build and check passed with 2362 files, 4827 routes and zero generated drift. The added QG field shifts generated navigation ordering. A second build/check after removing the redundant registration override also passed; the pressure diagnostic adds no generated API source.
 - These results do not establish a nonlinear pressure solve, nonlinear trajectories, nonlinear energy conservation, or nonlinear restart. Those remain active goal requirements.

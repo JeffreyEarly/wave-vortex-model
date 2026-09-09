@@ -316,7 +316,6 @@ classdef WVTransformFreeSurfaceBoussinesq < WVGeometryDoublyPeriodicStratified &
                 component = WVFlowComponent(self,coefficientMasks=groups{i});
                 component.name = char(labels(i)); component.shortName = char(labels(i)); component.abbreviatedName = char(labels(i));
                 self.addFlowComponent(component);
-                self.addOperation(self.operationForKnownVariable('eta_i',flowComponent=component));
             end
         end
 
