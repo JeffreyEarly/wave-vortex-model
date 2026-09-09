@@ -1,0 +1,30 @@
+{
+  "code": 0,
+  "elapsedSeconds": 2.4041E-5,
+  "message": "",
+  "profile": [
+    1027.7,
+    1027.3312500000361,
+    1026.9249999998817,
+    1026.4812500000983,
+    1026
+  ],
+  "report": {
+    "acceptedSteps": 6,
+    "algorithm": "damped-least-squares",
+    "damping": 8.74230925279752E-8,
+    "evaluations": 7,
+    "exitFlag": 1,
+    "finalCost": 1.2220554938745397E-23,
+    "gradientNorm": 2.7459051810678786E-14,
+    "initialCost": 0.0015227162000482181,
+    "iterations": 7,
+    "maximumResidual": 2.828987044622977E-12,
+    "qualified": true,
+    "reason": "gradient-tolerance",
+    "rejectedSteps": 0,
+    "workspaceBytes": 856
+  },
+  "schema": "wv-no-motion-recovery-dump-v1",
+  "status": "complete"
+}

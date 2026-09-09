@@ -1,0 +1,49 @@
+{
+  "sourceCommit": "57845afa7b3eb44d2270b269f96903afaa6f31cb",
+  "sourceSHA256": [
+    {
+      "path": "PortableRuntime/include/WaveVortexRuntime/WVNoMotionProfileRecovery.hpp",
+      "sha256": "246843db8a1bae5b47664412d4a75c291bdca8c9c3bd7942399f5e80fee7edff"
+    },
+    {
+      "path": "PortableRuntime/src/WVNoMotionProfileRecovery.cpp",
+      "sha256": "725c00b4c0611dc0e3569049a693553f86c7d0854cd56c3ce45e112a1c646105"
+    },
+    {
+      "path": "PortableRuntime/src/WVNoMotionDensityMoments.cpp",
+      "sha256": "801948b3a635c05707f36c8bf58ac5497a6ff2f69933cb2028892b4ec7dc6d44"
+    },
+    {
+      "path": "PortableRuntime/tests/WVNoMotionRecoveryDump.cpp",
+      "sha256": "33364b05837d38c0d48d4704b1d011da74b4348c02a0514a17ff0dcbb8e4be56"
+    },
+    {
+      "path": "Operations/WVNoMotionProfileOperation.m",
+      "sha256": "c6e521114c56b1450c39016f58731d05b1d8b7a9768efd95f78b39aec7fcc16f"
+    },
+    {
+      "path": "Operations/@WVNoMotionProfile/WVNoMotionProfile.m",
+      "sha256": "e4f90cbbf6bed361fd797ed98e4231febf0d3d3870c645f6220c7b184073b7fa"
+    },
+    {
+      "path": "UnitTests/TestPortableNoMotionRecovery.m",
+      "sha256": "ba849fd2df5c35bdea0b6b51a6e2f0cd2f66f1b9ba8cc40e6019196ae7bda2a3"
+    },
+    {
+      "path": "tools/density-diagnostics/benchmarkCapturedNoMotionRecovery.m",
+      "sha256": "9a6644b123205801c0f4905f018ba4f00fc6364808ed803812aa8a28bfe32694"
+    },
+    {
+      "path": "UnitTests/fixtures/density-run18-day3000.json",
+      "sha256": "38b476e7be606b4f87da4c8ba9f03637dce9e65ea904a8e5457cf8ce7cda6d74"
+    },
+    {
+      "path": "UnitTests/fixtures/density-run18-day3250.json",
+      "sha256": "73cdf32e24b75c4fa20d27c07aba072e5b23d7047f4e7dcd7e8ee7b574a0a45e"
+    }
+  ],
+  "executionBinary": {
+    "path": "/private/tmp/wvm-v4-audit-runtime/WVNoMotionRecoveryDump",
+    "sha256": "616d51d376976353bbd54c277e55d62fb3a18caa21d583537dc8a6c194642437"
+  }
+}

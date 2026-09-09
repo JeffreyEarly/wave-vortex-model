@@ -4,7 +4,8 @@
 
 ### Portable density foundation
 
-- Added a C++ supplied-profile primitive for monotone cubic density, safeguarded inverse material height and stable APE integration, with storage bounded by the vertical profile and no successful-query allocations. Added the optional v2 density diagnostic execution contract: omitted options select actual `rho_nm`, and explicit initial-profile selection is reported without changing MATLAB restart files. Profile recovery and the four density outputs remain unavailable pending their separate implementation and qualification.
+- Added bounded C++ recovery of the current no-motion density profile using volume-weighted moments and damped least squares, with an exact stable-rest shortcut, explicit convergence and qualification reporting, and failure preservation. Density outputs remain unavailable until model-event evaluation and persistence are qualified.
+- Added a C++ supplied-profile primitive for monotone cubic density, safeguarded inverse material height and stable APE integration, with storage bounded by the vertical profile and no successful-query allocations. Added the optional v2 density diagnostic execution contract: omitted options select actual `rho_nm`, and explicit initial-profile selection is reported without changing MATLAB restart files. The four density outputs remain unavailable pending complete execution-chain qualification.
 
 ### Portable phase diagnostics
 

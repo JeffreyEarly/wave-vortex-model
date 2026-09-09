@@ -1,0 +1,482 @@
+{
+  "schema": "wave-vortex-no-motion-recovery-matlab-qualification-v1",
+  "status": "passed",
+  "scope": "Bounded C++ raw-moment extraction and damped least-squares actual no-motion recovery, compared with MATLAB plus independent compact physical controls. Full JAMES comparisons use shared qualified supplied-profile calculus. No whole-model speedup, unique continuous no-motion distribution, solver replacement science, or density-output runtime availability is claimed.",
+  "sourceCommit": "275c553f8fc99404204e10790a7f6edf583aadc6",
+  "sourceCommitInterpretation": "Checkout base revision; sourceSHA256 binds the reviewed worktree source used for final measurements.",
+  "sourceSHA256": [
+    {
+      "path": "Operations/WVNoMotionProfileOperation.m",
+      "sha256": "c6e521114c56b1450c39016f58731d05b1d8b7a9768efd95f78b39aec7fcc16f"
+    },
+    {
+      "path": "Operations/@WVNoMotionProfile/WVNoMotionProfile.m",
+      "sha256": "e4f90cbbf6bed361fd797ed98e4231febf0d3d3870c645f6220c7b184073b7fa"
+    },
+    {
+      "path": "PortableRuntime/include/WaveVortexRuntime/WVNoMotionProfileRecovery.hpp",
+      "sha256": "246843db8a1bae5b47664412d4a75c291bdca8c9c3bd7942399f5e80fee7edff"
+    },
+    {
+      "path": "PortableRuntime/src/WVNoMotionProfileRecovery.cpp",
+      "sha256": "725c00b4c0611dc0e3569049a693553f86c7d0854cd56c3ce45e112a1c646105"
+    },
+    {
+      "path": "PortableRuntime/src/WVNoMotionDensityMoments.cpp",
+      "sha256": "e407f8e187eb922155b67bd69fbd105d9e4a3b4bc6f40b1649c31020a6af129d"
+    },
+    {
+      "path": "PortableRuntime/tests/WVNoMotionRecoveryDump.cpp",
+      "sha256": "33364b05837d38c0d48d4704b1d011da74b4348c02a0514a17ff0dcbb8e4be56"
+    },
+    {
+      "path": "tools/density-diagnostics/benchmarkCapturedNoMotionRecovery.m",
+      "sha256": "ae469cff8c6029a78f6c69d1601af8721bb6adac2bb45c718621d6b3f34860ed"
+    },
+    {
+      "path": "UnitTests/TestPortableNoMotionRecovery.m",
+      "sha256": "4a1789e11019e9d86cfcafdfb308605f9b2eea5cb9033d612fd65a9cb804f7cf"
+    },
+    {
+      "path": "UnitTests/fixtures/density-run18-day3000.json",
+      "sha256": "38b476e7be606b4f87da4c8ba9f03637dce9e65ea904a8e5457cf8ce7cda6d74"
+    },
+    {
+      "path": "UnitTests/fixtures/density-run18-day3250.json",
+      "sha256": "73cdf32e24b75c4fa20d27c07aba072e5b23d7047f4e7dcd7e8ee7b574a0a45e"
+    }
+  ],
+  "executionBinary": {
+    "path": "/private/tmp/wvm-v4-audit-runtime/WVNoMotionRecoveryDump",
+    "sha256": "dffa2d68c734fc3fb8d6513b853d508d2545d162f0fac41489b5b940afec1e7d"
+  },
+  "matlabRelease": "2025b",
+  "platform": "MACA64",
+  "gateLedger": [
+    {
+      "gate": "Initial compact suite",
+      "result": "5/6 methods passed; captured parity failed original density-span1e-8 and1mm bounds. Original failed log, outputs and source hashes retained with numerical data preserved; log trailing whitespace/final blank lines normalized with original SHA256 retained."
+    },
+    {
+      "gate": "Independent arithmetic diagnosis",
+      "result": "Same source compiled with floating-point contraction disabled changes captured profiles2.23995e-7/3.10329e-7kg/m3 while moment changes are5.17142e-13/1.25056e-12. Numerical raw-profile Jacobian ranks23/41 and27/84; no QR defect identified. SVD values below machine resolution are diagnostics, not precise condition estimates."
+    },
+    {
+      "gate": "Scientific acceptance decision",
+      "result": "Coordinator approved explicit one-ppm density-span/profile-height budgets after diagnosis, retaining original finite/ordering/endpoints/convergence/residual<=1e-8 and all independent synthetic gates. Full-state prospective bounds additionally constrain volume-mean eta and mean APE."
+    },
+    {
+      "gate": "Captured compact method with approved physical bounds",
+      "result": "1/1 passed; only this changed method rerun. Exact measured tolerances retained in captured-*-physical.json."
+    },
+    {
+      "gate": "Changed moment/recovery methods",
+      "result": "4/4 passed after plane-accumulation edge fix, then4/4 passed after final SIMD accumulation. Unchanged fit budget method retains initial pass; no redundant full compact-suite rerun."
+    },
+    {
+      "gate": "MATLAB Code Analyzer",
+      "result": "TestPortableNoMotionRecovery.m and benchmarkCapturedNoMotionRecovery.m both zero findings after final coherent source edits."
+    },
+    {
+      "gate": "Full-state baseline campaign",
+      "result": "Both states passed all prospective physical gates; scalar C++ moment accumulation2.60x/3.13x slower than MATLAB, retained as baseline."
+    },
+    {
+      "gate": "Full-state final campaign",
+      "result": "Both states passed all prospective physical gates after bounded eight-lane moment accumulation; exactly three warmed alternating trials per stage and state; no concurrent workloads or additional profiling."
+    },
+    {
+      "gate": "Scope and whitespace",
+      "result": "No production MATLAB edits or new full-state CI fixtures; git diff --check passed."
+    }
+  ],
+  "physicalAcceptance": {
+    "maximumNormalizedProfileDifference": 1e-06,
+    "maximumInverseHeightDifferencePerDepth": 1e-06,
+    "maximumVolumeMeanEtaDifferencePerDepth": 1e-08,
+    "maximumRelativeMeanAPEDifference": 1e-05,
+    "densityClosure": "8eps(maxabs density)",
+    "other": "Finite, bounded material height; zero negative APE; strict finite density profile; solver success and normalized raw residual<=1e-8."
+  },
+  "performanceInterpretation": "Final moment median speed ratios MATLAB/C++ are1.345x and1.181x (elapsed-time reductions25.7% and15.4%). Fit is1.818x faster at43nodes, but86-node C++ fit takes7.7% longer than MATLAB. Moment stage includes extrema on both sides; C++ also identifies stable-rest candidates. Timings exclude C++ process startup and input parsing/I/O and are not whole-model timings.",
+  "memoryInterpretation": "Caller-owned full density input excluded. Final reported moment/recovery workspace is67,256/67,256bytes at43nodes and68,976/238,672bytes at86nodes; no full-volume extra normalized-density/power arrays or Ngrid-by-Nz matrices.",
+  "normalizationInterpretation": "Original shape initializes log gaps, physical endpoints use current extrema, and z_int/Lz weights are not silently renormalized. Both retained JAMES fixtures share current extrema with their original endpoints; day3250 weight sum differs from1 by floating-point roundoff.",
+  "results": [
+    {
+      "day": 3000,
+      "grid": [
+        256,
+        256,
+        43
+      ],
+      "status": "passed",
+      "sourceSnapshot": {
+        "path": "/Users/jearly/Documents/OceanKitRepositories/along-track-velocity-decomp/data/run18_restart_day3000.nc",
+        "sha256": "6cbf46d71e2e95bf393c24cd74e10a65d1104b6dab09ac78a8a5a5a27402830d"
+      },
+      "momentTiming": {
+        "trialSeconds": [
+          [
+            0.028013041666666665,
+            0.0208265
+          ],
+          [
+            0.033003541666666664,
+            0.020831
+          ],
+          [
+            0.027452291666666667,
+            0.020804833
+          ]
+        ],
+        "medianSeconds": [
+          0.028013041666666665,
+          0.0208265
+        ],
+        "pairedSpeedups": [
+          1.3450671820357076,
+          1.5843474469140544,
+          1.3195151177933833
+        ],
+        "medianSpeedup": 1.3450671820357076
+      },
+      "fitTiming": {
+        "trialSeconds": [
+          [
+            0.024349166666666668,
+            0.013192083
+          ],
+          [
+            0.023883958333333333,
+            0.013130583
+          ],
+          [
+            0.023976833333333333,
+            0.01522025
+          ]
+        ],
+        "medianSeconds": [
+          0.023976833333333333,
+          0.013192083
+        ],
+        "pairedSpeedups": [
+          1.8457408634153278,
+          1.8189564266364513,
+          1.5753245402232772
+        ],
+        "medianSpeedup": 1.817516864723587
+      },
+      "baselineCppMomentMedianSeconds": 0.072077792,
+      "scalarToFinalCppMomentSpeedup": 3.4608691810913976,
+      "sameMomentProfileMaximumDifference": 5.247920853435062e-08,
+      "fullRecoveryProfileMaximumDifference": 5.013312147639226e-07,
+      "momentMaximumDifference": 4.440892098500626e-16,
+      "physical": {
+        "inverseHeightMaximumDifference": 0.0006468015499194735,
+        "inverseHeightRMSDifference": 0.00029985999712955804,
+        "meanEtaMatlab": -0.009446445992350007,
+        "meanEtaCpp": -0.0094726241938335,
+        "densityClosureMatlab": 0,
+        "densityClosureCpp": 0,
+        "meanAPEMatlab": 0.0014887143075705863,
+        "meanAPECpp": 0.0014887143278309832,
+        "apeMaximumDifference": 3.0696935947316373e-07,
+        "negativeAPECounts": [
+          0,
+          0
+        ],
+        "meanEtaDifference": 2.617820148349305e-05,
+        "meanAPERelativeDifference": 1.3609325021454736e-08,
+        "cppMaterialHeightRange": [
+          -3999.999999996362,
+          -1.1368683772161603e-10
+        ],
+        "allFinite": true
+      },
+      "acceptance": {
+        "profileMaximumDifference": 1.8579818814130248e-06,
+        "inverseHeightMaximumDifference": 0.004,
+        "meanEtaDifference": 4e-05,
+        "meanAPERelativeDifference": 1e-05,
+        "densityClosure": 1.8189894035458565e-12
+      },
+      "momentWorkspaceBytes": 67256,
+      "recoveryWorkspaceBytes": 67256
+    },
+    {
+      "day": 3250,
+      "grid": [
+        512,
+        512,
+        86
+      ],
+      "status": "passed",
+      "sourceSnapshot": {
+        "path": "/Users/jearly/Documents/OceanKitRepositories/along-track-velocity-decomp/data/run18_restart_day3250.nc",
+        "sha256": "5d062ca5b375772fe9ddd05b7916bd1e40f588a982b3629a942c5d8a7455657c"
+      },
+      "momentTiming": {
+        "trialSeconds": [
+          [
+            0.36513883333333336,
+            0.304125333
+          ],
+          [
+            0.3593109583333333,
+            0.302017708
+          ],
+          [
+            0.357164125,
+            0.305889125
+          ]
+        ],
+        "medianSeconds": [
+          0.3593109583333333,
+          0.304125333
+        ],
+        "pairedSpeedups": [
+          1.2006195923617233,
+          1.1897016261487996,
+          1.1676260965472376
+        ],
+        "medianSpeedup": 1.1814568513216666
+      },
+      "fitTiming": {
+        "trialSeconds": [
+          [
+            0.09672841666666666,
+            0.102742333
+          ],
+          [
+            0.09525125,
+            0.102573333
+          ],
+          [
+            0.09492979166666667,
+            0.102472667
+          ]
+        ],
+        "medianSeconds": [
+          0.09525125,
+          0.102573333
+        ],
+        "pairedSpeedups": [
+          0.9414660329609866,
+          0.9286161150676462,
+          0.9263913436220672
+        ],
+        "medianSpeedup": 0.9286161150676462
+      },
+      "baselineCppMomentMedianSeconds": 1.11886775,
+      "scalarToFinalCppMomentSpeedup": 3.6789692557443083,
+      "sameMomentProfileMaximumDifference": 1.5927321328490507e-07,
+      "fullRecoveryProfileMaximumDifference": 2.655926891748095e-07,
+      "momentMaximumDifference": 1.6653345369377348e-16,
+      "physical": {
+        "inverseHeightMaximumDifference": 0.0008336612140737998,
+        "inverseHeightRMSDifference": 0.00034322829591431904,
+        "meanEtaMatlab": 0.0036454738287704726,
+        "meanEtaCpp": 0.00363041468883388,
+        "densityClosureMatlab": 0,
+        "densityClosureCpp": 0,
+        "meanAPEMatlab": 0.0013588309707344376,
+        "meanAPECpp": 0.0013588309685462626,
+        "apeMaximumDifference": 1.9624115378535922e-07,
+        "negativeAPECounts": [
+          0,
+          0
+        ],
+        "meanEtaDifference": 1.5059139936592688e-05,
+        "meanAPERelativeDifference": 1.6103364108959224e-09,
+        "cppMaterialHeightRange": [
+          -3999.999999996362,
+          -1.1368683772161603e-10
+        ],
+        "allFinite": true
+      },
+      "acceptance": {
+        "profileMaximumDifference": 1.8579818814130248e-06,
+        "inverseHeightMaximumDifference": 0.004,
+        "meanEtaDifference": 4e-05,
+        "meanAPERelativeDifference": 1e-05,
+        "densityClosure": 1.8189894035458565e-12
+      },
+      "momentWorkspaceBytes": 68976,
+      "recoveryWorkspaceBytes": 238672
+    }
+  ],
+  "artifacts": [
+    {
+      "path": "arithmetic-sensitivity.json",
+      "sha256": "89aecc4e217385b1bb3f1d3cb08817d8ff4ce29d82d3e59e7aa49f7d569cdb70"
+    },
+    {
+      "path": "baseline-scalar-moments/day3000.json",
+      "sha256": "3730c815621e350cd45750bc468e363edbcad1892203d85167d35ae4b49c9e75"
+    },
+    {
+      "path": "baseline-scalar-moments/day3250.json",
+      "sha256": "c90829a02787c1d2b45198ee84991d4dbd62bb0027bf819f1d626dfabaf8ae2a"
+    },
+    {
+      "path": "baseline-scalar-moments/paired-benchmark.log",
+      "sha256": "599c85aa771d8719ddb631b43a032a24bd77757543ad73ab67c349198507b491"
+    },
+    {
+      "path": "baseline-scalar-moments/receipt.json",
+      "sha256": "5367d2a3441cab5134233323517df956c434854c366753371d0b0f2cc9c19ff0"
+    },
+    {
+      "path": "compact-affected.log",
+      "sha256": "7e52ff6d80415c5610a3487ee07798066ca39c8d18d02e51a576438113e9b46e"
+    },
+    {
+      "path": "compact-captured-final.log",
+      "sha256": "1cd6f9f39b6c7433a39a82b7eb8c9577b949c225bd7351c0f07d6c9ed22a00b0"
+    },
+    {
+      "path": "compact-cases/captured-3000-physical.json",
+      "sha256": "b1402bdd7e778a613e03bd8943e75a9c1d15650cb11e3fafde890f75fb6bcf9b"
+    },
+    {
+      "path": "compact-cases/captured-3000.json",
+      "sha256": "052df42430d3948b2f63e72b9000753ad7fa4682830d0a71c8be2553b1446dc5"
+    },
+    {
+      "path": "compact-cases/captured-3250-physical.json",
+      "sha256": "0bd33462666f89234b3e20d8e9b0537d497bd2a9c8720909362f5f34d02e9530"
+    },
+    {
+      "path": "compact-cases/captured-3250.json",
+      "sha256": "82661cd46b9b20e7a7cf8b26f381fff2fab4487d8a17ce0c9b2f370bc80c7beb"
+    },
+    {
+      "path": "compact-cases/constant-density.json",
+      "sha256": "5f13c1e63fe5512ebacc69e61435eb678022f600165d83cbfe94356650efd73c"
+    },
+    {
+      "path": "compact-cases/exhausted-maximumEvaluations.json",
+      "sha256": "651c8bc7681aaad1f984cf99a335c3f41f4a6768ef8b507f6c3b683f922ce161"
+    },
+    {
+      "path": "compact-cases/exhausted-maximumIterations.json",
+      "sha256": "5fbe14cada553adc16cfd4a9bc1afa3ab1e14ad2203aaf226b6c7c95e1e2b830"
+    },
+    {
+      "path": "compact-cases/outlier.json",
+      "sha256": "fc57fe2f409155692f288229428e8bd9e09fcc3d121b4195d96e00fd2406c0af"
+    },
+    {
+      "path": "compact-cases/rearranged-0.3.json",
+      "sha256": "0745c490da387b372f8623ee6e315a7821c3aa81198de3c7f86a0170a1b6c005"
+    },
+    {
+      "path": "compact-cases/rearranged-0.json",
+      "sha256": "dce2a13b2989b568a5d6bcc2f46f87bc08e9db72d6c23f8ade2c4738264c4810"
+    },
+    {
+      "path": "compact-cases/stable-rest.json",
+      "sha256": "a4694bf1bdf9d21d71b41ba8625e591170488598d82f0d58116f276c7201c6d4"
+    },
+    {
+      "path": "compact-cases/weighted-moments.json",
+      "sha256": "f5373f7ee4426c466c3c302241c2f84600c88a526930f61f95ed50e152a387f8"
+    },
+    {
+      "path": "final-simd-moments/day3000.json",
+      "sha256": "17196412338d863ac003aa89348f8424718158a066892b3055d776d7c3fef76f"
+    },
+    {
+      "path": "final-simd-moments/day3250.json",
+      "sha256": "8c0e4469d7f4744d7928d2a845dde88422123fd5f9a141e4cf73f28de01a6139"
+    },
+    {
+      "path": "final-simd-moments/paired-benchmark.log",
+      "sha256": "e459eb12f97b629a1673cea6357e0ec6dfa283552a5d0369947370d1b0515a66"
+    },
+    {
+      "path": "initial-compact-cases/captured-3000-physical.json",
+      "sha256": "2304bb952cd5a6052dcb2804f23c807e0d87be2d3d32ecbe58987ed251495a67"
+    },
+    {
+      "path": "initial-compact-cases/captured-3000.json",
+      "sha256": "24108d650372acd41af73e2aa06000e862086cdecc0f909469081d4134fc42aa"
+    },
+    {
+      "path": "initial-compact-cases/captured-3250-physical.json",
+      "sha256": "499afc9943f95f2bb2642fd79975c63247bc864012931eb87959f4688c906b77"
+    },
+    {
+      "path": "initial-compact-cases/captured-3250.json",
+      "sha256": "6d9d7be0284a495fe3c99a3ed96374b658fd15c1c393d53a65d9f3097f6aeef1"
+    },
+    {
+      "path": "initial-compact-cases/constant-density.json",
+      "sha256": "57a71a092b7b648c36958ca69b5755aec28648e02b4753f800940750a5eff3d6"
+    },
+    {
+      "path": "initial-compact-cases/exhausted-maximumEvaluations.json",
+      "sha256": "651c8bc7681aaad1f984cf99a335c3f41f4a6768ef8b507f6c3b683f922ce161"
+    },
+    {
+      "path": "initial-compact-cases/exhausted-maximumIterations.json",
+      "sha256": "5fbe14cada553adc16cfd4a9bc1afa3ab1e14ad2203aaf226b6c7c95e1e2b830"
+    },
+    {
+      "path": "initial-compact-cases/outlier.json",
+      "sha256": "493d803853426bc836f0557b3157f630dd3d02f05aa7c02cf8809eee8b434ddd"
+    },
+    {
+      "path": "initial-compact-cases/rearranged-0.3.json",
+      "sha256": "be9de8efbe9bf7165c3d6589fe185588fdb9423e109f08e654d7a669780dc8ff"
+    },
+    {
+      "path": "initial-compact-cases/rearranged-0.json",
+      "sha256": "c9efd1c70d068420898ada33f45065e2857c21dfa11d2c85c2adfc1ab7273510"
+    },
+    {
+      "path": "initial-compact-cases/stable-rest.json",
+      "sha256": "b50d28826c7deac51a1d449d147d9cd2ffa42f8a19a5cd90d255cd2241ac5fe9"
+    },
+    {
+      "path": "initial-compact-cases/weighted-moments.json",
+      "sha256": "2996f2316544eafc9c8989693b2a1cbe73c3479e7ed6cd4ff65a0ccfaa2e5f7d"
+    },
+    {
+      "path": "initial-compact-source.json",
+      "sha256": "c5df77d5a9829bd9f882e383563ceeebf921517c91c307ff93a7698cd418a859"
+    },
+    {
+      "path": "initial-compact.log",
+      "sha256": "f1ae54cf4f4564a5af365999701c496087025c563fa77ce24aae2a1d296b7597"
+    },
+    {
+      "path": "recovery-diagnosis.json",
+      "sha256": "0d01744d53eb38936acf1541215f7c3ed4c2c8a6e7d13ac085fc7d3de761a00a"
+    },
+    {
+      "path": "recovery-diagnosis.log",
+      "sha256": "cb5e701256368b09a674a046380b12e256293d55b9fb3144047e8e4983ea9ab4"
+    }
+  ],
+  "logNormalization": [
+    {
+      "path": "baseline-scalar-moments/paired-benchmark.log",
+      "originalSHA256": "5c6e5e8fc937c93416db63785b28c20eacac202356054941b54ec1dd79e63668",
+      "normalizedSHA256": "599c85aa771d8719ddb631b43a032a24bd77757543ad73ab67c349198507b491",
+      "normalization": "Removed trailing whitespace and final blank lines only; numerical values and diagnostic text preserved."
+    },
+    {
+      "path": "initial-compact.log",
+      "originalSHA256": "7ab3a9a60e7d620530b3a8945619a63e9a13015f0e413be7ebd13472df179d07",
+      "normalizedSHA256": "f1ae54cf4f4564a5af365999701c496087025c563fa77ce24aae2a1d296b7597",
+      "normalization": "Removed trailing whitespace and final blank lines only; numerical values and diagnostic text preserved."
+    },
+    {
+      "path": "recovery-diagnosis.log",
+      "originalSHA256": "83c11b92a5355456ca90093df872c47bd62ea49e3e915626a5e61407c09ac4db",
+      "normalizedSHA256": "cb5e701256368b09a674a046380b12e256293d55b9fb3144047e8e4983ea9ab4",
+      "normalization": "Removed trailing whitespace and final blank lines only; numerical values and diagnostic text preserved."
+    }
+  ]
+}

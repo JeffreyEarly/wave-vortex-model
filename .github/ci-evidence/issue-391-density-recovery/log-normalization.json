@@ -1,0 +1,22 @@
+[
+  {
+    "path": "matlab-initial-failure.log",
+    "originalSHA256": "7ab3a9a60e7d620530b3a8945619a63e9a13015f0e413be7ebd13472df179d07",
+    "change": "Trim trailing whitespace and final blank lines only."
+  },
+  {
+    "path": "matlab-physical-diagnosis.log",
+    "originalSHA256": "83c11b92a5355456ca90093df872c47bd62ea49e3e915626a5e61407c09ac4db",
+    "change": "Trim trailing whitespace and final blank lines only."
+  },
+  {
+    "path": "foundation-matlab-repair.log",
+    "originalSHA256": "626eeaeddb6c506171aeef71aea373a4f05d075ae46d70a7a0c40b67c8e3d639",
+    "change": "Trim trailing whitespace and final blank lines only."
+  },
+  {
+    "path": "documentation.log",
+    "originalSHA256": "34fe0fd9da8e3d5fbd58ce2703f31a71f60a62cd4e86637cd7fc021e5664d962",
+    "change": "Trim trailing whitespace and final blank lines only."
+  }
+]

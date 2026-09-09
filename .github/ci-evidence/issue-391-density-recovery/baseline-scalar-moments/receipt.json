@@ -1,0 +1,27 @@
+{
+  "schema": "wave-vortex-recovery-moment-baseline-v1",
+  "scope": "First full captured-state campaign, before optional streaming-moment performance tuning; scientific acceptance passed, scalar moment pass slower than MATLAB.",
+  "status": "retained-baseline",
+  "artifacts": [
+    {
+      "path": "day3000.json",
+      "sha256": "3730c815621e350cd45750bc468e363edbcad1892203d85167d35ae4b49c9e75"
+    },
+    {
+      "path": "day3250.json",
+      "sha256": "c90829a02787c1d2b45198ee84991d4dbd62bb0027bf819f1d626dfabaf8ae2a"
+    },
+    {
+      "path": "paired-benchmark.log",
+      "sha256": "599c85aa771d8719ddb631b43a032a24bd77757543ad73ab67c349198507b491"
+    }
+  ],
+  "logNormalization": [
+    {
+      "path": "baseline-scalar-moments/paired-benchmark.log",
+      "originalSHA256": "5c6e5e8fc937c93416db63785b28c20eacac202356054941b54ec1dd79e63668",
+      "normalizedSHA256": "599c85aa771d8719ddb631b43a032a24bd77757543ad73ab67c349198507b491",
+      "normalization": "Removed trailing whitespace and final blank lines only; numerical values and diagnostic text preserved."
+    }
+  ]
+}

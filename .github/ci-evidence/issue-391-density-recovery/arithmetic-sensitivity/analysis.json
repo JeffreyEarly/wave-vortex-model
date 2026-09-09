@@ -1,0 +1,91 @@
+{
+  "schema": "no-motion-recovery-arithmetic-sensitivity-v1",
+  "description": "Identical source, inputs, AppleClang O3; only -ffp-contract=off differs. Neither compiler setting changes production. SVD is diagnostic and its smallest values below double precision are not precise condition-number estimates.",
+  "rows": [
+    {
+      "day": "3000",
+      "n": 43,
+      "parameterCount": 41,
+      "defaultMatchesTestedBinary": true,
+      "arithmeticOnlyProfileDifference": 2.2399512999982107e-07,
+      "defaultVsMatlab": 7.325616024900228e-07,
+      "uncontractedVsMatlab": 5.085664724902017e-07,
+      "arithmeticOnlyMomentDifference": 5.171418848703979e-13,
+      "defaultVsMatlabMomentDifference": 3.9745984281580604e-13,
+      "normalizedProfileJacobianSingularValueRange": [
+        22.51396210462843,
+        7.131836901752688e-20
+      ],
+      "numericalRankAtStandardDoubleThreshold": 23,
+      "conditionEstimate": 3.156825151048463e+20,
+      "default": {
+        "iterations": 309,
+        "acceptedSteps": 302,
+        "rejectedSteps": 6,
+        "maximumResidual": 4.602807024411959e-11,
+        "finalCost": 3.724107152133913e-21,
+        "gradientNorm": 9.772211375492215e-13,
+        "damping": 2.2879405870457067e-14
+      },
+      "uncontracted": {
+        "iterations": 309,
+        "acceptedSteps": 302,
+        "rejectedSteps": 6,
+        "maximumResidual": 4.6144310594797844e-11,
+        "finalCost": 3.737108277311307e-21,
+        "gradientNorm": 9.814957880603224e-13,
+        "damping": 2.3085624720020578e-14
+      }
+    },
+    {
+      "day": "3250",
+      "n": 86,
+      "parameterCount": 84,
+      "defaultMatchesTestedBinary": true,
+      "arithmeticOnlyProfileDifference": 3.103289145656163e-07,
+      "defaultVsMatlab": 3.249663222959498e-07,
+      "uncontractedVsMatlab": 1.4637407730333507e-08,
+      "arithmeticOnlyMomentDifference": 1.2505552149377763e-12,
+      "defaultVsMatlabMomentDifference": 1.26704202685346e-12,
+      "normalizedProfileJacobianSingularValueRange": [
+        43.31135587123848,
+        2.348248432006884e-20
+      ],
+      "numericalRankAtStandardDoubleThreshold": 27,
+      "conditionEstimate": 1.844411148364881e+21,
+      "default": {
+        "iterations": 288,
+        "acceptedSteps": 282,
+        "rejectedSteps": 5,
+        "maximumResidual": 2.1029844532449715e-11,
+        "finalCost": 1.3335667136246723e-21,
+        "gradientNorm": 9.956609424273115e-13,
+        "damping": 4.483005646262276e-14
+      },
+      "uncontracted": {
+        "iterations": 288,
+        "acceptedSteps": 282,
+        "rejectedSteps": 5,
+        "maximumResidual": 2.0706769632283795e-11,
+        "finalCost": 1.293427662953596e-21,
+        "gradientNorm": 9.827244372622516e-13,
+        "damping": 4.4348917559779656e-14
+      }
+    }
+  ],
+  "sourceSHA256": "725c00b4c0611dc0e3569049a693553f86c7d0854cd56c3ce45e112a1c646105",
+  "compiler": "/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/c++",
+  "sharedFlags": "-O3 -DNDEBUG -std=c++17 -fPIC -isysroot /Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX26.5.sdk",
+  "onlyVariantFlag": "-ffp-contract=off",
+  "binarySHA256": {
+    "fit-default": "b65d7ef0adddd9e9c3f1c5e9b00a870279dc618a91a1948da14b83a337b0d1ba",
+    "fit-uncontracted": "e0ba16afc173ac22450817e9a9ad06a1ad4adb835ce5db15946359370b709fb5"
+  },
+  "inputSHA256": {
+    "UnitTests/fixtures/density-run18-day3000.json": "38b476e7be606b4f87da4c8ba9f03637dce9e65ea904a8e5457cf8ce7cda6d74",
+    "UnitTests/fixtures/density-run18-day3250.json": "73cdf32e24b75c4fa20d27c07aba072e5b23d7047f4e7dcd7e8ee7b574a0a45e"
+  },
+  "probeSHA256": "d8396e34ed9279f03ca15986b55217fcecd715f95fc0f685180b32fc9227c885",
+  "pythonAnalysisSHA256": "adff9a0685470ddb44153f807f3aaa40ef6a15d808a583e954b32d39930377d9",
+  "assessment": "No production source or tolerance was changed. Source inspection found no mathematical Householder defect. Keeping QR implementation fixed while changing contraction reproduces the same order of profile disagreement, so exact MATLAB profile matching is not justified by the normalized-moment residual alone; qualification must include explicit downstream physical-error budgets."
+}

@@ -1,0 +1,7 @@
+{
+  "profileMaximumDifference": 7.3256160249002278E-7,
+  "inverseHeightMaximumDifference": 0.0010143595300178276,
+  "cppResidual": 4.602807024411959E-11,
+  "matlabResidual": 4.6396775310597604E-11,
+  "directMomentResidual": 4.6028181266422052E-11
+}

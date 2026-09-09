@@ -1,0 +1,330 @@
+{
+  "schema": "wave-vortex-captured-no-motion-recovery-v1",
+  "status": "passed",
+  "scope": "Current full-density moment extraction and bounded raw-moment recovery. Three warmed alternating trials per stage; C++ elapsedSeconds excludes request parsing, binary input I/O and process startup. No integrations or concurrent timing workloads.",
+  "input": {
+    "path": "/Users/jearly/Documents/OceanKitRepositories/along-track-velocity-decomp/data/run18_restart_day3000.nc",
+    "sha256": "6cbf46d71e2e95bf393c24cd74e10a65d1104b6dab09ac78a8a5a5a27402830d"
+  },
+  "executionBinary": {
+    "path": "/private/tmp/wvm-v4-audit-runtime/WVNoMotionRecoveryDump",
+    "sha256": "39679c4553c135667a869f802d47d28a7bc0e4453fd0c29c721750861410cb50"
+  },
+  "matlabRelease": "2025b",
+  "platform": "MACA64",
+  "sourceSHA256": [
+    {
+      "path": "Operations/WVNoMotionProfileOperation.m",
+      "sha256": "c6e521114c56b1450c39016f58731d05b1d8b7a9768efd95f78b39aec7fcc16f"
+    },
+    {
+      "path": "Operations/@WVNoMotionProfile/WVNoMotionProfile.m",
+      "sha256": "e4f90cbbf6bed361fd797ed98e4231febf0d3d3870c645f6220c7b184073b7fa"
+    },
+    {
+      "path": "PortableRuntime/include/WaveVortexRuntime/WVNoMotionProfileRecovery.hpp",
+      "sha256": "246843db8a1bae5b47664412d4a75c291bdca8c9c3bd7942399f5e80fee7edff"
+    },
+    {
+      "path": "PortableRuntime/src/WVNoMotionProfileRecovery.cpp",
+      "sha256": "725c00b4c0611dc0e3569049a693553f86c7d0854cd56c3ce45e112a1c646105"
+    },
+    {
+      "path": "PortableRuntime/src/WVNoMotionDensityMoments.cpp",
+      "sha256": "201970bccdb2eb56a1bf5cbefa0f81175078dc8620205c8e3a9ac829d91daa94"
+    },
+    {
+      "path": "PortableRuntime/tests/WVNoMotionRecoveryDump.cpp",
+      "sha256": "33364b05837d38c0d48d4704b1d011da74b4348c02a0514a17ff0dcbb8e4be56"
+    },
+    {
+      "path": "tools/density-diagnostics/benchmarkCapturedNoMotionRecovery.m",
+      "sha256": "ae469cff8c6029a78f6c69d1601af8721bb6adac2bb45c718621d6b3f34860ed"
+    }
+  ],
+  "loadAndDensitySeconds": 2.41518275,
+  "grid": [
+    256,
+    256,
+    43
+  ],
+  "densityRange": [
+    1025.0000000000005,
+    1026.8579818814135
+  ],
+  "weightSum": 1.0000000000000002,
+  "trialOrders": [
+    [
+      1,
+      2
+    ],
+    [
+      2,
+      1
+    ],
+    [
+      1,
+      2
+    ]
+  ],
+  "trialColumns": [
+    "matlab",
+    "cpp"
+  ],
+  "momentTiming": {
+    "trialSeconds": [
+      [
+        0.030197541666666668,
+        0.072077792
+      ],
+      [
+        0.027686916666666665,
+        0.072030459
+      ],
+      [
+        0.027243083333333334,
+        0.072165208
+      ]
+    ],
+    "medianSeconds": [
+      0.027686916666666665,
+      0.072077792
+    ],
+    "pairedSpeedups": [
+      0.41895764047082168,
+      0.38437790139122485,
+      0.37750993987758391
+    ],
+    "medianSpeedup": 0.38412548301516597
+  },
+  "momentTimingInterpretation": "Both stages include current-density extrema and raw moments; the C++ distribution pass also identifies an exact stable-rest profile. Inputs are already resident in each process.",
+  "fitTiming": {
+    "trialSeconds": [
+      [
+        0.024499291666666666,
+        0.0133195
+      ],
+      [
+        0.024017833333333332,
+        0.013159417
+      ],
+      [
+        0.024118333333333332,
+        0.015222375
+      ]
+    ],
+    "medianSeconds": [
+      0.024118333333333332,
+      0.0133195
+    ],
+    "pairedSpeedups": [
+      1.8393552060262521,
+      1.8251441787530049,
+      1.5844001565677717
+    ],
+    "medianSpeedup": 1.8107536569190534
+  },
+  "fitTimingInterpretation": "Both implementations receive identical MATLAB target moments; moment-accumulation effects are assessed separately by full recovery below.",
+  "momentMaximumDifference": 3.3306690738754696E-16,
+  "firstFourMomentDifferences": [
+    3.3306690738754696E-16,
+    0,
+    0,
+    -2.2204460492503131E-16
+  ],
+  "distribution": {
+    "maximumDensity": 1026.8579818814135,
+    "minimumDensity": 1025.0000000000005,
+    "moments": [
+      0.83954711822495875,
+      0.76050483554038506,
+      0.708209637155033,
+      0.669250608114627,
+      0.63827962016381623,
+      0.61262732242545537,
+      0.59076973251931786,
+      0.57175493819000212,
+      0.55494862133223177,
+      0.53990692528076867,
+      0.526307157569849,
+      0.51390738784452017,
+      0.502521592958015,
+      0.492003680739037,
+      0.48223683890628644,
+      0.47312621171731234,
+      0.46459372997852805,
+      0.45657437690379621,
+      0.449013436645524,
+      0.44186443087138444,
+      0.43508754690346169,
+      0.42864842340252463,
+      0.42251720033279294,
+      0.41666776712322895,
+      0.411077161433337,
+      0.40572508373975108,
+      0.40059350197700677,
+      0.39566632690893894,
+      0.39092914357394604,
+      0.38636898757016014,
+      0.3819741574861254,
+      0.37773405668709509,
+      0.37363905910962913,
+      0.369680394820002,
+      0.36585005194242132,
+      0.36214069222426243,
+      0.35854557802356207,
+      0.35505850891277863,
+      0.35167376641759529,
+      0.34838606566922076,
+      0.34519051295755376,
+      0.34208256834160872,
+      0.33905801261112833
+    ],
+    "sampleCount": 2.818048E+6,
+    "stableProfile": [],
+    "workspaceBytes": 67256
+  },
+  "matlabFit": {
+    "algorithm": "damped-least-squares",
+    "reason": "gradient-tolerance",
+    "iterations": 309,
+    "evaluations": 309,
+    "acceptedSteps": 302,
+    "rejectedSteps": 6,
+    "initialCost": 1.2516371836101829E-5,
+    "finalCost": 3.7663356986577095E-21,
+    "maximumResidual": 4.6395443042968054E-11,
+    "gradientNorm": 9.9107466363853556E-13,
+    "damping": 2.3520144068361928E-14,
+    "parameters": {
+      "maximumIterations": 2000,
+      "maximumEvaluations": 5000,
+      "gradientTolerance": 1E-12,
+      "stepTolerance": 1E-12,
+      "relativeCostTolerance": 1E-12
+    }
+  },
+  "cppSameMomentFit": {
+    "acceptedSteps": 302,
+    "algorithm": "damped-least-squares",
+    "damping": 2.3461594936201166E-14,
+    "evaluations": 309,
+    "exitFlag": 1,
+    "finalCost": 3.7631354703247152E-21,
+    "gradientNorm": 9.8832919949627572E-13,
+    "initialCost": 1.2516371836101879E-5,
+    "iterations": 309,
+    "maximumResidual": 4.6369574846494288E-11,
+    "qualified": true,
+    "reason": "gradient-tolerance",
+    "rejectedSteps": 6,
+    "workspaceBytes": 59448
+  },
+  "sameMomentProfileMaximumDifference": 5.2479208534350619E-8,
+  "cppRecovery": {
+    "code": 0,
+    "elapsedSeconds": 0.088160667,
+    "message": "",
+    "profile": [
+      1026.8579818814135,
+      1026.8531978740343,
+      1026.8464911613446,
+      1026.8378519879982,
+      1026.8272646838529,
+      1026.8147101612749,
+      1026.8001868807078,
+      1026.7837370067596,
+      1026.7654476413729,
+      1026.7454121053563,
+      1026.7236717355204,
+      1026.7001755602869,
+      1026.6747838095741,
+      1026.6473149902283,
+      1026.6176221150567,
+      1026.585670899573,
+      1026.5515756511425,
+      1026.515559418865,
+      1026.4778495217956,
+      1026.438569653038,
+      1026.3976857107439,
+      1026.3550172075402,
+      1026.310296587139,
+      1026.2632538655919,
+      1026.2137092214691,
+      1026.1616528344784,
+      1026.1072773890037,
+      1026.0509318424047,
+      1025.9929952320661,
+      1025.9337213638582,
+      1025.8731274683394,
+      1025.8109701645612,
+      1025.746812601139,
+      1025.6801684306927,
+      1025.6107099821311,
+      1025.5384998261563,
+      1025.4641178307929,
+      1025.3884983291266,
+      1025.3124442268495,
+      1025.23611220336,
+      1025.1588803444427,
+      1025.079923161803,
+      1025.0000000000005
+    ],
+    "report": {
+      "acceptedSteps": 302,
+      "algorithm": "damped-least-squares",
+      "damping": 2.3156645102279537E-14,
+      "evaluations": 309,
+      "exitFlag": 1,
+      "finalCost": 3.74168876050015E-21,
+      "gradientNorm": 9.85072150915152E-13,
+      "initialCost": 1.2516371836103107E-5,
+      "iterations": 309,
+      "maximumResidual": 4.6178172397048911E-11,
+      "qualified": true,
+      "reason": "gradient-tolerance",
+      "rejectedSteps": 6,
+      "workspaceBytes": 67256
+    },
+    "schema": "wv-no-motion-recovery-dump-v1",
+    "status": "complete"
+  },
+  "matlabDirectProfileMaximumDifference": 0,
+  "profileMaximumDifference": 4.2065812522196211E-7,
+  "physical": {
+    "inverseHeightMaximumDifference": 0.00054330699776983238,
+    "inverseHeightRMSDifference": 0.0002518576153916585,
+    "meanEtaMatlab": -0.0094464459923500072,
+    "meanEtaCpp": -0.0094684320120328319,
+    "densityClosureMatlab": 0,
+    "densityClosureCpp": 0,
+    "meanAPEMatlab": 0.0014887143075705863,
+    "meanAPECpp": 0.0014887143245870687,
+    "apeMaximumDifference": 2.576013539423716E-7,
+    "negativeAPECounts": [
+      0,
+      0
+    ],
+    "meanEtaDifference": 2.1986019682824695E-5,
+    "meanAPERelativeDifference": 1.1430320996207341E-8,
+    "cppMaterialHeightRange": [
+      -3999.999999996362,
+      -1.1368683772161603E-10
+    ],
+    "allFinite": true
+  },
+  "physicalInterpretation": "Both recovered nodal profiles use the same qualified MATLAB inverse/APE primitive to isolate recovery differences. Supplied-profile C++ primitive parity is separately qualified; these comparisons do not establish an exact continuous sorted-state truth.",
+  "retainedFixture": {
+    "path": "/Users/jearly/Documents/OceanKitRepositories/wvm-v4-cpp-adoption-audit/UnitTests/fixtures/density-run18-day3000.json",
+    "sha256": "38b476e7be606b4f87da4c8ba9f03637dce9e65ea904a8e5457cf8ce7cda6d74"
+  },
+  "retainedMomentMaximumDifference": 5.5511151231257827E-17,
+  "retainedNormalizationEndpointsMatch": true,
+  "acceptance": {
+    "profileMaximumDifference": 1.8579818814130248E-6,
+    "inverseHeightMaximumDifference": 0.004,
+    "meanEtaDifference": 4E-5,
+    "meanAPERelativeDifference": 1E-5,
+    "densityClosure": 1.8189894035458565E-12
+  }
+}

@@ -35,6 +35,8 @@ add_library(WaveVortexPortableRuntime STATIC
     src/WVForcingEngine.cpp
     src/WVIntegrationState.cpp
     src/WVNoMotionProfile.cpp
+    src/WVNoMotionProfileRecovery.cpp
+    src/WVNoMotionDensityMoments.cpp
     src/WVRungeKutta.cpp
     include/WaveVortexRuntime/WVBarotropicQGForcingEngine.hpp
     src/WVBarotropicQGForcingEngine.cpp
@@ -242,6 +244,9 @@ if(BUILD_TESTING)
     wv_add_runtime_test(TestWVNoMotionProfile TestWVNoMotionProfile.cpp no-motion-profile)
     target_sources(TestWVNoMotionProfile PRIVATE ../tools/compiled-kernel/tests/WVAllocationProbe.cpp)
     target_include_directories(TestWVNoMotionProfile PRIVATE ../tools/compiled-kernel/tests)
+    wv_add_runtime_test(TestWVNoMotionProfileRecovery TestWVNoMotionProfileRecovery.cpp no-motion-profile-recovery)
+    target_sources(TestWVNoMotionProfileRecovery PRIVATE ../tools/compiled-kernel/tests/WVAllocationProbe.cpp)
+    target_include_directories(TestWVNoMotionProfileRecovery PRIVATE ../tools/compiled-kernel/tests)
     wv_add_runtime_test(TestWVObserverAdapter TestWVObserverAdapter.cpp observer-adapter)
     wv_add_runtime_test(TestWVExtensionCatalog TestWVExtensionCatalog.cpp extension-catalog)
     wv_add_runtime_test(TestWVForcingCompatibility TestWVForcingCompatibility.cpp forcing-compatibility-catalog)
@@ -436,6 +441,12 @@ if(BUILD_TESTING)
     target_link_libraries(WVNoMotionProfileDump PRIVATE WaveVortex::PortableRuntime)
     if(CMAKE_CXX_COMPILER_ID MATCHES "AppleClang|Clang|GNU")
         target_compile_options(WVNoMotionProfileDump PRIVATE -Wall -Wextra -Wpedantic -Werror)
+    endif()
+    add_executable(WVNoMotionRecoveryDump tests/WVNoMotionRecoveryDump.cpp)
+    target_include_directories(WVNoMotionRecoveryDump PRIVATE third_party)
+    target_link_libraries(WVNoMotionRecoveryDump PRIVATE WaveVortex::PortableRuntime)
+    if(CMAKE_CXX_COMPILER_ID MATCHES "AppleClang|Clang|GNU")
+        target_compile_options(WVNoMotionRecoveryDump PRIVATE -Wall -Wextra -Wpedantic -Werror)
     endif()
 endif()
 

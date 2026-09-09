@@ -1,0 +1,24 @@
+{
+  "code": 9,
+  "elapsedSeconds": 7.708E-6,
+  "message": "No-motion recovery did not qualify a normalized moment residual <=1e-8.",
+  "profile": [],
+  "report": {
+    "acceptedSteps": 2,
+    "algorithm": "damped-least-squares",
+    "damping": 1.4968244950045027,
+    "evaluations": 8,
+    "exitFlag": 2,
+    "finalCost": 0.028773533421065575,
+    "gradientNorm": 1.17963956627241E-12,
+    "initialCost": 0.21502487088854194,
+    "iterations": 8,
+    "maximumResidual": 0.12106902511031538,
+    "qualified": false,
+    "reason": "step-tolerance",
+    "rejectedSteps": 5,
+    "workspaceBytes": 1144
+  },
+  "schema": "wv-no-motion-recovery-dump-v1",
+  "status": "failed"
+}
