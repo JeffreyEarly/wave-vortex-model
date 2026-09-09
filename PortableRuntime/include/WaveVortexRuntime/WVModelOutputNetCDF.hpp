@@ -199,6 +199,9 @@ public:
       const WVIntegrationStateLayout &stateLayout, WVCheckpoint &checkpoint,
       WVAdditionalStateStorage &additionalState);
 
+  bool requiresRestartableStop() const noexcept override { return true; }
+  bool hasCommittedOutputAt(const WVOutputRouteView &route,
+                            double time) const noexcept override;
   WVKernelStatus preflight(const WVOutputPlan &plan) override;
   WVKernelStatus deliver(const WVOutputEvent &event,
                          const WVOutputRouteView &route,

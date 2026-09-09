@@ -3,6 +3,8 @@
 #include "WaveVortexRuntime/WVIntegrationState.hpp"
 
 #include <cstddef>
+#include <exception>
+#include <functional>
 #include <limits>
 #include <memory>
 
@@ -108,6 +110,68 @@ struct WVAcceptedStep {
   const WVDenseOutput *denseOutput = nullptr;
 };
 
+// Control is borrowed for one invocation. Callbacks run only at these coarse
+// boundaries, never inside a stage, rejected attempt, or individual output
+// route.
+enum class WVIntegrationBoundary : std::uint8_t {
+  initialState,
+  acceptedStep,
+  outputOccurrence
+};
+struct WVIntegrationProgress {
+  WVIntegrationBoundary boundary = WVIntegrationBoundary::initialState;
+  double acceptedTime = 0.0;
+  double outputTime = 0.0;
+};
+struct WVIntegrationControl {
+  std::function<bool(const WVIntegrationProgress &)> shouldStop;
+};
+enum class WVIntegrationCompletion : std::uint8_t {
+  reachedFinalTime,
+  stopRequested,
+  outputSinkRequested,
+  integrationFailure,
+  outputFailure,
+  callbackFailure
+};
+struct WVIntegrationTermination {
+  WVIntegrationCompletion completion =
+      WVIntegrationCompletion::reachedFinalTime;
+  WVIntegrationProgress requestedAt;
+  double finalAcceptedTime = 0.0;
+  std::size_t callbackEvaluationCount = 0;
+  bool stopped() const noexcept {
+    return completion == WVIntegrationCompletion::stopRequested ||
+           completion == WVIntegrationCompletion::outputSinkRequested;
+  }
+};
+
+// Exceptions are failures, never successful cancellation. A latched request
+// remains latched while the output driver drains the accepted interval.
+inline WVKernelStatus
+evaluateIntegrationControl(const WVIntegrationControl &control,
+                           const WVIntegrationProgress &progress,
+                           WVIntegrationTermination &termination) {
+  if (!control.shouldStop || termination.stopped())
+    return WVKernelStatus::ok();
+  ++termination.callbackEvaluationCount;
+  try {
+    if (control.shouldStop(progress)) {
+      termination.completion = WVIntegrationCompletion::stopRequested;
+      termination.requestedAt = progress;
+    }
+  } catch (const std::exception &error) {
+    termination.completion = WVIntegrationCompletion::callbackFailure;
+    return {WVKernelStatusCode::numericalFailure,
+            std::string("Integration stop callback failed: ") + error.what()};
+  } catch (...) {
+    termination.completion = WVIntegrationCompletion::callbackFailure;
+    return {WVKernelStatusCode::numericalFailure,
+            "Integration stop callback failed with a non-standard exception."};
+  }
+  return WVKernelStatus::ok();
+}
+
 class WVTimeIntegrator {
 public:
   virtual ~WVTimeIntegrator() = default;
@@ -119,6 +183,24 @@ public:
   virtual WVKernelStatus advanceToTime(WVMutableIntegrationState &state,
                                        double finalTime,
                                        double stepSize) = 0;
+  // Additive default keeps source-linked v1 custom integrators source
+  // compatible.
+  virtual WVKernelStatus advanceToTime(WVMutableIntegrationState &state,
+                                       double finalTime, double stepSize,
+                                       const WVIntegrationControl &control,
+                                       WVIntegrationTermination &termination) {
+    termination = {};
+    const auto status =
+        control.shouldStop
+            ? WVKernelStatus{WVKernelStatusCode::unsupportedOperation,
+                             "This source-linked integrator has no controlled "
+                             "driver."}
+            : advanceToTime(state, finalTime, stepSize);
+    termination.finalAcceptedTime = state.waveVortex.t;
+    if (!status)
+      termination.completion = WVIntegrationCompletion::integrationFailure;
+    return status;
+  }
   virtual const WVAcceptedStep *lastAcceptedStep() const noexcept = 0;
   virtual double nextStepSize() const noexcept = 0;
   virtual std::size_t persistentBytes() const noexcept = 0;

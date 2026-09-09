@@ -621,11 +621,14 @@ classdef WVGeometryDoublyPeriodicStratifiedConstant < WVGeometryDoublyPeriodic &
                 options
             end
             [Lxyz(1:2), Nxyz(1:2), geomOptions] = WVGeometryDoublyPeriodic.requiredPropertiesForGeometryFromGroup(group,shouldIgnoreMissingProperties=true);
-            [Lxyz(3), Nxyz(3), stratOptions] = WVStratification.requiredPropertiesForStratificationFromGroup(group,shouldIgnoreMissingProperties=true);
+            % This geometry derives j from Nz; output-group copies of j do
+            % not belong to its persisted stratification inputs.
+            stratificationNames = setdiff(WVStratification.namesOfRequiredPropertiesForStratification(),{'j'});
+            S = CAAnnotatedClass.propertyValuesFromGroup(group,stratificationNames,shouldIgnoreMissingProperties=true);
+            Lxyz(3) = S.Lz;
+            Nxyz(3) = length(S.z);
             vars = CAAnnotatedClass.propertyValuesFromGroup(group,WVGeometryDoublyPeriodicStratifiedConstant.newRequiredPropertyNames);
-            S = struct(stratOptions{:});
-            S = rmfield(S,'j');
-            S = rmfield(S,'z');
+            S = rmfield(S,{'Lz','z'});
             stratOptions = namedargs2cell(S);
             newOptions = namedargs2cell(vars);
             options = cat(2,stratOptions,geomOptions,newOptions);

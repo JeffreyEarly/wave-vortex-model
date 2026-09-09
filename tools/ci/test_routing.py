@@ -61,8 +61,27 @@ class RoutingTests(unittest.TestCase):
         for plan in [select([]), select(['README.md'], complete=True)]:
             self.assertEqual(set(plan['families']), set(FAMILIES))
             self.assertTrue(plan['packaging'])
+            self.assertTrue({'TestAdaptiveDampingResolution', 'TestEnergyDiagnostics',
+                             'TestSpectralOutputRestart'} <= set(plan['matlabTests']))
         self.assertFalse(select(['README.md'])['complete'])
         self.assertEqual(select(['README.md'], complete=True)['deferredMethods'], [])
+
+    def test_matlab_regressions_follow_production_changes(self):
+        cases = [
+            ('Forcing/WVAdaptiveDamping.m', 'TestAdaptiveDampingResolution'),
+            ('@WVTransform/classDefinedOperationForKnownVariable.m', 'TestEnergyDiagnostics'),
+            ('ObservingSystems/WVEulerianFields.m', 'TestEnergyDiagnostics'),
+            ('@WVGeometryDoublyPeriodicStratifiedConstant/WVGeometryDoublyPeriodicStratifiedConstant.m',
+             'TestSpectralOutputRestart'),
+            ('@WVModel/modelFromFile.m', 'TestSpectralOutputRestart'),
+        ]
+        for path, regression in cases:
+            with self.subTest(path=path):
+                plan = select([path])
+                self.assertIn(regression, plan['matlabTests'])
+                self.assertEqual(plan['releases'], ['R2025b', 'R2026a'])
+                batches = [name for group in plan['matlabShards'] for name in group['classes']]
+                self.assertEqual(batches.count(regression), 1)
 
     def test_legacy_migration_executes_required_phases(self):
         plan = select(['README.md'], migration=True)

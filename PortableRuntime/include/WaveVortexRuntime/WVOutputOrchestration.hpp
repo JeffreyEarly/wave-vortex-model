@@ -204,6 +204,15 @@ struct WVOutputDeliveryResult {
 class WVOutputSink {
 public:
   virtual ~WVOutputSink() = default;
+  // Model-file sinks require a complete persisted restart boundary. Generic
+  // sinks stop after draining the current accepted interval.
+  virtual bool requiresRestartableStop() const noexcept { return false; }
+  // Source continuation alone does not prove that a remapped destination has
+  // a record. Conservative default makes restartable custom sinks drain to a
+  // future occurrence unless they provide destination commit evidence.
+  virtual bool hasCommittedOutputAt(const WVOutputRouteView &, double) const noexcept {
+    return false;
+  }
   virtual WVKernelStatus preflight(const WVOutputPlan &plan) = 0;
   virtual WVKernelStatus deliver(const WVOutputEvent &event,
                                  const WVOutputRouteView &route,
@@ -274,6 +283,7 @@ struct WVOutputDriverMetrics {
   std::size_t interpolationBufferMaximumLiveBytes = 0;
   std::size_t routeStagingCapacityBytes = 0;
   std::size_t routeStagingMaximumLiveBytes = 0;
+  std::size_t controlledStopWorkspaceMaximumLiveBytes = 0;
   double interpolationSeconds = 0.0;
   std::size_t retainedStorageBytes = 0;
   std::vector<WVOutputFileMetrics> files;
@@ -297,6 +307,11 @@ public:
   WVKernelStatus advanceToTime(WVMutableIntegrationState &state,
                                double finalTime, double initialStepSize,
                                WVOutputSink &sink);
+  WVKernelStatus advanceToTime(WVMutableIntegrationState &state,
+                               double finalTime, double initialStepSize,
+                               WVOutputSink &sink,
+                               const WVIntegrationControl &control,
+                               WVIntegrationTermination &termination);
 
   const std::vector<WVOutputScheduleContinuation> &
   committedContinuations() const noexcept;

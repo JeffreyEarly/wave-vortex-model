@@ -51,12 +51,7 @@ classdef TestPortableDiagnostics < matlab.unittest.TestCase
                         end
                         expected = struct;
                         for name = reshape(names,1,[])
-                            if name=="energy" && ismember(family,["barotropic","stratified-qg"])
-                                % The legacy portable energy alias uses the registered QG invariant.
-                                value = wvt.totalEnergy;
-                            else
-                                value = wvt.(name);
-                            end
+                            value = wvt.(name);
                             expected.(name) = value(:);
                         end
                         model = WVModel(wvt,shouldUseLinearDynamics=family~="barotropic");
@@ -123,8 +118,7 @@ classdef TestPortableDiagnostics < matlab.unittest.TestCase
                 source = fullfile(testCase.folder,"lifecycle-source.nc");
                 file = model.createNetCDFFileForModelOutput(source,outputInterval=.5,shouldOverwriteExisting=true);
                 dense = file.addNewEvenlySpacedOutputGroup("dense",outputInterval=.125,initialTime=37,finalTime=38);
-                denseNames = names(~ismember(names,["Apt","Amt","A0t"]));
-                dense.addObservingSystem(WVEulerianFields(model,fieldNames=cellstr(denseNames)));
+                dense.addObservingSystem(WVEulerianFields(model,fieldNames=cellstr(names)));
                 secondSource = fullfile(testCase.folder,"lifecycle-second-source.nc");
                 model.createNetCDFFileForModelOutput(secondSource,outputInterval=.5,shouldOverwriteExisting=true);
                 for outputFile = reshape(model.outputFiles,1,[])

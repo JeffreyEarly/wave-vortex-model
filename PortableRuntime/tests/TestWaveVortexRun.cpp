@@ -1,5 +1,6 @@
-#include "WaveVortexRuntime/WVCheckpointReader.hpp"
 #include "WVTestExtensionCatalog.hpp"
+#include "WaveVortexRuntime/WVCheckpointReader.hpp"
+#include "WaveVortexRuntime/WVRunner.hpp"
 
 #include <algorithm>
 #include <cstdlib>
@@ -123,6 +124,106 @@ int main() {
         std::filesystem::remove_all(directory);
         std::filesystem::create_directories(directory);
         const auto input = std::filesystem::path(WV_RUNTIME_FIXTURE_DIR)/"forcing-mixed-hydrostatic.nc";
+        {
+          const auto callbackReport = directory / "callback-failure.json";
+          std::vector<std::string> arguments{
+              "wave-vortex-run",
+              input.string(),
+              (directory / "callback-failure.nc").string(),
+              "--restart-mode",
+              "coefficients",
+              "--output-policy",
+              "create",
+              "--delta-t",
+              "1e-5",
+              "--steps",
+              "2",
+              "--fft-provider",
+              "reference",
+              "--report",
+              callbackReport.string()};
+          std::vector<char *> argv;
+          for (auto &argument : arguments)
+            argv.push_back(argument.data());
+          const int code = runWaveVortex(
+              static_cast<int>(argv.size()), argv.data(),
+              test::extensionCatalog(), {[](const auto &) -> bool {
+                throw std::runtime_error("injected callback error");
+              }});
+          const auto failure = text(callbackReport);
+          require(code == 7 &&
+                      failure.find("\"stage\":\"stop-callback\"") !=
+                          std::string::npos &&
+                      failure.find("\"reason\":\"callback-failure\"") !=
+                          std::string::npos &&
+                      jsonNumber(failure, "acceptedStepCount") == 0.0,
+                  "reusable runner must report callback failure separately "
+                  "from integration and output failure");
+        }
+        // Warmup and measured phases share one invocation-level stop result.
+        for (const auto denseOutputs : {0, 1}) {
+            for (const auto scenario : {"stop", "continue", "throw"}) {
+                const auto stem = std::string("warmup-") + scenario + "-" +
+                                  std::to_string(denseOutputs);
+                const auto warmupReport = directory / (stem + ".json");
+                const auto warmupOutput = directory / (stem + ".nc");
+                std::vector<std::string> arguments{
+                    "wave-vortex-run", input.string(), warmupOutput.string(),
+                    "--restart-mode", "coefficients", "--output-policy", "create",
+                    "--delta-t", "1e-5", "--steps", "2", "--fft-provider",
+                    "reference", "--benchmark-warmup-steps", "1",
+                    "--report", warmupReport.string()};
+                if (denseOutputs != 0) {
+                    arguments.push_back("--benchmark-dense-outputs-per-step");
+                    arguments.push_back(std::to_string(denseOutputs));
+                }
+                std::vector<char *> argv;
+                for (auto &argument : arguments) argv.push_back(argument.data());
+                std::size_t callbackCount = 0;
+                bool requested = false;
+                double requestTime = 0.0;
+                const int code = runWaveVortex(
+                    static_cast<int>(argv.size()), argv.data(),
+                    test::extensionCatalog(), {[&](const auto &progress) {
+                        ++callbackCount;
+                        if (progress.boundary != WVIntegrationBoundary::acceptedStep ||
+                            requested || std::string(scenario) == "continue") return false;
+                        requested = true;
+                        requestTime = progress.acceptedTime;
+                        if (std::string(scenario) == "throw")
+                            throw std::runtime_error("injected warmup callback failure");
+                        return true; // A one-shot request must survive phase transitions.
+                    }});
+                const auto reportText = text(warmupReport);
+                require(jsonNumber(reportText, "callbackEvaluationCount") == callbackCount,
+                        "runner must aggregate callback counts across warmup and measurement");
+                if (std::string(scenario) == "throw") {
+                    require(code == 7 &&
+                                reportText.find("\"stage\":\"stop-callback\"") != std::string::npos &&
+                                reportText.find("\"reason\":\"callback-failure\"") != std::string::npos &&
+                                jsonNumber(reportText, "acceptedStepCount") == 1.0 &&
+                                jsonNumber(reportText, "finalAcceptedTime") == requestTime &&
+                                !std::filesystem::exists(warmupOutput),
+                            "warmup callback failure must retain structured classification and state metrics");
+                } else {
+                    require(code == 0, "controlled benchmark warmup run failed");
+                    WVCheckpoint stopped;
+                    const auto status = WVCheckpointReader::read(
+                        warmupOutput.string(), *test::extensionCatalog(), stopped);
+                    require(static_cast<bool>(status), status.message);
+                    if (std::string(scenario) == "stop") {
+                        require(reportText.find("\"status\":\"stopped\"") != std::string::npos &&
+                                    jsonNumber(reportText, "stepCount") == 1.0 &&
+                                    jsonNumber(reportText, "requestedAtAcceptedTime") == requestTime &&
+                                    stopped.state.t == requestTime,
+                                "a warmup stop must preserve its request and skip all measured steps");
+                    } else {
+                        require(jsonNumber(reportText, "stepCount") == 3.0,
+                                "continuing warmup must complete warmup and measured steps");
+                    }
+                }
+            }
+        }
         const auto output = directory/"output.nc";
         const auto report = directory/"report.json";
         require(run(quote(input)+" "+quote(output)+" --delta-t 0.037 --steps 2 --fft-provider reference --report "+quote(report)) == 0,"runner step execution failed");
@@ -270,6 +371,63 @@ int main() {
         require(lateFailureReportText.find("\"committedCount\":1") != std::string::npos && lateFailureReportText.find("\"status\":\"failed\"") != std::string::npos,"later scheduled-output failure report omitted partial results");
 
 #if defined(__APPLE__) || defined(__linux__)
+        for (const int scenario : {0, 1, 2}) {
+          const auto stem = "graceful-" + std::to_string(scenario);
+          const auto stopDirectory = directory / stem;
+          const auto stopPhase = directory / (stem + ".phase");
+          const auto stopPid = directory / (stem + ".pid");
+          const auto stopReport = directory / (stem + ".json");
+          const auto stopArguments =
+              quote(input) + " --delta-t 1e-5 --final-time " +
+              number(initialCheckpoint.state.t + 1e-3) +
+              " --fft-provider reference --output-time " +
+              number(initialCheckpoint.state.t) + " --output-time " +
+              number(scheduledMidpoint) + " --output-time " +
+              number(initialCheckpoint.state.t + 1e-3) +
+              " --output-directory " + quote(stopDirectory) + " --phase-file " +
+              quote(stopPhase) + " --report " + quote(stopReport);
+          int stopStatus = -1;
+          std::thread stopWorker(
+              [&] { stopStatus = runWithPid(stopArguments, stopPid); });
+          waitForText(stopPhase,
+                      scenario == 1 ? "output-committed:2" : "steady-retained");
+          waitForNonemptyFile(stopPid);
+          std::ifstream processInput(stopPid);
+          int process = 0;
+          processInput >> process;
+          require(process > 0 && ::kill(process, SIGINT) == 0,
+                  "unable to request graceful CLI stop");
+          if (scenario == 2) {
+            std::this_thread::sleep_for(std::chrono::milliseconds(5));
+            require(::kill(process, SIGINT) == 0,
+                    "unable to force repeated interrupt");
+          }
+          stopWorker.join();
+          if (scenario == 2) {
+            require(stopStatus != 0,
+                    "repeated SIGINT must permit ordinary process termination");
+            continue;
+          }
+          require(stopStatus == 0, "graceful SIGINT must return success");
+          const auto stoppedReport = text(stopReport);
+          require(stoppedReport.find("\"status\":\"stopped\"") !=
+                          std::string::npos &&
+                      stoppedReport.find("\"reason\":\"stop-requested\"") !=
+                          std::string::npos &&
+                      jsonNumber(stoppedReport, "finalAcceptedTime") <
+                          initialCheckpoint.state.t + 1e-3,
+                  "graceful stop report must distinguish actual accepted time "
+                  "from target");
+          WVCheckpoint stoppedCheckpoint;
+          require(bool(WVCheckpointReader::read(
+                      (stopDirectory / "checkpoint-000001.nc").string(),
+                      *test::extensionCatalog(), stoppedCheckpoint)),
+                  "graceful stop corrupted committed checkpoint");
+          require(
+              !std::filesystem::exists(stopDirectory / "checkpoint-000003.nc"),
+              "graceful stop wrote an occurrence after its accepted boundary");
+        }
+
         const auto interruptedDirectory = directory/"interrupted";
         const auto interruptedPhase = directory/"interrupted.phase";
         const auto interruptedPid = directory/"interrupted.pid";

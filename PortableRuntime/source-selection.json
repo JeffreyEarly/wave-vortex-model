@@ -64,7 +64,9 @@
     "hydrostaticRuntime": "issue-300",
     "boussinesqKernel": "issue-302",
     "boussinesqRuntime": "issue-303",
-    "resolvedForcingTendencyDiagnostics": "issue-315"
+    "resolvedForcingTendencyDiagnostics": "issue-315",
+    "controlledEarlyTermination": "issue-288",
+    "adaptiveDampingEffectiveResolution": "issue-409"
   },
   "excluded": [
     "benchmark harnesses and payloads",

@@ -20,14 +20,16 @@ SHARED_TESTS = ['TestPortableStableForcing', 'TestPortableForcingCompatibility',
 PERSISTENCE_TESTS = ['TestPortableRuntimeCompatibility', 'TestPortableRunRequestWriter',
                      'TestPortableObserverContracts', 'TestPortableForcingContracts',
                      'TestWVModelOutputPersistence', 'TestNetCDF', 'TestNetCDFHandleOwnership',
-                     'TestShouldExcludeConjugatesPersistence', 'TestObservingSystems', 'TestWVModelIntegration']
+                     'TestShouldExcludeConjugatesPersistence', 'TestObservingSystems', 'TestWVModelIntegration',
+                     'TestSpectralOutputRestart']
 MATLAB_CORE_TESTS = ['TestWVTransformInitialization', 'TestCoreTransformInvariants',
                      'TestOperationRegistrationAndCaching', 'TestTotalFlowComponent',
                      'TestFlowComponentSurfaceDiagnostics', 'TestPhysicalUnitMetadata',
                      'TestPublicInterpolationContract', 'TestRandomFlow', 'TestEtaTrueOperation',
                      'TestVerticalCalculus', 'TestNonlinearFlux', 'TestForcingLifecycle',
                      'TestForcingMathematicalContracts', 'TestTraditionalDamping',
-                     'TestNarrowBandGeostrophicForcing']
+                     'TestNarrowBandGeostrophicForcing', 'TestAdaptiveDampingResolution',
+                     'TestEnergyDiagnostics']
 
 
 TEST_COSTS = json.loads(Path(__file__).with_name('test_costs.json').read_text())['seconds']

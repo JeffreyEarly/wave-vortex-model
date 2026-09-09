@@ -3090,6 +3090,87 @@ void testAlgorithmicScheduleThroughModelAndRequestRunner() {
   require(!status,
           "an incompatible full typed schedule cursor passed preflight");
 
+  const auto controlledPath =
+      directory.path / "algorithmic-model-controlled.nc";
+  WVModelOutputRequest controlledRequest;
+  controlledRequest.policy = WVModelOutputPolicy::create;
+  controlledRequest.destinations = {{"primary", controlledPath.string()}};
+  controlledRequest.finalTime = scheduledTime(4);
+  WVModel controlledModel;
+  WVModelState controlledState;
+  status = WVModel::createFromModelOutputFiles(
+      modelOutputCatalog(), {sourcePath.string()}, controlledRequest,
+      std::make_unique<WVReferenceFFTEngine>(), {}, controlledModel,
+      controlledState);
+  require(bool(status), status.message);
+  require(bool(controlledModel.prepareStateAfterRestart(controlledState)),
+          "algorithmic stop prepare");
+  const auto controlledResult = controlledModel.advanceToTime(
+      controlledState, controlledRequest.finalTime, scale, {[](const auto &p) {
+        return p.boundary == WVIntegrationBoundary::acceptedStep;
+      }});
+  require(bool(controlledResult), "algorithmic control status: " + controlledResult.status.message);
+  require(
+      bool(controlledResult) && controlledResult.termination.stopped() &&
+          std::abs(controlledState.checkpoint().state.t - scheduledTime(2)) <=
+              8.0 * std::numeric_limits<double>::epsilon() * std::max(1.0, std::abs(scheduledTime(2))) &&
+          bool(controlledModel.closeOutput()),
+      "source-defined algorithmic stop must find a complete future checkpoint");
+  WVModelOutputNetCDFInspection controlledInspection;
+  persistence = WVModelOutputNetCDFSink::inspect(
+      {controlledPath.string()}, *modelOutputCatalog(), controlledInspection);
+  require(bool(persistence) &&
+              controlledInspection.latestRestart.t == scheduledTime(2) &&
+              controlledInspection.scheduleContinuations[0]
+                      .cursor.committedOrdinal == 2,
+          "source-defined stop must preserve complete typed schedule cursor");
+  WVModelOutputRequest controlledAppend;
+  controlledAppend.policy = WVModelOutputPolicy::append;
+  controlledAppend.finalTime = scheduledTime(3);
+  WVModel algorithmicResume;
+  WVModelState algorithmicState;
+  status = WVModel::createFromModelOutputFiles(
+      modelOutputCatalog(), {controlledPath.string()}, controlledAppend,
+      std::make_unique<WVReferenceFFTEngine>(), {}, algorithmicResume,
+      algorithmicState);
+  require(bool(status), "algorithmic stop append: " + status.message);
+  require(bool(algorithmicResume.prepareStateAfterRestart(algorithmicState)) &&
+              bool(algorithmicResume.advanceToTime(
+                  algorithmicState, controlledAppend.finalTime, scale)) &&
+              bool(algorithmicResume.closeOutput()),
+          "algorithmic stop continuation");
+
+  const auto initialStopPath = directory.path / "algorithmic-initial-stop.nc";
+  auto initialStopRequest = controlledRequest;
+  initialStopRequest.destinations = {{"primary", initialStopPath.string()}};
+  WVModel initialStopModel;
+  WVModelState initialStopState;
+  status = WVModel::createFromModelOutputFiles(modelOutputCatalog(), {sourcePath.string()}, initialStopRequest,
+      std::make_unique<WVReferenceFFTEngine>(), {}, initialStopModel, initialStopState);
+  require(bool(status) && bool(initialStopModel.prepareStateAfterRestart(initialStopState)), "initial stop source create");
+  const auto initialStop = initialStopModel.advanceToTime(initialStopState, initialStopRequest.finalTime, scale,
+      {[](const auto &) { return true; }});
+  require(bool(initialStop) && initialStop.termination.stopped() && bool(initialStopModel.closeOutput()),
+          "initial stop should close coherently");
+  WVModelOutputNetCDFInspection initialStopInspection;
+  persistence = WVModelOutputNetCDFSink::inspect({initialStopPath.string()}, *modelOutputCatalog(), initialStopInspection);
+  require(bool(persistence), "initial stop new destination inspect: " + persistence.message);
+  require(initialStop.termination.requestedAt.acceptedTime == scheduledTime(1) &&
+          initialStopInspection.latestRestart.t == scheduledTime(2),
+          "new destinations must reach a real persisted occurrence before stop success");
+  auto initialAppendRequest = controlledAppend;
+  initialAppendRequest.finalTime = scheduledTime(3);
+  WVModel appendInitialStop;
+  WVModelState appendInitialState;
+  status = WVModel::createFromModelOutputFiles(modelOutputCatalog(), {initialStopPath.string()}, initialAppendRequest,
+      std::make_unique<WVReferenceFFTEngine>(), {}, appendInitialStop, appendInitialState);
+  require(bool(status) && bool(appendInitialStop.prepareStateAfterRestart(appendInitialState)), "initial append stop create");
+  const auto appendStop = appendInitialStop.advanceToTime(appendInitialState, initialAppendRequest.finalTime, scale,
+      {[](const auto &) { return true; }});
+  require(bool(appendStop) && appendStop.termination.stopped() &&
+          appendStop.metrics.integrator.acceptedStepCount == 0 && bool(appendInitialStop.closeOutput()),
+          "already-committed append destinations can stop before any accepted step");
+
   const auto fixedPath = directory.path / "algorithmic-model-fixed.nc";
   WVModelOutputRequest fixedRequest;
   fixedRequest.policy = WVModelOutputPolicy::create;
@@ -4380,9 +4461,237 @@ void testWVModelRetainsFailedNetCDFRouteForRetry() {
   }
 }
 
+void testControlledStopRestartGraph() {
+  TemporaryDirectory directory;
+  auto checkpoint = checkpointTemplate();
+  checkpoint.state.t = 0.0;
+  checkpoint.state.t0 = 0.0;
+  constexpr double scale = 1e-5;
+  for (const auto kind :
+       {WVModelIntegratorKind::fixedRK4, WVModelIntegratorKind::adaptiveRK23,
+        WVModelIntegratorKind::adaptiveRK45,
+        WVModelIntegratorKind::adaptiveRK78}) {
+    const std::string prefix =
+        "controlled-" + std::to_string(static_cast<int>(kind));
+    const auto first = directory.path / (prefix + "-first.nc");
+    const auto second = directory.path / (prefix + "-second.nc");
+    auto record = recordFor(checkpoint, first);
+    for (const auto *name : {"particles-x", "particles-y"})
+      record.stateBlocks.push_back(
+          {name,
+           WVStateScalarType::real64,
+           {2},
+           WVToleranceKind::uniformAbsolute,
+           1e-4,
+           WVStateOwnership::integratorOwned,
+           WVRestartRequirement::requiredDynamicState});
+    record.stateBlocks.push_back(
+        {"tracer-state",
+         WVStateScalarType::real64,
+         {checkpoint.configuration.Nx, checkpoint.configuration.Ny,
+          checkpoint.configuration.Nz},
+         WVToleranceKind::uniformAbsolute,
+         1e-5,
+         WVStateOwnership::integratorOwned,
+         WVRestartRequirement::requiredDynamicState});
+    WVObserverRecord particles;
+    particles.identifier = "particles";
+    particles.name = "particles";
+    particles.typeIdentifier = "WVLagrangianParticles";
+    particles.stateBlockIdentifiers = {"particles-x", "particles-y"};
+    particles.x = {0.1, 0.2};
+    particles.y = {0.3, 0.4};
+    particles.z = {-100.0, -300.0};
+    particles.isXYOnly = true;
+    particles.horizontalAbsoluteTolerance = 1e-4;
+    WVObserverRecord tracer;
+    tracer.identifier = "tracer";
+    tracer.name = "tracer";
+    tracer.typeIdentifier = "WVTracer";
+    tracer.stateBlockIdentifiers = {"tracer-state"};
+    tracer.shouldAntialias = true;
+    record.observers.push_back(particles);
+    record.observers.push_back(tracer);
+    record.outputFiles = {
+        {"first",
+         first.string(),
+         {{"restart",
+           "wave-vortex",
+           {0.5 * scale, 0.0, scale},
+           {"coefficients"},
+           true},
+          {"dense",
+           "dense",
+           {0.125 * scale, 0.0, scale},
+           {"particles", "tracer"},
+           false}}},
+        {"second",
+         second.string(),
+         {{"restart",
+           "wave-vortex",
+           {0.5 * scale, 0.0, scale},
+           {"coefficients", "particles", "tracer"},
+           true},
+          {"dense", "dense", {0.125 * scale, 0.0, scale}, {}, false}}}};
+    auto descriptor = descriptorFor(record);
+    WVModelIntegratorConfiguration options;
+    options.kind = kind;
+    options.fixed.retainDenseOutput = true;
+    options.adaptive.retainDenseOutput = true;
+    options.adaptiveRK45.retainDenseOutput = true;
+    options.adaptiveRK78.retainDenseOutput = true;
+    WVModel model;
+    auto status = WVModel::create(
+        modelOutputCatalog(), checkpoint.configuration,
+        checkpoint.forcingSchedule, descriptor,
+        std::make_unique<WVReferenceFFTEngine>(), options, model);
+    require(bool(status), status.message);
+    WVModelState state;
+    status = WVModelState::create(checkpoint, model.stateLayout(), state);
+    require(bool(status), status.message);
+    status = model.initializeObserverState(state);
+    require(bool(status), status.message);
+    auto initial = state.mutableView();
+    for (std::size_t block = 0; block < initial.additionalBlockCount; ++block) {
+      const auto &view = initial.additionalBlocks[block];
+      if (view.layout->identifier == "tracer-state")
+        for (std::size_t index = 0; index < view.layout->elementCount; ++index)
+          view.realData[index] =
+              1.0 + 0.01 * std::sin(static_cast<double>(index));
+    }
+    status = model.prepareStateAfterRestart(state);
+    require(bool(status), status.message);
+    WVModelOutputConfiguration output;
+    status = WVModelOutputConfiguration::compile(
+        record, {}, {}, WVModelOutputPolicy::create, modelOutputCatalog(), 0.0,
+        scale, output, &checkpoint.configuration);
+    require(bool(status), status.message);
+    status = model.openOutput(state, std::move(output));
+    require(bool(status), status.message);
+    const auto result = model.advanceToTime(
+        state, scale, 0.4 * scale, {[](const auto &progress) {
+          return progress.boundary == WVIntegrationBoundary::outputOccurrence &&
+                 progress.outputTime > 0.0;
+        }});
+    require(bool(result), result.status.message);
+    require(result.termination.stopped() &&
+                result.termination.requestedAt.acceptedTime < 0.5 * scale &&
+                state.checkpoint().state.t == 0.5 * scale &&
+                result.termination.finalAcceptedTime ==
+                    state.checkpoint().state.t &&
+                result.metrics.integrator.acceptedStepCount ==
+                    model.metrics(&state).integrator.acceptedStepCount &&
+                result.metrics.outputDriver
+                        .controlledStopWorkspaceMaximumLiveBytes > 0,
+            "off-lattice controlled stop must finish at a complete checkpoint "
+            "with all metrics");
+    require(bool(model.closeOutput()), "controlled output close");
+    int emptyFile = -1, denseGroup = -1, emptyObservers = -1;
+    char emptyClass[32] = {};
+    require(nc_open(second.c_str(), NC_NOWRITE, &emptyFile) == NC_NOERR &&
+                nc_inq_ncid(emptyFile, "dense", &denseGroup) == NC_NOERR &&
+                nc_inq_ncid(denseGroup, "observingSystems", &emptyObservers) ==
+                    NC_NOERR &&
+                nc_get_att_text(emptyObservers, NC_GLOBAL,
+                                "AnnotatedClassArray",
+                                emptyClass) == NC_NOERR &&
+                std::string(emptyClass) == "WVObservingSystem" &&
+                nc_close(emptyFile) == NC_NOERR,
+            "empty observer collections must preserve MATLAB's annotated array "
+            "encoding");
+    const std::vector<std::string> paths{first.string(), second.string()};
+    for (const auto &path : paths) {
+      WVModelOutputNetCDFInspection single;
+      const auto read = WVModelOutputNetCDFSink::inspect(
+          {path}, *modelOutputCatalog(), single);
+      require(
+          bool(read) && single.latestRestart.t == 0.5 * scale,
+          "each stopped destination must restore at the accepted endpoint: " +
+              read.message);
+      for (std::size_t group = 0; group < single.scheduleContinuations.size();
+           ++group)
+        require(single.scheduleContinuations[group].cursor.committedOrdinal ==
+                    single.destinationProgress[group]
+                        .committedScheduleCursor.committedOrdinal,
+                "stopped continuation must match each destination cursor");
+      std::filesystem::copy_file(path, path + ".stopped.nc");
+    }
+    if (kind == WVModelIntegratorKind::fixedRK4) {
+      const auto initialFirst = directory.path / "controlled-initial-first.nc";
+      const auto initialSecond = directory.path / "controlled-initial-second.nc";
+      for (const auto policy : {WVModelOutputPolicy::create, WVModelOutputPolicy::replace}) {
+        WVModelOutputRequest immediateRequest;
+        immediateRequest.policy = policy;
+        immediateRequest.destinations = {{"first", initialFirst.string()}, {"second", initialSecond.string()}};
+        immediateRequest.finalTime = scale;
+        WVModel immediateModel;
+        WVModelState immediateState;
+        status = WVModel::createFromModelOutputFiles(modelOutputCatalog(), paths, immediateRequest,
+            std::make_unique<WVReferenceFFTEngine>(), options, immediateModel, immediateState);
+        require(bool(status) && bool(immediateModel.prepareStateAfterRestart(immediateState)), "immediate remap prepare");
+        const auto immediate = immediateModel.advanceToTime(immediateState, scale, 0.4 * scale,
+            {[](const auto &) { return true; }});
+        require(bool(immediate) && immediate.termination.stopped() &&
+                immediate.termination.requestedAt.acceptedTime == 0.5 * scale &&
+                immediateState.checkpoint().state.t == scale && bool(immediateModel.closeOutput()),
+                "create/replace immediate stop must persist an authored occurrence after the source cursor");
+        for (const auto &path : {initialFirst, initialSecond}) {
+          WVModelOutputNetCDFInspection remapped;
+          const auto inspected = WVModelOutputNetCDFSink::inspect({path.string()}, *modelOutputCatalog(), remapped);
+          require(bool(inspected) && remapped.latestRestart.t == scale, "immediate remap must be independently restartable");
+          const std::string suffix = policy == WVModelOutputPolicy::create ? ".create.nc" : ".replace.nc";
+          std::filesystem::copy_file(path, path.string() + suffix);
+        }
+      }
+    }
+    WVModelOutputRequest append;
+    append.policy = WVModelOutputPolicy::append;
+    append.finalTime = scale;
+    WVModel resumed;
+    WVModelState resumedState;
+    status = WVModel::createFromModelOutputFiles(
+        modelOutputCatalog(), paths, append,
+        std::make_unique<WVReferenceFFTEngine>(), options, resumed,
+        resumedState);
+    require(bool(status), "stopped graph append preflight: " + status.message);
+    const auto a = state.constView(), b = resumedState.constView();
+    for (std::size_t block = 0; block < a.additionalBlockCount; ++block)
+      for (std::size_t index = 0;
+           index < a.additionalBlocks[block].layout->elementCount; ++index)
+        require(a.additionalBlocks[block].realData[index] ==
+                    b.additionalBlocks[block].realData[index],
+                "particle and tracer state must restore exactly");
+    for (const auto &pair :
+         {std::make_pair(&state.checkpoint().state.coefficients.Ap,
+                         &resumedState.checkpoint().state.coefficients.Ap),
+          std::make_pair(&state.checkpoint().state.coefficients.Am,
+                         &resumedState.checkpoint().state.coefficients.Am),
+          std::make_pair(&state.checkpoint().state.coefficients.A0,
+                         &resumedState.checkpoint().state.coefficients.A0)})
+      for (std::size_t index = 0; index < pair.first->size(); ++index)
+        require((*pair.first)[index].real == (*pair.second)[index].real &&
+                    (*pair.first)[index].imag == (*pair.second)[index].imag,
+                "coefficient stop endpoint must restore exactly");
+    status = resumed.prepareStateAfterRestart(resumedState);
+    require(bool(status), status.message);
+    status = resumed.advanceToTime(resumedState, scale, 0.4 * scale);
+    require(bool(status) && bool(resumed.closeOutput()),
+            "C++ continuation after controlled stop");
+    std::cout << "CONTROLLED_STOP_RESTART " << prefix
+              << " stopped=" << 0.5 * scale
+              << " requested=" << result.termination.requestedAt.acceptedTime
+              << " first=" << first << " second=" << second << '\n';
+  }
+}
+
 } // namespace
 
-int main() {
+int main(int argc, char **argv) {
+  if (argc == 2 && std::string(argv[1]) == "--controlled-stop") {
+    testControlledStopRestartGraph();
+    return 0;
+  }
+  testControlledStopRestartGraph();
   try {
     (void)modelOutputCatalog();
     testCreateReadAndAppend();

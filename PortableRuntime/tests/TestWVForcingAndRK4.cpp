@@ -415,6 +415,37 @@ void testSpectralForcing() {
     require(engine->metrics().workspaceCapacityBytes == expectedWorkspace,"spectral forcing did not allocate only its required physical-field workspace");
 }
 
+void testZeroVerticalResolutionPreservesUniformMode() {
+    for (bool hydrostatic : {true,false}) {
+        auto config = configuration(hydrostatic);
+        config.Nx = 8; config.Ny = 8;
+        config.Lx = 15000; config.Ly = 15000;
+        config.shouldAntialias = false;
+        auto filter = forcingConfiguration();
+        filter.values.push_back(realValue("Nj",{1.0}));
+        WVFrozenForcingSchedule schedule;
+        schedule.entries.push_back(entry("WVAntialiasing","antialias filter",WVForcingStage::spectral,127,filter));
+        schedule.entries.push_back(entry("WVAdaptiveDamping","adaptive",WVForcingStage::spectral,255));
+        auto engine = createEngine(config,schedule);
+        OwnedState state(engine->kernel().descriptor().spectralShape());
+        std::fill(state.values.begin(),state.values.end(),WVComplex64{});
+        const auto count = state.shape.elementCount();
+        const auto& modes = engine->kernel().descriptor().fourierModes();
+        std::size_t index = modes.size();
+        for (std::size_t m = 0; m < modes.size(); ++m) {
+            if (modes[m].Kh > 0 && modes[m].Kh < 1.01*2*3.141592653589793/config.Lx) { index = m; break; }
+        }
+        require(index < modes.size(),"No retained large-scale mode for zero-resolution regression");
+        state.values[2*count+config.Nj*index] = {1e-6,0};
+        std::vector<WVComplex64> values(3*count);
+        auto flux = fluxView(values,state.shape);
+        const auto status = engine->nonlinearFlux(state.view(),flux);
+        require(static_cast<bool>(status),status.message);
+        requireFinite(values,"Zero vertical resolution produced nonfinite damping");
+        for (const auto value : values) require(value.real == 0 && value.imag == 0,"Adaptive damping changed an undamped vertically uniform large-scale mode");
+    }
+}
+
 void testCoefficientErrorPolicyStorage() {
     auto engine = createEngine(true,{});
     std::unique_ptr<WVIntegrationErrorPolicy> policy;
@@ -745,6 +776,7 @@ int main() {
         testMatlabCFLFixtures();
         testRK4DeterminismRestartAndFailure();
         testSpectralForcing();
+        testZeroVerticalResolutionPreservesUniformMode();
         testCoefficientErrorPolicyStorage();
         testSourceLinkedLinearCoefficientExtension();
         testLinearBottomFrictionFormula(true,5,0.0);

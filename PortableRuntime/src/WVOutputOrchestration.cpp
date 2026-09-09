@@ -648,6 +648,8 @@ public:
   double proposedStepSize = 0.0;
   double acceptedStateTime = 0.0;
   WVOutputEventKind stagedEventKind = WVOutputEventKind::acceptedEndpoint;
+  WVIntegrationTermination termination;
+  double controlledStopTime = std::numeric_limits<double>::quiet_NaN();
   bool running = false;
   bool started = false;
   bool completed = false;
@@ -982,6 +984,153 @@ public:
     return WVKernelStatus::ok();
   }
 
+  // Select a scheduled coefficient occurrence with every required dynamic
+  // block represented at the same time, including blocks in sibling groups.
+  // This work happens only after a stop request, with bounded group storage.
+  WVKernelStatus selectControlledStopTime(double acceptedTime, const WVOutputSink &sink) {
+    if (std::isfinite(controlledStopTime))
+      return WVKernelStatus::ok();
+    const auto &groups = plan.impl_->groups;
+    std::vector<double> times(groups.size());
+    std::vector<WVOutputScheduleCursor> cursors;
+    for (const auto &continuation : continuations)
+      cursors.push_back(continuation.cursor);
+    std::vector<WVOutputScheduleOccurrence> occurrences(groups.size());
+    std::vector<std::uint8_t> proposed(groups.size());
+    std::vector<std::uint8_t> occurs(groups.size());
+    const auto accountScratch = [&]() {
+      std::size_t bytes =
+          times.capacity() * sizeof(double) +
+          cursors.capacity() * sizeof(WVOutputScheduleCursor) +
+          occurrences.capacity() * sizeof(WVOutputScheduleOccurrence) +
+          proposed.capacity() + occurs.capacity();
+      for (const auto &cursor : cursors)
+        bytes +=
+            cursor.values.persistentBytes() - sizeof(WVPortableTypedRecord);
+      for (const auto &occurrence : occurrences) {
+        bytes += occurrence.proposedCursor.values.persistentBytes() -
+                 sizeof(WVPortableTypedRecord);
+      }
+      metrics.controlledStopWorkspaceMaximumLiveBytes =
+          std::max(metrics.controlledStopWorkspaceMaximumLiveBytes, bytes);
+    };
+    accountScratch();
+    double lowerBound = acceptedTime;
+    while (lowerBound <= plan.finalTime()) {
+      double candidate = std::numeric_limits<double>::infinity();
+      for (std::size_t index = 0; index < groups.size(); ++index) {
+        const auto &group = groups[index];
+        double committedTime = 0.0;
+        bool committed = false;
+        auto status = group.schedule->committedTime(cursors[index],
+                                                    committedTime, committed);
+        if (!status)
+          return status;
+        times[index] = std::numeric_limits<double>::infinity();
+        proposed[index] = false;
+        // Only the real execution cursor proves a persisted current endpoint.
+        if (lowerBound == acceptedTime && committed &&
+            committedTime == acceptedTime &&
+            sink.hasCommittedOutputAt(group.route, committedTime) &&
+            cursors[index].committedOrdinal ==
+                continuations[index].cursor.committedOrdinal) {
+          times[index] = committedTime;
+        } else {
+          bool available = false;
+          status =
+              group.schedule->peek(cursors[index], lowerBound, plan.finalTime(),
+                                   occurrences[index], available);
+          if (!status)
+            return status;
+          if (available) {
+            if (occurrences[index].proposedCursor.committedOrdinal <=
+                cursors[index].committedOrdinal)
+              return invalid("Controlled-stop schedule search did not advance "
+                             "its cursor.");
+            times[index] = occurrences[index].scheduledTime;
+            proposed[index] = true;
+          }
+        }
+        if (group.group->containsCompleteCoefficientRestart)
+          candidate = std::min(candidate, times[index]);
+      }
+      if (!std::isfinite(candidate))
+        break;
+      accountScratch();
+      for (std::size_t index = 0; index < groups.size(); ++index) {
+        occurs[index] =
+            std::isfinite(times[index]) && sameTime(times[index], candidate);
+        if (!occurs[index]) {
+          WVOutputScheduleOccurrence next;
+          bool available = false;
+          auto status = groups[index].schedule->peek(
+              cursors[index], candidate, candidate, next, available);
+          if (!status)
+            return status;
+          occurs[index] = available && sameTime(next.scheduledTime, candidate);
+        }
+      }
+      bool complete = true;
+      for (std::size_t file = 0;
+           file < plan.impl_->descriptor.record().outputFiles.size(); ++file) {
+        bool checkpoint = false;
+        for (std::size_t index = 0; index < groups.size(); ++index)
+          checkpoint =
+              checkpoint ||
+              (groups[index].fileOrdinal == file && occurs[index] &&
+               groups[index].group->containsCompleteCoefficientRestart);
+        if (!checkpoint) {
+          complete = false;
+          break;
+        }
+        for (const auto &block : plan.impl_->descriptor.record().stateBlocks) {
+          if (block.restartRequirement !=
+              WVRestartRequirement::requiredDynamicState)
+            continue;
+          bool represented = false;
+          for (std::size_t index = 0; index < groups.size(); ++index) {
+            if (groups[index].fileOrdinal != file || !occurs[index])
+              continue;
+            for (const auto &observer : groups[index].observers) {
+              const auto &identifiers = observer.record->stateBlockIdentifiers;
+              represented = represented ||
+                            std::find(identifiers.begin(), identifiers.end(),
+                                      block.identifier) != identifiers.end();
+            }
+          }
+          if (!represented) {
+            complete = false;
+            break;
+          }
+        }
+        if (!complete)
+          break;
+      }
+      if (complete) {
+        controlledStopTime = std::max(candidate, acceptedTime);
+        return WVKernelStatus::ok();
+      }
+      bool advanced = false;
+      for (std::size_t index = 0; index < groups.size(); ++index) {
+        if (times[index] <= candidate && proposed[index]) {
+          cursors[index] = occurrences[index].proposedCursor;
+          advanced = true;
+        }
+      }
+      // For a rejected already-committed endpoint, moving the lower bound is
+      // sufficient: peek starts after its committed ordinal. Thereafter every
+      // rejection must consume at least one proposed coefficient cursor.
+      if (!advanced && lowerBound != acceptedTime)
+        return invalid("Controlled-stop schedule search made no progress.");
+      lowerBound =
+          std::nextafter(candidate, std::numeric_limits<double>::infinity());
+    }
+    return {
+        WVKernelStatusCode::unsupportedOperation,
+        "Controlled stop has no complete scheduled restart occurrence at or "
+        "after the accepted state and before the requested final time."};
+  }
+
   WVKernelStatus deliverStagedEvent(WVOutputSink &sink, bool &terminate) {
     if (!hasStagedEvent || !hasPendingEvent)
       return {WVKernelStatusCode::numericalFailure,
@@ -1032,8 +1181,13 @@ public:
       continuations[progressIndex].cursor =
           stagedProposedCursors[nextRouteIndex];
       occurrenceNeedsRefresh[progressIndex] = 1;
-      terminate = terminate ||
-                  result.action == WVOutputDeliveryResult::Action::terminate;
+      if (result.action == WVOutputDeliveryResult::Action::terminate &&
+          !termination.stopped()) {
+        termination.completion = WVIntegrationCompletion::outputSinkRequested;
+        termination.requestedAt = {WVIntegrationBoundary::outputOccurrence,
+                                   acceptedStateTime, stagedEventTime};
+      }
+      terminate = termination.stopped();
     }
     hasStagedEvent = false;
     hasPendingEvent = false;
@@ -1051,186 +1205,282 @@ WVKernelStatus WVOutputDriver::advanceToTime(WVMutableIntegrationState &state,
                                              double finalTime,
                                              double initialStepSize,
                                              WVOutputSink &sink) {
-  if (impl_->running)
-    return {WVKernelStatusCode::reentrantExecution,
-            "Output orchestration is not reentrant."};
-  if (impl_->completed)
-    return invalid("Output orchestration has already completed.");
-  if (!std::isfinite(state.waveVortex.t) || !std::isfinite(finalTime) ||
-      !std::isfinite(initialStepSize) || initialStepSize <= 0.0 ||
-      finalTime < state.waveVortex.t ||
-      !sameTime(finalTime, impl_->plan.finalTime()))
-    return invalid("Output execution must use the planned final "
-                   "time and a positive initial step size.");
-  if ((!impl_->started &&
-       !sameTime(state.waveVortex.t, impl_->plan.initialTime())) ||
-      (impl_->started &&
-       !sameTime(state.waveVortex.t, impl_->acceptedStateTime)))
-    return invalid("Output continuation state does not match the "
-                   "planned start or retained accepted-state cursor.");
-  if (!sameIntegrationStateLayout(impl_->plan.impl_->stateLayout,
-                                  impl_->integrator.stateLayout()))
-    return invalid("Output plan and integrator state layouts differ.");
-  auto status =
-      validateMutableIntegrationState(impl_->integrator.stateLayout(), state);
-  if (!status)
-    return status;
-  if (!impl_->started) {
-    status = impl_->prepareTracking();
-    if (!status)
-      return status;
-    status = impl_->prepareInterpolation();
-    if (!status)
-      return status;
-  }
-  impl_->metrics.retainedStorageBytes =
-      sizeof(*this) + impl_->persistentBytes();
+  WVIntegrationTermination termination;
+  return advanceToTime(state, finalTime, initialStepSize, sink, {},
+                       termination);
+}
 
-  impl_->running = true;
-  struct Guard {
-    Impl &impl;
-    ~Guard() {
-      impl.running = false;
-      impl.metrics.retainedStorageBytes =
-          sizeof(WVOutputDriver) + impl.persistentBytes();
+WVKernelStatus WVOutputDriver::advanceToTime(
+    WVMutableIntegrationState &state, double finalTime, double initialStepSize,
+    WVOutputSink &sink, const WVIntegrationControl &control,
+    WVIntegrationTermination &termination) {
+  if (impl_->termination.completion == WVIntegrationCompletion::callbackFailure)
+    impl_->termination.completion = WVIntegrationCompletion::reachedFinalTime;
+  auto failureKind = WVIntegrationCompletion::integrationFailure;
+  const auto execute = [&]() -> WVKernelStatus {
+    if (impl_->running)
+      return {WVKernelStatusCode::reentrantExecution,
+              "Output orchestration is not reentrant."};
+    if (impl_->completed)
+      return invalid("Output orchestration has already completed.");
+    if (!std::isfinite(state.waveVortex.t) || !std::isfinite(finalTime) ||
+        !std::isfinite(initialStepSize) || initialStepSize <= 0.0 ||
+        finalTime < state.waveVortex.t ||
+        !sameTime(finalTime, impl_->plan.finalTime()))
+      return invalid("Output execution must use the planned final "
+                     "time and a positive initial step size.");
+    if ((!impl_->started &&
+         !sameTime(state.waveVortex.t, impl_->plan.initialTime())) ||
+        (impl_->started &&
+         !sameTime(state.waveVortex.t, impl_->acceptedStateTime)))
+      return invalid("Output continuation state does not match the "
+                     "planned start or retained accepted-state cursor.");
+    if (!sameIntegrationStateLayout(impl_->plan.impl_->stateLayout,
+                                    impl_->integrator.stateLayout()))
+      return invalid("Output plan and integrator state layouts differ.");
+    auto status =
+        validateMutableIntegrationState(impl_->integrator.stateLayout(), state);
+    if (!status)
+      return status;
+    if (!impl_->started) {
+      status = impl_->prepareTracking();
+      if (!status)
+        return status;
+      status = impl_->prepareInterpolation();
+      if (!status)
+        return status;
     }
-  } guard{*impl_};
-  status = sink.preflight(impl_->plan);
-  if (!status)
-    return status;
-  if (!impl_->started) {
-    impl_->started = true;
-    impl_->proposedStepSize = initialStepSize;
-    impl_->acceptedStateTime = state.waveVortex.t;
-  }
+    impl_->metrics.retainedStorageBytes =
+        sizeof(*this) + impl_->persistentBytes();
 
-  bool terminate = false;
-  if (impl_->hasStagedEvent) {
-    status = impl_->deliverStagedEvent(sink, terminate);
+    impl_->running = true;
+    struct Guard {
+      Impl &impl;
+      ~Guard() {
+        impl.running = false;
+        impl.metrics.retainedStorageBytes =
+            sizeof(WVOutputDriver) + impl.persistentBytes();
+      }
+    } guard{*impl_};
+    failureKind = WVIntegrationCompletion::outputFailure;
+    status = sink.preflight(impl_->plan);
     if (!status)
       return status;
-  }
-  if (terminate) {
-    impl_->completed = true;
-    return WVKernelStatus::ok();
-  }
-
-  status = impl_->selectNextEvent(impl_->plan.initialTime());
-  if (!status)
-    return status;
-
-  while (impl_->hasPendingEvent &&
-         impl_->stagedEventTime == impl_->plan.initialTime() &&
-         state.waveVortex.t == impl_->plan.initialTime()) {
-    const auto initial = integrationConstView(
-        state, impl_->sourceCoefficientConstViews, impl_->sourceConstViews);
-    status = impl_->stageEventState(WVOutputEventKind::initial, initial);
-    if (!status)
-      return status;
-    status = impl_->deliverStagedEvent(sink, terminate);
-    if (!status)
-      return status;
-    if (terminate) {
-      impl_->completed = true;
-      return WVKernelStatus::ok();
+    failureKind = WVIntegrationCompletion::integrationFailure;
+    if (!impl_->started) {
+      impl_->started = true;
+      impl_->proposedStepSize = initialStepSize;
+      impl_->acceptedStateTime = state.waveVortex.t;
     }
+
+    bool terminate = impl_->termination.stopped();
+    const auto poll = [&](WVIntegrationBoundary boundary, double outputTime) {
+      auto result = evaluateIntegrationControl(
+          control, {boundary, state.waveVortex.t, outputTime},
+          impl_->termination);
+      terminate = impl_->termination.stopped();
+      return result;
+    };
+    const auto deliver = [&]() {
+      failureKind = WVIntegrationCompletion::outputFailure;
+      auto result = impl_->deliverStagedEvent(sink, terminate);
+      if (!result)
+        return result;
+      failureKind = WVIntegrationCompletion::integrationFailure;
+      return poll(WVIntegrationBoundary::outputOccurrence,
+                  impl_->stagedEventTime);
+    };
+    const auto stopReady = [&]() -> bool {
+      return terminate &&
+             (!sink.requiresRestartableStop() ||
+              (std::isfinite(impl_->controlledStopTime) &&
+               sameTime(state.waveVortex.t, impl_->controlledStopTime)));
+    };
+    const auto prepareStop = [&]() -> WVKernelStatus {
+      if (!terminate || !sink.requiresRestartableStop())
+        return WVKernelStatus::ok();
+      failureKind = WVIntegrationCompletion::outputFailure;
+      const auto result = impl_->selectControlledStopTime(state.waveVortex.t, sink);
+      if (result)
+        failureKind = WVIntegrationCompletion::integrationFailure;
+      return result;
+    };
+    if (impl_->hasStagedEvent) {
+      status = deliver();
+      if (!status)
+        return status;
+    }
+
+    if (terminate && state.waveVortex.t == impl_->plan.initialTime()) {
+      status = prepareStop();
+      if (!status)
+        return status;
+      if (stopReady()) {
+        impl_->completed = true;
+        return WVKernelStatus::ok();
+      }
+    }
+
     status = impl_->selectNextEvent(impl_->plan.initialTime());
     if (!status)
       return status;
-  }
 
-  auto processAcceptedEvents = [&](const WVAcceptedStep &accepted) {
-    auto selectStatus = impl_->selectNextEvent(accepted.initialTime);
-    if (!selectStatus)
-      return selectStatus;
     while (impl_->hasPendingEvent &&
-           impl_->stagedEventTime <=
-               accepted.finalTime +
-                   timeTolerance(impl_->stagedEventTime, accepted.finalTime)) {
-      const double outputTime = impl_->stagedEventTime;
-      if (outputTime < accepted.initialTime -
-                           timeTolerance(outputTime, accepted.initialTime))
-        return WVKernelStatus{
-            WVKernelStatusCode::numericalFailure,
-            "Retained accepted-step history does not cover the next output "
-            "event."};
-      if (sameTime(outputTime, accepted.finalTime)) {
-        auto stageStatus = impl_->stageEventState(
-            WVOutputEventKind::acceptedEndpoint, accepted.endpoint);
-        if (!stageStatus)
-          return stageStatus;
-      } else {
-        if (accepted.denseOutput == nullptr)
-          return WVKernelStatus{WVKernelStatusCode::unsupportedOperation,
-                                "An interior integration-state output requires "
-                                "method-owned dense "
-                                "output."};
-        const auto start = std::chrono::steady_clock::now();
-        auto stageStatus = accepted.denseOutput->evaluateState(
-            outputTime, impl_->interpolationState);
-        const auto stop = std::chrono::steady_clock::now();
-        impl_->metrics.interpolationSeconds +=
-            std::chrono::duration<double>(stop - start).count();
-        if (!stageStatus)
-          return stageStatus;
-        impl_->markStagedEvent(WVOutputEventKind::interpolated);
+           impl_->stagedEventTime == impl_->plan.initialTime() &&
+           state.waveVortex.t == impl_->plan.initialTime()) {
+      const auto initial = integrationConstView(
+          state, impl_->sourceCoefficientConstViews, impl_->sourceConstViews);
+      status = impl_->stageEventState(WVOutputEventKind::initial, initial);
+      if (!status)
+        return status;
+      status = deliver();
+      if (!status)
+        return status;
+      status = prepareStop();
+      if (!status)
+        return status;
+      if (stopReady()) {
+        impl_->completed = true;
+        return WVKernelStatus::ok();
       }
-      auto deliveryStatus = impl_->deliverStagedEvent(sink, terminate);
-      if (!deliveryStatus)
-        return deliveryStatus;
-      if (terminate)
-        break;
-      selectStatus = impl_->selectNextEvent(outputTime);
+      status = impl_->selectNextEvent(impl_->plan.initialTime());
+      if (!status)
+        return status;
+    }
+
+    if (state.waveVortex.t == impl_->plan.initialTime()) {
+      status = poll(WVIntegrationBoundary::initialState, 0.0);
+      if (!status)
+        return status;
+      status = prepareStop();
+      if (!status)
+        return status;
+      if (stopReady()) {
+        impl_->completed = true;
+        return WVKernelStatus::ok();
+      }
+    }
+
+    auto processAcceptedEvents = [&](const WVAcceptedStep &accepted) {
+      auto selectStatus = impl_->selectNextEvent(accepted.initialTime);
       if (!selectStatus)
         return selectStatus;
+      while (impl_->hasPendingEvent &&
+             impl_->stagedEventTime <=
+                 accepted.finalTime + timeTolerance(impl_->stagedEventTime,
+                                                    accepted.finalTime)) {
+        const double outputTime = impl_->stagedEventTime;
+        if (outputTime < accepted.initialTime -
+                             timeTolerance(outputTime, accepted.initialTime))
+          return WVKernelStatus{
+              WVKernelStatusCode::numericalFailure,
+              "Retained accepted-step history does not cover the next output "
+              "event."};
+        if (sameTime(outputTime, accepted.finalTime)) {
+          auto stageStatus = impl_->stageEventState(
+              WVOutputEventKind::acceptedEndpoint, accepted.endpoint);
+          if (!stageStatus)
+            return stageStatus;
+        } else {
+          if (accepted.denseOutput == nullptr)
+            return WVKernelStatus{
+                WVKernelStatusCode::unsupportedOperation,
+                "An interior integration-state output requires "
+                "method-owned dense "
+                "output."};
+          const auto start = std::chrono::steady_clock::now();
+          auto stageStatus = accepted.denseOutput->evaluateState(
+              outputTime, impl_->interpolationState);
+          const auto stop = std::chrono::steady_clock::now();
+          impl_->metrics.interpolationSeconds +=
+              std::chrono::duration<double>(stop - start).count();
+          if (!stageStatus)
+            return stageStatus;
+          impl_->markStagedEvent(WVOutputEventKind::interpolated);
+        }
+        auto deliveryStatus = deliver();
+        if (!deliveryStatus)
+          return deliveryStatus;
+        selectStatus = impl_->selectNextEvent(outputTime);
+        if (!selectStatus)
+          return selectStatus;
+      }
+      return WVKernelStatus::ok();
+    };
+
+    const auto *retainedStep = impl_->integrator.lastAcceptedStep();
+    if (retainedStep != nullptr &&
+        sameTime(retainedStep->finalTime, state.waveVortex.t)) {
+      status = processAcceptedEvents(*retainedStep);
+      if (!status)
+        return status;
+      status = poll(WVIntegrationBoundary::acceptedStep, 0.0);
+      if (!status)
+        return status;
+      status = prepareStop();
+      if (!status)
+        return status;
+      if (stopReady()) {
+        impl_->completed = true;
+        return WVKernelStatus::ok();
+      }
     }
+
+    while (state.waveVortex.t < finalTime &&
+           !sameTime(state.waveVortex.t, finalTime)) {
+      const double use = std::min(impl_->proposedStepSize,
+                                  (std::isfinite(impl_->controlledStopTime)
+                                       ? impl_->controlledStopTime
+                                       : finalTime) -
+                                      state.waveVortex.t);
+      status = impl_->integrator.step(state, use);
+      if (!status)
+        return status;
+      ++impl_->metrics.acceptedStepCount;
+      impl_->proposedStepSize = impl_->integrator.nextStepSize();
+      impl_->acceptedStateTime = state.waveVortex.t;
+      if (!std::isfinite(impl_->proposedStepSize) ||
+          impl_->proposedStepSize <= 0.0)
+        return {WVKernelStatusCode::numericalFailure,
+                "Integrator did not publish a finite positive next "
+                "step size."};
+      const auto *accepted = impl_->integrator.lastAcceptedStep();
+      if (accepted == nullptr)
+        return {WVKernelStatusCode::numericalFailure,
+                "Integrator succeeded without an accepted-step "
+                "view."};
+      status = processAcceptedEvents(*accepted);
+      if (!status)
+        return status;
+      status = poll(WVIntegrationBoundary::acceptedStep, 0.0);
+      if (!status)
+        return status;
+      status = prepareStop();
+      if (!status)
+        return status;
+      if (stopReady())
+        break;
+    }
+    if (!terminate && impl_->hasPendingEvent)
+      return {WVKernelStatusCode::numericalFailure,
+              "Integration ended before the complete output plan was "
+              "delivered."};
+    impl_->completed = true;
     return WVKernelStatus::ok();
   };
-
-  const auto *retainedStep = impl_->integrator.lastAcceptedStep();
-  if (retainedStep != nullptr &&
-      sameTime(retainedStep->finalTime, state.waveVortex.t)) {
-    status = processAcceptedEvents(*retainedStep);
-    if (!status)
-      return status;
-    if (terminate) {
-      impl_->completed = true;
-      return WVKernelStatus::ok();
-    }
+  WVKernelStatus status;
+  try {
+    status = execute();
+  } catch (const std::bad_alloc &) {
+    status = {WVKernelStatusCode::allocationFailure,
+              "Output-driver controlled execution allocation failed."};
   }
-
-  while (state.waveVortex.t < finalTime &&
-         !sameTime(state.waveVortex.t, finalTime)) {
-    const double use =
-        std::min(impl_->proposedStepSize, finalTime - state.waveVortex.t);
-    status = impl_->integrator.step(state, use);
-    if (!status)
-      return status;
-    ++impl_->metrics.acceptedStepCount;
-    impl_->proposedStepSize = impl_->integrator.nextStepSize();
-    impl_->acceptedStateTime = state.waveVortex.t;
-    if (!std::isfinite(impl_->proposedStepSize) ||
-        impl_->proposedStepSize <= 0.0)
-      return {WVKernelStatusCode::numericalFailure,
-              "Integrator did not publish a finite positive next "
-              "step size."};
-    const auto *accepted = impl_->integrator.lastAcceptedStep();
-    if (accepted == nullptr)
-      return {WVKernelStatusCode::numericalFailure,
-              "Integrator succeeded without an accepted-step "
-              "view."};
-    status = processAcceptedEvents(*accepted);
-    if (!status)
-      return status;
-    if (terminate)
-      break;
-  }
-  if (!terminate && impl_->hasPendingEvent)
-    return {WVKernelStatusCode::numericalFailure,
-            "Integration ended before the complete output plan was "
-            "delivered."};
-  impl_->completed = true;
-  return WVKernelStatus::ok();
+  termination = impl_->termination;
+  termination.finalAcceptedTime = state.waveVortex.t;
+  if (!status &&
+      termination.completion != WVIntegrationCompletion::callbackFailure)
+    termination.completion = failureKind;
+  return status;
 }
 
 const std::vector<WVOutputScheduleContinuation> &

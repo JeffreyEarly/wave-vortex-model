@@ -3,6 +3,7 @@
 #include "WaveVortexRuntime/WVModel.hpp"
 #include "WVReferenceFFTEngine.hpp"
 
+#include <algorithm>
 #include <cmath>
 #include <iostream>
 #include <stdexcept>
@@ -149,10 +150,58 @@ void adaptiveRK78FacadeAdvances() {
           "WVModel lost the endpoint-only adaptive-rk78 contract");
 }
 
+void controlledCFLSelectionPreservesFixedSteps() {
+  WVModel baseline, stopped;
+  WVModelState baselineState, stoppedState;
+  auto status = WVModel::createFromCheckpoint(
+      test::extensionCatalog(), readFixture(),
+      std::make_unique<WVReferenceFFTEngine>(), {}, baseline, baselineState);
+  require(bool(status), status.message);
+  status = WVModel::createFromCheckpoint(
+      test::extensionCatalog(), readFixture(),
+      std::make_unique<WVReferenceFFTEngine>(), {}, stopped, stoppedState);
+  require(bool(status), status.message);
+  require(bool(baseline.prepareStateAfterRestart(baselineState)) &&
+              bool(stopped.prepareStateAfterRestart(stoppedState)),
+          "CFL stop prepare");
+  WVFixedTimeStepCandidates candidates;
+  status =
+      stopped.evaluateFixedTimeStepCandidates(stoppedState, 1e-7, candidates);
+  require(bool(status), status.message);
+  const double h = std::min(candidates.advective, candidates.oscillatory);
+  require(std::isfinite(h) && h > 0.0,
+          "CFL must select a finite positive step");
+  const double initialTime = stoppedState.checkpoint().state.t;
+  const double target = initialTime + 2.0 * h;
+  status = baseline.advanceToTime(baselineState, target, h);
+  require(bool(status), status.message);
+  const auto result = stopped.advanceToTime(
+      stoppedState, target, h, {[](const auto &progress) {
+        return progress.boundary == WVIntegrationBoundary::acceptedStep;
+      }});
+  require(bool(result) && result.termination.stopped() &&
+              result.metrics.integrator.acceptedStepCount == 1 &&
+              result.metrics.integrator.rightHandSideEvaluationCount == 4 &&
+              result.termination.finalAcceptedTime ==
+                  stoppedState.checkpoint().state.t &&
+              stoppedState.checkpoint().state.t == initialTime + h,
+          "CFL stop must return the last accepted state and complete metrics");
+  status = stopped.advanceToTime(stoppedState, target, h);
+  require(bool(status) &&
+              difference(baselineState.checkpoint(),
+                         stoppedState.checkpoint()) == 0.0 &&
+              baseline.metrics(&baselineState)
+                      .integrator.rightHandSideEvaluationCount ==
+                  stopped.metrics(&stoppedState)
+                      .integrator.rightHandSideEvaluationCount,
+          "CFL controlled stop and resume changed the fixed trajectory");
+}
+
 } // namespace
 
 int main() {
   try {
+    controlledCFLSelectionPreservesFixedSteps();
     fixedFacadeMatchesDirectIntegrator();
     adaptiveFacadeAdvances();
     adaptiveRK78FacadeAdvances();

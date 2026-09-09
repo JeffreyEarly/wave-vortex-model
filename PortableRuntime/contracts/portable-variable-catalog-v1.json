@@ -5495,7 +5495,7 @@
       "configuration": "constant-hydrostatic-aa0",
       "authority": "known-variable-factory",
       "operationClass": "WVOperation",
-      "operationExpression": "@(wvt)sum(wvt.Apm_TE_factor(:).*(mask.Ap(:).*abs(wvt.Ap(:)).^2+mask.Am(:).*abs(wvt.Am(:)).^2)+wvt.A0_TE_factor(:).*(mask.A0(:).*abs(wvt.A0(:)).^2))",
+      "operationExpression": "@(wvt)maskedEnergy(wvt,mask)",
       "component": "",
       "metadata": {
         "ordinal": 20,
@@ -5542,7 +5542,7 @@
       "configuration": "constant-hydrostatic-aa0",
       "authority": "known-variable-factory",
       "operationClass": "WVOperation",
-      "operationExpression": "@(wvt)sum(wvt.Apm_TE_factor(:).*(mask.Ap(:).*abs(wvt.Ap(:)).^2+mask.Am(:).*abs(wvt.Am(:)).^2)+wvt.A0_TE_factor(:).*(mask.A0(:).*abs(wvt.A0(:)).^2))",
+      "operationExpression": "@(wvt)maskedEnergy(wvt,mask)",
       "component": "geostrophic",
       "metadata": {
         "ordinal": 34,
@@ -5585,7 +5585,7 @@
       "configuration": "constant-hydrostatic-aa0",
       "authority": "known-variable-factory",
       "operationClass": "WVOperation",
-      "operationExpression": "@(wvt)sum(wvt.Apm_TE_factor(:).*(mask.Ap(:).*abs(wvt.Ap(:)).^2+mask.Am(:).*abs(wvt.Am(:)).^2)+wvt.A0_TE_factor(:).*(mask.A0(:).*abs(wvt.A0(:)).^2))",
+      "operationExpression": "@(wvt)maskedEnergy(wvt,mask)",
       "component": "inertial",
       "metadata": {
         "ordinal": 35,
@@ -5631,7 +5631,7 @@
       "configuration": "constant-hydrostatic-aa0",
       "authority": "known-variable-factory",
       "operationClass": "WVOperation",
-      "operationExpression": "@(wvt)sum(wvt.Apm_TE_factor(:).*(mask.Ap(:).*abs(wvt.Ap(:)).^2+mask.Am(:).*abs(wvt.Am(:)).^2)+wvt.A0_TE_factor(:).*(mask.A0(:).*abs(wvt.A0(:)).^2))",
+      "operationExpression": "@(wvt)maskedEnergy(wvt,mask)",
       "component": "mda",
       "metadata": {
         "ordinal": 36,
@@ -5674,7 +5674,7 @@
       "configuration": "constant-hydrostatic-aa0",
       "authority": "known-variable-factory",
       "operationClass": "WVOperation",
-      "operationExpression": "@(wvt)sum(wvt.Apm_TE_factor(:).*(mask.Ap(:).*abs(wvt.Ap(:)).^2+mask.Am(:).*abs(wvt.Am(:)).^2)+wvt.A0_TE_factor(:).*(mask.A0(:).*abs(wvt.A0(:)).^2))",
+      "operationExpression": "@(wvt)maskedEnergy(wvt,mask)",
       "component": "wave",
       "metadata": {
         "ordinal": 37,
@@ -9534,7 +9534,7 @@
       "configuration": "constant-hydrostatic-aa1",
       "authority": "known-variable-factory",
       "operationClass": "WVOperation",
-      "operationExpression": "@(wvt)sum(wvt.Apm_TE_factor(:).*(mask.Ap(:).*abs(wvt.Ap(:)).^2+mask.Am(:).*abs(wvt.Am(:)).^2)+wvt.A0_TE_factor(:).*(mask.A0(:).*abs(wvt.A0(:)).^2))",
+      "operationExpression": "@(wvt)maskedEnergy(wvt,mask)",
       "component": "",
       "metadata": {
         "ordinal": 20,
@@ -9581,7 +9581,7 @@
       "configuration": "constant-hydrostatic-aa1",
       "authority": "known-variable-factory",
       "operationClass": "WVOperation",
-      "operationExpression": "@(wvt)sum(wvt.Apm_TE_factor(:).*(mask.Ap(:).*abs(wvt.Ap(:)).^2+mask.Am(:).*abs(wvt.Am(:)).^2)+wvt.A0_TE_factor(:).*(mask.A0(:).*abs(wvt.A0(:)).^2))",
+      "operationExpression": "@(wvt)maskedEnergy(wvt,mask)",
       "component": "geostrophic",
       "metadata": {
         "ordinal": 34,
@@ -9624,7 +9624,7 @@
       "configuration": "constant-hydrostatic-aa1",
       "authority": "known-variable-factory",
       "operationClass": "WVOperation",
-      "operationExpression": "@(wvt)sum(wvt.Apm_TE_factor(:).*(mask.Ap(:).*abs(wvt.Ap(:)).^2+mask.Am(:).*abs(wvt.Am(:)).^2)+wvt.A0_TE_factor(:).*(mask.A0(:).*abs(wvt.A0(:)).^2))",
+      "operationExpression": "@(wvt)maskedEnergy(wvt,mask)",
       "component": "inertial",
       "metadata": {
         "ordinal": 35,
@@ -9670,7 +9670,7 @@
       "configuration": "constant-hydrostatic-aa1",
       "authority": "known-variable-factory",
       "operationClass": "WVOperation",
-      "operationExpression": "@(wvt)sum(wvt.Apm_TE_factor(:).*(mask.Ap(:).*abs(wvt.Ap(:)).^2+mask.Am(:).*abs(wvt.Am(:)).^2)+wvt.A0_TE_factor(:).*(mask.A0(:).*abs(wvt.A0(:)).^2))",
+      "operationExpression": "@(wvt)maskedEnergy(wvt,mask)",
       "component": "mda",
       "metadata": {
         "ordinal": 36,
@@ -9713,7 +9713,7 @@
       "configuration": "constant-hydrostatic-aa1",
       "authority": "known-variable-factory",
       "operationClass": "WVOperation",
-      "operationExpression": "@(wvt)sum(wvt.Apm_TE_factor(:).*(mask.Ap(:).*abs(wvt.Ap(:)).^2+mask.Am(:).*abs(wvt.Am(:)).^2)+wvt.A0_TE_factor(:).*(mask.A0(:).*abs(wvt.A0(:)).^2))",
+      "operationExpression": "@(wvt)maskedEnergy(wvt,mask)",
       "component": "wave",
       "metadata": {
         "ordinal": 37,
@@ -13574,7 +13574,7 @@
       "configuration": "constant-nonhydrostatic-aa0",
       "authority": "known-variable-factory",
       "operationClass": "WVOperation",
-      "operationExpression": "@(wvt)sum(wvt.Apm_TE_factor(:).*(mask.Ap(:).*abs(wvt.Ap(:)).^2+mask.Am(:).*abs(wvt.Am(:)).^2)+wvt.A0_TE_factor(:).*(mask.A0(:).*abs(wvt.A0(:)).^2))",
+      "operationExpression": "@(wvt)maskedEnergy(wvt,mask)",
       "component": "",
       "metadata": {
         "ordinal": 20,
@@ -13621,7 +13621,7 @@
       "configuration": "constant-nonhydrostatic-aa0",
       "authority": "known-variable-factory",
       "operationClass": "WVOperation",
-      "operationExpression": "@(wvt)sum(wvt.Apm_TE_factor(:).*(mask.Ap(:).*abs(wvt.Ap(:)).^2+mask.Am(:).*abs(wvt.Am(:)).^2)+wvt.A0_TE_factor(:).*(mask.A0(:).*abs(wvt.A0(:)).^2))",
+      "operationExpression": "@(wvt)maskedEnergy(wvt,mask)",
       "component": "geostrophic",
       "metadata": {
         "ordinal": 34,
@@ -13664,7 +13664,7 @@
       "configuration": "constant-nonhydrostatic-aa0",
       "authority": "known-variable-factory",
       "operationClass": "WVOperation",
-      "operationExpression": "@(wvt)sum(wvt.Apm_TE_factor(:).*(mask.Ap(:).*abs(wvt.Ap(:)).^2+mask.Am(:).*abs(wvt.Am(:)).^2)+wvt.A0_TE_factor(:).*(mask.A0(:).*abs(wvt.A0(:)).^2))",
+      "operationExpression": "@(wvt)maskedEnergy(wvt,mask)",
       "component": "inertial",
       "metadata": {
         "ordinal": 35,
@@ -13710,7 +13710,7 @@
       "configuration": "constant-nonhydrostatic-aa0",
       "authority": "known-variable-factory",
       "operationClass": "WVOperation",
-      "operationExpression": "@(wvt)sum(wvt.Apm_TE_factor(:).*(mask.Ap(:).*abs(wvt.Ap(:)).^2+mask.Am(:).*abs(wvt.Am(:)).^2)+wvt.A0_TE_factor(:).*(mask.A0(:).*abs(wvt.A0(:)).^2))",
+      "operationExpression": "@(wvt)maskedEnergy(wvt,mask)",
       "component": "mda",
       "metadata": {
         "ordinal": 36,
@@ -13753,7 +13753,7 @@
       "configuration": "constant-nonhydrostatic-aa0",
       "authority": "known-variable-factory",
       "operationClass": "WVOperation",
-      "operationExpression": "@(wvt)sum(wvt.Apm_TE_factor(:).*(mask.Ap(:).*abs(wvt.Ap(:)).^2+mask.Am(:).*abs(wvt.Am(:)).^2)+wvt.A0_TE_factor(:).*(mask.A0(:).*abs(wvt.A0(:)).^2))",
+      "operationExpression": "@(wvt)maskedEnergy(wvt,mask)",
       "component": "wave",
       "metadata": {
         "ordinal": 37,
@@ -17673,7 +17673,7 @@
       "configuration": "constant-nonhydrostatic-aa1",
       "authority": "known-variable-factory",
       "operationClass": "WVOperation",
-      "operationExpression": "@(wvt)sum(wvt.Apm_TE_factor(:).*(mask.Ap(:).*abs(wvt.Ap(:)).^2+mask.Am(:).*abs(wvt.Am(:)).^2)+wvt.A0_TE_factor(:).*(mask.A0(:).*abs(wvt.A0(:)).^2))",
+      "operationExpression": "@(wvt)maskedEnergy(wvt,mask)",
       "component": "",
       "metadata": {
         "ordinal": 20,
@@ -17720,7 +17720,7 @@
       "configuration": "constant-nonhydrostatic-aa1",
       "authority": "known-variable-factory",
       "operationClass": "WVOperation",
-      "operationExpression": "@(wvt)sum(wvt.Apm_TE_factor(:).*(mask.Ap(:).*abs(wvt.Ap(:)).^2+mask.Am(:).*abs(wvt.Am(:)).^2)+wvt.A0_TE_factor(:).*(mask.A0(:).*abs(wvt.A0(:)).^2))",
+      "operationExpression": "@(wvt)maskedEnergy(wvt,mask)",
       "component": "geostrophic",
       "metadata": {
         "ordinal": 34,
@@ -17763,7 +17763,7 @@
       "configuration": "constant-nonhydrostatic-aa1",
       "authority": "known-variable-factory",
       "operationClass": "WVOperation",
-      "operationExpression": "@(wvt)sum(wvt.Apm_TE_factor(:).*(mask.Ap(:).*abs(wvt.Ap(:)).^2+mask.Am(:).*abs(wvt.Am(:)).^2)+wvt.A0_TE_factor(:).*(mask.A0(:).*abs(wvt.A0(:)).^2))",
+      "operationExpression": "@(wvt)maskedEnergy(wvt,mask)",
       "component": "inertial",
       "metadata": {
         "ordinal": 35,
@@ -17809,7 +17809,7 @@
       "configuration": "constant-nonhydrostatic-aa1",
       "authority": "known-variable-factory",
       "operationClass": "WVOperation",
-      "operationExpression": "@(wvt)sum(wvt.Apm_TE_factor(:).*(mask.Ap(:).*abs(wvt.Ap(:)).^2+mask.Am(:).*abs(wvt.Am(:)).^2)+wvt.A0_TE_factor(:).*(mask.A0(:).*abs(wvt.A0(:)).^2))",
+      "operationExpression": "@(wvt)maskedEnergy(wvt,mask)",
       "component": "mda",
       "metadata": {
         "ordinal": 36,
@@ -17852,7 +17852,7 @@
       "configuration": "constant-nonhydrostatic-aa1",
       "authority": "known-variable-factory",
       "operationClass": "WVOperation",
-      "operationExpression": "@(wvt)sum(wvt.Apm_TE_factor(:).*(mask.Ap(:).*abs(wvt.Ap(:)).^2+mask.Am(:).*abs(wvt.Am(:)).^2)+wvt.A0_TE_factor(:).*(mask.A0(:).*abs(wvt.A0(:)).^2))",
+      "operationExpression": "@(wvt)maskedEnergy(wvt,mask)",
       "component": "wave",
       "metadata": {
         "ordinal": 37,
@@ -18860,7 +18860,7 @@
       "configuration": "barotropic-aa0",
       "authority": "known-variable-factory",
       "operationClass": "WVOperation",
-      "operationExpression": "@(wvt)sum(wvt.Apm_TE_factor(:).*(mask.Ap(:).*abs(wvt.Ap(:)).^2+mask.Am(:).*abs(wvt.Am(:)).^2)+wvt.A0_TE_factor(:).*(mask.A0(:).*abs(wvt.A0(:)).^2))",
+      "operationExpression": "@(wvt)maskedEnergy(wvt,mask)",
       "component": "",
       "metadata": {
         "ordinal": 20,
@@ -19681,7 +19681,7 @@
       "configuration": "barotropic-aa1",
       "authority": "known-variable-factory",
       "operationClass": "WVOperation",
-      "operationExpression": "@(wvt)sum(wvt.Apm_TE_factor(:).*(mask.Ap(:).*abs(wvt.Ap(:)).^2+mask.Am(:).*abs(wvt.Am(:)).^2)+wvt.A0_TE_factor(:).*(mask.A0(:).*abs(wvt.A0(:)).^2))",
+      "operationExpression": "@(wvt)maskedEnergy(wvt,mask)",
       "component": "",
       "metadata": {
         "ordinal": 20,
@@ -20835,7 +20835,7 @@
       "configuration": "stratified-qg-aa0",
       "authority": "known-variable-factory",
       "operationClass": "WVOperation",
-      "operationExpression": "@(wvt)sum(wvt.Apm_TE_factor(:).*(mask.Ap(:).*abs(wvt.Ap(:)).^2+mask.Am(:).*abs(wvt.Am(:)).^2)+wvt.A0_TE_factor(:).*(mask.A0(:).*abs(wvt.A0(:)).^2))",
+      "operationExpression": "@(wvt)maskedEnergy(wvt,mask)",
       "component": "",
       "metadata": {
         "ordinal": 20,
@@ -21992,7 +21992,7 @@
       "configuration": "stratified-qg-aa1",
       "authority": "known-variable-factory",
       "operationClass": "WVOperation",
-      "operationExpression": "@(wvt)sum(wvt.Apm_TE_factor(:).*(mask.Ap(:).*abs(wvt.Ap(:)).^2+mask.Am(:).*abs(wvt.Am(:)).^2)+wvt.A0_TE_factor(:).*(mask.A0(:).*abs(wvt.A0(:)).^2))",
+      "operationExpression": "@(wvt)maskedEnergy(wvt,mask)",
       "component": "",
       "metadata": {
         "ordinal": 20,
@@ -25770,7 +25770,7 @@
       "configuration": "hydrostatic-aa0",
       "authority": "known-variable-factory",
       "operationClass": "WVOperation",
-      "operationExpression": "@(wvt)sum(wvt.Apm_TE_factor(:).*(mask.Ap(:).*abs(wvt.Ap(:)).^2+mask.Am(:).*abs(wvt.Am(:)).^2)+wvt.A0_TE_factor(:).*(mask.A0(:).*abs(wvt.A0(:)).^2))",
+      "operationExpression": "@(wvt)maskedEnergy(wvt,mask)",
       "component": "",
       "metadata": {
         "ordinal": 20,
@@ -25817,7 +25817,7 @@
       "configuration": "hydrostatic-aa0",
       "authority": "known-variable-factory",
       "operationClass": "WVOperation",
-      "operationExpression": "@(wvt)sum(wvt.Apm_TE_factor(:).*(mask.Ap(:).*abs(wvt.Ap(:)).^2+mask.Am(:).*abs(wvt.Am(:)).^2)+wvt.A0_TE_factor(:).*(mask.A0(:).*abs(wvt.A0(:)).^2))",
+      "operationExpression": "@(wvt)maskedEnergy(wvt,mask)",
       "component": "geostrophic",
       "metadata": {
         "ordinal": 34,
@@ -25860,7 +25860,7 @@
       "configuration": "hydrostatic-aa0",
       "authority": "known-variable-factory",
       "operationClass": "WVOperation",
-      "operationExpression": "@(wvt)sum(wvt.Apm_TE_factor(:).*(mask.Ap(:).*abs(wvt.Ap(:)).^2+mask.Am(:).*abs(wvt.Am(:)).^2)+wvt.A0_TE_factor(:).*(mask.A0(:).*abs(wvt.A0(:)).^2))",
+      "operationExpression": "@(wvt)maskedEnergy(wvt,mask)",
       "component": "inertial",
       "metadata": {
         "ordinal": 35,
@@ -25906,7 +25906,7 @@
       "configuration": "hydrostatic-aa0",
       "authority": "known-variable-factory",
       "operationClass": "WVOperation",
-      "operationExpression": "@(wvt)sum(wvt.Apm_TE_factor(:).*(mask.Ap(:).*abs(wvt.Ap(:)).^2+mask.Am(:).*abs(wvt.Am(:)).^2)+wvt.A0_TE_factor(:).*(mask.A0(:).*abs(wvt.A0(:)).^2))",
+      "operationExpression": "@(wvt)maskedEnergy(wvt,mask)",
       "component": "mda",
       "metadata": {
         "ordinal": 36,
@@ -25949,7 +25949,7 @@
       "configuration": "hydrostatic-aa0",
       "authority": "known-variable-factory",
       "operationClass": "WVOperation",
-      "operationExpression": "@(wvt)sum(wvt.Apm_TE_factor(:).*(mask.Ap(:).*abs(wvt.Ap(:)).^2+mask.Am(:).*abs(wvt.Am(:)).^2)+wvt.A0_TE_factor(:).*(mask.A0(:).*abs(wvt.A0(:)).^2))",
+      "operationExpression": "@(wvt)maskedEnergy(wvt,mask)",
       "component": "wave",
       "metadata": {
         "ordinal": 37,
@@ -29852,7 +29852,7 @@
       "configuration": "hydrostatic-aa1",
       "authority": "known-variable-factory",
       "operationClass": "WVOperation",
-      "operationExpression": "@(wvt)sum(wvt.Apm_TE_factor(:).*(mask.Ap(:).*abs(wvt.Ap(:)).^2+mask.Am(:).*abs(wvt.Am(:)).^2)+wvt.A0_TE_factor(:).*(mask.A0(:).*abs(wvt.A0(:)).^2))",
+      "operationExpression": "@(wvt)maskedEnergy(wvt,mask)",
       "component": "",
       "metadata": {
         "ordinal": 20,
@@ -29899,7 +29899,7 @@
       "configuration": "hydrostatic-aa1",
       "authority": "known-variable-factory",
       "operationClass": "WVOperation",
-      "operationExpression": "@(wvt)sum(wvt.Apm_TE_factor(:).*(mask.Ap(:).*abs(wvt.Ap(:)).^2+mask.Am(:).*abs(wvt.Am(:)).^2)+wvt.A0_TE_factor(:).*(mask.A0(:).*abs(wvt.A0(:)).^2))",
+      "operationExpression": "@(wvt)maskedEnergy(wvt,mask)",
       "component": "geostrophic",
       "metadata": {
         "ordinal": 34,
@@ -29942,7 +29942,7 @@
       "configuration": "hydrostatic-aa1",
       "authority": "known-variable-factory",
       "operationClass": "WVOperation",
-      "operationExpression": "@(wvt)sum(wvt.Apm_TE_factor(:).*(mask.Ap(:).*abs(wvt.Ap(:)).^2+mask.Am(:).*abs(wvt.Am(:)).^2)+wvt.A0_TE_factor(:).*(mask.A0(:).*abs(wvt.A0(:)).^2))",
+      "operationExpression": "@(wvt)maskedEnergy(wvt,mask)",
       "component": "inertial",
       "metadata": {
         "ordinal": 35,
@@ -29988,7 +29988,7 @@
       "configuration": "hydrostatic-aa1",
       "authority": "known-variable-factory",
       "operationClass": "WVOperation",
-      "operationExpression": "@(wvt)sum(wvt.Apm_TE_factor(:).*(mask.Ap(:).*abs(wvt.Ap(:)).^2+mask.Am(:).*abs(wvt.Am(:)).^2)+wvt.A0_TE_factor(:).*(mask.A0(:).*abs(wvt.A0(:)).^2))",
+      "operationExpression": "@(wvt)maskedEnergy(wvt,mask)",
       "component": "mda",
       "metadata": {
         "ordinal": 36,
@@ -30031,7 +30031,7 @@
       "configuration": "hydrostatic-aa1",
       "authority": "known-variable-factory",
       "operationClass": "WVOperation",
-      "operationExpression": "@(wvt)sum(wvt.Apm_TE_factor(:).*(mask.Ap(:).*abs(wvt.Ap(:)).^2+mask.Am(:).*abs(wvt.Am(:)).^2)+wvt.A0_TE_factor(:).*(mask.A0(:).*abs(wvt.A0(:)).^2))",
+      "operationExpression": "@(wvt)maskedEnergy(wvt,mask)",
       "component": "wave",
       "metadata": {
         "ordinal": 37,
@@ -33935,7 +33935,7 @@
       "configuration": "boussinesq-aa0",
       "authority": "known-variable-factory",
       "operationClass": "WVOperation",
-      "operationExpression": "@(wvt)sum(wvt.Apm_TE_factor(:).*(mask.Ap(:).*abs(wvt.Ap(:)).^2+mask.Am(:).*abs(wvt.Am(:)).^2)+wvt.A0_TE_factor(:).*(mask.A0(:).*abs(wvt.A0(:)).^2))",
+      "operationExpression": "@(wvt)maskedEnergy(wvt,mask)",
       "component": "",
       "metadata": {
         "ordinal": 20,
@@ -33982,7 +33982,7 @@
       "configuration": "boussinesq-aa0",
       "authority": "known-variable-factory",
       "operationClass": "WVOperation",
-      "operationExpression": "@(wvt)sum(wvt.Apm_TE_factor(:).*(mask.Ap(:).*abs(wvt.Ap(:)).^2+mask.Am(:).*abs(wvt.Am(:)).^2)+wvt.A0_TE_factor(:).*(mask.A0(:).*abs(wvt.A0(:)).^2))",
+      "operationExpression": "@(wvt)maskedEnergy(wvt,mask)",
       "component": "geostrophic",
       "metadata": {
         "ordinal": 34,
@@ -34025,7 +34025,7 @@
       "configuration": "boussinesq-aa0",
       "authority": "known-variable-factory",
       "operationClass": "WVOperation",
-      "operationExpression": "@(wvt)sum(wvt.Apm_TE_factor(:).*(mask.Ap(:).*abs(wvt.Ap(:)).^2+mask.Am(:).*abs(wvt.Am(:)).^2)+wvt.A0_TE_factor(:).*(mask.A0(:).*abs(wvt.A0(:)).^2))",
+      "operationExpression": "@(wvt)maskedEnergy(wvt,mask)",
       "component": "inertial",
       "metadata": {
         "ordinal": 35,
@@ -34071,7 +34071,7 @@
       "configuration": "boussinesq-aa0",
       "authority": "known-variable-factory",
       "operationClass": "WVOperation",
-      "operationExpression": "@(wvt)sum(wvt.Apm_TE_factor(:).*(mask.Ap(:).*abs(wvt.Ap(:)).^2+mask.Am(:).*abs(wvt.Am(:)).^2)+wvt.A0_TE_factor(:).*(mask.A0(:).*abs(wvt.A0(:)).^2))",
+      "operationExpression": "@(wvt)maskedEnergy(wvt,mask)",
       "component": "mda",
       "metadata": {
         "ordinal": 36,
@@ -34114,7 +34114,7 @@
       "configuration": "boussinesq-aa0",
       "authority": "known-variable-factory",
       "operationClass": "WVOperation",
-      "operationExpression": "@(wvt)sum(wvt.Apm_TE_factor(:).*(mask.Ap(:).*abs(wvt.Ap(:)).^2+mask.Am(:).*abs(wvt.Am(:)).^2)+wvt.A0_TE_factor(:).*(mask.A0(:).*abs(wvt.A0(:)).^2))",
+      "operationExpression": "@(wvt)maskedEnergy(wvt,mask)",
       "component": "wave",
       "metadata": {
         "ordinal": 37,
@@ -38077,7 +38077,7 @@
       "configuration": "boussinesq-aa1",
       "authority": "known-variable-factory",
       "operationClass": "WVOperation",
-      "operationExpression": "@(wvt)sum(wvt.Apm_TE_factor(:).*(mask.Ap(:).*abs(wvt.Ap(:)).^2+mask.Am(:).*abs(wvt.Am(:)).^2)+wvt.A0_TE_factor(:).*(mask.A0(:).*abs(wvt.A0(:)).^2))",
+      "operationExpression": "@(wvt)maskedEnergy(wvt,mask)",
       "component": "",
       "metadata": {
         "ordinal": 20,
@@ -38124,7 +38124,7 @@
       "configuration": "boussinesq-aa1",
       "authority": "known-variable-factory",
       "operationClass": "WVOperation",
-      "operationExpression": "@(wvt)sum(wvt.Apm_TE_factor(:).*(mask.Ap(:).*abs(wvt.Ap(:)).^2+mask.Am(:).*abs(wvt.Am(:)).^2)+wvt.A0_TE_factor(:).*(mask.A0(:).*abs(wvt.A0(:)).^2))",
+      "operationExpression": "@(wvt)maskedEnergy(wvt,mask)",
       "component": "geostrophic",
       "metadata": {
         "ordinal": 34,
@@ -38167,7 +38167,7 @@
       "configuration": "boussinesq-aa1",
       "authority": "known-variable-factory",
       "operationClass": "WVOperation",
-      "operationExpression": "@(wvt)sum(wvt.Apm_TE_factor(:).*(mask.Ap(:).*abs(wvt.Ap(:)).^2+mask.Am(:).*abs(wvt.Am(:)).^2)+wvt.A0_TE_factor(:).*(mask.A0(:).*abs(wvt.A0(:)).^2))",
+      "operationExpression": "@(wvt)maskedEnergy(wvt,mask)",
       "component": "inertial",
       "metadata": {
         "ordinal": 35,
@@ -38213,7 +38213,7 @@
       "configuration": "boussinesq-aa1",
       "authority": "known-variable-factory",
       "operationClass": "WVOperation",
-      "operationExpression": "@(wvt)sum(wvt.Apm_TE_factor(:).*(mask.Ap(:).*abs(wvt.Ap(:)).^2+mask.Am(:).*abs(wvt.Am(:)).^2)+wvt.A0_TE_factor(:).*(mask.A0(:).*abs(wvt.A0(:)).^2))",
+      "operationExpression": "@(wvt)maskedEnergy(wvt,mask)",
       "component": "mda",
       "metadata": {
         "ordinal": 36,
@@ -38256,7 +38256,7 @@
       "configuration": "boussinesq-aa1",
       "authority": "known-variable-factory",
       "operationClass": "WVOperation",
-      "operationExpression": "@(wvt)sum(wvt.Apm_TE_factor(:).*(mask.Ap(:).*abs(wvt.Ap(:)).^2+mask.Am(:).*abs(wvt.Am(:)).^2)+wvt.A0_TE_factor(:).*(mask.A0(:).*abs(wvt.A0(:)).^2))",
+      "operationExpression": "@(wvt)maskedEnergy(wvt,mask)",
       "component": "wave",
       "metadata": {
         "ordinal": 37,

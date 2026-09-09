@@ -54,6 +54,15 @@ struct WVModelMetrics {
   WVModelOutputNetCDFMetrics output;
 };
 
+// State remains caller-owned and contains the final accepted endpoint. Metrics
+// are a complete snapshot including failures and work completed while draining.
+struct WVModelAdvanceResult {
+  WVKernelStatus status;
+  WVIntegrationTermination termination;
+  WVModelMetrics metrics;
+  explicit operator bool() const noexcept { return static_cast<bool>(status); }
+};
+
 struct WVModelOutputDestination {
   std::string fileIdentifier;
   std::string path;
@@ -221,6 +230,14 @@ public:
   WVKernelStatus advanceToTime(WVModelState &state, double finalTime,
                                double initialStepSize,
                                const WVOutputPlan &plan, WVOutputSink &sink);
+  WVModelAdvanceResult advanceToTime(WVModelState &state, double finalTime,
+                                     double initialStepSize,
+                                     const WVIntegrationControl &control);
+  WVModelAdvanceResult advanceToTime(WVModelState &state, double finalTime,
+                                     double initialStepSize,
+                                     const WVOutputPlan &plan,
+                                     WVOutputSink &sink,
+                                     const WVIntegrationControl &control);
   WVCheckpointStatus closeOutput() noexcept;
   bool hasOutput() const noexcept;
 
