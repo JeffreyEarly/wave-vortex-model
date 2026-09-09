@@ -123,8 +123,7 @@ classdef TestPortableDiagnostics < matlab.unittest.TestCase
                 source = fullfile(testCase.folder,"lifecycle-source.nc");
                 file = model.createNetCDFFileForModelOutput(source,outputInterval=.5,shouldOverwriteExisting=true);
                 dense = file.addNewEvenlySpacedOutputGroup("dense",outputInterval=.125,initialTime=37,finalTime=38);
-                denseNames = names(~ismember(names,["Apt","Amt","A0t"]));
-                dense.addObservingSystem(WVEulerianFields(model,fieldNames=cellstr(denseNames)));
+                dense.addObservingSystem(WVEulerianFields(model,fieldNames=cellstr(names)));
                 secondSource = fullfile(testCase.folder,"lifecycle-second-source.nc");
                 model.createNetCDFFileForModelOutput(secondSource,outputInterval=.5,shouldOverwriteExisting=true);
                 for outputFile = reshape(model.outputFiles,1,[])
