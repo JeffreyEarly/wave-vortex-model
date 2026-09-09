@@ -4,7 +4,11 @@
 
 ### InternalModes beta dependency
 
-- Require the exact packaged `InternalModes@2.0.0-beta.2` prerelease, adding exact bulk mode construction and the consolidated projection/assessment API while retaining the rotating-wave normalization, stretched-coordinate calculus, eigenproblem-conditioning and localized analytical APV-root corrections. Routine CI and package verification now use its immutable OceanKit snapshot. This adopts a beta provider; it does not publish WVM v5 or promise stable V2 APIs.
+- Require the exact packaged `InternalModes@2.0.0-beta.3` prerelease, adding spectral coefficient scaling to improve long-wave pressure derivatives while retaining exact bulk mode construction, the consolidated projection/assessment API, and the earlier scientific corrections. Routine CI and package verification now use its immutable OceanKit snapshot. This adopts a beta provider; it does not publish WVM v5 or promise stable V2 APIs.
+
+### Released-provider advisory regression reference
+
+- Compare the authoring advisory against a new InternalModes beta.3 reference with explicit provider, OceanKit, WVM and case provenance. Preserve the original calibration study files and the existing equality tolerance and count/rejection policies.
 
 ### Shared wave advisory projection kernels
 
@@ -17,7 +21,7 @@
 ### Experimental free-surface Boussinesq transform
 
 - Added `WVTransformFreeSurfaceBoussinesq.fromStratification` with independently retained wave, APV, zero-APV endpoint, inertial, and mean-density-anomaly families, physical pressure/velocity/displacement/SSH reconstruction, admissible mixed-state projection and error assessment, positive physical-energy accounting, and exact reference-time phase evolution.
-- Shared the existing free-surface balanced scientific construction with QG; preserved its resolved Galerkin transforms and fixed-grid qualification. The prototype requires the corrected InternalModes `2.0.0-beta.2` package; broader beta qualification remains under #354.
+- Shared the existing free-surface balanced scientific construction with QG; preserved its resolved Galerkin transforms and fixed-grid qualification. The prototype requires the corrected InternalModes `2.0.0-beta.3` package; broader beta qualification remains under #354.
 - Changing `t0` now invalidates linearly evolving cached fields, matching the existing invalidation on `t` changes.
 
 ### Forced linear Boussinesq evolution and restart
