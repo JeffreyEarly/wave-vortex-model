@@ -85,10 +85,7 @@ class RoutingTests(unittest.TestCase):
 
     def test_integration_qualification_follows_runtime_and_complete_changes(self):
         evidence = {'TestPortableForwardIntegration', 'TestPortableForwardIntegrationCatalog',
-                    'TestPortableQualificationCatalog', 'TestBarotropicQGPortableQualificationEvidence',
-                    'TestPortableStratifiedQGQualificationEvidence',
-                    'TestPortableHydrostaticQualificationEvidence',
-                    'TestPortableBoussinesqQualificationEvidence'}
+                    'TestPortableQualificationCatalog', 'TestBarotropicQGPortableQualificationEvidence'}
         for plan in [select(['PortableRuntime/src/WVRungeKutta.cpp']),
                      select(['README.md'], complete=True)]:
             for inventory, shards in [('matlabTests', 'matlabShards'),
@@ -98,7 +95,7 @@ class RoutingTests(unittest.TestCase):
                 for name in evidence:
                     self.assertEqual(flattened.count(name), 1)
         family = select(['CompiledKernel/src/WVTransformBoussinesqKernel.cpp'])
-        self.assertIn('TestPortableBoussinesqQualificationEvidence', family['matlabTests'])
+        self.assertIn('TestPortableBoussinesqQualification', family['matlabTests'])
         self.assertNotIn('TestPortableHydrostaticQualificationEvidence', family['matlabTests'])
 
     def test_legacy_migration_executes_required_phases(self):

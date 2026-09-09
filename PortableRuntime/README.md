@@ -35,6 +35,8 @@ The [forward-integration slice](INTEGRATION.md) records the six transform config
 
 Execution is forward in time. Backward integration, execution of arbitrary MATLAB function handles in C++, and experimental adaptive-cell integration are outside this supported surface. MATLAB-authored opaque `N2Function` payloads remain supported scientific provenance and are preserved through restart; the C++ runtime does not execute those handles. Source-linked C++ implementations continue to use the documented catalog and integration contracts.
 
+Spline sampling preserves MATLAB’s transform-specific boundary conventions. On small horizontal grids, a circularly shifted query can remain beyond the final grid knot: the three-dimensional transform sampler returns zero, while Barotropic QG extends the end spline polynomial. The MATLAB small-grid behavior is tracked separately in [#419](https://github.com/JeffreyEarly/wave-vortex-model/issues/419).
+
 ## Controlled termination
 
 Source-linked applications can pass a `WVIntegrationControl` to the additive `WVModel::advanceToTime` overload. The model state remains caller-owned; the returned `WVModelAdvanceResult` contains status, termination details and a complete metrics snapshot, including work completed while draining a stop request.

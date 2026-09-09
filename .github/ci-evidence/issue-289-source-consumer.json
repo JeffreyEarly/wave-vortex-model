@@ -17,7 +17,7 @@
       "PortableRuntime/third_party"
     ],
     "files": 130,
-    "sha256": "6d3f94029ff866966438c6e06beb2844c29df073b68e59e23c4340710da41169"
+    "sha256": "b761ba879c649ae5f18d0328a8e6395d78896168ef36b609c477deb6f4568db9"
   },
   "consumerSource": {
     "prefixes": [
@@ -36,7 +36,7 @@
   },
   "testCount": 7,
   "testFailures": 0,
-  "ctestSeconds": 13.38,
+  "ctestSeconds": 13.01,
   "tests": [
     "alongtrack_portable_core",
     "alongtrack_portable_core_source_policy",
@@ -47,17 +47,25 @@
     "alongtrack_wavevortex_extension_source_policy"
   ],
   "logs": {
-    "/private/tmp/wvm289-ats-build.log": "c5ec05805544424fed7ffb3947b804782af93fa48e9d98433a18c8222d491a62",
-    "/private/tmp/wvm289-ats-configure.log": "84b0aff9d9b957705778c0dcfce05f64bc488639395bd64fda4a9674ef9c12a5",
-    "/private/tmp/wvm289-ats-tests.log": "f9adc711c32c7fa79cedd5a8610755cffb729e587e4d7c4fc723f657f974adc3"
+    "/private/tmp/wvm289-ats-final-build.log": "621810321238c1c08e765110bb6bf02204560df249b024f829250841a1b44dcb",
+    "/private/tmp/wvm289-ats-final-tests.log": "6dfd916a9d68893c40977b2e9af549e567d2dd327a3e2b0fee34f5d4130556cc",
+    "/private/tmp/wvm289-ats-configure.log": "84b0aff9d9b957705778c0dcfce05f64bc488639395bd64fda4a9674ef9c12a5"
   },
   "executables": {
     "alongtrack_portable_core_tests": "6a9dd396dc7d878fa0e332ac47f4de59864e784d4313927bbbc5eeb411a97cb2",
-    "cpp/extensions/wavevortex/alongtrack-wave-vortex-run": "e21f42ecd1f814f4856f0fb6d23d79cf8f5401685e478ecb78dcb80101dca388",
-    "cpp/extensions/wavevortex/alongtrack_wavevortex_extension_routing_tests": "718ca4b98a655388f21f7dba4d7c169c46174cfd2023ab6c72052b2bb954d237",
-    "cpp/extensions/wavevortex/alongtrack_wavevortex_extension_tests": "4f1772b3b1cbb64caff487e783c24c868aaac9b1f69922329a6ae0398f9fe84a",
-    "cpp/extensions/wavevortex/alongtrack_wavevortex_runner_end_to_end_tests": "194c64356a17e10a3885233a19ca7cbb2b0ce7d1b89450f792e594ea8014166c",
-    "wavevortex-portable-runtime/wave-vortex-run": "9d3da343f8970b9addc0e3e88a7fc99b853fe996f03fa2228b4d4a2aadc5f873"
+    "cpp/extensions/wavevortex/alongtrack-wave-vortex-run": "84c4779cf0c406991dd5a548e0535f83c92125965ba71297c41e44a5939a822e",
+    "cpp/extensions/wavevortex/alongtrack_wavevortex_extension_routing_tests": "ae9d2699b574e7a85a1779feb8fc697fd97458ec4a9e431de0e0eec122ca65e7",
+    "cpp/extensions/wavevortex/alongtrack_wavevortex_extension_tests": "29d649006927f550b41c005b4d574a01a9e3b674e40e91cde5124a7e65c34da8",
+    "cpp/extensions/wavevortex/alongtrack_wavevortex_runner_end_to_end_tests": "fdcb4cc6cf9d7c6a94c1daaa23ff45ea032d2823204cac62d270232f4cc4c037",
+    "wavevortex-portable-runtime/wave-vortex-run": "38c0171a88620020378adcf957e04430e5ae296cb80ae61ca849506aa4b94192"
   },
-  "scope": "Fresh current source-linked consumer build and all seven consumer tests. No ATS source edits. This is not a package export or cross-platform execution receipt."
+  "scope": "Fresh current source-linked consumer rebuilt after the final tracer and spline corrections; all seven consumer tests pass. No ATS source edits. Package export and cross-platform verification are separate required CI gates.",
+  "priorBaselineCheck": {
+    "waveVortexCommit": "2e1cc19975a5c812223a19be06b9976f57444504",
+    "testCount": 7,
+    "failures": 0,
+    "seconds": 13.38,
+    "note": "Repeated after the subsequent tracer/sampler production corrections; the final source hashes and results below supersede this initial check."
+  },
+  "waveVortexQualifiedCommit": "6d063156bd36dd8bbfb94f1f0b443c59fc64fbc0"
 }

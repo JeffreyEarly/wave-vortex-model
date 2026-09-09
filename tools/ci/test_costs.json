@@ -24,6 +24,8 @@
     "TestPortableDiagnostics": 75,
     "TestPortableForcingCompatibility": 80,
     "TestPortableForcingContracts": 5,
+    "TestPortableForwardIntegration": 165,
+    "TestPortableForwardIntegrationCatalog": 5,
     "TestPortableHydrostatic": 105,
     "TestPortableHydrostaticQualification": 60,
     "TestPortableObserverContracts": 5,
@@ -44,5 +46,9 @@
     "TestWVModelIntegration": 35,
     "TestWVModelOutputPersistence": 15,
     "TestWVTransformInitialization": 15
+  },
+  "localEstimateSources": {
+    "TestPortableForwardIntegration": "Issue #289 Apple Silicon reference execution: sum of sharedMatlabPreparation and providerLifecycle, rounded up to 15 seconds. Scheduling only; hosted CI can refine this estimate.",
+    "TestPortableForwardIntegrationCatalog": "Issue #289 local structural and receipt validation; scheduling only."
   }
 }

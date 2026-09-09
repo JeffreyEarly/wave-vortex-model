@@ -107,5 +107,93 @@
       }
     }
   ],
-  "scope": "Analytic RK4/RK23 accepted and dense convergence; real source-registered required complex dynamic state through rejection, dense output, accepted stop, owning typed-record reconstruction and bounded repeated lifecycle for all four methods. Test-only public runner stop launcher contract. Complex reconstruction is a source-owned typed record, not MATLAB serialization of an arbitrary class. Existing generic controller, RK45/RK78 order and failure contracts also execute in unified-integration. No production code changed."
+  "scope": "Analytic RK4/RK23 accepted and dense convergence; real source-registered required complex dynamic state through rejection, dense output, accepted stop, owning typed-record reconstruction and bounded repeated lifecycle for all four methods. Test-only public runner stop launcher contract. Complex reconstruction is a source-owned typed record, not MATLAB serialization of an arbitrary class. Existing generic controller, RK45/RK78 order and failure contracts also execute in unified-integration. No production code changed.",
+  "tracerCorrection": {
+    "sourceCommit": "25f68a1a870791ab5adba56bad8113f11d50c7bd",
+    "integrationCommit": "a776f879",
+    "cause": "The C++ scalar vertical derivative included modes omitted by MATLAB retained Nj projection.",
+    "sourceSHA256": [
+      {
+        "path": "CompiledKernel/src/WVTransformConstantStratificationKernel.cpp",
+        "sha256": "61dfb8f7c8ac2d91c90f509efda733884530fe84321bdd5f66210e31ec31c376"
+      },
+      {
+        "path": "PortableRuntime/tests/TestWVLagrangianParticles.cpp",
+        "sha256": "7c181658237f92ad1626078849d5823e27ec9c11e7780f42a6737a188ea9b579"
+      }
+    ],
+    "analyticCases": 60,
+    "regressionFailedBeforeFix": true,
+    "release": {
+      "test": "lagrangian-particles",
+      "passed": true,
+      "seconds": 0.29
+    },
+    "sanitized": {
+      "test": "lagrangian-particles",
+      "passed": true,
+      "seconds": 0.41
+    },
+    "matlabReferenceConfirmation": {
+      "configuration": "constant-hydrostatic",
+      "profile": "rk4-cfl",
+      "durationSeconds": 120,
+      "outcomeDestinations": 12,
+      "maximumTracerRelativeError": 0,
+      "maximumParticlePositionErrorMetres": 0,
+      "maximumSavedRelativeError": 1.278e-15,
+      "heldAmplitudeError": 0,
+      "controlsAndTolerancesUnchanged": true
+    },
+    "logs": {
+      "/private/tmp/wvm289-tracer-green-test.log": "9d891ad820117d5bb00cf2dad526c34c8c2869676d1a95c430c544a4d9047613",
+      "/private/tmp/wvm289-tracer-red-test.log": "2062c1973a4f4e7a8af74a9f7650749733135d86a5f530b7ffbe83cc0d4d8c7e",
+      "/private/tmp/wvm289-tracer-sanitized-test.log": "14682606145152fe26206a58d57ec0d868a7303d3da42448048910b550dcaedc"
+    }
+  },
+  "samplerCorrection": {
+    "sourceCommit": "2ae8eaa32e820aa5042f62b5eaefc969254bdf94",
+    "integrationCommit": "01f6b28b",
+    "sourceSHA256": [
+      {
+        "path": "PortableRuntime/src/WVStratifiedFieldEvaluationAdapter.cpp",
+        "sha256": "07d60940074708686a36c85ddc1d27377b3bd1c531b1f4c1dc8be7a26a1fc31f"
+      },
+      {
+        "path": "PortableRuntime/src/WVBarotropicQGFieldEvaluationAdapter.cpp",
+        "sha256": "8f46646ef2bf0773d3468940976edcb97852b217080b4d11ac927039cd080dfc"
+      },
+      {
+        "path": "PortableRuntime/tests/TestWVFieldEvaluation.cpp",
+        "sha256": "553d6344d558d40aa857044dc8159d97553e83818687e3cf9dac76b3793959f6"
+      }
+    ],
+    "scope": "Match legacy three-dimensional zero fill and Barotropic QG cubic extrapolation outside the shifted small grid. Generic constant-stratification sampler is unchanged. Fixed/moving/event and independent cubic regression controls.",
+    "bothRegressionsFailedBeforeFix": true,
+    "release": {
+      "testCount": 4,
+      "passed": 4,
+      "seconds": 1.16
+    },
+    "sanitized": {
+      "testCount": 4,
+      "passed": 4,
+      "seconds": 2.25
+    },
+    "nativeLinked": {
+      "testCount": 2,
+      "passed": 2,
+      "seconds": 0.64,
+      "note": "Field unit test uses reference provider; actual native provider qualification is in the MATLAB representative matrix."
+    },
+    "logs": {
+      "/private/tmp/wvm289-sampler-bqg-red-test.log": "734dc5b4327b6170bc9be336799d3bdff73115aa38756eadbaa6d1750845c26e",
+      "/private/tmp/wvm289-sampler-final-test.log": "3419697302b7db72985d1d46aeccd6d006c453cd253ecfc99d9434154c44243c",
+      "/private/tmp/wvm289-sampler-green-test.log": "ccb06fe9ffc12874b0d4d90d7242327216a73ec9cb2057c78c8d91026263884f",
+      "/private/tmp/wvm289-sampler-native-test.log": "fffaba4189288806618ae24ae1a1d0181aef37198ae830dd47eaa8196de59ef6",
+      "/private/tmp/wvm289-sampler-red-test.log": "10a398dba9c0a75dc827e36451753a0c571fca7d1efc046c805af47540589b2d",
+      "/private/tmp/wvm289-sampler-sanitized-test.log": "356ca38874a4c4cdb96859b3ad352e039acd2c9c917f20e317d474ab25aee961",
+      "/private/tmp/wvm289-sampler-variable-red-test.log": "90804fc35a03fa00d9481606144c2d4ad1baefcaa14a4b07b942948ec8774824"
+    }
+  }
 }

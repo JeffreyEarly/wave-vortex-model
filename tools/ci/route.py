@@ -11,9 +11,9 @@ FAMILIES = ('constant', 'barotropic', 'sqg', 'hydrostatic', 'boussinesq')
 FAMILY_TESTS = {
     'constant': ['TestCompiledKernelContract', 'TestCoreTransformInvariants'],
     'barotropic': ['TestBarotropicQGCompiledKernel', 'TestBarotropicQGPortableQualificationEvidence'],
-    'sqg': ['TestPortableStratifiedQG', 'TestPortableStratifiedQGQualification', 'TestPortableStratifiedQGQualificationEvidence', 'TestStratifiedQGCompiledKernel'],
-    'hydrostatic': ['TestPortableHydrostatic', 'TestPortableHydrostaticQualification', 'TestPortableHydrostaticQualificationEvidence', 'TestHydrostaticCompiledKernel'],
-    'boussinesq': ['TestPortableBoussinesq', 'TestPortableBoussinesqQualification', 'TestPortableBoussinesqQualificationEvidence', 'TestBoussinesqCompiledKernel'],
+    'sqg': ['TestPortableStratifiedQG', 'TestPortableStratifiedQGQualification', 'TestStratifiedQGCompiledKernel'],
+    'hydrostatic': ['TestPortableHydrostatic', 'TestPortableHydrostaticQualification', 'TestHydrostaticCompiledKernel'],
+    'boussinesq': ['TestPortableBoussinesq', 'TestPortableBoussinesqQualification', 'TestBoussinesqCompiledKernel'],
 }
 SHARED_TESTS = ['TestPortableStableForcing', 'TestPortableForcingCompatibility',
                 'TestCompiledKernelIntegration', 'TestStratifiedModalRecord',

@@ -67,6 +67,7 @@
     "boussinesqRuntime": "issue-303",
     "resolvedForcingTendencyDiagnostics": "issue-315",
     "controlledEarlyTermination": "issue-288",
+    "standardForwardIntegrationQualification": "issue-289",
     "adaptiveDampingEffectiveResolution": "issue-409"
   },
   "excluded": [

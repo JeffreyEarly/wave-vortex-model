@@ -44,6 +44,7 @@
     "boussinesqKernel": "issue-302",
     "resolvedForcingTendencyDiagnostics": "issue-315",
     "controlledEarlyTermination": "issue-288",
+    "standardForwardIntegrationQualification": "issue-289",
     "adaptiveDampingEffectiveResolution": "issue-409"
   },
   "contract": {
@@ -72,7 +73,7 @@
   "keySourceSHA256": {
     "preparedModeExecutor": "817d2a3cd791b51a38e0e427a1d6800d376aaa976ca7100f438599841fabce93",
     "coefficientFormulas": "78d647608d8919b33c278c280eb6d2b253dfb0acd8d3330141fbdc845e00864a",
-    "kernel": "c04bcc5421ebad4a62b960da4d5ec2134340f0b140b84c99a740fc53e878e656",
+    "kernel": "61dfb8f7c8ac2d91c90f509efda733884530fe84321bdd5f66210e31ec31c376",
     "integrationSystem": "b8e35f304ad53b1f536ebecee235b5ccef95373d79a039c776d41f801944d7ec",
     "nativeEngine": "43dae9c58e67ccb6e2d7eceb9371a2c09117569cc5dd9e942004b38b7f7eb7fc",
     "mexGateway": "fc9827e29d8da083c9170e761fc42f4e2a3aa88cf810bc76ac28395d7b4ef8b2",
