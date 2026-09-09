@@ -76,29 +76,39 @@ state.waveF = zeros(nz,nw,np); state.waveG = zeros(nz,nw,np);
 state.waveGForward = zeros(nw,nz,np); state.waveEquivalentDepth = zeros(nw,np);
 state.waveFrequency = zeros(nw,np); state.waveGramError = zeros(np,1);
 solver = IMSolverSpectral(nEVP=options.nEVP,coordinateKind="wkb");
+% Share coordinate preparation across the exact requested wave pencils.
+% Zero wavenumber has its own count and must be evaluated separately.
+bases = solver.solveWaveModesAtWavenumbers([0 state.khUnique(:).'],N2=state.N2Function,zDomain=[-Lxyz(3) 0],f0=f,g=options.g,surfaceBoundary=IMBoundaryCondition(a=0,b=1,c=1,d=0),nModes=nw,nInertialModes=options.inertialModeCount);
 for p = 0:np
-    if p == 0, kh = 0; count = options.inertialModeCount; else, kh = state.khUnique(p); count = nw; end
-    evp = IMInternalModes.waveModesAtWavenumber(N2=state.N2Function,zDomain=[-Lxyz(3) 0],k=kh,f0=f,g=options.g,surfaceBoundary=IMBoundaryCondition(a=0,b=1,c=1,d=0));
-    basis = solver.solveEVP(evp,nModes=count);
-    F = basis.F(state.z); G = basis.G(state.z); h = basis.h(:);
+    basis = bases.bases{bases.basisIndex(p+1)};
+    h = basis.h(:);
+    if p == 0, count = options.inertialModeCount; else, count = nw; end
     if any(h<=0) || length(h)~=count
         error('WVTransformFreeSurfaceBoussinesq:InvalidWaveBand','The requested wave/inertial prefix must contain only finite positive equivalent depths.')
     end
     if p == 0
-        state.inertialF = F;
-        state.inertialFForward = (F'.*state.verticalQuadratureWeights.')./h;
         state.inertialEquivalentDepth = h;
         state.inertialModeNumber = basis.modeNumber(:);
-        state.inertialGramError = norm(state.inertialFForward*F-eye(count),2);
     else
-        forward = G'.*(state.verticalQuadratureWeights.*((state.N2Function(state.z)-f^2)/options.g)).';
-        forward(:,end) = forward(:,end)+G(end,:).';
-        state.waveF(:,:,p) = F; state.waveG(:,:,p) = G;
-        state.waveGForward(:,:,p) = forward; state.waveEquivalentDepth(:,p) = h;
-        state.waveFrequency(:,p) = sqrt(f^2+options.g*h*kh^2);
-        state.waveGramError(p) = norm(forward*G-eye(count),2);
+        state.waveEquivalentDepth(:,p) = h;
+        state.waveFrequency(:,p) = sqrt(f^2+options.g*h*state.khUnique(p)^2);
         if p == 1, state.waveModeNumber = basis.modeNumber(:); end
     end
+end
+state.inertialF = bases.evaluate(state.z,variable="F",pages=1);
+state.inertialFForward = (state.inertialF'.*state.verticalQuadratureWeights.')./state.inertialEquivalentDepth;
+state.inertialGramError = norm(state.inertialFForward*state.inertialF-eye(options.inertialModeCount),2);
+if np > 0
+    bases.evaluateChunks(state.z,@acceptWaveF,variable="F",pages=2:np+1);
+    bases.evaluateChunks(state.z,@acceptWaveG,variable="G",pages=2:np+1);
+end
+% Preserve the prescribed physical pairing, including the surface term.
+for p = 1:np
+    G = state.waveG(:,:,p);
+    forward = G'.*(state.verticalQuadratureWeights.*((state.N2Function(state.z)-f^2)/options.g)).';
+    forward(:,end) = forward(:,end)+G(end,:).';
+    state.waveGForward(:,:,p) = forward;
+    state.waveGramError(p) = norm(forward*G-eye(nw),2);
 end
 if np == 0, state.waveModeNumber = state.waveMode; end
 if max([state.waveGramError;state.inertialGramError]) > options.projectionTolerance
@@ -108,4 +118,12 @@ end
 % dp/dz=-rho0*N2*eta. The provider F differs only by its surface constant.
 state.mdaPressureMode = options.g*(state.mdaF-state.mdaF(end,:));
 self = WVTransformFreeSurfaceBoussinesq(state);
+
+    function acceptWaveF(values,rows,~,pages)
+        state.waveF(rows,:,pages-1) = values;
+    end
+
+    function acceptWaveG(values,rows,~,pages)
+        state.waveG(rows,:,pages-1) = values;
+    end
 end

@@ -34,7 +34,7 @@ classdef TestReleaseVerification < matlab.unittest.TestCase
             compatibleVersions = string({manifest.dependencies.compatibleVersions});
             expected = dictionary( ...
                 ["ClassAnnotations" "InternalModes" "NetCDF" "SplineCore" "chebfun"], ...
-                ["^1.2.1" "2.0.0-beta.1" "^1.0.2" "^2.2.0" ""]);
+                ["^1.2.1" "2.0.0-beta.2" "^1.0.2" "^2.2.0" ""]);
             testCase.verifyEqual(sort(reshape(dependencies,[],1)),sort(reshape(keys(expected),[],1)));
             for iDependency = 1:numel(dependencies)
                 testCase.verifyEqual(compatibleVersions(iDependency),expected(dependencies(iDependency)));
@@ -53,7 +53,7 @@ classdef TestReleaseVerification < matlab.unittest.TestCase
                     "Exported package / MATLAB R2025b"
                     "release: R2025b"
                     "contents: read"
-                    "80006f5040da787465860249f975def9831624c8"
+                    "5c2b41d2d4858f90756866f137002f18cb0ae1b6"
                     "MATLAB_PREFDIR"
                     "Temporary=true"
                     "ClassDocumentation@1.3.2"
@@ -201,7 +201,7 @@ classdef TestReleaseVerification < matlab.unittest.TestCase
             requiredWorkflow = testCase.readFile(fullfile(".github","workflows","ci.yml"));
             extendedWorkflow = testCase.readFile(fullfile(".github","workflows","extended-ci.yml"));
             for workflow = [requiredWorkflow extendedWorkflow]
-                testCase.verifySubstring(workflow,"80006f5040da787465860249f975def9831624c8");
+                testCase.verifySubstring(workflow,"5c2b41d2d4858f90756866f137002f18cb0ae1b6");
                 testCase.verifySubstring(workflow,"release: R2025b");
                 testCase.verifyFalse(contains(workflow,"eb71bc7b05e74776afd678b27c964cf53cd9d547"));
                 testCase.verifyFalse(contains(workflow,"R2024b"));

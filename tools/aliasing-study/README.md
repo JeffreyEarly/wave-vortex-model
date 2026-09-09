@@ -1,12 +1,14 @@
 # Sparse quadratic-product assessment (issue 400)
 
-This reproducible authoring study compares linear, fixed sparse, and targeted sparse checks against a bounded dense survey of physical wave and mixed-family source products. See `REPORT.md` for findings, `API-PROPOSAL.md` for the proposed advisory interface, and `results/comparison-v1` for consolidated machine-readable evidence. Runtime defaults, coefficient shapes, physical grids, and package dependencies are unchanged.
+This reproducible authoring study compares linear, fixed sparse, and targeted sparse checks against a bounded dense survey of physical wave and mixed-family source products. See `REPORT.md` for findings, `API-PROPOSAL.md` for the proposed advisory interface, and `results/comparison-v1` for consolidated machine-readable evidence. Runtime defaults, coefficient shapes, and physical grids are unchanged. The current authoring code uses the released InternalModes beta dependency declared by WVM.
 
 The first working advisory API is documented in [ADVISORY-API.md](ADVISORY-API.md). It reuses prepared modes and returns strict-count, reference, coverage, and budget diagnostics in memory.
 
 ## Reproduce
 
-Use this authoring branch, based on WVM `9fefcc9a528de65e2f348706c45b13f741754a78`, alongside the OceanKit export at `80006f5040da787465860249f975def9831624c8` (InternalModes source `4086f978b36a4100e7419688ab355591c8253ef1`). The commands below run from the WVM repository with the export named `../wvm400-oceankit`. `configureStudyPath` adds only the pinned packages and their manifest-listed folders. On this local Apple Silicon host, MATLAB must run outside the Codex sandbox under the shared workspace policy.
+Use the current authoring checkout alongside OceanKit `5c2b41d2d4858f90756866f137002f18cb0ae1b6`, which exports `InternalModes@2.0.0-beta.2` from provider tag `c97f3ba50eb7ef67c8c3183cfcf6b7645783bbea`. The commands below run from the WVM repository with that OceanKit checkout named `../wvm400-oceankit`. `configureStudyPath` adds only the pinned packages and their manifest-listed folders and records the actual WVM Git revision. On this local Apple Silicon host, MATLAB must run outside the Codex sandbox under the shared workspace policy.
+
+The preserved historical tables were generated with WVM `9fefcc9a528de65e2f348706c45b13f741754a78` and OceanKit `80006f5040da787465860249f975def9831624c8` (InternalModes `4086f978b36a4100e7419688ab355591c8253ef1`, version `2.0.0-beta.1`). Reproducing that historical implementation exactly requires those source/dependency revisions; current-code comparisons keep the recorded historical provenance unchanged.
 
 For a full reproduction, first use a disposable checkout and move its published result tables aside. A fresh Git checkout contains those tables but omits the large MAT files, so it is not an empty numerical output directory. The following two setup commands preserve the published tables; do not run them in the original study working copy.
 

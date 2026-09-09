@@ -16,7 +16,7 @@ concurrency:
   cancel-in-progress: true
 
 env:
-  OCEANKIT_COMMIT: 80006f5040da787465860249f975def9831624c8
+  OCEANKIT_COMMIT: 5c2b41d2d4858f90756866f137002f18cb0ae1b6
 
 jobs:
   kernel-contract:

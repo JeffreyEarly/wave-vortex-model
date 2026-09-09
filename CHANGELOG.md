@@ -4,12 +4,16 @@
 
 ### InternalModes beta dependency
 
-- Require the exact packaged `InternalModes@2.0.0-beta.1` prerelease, containing the rotating-wave normalization, stretched-coordinate calculus, eigenproblem-conditioning and localized analytical APV-root corrections. Routine CI and package verification now use its immutable OceanKit snapshot. This adopts a beta provider; it does not publish WVM v5 or promise stable V2 APIs.
+- Require the exact packaged `InternalModes@2.0.0-beta.2` prerelease, adding exact bulk mode construction and the consolidated projection/assessment API while retaining the rotating-wave normalization, stretched-coordinate calculus, eigenproblem-conditioning and localized analytical APV-root corrections. Routine CI and package verification now use its immutable OceanKit snapshot. This adopts a beta provider; it does not publish WVM v5 or promise stable V2 APIs.
+
+### Exact bulk free-surface wave construction
+
+- Share coordinate preparation across exact distinct-wavenumber solves and stream evaluated modes into the existing Boussinesq arrays. Preserve independent wave/inertial counts, physical source projections, mode labels, fixed-grid rejection criteria, and restart state.
 
 ### Experimental free-surface Boussinesq transform
 
 - Added `WVTransformFreeSurfaceBoussinesq.fromStratification` with independently retained wave, APV, zero-APV endpoint, inertial, and mean-density-anomaly families, physical pressure/velocity/displacement/SSH reconstruction, admissible mixed-state projection and error assessment, positive physical-energy accounting, and exact reference-time phase evolution.
-- Shared the existing free-surface balanced scientific construction with QG; preserved its resolved Galerkin transforms and fixed-grid qualification. The prototype requires the corrected InternalModes `2.0.0-beta.1` package; broader beta qualification remains under #354.
+- Shared the existing free-surface balanced scientific construction with QG; preserved its resolved Galerkin transforms and fixed-grid qualification. The prototype requires the corrected InternalModes `2.0.0-beta.2` package; broader beta qualification remains under #354.
 - Changing `t0` now invalidates linearly evolving cached fields, matching the existing invalidation on `t` changes.
 
 ### Forced linear Boussinesq evolution and restart
