@@ -310,6 +310,61 @@ classdef TestDensityDiagnosticReference < matlab.unittest.TestCase
             testCase.verifyEqual(actual,N2*(z-materialHeight).^2/2,RelTol=2e-6);
         end
 
+        function productionLargeArrayCrossesChunkBoundariesAndManyIntervals(testCase)
+            N2 = .04;
+            knots = linspace(-1,1,33).';
+            profile = WVNoMotionProfile(knots,1-N2*knots);
+            shape = [17 17 241];
+            index = (1:prod(shape)).';
+            materialHeight = -1+2*mod(index,257)/256;
+            z = -materialHeight;
+            z(mod(index,3)==0) = materialHeight(mod(index,3)==0);
+            z(mod(index,3)==1) = knots(1+mod(index(mod(index,3)==1),numel(knots)));
+            % Distinct cases around the 65536-element chunk boundary and
+            % final tail include zero, upward, downward, and domain-wide moves.
+            selected = [1 65535 65536 65537 numel(index)];
+            materialHeight(selected) = [-1 .5 -.5 .25 1];
+            z(selected) = [1 .5 .75 -.75 -1];
+            materialHeight = reshape(materialHeight,shape);
+            z = reshape(z,shape);
+            actual = profile.availablePotentialEnergy(z,materialHeight,1,1);
+            expected = N2*(z-materialHeight).^2/2;
+            testCase.verifyEqual(size(actual),shape);
+            testCase.verifyEqual(actual,expected,RelTol=2e-13);
+            testCase.verifyEqual(actual(z==materialHeight),zeros(nnz(z==materialHeight),1));
+            testCase.verifyGreaterThan(actual(z~=materialHeight),zeros(nnz(z~=materialHeight),1));
+        end
+
+        function productionIrregularIntervalsMatchIndependentQuadrature(testCase)
+            knots = [-2;-1.7;-.8;-.79;-.1;.25;1];
+            density = [9;8.99;8.7;6;5.9;3;1];
+            profile = WVNoMotionProfile(knots,density);
+            % Differentiate MATLAB's density PCHIP directly and integrate
+            % numerically; do not use the production primitive or its
+            % normalized coefficients as the reference integration method.
+            pp = pchip(knots,density);
+            derivative = mkpp(pp.breaks,pp.coefs(:,1:end-1).*(pp.order-1:-1:1));
+            materialHeight = reshape([-2 -1.7 -.8 -.795 -.79 -.1 .25 1 -.25 .8 -.1 -.1],3,4);
+            z = reshape([1 -.1 .25 -.794 -2 .25 -.8 -2 .9 -.7 -.1 -.8],3,4);
+            g = 9.81;
+            rho0 = 1025;
+            expected = zeros(size(z));
+            for index = 1:numel(z)
+                lower = min(z(index),materialHeight(index));
+                upper = max(z(index),materialHeight(index));
+                if lower == upper
+                    continue
+                end
+                waypoints = knots(knots>lower & knots<upper);
+                integrand = @(r) (r-z(index)).*ppval(derivative,r);
+                expected(index) = (g/rho0)*sign(z(index)-materialHeight(index)) * ...
+                    integral(integrand,lower,upper,Waypoints=waypoints,AbsTol=1e-12,RelTol=1e-12);
+            end
+            actual = profile.availablePotentialEnergy(z,materialHeight,g,rho0);
+            testCase.verifyEqual(actual,expected,AbsTol=5e-13,RelTol=5e-12);
+            testCase.verifyGreaterThanOrEqual(actual,zeros(size(actual)));
+        end
+
         function productionRejectsPlateausAndOutOfRangeQueries(testCase)
             testCase.verifyError(@()WVNoMotionProfile([-1;0;1],[3;2;2]),'WVNoMotionProfile:NonInvertibleDensity');
             testCase.verifyError(@()WVNoMotionProfile([-1;0;1],[1;2;3]),'WVNoMotionProfile:NonInvertibleDensity');

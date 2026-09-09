@@ -1,4 +1,6 @@
-classdef WVNoMotionProfile
+classdef APEReference7c26
+    % Frozen benchmark reference from commit 7c26eca05561e1fda4e99f641080efc5f6a7a449.
+    % Only the class and constructor names differ from the original source.
     % Evaluate a monotone density profile and its displacement energetics.
     %
     % A shape-preserving cubic interpolant supplies the density, its inverse,
@@ -18,7 +20,7 @@ classdef WVNoMotionProfile
         normalizedDensity
     end
     methods
-        function self = WVNoMotionProfile(z,rho)
+        function self = APEReference7c26(z,rho)
             arguments
                 z (:,1) double {mustBeFinite,mustBeReal}
                 rho (:,1) double {mustBeFinite,mustBeReal}
@@ -103,40 +105,24 @@ classdef WVNoMotionProfile
             % from material height s to z. This uses density derivatives
             % directly, avoiding cancellation even for sub-ulp density
             % changes associated with small representable displacements.
-            ape = zeros(size(z));
-            % Bound temporary arrays and locate each starting interval once.
-            % Only parcels that cross a knot remain active for another pass;
-            % work scales with actual crossings, not every vertical interval.
-            blockSize = 65536;
-            for first = 1:blockSize:numel(z)
-                positions = first:min(first+blockSize-1,numel(z));
-                height = reshape(z(positions),[],1);
-                target = reshape(materialHeight(positions),[],1);
-                low = min(height,target);
-                high = max(height,target);
-                interval = discretize(low,self.z);
-                integral = zeros(size(low));
-                active = find(high > low);
-                while ~isempty(active)
-                    index = interval(active);
-                    a = low(active);
-                    b = min(high(active),self.z(index+1));
-                    t = a-self.z(index);
-                    d = b-a;
-                    c = self.coefficients(index,:);
-                    A = (3*c(:,1).*t+2*c(:,2)).*t+c(:,3);
-                    B = 6*c(:,1).*t+2*c(:,2);
-                    C = 3*c(:,1);
-                    D = height(active)-a;
-                    piece = -D.*A.*d + (A-D.*B).*d.^2/2 + (B-D.*C).*d.^3/3 + C.*d.^4/4;
-                    integral(active) = integral(active)+piece;
-                    remaining = b < high(active);
-                    active = active(remaining);
-                    low(active) = b(remaining);
-                    interval(active) = interval(active)+1;
-                end
-                ape(positions) = (g*self.densityScale/rho0)*sign(height-target).*integral;
+            low = min(z,materialHeight);
+            high = max(z,materialHeight);
+            integral = zeros(size(z));
+            for index = 1:numel(self.z)-1
+                a = max(low,self.z(index));
+                b = min(high,self.z(index+1));
+                selected = b > a;
+                t = a(selected)-self.z(index);
+                d = b(selected)-a(selected);
+                c = self.coefficients(index,:);
+                A = (3*c(1)*t+2*c(2)).*t+c(3);
+                B = 6*c(1)*t+2*c(2);
+                C = 3*c(1);
+                D = z(selected)-a(selected);
+                piece = -D.*A.*d + (A-D.*B).*d.^2/2 + (B-D*C).*d.^3/3 + C*d.^4/4;
+                integral(selected) = integral(selected)+piece;
             end
+            ape = (g*self.densityScale/rho0)*sign(z-materialHeight).*integral;
         end
     end
     methods (Access=private)
