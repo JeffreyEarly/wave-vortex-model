@@ -6,6 +6,42 @@ classdef TestFreeSurfacePressureReference < matlab.unittest.TestCase
         end
     end
     methods (Test, TestTags="full")
+        function flatOperatorRecoversResolvedLinearPressure(testCase)
+            wvt = WVTransformFreeSurfaceBoussinesq.fromStratification([1e5 1e5 1000],[6 6 33],N2Function=@(z)1e-4+0*z,apvModeCount=3,mdaModeCount=2,waveModeCount=4,inertialModeCount=3,nEVP=128);
+            column = find(wvt.kNonzero>0 & wvt.lNonzero==0,1);
+            wvt.Aw_p(1,column) = 0.002+0.003i;
+            wvt.Aw_m(2,column) = 0.001-0.002i;
+            wvt.Ag_q(1,column) = 1e-8;
+            wvt.Ag_0(:,column) = [1e-8;-2e-8];
+            wvt.Amda(1) = 0.001;
+            wvt.Aio(1) = 0.002i;
+            fields = wvt.reconstructFields(["u","v","w","eta","p","ssh"]);
+            force = struct(u=wvt.f*fields.v,v=-wvt.f*fields.u,w=-reshape(wvt.N2,1,1,[]).*fields.eta);
+            derivative.x = @(field) fourierDerivative(field,wvt.Lx,1);
+            derivative.y = @(field) fourierDerivative(field,wvt.Ly,2);
+            derivative.xi = @(field) wvt.diffZ(field);
+            % Linearization freezes geometry at zero but retains the linear
+            % dynamic surface-pressure data from the resolved mixed state.
+            [pressure,diagnostics] = solveFreeSurfacePressureReference(zeros(size(fields.ssh)),force,wvt.g*fields.ssh,wvt.z,wvt.Lz,derivative);
+            expected = fields.p/wvt.rho0;
+            testCase.verifyLessThan(norm(pressure(:)-expected(:))/norm(expected(:)),2e-7)
+            state = wvt.coefficientState();
+            omega = wvt.waveFrequency(:,wvt.klNonzeroKhUniqueIndex);
+            state.Aw_p = 1i*omega.*state.Aw_p;
+            state.Aw_m = -1i*omega.*state.Aw_m;
+            state.Aio = 1i*wvt.f*state.Aio;
+            state.Ag_q(:) = 0;
+            state.Ag_0(:) = 0;
+            state.Amda(:) = 0;
+            spectral = wvt.reconstructSpectralState(state=state);
+            for name = ["u","v","w"]
+                expected = wvt.transformToSpatialDomainWithFourier(spectral.(name));
+                actual = diagnostics.acceleration.(name);
+                scale = norm(force.(name)(:))+norm(expected(:));
+                testCase.verifyLessThan(norm(actual(:)-expected(:))/scale,2e-6)
+            end
+        end
+
         function recoverManufacturedNonflatPressure(testCase)
             [x,y,xi,Lz,derivative] = referenceGrid(6,9);
             [X,Y,S] = ndgrid(x,y,1+xi/Lz);
