@@ -25,7 +25,7 @@ for id=["cal-constant-17","cal-exponential-17"]
     end
     % This intentionally small all-products control changes neither the
     % scientific modes nor reference rules between sparse/dense measurements.
-    config.Nxy=[4 4]; data=prepareSourceStudy(config);
+    config.Nxy=[6 6]; data=prepareSourceStudy(config);
     sparse=prepareWaveQuadraticAssessment(data,ensureOutputCoverage=true);
     dense=prepareWaveQuadraticAssessment(data,policy="dense");
     for count=1:config.waveCount

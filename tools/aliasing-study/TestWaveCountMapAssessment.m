@@ -117,10 +117,11 @@ classdef TestWaveCountMapAssessment < matlab.unittest.TestCase
         end
 
         function smallDenseControlContainsSparseEvidence(testCase)
-            config=resolveStudyCase("cal-constant-17"); config.Nxy=[4 4];
+            config=resolveStudyCase("cal-constant-17"); config.Nxy=[6 6];
             data=prepareSourceStudy(config);
             sparse=prepareWaveQuadraticAssessment(data,ensureOutputCoverage=true);
             dense=prepareWaveQuadraticAssessment(data,policy="dense");
+            testCase.verifyTrue(any(dense.products.waveOut))
             for count=[3 8]
                 a=assessWaveQuadraticResolution(sparse,waveModeCount=count);
                 b=assessWaveQuadraticResolution(dense,waveModeCount=count);
