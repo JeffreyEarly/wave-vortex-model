@@ -408,6 +408,35 @@ classdef TestDensityDiagnosticReference < matlab.unittest.TestCase
             end
         end
 
+        function productionInverseEndpointRoundoffRemainsInsideProfile(testCase)
+            % Both exact endpoint queries previously returned one ulp above
+            % the original upper knot, making a valid APE composition fail.
+            profiles = {WVNoMotionProfile([-.1;.3],[2;1]), ...
+                WVNoMotionProfile([-1000;-1000/9;0],[1;.010699594101397314;0])};
+            for index = 1:numel(profiles)
+                profile = profiles{index};
+                densitySpacing = eps(max(abs(profile.rho)));
+                density = [profile.rho(1),profile.rho(end),profile.rho(end)-4*densitySpacing];
+                materialHeight = profile.inverse(density);
+                testCase.verifyEqual(materialHeight,[profile.z(1),profile.z(end),profile.z(end)]);
+                testCase.verifyGreaterThanOrEqual(materialHeight,profile.z(1));
+                testCase.verifyLessThanOrEqual(materialHeight,profile.z(end));
+                height = mean(profile.z([1 end]))*ones(size(materialHeight));
+                ape = profile.availablePotentialEnergy(height,materialHeight,1,1);
+                testCase.verifyTrue(all(isfinite(ape)));
+                testCase.verifyGreaterThanOrEqual(ape,0);
+                if index == 1
+                    expected = (profile.rho(1)-profile.rho(end))/(2*diff(profile.z))*(height-materialHeight).^2;
+                    testCase.verifyEqual(ape,expected,RelTol=2e-14);
+                end
+                testCase.verifyError(@()profile.inverse(profile.rho(end)-9*densitySpacing), ...
+                    'WVNoMotionProfile:DensityOutsideProfile');
+                outside = profile.z(end)+eps(max(abs(profile.z)));
+                testCase.verifyError(@()profile.availablePotentialEnergy(height(1),outside,1,1), ...
+                    'WVNoMotionProfile:HeightOutsideProfile');
+            end
+        end
+
         function productionRejectsPlateausAndOutOfRangeQueries(testCase)
             testCase.verifyError(@()WVNoMotionProfile([-1;0;1],[3;2;2]),'WVNoMotionProfile:NonInvertibleDensity');
             testCase.verifyError(@()WVNoMotionProfile([-1;0;1],[1;2;3]),'WVNoMotionProfile:NonInvertibleDensity');

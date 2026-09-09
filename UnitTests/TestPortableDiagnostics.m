@@ -107,6 +107,10 @@ classdef TestPortableDiagnostics < matlab.unittest.TestCase
                 % Forcing templates require actual instance bindings, covered
                 % by TestPortableStableForcing's output continuation matrix.
                 rows = rows([rows.ordinal]>=23 & string({rows.runtimeStatus})=="implemented" & string({rows.authority})~="forcing-instance-template");
+                % Density recovery has its own prospective error bounds and
+                % complete output/continuation coverage in TestPortableDensityOutput.
+                densityNames = ["rho_nm","eta_true","ape","apv"];
+                rows = rows(~ismember(arrayfun(@(row)string(row.metadata.name),rows),densityNames));
                 names = reshape(arrayfun(@(row)string(row.metadata.name),rows),1,[]);
                 for row = reshape(rows,1,[])
                     if string(row.authority)=="known-variable-factory"

@@ -22,6 +22,8 @@ nav_order: 100
 
 ### MATLAB density diagnostics
 
+- Corrected rounding-sized endpoint excursions from the MATLAB density-profile inverse that could make APE fail for valid endpoint densities. Previously in-range results and strict out-of-range query rejection are preserved.
+
 - Bounded displacement inversion to blocks of 1,048,576 parcels, reducing its expanded coefficient array from 688 MiB to at most 32 MiB on the large JAMES state while preserving the solver and bitwise diagnostic results. Three paired local trials measured displacement operation medians of 0.142→0.122 seconds on 256×256×43 and 1.045→1.032 seconds on 512×512×86; the latter is within timing variation.
 - Accelerated exact APE integration by locating each parcel interval once and visiting only crossed intervals in bounded blocks. Three paired local trials on the JAMES 256×256×43 and 512×512×86 states reduced operation medians from 0.304 to 0.108 seconds and 3.578 to 0.756 seconds, with bitwise-identical APE arrays and unchanged small-displacement precision.
 - Density diagnostics now use the diagnosed current `rho_nm` by default. Displacement and APE share a monotone cubic profile and consistent material height; APV uses the corrected displacement. Explicit `shouldUseTrueNoMotionProfile=false` selects the original-profile approximation for both displacement and APE, using the corrected calculus rather than reproducing the old algorithm.

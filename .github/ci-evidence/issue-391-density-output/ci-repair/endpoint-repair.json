@@ -1,0 +1,56 @@
+{
+  "schemaVersion": 1,
+  "issue": 456,
+  "failedCIRun": 34416775337,
+  "matlabFix": "Correct only published inverse endpoint excursions within the existing height tolerance; preserve interior results and strict APE validation.",
+  "focusedProfileAndOutputMethodsPassed": 13,
+  "ordinaryDenseProviderCells": 32,
+  "genericOutputContinuationPassed": true,
+  "genericOutputProviders": [
+    "reference",
+    "native-fftw"
+  ],
+  "analyzerFindings": 0,
+  "cppProductionChanged": false,
+  "scopeCorrection": "TestPortableDiagnostics generic output excludes the four density names; TestPortableDensityOutput owns their existing prospective numerical and continuation gates.",
+  "artifacts": [
+    {
+      "path": "endpoint-documentation.log",
+      "sha256": "0f11f92ec77208d2180e09a63d7cd211fc2d9d9c9cdb35ec40d0afdc43ef1618"
+    },
+    {
+      "path": "generic-output-test.log",
+      "sha256": "647f8f5b559db27858602d0982deea2f0e662dbedb4586fcd6a790190c450c10"
+    },
+    {
+      "path": "inverse-diagnosis.log",
+      "sha256": "61fbaa30d2856aaca1ceb303a1a73c1ce03986820d5b3f87625c0610b31310d5"
+    },
+    {
+      "path": "inverse-endpoint-red.log",
+      "sha256": "aa71834f1714c6339203a99629ea46f29f6654607bb76f6ee421ef548a8f2385"
+    },
+    {
+      "path": "inverse-results.json",
+      "sha256": "143fd1ca053c752c1089211e4f7fa76d4bdd8539dab9e8cd862fa709dbf02a2c"
+    },
+    {
+      "path": "inverse-tests.log",
+      "sha256": "d5920da6ef57b4382dc5937d382b49f0f3e3f3beb6fdd40f94f0aca34e95ef36"
+    },
+    {
+      "path": "kernel-selection-test.log",
+      "sha256": "b7e4e8ed5c24f442cf4c22ddf0a53ca7ebb8d94c231373c60e20996571877a33"
+    },
+    {
+      "path": "verification.json",
+      "sha256": "ff232cbafc8be0f06a246128e8574aea28f624b7ec5d5d9d2c8a42fa0fc6bd3a"
+    }
+  ],
+  "documentation": {
+    "files": 2026,
+    "routes": 4145,
+    "failures": 0,
+    "comparisonModified": 0
+  }
+}

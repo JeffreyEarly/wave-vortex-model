@@ -1,0 +1,256 @@
+[Warning: Directory access failure: /Users/jearly/Documents/MATLAB]
+CI package: Distributions 2.0.0 (/Users/jearly/Documents/OceanKitRepositories/OceanKit/Distributions-2.0.0)
+CI package: SplineCore 2.2.0 (/Users/jearly/Documents/OceanKitRepositories/OceanKit/SplineCore-2.2.0)
+CI package: chebfun 5.7.0 (/Users/jearly/Documents/OceanKitRepositories/OceanKit/chebfun-5.7.0)
+CI package: InternalModes 1.3.0 (/Users/jearly/Documents/OceanKitRepositories/OceanKit/InternalModes-1.3.0)
+CI package: NetCDF 1.0.2 (/Users/jearly/Documents/OceanKitRepositories/OceanKit/NetCDF-1.0.2)
+CI package: ClassAnnotations 1.2.1 (/Users/jearly/Documents/OceanKitRepositories/OceanKit/ClassAnnotations-1.2.1)
+CI package: ClassDocumentation 1.3.2 (/Users/jearly/Documents/OceanKitRepositories/OceanKit/ClassDocumentation-1.3.2)
+CI package: WaveVortexModel 4.3.0 (/Users/jearly/Documents/OceanKitRepositories/wvm-v4-pr447-ci-repair)
+Running TestDensityDiagnosticReference
+.......BLAS: trying environment BLAS_VERSION...
+BLAS: loading libmwAF_BLAS_ilp64.dylib
+BLAS: loaded libmwAF_BLAS_ilp64.dylib@0x92a138b0
+... ..
+Done TestDensityDiagnosticReference
+__________
+
+Running TestPortableDensityOutput
+Ending simulation. Wrote 1 time points to wave-vortex group
+Ending simulation. Wrote 1 time points to dense group
+WVTransformConstantStratification initialized from Ap, Am, A0.
+Ending simulation. Wrote 3 time points to wave-vortex group
+Ending simulation. Wrote 9 time points to dense group
+WARNING: package sun.awt.X11 not in java.desktop
+WARNING: package sun.awt.X11 not in java.desktop
+WVTransformConstantStratification initialized from Ap, Am, A0.
+Ending simulation. Wrote 3 time points to wave-vortex group
+Ending simulation. Wrote 9 time points to dense group
+DENSITY_OUTPUT_PASS constant-hydrostatic aa=0 reference=actual provider=reference
+WVTransformConstantStratification initialized from Ap, Am, A0.
+Ending simulation. Wrote 3 time points to wave-vortex group
+Ending simulation. Wrote 9 time points to dense group
+DENSITY_OUTPUT_PASS constant-hydrostatic aa=0 reference=actual provider=native-fftw
+Ending simulation. Wrote 1 time points to wave-vortex group
+Ending simulation. Wrote 1 time points to dense group
+WVTransformConstantStratification initialized from Ap, Am, A0.
+Ending simulation. Wrote 3 time points to wave-vortex group
+Ending simulation. Wrote 9 time points to dense group
+WVTransformConstantStratification initialized from Ap, Am, A0.
+Ending simulation. Wrote 3 time points to wave-vortex group
+Ending simulation. Wrote 9 time points to dense group
+DENSITY_OUTPUT_PASS constant-hydrostatic aa=0 reference=initial provider=reference
+WVTransformConstantStratification initialized from Ap, Am, A0.
+Ending simulation. Wrote 3 time points to wave-vortex group
+Ending simulation. Wrote 9 time points to dense group
+DENSITY_OUTPUT_PASS constant-hydrostatic aa=0 reference=initial provider=native-fftw
+Ending simulation. Wrote 1 time points to wave-vortex group
+Ending simulation. Wrote 1 time points to dense group
+WVTransformConstantStratification initialized from Ap, Am, A0.
+Ending simulation. Wrote 3 time points to wave-vortex group
+Ending simulation. Wrote 9 time points to dense group
+WVTransformConstantStratification initialized from Ap, Am, A0.
+Ending simulation. Wrote 3 time points to wave-vortex group
+Ending simulation. Wrote 9 time points to dense group
+DENSITY_OUTPUT_PASS constant-hydrostatic aa=1 reference=actual provider=reference
+WVTransformConstantStratification initialized from Ap, Am, A0.
+Ending simulation. Wrote 3 time points to wave-vortex group
+Ending simulation. Wrote 9 time points to dense group
+DENSITY_OUTPUT_PASS constant-hydrostatic aa=1 reference=actual provider=native-fftw
+Ending simulation. Wrote 1 time points to wave-vortex group
+Ending simulation. Wrote 1 time points to dense group
+WVTransformConstantStratification initialized from Ap, Am, A0.
+Ending simulation. Wrote 3 time points to wave-vortex group
+Ending simulation. Wrote 9 time points to dense group
+WVTransformConstantStratification initialized from Ap, Am, A0.
+Ending simulation. Wrote 3 time points to wave-vortex group
+Ending simulation. Wrote 9 time points to dense group
+DENSITY_OUTPUT_PASS constant-hydrostatic aa=1 reference=initial provider=reference
+WVTransformConstantStratification initialized from Ap, Am, A0.
+Ending simulation. Wrote 3 time points to wave-vortex group
+Ending simulation. Wrote 9 time points to dense group
+DENSITY_OUTPUT_PASS constant-hydrostatic aa=1 reference=initial provider=native-fftw
+Ending simulation. Wrote 1 time points to wave-vortex group
+Ending simulation. Wrote 1 time points to dense group
+WVTransformConstantStratification initialized from Ap, Am, A0.
+Ending simulation. Wrote 3 time points to wave-vortex group
+Ending simulation. Wrote 9 time points to dense group
+WVTransformConstantStratification initialized from Ap, Am, A0.
+Ending simulation. Wrote 3 time points to wave-vortex group
+Ending simulation. Wrote 9 time points to dense group
+DENSITY_OUTPUT_PASS constant-nonhydrostatic aa=0 reference=actual provider=reference
+WVTransformConstantStratification initialized from Ap, Am, A0.
+Ending simulation. Wrote 3 time points to wave-vortex group
+Ending simulation. Wrote 9 time points to dense group
+DENSITY_OUTPUT_PASS constant-nonhydrostatic aa=0 reference=actual provider=native-fftw
+Ending simulation. Wrote 1 time points to wave-vortex group
+Ending simulation. Wrote 1 time points to dense group
+WVTransformConstantStratification initialized from Ap, Am, A0.
+Ending simulation. Wrote 3 time points to wave-vortex group
+Ending simulation. Wrote 9 time points to dense group
+WVTransformConstantStratification initialized from Ap, Am, A0.
+Ending simulation. Wrote 3 time points to wave-vortex group
+Ending simulation. Wrote 9 time points to dense group
+DENSITY_OUTPUT_PASS constant-nonhydrostatic aa=0 reference=initial provider=reference
+WVTransformConstantStratification initialized from Ap, Am, A0.
+Ending simulation. Wrote 3 time points to wave-vortex group
+Ending simulation. Wrote 9 time points to dense group
+DENSITY_OUTPUT_PASS constant-nonhydrostatic aa=0 reference=initial provider=native-fftw
+Ending simulation. Wrote 1 time points to wave-vortex group
+Ending simulation. Wrote 1 time points to dense group
+WVTransformConstantStratification initialized from Ap, Am, A0.
+Ending simulation. Wrote 3 time points to wave-vortex group
+Ending simulation. Wrote 9 time points to dense group
+WVTransformConstantStratification initialized from Ap, Am, A0.
+Ending simulation. Wrote 3 time points to wave-vortex group
+Ending simulation. Wrote 9 time points to dense group
+DENSITY_OUTPUT_PASS constant-nonhydrostatic aa=1 reference=actual provider=reference
+WVTransformConstantStratification initialized from Ap, Am, A0.
+Ending simulation. Wrote 3 time points to wave-vortex group
+Ending simulation. Wrote 9 time points to dense group
+DENSITY_OUTPUT_PASS constant-nonhydrostatic aa=1 reference=actual provider=native-fftw
+Ending simulation. Wrote 1 time points to wave-vortex group
+Ending simulation. Wrote 1 time points to dense group
+WVTransformConstantStratification initialized from Ap, Am, A0.
+Ending simulation. Wrote 3 time points to wave-vortex group
+Ending simulation. Wrote 9 time points to dense group
+WVTransformConstantStratification initialized from Ap, Am, A0.
+Ending simulation. Wrote 3 time points to wave-vortex group
+Ending simulation. Wrote 9 time points to dense group
+DENSITY_OUTPUT_PASS constant-nonhydrostatic aa=1 reference=initial provider=reference
+WVTransformConstantStratification initialized from Ap, Am, A0.
+Ending simulation. Wrote 3 time points to wave-vortex group
+Ending simulation. Wrote 9 time points to dense group
+DENSITY_OUTPUT_PASS constant-nonhydrostatic aa=1 reference=initial provider=native-fftw
+Ending simulation. Wrote 1 time points to wave-vortex group
+Ending simulation. Wrote 1 time points to dense group
+WVTransformHydrostatic initialized from Ap, Am, A0.
+Ending simulation. Wrote 3 time points to wave-vortex group
+Ending simulation. Wrote 9 time points to dense group
+WVTransformHydrostatic initialized from Ap, Am, A0.
+Ending simulation. Wrote 3 time points to wave-vortex group
+Ending simulation. Wrote 9 time points to dense group
+DENSITY_OUTPUT_PASS hydrostatic aa=0 reference=actual provider=reference
+WVTransformHydrostatic initialized from Ap, Am, A0.
+Ending simulation. Wrote 3 time points to wave-vortex group
+Ending simulation. Wrote 9 time points to dense group
+DENSITY_OUTPUT_PASS hydrostatic aa=0 reference=actual provider=native-fftw
+Ending simulation. Wrote 1 time points to wave-vortex group
+Ending simulation. Wrote 1 time points to dense group
+WVTransformHydrostatic initialized from Ap, Am, A0.
+Ending simulation. Wrote 3 time points to wave-vortex group
+Ending simulation. Wrote 9 time points to dense group
+WVTransformHydrostatic initialized from Ap, Am, A0.
+Ending simulation. Wrote 3 time points to wave-vortex group
+Ending simulation. Wrote 9 time points to dense group
+DENSITY_OUTPUT_PASS hydrostatic aa=0 reference=initial provider=reference
+WVTransformHydrostatic initialized from Ap, Am, A0.
+Ending simulation. Wrote 3 time points to wave-vortex group
+Ending simulation. Wrote 9 time points to dense group
+DENSITY_OUTPUT_PASS hydrostatic aa=0 reference=initial provider=native-fftw
+Ending simulation. Wrote 1 time points to wave-vortex group
+Ending simulation. Wrote 1 time points to dense group
+WVTransformHydrostatic initialized from Ap, Am, A0.
+Ending simulation. Wrote 3 time points to wave-vortex group
+Ending simulation. Wrote 9 time points to dense group
+WVTransformHydrostatic initialized from Ap, Am, A0.
+Ending simulation. Wrote 3 time points to wave-vortex group
+Ending simulation. Wrote 9 time points to dense group
+DENSITY_OUTPUT_PASS hydrostatic aa=1 reference=actual provider=reference
+WVTransformHydrostatic initialized from Ap, Am, A0.
+Ending simulation. Wrote 3 time points to wave-vortex group
+Ending simulation. Wrote 9 time points to dense group
+DENSITY_OUTPUT_PASS hydrostatic aa=1 reference=actual provider=native-fftw
+Ending simulation. Wrote 1 time points to wave-vortex group
+Ending simulation. Wrote 1 time points to dense group
+WVTransformHydrostatic initialized from Ap, Am, A0.
+Ending simulation. Wrote 3 time points to wave-vortex group
+Ending simulation. Wrote 9 time points to dense group
+WVTransformHydrostatic initialized from Ap, Am, A0.
+Ending simulation. Wrote 3 time points to wave-vortex group
+Ending simulation. Wrote 9 time points to dense group
+DENSITY_OUTPUT_PASS hydrostatic aa=1 reference=initial provider=reference
+WVTransformHydrostatic initialized from Ap, Am, A0.
+Ending simulation. Wrote 3 time points to wave-vortex group
+Ending simulation. Wrote 9 time points to dense group
+DENSITY_OUTPUT_PASS hydrostatic aa=1 reference=initial provider=native-fftw
+building 20 boussinesq transformation matrices...1...finished.
+Ending simulation. Wrote 1 time points to wave-vortex group
+Ending simulation. Wrote 1 time points to dense group
+WVTransformBoussinesq initialized from Ap, Am, A0.
+Ending simulation. Wrote 3 time points to wave-vortex group
+Ending simulation. Wrote 9 time points to dense group
+WVTransformBoussinesq initialized from Ap, Am, A0.
+Ending simulation. Wrote 3 time points to wave-vortex group
+Ending simulation. Wrote 9 time points to dense group
+DENSITY_OUTPUT_PASS boussinesq aa=0 reference=actual provider=reference
+WVTransformBoussinesq initialized from Ap, Am, A0.
+Ending simulation. Wrote 3 time points to wave-vortex group
+Ending simulation. Wrote 9 time points to dense group
+DENSITY_OUTPUT_PASS boussinesq aa=0 reference=actual provider=native-fftw
+building 20 boussinesq transformation matrices...1...finished.
+Ending simulation. Wrote 1 time points to wave-vortex group
+Ending simulation. Wrote 1 time points to dense group
+WVTransformBoussinesq initialized from Ap, Am, A0.
+Ending simulation. Wrote 3 time points to wave-vortex group
+Ending simulation. Wrote 9 time points to dense group
+WVTransformBoussinesq initialized from Ap, Am, A0.
+Ending simulation. Wrote 3 time points to wave-vortex group
+Ending simulation. Wrote 9 time points to dense group
+DENSITY_OUTPUT_PASS boussinesq aa=0 reference=initial provider=reference
+WVTransformBoussinesq initialized from Ap, Am, A0.
+Ending simulation. Wrote 3 time points to wave-vortex group
+Ending simulation. Wrote 9 time points to dense group
+DENSITY_OUTPUT_PASS boussinesq aa=0 reference=initial provider=native-fftw
+building 6 boussinesq transformation matrices...1...finished.
+Ending simulation. Wrote 1 time points to wave-vortex group
+Ending simulation. Wrote 1 time points to dense group
+WVTransformBoussinesq initialized from Ap, Am, A0.
+Ending simulation. Wrote 3 time points to wave-vortex group
+Ending simulation. Wrote 9 time points to dense group
+WVTransformBoussinesq initialized from Ap, Am, A0.
+Ending simulation. Wrote 3 time points to wave-vortex group
+Ending simulation. Wrote 9 time points to dense group
+DENSITY_OUTPUT_PASS boussinesq aa=1 reference=actual provider=reference
+WVTransformBoussinesq initialized from Ap, Am, A0.
+Ending simulation. Wrote 3 time points to wave-vortex group
+Ending simulation. Wrote 9 time points to dense group
+DENSITY_OUTPUT_PASS boussinesq aa=1 reference=actual provider=native-fftw
+building 6 boussinesq transformation matrices...1...finished.
+Ending simulation. Wrote 1 time points to wave-vortex group
+Ending simulation. Wrote 1 time points to dense group
+WVTransformBoussinesq initialized from Ap, Am, A0.
+Ending simulation. Wrote 3 time points to wave-vortex group
+Ending simulation. Wrote 9 time points to dense group
+WVTransformBoussinesq initialized from Ap, Am, A0.
+Ending simulation. Wrote 3 time points to wave-vortex group
+Ending simulation. Wrote 9 time points to dense group
+DENSITY_OUTPUT_PASS boussinesq aa=1 reference=initial provider=reference
+WVTransformBoussinesq initialized from Ap, Am, A0.
+Ending simulation. Wrote 3 time points to wave-vortex group
+Ending simulation. Wrote 9 time points to dense group
+DENSITY_OUTPUT_PASS boussinesq aa=1 reference=initial provider=native-fftw
+.
+Done TestPortableDensityOutput
+__________
+
+                                                    Name                                                    Passed    Failed    Incomplete    Duration      Details
+    ____________________________________________________________________________________________________    ______    ______    __________    ________    ____________
+
+    {'TestDensityDiagnosticReference/productionLinearProfileResolvesBothDisplacementSignsAndTinyEnergy'}    true      false       false         0.1231    {1×1 struct}
+    {'TestDensityDiagnosticReference/productionTwoNodeProfileUsesLinearPolynomial'                     }    true      false       false       0.018739    {1×1 struct}
+    {'TestDensityDiagnosticReference/productionSharpProfileInvertsAZeroEndpointSlope'                  }    true      false       false       0.014311    {1×1 struct}
+    {'TestDensityDiagnosticReference/productionCompositionPreservesThreeDimensionalShapes'             }    true      false       false       0.021535    {1×1 struct}
+    {'TestDensityDiagnosticReference/productionNonlinearReconstructionConvergesToAnalyticTruth'        }    true      false       false       0.049827    {1×1 struct}
+    {'TestDensityDiagnosticReference/productionWeakGradientAccuracyAccountsForDensityResolution'       }    true      false       false       0.014201    {1×1 struct}
+    {'TestDensityDiagnosticReference/productionLargeArrayCrossesChunkBoundariesAndManyIntervals'       }    true      false       false       0.064292    {1×1 struct}
+    {'TestDensityDiagnosticReference/productionIrregularIntervalsMatchIndependentQuadrature'           }    true      false       false       0.058578    {1×1 struct}
+    {'TestDensityDiagnosticReference/productionLargeInverseUsesAnalyticNonlinearDensityAcrossChunks'   }    true      false       false         0.2528    {1×1 struct}
+    {'TestDensityDiagnosticReference/productionInversePreservesRowAndEmptyShapes'                      }    true      false       false       0.021051    {1×1 struct}
+    {'TestDensityDiagnosticReference/productionInverseEndpointRoundoffRemainsInsideProfile'            }    true      false       false       0.080953    {1×1 struct}
+    {'TestDensityDiagnosticReference/productionRejectsPlateausAndOutOfRangeQueries'                    }    true      false       false       0.034049    {1×1 struct}
+    {'TestPortableDensityOutput/ordinaryAndDenseDensityOutputsMatchMatlab'                             }    true      false       false         60.832    {1×1 struct}
+
+ANALYZER Operations/@WVNoMotionProfile/WVNoMotionProfile.m 0
+ANALYZER UnitTests/TestDensityDiagnosticReference.m 0
+BLAS: unloading libraries
