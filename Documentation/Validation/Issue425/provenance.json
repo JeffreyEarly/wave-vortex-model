@@ -1,0 +1,21 @@
+{
+  "baselineSourceRevision": "563a59a0074575cdfc8a757d2ce182b18f8d1376",
+  "implementationAndMainFigureRevision": "9a2101d270cc5827de9e477407f5d23661cf1435",
+  "denseControlAndShortWaveRevision": "e30e24cd0ce0a83b42948380e0d5ff6a7108ac5c",
+  "internalModesVersion": "2.0.0-beta.4",
+  "internalModesRevision": "f2ce3c143744ae00fbb25bd9d7b8c73fb358ca51",
+  "oceanKitRevision": "65d9aa2c3de941406dc6bf2cf1937ba5b3dcd1d5",
+  "verification": {
+    "affectedTests": 28,
+    "failed": 0,
+    "incomplete": 0,
+    "denseControlRerun": "6 by 6 grid includes nonzero wave outputs",
+    "documentationFiles": 2358,
+    "documentationRoutes": 4819,
+    "documentationFailures": 0,
+    "newEigensolvesInRepeatProfile": 0,
+    "newProductProjectionsInRepeatProfile": 0
+  },
+  "restoredKappaExampleRevision": "afb500ca985fd65f528d675ed71a00432a7bec3c",
+  "restoredKappaExampleVerification": "kappa-dependent/verification.json"
+}

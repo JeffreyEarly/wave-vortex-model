@@ -1,0 +1,6 @@
+{
+  "matlabVersion": "25.2.0.3150157 (R2025b) Update 4",
+  "hardware": "Apple M4 Max",
+  "computer": "MACA64",
+  "scope": "Unprofiled elapsed times; all repetitions retained. Working memory is a conservative estimate, not measured process RSS. Logical solve-call counts include one bulk boundary solve per resolution."
+}

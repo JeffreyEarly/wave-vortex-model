@@ -4,6 +4,7 @@ arguments
     config (1,1) struct
 end
 timer=tic;
+preparationCost=struct(candidateSolveSeconds=0,referenceSolveSeconds=0,candidateSolves=0,referenceSolves=0);
 D=config.Lz; f=config.f; g=config.g;
 profile=studyProfile(config.profile,D); N2=profile.N2;
 if min(chebfun(N2,[-D 0]))<=f^2, error('WVStudy:UnsupportedProfile','Require N2>f^2.'); end
@@ -37,7 +38,8 @@ for p=1:length(wave)
 end
 positive=find(inventory.magnitudes>0);
 problem=IMGeostrophicZeroAPVModes.atWavenumber(N2=N2,zDomain=[-D 0],f0=f,g=g,k=inventory.magnitudes(positive),endpoints=["surface","bottom"],surfaceBoundary="freeSurface");
-zero=solver.solveGeostrophicZeroAPVModes(problem); zeroCheck=checkSolver.solveGeostrophicZeroAPVModes(problem);
+solveTimer=tic; zero=solver.solveGeostrophicZeroAPVModes(problem); preparationCost.candidateSolveSeconds=preparationCost.candidateSolveSeconds+toc(solveTimer); preparationCost.candidateSolves=preparationCost.candidateSolves+1;
+solveTimer=tic; zeroCheck=checkSolver.solveGeostrophicZeroAPVModes(problem); preparationCost.referenceSolveSeconds=preparationCost.referenceSolveSeconds+toc(solveTimer); preparationCost.referenceSolves=preparationCost.referenceSolves+1;
 for j=1:length(positive)
     % G's native coefficients are private. Adaptive physical-coordinate
     % interpolation of this same solved G supplies its derivative; compare
@@ -78,10 +80,11 @@ for p=1:length(wave)
     pageDifficulty(p)=max([wave{p}.tail,apv.tail]);
     if ~isempty(boundary{p}), pageDifficulty(p)=max([pageDifficulty(p),boundary{p}.tail]); end
 end
-data=struct(pageDifficulty=pageDifficulty,config=config,profile=profile,z=z,w=w,zR=zR,wR=wR,zQ=zQ,wQ=wQ,allZ=allZ,sets=sets,inventory=inventory,apv=apv,mda=mda,wave={wave},boundary={boundary},waveGram=waveGram,inertialGram=inertialGram,convergence=convergence,requiredConvergence=requiredConvergence,boundaryInterpolationError=interpolationError,constructionSeconds=toc(timer));
+data=struct(pageDifficulty=pageDifficulty,config=config,profile=profile,z=z,w=w,zR=zR,wR=wR,zQ=zQ,wQ=wQ,allZ=allZ,sets=sets,inventory=inventory,apv=apv,mda=mda,wave={wave},boundary={boundary},waveGram=waveGram,inertialGram=inertialGram,convergence=convergence,requiredConvergence=requiredConvergence,boundaryInterpolationError=interpolationError,constructionSeconds=toc(timer),preparationCost=preparationCost);
 
     function B=family(evp,n)
-        basis=solver.solveEVP(evp,nModes=n); check=checkSolver.solveEVP(evp,nModes=n);
+        solveTimer=tic; basis=solver.solveEVP(evp,nModes=n); preparationCost.candidateSolveSeconds=preparationCost.candidateSolveSeconds+toc(solveTimer); preparationCost.candidateSolves=preparationCost.candidateSolves+1;
+        solveTimer=tic; check=checkSolver.solveEVP(evp,nModes=n); preparationCost.referenceSolveSeconds=preparationCost.referenceSolveSeconds+toc(solveTimer); preparationCost.referenceSolves=preparationCost.referenceSolves+1;
         assert(isequal(basis.modeNumber,check.modeNumber),'Independent solves changed mode labels.');
         B=splitValues(evaluateStudyModes(basis,allZ,N2,profile.dLogN2),sets);
         B.basis=basis; B.checkh=check.h(:);

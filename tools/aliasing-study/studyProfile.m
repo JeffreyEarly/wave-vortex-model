@@ -9,6 +9,8 @@ switch name
         N2=@(z)1e-4*ones(size(z)); dLog=@(z)zeros(size(z));
     case "exponential"
         N2=@(z)1e-4*exp(2*z/D); dLog=@(z)(2/D)*ones(size(z));
+    case "exponential-surface"
+        N2=@(z)1e-4*exp(2*z/(.4*D)); dLog=@(z)(2/(.4*D))*ones(size(z));
     case "exponential-withheld"
         N2=@(z)8e-5*exp(1.3*z/D); dLog=@(z)(1.3/D)*ones(size(z));
     case "pycnocline"

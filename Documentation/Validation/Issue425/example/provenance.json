@@ -1,0 +1,304 @@
+{
+  "configuration": {
+    "Lz": 1000,
+    "f": 0.0001,
+    "g": 9.81,
+    "evpOrders": [
+      192,
+      256
+    ],
+    "referenceOrders": [
+      257,
+      513
+    ],
+    "referenceAllowance": 0.0001,
+    "eigenAllowance": 1E-6,
+    "gramTolerance": 0.01,
+    "id": "count-map-exponential-25",
+    "profile": "exponential-surface",
+    "Lxy": [
+      100000,
+      100000
+    ],
+    "Nxy": [
+      16,
+      16
+    ],
+    "Nz": 25,
+    "waveCount": 11,
+    "apvCount": 3,
+    "mdaCount": 3,
+    "inertialCount": 3
+  },
+  "matlabVersion": "25.2.0.3150157 (R2025b) Update 4",
+  "computer": "MACA64",
+  "source": {
+    "revision": "9a2101d270cc5827de9e477407f5d23661cf1435",
+    "hasTrackedChanges": false
+  },
+  "internalModesVersion": "2.0.0-beta.4",
+  "preparationSeconds": 15.859234375,
+  "cost": {
+    "reservedProducts": 232128,
+    "productBudget": 500000,
+    "workingMemoryEstimateBytes": 5.05644288E+8,
+    "workingMemoryBudget": 5.36870912E+8,
+    "largestProductBatch": 388,
+    "sourcePreparationSeconds": 4.3312962083333337,
+    "reservationSeconds": 0.038197833333333334,
+    "projectionPreparationSeconds": 0.721500375,
+    "productEvaluationSeconds": 7.391213875,
+    "evidencePreparationSeconds": 11.522228083333333,
+    "projectionCount": 2385,
+    "sourcePreparation": {
+      "candidateSolveSeconds": 1.0759372083333336,
+      "referenceSolveSeconds": 1.9493835833333337,
+      "candidateSolves": 18,
+      "referenceSolves": 18
+    },
+    "retainedBytes": 3.3438577E+7,
+    "selectedProducts": 232128,
+    "selectedNonzeroProducts": 159010,
+    "reusedPreparation": true,
+    "newEigensolves": 0,
+    "newProductEvaluations": 0,
+    "assessmentSeconds": 0.028855125
+  },
+  "repeatAssessmentSeconds": 0.013302708333333333,
+  "repeatStatus": "assessed",
+  "coverage": {
+    "policy": "fixed",
+    "selectedInteractionIndices": [
+      1627,
+      1647,
+      1636,
+      1637,
+      988,
+      1026,
+      997,
+      999,
+      590,
+      630,
+      596,
+      601,
+      232,
+      271,
+      233,
+      235,
+      439,
+      473,
+      442,
+      443,
+      2,
+      35,
+      1,
+      73,
+      30,
+      21,
+      20,
+      14,
+      12,
+      5
+    ],
+    "ensureOutputCoverage": true,
+    "referenceScope": "Entire prepared candidate inventory; conservative for reduced maps",
+    "inputFamilyPairs": [
+      [
+        "wave",
+        "wave"
+      ],
+      [
+        "wave",
+        "apv"
+      ],
+      [
+        "apv",
+        "wave"
+      ],
+      [
+        "wave",
+        "boundary"
+      ],
+      [
+        "boundary",
+        "wave"
+      ],
+      [
+        "apv",
+        "boundary"
+      ],
+      [
+        "boundary",
+        "apv"
+      ],
+      [
+        "boundary",
+        "boundary"
+      ]
+    ],
+    "omittedInputFamilies": [
+      "inertial",
+      "mda"
+    ],
+    "omittedOutputs": [
+      "apv",
+      "boundary",
+      "mean-w"
+    ],
+    "exhaustiveGuarantee": false,
+    "superpositionGuarantee": false,
+    "countMapScope": "One complete map; per-output errors cannot be combined into independently selectable count recommendations.",
+    "missingOutputKappa": [],
+    "fixedInputSelection": "Candidate-band cumulative low/middle/cutoff stresses, filtered by actual input counts and their maximum stress band; all fixed-family columns remain eligible."
+  },
+  "referenceDiagnostics": {
+    "status": "survey-complete",
+    "policy": "fixed",
+    "pageDifficulty": [
+      6.8864845658135839E-7,
+      0.0090948832982866365,
+      0.00909489487930982,
+      0.0090949080965871121,
+      0.009094907077927563,
+      0.0090949239085824276,
+      0.0090949233740074183,
+      0.0090949353873912581,
+      0.0090949450598288,
+      0.00909496176829064,
+      0.0090949704315524873,
+      0.009094972899200993,
+      0.0090949773270969439,
+      0.0090950044899357346,
+      0.0090950078797563359
+    ],
+    "configuration": {
+      "Lz": 1000,
+      "f": 0.0001,
+      "g": 9.81,
+      "evpOrders": [
+        192,
+        256
+      ],
+      "referenceOrders": [
+        257,
+        513
+      ],
+      "referenceAllowance": 0.0001,
+      "eigenAllowance": 1E-6,
+      "gramTolerance": 0.01,
+      "id": "count-map-exponential-25",
+      "profile": "exponential-surface",
+      "Lxy": [
+        100000,
+        100000
+      ],
+      "Nxy": [
+        16,
+        16
+      ],
+      "Nz": 25,
+      "waveCount": 11,
+      "apvCount": 3,
+      "mdaCount": 3,
+      "inertialCount": 3
+    },
+    "constructionSeconds": 5.0527965833333335,
+    "projectionPreparationSeconds": 0.721500375,
+    "projectionCount": 2385,
+    "assessmentSeconds": 7.391213875,
+    "interactionCount": 30,
+    "nonzeroProductEvaluations": 159010,
+    "structuralZeroProducts": 73118,
+    "referenceStability": 4.3384110721432152E-13,
+    "eigenConvergence": 1.6510059528435008E-9,
+    "allModeDerivativeConvergence": 8.1494031715519437E-9,
+    "eigenProductStability": 1.1209477962271983E-6,
+    "eigenConvergenceByMetric": [
+      4.8994524104932217E-13,
+      4.9161216553842823E-11,
+      2.0665747523662568E-12,
+      8.1494031715519437E-9,
+      2.9580901515700785E-12
+    ],
+    "sobolevConvergenceByMetric": [
+      4.8994524104932217E-13,
+      1.6510059528435008E-9,
+      2.4549744967403104E-12
+    ],
+    "boundaryInterpolationError": 1.1311452855701211E-13,
+    "waveGram": [
+      1.0265122085684197E-12,
+      7.4581161139770463E-10,
+      7.6035989416982E-10,
+      7.8806542941362951E-10,
+      7.9392522441888411E-10,
+      3.9515482134933124E-8,
+      1.3178227093335214E-6,
+      1.5227699787329802E-5,
+      6.57166455373234E-5,
+      0.00010725460939758493,
+      0.00011659003359407971
+    ],
+    "apvGram": 2.5410967518064173E-9,
+    "mdaGram": 3.1554988380651695E-9,
+    "inertialGram": 9.5362897387048412E-8,
+    "apvControl": [
+      {
+        "modeCount": 1,
+        "lastModeNumber": -1,
+        "gramError": 1.3289079242948826E-9,
+        "gramLimitingVariable": "G",
+        "leakageError": null,
+        "leakageLimitingVariable": "",
+        "leakageLimitingModeNumber": null,
+        "quadraticAliasingError": 1.6300775083421083E-9,
+        "quadraticLimitingChannel": "FG->G",
+        "quadraticLimitingModeNumberI": -1,
+        "quadraticLimitingModeNumberJ": -1,
+        "gramAccepted": true,
+        "leakageAccepted": true,
+        "quadraticAccepted": true,
+        "combinedAccepted": true
+      },
+      {
+        "modeCount": 2,
+        "lastModeNumber": 1,
+        "gramError": 2.4280664220791566E-9,
+        "gramLimitingVariable": "G",
+        "leakageError": null,
+        "leakageLimitingVariable": "",
+        "leakageLimitingModeNumber": null,
+        "quadraticAliasingError": 6.3552212364447017E-9,
+        "quadraticLimitingChannel": "GG->F",
+        "quadraticLimitingModeNumberI": 1,
+        "quadraticLimitingModeNumberJ": 1,
+        "gramAccepted": true,
+        "leakageAccepted": true,
+        "quadraticAccepted": true,
+        "combinedAccepted": true
+      },
+      {
+        "modeCount": 3,
+        "lastModeNumber": 2,
+        "gramError": 2.5410967518064173E-9,
+        "gramLimitingVariable": "G",
+        "leakageError": null,
+        "leakageLimitingVariable": "",
+        "leakageLimitingModeNumber": null,
+        "quadraticAliasingError": 1.2565148551295245E-8,
+        "quadraticLimitingChannel": "GG->F",
+        "quadraticLimitingModeNumberI": 1,
+        "quadraticLimitingModeNumberJ": 2,
+        "gramAccepted": true,
+        "leakageAccepted": true,
+        "quadraticAccepted": true,
+        "combinedAccepted": true
+      }
+    ],
+    "matlabVersion": "25.2.0.3150157 (R2025b) Update 4",
+    "computer": "MACA64",
+    "referencesStable": true,
+    "fixedFamiliesGramAccepted": true
+  },
+  "interpretation": "Linear counts and individual sampled quadratic products for one coupled map; no arbitrary-superposition or full nonlinear guarantee"
+}
