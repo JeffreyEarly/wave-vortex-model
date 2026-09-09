@@ -1123,11 +1123,13 @@ WVKernelStatus WVTransformConstantStratificationKernel::advectFGridScalar(
     for (std::size_t row = 0; row < halfRows; ++row) {
         const auto base = 2*c.Nz+3*c.Nz*row;
         half[base] = {};
-        for (std::size_t j = 1; j+1 < c.Nz; ++j) {
+        // MATLAB diffZF uses DCT/iDST restricted to the retained vertical
+        // modes. Horizontal derivatives above still retain every grid depth.
+        for (std::size_t j = 1; j < c.Nj; ++j) {
             const double verticalWavenumber = pi*static_cast<double>(j)/c.Lz;
             half[base+j] = multiply(half[base+j],-verticalWavenumber);
         }
-        half[base+c.Nz-1] = {};
+        for (std::size_t j = c.Nj; j < c.Nz; ++j) half[base+j] = {};
     }
     normalizeInverseDST(half,c.Nz,halfRows,3,2,1);
     status = plans_[verticalDST1Storage3]->execute(half+2*c.Nz+1,half+2*c.Nz+1);

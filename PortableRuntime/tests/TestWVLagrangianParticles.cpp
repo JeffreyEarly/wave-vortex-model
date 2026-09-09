@@ -357,8 +357,11 @@ void testTracers(bool hydrostatic) {
           "tracer integration grew persistent storage");
 }
 
-void testScalarAdvectionOperator(bool shouldAntialias) {
-  const auto config = configuration(true);
+void testScalarAdvectionOperator(bool shouldAntialias, bool hydrostatic,
+                                 std::size_t retainedModes,
+                                 std::size_t verticalMode) {
+  auto config = configuration(hydrostatic);
+  config.Nj = retainedModes;
   std::unique_ptr<WVTransformConstantStratificationKernel> kernel;
   auto status = WVTransformConstantStratificationKernel::create(
       config, std::make_unique<WVReferenceFFTEngine>(), kernel);
@@ -372,7 +375,6 @@ void testScalarAdvectionOperator(bool shouldAntialias) {
   const double u = 0.75;
   const double v = -0.4;
   const double w = 0.2;
-  const auto verticalMode = config.Nz - 2;
   for (std::size_t z = 0; z < config.Nz; ++z)
     for (std::size_t y = 0; y < config.Ny; ++y)
       for (std::size_t x = 0; x < config.Nx; ++x) {
@@ -383,7 +385,9 @@ void testScalarAdvectionOperator(bool shouldAntialias) {
             0.25 * std::cos(2.0 * pi * static_cast<double>(y) /
                             static_cast<double>(config.Ny)) +
             0.1 * std::cos(pi * static_cast<double>(verticalMode * z) /
-                           static_cast<double>(config.Nz - 1));
+                           static_cast<double>(config.Nz - 1)) *
+                (1.0 + 0.3 * std::sin(2.0 * pi * static_cast<double>(x) /
+                                      static_cast<double>(config.Nx)));
         fields[index] = u;
         fields[R + index] = v;
         fields[2 * R + index] = w;
@@ -404,18 +408,25 @@ void testScalarAdvectionOperator(bool shouldAntialias) {
         const auto index = x + config.Nx * (y + config.Ny * z);
         const double expected =
             -u * k * std::cos(2.0 * pi * static_cast<double>(x) /
-                              static_cast<double>(config.Nx)) +
+                              static_cast<double>(config.Nx)) *
+                (1.0 + 0.03 * std::cos(pi * static_cast<double>(verticalMode * z) /
+                                      static_cast<double>(config.Nz - 1))) +
             v * 0.25 * l *
                 std::sin(2.0 * pi * static_cast<double>(y) /
                          static_cast<double>(config.Ny)) +
-            w * 0.1 * pi * static_cast<double>(verticalMode) / config.Lz *
+            (verticalMode < config.Nj ? 1.0 : 0.0) * w * 0.1 * pi *
+                static_cast<double>(verticalMode) / config.Lz *
                 std::sin(pi * static_cast<double>(verticalMode * z) /
-                         static_cast<double>(config.Nz - 1));
+                         static_cast<double>(config.Nz - 1)) *
+                (1.0 + 0.3 * std::sin(2.0 * pi * static_cast<double>(x) /
+                                      static_cast<double>(config.Nx)));
         maximumError = std::max(maximumError,
                                 std::abs(flux[index] - expected));
       }
   require(maximumError <= 1e-12,
-          "shared scalar differential operator changed its sign or scaling");
+          "tracer derivative must match MATLAB retained-mode diffZF while "
+          "preserving full-grid horizontal derivatives; Nj=" +
+              std::to_string(config.Nj) + " j=" + std::to_string(verticalMode));
 }
 
 void testIntegratedObservers(bool hydrostatic) {
@@ -583,8 +594,13 @@ int main() {
     testIntegratedObservers(false);
     testTracers(true);
     testTracers(false);
-    testScalarAdvectionOperator(false);
-    testScalarAdvectionOperator(true);
+    // MATLAB diffZF projects to retained cosine modes before differentiating.
+    // Horizontal diffX/diffY still act independently at every full-grid depth.
+    for (const bool hydrostatic : {false, true})
+      for (const bool antialias : {false, true})
+        for (const std::size_t retained : {std::size_t{1}, std::size_t{4}, std::size_t{6}})
+          for (const std::size_t mode : {std::size_t{0}, std::size_t{1}, std::size_t{3}, std::size_t{4}, std::size_t{5}})
+            testScalarAdvectionOperator(antialias, hydrostatic, retained, mode);
     testValidation();
     std::cout << "PASS TestWVLagrangianParticles\n";
     return 0;
