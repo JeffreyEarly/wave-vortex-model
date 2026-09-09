@@ -1,0 +1,906 @@
+{
+  "schema": "wave-vortex-forward-integration-summary-v1",
+  "issue": 289,
+  "status": "locally-qualified",
+  "integratedSourceCommit": "1ee655064cf57e949b5461af9f3c55d43a6246af",
+  "baseCommit": "2e1cc19975a5c812223a19be06b9976f57444504",
+  "platform": "Apple Silicon macOS; AppleClang Release; reference and native FFTW; Accelerate enabled in the native-capable runner build",
+  "matlabRelease": "R2025b",
+  "sourceSHA256": [
+    {
+      "path": "PortableRuntime/include/WaveVortexRuntime/WVRungeKutta.hpp",
+      "sha256": "24e5494ee76993439a364f9f3dac868c19756ed781e9077e80d16241b2149405"
+    },
+    {
+      "path": "PortableRuntime/include/WaveVortexRuntime/WVIntegrationContracts.hpp",
+      "sha256": "649f29e05fdcd821920435686f4bd09c654e400e0d0504c9ffdea3c648b4e4e5"
+    },
+    {
+      "path": "PortableRuntime/src/WVRungeKutta.cpp",
+      "sha256": "b5c57a5632a1211835d3801dc02c05bfbb0102d4f760c30ae5a65e30008028d9"
+    },
+    {
+      "path": "PortableRuntime/src/WVModel.cpp",
+      "sha256": "a3431993bc146eb30856fe908526ebd4663f200a39aaa308058b3dfb6445e468"
+    },
+    {
+      "path": "PortableRuntime/src/WVOutputOrchestration.cpp",
+      "sha256": "03a3ad962ba28cc466a850b028a4664aae9ec58e7c3487e85e75407c8af4864b"
+    },
+    {
+      "path": "PortableRuntime/src/WVModelOutputNetCDFWriter.cpp",
+      "sha256": "63fd048d8dc124808259f6ac6d9480bf76b74fcf9864565743d9f970257e46e2"
+    },
+    {
+      "path": "PortableRuntime/app/WaveVortexRun.cpp",
+      "sha256": "77d0d60dfe86e0348b2e9db23e88bd52bb99acaebf09804c5480dd56ca0827a0"
+    },
+    {
+      "path": "PortableRuntime/src/WVFieldEvaluationService.cpp",
+      "sha256": "a4ab050de655e7a36fa2f9e6b7580e1a9b84e6953c4c54e421b7fd3514968c80"
+    },
+    {
+      "path": "PortableRuntime/src/WVStratifiedFieldEvaluationAdapter.cpp",
+      "sha256": "07d60940074708686a36c85ddc1d27377b3bd1c531b1f4c1dc8be7a26a1fc31f"
+    },
+    {
+      "path": "PortableRuntime/src/WVBarotropicQGFieldEvaluationAdapter.cpp",
+      "sha256": "8f46646ef2bf0773d3468940976edcb97852b217080b4d11ac927039cd080dfc"
+    },
+    {
+      "path": "CompiledKernel/src/WVTransformConstantStratificationKernel.cpp",
+      "sha256": "61dfb8f7c8ac2d91c90f509efda733884530fe84321bdd5f66210e31ec31c376"
+    },
+    {
+      "path": "PortableRuntime/tests/WVForwardIntegrationProbe.cpp",
+      "sha256": "8a7b800a5cf6140e89242d4989a0a1ec81bc8e496737cb4dafe830a52068de3a"
+    },
+    {
+      "path": "UnitTests/TestPortableForwardIntegration.m",
+      "sha256": "485a4600d74e5c71d903cfe545726852877359b299bfaedd5811d011ccd88895"
+    }
+  ],
+  "executionBinaries": [
+    {
+      "role": "runner",
+      "path": "/private/tmp/wvm289-core-native-final/wave-vortex-run",
+      "sha256": "e67bc602d5b8fe32edf3532ddf458a281cd5b48b469ec72e3ed25c1b792092d4",
+      "sourceCommit": "2ae8eaa32e820aa5042f62b5eaefc969254bdf94"
+    },
+    {
+      "role": "probe",
+      "path": "/private/tmp/wvm289-core-native-final/WVForwardIntegrationProbe",
+      "sha256": "b5356971cce284d264c508c4fb4ca92ec7219c256d8a77f5092e8af6d69bc2c4",
+      "sourceCommit": "2ae8eaa32e820aa5042f62b5eaefc969254bdf94"
+    }
+  ],
+  "executionProvenance": {
+    "matlabTestCommit": "b59498d904a68509ab915e47bf908ed4c3e13450",
+    "cppBuildCommit": "2ae8eaa32e820aa5042f62b5eaefc969254bdf94",
+    "note": "Independent agent worktrees executed the same source bytes now integrated in the declared source commit. All recorded source and catalog hashes were checked against the integration checkout; execution commits were preserved, not relabeled."
+  },
+  "qualifiedArtifacts": [
+    {
+      "path": "PortableRuntime/qualification/forward-integration-reference-v1.json",
+      "sha256": "d638d62fd00cdfe1b9944a6465d69a1ee8615c14b2c5fda6408af30a6393a749"
+    },
+    {
+      "path": "PortableRuntime/qualification/forward-integration-native-fftw-v1.json",
+      "sha256": "fbd7d8fb3fce168bf01a70b5808a05e0376ef81b07daee58bc709d930ad6e31c"
+    },
+    {
+      "path": ".github/ci-evidence/issue-289-cpp.json",
+      "sha256": "805e77bcc1cb21d78f2d5066d2a0af1cfb7f638bdbde1334c828d86b7252a8c3"
+    },
+    {
+      "path": ".github/ci-evidence/issue-289-source-consumer.json",
+      "sha256": "cce642274e1e01d47ed3857e8237fb998470d8f874cbc7387a825883efcb877c"
+    }
+  ],
+  "matlab": {
+    "schema": "issue-289-matlab-verification-summary-v1",
+    "testCommit": "b59498d904a68509ab915e47bf908ed4c3e13450",
+    "testSHA256": "485a4600d74e5c71d903cfe545726852877359b299bfaedd5811d011ccd88895",
+    "providerCaseCount": 12,
+    "completedDestinationOutcomes": 144,
+    "maximumErrors": {
+      "coefficients": 2.066742935413747e-15,
+      "fields": 1.1229037321661902e-15,
+      "tracer": 1.5542843854036618e-15,
+      "savedOutput": 2.6396901016129792e-15,
+      "particlePosition": 1.8189894035458565e-12,
+      "heldAmplitude": 0
+    },
+    "minimumEvolution": {
+      "coefficients": 0.001561655595010085,
+      "particlePosition": 0.2326754131022426,
+      "tracer": 8.125184943286179e-05
+    },
+    "denseHeldRecordCount": 216,
+    "maximumDenseHeldError": 0,
+    "providers": [
+      "native-fftw",
+      "reference"
+    ],
+    "caseTimingSeconds": [
+      {
+        "configuration": "barotropic-qg",
+        "provider": "native-fftw",
+        "sharedMatlabPreparation": 3.5642055833333335,
+        "providerLifecycle": 9.749261458333333
+      },
+      {
+        "configuration": "barotropic-qg",
+        "provider": "reference",
+        "sharedMatlabPreparation": 3.5642055833333335,
+        "providerLifecycle": 10.190690625
+      },
+      {
+        "configuration": "boussinesq",
+        "provider": "native-fftw",
+        "sharedMatlabPreparation": 8.341258333333334,
+        "providerLifecycle": 23.817827333333334
+      },
+      {
+        "configuration": "boussinesq",
+        "provider": "reference",
+        "sharedMatlabPreparation": 8.341258333333334,
+        "providerLifecycle": 24.521921708333334
+      },
+      {
+        "configuration": "constant-hydrostatic",
+        "provider": "native-fftw",
+        "sharedMatlabPreparation": 9.040719583333333,
+        "providerLifecycle": 18.093447416666667
+      },
+      {
+        "configuration": "constant-hydrostatic",
+        "provider": "reference",
+        "sharedMatlabPreparation": 9.040719583333333,
+        "providerLifecycle": 20.580684041666668
+      },
+      {
+        "configuration": "constant-nonhydrostatic",
+        "provider": "native-fftw",
+        "sharedMatlabPreparation": 5.2644080833333335,
+        "providerLifecycle": 17.046950708333334
+      },
+      {
+        "configuration": "constant-nonhydrostatic",
+        "provider": "reference",
+        "sharedMatlabPreparation": 5.2644080833333335,
+        "providerLifecycle": 16.459074125
+      },
+      {
+        "configuration": "hydrostatic",
+        "provider": "native-fftw",
+        "sharedMatlabPreparation": 7.677141291666667,
+        "providerLifecycle": 21.8020695
+      },
+      {
+        "configuration": "hydrostatic",
+        "provider": "reference",
+        "sharedMatlabPreparation": 7.677141291666667,
+        "providerLifecycle": 22.492883
+      },
+      {
+        "configuration": "stratified-qg",
+        "provider": "native-fftw",
+        "sharedMatlabPreparation": 5.627472958333334,
+        "providerLifecycle": 16.128466833333334
+      },
+      {
+        "configuration": "stratified-qg",
+        "provider": "reference",
+        "sharedMatlabPreparation": 5.627472958333334,
+        "providerLifecycle": 17.687227375
+      }
+    ],
+    "sourceCommits": [
+      "b59498d904a68509ab915e47bf908ed4c3e13450"
+    ],
+    "buildSourceCommits": [
+      "2ae8eaa32e820aa5042f62b5eaefc969254bdf94"
+    ],
+    "catalogSHA256": [
+      "c9b669fa92d5556526ce9cefac8b9847f52c1ea15c8ab3b00db0f3454adfaef9"
+    ],
+    "files": [
+      {
+        "path": "/private/tmp/wvm289-matlab-final-evidence/forward-barotropic-qg-rk45-native-fftw.json",
+        "sha256": "0b4bc9c3acd8f06a835da423a03b212b7928fd59cd2640b44a020cd07f430157"
+      },
+      {
+        "path": "/private/tmp/wvm289-matlab-final-evidence/forward-barotropic-qg-rk45-reference.json",
+        "sha256": "e388e00c262ab352d1b7d653f6589055de0de276f8318d4d3c9c0846b7086db2"
+      },
+      {
+        "path": "/private/tmp/wvm289-matlab-final-evidence/forward-boussinesq-rk45-native-fftw.json",
+        "sha256": "b732702af286430dd07dbc9cec6f502d9577ba857ca6bb645026ac1b7f9f2c36"
+      },
+      {
+        "path": "/private/tmp/wvm289-matlab-final-evidence/forward-boussinesq-rk45-reference.json",
+        "sha256": "ccaa49406e653e9c7bfea7f50e46b93aa9214d78080c83ca508724f8cd369ec2"
+      },
+      {
+        "path": "/private/tmp/wvm289-matlab-final-evidence/forward-constant-hydrostatic-cfl-rk4-native-fftw.json",
+        "sha256": "9228873fadb208ab3895788297b1eb30f06d8231f579707daf7ba2764441cdf8"
+      },
+      {
+        "path": "/private/tmp/wvm289-matlab-final-evidence/forward-constant-hydrostatic-cfl-rk4-reference.json",
+        "sha256": "0f51825807a436e974ff3d092149b17433774f9fdd958289c8e0bf45c7cd45bf"
+      },
+      {
+        "path": "/private/tmp/wvm289-matlab-final-evidence/forward-constant-nonhydrostatic-rk23-native-fftw.json",
+        "sha256": "53f9742e686e9160ae613f03cf8b1bf13134836408a571b3f3bbe950e5ff32e8"
+      },
+      {
+        "path": "/private/tmp/wvm289-matlab-final-evidence/forward-constant-nonhydrostatic-rk23-reference.json",
+        "sha256": "2762f5a93964190aaebb67bc1794fbd539c63eb08378827432ac83376cc34add"
+      },
+      {
+        "path": "/private/tmp/wvm289-matlab-final-evidence/forward-hydrostatic-rk45-native-fftw.json",
+        "sha256": "79ee8b53c785f45a1fe392167f23d5d98f96077e3b17724a401bd3be8c2b8df5"
+      },
+      {
+        "path": "/private/tmp/wvm289-matlab-final-evidence/forward-hydrostatic-rk45-reference.json",
+        "sha256": "0b0d886279e51198c10dde39bf3aea87187d01832d2dc43187ebcd5a5db2fd32"
+      },
+      {
+        "path": "/private/tmp/wvm289-matlab-final-evidence/forward-stratified-qg-rk45-native-fftw.json",
+        "sha256": "6a94cfe5f95a741a508bcf6b80cba8ea31e6afc4f9019c71d96af0c19f63c031"
+      },
+      {
+        "path": "/private/tmp/wvm289-matlab-final-evidence/forward-stratified-qg-rk45-reference.json",
+        "sha256": "96e91e4b5109901e5f91d3969e3af14e44a5cf25337d17db4d2b8e98537e256f"
+      }
+    ],
+    "testWallTimeSeconds": 259.18790912500003
+  },
+  "matlabTests": [
+    {
+      "name": "TestPortableForwardIntegration/representativeLifecycleMatchesMatlab(configuration=constantHydrostatic)",
+      "passed": true,
+      "failed": false,
+      "incomplete": false,
+      "duration": 48.28090075
+    },
+    {
+      "name": "TestPortableForwardIntegration/representativeLifecycleMatchesMatlab(configuration=constantNonhydrostatic)",
+      "passed": true,
+      "failed": false,
+      "incomplete": false,
+      "duration": 38.86990566666667
+    },
+    {
+      "name": "TestPortableForwardIntegration/representativeLifecycleMatchesMatlab(configuration=barotropic)",
+      "passed": true,
+      "failed": false,
+      "incomplete": false,
+      "duration": 23.590939
+    },
+    {
+      "name": "TestPortableForwardIntegration/representativeLifecycleMatchesMatlab(configuration=stratifiedQG)",
+      "passed": true,
+      "failed": false,
+      "incomplete": false,
+      "duration": 39.53941854166667
+    },
+    {
+      "name": "TestPortableForwardIntegration/representativeLifecycleMatchesMatlab(configuration=hydrostatic)",
+      "passed": true,
+      "failed": false,
+      "incomplete": false,
+      "duration": 52.072371375
+    },
+    {
+      "name": "TestPortableForwardIntegration/representativeLifecycleMatchesMatlab(configuration=boussinesq)",
+      "passed": true,
+      "failed": false,
+      "incomplete": false,
+      "duration": 56.83437379166667
+    }
+  ],
+  "combinedCatalogTests": [
+    {
+      "name": "TestPortableForwardIntegrationCatalog/regenerationMatchesCommittedArtifacts",
+      "passed": true,
+      "failed": false,
+      "incomplete": false,
+      "duration": 0.14722529166666667
+    },
+    {
+      "name": "TestPortableForwardIntegrationCatalog/committedReceiptsEstablishExecutedQualification",
+      "passed": true,
+      "failed": false,
+      "incomplete": false,
+      "duration": 0.09878629166666666
+    },
+    {
+      "name": "TestPortableForwardIntegrationCatalog/collectorRejectsMissingOrMixedExecutionSources",
+      "passed": true,
+      "failed": false,
+      "incomplete": false,
+      "duration": 0.237380375
+    },
+    {
+      "name": "TestPortableForwardIntegrationCatalog/supportRowsAndExclusionsAreComplete",
+      "passed": true,
+      "failed": false,
+      "incomplete": false,
+      "duration": 0.06609995833333333
+    },
+    {
+      "name": "TestPortableForwardIntegrationCatalog/executionRequiresEveryCaseAndExactScope",
+      "passed": true,
+      "failed": false,
+      "incomplete": false,
+      "duration": 0.20223633333333335
+    },
+    {
+      "name": "TestPortableForwardIntegrationCatalog/sourceAndArtifactDigestsCannotGoStale",
+      "passed": true,
+      "failed": false,
+      "incomplete": false,
+      "duration": 0.153486875
+    },
+    {
+      "name": "TestPortableForwardIntegrationCatalog/numericalAndRetainedEvidenceCannotBePromoted",
+      "passed": true,
+      "failed": false,
+      "incomplete": false,
+      "duration": 0.255253375
+    },
+    {
+      "name": "TestPortableForwardIntegrationCatalog/inheritedProofPreservesOriginalArtifactAndCorrections",
+      "passed": true,
+      "failed": false,
+      "incomplete": false,
+      "duration": 0.16875183333333332
+    }
+  ],
+  "sourceSelectionTests": {
+    "passed": 5,
+    "failed": 0,
+    "logSHA256": "5100515b37757c9b076af483b6738d0b35dcdd0d78b453e73ee6aa305d89fc94",
+    "note": "All five tests pass. The temporary wrapper subsequently stopped on an overly strict zero-analyzer-findings assertion; separate inspection found only nine existing nonblocking PROP style messages."
+  },
+  "codeAnalyzer": {
+    "newMatlabFiles": 8,
+    "newFileFindings": 0,
+    "existingTestFile": "UnitTests/TestCompiledKernelIntegration.m",
+    "existingNonblockingPROPFindings": 9,
+    "blockingFindings": 0,
+    "productionAnalyzerGate": "required hosted CI"
+  },
+  "pythonCITests": {
+    "passed": 38,
+    "failed": 0,
+    "schedulingEstimateSeconds": 165
+  },
+  "nonregression": {
+    "schema": "portable-diagnostic-nonregression-v1",
+    "issue": 289,
+    "maximumRegressionFraction": 0.03,
+    "runsPerExecutable": 8,
+    "method": "One excluded warmup pair, alternating process order, ratio of medians; complete integration includes scheduled output.",
+    "executableSHA256": {
+      "baseline": "6e2646c7933d1106a9c41583269224b90016026f6d46c305935af93a7bc4e278",
+      "candidate": "e67bc602d5b8fe32edf3532ddf458a281cd5b48b469ec72e3ed25c1b792092d4"
+    },
+    "cases": [
+      {
+        "family": "constant",
+        "sourceSHA256": "0cd2aa70695b407673c09e5e135e9f720e622d6a1e92eacc3d1e8252704e5490",
+        "requestSHA256": "3dfade6400a63198fe2f00f26329cbaff38e1ce149cc5a87bb18228314d043d6",
+        "samples": {
+          "baseline": [
+            {
+              "integrationSeconds": 0.543910375,
+              "processSeconds": 1.7016397919505835,
+              "retainedBytes": 6605937,
+              "maximumLiveBytes": 6749570,
+              "stepCount": 64,
+              "rhsEvaluationCount": 256
+            },
+            {
+              "integrationSeconds": 0.554795709,
+              "processSeconds": 1.7098707500845194,
+              "retainedBytes": 6605937,
+              "maximumLiveBytes": 6749570,
+              "stepCount": 64,
+              "rhsEvaluationCount": 256
+            },
+            {
+              "integrationSeconds": 0.615824292,
+              "processSeconds": 1.7735943750012666,
+              "retainedBytes": 6605937,
+              "maximumLiveBytes": 6749570,
+              "stepCount": 64,
+              "rhsEvaluationCount": 256
+            },
+            {
+              "integrationSeconds": 0.551920208,
+              "processSeconds": 1.7161304578185081,
+              "retainedBytes": 6605937,
+              "maximumLiveBytes": 6749570,
+              "stepCount": 64,
+              "rhsEvaluationCount": 256
+            },
+            {
+              "integrationSeconds": 0.549703083,
+              "processSeconds": 1.709580209106207,
+              "retainedBytes": 6605937,
+              "maximumLiveBytes": 6749570,
+              "stepCount": 64,
+              "rhsEvaluationCount": 256
+            },
+            {
+              "integrationSeconds": 0.611047,
+              "processSeconds": 1.7603590001817793,
+              "retainedBytes": 6605937,
+              "maximumLiveBytes": 6749570,
+              "stepCount": 64,
+              "rhsEvaluationCount": 256
+            },
+            {
+              "integrationSeconds": 0.553253375,
+              "processSeconds": 1.697500541107729,
+              "retainedBytes": 6605937,
+              "maximumLiveBytes": 6749570,
+              "stepCount": 64,
+              "rhsEvaluationCount": 256
+            },
+            {
+              "integrationSeconds": 0.613587583,
+              "processSeconds": 1.7646461660042405,
+              "retainedBytes": 6605937,
+              "maximumLiveBytes": 6749570,
+              "stepCount": 64,
+              "rhsEvaluationCount": 256
+            }
+          ],
+          "candidate": [
+            {
+              "integrationSeconds": 0.552732833,
+              "processSeconds": 1.7087293749209493,
+              "retainedBytes": 6605937,
+              "maximumLiveBytes": 6749570,
+              "stepCount": 64,
+              "rhsEvaluationCount": 256
+            },
+            {
+              "integrationSeconds": 0.55146425,
+              "processSeconds": 1.709590292070061,
+              "retainedBytes": 6605937,
+              "maximumLiveBytes": 6749570,
+              "stepCount": 64,
+              "rhsEvaluationCount": 256
+            },
+            {
+              "integrationSeconds": 0.549791792,
+              "processSeconds": 1.7166837500408292,
+              "retainedBytes": 6605937,
+              "maximumLiveBytes": 6749570,
+              "stepCount": 64,
+              "rhsEvaluationCount": 256
+            },
+            {
+              "integrationSeconds": 0.551064208,
+              "processSeconds": 1.7149334999267012,
+              "retainedBytes": 6605937,
+              "maximumLiveBytes": 6749570,
+              "stepCount": 64,
+              "rhsEvaluationCount": 256
+            },
+            {
+              "integrationSeconds": 0.554040208,
+              "processSeconds": 1.711442207917571,
+              "retainedBytes": 6605937,
+              "maximumLiveBytes": 6749570,
+              "stepCount": 64,
+              "rhsEvaluationCount": 256
+            },
+            {
+              "integrationSeconds": 0.553558708,
+              "processSeconds": 1.710046709049493,
+              "retainedBytes": 6605937,
+              "maximumLiveBytes": 6749570,
+              "stepCount": 64,
+              "rhsEvaluationCount": 256
+            },
+            {
+              "integrationSeconds": 0.621810667,
+              "processSeconds": 1.7740217079408467,
+              "retainedBytes": 6605937,
+              "maximumLiveBytes": 6749570,
+              "stepCount": 64,
+              "rhsEvaluationCount": 256
+            },
+            {
+              "integrationSeconds": 0.551816625,
+              "processSeconds": 1.7081990828737617,
+              "retainedBytes": 6605937,
+              "maximumLiveBytes": 6749570,
+              "stepCount": 64,
+              "rhsEvaluationCount": 256
+            }
+          ]
+        },
+        "medians": {
+          "baseline": {
+            "integrationSeconds": 0.5540245420000001,
+            "retainedBytes": 6605937
+          },
+          "candidate": {
+            "integrationSeconds": 0.552274729,
+            "retainedBytes": 6605937
+          }
+        },
+        "runtimeChangeFraction": -0.0031583673056853057,
+        "retainedMemoryChangeFraction": 0.0,
+        "passes": true
+      },
+      {
+        "family": "hydrostatic",
+        "sourceSHA256": "b1c797e746116db899867d6214f74839e718367548c7f4e130c0f702092508d8",
+        "requestSHA256": "81c962ce8362f60b580d43ac134d974cf6bd07dff2ae432f3c6c01dade1990ec",
+        "samples": {
+          "baseline": [
+            {
+              "integrationSeconds": 0.641781833,
+              "processSeconds": 0.6851449171081185,
+              "retainedBytes": 3228693,
+              "maximumLiveBytes": 3292550,
+              "stepCount": 64,
+              "rhsEvaluationCount": 256
+            },
+            {
+              "integrationSeconds": 0.63855975,
+              "processSeconds": 0.6814170000143349,
+              "retainedBytes": 3228693,
+              "maximumLiveBytes": 3292550,
+              "stepCount": 64,
+              "rhsEvaluationCount": 256
+            },
+            {
+              "integrationSeconds": 0.641331041,
+              "processSeconds": 0.6838479160796851,
+              "retainedBytes": 3228693,
+              "maximumLiveBytes": 3292550,
+              "stepCount": 64,
+              "rhsEvaluationCount": 256
+            },
+            {
+              "integrationSeconds": 0.639127,
+              "processSeconds": 0.6821135829668492,
+              "retainedBytes": 3228693,
+              "maximumLiveBytes": 3292550,
+              "stepCount": 64,
+              "rhsEvaluationCount": 256
+            },
+            {
+              "integrationSeconds": 0.64891675,
+              "processSeconds": 0.6914910420309752,
+              "retainedBytes": 3228693,
+              "maximumLiveBytes": 3292550,
+              "stepCount": 64,
+              "rhsEvaluationCount": 256
+            },
+            {
+              "integrationSeconds": 0.636505083,
+              "processSeconds": 0.6807792498730123,
+              "retainedBytes": 3228693,
+              "maximumLiveBytes": 3292550,
+              "stepCount": 64,
+              "rhsEvaluationCount": 256
+            },
+            {
+              "integrationSeconds": 0.639920542,
+              "processSeconds": 0.6904351669363678,
+              "retainedBytes": 3228693,
+              "maximumLiveBytes": 3292550,
+              "stepCount": 64,
+              "rhsEvaluationCount": 256
+            },
+            {
+              "integrationSeconds": 0.6394795,
+              "processSeconds": 0.6784600419923663,
+              "retainedBytes": 3228693,
+              "maximumLiveBytes": 3292550,
+              "stepCount": 64,
+              "rhsEvaluationCount": 256
+            }
+          ],
+          "candidate": [
+            {
+              "integrationSeconds": 0.63729075,
+              "processSeconds": 0.6802128748968244,
+              "retainedBytes": 3228805,
+              "maximumLiveBytes": 3292742,
+              "stepCount": 64,
+              "rhsEvaluationCount": 256
+            },
+            {
+              "integrationSeconds": 0.641800792,
+              "processSeconds": 0.6843797918409109,
+              "retainedBytes": 3228805,
+              "maximumLiveBytes": 3292742,
+              "stepCount": 64,
+              "rhsEvaluationCount": 256
+            },
+            {
+              "integrationSeconds": 0.638775084,
+              "processSeconds": 0.6820612919982523,
+              "retainedBytes": 3228805,
+              "maximumLiveBytes": 3292742,
+              "stepCount": 64,
+              "rhsEvaluationCount": 256
+            },
+            {
+              "integrationSeconds": 0.640466708,
+              "processSeconds": 0.6832706660497934,
+              "retainedBytes": 3228805,
+              "maximumLiveBytes": 3292742,
+              "stepCount": 64,
+              "rhsEvaluationCount": 256
+            },
+            {
+              "integrationSeconds": 0.639822417,
+              "processSeconds": 0.6824896249454468,
+              "retainedBytes": 3228805,
+              "maximumLiveBytes": 3292742,
+              "stepCount": 64,
+              "rhsEvaluationCount": 256
+            },
+            {
+              "integrationSeconds": 0.636238292,
+              "processSeconds": 0.677964000031352,
+              "retainedBytes": 3228805,
+              "maximumLiveBytes": 3292742,
+              "stepCount": 64,
+              "rhsEvaluationCount": 256
+            },
+            {
+              "integrationSeconds": 0.64133775,
+              "processSeconds": 0.6882313340902328,
+              "retainedBytes": 3228805,
+              "maximumLiveBytes": 3292742,
+              "stepCount": 64,
+              "rhsEvaluationCount": 256
+            },
+            {
+              "integrationSeconds": 0.639214875,
+              "processSeconds": 0.6786238749045879,
+              "retainedBytes": 3228805,
+              "maximumLiveBytes": 3292742,
+              "stepCount": 64,
+              "rhsEvaluationCount": 256
+            }
+          ]
+        },
+        "medians": {
+          "baseline": {
+            "integrationSeconds": 0.639700021,
+            "retainedBytes": 3228693
+          },
+          "candidate": {
+            "integrationSeconds": 0.639518646,
+            "retainedBytes": 3228805
+          }
+        },
+        "runtimeChangeFraction": -0.00028353133350922377,
+        "retainedMemoryChangeFraction": 3.4688959278605935e-05,
+        "passes": true
+      },
+      {
+        "family": "boussinesq",
+        "sourceSHA256": "5abd22e797538c0ec41ee00be916c1f151fc0378005eaa97102f1eec7987ba3b",
+        "requestSHA256": "0ea1aad6c8f484c1d80612427607bfe99addd73f4b4bebee753f52b93954ab4c",
+        "samples": {
+          "baseline": [
+            {
+              "integrationSeconds": 0.518602875,
+              "processSeconds": 0.5708609998691827,
+              "retainedBytes": 1587172,
+              "maximumLiveBytes": 1623765,
+              "stepCount": 64,
+              "rhsEvaluationCount": 256
+            },
+            {
+              "integrationSeconds": 0.516633209,
+              "processSeconds": 0.5698045829776675,
+              "retainedBytes": 1587172,
+              "maximumLiveBytes": 1623765,
+              "stepCount": 64,
+              "rhsEvaluationCount": 256
+            },
+            {
+              "integrationSeconds": 0.5142875,
+              "processSeconds": 0.5691362500656396,
+              "retainedBytes": 1587172,
+              "maximumLiveBytes": 1623765,
+              "stepCount": 64,
+              "rhsEvaluationCount": 256
+            },
+            {
+              "integrationSeconds": 0.518268166,
+              "processSeconds": 0.5710359578952193,
+              "retainedBytes": 1587172,
+              "maximumLiveBytes": 1623765,
+              "stepCount": 64,
+              "rhsEvaluationCount": 256
+            },
+            {
+              "integrationSeconds": 0.514043,
+              "processSeconds": 0.5676959999836981,
+              "retainedBytes": 1587172,
+              "maximumLiveBytes": 1623765,
+              "stepCount": 64,
+              "rhsEvaluationCount": 256
+            },
+            {
+              "integrationSeconds": 0.516864416,
+              "processSeconds": 0.5700708329677582,
+              "retainedBytes": 1587172,
+              "maximumLiveBytes": 1623765,
+              "stepCount": 64,
+              "rhsEvaluationCount": 256
+            },
+            {
+              "integrationSeconds": 0.52094225,
+              "processSeconds": 0.5740495829377323,
+              "retainedBytes": 1587172,
+              "maximumLiveBytes": 1623765,
+              "stepCount": 64,
+              "rhsEvaluationCount": 256
+            },
+            {
+              "integrationSeconds": 0.514282167,
+              "processSeconds": 0.5667826249264181,
+              "retainedBytes": 1587172,
+              "maximumLiveBytes": 1623765,
+              "stepCount": 64,
+              "rhsEvaluationCount": 256
+            }
+          ],
+          "candidate": [
+            {
+              "integrationSeconds": 0.515359,
+              "processSeconds": 0.5673634589184076,
+              "retainedBytes": 1587172,
+              "maximumLiveBytes": 1623765,
+              "stepCount": 64,
+              "rhsEvaluationCount": 256
+            },
+            {
+              "integrationSeconds": 0.520798083,
+              "processSeconds": 0.5757008751388639,
+              "retainedBytes": 1587172,
+              "maximumLiveBytes": 1623765,
+              "stepCount": 64,
+              "rhsEvaluationCount": 256
+            },
+            {
+              "integrationSeconds": 0.515712833,
+              "processSeconds": 0.5688932908233255,
+              "retainedBytes": 1587172,
+              "maximumLiveBytes": 1623765,
+              "stepCount": 64,
+              "rhsEvaluationCount": 256
+            },
+            {
+              "integrationSeconds": 0.51481325,
+              "processSeconds": 0.5684703751467168,
+              "retainedBytes": 1587172,
+              "maximumLiveBytes": 1623765,
+              "stepCount": 64,
+              "rhsEvaluationCount": 256
+            },
+            {
+              "integrationSeconds": 0.535803208,
+              "processSeconds": 0.5891669588163495,
+              "retainedBytes": 1587172,
+              "maximumLiveBytes": 1623765,
+              "stepCount": 64,
+              "rhsEvaluationCount": 256
+            },
+            {
+              "integrationSeconds": 0.519823875,
+              "processSeconds": 0.5722124581225216,
+              "retainedBytes": 1587172,
+              "maximumLiveBytes": 1623765,
+              "stepCount": 64,
+              "rhsEvaluationCount": 256
+            },
+            {
+              "integrationSeconds": 0.517169709,
+              "processSeconds": 0.5699964170344174,
+              "retainedBytes": 1587172,
+              "maximumLiveBytes": 1623765,
+              "stepCount": 64,
+              "rhsEvaluationCount": 256
+            },
+            {
+              "integrationSeconds": 0.518178542,
+              "processSeconds": 0.5712163329590112,
+              "retainedBytes": 1587172,
+              "maximumLiveBytes": 1623765,
+              "stepCount": 64,
+              "rhsEvaluationCount": 256
+            }
+          ]
+        },
+        "medians": {
+          "baseline": {
+            "integrationSeconds": 0.5167488124999999,
+            "retainedBytes": 1587172
+          },
+          "candidate": {
+            "integrationSeconds": 0.5176741255,
+            "retainedBytes": 1587172
+          }
+        },
+        "runtimeChangeFraction": 0.0017906436891910182,
+        "retainedMemoryChangeFraction": 0.0,
+        "passes": true
+      }
+    ],
+    "passes": true
+  },
+  "benchmarkProvenance": {
+    "baselineExecutable": "/private/tmp/wvm289-baseline/wave-vortex-run",
+    "baselineProductionCommit": "2e1cc19975a5c812223a19be06b9976f57444504",
+    "candidateExecutable": "/private/tmp/wvm289-core-native-final/wave-vortex-run",
+    "candidateBuildCommit": "2ae8eaa32e820aa5042f62b5eaefc969254bdf94",
+    "harness": "Benchmarks/comparePortableDiagnosticBaseline.py",
+    "harnessSHA256": "f5f45c643c7e89f6276e9d06c268614e718cce5f45627e9681bcd5a5796c88a7",
+    "rawReportSHA256": "10447eeaf9332a0fda26cc2be67a31cec95d2b2dd15e341b920ae50ad3bc87d7",
+    "metadataNote": "The reusable harness defaults its issue tag to305; the stored measured report is labeled289 without changing samples.",
+    "configuration": "Both Release, native FFTW and Accelerate; existing authored fixtures; other agent jobs finished before timing.",
+    "fixtureSHA256": {
+      "boussinesq-request.json": "0ea1aad6c8f484c1d80612427607bfe99addd73f4b4bebee753f52b93954ab4c",
+      "boussinesq-source.nc": "5abd22e797538c0ec41ee00be916c1f151fc0378005eaa97102f1eec7987ba3b",
+      "constant-request.json": "3dfade6400a63198fe2f00f26329cbaff38e1ce149cc5a87bb18228314d043d6",
+      "constant-source.nc": "0cd2aa70695b407673c09e5e135e9f720e622d6a1e92eacc3d1e8252704e5490",
+      "hydrostatic-request.json": "81c962ce8362f60b580d43ac134d974cf6bd07dff2ae432f3c6c01dade1990ec",
+      "hydrostatic-source.nc": "b1c797e746116db899867d6214f74839e718367548c7f4e130c0f702092508d8"
+    }
+  },
+  "benchmarkNumericOutput": [
+    {
+      "family": "constant",
+      "numericVariableCount": 43,
+      "maximumNormalizedError": 4.48269111820825e-16,
+      "allNumericVariablesExactlyEqual": false
+    },
+    {
+      "family": "hydrostatic",
+      "numericVariableCount": 55,
+      "maximumNormalizedError": 5.737415521202618e-16,
+      "allNumericVariablesExactlyEqual": false
+    },
+    {
+      "family": "boussinesq",
+      "numericVariableCount": 65,
+      "maximumNormalizedError": 0,
+      "allNumericVariablesExactlyEqual": true
+    }
+  ],
+  "benchmarkOutputSHA256": {
+    "boussinesq-baseline.nc": "b325c5cb77d51693d0973f6de90457565b76994a3afce1c8fcbd8e412dc3e003",
+    "boussinesq-candidate.nc": "b325c5cb77d51693d0973f6de90457565b76994a3afce1c8fcbd8e412dc3e003",
+    "constant-baseline.nc": "c435c1c2cc2e33af59cf48e36df793132892aa40e03a62e82ce44922c5b630e0",
+    "constant-candidate.nc": "40ef4f6cf3d1943bdc10601ee898a3bb5bd1c5e132236c0b334b5e320f28fdb5",
+    "hydrostatic-baseline.nc": "89c9d7e45344395a8205e4bcb5613a83b343fbf34557692f61570e8b7511941a",
+    "hydrostatic-candidate.nc": "f09ed5827f601f1be9f3ef6c363b75446e15c87b6c2f153cab5d75b7a46c467b"
+  },
+  "limits": [
+    "Source witnesses for30 support rows plus12 fresh representative provider cases do not constitute an exhaustive cross-feature runtime product.",
+    "Backward integration, arbitrary MATLAB function-handle execution and experimental adaptive-cell integration remain excluded. Opaque saved N2Function scientific provenance remains supported.",
+    "MATLAB production code and saved-file behavior are unchanged.",
+    "Historical report inventory drift is tracked in418; MATLAB small-grid spline behavior in419.",
+    "Full compatibility assembly306, unresolved output contracts391 and final parity307 remain separate."
+  ],
+  "hostedIntegration": "Required CI, package/source export, documentation/analyzer and merge are recorded in the PR/issue handoff after completion; optional Full CI is not an added gate."
+}
