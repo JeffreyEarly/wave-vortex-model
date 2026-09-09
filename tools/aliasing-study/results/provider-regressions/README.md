@@ -8,7 +8,7 @@ The [cal-constant-17 reference](internal-modes-2.0.0-beta.3/cal-constant-17/pref
 
 Spectral coefficient scaling removes part of the old eigensolve's derivative error. Consequently, the first three quadratic-error estimates change from approximately `[7.9853e-7, 8.7664e-7, 1.1294e-6]` to `[1.0257e-7, 1.0257e-7, 1.9841e-7]`. The five higher-prefix estimates retain their historical values within the existing `1e-7` comparison allowance. This is a numerical-reference update; the acceptance thresholds, requested counts, recommendations, rejection rules, reference qualification and budgets are unchanged.
 
-`TestWaveQuadraticAdvisory` compares all eight prefix errors against this release's values with the same `AbsTol=1e-7` equality assertion. It also checks that the loaded provider version matches the reference. Smaller reported errors are not automatically accepted in place of equality. The independent source-projection, product, reference-gating and count-rejection tests remain in force.
+At the beta.3 adoption revision, `TestWaveQuadraticAdvisory` compares all eight prefix errors against this release's values with the same `AbsTol=1e-7` equality assertion. It also checks that the loaded provider version matches the reference. Smaller reported errors are not automatically accepted in place of equality. The independent source-projection, product, reference-gating and count-rejection tests remain in force.
 
 To reproduce, check out the recorded WVM and OceanKit revisions, then run from the WVM authoring repository with a new output directory:
 
@@ -18,3 +18,9 @@ writeWaveAdvisoryRegressionReference(fullfile(tempdir,"new-wave-advisory-referen
 ```
 
 Here `oceanKitRoot` is the checkout of the recorded OceanKit revision. Compare `prefix-errors.csv`; the new provenance file will record the new generation time. The writer rejects an existing output directory to prevent accidental replacement of historical evidence. When adopting a later provider, generate a separate reference directory, review numerical changes and update the test's selected reference deliberately.
+
+## InternalModes 2.0.0-beta.4
+
+The [beta.4 reference](internal-modes-2.0.0-beta.4/cal-constant-17/prefix-errors.csv) uses provider release `f2ce3c143744ae00fbb25bd9d7b8c73fb358ca51`, OceanKit `65d9aa2c3de941406dc6bf2cf1937ba5b3dcd1d5`, and committed WVM generator `6ea0a8dbd9ca684c4379cc0650106bccdc08fc86`. Its [provenance](internal-modes-2.0.0-beta.4/cal-constant-17/provenance.json) records the full configuration. All eight quadratic-error values are identical to the beta.3 reference; the accepted requested count remains three, and all existing tolerances and rejection policies are unchanged.
+
+The current test selects this beta.4 reference and checks the loaded provider version. The earlier beta.3 reference and original calibration files remain unchanged. Shared per-mode convergence measurements and the sampled output-page breakdown add evidence without changing these recorded advisory results.

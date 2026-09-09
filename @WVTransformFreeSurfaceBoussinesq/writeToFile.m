@@ -1,7 +1,7 @@
 function ncfile = writeToFile(self,path,properties,options)
 % Write the complete free-surface Boussinesq scientific representation.
 %
-% Inactive zero-APV dimensions and variables are physically omitted.
+% Empty wave and zero-APV dimensions and variables are physically omitted.
 %
 % - Topic: Save transform state
 % - Declaration: ncfile = writeToFile(self,path,properties,options)
@@ -34,6 +34,14 @@ if self.activeEndpointCount > 0
     end
 else
     selected = setdiff(selected,WVTransformFreeSurfaceBoussinesq.optionalEndpointPropertyNames());
+end
+if ~isempty(self.waveMode)
+    selected = union(selected,setdiff(WVTransformFreeSurfaceBoussinesq.optionalWavePropertyNames(),{'Aw_p','Aw_m'}));
+    if any(ismember(self.coefficientStateVariableNamesForPersistence(),selected))
+        selected = union(selected,{'Aw_p','Aw_m'});
+    end
+else
+    selected = setdiff(selected,WVTransformFreeSurfaceBoussinesq.optionalWavePropertyNames());
 end
 
 optionArguments = namedargs2cell(options);

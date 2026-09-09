@@ -53,6 +53,18 @@ classdef TestSourceProjection < matlab.unittest.TestCase
             testCase.verifyLessThan(norm(B.Q.dF-expectedDF,'fro')/norm(expectedDF,'fro'),1e-6)
             testCase.verifyLessThan(norm(B.Q.dG-expectedDG,'fro')/norm(expectedDG,'fro'),1e-12)
             testCase.verifyLessThan(max(data.requiredConvergence,[],'all'),1e-6)
+            for page=1:numel(data.wave)
+                report=data.wave{page}.modeConvergence;
+                testCase.verifyEqual(report.identity.kappa,data.inventory.magnitudes(page))
+                testCase.verifyEqual(report.identity.columnLabels,string(data.wave{page}.labels))
+                testCase.verifyEqual(report.provenance.candidate.nEVP,data.config.evpOrders(1))
+                testCase.verifyEqual(report.provenance.reference.nEVP,data.config.evpOrders(2))
+                if ~isempty(data.boundary{page})
+                    boundary=data.boundary{page}.modeConvergence;
+                    testCase.verifyEqual(boundary.identity.kappa,data.inventory.magnitudes(page))
+                    testCase.verifyEqual(boundary.identity.columnLabels,["surface","bottom"])
+                end
+            end
         end
 
         function channelInventoryIncludesEveryDeclaredVolumeTerm(testCase)

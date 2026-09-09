@@ -12,7 +12,7 @@ snapshotNames = [
     "Distributions-2.0.0"
     "SplineCore-2.2.0"
     "chebfun-5.7.0"
-    "InternalModes-2.0.0-beta.3"
+    "InternalModes-2.0.0-beta.4"
     "NetCDF-1.0.2"
     "ClassAnnotations-1.2.1"
     ];
