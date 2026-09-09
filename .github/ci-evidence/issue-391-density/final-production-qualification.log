@@ -1,4 +1,4 @@
-[Warning: Directory access failure: /Users/jearly/Documents/MATLAB] 
+[Warning: Directory access failure: /Users/jearly/Documents/MATLAB]
 CI package: Distributions 2.0.0 (/Users/jearly/Documents/OceanKitRepositories/OceanKit/Distributions-2.0.0)
 CI package: SplineCore 2.2.0 (/Users/jearly/Documents/OceanKitRepositories/OceanKit/SplineCore-2.2.0)
 CI package: chebfun 5.7.0 (/Users/jearly/Documents/OceanKitRepositories/OceanKit/chebfun-5.7.0)
@@ -14,7 +14,7 @@ WVTransformBoussinesq initialized from Ap, Am, A0.
 PRODUCTION_DENSITY_COMPLETE run18_restart_day3000 status=passed solverResidual=4.63954e-11 closure=0 meanEta=-0.00944645 apeMean=0.00148871 apvRMS=3.00331e-06 diagnosticSeconds=0.703346
 PRODUCTION_DENSITY_BEGIN /Users/jearly/Documents/OceanKitRepositories/along-track-velocity-decomp/data/run18_restart_day3250.nc
 [Warning: Could not find appropriate function on path loading function handle
-/Users/jearly/Documents/ProjectRepositories/garrett-munk-spin-up/CimRuns/GMSpinUpExperiment.m>@(z)N0*N0*exp(2*z/L_gm)] 
+/Users/jearly/Documents/ProjectRepositories/garrett-munk-spin-up/CimRuns/GMSpinUpExperiment.m>@(z)N0*N0*exp(2*z/L_gm)]
 [> In NetCDFRealVariable.get.value (line 173)
 In NetCDFGroup/readVariables (line 448)
 In CAAnnotatedClass.propertyValuesFromGroup (line 229)
@@ -25,7 +25,7 @@ In WVTransformBoussinesq.requiredPropertiesForTransformFromGroup (line 487)
 In WVTransformBoussinesq.transformFromGroup (line 539)
 In WVTransformBoussinesq.waveVortexTransformFromFile (line 517)
 In WVTransform.waveVortexTransformFromFile (line 54)
-In qualifyProductionDensityDiagnostics (line 34)] 
+In qualifyProductionDensityDiagnostics (line 34)]
 WVTransformBoussinesq initialized from Ap, Am, A0.
 PRODUCTION_DENSITY_COMPLETE run18_restart_day3250 status=passed solverResidual=2.1248e-11 closure=0 meanEta=0.00364547 apeMean=0.00135883 apvRMS=3.09644e-06 diagnosticSeconds=5.70988
 BLAS: unloading libraries

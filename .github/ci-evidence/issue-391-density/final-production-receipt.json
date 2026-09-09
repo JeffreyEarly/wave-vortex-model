@@ -93,7 +93,8 @@
   ],
   "executionLog": {
     "path": ".github/ci-evidence/issue-391-density/final-production-qualification.log",
-    "sha256": "2dbdce352cb8d12d5ed107439b24cc87a29ea5ae25a8c0891ebaccc02fda101e"
+    "sha256": "64ed3c375cf1f84cfc93c7d61e029e0511f555004ecf1dc6ad90bebe6ef4c7de",
+    "normalization": "Trailing line whitespace removed from the retained MATLAB transcript."
   },
   "timingInterpretation": "Single local measurements, not an isolated performance benchmark.",
   "reproduction": "Configure the v4 package and dependencies with tools/configureCIEnvironment, add tools/density-diagnostics, then call qualifyProductionDensityDiagnostics(inputPath,baselineDirectory,outputPath) for each source-hashed snapshot. Captured NetCDF inputs are local external assets, not included in the repository.",
