@@ -100,7 +100,7 @@ for iOp = 1:length(variableName)
                     varAnnotation = WVVariableAnnotation('energy',{},'m3 s-2', 'horizontally-averaged depth-integrated energy computed spectrally from wave-vortex coefficients');
                     varAnnotation.isVariableWithLinearTimeStep = false;
                     varAnnotation.isVariableWithNonlinearTimeStep = true;
-                    f = @(wvt) sum( wvt.Apm_TE_factor(:).*( mask.Ap(:).*abs(wvt.Ap(:)).^2 + mask.Am(:).*abs(wvt.Am(:)).^2 ) + wvt.A0_TE_factor(:).*( mask.A0(:).*abs(wvt.A0(:)).^2) );
+                    f = @(wvt) maskedEnergy(wvt,mask);
 
                 case 'uvMax'
                     varAnnotation = WVVariableAnnotation('uvMax',{},'m s-1', 'max horizontal fluid speed');
@@ -166,4 +166,26 @@ end
 
 function surfaceField = surfaceSlice(field)
 surfaceField = field(:,:,end);
+end
+
+function energy = maskedEnergy(wvt,mask)
+% A QG transform has no wave coefficients. Evaluate only families selected
+% by the component mask, retaining the wave-plus-vortex summation order.
+hasAp = any(mask.Ap(:)) && any(wvt.totalFlowComponent.maskAp(:));
+hasAm = any(mask.Am(:)) && any(wvt.totalFlowComponent.maskAm(:));
+wavePower = 0;
+if hasAp
+    wavePower = mask.Ap(:).*abs(wvt.Ap(:)).^2;
+end
+if hasAm
+    wavePower = wavePower + mask.Am(:).*abs(wvt.Am(:)).^2;
+end
+energyTerms = 0;
+if hasAp || hasAm
+    energyTerms = wvt.Apm_TE_factor(:).*wavePower;
+end
+if any(mask.A0(:)) && any(wvt.totalFlowComponent.maskA0(:))
+    energyTerms = energyTerms + wvt.A0_TE_factor(:).*(mask.A0(:).*abs(wvt.A0(:)).^2);
+end
+energy = sum(energyTerms);
 end

@@ -45,10 +45,13 @@ classdef WVEulerianFields < WVObservingSystem
                 options.fieldNames = cellstr(options.fieldNames);
             end
             self@WVObservingSystem(model,"eulerian fields");
-            % Factory-created component energy operations are not registered
+            % Factory-created energy operations are not registered
             % by a fresh transform. Restore only missing standard annotations
             % before the saved observer's field list triggers categorization.
             missingNames = setdiff(string(options.fieldNames),string(model.wvt.variableNames));
+            if ismember("energy",missingNames)
+                model.wvt.addOperation(model.wvt.operationForKnownVariable('energy'));
+            end
             for componentName = reshape(string(model.wvt.flowComponentNames),1,[])
                 component = model.wvt.flowComponentWithName(componentName);
                 if ismember("energy_"+string(component.abbreviatedName),missingNames)

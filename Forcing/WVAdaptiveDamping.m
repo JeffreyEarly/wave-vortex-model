@@ -113,11 +113,12 @@ classdef WVAdaptiveDamping < WVForcing
 
     properties (Access = private, Hidden)
         forcingListener
+        assumedEffectiveJMax = NaN
     end
 
     methods (Access = private, Hidden)
         function forcingDidChangeNotification(self,~,~)
-            if self.wvt.effectiveHorizontalGridResolution ~= self.assumedEffectiveHorizontalGridResolution
+            if self.wvt.effectiveHorizontalGridResolution ~= self.assumedEffectiveHorizontalGridResolution || self.wvt.effectiveJMax ~= self.assumedEffectiveJMax
                 self.buildDampingOperator();
             end
         end
@@ -166,21 +167,30 @@ classdef WVAdaptiveDamping < WVForcing
             arguments
                 self WVAdaptiveDamping {mustBeNonempty}
             end
-            self.assumedEffectiveHorizontalGridResolution = self.wvt.effectiveHorizontalGridResolution;
-
-            kl_max = pi/self.assumedEffectiveHorizontalGridResolution;
+            horizontalResolution = self.wvt.effectiveHorizontalGridResolution;
+            kl_max = pi/horizontalResolution;
             j_max = self.wvt.effectiveJMax;
+            if ~(kl_max > 0)
+                error("WVAdaptiveDamping:UnresolvedHorizontalWavenumbers","Adaptive damping requires resolved horizontal wavenumbers.");
+            end
             j_index = find(self.wvt.j == self.wvt.effectiveJMax);
             [K,L,~] = self.wvt.kljGrid;
-            [Qkl,Qj,self.k_no_damp,self.k_damp,self.j_no_damp,self.j_damp] = self.spectralVanishingViscosityFilter(kl_max, j_max);
-            prefactor_xy = self.assumedEffectiveHorizontalGridResolution/(pi^2);
-            prefactor_z = (pi*pi*self.wvt.Lr2(j_index)/(self.assumedEffectiveHorizontalGridResolution)^2)*prefactor_xy;
+            [Qkl,Qj,horizontalCutoff,horizontalDampingScale,verticalCutoff,verticalDampingScale] = self.spectralVanishingViscosityFilter(kl_max, j_max);
+            prefactor_xy = horizontalResolution/(pi^2);
+            prefactor_z = (pi*pi*self.wvt.Lr2(j_index)/(horizontalResolution)^2)*prefactor_xy;
 
             Lr2inv = 1./self.wvt.Lr2;
-            self.damp = -prefactor_xy*Qkl.*(K.^2 +L.^2) ;
+            dampingOperator = -prefactor_xy*Qkl.*(K.^2 +L.^2) ;
             if ~isa(self.wvt,"WVGeometryDoublyPeriodicBarotropic")
-                self.damp = self.damp - prefactor_z*Qj.*Lr2inv;
+                dampingOperator = dampingOperator - prefactor_z*Qj.*Lr2inv;
             end
+            self.damp = dampingOperator;
+            self.k_no_damp = horizontalCutoff;
+            self.k_damp = horizontalDampingScale;
+            self.j_no_damp = verticalCutoff;
+            self.j_damp = verticalDampingScale;
+            self.assumedEffectiveHorizontalGridResolution = horizontalResolution;
+            self.assumedEffectiveJMax = j_max;
         end
 
         function [Qkl,Qj,kl_cutoff, kl_damp, j_cutoff, j_damp] = spectralVanishingViscosityFilter(self, kl_max, j_max)
@@ -211,17 +221,29 @@ classdef WVAdaptiveDamping < WVForcing
             [K,L,J] = wvt_.kljGrid;
             Kh = sqrt(K.^2 + L.^2);
 
-            Qkl = exp( - ((abs(Kh)-kl_max)./(abs(Kh)-kl_cutoff)).^2 );
-            Qkl(abs(Kh)<kl_cutoff) = 0;
-            Qkl(abs(Kh)>kl_max) = 1;
+            if kl_max == kl_cutoff
+                % The vanishing interval has collapsed: damp the last
+                % positive resolved mode, while preserving a constant field.
+                Qkl = double(Kh >= kl_max & Kh > 0);
+            else
+                Qkl = exp( - ((abs(Kh)-kl_max)./(abs(Kh)-kl_cutoff)).^2 );
+                Qkl(abs(Kh)<kl_cutoff) = 0;
+                Qkl(abs(Kh)>kl_max) = 1;
+            end
 
             if wvt_.Nj > 2
                 dj = wvt_.j(2)-wvt_.j(1);
                 j_cutoff = dj*(j_max/dj)^(3/4);
                 j_damp = (j_max+b*j_cutoff)/(1+b); % approximately
-                Qj = exp( - ((J-j_max)./(J-j_cutoff)).^2 );
-                Qj(J<j_cutoff) = 0;
-                Qj(J>j_max) = 1;
+                if j_max == j_cutoff
+                    % No resolved vertical variation exists when j_max=0.
+                    % Its uniform mode must retain zero vertical damping.
+                    Qj = double(J >= j_max & J > 0);
+                else
+                    Qj = exp( - ((J-j_max)./(J-j_cutoff)).^2 );
+                    Qj(J<j_cutoff) = 0;
+                    Qj(J>j_max) = 1;
+                end
             else
                 j_cutoff = 0;
                 j_damp = 0;

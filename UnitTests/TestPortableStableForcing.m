@@ -172,34 +172,67 @@ classdef TestPortableStableForcing < matlab.unittest.TestCase
                 end
             end
         end
-        function degenerateAdaptiveDampingHasExplicitMatlabException(testCase)
-            % #409: allocated Nj>2 with effective j_max=1 leaves 0/0 in Qj.
-            wvt = diagnosticWaveTransform("constant-hydrostatic",[8 6 9],false);
-            damping = WVAdaptiveDamping(wvt);
-            wvt.setForcing([WVNonlinearAdvection(wvt),WVAntialiasing(wvt,Nj=2),damping]);
-            testCase.verifyEqual(wvt.effectiveJMax,1);
-            testCase.verifyTrue(any(isnan(damping.damp(:))));
-            operation = SpatialForcingOperation(wvt);
-            expected = cell(1,operation.nVarOut);
-            [expected{:}] = operation.compute(wvt);
-            names = string({operation.outputVariables.name});
-            testCase.verifyTrue(all(isnan(expected{names=="Fu_adaptive_damping"}(:))));
-            before = {wvt.Ap,wvt.Am,wvt.A0};
-            source = testCase.writeInitialModel(wvt);
-            resultPath = fullfile(testCase.folder,"degenerate-tendencies.json");
-            for provider = testCase.providers
-                [status,output] = cleanSystem(shellQuote(testCase.executable)+" "+shellQuote(source)+" "+shellQuote(resultPath)+" "+provider+" tendencies");
-                testCase.assertEqual(status,0,provider+": "+output);
-                actual = jsondecode(fileread(resultPath));
-                testCase.verifyEqual(actual.diagnosticWorkspaceLiveBytes,0);
-                testCase.verifyEqual(actual.diagnosticForcingEvaluationCount,3);
-                for instance = reshape(actual.tendencies,1,[])
-                    for channel = string(fieldnames(instance.fields))'
-                        testCase.verifyTrue(all(isfinite(instance.fields.(channel))),provider+" "+instance.name+" "+channel);
+        function degenerateAdaptiveDampingMatchesMatlab(testCase)
+            for family = ["constant-hydrostatic","constant-nonhydrostatic","hydrostatic","boussinesq"]
+                for retainedModes = [1 2 3]
+                    grid = [8 6 9];
+                    if retainedModes == 2, grid = [5 5 9]; end
+                    wvt = diagnosticWaveTransform(family,grid,false);
+                    damping = WVAdaptiveDamping(wvt);
+                    wvt.setForcing([WVNonlinearAdvection(wvt),WVBetaPlanePVAdvection(wvt),WVAntialiasing(wvt,Nj=retainedModes),damping]);
+                    testCase.verifyEqual(wvt.effectiveJMax,retainedModes-1);
+                    testCase.verifyTrue(all(isfinite(damping.damp),"all"));
+                    operation = SpatialForcingOperation(wvt);
+                    expected = cell(1,operation.nVarOut);
+                    [expected{:}] = operation.compute(wvt);
+                    names = string({operation.outputVariables.name});
+                    for value = expected, testCase.assertTrue(all(isfinite(value{1}),"all")); end
+                    before = {wvt.Ap,wvt.Am,wvt.A0};
+                    testCase.compareTendency(wvt);
+                    wvt.addOperation(operation);
+                    model = WVModel(wvt);
+                    model.eulerianObservingSystem.addNetCDFOutputVariables(names{:});
+                    source = fullfile(testCase.folder,"degenerate-source.nc");
+                    file = model.createNetCDFFileForModelOutput(source,outputInterval=.5,shouldOverwriteExisting=true);
+                    file.outputTimesForIntegrationPeriod(wvt.t,wvt.t+1);
+                    file.writeTimeStepToOutputFile(wvt.t);
+                    model.closeNetCDFFile();
+                    for index = 1:numel(names)
+                        saved = ncread(source,"/wave-vortex/"+names(index));
+                        testCase.verifyEqual(saved(:),expected{index}(:));
                     end
+                    restored = testCase.verifyWarningFree(@()WVModel.modelFromFile(source));
+                    cleanup = onCleanup(@()restored.closeNetCDFFile());
+                    restoredDamping = restored.wvt.forcingWithName("adaptive damping");
+                    testCase.verifyEqual(restoredDamping.damp,damping.damp);
+                    restored.closeNetCDFFile(); clear cleanup
+                    resultPath = fullfile(testCase.folder,"degenerate-tendencies.json");
+                    for provider = testCase.providers
+                        [status,output] = cleanSystem(shellQuote(testCase.executable)+" "+shellQuote(source)+" "+shellQuote(resultPath)+" "+provider+" tendencies");
+                        testCase.assertEqual(status,0,provider+": "+output);
+                        actual = jsondecode(fileread(resultPath));
+                        testCase.verifyEqual(actual.diagnosticWorkspaceLiveBytes,0);
+                        testCase.verifyEqual(actual.diagnosticForcingEvaluationCount,numel(wvt.forcing));
+                        comparisons = 0;
+                        maximumError = 0;
+                        for instance = reshape(actual.tendencies,1,[])
+                            suffix = replace(string(instance.name),[" ","-"],"_");
+                            for channel = string(fieldnames(instance.fields))'
+                                reference = expected{names==channel+"_"+suffix};
+                                values = instance.fields.(channel);
+                                testCase.verifyTrue(all(isfinite(values(:))));
+                                scale = max(abs(reference(:)));
+                                testCase.verifyLessThanOrEqual(max(abs(values(:)-reference(:))),1e-12*max(scale,realmin),family+" modes="+retainedModes+" "+provider+" "+channel+" "+suffix);
+                                maximumError = max(maximumError,max(abs(values(:)-reference(:)))/max(scale,realmin));
+                                comparisons = comparisons+1;
+                            end
+                        end
+                        testCase.verifyEqual(comparisons,operation.nVarOut);
+                        fprintf('DEGENERATE_DAMPING %s modes=%d provider=%s comparisons=%d max_relative=%.17g\n',family,retainedModes,provider,comparisons,maximumError);
+                    end
+                    testCase.verifyEqual({wvt.Ap,wvt.Am,wvt.A0},before);
                 end
             end
-            testCase.verifyEqual({wvt.Ap,wvt.Am,wvt.A0},before);
         end
         function isolatedWaveDiagnosticsHaveSpatialShapes(testCase)
             for family = ["constant-hydrostatic","constant-nonhydrostatic","hydrostatic","boussinesq"]

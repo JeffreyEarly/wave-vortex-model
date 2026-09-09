@@ -51,12 +51,7 @@ classdef TestPortableDiagnostics < matlab.unittest.TestCase
                         end
                         expected = struct;
                         for name = reshape(names,1,[])
-                            if name=="energy" && ismember(family,["barotropic","stratified-qg"])
-                                % The legacy portable energy alias uses the registered QG invariant.
-                                value = wvt.totalEnergy;
-                            else
-                                value = wvt.(name);
-                            end
+                            value = wvt.(name);
                             expected.(name) = value(:);
                         end
                         model = WVModel(wvt,shouldUseLinearDynamics=family~="barotropic");

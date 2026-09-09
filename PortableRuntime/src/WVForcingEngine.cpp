@@ -32,6 +32,8 @@ std::size_t vectorBytes(const std::vector<T>& values) noexcept { return values.c
 
 double vanishingFilter(double value, double cutoff, double maximum) noexcept {
     value = std::abs(value);
+    // A collapsed zero-mode interval must preserve the uniform mode.
+    if (maximum == 0.0) return value > 0.0 ? 1.0 : 0.0;
     if (value < cutoff) return 0.0;
     if (value > maximum) return 1.0;
     if (maximum == cutoff) return value >= maximum ? 1.0 : 0.0;
