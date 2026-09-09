@@ -11,7 +11,9 @@ classdef TestPortableBoussinesqQualificationEvidence < matlab.unittest.TestCase
     end
     methods (Test,TestTags="full")
         function measuredEvidenceIsComplete(testCase)
-            validatePortableBoussinesqQualification(testCase.report);
+            validation = validatePortableBoussinesqQualification(testCase.report,evidenceScope="historical");
+            testCase.verifyEqual(validation.scope,"historical-workload");
+            testCase.verifyFalse(validation.currentReadiness);
             testCase.verifyEqual(numel(testCase.report.rows),47);
             testCase.verifyEqual(numel(testCase.report.continuations),12);
             testCase.verifyEqual(numel(testCase.report.lifecycle),7);
@@ -23,7 +25,7 @@ classdef TestPortableBoussinesqQualificationEvidence < matlab.unittest.TestCase
             referenceReport.continuations = referenceReport.continuations(string({referenceReport.continuations.provider})=="reference");
             grids = reshape([referenceReport.lifecycle.grid],3,[])';
             referenceReport.lifecycle = referenceReport.lifecycle(string({referenceReport.lifecycle.provider})=="reference" & ismember(grids,[8 6 9;12 10 13],"rows")');
-            validatePortableBoussinesqQualification(referenceReport);
+            validatePortableBoussinesqQualification(referenceReport,evidenceScope="historical");
             testCase.verifyEqual(numel(referenceReport.continuations),6);
             testCase.verifyEqual(numel(referenceReport.lifecycle),2);
             bad = referenceReport; bad.continuations(end)=[]; testCase.verifyInvalid(bad);
@@ -40,7 +42,7 @@ classdef TestPortableBoussinesqQualificationEvidence < matlab.unittest.TestCase
             referenceReport.tests = referenceReport.tests(string({referenceReport.tests.name})~="TestPortableBoussinesqQualification/longerContinuationMatchesMatlab");
             completeContinuations = referenceReport.continuations;
             referenceReport.continuations = [];
-            validatePortableBoussinesqQualification(referenceReport);
+            validatePortableBoussinesqQualification(referenceReport,evidenceScope="historical");
             bad = referenceReport; bad.schemaIdentifier="wave-vortex-boussinesq-qualification-v1"; testCase.verifyInvalid(bad);
             bad = referenceReport; bad.continuations=completeContinuations; testCase.verifyInvalid(bad);
             bad = referenceReport; bad.tests(end)=[]; testCase.verifyInvalid(bad);
@@ -82,7 +84,7 @@ classdef TestPortableBoussinesqQualificationEvidence < matlab.unittest.TestCase
     end
     methods (Access=private)
         function verifyInvalid(testCase,report)
-            testCase.verifyError(@()validatePortableBoussinesqQualification(report),"WaveVortexModel:InvalidBoussinesqQualification");
+            testCase.verifyError(@()validatePortableBoussinesqQualification(report,evidenceScope="historical"),"WaveVortexModel:InvalidBoussinesqQualification");
         end
     end
 end

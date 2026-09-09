@@ -98,6 +98,19 @@ class RoutingTests(unittest.TestCase):
         self.assertIn('TestPortableBoussinesqQualification', family['matlabTests'])
         self.assertNotIn('TestPortableHydrostaticQualificationEvidence', family['matlabTests'])
 
+    def test_historical_evidence_is_selected_for_its_family_and_complete_runs(self):
+        cases = [('CompiledKernel/src/WVTransformStratifiedQGKernel.cpp', 'TestPortableStratifiedQGQualificationEvidence'),
+                 ('CompiledKernel/src/WVTransformHydrostaticKernel.cpp', 'TestPortableHydrostaticQualificationEvidence'),
+                 ('CompiledKernel/src/WVTransformBoussinesqKernel.cpp', 'TestPortableBoussinesqQualificationEvidence')]
+        for path, evidence in cases:
+            for plan in [select([path]), select(['README.md'], complete=True)]:
+                for inventory, shards in [('matlabTests', 'matlabShards'),
+                                          ('sanitizedTests', 'sanitizedShards')]:
+                    self.assertIn(evidence, plan[inventory])
+                    self.assertIn('TestPortableHistoricalQualification', plan[inventory])
+                    flattened = [name for group in plan[shards] for name in group['classes']]
+                    self.assertEqual(flattened.count(evidence), 1)
+
     def test_legacy_migration_executes_required_phases(self):
         plan = select(['README.md'], migration=True)
         self.assertTrue(plan['documentation'])

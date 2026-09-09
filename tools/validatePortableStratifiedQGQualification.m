@@ -1,8 +1,9 @@
-function validatePortableStratifiedQGQualification(report,options)
+function validation = validatePortableStratifiedQGQualification(report,options)
 % Reject incomplete, stale or contradictory SQG qualification evidence.
 arguments (Input)
     report (1,1) struct
     options.repositoryRoot (1,1) string = string(fileparts(fileparts(mfilename("fullpath"))))
+    options.evidenceScope (1,1) string {mustBeMember(options.evidenceScope,["current","historical"])} = "current"
 end
 require(string(report.schemaIdentifier)=="wave-vortex-sqg-qualification-v1" && report.schemaVersion==1,"Unknown qualification schema.");
 require(string(report.status)=="complete","Qualification is incomplete.");
@@ -11,12 +12,7 @@ require(isequal(providers,"reference") || isequal(providers,["reference","native
 require(~isempty(report.tests) && all([report.tests.passed]) && ~any([report.tests.failed]) && ~any([report.tests.incomplete]),"Failed or incomplete test evidence.");
 testNames = string({report.tests.name});
 require(numel(unique(testNames))==numel(testNames),"Duplicate test evidence.");
-requiredClasses=["TestPortableStratifiedQG","TestPortableStratifiedQGQualification","TestPortableStableForcing","TestPortableForcingCompatibility","TestCompiledKernelIntegration","TestStratifiedModalRecord"];
-expectedNames=strings(1,0);
-for name=requiredClasses
-    suite=testsuite(fullfile(options.repositoryRoot,"UnitTests",name+".m"));
-    expectedNames=[expectedNames,string({suite.Name})]; %#ok<AGROW>
-end
+[expectedNames,validation] = portableQualificationTestInventory(report,"stratified-qg",options.repositoryRoot,options.evidenceScope);
 require(isequal(sort(testNames),sort(expectedNames)),"Missing or unexpected qualification tests.");
 [catalog,compatibleCatalog] = portableQualificationCatalog(report,"stratified-qg",options.repositoryRoot);
 require(compatibleCatalog,"Qualification catalog digest or transform slice is stale.");

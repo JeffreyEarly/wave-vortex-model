@@ -11,7 +11,9 @@ classdef TestPortableStratifiedQGQualificationEvidence < matlab.unittest.TestCas
     end
     methods (Test,TestTags="full")
         function measuredEvidenceIsComplete(testCase)
-            validatePortableStratifiedQGQualification(testCase.report);
+            validation = validatePortableStratifiedQGQualification(testCase.report,evidenceScope="historical");
+            testCase.verifyEqual(validation.scope,"historical-workload");
+            testCase.verifyFalse(validation.currentReadiness);
             testCase.verifyEqual(numel(testCase.report.rows),41);
             testCase.verifyEqual(numel(testCase.report.continuations),12);
             testCase.verifyEqual(numel(testCase.report.lifecycle),6);
@@ -43,7 +45,7 @@ classdef TestPortableStratifiedQGQualificationEvidence < matlab.unittest.TestCas
     end
     methods (Access=private)
         function verifyInvalid(testCase,report)
-            testCase.verifyError(@()validatePortableStratifiedQGQualification(report),"WaveVortexModel:InvalidSQGQualification");
+            testCase.verifyError(@()validatePortableStratifiedQGQualification(report,evidenceScope="historical"),"WaveVortexModel:InvalidSQGQualification");
         end
     end
 end

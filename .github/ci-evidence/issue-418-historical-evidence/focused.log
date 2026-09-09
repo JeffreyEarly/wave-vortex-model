@@ -1,0 +1,105 @@
+[Warning: Directory access failure: /Users/jearly/Documents/MATLAB]
+CI package: Distributions 2.0.0 (/Users/jearly/Documents/OceanKitRepositories/OceanKit/Distributions-2.0.0)
+CI package: SplineCore 2.2.0 (/Users/jearly/Documents/OceanKitRepositories/OceanKit/SplineCore-2.2.0)
+CI package: chebfun 5.7.0 (/Users/jearly/Documents/OceanKitRepositories/OceanKit/chebfun-5.7.0)
+CI package: InternalModes 1.3.0 (/Users/jearly/Documents/OceanKitRepositories/OceanKit/InternalModes-1.3.0)
+CI package: NetCDF 1.0.2 (/Users/jearly/Documents/OceanKitRepositories/OceanKit/NetCDF-1.0.2)
+CI package: ClassAnnotations 1.2.1 (/Users/jearly/Documents/OceanKitRepositories/OceanKit/ClassAnnotations-1.2.1)
+CI package: ClassDocumentation 1.3.2 (/Users/jearly/Documents/OceanKitRepositories/OceanKit/ClassDocumentation-1.3.2)
+CI package: WaveVortexModel 4.3.0 (/Users/jearly/Documents/OceanKitRepositories/wvm-v4-issue-418)
+Running TestPortableStratifiedQGQualificationEvidence
+WARNING: package sun.awt.X11 not in java.desktop
+WARNING: package sun.awt.X11 not in java.desktop
+...
+Done TestPortableStratifiedQGQualificationEvidence
+__________
+
+Running TestPortableHydrostaticQualificationEvidence
+.....
+Done TestPortableHydrostaticQualificationEvidence
+__________
+
+Running TestPortableBoussinesqQualificationEvidence
+.....
+Done TestPortableBoussinesqQualificationEvidence
+__________
+
+Running TestPortableHistoricalQualification
+.
+================================================================================
+Error occurred in TestPortableHistoricalQualification/missingDuplicateOrFailedOriginalTestsAreRejected and it did not run to completion.
+    ---------
+    Error ID:
+    ---------
+    'MATLAB:nonExistentField'
+    --------------
+    Error Details:
+    --------------
+    Unrecognized field name "duration".
+
+    Error in
+    TestPortableHistoricalQualification/missingDuplicateOrFailedOriginalTestsAreRejected
+    (line 41)
+                    bad = report; bad.tests(1).duration =
+                    bad.tests(1).duration+1;
+                    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+================================================================================
+...
+Done TestPortableHistoricalQualification
+__________
+
+Failure Summary:
+
+     Name                                                                                  Failed  Incomplete  Reason(s)
+    =====================================================================================================================
+     TestPortableHistoricalQualification/missingDuplicateOrFailedOriginalTestsAreRejected    X         X       Errored.
+                                                     Name                                                     Passed    Failed    Incomplete    Duration      Details
+    ______________________________________________________________________________________________________    ______    ______    __________    ________    ____________
+
+    {'TestPortableStratifiedQGQualificationEvidence/measuredEvidenceIsComplete'                          }    true      false       false        0.91166    {1×1 struct}
+    {'TestPortableStratifiedQGQualificationEvidence/missingOrContradictoryEvidenceIsRejected'            }    true      false       false        0.68604    {1×1 struct}
+    {'TestPortableStratifiedQGQualificationEvidence/numericalAndMemoryFailuresCannotClaimReadiness'      }    true      false       false        0.66329    {1×1 struct}
+    {'TestPortableHydrostaticQualificationEvidence/measuredEvidenceIsComplete'                           }    true      false       false        0.17198    {1×1 struct}
+    {'TestPortableHydrostaticQualificationEvidence/referenceOnlyScopeStillRequiresEveryContinuation'     }    true      false       false        0.18723    {1×1 struct}
+    {'TestPortableHydrostaticQualificationEvidence/contractsCannotClaimCompleteContinuationQualification'}    true      false       false        0.14607    {1×1 struct}
+    {'TestPortableHydrostaticQualificationEvidence/missingOrContradictoryEvidenceIsRejected'             }    true      false       false        0.66523    {1×1 struct}
+    {'TestPortableHydrostaticQualificationEvidence/numericalAndMemoryFailuresCannotClaimReadiness'       }    true      false       false         1.0414    {1×1 struct}
+    {'TestPortableBoussinesqQualificationEvidence/measuredEvidenceIsComplete'                            }    true      false       false         0.1561    {1×1 struct}
+    {'TestPortableBoussinesqQualificationEvidence/referenceOnlyScopeStillRequiresEveryContinuation'      }    true      false       false        0.18174    {1×1 struct}
+    {'TestPortableBoussinesqQualificationEvidence/contractsCannotClaimCompleteContinuationQualification' }    true      false       false        0.14551    {1×1 struct}
+    {'TestPortableBoussinesqQualificationEvidence/missingOrContradictoryEvidenceIsRejected'              }    true      false       false        0.57197    {1×1 struct}
+    {'TestPortableBoussinesqQualificationEvidence/numericalAndMemoryFailuresCannotClaimReadiness'        }    true      false       false         1.2225    {1×1 struct}
+    {'TestPortableHistoricalQualification/historicalWorkloadSurvivesCurrentClassGrowth'                  }    true      false       false         1.2608    {1×1 struct}
+    {'TestPortableHistoricalQualification/missingDuplicateOrFailedOriginalTestsAreRejected'              }    false     true        true        0.092565    {1×1 struct}
+    {'TestPortableHistoricalQualification/historicalResultsCannotBePromotedByAddingCurrentTests'         }    true      false       false         1.4187    {1×1 struct}
+    {'TestPortableHistoricalQualification/committedAuthorityRejectsTamperedManifestAndArtifact'          }    true      false       false        0.17327    {1×1 struct}
+
+ANALYZER tools/portableQualificationTestInventory.m findings=0
+ANALYZER tools/validatePortableStratifiedQGQualification.m findings=0
+ANALYZER tools/validatePortableHydrostaticQualification.m findings=0
+ANALYZER tools/validatePortableBoussinesqQualification.m findings=0
+ANALYZER UnitTests/TestPortableStratifiedQGQualificationEvidence.m findings=0
+ANALYZER UnitTests/TestPortableHydrostaticQualificationEvidence.m findings=0
+ANALYZER UnitTests/TestPortableBoussinesqQualificationEvidence.m findings=0
+ANALYZER UnitTests/TestPortableHistoricalQualification.m findings=15
+  15×1 struct array with fields:
+
+    id
+    message
+    fix
+    line
+    column
+
+{Error using assert
+At least one test failed in the test session.
+
+Error in matlab.unittest.internal.BaseTestResult/assertSuccess (line 126)
+             assert(~any([resultArray.Failed]),message('MATLAB:unittest:TestResult:UnsuccessfulRun'));
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+Error in wvm418ValidateHistorical (line 23)
+assertSuccess(results);
+^^^^^^^^^^^^^^^^^^^^^^
+Error in run (line 112)
+evalin('caller', strcat(scriptStem, ';'));
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+}

@@ -1,8 +1,9 @@
-function validatePortableBoussinesqQualification(report,options)
+function validation = validatePortableBoussinesqQualification(report,options)
 % Reject incomplete, stale or contradictory Boussinesq qualification evidence.
 arguments (Input)
     report (1,1) struct
     options.repositoryRoot (1,1) string = string(fileparts(fileparts(mfilename("fullpath"))))
+    options.evidenceScope (1,1) string {mustBeMember(options.evidenceScope,["current","historical"])} = "current"
 end
 contractsOnly=string(report.schemaIdentifier)=="wave-vortex-boussinesq-contracts-v1";
 require((string(report.schemaIdentifier)=="wave-vortex-boussinesq-qualification-v1" || contractsOnly) && report.schemaVersion==1,"Unknown qualification schema.");
@@ -13,13 +14,7 @@ require(~contractsOnly || isequal(providers,"reference"),"Contract-only evidence
 require(~isempty(report.tests) && all([report.tests.passed]) && ~any([report.tests.failed]) && ~any([report.tests.incomplete]),"Failed or incomplete test evidence.");
 testNames = string({report.tests.name});
 require(numel(unique(testNames))==numel(testNames),"Duplicate test evidence.");
-requiredClasses=["TestPortableBoussinesq","TestPortableBoussinesqQualification","TestPortableStableForcing","TestPortableForcingCompatibility","TestCompiledKernelIntegration","TestStratifiedModalRecord","TestBoussinesqCompiledKernel"];
-expectedNames=strings(1,0);
-for name=requiredClasses
-    suite=testsuite(fullfile(options.repositoryRoot,"UnitTests",name+".m"));
-    expectedNames=[expectedNames,string({suite.Name})]; %#ok<AGROW>
-end
-if contractsOnly, expectedNames=expectedNames(expectedNames~="TestPortableBoussinesqQualification/longerContinuationMatchesMatlab"); end
+[expectedNames,validation] = portableQualificationTestInventory(report,"boussinesq",options.repositoryRoot,options.evidenceScope);
 require(isequal(sort(testNames),sort(expectedNames)),"Missing or unexpected qualification tests.");
 [catalog,compatibleCatalog] = portableQualificationCatalog(report,"boussinesq",options.repositoryRoot);
 require(compatibleCatalog,"Qualification catalog digest or transform slice is stale.");

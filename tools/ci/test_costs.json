@@ -45,10 +45,15 @@
     "TestVerticalCalculus": 5,
     "TestWVModelIntegration": 35,
     "TestWVModelOutputPersistence": 15,
-    "TestWVTransformInitialization": 15
+    "TestWVTransformInitialization": 15,
+    "TestPortableStratifiedQGQualificationEvidence": 5,
+    "TestPortableHydrostaticQualificationEvidence": 5,
+    "TestPortableBoussinesqQualificationEvidence": 5,
+    "TestPortableHistoricalQualification": 5
   },
   "localEstimateSources": {
     "TestPortableForwardIntegration": "Issue #289 Apple Silicon reference execution: sum of sharedMatlabPreparation and providerLifecycle, rounded up to 15 seconds. Scheduling only; hosted CI can refine this estimate.",
     "TestPortableForwardIntegrationCatalog": "Issue #289 local structural and receipt validation; scheduling only."
-  }
+  },
+  "historicalEvidenceEstimateSource": "Issue #418 focused local MATLAB R2026a run; each class rounded up to 5 seconds; original sourceRun applies to other entries."
 }
