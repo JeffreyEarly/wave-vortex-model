@@ -1,0 +1,229 @@
+classdef TestDensityDiagnosticReference < matlab.unittest.TestCase
+    methods (Test, TestTags="full")
+        function unequalParcelVolumesDefineTheEmpiricalDistribution(testCase)
+            z = [-1;-.5;.8];
+            weights = DensityDiagnosticReference.verticalCellWeights(z,[-1 1]);
+            testCase.verifyEqual(weights,[.25;.9;.85],AbsTol=2e-15);
+            values = [3;1;3];
+            distribution = DensityDiagnosticReference.empiricalDistribution(values,weights);
+            testCase.verifyEqual(distribution.values,[1;3]);
+            testCase.verifyEqual(distribution.masses,[.9;1.1]/2,AbsTol=2e-15);
+            testCase.verifyEqual(distribution.cumulativeMass,[.45;1],AbsTol=2e-15);
+            testCase.verifyEqual(distribution.totalVolume,2);
+            testCase.verifyEqual(sum(distribution.values.*distribution.masses),sum(values.*weights)/sum(weights),AbsTol=2e-15);
+            unweighted = DensityDiagnosticReference.empiricalDistribution(values,ones(size(weights)));
+            testCase.verifyGreaterThan(abs(distribution.cumulativeMass(1)-unweighted.cumulativeMass(1)),.1);
+            permuted = DensityDiagnosticReference.empiricalDistribution(values([3 1 2]),weights([3 1 2]));
+            testCase.verifyEqual(permuted,distribution);
+        end
+
+        function zeroVolumesAreExcludedAndInvalidWeightsRejected(testCase)
+            distribution = DensityDiagnosticReference.empiricalDistribution([1 2 3],[1 0 3]);
+            testCase.verifyEqual(distribution.values,[1;3]);
+            testCase.verifyEqual(distribution.masses,[.25;.75]);
+            testCase.verifyError(@()DensityDiagnosticReference.empiricalDistribution([1 2],[0 0]),'DensityDiagnosticReference:InvalidWeights');
+            testCase.verifyError(@()DensityDiagnosticReference.empiricalDistribution([1 2],1),'DensityDiagnosticReference:InvalidWeights');
+            testCase.verifyError(@()DensityDiagnosticReference.verticalCellWeights([0;-1],[-1 1]),'DensityDiagnosticReference:InvalidVerticalGrid');
+        end
+
+        function interiorTwistHasAnalyticInverseAndFixedExterior(testCase)
+            [x,z] = ndgrid(linspace(-1,1,31));
+            center = [.13 -.17];
+            radius = .7;
+            [mappedX,mappedZ] = DensityDiagnosticReference.polarTwist(x,z,center,radius,1.3);
+            [materialX,materialHeight] = DensityDiagnosticReference.inversePolarTwist(mappedX,mappedZ,center,radius,1.3);
+            testCase.verifyEqual(materialX,x,AbsTol=6e-16);
+            testCase.verifyEqual(materialHeight,z,AbsTol=6e-16);
+            outside = (x-center(1)).^2+(z-center(2)).^2 >= radius^2;
+            testCase.verifyEqual(mappedX(outside),x(outside));
+            testCase.verifyEqual(mappedZ(outside),z(outside));
+            testCase.verifyGreaterThan(max(abs(mappedZ-z),[],"all"),.1);
+            testCase.verifyEqual((mappedX-center(1)).^2+(mappedZ-center(2)).^2, ...
+                (x-center(1)).^2+(z-center(2)).^2,AbsTol=1e-15);
+        end
+
+        function interiorTwistPreservesTheContinuousJacobian(testCase)
+            x = [.1;.25;-.3;.8];
+            z = [-.2;.15;-.25;.8];
+            h = 1e-5;
+            [xp,zp] = DensityDiagnosticReference.polarTwist(x+h,z,[.13 -.17],.7,1.3);
+            [xm,zm] = DensityDiagnosticReference.polarTwist(x-h,z,[.13 -.17],.7,1.3);
+            dXdx = (xp-xm)/(2*h);
+            dZdx = (zp-zm)/(2*h);
+            [xp,zp] = DensityDiagnosticReference.polarTwist(x,z+h,[.13 -.17],.7,1.3);
+            [xm,zm] = DensityDiagnosticReference.polarTwist(x,z-h,[.13 -.17],.7,1.3);
+            determinant = dXdx.*((zp-zm)/(2*h))-dZdx.*((xp-xm)/(2*h));
+            testCase.verifyEqual(determinant,ones(size(x)),AbsTol=5e-9);
+        end
+
+        function linearStableProfileHasAnalyticDisplacementAndEnergy(testCase)
+            [x,z] = ndgrid(linspace(-1,1,25));
+            [~,materialHeight] = DensityDiagnosticReference.inversePolarTwist(x,z,[.13 -.17],.7,1.3);
+            N2 = .04;
+            [eta,ape] = DensityDiagnosticReference.linearReference(z,materialHeight,N2);
+            % In a linear profile b=N2*z, the displaced buoyancy anomaly is
+            % -N2*eta. Integrating that restoring force gives N2*eta^2/2.
+            buoyancyAnomaly = N2*materialHeight-N2*z;
+            testCase.verifyEqual(eta,-buoyancyAnomaly/N2,AbsTol=3e-16);
+            referenceEnergy = N2*(z.^2/2-materialHeight.*z+materialHeight.^2/2);
+            testCase.verifyEqual(ape,referenceEnergy,AbsTol=1e-17);
+            testCase.verifyGreaterThan(max(ape,[],"all"),1e-4);
+            testCase.verifyGreaterThanOrEqual(min(ape,[],"all"),0);
+        end
+
+        function continuousMomentsConvergeButArbitraryDisplacementDoesNot(testCase)
+            sizes = [16 32 64 128];
+            errors = zeros(numel(sizes),2);
+            negativeErrors = zeros(size(sizes));
+            for index = 1:numel(sizes)
+                n = sizes(index);
+                grid = -1+((0:n-1)+.5)*2/n;
+                [x,z] = ndgrid(grid);
+                [~,materialHeight] = DensityDiagnosticReference.inversePolarTwist(x,z,[.13 -.17],.7,1.3);
+                distribution = DensityDiagnosticReference.empiricalDistribution(materialHeight,ones(size(z))*(2/n)^2);
+                moments = [sum(distribution.masses.*distribution.values.^2) sum(distribution.masses.*distribution.values.^4)];
+                errors(index,:) = abs(moments-[1/3 1/5]);
+                % This vertical-only deformation fixes both walls but has
+                % a nonunit Jacobian: it is not a parcel rearrangement.
+                arbitraryHeight = z-.3*sin(pi*x).*(1-z.^2);
+                negativeErrors(index) = abs(mean(arbitraryHeight.^2,"all")-1/3);
+                if index == 1
+                    % A continuous area-preserving map is NOT an exact
+                    % permutation of this finite set of sampled parcels.
+                    testCase.verifyGreaterThan(abs(moments(2)-mean(z.^4,"all")),1e-8);
+                end
+            end
+            testCase.verifyLessThan(errors(end,:),errors(1,:)/32);
+            testCase.verifyLessThan(errors(end,:),[3e-5 5e-5]);
+            testCase.verifyGreaterThan(min(negativeErrors),.02);
+            % Exact bias: .3^2 * mean(sin(pi*x)^2) * mean((1-z^2)^2).
+            testCase.verifyEqual(negativeErrors(end),.3^2*.5*(8/15),AbsTol=3e-5);
+        end
+
+        function changedNonlinearRestProfilesHaveIndependentAnalyticInverses(testCase)
+            original = DensityDiagnosticReference.nonlinearRestProfile(N2=.04,curvature=.3);
+            changed = DensityDiagnosticReference.nonlinearRestProfile(N2=.07,curvature=-.4);
+            z = linspace(-1,1,41).';
+            for profile = [original changed]
+                density = profile.density(z);
+                testCase.verifyLessThan(max(diff(density)),0);
+                testCase.verifyGreaterThan(min(profile.localN2(z)),0);
+                testCase.verifyEqual(profile.heightForDensity(density),z,AbsTol=2e-13);
+                testCase.verifyEqual(profile.buoyancy(z),profile.N2*(z+profile.curvature*z.^2/2),AbsTol=1e-16);
+            end
+            testCase.verifyGreaterThan(max(abs(changed.density(z)-original.density(z))),1);
+            testCase.verifyGreaterThan(abs(original.heightForDensity(changed.density(.5))-.5),.2);
+            testCase.verifyError(@()DensityDiagnosticReference.nonlinearRestProfile(curvature=1),'DensityDiagnosticReference:UnstableProfile');
+        end
+
+        function productionLinearProfileResolvesBothDisplacementSignsAndTinyEnergy(testCase)
+            N2 = .04;
+            knots = [-1;-.4;0;.4;1];
+            profile = WVNoMotionProfile(knots,1-N2*knots);
+            materialHeight = [-.7 -.1 .3;.5 -.25 .8];
+            eta = [.2 1e-7 -.2;-.3 -1e-7 .01];
+            z = materialHeight+eta;
+            testCase.verifyEqual(profile.inverse(1-N2*materialHeight),materialHeight,AbsTol=1e-14);
+            actual = profile.availablePotentialEnergy(z,materialHeight,1,1);
+            expected = N2*(z-materialHeight).^2/2;
+            testCase.verifyEqual(actual,expected,RelTol=1e-13);
+            testCase.verifyEqual(profile.availablePotentialEnergy(z,z,1,1),zeros(size(z)));
+            testCase.verifyEqual(size(profile.inverse(profile.density(z))),size(z));
+            % Use actual representable z-s, not the requested increment:
+            % the smallest displacement has no resolvable density anomaly.
+            materialHeight = [-.25 -.25 -.25 -.25 -.4 -.4 .4 .4 0 0 -eps(1) eps(1)];
+            z = [materialHeight(1:4)+[1e-12 -1e-12 eps(.25) -eps(.25)], ...
+                -.4-eps(.4),-.4+eps(.4),.4-eps(.4),.4+eps(.4),eps(1),-eps(1),eps(1),-eps(1)];
+            actual = profile.availablePotentialEnergy(z,materialHeight,1,1);
+            testCase.verifyGreaterThan(actual,zeros(size(actual)));
+            testCase.verifyEqual(actual,N2*(z-materialHeight).^2/2,RelTol=1e-13);
+        end
+
+        function productionTwoNodeProfileUsesLinearPolynomial(testCase)
+            N2 = .04;
+            profile = WVNoMotionProfile([-1;1],1-N2*[-1;1]);
+            materialHeight = [-.75 -.2 .2 .75 -.25 -.25 -.25 -.25];
+            z = materialHeight+[.3 1e-7 -1e-7 -.3 1e-12 -1e-12 eps(.25) -eps(.25)];
+            testCase.verifyEqual(profile.density(z),1-N2*z,AbsTol=3e-16);
+            testCase.verifyEqual(profile.inverse(1-N2*materialHeight),materialHeight,AbsTol=1e-14);
+            actual = profile.availablePotentialEnergy(z,materialHeight,1,1);
+            testCase.verifyGreaterThan(actual,zeros(size(actual)));
+            testCase.verifyEqual(actual,N2*(z-materialHeight).^2/2,RelTol=1e-13);
+        end
+
+        function productionSharpProfileInvertsAZeroEndpointSlope(testCase)
+            profile = WVNoMotionProfile([-1;0;1],[4;3;0]);
+            % PCHIP's first endpoint slope is zero for these secants. Its
+            % first segment has the explicit density 4-1.5*t^2+.5*t^3.
+            t = [0 1e-4 .1 .75 1];
+            density = 4-1.5*t.^2+.5*t.^3;
+            testCase.verifyEqual(profile.density(-1+t),density,AbsTol=1e-15);
+            testCase.verifyEqual(profile.inverse(density),-1+t,AbsTol=2e-11);
+            testCase.verifyEqual(profile.inverse([4 0]),[-1 1]);
+        end
+
+        function productionCompositionPreservesThreeDimensionalShapes(testCase)
+            N2 = .04;
+            profile = WVNoMotionProfile([-1;-.4;0;.4;1],1-N2*[-1;-.4;0;.4;1]);
+            materialHeight = reshape(linspace(-.7,.7,8),[2 2 2]);
+            z = materialHeight+reshape([.2 -.1 .15 -.2 .25 -.3 .1 -.15],[2 2 2]);
+            density = profile.density(materialHeight);
+            recovered = profile.inverse(density);
+            actual = profile.availablePotentialEnergy(z,recovered,1,1);
+            testCase.verifyEqual(size(density),[2 2 2]);
+            testCase.verifyEqual(size(recovered),[2 2 2]);
+            testCase.verifyEqual(size(actual),[2 2 2]);
+            testCase.verifyEqual(recovered,materialHeight,AbsTol=1e-14);
+            testCase.verifyEqual(actual,N2*(z-materialHeight).^2/2,RelTol=1e-12);
+        end
+
+        function productionNonlinearReconstructionConvergesToAnalyticTruth(testCase)
+            profiles = [DensityDiagnosticReference.nonlinearRestProfile(N2=.04,curvature=.3), ...
+                DensityDiagnosticReference.nonlinearRestProfile(N2=.07,curvature=-.4)];
+            [x,z] = ndgrid(linspace(-.8,.8,19));
+            [~,materialHeight] = DensityDiagnosticReference.inversePolarTwist(x,z,[.13 -.17],.7,1.3);
+            for reference = profiles
+                errors = zeros(3,2);
+                counts = [17 65 257];
+                for index = 1:numel(counts)
+                    knots = linspace(-1,1,counts(index)).';
+                    profile = WVNoMotionProfile(knots,reference.density(knots));
+                    recovered = profile.inverse(reference.density(materialHeight));
+                    errors(index,1) = max(abs(recovered-materialHeight),[],"all");
+                    actual = profile.availablePotentialEnergy(z,materialHeight,reference.gravity,reference.rho0);
+                    expected = reference.availablePotentialEnergy(z,materialHeight);
+                    errors(index,2) = max(abs(actual-expected),[],"all");
+                    testCase.verifyGreaterThanOrEqual(min(actual,[],"all"),0);
+                end
+                testCase.verifyLessThan(errors(end,:),errors(1,:)/100);
+                testCase.verifyLessThan(errors(end,:),[1e-8 1e-9]);
+            end
+        end
+
+        function productionWeakGradientAccuracyAccountsForDensityResolution(testCase)
+            rho0 = 1025;
+            g = 9.81;
+            N2 = 1e-10;
+            knots = [-1000;-731;-207;0];
+            density = @(z) rho0*(1-N2*z/g);
+            profile = WVNoMotionProfile(knots,density(knots));
+            materialHeight = [-850 -500 -100];
+            z = materialHeight+[25 -10 2];
+            densityHeightResolution = eps(rho0)*g/(rho0*N2);
+            testCase.verifyEqual(profile.inverse(density(materialHeight)),materialHeight,AbsTol=4*densityHeightResolution);
+            actual = profile.availablePotentialEnergy(z,materialHeight,g,rho0);
+            testCase.verifyEqual(actual,N2*(z-materialHeight).^2/2,RelTol=2e-6);
+        end
+
+        function productionRejectsPlateausAndOutOfRangeQueries(testCase)
+            testCase.verifyError(@()WVNoMotionProfile([-1;0;1],[3;2;2]),'WVNoMotionProfile:NonInvertibleDensity');
+            testCase.verifyError(@()WVNoMotionProfile([-1;0;1],[1;2;3]),'WVNoMotionProfile:NonInvertibleDensity');
+            profile = WVNoMotionProfile([-1;0;1],[3;2;1]);
+            testCase.verifyError(@()profile.inverse(.9),'WVNoMotionProfile:DensityOutsideProfile');
+            testCase.verifyError(@()profile.inverse(3.1),'WVNoMotionProfile:DensityOutsideProfile');
+            testCase.verifyError(@()profile.density(1.01),'WVNoMotionProfile:HeightOutsideProfile');
+            testCase.verifyError(@()profile.availablePotentialEnergy(0,-1.01,1,1),'WVNoMotionProfile:HeightOutsideProfile');
+            testCase.verifyEqual(profile.inverse([3 1]),[-1 1]);
+        end
+    end
+end

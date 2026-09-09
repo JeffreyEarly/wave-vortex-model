@@ -276,6 +276,9 @@ classdef WVTransformConstantStratification < WVGeometryDoublyPeriodicStratifiedC
             end
             self.shouldUseTrueNoMotionProfile = value;
             self.removeFromVariableCache("rho_nm");
+            self.removeFromVariableCache("eta_true");
+            self.removeFromVariableCache("ape");
+            self.removeFromVariableCache("apv");
         end
 
         function wvtX2 = waveVortexTransformWithResolution(self,m)

@@ -1,18 +1,26 @@
 classdef WVNoMotionProfileOperation < WVOperation
     properties (GetAccess=public, SetAccess=protected)
         solver
+        % Most recent compute result, including solver identity and exit flag.
+        %
+        % - Topic: Internal
+        % - Developer: true
+        lastSolverOutput = struct()
     end
 
     methods
 
-        function self = WVNoMotionProfileOperation()
+        function self = WVNoMotionProfileOperation(options)
             arguments
+                options.solver (1,1) string {mustBeMember(options.solver,["auto","lsqnonlin","fminsearch","dampedLeastSquares"])} = "auto"
             end
             outputVariables(1) = WVVariableAnnotation('rho_nm',{'z'},'kg m-3', 'no-motion density profile');
             % outputVariables(1).isVariableWithLinearTimeStep = false;
             self@WVOperation('rho_nm',outputVariables,@disp);
 
-            if WVNoMotionProfileOperation.hasOptimizationToolboxSupport()
+            if options.solver ~= "auto"
+                self.solver = options.solver;
+            elseif WVNoMotionProfileOperation.hasOptimizationToolboxSupport()
                 self.solver = "lsqnonlin";
             else
                 self.solver = "fminsearch";
@@ -20,7 +28,14 @@ classdef WVNoMotionProfileOperation < WVOperation
         end
 
         function varargout = compute(self,wvt,varargin)
-            rho_nm = WVNoMotionProfileOperation.find_rho_nm(wvt.z_int, wvt.Lz, wvt.rho_total, wvt.rho_nm0,solver=self.solver);
+            self.lastSolverOutput = struct();
+            [rho_nm,exitflag,output] = WVNoMotionProfileOperation.find_rho_nm(wvt.z_int, wvt.Lz, wvt.rho_total, wvt.rho_nm0,solver=self.solver);
+            output.exitflag = exitflag;
+            output.solver = self.solver;
+            self.lastSolverOutput = output;
+            if self.solver == "dampedLeastSquares" && (exitflag <= 0 || output.maximumResidual > 1e-8 || any(~isfinite(rho_nm)) || any(diff(rho_nm) >= 0))
+                error('WVNoMotionProfileOperation:UnqualifiedFit','The no-motion fit did not reach a finite, strictly ordered profile with normalized moment residual at most 1e-8. Inspect lastSolverOutput before using these density diagnostics.');
+            end
             varargout = {rho_nm};
         end
 
@@ -34,45 +49,49 @@ classdef WVNoMotionProfileOperation < WVOperation
         end
 
         function [rho,exitflag,output] = find_rho_nm(z_int, Lz, rho_total, rho_nm0,options)
-            %SOLVEMOMENTS_M1ZERO_MNFIXED
-            % Solve moments:  sum_{j=1}^n z_j m_j^k = c_k,  k=1..n
-            % with constraints:
-            %   m(1) = 0 (fixed)
-            %   m(n) = M (fixed, known, positive)
-            %   0 < m(2) < ... < m(n-1) < M  (strict ordering enforced)
+            % Fit a stably ordered profile to volume-weighted density moments.
             %
-            % Unknowns are u = [u3; ...; un] where gaps in log-space are
-            %   g_j = exp(u_j) = x_j - x_{j-1} > 0,  j=3..n
-            % and x_n = log(M) is fixed. Then x_2 is chosen so x_n stays fixed:
-            %   x_2 = log(M) - sum_{j=3}^n g_j
-            % and x_j = x_2 + sum_{t=3}^j g_t for j=3..n.
-            % Finally m_j = exp(x_j) for j=2..n-1, and m_n = M.
+            % Horizontally uniform stable density is returned exactly. For
+            % other states, the initial profile fixes the endpoint densities;
+            % interior nodes use strictly ordered log-gap parameters. The
+            % residuals are normalized raw moments of orders 1 through Nz.
             %
-            % Inputs
-            %   z       (n,1) positive weights
-            %   c       (n,1) target moments for k=1..n
-            %   M       (1,1) fixed value for m(n), must be > 0
-            %   m0      (n,1) initial guess, must satisfy m0(1)=0, m0(n)=M, strictly increasing
-            %   options (optional) optimoptions for lsqnonlin
+            % lsqnonlin requires Optimization Toolbox; fminsearch retains the
+            % legacy toolbox-free fit. dampedLeastSquares uses augmented QR
+            % with explicit bounded iteration/evaluation controls. Direct
+            % callers must inspect exitflag and output: a small step alone
+            % does not establish an accurate physical density distribution.
             %
-            % Outputs
-            %   m       (n,1) solution with fixed endpoints
-            %   u       (n-2,1) unconstrained parameters [u3..un]
-            %   exitflag, output : from lsqnonlin
-            %
-            % Requires Optimization Toolbox (lsqnonlin).
+            % - Topic: Internal
+            % - Developer: true
 
             arguments
                 z_int (:,1) double {mustBeFinite, mustBePositive}
                 Lz (1,1) double {mustBeFinite, mustBePositive}
                 rho_total (:,:,:) double {mustBeFinite}
                 rho_nm0 (:,1) double {mustBeFinite, mustBeNonnegative}
-                options.solver (1,1) string {mustBeMember(options.solver, ["lsqnonlin","fminsearch"])} = "fminsearch"
+                options.solver (1,1) string {mustBeMember(options.solver, ["lsqnonlin","fminsearch","dampedLeastSquares"])} = "fminsearch"
             end
 
             n = numel(z_int);
-            assert(numel(rho_nm0)==n, 'm0 must have length n.');
-            assert(all(diff(rho_nm0)<0), 'm0 must be strictly decreasing.');
+            if numel(rho_nm0) ~= n || size(rho_total,3) ~= n
+                error('WVNoMotionProfileOperation:InvalidDimensions','Density, reference profile and integration weights must share the same vertical dimension.');
+            end
+            if any(diff(rho_nm0) >= 0)
+                error('WVNoMotionProfileOperation:NonInvertibleReference','The initial reference density must strictly decrease with height.');
+            end
+
+            % A horizontally uniform stable state is already its own
+            % no-motion profile, even after its extrema have changed.
+            % Recover it exactly instead of solving an ill-conditioned
+            % inverse moment problem against the old endpoints.
+            stableProfile = reshape(rho_total(1,1,:),[],1);
+            if all(diff(stableProfile) < 0) && all(rho_total == reshape(stableProfile,1,1,[]),'all')
+                rho = stableProfile;
+                exitflag = 1;
+                output = struct(iterations=0,funcCount=0,maximumResidual=0,algorithm="stable-rest-profile",message="The density is already horizontally uniform and stably ordered.");
+                return
+            end
 
             z = flip(z_int/Lz);
 
@@ -84,6 +103,8 @@ classdef WVNoMotionProfileOperation < WVOperation
             u0 = WVNoMotionProfileOperation.rho_to_u(rho_nm0, rho0, rhoD);
 
             switch options.solver
+                case "dampedLeastSquares"
+                    [u,exitflag,output] = WVNoMotionProfileOperation.solveMoments(u0,z,rho_moment);
                 case "lsqnonlin"
                     options = optimoptions("lsqnonlin", ...
                         "Display","none", ...
@@ -116,12 +137,116 @@ classdef WVNoMotionProfileOperation < WVOperation
 
         % only issue now is that m0_j is decreasing, not increasing.
 
+        function [u,exitflag,output] = solveMoments(u0,weights,target,options)
+            % Fit normalized density moments with bounded damped least squares.
+            % The augmented rectangular system is solved directly, avoiding normal
+            % equations for the ill-conditioned raw-moment Jacobian.
+            %
+            % - Topic: Internal
+            % - Developer: true
+            arguments
+                u0 (:,1) double {mustBeFinite,mustBeReal}
+                weights (:,1) double {mustBeFinite,mustBeReal,mustBePositive}
+                target (:,1) double {mustBeFinite,mustBeReal}
+                options.maximumIterations (1,1) double {mustBeFinite,mustBeInteger,mustBeNonnegative} = 2000
+                options.maximumEvaluations (1,1) double {mustBeFinite,mustBeInteger,mustBePositive} = 5000
+                options.gradientTolerance (1,1) double {mustBeFinite,mustBePositive} = 1e-12
+                options.stepTolerance (1,1) double {mustBeFinite,mustBePositive} = 1e-12
+                options.relativeCostTolerance (1,1) double {mustBeFinite,mustBePositive} = 1e-12
+            end
+            if numel(weights) ~= numel(u0)+2 || numel(target) ~= numel(weights)
+                error("WVNoMotionProfileOperation:InvalidDimensions","Use n weights and target moments with n-2 log-gap parameters.");
+            end
+            u = u0;
+            [residual,J] = WVNoMotionProfileOperation.residual_and_jacobian(u,weights,target);
+            cost = sum(residual.^2)/2;
+            initialCost = cost;
+            scale = max(sum(J.^2,1));
+            damping = max(1e-3*scale,realmin);
+            multiplier = 2;
+            accepted = 0;
+            rejected = 0;
+            evaluations = 1;
+            exitflag = 0;
+            reason = "iteration-limit";
+            iterations = 0;
+            identity = eye(numel(u));
+            for iteration = 1:options.maximumIterations
+                iterations = iteration;
+                gradientNorm = norm(J'*residual,Inf);
+                if gradientNorm<=options.gradientTolerance
+                    exitflag = 1;
+                    reason = "gradient-tolerance";
+                    break
+                end
+                if evaluations >= options.maximumEvaluations
+                    reason = "evaluation-limit";
+                    break
+                end
+                step = [J;sqrt(damping)*identity]\[-residual;zeros(numel(u),1)];
+                if any(~isfinite(step))
+                    reason = "nonfinite-step";
+                    exitflag = -1;
+                    break
+                end
+                if norm(step)<=options.stepTolerance*(norm(u)+options.stepTolerance)
+                    exitflag = 2;
+                    reason = "step-tolerance";
+                    break
+                end
+                trial = u+step;
+                [trialResidual,trialJ] = WVNoMotionProfileOperation.residual_and_jacobian(trial,weights,target);
+                evaluations = evaluations+1;
+                trialCost = sum(trialResidual.^2)/2;
+                linearChange = J*step;
+                predictedDecrease = -residual'*linearChange-sum(linearChange.^2)/2;
+                actualDecrease = cost-trialCost;
+                if isfinite(trialCost) && all(isfinite(trialJ),"all") && predictedDecrease>0 && actualDecrease>0
+                    gain = actualDecrease/predictedDecrease;
+                    oldCost = cost;
+                    u = trial;
+                    residual = trialResidual;
+                    J = trialJ;
+                    cost = trialCost;
+                    accepted = accepted+1;
+                    damping = max(realmin,damping*max(1/3,1-(2*gain-1)^3));
+                    multiplier = 2;
+                    if actualDecrease<=options.relativeCostTolerance*oldCost
+                        exitflag = 3;
+                        reason = "relative-cost-tolerance";
+                        break
+                    end
+                else
+                    rejected = rejected+1;
+                    damping = damping*multiplier;
+                    multiplier = 2*multiplier;
+                    if ~isfinite(damping) || damping>1e30*max(scale,realmin)
+                        exitflag = -2;
+                        reason = "damping-limit";
+                        break
+                    end
+                end
+                if evaluations>=options.maximumEvaluations
+                    reason = "evaluation-limit";
+                    break
+                end
+            end
+            output = struct(algorithm="damped-least-squares",reason=reason,iterations=iterations,evaluations=evaluations,acceptedSteps=accepted, ...
+                rejectedSteps=rejected,initialCost=initialCost,finalCost=cost,maximumResidual=max(abs(residual)), ...
+                gradientNorm=norm(J'*residual,Inf),damping=damping,parameters=options);
+        end
+
         function rho_moment = moments_from_rho_tot(rho_total, rho0, rhoD, z_int, Lz)
             int_vol_avg = @(integrand) sum(mean(mean(shiftdim(z_int,-2).*integrand,1),2),3)/Lz;
 
+            normalizedDensity = (rho_total-rho0)/(rhoD-rho0);
+            power = normalizedDensity;
             rho_moment = zeros(size(rho_total,3),1);
             for i=1:size(rho_total,3)
-                rho_moment(i) = int_vol_avg(((rho_total-rho0)/(rhoD - rho0)).^i);
+                rho_moment(i) = int_vol_avg(power);
+                if i < size(rho_total,3)
+                    power = power.*normalizedDensity;
+                end
             end
         end
 

@@ -8,6 +8,12 @@ nav_order: 100
 
 ## [Unreleased]
 
+### MATLAB density diagnostic foundations
+
+- Corrected cache invalidation when changing `shouldUseTrueNoMotionProfile` and fixed its reversed documentation. MATLAB's default profile-selection flag and saved-file behavior remain unchanged.
+- Recover horizontally uniform stable density exactly as its own no-motion profile, including changed endpoint densities. Form density moments by recurrence, avoiding repeated full-grid powers.
+- Added an explicit `dampedLeastSquares` no-motion solver option that uses no Optimization Toolbox, reports its termination and residual, and rejects unqualified operation results before caching. Existing automatic solver selection remains unchanged.
+
 ### MATLAB phase output
 
 - Corrected `phase` and `conjPhase` annotations to declare complex values. Explicitly requested phase diagnostics now use the standard `_real`/`_imag` NetCDF variables, preserving both components in ordinary and dense output across restart and append. This replaces the malformed real-only diagnostic encoding; existing files are not migrated. Normal coefficient-based restart already reconstructs the phases from `t`, `t0`, and the modal frequencies and is unchanged.

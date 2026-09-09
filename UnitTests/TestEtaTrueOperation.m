@@ -131,7 +131,7 @@ classdef TestEtaTrueOperation < matlab.unittest.TestCase
             end
         end
 
-        function testShouldUseTrueNoMotionProfileInvalidatesOnlyRhoNmCache(testCase)
+        function testShouldUseTrueNoMotionProfileInvalidatesDensityDiagnosticCaches(testCase)
             transforms = {
                 TestEtaTrueOperation.constantTransform()
                 TestEtaTrueOperation.hydrostaticTransform()
@@ -142,6 +142,9 @@ classdef TestEtaTrueOperation < matlab.unittest.TestCase
                 wvt = transforms{iTransform};
                 wvt.addToVariableCache("rho_nm",wvt.rho_nm0);
                 wvt.addToVariableCache("eta",zeros(wvt.spatialMatrixSize));
+                for name = ["eta_true","ape","apv"]
+                    wvt.addToVariableCache(name,ones(wvt.spatialMatrixSize));
+                end
 
                 wvt.shouldUseTrueNoMotionProfile = false;
                 testCase.verifyTrue(isKey(wvt.variableCache,"rho_nm"));
@@ -149,11 +152,22 @@ classdef TestEtaTrueOperation < matlab.unittest.TestCase
 
                 wvt.shouldUseTrueNoMotionProfile = true;
                 testCase.verifyFalse(isKey(wvt.variableCache,"rho_nm"));
+                for name = ["eta_true","ape","apv"]
+                    testCase.verifyFalse(isKey(wvt.variableCache,name));
+                end
                 testCase.verifyTrue(isKey(wvt.variableCache,"eta"));
 
                 wvt.addToVariableCache("rho_nm",wvt.rho_nm0);
                 wvt.shouldUseTrueNoMotionProfile = true;
                 testCase.verifyTrue(isKey(wvt.variableCache,"rho_nm"));
+                for name = ["eta_true","ape","apv"]
+                    wvt.addToVariableCache(name,ones(wvt.spatialMatrixSize));
+                end
+                wvt.shouldUseTrueNoMotionProfile = false;
+                for name = ["rho_nm","eta_true","ape","apv"]
+                    testCase.verifyFalse(isKey(wvt.variableCache,name));
+                end
+                testCase.verifyTrue(isKey(wvt.variableCache,"eta"));
             end
         end
     end

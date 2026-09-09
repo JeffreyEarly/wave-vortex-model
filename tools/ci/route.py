@@ -28,6 +28,7 @@ MATLAB_CORE_TESTS = ['TestWVTransformInitialization', 'TestCoreTransformInvarian
                      'TestOperationRegistrationAndCaching', 'TestTotalFlowComponent',
                      'TestFlowComponentSurfaceDiagnostics', 'TestPhysicalUnitMetadata',
                      'TestPublicInterpolationContract', 'TestRandomFlow', 'TestEtaTrueOperation',
+                     'TestDensityDiagnosticReference', 'TestNoMotionProfileSolver',
                      'TestVerticalCalculus', 'TestNonlinearFlux', 'TestForcingLifecycle',
                      'TestForcingMathematicalContracts', 'TestTraditionalDamping',
                      'TestNarrowBandGeostrophicForcing', 'TestAdaptiveDampingResolution',
