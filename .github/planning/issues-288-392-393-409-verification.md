@@ -47,3 +47,5 @@ Numeric readback covers 43, 55 and 65 variables respectively. Maximum normalized
 ## Hosted integration
 
 Required hosted CI is the merge gate after publication. Its result and the eventual integration commit are recorded in the PR/issue handoff rather than guessed in this local qualification receipt. Optional Full CI is not requested.
+
+The first required run (`34307890693`) exposed GCC-only `-Werror=range-loop-construct` in a new test loop copying a pointer pair. The test now binds that pair by const reference. Its complete native NetCDF suite passed again (2.20 seconds). This is test-only; the qualified production source, MATLAB behavior and benchmark binaries are unchanged, so those passing gates were not repeated. The replacement required run validates Linux compilation.

@@ -1424,5 +1424,20 @@
     "Existing allocated Nj<=2 adaptive damping fallback is unchanged; undefined horizontal maximum-zero full-rate construction remains rejected.",
     "Six phase/density-profile contracts remain tracked under issue391; issues407 and412 are separate."
   ],
-  "hostedIntegration": "Required CI and merge are recorded in the PR and issue handoff; no hosted success is inferred from local checks."
+  "hostedIntegration": "Required CI and merge are recorded in the PR and issue handoff; no hosted success is inferred from local checks.",
+  "ciCorrections": [
+    {
+      "initialRun": "https://github.com/JeffreyEarly/wave-vortex-model/actions/runs/34307890693",
+      "failure": "GCC range-loop-construct warning treated as error in test pointer-pair loop",
+      "correction": "Bind pair by const reference; no production change",
+      "file": "PortableRuntime/tests/TestWVModelOutputNetCDF.cpp",
+      "correctedSHA256": "e5335bd840e1b1df39dd00aff341ee5a61fc8280af33512edf87e0de07fc66b5",
+      "focusedNativeTest": {
+        "name": "model-output-netcdf",
+        "passed": true,
+        "durationSeconds": 2.2
+      },
+      "retainedEvidence": "Initial source hashes remain bound to original passing local qualification. Production binaries and numerical/performance results are unchanged."
+    }
+  ]
 }
