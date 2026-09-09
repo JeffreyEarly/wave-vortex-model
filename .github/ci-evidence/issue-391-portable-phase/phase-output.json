@@ -1,0 +1,300 @@
+{
+  "schema": "portable-phase-output-numerical-v1",
+  "rows": [
+    {
+      "configuration": "constant-hydrostatic-aa0",
+      "grid": [
+        9,
+        7,
+        10
+      ],
+      "provider": "reference",
+      "maximumAbsoluteError": 1.1443916996305594E-16,
+      "scenarios": [
+        "whole",
+        "cppRestart",
+        "matlabToCpp",
+        "cppToMatlab"
+      ],
+      "ordinaryRecords": 3,
+      "denseRecords": 9
+    },
+    {
+      "configuration": "constant-hydrostatic-aa0",
+      "grid": [
+        9,
+        7,
+        10
+      ],
+      "provider": "native",
+      "maximumAbsoluteError": 1.1443916996305594E-16,
+      "scenarios": [
+        "whole",
+        "cppRestart",
+        "matlabToCpp",
+        "cppToMatlab"
+      ],
+      "ordinaryRecords": 3,
+      "denseRecords": 9
+    },
+    {
+      "configuration": "constant-hydrostatic-aa1",
+      "grid": [
+        8,
+        6,
+        9
+      ],
+      "provider": "reference",
+      "maximumAbsoluteError": 3.4694469519536142E-18,
+      "scenarios": [
+        "whole",
+        "cppRestart",
+        "matlabToCpp",
+        "cppToMatlab"
+      ],
+      "ordinaryRecords": 3,
+      "denseRecords": 9
+    },
+    {
+      "configuration": "constant-hydrostatic-aa1",
+      "grid": [
+        8,
+        6,
+        9
+      ],
+      "provider": "native",
+      "maximumAbsoluteError": 3.4694469519536142E-18,
+      "scenarios": [
+        "whole",
+        "cppRestart",
+        "matlabToCpp",
+        "cppToMatlab"
+      ],
+      "ordinaryRecords": 3,
+      "denseRecords": 9
+    },
+    {
+      "configuration": "constant-nonhydrostatic-aa0",
+      "grid": [
+        9,
+        7,
+        10
+      ],
+      "provider": "reference",
+      "maximumAbsoluteError": 1.1443916996305594E-16,
+      "scenarios": [
+        "whole",
+        "cppRestart",
+        "matlabToCpp",
+        "cppToMatlab"
+      ],
+      "ordinaryRecords": 3,
+      "denseRecords": 9
+    },
+    {
+      "configuration": "constant-nonhydrostatic-aa0",
+      "grid": [
+        9,
+        7,
+        10
+      ],
+      "provider": "native",
+      "maximumAbsoluteError": 1.1443916996305594E-16,
+      "scenarios": [
+        "whole",
+        "cppRestart",
+        "matlabToCpp",
+        "cppToMatlab"
+      ],
+      "ordinaryRecords": 3,
+      "denseRecords": 9
+    },
+    {
+      "configuration": "constant-nonhydrostatic-aa1",
+      "grid": [
+        8,
+        6,
+        9
+      ],
+      "provider": "reference",
+      "maximumAbsoluteError": 3.4694469519536142E-18,
+      "scenarios": [
+        "whole",
+        "cppRestart",
+        "matlabToCpp",
+        "cppToMatlab"
+      ],
+      "ordinaryRecords": 3,
+      "denseRecords": 9
+    },
+    {
+      "configuration": "constant-nonhydrostatic-aa1",
+      "grid": [
+        8,
+        6,
+        9
+      ],
+      "provider": "native",
+      "maximumAbsoluteError": 3.4694469519536142E-18,
+      "scenarios": [
+        "whole",
+        "cppRestart",
+        "matlabToCpp",
+        "cppToMatlab"
+      ],
+      "ordinaryRecords": 3,
+      "denseRecords": 9
+    },
+    {
+      "configuration": "hydrostatic-aa0",
+      "grid": [
+        9,
+        7,
+        10
+      ],
+      "provider": "reference",
+      "maximumAbsoluteError": 1.1443916996305594E-16,
+      "scenarios": [
+        "whole",
+        "cppRestart",
+        "matlabToCpp",
+        "cppToMatlab"
+      ],
+      "ordinaryRecords": 3,
+      "denseRecords": 9
+    },
+    {
+      "configuration": "hydrostatic-aa0",
+      "grid": [
+        9,
+        7,
+        10
+      ],
+      "provider": "native",
+      "maximumAbsoluteError": 1.1443916996305594E-16,
+      "scenarios": [
+        "whole",
+        "cppRestart",
+        "matlabToCpp",
+        "cppToMatlab"
+      ],
+      "ordinaryRecords": 3,
+      "denseRecords": 9
+    },
+    {
+      "configuration": "hydrostatic-aa1",
+      "grid": [
+        8,
+        6,
+        9
+      ],
+      "provider": "reference",
+      "maximumAbsoluteError": 6.9388939039072284E-18,
+      "scenarios": [
+        "whole",
+        "cppRestart",
+        "matlabToCpp",
+        "cppToMatlab"
+      ],
+      "ordinaryRecords": 3,
+      "denseRecords": 9
+    },
+    {
+      "configuration": "hydrostatic-aa1",
+      "grid": [
+        8,
+        6,
+        9
+      ],
+      "provider": "native",
+      "maximumAbsoluteError": 6.9388939039072284E-18,
+      "scenarios": [
+        "whole",
+        "cppRestart",
+        "matlabToCpp",
+        "cppToMatlab"
+      ],
+      "ordinaryRecords": 3,
+      "denseRecords": 9
+    },
+    {
+      "configuration": "boussinesq-aa0",
+      "grid": [
+        9,
+        7,
+        10
+      ],
+      "provider": "reference",
+      "maximumAbsoluteError": 1.1443916996305594E-16,
+      "scenarios": [
+        "whole",
+        "cppRestart",
+        "matlabToCpp",
+        "cppToMatlab"
+      ],
+      "ordinaryRecords": 3,
+      "denseRecords": 9
+    },
+    {
+      "configuration": "boussinesq-aa0",
+      "grid": [
+        9,
+        7,
+        10
+      ],
+      "provider": "native",
+      "maximumAbsoluteError": 1.1443916996305594E-16,
+      "scenarios": [
+        "whole",
+        "cppRestart",
+        "matlabToCpp",
+        "cppToMatlab"
+      ],
+      "ordinaryRecords": 3,
+      "denseRecords": 9
+    },
+    {
+      "configuration": "boussinesq-aa1",
+      "grid": [
+        8,
+        6,
+        9
+      ],
+      "provider": "reference",
+      "maximumAbsoluteError": 6.9388939039072284E-18,
+      "scenarios": [
+        "whole",
+        "cppRestart",
+        "matlabToCpp",
+        "cppToMatlab"
+      ],
+      "ordinaryRecords": 3,
+      "denseRecords": 9
+    },
+    {
+      "configuration": "boussinesq-aa1",
+      "grid": [
+        8,
+        6,
+        9
+      ],
+      "provider": "native",
+      "maximumAbsoluteError": 6.9388939039072284E-18,
+      "scenarios": [
+        "whole",
+        "cppRestart",
+        "matlabToCpp",
+        "cppToMatlab"
+      ],
+      "ordinaryRecords": 3,
+      "denseRecords": 9
+    }
+  ],
+  "matlabRelease": "2025b",
+  "initialTime": 37,
+  "referenceTime": 17,
+  "finalTime": 38,
+  "step": 0.25,
+  "denseInterval": 0.125,
+  "passes": true
+}

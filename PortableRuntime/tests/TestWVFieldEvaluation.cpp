@@ -9,6 +9,7 @@
 #include <array>
 #include <cmath>
 #include <cstddef>
+#include <cstring>
 #include <iostream>
 #include <limits>
 #include <memory>
@@ -240,6 +241,131 @@ void verifyPlanValidation() {
   status = service->createPlan({full("psi")}, plan);
   require(status.code == WVKernelStatusCode::unsupportedOperation,
           "undefined equatorial streamfunction was not rejected by planning");
+}
+
+void verifyPhaseDiagnostics(bool hydrostatic, bool antialias) {
+  const auto config = configuration(8, 6, hydrostatic, antialias);
+  auto state = stateFor(config);
+  const auto original = state;
+  WVTransformConstantStratificationDescriptor descriptor;
+  require(bool(WVTransformConstantStratificationDescriptor::create(config, descriptor)),
+          "phase descriptor creation failed");
+  std::unique_ptr<WVFieldEvaluationService> service;
+  require(bool(WVFieldEvaluationService::create(config,
+      std::make_unique<WVReferenceFFTEngine>(), service)), "phase service creation failed");
+  WVFieldEvaluationPlan plan;
+  require(bool(service->createPlan({full("phase"), full("conjPhase"), full("Apt"),
+      full("Amt"), full("A0t")}, plan)), "phase diagnostic plan rejected");
+  const auto count = state.shape.elementCount();
+  std::array<std::vector<WVComplex64>, 5> storage;
+  std::array<WVFieldOutputView, 5> views{};
+  for (std::size_t index = 0; index < storage.size(); ++index) {
+    const auto &spec = plan.outputs()[index];
+    require(spec.isComplex && spec.dimensions ==
+                std::vector<std::size_t>{state.shape.rows, state.shape.columns} &&
+                spec.elementCount == count,
+            "phase output lost its complex [j,kl] shape");
+    storage[index].assign(count, {713, -719});
+    views[index] = {nullptr, count, storage[index].data()};
+  }
+  const auto retained = service->persistentBytes() + plan.persistentBytes();
+  const double t0 = 17, t = 371.25;
+  const std::array<std::uint8_t, 5> inactive{};
+  require(bool(service->evaluate(plan, state.view(t, t0), views.data(), views.size(),
+                                 inactive.data())), "inactive phase plan failed");
+  for (const auto &output : storage)
+    for (const auto value : output)
+      require(value.real == 713 && value.imag == -719,
+              "inactive phase output was modified");
+  require(service->metrics().diagnosticWorkspaceHighWaterBytes == 0 &&
+              service->metrics().diagnosticIntermediateReuseCount == 0,
+          "inactive phase outputs allocated a phase table");
+  const std::array<std::uint8_t, 5> onlyA0{0, 0, 0, 0, 1};
+  require(bool(service->evaluate(plan, state.view(t, t0), views.data(), views.size(),
+                                 onlyA0.data())), "A0-only diagnostic selection failed");
+  require(service->metrics().diagnosticWorkspaceHighWaterBytes == 0 &&
+              service->metrics().diagnosticIntermediateReuseCount == 0,
+          "A0-only output allocated or reused an unrequested phase table");
+
+  const auto evaluateAndCompare = [&](double time, double referenceTime) {
+    const auto previousReuse = service->metrics().diagnosticIntermediateReuseCount;
+    require(bool(service->evaluate(plan, state.view(time, referenceTime),
+                                   views.data(), views.size())), "phase evaluation failed");
+    const double pi = std::acos(-1.0);
+    const double f = 2 * config.rotationRate * std::sin(config.latitude * pi / 180);
+    for (std::size_t horizontal = 0; horizontal < state.shape.columns; ++horizontal) {
+      const double kh = descriptor.fourierModes()[horizontal].Kh;
+      for (std::size_t vertical = 0; vertical < state.shape.rows; ++vertical) {
+        const auto index = vertical + state.shape.rows * horizontal;
+        const double m = static_cast<double>(vertical) * pi / config.Lz;
+        // Independent constant-N dispersion relation; j=0 follows the
+        // model's h=1 convention, including otherwise unused wave slots.
+        const double gravityTerm = vertical == 0 ? config.g * kh * kh :
+            hydrostatic ? config.N0 * config.N0 * kh * kh / (m * m) :
+            (config.N0 * config.N0 - f * f) * kh * kh / (m * m + kh * kh);
+        const double angle = std::sqrt(f * f + gravityTerm) * (time - referenceTime);
+        const double real = std::cos(angle), imag = std::sin(angle);
+        requireClose(storage[0][index].real, real, "phase real differs from analytic dispersion");
+        requireClose(storage[0][index].imag, imag, "phase does not use t-t0");
+        requireClose(storage[1][index].real, real, "conjPhase real differs");
+        requireClose(storage[1][index].imag, -imag, "conjPhase is not the conjugate");
+        requireClose(std::hypot(storage[0][index].real, storage[0][index].imag), 1,
+                     "phase is not unit magnitude");
+        const auto ap = state.Ap[index], am = state.Am[index];
+        requireClose(storage[2][index].real, ap.real * real - ap.imag * imag, "Apt phase product real");
+        requireClose(storage[2][index].imag, ap.real * imag + ap.imag * real, "Apt phase product imaginary");
+        requireClose(storage[3][index].real, am.real * real + am.imag * imag, "Amt conjugate product real");
+        requireClose(storage[3][index].imag, am.imag * real - am.real * imag, "Amt conjugate product imaginary");
+        require(storage[4][index].real == state.A0[index].real &&
+                    storage[4][index].imag == state.A0[index].imag, "phase output changed A0t");
+      }
+    }
+    require(service->metrics().diagnosticIntermediateReuseCount == previousReuse + 3,
+            "phase/conjPhase/Apt/Amt did not share their phase table");
+    require(service->metrics().diagnosticWorkspaceHighWaterBytes == count * sizeof(WVComplex64) &&
+                service->metrics().diagnosticWorkspaceLiveBytes == 0 &&
+                service->metrics().diagnosticPrimitiveOutputCount == 0 &&
+                service->metrics().fftExecutionCount == 0,
+            "phase diagnostics retained scratch or reconstructed physical fields");
+    require(service->persistentBytes() + plan.persistentBytes() == retained,
+            "phase evaluation changed retained plan/service storage");
+  };
+  evaluateAndCompare(t0, t0);
+  evaluateAndCompare(t, t0);
+  const auto phaseAtTime = storage[0];
+  evaluateAndCompare(t + 1000, t0 + 1000);
+  require(std::memcmp(phaseAtTime.data(), storage[0].data(), count * sizeof(WVComplex64)) == 0,
+          "phase depends on absolute time instead of elapsed time");
+  evaluateAndCompare(t + 31.5, t0);
+  require(std::memcmp(phaseAtTime.data(), storage[0].data(), count * sizeof(WVComplex64)) != 0,
+          "phase reused a stale event time");
+  require(std::memcmp(original.Ap.data(), state.Ap.data(), count * sizeof(WVComplex64)) == 0 &&
+              std::memcmp(original.Am.data(), state.Am.data(), count * sizeof(WVComplex64)) == 0 &&
+              std::memcmp(original.A0.data(), state.A0.data(), count * sizeof(WVComplex64)) == 0,
+          "phase diagnostics modified coefficients");
+  const auto phaseBeforeZeroing = storage[0];
+  std::fill(state.Ap.begin(), state.Ap.end(), WVComplex64{});
+  std::fill(state.Am.begin(), state.Am.end(), WVComplex64{});
+  std::fill(state.A0.begin(), state.A0.end(), WVComplex64{});
+  evaluateAndCompare(t + 31.5, t0);
+  require(std::memcmp(phaseBeforeZeroing.data(), storage[0].data(), count * sizeof(WVComplex64)) == 0,
+          "phase depends on wave-vortex amplitudes");
+
+  WVFieldSamplingRequest profiles;
+  profiles.kind = WVFieldSamplingKind::fixedVerticalProfiles;
+  profiles.xIndices = {1}; profiles.yIndices = {1};
+  WVFieldSamplingRequest positions;
+  positions.kind = WVFieldSamplingKind::positions;
+  positions.x = {0}; positions.y = {0}; positions.z = {0};
+  for (const auto *name : {"phase", "conjPhase"}) {
+    WVFieldEvaluationPlan invalid;
+    require(!service->createPlan({{"sample", name, profiles}}, invalid), "spectral phase accepted profile sampling");
+    require(!service->createPlan({{"sample", name, positions}}, invalid), "spectral phase accepted position sampling");
+  }
+  for (const auto *name : {"rho_nm", "eta_true", "ape", "apv"}) {
+    WVFieldEvaluationPlan invalid;
+    require(!service->createPlan({full(name)}, invalid), "phase support enabled unqualified density evaluation");
+  }
 }
 
 void verifyFailureAndLifecycleContracts() {
@@ -1038,6 +1164,9 @@ void verifySmallGridSplineBoundaries() {
 
 int main() {
   try {
+    for (const bool hydrostatic : {false, true})
+      for (const bool antialias : {false, true})
+        verifyPhaseDiagnostics(hydrostatic, antialias);
     verifyBarotropicSplineExtrapolation();
     verifySmallGridSplineBoundaries();
     verifyCatalog();

@@ -1631,9 +1631,9 @@
         "phase"
       ],
       "intermediates": [],
-      "runtimeStatus": "intentional-incompatibility",
+      "runtimeStatus": "implemented",
       "samplingRestriction": "Spectral coefficient layout only; spatial interpolation is undefined.",
-      "configurationRestriction": "phase-output-evaluation-pending-391: MATLAB complex output metadata is corrected; portable phase evaluation and persistence remain unqualified."
+      "configurationRestriction": "Applies only to wave-bearing transform configurations; evaluated at the event time relative to t0."
     },
     {
       "name": "energy_g",
@@ -1811,9 +1811,9 @@
       "intermediates": [
         "phaseEvolution"
       ],
-      "runtimeStatus": "intentional-incompatibility",
+      "runtimeStatus": "implemented",
       "samplingRestriction": "Spectral coefficient layout only; spatial interpolation is undefined.",
-      "configurationRestriction": "phase-output-evaluation-pending-391: MATLAB complex output metadata is corrected; portable phase evaluation and persistence remain unqualified."
+      "configurationRestriction": "Applies only to wave-bearing transform configurations; evaluated at the event time relative to t0."
     },
     {
       "name": "rho_nm",
