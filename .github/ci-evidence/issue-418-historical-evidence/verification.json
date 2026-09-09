@@ -1,0 +1,81 @@
+{
+  "schemaVersion": 1,
+  "scope": "issue-418-validator-regressions",
+  "baseCommit": "472729bf151dfb0244704ab3e08aa1dca970a5c4",
+  "workingTreeDirty": true,
+  "matlabRelease": "R2026a",
+  "qualificationCampaignRerun": false,
+  "originalQualificationArtifactsUnchanged": [
+    {
+      "family": "stratified-qg",
+      "sourceCommit": "93d84d4faba2c47bfe0b5203ef38abb0c6b33ffd",
+      "reportPath": "PortableRuntime/qualification/stratified-qg-apple-silicon-v1.json",
+      "reportSHA256": "081dd3988ce245e7e15c89ab7734b1a101375e588dc33f776780b32fbc887760"
+    },
+    {
+      "family": "hydrostatic",
+      "sourceCommit": "93d84d4faba2c47bfe0b5203ef38abb0c6b33ffd",
+      "reportPath": "PortableRuntime/qualification/hydrostatic-apple-silicon-v1.json",
+      "reportSHA256": "09d340c5845ab9fb11e50f1ad463534774734710155b5f654d02c9d1845503a3"
+    },
+    {
+      "family": "boussinesq",
+      "sourceCommit": "ffc3818c064e779bfd3f92b7604e05f29a56c6f8",
+      "reportPath": "PortableRuntime/qualification/boussinesq-apple-silicon-v1.json",
+      "reportSHA256": "ac6f6bd4d7a34547bf13a880648f67359db7b58cf3887014377f1b656fc8bbe4"
+    }
+  ],
+  "validation": {
+    "focusedMethods": 17,
+    "initialPassed": 16,
+    "initialFailed": 1,
+    "correctedFailedMethodPassed": 1,
+    "readinessReviewRerunPassed": 1,
+    "codeAnalyzerFindings": 0,
+    "ciPolicyTestsPassed": 43,
+    "docsCheck": {
+      "files": 2026,
+      "routes": 4145,
+      "failures": 0,
+      "changedGeneratedFiles": 0
+    }
+  },
+  "artifacts": [
+    {
+      "path": ".github/ci-evidence/issue-418-historical-evidence/focused.log",
+      "originalSHA256": "d47689fd0e50441785754f6f371d5dcb11b37b84ad2255645f49985eec0102d1",
+      "retainedSHA256": "b1df2b2fe27b8214c1d5ba88c8874c394262e1055a52ad935d60039a56e87bb0",
+      "normalization": "Trailing line whitespace removed; terminal blank lines preserved."
+    },
+    {
+      "path": ".github/ci-evidence/issue-418-historical-evidence/rerun.log",
+      "originalSHA256": "f063b863b5fd3a002dbdea4d750896edf3a7bbcd8f1a9d45c391f118bf8d59f0",
+      "retainedSHA256": "0fcaaadb5db3f4a4a0deefe0648476e38ca0fb1bc73bf28d204291b2356a1343",
+      "normalization": "Trailing line whitespace removed; terminal blank lines preserved."
+    },
+    {
+      "path": ".github/ci-evidence/issue-418-historical-evidence/final-checks.log",
+      "originalSHA256": "cb91d05a522ae9336bcbd3978dca1a94f35114a9fe0b99299722aa7a58161b15",
+      "retainedSHA256": "c2d83e82aef6521c1f6b807b558ed7a94baf6b8d7a68a1e4e060d29f921d8989",
+      "normalization": "Trailing line whitespace removed; terminal blank lines preserved."
+    },
+    {
+      "path": ".github/ci-evidence/issue-418-historical-evidence/readiness-rerun.log",
+      "originalSHA256": "1f6a2bc9e6ceecd725e312937ad208ae7d1e6201eeaefcd086f90df10920c6e7",
+      "retainedSHA256": "4038f73782bd20ec7144f333b385a09a90ea01e1271d5e0b40fb97a5be812c7b",
+      "normalization": "Trailing line whitespace removed; terminal blank lines preserved."
+    },
+    {
+      "path": ".github/ci-evidence/issue-418-historical-evidence/ci-policy.log",
+      "originalSHA256": "4c1ef6161f0fd43d3feccd20fb16503a08d9f9c9f841fc4bb554716d9a2464f9",
+      "retainedSHA256": "4c1ef6161f0fd43d3feccd20fb16503a08d9f9c9f841fc4bb554716d9a2464f9",
+      "normalization": "Trailing line whitespace removed; terminal blank lines preserved."
+    },
+    {
+      "path": ".github/ci-evidence/issue-418-historical-evidence/focused-results.json",
+      "originalSHA256": "20e539c23b62b8385026faa46f3a3a310429280afd94e504e3ff9ec21dea6a2f",
+      "retainedSHA256": "20e539c23b62b8385026faa46f3a3a310429280afd94e504e3ff9ec21dea6a2f",
+      "normalization": "Trailing line whitespace removed; terminal blank lines preserved."
+    }
+  ]
+}

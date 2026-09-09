@@ -11,13 +11,13 @@ FAMILIES = ('constant', 'barotropic', 'sqg', 'hydrostatic', 'boussinesq')
 FAMILY_TESTS = {
     'constant': ['TestCompiledKernelContract', 'TestCoreTransformInvariants'],
     'barotropic': ['TestBarotropicQGCompiledKernel', 'TestBarotropicQGPortableQualificationEvidence'],
-    'sqg': ['TestPortableStratifiedQG', 'TestPortableStratifiedQGQualification', 'TestStratifiedQGCompiledKernel'],
-    'hydrostatic': ['TestPortableHydrostatic', 'TestPortableHydrostaticQualification', 'TestHydrostaticCompiledKernel'],
-    'boussinesq': ['TestPortableBoussinesq', 'TestPortableBoussinesqQualification', 'TestBoussinesqCompiledKernel'],
+    'sqg': ['TestPortableStratifiedQG', 'TestPortableStratifiedQGQualification', 'TestStratifiedQGCompiledKernel', 'TestPortableStratifiedQGQualificationEvidence'],
+    'hydrostatic': ['TestPortableHydrostatic', 'TestPortableHydrostaticQualification', 'TestHydrostaticCompiledKernel', 'TestPortableHydrostaticQualificationEvidence'],
+    'boussinesq': ['TestPortableBoussinesq', 'TestPortableBoussinesqQualification', 'TestBoussinesqCompiledKernel', 'TestPortableBoussinesqQualificationEvidence'],
 }
 SHARED_TESTS = ['TestPortableStableForcing', 'TestPortableForcingCompatibility',
                 'TestCompiledKernelIntegration', 'TestStratifiedModalRecord',
-                'TestPortableQualificationCatalog', 'TestPortableForwardIntegration',
+                'TestPortableQualificationCatalog', 'TestPortableHistoricalQualification', 'TestPortableForwardIntegration',
                 'TestPortableForwardIntegrationCatalog', 'TestPortableNoMotionProfile',
                 'TestPortableNoMotionRecovery']
 PERSISTENCE_TESTS = ['TestPortableRuntimeCompatibility', 'TestPortableRunRequestWriter',

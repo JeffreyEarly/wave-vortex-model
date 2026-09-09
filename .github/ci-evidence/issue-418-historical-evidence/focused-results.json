@@ -1,0 +1,121 @@
+[
+  {
+    "name": "TestPortableStratifiedQGQualificationEvidence/measuredEvidenceIsComplete",
+    "passed": true,
+    "failed": false,
+    "incomplete": false,
+    "duration": 0.91166133333333332
+  },
+  {
+    "name": "TestPortableStratifiedQGQualificationEvidence/missingOrContradictoryEvidenceIsRejected",
+    "passed": true,
+    "failed": false,
+    "incomplete": false,
+    "duration": 0.68603741666666662
+  },
+  {
+    "name": "TestPortableStratifiedQGQualificationEvidence/numericalAndMemoryFailuresCannotClaimReadiness",
+    "passed": true,
+    "failed": false,
+    "incomplete": false,
+    "duration": 0.66329029166666675
+  },
+  {
+    "name": "TestPortableHydrostaticQualificationEvidence/measuredEvidenceIsComplete",
+    "passed": true,
+    "failed": false,
+    "incomplete": false,
+    "duration": 0.17198279166666669
+  },
+  {
+    "name": "TestPortableHydrostaticQualificationEvidence/referenceOnlyScopeStillRequiresEveryContinuation",
+    "passed": true,
+    "failed": false,
+    "incomplete": false,
+    "duration": 0.18722695833333333
+  },
+  {
+    "name": "TestPortableHydrostaticQualificationEvidence/contractsCannotClaimCompleteContinuationQualification",
+    "passed": true,
+    "failed": false,
+    "incomplete": false,
+    "duration": 0.14606666666666668
+  },
+  {
+    "name": "TestPortableHydrostaticQualificationEvidence/missingOrContradictoryEvidenceIsRejected",
+    "passed": true,
+    "failed": false,
+    "incomplete": false,
+    "duration": 0.665227625
+  },
+  {
+    "name": "TestPortableHydrostaticQualificationEvidence/numericalAndMemoryFailuresCannotClaimReadiness",
+    "passed": true,
+    "failed": false,
+    "incomplete": false,
+    "duration": 1.0413854166666667
+  },
+  {
+    "name": "TestPortableBoussinesqQualificationEvidence/measuredEvidenceIsComplete",
+    "passed": true,
+    "failed": false,
+    "incomplete": false,
+    "duration": 0.15610391666666668
+  },
+  {
+    "name": "TestPortableBoussinesqQualificationEvidence/referenceOnlyScopeStillRequiresEveryContinuation",
+    "passed": true,
+    "failed": false,
+    "incomplete": false,
+    "duration": 0.18173804166666666
+  },
+  {
+    "name": "TestPortableBoussinesqQualificationEvidence/contractsCannotClaimCompleteContinuationQualification",
+    "passed": true,
+    "failed": false,
+    "incomplete": false,
+    "duration": 0.14551275
+  },
+  {
+    "name": "TestPortableBoussinesqQualificationEvidence/missingOrContradictoryEvidenceIsRejected",
+    "passed": true,
+    "failed": false,
+    "incomplete": false,
+    "duration": 0.57197266666666668
+  },
+  {
+    "name": "TestPortableBoussinesqQualificationEvidence/numericalAndMemoryFailuresCannotClaimReadiness",
+    "passed": true,
+    "failed": false,
+    "incomplete": false,
+    "duration": 1.2225085416666668
+  },
+  {
+    "name": "TestPortableHistoricalQualification/historicalWorkloadSurvivesCurrentClassGrowth",
+    "passed": true,
+    "failed": false,
+    "incomplete": false,
+    "duration": 1.2608222083333331
+  },
+  {
+    "name": "TestPortableHistoricalQualification/missingDuplicateOrFailedOriginalTestsAreRejected",
+    "passed": false,
+    "failed": true,
+    "incomplete": true,
+    "duration": 0.09256525
+  },
+  {
+    "name": "TestPortableHistoricalQualification/historicalResultsCannotBePromotedByAddingCurrentTests",
+    "passed": true,
+    "failed": false,
+    "incomplete": false,
+    "duration": 1.4186964583333332
+  },
+  {
+    "name": "TestPortableHistoricalQualification/committedAuthorityRejectsTamperedManifestAndArtifact",
+    "passed": true,
+    "failed": false,
+    "incomplete": false,
+    "duration": 0.17327045833333332
+  }
+]
