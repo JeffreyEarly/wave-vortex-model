@@ -25,13 +25,18 @@ for j=unique(inputIndices).'
     if all(inventory.vectors(j,:)==0), continue; end
     for family=1:3, fields{j,family}=sourceStudyFields(data,names(family),j); end
 end
-contexts=cell(size(fields,1),4,3); targetNames=strings(size(fields,1),4); outputCounts=cell(size(fields,1),4);
+contexts=cell(size(fields,1),4,3); projections=cell(size(contexts)); targetNames=strings(size(fields,1),4); outputCounts=cell(size(fields,1),4);
 components=["u","v","w","eta"];
 for j=unique(outputIndices).'
     for c=1:4
         [contexts{j,c,1},outputCounts{j,c},targetNames(j,c)]=sourceProjectionContext(data,j,components(c),"R");
         contexts{j,c,2}=sourceProjectionContext(data,j,components(c),"Q");
         contexts{j,c,3}=sourceProjectionContext(data,j,components(c),"H");
+        if targetNames(j,c)~="null-mean-w"
+            for reference=1:3
+                projections{j,c,reference}=prepareProductProjections(contexts{j,c,reference},outputCounts{j,c});
+            end
+        end
     end
 end
 setupSeconds=data.constructionSeconds+toc(constructionTimer);
@@ -77,11 +82,11 @@ for t=indices
             end
             context1=contexts{v3,component,1}; context2=contexts{v3,component,2}; counts=outputCounts{v3,component};
             if target~="mda", endpoints=zeros(size(products.E)); else, endpoints=products.E; end
-            low=measureProductProjection(context1,products.S,products.R,endpoints,counts);
-            high=measureProductProjection(context2,products.S,products.Q,endpoints,counts);
+            low=measureProductProjection(context1,products.S,products.R,endpoints,counts,projections=projections{v3,component,1});
+            high=measureProductProjection(context2,products.S,products.Q,endpoints,counts,projections=projections{v3,component,2});
             stability=compareProductReferences(context2,low,high,counts);
             endpointsHigh=zeros(size(products.J)); if target=="mda", endpointsHigh=products.J; end
-            independent=measureProductProjection(contexts{v3,component,3},zeros(size(products.S)),products.H,endpointsHigh,counts);
+            independent=measureProductProjection(contexts{v3,component,3},zeros(size(products.S)),products.H,endpointsHigh,counts,projections=projections{v3,component,3});
             eigenProductStability=compareProductReferences(context2,high,independent,counts);
             errors=high.error;
             if target~="wave", errors=repmat(errors,config.waveCount,1); end

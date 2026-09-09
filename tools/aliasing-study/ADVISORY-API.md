@@ -12,6 +12,8 @@ report.prefixDiagnostics
 
 Preparation solves the declared modes and independent references once. Subsequent advisory calls reuse those modes, samples, physical grid, quadrature weights, and reference samples. The call itself does not solve an EVP, write files, or mutate preparation/model state. `measureSourceProducts` is the shared in-memory source-product calculation; `runSourceSurvey` remains its file-writing offline client. Physical signed projections, positive norms, endpoints, structural zeros, both wave signs, and the existing APV control retain their established calculation.
 
+The shared numerical kernel now uses InternalModes `IMProjection.fromPrescribedDual` for the existing signed physical source operators and its positive coefficient-error norm. Prefix operators are prepared once per assessment call, after the budget reservation, and reused across product batches. Physical inventory selection, reference convergence, independent family counts, and the report remain owned by this WVM authoring API. No provider object is added to model state or restart files. Historical study tables retain their recorded provider revision.
+
 The report exposes:
 
 - `status`: `assessed`, `rejected`, or `reference-inconclusive`, with rejection reasons.
