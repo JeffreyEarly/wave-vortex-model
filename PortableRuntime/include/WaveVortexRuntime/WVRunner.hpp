@@ -1,5 +1,6 @@
 #pragma once
 
+#include "WaveVortexRuntime/WVIntegrationContracts.hpp"
 #include <memory>
 
 namespace wavevortex::runtime {
@@ -13,5 +14,11 @@ class WVExtensionCatalog;
 // discovery is performed.
 int runWaveVortex(int argc, char **argv,
                   std::shared_ptr<const WVExtensionCatalog> catalog);
+
+// The reusable runner never installs process signal handlers. Applications
+// may supply their own stop control; the standalone main maps SIGINT here.
+int runWaveVortex(int argc, char **argv,
+                  std::shared_ptr<const WVExtensionCatalog> catalog,
+                  const WVIntegrationControl &control);
 
 } // namespace wavevortex::runtime

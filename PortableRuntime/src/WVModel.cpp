@@ -735,6 +735,87 @@ WVKernelStatus WVModel::advanceToTime(WVModelState &state, double finalTime,
   return status;
 }
 
+WVModelAdvanceResult
+WVModel::advanceToTime(WVModelState &state, double finalTime,
+                       double initialStepSize,
+                       const WVIntegrationControl &control) {
+#if !defined(WV_MODEL_ENABLE_OUTPUT) || WV_MODEL_ENABLE_OUTPUT
+  if (impl_->outputOpen) {
+    if (finalTime != impl_->outputFinalTime) {
+      WVModelAdvanceResult result;
+      result.status = invalid(
+          "The requested final time differs from the compiled output graph.");
+      result.termination.completion =
+          WVIntegrationCompletion::integrationFailure;
+      result.termination.finalAcceptedTime = state.mutableView().waveVortex.t;
+      result.metrics = metrics(&state);
+      return result;
+    }
+    return advanceToTime(state, finalTime, initialStepSize,
+                         impl_->outputConfiguration->plan(), impl_->outputSink,
+                         control);
+  }
+#endif
+  WVModelAdvanceResult result;
+  auto view = state.mutableView();
+  result.status = impl_->integrator->advanceToTime(
+      view, finalTime, initialStepSize, control, result.termination);
+  state.setTimes(view.waveVortex.t, view.waveVortex.t0);
+  result.metrics = metrics(&state);
+  return result;
+}
+
+WVModelAdvanceResult
+WVModel::advanceToTime(WVModelState &state, double finalTime,
+                       double initialStepSize, const WVOutputPlan &plan,
+                       WVOutputSink &sink,
+                       const WVIntegrationControl &control) {
+  WVModelAdvanceResult result;
+#if !defined(WV_MODEL_ENABLE_OUTPUT) || WV_MODEL_ENABLE_OUTPUT
+  auto view = state.mutableView();
+  if (impl_->outputDriver == nullptr) {
+    try {
+      impl_->outputDriver =
+          std::make_unique<WVOutputDriver>(*impl_->integrator, plan);
+    } catch (const std::bad_alloc &) {
+      result.status = {WVKernelStatusCode::allocationFailure,
+                       "WVModel output-driver allocation failed."};
+    }
+    impl_->outputDriverPlan = &plan;
+    impl_->outputDriverSink = &sink;
+  } else if (impl_->outputDriverPlan != &plan ||
+             impl_->outputDriverSink != &sink) {
+    result.status = invalid("A failed output delivery must be retried with the "
+                            "same output plan and sink.");
+  }
+  if (result.status) {
+    result.status = impl_->outputDriver->advanceToTime(
+        view, finalTime, initialStepSize, sink, control, result.termination);
+    impl_->outputDriverMetrics = impl_->outputDriver->metrics();
+    state.setTimes(view.waveVortex.t, view.waveVortex.t0);
+    if (result.status) {
+      impl_->outputDriver.reset();
+      impl_->outputDriverPlan = nullptr;
+      impl_->outputDriverSink = nullptr;
+    }
+  }
+#else
+  (void)finalTime;
+  (void)initialStepSize;
+  (void)plan;
+  (void)sink;
+  (void)control;
+  result.status = {WVKernelStatusCode::unsupportedOperation,
+                   "This adapter does not include output orchestration."};
+#endif
+  result.termination.finalAcceptedTime = state.mutableView().waveVortex.t;
+  if (!result.status && result.termination.completion ==
+                            WVIntegrationCompletion::reachedFinalTime)
+    result.termination.completion = WVIntegrationCompletion::integrationFailure;
+  result.metrics = metrics(&state);
+  return result;
+}
+
 WVCheckpointStatus WVModel::closeOutput() noexcept {
 #if !defined(WV_MODEL_ENABLE_OUTPUT) || WV_MODEL_ENABLE_OUTPUT
   if (!impl_->outputOpen)

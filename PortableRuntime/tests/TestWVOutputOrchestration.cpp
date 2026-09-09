@@ -1,4 +1,5 @@
 #include "WVTestQuadraticSchedule.hpp"
+#include "WVAllocationProbe.hpp"
 #include "WVTestExtensionCatalog.hpp"
 #include "WaveVortexRuntime/WVOutputOrchestration.hpp"
 
@@ -7,6 +8,7 @@
 #include <cstdlib>
 #include <iostream>
 #include <limits>
+#include <stdexcept>
 #include <string>
 #include <utility>
 #include <vector>
@@ -22,6 +24,10 @@ void require(bool condition, const std::string &message) {
     std::cerr << "FAIL: " << message << '\n';
     std::exit(1);
   }
+}
+
+void require(const WVKernelStatus &status, const std::string &message) {
+  require(static_cast<bool>(status), message + ": " + status.message);
 }
 
 WVPortableObserverRecord outputRecord(double finalTime = 1.0) {
@@ -286,6 +292,8 @@ struct DeliveredRoute {
 
 class RecordingSink final : public WVOutputSink {
 public:
+  bool restartable = false;
+  bool requiresRestartableStop() const noexcept override { return restartable; }
   WVKernelStatus preflight(const WVOutputPlan &plan) override {
     ++preflightAttempts;
     preflightEventCount = plan.eventCount();
@@ -1394,10 +1402,387 @@ void testScheduleOwnsProposedCursorContract() {
           "dispatch");
 }
 
+template <class Integrator, class Options>
+void testControlledIntegrator(Context &context, Options options,
+                              const std::string &name) {
+  StateFixture baseline(context.system.stateLayout());
+  StateFixture continued(context.system.stateLayout());
+  Integrator ordinary(context.system, options),
+      controlled(context.system, options);
+  require(ordinary.prepareStateAfterRestart(baseline.state) &&
+              controlled.prepareStateAfterRestart(continued.state),
+          name + " prepare");
+  WVIntegrationTermination result;
+  std::size_t callbacks = 0;
+  WVIntegrationControl alwaysContinue{[&](const auto &) {
+    ++callbacks;
+    return false;
+  }};
+  require(ordinary.advanceToTime(baseline.state, 1.0, 0.4) &&
+              controlled.advanceToTime(continued.state, 1.0, 0.4,
+                                       alwaysContinue, result),
+          name + " controlled completion");
+  const auto a = ordinary.metrics(), b = controlled.metrics();
+  require(
+      baseline.values() == continued.values() &&
+          a.acceptedStepCount == b.acceptedStepCount &&
+          a.rejectedStepCount == b.rejectedStepCount &&
+          a.rightHandSideEvaluationCount == b.rightHandSideEvaluationCount &&
+          a.workspaceCapacityBytes == b.workspaceCapacityBytes &&
+          ordinary.persistentBytes() == controlled.persistentBytes() &&
+          callbacks == b.acceptedStepCount + 1 &&
+          result.callbackEvaluationCount == callbacks &&
+          result.completion == WVIntegrationCompletion::reachedFinalTime &&
+          result.finalAcceptedTime == 1.0,
+      name + " exact no-stop coefficients/additional state/steps/RHS/storage");
+  StateFixture outputBaseline(context.system.stateLayout()),
+      outputContinued(context.system.stateLayout());
+  Integrator outputOrdinary(context.system, options),
+      outputControlled(context.system, options);
+  require(outputOrdinary.prepareStateAfterRestart(outputBaseline.state) &&
+              outputControlled.prepareStateAfterRestart(outputContinued.state),
+          name + " output prepare");
+  WVOutputPlan outputPlan;
+  require(WVOutputPlan::create(context.descriptor, test::extensionCatalog(),
+                               0.0, 1.0, {}, outputPlan),
+          name + " output plan");
+  RecordingSink ordinarySink, controlledSink;
+  WVOutputDriver ordinaryDriver(outputOrdinary, outputPlan),
+      controlledDriver(outputControlled, outputPlan);
+  callbacks = 0;
+  require(ordinaryDriver.advanceToTime(outputBaseline.state, 1.0, 0.4,
+                                       ordinarySink) &&
+              controlledDriver.advanceToTime(outputContinued.state, 1.0, 0.4,
+                                             controlledSink, alwaysContinue,
+                                             result),
+          name + " output continue");
+  require(
+      outputBaseline.values() == outputContinued.values() &&
+          outputOrdinary.metrics().acceptedStepCount ==
+              outputControlled.metrics().acceptedStepCount &&
+          outputOrdinary.metrics().rejectedStepCount ==
+              outputControlled.metrics().rejectedStepCount &&
+          outputOrdinary.metrics().rightHandSideEvaluationCount ==
+              outputControlled.metrics().rightHandSideEvaluationCount &&
+          ordinaryDriver.metrics().committedDeliveryCount ==
+              controlledDriver.metrics().committedDeliveryCount &&
+          ordinaryDriver.persistentBytes() ==
+              controlledDriver.persistentBytes() &&
+          controlledDriver.metrics().controlledStopWorkspaceMaximumLiveBytes ==
+              0,
+      name + " scheduled no-stop trajectory/RHS/storage invariant");
+  if (name == "RK23 retry")
+    require(b.rejectedStepCount > 0,
+            "RK23 control test must exercise rejected attempts");
+  StateFixture initial(context.system.stateLayout());
+  Integrator beforeFirst(context.system, options);
+  require(beforeFirst.prepareStateAfterRestart(initial.state),
+          name + " initial prepare");
+  const auto unchanged = initial.values();
+  require(beforeFirst.advanceToTime(initial.state, 1.0, 0.4,
+                                    {[](const auto &) { return true; }},
+                                    result) &&
+              result.stopped() && initial.values() == unchanged &&
+              beforeFirst.metrics().acceptedStepCount == 0,
+          name + " stop before first step");
+  StateFixture failed(context.system.stateLayout());
+  Integrator callbackFailure(context.system, options);
+  require(callbackFailure.prepareStateAfterRestart(failed.state),
+          name + " failure prepare");
+  const auto status = callbackFailure.advanceToTime(
+      failed.state, 1.0, 0.4, {[](const auto &progress) -> bool {
+        if (progress.boundary == WVIntegrationBoundary::acceptedStep)
+          throw std::runtime_error("injected stop callback failure");
+        return false;
+      }},
+      result);
+  require(!status &&
+              result.completion == WVIntegrationCompletion::callbackFailure &&
+              result.finalAcceptedTime == failed.state.waveVortex.t &&
+              failed.state.waveVortex.t > 0.0 &&
+              callbackFailure.metrics().acceptedStepCount == 1,
+          name + " callback failure retains accepted endpoint");
+  require(callbackFailure.advanceToTime(
+              failed.state, 1.0, callbackFailure.nextStepSize(), {}, result) &&
+              failed.state.waveVortex.t == 1.0,
+          name + " callback failure supports continuation");
+}
+
+void testControlledStops(Context &context) {
+  testControlledIntegrator<WVFixedStepRK4>(context, WVFixedStepRK4Options{true},
+                                           "RK4");
+  WVAdaptiveRK23Options rk23;
+  rk23.relativeTolerance = 1e-8;
+  rk23.absoluteToleranceScale = 1e-10;
+  rk23.retainDenseOutput = true;
+  testControlledIntegrator<WVAdaptiveRK23>(context, rk23, "RK23 retry");
+  WVAdaptiveRK45Options rk45;
+  rk45.relativeTolerance = 1e-8;
+  rk45.absoluteToleranceScale = 1e-10;
+  rk45.retainDenseOutput = true;
+  testControlledIntegrator<WVAdaptiveRK45>(context, rk45, "RK45");
+  WVAdaptiveRK78Options rk78;
+  rk78.relativeTolerance = 1e-8;
+  rk78.absoluteToleranceScale = 1e-10;
+  rk78.retainDenseOutput = true;
+  testControlledIntegrator<WVAdaptiveRK78>(context, rk78, "RK78");
+
+  auto record = outputRecord();
+  record.outputFiles[0].groups[0].schedule = {0.5, 0.0, 1.0};
+  record.outputFiles[0].groups[1].schedule = {0.125, 0.0, 1.0};
+  record.outputFiles[1].groups[0].schedule = {0.5, 0.0, 1.0};
+  auto descriptor = descriptorFrom(record);
+  for (const bool restartable : {false, true}) {
+    WVOutputPlan plan;
+    require(WVOutputPlan::create(descriptor, test::extensionCatalog(), 0.0, 1.0,
+                                 {}, plan),
+            "controlled multi-file plan");
+    StateFixture state(context.system.stateLayout());
+    WVFixedStepRK4 integrator(context.system, {true});
+    require(integrator.prepareStateAfterRestart(state.state),
+            "controlled driver prepare");
+    RecordingSink sink;
+    sink.restartable = restartable;
+    WVOutputDriver driver(integrator, plan);
+    WVIntegrationTermination termination;
+    const auto status = driver.advanceToTime(
+        state.state, 1.0, 0.4, sink, {[](const auto &progress) {
+          return progress.boundary == WVIntegrationBoundary::outputOccurrence &&
+                 progress.outputTime == 0.125;
+        }},
+        termination);
+    require(status && termination.stopped() &&
+                termination.requestedAt.outputTime == 0.125 &&
+                termination.requestedAt.acceptedTime == 0.4 &&
+                state.state.waveVortex.t == (restartable ? 0.5 : 0.4) &&
+                termination.finalAcceptedTime == state.state.waveVortex.t &&
+                !driver.hasPendingDelivery(),
+            "dense request drains to correct accepted boundary");
+    const double finalOutput = restartable ? 0.5 : 0.375;
+    require(sink.delivered.back().time == finalOutput &&
+                driver.metrics().committedDeliveryCount ==
+                    (restartable ? 9 : 6),
+            "all sibling routes and intervening dense occurrences committed");
+  }
+
+  // Different file checkpoint rates and dynamic-state rates must advance
+  // scratch cursors through incomplete candidates without changing execution.
+  for (const bool noCommonBeforeTarget : {false, true}) {
+    auto unequal = record;
+    unequal.outputFiles[0].groups[0].schedule = {0.25, 0.0, 1.5};
+    unequal.outputFiles[0].groups[0].observerIdentifiers = {"coefficients"};
+    unequal.outputFiles[0].groups[1].schedule = {0.5, 0.0, 1.5};
+    unequal.outputFiles[1].groups[0].schedule = {0.75, 0.0, 1.5};
+    const double target = noCommonBeforeTarget ? 1.0 : 1.5;
+    auto unequalDescriptor = descriptorFrom(unequal);
+    WVOutputPlan unequalPlan;
+    require(WVOutputPlan::create(unequalDescriptor, test::extensionCatalog(),
+                                 0.0, target, {}, unequalPlan),
+            "unequal stop plan");
+    StateFixture unequalState(context.system.stateLayout());
+    WVFixedStepRK4 unequalIntegrator(context.system, {true});
+    require(unequalIntegrator.prepareStateAfterRestart(unequalState.state),
+            "unequal stop prepare");
+    RecordingSink unequalSink;
+    unequalSink.restartable = true;
+    WVOutputDriver unequalDriver(unequalIntegrator, unequalPlan);
+    WVIntegrationTermination unequalTermination;
+    const auto unequalStatus = unequalDriver.advanceToTime(
+        unequalState.state, target, 0.4, unequalSink, {[](const auto &p) {
+          return p.boundary == WVIntegrationBoundary::acceptedStep;
+        }},
+        unequalTermination);
+    require(noCommonBeforeTarget
+                ? !unequalStatus &&
+                      unequalTermination.completion ==
+                          WVIntegrationCompletion::outputFailure &&
+                      unequalState.state.waveVortex.t == 0.4
+                : bool(unequalStatus) && unequalTermination.stopped() &&
+                      unequalState.state.waveVortex.t == 1.5,
+            "restart search must consume incomplete per-file/dynamic "
+            "candidates or fail before target overrun");
+  }
+
+  {
+    WVOutputPlan failedPlan;
+    require(WVOutputPlan::create(context.descriptor, test::extensionCatalog(),
+                                 0.0, 1.0, {}, failedPlan),
+            "callback retry plan");
+    StateFixture failedState(context.system.stateLayout());
+    WVFixedStepRK4 failedIntegrator(context.system, {true});
+    require(failedIntegrator.prepareStateAfterRestart(failedState.state),
+            "callback retry prepare");
+    RecordingSink failedSink;
+    WVOutputDriver failedDriver(failedIntegrator, failedPlan);
+    WVIntegrationTermination failedTermination;
+    failedSink.preflightFailure = true;
+    auto failedStatus = failedDriver.advanceToTime(
+        failedState.state, 1.0, 0.4, failedSink, {}, failedTermination);
+    require(!failedStatus &&
+                failedTermination.completion ==
+                    WVIntegrationCompletion::outputFailure &&
+                failedState.state.waveVortex.t == 0.0,
+            "sink preflight is an output failure");
+    failedSink.preflightFailure = false;
+    failedStatus = failedDriver.advanceToTime(
+        failedState.state, 1.0, 0.4, failedSink, {[](const auto &p) -> bool {
+          if (p.boundary == WVIntegrationBoundary::outputOccurrence &&
+              p.outputTime > 0.0)
+            throw 7;
+          return false;
+        }},
+        failedTermination);
+    require(!failedStatus &&
+                failedTermination.completion ==
+                    WVIntegrationCompletion::callbackFailure &&
+                failedState.state.waveVortex.t == 0.4 &&
+                !failedDriver.hasPendingDelivery() &&
+                failedDriver.metrics().committedDeliveryCount == 3,
+            "nonstandard callback exception preserves accepted state and "
+            "complete occurrence");
+    failedStatus = failedDriver.advanceToTime(
+        failedState.state, 1.0, 0.4, failedSink, {}, failedTermination);
+    require(
+        failedStatus && failedState.state.waveVortex.t == 1.0 &&
+            failedDriver.metrics().committedDeliveryCount == 10 &&
+            failedDriver.metrics().failureCount == 0,
+        "callback failure retries without duplicating completed occurrences");
+  }
+
+  {
+    class FailingSystem final : public WVIntegrationSystem {
+    public:
+      explicit FailingSystem(WVIntegrationSystem &base) : base(base) {}
+      WVIntegrationSystem &base;
+      std::size_t calls = 0;
+      const WVIntegrationStateLayout &stateLayout() const noexcept override {
+        return base.stateLayout();
+      }
+      WVKernelStatus evaluateRightHandSide(const WVIntegrationState &state,
+                                           WVIntegrationFlux &flux) override {
+        if (++calls == 5)
+          return {WVKernelStatusCode::numericalFailure, "injected RHS failure"};
+        return base.evaluateRightHandSide(state, flux);
+      }
+      WVStateConstraintResult
+      enforceStateConstraints(WVMutableIntegrationState &state) override {
+        return base.enforceStateConstraints(state);
+      }
+      WVKernelStatus createErrorPolicy(
+          double scale,
+          std::unique_ptr<WVIntegrationErrorPolicy> &policy) const override {
+        return base.createErrorPolicy(scale, policy);
+      }
+    } failingSystem(context.system);
+    StateFixture failedState(context.system.stateLayout());
+    WVFixedStepRK4 failedIntegrator(failingSystem);
+    require(failedIntegrator.prepareStateAfterRestart(failedState.state),
+            "numerical failure prepare");
+    WVIntegrationTermination failedTermination;
+    const auto failedStatus = failedIntegrator.advanceToTime(
+        failedState.state, 1.0, 0.4, {[](const auto &) { return false; }},
+        failedTermination);
+    require(!failedStatus &&
+                failedTermination.completion ==
+                    WVIntegrationCompletion::integrationFailure &&
+                failedState.state.waveVortex.t == 0.4 &&
+                failedTermination.finalAcceptedTime == 0.4 &&
+                failedIntegrator.metrics().acceptedStepCount == 1,
+            "numerical failure must return last accepted endpoint instead of a "
+            "rejected trial");
+  }
+
+  {
+    WVOutputPlan allocationPlan;
+    require(WVOutputPlan::create(descriptor, test::extensionCatalog(), 0.0, 1.0, {}, allocationPlan), "allocation stop plan");
+    StateFixture allocationState(context.system.stateLayout());
+    WVFixedStepRK4 allocationIntegrator(context.system, {true});
+    require(allocationIntegrator.prepareStateAfterRestart(allocationState.state), "allocation stop prepare");
+    RecordingSink allocationSink;
+    allocationSink.restartable = true;
+    WVOutputDriver allocationDriver(allocationIntegrator, allocationPlan);
+    WVIntegrationTermination allocationTermination;
+    auto allocationStatus = allocationDriver.advanceToTime(allocationState.state, 1.0, 0.4, allocationSink,
+        {[](const auto &p) {
+          if (p.boundary != WVIntegrationBoundary::acceptedStep) return false;
+          allocationProbe::failAfter = 0;
+          return true;
+        }}, allocationTermination);
+    allocationProbe::failAfter = -1;
+    require(!allocationStatus && allocationStatus.code == WVKernelStatusCode::allocationFailure &&
+            allocationTermination.completion == WVIntegrationCompletion::outputFailure &&
+            allocationState.state.waveVortex.t == 0.4 && !allocationDriver.hasPendingDelivery(),
+            "lookahead allocation failure must preserve accepted state and committed occurrences");
+    allocationStatus = allocationDriver.advanceToTime(allocationState.state, 1.0, 0.4, allocationSink, {}, allocationTermination);
+    require(allocationStatus && allocationTermination.stopped() && allocationState.state.waveVortex.t == 0.5 &&
+            allocationDriver.metrics().committedDeliveryCount == 9,
+            "lookahead allocation failure can retry without duplicating output");
+  }
+
+  // Stop is latched across a later route failure and cannot bypass its retry.
+  WVOutputPlan plan;
+  require(WVOutputPlan::create(descriptor, test::extensionCatalog(), 0.0, 1.0,
+                               {}, plan),
+          "retry plan");
+  StateFixture state(context.system.stateLayout());
+  WVFixedStepRK4 integrator(context.system, {true});
+  require(integrator.prepareStateAfterRestart(state.state),
+          "stop retry prepare");
+  RecordingSink sink;
+  sink.restartable = true;
+  sink.failAtAttempt = 5;
+  WVOutputDriver driver(integrator, plan);
+  WVIntegrationTermination termination;
+  auto status = driver.advanceToTime(
+      state.state, 1.0, 0.4, sink, {[](const auto &p) {
+        return p.boundary == WVIntegrationBoundary::outputOccurrence &&
+               p.outputTime == 0.125;
+      }},
+      termination);
+  require(!status &&
+              termination.completion ==
+                  WVIntegrationCompletion::outputFailure &&
+              state.state.waveVortex.t == 0.4 && driver.hasPendingDelivery(),
+          "output failure dominates stop success");
+  sink.failAtAttempt = std::numeric_limits<std::size_t>::max();
+  status = driver.advanceToTime(state.state, 1.0, 0.4, sink, {}, termination);
+  require(
+      status && termination.stopped() && state.state.waveVortex.t == 0.5 &&
+          driver.metrics().committedDeliveryCount == 9 &&
+          driver.metrics().failureCount == 1,
+      "latched stop retries only failed route then reaches restart boundary");
+
+  WVOutputPlan shortPlan;
+  require(WVOutputPlan::create(descriptor, test::extensionCatalog(), 0.0, 0.4,
+                               {}, shortPlan),
+          "short stop plan");
+  StateFixture shortState(context.system.stateLayout());
+  WVFixedStepRK4 shortIntegrator(context.system, {true});
+  require(shortIntegrator.prepareStateAfterRestart(shortState.state),
+          "short stop prepare");
+  RecordingSink shortSink;
+  shortSink.restartable = true;
+  WVOutputDriver shortDriver(shortIntegrator, shortPlan);
+  status = shortDriver.advanceToTime(
+      shortState.state, 0.4, 0.4, shortSink, {[](const auto &p) {
+        return p.boundary == WVIntegrationBoundary::outputOccurrence &&
+               p.outputTime == 0.125;
+      }},
+      termination);
+  require(!status &&
+              termination.completion ==
+                  WVIntegrationCompletion::outputFailure &&
+              status.message.find("no complete scheduled restart") !=
+                  std::string::npos &&
+              shortState.state.waveVortex.t == 0.4,
+          "missing future restart fails explicitly without exceeding target");
+}
+
 } // namespace
 
 int main() {
   Context context;
+  testControlledStops(context);
   testPlanningOrderingIdentityAndMetrics(context);
   testFixedDeliveryAndExactMetrics(context);
   testSegmentedContinuation(context);

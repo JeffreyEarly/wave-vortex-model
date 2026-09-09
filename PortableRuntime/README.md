@@ -29,6 +29,36 @@ Source API versioning is independent from exact data contracts. `wave-vortex-por
 
 The portable reference runtime and source-linked consumers are qualified on Ubuntu with GCC or Clang and on macOS with AppleClang. The optimized native FFTW runner is Apple-silicon-only. Windows/MSVC source-linked builds are unsupported. The [AlongTrackSimulator ATS #4 integration](https://github.com/satmapkit/AlongTrackSimulator/commit/ba57981f336ad5bbbc0907dcd74fcd4fcd137708) is the external application-owned catalog and reusable-runner proof; final source API qualification recompiles that consumer against the explicitly selected WaveVortexModel checkout.
 
+## Controlled termination
+
+Source-linked applications can pass a `WVIntegrationControl` to the additive `WVModel::advanceToTime` overload. The model state remains caller-owned; the returned `WVModelAdvanceResult` contains status, termination details and a complete metrics snapshot, including work completed while draining a stop request.
+
+```cpp
+WVIntegrationControl control;
+control.shouldStop = [&stopFlag](const WVIntegrationProgress &) {
+    return stopFlag.load(); // for example, an application-owned atomic<bool>
+};
+auto result = model.advanceToTime(state, requestedFinalTime, initialStep, control);
+if (!result) {
+    // result.termination distinguishes integration, output and callback failure.
+} else if (result.termination.stopped()) {
+    // state and result.termination.finalAcceptedTime describe an accepted state.
+}
+```
+
+The callback is borrowed for this invocation and runs synchronously at the initial accepted state, after an accepted step, or after a complete output occurrence across all coincident routes. It must not mutate the model, integration state or output configuration, or re-enter the driver. No callback runs inside RHS evaluation, individual element loops, a rejected step attempt or an incomplete output occurrence. A throwing callback is a failure, including nonstandard exceptions. Output failures take precedence over a pending stop; retrying the same plan and sink completes only the failed route, preserves committed cursors and retains the stop request.
+
+A stop requested by a generic sink or control first drains every output occurrence covered by the current accepted step. Interpolated output is never returned as the accepted model state. With an attached model-file sink, termination additionally waits for an authored checkpoint occurrence that contains all required dynamic observer state in **each destination**, possibly in coincident sibling groups. The driver may take additional steps to that boundary and clips the last such step. This keeps coefficients, particles, tracers and schedule cursors immediately readable by MATLAB from any individual file and by C++ from the complete graph. Authored schedules and the existing NetCDF encoding are preserved. Empty observer collections carry MATLAB's existing `AnnotatedClassArray` marker.
+
+Create/replace destinations have no committed records merely because their source cursor points at an earlier checkpoint: an immediate stop may drain to their first actually persisted authored occurrence. An append destination with a complete current checkpoint can stop before taking a step. Existing floating-point time-coincidence tolerances apply to accepted endpoints and scheduled times.
+
+Checkpoint spacing therefore limits graceful-stop latency. A stop request is latched at its original boundary and time; the actual accepted stop time can be later. A bounded lookahead uses temporary schedule cursors without changing execution cursors or retaining an occurrence history. If no common complete checkpoint occurs at or after the accepted state and before the requested final time, the run returns an explicit **output failure**; it never exceeds the requested target or claims a restartable controlled stop. Failure retains the accepted in-memory state and already committed records, with the same retry/failure limitations as other output errors.
+
+The existing overloads remain source compatible. Built-in controlled integration preserves each method's step-selection behavior, including `ode45`/`ode78` final-step handling. Calls without a callback retain their original numerical paths. Control adds no state-sized workspace; the output driver retains bounded scalar termination bookkeeping, and stop-only lookahead storage is reported in `controlledStopWorkspaceMaximumLiveBytes`. Source-linked custom integrators that do not implement the additive controlled overload continue to compile; requesting output-free controlled integration on one returns `unsupportedOperation`. Their existing accepted-step interface already supports control through `WVOutputDriver`.
+
+The standalone executable maps **SIGINT** to this same stop path. The first interrupt requests graceful termination; a second SIGINT uses normal process termination. SIGTERM retains its ordinary abort behavior. The reusable `runWaveVortex` API installs no signal handlers and accepts optional application-owned control. Successful controlled runs return exit code 0 and JSON `status: "stopped"`; the `termination` object records reason, requested boundary/time, actual accepted time and callback count. Callback failures use exit code 7, output failures use 6, and numerical/integration failures use 5, with distinct structured failure stages and reasons. Coefficient-only output writes the final accepted checkpoint; explicitly scheduled checkpoint output contains only the committed scheduled occurrences through the accepted endpoint.
+
+
 ## Build
 
 A portable reference build requires CMake 3.20, a C++17 compiler, and NetCDF C:

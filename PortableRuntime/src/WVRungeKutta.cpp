@@ -738,15 +738,24 @@ public:
   }
 
   template <typename Step, typename NextStepSize>
-  static WVKernelStatus advanceToTime(WVMutableIntegrationState &state,
-                                      double finalTime, double stepSize,
-                                      bool stretchFinalStep,
-                                      const char *methodName, Step step,
-                                      NextStepSize nextStepSize) {
+  static WVKernelStatus
+  advanceToTime(WVMutableIntegrationState &state, double finalTime,
+                double stepSize, bool stretchFinalStep, const char *methodName,
+                Step step, NextStepSize nextStepSize,
+                const WVIntegrationControl *control = nullptr,
+                WVIntegrationTermination *termination = nullptr) {
     if (finalTime < state.waveVortex.t || !std::isfinite(finalTime))
       return {WVKernelStatusCode::invalidConfiguration,
               std::string(methodName) +
                   " cannot advance backward or to a nonfinite time."};
+    if (control != nullptr) {
+      auto status = evaluateIntegrationControl(
+          *control,
+          {WVIntegrationBoundary::initialState, state.waveVortex.t, 0.0},
+          *termination);
+      if (!status || termination->stopped())
+        return status;
+    }
     while (state.waveVortex.t < finalTime) {
       const auto remaining = finalTime - state.waveVortex.t;
       if (remaining <= timeTolerance(state.waveVortex.t, finalTime)) {
@@ -760,6 +769,14 @@ public:
       if (!status)
         return status;
       stepSize = nextStepSize();
+      if (control != nullptr) {
+        const auto status = evaluateIntegrationControl(
+            *control,
+            {WVIntegrationBoundary::acceptedStep, state.waveVortex.t, 0.0},
+            *termination);
+        if (!status || termination->stopped())
+          return status;
+      }
     }
     state.waveVortex.t = finalTime;
     return WVKernelStatus::ok();
@@ -1015,6 +1032,52 @@ WVFixedStepRK4::advanceToTime(WVMutableIntegrationState &state,
   }
   state.waveVortex.t = finalTime;
   return WVKernelStatus::ok();
+}
+
+WVKernelStatus
+WVFixedStepRK4::advanceToTime(WVMutableIntegrationState &state,
+                              double finalTime, double h,
+                              const WVIntegrationControl &control,
+                              WVIntegrationTermination &termination) {
+  termination = {};
+  if (!control.shouldStop) {
+    const auto status = advanceToTime(state, finalTime, h);
+    termination.finalAcceptedTime = state.waveVortex.t;
+    if (!status)
+      termination.completion = WVIntegrationCompletion::integrationFailure;
+    return status;
+  }
+  auto status = [&]() -> WVKernelStatus {
+    if (finalTime < state.waveVortex.t || !std::isfinite(finalTime))
+      return {WVKernelStatusCode::invalidConfiguration,
+              "RK4 cannot advance backward or to a nonfinite time."};
+    auto result = evaluateIntegrationControl(
+        control, {WVIntegrationBoundary::initialState, state.waveVortex.t, 0.0},
+        termination);
+    if (!result || termination.stopped())
+      return result;
+    while (state.waveVortex.t < finalTime) {
+      const auto use = std::min(h, finalTime - state.waveVortex.t);
+      if (!(use > 0.0))
+        break;
+      result = step(state, use);
+      if (!result)
+        return result;
+      result = evaluateIntegrationControl(
+          control,
+          {WVIntegrationBoundary::acceptedStep, state.waveVortex.t, 0.0},
+          termination);
+      if (!result || termination.stopped())
+        return result;
+    }
+    state.waveVortex.t = finalTime;
+    return WVKernelStatus::ok();
+  }();
+  termination.finalAcceptedTime = state.waveVortex.t;
+  if (!status &&
+      termination.completion != WVIntegrationCompletion::callbackFailure)
+    termination.completion = WVIntegrationCompletion::integrationFailure;
+  return status;
 }
 
 WVKernelStatus WVFixedStepRK4::evaluateDenseOutput(
@@ -1370,6 +1433,30 @@ WVAdaptiveRK23::advanceToTime(WVMutableIntegrationState &state,
       state, finalTime, h, false, "RK23",
       [&](double use) { return step(state, use); },
       [&]() { return nextStepSize_; });
+}
+
+WVKernelStatus
+WVAdaptiveRK23::advanceToTime(WVMutableIntegrationState &state,
+                              double finalTime, double h,
+                              const WVIntegrationControl &control,
+                              WVIntegrationTermination &termination) {
+  termination = {};
+  if (!control.shouldStop) {
+    const auto status = advanceToTime(state, finalTime, h);
+    termination.finalAcceptedTime = state.waveVortex.t;
+    if (!status)
+      termination.completion = WVIntegrationCompletion::integrationFailure;
+    return status;
+  }
+  auto status = AdaptiveRungeKuttaDriver::advanceToTime(
+      state, finalTime, h, false, "RK23",
+      [&](double use) { return step(state, use); },
+      [&]() { return nextStepSize_; }, &control, &termination);
+  termination.finalAcceptedTime = state.waveVortex.t;
+  if (!status &&
+      termination.completion != WVIntegrationCompletion::callbackFailure)
+    termination.completion = WVIntegrationCompletion::integrationFailure;
+  return status;
 }
 
 WVKernelStatus WVAdaptiveRK23::evaluateDenseOutput(
@@ -1875,6 +1962,34 @@ WVKernelStatus WVAdaptiveRK45::advanceToTime(
                 use <= 1.1 * options_.maximumStepSize);
       },
       [&]() { return nextStepSize_; });
+}
+
+WVKernelStatus
+WVAdaptiveRK45::advanceToTime(WVMutableIntegrationState &state,
+                              double finalTime, double h,
+                              const WVIntegrationControl &control,
+                              WVIntegrationTermination &termination) {
+  termination = {};
+  if (!control.shouldStop) {
+    const auto status = advanceToTime(state, finalTime, h);
+    termination.finalAcceptedTime = state.waveVortex.t;
+    if (!status)
+      termination.completion = WVIntegrationCompletion::integrationFailure;
+    return status;
+  }
+  auto status = AdaptiveRungeKuttaDriver::advanceToTime(
+      state, finalTime, h, true, "RK45",
+      [&](double use) {
+        return stepImplementation(state, use,
+                                  use > options_.maximumStepSize &&
+                                      use <= 1.1 * options_.maximumStepSize);
+      },
+      [&]() { return nextStepSize_; }, &control, &termination);
+  termination.finalAcceptedTime = state.waveVortex.t;
+  if (!status &&
+      termination.completion != WVIntegrationCompletion::callbackFailure)
+    termination.completion = WVIntegrationCompletion::integrationFailure;
+  return status;
 }
 
 WVKernelStatus WVAdaptiveRK45::evaluateDenseOutput(
@@ -2591,6 +2706,34 @@ WVKernelStatus WVAdaptiveRK78::advanceToTime(
                 use <= 1.1 * options_.maximumStepSize);
       },
       [&]() { return nextStepSize_; });
+}
+
+WVKernelStatus
+WVAdaptiveRK78::advanceToTime(WVMutableIntegrationState &state,
+                              double finalTime, double h,
+                              const WVIntegrationControl &control,
+                              WVIntegrationTermination &termination) {
+  termination = {};
+  if (!control.shouldStop) {
+    const auto status = advanceToTime(state, finalTime, h);
+    termination.finalAcceptedTime = state.waveVortex.t;
+    if (!status)
+      termination.completion = WVIntegrationCompletion::integrationFailure;
+    return status;
+  }
+  auto status = AdaptiveRungeKuttaDriver::advanceToTime(
+      state, finalTime, h, true, "RK78",
+      [&](double use) {
+        return stepImplementation(state, use,
+                                  use > options_.maximumStepSize &&
+                                      use <= 1.1 * options_.maximumStepSize);
+      },
+      [&]() { return nextStepSize_; }, &control, &termination);
+  termination.finalAcceptedTime = state.waveVortex.t;
+  if (!status &&
+      termination.completion != WVIntegrationCompletion::callbackFailure)
+    termination.completion = WVIntegrationCompletion::integrationFailure;
+  return status;
 }
 
 WVKernelStatus WVAdaptiveRK78::evaluateDenseOutput(

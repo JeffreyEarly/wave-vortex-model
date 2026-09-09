@@ -88,6 +88,10 @@ public:
                       double stepSize) override;
   WVKernelStatus advanceToTime(WVMutableIntegrationState &state, double finalTime,
                                double stepSize) override;
+  WVKernelStatus advanceToTime(WVMutableIntegrationState &state,
+                               double finalTime, double stepSize,
+                               const WVIntegrationControl &control,
+                               WVIntegrationTermination &termination) override;
   WVKernelStatus evaluateDenseOutput(double time,
                                      WVMutableIntegrationState &output) const;
   WVKernelStatus
@@ -176,6 +180,10 @@ public:
                       double proposedStepSize) override;
   WVKernelStatus advanceToTime(WVMutableIntegrationState &state, double finalTime,
                                double initialStepSize) override;
+  WVKernelStatus advanceToTime(WVMutableIntegrationState &state,
+                               double finalTime, double stepSize,
+                               const WVIntegrationControl &control,
+                               WVIntegrationTermination &termination) override;
   WVKernelStatus evaluateDenseOutput(double time,
                                      WVMutableIntegrationState &output) const;
   WVKernelStatus
@@ -268,6 +276,10 @@ public:
   WVKernelStatus advanceToTime(WVMutableIntegrationState &state,
                                double finalTime,
                                double initialStepSize) override;
+  WVKernelStatus advanceToTime(WVMutableIntegrationState &state,
+                               double finalTime, double stepSize,
+                               const WVIntegrationControl &control,
+                               WVIntegrationTermination &termination) override;
   WVKernelStatus evaluateDenseOutput(double time,
                                      WVMutableIntegrationState &output) const;
   WVKernelStatus
@@ -354,6 +366,10 @@ public:
   WVKernelStatus advanceToTime(WVMutableIntegrationState &state,
                                double finalTime,
                                double initialStepSize) override;
+  WVKernelStatus advanceToTime(WVMutableIntegrationState &state,
+                               double finalTime, double stepSize,
+                               const WVIntegrationControl &control,
+                               WVIntegrationTermination &termination) override;
   WVKernelStatus evaluateDenseOutput(
       double time, WVMutableIntegrationState &output) const;
   WVKernelStatus evaluateState(

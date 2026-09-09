@@ -1538,6 +1538,14 @@ public:
     if (!result)
       return result;
 
+    if (group.record.observerIdentifiers.empty()) {
+      result = detail::putTextAttribute(
+          metadataRoot, NC_GLOBAL, "AnnotatedClassArray", "WVObservingSystem",
+          path + "/observingSystems");
+      if (!result)
+        return result;
+    }
+
     std::map<std::string, WVObservationVariable> definedDerivedVariables;
     for (std::size_t ordinal = 0;
          ordinal < group.record.observerIdentifiers.size(); ++ordinal) {
@@ -3873,6 +3881,15 @@ const WVModelOutputNetCDFMetrics &
 WVModelOutputNetCDFSink::metrics() const noexcept {
   static const WVModelOutputNetCDFMetrics empty;
   return impl_ ? impl_->metrics : empty;
+}
+
+bool WVModelOutputNetCDFSink::hasCommittedOutputAt(
+    const WVOutputRouteView &route, double time) const noexcept {
+  for (const auto &progress : destinationProgress())
+    if (progress.fileIdentifier == route.fileIdentifier &&
+        progress.groupIdentifier == route.groupIdentifier)
+      return progress.hasCommittedTime && progress.lastCommittedTime == time;
+  return false;
 }
 
 WVCheckpointStatus WVModelOutputNetCDFSink::close() noexcept {
