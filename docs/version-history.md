@@ -12,6 +12,10 @@ nav_order: 100
 
 - Require the exact packaged `InternalModes@2.0.0-beta.2` prerelease, adding exact bulk mode construction and the consolidated projection/assessment API while retaining the rotating-wave normalization, stretched-coordinate calculus, eigenproblem-conditioning and localized analytical APV-root corrections. Routine CI and package verification now use its immutable OceanKit snapshot. This adopts a beta provider; it does not publish WVM v5 or promise stable V2 APIs.
 
+### Shared wave advisory projection kernels
+
+- Reuse the provider's prescribed physical dual and positive coefficient-error norm in the existing authoring wave-resolution assessment. Prepare operators once per call while preserving physical source inventories, independent family counts, reference gates, budgets, and reports; no new model class hierarchy or persisted state is introduced.
+
 ### Exact bulk free-surface wave construction
 
 - Share coordinate preparation across exact distinct-wavenumber solves and stream evaluated modes into the existing Boussinesq arrays. Preserve independent wave/inertial counts, physical source projections, mode labels, fixed-grid rejection criteria, and restart state.
