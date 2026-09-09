@@ -1,10 +1,10 @@
 function result = waveQuadraticResolutionExample(outputDirectory,options)
-% Plot linear retained counts and sampled quadratic errors for one count map.
+% Plot the original kappa-dependent linear counts with bounded quadratic checks.
 %
 % Run from an authoring checkout with released dependencies configured. This
-% companion uses WVM's dealiased horizontal interaction inventory (excluding
-% Nyquist), not the complete FFT inventory in the InternalModes linear-only
-% example. Both active boundaries are inputs; their nonlinear outputs remain
+% default preserves InternalModes' full FFT linear inventory and 24 candidates.
+% Three quadratic triads use WVM's smaller dealiased inventory. Supplying an
+% explicit configuration runs the original complete-map control instead. Both active boundaries are inputs; their nonlinear outputs remain
 % outside the qualified scope. All reported errors are individual products.
 arguments (Input)
     outputDirectory (1,1) string = string(tempname)
@@ -21,10 +21,8 @@ if isfolder(outputDirectory) || isfile(outputDirectory)
 end
 config=options.configuration;
 if isempty(fieldnames(config))
-    config=resolveStudyCase("cal-exponential-17");
-    config.id="count-map-exponential-25"; config.profile="exponential-surface";
-    config.Lxy=[100000 100000]; config.Nxy=[16 16]; config.Nz=25;
-    config.waveCount=11; config.evpOrders=[192 256]; config.gramTolerance=.01;
+    result=kappaDependentExample(outputDirectory,options);
+    return
 end
 started=tic; data=prepareSourceStudy(config);
 prepared=prepareWaveQuadraticAssessment(data,ensureOutputCoverage=true,productBudget=options.productBudget,workingMemoryBudget=options.workingMemoryBudget);
@@ -76,6 +74,86 @@ provenance=struct(configuration=config,matlabVersion=string(version),computer=st
 writelines(jsonencode(provenance,PrettyPrint=true),fullfile(outputDirectory,'provenance.json'));
 result=struct(outputDirectory=outputDirectory,counts=linear,assessment=assessment,repeatAssessment=repeat,provenance=provenance);
 fprintf('Quadratic count-map example: %s\n',outputDirectory);
+end
+
+
+function result=kappaDependentExample(outputDirectory,options)
+% Reuse the provider example verbatim; reduce product coverage, not its band.
+started=tic;
+linearResult=waveModeCountsByWavenumber(outputDirectory=fullfile(outputDirectory,"linear"),figureVisible="off");
+closeLinear=onCleanup(@()close(linearResult.figure));
+linearSeconds=toc(started); linear=linearResult.waves;
+config=resolveStudyCase("cal-exponential-17");
+config.id="kappa-dependent-exponential-25"; config.profile="exponential-surface";
+config.Lxy=[1000 1000]; config.Nxy=[16 16]; config.Nz=25;
+config.waveCount=24; config.evpOrders=[192 256]; config.gramTolerance=.01;
+started=tic; data=prepareSourceStudy(config);
+assert(max(abs(data.z-linearResult.z))<1e-9 && max(abs(data.w-linearResult.weights))<1e-9,'The linear and product studies must use the same physical sampling.');
+kappa=data.inventory.magnitudes; positive=find(kappa>0);
+counts=zeros(numel(positive),1);
+for j=1:numel(positive)
+    [distance,index]=min(abs(linear.kappa-kappa(positive(j))));
+    assert(distance<64*eps(kappa(positive(j))),'Each product page must match the original Fourier inventory.');
+    counts(j)=linear.combinedCount(index);
+    assert(sum(cumprod(data.waveGram(:,positive(j))<=config.gramTolerance)>0)==linear.gridSupportedCount(index),'Refined product modes must reproduce the original grid-supported counts.');
+end
+% Deterministic low/middle/high output pages within the supported inventory.
+% At each output choose the triad with the smallest maximum input kappa.
+selectedPages=positive(unique(round(linspace(1,numel(positive),3))));
+triads=data.inventory.interactions; indices=zeros(1,numel(selectedPages));
+for j=1:numel(selectedPages)
+    rows=find(triads.page3==selectedPages(j));
+    difficulty=max(kappa(triads.page1(rows)),kappa(triads.page2(rows)));
+    [~,first]=min(difficulty); indices(j)=rows(first);
+end
+prepared=prepareWaveQuadraticAssessment(data,interactionIndices=indices,productBudget=options.productBudget,workingMemoryBudget=options.workingMemoryBudget);
+preparationSeconds=toc(started);
+assessment=assessWaveQuadraticResolution(prepared,waveModeKappa=kappa(positive),waveModeCount=counts,quadraticTolerance=options.quadraticTolerance,productBudget=options.productBudget);
+repeat=assessWaveQuadraticResolution(prepared,waveModeKappa=kappa(positive),waveModeCount=min(counts,3),quadraticTolerance=options.quadraticTolerance,productBudget=options.productBudget);
+selected=assessment.pages(selectedPages,:); repeated=repeat.pages(selectedPages,:);
+fig=figure(Visible="off",Color="w",Position=[100 100 1150 850]); closeFigure=onCleanup(@()close(fig));
+layout=tiledlayout(fig,2,1,TileSpacing="compact",Padding="compact");
+ax1=nexttile(layout);
+plot(ax1,linear.kappa,linear.convergedCount,'-',LineWidth=1.5,DisplayName="EVP converged (24-candidate ceiling)"); hold(ax1,'on');
+plot(ax1,linear.kappa,linear.combinedCount,'o-',LineWidth=1.5,MarkerSize=4,DisplayName="Grid-supported / combined count");
+plot(ax1,selected.kappa,selected.requestedWaveCount,'s',MarkerSize=10,LineWidth=1.5,Color=[.75 .25 .1],DisplayName="Selected quadratic output pages");
+ylim(ax1,[0 27]); ylabel(ax1,'Leading wave modes, including external'); grid(ax1,'on'); legend(ax1,Location="southwest");
+ax2=nexttile(layout); hold(ax2,'on'); set(ax2,YScale="log");
+reports={selected,repeated}; markers=['o','s']; colors=[.0 .45 .74;.85 .33 .1];
+names=["Linear count map","Counts capped at 3"];
+for j=1:2
+    pages=reports{j}; qualified=ismember(pages.status,["accepted","rejected"]);
+    if any(qualified)
+        plot(ax2,pages.kappa(qualified),max(pages.quadraticError(qualified),realmin),markers(j),Color=colors(j,:),MarkerFaceColor=colors(j,:),MarkerSize=8,DisplayName=names(j)+" — qualified sampled error");
+    end
+    if any(~qualified)
+        plot(ax2,pages.kappa(~qualified),max(pages.quadraticError(~qualified),realmin),markers(j),Color=colors(j,:),MarkerSize=9,LineWidth=1.5,DisplayName=names(j)+" — UNQUALIFIED estimate");
+    end
+end
+yline(ax2,options.quadraticTolerance,'--',DisplayName="Product tolerance (requires stable references)");
+xlabel(ax2,'\kappa (rad m^{-1})'); ylabel(ax2,'Sampled projection error at 3 outputs'); grid(ax2,'on'); legend(ax2,Location="northeast");
+for ax=[ax1 ax2]
+    xlim(ax,[0 1.03*max(linear.kappa)]);
+    xline(ax,max(kappa),':',"WVM dealiased limit",HandleVisibility="off",LabelVerticalAlignment="top");
+end
+linkaxes([ax1 ax2],'x');
+title(layout,'1 × 1 km; 16 × 16 horizontal points; 25 WKB–Chebyshev samples; 24 candidates');
+referenceStatus="inconclusive";
+if assessment.referenceDiagnostics.referencesStable, referenceStatus="stable"; end
+subtitle(layout,sprintf('Full FFT linear sweep; 3 selected quadratic triads; quadratic references: %s',referenceStatus));
+exportgraphics(fig,fullfile(outputDirectory,'count-map-quadratic.png'),Resolution=160);
+exportgraphics(fig,fullfile(outputDirectory,'count-map-quadratic.pdf'),ContentType="vector");
+writetable(linear,fullfile(outputDirectory,'linear-counts.csv'));
+writetable(removevars(assessment.pages,'limitingInteraction'),fullfile(outputDirectory,'quadratic-pages.csv'));
+writetable(removevars(repeat.pages,'limitingInteraction'),fullfile(outputDirectory,'repeat-pages.csv'));
+selectedTriads=addvars(triads(indices,:),indices(:),Before=1,NewVariableNames="interactionIndex");
+selectedTriads.outputKappa=kappa(selectedTriads.page3);
+writetable(selectedTriads,fullfile(outputDirectory,'selected-triads.csv'));
+writelines(jsonencode(selected.limitingInteraction,PrettyPrint=true),fullfile(outputDirectory,'limiting-interactions.json'));
+provenance=struct(configuration=config,matlabVersion=string(version),computer=string(computer),source=sourceRevision(),internalModesVersion="2.0.0-beta.4",linearPreparationSeconds=linearSeconds,preparationSeconds=preparationSeconds,cost=assessment.cost,repeatAssessmentSeconds=repeat.cost.assessmentSeconds,repeatStatus=repeat.status,coverage=assessment.coverage,referenceDiagnostics=assessment.referenceDiagnostics,interpretation="Original full FFT linear sweep plus three selected WVM triads; untested pages are not qualified; open markers are unqualified estimates, not a nonlinear count recommendation");
+writelines(jsonencode(provenance,PrettyPrint=true),fullfile(outputDirectory,'provenance.json'));
+result=struct(outputDirectory=outputDirectory,counts=linear,assessment=assessment,repeatAssessment=repeat,provenance=provenance);
+fprintf('Kappa-dependent quadratic example: %s\n',outputDirectory);
 end
 
 function result=sourceRevision()
