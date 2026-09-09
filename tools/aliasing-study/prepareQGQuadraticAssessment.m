@@ -26,7 +26,7 @@ n=config.apvCount+2; reserved=numel(indices)*n^2*3*5;
 workingBytes=reserved*1024+16*12*numel(data.allZ)*n^2;
 if reserved>options.productBudget, error('WVStudy:ProductBudgetExceeded','QG preparation reserves %d scalar output measurements; increase the explicit budget or reduce the inventory.',reserved); end
 if workingBytes>options.workingMemoryBudget, error('WVStudy:WorkingMemoryBudgetExceeded','QG preparation estimates %.1f MiB; reduce the inventory or increase the explicit budget.',workingBytes/1024^2); end
-contexts=cell(1,3); projections=cell(1,3); 
+contexts=cell(1,3); projections=cell(1,3);
 for s=1:3
     if s==1, zr=data.zR; wr=data.wR; else, zr=data.zQ; wr=data.wQ; end
     contexts{s}=prepareProductProjection(data.apv.basis,data.apv.transform,"F",zr,wr);
