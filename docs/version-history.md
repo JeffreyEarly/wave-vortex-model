@@ -8,13 +8,19 @@ nav_order: 100
 
 ## [Unreleased]
 
+### Per-kappa retained wave counts
+
+- Accept explicit physical-wavenumber/count maps in the experimental free-surface Boussinesq transform, including zero-wave pages. Keep scalar counts, independent inertial/balanced families and the existing rectangular coefficient arrays; inactive entries remain zero and do not enter polarization or projection.
+- Preserve count maps through output, restart and resolution transfer. Older uniform-count files load as full prefixes. New horizontal wavenumbers require explicit counts when transferring a nonuniform source map; discarded content is reported through the existing physical transfer assessment.
+- Add optional construction-time convergence reports with explicitly requested reference solves, reusing the provider's per-mode assessment. Separate linear mode/grid evidence from the authoring advisory's sampled quadratic output-page breakdown; no automatic truncation or new mode families are introduced.
+
 ### InternalModes beta dependency
 
-- Require the exact packaged `InternalModes@2.0.0-beta.3` prerelease, adding spectral coefficient scaling to improve long-wave pressure derivatives while retaining exact bulk mode construction, the consolidated projection/assessment API, and the earlier scientific corrections. Routine CI and package verification now use its immutable OceanKit snapshot. This adopts a beta provider; it does not publish WVM v5 or promise stable V2 APIs.
+- Require the exact packaged `InternalModes@2.0.0-beta.4` prerelease, adding per-mode convergence assessment and variable-count bulk construction alongside spectral coefficient scaling for long-wave pressure derivatives while retaining exact bulk mode construction, the consolidated projection/assessment API, and the earlier scientific corrections. Routine CI and package verification now use its immutable OceanKit snapshot. This adopts a beta provider; it does not publish WVM v5 or promise stable V2 APIs.
 
 ### Released-provider advisory regression reference
 
-- Compare the authoring advisory against a new InternalModes beta.3 reference with explicit provider, OceanKit, WVM and case provenance. Preserve the original calibration study files and the existing equality tolerance and count/rejection policies.
+- Compare the authoring advisory against a new InternalModes beta.4 reference with explicit provider, OceanKit, WVM and case provenance. Preserve the original calibration study and beta.3 reference files and the existing equality tolerance and count/rejection policies.
 
 ### Shared wave advisory projection kernels
 
@@ -27,7 +33,7 @@ nav_order: 100
 ### Experimental free-surface Boussinesq transform
 
 - Added `WVTransformFreeSurfaceBoussinesq.fromStratification` with independently retained wave, APV, zero-APV endpoint, inertial, and mean-density-anomaly families, physical pressure/velocity/displacement/SSH reconstruction, admissible mixed-state projection and error assessment, positive physical-energy accounting, and exact reference-time phase evolution.
-- Shared the existing free-surface balanced scientific construction with QG; preserved its resolved Galerkin transforms and fixed-grid qualification. The prototype requires the corrected InternalModes `2.0.0-beta.3` package; broader beta qualification remains under #354.
+- Shared the existing free-surface balanced scientific construction with QG; preserved its resolved Galerkin transforms and fixed-grid qualification. The prototype requires the corrected InternalModes `2.0.0-beta.4` package; broader beta qualification remains under #354.
 - Changing `t0` now invalidates linearly evolving cached fields, matching the existing invalidation on `t` changes.
 
 ### Forced linear Boussinesq evolution and restart

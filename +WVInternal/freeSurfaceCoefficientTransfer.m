@@ -59,6 +59,7 @@ for column=0:length(source.klNonzero)
             matched=false(size(sourceLabels)); targetRow=zeros(size(sourceLabels)); Mt=zeros(length(metric),0);
         end
         if isMean, a=sourceState.(family); else, a=sourceState.(family)(:,column); end
+        if ismember(family,["Aw_p","Aw_m"]), a=a(1:length(sourceLabels)); end
         b=complex(zeros(size(Mt,2),1));
         for j=find(matched).'
             % A scalar shape alignment cannot detect a changed APV inversion
@@ -87,7 +88,7 @@ for column=0:length(source.klNonzero)
         end
         if family=="Amda", b=real(b); end
         if present
-            if isMean, state.(family)=b; else, state.(family)(:,tc)=b; end
+            if isMean, state.(family)=b; else, state.(family)(1:length(b),tc)=b; end
         end
         full=Ms*a(:);
         missing=Ms(:,~matched)*reshape(a(~matched),[],1);

@@ -12,7 +12,7 @@ classdef TestWaveQuadraticAdvisory < matlab.unittest.TestCase
             data=testCase.prepared; z=data.z; weights=data.w;
             [report,evidence]=assessWaveQuadraticResolution(data,requestedWaveCount=3);
             root=fileparts(mfilename('fullpath'));
-            referenceRoot=fullfile(root,'results','provider-regressions','internal-modes-2.0.0-beta.3','cal-constant-17');
+            referenceRoot=fullfile(root,'results','provider-regressions','internal-modes-2.0.0-beta.4','cal-constant-17');
             expected=readtable(fullfile(referenceRoot,'prefix-errors.csv'));
             provenance=jsondecode(fileread(fullfile(referenceRoot,'provenance.json')));
             providerRoot=fileparts(fileparts(which('IMInternalModes')));
@@ -30,6 +30,19 @@ classdef TestWaveQuadraticAdvisory < matlab.unittest.TestCase
             limit=report.prefixDiagnostics.limitingInteraction{end};
             testCase.verifyEqual(sum(limit.integerWavevectors(1:2,:),1),limit.integerWavevectors(3,:))
             testCase.verifyNotEmpty(limit.outputModeLabels)
+            pages=report.outputPageDiagnostics;
+            testCase.verifyEqual(unique(pages.outputKappa),data.inventory.magnitudes(:))
+            for count=1:data.config.waveCount
+                rows=pages.commonWaveCount==count;
+                testCase.verifyEqual(max(pages.quadraticError(rows)),report.prefixDiagnostics.quadraticError(count))
+                testCase.verifyEqual(sum(pages.nonzeroProductCount(rows)),report.prefixDiagnostics.nonzeroProductCount(count))
+            end
+            testCase.verifyEqual(pages.outputWaveCount(pages.outputKappa==0),zeros(data.config.waveCount,1))
+            untested=pages.selectedInteractionCount==0;
+            testCase.verifyTrue(all(isnan(pages.quadraticError(untested))))
+            testCase.verifyTrue(all(pages.status(untested)=="inconclusive"))
+            testCase.verifyTrue(contains(report.coverage.outputPageScope,"common wave prefix"))
+            testCase.verifyTrue(contains(report.coverage.outputPageScope,"No independent per-page"))
         end
         function rejectsExplicitCountWithoutReplacingRequest(testCase)
             report=assessWaveQuadraticResolution(testCase.prepared,requestedWaveCount=4);
@@ -46,6 +59,8 @@ classdef TestWaveQuadraticAdvisory < matlab.unittest.TestCase
             testCase.verifyTrue(isnan(report.largestSampledCount))
             testCase.verifyEqual(report.fixedFamilyCounts.inertial,data.config.inertialCount)
             testCase.verifyFalse(report.requestedCountAccepted)
+            tested=~isnan(report.outputPageDiagnostics.quadraticError);
+            testCase.verifyTrue(all(report.outputPageDiagnostics.status(tested)=="rejected"))
         end
         function rejectsQuadraticFailureIndependentlyOfGram(testCase)
             data=testCase.prepared; data.waveGram(:)=0;
@@ -62,6 +77,8 @@ classdef TestWaveQuadraticAdvisory < matlab.unittest.TestCase
             testCase.verifyEqual(report.status,"reference-inconclusive")
             testCase.verifyTrue(isnan(report.largestSampledCount))
             testCase.verifyFalse(report.requestedCountAccepted)
+            tested=~isnan(report.outputPageDiagnostics.quadraticError);
+            testCase.verifyTrue(all(report.outputPageDiagnostics.status(tested)=="reference-inconclusive"))
         end
         function validatesBudgetBeforeProjection(testCase)
             % Removing prepared fields makes any attempted projection fail;

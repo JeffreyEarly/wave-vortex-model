@@ -45,19 +45,22 @@ weights = self.verticalQuadratureWeights;
 for p = 1:length(self.khUnique)
     columns = find(self.klNonzeroKhUniqueIndex==p);
     tendency.Ag_0(:,columns) = self.zeroAPVSourceSolve(:,:,p)*(self.zeroAPVFPairing(:,:,p)*curl(:,columns)-(self.f/self.Lz)*self.zeroAPVGPairing(:,:,p)*spectral.eta(:,indices(columns)));
-    phase = exp(1i*self.waveFrequency(:,p)*(self.t-self.t0));
+    count = self.waveModeCountByKh(p);
+    if count == 0, continue; end
+    modes = 1:count;
+    phase = exp(1i*self.waveFrequency(modes,p)*(self.t-self.t0));
     for j = columns.'
         index = indices(j);
-        pol = WVInternal.freeSurfaceWavePolarization(self.waveF(:,:,p),self.waveG(:,:,p),self.waveEquivalentDepth(:,p),self.kNonzero(j),self.lNonzero(j),f=self.f,g=self.g,rho0=self.rho0);
-        pair = complex(zeros(2*length(self.waveMode),1));
+        pol = WVInternal.freeSurfaceWavePolarization(self.waveF(:,modes,p),self.waveG(:,modes,p),self.waveEquivalentDepth(modes,p),self.kNonzero(j),self.lNonzero(j),f=self.f,g=self.g,rho0=self.rho0);
+        pair = complex(zeros(2*count,1));
         for name = ["u","v","w","eta"]
             metric = weights;
             if name=="eta", metric=metric.*self.N2; end
             pair = pair+reshape(pol.(name),self.Nz,[])'*(metric.*spectral.(name)(:,index));
         end
-        pair = reshape(pair,[],2)./(2*self.waveEquivalentDepth(:,p));
-        tendency.Aw_p(:,j) = pair(:,1)./phase;
-        tendency.Aw_m(:,j) = pair(:,2).*phase;
+        pair = reshape(pair,[],2)./(2*self.waveEquivalentDepth(modes,p));
+        tendency.Aw_p(modes,j) = pair(:,1)./phase;
+        tendency.Aw_m(modes,j) = pair(:,2).*phase;
     end
 end
 meanIndex = find(self.k==0 & self.l==0,1);

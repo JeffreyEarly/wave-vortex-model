@@ -51,7 +51,9 @@ for j=1:length(positive)
     B.H=checkValues;
     B.J=struct(F=zeroPage(zeroCheck,[-D;0],j,"F"),G=zeroPage(zeroCheck,[-D;0],j,"G"),dF=-N2([-D;0]).*zeroPage(zeroCheck,[-D;0],j,"G")/g,dG=dGcheck([-D;0]));
     B.convergence=[0 fieldConvergence(B.Q,checkValues,wQ)];
-    B.resolutionConvergence=[0 sobolevConvergence(B.Q,checkValues,wQ,D)];
+    identity=struct(family="geostrophicZeroAPVModes",columnLabels=string(zero.endpoints),normalization=string(zero.normalizationConvention),zDomain=[-D 0],kappa=inventory.magnitudes(positive(j)));
+    B.modeConvergence=compareModes(B.Q,checkValues,identity,[],[]);
+    B.resolutionConvergence=[0 h1Errors(B.modeConvergence)];
     B.interpolationError=relativeError(Gfun(zQ),B.Q.G,wQ);
     B.tail=modeTails(B.S);
     boundary{positive(j)}=B;
@@ -96,8 +98,19 @@ data=struct(pageDifficulty=pageDifficulty,config=config,profile=profile,z=z,w=w,
         assert(isequal(isfinite(basis.h),isfinite(check.h)),'Independent solves disagree on finite equivalent depths.');
         B.convergence=[depthError,fieldConvergence(B.Q,evaluateStudyModes(check,zQ,N2,profile.dLogN2),wQ)];
         B.convergence=B.convergence(:).';
-        B.resolutionConvergence=[depthError sobolevConvergence(B.Q,B.H,wQ,D)];
+        identity=struct(family=string(evp.modeFamily),columnLabels=string(basis.modeNumber),normalization=string(basis.normalization),zDomain=[-D 0]);
+        if isfield(evp.parameters,"k"), identity.kappa=evp.parameters.k; end
+        B.modeConvergence=compareModes(B.Q,B.H,identity,basis.h,check.h);
+        depthRows=B.modeConvergence.measurements.quantity=="equivalentDepth";
+        B.resolutionConvergence=[requiredError(B.modeConvergence,depthRows),h1Errors(B.modeConvergence)];
         B.tail=modeTails(B.S);
+    end
+
+    function report=compareModes(A,B,identity,h,referenceH)
+        candidate=struct(identity=identity,values=struct(F=A.F,G=A.G),derivatives=struct(F=A.dF,G=A.dG),provenance=struct(solverClass="IMSolverSpectral",nEVP=config.evpOrders(1),coordinateKind="wkb",referenceQuadratureCount=length(zQ)));
+        reference=struct(identity=identity,values=struct(F=B.F,G=B.G),derivatives=struct(F=B.dF,G=B.dG),provenance=struct(solverClass="IMSolverSpectral",nEVP=config.evpOrders(2),coordinateKind="wkb",referenceQuadratureCount=length(zQ)));
+        if ~isempty(h), candidate.equivalentDepths=h; reference.equivalentDepths=referenceH; end
+        report=assessModeConvergence(candidate,reference,zQ,wQ);
     end
 end
 
@@ -141,17 +154,18 @@ for variable=["F","G","dF","dG"]
 end
 end
 
-function errors=sobolevConvergence(A,B,w,D)
-% Joint positive H1 norms stay meaningful when a component's derivative is
-% nearly zero. The separate product-level EVP check still guards products
-% whose normalization amplifies a small derivative or localized overlap.
+function errors=h1Errors(report)
 errors=zeros(1,2); variables=["F","G"];
 for j=1:2
-    v=variables(j); dv="d"+v;
-    orientation=sign(sum(w.*A.(v).*B.(v),1)); orientation(orientation==0)=1;
-    numerator=sum(w.*(abs(A.(v)-B.(v).*orientation).^2+D^2*abs(A.(dv)-B.(dv).*orientation).^2),1);
-    denominator=sum(w.*(abs(B.(v)).^2+D^2*abs(B.(dv)).^2),1);
-    active=denominator>0;
-    if any(numerator(~active)>0), errors(j)=Inf; else, errors(j)=max([0 sqrt(numerator(active)./denominator(active))]); end
+    rows=report.measurements.quantity=="h1" & report.measurements.variable==variables(j);
+    errors(j)=requiredError(report,rows);
+end
+end
+
+function error=requiredError(report,rows)
+if ~any(rows) || any(report.measurements.status(rows)~="measured") || any(isnan(report.measurements.value(rows)))
+    error=Inf;
+else
+    error=max(report.measurements.value(rows));
 end
 end

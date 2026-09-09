@@ -16,14 +16,16 @@ switch family
         surface=-w.zeroAPVF(end,:,p)/(k^2+l^2);
         M=[-1i*l*F;1i*k*F;zeros(size(F));(w.f/w.g)*G;(w.f/w.g)*surface];
     case {"Aw_p","Aw_m"}
-        labels=w.waveModeNumber; sign=1; page=1;
+        rows=1:w.waveModeCountByKh(p);
+        labels=w.waveModeNumber(rows); sign=1; page=1;
+        if isempty(rows), M=complex(zeros(4*n+1,0)); return; end
         if family=="Aw_m", sign=-1; page=2; end
         % Append the true surface so the shared polarization computes SSH
         % there, rather than at the last interior quadrature point.
-        F=[P*w.waveF(:,:,p);w.waveF(end,:,p)];
-        G=[P*w.waveG(:,:,p);w.waveG(end,:,p)];
-        fields=WVInternal.freeSurfaceWavePolarization(F,G,w.waveEquivalentDepth(:,p),k,l,f=w.f,g=w.g,rho0=w.rho0);
-        phase=exp(sign*1i*w.waveFrequency(:,p).'*(time-w.t0));
+        F=[P*w.waveF(:,rows,p);w.waveF(end,rows,p)];
+        G=[P*w.waveG(:,rows,p);w.waveG(end,rows,p)];
+        fields=WVInternal.freeSurfaceWavePolarization(F,G,w.waveEquivalentDepth(rows,p),k,l,f=w.f,g=w.g,rho0=w.rho0);
+        phase=exp(sign*1i*w.waveFrequency(rows,p).'*(time-w.t0));
         M=[fields.u(1:n,:,page);fields.v(1:n,:,page);fields.w(1:n,:,page);fields.eta(1:n,:,page);fields.ssh(:,:,page)].*phase;
     case "Aio"
         labels=w.inertialModeNumber; F=(P*w.inertialF)*exp(1i*w.f*(time-w.t0));

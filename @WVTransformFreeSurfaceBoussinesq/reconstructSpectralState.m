@@ -41,11 +41,14 @@ for p = 1:length(self.khUnique)
     fields.eta(:,indices) = (self.f/self.g)*(self.apvG*aq+self.zeroAPVG(:,:,p)*a0);
     fields.p(:,indices) = self.rho0*self.f*psi;
     fields.qgpv(:,indices) = self.apvF*state.Ag_q(:,columns);
-    phase = exp(1i*self.waveFrequency(:,p)*(self.t-self.t0));
+    count = self.waveModeCountByKh(p);
+    if count == 0, continue; end
+    modes = 1:count;
+    phase = exp(1i*self.waveFrequency(modes,p)*(self.t-self.t0));
     for c = 1:length(columns)
         j = columns(c); index = indices(c);
-        polarizations = WVInternal.freeSurfaceWavePolarization(self.waveF(:,:,p),self.waveG(:,:,p),self.waveEquivalentDepth(:,p),self.kNonzero(j),self.lNonzero(j),f=self.f,g=self.g,rho0=self.rho0);
-        a = [state.Aw_p(:,j).*phase;state.Aw_m(:,j).*conj(phase)];
+        polarizations = WVInternal.freeSurfaceWavePolarization(self.waveF(:,modes,p),self.waveG(:,modes,p),self.waveEquivalentDepth(modes,p),self.kNonzero(j),self.lNonzero(j),f=self.f,g=self.g,rho0=self.rho0);
+        a = [state.Aw_p(modes,j).*phase;state.Aw_m(modes,j).*conj(phase)];
         for name = ["u","v","w","eta","p"]
             fields.(name)(:,index) = fields.(name)(:,index)+reshape(polarizations.(name),self.Nz,[])*a;
         end

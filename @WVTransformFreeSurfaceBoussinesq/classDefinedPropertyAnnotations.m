@@ -18,6 +18,7 @@ for annotation = shared
     end
 end
 annotations(end+1) = CANumericProperty('zeroAPVSourceSolve',{'activeEndpoint','activeEndpoint','khUnique'},'1','boundary-normalized signed source solve');
+annotations(end+1) = CANumericProperty('waveModeCountByKh',{'khUnique'},'1','retained wave prefix on each exact positive wavenumber page');
 names = {'waveModeNumber','inertialModeNumber','mdaPressureMode','waveF','waveG','waveGForward','waveEquivalentDepth','waveFrequency','inertialF','inertialFForward','inertialEquivalentDepth','waveGramError','inertialGramError','balancedNEVP','nEVP','projectionTolerance'};
 dims = {{'waveMode'},{'inertialMode'},{'z','mdaMode'},{'z','waveMode','khUnique'},{'z','waveMode','khUnique'},{'waveMode','z','khUnique'},{'waveMode','khUnique'},{'waveMode','khUnique'},{'z','inertialMode'},{'inertialMode','z'},{'inertialMode'},{'khUnique'},{},{},{},{}};
 units = {'1','1','m s-2','1','1','1','m','rad s-1','1','1','m','1','1','1','1','1'};

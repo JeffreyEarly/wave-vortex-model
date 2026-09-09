@@ -6,7 +6,7 @@ The first working advisory API is documented in [ADVISORY-API.md](ADVISORY-API.m
 
 ## Reproduce
 
-Use the current authoring checkout alongside OceanKit `0a483f5de9c623943944957f05300633511d6079`, which exports `InternalModes@2.0.0-beta.3` from provider tag `9ff1b6789a1dd1978736eb86760135909bf9999d`. The commands below run from the WVM repository with that OceanKit checkout named `../wvm400-oceankit`. `configureStudyPath` adds only the pinned packages and their manifest-listed folders and records the actual WVM Git revision. On this local Apple Silicon host, MATLAB must run outside the Codex sandbox under the shared workspace policy.
+Use the current authoring checkout alongside OceanKit `65d9aa2c3de941406dc6bf2cf1937ba5b3dcd1d5`, which exports `InternalModes@2.0.0-beta.4` from provider tag `f2ce3c143744ae00fbb25bd9d7b8c73fb358ca51`. The commands below run from the WVM repository with that OceanKit checkout named `../wvm400-oceankit`. `configureStudyPath` adds only the pinned packages and their manifest-listed folders and records the actual WVM Git revision. On this local Apple Silicon host, MATLAB must run outside the Codex sandbox under the shared workspace policy.
 
 The preserved historical tables were generated with WVM `9fefcc9a528de65e2f348706c45b13f741754a78` and OceanKit `80006f5040da787465860249f975def9831624c8` (InternalModes `4086f978b36a4100e7419688ab355591c8253ef1`, version `2.0.0-beta.1`). Reproducing that historical implementation exactly requires those source/dependency revisions; current-code comparisons keep the recorded historical provenance unchanged.
 

@@ -70,6 +70,9 @@ classdef WVTransformFreeSurfaceBoussinesq < WVGeometryDoublyPeriodicStratified &
         % Ordinal wave mode coordinate.
         % - Topic: Inspect scientific operators
         waveMode
+        % Retained wave prefix on each distinct positive wavenumber page.
+        % - Topic: Inspect scientific operators
+        waveModeCountByKh
         % Ordinal inertial mode coordinate.
         % - Topic: Inspect scientific operators
         inertialMode
@@ -205,6 +208,9 @@ classdef WVTransformFreeSurfaceBoussinesq < WVGeometryDoublyPeriodicStratified &
     end
 
     properties (Dependent)
+        % Active entries in the rectangular wave coefficient arrays.
+        % - Topic: Inspect coefficient families
+        activeWaveModes
         % Positive depth-integrated physical energy per unit area and reference density.
         % - Topic: Analyze physical energy
         totalEnergy
@@ -234,6 +240,10 @@ classdef WVTransformFreeSurfaceBoussinesq < WVGeometryDoublyPeriodicStratified &
             arguments (Input)
                 state (1,1) struct
             end
+            % Historical uniform scientific states did not store a count map.
+            if ~isfield(state,'waveModeCountByKh') && all(isfield(state,{'waveMode','khUnique'}))
+                state.waveModeCountByKh = repmat(numel(state.waveMode),numel(state.khUnique),1);
+            end
             required = [WVTransformFreeSurfaceBoussinesq.scientificPropertyNames(),WVTransformFreeSurfaceBoussinesq.geometryStateNames()];
             if ~all(isfield(state,required))
                 error('WVTransformFreeSurfaceBoussinesq:IncompleteScientificState','Supply the complete structure returned by scientificState or use fromStratification.')
@@ -252,7 +262,20 @@ classdef WVTransformFreeSurfaceBoussinesq < WVGeometryDoublyPeriodicStratified &
                     error('WVTransformFreeSurfaceBoussinesq:InvalidScientificState','%s must be a finite real array with shape %s.',shapeNames(iShape),mat2str(expected))
                 end
             end
-            if length(state.klNonzeroKhUniqueIndex)~=nc || any(state.klNonzeroKhUniqueIndex<1 | state.klNonzeroKhUniqueIndex>np) || any(state.waveEquivalentDepth<=0,'all') || any(state.inertialEquivalentDepth<=0)
+            if ~isa(state.waveModeCountByKh,'double') || ~isreal(state.waveModeCountByKh) || ~isequal(size(state.waveModeCountByKh),[np 1]) || any(~isfinite(state.waveModeCountByKh) | state.waveModeCountByKh<0 | state.waveModeCountByKh~=fix(state.waveModeCountByKh) | state.waveModeCountByKh>nw) || max([state.waveModeCountByKh;0])~=nw
+                error('WVTransformFreeSurfaceBoussinesq:InvalidScientificState','waveModeCountByKh must contain one nonnegative integer prefix per page, with maximum matching waveMode.')
+            end
+            active = (1:nw).' <= state.waveModeCountByKh.';
+            if any(state.waveEquivalentDepth(active)<=0) || any(state.waveFrequency(active)<=0) || any(state.waveEquivalentDepth(~active)~=0) || any(state.waveFrequency(~active)~=0)
+                error('WVTransformFreeSurfaceBoussinesq:InvalidScientificState','Wave depths and frequencies must be positive on active modes and zero in padding.')
+            end
+            for p = 1:np
+                inactive = state.waveModeCountByKh(p)+1:nw;
+                if any(state.waveF(:,inactive,p)~=0,'all') || any(state.waveG(:,inactive,p)~=0,'all') || any(state.waveGForward(inactive,:,p)~=0,'all')
+                    error('WVTransformFreeSurfaceBoussinesq:InvalidScientificState','Inactive wave operator entries must be zero.')
+                end
+            end
+            if length(state.klNonzeroKhUniqueIndex)~=nc || any(state.klNonzeroKhUniqueIndex<1 | state.klNonzeroKhUniqueIndex>np) || any(state.inertialEquivalentDepth<=0)
                 error('WVTransformFreeSurfaceBoussinesq:InvalidScientificState','Wave depths and horizontal page indices must be positive and match the stored families.')
             end
             geometry = struct(shouldAntialias=state.shouldAntialias,z=state.z,j=state.apvModeNumber,Nj=nq,N2Function=state.N2Function,rhoFunction=state.rhoFunction,rho0=state.rho0,planetaryRadius=state.planetaryRadius,rotationRate=state.rotationRate,latitude=state.latitude,g=state.g,dLnN2=state.dLnN2,PF0inv=state.PF0inv,QG0inv=state.QG0inv,PF0=state.PF0,QG0=state.QG0,P0=state.P0,Q0=state.Q0,h_0=state.h_0,z_int=state.z_int);
@@ -283,6 +306,7 @@ classdef WVTransformFreeSurfaceBoussinesq < WVGeometryDoublyPeriodicStratified &
         operation = operationForKnownVariable(self,variableName,options)
         diagnostics = physicalEnergy(self,options)
 
+        function value = get.activeWaveModes(self), value = self.waveMode <= self.waveModeCountByKh(self.klNonzeroKhUniqueIndex).'; end
         function value = get.activeEndpointCount(self), value = length(self.activeEndpoint); end
         function value = get.isHydrostatic(~), value = false; end
         function value = get.totalEnergy(self), d = self.physicalEnergy(); value = d.totalEnergy; end
@@ -359,11 +383,14 @@ classdef WVTransformFreeSurfaceBoussinesq < WVGeometryDoublyPeriodicStratified &
             if ~isa(value,'double') || ~isequal(size(value),shape) || any(~isfinite(value),'all') || (name=="Amda" && ~isreal(value))
                 error('WVTransformFreeSurfaceBoussinesq:InvalidCoefficient','%s must be a finite double array of shape %s; Amda must be real.',name,mat2str(shape))
             end
+            if ismember(name,["Aw_p","Aw_m"]) && any(value(~self.activeWaveModes)~=0)
+                error('WVTransformFreeSurfaceBoussinesq:InactiveWaveCoefficient','%s must be zero outside activeWaveModes.',name)
+            end
         end
     end
 
     methods (Static)
-        self = fromStratification(Lxyz,Nxyz,options)
+        [self,assessment] = fromStratification(Lxyz,Nxyz,options)
         function names = namesOfTransformVariables()
             names = {'u','v','w','eta','eta_i','p','ssh','ssu','ssv','qgpv'};
         end
@@ -373,7 +400,7 @@ classdef WVTransformFreeSurfaceBoussinesq < WVGeometryDoublyPeriodicStratified &
         function names = classRequiredPropertyNames()
             names = union(WVGeometryDoublyPeriodicStratified.namesOfRequiredPropertiesForGeometry(),WVTransformFreeSurfaceBoussinesq.scientificPropertyNames());
             names = union(names,{'activeEndpointCount','rhoFunction','Aw_p','Aw_m','Ag_q','Aio','Amda','t','t0','forcing'});
-            names = setdiff(names,WVTransformFreeSurfaceBoussinesq.optionalEndpointPropertyNames());
+            names = setdiff(names,[WVTransformFreeSurfaceBoussinesq.optionalEndpointPropertyNames(),WVTransformFreeSurfaceBoussinesq.optionalWavePropertyNames()]);
         end
     end
 
@@ -386,18 +413,21 @@ classdef WVTransformFreeSurfaceBoussinesq < WVGeometryDoublyPeriodicStratified &
     methods (Static, Hidden)
         function annotations = coefficientAnnotations()
             annotations = WVCoefficientAnnotation.empty(0,0);
-            annotations(end+1) = WVCoefficientAnnotation('Aw_p',{'waveMode','klNonzero'},'m s-1','positive-frequency waves',canonicalBasis="free-surface fixed-wavenumber waves",isComplex=true);
-            annotations(end+1) = WVCoefficientAnnotation('Aw_m',{'waveMode','klNonzero'},'m s-1','negative-frequency waves',canonicalBasis="free-surface fixed-wavenumber waves",isComplex=true);
+            annotations(end+1) = WVCoefficientAnnotation('Aw_p',{'waveMode','klNonzero'},'m s-1','positive-frequency waves',canonicalBasis="free-surface fixed-wavenumber waves",emptyFamilyPolicy="omit",isComplex=true);
+            annotations(end+1) = WVCoefficientAnnotation('Aw_m',{'waveMode','klNonzero'},'m s-1','negative-frequency waves',canonicalBasis="free-surface fixed-wavenumber waves",emptyFamilyPolicy="omit",isComplex=true);
             annotations(end+1) = WVCoefficientAnnotation('Ag_q',{'apvMode','klNonzero'},'s-1','APV coefficients',canonicalBasis="generalized-energy APV modes",isComplex=true);
             annotations(end+1) = WVCoefficientAnnotation('Ag_0',{'activeEndpoint','klNonzero'},'s-1','zero-APV coefficients',canonicalBasis="boundary-normalized zero-APV responses",emptyFamilyPolicy="omit",isComplex=true);
             annotations(end+1) = WVCoefficientAnnotation('Aio',{'inertialMode'},'m s-1','inertial oscillations',canonicalBasis="free-surface zero-wavenumber F modes",isComplex=true);
             annotations(end+1) = WVCoefficientAnnotation('Amda',{'mdaMode'},'m','mean density anomaly',canonicalBasis="signed-normalized MDA modes",isComplex=false);
         end
+        function names = optionalWavePropertyNames()
+            names = {'waveMode','waveModeNumber','waveF','waveG','waveGForward','waveEquivalentDepth','waveFrequency','Aw_p','Aw_m'};
+        end
         function names = optionalEndpointPropertyNames()
             names = {'activeEndpoint','Ag_0','apvEndpointResponse','zeroAPVF','zeroAPVG','zeroAPVFPairing','zeroAPVGPairing','zeroAPVSourceSolve'};
         end
         function names = scientificPropertyNames()
-            names = {'g0','gd','apvMode','mdaMode','waveMode','inertialMode','apvModeNumber','mdaModeNumber','waveModeNumber','inertialModeNumber','activeEndpoint','klNonzero','kNonzero','lNonzero','khNonzero','khUnique','klNonzeroKhUniqueIndex','apvF','apvG','apvFForward','apvMu','apvEndpointResponse','apvFSourcePairing','apvGSourcePairing','zeroAPVFPairing','zeroAPVGPairing','zeroAPVSourceSolve','zeroAPVF','zeroAPVG','mdaG','mdaGForward','mdaPressureMode','waveF','waveG','waveGForward','waveEquivalentDepth','waveFrequency','inertialF','inertialFForward','inertialEquivalentDepth','verticalQuadratureWeights','verticalDerivativeMatrix','waveGramError','inertialGramError','apvGramError','mdaGramError','balancedNEVP','nEVP','projectionTolerance'};
+            names = {'g0','gd','apvMode','mdaMode','waveMode','waveModeCountByKh','inertialMode','apvModeNumber','mdaModeNumber','waveModeNumber','inertialModeNumber','activeEndpoint','klNonzero','kNonzero','lNonzero','khNonzero','khUnique','klNonzeroKhUniqueIndex','apvF','apvG','apvFForward','apvMu','apvEndpointResponse','apvFSourcePairing','apvGSourcePairing','zeroAPVFPairing','zeroAPVGPairing','zeroAPVSourceSolve','zeroAPVF','zeroAPVG','mdaG','mdaGForward','mdaPressureMode','waveF','waveG','waveGForward','waveEquivalentDepth','waveFrequency','inertialF','inertialFForward','inertialEquivalentDepth','verticalQuadratureWeights','verticalDerivativeMatrix','waveGramError','inertialGramError','apvGramError','mdaGramError','balancedNEVP','nEVP','projectionTolerance'};
         end
         function names = geometryStateNames()
             names = {'Lxyz','Nxyz','shouldAntialias','z','N2Function','rhoFunction','rho0','planetaryRadius','rotationRate','latitude','g','dLnN2','PF0inv','QG0inv','PF0','QG0','P0','Q0','h_0','z_int'};
