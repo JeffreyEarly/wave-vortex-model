@@ -5,6 +5,7 @@ classdef TestFreeSurfaceWeakSolver < matlab.unittest.TestCase
             solver = WVInternal.freeSurfaceWeakSolver(wvt);
             initial = wvt.coefficientState();
             stream = RandStream('mt19937ar',Seed=75411);
+            wvt.t0 = -23;
             for time = [0,1371]
                 wvt.t = time;
                 metric = nonflatMetric(wvt);
@@ -58,6 +59,42 @@ classdef TestFreeSurfaceWeakSolver < matlab.unittest.TestCase
             testCase.verifyEqual([wvt.t,wvt.t0],[329,-17])
         end
 
+        function pureReactionAndNonzeroTargetSatisfyTheKKTEquations(testCase)
+            wvt = newTransform();
+            solver = WVInternal.freeSurfaceWeakSolver(wvt);
+            metric = flatMetric(wvt);
+            H = physicalGram(wvt,solver.layout,metric);
+            stream = RandStream('mt19937ar',Seed=911);
+            multiplier = randn(stream,solver.boundary.dimension,1);
+            rhs = solver.boundary.adjoint(multiplier);
+            target = zeros(solver.boundary.dimension,1);
+            [state,report] = solver.solve(rhs,target,metric);
+            value = solver.layout.pack(state);
+            testCase.verifyLessThan(sqrt(value.'*H*value),1e-10)
+            testCase.verifyEqual(report.multiplier,multiplier,AbsTol=1e-9)
+            zero = solver.layout.unpack(zeros(solver.layout.dimension,1));
+            target = randn(stream,solver.boundary.dimension,1);
+            [state,report] = solver.solve(zero,target,metric,tolerance=1e-11);
+            value = solver.layout.pack(state);
+            stationarity = H*value+solver.layout.pack(solver.boundary.adjoint(report.multiplier));
+            scale = sqrt(diag(H));
+            testCase.verifyLessThan(norm(stationarity./scale)/norm((H*value)./scale),1e-9)
+            testCase.verifyEqual(solver.boundary.apply(state),target,AbsTol=1e-10)
+            testCase.verifyLessThan(report.relativeConstraintResidual,5e-11)
+        end
+
+        function unconstrainedMDAMassNullDirectionFailsExplicitly(testCase)
+            wvt = newTransform(mdaModeCount=4);
+            solver = WVInternal.freeSurfaceWeakSolver(wvt);
+            metric = flatMetric(wvt);
+            metric.displacementWeight(:) = 0;
+            rhs = solver.layout.unpack(zeros(solver.layout.dimension,1));
+            directions = null(solver.boundary.meanBlock);
+            rhs.Amda = directions(:,1);
+            target = zeros(solver.boundary.dimension,1);
+            testCase.verifyError(@()solver.solve(rhs,target,metric),'WV:WeakSolverNotPositive')
+        end
+
         function incompleteSolveAndInvalidTargetFailExplicitly(testCase)
             wvt = newTransform();
             solver = WVInternal.freeSurfaceWeakSolver(wvt);
@@ -74,13 +111,14 @@ end
 function wvt = newTransform(options)
 arguments (Input)
     options.Nxyz (1,3) double = [4 4 33]
+    options.mdaModeCount (1,1) double = 2
     options.waveModeCount (:,1) double = 2
     options.waveModeKappa (:,1) double = zeros(0,1)
 end
 Nxyz = options.Nxyz;
 options = rmfield(options,'Nxyz');
 args = namedargs2cell(options);
-wvt = WVTransformFreeSurfaceBoussinesq.fromStratification([1e5 1e5 1000],Nxyz,args{:},N2Function=@(z)1e-4+zeros(size(z)),apvModeCount=2,mdaModeCount=2,inertialModeCount=2,shouldAntialias=true);
+wvt = WVTransformFreeSurfaceBoussinesq.fromStratification([1e5 1e5 1000],Nxyz,args{:},N2Function=@(z)1e-4+zeros(size(z)),apvModeCount=2,inertialModeCount=2,shouldAntialias=true);
 end
 
 function metric = flatMetric(wvt)
