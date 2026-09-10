@@ -19,15 +19,16 @@ function context = freeSurfaceThermodynamics(wvt)
 arguments (Input)
     wvt (1,1) WVTransformFreeSurfaceBoussinesq
 end
-profile = chebfun(wvt.N2Function,[-wvt.Lz,0]);
+% One polynomial piece makes the precomputed Gauss rule exact for the
+% represented profile, independently of global Chebfun splitting settings.
+profile = chebfun(wvt.N2Function,[-wvt.Lz,0],'splitting','off');
 if any(~isfinite(profile)) || min(profile)<=0
     error('WV:ThermodynamicProfile','The no-motion stratification must be finite and positive.');
 end
 I = cumsum(profile); I = I-I(0);
 J = cumsum(I); J = J-J(0);
-K = cumsum(J); K = K-K(0);
 [nodes,weights] = legpts(max(2,ceil((length(profile)+2)/2)),[0,1]);
-parameters = struct(nodes=nodes,weights=weights,Lz=wvt.Lz,g=wvt.g,rho0=wvt.rho0,profile=profile,I=I,J=J,K=K,topN2=profile(0));
+parameters = struct(nodes=nodes,weights=weights,Lz=wvt.Lz,g=wvt.g,rho0=wvt.rho0,profile=profile,I=I,J=J,topN2=profile(0));
 context = struct(evaluate=@(z,eta,ssh)evaluate(parameters,z,eta,ssh),referenceConvention="constant-surface-N2",minimumLabel=-wvt.Lz,maximumLabel=0);
 end
 
@@ -78,7 +79,7 @@ fields.referencePressure = parameters.rho0*(-parameters.g*z+physicalJ);
 end
 
 function value = referencePrimitive(parameters,z,order)
-if order==1, profile=parameters.I; elseif order==2, profile=parameters.J; else, profile=parameters.K; end
+if order==1, profile=parameters.I; else, profile=parameters.J; end
 value = zeros(size(z));
 interior = z<=0;
 value(interior) = sample(profile,z(interior));

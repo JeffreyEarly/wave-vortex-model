@@ -43,6 +43,21 @@ classdef TestFreeSurfaceThermodynamics < matlab.unittest.TestCase
             testCase.verifyEqual(context.evaluate(z,eta,ssh),fields)
         end
 
+        function highDegreeProfileUsesSufficientIntegralQuadrature(testCase)
+            D = 1000; N2 = 1e-4; degree = 18; a = 0.3;
+            wvt = newTransform(@(z)N2*(1+a*(1+z/D).^degree));
+            context = WVInternal.freeSurfaceThermodynamics(wvt);
+            [z,eta,ssh] = admissibleFields(wvt);
+            r = z-eta;
+            I = @(x)N2*(x+a*D/(degree+1)*((1+x/D).^(degree+1)-1));
+            J = @(x)N2*(x.^2/2+a*D^2/((degree+1)*(degree+2))*((1+x/D).^(degree+2)-1-(degree+2)*x/D));
+            referenceI = I(z); referenceI(z>0)=N2*(1+a)*z(z>0);
+            referenceJ = J(z); referenceJ(z>0)=0.5*N2*(1+a)*z(z>0).^2;
+            fields = context.evaluate(z,eta,ssh);
+            testCase.verifyEqual(fields.buoyancy,I(r)-referenceI,AbsTol=3e-15)
+            testCase.verifyEqual(fields.ape,-eta.*I(r)-J(r)+referenceJ,AbsTol=1e-11)
+        end
+
         function tinyDisplacementsRetainQuadraticEnergyAccuracy(testCase)
             wvt = newTransform(@(z)1e-4+zeros(size(z)));
             context = WVInternal.freeSurfaceThermodynamics(wvt);

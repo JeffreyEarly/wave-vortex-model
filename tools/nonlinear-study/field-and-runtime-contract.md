@@ -23,7 +23,7 @@ Use the ordinary v4 physical-velocity idiom without making meanings conditional 
 
 Remove provisional bare `p` rather than preserve an ambiguous alias. This is an intentional beta API change. Keep low-level `reconstructSpectralState` explicitly documented as reconstruction of hatted modal fields; it is also the internal linear-algebra primitive. Expose hatted sampled fields through `reconstructFields`' explicit names. The full pressure operation must not call a constraint multiplier pressure, and must distinguish collocation equation error from modal momentum projection error.
 
-Rename the existing quadratic `physicalEnergy` inventory to `quadraticEnergy`, retaining its positive physical Gram and all cross terms. Add `nonlinearEnergy` for the physical-volume kinetic plus exact APE and full surface energy. There is no migration alias or change of which formula is returned based on forcing registration.
+Keep the existing `physicalEnergy` and `totalEnergy` inventories explicitly quadratic, retaining their positive physical Gram and cross terms. Add `nonlinearEnergy` for the physical-volume kinetic plus exact APE and full surface energy. Do not change which formula an existing diagnostic returns based on forcing registration, and do not add migration aliases.
 
 ## Components and caches
 
