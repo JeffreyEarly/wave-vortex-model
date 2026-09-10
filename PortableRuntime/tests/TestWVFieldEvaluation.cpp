@@ -362,11 +362,298 @@ void verifyPhaseDiagnostics(bool hydrostatic, bool antialias) {
     require(!service->createPlan({{"sample", name, profiles}}, invalid), "spectral phase accepted profile sampling");
     require(!service->createPlan({{"sample", name, positions}}, invalid), "spectral phase accepted position sampling");
   }
-  for (const auto *name : {"rho_nm", "eta_true", "ape", "apv"}) {
+  for (const auto *name : {"rho_nm"}) {
     WVFieldEvaluationPlan invalid;
     require(bool(service->createPlan({full(name)}, invalid)), "qualified density full-grid plan rejected");
     require(!service->createPlan({{"sample",name,positions}}, invalid), "density accepted unsupported position sampling");
   }
+}
+
+void verifyDerivedMovingSampling() {
+  const auto config = configuration(6, 5, true, false);
+  std::unique_ptr<WVFieldEvaluationService> service;
+  auto status = WVFieldEvaluationService::create(
+      config, std::make_unique<WVReferenceFFTEngine>(), service);
+  require(bool(status), "derived moving service creation failed");
+  const auto state = stateFor(config);
+  const double dx = config.Lx / config.Nx;
+  const double dy = config.Ly / config.Ny;
+  const double dz = config.Lz / (config.Nz - 1);
+  WVFieldSamplingRequest sampling;
+  sampling.kind = WVFieldSamplingKind::positions;
+  sampling.interpolation = WVPositionInterpolation::spline;
+  sampling.x = {0.0, 2.0 * dx, config.Lx + 1.25 * dx, -0.4 * dx};
+  sampling.y = {0.0, 3.0 * dy, -0.75 * dy, config.Ly + 1.1 * dy};
+  sampling.z = {-config.Lz, -config.Lz + 2.0 * dz,
+                -config.Lz + 4.0 * dz, 0.0};
+  const std::array<const char *, 10> names{
+      "p", "pi", "psi", "qgpv", "ssh", "ssu", "ssv",
+      "zeta_x", "zeta_y", "zeta_z"};
+  std::vector<WVFieldRequest> fixedRequests;
+  std::vector<WVMovingFieldRequest> movingRequests;
+  for (std::size_t index = 0; index < names.size(); ++index) {
+    fixedRequests.push_back(
+        {"fixed-" + std::to_string(index), names[index], sampling});
+    movingRequests.push_back(
+        {"moving-" + std::to_string(index), names[index], 0,
+         sampling.x.size(), sampling.interpolation});
+  }
+  WVFieldEvaluationPlan fixed;
+  status = service->createPlan(fixedRequests, fixed);
+  require(bool(status), "derived fixed-position plan failed: " + status.message);
+  std::vector<std::vector<double>> fixedStorage(names.size());
+  std::vector<WVFieldOutputView> fixedViews;
+  for (std::size_t index = 0; index < names.size(); ++index) {
+    fixedStorage[index].resize(sampling.x.size());
+    fixedViews.push_back({fixedStorage[index].data(), fixedStorage[index].size()});
+  }
+  status = service->evaluate(fixed, state.view(), fixedViews.data(), fixedViews.size());
+  require(bool(status), "derived fixed-position evaluation failed");
+
+  WVMovingFieldEvaluationPlan moving;
+  status = service->createMovingPlan(movingRequests, moving);
+  require(bool(status), "derived moving plan failed: " + status.message);
+  const auto retained = moving.persistentBytes();
+  std::vector<std::vector<double>> movingStorage(
+      names.size(), std::vector<double>(sampling.x.size(), -919.0));
+  std::vector<WVFieldOutputView> movingViews;
+  for (auto &output : movingStorage)
+    movingViews.push_back({output.data(), output.size()});
+  std::vector<std::uint8_t> active(names.size());
+  for (std::size_t index = 0; index < active.size(); ++index)
+    active[index] = index % 2;
+  status = service->evaluateMoving(
+      moving, state.view(),
+      {sampling.x.data(), sampling.y.data(), sampling.z.data(),
+       sampling.x.size()},
+      movingViews.data(), movingViews.size(), active.data());
+  require(bool(status), "selected derived moving evaluation failed");
+  for (std::size_t index = 0; index < names.size(); ++index)
+    require(active[index] ? movingStorage[index] == fixedStorage[index]
+                          : std::all_of(movingStorage[index].begin(),
+                                        movingStorage[index].end(),
+                                        [](double value) { return value == -919.0; }),
+            "derived moving active-output selection changed values");
+  for (auto &output : movingStorage)
+    std::fill(output.begin(), output.end(), -919.0);
+  status = service->evaluateMoving(
+      moving, state.view(),
+      {sampling.x.data(), sampling.y.data(), sampling.z.data(),
+       sampling.x.size()},
+      movingViews.data(), movingViews.size());
+  require(bool(status), "derived moving evaluation failed");
+  require(movingStorage == fixedStorage,
+          "derived moving fields differ from fixed-position interpolation");
+  require(moving.persistentBytes() == retained &&
+              service->metrics().diagnosticWorkspaceLiveBytes == 0,
+          "derived moving evaluation retained temporary workspace");
+
+  auto invalidZ = sampling.z;
+  invalidZ[0] = std::numeric_limits<double>::quiet_NaN();
+  for (auto &output : movingStorage)
+    std::fill(output.begin(), output.end(), -919.0);
+  status = service->evaluateMoving(
+      moving, state.view(),
+      {sampling.x.data(), sampling.y.data(), invalidZ.data(),
+       sampling.x.size()},
+      movingViews.data(), movingViews.size());
+  require(!status && std::all_of(movingStorage.begin(), movingStorage.end(),
+      [](const auto &output) { return std::all_of(output.begin(), output.end(),
+          [](double value) { return value == -919.0; }); }),
+      "invalid derived moving coordinates published partial output");
+  require(service->metrics().diagnosticWorkspaceLiveBytes == 0,
+          "failed derived moving evaluation retained workspace");
+
+  std::unique_ptr<WVFieldEvaluationService> other;
+  require(bool(WVFieldEvaluationService::create(
+              config, std::make_unique<WVReferenceFFTEngine>(), other)),
+          "foreign derived moving service creation failed");
+  require(!other->evaluateMoving(
+              moving, state.view(),
+              {sampling.x.data(), sampling.y.data(), sampling.z.data(),
+               sampling.x.size()},
+              movingViews.data(), movingViews.size()),
+          "derived moving plan crossed service ownership");
+}
+
+void verifyDiagnosticSamplingRoutes() {
+  const auto config = configuration(6, 5, false, true);
+  std::unique_ptr<WVFieldEvaluationService> service;
+  require(bool(WVFieldEvaluationService::create(
+              config, std::make_unique<WVReferenceFFTEngine>(), service)),
+          "diagnostic sampling service creation failed");
+  const auto state = stateFor(config);
+  WVFieldSamplingRequest sampling;
+  sampling.kind = WVFieldSamplingKind::positions;
+  sampling.interpolation = WVPositionInterpolation::spline;
+  sampling.x = {0.4 * config.Lx / config.Nx,
+                config.Lx + 2.2 * config.Lx / config.Nx};
+  sampling.y = {1.3 * config.Ly / config.Ny,
+                -0.7 * config.Ly / config.Ny};
+  sampling.z = {-0.65 * config.Lz, -0.2 * config.Lz};
+  const std::array<const char *, 3> names{"u_g", "p_w", "ssh_io"};
+  std::vector<WVFieldRequest> fixedRequests;
+  std::vector<WVMovingFieldRequest> movingRequests;
+  std::vector<WVEventFieldRequest> eventRequests;
+  for (std::size_t index = 0; index < names.size(); ++index) {
+    fixedRequests.push_back(
+        {"fixed-diagnostic-" + std::to_string(index), names[index], sampling});
+    movingRequests.push_back(
+        {"moving-diagnostic-" + std::to_string(index), names[index], 0,
+         sampling.x.size(), sampling.interpolation});
+    eventRequests.push_back(
+        {"event-diagnostic-" + std::to_string(index), names[index], 0,
+         sampling.interpolation});
+  }
+  WVFieldEvaluationPlan fixed;
+  require(bool(service->createPlan(fixedRequests, fixed)),
+          "diagnostic fixed-position plan failed");
+  std::vector<std::vector<double>> fixedStorage(
+      names.size(), std::vector<double>(sampling.x.size()));
+  std::vector<WVFieldOutputView> fixedViews;
+  for (auto &field : fixedStorage)
+    fixedViews.push_back({field.data(), field.size()});
+  require(bool(service->evaluate(fixed, state.view(), fixedViews.data(),
+                                 fixedViews.size())),
+          "diagnostic fixed-position evaluation failed");
+
+  WVFieldSamplingRequest profiles;
+  profiles.kind = WVFieldSamplingKind::fixedVerticalProfiles;
+  profiles.xIndices = {1, config.Nx};
+  profiles.yIndices = {1, config.Ny};
+  WVFieldEvaluationPlan fullAndProfiles;
+  require(bool(service->createPlan(
+              {{"full-u-g", "u_g", {}}, {"profile-u-g", "u_g", profiles},
+               {"full-p-w", "p_w", {}}, {"profile-p-w", "p_w", profiles}},
+              fullAndProfiles)),
+          "diagnostic fixed-profile plan failed");
+  std::vector<std::vector<double>> profileStorage;
+  std::vector<WVFieldOutputView> profileViews;
+  profileStorage.reserve(fullAndProfiles.outputCount());
+  profileViews.reserve(fullAndProfiles.outputCount());
+  for (const auto &output : fullAndProfiles.outputs()) {
+    profileStorage.emplace_back(output.elementCount);
+    profileViews.push_back(
+        {profileStorage.back().data(), profileStorage.back().size()});
+  }
+  require(bool(service->evaluate(fullAndProfiles, state.view(),
+                                 profileViews.data(), profileViews.size())),
+          "diagnostic fixed-profile evaluation failed");
+  const auto plane = config.Nx * config.Ny;
+  for (const auto pair : {std::pair<std::size_t, std::size_t>{0, 1},
+                          std::pair<std::size_t, std::size_t>{2, 3}})
+    for (std::size_t z = 0; z < config.Nz; ++z) {
+      requireClose(profileStorage[pair.second][z],
+                   profileStorage[pair.first][plane * z],
+                   "diagnostic first profile differs from full field");
+      requireClose(profileStorage[pair.second][z + config.Nz],
+                   profileStorage[pair.first][config.Nx - 1 +
+                       config.Nx * (config.Ny - 1) + plane * z],
+                   "diagnostic last profile differs from full field");
+    }
+
+  WVMovingFieldEvaluationPlan moving;
+  require(bool(service->createMovingPlan(movingRequests, moving)),
+          "diagnostic moving plan failed");
+  std::vector<std::vector<double>> movingStorage(
+      names.size(), std::vector<double>(sampling.x.size()));
+  std::vector<WVFieldOutputView> movingViews;
+  for (auto &field : movingStorage)
+    movingViews.push_back({field.data(), field.size()});
+  require(bool(service->evaluateMoving(
+              moving, state.view(),
+              {sampling.x.data(), sampling.y.data(), sampling.z.data(),
+               sampling.x.size()},
+              movingViews.data(), movingViews.size())),
+          "diagnostic moving evaluation failed");
+  require(movingStorage == fixedStorage,
+          "diagnostic moving fields differ from fixed positions");
+
+  WVEventFieldEvaluationPlan event;
+  require(bool(service->createEventPlan(eventRequests, event)),
+          "diagnostic event plan failed");
+  const std::size_t extents[]{2};
+  WVEventPositionSetView positionSet{
+      sampling.x.data(), sampling.y.data(), sampling.z.data(),
+      sampling.x.size(), extents, 1};
+  WVPreparedFieldGeometry geometry;
+  require(bool(service->prepareEventGeometry(event, &positionSet, 1, geometry)),
+          "diagnostic event geometry failed");
+  std::vector<std::vector<double>> eventStorage(
+      names.size(), std::vector<double>(sampling.x.size()));
+  std::vector<WVFieldOutputView> eventViews;
+  for (auto &field : eventStorage)
+    eventViews.push_back({field.data(), field.size()});
+  require(bool(service->evaluateEvent(event, geometry, state.view(),
+                                      eventViews.data(), eventViews.size())),
+          "diagnostic event evaluation failed");
+  require(eventStorage == fixedStorage,
+          "diagnostic event fields differ from fixed positions");
+
+  auto movedEvent = std::move(event);
+  for (auto &field : eventStorage)
+    std::fill(field.begin(), field.end(), -919.0);
+  require(bool(service->evaluateEvent(movedEvent, geometry, state.view(),
+                                      eventViews.data(), eventViews.size())) &&
+              eventStorage == fixedStorage,
+          "prepared diagnostic geometry did not survive a plan move");
+  WVEventFieldEvaluationPlan identicalEvent;
+  require(bool(service->createEventPlan(eventRequests, identicalEvent)),
+          "identical diagnostic event plan failed");
+  for (auto &field : eventStorage)
+    std::fill(field.begin(), field.end(), -919.0);
+  require(!service->evaluateEvent(identicalEvent, geometry, state.view(),
+                                  eventViews.data(), eventViews.size()) &&
+              std::all_of(eventStorage.begin(), eventStorage.end(),
+                          [](const auto &field) {
+                            return std::all_of(
+                                field.begin(), field.end(),
+                                [](double value) { return value == -919.0; });
+                          }),
+          "prepared diagnostic geometry accepted an identical replacement plan");
+  const auto secondEventView = eventViews[1];
+  eventViews[1] = eventViews[0];
+  require(service->evaluateEvent(movedEvent, geometry, state.view(),
+                                 eventViews.data(), eventViews.size())
+                  .code == WVKernelStatusCode::overlappingArrays &&
+              std::all_of(eventStorage.front().begin(),
+                          eventStorage.front().end(),
+                          [](double value) { return value == -919.0; }),
+          "sampled event output overlap was accepted or published output");
+  eventViews[1] = secondEventView;
+  event = std::move(movedEvent);
+  for (std::size_t index = 0; index < eventStorage.size(); ++index)
+    std::copy(fixedStorage[index].begin(), fixedStorage[index].end(),
+              eventStorage[index].begin());
+
+  WVEventFieldEvaluationPlan primitiveEvent;
+  require(bool(service->createEventPlan(
+              {{"primitive-u", "u", 0, WVPositionInterpolation::spline}},
+              primitiveEvent)),
+          "primitive sibling event plan failed");
+  WVPreparedFieldGeometry primitiveGeometry;
+  require(bool(service->prepareEventGeometry(
+              primitiveEvent, &positionSet, 1, primitiveGeometry)),
+          "primitive sibling event geometry failed");
+  std::vector<double> primitive(sampling.x.size());
+  WVFieldOutputView primitiveView{primitive.data(), primitive.size()};
+  WVEventFieldEvaluationBatchEntry mixedEntries[]{
+      {&primitiveEvent, &primitiveGeometry, &primitiveView, 1},
+      {&event, &geometry, eventViews.data(), eventViews.size()}};
+  require(bool(service->evaluateEventBatch(state.view(), mixedEntries, 2)),
+          "mixed primitive/diagnostic event batch failed");
+  require(eventStorage == fixedStorage,
+          "mixed event batch changed diagnostic values");
+
+  auto otherConfig = config;
+  otherConfig.Nx = 7;
+  std::unique_ptr<WVFieldEvaluationService> other;
+  require(bool(WVFieldEvaluationService::create(
+              otherConfig, std::make_unique<WVReferenceFFTEngine>(), other)),
+          "foreign diagnostic event service creation failed");
+  WVPreparedFieldGeometry foreignGeometry;
+  require(!other->prepareEventGeometry(event, &positionSet, 1, foreignGeometry),
+          "diagnostic event plan crossed same-family grid ownership");
 }
 
 void verifyFailureAndLifecycleContracts() {
@@ -1151,6 +1438,12 @@ void verifySmallGridSplineBoundaries() {
   status = WVFieldEvaluationService::create(
       source, std::make_unique<WVReferenceFFTEngine>(), service);
   require(bool(status), status.message);
+  WVEventFieldEvaluationPlan unavailableDensityEvent;
+  require(!service->createEventPlan(
+              {{"unavailable-density", "eta_true", 0,
+                WVPositionInterpolation::linear}},
+              unavailableDensityEvent),
+          "stratified-QG event plan accepted an unavailable density diagnostic");
   const auto &g = source->geometry();
   std::vector<WVComplex64> a0(g.Nj * g.Nkl);
   WVCoefficientFamilyLayout family{"A0", {g.Nj, g.Nkl}};
@@ -1175,6 +1468,8 @@ int main() {
     verifyFailureAndLifecycleContracts();
     verifyEvaluation(6, 5, true, true);
     verifyEvaluation(7, 6, false, false);
+    verifyDerivedMovingSampling();
+    verifyDiagnosticSamplingRoutes();
     verifyEventFieldEvaluation();
     std::cout << "WVFieldEvaluationService portable contracts passed: "
                  "hydrostatic/nonhydrostatic, odd/even, antialiasing, "

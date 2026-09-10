@@ -428,7 +428,9 @@
       "portableKind": "diagnostic",
       "naturalRank": "volume",
       "samplingModes": [
-        "fullGrid"
+        "fullGrid",
+        "fixedVerticalProfiles",
+        "positions"
       ],
       "primitiveDependencies": [],
       "movingPrimitiveChannel": -1,
@@ -441,7 +443,9 @@
       "portableKind": "diagnostic",
       "naturalRank": "volume",
       "samplingModes": [
-        "fullGrid"
+        "fullGrid",
+        "fixedVerticalProfiles",
+        "positions"
       ],
       "primitiveDependencies": [],
       "movingPrimitiveChannel": -1,
@@ -454,7 +458,9 @@
       "portableKind": "diagnostic",
       "naturalRank": "volume",
       "samplingModes": [
-        "fullGrid"
+        "fullGrid",
+        "fixedVerticalProfiles",
+        "positions"
       ],
       "primitiveDependencies": [],
       "movingPrimitiveChannel": -1,
@@ -467,7 +473,9 @@
       "portableKind": "diagnostic",
       "naturalRank": "volume",
       "samplingModes": [
-        "fullGrid"
+        "fullGrid",
+        "fixedVerticalProfiles",
+        "positions"
       ],
       "primitiveDependencies": [],
       "movingPrimitiveChannel": -1,
@@ -480,7 +488,9 @@
       "portableKind": "diagnostic",
       "naturalRank": "volume",
       "samplingModes": [
-        "fullGrid"
+        "fullGrid",
+        "fixedVerticalProfiles",
+        "positions"
       ],
       "primitiveDependencies": [],
       "movingPrimitiveChannel": -1,
@@ -493,7 +503,9 @@
       "portableKind": "diagnostic",
       "naturalRank": "volume",
       "samplingModes": [
-        "fullGrid"
+        "fullGrid",
+        "fixedVerticalProfiles",
+        "positions"
       ],
       "primitiveDependencies": [],
       "movingPrimitiveChannel": -1,
@@ -506,7 +518,9 @@
       "portableKind": "diagnostic",
       "naturalRank": "volume",
       "samplingModes": [
-        "fullGrid"
+        "fullGrid",
+        "fixedVerticalProfiles",
+        "positions"
       ],
       "primitiveDependencies": [],
       "movingPrimitiveChannel": -1,
@@ -592,7 +606,9 @@
       "portableKind": "diagnostic",
       "naturalRank": "volume",
       "samplingModes": [
-        "fullGrid"
+        "fullGrid",
+        "fixedVerticalProfiles",
+        "positions"
       ],
       "primitiveDependencies": [
         "primitiveValues"
@@ -607,7 +623,9 @@
       "portableKind": "diagnostic",
       "naturalRank": "volume",
       "samplingModes": [
-        "fullGrid"
+        "fullGrid",
+        "fixedVerticalProfiles",
+        "positions"
       ],
       "primitiveDependencies": [
         "primitiveValues"
@@ -622,7 +640,9 @@
       "portableKind": "diagnostic",
       "naturalRank": "volume",
       "samplingModes": [
-        "fullGrid"
+        "fullGrid",
+        "fixedVerticalProfiles",
+        "positions"
       ],
       "primitiveDependencies": [
         "primitiveValues"
@@ -637,7 +657,9 @@
       "portableKind": "diagnostic",
       "naturalRank": "volume",
       "samplingModes": [
-        "fullGrid"
+        "fullGrid",
+        "fixedVerticalProfiles",
+        "positions"
       ],
       "primitiveDependencies": [
         "primitiveValues"
@@ -652,7 +674,9 @@
       "portableKind": "diagnostic",
       "naturalRank": "volume",
       "samplingModes": [
-        "fullGrid"
+        "fullGrid",
+        "fixedVerticalProfiles",
+        "positions"
       ],
       "primitiveDependencies": [
         "primitiveValues"
@@ -682,7 +706,9 @@
       "portableKind": "diagnostic",
       "naturalRank": "volume",
       "samplingModes": [
-        "fullGrid"
+        "fullGrid",
+        "fixedVerticalProfiles",
+        "positions"
       ],
       "primitiveDependencies": [
         "pressureHeight"
@@ -697,7 +723,9 @@
       "portableKind": "diagnostic",
       "naturalRank": "volume",
       "samplingModes": [
-        "fullGrid"
+        "fullGrid",
+        "fixedVerticalProfiles",
+        "positions"
       ],
       "primitiveDependencies": [
         "pressureHeight"
@@ -712,7 +740,9 @@
       "portableKind": "diagnostic",
       "naturalRank": "volume",
       "samplingModes": [
-        "fullGrid"
+        "fullGrid",
+        "fixedVerticalProfiles",
+        "positions"
       ],
       "primitiveDependencies": [
         "pressureHeight"
@@ -727,7 +757,9 @@
       "portableKind": "diagnostic",
       "naturalRank": "volume",
       "samplingModes": [
-        "fullGrid"
+        "fullGrid",
+        "fixedVerticalProfiles",
+        "positions"
       ],
       "primitiveDependencies": [
         "pressureHeight"
@@ -768,7 +800,8 @@
       "portableKind": "diagnostic",
       "naturalRank": "horizontal",
       "samplingModes": [
-        "fullGrid"
+        "fullGrid",
+        "positions"
       ],
       "primitiveDependencies": [
         "pressureHeight"
@@ -783,7 +816,8 @@
       "portableKind": "diagnostic",
       "naturalRank": "horizontal",
       "samplingModes": [
-        "fullGrid"
+        "fullGrid",
+        "positions"
       ],
       "primitiveDependencies": [
         "pressureHeight"
@@ -798,7 +832,8 @@
       "portableKind": "diagnostic",
       "naturalRank": "horizontal",
       "samplingModes": [
-        "fullGrid"
+        "fullGrid",
+        "positions"
       ],
       "primitiveDependencies": [
         "pressureHeight"
@@ -813,7 +848,8 @@
       "portableKind": "diagnostic",
       "naturalRank": "horizontal",
       "samplingModes": [
-        "fullGrid"
+        "fullGrid",
+        "positions"
       ],
       "primitiveDependencies": [
         "pressureHeight"
@@ -828,7 +864,8 @@
       "portableKind": "diagnostic",
       "naturalRank": "horizontal",
       "samplingModes": [
-        "fullGrid"
+        "fullGrid",
+        "positions"
       ],
       "primitiveDependencies": [
         "primitiveValues"
@@ -843,7 +880,8 @@
       "portableKind": "diagnostic",
       "naturalRank": "horizontal",
       "samplingModes": [
-        "fullGrid"
+        "fullGrid",
+        "positions"
       ],
       "primitiveDependencies": [
         "primitiveValues"
@@ -858,7 +896,8 @@
       "portableKind": "diagnostic",
       "naturalRank": "horizontal",
       "samplingModes": [
-        "fullGrid"
+        "fullGrid",
+        "positions"
       ],
       "primitiveDependencies": [
         "primitiveValues"
@@ -873,7 +912,8 @@
       "portableKind": "diagnostic",
       "naturalRank": "horizontal",
       "samplingModes": [
-        "fullGrid"
+        "fullGrid",
+        "positions"
       ],
       "primitiveDependencies": [
         "primitiveValues"
@@ -888,7 +928,8 @@
       "portableKind": "diagnostic",
       "naturalRank": "horizontal",
       "samplingModes": [
-        "fullGrid"
+        "fullGrid",
+        "positions"
       ],
       "primitiveDependencies": [
         "primitiveValues"
@@ -903,7 +944,8 @@
       "portableKind": "diagnostic",
       "naturalRank": "horizontal",
       "samplingModes": [
-        "fullGrid"
+        "fullGrid",
+        "positions"
       ],
       "primitiveDependencies": [
         "primitiveValues"
@@ -918,7 +960,8 @@
       "portableKind": "diagnostic",
       "naturalRank": "horizontal",
       "samplingModes": [
-        "fullGrid"
+        "fullGrid",
+        "positions"
       ],
       "primitiveDependencies": [
         "primitiveValues"
@@ -933,7 +976,8 @@
       "portableKind": "diagnostic",
       "naturalRank": "horizontal",
       "samplingModes": [
-        "fullGrid"
+        "fullGrid",
+        "positions"
       ],
       "primitiveDependencies": [
         "primitiveValues"
@@ -976,7 +1020,9 @@
       "portableKind": "diagnostic",
       "naturalRank": "volume",
       "samplingModes": [
-        "fullGrid"
+        "fullGrid",
+        "fixedVerticalProfiles",
+        "positions"
       ],
       "primitiveDependencies": [
         "primitiveValues"
@@ -991,7 +1037,9 @@
       "portableKind": "diagnostic",
       "naturalRank": "volume",
       "samplingModes": [
-        "fullGrid"
+        "fullGrid",
+        "fixedVerticalProfiles",
+        "positions"
       ],
       "primitiveDependencies": [
         "primitiveValues"
@@ -1006,7 +1054,9 @@
       "portableKind": "diagnostic",
       "naturalRank": "volume",
       "samplingModes": [
-        "fullGrid"
+        "fullGrid",
+        "fixedVerticalProfiles",
+        "positions"
       ],
       "primitiveDependencies": [
         "primitiveValues"
@@ -1021,7 +1071,9 @@
       "portableKind": "diagnostic",
       "naturalRank": "volume",
       "samplingModes": [
-        "fullGrid"
+        "fullGrid",
+        "fixedVerticalProfiles",
+        "positions"
       ],
       "primitiveDependencies": [
         "primitiveValues"
@@ -1036,7 +1088,9 @@
       "portableKind": "diagnostic",
       "naturalRank": "volume",
       "samplingModes": [
-        "fullGrid"
+        "fullGrid",
+        "fixedVerticalProfiles",
+        "positions"
       ],
       "primitiveDependencies": [
         "primitiveValues"
@@ -1051,7 +1105,9 @@
       "portableKind": "diagnostic",
       "naturalRank": "volume",
       "samplingModes": [
-        "fullGrid"
+        "fullGrid",
+        "fixedVerticalProfiles",
+        "positions"
       ],
       "primitiveDependencies": [
         "primitiveValues"
@@ -1066,7 +1122,9 @@
       "portableKind": "diagnostic",
       "naturalRank": "volume",
       "samplingModes": [
-        "fullGrid"
+        "fullGrid",
+        "fixedVerticalProfiles",
+        "positions"
       ],
       "primitiveDependencies": [
         "primitiveValues"
@@ -1081,7 +1139,9 @@
       "portableKind": "diagnostic",
       "naturalRank": "volume",
       "samplingModes": [
-        "fullGrid"
+        "fullGrid",
+        "fixedVerticalProfiles",
+        "positions"
       ],
       "primitiveDependencies": [
         "primitiveValues"
@@ -1096,7 +1156,9 @@
       "portableKind": "diagnostic",
       "naturalRank": "volume",
       "samplingModes": [
-        "fullGrid"
+        "fullGrid",
+        "fixedVerticalProfiles",
+        "positions"
       ],
       "primitiveDependencies": [
         "primitiveValues"
@@ -1111,7 +1173,9 @@
       "portableKind": "diagnostic",
       "naturalRank": "volume",
       "samplingModes": [
-        "fullGrid"
+        "fullGrid",
+        "fixedVerticalProfiles",
+        "positions"
       ],
       "primitiveDependencies": [
         "primitiveValues"
@@ -1126,7 +1190,9 @@
       "portableKind": "diagnostic",
       "naturalRank": "volume",
       "samplingModes": [
-        "fullGrid"
+        "fullGrid",
+        "fixedVerticalProfiles",
+        "positions"
       ],
       "primitiveDependencies": [
         "primitiveValues"
@@ -1141,7 +1207,9 @@
       "portableKind": "diagnostic",
       "naturalRank": "volume",
       "samplingModes": [
-        "fullGrid"
+        "fullGrid",
+        "fixedVerticalProfiles",
+        "positions"
       ],
       "primitiveDependencies": [
         "primitiveValues"
@@ -1607,7 +1675,7 @@
         "apeQuadrature"
       ],
       "runtimeStatus": "implemented",
-      "samplingRestriction": "Full natural grid only; interpolation and reductions are not supported.",
+      "samplingRestriction": "Full natural grid, vertical profiles, and fixed/event/moving positions; interpolation is qualified for these spatial samples. Reductions remain unsupported.",
       "configurationRestriction": "The wave-vortex-density-diagnostics-v1 runtime contract defaults to actual density with dampedLeastSquares recovery. Explicit initial reference applies to displacement, APE and APV; rho_nm always describes current density. Legacy MATLAB solver choices are not inferred from saved files."
     },
     {
@@ -1622,7 +1690,7 @@
         "etaTrueGradients"
       ],
       "runtimeStatus": "implemented",
-      "samplingRestriction": "Full natural grid only; interpolation and reductions are not supported.",
+      "samplingRestriction": "Full natural grid, vertical profiles, and fixed/event/moving positions; interpolation is qualified for these spatial samples. Reductions remain unsupported.",
       "configurationRestriction": "The wave-vortex-density-diagnostics-v1 runtime contract defaults to actual density with dampedLeastSquares recovery. Explicit initial reference applies to displacement, APE and APV; rho_nm always describes current density. Legacy MATLAB solver choices are not inferred from saved files."
     },
     {
@@ -1730,7 +1798,7 @@
         "inverseDensitySpline"
       ],
       "runtimeStatus": "implemented",
-      "samplingRestriction": "Full natural grid only; interpolation and reductions are not supported.",
+      "samplingRestriction": "Full natural grid, vertical profiles, and fixed/event/moving positions; interpolation is qualified for these spatial samples. Reductions remain unsupported.",
       "configurationRestriction": "The wave-vortex-density-diagnostics-v1 runtime contract defaults to actual density with dampedLeastSquares recovery. Explicit initial reference applies to displacement, APE and APV; rho_nm always describes current density. Legacy MATLAB solver choices are not inferred from saved files."
     },
     {
@@ -1825,7 +1893,7 @@
         "noMotionProfile"
       ],
       "runtimeStatus": "implemented",
-      "samplingRestriction": "Full natural grid only; interpolation and reductions are not supported.",
+      "samplingRestriction": "Full natural grid, vertical profiles, and fixed/event/moving positions; interpolation is qualified for these spatial samples. Reductions remain unsupported.",
       "configurationRestriction": "The wave-vortex-density-diagnostics-v1 runtime contract defaults to actual density with dampedLeastSquares recovery. Explicit initial reference applies to displacement, APE and APV; rho_nm always describes current density. Legacy MATLAB solver choices are not inferred from saved files."
     },
     {

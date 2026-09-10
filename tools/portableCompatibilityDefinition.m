@@ -58,14 +58,13 @@ for item=reshape(integration.witnesses,1,[])
     addWitness("integration-"+string(item.id),"matlab-runtime-parity",string(item.path),string(item.symbol),string(item.coverage));
 end
 addWitness("declared-sampling","matlab-runtime-parity","UnitTests/TestPortableFieldSamplingMatrix.m","declaredPortableSamplingMatchesMatlab","All six transform configurations, both antialias modes, every declared position/profile field, linear/spline and reference/native providers when available.");
+addWitness("density-sampling","matlab-runtime-parity","UnitTests/TestPortableFieldSamplingMatrix.m","densitySamplingPreservesReferenceSelection","Density position and profile sampling with both actual and initial reference selections across the declared families and antialias modes.");
 addWitness("ordinary-fields","matlab-runtime-parity","UnitTests/TestPortableDiagnostics.m","allTransformDiagnosticsMatchMatlab","Both antialias modes and both grid parities; registered non-forcing outputs except primary coefficients and separately qualified density fields.");
 addWitness("density-fields","matlab-runtime-parity","UnitTests/TestPortableDensityEventEvaluation.m","coefficientDrivenDensityMatchesMatlab","Four wave families, both antialias modes, actual and initial references; full natural density grids.");
 addWitness("forcing-wave-fields","matlab-runtime-parity","UnitTests/TestPortableStableForcing.m","fullGridWaveTendenciesMatchMatlab","Full-grid built-in forcing channels in four wave families, both antialias modes.");
 addWitness("forcing-barotropic-fields","matlab-runtime-parity","UnitTests/TestPortableStableForcing.m","fullGridBarotropicTendenciesMatchMatlab","Barotropic forcing channels, both antialias modes.");
 addWitness("forcing-stratified-fields","matlab-runtime-parity","UnitTests/TestPortableStableForcing.m","fullGridStratifiedTendenciesMatchMatlab","Stratified QG forcing channels, both antialias modes.");
 addWitness("matlab-sampling-authority","matlab-authority","@WVTransform/variableAtPositionWithName.m","variableAtPositionWithName","MATLAB interpolates registered gridded variables independently of the portable sampling mask.");
-addWitness("density-position-rejection","cpp-unit","PortableRuntime/tests/TestWVPortableVariableCatalog.cpp","main","Exact density position-sampling rejection in all four wave-bearing families and both antialias modes.");
-addWitness("constant-moving-authority","cpp-authority","PortableRuntime/src/WVFieldEvaluationService.cpp","createMovingPlan","The constant adapter rejects fields without a movingPrimitiveChannel; this is source authority, not an executed rejection fixture.");
 
 addWitness("observer-contracts","matlab-contract","UnitTests/TestPortableObserverContracts.m","supportedObserversReturnExactVersionedContracts","Five built-in observer identities and exact pair versions in a constant nonhydrostatic model.");
 addWitness("constant-graph","matlab-runtime-parity","UnitTests/TestPortableRuntimeCompatibility.m","matlabModelGraphRoundTripsThroughStandalone","Both constant configurations at AA-off: nonlinear model graph, coefficients, field/mooring records, particles and tracer.");
@@ -82,6 +81,8 @@ end
 addWitness("forward-compositions","matlab-runtime-parity","UnitTests/TestPortableForwardIntegration.m","representativeLifecycleMatchesMatlab","Six parameterized rich trajectories with all continuation directions, two destinations, held coefficients, particles/tracers and controlled stops.");
 addWitness("diagnostic-output","matlab-runtime-parity","UnitTests/TestPortableDiagnostics.m","outputContinuationMatchesMatlab","AA-on ordinary and dense multi-file diagnostic output across six families.");
 addWitness("density-output","matlab-runtime-parity","UnitTests/TestPortableDensityOutput.m","twoDestinationsContinueInBothDirections","Constant hydrostatic actual reference and hydrostatic initial reference, AA-on, two destinations and MATLAB/C++ continuation.");
+addWitness("sampling-output","matlab-runtime-parity","UnitTests/TestPortableSamplingOutput.m","ordinaryAndDenseSamplesMatchMatlab","Representative sampled diagnostic observer output with ordinary and dense records, fixed/adaptive integration, and actual/initial reference cases.");
+addWitness("sampling-output-continuation","matlab-runtime-parity","UnitTests/TestPortableSamplingOutput.m","twoDestinationsContinueInBothDirections","Representative MATLAB-to-C++ and C++-to-MATLAB continuation across two output destinations.");
 addWitness("base-observer-rejection","matlab-contract","UnitTests/TestPortableObserverContracts.m","baseClassIsUnavailable","Abstract extension base is not a supplied portable observer.");
 % Existing typed forcing and integration rows remain the sole scientific facts.
 for item=reshape(forcing.rows,1,[])
@@ -106,21 +107,18 @@ for item=reshape(variables.contracts,1,[])
     if string(item.metadata.naturalRank)=="horizontal", modes=unique([modes,"positions"],"stable"); end
     for sampling=modes
         axes=emptyAxes(); axes.configuration=configuration; axes.feature=name; axes.sampling=sampling;
-        missingMoving=false;
         if sampling=="positions"
             axes.stage="fixed-event-and-moving";
-            % The qualified sampler explicitly omits moving calls for these
-            % constant-adapter channel=-1 fields, while fixed/event work.
-            missingMoving=ismember(sampling,declared) && startsWith(configuration,"constant-") && ...
-                ismember(name,["p","pi","psi","qgpv","ssh","ssu","ssv","zeta_x","zeta_y","zeta_z"]);
-            if missingMoving, axes.stage="fixed-and-event"; end
         end
         status="supported"; reason="";
         if ~ismember(sampling,declared)
             status="unqualified"; reason="matlab-supported-sampling-not-implemented"; refs="matlab-sampling-authority";
-            if sampling=="positions" && ismember(name,["eta_true","ape","apv"])
-                refs=["matlab-sampling-authority","density-position-rejection"];
-            end
+        elseif ismember(sampling,["positions","fixedVerticalProfiles"])
+            % Spatial rows are independently exercised by the comprehensive
+            % sampler, including diagnostics and forcing outputs. Do not
+            % borrow full-grid witnesses for an interpolation claim.
+            refs="declared-sampling";
+            if ismember(name,["eta_true","ape","apv"]), refs=[refs,"density-sampling"]; end
         elseif ismember(name,["rho_nm","eta_true","ape","apv"])
             refs="density-fields";
         elseif endsWith(name,"_portable_catalog_forcing")
@@ -140,11 +138,8 @@ for item=reshape(variables.contracts,1,[])
         end
         if string(item.runtimeStatus)~="implemented", status="unqualified"; reason="source-evaluator-not-implemented"; end
         addRow("fields/"+sourceRow+"/"+sampling,"fields","fields",sourceRow,axes,status,reason,refs);
-        if missingMoving
-            axes.stage="moving";
-            addRow("fields/"+sourceRow+"/"+sampling+"/moving","fields","fields",sourceRow,axes,"unqualified", ...
-                "matlab-supported-moving-sampling-not-implemented",["matlab-sampling-authority","constant-moving-authority"]);
-        end
+        % Moving requests are part of the declared positions witness. The
+        % adapter's internal channel mapping is not a MATLAB incompatibility.
     end
 end
 % Exact antialias settings belong to the fixture contract as well.
@@ -164,6 +159,10 @@ for configuration=reshape(string(variables.configurations),1,[])
         elseif ~aa && ismember(family,["hydrostatic","boussinesq","stratified-qg"])
             refs=family+"-graph";
         end
+        if aa && ismember(configuration,["constant-nonhydrostatic-aa1","hydrostatic-aa1"]) && ...
+                ismember(observer,["WVMooring","WVLagrangianParticles"])
+            refs=[refs,"sampling-output"];
+        end
         if ~ismember(observer,["WVCoefficients","WVEulerianFields","WVLagrangianParticles","WVMooring","WVTracer"])
             refs=strings(1,0); reason="new-matlab-observer-without-portable-witness";
         end
@@ -182,6 +181,13 @@ for configuration=reshape(string(variables.configurations),1,[])
         axes.outputLayout="MATLAB-column-major-real-or-split-complex";
         axes.restartState="coefficients-forcing-observers-schedules";
         refs="forward-compositions"; status="supported"; reason="";
+        if configuration=="constant-nonhydrostatic-aa1" && feature=="ordinary-dense-output"
+            refs=[refs,"sampling-output"];
+        elseif configuration=="hydrostatic-aa1" && feature=="ordinary-dense-output"
+            refs=[refs,"sampling-output"];
+        elseif any(configuration==["constant-nonhydrostatic-aa1","hydrostatic-aa1"]) && any(feature==["multi-destination-output","segmented-restart","matlab-cpp-continuation"])
+            refs=[refs,"sampling-output-continuation"];
+        end
         addRow("persistence/"+configuration+"/"+feature,"persistence","integration",replace(family,"barotropic","barotropic-qg"),axes,status,reason,refs);
     end
 end

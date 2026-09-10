@@ -480,7 +480,9 @@ WVKernelStatus buildLegacyOutputPlan(
     for (const auto &field : execution.outputFields) {
       const auto *metadata = findExecutablePortableVariable(field);
       if (metadata == nullptr ||
-          metadata->kind != WVPortableVariableKind::field)
+          (metadata->kind != WVPortableVariableKind::field &&
+           metadata->kind != WVPortableVariableKind::diagnostic) ||
+          (metadata->samplingMask & portableFixedVerticalProfileSampling) == 0)
         return invalid("Unsupported mooring field: " + field + ".");
       WVObserverOutputChannel channel;
       channel.source = WVObserverOutputChannelSource::sampledField;
@@ -529,7 +531,9 @@ WVKernelStatus buildLegacyOutputPlan(
     const auto &field = execution.outputFields.front();
     const auto *metadata = findExecutablePortableVariable(field);
     if (metadata == nullptr ||
-        metadata->kind != WVPortableVariableKind::field)
+        (metadata->kind != WVPortableVariableKind::field &&
+         metadata->kind != WVPortableVariableKind::diagnostic) ||
+        (metadata->samplingMask & portablePositionSampling) == 0)
       return invalid("Unsupported fixed-position field: " + field + ".");
     WVObserverOutputChannel channel;
     channel.source = WVObserverOutputChannelSource::sampledField;
@@ -621,7 +625,9 @@ WVKernelStatus buildLegacyOutputPlan(
     for (const auto &field : execution.outputFields) {
       const auto *metadata = findExecutablePortableVariable(field);
       if (metadata == nullptr ||
-          metadata->kind != WVPortableVariableKind::field)
+          (metadata->kind != WVPortableVariableKind::field &&
+           metadata->kind != WVPortableVariableKind::diagnostic) ||
+          (metadata->samplingMask & portablePositionSampling) == 0)
         return invalid("Unsupported particle tracked field: " + field + ".");
       auto variable = fieldVariable(
           *metadata, "derived-" + field, observer.name + '_' + field,

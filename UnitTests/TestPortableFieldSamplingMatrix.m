@@ -8,7 +8,7 @@ classdef TestPortableFieldSamplingMatrix < matlab.unittest.TestCase
     methods (TestClassSetup)
         function prepareProbe(testCase)
             testCase.root=string(fileparts(fileparts(mfilename("fullpath"))));
-            fixture=testCase.applyFixture(matlab.unittest.fixtures.TemporaryFolderFixture);
+            fixture=testCase.applyFixture(matlab.unittest.fixtures.TemporaryFolderFixture(PreservingOnFailure=true));
             testCase.folder=string(fixture.Folder);
             stableProbe=string(getenv("WV_STABLE_FORCING_DUMP"));
             testCase.probe=string(getenv("WV_FIELD_SAMPLING_DUMP"));
@@ -30,6 +30,7 @@ classdef TestPortableFieldSamplingMatrix < matlab.unittest.TestCase
         function declaredPortableSamplingMatchesMatlab(testCase)
             catalog=jsondecode(fileread(fullfile(testCase.root,"PortableRuntime","contracts","portable-variable-catalog-v1.json")));
             families=["constant-hydrostatic","constant-nonhydrostatic","barotropic","stratified-qg","hydrostatic","boussinesq"];
+            evidence={};
             for family=families
                 for antialias=[false true]
                     configuration=family+"-aa"+double(antialias);
@@ -40,10 +41,10 @@ classdef TestPortableFieldSamplingMatrix < matlab.unittest.TestCase
                         modes=string(row.metadata.samplingModes);
                         if ismember("positions",modes), positions{end+1}=string(row.metadata.name); end %#ok<AGROW>
                         if ismember("fixedVerticalProfiles",modes), profiles{end+1}=string(row.metadata.name); end %#ok<AGROW>
-                        if ismember("positions",modes) && (~startsWith(family,"constant-") || row.metadata.movingPrimitiveChannel>=0), movingPositions{end+1}=string(row.metadata.name); end %#ok<AGROW>
+                        if ismember("positions",modes), movingPositions{end+1}=string(row.metadata.name); end %#ok<AGROW>
                     end
                     [wvt,source]=testCase.writeSource(family,antialias,configuration);
-                    [x,y,z]=testCase.positionCoordinates(wvt,3);
+                    [x,y,z]=testCase.positionCoordinates(wvt);
                     request=struct(x=x,y=y,z=z,fields={positions});
                     if isempty(positions), request.fields={}; end
                     if isempty(profiles)
@@ -62,7 +63,11 @@ classdef TestPortableFieldSamplingMatrix < matlab.unittest.TestCase
                         for method=["linear","spline"]
                             for name=string(positions)
                                 expected=wvt.variableAtPositionWithName(request.x,request.y,request.z,char(name),interpolationMethod=char(method));
-                                tolerance=2e-11*max(abs(expected(:)))+1e-16;
+                                tolerance=testCase.samplingTolerance(wvt,name,expected);
+                                cppGrid=reshape(actual.full.(name),size(wvt.(name)));
+                                interpolatedCppGrid=testCase.interpolateFullField(wvt,request.x,request.y,request.z,method,cppGrid);
+                                interpolationTolerance=2e-11*max(abs(interpolatedCppGrid(:)))+1e-16;
+                                if endsWith(name,"_portable_catalog_forcing"), interpolationTolerance=2e-11*max(abs(cppGrid(:)))+realmin; end
                                 for path=["fixed","moving","event"]
                                     if ~isfield(actual.(method).(path),name)
                                         testCase.verifyEqual(path,"moving",configuration+" "+provider+" "+method+" missing "+name+" output");
@@ -72,18 +77,75 @@ classdef TestPortableFieldSamplingMatrix < matlab.unittest.TestCase
                                     if path=="moving", testCase.verifyTrue(ismember(name,string(movingPositions)),configuration+" "+provider+" "+method+" unexpectedly emitted moving "+name); end
                                     observed=actual.(method).(path).(name);
                                     testCase.verifyLessThanOrEqual(max(abs(observed(:)-expected(:))),tolerance,configuration+" "+provider+" "+method+" "+path+" "+name);
+                                    testCase.verifyLessThanOrEqual(max(abs(observed(:)-interpolatedCppGrid(:))),interpolationTolerance,configuration+" "+provider+" "+method+" "+path+" interpolation of full "+name);
+                                    evidence{end+1}=struct(configuration=configuration,provider=provider,method=method,path=path,field=name,maximumError=max(abs(observed(:)-expected(:))),tolerance=tolerance,interpolationMaximumError=max(abs(observed(:)-interpolatedCppGrid(:))),interpolationTolerance=interpolationTolerance); %#ok<AGROW>
                                 end
                             end
                             for name=string(profiles)
                                 expected=testCase.profileColumn(wvt,name,request.profiles.xIndices(find(string(profiles)==name,1)),request.profiles.yIndices(find(string(profiles)==name,1)));
                                 observed=actual.(method).profiles.(name);
-                                tolerance=2e-11*max(abs(expected(:)))+1e-16;
+                                tolerance=testCase.samplingTolerance(wvt,name,expected);
                                 testCase.verifyLessThanOrEqual(max(abs(observed(:)-expected(:))),tolerance,configuration+" "+provider+" "+method+" profile "+name);
+                                cppGrid=reshape(actual.full.(name),size(wvt.(name)));
+                                fieldIndex=find(string(profiles)==name,1);
+                                expectedCppColumn=cppGrid(request.profiles.xIndices(fieldIndex),request.profiles.yIndices(fieldIndex),:);
+                                testCase.verifyEqual(observed(:),expectedCppColumn(:),configuration+" "+provider+" profile must select the full-field column for "+name);
+                                evidence{end+1}=struct(configuration=configuration,provider=provider,method=method,path="fixedVerticalProfiles",field=name,maximumError=max(abs(observed(:)-expected(:))),tolerance=tolerance,interpolationMaximumError=max(abs(observed(:)-expectedCppColumn(:))),interpolationTolerance=0); %#ok<AGROW>
                             end
                         end
                     end
                 end
             end
+            testCase.writeEvidence("matrix",evidence);
+        end
+        function densitySamplingPreservesReferenceSelection(testCase)
+            names=["eta_true","ape","apv"];
+            evidence={};
+            for family=["constant-hydrostatic","constant-nonhydrostatic","hydrostatic","boussinesq"]
+                for antialias=[false true]
+                    configuration=family+"-aa"+double(antialias);
+                    [wvt,source]=testCase.writeSource(family,antialias,configuration);
+                    [x,y,z]=testCase.positionCoordinates(wvt);
+                    wvt.shouldUseTrueNoMotionProfile=true;
+                    actualDisplacement=wvt.eta_true;
+                    wvt.shouldUseTrueNoMotionProfile=false;
+                    testCase.assertGreaterThan(max(abs(actualDisplacement-wvt.eta_true),[],"all"),1e-8,"Density reference fixture must distinguish actual from initial.");
+                    for reference=["actual","initial"]
+                        wvt.shouldUseTrueNoMotionProfile=reference=="actual";
+                        request=struct(x=x,y=y,z=z,fields=names,reference=reference,profiles=struct(fields=names,xIndices=[1 3 5],yIndices=[1 2 3]));
+                        requestPath=fullfile(testCase.folder,configuration+"-density-request.json");
+                        outputPath=fullfile(testCase.folder,configuration+"-density-output.json");
+                        writeJSON(requestPath,request);
+                        for provider=testCase.providers
+                            [status,output]=cleanSystem(shellQuote(testCase.probe)+" "+shellQuote(source)+" "+shellQuote(requestPath)+" "+shellQuote(outputPath)+" "+provider);
+                            testCase.assertEqual(status,0,configuration+" "+reference+" "+provider+": "+output);
+                            actual=jsondecode(fileread(outputPath));
+                            for method=["linear","spline"]
+                                for index=1:numel(names)
+                                    name=names(index);
+                                    expected=wvt.variableAtPositionWithName(x,y,z,char(name),interpolationMethod=char(method));
+                                    tolerance=testCase.samplingTolerance(wvt,name,expected);
+                                    cppGrid=reshape(actual.full.(name),size(wvt.(name)));
+                                    interpolatedCppGrid=testCase.interpolateFullField(wvt,x,y,z,method,cppGrid);
+                                    for path=["fixed","moving","event"]
+                                        observed=actual.(method).(path).(name);
+                                        testCase.verifyLessThanOrEqual(max(abs(observed(:)-expected(:))),tolerance,configuration+" "+reference+" "+provider+" "+path+" "+name);
+                                        interpolationTolerance=2e-11*max(abs(interpolatedCppGrid(:)))+1e-16;
+                                        testCase.verifyLessThanOrEqual(max(abs(observed(:)-interpolatedCppGrid(:))),interpolationTolerance);
+                                        evidence{end+1}=struct(configuration=configuration,reference=reference,provider=provider,method=method,path=path,field=name,maximumError=max(abs(observed(:)-expected(:))),tolerance=tolerance,interpolationMaximumError=max(abs(observed(:)-interpolatedCppGrid(:))),interpolationTolerance=interpolationTolerance); %#ok<AGROW>
+                                    end
+                                    expected=testCase.profileColumn(wvt,name,request.profiles.xIndices(index),request.profiles.yIndices(index));
+                                    observed=actual.(method).profiles.(name);
+                                    testCase.verifyLessThanOrEqual(max(abs(observed(:)-expected(:))),testCase.samplingTolerance(wvt,name,expected));
+                                    cppColumn=cppGrid(request.profiles.xIndices(index),request.profiles.yIndices(index),:);
+                                    testCase.verifyEqual(observed(:),cppColumn(:));
+                                end
+                            end
+                        end
+                    end
+                end
+            end
+            testCase.writeEvidence("density-reference",evidence);
         end
     end
     methods (Access=private)
@@ -112,14 +174,48 @@ classdef TestPortableFieldSamplingMatrix < matlab.unittest.TestCase
                 mda=inertial & wvt.J>0; wvt.A0(mda)=.003*sin(n(mda));
             end
             wvt.t=37; wvt.t0=17; wvt.removeAllForcing();
+            held=WVFixedAmplitudeForcing(wvt,name="portable_catalog_forcing");
+            held.setGeostrophicForcingCoefficients(wvt.A0);
+            if ~ismember(family,["barotropic","stratified-qg"]), held.setWaveForcingCoefficients(wvt.Ap,wvt.Am); end
+            wvt.setForcing([WVNonlinearAdvection(wvt),held]);
+            wvt.addOperation(SpatialForcingOperation(wvt));
+            forcingNames=string(wvt.variableNames);
+            forcingNames=forcingNames(endsWith(forcingNames,"_portable_catalog_forcing"));
+            forcingMagnitude=0;
+            for name=reshape(forcingNames,1,[]), forcingMagnitude=max(forcingMagnitude,max(abs(wvt.(name)),[],"all")); end
+            testCase.assertGreaterThan(forcingMagnitude,0,"The forcing sampling fixture must have a nonzero resolved tendency.");
             model=WVModel(wvt,shouldUseLinearDynamics=family=="barotropic" || family=="constant-hydrostatic" || family=="constant-nonhydrostatic");
             path=fullfile(testCase.folder,configuration+"-source.nc"); file=model.createNetCDFFileForModelOutput(path,outputInterval=.5,shouldOverwriteExisting=true); file.outputTimesForIntegrationPeriod(37,37); file.writeTimeStepToOutputFile(37); model.closeNetCDFFile();
         end
-        function [x,y,z]=positionCoordinates(~,wvt,count)
+        function [x,y,z]=positionCoordinates(~,wvt)
             dx=wvt.Lx/wvt.Nx; dy=wvt.Ly/wvt.Ny;
-            x=[.35*dx;wvt.Lx+.35*dx;2*dx]; y=[.6*dy;-wvt.Ly+.6*dy;3*dy];
-            z=zeros(count,1); if isprop(wvt,"Lz"), z=-wvt.Lz*[.23;.61;.84]; end
-            if count~=3, x=x(1:count); y=y(1:count); z=z(1:count); end
+            x=[.35*dx;wvt.Lx+.35*dx;2*dx;-.65*dx;wvt.Lx-1e-5*dx;0;wvt.Lx];
+            y=[.6*dy;-wvt.Ly+.6*dy;3*dy;wvt.Ly-.4*dy;.75*dy;0;wvt.Ly];
+            z=zeros(size(x));
+            if ismember('z',wvt.spatialDimensionNames), z=[-wvt.Lz*[.23;.61;.84];wvt.z(1);wvt.z(end);wvt.z(1)-.01*wvt.Lz;wvt.z(end)+.01*wvt.Lz]; end
+        end
+        function tolerance=samplingTolerance(~,wvt,name,expected)
+            scale=max(abs(expected(:)));
+            tolerance=2e-11*scale+1e-16;
+            if endsWith(name,"_portable_catalog_forcing"), tolerance=2e-11*max(abs(wvt.(name)),[],"all")+realmin; end
+            % Retain the independently qualified density-recovery bounds.
+            % Interpolation itself is checked separately against the C++ grid.
+            if name=="eta_true", tolerance=1e-6*wvt.Lz; end
+            if name=="ape", tolerance=1e-5*max(abs(wvt.ape),[],"all")+1e-12; end
+            if name=="apv", tolerance=1e-6*max(abs(wvt.apv),[],"all")+1e-12; end
+        end
+        function writeEvidence(~,suffix,rows)
+            report=string(getenv("WV_FIELD_SAMPLING_REPORT"));
+            if report~="", writeJSON(replace(report,".json","-"+suffix+".json"),struct(schema="wvm-field-sampling-parity-v1",rows=[rows{:}])); end
+        end
+        function values=interpolateFullField(~,wvt,x,y,z,method,field)
+            dimensions={'x','y'};
+            if ~ismatrix(field), dimensions{end+1}='z'; end
+            name='portableSamplingGrid';
+            annotation=WVVariableAnnotation(name,dimensions,'1','independent full-grid interpolation control');
+            operation=WVOperation(name,annotation,@(~)field);
+            wvt.addOperation(operation,shouldOverwriteExisting=true,shouldSuppressWarning=true);
+            values=wvt.variableAtPositionWithName(x,y,z,name,interpolationMethod=char(method));
         end
         function values=profileColumn(~,wvt,name,xIndex,yIndex)
             value=wvt.(name);

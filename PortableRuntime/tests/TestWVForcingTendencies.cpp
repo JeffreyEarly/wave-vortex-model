@@ -334,13 +334,6 @@ void fieldService(Engine& engine,const WVState& state,WVShape4D spatial,
     require(!unbound->createPlan({requests.front()},rejected),"Kernel-only service accepted an unbound forcing");
     auto bad=requests.front(); bad.fieldName+="_missing";
     require(!service->createPlan({bad},rejected),"Unknown forcing instance accepted");
-    for(auto kind:{WVFieldSamplingKind::positions,WVFieldSamplingKind::fixedVerticalProfiles}) {
-        bad=requests.front(); bad.sampling.kind=kind;
-        bad.sampling.x={0}; bad.sampling.y={0}; bad.sampling.z={0};
-        bad.sampling.xIndices={1}; bad.sampling.yIndices={1};
-        require(service->createPlan({bad},rejected).code==WVKernelStatusCode::unsupportedOperation,
-            "Forcing diagnostic accepted unqualified profile/position sampling");
-    }
     require(plan.outputCount()==requests.size(),"Forcing field output count");
     std::vector<std::vector<double>> data(plan.outputCount());
     std::vector<WVFieldOutputView> views;
@@ -356,6 +349,7 @@ void fieldService(Engine& engine,const WVState& state,WVShape4D spatial,
     const auto count=engine.tendencyMetrics().forcingEvaluationCount,start=counter->calls;
     const auto reconstructions=engine.metrics().physicalFieldReconstructionCount;
     const auto primitiveEvaluations=service->metrics().primitiveFieldEvaluationCount;
+    const auto diagnosticReuse=service->metrics().diagnosticIntermediateReuseCount;
     status=service->evaluate(plan,integrationState,views.data(),views.size());
     if(!status) throw std::runtime_error("Forcing field evaluation: "+status.message);
     const auto fftCalls=counter->calls-start;
@@ -364,7 +358,7 @@ void fieldService(Engine& engine,const WVState& state,WVShape4D spatial,
         "Forcing diagnostics reconstructed velocity already prepared for field outputs");
     const auto expectedPhysical=qg ? 2 : std::is_same_v<Engine,WVConstantStratificationForcingEngine> ? 3 : 4;
     require(service->metrics().primitiveFieldEvaluationCount==primitiveEvaluations+expectedPhysical &&
-        service->metrics().diagnosticIntermediateReuseCount==4,
+        service->metrics().diagnosticIntermediateReuseCount==diagnosticReuse+4,
         "Ordinary and forcing outputs failed to share their physical dependencies");
     for(std::size_t index=0;index<forcingOutputCount;++index) {
         const auto instance=index/spatial.fourth,channel=index%spatial.fourth;
@@ -377,6 +371,74 @@ void fieldService(Engine& engine,const WVState& state,WVShape4D spatial,
     require(service->persistentBytes()==persistent && plan.persistentBytes()==planBytes &&
         service->metrics().servicePersistentBytes==persistent && service->metrics().diagnosticWorkspaceLiveBytes==0,
         "Bound field service retained diagnostic workspace or miscounted persistent bytes");
+    WVFieldSamplingRequest forcingPosition;
+    forcingPosition.kind=WVFieldSamplingKind::positions;
+    forcingPosition.x={0};forcingPosition.y={0};forcingPosition.z={0};
+    WVFieldEvaluationPlan sampledForcing;
+    require(bool(service->createPlan({{"sampled-forcing",requests.front().fieldName,forcingPosition}},sampledForcing)),
+        "Forcing diagnostic position plan failed");
+    double sampledForcingValue=99;
+    WVFieldOutputView sampledForcingView{&sampledForcingValue,1};
+    require(bool(service->evaluate(sampledForcing,integrationState,&sampledForcingView,1)) &&
+        sampledForcingValue==data.front()[(spatial.third-1)*spatial.first*spatial.second],
+        "Forcing diagnostic position differs from its full-grid field");
+    WVMovingFieldEvaluationPlan movingForcing;
+    require(bool(service->createMovingPlan({{"moving-forcing",requests.front().fieldName,0,1,
+        WVPositionInterpolation::linear}},movingForcing)),"Forcing diagnostic moving plan failed");
+    double movingForcingValue=99;
+    WVFieldOutputView movingForcingView{&movingForcingValue,1};
+    const double forcingX=0,forcingY=0,forcingZ=0;
+    require(bool(service->evaluateMoving(movingForcing,integrationState,
+        {&forcingX,&forcingY,&forcingZ,1},&movingForcingView,1)) &&
+        movingForcingValue==sampledForcingValue,
+        "Forcing diagnostic moving sample differs from fixed position");
+    std::unique_ptr<WVFieldEvaluationService> metricService;
+    require(bool(WVFieldEvaluationService::createBorrowing(engine,metricService)),
+        "Forcing metric field service creation failed");
+    WVMovingFieldEvaluationPlan metricMoving;
+    require(bool(metricService->createMovingPlan(
+        {{"metric-moving-forcing",requests.front().fieldName,0,1,
+          WVPositionInterpolation::linear}},metricMoving)),
+        "Forcing metric moving plan failed");
+    double metricMovingValue=99;
+    WVFieldOutputView metricMovingView{&metricMovingValue,1};
+    require(bool(metricService->evaluateMoving(
+        metricMoving,integrationState,{&forcingX,&forcingY,&forcingZ,1},
+        &metricMovingView,1)) && metricMovingValue==sampledForcingValue,
+        "Forcing metric moving evaluation failed");
+    require(metricService->metrics().diagnosticWorkspaceLiveBytes==0 &&
+        metricService->metrics().diagnosticWorkspaceHighWaterBytes>=
+            R*sizeof(double)+engine.tendencyMetrics().workspaceLastPeakBytes,
+        "Moving forcing metrics omit outer or nested forcing workspace");
+    WVEventFieldEvaluationPlan forcingEvent;
+    require(bool(service->createEventPlan({{"event-forcing",requests.front().fieldName,0,
+        WVPositionInterpolation::linear}},forcingEvent)),"Forcing diagnostic event plan failed");
+    WVPreparedFieldGeometry forcingGeometry;
+    const WVEventPositionSetView forcingPositionSet{&forcingX,&forcingY,&forcingZ,1};
+    require(bool(service->prepareEventGeometry(forcingEvent,&forcingPositionSet,1,forcingGeometry)),
+        "Forcing diagnostic event geometry failed");
+    double eventForcingValue=99;
+    WVFieldOutputView eventForcingView{&eventForcingValue,1};
+    require(bool(service->evaluateEvent(forcingEvent,forcingGeometry,integrationState,&eventForcingView,1)) &&
+        eventForcingValue==sampledForcingValue,
+        "Forcing diagnostic event sample differs from fixed position");
+    WVFieldSamplingRequest forcingProfile;
+    forcingProfile.kind=WVFieldSamplingKind::fixedVerticalProfiles;
+    forcingProfile.xIndices={1};forcingProfile.yIndices={1};
+    if constexpr(std::is_same_v<Engine,WVBarotropicQGForcingEngine>) {
+        require(!service->createPlan({{"profile-forcing",requests.front().fieldName,forcingProfile}},sampledForcing),
+            "Barotropic forcing accepted a vertical profile");
+    } else {
+        require(bool(service->createPlan({{"profile-forcing",requests.front().fieldName,forcingProfile}},sampledForcing)),
+            "Forcing diagnostic profile plan failed");
+        std::vector<double> forcingProfileValues(spatial.third);
+        WVFieldOutputView forcingProfileView{forcingProfileValues.data(),forcingProfileValues.size()};
+        require(bool(service->evaluate(sampledForcing,integrationState,&forcingProfileView,1)),
+            "Forcing diagnostic profile evaluation failed");
+        for(std::size_t level=0;level<spatial.third;++level)
+            require(forcingProfileValues[level]==data.front()[level*spatial.first*spatial.second],
+                "Forcing diagnostic profile differs from its full-grid field");
+    }
     const auto successful=data;
     std::vector<std::uint8_t> active(plan.outputCount());
     std::vector<WVFieldOutputView> selectedViews(plan.outputCount());

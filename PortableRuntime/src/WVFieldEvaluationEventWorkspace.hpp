@@ -28,6 +28,33 @@ public:
     }
   }
 
+  WVKernelStatus validateState(const WVIntegrationState& state) const {
+    std::array<const WVComplex64*,3> coefficients{
+        state.waveVortex.coefficients.Ap.data,
+        state.waveVortex.coefficients.Am.data,
+        state.waveVortex.coefficients.A0.data};
+    if(state.coefficientFamilies) {
+      if(state.coefficientFamilyCount==1)
+        coefficients={nullptr,nullptr,state.coefficientFamilies[0].data};
+      else if(state.coefficientFamilyCount==3)
+        for(std::size_t family=0;family<3;++family)
+          coefficients[family]=state.coefficientFamilies[family].data;
+    }
+    if(state.waveVortex.t!=t_ || state.waveVortex.t0!=t0_ ||
+        coefficients!=coefficients_)
+      return {WVKernelStatusCode::invalidConfiguration,
+              "Field evaluation belongs to a different active event state."};
+    return WVKernelStatus::ok();
+  }
+
+  std::size_t externalWorkspaceBytes() const noexcept {
+    return externalWorkspaceBytes_;
+  }
+  void setExternalWorkspaceBytes(std::size_t bytes) noexcept {
+    externalWorkspaceBytes_=bytes;
+    if(metrics_) account();
+  }
+
   template<class Operation>
   WVKernelStatus evaluate(std::size_t field,const WVState& state,double* output,
       std::size_t count,Operation&& operation,bool& reused) {
@@ -124,6 +151,7 @@ private:
   WVDensityEventMetrics densityMetrics_;
   std::vector<double> apv_;
   bool apvReady_=false;
+  std::size_t externalWorkspaceBytes_=0;
   void account() noexcept {
     const auto sourceBytes=(densitySource_.capacity()+densityHeights_.capacity()+
         densityWeights_.capacity()+densityInitial_.capacity()+apv_.capacity())*sizeof(double);
@@ -133,8 +161,10 @@ private:
     metrics_->densityWorkspaceHighWaterBytes=std::max(metrics_->densityWorkspaceHighWaterBytes,peak);
     std::size_t other=0;
     for(const auto& field:fields_) other+=field.capacity()*sizeof(double);
-    metrics_->eventFieldWorkspaceLiveBytes=other+live;
-    metrics_->eventFieldWorkspaceHighWaterBytes=std::max(metrics_->eventFieldWorkspaceHighWaterBytes,other+peak);
+    metrics_->eventFieldWorkspaceLiveBytes=externalWorkspaceBytes_+other+live;
+    metrics_->eventFieldWorkspaceHighWaterBytes=std::max(
+        metrics_->eventFieldWorkspaceHighWaterBytes,
+        externalWorkspaceBytes_+other+peak);
   }
 };
 
@@ -145,6 +175,9 @@ public:
   WVFieldEvaluationEventScope(const WVFieldEvaluationEventScope&)=delete;
   WVFieldEvaluationEventScope& operator=(const WVFieldEvaluationEventScope&)=delete;
   const WVKernelStatus& status() const noexcept {return status_;}
+  void setExternalWorkspaceBytes(std::size_t bytes) noexcept {
+    workspace_.setExternalWorkspaceBytes(bytes);
+  }
   void release() noexcept;
 private:
   WVFieldEvaluationService* service_=nullptr;

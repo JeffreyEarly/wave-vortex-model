@@ -707,6 +707,41 @@ WVKernelStatus WVBarotropicQGFieldEvaluationAdapter::createMovingPlan(
   }
 }
 
+WVKernelStatus WVBarotropicQGFieldEvaluationAdapter::samplePreparedField(
+    const WVFieldEvaluationPlan &publicPlan, const double *source,
+    WVFieldOutputView output) {
+  const auto plan = std::static_pointer_cast<const Plan>(publicPlan.transformPlan_);
+  if (!plan || plan->fingerprint != configurationFingerprint(configuration()) ||
+      plan->requests.size() != 1 || publicPlan.outputs_.size() != 1)
+    return invalid("Prepared Barotropic QG sampler does not match this transform.");
+  const auto &request = plan->requests.front();
+  if (!source || !output.data ||
+      output.elementCount != publicPlan.outputs_.front().elementCount)
+    return {WVKernelStatusCode::invalidShape,
+            "Prepared Barotropic QG sampler storage has the wrong shape."};
+  const auto &g = configuration();
+  if (request.sampling == WVFieldSamplingKind::positions) {
+    for (std::size_t position = 0; position < request.weights.size(); ++position)
+      output.data[position] = interpolate(source, request.weights[position],
+                                          request.interpolation, g.Nx, g.Ny);
+    if (request.interpolation == WVPositionInterpolation::linear)
+      metrics_.linearInterpolationCount += request.weights.size();
+    else
+      metrics_.splineInterpolationCount += request.weights.size();
+  } else {
+    std::copy_n(source, output.elementCount, output.data);
+    ++metrics_.fullGridWriteCount;
+  }
+  metrics_.outputElementWriteCount += output.elementCount;
+  return WVKernelStatus::ok();
+}
+
+void WVBarotropicQGFieldEvaluationAdapter::recordSampledMoving(
+    std::size_t positionCount) noexcept {
+  ++metrics_.movingEvaluationCount;
+  metrics_.movingPositionCount += positionCount;
+}
+
 WVKernelStatus WVBarotropicQGFieldEvaluationAdapter::evaluateMoving(
     const WVMovingFieldEvaluationPlan &publicPlan,
     const WVIntegrationState &state, WVMovingPositionView positions,

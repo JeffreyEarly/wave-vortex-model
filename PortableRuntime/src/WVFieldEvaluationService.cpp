@@ -381,6 +381,34 @@ public:
   }
 };
 
+namespace detail {
+class WVSampledMovingFieldPlan final {
+public:
+  struct Request {
+    std::string identifier;
+    std::string fieldName;
+    WVPortableNaturalRank naturalRank = WVPortableNaturalRank::volume;
+    std::size_t positionOffset = 0;
+    std::size_t positionCount = 0;
+    WVPositionInterpolation interpolation = WVPositionInterpolation::linear;
+    std::size_t outputIndex = 0;
+  };
+  std::string configurationIdentifier;
+  const WVFieldEvaluationService *owner = nullptr;
+  WVDensityDiagnosticContract densityContract;
+  WVFieldEvaluationPlan fullGridPlan;
+  std::vector<Request> requests;
+  std::size_t persistentBytes() const noexcept {
+    std::size_t bytes = sizeof(*this) + configurationIdentifier.capacity() +
+                        requests.capacity() * sizeof(Request) +
+                        fullGridPlan.persistentBytes() - sizeof(fullGridPlan);
+    for (const auto &request : requests)
+      bytes += request.identifier.capacity() + request.fieldName.capacity();
+    return bytes;
+  }
+};
+} // namespace detail
+
 std::size_t WVMovingFieldEvaluationPlan::persistentBytes() const noexcept {
   std::size_t bytes = sizeof(*this) +
                       requests_.capacity() * sizeof(ResolvedRequest) +
@@ -388,7 +416,8 @@ std::size_t WVMovingFieldEvaluationPlan::persistentBytes() const noexcept {
   for (const auto &output : outputs_)
     bytes += output.identifier.capacity() + output.fieldName.capacity() +
              output.dimensions.capacity() * sizeof(std::size_t);
-  return bytes + transformPlanBytes_;
+  return bytes + transformPlanBytes_ +
+         (sampledPlan_ ? sampledPlan_->persistentBytes() : 0);
 }
 
 std::size_t WVEventFieldEvaluationPlan::persistentBytes() const noexcept {
@@ -398,7 +427,8 @@ std::size_t WVEventFieldEvaluationPlan::persistentBytes() const noexcept {
       requiresZByPositionSet_.capacity() * sizeof(std::uint8_t);
   for (const auto &output : outputs_)
     bytes += output.identifier.capacity() + output.fieldName.capacity();
-  return bytes + transformPlanBytes_;
+  return bytes + transformPlanBytes_ + configurationIdentifier_.capacity() +
+         (planIdentity_ ? sizeof(std::uint8_t) : 0);
 }
 
 std::size_t WVFieldEvaluationPlan::PositionWeights::persistentBytes() const
@@ -1606,15 +1636,197 @@ WVFieldEvaluationService::evaluatePlanBatch(const PlanInvocation *invocations,
   return WVKernelStatus::ok();
 }
 
+WVKernelStatus WVFieldEvaluationService::samplePreparedField(
+    const WVFieldEvaluationPlan &plan, const double *source,
+    WVFieldOutputView output) {
+  if (barotropicQG_)
+    return barotropicQG_->samplePreparedField(plan, source, output);
+  if (stratified_)
+    return stratified_->samplePreparedField(plan, source, output);
+  if (plan.requests_.size() != 1 || plan.outputs_.size() != 1 || !source ||
+      !output.data || output.elementCount != plan.outputs_.front().elementCount)
+    return {WVKernelStatusCode::invalidShape,
+            "Prepared field sampler storage has the wrong shape."};
+  if (!sameTransformConfiguration(plan.configuration_,
+                                  transform_->descriptor().configuration()))
+    return invalid("Prepared field sampler belongs to another transform.");
+  const auto &request = plan.requests_.front();
+  const auto &configuration = transform_->descriptor().configuration();
+  const auto plane = configuration.Nx * configuration.Ny;
+  if (request.samplingKind == WVFieldSamplingKind::fixedVerticalProfiles) {
+    for (std::size_t profile = 0; profile < request.profileXIndices.size();
+         ++profile) {
+      const auto horizontal = request.profileXIndices[profile] +
+                              configuration.Nx * request.profileYIndices[profile];
+      for (std::size_t z = 0; z < configuration.Nz; ++z)
+        output.data[z + configuration.Nz * profile] =
+            source[horizontal + plane * z];
+    }
+    ++metrics_.profileWriteCount;
+  } else if (request.samplingKind == WVFieldSamplingKind::positions) {
+    const auto zCount = request.nativeRank == WVPortableNaturalRank::volume
+                            ? configuration.Nz
+                            : 1;
+    for (std::size_t position = 0;
+         position < request.positionWeights.size(); ++position) {
+      const auto &weights = request.positionWeights[position];
+      double value = 0.0;
+      if (!weights.outsideInterpolationDomain) {
+        if (request.interpolation == WVPositionInterpolation::linear) {
+          const auto verticalCount = zCount == 1 ? 1u : 2u;
+          for (std::size_t z = 0; z < verticalCount; ++z)
+            for (std::size_t y = 0; y < 2; ++y)
+              for (std::size_t x = 0; x < 2; ++x)
+                value += source[weights.xLinearIndices[x] + configuration.Nx *
+                                (weights.yLinearIndices[y] + configuration.Ny *
+                                 weights.zLinearIndices[z])] *
+                         weights.xLinearWeights[x] *
+                         weights.yLinearWeights[y] *
+                         (zCount == 1 ? 1.0 : weights.zLinearWeights[z]);
+        } else {
+          for (std::size_t z = 0; z < zCount; ++z)
+            for (std::size_t y = 0; y < configuration.Ny; ++y)
+              for (std::size_t x = 0; x < configuration.Nx; ++x)
+                value += source[x + configuration.Nx *
+                                (y + configuration.Ny * z)] *
+                         weights.xSplineWeights[x] *
+                         weights.ySplineWeights[y] *
+                         (zCount == 1 ? 1.0 : weights.zSplineWeights[z]);
+        }
+      }
+      output.data[position] = value;
+    }
+    if (request.interpolation == WVPositionInterpolation::linear)
+      metrics_.linearInterpolationCount += request.positionWeights.size();
+    else
+      metrics_.splineInterpolationCount += request.positionWeights.size();
+  } else {
+    std::copy_n(source, output.elementCount, output.data);
+    ++metrics_.fullGridWriteCount;
+  }
+  metrics_.outputElementWriteCount += output.elementCount;
+  return WVKernelStatus::ok();
+}
+
 WVKernelStatus WVFieldEvaluationService::createEventPlan(
     const std::vector<WVEventFieldRequest> &requests,
-    WVEventFieldEvaluationPlan &plan) {
-  if (barotropicQG_)
-    return barotropicQG_->createEventPlan(requests, plan);
-  if (stratified_)
-    return stratified_->createEventPlan(requests, plan);
+    WVEventFieldEvaluationPlan &plan,
+    WVDensityDiagnosticContract densityContract) {
+  if (densityContract.reference != WVNoMotionReference::actual &&
+      densityContract.reference != WVNoMotionReference::initial)
+    return invalid("Invalid event-field density diagnostic reference.");
+  std::vector<WVFieldRequest> diagnosticRequests;
+  try {
+    diagnosticRequests.reserve(requests.size());
+    for (const auto &request : requests)
+      diagnosticRequests.push_back({request.identifier, request.fieldName, {}});
+  } catch (const std::bad_alloc &) {
+    return {WVKernelStatusCode::allocationFailure,
+            "Unable to inspect event-field requests."};
+  }
+  if (detail::WVDiagnosticFieldPlan::required(diagnosticRequests,
+                                              stratified_ != nullptr)) {
+    try {
+      WVEventFieldEvaluationPlan candidate;
+      candidate.genericSampling_ = true;
+      candidate.owner_ = this;
+      candidate.planIdentity_ = std::make_shared<const std::uint8_t>(0);
+      candidate.configurationIdentifier_ = portableVariableConfiguration();
+      candidate.densityContract_ = densityContract;
+      candidate.requests_.reserve(requests.size());
+      candidate.outputs_.reserve(requests.size());
+      std::set<std::string> identifiers;
+      for (std::size_t index = 0; index < requests.size(); ++index) {
+        const auto &request = requests[index];
+        if (request.identifier.empty() ||
+            !identifiers.insert(request.identifier).second)
+          return invalid("Event-field request identifiers must be nonempty and unique.");
+        if (request.positionSetSlot == std::numeric_limits<std::size_t>::max())
+          return {WVKernelStatusCode::sizeOverflow,
+                  "An event-field position-set slot overflows its plan."};
+        if (request.interpolation != WVPositionInterpolation::linear &&
+            request.interpolation != WVPositionInterpolation::spline)
+          return invalid("Event-field interpolation method is invalid.");
+        const WVPortableVariableMetadata *metadata =
+            findPortableVariable(request.fieldName);
+        const WVPortableVariableContract *contract = nullptr;
+        if (metadata) {
+          contract = portableVariableContract(metadata->identifier,
+                                               candidate.configurationIdentifier_);
+        } else if (forcing_) {
+          detail::WVForcingDiagnosticBinding::Output bound;
+          const auto status = forcing_->resolve(
+              request.fieldName, candidate.configurationIdentifier_,
+              portablePositionSampling, bound);
+          if (!status)
+            return status;
+          contract = bound.contract;
+          metadata = contract ? &contract->metadata : nullptr;
+        }
+        if (!metadata ||
+            (metadata->naturalRank != WVPortableNaturalRank::volume &&
+             metadata->naturalRank != WVPortableNaturalRank::horizontal) ||
+            (metadata->samplingMask & portablePositionSampling) == 0)
+          return {WVKernelStatusCode::unsupportedOperation,
+                  "Event-position sampling does not support field " +
+                      request.fieldName + "."};
+        if (metadata->ordinal >= 23 && !contract)
+          return {WVKernelStatusCode::unsupportedOperation,
+                  "Diagnostic is unavailable on this transform: " +
+                      request.fieldName};
+        candidate.requests_.push_back(
+            {metadata->identifier, metadata->naturalRank,
+             metadata->primitiveDependencyMask, request.positionSetSlot,
+             request.interpolation, index});
+        candidate.outputs_.push_back(
+            {request.identifier, request.fieldName, metadata->identifier,
+             metadata->naturalRank, metadata->primitiveDependencyMask,
+             request.positionSetSlot, request.interpolation});
+        candidate.positionSetCount_ = std::max(
+            candidate.positionSetCount_, request.positionSetSlot + 1);
+      }
+      candidate.requiresZByPositionSet_.assign(candidate.positionSetCount_, 0);
+      for (const auto &request : candidate.requests_)
+        if (request.nativeRank == WVPortableNaturalRank::volume)
+          candidate.requiresZByPositionSet_[request.positionSetSlot] = 1;
+      std::uint64_t fingerprint = fingerprintOffset;
+      appendFingerprint(fingerprint, candidate.configurationIdentifier_.data(),
+                        candidate.configurationIdentifier_.size());
+      appendFingerprint(fingerprint, candidate.positionSetCount_);
+      for (std::size_t index = 0; index < requests.size(); ++index) {
+        appendFingerprint(fingerprint, requests[index].fieldName.data(),
+                          requests[index].fieldName.size());
+        appendFingerprint(fingerprint, requests[index].positionSetSlot);
+        appendFingerprint(fingerprint, requests[index].interpolation);
+      }
+      candidate.fingerprint_ = fingerprint;
+      const auto planBytes = candidate.persistentBytes();
+      plan = std::move(candidate);
+      auto &eventMetrics = mutableMetrics();
+      ++eventMetrics.eventPlanCreationCount;
+      eventMetrics.eventPlanFieldResolutionCount += requests.size();
+      eventMetrics.lastEventPlanBytes = planBytes;
+      eventMetrics.maximumEventPlanBytes = std::max(
+          eventMetrics.maximumEventPlanBytes, planBytes);
+      return WVKernelStatus::ok();
+    } catch (const std::bad_alloc &) {
+      return {WVKernelStatusCode::allocationFailure,
+              "Unable to allocate a sampled event-field plan."};
+    }
+  }
+  if (barotropicQG_) {
+    const auto status = barotropicQG_->createEventPlan(requests, plan);
+    if (status) plan.owner_ = this;
+    return status;
+  }
+  if (stratified_) {
+    const auto status = stratified_->createEventPlan(requests, plan);
+    if (status) plan.owner_ = this;
+    return status;
+  }
   try {
     WVEventFieldEvaluationPlan candidate;
+    candidate.owner_ = this;
     const auto &configuration = transform_->descriptor().configuration();
     candidate.configuration_ = configuration;
     candidate.requests_.reserve(requests.size());
@@ -1713,6 +1925,124 @@ WVKernelStatus WVFieldEvaluationService::prepareEventGeometry(
     const WVEventFieldEvaluationPlan &plan,
     const WVEventPositionSetView *positionSets,
     std::size_t positionSetCount, WVPreparedFieldGeometry &geometry) {
+  if (plan.owner_ != this)
+    return invalid("The event-field plan belongs to another field service.");
+  if (plan.genericSampling_) {
+    if (plan.owner_ != this ||
+        plan.configurationIdentifier_ != portableVariableConfiguration())
+      return invalid("The sampled event-field plan belongs to another transform.");
+    if (positionSetCount != plan.positionSetCount_)
+      return {WVKernelStatusCode::invalidShape,
+              "Event position-set count must match the sampled field plan."};
+    if (positionSetCount && !positionSets)
+      return {WVKernelStatusCode::invalidPointer,
+              "Event position sets have a null view pointer."};
+    try {
+      WVPreparedFieldGeometry candidate;
+      candidate.fieldPlanFingerprint_ = plan.fingerprint_;
+      candidate.planIdentity_ = plan.planIdentity_;
+      candidate.positionSets_.reserve(positionSetCount);
+      std::uint64_t geometryFingerprint = fingerprintOffset;
+      appendFingerprint(geometryFingerprint, plan.fingerprint_);
+      for (std::size_t slot = 0; slot < positionSetCount; ++slot) {
+        const auto &view = positionSets[slot];
+        if (view.extentCount && !view.extents)
+          return {WVKernelStatusCode::invalidPointer,
+                  "Event position-set extents have a null pointer."};
+        if (view.positionCount &&
+            (!view.x || !view.y ||
+             (plan.requiresZByPositionSet_[slot] && !view.z)))
+          return {WVKernelStatusCode::invalidPointer,
+                  "Event coordinates required by a sampled field are missing."};
+        WVPreparedFieldGeometry::PositionSet stored;
+        stored.x = view.x;
+        stored.y = view.y;
+        stored.z = view.z;
+        stored.positionCount = view.positionCount;
+        if (view.extentCount)
+          stored.extents.assign(view.extents, view.extents + view.extentCount);
+        else
+          stored.extents = {view.positionCount};
+        std::size_t extentProduct = 1;
+        for (const auto extent : stored.extents)
+          extentProduct = checkedProduct(extentProduct, extent);
+        if (extentProduct != view.positionCount)
+          return {WVKernelStatusCode::invalidShape,
+                  "Event position-set extents do not match its sample count."};
+        for (std::size_t position = 0; position < view.positionCount; ++position)
+          if (!std::isfinite(view.x[position]) ||
+              !std::isfinite(view.y[position]) ||
+              (view.z && !std::isfinite(view.z[position])))
+            return invalid("Event position coordinates must be finite.");
+        if (candidate.positionCount_ >
+            std::numeric_limits<std::size_t>::max() - view.positionCount)
+          return {WVKernelStatusCode::sizeOverflow,
+                  "Event position count overflows its prepared geometry."};
+        candidate.positionCount_ += view.positionCount;
+        const auto coordinateCount = view.z ? 3u : 2u;
+        candidate.borrowedCoordinateBytes_ +=
+            checkedProduct(checkedProduct(view.positionCount, coordinateCount),
+                           sizeof(double));
+        appendFingerprint(geometryFingerprint, slot);
+        appendFingerprint(geometryFingerprint, view.positionCount);
+        for (const auto extent : stored.extents)
+          appendFingerprint(geometryFingerprint, extent);
+        const auto bytes = view.positionCount * sizeof(double);
+        appendFingerprint(geometryFingerprint, view.x, bytes);
+        appendFingerprint(geometryFingerprint, view.y, bytes);
+        if (view.z)
+          appendFingerprint(geometryFingerprint, view.z, bytes);
+        candidate.positionSets_.push_back(std::move(stored));
+      }
+      std::vector<WVFieldRequest> requests;
+      requests.reserve(plan.requests_.size());
+      candidate.outputs_.reserve(plan.requests_.size());
+      for (const auto &request : plan.requests_) {
+        const auto &set = candidate.positionSets_[request.positionSetSlot];
+        WVFieldSamplingRequest sampling;
+        sampling.kind = WVFieldSamplingKind::positions;
+        sampling.interpolation = request.interpolation;
+        if (set.positionCount) {
+          sampling.x.assign(set.x, set.x + set.positionCount);
+          sampling.y.assign(set.y, set.y + set.positionCount);
+          if (request.nativeRank == WVPortableNaturalRank::volume)
+            sampling.z.assign(set.z, set.z + set.positionCount);
+        }
+        requests.push_back(
+            {plan.outputs_[request.outputIndex].identifier,
+             plan.outputs_[request.outputIndex].fieldName,
+             std::move(sampling)});
+        candidate.outputs_.push_back(
+            {request.outputIndex, request.positionSetSlot, set.extents,
+             set.positionCount});
+      }
+      auto status = createPlan(requests, candidate.evaluationPlan_,
+                               plan.densityContract_);
+      if (!status)
+        return status;
+      candidate.geometryFingerprint_ = geometryFingerprint;
+      const auto retainedBytes = candidate.retainedBytes();
+      const auto liveBytes = candidate.liveBytes();
+      geometry = std::move(candidate);
+      auto &eventMetrics = mutableMetrics();
+      ++eventMetrics.eventGeometryPreparationCount;
+      eventMetrics.eventPositionSetCount += positionSetCount;
+      eventMetrics.eventPositionCount += geometry.positionCount_;
+      eventMetrics.lastPreparedGeometryRetainedBytes = retainedBytes;
+      eventMetrics.maximumPreparedGeometryRetainedBytes = std::max(
+          eventMetrics.maximumPreparedGeometryRetainedBytes, retainedBytes);
+      eventMetrics.lastPreparedGeometryLiveBytes = liveBytes;
+      eventMetrics.maximumPreparedGeometryLiveBytes = std::max(
+          eventMetrics.maximumPreparedGeometryLiveBytes, liveBytes);
+      return WVKernelStatus::ok();
+    } catch (const std::overflow_error &) {
+      return {WVKernelStatusCode::sizeOverflow,
+              "Event geometry extents or storage overflow size_t."};
+    } catch (const std::bad_alloc &) {
+      return {WVKernelStatusCode::allocationFailure,
+              "Unable to allocate sampled event geometry."};
+    }
+  }
   if (barotropicQG_)
     return barotropicQG_->prepareEventGeometry(
         plan, positionSets, positionSetCount, geometry);
@@ -1962,6 +2292,10 @@ WVKernelStatus WVFieldEvaluationService::evaluateEvent(
 WVKernelStatus WVFieldEvaluationService::evaluateEventBatch(
     const WVState &state, const WVEventFieldEvaluationBatchEntry *entries,
     std::size_t entryCount) {
+  if (entries && std::any_of(entries, entries + entryCount, [](const auto &entry) {
+        return entry.plan && entry.plan->genericSampling_;
+      }))
+    return evaluateSampledEventBatch({state}, entries, entryCount);
   if (!transform_) return {WVKernelStatusCode::unsupportedOperation,"This transform requires coefficient-family state views."};
   if (entryCount != 0 && entries == nullptr)
     return {WVKernelStatusCode::invalidPointer,
@@ -2034,6 +2368,10 @@ WVKernelStatus WVFieldEvaluationService::evaluateEventBatch(
     const WVIntegrationState &state,
     const WVEventFieldEvaluationBatchEntry *entries,
     std::size_t entryCount) {
+  if (entries && std::any_of(entries, entries + entryCount, [](const auto &entry) {
+        return entry.plan && entry.plan->genericSampling_;
+      }))
+    return evaluateSampledEventBatch(state, entries, entryCount);
   if (barotropicQG_)
     return barotropicQG_->evaluateEventBatch(state, entries, entryCount);
   if (stratified_)
@@ -2041,9 +2379,266 @@ WVKernelStatus WVFieldEvaluationService::evaluateEventBatch(
   return evaluateEventBatch(state.waveVortex, entries, entryCount);
 }
 
+WVKernelStatus WVFieldEvaluationService::evaluateSampledEventBatch(
+    const WVIntegrationState &state,
+    const WVEventFieldEvaluationBatchEntry *entries,
+    std::size_t entryCount) {
+  if (entryCount && !entries)
+    return {WVKernelStatusCode::invalidPointer,
+            "Sampled event field batch has a null entry pointer."};
+  if ((state.coefficientFamilyCount && !state.coefficientFamilies) ||
+      (state.additionalBlockCount && !state.additionalBlocks))
+    return {WVKernelStatusCode::invalidPointer,
+            "Sampled event state views have a null array pointer."};
+  std::size_t outputCount = 0;
+  for (std::size_t index = 0; index < entryCount; ++index) {
+    const auto &entry = entries[index];
+    if (!entry.plan || !entry.geometry)
+      return {WVKernelStatusCode::invalidPointer,
+              "Sampled event field batch entry has a null plan or geometry."};
+    if (entry.plan->owner_ != this)
+      return invalid("Sampled event field batch contains a foreign plan.");
+    if (entry.plan->genericSampling_ &&
+        (
+         entry.plan->configurationIdentifier_ != portableVariableConfiguration()))
+      return invalid("Sampled event field batch contains an incompatible plan.");
+    if ((entry.plan->genericSampling_ &&
+         entry.geometry->planIdentity_ != entry.plan->planIdentity_) ||
+        entry.geometry->fieldPlanFingerprint_ != entry.plan->fingerprint_ ||
+        entry.geometry->outputCount() != entry.plan->outputCount())
+      return invalid("Prepared sampled event geometry does not match its plan.");
+    if (entry.outputCount != entry.geometry->outputs_.size() ||
+        (entry.outputCount && !entry.outputs))
+      return {WVKernelStatusCode::invalidShape,
+              "Sampled event outputs must match prepared geometry."};
+    for (std::size_t output = 0; output < entry.outputCount; ++output) {
+      const auto &view = entry.outputs[output];
+      if (view.elementCount !=
+          entry.geometry->outputs_[output].elementCount)
+        return {WVKernelStatusCode::invalidShape,
+                "A sampled event output has the wrong shape."};
+      if (view.elementCount && !view.data)
+        return {WVKernelStatusCode::invalidPointer,
+                "A sampled event output has a null pointer."};
+      const auto bytes = view.elementCount * sizeof(double);
+      for (const auto coefficient :
+           {state.waveVortex.coefficients.Ap, state.waveVortex.coefficients.Am,
+            state.waveVortex.coefficients.A0})
+        if (memoryOverlaps(view.data, bytes, coefficient.data,
+                           coefficient.shape.elementCount() *
+                               sizeof(WVComplex64)))
+          return {WVKernelStatusCode::overlappingArrays,
+                  "Sampled event outputs must not overlap coefficient state."};
+      for (std::size_t family = 0; family < state.coefficientFamilyCount;
+           ++family) {
+        const auto &coefficient = state.coefficientFamilies[family];
+        if (coefficient.layout &&
+            memoryOverlaps(view.data, bytes, coefficient.data,
+                           coefficient.layout->elementCount *
+                               sizeof(WVComplex64)))
+          return {WVKernelStatusCode::overlappingArrays,
+                  "Sampled event outputs must not overlap coefficient state."};
+      }
+      for (std::size_t block = 0; block < state.additionalBlockCount; ++block) {
+        const auto &additional = state.additionalBlocks[block];
+        if (additional.layout &&
+            (memoryOverlaps(view.data, bytes, additional.realData,
+                            additional.layout->elementCount * sizeof(double)) ||
+             memoryOverlaps(view.data, bytes, additional.complexData,
+                            additional.layout->elementCount *
+                                sizeof(WVComplex64))))
+          return {WVKernelStatusCode::overlappingArrays,
+                  "Sampled event outputs must not overlap additional state."};
+      }
+      for (std::size_t priorEntry = 0; priorEntry <= index; ++priorEntry) {
+        const auto lastOutput =
+            priorEntry == index ? output : entries[priorEntry].outputCount;
+        for (std::size_t priorOutput = 0; priorOutput < lastOutput;
+             ++priorOutput) {
+          const auto &prior = entries[priorEntry].outputs[priorOutput];
+          if (memoryOverlaps(view.data, bytes, prior.data,
+                             prior.elementCount * sizeof(double)))
+            return {WVKernelStatusCode::overlappingArrays,
+                    "Sampled event outputs must not overlap each other."};
+        }
+      }
+    }
+    if (outputCount > std::numeric_limits<std::size_t>::max() -
+                          entry.outputCount)
+      return {WVKernelStatusCode::sizeOverflow,
+              "Sampled event output count overflows size_t."};
+    outputCount += entry.outputCount;
+  }
+  if (entryCount == 0)
+    return WVKernelStatus::ok();
+  const bool ownsEventScope = entryCount != 0 && eventWorkspace_ == nullptr;
+  detail::WVFieldEvaluationEventScope scope(*this, state, ownsEventScope,
+                                            true);
+  if (!scope.status())
+    return scope.status();
+  if (entryCount != 0) {
+    const auto stateStatus = eventWorkspace_->validateState(state);
+    if (!stateStatus)
+      return stateStatus;
+  }
+  try {
+    std::vector<std::vector<std::vector<double>>> staged(entryCount);
+    std::vector<std::vector<WVFieldOutputView>> stagedViews(entryCount);
+    std::size_t stagingBytes =
+        staged.capacity() * sizeof(std::vector<std::vector<double>>) +
+        stagedViews.capacity() * sizeof(std::vector<WVFieldOutputView>);
+    for (std::size_t index = 0; index < entryCount; ++index) {
+      const auto &entry = entries[index];
+      staged[index].resize(entry.outputCount);
+      stagedViews[index].resize(entry.outputCount);
+      stagingBytes +=
+          staged[index].capacity() * sizeof(std::vector<double>) +
+          stagedViews[index].capacity() * sizeof(WVFieldOutputView);
+      for (std::size_t output = 0; output < entry.outputCount; ++output) {
+        staged[index][output].resize(entry.outputs[output].elementCount);
+        stagingBytes += staged[index][output].capacity() * sizeof(double);
+        stagedViews[index][output] = {staged[index][output].data(),
+                                      staged[index][output].size()};
+      }
+    }
+    auto &workspaceMetrics = mutableMetrics();
+    const auto previousExternalBytes =
+        eventWorkspace_->externalWorkspaceBytes();
+    if (previousExternalBytes > std::numeric_limits<std::size_t>::max() -
+                                    stagingBytes)
+      return {WVKernelStatusCode::sizeOverflow,
+              "Sampled event staging storage overflows size_t."};
+    struct RestoreExternalWorkspace {
+      detail::WVFieldEvaluationEventWorkspace *workspace;
+      std::size_t bytes;
+      ~RestoreExternalWorkspace() {
+        workspace->setExternalWorkspaceBytes(bytes);
+      }
+    } restoreExternal{eventWorkspace_, previousExternalBytes};
+    eventWorkspace_->setExternalWorkspaceBytes(previousExternalBytes +
+                                               stagingBytes);
+    for (std::size_t index = 0; index < entryCount; ++index) {
+      const auto &entry = entries[index];
+      const auto status = evaluate(entry.geometry->evaluationPlan_, state,
+                                   stagedViews[index].data(),
+                                   stagedViews[index].size());
+      if (!status)
+        return status;
+    }
+    for (std::size_t index = 0; index < entryCount; ++index)
+      for (std::size_t output = 0; output < entries[index].outputCount;
+           ++output)
+        std::copy(staged[index][output].begin(), staged[index][output].end(),
+                  entries[index].outputs[output].data);
+    workspaceMetrics.eventEvaluationCount += entryCount;
+    ++workspaceMetrics.eventBatchEvaluationCount;
+    workspaceMetrics.eventBatchOccurrenceCount += entryCount;
+    workspaceMetrics.eventBatchOutputCount += outputCount;
+    return WVKernelStatus::ok();
+  } catch (const std::bad_alloc &) {
+    return {WVKernelStatusCode::allocationFailure,
+            "Unable to allocate sampled event batch staging."};
+  }
+}
+
 WVKernelStatus WVFieldEvaluationService::createMovingPlan(
     const std::vector<WVMovingFieldRequest> &requests,
-    WVMovingFieldEvaluationPlan &plan) const {
+    WVMovingFieldEvaluationPlan &plan,
+    WVDensityDiagnosticContract densityContract) const {
+  if (densityContract.reference != WVNoMotionReference::actual &&
+      densityContract.reference != WVNoMotionReference::initial)
+    return invalid("Invalid moving-field density diagnostic reference.");
+  std::vector<WVFieldRequest> diagnosticRequests;
+  try {
+    diagnosticRequests.reserve(requests.size());
+    for (const auto &request : requests)
+      diagnosticRequests.push_back({request.identifier, request.fieldName, {}});
+  } catch (const std::bad_alloc &) {
+    return {WVKernelStatusCode::allocationFailure,
+            "Unable to inspect moving-field requests."};
+  }
+  const bool sampledPlanRequired =
+      detail::WVDiagnosticFieldPlan::required(diagnosticRequests,
+                                              stratified_ != nullptr) ||
+      std::any_of(requests.begin(), requests.end(), [](const auto &request) {
+        const auto *metadata = findPortableVariable(request.fieldName);
+        return metadata && metadata->movingPrimitiveChannel < 0;
+      });
+  if (sampledPlanRequired) {
+    try {
+      auto implementation =
+          std::make_shared<detail::WVSampledMovingFieldPlan>();
+      implementation->configurationIdentifier = portableVariableConfiguration();
+      implementation->owner = this;
+      implementation->densityContract = densityContract;
+      implementation->requests.reserve(requests.size());
+      std::set<std::string> identifiers;
+      std::size_t positionCount = 0;
+      for (std::size_t index = 0; index < requests.size(); ++index) {
+        const auto &request = requests[index];
+        if (request.identifier.empty() ||
+            !identifiers.insert(request.identifier).second ||
+            request.positionCount == 0 ||
+            request.positionOffset > std::numeric_limits<std::size_t>::max() -
+                                         request.positionCount)
+          return invalid("Sampled moving-field request is invalid.");
+        if (request.interpolation != WVPositionInterpolation::linear &&
+            request.interpolation != WVPositionInterpolation::spline)
+          return invalid("Moving-field interpolation method is invalid.");
+        const WVPortableVariableMetadata *metadata =
+            findPortableVariable(request.fieldName);
+        const WVPortableVariableContract *contract = nullptr;
+        if (metadata) {
+          contract = portableVariableContract(metadata->identifier,
+                                               implementation->configurationIdentifier);
+        } else if (forcing_) {
+          detail::WVForcingDiagnosticBinding::Output bound;
+          const auto status = forcing_->resolve(
+              request.fieldName, implementation->configurationIdentifier,
+              portablePositionSampling, bound);
+          if (!status)
+            return status;
+          contract = bound.contract;
+          metadata = contract ? &contract->metadata : nullptr;
+        }
+        if (!metadata || metadata->kind == WVPortableVariableKind::coefficient ||
+            (metadata->naturalRank != WVPortableNaturalRank::volume &&
+             metadata->naturalRank != WVPortableNaturalRank::horizontal) ||
+            (metadata->samplingMask & portablePositionSampling) == 0)
+          return {WVKernelStatusCode::unsupportedOperation,
+                  "Moving-position sampling does not support field " +
+                      request.fieldName + "."};
+        if (metadata->ordinal >= 23 && !contract)
+          return {WVKernelStatusCode::unsupportedOperation,
+                  "Diagnostic is unavailable on this transform: " +
+                      request.fieldName};
+        implementation->requests.push_back(
+            {request.identifier, request.fieldName, metadata->naturalRank,
+             request.positionOffset, request.positionCount,
+             request.interpolation, index});
+        positionCount = std::max(positionCount,
+                                 request.positionOffset + request.positionCount);
+      }
+      auto status = createPlan(diagnosticRequests,
+                               implementation->fullGridPlan, densityContract);
+      if (!status)
+        return status;
+      WVMovingFieldEvaluationPlan candidate;
+      candidate.positionCount_ = positionCount;
+      candidate.sampledPlan_ = implementation;
+      candidate.outputs_.reserve(requests.size());
+      for (const auto &request : requests)
+        candidate.outputs_.push_back(
+            {request.identifier, request.fieldName,
+             WVFieldSamplingKind::positions, {request.positionCount},
+             request.positionCount});
+      plan = std::move(candidate);
+      return WVKernelStatus::ok();
+    } catch (const std::bad_alloc &) {
+      return {WVKernelStatusCode::allocationFailure,
+              "Unable to allocate a sampled moving-field plan."};
+    }
+  }
   if (barotropicQG_)
     return barotropicQG_->createMovingPlan(requests, plan);
   if (stratified_)
@@ -2100,6 +2695,9 @@ WVKernelStatus WVFieldEvaluationService::evaluateMoving(
     const WVMovingFieldEvaluationPlan &plan, const WVState &state,
     WVMovingPositionView positions, WVFieldOutputView *outputs,
     std::size_t outputCount, const std::uint8_t *activeOutputs) {
+  if (plan.sampledPlan_)
+    return evaluateSampledMovingImpl(plan, {state}, positions, outputs,
+                                     outputCount, activeOutputs);
   return evaluateMovingImpl(plan,state,nullptr,positions,outputs,outputCount,activeOutputs);
 }
 
@@ -2107,6 +2705,9 @@ WVKernelStatus WVFieldEvaluationService::evaluateMoving(
     const WVMovingFieldEvaluationPlan &plan,
     const WVIntegrationState &state, WVMovingPositionView positions,
     WVFieldOutputView *outputs, std::size_t outputCount, const std::uint8_t *activeOutputs) {
+  if (plan.sampledPlan_)
+    return evaluateSampledMovingImpl(plan, state, positions, outputs,
+                                     outputCount, activeOutputs);
   if (barotropicQG_)
     return barotropicQG_->evaluateMoving(plan, state, positions, outputs,
                                          outputCount, activeOutputs);
@@ -2122,6 +2723,10 @@ WVKernelStatus WVFieldEvaluationService::evaluateMovingFromAdvectionFields(
     const WVRealFieldBundleConstView &advectionFields,
     WVMovingPositionView positions, WVFieldOutputView *outputs,
     std::size_t outputCount, const std::uint8_t *activeOutputs) {
+  if (plan.sampledPlan_)
+    return {WVKernelStatusCode::unsupportedOperation,
+            "Derived moving fields cannot be evaluated from prepared "
+            "advection fields."};
   return evaluateMovingImpl(plan,state,&advectionFields,positions,outputs,outputCount,activeOutputs);
 }
 
@@ -2131,6 +2736,10 @@ WVKernelStatus WVFieldEvaluationService::evaluateMovingFromAdvectionFields(
     const WVRealFieldBundleConstView &advectionFields,
     WVMovingPositionView positions, WVFieldOutputView *outputs,
     std::size_t outputCount, const std::uint8_t *activeOutputs) {
+  if (plan.sampledPlan_)
+    return {WVKernelStatusCode::unsupportedOperation,
+            "Derived moving fields cannot be evaluated from prepared "
+            "advection fields."};
   if (barotropicQG_)
     return barotropicQG_->evaluateMovingFromAdvectionFields(
         plan, state, advectionFields, positions, outputs, outputCount, activeOutputs);
@@ -2140,6 +2749,148 @@ WVKernelStatus WVFieldEvaluationService::evaluateMovingFromAdvectionFields(
   return evaluateMovingFromAdvectionFields(
       plan, state.waveVortex, advectionFields, positions, outputs,
       outputCount, activeOutputs);
+}
+
+WVKernelStatus WVFieldEvaluationService::evaluateSampledMovingImpl(
+    const WVMovingFieldEvaluationPlan &plan,
+    const WVIntegrationState &state, WVMovingPositionView positions,
+    WVFieldOutputView *outputs, std::size_t outputCount,
+    const std::uint8_t *activeOutputs) {
+  const auto implementation = plan.sampledPlan_;
+  if (!implementation || implementation->owner != this ||
+      implementation->configurationIdentifier != portableVariableConfiguration())
+    return invalid("The sampled moving-field plan belongs to another transform.");
+  if (positions.positionCount != plan.positionCount_ ||
+      (positions.positionCount &&
+       (!positions.x || !positions.y)))
+    return {WVKernelStatusCode::invalidShape,
+            "Moving coordinates must match the sampled field plan."};
+  if (outputCount != plan.outputs_.size() || (outputCount && !outputs))
+    return {WVKernelStatusCode::invalidShape,
+            "Moving-field outputs must match the sampled field plan."};
+  bool anyActive = false;
+  for (const auto &request : implementation->requests) {
+    if (activeOutputs && !activeOutputs[request.outputIndex])
+      continue;
+    anyActive = true;
+    const auto &output = outputs[request.outputIndex];
+    if (!output.data || output.elementCount != request.positionCount)
+      return {WVKernelStatusCode::invalidShape,
+              "A sampled moving-field output has the wrong shape."};
+    for (std::size_t local = 0; local < request.positionCount; ++local) {
+      const auto position = request.positionOffset + local;
+      if (!std::isfinite(positions.x[position]) ||
+          !std::isfinite(positions.y[position]) ||
+          (request.naturalRank == WVPortableNaturalRank::volume &&
+           (!positions.z || !std::isfinite(positions.z[position]))))
+        return invalid("Moving coordinates must be finite.");
+    }
+  }
+  if (!anyActive)
+    return WVKernelStatus::ok();
+  auto &workspaceMetrics = mutableMetrics();
+  const auto outerWorkspaceBytes =
+      workspaceMetrics.diagnosticWorkspaceLiveBytes;
+  struct ResetSampledMovingWorkspace {
+    WVFieldEvaluationMetrics &metrics;
+    std::size_t outerBytes;
+    ~ResetSampledMovingWorkspace() {
+      metrics.diagnosticWorkspaceLiveBytes = outerBytes;
+    }
+  } resetWorkspace{workspaceMetrics, outerWorkspaceBytes};
+  try {
+    std::vector<std::vector<double>> fullStorage(outputCount);
+    std::vector<WVFieldOutputView> fullViews(outputCount);
+    std::vector<std::uint8_t> selection(outputCount, 0);
+    std::vector<std::vector<double>> sampledStorage(outputCount);
+    std::size_t transientSamplerBytes = 0;
+    const auto accountWorkspace = [&]() {
+      std::size_t bytes =
+          fullStorage.capacity() * sizeof(std::vector<double>) +
+          fullViews.capacity() * sizeof(WVFieldOutputView) +
+          selection.capacity() * sizeof(std::uint8_t) +
+          sampledStorage.capacity() * sizeof(std::vector<double>) +
+          transientSamplerBytes;
+      for (const auto &field : fullStorage)
+        bytes += field.capacity() * sizeof(double);
+      for (const auto &field : sampledStorage)
+        bytes += field.capacity() * sizeof(double);
+      workspaceMetrics.diagnosticWorkspaceLiveBytes =
+          outerWorkspaceBytes + bytes;
+      workspaceMetrics.diagnosticWorkspaceHighWaterBytes = std::max(
+          workspaceMetrics.diagnosticWorkspaceHighWaterBytes,
+          workspaceMetrics.diagnosticWorkspaceLiveBytes);
+    };
+    for (const auto &request : implementation->requests) {
+      if (activeOutputs && !activeOutputs[request.outputIndex])
+        continue;
+      selection[request.outputIndex] = 1;
+      const auto elements = implementation->fullGridPlan.outputs()
+                                [request.outputIndex].elementCount;
+      fullStorage[request.outputIndex].resize(elements);
+      fullViews[request.outputIndex] = {fullStorage[request.outputIndex].data(),
+                                        elements};
+    }
+    accountWorkspace();
+    auto status = evaluate(implementation->fullGridPlan, state,
+                           fullViews.data(), fullViews.size(), selection.data());
+    if (!status)
+      return status;
+    for (const auto &request : implementation->requests) {
+      if (activeOutputs && !activeOutputs[request.outputIndex])
+        continue;
+      WVFieldSamplingRequest sampling;
+      sampling.kind = WVFieldSamplingKind::positions;
+      sampling.interpolation = request.interpolation;
+      sampling.x.assign(positions.x + request.positionOffset,
+                        positions.x + request.positionOffset +
+                            request.positionCount);
+      sampling.y.assign(positions.y + request.positionOffset,
+                        positions.y + request.positionOffset +
+                            request.positionCount);
+      if (request.naturalRank == WVPortableNaturalRank::volume)
+        sampling.z.assign(positions.z + request.positionOffset,
+                          positions.z + request.positionOffset +
+                              request.positionCount);
+      const char *proxy = request.naturalRank == WVPortableNaturalRank::volume
+                              ? "u"
+                              : (barotropicQG_ ? "qgpv" : "ssu");
+      WVFieldEvaluationPlan sampler;
+      status = createPlan({{"moving-sampler", proxy, std::move(sampling)}},
+                          sampler);
+      if (!status)
+        return status;
+      transientSamplerBytes = sampler.persistentBytes();
+      auto &sampled = sampledStorage[request.outputIndex];
+      sampled.resize(request.positionCount);
+      accountWorkspace();
+      status = samplePreparedField(
+          sampler, fullStorage[request.outputIndex].data(),
+          {sampled.data(), sampled.size()});
+      if (!status)
+        return status;
+      transientSamplerBytes = 0;
+    }
+    for (const auto &request : implementation->requests) {
+      if (activeOutputs && !activeOutputs[request.outputIndex])
+        continue;
+      std::copy(sampledStorage[request.outputIndex].begin(),
+                sampledStorage[request.outputIndex].end(),
+                outputs[request.outputIndex].data);
+    }
+    if (barotropicQG_)
+      barotropicQG_->recordSampledMoving(positions.positionCount);
+    else if (stratified_)
+      stratified_->recordSampledMoving(positions.positionCount);
+    else {
+      ++metrics_.movingEvaluationCount;
+      metrics_.movingPositionCount += positions.positionCount;
+    }
+    return WVKernelStatus::ok();
+  } catch (const std::bad_alloc &) {
+    return {WVKernelStatusCode::allocationFailure,
+            "Unable to allocate sampled moving-field workspace."};
+  }
 }
 
 WVRealFieldBundleView WVFieldEvaluationService::advectionFieldStorage() noexcept {
@@ -2462,6 +3213,14 @@ WVFieldEvaluationService::metrics() const noexcept {
   if (stratified_) metrics_ = stratified_->metrics();
   else if (barotropicQG_) metrics_ = barotropicQG_->metrics();
   metrics_.servicePersistentBytes = persistentBytes();
+  return metrics_;
+}
+
+WVFieldEvaluationMetrics &WVFieldEvaluationService::mutableMetrics() noexcept {
+  if (stratified_)
+    return stratified_->mutableMetrics();
+  if (barotropicQG_)
+    return barotropicQG_->mutableMetrics();
   return metrics_;
 }
 

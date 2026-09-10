@@ -135,7 +135,13 @@ int main() {
         "constant-nonhydrostatic-aa0","constant-nonhydrostatic-aa1",
         "hydrostatic-aa0","hydrostatic-aa1","boussinesq-aa0","boussinesq-aa1"}) {
       require(resolve(name,configuration) == WVPortableVariableStatus::supported);
-      require(resolve(name,configuration,portablePositionSampling) == WVPortableVariableStatus::unsupportedSampling);
+      if (std::string_view(name) == "rho_nm") {
+        require(resolve(name,configuration,portablePositionSampling) == WVPortableVariableStatus::unsupportedSampling);
+        require(resolve(name,configuration,portableFixedVerticalProfileSampling) == WVPortableVariableStatus::unsupportedSampling);
+      } else {
+        require(resolve(name,configuration,portablePositionSampling) == WVPortableVariableStatus::supported);
+        require(resolve(name,configuration,portableFixedVerticalProfileSampling) == WVPortableVariableStatus::supported);
+      }
     }
     options.noMotionSolver=WVPortableNoMotionSolver::fminsearch;
     require(resolve(name) == WVPortableVariableStatus::invalidContract);
@@ -146,7 +152,8 @@ int main() {
   require(resolve("u", "barotropic-aa0") == WVPortableVariableStatus::supported);
   require(plan.output->metadata.dimensionCount == 2);
   require(resolve("u", "barotropic-aa0", portableFixedVerticalProfileSampling) == WVPortableVariableStatus::unsupportedSampling);
-  require(resolve("ape", "hydrostatic-aa0", portablePositionSampling) == WVPortableVariableStatus::unsupportedSampling);
+  require(resolve("ape", "hydrostatic-aa0", portablePositionSampling) == WVPortableVariableStatus::supported);
+  require(resolve("energy", "constant-hydrostatic-aa0", portablePositionSampling) == WVPortableVariableStatus::unsupportedSampling);
   require(resolve("ape", "unknown") == WVPortableVariableStatus::unknownConfiguration);
   require(resolve("custom") == WVPortableVariableStatus::unknownVariable);
   require(resolve("totalEnstrophy") == WVPortableVariableStatus::intentionalIncompatibility);

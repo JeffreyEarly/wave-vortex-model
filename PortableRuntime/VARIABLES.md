@@ -109,7 +109,7 @@ The registered outputs below remain unavailable in the portable runtime for the 
 
 ## Sampling and reusable intermediates
 
-Existing sampling modes are preserved. New fields support a full-grid contract only; new scalar reductions support scalar output, and phased coefficients retain spectral layout. Interpolation of new spatial diagnostics requires separate numerical qualification. The field service deduplicates primitive requests within each component, slices surfaces from shared volumes, and releases diagnostic scratch after each evaluation.
+Volume fields support full-grid output, fixed vertical profiles, and fixed, event, and moving position samples; horizontal fields support full-grid output and position samples. Scalar, coefficient, and vertical fields retain their existing full-grid or coefficient restrictions. Diagnostic spatial sampling is qualified by the registered field-sampling witnesses, while initial and actual density-profile references remain explicit. The field service deduplicates primitive requests within each component, slices surfaces from shared volumes, and releases diagnostic scratch after each evaluation.
 
 | Intermediate | Lifetime | Purpose |
 | --- | --- | --- |
