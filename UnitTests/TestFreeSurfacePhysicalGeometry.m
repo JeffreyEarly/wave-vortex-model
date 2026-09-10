@@ -1,5 +1,5 @@
 classdef TestFreeSurfacePhysicalGeometry < matlab.unittest.TestCase
-    methods (Test)
+    methods (Test, TestTags="full")
         function physicalStreamfunctionAndMaterialVelocityAgree(testCase)
             % Construct physical incompressible flow from a streamfunction,
             % then independently form its contravariant flux components.
