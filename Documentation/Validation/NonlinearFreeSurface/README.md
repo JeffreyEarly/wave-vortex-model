@@ -22,6 +22,10 @@ This feasibility result does not establish a physical closure. The correction ch
 
 The coefficient constraint multiplier is not an ordinary pressure field. Production adoption requires a derived weak momentum/displacement formulation and an energy/work identity appropriate to the nonlinear available energy. The current quadratic Gram is useful for the diagnostic experiment but does not supply that nonlinear conservation law. No ad hoc SSH subtraction or energy repair has been adopted into model evolution.
 
+The [candidate weak formulation](../../../tools/nonlinear-study/mapped-weak-evolution.md) derives a physical kinetic metric, finite-amplitude APE weight, geometry-dependent energy gradient, and separate quadrature, surface-rate and constraint-reaction work defects. Independent review confirmed the algebra and made both upper and lower parcel-label restrictions explicit. It is a candidate numerical formulation, not a completed conservation or evolution result.
+
+A [reference-pressure note](../../../tools/nonlinear-study/reference-pressure-choice.md) records an exact smooth-reference alternative that avoids the positive-crest reference layer if its full surface-pressure and surface-energy terms are retained. That choice differs from the provisional small-surface-pressure approximation. Neither continuation of the pressure reference nor a successful constraint solve permits arbitrary out-of-range parcel-density labels.
+
 ## Reproduction
 
 Configure the authoring WVM and pinned dependencies with `configureCIEnvironment`, add `tools/nonlinear-study` to the path, then run `runFreeSurfaceKinematicProbe(outputFolder)` and `runFreeSurfaceConstrainedProjectionStudy(outputFolder)`. The exact study settings and source-probe digest are in [provenance](projection-probe-provenance.json). Both studies are tiny-grid mathematical controls, not production benchmarks.
