@@ -20,6 +20,7 @@ helper.seedCheckpoints = @seedCheckpoints;
 helper.fourierDerivative = @fourierDerivative;
 helper.weakTendency = @weakTendency;
 helper.labelBounds = @labelBounds;
+helper.materialInvariants = @materialInvariants;
 end
 
 function context = buildContext(wvt,padding)
@@ -319,4 +320,24 @@ minimumLabel=min(labels,[],'all'); maximumLabel=max(labels,[],'all');
 if minimumLabel < -context.D || maximumLabel > 0
     error('WV:WeakStudyStageLabelDomain','Stage labels [%.16g,%.16g] leave [-D,0] on the dense checkpoint grid.',minimumLabel,maximumLabel);
 end
+end
+
+function [moments,scales,q] = materialInvariants(hatted,context)
+% Physical APV and material moments; horizontal integrals are area averages.
+sshX=context.derivative.x(hatted.ssh); sshY=context.derivative.y(hatted.ssh);
+physical=WVInternal.freeSurfacePhysicalFields(hatted,context.xi,context.D,sshX,sshY);
+alpha=reshape(1+context.xi/context.D,1,1,[]);
+betaX=alpha.*sshX./physical.gamma; betaY=alpha.*sshY./physical.gamma;
+dx=@(field)context.derivative.x(field)-betaX.*context.derivative.xi(field);
+dy=@(field)context.derivative.y(field)-betaY.*context.derivative.xi(field);
+dz=@(field)context.derivative.xi(field)./physical.gamma;
+r=physical.z-hatted.eta;
+omegaX=dy(physical.w)-dz(physical.v);
+omegaY=dz(physical.u)-dx(physical.w);
+omegaZ=dx(physical.v)-dy(physical.u);
+q=omegaX.*dx(r)+omegaY.*dy(r)+(omegaZ+context.f).*dz(r)-context.f;
+gamma=repmat(physical.gamma,1,1,context.shape(3));
+weight=context.weights.*gamma(:);
+moments=struct(volume=sum(weight),labelMoment1=sum(weight.*r(:)),labelMoment2=sum(weight.*r(:).^2),apvMoment1=sum(weight.*q(:)),apvMoment2=sum(weight.*q(:).^2));
+scales=struct(volume=sum(weight),labelMoment1=sum(weight.*abs(r(:))),labelMoment2=sum(weight.*r(:).^2),apvMoment1=sum(weight.*abs(q(:))),apvMoment2=sum(weight.*q(:).^2));
 end
