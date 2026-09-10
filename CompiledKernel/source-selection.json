@@ -102,8 +102,8 @@
     "matrixIdentity": "exact-source-and-name",
     "placement": "out-of-place",
     "sourceSHA256": {
-      "interface": "d9bce324eeb1572abe39d99a23448d55a31ad8074ce2e4105ef41bbdd610bb95",
-      "horizontal": "484cf58901a4008e6109aacbceeee03aa50e0f4641c91c4cf730466a3d16251a",
+      "interface": "28699522bc82de60378d93e7e25e42938f03bc30939e00f010ad0af67216d589",
+      "horizontal": "02dda3f33d22e5642b832eb36625a851e3c92a102588c49845f66a9d600be780",
       "vertical": "460d12936bd9f383400476b0bc8338735ec9216e4fd7489240f6c9d78ab7898b",
       "validation": "eb416d6abc47d97d506b4c4fa65e8006b951d07d013c5d96db0f8043b417cc79",
       "referenceFFT": "703724883edd3c05f583c7e68bad46830b1a92e22524a10906d3da366ad64c49",
@@ -187,6 +187,7 @@
     "nativeCandidateHorizontalSchedule": "fftw-streaming-pruned-tile16",
     "matrixRepresentation": "direct-interleaved; exact persisted groups",
     "streamedHydrostaticRealScratch": "6R (frozen 10R); spectral scratch unchanged",
-    "qualification": ".github/planning/issue-455-variable-matrix-qualification.md"
+    "qualification": ".github/planning/issue-455-variable-matrix-qualification.md",
+    "fullGridDerivativeScratch": "one horizontal real/half-spectrum plane when retained provider is active; all resolved frequencies preserved"
   }
 }

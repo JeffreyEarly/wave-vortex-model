@@ -1,0 +1,79 @@
+{
+  "schema": "wvm-derivative-resource-screen-decision-v1",
+  "candidateSource": "ed66d2f1",
+  "controlSource": "b157988355d2fabb6cbc62d56de18b203456897f",
+  "largeRuns": 96,
+  "smokeRuns": 18,
+  "allScientificChecksPassed": true,
+  "allMemoryGatesPassed": true,
+  "allPriorTimeGatesPassed": false,
+  "defaultAdoption": false,
+  "issue463Complete": false,
+  "reason": "One QG-256 direct flux prior-candidate ratio exceeds the 1.03 gate; retain this result. Event/full-model qualification and final compact/interleaved selection remain under the combined goal.",
+  "profiles": [
+    {
+      "profile": "stratified-qg-256x256x129-flux",
+      "scientificPassed": true,
+      "candidateToPriorTime": 1.0338498632693425,
+      "priorTimeGatePassed": false,
+      "candidateToProductionPeakRSS": 0.8048582509094189,
+      "productionMemoryGatePassed": true
+    },
+    {
+      "profile": "stratified-qg-256x256x129-scalar-horizontal",
+      "scientificPassed": true,
+      "candidateToPriorTime": 0.907617755357533,
+      "priorTimeGatePassed": true,
+      "candidateToProductionPeakRSS": 0.8772265346683167,
+      "productionMemoryGatePassed": true
+    },
+    {
+      "profile": "hydrostatic-256x256x129-flux",
+      "scientificPassed": true,
+      "candidateToPriorTime": 0.9847912614992638,
+      "priorTimeGatePassed": true,
+      "candidateToProductionPeakRSS": 0.6594104442344045,
+      "productionMemoryGatePassed": true
+    },
+    {
+      "profile": "hydrostatic-256x256x129-scalar-horizontal",
+      "scientificPassed": true,
+      "candidateToPriorTime": 0.8859755557665481,
+      "priorTimeGatePassed": true,
+      "candidateToProductionPeakRSS": 0.7340556882565399,
+      "productionMemoryGatePassed": true
+    },
+    {
+      "profile": "stratified-qg-512x512x257-flux",
+      "scientificPassed": true,
+      "candidateToPriorTime": 1.0012068228341435,
+      "priorTimeGatePassed": true,
+      "candidateToProductionPeakRSS": 0.7717906173376803,
+      "productionMemoryGatePassed": true
+    },
+    {
+      "profile": "stratified-qg-512x512x257-scalar-horizontal",
+      "scientificPassed": true,
+      "candidateToPriorTime": 0.8393406980712432,
+      "priorTimeGatePassed": true,
+      "candidateToProductionPeakRSS": 0.8593239188165703,
+      "productionMemoryGatePassed": true
+    },
+    {
+      "profile": "hydrostatic-512x512x257-flux",
+      "scientificPassed": true,
+      "candidateToPriorTime": 0.9956313492542069,
+      "priorTimeGatePassed": true,
+      "candidateToProductionPeakRSS": 0.6349606305184107,
+      "productionMemoryGatePassed": true
+    },
+    {
+      "profile": "hydrostatic-512x512x257-scalar-horizontal",
+      "scientificPassed": true,
+      "candidateToPriorTime": 0.8422389164250886,
+      "priorTimeGatePassed": true,
+      "candidateToProductionPeakRSS": 0.7162395404813037,
+      "productionMemoryGatePassed": true
+    }
+  ]
+}
