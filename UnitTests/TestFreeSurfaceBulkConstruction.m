@@ -42,14 +42,14 @@ classdef TestFreeSurfaceBulkConstruction < matlab.unittest.TestCase
             end
             for t = [0 1234]
                 bulk.t = t; scalar.t = t;
-                actual = bulk.reconstructFields(["u","v","w","eta","p","ssh"]);
-                expected = scalar.reconstructFields(["u","v","w","eta","p","ssh"]);
+                actual = bulk.reconstructFields(["u","v","w","eta","p_linear","ssh"]);
+                expected = scalar.reconstructFields(["u","v","w","eta","p_linear","ssh"]);
                 for name = string(fieldnames(actual)).'
                     actualField = actual.(name); expectedField = expected.(name);
                     testCase.verifyLessThan(norm(actualField(:)-expectedField(:))/max(norm(expectedField(:)),realmin),1e-8,name)
                 end
                 testCase.verifyEqual(bulk.totalEnergy,scalar.totalEnergy,RelTol=1e-8)
-                sources = rmfield(expected,{'p','ssh'});
+                sources = rmfield(expected,{'p_linear','ssh'});
                 actualTendency = bulk.projectSources(sources);
                 expectedTendency = scalar.projectSources(sources);
                 for name = string(fieldnames(actualTendency)).'

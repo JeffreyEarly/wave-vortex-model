@@ -15,15 +15,15 @@ classdef TestFreeSurfacePressureReference < matlab.unittest.TestCase
             wvt.Ag_0(:,column) = [1e-8;-2e-8];
             wvt.Amda(1) = 0.001;
             wvt.Aio(1) = 0.002i;
-            fields = wvt.reconstructFields(["u","v","w","eta","p","ssh"]);
-            force = struct(u=wvt.f*fields.v,v=-wvt.f*fields.u,w=-reshape(wvt.N2,1,1,[]).*fields.eta);
+            fields = wvt.reconstructFields(["u_hat","v_hat","w_hat","eta","p_linear","ssh"]);
+            force = struct(u=wvt.f*fields.v_hat,v=-wvt.f*fields.u_hat,w=-reshape(wvt.N2,1,1,[]).*fields.eta);
             derivative.x = @(field) fourierDerivative(field,wvt.Lx,1);
             derivative.y = @(field) fourierDerivative(field,wvt.Ly,2);
             derivative.xi = @(field) wvt.diffZ(field);
             % Linearization freezes geometry at zero but retains the linear
             % dynamic surface-pressure data from the resolved mixed state.
             [pressure,diagnostics] = solveFreeSurfacePressureReference(zeros(size(fields.ssh)),force,wvt.g*fields.ssh,wvt.z,wvt.Lz,derivative);
-            expected = fields.p/wvt.rho0;
+            expected = fields.p_linear/wvt.rho0;
             testCase.verifyLessThan(norm(pressure(:)-expected(:))/norm(expected(:)),2e-7)
             state = wvt.coefficientState();
             omega = wvt.waveFrequency(:,wvt.klNonzeroKhUniqueIndex);

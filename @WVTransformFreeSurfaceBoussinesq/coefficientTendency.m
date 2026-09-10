@@ -5,6 +5,8 @@ function [tendency,speed,diagnostics] = coefficientTendency(self)
 % and retained kinematic constraints. Linear phases are carried by field
 % reconstruction and subtracted once from the full coefficient rate.
 % Without advection, preserve the linear projection of reference sources.
+% Prescribed work plus constraint-reaction work is not the complete energy
+% rate: spatial, solver and SSH residual work also enter the discrete budget.
 % Nonlinear activation requires the stored inventory's quadratic qualification.
 %
 % - Topic: Project physical sources

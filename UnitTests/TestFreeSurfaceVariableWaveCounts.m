@@ -42,7 +42,7 @@ classdef TestFreeSurfaceVariableWaveCounts < matlab.unittest.TestCase
                 testCase.verifyEqual(projected.Aw_p(~w.activeWaveModes),zeros(sum(~w.activeWaveModes,'all'),1))
                 testCase.verifyEqual(projected.Aw_m(~w.activeWaveModes),zeros(sum(~w.activeWaveModes,'all'),1))
                 testCase.verifyEqual(w.totalEnergy,energy,RelTol=1e-7)
-                testCase.verifyTrue(all(isfinite(w.p),'all'))
+                testCase.verifyTrue(all(isfinite(w.p_linear),'all'))
             end
             invalid = w.Aw_p; invalid(find(~w.activeWaveModes,1)) = 1;
             testCase.verifyError(@()assignWave(w,invalid),'WVTransformFreeSurfaceBoussinesq:InactiveWaveCoefficient')

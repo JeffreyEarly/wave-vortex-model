@@ -1,8 +1,14 @@
 classdef SpatialForcingOperation < WVOperation
-    % Computes the nonlinear flux for a WVTransform
+    % Computes spatial forcing contributions for a WVTransform.
+    %
+    % Free-surface Boussinesq outputs are pressure-free hatted increments.
+    % Their names are a snapshot of the registry when this operation is
+    % created. Same-name replacement uses the current forcing; a removed
+    % forcing contributes zero. Recreate the operation to expose new names.
 
     properties
         Fpv
+        forcingNames = strings(0,1)
     end
 
     methods
@@ -14,7 +20,14 @@ classdef SpatialForcingOperation < WVOperation
             outputVariables = WVVariableAnnotation.empty(0,0);
             for i=1:length(wvt.forcing)
 
-                if isa(wvt,"WVTransformBarotropicQG") || isa(wvt,"WVTransformStratifiedQG")
+                if isa(wvt,"WVTransformFreeSurfaceBoussinesq")
+                    suffix=replace(replace(string(wvt.forcing(i).name)," ","_"),"-","_");
+                    for j=1:4
+                        variables=["u","v","w","eta"];
+                        units='m s-2'; if j==4, units='m s-1'; end
+                        outputVariables((i-1)*4+j)=WVVariableAnnotation(char("F"+variables(j)+"_"+suffix),wvt.spatialDimensionNames(),units,char("pressure-free hatted "+variables(j)+" source from "+string(wvt.forcing(i).name)));
+                    end
+                elseif isa(wvt,"WVTransformBarotropicQG") || isa(wvt,"WVTransformStratifiedQG")
                     name = replace(replace(join( ["Fqgpv_", string(wvt.forcing(i).name)],"")," ","_"),"-","_");
                     outputVariables(i) = WVVariableAnnotation(name,wvt.spatialDimensionNames(),'s-2', join(['spatial representation of qgpv forcing',string(wvt.forcing(i).name)]));
                 elseif isa(wvt,"WVTransformHydrostatic") || (isa(wvt,"WVTransformConstantStratification") && wvt.isHydrostatic == true)
@@ -42,12 +55,24 @@ classdef SpatialForcingOperation < WVOperation
             end
             self@WVOperation('spatial forcing',outputVariables,@disp);
             self.Fpv = zeros(wvt.spatialMatrixSize);
+            if isa(wvt,"WVTransformFreeSurfaceBoussinesq")
+                self.forcingNames=string({wvt.forcing.name});
+                addlistener(wvt,'forcingDidChange',@(~,~)invalidateFields(wvt,outputVariables));
+            end
         end
 
         function varargout = compute(self,wvt,varargin)
             varargout = cell(self.nVarOut,1);
 
-            if isa(wvt,"WVTransformBarotropicQG") || isa(wvt,"WVTransformStratifiedQG")
+            if isa(wvt,"WVTransformFreeSurfaceBoussinesq")
+                for index=1:numel(self.forcingNames)
+                    if ismember(self.forcingNames(index),string({wvt.forcing.name}))
+                        [varargout{(index-1)*4+(1:4)}]=wvt.spatialFluxForForcingWithName(self.forcingNames(index));
+                    else
+                        varargout((index-1)*4+(1:4))=repmat({zeros(wvt.spatialMatrixSize)},1,4);
+                    end
+                end
+            elseif isa(wvt,"WVTransformBarotropicQG") || isa(wvt,"WVTransformStratifiedQG")
                 self.Fpv = 0*self.Fpv;
                 iForce = 0;
                 for i=1:length(wvt.spatialFluxForcing)
@@ -127,4 +152,10 @@ classdef SpatialForcingOperation < WVOperation
 
     end
 
+end
+
+function invalidateFields(wvt,annotations)
+for annotation=annotations
+    wvt.removeFromVariableCache(annotation.name);
+end
 end

@@ -99,7 +99,7 @@ classdef TestFreeSurfacePhysicalContract < matlab.unittest.TestCase
             physicalV = chiY-A.*sshY.*chiXi./gamma;
             physicalW = chiXi./gamma;
             physicalSource = WVPrescribedBoussinesqSource(wvt,uRate=physicalU,vRate=physicalV,wRate=physicalW,sourceCoordinates="physical");
-            wvt.addForcing(physicalSource);
+            wvt.addForcing([WVNonlinearAdvection(wvt),physicalSource]);
             testCase.verifyEqual(wvt.p_full-pressure,wvt.rho0*chi,AbsTol=3e-7)
             wvt.removeForcing(physicalSource);
             testCase.verifyEqual(wvt.p_full,pressure,AbsTol=2e-8)
@@ -138,7 +138,7 @@ classdef TestFreeSurfacePhysicalContract < matlab.unittest.TestCase
 end
 
 function wvt = fixture()
-wvt = WVTransformFreeSurfaceBoussinesq.fromStratification([1e5 1e5 1000],[4 4 65],N2Function=@(z)1e-4+0*z,apvModeCount=2,waveModeCount=3,mdaModeCount=2,inertialModeCount=2,nEVP=128);
+wvt = WVTransformFreeSurfaceBoussinesq.fromStratification([1e5 1e5 1000],[8 8 65],N2Function=@(z)1e-4+0*z,apvModeCount=2,waveModeCount=3,mdaModeCount=2,inertialModeCount=2,nEVP=128,shouldAntialias=true,shouldCheckQuadraticAliasing=true);
 helper = freeSurfaceWeakStudyHelpers();
 state = helper.seedState(wvt);
 xColumn = find(wvt.kNonzero>0 & wvt.lNonzero==0,1);

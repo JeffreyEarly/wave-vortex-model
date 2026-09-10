@@ -39,7 +39,11 @@ classdef TestPrescribedBoussinesqSourceCoordinates < matlab.unittest.TestCase
             args = namedargs2cell(options);
             for coordinates = ["reference","physical"]
                 source = WVPrescribedBoussinesqSource(wvt,args{:},sourceCoordinates=coordinates);
-                wvt.setForcing(source);
+                if coordinates=="physical"
+                    wvt.setForcing([WVNonlinearAdvection(wvt),source]);
+                else
+                    wvt.setForcing(source);
+                end
                 path = fullfile(fixture.Folder,coordinates+".nc");
                 file = wvt.writeToFile(path);
                 file.close();
@@ -90,7 +94,7 @@ classdef TestPrescribedBoussinesqSourceCoordinates < matlab.unittest.TestCase
 end
 
 function wvt = newTransform(Nxyz)
-wvt = WVTransformFreeSurfaceBoussinesq.fromStratification([1e5 1e5 1000],Nxyz,N2Function=@(z)1e-4+zeros(size(z)),apvModeCount=2,mdaModeCount=2,waveModeCount=2,inertialModeCount=2,shouldAntialias=true);
+wvt = WVTransformFreeSurfaceBoussinesq.fromStratification([1e5 1e5 1000],Nxyz,N2Function=@(z)1e-4+zeros(size(z)),apvModeCount=2,mdaModeCount=2,waveModeCount=2,inertialModeCount=2,shouldAntialias=true,shouldCheckQuadraticAliasing=true);
 end
 
 function options = sourceOptions(wvt)

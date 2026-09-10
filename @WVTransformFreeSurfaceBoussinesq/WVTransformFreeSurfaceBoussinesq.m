@@ -1,5 +1,5 @@
 classdef WVTransformFreeSurfaceBoussinesq < WVGeometryDoublyPeriodicStratified & WVTransform
-    % Represent resolved linear free-surface waves and balanced flow together.
+    % Represent resolved free-surface waves and balanced flow together.
     %
     % Create scientific operators with `fromStratification`. The primary
     % constructor accepts the complete structure returned by `scientificState`
@@ -20,7 +20,12 @@ classdef WVTransformFreeSurfaceBoussinesq < WVGeometryDoublyPeriodicStratified &
     % polarization from the full instantaneous pressure diagnostic. Existing
     % physicalEnergy/totalEnergy are quadratic; nonlinearEnergy uses full APE
     % and the matching C1-reference surface term.
-    % Nonlinear runtime activation remains unqualified.
+    % Nonlinear evolution is explicit: construct with shouldAntialias=true and
+    % shouldCheckQuadraticAliasing=true, then add WVNonlinearAdvection(wvt).
+    % The full mapped weak solve enforces retained surface/endpoint targets;
+    % its finite-inventory reaction contributes to nonlinear energy change.
+    % Bounded refinement and restart evidence are supplied with the example.
+    % Adaptive stepping and portable nonlinear execution remain unavailable.
     % Legacy rigid-lid Ap/Am/A0 initialization is not supported here.
     %
     % ```matlab
@@ -346,6 +351,7 @@ classdef WVTransformFreeSurfaceBoussinesq < WVGeometryDoublyPeriodicStratified &
         [pressure,diagnostics] = fullPressure(self)
         diagnostics = nonlinearEnergy(self)
         flux = fluxForForcing(self)
+        [u,v,w,eta] = spatialFluxForForcingWithName(self,name)
         fields = reconstructSpectralState(self,options)
         [state,assessment] = projectFields(self,fields)
         operation = operationForKnownVariable(self,variableName,options)

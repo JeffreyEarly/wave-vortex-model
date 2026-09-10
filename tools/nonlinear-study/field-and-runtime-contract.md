@@ -1,6 +1,6 @@
 # Field and runtime contract for the nonlinear beta increment
 
-This records the implementation target after the weak-solver and pressure-reference studies. Public activation and caller updates are still pending. The current class's provisional `reconstructFields` still returns hatted velocities; it must not be described as implementing the contract below until that batch is complete.
+This records the implemented field contract after the weak-solver and pressure-reference studies. The ordinary `WVModel` path now supports explicit nonlinear activation; the linked validation reports define its bounded qualification. Existing exact linear phases remain the default.
 
 ## Field meanings
 
@@ -39,7 +39,7 @@ These are additive contributions to the full physical velocity. They are not ind
 
 ## Projection and source boundaries
 
-`projectFields` should accept ordinary physical `u/v/w`, total displacement and SSH. Invert the physical map using the supplied SSH before applying the existing resolved adiabatic modal projection. Preserve modal counts, signed projection duals and existing quality diagnostics; clearly label any diagnostic norm evaluated on the hatted reference fields. A reconstructed physical state must round-trip through that inverse map without redefining the basis.
+`projectFields` accepts ordinary physical `u/v/w`, total displacement and SSH. Invert the physical map using the supplied SSH before applying the existing resolved adiabatic modal projection. Preserve modal counts, signed projection duals and existing quality diagnostics; clearly label any diagnostic norm evaluated on the hatted reference fields. A reconstructed physical state must round-trip through that inverse map without redefining the basis.
 
 The continuous `projectSources` method remains an explicitly **linear** source projection, with hatted equation-source meanings documented at its boundary. It is not the full nonlinear physical-forcing closure. In a nonlinear run, supported physical volume acceleration and displacement sources must enter the stage equation and its coupled closure before projection; source work must use their physical meaning. Independent surface mass sources remain outside this increment.
 
@@ -49,4 +49,10 @@ Use the existing `WVModel` six-family `coefficientTendency` path and explicit no
 
 Persist the scientific field/dynamics convention and canonical families with unchanged per-kappa counts. Rebuild derived factors and thermodynamic primitives on restoration without solving EVPs. Update output names and example callers directly. Before activating ordinary physical velocities, audit tracers and particles: physical `w` is not a reference-coordinate trajectory rate. Either adapt a bounded observer contract to `w_i` and the correct horizontal rates, or reject the unsupported nonlinear combination explicitly.
 
-Completion requires the public operations, inverse projection, caches, forcing dispatch, observations and native restart tests to agree with these definitions. This document alone does not implement them.
+Public operations, inverse projection, caches, forcing dispatch and physical/reference observer checks now exercise these definitions. The full-reference trajectory and native restart reports provide the corresponding numerical evidence.
+
+`coefficientTendency` returns the six family rates, optional maximum physical horizontal speed, and nonlinear diagnostics. `fluxForForcing` follows the existing name-to-structure dictionary idiom with those same six family names. `spatialFluxForForcingWithName` and `SpatialForcingOperation` expose pressure-free hatted equation increments; their values do not include the coupled modal pressure/constraint response. The spatial operation fixes output names at creation, follows same-name replacements and reports zero for removed forcings. Recreate it to expose newly added names.
+
+`prescribedWork` is direct physical forcing work and `constraintReactionWork` is the reaction's actual signed energy contribution. Their sum is not the entire nonlinear energy rate: spatial, solver and SSH residual work remain in the discrete budget. See the full-reference trajectory review for the independently evaluated identity.
+
+Native files store `fieldConvention="physical-velocity-full-c1"`. Incompatible or missing conventions are rejected rather than assigned an ambiguous interpretation. Forcing registration and its persisted inventory determine whether the explicitly nonlinear path is active; transient reference factors, thermodynamic primitives and pressure contexts rebuild without mode solves.

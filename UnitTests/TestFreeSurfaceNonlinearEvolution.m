@@ -23,7 +23,7 @@ classdef TestFreeSurfaceNonlinearEvolution < matlab.unittest.TestCase
             testCase.verifyEqual(w.coefficientState(),original)
             flux=w.fluxForForcing();
             testCase.verifyEqual(flux{"nonlinear advection"},actual)
-            w.removeForcing("nonlinear advection");
+            w.removeForcing(w.forcingWithName("nonlinear advection"));
             rate=w.coefficientTendency();
             for name=string(fieldnames(rate)).', testCase.verifyEqual(rate.(name),zeros(size(rate.(name)))); end
             testCase.verifyEqual(w.coefficientState(),original)
@@ -35,11 +35,23 @@ classdef TestFreeSurfaceNonlinearEvolution < matlab.unittest.TestCase
             [X,Y,Z]=ndgrid(w.x,w.y,w.z);
             source=WVPrescribedBoussinesqSource(w,uRate=1e-7*(1+Z/w.Lz).*cos(2*pi*X/w.Lx),vRate=2e-7*(Z/w.Lz).^2.*sin(2*pi*Y/w.Ly),wRate=3e-8*(1+Z/w.Lz).^2,etaRate=1e-6*(1+.1*cos(2*pi*X/w.Lx)).*(1+Z/(2*w.Lz)),sourceCoordinates="physical",frequency=.003,referenceTime=29,phase=.4);
             w.addForcing(source);
+            w.addOperation(SpatialForcingOperation(w));
+            [su,sv,sw,se]=w.spatialFluxForForcingWithName(source.name);
+            testCase.verifyEqual(w.Fu_prescribed_Boussinesq_source,su)
+            testCase.verifyEqual(w.Fv_prescribed_Boussinesq_source,sv)
+            testCase.verifyEqual(w.Fw_prescribed_Boussinesq_source,sw)
+            testCase.verifyEqual(w.Feta_prescribed_Boussinesq_source,se)
+            [nu,nv,nw,ne]=w.spatialFluxForForcingWithName("nonlinear advection");
+            testCase.verifyEqual(w.Fu_nonlinear_advection,nu)
+            testCase.verifyEqual(w.Fv_nonlinear_advection,nv)
+            testCase.verifyEqual(w.Fw_nonlinear_advection,nw)
+            testCase.verifyEqual(w.Feta_nonlinear_advection,ne)
+            testCase.verifyError(@()w.energyFluxFromNonlinearFlux([],[],[]),'WVTransformFreeSurfaceBoussinesq:UseCanonicalFamilies')
             [rate,~,diagnostics]=w.coefficientTendency();
             flux=w.fluxForForcing(); response=flux{string(source.name)};
             total=flux{"nonlinear advection"};
             for name=string(fieldnames(rate)).', total.(name)=total.(name)+response.(name); end
-            testCase.verifyEqual(total,rate)
+            for name=string(fieldnames(rate)).', testCase.verifyEqual(total.(name),rate.(name),AbsTol=16*eps(max(abs(rate.(name)),[],'all'))); end
             layout=WVInternal.freeSurfaceRealCoefficientLayout(w);
             testCase.verifyLessThan(norm(layout.pack(flux{"nonlinear advection"})-layout.pack(unforced))/norm(layout.pack(unforced)),2e-8)
             f=w.reconstructFields(["u","v","w","eta","ssh"]);
@@ -68,6 +80,9 @@ classdef TestFreeSurfaceNonlinearEvolution < matlab.unittest.TestCase
             ctx=WVInternal.freeSurfaceNonlinearStage(w);
             [~,forcedReport]=ctx.evaluate(w.coefficientState(),includeForcing=true);
             w.removeForcing(source);
+            [remaining,~,~,~]=w.spatialFluxForForcingWithName("nonlinear advection");
+            testCase.verifyEqual(w.Fu_nonlinear_advection,remaining)
+            testCase.verifyEqual(w.Fu_prescribed_Boussinesq_source,zeros(w.spatialMatrixSize))
             [~,unforcedReport]=ctx.evaluate(w.coefficientState(),includeForcing=true);
             reaction=forcedReport.constraintReactionWork-unforcedReport.constraintReactionWork;
             testCase.verifyEqual(measuredWork,expectedWork+reaction,AbsTol=2e-10)

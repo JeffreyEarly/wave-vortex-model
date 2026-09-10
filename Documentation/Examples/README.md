@@ -1,4 +1,6 @@
-# Free-surface QG authoring example
+# Free-surface authoring examples
+
+## Free-surface QG
 
 `makeShortSeasonalQGModel` composes the ordinary `WVTransformFreeSurfaceQG`, forcing and `WVModel` interfaces. `runShortSeasonalQG` runs that model to day 32, closes its standard NetCDF file, restores it through `WVModel.modelFromFile`, explicitly reselects six-hour fixed exponential stepping and continues to day 64.
 
@@ -29,3 +31,19 @@ This is a bounded composition, time-refinement and restart example. It is **not 
 Use `WVVerticalDiffusivity.assessSeasonalResponse` for observable-specific accuracy and reference-convergence estimates in its stated linear seasonal problem. Read absolute and relative errors for QGPV and each endpoint separately, and verify reference stability. Its estimates do not certify the complete nonlinear example. There is no universal one-percent target; known high-band seasonal failures remain documented in the [qualification handoff](../Validation/Issue353AdiabaticQualification.md).
 
 The [short-case report](../Validation/Issue353ShortSeasonalQG.md) documents process budgets, actual time refinement and aligned/shifted restart. The [current audit](../Validation/Issue353AdiabaticQualification.md) records 126 passing cases and successful execution of this exact default wrapper on the corrected authoring graph. This directory is excluded from the current MPM export: #354 must adopt and verify supported examples in the released/exported workflow before claiming installed-package support.
+
+
+## Nonlinear free-surface Boussinesq
+
+`runNonlinearFreeSurfaceBoussinesq` runs a deterministic 200-second, mixed-family inviscid case with fixed five-second RK4 stepping. It constructs the resolved adiabatic inventory with horizontal antialiasing and quadratic qualification, explicitly registers `WVNonlinearAdvection`, and uses ordinary `WVModel` NetCDF output. No nonlinear forcing is installed by Boussinesq construction alone.
+
+```matlab
+addpath('Documentation/Examples');
+history = runNonlinearFreeSurfaceBoussinesq(fullfile(tempdir,'new-nonlinear-free-surface-run'));
+```
+
+Use a new output directory. The example writes native NetCDF, a diagnostic CSV, and PNG/PDF plots of SSH, full nonlinear energy change, constraint-reaction work and the weak-solver residual. The small 8-by-8 horizontal grid is for numerical qualification, not realistic surface imagery. It uses 129 vertical samples, four APV/MDA/inertial modes and six wave modes, with both active boundaries. Mean material-label offsets keep parcels inside the prescribed density domain.
+
+`u/v/w` are physical velocities on `z_physical`; `u_hat/v_hat/w_hat` retain the modal variables. `eta` is total displacement and `eta_i=eta-(1+z/Lz)*ssh` uses the reference sample coordinate `z`. `p_linear` and `p_full` distinguish modal and instantaneous full pressure. See the [field contract](../../tools/nonlinear-study/field-and-runtime-contract.md) for derivative and source meanings.
+
+This is a v5 development/beta prototype with a measurable finite-mode constraint reaction. Full nonlinear energy and material/APV moments are not asserted to be exactly conserved. The [full-reference refinement study](../Validation/NonlinearFreeSurface/matrix-free-full-reference-qualification.md) separates timestep error, spatial changes and energy-work accounting. Retained quadratic checks do not certify all rational geometry terms or every nonlinear interaction. Adaptive Boussinesq stepping, portable nonlinear execution and breaking remain outside this example. As with the QG example, this authoring directory is not part of the current MPM export.
