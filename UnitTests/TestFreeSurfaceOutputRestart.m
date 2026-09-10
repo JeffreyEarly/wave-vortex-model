@@ -201,7 +201,7 @@ file=model.createNetCDFFileForModelOutput(char(path),outputInterval=40,shouldOve
 model.eulerianObservingSystem.addNetCDFOutputVariables('u','v','eta','ssh','qgpv');
 group=file.addNewEvenlySpacedOutputGroup('fields',initialTime=137,outputInterval=30,finalTime=347);
 names={'u','v','eta','ssh'};
-if isa(model.wvt,'WVTransformFreeSurfaceBoussinesq'), names=[names {'w','p'}]; end
+if isa(model.wvt,'WVTransformFreeSurfaceBoussinesq'), names=[names {'w','p_linear'}]; end
 group.addObservingSystem(WVEulerianFields(model,fieldNames=names));
 group.addObservingSystem(WVMooring(model,name="mooring",x=[0 25000],y=[0 50000],trackedFieldNames={'u','eta'}));
 group.addObservingSystem(model.fluxedObservingSystemWithName('particles'));

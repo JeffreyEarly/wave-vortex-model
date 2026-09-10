@@ -26,7 +26,7 @@ The nonlinear terms are evaluated in physical space and added to the
 momentum, thermodynamic, or quasigeostrophic potential-vorticity
 (QGPV) equation appropriate to the transform.
 
-For nonhydrostatic transforms,
+For legacy nonhydrostatic transforms,
 
 $$
 \begin{align}
@@ -62,10 +62,14 @@ state includes active boundary sheets.
 
 ### Notes
 
-Every supported transform installs this forcing by default. A
+Each legacy transform installs this forcing by default. A
 nonlinear `WVModel` evaluates it automatically. Analytical linear
 evolution does not evaluate nonlinear forcing, so the object does not
 need to be removed when using linear evolution.
+Free-surface Boussinesq transforms remain linear by default. Adding
+this forcing requires horizontal antialiasing and an inventory
+constructed with quadratic-product qualification. Its callback adds
+the full mapped zero-pressure nonlinear excess in hatted coordinates.
 
 ### Example
 

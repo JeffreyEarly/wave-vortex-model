@@ -1,6 +1,6 @@
 # Reference pressure and parcel-label domains
 
-This records the formulation comparison and the selected internal nonlinear convention. The runtime path and manuscript have not yet been changed. It addresses a numerical difficulty in evaluating the full equations at positive surface crests. It does not resolve modal constraint reaction work or authorize parcel labels outside their density domain.
+This records the formulation comparison and the selected internal nonlinear convention. The runtime now uses this full convention; the manuscript itself is unchanged. It addresses a numerical difficulty in evaluating the full equations at positive surface crests. It does not resolve modal constraint reaction work or authorize parcel labels outside their density domain.
 
 ## Two different density arguments
 

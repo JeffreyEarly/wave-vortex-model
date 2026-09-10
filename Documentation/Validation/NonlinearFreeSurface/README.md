@@ -1,6 +1,10 @@
 # Nonlinear free-surface implementation evidence
 
-This directory records the active nonlinear free-surface Boussinesq increment (#449/#450, with the relevant #448 guard). The implementation is not yet qualified nonlinear dynamics. The baseline is WVM `81987767` and InternalModes `2.0.0-beta.4`. The existing linear and small-amplitude QG scope remains distinct.
+This directory records the nonlinear free-surface Boussinesq increment (#449/#450, with the relevant #448 guard), based on WVM `81987767` and InternalModes `2.0.0-beta.4`. Start with the [current runtime and equation contract](runtime-qualification.md), [full-reference trajectory results](matrix-free-full-reference-qualification.md), and [native/cold-start restart evidence](nonlinear-runtime-restart.md).
+
+The implemented beta path explicitly enables full mapped weak evolution through ordinary `WVModel`, preserving all resolved adiabatic families. Its physical pressure diagnostic is distinct from modal constraint reaction. Finite-inventory energy and material/APV errors remain measurable; the evidence supports a bounded, refinement-tested prototype, not exact conservation or general production readiness. Existing linear and small-amplitude QG scope remains distinct.
+
+The following sections preserve the chronological investigation, including earlier small-pressure-approximation experiments and statements about what was pending at each stage. Those earlier trajectories are not reclassified as full-reference qualification.
 
 ## Initial source and surface-constraint audit
 
@@ -98,3 +102,17 @@ Verification ledger for this batch:
 - Code Analyzer passed for all six internal layout/operator/factor/solver helpers and their new tests; whitespace and authored-file scope reviewed. These internal helpers do not change generated public API output, so documentation generation/check was not repeated.
 
 This qualifies the composed stage linear algebra on bounded fixtures. It does not yet activate nonlinear `WVModel` evolution or qualify its nonlinear physical-pressure diagnostic, complete stage RHS, trajectory cost, forcing, observers or restart.
+
+## Final full-reference integration
+
+The [current contract](runtime-qualification.md) supersedes the pending-runtime statements above. `freeSurfaceThermodynamics` supplies stable full-C1 buoyancy, APE and surface terms, with a bounded/reportable density-label roundoff allowance. The matrix-free stage composes these fields, mapped equations, metric and trace constraints. `coefficientTendency` connects it to existing forcing callbacks and six-family `WVModel` integration; `fullPressure` separately recovers the instantaneous physical pressure.
+
+The [public-field qualification](physical-field-contract-qualification.md) covers inverse projection, physical/hatted/component identities, clock-dependent balanced caches, pressure/source effects and native interpretation. The observer tests independently check physical-position queries, endpoints, periodicity and reference-grid tracer transport. The [forcing qualification](../../../tools/nonlinear-study/forcing-integration-verification.md) covers atomic effective-inventory validation, no implicit count changes and independent mapped callback equations. Supported physical-source work and endpoint responses are checked against direct physical integration and a fixed-clock energy derivative, including constraint-reaction work.
+
+The [full-reference trajectory study](matrix-free-full-reference-qualification.md) reports observed fourth-order timestep ratios and energy-work closure; material/APV conservation is imperfect and improves under the tested vertical/family refinement. The [fixed-inventory overintegration study](../../../tools/nonlinear-study/frozen-overintegration.md) independently holds all 206 real modal coordinates fixed, verifies full-C1 thermodynamics and resolved product coefficients, and separates quadrature from retained-mode effects. The [strong-residual study](../../../tools/nonlinear-study/strong-residual-refinement.md) distinguishes pressure IBP error from persistent finite-inventory constraint reaction.
+
+The [native runtime report](nonlinear-runtime-restart.md) records exact agreement in bounded interrupted/uninterrupted continuation, including a fresh MATLAB process with no InternalModes provider and unequal wave prefixes `[3,2,0,3]`. No mode solves or retained-count changes occur on restoration.
+
+The exact final [authoring example](../../Examples/runNonlinearFreeSurfaceBoussinesq.m) completed 200 seconds with eleven native output records. Its maximum sampled retained-constraint defect is `1.735e-18`, maximum relative weak stationarity residual `1.256e-12`, and full-energy change `7.286e-6` m³/s². The [CSV](nonlinear-example.csv) and [figure](nonlinear-example.png) retain these diagnostics. The figure was visually reviewed; no geometry exaggeration or conservation claim is made. The example's 8-by-8 surface is intentionally a small numerical control.
+
+Code Analyzer found no blocking production issues. Additional changed helper/test/example analysis identified only two pre-existing suppressed `NASGU` cache-warming assignments in `TestFreeSurfaceBoussinesqTransform`; they were compared with the baseline and retained intentionally. Documentation build/check passed with 2362 files, 4827 routes and zero generated drift. Separate verification logs retain initial test-fixture/API-call failures and the corrected reruns rather than counting failed attempts as passes.
