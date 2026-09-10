@@ -1,0 +1,8 @@
+Internal ctest changing into directory: /tmp/wvm358-compact-sanitized
+Test project /tmp/wvm358-compact-sanitized
+    Start 8: WVCompactConstantSchedule
+1/1 Test #8: WVCompactConstantSchedule ........   Passed    2.07 sec
+
+100% tests passed, 0 tests failed out of 1
+
+Total Test time (real) =   2.07 sec

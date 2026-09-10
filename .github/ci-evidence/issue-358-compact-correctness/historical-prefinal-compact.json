@@ -1,0 +1,104 @@
+{
+  "scope": "issue-358-compact-constant-focused-correctness",
+  "createdAt": "2026-09-10T01:55:16.023798+00:00",
+  "sourceRoot": "/Users/jearly/Documents/OceanKitRepositories/wvm-v4-cpp-adoption-audit",
+  "baseCommit": "8d08ba48b554a84b9920e349e6d4c69dccd6c0dd",
+  "workingTreeChanges": true,
+  "cases": {
+    "reference": 10,
+    "nativeFFTW": 12,
+    "hydrostatic": true,
+    "nonhydrostatic": true,
+    "antialiasOnOff": true,
+    "minimumGridAndNj1": true,
+    "oddNonsquareGrids": true,
+    "parallelPointwiseAbove4096": true
+  },
+  "bounds": {
+    "maximumErrorOverMaxOneReferenceMagnitude": 2e-12,
+    "l2ErrorOverMaxOneReferenceL2": 1e-12
+  },
+  "nativeWarmAllocationCalls": 0,
+  "referenceAllocationContract": "Reference Type-I implementation allocates temporary vectors; correctness only, excluded from native allocation/performance requirement.",
+  "gates": [
+    {
+      "name": "Release WVKernelContract plus WVCompactConstantSchedule",
+      "status": "passed",
+      "log": "/private/tmp/wvm358-compact-final-release-test.log",
+      "sha256": "5a1272c08cc8b434364eb5851eddf1afb28b48a04130a2725657150b4e028329"
+    },
+    {
+      "name": "ASan UBSan WVCompactConstantSchedule reference and native",
+      "status": "passed",
+      "log": "/private/tmp/wvm358-compact-final-sanitized-test2.log",
+      "sha256": "b4dee8bbb07321082092803ee508eed74e331cb1b23cfc14ed4e85694e8e1364"
+    }
+  ],
+  "historicalIterations": [
+    {
+      "status": "failed-test-setup",
+      "detail": "Initial native allocation rule applied to reference provider; reference deliberately allocates vertical temporary. Both test-only and production reference adapters confirmed. Native allocation rule remains zero."
+    },
+    {
+      "status": "failed-build",
+      "detail": "Provider resource-sharing source had local scratch self-initializer; corrected by provider owner. Subsequent old executable invocations shared-test.log and final-sanitized-test.log explicitly invalidated; no pass attributed to final source."
+    }
+  ],
+  "sourceSHA256": [
+    {
+      "path": "CompiledKernel/src/WVTransformConstantStratificationKernel.cpp",
+      "sha256": "51e8707c8712fb62f82cbb4b1fc23589d338b02b3eb9328527db3a6fdcbba7db"
+    },
+    {
+      "path": "CompiledKernel/include/WaveVortexKernel/WVTransformConstantStratificationKernel.hpp",
+      "sha256": "54c7729dc02a2f9bf07d3b9df0dda733693abd144b1072e3b38b11b6c291440b"
+    },
+    {
+      "path": "CompiledKernel/src/WVRetainedHorizontalOperator.cpp",
+      "sha256": "484cf58901a4008e6109aacbceeee03aa50e0f4641c91c4cf730466a3d16251a"
+    },
+    {
+      "path": "CompiledKernel/include/WaveVortexKernel/WVSpectralOperators.hpp",
+      "sha256": "d9bce324eeb1572abe39d99a23448d55a31ad8074ce2e4105ef41bbdd610bb95"
+    },
+    {
+      "path": "CompiledKernel/include/WaveVortexKernel/WVFFTEngine.hpp",
+      "sha256": "10e0fcb9c2053f848889e4d806233588e0432f49d59c1211c146c8343c0ba9df"
+    },
+    {
+      "path": "CompiledKernel/adapters/native-fftw/WVNativeFFTWEngine.cpp",
+      "sha256": "bf22362163ad2899a487fed012c40fa212e5ac74c67e6449eacfc239dad21c4e"
+    },
+    {
+      "path": "CompiledKernel/adapters/native-fftw/WVNativeFFTWEngine.hpp",
+      "sha256": "7285f9989e604d2056a36eec275b95389bf386c3a5c7f5140086206f6ecf251b"
+    },
+    {
+      "path": "tools/compiled-kernel/tests/TestWVCompactConstantSchedule.cpp",
+      "sha256": "41849e062d0a4f30318d646daf010eca09d300152a16462a78ef3d154d217168"
+    },
+    {
+      "path": "tools/compiled-kernel/CMakeLists.txt",
+      "sha256": "598154f4d192765119d8d6c208fda621d9aee2bbd3f199171cd76e21521f1085"
+    },
+    {
+      "path": "CompiledKernel/CMakeLists.txt",
+      "sha256": "ea76fc46b3c7b44d2d380947fc7d014d34852ce1ad950cf6aaba91149f2e17b3"
+    }
+  ],
+  "executables": [
+    {
+      "path": "/private/tmp/wvm358-compact-tests/TestWVCompactConstantSchedule",
+      "sha256": "bc7deac88276f4b53df6abd49cb9f50ae97a5b6751d7dc880440a241ac8ae31e"
+    },
+    {
+      "path": "/private/tmp/wvm358-compact-sanitized/TestWVCompactConstantSchedule",
+      "sha256": "5ba7159b032b2c4984ed5ab0866deee89dfa77d8670ec7d45f9f2dc831a42cb4"
+    }
+  ],
+  "limitations": [
+    "No performance adoption claim; default remains frozen schedule.",
+    "Root owns independent MATLAB and large calibration/full-model/memory qualification.",
+    "Reported owned storage excludes opaque FFTW and OS thread allocations, which require process RSS."
+  ]
+}

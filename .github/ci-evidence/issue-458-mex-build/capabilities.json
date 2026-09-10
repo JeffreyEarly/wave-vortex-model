@@ -1,0 +1,181 @@
+{
+  "schemaVersion": "1.0.0",
+  "status": "available",
+  "isSupported": true,
+  "isAvailable": true,
+  "matlab": {
+    "release": "R2025b",
+    "version": "25.2.0.3150157 (R2025b) Update 4",
+    "minimumRelease": "R2025b",
+    "isSupported": true
+  },
+  "platform": {
+    "architecture": "maca64",
+    "operatingSystem": "macOS",
+    "isSupported": true
+  },
+  "provider": {
+    "id": "native-neon-pthreads",
+    "version": "3.3.11",
+    "sourceURL": "https://fftw.org/pub/fftw/fftw-3.3.11.tar.gz",
+    "sourceURLs": [
+      "https://fftw.org/pub/fftw/fftw-3.3.11.tar.gz",
+      "http://fftw.org/pub/fftw/fftw-3.3.11.tar.gz"
+    ],
+    "sourceSHA256": "5630c24cdeb33b131612f7eb4b1a9934234754f9f388ff8617458d0be6f239a1",
+    "threadBackend": "pthreads",
+    "configureFlags": "--host=aarch64-apple-darwin --enable-neon --enable-threads --disable-fortran --disable-openmp --enable-shared --disable-static",
+    "compilerFlags": "-O3 -mcpu=native",
+    "deploymentTarget": "13.3",
+    "simd": "NEON",
+    "sharedLibraries": true,
+    "fortran": false,
+    "openmp": false,
+    "kernelScope": "constant-stratification hydrostatic and nonhydrostatic preview"
+  },
+  "compiler": {
+    "c": "/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/clang",
+    "cxx": "/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/clang++",
+    "identity": "Apple clang version 21.0.0 (clang-2100.1.1.101)\nTarget: arm64-apple-darwin25.6.0\nThread model: posix\nInstalledDir: /Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin",
+    "sdkPath": "/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX.sdk",
+    "mexName": "Xcode Clang++",
+    "mexManufacturer": "Apple",
+    "mexVersion": "21.0.0"
+  },
+  "module": {
+    "name": "wv_compiled_backend_mex",
+    "path": "/private/tmp/wvm458-public-build-export/wv_compiled_backend_mex.mexmaca64",
+    "sha256": "cca33aa937023f98e0e5ed2b78abbcde4c69e01d96a59b70859df0462bb2995b",
+    "engine": "fftw",
+    "isInstalled": true,
+    "identityValidated": true,
+    "loadedBeforeInspection": false,
+    "loadedAfterInspection": false
+  },
+  "libraries": {
+    "base": {
+      "path": "/private/tmp/wvm458-public-build-export/.compiled-backend-cache/provider/native-neon-pthreads/lib/libfftw3.3.dylib",
+      "version": "fftw-3.3.11-neon",
+      "sha256": "48beedbfd1bb76f379514334a4d0a907f9ab68894fd0f02039708706f603d9b5"
+    },
+    "thread": {
+      "path": "/private/tmp/wvm458-public-build-export/.compiled-backend-cache/provider/native-neon-pthreads/lib/libfftw3_threads.3.dylib",
+      "version": "fftw-3.3.11-neon",
+      "sha256": "13df1b16e605d78732efaa8bcd75ac6884c4750b869f7685b04cd28813706884"
+    },
+    "openmp": {
+      "path": "",
+      "version": "",
+      "sha256": "",
+      "detected": false
+    }
+  },
+  "contract": {
+    "version": 4,
+    "threadCount": 16,
+    "defaultThreadRule": "min(18,maxNumCompThreads)",
+    "planCount": 17
+  },
+  "featureValidation": {
+    "status": "passed",
+    "maximumRelativeError": 2.6290663547738235E-15,
+    "hydrostatic": {
+      "status": "passed",
+      "isHydrostatic": true,
+      "maximumRelativeError": 9.0667488145531851E-16,
+      "errors": {
+        "forward": 5.5169552330355619E-16,
+        "inverse": 3.5418010995250012E-16,
+        "nonlinearFlux": 9.0667488145531851E-16
+      },
+      "planCount": 17,
+      "contractVersion": 4,
+      "lifecyclePassed": true,
+      "threadCount": 16
+    },
+    "nonhydrostatic": {
+      "status": "passed",
+      "isHydrostatic": false,
+      "maximumRelativeError": 2.6290663547738235E-15,
+      "errors": {
+        "forward": 4.0331774907666511E-16,
+        "inverse": 3.3778836257369673E-16,
+        "nonlinearFlux": 2.6290663547738235E-15
+      },
+      "planCount": 17,
+      "contractVersion": 4,
+      "lifecyclePassed": true,
+      "threadCount": 16
+    },
+    "deterministic": true,
+    "tolerance": 1E-12
+  },
+  "storageEstimates": {
+    "status": "measured-after-kernel-construction",
+    "formulaSource": "Application-owned kernel, provider, descriptor, plan-wrapper, and bounded scratch storage; FFTW plan internals remain opaque",
+    "cases": [
+      {
+        "id": "hydrostatic",
+        "Nxyz": [
+          8,
+          6,
+          7
+        ],
+        "isHydrostatic": true,
+        "persistentBytes": 39947,
+        "stateInputBytes": 1728,
+        "fluxOutputBytes": 1728,
+        "knownMaximumLiveOwnedBytes": 41675,
+        "planBytes": 680,
+        "planMemoryAccounting": "known C++ storage lower bound; FFTW plan and native thread storage are opaque"
+      },
+      {
+        "id": "nonhydrostatic",
+        "Nxyz": [
+          8,
+          6,
+          7
+        ],
+        "isHydrostatic": false,
+        "persistentBytes": 39947,
+        "stateInputBytes": 1728,
+        "fluxOutputBytes": 1728,
+        "knownMaximumLiveOwnedBytes": 41675,
+        "planBytes": 680,
+        "planMemoryAccounting": "known C++ storage lower bound; FFTW plan and native thread storage are opaque"
+      }
+    ]
+  },
+  "buildAttempt": {
+    "status": "complete",
+    "stage": "complete",
+    "startedAtUTC": "2026-09-10T02:00:59.986Z",
+    "completedAtUTC": "2026-09-10T02:01:41.166Z",
+    "threadCount": 16,
+    "compiler": {
+      "c": "/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/clang",
+      "cxx": "/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/clang++",
+      "identity": "Apple clang version 21.0.0 (clang-2100.1.1.101)\nTarget: arm64-apple-darwin25.6.0\nThread model: posix\nInstalledDir: /Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin",
+      "sdkPath": "/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX.sdk",
+      "mexName": "Xcode Clang++",
+      "mexManufacturer": "Apple",
+      "mexVersion": "21.0.0"
+    },
+    "failure": {
+      "stage": "",
+      "identifier": "",
+      "message": "",
+      "stack": []
+    }
+  },
+  "cache": {
+    "root": "/private/tmp/wvm458-public-build-export/.compiled-backend-cache",
+    "isIgnoredLocalState": true
+  },
+  "failure": {
+    "stage": "",
+    "identifier": "",
+    "message": "",
+    "stack": []
+  }
+}

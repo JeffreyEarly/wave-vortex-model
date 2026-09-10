@@ -43,6 +43,29 @@ public:
     virtual std::size_t persistentBytes() const noexcept = 0;
 };
 
+struct WVRetainedHorizontalSpecification;
+struct WVRealInput;
+struct WVRealOutput;
+struct WVComplexInput;
+struct WVComplexOutput;
+
+// Optional prepared retained transform. The enclosing operator validates all
+// buffers, Hermitian constraints and exclusive workspace use before execution.
+class WVRetainedHorizontalPlan {
+public:
+    virtual ~WVRetainedHorizontalPlan() = default;
+    virtual WVKernelStatus forward(WVRealInput, WVComplexOutput) = 0;
+    virtual WVKernelStatus inverse(WVComplexInput, WVRealOutput) = 0;
+    virtual std::size_t persistentBytes() const noexcept = 0;
+    virtual std::size_t planBytesLowerBound() const noexcept = 0;
+    // persistentBytes includes shared dependencies. Owners of multiple plans
+    // may subtract repeated sharedResourceBytes with the same nonnull identity.
+    virtual const void* sharedResourceIdentity() const noexcept { return nullptr; }
+    virtual std::size_t sharedResourceBytes() const noexcept { return 0; }
+    virtual std::size_t workerCount() const noexcept = 0;
+    virtual const char* identifier() const noexcept = 0;
+};
+
 class WVFFTEngine {
 public:
     virtual ~WVFFTEngine() = default;
@@ -51,6 +74,10 @@ public:
     // Provider-owned C++ storage retained by the engine itself. Individual
     // plans report their storage separately through WVFFTPlan.
     virtual std::size_t persistentBytes() const noexcept = 0;
+    virtual WVKernelStatus createRetainedHorizontalPlan(const WVRetainedHorizontalSpecification&,
+        std::unique_ptr<WVRetainedHorizontalPlan>&) {
+        return {WVKernelStatusCode::unsupportedOperation,"Provider has no retained horizontal schedule."};
+    }
     virtual WVKernelStatus createPlan(const WVFFTPlanSpecification& specification, std::unique_ptr<WVFFTPlan>& plan) = 0;
 };
 

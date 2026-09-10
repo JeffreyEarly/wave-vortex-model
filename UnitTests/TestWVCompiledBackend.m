@@ -105,8 +105,18 @@ classdef TestWVCompiledBackend < matlab.unittest.TestCase
             exportRoot = fullfile(fixture.Folder,"export"); mkdir(exportRoot);
             tracked = splitlines(strtrim(string(runGit(testCase.repositoryRoot,"ls-files"))));
             classFiles = tracked(startsWith(tracked,"@WVCompiledBackend/"));
-            runtimeSources = ["PortableRuntime/include/WaveVortexRuntime/WVBarotropicQGForcingEngine.hpp";"PortableRuntime/include/WaveVortexRuntime/WVCheckpointReader.hpp";"PortableRuntime/include/WaveVortexRuntime/WVExtensionCatalog.hpp";"PortableRuntime/include/WaveVortexRuntime/WVFieldEvaluationService.hpp";"PortableRuntime/include/WaveVortexRuntime/WVForcing.hpp";"PortableRuntime/include/WaveVortexRuntime/WVForcingContracts.hpp";"PortableRuntime/include/WaveVortexRuntime/WVModel.hpp";"PortableRuntime/include/WaveVortexRuntime/WVModelOutputConfiguration.hpp";"PortableRuntime/include/WaveVortexRuntime/WVObservation.hpp";"PortableRuntime/include/WaveVortexRuntime/WVObserverContracts.hpp";"PortableRuntime/include/WaveVortexRuntime/WVObserverOutputProvider.hpp";"PortableRuntime/include/WaveVortexRuntime/WVObservingSystem.hpp";"PortableRuntime/include/WaveVortexRuntime/WVOutputSchedule.hpp";"PortableRuntime/include/WaveVortexRuntime/WVPortableImplementationContract.hpp";"PortableRuntime/include/WaveVortexRuntime/WVPortableTypedRecord.hpp";"PortableRuntime/src/WVExtensionCatalog.cpp";"PortableRuntime/src/WVBarotropicQGFieldEvaluationAdapter.cpp";"PortableRuntime/src/WVBarotropicQGFieldEvaluationAdapter.hpp";"PortableRuntime/src/WVBarotropicQGIntegrationSystem.cpp";"PortableRuntime/src/WVLegacyObserverCompatibility.hpp";"PortableRuntime/src/WVModel.cpp";"PortableRuntime/src/WVModelInternalAccess.hpp";"PortableRuntime/src/WVModelTransformAdapters.cpp";"PortableRuntime/src/WVModelTransformAdapters.hpp";"PortableRuntime/src/WVPortableImplementationContract.cpp";"PortableRuntime/src/WVForcingContracts.cpp";"PortableRuntime/src/WVForcingEngine.cpp";"PortableRuntime/src/WVBarotropicQGForcingEngine.cpp";"PortableRuntime/src/WVIntegrationState.cpp";"PortableRuntime/src/WVRungeKutta.cpp";"PortableRuntime/src/WVObserverAdapter.cpp";"PortableRuntime/src/WVObserverContracts.cpp";"PortableRuntime/src/WVObservation.cpp";"PortableRuntime/src/WVPortableTypedRecord.cpp";"PortableRuntime/src/WVOutputSchedule.cpp";"PortableRuntime/src/WVFieldEvaluationService.cpp";"PortableRuntime/src/WVConstantStratificationIntegrationSystem.cpp"];
-            required = [classFiles;"CompiledKernel/native-fftw-provider.env";"CompiledKernel/adapters/native-fftw/WVNativeFFTWEngine.cpp";"CompiledKernel/adapters/native-fftw/WVNativeFFTWEngine.hpp";"CompiledKernel/adapters/native-fftw/wv_compiled_backend_mex.cpp";"CompiledKernel/src/WVKernelTypes.cpp";"CompiledKernel/src/WVTransformBarotropicQGKernel.cpp";"CompiledKernel/src/WVTransformConstantStratificationKernel.cpp";runtimeSources];
+            buildSource = string(fileread(fullfile(testCase.repositoryRoot,"@WVCompiledBackend","private","wvCompiledBackendBuild.m")));
+            sourceTokens = regexp(buildSource,'"WV[^"/]+\.cpp"','match');
+            sourceNames = unique(erase(string(sourceTokens(:)),'"'));
+            coreFiles = tracked(startsWith(tracked,"CompiledKernel/src/") & endsWith(tracked,".cpp"));
+            [~,coreNames] = fileparts(coreFiles);
+            % The MEX gateway enters WVModel factories, so the complete kernel
+            % library is a link dependency even for constant-model commands.
+            testCase.verifyTrue(all(ismember(coreNames+".cpp",sourceNames)),"The production MEX source list omits a kernel translation unit.");
+            runtimeFiles = "PortableRuntime/src/"+sourceNames;
+            runtimeFiles = runtimeFiles(ismember(runtimeFiles,tracked));
+            headers = tracked((startsWith(tracked,"CompiledKernel/") | startsWith(tracked,"PortableRuntime/")) & endsWith(tracked,".hpp"));
+            required = [classFiles;"CompiledKernel/native-fftw-provider.env";"CompiledKernel/adapters/native-fftw/WVNativeFFTWEngine.cpp";"CompiledKernel/adapters/native-fftw/wv_compiled_backend_mex.cpp";coreFiles;runtimeFiles;headers];
             testCase.verifyTrue(all(ismember(required,tracked)));
             for relative = required'
                 destination = fullfile(exportRoot,relative);
@@ -139,6 +149,11 @@ classdef TestWVCompiledBackend < matlab.unittest.TestCase
             testCase.verifyEqual(capabilities.platform.architecture,"maca64");
             testCase.verifyEqual(capabilities.contract.threadCount,min(18,maxNumCompThreads));
             testCase.verifyEqual(capabilities.contract.planCount,17);
+            testCase.verifyEqual(capabilities.contract.planCountMeaning,"logical-prepared-operation-slots");
+            testCase.verifyEqual(capabilities.module.executionScheduleVersion,1);
+            testCase.verifyEqual(string(capabilities.module.workerPolicyIdentifier),"constant-stage-workers-v1");
+            testCase.verifyEqual(string(capabilities.module.planCountMeaning),"logical-prepared-operation-slots");
+            testCase.verifyTrue(ismember(string(capabilities.module.nonlinearFluxSchedule),["streamed-target-three-channel","retained-compact-streamed-target-three-channel-v1"]));
             testCase.verifyEqual(capabilities.libraries.base.path,string(realpath(fullfile(capabilities.cache.root,"provider","native-neon-pthreads","lib","libfftw3.3.dylib"))));
             testCase.verifyEqual(capabilities.libraries.thread.path,string(realpath(fullfile(capabilities.cache.root,"provider","native-neon-pthreads","lib","libfftw3_threads.3.dylib"))));
             testCase.verifyFalse(capabilities.libraries.openmp.detected);

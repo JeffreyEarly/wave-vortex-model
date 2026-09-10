@@ -1,0 +1,646 @@
+[Warning: Directory access failure: /Users/jearly/Documents/MATLAB]
+CI package: Distributions 2.0.0 (/Users/jearly/Documents/OceanKitRepositories/OceanKit/Distributions-2.0.0)
+CI package: SplineCore 2.2.0 (/Users/jearly/Documents/OceanKitRepositories/OceanKit/SplineCore-2.2.0)
+CI package: chebfun 5.7.0 (/Users/jearly/Documents/OceanKitRepositories/OceanKit/chebfun-5.7.0)
+CI package: InternalModes 1.3.0 (/Users/jearly/Documents/OceanKitRepositories/OceanKit/InternalModes-1.3.0)
+CI package: NetCDF 1.0.2 (/Users/jearly/Documents/OceanKitRepositories/OceanKit/NetCDF-1.0.2)
+CI package: ClassAnnotations 1.2.1 (/Users/jearly/Documents/OceanKitRepositories/OceanKit/ClassAnnotations-1.2.1)
+CI package: WaveVortexModel 4.3.0 (/Users/jearly/Documents/OceanKitRepositories/wvm-v4-cpp-adoption-audit)
+writeConstantAdoptionFixtures.m Code Analyzer findings: 0
+buildConstantAdoptionMex.m Code Analyzer findings: 0
+constantAdoptionMexWorker.m Code Analyzer findings: 1
+         id: 'MSNU'
+    message: 'A Code Analyzer message was once suppressed here, but the message is no longer generated.'
+        fix: 1
+       line: 21
+     column: [70 80]
+
+Building with 'Xcode Clang++'.
+{Error using mex
+ld: warning: building for macOS-13.0, but linking with dylib
+'/Users/jearly/Documents/OceanKitRepositories/wave-vortex-model/.compiled-backend-cache/provider/native-neon-pthreads/lib/libfftw3_threads.3.dylib'
+which was built for newer version 13.3
+ld: warning: building for macOS-13.0, but linking with dylib
+'/Users/jearly/Documents/OceanKitRepositories/wave-vortex-model/.compiled-backend-cache/provider/native-neon-pthreads/lib/libfftw3.3.dylib'
+which was built for newer version 13.3
+Undefined symbols for architecture arm64:
+  "wavevortex::WVTransformBoussinesqKernel::waveModeVerticalStructureAtIndex(unsigned
+  long, wavevortex::WVMatrixView<double>)", referenced from:
+      wavevortex::runtime::detail::createBoussinesqPseudoTopographicForcing(wavevortex::runtime::WVFrozenForcingEntry
+      const&, wavevortex::WVTransformBoussinesqKernel&,
+      wavevortex::runtime::WVForcingPreparation const&,
+      std::__1::unique_ptr<wavevortex::runtime::WVForcing,
+      std::__1::default_delete<wavevortex::runtime::WVForcing>>&) in
+      WVForcingEngine.o
+  "wavevortex::WVTransformHydrostaticKernel::transformToSpatial(wavevortex::WVMatrixView<wavevortex::WVComplex64
+  const>, wavevortex::WVHydrostaticFamily, wavevortex::WVVolumeView<double>)",
+  referenced from:
+      wavevortex::runtime::detail::createHydrostaticPseudoTopographicForcing(wavevortex::runtime::WVFrozenForcingEntry
+      const&, wavevortex::WVTransformHydrostaticKernel&,
+      wavevortex::runtime::WVForcingPreparation const&,
+      std::__1::unique_ptr<wavevortex::runtime::WVForcing,
+      std::__1::default_delete<wavevortex::runtime::WVForcing>>&) in
+      WVForcingEngine.o
+  "wavevortex::runtime::WVBoussinesqForcingEngine::physicalFields(wavevortex::WVState
+  const&, wavevortex::WVFieldBundleView<double const>&)", referenced from:
+      wavevortex::runtime::WVForcingExecutionContext::physicalFields(wavevortex::WVFieldBundleView<double
+      const>&) in WVForcingEngine.o
+      wavevortex::runtime::(anonymous
+      namespace)::QuadraticBottomFrictionForcing::addRightHandSide(wavevortex::runtime::WVForcingExecutionContext&)
+      const in WVForcingEngine.o
+      wavevortex::runtime::(anonymous
+      namespace)::LinearBottomFrictionForcing::addRightHandSide(wavevortex::runtime::WVForcingExecutionContext&)
+      const in WVForcingEngine.o
+  "wavevortex::runtime::WVBoussinesqForcingEngine::addNonlinearFlux(wavevortex::WVState
+  const&, wavevortex::WVFlux&)", referenced from:
+      wavevortex::runtime::WVForcingExecutionContext::nonlinearAdvection() in
+      WVForcingEngine.o
+      wavevortex::runtime::(anonymous
+      namespace)::NonlinearAdvectionForcing::addRightHandSide(wavevortex::runtime::WVForcingExecutionContext&)
+      const in WVForcingEngine.o
+  "wavevortex::runtime::WVBoussinesqForcingEngine::validateSchedule(wavevortex::WVStratifiedModalGeometry
+  const&, wavevortex::runtime::WVFrozenForcingSchedule const&,
+  wavevortex::WVShape2D, wavevortex::runtime::WVExtensionCatalog const&)",
+  referenced from:
+      wavevortex::runtime::detail::validatePersistedModelForcingSchedule(wavevortex::runtime::WVCheckpointInspection
+      const&, wavevortex::runtime::WVFrozenForcingSchedule const&,
+      wavevortex::runtime::WVExtensionCatalog const&) in
+      WVModelTransformAdapters.o
+  "wavevortex::runtime::WVBoussinesqForcingEngine::addAdaptiveDamping(wavevortex::WVState
+  const&, std::__1::vector<double, std::__1::allocator<double>> const&,
+  wavevortex::WVFlux&)", referenced from:
+      wavevortex::runtime::WVForcingExecutionContext::adaptiveDamping(std::__1::vector<double,
+      std::__1::allocator<double>> const&) in WVForcingEngine.o
+  "wavevortex::runtime::WVBoussinesqForcingEngine::addLaplacianDamping(wavevortex::WVState
+  const&, double, double, wavevortex::WVLaplacianDirection,
+  wavevortex::WVFlux&)", referenced from:
+      wavevortex::runtime::WVForcingExecutionContext::laplacianDamping(double,
+      double, wavevortex::WVLaplacianDirection) in WVForcingEngine.o
+  "wavevortex::runtime::WVBoussinesqForcingEngine::addVerticalDiffusivity(wavevortex::WVState
+  const&, double, bool, wavevortex::WVFlux&)", referenced from:
+      wavevortex::runtime::WVForcingExecutionContext::verticalDiffusivity(double,
+      bool) in WVForcingEngine.o
+      wavevortex::runtime::(anonymous
+      namespace)::HydrostaticVerticalDiffusivityForcing::addRightHandSide(wavevortex::runtime::WVForcingExecutionContext&)
+      const in WVForcingEngine.o
+  "wavevortex::runtime::WVBoussinesqForcingEngine::clearedSpatialTendency()",
+  referenced from:
+      wavevortex::runtime::WVForcingExecutionContext::clearedSpatialTendency()
+      in WVForcingEngine.o
+      wavevortex::runtime::(anonymous
+      namespace)::QuadraticBottomFrictionForcing::addRightHandSide(wavevortex::runtime::WVForcingExecutionContext&)
+      const in WVForcingEngine.o
+      wavevortex::runtime::(anonymous
+      namespace)::LinearBottomFrictionForcing::addRightHandSide(wavevortex::runtime::WVForcingExecutionContext&)
+      const in WVForcingEngine.o
+  "wavevortex::runtime::WVBoussinesqForcingEngine::evaluateForcingTendencies(wavevortex::WVState
+  const&, wavevortex::runtime::WVForcingTendencyOutput const*, unsigned long,
+  wavevortex::WVFieldBundleView<double const> const*)", referenced from:
+      wavevortex::WVKernelStatus
+      wavevortex::runtime::detail::WVForcingDiagnosticBinding::create<wavevortex::runtime::WVBoussinesqForcingEngine,
+      false>(wavevortex::runtime::WVBoussinesqForcingEngine&,
+      std::__1::unique_ptr<wavevortex::runtime::detail::WVForcingDiagnosticBinding,
+      std::__1::default_delete<wavevortex::runtime::detail::WVForcingDiagnosticBinding>>&)::'lambda'(void*,
+      wavevortex::WVState const&, wavevortex::runtime::WVForcingTendencyOutput
+      const*, unsigned long, wavevortex::WVFieldBundleView<double const>
+      const*)::__invoke(void*, wavevortex::WVState const&,
+      wavevortex::runtime::WVForcingTendencyOutput const*, unsigned long,
+      wavevortex::WVFieldBundleView<double const> const*) in
+      WVFieldEvaluationService.o
+  "wavevortex::runtime::WVBoussinesqForcingEngine::addProjectedSpatialTendency(wavevortex::WVState
+  const&, wavevortex::WVFieldBundleView<double const>, wavevortex::WVFlux&)",
+  referenced from:
+      wavevortex::runtime::WVForcingExecutionContext::projectSpatialTendency(wavevortex::WVFieldBundleView<double
+      const> const&) in WVForcingEngine.o
+      wavevortex::runtime::(anonymous
+      namespace)::QuadraticBottomFrictionForcing::addRightHandSide(wavevortex::runtime::WVForcingExecutionContext&)
+      const in WVForcingEngine.o
+      wavevortex::runtime::(anonymous
+      namespace)::LinearBottomFrictionForcing::addRightHandSide(wavevortex::runtime::WVForcingExecutionContext&)
+      const in WVForcingEngine.o
+  "wavevortex::runtime::WVBoussinesqForcingEngine::addPseudoTopographicGeneration(wavevortex::WVState
+  const&, wavevortex::runtime::WVPseudoTopographicOperators const&,
+  wavevortex::WVFlux&)", referenced from:
+      wavevortex::runtime::WVForcingExecutionContext::pseudoTopographicGeneration(wavevortex::runtime::WVPseudoTopographicOperators
+      const&) in WVForcingEngine.o
+  "wavevortex::runtime::WVHydrostaticForcingEngine::physicalFields(wavevortex::WVState
+  const&, wavevortex::WVFieldBundleView<double const>&)", referenced from:
+      wavevortex::runtime::WVForcingExecutionContext::physicalFields(wavevortex::WVFieldBundleView<double
+      const>&) in WVForcingEngine.o
+      wavevortex::runtime::(anonymous
+      namespace)::QuadraticBottomFrictionForcing::addRightHandSide(wavevortex::runtime::WVForcingExecutionContext&)
+      const in WVForcingEngine.o
+      wavevortex::runtime::(anonymous
+      namespace)::LinearBottomFrictionForcing::addRightHandSide(wavevortex::runtime::WVForcingExecutionContext&)
+      const in WVForcingEngine.o
+  "wavevortex::runtime::WVHydrostaticForcingEngine::addNonlinearFlux(wavevortex::WVState
+  const&, wavevortex::WVFlux&)", referenced from:
+      wavevortex::runtime::WVForcingExecutionContext::nonlinearAdvection() in
+      WVForcingEngine.o
+      wavevortex::runtime::(anonymous
+      namespace)::NonlinearAdvectionForcing::addRightHandSide(wavevortex::runtime::WVForcingExecutionContext&)
+      const in WVForcingEngine.o
+  "wavevortex::runtime::WVHydrostaticForcingEngine::validateSchedule(wavevortex::WVStratifiedModalGeometry
+  const&, wavevortex::runtime::WVFrozenForcingSchedule const&,
+  wavevortex::WVShape2D, wavevortex::runtime::WVExtensionCatalog const&)",
+  referenced from:
+      wavevortex::runtime::detail::validatePersistedModelForcingSchedule(wavevortex::runtime::WVCheckpointInspection
+      const&, wavevortex::runtime::WVFrozenForcingSchedule const&,
+      wavevortex::runtime::WVExtensionCatalog const&) in
+      WVModelTransformAdapters.o
+  "wavevortex::runtime::WVHydrostaticForcingEngine::addAdaptiveDamping(wavevortex::WVState
+  const&, std::__1::vector<double, std::__1::allocator<double>> const&,
+  wavevortex::WVFlux&)", referenced from:
+      wavevortex::runtime::WVForcingExecutionContext::adaptiveDamping(std::__1::vector<double,
+      std::__1::allocator<double>> const&) in WVForcingEngine.o
+  "wavevortex::runtime::WVHydrostaticForcingEngine::addLaplacianDamping(wavevortex::WVState
+  const&, double, double, wavevortex::WVLaplacianDirection,
+  wavevortex::WVFlux&)", referenced from:
+      wavevortex::runtime::WVForcingExecutionContext::laplacianDamping(double,
+      double, wavevortex::WVLaplacianDirection) in WVForcingEngine.o
+  "wavevortex::runtime::WVHydrostaticForcingEngine::addVerticalDiffusivity(wavevortex::WVState
+  const&, double, bool, wavevortex::WVFlux&)", referenced from:
+      wavevortex::runtime::WVForcingExecutionContext::verticalDiffusivity(double,
+      bool) in WVForcingEngine.o
+      wavevortex::runtime::(anonymous
+      namespace)::HydrostaticVerticalDiffusivityForcing::addRightHandSide(wavevortex::runtime::WVForcingExecutionContext&)
+      const in WVForcingEngine.o
+  "wavevortex::runtime::WVHydrostaticForcingEngine::clearedSpatialTendency()",
+  referenced from:
+      wavevortex::runtime::WVForcingExecutionContext::clearedSpatialTendency()
+      in WVForcingEngine.o
+      wavevortex::runtime::(anonymous
+      namespace)::QuadraticBottomFrictionForcing::addRightHandSide(wavevortex::runtime::WVForcingExecutionContext&)
+      const in WVForcingEngine.o
+      wavevortex::runtime::(anonymous
+      namespace)::LinearBottomFrictionForcing::addRightHandSide(wavevortex::runtime::WVForcingExecutionContext&)
+      const in WVForcingEngine.o
+  "wavevortex::runtime::WVHydrostaticForcingEngine::evaluateForcingTendencies(wavevortex::WVState
+  const&, wavevortex::runtime::WVForcingTendencyOutput const*, unsigned long,
+  wavevortex::WVFieldBundleView<double const> const*)", referenced from:
+      wavevortex::WVKernelStatus
+      wavevortex::runtime::detail::WVForcingDiagnosticBinding::create<wavevortex::runtime::WVHydrostaticForcingEngine,
+      false>(wavevortex::runtime::WVHydrostaticForcingEngine&,
+      std::__1::unique_ptr<wavevortex::runtime::detail::WVForcingDiagnosticBinding,
+      std::__1::default_delete<wavevortex::runtime::detail::WVForcingDiagnosticBinding>>&)::'lambda'(void*,
+      wavevortex::WVState const&, wavevortex::runtime::WVForcingTendencyOutput
+      const*, unsigned long, wavevortex::WVFieldBundleView<double const>
+      const*)::__invoke(void*, wavevortex::WVState const&,
+      wavevortex::runtime::WVForcingTendencyOutput const*, unsigned long,
+      wavevortex::WVFieldBundleView<double const> const*) in
+      WVFieldEvaluationService.o
+  "wavevortex::runtime::WVHydrostaticForcingEngine::addProjectedSpatialTendency(wavevortex::WVState
+  const&, wavevortex::WVFieldBundleView<double const>, wavevortex::WVFlux&)",
+  referenced from:
+      wavevortex::runtime::WVForcingExecutionContext::projectSpatialTendency(wavevortex::WVFieldBundleView<double
+      const> const&) in WVForcingEngine.o
+      wavevortex::runtime::(anonymous
+      namespace)::QuadraticBottomFrictionForcing::addRightHandSide(wavevortex::runtime::WVForcingExecutionContext&)
+      const in WVForcingEngine.o
+      wavevortex::runtime::(anonymous
+      namespace)::LinearBottomFrictionForcing::addRightHandSide(wavevortex::runtime::WVForcingExecutionContext&)
+      const in WVForcingEngine.o
+  "wavevortex::runtime::WVHydrostaticForcingEngine::addPseudoTopographicGeneration(wavevortex::WVState
+  const&, wavevortex::runtime::WVPseudoTopographicOperators const&,
+  wavevortex::WVFlux&)", referenced from:
+      wavevortex::runtime::WVForcingExecutionContext::pseudoTopographicGeneration(wavevortex::runtime::WVPseudoTopographicOperators
+      const&) in WVForcingEngine.o
+  "wavevortex::runtime::WVStratifiedQGForcingEngine::validateSchedule(wavevortex::WVStratifiedModalGeometry
+  const&, wavevortex::runtime::WVFrozenForcingSchedule const&, unsigned long,
+  wavevortex::runtime::WVExtensionCatalog const&)", referenced from:
+      wavevortex::runtime::detail::validatePersistedModelForcingSchedule(wavevortex::runtime::WVCheckpointInspection
+      const&, wavevortex::runtime::WVFrozenForcingSchedule const&,
+      wavevortex::runtime::WVExtensionCatalog const&) in
+      WVModelTransformAdapters.o
+  "wavevortex::runtime::WVStratifiedQGForcingEngine::evaluateForcingTendencies(wavevortex::WVMatrixView<wavevortex::WVComplex64
+  const> const&, wavevortex::runtime::WVForcingTendencyOutput const*, unsigned
+  long, wavevortex::WVFieldBundleView<double const> const*)", referenced from:
+      wavevortex::WVKernelStatus
+      wavevortex::runtime::detail::WVForcingDiagnosticBinding::create<wavevortex::runtime::WVStratifiedQGForcingEngine,
+      true>(wavevortex::runtime::WVStratifiedQGForcingEngine&,
+      std::__1::unique_ptr<wavevortex::runtime::detail::WVForcingDiagnosticBinding,
+      std::__1::default_delete<wavevortex::runtime::detail::WVForcingDiagnosticBinding>>&)::'lambda'(void*,
+      wavevortex::WVState const&, wavevortex::runtime::WVForcingTendencyOutput
+      const*, unsigned long, wavevortex::WVFieldBundleView<double const>
+      const*)::__invoke(void*, wavevortex::WVState const&,
+      wavevortex::runtime::WVForcingTendencyOutput const*, unsigned long,
+      wavevortex::WVFieldBundleView<double const> const*) in
+      WVFieldEvaluationService.o
+  "wavevortex::runtime::WVStratifiedQGForcingEngine::~WVStratifiedQGForcingEngine()",
+  referenced from:
+      wavevortex::runtime::WVStratifiedQGIntegrationSystem::~WVStratifiedQGIntegrationSystem()
+      in WVModelTransformAdapters.o
+  "wavevortex::runtime::WVBoussinesqIntegrationSystem::create(std::__1::shared_ptr<wavevortex::WVStratifiedModalSource
+  const>, wavevortex::runtime::WVFrozenForcingSchedule const&,
+  std::__1::shared_ptr<wavevortex::runtime::WVExtensionCatalog const>,
+  std::__1::unique_ptr<wavevortex::WVFFTEngine,
+  std::__1::default_delete<wavevortex::WVFFTEngine>>,
+  std::__1::unique_ptr<wavevortex::runtime::WVBoussinesqIntegrationSystem,
+  std::__1::default_delete<wavevortex::runtime::WVBoussinesqIntegrationSystem>>&)",
+  referenced from:
+      wavevortex::runtime::detail::createBoussinesqModelSystem(std::__1::shared_ptr<wavevortex::WVStratifiedModalSource
+      const>, wavevortex::runtime::WVFrozenForcingSchedule const&,
+      wavevortex::runtime::WVPortableObserverDescriptor const*,
+      std::__1::shared_ptr<wavevortex::runtime::WVExtensionCatalog const>,
+      std::__1::unique_ptr<wavevortex::WVFFTEngine,
+      std::__1::default_delete<wavevortex::WVFFTEngine>>,
+      std::__1::unique_ptr<wavevortex::runtime::detail::WVResolvedModelSystem,
+      std::__1::default_delete<wavevortex::runtime::detail::WVResolvedModelSystem>>&)
+      in WVModelTransformAdapters.o
+  "wavevortex::runtime::WVBoussinesqIntegrationSystem::create(std::__1::shared_ptr<wavevortex::WVStratifiedModalSource
+  const>, wavevortex::runtime::WVFrozenForcingSchedule const&,
+  wavevortex::runtime::WVPortableObserverDescriptor const&,
+  std::__1::shared_ptr<wavevortex::runtime::WVExtensionCatalog const>,
+  std::__1::unique_ptr<wavevortex::WVFFTEngine,
+  std::__1::default_delete<wavevortex::WVFFTEngine>>,
+  std::__1::unique_ptr<wavevortex::runtime::WVBoussinesqIntegrationSystem,
+  std::__1::default_delete<wavevortex::runtime::WVBoussinesqIntegrationSystem>>&)",
+  referenced from:
+      wavevortex::runtime::detail::createBoussinesqModelSystem(std::__1::shared_ptr<wavevortex::WVStratifiedModalSource
+      const>, wavevortex::runtime::WVFrozenForcingSchedule const&,
+      wavevortex::runtime::WVPortableObserverDescriptor const*,
+      std::__1::shared_ptr<wavevortex::runtime::WVExtensionCatalog const>,
+      std::__1::unique_ptr<wavevortex::WVFFTEngine,
+      std::__1::default_delete<wavevortex::WVFFTEngine>>,
+      std::__1::unique_ptr<wavevortex::runtime::detail::WVResolvedModelSystem,
+      std::__1::default_delete<wavevortex::runtime::detail::WVResolvedModelSystem>>&)
+      in WVModelTransformAdapters.o
+  "wavevortex::runtime::WVBoussinesqIntegrationSystem::~WVBoussinesqIntegrationSystem()",
+  referenced from:
+      wavevortex::runtime::detail::createBoussinesqModelSystem(std::__1::shared_ptr<wavevortex::WVStratifiedModalSource
+      const>, wavevortex::runtime::WVFrozenForcingSchedule const&,
+      wavevortex::runtime::WVPortableObserverDescriptor const*,
+      std::__1::shared_ptr<wavevortex::runtime::WVExtensionCatalog const>,
+      std::__1::unique_ptr<wavevortex::WVFFTEngine,
+      std::__1::default_delete<wavevortex::WVFFTEngine>>,
+      std::__1::unique_ptr<wavevortex::runtime::detail::WVResolvedModelSystem,
+      std::__1::default_delete<wavevortex::runtime::detail::WVResolvedModelSystem>>&)
+      in WVModelTransformAdapters.o
+      std::__1::unique_ptr<wavevortex::runtime::WVBoussinesqIntegrationSystem,
+      std::__1::default_delete<wavevortex::runtime::WVBoussinesqIntegrationSystem>>::~unique_ptr[abi:nqe210106]()
+      in WVModelTransformAdapters.o
+      wavevortex::runtime::detail::(anonymous
+      namespace)::BoussinesqModelSystem::~BoussinesqModelSystem() in
+      WVModelTransformAdapters.o
+      wavevortex::runtime::detail::(anonymous
+      namespace)::BoussinesqModelSystem::~BoussinesqModelSystem() in
+      WVModelTransformAdapters.o
+  "wavevortex::runtime::WVHydrostaticIntegrationSystem::create(std::__1::shared_ptr<wavevortex::WVStratifiedModalSource
+  const>, wavevortex::runtime::WVFrozenForcingSchedule const&,
+  std::__1::shared_ptr<wavevortex::runtime::WVExtensionCatalog const>,
+  std::__1::unique_ptr<wavevortex::WVFFTEngine,
+  std::__1::default_delete<wavevortex::WVFFTEngine>>,
+  std::__1::unique_ptr<wavevortex::runtime::WVHydrostaticIntegrationSystem,
+  std::__1::default_delete<wavevortex::runtime::WVHydrostaticIntegrationSystem>>&)",
+  referenced from:
+      wavevortex::runtime::detail::createHydrostaticModelSystem(std::__1::shared_ptr<wavevortex::WVStratifiedModalSource
+      const>, wavevortex::runtime::WVFrozenForcingSchedule const&,
+      wavevortex::runtime::WVPortableObserverDescriptor const*,
+      std::__1::shared_ptr<wavevortex::runtime::WVExtensionCatalog const>,
+      std::__1::unique_ptr<wavevortex::WVFFTEngine,
+      std::__1::default_delete<wavevortex::WVFFTEngine>>,
+      std::__1::unique_ptr<wavevortex::runtime::detail::WVResolvedModelSystem,
+      std::__1::default_delete<wavevortex::runtime::detail::WVResolvedModelSystem>>&)
+      in WVModelTransformAdapters.o
+  "wavevortex::runtime::WVHydrostaticIntegrationSystem::create(std::__1::shared_ptr<wavevortex::WVStratifiedModalSource
+  const>, wavevortex::runtime::WVFrozenForcingSchedule const&,
+  wavevortex::runtime::WVPortableObserverDescriptor const&,
+  std::__1::shared_ptr<wavevortex::runtime::WVExtensionCatalog const>,
+  std::__1::unique_ptr<wavevortex::WVFFTEngine,
+  std::__1::default_delete<wavevortex::WVFFTEngine>>,
+  std::__1::unique_ptr<wavevortex::runtime::WVHydrostaticIntegrationSystem,
+  std::__1::default_delete<wavevortex::runtime::WVHydrostaticIntegrationSystem>>&)",
+  referenced from:
+      wavevortex::runtime::detail::createHydrostaticModelSystem(std::__1::shared_ptr<wavevortex::WVStratifiedModalSource
+      const>, wavevortex::runtime::WVFrozenForcingSchedule const&,
+      wavevortex::runtime::WVPortableObserverDescriptor const*,
+      std::__1::shared_ptr<wavevortex::runtime::WVExtensionCatalog const>,
+      std::__1::unique_ptr<wavevortex::WVFFTEngine,
+      std::__1::default_delete<wavevortex::WVFFTEngine>>,
+      std::__1::unique_ptr<wavevortex::runtime::detail::WVResolvedModelSystem,
+      std::__1::default_delete<wavevortex::runtime::detail::WVResolvedModelSystem>>&)
+      in WVModelTransformAdapters.o
+  "wavevortex::runtime::WVHydrostaticIntegrationSystem::~WVHydrostaticIntegrationSystem()",
+  referenced from:
+      wavevortex::runtime::detail::createHydrostaticModelSystem(std::__1::shared_ptr<wavevortex::WVStratifiedModalSource
+      const>, wavevortex::runtime::WVFrozenForcingSchedule const&,
+      wavevortex::runtime::WVPortableObserverDescriptor const*,
+      std::__1::shared_ptr<wavevortex::runtime::WVExtensionCatalog const>,
+      std::__1::unique_ptr<wavevortex::WVFFTEngine,
+      std::__1::default_delete<wavevortex::WVFFTEngine>>,
+      std::__1::unique_ptr<wavevortex::runtime::detail::WVResolvedModelSystem,
+      std::__1::default_delete<wavevortex::runtime::detail::WVResolvedModelSystem>>&)
+      in WVModelTransformAdapters.o
+      std::__1::unique_ptr<wavevortex::runtime::WVHydrostaticIntegrationSystem,
+      std::__1::default_delete<wavevortex::runtime::WVHydrostaticIntegrationSystem>>::~unique_ptr[abi:nqe210106]()
+      in WVModelTransformAdapters.o
+      wavevortex::runtime::detail::(anonymous
+      namespace)::HydrostaticModelSystem::~HydrostaticModelSystem() in
+      WVModelTransformAdapters.o
+      wavevortex::runtime::detail::(anonymous
+      namespace)::HydrostaticModelSystem::~HydrostaticModelSystem() in
+      WVModelTransformAdapters.o
+  "wavevortex::runtime::WVStratifiedQGIntegrationSystem::create(std::__1::shared_ptr<wavevortex::WVStratifiedModalSource
+  const>, wavevortex::runtime::WVFrozenForcingSchedule const&,
+  std::__1::shared_ptr<wavevortex::runtime::WVExtensionCatalog const>,
+  std::__1::unique_ptr<wavevortex::WVFFTEngine,
+  std::__1::default_delete<wavevortex::WVFFTEngine>>,
+  std::__1::unique_ptr<wavevortex::runtime::WVStratifiedQGIntegrationSystem,
+  std::__1::default_delete<wavevortex::runtime::WVStratifiedQGIntegrationSystem>>&)",
+  referenced from:
+      wavevortex::runtime::detail::createStratifiedQGModelSystem(std::__1::shared_ptr<wavevortex::WVStratifiedModalSource
+      const>, wavevortex::runtime::WVFrozenForcingSchedule const&,
+      wavevortex::runtime::WVPortableObserverDescriptor const*,
+      std::__1::shared_ptr<wavevortex::runtime::WVExtensionCatalog const>,
+      std::__1::unique_ptr<wavevortex::WVFFTEngine,
+      std::__1::default_delete<wavevortex::WVFFTEngine>>,
+      std::__1::unique_ptr<wavevortex::runtime::detail::WVResolvedModelSystem,
+      std::__1::default_delete<wavevortex::runtime::detail::WVResolvedModelSystem>>&)
+      in WVModelTransformAdapters.o
+  "wavevortex::runtime::WVStratifiedQGIntegrationSystem::create(std::__1::shared_ptr<wavevortex::WVStratifiedModalSource
+  const>, wavevortex::runtime::WVFrozenForcingSchedule const&,
+  wavevortex::runtime::WVPortableObserverDescriptor const&,
+  std::__1::shared_ptr<wavevortex::runtime::WVExtensionCatalog const>,
+  std::__1::unique_ptr<wavevortex::WVFFTEngine,
+  std::__1::default_delete<wavevortex::WVFFTEngine>>,
+  std::__1::unique_ptr<wavevortex::runtime::WVStratifiedQGIntegrationSystem,
+  std::__1::default_delete<wavevortex::runtime::WVStratifiedQGIntegrationSystem>>&)",
+  referenced from:
+      wavevortex::runtime::detail::createStratifiedQGModelSystem(std::__1::shared_ptr<wavevortex::WVStratifiedModalSource
+      const>, wavevortex::runtime::WVFrozenForcingSchedule const&,
+      wavevortex::runtime::WVPortableObserverDescriptor const*,
+      std::__1::shared_ptr<wavevortex::runtime::WVExtensionCatalog const>,
+      std::__1::unique_ptr<wavevortex::WVFFTEngine,
+      std::__1::default_delete<wavevortex::WVFFTEngine>>,
+      std::__1::unique_ptr<wavevortex::runtime::detail::WVResolvedModelSystem,
+      std::__1::default_delete<wavevortex::runtime::detail::WVResolvedModelSystem>>&)
+      in WVModelTransformAdapters.o
+  "wavevortex::runtime::detail::WVDiagnosticFieldPlan::configurationIdentifier(wavevortex::runtime::WVFieldEvaluationService
+  const&)", referenced from:
+      wavevortex::runtime::WVFieldEvaluationService::portableVariableConfiguration()
+      const in WVFieldEvaluationService.o
+  "wavevortex::runtime::detail::WVDiagnosticFieldPlan::create(wavevortex::runtime::WVFieldEvaluationService
+  const&, std::__1::vector<wavevortex::runtime::WVFieldRequest,
+  std::__1::allocator<wavevortex::runtime::WVFieldRequest>> const&,
+  wavevortex::runtime::WVFieldEvaluationPlan&,
+  wavevortex::runtime::WVDensityDiagnosticContract)", referenced from:
+      wavevortex::runtime::WVFieldEvaluationService::createPlan(std::__1::vector<wavevortex::runtime::WVFieldRequest,
+      std::__1::allocator<wavevortex::runtime::WVFieldRequest>> const&,
+      wavevortex::runtime::WVFieldEvaluationPlan&,
+      wavevortex::runtime::WVDensityDiagnosticContract) const in
+      WVFieldEvaluationService.o
+  "wavevortex::runtime::detail::WVDiagnosticFieldPlan::required(std::__1::vector<wavevortex::runtime::WVFieldRequest,
+  std::__1::allocator<wavevortex::runtime::WVFieldRequest>> const&, bool)",
+  referenced from:
+      wavevortex::runtime::WVFieldEvaluationService::createPlan(std::__1::vector<wavevortex::runtime::WVFieldRequest,
+      std::__1::allocator<wavevortex::runtime::WVFieldRequest>> const&,
+      wavevortex::runtime::WVFieldEvaluationPlan&,
+      wavevortex::runtime::WVDensityDiagnosticContract) const in
+      WVFieldEvaluationService.o
+  "wavevortex::runtime::detail::WVDensityEventEvaluation::release()",
+  referenced from:
+      wavevortex::runtime::detail::WVFieldEvaluationEventScope::release() in
+      WVFieldEvaluationService.o
+  "wavevortex::runtime::detail::createStratifiedQGFixedAmplitude(wavevortex::runtime::WVFrozenForcingEntry
+  const&, wavevortex::WVStratifiedModalGeometry const&, bool,
+  std::__1::unique_ptr<wavevortex::runtime::WVStratifiedQGForcing,
+  std::__1::default_delete<wavevortex::runtime::WVStratifiedQGForcing>>&)",
+  referenced from:
+      wavevortex::runtime::builtInForcingFactories() in WVForcingContracts.o
+      wavevortex::runtime::builtInForcingFactories() in WVForcingContracts.o
+  "wavevortex::runtime::detail::createStratifiedQGAdaptiveDamping(wavevortex::runtime::WVFrozenForcingEntry
+  const&, wavevortex::WVStratifiedModalGeometry const&, bool,
+  std::__1::unique_ptr<wavevortex::runtime::WVStratifiedQGForcing,
+  std::__1::default_delete<wavevortex::runtime::WVStratifiedQGForcing>>&)",
+  referenced from:
+      wavevortex::runtime::builtInForcingFactories() in WVForcingContracts.o
+  "wavevortex::runtime::detail::preflightStratifiedQGEmptyForcing(wavevortex::runtime::WVFrozenForcingEntry
+  const&, unsigned long)", referenced from:
+      wavevortex::runtime::builtInForcingFactories() in WVForcingContracts.o
+      wavevortex::runtime::builtInForcingFactories() in WVForcingContracts.o
+      wavevortex::runtime::builtInForcingFactories() in WVForcingContracts.o
+  "wavevortex::runtime::detail::WVStratifiedFieldEvaluationAdapter::evaluateMoving(wavevortex::runtime::WVMovingFieldEvaluationPlan
+  const&, wavevortex::runtime::WVIntegrationState const&,
+  wavevortex::runtime::WVMovingPositionView,
+  wavevortex::runtime::WVFieldOutputView*, unsigned long, unsigned char
+  const*)", referenced from:
+      wavevortex::runtime::WVFieldEvaluationService::evaluateMoving(wavevortex::runtime::WVMovingFieldEvaluationPlan
+      const&, wavevortex::runtime::WVIntegrationState const&,
+      wavevortex::runtime::WVMovingPositionView,
+      wavevortex::runtime::WVFieldOutputView*, unsigned long, unsigned char
+      const*) in WVFieldEvaluationService.o
+  "wavevortex::runtime::detail::WVStratifiedFieldEvaluationAdapter::createBorrowing(wavevortex::WVTransformBoussinesqKernel&,
+  std::__1::unique_ptr<wavevortex::runtime::detail::WVStratifiedFieldEvaluationAdapter,
+  std::__1::default_delete<wavevortex::runtime::detail::WVStratifiedFieldEvaluationAdapter>>&)",
+  referenced from:
+      wavevortex::runtime::WVFieldEvaluationService::createBorrowing(wavevortex::WVTransformBoussinesqKernel&,
+      std::__1::unique_ptr<wavevortex::runtime::WVFieldEvaluationService,
+      std::__1::default_delete<wavevortex::runtime::WVFieldEvaluationService>>&)
+      in WVFieldEvaluationService.o
+  "wavevortex::runtime::detail::WVStratifiedFieldEvaluationAdapter::createBorrowing(wavevortex::WVTransformHydrostaticKernel&,
+  std::__1::unique_ptr<wavevortex::runtime::detail::WVStratifiedFieldEvaluationAdapter,
+  std::__1::default_delete<wavevortex::runtime::detail::WVStratifiedFieldEvaluationAdapter>>&)",
+  referenced from:
+      wavevortex::runtime::WVFieldEvaluationService::createBorrowing(wavevortex::WVTransformHydrostaticKernel&,
+      std::__1::unique_ptr<wavevortex::runtime::WVFieldEvaluationService,
+      std::__1::default_delete<wavevortex::runtime::WVFieldEvaluationService>>&)
+      in WVFieldEvaluationService.o
+  "wavevortex::runtime::detail::WVStratifiedFieldEvaluationAdapter::createBorrowing(wavevortex::WVTransformStratifiedQGKernel&,
+  std::__1::unique_ptr<wavevortex::runtime::detail::WVStratifiedFieldEvaluationAdapter,
+  std::__1::default_delete<wavevortex::runtime::detail::WVStratifiedFieldEvaluationAdapter>>&)",
+  referenced from:
+      wavevortex::runtime::WVFieldEvaluationService::createBorrowing(wavevortex::WVTransformStratifiedQGKernel&,
+      std::__1::unique_ptr<wavevortex::runtime::WVFieldEvaluationService,
+      std::__1::default_delete<wavevortex::runtime::WVFieldEvaluationService>>&)
+      in WVFieldEvaluationService.o
+  "wavevortex::runtime::detail::WVStratifiedFieldEvaluationAdapter::createEventPlan(std::__1::vector<wavevortex::runtime::WVEventFieldRequest,
+  std::__1::allocator<wavevortex::runtime::WVEventFieldRequest>> const&,
+  wavevortex::runtime::WVEventFieldEvaluationPlan&)", referenced from:
+      wavevortex::runtime::WVFieldEvaluationService::createEventPlan(std::__1::vector<wavevortex::runtime::WVEventFieldRequest,
+      std::__1::allocator<wavevortex::runtime::WVEventFieldRequest>> const&,
+      wavevortex::runtime::WVEventFieldEvaluationPlan&) in
+      WVFieldEvaluationService.o
+  "wavevortex::runtime::detail::WVStratifiedFieldEvaluationAdapter::evaluateEventBatch(wavevortex::runtime::WVIntegrationState
+  const&, wavevortex::runtime::WVEventFieldEvaluationBatchEntry const*,
+  unsigned long)", referenced from:
+      wavevortex::runtime::WVFieldEvaluationService::evaluateEvent(wavevortex::runtime::WVEventFieldEvaluationPlan
+      const&, wavevortex::runtime::WVPreparedFieldGeometry const&,
+      wavevortex::runtime::WVIntegrationState const&,
+      wavevortex::runtime::WVFieldOutputView*, unsigned long) in
+      WVFieldEvaluationService.o
+      wavevortex::runtime::WVFieldEvaluationService::evaluateEventBatch(wavevortex::runtime::WVIntegrationState
+      const&, wavevortex::runtime::WVEventFieldEvaluationBatchEntry const*,
+      unsigned long) in WVFieldEvaluationService.o
+  "wavevortex::runtime::detail::WVStratifiedFieldEvaluationAdapter::prepareEventGeometry(wavevortex::runtime::WVEventFieldEvaluationPlan
+  const&, wavevortex::runtime::WVEventPositionSetView const*, unsigned long,
+  wavevortex::runtime::WVPreparedFieldGeometry&)", referenced from:
+      wavevortex::runtime::WVFieldEvaluationService::prepareEventGeometry(wavevortex::runtime::WVEventFieldEvaluationPlan
+      const&, wavevortex::runtime::WVEventPositionSetView const*, unsigned
+      long, wavevortex::runtime::WVPreparedFieldGeometry&) in
+      WVFieldEvaluationService.o
+  "wavevortex::runtime::detail::WVStratifiedFieldEvaluationAdapter::evaluateMovingFromAdvectionFields(wavevortex::runtime::WVMovingFieldEvaluationPlan
+  const&, wavevortex::runtime::WVIntegrationState const&,
+  wavevortex::WVFieldBundleView<double const> const&,
+  wavevortex::runtime::WVMovingPositionView,
+  wavevortex::runtime::WVFieldOutputView*, unsigned long, unsigned char
+  const*)", referenced from:
+      wavevortex::runtime::WVFieldEvaluationService::evaluateMovingFromAdvectionFields(wavevortex::runtime::WVMovingFieldEvaluationPlan
+      const&, wavevortex::runtime::WVIntegrationState const&,
+      wavevortex::WVFieldBundleView<double const> const&,
+      wavevortex::runtime::WVMovingPositionView,
+      wavevortex::runtime::WVFieldOutputView*, unsigned long, unsigned char
+      const*) in WVFieldEvaluationService.o
+  "wavevortex::runtime::detail::WVStratifiedFieldEvaluationAdapter::create(std::__1::shared_ptr<wavevortex::WVStratifiedModalSource
+  const>, std::__1::unique_ptr<wavevortex::WVFFTEngine,
+  std::__1::default_delete<wavevortex::WVFFTEngine>>,
+  std::__1::unique_ptr<wavevortex::runtime::detail::WVStratifiedFieldEvaluationAdapter,
+  std::__1::default_delete<wavevortex::runtime::detail::WVStratifiedFieldEvaluationAdapter>>&)",
+  referenced from:
+      wavevortex::runtime::WVFieldEvaluationService::create(std::__1::shared_ptr<wavevortex::WVStratifiedModalSource
+      const>, std::__1::unique_ptr<wavevortex::WVFFTEngine,
+      std::__1::default_delete<wavevortex::WVFFTEngine>>,
+      std::__1::unique_ptr<wavevortex::runtime::WVFieldEvaluationService,
+      std::__1::default_delete<wavevortex::runtime::WVFieldEvaluationService>>&)
+      in WVFieldEvaluationService.o
+  "wavevortex::runtime::detail::WVStratifiedFieldEvaluationAdapter::evaluate(wavevortex::runtime::WVFieldEvaluationPlan
+  const&, wavevortex::runtime::WVIntegrationState const&,
+  wavevortex::runtime::WVFieldOutputView*, unsigned long, unsigned char
+  const*)", referenced from:
+      wavevortex::runtime::WVFieldEvaluationService::evaluate(wavevortex::runtime::WVFieldEvaluationPlan
+      const&, wavevortex::runtime::WVIntegrationState const&,
+      wavevortex::runtime::WVFieldOutputView*, unsigned long, unsigned char
+      const*) in WVFieldEvaluationService.o
+  "wavevortex::runtime::detail::WVStratifiedFieldEvaluationAdapter::~WVStratifiedFieldEvaluationAdapter()",
+  referenced from:
+      wavevortex::runtime::WVFieldEvaluationService::~WVFieldEvaluationService()
+      in WVFieldEvaluationService.o
+  "wavevortex::runtime::detail::preflightStratifiedQGScalarForcing(wavevortex::runtime::WVFrozenForcingEntry
+  const&, unsigned long)", referenced from:
+      wavevortex::runtime::builtInForcingFactories() in WVForcingContracts.o
+      wavevortex::runtime::builtInForcingFactories() in WVForcingContracts.o
+  "wavevortex::runtime::detail::preflightStratifiedQGFixedAmplitude(wavevortex::runtime::WVFrozenForcingEntry
+  const&, unsigned long)", referenced from:
+      wavevortex::runtime::builtInForcingFactories() in WVForcingContracts.o
+      wavevortex::runtime::builtInForcingFactories() in WVForcingContracts.o
+  "wavevortex::runtime::detail::createStratifiedQGNonlinearAdvection(wavevortex::runtime::WVFrozenForcingEntry
+  const&, wavevortex::WVStratifiedModalGeometry const&, bool,
+  std::__1::unique_ptr<wavevortex::runtime::WVStratifiedQGForcing,
+  std::__1::default_delete<wavevortex::runtime::WVStratifiedQGForcing>>&)",
+  referenced from:
+      wavevortex::runtime::builtInForcingFactories() in WVForcingContracts.o
+  "wavevortex::runtime::detail::createStratifiedQGVerticalDiffusivity(wavevortex::runtime::WVFrozenForcingEntry
+  const&, wavevortex::WVStratifiedModalGeometry const&, bool,
+  std::__1::unique_ptr<wavevortex::runtime::WVStratifiedQGForcing,
+  std::__1::default_delete<wavevortex::runtime::WVStratifiedQGForcing>>&)",
+  referenced from:
+      wavevortex::runtime::builtInForcingFactories() in WVForcingContracts.o
+  "wavevortex::runtime::detail::createStratifiedQGBetaPlanePVAdvection(wavevortex::runtime::WVFrozenForcingEntry
+  const&, wavevortex::WVStratifiedModalGeometry const&, bool,
+  std::__1::unique_ptr<wavevortex::runtime::WVStratifiedQGForcing,
+  std::__1::default_delete<wavevortex::runtime::WVStratifiedQGForcing>>&)",
+  referenced from:
+      wavevortex::runtime::builtInForcingFactories() in WVForcingContracts.o
+  "wavevortex::runtime::detail::createStratifiedQGExplicitAntialiasing(wavevortex::runtime::WVFrozenForcingEntry
+  const&, wavevortex::WVStratifiedModalGeometry const&, bool,
+  std::__1::unique_ptr<wavevortex::runtime::WVStratifiedQGForcing,
+  std::__1::default_delete<wavevortex::runtime::WVStratifiedQGForcing>>&)",
+  referenced from:
+      wavevortex::runtime::builtInForcingFactories() in WVForcingContracts.o
+  "wavevortex::runtime::detail::createStratifiedQGLinearBottomFriction(wavevortex::runtime::WVFrozenForcingEntry
+  const&, wavevortex::WVStratifiedModalGeometry const&, bool,
+  std::__1::unique_ptr<wavevortex::runtime::WVStratifiedQGForcing,
+  std::__1::default_delete<wavevortex::runtime::WVStratifiedQGForcing>>&)",
+  referenced from:
+      wavevortex::runtime::builtInForcingFactories() in WVForcingContracts.o
+  "wavevortex::runtime::detail::preflightStratifiedQGVerticalDiffusivity(wavevortex::runtime::WVFrozenForcingEntry
+  const&, unsigned long)", referenced from:
+      wavevortex::runtime::builtInForcingFactories() in WVForcingContracts.o
+  "wavevortex::runtime::detail::createStratifiedQGQuadraticBottomFriction(wavevortex::runtime::WVFrozenForcingEntry
+  const&, wavevortex::WVStratifiedModalGeometry const&, bool,
+  std::__1::unique_ptr<wavevortex::runtime::WVStratifiedQGForcing,
+  std::__1::default_delete<wavevortex::runtime::WVStratifiedQGForcing>>&)",
+  referenced from:
+      wavevortex::runtime::builtInForcingFactories() in WVForcingContracts.o
+  "wavevortex::runtime::detail::preflightStratifiedQGExplicitAntialiasing(wavevortex::runtime::WVFrozenForcingEntry
+  const&, unsigned long)", referenced from:
+      wavevortex::runtime::builtInForcingFactories() in WVForcingContracts.o
+  "wavevortex::runtime::WVBoussinesqIntegrationSystem::initializeParticleState(wavevortex::runtime::WVMutableIntegrationState&)
+  const", referenced from:
+      wavevortex::runtime::detail::(anonymous
+      namespace)::BoussinesqModelSystem::initializeObserverState(wavevortex::runtime::WVMutableIntegrationState&)
+      const in WVModelTransformAdapters.o
+  "wavevortex::runtime::WVHydrostaticIntegrationSystem::initializeParticleState(wavevortex::runtime::WVMutableIntegrationState&)
+  const", referenced from:
+      wavevortex::runtime::detail::(anonymous
+      namespace)::HydrostaticModelSystem::initializeObserverState(wavevortex::runtime::WVMutableIntegrationState&)
+      const in WVModelTransformAdapters.o
+  "wavevortex::runtime::WVStratifiedQGIntegrationSystem::initializeParticleState(wavevortex::runtime::WVMutableIntegrationState&)
+  const", referenced from:
+      wavevortex::runtime::detail::(anonymous
+      namespace)::StratifiedQGModelSystem::initializeObserverState(wavevortex::runtime::WVMutableIntegrationState&)
+      const in WVModelTransformAdapters.o
+  "wavevortex::runtime::detail::WVDiagnosticFieldPlan::persistentBytes()
+  const", referenced from:
+      wavevortex::runtime::WVFieldEvaluationPlan::persistentBytes() const in
+      WVFieldEvaluationService.o
+  "wavevortex::runtime::detail::WVDiagnosticFieldPlan::evaluate(wavevortex::runtime::WVFieldEvaluationService&,
+  wavevortex::runtime::WVIntegrationState const&,
+  wavevortex::runtime::WVFieldOutputView*, unsigned long, unsigned char const*)
+  const", referenced from:
+      wavevortex::runtime::WVFieldEvaluationService::evaluate(wavevortex::runtime::WVFieldEvaluationPlan
+      const&, wavevortex::WVState const&,
+      wavevortex::runtime::WVFieldOutputView*, unsigned long, unsigned char
+      const*) in WVFieldEvaluationService.o
+      wavevortex::runtime::WVFieldEvaluationService::evaluate(wavevortex::runtime::WVFieldEvaluationPlan
+      const&, wavevortex::runtime::WVIntegrationState const&,
+      wavevortex::runtime::WVFieldOutputView*, unsigned long, unsigned char
+      const*) in WVFieldEvaluationService.o
+  "wavevortex::runtime::detail::WVStratifiedFieldEvaluationAdapter::createPlan(std::__1::vector<wavevortex::runtime::WVFieldRequest,
+  std::__1::allocator<wavevortex::runtime::WVFieldRequest>> const&,
+  wavevortex::runtime::WVFieldEvaluationPlan&) const", referenced from:
+      wavevortex::runtime::WVFieldEvaluationService::createPlan(std::__1::vector<wavevortex::runtime::WVFieldRequest,
+      std::__1::allocator<wavevortex::runtime::WVFieldRequest>> const&,
+      wavevortex::runtime::WVFieldEvaluationPlan&,
+      wavevortex::runtime::WVDensityDiagnosticContract) const in
+      WVFieldEvaluationService.o
+  "wavevortex::runtime::detail::WVStratifiedFieldEvaluationAdapter::configuration()
+  const", referenced from:
+      wavevortex::runtime::WVFieldEvaluationService::stratifiedGeometry() const
+      in WVFieldEvaluationService.o
+      wavevortex::runtime::WVFieldEvaluationService::createStateLayout(wavevortex::runtime::WVPortableObserverDescriptor
+      const&, wavevortex::runtime::WVIntegrationStateLayout&) const in
+      WVFieldEvaluationService.o
+      wavevortex::runtime::WVFieldEvaluationService::isCompatibleWith(wavevortex::runtime::WVFieldEvaluationService
+      const&) const in WVFieldEvaluationService.o
+      wavevortex::runtime::WVFieldEvaluationService::isCompatibleWith(wavevortex::runtime::WVFieldEvaluationService
+      const&) const in WVFieldEvaluationService.o
+  "wavevortex::runtime::detail::WVStratifiedFieldEvaluationAdapter::persistentBytes()
+  const", referenced from:
+      wavevortex::runtime::WVFieldEvaluationService::persistentBytes() const in
+      WVFieldEvaluationService.o
+  "wavevortex::runtime::detail::WVStratifiedFieldEvaluationAdapter::createMovingPlan(std::__1::vector<wavevortex::runtime::WVMovingFieldRequest,
+  std::__1::allocator<wavevortex::runtime::WVMovingFieldRequest>> const&,
+  wavevortex::runtime::WVMovingFieldEvaluationPlan&) const", referenced from:
+      wavevortex::runtime::WVFieldEvaluationService::createMovingPlan(std::__1::vector<wavevortex::runtime::WVMovingFieldRequest,
+      std::__1::allocator<wavevortex::runtime::WVMovingFieldRequest>> const&,
+      wavevortex::runtime::WVMovingFieldEvaluationPlan&) const in
+      WVFieldEvaluationService.o
+  "wavevortex::runtime::detail::WVStratifiedFieldEvaluationAdapter::isCompatibleWith(wavevortex::runtime::WVIntegrationStateLayout
+  const&) const", referenced from:
+      wavevortex::runtime::WVFieldEvaluationService::isCompatibleWith(wavevortex::runtime::WVIntegrationStateLayout
+      const&) const in WVFieldEvaluationService.o
+ld: symbol(s) not found for architecture arm64
+clang++: error: linker command failed with exit code 1 (use -v to see
+invocation)
+
+
+Error in buildConstantAdoptionMex (line 22)
+mex("-R2018a",compiler,sourceArguments{:},"-I"+fullfile(sourceRoot,"CompiledKernel","include"),"-I"+fullfile(sourceRoot,"PortableRuntime","include"),"-I"+fullfile(sourceRoot,"PortableRuntime","src"),"-I"+adapter,"-I"+fullfile(providerRoot,"include"),linker,fullfile(providerRoot,"lib","libfftw3_threads.dylib"),fullfile(providerRoot,"lib","libfftw3.dylib"),"-outdir",outputFolder,"-output",moduleName);
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+Error in wvm358_build_control_mex (line 8)
+buildConstantAdoptionMex('/Users/jearly/Documents/OceanKitRepositories/wvm-v4-issue358-control','/Users/jearly/Documents/OceanKitRepositories/wave-vortex-model/.compiled-backend-cache/provider/native-neon-pthreads','/private/tmp/wvm358-mex-control','wvm358_control');
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+Error in run (line 112)
+evalin('caller', strcat(scriptStem, ';'));
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+}

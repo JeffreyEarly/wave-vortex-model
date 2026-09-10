@@ -2,6 +2,17 @@ cmake_minimum_required(VERSION 3.20)
 project(WaveVortexKernel VERSION 0.1.0 LANGUAGES CXX)
 find_package(Threads REQUIRED)
 
+# Author-only candidate selection. Promotion requires issue #358 qualification;
+# ordinary builds keep the accepted streamed constant-stratification schedule.
+option(WV_KERNEL_COMPACT_CONSTANT_CANDIDATE "Select the unqualified compact constant schedule for adoption tests" OFF)
+set(WV_KERNEL_COMPACT_HORIZONTAL_WORKERS "12" CACHE STRING "Prepared outer workers for the compact horizontal candidate")
+set(WV_KERNEL_COMPACT_POINTWISE_WORKERS "12" CACHE STRING "Prepared pointwise workers for the compact constant candidate")
+foreach(worker_setting WV_KERNEL_COMPACT_HORIZONTAL_WORKERS WV_KERNEL_COMPACT_POINTWISE_WORKERS)
+    if(NOT "${${worker_setting}}" MATCHES "^[1-9][0-9]*$")
+        message(FATAL_ERROR "${worker_setting} must be a positive integer")
+    endif()
+endforeach()
+
 add_library(WaveVortexKernel STATIC
     src/WVRetainedHorizontalOperator.cpp
     src/WVPreparedVerticalOperator.cpp
@@ -13,6 +24,10 @@ add_library(WaveVortexKernel STATIC
     src/WVTransformConstantStratificationKernel.cpp
 )
 add_library(WaveVortex::Kernel ALIAS WaveVortexKernel)
+target_compile_definitions(WaveVortexKernel PUBLIC
+    WV_KERNEL_COMPACT_CONSTANT_CANDIDATE=$<BOOL:${WV_KERNEL_COMPACT_CONSTANT_CANDIDATE}>
+    WV_KERNEL_COMPACT_HORIZONTAL_WORKERS=${WV_KERNEL_COMPACT_HORIZONTAL_WORKERS}
+    WV_KERNEL_COMPACT_POINTWISE_WORKERS=${WV_KERNEL_COMPACT_POINTWISE_WORKERS})
 
 add_library(WaveVortexReferenceFFT STATIC
     adapters/reference/WVReferenceFFTEngine.cpp

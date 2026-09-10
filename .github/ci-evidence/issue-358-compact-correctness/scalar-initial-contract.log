@@ -1,0 +1,10 @@
+Internal ctest changing into directory: /tmp/wvm358-compact-tests
+Test project /tmp/wvm358-compact-tests
+    Start 1: WVKernelContract
+1/2 Test #1: WVKernelContract .................   Passed    0.28 sec
+    Start 8: WVCompactConstantSchedule
+2/2 Test #8: WVCompactConstantSchedule ........   Passed    0.44 sec
+
+100% tests passed, 0 tests failed out of 2
+
+Total Test time (real) =   0.73 sec

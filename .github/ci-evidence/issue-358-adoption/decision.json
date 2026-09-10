@@ -1,0 +1,150 @@
+{
+  "schema": "wvm-constant-adoption-decision-v1",
+  "passed": false,
+  "decision": "retain frozen default",
+  "reason": "Complete-model integration exceeds the predeclared per-profile 1.03 limit. A completed failing mandatory gate suffices to reject adoption.",
+  "decisionRule": "Early rejection; remaining expensive measurements intentionally stopped, never treated as passing or as complete standalone/MATLAB-loaded timing evidence.",
+  "failedGate": {
+    "name": "model: no profile regression",
+    "bound": 1.03,
+    "actual": {
+      "constant-hydrostatic-coefficient-only": 1.1856719280613925,
+      "constant-hydrostatic-composite": 1.1966594799847166,
+      "constant-nonhydrostatic-coefficient-only": 1.2066857075921664,
+      "constant-nonhydrostatic-composite": 1.1936814714808024
+    }
+  },
+  "modelCampaign": {
+    "completedPairs": 40,
+    "measuredPairsPerProfile": 8,
+    "excludedWarmupPairsPerProfile": 2,
+    "scientificOutputAndMatchedWorkPassed": true,
+    "pairedBootstrap": {
+      "integration": {
+        "geometricRatio": 1.1956510132155416,
+        "confidence95": [
+          1.1800510118082652,
+          1.2097465491566242
+        ],
+        "resamples": 10000,
+        "seed": 358
+      },
+      "completeLifetime": {
+        "geometricRatio": 0.42682079606443735,
+        "confidence95": [
+          0.4245409469568539,
+          0.4290069723142949
+        ],
+        "resamples": 10000,
+        "seed": 358
+      },
+      "peakRSS": {
+        "geometricRatio": 0.9764702594475466,
+        "confidence95": [
+          0.9710467655564238,
+          0.9824865397048111
+        ],
+        "resamples": 10000,
+        "seed": 358
+      },
+      "retained": {
+        "geometricRatio": 0.9739193624929461,
+        "confidence95": [
+          0.9739193624929461,
+          0.9739193624929461
+        ],
+        "resamples": 10000,
+        "seed": 358
+      },
+      "maximumLive": {
+        "geometricRatio": 0.9749382270529926,
+        "confidence95": [
+          0.9749382270529926,
+          0.9749382270529926
+        ],
+        "resamples": 10000,
+        "seed": 358
+      }
+    },
+    "profiles": [
+      {
+        "profile": "constant-hydrostatic-coefficient-only",
+        "pairs": 8,
+        "integrationGeometricRatio": 1.1856719280613925,
+        "completeLifetimeGeometricRatio": 0.31220761235989414,
+        "peakRSSGeometricRatio": 0.9571022789154859,
+        "retainedGeometricRatio": 0.9692654104932938,
+        "maximumLiveGeometricRatio": 0.9701528597274195
+      },
+      {
+        "profile": "constant-hydrostatic-composite",
+        "pairs": 8,
+        "integrationGeometricRatio": 1.1966594799847166,
+        "completeLifetimeGeometricRatio": 0.5115784226498243,
+        "peakRSSGeometricRatio": 1.0017984619662825,
+        "retainedGeometricRatio": 0.9786035254398084,
+        "maximumLiveGeometricRatio": 0.979759947673769
+      },
+      {
+        "profile": "constant-nonhydrostatic-coefficient-only",
+        "pairs": 8,
+        "integrationGeometricRatio": 1.2066857075921664,
+        "completeLifetimeGeometricRatio": 0.3762879910894472,
+        "peakRSSGeometricRatio": 0.947246773610296,
+        "retainedGeometricRatio": 0.9692498308921528,
+        "maximumLiveGeometricRatio": 0.9701276118441627
+      },
+      {
+        "profile": "constant-nonhydrostatic-composite",
+        "pairs": 8,
+        "integrationGeometricRatio": 1.1936814714808024,
+        "completeLifetimeGeometricRatio": 0.5522124844753326,
+        "peakRSSGeometricRatio": 1.001000365614366,
+        "retainedGeometricRatio": 0.9786035254398084,
+        "maximumLiveGeometricRatio": 0.979759947673769
+      }
+    ]
+  },
+  "workerScreen": {
+    "scores": [
+      {
+        "workers": 1,
+        "geometricRatio": 0.5686256460309921
+      },
+      {
+        "workers": 2,
+        "geometricRatio": 0.5401314098147678
+      },
+      {
+        "workers": 4,
+        "geometricRatio": 0.503335043577266
+      },
+      {
+        "workers": 8,
+        "geometricRatio": 0.5307840226144989
+      },
+      {
+        "workers": 12,
+        "geometricRatio": 0.4975131669170738
+      }
+    ],
+    "selectedPointwiseWorkers": 12,
+    "rule": "Eight equally weighted native/MATLAB-loaded profiles; within1% choose fewer workers; exploratory screen, no adoption claim"
+  },
+  "remainingCampaigns": {
+    "native": {
+      "status": "intentionally stopped",
+      "completedPairs": 3,
+      "profile": "constant-nonhydrostatic-256x256x129",
+      "terminatedProcessPID": 62179,
+      "termination": "SIGTERM during pair03 control after the model rejection was established",
+      "performanceClaim": false
+    },
+    "matlabLoaded": {
+      "status": "not started",
+      "performanceClaim": false
+    }
+  },
+  "logInterpretation": "The orchestrator generic Scientific qualification failed message was caused by intentional termination, not a numerical failure. Original logs and partial records are retained.",
+  "sourceProvenanceSHA256": "18bcc5d44f12be1ac6bb810c08735f46ad476f0f9acf616efbb70746d7777743"
+}
