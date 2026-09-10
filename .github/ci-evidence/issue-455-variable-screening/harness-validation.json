@@ -1,0 +1,123 @@
+{
+  "recordedLargeReportsValidated": 64,
+  "metadataMutationsRejected": [
+    "grid",
+    "family",
+    "horizontalSchedule",
+    "horizontalWorkers",
+    "matrixBackend",
+    "samplesSeconds"
+  ],
+  "deliberateOutputFailure": {
+    "returncode": 1,
+    "stderr": "{\"sampleSeconds\":2.475e-05,\"success\":true}\n{\"sampleSeconds\":2.959e-06,\"success\":true}\nCannot write flux payload.\n"
+  },
+  "finalSmoke": {
+    "decision": "correctness-smoke",
+    "allScientificChecksPassed": true,
+    "profiles": {
+      "stratified-qg-8x6x9": {
+        "frozen": {
+          "processMediansSeconds": [
+            6.375e-05
+          ],
+          "geometricMeanSeconds": 6.374999999999999e-05,
+          "maximumPeakRSSBytes": 17661952,
+          "ratioToFrozen": 1.0
+        },
+        "pruned": {
+          "processMediansSeconds": [
+            0.000244584
+          ],
+          "geometricMeanSeconds": 0.00024458400000000006,
+          "maximumPeakRSSBytes": 17940480,
+          "ratioToFrozen": 3.836611764705884
+        },
+        "streamed": {
+          "processMediansSeconds": [
+            3.1833e-05
+          ],
+          "geometricMeanSeconds": 3.183299999999998e-05,
+          "maximumPeakRSSBytes": 17580032,
+          "ratioToFrozen": 0.49934117647058796
+        },
+        "pruned-streamed": {
+          "processMediansSeconds": [
+            0.000243708
+          ],
+          "geometricMeanSeconds": 0.000243708,
+          "maximumPeakRSSBytes": 17809408,
+          "ratioToFrozen": 3.8228705882352947
+        }
+      },
+      "hydrostatic-8x6x9": {
+        "frozen": {
+          "processMediansSeconds": [
+            4.3666e-05
+          ],
+          "geometricMeanSeconds": 4.3665999999999964e-05,
+          "maximumPeakRSSBytes": 18022400,
+          "ratioToFrozen": 1.0
+        },
+        "pruned": {
+          "processMediansSeconds": [
+            0.00059775
+          ],
+          "geometricMeanSeconds": 0.00059775,
+          "maximumPeakRSSBytes": 18268160,
+          "ratioToFrozen": 13.689140292218212
+        },
+        "streamed": {
+          "processMediansSeconds": [
+            3.1042e-05
+          ],
+          "geometricMeanSeconds": 3.104200000000001e-05,
+          "maximumPeakRSSBytes": 17924096,
+          "ratioToFrozen": 0.7108963495625896
+        },
+        "pruned-streamed": {
+          "processMediansSeconds": [
+            0.000492708
+          ],
+          "geometricMeanSeconds": 0.0004927079999999998,
+          "maximumPeakRSSBytes": 18300928,
+          "ratioToFrozen": 11.283561581092846
+        }
+      },
+      "boussinesq-8x6x9": {
+        "frozen": {
+          "processMediansSeconds": [
+            7.6875e-05
+          ],
+          "geometricMeanSeconds": 7.6875e-05,
+          "maximumPeakRSSBytes": 18644992,
+          "ratioToFrozen": 1.0
+        },
+        "pruned": {
+          "processMediansSeconds": [
+            0.000437875
+          ],
+          "geometricMeanSeconds": 0.00043787499999999984,
+          "maximumPeakRSSBytes": 18989056,
+          "ratioToFrozen": 5.695934959349591
+        },
+        "streamed": {
+          "processMediansSeconds": [
+            5.3083e-05
+          ],
+          "geometricMeanSeconds": 5.308300000000002e-05,
+          "maximumPeakRSSBytes": 18694144,
+          "ratioToFrozen": 0.6905105691056913
+        },
+        "pruned-streamed": {
+          "processMediansSeconds": [
+            0.000677917
+          ],
+          "geometricMeanSeconds": 0.0006779169999999999,
+          "maximumPeakRSSBytes": 19005440,
+          "ratioToFrozen": 8.818432520325201
+        }
+      }
+    }
+  }
+}

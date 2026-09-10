@@ -1,6 +1,7 @@
 #include "WaveVortexRuntime/WVStratifiedModalRecord.hpp"
 #include "WaveVortexKernel/WVTransformStratifiedQGKernel.hpp"
 #include "WVReferenceFFTEngine.hpp"
+#include "WVAccelerateMatrixBackend.hpp"
 #include "../../tools/compiled-kernel/tests/WVAllocationProbe.hpp"
 #include "nlohmann/json.hpp"
 #if WV_TEST_NATIVE_FFTW
@@ -14,17 +15,20 @@ using namespace wavevortex;
 using namespace wavevortex::runtime;
 using nlohmann::json;
 namespace {
+bool hasSuffix(const std::string& value,const std::string& suffix) { return value.size()>=suffix.size() && value.compare(value.size()-suffix.size(),suffix.size(),suffix)==0; }
 template<class T> void require(T status) { if (!status) throw std::runtime_error(status.message); }
 json complexValues(const std::vector<WVComplex64>& a) { std::vector<double> r,i; for (auto x:a) { r.push_back(x.real); i.push_back(x.imag); } return {{"real",r},{"imag",i}}; }
 std::vector<WVComplex64> complexInput(const json& a) { auto r=a.at("real").get<std::vector<double>>(),i=a.at("imag").get<std::vector<double>>(); if (r.size()!=i.size()) throw std::runtime_error("Input lengths differ."); std::vector<WVComplex64> b(r.size()); for (std::size_t n=0;n<r.size();++n) b[n]={r[n],i[n]}; return b; }
 }
 int main(int argc,char** argv) {
     try {
-        if (argc!=5) throw std::runtime_error("Usage: WVStratifiedQGKernelDump record.nc input.json output.json reference|native");
+        if (argc!=5) throw std::runtime_error("Usage: WVStratifiedQGKernelDump record.nc input.json output.json reference|native|native-accelerate[-pruned]");
         std::ifstream inputFile(argv[2]); json data; inputFile>>data;
         std::shared_ptr<const WVStratifiedModalRecord> record; require(WVStratifiedModalReader::read(argv[1],record));
         std::unique_ptr<WVFFTEngine> engine;
-        if (std::string(argv[4])=="reference") engine=std::make_unique<WVReferenceFFTEngine>();
+        const std::string requestedProvider=argv[4]; const bool pruned=hasSuffix(requestedProvider,"-pruned");
+        const std::string provider=pruned ? requestedProvider.substr(0,requestedProvider.size()-7) : requestedProvider;
+        if (provider=="reference") engine=std::make_unique<WVReferenceFFTEngine>();
         else {
 #if WV_TEST_NATIVE_FFTW
             require(WVFFTWEngine::create(1,engine));
@@ -32,11 +36,12 @@ int main(int argc,char** argv) {
             throw std::runtime_error("Native FFTW adapter was not built.");
 #endif
         }
-        std::unique_ptr<WVTransformStratifiedQGKernel> kernel; require(WVTransformStratifiedQGKernel::create(record,std::move(engine),kernel));
+        WVVariableExecutionOptions options; if (pruned) options={WVRetainedHorizontalSchedule::streamingPrunedTile16,2,true};
+        std::unique_ptr<WVTransformStratifiedQGKernel> kernel; require(WVTransformStratifiedQGKernel::create(record,std::move(engine),kernel,provider=="native-accelerate" ? WVCreateAccelerateMatrixBackend : WVCreateScalarMatrixBackend,options));
         const auto& g=kernel->geometry(); const auto S=g.Nj*g.Nkl,R=g.Nx*g.Ny*g.Nz;
         auto a=complexInput(data.at("A0")); if (a.size()!=S) throw std::runtime_error("Wrong coefficient size."); const auto original=a;
         WVComplexConstView A0{a.data(),kernel->spectralShape()}; std::vector<WVComplex64> c(S); WVComplexView out{c.data(),kernel->spectralShape()};
-        json result; result["engine"]=kernel->engineIdentifier(); result["contract"]=WVStratifiedQGKernelContract;
+        json result; result["engine"]=kernel->engineIdentifier(); result["contract"]=WVStratifiedQGKernelContract; result["horizontalSchedule"]=kernel->horizontalScheduleIdentifier(); result["streamedNonlinear"]=kernel->executionOptions().streamedNonlinear;
         const auto& f=kernel->factors(); result["factors"]={{"u",complexValues(f.u)},{"v",complexValues(f.v)},{"eta",f.eta},{"pi",f.pi},{"psi",f.psi},{"qgpv",f.qgpv},{"zetaZ",f.zetaZ},{"energy",f.energy},{"enstrophy",f.enstrophy},{"ke",f.kineticEnergy},{"pe",f.potentialEnergy}};
         struct Field { const char* name; WVStratifiedQGField id; bool surface; };
         const Field fields[]={{"u",WVStratifiedQGField::u,false},{"v",WVStratifiedQGField::v,false},{"w",WVStratifiedQGField::w,false},{"eta",WVStratifiedQGField::eta,false},{"pi",WVStratifiedQGField::pi,false},{"p",WVStratifiedQGField::p,false},{"psi",WVStratifiedQGField::psi,false},{"qgpv",WVStratifiedQGField::qgpv,false},{"rho_e",WVStratifiedQGField::rhoE,false},{"rho_total",WVStratifiedQGField::rhoTotal,false},{"zeta_z",WVStratifiedQGField::zetaZ,false},{"ssh",WVStratifiedQGField::ssh,true},{"ssu",WVStratifiedQGField::ssu,true},{"ssv",WVStratifiedQGField::ssv,true}};

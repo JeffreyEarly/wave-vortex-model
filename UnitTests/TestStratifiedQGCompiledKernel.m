@@ -11,8 +11,9 @@ classdef TestStratifiedQGCompiledKernel < matlab.unittest.TestCase
             testCase.folder = string(fixture.Folder);
             testCase.executable = string(getenv("WV_QG_KERNEL_DUMP"));
             testCase.providers = "reference";
+            testCase.providers(end+1) = "reference-pruned";
             if getenv("WV_QG_TEST_NATIVE") == "1"
-                testCase.providers = ["reference","native"];
+                testCase.providers = [testCase.providers,"native","native-accelerate","native-pruned","native-accelerate-pruned"];
             end
             if testCase.executable == ""
                 build = fullfile(testCase.folder,"build");
@@ -99,6 +100,9 @@ classdef TestStratifiedQGCompiledKernel < matlab.unittest.TestCase
             for provider = testCase.providers
                 report = testCase.runKernel(wvt,input,provider);
                 testCase.verifyEqual(string(report.contract),"wave-vortex-stratified-qg-kernel-v1")
+                schedule=string(report.horizontalSchedule);
+                testCase.verifyEqual(schedule,expectedHorizontalSchedule(provider))
+                testCase.verifyEqual(report.streamedNonlinear,endsWith(provider,"-pruned"))
                 testCase.verifyEqual(report.preparedAllocations,0)
                 testCase.verifyTrue(report.inputPreserved)
                 testCase.verifyEqual(report.realScratchBytes,4*wvt.Nx*wvt.Ny*wvt.Nz*8)
@@ -189,4 +193,12 @@ if isunix && ~ismac
     command = "env -u LD_LIBRARY_PATH -u DYLD_LIBRARY_PATH " + command;
 end
 [status,output] = system(command);
+end
+
+function schedule = expectedHorizontalSchedule(provider)
+if endsWith(provider,"-pruned") && startsWith(provider,"native")
+    schedule="fftw-streaming-pruned-tile16";
+else
+    schedule="full-fft-gather";
+end
 end

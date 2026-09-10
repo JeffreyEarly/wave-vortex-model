@@ -10,9 +10,9 @@ classdef TestHydrostaticCompiledKernel < matlab.unittest.TestCase
             fixture = testCase.applyFixture(matlab.unittest.fixtures.TemporaryFolderFixture);
             testCase.folder = string(fixture.Folder);
             testCase.executable = string(getenv("WV_HYDRO_KERNEL_DUMP"));
-            testCase.providers = "reference";
+            testCase.providers = ["reference","reference-pruned"];
             if getenv("WV_HYDRO_TEST_NATIVE") == "1"
-                testCase.providers = ["reference","native","native-accelerate"];
+                testCase.providers = [testCase.providers,"native","native-accelerate","native-pruned","native-accelerate-pruned"];
             end
             if testCase.executable == ""
                 build = fullfile(testCase.folder,"build");
@@ -95,9 +95,14 @@ classdef TestHydrostaticCompiledKernel < matlab.unittest.TestCase
             for provider=testCase.providers
                 report=testCase.runKernel(wvt,input,provider);
                 testCase.verifyEqual(string(report.contract),"wave-vortex-hydrostatic-kernel-v1")
+                schedule=string(report.horizontalSchedule);
+                testCase.verifyEqual(schedule,expectedHorizontalSchedule(provider))
+                testCase.verifyEqual(report.streamedNonlinear,endsWith(provider,"-pruned"))
                 testCase.verifyEqual(report.preparedAllocations,0)
                 testCase.verifyTrue(report.inputPreserved && report.storageStable && report.ownerReleased)
-                testCase.verifyEqual(report.realScratchBytes,10*wvt.Nx*wvt.Ny*wvt.Nz*8)
+                expectedScratchBytes=10*wvt.Nx*wvt.Ny*wvt.Nz*8;
+                if endsWith(provider,"-pruned"), expectedScratchBytes=6*wvt.Nx*wvt.Ny*wvt.Nz*8; end
+                testCase.verifyEqual(report.realScratchBytes,expectedScratchBytes)
                 for name=["Omega","NAp","NA0","PA0","ApmN","A0Z","A0N","Apm_TE_factor","A0_TE_factor","A0_Psi_factor","A0_QGPV_factor","A0_TZ_factor"]
                     testCase.near(report.factors.(name),wvt.(name),"factor "+name)
                 end
@@ -207,4 +212,12 @@ if isunix && ~ismac
     command="env -u LD_LIBRARY_PATH -u DYLD_LIBRARY_PATH "+command;
 end
 [status,output]=system(command);
+end
+
+function schedule = expectedHorizontalSchedule(provider)
+if endsWith(provider,"-pruned") && startsWith(provider,"native")
+    schedule="fftw-streaming-pruned-tile16";
+else
+    schedule="full-fft-gather";
+end
 end

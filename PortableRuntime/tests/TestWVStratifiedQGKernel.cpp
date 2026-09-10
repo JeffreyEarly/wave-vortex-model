@@ -116,12 +116,48 @@ void contracts(const std::shared_ptr<const WVStratifiedModalRecord>& source) {
     }
     require(succeeded,"Allocation sweep never succeeded");
 }
+
+void variableScheduleParity(const std::shared_ptr<const WVStratifiedModalRecord>& source) {
+    std::unique_ptr<WVTransformStratifiedQGKernel> frozen, candidate;
+    require(bool(WVTransformStratifiedQGKernel::create(source,std::make_unique<WVReferenceFFTEngine>(),frozen)),"Frozen schedule setup failed");
+    WVVariableExecutionOptions options{WVRetainedHorizontalSchedule::streamingPrunedTile16,2,true};
+    require(bool(WVTransformStratifiedQGKernel::create(source,std::make_unique<WVReferenceFFTEngine>(),candidate, WVCreateScalarMatrixBackend, options)),"Candidate schedule setup failed");
+    require(std::string(candidate->horizontalScheduleIdentifier())=="full-fft-gather","Reference provider fallback was not reported");
+    const auto& g=source->geometry(); const auto S=g.Nj*g.Nkl;
+    std::vector<WVComplex64> input(S), frozenOut(S), candidateOut(S);
+    for (std::size_t i=0;i<S;++i) input[i]={0.001*std::sin(.17*i),-0.002*std::cos(.11*i)};
+    const auto inputBefore=input;
+    const WVComplexConstView in{input.data(),{g.Nj,g.Nkl}};
+    require(bool(frozen->nonlinearFlux(in,{frozenOut.data(),in.shape})),"Frozen nonlinear flux failed");
+    require(bool(candidate->nonlinearFlux(in,{candidateOut.data(),in.shape})),"Candidate nonlinear flux failed");
+    for (std::size_t i=0;i<S;++i) require(std::abs(frozenOut[i].real-candidateOut[i].real)<1e-12 && std::abs(frozenOut[i].imag-candidateOut[i].imag)<1e-12,"Candidate nonlinear flux differs");
+    const auto R=g.Nx*g.Ny*g.Nz; std::vector<double> frozenUV(2*R),candidateUV(2*R),frozenRaw(R),candidateRaw(R);
+    require(bool(frozen->transformA0ToField(in,WVStratifiedQGField::u,{frozenUV.data(),{g.Nx,g.Ny,g.Nz}})) && bool(frozen->transformA0ToField(in,WVStratifiedQGField::v,{frozenUV.data()+R,{g.Nx,g.Ny,g.Nz}})),"Frozen borrowed fields failed");
+    require(bool(candidate->transformA0ToField(in,WVStratifiedQGField::u,{candidateUV.data(),{g.Nx,g.Ny,g.Nz}})) && bool(candidate->transformA0ToField(in,WVStratifiedQGField::v,{candidateUV.data()+R,{g.Nx,g.Ny,g.Nz}})),"Candidate borrowed fields failed");
+    const auto frozenUVBefore=frozenUV,candidateUVBefore=candidateUV;
+    WVRealFieldBundleConstView frozenFields{frozenUV.data(),{g.Nx,g.Ny,g.Nz,2}},candidateFields{candidateUV.data(),{g.Nx,g.Ny,g.Nz,2}};
+    WVRealVolumeView frozenRawView{frozenRaw.data(),{g.Nx,g.Ny,g.Nz}},candidateRawView{candidateRaw.data(),{g.Nx,g.Ny,g.Nz}};
+    WVComplexView frozenFluxView{frozenOut.data(),in.shape},candidateFluxView{candidateOut.data(),in.shape};
+    std::fill(frozenOut.begin(),frozenOut.end(),WVComplex64{17,19}); std::fill(candidateOut.begin(),candidateOut.end(),WVComplex64{17,19});
+    require(bool(frozen->nonlinearFlux(in,frozenFluxView,0,&frozenRawView,&frozenFields)),"Frozen raw flux failed");
+    allocationProbe::calls=0; allocationProbe::counting=true;
+    require(bool(candidate->nonlinearFlux(in,candidateFluxView,0,&candidateRawView,&candidateFields)),"Candidate raw flux failed");
+    allocationProbe::counting=false; require(allocationProbe::calls==0,"Candidate prepared nonlinear flux allocated");
+    require(frozenRaw==candidateRaw,"Candidate raw borrowed-field tendency differs");
+    require(frozenUV==candidateUV && frozenUV==frozenUVBefore && candidateUV==candidateUVBefore,"Raw evaluation changed or mutated borrowed fields");
+    for (const auto* output:{&frozenOut,&candidateOut}) for (const auto value:*output)
+        require(value.real==17 && value.imag==19,"Raw evaluation wrote spectral flux");
+    for (std::size_t i=0;i<S;++i) require(input[i].real==inputBefore[i].real && input[i].imag==inputBefore[i].imag,"Parity evaluation mutated input coefficients");
+    require(candidate->executionOptions().horizontalWorkers==2 && candidate->executionOptions().streamedNonlinear,"Candidate options were not retained");
+    require(candidate->persistentBytes()>=candidate->storage().workspaceBytes,"Candidate storage ledger under-reports workspace");
+}
 }
 int main() {
     try {
         Temporary file; fixture(file.path);
         std::shared_ptr<const WVStratifiedModalRecord> source; auto status=WVStratifiedModalReader::read(file.path.string(),source); require(bool(status),status.message.c_str());
         contracts(source);
+        variableScheduleParity(source);
         std::unique_ptr<WVTransformStratifiedQGKernel> kernel; require(bool(WVTransformStratifiedQGKernel::create(source,std::make_unique<WVReferenceFFTEngine>(),kernel)),"Lifetime setup failed");
         std::weak_ptr<const WVStratifiedModalRecord> weak=source; source.reset(); require(!weak.expired(),"Kernel lost scientific owner"); kernel.reset(); require(weak.expired(),"Scientific owner leaked");
         std::cout<<"Stratified QG kernel contracts passed\n"; return 0;

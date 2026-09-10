@@ -12,9 +12,9 @@ classdef TestBoussinesqCompiledKernel < matlab.unittest.TestCase
             fixture = testCase.applyFixture(matlab.unittest.fixtures.TemporaryFolderFixture);
             testCase.folder = string(fixture.Folder);
             testCase.executable = string(getenv("WV_BOUSS_KERNEL_DUMP"));
-            testCase.providers = "reference";
+            testCase.providers = ["reference","reference-pruned"];
             if getenv("WV_BOUSS_TEST_NATIVE") == "1"
-                testCase.providers = ["reference","native","native-accelerate"];
+                testCase.providers = [testCase.providers,"native","native-accelerate","native-pruned","native-accelerate-pruned"];
             end
             if testCase.executable == ""
                 build = fullfile(testCase.folder,"build");
@@ -169,6 +169,9 @@ classdef TestBoussinesqCompiledKernel < matlab.unittest.TestCase
             for provider=testCase.providers
                 report=testCase.runKernel(wvt,input,provider);
                 testCase.verifyEqual(string(report.contract),"wave-vortex-boussinesq-kernel-v1")
+                schedule=string(report.horizontalSchedule);
+                testCase.verifyEqual(schedule,expectedHorizontalSchedule(provider))
+                testCase.verifyEqual(report.streamedNonlinear,endsWith(provider,"-pruned"))
                 testCase.verifyEqual(report.preparedAllocations,0)
                 testCase.verifyTrue(report.inputPreserved && report.storageStable && report.ownerReleased)
                 testCase.verifyEqual(report.realScratchBytes,11*wvt.Nx*wvt.Ny*wvt.Nz*8)
@@ -303,5 +306,13 @@ if isstruct(value)
     value.real=reorderModalRecord(value.real,Nj,order); value.imag=reorderModalRecord(value.imag,Nj,order);
 else
     value=reshape(value,Nj,[]); value=reshape(value(:,order),[],1);
+end
+end
+
+function schedule = expectedHorizontalSchedule(provider)
+if endsWith(provider,"-pruned") && startsWith(provider,"native")
+    schedule="fftw-streaming-pruned-tile16";
+else
+    schedule="full-fft-gather";
 end
 end

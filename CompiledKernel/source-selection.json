@@ -177,5 +177,16 @@
       ],
       "reason": "Owner accepts this cost and declined small-grid optimization; large-grid timing gates passed."
     }
+  },
+  "variableSpectralSchedule": {
+    "issue": 455,
+    "status": "experimental-opt-in",
+    "productionDefault": false,
+    "optionsHeader": "CompiledKernel/include/WaveVortexKernel/WVVariableExecutionOptions.hpp",
+    "defaultHorizontalSchedule": "full-fft-gather",
+    "nativeCandidateHorizontalSchedule": "fftw-streaming-pruned-tile16",
+    "matrixRepresentation": "direct-interleaved; exact persisted groups",
+    "streamedHydrostaticRealScratch": "6R (frozen 10R); spectral scratch unchanged",
+    "qualification": ".github/planning/issue-455-variable-matrix-qualification.md"
   }
 }

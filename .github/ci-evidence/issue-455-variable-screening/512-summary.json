@@ -1,0 +1,98 @@
+{
+  "decision": "screening-only",
+  "allScientificChecksPassed": true,
+  "profiles": {
+    "stratified-qg-512x512x257": {
+      "frozen": {
+        "processMediansSeconds": [
+          0.7697768545,
+          0.769284292,
+          0.7673065205,
+          0.7670799375
+        ],
+        "geometricMeanSeconds": 0.7683609884902683,
+        "maximumPeakRSSBytes": 4217208832,
+        "ratioToFrozen": 1.0
+      },
+      "pruned": {
+        "processMediansSeconds": [
+          0.1636099165,
+          0.1605087915,
+          0.1604020625,
+          0.1579513125
+        ],
+        "geometricMeanSeconds": 0.1606054981543646,
+        "maximumPeakRSSBytes": 4334518272,
+        "ratioToFrozen": 0.20902349359242453
+      },
+      "streamed": {
+        "processMediansSeconds": [
+          0.7663760835,
+          0.7655509380000001,
+          0.7732840835,
+          0.7689049165
+        ],
+        "geometricMeanSeconds": 0.7685231183707476,
+        "maximumPeakRSSBytes": 4216619008,
+        "ratioToFrozen": 1.0002110074338857
+      },
+      "pruned-streamed": {
+        "processMediansSeconds": [
+          0.160202562,
+          0.160926354,
+          0.16302795850000001,
+          0.160784333
+        ],
+        "geometricMeanSeconds": 0.1612317663616301,
+        "maximumPeakRSSBytes": 4334272512,
+        "ratioToFrozen": 0.20983856387403274
+      }
+    },
+    "hydrostatic-512x512x257": {
+      "frozen": {
+        "processMediansSeconds": [
+          2.831058146,
+          2.834182333,
+          2.8200860414999998,
+          2.8205798125
+        ],
+        "geometricMeanSeconds": 2.8264696859799745,
+        "maximumPeakRSSBytes": 8640757760,
+        "ratioToFrozen": 1.0
+      },
+      "pruned": {
+        "processMediansSeconds": [
+          0.886311104,
+          0.8940273335,
+          0.900407854,
+          0.894745
+        ],
+        "geometricMeanSeconds": 0.8938587287255062,
+        "maximumPeakRSSBytes": 8723021824,
+        "ratioToFrozen": 0.31624564493271523
+      },
+      "streamed": {
+        "processMediansSeconds": [
+          2.8430840415,
+          2.8389225414999997,
+          2.8643287085,
+          2.8400790835
+        ],
+        "geometricMeanSeconds": 2.8465848425922675,
+        "maximumPeakRSSBytes": 6484836352,
+        "ratioToFrozen": 1.0071167070045257
+      },
+      "pruned-streamed": {
+        "processMediansSeconds": [
+          0.8928602495,
+          0.8951975415,
+          0.9029776045,
+          0.8862948964999999
+        ],
+        "geometricMeanSeconds": 0.894312702233658,
+        "maximumPeakRSSBytes": 6567362560,
+        "ratioToFrozen": 0.3164062599608557
+      }
+    }
+  }
+}

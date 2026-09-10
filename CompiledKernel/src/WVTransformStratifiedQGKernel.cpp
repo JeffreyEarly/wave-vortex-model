@@ -17,7 +17,7 @@ bool derivativeValid(WVStratifiedQGDerivative d) { return d>=WVStratifiedQGDeriv
 WVKernelStatus reentrant() { return {WVKernelStatusCode::reentrantExecution,"Stratified QG workspace is already active."}; }
 }
 WVKernelStatus WVTransformStratifiedQGKernel::create(std::shared_ptr<const WVStratifiedModalSource> source,
-    std::unique_ptr<WVFFTEngine> engine,std::unique_ptr<WVTransformStratifiedQGKernel>& result,MatrixBackendFactory factory) {
+    std::unique_ptr<WVFFTEngine> engine,std::unique_ptr<WVTransformStratifiedQGKernel>& result,MatrixBackendFactory factory,WVVariableExecutionOptions options) {
     try {
         if (!source || !engine || !factory) return {WVKernelStatusCode::invalidConfiguration,"Scientific source, FFT engine and matrix backend factory are required."};
         const auto& g=source->geometry();
@@ -32,9 +32,11 @@ WVKernelStatus WVTransformStratifiedQGKernel::create(std::shared_ptr<const WVStr
         c.S_=product(g.Nj,g.Nkl); c.H_=product(g.Nz,g.Nkl); c.R_=product(product(g.Nx,g.Ny),g.Nz);
         product(c.S_,sizeof(WVComplex64)); product(c.H_,sizeof(WVComplex64)); product(product(4,c.R_),sizeof(double));
         c.engineIdentifier_=engine->identifier(); c.engineLibraryIdentity_=engine->libraryIdentity();
+        c.executionOptions_=options;
         WVRetainedHorizontalSpecification horizontal;
         auto status=c.source_->horizontalSpecification(g.Nz,WVComplexRepresentation::interleaved,"QG-grid",horizontal);
         if (!status) return status;
+        horizontal.schedule=options.horizontalSchedule; horizontal.outerWorkers=options.horizontalWorkers;
         status=WVRetainedHorizontalOperator::create(horizontal,std::move(engine),c.horizontal_); if (!status) return status;
         status=c.horizontal_->createWorkspace(c.horizontalWorkspace_); if (!status) return status;
         const WVStratifiedModalOperator operations[]={WVStratifiedModalOperator::reconstructF,WVStratifiedModalOperator::projectF,WVStratifiedModalOperator::reconstructG,WVStratifiedModalOperator::projectG};
@@ -210,11 +212,18 @@ WVKernelStatus WVTransformStratifiedQGKernel::nonlinearFlux(WVComplexConstView a
     ActiveCall guard(active_); if (!guard.entered) return reentrant();
     const WVStratifiedQGField fields[]={WVStratifiedQGField::u,WVStratifiedQGField::v,WVStratifiedQGField::qgpv,WVStratifiedQGField::qgpv};
     const WVStratifiedQGDerivative derivatives[]={WVStratifiedQGDerivative::value,WVStratifiedQGDerivative::value,WVStratifiedQGDerivative::x,WVStratifiedQGDerivative::y};
-    if (preparedUV) std::copy_n(preparedUV->data,2*R_,real_.data());
-    for (std::size_t f=preparedUV ? 2 : 0;f<4;++f) { status=reconstruct(a,fields[f],derivatives[f],real_.data()+f*R_); if (!status) return status; }
-    for (std::size_t i=0;i<R_;++i) real_[3*R_+i]=-(real_[i]*real_[2*R_+i]+real_[R_+i]*(real_[3*R_+i]+beta));
-    if (raw) { std::copy_n(real_.data()+3*R_,R_,raw->data); return WVKernelStatus::ok(); }
-    return project(real_.data()+3*R_,b.data);
+    const bool streamed=executionOptions_.streamedNonlinear;
+    const double* velocity=streamed && preparedUV ? preparedUV->data : real_.data();
+    if (preparedUV && !streamed) std::copy_n(preparedUV->data,2*R_,real_.data());
+    // A raw diagnostic owns its destination for the whole call. Reconstruct q_y
+    // there directly; the validated borrowed velocity is never overwritten.
+    double* tendency=streamed && raw ? raw->data : real_.data()+3*R_;
+    for (std::size_t f=preparedUV ? 2 : 0;f<4;++f) {
+        status=reconstruct(a,fields[f],derivatives[f],f==3 ? tendency : real_.data()+f*R_); if (!status) return status;
+    }
+    for (std::size_t i=0;i<R_;++i) tendency[i]=-(velocity[i]*real_[2*R_+i]+velocity[R_+i]*(tendency[i]+beta));
+    if (raw) { if (tendency!=raw->data) std::copy_n(tendency,R_,raw->data); return WVKernelStatus::ok(); }
+    return project(tendency,b.data);
 }
 WVKernelStatus WVTransformStratifiedQGKernel::verticalDiffusivityFlux(WVComplexConstView a,double kappaZ,WVComplexView b,WVRealVolumeView* raw) {
     if (!std::isfinite(kappaZ) || kappaZ<0) return {WVKernelStatusCode::invalidConfiguration,"Vertical diffusivity must be finite and nonnegative."};
