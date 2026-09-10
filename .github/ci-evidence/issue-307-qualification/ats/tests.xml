@@ -1,0 +1,50 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuite name="Darwin-c++"
+	tests="7"
+	failures="0"
+	disabled="0"
+	skipped="0"
+	hostname="lyra.ad.nwra.com"
+	time="13"
+	timestamp="2026-09-09T16:24:28"
+	>
+	<testcase name="alongtrack_portable_core" classname="alongtrack_portable_core" time="0.410165" status="run">
+		<properties/>
+		<system-out>All portable-core checks passed
+</system-out>
+	</testcase>
+	<testcase name="alongtrack_portable_core_source_policy" classname="alongtrack_portable_core_source_policy" time="0.0608153" status="run">
+		<properties/>
+		<system-out></system-out>
+	</testcase>
+	<testcase name="alongtrack_wavevortex_runner_composition" classname="alongtrack_wavevortex_runner_composition" time="0.280786" status="run">
+		<properties/>
+		<system-out></system-out>
+	</testcase>
+	<testcase name="alongtrack_wavevortex_runner_end_to_end" classname="alongtrack_wavevortex_runner_end_to_end" time="11.8097" status="run">
+		<properties/>
+		<system-out>METRIC repeating transactional replace parity persisted-value-abs=0 persisted-value-norm=0
+METRIC repeating segmented continuation persisted-value-abs=1.7347234759768071e-17 persisted-value-norm=1.7347234759768071e-17
+METRIC geodetic transactional replace parity persisted-value-abs=0 persisted-value-norm=0
+METRIC geodetic segmented continuation persisted-value-abs=9.1072982488782372e-18 persisted-value-norm=9.1072982488782372e-18
+PASS: source-linked AlongTrack runner and persistence
+</system-out>
+	</testcase>
+	<testcase name="alongtrack_wavevortex_extension" classname="alongtrack_wavevortex_extension" time="0.332053" status="run">
+		<properties/>
+		<system-out>METRIC schedule-persistent-bytes short=2419 long=2419 repeating-short=2419 repeating-long=2419 cursor=124
+METRIC matlab-parity x-abs=0 x-norm=0 y-abs=0 y-norm=0 ssh-abs=5.4569682106375694e-12 ssh-norm=1.898451353198411e-15 ssu-abs=2.7648638933897018e-10 ssu-norm=2.9128597190802811e-15 ssv-abs=5.8207660913467407e-10 ssv-norm=2.4475353079278845e-15
+METRIC evaluator-storage short-plan=39503 long-plan=39503 short-service=88732 long-service=88732 retained=8844 live=8812 max-live=8844
+PASS: AlongTrack WaveVortex extension contracts
+</system-out>
+	</testcase>
+	<testcase name="alongtrack_wavevortex_extension_routing" classname="alongtrack_wavevortex_extension_routing" time="0.251242" status="run">
+		<properties/>
+		<system-out>PASS: AlongTrack WaveVortex routing and preflight
+</system-out>
+	</testcase>
+	<testcase name="alongtrack_wavevortex_extension_source_policy" classname="alongtrack_wavevortex_extension_source_policy" time="0.0849271" status="run">
+		<properties/>
+		<system-out></system-out>
+	</testcase>
+</testsuite>

@@ -1,0 +1,14 @@
+[ 16%] Built target WaveVortexKernel
+[ 22%] Built target WaveVortexReferenceFFT
+[ 22%] Built target WaveVortexNativeFFTW
+[ 96%] Built target WaveVortexPortableRuntime
+[ 96%] Building CXX object CMakeFiles/WVHydrostaticLifecycleProbe.dir/tests/WVStratifiedLifecycleProbe.cpp.o
+[ 96%] Linking CXX executable WVHydrostaticLifecycleProbe
+[100%] Built target WVHydrostaticLifecycleProbe
+[ 16%] Built target WaveVortexKernel
+[ 22%] Built target WaveVortexNativeFFTW
+[ 22%] Built target WaveVortexReferenceFFT
+[ 96%] Built target WaveVortexPortableRuntime
+[ 96%] Building CXX object CMakeFiles/WVBoussinesqLifecycleProbe.dir/tests/WVStratifiedLifecycleProbe.cpp.o
+[ 96%] Linking CXX executable WVBoussinesqLifecycleProbe
+[100%] Built target WVBoussinesqLifecycleProbe

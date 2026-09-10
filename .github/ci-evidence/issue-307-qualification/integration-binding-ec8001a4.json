@@ -1,0 +1,36 @@
+{
+  "schema": "wave-vortex-local-qualification-integration-binding-v1",
+  "issue": 307,
+  "integratedCommit": "ec8001a44670e1c7dc04312c1f35349606b5d61a",
+  "verifiedAtUTC": "2026-09-09T23:57:06.229740+00:00",
+  "originalReceipt": {
+    "path": "qualification.json",
+    "sha256": "75c8b3fbdc4368a784eeed6391407b8ae443a03ea94ee20c9f7bc0f5a0e560c4",
+    "executionCommit": "f846323900432aaabf76c5c217fcb0b73e721525",
+    "assemblyCommit": "12f2b2868fe468e6ce4166de0d3b340e777c683e"
+  },
+  "verifiedOriginalArtifactCount": 258,
+  "nestedSourceConsumerProcessMemoryAndLifecycleHashesVerified": true,
+  "cppProductionFileCount": 138,
+  "cppProductionSHA256": "f7ef226a55aa45cdd7cee565c2944123842c793364ed5fa891f568a311f4657a",
+  "cppProductionMatchesOriginalExecution": true,
+  "workingTreeCppProductionMatchesIntegratedCommit": true,
+  "classification": "Inherited execution bound to byte-identical integrated C++ sources; not a new measurement campaign.",
+  "matlabCorrection": {
+    "issue": 456,
+    "path": "Operations/@WVNoMotionProfile/WVNoMotionProfile.m",
+    "sha256": "fc297a6ec059521eedc108984f764f66b3667e20e8a6e99d204bb161e315f3a7",
+    "scope": "MATLAB inverse publication corrects only rounding-sized endpoint excursions within its existing height tolerance; strict input rejection and interior results are preserved.",
+    "qualificationSupplement": ".github/ci-evidence/issue-391-density-output/ci-repair/endpoint-repair.json",
+    "qualificationSupplementSHA256": "9f29dcfbf91a2093cad37cc597f47a71aeb68f7f8fc2bc82c14f2fb72a4c6265",
+    "verifiedSupplementArtifactCount": 8,
+    "verifiedPassingFocusedMethods": 13,
+    "note": "MATLAB scientific source changed, so this receipt makes no blanket MATLAB-source-equivalence claim. The separately retained red/green regression and 32-cell ordinary/dense rerun qualify the correction."
+  },
+  "decision": "partial-local-gates-only",
+  "standardPortableParity": false,
+  "remainingDecisionInputs": [
+    "assembled compatibility matrix completeness",
+    "final required hosted qualification results"
+  ]
+}

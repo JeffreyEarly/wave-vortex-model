@@ -1,0 +1,20 @@
+Internal ctest changing into directory: /tmp/wvm307-ats-build
+Test project /tmp/wvm307-ats-build
+    Start 1: alongtrack_portable_core
+1/7 Test #1: alongtrack_portable_core ........................   Passed    0.41 sec
+    Start 2: alongtrack_portable_core_source_policy
+2/7 Test #2: alongtrack_portable_core_source_policy ..........   Passed    0.06 sec
+    Start 3: alongtrack_wavevortex_runner_composition
+3/7 Test #3: alongtrack_wavevortex_runner_composition ........   Passed    0.28 sec
+    Start 4: alongtrack_wavevortex_runner_end_to_end
+4/7 Test #4: alongtrack_wavevortex_runner_end_to_end .........   Passed   11.81 sec
+    Start 5: alongtrack_wavevortex_extension
+5/7 Test #5: alongtrack_wavevortex_extension .................   Passed    0.33 sec
+    Start 6: alongtrack_wavevortex_extension_routing
+6/7 Test #6: alongtrack_wavevortex_extension_routing .........   Passed    0.25 sec
+    Start 7: alongtrack_wavevortex_extension_source_policy
+7/7 Test #7: alongtrack_wavevortex_extension_source_policy ...   Passed    0.08 sec
+
+100% tests passed, 0 tests failed out of 7
+
+Total Test time (real) =  13.26 sec

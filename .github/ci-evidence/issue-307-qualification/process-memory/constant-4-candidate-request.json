@@ -1,0 +1,20 @@
+{
+  "schemaIdentifier": "wave-vortex-run-request-v2",
+  "schemaVersion": 2,
+  "modelFiles": [
+    "/private/tmp/wvm307-process-memory-final/constant-4-candidate.nc"
+  ],
+  "integration": {
+    "method": "fixed-rk4",
+    "finalTime": 32,
+    "initialStep": 0.5
+  },
+  "output": {
+    "policy": "append",
+    "destinations": {}
+  },
+  "execution": {
+    "fftProvider": "native-fftw"
+  },
+  "report": "/Users/jearly/Documents/OceanKitRepositories/wvm-v4-cpp-adoption-audit/.github/ci-evidence/issue-307-qualification/process-memory/constant-4-candidate-report.json"
+}
