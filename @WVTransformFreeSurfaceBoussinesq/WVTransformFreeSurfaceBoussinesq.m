@@ -69,6 +69,7 @@ classdef WVTransformFreeSurfaceBoussinesq < WVGeometryDoublyPeriodicStratified &
         % Factors depend only on the immutable scientific representation.
         thermodynamics_ = []
         pressureSolver_ = []
+        nonlinearSolver_ = []
     end
 
     properties (Transient, SetAccess=private)
@@ -344,6 +345,7 @@ classdef WVTransformFreeSurfaceBoussinesq < WVGeometryDoublyPeriodicStratified &
         [varargout] = variableAtPositionWithName(self,x,y,z,variableNames,options)
         [pressure,diagnostics] = fullPressure(self)
         diagnostics = nonlinearEnergy(self)
+        flux = fluxForForcing(self)
         fields = reconstructSpectralState(self,options)
         [state,assessment] = projectFields(self,fields)
         operation = operationForKnownVariable(self,variableName,options)
@@ -409,7 +411,7 @@ classdef WVTransformFreeSurfaceBoussinesq < WVGeometryDoublyPeriodicStratified &
             value = []; WVTransformFreeSurfaceBoussinesq.throwUnavailable('WVTransformFreeSurfaceBoussinesq:UseCanonicalFamilies','Use reconstructFields with canonical coefficient families.')
         end
         function [Fp,Fm,F0] = nonlinearFlux(~)
-            Fp=[]; Fm=[]; F0=[]; WVTransformFreeSurfaceBoussinesq.throwUnavailable('WVTransformFreeSurfaceBoussinesq:NonlinearDynamicsUnavailable','This transform currently qualifies exact linear evolution only.')
+            Fp=[]; Fm=[]; F0=[]; WVTransformFreeSurfaceBoussinesq.throwUnavailable('WVTransformFreeSurfaceBoussinesq:UseCanonicalFamilies','Use coefficientTendency to evaluate the six independently shaped coefficient families.')
         end
 
     end
@@ -428,6 +430,12 @@ classdef WVTransformFreeSurfaceBoussinesq < WVGeometryDoublyPeriodicStratified &
                 self.thermodynamics_ = WVInternal.freeSurfaceThermodynamics(self);
             end
             context = self.thermodynamics_;
+        end
+        function context = nonlinearContext(self)
+            if isempty(self.nonlinearSolver_)
+                self.nonlinearSolver_ = WVInternal.freeSurfaceNonlinearStage(self);
+            end
+            context = self.nonlinearSolver_;
         end
         function context = pressureContext(self)
             if isempty(self.pressureSolver_)

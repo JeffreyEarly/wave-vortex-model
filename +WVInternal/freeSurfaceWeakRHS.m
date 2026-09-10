@@ -1,4 +1,4 @@
-function [covector,target,diagnostics] = freeSurfaceWeakRHS(wvt,hatted,metric,buoyancy,piSurface,derivative,boundary)
+function [covector,target,diagnostics] = freeSurfaceWeakRHS(wvt,hatted,metric,buoyancy,piSurface,derivative,boundary,options)
 % Assemble the unforced mapped weak RHS and retained kinematic targets.
 %
 % This returns a coefficient COVECTOR, not a coefficient tendency. The
@@ -16,7 +16,10 @@ function [covector,target,diagnostics] = freeSurfaceWeakRHS(wvt,hatted,metric,bu
 % using physical horizontal velocity. Derivatives act on the full mapped
 % interior-displacement field before selecting endpoints. boundary provides
 % the retained target coordinates and reports discarded target RMS.
-% No reaction multiplier is identified with physical pressure.
+% No reaction multiplier is identified with physical pressure. Optional
+% tendency supplies already assembled pressure-free hatted equation rates;
+% displacementSource adds only the prescribed endpoint material-label rates.
+% This does not admit an independent SSH mass source.
 arguments (Input)
     wvt (1,1) WVTransformFreeSurfaceBoussinesq
     hatted (1,1) struct
@@ -25,6 +28,8 @@ arguments (Input)
     piSurface (:,:) double {mustBeReal,mustBeFinite}
     derivative (1,1) struct
     boundary (1,1) struct
+    options.tendency (1,1) struct = struct()
+    options.displacementSource (:,:,:) double {mustBeReal,mustBeFinite} = zeros(wvt.Nx,wvt.Ny,wvt.Nz)
 end
 arguments (Output)
     covector (1,1) struct
@@ -56,7 +61,19 @@ topWeight = wvt.verticalQuadratureWeights(end);
 if ~isfinite(topWeight) || topWeight<=0
     error('WV:WeakRHSSurfaceWeight','The stored top vertical quadrature weight must be positive.');
 end
-rhs = WVInternal.freeSurfaceMappedTendency(hatted,zeros(shape),buoyancy,wvt.z,wvt.Lz,wvt.f,wvt.rho0,derivative);
+if isempty(fieldnames(options.tendency))
+    rhs = WVInternal.freeSurfaceMappedTendency(hatted,zeros(shape),buoyancy,wvt.z,wvt.Lz,wvt.f,wvt.rho0,derivative);
+else
+    rhs = options.tendency;
+end
+for name = ["u","v","w","eta"]
+    if ~isfield(rhs,name) || ~isequal(size(rhs.(name)),shape) || ~isreal(rhs.(name)) || any(~isfinite(rhs.(name)),'all')
+        error('WV:WeakRHSFields','The supplied tendency must contain finite real volume fields u,v,w,eta.');
+    end
+end
+if ~isequal(size(options.displacementSource),shape)
+    error('WV:WeakRHSFields','The displacement source must use the volume grid.');
+end
 vertical = rhs.w+metric.betaX.*rhs.u+metric.betaY.*rhs.v;
 weighted.u = rhs.u./metric.gamma+metric.gamma.*metric.betaX.*vertical;
 weighted.v = rhs.v./metric.gamma+metric.gamma.*metric.betaY.*vertical;
@@ -69,7 +86,7 @@ covector = WVInternal.freeSurfaceReconstructionAdjoint(wvt,weighted);
 alpha = reshape(1+wvt.z/wvt.Lz,1,1,[]);
 interiorDisplacement = hatted.eta-alpha.*hatted.ssh;
 endpointAdvection = -(hatted.u.*derivative.x(interiorDisplacement)+hatted.v.*derivative.y(interiorDisplacement))./metric.gamma;
-fields = struct(ssh=hatted.w(:,:,end),surface=endpointAdvection(:,:,end),bottom=endpointAdvection(:,:,1));
+fields = struct(ssh=hatted.w(:,:,end),surface=endpointAdvection(:,:,end)+options.displacementSource(:,:,end),bottom=endpointAdvection(:,:,1)+options.displacementSource(:,:,1));
 [target,discardedRMS] = boundary.projectTarget(fields);
 diagnostics = struct(discardedBoundaryTargetRMS=discardedRMS,boundaryTargetFields=fields);
 end
