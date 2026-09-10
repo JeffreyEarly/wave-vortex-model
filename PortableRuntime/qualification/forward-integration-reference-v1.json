@@ -3,7 +3,7 @@
   "schemaVersion": 1,
   "scope": "forward-integration",
   "status": "complete",
-  "sourceCommit": "107894a120da8f2aaa545101d74190a34c38974b",
+  "sourceCommit": "b71860fc4cc877298abf5dbb39a3716acc5f0cf4",
   "provider": "reference",
   "matlabRelease": "2025b",
   "platform": "MACA64",
@@ -209,8 +209,8 @@
         }
       ],
       "timingSeconds": {
-        "sharedMatlabPreparation": 8.7122093333333339,
-        "providerLifecycle": 20.237731291666666
+        "sharedMatlabPreparation": 8.635786625,
+        "providerLifecycle": 20.129250791666667
       },
       "runs": {
         "whole": {
@@ -242,7 +242,7 @@
             "selectedStep": 4,
             "effectiveIntegrationStep": 4,
             "transientWorkspaceMaximumLiveBytes": 10368,
-            "candidateEvaluationSeconds": 0.000303375,
+            "candidateEvaluationSeconds": 0.000309875,
             "noFallback": true
           },
           "termination": {
@@ -268,7 +268,25 @@
           },
           "acceptedStepCount": 30,
           "rejectedStepCount": 0,
-          "denseOutputEvaluationCount": 18
+          "denseOutputEvaluationCount": 18,
+          "variableKernelPolicy": {
+            "buildEnabled": true,
+            "variableTransform": false,
+            "transformKind": "constant-stratification",
+            "selection": "non-variable-transform",
+            "compact": false,
+            "matrixBackend": "scalar",
+            "spectralSchedule": "established-interleaved",
+            "horizontalSchedule": "full-fft",
+            "streamedNonlinear": false,
+            "horizontalWorkers": 1,
+            "pointwiseWorkers": 1,
+            "requestedFFTThreads": [],
+            "effectiveFFTThreads": 1,
+            "hostLogicalWorkers": 16,
+            "hostPerformanceWorkers": 12,
+            "noFallback": true
+          }
         },
         "firstSegment": {
           "status": "complete",
@@ -299,7 +317,7 @@
             "selectedStep": 4,
             "effectiveIntegrationStep": 4,
             "transientWorkspaceMaximumLiveBytes": 10368,
-            "candidateEvaluationSeconds": 0.000310208,
+            "candidateEvaluationSeconds": 0.000306375,
             "noFallback": true
           },
           "termination": {
@@ -325,7 +343,25 @@
           },
           "acceptedStepCount": 15,
           "rejectedStepCount": 0,
-          "denseOutputEvaluationCount": 9
+          "denseOutputEvaluationCount": 9,
+          "variableKernelPolicy": {
+            "buildEnabled": true,
+            "variableTransform": false,
+            "transformKind": "constant-stratification",
+            "selection": "non-variable-transform",
+            "compact": false,
+            "matrixBackend": "scalar",
+            "spectralSchedule": "established-interleaved",
+            "horizontalSchedule": "full-fft",
+            "streamedNonlinear": false,
+            "horizontalWorkers": 1,
+            "pointwiseWorkers": 1,
+            "requestedFFTThreads": [],
+            "effectiveFFTThreads": 1,
+            "hostLogicalWorkers": 16,
+            "hostPerformanceWorkers": 12,
+            "noFallback": true
+          }
         },
         "secondSegment": {
           "status": "complete",
@@ -356,7 +392,7 @@
             "selectedStep": 4,
             "effectiveIntegrationStep": 4,
             "transientWorkspaceMaximumLiveBytes": 10368,
-            "candidateEvaluationSeconds": 0.0003025,
+            "candidateEvaluationSeconds": 0.000338667,
             "noFallback": true
           },
           "termination": {
@@ -382,7 +418,25 @@
           },
           "acceptedStepCount": 15,
           "rejectedStepCount": 0,
-          "denseOutputEvaluationCount": 9
+          "denseOutputEvaluationCount": 9,
+          "variableKernelPolicy": {
+            "buildEnabled": true,
+            "variableTransform": false,
+            "transformKind": "constant-stratification",
+            "selection": "non-variable-transform",
+            "compact": false,
+            "matrixBackend": "scalar",
+            "spectralSchedule": "established-interleaved",
+            "horizontalSchedule": "full-fft",
+            "streamedNonlinear": false,
+            "horizontalWorkers": 1,
+            "pointwiseWorkers": 1,
+            "requestedFFTThreads": [],
+            "effectiveFFTThreads": 1,
+            "hostLogicalWorkers": 16,
+            "hostPerformanceWorkers": 12,
+            "noFallback": true
+          }
         },
         "matlabToCpp": {
           "status": "complete",
@@ -413,7 +467,7 @@
             "selectedStep": 4,
             "effectiveIntegrationStep": 4,
             "transientWorkspaceMaximumLiveBytes": 10368,
-            "candidateEvaluationSeconds": 0.000303542,
+            "candidateEvaluationSeconds": 0.000305917,
             "noFallback": true
           },
           "termination": {
@@ -439,7 +493,25 @@
           },
           "acceptedStepCount": 15,
           "rejectedStepCount": 0,
-          "denseOutputEvaluationCount": 9
+          "denseOutputEvaluationCount": 9,
+          "variableKernelPolicy": {
+            "buildEnabled": true,
+            "variableTransform": false,
+            "transformKind": "constant-stratification",
+            "selection": "non-variable-transform",
+            "compact": false,
+            "matrixBackend": "scalar",
+            "spectralSchedule": "established-interleaved",
+            "horizontalSchedule": "full-fft",
+            "streamedNonlinear": false,
+            "horizontalWorkers": 1,
+            "pointwiseWorkers": 1,
+            "requestedFFTThreads": [],
+            "effectiveFFTThreads": 1,
+            "hostLogicalWorkers": 16,
+            "hostPerformanceWorkers": 12,
+            "noFallback": true
+          }
         },
         "stopped": {
           "status": "stopped",
@@ -470,7 +542,7 @@
             "selectedStep": 4,
             "effectiveIntegrationStep": 4,
             "transientWorkspaceMaximumLiveBytes": 10368,
-            "candidateEvaluationSeconds": 0.000358834,
+            "candidateEvaluationSeconds": 0.000303791,
             "noFallback": true
           },
           "termination": {
@@ -496,7 +568,25 @@
           },
           "acceptedStepCount": 5,
           "rejectedStepCount": 0,
-          "denseOutputEvaluationCount": 3
+          "denseOutputEvaluationCount": 3,
+          "variableKernelPolicy": {
+            "buildEnabled": true,
+            "variableTransform": false,
+            "transformKind": "constant-stratification",
+            "selection": "non-variable-transform",
+            "compact": false,
+            "matrixBackend": "scalar",
+            "spectralSchedule": "established-interleaved",
+            "horizontalSchedule": "full-fft",
+            "streamedNonlinear": false,
+            "horizontalWorkers": 1,
+            "pointwiseWorkers": 1,
+            "requestedFFTThreads": [],
+            "effectiveFFTThreads": 1,
+            "hostLogicalWorkers": 16,
+            "hostPerformanceWorkers": 12,
+            "noFallback": true
+          }
         },
         "stoppedResume": {
           "status": "complete",
@@ -527,7 +617,7 @@
             "selectedStep": 4,
             "effectiveIntegrationStep": 4,
             "transientWorkspaceMaximumLiveBytes": 10368,
-            "candidateEvaluationSeconds": 0.000305333,
+            "candidateEvaluationSeconds": 0.000309625,
             "noFallback": true
           },
           "termination": {
@@ -553,7 +643,25 @@
           },
           "acceptedStepCount": 25,
           "rejectedStepCount": 0,
-          "denseOutputEvaluationCount": 15
+          "denseOutputEvaluationCount": 15,
+          "variableKernelPolicy": {
+            "buildEnabled": true,
+            "variableTransform": false,
+            "transformKind": "constant-stratification",
+            "selection": "non-variable-transform",
+            "compact": false,
+            "matrixBackend": "scalar",
+            "spectralSchedule": "established-interleaved",
+            "horizontalSchedule": "full-fft",
+            "streamedNonlinear": false,
+            "horizontalWorkers": 1,
+            "pointwiseWorkers": 1,
+            "requestedFFTThreads": [],
+            "effectiveFFTThreads": 1,
+            "hostLogicalWorkers": 16,
+            "hostPerformanceWorkers": 12,
+            "noFallback": true
+          }
         }
       }
     },
@@ -757,8 +865,8 @@
         }
       ],
       "timingSeconds": {
-        "sharedMatlabPreparation": 4.998853875,
-        "providerLifecycle": 15.999610541666666
+        "sharedMatlabPreparation": 4.889531125,
+        "providerLifecycle": 16.414776166666666
       },
       "runs": {
         "whole": {
@@ -816,7 +924,25 @@
           },
           "acceptedStepCount": 30,
           "rejectedStepCount": 0,
-          "denseOutputEvaluationCount": 18
+          "denseOutputEvaluationCount": 18,
+          "variableKernelPolicy": {
+            "buildEnabled": true,
+            "variableTransform": false,
+            "transformKind": "constant-stratification",
+            "selection": "non-variable-transform",
+            "compact": false,
+            "matrixBackend": "scalar",
+            "spectralSchedule": "established-interleaved",
+            "horizontalSchedule": "full-fft",
+            "streamedNonlinear": false,
+            "horizontalWorkers": 1,
+            "pointwiseWorkers": 1,
+            "requestedFFTThreads": [],
+            "effectiveFFTThreads": 1,
+            "hostLogicalWorkers": 16,
+            "hostPerformanceWorkers": 12,
+            "noFallback": true
+          }
         },
         "firstSegment": {
           "status": "complete",
@@ -873,7 +999,25 @@
           },
           "acceptedStepCount": 15,
           "rejectedStepCount": 0,
-          "denseOutputEvaluationCount": 9
+          "denseOutputEvaluationCount": 9,
+          "variableKernelPolicy": {
+            "buildEnabled": true,
+            "variableTransform": false,
+            "transformKind": "constant-stratification",
+            "selection": "non-variable-transform",
+            "compact": false,
+            "matrixBackend": "scalar",
+            "spectralSchedule": "established-interleaved",
+            "horizontalSchedule": "full-fft",
+            "streamedNonlinear": false,
+            "horizontalWorkers": 1,
+            "pointwiseWorkers": 1,
+            "requestedFFTThreads": [],
+            "effectiveFFTThreads": 1,
+            "hostLogicalWorkers": 16,
+            "hostPerformanceWorkers": 12,
+            "noFallback": true
+          }
         },
         "secondSegment": {
           "status": "complete",
@@ -930,7 +1074,25 @@
           },
           "acceptedStepCount": 15,
           "rejectedStepCount": 0,
-          "denseOutputEvaluationCount": 9
+          "denseOutputEvaluationCount": 9,
+          "variableKernelPolicy": {
+            "buildEnabled": true,
+            "variableTransform": false,
+            "transformKind": "constant-stratification",
+            "selection": "non-variable-transform",
+            "compact": false,
+            "matrixBackend": "scalar",
+            "spectralSchedule": "established-interleaved",
+            "horizontalSchedule": "full-fft",
+            "streamedNonlinear": false,
+            "horizontalWorkers": 1,
+            "pointwiseWorkers": 1,
+            "requestedFFTThreads": [],
+            "effectiveFFTThreads": 1,
+            "hostLogicalWorkers": 16,
+            "hostPerformanceWorkers": 12,
+            "noFallback": true
+          }
         },
         "matlabToCpp": {
           "status": "complete",
@@ -987,7 +1149,25 @@
           },
           "acceptedStepCount": 15,
           "rejectedStepCount": 0,
-          "denseOutputEvaluationCount": 9
+          "denseOutputEvaluationCount": 9,
+          "variableKernelPolicy": {
+            "buildEnabled": true,
+            "variableTransform": false,
+            "transformKind": "constant-stratification",
+            "selection": "non-variable-transform",
+            "compact": false,
+            "matrixBackend": "scalar",
+            "spectralSchedule": "established-interleaved",
+            "horizontalSchedule": "full-fft",
+            "streamedNonlinear": false,
+            "horizontalWorkers": 1,
+            "pointwiseWorkers": 1,
+            "requestedFFTThreads": [],
+            "effectiveFFTThreads": 1,
+            "hostLogicalWorkers": 16,
+            "hostPerformanceWorkers": 12,
+            "noFallback": true
+          }
         },
         "stopped": {
           "status": "stopped",
@@ -1044,7 +1224,25 @@
           },
           "acceptedStepCount": 5,
           "rejectedStepCount": 0,
-          "denseOutputEvaluationCount": 3
+          "denseOutputEvaluationCount": 3,
+          "variableKernelPolicy": {
+            "buildEnabled": true,
+            "variableTransform": false,
+            "transformKind": "constant-stratification",
+            "selection": "non-variable-transform",
+            "compact": false,
+            "matrixBackend": "scalar",
+            "spectralSchedule": "established-interleaved",
+            "horizontalSchedule": "full-fft",
+            "streamedNonlinear": false,
+            "horizontalWorkers": 1,
+            "pointwiseWorkers": 1,
+            "requestedFFTThreads": [],
+            "effectiveFFTThreads": 1,
+            "hostLogicalWorkers": 16,
+            "hostPerformanceWorkers": 12,
+            "noFallback": true
+          }
         },
         "stoppedResume": {
           "status": "complete",
@@ -1101,7 +1299,25 @@
           },
           "acceptedStepCount": 25,
           "rejectedStepCount": 0,
-          "denseOutputEvaluationCount": 15
+          "denseOutputEvaluationCount": 15,
+          "variableKernelPolicy": {
+            "buildEnabled": true,
+            "variableTransform": false,
+            "transformKind": "constant-stratification",
+            "selection": "non-variable-transform",
+            "compact": false,
+            "matrixBackend": "scalar",
+            "spectralSchedule": "established-interleaved",
+            "horizontalSchedule": "full-fft",
+            "streamedNonlinear": false,
+            "horizontalWorkers": 1,
+            "pointwiseWorkers": 1,
+            "requestedFFTThreads": [],
+            "effectiveFFTThreads": 1,
+            "hostLogicalWorkers": 16,
+            "hostPerformanceWorkers": 12,
+            "noFallback": true
+          }
         }
       }
     },
@@ -1305,8 +1521,8 @@
         }
       ],
       "timingSeconds": {
-        "sharedMatlabPreparation": 3.5291820833333332,
-        "providerLifecycle": 10.365359541666667
+        "sharedMatlabPreparation": 3.504243625,
+        "providerLifecycle": 10.646410791666666
       },
       "runs": {
         "whole": {
@@ -1361,7 +1577,25 @@
           },
           "acceptedStepCount": 30,
           "rejectedStepCount": 0,
-          "denseOutputEvaluationCount": 18
+          "denseOutputEvaluationCount": 18,
+          "variableKernelPolicy": {
+            "buildEnabled": true,
+            "variableTransform": false,
+            "transformKind": "barotropic-qg",
+            "selection": "non-variable-transform",
+            "compact": false,
+            "matrixBackend": "scalar",
+            "spectralSchedule": "established-interleaved",
+            "horizontalSchedule": "full-fft",
+            "streamedNonlinear": false,
+            "horizontalWorkers": 1,
+            "pointwiseWorkers": 1,
+            "requestedFFTThreads": [],
+            "effectiveFFTThreads": 1,
+            "hostLogicalWorkers": 16,
+            "hostPerformanceWorkers": 12,
+            "noFallback": true
+          }
         },
         "firstSegment": {
           "status": "complete",
@@ -1415,7 +1649,25 @@
           },
           "acceptedStepCount": 15,
           "rejectedStepCount": 0,
-          "denseOutputEvaluationCount": 9
+          "denseOutputEvaluationCount": 9,
+          "variableKernelPolicy": {
+            "buildEnabled": true,
+            "variableTransform": false,
+            "transformKind": "barotropic-qg",
+            "selection": "non-variable-transform",
+            "compact": false,
+            "matrixBackend": "scalar",
+            "spectralSchedule": "established-interleaved",
+            "horizontalSchedule": "full-fft",
+            "streamedNonlinear": false,
+            "horizontalWorkers": 1,
+            "pointwiseWorkers": 1,
+            "requestedFFTThreads": [],
+            "effectiveFFTThreads": 1,
+            "hostLogicalWorkers": 16,
+            "hostPerformanceWorkers": 12,
+            "noFallback": true
+          }
         },
         "secondSegment": {
           "status": "complete",
@@ -1469,7 +1721,25 @@
           },
           "acceptedStepCount": 15,
           "rejectedStepCount": 0,
-          "denseOutputEvaluationCount": 9
+          "denseOutputEvaluationCount": 9,
+          "variableKernelPolicy": {
+            "buildEnabled": true,
+            "variableTransform": false,
+            "transformKind": "barotropic-qg",
+            "selection": "non-variable-transform",
+            "compact": false,
+            "matrixBackend": "scalar",
+            "spectralSchedule": "established-interleaved",
+            "horizontalSchedule": "full-fft",
+            "streamedNonlinear": false,
+            "horizontalWorkers": 1,
+            "pointwiseWorkers": 1,
+            "requestedFFTThreads": [],
+            "effectiveFFTThreads": 1,
+            "hostLogicalWorkers": 16,
+            "hostPerformanceWorkers": 12,
+            "noFallback": true
+          }
         },
         "matlabToCpp": {
           "status": "complete",
@@ -1523,7 +1793,25 @@
           },
           "acceptedStepCount": 15,
           "rejectedStepCount": 0,
-          "denseOutputEvaluationCount": 9
+          "denseOutputEvaluationCount": 9,
+          "variableKernelPolicy": {
+            "buildEnabled": true,
+            "variableTransform": false,
+            "transformKind": "barotropic-qg",
+            "selection": "non-variable-transform",
+            "compact": false,
+            "matrixBackend": "scalar",
+            "spectralSchedule": "established-interleaved",
+            "horizontalSchedule": "full-fft",
+            "streamedNonlinear": false,
+            "horizontalWorkers": 1,
+            "pointwiseWorkers": 1,
+            "requestedFFTThreads": [],
+            "effectiveFFTThreads": 1,
+            "hostLogicalWorkers": 16,
+            "hostPerformanceWorkers": 12,
+            "noFallback": true
+          }
         },
         "stopped": {
           "status": "stopped",
@@ -1577,7 +1865,25 @@
           },
           "acceptedStepCount": 5,
           "rejectedStepCount": 0,
-          "denseOutputEvaluationCount": 3
+          "denseOutputEvaluationCount": 3,
+          "variableKernelPolicy": {
+            "buildEnabled": true,
+            "variableTransform": false,
+            "transformKind": "barotropic-qg",
+            "selection": "non-variable-transform",
+            "compact": false,
+            "matrixBackend": "scalar",
+            "spectralSchedule": "established-interleaved",
+            "horizontalSchedule": "full-fft",
+            "streamedNonlinear": false,
+            "horizontalWorkers": 1,
+            "pointwiseWorkers": 1,
+            "requestedFFTThreads": [],
+            "effectiveFFTThreads": 1,
+            "hostLogicalWorkers": 16,
+            "hostPerformanceWorkers": 12,
+            "noFallback": true
+          }
         },
         "stoppedResume": {
           "status": "complete",
@@ -1631,7 +1937,25 @@
           },
           "acceptedStepCount": 25,
           "rejectedStepCount": 0,
-          "denseOutputEvaluationCount": 15
+          "denseOutputEvaluationCount": 15,
+          "variableKernelPolicy": {
+            "buildEnabled": true,
+            "variableTransform": false,
+            "transformKind": "barotropic-qg",
+            "selection": "non-variable-transform",
+            "compact": false,
+            "matrixBackend": "scalar",
+            "spectralSchedule": "established-interleaved",
+            "horizontalSchedule": "full-fft",
+            "streamedNonlinear": false,
+            "horizontalWorkers": 1,
+            "pointwiseWorkers": 1,
+            "requestedFFTThreads": [],
+            "effectiveFFTThreads": 1,
+            "hostLogicalWorkers": 16,
+            "hostPerformanceWorkers": 12,
+            "noFallback": true
+          }
         }
       }
     },
@@ -1835,8 +2159,8 @@
         }
       ],
       "timingSeconds": {
-        "sharedMatlabPreparation": 5.5465982083333332,
-        "providerLifecycle": 17.949861125
+        "sharedMatlabPreparation": 5.368324625,
+        "providerLifecycle": 18.073763083333333
       },
       "runs": {
         "whole": {
@@ -1894,7 +2218,25 @@
           },
           "acceptedStepCount": 30,
           "rejectedStepCount": 0,
-          "denseOutputEvaluationCount": 18
+          "denseOutputEvaluationCount": 18,
+          "variableKernelPolicy": {
+            "buildEnabled": true,
+            "variableTransform": true,
+            "transformKind": "stratified-qg",
+            "selection": "reference-provider",
+            "compact": false,
+            "matrixBackend": "scalar",
+            "spectralSchedule": "established-interleaved",
+            "horizontalSchedule": "full-fft",
+            "streamedNonlinear": false,
+            "horizontalWorkers": 1,
+            "pointwiseWorkers": 1,
+            "requestedFFTThreads": [],
+            "effectiveFFTThreads": 1,
+            "hostLogicalWorkers": 16,
+            "hostPerformanceWorkers": 12,
+            "noFallback": true
+          }
         },
         "firstSegment": {
           "status": "complete",
@@ -1951,7 +2293,25 @@
           },
           "acceptedStepCount": 15,
           "rejectedStepCount": 0,
-          "denseOutputEvaluationCount": 9
+          "denseOutputEvaluationCount": 9,
+          "variableKernelPolicy": {
+            "buildEnabled": true,
+            "variableTransform": true,
+            "transformKind": "stratified-qg",
+            "selection": "reference-provider",
+            "compact": false,
+            "matrixBackend": "scalar",
+            "spectralSchedule": "established-interleaved",
+            "horizontalSchedule": "full-fft",
+            "streamedNonlinear": false,
+            "horizontalWorkers": 1,
+            "pointwiseWorkers": 1,
+            "requestedFFTThreads": [],
+            "effectiveFFTThreads": 1,
+            "hostLogicalWorkers": 16,
+            "hostPerformanceWorkers": 12,
+            "noFallback": true
+          }
         },
         "secondSegment": {
           "status": "complete",
@@ -2008,7 +2368,25 @@
           },
           "acceptedStepCount": 15,
           "rejectedStepCount": 0,
-          "denseOutputEvaluationCount": 9
+          "denseOutputEvaluationCount": 9,
+          "variableKernelPolicy": {
+            "buildEnabled": true,
+            "variableTransform": true,
+            "transformKind": "stratified-qg",
+            "selection": "reference-provider",
+            "compact": false,
+            "matrixBackend": "scalar",
+            "spectralSchedule": "established-interleaved",
+            "horizontalSchedule": "full-fft",
+            "streamedNonlinear": false,
+            "horizontalWorkers": 1,
+            "pointwiseWorkers": 1,
+            "requestedFFTThreads": [],
+            "effectiveFFTThreads": 1,
+            "hostLogicalWorkers": 16,
+            "hostPerformanceWorkers": 12,
+            "noFallback": true
+          }
         },
         "matlabToCpp": {
           "status": "complete",
@@ -2065,7 +2443,25 @@
           },
           "acceptedStepCount": 15,
           "rejectedStepCount": 0,
-          "denseOutputEvaluationCount": 9
+          "denseOutputEvaluationCount": 9,
+          "variableKernelPolicy": {
+            "buildEnabled": true,
+            "variableTransform": true,
+            "transformKind": "stratified-qg",
+            "selection": "reference-provider",
+            "compact": false,
+            "matrixBackend": "scalar",
+            "spectralSchedule": "established-interleaved",
+            "horizontalSchedule": "full-fft",
+            "streamedNonlinear": false,
+            "horizontalWorkers": 1,
+            "pointwiseWorkers": 1,
+            "requestedFFTThreads": [],
+            "effectiveFFTThreads": 1,
+            "hostLogicalWorkers": 16,
+            "hostPerformanceWorkers": 12,
+            "noFallback": true
+          }
         },
         "stopped": {
           "status": "stopped",
@@ -2122,7 +2518,25 @@
           },
           "acceptedStepCount": 5,
           "rejectedStepCount": 0,
-          "denseOutputEvaluationCount": 3
+          "denseOutputEvaluationCount": 3,
+          "variableKernelPolicy": {
+            "buildEnabled": true,
+            "variableTransform": true,
+            "transformKind": "stratified-qg",
+            "selection": "reference-provider",
+            "compact": false,
+            "matrixBackend": "scalar",
+            "spectralSchedule": "established-interleaved",
+            "horizontalSchedule": "full-fft",
+            "streamedNonlinear": false,
+            "horizontalWorkers": 1,
+            "pointwiseWorkers": 1,
+            "requestedFFTThreads": [],
+            "effectiveFFTThreads": 1,
+            "hostLogicalWorkers": 16,
+            "hostPerformanceWorkers": 12,
+            "noFallback": true
+          }
         },
         "stoppedResume": {
           "status": "complete",
@@ -2179,7 +2593,25 @@
           },
           "acceptedStepCount": 25,
           "rejectedStepCount": 0,
-          "denseOutputEvaluationCount": 15
+          "denseOutputEvaluationCount": 15,
+          "variableKernelPolicy": {
+            "buildEnabled": true,
+            "variableTransform": true,
+            "transformKind": "stratified-qg",
+            "selection": "reference-provider",
+            "compact": false,
+            "matrixBackend": "scalar",
+            "spectralSchedule": "established-interleaved",
+            "horizontalSchedule": "full-fft",
+            "streamedNonlinear": false,
+            "horizontalWorkers": 1,
+            "pointwiseWorkers": 1,
+            "requestedFFTThreads": [],
+            "effectiveFFTThreads": 1,
+            "hostLogicalWorkers": 16,
+            "hostPerformanceWorkers": 12,
+            "noFallback": true
+          }
         }
       }
     },
@@ -2383,8 +2815,8 @@
         }
       ],
       "timingSeconds": {
-        "sharedMatlabPreparation": 7.2486677083333335,
-        "providerLifecycle": 21.990395166666666
+        "sharedMatlabPreparation": 7.101719,
+        "providerLifecycle": 22.420603041666666
       },
       "runs": {
         "whole": {
@@ -2442,7 +2874,25 @@
           },
           "acceptedStepCount": 30,
           "rejectedStepCount": 0,
-          "denseOutputEvaluationCount": 18
+          "denseOutputEvaluationCount": 18,
+          "variableKernelPolicy": {
+            "buildEnabled": true,
+            "variableTransform": true,
+            "transformKind": "hydrostatic",
+            "selection": "reference-provider",
+            "compact": false,
+            "matrixBackend": "scalar",
+            "spectralSchedule": "established-interleaved",
+            "horizontalSchedule": "full-fft",
+            "streamedNonlinear": false,
+            "horizontalWorkers": 1,
+            "pointwiseWorkers": 1,
+            "requestedFFTThreads": [],
+            "effectiveFFTThreads": 1,
+            "hostLogicalWorkers": 16,
+            "hostPerformanceWorkers": 12,
+            "noFallback": true
+          }
         },
         "firstSegment": {
           "status": "complete",
@@ -2499,7 +2949,25 @@
           },
           "acceptedStepCount": 15,
           "rejectedStepCount": 0,
-          "denseOutputEvaluationCount": 9
+          "denseOutputEvaluationCount": 9,
+          "variableKernelPolicy": {
+            "buildEnabled": true,
+            "variableTransform": true,
+            "transformKind": "hydrostatic",
+            "selection": "reference-provider",
+            "compact": false,
+            "matrixBackend": "scalar",
+            "spectralSchedule": "established-interleaved",
+            "horizontalSchedule": "full-fft",
+            "streamedNonlinear": false,
+            "horizontalWorkers": 1,
+            "pointwiseWorkers": 1,
+            "requestedFFTThreads": [],
+            "effectiveFFTThreads": 1,
+            "hostLogicalWorkers": 16,
+            "hostPerformanceWorkers": 12,
+            "noFallback": true
+          }
         },
         "secondSegment": {
           "status": "complete",
@@ -2556,7 +3024,25 @@
           },
           "acceptedStepCount": 15,
           "rejectedStepCount": 0,
-          "denseOutputEvaluationCount": 9
+          "denseOutputEvaluationCount": 9,
+          "variableKernelPolicy": {
+            "buildEnabled": true,
+            "variableTransform": true,
+            "transformKind": "hydrostatic",
+            "selection": "reference-provider",
+            "compact": false,
+            "matrixBackend": "scalar",
+            "spectralSchedule": "established-interleaved",
+            "horizontalSchedule": "full-fft",
+            "streamedNonlinear": false,
+            "horizontalWorkers": 1,
+            "pointwiseWorkers": 1,
+            "requestedFFTThreads": [],
+            "effectiveFFTThreads": 1,
+            "hostLogicalWorkers": 16,
+            "hostPerformanceWorkers": 12,
+            "noFallback": true
+          }
         },
         "matlabToCpp": {
           "status": "complete",
@@ -2613,7 +3099,25 @@
           },
           "acceptedStepCount": 15,
           "rejectedStepCount": 0,
-          "denseOutputEvaluationCount": 9
+          "denseOutputEvaluationCount": 9,
+          "variableKernelPolicy": {
+            "buildEnabled": true,
+            "variableTransform": true,
+            "transformKind": "hydrostatic",
+            "selection": "reference-provider",
+            "compact": false,
+            "matrixBackend": "scalar",
+            "spectralSchedule": "established-interleaved",
+            "horizontalSchedule": "full-fft",
+            "streamedNonlinear": false,
+            "horizontalWorkers": 1,
+            "pointwiseWorkers": 1,
+            "requestedFFTThreads": [],
+            "effectiveFFTThreads": 1,
+            "hostLogicalWorkers": 16,
+            "hostPerformanceWorkers": 12,
+            "noFallback": true
+          }
         },
         "stopped": {
           "status": "stopped",
@@ -2670,7 +3174,25 @@
           },
           "acceptedStepCount": 5,
           "rejectedStepCount": 0,
-          "denseOutputEvaluationCount": 3
+          "denseOutputEvaluationCount": 3,
+          "variableKernelPolicy": {
+            "buildEnabled": true,
+            "variableTransform": true,
+            "transformKind": "hydrostatic",
+            "selection": "reference-provider",
+            "compact": false,
+            "matrixBackend": "scalar",
+            "spectralSchedule": "established-interleaved",
+            "horizontalSchedule": "full-fft",
+            "streamedNonlinear": false,
+            "horizontalWorkers": 1,
+            "pointwiseWorkers": 1,
+            "requestedFFTThreads": [],
+            "effectiveFFTThreads": 1,
+            "hostLogicalWorkers": 16,
+            "hostPerformanceWorkers": 12,
+            "noFallback": true
+          }
         },
         "stoppedResume": {
           "status": "complete",
@@ -2727,7 +3249,25 @@
           },
           "acceptedStepCount": 25,
           "rejectedStepCount": 0,
-          "denseOutputEvaluationCount": 15
+          "denseOutputEvaluationCount": 15,
+          "variableKernelPolicy": {
+            "buildEnabled": true,
+            "variableTransform": true,
+            "transformKind": "hydrostatic",
+            "selection": "reference-provider",
+            "compact": false,
+            "matrixBackend": "scalar",
+            "spectralSchedule": "established-interleaved",
+            "horizontalSchedule": "full-fft",
+            "streamedNonlinear": false,
+            "horizontalWorkers": 1,
+            "pointwiseWorkers": 1,
+            "requestedFFTThreads": [],
+            "effectiveFFTThreads": 1,
+            "hostLogicalWorkers": 16,
+            "hostPerformanceWorkers": 12,
+            "noFallback": true
+          }
         }
       }
     },
@@ -2931,8 +3471,8 @@
         }
       ],
       "timingSeconds": {
-        "sharedMatlabPreparation": 7.907944791666667,
-        "providerLifecycle": 24.116725083333332
+        "sharedMatlabPreparation": 7.7565619166666666,
+        "providerLifecycle": 24.647897833333332
       },
       "runs": {
         "whole": {
@@ -2990,7 +3530,25 @@
           },
           "acceptedStepCount": 30,
           "rejectedStepCount": 0,
-          "denseOutputEvaluationCount": 18
+          "denseOutputEvaluationCount": 18,
+          "variableKernelPolicy": {
+            "buildEnabled": true,
+            "variableTransform": true,
+            "transformKind": "boussinesq",
+            "selection": "reference-provider",
+            "compact": false,
+            "matrixBackend": "scalar",
+            "spectralSchedule": "established-interleaved",
+            "horizontalSchedule": "full-fft",
+            "streamedNonlinear": false,
+            "horizontalWorkers": 1,
+            "pointwiseWorkers": 1,
+            "requestedFFTThreads": [],
+            "effectiveFFTThreads": 1,
+            "hostLogicalWorkers": 16,
+            "hostPerformanceWorkers": 12,
+            "noFallback": true
+          }
         },
         "firstSegment": {
           "status": "complete",
@@ -3047,7 +3605,25 @@
           },
           "acceptedStepCount": 15,
           "rejectedStepCount": 0,
-          "denseOutputEvaluationCount": 9
+          "denseOutputEvaluationCount": 9,
+          "variableKernelPolicy": {
+            "buildEnabled": true,
+            "variableTransform": true,
+            "transformKind": "boussinesq",
+            "selection": "reference-provider",
+            "compact": false,
+            "matrixBackend": "scalar",
+            "spectralSchedule": "established-interleaved",
+            "horizontalSchedule": "full-fft",
+            "streamedNonlinear": false,
+            "horizontalWorkers": 1,
+            "pointwiseWorkers": 1,
+            "requestedFFTThreads": [],
+            "effectiveFFTThreads": 1,
+            "hostLogicalWorkers": 16,
+            "hostPerformanceWorkers": 12,
+            "noFallback": true
+          }
         },
         "secondSegment": {
           "status": "complete",
@@ -3104,7 +3680,25 @@
           },
           "acceptedStepCount": 15,
           "rejectedStepCount": 0,
-          "denseOutputEvaluationCount": 9
+          "denseOutputEvaluationCount": 9,
+          "variableKernelPolicy": {
+            "buildEnabled": true,
+            "variableTransform": true,
+            "transformKind": "boussinesq",
+            "selection": "reference-provider",
+            "compact": false,
+            "matrixBackend": "scalar",
+            "spectralSchedule": "established-interleaved",
+            "horizontalSchedule": "full-fft",
+            "streamedNonlinear": false,
+            "horizontalWorkers": 1,
+            "pointwiseWorkers": 1,
+            "requestedFFTThreads": [],
+            "effectiveFFTThreads": 1,
+            "hostLogicalWorkers": 16,
+            "hostPerformanceWorkers": 12,
+            "noFallback": true
+          }
         },
         "matlabToCpp": {
           "status": "complete",
@@ -3161,7 +3755,25 @@
           },
           "acceptedStepCount": 15,
           "rejectedStepCount": 0,
-          "denseOutputEvaluationCount": 9
+          "denseOutputEvaluationCount": 9,
+          "variableKernelPolicy": {
+            "buildEnabled": true,
+            "variableTransform": true,
+            "transformKind": "boussinesq",
+            "selection": "reference-provider",
+            "compact": false,
+            "matrixBackend": "scalar",
+            "spectralSchedule": "established-interleaved",
+            "horizontalSchedule": "full-fft",
+            "streamedNonlinear": false,
+            "horizontalWorkers": 1,
+            "pointwiseWorkers": 1,
+            "requestedFFTThreads": [],
+            "effectiveFFTThreads": 1,
+            "hostLogicalWorkers": 16,
+            "hostPerformanceWorkers": 12,
+            "noFallback": true
+          }
         },
         "stopped": {
           "status": "stopped",
@@ -3218,7 +3830,25 @@
           },
           "acceptedStepCount": 5,
           "rejectedStepCount": 0,
-          "denseOutputEvaluationCount": 3
+          "denseOutputEvaluationCount": 3,
+          "variableKernelPolicy": {
+            "buildEnabled": true,
+            "variableTransform": true,
+            "transformKind": "boussinesq",
+            "selection": "reference-provider",
+            "compact": false,
+            "matrixBackend": "scalar",
+            "spectralSchedule": "established-interleaved",
+            "horizontalSchedule": "full-fft",
+            "streamedNonlinear": false,
+            "horizontalWorkers": 1,
+            "pointwiseWorkers": 1,
+            "requestedFFTThreads": [],
+            "effectiveFFTThreads": 1,
+            "hostLogicalWorkers": 16,
+            "hostPerformanceWorkers": 12,
+            "noFallback": true
+          }
         },
         "stoppedResume": {
           "status": "complete",
@@ -3275,7 +3905,25 @@
           },
           "acceptedStepCount": 25,
           "rejectedStepCount": 0,
-          "denseOutputEvaluationCount": 15
+          "denseOutputEvaluationCount": 15,
+          "variableKernelPolicy": {
+            "buildEnabled": true,
+            "variableTransform": true,
+            "transformKind": "boussinesq",
+            "selection": "reference-provider",
+            "compact": false,
+            "matrixBackend": "scalar",
+            "spectralSchedule": "established-interleaved",
+            "horizontalSchedule": "full-fft",
+            "streamedNonlinear": false,
+            "horizontalWorkers": 1,
+            "pointwiseWorkers": 1,
+            "requestedFFTThreads": [],
+            "effectiveFFTThreads": 1,
+            "hostLogicalWorkers": 16,
+            "hostPerformanceWorkers": 12,
+            "noFallback": true
+          }
         }
       }
     }
@@ -3295,7 +3943,7 @@
     },
     {
       "path": "PortableRuntime/src/WVModel.cpp",
-      "sha256": "5cee6731ebdd271e694011322b868c1d0040499fad6e85bcb0079f90114dc55d"
+      "sha256": "6aab778f71f4723da3ad25db2961f1c461ec00dff4aff414015dd91d927b0f4c"
     },
     {
       "path": "PortableRuntime/src/WVOutputOrchestration.cpp",
@@ -3307,7 +3955,7 @@
     },
     {
       "path": "PortableRuntime/app/WaveVortexRun.cpp",
-      "sha256": "d012da962b42155935b48968c617a5702b78097bf15f76b7d2da595a99e98cd8"
+      "sha256": "abb75e0d63cb938469596787033d081d56fbf84f9a53820d38cf99f3c69ceae0"
     },
     {
       "path": "PortableRuntime/src/WVFieldEvaluationService.cpp",
@@ -3331,51 +3979,67 @@
     },
     {
       "path": "UnitTests/TestPortableForwardIntegration.m",
-      "sha256": "485a4600d74e5c71d903cfe545726852877359b299bfaedd5811d011ccd88895"
+      "sha256": "a4d5b8d437855263758ef08339fc142fc1843839363ee38fc0a26dbcb5aa0b35"
+    },
+    {
+      "path": "PortableRuntime/CMakeLists.txt",
+      "sha256": "d0c100b68f0302ca062ae9e7919843f99813897a5198c135a69afc1919a24876"
+    },
+    {
+      "path": "CompiledKernel/CMakeLists.txt",
+      "sha256": "e133b74121e699325e539f6ba5c424e9bb2739200cb86c54d8077cace2c3b2ea"
+    },
+    {
+      "path": "PortableRuntime/app/WVRunnerVariablePolicy.cpp",
+      "sha256": "02e695fb461ac734de780efc3bfb52e9b9621a2edbd37893ae9dbbc7d7191bfb"
+    },
+    {
+      "path": "PortableRuntime/app/WVRunnerVariablePolicy.hpp",
+      "sha256": "c16796f29a84789a37fdf4927bfd03892796d683eb796aef75a0b5c5207d6c94"
     }
   ],
   "buildSource": {
-    "root": "/Users/jearly/Documents/OceanKitRepositories/wvm-v4-cpp-adoption-audit",
-    "commit": "107894a120da8f2aaa545101d74190a34c38974b"
+    "root": "/Users/jearly/Documents/OceanKitRepositories/wvm-v4-variable-compact",
+    "commit": "b71860fc4cc877298abf5dbb39a3716acc5f0cf4"
   },
   "executionBinaries": [
     {
       "role": "runner",
-      "path": "/private/tmp/wvm455-cpp-default-qualification/runtime-release/wave-vortex-run",
-      "sha256": "63e9bb5bc0ea5f2800cc8fb8cea6dac057336bf578cbb9f48c9da4c17666d3d5",
-      "sourceCommit": "107894a120da8f2aaa545101d74190a34c38974b"
+      "path": "/private/tmp/wvm455-runner-final-default-build/wave-vortex-run",
+      "sha256": "7b301e5eef65afc18386596243f13f9dc0a9b719a25c45032bed2d49d1cf62b5",
+      "sourceCommit": "b71860fc4cc877298abf5dbb39a3716acc5f0cf4"
     },
     {
       "role": "probe",
-      "path": "/private/tmp/wvm455-cpp-default-qualification/runtime-release/WVForwardIntegrationProbe",
-      "sha256": "29b0aaceedec63ed2370d7b8e91c7d03249e311801d10ec1226742f7a2025be7",
-      "sourceCommit": "107894a120da8f2aaa545101d74190a34c38974b"
+      "path": "/private/tmp/wvm455-runner-final-default-build/WVForwardIntegrationProbe",
+      "sha256": "7e2dbb8b6fe61f7979748501ec3664a3dfb7c816b96cc0c7fbd39aa4d671fe73",
+      "sourceCommit": "b71860fc4cc877298abf5dbb39a3716acc5f0cf4"
     }
   ],
   "artifacts": [
     {
-      "path": "PortableRuntime/qualification/forward-integration-evidence-v1/forward-constant-hydrostatic-cfl-rk4-reference-5b3da241c968280985ac7ffb4a632d5abeed17cbca1a2d89322f0bead56ed938.json",
-      "sha256": "5b3da241c968280985ac7ffb4a632d5abeed17cbca1a2d89322f0bead56ed938"
+      "path": "PortableRuntime/qualification/forward-integration-evidence-v1/forward-constant-hydrostatic-cfl-rk4-reference-4dc49b06bee0a5e70e99209497ec59f2c8785e66592d4a29dec5dadf6ae6023a.json",
+      "sha256": "4dc49b06bee0a5e70e99209497ec59f2c8785e66592d4a29dec5dadf6ae6023a"
     },
     {
-      "path": "PortableRuntime/qualification/forward-integration-evidence-v1/forward-constant-nonhydrostatic-rk23-reference-81b5c2dacacee0389070cead7007ffb7582122e4d42651cd4f82b514efab3c4f.json",
-      "sha256": "81b5c2dacacee0389070cead7007ffb7582122e4d42651cd4f82b514efab3c4f"
+      "path": "PortableRuntime/qualification/forward-integration-evidence-v1/forward-constant-nonhydrostatic-rk23-reference-097cad777950893342f70f3e6f63edbc2d6a09f439a7bbef4b1d264ef1768fe0.json",
+      "sha256": "097cad777950893342f70f3e6f63edbc2d6a09f439a7bbef4b1d264ef1768fe0"
     },
     {
-      "path": "PortableRuntime/qualification/forward-integration-evidence-v1/forward-barotropic-qg-rk45-reference-d0d4add8d489858301e7c789d7cb94968e0a100a3c2640c322325ceff003fb13.json",
-      "sha256": "d0d4add8d489858301e7c789d7cb94968e0a100a3c2640c322325ceff003fb13"
+      "path": "PortableRuntime/qualification/forward-integration-evidence-v1/forward-barotropic-qg-rk45-reference-8c828d553d5ca979c1425be3182fe285db4795d0570cd8eb7caf06b6dceb52f6.json",
+      "sha256": "8c828d553d5ca979c1425be3182fe285db4795d0570cd8eb7caf06b6dceb52f6"
     },
     {
-      "path": "PortableRuntime/qualification/forward-integration-evidence-v1/forward-stratified-qg-rk45-reference-ff3d844cf41eeb7ab10bc987e7ccfd61bb2ef8c24b83bbd2864d7d3c8928f97b.json",
-      "sha256": "ff3d844cf41eeb7ab10bc987e7ccfd61bb2ef8c24b83bbd2864d7d3c8928f97b"
+      "path": "PortableRuntime/qualification/forward-integration-evidence-v1/forward-stratified-qg-rk45-reference-ee6fc38f47edb47db5f1f92023cf334227348b3eefcbeb4e11ae776e119f3282.json",
+      "sha256": "ee6fc38f47edb47db5f1f92023cf334227348b3eefcbeb4e11ae776e119f3282"
     },
     {
-      "path": "PortableRuntime/qualification/forward-integration-evidence-v1/forward-hydrostatic-rk45-reference-122454699803b357b6cd77d766919f542591c913d05edf66fd3339e1a7a127c8.json",
-      "sha256": "122454699803b357b6cd77d766919f542591c913d05edf66fd3339e1a7a127c8"
+      "path": "PortableRuntime/qualification/forward-integration-evidence-v1/forward-hydrostatic-rk45-reference-03fc85aeedc1d70559028ab837751c632270d4ce77c53b8a7ba9d24774540089.json",
+      "sha256": "03fc85aeedc1d70559028ab837751c632270d4ce77c53b8a7ba9d24774540089"
     },
     {
-      "path": "PortableRuntime/qualification/forward-integration-evidence-v1/forward-boussinesq-rk45-reference-a45b484e295ac2f6bb17dead16436bc5783f34353236db135171bcc628e8bba9.json",
-      "sha256": "a45b484e295ac2f6bb17dead16436bc5783f34353236db135171bcc628e8bba9"
+      "path": "PortableRuntime/qualification/forward-integration-evidence-v1/forward-boussinesq-rk45-reference-01efd359e6709c966b7124c484dcc2b186193c8ed84d2831f088b601e32b64f5.json",
+      "sha256": "01efd359e6709c966b7124c484dcc2b186193c8ed84d2831f088b601e32b64f5"
     }
   ],
   "catalogSHA256": "c9b669fa92d5556526ce9cefac8b9847f52c1ea15c8ab3b00db0f3454adfaef9"

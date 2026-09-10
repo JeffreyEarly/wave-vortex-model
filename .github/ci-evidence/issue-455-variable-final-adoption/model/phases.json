@@ -1,0 +1,161 @@
+{
+  "schema": "wvm-variable-complete-model-phases-v1",
+  "profiles": [
+    {
+      "family": "SQG",
+      "campaign": "/private/tmp/wvm455-variable-model-sqg-final-v1/run.json",
+      "grid": [
+        256,
+        256,
+        129
+      ],
+      "measuredBlocks": 8,
+      "phaseSeconds": {
+        "inspect": {
+          "controlMedian": 0.0479664165,
+          "compactMedian": 0.0492036665
+        },
+        "outputPreparation": {
+          "controlMedian": 0.036887332999999994,
+          "compactMedian": 0.036869874999999996
+        },
+        "providerCreation": {
+          "controlMedian": 0.0002190835,
+          "compactMedian": 0.00022189600000000002
+        },
+        "modelConstruction": {
+          "controlMedian": 0.1224769165,
+          "compactMedian": 0.130986896
+        },
+        "integrate": {
+          "controlMedian": 1.8425423959999998,
+          "compactMedian": 0.38771137499999997
+        },
+        "close": {
+          "controlMedian": 0.013027375,
+          "compactMedian": 0.013044729
+        },
+        "workerCompleteBeforeReport": {
+          "controlMedian": 2.0604000835000003,
+          "compactMedian": 0.6189122705
+        }
+      },
+      "completeLifetime": {
+        "geometricRatio": 0.3129168326255215,
+        "controlMedian": 2.096049645449966,
+        "compactMedian": 0.6533549579326063
+      },
+      "peakRSS": {
+        "geometricRatio": 0.9358928475069807,
+        "controlMedian": 1585913856.0,
+        "compactMedian": 1484070912.0
+      },
+      "integrationGeometricRatio": 0.21247671361167017
+    },
+    {
+      "family": "Hydrostatic",
+      "campaign": "/private/tmp/wvm455-variable-model-hydro-final-v1/run.json",
+      "grid": [
+        256,
+        256,
+        129
+      ],
+      "measuredBlocks": 8,
+      "phaseSeconds": {
+        "inspect": {
+          "controlMedian": 0.059051396000000006,
+          "compactMedian": 0.0595755
+        },
+        "outputPreparation": {
+          "controlMedian": 0.046953937,
+          "compactMedian": 0.0467498545
+        },
+        "providerCreation": {
+          "controlMedian": 0.0002193335,
+          "compactMedian": 0.00021475
+        },
+        "modelConstruction": {
+          "controlMedian": 0.167978479,
+          "compactMedian": 0.167674812
+        },
+        "integrate": {
+          "controlMedian": 8.096214188000001,
+          "compactMedian": 1.185796646
+        },
+        "close": {
+          "controlMedian": 0.014835542,
+          "compactMedian": 0.0148497915
+        },
+        "workerCompleteBeforeReport": {
+          "controlMedian": 8.382908687,
+          "compactMedian": 1.4746133755000002
+        }
+      },
+      "completeLifetime": {
+        "geometricRatio": 0.17971257827216844,
+        "controlMedian": 8.423329770914279,
+        "compactMedian": 1.5154070415301248
+      },
+      "peakRSS": {
+        "geometricRatio": 0.8634132927961484,
+        "controlMedian": 2751840256.0,
+        "compactMedian": 2375933952.0
+      },
+      "integrationGeometricRatio": 0.14679869831964742
+    },
+    {
+      "family": "Boussinesq",
+      "campaign": "/private/tmp/wvm455-variable-model-bouss256-final-v2/run.json",
+      "grid": [
+        256,
+        256,
+        129
+      ],
+      "measuredBlocks": 8,
+      "phaseSeconds": {
+        "inspect": {
+          "controlMedian": 7.9030295630000005,
+          "compactMedian": 7.901551187500001
+        },
+        "outputPreparation": {
+          "controlMedian": 7.883549625000001,
+          "compactMedian": 7.833016708000001
+        },
+        "providerCreation": {
+          "controlMedian": 0.000222625,
+          "compactMedian": 0.000225396
+        },
+        "modelConstruction": {
+          "controlMedian": 18.194826437499998,
+          "compactMedian": 18.047849708
+        },
+        "integrate": {
+          "controlMedian": 26.879114,
+          "compactMedian": 3.246691354
+        },
+        "close": {
+          "controlMedian": 0.014847665999999999,
+          "compactMedian": 0.0149518955
+        },
+        "workerCompleteBeforeReport": {
+          "controlMedian": 60.824011958499995,
+          "compactMedian": 36.984743249999994
+        }
+      },
+      "completeLifetime": {
+        "geometricRatio": 0.6084939007657877,
+        "controlMedian": 60.92545343807433,
+        "compactMedian": 37.0603028543992
+      },
+      "peakRSS": {
+        "geometricRatio": 0.7663615603208138,
+        "controlMedian": 9976463360.0,
+        "compactMedian": 7645691904.0
+      },
+      "integrationGeometricRatio": 0.12027216557199029
+    }
+  ],
+  "integrationGeometricRatio": 0.15538158907825497,
+  "completeLifetimeGeometricRatio": 0.32465433780559544,
+  "peakRSSGeometricRatio": 0.8523661428352827
+}
