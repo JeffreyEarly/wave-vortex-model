@@ -48,6 +48,8 @@ The [runtime integration note](../../../tools/nonlinear-study/runtime-integratio
 
 `WVInternal.freeSurfaceReconstructionAdjoint` supplies the internal quadrature adjoint needed for weak mass actions. It is not a replacement for `projectSources`: it applies no Gram inverse, $N^2$ weight or energy normalization. Independent physical-space pairing tests pass for all fields and families, constant/exponential profiles, variable wave counts, zero pages and padding, nonzero phase clocks and omitted families. No nonlinear evolution is activated by this primitive.
 
+`WVInternal.freeSurfaceWeakMassAction` composes reconstruction, a frozen stage metric and that adjoint. Three independent tests verify nonflat physical bilinear pairings, symmetry, positive energy, agreement with a complete tiny real Gram matrix, variable counts and phase handling. A zero thermodynamic weight has the expected MDA null direction; the helper does not claim positive definiteness for a degenerate label-density metric. Both helper and test Analyzer checks passed. A preconditioner, independent retained constraint coordinates, coupled solve and overintegrated adjoint remain runtime work.
+
 ## Reproduction
 
 Configure the authoring WVM and pinned dependencies with `configureCIEnvironment`, add `tools/nonlinear-study` to the path, then run `runFreeSurfaceKinematicProbe(outputFolder)` and `runFreeSurfaceConstrainedProjectionStudy(outputFolder)`. The exact study settings and source-probe digest are in [provenance](projection-probe-provenance.json). Both studies are tiny-grid mathematical controls, not production benchmarks.
@@ -72,6 +74,7 @@ The oracle replaces the two endpoint rows with boundary conditions; it reports e
 - Constrained study: thirty-six rows generated; Code Analyzer and whitespace checks passed.
 - Global nonlinear weak budget: six cases generated, including separate retained/discarded endpoint targets, all finite-difference step errors, seed agreement, label bounds and pressure-adjoint metrics. Analyzer and independent review passed. Timing columns are single diagnostic observations, not a benchmark claim.
 - Reconstruction adjoint: three independent tests passed against the new helper, including preservation of state/clocks; helper and test-file Analyzer reported no findings.
+- Frozen-stage weak mass: three independent tests passed, including dense real-Gram/action agreement; helper and test-file Analyzer reported no findings.
 - Short weak trajectories: six cases completed, shared initial RHS agreed with the instantaneous study, and Analyzer passed on all three study source files. No extra trajectory runs were used to manufacture a clean timestep-order result.
 - Integrated API documentation: build and check passed with 2362 files, 4827 routes and zero generated drift. The added QG field shifts generated navigation ordering. A second build/check after removing the redundant registration override also passed; the pressure diagnostic adds no generated API source.
 - These results do not establish a production nonlinear pressure solve, qualified `WVModel` nonlinear evolution, exact finite-dimensional energy conservation, or nonlinear restart. Those remain active goal requirements.
