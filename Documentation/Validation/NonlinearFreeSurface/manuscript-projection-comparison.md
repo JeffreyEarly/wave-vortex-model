@@ -2,6 +2,8 @@
 
 This is the first review point in the 10 September pressure-revision plan. It implements the manuscript's direct nonlinear residual in authoring tools and compares it with PR #459's alternative weak stage. It does not replace the runtime or qualify nonlinear trajectories. PR #459 remains draft; its earlier tests do not establish that the weak stage is necessary.
 
+The subsequent [boundary-resolution and short-trajectory study](manuscript-evolution-qualification.md) completes the next review increment. This first-comparison report remains the record of the initial pressure-order and source-projection checks.
+
 The manuscript is *A unified theory for geostrophic and gravity-wave dynamics of the ocean surface and interior*, [Overleaf](https://www.overleaf.com/project/6317e19111f4547c06f405b1), at `311ebf56c13c30ab4cac423ef7260d3bd693e939`. The implementation baseline is `a2088e8acac7fca67f3c5ae56b73dbfe7183091e`; dependencies remain the declared InternalModes `2.0.0-beta.4` and existing pinned exports. No manuscript, package metadata or released snapshot was changed.
 
 ## Equation-to-code contract
