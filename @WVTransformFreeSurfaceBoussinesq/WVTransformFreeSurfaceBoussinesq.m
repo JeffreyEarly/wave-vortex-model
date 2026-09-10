@@ -341,6 +341,7 @@ classdef WVTransformFreeSurfaceBoussinesq < WVGeometryDoublyPeriodicStratified &
 
         state = scientificState(self)
         fields = reconstructFields(self,variableNames,options)
+        [varargout] = variableAtPositionWithName(self,x,y,z,variableNames,options)
         [pressure,diagnostics] = fullPressure(self)
         diagnostics = nonlinearEnergy(self)
         fields = reconstructSpectralState(self,options)
@@ -411,6 +412,14 @@ classdef WVTransformFreeSurfaceBoussinesq < WVGeometryDoublyPeriodicStratified &
             Fp=[]; Fm=[]; F0=[]; WVTransformFreeSurfaceBoussinesq.throwUnavailable('WVTransformFreeSurfaceBoussinesq:NonlinearDynamicsUnavailable','This transform currently qualifies exact linear evolution only.')
         end
 
+    end
+
+    methods (Hidden)
+        [u,v,w,eta] = nonlinearAdvectionSources(self,stage)
+    end
+
+    methods (Access = protected)
+        validateForcingInventory(self,forcing)
     end
 
     methods (Access = private)

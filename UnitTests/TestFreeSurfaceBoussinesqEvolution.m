@@ -77,7 +77,7 @@ classdef TestFreeSurfaceBoussinesqEvolution < matlab.unittest.TestCase
                 m=WVModel(w); m.setupIntegrator(integratorType="fixed",deltaT=20);
                 filePath=fullfile(fixture.Folder,char(profile+".nc"));
                 m.createNetCDFFileForModelOutput(filePath,outputInterval=400);
-                m.eulerianObservingSystem.addNetCDFOutputVariables('u','v','w','eta','p','ssh');
+                m.eulerianObservingSystem.addNetCDFOutputVariables('u','v','w','eta','p_linear','ssh');
                 m.integrateToTime(927,shouldShowIntegrationDiagnostics=false); m.closeNetCDFFile();
                 resumed=WVModel.modelFromFile(filePath);
                 closeFile=onCleanup(@()resumed.closeNetCDFFile());
@@ -97,7 +97,7 @@ classdef TestFreeSurfaceBoussinesqEvolution < matlab.unittest.TestCase
                     c=resumed.wvt.flowComponentWithName(component); u=uninterrupted.flowComponentWithName(component);
                     testCase.verifyEqual(resumed.wvt.totalEnergyOfFlowComponent(c),uninterrupted.totalEnergyOfFlowComponent(u),RelTol=2e-12)
                 end
-                testCase.verifyEqual(resumed.wvt.p,uninterrupted.p,AbsTol=1e-10)
+                testCase.verifyEqual(resumed.wvt.p_linear,uninterrupted.p_linear,AbsTol=1e-10)
                 clear closeFile
                 fprintf('%s RK4 errors: %.6g %.6g %.6g\n',profile,errors)
             end
@@ -115,7 +115,7 @@ classdef TestFreeSurfaceBoussinesqEvolution < matlab.unittest.TestCase
                     actual=rmfield(actual,'Ag_0'); expected=rmfield(expected,'Ag_0');
                 end
                 testCase.verifyEqual(actual,expected)
-                testCase.verifyEqual(r.reconstructFields(["u","v","w","eta","p","ssh"]),w.reconstructFields(["u","v","w","eta","p","ssh"]))
+                testCase.verifyEqual(r.reconstructFields(["u","v","w","eta","p_linear","ssh"]),w.reconstructFields(["u","v","w","eta","p_linear","ssh"]))
                 testCase.verifyEqual(r.activeEndpoint,w.activeEndpoint)
                 zero=zeros(w.Nx,w.Ny,w.Nz); s=struct(u=zero,v=zero,w=zero,eta=zero);
                 testCase.verifyEqual(r.projectSources(s),w.projectSources(s))
@@ -152,7 +152,7 @@ classdef TestFreeSurfaceBoussinesqEvolution < matlab.unittest.TestCase
                 m=WVModel(checkpoint); m.setupIntegrator(integratorType="fixed",deltaT=20);
                 checkpointFile=fullfile(outputFolder,profile+".nc");
                 m.createNetCDFFileForModelOutput(char(checkpointFile),outputInterval=400,shouldOverwriteExisting=true);
-                m.eulerianObservingSystem.addNetCDFOutputVariables('u','v','w','eta','p','ssh');
+                m.eulerianObservingSystem.addNetCDFOutputVariables('u','v','w','eta','p_linear','ssh');
                 m.integrateToTime(927,shouldShowIntegrationDiagnostics=false); m.closeNetCDFFile();
                 savedState=checkpoint.coefficientState();
                 save(fullfile(outputFolder,profile+"-reference.mat"),'finalState','savedState');
