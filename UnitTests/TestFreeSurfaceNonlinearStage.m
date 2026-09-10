@@ -76,6 +76,47 @@ classdef TestFreeSurfaceNonlinearStage < matlab.unittest.TestCase
             end
         end
 
+        function variableWavePagesPreservePaddingAtChangingClocks(testCase)
+            profile = @(z)1e-4*exp(2*z/700);
+            options = struct(N2Function=profile,apvModeCount=2,waveModeCount=3,mdaModeCount=2,inertialModeCount=2,nEVP=128,shouldAntialias=true);
+            args = namedargs2cell(options);
+            uniform = WVTransformFreeSurfaceBoussinesq.fromStratification([1e5 1e5 1000],[8 8 65],args{:});
+            counts = mod(3-(0:length(uniform.khUnique)-1).',4);
+            options.waveModeCount = counts;
+            args = namedargs2cell(options);
+            wvt = WVTransformFreeSurfaceBoussinesq.fromStratification([1e5 1e5 1000],[8 8 65],args{:},waveModeKappa=uniform.khUnique);
+            helper = freeSurfaceWeakStudyHelpers();
+            seed = helper.seedState(wvt);
+            seed.Aw_m = .4*exp(.63i)*seed.Aw_p;
+            for family = ["Aw_p","Aw_m"], seed.(family)(~wvt.activeWaveModes)=0; end
+            context = WVInternal.freeSurfaceNonlinearStage(wvt);
+            original = wvt.coefficientState();
+            testCase.verifyEqual(wvt.activeEndpoint(:),[1;2])
+            testCase.verifyTrue(any(counts==0))
+            testCase.verifyTrue(any(~wvt.activeWaveModes,'all'))
+            frequency = wvt.waveFrequency(:,wvt.klNonzeroKhUniqueIndex);
+            testCase.verifyTrue(all(isfinite(frequency),'all'))
+            testCase.verifyEqual(frequency(~wvt.activeWaveModes),zeros(nnz(~wvt.activeWaveModes),1))
+            clocks = [13,7;1301,-31;-17,17];
+            for index = 1:size(clocks,1)
+                wvt.t=clocks(index,1); wvt.t0=clocks(index,2);
+                [rate,diagnostics,stage] = context.evaluate(seed);
+                for family = string(fieldnames(rate)).'
+                    testCase.verifyTrue(all(isfinite(rate.(family)),'all'))
+                end
+                for family = ["Aw_p","Aw_m"]
+                    testCase.verifyEqual(rate.(family)(~wvt.activeWaveModes),zeros(nnz(~wvt.activeWaveModes),1))
+                    testCase.verifyEqual(stage.totalRate.(family)(~wvt.activeWaveModes),zeros(nnz(~wvt.activeWaveModes),1))
+                    testCase.verifyEqual(stage.linearRate.(family)(~wvt.activeWaveModes),zeros(nnz(~wvt.activeWaveModes),1))
+                end
+                testCase.verifyGreaterThan(diagnostics.minimumLabel,-wvt.Lz)
+                testCase.verifyLessThan(diagnostics.maximumLabel,0)
+                testCase.verifyLessThan(diagnostics.solver.relativeResidual,5e-10)
+                testCase.verifyEqual(wvt.coefficientState(),original)
+                testCase.verifyEqual([wvt.t,wvt.t0],clocks(index,:))
+            end
+        end
+
         function outOfDomainLabelsFailWithoutChangingState(testCase)
             [wvt,seed] = fixture(false);
             context = WVInternal.freeSurfaceNonlinearStage(wvt);

@@ -29,3 +29,20 @@ The worktree was clean before rebasing this bounded increment onto root commit `
 - Reversing the valid MDA endpoint offsets triggers `WV:ParcelLabelDomain` without changing the transform. The finite-amplitude constant-profile fixture also passes the study's existing dense label checkpoints as an independent test-only check.
 
 All three focused tests passed; after strengthening clock reuse, only the affected dense-stage/default-state method was rerun. Code Analyzer passed for the helper and test, and whitespace/scope checks passed. No existing runtime or public class, package metadata, released snapshot, or generated documentation was changed. This is instantaneous stage qualification on small grids. It does not establish physical pressure recovery, long-time integration, nonlinear energy/APV conservation, or trajectory convergence under the newly selected full C1 equations.
+
+## Variable counts and pure-wave endpoint follow-up
+
+On root commit `707c4683` (including the thermodynamic single-polynomial fix `aae3fa03`), the new `variableWavePagesPreservePaddingAtChangingClocks` method uses an exponentially stratified 8-by-8-by-65 grid. Wave counts cycle through 3, 2, 1, and 0 by wavenumber page. Both endpoint families remain active; the mixed seed uses the existing strictly admissible MDA mean offsets. One composed context is evaluated at $(t,t_0)=(13,7),(1301,-31),(-17,17)$. The test passed in approximately 9.21 s: padded frequencies and all returned padded wave rates (total, linear, and nonlinear) are finite and exactly zero, labels remain strictly admissible, the solve converges, and coefficients/clocks remain unchanged. Code Analyzer passed for the updated test. Only this new focused method was run; previously passing composed-stage cases were not repeated.
+
+A separate exploratory pure-wave check exposes a remaining strict-domain limitation. The fixture has 4-by-4-by-65 samples, APV/wave/MDA/inertial counts 2/3/2/2, `nEVP=128`, and zero coefficients except the first positive-frequency wave at the first positive zonal wavenumber. Its complex coefficient is $\exp(0.37i)/(2|C_{w+}|)$, where $C_{w+}$ is that mode's SSH polarization, giving a 1 m cosine amplitude. No mean endpoint offsets or balanced anomalies are introduced: the physical wave should have zero surface/bottom density anomalies. The probe reconstructed the fields, measured labels and endpoint residuals, then called the unmodified stage evaluator.
+
+| Profile | $t$ (s), $t_0=0$ | Maximum positive label (m) | Maximum absolute bottom displacement (m) | Evaluation result |
+| --- | ---: | ---: | ---: | --- |
+| $N^2=10^{-4}$ | 0 | $7.32747\times10^{-15}$ | $2.91043\times10^{-16}$ | `WV:ParcelLabelDomain` |
+| $N^2=10^{-4}$ | 327 | $5.88418\times10^{-15}$ | $2.31712\times10^{-16}$ | `WV:ParcelLabelDomain` |
+| $N^2=10^{-4}$ | 100000 | $7.66054\times10^{-15}$ | $3.04248\times10^{-16}$ | `WV:ParcelLabelDomain` |
+| $N^2=10^{-4}\exp(2z/700)$ | 0 | $7.77156\times10^{-16}$ | $7.34932\times10^{-16}$ | `WV:ParcelLabelDomain` |
+| $N^2=10^{-4}\exp(2z/700)$ | 327 | $4.44089\times10^{-16}$ | $5.84305\times10^{-16}$ | `WV:ParcelLabelDomain` |
+| $N^2=10^{-4}\exp(2z/700)$ | 100000 | $5.55112\times10^{-16}$ | $6.06487\times10^{-16}$ | `WV:ParcelLabelDomain` |
+
+The surface anomaly $\eta_s-\zeta$ has both signs, with extrema equal in magnitude to the positive-label values shown. The reported minimum label is exactly $-1000$ m in each case; the small bottom displacement is below the subtraction resolution at that depth. Thus numerical stored-mode/reconstruction endpoint residuals suffice to trigger the exact upper-label inequality even for these otherwise admissible pure-wave states. All six stage calls were rejected. The probe did not clip labels, alter endpoint modes, add artificial mean offsets, or change the evaluator. This failure is reported as an unresolved domain/reconstruction gate rather than asserted as desired permanent behavior in a passing unit test. Pure-wave stage acceptance is not qualified by the valid-offset mixed controls above.
