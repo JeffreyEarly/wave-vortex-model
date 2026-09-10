@@ -1,0 +1,213 @@
+{
+  "decision": "resource-screen-only",
+  "profiles": {
+    "stratified-qg-256x256x129-flux": {
+      "metrics": {
+        "production": {
+          "processMedianSeconds": [
+            0.07945920849999999,
+            0.0827258125,
+            0.08006208349999999,
+            0.08098383349999999
+          ],
+          "maximumPeakRSSBytes": 544980992,
+          "persistentBytes": [
+            498556971,
+            498556971,
+            498556971,
+            498556971
+          ]
+        },
+        "prior-pruned": {
+          "processMedianSeconds": [
+            0.0152231665,
+            0.0158297295,
+            0.014839333,
+            0.0154057495
+          ],
+          "maximumPeakRSSBytes": 572948480,
+          "persistentBytes": [
+            525534126,
+            525534126,
+            525534126,
+            525534126
+          ]
+        },
+        "candidate": {
+          "processMedianSeconds": [
+            0.0156929165,
+            0.015653729499999998,
+            0.0166665415,
+            0.015372292
+          ],
+          "maximumPeakRSSBytes": 438632448,
+          "persistentBytes": [
+            390792110,
+            390792110,
+            390792110,
+            390792110
+          ]
+        }
+      },
+      "candidateToPriorTime": 1.0338498632693425,
+      "candidateToProductionTime": 0.1960305583282916,
+      "candidateToProductionPeakRSS": 0.8048582509094189
+    },
+    "stratified-qg-256x256x129-scalar-horizontal": {
+      "metrics": {
+        "production": {
+          "processMedianSeconds": [
+            0.0531640415,
+            0.054240354500000004,
+            0.053707625499999995,
+            0.0550172085
+          ],
+          "maximumPeakRSSBytes": 873824256,
+          "persistentBytes": [
+            498556971,
+            498556971,
+            498556971,
+            498556971
+          ]
+        },
+        "prior-pruned": {
+          "processMedianSeconds": [
+            0.0538414165,
+            0.0538684795,
+            0.053571479000000005,
+            0.053110792000000004
+          ],
+          "maximumPeakRSSBytes": 901611520,
+          "persistentBytes": [
+            525534126,
+            525534126,
+            525534126,
+            525534126
+          ]
+        },
+        "candidate": {
+          "processMedianSeconds": [
+            0.048601020999999994,
+            0.04644425,
+            0.0472386665,
+            0.052517563
+          ],
+          "maximumPeakRSSBytes": 766541824,
+          "persistentBytes": [
+            390792110,
+            390792110,
+            390792110,
+            390792110
+          ]
+        }
+      },
+      "candidateToPriorTime": 0.907617755357533,
+      "candidateToProductionTime": 0.9003806078581884,
+      "candidateToProductionPeakRSS": 0.8772265346683167
+    },
+    "hydrostatic-256x256x129-flux": {
+      "metrics": {
+        "production": {
+          "processMedianSeconds": [
+            0.30976895800000004,
+            0.340024187,
+            0.3483706875,
+            0.31459612449999996
+          ],
+          "maximumPeakRSSBytes": 1109393408,
+          "persistentBytes": [
+            990187289,
+            990187289,
+            990187289,
+            990187289
+          ]
+        },
+        "prior-pruned": {
+          "processMedianSeconds": [
+            0.09236093749999999,
+            0.10369814599999999,
+            0.1050888955,
+            0.103831229
+          ],
+          "maximumPeakRSSBytes": 866582528,
+          "persistentBytes": [
+            746631836,
+            746631836,
+            746631836,
+            746631836
+          ]
+        },
+        "candidate": {
+          "processMedianSeconds": [
+            0.09337079200000001,
+            0.1018580415,
+            0.1017756875,
+            0.1015477915
+          ],
+          "maximumPeakRSSBytes": 731545600,
+          "persistentBytes": [
+            611889820,
+            611889820,
+            611889820,
+            611889820
+          ]
+        }
+      },
+      "candidateToPriorTime": 0.9847912614992638,
+      "candidateToProductionTime": 0.303769770416776,
+      "candidateToProductionPeakRSS": 0.6594104442344045
+    },
+    "hydrostatic-256x256x129-scalar-horizontal": {
+      "metrics": {
+        "production": {
+          "processMedianSeconds": [
+            0.053578521000000004,
+            0.0548674585,
+            0.0540551875,
+            0.052968396
+          ],
+          "maximumPeakRSSBytes": 1419853824,
+          "persistentBytes": [
+            990187289,
+            990187289,
+            990187289,
+            990187289
+          ]
+        },
+        "prior-pruned": {
+          "processMedianSeconds": [
+            0.053112042,
+            0.052532458000000004,
+            0.0541671665,
+            0.053384771
+          ],
+          "maximumPeakRSSBytes": 1177092096,
+          "persistentBytes": [
+            746631836,
+            746631836,
+            746631836,
+            746631836
+          ]
+        },
+        "candidate": {
+          "processMedianSeconds": [
+            0.046883833,
+            0.0464735205,
+            0.047418979,
+            0.048114979
+          ],
+          "maximumPeakRSSBytes": 1042251776,
+          "persistentBytes": [
+            611889820,
+            611889820,
+            611889820,
+            611889820
+          ]
+        }
+      },
+      "candidateToPriorTime": 0.8859755557665481,
+      "candidateToProductionTime": 0.876648218180707,
+      "candidateToProductionPeakRSS": 0.7340556882565399
+    }
+  }
+}
