@@ -7,6 +7,55 @@ classdef TestFreeSurfaceNonlinearRestart < matlab.unittest.TestCase
     end
 
     methods (Test, TestTags="full")
+        function nonlinearParticleAndTracerContinuationAgree(testCase)
+            fixture = testCase.applyFixture(matlab.unittest.fixtures.TemporaryFolderFixture);
+            base = WVTransformFreeSurfaceBoussinesq.fromStratification([1e5 1e5 1000],[8 8 65],N2Function=@(z)1e-4+zeros(size(z)),apvModeCount=2,mdaModeCount=2,inertialModeCount=2,waveModeCount=3,shouldCheckQuadraticAliasing=true,shouldAntialias=true);
+            scientific = base.scientificState();
+            seed = mixedSeed(base); source = physicalSourceOptions(base);
+            uninterrupted = observerModel(scientific,seed,source);
+            initialParticles = uninterrupted.fluxedObservingSystemWithName('particles').initialConditions();
+            initialDye = uninterrupted.tracer('dye');
+            uninterrupted.integrateToTime(347,shouldShowIntegrationDiagnostics=false);
+            expectedParticles = uninterrupted.fluxedObservingSystemWithName('particles').initialConditions();
+            expectedDye = uninterrupted.tracer('dye');
+
+            interrupted = observerModel(scientific,seed,source);
+            filePath = fullfile(fixture.Folder,'nonlinear-observers.nc');
+            interrupted.createNetCDFFileForModelOutput(filePath,outputInterval=10);
+            interrupted.integrateToTime(337,shouldShowIntegrationDiagnostics=false);
+            checkpointParticles = interrupted.fluxedObservingSystemWithName('particles').initialConditions();
+            checkpointDye = interrupted.tracer('dye');
+            interrupted.closeNetCDFFile();
+            resumed = WVModel.modelFromFile(filePath);
+            cleanup = onCleanup(@()resumed.closeNetCDFFile());
+            testCase.verifyFalse(resumed.isDynamicsLinear)
+            testCase.verifyEmpty(resumed.wvt.verticalModes)
+            testCase.verifyEqual([resumed.wvt.t,resumed.wvt.t0],[337,-17])
+            testCase.verifyEqual(resumed.fluxedObservingSystemWithName('particles').initialConditions(),checkpointParticles)
+            testCase.verifyEqual(resumed.tracer('dye'),checkpointDye)
+            testCase.verifyEqual(resumed.tracer('constant'),2+zeros(size(initialDye)),AbsTol=2e-12)
+            resumed.setupIntegrator(integratorType="fixed",deltaT=5);
+            resumed.integrateToTime(347,shouldShowIntegrationDiagnostics=false);
+            actualParticles = resumed.fluxedObservingSystemWithName('particles').initialConditions();
+            particleError = max(abs(cell2mat(actualParticles)-cell2mat(expectedParticles)),[],'all');
+            dyeError = max(abs(resumed.tracer('dye')-expectedDye),[],'all');
+            constantError = max([max(abs(resumed.tracer('constant')-2),[],'all'),max(abs(uninterrupted.tracer('constant')-2),[],'all')]);
+            motion = cell2mat(expectedParticles)-cell2mat(initialParticles);
+            verticalMotion = max(abs(expectedParticles{3}-initialParticles{3}));
+            dyeChange = max(abs(expectedDye-initialDye),[],'all');
+            testCase.verifyLessThan(particleError,2e-9)
+            testCase.verifyLessThan(dyeError,2e-12)
+            testCase.verifyLessThan(constantError,2e-12)
+            testCase.verifyGreaterThan(max(abs(motion),[],'all'),1e-3)
+            testCase.verifyGreaterThan(verticalMotion,1e-5)
+            testCase.verifyGreaterThan(dyeChange,1e-7)
+            testCase.verifyLessThan(coefficientError(resumed.wvt.coefficientState(),uninterrupted.wvt.coefficientState()),2e-11)
+            testCase.verifyEqual([resumed.wvt.t,resumed.wvt.t0],[347,-17])
+            ssh = resumed.wvt.variableAtPositionWithName(actualParticles{1},actualParticles{2},[],'ssh');
+            testCase.verifyTrue(all(actualParticles{3}>-resumed.wvt.Lz & actualParticles{3}<ssh))
+            fprintf('Nonlinear observer restart: particle error %.6g m, dye error %.6g, constant error %.6g, maximum motion %.6g m, vertical motion %.6g m, dye change %.6g\n',particleError,dyeError,constantError,max(abs(motion),[],'all'),verticalMotion,dyeChange)
+        end
+
         function fixedRK4AndProviderFreeNativeContinuationAgree(testCase)
             fixture = testCase.applyFixture(matlab.unittest.fixtures.TemporaryFolderFixture);
             base = WVTransformFreeSurfaceBoussinesq.fromStratification([1e5 1e5 1000],[8 8 65],N2Function=@(z)1e-4+zeros(size(z)),apvModeCount=2,mdaModeCount=2,inertialModeCount=2,waveModeCount=3,shouldCheckQuadraticAliasing=true,shouldAntialias=true);
@@ -98,6 +147,17 @@ classdef TestFreeSurfaceNonlinearRestart < matlab.unittest.TestCase
             clear fileCleanup pathCleanup
         end
     end
+end
+
+function model = observerModel(scientific,seed,source)
+model = WVModel(configuredTransform(scientific,seed,source));
+wvt = model.wvt;
+model.addFluxedObservingSystem(WVLagrangianParticles(model,name="particles",x=[12000 53000],y=[23000 71000],z=[-250 -650],trackedFieldNames={'u','w'}));
+[X,Y,Z] = ndgrid(wvt.x,wvt.y,wvt.z);
+phi = cos(2*pi*X/wvt.Lx).*sin(2*pi*Y/wvt.Ly).*(1+Z/(2*wvt.Lz));
+model.addFluxedObservingSystem(WVTracer(model,name="dye",phi=phi,shouldAntialias=true));
+model.addFluxedObservingSystem(WVTracer(model,name="constant",phi=2+zeros(size(phi)),shouldAntialias=true));
+model.setupIntegrator(integratorType="fixed",deltaT=5);
 end
 
 function names = outputNames()
