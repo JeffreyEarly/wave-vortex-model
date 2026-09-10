@@ -1,6 +1,6 @@
 # Reference pressure and parcel-label domains
 
-This is a formulation option for the nonlinear study, not an implemented change to WVM or the manuscript. It addresses a numerical difficulty in evaluating the full equations at positive surface crests. It does not resolve modal constraint reaction work or authorize parcel labels outside their density domain.
+This records the formulation comparison and the selected internal nonlinear convention. The runtime path and manuscript have not yet been changed. It addresses a numerical difficulty in evaluating the full equations at positive surface crests. It does not resolve modal constraint reaction work or authorize parcel labels outside their density domain.
 
 ## Two different density arguments
 
@@ -56,3 +56,11 @@ Compare the two exact reference conventions first, with valid parcel labels, con
 Manuscript anchors: `eq:total-displacement-definition`, `eq:displacement-coordinate-identity`, `eq:rho-nm-plus-definition`, `eq:physical-height-ape-density`, `eq:available-energy`, `eq:projection-ready-surface-pressure`, `eq:free-surface-quasigeostrophy-exact-displacement-buoyancy-integral`.
 
 Independent review verified the signs, reference-invariant physical acceleration, cancellation of volume and surface energy, and the distinction from parcel-label extension. No numerical or production-equivalence claim follows from that algebraic review. A weak implementation must also replace its surface pressure pairing by $-W_s^T V\pi_s$ and include the nonlinear surface-energy derivative in its energy gradient.
+
+## Selected convention after numerical comparison
+
+The nonlinear prototype now selects the full surface terms with an explicit C1 reference-density continuation above zero. On the original column, define $I(z)=\int_0^z N^2(s)\,ds$, $J'=I$ and $K'=J$, with all primitives zero at zero. Above zero, use $I=N^2(0)z$, $J=N^2(0)z^2/2$ and $K=N^2(0)z^3/6$. This continues reference density linearly; it does not evaluate an arbitrary user function outside its supplied column and does not extend parcel density. It is generally not analytic when the interior derivative of $N^2$ is nonzero.
+
+For $r=z-\eta$ in $[-D,0]$, use $B=I(r)-I(z)$, $\mathscr A=-\eta I(r)-J(r)+J(z)$, $\pi_s=g\zeta-J(\zeta)$ and $\mathcal E_s=g\zeta^2/2-K(\zeta)$. The exact acceleration and total energy are equivalent to the manuscript's full upper-constant reference; matching volume and surface reference changes cancel. This explicitly replaces the plan's provisional small-pressure approximation. Earlier weak-budget and trajectory results using that approximation remain valid evidence for their stated equations and are not relabelled as full-reference trajectory qualification.
+
+The comparison and its numerical limits are in `reference-pressure-comparison.md`. The internal `freeSurfaceThermodynamics` helper uses antiderivatives for the reference pressure/density, and exact polynomial Gauss integration of the represented stratification for displacement integrals and surface corrections. The latter avoids subtracting large nearly equal primitives in the small-displacement limit. Parcel labels outside the original column fail explicitly. Nonlinear runtime activation and its new trajectory qualification remain pending.
