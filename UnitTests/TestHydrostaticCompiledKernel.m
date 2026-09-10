@@ -10,9 +10,9 @@ classdef TestHydrostaticCompiledKernel < matlab.unittest.TestCase
             fixture = testCase.applyFixture(matlab.unittest.fixtures.TemporaryFolderFixture);
             testCase.folder = string(fixture.Folder);
             testCase.executable = string(getenv("WV_HYDRO_KERNEL_DUMP"));
-            testCase.providers = ["reference","reference-pruned"];
+            testCase.providers = ["reference","reference-pruned","reference-compact"];
             if getenv("WV_HYDRO_TEST_NATIVE") == "1"
-                testCase.providers = [testCase.providers,"native","native-accelerate","native-pruned","native-accelerate-pruned"];
+                testCase.providers = [testCase.providers,"native","native-accelerate","native-pruned","native-accelerate-pruned","native-compact","native-accelerate-compact"];
             end
             if testCase.executable == ""
                 build = fullfile(testCase.folder,"build");
@@ -97,11 +97,13 @@ classdef TestHydrostaticCompiledKernel < matlab.unittest.TestCase
                 testCase.verifyEqual(string(report.contract),"wave-vortex-hydrostatic-kernel-v1")
                 schedule=string(report.horizontalSchedule);
                 testCase.verifyEqual(schedule,expectedHorizontalSchedule(provider))
-                testCase.verifyEqual(report.streamedNonlinear,endsWith(provider,"-pruned"))
+                testCase.verifyEqual(report.streamedNonlinear,endsWith(provider,["-pruned","-compact"]))
+                testCase.verifyEqual(report.compactSplitViews,endsWith(provider,"-compact"))
+                testCase.verifyEqual(report.pointwiseWorkers,1+double(endsWith(provider,"-compact")))
                 testCase.verifyEqual(report.preparedAllocations,0)
                 testCase.verifyTrue(report.inputPreserved && report.storageStable && report.ownerReleased)
                 expectedScratchBytes=10*wvt.Nx*wvt.Ny*wvt.Nz*8;
-                if endsWith(provider,"-pruned"), expectedScratchBytes=6*wvt.Nx*wvt.Ny*wvt.Nz*8; end
+                if endsWith(provider,["-pruned","-compact"]), expectedScratchBytes=6*wvt.Nx*wvt.Ny*wvt.Nz*8; end
                 testCase.verifyEqual(report.realScratchBytes,expectedScratchBytes)
                 for name=["Omega","NAp","NA0","PA0","ApmN","A0Z","A0N","Apm_TE_factor","A0_TE_factor","A0_Psi_factor","A0_QGPV_factor","A0_TZ_factor"]
                     testCase.near(report.factors.(name),wvt.(name),"factor "+name)
@@ -215,7 +217,7 @@ end
 end
 
 function schedule = expectedHorizontalSchedule(provider)
-if endsWith(provider,"-pruned") && startsWith(provider,"native")
+if endsWith(provider,["-pruned","-compact"]) && startsWith(provider,"native")
     schedule="fftw-streaming-pruned-tile16";
 else
     schedule="full-fft-gather";

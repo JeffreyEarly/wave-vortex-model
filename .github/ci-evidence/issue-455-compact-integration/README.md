@@ -1,0 +1,7 @@
+# Compact variable-transform integration checks
+
+These are correctness and source-contract receipts, not default-adoption evidence. All ten MATLAB test methods passed across reference/native/scalar/Accelerate and established/pruned/compact configurations. Compact dump configurations used two prepared pointwise workers. Code Analyzer reported no messages for the three changed MATLAB test classes or the author fixture generator.
+
+Focused C++ Release and ASan/UBSan tests passed for all three kernels and the exact-group vertical operator; worker counts one and two preserve per-cell arithmetic and prepared execution has zero allocations. The three runtime service-injection tests passed. The model facade and model NetCDF output tests passed. Review covered direct-view lifetimes, persisted model service forwarding and independent build provenance.
+
+The capacity receipt evaluates the exact MATLAB group expression using existing persisted horizontal wavenumbers. The 512-grid Boussinesq scientific arrays alone exceed available local disk, so no passing result is claimed for that profile. The 256-grid fixture was generated successfully after retrying from the v4 working directory. The first attempt failed to resolve `diffZF` after matrix construction; a small preflight and the retry passed. No production MATLAB source was changed for this method-resolution failure. The author generator now persists expensive scientific matrices before calculating the independent flux oracle.

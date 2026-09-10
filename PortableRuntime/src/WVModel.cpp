@@ -339,7 +339,8 @@ WVKernelStatus WVModel::createFromCheckpoint(
     std::shared_ptr<const WVExtensionCatalog> catalog,
     WVCheckpoint checkpoint, std::unique_ptr<WVFFTEngine> engine,
     const WVModelIntegratorConfiguration &integratorConfiguration,
-    WVModel &model, WVModelState &state) {
+    WVModel &model, WVModelState &state,
+    const WVVariableKernelServices &services) {
   if (!catalog)
     return invalid("WVModel requires an extension catalog.");
   try {
@@ -347,7 +348,7 @@ WVKernelStatus WVModel::createFromCheckpoint(
     const auto inspection = detail::modelCheckpointInspection(checkpoint);
     auto status = detail::createPersistedModelSystem(
         inspection, checkpoint.forcingSchedule, nullptr, catalog,
-        std::move(engine), candidate->resolvedSystem);
+        std::move(engine), candidate->resolvedSystem, services);
     if (!status)
       return status;
     status = candidate->configureIntegrator(integratorConfiguration);
@@ -413,7 +414,8 @@ WVKernelStatus WVModel::createFromModelOutputFiles(
     const WVModelOutputRequest &outputRequest,
     std::unique_ptr<WVFFTEngine> engine,
     const WVModelIntegratorConfiguration &integratorConfiguration,
-    WVModel &model, WVModelState &state) {
+    WVModel &model, WVModelState &state,
+    const WVVariableKernelServices &services) {
 #if !defined(WV_MODEL_ENABLE_OUTPUT) || WV_MODEL_ENABLE_OUTPUT
   if (paths.empty())
     return invalid("At least one model-output NetCDF path is required.");
@@ -427,7 +429,7 @@ WVKernelStatus WVModel::createFromModelOutputFiles(
 
   return createFromModelOutputInspection(
       std::move(catalog), std::move(inspection), outputRequest, std::move(engine),
-      integratorConfiguration, model, state);
+      integratorConfiguration, model, state, services);
 #else
   (void)paths;
   (void)outputRequest;
@@ -435,6 +437,7 @@ WVKernelStatus WVModel::createFromModelOutputFiles(
   (void)integratorConfiguration;
   (void)model;
   (void)state;
+  (void)services;
   return {WVKernelStatusCode::unsupportedOperation,
           "This adapter does not include model-output persistence."};
 #endif
@@ -446,7 +449,8 @@ WVKernelStatus WVModel::createFromModelOutputInspection(
     const WVModelOutputRequest &outputRequest,
     std::unique_ptr<WVFFTEngine> engine,
     const WVModelIntegratorConfiguration &integratorConfiguration,
-    WVModel &model, WVModelState &state) {
+    WVModel &model, WVModelState &state,
+    const WVVariableKernelServices &services) {
 #if !defined(WV_MODEL_ENABLE_OUTPUT) || WV_MODEL_ENABLE_OUTPUT
 
   WVModelOutputConfiguration outputConfiguration;
@@ -456,7 +460,7 @@ WVKernelStatus WVModel::createFromModelOutputInspection(
     return status;
   return createFromModelOutputInspection(
       std::move(catalog), std::move(inspection), std::move(outputConfiguration),
-      std::move(engine), integratorConfiguration, model, state);
+      std::move(engine), integratorConfiguration, model, state, {}, services);
 #else
   (void)inspection;
   (void)outputRequest;
@@ -464,6 +468,7 @@ WVKernelStatus WVModel::createFromModelOutputInspection(
   (void)integratorConfiguration;
   (void)model;
   (void)state;
+  (void)services;
   return {WVKernelStatusCode::unsupportedOperation,
           "This adapter does not include model-output persistence."};
 #endif
@@ -493,7 +498,8 @@ WVKernelStatus WVModel::createFromModelOutputInspection(
     std::unique_ptr<WVFFTEngine> engine,
     const WVModelIntegratorConfiguration &integratorConfiguration,
     WVModel &model, WVModelState &state,
-    WVDensityDiagnosticContract densityContract) {
+    WVDensityDiagnosticContract densityContract,
+    const WVVariableKernelServices &services) {
 #if !defined(WV_MODEL_ENABLE_OUTPUT) || WV_MODEL_ENABLE_OUTPUT
 
   if (!catalog || outputConfiguration.catalog() != catalog)
@@ -505,7 +511,7 @@ WVKernelStatus WVModel::createFromModelOutputInspection(
   auto candidateImpl = std::make_unique<Impl>();
   auto status = detail::createPersistedModelSystem(
       inspection.latestRestart, forcingSchedule, &descriptor, catalog,
-      std::move(engine), candidateImpl->resolvedSystem);
+      std::move(engine), candidateImpl->resolvedSystem, services);
   if (status) {
     candidateImpl->resolvedSystem->setLinearDynamics(inspection.isDynamicsLinear);
     status = candidateImpl->configureIntegrator(integratorConfiguration);
@@ -547,6 +553,7 @@ WVKernelStatus WVModel::createFromModelOutputInspection(
   (void)integratorConfiguration;
   (void)model;
   (void)state;
+  (void)services;
   return {WVKernelStatusCode::unsupportedOperation,
           "This adapter does not include model-output persistence."};
 #endif

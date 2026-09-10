@@ -154,20 +154,35 @@ WVKernelStatus WVPreparedVerticalOperator::create(const WVVerticalSpecification&
         }
         std::vector<bool> visited(spec.input.columns,false), usedMatrices(spec.matrices.size(),false);
         std::set<std::uint64_t> groups;
+        const bool directLayout = spec.input.rowStride == 1 && spec.output.rowStride == 1 &&
+            spec.input.columnStride >= inRows && spec.output.columnStride >= outRows &&
+            spec.input.columnStride <= limit && spec.output.columnStride <= limit;
         for (const auto& source : spec.groups) {
             if (!groups.insert(source.identity).second || source.matrix >= matrixIndices.size() || source.modes.empty())
                 return {WVKernelStatusCode::invalidConfiguration,"Invalid or duplicate vertical group."};
             if (source.modes.size() > limit) return {WVKernelStatusCode::sizeOverflow,"Group width exceeds the provider integer range."};
-            bool direct = spec.input.rowStride == 1 && spec.output.rowStride == 1 && spec.input.columnStride >= inRows && spec.output.columnStride >= outRows && spec.input.columnStride <= limit && spec.output.columnStride <= limit;
             for (std::size_t i = 0; i < source.modes.size(); ++i) {
                 const auto mode = source.modes[i];
                 if (mode >= visited.size() || visited[mode]) return {WVKernelStatusCode::invalidConfiguration,"Vertical group membership is invalid or repeated."};
                 visited[mode] = true;
-                if (i && mode != source.modes[i-1]+1) direct = false;
             }
             usedMatrices[source.matrix] = true;
-            if (!direct) d->packedColumns = std::max(d->packedColumns,source.modes.size());
-            d->groups.push_back({source.identity,matrixIndices[source.matrix],source.modes,direct});
+            if (!directLayout) {
+                d->packedColumns = std::max(d->packedColumns,source.modes.size());
+                d->groups.push_back({source.identity,matrixIndices[source.matrix],source.modes,false});
+                continue;
+            }
+            // Preserve the exact public group and matrix-source mapping while
+            // presenting each maximal contiguous run as a direct matrix view.
+            // Membership order remains authoritative; no sorting or inferred
+            // grouping key participates in preparation.
+            for (std::size_t first = 0; first < source.modes.size();) {
+                std::size_t end = first+1;
+                while (end < source.modes.size() && source.modes[end] == source.modes[end-1]+1) ++end;
+                d->groups.push_back({source.identity,matrixIndices[source.matrix],
+                    {source.modes.begin()+static_cast<std::ptrdiff_t>(first),source.modes.begin()+static_cast<std::ptrdiff_t>(end)},true});
+                first = end;
+            }
         }
         if (std::find(visited.begin(),visited.end(),false) != visited.end()) return {WVKernelStatusCode::invalidConfiguration,"Vertical groups do not cover the retained set."};
         if (std::find(usedMatrices.begin(),usedMatrices.end(),false) != usedMatrices.end()) return {WVKernelStatusCode::invalidConfiguration,"Unused matrix records are not permitted."};

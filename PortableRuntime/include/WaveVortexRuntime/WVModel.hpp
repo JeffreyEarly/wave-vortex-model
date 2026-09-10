@@ -4,6 +4,7 @@
 #include "WaveVortexRuntime/WVConstantStratificationIntegrationSystem.hpp"
 #include "WaveVortexRuntime/WVModelOutputConfiguration.hpp"
 #include "WaveVortexRuntime/WVObserverOutputEvaluationService.hpp"
+#include "WaveVortexRuntime/WVVariableKernelServices.hpp"
 
 #include <cstddef>
 #include <cstdint>
@@ -143,7 +144,8 @@ public:
       WVCheckpoint checkpoint,
       std::unique_ptr<WVFFTEngine> engine,
       const WVModelIntegratorConfiguration &integratorConfiguration,
-      WVModel &model, WVModelState &state);
+      WVModel &model, WVModelState &state,
+      const WVVariableKernelServices &services = {});
   static WVKernelStatus validateCheckpointForcingSchedule(
       const WVCheckpointInspection &inspection,
       const WVFrozenForcingSchedule &schedule,
@@ -158,7 +160,8 @@ public:
       const WVModelOutputRequest &outputRequest,
       std::unique_ptr<WVFFTEngine> engine,
       const WVModelIntegratorConfiguration &integratorConfiguration,
-      WVModel &model, WVModelState &state);
+      WVModel &model, WVModelState &state,
+      const WVVariableKernelServices &services = {});
 
   // Consume an already inspected graph so callers that perform an explicit
   // preflight do not repeat NetCDF inspection or retain its state twice.
@@ -168,7 +171,8 @@ public:
       const WVModelOutputRequest &outputRequest,
       std::unique_ptr<WVFFTEngine> engine,
       const WVModelIntegratorConfiguration &integratorConfiguration,
-      WVModel &model, WVModelState &state);
+      WVModel &model, WVModelState &state,
+      const WVVariableKernelServices &services = {});
 
   // Validate and compile destination policy before provider construction or
   // runtime-state allocation. The returned configuration owns the sole
@@ -189,7 +193,8 @@ public:
       std::unique_ptr<WVFFTEngine> engine,
       const WVModelIntegratorConfiguration &integratorConfiguration,
       WVModel &model, WVModelState &state,
-      WVDensityDiagnosticContract densityContract = {});
+      WVDensityDiagnosticContract densityContract = {},
+      const WVVariableKernelServices &services = {});
 
   static WVKernelStatus create(
       std::shared_ptr<const WVExtensionCatalog> catalog,

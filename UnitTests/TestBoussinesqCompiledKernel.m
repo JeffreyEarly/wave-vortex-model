@@ -12,9 +12,9 @@ classdef TestBoussinesqCompiledKernel < matlab.unittest.TestCase
             fixture = testCase.applyFixture(matlab.unittest.fixtures.TemporaryFolderFixture);
             testCase.folder = string(fixture.Folder);
             testCase.executable = string(getenv("WV_BOUSS_KERNEL_DUMP"));
-            testCase.providers = ["reference","reference-pruned"];
+            testCase.providers = ["reference","reference-pruned","reference-compact"];
             if getenv("WV_BOUSS_TEST_NATIVE") == "1"
-                testCase.providers = [testCase.providers,"native","native-accelerate","native-pruned","native-accelerate-pruned"];
+                testCase.providers = [testCase.providers,"native","native-accelerate","native-pruned","native-accelerate-pruned","native-compact","native-accelerate-compact"];
             end
             if testCase.executable == ""
                 build = fullfile(testCase.folder,"build");
@@ -171,10 +171,14 @@ classdef TestBoussinesqCompiledKernel < matlab.unittest.TestCase
                 testCase.verifyEqual(string(report.contract),"wave-vortex-boussinesq-kernel-v1")
                 schedule=string(report.horizontalSchedule);
                 testCase.verifyEqual(schedule,expectedHorizontalSchedule(provider))
-                testCase.verifyEqual(report.streamedNonlinear,endsWith(provider,"-pruned"))
+                testCase.verifyEqual(report.streamedNonlinear,endsWith(provider,["-pruned","-compact"]))
+                testCase.verifyEqual(report.compactSplitViews,endsWith(provider,"-compact"))
+                testCase.verifyEqual(report.pointwiseWorkers,1+double(endsWith(provider,"-compact")))
                 testCase.verifyEqual(report.preparedAllocations,0)
                 testCase.verifyTrue(report.inputPreserved && report.storageStable && report.ownerReleased)
-                testCase.verifyEqual(report.realScratchBytes,11*wvt.Nx*wvt.Ny*wvt.Nz*8)
+                expectedScratchVolumes=11;
+                if endsWith(provider,["-pruned","-compact"]), expectedScratchVolumes=6; end
+                testCase.verifyEqual(report.realScratchBytes,expectedScratchVolumes*wvt.Nx*wvt.Ny*wvt.Nz*8)
                 testCase.verifyEqual(report.waveGroup(:),wvt.iK2unique(:)-1)
                 testCase.verifyEqual(report.K2unique(:),wvt.K2unique(:))
                 for name=["Omega","NAp","NA0","PA0","ApmN","A0Z","A0N","Apm_TE_factor","A0_TE_factor","A0_Psi_factor","A0_QGPV_factor","A0_TZ_factor"]
@@ -310,7 +314,7 @@ end
 end
 
 function schedule = expectedHorizontalSchedule(provider)
-if endsWith(provider,"-pruned") && startsWith(provider,"native")
+if endsWith(provider,["-pruned","-compact"]) && startsWith(provider,"native")
     schedule="fftw-streaming-pruned-tile16";
 else
     schedule="full-fft-gather";

@@ -21,11 +21,15 @@ std::vector<WVComplex64> complexInput(const json& a) { auto r=a.at("real").get<s
 }
 int main(int argc,char** argv) {
     try {
-        if (argc!=5) throw std::runtime_error("Usage: WVBoussinesqKernelDump record.nc input.json output.json reference|native|native-accelerate[-pruned]");
+        if (argc!=5) throw std::runtime_error("Usage: WVBoussinesqKernelDump record.nc input.json output.json reference|native|native-accelerate[-pruned|-compact]");
         std::ifstream inputFile(argv[2]); json data; inputFile>>data;
         std::shared_ptr<const WVStratifiedModalRecord> record; require(WVStratifiedModalReader::read(argv[1],record));
         std::weak_ptr<const WVStratifiedModalRecord> owner=record;
-        std::unique_ptr<WVFFTEngine> engine; const std::string requestedProvider=argv[4]; const bool pruned=hasSuffix(requestedProvider,"-pruned"); const std::string provider=pruned ? requestedProvider.substr(0,requestedProvider.size()-7) : requestedProvider;
+        std::unique_ptr<WVFFTEngine> engine; const std::string requestedProvider=argv[4];
+        const bool compact=hasSuffix(requestedProvider,"-compact");
+        const bool pruned=compact || hasSuffix(requestedProvider,"-pruned");
+        const auto suffixLength=compact ? 8u : (pruned ? 7u : 0u);
+        const std::string provider=suffixLength ? requestedProvider.substr(0,requestedProvider.size()-suffixLength) : requestedProvider;
         if (provider=="reference") engine=std::make_unique<WVReferenceFFTEngine>();
         else if (provider=="native" || provider=="native-accelerate") {
 #if WV_TEST_NATIVE_FFTW
@@ -35,7 +39,11 @@ int main(int argc,char** argv) {
 #endif
         } else throw std::runtime_error("Unknown provider.");
         std::unique_ptr<WVTransformBoussinesqKernel> kernel;
-        WVVariableExecutionOptions options; if (pruned) options={WVRetainedHorizontalSchedule::streamingPrunedTile16,2,true};
+        WVVariableExecutionOptions options;
+        if (pruned) options={WVRetainedHorizontalSchedule::streamingPrunedTile16,2,true,
+            compact ? WVVariableSpectralSchedule::compactSplitFusedViews :
+                WVVariableSpectralSchedule::establishedInterleaved};
+        if (compact) options.pointwiseWorkers=2;
         require(WVTransformBoussinesqKernel::create(record,std::move(engine),kernel,provider=="native-accelerate" ? WVCreateAccelerateMatrixBackend : WVCreateScalarMatrixBackend,options)); record.reset();
         const auto& g=kernel->geometry(); const auto S=g.Nj*g.Nkl,R=g.Nx*g.Ny*g.Nz; const auto shape=kernel->spectralShape(); const auto volume=kernel->spatialShape();
         std::array<std::vector<WVComplex64>,3> a,c;
@@ -47,6 +55,8 @@ int main(int argc,char** argv) {
         WVFlux flux{out.Ap,out.Am,out.A0};
         auto packed=[&]() { return json{{"Ap",complexValues(c[0])},{"Am",complexValues(c[1])},{"A0",complexValues(c[2])}}; };
         json result; result["engine"]=kernel->engineIdentifier(); result["backend"]=kernel->matrixBackendIdentifier(); result["contract"]=WVBoussinesqKernelContract; result["horizontalSchedule"]=kernel->horizontalScheduleIdentifier(); result["streamedNonlinear"]=kernel->executionOptions().streamedNonlinear;
+        result["compactSplitViews"]=kernel->executionOptions().usesCompactSplitViews(); result["pointwiseWorkers"]=kernel->executionOptions().pointwiseWorkers;
+        result["spectralSchedule"]=kernel->executionOptions().usesCompactSplitViews() ? "compact-split-fused-views" : "established-interleaved";
         const auto& factors=kernel->factors();
         const std::pair<const char*,double WVBoussinesqModeFactors::*> realFactors[]={
             {"Omega",&WVBoussinesqModeFactors::omega},{"NAp",&WVBoussinesqModeFactors::NAp},{"NA0",&WVBoussinesqModeFactors::NA0},{"PA0",&WVBoussinesqModeFactors::PA0},

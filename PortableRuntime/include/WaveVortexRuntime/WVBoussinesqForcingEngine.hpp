@@ -2,6 +2,7 @@
 #include "WVForcingTendency.hpp"
 #include "WVForcingEngine.hpp"
 #include "WaveVortexKernel/WVTransformBoussinesqKernel.hpp"
+#include "WaveVortexRuntime/WVVariableKernelServices.hpp"
 namespace wavevortex::runtime {
 // Reuses the resolved WVForcing services; scientific operators are supplied by
 // the immutable Boussinesq source and prepared once at construction.
@@ -19,7 +20,7 @@ public:
     const WVForcingTendencyMetrics& tendencyMetrics() const noexcept { return tendencyMetrics_; }
 
     static WVKernelStatus validateSchedule(const WVStratifiedModalGeometry&,const WVFrozenForcingSchedule&,WVShape2D,const WVExtensionCatalog&);
-    static WVKernelStatus create(std::shared_ptr<const WVStratifiedModalSource>,const WVFrozenForcingSchedule&,std::shared_ptr<const WVExtensionCatalog>,std::unique_ptr<WVFFTEngine>,std::unique_ptr<WVBoussinesqForcingEngine>&);
+    static WVKernelStatus create(std::shared_ptr<const WVStratifiedModalSource>,const WVFrozenForcingSchedule&,std::shared_ptr<const WVExtensionCatalog>,std::unique_ptr<WVFFTEngine>,std::unique_ptr<WVBoussinesqForcingEngine>&,const WVVariableKernelServices& services = {});
     WVKernelStatus nonlinearFlux(const WVState&,WVFlux&);
     WVKernelStatus physicalFields(const WVState&,WVRealFieldBundleConstView&);
     WVStateConstraintResult restoreForcingAmplitudes(WVMutableCoefficients&);

@@ -6,6 +6,8 @@
 #include <functional>
 
 namespace wavevortex {
+namespace spectral_detail { class WVVariableComplexBuffer; }
+namespace kernel_detail { class WVPreparedModeExecutor; }
 inline constexpr const char* WVBoussinesqKernelContract = "wave-vortex-boussinesq-kernel-v1";
 enum class WVBoussinesqField { u, v, w, eta, pi, p, psi, qgpv, rhoE, rhoTotal, zetaX, zetaY, zetaZ, ssh, ssu, ssv };
 enum class WVBoussinesqDerivative { value, x, y, z };
@@ -30,6 +32,7 @@ struct WVBoussinesqStorage {
 // instances are required for concurrent calls. No eigensolver or persistence I/O.
 class WVTransformBoussinesqKernel final {
 public:
+    ~WVTransformBoussinesqKernel();
     using MatrixBackendFactory = std::function<WVKernelStatus(std::unique_ptr<WVVerticalMatrixBackend>&)>;
     static WVKernelStatus create(std::shared_ptr<const WVStratifiedModalSource>,
         std::unique_ptr<WVFFTEngine>, std::unique_ptr<WVTransformBoussinesqKernel>&,
@@ -94,11 +97,15 @@ private:
     WVKernelStatus state(const WVState&) const;
     WVKernelStatus disjoint(const void*,std::size_t,const void*,std::size_t) const;
     WVKernelStatus preparePhase(double t,double t0);
-    WVKernelStatus vertical(std::size_t,const WVComplex64*,WVComplex64*);
-    WVKernelStatus project(const double*,WVComplex64*,WVBoussinesqFamily);
+    WVComplexOutput modalView(std::size_t slot = 0);
+    WVComplexOutput gridView(std::size_t slot = 0);
+    WVKernelStatus vertical(std::size_t,WVComplexInput,WVComplexOutput);
+    WVKernelStatus project(const double*,WVComplexOutput,WVBoussinesqFamily);
     WVKernelStatus reconstruct(const WVCoefficients&,WVBoussinesqField,
         WVBoussinesqDerivative,WVBoussinesqComponent,double*);
     WVKernelStatus projectFields(const double*,const double*,const double*,const double*,WVMutableCoefficients);
+    WVKernelStatus projectSpectralFields(WVComplexInput,WVComplexInput,WVComplexInput,WVComplexInput,
+        WVComplexOutput,bool,WVMutableCoefficients);
     WVKernelStatus verticalCalculus(const double*,WVBoussinesqFamily,unsigned,bool,double*);
     WVVariableExecutionOptions executionOptions_;
     std::shared_ptr<const WVStratifiedModalSource> source_;
@@ -109,7 +116,9 @@ private:
     std::unique_ptr<WVRetainedHorizontalWorkspace> horizontalWorkspace_;
     std::array<std::unique_ptr<WVPreparedVerticalOperator>,11> vertical_;
     std::array<std::unique_ptr<WVVerticalWorkspace>,11> verticalWorkspace_;
-    std::vector<WVComplex64> modal_,gridSpectral_,phase_;
+    std::unique_ptr<spectral_detail::WVVariableComplexBuffer> spectralStorage_;
+    std::unique_ptr<kernel_detail::WVPreparedModeExecutor> pointwise_;
+    std::vector<WVComplex64> phase_;
     std::vector<double> real_;
     std::size_t S_ = 0,R_ = 0,H_ = 0;
     std::atomic<bool> active_{false};

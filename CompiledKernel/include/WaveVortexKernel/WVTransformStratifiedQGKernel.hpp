@@ -6,6 +6,8 @@
 #include <functional>
 
 namespace wavevortex {
+namespace spectral_detail { class WVVariableComplexBuffer; }
+namespace kernel_detail { class WVPreparedModeExecutor; }
 inline constexpr const char* WVStratifiedQGKernelContract = "wave-vortex-stratified-qg-kernel-v1";
 enum class WVStratifiedQGField { u, v, w, eta, pi, p, psi, qgpv, rhoE, rhoTotal, zetaZ, ssh, ssu, ssv };
 enum class WVStratifiedQGDerivative { value, x, y, z };
@@ -29,11 +31,13 @@ public:
     static WVKernelStatus create(std::shared_ptr<const WVStratifiedModalSource>,
         std::unique_ptr<WVFFTEngine>, std::unique_ptr<WVTransformStratifiedQGKernel>&,
         MatrixBackendFactory = WVCreateScalarMatrixBackend, WVVariableExecutionOptions = {});
+    ~WVTransformStratifiedQGKernel();
     const WVVariableExecutionOptions& executionOptions() const noexcept { return executionOptions_; }
     const char* horizontalScheduleIdentifier() const noexcept { return horizontalWorkspace_->scheduleIdentifier(); }
     const WVStratifiedModalGeometry& geometry() const noexcept { return source_->geometry(); }
     const WVStratifiedQGModeFactors& factors() const noexcept { return factors_; }
     const WVStratifiedQGStorage& storage() const noexcept { return storage_; }
+    const char* matrixBackendIdentifier() const noexcept { return vertical_[0]->backendIdentifier(); }
     std::size_t persistentBytes() const noexcept {
         return sizeof(*this)+storage_.sharedScientificBytes+storage_.preparedBytes+storage_.workspaceBytes+storage_.spectralScratchBytes+storage_.realScratchBytes+storage_.factorBytes;
     }
@@ -80,9 +84,9 @@ private:
     WVKernelStatus disjoint(const void*, std::size_t, const void*, std::size_t) const;
     WVKernelStatus validateDiagnosticBuffers(WVComplexConstView, WVComplexView,
         const WVRealVolumeView*, const WVRealFieldBundleConstView* = nullptr) const;
-    WVKernelStatus project(const double*, WVComplex64*, std::size_t operation = 1);
+    WVKernelStatus project(const double*, WVComplexOutput, std::size_t operation = 1);
     WVKernelStatus reconstruct(WVComplexConstView, WVStratifiedQGField, WVStratifiedQGDerivative, double*);
-    WVKernelStatus vertical(std::size_t operation, const WVComplex64*, WVComplex64*);
+    WVKernelStatus vertical(std::size_t operation, WVComplexInput, WVComplexOutput);
     WVVariableExecutionOptions executionOptions_;
     std::shared_ptr<const WVStratifiedModalSource> source_;
     WVStratifiedQGModeFactors factors_;
@@ -92,7 +96,8 @@ private:
     std::unique_ptr<WVRetainedHorizontalWorkspace> horizontalWorkspace_;
     std::array<std::unique_ptr<WVPreparedVerticalOperator>,4> vertical_;
     std::array<std::unique_ptr<WVVerticalWorkspace>,4> verticalWorkspace_;
-    std::vector<WVComplex64> modal_, auxiliary_, gridSpectral_;
+    std::unique_ptr<spectral_detail::WVVariableComplexBuffer> modalSpectral_, gridSpectral_;
+    std::unique_ptr<kernel_detail::WVPreparedModeExecutor> pointwise_;
     std::vector<double> real_;
     std::size_t S_ = 0, R_ = 0, H_ = 0;
     std::atomic<bool> active_{false};

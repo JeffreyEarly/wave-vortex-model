@@ -6,6 +6,8 @@
 #include <functional>
 
 namespace wavevortex {
+namespace spectral_detail { class WVVariableComplexBuffer; }
+namespace kernel_detail { class WVPreparedModeExecutor; }
 inline constexpr const char* WVHydrostaticKernelContract = "wave-vortex-hydrostatic-kernel-v1";
 enum class WVHydrostaticField { u, v, w, eta, pi, p, psi, qgpv, rhoE, rhoTotal, zetaX, zetaY, zetaZ, ssh, ssu, ssv };
 enum class WVHydrostaticDerivative { value, x, y, z };
@@ -30,6 +32,7 @@ struct WVHydrostaticStorage {
 // instances are required for concurrent calls. No eigensolver or persistence I/O.
 class WVTransformHydrostaticKernel final {
 public:
+    ~WVTransformHydrostaticKernel();
     using MatrixBackendFactory = std::function<WVKernelStatus(std::unique_ptr<WVVerticalMatrixBackend>&)>;
     static WVKernelStatus create(std::shared_ptr<const WVStratifiedModalSource>,
         std::unique_ptr<WVFFTEngine>, std::unique_ptr<WVTransformHydrostaticKernel>&,
@@ -88,13 +91,15 @@ private:
     WVKernelStatus state(const WVState&) const;
     WVKernelStatus disjoint(const void*,std::size_t,const void*,std::size_t) const;
     WVKernelStatus preparePhase(double t,double t0);
-    WVKernelStatus vertical(std::size_t,const WVComplex64*,WVComplex64*);
-    WVKernelStatus project(const double*,WVComplex64*,WVHydrostaticFamily);
+    WVComplexOutput modalView(std::size_t slot = 0);
+    WVComplexOutput gridView(std::size_t slot = 0);
+    WVKernelStatus vertical(std::size_t,WVComplexInput,WVComplexOutput);
+    WVKernelStatus project(const double*,WVComplexOutput,WVHydrostaticFamily);
     WVKernelStatus reconstruct(const WVCoefficients&,WVHydrostaticField,
         WVHydrostaticDerivative,WVHydrostaticComponent,double*);
     WVKernelStatus projectFields(const double*,const double*,const double*,WVMutableCoefficients);
     WVKernelStatus projectedFieldsToCoefficients(
-        const WVComplex64*,const WVComplex64*,const WVComplex64*,WVMutableCoefficients);
+        WVComplexInput,WVComplexInput,WVComplexInput,WVMutableCoefficients);
     WVKernelStatus verticalCalculus(const double*,WVHydrostaticFamily,unsigned,bool,double*);
     WVVariableExecutionOptions executionOptions_;
     std::shared_ptr<const WVStratifiedModalSource> source_;
@@ -105,7 +110,9 @@ private:
     std::unique_ptr<WVRetainedHorizontalWorkspace> horizontalWorkspace_;
     std::array<std::unique_ptr<WVPreparedVerticalOperator>,4> vertical_;
     std::array<std::unique_ptr<WVVerticalWorkspace>,4> verticalWorkspace_;
-    std::vector<WVComplex64> modal_,gridSpectral_,phase_;
+    std::unique_ptr<spectral_detail::WVVariableComplexBuffer> spectralStorage_;
+    std::unique_ptr<kernel_detail::WVPreparedModeExecutor> pointwise_;
+    std::vector<WVComplex64> phase_;
     std::vector<double> real_;
     std::size_t S_ = 0,R_ = 0,H_ = 0;
     std::atomic<bool> active_{false};

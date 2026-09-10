@@ -97,9 +97,10 @@ WVKernelStatus WVBoussinesqIntegrationSystem::create(
     const WVFrozenForcingSchedule &schedule,
     std::shared_ptr<const WVExtensionCatalog> catalog,
     std::unique_ptr<WVFFTEngine> engine,
-    std::unique_ptr<WVBoussinesqIntegrationSystem> &system) {
+    std::unique_ptr<WVBoussinesqIntegrationSystem> &system,
+    const WVVariableKernelServices &services) {
   return createImpl(std::move(source), schedule, nullptr, std::move(catalog),
-                    std::move(engine), system);
+                    std::move(engine), system, services);
 }
 
 WVKernelStatus WVBoussinesqIntegrationSystem::create(
@@ -108,9 +109,10 @@ WVKernelStatus WVBoussinesqIntegrationSystem::create(
     const WVPortableObserverDescriptor &descriptor,
     std::shared_ptr<const WVExtensionCatalog> catalog,
     std::unique_ptr<WVFFTEngine> engine,
-    std::unique_ptr<WVBoussinesqIntegrationSystem> &system) {
+    std::unique_ptr<WVBoussinesqIntegrationSystem> &system,
+    const WVVariableKernelServices &services) {
   return createImpl(std::move(source), schedule, &descriptor, std::move(catalog),
-                    std::move(engine), system);
+                    std::move(engine), system, services);
 }
 
 WVKernelStatus WVBoussinesqIntegrationSystem::createImpl(
@@ -119,7 +121,8 @@ WVKernelStatus WVBoussinesqIntegrationSystem::createImpl(
     const WVPortableObserverDescriptor *descriptor,
     std::shared_ptr<const WVExtensionCatalog> catalog,
     std::unique_ptr<WVFFTEngine> engine,
-    std::unique_ptr<WVBoussinesqIntegrationSystem> &system) {
+    std::unique_ptr<WVBoussinesqIntegrationSystem> &system,
+    const WVVariableKernelServices &services) {
   system.reset();
   if (!catalog)
     return {WVKernelStatusCode::invalidConfiguration,
@@ -136,7 +139,7 @@ WVKernelStatus WVBoussinesqIntegrationSystem::createImpl(
             new WVBoussinesqIntegrationSystem());
     auto status = WVBoussinesqForcingEngine::create(
         std::move(source), schedule, std::move(catalog), std::move(engine),
-        candidate->forcing_);
+        candidate->forcing_, services);
     if (!status)
       return status;
     const auto coefficientShape =

@@ -28,7 +28,8 @@ std::size_t count(const char* value) {
     return std::stoull(text);
 }
 template<class Kernel, class Execute>
-json measure(Kernel& kernel,Execute execute,std::size_t warmups,std::size_t samples) {
+json measure(Kernel& kernel,Execute execute,std::size_t warmups,std::size_t samples,std::chrono::steady_clock::time_point preparationStart) {
+    const double preparationSeconds=std::chrono::duration<double>(std::chrono::steady_clock::now()-preparationStart).count();
     for (std::size_t i=0;i<warmups;++i) require(execute());
     const auto bytes=kernel.persistentBytes();
     std::vector<double> times(samples);
@@ -43,7 +44,7 @@ json measure(Kernel& kernel,Execute execute,std::size_t warmups,std::size_t samp
     }
     if (kernel.persistentBytes()!=bytes) throw std::runtime_error("Persistent storage changed during execution.");
     const auto& s=kernel.storage();
-    return {{"samplesSeconds",times},{"horizontalSchedule",kernel.horizontalScheduleIdentifier()},
+    return {{"preparationSeconds",preparationSeconds},{"matrixBackendIdentifier",kernel.matrixBackendIdentifier()},{"compactSplitViews",kernel.executionOptions().usesCompactSplitViews()},{"streamedNonlinear",kernel.executionOptions().streamedNonlinear},{"samplesSeconds",times},{"horizontalSchedule",kernel.horizontalScheduleIdentifier()},
         {"persistentBytes",bytes},{"realScratchBytes",s.realScratchBytes},
         {"spectralScratchBytes",s.spectralScratchBytes},{"preparedBytes",s.preparedBytes},
         {"workspaceBytes",s.workspaceBytes},{"providerBytesLowerBound",s.providerBytesLowerBound},
@@ -52,19 +53,21 @@ json measure(Kernel& kernel,Execute execute,std::size_t warmups,std::size_t samp
 }
 int main(int argc,char** argv) {
     try {
-        if (argc!=7) throw std::runtime_error("Usage: worker INPUT frozen|pruned|streamed|pruned-streamed WORKERS WARMUPS SAMPLES OUTPUT");
+        if (argc!=7 && argc!=8) throw std::runtime_error("Usage: worker INPUT frozen|pruned|streamed|pruned-streamed|compact WORKERS WARMUPS SAMPLES OUTPUT [POINTWISE_WORKERS]");
         const std::string selection=argv[2];
-        if (selection!="frozen" && selection!="pruned" && selection!="streamed" && selection!="pruned-streamed")
+        if (selection!="frozen" && selection!="pruned" && selection!="streamed" && selection!="pruned-streamed" && selection!="compact")
             throw std::runtime_error("Unknown execution selection.");
         const auto workers=count(argv[3]),warmups=count(argv[4]),samples=count(argv[5]);
         if (!workers || !samples) throw std::runtime_error("Workers and samples must be positive.");
         if (std::filesystem::exists(argv[6])) throw std::runtime_error("Refusing to overwrite an existing payload.");
         WVVariableExecutionOptions options;
-        if (selection=="pruned" || selection=="pruned-streamed") {
+        if (argc==8) options.pointwiseWorkers=count(argv[7]);
+        if (selection=="pruned" || selection=="pruned-streamed" || selection=="compact") {
             options.horizontalSchedule=WVRetainedHorizontalSchedule::streamingPrunedTile16;
             options.horizontalWorkers=workers;
         }
-        options.streamedNonlinear=selection=="streamed" || selection=="pruned-streamed";
+        options.streamedNonlinear=selection=="streamed" || selection=="pruned-streamed" || selection=="compact";
+        if (selection=="compact") options.spectralSchedule=WVVariableSpectralSchedule::compactSplitFusedViews;
         std::shared_ptr<const WVExtensionCatalog> catalog; require(makeBuiltInExtensionCatalog(catalog));
         WVCheckpoint checkpoint; require(WVCheckpointReader::read(argv[1],*catalog,checkpoint));
         if (!checkpoint.stratifiedModalSource) throw std::runtime_error("A variable-stratification source is required.");
@@ -90,22 +93,24 @@ int main(int argc,char** argv) {
             {qg ? WVComplexConstView{} : coefficient("Ap"),qg ? WVComplexConstView{} : coefficient("Am"),coefficient("A0")}};
         WVFlux flux{{fp.data(),shape},{fm.data(),shape},{f0.data(),shape}};
         json result;
+        const auto preparationStart=std::chrono::steady_clock::now();
         if (qg) {
             std::unique_ptr<WVTransformStratifiedQGKernel> kernel;
             require(WVTransformStratifiedQGKernel::create(checkpoint.stratifiedModalSource,std::move(fft),kernel,WVCreateAccelerateMatrixBackend,options));
-            result=measure(*kernel,[&] { return kernel->nonlinearFlux(state.coefficients.A0,flux.F0); },warmups,samples);
+            result=measure(*kernel,[&] { return kernel->nonlinearFlux(state.coefficients.A0,flux.F0); },warmups,samples,preparationStart);
         } else if (g.transformClass=="WVTransformHydrostatic") {
             std::unique_ptr<WVTransformHydrostaticKernel> kernel;
             require(WVTransformHydrostaticKernel::create(checkpoint.stratifiedModalSource,std::move(fft),kernel,WVCreateAccelerateMatrixBackend,options));
-            result=measure(*kernel,[&] { return kernel->nonlinearFlux(state,flux); },warmups,samples);
+            result=measure(*kernel,[&] { return kernel->nonlinearFlux(state,flux); },warmups,samples,preparationStart);
         } else if (g.transformClass=="WVTransformBoussinesq") {
             std::unique_ptr<WVTransformBoussinesqKernel> kernel;
             require(WVTransformBoussinesqKernel::create(checkpoint.stratifiedModalSource,std::move(fft),kernel,WVCreateAccelerateMatrixBackend,options));
-            result=measure(*kernel,[&] { return kernel->nonlinearFlux(state,flux); },warmups,samples);
+            result=measure(*kernel,[&] { return kernel->nonlinearFlux(state,flux); },warmups,samples,preparationStart);
         } else throw std::runtime_error("Unsupported transform family.");
         rusage usage{}; if (getrusage(RUSAGE_SELF,&usage)!=0) throw std::runtime_error("Cannot measure peak RSS.");
         result["peakRSSBytes"]=static_cast<std::size_t>(usage.ru_maxrss);
         result["schema"]="wvm-variable-screening-v1"; result["family"]=g.transformClass;
+        result["pointwiseWorkers"]=options.pointwiseWorkers;
         result["selection"]=selection; result["horizontalWorkers"]=options.horizontalWorkers;
         result["grid"]={g.Nx,g.Ny,g.Nz}; result["warmups"]=warmups;
         result["matrixBackend"]="accelerate";

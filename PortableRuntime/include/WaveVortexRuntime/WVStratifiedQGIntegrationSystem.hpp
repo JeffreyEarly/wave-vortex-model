@@ -4,6 +4,7 @@
 #include "WaveVortexRuntime/WVConstantStratificationIntegrationSystem.hpp"
 #include "WaveVortexRuntime/WVFieldEvaluationService.hpp"
 #include "WaveVortexRuntime/WVIntegrationContracts.hpp"
+#include "WaveVortexRuntime/WVVariableKernelServices.hpp"
 
 #include <memory>
 
@@ -16,20 +17,23 @@ public:
   static WVKernelStatus create(
       std::shared_ptr<const WVStratifiedModalSource> source,
       std::unique_ptr<WVFFTEngine> engine,
-      std::unique_ptr<WVStratifiedQGIntegrationSystem> &system);
+      std::unique_ptr<WVStratifiedQGIntegrationSystem> &system,
+      const WVVariableKernelServices &services = {});
   static WVKernelStatus create(
       std::shared_ptr<const WVStratifiedModalSource> source,
       const WVFrozenForcingSchedule &schedule,
       const WVPortableObserverDescriptor &descriptor,
       std::shared_ptr<const WVExtensionCatalog> catalog,
       std::unique_ptr<WVFFTEngine> engine,
-      std::unique_ptr<WVStratifiedQGIntegrationSystem> &system);
+      std::unique_ptr<WVStratifiedQGIntegrationSystem> &system,
+      const WVVariableKernelServices &services = {});
   static WVKernelStatus create(
       std::shared_ptr<const WVStratifiedModalSource> source,
       const WVFrozenForcingSchedule &schedule,
       std::shared_ptr<const WVExtensionCatalog> catalog,
       std::unique_ptr<WVFFTEngine> engine,
-      std::unique_ptr<WVStratifiedQGIntegrationSystem> &system);
+      std::unique_ptr<WVStratifiedQGIntegrationSystem> &system,
+      const WVVariableKernelServices &services = {});
 
   ~WVStratifiedQGIntegrationSystem() override = default;
   WVStratifiedQGIntegrationSystem(const WVStratifiedQGIntegrationSystem &) =
@@ -84,7 +88,8 @@ private:
       const WVPortableObserverDescriptor *descriptor,
       std::shared_ptr<const WVExtensionCatalog> catalog,
       std::unique_ptr<WVFFTEngine> engine,
-      std::unique_ptr<WVStratifiedQGIntegrationSystem> &system);
+      std::unique_ptr<WVStratifiedQGIntegrationSystem> &system,
+      const WVVariableKernelServices &services);
   struct Particle {
     WVObserverRecord record;
     std::size_t xBlock = 0;

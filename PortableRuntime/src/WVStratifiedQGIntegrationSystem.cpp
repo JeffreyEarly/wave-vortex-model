@@ -175,13 +175,14 @@ private:
 WVKernelStatus WVStratifiedQGIntegrationSystem::create(
     std::shared_ptr<const WVStratifiedModalSource> source,
     std::unique_ptr<WVFFTEngine> engine,
-    std::unique_ptr<WVStratifiedQGIntegrationSystem> &system) {
+    std::unique_ptr<WVStratifiedQGIntegrationSystem> &system,
+    const WVVariableKernelServices &services) {
   std::shared_ptr<const WVExtensionCatalog> catalog;
   auto status = makeBuiltInExtensionCatalog(catalog);
   if (!status)
     return status;
   return create(std::move(source), defaultNonlinearAdvectionSchedule(),
-                std::move(catalog), std::move(engine), system);
+                std::move(catalog), std::move(engine), system, services);
 }
 
 WVKernelStatus WVStratifiedQGIntegrationSystem::create(
@@ -189,9 +190,10 @@ WVKernelStatus WVStratifiedQGIntegrationSystem::create(
     const WVFrozenForcingSchedule &schedule,
     std::shared_ptr<const WVExtensionCatalog> catalog,
     std::unique_ptr<WVFFTEngine> engine,
-    std::unique_ptr<WVStratifiedQGIntegrationSystem> &system) {
+    std::unique_ptr<WVStratifiedQGIntegrationSystem> &system,
+    const WVVariableKernelServices &services) {
   return createImpl(std::move(source), schedule, nullptr, std::move(catalog),
-                    std::move(engine), system);
+                    std::move(engine), system, services);
 }
 
 WVKernelStatus WVStratifiedQGIntegrationSystem::create(
@@ -200,9 +202,10 @@ WVKernelStatus WVStratifiedQGIntegrationSystem::create(
     const WVPortableObserverDescriptor &descriptor,
     std::shared_ptr<const WVExtensionCatalog> catalog,
     std::unique_ptr<WVFFTEngine> engine,
-    std::unique_ptr<WVStratifiedQGIntegrationSystem> &system) {
+    std::unique_ptr<WVStratifiedQGIntegrationSystem> &system,
+    const WVVariableKernelServices &services) {
   return createImpl(std::move(source), schedule, &descriptor, std::move(catalog),
-                    std::move(engine), system);
+                    std::move(engine), system, services);
 }
 
 WVKernelStatus WVStratifiedQGIntegrationSystem::createImpl(
@@ -211,7 +214,8 @@ WVKernelStatus WVStratifiedQGIntegrationSystem::createImpl(
     const WVPortableObserverDescriptor *descriptor,
     std::shared_ptr<const WVExtensionCatalog> catalog,
     std::unique_ptr<WVFFTEngine> engine,
-    std::unique_ptr<WVStratifiedQGIntegrationSystem> &system) {
+    std::unique_ptr<WVStratifiedQGIntegrationSystem> &system,
+    const WVVariableKernelServices &services) {
   system.reset();
   if (!catalog)
     return invalid("A Stratified QG integration system requires an extension "
@@ -226,7 +230,7 @@ WVKernelStatus WVStratifiedQGIntegrationSystem::createImpl(
         new WVStratifiedQGIntegrationSystem());
     auto status = WVStratifiedQGForcingEngine::create(
         std::move(source), schedule, catalog, std::move(engine),
-        candidate->forcingEngine_);
+        candidate->forcingEngine_, services);
     if (!status)
       return status;
     WVTransformStateDescription stateDescription{

@@ -173,10 +173,12 @@ void contracts(const std::shared_ptr<const WVStratifiedModalRecord>& source) {
     }
     require(succeeded,"Allocation sweep never succeeded");
 }
-void variableScheduleParity(const std::shared_ptr<const WVStratifiedModalRecord>& source) {
+void variableScheduleParity(const std::shared_ptr<const WVStratifiedModalRecord>& source,bool compact = false) {
     std::unique_ptr<WVTransformBoussinesqKernel> frozen, candidate;
     require(bool(WVTransformBoussinesqKernel::create(source,std::make_unique<WVReferenceFFTEngine>(),frozen)),"Frozen schedule setup failed");
     WVVariableExecutionOptions options{WVRetainedHorizontalSchedule::streamingPrunedTile16,2,true};
+    if (compact) options.spectralSchedule=WVVariableSpectralSchedule::compactSplitFusedViews;
+    options.pointwiseWorkers=2;
     require(bool(WVTransformBoussinesqKernel::create(source,std::make_unique<WVReferenceFFTEngine>(),candidate, WVCreateScalarMatrixBackend, options)),"Candidate schedule setup failed");
     require(std::string(candidate->horizontalScheduleIdentifier())=="full-fft-gather","Reference provider fallback was not reported");
     const auto& g=source->geometry(); const auto S=g.Nj*g.Nkl,R=g.Nx*g.Ny*g.Nz;
@@ -191,23 +193,59 @@ void variableScheduleParity(const std::shared_ptr<const WVStratifiedModalRecord>
     require(bool(frozen->nonlinearFlux(state,frozenFlux)),"Frozen nonlinear flux failed");
     require(bool(candidate->nonlinearFlux(state,candidateFlux)),"Candidate nonlinear flux failed");
     for (std::size_t j=0;j<3;++j) for (std::size_t i=0;i<S;++i) require(std::abs(frozenOut[j][i].real-candidateOut[j][i].real)<1e-12 && std::abs(frozenOut[j][i].imag-candidateOut[j][i].imag)<1e-12,"Candidate nonlinear flux differs");
+    auto serialOptions=options; serialOptions.pointwiseWorkers=1;
+    std::unique_ptr<WVTransformBoussinesqKernel> serial; std::array<std::vector<WVComplex64>,3> serialOut;
+    for (auto& values:serialOut) values.resize(S);
+    require(bool(WVTransformBoussinesqKernel::create(source,std::make_unique<WVReferenceFFTEngine>(),serial,
+        WVCreateScalarMatrixBackend,serialOptions)),"Single-worker candidate setup failed");
+    WVFlux serialFlux{{serialOut[0].data(),{g.Nj,g.Nkl}},{serialOut[1].data(),{g.Nj,g.Nkl}},{serialOut[2].data(),{g.Nj,g.Nkl}}};
+    require(bool(serial->nonlinearFlux(state,serialFlux)),"Single-worker candidate flux failed");
+    for (std::size_t j=0;j<3;++j) for (std::size_t i=0;i<S;++i)
+        require(serialOut[j][i].real==candidateOut[j][i].real && serialOut[j][i].imag==candidateOut[j][i].imag,
+            "Pointwise worker partition changed boussinesq arithmetic");
     std::vector<double> ff(4*R),cf(4*R),fr(4*R),cr(4*R);
     const WVBoussinesqField fields[]={WVBoussinesqField::u,WVBoussinesqField::v,WVBoussinesqField::w,WVBoussinesqField::eta};
     for (std::size_t j=0;j<4;++j) { require(bool(frozen->transformStateField(state,fields[j],{ff.data()+j*R,{g.Nx,g.Ny,g.Nz}})),"Frozen borrowed fields failed"); require(bool(candidate->transformStateField(state,fields[j],{cf.data()+j*R,{g.Nx,g.Ny,g.Nz}})),"Candidate borrowed fields failed"); }
     const auto ffBefore=ff,cfBefore=cf;
     WVRealFieldBundleConstView ffields{ff.data(),{g.Nx,g.Ny,g.Nz,4}},cfields{cf.data(),{g.Nx,g.Ny,g.Nz,4}}; WVRealFieldBundleView frv{fr.data(),{g.Nx,g.Ny,g.Nz,4}},crv{cr.data(),{g.Nx,g.Ny,g.Nz,4}};
     require(bool(frozen->nonlinearFlux(state,frozenFlux,&frv,&ffields)),"Frozen raw flux failed"); allocationProbe::calls=0; allocationProbe::counting=true; require(bool(candidate->nonlinearFlux(state,candidateFlux,&crv,&cfields)),"Candidate raw flux failed"); allocationProbe::counting=false; require(allocationProbe::calls==0,"Candidate prepared nonlinear flux allocated");
-    require(fr==cr && ff==cf && ff==ffBefore && cf==cfBefore,"Candidate borrowed-field raw tendency differs or mutated input");
+    require(ff==ffBefore && cf==cfBefore,"Candidate mutated borrowed fields");
+    for (std::size_t i=0;i<fr.size();++i) require(std::abs(fr[i]-cr[i])<1e-12,"Candidate raw tendency differs");
+    for (std::size_t i=0;i<ff.size();++i) require(std::abs(ff[i]-cf[i])<1e-12,"Candidate reconstructed field differs");
     for (std::size_t j=0;j<3;++j) for (std::size_t i=0;i<S;++i) require(std::abs(frozenOut[j][i].real-candidateOut[j][i].real)<1e-12 && std::abs(frozenOut[j][i].imag-candidateOut[j][i].imag)<1e-12,"Candidate prepared nonlinear flux differs");
     for (auto* outputs:{&frozenOut,&candidateOut}) for (auto& values:*outputs) std::fill(values.begin(),values.end(),WVComplex64{17,19});
     require(bool(frozen->nonlinearFlux(state,frozenFlux,&frv,&ffields,false)),"Frozen spatial-only flux failed");
     require(bool(candidate->nonlinearFlux(state,candidateFlux,&crv,&cfields,false)),"Candidate spatial-only flux failed");
-    require(fr==cr && ff==cf && ff==ffBefore && cf==cfBefore,"Candidate spatial-only tendency differs or mutated borrowed fields");
+    require(ff==ffBefore && cf==cfBefore,"Candidate spatial-only evaluation mutated borrowed fields");
+    for (std::size_t i=0;i<fr.size();++i) require(std::abs(fr[i]-cr[i])<1e-12,"Candidate spatial-only tendency differs");
     for (const auto* outputs:{&frozenOut,&candidateOut}) for (const auto& values:*outputs) for (const auto value:values)
         require(value.real==17 && value.imag==19,"Spatial-only evaluation wrote spectral flux");
     for (std::size_t j=0;j<3;++j) for (std::size_t i=0;i<S;++i)
         require(input[j][i].real==inputBefore[j][i].real && input[j][i].imag==inputBefore[j][i].imag,"Parity evaluation mutated input coefficients");
-    require(candidate->executionOptions().horizontalWorkers==2 && candidate->executionOptions().streamedNonlinear,"Candidate options were not retained");
+    require(frozen->storage().realScratchBytes==11*R*sizeof(double) && candidate->storage().realScratchBytes==6*R*sizeof(double),
+        "Boussinesq streamed scratch accounting differs");
+    require(candidate->executionOptions().horizontalWorkers==2 && candidate->executionOptions().streamedNonlinear &&
+        candidate->executionOptions().usesCompactSplitViews()==compact && candidate->executionOptions().pointwiseWorkers==2,
+        "Candidate options were not retained");
+    require(candidate->persistentBytes()>=candidate->storage().workspaceBytes,"Candidate storage ledger under-reports workspace");
+
+    auto* retained=candidate.get(); WVVariableExecutionOptions invalidWorkerOptions; invalidWorkerOptions.pointwiseWorkers=0;
+    auto status=WVTransformBoussinesqKernel::create(source,std::make_unique<WVReferenceFFTEngine>(),candidate,
+        WVCreateScalarMatrixBackend,invalidWorkerOptions);
+    require(status.code==WVKernelStatusCode::invalidConfiguration && candidate.get()==retained,
+        "Zero pointwise workers were accepted or replaced the retained kernel");
+    std::unique_ptr<WVTransformBoussinesqKernel> invalid;
+    WVVariableExecutionOptions invalidOptions;
+    invalidOptions.spectralSchedule=WVVariableSpectralSchedule::compactSplitFusedViews;
+    status=WVTransformBoussinesqKernel::create(source,std::make_unique<WVReferenceFFTEngine>(),invalid,
+        WVCreateScalarMatrixBackend,invalidOptions);
+    require(status.code==WVKernelStatusCode::invalidConfiguration && !invalid,
+        "Compact split views accepted a non-streaming horizontal schedule");
+    invalidOptions.spectralSchedule=static_cast<WVVariableSpectralSchedule>(99);
+    status=WVTransformBoussinesqKernel::create(source,std::make_unique<WVReferenceFFTEngine>(),invalid,
+        WVCreateScalarMatrixBackend,invalidOptions);
+    require(status.code==WVKernelStatusCode::invalidConfiguration && !invalid,
+        "Unknown variable spectral schedule was accepted");
 }
 
 void modalContracts(const std::filesystem::path& path) {
@@ -250,10 +288,12 @@ void modalContracts(const std::filesystem::path& path) {
 int main() {
     try {
         Temporary file; boussinesqFixture(file.path);
+        for (std::size_t z=0;z<7;++z) change(file.path,"dLnN2",.001*(z+1),z);
         std::shared_ptr<const WVStratifiedModalRecord> source; auto status=WVStratifiedModalReader::read(file.path.string(),source); require(bool(status),status.message.c_str());
         modalContracts(file.path);
         contracts(source);
         variableScheduleParity(source);
+        variableScheduleParity(source,true);
         std::unique_ptr<WVTransformBoussinesqKernel> kernel; require(bool(WVTransformBoussinesqKernel::create(source,std::make_unique<WVReferenceFFTEngine>(),kernel)),"Lifetime setup failed");
         std::weak_ptr<const WVStratifiedModalRecord> weak=source; source.reset(); require(!weak.expired(),"Kernel lost scientific owner"); kernel.reset(); require(weak.expired(),"Scientific owner leaked");
         std::cout<<"Boussinesq kernel contracts passed\n"; return 0;
