@@ -344,20 +344,26 @@ def capacity_preflight(profiles, contract, output, retention,
 
 def summarize(blocks, contract):
     passed = all(block["passed"] for block in blocks)
+    expected_blocks = contract["profileCount"] * contract["blocks"]
     result = {"passed": passed, "profileSet": contract["profileSet"],
               "declaredProfileCount": contract["declaredProfileCount"],
               "selectedProfileCount": contract["profileCount"],
               "completedBlocks": len(blocks),
-              "expectedBlocks": contract["profileCount"] * contract["blocks"],
+              "expectedBlocks": expected_blocks,
+              "campaignComplete": len(blocks) == expected_blocks,
               "decision": "correctness qualification; no timing claim"}
     if contract.get("qualificationOnly") or not passed:
         return result
-    result["decision"] = "complete-model measurements; adoption requires the other declared gates"
     result["timing"] = []
+    measured_count = 0
     for profile in sorted({block["profile"] for block in blocks}):
         measured = [block for block in blocks if block["profile"] == profile and
                     not block["warmup"]]
+        measured_count += len(measured)
         row = {"profile": profile, "measuredBlocks": len(measured), "ratios": {}}
+        if not measured:
+            result["timing"].append(row)
+            continue
         for selection in ("frozen", "interleaved", "compact"):
             ratios = []
             for block in measured:
@@ -368,6 +374,12 @@ def summarize(blocks, contract):
                 "candidateOverIndependentControlMedian": statistics.median(ratios),
                 "samples": ratios}
         result["timing"].append(row)
+    if measured_count == 0:
+        result["decision"] = "warmup progress; no timing claim"
+    elif result["campaignComplete"]:
+        result["decision"] = "complete-model measurements; adoption requires the other declared gates"
+    else:
+        result["decision"] = "partial measured progress; no adoption timing claim"
     return result
 
 

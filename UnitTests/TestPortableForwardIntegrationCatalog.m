@@ -210,9 +210,14 @@ classdef TestPortableForwardIntegrationCatalog < matlab.unittest.TestCase
                 "CompiledKernel/src/WVTransformConstantStratificationKernel.cpp", ...
                 "PortableRuntime/src/WVFieldEvaluationService.cpp","PortableRuntime/src/WVStratifiedFieldEvaluationAdapter.cpp", ...
                 "PortableRuntime/src/WVBarotropicQGFieldEvaluationAdapter.cpp"];
+            required = [required,"PortableRuntime/app/WVRunnerVariablePolicy.cpp","PortableRuntime/app/WVRunnerVariablePolicy.hpp"];
             hashes = struct(path={},sha256={});
             for path = required
-                writeText(fullfile(root,path),"function representativeLifecycleMatchesMatlab(testCase,configuration)"+newline+"end"+newline);
+                content = "function representativeLifecycleMatchesMatlab(testCase,configuration)"+newline+"end"+newline;
+                if path=="PortableRuntime/app/WaveVortexRun.cpp"
+                    content = content+"% WVRunnerVariablePolicy.hpp"+newline;
+                end
+                writeText(fullfile(root,path),content);
                 hashes(end+1) = struct(path=path,sha256=portableForwardIntegrationSHA256(fullfile(root,path))); %#ok<AGROW>
             end
             checkNames = ["nontrivialEvolution","heldAmplitudes","completeRestartState","allContinuationDirections","twoOutputDestinations","controlledStopResume","denseOutputParity"];

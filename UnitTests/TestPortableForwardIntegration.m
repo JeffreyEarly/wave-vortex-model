@@ -384,6 +384,10 @@ function hashes=sourceHashes(root)
     hashes=struct('path',{},'sha256',{});
     sourceRoot=string(getenv("WV_FORWARD_INTEGRATION_SOURCE_ROOT"));
     if sourceRoot=="", sourceRoot=root; end
+    runnerSource=fullfile(sourceRoot,"PortableRuntime/app/WaveVortexRun.cpp");
+    if isfile(runnerSource) && contains(fileread(runnerSource),"WVRunnerVariablePolicy.hpp")
+        paths=[paths,"PortableRuntime/app/WVRunnerVariablePolicy.cpp","PortableRuntime/app/WVRunnerVariablePolicy.hpp"];
+    end
     for index=1:numel(paths)
         file=fullfile(sourceRoot,paths(index));
         if startsWith(paths(index),"UnitTests/"), file=fullfile(root,paths(index)); end
