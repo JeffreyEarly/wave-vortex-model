@@ -1,0 +1,109 @@
+{
+  "schema": "wave-vortex-required-ci-integration-v1",
+  "pullRequest": 447,
+  "mergeCommit": "6cc4fefda70277c8dd373210085016444f1d9c9e",
+  "testedHead": "ec8001a44670e1c7dc04312c1f35349606b5d61a",
+  "run": {
+    "status": "completed",
+    "conclusion": "success",
+    "url": "https://github.com/JeffreyEarly/wave-vortex-model/actions/runs/34418658838",
+    "createdAt": "2026-09-09T23:50:14Z",
+    "updatedAt": "2026-09-10T00:09:52Z"
+  },
+  "jobs": [
+    {
+      "name": "Select CI coverage",
+      "conclusion": "success"
+    },
+    {
+      "name": "Repository and CI policy contracts",
+      "conclusion": "success"
+    },
+    {
+      "name": "C++ / sanitized / build",
+      "conclusion": "success"
+    },
+    {
+      "name": "C++ / release / build",
+      "conclusion": "success"
+    },
+    {
+      "name": "Isolated package verification / Exported package / MATLAB R2025b",
+      "conclusion": "success"
+    },
+    {
+      "name": "Isolated package verification / Clean install / MATLAB R2025b",
+      "conclusion": "success"
+    },
+    {
+      "name": "MATLAB / R2025b / batch 0 / validate",
+      "conclusion": "success"
+    },
+    {
+      "name": "MATLAB / R2025b / batch 2 / validate",
+      "conclusion": "success"
+    },
+    {
+      "name": "MATLAB / R2026a / batch 3 / validate",
+      "conclusion": "success"
+    },
+    {
+      "name": "MATLAB / R2025b / batch 1 / validate",
+      "conclusion": "success"
+    },
+    {
+      "name": "MATLAB / R2026a / batch 0 / validate",
+      "conclusion": "success"
+    },
+    {
+      "name": "MATLAB / R2026a / batch 2 / validate",
+      "conclusion": "success"
+    },
+    {
+      "name": "MATLAB / R2026a / batch 1 / validate",
+      "conclusion": "success"
+    },
+    {
+      "name": "MATLAB / R2025b / batch 3 / validate",
+      "conclusion": "success"
+    },
+    {
+      "name": "MATLAB / sanitized probes / batch 1 / validate",
+      "conclusion": "success"
+    },
+    {
+      "name": "MATLAB / sanitized probes / batch 0 / validate",
+      "conclusion": "success"
+    },
+    {
+      "name": "MATLAB / sanitized probes / batch 3 / validate",
+      "conclusion": "success"
+    },
+    {
+      "name": "MATLAB / sanitized probes / batch 2 / validate",
+      "conclusion": "success"
+    },
+    {
+      "name": "Required / WaveVortexModel",
+      "conclusion": "success"
+    },
+    {
+      "name": "Smoke / MATLAB R2025b",
+      "conclusion": "skipped"
+    },
+    {
+      "name": "Code Analyzer / MATLAB R2025b",
+      "conclusion": "skipped"
+    },
+    {
+      "name": "Documentation / MATLAB R2025b",
+      "conclusion": "skipped"
+    }
+  ],
+  "closedIssues": [
+    391,
+    456
+  ],
+  "scope": "Required Linux Release/sanitizer, MATLAB R2025b/R2026a, sanitized probes, repository and source-package checks for the density implementation and endpoint repair. This is not hosted qualification of the later compatibility-assembly changes.",
+  "assemblyParent": "8890715a1c01f4515fbc46c865432badcf4d470f"
+}

@@ -15,10 +15,10 @@ WaveVortexModel has two optional source-built C++ paths. MATLAB remains the defa
 | Boundary | [Compiled MATLAB backend preview](/users-guide/compiled-preview.html) | [Standalone portable runtime](/users-guide/portable-runtime.html) |
 | --- | --- | --- |
 | Process | Runs inside the MATLAB process through MEX | Runs as the separate `wave-vortex-run` process |
-| Supported transforms | Constant stratification | Constant stratification and equivalent-barotropic QG |
+| Supported transforms | Constant stratification | All five transform families |
 | Numerical scope | Ordinary nonlinear flux | Complete supported model integration and output |
 | Integrators | MATLAB owns integration | Fixed RK4 and MATLAB-compatible `ode23`, `ode45`, and `ode78` |
-| Forcing | Exactly the default `WVNonlinearAdvection` | Documented built-in portable forcing subset |
+| Forcing | Exactly the default `WVNonlinearAdvection` | All twelve stable built-ins where MATLAB permits them |
 | Observers and output | MATLAB owns them | Documented portable observers, schedules, and NetCDF output |
 | Persistence | Backend selection is not persisted | MATLAB-authored NetCDF is continued and remains MATLAB-readable |
 | Build | `WVCompiledBackend.build()` | `PortableRuntime/buildWaveVortexRun.sh` |

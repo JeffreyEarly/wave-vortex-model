@@ -1,0 +1,90 @@
+{
+  "Nj": 12,
+  "accountingScope": "reported C++ capacities; excludes allocator metadata and opaque provider/NetCDF internals",
+  "completedLifecycles": 6,
+  "finalStateFinite": true,
+  "grid": [
+    24,
+    18,
+    25
+  ],
+  "measurements": [
+    {
+      "fieldReconstructions": 64,
+      "preparedStepAllocations": 0,
+      "retainedBytesAfter": 3153816,
+      "retainedBytesBefore": 3153816,
+      "rhsEvaluations": 64,
+      "sampleSeconds": 0.042435708,
+      "sampleSteps": 16,
+      "scientificBytes": 17427,
+      "setupSeconds": 0.037906208,
+      "spatialProjections": 0
+    },
+    {
+      "fieldReconstructions": 64,
+      "preparedStepAllocations": 0,
+      "retainedBytesAfter": 3153816,
+      "retainedBytesBefore": 3153816,
+      "rhsEvaluations": 64,
+      "sampleSeconds": 0.036381833,
+      "sampleSteps": 16,
+      "scientificBytes": 17427,
+      "setupSeconds": 0.015103041,
+      "spatialProjections": 0
+    },
+    {
+      "fieldReconstructions": 64,
+      "preparedStepAllocations": 0,
+      "retainedBytesAfter": 3153816,
+      "retainedBytesBefore": 3153816,
+      "rhsEvaluations": 64,
+      "sampleSeconds": 0.0366265,
+      "sampleSteps": 16,
+      "scientificBytes": 17427,
+      "setupSeconds": 0.014474292,
+      "spatialProjections": 0
+    },
+    {
+      "fieldReconstructions": 64,
+      "preparedStepAllocations": 0,
+      "retainedBytesAfter": 3153848,
+      "retainedBytesBefore": 3153848,
+      "rhsEvaluations": 64,
+      "sampleSeconds": 0.036547708,
+      "sampleSteps": 16,
+      "scientificBytes": 17427,
+      "setupSeconds": 0.0148255,
+      "spatialProjections": 0
+    },
+    {
+      "fieldReconstructions": 64,
+      "preparedStepAllocations": 0,
+      "retainedBytesAfter": 3153848,
+      "retainedBytesBefore": 3153848,
+      "rhsEvaluations": 64,
+      "sampleSeconds": 0.036345834,
+      "sampleSteps": 16,
+      "scientificBytes": 17427,
+      "setupSeconds": 0.014839334,
+      "spatialProjections": 0
+    },
+    {
+      "fieldReconstructions": 64,
+      "preparedStepAllocations": 0,
+      "retainedBytesAfter": 3153848,
+      "retainedBytesBefore": 3153848,
+      "rhsEvaluations": 64,
+      "sampleSeconds": 0.03631675,
+      "sampleSteps": 16,
+      "scientificBytes": 17427,
+      "setupSeconds": 0.014471,
+      "spatialProjections": 0
+    }
+  ],
+  "preparedStepAllocations": 0,
+  "provider": "native-fftw",
+  "retainedGrowthBytes": 0,
+  "schemaIdentifier": "wave-vortex-hydrostatic-lifecycle-v1",
+  "scientificOwnersReleased": true
+}

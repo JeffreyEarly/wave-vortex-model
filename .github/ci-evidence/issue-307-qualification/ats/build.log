@@ -1,0 +1,87 @@
+[  5%] Building CXX object wavevortex-portable-runtime/kernel/CMakeFiles/WaveVortexKernel.dir/src/WVPreparedVerticalOperator.cpp.o
+[  5%] Building CXX object wavevortex-portable-runtime/kernel/CMakeFiles/WaveVortexKernel.dir/src/WVRetainedHorizontalOperator.cpp.o
+[  5%] Building CXX object wavevortex-portable-runtime/kernel/CMakeFiles/WaveVortexKernel.dir/src/WVTransformStratifiedQGKernel.cpp.o
+[  5%] Building CXX object CMakeFiles/alongtrack_portable_core.dir/cpp/src/portable_core.cpp.o
+[  6%] Linking CXX static library libalongtrack_portable_core.a
+[  6%] Built target alongtrack_portable_core
+[  8%] Building CXX object wavevortex-portable-runtime/kernel/CMakeFiles/WaveVortexKernel.dir/src/WVTransformHydrostaticKernel.cpp.o
+[  9%] Building CXX object wavevortex-portable-runtime/kernel/CMakeFiles/WaveVortexKernel.dir/src/WVTransformBoussinesqKernel.cpp.o
+[ 10%] Building CXX object wavevortex-portable-runtime/kernel/CMakeFiles/WaveVortexKernel.dir/src/WVKernelTypes.cpp.o
+[ 12%] Building CXX object CMakeFiles/alongtrack_portable_core_tests.dir/cpp/tests/test_portable_core.cpp.o
+[ 13%] Building CXX object wavevortex-portable-runtime/kernel/CMakeFiles/WaveVortexKernel.dir/src/WVTransformBarotropicQGKernel.cpp.o
+[ 14%] Building CXX object wavevortex-portable-runtime/kernel/CMakeFiles/WaveVortexKernel.dir/src/WVTransformConstantStratificationKernel.cpp.o
+[ 16%] Linking CXX executable alongtrack_portable_core_tests
+[ 16%] Built target alongtrack_portable_core_tests
+[ 17%] Linking CXX static library libWaveVortexKernel.a
+[ 17%] Built target WaveVortexKernel
+[ 18%] Building CXX object wavevortex-portable-runtime/kernel/CMakeFiles/WaveVortexReferenceFFT.dir/adapters/reference/WVReferenceFFTEngine.cpp.o
+[ 20%] Building CXX object wavevortex-portable-runtime/CMakeFiles/WaveVortexPortableRuntime.dir/src/WVExtensionCatalog.cpp.o
+[ 21%] Building CXX object wavevortex-portable-runtime/CMakeFiles/WaveVortexPortableRuntime.dir/src/WVPortableTypedRecord.cpp.o
+[ 22%] Building CXX object wavevortex-portable-runtime/CMakeFiles/WaveVortexPortableRuntime.dir/src/WVPortableImplementationContract.cpp.o
+[ 24%] Building CXX object wavevortex-portable-runtime/CMakeFiles/WaveVortexPortableRuntime.dir/src/WVObservation.cpp.o
+[ 25%] Linking CXX static library libWaveVortexReferenceFFT.a
+[ 25%] Built target WaveVortexReferenceFFT
+[ 26%] Building CXX object wavevortex-portable-runtime/CMakeFiles/WaveVortexPortableRuntime.dir/src/WVOutputSchedule.cpp.o
+[ 28%] Building CXX object wavevortex-portable-runtime/CMakeFiles/WaveVortexPortableRuntime.dir/src/WVForcingContracts.cpp.o
+[ 29%] Building CXX object wavevortex-portable-runtime/CMakeFiles/WaveVortexPortableRuntime.dir/src/WVNetCDF.cpp.o
+[ 30%] Building CXX object wavevortex-portable-runtime/CMakeFiles/WaveVortexPortableRuntime.dir/src/WVStratifiedModalRecord.cpp.o
+[ 32%] Building CXX object wavevortex-portable-runtime/CMakeFiles/WaveVortexPortableRuntime.dir/src/WVForcingScheduleDecoder.cpp.o
+[ 33%] Building CXX object wavevortex-portable-runtime/CMakeFiles/WaveVortexPortableRuntime.dir/src/WVCheckpointTransformAdapters.cpp.o
+[ 34%] Building CXX object wavevortex-portable-runtime/CMakeFiles/WaveVortexPortableRuntime.dir/src/WVCheckpointWriter.cpp.o
+[ 36%] Building CXX object wavevortex-portable-runtime/CMakeFiles/WaveVortexPortableRuntime.dir/src/WVForcingEngine.cpp.o
+[ 37%] Building CXX object wavevortex-portable-runtime/CMakeFiles/WaveVortexPortableRuntime.dir/src/WVIntegrationState.cpp.o
+[ 38%] Building CXX object wavevortex-portable-runtime/CMakeFiles/WaveVortexPortableRuntime.dir/src/WVNoMotionProfile.cpp.o
+[ 40%] Building CXX object wavevortex-portable-runtime/CMakeFiles/WaveVortexPortableRuntime.dir/src/WVNoMotionProfileRecovery.cpp.o
+[ 41%] Building CXX object wavevortex-portable-runtime/CMakeFiles/WaveVortexPortableRuntime.dir/src/WVNoMotionDensityMoments.cpp.o
+[ 42%] Building CXX object wavevortex-portable-runtime/CMakeFiles/WaveVortexPortableRuntime.dir/src/WVDensityEventEvaluation.cpp.o
+[ 44%] Building CXX object wavevortex-portable-runtime/CMakeFiles/WaveVortexPortableRuntime.dir/src/WVRungeKutta.cpp.o
+[ 45%] Building CXX object wavevortex-portable-runtime/CMakeFiles/WaveVortexPortableRuntime.dir/src/WVBarotropicQGForcingEngine.cpp.o
+[ 46%] Building CXX object wavevortex-portable-runtime/CMakeFiles/WaveVortexPortableRuntime.dir/src/WVStratifiedQGForcingEngine.cpp.o
+[ 48%] Building CXX object wavevortex-portable-runtime/CMakeFiles/WaveVortexPortableRuntime.dir/src/WVHydrostaticForcingEngine.cpp.o
+[ 49%] Building CXX object wavevortex-portable-runtime/CMakeFiles/WaveVortexPortableRuntime.dir/src/WVBoussinesqForcingEngine.cpp.o
+[ 50%] Building CXX object wavevortex-portable-runtime/CMakeFiles/WaveVortexPortableRuntime.dir/src/WVBarotropicQGIntegrationSystem.cpp.o
+[ 52%] Building CXX object wavevortex-portable-runtime/CMakeFiles/WaveVortexPortableRuntime.dir/src/WVStratifiedQGIntegrationSystem.cpp.o
+[ 53%] Building CXX object wavevortex-portable-runtime/CMakeFiles/WaveVortexPortableRuntime.dir/src/WVHydrostaticIntegrationSystem.cpp.o
+[ 54%] Building CXX object wavevortex-portable-runtime/CMakeFiles/WaveVortexPortableRuntime.dir/src/WVBoussinesqIntegrationSystem.cpp.o
+[ 56%] Building CXX object wavevortex-portable-runtime/CMakeFiles/WaveVortexPortableRuntime.dir/src/WVBarotropicQGFieldEvaluationAdapter.cpp.o
+[ 57%] Building CXX object wavevortex-portable-runtime/CMakeFiles/WaveVortexPortableRuntime.dir/src/WVStratifiedFieldEvaluationAdapter.cpp.o
+[ 58%] Building CXX object wavevortex-portable-runtime/CMakeFiles/WaveVortexPortableRuntime.dir/src/WVOutputTransformAdapters.cpp.o
+[ 60%] Building CXX object wavevortex-portable-runtime/CMakeFiles/WaveVortexPortableRuntime.dir/src/WVOutputOrchestration.cpp.o
+[ 61%] Building CXX object wavevortex-portable-runtime/CMakeFiles/WaveVortexPortableRuntime.dir/src/WVObserverAdapter.cpp.o
+[ 62%] Building CXX object wavevortex-portable-runtime/CMakeFiles/WaveVortexPortableRuntime.dir/src/WVObserverContracts.cpp.o
+[ 64%] Building CXX object wavevortex-portable-runtime/CMakeFiles/WaveVortexPortableRuntime.dir/src/WVObserverSampleSource.cpp.o
+[ 65%] Building CXX object wavevortex-portable-runtime/CMakeFiles/WaveVortexPortableRuntime.dir/src/WVDiagnosticFieldPlan.cpp.o
+[ 66%] Building CXX object wavevortex-portable-runtime/CMakeFiles/WaveVortexPortableRuntime.dir/src/WVFieldEvaluationService.cpp.o
+[ 68%] Building CXX object wavevortex-portable-runtime/CMakeFiles/WaveVortexPortableRuntime.dir/src/WVConstantStratificationIntegrationSystem.cpp.o
+[ 69%] Building CXX object wavevortex-portable-runtime/CMakeFiles/WaveVortexPortableRuntime.dir/src/WVObserverOutputEvaluationService.cpp.o
+[ 70%] Building CXX object wavevortex-portable-runtime/CMakeFiles/WaveVortexPortableRuntime.dir/src/WVModelOutputTransformAdapters.cpp.o
+[ 72%] Building CXX object wavevortex-portable-runtime/CMakeFiles/WaveVortexPortableRuntime.dir/src/WVModelOutputNetCDFReader.cpp.o
+[ 73%] Building CXX object wavevortex-portable-runtime/CMakeFiles/WaveVortexPortableRuntime.dir/src/WVLegacyObservationNetCDFAdapter.cpp.o
+[ 74%] Building CXX object wavevortex-portable-runtime/CMakeFiles/WaveVortexPortableRuntime.dir/src/WVModelOutputNetCDFWriter.cpp.o
+[ 76%] Building CXX object wavevortex-portable-runtime/CMakeFiles/WaveVortexPortableRuntime.dir/src/WVModelOutputConfiguration.cpp.o
+[ 77%] Building CXX object wavevortex-portable-runtime/CMakeFiles/WaveVortexPortableRuntime.dir/src/WVModel.cpp.o
+[ 78%] Building CXX object wavevortex-portable-runtime/CMakeFiles/WaveVortexPortableRuntime.dir/src/WVModelTransformAdapters.cpp.o
+[ 80%] Linking CXX static library libWaveVortexPortableRuntime.a
+[ 80%] Built target WaveVortexPortableRuntime
+[ 84%] Building CXX object cpp/extensions/wavevortex/CMakeFiles/alongtrack_wavevortex_extension.dir/src/wavevortex_extension.cpp.o
+[ 84%] Building CXX object wavevortex-portable-runtime/CMakeFiles/WaveVortexRunner.dir/app/WVRunRequest.cpp.o
+[ 84%] Building CXX object wavevortex-portable-runtime/CMakeFiles/WaveVortexRunner.dir/app/WaveVortexRun.cpp.o
+[ 85%] Linking CXX static library libalongtrack_wavevortex_extension.a
+[ 85%] Built target alongtrack_wavevortex_extension
+[ 88%] Building CXX object cpp/extensions/wavevortex/CMakeFiles/alongtrack_wavevortex_extension_tests.dir/tests/test_wavevortex_extension.cpp.o
+[ 88%] Building CXX object cpp/extensions/wavevortex/CMakeFiles/alongtrack_wavevortex_extension_routing_tests.dir/tests/test_wavevortex_extension_routing.cpp.o
+[ 89%] Linking CXX static library libWaveVortexRunner.a
+[ 89%] Built target WaveVortexRunner
+[ 92%] Building CXX object cpp/extensions/wavevortex/CMakeFiles/alongtrack-wave-vortex-run.dir/app/AlongTrackWaveVortexRunMain.cpp.o
+[ 92%] Building CXX object wavevortex-portable-runtime/CMakeFiles/wave-vortex-run.dir/app/WaveVortexRunMain.cpp.o
+[ 93%] Linking CXX executable wave-vortex-run
+[ 94%] Linking CXX executable alongtrack-wave-vortex-run
+[ 94%] Built target wave-vortex-run
+[ 94%] Built target alongtrack-wave-vortex-run
+[ 96%] Building CXX object cpp/extensions/wavevortex/CMakeFiles/alongtrack_wavevortex_runner_end_to_end_tests.dir/tests/test_source_linked_runner.cpp.o
+[ 97%] Linking CXX executable alongtrack_wavevortex_extension_routing_tests
+[ 97%] Built target alongtrack_wavevortex_extension_routing_tests
+[ 98%] Linking CXX executable alongtrack_wavevortex_extension_tests
+[ 98%] Built target alongtrack_wavevortex_extension_tests
+[100%] Linking CXX executable alongtrack_wavevortex_runner_end_to_end_tests
+[100%] Built target alongtrack_wavevortex_runner_end_to_end_tests

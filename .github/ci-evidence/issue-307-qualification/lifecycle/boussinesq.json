@@ -1,0 +1,90 @@
+{
+  "Nj": 8,
+  "accountingScope": "reported C++ capacities; excludes allocator metadata and opaque provider/NetCDF internals",
+  "completedLifecycles": 6,
+  "finalStateFinite": true,
+  "grid": [
+    16,
+    12,
+    17
+  ],
+  "measurements": [
+    {
+      "fieldReconstructions": 64,
+      "preparedStepAllocations": 0,
+      "retainedBytesAfter": 1539479,
+      "retainedBytesBefore": 1539479,
+      "rhsEvaluations": 64,
+      "sampleSeconds": 0.01947775,
+      "sampleSteps": 16,
+      "scientificBytes": 106523,
+      "setupSeconds": 0.058010333,
+      "spatialProjections": 0
+    },
+    {
+      "fieldReconstructions": 64,
+      "preparedStepAllocations": 0,
+      "retainedBytesAfter": 1539479,
+      "retainedBytesBefore": 1539479,
+      "rhsEvaluations": 64,
+      "sampleSeconds": 0.017779584,
+      "sampleSteps": 16,
+      "scientificBytes": 106523,
+      "setupSeconds": 0.036077917,
+      "spatialProjections": 0
+    },
+    {
+      "fieldReconstructions": 64,
+      "preparedStepAllocations": 0,
+      "retainedBytesAfter": 1539479,
+      "retainedBytesBefore": 1539479,
+      "rhsEvaluations": 64,
+      "sampleSeconds": 0.017675667,
+      "sampleSteps": 16,
+      "scientificBytes": 106523,
+      "setupSeconds": 0.035484583,
+      "spatialProjections": 0
+    },
+    {
+      "fieldReconstructions": 64,
+      "preparedStepAllocations": 0,
+      "retainedBytesAfter": 1540575,
+      "retainedBytesBefore": 1540575,
+      "rhsEvaluations": 64,
+      "sampleSeconds": 0.017543042,
+      "sampleSteps": 16,
+      "scientificBytes": 106523,
+      "setupSeconds": 0.03526825,
+      "spatialProjections": 0
+    },
+    {
+      "fieldReconstructions": 64,
+      "preparedStepAllocations": 0,
+      "retainedBytesAfter": 1540575,
+      "retainedBytesBefore": 1540575,
+      "rhsEvaluations": 64,
+      "sampleSeconds": 0.017577416,
+      "sampleSteps": 16,
+      "scientificBytes": 106523,
+      "setupSeconds": 0.034902916,
+      "spatialProjections": 0
+    },
+    {
+      "fieldReconstructions": 64,
+      "preparedStepAllocations": 0,
+      "retainedBytesAfter": 1540575,
+      "retainedBytesBefore": 1540575,
+      "rhsEvaluations": 64,
+      "sampleSeconds": 0.017586,
+      "sampleSteps": 16,
+      "scientificBytes": 106523,
+      "setupSeconds": 0.03528675,
+      "spatialProjections": 0
+    }
+  ],
+  "preparedStepAllocations": 0,
+  "provider": "native-fftw",
+  "retainedGrowthBytes": 0,
+  "schemaIdentifier": "wave-vortex-boussinesq-lifecycle-v1",
+  "scientificOwnersReleased": true
+}

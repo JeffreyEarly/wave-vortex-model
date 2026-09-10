@@ -1,0 +1,10 @@
+root='/Users/jearly/Documents/OceanKitRepositories/wvm-v4-cpp-adoption-audit'; cd(root);
+addpath(fullfile(root,'tools')); configureCIEnvironment(root,'/Users/jearly/Documents/OceanKitRepositories/OceanKit',documentationPackageSpecifier="ClassDocumentation@1.3.2");
+for path=["UnitTests/TestCompiledKernelIntegration.m","tools/prepareWaveVortexModelReleaseCandidate.m"]
+ [~,name,ext]=fileparts(path);
+ findings=checkcode(fullfile(root,path),'-id'); baseline=checkcode(fullfile('/private/tmp/wvm306-analyzer-baseline',name+ext),'-id');
+ fprintf('ANALYZER %s current=%d baseline=%d\n',path,numel(findings),numel(baseline));
+ for finding=reshape(findings,1,[]), fprintf('%s line%d %s\n',finding.id,finding.line,finding.message); end
+ assert(isequal({findings.id},{baseline.id}) && isequal({findings.message},{baseline.message}));
+end
+buildtool docs:build; buildtool docs:check;

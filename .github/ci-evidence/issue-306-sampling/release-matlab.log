@@ -1,0 +1,1918 @@
+[Warning: Directory access failure: /Users/jearly/Documents/MATLAB]
+[Warning: Directory access failure: /Users/jearly/Documents/MATLAB]
+[> In restoredefaultpath (line 81)]
+CI package: Distributions 2.0.0 (/Users/jearly/Documents/OceanKitRepositories/OceanKit/Distributions-2.0.0)
+CI package: SplineCore 2.2.0 (/Users/jearly/Documents/OceanKitRepositories/OceanKit/SplineCore-2.2.0)
+CI package: chebfun 5.7.0 (/Users/jearly/Documents/OceanKitRepositories/OceanKit/chebfun-5.7.0)
+CI package: InternalModes 1.3.0 (/Users/jearly/Documents/OceanKitRepositories/OceanKit/InternalModes-1.3.0)
+CI package: NetCDF 1.0.2 (/Users/jearly/Documents/OceanKitRepositories/OceanKit/NetCDF-1.0.2)
+CI package: ClassAnnotations 1.2.1 (/Users/jearly/Documents/OceanKitRepositories/OceanKit/ClassAnnotations-1.2.1)
+CI package: WaveVortexModel 4.3.0 (/Users/jearly/Documents/OceanKitRepositories/wvm-v4-cpp-adoption-audit)
+Running TestPortableFieldSamplingMatrix
+Ending simulation. Wrote 1 time points to wave-vortex group
+BLAS: trying environment BLAS_VERSION...
+BLAS: loading libmwAF_BLAS_ilp64.dylib
+BLAS: loaded libmwAF_BLAS_ilp64.dylib@0x9720b8b0
+Ending simulation. Wrote 1 time points to wave-vortex group
+Ending simulation. Wrote 1 time points to wave-vortex group
+Ending simulation. Wrote 1 time points to wave-vortex group
+Ending simulation. Wrote 1 time points to wave-vortex group
+Ending simulation. Wrote 1 time points to wave-vortex group
+[Warning: The nonlinear flux has no damping and may not be stable.]
+[> In WVModel (line 121)
+In TestPortableFieldSamplingMatrix/writeSource (line 114)
+In TestPortableFieldSamplingMatrix/declaredPortableSamplingMatchesMatlab (line 45)]
+Ending simulation. Wrote 1 time points to wave-vortex group
+[Warning: The nonlinear flux has no damping and may not be stable.]
+[> In WVModel (line 121)
+In TestPortableFieldSamplingMatrix/writeSource (line 114)
+In TestPortableFieldSamplingMatrix/declaredPortableSamplingMatchesMatlab (line 45)]
+Ending simulation. Wrote 1 time points to wave-vortex group
+[Warning: The nonlinear flux has no damping and may not be stable.]
+[> In WVModel (line 121)
+In TestPortableFieldSamplingMatrix/writeSource (line 114)
+In TestPortableFieldSamplingMatrix/declaredPortableSamplingMatchesMatlab (line 45)]
+Ending simulation. Wrote 1 time points to wave-vortex group
+[Warning: The nonlinear flux has no damping and may not be stable.]
+[> In WVModel (line 121)
+In TestPortableFieldSamplingMatrix/writeSource (line 114)
+In TestPortableFieldSamplingMatrix/declaredPortableSamplingMatchesMatlab (line 45)]
+Ending simulation. Wrote 1 time points to wave-vortex group
+building 12 boussinesq transformation matrices...1...finished.
+[Warning: The nonlinear flux has no damping and may not be stable.]
+[> In WVModel (line 121)
+In TestPortableFieldSamplingMatrix/writeSource (line 114)
+In TestPortableFieldSamplingMatrix/declaredPortableSamplingMatchesMatlab (line 45)]
+Ending simulation. Wrote 1 time points to wave-vortex group
+building 5 boussinesq transformation matrices...1...finished.
+[Warning: The nonlinear flux has no damping and may not be stable.]
+[> In WVModel (line 121)
+In TestPortableFieldSamplingMatrix/writeSource (line 114)
+In TestPortableFieldSamplingMatrix/declaredPortableSamplingMatchesMatlab (line 45)]
+Ending simulation. Wrote 1 time points to wave-vortex group
+.
+Done TestPortableFieldSamplingMatrix
+__________
+
+Running TestPortableStratifiedQG
+Ending simulation. Wrote 1 time points to wave-vortex group
+Ending simulation. Wrote 1 time points to dense group
+WARNING: package sun.awt.X11 not in java.desktop
+WARNING: package sun.awt.X11 not in java.desktop
+WVTransformStratifiedQG initialized from A0.
+Ending simulation. Wrote 3 time points to wave-vortex group
+Ending simulation. Wrote 9 time points to dense group
+WVTransformStratifiedQG initialized from A0.
+Ending simulation. Wrote 3 time points to wave-vortex group
+Ending simulation. Wrote 9 time points to dense group
+
+================================================================================
+Assertion failed in TestPortableStratifiedQG/linearPassiveObserversMatchMatlab and it did not run to completion.
+    ----------------
+    Test Diagnostic:
+    ----------------
+    {"schemaVersion":"wave-vortex-run-v1","status":"failed","exitCode":4,"failure":{"stage":"provider","message":"This runner was built without the native FFTW provider. Build the source runner with PortableRuntime/buildWaveVortexRun.sh on a supported Apple-silicon host; no reference-provider fallback is performed.","location":""}}
+
+    ---------------------
+    Framework Diagnostic:
+    ---------------------
+    assertEqual failed.
+    --> The numeric values are not equal using "isequaln".
+    --> Failure table:
+            Actual    Expected    Error    RelativeError
+            ______    ________    _____    _____________
+
+              4          0          4           Inf
+
+    Actual Value:
+         4
+    Expected Value:
+         0
+    ------------------
+    Stack Information:
+    ------------------
+    In /Users/jearly/Documents/OceanKitRepositories/wvm-v4-cpp-adoption-audit/UnitTests/TestPortableStratifiedQG.m (TestPortableStratifiedQG.linearPassiveObserversMatchMatlab) at 40
+================================================================================
+.Ending simulation. Wrote 1 time points to wave-vortex group
+Ending simulation. Wrote 1 time points to dense group
+dX/U = 109846.2 s (1830.8 min). The highest frequency resolved IGW has period of Inf s (Inf min).
+WVTransformStratifiedQG initialized from A0.
+Ending simulation. Wrote 3 time points to wave-vortex group
+Ending simulation. Wrote 9 time points to dense group
+WVTransformStratifiedQG initialized from A0.
+Ending simulation. Wrote 3 time points to wave-vortex group
+Ending simulation. Wrote 9 time points to dense group
+WVTransformStratifiedQG initialized from A0.
+dX/U = 109846.2 s (1830.8 min). The highest frequency resolved IGW has period of Inf s (Inf min).
+Ending simulation. Wrote 3 time points to wave-vortex group
+Ending simulation. Wrote 9 time points to dense group
+WVTransformStratifiedQG initialized from A0.
+Ending simulation. Wrote 3 time points to wave-vortex group
+Ending simulation. Wrote 9 time points to dense group
+WVTransformStratifiedQG initialized from A0.
+dX/U = 109846.2 s (1830.8 min). The highest frequency resolved IGW has period of Inf s (Inf min).
+Ending simulation. Wrote 3 time points to wave-vortex group
+Ending simulation. Wrote 9 time points to dense group
+WVTransformStratifiedQG initialized from A0.
+Ending simulation. Wrote 3 time points to wave-vortex group
+Ending simulation. Wrote 9 time points to dense group
+
+================================================================================
+Assertion failed in TestPortableStratifiedQG/cflAndDefaultSteppingMatchMatlab and it did not run to completion.
+    ----------------
+    Test Diagnostic:
+    ----------------
+    {"schemaVersion":"wave-vortex-run-v1","status":"failed","exitCode":4,"failure":{"stage":"provider","message":"This runner was built without the native FFTW provider. Build the source runner with PortableRuntime/buildWaveVortexRun.sh on a supported Apple-silicon host; no reference-provider fallback is performed.","location":""}}
+
+    ---------------------
+    Framework Diagnostic:
+    ---------------------
+    assertEqual failed.
+    --> The numeric values are not equal using "isequaln".
+    --> Failure table:
+            Actual    Expected    Error    RelativeError
+            ______    ________    _____    _____________
+
+              4          0          4           Inf
+
+    Actual Value:
+         4
+    Expected Value:
+         0
+    ------------------
+    Stack Information:
+    ------------------
+    In /Users/jearly/Documents/OceanKitRepositories/wvm-v4-cpp-adoption-audit/UnitTests/TestPortableStratifiedQG.m (TestPortableStratifiedQG.cflAndDefaultSteppingMatchMatlab) at 67
+================================================================================
+.Ending simulation. Wrote 1 time points to wave-vortex group
+Ending simulation. Wrote 1 time points to dense group
+Ending simulation. Wrote 1 time points to wave-vortex group
+WVTransformStratifiedQG initialized from A0.
+Ending simulation. Wrote 3 time points to wave-vortex group
+Ending simulation. Wrote 9 time points to dense group
+WVTransformStratifiedQG initialized from A0.
+Ending simulation. Wrote 2 time points to wave-vortex group
+Ending simulation. Wrote 8 time points to dense group
+WVTransformStratifiedQG initialized from A0.
+Ending simulation. Wrote 2 time points to wave-vortex group
+Ending simulation. Wrote 8 time points to dense group
+WVTransformStratifiedQG initialized from A0.
+Ending simulation. Wrote 3 time points to wave-vortex group
+Ending simulation. Wrote 9 time points to dense group
+
+================================================================================
+Assertion failed in TestPortableStratifiedQG/multiFileOutputPoliciesAndRestart and it did not run to completion.
+    ----------------
+    Test Diagnostic:
+    ----------------
+    {"schemaVersion":"wave-vortex-run-v1","status":"failed","exitCode":4,"failure":{"stage":"provider","message":"This runner was built without the native FFTW provider. Build the source runner with PortableRuntime/buildWaveVortexRun.sh on a supported Apple-silicon host; no reference-provider fallback is performed.","location":""}}
+
+    ---------------------
+    Framework Diagnostic:
+    ---------------------
+    assertEqual failed.
+    --> The numeric values are not equal using "isequaln".
+    --> Failure table:
+            Actual    Expected    Error    RelativeError
+            ______    ________    _____    _____________
+
+              4          0          4           Inf
+
+    Actual Value:
+         4
+    Expected Value:
+         0
+    ------------------
+    Stack Information:
+    ------------------
+    In /Users/jearly/Documents/OceanKitRepositories/wvm-v4-cpp-adoption-audit/UnitTests/TestPortableStratifiedQG.m (TestPortableStratifiedQG.multiFileOutputPoliciesAndRestart) at 113
+================================================================================
+.[Warning: The nonlinear flux has no damping and may not be stable.]
+[> In WVModel (line 121)
+In TestPortableStratifiedQG/writeInitialModel (line 297)
+In TestPortableStratifiedQG/incompatibleModelGraphsAreTransactional (line 152)]
+Ending simulation. Wrote 1 time points to wave-vortex group
+[Warning: The nonlinear flux has no damping and may not be stable.]
+[> In WVModel (line 121)
+In TestPortableStratifiedQG/writeInitialModel (line 297)
+In TestPortableStratifiedQG/incompatibleModelGraphsAreTransactional (line 152)]
+Ending simulation. Wrote 1 time points to wave-vortex group
+[Warning: The nonlinear flux has no damping and may not be stable.]
+[> In WVModel (line 121)
+In TestPortableStratifiedQG/writeInitialModel (line 297)
+In TestPortableStratifiedQG/incompatibleModelGraphsAreTransactional (line 152)]
+Ending simulation. Wrote 1 time points to wave-vortex group
+[Warning: The nonlinear flux has no damping and may not be stable.]
+[> In WVModel (line 121)
+In TestPortableStratifiedQG/writeInitialModel (line 297)
+In TestPortableStratifiedQG/incompatibleModelGraphsAreTransactional (line 152)]
+Ending simulation. Wrote 1 time points to wave-vortex group
+[Warning: The nonlinear flux has no damping and may not be stable.]
+[> In WVModel (line 121)
+In TestPortableStratifiedQG/writeInitialModel (line 297)
+In TestPortableStratifiedQG/incompatibleModelGraphsAreTransactional (line 152)]
+Ending simulation. Wrote 1 time points to wave-vortex group
+[Warning: The nonlinear flux has no damping and may not be stable.]
+[> In WVModel (line 121)
+In TestPortableStratifiedQG/writeInitialModel (line 297)
+In TestPortableStratifiedQG/incompatibleModelGraphsAreTransactional (line 152)]
+Ending simulation. Wrote 1 time points to wave-vortex group
+[Warning: The nonlinear flux has no damping and may not be stable.]
+[> In WVModel (line 121)
+In TestPortableStratifiedQG/writeInitialModel (line 297)
+In TestPortableStratifiedQG/incompatibleModelGraphsAreTransactional (line 152)]
+Ending simulation. Wrote 1 time points to wave-vortex group
+[Warning: The nonlinear flux has no damping and may not be stable.]
+[> In WVModel (line 121)
+In TestPortableStratifiedQG/writeInitialModel (line 297)
+In TestPortableStratifiedQG/incompatibleModelGraphsAreTransactional (line 161)]
+Ending simulation. Wrote 1 time points to wave-vortex group
+Ending simulation. Wrote 1 time points to dense group
+.Ending simulation. Wrote 1 time points to wave-vortex group
+Ending simulation. Wrote 1 time points to dense group
+WVTransformStratifiedQG initialized from A0.
+WVTransformStratifiedQG initialized from A0.
+Ending simulation. Wrote 3 time points to wave-vortex group
+Ending simulation. Wrote 9 time points to dense group
+Ending simulation. Wrote 3 time points to wave-vortex group
+Ending simulation. Wrote 9 time points to dense group
+WVTransformStratifiedQG initialized from A0.
+WVTransformStratifiedQG initialized from A0.
+dX/U = 109846.2 s (1830.8 min). The highest frequency resolved IGW has period of Inf s (Inf min).
+Ending simulation. Wrote 3 time points to wave-vortex group
+Ending simulation. Wrote 9 time points to dense group
+Ending simulation. Wrote 3 time points to wave-vortex group
+Ending simulation. Wrote 9 time points to dense group
+WVTransformStratifiedQG initialized from A0.
+WVTransformStratifiedQG initialized from A0.
+dX/U = 109846.2 s (1830.8 min). The highest frequency resolved IGW has period of Inf s (Inf min).
+Ending simulation. Wrote 3 time points to wave-vortex group
+Ending simulation. Wrote 9 time points to dense group
+Ending simulation. Wrote 3 time points to wave-vortex group
+Ending simulation. Wrote 9 time points to dense group
+
+================================================================================
+Assertion failed in TestPortableStratifiedQG/modelIntegrationRoundTripsThroughMatlab and it did not run to completion.
+    ----------------
+    Test Diagnostic:
+    ----------------
+    {"schemaVersion":"wave-vortex-run-v1","status":"failed","exitCode":4,"failure":{"stage":"provider","message":"This runner was built without the native FFTW provider. Build the source runner with PortableRuntime/buildWaveVortexRun.sh on a supported Apple-silicon host; no reference-provider fallback is performed.","location":""}}
+
+    ---------------------
+    Framework Diagnostic:
+    ---------------------
+    assertEqual failed.
+    --> The numeric values are not equal using "isequaln".
+    --> Failure table:
+            Actual    Expected    Error    RelativeError
+            ______    ________    _____    _____________
+
+              4          0          4           Inf
+
+    Actual Value:
+         4
+    Expected Value:
+         0
+    ------------------
+    Stack Information:
+    ------------------
+    In /Users/jearly/Documents/OceanKitRepositories/wvm-v4-cpp-adoption-audit/UnitTests/TestPortableStratifiedQG.m (TestPortableStratifiedQG.modelIntegrationRoundTripsThroughMatlab) at 182
+================================================================================
+.[Warning: The nonlinear flux has no damping and may not be stable.]
+[> In WVModel (line 121)
+In TestPortableStratifiedQG/writeInitialModel (line 297)
+In TestPortableStratifiedQG/fieldSamplingMatchesMatlab (line 212)]
+Ending simulation. Wrote 1 time points to wave-vortex group
+
+================================================================================
+Assertion failed in TestPortableStratifiedQG/fieldSamplingMatchesMatlab and it did not run to completion.
+    ----------------
+    Test Diagnostic:
+    ----------------
+    Native provider not built.
+
+    ---------------------
+    Framework Diagnostic:
+    ---------------------
+    assertEqual failed.
+    --> The numeric values are not equal using "isequaln".
+    --> Failure table:
+            Actual    Expected    Error    RelativeError
+            ______    ________    _____    _____________
+
+              1          0          1           Inf
+
+    Actual Value:
+         1
+    Expected Value:
+         0
+    ------------------
+    Stack Information:
+    ------------------
+    In /Users/jearly/Documents/OceanKitRepositories/wvm-v4-cpp-adoption-audit/UnitTests/TestPortableStratifiedQG.m (TestPortableStratifiedQG.fieldSamplingMatchesMatlab) at 220
+================================================================================
+.Ending simulation. Wrote 1 time points to wave-vortex group
+
+================================================================================
+Assertion failed in TestPortableStratifiedQG/applicableForcingTendenciesMatchMatlab and it did not run to completion.
+    ----------------
+    Test Diagnostic:
+    ----------------
+    Native adapter unavailable.
+
+    ---------------------
+    Framework Diagnostic:
+    ---------------------
+    assertEqual failed.
+    --> The numeric values are not equal using "isequaln".
+    --> Failure table:
+            Actual    Expected    Error    RelativeError
+            ______    ________    _____    _____________
+
+              1          0          1           Inf
+
+    Actual Value:
+         1
+    Expected Value:
+         0
+    ------------------
+    Stack Information:
+    ------------------
+    In /Users/jearly/Documents/OceanKitRepositories/wvm-v4-cpp-adoption-audit/UnitTests/TestPortableStratifiedQG.m (TestPortableStratifiedQG.compareTendency) at 344
+    In /Users/jearly/Documents/OceanKitRepositories/wvm-v4-cpp-adoption-audit/UnitTests/TestPortableStratifiedQG.m (TestPortableStratifiedQG.applicableForcingTendenciesMatchMatlab) at 243
+================================================================================
+.Ending simulation. Wrote 1 time points to wave-vortex group
+
+================================================================================
+Assertion failed in TestPortableStratifiedQG/orderedForcingTendenciesMatchMatlab and it did not run to completion.
+    ----------------
+    Test Diagnostic:
+    ----------------
+    Native adapter unavailable.
+
+    ---------------------
+    Framework Diagnostic:
+    ---------------------
+    assertEqual failed.
+    --> The numeric values are not equal using "isequaln".
+    --> Failure table:
+            Actual    Expected    Error    RelativeError
+            ______    ________    _____    _____________
+
+              1          0          1           Inf
+
+    Actual Value:
+         1
+    Expected Value:
+         0
+    ------------------
+    Stack Information:
+    ------------------
+    In /Users/jearly/Documents/OceanKitRepositories/wvm-v4-cpp-adoption-audit/UnitTests/TestPortableStratifiedQG.m (TestPortableStratifiedQG.compareTendency) at 344
+    In /Users/jearly/Documents/OceanKitRepositories/wvm-v4-cpp-adoption-audit/UnitTests/TestPortableStratifiedQG.m (TestPortableStratifiedQG.orderedForcingTendenciesMatchMatlab) at 257
+================================================================================
+.
+Done TestPortableStratifiedQG
+__________
+
+Running TestPortableHydrostatic
+Ending simulation. Wrote 1 time points to wave-vortex group
+Ending simulation. Wrote 1 time points to dense group
+WVTransformHydrostatic initialized from Ap, Am, A0.
+Ending simulation. Wrote 3 time points to wave-vortex group
+Ending simulation. Wrote 9 time points to dense group
+WVTransformHydrostatic initialized from Ap, Am, A0.
+Ending simulation. Wrote 3 time points to wave-vortex group
+Ending simulation. Wrote 9 time points to dense group
+
+================================================================================
+Assertion failed in TestPortableHydrostatic/linearPassiveObserversMatchMatlab and it did not run to completion.
+    ----------------
+    Test Diagnostic:
+    ----------------
+    {"schemaVersion":"wave-vortex-run-v1","status":"failed","exitCode":4,"failure":{"stage":"provider","message":"This runner was built without the native FFTW provider. Build the source runner with PortableRuntime/buildWaveVortexRun.sh on a supported Apple-silicon host; no reference-provider fallback is performed.","location":""}}
+
+    ---------------------
+    Framework Diagnostic:
+    ---------------------
+    assertEqual failed.
+    --> The numeric values are not equal using "isequaln".
+    --> Failure table:
+            Actual    Expected    Error    RelativeError
+            ______    ________    _____    _____________
+
+              4          0          4           Inf
+
+    Actual Value:
+         4
+    Expected Value:
+         0
+    ------------------
+    Stack Information:
+    ------------------
+    In /Users/jearly/Documents/OceanKitRepositories/wvm-v4-cpp-adoption-audit/UnitTests/TestPortableHydrostatic.m (TestPortableHydrostatic.linearPassiveObserversMatchMatlab) at 40
+================================================================================
+.Ending simulation. Wrote 1 time points to wave-vortex group
+Ending simulation. Wrote 1 time points to dense group
+WVTransformHydrostatic initialized from Ap, Am, A0.
+Ending simulation. Wrote 3 time points to wave-vortex group
+Ending simulation. Wrote 9 time points to dense group
+WVTransformHydrostatic initialized from Ap, Am, A0.
+Ending simulation. Wrote 3 time points to wave-vortex group
+Ending simulation. Wrote 9 time points to dense group
+
+================================================================================
+Assertion failed in TestPortableHydrostatic/horizontalOnlyObserversMatchMatlab and it did not run to completion.
+    ----------------
+    Test Diagnostic:
+    ----------------
+    {"schemaVersion":"wave-vortex-run-v1","status":"failed","exitCode":4,"failure":{"stage":"provider","message":"This runner was built without the native FFTW provider. Build the source runner with PortableRuntime/buildWaveVortexRun.sh on a supported Apple-silicon host; no reference-provider fallback is performed.","location":""}}
+
+    ---------------------
+    Framework Diagnostic:
+    ---------------------
+    assertEqual failed.
+    --> The numeric values are not equal using "isequaln".
+    --> Failure table:
+            Actual    Expected    Error    RelativeError
+            ______    ________    _____    _____________
+
+              4          0          4           Inf
+
+    Actual Value:
+         4
+    Expected Value:
+         0
+    ------------------
+    Stack Information:
+    ------------------
+    In /Users/jearly/Documents/OceanKitRepositories/wvm-v4-cpp-adoption-audit/UnitTests/TestPortableHydrostatic.m (TestPortableHydrostatic.horizontalOnlyObserversMatchMatlab) at 64
+================================================================================
+.Ending simulation. Wrote 1 time points to wave-vortex group
+Ending simulation. Wrote 1 time points to dense group
+dX/U = 127743.7 s (2129.1 min). dZ/W = 475040.2 s (7917.3 min). The highest frequency resolved IGW has period of 1212.7 s (20.2 min).
+WVTransformHydrostatic initialized from Ap, Am, A0.
+Ending simulation. Wrote 3 time points to wave-vortex group
+Ending simulation. Wrote 9 time points to dense group
+WVTransformHydrostatic initialized from Ap, Am, A0.
+Ending simulation. Wrote 3 time points to wave-vortex group
+Ending simulation. Wrote 9 time points to dense group
+WVTransformHydrostatic initialized from Ap, Am, A0.
+dX/U = 127743.7 s (2129.1 min). dZ/W = 475040.2 s (7917.3 min). The highest frequency resolved IGW has period of 1212.7 s (20.2 min).
+Ending simulation. Wrote 3 time points to wave-vortex group
+Ending simulation. Wrote 9 time points to dense group
+WVTransformHydrostatic initialized from Ap, Am, A0.
+Ending simulation. Wrote 3 time points to wave-vortex group
+Ending simulation. Wrote 9 time points to dense group
+WVTransformHydrostatic initialized from Ap, Am, A0.
+dX/U = 127743.7 s (2129.1 min). dZ/W = 475040.2 s (7917.3 min). The highest frequency resolved IGW has period of 1212.7 s (20.2 min).
+Ending simulation. Wrote 3 time points to wave-vortex group
+Ending simulation. Wrote 9 time points to dense group
+WVTransformHydrostatic initialized from Ap, Am, A0.
+Ending simulation. Wrote 3 time points to wave-vortex group
+Ending simulation. Wrote 9 time points to dense group
+
+================================================================================
+Assertion failed in TestPortableHydrostatic/cflAndDefaultSteppingMatchMatlab and it did not run to completion.
+    ----------------
+    Test Diagnostic:
+    ----------------
+    {"schemaVersion":"wave-vortex-run-v1","status":"failed","exitCode":4,"failure":{"stage":"provider","message":"This runner was built without the native FFTW provider. Build the source runner with PortableRuntime/buildWaveVortexRun.sh on a supported Apple-silicon host; no reference-provider fallback is performed.","location":""}}
+
+    ---------------------
+    Framework Diagnostic:
+    ---------------------
+    assertEqual failed.
+    --> The numeric values are not equal using "isequaln".
+    --> Failure table:
+            Actual    Expected    Error    RelativeError
+            ______    ________    _____    _____________
+
+              4          0          4           Inf
+
+    Actual Value:
+         4
+    Expected Value:
+         0
+    ------------------
+    Stack Information:
+    ------------------
+    In /Users/jearly/Documents/OceanKitRepositories/wvm-v4-cpp-adoption-audit/UnitTests/TestPortableHydrostatic.m (TestPortableHydrostatic.cflAndDefaultSteppingMatchMatlab) at 89
+================================================================================
+.Ending simulation. Wrote 1 time points to wave-vortex group
+Ending simulation. Wrote 1 time points to dense group
+Ending simulation. Wrote 1 time points to wave-vortex group
+WVTransformHydrostatic initialized from Ap, Am, A0.
+Ending simulation. Wrote 3 time points to wave-vortex group
+Ending simulation. Wrote 9 time points to dense group
+WVTransformHydrostatic initialized from Ap, Am, A0.
+Ending simulation. Wrote 2 time points to wave-vortex group
+Ending simulation. Wrote 8 time points to dense group
+WVTransformHydrostatic initialized from Ap, Am, A0.
+Ending simulation. Wrote 2 time points to wave-vortex group
+Ending simulation. Wrote 8 time points to dense group
+WVTransformHydrostatic initialized from Ap, Am, A0.
+Ending simulation. Wrote 3 time points to wave-vortex group
+Ending simulation. Wrote 9 time points to dense group
+
+================================================================================
+Assertion failed in TestPortableHydrostatic/multiFileOutputPoliciesAndRestart and it did not run to completion.
+    ----------------
+    Test Diagnostic:
+    ----------------
+    {"schemaVersion":"wave-vortex-run-v1","status":"failed","exitCode":4,"failure":{"stage":"provider","message":"This runner was built without the native FFTW provider. Build the source runner with PortableRuntime/buildWaveVortexRun.sh on a supported Apple-silicon host; no reference-provider fallback is performed.","location":""}}
+
+    ---------------------
+    Framework Diagnostic:
+    ---------------------
+    assertEqual failed.
+    --> The numeric values are not equal using "isequaln".
+    --> Failure table:
+            Actual    Expected    Error    RelativeError
+            ______    ________    _____    _____________
+
+              4          0          4           Inf
+
+    Actual Value:
+         4
+    Expected Value:
+         0
+    ------------------
+    Stack Information:
+    ------------------
+    In /Users/jearly/Documents/OceanKitRepositories/wvm-v4-cpp-adoption-audit/UnitTests/TestPortableHydrostatic.m (TestPortableHydrostatic.multiFileOutputPoliciesAndRestart) at 140
+================================================================================
+.[Warning: The nonlinear flux has no damping and may not be stable.]
+[> In WVModel (line 121)
+In TestPortableHydrostatic/writeInitialModel (line 376)
+In TestPortableHydrostatic/incompatibleModelGraphsAreTransactional (line 178)]
+Ending simulation. Wrote 1 time points to wave-vortex group
+.Ending simulation. Wrote 1 time points to wave-vortex group
+Ending simulation. Wrote 1 time points to dense group
+WVTransformHydrostatic initialized from Ap, Am, A0.
+WVTransformHydrostatic initialized from Ap, Am, A0.
+Ending simulation. Wrote 3 time points to wave-vortex group
+Ending simulation. Wrote 9 time points to dense group
+Ending simulation. Wrote 3 time points to wave-vortex group
+Ending simulation. Wrote 9 time points to dense group
+WVTransformHydrostatic initialized from Ap, Am, A0.
+WVTransformHydrostatic initialized from Ap, Am, A0.
+dX/U = 127743.7 s (2129.1 min). dZ/W = 475040.2 s (7917.3 min). The highest frequency resolved IGW has period of 1212.7 s (20.2 min).
+Ending simulation. Wrote 3 time points to wave-vortex group
+Ending simulation. Wrote 9 time points to dense group
+Ending simulation. Wrote 3 time points to wave-vortex group
+Ending simulation. Wrote 9 time points to dense group
+WVTransformHydrostatic initialized from Ap, Am, A0.
+WVTransformHydrostatic initialized from Ap, Am, A0.
+dX/U = 127743.7 s (2129.1 min). dZ/W = 475040.2 s (7917.3 min). The highest frequency resolved IGW has period of 1212.7 s (20.2 min).
+Ending simulation. Wrote 3 time points to wave-vortex group
+Ending simulation. Wrote 9 time points to dense group
+Ending simulation. Wrote 3 time points to wave-vortex group
+Ending simulation. Wrote 9 time points to dense group
+
+================================================================================
+Assertion failed in TestPortableHydrostatic/modelIntegrationRoundTripsThroughMatlab and it did not run to completion.
+    ----------------
+    Test Diagnostic:
+    ----------------
+    {"schemaVersion":"wave-vortex-run-v1","status":"failed","exitCode":4,"failure":{"stage":"provider","message":"This runner was built without the native FFTW provider. Build the source runner with PortableRuntime/buildWaveVortexRun.sh on a supported Apple-silicon host; no reference-provider fallback is performed.","location":""}}
+
+    ---------------------
+    Framework Diagnostic:
+    ---------------------
+    assertEqual failed.
+    --> The numeric values are not equal using "isequaln".
+    --> Failure table:
+            Actual    Expected    Error    RelativeError
+            ______    ________    _____    _____________
+
+              4          0          4           Inf
+
+    Actual Value:
+         4
+    Expected Value:
+         0
+    ------------------
+    Stack Information:
+    ------------------
+    In /Users/jearly/Documents/OceanKitRepositories/wvm-v4-cpp-adoption-audit/UnitTests/TestPortableHydrostatic.m (TestPortableHydrostatic.modelIntegrationRoundTripsThroughMatlab) at 200
+================================================================================
+.[Warning: The nonlinear flux has no damping and may not be stable.]
+[> In WVModel (line 121)
+In TestPortableHydrostatic/writeInitialModel (line 376)
+In TestPortableHydrostatic/fieldSamplingMatchesMatlab (line 232)]
+Ending simulation. Wrote 1 time points to wave-vortex group
+
+================================================================================
+Assertion failed in TestPortableHydrostatic/fieldSamplingMatchesMatlab and it did not run to completion.
+    ----------------
+    Test Diagnostic:
+    ----------------
+    Native provider not built.
+
+    ---------------------
+    Framework Diagnostic:
+    ---------------------
+    assertEqual failed.
+    --> The numeric values are not equal using "isequaln".
+    --> Failure table:
+            Actual    Expected    Error    RelativeError
+            ______    ________    _____    _____________
+
+              1          0          1           Inf
+
+    Actual Value:
+         1
+    Expected Value:
+         0
+    ------------------
+    Stack Information:
+    ------------------
+    In /Users/jearly/Documents/OceanKitRepositories/wvm-v4-cpp-adoption-audit/UnitTests/TestPortableHydrostatic.m (TestPortableHydrostatic.fieldSamplingMatchesMatlab) at 240
+================================================================================
+.Ending simulation. Wrote 1 time points to wave-vortex group
+
+================================================================================
+Assertion failed in TestPortableHydrostatic/retainedSubsetAndNonuniformGrid and it did not run to completion.
+    ----------------
+    Test Diagnostic:
+    ----------------
+    Native adapter unavailable.
+
+    ---------------------
+    Framework Diagnostic:
+    ---------------------
+    assertEqual failed.
+    --> The numeric values are not equal using "isequaln".
+    --> Failure table:
+            Actual    Expected    Error    RelativeError
+            ______    ________    _____    _____________
+
+              1          0          1           Inf
+
+    Actual Value:
+         1
+    Expected Value:
+         0
+    ------------------
+    Stack Information:
+    ------------------
+    In /Users/jearly/Documents/OceanKitRepositories/wvm-v4-cpp-adoption-audit/UnitTests/TestPortableHydrostatic.m (TestPortableHydrostatic.compareTendency) at 427
+    In /Users/jearly/Documents/OceanKitRepositories/wvm-v4-cpp-adoption-audit/UnitTests/TestPortableHydrostatic.m (TestPortableHydrostatic.retainedSubsetAndNonuniformGrid) at 264
+================================================================================
+.Ending simulation. Wrote 1 time points to wave-vortex group
+Ending simulation. Wrote 1 time points to dense group
+Ending simulation. Wrote 1 time points to wave-vortex group
+Ending simulation. Wrote 1 time points to dense group
+Ending simulation. Wrote 1 time points to wave-vortex group
+Ending simulation. Wrote 1 time points to dense group
+[Warning: The nonlinear flux has no damping and may not be stable.]
+[> In WVModel (line 121)
+In TestPortableHydrostatic/writeInitialModel (line 376)
+In TestPortableHydrostatic/malformedModelsLeaveAppendTargetsUnchanged (line 273)]
+Ending simulation. Wrote 1 time points to wave-vortex group
+Ending simulation. Wrote 1 time points to dense group
+[Warning: The nonlinear flux has no damping and may not be stable.]
+[> In WVModel (line 121)
+In TestPortableHydrostatic/writeInitialModel (line 376)
+In TestPortableHydrostatic/malformedModelsLeaveAppendTargetsUnchanged (line 273)]
+Ending simulation. Wrote 1 time points to wave-vortex group
+Ending simulation. Wrote 1 time points to dense group
+.Ending simulation. Wrote 1 time points to wave-vortex group
+
+================================================================================
+Assertion failed in TestPortableHydrostatic/applicableForcingTendenciesMatchMatlab and it did not run to completion.
+    ----------------
+    Test Diagnostic:
+    ----------------
+    Native adapter unavailable.
+
+    ---------------------
+    Framework Diagnostic:
+    ---------------------
+    assertEqual failed.
+    --> The numeric values are not equal using "isequaln".
+    --> Failure table:
+            Actual    Expected    Error    RelativeError
+            ______    ________    _____    _____________
+
+              1          0          1           Inf
+
+    Actual Value:
+         1
+    Expected Value:
+         0
+    ------------------
+    Stack Information:
+    ------------------
+    In /Users/jearly/Documents/OceanKitRepositories/wvm-v4-cpp-adoption-audit/UnitTests/TestPortableHydrostatic.m (TestPortableHydrostatic.compareTendency) at 427
+    In /Users/jearly/Documents/OceanKitRepositories/wvm-v4-cpp-adoption-audit/UnitTests/TestPortableHydrostatic.m (TestPortableHydrostatic.applicableForcingTendenciesMatchMatlab) at 297
+================================================================================
+. Ending simulation. Wrote 1 time points to wave-vortex group
+WVTransformHydrostatic initialized from Ap, Am, A0.
+Ending simulation. Wrote 2 time points to wave-vortex group
+WVTransformHydrostatic initialized from Ap, Am, A0.
+Ending simulation. Wrote 2 time points to wave-vortex group
+
+================================================================================
+Assertion failed in TestPortableHydrostatic/applicableForcingContinuationsMatchMatlab and it did not run to completion.
+    ----------------
+    Test Diagnostic:
+    ----------------
+    {"schemaVersion":"wave-vortex-run-v1","status":"failed","exitCode":4,"failure":{"stage":"provider","message":"This runner was built without the native FFTW provider. Build the source runner with PortableRuntime/buildWaveVortexRun.sh on a supported Apple-silicon host; no reference-provider fallback is performed.","location":""}}
+
+    ---------------------
+    Framework Diagnostic:
+    ---------------------
+    assertEqual failed.
+    --> The numeric values are not equal using "isequaln".
+    --> Failure table:
+            Actual    Expected    Error    RelativeError
+            ______    ________    _____    _____________
+
+              4          0          4           Inf
+
+    Actual Value:
+         4
+    Expected Value:
+         0
+    ------------------
+    Stack Information:
+    ------------------
+    In /Users/jearly/Documents/OceanKitRepositories/wvm-v4-cpp-adoption-audit/UnitTests/TestPortableHydrostatic.m (TestPortableHydrostatic.compareContinuation) at 412
+    In /Users/jearly/Documents/OceanKitRepositories/wvm-v4-cpp-adoption-audit/UnitTests/TestPortableHydrostatic.m (TestPortableHydrostatic.applicableForcingContinuationsMatchMatlab) at 310
+================================================================================
+.Ending simulation. Wrote 1 time points to wave-vortex group
+
+================================================================================
+Assertion failed in TestPortableHydrostatic/orderedForcingTendenciesMatchMatlab and it did not run to completion.
+    ----------------
+    Test Diagnostic:
+    ----------------
+    Native adapter unavailable.
+
+    ---------------------
+    Framework Diagnostic:
+    ---------------------
+    assertEqual failed.
+    --> The numeric values are not equal using "isequaln".
+    --> Failure table:
+            Actual    Expected    Error    RelativeError
+            ______    ________    _____    _____________
+
+              1          0          1           Inf
+
+    Actual Value:
+         1
+    Expected Value:
+         0
+    ------------------
+    Stack Information:
+    ------------------
+    In /Users/jearly/Documents/OceanKitRepositories/wvm-v4-cpp-adoption-audit/UnitTests/TestPortableHydrostatic.m (TestPortableHydrostatic.compareTendency) at 427
+    In /Users/jearly/Documents/OceanKitRepositories/wvm-v4-cpp-adoption-audit/UnitTests/TestPortableHydrostatic.m (TestPortableHydrostatic.orderedForcingTendenciesMatchMatlab) at 322
+================================================================================
+.
+Done TestPortableHydrostatic
+__________
+
+Running TestPortableBoussinesq
+building 6 boussinesq transformation matrices...1...finished.
+Ending simulation. Wrote 1 time points to wave-vortex group
+Ending simulation. Wrote 1 time points to dense group
+WVTransformBoussinesq initialized from Ap, Am, A0.
+Ending simulation. Wrote 3 time points to wave-vortex group
+Ending simulation. Wrote 9 time points to dense group
+WVTransformBoussinesq initialized from Ap, Am, A0.
+Ending simulation. Wrote 3 time points to wave-vortex group
+Ending simulation. Wrote 9 time points to dense group
+
+================================================================================
+Assertion failed in TestPortableBoussinesq/linearPassiveObserversMatchMatlab and it did not run to completion.
+    ----------------
+    Test Diagnostic:
+    ----------------
+    {"schemaVersion":"wave-vortex-run-v1","status":"failed","exitCode":4,"failure":{"stage":"provider","message":"This runner was built without the native FFTW provider. Build the source runner with PortableRuntime/buildWaveVortexRun.sh on a supported Apple-silicon host; no reference-provider fallback is performed.","location":""}}
+
+    ---------------------
+    Framework Diagnostic:
+    ---------------------
+    assertEqual failed.
+    --> The numeric values are not equal using "isequaln".
+    --> Failure table:
+            Actual    Expected    Error    RelativeError
+            ______    ________    _____    _____________
+
+              4          0          4           Inf
+
+    Actual Value:
+         4
+    Expected Value:
+         0
+    ------------------
+    Stack Information:
+    ------------------
+    In /Users/jearly/Documents/OceanKitRepositories/wvm-v4-cpp-adoption-audit/UnitTests/TestPortableBoussinesq.m (TestPortableBoussinesq.linearPassiveObserversMatchMatlab) at 40
+================================================================================
+.building 12 boussinesq transformation matrices...1...finished.
+Ending simulation. Wrote 1 time points to wave-vortex group
+Ending simulation. Wrote 1 time points to dense group
+WVTransformBoussinesq initialized from Ap, Am, A0.
+Ending simulation. Wrote 3 time points to wave-vortex group
+Ending simulation. Wrote 9 time points to dense group
+WVTransformBoussinesq initialized from Ap, Am, A0.
+Ending simulation. Wrote 3 time points to wave-vortex group
+Ending simulation. Wrote 9 time points to dense group
+
+================================================================================
+Assertion failed in TestPortableBoussinesq/horizontalOnlyObserversMatchMatlab and it did not run to completion.
+    ----------------
+    Test Diagnostic:
+    ----------------
+    {"schemaVersion":"wave-vortex-run-v1","status":"failed","exitCode":4,"failure":{"stage":"provider","message":"This runner was built without the native FFTW provider. Build the source runner with PortableRuntime/buildWaveVortexRun.sh on a supported Apple-silicon host; no reference-provider fallback is performed.","location":""}}
+
+    ---------------------
+    Framework Diagnostic:
+    ---------------------
+    assertEqual failed.
+    --> The numeric values are not equal using "isequaln".
+    --> Failure table:
+            Actual    Expected    Error    RelativeError
+            ______    ________    _____    _____________
+
+              4          0          4           Inf
+
+    Actual Value:
+         4
+    Expected Value:
+         0
+    ------------------
+    Stack Information:
+    ------------------
+    In /Users/jearly/Documents/OceanKitRepositories/wvm-v4-cpp-adoption-audit/UnitTests/TestPortableBoussinesq.m (TestPortableBoussinesq.horizontalOnlyObserversMatchMatlab) at 64
+================================================================================
+.building 20 boussinesq transformation matrices...1...finished.
+Ending simulation. Wrote 1 time points to wave-vortex group
+Ending simulation. Wrote 1 time points to dense group
+dX/U = 127759.1 s (2129.3 min). dZ/W = 567426.5 s (9457.1 min). The highest frequency resolved IGW has period of 1486.4 s (24.8 min).
+WVTransformBoussinesq initialized from Ap, Am, A0.
+Ending simulation. Wrote 3 time points to wave-vortex group
+Ending simulation. Wrote 9 time points to dense group
+WVTransformBoussinesq initialized from Ap, Am, A0.
+Ending simulation. Wrote 3 time points to wave-vortex group
+Ending simulation. Wrote 9 time points to dense group
+WVTransformBoussinesq initialized from Ap, Am, A0.
+dX/U = 127759.1 s (2129.3 min). dZ/W = 567426.5 s (9457.1 min). The highest frequency resolved IGW has period of 1486.4 s (24.8 min).
+Ending simulation. Wrote 3 time points to wave-vortex group
+Ending simulation. Wrote 9 time points to dense group
+WVTransformBoussinesq initialized from Ap, Am, A0.
+Ending simulation. Wrote 3 time points to wave-vortex group
+Ending simulation. Wrote 9 time points to dense group
+WVTransformBoussinesq initialized from Ap, Am, A0.
+dX/U = 127759.1 s (2129.3 min). dZ/W = 567426.5 s (9457.1 min). The highest frequency resolved IGW has period of 1486.4 s (24.8 min).
+Ending simulation. Wrote 3 time points to wave-vortex group
+Ending simulation. Wrote 9 time points to dense group
+WVTransformBoussinesq initialized from Ap, Am, A0.
+Ending simulation. Wrote 3 time points to wave-vortex group
+Ending simulation. Wrote 9 time points to dense group
+
+================================================================================
+Assertion failed in TestPortableBoussinesq/cflAndDefaultSteppingMatchMatlab and it did not run to completion.
+    ----------------
+    Test Diagnostic:
+    ----------------
+    {"schemaVersion":"wave-vortex-run-v1","status":"failed","exitCode":4,"failure":{"stage":"provider","message":"This runner was built without the native FFTW provider. Build the source runner with PortableRuntime/buildWaveVortexRun.sh on a supported Apple-silicon host; no reference-provider fallback is performed.","location":""}}
+
+    ---------------------
+    Framework Diagnostic:
+    ---------------------
+    assertEqual failed.
+    --> The numeric values are not equal using "isequaln".
+    --> Failure table:
+            Actual    Expected    Error    RelativeError
+            ______    ________    _____    _____________
+
+              4          0          4           Inf
+
+    Actual Value:
+         4
+    Expected Value:
+         0
+    ------------------
+    Stack Information:
+    ------------------
+    In /Users/jearly/Documents/OceanKitRepositories/wvm-v4-cpp-adoption-audit/UnitTests/TestPortableBoussinesq.m (TestPortableBoussinesq.cflAndDefaultSteppingMatchMatlab) at 89
+================================================================================
+.building 6 boussinesq transformation matrices...1...finished.
+Ending simulation. Wrote 1 time points to wave-vortex group
+Ending simulation. Wrote 1 time points to dense group
+Ending simulation. Wrote 1 time points to wave-vortex group
+WVTransformBoussinesq initialized from Ap, Am, A0.
+Ending simulation. Wrote 3 time points to wave-vortex group
+Ending simulation. Wrote 9 time points to dense group
+WVTransformBoussinesq initialized from Ap, Am, A0.
+Ending simulation. Wrote 2 time points to wave-vortex group
+Ending simulation. Wrote 8 time points to dense group
+WVTransformBoussinesq initialized from Ap, Am, A0.
+Ending simulation. Wrote 2 time points to wave-vortex group
+Ending simulation. Wrote 8 time points to dense group
+WVTransformBoussinesq initialized from Ap, Am, A0.
+Ending simulation. Wrote 3 time points to wave-vortex group
+Ending simulation. Wrote 9 time points to dense group
+
+================================================================================
+Assertion failed in TestPortableBoussinesq/multiFileOutputPoliciesAndRestart and it did not run to completion.
+    ----------------
+    Test Diagnostic:
+    ----------------
+    {"schemaVersion":"wave-vortex-run-v1","status":"failed","exitCode":4,"failure":{"stage":"provider","message":"This runner was built without the native FFTW provider. Build the source runner with PortableRuntime/buildWaveVortexRun.sh on a supported Apple-silicon host; no reference-provider fallback is performed.","location":""}}
+
+    ---------------------
+    Framework Diagnostic:
+    ---------------------
+    assertEqual failed.
+    --> The numeric values are not equal using "isequaln".
+    --> Failure table:
+            Actual    Expected    Error    RelativeError
+            ______    ________    _____    _____________
+
+              4          0          4           Inf
+
+    Actual Value:
+         4
+    Expected Value:
+         0
+    ------------------
+    Stack Information:
+    ------------------
+    In /Users/jearly/Documents/OceanKitRepositories/wvm-v4-cpp-adoption-audit/UnitTests/TestPortableBoussinesq.m (TestPortableBoussinesq.multiFileOutputPoliciesAndRestart) at 140
+================================================================================
+.building 6 boussinesq transformation matrices...1...finished.
+[Warning: The nonlinear flux has no damping and may not be stable.]
+[> In WVModel (line 121)
+In TestPortableBoussinesq/writeInitialModel (line 397)
+In TestPortableBoussinesq/incompatibleModelGraphsAreTransactional (line 177)]
+Ending simulation. Wrote 1 time points to wave-vortex group
+.building 20 boussinesq transformation matrices...1...finished.
+Ending simulation. Wrote 1 time points to wave-vortex group
+Ending simulation. Wrote 1 time points to dense group
+WVTransformBoussinesq initialized from Ap, Am, A0.
+WVTransformBoussinesq initialized from Ap, Am, A0.
+Ending simulation. Wrote 3 time points to wave-vortex group
+Ending simulation. Wrote 9 time points to dense group
+Ending simulation. Wrote 3 time points to wave-vortex group
+Ending simulation. Wrote 9 time points to dense group
+WVTransformBoussinesq initialized from Ap, Am, A0.
+WVTransformBoussinesq initialized from Ap, Am, A0.
+dX/U = 127759.1 s (2129.3 min). dZ/W = 567426.5 s (9457.1 min). The highest frequency resolved IGW has period of 1486.4 s (24.8 min).
+Ending simulation. Wrote 3 time points to wave-vortex group
+Ending simulation. Wrote 9 time points to dense group
+Ending simulation. Wrote 3 time points to wave-vortex group
+Ending simulation. Wrote 9 time points to dense group
+WVTransformBoussinesq initialized from Ap, Am, A0.
+WVTransformBoussinesq initialized from Ap, Am, A0.
+dX/U = 127759.1 s (2129.3 min). dZ/W = 567426.5 s (9457.1 min). The highest frequency resolved IGW has period of 1486.4 s (24.8 min).
+Ending simulation. Wrote 3 time points to wave-vortex group
+Ending simulation. Wrote 9 time points to dense group
+Ending simulation. Wrote 3 time points to wave-vortex group
+Ending simulation. Wrote 9 time points to dense group
+
+================================================================================
+Assertion failed in TestPortableBoussinesq/modelIntegrationRoundTripsThroughMatlab and it did not run to completion.
+    ----------------
+    Test Diagnostic:
+    ----------------
+    {"schemaVersion":"wave-vortex-run-v1","status":"failed","exitCode":4,"failure":{"stage":"provider","message":"This runner was built without the native FFTW provider. Build the source runner with PortableRuntime/buildWaveVortexRun.sh on a supported Apple-silicon host; no reference-provider fallback is performed.","location":""}}
+
+    ---------------------
+    Framework Diagnostic:
+    ---------------------
+    assertEqual failed.
+    --> The numeric values are not equal using "isequaln".
+    --> Failure table:
+            Actual    Expected    Error    RelativeError
+            ______    ________    _____    _____________
+
+              4          0          4           Inf
+
+    Actual Value:
+         4
+    Expected Value:
+         0
+    ------------------
+    Stack Information:
+    ------------------
+    In /Users/jearly/Documents/OceanKitRepositories/wvm-v4-cpp-adoption-audit/UnitTests/TestPortableBoussinesq.m (TestPortableBoussinesq.modelIntegrationRoundTripsThroughMatlab) at 199
+================================================================================
+.building 20 boussinesq transformation matrices...1...finished.
+[Warning: The nonlinear flux has no damping and may not be stable.]
+[> In WVModel (line 121)
+In TestPortableBoussinesq/writeInitialModel (line 397)
+In TestPortableBoussinesq/fieldSamplingMatchesMatlab (line 231)]
+Ending simulation. Wrote 1 time points to wave-vortex group
+
+================================================================================
+Assertion failed in TestPortableBoussinesq/fieldSamplingMatchesMatlab and it did not run to completion.
+    ----------------
+    Test Diagnostic:
+    ----------------
+    Native provider not built.
+
+    ---------------------
+    Framework Diagnostic:
+    ---------------------
+    assertEqual failed.
+    --> The numeric values are not equal using "isequaln".
+    --> Failure table:
+            Actual    Expected    Error    RelativeError
+            ______    ________    _____    _____________
+
+              1          0          1           Inf
+
+    Actual Value:
+         1
+    Expected Value:
+         0
+    ------------------
+    Stack Information:
+    ------------------
+    In /Users/jearly/Documents/OceanKitRepositories/wvm-v4-cpp-adoption-audit/UnitTests/TestPortableBoussinesq.m (TestPortableBoussinesq.fieldSamplingMatchesMatlab) at 239
+================================================================================
+.building 20 boussinesq transformation matrices...1...finished.
+building 20 boussinesq transformation matrices...1...finished.
+Ending simulation. Wrote 1 time points to wave-vortex group
+
+================================================================================
+Assertion failed in TestPortableBoussinesq/retainedSubsetAndNonuniformGrid and it did not run to completion.
+    ----------------
+    Test Diagnostic:
+    ----------------
+    Native adapter unavailable.
+
+    ---------------------
+    Framework Diagnostic:
+    ---------------------
+    assertEqual failed.
+    --> The numeric values are not equal using "isequaln".
+    --> Failure table:
+            Actual    Expected    Error    RelativeError
+            ______    ________    _____    _____________
+
+              1          0          1           Inf
+
+    Actual Value:
+         1
+    Expected Value:
+         0
+    ------------------
+    Stack Information:
+    ------------------
+    In /Users/jearly/Documents/OceanKitRepositories/wvm-v4-cpp-adoption-audit/UnitTests/TestPortableBoussinesq.m (TestPortableBoussinesq.compareTendency) at 448
+    In /Users/jearly/Documents/OceanKitRepositories/wvm-v4-cpp-adoption-audit/UnitTests/TestPortableBoussinesq.m (TestPortableBoussinesq.retainedSubsetAndNonuniformGrid) at 263
+================================================================================
+.building 12 boussinesq transformation matrices...1...finished.
+Ending simulation. Wrote 1 time points to wave-vortex group
+Ending simulation. Wrote 1 time points to dense group
+building 12 boussinesq transformation matrices...1...finished.
+Ending simulation. Wrote 1 time points to wave-vortex group
+Ending simulation. Wrote 1 time points to dense group
+building 12 boussinesq transformation matrices...1...finished.
+Ending simulation. Wrote 1 time points to wave-vortex group
+Ending simulation. Wrote 1 time points to dense group
+building 12 boussinesq transformation matrices...1...finished.
+[Warning: The nonlinear flux has no damping and may not be stable.]
+[> In WVModel (line 121)
+In TestPortableBoussinesq/writeInitialModel (line 397)
+In TestPortableBoussinesq/malformedModelsLeaveAppendTargetsUnchanged (line 272)]
+Ending simulation. Wrote 1 time points to wave-vortex group
+Ending simulation. Wrote 1 time points to dense group
+building 12 boussinesq transformation matrices...1...finished.
+[Warning: The nonlinear flux has no damping and may not be stable.]
+[> In WVModel (line 121)
+In TestPortableBoussinesq/writeInitialModel (line 397)
+In TestPortableBoussinesq/malformedModelsLeaveAppendTargetsUnchanged (line 272)]
+Ending simulation. Wrote 1 time points to wave-vortex group
+Ending simulation. Wrote 1 time points to dense group
+building 12 boussinesq transformation matrices...1...finished.
+[Warning: The nonlinear flux has no damping and may not be stable.]
+[> In WVModel (line 121)
+In TestPortableBoussinesq/writeInitialModel (line 397)
+In TestPortableBoussinesq/malformedModelsLeaveAppendTargetsUnchanged (line 272)]
+Ending simulation. Wrote 1 time points to wave-vortex group
+Ending simulation. Wrote 1 time points to dense group
+building 12 boussinesq transformation matrices...1...finished.
+[Warning: The nonlinear flux has no damping and may not be stable.]
+[> In WVModel (line 121)
+In TestPortableBoussinesq/writeInitialModel (line 397)
+In TestPortableBoussinesq/malformedModelsLeaveAppendTargetsUnchanged (line 272)]
+Ending simulation. Wrote 1 time points to wave-vortex group
+Ending simulation. Wrote 1 time points to dense group
+.building 12 boussinesq transformation matrices...1...finished.
+[Warning: The nonlinear flux has no damping and may not be stable.]
+[> In WVModel (line 121)
+In TestPortableBoussinesq/writeInitialModel (line 397)
+In TestPortableBoussinesq/waveMismatchIsTransactional (line 294)]
+Ending simulation. Wrote 1 time points to wave-vortex group
+Ending simulation. Wrote 1 time points to dense group
+Ending simulation. Wrote 1 time points to wave-vortex group
+. building 12 boussinesq transformation matrices...1...finished.
+Ending simulation. Wrote 1 time points to wave-vortex group
+
+================================================================================
+Assertion failed in TestPortableBoussinesq/applicableForcingTendenciesMatchMatlab and it did not run to completion.
+    ----------------
+    Test Diagnostic:
+    ----------------
+    Native adapter unavailable.
+
+    ---------------------
+    Framework Diagnostic:
+    ---------------------
+    assertEqual failed.
+    --> The numeric values are not equal using "isequaln".
+    --> Failure table:
+            Actual    Expected    Error    RelativeError
+            ______    ________    _____    _____________
+
+              1          0          1           Inf
+
+    Actual Value:
+         1
+    Expected Value:
+         0
+    ------------------
+    Stack Information:
+    ------------------
+    In /Users/jearly/Documents/OceanKitRepositories/wvm-v4-cpp-adoption-audit/UnitTests/TestPortableBoussinesq.m (TestPortableBoussinesq.compareTendency) at 448
+    In /Users/jearly/Documents/OceanKitRepositories/wvm-v4-cpp-adoption-audit/UnitTests/TestPortableBoussinesq.m (TestPortableBoussinesq.applicableForcingTendenciesMatchMatlab) at 317
+================================================================================
+.building 12 boussinesq transformation matrices...1...finished.
+Ending simulation. Wrote 1 time points to wave-vortex group
+WVTransformBoussinesq initialized from Ap, Am, A0.
+Ending simulation. Wrote 2 time points to wave-vortex group
+WVTransformBoussinesq initialized from Ap, Am, A0.
+Ending simulation. Wrote 2 time points to wave-vortex group
+
+================================================================================
+Assertion failed in TestPortableBoussinesq/applicableForcingContinuationsMatchMatlab and it did not run to completion.
+    ----------------
+    Test Diagnostic:
+    ----------------
+    {"schemaVersion":"wave-vortex-run-v1","status":"failed","exitCode":4,"failure":{"stage":"provider","message":"This runner was built without the native FFTW provider. Build the source runner with PortableRuntime/buildWaveVortexRun.sh on a supported Apple-silicon host; no reference-provider fallback is performed.","location":""}}
+
+    ---------------------
+    Framework Diagnostic:
+    ---------------------
+    assertEqual failed.
+    --> The numeric values are not equal using "isequaln".
+    --> Failure table:
+            Actual    Expected    Error    RelativeError
+            ______    ________    _____    _____________
+
+              4          0          4           Inf
+
+    Actual Value:
+         4
+    Expected Value:
+         0
+    ------------------
+    Stack Information:
+    ------------------
+    In /Users/jearly/Documents/OceanKitRepositories/wvm-v4-cpp-adoption-audit/UnitTests/TestPortableBoussinesq.m (TestPortableBoussinesq.compareContinuation) at 433
+    In /Users/jearly/Documents/OceanKitRepositories/wvm-v4-cpp-adoption-audit/UnitTests/TestPortableBoussinesq.m (TestPortableBoussinesq.applicableForcingContinuationsMatchMatlab) at 331
+================================================================================
+.building 20 boussinesq transformation matrices...1...finished.
+Ending simulation. Wrote 1 time points to wave-vortex group
+
+================================================================================
+Assertion failed in TestPortableBoussinesq/orderedForcingTendenciesMatchMatlab and it did not run to completion.
+    ----------------
+    Test Diagnostic:
+    ----------------
+    Native adapter unavailable.
+
+    ---------------------
+    Framework Diagnostic:
+    ---------------------
+    assertEqual failed.
+    --> The numeric values are not equal using "isequaln".
+    --> Failure table:
+            Actual    Expected    Error    RelativeError
+            ______    ________    _____    _____________
+
+              1          0          1           Inf
+
+    Actual Value:
+         1
+    Expected Value:
+         0
+    ------------------
+    Stack Information:
+    ------------------
+    In /Users/jearly/Documents/OceanKitRepositories/wvm-v4-cpp-adoption-audit/UnitTests/TestPortableBoussinesq.m (TestPortableBoussinesq.compareTendency) at 448
+    In /Users/jearly/Documents/OceanKitRepositories/wvm-v4-cpp-adoption-audit/UnitTests/TestPortableBoussinesq.m (TestPortableBoussinesq.orderedForcingTendenciesMatchMatlab) at 343
+================================================================================
+.
+Done TestPortableBoussinesq
+__________
+
+Failure Summary:
+
+     Name                                                               Failed  Incomplete  Reason(s)
+    =============================================================================================================
+     TestPortableStratifiedQG/linearPassiveObserversMatchMatlab           X         X       Failed by assertion.
+    -------------------------------------------------------------------------------------------------------------
+     TestPortableStratifiedQG/cflAndDefaultSteppingMatchMatlab            X         X       Failed by assertion.
+    -------------------------------------------------------------------------------------------------------------
+     TestPortableStratifiedQG/multiFileOutputPoliciesAndRestart           X         X       Failed by assertion.
+    -------------------------------------------------------------------------------------------------------------
+     TestPortableStratifiedQG/modelIntegrationRoundTripsThroughMatlab     X         X       Failed by assertion.
+    -------------------------------------------------------------------------------------------------------------
+     TestPortableStratifiedQG/fieldSamplingMatchesMatlab                  X         X       Failed by assertion.
+    -------------------------------------------------------------------------------------------------------------
+     TestPortableStratifiedQG/applicableForcingTendenciesMatchMatlab      X         X       Failed by assertion.
+    -------------------------------------------------------------------------------------------------------------
+     TestPortableStratifiedQG/orderedForcingTendenciesMatchMatlab         X         X       Failed by assertion.
+    -------------------------------------------------------------------------------------------------------------
+     TestPortableHydrostatic/linearPassiveObserversMatchMatlab            X         X       Failed by assertion.
+    -------------------------------------------------------------------------------------------------------------
+     TestPortableHydrostatic/horizontalOnlyObserversMatchMatlab           X         X       Failed by assertion.
+    -------------------------------------------------------------------------------------------------------------
+     TestPortableHydrostatic/cflAndDefaultSteppingMatchMatlab             X         X       Failed by assertion.
+    -------------------------------------------------------------------------------------------------------------
+     TestPortableHydrostatic/multiFileOutputPoliciesAndRestart            X         X       Failed by assertion.
+    -------------------------------------------------------------------------------------------------------------
+     TestPortableHydrostatic/modelIntegrationRoundTripsThroughMatlab      X         X       Failed by assertion.
+    -------------------------------------------------------------------------------------------------------------
+     TestPortableHydrostatic/fieldSamplingMatchesMatlab                   X         X       Failed by assertion.
+    -------------------------------------------------------------------------------------------------------------
+     TestPortableHydrostatic/retainedSubsetAndNonuniformGrid              X         X       Failed by assertion.
+    -------------------------------------------------------------------------------------------------------------
+     TestPortableHydrostatic/applicableForcingTendenciesMatchMatlab       X         X       Failed by assertion.
+    -------------------------------------------------------------------------------------------------------------
+     TestPortableHydrostatic/applicableForcingContinuationsMatchMatlab    X         X       Failed by assertion.
+    -------------------------------------------------------------------------------------------------------------
+     TestPortableHydrostatic/orderedForcingTendenciesMatchMatlab          X         X       Failed by assertion.
+    -------------------------------------------------------------------------------------------------------------
+     TestPortableBoussinesq/linearPassiveObserversMatchMatlab             X         X       Failed by assertion.
+    -------------------------------------------------------------------------------------------------------------
+     TestPortableBoussinesq/horizontalOnlyObserversMatchMatlab            X         X       Failed by assertion.
+    -------------------------------------------------------------------------------------------------------------
+     TestPortableBoussinesq/cflAndDefaultSteppingMatchMatlab              X         X       Failed by assertion.
+    -------------------------------------------------------------------------------------------------------------
+     TestPortableBoussinesq/multiFileOutputPoliciesAndRestart             X         X       Failed by assertion.
+    -------------------------------------------------------------------------------------------------------------
+     TestPortableBoussinesq/modelIntegrationRoundTripsThroughMatlab       X         X       Failed by assertion.
+    -------------------------------------------------------------------------------------------------------------
+     TestPortableBoussinesq/fieldSamplingMatchesMatlab                    X         X       Failed by assertion.
+    -------------------------------------------------------------------------------------------------------------
+     TestPortableBoussinesq/retainedSubsetAndNonuniformGrid               X         X       Failed by assertion.
+    -------------------------------------------------------------------------------------------------------------
+     TestPortableBoussinesq/applicableForcingTendenciesMatchMatlab        X         X       Failed by assertion.
+    -------------------------------------------------------------------------------------------------------------
+     TestPortableBoussinesq/applicableForcingContinuationsMatchMatlab     X         X       Failed by assertion.
+    -------------------------------------------------------------------------------------------------------------
+     TestPortableBoussinesq/orderedForcingTendenciesMatchMatlab           X         X       Failed by assertion.
+  1×34 TestResult array with properties:
+
+    Name
+    Passed
+    Failed
+    Incomplete
+    Duration
+    Details
+
+Totals:
+   7 Passed, 27 Failed, 27 Incomplete.
+   238.6024 seconds testing time.
+
+{Error using assert
+Assertion failed.
+}
+BLAS: unloading libraries
+ and may not be stable.]
+[> In WVModel (line 121)
+In TestPortableHydrostatic/writeInitialModel (line 376)
+In TestPortableHydrostatic/malformedModelsLeaveAppendTargetsUnchanged (line 273)]
+Ending simulation. Wrote 1 time points to wave-vortex group
+Ending simulation. Wrote 1 time points to dense group
+[Warning: The nonlinear flux has no damping and may not be stable.]
+[> In WVModel (line 121)
+In TestPortableHydrostatic/writeInitialModel (line 376)
+In TestPortableHydrostatic/malformedModelsLeaveAppendTargetsUnchanged (line 273)]
+Ending simulation. Wrote 1 time points to wave-vortex group
+Ending simulation. Wrote 1 time points to dense group
+.Ending simulation. Wrote 1 time points to wave-vortex group
+
+================================================================================
+Assertion failed in TestPortableHydrostatic/applicableForcingTendenciesMatchMatlab and it did not run to completion.
+    ----------------
+    Test Diagnostic:
+    ----------------
+    Native adapter unavailable.
+
+    ---------------------
+    Framework Diagnostic:
+    ---------------------
+    assertEqual failed.
+    --> The numeric values are not equal using "isequaln".
+    --> Failure table:
+            Actual    Expected    Error    RelativeError
+            ______    ________    _____    _____________
+
+              1          0          1           Inf
+
+    Actual Value:
+         1
+    Expected Value:
+         0
+    ------------------
+    Stack Information:
+    ------------------
+    In /Users/jearly/Documents/OceanKitRepositories/wvm-v4-cpp-adoption-audit/UnitTests/TestPortableHydrostatic.m (TestPortableHydrostatic.compareTendency) at 427
+    In /Users/jearly/Documents/OceanKitRepositories/wvm-v4-cpp-adoption-audit/UnitTests/TestPortableHydrostatic.m (TestPortableHydrostatic.applicableForcingTendenciesMatchMatlab) at 297
+================================================================================
+. Ending simulation. Wrote 1 time points to wave-vortex group
+WVTransformHydrostatic initialized from Ap, Am, A0.
+Ending simulation. Wrote 2 time points to wave-vortex group
+WVTransformHydrostatic initialized from Ap, Am, A0.
+Ending simulation. Wrote 2 time points to wave-vortex group
+
+================================================================================
+Assertion failed in TestPortableHydrostatic/applicableForcingContinuationsMatchMatlab and it did not run to completion.
+    ----------------
+    Test Diagnostic:
+    ----------------
+    {"schemaVersion":"wave-vortex-run-v1","status":"failed","exitCode":4,"failure":{"stage":"provider","message":"This runner was built without the native FFTW provider. Build the source runner with PortableRuntime/buildWaveVortexRun.sh on a supported Apple-silicon host; no reference-provider fallback is performed.","location":""}}
+
+    ---------------------
+    Framework Diagnostic:
+    ---------------------
+    assertEqual failed.
+    --> The numeric values are not equal using "isequaln".
+    --> Failure table:
+            Actual    Expected    Error    RelativeError
+            ______    ________    _____    _____________
+
+              4          0          4           Inf
+
+    Actual Value:
+         4
+    Expected Value:
+         0
+    ------------------
+    Stack Information:
+    ------------------
+    In /Users/jearly/Documents/OceanKitRepositories/wvm-v4-cpp-adoption-audit/UnitTests/TestPortableHydrostatic.m (TestPortableHydrostatic.compareContinuation) at 412
+    In /Users/jearly/Documents/OceanKitRepositories/wvm-v4-cpp-adoption-audit/UnitTests/TestPortableHydrostatic.m (TestPortableHydrostatic.applicableForcingContinuationsMatchMatlab) at 310
+================================================================================
+.Ending simulation. Wrote 1 time points to wave-vortex group
+
+================================================================================
+Assertion failed in TestPortableHydrostatic/orderedForcingTendenciesMatchMatlab and it did not run to completion.
+    ----------------
+    Test Diagnostic:
+    ----------------
+    Native adapter unavailable.
+
+    ---------------------
+    Framework Diagnostic:
+    ---------------------
+    assertEqual failed.
+    --> The numeric values are not equal using "isequaln".
+    --> Failure table:
+            Actual    Expected    Error    RelativeError
+            ______    ________    _____    _____________
+
+              1          0          1           Inf
+
+    Actual Value:
+         1
+    Expected Value:
+         0
+    ------------------
+    Stack Information:
+    ------------------
+    In /Users/jearly/Documents/OceanKitRepositories/wvm-v4-cpp-adoption-audit/UnitTests/TestPortableHydrostatic.m (TestPortableHydrostatic.compareTendency) at 427
+    In /Users/jearly/Documents/OceanKitRepositories/wvm-v4-cpp-adoption-audit/UnitTests/TestPortableHydrostatic.m (TestPortableHydrostatic.orderedForcingTendenciesMatchMatlab) at 322
+================================================================================
+.
+Done TestPortableHydrostatic
+__________
+
+Running TestPortableBoussinesq
+building 6 boussinesq transformation matrices...1...finished.
+Ending simulation. Wrote 1 time points to wave-vortex group
+Ending simulation. Wrote 1 time points to dense group
+WVTransformBoussinesq initialized from Ap, Am, A0.
+Ending simulation. Wrote 3 time points to wave-vortex group
+Ending simulation. Wrote 9 time points to dense group
+WVTransformBoussinesq initialized from Ap, Am, A0.
+Ending simulation. Wrote 3 time points to wave-vortex group
+Ending simulation. Wrote 9 time points to dense group
+
+================================================================================
+Assertion failed in TestPortableBoussinesq/linearPassiveObserversMatchMatlab and it did not run to completion.
+    ----------------
+    Test Diagnostic:
+    ----------------
+    {"schemaVersion":"wave-vortex-run-v1","status":"failed","exitCode":4,"failure":{"stage":"provider","message":"This runner was built without the native FFTW provider. Build the source runner with PortableRuntime/buildWaveVortexRun.sh on a supported Apple-silicon host; no reference-provider fallback is performed.","location":""}}
+
+    ---------------------
+    Framework Diagnostic:
+    ---------------------
+    assertEqual failed.
+    --> The numeric values are not equal using "isequaln".
+    --> Failure table:
+            Actual    Expected    Error    RelativeError
+            ______    ________    _____    _____________
+
+              4          0          4           Inf
+
+    Actual Value:
+         4
+    Expected Value:
+         0
+    ------------------
+    Stack Information:
+    ------------------
+    In /Users/jearly/Documents/OceanKitRepositories/wvm-v4-cpp-adoption-audit/UnitTests/TestPortableBoussinesq.m (TestPortableBoussinesq.linearPassiveObserversMatchMatlab) at 40
+================================================================================
+.building 12 boussinesq transformation matrices...1...finished.
+Ending simulation. Wrote 1 time points to wave-vortex group
+Ending simulation. Wrote 1 time points to dense group
+WVTransformBoussinesq initialized from Ap, Am, A0.
+Ending simulation. Wrote 3 time points to wave-vortex group
+Ending simulation. Wrote 9 time points to dense group
+WVTransformBoussinesq initialized from Ap, Am, A0.
+Ending simulation. Wrote 3 time points to wave-vortex group
+Ending simulation. Wrote 9 time points to dense group
+
+================================================================================
+Assertion failed in TestPortableBoussinesq/horizontalOnlyObserversMatchMatlab and it did not run to completion.
+    ----------------
+    Test Diagnostic:
+    ----------------
+    {"schemaVersion":"wave-vortex-run-v1","status":"failed","exitCode":4,"failure":{"stage":"provider","message":"This runner was built without the native FFTW provider. Build the source runner with PortableRuntime/buildWaveVortexRun.sh on a supported Apple-silicon host; no reference-provider fallback is performed.","location":""}}
+
+    ---------------------
+    Framework Diagnostic:
+    ---------------------
+    assertEqual failed.
+    --> The numeric values are not equal using "isequaln".
+    --> Failure table:
+            Actual    Expected    Error    RelativeError
+            ______    ________    _____    _____________
+
+              4          0          4           Inf
+
+    Actual Value:
+         4
+    Expected Value:
+         0
+    ------------------
+    Stack Information:
+    ------------------
+    In /Users/jearly/Documents/OceanKitRepositories/wvm-v4-cpp-adoption-audit/UnitTests/TestPortableBoussinesq.m (TestPortableBoussinesq.horizontalOnlyObserversMatchMatlab) at 64
+================================================================================
+.building 20 boussinesq transformation matrices...1...finished.
+Ending simulation. Wrote 1 time points to wave-vortex group
+Ending simulation. Wrote 1 time points to dense group
+dX/U = 127759.1 s (2129.3 min). dZ/W = 567426.5 s (9457.1 min). The highest frequency resolved IGW has period of 1486.4 s (24.8 min).
+WVTransformBoussinesq initialized from Ap, Am, A0.
+Ending simulation. Wrote 3 time points to wave-vortex group
+Ending simulation. Wrote 9 time points to dense group
+WVTransformBoussinesq initialized from Ap, Am, A0.
+Ending simulation. Wrote 3 time points to wave-vortex group
+Ending simulation. Wrote 9 time points to dense group
+WVTransformBoussinesq initialized from Ap, Am, A0.
+dX/U = 127759.1 s (2129.3 min). dZ/W = 567426.5 s (9457.1 min). The highest frequency resolved IGW has period of 1486.4 s (24.8 min).
+Ending simulation. Wrote 3 time points to wave-vortex group
+Ending simulation. Wrote 9 time points to dense group
+WVTransformBoussinesq initialized from Ap, Am, A0.
+Ending simulation. Wrote 3 time points to wave-vortex group
+Ending simulation. Wrote 9 time points to dense group
+WVTransformBoussinesq initialized from Ap, Am, A0.
+dX/U = 127759.1 s (2129.3 min). dZ/W = 567426.5 s (9457.1 min). The highest frequency resolved IGW has period of 1486.4 s (24.8 min).
+Ending simulation. Wrote 3 time points to wave-vortex group
+Ending simulation. Wrote 9 time points to dense group
+WVTransformBoussinesq initialized from Ap, Am, A0.
+Ending simulation. Wrote 3 time points to wave-vortex group
+Ending simulation. Wrote 9 time points to dense group
+
+================================================================================
+Assertion failed in TestPortableBoussinesq/cflAndDefaultSteppingMatchMatlab and it did not run to completion.
+    ----------------
+    Test Diagnostic:
+    ----------------
+    {"schemaVersion":"wave-vortex-run-v1","status":"failed","exitCode":4,"failure":{"stage":"provider","message":"This runner was built without the native FFTW provider. Build the source runner with PortableRuntime/buildWaveVortexRun.sh on a supported Apple-silicon host; no reference-provider fallback is performed.","location":""}}
+
+    ---------------------
+    Framework Diagnostic:
+    ---------------------
+    assertEqual failed.
+    --> The numeric values are not equal using "isequaln".
+    --> Failure table:
+            Actual    Expected    Error    RelativeError
+            ______    ________    _____    _____________
+
+              4          0          4           Inf
+
+    Actual Value:
+         4
+    Expected Value:
+         0
+    ------------------
+    Stack Information:
+    ------------------
+    In /Users/jearly/Documents/OceanKitRepositories/wvm-v4-cpp-adoption-audit/UnitTests/TestPortableBoussinesq.m (TestPortableBoussinesq.cflAndDefaultSteppingMatchMatlab) at 89
+================================================================================
+.building 6 boussinesq transformation matrices...1...finished.
+Ending simulation. Wrote 1 time points to wave-vortex group
+Ending simulation. Wrote 1 time points to dense group
+Ending simulation. Wrote 1 time points to wave-vortex group
+WVTransformBoussinesq initialized from Ap, Am, A0.
+Ending simulation. Wrote 3 time points to wave-vortex group
+Ending simulation. Wrote 9 time points to dense group
+WVTransformBoussinesq initialized from Ap, Am, A0.
+Ending simulation. Wrote 2 time points to wave-vortex group
+Ending simulation. Wrote 8 time points to dense group
+WVTransformBoussinesq initialized from Ap, Am, A0.
+Ending simulation. Wrote 2 time points to wave-vortex group
+Ending simulation. Wrote 8 time points to dense group
+WVTransformBoussinesq initialized from Ap, Am, A0.
+Ending simulation. Wrote 3 time points to wave-vortex group
+Ending simulation. Wrote 9 time points to dense group
+
+================================================================================
+Assertion failed in TestPortableBoussinesq/multiFileOutputPoliciesAndRestart and it did not run to completion.
+    ----------------
+    Test Diagnostic:
+    ----------------
+    {"schemaVersion":"wave-vortex-run-v1","status":"failed","exitCode":4,"failure":{"stage":"provider","message":"This runner was built without the native FFTW provider. Build the source runner with PortableRuntime/buildWaveVortexRun.sh on a supported Apple-silicon host; no reference-provider fallback is performed.","location":""}}
+
+    ---------------------
+    Framework Diagnostic:
+    ---------------------
+    assertEqual failed.
+    --> The numeric values are not equal using "isequaln".
+    --> Failure table:
+            Actual    Expected    Error    RelativeError
+            ______    ________    _____    _____________
+
+              4          0          4           Inf
+
+    Actual Value:
+         4
+    Expected Value:
+         0
+    ------------------
+    Stack Information:
+    ------------------
+    In /Users/jearly/Documents/OceanKitRepositories/wvm-v4-cpp-adoption-audit/UnitTests/TestPortableBoussinesq.m (TestPortableBoussinesq.multiFileOutputPoliciesAndRestart) at 140
+================================================================================
+.building 6 boussinesq transformation matrices...1...finished.
+[Warning: The nonlinear flux has no damping and may not be stable.]
+[> In WVModel (line 121)
+In TestPortableBoussinesq/writeInitialModel (line 397)
+In TestPortableBoussinesq/incompatibleModelGraphsAreTransactional (line 177)]
+Ending simulation. Wrote 1 time points to wave-vortex group
+.building 20 boussinesq transformation matrices...1...finished.
+Ending simulation. Wrote 1 time points to wave-vortex group
+Ending simulation. Wrote 1 time points to dense group
+WVTransformBoussinesq initialized from Ap, Am, A0.
+WVTransformBoussinesq initialized from Ap, Am, A0.
+Ending simulation. Wrote 3 time points to wave-vortex group
+Ending simulation. Wrote 9 time points to dense group
+Ending simulation. Wrote 3 time points to wave-vortex group
+Ending simulation. Wrote 9 time points to dense group
+WVTransformBoussinesq initialized from Ap, Am, A0.
+WVTransformBoussinesq initialized from Ap, Am, A0.
+dX/U = 127759.1 s (2129.3 min). dZ/W = 567426.5 s (9457.1 min). The highest frequency resolved IGW has period of 1486.4 s (24.8 min).
+Ending simulation. Wrote 3 time points to wave-vortex group
+Ending simulation. Wrote 9 time points to dense group
+Ending simulation. Wrote 3 time points to wave-vortex group
+Ending simulation. Wrote 9 time points to dense group
+WVTransformBoussinesq initialized from Ap, Am, A0.
+WVTransformBoussinesq initialized from Ap, Am, A0.
+dX/U = 127759.1 s (2129.3 min). dZ/W = 567426.5 s (9457.1 min). The highest frequency resolved IGW has period of 1486.4 s (24.8 min).
+Ending simulation. Wrote 3 time points to wave-vortex group
+Ending simulation. Wrote 9 time points to dense group
+Ending simulation. Wrote 3 time points to wave-vortex group
+Ending simulation. Wrote 9 time points to dense group
+
+================================================================================
+Assertion failed in TestPortableBoussinesq/modelIntegrationRoundTripsThroughMatlab and it did not run to completion.
+    ----------------
+    Test Diagnostic:
+    ----------------
+    {"schemaVersion":"wave-vortex-run-v1","status":"failed","exitCode":4,"failure":{"stage":"provider","message":"This runner was built without the native FFTW provider. Build the source runner with PortableRuntime/buildWaveVortexRun.sh on a supported Apple-silicon host; no reference-provider fallback is performed.","location":""}}
+
+    ---------------------
+    Framework Diagnostic:
+    ---------------------
+    assertEqual failed.
+    --> The numeric values are not equal using "isequaln".
+    --> Failure table:
+            Actual    Expected    Error    RelativeError
+            ______    ________    _____    _____________
+
+              4          0          4           Inf
+
+    Actual Value:
+         4
+    Expected Value:
+         0
+    ------------------
+    Stack Information:
+    ------------------
+    In /Users/jearly/Documents/OceanKitRepositories/wvm-v4-cpp-adoption-audit/UnitTests/TestPortableBoussinesq.m (TestPortableBoussinesq.modelIntegrationRoundTripsThroughMatlab) at 199
+================================================================================
+.building 20 boussinesq transformation matrices...1...finished.
+[Warning: The nonlinear flux has no damping and may not be stable.]
+[> In WVModel (line 121)
+In TestPortableBoussinesq/writeInitialModel (line 397)
+In TestPortableBoussinesq/fieldSamplingMatchesMatlab (line 231)]
+Ending simulation. Wrote 1 time points to wave-vortex group
+
+================================================================================
+Assertion failed in TestPortableBoussinesq/fieldSamplingMatchesMatlab and it did not run to completion.
+    ----------------
+    Test Diagnostic:
+    ----------------
+    Native provider not built.
+
+    ---------------------
+    Framework Diagnostic:
+    ---------------------
+    assertEqual failed.
+    --> The numeric values are not equal using "isequaln".
+    --> Failure table:
+            Actual    Expected    Error    RelativeError
+            ______    ________    _____    _____________
+
+              1          0          1           Inf
+
+    Actual Value:
+         1
+    Expected Value:
+         0
+    ------------------
+    Stack Information:
+    ------------------
+    In /Users/jearly/Documents/OceanKitRepositories/wvm-v4-cpp-adoption-audit/UnitTests/TestPortableBoussinesq.m (TestPortableBoussinesq.fieldSamplingMatchesMatlab) at 239
+================================================================================
+.building 20 boussinesq transformation matrices...1...finished.
+building 20 boussinesq transformation matrices...1...finished.
+Ending simulation. Wrote 1 time points to wave-vortex group
+
+================================================================================
+Assertion failed in TestPortableBoussinesq/retainedSubsetAndNonuniformGrid and it did not run to completion.
+    ----------------
+    Test Diagnostic:
+    ----------------
+    Native adapter unavailable.
+
+    ---------------------
+    Framework Diagnostic:
+    ---------------------
+    assertEqual failed.
+    --> The numeric values are not equal using "isequaln".
+    --> Failure table:
+            Actual    Expected    Error    RelativeError
+            ______    ________    _____    _____________
+
+              1          0          1           Inf
+
+    Actual Value:
+         1
+    Expected Value:
+         0
+    ------------------
+    Stack Information:
+    ------------------
+    In /Users/jearly/Documents/OceanKitRepositories/wvm-v4-cpp-adoption-audit/UnitTests/TestPortableBoussinesq.m (TestPortableBoussinesq.compareTendency) at 448
+    In /Users/jearly/Documents/OceanKitRepositories/wvm-v4-cpp-adoption-audit/UnitTests/TestPortableBoussinesq.m (TestPortableBoussinesq.retainedSubsetAndNonuniformGrid) at 263
+================================================================================
+.building 12 boussinesq transformation matrices...1...finished.
+Ending simulation. Wrote 1 time points to wave-vortex group
+Ending simulation. Wrote 1 time points to dense group
+building 12 boussinesq transformation matrices...1...finished.
+Ending simulation. Wrote 1 time points to wave-vortex group
+Ending simulation. Wrote 1 time points to dense group
+building 12 boussinesq transformation matrices...1...finished.
+Ending simulation. Wrote 1 time points to wave-vortex group
+Ending simulation. Wrote 1 time points to dense group
+building 12 boussinesq transformation matrices...1...finished.
+[Warning: The nonlinear flux has no damping and may not be stable.]
+[> In WVModel (line 121)
+In TestPortableBoussinesq/writeInitialModel (line 397)
+In TestPortableBoussinesq/malformedModelsLeaveAppendTargetsUnchanged (line 272)]
+Ending simulation. Wrote 1 time points to wave-vortex group
+Ending simulation. Wrote 1 time points to dense group
+building 12 boussinesq transformation matrices...1...finished.
+[Warning: The nonlinear flux has no damping and may not be stable.]
+[> In WVModel (line 121)
+In TestPortableBoussinesq/writeInitialModel (line 397)
+In TestPortableBoussinesq/malformedModelsLeaveAppendTargetsUnchanged (line 272)]
+Ending simulation. Wrote 1 time points to wave-vortex group
+Ending simulation. Wrote 1 time points to dense group
+building 12 boussinesq transformation matrices...1...finished.
+[Warning: The nonlinear flux has no damping and may not be stable.]
+[> In WVModel (line 121)
+In TestPortableBoussinesq/writeInitialModel (line 397)
+In TestPortableBoussinesq/malformedModelsLeaveAppendTargetsUnchanged (line 272)]
+Ending simulation. Wrote 1 time points to wave-vortex group
+Ending simulation. Wrote 1 time points to dense group
+building 12 boussinesq transformation matrices...1...finished.
+[Warning: The nonlinear flux has no damping and may not be stable.]
+[> In WVModel (line 121)
+In TestPortableBoussinesq/writeInitialModel (line 397)
+In TestPortableBoussinesq/malformedModelsLeaveAppendTargetsUnchanged (line 272)]
+Ending simulation. Wrote 1 time points to wave-vortex group
+Ending simulation. Wrote 1 time points to dense group
+.building 12 boussinesq transformation matrices...1...finished.
+[Warning: The nonlinear flux has no damping and may not be stable.]
+[> In WVModel (line 121)
+In TestPortableBoussinesq/writeInitialModel (line 397)
+In TestPortableBoussinesq/waveMismatchIsTransactional (line 294)]
+Ending simulation. Wrote 1 time points to wave-vortex group
+Ending simulation. Wrote 1 time points to dense group
+Ending simulation. Wrote 1 time points to wave-vortex group
+. building 12 boussinesq transformation matrices...1...finished.
+Ending simulation. Wrote 1 time points to wave-vortex group
+
+================================================================================
+Assertion failed in TestPortableBoussinesq/applicableForcingTendenciesMatchMatlab and it did not run to completion.
+    ----------------
+    Test Diagnostic:
+    ----------------
+    Native adapter unavailable.
+
+    ---------------------
+    Framework Diagnostic:
+    ---------------------
+    assertEqual failed.
+    --> The numeric values are not equal using "isequaln".
+    --> Failure table:
+            Actual    Expected    Error    RelativeError
+            ______    ________    _____    _____________
+
+              1          0          1           Inf
+
+    Actual Value:
+         1
+    Expected Value:
+         0
+    ------------------
+    Stack Information:
+    ------------------
+    In /Users/jearly/Documents/OceanKitRepositories/wvm-v4-cpp-adoption-audit/UnitTests/TestPortableBoussinesq.m (TestPortableBoussinesq.compareTendency) at 448
+    In /Users/jearly/Documents/OceanKitRepositories/wvm-v4-cpp-adoption-audit/UnitTests/TestPortableBoussinesq.m (TestPortableBoussinesq.applicableForcingTendenciesMatchMatlab) at 317
+================================================================================
+.building 12 boussinesq transformation matrices...1...finished.
+Ending simulation. Wrote 1 time points to wave-vortex group
+WVTransformBoussinesq initialized from Ap, Am, A0.
+Ending simulation. Wrote 2 time points to wave-vortex group
+WVTransformBoussinesq initialized from Ap, Am, A0.
+Ending simulation. Wrote 2 time points to wave-vortex group
+
+================================================================================
+Assertion failed in TestPortableBoussinesq/applicableForcingContinuationsMatchMatlab and it did not run to completion.
+    ----------------
+    Test Diagnostic:
+    ----------------
+    {"schemaVersion":"wave-vortex-run-v1","status":"failed","exitCode":4,"failure":{"stage":"provider","message":"This runner was built without the native FFTW provider. Build the source runner with PortableRuntime/buildWaveVortexRun.sh on a supported Apple-silicon host; no reference-provider fallback is performed.","location":""}}
+
+    ---------------------
+    Framework Diagnostic:
+    ---------------------
+    assertEqual failed.
+    --> The numeric values are not equal using "isequaln".
+    --> Failure table:
+            Actual    Expected    Error    RelativeError
+            ______    ________    _____    _____________
+
+              4          0          4           Inf
+
+    Actual Value:
+         4
+    Expected Value:
+         0
+    ------------------
+    Stack Information:
+    ------------------
+    In /Users/jearly/Documents/OceanKitRepositories/wvm-v4-cpp-adoption-audit/UnitTests/TestPortableBoussinesq.m (TestPortableBoussinesq.compareContinuation) at 433
+    In /Users/jearly/Documents/OceanKitRepositories/wvm-v4-cpp-adoption-audit/UnitTests/TestPortableBoussinesq.m (TestPortableBoussinesq.applicableForcingContinuationsMatchMatlab) at 331
+================================================================================
+.building 20 boussinesq transformation matrices...1...finished.
+Ending simulation. Wrote 1 time points to wave-vortex group
+
+================================================================================
+Assertion failed in TestPortableBoussinesq/orderedForcingTendenciesMatchMatlab and it did not run to completion.
+    ----------------
+    Test Diagnostic:
+    ----------------
+    Native adapter unavailable.
+
+    ---------------------
+    Framework Diagnostic:
+    ---------------------
+    assertEqual failed.
+    --> The numeric values are not equal using "isequaln".
+    --> Failure table:
+            Actual    Expected    Error    RelativeError
+            ______    ________    _____    _____________
+
+              1          0          1           Inf
+
+    Actual Value:
+         1
+    Expected Value:
+         0
+    ------------------
+    Stack Information:
+    ------------------
+    In /Users/jearly/Documents/OceanKitRepositories/wvm-v4-cpp-adoption-audit/UnitTests/TestPortableBoussinesq.m (TestPortableBoussinesq.compareTendency) at 448
+    In /Users/jearly/Documents/OceanKitRepositories/wvm-v4-cpp-adoption-audit/UnitTests/TestPortableBoussinesq.m (TestPortableBoussinesq.orderedForcingTendenciesMatchMatlab) at 343
+================================================================================
+.
+Done TestPortableBoussinesq
+__________
+
+Failure Summary:
+
+     Name                                                                   Failed  Incomplete  Reason(s)
+    ====================================================================================================================
+     TestPortableFieldSamplingMatrix/declaredPortableSamplingMatchesMatlab    X                 Failed by verification.
+    --------------------------------------------------------------------------------------------------------------------
+     TestPortableStratifiedQG/linearPassiveObserversMatchMatlab               X         X       Failed by assertion.
+    --------------------------------------------------------------------------------------------------------------------
+     TestPortableStratifiedQG/cflAndDefaultSteppingMatchMatlab                X         X       Failed by assertion.
+    --------------------------------------------------------------------------------------------------------------------
+     TestPortableStratifiedQG/multiFileOutputPoliciesAndRestart               X         X       Failed by assertion.
+    --------------------------------------------------------------------------------------------------------------------
+     TestPortableStratifiedQG/modelIntegrationRoundTripsThroughMatlab         X         X       Failed by assertion.
+    --------------------------------------------------------------------------------------------------------------------
+     TestPortableStratifiedQG/fieldSamplingMatchesMatlab                      X         X       Failed by assertion.
+    --------------------------------------------------------------------------------------------------------------------
+     TestPortableStratifiedQG/applicableForcingTendenciesMatchMatlab          X         X       Failed by assertion.
+    --------------------------------------------------------------------------------------------------------------------
+     TestPortableStratifiedQG/orderedForcingTendenciesMatchMatlab             X         X       Failed by assertion.
+    --------------------------------------------------------------------------------------------------------------------
+     TestPortableHydrostatic/linearPassiveObserversMatchMatlab                X         X       Failed by assertion.
+    --------------------------------------------------------------------------------------------------------------------
+     TestPortableHydrostatic/horizontalOnlyObserversMatchMatlab               X         X       Failed by assertion.
+    --------------------------------------------------------------------------------------------------------------------
+     TestPortableHydrostatic/cflAndDefaultSteppingMatchMatlab                 X         X       Failed by assertion.
+    --------------------------------------------------------------------------------------------------------------------
+     TestPortableHydrostatic/multiFileOutputPoliciesAndRestart                X         X       Failed by assertion.
+    --------------------------------------------------------------------------------------------------------------------
+     TestPortableHydrostatic/modelIntegrationRoundTripsThroughMatlab          X         X       Failed by assertion.
+    --------------------------------------------------------------------------------------------------------------------
+     TestPortableHydrostatic/fieldSamplingMatchesMatlab                       X         X       Failed by assertion.
+    --------------------------------------------------------------------------------------------------------------------
+     TestPortableHydrostatic/retainedSubsetAndNonuniformGrid                  X         X       Failed by assertion.
+    --------------------------------------------------------------------------------------------------------------------
+     TestPortableHydrostatic/applicableForcingTendenciesMatchMatlab           X         X       Failed by assertion.
+    --------------------------------------------------------------------------------------------------------------------
+     TestPortableHydrostatic/applicableForcingContinuationsMatchMatlab        X         X       Failed by assertion.
+    --------------------------------------------------------------------------------------------------------------------
+     TestPortableHydrostatic/orderedForcingTendenciesMatchMatlab              X         X       Failed by assertion.
+    --------------------------------------------------------------------------------------------------------------------
+     TestPortableBoussinesq/linearPassiveObserversMatchMatlab                 X         X       Failed by assertion.
+    --------------------------------------------------------------------------------------------------------------------
+     TestPortableBoussinesq/horizontalOnlyObserversMatchMatlab                X         X       Failed by assertion.
+    --------------------------------------------------------------------------------------------------------------------
+     TestPortableBoussinesq/cflAndDefaultSteppingMatchMatlab                  X         X       Failed by assertion.
+    --------------------------------------------------------------------------------------------------------------------
+     TestPortableBoussinesq/multiFileOutputPoliciesAndRestart                 X         X       Failed by assertion.
+    --------------------------------------------------------------------------------------------------------------------
+     TestPortableBoussinesq/modelIntegrationRoundTripsThroughMatlab           X         X       Failed by assertion.
+    --------------------------------------------------------------------------------------------------------------------
+     TestPortableBoussinesq/fieldSamplingMatchesMatlab                        X         X       Failed by assertion.
+    --------------------------------------------------------------------------------------------------------------------
+     TestPortableBoussinesq/retainedSubsetAndNonuniformGrid                   X         X       Failed by assertion.
+    --------------------------------------------------------------------------------------------------------------------
+     TestPortableBoussinesq/applicableForcingTendenciesMatchMatlab            X         X       Failed by assertion.
+    --------------------------------------------------------------------------------------------------------------------
+     TestPortableBoussinesq/applicableForcingContinuationsMatchMatlab         X         X       Failed by assertion.
+    --------------------------------------------------------------------------------------------------------------------
+     TestPortableBoussinesq/orderedForcingTendenciesMatchMatlab               X         X       Failed by assertion.
+  1×34 TestResult array with properties:
+
+    Name
+    Passed
+    Failed
+    Incomplete
+    Duration
+    Details
+
+Totals:
+   6 Passed, 28 Failed, 27 Incomplete.
+   242.9487 seconds testing time.
+
+{Error using assert
+Assertion failed.
+}
+BLAS: unloading libraries

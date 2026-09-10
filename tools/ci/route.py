@@ -18,7 +18,7 @@ FAMILY_TESTS = {
 SHARED_TESTS = ['TestPortableStableForcing', 'TestPortableForcingCompatibility',
                 'TestCompiledKernelIntegration', 'TestStratifiedModalRecord',
                 'TestPortableQualificationCatalog', 'TestPortableHistoricalQualification', 'TestPortableForwardIntegration',
-                'TestPortableForwardIntegrationCatalog', 'TestPortableNoMotionProfile',
+                'TestPortableForwardIntegrationCatalog', 'TestPortableCompatibilityMatrix', 'TestPortableFieldSamplingMatrix', 'TestPortableNoMotionProfile',
                 'TestPortableNoMotionRecovery', 'TestPortableDensityEventEvaluation', 'TestPortableDensityOutput']
 PERSISTENCE_TESTS = ['TestPortableRuntimeCompatibility', 'TestPortableRunRequestWriter',
                      'TestPortableObserverContracts', 'TestPortableForcingContracts',
@@ -70,6 +70,10 @@ def select(paths, *, complete=False, migration=False, source_commit=''):
         lower = path.lower()
         if path.startswith(('.github/ci-evidence/', '.github/planning/')):
             reasons.append(f'{path}: evidence/planning; repository checks and smoke')
+            continue
+        if path == 'PortableRuntime/COMPATIBILITY.md':
+            tests.add('TestPortableCompatibilityMatrix')
+            reasons.append(f'{path}: generated compatibility documentation must match its catalog')
             continue
         if path.startswith(('tools/ci/', '.github/workflows/', '.github/actions/')) or path == 'buildfile.m':
             scientific(f'{path}: CI implementation exercises all routes')

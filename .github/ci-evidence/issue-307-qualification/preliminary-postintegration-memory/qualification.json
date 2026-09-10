@@ -1,0 +1,481 @@
+{
+  "schema": "wave-vortex-process-memory-qualification-v1",
+  "gateDeclaredBeforeMeasurement": true,
+  "runsPerExecutable": 5,
+  "rssRelativeAllowance": 0.1,
+  "rssAbsoluteAllowanceBytes": 16777216,
+  "retainedRelativeAllowance": 0.03,
+  "samplingPauseSeconds": 0.01,
+  "peakAuthority": "runner getrusage process-lifetime high-water mark",
+  "externalSampling": "ps resident bytes from launch to exit; sampled lower bound, variable cadence; no phase attribution",
+  "binarySHA256": {
+    "baseline": "990de02d401caa4bb6c05f5b832c331e81f6aa8dffede058c42c49097f60b8fe",
+    "candidate": "6f57eba3d803c79898a63856d9e6c91b7a0b7907ae045fcd3c8ff1473de2f8d1"
+  },
+  "cases": [
+    {
+      "family": "constant",
+      "sourceSHA256": "0cd2aa70695b407673c09e5e135e9f720e622d6a1e92eacc3d1e8252704e5490",
+      "requestSHA256": "3dfade6400a63198fe2f00f26329cbaff38e1ce149cc5a87bb18228314d043d6",
+      "samples": {
+        "baseline": [
+          {
+            "peakRSSBytes": 84279296,
+            "integrationBaselineRSSBytes": 34439168,
+            "externalSampledPeakRSSBytes": 81903616,
+            "externalSampleCount": 105,
+            "retainedBytes": 6606113,
+            "stepCount": 64,
+            "rhsEvaluationCount": 256,
+            "report": "constant-0-baseline-report.json",
+            "reportSHA256": "3aba0019a1258f4d9ca92cbc1fb2fc6bacc2a3ab9a545e8aaddc5c9f4915c168",
+            "rssSamples": "constant-0-baseline-rss.json",
+            "rssSamplesSHA256": "7086a9c845f2180d4fe9a858e24f8c41642494be6d4958581a55673e651d8d47"
+          },
+          {
+            "peakRSSBytes": 83804160,
+            "integrationBaselineRSSBytes": 35602432,
+            "externalSampledPeakRSSBytes": 81805312,
+            "externalSampleCount": 99,
+            "retainedBytes": 6606113,
+            "stepCount": 64,
+            "rhsEvaluationCount": 256,
+            "report": "constant-1-baseline-report.json",
+            "reportSHA256": "2e8836506bf0aec4fa15719846cd67562c43970ed75aab92ee417a4f10c8c760",
+            "rssSamples": "constant-1-baseline-rss.json",
+            "rssSamplesSHA256": "8f2e7c37bb78a8a33b398a2b1bfac47ba070dbe455beaebb3c9e842fd03a9e91"
+          },
+          {
+            "peakRSSBytes": 83984384,
+            "integrationBaselineRSSBytes": 34160640,
+            "externalSampledPeakRSSBytes": 82034688,
+            "externalSampleCount": 99,
+            "retainedBytes": 6606113,
+            "stepCount": 64,
+            "rhsEvaluationCount": 256,
+            "report": "constant-2-baseline-report.json",
+            "reportSHA256": "d457324d460d5aeeb626b5567338bae28c97e89f999a2de6ced481b5293f8ad7",
+            "rssSamples": "constant-2-baseline-rss.json",
+            "rssSamplesSHA256": "5674da025b97756598f02125322707c3465ba8f4a93a297d4ce0da1048de8c4b"
+          },
+          {
+            "peakRSSBytes": 84082688,
+            "integrationBaselineRSSBytes": 34390016,
+            "externalSampledPeakRSSBytes": 84082688,
+            "externalSampleCount": 101,
+            "retainedBytes": 6606113,
+            "stepCount": 64,
+            "rhsEvaluationCount": 256,
+            "report": "constant-3-baseline-report.json",
+            "reportSHA256": "15804da29270971d19defcba422b3d9a89b71f131f20adc944700aaa024b8fcb",
+            "rssSamples": "constant-3-baseline-rss.json",
+            "rssSamplesSHA256": "ec7a77bd603fac4b1fb819b4f6c0d9ff0c5244f7504885d8a4a0ba4839e96d94"
+          },
+          {
+            "peakRSSBytes": 84033536,
+            "integrationBaselineRSSBytes": 34537472,
+            "externalSampledPeakRSSBytes": 84033536,
+            "externalSampleCount": 100,
+            "retainedBytes": 6606113,
+            "stepCount": 64,
+            "rhsEvaluationCount": 256,
+            "report": "constant-4-baseline-report.json",
+            "reportSHA256": "294ffd92b55c31331499769d958f7e2ded3d3f05b6dece3db194983b889a9e58",
+            "rssSamples": "constant-4-baseline-rss.json",
+            "rssSamplesSHA256": "390b44e93857a7ca22fc3b770ff05165bf769723720132bed87413f6100a76d6"
+          }
+        ],
+        "candidate": [
+          {
+            "peakRSSBytes": 84393984,
+            "integrationBaselineRSSBytes": 36028416,
+            "externalSampledPeakRSSBytes": 82034688,
+            "externalSampleCount": 101,
+            "retainedBytes": 6606201,
+            "stepCount": 64,
+            "rhsEvaluationCount": 256,
+            "report": "constant-0-candidate-report.json",
+            "reportSHA256": "e92e1eff67216c32eeeaca4ed8883013b18ad954d919e9b89a83d68ac09aa017",
+            "rssSamples": "constant-0-candidate-rss.json",
+            "rssSamplesSHA256": "e1bc374ed60891b1f18179c30cb9d764efd706aad1b831edfc0cbe715d90107e"
+          },
+          {
+            "peakRSSBytes": 84328448,
+            "integrationBaselineRSSBytes": 34832384,
+            "externalSampledPeakRSSBytes": 82329600,
+            "externalSampleCount": 104,
+            "retainedBytes": 6606201,
+            "stepCount": 64,
+            "rhsEvaluationCount": 256,
+            "report": "constant-1-candidate-report.json",
+            "reportSHA256": "97eaec6baaeaeeedec3e8114740e3d48392ce82473b963b08fa4e29aa81e4775",
+            "rssSamples": "constant-1-candidate-rss.json",
+            "rssSamplesSHA256": "7f905fd4f6e416011744c788c373a6839fbf9ee5b0c6ad175a7baeb0677a0634"
+          },
+          {
+            "peakRSSBytes": 84213760,
+            "integrationBaselineRSSBytes": 35962880,
+            "externalSampledPeakRSSBytes": 82280448,
+            "externalSampleCount": 99,
+            "retainedBytes": 6606201,
+            "stepCount": 64,
+            "rhsEvaluationCount": 256,
+            "report": "constant-2-candidate-report.json",
+            "reportSHA256": "d85078c42c26db3e9fa727d5e7f3ec7ca8ec7013699fcb32bdcf8a6c1ee33153",
+            "rssSamples": "constant-2-candidate-rss.json",
+            "rssSamplesSHA256": "c3d93a40b9a1af52a1c9cca4e76272b8edb6d3f50a910964e5da7912839f93f3"
+          },
+          {
+            "peakRSSBytes": 84213760,
+            "integrationBaselineRSSBytes": 34422784,
+            "externalSampledPeakRSSBytes": 84213760,
+            "externalSampleCount": 99,
+            "retainedBytes": 6606201,
+            "stepCount": 64,
+            "rhsEvaluationCount": 256,
+            "report": "constant-3-candidate-report.json",
+            "reportSHA256": "30c75e59bd2bd75c23353c67e96bc6e41e36f4e878685509198ed3dc90c4c703",
+            "rssSamples": "constant-3-candidate-rss.json",
+            "rssSamplesSHA256": "17ffffb0dd61e8cb6cfc5d72967fcef4c7f637d8fcd7b8907c2923ce61c58513"
+          },
+          {
+            "peakRSSBytes": 84148224,
+            "integrationBaselineRSSBytes": 34553856,
+            "externalSampledPeakRSSBytes": 84148224,
+            "externalSampleCount": 105,
+            "retainedBytes": 6606201,
+            "stepCount": 64,
+            "rhsEvaluationCount": 256,
+            "report": "constant-4-candidate-report.json",
+            "reportSHA256": "9fb284607cfa3ca6c6adc1156b65a0b144e2b9907029b7a50697ff2cdfd3064f",
+            "rssSamples": "constant-4-candidate-rss.json",
+            "rssSamplesSHA256": "273823ff1de064035b5b83221271d865393e7fcbf27885a4de376456e37df9db"
+          }
+        ]
+      },
+      "medians": {
+        "baseline": {
+          "peakRSSBytes": 84033536,
+          "retainedBytes": 6606113
+        },
+        "candidate": {
+          "peakRSSBytes": 84213760,
+          "retainedBytes": 6606201
+        }
+      },
+      "maximumCandidateMedianRSSBytes": 100810752,
+      "workMatchesExactly": true,
+      "passes": true
+    },
+    {
+      "family": "hydrostatic",
+      "sourceSHA256": "b1c797e746116db899867d6214f74839e718367548c7f4e130c0f702092508d8",
+      "requestSHA256": "81c962ce8362f60b580d43ac134d974cf6bd07dff2ae432f3c6c01dade1990ec",
+      "samples": {
+        "baseline": [
+          {
+            "peakRSSBytes": 51576832,
+            "integrationBaselineRSSBytes": 28491776,
+            "externalSampledPeakRSSBytes": 50593792,
+            "externalSampleCount": 39,
+            "retainedBytes": 3228917,
+            "stepCount": 64,
+            "rhsEvaluationCount": 256,
+            "report": "hydrostatic-0-baseline-report.json",
+            "reportSHA256": "87cda654da3daad14d965ef18481898937d74a55d1697881f372c7aa19b7061f",
+            "rssSamples": "hydrostatic-0-baseline-rss.json",
+            "rssSamplesSHA256": "296dcdf13da011b2a3c5edf1ed4243988f82517460a7bf1b4ba425d051bf106a"
+          },
+          {
+            "peakRSSBytes": 51494912,
+            "integrationBaselineRSSBytes": 28442624,
+            "externalSampledPeakRSSBytes": 51609600,
+            "externalSampleCount": 40,
+            "retainedBytes": 3228917,
+            "stepCount": 64,
+            "rhsEvaluationCount": 256,
+            "report": "hydrostatic-1-baseline-report.json",
+            "reportSHA256": "9701f7520ed8ab10cdea4b88840f7cddcd91398997331dff3bae7f4b3e780f3b",
+            "rssSamples": "hydrostatic-1-baseline-rss.json",
+            "rssSamplesSHA256": "271a1e9e5f264d7a474897c5de5816a07b78cddb9d517ddb23f0815221a03120"
+          },
+          {
+            "peakRSSBytes": 51232768,
+            "integrationBaselineRSSBytes": 28196864,
+            "externalSampledPeakRSSBytes": 50233344,
+            "externalSampleCount": 39,
+            "retainedBytes": 3228917,
+            "stepCount": 64,
+            "rhsEvaluationCount": 256,
+            "report": "hydrostatic-2-baseline-report.json",
+            "reportSHA256": "065027a50b2d98d0d1303cd301f77419e9ee35d5ea32ad3460b0a3718dc73de0",
+            "rssSamples": "hydrostatic-2-baseline-rss.json",
+            "rssSamplesSHA256": "0b0909c1e8c54bb3712b152bf256ad794b33442d13d6d5e33bacafad387ccf42"
+          },
+          {
+            "peakRSSBytes": 51380224,
+            "integrationBaselineRSSBytes": 28360704,
+            "externalSampledPeakRSSBytes": 50397184,
+            "externalSampleCount": 41,
+            "retainedBytes": 3228917,
+            "stepCount": 64,
+            "rhsEvaluationCount": 256,
+            "report": "hydrostatic-3-baseline-report.json",
+            "reportSHA256": "7b6f2237aec91ee46f69d504f3ed77bc35b6e6df606c6efae77bd197d0bea2bb",
+            "rssSamples": "hydrostatic-3-baseline-rss.json",
+            "rssSamplesSHA256": "2e6fd78d3fef91e5d0460af04d611d1afe9072a5da37acf958081f77bc497b7c"
+          },
+          {
+            "peakRSSBytes": 51429376,
+            "integrationBaselineRSSBytes": 28393472,
+            "externalSampledPeakRSSBytes": 50446336,
+            "externalSampleCount": 40,
+            "retainedBytes": 3228917,
+            "stepCount": 64,
+            "rhsEvaluationCount": 256,
+            "report": "hydrostatic-4-baseline-report.json",
+            "reportSHA256": "1234c5771459afebf45c3b658fcd3fd6d1f9374f2287b9ba7138b6bfb4d633e6",
+            "rssSamples": "hydrostatic-4-baseline-rss.json",
+            "rssSamplesSHA256": "712bb66aba325c0d115cba437981eb5bf5c5db0a0d226d57105ac336cae9c552"
+          }
+        ],
+        "candidate": [
+          {
+            "peakRSSBytes": 51527680,
+            "integrationBaselineRSSBytes": 28475392,
+            "externalSampledPeakRSSBytes": 51527680,
+            "externalSampleCount": 40,
+            "retainedBytes": 3229021,
+            "stepCount": 64,
+            "rhsEvaluationCount": 256,
+            "report": "hydrostatic-0-candidate-report.json",
+            "reportSHA256": "57a7c003ce8b3f038a76c47e5f9765ab8fd3f51d8c6bf012f275f47b711c3ee3",
+            "rssSamples": "hydrostatic-0-candidate-rss.json",
+            "rssSamplesSHA256": "8714c5196245850d52dcb5f88b21a8ab2147d5fd01f1bc771e0c5db8bc434c33"
+          },
+          {
+            "peakRSSBytes": 51494912,
+            "integrationBaselineRSSBytes": 28393472,
+            "externalSampledPeakRSSBytes": 50528256,
+            "externalSampleCount": 41,
+            "retainedBytes": 3229021,
+            "stepCount": 64,
+            "rhsEvaluationCount": 256,
+            "report": "hydrostatic-1-candidate-report.json",
+            "reportSHA256": "61f1043517473bd6c7b0e1b324f5f2895fb27eaddf22136f8b1c78ac1db83efa",
+            "rssSamples": "hydrostatic-1-candidate-rss.json",
+            "rssSamplesSHA256": "429ae7ec6cb15670a50c3dd47b1336abc3273a14310e19f36c6ce9b7e725d35e"
+          },
+          {
+            "peakRSSBytes": 51478528,
+            "integrationBaselineRSSBytes": 28409856,
+            "externalSampledPeakRSSBytes": 51478528,
+            "externalSampleCount": 41,
+            "retainedBytes": 3229021,
+            "stepCount": 64,
+            "rhsEvaluationCount": 256,
+            "report": "hydrostatic-2-candidate-report.json",
+            "reportSHA256": "2bbb3f5b67d797eb4e55440992c2f2af9f84dc43a5b7c929b7b71cc0aa279e47",
+            "rssSamples": "hydrostatic-2-candidate-rss.json",
+            "rssSamplesSHA256": "bb93d6a107c66135231b55db6e074093741e8cef00b69ae7f81b674fd18ce353"
+          },
+          {
+            "peakRSSBytes": 51527680,
+            "integrationBaselineRSSBytes": 28426240,
+            "externalSampledPeakRSSBytes": 51527680,
+            "externalSampleCount": 40,
+            "retainedBytes": 3229021,
+            "stepCount": 64,
+            "rhsEvaluationCount": 256,
+            "report": "hydrostatic-3-candidate-report.json",
+            "reportSHA256": "601a8905e85050516e0fcade5f98fc63372333206377baef8b173320937ec40e",
+            "rssSamples": "hydrostatic-3-candidate-rss.json",
+            "rssSamplesSHA256": "2ab1bc6b24493531d16cb9adf2ee446f8a24d1b6f2d2106559e4514b14d0a7c6"
+          },
+          {
+            "peakRSSBytes": 51576832,
+            "integrationBaselineRSSBytes": 28475392,
+            "externalSampledPeakRSSBytes": 51576832,
+            "externalSampleCount": 40,
+            "retainedBytes": 3229021,
+            "stepCount": 64,
+            "rhsEvaluationCount": 256,
+            "report": "hydrostatic-4-candidate-report.json",
+            "reportSHA256": "883389100f3984d6d2c2923192ff0008f60987e96908001a0fb0889bf08d3c6d",
+            "rssSamples": "hydrostatic-4-candidate-rss.json",
+            "rssSamplesSHA256": "df15fd0c295f5a90e0338fb3dd96333a93c568079a82177070bb8564010a3c6d"
+          }
+        ]
+      },
+      "medians": {
+        "baseline": {
+          "peakRSSBytes": 51429376,
+          "retainedBytes": 3228917
+        },
+        "candidate": {
+          "peakRSSBytes": 51527680,
+          "retainedBytes": 3229021
+        }
+      },
+      "maximumCandidateMedianRSSBytes": 68206592,
+      "workMatchesExactly": true,
+      "passes": true
+    },
+    {
+      "family": "boussinesq",
+      "sourceSHA256": "5abd22e797538c0ec41ee00be916c1f151fc0378005eaa97102f1eec7987ba3b",
+      "requestSHA256": "0ea1aad6c8f484c1d80612427607bfe99addd73f4b4bebee753f52b93954ab4c",
+      "samples": {
+        "baseline": [
+          {
+            "peakRSSBytes": 33112064,
+            "integrationBaselineRSSBytes": 25690112,
+            "externalSampledPeakRSSBytes": 32751616,
+            "externalSampleCount": 34,
+            "retainedBytes": 1587396,
+            "stepCount": 64,
+            "rhsEvaluationCount": 256,
+            "report": "boussinesq-0-baseline-report.json",
+            "reportSHA256": "a3897b246ee4644b5595b5a8e31d47d4581bbce3ff69e8ea48aa587efae27d67",
+            "rssSamples": "boussinesq-0-baseline-rss.json",
+            "rssSamplesSHA256": "21b5a9ec9683424e24d88a1721032375b71936aef2a4db7be7808482da210f09"
+          },
+          {
+            "peakRSSBytes": 33079296,
+            "integrationBaselineRSSBytes": 25772032,
+            "externalSampledPeakRSSBytes": 32669696,
+            "externalSampleCount": 35,
+            "retainedBytes": 1587396,
+            "stepCount": 64,
+            "rhsEvaluationCount": 256,
+            "report": "boussinesq-1-baseline-report.json",
+            "reportSHA256": "d69857c33ac7705b8e3ce3d971610d8f7a89882a5dcb9c3f33cdc28b3f777c15",
+            "rssSamples": "boussinesq-1-baseline-rss.json",
+            "rssSamplesSHA256": "0efc2a817e2cbc670b3e5d799289c8359c32de94b0eea02946dbeeb2eb3f932b"
+          },
+          {
+            "peakRSSBytes": 32915456,
+            "integrationBaselineRSSBytes": 25673728,
+            "externalSampledPeakRSSBytes": 32505856,
+            "externalSampleCount": 33,
+            "retainedBytes": 1587396,
+            "stepCount": 64,
+            "rhsEvaluationCount": 256,
+            "report": "boussinesq-2-baseline-report.json",
+            "reportSHA256": "939e8b747e0c6684450dfd7e6bb5c1c5cb22a903c684262c276f33c3c9e8133c",
+            "rssSamples": "boussinesq-2-baseline-rss.json",
+            "rssSamplesSHA256": "1413044389733bb62064e7cc8db3f3a46d5a91f47a4a8a3c44808097ce653507"
+          },
+          {
+            "peakRSSBytes": 32849920,
+            "integrationBaselineRSSBytes": 25640960,
+            "externalSampledPeakRSSBytes": 32489472,
+            "externalSampleCount": 33,
+            "retainedBytes": 1587396,
+            "stepCount": 64,
+            "rhsEvaluationCount": 256,
+            "report": "boussinesq-3-baseline-report.json",
+            "reportSHA256": "c7ec9c9c5648fef6b9b2e498aedc72dd395646b042ea253c231e476545735f8e",
+            "rssSamples": "boussinesq-3-baseline-rss.json",
+            "rssSamplesSHA256": "16d9ca01c201d9019992c1e9a14922c8161e7810ab4c24ad7a3e6fa50dcc7099"
+          },
+          {
+            "peakRSSBytes": 32980992,
+            "integrationBaselineRSSBytes": 25591808,
+            "externalSampledPeakRSSBytes": 32636928,
+            "externalSampleCount": 33,
+            "retainedBytes": 1587396,
+            "stepCount": 64,
+            "rhsEvaluationCount": 256,
+            "report": "boussinesq-4-baseline-report.json",
+            "reportSHA256": "9272f90ba566e2058cf6009f3a150617103bf6722eced3918bd3ecc1257180cc",
+            "rssSamples": "boussinesq-4-baseline-rss.json",
+            "rssSamplesSHA256": "331e0a5e82f7ac83b2c5988a974c3e258d9165cc532619606c98d605f997afa0"
+          }
+        ],
+        "candidate": [
+          {
+            "peakRSSBytes": 32915456,
+            "integrationBaselineRSSBytes": 25690112,
+            "externalSampledPeakRSSBytes": 32555008,
+            "externalSampleCount": 36,
+            "retainedBytes": 1587500,
+            "stepCount": 64,
+            "rhsEvaluationCount": 256,
+            "report": "boussinesq-0-candidate-report.json",
+            "reportSHA256": "74072ad5430a4150933e0a904dd37287806dd0609ba40ac46a23e1d1d9516aba",
+            "rssSamples": "boussinesq-0-candidate-rss.json",
+            "rssSamplesSHA256": "c44fe9bc58abbd9df8fa7f53d99c0555d29bc128bbef5bac599f3c3947ba9bc1"
+          },
+          {
+            "peakRSSBytes": 32899072,
+            "integrationBaselineRSSBytes": 25640960,
+            "externalSampledPeakRSSBytes": 32555008,
+            "externalSampleCount": 34,
+            "retainedBytes": 1587500,
+            "stepCount": 64,
+            "rhsEvaluationCount": 256,
+            "report": "boussinesq-1-candidate-report.json",
+            "reportSHA256": "d1c0e3d8179c6018d0489c9533dca992597c248e6451edad3ec404518b4f04de",
+            "rssSamples": "boussinesq-1-candidate-rss.json",
+            "rssSamplesSHA256": "f26a41d5f5b98df03baf392074a77d7b2c97b03350909fa73b0e8ce26e4e6cb5"
+          },
+          {
+            "peakRSSBytes": 32915456,
+            "integrationBaselineRSSBytes": 25640960,
+            "externalSampledPeakRSSBytes": 32571392,
+            "externalSampleCount": 34,
+            "retainedBytes": 1587500,
+            "stepCount": 64,
+            "rhsEvaluationCount": 256,
+            "report": "boussinesq-2-candidate-report.json",
+            "reportSHA256": "31790de3c68586bca48911b3fab43581d7afd813f687afd2461b153a37d91d6f",
+            "rssSamples": "boussinesq-2-candidate-rss.json",
+            "rssSamplesSHA256": "3bc2f41e1a3405ee4e1726c65f9459a194cb10f1c399021baac94f1b9859d98c"
+          },
+          {
+            "peakRSSBytes": 32980992,
+            "integrationBaselineRSSBytes": 25690112,
+            "externalSampledPeakRSSBytes": 32620544,
+            "externalSampleCount": 33,
+            "retainedBytes": 1587500,
+            "stepCount": 64,
+            "rhsEvaluationCount": 256,
+            "report": "boussinesq-3-candidate-report.json",
+            "reportSHA256": "bb63cdd426cfab7f7a69a903c6e237043154f8cc18d89c26b92d3b472bf97df0",
+            "rssSamples": "boussinesq-3-candidate-rss.json",
+            "rssSamplesSHA256": "93ccbfb499edd49a71e053e30564426c75f9458bd210f0e6481be6ac68b18e49"
+          },
+          {
+            "peakRSSBytes": 32948224,
+            "integrationBaselineRSSBytes": 25542656,
+            "externalSampledPeakRSSBytes": 32587776,
+            "externalSampleCount": 33,
+            "retainedBytes": 1587500,
+            "stepCount": 64,
+            "rhsEvaluationCount": 256,
+            "report": "boussinesq-4-candidate-report.json",
+            "reportSHA256": "093f81f07714db8c1a64f46106540cef28ddbb525c6b6725a49107e15c60ccbc",
+            "rssSamples": "boussinesq-4-candidate-rss.json",
+            "rssSamplesSHA256": "74fdfeb1d3f18d7cae0f850a08ca845c7cac42a1120c57c2388909c9ec4a3c74"
+          }
+        ]
+      },
+      "medians": {
+        "baseline": {
+          "peakRSSBytes": 32980992,
+          "retainedBytes": 1587396
+        },
+        "candidate": {
+          "peakRSSBytes": 32915456,
+          "retainedBytes": 1587500
+        }
+      },
+      "maximumCandidateMedianRSSBytes": 49758208,
+      "workMatchesExactly": true,
+      "passes": true
+    }
+  ],
+  "binaryHashesUnchanged": true,
+  "passes": true
+}

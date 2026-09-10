@@ -1,0 +1,62 @@
+[Warning: Directory access failure: /Users/jearly/Documents/MATLAB]
+CI package: Distributions 2.0.0 (/Users/jearly/Documents/OceanKitRepositories/OceanKit/Distributions-2.0.0)
+CI package: SplineCore 2.2.0 (/Users/jearly/Documents/OceanKitRepositories/OceanKit/SplineCore-2.2.0)
+CI package: chebfun 5.7.0 (/Users/jearly/Documents/OceanKitRepositories/OceanKit/chebfun-5.7.0)
+CI package: InternalModes 1.3.0 (/Users/jearly/Documents/OceanKitRepositories/OceanKit/InternalModes-1.3.0)
+CI package: NetCDF 1.0.2 (/Users/jearly/Documents/OceanKitRepositories/OceanKit/NetCDF-1.0.2)
+CI package: ClassAnnotations 1.2.1 (/Users/jearly/Documents/OceanKitRepositories/OceanKit/ClassAnnotations-1.2.1)
+CI package: ClassDocumentation 1.3.2 (/Users/jearly/Documents/OceanKitRepositories/OceanKit/ClassDocumentation-1.3.2)
+CI package: WaveVortexModel 4.3.0 (/Users/jearly/Documents/OceanKitRepositories/wvm-v4-cpp-adoption-audit)
+BLAS: trying environment BLAS_VERSION...
+BLAS: loading libmwAF_BLAS_ilp64.dylib
+BLAS: loaded libmwAF_BLAS_ilp64.dylib@0x933fb8b0
+building 12 boussinesq transformation matrices...1...finished.
+building 6 boussinesq transformation matrices...1...finished.
+WARNING: package sun.awt.X11 not in java.desktop
+WARNING: package sun.awt.X11 not in java.desktop
+            rowCount: 1784
+        witnessCount: 68
+    unqualifiedCount: 822
+
+Running TestPortableCompatibilityMatrix
+building 12 boussinesq transformation matrices...1...finished.
+building 6 boussinesq transformation matrices...1...finished.
+.building 12 boussinesq transformation matrices...1...finished.
+building 6 boussinesq transformation matrices...1...finished.
+.....
+Done TestPortableCompatibilityMatrix
+__________
+
+  1×6 TestResult array with properties:
+
+    Name
+    Passed
+    Failed
+    Incomplete
+    Duration
+    Details
+
+Totals:
+   6 Passed, 0 Failed, 0 Incomplete.
+   24.0309 seconds testing time.
+
+tools/portableCompatibilityDefinition.m
+  4×1 struct array with fields:
+
+    id
+    message
+    fix
+    line
+    column
+
+{Error using assert
+Assertion failed.
+
+Error in wvm306_matrix (line 10)
+for k=1:numel(files), findings=checkcode(fullfile(root,files{k}),'-id'); disp(files{k}); disp(findings); assert(isempty(findings)); end
+                                                                                                         ^^^^^^^^^^^^^^^^^^^^^^^^^
+Error in run (line 112)
+evalin('caller', strcat(scriptStem, ';'));
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+}
+BLAS: unloading libraries

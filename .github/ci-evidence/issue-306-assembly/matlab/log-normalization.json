@@ -1,0 +1,26 @@
+[
+  {
+    "path": ".github/ci-evidence/issue-306-assembly/matlab/initial-structural.log",
+    "rawSHA256": "17d65994aff78bf8f11d6c27dd326466d3a355217b6aa31241b19dd6f2808b76",
+    "sha256": "d140561514165845dba34d80b7c1de0a7055bd8be08b5199fcd05f76990e7021",
+    "normalization": "Removed trailing whitespace and terminal backspace markers; numerical and result text preserved."
+  },
+  {
+    "path": ".github/ci-evidence/issue-306-assembly/matlab/observer-graphs.log",
+    "rawSHA256": "b808b65fb20e6236ce8df9a74e2a1b26e56891fc67e3e743a811488476817d43",
+    "sha256": "2eb0969ec03361feb749fa4b31cfe0bbcaa762f7c29d1451127a26f4ff6baf06",
+    "normalization": "Removed trailing whitespace and terminal backspace markers; numerical and result text preserved."
+  },
+  {
+    "path": ".github/ci-evidence/issue-306-assembly/matlab/concurrent-source-change.log",
+    "rawSHA256": "bce0831f278ca950c11d591cd45a1d53a1df6ec38f33bfb839489ca2958ec980",
+    "sha256": "da430f94c385df7228ce76ab3204adb3852b95f24bc470143ed70a5a053b76a1",
+    "normalization": "Replaced the duplicate complete JSON dump with its exact source-digest difference and result summary."
+  },
+  {
+    "path": ".github/ci-evidence/issue-306-assembly/matlab/final-structural.log",
+    "rawSHA256": "3137926e5e42eb7b2d46fc4c72e23009077a60ef9f9538564cfc7486ac443ba7",
+    "sha256": "f9b3830a7792c52eec1de8e1bbed26bb32351a45124094fbfd8019355c6a8bfa",
+    "normalization": "Removed trailing whitespace and terminal backspace markers; result text preserved."
+  }
+]
