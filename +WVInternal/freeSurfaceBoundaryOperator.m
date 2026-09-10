@@ -16,7 +16,7 @@ arguments (Input)
 end
 coefficientLayout = WVInternal.freeSurfaceRealCoefficientLayout(wvt);
 template = coefficientLayout.unpack(zeros(coefficientLayout.dimension,1));
-selected = [1,1+wvt.activeEndpoint];
+selected = [1,1+wvt.activeEndpoint(:).'];
 allNames = ["ssh","surface","bottom"];
 names = allNames(selected);
 nTrace = length(selected);
@@ -30,14 +30,15 @@ for page = 1:length(blocks)
     qEta = -(wvt.f/wvt.g)*wvt.apvG([end,1],:)./mu;
     zeroSSH = -(wvt.f/wvt.g)*wvt.zeroAPVF(end,:,page)/wvt.khUnique(page)^2;
     zeroEta = -(wvt.f/wvt.g)*wvt.zeroAPVG([end,1],:,page)/wvt.khUnique(page)^2;
-    block = [qSSH,zeroSSH;qEta(1,:)-qSSH,zeroEta(1,:)-zeroSSH;qEta(2,:),zeroEta(2,:)];
     count = wvt.waveModeCountByKh(page);
+    block = zeros(3,nq+n0+2*count);
+    block(:,1:nq+n0) = [qSSH,zeroSSH;qEta(1,:)-qSSH,zeroEta(1,:)-zeroSSH;qEta(2,:),zeroEta(2,:)];
     if count>0
         modes = 1:count;
         wave = WVInternal.freeSurfaceWavePolarization(wvt.waveF(:,modes,page),wvt.waveG(:,modes,page),wvt.waveEquivalentDepth(modes,page),wvt.khUnique(page),0,f=wvt.f,g=wvt.g,rho0=wvt.rho0);
         waveSSH = reshape(wave.ssh,1,[]);
         waveEta = reshape(wave.eta([end,1],:,:),2,[]);
-        block = [block,[waveSSH;waveEta(1,:)-waveSSH;waveEta(2,:)]];
+        block(:,nq+n0+1:end) = [waveSSH;waveEta(1,:)-waveSSH;waveEta(2,:)];
     end
     blocks{page} = block(selected,:);
 end
