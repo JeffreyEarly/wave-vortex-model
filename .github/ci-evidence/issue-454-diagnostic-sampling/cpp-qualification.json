@@ -1,0 +1,62 @@
+{
+  "schemaIdentifier": "wvm-issue-454-cpp-validation-receipt-v1",
+  "receiptCreatedAtUtc": "2026-09-10T18:37:57Z",
+  "repository": "/Users/jearly/Documents/OceanKitRepositories/wvm-v4-issue454-sampling",
+  "branch": "issue-454-diagnostic-sampling",
+  "implementationCommit": "ec2802519246ad518243657bb40ffb04e04cf6f9",
+  "currentCommit": "d1ef3303bc93b412f3c55b60c873d3681cf5124f",
+  "sourceClosure": {
+    "scope": "PortableRuntime/include, PortableRuntime/src, PortableRuntime/app, and PortableRuntime/CMakeLists.txt complete regular-file closure",
+    "sha256": "e098361ae9aebc5ffb69239489034e5c311107139993b668e7af7da64acc64c8",
+    "unchangedAfterImplementationCommit": true
+  },
+  "artifacts": [
+    {
+      "path": "/private/tmp/wvm454-sampling-native-release/WVStratifiedQGFieldDump",
+      "sha256": "dcc868554c2c8a6d1c0399c7ceb3d7be789cfa0d29cf1957be2ea8baaae96a68"
+    },
+    {
+      "path": "/private/tmp/wvm454-sampling-native-release/wave-vortex-run",
+      "sha256": "c8e87d1c51a3f30e634fd33c24a7df2ff612973f52419d9a24908c86a6bc12bd"
+    }
+  ],
+  "nativeRelease": {
+    "buildDirectory": "/private/tmp/wvm454-sampling-native-release",
+    "configureCommand": "cmake -S PortableRuntime -B /private/tmp/wvm454-sampling-native-release -DCMAKE_BUILD_TYPE=Release -DWV_RUNTIME_ENABLE_NATIVE_FFTW=ON -DWV_RUNTIME_FFTW_ROOT=/Users/jearly/Documents/OceanKitRepositories/wave-vortex-model/.compiled-backend-cache/provider/native-neon-pthreads -DWV_ENABLE_ACCELERATE=ON",
+    "buildCommand": "cmake --build /private/tmp/wvm454-sampling-native-release --target TestWVFieldEvaluation TestWVDensityFieldEvaluation TestWVForcingTendencies TestWVPortableVariableCatalog TestWVObservationOccurrence TestWVObserverAdapter TestWVObserverOutputEvaluation WVStratifiedQGFieldDump wave-vortex-run -j 6",
+    "rawLogPath": null,
+    "rawLogNote": "Commands were run interactively through the Codex command tool; no standalone raw log was persisted.",
+    "tests": [
+      {"command": "/private/tmp/wvm454-sampling-native-release/TestWVFieldEvaluation", "result": "passed"},
+      {"command": "/private/tmp/wvm454-sampling-native-release/TestWVDensityFieldEvaluation", "result": "passed"},
+      {"command": "/private/tmp/wvm454-sampling-native-release/TestWVForcingTendencies", "result": "passed"},
+      {"command": "/private/tmp/wvm454-sampling-native-release/TestWVPortableVariableCatalog", "result": "passed"},
+      {"command": "/private/tmp/wvm454-sampling-native-release/TestWVObservationOccurrence", "result": "passed"},
+      {"command": "/private/tmp/wvm454-sampling-native-release/TestWVObserverAdapter", "result": "passed"},
+      {"command": "/private/tmp/wvm454-sampling-native-release/TestWVObserverOutputEvaluation", "result": "passed"}
+    ]
+  },
+  "addressSanitizer": {
+    "buildDirectory": "/private/tmp/wvm454-sampling-asan",
+    "configureCommand": "cmake -S PortableRuntime -B /private/tmp/wvm454-sampling-asan -DCMAKE_BUILD_TYPE=Debug '-DCMAKE_CXX_FLAGS=-fsanitize=address -fno-omit-frame-pointer' '-DCMAKE_EXE_LINKER_FLAGS=-fsanitize=address'",
+    "buildCommand": "cmake --build /private/tmp/wvm454-sampling-asan --target TestWVFieldEvaluation TestWVDensityFieldEvaluation TestWVForcingTendencies TestWVPortableVariableCatalog TestWVObservationOccurrence TestWVObserverAdapter TestWVObserverOutputEvaluation -j 6",
+    "rawLogPath": null,
+    "rawLogNote": "Commands were run interactively through the Codex command tool; no standalone raw log was persisted.",
+    "tests": [
+      {"command": "/private/tmp/wvm454-sampling-asan/TestWVFieldEvaluation", "result": "passed"},
+      {"command": "/private/tmp/wvm454-sampling-asan/TestWVDensityFieldEvaluation", "result": "passed"},
+      {"command": "/private/tmp/wvm454-sampling-asan/TestWVForcingTendencies", "result": "passed"},
+      {"command": "/private/tmp/wvm454-sampling-asan/TestWVPortableVariableCatalog", "result": "passed"},
+      {"command": "/private/tmp/wvm454-sampling-asan/TestWVObservationOccurrence", "result": "passed"},
+      {"command": "/private/tmp/wvm454-sampling-asan/TestWVObserverAdapter", "result": "passed"},
+      {"command": "/private/tmp/wvm454-sampling-asan/TestWVObserverOutputEvaluation", "result": "passed"}
+    ]
+  },
+  "additionalChecks": [
+    {"command": "git diff --check", "result": "passed"}
+  ],
+  "notes": [
+    "No builds or numerical jobs were run while creating this receipt.",
+    "The current commit includes a later mainline merge; the recorded PortableRuntime source-closure hash remains identical to the tested implementation closure."
+  ]
+}
