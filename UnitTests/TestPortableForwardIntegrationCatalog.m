@@ -210,7 +210,8 @@ classdef TestPortableForwardIntegrationCatalog < matlab.unittest.TestCase
                 "CompiledKernel/src/WVTransformConstantStratificationKernel.cpp", ...
                 "PortableRuntime/src/WVFieldEvaluationService.cpp","PortableRuntime/src/WVStratifiedFieldEvaluationAdapter.cpp", ...
                 "PortableRuntime/src/WVBarotropicQGFieldEvaluationAdapter.cpp"];
-            required = [required,"PortableRuntime/app/WVRunnerVariablePolicy.cpp","PortableRuntime/app/WVRunnerVariablePolicy.hpp"];
+            required = [required,"PortableRuntime/CMakeLists.txt","CompiledKernel/CMakeLists.txt", ...
+                "PortableRuntime/app/WVRunnerVariablePolicy.cpp","PortableRuntime/app/WVRunnerVariablePolicy.hpp"];
             hashes = struct(path={},sha256={});
             for path = required
                 content = "function representativeLifecycleMatchesMatlab(testCase,configuration)"+newline+"end"+newline;
