@@ -1,5 +1,7 @@
 # Modal stage versus instantaneous strong equations
 
+> Historical evidence. This report describes the retired weak/pressure implementation or its comparison studies. The executable solvers have been removed; see the [direct runtime qualification](../../Documentation/Validation/NonlinearFreeSurface/direct-runtime-qualification.md) for the current implementation. Historical source links refer to revision `7b9ccda7`.
+
 The strong velocity and displacement residuals decrease with vertical inventory and grid refinement for the specified mixed seed. The pressure integration-by-parts defect is at roundoff throughout. The remaining **retained** strong residual is the nonzero constraint reaction, not a physical pressure defect. This supplies bounded consistency evidence, but does not establish exact finite-dimensional momentum or qualify an evolved trajectory for activation.
 
 ## Control and comparison

@@ -1,5 +1,7 @@
 # Forcing integration foundation
 
+> Historical evidence. This report describes the retired weak/pressure implementation or its comparison studies. The executable solvers have been removed; see the [direct runtime qualification](../../Documentation/Validation/NonlinearFreeSurface/direct-runtime-qualification.md) for the current implementation. Historical source links refer to revision `7b9ccda7`.
+
 The base registry calls the protected `validateForcingInventory(self,forcing)` hook after resolving names and sorting priorities, before committing state or firing removal/change callbacks. The base hook is a no-op. The free-surface Boussinesq override accepts reference-coordinate prescribed sources in linear mode; physical-coordinate sources require nonlinear advection in the effective inventory. Nonlinear advection requires existing `shouldAntialias` and `shouldCheckQuadraticAliasing` qualification, and only advection/prescribed-source classes are supported. Registration never reselects modes.
 
 `nonlinearAdvectionSources(self,stage)` returns the four hatted zero-pressure excesses $F_{\rm full}(p=0)-(f\hat v,-f\hat u,-N^2\eta,\hat w)$. It uses the existing full mapped tendency, including its geometric vertical-momentum coupling. Optional shared hatted/physical/thermodynamic fields avoid spectral reconstruction and thermodynamic reevaluation; the standalone path uses the transform's cached thermodynamics and performs no pressure or weak solve. Portable implementation capability remains unavailable for this transform, while legacy contracts remain supported.

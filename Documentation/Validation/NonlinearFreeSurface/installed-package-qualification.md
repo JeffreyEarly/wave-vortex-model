@@ -1,5 +1,7 @@
 # Native installed-package consumer
 
+> Historical evidence. This report describes the retired weak/pressure implementation or its comparison studies. The executable solvers have been removed; see the [direct runtime qualification](direct-runtime-qualification.md) for the current implementation. Historical source links refer to revision `7b9ccda7`.
+
 The nonlinear consumer passed on MATLAB R2025b Update 4, the declared compatibility floor, on 9 September 2026. Source revision `705f6ae99a500bab9548f7809e8d6fd6b4e48f0f` was exported through the existing `ci_release` workflow with no version bump, no documentation rebuild and no publication. All 301 installed runtime MATLAB files and the manifest were subsequently byte-compared against the integration worktree; later documentation/test changes did not change that runtime payload.
 
 A native temporary MPM install resolved exactly ClassAnnotations 1.2.1, Distributions 2.0.0, InternalModes 2.0.0-beta.4, NetCDF 1.0.2, SplineCore 2.2.0, chebfun 5.7.0 and this WVM source export. The development manifest still reports 4.3.0; this check neither changes that metadata nor publishes a release. All transform, forcing, nonlinear-helper and dependency symbols resolved within their temporary installed roots. WVM authoring tools and tests were unavailable during the consumer calculation; dependency test paths were explicitly removed.

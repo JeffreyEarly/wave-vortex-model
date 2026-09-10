@@ -1,10 +1,12 @@
 function diagnostics = nonlinearEnergy(self)
 % Evaluate the full physical-volume kinetic, APE and surface energy.
 %
-% This total-state inventory uses the moving-volume Jacobian, exact parcel
-% thermodynamics, and the matching full surface term. It is distinct from
+% This total-state inventory uses the moving-volume Jacobian, parcel
+% thermodynamics with upper-constant reference density, and g*ssh^2/2. It is distinct from
 % the existing quadratic physicalEnergy and totalEnergy diagnostics. There
-% is no additive component partition for this nonlinear inventory.
+% is no additive component partition for this nonlinear inventory. Modal
+% pressure in the RHS supplies a quadratic-order approximation; this energy
+% is a diagnostic, not an exactly imposed finite-inventory invariant.
 %
 % - Topic: Analyze physical energy
 % - Declaration: diagnostics = nonlinearEnergy()

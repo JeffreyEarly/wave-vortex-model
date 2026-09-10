@@ -32,7 +32,7 @@ arguments
 end
 
 if isa(self,'WVTransformFreeSurfaceBoussinesq')
-    error('WVTransformFreeSurfaceBoussinesq:UseCanonicalFamilies','Three-array energy flux does not describe this six-family transform. Use coefficientTendency diagnostics for prescribed work and constraint reaction, and nonlinearEnergy for full energy.');
+    error('WVTransformFreeSurfaceBoussinesq:UseCanonicalFamilies','Three-array energy flux does not describe this six-family transform. Use coefficientTendency diagnostics for physical work and the resolved energy rate, and nonlinearEnergy for the moving-volume inventory.');
 end
 
 % The phase is tricky here. It is wound forward for the flux,

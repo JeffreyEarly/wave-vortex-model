@@ -6,13 +6,13 @@ classdef TestFreeSurfaceThermodynamics < matlab.unittest.TestCase
             [z,eta,ssh] = admissibleFields(wvt);
             fields = context.evaluate(z,eta,ssh);
             N2 = 1e-4;
-            testCase.verifyEqual(fields.buoyancy,-N2*eta,AbsTol=2e-15)
-            testCase.verifyEqual(fields.ape,0.5*N2*eta.^2,AbsTol=1e-11)
-            testCase.verifyEqual(fields.pressureSurface,wvt.g*ssh-0.5*N2*ssh.^2,AbsTol=1e-12)
-            testCase.verifyEqual(fields.energySurface,0.5*wvt.g*ssh.^2-N2*ssh.^3/6,AbsTol=1e-12)
+            testCase.verifyEqual(fields.buoyancy,-N2*(eta-max(z,0)),AbsTol=2e-15)
+            testCase.verifyEqual(fields.ape,0.5*N2*(eta.^2-max(z,0).^2),AbsTol=1e-11)
+            testCase.verifyEqual(fields.pressureSurface,wvt.g*ssh,AbsTol=1e-12)
+            testCase.verifyEqual(fields.energySurface,0.5*wvt.g*ssh.^2,AbsTol=1e-12)
             testCase.verifyEqual(fields.N2AtLabel,N2+zeros(size(z)),AbsTol=1e-17)
             testCase.verifyEqual(fields.apeEta,N2*eta,AbsTol=1e-15)
-            testCase.verifyEqual(fields.apeZ,zeros(size(z)),AbsTol=3e-15)
+            testCase.verifyEqual(fields.apeZ,-N2*max(z,0),AbsTol=3e-15)
             testCase.verifyEqual(fields.density,wvt.rho0*(1-N2*(z-eta)/wvt.g),AbsTol=5e-13)
         end
 
@@ -24,18 +24,15 @@ classdef TestFreeSurfaceThermodynamics < matlab.unittest.TestCase
             r = z-eta;
             I = @(x)N2*expm1(rate*x)/rate;
             J = @(x)N2*(expm1(rate*x)-rate*x)/rate^2;
-            K = @(x)N2*(expm1(rate*x)-rate*x-0.5*(rate*x).^2)/rate^3;
-            referenceI = I(z); referenceI(z>0)=N2*z(z>0);
-            referenceJ = J(z); referenceJ(z>0)=0.5*N2*z(z>0).^2;
-            surfaceJ = J(ssh); surfaceJ(ssh>0)=0.5*N2*ssh(ssh>0).^2;
-            surfaceK = K(ssh); surfaceK(ssh>0)=N2*ssh(ssh>0).^3/6;
+            referenceI = I(z); referenceI(z>0)=0;
+            referenceJ = J(z); referenceJ(z>0)=0;
             fields = context.evaluate(z,eta,ssh);
             testCase.verifyEqual(fields.buoyancy,I(r)-referenceI,AbsTol=2e-15)
             testCase.verifyEqual(fields.ape,-eta.*I(r)-J(r)+referenceJ,AbsTol=1e-11)
             testCase.verifyEqual(fields.apeEta,eta.*N2.*exp(rate*r),AbsTol=2e-15)
             testCase.verifyEqual(fields.apeZ,-eta.*N2.*exp(rate*r)-I(r)+referenceI,AbsTol=3e-15)
-            testCase.verifyEqual(fields.pressureSurface,wvt.g*ssh-surfaceJ,AbsTol=1e-12)
-            testCase.verifyEqual(fields.energySurface,0.5*wvt.g*ssh.^2-surfaceK,AbsTol=1e-11)
+            testCase.verifyEqual(fields.pressureSurface,wvt.g*ssh,AbsTol=1e-12)
+            testCase.verifyEqual(fields.energySurface,0.5*wvt.g*ssh.^2,AbsTol=1e-11)
             testCase.verifyEqual(fields.referencePressure,wvt.rho0*(-wvt.g*z+referenceJ),AbsTol=1e-9)
             % The factory freezes profile/constants and does not depend on
             % modal phase clocks or prognostic coefficient mutations.
@@ -51,8 +48,8 @@ classdef TestFreeSurfaceThermodynamics < matlab.unittest.TestCase
             r = z-eta;
             I = @(x)N2*(x+a*D/(degree+1)*((1+x/D).^(degree+1)-1));
             J = @(x)N2*(x.^2/2+a*D^2/((degree+1)*(degree+2))*((1+x/D).^(degree+2)-1-(degree+2)*x/D));
-            referenceI = I(z); referenceI(z>0)=N2*(1+a)*z(z>0);
-            referenceJ = J(z); referenceJ(z>0)=0.5*N2*(1+a)*z(z>0).^2;
+            referenceI = I(z); referenceI(z>0)=0;
+            referenceJ = J(z); referenceJ(z>0)=0;
             fields = context.evaluate(z,eta,ssh);
             testCase.verifyEqual(fields.buoyancy,I(r)-referenceI,AbsTol=3e-15)
             testCase.verifyEqual(fields.ape,-eta.*I(r)-J(r)+referenceJ,AbsTol=1e-11)

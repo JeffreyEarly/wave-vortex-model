@@ -1,5 +1,7 @@
 # Physical field contract qualification
 
+> Historical evidence. This report describes the retired weak/pressure implementation or its comparison studies. The executable solvers have been removed; see the [direct runtime qualification](direct-runtime-qualification.md) for the current implementation. Historical source links refer to revision `7b9ccda7`.
+
 `UnitTests/TestFreeSurfacePhysicalContract.m` qualifies the public field changes at root commit `a25305d5` on a constant-stratification 4-by-4-by-65 mixed state with both wave signs, two horizontal surface slopes, and valid MDA mean endpoint offsets. This increment changes only this test and note; no core fixes were needed.
 
 The four focused methods cover:

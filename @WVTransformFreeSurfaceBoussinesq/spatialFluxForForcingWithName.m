@@ -1,11 +1,12 @@
 function [u,v,w,eta] = spatialFluxForForcingWithName(self,name)
-% Return one forcing's pressure-free hatted equation-source increments.
+% Return one forcing's hatted equation-source increments.
 %
-% Momentum increments are reference-variable accelerations. A prescribed
-% physical source is mapped using the total surface geometry. Nonlinear
-% advection returns the full mapped nonlinear excess beyond the analytical
-% linear equations. No pressure or constraint response is included; use
-% fluxForForcing for the corresponding resolved coefficient response.
+% Physical momentum sources are mapped using the total surface geometry.
+% Their vertical coordinate coupling accounts for the source contribution
+% to H in Appendix C; nonlinear advection evaluates H without forcing.
+% Reference sources already specify hatted accelerations and are unchanged.
+% Nonlinear advection includes -N-P using the reconstructed modal pressure.
+% fluxForForcing applies the source projector to these same increments.
 %
 % - Topic: Project physical sources
 % - Declaration: [u,v,w,eta] = spatialFluxForForcingWithName(name)

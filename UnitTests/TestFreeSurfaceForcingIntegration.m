@@ -1,20 +1,18 @@
 classdef TestFreeSurfaceForcingIntegration < matlab.unittest.TestCase
     methods (TestClassSetup)
-        function addStudyHelpers(testCase)
-            root = fileparts(fileparts(mfilename('fullpath')));
-            testCase.applyFixture(matlab.unittest.fixtures.PathFixture(fullfile(root,'tools','nonlinear-study')));
+        function addStudyOperators(testCase)
+            sourceRoot = fileparts(fileparts(mfilename('fullpath')));
+            testCase.applyFixture(matlab.unittest.fixtures.PathFixture(fullfile(sourceRoot,'tools','nonlinear-study')));
         end
     end
 
     methods (Test, TestTags="full")
         function effectiveNamedInventoryIsValidatedAtomically(testCase)
-            wvt = newTransform(true,true);
+            wvt = newTransform();
             advection = WVNonlinearAdvection(wvt);
             reference = WVPrescribedBoussinesqSource(wvt);
             physical = WVPrescribedBoussinesqSource(wvt,sourceCoordinates="physical");
             testCase.verifyEmpty(wvt.forcing)
-            % Both sources have the same registry name. Validate the final
-            % effective object, not the physical source replaced in-batch.
             wvt.addForcing([physical reference]);
             testCase.verifyEqual(wvt.forcing,reference)
             testCase.verifyError(@()wvt.setForcing([reference physical]),'WVTransformFreeSurfaceBoussinesq:PhysicalSourceRequiresAdvection')
@@ -28,7 +26,6 @@ classdef TestFreeSurfaceForcingIntegration < matlab.unittest.TestCase
             expected = wvt.forcing;
             testCase.verifyError(@()wvt.removeForcing(advection),'WVTransformFreeSurfaceBoussinesq:PhysicalSourceRequiresAdvection')
             testCase.verifyEqual(wvt.forcing,expected)
-            % Replacing the physical source permits return to linear mode.
             wvt.addForcing(reference);
             wvt.removeForcing(advection);
             testCase.verifyEqual(wvt.forcing,reference)
@@ -37,91 +34,94 @@ classdef TestFreeSurfaceForcingIntegration < matlab.unittest.TestCase
             testCase.verifyEmpty(wvt.forcing)
         end
 
-        function activationRequiresTheExistingQualifiedInventory(testCase)
-            for flags = {[true false],[false true]}
-                value = flags{1};
-                wvt = newTransform(value(1),value(2));
-                source = WVPrescribedBoussinesqSource(wvt);
-                wvt.addForcing(source);
-                inventory = wvt.scientificState();
-                testCase.verifyError(@()wvt.addForcing(WVNonlinearAdvection(wvt)),'WVTransformFreeSurfaceBoussinesq:NonlinearInventoryUnqualified')
-                testCase.verifyEqual(wvt.forcing,source)
-                testCase.verifyEqual(wvt.scientificState(),inventory)
-            end
-            legacy = WVTransformConstantStratification([40e3 30e3 2e3],[8 6 5],N0=5.2e-3,latitude=45,shouldAntialias=false);
-            control = WVNonlinearAdvection(legacy);
-            legacy.setForcing(control);
-            contract = control.portableImplementationContract();
-            testCase.verifyEqual(contract.capabilityStatus,"supported")
-            qualified = newTransform(true,true);
-            mapped = WVNonlinearAdvection(qualified);
-            contract = mapped.portableImplementationContract();
-            testCase.verifyEqual(contract.capabilityStatus,"unavailable")
-            testCase.verifyNotEmpty(contract.reason)
+        function referenceSourcesRemainUnmappedInLinearEvolution(testCase)
+            wvt = newTransform();
+            [X,Y,Z] = ndgrid(wvt.x,wvt.y,wvt.z);
+            source = WVPrescribedBoussinesqSource(wvt,uRate=1e-7*cos(2*pi*X/wvt.Lx),vRate=2e-7*sin(2*pi*Y/wvt.Ly),wRate=3e-8*(1+Z/wvt.Lz),etaRate=1e-6*(1+Z/(2*wvt.Lz)),frequency=.003,referenceTime=29,phase=.4);
+            wvt.t = 327; wvt.t0 = -17;
+            wvt.addForcing(source);
+            scale = cos(source.frequency*(wvt.t-source.referenceTime)+source.phase);
+            [actual.u,actual.v,actual.w,actual.eta] = wvt.spatialFluxForForcingWithName(source.name);
+            expected = struct(u=scale*source.uRate,v=scale*source.vRate,w=scale*source.wRate,eta=scale*source.etaRate);
+            for name = ["u","v","w","eta"], testCase.verifyEqual(actual.(name),expected.(name)); end
+            [rate,~,diagnostics] = wvt.coefficientTendency();
+            testCase.verifyEqual(rate,wvt.projectSources(expected))
+            testCase.verifyEmpty(fieldnames(diagnostics))
+            testCase.verifyEqual([wvt.t,wvt.t0],[327,-17])
         end
 
-        function sharedCallbackMatchesIndependentMappedMeanFlow(testCase)
-            wvt = newTransform(true,true);
-            force = WVNonlinearAdvection(wvt);
-            [X,Y,S] = ndgrid(wvt.x,wvt.y,1+wvt.z/wvt.Lz);
-            k = 2*pi/wvt.Lx;
-            l = 2*pi/wvt.Ly;
-            ssh = cos(k*X(:,:,1))+.7*sin(l*Y(:,:,1));
-            sx = -k*sin(k*X(:,:,1));
-            sy = .7*l*cos(l*Y(:,:,1));
-            sxx = -k^2*cos(k*X(:,:,1));
-            syy = -.7*l^2*sin(l*Y(:,:,1));
-            U = .03; V = .02;
-            zero = zeros(size(X));
-            hatted = struct(u=U+zero,v=V+zero,w=zero,eta=S.*ssh+2*(2*S-1),ssh=ssh);
-            physical = WVInternal.freeSurfacePhysicalFields(hatted,wvt.z,wvt.Lz,sx,sy);
-            thermodynamics = WVInternal.freeSurfaceThermodynamics(wvt);
-            stage = struct(hatted=hatted,physical=physical,thermodynamics=thermodynamics.evaluate(physical.z,hatted.eta,ssh));
-            gamma = physical.gamma;
-            Q = U*sx+V*sy;
-            expected.u = U*Q./(wvt.Lz*gamma.^2)+zero;
-            expected.v = V*Q./(wvt.Lz*gamma.^2)+zero;
-            expected.w = -S.*(U^2*sxx+V^2*syy)./gamma.^2-S.*wvt.f.*(V*sx-U*sy)./gamma;
-            expected.eta = zero;
-            base = 1e-8+zero;
-            [actual.u,actual.v,actual.w,actual.eta] = force.addNonhydrostaticSpatialForcing(wvt,base,base,base,base,stage);
-            % Analytic derivatives versus full-grid FFT product derivatives;
-            % the small rational metric tail is below the absolute bound.
-            for name = ["u","v","w","eta"]
-                testCase.verifyEqual(actual.(name),base+expected.(name),AbsTol=2e-14)
-            end
-            testCase.verifyGreaterThan(max(abs(expected.u),[],'all'),1e-12)
-            testCase.verifyGreaterThan(max(abs(expected.w),[],'all'),1e-11)
+        function physicalAccelerationsUseTheAppendixCMapOnce(testCase)
+            [wvt,~,~] = seededTransform();
+            [X,Y,Z] = ndgrid(wvt.x,wvt.y,wvt.z);
+            source = WVPrescribedBoussinesqSource(wvt,uRate=1e-7*(1+Z/wvt.Lz).*cos(2*pi*X/wvt.Lx),vRate=2e-7*(Z/wvt.Lz).^2.*sin(2*pi*Y/wvt.Ly),wRate=3e-8*(1+Z/wvt.Lz).^2,etaRate=1e-6*(1+.1*cos(2*pi*X/wvt.Lx)).*(1+Z/(2*wvt.Lz)),sourceCoordinates="physical",frequency=.003,referenceTime=29,phase=.4);
+            wvt.setForcing([source WVNonlinearAdvection(wvt)]);
+            scale = cos(source.frequency*(wvt.t-source.referenceTime)+source.phase);
+            Su = scale*source.uRate; Sv = scale*source.vRate;
+            Sw = scale*source.wRate; Seta = scale*source.etaRate;
+            ssh = wvt.ssh; gamma = 1+ssh/wvt.Lz;
+            alpha = reshape(1+wvt.z/wvt.Lz,1,1,[]);
+            expected = struct(u=gamma.*Su,v=gamma.*Sv,w=Sw-alpha.*wvt.diffX(ssh).*Su-alpha.*wvt.diffY(ssh).*Sv,eta=Seta);
+            [actual.u,actual.v,actual.w,actual.eta] = wvt.spatialFluxForForcingWithName(source.name);
+            for name = ["u","v","w","eta"], testCase.verifyEqual(actual.(name),expected.(name),AbsTol=2e-20); end
+
+            wvt.addOperation(SpatialForcingOperation(wvt));
+            testCase.verifyEqual(wvt.Fu_prescribed_Boussinesq_source,expected.u,AbsTol=2e-20)
+            testCase.verifyEqual(wvt.Fv_prescribed_Boussinesq_source,expected.v,AbsTol=2e-20)
+            testCase.verifyEqual(wvt.Fw_prescribed_Boussinesq_source,expected.w,AbsTol=2e-20)
+            testCase.verifyEqual(wvt.Feta_prescribed_Boussinesq_source,expected.eta,AbsTol=2e-20)
         end
 
-        function standaloneCallbackUsesCurrentHattedFieldsWithoutSolving(testCase)
-            wvt = newTransform(true,true);
-            helper = freeSurfaceWeakStudyHelpers();
-            state = helper.seedState(wvt);
-            for name = string(fieldnames(state)).', wvt.(name)=state.(name); end
-            wvt.t = 37; wvt.t0 = -17;
-            spectral = wvt.reconstructSpectralState();
-            for name = ["u","v","w","eta","ssh"]
-                hatted.(name) = wvt.transformToSpatialDomainWithFourier(spectral.(name));
+        function forcingDecompositionSumsToTheSingleProjectedTendency(testCase)
+            [wvt,~,~] = seededTransform();
+            [X,Y,Z] = ndgrid(wvt.x,wvt.y,wvt.z);
+            source = WVPrescribedBoussinesqSource(wvt,uRate=1e-7*(1+Z/wvt.Lz).*cos(2*pi*X/wvt.Lx),vRate=2e-7*(Z/wvt.Lz).^2.*sin(2*pi*Y/wvt.Ly),wRate=3e-8*(1+Z/wvt.Lz).^2,etaRate=1e-6*(1+.1*cos(2*pi*X/wvt.Lx)).*(1+Z/(2*wvt.Lz)),sourceCoordinates="physical",frequency=.003,referenceTime=29,phase=.4);
+            wvt.setForcing([source WVNonlinearAdvection(wvt)]);
+            [advection.u,advection.v,advection.w,advection.eta] = wvt.spatialFluxForForcingWithName("nonlinear advection");
+            [prescribed.u,prescribed.v,prescribed.w,prescribed.eta] = wvt.spatialFluxForForcingWithName(source.name);
+            totalSource = advection;
+            for name = ["u","v","w","eta"], totalSource.(name)=totalSource.(name)+prescribed.(name); end
+            expected = wvt.projectSources(totalSource);
+            [actual,~,diagnostics] = wvt.coefficientTendency();
+            verifyState(testCase,actual,expected,2e-13)
+
+            flux = wvt.fluxForForcing();
+            sumFlux = flux{"nonlinear advection"};
+            prescribedFlux = flux{string(source.name)};
+            for family = string(fieldnames(sumFlux)).'
+                sumFlux.(family) = sumFlux.(family)+prescribedFlux.(family);
             end
-            hatted.ssh = hatted.ssh(:,:,end);
-            physical = WVInternal.freeSurfacePhysicalFields(hatted,wvt.z,wvt.Lz,wvt.diffX(hatted.ssh),wvt.diffY(hatted.ssh));
-            thermo = WVInternal.freeSurfaceThermodynamics(wvt);
-            stage = struct(hatted=hatted,physical=physical,thermodynamics=thermo.evaluate(physical.z,hatted.eta,hatted.ssh));
-            force = WVNonlinearAdvection(wvt);
-            zero = zeros(wvt.Nx,wvt.Ny,wvt.Nz);
-            [direct.u,direct.v,direct.w,direct.eta] = force.addNonhydrostaticSpatialForcing(wvt,zero,zero,zero,zero);
-            [shared.u,shared.v,shared.w,shared.eta] = force.addNonhydrostaticSpatialForcing(wvt,zero,zero,zero,zero,stage);
-            for name = ["u","v","w","eta"]
-                testCase.verifyEqual(direct.(name),shared.(name),AbsTol=1e-15)
-            end
-            testCase.verifyEqual(wvt.coefficientState(),state)
-            testCase.verifyEqual([wvt.t,wvt.t0],[37,-17])
-            testCase.verifyEmpty(wvt.forcing)
+            verifyState(testCase,sumFlux,actual,2e-13)
+            verifyState(testCase,prescribedFlux,wvt.projectSources(prescribed),2e-13)
+
+            fields = wvt.reconstructFields(["u","v","w","eta","ssh"]);
+            scale = cos(source.frequency*(wvt.t-source.referenceTime)+source.phase);
+            gamma = 1+fields.ssh/wvt.Lz;
+            weights = reshape(wvt.verticalQuadratureWeights,1,1,[])/(wvt.Nx*wvt.Ny);
+            expectedWork = sum(weights.*gamma.*scale.*(fields.u.*source.uRate+fields.v.*source.vRate+fields.w.*source.wRate+1e-4*fields.eta.*source.etaRate),'all');
+            testCase.verifyEqual(diagnostics.prescribedWork,expectedWork,AbsTol=2e-16)
+            testCase.verifyTrue(isfinite(diagnostics.energyTendency))
+            testCase.verifyFalse(isfield(diagnostics,'constraintReactionWork'))
+            testCase.verifyEqual([wvt.t,wvt.t0],[327,-17])
         end
     end
 end
 
-function wvt = newTransform(antialias,quadratic)
-wvt = WVTransformFreeSurfaceBoussinesq.fromStratification([1e5 1e5 1000],[8 8 65],N2Function=@(z)1e-4+0*z,shouldAntialias=antialias,shouldCheckQuadraticAliasing=quadratic,apvModeCount=2,mdaModeCount=2,waveModeCount=3,inertialModeCount=2,nEVP=128);
+function wvt = newTransform()
+wvt = WVTransformFreeSurfaceBoussinesq.fromStratification([1e5 1e5 1000],[8 8 65],N2Function=@(z)1e-4+zeros(size(z)),shouldAntialias=true,shouldCheckQuadraticAliasing=true,apvModeCount=2,mdaModeCount=2,waveModeCount=3,inertialModeCount=2,nEVP=128);
+end
+
+function [wvt,study,state] = seededTransform()
+wvt = newTransform();
+wvt.t0 = -17;
+study = manuscriptEvolutionOperators(wvt,"constant",padding=1);
+state = study.seed("mixed",1);
+for family = string(fieldnames(state)).', wvt.(family)=state.(family); end
+wvt.t = 327;
+end
+
+function verifyState(testCase,actual,expected,tolerance)
+for family = string(fieldnames(expected)).'
+    scale = max(abs(expected.(family)),[],'all');
+    testCase.verifyEqual(actual.(family),expected.(family),AbsTol=tolerance*scale+1e-13)
+end
 end

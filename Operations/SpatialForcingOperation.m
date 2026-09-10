@@ -1,7 +1,7 @@
 classdef SpatialForcingOperation < WVOperation
     % Computes spatial forcing contributions for a WVTransform.
     %
-    % Free-surface Boussinesq outputs are pressure-free hatted increments.
+    % Free-surface Boussinesq outputs are hatted increments.
     % Their names are a snapshot of the registry when this operation is
     % created. Same-name replacement uses the current forcing; a removed
     % forcing contributes zero. Recreate the operation to expose new names.
@@ -25,7 +25,7 @@ classdef SpatialForcingOperation < WVOperation
                     for j=1:4
                         variables=["u","v","w","eta"];
                         units='m s-2'; if j==4, units='m s-1'; end
-                        outputVariables((i-1)*4+j)=WVVariableAnnotation(char("F"+variables(j)+"_"+suffix),wvt.spatialDimensionNames(),units,char("pressure-free hatted "+variables(j)+" source from "+string(wvt.forcing(i).name)));
+                        outputVariables((i-1)*4+j)=WVVariableAnnotation(char("F"+variables(j)+"_"+suffix),wvt.spatialDimensionNames(),units,char("hatted "+variables(j)+" source from "+string(wvt.forcing(i).name)));
                     end
                 elseif isa(wvt,"WVTransformBarotropicQG") || isa(wvt,"WVTransformStratifiedQG")
                     name = replace(replace(join( ["Fqgpv_", string(wvt.forcing(i).name)],"")," ","_"),"-","_");

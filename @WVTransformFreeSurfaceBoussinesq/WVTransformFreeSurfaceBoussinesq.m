@@ -16,14 +16,14 @@ classdef WVTransformFreeSurfaceBoussinesq < WVGeometryDoublyPeriodicStratified &
     % Resolution transfer preserves matching physical modes with independent
     % retained counts and reports positive physical reconstruction errors.
     % u/v/w are physical velocities on the moving mesh; u_hat/v_hat/w_hat
-    % expose the modal variables. p_linear and p_full distinguish linear
-    % polarization from the full instantaneous pressure diagnostic. Existing
-    % physicalEnergy/totalEnergy are quadratic; nonlinearEnergy uses full APE
-    % and the matching C1-reference surface term.
+    % expose the modal variables. p is the reconstructed modal pressure.
+    % Existing physicalEnergy/totalEnergy are quadratic; nonlinearEnergy uses
+    % moving-volume kinetic energy, parcel APE and g*ssh^2/2 surface energy.
     % Nonlinear evolution is explicit: construct with shouldAntialias=true and
     % shouldCheckQuadraticAliasing=true, then add WVNonlinearAdvection(wvt).
-    % The full mapped weak solve enforces retained surface/endpoint targets;
-    % its finite-inventory reaction contributes to nonlinear energy change.
+    % The callback projects the manuscript nonlinear sources directly.
+    % Modal pressure supplies the quadratic-order approximation; finite
+    % retained inventories can leave boundary and energy-budget residuals.
     % Bounded refinement and restart evidence are supplied with the example.
     % Adaptive stepping and portable nonlinear execution remain unavailable.
     % Legacy rigid-lid Ap/Am/A0 initialization is not supported here.
@@ -65,16 +65,14 @@ classdef WVTransformFreeSurfaceBoussinesq < WVGeometryDoublyPeriodicStratified &
     end
 
     properties (Constant)
-        % Persisted interpretation of physical fields and full thermodynamics.
+        % Persisted interpretation of physical fields and parcel thermodynamics.
         % - Topic: Save transform state
-        fieldConvention = "physical-velocity-full-c1"
+        fieldConvention = "physical-velocity-upper-constant"
     end
 
     properties (Transient, Access=private)
         % Factors depend only on the immutable scientific representation.
         thermodynamics_ = []
-        pressureSolver_ = []
-        nonlinearSolver_ = []
     end
 
     properties (Transient, SetAccess=private)
@@ -332,10 +330,8 @@ classdef WVTransformFreeSurfaceBoussinesq < WVGeometryDoublyPeriodicStratified &
             self.Aw_p = complex(zeros(nw,nc)); self.Aw_m = complex(zeros(nw,nc));
             self.Ag_q = complex(zeros(nq,nc)); self.Ag_0 = complex(zeros(length(self.activeEndpoint),nc));
             self.Aio = complex(zeros(length(self.inertialMode),1)); self.Amda = zeros(length(self.mdaMode),1);
-            names = setdiff(self.namesOfTransformVariables(),{'p_full'},'stable');
+            names = self.namesOfTransformVariables();
             self.addOperation(self.operationForKnownVariable(names{:}));
-            self.addOperation(self.operationForKnownVariable('p_full'));
-            addlistener(self,'forcingDidChange',@(~,~)self.removeFromVariableCache('p_full'));
             groups = {struct(Aw_p=true,Aw_m=true),struct(Ag_q=true),struct(Ag_0=true),struct(Ag_q=true,Ag_0=true,Amda=true),struct(Aio=true),struct(Amda=true)};
             labels = ["wave","apv","zeroapv","balanced","inertial","mda"];
             for i = 1:length(labels)
@@ -348,7 +344,6 @@ classdef WVTransformFreeSurfaceBoussinesq < WVGeometryDoublyPeriodicStratified &
         state = scientificState(self)
         fields = reconstructFields(self,variableNames,options)
         [varargout] = variableAtPositionWithName(self,x,y,z,variableNames,options)
-        [pressure,diagnostics] = fullPressure(self)
         diagnostics = nonlinearEnergy(self)
         flux = fluxForForcing(self)
         [u,v,w,eta] = spatialFluxForForcingWithName(self,name)
@@ -423,7 +418,7 @@ classdef WVTransformFreeSurfaceBoussinesq < WVGeometryDoublyPeriodicStratified &
     end
 
     methods (Hidden)
-        [u,v,w,eta] = nonlinearAdvectionSources(self,stage)
+        [u,v,w,eta] = nonlinearAdvectionSources(self)
     end
 
     methods (Access = protected)
@@ -436,18 +431,6 @@ classdef WVTransformFreeSurfaceBoussinesq < WVGeometryDoublyPeriodicStratified &
                 self.thermodynamics_ = WVInternal.freeSurfaceThermodynamics(self);
             end
             context = self.thermodynamics_;
-        end
-        function context = nonlinearContext(self)
-            if isempty(self.nonlinearSolver_)
-                self.nonlinearSolver_ = WVInternal.freeSurfaceNonlinearStage(self);
-            end
-            context = self.nonlinearSolver_;
-        end
-        function context = pressureContext(self)
-            if isempty(self.pressureSolver_)
-                self.pressureSolver_ = WVInternal.freeSurfacePressureSolver(self);
-            end
-            context = self.pressureSolver_;
         end
         function validateCoefficient(self,value,name)
             switch name
@@ -469,7 +452,7 @@ classdef WVTransformFreeSurfaceBoussinesq < WVGeometryDoublyPeriodicStratified &
     methods (Static)
         [self,assessment] = fromStratification(Lxyz,Nxyz,options)
         function names = namesOfTransformVariables()
-            names = {'u','v','w','u_hat','v_hat','w_hat','eta','eta_i','p_linear','p_full','ssh','ssu','ssv','w_i','z_physical','qgpv'};
+            names = {'u','v','w','u_hat','v_hat','w_hat','eta','eta_i','p','ssh','ssu','ssv','w_i','z_physical','qgpv'};
         end
         annotations = classDefinedPropertyAnnotations()
         [wvt,ncfile] = waveVortexTransformFromFile(path,options)

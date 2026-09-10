@@ -1,5 +1,7 @@
 # Nonlinear WVModel RK4 and native restart qualification
 
+> Historical evidence. This report describes the retired weak/pressure implementation or its comparison studies. The executable solvers have been removed; see the [direct runtime qualification](direct-runtime-qualification.md) for the current implementation. Historical source links refer to revision `7b9ccda7`.
+
 `TestFreeSurfaceNonlinearRestart` qualifies a bounded integration and persistence path for the full C1 mapped equations. It uses the production `WVModel` fixed RK4 integrator, explicit `WVNonlinearAdvection`, and a small `WVPrescribedBoussinesqSource` declared in physical coordinates. The source includes momentum and total-displacement rates with a nonzero absolute-time frequency and phase.
 
 ## Configuration and independent integration control

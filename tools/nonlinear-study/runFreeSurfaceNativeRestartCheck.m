@@ -27,8 +27,8 @@ if stage=="write"
     wvt = WVTransformFreeSurfaceBoussinesq.fromStratification([1e5 1e5 1000],[8 8 65],args{:},waveModeKappa=base.khUnique);
     assert(any(counts==0) && any(~wvt.activeWaveModes,'all'))
     scientific = wvt.scientificState();
-    helper = freeSurfaceWeakStudyHelpers();
-    seed = helper.seedState(wvt);
+    study = manuscriptEvolutionOperators(wvt,"constant");
+    seed = study.seed("mixed",1);
     seed.Aw_m = 0.35*exp(0.63i)*seed.Aw_p;
     column = find(wvt.kNonzero==0 & wvt.lNonzero>0,1);
     xColumn = find(wvt.kNonzero>0 & wvt.lNonzero==0,1);
@@ -81,9 +81,12 @@ else
     assert(isreal(state.Amda) && isempty(resumed.wvt.verticalModes))
     assert(isequal([resumed.wvt.t,resumed.wvt.t0],[367,-17]))
     assert(isempty(which('IMInternalModes')) && isempty(which('IMSolverSpectral')))
-    [~,~,diagnostics] = resumed.wvt.coefficientTendency();
-    assert(diagnostics.minimumLabel>-resumed.wvt.Lz && diagnostics.maximumLabel<0)
-    result = struct(stage=stage,coefficientError=coefficientError,physicalFieldError=physicalFieldError,energyError=energyError,minimumLabel=diagnostics.minimumLabel,maximumLabel=diagnostics.maximumLabel,solverResidual=diagnostics.solver.relativeResidual,waveModeCounts=expected.counts.',zeroWavePages=nnz(expected.counts==0),inactiveWaveEntries=nnz(~expected.active),modeProviderAvailable=false);
+    resumed.wvt.coefficientTendency();
+    labelFields = resumed.wvt.reconstructFields(["eta","z_physical"]);
+    label = labelFields.z_physical-labelFields.eta;
+    minimumLabel = min(label,[],'all'); maximumLabel = max(label,[],'all');
+    assert(minimumLabel>-resumed.wvt.Lz && maximumLabel<0)
+    result = struct(stage=stage,coefficientError=coefficientError,physicalFieldError=physicalFieldError,energyError=energyError,minimumLabel=minimumLabel,maximumLabel=maximumLabel,waveModeCounts=expected.counts.',zeroWavePages=nnz(expected.counts==0),inactiveWaveEntries=nnz(~expected.active),modeProviderAvailable=false);
     clear cleanup
 end
 fprintf('%s\n',jsonencode(result))
@@ -105,7 +108,7 @@ model.setupIntegrator(integratorType="fixed",deltaT=5);
 end
 
 function names = fieldNames()
-names = ["u","v","w","eta","eta_i","ssh","p_linear","p_full","w_i","z_physical"];
+names = ["u","v","w","eta","eta_i","ssh","p","w_i","z_physical"];
 end
 
 function value = relativeStructError(actual,expected)

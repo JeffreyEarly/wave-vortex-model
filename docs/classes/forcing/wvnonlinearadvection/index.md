@@ -69,7 +69,7 @@ need to be removed when using linear evolution.
 Free-surface Boussinesq transforms remain linear by default. Adding
 this forcing requires horizontal antialiasing and an inventory
 constructed with quadratic-product qualification. Its callback adds
-the full mapped zero-pressure nonlinear excess in hatted coordinates.
+the manuscript -N-P sources in hatted coordinates using modal pressure.
 
 ### Example
 

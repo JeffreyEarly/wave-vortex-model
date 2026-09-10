@@ -1,5 +1,7 @@
 # Internal reference-geometry mass inverse
 
+> Historical evidence. This report describes the retired weak/pressure implementation or its comparison studies. The executable solvers have been removed; see the [direct runtime qualification](direct-runtime-qualification.md) for the current implementation. Historical source links refer to revision `7b9ccda7`.
+
 `WVInternal.freeSurfaceReferenceMass(wvt)` constructs a context with `solve(covector)`. It inverts the full positive reference-geometry weak mass using independent compact Fourier columns. It is not `projectSources`, a nonlinear pressure closure, or an activated evolution path. No new modal families or global realified basis matrix are introduced.
 
 For one nonzero Fourier column, let $U,V,W,E,C$ be its stored-mode reconstruction matrices in family order `Ag_q`, `Ag_0`, `Aw_p`, `Aw_m`, retaining only the page's active wave prefix. The raw complex coefficient Gram is

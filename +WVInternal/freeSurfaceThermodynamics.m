@@ -1,21 +1,13 @@
 function context = freeSurfaceThermodynamics(wvt)
-% Evaluate exact parcel buoyancy, APE and matching surface pressure/energy.
+% Evaluate parcel buoyancy and APE with upper-constant reference density.
 %
-% Parcel labels are restricted to [-Lz,0], allowing 32 ulps of Lz for
-% representational endpoint roundoff. Such labels are evaluated at the
-% endpoint and the adjustment is reported; coefficients are never changed.
-% Larger excursions fail. The hydrostatic reference density
-% equals the stored no-motion profile there, and continues above zero with
-% constant N2(0), hence linear reference density. This is an explicit C1
-% reference-density convention, not extrapolation of parcel density. It is
-% generally not analytic at zero when the interior N2 derivative is nonzero.
-%
-% For I(z)=integral_0^z N2, J'=I, K'=J with J(0)=K(0)=0, r=z-eta,
-% B=I(r)-I(z), A=-eta*I(r)-J(r)+J(z), pi_s=g*ssh-J(ssh), and
-% E_s=g*ssh^2/2-K(ssh). pi_s is pressure per reference density. A and E_s
-% are energy per reference density per physical volume/area respectively.
-% The full surface terms are necessary for invariance under this reference
-% choice. They must not be replaced by g*ssh and g*ssh^2/2 in a coupled run.
+% Parcel labels remain in [-Lz,0], allowing 32 ulps of endpoint roundoff.
+% The hydrostatic no-motion density is constant above zero, so N_+^2=0
+% there. Parcel density is never extended beyond its reference domain.
+% For I(z)=integral_0^z N_+^2, J'=I, r=z-eta, buoyancy is I(r)-I(z)
+% and APE is -eta*I(r)-J(r)+J(z). The manuscript surface-pressure
+% approximation uses g*ssh and drops the corresponding cubic surface-energy
+% correction, leaving g*ssh^2/2. This is not an all-orders pressure closure.
 %
 % The factory snapshots the profile and constants without computing modes.
 % Derived antiderivatives are rebuilt, not persisted as prognostic state.
@@ -31,8 +23,8 @@ end
 I = cumsum(profile); I = I-I(0);
 J = cumsum(I); J = J-J(0);
 [nodes,weights] = legpts(max(2,ceil((length(profile)+2)/2)),[0,1]);
-parameters = struct(nodes=nodes,weights=weights,Lz=wvt.Lz,g=wvt.g,rho0=wvt.rho0,profile=profile,I=I,J=J,topN2=profile(0));
-context = struct(evaluate=@(z,eta,ssh)evaluate(parameters,z,eta,ssh),referenceConvention="constant-surface-N2",minimumLabel=-wvt.Lz,maximumLabel=0);
+parameters = struct(nodes=nodes,weights=weights,Lz=wvt.Lz,g=wvt.g,rho0=wvt.rho0,profile=profile,I=I,J=J);
+context = struct(evaluate=@(z,eta,ssh)evaluate(parameters,z,eta,ssh),referenceConvention="upper-constant-density",minimumLabel=-wvt.Lz,maximumLabel=0);
 end
 
 function fields = evaluate(parameters,z,eta,ssh)
@@ -72,8 +64,8 @@ fields.N2AtLabel = sample(parameters.profile,label);
 % Split at zero, where the explicit reference continuation changes formula.
 crest = max(z,0);
 interval = effectiveEta-crest;
-fields.buoyancy = -parameters.topN2*crest;
-fields.ape = 0.5*parameters.topN2*crest.^2;
+fields.buoyancy = zeros(size(z));
+fields.ape = zeros(size(z));
 for index = 1:length(parameters.nodes)
     node = parameters.nodes(index);
     weightedN2 = parameters.weights(index)*sample(parameters.profile,label+node*interval);
@@ -82,8 +74,8 @@ for index = 1:length(parameters.nodes)
 end
 fields.apeEta = effectiveEta.*fields.N2AtLabel;
 fields.apeZ = -fields.apeEta-fields.buoyancy;
-fields.pressureSurface = parameters.g*ssh-surfacePrimitive(parameters,ssh,2);
-fields.energySurface = 0.5*parameters.g*ssh.^2-surfacePrimitive(parameters,ssh,3);
+fields.pressureSurface = parameters.g*ssh;
+fields.energySurface = 0.5*parameters.g*ssh.^2;
 fields.density = parameters.rho0-(parameters.rho0/parameters.g)*labelI;
 fields.referenceDensity = parameters.rho0-(parameters.rho0/parameters.g)*physicalI;
 fields.referencePressure = parameters.rho0*(-parameters.g*z+physicalJ);
@@ -94,20 +86,8 @@ if order==1, profile=parameters.I; else, profile=parameters.J; end
 value = zeros(size(z));
 interior = z<=0;
 value(interior) = sample(profile,z(interior));
-value(~interior) = parameters.topN2*z(~interior).^order/factorial(order);
 end
 
 function value = sample(profile,z)
 value = reshape(profile(z(:)),size(z));
-end
-
-function value = surfacePrimitive(parameters,ssh,order)
-% Direct integral moments also preserve tiny surface corrections near zero.
-value = parameters.topN2*max(ssh,0).^order/factorial(order);
-negative = ssh<0;
-z = ssh(negative);
-for index = 1:length(parameters.nodes)
-    node = parameters.nodes(index);
-    value(negative) = value(negative)+z.^order.*parameters.weights(index)*(1-node)^(order-1)/factorial(order-1).*sample(parameters.profile,node*z);
-end
 end

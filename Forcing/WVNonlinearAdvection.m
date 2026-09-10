@@ -48,7 +48,7 @@ classdef WVNonlinearAdvection < WVForcing
     % Free-surface Boussinesq transforms remain linear by default. Adding
     % this forcing requires horizontal antialiasing and an inventory
     % constructed with quadratic-product qualification. Its callback adds
-    % the full mapped zero-pressure nonlinear excess in hatted coordinates.
+    % the manuscript -N-P sources in hatted coordinates using modal pressure.
     %
     % ### Example
     %
@@ -117,10 +117,9 @@ classdef WVNonlinearAdvection < WVForcing
             Feta = Feta - (wvt.u .* wvt.diffX(wvt.eta) + wvt.v .* wvt.diffY(wvt.eta) + wvt.w .* (wvt.diffZG(wvt.eta) + wvt.eta .* self.dLnN2));
         end
 
-        function [Fu, Fv, Fw, Feta] = addNonhydrostaticSpatialForcing(self, wvt, Fu, Fv, Fw, Feta, stage)
+        function [Fu, Fv, Fw, Feta] = addNonhydrostaticSpatialForcing(self, wvt, Fu, Fv, Fw, Feta)
             if isa(wvt,'WVTransformFreeSurfaceBoussinesq')
-                if nargin<7, stage=struct(); end
-                [u,v,w,eta] = wvt.nonlinearAdvectionSources(stage);
+                [u,v,w,eta] = wvt.nonlinearAdvectionSources();
                 Fu=Fu+u; Fv=Fv+v; Fw=Fw+w; Feta=Feta+eta;
                 return
             end

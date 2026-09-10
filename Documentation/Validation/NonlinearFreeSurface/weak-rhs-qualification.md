@@ -1,5 +1,7 @@
 # Internal mapped weak RHS assembly
 
+> Historical evidence. This report describes the retired weak/pressure implementation or its comparison studies. The executable solvers have been removed; see the [direct runtime qualification](direct-runtime-qualification.md) for the current implementation. Historical source links refer to revision `7b9ccda7`.
+
 `[covector,target,diagnostics] = WVInternal.freeSurfaceWeakRHS(wvt,hatted,metric,buoyancy,piSurface,derivative,boundary)` assembles an unforced weak coefficient covector and retained kinematic target. It does not solve for a coefficient tendency, choose a density reference, choose a surface-pressure approximation, or infer physical volume pressure from a constraint reaction. `piSurface` is pressure divided by reference density, in m$^2$/s$^2$. `buoyancy` is supplied physical acceleration. The caller owns the consistency of the frozen metric with the hatted state and its declared thermodynamic reference.
 
 The helper calls `freeSurfaceMappedTendency` with zero volume pressure to obtain the complete pressure-free mapped momentum tendency $F$ and total-displacement tendency $d$. It then applies the reconstruction adjoint to the volume test fields $R F$ and $m_\eta d$, where $R=M^{-1}$ is the same inverse physical kinetic metric used by `freeSurfaceWeakMassAction`, and $m_\eta$ is the supplied `displacementWeight`. The resulting weak load is

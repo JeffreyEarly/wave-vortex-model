@@ -1,5 +1,7 @@
 # Frozen full-C1 horizontal overintegration
 
+> Historical evidence. This report describes the retired weak/pressure implementation or its comparison studies. The executable solvers have been removed; see the [direct runtime qualification](../../Documentation/Validation/NonlinearFreeSurface/direct-runtime-qualification.md) for the current implementation. Historical source links refer to revision `7b9ccda7`.
+
 This authoring study holds the canonical coefficients, clocks, vertical grid, and retained modes fixed. It changes only the horizontal quadrature grid. It supplies a bounded check of the prototype's rational metric and thermodynamic products; it does not establish a universal quadratic-aliasing theorem or qualify an evolved trajectory.
 
 Run `runFreeSurfaceFrozenOverintegrationStudy` after `configureCIEnvironment` and adding `tools/nonlinear-study` to the path. The committed CSV contains the unrounded measurements. The implementation base is `e16ebba8`; no runtime source or manuscript was changed.

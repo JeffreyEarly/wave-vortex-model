@@ -1,5 +1,7 @@
 # Internal full-C1 nonlinear stage composition
 
+> Historical evidence. This report describes the retired weak/pressure implementation or its comparison studies. The executable solvers have been removed; see the [direct runtime qualification](direct-runtime-qualification.md) for the current implementation. Historical source links refer to revision `7b9ccda7`.
+
 `context = WVInternal.freeSurfaceNonlinearStage(wvt)` creates an internal unforced evaluator. `[rate,diagnostics,stage] = context.evaluate(state)` accepts the canonical reference-time coefficient structure; omitting it uses current coefficients. Evaluation does not mutate coefficients or either clock. This factory is not registered as a forcing, flux operation, integrator, or public nonlinear activation.
 
 The evaluator explicitly selects `freeSurfaceThermodynamics` from commit `0d13ee48`: the no-motion density has its C1 constant-surface-$N^2$ physical-height continuation, with the matching full nonlinear surface pressure and energy. It does not extend parcel density. Physical labels $z-\eta$ must remain in $[-D,0]$ on the stored sample grid, subject to the explicit bounded endpoint evaluation convention documented below. The helper preserves and reports raw labels as well as the adjustment diagnostics; this is not an oversampled domain certificate.

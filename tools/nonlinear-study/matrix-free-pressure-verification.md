@@ -1,5 +1,7 @@
 # Instantaneous matrix-free pressure diagnostic
 
+> Historical evidence. This report describes the retired weak/pressure implementation or its comparison studies. The executable solvers have been removed; see the [direct runtime qualification](../../Documentation/Validation/NonlinearFreeSurface/direct-runtime-qualification.md) for the current implementation. Historical source links refer to revision `7b9ccda7`.
+
 `WVInternal.freeSurfacePressureSolver(wvt)` snapshots the reference grid and stored vertical derivative. Its `solve(ssh,force,piSurface)` returns pressure per reference density and a diagnostic report containing the complete mapped pressure gradient, pressure-corrected hatted acceleration, GMRES residuals, and separate interior, bottom, and surface divergence defects. No runtime evolution path calls this helper.
 
 The equation matches the dense authoring oracle: $\nabla_\xi\cdot(M\nabla_\xi\pi)=\nabla_\xi\cdot F$ at interior vertical nodes, $(M\nabla_\xi\pi)_w=F_w$ at the bottom, and $\pi=\pi_s$ at the surface. Both surface slopes and all metric cross terms are included. Boundary rows replace the PDE; endpoint divergence is deliberately reported separately. This instantaneous collocation pressure is not a modal constraint multiplier, and it does not establish that a projected modal trajectory obeys the unprojected pointwise momentum equations without projection and constraint reaction forces.

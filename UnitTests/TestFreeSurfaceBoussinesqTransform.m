@@ -28,7 +28,7 @@ classdef TestFreeSurfaceBoussinesqTransform < matlab.unittest.TestCase
 
         function operationsAndComponentsAgree(testCase)
             w = newTransform("exponential",65); assignState(w,mixedState(w));
-            names = ["u","v","w","eta","eta_i","p_linear","ssh","qgpv"];
+            names = ["u","v","w","eta","eta_i","p","ssh","qgpv"];
             full = w.reconstructFields(names); original = w.coefficientState();
             sums = structfun(@(v)zeros(size(v)),full,UniformOutput=false);
             for label = ["wave","apv","zeroapv","inertial","mda"]
@@ -44,7 +44,7 @@ classdef TestFreeSurfaceBoussinesqTransform < matlab.unittest.TestCase
             end
             testCase.verifyEqual(w.coefficientState(),original)
             testCase.verifyEqual(full.eta_i,full.eta-reshape(1+w.z/w.Lz,1,1,[]).*full.ssh,AbsTol=1e-12)
-            testCase.verifyEqual(full.p_linear(:,:,end),w.rho0*w.g*full.ssh,AbsTol=1e-10)
+            testCase.verifyEqual(full.p(:,:,end),w.rho0*w.g*full.ssh,AbsTol=1e-10)
         end
 
         function customComponentsRegisterInteriorDisplacement(testCase)
@@ -107,12 +107,12 @@ classdef TestFreeSurfaceBoussinesqTransform < matlab.unittest.TestCase
             w.t0=111; testCase.verifyFalse(isKey(w.variableCache,'u'))
             testCase.verifyGreaterThan(norm(at111(:)-w.u(:)),1e-6)
             testCase.verifyEqual(w.scientificState(),operators)
-            balanced=w.reconstructFields(["u_hat","eta","p_linear","ssh"],flowComponent=w.flowComponentWithName('balanced'));
+            balanced=w.reconstructFields(["u_hat","eta","p","ssh"],flowComponent=w.flowComponentWithName('balanced'));
             balancedCache=w.u_hat_balanced;
             w.t=1e5;
             testCase.verifyTrue(isKey(w.variableCache,'u_hat_balanced'))
             testCase.verifyEqual(w.u_hat_balanced,balancedCache)
-            testCase.verifyEqual(w.reconstructFields(["u_hat","eta","p_linear","ssh"],flowComponent=w.flowComponentWithName('balanced')),balanced)
+            testCase.verifyEqual(w.reconstructFields(["u_hat","eta","p","ssh"],flowComponent=w.flowComponentWithName('balanced')),balanced)
         end
 
         function linearEquationsAndEndpointsHoldForMixedState(testCase)
@@ -161,7 +161,7 @@ classdef TestFreeSurfaceBoussinesqTransform < matlab.unittest.TestCase
             testCase.verifyEqual(clone.scientificState(),state)
             testCase.verifyEmpty(clone.verticalModes)
             assignState(w,mixedState(w)); assignState(clone,w.coefficientState());
-            testCase.verifyEqual(clone.reconstructFields(["u","v","w","eta","p_linear","ssh"]),w.reconstructFields(["u","v","w","eta","p_linear","ssh"]))
+            testCase.verifyEqual(clone.reconstructFields(["u","v","w","eta","p","ssh"]),w.reconstructFields(["u","v","w","eta","p","ssh"]))
             testCase.verifyError(@()WVTransformFreeSurfaceBoussinesq(rmfield(state,'waveF')),'WVTransformFreeSurfaceBoussinesq:IncompleteScientificState')
             testCase.verifyError(@()assignFamily(w,'Aw_p',zeros(1,1)),'WVTransformFreeSurfaceBoussinesq:InvalidCoefficient')
             testCase.verifyError(@()assignFamily(w,'Amda',1i*ones(size(w.Amda))),'WVTransformFreeSurfaceBoussinesq:InvalidCoefficient')

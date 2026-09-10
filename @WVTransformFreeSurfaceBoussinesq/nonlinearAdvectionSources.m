@@ -1,14 +1,12 @@
-function [u,v,w,eta] = nonlinearAdvectionSources(self,stage)
-% Return full mapped zero-pressure nonlinear excess on the hatted grid.
+function [u,v,w,eta] = nonlinearAdvectionSources(self)
+% Evaluate the manuscript -N-P sources on the hatted reference grid.
 %
-% Subtract the zero-pressure linear terms (f*v,-f*u,-N2*eta,w) from
-% the full mapped RHS. Geometry and exact buoyancy are included; pressure,
-% modal projection, weak solves, and prescribed forcing are not evaluated.
-% A supplied shared stage has hatted, physical, and thermodynamics fields.
-% Otherwise reconstruct once and use this transform's cached thermodynamics.
+% Appendix C includes modal pressure in both P and the horizontal tendency
+% H inside N_w. The complete linear operator cancels under projection onto
+% the time-dependent basis; it is not added to these coefficient sources.
+% Prescribed forcing is mapped separately by spatialFluxForForcingWithName.
 arguments (Input)
     self (1,1) WVTransformFreeSurfaceBoussinesq
-    stage (1,1) struct = struct()
 end
 arguments (Output)
     u (:,:,:) double
@@ -16,23 +14,19 @@ arguments (Output)
     w (:,:,:) double
     eta (:,:,:) double
 end
-derivative = struct(x=@(field)self.diffX(field),y=@(field)self.diffY(field),xi=@(field)self.diffZ(field));
-if isempty(fieldnames(stage))
-    spectral = self.reconstructSpectralState();
-    for name = ["u","v","w","eta","ssh"]
-        stage.hatted.(name) = self.transformToSpatialDomainWithFourier(spectral.(name));
-    end
-    stage.hatted.ssh = stage.hatted.ssh(:,:,end);
-    stage.physical = WVInternal.freeSurfacePhysicalFields(stage.hatted,self.z,self.Lz,derivative.x(stage.hatted.ssh),derivative.y(stage.hatted.ssh));
-    thermodynamics = self.thermodynamicContext();
-    stage.thermodynamics = thermodynamics.evaluate(stage.physical.z,stage.hatted.eta,stage.hatted.ssh);
-elseif ~all(isfield(stage,{'hatted','physical','thermodynamics'}))
-    error('WVTransformFreeSurfaceBoussinesq:InvalidAdvectionStage','A shared advection stage must contain hatted, physical, and thermodynamics fields.');
+spectral = self.reconstructSpectralState();
+hatted = struct();
+for name = ["u","v","w","eta","ssh","p"]
+    hatted.(name) = self.transformToSpatialDomainWithFourier(spectral.(name));
 end
-zero = zeros(self.Nx,self.Ny,self.Nz);
-full = WVInternal.freeSurfaceMappedTendency(stage.hatted,zero,stage.thermodynamics.buoyancy,self.z,self.Lz,self.f,self.rho0,derivative);
-u = full.u-self.f*stage.hatted.v;
-v = full.v+self.f*stage.hatted.u;
-w = full.w+reshape(self.N2,1,1,[]).*stage.hatted.eta;
-eta = full.eta-stage.hatted.w;
+hatted.ssh = hatted.ssh(:,:,end);
+physicalZ = reshape(self.z,1,1,[])+reshape(1+self.z/self.Lz,1,1,[]).*hatted.ssh;
+thermodynamics = self.thermodynamicContext();
+thermal = thermodynamics.evaluate(physicalZ,hatted.eta,hatted.ssh);
+derivative = struct(x=@(field)self.diffX(field),y=@(field)self.diffY(field),xi=@(field)self.diffZ(field));
+terms = WVInternal.freeSurfaceNonlinearTerms(hatted,hatted.p,self.z,self.Lz,self.f,self.rho0,self.N2,-thermal.buoyancy,derivative);
+u = terms.source.u;
+v = terms.source.v;
+w = terms.source.w;
+eta = terms.source.eta;
 end

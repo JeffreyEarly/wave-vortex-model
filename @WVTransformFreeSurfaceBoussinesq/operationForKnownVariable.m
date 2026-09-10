@@ -26,8 +26,8 @@ if isempty(names) || length(unique(names)) ~= length(names) || any(~ismember(nam
     error('WVTransform:UnknownVariable','Request distinct Boussinesq fields listed by namesOfTransformVariables.')
 end
 component = options.flowComponent;
-if ~isempty(component) && any(ismember(names,["z_physical","p_full"]))
-    error('WVTransform:TotalStateVariable','z_physical and p_full describe the total state and have no component partition.')
+if ~isempty(component) && any(ismember(names,"z_physical"))
+    error('WVTransform:TotalStateVariable','z_physical describes the total state and has no component partition.')
 end
 suffix = "";
 if ~isempty(component)
@@ -49,8 +49,7 @@ for name = names
         case "eta", units = 'm'; description = 'total material displacement including the MDA mean';
         case "eta_i", units = 'm'; description = 'parcel-label displacement relative to the fixed reference column';
         case "z_physical", units = 'm'; description = 'physical height of the moving mesh';
-        case "p_linear", units = 'Pa'; description = 'linear modal pressure anomaly including hydrostatic MDA';
-        case "p_full", units = 'Pa'; description = 'full collocation pressure anomaly relative to the C1 hydrostatic reference';
+        case "p", units = 'Pa'; description = 'linear modal pressure anomaly including hydrostatic MDA';
         case {"u_hat","v_hat","w_hat"}, units = 'm s-1'; description = 'hatted modal velocity on the fixed reference column';
         case "w_i", units = 'm s-1'; description = 'material reference-coordinate velocity';
         case "qgpv", units = 's-1'; description = 'full QGPV including the MDA mean';
@@ -60,7 +59,7 @@ for name = names
         otherwise, units = 'm s-1'; description = 'physical velocity on the moving mesh';
     end
     annotation = WVVariableAnnotation(char(name+suffix),dimensions,units,description);
-    annotation.isVariableWithLinearTimeStep = isTimeDependent || ismember(name,["u","v","w","ssu","ssv","w_i","z_physical","p_full"]);
+    annotation.isVariableWithLinearTimeStep = isTimeDependent || ismember(name,["u","v","w","ssu","ssv","w_i","z_physical"]);
     annotation.isVariableWithNonlinearTimeStep = true;
     annotation.isDependentOnApAmA0 = true;
     annotations(end+1) = annotation;

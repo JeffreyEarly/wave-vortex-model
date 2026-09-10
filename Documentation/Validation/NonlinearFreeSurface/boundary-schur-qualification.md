@@ -1,5 +1,7 @@
 # Internal reference boundary Schur inverse
 
+> Historical evidence. This report describes the retired weak/pressure implementation or its comparison studies. The executable solvers have been removed; see the [direct runtime qualification](direct-runtime-qualification.md) for the current implementation. Historical source links refer to revision `7b9ccda7`.
+
 `WVInternal.freeSurfaceBoundarySchur(wvt,boundary,referenceMass)` returns an internal context whose `solve(traceVector)` applies the inverse of $S=K H_{\rm ref}^{-1}K^*$. It consumes the retained-boundary metadata and Fourier-page reference-mass whitening; it does not change modes, remove traces, activate dynamics, or construct a global matrix.
 
 For a nonzero page, write the unweighted complex trace map as $C$ and the raw coefficient whitening as $T$, with $T^*H_0T=I$. The boundary operator packs the real and imaginary traces with $\sqrt{2}$, so its Schur action on the packed complex vector $v_{\rm Re}+i v_{\rm Im}$ is

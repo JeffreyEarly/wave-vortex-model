@@ -1,5 +1,7 @@
 # Direct manuscript projection: first comparison
 
+> Historical evidence. This report describes the retired weak/pressure implementation or its comparison studies. The executable solvers have been removed; see the [direct runtime qualification](direct-runtime-qualification.md) for the current implementation. Historical source links refer to revision `7b9ccda7`.
+
 This is the first review point in the 10 September pressure-revision plan. It implements the manuscript's direct nonlinear residual in authoring tools and compares it with PR #459's alternative weak stage. It does not replace the runtime or qualify nonlinear trajectories. PR #459 remains draft; its earlier tests do not establish that the weak stage is necessary.
 
 The subsequent [boundary-resolution and short-trajectory study](manuscript-evolution-qualification.md) completes the next review increment. This first-comparison report remains the record of the initial pressure-order and source-projection checks.
@@ -28,7 +30,7 @@ $$
 | `eq:projection-ready-displacement-advection` | `N.eta` retains total-displacement transport and the surface-deformation term |
 | `eq:projection-coefficient-and-projector` and the family source formulas | Pass `(-N.u-P.u,-N.v-P.v,-N.w-P.w,-N.eta)` to the generic source projector |
 
-The [evaluator](../../../tools/nonlinear-study/evaluateManuscriptNonlinearTerms.m) performs no projection, pressure solve, nonlinear mass solve or constraint correction. The [comparison driver](../../../tools/nonlinear-study/runManuscriptProjectionComparison.m) supplies modal pressure and the manuscript reference, then calls `projectSources`. Its unforced scope is deliberate. Prescribed sources must subsequently respect the Appendix C `H` bookkeeping: include their horizontal contribution in `H`, or map their physical acceleration separately, without doing both.
+The [evaluator](../../../tools/nonlinear-study/evaluateManuscriptNonlinearTerms.m) performs no projection, pressure solve, nonlinear mass solve or constraint correction. The [comparison driver](https://github.com/JeffreyEarly/wave-vortex-model/blob/7b9ccda7/tools/nonlinear-study/runManuscriptProjectionComparison.m) supplies modal pressure and the manuscript reference, then calls `projectSources`. Its unforced scope is deliberate. Prescribed sources must subsequently respect the Appendix C `H` bookkeeping: include their horizontal contribution in `H`, or map their physical acceleration separately, without doing both.
 
 ## Independent checks
 

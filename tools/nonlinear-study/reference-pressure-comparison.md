@@ -1,5 +1,7 @@
 # Exact reference-pressure comparison
 
+> Historical evidence. This report describes the retired weak/pressure implementation or its comparison studies. The executable solvers have been removed; see the [direct runtime qualification](../../Documentation/Validation/NonlinearFreeSurface/direct-runtime-qualification.md) for the current implementation. Historical source links refer to revision `7b9ccda7`.
+
 Recommendation: use the full equations with an explicit $C^1$ physical-height density reference and the complete surface pressure and energy terms. Continuing surface $N^2(0)$ as a constant above zero is a defensible, deterministic pressure convention that removes the buoyancy derivative kink without arbitrary evaluation of a user function above its declared domain. It adds no prognostic variables or hierarchy. It does not extend parcel-density labels. The simpler approximate surface condition remains a separate, explicitly approximate scientific choice; selecting the full convention must explicitly update the provisional plan.
 
 ## Equations checked

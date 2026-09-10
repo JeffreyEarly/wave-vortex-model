@@ -1,5 +1,7 @@
 # Alternative weak-runtime contract under review
 
+> Historical evidence. This report describes the retired weak/pressure implementation or its comparison studies. The executable solvers have been removed; see the [direct runtime qualification](direct-runtime-qualification.md) for the current implementation. Historical source links refer to revision `7b9ccda7`.
+
 **Review status, 10 September:** this describes PR #459's alternative constrained weak discretization. It is not the accepted direct manuscript projection. See the [direct manuscript boundary/trajectory qualification](manuscript-evolution-qualification.md); the PR remains draft pending runtime integration and requalification. Earlier results below apply to the alternative only.
 
 This increment implements the full mapped, inviscid Boussinesq equations as a constrained weak evolution on the existing resolved adiabatic span. It adds no thermal modes or class hierarchy. The implementation baseline is WVM `81987767956fae5aadcb53a9df16482221f5f3e4`, the declared InternalModes `2.0.0-beta.4` export, and the free-surface manuscript `311ebf56c13c30ab4cac423ef7260d3bd693e939`.

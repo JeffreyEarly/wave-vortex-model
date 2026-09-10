@@ -4,11 +4,12 @@ function fields = reconstructFields(self,variableNames,options)
 % u/v/w are physical velocities; u_hat/v_hat/w_hat are the modal variables.
 % The existing z axis remains the fixed reference coordinate, while
 % z_physical is the moving mesh. eta is total displacement and
-% eta_i=eta-(1+z/Lz)*ssh. p_linear is modal pressure; p_full is the complete
-% instantaneous collocation diagnostic relative to the C1 density reference.
+% eta_i=eta-(1+z/Lz)*ssh. p is reconstructed modal pressure,
+% including hydrostatic MDA. It supplies the quadratic-order pressure
+% approximation in the manuscript nonlinear terms.
 %
 % Component velocities use the total state's geometry, so disjoint component
-% contributions add to the full velocity. z_physical and p_full have no
+% contributions add to the full velocity. z_physical has no
 % component partition. Mean SSH retains the existing zero-mean gauge.
 %
 % - Topic: Reconstruct and project fields
@@ -27,8 +28,8 @@ end
 if any(~ismember(variableNames,string(self.namesOfTransformVariables())))
     error('WVTransform:UnknownVariable','Request fields listed by namesOfTransformVariables.')
 end
-if ~isempty(options.flowComponent) && any(ismember(variableNames,["z_physical","p_full"]))
-    error('WVTransform:TotalStateVariable','z_physical and p_full describe the total state and have no component partition.')
+if ~isempty(options.flowComponent) && any(ismember(variableNames,"z_physical"))
+    error('WVTransform:TotalStateVariable','z_physical describes the total state and has no component partition.')
 end
 spectral = self.reconstructSpectralState(flowComponent=options.flowComponent);
 sampled = struct();
@@ -56,8 +57,7 @@ for name = variableNames
         case "ssu", value = physical.u(:,:,end);
         case "ssv", value = physical.v(:,:,end);
         case "ssh", value = sampled.ssh;
-        case "p_linear", value = self.transformToSpatialDomainWithFourier(spectral.p);
-        case "p_full", value = self.fullPressure();
+        case "p", value = self.transformToSpatialDomainWithFourier(spectral.p);
         otherwise, value = self.transformToSpatialDomainWithFourier(spectral.(name));
     end
     fields.(name) = value;

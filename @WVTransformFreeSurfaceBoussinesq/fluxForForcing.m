@@ -1,12 +1,10 @@
 function flux = fluxForForcing(self)
-% Partition the reference-time coefficient tendency by registered forcing.
+% Project each registered source into the reference-time coefficient families.
 %
-% Values use the six canonical family names and their independent shapes.
-% In nonlinear dynamics every prescribed source is projected through the
-% same frozen weak metric and endpoint constraints as the full stage.
-% Nonlinear advection receives the autonomous full-equation response after
-% removing analytical linear phases. Summing all entries recovers
-% coefficientTendency. These rates are not energy/work partitions.
+% Summing all entries recovers coefficientTendency. Every entry uses the
+% same hatted source convention as spatialFluxForForcingWithName and the
+% six independently shaped coefficient families. These are rates, not energy
+% partitions; nonlinearEnergy includes cross terms and moving geometry.
 %
 % - Topic: Project physical sources
 % - Declaration: flux = fluxForForcing()
@@ -17,15 +15,9 @@ end
 arguments (Output)
     flux (1,1) dictionary
 end
-if any(arrayfun(@(forcing)isa(forcing,'WVNonlinearAdvection'),self.spatialFluxForcing))
-    context=self.nonlinearContext();
-    [~,~,~,flux]=context.evaluate(self.coefficientState(),includeForcing=true);
-else
-    flux=configureDictionary("string","cell");
-    zero=zeros(self.Nx,self.Ny,self.Nz);
-    for forcing=self.spatialFluxForcing
-        [source.u,source.v,source.w,source.eta]=forcing.addNonhydrostaticSpatialForcing(self,zero,zero,zero,zero);
-        flux{string(forcing.name)}=self.projectSources(source);
-    end
+flux = configureDictionary("string","cell");
+for forcing = self.spatialFluxForcing
+    [source.u,source.v,source.w,source.eta] = self.spatialFluxForForcingWithName(string(forcing.name));
+    flux{string(forcing.name)} = self.projectSources(source);
 end
 end

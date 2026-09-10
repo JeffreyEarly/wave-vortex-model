@@ -1,5 +1,7 @@
 # Matrix-free full-reference trajectory review
 
+> Historical evidence. This report describes the retired weak/pressure implementation or its comparison studies. The executable solvers have been removed; see the [direct runtime qualification](direct-runtime-qualification.md) for the current implementation. Historical source links refer to revision `7b9ccda7`.
+
 `runMatrixFreeNonlinearTrajectoryStudy.m` runs the composed full C1 stage for 200 s with steps 10, 5, and 2.5 s. The two executed configurations use 8-by-8 horizontal samples with the transform's retained antialiased band, 65/129 vertical samples, APV/MDA/inertial counts 2/4, and wave counts 3/6. Thus refinement changes both vertical quadrature and retained vertical families at fixed horizontal bandwidth. The optional larger horizontal configuration was not run. These full-surface-reference equations differ from the earlier `mapped-weak-*` approximate-surface trajectories, whose evidence remains unchanged.
 
 ## Independent algebra and clock review
