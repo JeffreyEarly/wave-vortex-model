@@ -10,7 +10,7 @@ classdef TestSQGTracerConvenience < matlab.unittest.TestCase
         end
     end
 
-    methods (Test)
+    methods (Test,TestTags="smoke")
         function convenienceUsesTransformVelocityCapability(testCase)
             transforms = {
                 WVTransformStratifiedQG([17000 11000 1000],[8 6 9],Nj=4,N2Function=@(z)1e-4*exp(z/700),shouldAntialias=false)
