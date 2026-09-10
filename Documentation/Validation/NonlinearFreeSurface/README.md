@@ -26,6 +26,28 @@ The [candidate weak formulation](../../../tools/nonlinear-study/mapped-weak-evol
 
 A [reference-pressure note](../../../tools/nonlinear-study/reference-pressure-choice.md) records an exact smooth-reference alternative that avoids the positive-crest reference layer if its full surface-pressure and surface-energy terms are retained. That choice differs from the provisional small-surface-pressure approximation. Neither continuation of the pressure reference nor a successful constraint solve permits arbitrary out-of-range parcel-density labels.
 
+## Instantaneous nonlinear weak-budget evidence
+
+The [global weak-budget study](../../../tools/nonlinear-study/runFreeSurfaceWeakBudgetStudy.m) now evaluates the candidate on the complete independent real coefficient span. Its [six-row CSV](mapped-weak-budget-study.csv) uses both active boundaries, all six families, explicit MDA offsets keeping parcel labels valid, two amplitudes and a fixed physical seed. The seed agrees across refinement within $2.30\times10^{-15}$ on a common 24 by 24 by 257 checkpoint grid.
+
+At amplitude one, jointly increasing vertical samples from 65 to 129 and retained APV/wave/MDA/inertial counts from 2/3/2/2 to 4/6/4/4 reduces constraint-reaction work from $4.780\times10^{-6}$ to $5.987\times10^{-8}$ m³/s³, about 80 times. Increasing horizontal quadrature from 8² to 12² leaves that result essentially unchanged. The retained horizontal band remains 4² in every case: this is joint vertical/family refinement, not full PDE convergence or an isolated vertical-sampling test. Discarded endpoint target harmonics remain measurable, with combined boundary-target RMS about $1.742\times10^{-6}$ m/s at amplitude one; retained endpoint-rate residuals are near roundoff.
+
+Analytical linear coefficient recovery is about $10^{-14}$. The finite-amplitude energy gradient agrees with directional finite differences within $4.36\times10^{-12}$ using the best of three steps; the CSV retains every step's error. Grid energy defects are around $10^{-10}$ to $10^{-11}$ m³/s³ and remain separate from reaction work. The complete sample-space pressure-adjoint defect decreases from $4.49\times10^{-5}$ to $1.38\times10^{-5}$, while one fixed smooth pressure probe passes near roundoff. That smooth control does not qualify an unknown nonlinear pressure field. Independent code review found no blocking algebra, conjugacy or work-sign errors. Trajectory qualification remains separate.
+
+## Short diagnostic trajectories
+
+The [trajectory driver](../../../tools/nonlinear-study/runFreeSurfaceWeakTrajectoryStudy.m) advances the same weak model for 200 seconds at timesteps 10, 5 and 2.5 seconds, with exact analytical linear phases. It shares study-local operators with the instantaneous experiment. The [summary](mapped-weak-trajectory-study.csv) and [history](mapped-weak-trajectory-history.csv) record direct energy, integrated grid/reaction/solver/SSH-geometry work, stage label bounds, retained constraints and discarded boundary targets. Run the instantaneous study into the same output folder first to supply its cross-check CSV.
+
+The independent supplied-linear-equation control preserves interaction coefficients within $7.61\times10^{-15}$. All nonlinear stage labels remain valid. At the finest timestep, the coarse and refined energy changes are $1.754\times10^{-4}$ and $3.169\times10^{-6}$ m³/s², almost entirely accounted for by accumulated reaction work. The remaining energy-budget residuals are $4.81\times10^{-10}$ and $5.34\times10^{-12}$ m³/s². Timestep differences are small but do not exhibit clean fourth-order ratios; no observed RK4 order is claimed. The final-state difference between the coarse and refined retained vertical families is about $9.31\times10^{-4}$ in the common physical checkpoint norm, at fixed horizontal bandwidth.
+
+These are short diagnostic trajectories, not production `WVModel` qualification. They do not establish arbitrary-stratification behavior, horizontal-band convergence, nonlinear pressure recovery, material/APV budgets or restart.
+
+## Runtime implementation direction
+
+The [runtime integration note](../../../tools/nonlinear-study/runtime-integration.md) keeps ordinary six-family `coefficientTendency`, exact phase evolution, forcing/operation lifecycles and annotated persistence. It separates matrix-free reconstruction/adjoint actions from the dense study and specifies where mode counts, quadrature, physical fields and constraint coordinates enter.
+
+`WVInternal.freeSurfaceReconstructionAdjoint` supplies the internal quadrature adjoint needed for weak mass actions. It is not a replacement for `projectSources`: it applies no Gram inverse, $N^2$ weight or energy normalization. Independent physical-space pairing tests pass for all fields and families, constant/exponential profiles, variable wave counts, zero pages and padding, nonzero phase clocks and omitted families. No nonlinear evolution is activated by this primitive.
+
 ## Reproduction
 
 Configure the authoring WVM and pinned dependencies with `configureCIEnvironment`, add `tools/nonlinear-study` to the path, then run `runFreeSurfaceKinematicProbe(outputFolder)` and `runFreeSurfaceConstrainedProjectionStudy(outputFolder)`. The exact study settings and source-probe digest are in [provenance](projection-probe-provenance.json). Both studies are tiny-grid mathematical controls, not production benchmarks.
@@ -48,5 +70,8 @@ The oracle replaces the two endpoint rows with boundary conditions; it reports e
 - Dense pressure reference: manufactured, mapped-RHS and resolved linear-limit tests passed; Code Analyzer reported no findings in the oracle and test class. The initial short-domain linear fixture correctly failed the existing bottom-resolution guard at 33 vertical points; the mixed-family linear control uses the established 100 km by 100 km by 1 km domain, preserving the guard and its tolerance.
 - Source audit: thirty generic-source controls generated the corrected source-scaled diagnostics.
 - Constrained study: thirty-six rows generated; Code Analyzer and whitespace checks passed.
+- Global nonlinear weak budget: six cases generated, including separate retained/discarded endpoint targets, all finite-difference step errors, seed agreement, label bounds and pressure-adjoint metrics. Analyzer and independent review passed. Timing columns are single diagnostic observations, not a benchmark claim.
+- Reconstruction adjoint: three independent tests passed against the new helper, including preservation of state/clocks; helper and test-file Analyzer reported no findings.
+- Short weak trajectories: six cases completed, shared initial RHS agreed with the instantaneous study, and Analyzer passed on all three study source files. No extra trajectory runs were used to manufacture a clean timestep-order result.
 - Integrated API documentation: build and check passed with 2362 files, 4827 routes and zero generated drift. The added QG field shifts generated navigation ordering. A second build/check after removing the redundant registration override also passed; the pressure diagnostic adds no generated API source.
-- These results do not establish a nonlinear pressure solve, nonlinear trajectories, nonlinear energy conservation, or nonlinear restart. Those remain active goal requirements.
+- These results do not establish a production nonlinear pressure solve, qualified `WVModel` nonlinear evolution, exact finite-dimensional energy conservation, or nonlinear restart. Those remain active goal requirements.
