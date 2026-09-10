@@ -234,6 +234,8 @@ for name=["u","v","w","eta"]
     errorValue=errorValue+sum(weight.*(actual.(name)(:)-expected.(name)(:)).^2);
     scale=scale+sum(weight.*expected.(name)(:).^2);
 end
+errorValue=errorValue+context.g*sum(context.surfaceWeights.*(actual.ssh(:)-expected.ssh(:)).^2);
+scale=scale+context.g*sum(context.surfaceWeights.*expected.ssh(:).^2);
 errorValue=sqrt(errorValue/max(scale,realmin));
 end
 
