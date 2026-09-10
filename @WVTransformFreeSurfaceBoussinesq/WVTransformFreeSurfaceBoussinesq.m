@@ -15,7 +15,12 @@ classdef WVTransformFreeSurfaceBoussinesq < WVGeometryDoublyPeriodicStratified &
     % shouldUseLinearDynamics=true advances unforced analytical phases only.
     % Resolution transfer preserves matching physical modes with independent
     % retained counts and reports positive physical reconstruction errors.
-    % Nonlinear dynamics remain unqualified.
+    % u/v/w are physical velocities on the moving mesh; u_hat/v_hat/w_hat
+    % expose the modal variables. p_linear and p_full distinguish linear
+    % polarization from the full instantaneous pressure diagnostic. Existing
+    % physicalEnergy/totalEnergy are quadratic; nonlinearEnergy uses full APE
+    % and the matching C1-reference surface term.
+    % Nonlinear runtime activation remains unqualified.
     % Legacy rigid-lid Ap/Am/A0 initialization is not supported here.
     %
     % ```matlab
@@ -52,6 +57,18 @@ classdef WVTransformFreeSurfaceBoussinesq < WVGeometryDoublyPeriodicStratified &
         % Real mean-density-anomaly amplitudes in meters.
         % - Topic: Inspect coefficient families
         Amda
+    end
+
+    properties (Constant)
+        % Persisted interpretation of physical fields and full thermodynamics.
+        % - Topic: Save transform state
+        fieldConvention = "physical-velocity-full-c1"
+    end
+
+    properties (Transient, Access=private)
+        % Factors depend only on the immutable scientific representation.
+        thermodynamics_ = []
+        pressureSolver_ = []
     end
 
     properties (Transient, SetAccess=private)
@@ -232,7 +249,7 @@ classdef WVTransformFreeSurfaceBoussinesq < WVGeometryDoublyPeriodicStratified &
         % Active entries in the rectangular wave coefficient arrays.
         % - Topic: Inspect coefficient families
         activeWaveModes
-        % Positive depth-integrated physical energy per unit area and reference density.
+        % Positive quadratic reference-geometry energy per area and reference density.
         % - Topic: Analyze physical energy
         totalEnergy
         % Alias for totalEnergy, in m3 s-2.
@@ -309,7 +326,10 @@ classdef WVTransformFreeSurfaceBoussinesq < WVGeometryDoublyPeriodicStratified &
             self.Aw_p = complex(zeros(nw,nc)); self.Aw_m = complex(zeros(nw,nc));
             self.Ag_q = complex(zeros(nq,nc)); self.Ag_0 = complex(zeros(length(self.activeEndpoint),nc));
             self.Aio = complex(zeros(length(self.inertialMode),1)); self.Amda = zeros(length(self.mdaMode),1);
-            names = self.namesOfTransformVariables(); self.addOperation(self.operationForKnownVariable(names{:}));
+            names = setdiff(self.namesOfTransformVariables(),{'p_full'},'stable');
+            self.addOperation(self.operationForKnownVariable(names{:}));
+            self.addOperation(self.operationForKnownVariable('p_full'));
+            addlistener(self,'forcingDidChange',@(~,~)self.removeFromVariableCache('p_full'));
             groups = {struct(Aw_p=true,Aw_m=true),struct(Ag_q=true),struct(Ag_0=true),struct(Ag_q=true,Ag_0=true,Amda=true),struct(Aio=true),struct(Amda=true)};
             labels = ["wave","apv","zeroapv","balanced","inertial","mda"];
             for i = 1:length(labels)
@@ -321,6 +341,8 @@ classdef WVTransformFreeSurfaceBoussinesq < WVGeometryDoublyPeriodicStratified &
 
         state = scientificState(self)
         fields = reconstructFields(self,variableNames,options)
+        [pressure,diagnostics] = fullPressure(self)
+        diagnostics = nonlinearEnergy(self)
         fields = reconstructSpectralState(self,options)
         [state,assessment] = projectFields(self,fields)
         operation = operationForKnownVariable(self,variableName,options)
@@ -392,6 +414,18 @@ classdef WVTransformFreeSurfaceBoussinesq < WVGeometryDoublyPeriodicStratified &
     end
 
     methods (Access = private)
+        function context = thermodynamicContext(self)
+            if isempty(self.thermodynamics_)
+                self.thermodynamics_ = WVInternal.freeSurfaceThermodynamics(self);
+            end
+            context = self.thermodynamics_;
+        end
+        function context = pressureContext(self)
+            if isempty(self.pressureSolver_)
+                self.pressureSolver_ = WVInternal.freeSurfacePressureSolver(self);
+            end
+            context = self.pressureSolver_;
+        end
         function validateCoefficient(self,value,name)
             switch name
                 case {"Aw_p","Aw_m"}, shape=[length(self.waveMode),length(self.klNonzero)];
@@ -412,14 +446,14 @@ classdef WVTransformFreeSurfaceBoussinesq < WVGeometryDoublyPeriodicStratified &
     methods (Static)
         [self,assessment] = fromStratification(Lxyz,Nxyz,options)
         function names = namesOfTransformVariables()
-            names = {'u','v','w','eta','eta_i','p','ssh','ssu','ssv','qgpv'};
+            names = {'u','v','w','u_hat','v_hat','w_hat','eta','eta_i','p_linear','p_full','ssh','ssu','ssv','w_i','z_physical','qgpv'};
         end
         annotations = classDefinedPropertyAnnotations()
         [wvt,ncfile] = waveVortexTransformFromFile(path,options)
         wvt = transformFromGroup(group)
         function names = classRequiredPropertyNames()
             names = union(WVGeometryDoublyPeriodicStratified.namesOfRequiredPropertiesForGeometry(),WVTransformFreeSurfaceBoussinesq.scientificPropertyNames());
-            names = union(names,{'activeEndpointCount','rhoFunction','Aw_p','Aw_m','Ag_q','Aio','Amda','t','t0','forcing'});
+            names = union(names,{'activeEndpointCount','rhoFunction','Aw_p','Aw_m','Ag_q','Aio','Amda','t','t0','forcing','fieldConvention'});
             names = setdiff(names,[WVTransformFreeSurfaceBoussinesq.optionalEndpointPropertyNames(),WVTransformFreeSurfaceBoussinesq.optionalWavePropertyNames()]);
         end
     end

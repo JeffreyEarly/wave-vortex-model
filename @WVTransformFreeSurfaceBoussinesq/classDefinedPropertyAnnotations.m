@@ -5,6 +5,7 @@ function annotations = classDefinedPropertyAnnotations()
 % - Returns annotations: geometry, transform, scientific and coefficient metadata
 annotations = WVGeometryDoublyPeriodicStratified.propertyAnnotationsForGeometry();
 annotations = cat(2,annotations,WVTransform.propertyAnnotationsForTransform());
+annotations(end+1) = CAPropertyAnnotation('fieldConvention','physical field and full thermodynamic convention');
 for name = ["waveMode","inertialMode","apvMode","mdaMode","activeEndpoint","klNonzero","khUnique"]
     annotations(end+1) = CADimensionProperty(char(name),'1',char(name));
 end

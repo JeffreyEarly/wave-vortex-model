@@ -1,13 +1,19 @@
 function fields = reconstructFields(self,variableNames,options)
-% Reconstruct selected real physical fields from one stored modal state.
+% Reconstruct selected fields on the reference samples and moving mesh.
 %
-% Eta denotes total displacement. The density-anomaly displacement is
-% eta_i=eta-(1+z/Lz)*ssh. Pressure includes the horizontally averaged
-% hydrostatic anomaly; mean SSH is fixed to zero.
+% u/v/w are physical velocities; u_hat/v_hat/w_hat are the modal variables.
+% The existing z axis remains the fixed reference coordinate, while
+% z_physical is the moving mesh. eta is total displacement and
+% eta_i=eta-(1+z/Lz)*ssh. p_linear is modal pressure; p_full is the complete
+% instantaneous collocation diagnostic relative to the C1 density reference.
+%
+% Component velocities use the total state's geometry, so disjoint component
+% contributions add to the full velocity. z_physical and p_full have no
+% component partition. Mean SSH retains the existing zero-mean gauge.
 %
 % - Topic: Reconstruct and project fields
 % - Declaration: fields = reconstructFields(variableNames,options)
-% - Parameter variableNames: row of supported physical field names
+% - Parameter variableNames: row of supported field names
 % - Parameter options.flowComponent: component of this transform; empty selects all
 % - Returns fields: named Nx by Ny by Nz arrays; surface fields are Nx by Ny
 arguments (Input)
@@ -21,14 +27,37 @@ end
 if any(~ismember(variableNames,string(self.namesOfTransformVariables())))
     error('WVTransform:UnknownVariable','Request fields listed by namesOfTransformVariables.')
 end
+if ~isempty(options.flowComponent) && any(ismember(variableNames,["z_physical","p_full"]))
+    error('WVTransform:TotalStateVariable','z_physical and p_full describe the total state and have no component partition.')
+end
 spectral = self.reconstructSpectralState(flowComponent=options.flowComponent);
+sampled = struct();
+for name = ["u","v","w","eta","ssh"]
+    sampled.(name) = self.transformToSpatialDomainWithFourier(spectral.(name));
+end
+sampled.ssh = sampled.ssh(:,:,end);
+if any(ismember(variableNames,["u","v","w","ssu","ssv","w_i","z_physical"]))
+    mapped = sampled;
+    if ~isempty(options.flowComponent)
+        total = self.reconstructSpectralState();
+        totalSSH = self.transformToSpatialDomainWithFourier(total.ssh);
+        mapped.ssh = totalSSH(:,:,end);
+    end
+    physical = WVInternal.freeSurfacePhysicalFields(mapped,self.z,self.Lz,self.diffX(mapped.ssh),self.diffY(mapped.ssh));
+end
 fields = struct();
 for name = variableNames
     switch name
-        case "eta_i", value = self.transformToSpatialDomainWithFourier(spectral.eta-(1+self.z/self.Lz).*spectral.ssh);
-        case "ssu", volume = self.transformToSpatialDomainWithFourier(spectral.u); value = volume(:,:,end);
-        case "ssv", volume = self.transformToSpatialDomainWithFourier(spectral.v); value = volume(:,:,end);
-        case "ssh", volume = self.transformToSpatialDomainWithFourier(spectral.ssh); value = volume(:,:,end);
+        case {"u","v","w","w_i"}, value = physical.(name);
+        case "z_physical", value = physical.z;
+        case {"u_hat","v_hat","w_hat"}, value = sampled.(extractBefore(name,"_hat"));
+        case "eta", value = sampled.eta;
+        case "eta_i", value = sampled.eta-reshape(1+self.z/self.Lz,1,1,[]).*sampled.ssh;
+        case "ssu", value = physical.u(:,:,end);
+        case "ssv", value = physical.v(:,:,end);
+        case "ssh", value = sampled.ssh;
+        case "p_linear", value = self.transformToSpatialDomainWithFourier(spectral.p);
+        case "p_full", value = self.fullPressure();
         otherwise, value = self.transformToSpatialDomainWithFourier(spectral.(name));
     end
     fields.(name) = value;
