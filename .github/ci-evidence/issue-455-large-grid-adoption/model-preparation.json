@@ -1,0 +1,152 @@
+{
+  "status": "passed",
+  "scope": "large complete-model fixture preparation only; no adoption timing samples",
+  "sourceCommit": "107894a120da8f2aaa545101d74190a34c38974b",
+  "generatorSHA256": "e2580ea1ec8476ceb3b2c80284a21367389f3c89968e92baaa22f0465b02bc7a",
+  "matlabVersion": "25.2.0.3150157 (R2025b) Update 4",
+  "integration": {
+    "method": "fixed-rk4",
+    "finalTime": 2,
+    "initialStep": 0.5
+  },
+  "stepCount": 4,
+  "rhsEvaluationCount": 16,
+  "profiles": [
+    {
+      "id": "constant-hydrostatic-coefficient-only-256",
+      "bytes": {
+        "source": 31249609,
+        "reference": 62371941,
+        "request": 535
+      },
+      "counts": {
+        "waveVortex": 2,
+        "dense": 0,
+        "particles": 0,
+        "tracers": 0
+      }
+    },
+    {
+      "id": "constant-nonhydrostatic-coefficient-only-256",
+      "bytes": {
+        "source": 31249609,
+        "reference": 62371941,
+        "request": 541
+      },
+      "counts": {
+        "waveVortex": 2,
+        "dense": 0,
+        "particles": 0,
+        "tracers": 0
+      }
+    },
+    {
+      "id": "constant-nonhydrostatic-composite-256",
+      "bytes": {
+        "source": 167620727,
+        "reference": 403225619,
+        "request": 527
+      },
+      "counts": {
+        "waveVortex": 2,
+        "dense": 1,
+        "particles": 2,
+        "tracers": 2
+      }
+    },
+    {
+      "id": "constant-hydrostatic-coefficient-only-512",
+      "bytes": {
+        "source": 249261841,
+        "reference": 498207213,
+        "request": 535
+      },
+      "counts": {
+        "waveVortex": 2,
+        "dense": 0,
+        "particles": 0,
+        "tracers": 0
+      }
+    },
+    {
+      "id": "constant-nonhydrostatic-coefficient-only-512",
+      "bytes": {
+        "source": 249261841,
+        "reference": 498207213,
+        "request": 541
+      },
+      "counts": {
+        "waveVortex": 2,
+        "dense": 0,
+        "particles": 0,
+        "tracers": 0
+      }
+    },
+    {
+      "id": "constant-nonhydrostatic-composite-512",
+      "bytes": {
+        "source": 1339837119,
+        "reference": 3224593227,
+        "request": 527
+      },
+      "counts": {
+        "waveVortex": 2,
+        "dense": 1,
+        "particles": 2,
+        "tracers": 2
+      }
+    }
+  ],
+  "independentReferenceBackend": {
+    "backend": "matlab",
+    "proof": "Constructor options computationalBackend defaults to matlab (line182); transformFromGroup runtime override also defaults to matlab (line596). WVModel.modelFromFile restores without compiled override. Runtime backend is not persisted in these source files; source code digests bind the defaults. Generator bytes remained frozen throughout execution."
+  },
+  "artifacts": [
+    {
+      "path": "/private/tmp/wvm455-large-model-fixtures/manifest.json",
+      "sha256": "62389f6926fc66a3f87015231fd80d5333338b00f91c2f7a317c686ad72c963a"
+    },
+    {
+      "path": "/private/tmp/wvm455AuthorModelFixtures.m",
+      "sha256": "9651f80763a2d270af4cfba05bc57439719ee6e11505cdd4a3bf806e591c4ffb"
+    },
+    {
+      "path": "/private/tmp/wvm455-model-fixture-generation.log",
+      "sha256": "fca0cbaebe16c8c7409fe66251921f78a4ad9b200e03d954da0d02dbd32d16ea"
+    },
+    {
+      "path": "/private/tmp/wvm455-model-fixture-generation.json",
+      "sha256": "009628ce8ca4c9a9b7da5363d20c67456828cb3786d547a02bb88a81731c2254"
+    },
+    {
+      "path": "/private/tmp/wvm455-model-fixture-analyzer.json",
+      "sha256": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945"
+    },
+    {
+      "path": "/private/tmp/wvm455-model-harness-structural.json",
+      "sha256": "88aae3de42182ef30758f3e65008e8632b85bb1ddf17c7b69871da196a79b3e5"
+    },
+    {
+      "path": "/Users/jearly/Documents/OceanKitRepositories/wvm-v4-cpp-adoption-audit/Benchmarks/constant-adoption/writeConstantModelFixtures.m",
+      "sha256": "e2580ea1ec8476ceb3b2c80284a21367389f3c89968e92baaa22f0465b02bc7a"
+    },
+    {
+      "path": "/Users/jearly/Documents/OceanKitRepositories/wvm-v4-cpp-adoption-audit/Benchmarks/constant-adoption/run_model_adoption.py",
+      "sha256": "1d79353dd96421ecab5610291c60eecbabfc3bddbcbfd413b9f4ddfbdbcefec4"
+    },
+    {
+      "path": "/Users/jearly/Documents/OceanKitRepositories/wvm-v4-cpp-adoption-audit/@WVTransformConstantStratification/WVTransformConstantStratification.m",
+      "sha256": "74b867853a77bd26ddc793d59f79afb5c7c1444aa84dd64f80a779d093a4027e"
+    },
+    {
+      "path": "/Users/jearly/Documents/OceanKitRepositories/wvm-v4-cpp-adoption-audit/@WVModel/modelFromFile.m",
+      "sha256": "d17dc344a6a1dc35af50c819c1db45e344e41b078aeb5e38c72219d898e2f0f1"
+    }
+  ],
+  "setupTiming": {
+    "scope": "fixture/reference generation only; no adoption timing sample",
+    "elapsedSeconds": 129.53589216666666,
+    "profiles": 6
+  },
+  "codeAnalyzerFindings": []
+}

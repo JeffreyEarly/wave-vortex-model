@@ -1,0 +1,39 @@
+{
+  "profiles": [
+    {
+      "profile": "constant-hydrostatic-256x256x129",
+      "pairs": 8,
+      "fluxRatio": 0.48879075024994006,
+      "peakRSSRatio": 0.6707953312676533
+    },
+    {
+      "profile": "constant-hydrostatic-512x512x257",
+      "pairs": 8,
+      "fluxRatio": 0.4825179523157001,
+      "peakRSSRatio": 0.5740866506345477
+    },
+    {
+      "profile": "constant-nonhydrostatic-256x256x129",
+      "pairs": 8,
+      "fluxRatio": 0.48497727654990186,
+      "peakRSSRatio": 0.6681304717667481
+    },
+    {
+      "profile": "constant-nonhydrostatic-512x512x257",
+      "pairs": 8,
+      "fluxRatio": 0.4713401064369898,
+      "peakRSSRatio": 0.5751373900893889
+    }
+  ],
+  "geometricFluxRatio": 0.4818624231213486,
+  "fluxPairedBootstrap95": [
+    0.46130137177292524,
+    0.5032541472916429
+  ],
+  "geometricPeakRSSRatio": 0.6202261746289046,
+  "peakRSSPairedBootstrap95": [
+    0.6174535711714566,
+    0.6226141703666239
+  ],
+  "decision": "requires owned-memory, full-model and MATLAB-loaded gates"
+}

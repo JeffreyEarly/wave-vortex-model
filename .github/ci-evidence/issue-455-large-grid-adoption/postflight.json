@@ -1,0 +1,1296 @@
+{
+  "passed": true,
+  "checks": [
+    {
+      "path": "/private/tmp/wvm358-control-adoption/wv-constant-adoption",
+      "sha256": "d7d0ffb197db09d6b1166567148852661be3a049e633c78b90f61e85abf8e967",
+      "kind": "control"
+    },
+    {
+      "path": "/Users/jearly/Documents/OceanKitRepositories/wave-vortex-model/.compiled-backend-cache/provider/native-neon-pthreads/lib/libfftw3.3.dylib",
+      "sha256": "b0dec1a21815db76726d48fe9b49cc34502b8fd7f4cccdfb0a54d50e39abef2c",
+      "kind": "provider"
+    },
+    {
+      "path": "/Users/jearly/Documents/OceanKitRepositories/wave-vortex-model/.compiled-backend-cache/provider/native-neon-pthreads/lib/libfftw3_threads.3.dylib",
+      "sha256": "064e6e17ca492204cb41aaf6ef739f6d5d22cc774699760e25166f5f8dffc359",
+      "kind": "provider"
+    },
+    {
+      "path": "/private/tmp/wvm358-candidate-adoption-p12/wv-constant-adoption",
+      "sha256": "df84ed449739d74150bd5af0aff0e2207a314fe33b8c55ed6dd671db682c6cf4",
+      "kind": "candidate"
+    },
+    {
+      "path": "/Users/jearly/Documents/OceanKitRepositories/wave-vortex-model/.compiled-backend-cache/provider/native-neon-pthreads/lib/libfftw3.3.dylib",
+      "sha256": "b0dec1a21815db76726d48fe9b49cc34502b8fd7f4cccdfb0a54d50e39abef2c",
+      "kind": "provider"
+    },
+    {
+      "path": "/Users/jearly/Documents/OceanKitRepositories/wave-vortex-model/.compiled-backend-cache/provider/native-neon-pthreads/lib/libfftw3_threads.3.dylib",
+      "sha256": "064e6e17ca492204cb41aaf6ef739f6d5d22cc774699760e25166f5f8dffc359",
+      "kind": "provider"
+    },
+    {
+      "path": "/private/tmp/wvm358-control-runtime/wave-vortex-run",
+      "sha256": "bac9b9c76cd4f0960a8225b0319e46d54dafc6e091a94917305d6cddb417fca2",
+      "kind": "modelControl"
+    },
+    {
+      "path": "/Users/jearly/Documents/OceanKitRepositories/wave-vortex-model/.compiled-backend-cache/provider/native-neon-pthreads/lib/libfftw3.3.dylib",
+      "sha256": "b0dec1a21815db76726d48fe9b49cc34502b8fd7f4cccdfb0a54d50e39abef2c",
+      "kind": "provider"
+    },
+    {
+      "path": "/Users/jearly/Documents/OceanKitRepositories/wave-vortex-model/.compiled-backend-cache/provider/native-neon-pthreads/lib/libfftw3_threads.3.dylib",
+      "sha256": "064e6e17ca492204cb41aaf6ef739f6d5d22cc774699760e25166f5f8dffc359",
+      "kind": "provider"
+    },
+    {
+      "path": "/private/tmp/wvm358-candidate-adoption-p12/runtime/wave-vortex-run",
+      "sha256": "be3f93268149b53df9cffaf24a530cb8147b33a8c14c05c4fd93608fc901cccc",
+      "kind": "modelCandidate"
+    },
+    {
+      "path": "/private/tmp/wvm358-mex-control-v3/wvm358_control.mexmaca64",
+      "sha256": "3883a664cf58ddef1fc637cb99b3fd477ccc72f0fd1f3582b41e2b361384e933",
+      "kind": "controlMex"
+    },
+    {
+      "path": "/private/tmp/wvm358-mex-candidate-streamed-p12/wv_adoption_candidate_streamed.mexmaca64",
+      "sha256": "064a6b4d758b2dad8deeb16a0655243c64f20eb189b0cd574328f2d4d6c13737",
+      "kind": "candidateMex"
+    },
+    {
+      "path": "/Users/jearly/Documents/OceanKitRepositories/wvm-v4-cpp-adoption-audit/@WVCompiledBackend/WVCompiledBackend.m",
+      "sha256": "0711670997101aaeff6ab2a9014178e42bc69bcfa90ea9b7bb2edc5aaf166d3d",
+      "kind": "candidate production-source equivalence"
+    },
+    {
+      "path": "/Users/jearly/Documents/OceanKitRepositories/wvm-v4-cpp-adoption-audit/@WVCompiledBackend/build.m",
+      "sha256": "eafd8c187897fb8736858b3bdac61c0a6183c58e5261ac405bc256cb24029949",
+      "kind": "candidate production-source equivalence"
+    },
+    {
+      "path": "/Users/jearly/Documents/OceanKitRepositories/wvm-v4-cpp-adoption-audit/@WVCompiledBackend/buildForTesting.m",
+      "sha256": "4f0e19a9c21111693c898b0d46360def937c0fa6eb2e2d6ad81d8da7c0592943",
+      "kind": "candidate production-source equivalence"
+    },
+    {
+      "path": "/Users/jearly/Documents/OceanKitRepositories/wvm-v4-cpp-adoption-audit/@WVCompiledBackend/capabilities.m",
+      "sha256": "dff2fd56e87af35f1256db85e06bbd05cc96d32b6373d33aa5bd225a13c3837c",
+      "kind": "candidate production-source equivalence"
+    },
+    {
+      "path": "/Users/jearly/Documents/OceanKitRepositories/wvm-v4-cpp-adoption-audit/@WVCompiledBackend/capabilitiesForTesting.m",
+      "sha256": "1072534717cac8da8e90b3f2f8daa9e269b2af28d7a2ea438beccb689d02056f",
+      "kind": "candidate production-source equivalence"
+    },
+    {
+      "path": "/Users/jearly/Documents/OceanKitRepositories/wvm-v4-cpp-adoption-audit/@WVCompiledBackend/private/wvCompiledBackendBuild.m",
+      "sha256": "d724445240b1b8832746ab8ab95cb8fceefcc86973acf189054949ad5002b0a9",
+      "kind": "candidate production-source equivalence"
+    },
+    {
+      "path": "/Users/jearly/Documents/OceanKitRepositories/wvm-v4-cpp-adoption-audit/@WVCompiledBackend/private/wvCompiledBackendCapabilities.m",
+      "sha256": "c453d0f3bce5089c9928dc00969f88ca236b5c34f64c7a732ac13282156a5620",
+      "kind": "candidate production-source equivalence"
+    },
+    {
+      "path": "/Users/jearly/Documents/OceanKitRepositories/wvm-v4-cpp-adoption-audit/@WVCompiledBackend/private/wvCompiledBackendConstants.m",
+      "sha256": "d4186fe60c56711b56b420b11e2dde0deeeea6bd1968514ffe054aac9e03f0f7",
+      "kind": "candidate production-source equivalence"
+    },
+    {
+      "path": "/Users/jearly/Documents/OceanKitRepositories/wvm-v4-cpp-adoption-audit/@WVCompiledBackend/private/wvCompiledBackendFailure.m",
+      "sha256": "48fec872a24a25306c1c20a75839f8dcc28bb3ba64090b905aac7a93e85cf43d",
+      "kind": "candidate production-source equivalence"
+    },
+    {
+      "path": "/Users/jearly/Documents/OceanKitRepositories/wvm-v4-cpp-adoption-audit/@WVCompiledBackend/private/wvCompiledBackendSupport.m",
+      "sha256": "7e6786ce6ccc79197c18ff56a402771dd03ee769a04d8f8a59beb7cc6fa67b6c",
+      "kind": "candidate production-source equivalence"
+    },
+    {
+      "path": "/Users/jearly/Documents/OceanKitRepositories/wvm-v4-cpp-adoption-audit/CompiledKernel/adapters/accelerate/WVAccelerateMatrixBackend.cpp",
+      "sha256": "08fa3565ad33dc08ace85b9c708019745a53fca1187d0ebb9b23991ddb4292cc",
+      "kind": "candidate production-source equivalence"
+    },
+    {
+      "path": "/Users/jearly/Documents/OceanKitRepositories/wvm-v4-cpp-adoption-audit/CompiledKernel/adapters/accelerate/WVAccelerateMatrixBackend.hpp",
+      "sha256": "775b2bd2415b1d6d697e37085305595a3955241047830b4a5da27edc4483c229",
+      "kind": "candidate production-source equivalence"
+    },
+    {
+      "path": "/Users/jearly/Documents/OceanKitRepositories/wvm-v4-cpp-adoption-audit/CompiledKernel/adapters/native-fftw/WVNativeFFTWEngine.cpp",
+      "sha256": "bf22362163ad2899a487fed012c40fa212e5ac74c67e6449eacfc239dad21c4e",
+      "kind": "candidate production-source equivalence"
+    },
+    {
+      "path": "/Users/jearly/Documents/OceanKitRepositories/wvm-v4-cpp-adoption-audit/CompiledKernel/adapters/native-fftw/WVNativeFFTWEngine.hpp",
+      "sha256": "7285f9989e604d2056a36eec275b95389bf386c3a5c7f5140086206f6ecf251b",
+      "kind": "candidate production-source equivalence"
+    },
+    {
+      "path": "/Users/jearly/Documents/OceanKitRepositories/wvm-v4-cpp-adoption-audit/CompiledKernel/adapters/native-fftw/wv_compiled_backend_mex.cpp",
+      "sha256": "b68cc36464bb6b46a3e10c69fa1964c76269aac717cedf88e9657f285a6c8ea6",
+      "kind": "candidate production-source equivalence"
+    },
+    {
+      "path": "/Users/jearly/Documents/OceanKitRepositories/wvm-v4-cpp-adoption-audit/CompiledKernel/adapters/reference/WVReferenceFFTEngine.cpp",
+      "sha256": "703724883edd3c05f583c7e68bad46830b1a92e22524a10906d3da366ad64c49",
+      "kind": "candidate production-source equivalence"
+    },
+    {
+      "path": "/Users/jearly/Documents/OceanKitRepositories/wvm-v4-cpp-adoption-audit/CompiledKernel/adapters/reference/WVReferenceFFTEngine.hpp",
+      "sha256": "b3a5e93dbce93be55573937f23c1d08e389780444466c61633a091b0da404afa",
+      "kind": "candidate production-source equivalence"
+    },
+    {
+      "path": "/Users/jearly/Documents/OceanKitRepositories/wvm-v4-cpp-adoption-audit/CompiledKernel/include/WaveVortexKernel/WVFFTEngine.hpp",
+      "sha256": "10e0fcb9c2053f848889e4d806233588e0432f49d59c1211c146c8343c0ba9df",
+      "kind": "candidate production-source equivalence"
+    },
+    {
+      "path": "/Users/jearly/Documents/OceanKitRepositories/wvm-v4-cpp-adoption-audit/CompiledKernel/include/WaveVortexKernel/WVKernelTypes.hpp",
+      "sha256": "8146ba3cdae911b7f283d9c7cf5207b22c077fdf14bb2533d0717fdd9b2112dd",
+      "kind": "candidate production-source equivalence"
+    },
+    {
+      "path": "/Users/jearly/Documents/OceanKitRepositories/wvm-v4-cpp-adoption-audit/CompiledKernel/include/WaveVortexKernel/WVSpectralOperators.hpp",
+      "sha256": "d9bce324eeb1572abe39d99a23448d55a31ad8074ce2e4105ef41bbdd610bb95",
+      "kind": "candidate production-source equivalence"
+    },
+    {
+      "path": "/Users/jearly/Documents/OceanKitRepositories/wvm-v4-cpp-adoption-audit/CompiledKernel/include/WaveVortexKernel/WVStratifiedModalSource.hpp",
+      "sha256": "2577060312de3d9255b34d5398ce881c568216d622ac946627657f76fe982ff6",
+      "kind": "candidate production-source equivalence"
+    },
+    {
+      "path": "/Users/jearly/Documents/OceanKitRepositories/wvm-v4-cpp-adoption-audit/CompiledKernel/include/WaveVortexKernel/WVTransformBarotropicQGKernel.hpp",
+      "sha256": "861b367736520dc46b887f1d5b8739181749bfc63b36f17f7e0a7e6b97e74d0b",
+      "kind": "candidate production-source equivalence"
+    },
+    {
+      "path": "/Users/jearly/Documents/OceanKitRepositories/wvm-v4-cpp-adoption-audit/CompiledKernel/include/WaveVortexKernel/WVTransformBoussinesqKernel.hpp",
+      "sha256": "4d0f428cb3bc58b6ad7ba31b16d53514744f0b4ce85b059cb80c1143b95d5721",
+      "kind": "candidate production-source equivalence"
+    },
+    {
+      "path": "/Users/jearly/Documents/OceanKitRepositories/wvm-v4-cpp-adoption-audit/CompiledKernel/include/WaveVortexKernel/WVTransformConstantStratificationKernel.hpp",
+      "sha256": "daab552e9856e169092d287e8b44b3f8c210140189bec2e65e999e1bdb315ebf",
+      "kind": "candidate production-source equivalence"
+    },
+    {
+      "path": "/Users/jearly/Documents/OceanKitRepositories/wvm-v4-cpp-adoption-audit/CompiledKernel/include/WaveVortexKernel/WVTransformHydrostaticKernel.hpp",
+      "sha256": "3edf2ca25455684e9d7566b01cbe86ede9f69ffcffbcbef24cd30c1cd16f6a02",
+      "kind": "candidate production-source equivalence"
+    },
+    {
+      "path": "/Users/jearly/Documents/OceanKitRepositories/wvm-v4-cpp-adoption-audit/CompiledKernel/include/WaveVortexKernel/WVTransformStratifiedQGKernel.hpp",
+      "sha256": "c1e3a5a8a1411ebddd62da1ceb87454df0c1c77fb74998e09b1c10898d369dd5",
+      "kind": "candidate production-source equivalence"
+    },
+    {
+      "path": "/Users/jearly/Documents/OceanKitRepositories/wvm-v4-cpp-adoption-audit/CompiledKernel/src/WVCoefficientFormulas.hpp",
+      "sha256": "78d647608d8919b33c278c280eb6d2b253dfb0acd8d3330141fbdc845e00864a",
+      "kind": "candidate production-source equivalence"
+    },
+    {
+      "path": "/Users/jearly/Documents/OceanKitRepositories/wvm-v4-cpp-adoption-audit/CompiledKernel/src/WVKernelTypes.cpp",
+      "sha256": "4b7cf55649b02eaae224bfaf618f756122a81c1caaff92c751b4e35f827ea1cc",
+      "kind": "candidate production-source equivalence"
+    },
+    {
+      "path": "/Users/jearly/Documents/OceanKitRepositories/wvm-v4-cpp-adoption-audit/CompiledKernel/src/WVPreparedModeExecutor.hpp",
+      "sha256": "817d2a3cd791b51a38e0e427a1d6800d376aaa976ca7100f438599841fabce93",
+      "kind": "candidate production-source equivalence"
+    },
+    {
+      "path": "/Users/jearly/Documents/OceanKitRepositories/wvm-v4-cpp-adoption-audit/CompiledKernel/src/WVPreparedVerticalOperator.cpp",
+      "sha256": "460d12936bd9f383400476b0bc8338735ec9216e4fd7489240f6c9d78ab7898b",
+      "kind": "candidate production-source equivalence"
+    },
+    {
+      "path": "/Users/jearly/Documents/OceanKitRepositories/wvm-v4-cpp-adoption-audit/CompiledKernel/src/WVRetainedHorizontalOperator.cpp",
+      "sha256": "484cf58901a4008e6109aacbceeee03aa50e0f4641c91c4cf730466a3d16251a",
+      "kind": "candidate production-source equivalence"
+    },
+    {
+      "path": "/Users/jearly/Documents/OceanKitRepositories/wvm-v4-cpp-adoption-audit/CompiledKernel/src/WVSpectralValidation.hpp",
+      "sha256": "eb416d6abc47d97d506b4c4fa65e8006b951d07d013c5d96db0f8043b417cc79",
+      "kind": "candidate production-source equivalence"
+    },
+    {
+      "path": "/Users/jearly/Documents/OceanKitRepositories/wvm-v4-cpp-adoption-audit/CompiledKernel/src/WVTransformBarotropicQGKernel.cpp",
+      "sha256": "276a610849031cab4d54d0c248a4aac42ee561431cb18e972943c6446b1b71dc",
+      "kind": "candidate production-source equivalence"
+    },
+    {
+      "path": "/Users/jearly/Documents/OceanKitRepositories/wvm-v4-cpp-adoption-audit/CompiledKernel/src/WVTransformBoussinesqKernel.cpp",
+      "sha256": "ad38658bd1557209ad4e4f2e4093065b31d63b18ccfc294627b7e5ae4904c7a6",
+      "kind": "candidate production-source equivalence"
+    },
+    {
+      "path": "/Users/jearly/Documents/OceanKitRepositories/wvm-v4-cpp-adoption-audit/CompiledKernel/src/WVTransformConstantStratificationKernel.cpp",
+      "sha256": "24ad9025c8e55d9aab8eb027b6201221a779105e8a59b13b42ff68c84dd134bb",
+      "kind": "candidate production-source equivalence"
+    },
+    {
+      "path": "/Users/jearly/Documents/OceanKitRepositories/wvm-v4-cpp-adoption-audit/CompiledKernel/src/WVTransformHydrostaticKernel.cpp",
+      "sha256": "565917c1f386e6e0fecc07d7313c371b9c650745c7e0871ecd99ca36bf929a09",
+      "kind": "candidate production-source equivalence"
+    },
+    {
+      "path": "/Users/jearly/Documents/OceanKitRepositories/wvm-v4-cpp-adoption-audit/CompiledKernel/src/WVTransformStratifiedQGKernel.cpp",
+      "sha256": "076e54244b239ae6710a56e901ba47d61779f15577ff325ed42b03fd5cf008a1",
+      "kind": "candidate production-source equivalence"
+    },
+    {
+      "path": "/Users/jearly/Documents/OceanKitRepositories/wvm-v4-cpp-adoption-audit/PortableRuntime/app/WVRunRequest.cpp",
+      "sha256": "a1c08d13a88dcfd0b0bb2e2164ed3476cfe0781835cc602c4ff2a167ffdced94",
+      "kind": "candidate production-source equivalence"
+    },
+    {
+      "path": "/Users/jearly/Documents/OceanKitRepositories/wvm-v4-cpp-adoption-audit/PortableRuntime/app/WVRunRequest.hpp",
+      "sha256": "943bfc293d24e15f9cbef7eceadd4db664ab91f8f9f464cf7c84b421e6e28440",
+      "kind": "candidate production-source equivalence"
+    },
+    {
+      "path": "/Users/jearly/Documents/OceanKitRepositories/wvm-v4-cpp-adoption-audit/PortableRuntime/app/WaveVortexRun.cpp",
+      "sha256": "d012da962b42155935b48968c617a5702b78097bf15f76b7d2da595a99e98cd8",
+      "kind": "candidate production-source equivalence"
+    },
+    {
+      "path": "/Users/jearly/Documents/OceanKitRepositories/wvm-v4-cpp-adoption-audit/PortableRuntime/app/WaveVortexRunMain.cpp",
+      "sha256": "1ac59b6450ff7a2dfdcdc430ea32bb4db64b147569f82255c84196fc2d14b64a",
+      "kind": "candidate production-source equivalence"
+    },
+    {
+      "path": "/Users/jearly/Documents/OceanKitRepositories/wvm-v4-cpp-adoption-audit/PortableRuntime/include/WaveVortexRuntime/WVBarotropicQGForcingEngine.hpp",
+      "sha256": "0a53711b622240b43576d22317f74f3be408bc67e4e026352e36e81a60c1df22",
+      "kind": "candidate production-source equivalence"
+    },
+    {
+      "path": "/Users/jearly/Documents/OceanKitRepositories/wvm-v4-cpp-adoption-audit/PortableRuntime/include/WaveVortexRuntime/WVBarotropicQGIntegrationSystem.hpp",
+      "sha256": "68a5878f99bb07d852f07efaf6c7a23496ec45d1b26c2a4ca607cb06ca543b7f",
+      "kind": "candidate production-source equivalence"
+    },
+    {
+      "path": "/Users/jearly/Documents/OceanKitRepositories/wvm-v4-cpp-adoption-audit/PortableRuntime/include/WaveVortexRuntime/WVBoussinesqForcingEngine.hpp",
+      "sha256": "72e731b26907bfe3cb473e0a21ec53951d4e7894a1f09f04d814cb5c0b823262",
+      "kind": "candidate production-source equivalence"
+    },
+    {
+      "path": "/Users/jearly/Documents/OceanKitRepositories/wvm-v4-cpp-adoption-audit/PortableRuntime/include/WaveVortexRuntime/WVBoussinesqIntegrationSystem.hpp",
+      "sha256": "a7524e9500c75d2cb8c748e86ebdca02677d3be2f9fe6691014f2ea7991a5ed2",
+      "kind": "candidate production-source equivalence"
+    },
+    {
+      "path": "/Users/jearly/Documents/OceanKitRepositories/wvm-v4-cpp-adoption-audit/PortableRuntime/include/WaveVortexRuntime/WVCheckpointReader.hpp",
+      "sha256": "51ec6e69f24ac9f3873b17cefa002193fd95f50da229020de9ea407cc4a9b791",
+      "kind": "candidate production-source equivalence"
+    },
+    {
+      "path": "/Users/jearly/Documents/OceanKitRepositories/wvm-v4-cpp-adoption-audit/PortableRuntime/include/WaveVortexRuntime/WVCheckpointWriter.hpp",
+      "sha256": "63f33ac6f15801bbd1493014facdc6c361944090384b8fe56de8fef07b7b1953",
+      "kind": "candidate production-source equivalence"
+    },
+    {
+      "path": "/Users/jearly/Documents/OceanKitRepositories/wvm-v4-cpp-adoption-audit/PortableRuntime/include/WaveVortexRuntime/WVConstantStratificationIntegrationSystem.hpp",
+      "sha256": "03c811a5cd97d0ca7667af855363d5933770618686cb0a29d48c020efc113ea8",
+      "kind": "candidate production-source equivalence"
+    },
+    {
+      "path": "/Users/jearly/Documents/OceanKitRepositories/wvm-v4-cpp-adoption-audit/PortableRuntime/include/WaveVortexRuntime/WVDensityDiagnosticContract.hpp",
+      "sha256": "150c8ae5d1a732a22bee0c6ce4c765a4e440cda12f520319671337229f2633a0",
+      "kind": "candidate production-source equivalence"
+    },
+    {
+      "path": "/Users/jearly/Documents/OceanKitRepositories/wvm-v4-cpp-adoption-audit/PortableRuntime/include/WaveVortexRuntime/WVExtensionCatalog.hpp",
+      "sha256": "f0479c6c1546451e988ca2e9c83e4c6b01b6523c3b86c0f2becfc2a02cc3146a",
+      "kind": "candidate production-source equivalence"
+    },
+    {
+      "path": "/Users/jearly/Documents/OceanKitRepositories/wvm-v4-cpp-adoption-audit/PortableRuntime/include/WaveVortexRuntime/WVFieldEvaluationService.hpp",
+      "sha256": "aee6e64f9af0ac293bfecb4df5d44cab68e08c0bed1b96906f3b0153407df529",
+      "kind": "candidate production-source equivalence"
+    },
+    {
+      "path": "/Users/jearly/Documents/OceanKitRepositories/wvm-v4-cpp-adoption-audit/PortableRuntime/include/WaveVortexRuntime/WVForcing.hpp",
+      "sha256": "a94e173f3d8164dce04eb1fb5db488704d6fe67f45f88456901a78c7eec703ca",
+      "kind": "candidate production-source equivalence"
+    },
+    {
+      "path": "/Users/jearly/Documents/OceanKitRepositories/wvm-v4-cpp-adoption-audit/PortableRuntime/include/WaveVortexRuntime/WVForcingContracts.hpp",
+      "sha256": "4246098267b350b9a11c65fb8bd05c7ea3ee265d34e289f8ca405cf09f6a68c2",
+      "kind": "candidate production-source equivalence"
+    },
+    {
+      "path": "/Users/jearly/Documents/OceanKitRepositories/wvm-v4-cpp-adoption-audit/PortableRuntime/include/WaveVortexRuntime/WVForcingEngine.hpp",
+      "sha256": "8d938ed71b19017ecab2c214ee96f60116de73d34365a4537cfd702f61ea26f9",
+      "kind": "candidate production-source equivalence"
+    },
+    {
+      "path": "/Users/jearly/Documents/OceanKitRepositories/wvm-v4-cpp-adoption-audit/PortableRuntime/include/WaveVortexRuntime/WVForcingSchedule.hpp",
+      "sha256": "5f255db064b224bf359f065b294506ea9ddc42f0edaf62cad4d359a987f4f48a",
+      "kind": "candidate production-source equivalence"
+    },
+    {
+      "path": "/Users/jearly/Documents/OceanKitRepositories/wvm-v4-cpp-adoption-audit/PortableRuntime/include/WaveVortexRuntime/WVForcingTendency.hpp",
+      "sha256": "5674b91740d4a522037adb5cd013932623e2be5001dc8cb893490f69e97d66d9",
+      "kind": "candidate production-source equivalence"
+    },
+    {
+      "path": "/Users/jearly/Documents/OceanKitRepositories/wvm-v4-cpp-adoption-audit/PortableRuntime/include/WaveVortexRuntime/WVHydrostaticForcingEngine.hpp",
+      "sha256": "aad706988b0ceac46a9dd2d0894df52bb2bd18c96524d0e290cf3b94b2ad746e",
+      "kind": "candidate production-source equivalence"
+    },
+    {
+      "path": "/Users/jearly/Documents/OceanKitRepositories/wvm-v4-cpp-adoption-audit/PortableRuntime/include/WaveVortexRuntime/WVHydrostaticIntegrationSystem.hpp",
+      "sha256": "105f13cf1e0b9d15eac60e7a4a14451823cedd43588ffd7e0e483a8c11e2168b",
+      "kind": "candidate production-source equivalence"
+    },
+    {
+      "path": "/Users/jearly/Documents/OceanKitRepositories/wvm-v4-cpp-adoption-audit/PortableRuntime/include/WaveVortexRuntime/WVIntegrationContracts.hpp",
+      "sha256": "649f29e05fdcd821920435686f4bd09c654e400e0d0504c9ffdea3c648b4e4e5",
+      "kind": "candidate production-source equivalence"
+    },
+    {
+      "path": "/Users/jearly/Documents/OceanKitRepositories/wvm-v4-cpp-adoption-audit/PortableRuntime/include/WaveVortexRuntime/WVIntegrationState.hpp",
+      "sha256": "67f17a04352c189ba231df74919aacaad73bb00bb2cf0c3a244688864f1fec20",
+      "kind": "candidate production-source equivalence"
+    },
+    {
+      "path": "/Users/jearly/Documents/OceanKitRepositories/wvm-v4-cpp-adoption-audit/PortableRuntime/include/WaveVortexRuntime/WVLagrangianParticles.hpp",
+      "sha256": "d347e95467b87c887bca7bd899131ada4dc31be2e4820cdf9d775f5d7e20374f",
+      "kind": "candidate production-source equivalence"
+    },
+    {
+      "path": "/Users/jearly/Documents/OceanKitRepositories/wvm-v4-cpp-adoption-audit/PortableRuntime/include/WaveVortexRuntime/WVModel.hpp",
+      "sha256": "366a50c7189bdfd84eebde0cb9b8e75685deb4098aab73c9376fed3754a75b6b",
+      "kind": "candidate production-source equivalence"
+    },
+    {
+      "path": "/Users/jearly/Documents/OceanKitRepositories/wvm-v4-cpp-adoption-audit/PortableRuntime/include/WaveVortexRuntime/WVModelOutputConfiguration.hpp",
+      "sha256": "8737648cb221476a2f2e5e524852398b0c8c1b8c771277d84fce0e27bb336cda",
+      "kind": "candidate production-source equivalence"
+    },
+    {
+      "path": "/Users/jearly/Documents/OceanKitRepositories/wvm-v4-cpp-adoption-audit/PortableRuntime/include/WaveVortexRuntime/WVModelOutputNetCDF.hpp",
+      "sha256": "2b5149e0db45a137c31284d34ddde5a49cd897b99ddf36528ccbc009997087e1",
+      "kind": "candidate production-source equivalence"
+    },
+    {
+      "path": "/Users/jearly/Documents/OceanKitRepositories/wvm-v4-cpp-adoption-audit/PortableRuntime/include/WaveVortexRuntime/WVNoMotionProfile.hpp",
+      "sha256": "fa9ee897d232e39bda85cc2c9af8c4dd20ed9d7540b192414eb616be121f0177",
+      "kind": "candidate production-source equivalence"
+    },
+    {
+      "path": "/Users/jearly/Documents/OceanKitRepositories/wvm-v4-cpp-adoption-audit/PortableRuntime/include/WaveVortexRuntime/WVNoMotionProfileRecovery.hpp",
+      "sha256": "ee9f3745e1f376fac3032c139bb27e056bd0d66287adc55f38a19bc2a23326f8",
+      "kind": "candidate production-source equivalence"
+    },
+    {
+      "path": "/Users/jearly/Documents/OceanKitRepositories/wvm-v4-cpp-adoption-audit/PortableRuntime/include/WaveVortexRuntime/WVObservation.hpp",
+      "sha256": "dc529e33fe3041869fd67bcc82327ca9d3cd7c5069c51f81f58e5a389d9d2643",
+      "kind": "candidate production-source equivalence"
+    },
+    {
+      "path": "/Users/jearly/Documents/OceanKitRepositories/wvm-v4-cpp-adoption-audit/PortableRuntime/include/WaveVortexRuntime/WVObserverContracts.hpp",
+      "sha256": "a3411d5c63d6169db3722128473a8590dfbdfff4eeb290c42c5f82e8b08c8728",
+      "kind": "candidate production-source equivalence"
+    },
+    {
+      "path": "/Users/jearly/Documents/OceanKitRepositories/wvm-v4-cpp-adoption-audit/PortableRuntime/include/WaveVortexRuntime/WVObserverOutputEvaluationService.hpp",
+      "sha256": "29c624be9047a02cfc220d488cc12e251f3565b3370b04a59c68b72283d6f01a",
+      "kind": "candidate production-source equivalence"
+    },
+    {
+      "path": "/Users/jearly/Documents/OceanKitRepositories/wvm-v4-cpp-adoption-audit/PortableRuntime/include/WaveVortexRuntime/WVObserverOutputProvider.hpp",
+      "sha256": "7afcd8bb9b45f3ca388096b9cc440e70a79dbd82ca0b0714555273eec5a5cf61",
+      "kind": "candidate production-source equivalence"
+    },
+    {
+      "path": "/Users/jearly/Documents/OceanKitRepositories/wvm-v4-cpp-adoption-audit/PortableRuntime/include/WaveVortexRuntime/WVObservingSystem.hpp",
+      "sha256": "859f5482c35d51056331f1055470f16594e772b466f0e26d3ac9a4b6538c02ad",
+      "kind": "candidate production-source equivalence"
+    },
+    {
+      "path": "/Users/jearly/Documents/OceanKitRepositories/wvm-v4-cpp-adoption-audit/PortableRuntime/include/WaveVortexRuntime/WVOutputOrchestration.hpp",
+      "sha256": "e83c1a05cb5c96cb8e0f8813ad4ddc342fa60b95fcb16b6ca3a3159d019465fd",
+      "kind": "candidate production-source equivalence"
+    },
+    {
+      "path": "/Users/jearly/Documents/OceanKitRepositories/wvm-v4-cpp-adoption-audit/PortableRuntime/include/WaveVortexRuntime/WVOutputSchedule.hpp",
+      "sha256": "3f746723d41555d69e1ada35eaee8fe6c07c38458e5d1587c4663ee6c146b85a",
+      "kind": "candidate production-source equivalence"
+    },
+    {
+      "path": "/Users/jearly/Documents/OceanKitRepositories/wvm-v4-cpp-adoption-audit/PortableRuntime/include/WaveVortexRuntime/WVPortableImplementationContract.hpp",
+      "sha256": "8a388243ef06cd5e55ec54c3123bf27c24f1b55e8f26d4082d3e5e8a5f0826f4",
+      "kind": "candidate production-source equivalence"
+    },
+    {
+      "path": "/Users/jearly/Documents/OceanKitRepositories/wvm-v4-cpp-adoption-audit/PortableRuntime/include/WaveVortexRuntime/WVPortableTypedRecord.hpp",
+      "sha256": "ed63e2fdc31ae7b7b6fd7fd0f32ed5d034c16882df33601bf2489ded3127e180",
+      "kind": "candidate production-source equivalence"
+    },
+    {
+      "path": "/Users/jearly/Documents/OceanKitRepositories/wvm-v4-cpp-adoption-audit/PortableRuntime/include/WaveVortexRuntime/WVPortableVariablePlan.hpp",
+      "sha256": "4307c51f5d1f3703417e10a0d622d57e8f9ba18ce22e792255dea6f94a773225",
+      "kind": "candidate production-source equivalence"
+    },
+    {
+      "path": "/Users/jearly/Documents/OceanKitRepositories/wvm-v4-cpp-adoption-audit/PortableRuntime/include/WaveVortexRuntime/WVRungeKutta.hpp",
+      "sha256": "24e5494ee76993439a364f9f3dac868c19756ed781e9077e80d16241b2149405",
+      "kind": "candidate production-source equivalence"
+    },
+    {
+      "path": "/Users/jearly/Documents/OceanKitRepositories/wvm-v4-cpp-adoption-audit/PortableRuntime/include/WaveVortexRuntime/WVRunner.hpp",
+      "sha256": "24112aa2984625c07e284da0b427259aa862f21cb9082e1e32f401f6aa25afdb",
+      "kind": "candidate production-source equivalence"
+    },
+    {
+      "path": "/Users/jearly/Documents/OceanKitRepositories/wvm-v4-cpp-adoption-audit/PortableRuntime/include/WaveVortexRuntime/WVStratifiedModalRecord.hpp",
+      "sha256": "c4025b48fbc7b51c27fb821cf886ea8d07ff619ee65539e4d6b5e4127037d4b8",
+      "kind": "candidate production-source equivalence"
+    },
+    {
+      "path": "/Users/jearly/Documents/OceanKitRepositories/wvm-v4-cpp-adoption-audit/PortableRuntime/include/WaveVortexRuntime/WVStratifiedQGForcingEngine.hpp",
+      "sha256": "86e8df8ef9d07c677b820d8104a6bd4ddb71606175c8dfe5e8a78099bcdd0045",
+      "kind": "candidate production-source equivalence"
+    },
+    {
+      "path": "/Users/jearly/Documents/OceanKitRepositories/wvm-v4-cpp-adoption-audit/PortableRuntime/include/WaveVortexRuntime/WVStratifiedQGIntegrationSystem.hpp",
+      "sha256": "b7985f98647e03439111e81076a735569209cc30ae9cdf11fa014b13bd41fdd7",
+      "kind": "candidate production-source equivalence"
+    },
+    {
+      "path": "/Users/jearly/Documents/OceanKitRepositories/wvm-v4-cpp-adoption-audit/PortableRuntime/include/WaveVortexRuntime/WVTracer.hpp",
+      "sha256": "b443240e896462271c99d9076458ae8bbd9c0495d38b017812e3bc7be8c2b893",
+      "kind": "candidate production-source equivalence"
+    },
+    {
+      "path": "/Users/jearly/Documents/OceanKitRepositories/wvm-v4-cpp-adoption-audit/PortableRuntime/include/WaveVortexRuntime/generated/WVPortableVariableCatalog.hpp",
+      "sha256": "157e33a74d7a4844e999bfeb682bbf9679fab500ec8107d4b9726e896264a909",
+      "kind": "candidate production-source equivalence"
+    },
+    {
+      "path": "/Users/jearly/Documents/OceanKitRepositories/wvm-v4-cpp-adoption-audit/PortableRuntime/include/WaveVortexRuntime/generated/WVPortableVariableContracts.hpp",
+      "sha256": "573135bc31e96003a1d2218a03a054a2e9e458c2d987c34e36c9f3164b6acf16",
+      "kind": "candidate production-source equivalence"
+    },
+    {
+      "path": "/Users/jearly/Documents/OceanKitRepositories/wvm-v4-cpp-adoption-audit/PortableRuntime/src/WVBarotropicQGFieldEvaluationAdapter.cpp",
+      "sha256": "8f46646ef2bf0773d3468940976edcb97852b217080b4d11ac927039cd080dfc",
+      "kind": "candidate production-source equivalence"
+    },
+    {
+      "path": "/Users/jearly/Documents/OceanKitRepositories/wvm-v4-cpp-adoption-audit/PortableRuntime/src/WVBarotropicQGFieldEvaluationAdapter.hpp",
+      "sha256": "676c4754d4a4b4f63fc005be14f43188f452e146a25f83fd8c784529aeec5544",
+      "kind": "candidate production-source equivalence"
+    },
+    {
+      "path": "/Users/jearly/Documents/OceanKitRepositories/wvm-v4-cpp-adoption-audit/PortableRuntime/src/WVBarotropicQGForcingEngine.cpp",
+      "sha256": "8c4523d6b44dac5d35e69d0dd87c8a394ff56f8afba0151c9949addc68cc9517",
+      "kind": "candidate production-source equivalence"
+    },
+    {
+      "path": "/Users/jearly/Documents/OceanKitRepositories/wvm-v4-cpp-adoption-audit/PortableRuntime/src/WVBarotropicQGIntegrationSystem.cpp",
+      "sha256": "9b044751747676e251b0d8230e789de837bd263d955e5dbda29591aa69b4e6b2",
+      "kind": "candidate production-source equivalence"
+    },
+    {
+      "path": "/Users/jearly/Documents/OceanKitRepositories/wvm-v4-cpp-adoption-audit/PortableRuntime/src/WVBoussinesqForcingEngine.cpp",
+      "sha256": "2de6889b570ed84198e347b2b8babea4ac5b7da3b9a0ca8ea6ccf0417d766783",
+      "kind": "candidate production-source equivalence"
+    },
+    {
+      "path": "/Users/jearly/Documents/OceanKitRepositories/wvm-v4-cpp-adoption-audit/PortableRuntime/src/WVBoussinesqIntegrationSystem.cpp",
+      "sha256": "4dc1dea2155af0ae3778ca88b85f49c63d529648c5eb26bd17a3fe74574a7d3e",
+      "kind": "candidate production-source equivalence"
+    },
+    {
+      "path": "/Users/jearly/Documents/OceanKitRepositories/wvm-v4-cpp-adoption-audit/PortableRuntime/src/WVCheckpointTransformAdapters.cpp",
+      "sha256": "8164ca316fd60b4b4ca8f8de9e014e6ebf17dd97c8d0cf89f8bf9b6ffa48c111",
+      "kind": "candidate production-source equivalence"
+    },
+    {
+      "path": "/Users/jearly/Documents/OceanKitRepositories/wvm-v4-cpp-adoption-audit/PortableRuntime/src/WVCheckpointWriter.cpp",
+      "sha256": "9cc3f50f54ac6f8d82177b0fcc156bd9119dbcdaec60a560dabfd137bd49f85c",
+      "kind": "candidate production-source equivalence"
+    },
+    {
+      "path": "/Users/jearly/Documents/OceanKitRepositories/wvm-v4-cpp-adoption-audit/PortableRuntime/src/WVCheckpointWriterTestHooks.hpp",
+      "sha256": "e6305469ddcb833229bf9a69289ff02330a373e6b00ada4b9179f08d3123b69f",
+      "kind": "candidate production-source equivalence"
+    },
+    {
+      "path": "/Users/jearly/Documents/OceanKitRepositories/wvm-v4-cpp-adoption-audit/PortableRuntime/src/WVConstantStratificationIntegrationSystem.cpp",
+      "sha256": "b8e35f304ad53b1f536ebecee235b5ccef95373d79a039c776d41f801944d7ec",
+      "kind": "candidate production-source equivalence"
+    },
+    {
+      "path": "/Users/jearly/Documents/OceanKitRepositories/wvm-v4-cpp-adoption-audit/PortableRuntime/src/WVDensityEventEvaluation.cpp",
+      "sha256": "6ed862d0470a18f52ed5530342bf187326bfd4a9c8b72b8fa5392371cb978916",
+      "kind": "candidate production-source equivalence"
+    },
+    {
+      "path": "/Users/jearly/Documents/OceanKitRepositories/wvm-v4-cpp-adoption-audit/PortableRuntime/src/WVDensityEventEvaluation.hpp",
+      "sha256": "aee0f0201ade9da3d76f4f3e499a31bc1683c0c1c87086d93825e6066fda0bf0",
+      "kind": "candidate production-source equivalence"
+    },
+    {
+      "path": "/Users/jearly/Documents/OceanKitRepositories/wvm-v4-cpp-adoption-audit/PortableRuntime/src/WVDiagnosticFieldPlan.cpp",
+      "sha256": "2066d40e657f3354385872699ce27b98ef43442d0fdb3b4cb685b45073780bfd",
+      "kind": "candidate production-source equivalence"
+    },
+    {
+      "path": "/Users/jearly/Documents/OceanKitRepositories/wvm-v4-cpp-adoption-audit/PortableRuntime/src/WVDiagnosticFieldPlan.hpp",
+      "sha256": "84c6d75c675a1c6afac6386b310191467eeef4c7a01fa62133fed5f73146b77d",
+      "kind": "candidate production-source equivalence"
+    },
+    {
+      "path": "/Users/jearly/Documents/OceanKitRepositories/wvm-v4-cpp-adoption-audit/PortableRuntime/src/WVExtensionCatalog.cpp",
+      "sha256": "ca6eb58dadd0cd91e9057595ea440b9ee7ad1f658fe6621ca2e4136498253877",
+      "kind": "candidate production-source equivalence"
+    },
+    {
+      "path": "/Users/jearly/Documents/OceanKitRepositories/wvm-v4-cpp-adoption-audit/PortableRuntime/src/WVFieldEvaluationEventWorkspace.hpp",
+      "sha256": "14e8b74e3cde5f3aee6e92728d26c031d0041d9df3d3a45acf82aef57125d4f0",
+      "kind": "candidate production-source equivalence"
+    },
+    {
+      "path": "/Users/jearly/Documents/OceanKitRepositories/wvm-v4-cpp-adoption-audit/PortableRuntime/src/WVFieldEvaluationService.cpp",
+      "sha256": "7e3977c816164eaa88ee527adb99c87657bfbba4406c5eb78db3ad781a68b54b",
+      "kind": "candidate production-source equivalence"
+    },
+    {
+      "path": "/Users/jearly/Documents/OceanKitRepositories/wvm-v4-cpp-adoption-audit/PortableRuntime/src/WVForcingContracts.cpp",
+      "sha256": "693c43c914c609290f169f8ceb95ecbe1eab31c4f34e204673146831df3cfd0c",
+      "kind": "candidate production-source equivalence"
+    },
+    {
+      "path": "/Users/jearly/Documents/OceanKitRepositories/wvm-v4-cpp-adoption-audit/PortableRuntime/src/WVForcingDiagnosticBinding.hpp",
+      "sha256": "ea6b998973e2de0721211cf9cfa27e86faeeca6f629b60f6f10e5d80207a90c9",
+      "kind": "candidate production-source equivalence"
+    },
+    {
+      "path": "/Users/jearly/Documents/OceanKitRepositories/wvm-v4-cpp-adoption-audit/PortableRuntime/src/WVForcingDiagnosticWorkspace.hpp",
+      "sha256": "e0f1bdc9a6e33b16376c904b6eff68024abbbf0a1539cbe292029291a70aa30c",
+      "kind": "candidate production-source equivalence"
+    },
+    {
+      "path": "/Users/jearly/Documents/OceanKitRepositories/wvm-v4-cpp-adoption-audit/PortableRuntime/src/WVForcingEngine.cpp",
+      "sha256": "377fda8325059f4c20bfad539299c4abdffa2052bf143e07c7677feccfaaeb83",
+      "kind": "candidate production-source equivalence"
+    },
+    {
+      "path": "/Users/jearly/Documents/OceanKitRepositories/wvm-v4-cpp-adoption-audit/PortableRuntime/src/WVForcingImplementations.hpp",
+      "sha256": "f12a6937c53fb92777aa273fec5045bc5e16389299e1bf365b29c930fe527435",
+      "kind": "candidate production-source equivalence"
+    },
+    {
+      "path": "/Users/jearly/Documents/OceanKitRepositories/wvm-v4-cpp-adoption-audit/PortableRuntime/src/WVForcingScheduleDecoder.cpp",
+      "sha256": "2eef7a7f903bd1d4b228816d04f81944f4c3bdde0c2233586a14436e56398bc9",
+      "kind": "candidate production-source equivalence"
+    },
+    {
+      "path": "/Users/jearly/Documents/OceanKitRepositories/wvm-v4-cpp-adoption-audit/PortableRuntime/src/WVForcingScheduleDecoder.hpp",
+      "sha256": "0960956d2f5cc24b023f5eca9d4b5dfa1867404bdd47d20140752835efdba252",
+      "kind": "candidate production-source equivalence"
+    },
+    {
+      "path": "/Users/jearly/Documents/OceanKitRepositories/wvm-v4-cpp-adoption-audit/PortableRuntime/src/WVHydrostaticForcingEngine.cpp",
+      "sha256": "37b97db982a7eceb02f9b1c4a9cbbbee0173765a12a0cae3824836f09db9bad1",
+      "kind": "candidate production-source equivalence"
+    },
+    {
+      "path": "/Users/jearly/Documents/OceanKitRepositories/wvm-v4-cpp-adoption-audit/PortableRuntime/src/WVHydrostaticIntegrationSystem.cpp",
+      "sha256": "216ba08d6ace0c20e0fd1475645e45083ddb44d6a0d72d2b64c22a93695f4a55",
+      "kind": "candidate production-source equivalence"
+    },
+    {
+      "path": "/Users/jearly/Documents/OceanKitRepositories/wvm-v4-cpp-adoption-audit/PortableRuntime/src/WVIntegrationState.cpp",
+      "sha256": "336f05fc957bf2c2e6c83900246e935cda15a5ac6ae456d552d7ee9c8f1d57c1",
+      "kind": "candidate production-source equivalence"
+    },
+    {
+      "path": "/Users/jearly/Documents/OceanKitRepositories/wvm-v4-cpp-adoption-audit/PortableRuntime/src/WVLegacyObservationNetCDFAdapter.cpp",
+      "sha256": "f2a09eeae014218946945b8d5521fb28e87df76a23b8533bad344ee3922b7bbe",
+      "kind": "candidate production-source equivalence"
+    },
+    {
+      "path": "/Users/jearly/Documents/OceanKitRepositories/wvm-v4-cpp-adoption-audit/PortableRuntime/src/WVLegacyObservationNetCDFAdapter.hpp",
+      "sha256": "433939c3cfd8afb54c15f6a03566d18c27e46a0453b5baa517e85205aa1dfdd3",
+      "kind": "candidate production-source equivalence"
+    },
+    {
+      "path": "/Users/jearly/Documents/OceanKitRepositories/wvm-v4-cpp-adoption-audit/PortableRuntime/src/WVLegacyObserverCompatibility.hpp",
+      "sha256": "52097e637ace915a5c50757c7055f8929e69fe42456aa7a502ff1b5b159bf40f",
+      "kind": "candidate production-source equivalence"
+    },
+    {
+      "path": "/Users/jearly/Documents/OceanKitRepositories/wvm-v4-cpp-adoption-audit/PortableRuntime/src/WVModel.cpp",
+      "sha256": "5cee6731ebdd271e694011322b868c1d0040499fad6e85bcb0079f90114dc55d",
+      "kind": "candidate production-source equivalence"
+    },
+    {
+      "path": "/Users/jearly/Documents/OceanKitRepositories/wvm-v4-cpp-adoption-audit/PortableRuntime/src/WVModelInternalAccess.hpp",
+      "sha256": "f0418b0bb4eef1392d3950e7b1c32a5da11dc73fe22a15f746cb5e0c57656249",
+      "kind": "candidate production-source equivalence"
+    },
+    {
+      "path": "/Users/jearly/Documents/OceanKitRepositories/wvm-v4-cpp-adoption-audit/PortableRuntime/src/WVModelOutputConfiguration.cpp",
+      "sha256": "d3a3ab1270766cf428d57c93d37b2db362161d94e81c3498ce1bbe421e007d51",
+      "kind": "candidate production-source equivalence"
+    },
+    {
+      "path": "/Users/jearly/Documents/OceanKitRepositories/wvm-v4-cpp-adoption-audit/PortableRuntime/src/WVModelOutputNetCDFReader.cpp",
+      "sha256": "4cdeac8d4adb5458f61f219ba617c0bbcbe2f7c24b80382232b3eac16fdbe079",
+      "kind": "candidate production-source equivalence"
+    },
+    {
+      "path": "/Users/jearly/Documents/OceanKitRepositories/wvm-v4-cpp-adoption-audit/PortableRuntime/src/WVModelOutputNetCDFWriter.cpp",
+      "sha256": "63fd048d8dc124808259f6ac6d9480bf76b74fcf9864565743d9f970257e46e2",
+      "kind": "candidate production-source equivalence"
+    },
+    {
+      "path": "/Users/jearly/Documents/OceanKitRepositories/wvm-v4-cpp-adoption-audit/PortableRuntime/src/WVModelOutputTransformAdapters.cpp",
+      "sha256": "2626f63130a867fde21655beec406b265ea9d64eb2f7c97fbf9a12126aa969b5",
+      "kind": "candidate production-source equivalence"
+    },
+    {
+      "path": "/Users/jearly/Documents/OceanKitRepositories/wvm-v4-cpp-adoption-audit/PortableRuntime/src/WVModelOutputTransformAdapters.hpp",
+      "sha256": "6113b58800f6088fdc7c7e6f92f07b276d1fdbaa0aa7d360f8c0107682fe5913",
+      "kind": "candidate production-source equivalence"
+    },
+    {
+      "path": "/Users/jearly/Documents/OceanKitRepositories/wvm-v4-cpp-adoption-audit/PortableRuntime/src/WVModelTransformAdapters.cpp",
+      "sha256": "dae18a4d8d008e835a5fe39d3e838aca68f7e122103886a11e4d94a7b77104b5",
+      "kind": "candidate production-source equivalence"
+    },
+    {
+      "path": "/Users/jearly/Documents/OceanKitRepositories/wvm-v4-cpp-adoption-audit/PortableRuntime/src/WVModelTransformAdapters.hpp",
+      "sha256": "002a040e7603703c94efcf077576f0c539879122745217da638449f7da94c269",
+      "kind": "candidate production-source equivalence"
+    },
+    {
+      "path": "/Users/jearly/Documents/OceanKitRepositories/wvm-v4-cpp-adoption-audit/PortableRuntime/src/WVNetCDF.cpp",
+      "sha256": "021953e8a2b9e5c683bcce1e02a22aa7c28329ea897171115c9a5f2a7b3640d0",
+      "kind": "candidate production-source equivalence"
+    },
+    {
+      "path": "/Users/jearly/Documents/OceanKitRepositories/wvm-v4-cpp-adoption-audit/PortableRuntime/src/WVNetCDF.hpp",
+      "sha256": "199348380b648f31c4e250350a9c242e503e12acd81521a17fc964a32859757f",
+      "kind": "candidate production-source equivalence"
+    },
+    {
+      "path": "/Users/jearly/Documents/OceanKitRepositories/wvm-v4-cpp-adoption-audit/PortableRuntime/src/WVNoMotionDensityMoments.cpp",
+      "sha256": "c00438f55038f38f8de91b2a6781041adf17221dd6e8fbd0e50cf5c3d40b1a19",
+      "kind": "candidate production-source equivalence"
+    },
+    {
+      "path": "/Users/jearly/Documents/OceanKitRepositories/wvm-v4-cpp-adoption-audit/PortableRuntime/src/WVNoMotionProfile.cpp",
+      "sha256": "0999b4d571a2a1deab55ff554b3af6a265506e5382c28d02127382cf6893340d",
+      "kind": "candidate production-source equivalence"
+    },
+    {
+      "path": "/Users/jearly/Documents/OceanKitRepositories/wvm-v4-cpp-adoption-audit/PortableRuntime/src/WVNoMotionProfileRecovery.cpp",
+      "sha256": "725c00b4c0611dc0e3569049a693553f86c7d0854cd56c3ce45e112a1c646105",
+      "kind": "candidate production-source equivalence"
+    },
+    {
+      "path": "/Users/jearly/Documents/OceanKitRepositories/wvm-v4-cpp-adoption-audit/PortableRuntime/src/WVObservation.cpp",
+      "sha256": "7d6e35bee07ba19daa82fc324d8d58f3f644be3f860445c4db580893b425cc77",
+      "kind": "candidate production-source equivalence"
+    },
+    {
+      "path": "/Users/jearly/Documents/OceanKitRepositories/wvm-v4-cpp-adoption-audit/PortableRuntime/src/WVObserverAdapter.cpp",
+      "sha256": "53e455ff127dc1b30406bce78a6ea2a4f2978df5effaa6aa27c7b850f01d1d22",
+      "kind": "candidate production-source equivalence"
+    },
+    {
+      "path": "/Users/jearly/Documents/OceanKitRepositories/wvm-v4-cpp-adoption-audit/PortableRuntime/src/WVObserverAdapter.hpp",
+      "sha256": "0c80e36bb7494ef4c37f38355dfdb2177e266a745a7d866af62c85a80f0783be",
+      "kind": "candidate production-source equivalence"
+    },
+    {
+      "path": "/Users/jearly/Documents/OceanKitRepositories/wvm-v4-cpp-adoption-audit/PortableRuntime/src/WVObserverContracts.cpp",
+      "sha256": "b482afc1b9dfdd79c153a067d4ae0165c1b5e8857819ef32d9c4cf410e1fa93f",
+      "kind": "candidate production-source equivalence"
+    },
+    {
+      "path": "/Users/jearly/Documents/OceanKitRepositories/wvm-v4-cpp-adoption-audit/PortableRuntime/src/WVObserverOutputEvaluationService.cpp",
+      "sha256": "ebbab46cee0bd97ae3d51b0d33d76275aa2c8adb46c1c15e76612da86fe58a44",
+      "kind": "candidate production-source equivalence"
+    },
+    {
+      "path": "/Users/jearly/Documents/OceanKitRepositories/wvm-v4-cpp-adoption-audit/PortableRuntime/src/WVObserverSampleSource.cpp",
+      "sha256": "b006d04a44c6dd2d067856abf572e755564117118aeb4d95f79e1b951fe61d1f",
+      "kind": "candidate production-source equivalence"
+    },
+    {
+      "path": "/Users/jearly/Documents/OceanKitRepositories/wvm-v4-cpp-adoption-audit/PortableRuntime/src/WVOutputOrchestration.cpp",
+      "sha256": "03a3ad962ba28cc466a850b028a4664aae9ec58e7c3487e85e75407c8af4864b",
+      "kind": "candidate production-source equivalence"
+    },
+    {
+      "path": "/Users/jearly/Documents/OceanKitRepositories/wvm-v4-cpp-adoption-audit/PortableRuntime/src/WVOutputSchedule.cpp",
+      "sha256": "be34c83b77ef553b61a5bf519a96559a7ea74ea9e5aba51f381b8f87be32e594",
+      "kind": "candidate production-source equivalence"
+    },
+    {
+      "path": "/Users/jearly/Documents/OceanKitRepositories/wvm-v4-cpp-adoption-audit/PortableRuntime/src/WVOutputTransformAdapters.cpp",
+      "sha256": "678b35a5667029a97b8204c592280053356048f8f6e965097c0e4e3938301691",
+      "kind": "candidate production-source equivalence"
+    },
+    {
+      "path": "/Users/jearly/Documents/OceanKitRepositories/wvm-v4-cpp-adoption-audit/PortableRuntime/src/WVOutputTransformAdapters.hpp",
+      "sha256": "1e095895c5174866a44d87e01db94af9cb56ec5aafab4c1e6ab9c8e4527b900d",
+      "kind": "candidate production-source equivalence"
+    },
+    {
+      "path": "/Users/jearly/Documents/OceanKitRepositories/wvm-v4-cpp-adoption-audit/PortableRuntime/src/WVPortableImplementationContract.cpp",
+      "sha256": "9cb1c48cede0745bab4d8eb0130b276c00e8010072094e15dbf7770f76456e07",
+      "kind": "candidate production-source equivalence"
+    },
+    {
+      "path": "/Users/jearly/Documents/OceanKitRepositories/wvm-v4-cpp-adoption-audit/PortableRuntime/src/WVPortableTypedRecord.cpp",
+      "sha256": "682ec7762bdf13a1356fe95a4737dbf365d7782f9fb2e9bc1b6de32bfa084698",
+      "kind": "candidate production-source equivalence"
+    },
+    {
+      "path": "/Users/jearly/Documents/OceanKitRepositories/wvm-v4-cpp-adoption-audit/PortableRuntime/src/WVRungeKutta.cpp",
+      "sha256": "b5c57a5632a1211835d3801dc02c05bfbb0102d4f760c30ae5a65e30008028d9",
+      "kind": "candidate production-source equivalence"
+    },
+    {
+      "path": "/Users/jearly/Documents/OceanKitRepositories/wvm-v4-cpp-adoption-audit/PortableRuntime/src/WVStratifiedFieldEvaluationAdapter.cpp",
+      "sha256": "07d60940074708686a36c85ddc1d27377b3bd1c531b1f4c1dc8be7a26a1fc31f",
+      "kind": "candidate production-source equivalence"
+    },
+    {
+      "path": "/Users/jearly/Documents/OceanKitRepositories/wvm-v4-cpp-adoption-audit/PortableRuntime/src/WVStratifiedFieldEvaluationAdapter.hpp",
+      "sha256": "bea306f9f0987225a88ba453c85935cfe12357c0ac63e5568398a4056f69af42",
+      "kind": "candidate production-source equivalence"
+    },
+    {
+      "path": "/Users/jearly/Documents/OceanKitRepositories/wvm-v4-cpp-adoption-audit/PortableRuntime/src/WVStratifiedModalRecord.cpp",
+      "sha256": "aaa44fe114f6cb09c0ec737e4e666f9ac81c9b9f076bcafed528ee9ec326c25a",
+      "kind": "candidate production-source equivalence"
+    },
+    {
+      "path": "/Users/jearly/Documents/OceanKitRepositories/wvm-v4-cpp-adoption-audit/PortableRuntime/src/WVStratifiedQGForcingEngine.cpp",
+      "sha256": "e49ce29a2ad53177aaedca8ce593675ac7af86f45be3c15ea0f3a0fe60a853cc",
+      "kind": "candidate production-source equivalence"
+    },
+    {
+      "path": "/Users/jearly/Documents/OceanKitRepositories/wvm-v4-cpp-adoption-audit/PortableRuntime/src/WVStratifiedQGIntegrationSystem.cpp",
+      "sha256": "3fa88d6e95d3ff0415e27a1a62feb151f6e3c5fc99b1291beeee375b3ff71acf",
+      "kind": "candidate production-source equivalence"
+    },
+    {
+      "path": "/Users/jearly/Documents/OceanKitRepositories/wvm-v4-cpp-adoption-audit/PortableRuntime/tests/TestWVBarotropicQGForcing.cpp",
+      "sha256": "43f1ced7ffe8756eb8a91866673b58e89bf7068d535f92c138b7e8e21bd0c885",
+      "kind": "candidate production-source equivalence"
+    },
+    {
+      "path": "/Users/jearly/Documents/OceanKitRepositories/wvm-v4-cpp-adoption-audit/PortableRuntime/tests/TestWVBarotropicQGIntegration.cpp",
+      "sha256": "c9596e2da6f95ec57506b1ad5b095e4daa50fb591cf77d7aa8af7e27dc5db552",
+      "kind": "candidate production-source equivalence"
+    },
+    {
+      "path": "/Users/jearly/Documents/OceanKitRepositories/wvm-v4-cpp-adoption-audit/PortableRuntime/tests/TestWVBarotropicQGModelOutput.cpp",
+      "sha256": "24b432de1e4c40cdd830c1c30eedb579ffcaf620cee86a1a141082e51046e507",
+      "kind": "candidate production-source equivalence"
+    },
+    {
+      "path": "/Users/jearly/Documents/OceanKitRepositories/wvm-v4-cpp-adoption-audit/PortableRuntime/tests/TestWVBarotropicQGNativeFFTW.cpp",
+      "sha256": "c5f3a9fe3993b2b16407c903eeaa0a446e1e61e7082a09fd357e3688764972e2",
+      "kind": "candidate production-source equivalence"
+    },
+    {
+      "path": "/Users/jearly/Documents/OceanKitRepositories/wvm-v4-cpp-adoption-audit/PortableRuntime/tests/TestWVBoussinesqKernel.cpp",
+      "sha256": "784c3095a332cead315f851361d1c035a6195ae8ef2cc6ec9e9f25bb877814c5",
+      "kind": "candidate production-source equivalence"
+    },
+    {
+      "path": "/Users/jearly/Documents/OceanKitRepositories/wvm-v4-cpp-adoption-audit/PortableRuntime/tests/TestWVBoussinesqRuntime.cpp",
+      "sha256": "4cb3be02269677363578b905c718396fc4b6f4ce8b8a004ae96e29b01a42d9d6",
+      "kind": "candidate production-source equivalence"
+    },
+    {
+      "path": "/Users/jearly/Documents/OceanKitRepositories/wvm-v4-cpp-adoption-audit/PortableRuntime/tests/TestWVCheckpointReader.cpp",
+      "sha256": "61bf53c35822d87c1ce6142873529d81956483163e35ee59592429d44dad5f1e",
+      "kind": "candidate production-source equivalence"
+    },
+    {
+      "path": "/Users/jearly/Documents/OceanKitRepositories/wvm-v4-cpp-adoption-audit/PortableRuntime/tests/TestWVCheckpointWriter.cpp",
+      "sha256": "0a743944017c29da760377d8e2ead64fe52f630bd25f5bfe8a8ca328e2d80801",
+      "kind": "candidate production-source equivalence"
+    },
+    {
+      "path": "/Users/jearly/Documents/OceanKitRepositories/wvm-v4-cpp-adoption-audit/PortableRuntime/tests/TestWVDensityEventEvaluation.cpp",
+      "sha256": "64adb61d0daf3d3e44601ddb7708f6c9113513969a49eeac71fb97f2545497e4",
+      "kind": "candidate production-source equivalence"
+    },
+    {
+      "path": "/Users/jearly/Documents/OceanKitRepositories/wvm-v4-cpp-adoption-audit/PortableRuntime/tests/TestWVDensityFieldEvaluation.cpp",
+      "sha256": "e2338410a5f5e86c4b68a1145f8f0d375ffd542437cd588b3d52298b590cb8bf",
+      "kind": "candidate production-source equivalence"
+    },
+    {
+      "path": "/Users/jearly/Documents/OceanKitRepositories/wvm-v4-cpp-adoption-audit/PortableRuntime/tests/TestWVExtendedRunner.cpp",
+      "sha256": "535bd6f9db58f049835772e71d4146d021f9d00946cf2a8b7d69bb05fbc3387b",
+      "kind": "candidate production-source equivalence"
+    },
+    {
+      "path": "/Users/jearly/Documents/OceanKitRepositories/wvm-v4-cpp-adoption-audit/PortableRuntime/tests/TestWVExtensionCatalog.cpp",
+      "sha256": "e3b16e193fd05c3a895ee78e77d2f26836b13f1355e1735f61a515ff8e527c51",
+      "kind": "candidate production-source equivalence"
+    },
+    {
+      "path": "/Users/jearly/Documents/OceanKitRepositories/wvm-v4-cpp-adoption-audit/PortableRuntime/tests/TestWVFieldEvaluation.cpp",
+      "sha256": "74ed9eecc5daf236f85d4bb00975247a3d808044222ac088a3d1e9dbcf065a48",
+      "kind": "candidate production-source equivalence"
+    },
+    {
+      "path": "/Users/jearly/Documents/OceanKitRepositories/wvm-v4-cpp-adoption-audit/PortableRuntime/tests/TestWVForcingAndRK4.cpp",
+      "sha256": "d2b5092001b1c1c992ea03346413c7266e69c7c30fc67b2a138d63db31dd7b6f",
+      "kind": "candidate production-source equivalence"
+    },
+    {
+      "path": "/Users/jearly/Documents/OceanKitRepositories/wvm-v4-cpp-adoption-audit/PortableRuntime/tests/TestWVForcingCompatibility.cpp",
+      "sha256": "0e1466c334f59123fc755ebd3c6483c5b068bb7811ac8a9550e5742b60f8498d",
+      "kind": "candidate production-source equivalence"
+    },
+    {
+      "path": "/Users/jearly/Documents/OceanKitRepositories/wvm-v4-cpp-adoption-audit/PortableRuntime/tests/TestWVForcingTendencies.cpp",
+      "sha256": "06f50ecb04c570543cc5cf3a47f420f678dcf64d1860e4d9bde4514d0dbd1ca9",
+      "kind": "candidate production-source equivalence"
+    },
+    {
+      "path": "/Users/jearly/Documents/OceanKitRepositories/wvm-v4-cpp-adoption-audit/PortableRuntime/tests/TestWVHydrostaticKernel.cpp",
+      "sha256": "90d0ae7ffe9bd29e9760e2cbf5020a95e1d4e2a25d1e8ddf26adc94770de85df",
+      "kind": "candidate production-source equivalence"
+    },
+    {
+      "path": "/Users/jearly/Documents/OceanKitRepositories/wvm-v4-cpp-adoption-audit/PortableRuntime/tests/TestWVHydrostaticRuntime.cpp",
+      "sha256": "90483f7978a51e10cf65627f9e5e1ec096cf2fe8031f636a5af6d399d0dbd3e3",
+      "kind": "candidate production-source equivalence"
+    },
+    {
+      "path": "/Users/jearly/Documents/OceanKitRepositories/wvm-v4-cpp-adoption-audit/PortableRuntime/tests/TestWVLagrangianParticles.cpp",
+      "sha256": "7c181658237f92ad1626078849d5823e27ec9c11e7780f42a6737a188ea9b579",
+      "kind": "candidate production-source equivalence"
+    },
+    {
+      "path": "/Users/jearly/Documents/OceanKitRepositories/wvm-v4-cpp-adoption-audit/PortableRuntime/tests/TestWVModel.cpp",
+      "sha256": "72c8a5f237185a9daa896fabfc3030f08ba6c696243a122e5dd8899e7ba4a2b4",
+      "kind": "candidate production-source equivalence"
+    },
+    {
+      "path": "/Users/jearly/Documents/OceanKitRepositories/wvm-v4-cpp-adoption-audit/PortableRuntime/tests/TestWVModelOutputConfiguration.cpp",
+      "sha256": "0f69cbf63bd6ce078d8cacc17c959ed1e30b325ec72f3e483e732acc3a46d6f6",
+      "kind": "candidate production-source equivalence"
+    },
+    {
+      "path": "/Users/jearly/Documents/OceanKitRepositories/wvm-v4-cpp-adoption-audit/PortableRuntime/tests/TestWVModelOutputNetCDF.cpp",
+      "sha256": "7217b109c9b30ded3acbe2e2cf67c5fde4725eba342831ec5d081e2ef4fbe4e3",
+      "kind": "candidate production-source equivalence"
+    },
+    {
+      "path": "/Users/jearly/Documents/OceanKitRepositories/wvm-v4-cpp-adoption-audit/PortableRuntime/tests/TestWVNoMotionProfile.cpp",
+      "sha256": "71c952be1247018dce7b4488a8e6ae7536d3a732bb08bbbe30b3dc49f6631ed2",
+      "kind": "candidate production-source equivalence"
+    },
+    {
+      "path": "/Users/jearly/Documents/OceanKitRepositories/wvm-v4-cpp-adoption-audit/PortableRuntime/tests/TestWVNoMotionProfileRecovery.cpp",
+      "sha256": "dfdd41b968270f9cbe6abe948dc1a5fee671ac4f525b580819f5c72c5a80592c",
+      "kind": "candidate production-source equivalence"
+    },
+    {
+      "path": "/Users/jearly/Documents/OceanKitRepositories/wvm-v4-cpp-adoption-audit/PortableRuntime/tests/TestWVObservation.cpp",
+      "sha256": "4a1d35ecfbdde71b80bf1cb4af484149edc5330a7a63a314ef2debbce852e1a4",
+      "kind": "candidate production-source equivalence"
+    },
+    {
+      "path": "/Users/jearly/Documents/OceanKitRepositories/wvm-v4-cpp-adoption-audit/PortableRuntime/tests/TestWVObservationOccurrence.cpp",
+      "sha256": "a2fb96f2330c49778539dda508a7dbc74042d6a2cddbd1a075b22cc15485f4d5",
+      "kind": "candidate production-source equivalence"
+    },
+    {
+      "path": "/Users/jearly/Documents/OceanKitRepositories/wvm-v4-cpp-adoption-audit/PortableRuntime/tests/TestWVObserverAdapter.cpp",
+      "sha256": "6c063d79165f544a62510ea39013bdb4387bf47b615e5d21b9d345ac1824e3f3",
+      "kind": "candidate production-source equivalence"
+    },
+    {
+      "path": "/Users/jearly/Documents/OceanKitRepositories/wvm-v4-cpp-adoption-audit/PortableRuntime/tests/TestWVObserverOutputEvaluation.cpp",
+      "sha256": "f32d88755b750268316128932aaf36574a5b79579eb719f37557a40590e0db3c",
+      "kind": "candidate production-source equivalence"
+    },
+    {
+      "path": "/Users/jearly/Documents/OceanKitRepositories/wvm-v4-cpp-adoption-audit/PortableRuntime/tests/TestWVOutputOccurrence.cpp",
+      "sha256": "d4f933759a410b1fa1cf14b9022a5a7f54465065c242cd1850624523d6e3be9c",
+      "kind": "candidate production-source equivalence"
+    },
+    {
+      "path": "/Users/jearly/Documents/OceanKitRepositories/wvm-v4-cpp-adoption-audit/PortableRuntime/tests/TestWVOutputOrchestration.cpp",
+      "sha256": "6b4f64518b74a18a6882252aea6722c496f56dba728bfa69b362e2b462358f65",
+      "kind": "candidate production-source equivalence"
+    },
+    {
+      "path": "/Users/jearly/Documents/OceanKitRepositories/wvm-v4-cpp-adoption-audit/PortableRuntime/tests/TestWVPortableImplementationContract.cpp",
+      "sha256": "4524a91e01caf742c8edf3daf0ce72c4fdd6c4a34ba067156d3a2c9d86616067",
+      "kind": "candidate production-source equivalence"
+    },
+    {
+      "path": "/Users/jearly/Documents/OceanKitRepositories/wvm-v4-cpp-adoption-audit/PortableRuntime/tests/TestWVPortableTypedRecord.cpp",
+      "sha256": "15d215539a8da02da9fe13cc1d96fd3ed978b736f5bdf1a8a10b8b4aed22fead",
+      "kind": "candidate production-source equivalence"
+    },
+    {
+      "path": "/Users/jearly/Documents/OceanKitRepositories/wvm-v4-cpp-adoption-audit/PortableRuntime/tests/TestWVPortableVariableCatalog.cpp",
+      "sha256": "ff79218516f900f7f75b99510c841d7d3391e4de6488e2249c56280db1631311",
+      "kind": "candidate production-source equivalence"
+    },
+    {
+      "path": "/Users/jearly/Documents/OceanKitRepositories/wvm-v4-cpp-adoption-audit/PortableRuntime/tests/TestWVRunRequest.cpp",
+      "sha256": "45061e1b04dc4f9bebcb567807d37ce17bf67ecd054da9091aa2470389187a53",
+      "kind": "candidate production-source equivalence"
+    },
+    {
+      "path": "/Users/jearly/Documents/OceanKitRepositories/wvm-v4-cpp-adoption-audit/PortableRuntime/tests/TestWVStratifiedModalRecord.cpp",
+      "sha256": "9e9288f9a6d9c168bfbcadf36decd5555fa0551fd572d0d84a072cefd242f5ab",
+      "kind": "candidate production-source equivalence"
+    },
+    {
+      "path": "/Users/jearly/Documents/OceanKitRepositories/wvm-v4-cpp-adoption-audit/PortableRuntime/tests/TestWVStratifiedQGKernel.cpp",
+      "sha256": "1c77d9fb447fa8d39968cdf9af6165b6d2444af043473bc10dacd2eeb9f0d4c1",
+      "kind": "candidate production-source equivalence"
+    },
+    {
+      "path": "/Users/jearly/Documents/OceanKitRepositories/wvm-v4-cpp-adoption-audit/PortableRuntime/tests/TestWVUnifiedIntegration.cpp",
+      "sha256": "90b2ab9eedaa55c97fd8a94b8f60d5eb05ffac8758dc4a57ef42f2bc00ab3149",
+      "kind": "candidate production-source equivalence"
+    },
+    {
+      "path": "/Users/jearly/Documents/OceanKitRepositories/wvm-v4-cpp-adoption-audit/PortableRuntime/tests/TestWaveVortexRun.cpp",
+      "sha256": "ed5125ef91c5ab925417f4fe9c18467de2cb701eb77d26a19daf0e19936e66c8",
+      "kind": "candidate production-source equivalence"
+    },
+    {
+      "path": "/Users/jearly/Documents/OceanKitRepositories/wvm-v4-cpp-adoption-audit/PortableRuntime/tests/WVBarotropicQGForcingDump.cpp",
+      "sha256": "9e021e5e9cb6b06c7d4c5dfcf25a2adcb86e80bb8027d2ccc5d98314d77f15a1",
+      "kind": "candidate production-source equivalence"
+    },
+    {
+      "path": "/Users/jearly/Documents/OceanKitRepositories/wvm-v4-cpp-adoption-audit/PortableRuntime/tests/WVBarotropicQGToleranceDump.cpp",
+      "sha256": "b4916ba7a89fd229857e9322f7c0c3b9c9a2354bcf4348f55d5a8a7fae9cbd32",
+      "kind": "candidate production-source equivalence"
+    },
+    {
+      "path": "/Users/jearly/Documents/OceanKitRepositories/wvm-v4-cpp-adoption-audit/PortableRuntime/tests/WVBoussinesqKernelDump.cpp",
+      "sha256": "9582b5b9e40683b762b01a075100a75ab19e8278139d2512dedf4f598083fc22",
+      "kind": "candidate production-source equivalence"
+    },
+    {
+      "path": "/Users/jearly/Documents/OceanKitRepositories/wvm-v4-cpp-adoption-audit/PortableRuntime/tests/WVBoussinesqModalTestFixture.hpp",
+      "sha256": "23348e2fb44a7a33f4189d50f084f7218f41de3d0e1ca4228a2d7a7ff9e59441",
+      "kind": "candidate production-source equivalence"
+    },
+    {
+      "path": "/Users/jearly/Documents/OceanKitRepositories/wvm-v4-cpp-adoption-audit/PortableRuntime/tests/WVDensityEventDump.cpp",
+      "sha256": "d1bf07cbc747f7067b3f5f79bc34cd7dae2befea00bbc50675a83acaf8f58386",
+      "kind": "candidate production-source equivalence"
+    },
+    {
+      "path": "/Users/jearly/Documents/OceanKitRepositories/wvm-v4-cpp-adoption-audit/PortableRuntime/tests/WVDiagnosticFieldDump.cpp",
+      "sha256": "ba34ca56fc7406546e437ad6b23f33c6b22c4258e31aa95f9a36f119d3d0748c",
+      "kind": "candidate production-source equivalence"
+    },
+    {
+      "path": "/Users/jearly/Documents/OceanKitRepositories/wvm-v4-cpp-adoption-audit/PortableRuntime/tests/WVForwardIntegrationProbe.cpp",
+      "sha256": "8a7b800a5cf6140e89242d4989a0a1ec81bc8e496737cb4dafe830a52068de3a",
+      "kind": "candidate production-source equivalence"
+    },
+    {
+      "path": "/Users/jearly/Documents/OceanKitRepositories/wvm-v4-cpp-adoption-audit/PortableRuntime/tests/WVHydrostaticKernelDump.cpp",
+      "sha256": "c215f23f897817a4a213c3b91d25f57f7bf9eaca40bbeb763c8173b3d8b45493",
+      "kind": "candidate production-source equivalence"
+    },
+    {
+      "path": "/Users/jearly/Documents/OceanKitRepositories/wvm-v4-cpp-adoption-audit/PortableRuntime/tests/WVNoMotionProfileDump.cpp",
+      "sha256": "6840007c13ebb0f4ae650036f66e5c5fc109d09d1295a52b31d3925abe27763a",
+      "kind": "candidate production-source equivalence"
+    },
+    {
+      "path": "/Users/jearly/Documents/OceanKitRepositories/wvm-v4-cpp-adoption-audit/PortableRuntime/tests/WVNoMotionRecoveryDump.cpp",
+      "sha256": "33364b05837d38c0d48d4704b1d011da74b4348c02a0514a17ff0dcbb8e4be56",
+      "kind": "candidate production-source equivalence"
+    },
+    {
+      "path": "/Users/jearly/Documents/OceanKitRepositories/wvm-v4-cpp-adoption-audit/PortableRuntime/tests/WVStableForcingDump.cpp",
+      "sha256": "cb4d727a02df509f7697e61435a44f19106da267ef3f9995084091583bf15c9b",
+      "kind": "candidate production-source equivalence"
+    },
+    {
+      "path": "/Users/jearly/Documents/OceanKitRepositories/wvm-v4-cpp-adoption-audit/PortableRuntime/tests/WVStratifiedLifecycleProbe.cpp",
+      "sha256": "169580ec090cfdb4897704fb71f69e1c2d9468a44e04b2ca3d9a6491f144e154",
+      "kind": "candidate production-source equivalence"
+    },
+    {
+      "path": "/Users/jearly/Documents/OceanKitRepositories/wvm-v4-cpp-adoption-audit/PortableRuntime/tests/WVStratifiedModalDump.cpp",
+      "sha256": "6e1109a1daaeb2417a2d8c468f36886cf8acc699f1ef47745f7ae02531c61c21",
+      "kind": "candidate production-source equivalence"
+    },
+    {
+      "path": "/Users/jearly/Documents/OceanKitRepositories/wvm-v4-cpp-adoption-audit/PortableRuntime/tests/WVStratifiedModalTestFixture.hpp",
+      "sha256": "c5e17c863ae4157db8d94860d350693a6a21d189d496f66a0977ab81a7d0817b",
+      "kind": "candidate production-source equivalence"
+    },
+    {
+      "path": "/Users/jearly/Documents/OceanKitRepositories/wvm-v4-cpp-adoption-audit/PortableRuntime/tests/WVStratifiedQGFieldDump.cpp",
+      "sha256": "e23a1f840eff4417f4ab698b2ffcd21b468ca2a46b79bafb3a2a145491ee7ea7",
+      "kind": "candidate production-source equivalence"
+    },
+    {
+      "path": "/Users/jearly/Documents/OceanKitRepositories/wvm-v4-cpp-adoption-audit/PortableRuntime/tests/WVStratifiedQGKernelDump.cpp",
+      "sha256": "aa080958818e24705b0ee786ab42f3b7d1496580b97602e1c6615d8994c7262d",
+      "kind": "candidate production-source equivalence"
+    },
+    {
+      "path": "/Users/jearly/Documents/OceanKitRepositories/wvm-v4-cpp-adoption-audit/PortableRuntime/tests/WVTestExtensionCatalog.hpp",
+      "sha256": "b62c5f6c81ff09217e9df90ca12d30089819c447549f0a86f34960931095d927",
+      "kind": "candidate production-source equivalence"
+    },
+    {
+      "path": "/Users/jearly/Documents/OceanKitRepositories/wvm-v4-cpp-adoption-audit/PortableRuntime/tests/WVTestLinearCoefficientForcing.hpp",
+      "sha256": "8568b837330573673aa55996fd7161cf0a5fc548538cf23a3d1880b5148fd977",
+      "kind": "candidate production-source equivalence"
+    },
+    {
+      "path": "/Users/jearly/Documents/OceanKitRepositories/wvm-v4-cpp-adoption-audit/PortableRuntime/tests/WVTestObservationOccurrenceProviders.hpp",
+      "sha256": "2f6188e550c5885e0940ec3a8fcf9dd7806992ba1d3c34f779dddcbcc2bae518",
+      "kind": "candidate production-source equivalence"
+    },
+    {
+      "path": "/Users/jearly/Documents/OceanKitRepositories/wvm-v4-cpp-adoption-audit/PortableRuntime/tests/WVTestOccurrenceSchedule.hpp",
+      "sha256": "8d36343601000af03043530f3cb8dee293946907dac4724a1ffc1baed597591f",
+      "kind": "candidate production-source equivalence"
+    },
+    {
+      "path": "/Users/jearly/Documents/OceanKitRepositories/wvm-v4-cpp-adoption-audit/PortableRuntime/tests/WVTestQuadraticSchedule.hpp",
+      "sha256": "3b35f79ad5dcb6ced78edb0d759b7f628b026fab27d6dc924b7bf20f79a866aa",
+      "kind": "candidate production-source equivalence"
+    },
+    {
+      "path": "/Users/jearly/Documents/OceanKitRepositories/wvm-v4-cpp-adoption-audit/PortableRuntime/tests/generated/WVForcingCompatibilityRows.hpp",
+      "sha256": "d7f9ff58d1bc1e3ccef82fec62f2b890293ba4a316aac4d29b8a49e59ab3de71",
+      "kind": "candidate production-source equivalence"
+    },
+    {
+      "path": "/Users/jearly/Documents/OceanKitRepositories/wvm-v4-cpp-adoption-audit/PortableRuntime/third_party/nlohmann/json.hpp",
+      "sha256": "9bea4c8066ef4a1c206b2be5a36302f8926f7fdc6087af5d20b417d0cf103ea6",
+      "kind": "candidate production-source equivalence"
+    },
+    {
+      "path": "/Users/jearly/Documents/OceanKitRepositories/wvm-v4-cpp-adoption-audit/Benchmarks/constant-adoption/writeConstantAdoptionFixtures.m",
+      "sha256": "65271cf4d9578e4739bbe07285f9f9befdb103d30f022384f35a367eb8d14acc",
+      "kind": "flux fixture generator"
+    },
+    {
+      "path": "/private/tmp/wvm358-fixtures-calibration/constant-nonhydrostatic-256x256x129.nc",
+      "sha256": "faf133f63d6a27afa7ac9ccdece313fe7d00bae8853e6d1ec49f665f8bb093ca",
+      "kind": "independent flux fixture"
+    },
+    {
+      "path": "/private/tmp/wvm358-fixtures-calibration/constant-nonhydrostatic-256x256x129-matlab-flux.bin",
+      "sha256": "aa9a7db8407c352729e9a02bca6f57d6f877cb6359cd421a432fda39dac88bcd",
+      "kind": "independent flux fixture"
+    },
+    {
+      "path": "/private/tmp/wvm358-fixtures-calibration/constant-hydrostatic-256x256x129.nc",
+      "sha256": "772126312d8d8a77d9976e4cc50bf77a788035d975da045c86997164d3d87fba",
+      "kind": "independent flux fixture"
+    },
+    {
+      "path": "/private/tmp/wvm358-fixtures-calibration/constant-hydrostatic-256x256x129-matlab-flux.bin",
+      "sha256": "a72c6c83cf009a0c9db15813a85027ad5a49b9acf397098abc61f20c58ab355d",
+      "kind": "independent flux fixture"
+    },
+    {
+      "path": "/private/tmp/wvm358-fixtures-calibration/constant-nonhydrostatic-512x512x257.nc",
+      "sha256": "c0642337db10e78bb760dcba05d8a6b891e7ba060b6d7c5ff46c417c1af723a3",
+      "kind": "independent flux fixture"
+    },
+    {
+      "path": "/private/tmp/wvm358-fixtures-calibration/constant-nonhydrostatic-512x512x257-matlab-flux.bin",
+      "sha256": "51fafe7fc559c21efc8f9e223d2055fc63796c4c9cef4998d57f3f6bec1b2817",
+      "kind": "independent flux fixture"
+    },
+    {
+      "path": "/private/tmp/wvm358-fixtures-calibration/constant-hydrostatic-512x512x257.nc",
+      "sha256": "4b8bc6816b3d2da81e68c14538aa29f64f0e55d2ad177b9b132caee60f4091ae",
+      "kind": "independent flux fixture"
+    },
+    {
+      "path": "/private/tmp/wvm358-fixtures-calibration/constant-hydrostatic-512x512x257-matlab-flux.bin",
+      "sha256": "331270fda70af03de76f5eeaeafa6e65e3134208d6f6c85a4200fe2e75caeda2",
+      "kind": "independent flux fixture"
+    },
+    {
+      "path": "/private/tmp/wvm455-large-model-fixtures/constant-hydrostatic-coefficient-only-256-source.nc",
+      "sha256": "805fdc82c45945a7a2266d92ebda3a62696a9f19a819e79b5b2b44cd7816163a",
+      "kind": "independent model fixture"
+    },
+    {
+      "path": "/private/tmp/wvm455-large-model-fixtures/constant-hydrostatic-coefficient-only-256-reference.nc",
+      "sha256": "46fac0fed7bd502a783946bb00b1868169f0f3fade992bdd5e972ae75f966cd2",
+      "kind": "independent model fixture"
+    },
+    {
+      "path": "/private/tmp/wvm455-large-model-fixtures/constant-hydrostatic-coefficient-only-256-request.json",
+      "sha256": "bda1b98a689a97fac2c70687e18c4c74f00c1bef80654533a2acf4c4cc24cb5f",
+      "kind": "independent model fixture"
+    },
+    {
+      "path": "/private/tmp/wvm455-large-model-fixtures/constant-nonhydrostatic-coefficient-only-256-source.nc",
+      "sha256": "acc14db57b379153c02a5130fdc61a18c8dd5d1719cdd1ce963ae6865031d00c",
+      "kind": "independent model fixture"
+    },
+    {
+      "path": "/private/tmp/wvm455-large-model-fixtures/constant-nonhydrostatic-coefficient-only-256-reference.nc",
+      "sha256": "f4b1e3ae7c853319f5a14eb3f4cb5ccf90bcb4887b63bc11ceaae4c37ff347f3",
+      "kind": "independent model fixture"
+    },
+    {
+      "path": "/private/tmp/wvm455-large-model-fixtures/constant-nonhydrostatic-coefficient-only-256-request.json",
+      "sha256": "29198232e3679d2a6e7d3af3041a195b5c0b1243267aee9f71a08485e61c9f9d",
+      "kind": "independent model fixture"
+    },
+    {
+      "path": "/private/tmp/wvm455-large-model-fixtures/constant-nonhydrostatic-composite-256-source.nc",
+      "sha256": "5c5400c0207146f804a2f9592cbb8c57b5be0795c346f5053fde9fb27f3765da",
+      "kind": "independent model fixture"
+    },
+    {
+      "path": "/private/tmp/wvm455-large-model-fixtures/constant-nonhydrostatic-composite-256-reference.nc",
+      "sha256": "e69eff60158d1987b8fc2cff5efb90b29ec2cb5448f9fc0b2dbd4255cfa4a214",
+      "kind": "independent model fixture"
+    },
+    {
+      "path": "/private/tmp/wvm455-large-model-fixtures/constant-nonhydrostatic-composite-256-request.json",
+      "sha256": "4d906e52f4a7d0729d8cce4fc9ab74d199fcdadde1c452a9ed2be8958d72a6e7",
+      "kind": "independent model fixture"
+    },
+    {
+      "path": "/private/tmp/wvm455-large-model-fixtures/constant-hydrostatic-coefficient-only-512-source.nc",
+      "sha256": "cf5720c69e4c48455d2782cf786d0025c3875d74486cc03f9a7e872b2c822dbc",
+      "kind": "independent model fixture"
+    },
+    {
+      "path": "/private/tmp/wvm455-large-model-fixtures/constant-hydrostatic-coefficient-only-512-reference.nc",
+      "sha256": "c8043d6cda5af94d9b03904e1a4d5968f460e67cad1d2637230ed6fe1b5f3b50",
+      "kind": "independent model fixture"
+    },
+    {
+      "path": "/private/tmp/wvm455-large-model-fixtures/constant-hydrostatic-coefficient-only-512-request.json",
+      "sha256": "4e2c3b4d0cdb8a9b5a10db9d09804cd165ba338f1076368cb89f66521a5a1ad7",
+      "kind": "independent model fixture"
+    },
+    {
+      "path": "/private/tmp/wvm455-large-model-fixtures/constant-nonhydrostatic-coefficient-only-512-source.nc",
+      "sha256": "e759e9c2348314a676642f7fdba745409427eb2cc29a86a6caed9fc7b7772f0c",
+      "kind": "independent model fixture"
+    },
+    {
+      "path": "/private/tmp/wvm455-large-model-fixtures/constant-nonhydrostatic-coefficient-only-512-reference.nc",
+      "sha256": "73efc5e4a1e00a61192a1899fd790be254b29fc2fed8ea700a18c254511b012e",
+      "kind": "independent model fixture"
+    },
+    {
+      "path": "/private/tmp/wvm455-large-model-fixtures/constant-nonhydrostatic-coefficient-only-512-request.json",
+      "sha256": "a72777c9408aaaaf7b61f03668e7d5ff0bba07faf1088168b116460bbf906de5",
+      "kind": "independent model fixture"
+    },
+    {
+      "path": "/private/tmp/wvm455-large-model-fixtures/constant-nonhydrostatic-composite-512-source.nc",
+      "sha256": "7df9efa0d63302c7725744099a7e03d15b84e06f517668f53ffb04a3cfae0629",
+      "kind": "independent model fixture"
+    },
+    {
+      "path": "/private/tmp/wvm455-large-model-fixtures/constant-nonhydrostatic-composite-512-reference.nc",
+      "sha256": "8bdd44c03f355fe4a69b7a011a66076c711e7d9caddbdd1640644cd802954f86",
+      "kind": "independent model fixture"
+    },
+    {
+      "path": "/private/tmp/wvm455-large-model-fixtures/constant-nonhydrostatic-composite-512-request.json",
+      "sha256": "48fd0a734bd4fd08a3df3bc22a824c98800364a1835c20398e2befefe7743226",
+      "kind": "independent model fixture"
+    },
+    {
+      "path": "/Users/jearly/Documents/OceanKitRepositories/wvm-v4-cpp-adoption-audit/Benchmarks/constant-adoption/.gitignore",
+      "sha256": "32dae3052f331ee34d628ef535709b301259a45df7c7522c4d35dcf49873f00b",
+      "kind": "campaign harness unchanged"
+    },
+    {
+      "path": "/Users/jearly/Documents/OceanKitRepositories/wvm-v4-cpp-adoption-audit/Benchmarks/constant-adoption/CMakeLists.txt",
+      "sha256": "de46e5be5fa9f72ca6ef82cb6cbb9933fa754fbc85f381da3ba8ecc87a49b606",
+      "kind": "campaign harness unchanged"
+    },
+    {
+      "path": "/Users/jearly/Documents/OceanKitRepositories/wvm-v4-cpp-adoption-audit/Benchmarks/constant-adoption/README.md",
+      "sha256": "e5bfdfbe51bfb582a8c61076fcbeac8e13f28db3bb9e978ffa90add095cb5a61",
+      "kind": "campaign harness unchanged"
+    },
+    {
+      "path": "/Users/jearly/Documents/OceanKitRepositories/wvm-v4-cpp-adoption-audit/Benchmarks/constant-adoption/WVConstantAdoptionWorker.cpp",
+      "sha256": "263ffea5bd9b5717079d32f2b2df3099efb6bc0bbba119884f562f3ddd547e8f",
+      "kind": "campaign harness unchanged"
+    },
+    {
+      "path": "/Users/jearly/Documents/OceanKitRepositories/wvm-v4-cpp-adoption-audit/Benchmarks/constant-adoption/buildConstantAdoptionMex.m",
+      "sha256": "edf318d322f04a77ba7ada32df28445f9f65939e1d4661fd14e726a2c25f009f",
+      "kind": "campaign harness unchanged"
+    },
+    {
+      "path": "/Users/jearly/Documents/OceanKitRepositories/wvm-v4-cpp-adoption-audit/Benchmarks/constant-adoption/constantAdoptionMexWorker.m",
+      "sha256": "65b24e76d48a04f59ed9ac30d5d67110b402f3be6cf9fc4f98ed40f675310466",
+      "kind": "campaign harness unchanged"
+    },
+    {
+      "path": "/Users/jearly/Documents/OceanKitRepositories/wvm-v4-cpp-adoption-audit/Benchmarks/constant-adoption/decide_adoption.py",
+      "sha256": "6b38570dba144c7bc57ca35b8a675de0448b59e766ad325d1f2244a70c150e80",
+      "kind": "campaign harness unchanged"
+    },
+    {
+      "path": "/Users/jearly/Documents/OceanKitRepositories/wvm-v4-cpp-adoption-audit/Benchmarks/constant-adoption/freeze_build.py",
+      "sha256": "2e6da650febcdfe022d0a6ee5a4b96108c58e4223b54ccad99f86d1751795ee9",
+      "kind": "campaign harness unchanged"
+    },
+    {
+      "path": "/Users/jearly/Documents/OceanKitRepositories/wvm-v4-cpp-adoption-audit/Benchmarks/constant-adoption/run_adoption.py",
+      "sha256": "7be50fe015586f9e942d9efe74f32a7815b73e5f9b5e0b3e9868a93453cc90a4",
+      "kind": "campaign harness unchanged"
+    },
+    {
+      "path": "/Users/jearly/Documents/OceanKitRepositories/wvm-v4-cpp-adoption-audit/Benchmarks/constant-adoption/run_model_adoption.py",
+      "sha256": "1d79353dd96421ecab5610291c60eecbabfc3bddbcbfd413b9f4ddfbdbcefec4",
+      "kind": "campaign harness unchanged"
+    },
+    {
+      "path": "/Users/jearly/Documents/OceanKitRepositories/wvm-v4-cpp-adoption-audit/Benchmarks/constant-adoption/writeConstantAdoptionFixtures.m",
+      "sha256": "65271cf4d9578e4739bbe07285f9f9befdb103d30f022384f35a367eb8d14acc",
+      "kind": "campaign harness unchanged"
+    },
+    {
+      "path": "/Users/jearly/Documents/OceanKitRepositories/wvm-v4-cpp-adoption-audit/Benchmarks/constant-adoption/writeConstantModelFixtures.m",
+      "sha256": "e2580ea1ec8476ceb3b2c80284a21367389f3c89968e92baaa22f0465b02bc7a",
+      "kind": "campaign harness unchanged"
+    }
+  ],
+  "campaignProvenanceSHA256": "f19e7aa8d2b22fb3ebfc623cd7faf8ee9ffcf4c2fbcf31ee8cfa964ac1369d6c"
+}

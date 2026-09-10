@@ -51,7 +51,7 @@
     "version": 4,
     "coefficientShape": "[Nj,Nkl]",
     "planCount": 17,
-    "knownScratch": "4H+6R",
+    "knownScratch": "4C+6R",
     "coefficientWorkers": 2,
     "coefficientExecution": "prepared-persistent-workers",
     "persistentFullHermitianSpectrum": false,
@@ -136,7 +136,7 @@
     "issue": 358,
     "identity": "retained-compact-streamed-target-three-channel-v1",
     "executionScheduleVersion": 1,
-    "productionDefault": false,
+    "productionDefault": true,
     "frozenControl": "8d08ba48b554a84b9920e349e6d4c69dccd6c0dd",
     "baseNumericalScratch": "4C+6R",
     "configuredScalarNumericalScratch": "max(4C,H)+6R",
@@ -156,13 +156,26 @@
     },
     "sourceSHA256": {
       "CompiledKernel/include/WaveVortexKernel/WVFFTEngine.hpp": "10e0fcb9c2053f848889e4d806233588e0432f49d59c1211c146c8343c0ba9df",
-      "CompiledKernel/include/WaveVortexKernel/WVTransformConstantStratificationKernel.hpp": "daab552e9856e169092d287e8b44b3f8c210140189bec2e65e999e1bdb315ebf",
+      "CompiledKernel/include/WaveVortexKernel/WVTransformConstantStratificationKernel.hpp": "b7d503e7cc04904a92ef2ec267b18f2a0569c2cbb10d090534f2bacd0ab653cf",
       "CompiledKernel/adapters/native-fftw/WVNativeFFTWEngine.hpp": "7285f9989e604d2056a36eec275b95389bf386c3a5c7f5140086206f6ecf251b",
-      "@WVCompiledBackend/private/wvCompiledBackendConstants.m": "d4186fe60c56711b56b420b11e2dde0deeeea6bd1968514ffe054aac9e03f0f7",
+      "@WVCompiledBackend/private/wvCompiledBackendConstants.m": "6b8833c89efb0d55dca397bc752194e18c9cd7128aff4a9959b8dad12300ae78",
       "@WVCompiledBackend/private/wvCompiledBackendCapabilities.m": "c453d0f3bce5089c9928dc00969f88ca236b5c34f64c7a732ac13282156a5620"
     },
-    "adoptionDecision": "rejected-small-model-integration-regression",
-    "followUpIssue": 460,
-    "evidence": ".github/ci-evidence/issue-358-adoption/decision.json"
+    "adoptionDecision": "accepted-large-grid-qualification-with-owner-accepted-small-grid-cost",
+    "evidence": ".github/ci-evidence/issue-455-large-grid-adoption/decision.json",
+    "historicalAdoptionEvidence": ".github/ci-evidence/issue-358-adoption/decision.json",
+    "qualificationIssue": 455,
+    "acceptedSmallGridTimingException": {
+      "grid": [
+        32,
+        24,
+        33
+      ],
+      "observedIntegrationPenaltyPercent": [
+        18.6,
+        20.7
+      ],
+      "reason": "Owner accepts this cost and declined small-grid optimization; large-grid timing gates passed."
+    }
   }
 }

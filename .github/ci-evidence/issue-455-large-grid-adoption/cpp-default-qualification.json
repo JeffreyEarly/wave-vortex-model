@@ -1,0 +1,530 @@
+{
+  "status": "passed",
+  "scope": "Fresh actual-default-ON C++ consumer/contract/lifecycle qualification; no performance claim",
+  "sourceRoot": "/Users/jearly/Documents/OceanKitRepositories/wvm-v4-cpp-adoption-audit",
+  "sourceCommit": "107894a120da8f2aaa545101d74190a34c38974b",
+  "sourceState": "Promotion edits uncommitted; exact hashes authoritative",
+  "productionSourceHashesUnchangedDuringTests": true,
+  "testCorrection": {
+    "path": "PortableRuntime/tests/TestWVDensityFieldEvaluation.cpp",
+    "beforeSHA256": "e2338410a5f5e86c4b68a1145f8f0d375ffd542437cd588b3d52298b590cb8bf",
+    "afterSHA256": "9a4ef98c8fa10aeacd6ebeffa513c41fa1003ed06c4d94c029e2c30b51baad34",
+    "reason": "Explicit scalar preparation before retained-storage snapshot; compact full-grid scalar plans intentionally prepare on demand. Scientific oracle and strict no-growth checks preserved.",
+    "validation": "Only failed density target repeated; Release and sanitizer pass, original failure retained."
+  },
+  "acceptedCounts": {
+    "kernelRelease": 8,
+    "runtimeRelease": 14,
+    "atsRelease": 7,
+    "kernelSanitizer": 4,
+    "runtimeSanitizer": 4
+  },
+  "results": [
+    {
+      "name": "kernel-release-tests",
+      "tests": 8,
+      "failures": 0,
+      "xmlSHA256": "1fae00ac81097321c3cf9bfae7703246c8d0b6e41dadbd5423b2d9bfa36bbac8",
+      "historical": false
+    },
+    {
+      "name": "runtime-release-tests",
+      "tests": 14,
+      "failures": 1,
+      "xmlSHA256": "86850a362be15092816ab6f4ba3d9ba9e2c10fc869ea03be1cfc93d09b26a092",
+      "historical": true
+    },
+    {
+      "name": "ats-release-tests",
+      "tests": 7,
+      "failures": 0,
+      "xmlSHA256": "fa2533550d43cb974c0c99c108b4cb792d34fb2fc904cc4e77a475434565cd2f",
+      "historical": false
+    },
+    {
+      "name": "kernel-sanitized-tests",
+      "tests": 4,
+      "failures": 0,
+      "xmlSHA256": "20f5e10f449a5486bb9099b793ce3c25230e3a1d8a9aebc1782d165b59a8a4e7",
+      "historical": false
+    },
+    {
+      "name": "runtime-sanitized-tests",
+      "tests": 3,
+      "failures": 0,
+      "xmlSHA256": "ac9fb3d2c344c6f26ae7c6822c3df715fe3442f9896d1c5af3c9fb219c390569",
+      "historical": false
+    },
+    {
+      "name": "density-release-retest",
+      "tests": 1,
+      "failures": 0,
+      "xmlSHA256": "ae334caf29750c2e9955af99a2aaaa684133472102b7bbd06cd98e2175e85549",
+      "historical": false
+    },
+    {
+      "name": "density-sanitized-tests",
+      "tests": 1,
+      "failures": 0,
+      "xmlSHA256": "f2e05b9fa40c7f7a69a51ae29b72670694b2a3e486a221865526f26c698347cb",
+      "historical": false
+    }
+  ],
+  "builds": [
+    {
+      "name": "kernel-release",
+      "cacheSHA256": "705fd5da677c8b4066eedab82f7abca381193286ad3068f262232d4efcd39ac6",
+      "defaultSelection": "ON with no command-line override",
+      "nativeProvider": true
+    },
+    {
+      "name": "runtime-release",
+      "cacheSHA256": "dd267fd422174210121888dbfcf489268396b87794e1e7b6e678b0f997edb1db",
+      "defaultSelection": "ON with no command-line override",
+      "nativeProvider": true
+    },
+    {
+      "name": "ats-release",
+      "cacheSHA256": "914bd897920eb5ee2756dcf02648b3d95636a75d9087a6825794c71c9bd096b8",
+      "defaultSelection": "ON with no command-line override",
+      "nativeProvider": false
+    },
+    {
+      "name": "kernel-sanitized",
+      "cacheSHA256": "5ae200340f66d4de2b6f7a335c3690ae68c9b651251be0a3655dbb1d5ee7633a",
+      "defaultSelection": "ON with no command-line override",
+      "nativeProvider": true
+    },
+    {
+      "name": "runtime-sanitized",
+      "cacheSHA256": "06605c6456e7ab7f4de9442ccbf2bb229f3d69727cd24ba1be8f43f4deceb0ba",
+      "defaultSelection": "ON with no command-line override",
+      "nativeProvider": true
+    }
+  ],
+  "binaries": [
+    {
+      "build": "kernel-release",
+      "path": "/private/tmp/wvm455-cpp-default-qualification/kernel-release/TestWVKernelContract",
+      "sha256": "e8113291d57b483ea4167f58ad971d68f537142a894399e808dd965065de38fe"
+    },
+    {
+      "build": "kernel-release",
+      "path": "/private/tmp/wvm455-cpp-default-qualification/kernel-release/TestWVAllocationProbe",
+      "sha256": "13ed370cc5dc15138140f15f2a71f43be2bb5cbe49fc808f9864e0a3b98719f5"
+    },
+    {
+      "build": "kernel-release",
+      "path": "/private/tmp/wvm455-cpp-default-qualification/kernel-release/TestWVSpectralOperators",
+      "sha256": "b58138c898bb6b056eff300c613e3475350c147e09e046b337304648a2c7112d"
+    },
+    {
+      "build": "kernel-release",
+      "path": "/private/tmp/wvm455-cpp-default-qualification/kernel-release/TestWVPrunedHorizontal",
+      "sha256": "21eb0c8c86f60c28f94df05efbaf009ff31a1e6de743c21d203c09d18bfb2e50"
+    },
+    {
+      "build": "kernel-release",
+      "path": "/private/tmp/wvm455-cpp-default-qualification/kernel-release/TestWVCompactConstantSchedule",
+      "sha256": "e90932f47dfa410ae1196ecc79e99490d48497170093955cf4d66eb41b41d750"
+    },
+    {
+      "build": "kernel-release",
+      "path": "/private/tmp/wvm455-cpp-default-qualification/kernel-release/TestWVBarotropicQGKernel",
+      "sha256": "24ff6d1539c2a70cbb76925054273a33d9829685e54ebd185da1095b486cf56d"
+    },
+    {
+      "build": "kernel-release",
+      "path": "/private/tmp/wvm455-cpp-default-qualification/kernel-release/TestWVPreparedModeExecutor",
+      "sha256": "9abd8d48e6284837351e8d59c94ddb0f16e99125a6cb0f5115297fd4046329d5"
+    },
+    {
+      "build": "kernel-release",
+      "path": "/private/tmp/wvm455-cpp-default-qualification/kernel-release/TestWVNativeFFTWOwnership",
+      "sha256": "c78a647b6dd67171e799d1cc90351d24fbb300e6b4090d4d1218b81a67d16972"
+    },
+    {
+      "build": "runtime-release",
+      "path": "/private/tmp/wvm455-cpp-default-qualification/runtime-release/TestWVModel",
+      "sha256": "4559e1a19264d5d48e07e8c143a00a64cc4e20e11827b18105b1d78d70dda2d0"
+    },
+    {
+      "build": "runtime-release",
+      "path": "/private/tmp/wvm455-cpp-default-qualification/runtime-release/TestWVUnifiedIntegration",
+      "sha256": "6783c7dae73e3ef15b09283cb79b10a0cd5fb40901dc1a394d583f2c2968fbc8"
+    },
+    {
+      "build": "runtime-release",
+      "path": "/private/tmp/wvm455-cpp-default-qualification/runtime-release/TestWVOutputOccurrence",
+      "sha256": "34f69577303403308f3a21eafe420626d207ed20ced4d580dbe651bf66133b4e"
+    },
+    {
+      "build": "runtime-release",
+      "path": "/private/tmp/wvm455-cpp-default-qualification/runtime-release/TestWVObserverOutputEvaluation",
+      "sha256": "54f95a0e9152e65de46bccf39de6cde317f71788ca6199c44e129c06692fc256"
+    },
+    {
+      "build": "runtime-release",
+      "path": "/private/tmp/wvm455-cpp-default-qualification/runtime-release/TestWaveVortexRun",
+      "sha256": "acc0aa30c42390203521169e05e934a2a1aa25265465e46b3b0255ea23f36613"
+    },
+    {
+      "build": "runtime-release",
+      "path": "/private/tmp/wvm455-cpp-default-qualification/runtime-release/wave-vortex-run",
+      "sha256": "63e9bb5bc0ea5f2800cc8fb8cea6dac057336bf578cbb9f48c9da4c17666d3d5"
+    },
+    {
+      "build": "runtime-release",
+      "path": "/private/tmp/wvm455-cpp-default-qualification/runtime-release/TestWVExtendedRunner",
+      "sha256": "3f47c8bafe0b85f7a20e999f18a676629429e7e4590b94430fcf00df490c2f81"
+    },
+    {
+      "build": "runtime-release",
+      "path": "/private/tmp/wvm455-cpp-default-qualification/runtime-release/TestWVObservationOccurrence",
+      "sha256": "0dc8bd119a46454729864d2945afc71c23a18bd319b141018ab0e0084520bc60"
+    },
+    {
+      "build": "runtime-release",
+      "path": "/private/tmp/wvm455-cpp-default-qualification/runtime-release/TestWVForcingTendencies",
+      "sha256": "1b6b104d2adc59ac1d72eaa7a489a050096beb955b1dc52c0d96c1be71acde95"
+    },
+    {
+      "build": "runtime-release",
+      "path": "/private/tmp/wvm455-cpp-default-qualification/runtime-release/TestWVOutputOrchestration",
+      "sha256": "ee6d21fa6789dded9c749b5ed44d2d672273ec5a03997d3c8f76ff2246a6bd83"
+    },
+    {
+      "build": "runtime-release",
+      "path": "/private/tmp/wvm455-cpp-default-qualification/runtime-release/TestWVFieldEvaluation",
+      "sha256": "1d3ddcbe4782e54aa4582684ca0902477737855a12efe9c84298e818d48185b7"
+    },
+    {
+      "build": "runtime-release",
+      "path": "/private/tmp/wvm455-cpp-default-qualification/runtime-release/TestWVDensityFieldEvaluation",
+      "sha256": "f711fe943fcbf313d6848434a820a619dfa2ee87128bdcf0c18813b78e7514f3"
+    },
+    {
+      "build": "runtime-release",
+      "path": "/private/tmp/wvm455-cpp-default-qualification/runtime-release/TestWVModelOutputConfiguration",
+      "sha256": "2f91ccc1e0d1bfc89cdc19132dfa7715f9e9d95315abad97bc407247aaaf67e4"
+    },
+    {
+      "build": "runtime-release",
+      "path": "/private/tmp/wvm455-cpp-default-qualification/runtime-release/TestWVLagrangianParticles",
+      "sha256": "fe5b4bcfe31b4d32399b0196147379c257a352fee947722e15fa52895df173ca"
+    },
+    {
+      "build": "runtime-release",
+      "path": "/private/tmp/wvm455-cpp-default-qualification/runtime-release/TestWVModelOutputNetCDF",
+      "sha256": "d7701b68e64585bac83b2039d0f88d4c2eba13385ba24d7e029c67c6447b445e"
+    },
+    {
+      "build": "runtime-release",
+      "path": "/private/tmp/wvm455-cpp-default-qualification/runtime-release/TestWVForcingAndRK4",
+      "sha256": "a5923cf70f1428eca035c9aaf4c7eeaaeb160f235fbe10551e9e8fdcbd58ad19"
+    },
+    {
+      "build": "ats-release",
+      "path": "/private/tmp/wvm455-cpp-default-qualification/ats-release/alongtrack_portable_core_tests",
+      "sha256": "6a9dd396dc7d878fa0e332ac47f4de59864e784d4313927bbbc5eeb411a97cb2"
+    },
+    {
+      "build": "kernel-sanitized",
+      "path": "/private/tmp/wvm455-cpp-default-qualification/kernel-sanitized/TestWVKernelContract",
+      "sha256": "8caecdc09c2d37ec44429232455398d58783e138254cfc0392aa75319fd48ae9"
+    },
+    {
+      "build": "kernel-sanitized",
+      "path": "/private/tmp/wvm455-cpp-default-qualification/kernel-sanitized/TestWVPrunedHorizontal",
+      "sha256": "75ff716c5eb6ab7edb68af3a0ab2b32ff84d2ce4f840f08cb33c40a27bdb6618"
+    },
+    {
+      "build": "kernel-sanitized",
+      "path": "/private/tmp/wvm455-cpp-default-qualification/kernel-sanitized/TestWVCompactConstantSchedule",
+      "sha256": "fbe5cfe20e2c2d9900f84efa8acb2fb3896eee74cd9d012cc8888004c43b1f82"
+    },
+    {
+      "build": "kernel-sanitized",
+      "path": "/private/tmp/wvm455-cpp-default-qualification/kernel-sanitized/TestWVNativeFFTWOwnership",
+      "sha256": "6fa508b3f06d6cac79aae877d4aa22916b3529f7f3cbb4de0c9b9ab0ca84d2bc"
+    },
+    {
+      "build": "runtime-sanitized",
+      "path": "/private/tmp/wvm455-cpp-default-qualification/runtime-sanitized/wave-vortex-run",
+      "sha256": "698d376f8e804aca581250b9bdb36b3c8ee07ae60da39c141f9b3b79f2987b16"
+    },
+    {
+      "build": "runtime-sanitized",
+      "path": "/private/tmp/wvm455-cpp-default-qualification/runtime-sanitized/TestWVExtendedRunner",
+      "sha256": "eb92dd0fc1445b6e9786dcb781f8fa6d09edce570b33687243eefe8ef935feaf"
+    },
+    {
+      "build": "runtime-sanitized",
+      "path": "/private/tmp/wvm455-cpp-default-qualification/runtime-sanitized/TestWVFieldEvaluation",
+      "sha256": "11d6106ba06170061b7fa8321feaab0060578f3ce18bea87098b8720a492e7eb"
+    },
+    {
+      "build": "runtime-sanitized",
+      "path": "/private/tmp/wvm455-cpp-default-qualification/runtime-sanitized/TestWVDensityFieldEvaluation",
+      "sha256": "7a8ed77b20665fcdf6a05db3465183785d1c2ba7cc11edbbe8a3a6286f94fa6d"
+    },
+    {
+      "build": "runtime-sanitized",
+      "path": "/private/tmp/wvm455-cpp-default-qualification/runtime-sanitized/TestWVLagrangianParticles",
+      "sha256": "8e5780f7d3958972a99967a0fc74fda139dcc736189ea48d5e603908b572b209"
+    },
+    {
+      "build": "runtime-sanitized",
+      "path": "/private/tmp/wvm455-cpp-default-qualification/runtime-sanitized/TestWVModelOutputNetCDF",
+      "sha256": "4d8a738435c0090aebc19a7aa459a6f3686b8aefaf23ef718e7e4ef47ea06584"
+    }
+  ],
+  "providerLibraries": [
+    {
+      "path": "/Users/jearly/Documents/OceanKitRepositories/wave-vortex-model/.compiled-backend-cache/provider/native-neon-pthreads/lib/libfftw3.3.dylib",
+      "sha256": "b0dec1a21815db76726d48fe9b49cc34502b8fd7f4cccdfb0a54d50e39abef2c"
+    },
+    {
+      "path": "/Users/jearly/Documents/OceanKitRepositories/wave-vortex-model/.compiled-backend-cache/provider/native-neon-pthreads/lib/libfftw3_threads.3.dylib",
+      "sha256": "064e6e17ca492204cb41aaf6ef739f6d5d22cc774699760e25166f5f8dffc359"
+    }
+  ],
+  "ats": {
+    "root": "/Users/jearly/Documents/OceanKitRepositories/AlongTrackSimulator",
+    "commit": "511aa6af9c60353b3de4d371dfe0df43159027cf",
+    "cleanAndUnchanged": true,
+    "edits": false
+  },
+  "testCommands": {
+    "kernelRelease": [
+      "ctest",
+      "--test-dir",
+      "/private/tmp/wvm455-cpp-default-qualification/kernel-release",
+      "--output-on-failure"
+    ],
+    "runtimeReleaseSelection": [
+      "forcing-and-rk4",
+      "forcing-tendencies",
+      "unified-integration",
+      "output-orchestration",
+      "output-occurrence",
+      "model-output-netcdf",
+      "model-output-configuration",
+      "model-facade",
+      "field-evaluation",
+      "observer-output-evaluation",
+      "observation-occurrence",
+      "lagrangian-particles",
+      "standalone-runner",
+      "density-field-evaluation"
+    ],
+    "atsRelease": [
+      "ctest",
+      "--test-dir",
+      "/private/tmp/wvm455-cpp-default-qualification/ats-release",
+      "--output-on-failure"
+    ],
+    "kernelSanitizerSelection": [
+      "WVKernelContract",
+      "WVNativeFFTWOwnership",
+      "WVPrunedHorizontal",
+      "WVCompactConstantSchedule"
+    ],
+    "runtimeSanitizerSelection": [
+      "lagrangian-particles",
+      "model-output-netcdf",
+      "field-evaluation",
+      "density-field-evaluation"
+    ]
+  },
+  "sourceBinding": {
+    "path": "/private/tmp/wvm455-cpp-default-qualification/source-before.json",
+    "sha256": "14e755bc235956e4ecb9f6a5da34f7fb9b274ba3e51c606872eadbf73f873391"
+  },
+  "artifacts": [
+    {
+      "path": "/private/tmp/wvm455-cpp-default-qualification/ats-release-CMakeCache.txt",
+      "sha256": "914bd897920eb5ee2756dcf02648b3d95636a75d9087a6825794c71c9bd096b8"
+    },
+    {
+      "path": "/private/tmp/wvm455-cpp-default-qualification/ats-release-build.log",
+      "sha256": "78551e2be40d27e913adad1b52f7252cd471438e2791d1df514b6d11debe6ed7"
+    },
+    {
+      "path": "/private/tmp/wvm455-cpp-default-qualification/ats-release-commands.json",
+      "sha256": "e220b71f817440f45e0248aca194e405437fb7d3675c82760989e02930093151"
+    },
+    {
+      "path": "/private/tmp/wvm455-cpp-default-qualification/ats-release-configure.log",
+      "sha256": "6d453f3b4f6dca4b787ea8dd6ea32167fc01793ac0e85133e7a7564209d00754"
+    },
+    {
+      "path": "/private/tmp/wvm455-cpp-default-qualification/ats-release-target-flags.json",
+      "sha256": "8fb8803bbcc2f5e7057403660326b25066f885a57d848022d98624d90c0905cd"
+    },
+    {
+      "path": "/private/tmp/wvm455-cpp-default-qualification/ats-release-tests.log",
+      "sha256": "4c6377f789ae1e729bbec3ad2c5e235b1ae1e761150358425bf501206f78d983"
+    },
+    {
+      "path": "/private/tmp/wvm455-cpp-default-qualification/ats-release-tests.xml",
+      "sha256": "fa2533550d43cb974c0c99c108b4cb792d34fb2fc904cc4e77a475434565cd2f"
+    },
+    {
+      "path": "/private/tmp/wvm455-cpp-default-qualification/density-release-rebuild.log",
+      "sha256": "74a9677922ada9b4c47aa505ba17da7e71af2056dedd5f9d0b8ca5a82a0c88e5"
+    },
+    {
+      "path": "/private/tmp/wvm455-cpp-default-qualification/density-release-retest.log",
+      "sha256": "c5927d2d42395882f759f75a704b516214e6b0ae2961732a1afa8caf158a2eed"
+    },
+    {
+      "path": "/private/tmp/wvm455-cpp-default-qualification/density-release-retest.xml",
+      "sha256": "ae334caf29750c2e9955af99a2aaaa684133472102b7bbd06cd98e2175e85549"
+    },
+    {
+      "path": "/private/tmp/wvm455-cpp-default-qualification/density-sanitized-build.log",
+      "sha256": "74a9677922ada9b4c47aa505ba17da7e71af2056dedd5f9d0b8ca5a82a0c88e5"
+    },
+    {
+      "path": "/private/tmp/wvm455-cpp-default-qualification/density-sanitized-tests.log",
+      "sha256": "1824c9acd6d5162abbe250ddff1c98b2856133e34e1a63350ad08a8490e44e9d"
+    },
+    {
+      "path": "/private/tmp/wvm455-cpp-default-qualification/density-sanitized-tests.xml",
+      "sha256": "f2e05b9fa40c7f7a69a51ae29b72670694b2a3e486a221865526f26c698347cb"
+    },
+    {
+      "path": "/private/tmp/wvm455-cpp-default-qualification/kernel-release-CMakeCache.txt",
+      "sha256": "705fd5da677c8b4066eedab82f7abca381193286ad3068f262232d4efcd39ac6"
+    },
+    {
+      "path": "/private/tmp/wvm455-cpp-default-qualification/kernel-release-build.log",
+      "sha256": "66ee7c3bc2ea8802e2428e3e1d6b0cf5c1e0c26aecb2450c5cfd132d0471e868"
+    },
+    {
+      "path": "/private/tmp/wvm455-cpp-default-qualification/kernel-release-commands.json",
+      "sha256": "bfe20ead516451817305b0e3295afbafb6d1d45fce9cb89138960f31cc51ad33"
+    },
+    {
+      "path": "/private/tmp/wvm455-cpp-default-qualification/kernel-release-configure.log",
+      "sha256": "3293d24924976ded9319b4477e9f28c4ea427004108e82fd0c53f0606fd21439"
+    },
+    {
+      "path": "/private/tmp/wvm455-cpp-default-qualification/kernel-release-target-flags.json",
+      "sha256": "d955f44f768161221f04317fe46db1daf84290a7e92af286223d4a229475cc74"
+    },
+    {
+      "path": "/private/tmp/wvm455-cpp-default-qualification/kernel-release-tests.log",
+      "sha256": "9f4be045da7ba0a8ca0a4537ff8d7ceb60f0fcc3d6a314da9ce30b736c977998"
+    },
+    {
+      "path": "/private/tmp/wvm455-cpp-default-qualification/kernel-release-tests.xml",
+      "sha256": "1fae00ac81097321c3cf9bfae7703246c8d0b6e41dadbd5423b2d9bfa36bbac8"
+    },
+    {
+      "path": "/private/tmp/wvm455-cpp-default-qualification/kernel-sanitized-CMakeCache.txt",
+      "sha256": "5ae200340f66d4de2b6f7a335c3690ae68c9b651251be0a3655dbb1d5ee7633a"
+    },
+    {
+      "path": "/private/tmp/wvm455-cpp-default-qualification/kernel-sanitized-build.log",
+      "sha256": "00368ab0ba8015c95c0233b372b2773c3b694f7a6e2b04baad5ed9445921bd00"
+    },
+    {
+      "path": "/private/tmp/wvm455-cpp-default-qualification/kernel-sanitized-commands.json",
+      "sha256": "759d6fabff5b4d773cf9098033ba04b78b46c29216dcab90ba8dbc4121c4831b"
+    },
+    {
+      "path": "/private/tmp/wvm455-cpp-default-qualification/kernel-sanitized-configure.log",
+      "sha256": "97908fe605663f32afa6e52e60e3562fa0901f11055362b22b58be05f0d320d8"
+    },
+    {
+      "path": "/private/tmp/wvm455-cpp-default-qualification/kernel-sanitized-target-flags.json",
+      "sha256": "c6c8323980b01c955fd0e56657e499397f634299b66767aa5268572d422dedf4"
+    },
+    {
+      "path": "/private/tmp/wvm455-cpp-default-qualification/kernel-sanitized-tests.log",
+      "sha256": "564f854d96ed87714deaeaac8126e90ad6d73327648a409104c1787748849f46"
+    },
+    {
+      "path": "/private/tmp/wvm455-cpp-default-qualification/kernel-sanitized-tests.xml",
+      "sha256": "20f5e10f449a5486bb9099b793ce3c25230e3a1d8a9aebc1782d165b59a8a4e7"
+    },
+    {
+      "path": "/private/tmp/wvm455-cpp-default-qualification/release-build-results.json",
+      "sha256": "bff9557595c5138a39704f0c61ce2079a23c1972c83c33719580dcf6e4667388"
+    },
+    {
+      "path": "/private/tmp/wvm455-cpp-default-qualification/run_builds.py",
+      "sha256": "29dabb97e70b9e0fd41d8267cda12a22cf07570255869d0bed2e7f3881e84f6b"
+    },
+    {
+      "path": "/private/tmp/wvm455-cpp-default-qualification/run_sanitized.py",
+      "sha256": "bf10394406d0f55dae52ed8ed144ed610e3f8b48514c431b2a7ebe06deabcd25"
+    },
+    {
+      "path": "/private/tmp/wvm455-cpp-default-qualification/runtime-release-CMakeCache.txt",
+      "sha256": "dd267fd422174210121888dbfcf489268396b87794e1e7b6e678b0f997edb1db"
+    },
+    {
+      "path": "/private/tmp/wvm455-cpp-default-qualification/runtime-release-build.log",
+      "sha256": "e9b368c14dacf4cf922cac982a8f951aadd185a78b5864d7190bf19f29d49dad"
+    },
+    {
+      "path": "/private/tmp/wvm455-cpp-default-qualification/runtime-release-commands.json",
+      "sha256": "d96885d74095a389d0414dd04b7526a57ba922bdb2774acb0a7e4b71cfa32b82"
+    },
+    {
+      "path": "/private/tmp/wvm455-cpp-default-qualification/runtime-release-configure.log",
+      "sha256": "78a6e225fda67478b460892b7f0a96950b8eb3598c2f8615aff20050ee08755e"
+    },
+    {
+      "path": "/private/tmp/wvm455-cpp-default-qualification/runtime-release-target-flags.json",
+      "sha256": "20b06f88ab061907c8d108b7e6600bfd9e495e86ff68542981c40e691c2b9c84"
+    },
+    {
+      "path": "/private/tmp/wvm455-cpp-default-qualification/runtime-release-tests.log",
+      "sha256": "bc52a8d45031c2cf7e3b7d013f334a7366c43d8a31252d83a17a6bde05ca9860"
+    },
+    {
+      "path": "/private/tmp/wvm455-cpp-default-qualification/runtime-release-tests.xml",
+      "sha256": "86850a362be15092816ab6f4ba3d9ba9e2c10fc869ea03be1cfc93d09b26a092"
+    },
+    {
+      "path": "/private/tmp/wvm455-cpp-default-qualification/runtime-sanitized-CMakeCache.txt",
+      "sha256": "06605c6456e7ab7f4de9442ccbf2bb229f3d69727cd24ba1be8f43f4deceb0ba"
+    },
+    {
+      "path": "/private/tmp/wvm455-cpp-default-qualification/runtime-sanitized-build.log",
+      "sha256": "d6991dec7f8f9e694dcdb2f2318c3097f55d5c8a2dedf6023b4e540e46858096"
+    },
+    {
+      "path": "/private/tmp/wvm455-cpp-default-qualification/runtime-sanitized-commands.json",
+      "sha256": "b460e0e6782cb2c3aa859c0fa268fc1439645166d97719469e12186ba19bfca2"
+    },
+    {
+      "path": "/private/tmp/wvm455-cpp-default-qualification/runtime-sanitized-configure.log",
+      "sha256": "14bf3aac0f873c079a96273ca3ac4e8366086dbfa1ac3003243137ddf09a28c8"
+    },
+    {
+      "path": "/private/tmp/wvm455-cpp-default-qualification/runtime-sanitized-target-flags.json",
+      "sha256": "2d18e924bba2c24642ed82b5ea1f2fecfffddc0a30319ba4e8621fda10e42d4f"
+    },
+    {
+      "path": "/private/tmp/wvm455-cpp-default-qualification/runtime-sanitized-tests.log",
+      "sha256": "f5315837bdfc3ee4fb11a2bce866fdcc4e31a7f2ecf662693da29c80e2f78392"
+    },
+    {
+      "path": "/private/tmp/wvm455-cpp-default-qualification/runtime-sanitized-tests.xml",
+      "sha256": "ac9fb3d2c344c6f26ae7c6822c3df715fe3442f9896d1c5af3c9fb219c390569"
+    },
+    {
+      "path": "/private/tmp/wvm455-cpp-default-qualification/sanitized-build-results.json",
+      "sha256": "3e0290113678da271089312749e3e9dc6df9862db53aae4a5b5366915891a11a"
+    },
+    {
+      "path": "/private/tmp/wvm455-cpp-default-qualification/source-before.json",
+      "sha256": "14e755bc235956e4ecb9f6a5da34f7fb9b274ba3e51c606872eadbf73f873391"
+    }
+  ]
+}

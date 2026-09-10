@@ -8,11 +8,11 @@
 namespace wavevortex {
 namespace kernel_detail { class WVPreparedModeExecutor; struct WVCompactConstantSchedule; }
 
-// Experimental schedule selection is an explicit construction policy, never
+// Schedule selection is an explicit construction policy, never
 // mutable process state or part of the scientific checkpoint identity.
 enum class WVConstantNonlinearFluxSchedule { frozenStreamed, compactCandidate };
 struct WVConstantKernelExecutionOptions {
-#if defined(WV_KERNEL_COMPACT_CONSTANT_CANDIDATE) && WV_KERNEL_COMPACT_CONSTANT_CANDIDATE
+#if !defined(WV_KERNEL_COMPACT_CONSTANT_CANDIDATE) || WV_KERNEL_COMPACT_CONSTANT_CANDIDATE
     WVConstantNonlinearFluxSchedule schedule = WVConstantNonlinearFluxSchedule::compactCandidate;
 #else
     WVConstantNonlinearFluxSchedule schedule = WVConstantNonlinearFluxSchedule::frozenStreamed;

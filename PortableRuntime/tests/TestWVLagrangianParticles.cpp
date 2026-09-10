@@ -307,7 +307,12 @@ void testTracers(bool hydrostatic) {
   const auto scratchCapacityBytes =
       system->kernelMetrics().scratchCapacityBytes;
   const auto planCount = system->kernelMetrics().planCount;
-  require(planCount == 18,
+  const auto expectedPlanCount =
+      WVConstantKernelExecutionOptions{}.schedule ==
+              WVConstantNonlinearFluxSchedule::compactCandidate
+          ? 21u
+          : 18u;
+  require(planCount == expectedPlanCount,
           "antialiased tracer did not prepare the scalar inverse plan");
   status = system->evaluateRightHandSide(fixture.constView(), fixture.rhs);
   require(static_cast<bool>(status), status.message);

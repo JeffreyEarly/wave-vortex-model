@@ -412,10 +412,13 @@ void testNonlinearFlux(bool hydrostatic) {
     require(kernel->metrics().executionCount == 2*executionsPerCall,"unexpected nonlinear-flux plan execution count");
     require(kernel->metrics().nonlinearFluxCallCount == 2,"unexpected nonlinear-flux call count");
     require(kernel->metrics().nonlinearFluxPhaseEvaluationCount == 2*count,"nonlinear flux did not evaluate phase exactly once per coefficient");
-    require(std::string(kernel->nonlinearFluxScheduleIdentifier()) == "streamed-target-three-channel","unexpected nonlinear-flux schedule identifier");
+    const bool compact = WVConstantKernelExecutionOptions{}.schedule == WVConstantNonlinearFluxSchedule::compactCandidate;
+    const char* expectedSchedule = compact ? "retained-compact-streamed-target-three-channel-v1" : "streamed-target-three-channel";
+    require(std::string(kernel->nonlinearFluxScheduleIdentifier()) == expectedSchedule,"unexpected nonlinear-flux schedule identifier");
     const auto halfFieldBytes = (config.Nx / 2 + 1) * config.Ny * config.Nz * sizeof(WVComplex64);
     const auto realFieldBytes = config.Nx * config.Ny * config.Nz * sizeof(double);
-    require(kernel->metrics().halfSpectrumScratchCapacityBytes == 4 * halfFieldBytes,"streamed target half-spectrum scratch is not 4H");
+    const auto executionFieldBytes = compact ? kernel->descriptor().Nkl()*config.Nz*sizeof(WVComplex64) : halfFieldBytes;
+    require(kernel->metrics().halfSpectrumScratchCapacityBytes == 4 * executionFieldBytes,"schedule numerical scratch does not match its execution rows");
     require(kernel->metrics().realScratchCapacityBytes == 6 * realFieldBytes,"streamed target real scratch is not 6R");
     require(kernel->metrics().engineBytes >= sizeof(wavevortex::test::WVReferenceFFTEngine) &&
                 kernel->metrics().kernelManagementBytes > 0 &&
@@ -426,8 +429,8 @@ void testNonlinearFlux(bool hydrostatic) {
                         kernel->metrics().planBytes +
                         kernel->metrics().scratchCapacityBytes,
             "compiled-kernel retained-storage ownership formula is not exact");
-    require(kernel->phaseReservationBytes() == halfFieldBytes,"streamed target phase reservation is not one H region");
-    require(kernel->descriptor().spectralShape().elementCount() * sizeof(WVComplex64) <= kernel->phaseReservationBytes(),"streamed phase values do not fit inside their H-sized reservation");
+    require(kernel->phaseReservationBytes() == executionFieldBytes,"phase reservation is not one execution spectrum");
+    require(kernel->descriptor().spectralShape().elementCount() * sizeof(WVComplex64) <= kernel->phaseReservationBytes(),"phase values do not fit inside their execution-spectrum reservation");
     require(kernel->metrics().planCount == 17,"unexpected streamed target plan count");
 
     const auto R = kernel->descriptor().spatialShape().elementCount();

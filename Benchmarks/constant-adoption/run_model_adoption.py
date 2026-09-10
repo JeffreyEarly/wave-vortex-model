@@ -4,7 +4,9 @@
 Author-only dependencies: NumPy and netCDF4. Qualification runs one fresh pair
 per profile and makes no timing claim. Final mode requires frozen provenance,
 uses two excluded warmup pairs and eight alternating measured pairs. Every run
-gets a fresh source copy; all requests, reports, logs and NetCDF bytes remain.
+gets a fresh source copy. Requests, reports, logs and comparisons remain; the
+explicit large-only retention policy may remove verified extra NetCDF payloads
+while retaining the first measured pair and all failures.
 """
 import argparse
 import hashlib
@@ -187,9 +189,9 @@ def run_child(command, folder):
             "userSeconds": usage.ru_utime, "systemSeconds": usage.ru_stime}
 
 
-def summarize(pairs, mode):
+def summarize(pairs, mode, profile_count=4):
     measured = [p for p in pairs if not p["warmup"]]
-    expected_pairs = 4 if mode == "qualification" else 40
+    expected_pairs = profile_count * (1 if mode == "qualification" else 10)
     complete = len(pairs) == expected_pairs
     result = {"passed": complete and all(p["passed"] for p in pairs), "completedPairs": len(pairs),
               "expectedPairs": expected_pairs, "status": "complete" if complete else "incomplete",
@@ -224,6 +226,57 @@ def summarize(pairs, mode):
     return result
 
 
+def fixture_contract(fixtures):
+    """Named immutable workloads; a different run length requires a new profile."""
+    schema = fixtures["schema"]
+    base = ["constant-hydrostatic-coefficient-only", "constant-hydrostatic-composite",
+            "constant-nonhydrostatic-coefficient-only", "constant-nonhydrostatic-composite"]
+    if schema == "wvm-constant-model-fixtures-v1":
+        expected = base
+        steps, final = 64, 32
+    elif schema == "wvm-constant-model-fixtures-large-v1":
+        expected = [name + "-" + str(size) for size in (256, 512) for name in
+                    (base[0], base[2], base[3])]
+        steps, final = 4, 2
+        parameters = fixtures["parameters"]
+        if (parameters["Nxyz"] != [[256, 256, 129], [512, 512, 257]] or
+                parameters["fields"] != ["u"] or parameters["denseOutputTimes"] != .75 or
+                parameters["fixedStepCount"] != steps or parameters["rhsEvaluationCount"] != 4 * steps):
+            raise ValueError("Large fixture axes, fields, dense time or work differ")
+    else:
+        raise ValueError("Unknown frozen complete-model profile schema")
+    if [p["id"] for p in fixtures["profiles"]] != expected:
+        raise ValueError("Frozen complete-model profile inventory/order differs")
+    return {"method": "fixed-rk4", "finalTime": final, "initialStep": .5}, steps
+
+
+def retain_verified_pair(pair, output, policy):
+    """Delete only verified extra payloads after hashes/comparisons are durable."""
+    if policy == "all" or not pair["passed"] or pair["pair"] == 0:
+        return
+    # The caller has persisted both run receipts, comparisons and pairs.json.
+    # All failed pairs and the first measured pair stay independently inspectable.
+    paths = []
+    for role in ("control", "candidate"):
+        run = pair["runs"][role]
+        path = Path(run["directory"]) / "output.nc"
+        expected = run["artifacts"]["output.nc"]
+        if digest(path) != expected:
+            raise ValueError("Verified output changed before retention cleanup")
+        paths.append({"path": str(path), "sha256": expected, "bytes": path.stat().st_size})
+    receipt = {"policy": policy, "profile": pair["profile"], "pair": pair["pair"],
+               "reason": "Both complete graphs, numerical comparisons, work and source identities passed; hashes and comparisons retained",
+               "status": "verified-pending-removal", "outputs": paths}
+    receipt_path = output / (pair["profile"] + f"-pair{pair['pair']:02}-retention.json")
+    save(receipt_path, receipt)
+    for item in paths:
+        Path(item["path"]).unlink()
+    receipt["status"] = "removed-after-verification"
+    save(receipt_path, receipt)
+    pair["payloadRetention"] = {"path": str(receipt_path), "sha256": digest(receipt_path),
+                                "status": receipt["status"]}
+
+
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--fixtures", required=True, type=Path, help="Frozen manifest.json")
@@ -231,6 +284,8 @@ def main():
     parser.add_argument("--candidate", required=True, type=Path)
     parser.add_argument("--output", required=True, type=Path)
     parser.add_argument("--mode", choices=["qualification", "final"], default="qualification")
+    parser.add_argument("--payload-retention", choices=["all", "first-measured-pair"], default="all",
+                        help="Large profiles only: retain first measured pair and every failed payload; remove only verified extra outputs")
     parser.add_argument("--provenance", type=Path, help="Frozen source/build/provider/host receipt; required for final")
     args = parser.parse_args()
     if args.mode == "final" and not args.provenance:
@@ -238,8 +293,9 @@ def main():
     args.output = args.output.resolve()
     args.output.mkdir(parents=True, exist_ok=False)
     fixtures = json.loads(args.fixtures.read_text())
-    if fixtures["schema"] != "wvm-constant-model-fixtures-v1" or len(fixtures["profiles"]) != 4:
-        raise ValueError("Expected the four frozen complete-model profiles")
+    expected_integration, expected_steps = fixture_contract(fixtures)
+    if args.payload_retention != "all" and fixtures["schema"] != "wvm-constant-model-fixtures-large-v1":
+        raise ValueError("Historical small profiles retain every output")
     executables = {"control": args.control.resolve(), "candidate": args.candidate.resolve()}
     executable_hashes = {role: digest(path) for role, path in executables.items()}
     for profile in fixtures["profiles"]:
@@ -247,12 +303,14 @@ def main():
             if digest(profile[kind + "Path"]) != profile[kind + "SHA256"]:
                 raise ValueError("Frozen " + kind + " fixture hash differs: " + profile["id"])
         request = json.loads(Path(profile["requestPath"]).read_text())
-        if request["integration"] != {"method": "fixed-rk4", "finalTime": 32, "initialStep": .5}:
-            raise ValueError("Expected fixed RK4, dt=.5, finalTime=32")
+        if request["integration"] != expected_integration:
+            raise ValueError("Fixed integration request differs from the named frozen workload")
     save(args.output / "manifest.json", {"schema": "wvm-constant-model-adoption-v1", "mode": args.mode,
         "platform": platform.platform(), "harnessSHA256": digest(__file__), "fixtures": fixtures,
         "fixturesManifestSHA256": digest(args.fixtures), "warmupPairs": 0 if args.mode == "qualification" else 2,
         "measuredPairs": 1 if args.mode == "qualification" else 8,
+        "payloadRetention": args.payload_retention, "expectedStepCount": expected_steps,
+        "expectedRHSEvaluationCount": 4 * expected_steps,
         "executables": {role: {"path": str(path), "sha256": executable_hashes[role]} for role, path in executables.items()},
         "provenance": json.loads(args.provenance.read_text()) if args.provenance else None,
         "provenanceSHA256": digest(args.provenance) if args.provenance else None,
@@ -288,8 +346,9 @@ def main():
                     save(folder / "matlab-comparison.json", comparison)
                     run["matlabComparison"] = {"passed": comparison["passed"], "differences": comparison["differences"],
                         "excludedAttributes": comparison["excludedAttributes"], "variableCount": comparison["variableCount"]}
-                    run["fixedWorkPassed"] = (run["state"]["stepCount"] == 64 and
-                        run["state"]["initialTime"] == 0 and run["state"]["finalTime"] == 32 and
+                    run["fixedWorkPassed"] = (run["state"]["stepCount"] == expected_steps and
+                        run["state"]["rhsEvaluationCount"] == 4 * expected_steps and
+                        run["state"]["initialTime"] == 0 and run["state"]["finalTime"] == expected_integration["finalTime"] and
                         run["state"]["deltaT"] == .5 and run["state"]["rejectedStepCount"] == 0)
                     run["passed"] = comparison["passed"] and run["fixedWorkPassed"] and run["executableUnchanged"]
                 run["artifacts"] = {p.name: digest(p) for p in sorted(folder.iterdir()) if p.is_file()}
@@ -307,7 +366,9 @@ def main():
                 pair["passed"] = pair["passed"] and comparison["passed"] and pair["matchedWork"]
             pairs.append(pair)
             save(args.output / "pairs.json", pairs)
-            save(args.output / "summary.json", summarize(pairs, args.mode))
+            save(args.output / "summary.json", summarize(pairs, args.mode, len(fixtures["profiles"])))
+            retain_verified_pair(pair, args.output, args.payload_retention)
+            save(args.output / "pairs.json", pairs)
             if not pair["passed"] and args.mode == "final":
                 raise RuntimeError("Qualification failed; negative pair and all outputs retained")
     for profile in fixtures["profiles"]:
