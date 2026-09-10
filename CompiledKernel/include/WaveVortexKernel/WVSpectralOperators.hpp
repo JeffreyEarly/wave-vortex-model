@@ -47,6 +47,7 @@ struct WVRealGridLayout {
 struct WVRealInput { const double* data = nullptr; std::size_t bytes = 0; };
 struct WVRealOutput { double* data = nullptr; std::size_t bytes = 0; };
 struct WVRetainedModeKey { std::int64_t k = 0, l = 0; };
+enum class WVRetainedHorizontalSchedule { fullFFT, streamingPrunedTile16 };
 struct WVRetainedHorizontalSpecification {
     WVRealGridLayout grid;
     WVComplexLayout retained;
@@ -54,6 +55,8 @@ struct WVRetainedHorizontalSpecification {
     std::vector<WVRetainedModeKey> modes; // One representative per Hermitian orbit, in caller order.
     WVFourierNormalization normalization = WVFourierNormalization::forwardUnit;
     WVOperatorPlacement placement = WVOperatorPlacement::outOfPlace;
+    WVRetainedHorizontalSchedule schedule = WVRetainedHorizontalSchedule::fullFFT;
+    std::size_t outerWorkers = 1;
 };
 
 namespace spectral_detail {
@@ -69,6 +72,10 @@ public:
     WVRetainedHorizontalWorkspace& operator=(const WVRetainedHorizontalWorkspace&) = delete;
     std::size_t persistentBytes() const noexcept;
     std::size_t planBytesLowerBound() const noexcept;
+    const char* scheduleIdentifier() const noexcept;
+    const void* sharedResourceIdentity() const noexcept;
+    std::size_t sharedResourceBytes() const noexcept;
+    std::size_t workerCount() const noexcept;
 private:
     friend class WVRetainedHorizontalOperator;
     WVRetainedHorizontalWorkspace();
@@ -76,10 +83,12 @@ private:
 };
 class WVRetainedHorizontalOperator {
 public:
-    // Reference schedule: full FFT followed by gather, or zero/embed followed by
-    // full inverse FFT. Uses the supplied provider; no pruned transform adoption.
+    // Full FFT is the default; a pruned schedule requires explicit opt-in.
     static WVKernelStatus create(const WVRetainedHorizontalSpecification&, std::unique_ptr<WVFFTEngine>, std::unique_ptr<WVRetainedHorizontalOperator>&);
-    WVKernelStatus createWorkspace(std::unique_ptr<WVRetainedHorizontalWorkspace>&) const;
+    static WVKernelStatus createShared(const WVRetainedHorizontalSpecification&, std::shared_ptr<WVFFTEngine>, std::unique_ptr<WVRetainedHorizontalOperator>&);
+    // false omits full-grid derivative preparation and bounds fallback scratch
+    // to one horizontal plane. spatialDerivative then returns unsupported.
+    WVKernelStatus createWorkspace(std::unique_ptr<WVRetainedHorizontalWorkspace>&, bool prepareSpatialDerivative = true) const;
     WVKernelStatus forward(WVRetainedHorizontalWorkspace&, WVRealInput, WVComplexOutput) const;
     WVKernelStatus inverse(WVRetainedHorizontalWorkspace&, WVComplexInput, WVRealOutput) const;
     std::size_t persistentBytes() const noexcept;

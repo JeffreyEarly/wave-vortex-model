@@ -1,0 +1,92 @@
+{
+  "passed": true,
+  "completedPairs": 40,
+  "expectedPairs": 40,
+  "status": "complete",
+  "decision": "measured complete-model evidence; adoption also requires standalone and MATLAB-loaded gates",
+  "profiles": [
+    {
+      "profile": "constant-hydrostatic-coefficient-only",
+      "pairs": 8,
+      "integrationGeometricRatio": 1.1856719280613925,
+      "completeLifetimeGeometricRatio": 0.31220761235989414,
+      "peakRSSGeometricRatio": 0.9571022789154859,
+      "retainedGeometricRatio": 0.9692654104932938,
+      "maximumLiveGeometricRatio": 0.9701528597274195
+    },
+    {
+      "profile": "constant-hydrostatic-composite",
+      "pairs": 8,
+      "integrationGeometricRatio": 1.1966594799847166,
+      "completeLifetimeGeometricRatio": 0.5115784226498243,
+      "peakRSSGeometricRatio": 1.0017984619662825,
+      "retainedGeometricRatio": 0.9786035254398084,
+      "maximumLiveGeometricRatio": 0.979759947673769
+    },
+    {
+      "profile": "constant-nonhydrostatic-coefficient-only",
+      "pairs": 8,
+      "integrationGeometricRatio": 1.2066857075921664,
+      "completeLifetimeGeometricRatio": 0.3762879910894472,
+      "peakRSSGeometricRatio": 0.947246773610296,
+      "retainedGeometricRatio": 0.9692498308921528,
+      "maximumLiveGeometricRatio": 0.9701276118441627
+    },
+    {
+      "profile": "constant-nonhydrostatic-composite",
+      "pairs": 8,
+      "integrationGeometricRatio": 1.1936814714808024,
+      "completeLifetimeGeometricRatio": 0.5522124844753326,
+      "peakRSSGeometricRatio": 1.001000365614366,
+      "retainedGeometricRatio": 0.9786035254398084,
+      "maximumLiveGeometricRatio": 0.979759947673769
+    }
+  ],
+  "pairedBootstrap": {
+    "integration": {
+      "geometricRatio": 1.1956510132155416,
+      "confidence95": [
+        1.1800510118082652,
+        1.2097465491566242
+      ],
+      "resamples": 10000,
+      "seed": 358
+    },
+    "completeLifetime": {
+      "geometricRatio": 0.42682079606443735,
+      "confidence95": [
+        0.4245409469568539,
+        0.4290069723142949
+      ],
+      "resamples": 10000,
+      "seed": 358
+    },
+    "peakRSS": {
+      "geometricRatio": 0.9764702594475466,
+      "confidence95": [
+        0.9710467655564238,
+        0.9824865397048111
+      ],
+      "resamples": 10000,
+      "seed": 358
+    },
+    "retained": {
+      "geometricRatio": 0.9739193624929461,
+      "confidence95": [
+        0.9739193624929461,
+        0.9739193624929461
+      ],
+      "resamples": 10000,
+      "seed": 358
+    },
+    "maximumLive": {
+      "geometricRatio": 0.9749382270529926,
+      "confidence95": [
+        0.9749382270529926,
+        0.9749382270529926
+      ],
+      "resamples": 10000,
+      "seed": 358
+    }
+  }
+}

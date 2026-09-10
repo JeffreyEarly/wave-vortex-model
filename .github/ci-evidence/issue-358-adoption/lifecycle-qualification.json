@@ -1,0 +1,121 @@
+{
+  "scope": "issue-358 focused constant candidate lifecycle functional qualification",
+  "status": "passed",
+  "timingClaim": false,
+  "sourceState": "Explicit compact candidate ON, horizontal12/pointwise12; dirty source tree bound by frozen source hashes, not just baseline HEAD.",
+  "results": [
+    {
+      "name": "TestPortableForwardIntegration/representativeLifecycleMatchesMatlab(configuration=constantHydrostatic)",
+      "passed": true,
+      "failed": false,
+      "incomplete": false,
+      "duration": 46.322928250000004
+    },
+    {
+      "name": "TestPortableForwardIntegration/representativeLifecycleMatchesMatlab(configuration=constantNonhydrostatic)",
+      "passed": true,
+      "failed": false,
+      "incomplete": false,
+      "duration": 38.69098704166667
+    }
+  ],
+  "fragments": [
+    {
+      "path": "/private/tmp/wvm358-lifecycle-evidence/forward-constant-hydrostatic-cfl-rk4-native-fftw.json",
+      "sha256": "ecebec0763d54120d16ca01ed4cdd016f6660322e7946676338070c720666805",
+      "provider": "native-fftw",
+      "cases": [
+        "forward-constant-hydrostatic-cfl-rk4"
+      ],
+      "boundSourcesAndBinariesUnchanged": true
+    },
+    {
+      "path": "/private/tmp/wvm358-lifecycle-evidence/forward-constant-hydrostatic-cfl-rk4-reference.json",
+      "sha256": "144ea56ce07d0b221cfc26576190659c3921cc5781c9fedfd99ba61ab9e457f1",
+      "provider": "reference",
+      "cases": [
+        "forward-constant-hydrostatic-cfl-rk4"
+      ],
+      "boundSourcesAndBinariesUnchanged": true
+    },
+    {
+      "path": "/private/tmp/wvm358-lifecycle-evidence/forward-constant-nonhydrostatic-rk23-native-fftw.json",
+      "sha256": "518ae5e631f203ed8c2a81c23c7c8a1d60d36aed54cef5a7be5690bdf98058bb",
+      "provider": "native-fftw",
+      "cases": [
+        "forward-constant-nonhydrostatic-rk23"
+      ],
+      "boundSourcesAndBinariesUnchanged": true
+    },
+    {
+      "path": "/private/tmp/wvm358-lifecycle-evidence/forward-constant-nonhydrostatic-rk23-reference.json",
+      "sha256": "3c858d0c82c01e18b10585fb14a51d2e40159a4c137c875adb59b561a48c2176",
+      "provider": "reference",
+      "cases": [
+        "forward-constant-nonhydrostatic-rk23"
+      ],
+      "boundSourcesAndBinariesUnchanged": true
+    }
+  ],
+  "provenance": [
+    {
+      "role": "runner",
+      "provenance": "/private/tmp/wvm358-lifecycle-runner-provenance.json",
+      "sha256": "eedc490d0cbdbe7c9bc73922cc2bb0d797e7cc5b66cb80297327f563351478f3",
+      "binary": {
+        "path": "/private/tmp/wvm358-lifecycle-runtime/wave-vortex-run",
+        "sha256": "be3f93268149b53df9cffaf24a530cb8147b33a8c14c05c4fd93608fc901cccc"
+      },
+      "changedCapturedFiles": [
+        "Benchmarks/constant-adoption/constantAdoptionMexWorker.m",
+        "CompiledKernel/README.md",
+        "CompiledKernel/source-selection.json"
+      ],
+      "productionSourcesUnchanged": true,
+      "providerLibrariesUnchanged": true
+    },
+    {
+      "role": "probe",
+      "provenance": "/private/tmp/wvm358-lifecycle-probe-provenance.json",
+      "sha256": "8d316cce47be0fae520dc0952de0c16e8ad40147c4cf6e59cdc1cb6666c074ff",
+      "binary": {
+        "path": "/private/tmp/wvm358-lifecycle-runtime/WVForwardIntegrationProbe",
+        "sha256": "e9ba55567df521a27065d48bc8f063ea95b6ee4ca148b3027617c64b35d7732f"
+      },
+      "changedCapturedFiles": [
+        "Benchmarks/constant-adoption/constantAdoptionMexWorker.m",
+        "CompiledKernel/README.md",
+        "CompiledKernel/source-selection.json"
+      ],
+      "productionSourcesUnchanged": true,
+      "providerLibrariesUnchanged": true
+    }
+  ],
+  "artifacts": [
+    {
+      "path": "/private/tmp/wvm358-lifecycle-matlab.log",
+      "sha256": "16a41ec57caef34aada7078bee380d731d1e3c39e5e63f4c2ce64c76745d6be4"
+    },
+    {
+      "path": "/private/tmp/wvm358-lifecycle-matlab-final.log",
+      "sha256": "06fa168891c93e52afb20c38697073805cbd919b716bdb74c5ec35fd25d578f3"
+    },
+    {
+      "path": "/private/tmp/wvm358-lifecycle-results.json",
+      "sha256": "a7c60050b0ec401b021e6806e79e676e108b0b097525b81e631c311753047ca4"
+    },
+    {
+      "path": "/private/tmp/wvm358LifecycleCheck.m",
+      "sha256": "15f65a0f26e094caa3243bb6d404403c42ca61af5361081eb7eea15ba7b6602e"
+    },
+    {
+      "path": "/private/tmp/wvm358-lifecycle-configure.log",
+      "sha256": "3349656b71c04c753307dbdce104cf4c5d59aee6fb7d8986032e915adda0048d"
+    },
+    {
+      "path": "/private/tmp/wvm358-lifecycle-build.log",
+      "sha256": "1e86c807010830663d6ffb5c68302a4632f71c4207ef7324f3efe291f40f3a9c"
+    }
+  ],
+  "historicalFailure": "Initial temporary script name contained hyphens and failed before tests; renamed script, preserving original failure log."
+}

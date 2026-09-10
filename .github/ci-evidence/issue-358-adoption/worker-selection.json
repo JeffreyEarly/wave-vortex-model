@@ -1,0 +1,26 @@
+{
+  "scores": [
+    {
+      "workers": 1,
+      "geometricRatio": 0.5686256460309921
+    },
+    {
+      "workers": 2,
+      "geometricRatio": 0.5401314098147678
+    },
+    {
+      "workers": 4,
+      "geometricRatio": 0.503335043577266
+    },
+    {
+      "workers": 8,
+      "geometricRatio": 0.5307840226144989
+    },
+    {
+      "workers": 12,
+      "geometricRatio": 0.4975131669170738
+    }
+  ],
+  "selectedPointwiseWorkers": 12,
+  "rule": "Eight equally weighted native/MATLAB-loaded profiles; within1% choose fewer workers; exploratory screen, no adoption claim"
+}

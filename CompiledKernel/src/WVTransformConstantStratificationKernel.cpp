@@ -1,6 +1,8 @@
 #include "WaveVortexKernel/WVTransformConstantStratificationKernel.hpp"
 #include "WVCoefficientFormulas.hpp"
 #include "WVPreparedModeExecutor.hpp"
+#include "WaveVortexKernel/WVSpectralOperators.hpp"
+#include <array>
 
 #include <algorithm>
 #include <cmath>
@@ -11,7 +13,58 @@
 #include <stdexcept>
 
 namespace wavevortex {
+namespace kernel_detail {
+struct WVCompactHorizontalGroup {
+    std::unique_ptr<WVRetainedHorizontalOperator> operation;
+    std::unique_ptr<WVRetainedHorizontalWorkspace> workspace;
+    std::size_t realBytes = 0, complexBytes = 0;
+    std::size_t persistentBytes() const noexcept {
+        return sizeof(*this) + operation->persistentBytes() + workspace->persistentBytes();
+    }
+};
+struct WVCompactConstantSchedule {
+    WVHalfSpectrumMappings mapping;
+    WVConstantKernelExecutionOptions options;
+    std::array<std::shared_ptr<WVCompactHorizontalGroup>,3> horizontal;
+    std::vector<std::unique_ptr<WVFFTPlan>> scalarPlans;
+    std::unique_ptr<WVPreparedModeExecutor> pointwise;
+    std::size_t persistentBytes() const noexcept {
+        std::size_t bytes = sizeof(*this) - sizeof(mapping) + mapping.persistentBytes() +
+            scalarPlans.capacity()*sizeof(std::unique_ptr<WVFFTPlan>);
+        if (pointwise) bytes += pointwise->persistentBytes();
+        for (std::size_t i=0;i<horizontal.size();++i) if (horizontal[i]) {
+            bytes += horizontal[i]->persistentBytes();
+            const auto identity=horizontal[i]->workspace->sharedResourceIdentity();
+            if (identity) for (std::size_t previous=0;previous<i;++previous)
+                if (horizontal[previous] && horizontal[previous]->workspace->sharedResourceIdentity()==identity) {
+                    // A provider may share its guarded execution resources
+                    // across the different channel layouts of this kernel.
+                    bytes -= horizontal[i]->workspace->sharedResourceBytes();
+                    break;
+                }
+        }
+        return bytes;
+    }
+};
+}
 namespace {
+class WVCompactHorizontalPlan final : public WVFFTPlan {
+public:
+    WVCompactHorizontalPlan(std::shared_ptr<kernel_detail::WVCompactHorizontalGroup> group, bool forward)
+        : group_(std::move(group)), forward_(forward) {}
+    WVKernelStatus execute(const void* input, void* output) override {
+        if (forward_) return group_->operation->forward(*group_->workspace,
+            {static_cast<const double*>(input),group_->realBytes},
+            {static_cast<WVComplex64*>(output),nullptr,nullptr,group_->complexBytes});
+        return group_->operation->inverse(*group_->workspace,
+            {static_cast<const WVComplex64*>(input),nullptr,nullptr,group_->complexBytes},
+            {static_cast<double*>(output),group_->realBytes});
+    }
+    std::size_t persistentBytes() const noexcept override { return sizeof(*this); }
+private:
+    std::shared_ptr<kernel_detail::WVCompactHorizontalGroup> group_;
+    bool forward_;
+};
 
 constexpr double pi = 3.141592653589793238462643383279502884;
 
@@ -426,17 +479,38 @@ WVTransformConstantStratificationKernel::~WVTransformConstantStratificationKerne
 WVKernelStatus WVTransformConstantStratificationKernel::create(
     const WVTransformConstantStratificationConfiguration& configuration,
     std::unique_ptr<WVFFTEngine> engine,
-    std::unique_ptr<WVTransformConstantStratificationKernel>& kernel) {
+    std::unique_ptr<WVTransformConstantStratificationKernel>& kernel, WVConstantKernelExecutionOptions options) {
     if (!engine) return {WVKernelStatusCode::invalidPointer, "An FFT engine is required."};
+    if (options.schedule != WVConstantNonlinearFluxSchedule::frozenStreamed && options.schedule != WVConstantNonlinearFluxSchedule::compactCandidate)
+        return {WVKernelStatusCode::invalidConfiguration,"Unknown constant nonlinear-flux schedule."};
+    if (options.schedule == WVConstantNonlinearFluxSchedule::compactCandidate && (!options.horizontalOuterWorkers || !options.pointwiseWorkers))
+        return {WVKernelStatusCode::invalidConfiguration,"Compact worker counts must be positive."};
     try {
         auto candidate = std::unique_ptr<WVTransformConstantStratificationKernel>(new WVTransformConstantStratificationKernel());
         auto status = WVTransformConstantStratificationDescriptor::create(configuration, candidate->descriptor_);
         if (!status) return status;
         candidate->engineIdentifier_ = engine->identifier();
         candidate->engineLibraryIdentity_ = engine->libraryIdentity();
-        candidate->engine_ = std::move(engine);
+        candidate->engine_ = std::shared_ptr<WVFFTEngine>(std::move(engine));
+        if (options.schedule == WVConstantNonlinearFluxSchedule::compactCandidate) {
+            candidate->compact_ = std::make_unique<kernel_detail::WVCompactConstantSchedule>();
+            auto& compact = *candidate->compact_;
+            compact.options = options;
+            const auto& original = candidate->descriptor_.halfSpectrumMappings();
+            // Keep one original stored orientation per Hermitian orbit. The
+            // retained horizontal inverse completes its boundary partner after
+            // the real vertical transform; that completion commutes exactly.
+            compact.mapping.NxHalf = original.NxHalf;
+            compact.mapping.conjugatesStoredValueByWVIndex = original.conjugatesStoredValueByWVIndex;
+            for (std::size_t mode=0; mode<candidate->descriptor_.Nkl(); ++mode) {
+                compact.mapping.storageRowsByWVIndex.push_back(mode);
+                if (std::find(original.selfConjugateRows.begin(),original.selfConjugateRows.end(),original.storageRowsByWVIndex[mode]) != original.selfConjugateRows.end())
+                    compact.mapping.selfConjugateRows.push_back(mode);
+            }
+            compact.pointwise = std::make_unique<kernel_detail::WVPreparedModeExecutor>(options.pointwiseWorkers);
+        }
         constexpr std::size_t halfChannels = 4;
-        const auto halfElements = checkedProduct(checkedProduct(candidate->descriptor_.halfSpectrumMappings().NxHalf, configuration.Ny), checkedProduct(configuration.Nz, halfChannels));
+        const auto halfElements = checkedProduct(candidate->executionRowCount(), checkedProduct(configuration.Nz, halfChannels));
         const auto halfFieldElements = checkedProduct(checkedProduct(candidate->descriptor_.halfSpectrumMappings().NxHalf,configuration.Ny),configuration.Nz);
         if (candidate->descriptor_.spectralShape().elementCount() > halfFieldElements) return {WVKernelStatusCode::invalidShape,"The streamed phase reservation requires M <= H."};
         constexpr std::size_t realChannels = 6;
@@ -482,7 +556,7 @@ WVKernelStatus WVTransformConstantStratificationKernel::create(
 WVKernelStatus WVTransformConstantStratificationKernel::preparePlans() {
     plans_.resize(planCount);
     const auto& c = descriptor_.configuration();
-    const auto halfRows = (c.Nx / 2 + 1) * c.Ny;
+    const auto halfRows = executionRowCount();
     const WVFFTPlanSpecification specifications[] = {
         horizontalSpecification(c, 3, true), horizontalSpecification(c, 4, true), horizontalSpecification(c, 3, false), horizontalSpecification(c, 4, false),
         verticalSpecification(c,halfRows,3,2,false), verticalSpecification(c,halfRows,3,1,true), verticalSpecification(c,halfRows,3,2,true), verticalSpecification(c,halfRows,3,1,false),
@@ -492,7 +566,39 @@ WVKernelStatus WVTransformConstantStratificationKernel::preparePlans() {
         ,horizontalSpecification(c,1,true), verticalSpecification(c,halfRows,1,1,false), verticalSpecification(c,halfRows,1,1,true)
     };
     for (std::size_t i = 0; i < planCount; ++i) {
-        auto status = engine_->createPlan(specifications[i], plans_[i]);
+        WVKernelStatus status;
+        const bool horizontal = i == horizontalForward3 || i == horizontalForward4 ||
+            i == horizontalInverse3 || i == horizontalInverse4 || i == horizontalForward1;
+        if (compact_ && horizontal) {
+            const auto channels = i == horizontalForward1 ? 1U :
+                (i == horizontalForward4 || i == horizontalInverse4 ? 4U : 3U);
+            const auto groupIndex = channels == 1 ? 0U : (channels == 3 ? 1U : 2U);
+            auto& group = compact_->horizontal[groupIndex];
+            if (!group) {
+                group = std::make_shared<kernel_detail::WVCompactHorizontalGroup>();
+                WVRetainedHorizontalSpecification spec;
+                const auto planes = c.Nz*channels;
+                spec.grid = {c.Nx,c.Ny,planes,1,c.Nx,c.Nx*c.Ny,"constant-fields"};
+                spec.retained = {planes,descriptor_.Nkl(),1,planes,WVComplexRepresentation::interleaved,"constant-fields","constant-stored-orbits"};
+                spec.Lx=c.Lx; spec.Ly=c.Ly;
+                spec.schedule=WVRetainedHorizontalSchedule::streamingPrunedTile16;
+                spec.outerWorkers=compact_->options.horizontalOuterWorkers;
+                const auto& original=descriptor_.halfSpectrumMappings();
+                for (const auto row : original.storageRowsByWVIndex) {
+                    const auto y=row/original.NxHalf;
+                    const auto l=y<(c.Ny+1)/2 ? static_cast<std::int64_t>(y) : static_cast<std::int64_t>(y)-static_cast<std::int64_t>(c.Ny);
+                    spec.modes.push_back({static_cast<std::int64_t>(row%original.NxHalf),l});
+                }
+                status=WVRetainedHorizontalOperator::createShared(spec,engine_,group->operation);
+                if (!status) return status;
+                status=group->operation->createWorkspace(group->workspace,false);
+                if (!status) return status;
+                group->realBytes=descriptor_.spatialShape().elementCount()*channels*sizeof(double);
+                group->complexBytes=c.Nz*channels*descriptor_.Nkl()*sizeof(WVComplex64);
+            }
+            plans_[i]=std::make_unique<WVCompactHorizontalPlan>(group,i==horizontalForward1 || i==horizontalForward3 || i==horizontalForward4);
+            status=WVKernelStatus::ok();
+        } else status = engine_->createPlan(specifications[i], plans_[i]);
         if (!status || !plans_[i]) return status ? WVKernelStatus{WVKernelStatusCode::fftPlanFailure, "FFT engine returned an empty plan."} : status;
         metrics_.planBytes += plans_[i]->persistentBytes();
     }
@@ -522,15 +628,45 @@ WVTransformConstantStratificationKernel::metrics() const noexcept {
         metrics_.planBytes += scalarInversePlan_->persistentBytes();
         ++metrics_.planCount;
     }
+    metrics_.kernelManagementBytes = sizeof(*this) - sizeof(descriptor_) +
+        engineIdentifier_.capacity() + engineLibraryIdentity_.capacity() +
+        plans_.capacity()*sizeof(std::unique_ptr<WVFFTPlan>) +
+        (coefficientExecutor_ ? coefficientExecutor_->persistentBytes() : 0);
+    if (compact_) {
+        metrics_.kernelManagementBytes += compact_->persistentBytes();
+        for (const auto& group : compact_->horizontal)
+            if (group) metrics_.planBytes += group->workspace->planBytesLowerBound();
+        for (const auto& plan : compact_->scalarPlans) if (plan) {
+            metrics_.planBytes += plan->persistentBytes(); ++metrics_.planCount;
+        }
+    }
+    metrics_.halfSpectrumScratchCapacityBytes=halfSpectrumScratch_.capacity()*sizeof(double);
+    metrics_.scratchCapacityBytes=metrics_.halfSpectrumScratchCapacityBytes+metrics_.realScratchCapacityBytes;
+    metrics_.scratchHighWaterBytes=std::max(metrics_.scratchHighWaterBytes,scratchBytes());
     return metrics_;
 }
 
+const WVHalfSpectrumMappings& WVTransformConstantStratificationKernel::executionMapping() const noexcept {
+    return compact_ ? compact_->mapping : descriptor_.halfSpectrumMappings();
+}
+std::size_t WVTransformConstantStratificationKernel::executionRowCount() const noexcept {
+    return compact_ ? descriptor_.Nkl() : descriptor_.halfSpectrumMappings().NxHalf*descriptor_.configuration().Ny;
+}
+std::size_t WVTransformConstantStratificationKernel::verticalExecutionRowCount() const noexcept { return executionRowCount(); }
+std::size_t WVTransformConstantStratificationKernel::pointwiseWorkerCount() const noexcept { return compact_ ? compact_->pointwise->workerCount() : 1; }
+std::size_t WVTransformConstantStratificationKernel::retainedHorizontalWorkerCount() const noexcept {
+    return compact_ ? compact_->horizontal[1]->workspace->workerCount() : 0;
+}
+const char* WVTransformConstantStratificationKernel::retainedHorizontalScheduleIdentifier() const noexcept {
+    return compact_ ? compact_->horizontal[1]->workspace->scheduleIdentifier() : "full-half-spectrum";
+}
+
 const char* WVTransformConstantStratificationKernel::nonlinearFluxScheduleIdentifier() const noexcept {
-    return "streamed-target-three-channel";
+    return compact_ ? "retained-compact-streamed-target-three-channel-v1" : "streamed-target-three-channel";
 }
 
 const char* WVTransformConstantStratificationKernel::phaseImplementationIdentifier() const noexcept {
-    return "scalar-sincos";
+    return compact_ ? "fused-scalar-sincos" : "scalar-sincos";
 }
 
 const char* WVTransformConstantStratificationKernel::coefficientArithmeticModeIdentifier() const noexcept {
@@ -549,11 +685,11 @@ const char* WVTransformConstantStratificationKernel::optimizationImplementationI
 #endif
 }
 
-std::size_t WVTransformConstantStratificationKernel::coefficientWorkerCount() const noexcept { return WV_KERNEL_COEFFICIENT_WORKERS; }
+std::size_t WVTransformConstantStratificationKernel::coefficientWorkerCount() const noexcept { return coefficientExecutor_ ? coefficientExecutor_->workerCount() : 0; }
 
 std::size_t WVTransformConstantStratificationKernel::phaseReservationBytes() const noexcept {
     const auto& c = descriptor_.configuration();
-    return descriptor_.halfSpectrumMappings().NxHalf * c.Ny * c.Nz * sizeof(WVComplex64);
+    return executionRowCount() * c.Nz * sizeof(WVComplex64);
 }
 
 void WVTransformConstantStratificationKernel::setStageInstrumentation(bool enabled) noexcept {
@@ -586,9 +722,9 @@ WVKernelStatus WVTransformConstantStratificationKernel::transformUVEtaToWaveVort
 WVKernelStatus WVTransformConstantStratificationKernel::transformUVEtaToWaveVortexImpl(
     const WVRealFieldBundleConstView& fields, double t, double t0, WVMutableCoefficients& coefficients, WVComplexConstView phaseValues) {
     const auto& c = descriptor_.configuration();
-    const auto& mapping = descriptor_.halfSpectrumMappings();
+    const auto& mapping = executionMapping();
     const auto& modes = descriptor_.verticalModes();
-    const std::size_t halfRows = mapping.NxHalf * c.Ny;
+    const std::size_t halfRows = executionRowCount();
     auto* half = reinterpret_cast<WVComplex64*>(halfSpectrumScratch_.data());
     auto execute = plans_[horizontalForward3]->execute(fields.data, half);
     if (!execute) return execute;
@@ -598,7 +734,7 @@ WVKernelStatus WVTransformConstantStratificationKernel::transformUVEtaToWaveVort
     metrics_.executionCount += 2; metrics_.verticalExecutionCount += 2;
     normalizeForwardDCT(half,c.Nz,halfRows,3,0,2);
     normalizeForwardDST(half,c.Nz,halfRows,3,2,1);
-    const double horizontalScale = 1.0 / static_cast<double>(c.Nx * c.Ny);
+    const double horizontalScale = compact_ ? 1.0 : 1.0 / static_cast<double>(c.Nx * c.Ny);
     auto* WV_KERNEL_RESTRICT outputAp=coefficients.Ap.data; auto* WV_KERNEL_RESTRICT outputAm=coefficients.Am.data; auto* outputA0=coefficients.A0.data;
 
     const auto coefficientProjectionStart = std::chrono::steady_clock::now();
@@ -685,8 +821,8 @@ WVKernelStatus WVTransformConstantStratificationKernel::transformUVWEtaToWaveVor
 
 WVKernelStatus WVTransformConstantStratificationKernel::transformUVWEtaToWaveVortexImpl(
     const WVRealFieldBundleConstView& fields, double t, double t0, WVMutableCoefficients& coefficients, WVComplexConstView phaseValues) {
-    const auto& c = descriptor_.configuration(); const auto& mapping = descriptor_.halfSpectrumMappings(); const auto& modes = descriptor_.verticalModes();
-    const std::size_t halfRows = mapping.NxHalf * c.Ny;
+    const auto& c = descriptor_.configuration(); const auto& mapping = executionMapping(); const auto& modes = descriptor_.verticalModes();
+    const std::size_t halfRows = executionRowCount();
     auto* half = reinterpret_cast<WVComplex64*>(halfSpectrumScratch_.data());
     auto execute = plans_[horizontalForward4]->execute(fields.data, half); if (!execute) return execute;
     ++metrics_.executionCount; ++metrics_.horizontalExecutionCount;
@@ -694,7 +830,7 @@ WVKernelStatus WVTransformConstantStratificationKernel::transformUVWEtaToWaveVor
     execute = plans_[verticalDST2Storage4]->execute(half + 2 * c.Nz + 1,half + 2 * c.Nz + 1); if (!execute) return execute;
     metrics_.executionCount += 2; metrics_.verticalExecutionCount += 2;
     normalizeForwardDCT(half,c.Nz,halfRows,4,0,2); normalizeForwardDST(half,c.Nz,halfRows,4,2,2);
-    const double horizontalScale = 1.0 / static_cast<double>(c.Nx * c.Ny);
+    const double horizontalScale = compact_ ? 1.0 : 1.0 / static_cast<double>(c.Nx * c.Ny);
     auto* WV_KERNEL_RESTRICT outputAp=coefficients.Ap.data; auto* WV_KERNEL_RESTRICT outputAm=coefficients.Am.data; auto* outputA0=coefficients.A0.data;
     const auto coefficientProjectionStart = std::chrono::steady_clock::now();
     auto projectModes = [&](auto phaseProvidedConstant) {
@@ -741,14 +877,14 @@ WVKernelStatus WVTransformConstantStratificationKernel::transformWaveVortexToUVW
     ExecutionGuard guard(executing_);
     if (!guard.entered()) return {WVKernelStatusCode::reentrantExecution,"Kernel operations are not reentrant."};
     const auto& c = descriptor_.configuration();
-    const auto halfFieldElements = descriptor_.halfSpectrumMappings().NxHalf * c.Ny * c.Nz;
+    const auto halfFieldElements = executionRowCount() * c.Nz;
     auto* phaseStorage = reinterpret_cast<WVComplex64*>(halfSpectrumScratch_.data()) + 3 * halfFieldElements;
     const auto count = spectral.elementCount();
     const auto& omega = descriptor_.verticalModes().omega;
     const double elapsed = state.t-state.t0;
-    for (std::size_t index = 0; index < count; ++index) phaseStorage[index] = phase(omega[index]*elapsed);
+    if (!compact_) for (std::size_t index = 0; index < count; ++index) phaseStorage[index] = phase(omega[index]*elapsed);
     ++metrics_.advectionVelocityReconstructionCount;
-    return transformWaveVortexToUVWImpl(state,fields,nullptr,{phaseStorage,spectral});
+    return transformWaveVortexToUVWImpl(state,fields,nullptr,{phaseStorage,spectral},compact_ ? phaseStorage : nullptr);
 }
 
 WVKernelStatus WVTransformConstantStratificationKernel::transformStateFieldDerivatives(
@@ -768,18 +904,18 @@ WVKernelStatus WVTransformConstantStratificationKernel::transformStateFieldDeriv
     ExecutionGuard guard(executing_);
     if (!guard.entered()) return {WVKernelStatusCode::reentrantExecution,"Kernel operations are not reentrant."};
     const auto& c = descriptor_.configuration();
-    const auto halfFieldElements = descriptor_.halfSpectrumMappings().NxHalf * c.Ny * c.Nz;
+    const auto halfFieldElements = executionRowCount() * c.Nz;
     auto* phaseStorage = reinterpret_cast<WVComplex64*>(halfSpectrumScratch_.data()) + 3 * halfFieldElements;
     const auto coefficientCount = spectral.elementCount();
     const auto& omega = descriptor_.verticalModes().omega;
     const double elapsed = state.t-state.t0;
-    for (std::size_t index = 0; index < coefficientCount; ++index) phaseStorage[index] = phase(omega[index]*elapsed);
-    return transformToSpatialDomainWithDerivativesFromStateImpl(state,{phaseStorage,spectral},target,derivatives);
+    if (!compact_) for (std::size_t index = 0; index < coefficientCount; ++index) phaseStorage[index] = phase(omega[index]*elapsed);
+    return transformToSpatialDomainWithDerivativesFromStateImpl(state,{phaseStorage,spectral},target,derivatives,compact_ ? phaseStorage : nullptr);
 }
 
 WVKernelStatus WVTransformConstantStratificationKernel::transformWaveVortexToUVWEtaImpl(const WVState& state, WVRealFieldBundleView& fields, const WVCoefficients* evolvedCoefficients) {
-    const auto& c = descriptor_.configuration(); const auto& mapping = descriptor_.halfSpectrumMappings(); const auto& modes = descriptor_.verticalModes();
-    const std::size_t halfRows = mapping.NxHalf * c.Ny; auto* half = reinterpret_cast<WVComplex64*>(halfSpectrumScratch_.data());
+    const auto& c = descriptor_.configuration(); const auto& mapping = executionMapping(); const auto& modes = descriptor_.verticalModes();
+    const std::size_t halfRows = executionRowCount(); auto* half = reinterpret_cast<WVComplex64*>(halfSpectrumScratch_.data());
     std::fill(half,half + c.Nz * 4 * halfRows,WVComplex64{});
     const auto coefficientAssemblyStart = std::chrono::steady_clock::now();
     coefficientExecutor_->execute(descriptor_.Nkl(),[&](std::size_t begin, std::size_t end) {
@@ -811,11 +947,11 @@ WVKernelStatus WVTransformConstantStratificationKernel::transformWaveVortexToUVW
 }
 
 WVKernelStatus WVTransformConstantStratificationKernel::transformWaveVortexToUVWImpl(
-    const WVState& state, WVRealFieldBundleView& fields, const WVCoefficients* evolvedCoefficients, WVComplexConstView phaseValues) {
+    const WVState& state, WVRealFieldBundleView& fields, const WVCoefficients* evolvedCoefficients, WVComplexConstView phaseValues, WVComplex64* generatedPhase) {
     const auto& c = descriptor_.configuration();
-    const auto& mapping = descriptor_.halfSpectrumMappings();
+    const auto& mapping = executionMapping();
     const auto& modes = descriptor_.verticalModes();
-    const std::size_t halfRows = mapping.NxHalf * c.Ny;
+    const std::size_t halfRows = executionRowCount();
     auto* half = reinterpret_cast<WVComplex64*>(halfSpectrumScratch_.data());
     std::fill(half,half + c.Nz * 3 * halfRows,WVComplex64{});
     const auto coefficientAssemblyStart = std::chrono::steady_clock::now();
@@ -823,7 +959,9 @@ WVKernelStatus WVTransformConstantStratificationKernel::transformWaveVortexToUVW
         for (std::size_t iMode = begin; iMode < end; ++iMode) {
             auto source = [&](std::size_t index) {
                 if (evolvedCoefficients != nullptr) return EvolvedWaveVortexCoefficients{evolvedCoefficients->Ap.data[index],evolvedCoefficients->Am.data[index],evolvedCoefficients->A0.data[index]};
-                return evolveWaveVortexCoefficients(state.coefficients.Ap.data[index],state.coefficients.Am.data[index],state.coefficients.A0.data[index],phaseValues.data[index]);
+                const auto phaseValue = generatedPhase ?
+                    (generatedPhase[index]=phase(modes.omega[index]*(state.t-state.t0))) : phaseValues.data[index];
+                return evolveWaveVortexCoefficients(state.coefficients.Ap.data[index],state.coefficients.Am.data[index],state.coefficients.A0.data[index],phaseValue);
             };
             if (mapping.conjugatesStoredValueByWVIndex[iMode]) assembleVelocitySpectraForMode<true>(half,mapping,modes,c.Nz,c.Nj,iMode,source);
             else assembleVelocitySpectraForMode<false>(half,mapping,modes,c.Nz,c.Nj,iMode,source);
@@ -853,8 +991,8 @@ WVKernelStatus validateAllDerivativeInputs(const WVTransformConstantStratificati
 WVKernelStatus WVTransformConstantStratificationKernel::transformToSpatialDomainWithFAllDerivatives(const WVComplexConstView& Apm, const WVComplexConstView& A0, WVRealFieldBundleView& fields) {
     auto initial = validateAllDerivativeInputs(*this, Apm, A0, fields); if (!initial) return initial;
     ExecutionGuard guard(executing_); if (!guard.entered()) return {WVKernelStatusCode::reentrantExecution, "Kernel operations are not reentrant."};
-    const auto& c = descriptor_.configuration(); const auto& mapping = descriptor_.halfSpectrumMappings(); const auto& modes = descriptor_.verticalModes();
-    const std::size_t halfRows = mapping.NxHalf * c.Ny; auto* half = reinterpret_cast<WVComplex64*>(halfSpectrumScratch_.data());
+    const auto& c = descriptor_.configuration(); const auto& mapping = executionMapping(); const auto& modes = descriptor_.verticalModes();
+    const std::size_t halfRows = executionRowCount(); auto* half = reinterpret_cast<WVComplex64*>(halfSpectrumScratch_.data());
     std::fill(half,half + c.Nz * 4 * halfRows,WVComplex64{});
     const auto coefficientAssemblyStart = std::chrono::steady_clock::now();
     coefficientExecutor_->execute(descriptor_.Nkl(),[&](std::size_t begin, std::size_t end) {
@@ -876,8 +1014,8 @@ WVKernelStatus WVTransformConstantStratificationKernel::transformToSpatialDomain
 WVKernelStatus WVTransformConstantStratificationKernel::transformToSpatialDomainWithGAllDerivatives(const WVComplexConstView& Apm, const WVComplexConstView& A0, WVRealFieldBundleView& fields) {
     auto initial = validateAllDerivativeInputs(*this, Apm, A0, fields); if (!initial) return initial;
     ExecutionGuard guard(executing_); if (!guard.entered()) return {WVKernelStatusCode::reentrantExecution, "Kernel operations are not reentrant."};
-    const auto& c = descriptor_.configuration(); const auto& mapping = descriptor_.halfSpectrumMappings(); const auto& modes = descriptor_.verticalModes();
-    const std::size_t halfRows = mapping.NxHalf * c.Ny; auto* half = reinterpret_cast<WVComplex64*>(halfSpectrumScratch_.data());
+    const auto& c = descriptor_.configuration(); const auto& mapping = executionMapping(); const auto& modes = descriptor_.verticalModes();
+    const std::size_t halfRows = executionRowCount(); auto* half = reinterpret_cast<WVComplex64*>(halfSpectrumScratch_.data());
     std::fill(half,half + c.Nz * 4 * halfRows,WVComplex64{});
     const auto coefficientAssemblyStart = std::chrono::steady_clock::now();
     coefficientExecutor_->execute(descriptor_.Nkl(),[&](std::size_t begin, std::size_t end) {
@@ -899,9 +1037,9 @@ WVKernelStatus WVTransformConstantStratificationKernel::transformToSpatialDomain
 WVKernelStatus WVTransformConstantStratificationKernel::transformToSpatialDomainWithDerivativesImpl(
     const WVCoefficients& evolvedCoefficients, std::size_t target, WVRealFieldBundleView& derivatives) {
     const auto& c = descriptor_.configuration();
-    const auto& mapping = descriptor_.halfSpectrumMappings();
+    const auto& mapping = executionMapping();
     const auto& modes = descriptor_.verticalModes();
-    const std::size_t halfRows = mapping.NxHalf * c.Ny;
+    const std::size_t halfRows = executionRowCount();
     auto* half = reinterpret_cast<WVComplex64*>(halfSpectrumScratch_.data());
     std::fill(half,half + c.Nz * 3 * halfRows,WVComplex64{});
     const bool cosine = target < 2;
@@ -939,11 +1077,11 @@ WVKernelStatus WVTransformConstantStratificationKernel::transformToSpatialDomain
 }
 
 WVKernelStatus WVTransformConstantStratificationKernel::transformToSpatialDomainWithDerivativesFromStateImpl(
-    const WVState& state, WVComplexConstView phaseValues, std::size_t target, WVRealFieldBundleView& derivatives) {
+    const WVState& state, WVComplexConstView phaseValues, std::size_t target, WVRealFieldBundleView& derivatives, WVComplex64* generatedPhase) {
     const auto& c = descriptor_.configuration();
-    const auto& mapping = descriptor_.halfSpectrumMappings();
+    const auto& mapping = executionMapping();
     const auto& modes = descriptor_.verticalModes();
-    const std::size_t halfRows = mapping.NxHalf * c.Ny;
+    const std::size_t halfRows = executionRowCount();
     auto* half = reinterpret_cast<WVComplex64*>(halfSpectrumScratch_.data());
     std::fill(half,half + c.Nz * 3 * halfRows,WVComplex64{});
     const bool cosine = target < 2;
@@ -952,7 +1090,9 @@ WVKernelStatus WVTransformConstantStratificationKernel::transformToSpatialDomain
         constexpr std::size_t resolvedTarget = decltype(targetConstant)::value;
         coefficientExecutor_->execute(descriptor_.Nkl(),[&](std::size_t begin, std::size_t end) {
             for (std::size_t mode = begin; mode < end; ++mode) {
-                auto source = [&](std::size_t index) { return evolveWaveVortexCoefficients(state.coefficients.Ap.data[index],state.coefficients.Am.data[index],state.coefficients.A0.data[index],phaseValues.data[index]); };
+                auto source = [&](std::size_t index) { const auto phaseValue = generatedPhase ?
+                    (generatedPhase[index]=phase(modes.omega[index]*(state.t-state.t0))) : phaseValues.data[index];
+                return evolveWaveVortexCoefficients(state.coefficients.Ap.data[index],state.coefficients.Am.data[index],state.coefficients.A0.data[index],phaseValue); };
                 if (mapping.conjugatesStoredValueByWVIndex[mode]) assembleDerivativeSpectraForMode<resolvedTarget,true>(half,mapping,modes,descriptor_.fourierModes(),c.Nz,c.Nj,mode,source);
                 else assembleDerivativeSpectraForMode<resolvedTarget,false>(half,mapping,modes,descriptor_.fourierModes(),c.Nz,c.Nj,mode,source);
             }
@@ -981,21 +1121,27 @@ WVKernelStatus WVTransformConstantStratificationKernel::transformToSpatialDomain
 WVKernelStatus WVTransformConstantStratificationKernel::projectSingleFluxTargetImpl(
     const WVRealFieldBundleConstView& field, std::size_t target, WVComplexConstView phaseValues, WVFlux& flux) {
     const auto& c = descriptor_.configuration();
-    const auto& mapping = descriptor_.halfSpectrumMappings();
+    const auto& mapping = executionMapping();
     const auto& modes = descriptor_.verticalModes();
-    const std::size_t halfRows = mapping.NxHalf * c.Ny;
+    const std::size_t halfRows = executionRowCount();
     auto* half = reinterpret_cast<WVComplex64*>(halfSpectrumScratch_.data());
     auto execute = plans_[horizontalForward1]->execute(field.data,half); if (!execute) return execute;
     ++metrics_.executionCount; ++metrics_.horizontalExecutionCount;
     if (target < 2) {
         execute = plans_[verticalDCT1Storage1]->execute(half,half); if (!execute) return execute;
-        normalizeForwardDCT(half,c.Nz,halfRows,1,0,1);
+        if (!compact_) normalizeForwardDCT(half,c.Nz,halfRows,1,0,1);
     } else {
         execute = plans_[verticalDST1Storage1]->execute(half + 1,half + 1); if (!execute) return execute;
-        normalizeForwardDST(half,c.Nz,halfRows,1,0,1);
+        if (!compact_) normalizeForwardDST(half,c.Nz,halfRows,1,0,1);
+        else for (std::size_t row=0;row<halfRows;++row) half[c.Nz*row]={};
     }
     ++metrics_.executionCount; ++metrics_.verticalExecutionCount;
-    const double horizontalScale = 1.0 / static_cast<double>(c.Nx * c.Ny);
+    // Candidate horizontal values already use forward-unit normalization.
+    // Apply the Type-I scale only to retained Nj values in the projection.
+    // Nj <= Nz-1 excludes the DCT terminal endpoint; the G zero mode is zeroed
+    // above because its untransformed boundary sample is not a sine coefficient.
+    const double horizontalScale = compact_ ? 1.0/static_cast<double>(c.Nz-1) :
+        1.0/static_cast<double>(c.Nx*c.Ny);
     auto projectTarget = [&](auto targetConstant, auto hydrostaticConstant) {
         constexpr std::size_t resolvedTarget = decltype(targetConstant)::value;
         constexpr bool hydrostatic = decltype(hydrostaticConstant)::value;
@@ -1023,6 +1169,38 @@ WVKernelStatus WVTransformConstantStratificationKernel::projectSingleFluxTargetI
     return WVKernelStatus::ok();
 }
 
+WVFFTPlan* WVTransformConstantStratificationKernel::scalarPlan(std::size_t index) const noexcept {
+    return compact_ ? compact_->scalarPlans[index].get() : plans_[index].get();
+}
+WVKernelStatus WVTransformConstantStratificationKernel::ensureScalarPlans() {
+    if (!compact_ || !compact_->scalarPlans.empty()) return WVKernelStatus::ok();
+    try {
+        const auto& c=descriptor_.configuration();
+        const auto rows=descriptor_.halfSpectrumMappings().NxHalf*c.Ny;
+        std::vector<std::unique_ptr<WVFFTPlan>> prepared(planCount);
+        const std::array<std::pair<std::size_t,WVFFTPlanSpecification>,3> specs{{
+            {horizontalForward1,horizontalSpecification(c,1,true)},
+            {verticalDCT1Storage1,verticalSpecification(c,rows,1,1,false)},
+            {verticalDST1Storage1,verticalSpecification(c,rows,1,1,true)}}};
+        for (const auto& item : specs) {
+            auto status=engine_->createPlan(item.second,prepared[item.first]);
+            if (!status) return status;
+            if (!prepared[item.first]) return {WVKernelStatusCode::fftPlanFailure,"Empty full-grid scalar plan."};
+        }
+        // Scalar calculus retains arbitrary full-grid horizontal modes. It
+        // shares the compact arena at max(4*C,H). The immutable scalar Fourier
+        // source borrows unused real scratch during scalar-only operations.
+        const auto doubles=checkedProduct(checkedProduct(rows,c.Nz),2);
+        if (halfSpectrumScratch_.size()<doubles) {
+            std::vector<double> expanded(doubles);
+            halfSpectrumScratch_.swap(expanded);
+        }
+        compact_->scalarPlans=std::move(prepared);
+        return WVKernelStatus::ok();
+    } catch (const std::bad_alloc&) { return {WVKernelStatusCode::allocationFailure,"Unable to prepare full-grid scalar storage."}; }
+      catch (const std::overflow_error& error) { return {WVKernelStatusCode::sizeOverflow,error.what()}; }
+}
+
 WVKernelStatus WVTransformConstantStratificationKernel::ensureScalarInversePlan() {
     if (scalarInversePlan_) return WVKernelStatus::ok();
     std::unique_ptr<WVFFTPlan> plan;
@@ -1036,6 +1214,8 @@ WVKernelStatus WVTransformConstantStratificationKernel::ensureScalarInversePlan(
 }
 
 WVKernelStatus WVTransformConstantStratificationKernel::prepareScalarAdvection() {
+    auto status=ensureScalarPlans();
+    if (!status) return status;
     return ensureScalarInversePlan();
 }
 
@@ -1045,7 +1225,7 @@ WVKernelStatus WVTransformConstantStratificationKernel::antialiasScalarInPlace(W
     const auto& c = descriptor_.configuration();
     const auto halfRows = descriptor_.halfSpectrumMappings().NxHalf * c.Ny;
     auto* half = reinterpret_cast<WVComplex64*>(halfSpectrumScratch_.data());
-    status = plans_[horizontalForward1]->execute(scalar.data,half);
+    status = scalarPlan(horizontalForward1)->execute(scalar.data,half);
     if (!status) return status;
     ++metrics_.executionCount;
     ++metrics_.horizontalExecutionCount;
@@ -1060,6 +1240,72 @@ WVKernelStatus WVTransformConstantStratificationKernel::antialiasScalarInPlace(W
     ++metrics_.executionCount;
     ++metrics_.horizontalExecutionCount;
     ++metrics_.scalarAntialiasCount;
+    return WVKernelStatus::ok();
+}
+
+WVKernelStatus WVTransformConstantStratificationKernel::prepareCompactScalarDerivatives(
+    const WVRealVolumeConstView& scalar, bool sine) {
+    auto status=ensureScalarPlans(); if (!status) return status;
+    status=ensureScalarInversePlan(); if (!status) return status;
+    const auto& c=descriptor_.configuration();
+    const auto R=descriptor_.spatialShape().elementCount();
+    const auto NxHalf=descriptor_.halfSpectrumMappings().NxHalf;
+    const auto rows=NxHalf*c.Ny;
+    // All public scalar inputs/velocities are caller-owned. The first3R is
+    // otherwise unused by scalar calculus; 2H doubles fit there for Nx>=2.
+    // The final3R retains complete derivatives until the public output commits.
+    auto* source=reinterpret_cast<WVComplex64*>(realScratch_.data());
+    auto* working=reinterpret_cast<WVComplex64*>(halfSpectrumScratch_.data());
+    auto start=std::chrono::steady_clock::now();
+    status=scalarPlan(horizontalForward1)->execute(scalar.data,source);
+    if (!status) return status;
+    metrics_.scalarForwardSeconds+=std::chrono::duration<double>(std::chrono::steady_clock::now()-start).count();
+    ++metrics_.executionCount; ++metrics_.horizontalExecutionCount;
+    const double scale=1.0/static_cast<double>(c.Nx*c.Ny);
+    for (std::size_t target=0;target<3;++target) {
+        start=std::chrono::steady_clock::now();
+        for (std::size_t row=0;row<rows;++row) {
+            const auto kIndex=row%NxHalf,lIndex=row/NxHalf;
+            const auto lMode=lIndex<(c.Ny+1)/2 ? static_cast<std::int64_t>(lIndex) :
+                static_cast<std::int64_t>(lIndex)-static_cast<std::int64_t>(c.Ny);
+            const double k=c.Nx%2==0 && kIndex==c.Nx/2 ? 0.0 : 2*pi*static_cast<double>(kIndex)/c.Lx;
+            // Preserve the existing G and F full-grid Nyquist conventions.
+            const double l=sine && c.Ny%2==0 && lIndex==c.Ny/2 ? 0.0 : 2*pi*static_cast<double>(lMode)/c.Ly;
+            for (std::size_t z=0;z<c.Nz;++z) {
+                const auto value=multiply(source[z+c.Nz*row],scale);
+                working[z+c.Nz*row]=target==2 ? value : multiply(value,WVComplex64{0,target==0?k:l});
+            }
+        }
+        metrics_.scalarDerivativeAssemblySeconds+=std::chrono::duration<double>(std::chrono::steady_clock::now()-start).count();
+        if (target==2) {
+            start=std::chrono::steady_clock::now();
+            status=scalarPlan(sine?verticalDST1Storage1:verticalDCT1Storage1)->execute(working+(sine?1:0),working+(sine?1:0));
+            if (!status) return status;
+            ++metrics_.executionCount; ++metrics_.verticalExecutionCount;
+            if (sine) normalizeForwardDST(working,c.Nz,rows,1,0,1);
+            else normalizeForwardDCT(working,c.Nz,rows,1,0,1);
+            for (std::size_t row=0;row<rows;++row) {
+                const auto base=c.Nz*row;
+                working[base]={};
+                for (std::size_t j=1;j<c.Nj;++j)
+                    working[base+j]=multiply(working[base+j],(sine?1.0:-1.0)*pi*static_cast<double>(j)/c.Lz);
+                for (std::size_t j=c.Nj;j<c.Nz;++j) working[base+j]={};
+            }
+            if (sine) normalizeInverseDCT(working,c.Nz,rows,1,0,1);
+            else normalizeInverseDST(working,c.Nz,rows,1,0,1);
+            status=scalarPlan(sine?verticalDCT1Storage1:verticalDST1Storage1)->execute(working+(sine?0:1),working+(sine?0:1));
+            if (!status) return status;
+            ++metrics_.executionCount; ++metrics_.verticalExecutionCount;
+            metrics_.scalarVerticalDerivativeSeconds+=std::chrono::duration<double>(std::chrono::steady_clock::now()-start).count();
+        }
+        for (const auto row:descriptor_.halfSpectrumMappings().selfConjugateRows)
+            for (std::size_t z=0;z<c.Nz;++z) working[z+c.Nz*row].imag=0;
+        start=std::chrono::steady_clock::now();
+        status=scalarInversePlan_->execute(working,realScratch_.data()+(3+target)*R);
+        if (!status) return status;
+        metrics_.scalarInverseSeconds+=std::chrono::duration<double>(std::chrono::steady_clock::now()-start).count();
+        ++metrics_.executionCount; ++metrics_.horizontalExecutionCount;
+    }
     return WVKernelStatus::ok();
 }
 
@@ -1078,11 +1324,20 @@ WVKernelStatus WVTransformConstantStratificationKernel::transformGGridScalarDeri
         return {WVKernelStatusCode::invalidConfiguration,"G-grid scalar must be finite."};
     ExecutionGuard guard(executing_);
     if(!guard.entered()) return {WVKernelStatusCode::reentrantExecution,"Kernel operations are not reentrant."};
+    if (compact_) {
+        status=prepareCompactScalarDerivatives(scalar,true); if (!status) return status;
+        const auto* result=realScratch_.data()+3*R;
+        for (std::size_t i=0;i<3*R;++i) if (!std::isfinite(result[i]))
+            return {WVKernelStatusCode::numericalFailure,"G-grid scalar derivative overflowed."};
+        std::copy_n(result,3*R,derivatives.data);
+        return WVKernelStatus::ok();
+    }
+    status=ensureScalarPlans(); if (!status) return status;
     const auto& c=descriptor_.configuration();
     const auto NxHalf=descriptor_.halfSpectrumMappings().NxHalf;
     const auto halfRows=NxHalf*c.Ny;
     auto* half=reinterpret_cast<WVComplex64*>(halfSpectrumScratch_.data());
-    status=plans_[horizontalForward1]->execute(scalar.data,half);
+    status=scalarPlan(horizontalForward1)->execute(scalar.data,half);
     if(!status) return status;
     ++metrics_.executionCount; ++metrics_.horizontalExecutionCount;
     const double scale=1.0/static_cast<double>(c.Nx*c.Ny);
@@ -1100,7 +1355,7 @@ WVKernelStatus WVTransformConstantStratificationKernel::transformGGridScalarDeri
         }
     }
     // G has sine basis; the first derivative is its retained cosine series.
-    status=plans_[verticalDST1Storage3]->execute(half+2*c.Nz+1,half+2*c.Nz+1);
+    status=scalarPlan(verticalDST1Storage3)->execute(half+2*c.Nz+1,half+2*c.Nz+1);
     if(!status) return status;
     ++metrics_.executionCount; ++metrics_.verticalExecutionCount;
     normalizeForwardDST(half,c.Nz,halfRows,3,2,1);
@@ -1110,14 +1365,14 @@ WVKernelStatus WVTransformConstantStratificationKernel::transformGGridScalarDeri
         for(std::size_t j=c.Nj;j<c.Nz;++j) half[base+j]={};
     }
     normalizeInverseDCT(half,c.Nz,halfRows,3,2,1);
-    status=plans_[verticalDCT1Storage3]->execute(half+2*c.Nz,half+2*c.Nz);
+    status=scalarPlan(verticalDCT1Storage3)->execute(half+2*c.Nz,half+2*c.Nz);
     if(!status) return status;
     ++metrics_.executionCount; ++metrics_.verticalExecutionCount;
     for(const auto row:descriptor_.halfSpectrumMappings().selfConjugateRows)
         for(std::size_t z=0;z<c.Nz;++z) for(std::size_t channel=0;channel<3;++channel)
             half[z+c.Nz*channel+3*c.Nz*row].imag=0;
     auto* result=realScratch_.data()+3*R;
-    status=plans_[horizontalInverse3]->execute(half,result);
+    status=scalarPlan(horizontalInverse3)->execute(half,result);
     if(!status) return status;
     ++metrics_.executionCount; ++metrics_.horizontalExecutionCount;
     for(std::size_t i=0;i<3*R;++i) if(!std::isfinite(result[i]))
@@ -1148,12 +1403,17 @@ WVKernelStatus WVTransformConstantStratificationKernel::advectFGridScalar(
     ExecutionGuard guard(executing_);
     if (!guard.entered()) return {WVKernelStatusCode::reentrantExecution,"Kernel operations are not reentrant."};
 
+    auto stageStarted=std::chrono::steady_clock::now();
+    if (compact_) {
+        status=prepareCompactScalarDerivatives(scalar,false); if (!status) return status;
+    } else {
+    status=ensureScalarPlans(); if (!status) return status;
     const auto& c = descriptor_.configuration();
     const std::size_t NxHalf = descriptor_.halfSpectrumMappings().NxHalf;
     const std::size_t halfRows = NxHalf*c.Ny;
     auto* half = reinterpret_cast<WVComplex64*>(halfSpectrumScratch_.data());
-    auto stageStarted = std::chrono::steady_clock::now();
-    status = plans_[horizontalForward1]->execute(scalar.data,half);
+    stageStarted = std::chrono::steady_clock::now();
+    status = scalarPlan(horizontalForward1)->execute(scalar.data,half);
     if (!status) return status;
     metrics_.scalarForwardSeconds += std::chrono::duration<double>(
         std::chrono::steady_clock::now()-stageStarted).count();
@@ -1178,7 +1438,7 @@ WVKernelStatus WVTransformConstantStratificationKernel::advectFGridScalar(
     metrics_.scalarDerivativeAssemblySeconds += std::chrono::duration<double>(
         std::chrono::steady_clock::now()-stageStarted).count();
     stageStarted = std::chrono::steady_clock::now();
-    status = plans_[verticalDCT1Storage3]->execute(half+2*c.Nz,half+2*c.Nz);
+    status = scalarPlan(verticalDCT1Storage3)->execute(half+2*c.Nz,half+2*c.Nz);
     if (!status) return status;
     ++metrics_.executionCount;
     ++metrics_.verticalExecutionCount;
@@ -1195,7 +1455,7 @@ WVKernelStatus WVTransformConstantStratificationKernel::advectFGridScalar(
         for (std::size_t j = c.Nj; j < c.Nz; ++j) half[base+j] = {};
     }
     normalizeInverseDST(half,c.Nz,halfRows,3,2,1);
-    status = plans_[verticalDST1Storage3]->execute(half+2*c.Nz+1,half+2*c.Nz+1);
+    status = scalarPlan(verticalDST1Storage3)->execute(half+2*c.Nz+1,half+2*c.Nz+1);
     if (!status) return status;
     ++metrics_.executionCount;
     ++metrics_.verticalExecutionCount;
@@ -1208,12 +1468,13 @@ WVKernelStatus WVTransformConstantStratificationKernel::advectFGridScalar(
     metrics_.scalarVerticalDerivativeSeconds += std::chrono::duration<double>(
         std::chrono::steady_clock::now()-stageStarted).count();
     stageStarted = std::chrono::steady_clock::now();
-    status = plans_[horizontalInverse3]->execute(half,realScratch_.data()+3*R);
+    status = scalarPlan(horizontalInverse3)->execute(half,realScratch_.data()+3*R);
     if (!status) return status;
     metrics_.scalarInverseSeconds += std::chrono::duration<double>(
         std::chrono::steady_clock::now()-stageStarted).count();
     ++metrics_.executionCount;
     ++metrics_.horizontalExecutionCount;
+    }
     const double* U = advectionFields.data;
     const double* V = U+R;
     const double* W = V+R;
@@ -1298,18 +1559,18 @@ WVKernelStatus WVTransformConstantStratificationKernel::nonlinearFluxImpl(
     using Clock = std::chrono::steady_clock;
     auto stageStart = Clock::now();
     const auto& c = descriptor_.configuration();
-    const auto halfFieldElements = descriptor_.halfSpectrumMappings().NxHalf * c.Ny * c.Nz;
+    const auto halfFieldElements = executionRowCount() * c.Nz;
     auto* phaseStorage = reinterpret_cast<WVComplex64*>(halfSpectrumScratch_.data()) + 3 * halfFieldElements;
     const double elapsed = state.t - state.t0;
     for (std::size_t index = 0; index < phaseEvaluationCount; ++index) {
-        phaseStorage[index] = phase(modes.omega[index] * elapsed);
+        if (!compact_) phaseStorage[index] = phase(modes.omega[index] * elapsed);
         if (projectFlux) {
             flux.Fp.data[index] = {};
             flux.Fm.data[index] = {};
             flux.F0.data[index] = {};
         }
     }
-    if (stageInstrumentationEnabled_) metrics_.phaseSeconds = std::chrono::duration<double>(Clock::now() - stageStart).count();
+    if (stageInstrumentationEnabled_) metrics_.phaseSeconds = compact_ ? 0.0 : std::chrono::duration<double>(Clock::now() - stageStart).count();
     ++metrics_.nonlinearFluxCallCount;
     metrics_.nonlinearFluxPhaseEvaluationCount += phaseEvaluationCount;
     const WVComplexConstView phaseValues{phaseStorage,spectral};
@@ -1320,7 +1581,9 @@ WVKernelStatus WVTransformConstantStratificationKernel::nonlinearFluxImpl(
     auto& advectingFields = retainedAdvectionFields == nullptr ? internalAdvectionFields : *retainedAdvectionFields;
     stageStart = Clock::now();
     if (!advectionFieldsPrepared) {
-        status = transformWaveVortexToUVWImpl(state,advectingFields,nullptr,phaseValues);
+        // Generate the phase while constructing the first retained spectrum.
+        // Supplied velocities instead generate it in the first derivative pass.
+        status = transformWaveVortexToUVWImpl(state,advectingFields,nullptr,phaseValues,compact_ ? phaseStorage : nullptr);
         if (!status) return status;
         ++metrics_.advectionVelocityReconstructionCount;
     }
@@ -1337,7 +1600,8 @@ WVKernelStatus WVTransformConstantStratificationKernel::nonlinearFluxImpl(
         double* derivativeData = realScratch_.data() + 3 * fieldElements;
         WVRealFieldBundleView derivatives{derivativeData,{spatial.first,spatial.second,spatial.third,3}};
         stageStart = Clock::now();
-        status = transformToSpatialDomainWithDerivativesFromStateImpl(state,phaseValues,targets[iTarget],derivatives);
+        status = transformToSpatialDomainWithDerivativesFromStateImpl(state,phaseValues,targets[iTarget],derivatives,
+            compact_ && advectionFieldsPrepared && iTarget==0 ? phaseStorage : nullptr);
         if (!status) return status;
         if (stageInstrumentationEnabled_) derivativeSeconds += std::chrono::duration<double>(Clock::now() - stageStart).count();
         const double* WV_KERNEL_RESTRICT U = advectingFields.data;
@@ -1347,7 +1611,11 @@ WVKernelStatus WVTransformConstantStratificationKernel::nonlinearFluxImpl(
         const double* WV_KERNEL_RESTRICT dy = dx + fieldElements;
         const double* WV_KERNEL_RESTRICT dz = dy + fieldElements;
         stageStart = Clock::now();
-        for (std::size_t i = 0; i < fieldElements; ++i) dx[i] = -(U[i] * dx[i] + V[i] * dy[i] + W[i] * dz[i]);
+        auto product = [&](std::size_t begin, std::size_t end) {
+            for (std::size_t i=begin;i<end;++i) dx[i]=-(U[i]*dx[i]+V[i]*dy[i]+W[i]*dz[i]);
+        };
+        if (compact_ && fieldElements >= 4096) compact_->pointwise->execute(fieldElements,product);
+        else product(0,fieldElements);
         if (spatialTendency)
             std::copy_n(dx,fieldElements,spatialTendency->data+iTarget*fieldElements);
         if (stageInstrumentationEnabled_) productSeconds += std::chrono::duration<double>(Clock::now() - stageStart).count();

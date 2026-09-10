@@ -1,0 +1,190 @@
+{
+  "scope": "issue-358 required CI source-bound default-off forward qualification refresh",
+  "status": "passed",
+  "sourceCommit": "a2dcc8749157cf852838a990044e1da25d29b6c1",
+  "candidateEnabled": false,
+  "horizontalWorkers": 12,
+  "pointwiseWorkers": 12,
+  "methods": [
+    {
+      "name": "TestPortableForwardIntegration/representativeLifecycleMatchesMatlab(configuration=constantHydrostatic)",
+      "passed": true,
+      "failed": false,
+      "incomplete": false,
+      "duration": 46.87786908333334
+    },
+    {
+      "name": "TestPortableForwardIntegration/representativeLifecycleMatchesMatlab(configuration=constantNonhydrostatic)",
+      "passed": true,
+      "failed": false,
+      "incomplete": false,
+      "duration": 37.48021179166667
+    },
+    {
+      "name": "TestPortableForwardIntegration/representativeLifecycleMatchesMatlab(configuration=barotropic)",
+      "passed": true,
+      "failed": false,
+      "incomplete": false,
+      "duration": 23.373550375
+    },
+    {
+      "name": "TestPortableForwardIntegration/representativeLifecycleMatchesMatlab(configuration=stratifiedQG)",
+      "passed": true,
+      "failed": false,
+      "incomplete": false,
+      "duration": 39.348335875
+    },
+    {
+      "name": "TestPortableForwardIntegration/representativeLifecycleMatchesMatlab(configuration=hydrostatic)",
+      "passed": true,
+      "failed": false,
+      "incomplete": false,
+      "duration": 50.4793315
+    },
+    {
+      "name": "TestPortableForwardIntegration/representativeLifecycleMatchesMatlab(configuration=boussinesq)",
+      "passed": true,
+      "failed": false,
+      "incomplete": false,
+      "duration": 55.45803529166667
+    }
+  ],
+  "methodSeconds": 253.01733391666667,
+  "caseCount": 12,
+  "catalogResult": {
+    "name": "TestPortableForwardIntegrationCatalog/committedReceiptsEstablishExecutedQualification",
+    "passed": true,
+    "failed": false,
+    "incomplete": false,
+    "duration": 0.167923875
+  },
+  "maximumErrors": {
+    "coefficients": 2.066742935413747e-15,
+    "fields": 1.1229037321661902e-15,
+    "tracer": 1.5542843854036618e-15,
+    "particlePosition": 1.8189894035458565e-12,
+    "savedOutput": 2.6396901016129792e-15,
+    "heldAmplitude": 0
+  },
+  "aggregates": [
+    {
+      "path": "PortableRuntime/qualification/forward-integration-reference-v1.json",
+      "sha256": "d810c4376daca2eb51de532e6671df354cf262b9139dd9455a9f46b710131bd3",
+      "provider": "reference",
+      "caseCount": 6
+    },
+    {
+      "path": "PortableRuntime/qualification/forward-integration-native-fftw-v1.json",
+      "sha256": "41520eb743c4e97d9e0bea2e2ffe16f8016d3ad0c1424d357e45af2155be3e7b",
+      "provider": "native-fftw",
+      "caseCount": 6
+    }
+  ],
+  "fragments": [
+    {
+      "path": "PortableRuntime/qualification/forward-integration-evidence-v1/forward-constant-hydrostatic-cfl-rk4-reference-87516950f8e8f661a40f7ad553564e8f1d2aa042e158139bff13adb038eb838b.json",
+      "sha256": "87516950f8e8f661a40f7ad553564e8f1d2aa042e158139bff13adb038eb838b"
+    },
+    {
+      "path": "PortableRuntime/qualification/forward-integration-evidence-v1/forward-constant-nonhydrostatic-rk23-reference-3f535a2edc55f7dee382ac7d68a3b8e1662cf6f34f9a479ea5a0cd4fcffdfb99.json",
+      "sha256": "3f535a2edc55f7dee382ac7d68a3b8e1662cf6f34f9a479ea5a0cd4fcffdfb99"
+    },
+    {
+      "path": "PortableRuntime/qualification/forward-integration-evidence-v1/forward-barotropic-qg-rk45-reference-d8a4e51c40734f761b370ed95178cf99568f7194a92d8115b04a153287cbd5e7.json",
+      "sha256": "d8a4e51c40734f761b370ed95178cf99568f7194a92d8115b04a153287cbd5e7"
+    },
+    {
+      "path": "PortableRuntime/qualification/forward-integration-evidence-v1/forward-stratified-qg-rk45-reference-ae9b082557e88fc5bd024d53f4c052c5940ef4d55e9033f8dbd312e5eea8a964.json",
+      "sha256": "ae9b082557e88fc5bd024d53f4c052c5940ef4d55e9033f8dbd312e5eea8a964"
+    },
+    {
+      "path": "PortableRuntime/qualification/forward-integration-evidence-v1/forward-hydrostatic-rk45-reference-ef74d8905f2e1786dc0d50988cdfc5d0d0a3d045e1fb1be50269a47ff34b9afe.json",
+      "sha256": "ef74d8905f2e1786dc0d50988cdfc5d0d0a3d045e1fb1be50269a47ff34b9afe"
+    },
+    {
+      "path": "PortableRuntime/qualification/forward-integration-evidence-v1/forward-boussinesq-rk45-reference-0319ad4bec46e9b0745fdb3bef60db231bf97404362000b144698362da335a31.json",
+      "sha256": "0319ad4bec46e9b0745fdb3bef60db231bf97404362000b144698362da335a31"
+    },
+    {
+      "path": "PortableRuntime/qualification/forward-integration-evidence-v1/forward-constant-hydrostatic-cfl-rk4-native-fftw-60afa166ce20d5cb23ecec34ca1f9d387d8cefa4256e5f5728bd59c0dea26054.json",
+      "sha256": "60afa166ce20d5cb23ecec34ca1f9d387d8cefa4256e5f5728bd59c0dea26054"
+    },
+    {
+      "path": "PortableRuntime/qualification/forward-integration-evidence-v1/forward-constant-nonhydrostatic-rk23-native-fftw-14c9e3c4c5ea586533c6314fde5559efd3cb8450508f3fc4fb20141b05c71483.json",
+      "sha256": "14c9e3c4c5ea586533c6314fde5559efd3cb8450508f3fc4fb20141b05c71483"
+    },
+    {
+      "path": "PortableRuntime/qualification/forward-integration-evidence-v1/forward-barotropic-qg-rk45-native-fftw-f5a56eab162e383adcee1bf98e0cb84f7df4d7e72b5c568b12cc423e02d526e7.json",
+      "sha256": "f5a56eab162e383adcee1bf98e0cb84f7df4d7e72b5c568b12cc423e02d526e7"
+    },
+    {
+      "path": "PortableRuntime/qualification/forward-integration-evidence-v1/forward-stratified-qg-rk45-native-fftw-6418c729075b829eb103d50836bc1536979188c61d01b4662bef8b1b04148ffe.json",
+      "sha256": "6418c729075b829eb103d50836bc1536979188c61d01b4662bef8b1b04148ffe"
+    },
+    {
+      "path": "PortableRuntime/qualification/forward-integration-evidence-v1/forward-hydrostatic-rk45-native-fftw-39b494e711b828a667ba232949b81b3afe3a258a202b3a4dc2f6766203086a14.json",
+      "sha256": "39b494e711b828a667ba232949b81b3afe3a258a202b3a4dc2f6766203086a14"
+    },
+    {
+      "path": "PortableRuntime/qualification/forward-integration-evidence-v1/forward-boussinesq-rk45-native-fftw-d9916c750f6694deabd24fb9d3b99b5d68cb40960805ed811bef497b47c04660.json",
+      "sha256": "d9916c750f6694deabd24fb9d3b99b5d68cb40960805ed811bef497b47c04660"
+    }
+  ],
+  "provenance": [
+    {
+      "path": "/private/tmp/wvm358-default-refresh-runner-provenance.json",
+      "sha256": "da9c86084694035ad9c509ab289b56d168ce11976b6aad82ce92ee94cb854f03",
+      "executable": {
+        "path": "/private/tmp/wvm358-default-refresh-runtime/wave-vortex-run",
+        "sha256": "bada41ce29b6b63b066802f176d3c841a5d387f5c890a6508eec1ae6978d696c"
+      },
+      "productionSourcesUnchanged": true,
+      "providerUnchanged": true,
+      "changedCapturedFiles": [
+        "PortableRuntime/qualification/forward-integration-native-fftw-v1.json",
+        "PortableRuntime/qualification/forward-integration-reference-v1.json"
+      ]
+    },
+    {
+      "path": "/private/tmp/wvm358-default-refresh-probe-provenance.json",
+      "sha256": "99c2c5a70c3e0b068f17fcb82ff2c196ed897c46f0b3d6a29bf49bc5afd52470",
+      "executable": {
+        "path": "/private/tmp/wvm358-default-refresh-runtime/WVForwardIntegrationProbe",
+        "sha256": "8532a35b10b356fcbbbf1ed210459b5681169c805ea719d5cc2c93ee7f06288e"
+      },
+      "productionSourcesUnchanged": true,
+      "providerUnchanged": true,
+      "changedCapturedFiles": [
+        "PortableRuntime/qualification/forward-integration-native-fftw-v1.json",
+        "PortableRuntime/qualification/forward-integration-reference-v1.json"
+      ]
+    }
+  ],
+  "artifacts": [
+    {
+      "path": "/private/tmp/wvm358DefaultRefresh.m",
+      "sha256": "8f6279a3c3ac8302c698455420dd2083b5fcf342d2d649e93c00340cb13933c3"
+    },
+    {
+      "path": "/private/tmp/wvm358-default-refresh-matlab.log",
+      "sha256": "35bca48a65ab1e2ddcb78345e0a2f8d07a858dc1e758a29929e69c42b768fa38"
+    },
+    {
+      "path": "/private/tmp/wvm358-default-refresh-results.json",
+      "sha256": "77d26033da4ac43deb0b735b705547a23660668e9ad4b25aa75310a2a74ca140"
+    },
+    {
+      "path": "/private/tmp/wvm358-default-refresh-catalog-results.json",
+      "sha256": "be7a7fa98c8e8f5bbc886ed0c647453117d939519d1ba197982a84a860f64405"
+    },
+    {
+      "path": "/private/tmp/wvm358-default-refresh-build.log",
+      "sha256": "00125ae46b2202c5ba6a0a63f9f7f251923a70820d3346a46a5955fcd22c058a"
+    },
+    {
+      "path": "/private/tmp/wvm358-default-refresh-configure.log",
+      "sha256": "9000b27189136aaa4f169d2008daddb6dcfc350fa0b10134b7cf9f8f5d47f942"
+    }
+  ],
+  "historicalEvidence": "Prior qualification aggregates remain in Git history; all previous content-addressed case artifacts and candidate-on lifecycle receipts remain unchanged. No source/validator relaxation."
+}

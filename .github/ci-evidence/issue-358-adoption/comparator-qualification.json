@@ -1,0 +1,143 @@
+{
+  "scope": "isolated synthetic comparator/work-gate tests; no integrations or timing claims",
+  "harnessSHA256": "424c88450bedc7d4793219ecf8e8ad813c7bf24d21cfa1d260b02e4a02527201",
+  "artifacts": "/private/tmp/wvm358-model-comparator-tests/fixtures-5byrjxmx",
+  "passed": true,
+  "checks": [
+    {
+      "name": "order-independent-exact-graph",
+      "expectedPassed": true,
+      "actualPassed": true
+    },
+    {
+      "name": "unexpected-group",
+      "expectedPassed": false,
+      "actualPassed": false
+    },
+    {
+      "name": "numeric-payload",
+      "expectedPassed": false,
+      "actualPassed": false
+    },
+    {
+      "name": "exact-time",
+      "expectedPassed": false,
+      "actualPassed": false
+    },
+    {
+      "name": "metadata-value",
+      "expectedPassed": false,
+      "actualPassed": false
+    },
+    {
+      "name": "metadata-type",
+      "expectedPassed": false,
+      "actualPassed": false
+    },
+    {
+      "name": "missing-history",
+      "expectedPassed": false,
+      "actualPassed": false
+    },
+    {
+      "name": "empty-history",
+      "expectedPassed": false,
+      "actualPassed": false
+    },
+    {
+      "name": "volatile-history-only",
+      "expectedPassed": true,
+      "actualPassed": true
+    },
+    {
+      "name": "matching-nonfinite-evolution-rejected",
+      "expectedPassed": false,
+      "actualPassed": false
+    },
+    {
+      "name": "cpp-boundary-missing-group-history-rejected",
+      "expectedPassed": false,
+      "actualPassed": false
+    },
+    {
+      "name": "matlab-boundary-group-history-presence-excluded",
+      "expectedPassed": true,
+      "actualPassed": true
+    },
+    {
+      "name": "matlab-boundary-other-missing-attribute-rejected",
+      "expectedPassed": false,
+      "actualPassed": false
+    },
+    {
+      "name": "matlab-boundary-root-history-still-strict",
+      "expectedPassed": false,
+      "actualPassed": false
+    },
+    {
+      "name": "matlab-boundary-variable-history-still-strict",
+      "expectedPassed": false,
+      "actualPassed": false
+    },
+    {
+      "name": "work-valid",
+      "expectedExitCode": 0,
+      "actualExitCode": 0,
+      "summary": {
+        "passed": true,
+        "completedPairs": 4,
+        "expectedPairs": 4,
+        "status": "complete",
+        "decision": "correctness-only; concurrent host work, no timing claim"
+      }
+    },
+    {
+      "name": "work-step-count",
+      "expectedExitCode": 1,
+      "actualExitCode": 1,
+      "summary": {
+        "passed": false,
+        "completedPairs": 4,
+        "expectedPairs": 4,
+        "status": "complete",
+        "decision": "correctness-only; concurrent host work, no timing claim"
+      }
+    },
+    {
+      "name": "work-rhs-count",
+      "expectedExitCode": 1,
+      "actualExitCode": 1,
+      "summary": {
+        "passed": false,
+        "completedPairs": 4,
+        "expectedPairs": 4,
+        "status": "complete",
+        "decision": "correctness-only; concurrent host work, no timing claim"
+      }
+    },
+    {
+      "name": "work-final-time",
+      "expectedExitCode": 1,
+      "actualExitCode": 1,
+      "summary": {
+        "passed": false,
+        "completedPairs": 4,
+        "expectedPairs": 4,
+        "status": "complete",
+        "decision": "correctness-only; concurrent host work, no timing claim"
+      }
+    },
+    {
+      "name": "work-rejected-count",
+      "expectedExitCode": 1,
+      "actualExitCode": 1,
+      "summary": {
+        "passed": false,
+        "completedPairs": 4,
+        "expectedPairs": 4,
+        "status": "complete",
+        "decision": "correctness-only; concurrent host work, no timing claim"
+      }
+    }
+  ]
+}

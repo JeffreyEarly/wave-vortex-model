@@ -6,6 +6,7 @@
 #include "WaveVortexRuntime/WVModel.hpp"
 #include "WaveVortexKernel/WVTransformConstantStratificationKernel.hpp"
 
+#include <algorithm>
 #include <cstdint>
 #include <chrono>
 #include <memory>
@@ -187,15 +188,30 @@ void cleanup() { models.clear(); }
 
 mxArray* scalarString(const std::string& value) { return mxCreateString(value.c_str()); }
 
+const char* defaultConstantScheduleIdentifier() {
+    return WVConstantKernelExecutionOptions{}.schedule == WVConstantNonlinearFluxSchedule::compactCandidate ?
+        "retained-compact-streamed-target-three-channel-v1" : "streamed-target-three-channel";
+}
+constexpr const char* logicalPlanCountMeaning = "logical-prepared-operation-slots";
+constexpr const char* constantWorkerPolicyIdentifier = "constant-stage-workers-v1";
+
 mxArray* moduleInfo(const std::string& expectedOpenMPRuntime) {
-    const char* names[] = {"engine","version","baseLibrary","threadLibrary","openMPRuntimeLibrary"};
-    mxArray* result = mxCreateStructMatrix(1,1,5,names);
+    const char* names[] = {"engine","version","baseLibrary","threadLibrary","openMPRuntimeLibrary","nonlinearFluxSchedule","executionScheduleVersion","workerPolicyIdentifier","requestedHorizontalWorkers","requestedPointwiseWorkers","planCountMeaning"};
+    mxArray* result = mxCreateStructMatrix(1,1,11,names);
     const auto identity = WVFFTWEngine::linkedLibraries(expectedOpenMPRuntime);
     mxSetField(result,0,"engine",mxCreateString("fftw"));
     mxSetField(result,0,"version",scalarString(identity.version));
     mxSetField(result,0,"baseLibrary",scalarString(identity.baseLibrary));
     mxSetField(result,0,"threadLibrary",scalarString(identity.threadLibrary));
     mxSetField(result,0,"openMPRuntimeLibrary",scalarString(identity.openMPRuntimeLibrary));
+    const auto policy = WVConstantKernelExecutionOptions{};
+    const bool compact = policy.schedule == WVConstantNonlinearFluxSchedule::compactCandidate;
+    mxSetField(result,0,"nonlinearFluxSchedule",mxCreateString(defaultConstantScheduleIdentifier()));
+    mxSetField(result,0,"executionScheduleVersion",mxCreateDoubleScalar(1.0));
+    mxSetField(result,0,"workerPolicyIdentifier",mxCreateString(constantWorkerPolicyIdentifier));
+    mxSetField(result,0,"requestedHorizontalWorkers",mxCreateDoubleScalar(compact ? policy.horizontalOuterWorkers : 0));
+    mxSetField(result,0,"requestedPointwiseWorkers",mxCreateDoubleScalar(compact ? policy.pointwiseWorkers : 1));
+    mxSetField(result,0,"planCountMeaning",mxCreateString(logicalPlanCountMeaning));
     return result;
 }
 
@@ -214,11 +230,12 @@ void mexFunction(int nlhs, mxArray* plhs[], int nrhs, const mxArray* prhs[]) {
     }
     if (command == "moduleMetrics") {
         if (nrhs != 1 || nlhs != 1) fail("WaveVortexModel:CompiledKernelCommand","moduleMetrics takes no additional inputs.");
-        const char* names[] = {"kernelCount","moduleLocked","activePlans","totalPlansCreated","totalPlansDestroyed","outstandingPlanningBytes","totalPlanningSeconds"};
-        plhs[0] = mxCreateStructMatrix(1,1,7,names);
+        const char* names[] = {"kernelCount","moduleLocked","activePlans","totalPlansCreated","totalPlansDestroyed","outstandingPlanningBytes","totalPlanningSeconds","providerPlanCountScope"};
+        plhs[0] = mxCreateStructMatrix(1,1,8,names);
         const auto lifetime = WVFFTWEngine::lifetimeMetrics();
         const double values[] = {static_cast<double>(models.size()),models.empty() ? 0.0 : 1.0,static_cast<double>(lifetime.activePlans),static_cast<double>(lifetime.totalPlansCreated),static_cast<double>(lifetime.totalPlansDestroyed),static_cast<double>(lifetime.outstandingPlanningBytes),lifetime.totalPlanningSeconds};
         for (std::size_t i = 0; i < 7; ++i) mxSetField(plhs[0],0,names[i],mxCreateDoubleScalar(values[i]));
+        mxSetField(plhs[0],0,"providerPlanCountScope",mxCreateString("module-global FFTW handles across all contexts; shared resources counted once"));
         return;
     }
     if (command == "estimate") {
@@ -226,22 +243,34 @@ void mexFunction(int nlhs, mxArray* plhs[], int nrhs, const mxArray* prhs[]) {
         WVTransformConstantStratificationDescriptor descriptor;
         requireStatus(WVTransformConstantStratificationDescriptor::create(configuration(prhs[1]),descriptor));
         const auto& c = descriptor.configuration();
-        const auto halfElements = descriptor.halfSpectrumMappings().NxHalf * c.Ny * c.Nz * 4;
+        const bool compact = WVConstantKernelExecutionOptions{}.schedule == WVConstantNonlinearFluxSchedule::compactCandidate;
+        const auto fullHalfRows = descriptor.halfSpectrumMappings().NxHalf*c.Ny;
+        const auto executionRows = compact ? descriptor.Nkl() : fullHalfRows;
+        const auto halfElements = executionRows*c.Nz*4;
         const auto halfSpectrumScratchCapacityBytes = 2 * halfElements * sizeof(double);
         const auto realScratchCapacityBytes = descriptor.spatialShape().elementCount() * 6 * sizeof(double);
         const auto scratchCapacityBytes = halfSpectrumScratchCapacityBytes + realScratchCapacityBytes;
+        const auto configuredScalarHalfElements = compact ?
+            std::max(halfElements,fullHalfRows*c.Nz) : halfElements;
+        const auto configuredScalarScratchCapacityBytes = configuredScalarHalfElements*sizeof(WVComplex64)+realScratchCapacityBytes;
         const auto spectralBytes = descriptor.spectralShape().elementCount() * sizeof(WVComplex64);
         const auto descriptorBytes = descriptor.persistentBytes() +
                                      descriptor.halfSpectrumMappings().NxHalf *
                                          c.Ny * sizeof(std::uint8_t);
         const auto persistentBytesLowerBound = descriptorBytes + scratchCapacityBytes;
-        const char* names[] = {"contractVersion","planCount","planMemoryAccounting","descriptorBytes","halfSpectrumScratchCapacityBytes","realScratchCapacityBytes","scratchCapacityBytes","persistentBytesLowerBound","stateInputBytes","fluxOutputBytes","knownMaximumLiveOwnedBytesLowerBound","Nx","Ny","Nz","Nj","Nkl"};
-        plhs[0] = mxCreateStructMatrix(1,1,16,names);
+        const char* names[] = {"contractVersion","planCount","planMemoryAccounting","descriptorBytes","halfSpectrumScratchCapacityBytes","realScratchCapacityBytes","scratchCapacityBytes","persistentBytesLowerBound","stateInputBytes","fluxOutputBytes","knownMaximumLiveOwnedBytesLowerBound","Nx","Ny","Nz","Nj","Nkl","planCountMeaning","nonlinearFluxSchedule","executionScheduleVersion","verticalExecutionRowCount","configuredScalarScratchCapacityBytes","estimateScope"};
+        plhs[0] = mxCreateStructMatrix(1,1,22,names);
         mxSetField(plhs[0],0,"contractVersion",mxCreateDoubleScalar(static_cast<double>(WVKernelContractVersion)));
         mxSetField(plhs[0],0,"planCount",mxCreateDoubleScalar(17.0));
         mxSetField(plhs[0],0,"planMemoryAccounting",mxCreateString("FFTW plan storage is opaque before construction"));
         const double values[] = {static_cast<double>(descriptorBytes),static_cast<double>(halfSpectrumScratchCapacityBytes),static_cast<double>(realScratchCapacityBytes),static_cast<double>(scratchCapacityBytes),static_cast<double>(persistentBytesLowerBound),static_cast<double>(3*spectralBytes),static_cast<double>(3*spectralBytes),static_cast<double>(persistentBytesLowerBound+3*spectralBytes),static_cast<double>(c.Nx),static_cast<double>(c.Ny),static_cast<double>(c.Nz),static_cast<double>(c.Nj),static_cast<double>(descriptor.Nkl())};
         for (std::size_t i = 0; i < 13; ++i) mxSetField(plhs[0],0,names[i+3],mxCreateDoubleScalar(values[i]));
+        mxSetField(plhs[0],0,"planCountMeaning",mxCreateString(logicalPlanCountMeaning));
+        mxSetField(plhs[0],0,"nonlinearFluxSchedule",mxCreateString(defaultConstantScheduleIdentifier()));
+        mxSetField(plhs[0],0,"executionScheduleVersion",mxCreateDoubleScalar(1.0));
+        mxSetField(plhs[0],0,"verticalExecutionRowCount",mxCreateDoubleScalar(executionRows));
+        mxSetField(plhs[0],0,"configuredScalarScratchCapacityBytes",mxCreateDoubleScalar(configuredScalarScratchCapacityBytes));
+        mxSetField(plhs[0],0,"estimateScope",mxCreateString("Base descriptor/mask and numerical arena only; provider, shared horizontal resources, executors and management are measured after construction. Scalar envelope is a separate optional configuration."));
         return;
     }
     if (command == "create") {
@@ -336,8 +365,8 @@ void mexFunction(int nlhs, mxArray* plhs[], int nrhs, const mxArray* prhs[]) {
     }
     if (command == "metrics") {
         if (nrhs != 2 || nlhs != 1) fail("WaveVortexModel:CompiledKernelCommand","metrics requires one handle.");
-        const char* names[] = {"engine","loadedLibrary","nonlinearFluxSchedule","phaseImplementation","coefficientStorageMode","coefficientArithmeticMode","inverseNormalizationPlacement","optimizationImplementation","coefficientWorkerCount","planMemoryAccounting","contractVersion","planCount","planBytes","engineBytes","kernelManagementBytes","descriptorBytes","scratchCapacityBytes","scratchHighWaterBytes","halfSpectrumScratchCapacityBytes","realScratchCapacityBytes","executionCount","horizontalExecutionCount","verticalExecutionCount","nonlinearFluxCallCount","nonlinearFluxPhaseEvaluationCount","phaseWorkspaceBytes","phaseReservationBytes","persistentBytes","stateInputBytes","fluxOutputBytes","knownMaximumLiveOwnedBytes","persistentFullHermitianBytes","gradientMaskBytes","Nx","Ny","Nz","Nj","Nkl","phaseSeconds","reconstructionSeconds","derivativeReconstructionSeconds","productSeconds","projectionSeconds","coefficientAssemblySeconds","derivativeCoefficientAssemblySeconds","coefficientProjectionSeconds","activeForcingSchedule"};
-        plhs[0] = mxCreateStructMatrix(1,1,47,names);
+        const char* names[] = {"engine","loadedLibrary","nonlinearFluxSchedule","phaseImplementation","coefficientStorageMode","coefficientArithmeticMode","inverseNormalizationPlacement","optimizationImplementation","coefficientWorkerCount","planMemoryAccounting","contractVersion","planCount","planBytes","engineBytes","kernelManagementBytes","descriptorBytes","scratchCapacityBytes","scratchHighWaterBytes","halfSpectrumScratchCapacityBytes","realScratchCapacityBytes","executionCount","horizontalExecutionCount","verticalExecutionCount","nonlinearFluxCallCount","nonlinearFluxPhaseEvaluationCount","phaseWorkspaceBytes","phaseReservationBytes","persistentBytes","stateInputBytes","fluxOutputBytes","knownMaximumLiveOwnedBytes","persistentFullHermitianBytes","gradientMaskBytes","Nx","Ny","Nz","Nj","Nkl","phaseSeconds","reconstructionSeconds","derivativeReconstructionSeconds","productSeconds","projectionSeconds","coefficientAssemblySeconds","derivativeCoefficientAssemblySeconds","coefficientProjectionSeconds","activeForcingSchedule","planCountMeaning","executionScheduleVersion","workerPolicyIdentifier","pointwiseWorkerCount","retainedHorizontalWorkerCount","retainedHorizontalSchedule","verticalExecutionRowCount","phaseValueBytes","pointwiseDispatchRule"};
+        plhs[0] = mxCreateStructMatrix(1,1,56,names);
         const auto& metrics = value.metrics();
         const auto& configuration = value.descriptor().configuration();
         const auto spectralBytes = value.descriptor().spectralShape().elementCount() * sizeof(WVComplex64);
@@ -352,6 +381,15 @@ void mexFunction(int nlhs, mxArray* plhs[], int nrhs, const mxArray* prhs[]) {
         mxSetField(plhs[0],0,"coefficientWorkerCount",mxCreateDoubleScalar(static_cast<double>(value.coefficientWorkerCount())));
         mxSetField(plhs[0],0,"planMemoryAccounting",mxCreateString("known C++ storage lower bound; FFTW plan and native thread storage are opaque"));
         mxSetField(plhs[0],0,"activeForcingSchedule",mxCreateString(model(prhs[1]).forcingScheduleIdentifier().c_str()));
+        mxSetField(plhs[0],0,"planCountMeaning",mxCreateString(logicalPlanCountMeaning));
+        mxSetField(plhs[0],0,"executionScheduleVersion",mxCreateDoubleScalar(1.0));
+        mxSetField(plhs[0],0,"workerPolicyIdentifier",mxCreateString(constantWorkerPolicyIdentifier));
+        mxSetField(plhs[0],0,"pointwiseWorkerCount",mxCreateDoubleScalar(value.pointwiseWorkerCount()));
+        mxSetField(plhs[0],0,"retainedHorizontalWorkerCount",mxCreateDoubleScalar(value.retainedHorizontalWorkerCount()));
+        mxSetField(plhs[0],0,"retainedHorizontalSchedule",mxCreateString(value.retainedHorizontalScheduleIdentifier()));
+        mxSetField(plhs[0],0,"verticalExecutionRowCount",mxCreateDoubleScalar(value.verticalExecutionRowCount()));
+        mxSetField(plhs[0],0,"phaseValueBytes",mxCreateDoubleScalar(spectralBytes));
+        mxSetField(plhs[0],0,"pointwiseDispatchRule",mxCreateString("Prepared worker count; serial for fewer than 4096 real elements. Frozen schedule always serial."));
         const double numbers[] = {static_cast<double>(WVKernelContractVersion),static_cast<double>(metrics.planCount),static_cast<double>(metrics.planBytes),static_cast<double>(metrics.engineBytes),static_cast<double>(metrics.kernelManagementBytes),static_cast<double>(metrics.descriptorBytes),static_cast<double>(metrics.scratchCapacityBytes),static_cast<double>(metrics.scratchHighWaterBytes),static_cast<double>(metrics.halfSpectrumScratchCapacityBytes),static_cast<double>(metrics.realScratchCapacityBytes),static_cast<double>(metrics.executionCount),static_cast<double>(metrics.horizontalExecutionCount),static_cast<double>(metrics.verticalExecutionCount),static_cast<double>(metrics.nonlinearFluxCallCount),static_cast<double>(metrics.nonlinearFluxPhaseEvaluationCount),static_cast<double>(value.phaseReservationBytes()),static_cast<double>(value.phaseReservationBytes()),static_cast<double>(value.persistentBytes()),static_cast<double>(3*spectralBytes),static_cast<double>(3*spectralBytes),static_cast<double>(value.persistentBytes()+3*spectralBytes),0.0,0.0,static_cast<double>(configuration.Nx),static_cast<double>(configuration.Ny),static_cast<double>(configuration.Nz),static_cast<double>(configuration.Nj),static_cast<double>(value.descriptor().Nkl())};
         for (std::size_t i = 0; i < 28; ++i) mxSetField(plhs[0],0,names[i+10],mxCreateDoubleScalar(numbers[i]));
         const double stageSeconds[] = {metrics.phaseSeconds,metrics.reconstructionSeconds,metrics.derivativeReconstructionSeconds,metrics.productSeconds,metrics.projectionSeconds,metrics.coefficientAssemblySeconds,metrics.derivativeCoefficientAssemblySeconds,metrics.coefficientProjectionSeconds};

@@ -54,7 +54,8 @@
     "knownScratch": "4H+6R",
     "coefficientWorkers": 2,
     "coefficientExecution": "prepared-persistent-workers",
-    "persistentFullHermitianSpectrum": false
+    "persistentFullHermitianSpectrum": false,
+    "planCountMeaning": "logical-prepared-operation-slots"
   },
   "barotropicQGContract": {
     "version": 4,
@@ -73,11 +74,11 @@
   "keySourceSHA256": {
     "preparedModeExecutor": "817d2a3cd791b51a38e0e427a1d6800d376aaa976ca7100f438599841fabce93",
     "coefficientFormulas": "78d647608d8919b33c278c280eb6d2b253dfb0acd8d3330141fbdc845e00864a",
-    "kernel": "2aed16e2b0c2edf6157a3085ac809852f01e80f9d35a73cbac4d71e5065236d4",
+    "kernel": "24ad9025c8e55d9aab8eb027b6201221a779105e8a59b13b42ff68c84dd134bb",
     "integrationSystem": "b8e35f304ad53b1f536ebecee235b5ccef95373d79a039c776d41f801944d7ec",
-    "nativeEngine": "43dae9c58e67ccb6e2d7eceb9371a2c09117569cc5dd9e942004b38b7f7eb7fc",
-    "mexGateway": "fc9827e29d8da083c9170e761fc42f4e2a3aa88cf810bc76ac28395d7b4ef8b2",
-    "buildOrchestrator": "f2c8d71e3e078d467c7cd508596a143c665f469116917b2870da67001b12b371"
+    "nativeEngine": "bf22362163ad2899a487fed012c40fa212e5ac74c67e6449eacfc239dad21c4e",
+    "mexGateway": "b68cc36464bb6b46a3e10c69fa1964c76269aac717cedf88e9657f285a6c8ea6",
+    "buildOrchestrator": "d724445240b1b8832746ab8ab95cb8fceefcc86973acf189054949ad5002b0a9"
   },
   "excluded": [
     "historical benchmark harnesses and canonical engineering artifacts",
@@ -101,13 +102,14 @@
     "matrixIdentity": "exact-source-and-name",
     "placement": "out-of-place",
     "sourceSHA256": {
-      "interface": "ef5b7efef9362061f7a737bbeb52272ebf43f16c5100086feaf061aeb03845fd",
-      "horizontal": "9caecbe0499ff231a1911cb83b087616fdbf36a3a56ae1341f32781e840a4854",
+      "interface": "d9bce324eeb1572abe39d99a23448d55a31ad8074ce2e4105ef41bbdd610bb95",
+      "horizontal": "484cf58901a4008e6109aacbceeee03aa50e0f4641c91c4cf730466a3d16251a",
       "vertical": "460d12936bd9f383400476b0bc8338735ec9216e4fd7489240f6c9d78ab7898b",
       "validation": "eb416d6abc47d97d506b4c4fa65e8006b951d07d013c5d96db0f8043b417cc79",
       "referenceFFT": "703724883edd3c05f583c7e68bad46830b1a92e22524a10906d3da366ad64c49",
       "accelerate": "08fa3565ad33dc08ace85b9c708019745a53fca1187d0ebb9b23991ddb4292cc"
-    }
+    },
+    "optionalHorizontalSchedule": "fftw-streaming-pruned-tile16"
   },
   "stratifiedQGKernel": {
     "identity": "wave-vortex-stratified-qg-kernel-v1",
@@ -129,5 +131,38 @@
     "coefficientLayout": "canonical-interleaved-Nj-Nkl",
     "runtimeExecutionCapabilityAdded": false,
     "qualification": "UnitTests/TestBoussinesqCompiledKernel.m"
+  },
+  "constantSpectralSchedule": {
+    "issue": 358,
+    "identity": "retained-compact-streamed-target-three-channel-v1",
+    "executionScheduleVersion": 1,
+    "productionDefault": false,
+    "frozenControl": "8d08ba48b554a84b9920e349e6d4c69dccd6c0dd",
+    "baseNumericalScratch": "4C+6R",
+    "configuredScalarNumericalScratch": "max(4C,H)+6R",
+    "definitions": {
+      "C": "Nz*Nkl complex values",
+      "H": "(floor(Nx/2)+1)*Ny*Nz complex values",
+      "R": "Nx*Ny*Nz real values"
+    },
+    "workerPolicy": {
+      "identity": "constant-stage-workers-v1",
+      "horizontalOuter": 12,
+      "horizontalFFTWInternal": 1,
+      "typeIFFTWInternal": "requested provider thread count; 16 in the recorded campaign",
+      "coefficient": 2,
+      "pointwise": 12,
+      "pointwiseSerialBelowRealElements": 4096
+    },
+    "sourceSHA256": {
+      "CompiledKernel/include/WaveVortexKernel/WVFFTEngine.hpp": "10e0fcb9c2053f848889e4d806233588e0432f49d59c1211c146c8343c0ba9df",
+      "CompiledKernel/include/WaveVortexKernel/WVTransformConstantStratificationKernel.hpp": "daab552e9856e169092d287e8b44b3f8c210140189bec2e65e999e1bdb315ebf",
+      "CompiledKernel/adapters/native-fftw/WVNativeFFTWEngine.hpp": "7285f9989e604d2056a36eec275b95389bf386c3a5c7f5140086206f6ecf251b",
+      "@WVCompiledBackend/private/wvCompiledBackendConstants.m": "d4186fe60c56711b56b420b11e2dde0deeeea6bd1968514ffe054aac9e03f0f7",
+      "@WVCompiledBackend/private/wvCompiledBackendCapabilities.m": "c453d0f3bce5089c9928dc00969f88ca236b5c34f64c7a732ac13282156a5620"
+    },
+    "adoptionDecision": "rejected-small-model-integration-regression",
+    "followUpIssue": 460,
+    "evidence": ".github/ci-evidence/issue-358-adoption/decision.json"
   }
 }

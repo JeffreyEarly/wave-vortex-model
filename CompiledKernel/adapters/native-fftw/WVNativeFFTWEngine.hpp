@@ -7,6 +7,7 @@
 #include <string>
 
 namespace wavevortex {
+struct WVFFTWRetainedCache;
 
 struct WVFFTWLifetimeMetrics {
     std::size_t activePlans = 0;
@@ -28,14 +29,15 @@ struct WVFFTWLibraryIdentity {
 class WVFFTWEngine final : public WVFFTEngine {
 public:
     static WVKernelStatus create(std::size_t threadCount, std::unique_ptr<WVFFTEngine>& engine);
+    ~WVFFTWEngine() override;
     static WVFFTWLifetimeMetrics lifetimeMetrics() noexcept;
     static WVFFTWLibraryIdentity linkedLibraries(const std::string& expectedOpenMPRuntime = {});
 
     std::string identifier() const override;
     std::string libraryIdentity() const override { return loadedLibraryPath_; }
-    std::size_t persistentBytes() const noexcept override {
-        return sizeof(*this) + loadedLibraryPath_.capacity();
-    }
+    std::size_t persistentBytes() const noexcept override;
+    WVKernelStatus createRetainedHorizontalPlan(const WVRetainedHorizontalSpecification&,
+        std::unique_ptr<WVRetainedHorizontalPlan>&) override;
     WVKernelStatus createPlan(const WVFFTPlanSpecification& specification, std::unique_ptr<WVFFTPlan>& plan) override;
     std::size_t threadCount() const noexcept { return threadCount_; }
     const std::string& loadedLibraryPath() const noexcept { return loadedLibraryPath_; }
@@ -44,6 +46,7 @@ private:
     WVFFTWEngine(std::size_t threadCount, std::string loadedLibraryPath);
     std::size_t threadCount_ = 1;
     std::string loadedLibraryPath_;
+    std::unique_ptr<WVFFTWRetainedCache> retainedCache_;
 };
 
 } // namespace wavevortex

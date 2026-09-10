@@ -10,13 +10,15 @@ struct HorizontalMode {
 struct HorizontalData {
     WVRetainedHorizontalSpecification spec;
     std::vector<HorizontalMode> mapping;
-    std::unique_ptr<WVFFTEngine> engine;
+    std::shared_ptr<WVFFTEngine> engine;
     std::size_t realSpan = 0, complexSpan = 0, planeSize = 0, halfSize = 0;
     double forwardScale = 1, inverseScale = 1;
 };
 struct HorizontalWorkspaceData {
     std::shared_ptr<const HorizontalData> owner;
     std::unique_ptr<WVFFTPlan> forward, inverse;
+    std::unique_ptr<WVRetainedHorizontalPlan> retained;
+    bool full = true;
     std::vector<double> real;
     std::vector<WVComplex64> half;
     std::atomic<bool> active{false};
@@ -43,14 +45,15 @@ std::size_t index(std::int64_t mode, std::size_t count) {
     if (mode < -half || mode > half) throw std::invalid_argument("Retained Fourier mode lies outside the grid.");
     return mode < 0 ? static_cast<std::size_t>(static_cast<std::int64_t>(count)+mode) : static_cast<std::size_t>(mode);
 }
-WVFFTPlanSpecification fftSpecification(const HorizontalData& data, bool inverse) {
+WVFFTPlanSpecification fftSpecification(const HorizontalData& data, bool inverse, bool full = true) {
     const auto& g = data.spec.grid;
+    const auto planes = full ? g.planes : 1;
     WVFFTPlanSpecification s;
     s.kind = inverse ? WVFFTPlanKind::horizontalComplexToReal2D : WVFFTPlanKind::horizontalRealToComplex2D;
     s.transformDimensions = {{g.Ny,static_cast<std::ptrdiff_t>(g.Nx),static_cast<std::ptrdiff_t>(g.Nx/2+1)},{g.Nx,1,1}};
-    s.batchDimensions = {{g.planes,static_cast<std::ptrdiff_t>(data.planeSize),static_cast<std::ptrdiff_t>(data.halfSize)}};
-    s.inputBytes = product(product(data.planeSize,g.planes),sizeof(double));
-    s.outputBytes = product(product(data.halfSize,g.planes),sizeof(WVComplex64));
+    s.batchDimensions = {{planes,static_cast<std::ptrdiff_t>(data.planeSize),static_cast<std::ptrdiff_t>(data.halfSize)}};
+    s.inputBytes = product(product(data.planeSize,planes),sizeof(double));
+    s.outputBytes = product(product(data.halfSize,planes),sizeof(WVComplex64));
     s.destroysInput = inverse; // Only disposable workspace is passed to the full inverse.
     if (inverse) {
         for (auto& d : s.transformDimensions) std::swap(d.inputStride,d.outputStride);
@@ -73,10 +76,23 @@ using namespace spectral_detail;
 WVRetainedHorizontalWorkspace::WVRetainedHorizontalWorkspace() = default;
 WVRetainedHorizontalWorkspace::~WVRetainedHorizontalWorkspace() = default;
 std::size_t WVRetainedHorizontalWorkspace::persistentBytes() const noexcept {
-    return sizeof(*this)+sizeof(*data_)+data_->real.capacity()*sizeof(double)+data_->half.capacity()*sizeof(WVComplex64);
+    return sizeof(*this)+sizeof(*data_)+data_->real.capacity()*sizeof(double)+data_->half.capacity()*sizeof(WVComplex64)+(data_->retained ? data_->retained->persistentBytes() : 0);
 }
 std::size_t WVRetainedHorizontalWorkspace::planBytesLowerBound() const noexcept {
-    return data_->forward->persistentBytes()+data_->inverse->persistentBytes();
+    return (data_->forward ? data_->forward->persistentBytes()+data_->inverse->persistentBytes() : 0)+
+        (data_->retained ? data_->retained->planBytesLowerBound() : 0);
+}
+const char* WVRetainedHorizontalWorkspace::scheduleIdentifier() const noexcept {
+    return data_->retained ? data_->retained->identifier() : data_->full ? "full-fft-gather" : "plane-streamed-full-fft-gather";
+}
+const void* WVRetainedHorizontalWorkspace::sharedResourceIdentity() const noexcept {
+    return data_->retained ? data_->retained->sharedResourceIdentity() : nullptr;
+}
+std::size_t WVRetainedHorizontalWorkspace::sharedResourceBytes() const noexcept {
+    return data_->retained ? data_->retained->sharedResourceBytes() : 0;
+}
+std::size_t WVRetainedHorizontalWorkspace::workerCount() const noexcept {
+    return data_->retained ? data_->retained->workerCount() : 1;
 }
 std::size_t WVRetainedHorizontalOperator::persistentBytes() const noexcept {
     return sizeof(*this)+sizeof(*data_)+identityBytes(data_->spec.retained)+data_->spec.grid.family.capacity()+
@@ -85,6 +101,11 @@ std::size_t WVRetainedHorizontalOperator::persistentBytes() const noexcept {
 std::size_t WVRetainedHorizontalOperator::providerBytesLowerBound() const noexcept { return data_->engine->persistentBytes(); }
 WVKernelStatus WVRetainedHorizontalOperator::create(const WVRetainedHorizontalSpecification& spec,
     std::unique_ptr<WVFFTEngine> engine, std::unique_ptr<WVRetainedHorizontalOperator>& result) {
+    try { return createShared(spec,std::shared_ptr<WVFFTEngine>(std::move(engine)),result); }
+    catch (const std::bad_alloc&) { return {WVKernelStatusCode::allocationFailure,"Horizontal provider ownership allocation failed."}; }
+}
+WVKernelStatus WVRetainedHorizontalOperator::createShared(const WVRetainedHorizontalSpecification& spec,
+    std::shared_ptr<WVFFTEngine> engine, std::unique_ptr<WVRetainedHorizontalOperator>& result) {
     try {
         if (!engine) return {WVKernelStatusCode::invalidPointer,"A full FFT provider is required."};
         if (spec.placement != WVOperatorPlacement::outOfPlace) return {WVKernelStatusCode::unsupportedOperation,"Retained horizontal execution is out-of-place."};
@@ -92,6 +113,9 @@ WVKernelStatus WVRetainedHorizontalOperator::create(const WVRetainedHorizontalSp
             return {WVKernelStatusCode::invalidConfiguration,"Domain lengths must be finite and positive."};
         if (spec.grid.Nx > static_cast<std::size_t>(INT64_MAX) || spec.grid.Ny > static_cast<std::size_t>(INT64_MAX))
             return {WVKernelStatusCode::sizeOverflow,"Fourier grid exceeds signed mode-key range."};
+        if (!spec.outerWorkers || (spec.schedule != WVRetainedHorizontalSchedule::fullFFT &&
+            spec.schedule != WVRetainedHorizontalSchedule::streamingPrunedTile16))
+            return {WVKernelStatusCode::invalidConfiguration,"Invalid horizontal schedule or worker count."};
         const auto rs = gridSpan(spec.grid), cs = validate(spec.retained);
         if (spec.retained.rows != spec.grid.planes || spec.retained.columns != spec.modes.size() || spec.grid.family != spec.retained.family)
             return {WVKernelStatusCode::invalidShape,"Horizontal families and extents must match the retained set."};
@@ -128,18 +152,26 @@ WVKernelStatus WVRetainedHorizontalOperator::create(const WVRetainedHorizontalSp
       catch (const std::overflow_error& e) { return {WVKernelStatusCode::sizeOverflow,e.what()}; }
       catch (const std::invalid_argument& e) { return {WVKernelStatusCode::invalidConfiguration,e.what()}; }
 }
-WVKernelStatus WVRetainedHorizontalOperator::createWorkspace(std::unique_ptr<WVRetainedHorizontalWorkspace>& result) const {
+WVKernelStatus WVRetainedHorizontalOperator::createWorkspace(std::unique_ptr<WVRetainedHorizontalWorkspace>& result, bool prepareSpatialDerivative) const {
     try {
         auto w = std::unique_ptr<WVRetainedHorizontalWorkspace>(new WVRetainedHorizontalWorkspace);
         w->data_ = std::make_unique<HorizontalWorkspaceData>();
-        auto& d = *w->data_; d.owner = data_;
-        d.real.resize(product(data_->planeSize,data_->spec.grid.planes));
-        d.half.resize(product(data_->halfSize,data_->spec.grid.planes));
-        auto status = data_->engine->createPlan(fftSpecification(*data_,false),d.forward);
-        if (!status) return status;
-        status = data_->engine->createPlan(fftSpecification(*data_,true),d.inverse);
-        if (!status) return status;
-        if (!d.forward || !d.inverse) return {WVKernelStatusCode::fftPlanFailure,"Provider returned an empty plan."};
+        auto& d = *w->data_; d.owner = data_; d.full = prepareSpatialDerivative;
+        if (data_->spec.schedule == WVRetainedHorizontalSchedule::streamingPrunedTile16) {
+            auto status = data_->engine->createRetainedHorizontalPlan(data_->spec,d.retained);
+            if (!status && status.code != WVKernelStatusCode::unsupportedOperation) return status;
+            if (status && !d.retained) return {WVKernelStatusCode::fftPlanFailure,"Provider returned an empty retained plan."};
+        }
+        if (d.full || !d.retained) {
+            const auto planes = d.full ? data_->spec.grid.planes : 1;
+            d.real.resize(product(data_->planeSize,planes));
+            d.half.resize(product(data_->halfSize,planes));
+            auto status = data_->engine->createPlan(fftSpecification(*data_,false,d.full),d.forward);
+            if (!status) return status;
+            status = data_->engine->createPlan(fftSpecification(*data_,true,d.full),d.inverse);
+            if (!status) return status;
+            if (!d.forward || !d.inverse) return {WVKernelStatusCode::fftPlanFailure,"Provider returned an empty plan."};
+        }
         result = std::move(w); return WVKernelStatus::ok();
     } catch (const std::bad_alloc&) { return {WVKernelStatusCode::allocationFailure,"Horizontal workspace allocation failed."}; }
 }
@@ -148,7 +180,22 @@ WVKernelStatus WVRetainedHorizontalOperator::forward(WVRetainedHorizontalWorkspa
     if (w.owner != data_) return {WVKernelStatusCode::invalidConfiguration,"Workspace belongs to another horizontal operator."};
     auto status = validateHorizontalBuffers(d,input,output.input()); if (!status) return status;
     ActiveCall guard(w.active); if (!guard.entered) return {WVKernelStatusCode::reentrantExecution,"Horizontal workspace is active."};
+    if (w.retained) return w.retained->forward(input,output);
     const auto& g = d.spec.grid; const auto& l = d.spec.retained;
+    if (!w.full) {
+        for (std::size_t p = 0; p < g.planes; ++p) {
+            for (std::size_t y = 0; y < g.Ny; ++y) for (std::size_t x = 0; x < g.Nx; ++x)
+                w.real[y*g.Nx+x] = input.data[p*g.planeStride+y*g.yStride+x*g.xStride];
+            status = w.forward->execute(w.real.data(),w.half.data()); if (!status) return status;
+            for (std::size_t mode = 0; mode < d.mapping.size(); ++mode) {
+                const auto& map = d.mapping[mode]; auto value = w.half[map.row];
+                value.real *= d.forwardScale; value.imag *= map.conjugate ? -d.forwardScale : d.forwardScale;
+                if (map.self) value.imag = 0;
+                write(output,p*l.rowStride+mode*l.columnStride,value);
+            }
+        }
+        return WVKernelStatus::ok();
+    }
     for (std::size_t p = 0; p < g.planes; ++p) for (std::size_t y = 0; y < g.Ny; ++y) for (std::size_t x = 0; x < g.Nx; ++x)
         w.real[p*d.planeSize+y*g.Nx+x] = input.data[p*g.planeStride+y*g.yStride+x*g.xStride];
     status = w.forward->execute(w.real.data(),w.half.data()); if (!status) return status;
@@ -170,6 +217,22 @@ WVKernelStatus WVRetainedHorizontalOperator::inverse(WVRetainedHorizontalWorkspa
     for (std::size_t mode = 0; mode < d.mapping.size(); ++mode) if (d.mapping[mode].self)
         for (std::size_t p = 0; p < g.planes; ++p) if (read(input,p*l.rowStride+mode*l.columnStride).imag != 0)
             return {WVKernelStatusCode::invalidConfiguration,"Self-conjugate Fourier values must be real."};
+    if (w.retained) return w.retained->inverse(input,output);
+    if (!w.full) {
+        for (std::size_t p = 0; p < g.planes; ++p) {
+            std::fill(w.half.begin(),w.half.end(),WVComplex64{});
+            for (std::size_t mode = 0; mode < d.mapping.size(); ++mode) {
+                const auto& map = d.mapping[mode]; auto value = read(input,p*l.rowStride+mode*l.columnStride);
+                if (map.conjugate) value.imag = -value.imag;
+                w.half[map.row] = value;
+                if (map.partner != map.row) w.half[map.partner] = {value.real,-value.imag};
+            }
+            status = w.inverse->execute(w.half.data(),w.real.data()); if (!status) return status;
+            for (std::size_t y = 0; y < g.Ny; ++y) for (std::size_t x = 0; x < g.Nx; ++x)
+                output.data[p*g.planeStride+y*g.yStride+x*g.xStride] = d.inverseScale*w.real[y*g.Nx+x];
+        }
+        return WVKernelStatus::ok();
+    }
     std::fill(w.half.begin(),w.half.end(),WVComplex64{});
     for (std::size_t mode = 0; mode < d.mapping.size(); ++mode) for (std::size_t p = 0; p < g.planes; ++p) {
         const auto& map = d.mapping[mode]; auto value = read(input,p*l.rowStride+mode*l.columnStride);
@@ -184,6 +247,7 @@ WVKernelStatus WVRetainedHorizontalOperator::inverse(WVRetainedHorizontalWorkspa
 }
 WVKernelStatus WVRetainedHorizontalOperator::spatialDerivative(WVRetainedHorizontalWorkspace& workspace, WVRealInput input, WVRealOutput output, bool xDerivative) const {
     auto& w = *workspace.data_; const auto& d = *data_;
+    if (!w.full) return {WVKernelStatusCode::unsupportedOperation,"Workspace omitted full-grid derivative preparation."};
     if (w.owner != data_) return {WVKernelStatusCode::invalidConfiguration,"Workspace belongs to another horizontal operator."};
     if (input.bytes < d.realSpan || output.bytes < d.realSpan) return {WVKernelStatusCode::invalidShape,"Derivative grid capacity is too small."};
     if (!addressFits(input.data,d.realSpan,alignof(double)) || !addressFits(output.data,d.realSpan,alignof(double)))

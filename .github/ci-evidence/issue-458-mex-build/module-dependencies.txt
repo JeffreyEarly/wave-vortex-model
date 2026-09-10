@@ -1,0 +1,10 @@
+/private/tmp/wvm458-public-build-export/wv_compiled_backend_mex.mexmaca64:
+	/System/Library/Frameworks/Cocoa.framework/Versions/A/Cocoa (compatibility version 1.0.0, current version 24.0.0)
+	/private/tmp/wvm458-public-build-export/.compiled-backend-cache/provider/native-neon-pthreads/lib/libfftw3_threads.3.dylib (compatibility version 11.0.0, current version 11.11.0)
+	/private/tmp/wvm458-public-build-export/.compiled-backend-cache/provider/native-neon-pthreads/lib/libfftw3.3.dylib (compatibility version 11.0.0, current version 11.11.0)
+	@rpath/libmx.dylib (compatibility version 0.0.0, current version 0.0.0, weak)
+	@rpath/libmex.dylib (compatibility version 0.0.0, current version 0.0.0, weak)
+	@rpath/libmat.dylib (compatibility version 0.0.0, current version 0.0.0, weak)
+	@rpath/libMatlabDataArray.dylib (compatibility version 0.0.0, current version 0.0.0, weak)
+	/usr/lib/libc++.1.dylib (compatibility version 1.0.0, current version 2100.43.0)
+	/usr/lib/libSystem.B.dylib (compatibility version 1.0.0, current version 1356.0.0)

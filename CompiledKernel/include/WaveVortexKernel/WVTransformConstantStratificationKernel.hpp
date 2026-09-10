@@ -6,7 +6,28 @@
 #include <vector>
 
 namespace wavevortex {
-namespace kernel_detail { class WVPreparedModeExecutor; }
+namespace kernel_detail { class WVPreparedModeExecutor; struct WVCompactConstantSchedule; }
+
+// Experimental schedule selection is an explicit construction policy, never
+// mutable process state or part of the scientific checkpoint identity.
+enum class WVConstantNonlinearFluxSchedule { frozenStreamed, compactCandidate };
+struct WVConstantKernelExecutionOptions {
+#if defined(WV_KERNEL_COMPACT_CONSTANT_CANDIDATE) && WV_KERNEL_COMPACT_CONSTANT_CANDIDATE
+    WVConstantNonlinearFluxSchedule schedule = WVConstantNonlinearFluxSchedule::compactCandidate;
+#else
+    WVConstantNonlinearFluxSchedule schedule = WVConstantNonlinearFluxSchedule::frozenStreamed;
+#endif
+#if defined(WV_KERNEL_COMPACT_HORIZONTAL_WORKERS)
+    std::size_t horizontalOuterWorkers = WV_KERNEL_COMPACT_HORIZONTAL_WORKERS;
+#else
+    std::size_t horizontalOuterWorkers = 12;
+#endif
+#if defined(WV_KERNEL_COMPACT_POINTWISE_WORKERS)
+    std::size_t pointwiseWorkers = WV_KERNEL_COMPACT_POINTWISE_WORKERS;
+#else
+    std::size_t pointwiseWorkers = 12;
+#endif
+};
 
 enum class WVLaplacianDirection : std::uint8_t { horizontal, vertical };
 
@@ -49,7 +70,7 @@ struct WVKernelMetrics {
 
 class WVTransformConstantStratificationKernel {
 public:
-    static WVKernelStatus create(const WVTransformConstantStratificationConfiguration& configuration, std::unique_ptr<WVFFTEngine> engine, std::unique_ptr<WVTransformConstantStratificationKernel>& kernel);
+    static WVKernelStatus create(const WVTransformConstantStratificationConfiguration& configuration, std::unique_ptr<WVFFTEngine> engine, std::unique_ptr<WVTransformConstantStratificationKernel>& kernel, WVConstantKernelExecutionOptions options = {});
 
     ~WVTransformConstantStratificationKernel();
     WVTransformConstantStratificationKernel(const WVTransformConstantStratificationKernel&) = delete;
@@ -67,6 +88,10 @@ public:
     const char* inverseNormalizationPlacementIdentifier() const noexcept;
     const char* optimizationImplementationIdentifier() const noexcept;
     std::size_t coefficientWorkerCount() const noexcept;
+    std::size_t pointwiseWorkerCount() const noexcept;
+    std::size_t retainedHorizontalWorkerCount() const noexcept;
+    const char* retainedHorizontalScheduleIdentifier() const noexcept;
+    std::size_t verticalExecutionRowCount() const noexcept;
     std::size_t phaseReservationBytes() const noexcept;
     void setStageInstrumentation(bool enabled) noexcept;
     std::size_t persistentBytes() const noexcept;
@@ -104,20 +129,26 @@ private:
     WVKernelStatus transformUVEtaToWaveVortexImpl(const WVRealFieldBundleConstView& fields, double t, double t0, WVMutableCoefficients& coefficients, WVComplexConstView phaseValues = {});
     WVKernelStatus transformUVWEtaToWaveVortexImpl(const WVRealFieldBundleConstView& fields, double t, double t0, WVMutableCoefficients& coefficients, WVComplexConstView phaseValues = {});
     WVKernelStatus transformWaveVortexToUVWEtaImpl(const WVState& state, WVRealFieldBundleView& fields, const WVCoefficients* evolvedCoefficients = nullptr);
-    WVKernelStatus transformWaveVortexToUVWImpl(const WVState& state, WVRealFieldBundleView& fields, const WVCoefficients* evolvedCoefficients, WVComplexConstView phaseValues = {});
+    WVKernelStatus transformWaveVortexToUVWImpl(const WVState& state, WVRealFieldBundleView& fields, const WVCoefficients* evolvedCoefficients, WVComplexConstView phaseValues = {}, WVComplex64* generatedPhase = nullptr);
     WVKernelStatus transformToSpatialDomainWithDerivativesImpl(const WVCoefficients& evolvedCoefficients, std::size_t target, WVRealFieldBundleView& derivatives);
-    WVKernelStatus transformToSpatialDomainWithDerivativesFromStateImpl(const WVState& state, WVComplexConstView phaseValues, std::size_t target, WVRealFieldBundleView& derivatives);
+    WVKernelStatus transformToSpatialDomainWithDerivativesFromStateImpl(const WVState& state, WVComplexConstView phaseValues, std::size_t target, WVRealFieldBundleView& derivatives, WVComplex64* generatedPhase = nullptr);
     WVKernelStatus projectSingleFluxTargetImpl(const WVRealFieldBundleConstView& field, std::size_t target, WVComplexConstView phaseValues, WVFlux& flux);
     WVKernelStatus nonlinearFluxImpl(const WVState& state, WVFlux& flux, WVRealFieldBundleView* advectionFields, bool advectionFieldsPrepared = false,
         WVRealFieldBundleView* spatialTendency = nullptr, bool projectFlux = true);
     WVKernelStatus ensureScalarInversePlan();
+    WVKernelStatus ensureScalarPlans();
+    WVKernelStatus prepareCompactScalarDerivatives(const WVRealVolumeConstView& scalar, bool sine);
+    WVFFTPlan* scalarPlan(std::size_t index) const noexcept;
+    const WVHalfSpectrumMappings& executionMapping() const noexcept;
+    std::size_t executionRowCount() const noexcept;
     WVKernelStatus antialiasScalarInPlace(WVRealVolumeView& scalar);
     WVTransformConstantStratificationDescriptor descriptor_;
-    std::unique_ptr<WVFFTEngine> engine_;
+    std::shared_ptr<WVFFTEngine> engine_;
     std::string engineIdentifier_;
     std::string engineLibraryIdentity_;
     std::vector<std::unique_ptr<WVFFTPlan>> plans_;
     std::unique_ptr<WVFFTPlan> scalarInversePlan_;
+    std::unique_ptr<kernel_detail::WVCompactConstantSchedule> compact_;
     std::vector<std::uint8_t> scalarAntialiasRows_;
     std::vector<double> halfSpectrumScratch_;
     std::vector<double> realScratch_;
