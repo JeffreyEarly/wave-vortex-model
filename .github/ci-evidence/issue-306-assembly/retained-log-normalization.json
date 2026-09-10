@@ -1,0 +1,56 @@
+{
+  "schema": "wvm-retained-log-normalization-v1",
+  "operation": "Strip trailing line whitespace and final blank lines; preserve substantive output.",
+  "artifacts": [
+    {
+      "path": ".github/ci-evidence/issue-306-assembly/source-manifest-tests.log",
+      "rawSHA256": "5f22b738e7a5af531ccdece5a47dff82669c2d999e7bcfa43a6d052c79ab7d25",
+      "retainedSHA256": "706b57cfc85bc5bb30e4186f064f088fe0fa50152dd493345a72164ffad7f0b9"
+    },
+    {
+      "path": ".github/ci-evidence/issue-306-assembly/documentation-analyzer.log",
+      "rawSHA256": "ddeb43a5a327444c0030cf80c0103b1ca316104f835c207c1b11860a34d39835",
+      "retainedSHA256": "969f363732adf00e677c335541a0abf5c6213cdfd8d7c1541253337af9f46ebf"
+    },
+    {
+      "path": ".github/ci-evidence/issue-306-sampling/code-analyzer.log",
+      "rawSHA256": "7ce382b07a1ab960e97b25ba78982fe5b0381718c158d04f166427558a6a0572",
+      "retainedSHA256": "3d1245a1fab1c89a398226a21511ecc90dabf26672b0c7c9c8223332ae5f0c9b"
+    },
+    {
+      "path": ".github/ci-evidence/issue-306-sampling/existing-release-focused.log",
+      "rawSHA256": "28b456f7b08e54c376a19b4db7baece52865fa2c70e9e8f3f41bd891d39e0f55",
+      "retainedSHA256": "5a87db8122feab88011aced20c870bc9b64e7b44f8d40b1d75fd1b3321075e43"
+    },
+    {
+      "path": ".github/ci-evidence/issue-306-sampling/existing-release-reference.log",
+      "rawSHA256": "17a937fb950f9b337ce0d9ee18284647d5e775716b7bf66dd67b22fe416a11ed",
+      "retainedSHA256": "1dfa7db8b8c83eb75a1867bbe3fd1d1da205208528fa26cdaa872ad3efa75d41"
+    },
+    {
+      "path": ".github/ci-evidence/issue-306-sampling/release-focused.log",
+      "rawSHA256": "348c0caa79c1d2e13a4aa9e9f22b694a81946c9dacef63fac38f42356eff8551",
+      "retainedSHA256": "d2693910ec60aaa05ddb1038a0c36359bbd361d06b74a844a987c3e7ccaf0e0d"
+    },
+    {
+      "path": ".github/ci-evidence/issue-306-sampling/release-final.log",
+      "rawSHA256": "689b3759bf9964a4ab72cabbc81339e37d60dfa0f128a42754758fc18b29f6d0",
+      "retainedSHA256": "64bac434c7d8cd620ff566293ce034cda3580b5c94dd142d3f226234fff32649"
+    },
+    {
+      "path": ".github/ci-evidence/issue-306-sampling/release-matlab.log",
+      "rawSHA256": "85a8b440e88880606b4041aac1a3c545094b713a72747139855a2a84d70b5883",
+      "retainedSHA256": "d7f5bc83bc899db4850b4da78fe400db7fba6384821cc49fab8c9753ff03170a"
+    },
+    {
+      "path": ".github/ci-evidence/issue-306-sampling/sanitized-reference.log",
+      "rawSHA256": "7ec0f17798a3bfd090294a66a7182b981889485af76ff46b31da8e2b6268e337",
+      "retainedSHA256": "de15c4048190a45c9e91c21efa4baf2c406730363ae4febfe3a93b482058fb3c"
+    },
+    {
+      "path": ".github/ci-evidence/issue-306-sampling/sanitized-final.log",
+      "rawSHA256": "3d35035d75cbc215f1cef225c004f58affec49ade86521bf15dcbffc533ffd42",
+      "retainedSHA256": "15f93a71ab427c14eedc81f542fe50c54b2959b4eed95bd185b0220289c99eae"
+    }
+  ]
+}

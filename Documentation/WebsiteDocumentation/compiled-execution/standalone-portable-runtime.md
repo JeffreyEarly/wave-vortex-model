@@ -49,11 +49,11 @@ If the native provider is unavailable, the runner stops with build instructions 
 
 ## Supported scientific workflow
 
-The runtime supports hydrostatic and nonhydrostatic constant stratification and equivalent-barotropic QG. It preserves compact QG `A0` storage and supports fixed RK4 plus MATLAB-compatible `ode23`, `ode45`, and `ode78`, including their method-owned continuous output.
+The runtime supports all five transform families, including hydrostatic and nonhydrostatic constant stratification. It preserves each transform's coefficient layout and supports explicit or CFL-selected RK4 plus MATLAB-compatible `ode23`, `ode45`, and `ode78`, including continuous output.
 
-The qualified forcing set includes nonlinear advection, adaptive damping, fixed and narrow-band amplitudes, linear and quadratic bottom friction, beta-plane PV advection, and constant-stratification pseudo-topographic wave generation where transform-valid. Supported model graphs may contain coefficients, Eulerian fields, constant-stratification moorings, particles, and tracers within the documented transform-specific limits. Multi-file and named-group schedules are authored in MATLAB and executed without restating the science in JSON.
+All twelve stable supplied forcing identities are implemented where MATLAB permits them. The five built-in observing systems support transform-specific coefficient, field, mooring, particle, and tracer layouts. Multi-file and named-group schedules are authored in MATLAB and executed without restating the science in JSON. The [generated compatibility matrix](https://github.com/JeffreyEarly/wave-vortex-model/blob/main/PortableRuntime/COMPATIBILITY.md) identifies exact support, sampling restrictions, intentional incompatibilities, and their test fixtures.
 
-Unsupported transforms, arbitrary MATLAB subclasses, three-dimensional QG particles or tracers, QG moorings, later closures, dynamic plug-ins, and Windows/MSVC builds are rejected. The portable C++ extension boundary is source-compatible, not a binary plug-in ABI.
+Arbitrary MATLAB subclass or function-handle execution, backward integration, dynamic plug-ins, distributed binaries, and Windows/MSVC qualification remain outside this surface. Opaque MATLAB stratification functions remain preserved restart provenance. C++ extensions are compiled with the selected source checkout and have no binary plug-in ABI.
 
 ## Build and continue
 

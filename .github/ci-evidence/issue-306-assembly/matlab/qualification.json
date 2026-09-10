@@ -1,0 +1,167 @@
+{
+  "schema": "wave-vortex-standard-compatibility-matlab-qualification-v1",
+  "schemaVersion": 1,
+  "scope": "standard-assembly-and-constant-observer-fixtures",
+  "status": "complete-with-tracked-implementation-gaps",
+  "sourceCommitAtFinalAssembly": "ec8001a44670e1c7dc04312c1f35349606b5d61a",
+  "sourceRoot": "/Users/jearly/Documents/OceanKitRepositories/wvm-v4-cpp-adoption-audit",
+  "sourceContext": "Working-tree authoring changes are bound by file digests. This is focused assembly/observer evidence; it does not relabel the historical leaf numerical campaigns as fresh.",
+  "matrix": {
+    "path": "PortableRuntime/contracts/portable-compatibility-matrix-v1.json",
+    "sha256": "3082cead3726ac946bc20005c6cace4f28c1bbbc6ffa390d418593f7bf229321",
+    "rows": 1794,
+    "witnesses": 74,
+    "statusCounts": {
+      "supported": 1206,
+      "intentional-incompatibility": 22,
+      "unqualified": 566
+    },
+    "gapReasons": {
+      "matlab-supported-sampling-not-implemented": 526,
+      "matlab-supported-moving-sampling-not-implemented": 40
+    },
+    "allGapIssues": [
+      454
+    ],
+    "standardParityReady": false
+  },
+  "verificationLedger": [
+    {
+      "gate": "initial six structural methods",
+      "passed": 6,
+      "failed": 0,
+      "context": "Initial bindings; validator mutation logic subsequently unchanged. Batch stopped at four new Code Analyzer findings, later fixed."
+    },
+    {
+      "gate": "expanded matlabModelGraphRoundTripsThroughStandalone",
+      "passed": 1,
+      "failed": 0,
+      "cases": [
+        "constant-nonhydrostatic-aa0",
+        "constant-hydrostatic-aa0"
+      ],
+      "context": "Existing coefficient, forcing/observer graph, particle and tracer comparisons preserved; added Eulerian and mooring output-series comparison. Explicit reference runner; no runtime timing claim."
+    },
+    {
+      "gate": "generated-byte comparison during concurrent sampling edit",
+      "passed": 1,
+      "failed": 1,
+      "context": "Authority test passed, generated-byte check detected the witness source edit. The numerical sampling test itself did not fail here. Concise retained digest mismatch replaces the full JSON dump."
+    },
+    {
+      "gate": "final affected structural methods",
+      "passed": 3,
+      "failed": 0,
+      "methods": [
+        "authoritativeInventoryAndTrackedGaps",
+        "generatedAssemblyMatchesCommittedFiles",
+        "movingSamplingStagesRemainExplicit"
+      ],
+      "seconds": 15.9645
+    },
+    {
+      "gate": "Code Analyzer",
+      "newAuthoringFilesFindings": 0,
+      "runtimeTestClassPreexistingFindings": [
+        {
+          "id": "NASGU",
+          "line": 127,
+          "reason": "Existing unused outputFile variable in untouched linearAdaptiveGraphRoundTripsThroughStandalone; no introduced warning."
+        }
+      ]
+    },
+    {
+      "gate": "current source digests and CI fixture registration",
+      "passed": true,
+      "rows": 1794,
+      "witnesses": 74
+    }
+  ],
+  "observerOutputComparison": {
+    "relativeTolerance": 1e-10,
+    "constantNonhydrostatic": {
+      "u": 3.9078819788117425e-16,
+      "mooring_u": 2.6052547700781005e-16
+    },
+    "constantHydrostatic": {
+      "u": 3.9068427820240997e-16,
+      "mooring_u": 2.604562009476441e-16
+    }
+  },
+  "executionBinary": {
+    "role": "observer-reference-runner",
+    "path": "/private/tmp/wvm-v4-audit-runtime/wave-vortex-run",
+    "sha256": "6f57eba3d803c79898a63856d9e6c91b7a0b7907ae045fcd3c8ff1473de2f8d1",
+    "provenance": "Coordinator-supplied existing root runner. The prerequisite endpoint repair changed MATLAB inverse code only; no C++ production rebuild or new numerical provider is claimed here."
+  },
+  "sourceSHA256": [
+    {
+      "path": "tools/portableCompatibilityDefinition.m",
+      "sha256": "492ac0649054af99700439cb7d5905012091e292b4b0b57389261d5e1e4dbbaa"
+    },
+    {
+      "path": "tools/portableCompatibilitySHA256.m",
+      "sha256": "fbb2faae5109d8e9f77e2d75fa04cb03ff53e9cd780ac7aa01bc904680402f76"
+    },
+    {
+      "path": "tools/validatePortableCompatibilityMatrix.m",
+      "sha256": "1b6b8c9a9afac74f572d0b1f3994a162f6e72655dfe62229d1e06ea328c61a3c"
+    },
+    {
+      "path": "tools/generatePortableCompatibilityMatrix.m",
+      "sha256": "41cea802a4126504d1f548f980c9835bd797170320f42b25b9641a59d3d0387c"
+    },
+    {
+      "path": "UnitTests/TestPortableCompatibilityMatrix.m",
+      "sha256": "f625f173ddab263d3896b929a886b512930565e48d234ec64ec8b5a9f2f2aec2"
+    },
+    {
+      "path": "UnitTests/TestPortableRuntimeCompatibility.m",
+      "sha256": "03023b18fa0ce71737508c654a0961fe849e8ff386cf859a2ef3a7c6c834f217"
+    },
+    {
+      "path": "UnitTests/TestPortableFieldSamplingMatrix.m",
+      "sha256": "a98857548d6c860f63a6d9f2dcc2d7d5bdd744ee0888f1fa409d1e403ec4d51f"
+    },
+    {
+      "path": "PortableRuntime/contracts/portable-compatibility-matrix-v1.json",
+      "sha256": "3082cead3726ac946bc20005c6cace4f28c1bbbc6ffa390d418593f7bf229321"
+    },
+    {
+      "path": "PortableRuntime/COMPATIBILITY.md",
+      "sha256": "bb8ec400f2fa0102de2f37f21e3ea4df31627b718781b40edc0aabd8950bd5f1"
+    }
+  ],
+  "artifacts": [
+    {
+      "path": ".github/ci-evidence/issue-306-assembly/matlab/concurrent-source-change.log",
+      "sha256": "da430f94c385df7228ce76ab3204adb3852b95f24bc470143ed70a5a053b76a1"
+    },
+    {
+      "path": ".github/ci-evidence/issue-306-assembly/matlab/final-structural.log",
+      "sha256": "f9b3830a7792c52eec1de8e1bbed26bb32351a45124094fbfd8019355c6a8bfa"
+    },
+    {
+      "path": ".github/ci-evidence/issue-306-assembly/matlab/initial-structural.log",
+      "sha256": "d140561514165845dba34d80b7c1de0a7055bd8be08b5199fcd05f76990e7021"
+    },
+    {
+      "path": ".github/ci-evidence/issue-306-assembly/matlab/log-normalization.json",
+      "sha256": "5674fccd203c15b7c278cc1745ed3c61468477dc537867ff71b32c979a4dd627"
+    },
+    {
+      "path": ".github/ci-evidence/issue-306-assembly/matlab/observer-graphs.log",
+      "sha256": "2eb0969ec03361feb749fa4b31cfe0bbcaa762f7c29d1451127a26f4ff6baf06"
+    }
+  ],
+  "additionalIterationNotes": [
+    {
+      "iteration": "initial setup",
+      "result": "Failed before scientific work because run() changed cwd to /private/tmp, where an unrelated stale class shadowed the repository geometry class. Fixed by cd(root) in the local driver; no production change."
+    },
+    {
+      "iteration": "intermediate analyzer after successful byte comparison",
+      "result": "One newly unused refs initializer was removed after sampling-map simplification. Final generator and affected tests subsequently reran successfully."
+    }
+  ]
+}

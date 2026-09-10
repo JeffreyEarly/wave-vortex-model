@@ -58,51 +58,64 @@ classdef TestPortableRuntimeCompatibility < matlab.unittest.TestCase
         end
 
         function matlabModelGraphRoundTripsThroughStandalone(testCase)
-            sourcePath = fullfile(testCase.TemporaryFolder,"matlab-model.nc");
-            controlPath = fullfile(testCase.TemporaryFolder,"matlab-control.nc");
-            source = testCase.createNonlinearModel(sourcePath);
-            source.integrateToTime(1e-4,shouldShowIntegrationDiagnostics=false,callback=@(~)[]);
-            source.closeNetCDFFile();
-            copyfile(sourcePath,controlPath)
+            for isHydrostatic = [false true]
+                caseFolder = fullfile(testCase.TemporaryFolder,"model-graph-h"+double(isHydrostatic));
+                mkdir(caseFolder);
+                sourcePath = fullfile(caseFolder,"matlab-model.nc");
+                controlPath = fullfile(caseFolder,"matlab-control.nc");
+                source = testCase.createNonlinearModel(sourcePath,isHydrostatic);
+                source.integrateToTime(1e-4,shouldShowIntegrationDiagnostics=false,callback=@(~)[]);
+                source.closeNetCDFFile();
+                copyfile(sourcePath,controlPath)
 
-            command = shellQuote(testCase.Runner) + " " + shellQuote(sourcePath) + ...
-                " --restart-mode model --output-policy append" + ...
-                " --delta-t 1e-4 --final-time 2e-4 --fft-provider reference";
-            [status,output] = systemWithoutMatlabRuntime(command);
-            testCase.assertEqual(status,0,output)
-            report = jsondecode(output);
-            testCase.verifyEqual(string(report.status),"complete")
-            testCase.verifyEqual(string(report.restartMode),"model")
-            testCase.verifyEqual(string(report.outputPolicy),"append")
-            testCase.verifySubstring(string(report.execution.schedule),"WVBottomFrictionLinear")
-            testCase.verifyTrue(report.execution.noFallback)
-            testCase.verifyGreaterThan(report.forcingOperations.physicalFieldReconstructionCount,0)
-            testCase.verifyEqual(report.forcingOperations.physicalFieldReconstructionCount,report.forcingOperations.evaluationCount)
-            testCase.verifyGreaterThanOrEqual(report.forcingOperations.physicalFieldReuseCount,2*report.forcingOperations.evaluationCount)
-            testCase.verifyEqual(report.forcingOperations.spatialTendencyProjectionCount,2*report.forcingOperations.physicalFieldReconstructionCount)
-            testCase.verifyGreaterThan(report.forcingOperations.spatialTendencyClearElementWrites,0)
+                command = shellQuote(testCase.Runner) + " " + shellQuote(sourcePath) + ...
+                    " --restart-mode model --output-policy append" + ...
+                    " --delta-t 1e-4 --final-time 2e-4 --fft-provider reference";
+                [status,output] = systemWithoutMatlabRuntime(command);
+                testCase.assertEqual(status,0,output)
+                report = jsondecode(output);
+                testCase.verifyEqual(string(report.status),"complete")
+                testCase.verifyEqual(string(report.restartMode),"model")
+                testCase.verifyEqual(string(report.outputPolicy),"append")
+                testCase.verifySubstring(string(report.execution.schedule),"WVBottomFrictionLinear")
+                testCase.verifyTrue(report.execution.noFallback)
+                testCase.verifyGreaterThan(report.forcingOperations.physicalFieldReconstructionCount,0)
+                testCase.verifyEqual(report.forcingOperations.physicalFieldReconstructionCount,report.forcingOperations.evaluationCount)
+                testCase.verifyGreaterThanOrEqual(report.forcingOperations.physicalFieldReuseCount,2*report.forcingOperations.evaluationCount)
+                testCase.verifyEqual(report.forcingOperations.spatialTendencyProjectionCount,2*report.forcingOperations.physicalFieldReconstructionCount)
+                testCase.verifyGreaterThan(report.forcingOperations.spatialTendencyClearElementWrites,0)
 
-            runtimeModel = WVModel.modelFromFile(char(sourcePath));
-            runtimeCleanup = onCleanup(@()runtimeModel.closeNetCDFFile());
-            controlModel = WVModel.modelFromFile(char(controlPath));
-            controlCleanup = onCleanup(@()controlModel.closeNetCDFFile());
-            controlModel.setupIntegrator(integratorType="fixed",deltaT=1e-4);
-            controlModel.integrateToTime(2e-4,shouldShowIntegrationDiagnostics=false,callback=@(~)[]);
+                runtimeModel = WVModel.modelFromFile(char(sourcePath));
+                runtimeCleanup = onCleanup(@()runtimeModel.closeNetCDFFile());
+                controlModel = WVModel.modelFromFile(char(controlPath));
+                controlCleanup = onCleanup(@()controlModel.closeNetCDFFile());
+                controlModel.setupIntegrator(integratorType="fixed",deltaT=1e-4);
+                controlModel.integrateToTime(2e-4,shouldShowIntegrationDiagnostics=false,callback=@(~)[]);
 
-            testCase.verifyModelGraphsEqual(runtimeModel,controlModel)
-            testCase.verifyEqual(runtimeModel.wvt.Ap,controlModel.wvt.Ap,AbsTol=1e-12)
-            testCase.verifyEqual(runtimeModel.wvt.Am,controlModel.wvt.Am,AbsTol=1e-12)
-            testCase.verifyEqual(runtimeModel.wvt.A0,controlModel.wvt.A0,AbsTol=1e-12)
-            [runtimeX,runtimeY,runtimeZ] = runtimeModel.floatPositions();
-            [controlX,controlY,controlZ] = controlModel.floatPositions();
-            testCase.verifyEqual(runtimeX,controlX,AbsTol=1e-8)
-            testCase.verifyEqual(runtimeY,controlY,AbsTol=1e-8)
-            testCase.verifyEqual(runtimeZ,controlZ,AbsTol=1e-10)
-            testCase.verifyEqual(runtimeModel.tracer("dye"),controlModel.tracer("dye"),AbsTol=1e-8)
-            testCase.verifyEqual(runtimeModel.outputFileWithName("matlab-model.nc").outputGroupWithName("wave-vortex").incrementsWrittenToGroup,uint64(3))
-            testCase.verifyEqual(runtimeModel.outputFileWithName("matlab-model.nc").outputGroupWithName("particles").incrementsWrittenToGroup,uint64(3))
-            testCase.verifyEqual(runtimeModel.outputFileWithName("matlab-model.nc").outputGroupWithName("tracers").incrementsWrittenToGroup,uint64(3))
-            clear runtimeCleanup controlCleanup
+                testCase.verifyModelGraphsEqual(runtimeModel,controlModel)
+                testCase.verifyEqual(runtimeModel.wvt.Ap,controlModel.wvt.Ap,AbsTol=1e-12)
+                testCase.verifyEqual(runtimeModel.wvt.Am,controlModel.wvt.Am,AbsTol=1e-12)
+                testCase.verifyEqual(runtimeModel.wvt.A0,controlModel.wvt.A0,AbsTol=1e-12)
+                [runtimeX,runtimeY,runtimeZ] = runtimeModel.floatPositions();
+                [controlX,controlY,controlZ] = controlModel.floatPositions();
+                testCase.verifyEqual(runtimeX,controlX,AbsTol=1e-8)
+                testCase.verifyEqual(runtimeY,controlY,AbsTol=1e-8)
+                testCase.verifyEqual(runtimeZ,controlZ,AbsTol=1e-10)
+                testCase.verifyEqual(runtimeModel.tracer("dye"),controlModel.tracer("dye"),AbsTol=1e-8)
+                testCase.verifyEqual(runtimeModel.outputFileWithName("matlab-model.nc").outputGroupWithName("wave-vortex").incrementsWrittenToGroup,uint64(3))
+                testCase.verifyEqual(runtimeModel.outputFileWithName("matlab-model.nc").outputGroupWithName("particles").incrementsWrittenToGroup,uint64(3))
+                testCase.verifyEqual(runtimeModel.outputFileWithName("matlab-model.nc").outputGroupWithName("tracers").incrementsWrittenToGroup,uint64(3))
+                clear runtimeCleanup controlCleanup
+                for name = ["u","mooring_u"]
+                    actual = ncread(sourcePath,"/wave-vortex/"+name);
+                    expected = ncread(controlPath,"/wave-vortex/"+name);
+                    scale = max(abs(expected),[],"all");
+                    testCase.verifyGreaterThan(scale,0)
+                    relativeError = max(abs(actual-expected),[],"all")/scale;
+                    testCase.verifyLessThanOrEqual(relativeError,1e-10,name)
+                    fprintf("OBSERVER_GRAPH_COMPARISON hydrostatic=%d field=%s relativeError=%.17g\n",isHydrostatic,name,relativeError);
+                end
+            end
         end
 
         function linearAdaptiveGraphRoundTripsThroughStandalone(testCase)
@@ -953,9 +966,10 @@ classdef TestPortableRuntimeCompatibility < matlab.unittest.TestCase
     end
 
     methods (Access = private)
-        function model = createNonlinearModel(testCase,path)
+        function model = createNonlinearModel(testCase,path,isHydrostatic)
+            if nargin < 3, isHydrostatic = false; end
             wvt = WVTransformConstantStratification([4000 3000 1000],[8 6 5], ...
-                N0=sqrt(2e-5),latitude=45,isHydrostatic=false,shouldAntialias=false);
+                N0=sqrt(2e-5),latitude=45,isHydrostatic=isHydrostatic,shouldAntialias=false);
             wvt.Ap(2) = 2e-6 + 1e-6i;
             wvt.Am(3) = -1e-6 + 0.5e-6i;
             wvt.A0(4) = 0.75e-6i;

@@ -29,6 +29,10 @@ Source API versioning is independent from exact data contracts. `wave-vortex-por
 
 The portable reference runtime and source-linked consumers are qualified on Ubuntu with GCC or Clang and on macOS with AppleClang. The optimized native FFTW runner is Apple-silicon-only. Windows/MSVC source-linked builds are unsupported. The [current AlongTrackSimulator consumer](https://github.com/satmapkit/AlongTrackSimulator/commit/511aa6af9c60353b3de4d371dfe0df43159027cf) supplies the external application-owned catalog and reusable-runner proof. Source API qualification recompiles that consumer against the explicitly selected WaveVortexModel checkout. The older ATS #4 commit recorded in source-selection provenance is a historical baseline, not the current consumer source.
 
+## Standard compatibility matrix
+
+The [generated compatibility matrix](COMPATIBILITY.md) assembles the MATLAB-authoritative forcing, variable, integration, observer, sampling, output, and persistence contracts. It links exact support or rejection records to test fixtures and keeps execution evidence separate from catalog completeness. Final standard-parity qualification is recorded under [issue #307](https://github.com/JeffreyEarly/wave-vortex-model/issues/307).
+
 ## Forward-integration support and evidence
 
 The [forward-integration slice](INTEGRATION.md) records the six transform configurations and five execution profiles: explicit and CFL-selected RK4, RK23, RK45, and RK78. It links each support row to method/configuration witnesses and identifies the representative complete-model continuation cases. Source references establish test coverage; executed qualification receipts separately record outcomes, provider, tolerances, and source provenance. This slice is an input to the complete compatibility matrix under #306.

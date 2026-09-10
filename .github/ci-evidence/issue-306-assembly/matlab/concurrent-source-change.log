@@ -1,0 +1,7 @@
+Generated-byte comparison failed while the sampling witness source was strengthened concurrently.
+Authority validation passed; one generated-byte method failed.
+Only the TestPortableFieldSamplingMatrix.m source digest differed.
+Compared source digests (actual then expected): a98857548d6c860f63a6d9f2dcc2d7d5bdd744ee0888f1fa409d1e403ec4d51f, 8d4a4f1586ceb9a2c5e3015026cb65936360aeaa66e5a4048f4267e19daed90a
+The full duplicate JSON dump remains local at /private/tmp/wvm306-matrix-final.log.
+Raw log SHA256: bce0831f278ca950c11d591cd45a1d53a1df6ec38f33bfb839489ca2958ec980
+No numerical qualification failed in this assembly comparison.

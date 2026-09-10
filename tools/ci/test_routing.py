@@ -3,6 +3,18 @@ from route import select, FAMILIES
 
 
 class RoutingTests(unittest.TestCase):
+    def test_generated_compatibility_documentation_checks_its_source(self):
+        plan = select(['PortableRuntime/COMPATIBILITY.md'])
+        self.assertIn('TestPortableCompatibilityMatrix', plan['matlabTests'])
+        self.assertFalse(plan['cpp'])
+
+    def test_compatibility_assembly_follows_scientific_changes(self):
+        for plan in [select(['PortableRuntime/src/WVModel.cpp']),
+                     select(['CompiledKernel/src/WVTransformHydrostaticKernel.cpp']),
+                     select(['README.md'], complete=True)]:
+            for key in ['matlabTests', 'sanitizedTests']:
+                self.assertIn('TestPortableCompatibilityMatrix', plan[key])
+
     def test_documentation_does_not_build_numerics(self):
         plan = select(['Documentation/WebsiteDocumentation/users-guide/output.md'])
         self.assertTrue(plan['documentation'])

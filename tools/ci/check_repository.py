@@ -16,4 +16,5 @@ for name in paths:
     if path.is_file() and name.startswith('.github/ci-evidence/') and path.suffix == '.json':
         json.loads(path.read_text())
 subprocess.run(['git', 'diff', '--check'], check=True)
+subprocess.run(['python3', 'tools/ci/check_compatibility_matrix.py'], check=True)
 print('Repository boundaries and tracked artifacts pass.')

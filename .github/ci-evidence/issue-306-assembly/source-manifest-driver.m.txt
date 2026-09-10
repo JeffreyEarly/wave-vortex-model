@@ -1,0 +1,8 @@
+root='/Users/jearly/Documents/OceanKitRepositories/wvm-v4-cpp-adoption-audit'; cd(root);
+addpath(fullfile(root,'tools')); configureCIEnvironment(root,'/Users/jearly/Documents/OceanKitRepositories/OceanKit',documentationPackageSpecifier="ClassDocumentation@1.3.2");
+addpath(fullfile(root,'UnitTests'),'-begin');
+results=run(testsuite(fullfile(root,'UnitTests','TestCompiledKernelIntegration.m'))); disp(table(results)); assertSuccess(results);
+for path=["UnitTests/TestCompiledKernelIntegration.m","tools/prepareWaveVortexModelReleaseCandidate.m"]
+ findings=checkcode(fullfile(root,path),'-id'); fprintf('ANALYZER %s %d\n',path,numel(findings)); disp(findings); assert(isempty(findings));
+end
+buildtool docs:build; buildtool docs:check;
