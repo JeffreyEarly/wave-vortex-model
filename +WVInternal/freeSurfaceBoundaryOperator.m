@@ -102,7 +102,11 @@ boundary = struct(dimension=dimension,names=names,apply=@apply,adjoint=@adjoint,
             retained(2:end,meanIndex) = real(spectral(2:end,meanIndex));
             storage = fourier.transformFromWVGridToFourierStorage(fourier.allocateFourierStorage(nTrace),retained);
             storage = fourier.reshapeFourierRowsToStorage(storage);
-            projected = real(ifft(ifft(storage,[],1),[],2))*(wvt.Nx*wvt.Ny);
+            if wvt.conjugateDimension==1
+                projected = ifft(ifft(storage,[],2),[],1,"symmetric")*(wvt.Nx*wvt.Ny);
+            else
+                projected = ifft(ifft(storage,[],1),[],2,"symmetric")*(wvt.Nx*wvt.Ny);
+            end
             discardedRMS = sqrt(mean((samples-projected).^2,'all'));
         end
     end
