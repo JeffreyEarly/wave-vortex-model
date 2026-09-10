@@ -33,6 +33,7 @@ Once the completed model campaign failed the mandatory integration gate, the rem
 - The unchanged current ATS consumer `511aa6af9c60353b3de4d371dfe0df43159027cf` builds against the candidate and passes 7/7 tests.
 - Source-selection smoke tests pass. The author worker's three unused instrumented-output warnings were corrected; its final Code Analyzer run has zero findings.
 - Fresh candidate and actual-default public MEX builds pass numerical, metadata, scratch and lifecycle self-tests. Their detailed receipts are in `../issue-358-compact-correctness`; the pre-existing source-link closure fix is also tracked in #458.
+- Initial hosted CI found stale constant-kernel hashes in the committed six-family forward-integration receipts. A fresh actual-default-OFF runner/probe executed all six lifecycle methods with both providers, passing 12/12 cases. The strict collector refreshed the two aggregate receipts and retained twelve new content-addressed fragments under `PortableRuntime/qualification`; the exact failed receipt-validation test now passes. Neither numerical code nor the validator was changed for this repair.
 
 ## Retained artifacts
 
