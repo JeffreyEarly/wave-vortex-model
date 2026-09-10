@@ -34,7 +34,9 @@ classdef TestCompiledKernelIntegration < matlab.unittest.TestCase
             testCase.verifyEqual(testCase.selection.contract.version,4);
             testCase.verifyEqual(string(testCase.selection.contract.coefficientShape),"[Nj,Nkl]");
             testCase.verifyEqual(testCase.selection.contract.planCount,17);
-            testCase.verifyEqual(string(testCase.selection.contract.knownScratch),"4H+6R");
+            testCase.verifyEqual(string(testCase.selection.contract.knownScratch),"4C+6R");
+            testCase.verifyTrue(testCase.selection.constantSpectralSchedule.productionDefault);
+            testCase.verifyEqual(string(testCase.selection.constantSpectralSchedule.configuredScalarNumericalScratch),"max(4C,H)+6R");
             testCase.verifyEqual(testCase.selection.contract.coefficientWorkers,2);
             testCase.verifyFalse(testCase.selection.contract.persistentFullHermitianSpectrum);
         end

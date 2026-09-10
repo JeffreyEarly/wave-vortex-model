@@ -31,11 +31,18 @@ int main(int argc,char** argv) {
       throw std::runtime_error("Native provider not built.");
 #endif
     } else throw std::runtime_error("Unknown FFT provider.");
+    // Explicit scalar setup precedes the retained-storage baseline. Keep the
+    // borrowed constant kernel alive until after the field service is destroyed.
+    std::unique_ptr<WVTransformConstantStratificationKernel> constantKernel;
     std::unique_ptr<WVFieldEvaluationService> fields;
     if(checkpoint.stratifiedModalSource) require(WVFieldEvaluationService::create(checkpoint.stratifiedModalSource,std::move(fft),fields));
     else if(checkpoint.transformKind==WVPersistedTransformKind::barotropicQG)
       require(WVFieldEvaluationService::create(checkpoint.barotropicQGConfiguration,std::move(fft),fields));
-    else require(WVFieldEvaluationService::create(checkpoint.configuration,std::move(fft),fields));
+    else {
+      require(WVTransformConstantStratificationKernel::create(checkpoint.configuration,std::move(fft),constantKernel));
+      require(constantKernel->prepareScalarAdvection());
+      require(WVFieldEvaluationService::createBorrowing(*constantKernel,fields));
+    }
     WVIntegrationStateLayout layout;require(WVIntegrationStateLayout::createCoefficientOnly(checkpoint.stateDescription,layout));
     std::vector<WVCoefficientFamilyConstView> families;
     std::vector<std::vector<WVComplex64>> before;
@@ -63,7 +70,10 @@ int main(int argc,char** argv) {
       values[i].resize(plan.outputs()[i].elementCount);
       views.push_back({values[i].data(),values[i].size()});
     }
-    const auto retained=fields->persistentBytes()+plan.persistentBytes();
+    const auto retainedBytes=[&] {
+      return fields->persistentBytes()+plan.persistentBytes()+(constantKernel ? constantKernel->persistentBytes() : 0);
+    };
+    const auto retained=retainedBytes();
     {
       detail::WVFieldEvaluationEventScope event(*fields,state,true,false);
       require(event.status());
@@ -92,7 +102,8 @@ int main(int argc,char** argv) {
       {"eventLiveBytes",metrics.eventFieldWorkspaceLiveBytes}};
     result["reference"]=selection;
     result["retainedBytes"]=retained;
-    if(retained!=fields->persistentBytes()+plan.persistentBytes()) throw std::runtime_error("Evaluation retained density scratch.");
+    if(retained!=retainedBytes()) throw std::runtime_error("Evaluation retained density scratch.");
+    if(metrics.densityWorkspaceLiveBytes || metrics.eventFieldWorkspaceLiveBytes) throw std::runtime_error("Evaluation left event scratch live.");
     for(std::size_t i=0;i<before.size();++i)
       if(std::memcmp(before[i].data(),families[i].data,before[i].size()*sizeof(WVComplex64)))
         throw std::runtime_error("Density evaluation modified coefficient state.");
@@ -100,6 +111,9 @@ int main(int argc,char** argv) {
     const auto prior=values;
     require(fields->evaluate(plan,state,views.data(),views.size()));
     if(prior!=values) throw std::runtime_error("Density replay changed values.");
+    if(retained!=retainedBytes()) throw std::runtime_error("Density replay grew retained storage.");
+    if(fields->metrics().densityWorkspaceLiveBytes || fields->metrics().eventFieldWorkspaceLiveBytes)
+      throw std::runtime_error("Density replay left event scratch live.");
     result["replayRecoveryCount"]=fields->metrics().densityRecoveryCount;
     std::ofstream out(argv[3]);out<<result.dump()<<'\n';
   } catch(const std::exception& e) {std::cerr<<e.what()<<'\n';return 1;}

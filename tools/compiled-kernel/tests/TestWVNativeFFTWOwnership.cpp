@@ -50,6 +50,10 @@ extern "C" fftw_plan wv_test_c2r(int rank, const fftw_iodim64* dims, int howmany
     PlannerCall call;
     return fail(failPlan) ? nullptr : retain(fftw_plan_guru64_dft_c2r(rank,dims,howmany,batch,in,out,flags));
 }
+extern "C" fftw_plan wv_test_c2c(int rank, const fftw_iodim64* dims, int howmany, const fftw_iodim64* batch, fftw_complex* in, fftw_complex* out, int sign, unsigned flags) {
+    PlannerCall call;
+    return fail(failPlan) ? nullptr : retain(fftw_plan_guru64_dft(rank,dims,howmany,batch,in,out,sign,flags));
+}
 extern "C" fftw_plan wv_test_r2r(int rank, const fftw_iodim64* dims, int howmany, const fftw_iodim64* batch, double* in, double* out, const fftw_r2r_kind* kinds, unsigned flags) {
     PlannerCall call;
     return fail(failPlan) ? nullptr : retain(fftw_plan_guru64_r2r(rank,dims,howmany,batch,in,out,kinds,flags));
@@ -196,6 +200,9 @@ void parity(const std::vector<double>& a, const std::vector<double>& b) {
     for (std::size_t i = 0; i < a.size(); ++i) { error = std::max(error,std::abs(a[i]-b[i])); scale = std::max(scale,std::abs(b[i])); }
     require(error <= 2e-12*scale + 1e-25, "native/reference real field mismatch");
 }
+std::size_t configuredScalarPlanCount() {
+    return WVConstantKernelExecutionOptions{}.schedule == WVConstantNonlinearFluxSchedule::compactCandidate ? 21 : 18;
+}
 void kernelExecution(bool hydro, bool odd) {
     auto c = configuration(hydro);
     if (odd) { c.Nx = 9; c.Ny = 7; c.Nz = 8; c.shouldAntialias = false; }
@@ -203,7 +210,7 @@ void kernelExecution(bool hydro, bool odd) {
     require(WVTransformConstantStratificationKernel::create(c,engine(),k));
     require(WVTransformConstantStratificationKernel::create(c,std::make_unique<WVReferenceFFTEngine>(),ref));
     require(k->prepareScalarAdvection()); require(ref->prepareScalarAdvection());
-    require(k->metrics().planCount == 18, "scalar plan not prepared");
+    require(k->metrics().planCount == configuredScalarPlanCount(), "scalar plan not prepared");
     const auto shape = k->descriptor().spectralShape();
     const auto spatial = k->descriptor().spatialShape();
     const auto n = shape.elementCount(), r = spatial.elementCount();
@@ -293,10 +300,26 @@ void kernelExecution(bool hydro, bool odd) {
     require(std::memcmp(ap.data(),originalAp.data(),n*sizeof(WVComplex64)) == 0 &&
             std::memcmp(am.data(),originalAm.data(),n*sizeof(WVComplex64)) == 0 &&
             std::memcmp(a0.data(),originalA0.data(),n*sizeof(WVComplex64)) == 0, "caller coefficients changed");
-    std::cout << "hydrostatic=" << hydro << " odd=" << odd << " prepared application allocations=0 retained plans=18 velocity reuse verified\n";
+    std::cout << "hydrostatic=" << hydro << " odd=" << odd << " prepared application allocations=0 logical plans=" << k->metrics().planCount << " velocity reuse verified\n";
 }
 void kernelSetupFailures() {
-    for (int i = 0; i < 17; ++i) {
+    // Measure the selected schedule, including all wrapped complex column
+    // plans. Logical operation slots need not equal actual FFTW handles.
+    std::unique_ptr<WVTransformConstantStratificationKernel> measured;
+    auto measuredProvider = engine(); // Provider construction is outside injection.
+    const auto lifetimeBefore = WVFFTWEngine::lifetimeMetrics();
+    allocationProbe::calls = 0;
+    allocationProbe::counting = true;
+    const auto measuredStatus = WVTransformConstantStratificationKernel::create(configuration(true),std::move(measuredProvider),measured);
+    allocationProbe::counting = false;
+    const auto setupAllocations = allocationProbe::calls.load();
+    require(measuredStatus);
+    const auto actualPlanCount = WVFFTWEngine::lifetimeMetrics().totalPlansCreated-lifetimeBefore.totalPlansCreated;
+    require(actualPlanCount > 0 && actualPlanCount <= static_cast<std::size_t>(std::numeric_limits<int>::max()), "raw plan sweep bound");
+    require(static_cast<std::size_t>(rawPlans.load()) == actualPlanCount, "raw FFTW acquisition bypassed test instrumentation");
+    require(setupAllocations > 0 && setupAllocations < static_cast<std::size_t>(std::numeric_limits<long>::max()), "allocation sweep bound");
+    measured.reset(); balanced();
+    for (int i = 0; i < static_cast<int>(actualPlanCount); ++i) {
         std::unique_ptr<WVTransformConstantStratificationKernel> k;
         failPlan = i;
         require(WVTransformConstantStratificationKernel::create(configuration(true),engine(),k).code == WVKernelStatusCode::fftPlanFailure && !k, "partial kernel planning failure");
@@ -305,13 +328,17 @@ void kernelSetupFailures() {
     // Sweep all application allocations through descriptor, scratch, plan and
     // executor setup, including std::thread's launch allocation.
     bool completed = false;
-    for (long i = 0; i < 256; ++i) {
+    for (long i = 0; i <= static_cast<long>(setupAllocations); ++i) {
         auto provider = engine();
         std::unique_ptr<WVTransformConstantStratificationKernel> candidate;
         allocationProbe::failAfter = i;
         const auto status = WVTransformConstantStratificationKernel::create(configuration(true),std::move(provider),candidate);
         allocationProbe::failAfter = -1;
-        if (status) { candidate.reset(); balanced(); completed = true; break; }
+        if (status) {
+            require(i == static_cast<long>(setupAllocations), "allocation sweep completed before measured setup boundary");
+            candidate.reset(); balanced(); completed = true;
+            continue;
+        }
         require(status.code == WVKernelStatusCode::allocationFailure && !candidate, "kernel allocation failure status");
         balanced();
     }
@@ -322,7 +349,7 @@ void kernelSetupFailures() {
     require(k->prepareScalarAdvection().code == WVKernelStatusCode::fftPlanFailure && k->metrics().planCount == 17, "scalar preparation failure");
     failPlan = -1;
     require(k->prepareScalarAdvection());
-    require(k->metrics().planCount == 18, "scalar preparation retry");
+    require(k->metrics().planCount == configuredScalarPlanCount(), "scalar preparation retry");
 }
 }
 int main() {

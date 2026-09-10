@@ -85,7 +85,7 @@ if(WV_KERNEL_FFTW_ROOT)
     # and can fail individual acquisition stages without production test hooks.
     target_compile_definitions(WVTestFFTWFailureAdapter PRIVATE
         fftw_malloc=wv_test_malloc fftw_free=wv_test_free fftw_plan_guru64_dft_r2c=wv_test_r2c
-        fftw_plan_guru64_dft_c2r=wv_test_c2r fftw_plan_guru64_r2r=wv_test_r2r fftw_destroy_plan=wv_test_destroy)
+        fftw_plan_guru64_dft_c2r=wv_test_c2r fftw_plan_guru64_dft=wv_test_c2c fftw_plan_guru64_r2r=wv_test_r2r fftw_destroy_plan=wv_test_destroy)
     if(CMAKE_CXX_COMPILER_ID MATCHES "AppleClang|Clang|GNU")
         target_compile_options(TestWVNativeFFTWOwnership PRIVATE -Wall -Wextra -Wpedantic -Werror)
     endif()

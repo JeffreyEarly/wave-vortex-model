@@ -1,0 +1,45 @@
+{
+  "status": "passed",
+  "scope": "large model fixture contract and verified-payload retention; no integrations",
+  "checks": [
+    {
+      "pair": -2,
+      "passed": true,
+      "policy": "first-measured-pair",
+      "removed": true
+    },
+    {
+      "pair": 0,
+      "passed": true,
+      "policy": "first-measured-pair",
+      "removed": false
+    },
+    {
+      "pair": 1,
+      "passed": true,
+      "policy": "first-measured-pair",
+      "removed": true
+    },
+    {
+      "pair": 2,
+      "passed": false,
+      "policy": "first-measured-pair",
+      "removed": false
+    },
+    {
+      "pair": 3,
+      "passed": true,
+      "policy": "all",
+      "removed": false
+    }
+  ],
+  "rejectedMutations": [
+    "missing profile",
+    "duplicate profile",
+    "work count",
+    "dense time",
+    "grid size",
+    "changed payload hash"
+  ],
+  "directory": "/private/tmp/wvm455-retention-29x6grzw"
+}

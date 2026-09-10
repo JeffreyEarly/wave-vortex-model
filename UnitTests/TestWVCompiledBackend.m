@@ -153,7 +153,7 @@ classdef TestWVCompiledBackend < matlab.unittest.TestCase
             testCase.verifyEqual(capabilities.module.executionScheduleVersion,1);
             testCase.verifyEqual(string(capabilities.module.workerPolicyIdentifier),"constant-stage-workers-v1");
             testCase.verifyEqual(string(capabilities.module.planCountMeaning),"logical-prepared-operation-slots");
-            testCase.verifyTrue(ismember(string(capabilities.module.nonlinearFluxSchedule),["streamed-target-three-channel","retained-compact-streamed-target-three-channel-v1"]));
+            testCase.verifyEqual(string(capabilities.module.nonlinearFluxSchedule),"retained-compact-streamed-target-three-channel-v1");
             testCase.verifyEqual(capabilities.libraries.base.path,string(realpath(fullfile(capabilities.cache.root,"provider","native-neon-pthreads","lib","libfftw3.3.dylib"))));
             testCase.verifyEqual(capabilities.libraries.thread.path,string(realpath(fullfile(capabilities.cache.root,"provider","native-neon-pthreads","lib","libfftw3_threads.3.dylib"))));
             testCase.verifyFalse(capabilities.libraries.openmp.detected);

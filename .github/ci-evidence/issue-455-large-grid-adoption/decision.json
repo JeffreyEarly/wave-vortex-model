@@ -1,0 +1,354 @@
+{
+  "schema": "wvm-constant-adoption-decision-v1",
+  "passed": true,
+  "decision": "performance gates passed; require final source/default/CI handoff",
+  "checks": [
+    {
+      "gate": "native: correct execution boundary",
+      "passed": true,
+      "actual": null,
+      "bound": null
+    },
+    {
+      "gate": "native: control binary provenance",
+      "passed": true,
+      "actual": null,
+      "bound": null
+    },
+    {
+      "gate": "native: candidate binary provenance",
+      "passed": true,
+      "actual": null,
+      "bound": null
+    },
+    {
+      "gate": "native: final protocol",
+      "passed": true,
+      "actual": null,
+      "bound": null
+    },
+    {
+      "gate": "native: all paired profiles",
+      "passed": true,
+      "actual": null,
+      "bound": null
+    },
+    {
+      "gate": "native: exact large run inventory",
+      "passed": true,
+      "actual": null,
+      "bound": null
+    },
+    {
+      "gate": "native: exact large summary inventory",
+      "passed": true,
+      "actual": null,
+      "bound": null
+    },
+    {
+      "gate": "native: independent MATLAB agreement",
+      "passed": true,
+      "actual": null,
+      "bound": null
+    },
+    {
+      "gate": "native: frozen control agreement",
+      "passed": true,
+      "actual": null,
+      "bound": null
+    },
+    {
+      "gate": "native: geometric flux improvement",
+      "passed": true,
+      "actual": 0.48888029521160015,
+      "bound": 0.9
+    },
+    {
+      "gate": "native: no profile regression",
+      "passed": true,
+      "actual": {
+        "constant-hydrostatic-256x256x129": 0.47868763894140476,
+        "constant-hydrostatic-512x512x257": 0.5056419828263221,
+        "constant-nonhydrostatic-256x256x129": 0.46711146045722657,
+        "constant-nonhydrostatic-512x512x257": 0.505235979488566
+      },
+      "bound": 1.03
+    },
+    {
+      "gate": "native: paired interval excludes tie",
+      "passed": true,
+      "actual": [
+        0.48296779487030606,
+        0.4945668770500397
+      ],
+      "bound": 1
+    },
+    {
+      "gate": "native: complete-lifetime RSS",
+      "passed": true,
+      "actual": [
+        0.42075191979887494,
+        [
+          0.42011603507475903,
+          0.4216680274289536
+        ]
+      ],
+      "bound": [
+        1,
+        1.03
+      ]
+    },
+    {
+      "gate": "native: no owned-memory growth",
+      "passed": true,
+      "actual": 0.8402630621925146,
+      "bound": 1
+    },
+    {
+      "gate": "native: selected shared policy",
+      "passed": true,
+      "actual": null,
+      "bound": null
+    },
+    {
+      "gate": "matlab-loaded: correct execution boundary",
+      "passed": true,
+      "actual": null,
+      "bound": null
+    },
+    {
+      "gate": "matlab-loaded: control binary provenance",
+      "passed": true,
+      "actual": null,
+      "bound": null
+    },
+    {
+      "gate": "matlab-loaded: candidate binary provenance",
+      "passed": true,
+      "actual": null,
+      "bound": null
+    },
+    {
+      "gate": "matlab-loaded: final protocol",
+      "passed": true,
+      "actual": null,
+      "bound": null
+    },
+    {
+      "gate": "matlab-loaded: all paired profiles",
+      "passed": true,
+      "actual": null,
+      "bound": null
+    },
+    {
+      "gate": "matlab-loaded: exact large run inventory",
+      "passed": true,
+      "actual": null,
+      "bound": null
+    },
+    {
+      "gate": "matlab-loaded: exact large summary inventory",
+      "passed": true,
+      "actual": null,
+      "bound": null
+    },
+    {
+      "gate": "matlab-loaded: independent MATLAB agreement",
+      "passed": true,
+      "actual": null,
+      "bound": null
+    },
+    {
+      "gate": "matlab-loaded: frozen control agreement",
+      "passed": true,
+      "actual": null,
+      "bound": null
+    },
+    {
+      "gate": "matlab-loaded: geometric flux improvement",
+      "passed": true,
+      "actual": 0.4818624231213486,
+      "bound": 0.9
+    },
+    {
+      "gate": "matlab-loaded: no profile regression",
+      "passed": true,
+      "actual": {
+        "constant-hydrostatic-256x256x129": 0.48879075024994006,
+        "constant-hydrostatic-512x512x257": 0.4825179523157001,
+        "constant-nonhydrostatic-256x256x129": 0.48497727654990186,
+        "constant-nonhydrostatic-512x512x257": 0.4713401064369898
+      },
+      "bound": 1.03
+    },
+    {
+      "gate": "matlab-loaded: paired interval excludes tie",
+      "passed": true,
+      "actual": [
+        0.46130137177292524,
+        0.5032541472916429
+      ],
+      "bound": 1
+    },
+    {
+      "gate": "matlab-loaded: complete-lifetime RSS",
+      "passed": true,
+      "actual": [
+        0.6202261746289046,
+        [
+          0.6174535711714566,
+          0.6226141703666239
+        ]
+      ],
+      "bound": [
+        1,
+        1.03
+      ]
+    },
+    {
+      "gate": "matlab-loaded: no owned-memory growth",
+      "passed": true,
+      "actual": 0.8402630621925146,
+      "bound": 1
+    },
+    {
+      "gate": "matlab-loaded: selected shared policy",
+      "passed": true,
+      "actual": null,
+      "bound": null
+    },
+    {
+      "gate": "boundaries: identical scientific fixtures",
+      "passed": true,
+      "actual": null,
+      "bound": null
+    },
+    {
+      "gate": "boundaries: identical frozen provenance",
+      "passed": true,
+      "actual": null,
+      "bound": null
+    },
+    {
+      "gate": "model: identical frozen provenance",
+      "passed": true,
+      "actual": null,
+      "bound": null
+    },
+    {
+      "gate": "model: large protocol marker",
+      "passed": true,
+      "actual": null,
+      "bound": null
+    },
+    {
+      "gate": "model: large fixture axes",
+      "passed": true,
+      "actual": null,
+      "bound": null
+    },
+    {
+      "gate": "model: large fixed work",
+      "passed": true,
+      "actual": null,
+      "bound": null
+    },
+    {
+      "gate": "model: large output workload",
+      "passed": true,
+      "actual": null,
+      "bound": null
+    },
+    {
+      "gate": "model: large protocol",
+      "passed": true,
+      "actual": null,
+      "bound": null
+    },
+    {
+      "gate": "model: exact large profile inventory",
+      "passed": true,
+      "actual": null,
+      "bound": null
+    },
+    {
+      "gate": "model: exact large pair inventory",
+      "passed": true,
+      "actual": null,
+      "bound": null
+    },
+    {
+      "gate": "model: large warmup classification",
+      "passed": true,
+      "actual": null,
+      "bound": null
+    },
+    {
+      "gate": "model: control binary provenance",
+      "passed": true,
+      "actual": null,
+      "bound": null
+    },
+    {
+      "gate": "model: candidate binary provenance",
+      "passed": true,
+      "actual": null,
+      "bound": null
+    },
+    {
+      "gate": "model: current protocol receipt",
+      "passed": true,
+      "actual": null,
+      "bound": null
+    },
+    {
+      "gate": "model: scientific output and matched work",
+      "passed": true,
+      "actual": null,
+      "bound": null
+    },
+    {
+      "gate": "model: all declared profiles",
+      "passed": true,
+      "actual": null,
+      "bound": null
+    },
+    {
+      "gate": "model: no profile regression",
+      "passed": true,
+      "actual": {
+        "constant-hydrostatic-coefficient-only-256": 0.4126809896385546,
+        "constant-hydrostatic-coefficient-only-512": 0.41510249751784256,
+        "constant-nonhydrostatic-coefficient-only-256": 0.38430150644074995,
+        "constant-nonhydrostatic-coefficient-only-512": 0.41335444384412534,
+        "constant-nonhydrostatic-composite-256": 0.47889369496893636,
+        "constant-nonhydrostatic-composite-512": 0.5325204443573802
+      },
+      "bound": 1.03
+    },
+    {
+      "gate": "model: no owned-memory growth",
+      "passed": true,
+      "actual": 0.9076701617681473,
+      "bound": 1
+    },
+    {
+      "gate": "model: complete-lifetime RSS",
+      "passed": true,
+      "actual": {
+        "geometricRatio": 0.6385856495623888,
+        "confidence95": [
+          0.6338925438013508,
+          0.6431053350153418
+        ],
+        "resamples": 10000,
+        "seed": 358
+      },
+      "bound": {
+        "geometricRatio": 1,
+        "upper95": 1.03
+      }
+    }
+  ],
+  "selectedPointwiseWorkers": 12
+}

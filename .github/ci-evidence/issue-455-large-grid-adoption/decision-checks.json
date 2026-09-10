@@ -1,0 +1,81 @@
+{
+  "passed": true,
+  "fixtures": "Actual frozen flux and six-model manifests with actual provenance; timing numbers are synthetic and not performance evidence.",
+  "cases": [
+    {
+      "case": "baseline",
+      "accepted": true,
+      "expectedAccepted": true
+    },
+    {
+      "case": "missing-native-run",
+      "accepted": false,
+      "expectedAccepted": false
+    },
+    {
+      "case": "duplicate-native-run",
+      "accepted": false,
+      "expectedAccepted": false
+    },
+    {
+      "case": "missing-model-pair",
+      "accepted": false,
+      "expectedAccepted": false
+    },
+    {
+      "case": "duplicate-model-pair",
+      "accepted": false,
+      "expectedAccepted": false
+    },
+    {
+      "case": "model-binary-mismatch",
+      "accepted": false,
+      "expectedAccepted": false
+    },
+    {
+      "case": "mex-binary-mismatch",
+      "accepted": false,
+      "expectedAccepted": false
+    },
+    {
+      "case": "wrong-model-grid",
+      "accepted": false,
+      "expectedAccepted": false
+    },
+    {
+      "case": "wrong-model-work",
+      "accepted": false,
+      "expectedAccepted": false
+    },
+    {
+      "case": "wrong-dense-time",
+      "accepted": false,
+      "expectedAccepted": false
+    },
+    {
+      "case": "wrong-warmup-classification",
+      "accepted": false,
+      "expectedAccepted": false
+    },
+    {
+      "case": "numerical-failure",
+      "accepted": false,
+      "expectedAccepted": false
+    },
+    {
+      "case": "model-timing-regression",
+      "accepted": false,
+      "expectedAccepted": false
+    },
+    {
+      "case": "model-owned-growth",
+      "accepted": false,
+      "expectedAccepted": false
+    },
+    {
+      "case": "rss-regression",
+      "accepted": false,
+      "expectedAccepted": false
+    }
+  ]
+}

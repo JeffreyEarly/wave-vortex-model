@@ -1,0 +1,38 @@
+{
+  "status": "passed",
+  "scope": "Local final handoff checks; hosted required CI is recorded on the pull request",
+  "checks": [
+    {
+      "name": "repository boundaries and tracked artifacts",
+      "result": "passed; 1794 compatibility rows and 74 witnesses; repeated after current forward receipts replaced older source-bound aggregates"
+    },
+    {
+      "name": "source-selection hashes",
+      "result": "all current constant schedule hashes match"
+    },
+    {
+      "name": "frozen protocol",
+      "result": "prospective planning protocol matches retained copy byte for byte"
+    },
+    {
+      "name": "evidence bundles",
+      "result": "embedded text SHA-256 checked after compression; public/default forward bundles retain their own inventories"
+    },
+    {
+      "name": "whitespace",
+      "result": "git diff --check passed"
+    },
+    {
+      "name": "scope",
+      "result": "v4 authoring checkout only; no website, package snapshot, version/dependency, v5, benchmark-repository or ATS source edits"
+    },
+    {
+      "name": "verification cadence",
+      "result": "focused affected scientific/build/receipt gates; no repeated large timing or local full MATLAB suite"
+    },
+    {
+      "name": "missing assets",
+      "result": "none required for completed verification"
+    }
+  ]
+}

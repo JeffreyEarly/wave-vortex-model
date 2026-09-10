@@ -82,6 +82,7 @@ void verifyGCalculus() {
     const auto expected=directDerivatives(scalar,c);
     WVRealVolumeConstView input{scalar.data(),{c.Nx,c.Ny,c.Nz}};
     WVRealFieldBundleView output{result.data(),{c.Nx,c.Ny,c.Nz,3}};
+    require(bool(kernel->prepareScalarAdvection()),"G calculus scalar preparation failed");
     const auto before=kernel->metrics();
     require(bool(kernel->transformGGridScalarDerivatives(input,output)),"G calculus failed");
     for(std::size_t i=0;i<result.size();++i) close(result[i],expected[i],3e-13,"full-grid G calculus differs from direct Fourier/DST oracle");
