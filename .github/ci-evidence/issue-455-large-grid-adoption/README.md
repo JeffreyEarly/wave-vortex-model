@@ -51,6 +51,8 @@ The fresh public MATLAB MEX build uses the actual private default with no compac
 
 The source-bound forward-integration receipts were regenerated with a fresh actual-default runner and probe: six transform families with both reference/native providers pass all 12 cases. Strict collection and `committedReceiptsEstablishExecutedQualification` pass. New content-addressed fragments and both aggregate receipts are retained under `PortableRuntime/qualification`, with supplemental default-build/source provenance and logs in `forward-default`. The tests cover adaptive/fixed integration, continuation, stop/resume, particles, tracers and dense output.
 
+Initial hosted CI also caught a cold scalar-preparation snapshot in the density event probe and a forbidden `.tar.gz` suffix on its text-evidence companion. The probe now explicitly prepares scalar resources before accounting for all retained kernel/service storage; the evidence container uses compressed JSON. Numerical tolerances and the source-product guard remain unchanged. Original failures and focused repair qualification are retained in `ci-repair`.
+
 ## Retained evidence
 
 - `native-summary.json`, `matlab-summary.json`, and `model-summary.json`: exact aggregate results.

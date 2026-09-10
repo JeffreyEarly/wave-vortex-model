@@ -1,0 +1,314 @@
+{
+  "schema": "wave-vortex-focused-ci-repair-v1",
+  "status": "passed",
+  "scope": "PR462 density-event prepared-storage probe and text-evidence container",
+  "createdAt": "2026-09-10T08:45:49.837929+00:00",
+  "sourceRoot": "/Users/jearly/Documents/OceanKitRepositories/wvm-v4-cpp-adoption-audit",
+  "sourceCommit": "cfa052825f6ea662e9ffb2bd60662a30b340ac6a",
+  "workingTreeChanges": true,
+  "sourceSHA256": [
+    {
+      "path": "PortableRuntime/tests/WVDensityEventDump.cpp",
+      "sha256": "5aaf0363ab78a6cb807ec0f192b0ecae1d3b5329cf1ae121fa96dba39cb28cb6"
+    },
+    {
+      "path": "UnitTests/TestPortableDensityEventEvaluation.m",
+      "sha256": "5d6b4e143d21af70563986119abf463d2b5c9531c33378a0c9585f2905a83b71"
+    },
+    {
+      "path": "UnitTests/TestCompiledKernelIntegration.m",
+      "sha256": "eeb061367fedcbb3e0803e6fb01a22afdce850fc6c24c5796e39cf377a42538d"
+    },
+    {
+      "path": "CompiledKernel/src/WVTransformConstantStratificationKernel.cpp",
+      "sha256": "24ad9025c8e55d9aab8eb027b6201221a779105e8a59b13b42ff68c84dd134bb"
+    },
+    {
+      "path": "CompiledKernel/include/WaveVortexKernel/WVTransformConstantStratificationKernel.hpp",
+      "sha256": "b7d503e7cc04904a92ef2ec267b18f2a0569c2cbb10d090534f2bacd0ab653cf"
+    },
+    {
+      "path": "PortableRuntime/src/WVFieldEvaluationService.cpp",
+      "sha256": "7e3977c816164eaa88ee527adb99c87657bfbba4406c5eb78db3ad781a68b54b"
+    },
+    {
+      "path": "PortableRuntime/src/WVDiagnosticFieldPlan.cpp",
+      "sha256": "2066d40e657f3354385872699ce27b98ef43442d0fdb3b4cb685b45073780bfd"
+    },
+    {
+      "path": "PortableRuntime/src/WVDensityEventEvaluation.cpp",
+      "sha256": "6ed862d0470a18f52ed5530342bf187326bfd4a9c8b72b8fa5392371cb978916"
+    },
+    {
+      "path": "PortableRuntime/src/WVNoMotionProfile.cpp",
+      "sha256": "0999b4d571a2a1deab55ff554b3af6a265506e5382c28d02127382cf6893340d"
+    },
+    {
+      "path": "PortableRuntime/src/WVNoMotionProfileRecovery.cpp",
+      "sha256": "725c00b4c0611dc0e3569049a693553f86c7d0854cd56c3ce45e112a1c646105"
+    },
+    {
+      "path": "PortableRuntime/src/WVNoMotionDensityMoments.cpp",
+      "sha256": "c00438f55038f38f8de91b2a6781041adf17221dd6e8fbd0e50cf5c3d40b1a19"
+    }
+  ],
+  "executables": [
+    {
+      "configuration": "release",
+      "path": "/private/tmp/wvm455-cpp-default-qualification/runtime-release/WVDensityEventDump",
+      "sha256": "27bb12ffc836a942221e60bb17a7f62179c5ab48800430ce72bbaca16981ee13"
+    },
+    {
+      "configuration": "sanitized",
+      "path": "/private/tmp/wvm455-cpp-default-qualification/runtime-sanitized/WVDensityEventDump",
+      "sha256": "e439c40ef93d3166579057761f3c2499deee670177707f1fcc6a123a1c009bb9"
+    }
+  ],
+  "summary": [
+    {
+      "configuration": "release",
+      "providers": [
+        "reference",
+        "native"
+      ],
+      "methods": [
+        {
+          "name": "TestPortableDensityEventEvaluation/coefficientDrivenDensityMatchesMatlab",
+          "passed": true,
+          "failed": false,
+          "incomplete": false,
+          "duration": 9.619077125
+        },
+        {
+          "name": "TestPortableDensityEventEvaluation/stableRestHasIndependentZeroDisplacementAndEnergy",
+          "passed": true,
+          "failed": false,
+          "incomplete": false,
+          "duration": 0.5328812916666666
+        },
+        {
+          "name": "TestPortableDensityEventEvaluation/initialReferenceAPVMatchesResolvedAnalyticFlow",
+          "passed": true,
+          "failed": false,
+          "incomplete": false,
+          "duration": 1.83593725
+        }
+      ],
+      "matlabVersion": "25.2.0.3150157 (R2025b) Update 4",
+      "coefficientCases": 32,
+      "restCases": 4,
+      "analyticCases": 8,
+      "maximumErrors": {
+        "profileMaximumError": 6.912159733474255e-11,
+        "etaMaximumError": 2.4439032131340355e-08,
+        "apeMaximumError": 9.686208602387847e-14,
+        "densityClosureMaximum": 0,
+        "apvMaximumError": 5.4136118602266664e-14,
+        "apvOperatorMaximumError": 4.743384504624082e-20
+      },
+      "maximumFractionOfUnchangedTolerance": {
+        "profileMaximumError": 2.446539435177567e-05,
+        "etaMaximumError": 2.4439032131340355e-05,
+        "apeMaximumError": 0.0160988422085296,
+        "apvMaximumError": 0.0010123230878303102,
+        "apvOperatorMaximumError": 4.5068766200837124e-07
+      },
+      "analyticAPVMaximumError": 9.531264666406969e-14,
+      "analyticDisplacementMaximumError": 3.161360062620133e-14,
+      "analyticAbsoluteTolerance": 1e-10
+    },
+    {
+      "configuration": "sanitized",
+      "providers": [
+        "reference"
+      ],
+      "methods": [
+        {
+          "name": "TestPortableDensityEventEvaluation/coefficientDrivenDensityMatchesMatlab",
+          "passed": true,
+          "failed": false,
+          "incomplete": false,
+          "duration": 10.826519541666668
+        },
+        {
+          "name": "TestPortableDensityEventEvaluation/stableRestHasIndependentZeroDisplacementAndEnergy",
+          "passed": true,
+          "failed": false,
+          "incomplete": false,
+          "duration": 0.6598869166666667
+        },
+        {
+          "name": "TestPortableDensityEventEvaluation/initialReferenceAPVMatchesResolvedAnalyticFlow",
+          "passed": true,
+          "failed": false,
+          "incomplete": false,
+          "duration": 13.056903125
+        }
+      ],
+      "matlabVersion": "25.2.0.3150157 (R2025b) Update 4",
+      "coefficientCases": 16,
+      "restCases": 2,
+      "analyticCases": 4,
+      "maximumErrors": {
+        "profileMaximumError": 1.3642420526593924e-10,
+        "etaMaximumError": 4.8234824134851806e-08,
+        "apeMaximumError": 1.9120800943244474e-13,
+        "densityClosureMaximum": 0,
+        "apvMaximumError": 1.0694648834054521e-13,
+        "apvOperatorMaximumError": 4.743384504624082e-20
+      },
+      "maximumFractionOfUnchangedTolerance": {
+        "profileMaximumError": 4.828696253639935e-05,
+        "etaMaximumError": 4.8234824134851806e-05,
+        "apeMaximumError": 0.031779488747548976,
+        "apvMaximumError": 0.0019998552187480982,
+        "apvOperatorMaximumError": 4.5068766200837124e-07
+      },
+      "analyticAPVMaximumError": 9.531264666406969e-14,
+      "analyticDisplacementMaximumError": 3.161360062620133e-14,
+      "analyticAbsoluteTolerance": 1e-10
+    }
+  ],
+  "sourceProductsTest": {
+    "name": "TestCompiledKernelIntegration/repositoryTracksOnlySourceProducts",
+    "passed": true,
+    "failed": false,
+    "incomplete": false,
+    "duration": 0.066131125
+  },
+  "changes": {
+    "production": false,
+    "matlabScientificOrTests": false,
+    "tolerances": false,
+    "probe": "Explicitly prepare borrowed constant kernel before retained-storage baseline; include kernel bytes, verify event release and replay no-growth.",
+    "container": "Replace public-default tar+gzip with JSON+gzip files mapping, preserving17 member texts/hashes and original rawSHA; stage deletion/replacement before source-products test."
+  },
+  "sanitizers": {
+    "address": true,
+    "undefinedBehavior": true,
+    "leak": false,
+    "reason": "AppleClang/macOS LeakSanitizer unsupported",
+    "ASAN_OPTIONS": "detect_leaks=0:alloc_dealloc_mismatch=1:halt_on_error=1",
+    "UBSAN_OPTIONS": "print_stacktrace=1:halt_on_error=1"
+  },
+  "localSetupFailures": [
+    {
+      "scope": "MATLAB authoring driver",
+      "reason": "UnitTests path missing before test discovery; explicit path added; zero scientific methods executed in that attempt."
+    },
+    {
+      "scope": "sanitizer invocation",
+      "reason": "detect_leaks=1 rejected by platform before probe main; reran same three failed methods with supported macOS configuration."
+    }
+  ],
+  "artifacts": [
+    {
+      "path": ".github/ci-evidence/issue-455-large-grid-adoption/ci-repair/fresh-local-evidence.json.gz",
+      "sha256": "340f7ec32c7ef21651ae41adccf2120e9d0c053a0fc8a0cd63f59920a568c7bc",
+      "format": "json+gzip",
+      "normalization": "Trailing whitespace/final blank lines only",
+      "entries": [
+        {
+          "path": "before.json",
+          "sha256": "4d5a2a2e76d0cf57294e696eb4b253daa012bd2e0fbf992eecc1c05bed25e45f",
+          "originalSHA256": "4d5a2a2e76d0cf57294e696eb4b253daa012bd2e0fbf992eecc1c05bed25e45f"
+        },
+        {
+          "path": "initial-path-setup-failure.log",
+          "sha256": "0da9245943a0c5db5f1d2dda7e56578ad3804a72dbd7f4cca1badb39603af401",
+          "originalSHA256": "ddc9672c705586b7ee2565a1ad1b3b905f33ece3ae6b05ac3ce9d692d16eed4c"
+        },
+        {
+          "path": "release-parity-analytic.json",
+          "sha256": "3f5b53c95cb96a53c765bc6aae23cb15d19ee954af64e49cc3a40ec8601ccd3e",
+          "originalSHA256": "3c0bfc2b0f7089317612d07f4d4a8a40991771da150578081be9a1903b6f5900"
+        },
+        {
+          "path": "release-parity.json",
+          "sha256": "1d2bc993adb12a55ce5595b77f691081d7b8d3d7184d01d8868cb8241d7f34c5",
+          "originalSHA256": "9b5f0344c3e8cdff3b7fa60f4dd407d86aea67340c7f1abc9d90fa8170c38b1b"
+        },
+        {
+          "path": "release-tests.json",
+          "sha256": "96a44e43ab6625c9ee1949fafe637f7754bfab417128e6b26b57727bc5e67ad2",
+          "originalSHA256": "0efb9e7a99a3b9bb4fd47d0cec23339310148e4e1ec728836623ae14bca3e4a2"
+        },
+        {
+          "path": "release.log",
+          "sha256": "ba5a5fa0496e6c9154623a3029f09bc15cbb980fd656c1118805e6293f5f75ec",
+          "originalSHA256": "f7577039534e5c9caf2472c8bc7944361ec2c55adb4a68bc91aee77bfbe54f0b"
+        },
+        {
+          "path": "retain.py",
+          "sha256": "0f3548fc15bcbddf44f41e66d66ca8770c80aed80082dea1bc3ae98453279e5b",
+          "originalSHA256": "0f3548fc15bcbddf44f41e66d66ca8770c80aed80082dea1bc3ae98453279e5b"
+        },
+        {
+          "path": "runFocused.m",
+          "sha256": "18688d052c1ff68c92c04d2f569368a2cc269b7d600e40ad4fbda910f1d18e5b",
+          "originalSHA256": "18688d052c1ff68c92c04d2f569368a2cc269b7d600e40ad4fbda910f1d18e5b"
+        },
+        {
+          "path": "sanitized-parity-analytic.json",
+          "sha256": "c3142a5489af91b7bc21d2fec33560649bca4c9415616e0dd82b70dba9efea9f",
+          "originalSHA256": "bef95c181a7eef06ac176235b5d1678b156ea6d5cfffdad4e44b36f67e71fbb0"
+        },
+        {
+          "path": "sanitized-parity.json",
+          "sha256": "8c6c08c60ce79b243822f53f707d50dfcb6807f69fd13b495c4c7c9dab807152",
+          "originalSHA256": "2360893f8ee5e540ec80f6552ed45dbd112873fc5a82beb9fe9392fec227f1ce"
+        },
+        {
+          "path": "sanitized-tests.json",
+          "sha256": "324acec6aea780138715e62e63aa4cd8e8ae54aa7ca398eb84f63d87a6b57a7d",
+          "originalSHA256": "e697edefb6ca2bb075cc282010cfe616e837012e9343fbf493fb8419f1b80da5"
+        },
+        {
+          "path": "sanitized.log",
+          "sha256": "eb5d3d72e7acdfe359d213be746637429216751c6ae3f2d583a4fe7da858c0b3",
+          "originalSHA256": "65bd77ba8a975b6ec94e62ab949b2e69828b8f8cd465e09c934e6ce6ab866f94"
+        },
+        {
+          "path": "source-products-tests.json",
+          "sha256": "2af93eaa5ec7e2b5a3e270d2265be86cbca9cfc7e442ba011faf3ffe4bc06818",
+          "originalSHA256": "32f5cbfb1b3ecf14f5c70ff9ff1c57b28b3459633285f4bec25d0b112af3406a"
+        },
+        {
+          "path": "unsupported-leak-option-failure-tests.json",
+          "sha256": "cfdbee0765a25f1215c2e52e88443a87339974fc2b2e0ddd79d03f787f810133",
+          "originalSHA256": "6f267d3c6b739ec3c7352c39878aa860d9bc78fc9caed5fd46c8c5c64ae15a11"
+        },
+        {
+          "path": "unsupported-leak-option-failure.log",
+          "sha256": "223ce918f63fb67265f49eedc1f8266ea823d3d20a2422ba3d301c95744852b7",
+          "originalSHA256": "aab8b6fdcff0fb9718ce967483116199429569c5f3e5830f694c531f8dff6bc0"
+        },
+        {
+          "path": "probe/WVDensityEventDump.before.cpp",
+          "sha256": "d1bf07cbc747f7067b3f5f79bc34cd7dae2befea00bbc50675a83acaf8f58386",
+          "originalSHA256": "d1bf07cbc747f7067b3f5f79bc34cd7dae2befea00bbc50675a83acaf8f58386"
+        },
+        {
+          "path": "probe/build-qualification.json",
+          "sha256": "574b1172f07359b3fa73ff9996b956d36979448644487b79893b5a06bbeddc07",
+          "originalSHA256": "574b1172f07359b3fa73ff9996b956d36979448644487b79893b5a06bbeddc07"
+        },
+        {
+          "path": "probe/release-build.log",
+          "sha256": "a244b7b743be97fe51fb4745a0fe8b3fc6a6089e953726fef30c516978855101",
+          "originalSHA256": "a244b7b743be97fe51fb4745a0fe8b3fc6a6089e953726fef30c516978855101"
+        },
+        {
+          "path": "probe/sanitized-build.log",
+          "sha256": "a244b7b743be97fe51fb4745a0fe8b3fc6a6089e953726fef30c516978855101",
+          "originalSHA256": "a244b7b743be97fe51fb4745a0fe8b3fc6a6089e953726fef30c516978855101"
+        }
+      ]
+    }
+  ],
+  "limitations": [
+    "Local MATLAB R2025b Update4 on macOS; hosted matrix rerun remains coordinator-owned.",
+    "ASan/UBSan passed; no local LeakSanitizer claim.",
+    "Only three affected density methods and one source-products method rerun; no MEX rebuild or broader passing gates repeated."
+  ]
+}

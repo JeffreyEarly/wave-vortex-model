@@ -981,9 +981,9 @@
   },
   "artifacts": [
     {
-      "path": ".github/ci-evidence/issue-455-large-grid-adoption/public-default/qualification-bundle.tar.gz",
-      "sha256": "fd5dc512f6f9431f34933c0a5ca0acce5e0b5b6d995d657ede05d82d0f8061bc",
-      "format": "tar+gzip",
+      "path": ".github/ci-evidence/issue-455-large-grid-adoption/public-default/qualification-bundle.json.gz",
+      "sha256": "b241c29cb1b812a7d98c1acc00c3ba968b76b8f2a6297439fc6d156927056ba3",
+      "format": "json+gzip",
       "entries": [
         {
           "path": "prepared.json",
@@ -1087,7 +1087,9 @@
           "originalSHA256": "2056f1c8d47a95341652a6018ea70239889cfa87bd4e1b11c6113926060f87a8",
           "normalization": "Trailing whitespace/final blank lines only."
         }
-      ]
+      ],
+      "previousContainerSHA256": "fd5dc512f6f9431f34933c0a5ca0acce5e0b5b6d995d657ede05d82d0f8061bc",
+      "containerConversion": "Converted tar container to JSON files mapping; every embedded normalized text byte/hash and original raw SHA preserved."
     }
   ],
   "historicalIterations": [
