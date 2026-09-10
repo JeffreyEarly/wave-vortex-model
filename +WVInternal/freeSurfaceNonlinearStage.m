@@ -9,8 +9,8 @@ function context = freeSurfaceNonlinearStage(wvt)
 %
 % This context explicitly selects freeSurfaceThermodynamics' full C1
 % constant-surface-N2 reference convention, including matching nonlinear
-% surface pressure and energy. Parcel labels are checked strictly on the
-% stored sample grid, without clipping or extrapolation. No oversampled
+% surface pressure and energy. Parcel labels are checked on the stored
+% grid with the reported thermodynamic endpoint roundoff allowance. No oversampled
 % domain certification, physical pressure recovery, forcing, integrator,
 % or public nonlinear activation is supplied by this internal composition.
 %
@@ -70,6 +70,6 @@ weights = reshape(wvt.verticalQuadratureWeights,1,1,[])/(wvt.Nx*wvt.Ny);
 kineticEnergy = sum(weights.*physical.gamma.*.5.*(physical.u.^2+physical.v.^2+physical.w.^2),'all');
 availablePotentialEnergy = sum(weights.*physical.gamma.*thermal.ape,'all');
 surfaceEnergy = mean(thermal.energySurface,'all');
-diagnostics = struct(solver=report,retainedTarget=target,discardedBoundaryTargetRMS=rhsDiagnostics.discardedBoundaryTargetRMS,minimumLabel=min(thermal.label,[],'all'),maximumLabel=max(thermal.label,[],'all'),kineticEnergy=kineticEnergy,availablePotentialEnergy=availablePotentialEnergy,surfaceEnergy=surfaceEnergy,totalEnergy=kineticEnergy+availablePotentialEnergy+surfaceEnergy,referenceConvention=thermodynamics.referenceConvention);
+diagnostics = struct(solver=report,retainedTarget=target,discardedBoundaryTargetRMS=rhsDiagnostics.discardedBoundaryTargetRMS,minimumLabel=min(thermal.label,[],'all'),maximumLabel=max(thermal.label,[],'all'),maximumLabelRoundoffAdjustment=thermal.maximumLabelRoundoffAdjustment,adjustedLabelCount=thermal.adjustedLabelCount,labelRoundoffTolerance=thermal.labelRoundoffTolerance,kineticEnergy=kineticEnergy,availablePotentialEnergy=availablePotentialEnergy,surfaceEnergy=surfaceEnergy,totalEnergy=kineticEnergy+availablePotentialEnergy+surfaceEnergy,referenceConvention=thermodynamics.referenceConvention);
 stage = struct(hatted=hatted,physical=physical,thermodynamics=thermal,metric=metric,covector=covector,totalRate=totalRate,linearRate=linearRate,boundaryTargetFields=rhsDiagnostics.boundaryTargetFields);
 end

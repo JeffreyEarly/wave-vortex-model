@@ -68,6 +68,24 @@ classdef TestFreeSurfaceThermodynamics < matlab.unittest.TestCase
             testCase.verifyEqual(fields.ape,0.5e-4*eta.^2,RelTol=2e-14)
         end
 
+        function endpointRoundoffIsBoundedReportedAndDoesNotAlterInputs(testCase)
+            wvt = newTransform(@(z)1e-4+zeros(size(z)));
+            context = WVInternal.freeSurfaceThermodynamics(wvt);
+            z = cat(3,-wvt.Lz*ones(2),zeros(2));
+            eta = cat(3,8*eps(wvt.Lz)*ones(2),-8*eps(wvt.Lz)*ones(2));
+            savedEta = eta;
+            fields = context.evaluate(z,eta,zeros(2));
+            testCase.verifyEqual(fields.adjustedLabelCount,8)
+            testCase.verifyEqual(fields.maximumLabelRoundoffAdjustment,8*eps(wvt.Lz))
+            testCase.verifyEqual(fields.densityLabel,z)
+            testCase.verifyEqual(fields.label,z-eta)
+            testCase.verifyEqual(fields.buoyancy,zeros(size(z)))
+            testCase.verifyEqual(fields.ape,zeros(size(z)))
+            testCase.verifyEqual(eta,savedEta)
+            eta = cat(3,64*eps(wvt.Lz)*ones(2),zeros(2));
+            testCase.verifyError(@()context.evaluate(z,eta,zeros(2)),'WV:ParcelLabelDomain')
+        end
+
         function outOfDomainLabelsAndInvalidGeometryFailExplicitly(testCase)
             wvt = newTransform(@(z)1e-4+zeros(size(z)));
             context = WVInternal.freeSurfaceThermodynamics(wvt);

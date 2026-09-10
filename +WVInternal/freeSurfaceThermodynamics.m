@@ -1,7 +1,10 @@
 function context = freeSurfaceThermodynamics(wvt)
 % Evaluate exact parcel buoyancy, APE and matching surface pressure/energy.
 %
-% Parcel labels are restricted to [-Lz,0]. The hydrostatic reference density
+% Parcel labels are restricted to [-Lz,0], allowing 32 ulps of Lz for
+% representational endpoint roundoff. Such labels are evaluated at the
+% endpoint and the adjustment is reported; coefficients are never changed.
+% Larger excursions fail. The hydrostatic reference density
 % equals the stored no-motion profile there, and continues above zero with
 % constant N2(0), hence linear reference density. This is an explicit C1
 % reference-density convention, not extrapolation of parcel density. It is
@@ -42,34 +45,42 @@ end
 if ~isequal(size(z),size(eta)) || ~isequal(size(ssh),[size(z,1),size(z,2)])
     error('WV:ThermodynamicShape','Physical height and displacement must share a volume grid, with SSH on its horizontal grid.');
 end
-label = z-eta;
-if any(label < -parameters.Lz | label > 0,'all')
-    error('WV:ParcelLabelDomain','Parcel labels z-eta must remain in [-Lz,0]; density is neither clipped nor extended outside that interval.');
+rawLabel = z-eta;
+labelTolerance = 32*eps(parameters.Lz);
+if any(rawLabel < -parameters.Lz-labelTolerance | rawLabel > labelTolerance,'all')
+    error('WV:ParcelLabelDomain','Parcel labels z-eta must remain in [-Lz,0] within the %.3g m endpoint roundoff allowance; parcel density is not extended.',labelTolerance);
 end
 if any(z < -parameters.Lz,'all') || any(ssh <= -parameters.Lz,'all')
     error('WV:ThermodynamicGeometry','Physical heights must remain above the reference bottom, with positive column depth.');
 end
+label = min(0,max(-parameters.Lz,rawLabel));
+labelAdjustment = label-rawLabel;
+effectiveEta = eta-labelAdjustment;
 labelI = sample(parameters.I,label);
 
 physicalI = referencePrimitive(parameters,z,1);
 physicalJ = referencePrimitive(parameters,z,2);
 fields = struct();
-fields.label = label;
+fields.label = rawLabel;
+fields.densityLabel = label;
+fields.maximumLabelRoundoffAdjustment = max(abs(labelAdjustment),[],'all');
+fields.adjustedLabelCount = nnz(labelAdjustment);
+fields.labelRoundoffTolerance = labelTolerance;
 fields.N2AtLabel = sample(parameters.profile,label);
 % Integrate the represented N2 polynomial over the displacement interval.
 % This avoids cancellation of O(Lz^2) primitives for arbitrarily small eta.
 % Split at zero, where the explicit reference continuation changes formula.
 crest = max(z,0);
-interval = eta-crest;
+interval = effectiveEta-crest;
 fields.buoyancy = -parameters.topN2*crest;
 fields.ape = 0.5*parameters.topN2*crest.^2;
 for index = 1:length(parameters.nodes)
     node = parameters.nodes(index);
     weightedN2 = parameters.weights(index)*sample(parameters.profile,label+node*interval);
     fields.buoyancy = fields.buoyancy-interval.*weightedN2;
-    fields.ape = fields.ape+interval.*(eta-node*interval).*weightedN2;
+    fields.ape = fields.ape+interval.*(effectiveEta-node*interval).*weightedN2;
 end
-fields.apeEta = eta.*fields.N2AtLabel;
+fields.apeEta = effectiveEta.*fields.N2AtLabel;
 fields.apeZ = -fields.apeEta-fields.buoyancy;
 fields.pressureSurface = parameters.g*ssh-surfacePrimitive(parameters,ssh,2);
 fields.energySurface = 0.5*parameters.g*ssh.^2-surfacePrimitive(parameters,ssh,3);
