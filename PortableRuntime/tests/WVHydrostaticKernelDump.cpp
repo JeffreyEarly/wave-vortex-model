@@ -14,17 +14,18 @@ using namespace wavevortex;
 using namespace wavevortex::runtime;
 using nlohmann::json;
 namespace {
+bool hasSuffix(const std::string& value,const std::string& suffix) { return value.size()>=suffix.size() && value.compare(value.size()-suffix.size(),suffix.size(),suffix)==0; }
 template<class T> void require(T status) { if (!status) throw std::runtime_error(status.message); }
 json complexValues(const std::vector<WVComplex64>& a) { std::vector<double> r,i; for (auto x:a) { r.push_back(x.real); i.push_back(x.imag); } return {{"real",r},{"imag",i}}; }
 std::vector<WVComplex64> complexInput(const json& a) { auto r=a.at("real").get<std::vector<double>>(),i=a.at("imag").get<std::vector<double>>(); if (r.size()!=i.size()) throw std::runtime_error("Input lengths differ."); std::vector<WVComplex64> b(r.size()); for (std::size_t n=0;n<r.size();++n) b[n]={r[n],i[n]}; return b; }
 }
 int main(int argc,char** argv) {
     try {
-        if (argc!=5) throw std::runtime_error("Usage: WVHydrostaticKernelDump record.nc input.json output.json reference|native|native-accelerate");
+        if (argc!=5) throw std::runtime_error("Usage: WVHydrostaticKernelDump record.nc input.json output.json reference|native|native-accelerate[-pruned]");
         std::ifstream inputFile(argv[2]); json data; inputFile>>data;
         std::shared_ptr<const WVStratifiedModalRecord> record; require(WVStratifiedModalReader::read(argv[1],record));
         std::weak_ptr<const WVStratifiedModalRecord> owner=record;
-        std::unique_ptr<WVFFTEngine> engine; const std::string provider=argv[4];
+        std::unique_ptr<WVFFTEngine> engine; const std::string requestedProvider=argv[4]; const bool pruned=hasSuffix(requestedProvider,"-pruned"); const std::string provider=pruned ? requestedProvider.substr(0,requestedProvider.size()-7) : requestedProvider;
         if (provider=="reference") engine=std::make_unique<WVReferenceFFTEngine>();
         else if (provider=="native" || provider=="native-accelerate") {
 #if WV_TEST_NATIVE_FFTW
@@ -34,7 +35,8 @@ int main(int argc,char** argv) {
 #endif
         } else throw std::runtime_error("Unknown provider.");
         std::unique_ptr<WVTransformHydrostaticKernel> kernel;
-        require(WVTransformHydrostaticKernel::create(record,std::move(engine),kernel,provider=="native-accelerate" ? WVCreateAccelerateMatrixBackend : WVCreateScalarMatrixBackend)); record.reset();
+        WVVariableExecutionOptions options; if (pruned) options={WVRetainedHorizontalSchedule::streamingPrunedTile16,2,true};
+        require(WVTransformHydrostaticKernel::create(record,std::move(engine),kernel,provider=="native-accelerate" ? WVCreateAccelerateMatrixBackend : WVCreateScalarMatrixBackend,options)); record.reset();
         const auto& g=kernel->geometry(); const auto S=g.Nj*g.Nkl,R=g.Nx*g.Ny*g.Nz; const auto shape=kernel->spectralShape(); const auto volume=kernel->spatialShape();
         std::array<std::vector<WVComplex64>,3> a,c;
         const char* coefficients[]={"Ap","Am","A0"};
@@ -44,7 +46,7 @@ int main(int argc,char** argv) {
         WVMutableCoefficients out{{c[0].data(),shape},{c[1].data(),shape},{c[2].data(),shape}};
         WVFlux flux{out.Ap,out.Am,out.A0};
         auto packed=[&]() { return json{{"Ap",complexValues(c[0])},{"Am",complexValues(c[1])},{"A0",complexValues(c[2])}}; };
-        json result; result["engine"]=kernel->engineIdentifier(); result["backend"]=kernel->matrixBackendIdentifier(); result["contract"]=WVHydrostaticKernelContract;
+        json result; result["engine"]=kernel->engineIdentifier(); result["backend"]=kernel->matrixBackendIdentifier(); result["contract"]=WVHydrostaticKernelContract; result["horizontalSchedule"]=kernel->horizontalScheduleIdentifier(); result["streamedNonlinear"]=kernel->executionOptions().streamedNonlinear;
         const auto& factors=kernel->factors();
         const std::pair<const char*,double WVHydrostaticModeFactors::*> realFactors[]={
             {"Omega",&WVHydrostaticModeFactors::omega},{"NAp",&WVHydrostaticModeFactors::NAp},{"NA0",&WVHydrostaticModeFactors::NA0},{"PA0",&WVHydrostaticModeFactors::PA0},

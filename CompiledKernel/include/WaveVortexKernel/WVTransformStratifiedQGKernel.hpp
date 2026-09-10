@@ -1,5 +1,6 @@
 #pragma once
 #include "WVStratifiedModalSource.hpp"
+#include "WVVariableExecutionOptions.hpp"
 #include <array>
 #include <atomic>
 #include <functional>
@@ -27,7 +28,9 @@ public:
     using MatrixBackendFactory = std::function<WVKernelStatus(std::unique_ptr<WVVerticalMatrixBackend>&)>;
     static WVKernelStatus create(std::shared_ptr<const WVStratifiedModalSource>,
         std::unique_ptr<WVFFTEngine>, std::unique_ptr<WVTransformStratifiedQGKernel>&,
-        MatrixBackendFactory = WVCreateScalarMatrixBackend);
+        MatrixBackendFactory = WVCreateScalarMatrixBackend, WVVariableExecutionOptions = {});
+    const WVVariableExecutionOptions& executionOptions() const noexcept { return executionOptions_; }
+    const char* horizontalScheduleIdentifier() const noexcept { return horizontalWorkspace_->scheduleIdentifier(); }
     const WVStratifiedModalGeometry& geometry() const noexcept { return source_->geometry(); }
     const WVStratifiedQGModeFactors& factors() const noexcept { return factors_; }
     const WVStratifiedQGStorage& storage() const noexcept { return storage_; }
@@ -80,6 +83,7 @@ private:
     WVKernelStatus project(const double*, WVComplex64*, std::size_t operation = 1);
     WVKernelStatus reconstruct(WVComplexConstView, WVStratifiedQGField, WVStratifiedQGDerivative, double*);
     WVKernelStatus vertical(std::size_t operation, const WVComplex64*, WVComplex64*);
+    WVVariableExecutionOptions executionOptions_;
     std::shared_ptr<const WVStratifiedModalSource> source_;
     WVStratifiedQGModeFactors factors_;
     WVStratifiedQGStorage storage_;

@@ -28,7 +28,7 @@ WVKernelStatus reentrant() { return {WVKernelStatusCode::reentrantExecution,"Bou
 }
 
 WVKernelStatus WVTransformBoussinesqKernel::create(std::shared_ptr<const WVStratifiedModalSource> source,
-    std::unique_ptr<WVFFTEngine> engine,std::unique_ptr<WVTransformBoussinesqKernel>& result,MatrixBackendFactory factory) {
+    std::unique_ptr<WVFFTEngine> engine,std::unique_ptr<WVTransformBoussinesqKernel>& result,MatrixBackendFactory factory,WVVariableExecutionOptions options) {
     try {
         if (!source || !engine || !factory) return {WVKernelStatusCode::invalidConfiguration,"Scientific source, FFT engine and matrix backend factory are required."};
         const auto& g=source->geometry();
@@ -43,8 +43,10 @@ WVKernelStatus WVTransformBoussinesqKernel::create(std::shared_ptr<const WVStrat
         product(product(6,c.S_),sizeof(WVComplex64)); product(product(5,c.H_),sizeof(WVComplex64));
         product(product(11,c.R_),sizeof(double)); product(c.S_,sizeof(WVBoussinesqModeFactors));
         c.engineIdentifier_=engine->identifier(); c.engineLibraryIdentity_=engine->libraryIdentity();
+        c.executionOptions_=options;
         WVRetainedHorizontalSpecification horizontal;
         auto status=c.source_->horizontalSpecification(g.Nz,WVComplexRepresentation::interleaved,"boussinesq-grid",horizontal); if (!status) return status;
+        horizontal.schedule=options.horizontalSchedule; horizontal.outerWorkers=options.horizontalWorkers;
         status=WVRetainedHorizontalOperator::create(horizontal,std::move(engine),c.horizontal_); if (!status) return status;
         status=c.horizontal_->createWorkspace(c.horizontalWorkspace_); if (!status) return status;
         const WVStratifiedModalOperator operations[]={WVStratifiedModalOperator::reconstructF,WVStratifiedModalOperator::projectF,WVStratifiedModalOperator::reconstructG,WVStratifiedModalOperator::projectG,
@@ -366,7 +368,9 @@ WVKernelStatus WVTransformBoussinesqKernel::nonlinearFlux(const WVState& a,WVFlu
     ActiveCall guard(active_); if (!guard.entered) return reentrant();
     s=preparePhase(a.t,a.t0); if (!s) return s;
     const WVBoussinesqField fields[]={WVBoussinesqField::u,WVBoussinesqField::v,WVBoussinesqField::w,WVBoussinesqField::eta};
-    if (preparedFields) std::copy_n(preparedFields->data,4*R_,real_.data());
+    const bool borrowed=executionOptions_.streamedNonlinear && preparedFields;
+    const double* advectionFields=borrowed ? preparedFields->data : real_.data();
+    if (preparedFields) { if (!borrowed) std::copy_n(preparedFields->data,4*R_,real_.data()); }
     else for (std::size_t i=0;i<4;++i) { s=reconstruct(a.coefficients,fields[i],WVBoussinesqDerivative::value,WVBoussinesqComponent::all,real_.data()+i*R_); if (!s) return s; }
     for (std::size_t targetIndex=0;targetIndex<4;++targetIndex) {
         const auto field=fields[targetIndex]; auto* flux=real_.data()+(4+targetIndex)*R_;
@@ -374,8 +378,8 @@ WVKernelStatus WVTransformBoussinesqKernel::nonlinearFlux(const WVState& a,WVFlu
         for (std::size_t axis=0;axis<3;++axis) {
             s=reconstruct(a.coefficients,field,static_cast<WVBoussinesqDerivative>(axis+1),WVBoussinesqComponent::all,real_.data()+10*R_); if (!s) return s;
             for (std::size_t i=0;i<R_;++i) {
-                const double correction=targetIndex==3 && axis==2 ? real_[3*R_+i]*geometry().dLnN2[i/(R_/geometry().Nz)] : 0;
-                flux[i]-=real_[axis*R_+i]*(real_[10*R_+i]+correction);
+                const double correction=targetIndex==3 && axis==2 ? advectionFields[3*R_+i]*geometry().dLnN2[i/(R_/geometry().Nz)] : 0;
+                flux[i]-=advectionFields[axis*R_+i]*(real_[10*R_+i]+correction);
             }
         }
     }

@@ -1,5 +1,6 @@
 #pragma once
 #include "WVStratifiedModalSource.hpp"
+#include "WVVariableExecutionOptions.hpp"
 #include <array>
 #include <atomic>
 #include <functional>
@@ -32,7 +33,9 @@ public:
     using MatrixBackendFactory = std::function<WVKernelStatus(std::unique_ptr<WVVerticalMatrixBackend>&)>;
     static WVKernelStatus create(std::shared_ptr<const WVStratifiedModalSource>,
         std::unique_ptr<WVFFTEngine>, std::unique_ptr<WVTransformHydrostaticKernel>&,
-        MatrixBackendFactory = WVCreateScalarMatrixBackend);
+        MatrixBackendFactory = WVCreateScalarMatrixBackend, WVVariableExecutionOptions = {});
+    const WVVariableExecutionOptions& executionOptions() const noexcept { return executionOptions_; }
+    const char* horizontalScheduleIdentifier() const noexcept { return horizontalWorkspace_->scheduleIdentifier(); }
     const WVStratifiedModalGeometry& geometry() const noexcept { return source_->geometry(); }
     const std::vector<WVHydrostaticModeFactors>& factors() const noexcept { return factors_; }
     const WVHydrostaticStorage& storage() const noexcept { return storage_; }
@@ -90,7 +93,10 @@ private:
     WVKernelStatus reconstruct(const WVCoefficients&,WVHydrostaticField,
         WVHydrostaticDerivative,WVHydrostaticComponent,double*);
     WVKernelStatus projectFields(const double*,const double*,const double*,WVMutableCoefficients);
+    WVKernelStatus projectedFieldsToCoefficients(
+        const WVComplex64*,const WVComplex64*,const WVComplex64*,WVMutableCoefficients);
     WVKernelStatus verticalCalculus(const double*,WVHydrostaticFamily,unsigned,bool,double*);
+    WVVariableExecutionOptions executionOptions_;
     std::shared_ptr<const WVStratifiedModalSource> source_;
     std::vector<WVHydrostaticModeFactors> factors_;
     WVHydrostaticStorage storage_;

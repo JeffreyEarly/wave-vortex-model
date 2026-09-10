@@ -28,7 +28,7 @@ WVKernelStatus reentrant() { return {WVKernelStatusCode::reentrantExecution,"Hyd
 }
 
 WVKernelStatus WVTransformHydrostaticKernel::create(std::shared_ptr<const WVStratifiedModalSource> source,
-    std::unique_ptr<WVFFTEngine> engine,std::unique_ptr<WVTransformHydrostaticKernel>& result,MatrixBackendFactory factory) {
+    std::unique_ptr<WVFFTEngine> engine,std::unique_ptr<WVTransformHydrostaticKernel>& result,MatrixBackendFactory factory,WVVariableExecutionOptions options) {
     try {
         if (!source || !engine || !factory) return {WVKernelStatusCode::invalidConfiguration,"Scientific source, FFT engine and matrix backend factory are required."};
         const auto& g=source->geometry();
@@ -41,10 +41,12 @@ WVKernelStatus WVTransformHydrostaticKernel::create(std::shared_ptr<const WVStra
         auto& c=*candidate; c.source_=std::move(source);
         c.S_=product(g.Nj,g.Nkl); c.H_=product(g.Nz,g.Nkl); c.R_=product(product(g.Nx,g.Ny),g.Nz);
         product(product(3,c.S_),sizeof(WVComplex64)); product(product(2,c.H_),sizeof(WVComplex64));
-        product(product(10,c.R_),sizeof(double)); product(c.S_,sizeof(WVHydrostaticModeFactors));
+        product(product(options.streamedNonlinear ? 6 : 10,c.R_),sizeof(double)); product(c.S_,sizeof(WVHydrostaticModeFactors));
         c.engineIdentifier_=engine->identifier(); c.engineLibraryIdentity_=engine->libraryIdentity();
+        c.executionOptions_=options;
         WVRetainedHorizontalSpecification horizontal;
         auto status=c.source_->horizontalSpecification(g.Nz,WVComplexRepresentation::interleaved,"hydrostatic-grid",horizontal); if (!status) return status;
+        horizontal.schedule=options.horizontalSchedule; horizontal.outerWorkers=options.horizontalWorkers;
         status=WVRetainedHorizontalOperator::create(horizontal,std::move(engine),c.horizontal_); if (!status) return status;
         status=c.horizontal_->createWorkspace(c.horizontalWorkspace_); if (!status) return status;
         const WVStratifiedModalOperator operations[]={WVStratifiedModalOperator::reconstructF,WVStratifiedModalOperator::projectF,WVStratifiedModalOperator::reconstructG,WVStratifiedModalOperator::projectG};
@@ -95,7 +97,7 @@ WVKernelStatus WVTransformHydrostaticKernel::create(std::shared_ptr<const WVStra
                 a.NA0,a.PA0,a.ApmD.imag,a.ApmN,a.A0Z,a.A0N,a.waveEnergy,a.balancedEnergy,a.psi,a.qgpv,a.enstrophy})
                 if (!std::isfinite(x)) return {WVKernelStatusCode::numericalFailure,"Hydrostatic coefficient factor overflow."};
         }
-        c.modal_.resize(3*c.S_); c.gridSpectral_.resize(2*c.H_); c.phase_.resize(c.S_); c.real_.resize(10*c.R_);
+        c.modal_.resize(3*c.S_); c.gridSpectral_.resize(2*c.H_); c.phase_.resize(c.S_); c.real_.resize((options.streamedNonlinear ? 6 : 10)*c.R_);
         auto& s=c.storage_; s.sharedScientificBytes=c.source_->persistentBytes(); s.preparedBytes=c.horizontal_->persistentBytes();
         s.workspaceBytes=c.horizontalWorkspace_->persistentBytes(); s.providerBytesLowerBound=c.horizontal_->providerBytesLowerBound(); s.planBytesLowerBound=c.horizontalWorkspace_->planBytesLowerBound();
         for (std::size_t i=0;i<4;++i) { s.preparedBytes+=c.vertical_[i]->persistentBytes(); s.workspaceBytes+=c.verticalWorkspace_[i]->persistentBytes(); }
@@ -176,6 +178,10 @@ WVKernelStatus WVTransformHydrostaticKernel::projectFields(const double* u,const
     auto s=project(u,U,WVHydrostaticFamily::F); if (!s) return s;
     s=project(v,V,WVHydrostaticFamily::F); if (!s) return s;
     s=project(eta,N,WVHydrostaticFamily::G); if (!s) return s;
+    return projectedFieldsToCoefficients(U,V,N,b);
+}
+WVKernelStatus WVTransformHydrostaticKernel::projectedFieldsToCoefficients(
+    const WVComplex64* U,const WVComplex64* V,const WVComplex64* N,WVMutableCoefficients b) {
     for (std::size_t i=0;i<S_;++i) {
         const auto& f=factors_[i]; const auto mode=i/geometry().Nj; const double k=geometry().k[mode],l=geometry().l[mode];
         const auto zeta=subtract(multiply(V[i],{0,k}),multiply(U[i],{0,l}));
@@ -202,8 +208,9 @@ WVKernelStatus WVTransformHydrostaticKernel::reconstruct(const WVCoefficients& a
     if (field==WVHydrostaticField::zetaX || field==WVHydrostaticField::zetaY) {
         const bool x=field==WVHydrostaticField::zetaX;
         auto s=reconstruct(a,x ? WVHydrostaticField::w : WVHydrostaticField::u,x ? WVHydrostaticDerivative::y : WVHydrostaticDerivative::z,component,b); if (!s) return s;
-        s=reconstruct(a,x ? WVHydrostaticField::v : WVHydrostaticField::w,x ? WVHydrostaticDerivative::z : WVHydrostaticDerivative::x,component,real_.data()+8*R_); if (!s) return s;
-        for (std::size_t i=0;i<R_;++i) b[i]-=real_[8*R_+i];
+        auto* auxiliary=real_.data()+(executionOptions_.streamedNonlinear ? 5 : 8)*R_;
+        s=reconstruct(a,x ? WVHydrostaticField::v : WVHydrostaticField::w,x ? WVHydrostaticDerivative::z : WVHydrostaticDerivative::x,component,auxiliary); if (!s) return s;
+        for (std::size_t i=0;i<R_;++i) b[i]-=auxiliary[i];
         return WVKernelStatus::ok();
     }
     const bool density=field==WVHydrostaticField::rhoE || field==WVHydrostaticField::rhoTotal;
@@ -244,8 +251,11 @@ WVKernelStatus WVTransformHydrostaticKernel::reconstruct(const WVCoefficients& a
         gridSpectral_[z+g.Nz*mode]=scale(gridSpectral_[z+g.Nz*mode],-g.N2[z]/g.g);
     s=horizontal_->inverse(*horizontalWorkspace_,input(gridSpectral_.data(),H_),{b,R_*sizeof(double)}); if (!s) return s;
     if (density) {
-        const double* eta=nullptr;
-        if (dz) { s=reconstruct(a,WVHydrostaticField::eta,WVHydrostaticDerivative::value,component,real_.data()+8*R_); if (!s) return s; eta=real_.data()+8*R_; }
+        double* eta=nullptr;
+        if (dz) {
+            eta=real_.data()+(executionOptions_.streamedNonlinear ? 5 : 8)*R_;
+            s=reconstruct(a,WVHydrostaticField::eta,WVHydrostaticDerivative::value,component,eta); if (!s) return s;
+        }
         const auto plane=R_/g.Nz;
         for (std::size_t z=0;z<g.Nz;++z) for (std::size_t xy=0;xy<plane;++xy) {
             const auto i=xy+plane*z;
@@ -265,8 +275,9 @@ WVKernelStatus WVTransformHydrostaticKernel::transformStateField(const WVState& 
     for (auto x : {a.coefficients.Ap,a.coefficients.Am,a.coefficients.A0}) { s=disjoint(x.data,S_*sizeof(WVComplex64),b.data,bytes); if (!s) return s; }
     ActiveCall guard(active_); if (!guard.entered) return reentrant();
     s=preparePhase(a.t,a.t0); if (!s) return s;
-    s=reconstruct(a.coefficients,field,derivative,component,surface(field) ? real_.data()+9*R_ : b.data); if (!s) return s;
-    if (surface(field)) { const auto plane=R_/geometry().Nz; std::copy_n(real_.data()+10*R_-plane,plane,b.data); }
+    auto* fullField=real_.data()+(executionOptions_.streamedNonlinear ? 5 : 9)*R_;
+    s=reconstruct(a.coefficients,field,derivative,component,surface(field) ? fullField : b.data); if (!s) return s;
+    if (surface(field)) { const auto plane=R_/geometry().Nz; std::copy_n(fullField+R_-plane,plane,b.data); }
     return WVKernelStatus::ok();
 }
 WVKernelStatus WVTransformHydrostaticKernel::evolveCoefficients(const WVState& a,WVMutableCoefficients b) {
@@ -330,6 +341,30 @@ WVKernelStatus WVTransformHydrostaticKernel::nonlinearFlux(const WVState& a,WVFl
     ActiveCall guard(active_); if (!guard.entered) return reentrant();
     s=preparePhase(a.t,a.t0); if (!s) return s;
     const WVHydrostaticField fields[]={WVHydrostaticField::u,WVHydrostaticField::v,WVHydrostaticField::w,WVHydrostaticField::eta};
+    if (executionOptions_.streamedNonlinear) {
+        const double* advectionFields=preparedFields ? preparedFields->data : real_.data();
+        if (!preparedFields) for (std::size_t i=0;i<4;++i) {
+            s=reconstruct(a.coefficients,fields[i],WVHydrostaticDerivative::value,WVHydrostaticComponent::all,real_.data()+i*R_); if (!s) return s;
+        }
+        auto* flux=real_.data()+4*R_; auto* derivative=real_.data()+5*R_;
+        for (std::size_t targetIndex=0;targetIndex<3;++targetIndex) {
+            const auto field=fields[targetIndex==2 ? 3 : targetIndex];
+            std::fill_n(flux,R_,0);
+            for (std::size_t axis=0;axis<3;++axis) {
+                s=reconstruct(a.coefficients,field,static_cast<WVHydrostaticDerivative>(axis+1),WVHydrostaticComponent::all,derivative); if (!s) return s;
+                for (std::size_t i=0;i<R_;++i) {
+                    const double correction=targetIndex==2 && axis==2 ? advectionFields[3*R_+i]*geometry().dLnN2[i/(R_/geometry().Nz)] : 0;
+                    flux[i]-=advectionFields[axis*R_+i]*(derivative[i]+correction);
+                }
+            }
+            if (spatialTendency) std::copy_n(flux,R_,spatialTendency->data+targetIndex*R_);
+            if (projectFlux) {
+                const std::size_t projectedIndex=targetIndex==2 ? 0 : targetIndex+1;
+                s=project(flux,modal_.data()+projectedIndex*S_,targetIndex==2 ? WVHydrostaticFamily::G : WVHydrostaticFamily::F); if (!s) return s;
+            }
+        }
+        return projectFlux ? projectedFieldsToCoefficients(modal_.data()+S_,modal_.data()+2*S_,modal_.data(),target) : WVKernelStatus::ok();
+    }
     if (preparedFields) std::copy_n(preparedFields->data,4*R_,real_.data());
     else for (std::size_t i=0;i<4;++i) { s=reconstruct(a.coefficients,fields[i],WVHydrostaticDerivative::value,WVHydrostaticComponent::all,real_.data()+i*R_); if (!s) return s; }
     for (std::size_t targetIndex=0;targetIndex<3;++targetIndex) {
