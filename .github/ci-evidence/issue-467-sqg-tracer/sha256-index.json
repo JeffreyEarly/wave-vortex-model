@@ -1,0 +1,30 @@
+{
+  "files": {
+    "pre-fix-reproduction.json": {
+      "bytes": 2352,
+      "sha256": "4a93ed25c2decc45f40d9354d461a972f15c769c521b209230380ef800048c66"
+    },
+    "qualification-driver.m": {
+      "bytes": 2845,
+      "sha256": "61d2b94acd1fdeb567ed8c68ed705d1b99d18898594b31c00589557f5aa2e995"
+    },
+    "qualification.json": {
+      "bytes": 3622,
+      "sha256": "b637c83dd429223b291579241b9ad64688345f4f51da9e91567c195d86be44ea"
+    },
+    "qualification.log.gz": {
+      "bytes": 1066,
+      "sha256": "0aaa25ef0612131fdc158da5649be2714e1f57b0c0b2dbadb0d74f58d70bf1b9"
+    },
+    "reporting-correction.json": {
+      "bytes": 955,
+      "sha256": "12919ce43250ec95b9d432bc0574642657df98f4a10111271e9c8c60584e1894"
+    },
+    "verification.md": {
+      "bytes": 1157,
+      "sha256": "54d9d0f51ed024376f2f3c093db9dd931031ad6767e500074ea6f3c98c1c277e"
+    }
+  },
+  "schema": "wvm-sqg-tracer-evidence-index-v1",
+  "sourceCommit": "9641226c206342712b5df871ee3bfb37a44469fa"
+}

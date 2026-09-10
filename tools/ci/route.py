@@ -24,7 +24,7 @@ PERSISTENCE_TESTS = ['TestPortableRuntimeCompatibility', 'TestPortableRunRequest
                      'TestPortableObserverContracts', 'TestPortableForcingContracts',
                      'TestWVModelOutputPersistence', 'TestNetCDF', 'TestNetCDFHandleOwnership',
                      'TestShouldExcludeConjugatesPersistence', 'TestObservingSystems', 'TestWVModelIntegration',
-                     'TestSpectralOutputRestart']
+                     'TestSpectralOutputRestart', 'TestSQGTracerConvenience']
 MATLAB_CORE_TESTS = ['TestWVTransformInitialization', 'TestCoreTransformInvariants',
                      'TestOperationRegistrationAndCaching', 'TestTotalFlowComponent',
                      'TestFlowComponentSurfaceDiagnostics', 'TestPhysicalUnitMetadata',

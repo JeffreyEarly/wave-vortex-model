@@ -601,7 +601,7 @@ classdef WVModel < handle & WVModelAdaptiveTimeStepMethods & WVModelFixedTimeSte
             end
             % Add a scalar field tracer to be advected by the flow
             % - Topic: Tracer
-            isXYOnly= (length(self.wvt.spatialDimensionNames) == 2);
+            isXYOnly = ~self.wvt.hasVariableWithName('w');
             observingSystem = WVTracer(self,name=name,phi=phi,isXYOnly=isXYOnly);
             if isscalar(self.outputFiles) && isscalar(self.outputFiles(1).outputGroups)
                 self.outputFiles(1).outputGroups(1).addObservingSystem(observingSystem);
