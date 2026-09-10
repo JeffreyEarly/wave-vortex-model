@@ -88,6 +88,8 @@ public:
     static WVKernelStatus createShared(const WVRetainedHorizontalSpecification&, std::shared_ptr<WVFFTEngine>, std::unique_ptr<WVRetainedHorizontalOperator>&);
     // false omits full-grid derivative preparation and bounds fallback scratch
     // to one horizontal plane. spatialDerivative then returns unsupported.
+    // With a retained provider, prepared full-grid derivatives also stream
+    // through one plane; their frequency coverage is still the entire grid.
     WVKernelStatus createWorkspace(std::unique_ptr<WVRetainedHorizontalWorkspace>&, bool prepareSpatialDerivative = true) const;
     WVKernelStatus forward(WVRetainedHorizontalWorkspace&, WVRealInput, WVComplexOutput) const;
     WVKernelStatus inverse(WVRetainedHorizontalWorkspace&, WVComplexInput, WVRealOutput) const;

@@ -18,7 +18,7 @@ struct HorizontalWorkspaceData {
     std::shared_ptr<const HorizontalData> owner;
     std::unique_ptr<WVFFTPlan> forward, inverse;
     std::unique_ptr<WVRetainedHorizontalPlan> retained;
-    bool full = true;
+    bool derivativePrepared = true, batchedFullFFT = true;
     std::vector<double> real;
     std::vector<WVComplex64> half;
     std::atomic<bool> active{false};
@@ -83,7 +83,7 @@ std::size_t WVRetainedHorizontalWorkspace::planBytesLowerBound() const noexcept 
         (data_->retained ? data_->retained->planBytesLowerBound() : 0);
 }
 const char* WVRetainedHorizontalWorkspace::scheduleIdentifier() const noexcept {
-    return data_->retained ? data_->retained->identifier() : data_->full ? "full-fft-gather" : "plane-streamed-full-fft-gather";
+    return data_->retained ? data_->retained->identifier() : data_->batchedFullFFT ? "full-fft-gather" : "plane-streamed-full-fft-gather";
 }
 const void* WVRetainedHorizontalWorkspace::sharedResourceIdentity() const noexcept {
     return data_->retained ? data_->retained->sharedResourceIdentity() : nullptr;
@@ -156,19 +156,20 @@ WVKernelStatus WVRetainedHorizontalOperator::createWorkspace(std::unique_ptr<WVR
     try {
         auto w = std::unique_ptr<WVRetainedHorizontalWorkspace>(new WVRetainedHorizontalWorkspace);
         w->data_ = std::make_unique<HorizontalWorkspaceData>();
-        auto& d = *w->data_; d.owner = data_; d.full = prepareSpatialDerivative;
+        auto& d = *w->data_; d.owner = data_; d.derivativePrepared = prepareSpatialDerivative;
         if (data_->spec.schedule == WVRetainedHorizontalSchedule::streamingPrunedTile16) {
             auto status = data_->engine->createRetainedHorizontalPlan(data_->spec,d.retained);
             if (!status && status.code != WVKernelStatusCode::unsupportedOperation) return status;
             if (status && !d.retained) return {WVKernelStatusCode::fftPlanFailure,"Provider returned an empty retained plan."};
         }
-        if (d.full || !d.retained) {
-            const auto planes = d.full ? data_->spec.grid.planes : 1;
+        d.batchedFullFFT = prepareSpatialDerivative && !d.retained;
+        if (prepareSpatialDerivative || !d.retained) {
+            const auto planes = d.batchedFullFFT ? data_->spec.grid.planes : 1;
             d.real.resize(product(data_->planeSize,planes));
             d.half.resize(product(data_->halfSize,planes));
-            auto status = data_->engine->createPlan(fftSpecification(*data_,false,d.full),d.forward);
+            auto status = data_->engine->createPlan(fftSpecification(*data_,false,d.batchedFullFFT),d.forward);
             if (!status) return status;
-            status = data_->engine->createPlan(fftSpecification(*data_,true,d.full),d.inverse);
+            status = data_->engine->createPlan(fftSpecification(*data_,true,d.batchedFullFFT),d.inverse);
             if (!status) return status;
             if (!d.forward || !d.inverse) return {WVKernelStatusCode::fftPlanFailure,"Provider returned an empty plan."};
         }
@@ -182,7 +183,7 @@ WVKernelStatus WVRetainedHorizontalOperator::forward(WVRetainedHorizontalWorkspa
     ActiveCall guard(w.active); if (!guard.entered) return {WVKernelStatusCode::reentrantExecution,"Horizontal workspace is active."};
     if (w.retained) return w.retained->forward(input,output);
     const auto& g = d.spec.grid; const auto& l = d.spec.retained;
-    if (!w.full) {
+    if (!w.batchedFullFFT) {
         for (std::size_t p = 0; p < g.planes; ++p) {
             for (std::size_t y = 0; y < g.Ny; ++y) for (std::size_t x = 0; x < g.Nx; ++x)
                 w.real[y*g.Nx+x] = input.data[p*g.planeStride+y*g.yStride+x*g.xStride];
@@ -218,7 +219,7 @@ WVKernelStatus WVRetainedHorizontalOperator::inverse(WVRetainedHorizontalWorkspa
         for (std::size_t p = 0; p < g.planes; ++p) if (read(input,p*l.rowStride+mode*l.columnStride).imag != 0)
             return {WVKernelStatusCode::invalidConfiguration,"Self-conjugate Fourier values must be real."};
     if (w.retained) return w.retained->inverse(input,output);
-    if (!w.full) {
+    if (!w.batchedFullFFT) {
         for (std::size_t p = 0; p < g.planes; ++p) {
             std::fill(w.half.begin(),w.half.end(),WVComplex64{});
             for (std::size_t mode = 0; mode < d.mapping.size(); ++mode) {
@@ -247,7 +248,7 @@ WVKernelStatus WVRetainedHorizontalOperator::inverse(WVRetainedHorizontalWorkspa
 }
 WVKernelStatus WVRetainedHorizontalOperator::spatialDerivative(WVRetainedHorizontalWorkspace& workspace, WVRealInput input, WVRealOutput output, bool xDerivative) const {
     auto& w = *workspace.data_; const auto& d = *data_;
-    if (!w.full) return {WVKernelStatusCode::unsupportedOperation,"Workspace omitted full-grid derivative preparation."};
+    if (!w.derivativePrepared) return {WVKernelStatusCode::unsupportedOperation,"Workspace omitted full-grid derivative preparation."};
     if (w.owner != data_) return {WVKernelStatusCode::invalidConfiguration,"Workspace belongs to another horizontal operator."};
     if (input.bytes < d.realSpan || output.bytes < d.realSpan) return {WVKernelStatusCode::invalidShape,"Derivative grid capacity is too small."};
     if (!addressFits(input.data,d.realSpan,alignof(double)) || !addressFits(output.data,d.realSpan,alignof(double)))
@@ -255,16 +256,31 @@ WVKernelStatus WVRetainedHorizontalOperator::spatialDerivative(WVRetainedHorizon
     if (overlap(input.data,d.realSpan,output.data,d.realSpan)) return {WVKernelStatusCode::overlappingArrays,"Derivative input and output overlap."};
     ActiveCall guard(w.active); if (!guard.entered) return {WVKernelStatusCode::reentrantExecution,"Horizontal workspace is active."};
     const auto& g = d.spec.grid;
+    const auto half = g.Nx/2+1;
+    const auto differentiate = [&](WVComplex64* values) {
+        for (std::size_t y = 0; y < g.Ny; ++y) for (std::size_t x = 0; x < half; ++x) {
+            const auto i = xDerivative ? x : y, n = xDerivative ? g.Nx : g.Ny;
+            const auto mode = i <= n/2 ? static_cast<std::int64_t>(i) : static_cast<std::int64_t>(i)-static_cast<std::int64_t>(n);
+            const double k = n%2 == 0 && i == n/2 ? 0.0 : 2*std::acos(-1.0)*mode/(xDerivative ? d.spec.Lx : d.spec.Ly)/d.planeSize;
+            auto& value = values[y*half+x]; value = {-k*value.imag,k*value.real};
+        }
+    };
+    if (!w.batchedFullFFT) {
+        for (std::size_t p = 0; p < g.planes; ++p) {
+            for (std::size_t y = 0; y < g.Ny; ++y) for (std::size_t x = 0; x < g.Nx; ++x)
+                w.real[y*g.Nx+x] = input.data[p*g.planeStride+y*g.yStride+x*g.xStride];
+            auto status = w.forward->execute(w.real.data(),w.half.data()); if (!status) return status;
+            differentiate(w.half.data());
+            status = w.inverse->execute(w.half.data(),w.real.data()); if (!status) return status;
+            for (std::size_t y = 0; y < g.Ny; ++y) for (std::size_t x = 0; x < g.Nx; ++x)
+                output.data[p*g.planeStride+y*g.yStride+x*g.xStride] = w.real[y*g.Nx+x];
+        }
+        return WVKernelStatus::ok();
+    }
     for (std::size_t p = 0; p < g.planes; ++p) for (std::size_t y = 0; y < g.Ny; ++y) for (std::size_t x = 0; x < g.Nx; ++x)
         w.real[p*d.planeSize+y*g.Nx+x] = input.data[p*g.planeStride+y*g.yStride+x*g.xStride];
     auto status = w.forward->execute(w.real.data(),w.half.data()); if (!status) return status;
-    const auto half = g.Nx/2+1;
-    for (std::size_t p = 0; p < g.planes; ++p) for (std::size_t y = 0; y < g.Ny; ++y) for (std::size_t x = 0; x < half; ++x) {
-        const auto i = xDerivative ? x : y, n = xDerivative ? g.Nx : g.Ny;
-        const auto mode = i <= n/2 ? static_cast<std::int64_t>(i) : static_cast<std::int64_t>(i)-static_cast<std::int64_t>(n);
-        const double k = n%2 == 0 && i == n/2 ? 0.0 : 2*std::acos(-1.0)*mode/(xDerivative ? d.spec.Lx : d.spec.Ly)/d.planeSize;
-        auto& value = w.half[p*d.halfSize+y*half+x]; value = {-k*value.imag,k*value.real};
-    }
+    for (std::size_t p = 0; p < g.planes; ++p) differentiate(w.half.data()+p*d.halfSize);
     status = w.inverse->execute(w.half.data(),w.real.data()); if (!status) return status;
     for (std::size_t p = 0; p < g.planes; ++p) for (std::size_t y = 0; y < g.Ny; ++y) for (std::size_t x = 0; x < g.Nx; ++x)
         output.data[p*g.planeStride+y*g.yStride+x*g.xStride] = w.real[p*d.planeSize+y*g.Nx+x];
