@@ -200,6 +200,7 @@
       "CompiledKernel/include/WaveVortexKernel/WVTransformStratifiedQGKernel.hpp": "d71829160dfac6a69fda8b8aa74949adaa14cf1dab995a81c5896319cc0a0b12",
       "CompiledKernel/include/WaveVortexKernel/WVTransformHydrostaticKernel.hpp": "d02d9efd28ac968a65169911131845efa0d9d2240cf5cb9b15e2bd8b4d1954d8",
       "CompiledKernel/include/WaveVortexKernel/WVTransformBoussinesqKernel.hpp": "1d4ee99a5a64b5da5f0dc79e3af3f9267eaff571adfae531cac675e15c667114"
-    }
+    },
+    "fullGridDerivativeScratch": "one horizontal real/half-spectrum plane when retained provider is active; all resolved frequencies preserved"
   }
 }

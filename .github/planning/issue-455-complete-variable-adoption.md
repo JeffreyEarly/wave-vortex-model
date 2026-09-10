@@ -28,7 +28,7 @@ Final variable adoption requires at least 10% geometric complete-flux improvemen
 - Existing large SQG/Hydrostatic and three-family smoke fixtures are available under `/private/tmp/wvm455-variable-*fixtures*`. Available local disk was approximately 19 GiB at goal start; preserve prior evidence and estimate new fixture/output capacity before generating it.
 - Derivative implementation: Release `WVPrunedHorizontal` and `WVSpectralOperators` passed; ASan/UBSan `WVPrunedHorizontal` passed. Native and reference coverage includes full frequencies, both axes, Nyquist modes, strided/padded storage, input preservation, plan lifetime and zero prepared allocations.
 - Independently built control/candidate workers passed all 18 smoke cases (three families × flux/scalar × three selections) against MATLAB flux or analytical scalar and frozen outputs. Source/binary postflight passed. Harness preparation corrected its Nyquist/cross-term oracle and a missing modal-record include before qualification. No numerical tolerance changed.
-- Production MATLAB/forcing/integrator sources are unchanged between fixture source `55dd8ae` and `b1579883`; reuse preserves the original fixture generator and payload hashes. No large performance result is claimed yet.
+- Production MATLAB/forcing/integrator sources are unchanged between fixture source `55dd8ae` and `b1579883`; reuse preserves the original fixture generator and payload hashes. The [96-run resource screen](../ci-evidence/issue-463-derivative-resources/README.md) passes scientific and production-memory gates; one QG-256 prior-pruned time ratio is 1.0338 and fails its 1.03 gate. #463 remains open pending the combined adoption decision.
 
 ## Prospective derivative-resource screen (#463)
 
