@@ -1,0 +1,11 @@
+{
+  "schema": "wvm-sqg-default-add-tracer-repro-v1",
+  "sourceCommit": "a3acbf4dc9305c4d656399e9f98bc8360ddfa66f",
+  "wvModelPath": "/Users/jearly/Documents/OceanKitRepositories/wvm-v4-variable-compact/@WVModel/WVModel.m",
+  "nonlinearPath": "/Users/jearly/Documents/OceanKitRepositories/wvm-v4-variable-compact/Forcing/WVNonlinearAdvection.m",
+  "status": "reproduced-error",
+  "identifier": "WVTransform:UnknownVariable",
+  "message": "The variable w does not exist",
+  "report": "Error using . (line 255)\nThe variable w does not exist\n\nError in WVTracer/fluxAtTime (line 82)\n                F_phi = -self.wvt.u .* self.wvt.diffX(self.phi) - self.wvt.v .* self.wvt.diffY(self.phi) - self.wvt.w .* self.wvt.diffZF(self.phi);\n                                                                                                           ^^^^^^^^^^\nError in WVModel/fluxAtTimeCellArray (line 805)\n                F(self.indicesForFluxedSystem{i}) = self.fluxedObservingSystems(i).fluxAtTime(t,y0(self.indicesForFluxedSystem{i}));\n                                                    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nError in WVModelFixedTimeStepMethods>@(t,y0)self.fluxAtTimeCellArray(t,y0) (line 131)\n            self.rk4Integrator = WVArrayIntegrator(@(t,y0) self.fluxAtTimeCellArray(t,y0),integratorTimes,Y0,deltaT,OutputFcn=@self.timeStepIncrement);\n                                                           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nError in WVArrayIntegrator (line 45)\n            f0 = f(self.initialTime,y0);\n                 ^^^^^^^^^^^^^^^^^^^^^^\nError in WVModelFixedTimeStepMethods/integrateToTimeWithFixedTimeStep (line 131)\n            self.rk4Integrator = WVArrayIntegrator(@(t,y0) self.fluxAtTimeCellArray(t,y0),integratorTimes,Y0,deltaT,OutputFcn=@self.timeStepIncrement);\n                                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nError in WVModel/integrateToTime (line 749)\n                    self.integrateToTimeWithFixedTimeStep(finalTime);\n                    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^",
+  "sourceCommitCaptureCorrection": "Original MATLAB one-output system call returned exit status 0; commit verified from the clean source path after the run."
+}

@@ -182,6 +182,8 @@ classdef TestCompiledKernelIntegration < matlab.unittest.TestCase
                 "PortableRuntime/app/WaveVortexRunMain.cpp"
                 "PortableRuntime/app/WVRunRequest.cpp"
                 "PortableRuntime/app/WVRunRequest.hpp"
+                "PortableRuntime/app/WVRunnerVariablePolicy.cpp"
+                "PortableRuntime/app/WVRunnerVariablePolicy.hpp"
                 "PortableRuntime/contracts/wave-vortex-run-request-v1.schema.json"
                 "PortableRuntime/contracts/wave-vortex-run-request-v2.schema.json"
                 "PortableRuntime/examples/portable-run-request-v1.json"

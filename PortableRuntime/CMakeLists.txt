@@ -3,6 +3,7 @@ project(WaveVortexPortableRuntime VERSION 1.0.0 LANGUAGES CXX)
 
 include(CTest)
 option(WV_RUNTIME_ENABLE_NATIVE_FFTW "Build wave-vortex-run with the pinned native FFTW adapter" OFF)
+option(WV_RUNTIME_ENABLE_COMPACT_VARIABLE_POLICY "Select the candidate compact variable-kernel policy in the native runner" OFF)
 option(WV_RUNTIME_BUILD_BENCHMARKS "Build author-only portable-runtime benchmark workers" OFF)
 set(WV_RUNTIME_FFTW_ROOT "" CACHE PATH "Prefix containing the validated FFTW 3.3.11 include and lib folders")
 
@@ -86,6 +87,7 @@ add_library(WaveVortexRunner STATIC
     include/WaveVortexRuntime/WVRunner.hpp
     app/WaveVortexRun.cpp
     app/WVRunRequest.cpp
+    app/WVRunnerVariablePolicy.cpp
 )
 add_library(WaveVortex::Runner ALIAS WaveVortexRunner)
 target_compile_features(WaveVortexRunner PUBLIC cxx_std_17)
@@ -108,6 +110,8 @@ if(NOT WV_RUNTIME_GIT_RESULT EQUAL 0 OR NOT WV_RUNTIME_SOURCE_COMMIT)
 endif()
 target_compile_definitions(WaveVortexRunner PRIVATE WV_RUNTIME_SOURCE_COMMIT="${WV_RUNTIME_SOURCE_COMMIT}")
 target_compile_definitions(WaveVortexRunner PRIVATE WV_RUNTIME_HAS_DENSE_OUTPUT=1)
+target_compile_definitions(WaveVortexRunner PRIVATE
+    WV_RUNTIME_ENABLE_COMPACT_VARIABLE_POLICY=$<BOOL:${WV_RUNTIME_ENABLE_COMPACT_VARIABLE_POLICY}>)
 
 if(WV_RUNTIME_ENABLE_NATIVE_FFTW)
     if(NOT APPLE OR NOT CMAKE_SYSTEM_PROCESSOR MATCHES "arm64|aarch64")
@@ -126,6 +130,21 @@ if(WV_RUNTIME_ENABLE_NATIVE_FFTW)
     set_target_properties(wave-vortex-run PROPERTIES BUILD_RPATH "${WV_RUNTIME_FFTW_ROOT}/lib")
 else()
     target_compile_definitions(WaveVortexRunner PRIVATE WV_RUNTIME_HAS_NATIVE_FFTW=0 WV_RUNTIME_EXPECTED_FFTW_ROOT="")
+endif()
+
+if(WV_RUNTIME_ENABLE_COMPACT_VARIABLE_POLICY)
+    if(NOT WV_RUNTIME_ENABLE_NATIVE_FFTW)
+        message(FATAL_ERROR "The compact variable runner policy requires the native FFTW provider.")
+    endif()
+    if(NOT APPLE OR NOT CMAKE_SYSTEM_PROCESSOR MATCHES "arm64|aarch64")
+        message(FATAL_ERROR "The compact variable runner policy currently supports Apple silicon only.")
+    endif()
+    if(NOT WV_ENABLE_ACCELERATE)
+        message(FATAL_ERROR "The compact variable runner policy requires the Accelerate matrix adapter.")
+    endif()
+    target_include_directories(WaveVortexRunner PRIVATE
+        ../CompiledKernel/adapters/accelerate)
+    target_link_libraries(WaveVortexRunner PRIVATE WaveVortex::AccelerateMatrix)
 endif()
 
 if(WV_RUNTIME_BUILD_BENCHMARKS)
@@ -293,8 +312,13 @@ if(BUILD_TESTING)
     wv_add_runtime_test(TestWVObserverOutputEvaluation TestWVObserverOutputEvaluation.cpp observer-output-evaluation)
     wv_add_runtime_test(TestWVObservationOccurrence TestWVObservationOccurrence.cpp observation-occurrence)
     wv_add_runtime_test(TestWVLagrangianParticles TestWVLagrangianParticles.cpp lagrangian-particles)
+    wv_add_runtime_test(TestWVRunnerVariablePolicy TestWVRunnerVariablePolicy.cpp runner-variable-policy)
+    target_include_directories(TestWVRunnerVariablePolicy PRIVATE app)
+    target_link_libraries(TestWVRunnerVariablePolicy PRIVATE WaveVortex::Runner)
     wv_add_runtime_test(TestWaveVortexRun TestWaveVortexRun.cpp standalone-runner)
     target_link_libraries(TestWaveVortexRun PRIVATE WaveVortex::Runner)
+    target_compile_definitions(TestWaveVortexRun PRIVATE
+        WV_TEST_COMPACT_VARIABLE_POLICY=$<BOOL:${WV_RUNTIME_ENABLE_COMPACT_VARIABLE_POLICY}>)
 
     add_executable(WVForwardIntegrationProbe tests/WVForwardIntegrationProbe.cpp)
     target_link_libraries(WVForwardIntegrationProbe PRIVATE WaveVortex::Runner)

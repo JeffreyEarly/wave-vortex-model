@@ -6,6 +6,7 @@
 #include "WaveVortexRuntime/WVRunner.hpp"
 #include "WVModelInternalAccess.hpp"
 #include "WVRunRequest.hpp"
+#include "WVRunnerVariablePolicy.hpp"
 #ifndef WV_RUNTIME_HAS_DENSE_OUTPUT
 #define WV_RUNTIME_HAS_DENSE_OUTPUT 1
 #endif
@@ -16,6 +17,13 @@
 
 #if WV_RUNTIME_HAS_NATIVE_FFTW
 #include "WVNativeFFTWEngine.hpp"
+#endif
+
+#ifndef WV_RUNTIME_ENABLE_COMPACT_VARIABLE_POLICY
+#define WV_RUNTIME_ENABLE_COMPACT_VARIABLE_POLICY 0
+#endif
+#if WV_RUNTIME_ENABLE_COMPACT_VARIABLE_POLICY
+#include "WVAccelerateMatrixBackend.hpp"
 #endif
 
 #include <algorithm>
@@ -354,6 +362,7 @@ bool parseLegacyOptions(int argc, char** argv, Options& options, std::string& er
             options.hasAbsoluteTolerance = true;
         } else if (name == "--threads") {
             if (!parseSize(value,options.threads) || options.threads == 0) { error = "--threads must be a positive integer."; return false; }
+            options.hasRequestedThreads = true;
         } else if (name == "--report") {
             options.report = value;
         } else if (name == "--phase-file") {
@@ -870,6 +879,30 @@ std::unique_ptr<WVFFTEngine> provider(const Options& options, std::string& versi
 #endif
 }
 
+std::string variablePolicyJSON(const cli::WVRunnerVariablePolicy& policy,
+    const cli::WVRunnerHostTopology& topology,bool hasRequestedThreads,
+    std::size_t requestedThreads) {
+    const auto& execution=policy.execution;
+    std::ostringstream output;
+    output << "{\"buildEnabled\":" << (policy.buildEnabled ? "true" : "false")
+           << ",\"variableTransform\":" << (policy.variableTransform ? "true" : "false")
+           << ",\"transformKind\":" << quoted(cli::runnerTransformKindIdentifier(policy.transformKind))
+           << ",\"selection\":" << quoted(std::string(policy.selection))
+           << ",\"compact\":" << (policy.compact ? "true" : "false")
+           << ",\"matrixBackend\":" << quoted(cli::runnerMatrixBackendIdentifier(policy.matrixBackend))
+           << ",\"spectralSchedule\":" << quoted(cli::runnerSpectralScheduleIdentifier(execution.spectralSchedule))
+           << ",\"horizontalSchedule\":" << quoted(cli::runnerHorizontalScheduleIdentifier(execution.horizontalSchedule))
+           << ",\"streamedNonlinear\":" << (execution.streamedNonlinear ? "true" : "false")
+           << ",\"horizontalWorkers\":" << execution.horizontalWorkers
+           << ",\"pointwiseWorkers\":" << execution.pointwiseWorkers
+           << ",\"requestedFFTThreads\":" << (hasRequestedThreads ? std::to_string(requestedThreads) : "null")
+           << ",\"effectiveFFTThreads\":" << policy.effectiveFFTThreads
+           << ",\"hostLogicalWorkers\":" << topology.logicalWorkers
+           << ",\"hostPerformanceWorkers\":" << topology.performanceWorkers
+           << ",\"noFallback\":true}";
+    return output.str();
+}
+
 } // namespace
 
 int wavevortex::runtime::runWaveVortex(
@@ -998,6 +1031,19 @@ int wavevortex::runtime::runWaveVortex(
         }
     }
 
+    const auto hostTopology=cli::runnerHostTopology();
+    const auto requestedFFTThreads=options.threads;
+    const auto variablePolicy=cli::selectRunnerVariablePolicy(
+        WV_RUNTIME_ENABLE_COMPACT_VARIABLE_POLICY!=0,inspection.transformKind,
+        options.provider,options.threads,options.hasRequestedThreads,hostTopology);
+    options.threads=variablePolicy.effectiveFFTThreads;
+    WVVariableKernelServices variableServices;
+    variableServices.execution=variablePolicy.execution;
+#if WV_RUNTIME_ENABLE_COMPACT_VARIABLE_POLICY
+    if (variablePolicy.matrixBackend==cli::WVRunnerMatrixBackend::accelerate)
+        variableServices.matrixBackendFactory=WVCreateAccelerateMatrixBackend;
+#endif
+
     WVModelOutputConfiguration preparedOutputConfiguration;
     if (options.restartMode == "model") {
         WVModelOutputRequest outputRequest;
@@ -1077,12 +1123,13 @@ int wavevortex::runtime::runWaveVortex(
         kernelStatus = WVModel::createFromModelOutputInspection(
             catalog,std::move(modelInspection),
             std::move(preparedOutputConfiguration),std::move(fftEngine),
-            integratorConfiguration,model,modelState,options.densityDiagnostics);
+            integratorConfiguration,model,modelState,options.densityDiagnostics,
+            variableServices);
     } else {
         sourceCheckpoint.forcingSchedule = activeForcingSchedule;
         kernelStatus = WVModel::createFromCheckpoint(
             catalog, std::move(sourceCheckpoint), std::move(fftEngine),
-            integratorConfiguration, model, modelState);
+            integratorConfiguration, model, modelState, variableServices);
     }
     if (!kernelStatus) {
         emit(failureJSON(ExitCode::provider,"construct",kernelStatus.message,{},options.scheduledOutput() ? scheduledOutputJSON(options,scheduledPlan,nullptr) : std::string{}),options.report,std::cerr);
@@ -1593,6 +1640,7 @@ int wavevortex::runtime::runWaveVortex(
         << outputDriverMetrics.controlledStopWorkspaceMaximumLiveBytes
         << "},\"source\":{\"commit\":" << quoted(WV_RUNTIME_SOURCE_COMMIT) << "},"
            << "\"input\":" << quoted(options.input) << ",\"output\":" << quoted(options.output) << ",\"restartMode\":" << quoted(options.restartMode) << ",\"outputPolicy\":" << quoted(options.outputPolicy) << ",\"provider\":" << providerReport.str() << ','
+           << "\"variableKernelPolicy\":" << variablePolicyJSON(variablePolicy,hostTopology,options.hasRequestedThreads,requestedFFTThreads) << ','
            << "\"request\":{\"active\":" << (options.requestMode ? "true" : "false") << ",\"path\":" << quoted(options.requestPath) << ",\"schemaIdentifier\":" << quoted(options.requestSchemaIdentifier) << ",\"schemaVersion\":" << options.requestSchemaVersion << ",\"modelFiles\":" << stringArrayJSON(options.modelFiles) << ",\"destinations\":" << destinationMapJSON(options.outputDestinations) << "},"
            << "\"state\":{\"initialTime\":" << inspection.t << ",\"finalTime\":" << state.waveVortex.t << ",\"deltaT\":" << options.deltaT << ",\"stepCount\":" << stepCount << ",\"rejectedStepCount\":" << rejectedStepCount << ",\"rhsEvaluationCount\":" << rightHandSideEvaluationCount << ",\"shape\":" << sizeArrayJSON(coefficientDimensions) << "},"
            << "\"integrator\":{\"id\":" << quoted(options.integrator) << ",\"controller\":" << quoted(adaptiveController) << ",\"relativeTolerance\":" << options.relativeTolerance << ",\"absoluteTolerance\":" << options.absoluteTolerance << ",\"requestedInitialStep\":" << requestedStepJSON(options.hasInitialStep,options.initialStep) << ",\"effectiveInitialStep\":" << integrationInitialStep << ",\"requestedMaximumStep\":" << requestedStepJSON(options.hasMaximumStep,options.maximumStep) << ",\"effectiveMaximumStep\":" << (hasAdaptiveIntegrator ? effectiveMaximumStep : options.deltaT) << ",\"toleranceHash\":" << quoted(hasAdaptiveIntegrator ? std::to_string(adaptiveToleranceHash) : "") << ",\"toleranceHashClearedMantissaBits\":20,"

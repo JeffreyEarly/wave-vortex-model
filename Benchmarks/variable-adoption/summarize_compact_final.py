@@ -15,6 +15,7 @@ FLUX_PROFILES = {
     for n, nz in ((256, 129), (512, 257))
     if family != 'boussinesq' or n == 256}
 MODEL_PROFILES = {'variable-stratified-qg-composite-large', 'variable-hydrostatic-composite-large'}
+BOUSS_MODEL_PROFILES = {'variable-boussinesq-composite-256'}
 
 
 def positive(value):
@@ -64,6 +65,11 @@ def flux_summary(folder):
                 and post['sourcesAndWorkersUnchanged'])
     if not complete:
         raise ValueError('Incomplete final direct-flux protocol')
+    provider_identities = {tuple(r['report']['provider'][key] for key in
+                                ('version', 'baseLibrary', 'baseLibrarySHA256', 'threadLibrary', 'threadLibrarySHA256'))
+                           for r in runs}
+    if len(provider_identities) != 1:
+        raise ValueError('Direct-flux provider changed within or across source selections')
     for row in runs:
         report = row['report']
         selection = {'production': 'frozen', 'prior-pruned': 'pruned-streamed',
@@ -114,23 +120,33 @@ def model_summary(path):
     campaign = json.loads(path.read_text())
     manifest_bytes = Path(campaign['manifestPath']).read_bytes()
     manifest = json.loads(manifest_bytes)
+    expected_profiles = (BOUSS_MODEL_PROFILES if manifest['schema'] == 'wvm-variable-boussinesq-model-fixture-256-v1'
+                         else MODEL_PROFILES)
     if (hashlib.sha256(manifest_bytes).hexdigest() != campaign['manifestSHA256']
-            or manifest['schema'] != 'wvm-variable-model-fixtures-large-v1'
+            or manifest['schema'] not in ('wvm-variable-model-fixtures-large-v1', 'wvm-variable-boussinesq-model-fixture-256-v1')
             or manifest['parameters']['grid'] != [256, 256, 129]
-            or {p['id'] for p in manifest['profiles']} != MODEL_PROFILES):
+            or {p['id'] for p in manifest['profiles']} != expected_profiles):
         raise ValueError('Model fixture contract differs from the final freeze')
     blocks = campaign['blocks']
     profiles = {b['profile'] for b in blocks}
+    selected_profiles = set(campaign.get('selectedProfiles', expected_profiles))
     expected = {(p, b) for p in profiles for b in range(10)}
-    if (campaign['mode'] != 'final' or profiles != MODEL_PROFILES or len(blocks) != len(expected)
+    if (campaign['mode'] != 'final' or not selected_profiles or not selected_profiles <= expected_profiles
+            or profiles != selected_profiles or len(blocks) != len(expected)
             or {(b['profile'], b['block']) for b in blocks} != expected
             or any(b['warmup'] != (b['block'] < 2) for b in blocks)
-            or not campaign['summary']['passed']):
+            or not campaign['summary']['passed'] or not campaign['summary']['sourceBuildAndProviderIdentityStable']):
         raise ValueError('Incomplete or scientifically failing final model protocol')
     for block in blocks:
+        labels = {'control-frozen', 'candidate-frozen', 'candidate-interleaved', 'candidate-compact'}
+        comparisons = {'matlab-vs-' + label for label in labels}
+        if campaign['retentionPolicy'] == 'first-block' and block['block'] > 0:
+            comparisons |= {'retained-control-vs-' + label for label in labels}
+        else:
+            comparisons |= {'control-vs-' + label for label in labels if label != 'control-frozen'}
         if (not block['passed'] or set(block['runs']) !=
-                {'control-frozen', 'candidate-frozen', 'candidate-interleaved', 'candidate-compact'}
-                or len(block['comparisons']) != 7 or not all(c['passed'] for c in block['comparisons'].values())):
+                labels or set(block['comparisons']) != comparisons
+                or not all(c['passed'] for c in block['comparisons'].values())):
             raise ValueError('Model scientific comparison inventory mismatch')
         for key, run in block['runs'].items():
             report = run['report']
@@ -149,7 +165,8 @@ def model_summary(path):
                     or report['selection']['matrixBackendIdentifier'] != 'accelerate-gemm-v1'):
                 raise ValueError('Model observed optimized topology mismatch')
     measured = [b for b in blocks if not b['warmup']]
-    result = {'scientificChecksPassed': True, 'completeProtocol': True, 'selections': {}}
+    result = {'scientificChecksPassed': True, 'completeProtocol': True,
+              'profiles': sorted(profiles), 'selections': {}}
     for selection in ('frozen', 'interleaved', 'compact'):
         timing, rss, owned = {}, {}, {}
         for profile in sorted(profiles):
@@ -177,19 +194,24 @@ def model_summary(path):
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument('--flux', type=Path, required=True)
-    parser.add_argument('--model', type=Path)
+    parser.add_argument('--model', type=Path, action='append')
     parser.add_argument('--output', type=Path, required=True)
     args = parser.parse_args()
     result = {'schema': 'wvm-variable-final-gates-v1', 'flux': flux_summary(args.flux),
+              'evaluatorSHA256': hashlib.sha256(Path(__file__).read_bytes()).hexdigest(),
               'defaultAdoption': False,
               'limitations': ['Boussinesq 512 direct flux excluded by capacity.',
-                              'Model qualification covers SQG/Hydrostatic 256 composite workloads only.',
+                              'Model qualification uses short 256x256x129 composite workloads; 512 model workloads are not qualified.',
                               'Public MATLAB-loaded variable service injection is not exposed.']}
     if args.model:
-        result['model'] = model_summary(args.model)
+        models = [model_summary(path) for path in args.model]
+        observed = [p for model in models for p in model['profiles']]
+        complete = set(observed) == MODEL_PROFILES | BOUSS_MODEL_PROFILES and len(observed) == 3
+        result['model'] = {'campaigns': models, 'allThreeFamiliesQualified': complete}
         result['measuredGatesPassed'] = (result['flux']['productionGatesPassed']
                                         and result['flux']['priorPrunedGatesPassed']
-                                        and result['model']['selections']['compact']['passed'])
+                                        and complete
+                                        and all(model['selections']['compact']['passed'] for model in models))
     result['decision'] = 'Measurement evidence; final source/default/CI handoff remains separate.'
     with args.output.open('x') as stream:
         json.dump(result, stream, indent=2, allow_nan=False)

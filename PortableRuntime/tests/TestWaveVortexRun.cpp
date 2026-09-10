@@ -1,5 +1,6 @@
 #include "WVTestExtensionCatalog.hpp"
 #include "WaveVortexRuntime/WVCheckpointReader.hpp"
+#include "WaveVortexRuntime/WVModelOutputNetCDF.hpp"
 #include "WaveVortexRuntime/WVRunner.hpp"
 
 #include <algorithm>
@@ -20,6 +21,10 @@
 
 #if defined(__APPLE__) || defined(__linux__)
 #include <unistd.h>
+#endif
+
+#ifndef WV_TEST_COMPACT_VARIABLE_POLICY
+#define WV_TEST_COMPACT_VARIABLE_POLICY 0
 #endif
 
 namespace {
@@ -114,6 +119,76 @@ double jsonNumber(const std::string& json, const std::string& key) {
     const double value = std::strtod(begin,&end);
     require(end != begin,"JSON field is not numeric: "+key);
     return value;
+}
+
+void requirePortableRunnerPolicy(const std::string& report,const char* route) {
+    require(report.find("\"variableKernelPolicy\":{")!=std::string::npos,
+        std::string(route)+" runner report omitted variable-kernel policy");
+    require(report.find("\"matrixBackend\":\"scalar\"")!=std::string::npos &&
+        report.find("\"transformKind\":\"constant-stratification\"")!=std::string::npos &&
+        report.find("\"spectralSchedule\":\"established-interleaved\"")!=std::string::npos &&
+        report.find("\"horizontalSchedule\":\"full-fft\"")!=std::string::npos &&
+        report.find("\"effectiveFFTThreads\":1")!=std::string::npos &&
+        report.find("\"noFallback\":true")!=std::string::npos,
+        std::string(route)+" reference policy changed or was incompletely reported");
+#if WV_TEST_COMPACT_VARIABLE_POLICY
+    require(report.find("\"buildEnabled\":true")!=std::string::npos &&
+        report.find("\"selection\":\"non-variable-transform\"")!=std::string::npos,
+        std::string(route)+" did not report its inspected non-variable family");
+#else
+    require(report.find("\"buildEnabled\":false")!=std::string::npos &&
+        report.find("\"selection\":\"build-disabled\"")!=std::string::npos,
+        std::string(route)+" changed the default-off runner policy");
+#endif
+}
+
+double createModelOutputFixture(const WVCheckpoint& checkpoint,const std::filesystem::path& path) {
+    WVPortableObserverRecord record;
+    const std::vector<std::size_t> shape={checkpoint.state.coefficients.shape.rows,
+        checkpoint.state.coefficients.shape.columns};
+    for (const auto* name:{"Ap","Am","A0"})
+        record.stateBlocks.push_back({name,WVStateScalarType::complex64,shape,
+            WVToleranceKind::coefficientEnergyScaled,1e-6,WVStateOwnership::integratorOwned,
+            WVRestartRequirement::requiredDynamicState});
+    WVObserverRecord coefficients;
+    coefficients.identifier="coefficients";
+    coefficients.name="wave-vortex coefficients";
+    coefficients.typeIdentifier="WVCoefficients";
+    coefficients.stateBlockIdentifiers={"Ap","Am","A0"};
+    record.observers.push_back(std::move(coefficients));
+    const double interval=1e-7,finalTime=checkpoint.state.t+2*interval;
+    record.outputFiles={{"primary",path.string(),{{"restart","wave-vortex",
+        {interval,checkpoint.state.t,finalTime},{"coefficients"},true}}}};
+    WVPortableObserverDescriptor descriptor;
+    auto status=WVPortableObserverDescriptor::create(record,test::extensionCatalog(),descriptor);
+    require(bool(status),status.message);
+    WVIntegrationStateLayout layout;
+    status=WVIntegrationStateLayout::create(checkpoint.state.coefficients.shape,descriptor,layout);
+    require(bool(status),status.message);
+    WVOutputPlan plan;
+    status=WVOutputPlan::create(descriptor,test::extensionCatalog(),checkpoint.state.t,finalTime,{},plan);
+    require(bool(status) && plan.eventCount()>0,status.message);
+    WVModelOutputNetCDFConfiguration configuration{test::extensionCatalog(),checkpoint,false};
+    WVModelOutputNetCDFSink sink;
+    auto persistence=WVModelOutputNetCDFSink::createNew(configuration,descriptor,plan,layout,nullptr,sink);
+    require(bool(persistence),persistence.message);
+    status=sink.preflight(plan); require(bool(status),status.message);
+    for (std::size_t index=0;index<plan.eventCount();++index) {
+        const auto planned=plan.event(index);
+        require(planned.routeCount==1,"Model-output fixture route count differs");
+        auto state=checkpoint.state.view(); state.t=planned.scheduledTime;
+        WVOutputEvent event;
+        event.eventOrdinal=planned.eventOrdinal;
+        event.scheduledTime=planned.scheduledTime;
+        event.state={state,nullptr,0};
+        event.routes=planned.routes;
+        event.routeCount=planned.routeCount;
+        WVOutputDeliveryResult delivery;
+        status=sink.deliver(event,planned.routes[0],delivery);
+        require(bool(status),status.message);
+    }
+    persistence=sink.close(); require(bool(persistence),persistence.message);
+    return plan.event(plan.eventCount()-1).scheduledTime;
 }
 
 } // namespace
@@ -233,6 +308,7 @@ int main() {
         require(checkpoint.state.t > 8.949 && checkpoint.state.t < 9.025,"runner did not advance the selected state");
         require(std::filesystem::file_size(report) > 0,"runner did not write its report");
         const auto reportText = text(report);
+        requirePortableRunnerPolicy(reportText,"checkpoint route");
         const auto checkpointStateBytes = jsonNumber(reportText,"checkpointState");
         const auto modelStateBytes = jsonNumber(reportText,"modelState");
         const auto extensionCatalogBytes = jsonNumber(reportText,"extensionCatalog");
@@ -286,6 +362,12 @@ int main() {
         require(reportText.find("\"stageFluxClearWrites\":0") != std::string::npos && reportText.find("\"weightedFluxInitializationReads\":216") != std::string::npos,"runner omitted eliminated-clear and first-stage initialization diagnostics");
         require(reportText.find("\"contractAbstractionAdditionalArrayStorage\":0") != std::string::npos,"runner reported array-sized contract workspace");
         require(reportText.find("\"integrationBreakdownSeconds\"") != std::string::npos && reportText.find("\"waveVortexFlux\"") != std::string::npos && reportText.find("\"tracerAdvection\"") != std::string::npos && reportText.find("\"tracerForward\"") != std::string::npos && reportText.find("\"tracerAntialias\"") != std::string::npos && reportText.find("\"observerEvaluation\"") != std::string::npos,"runner omitted the integration cost decomposition");
+        const auto modelInput=directory/"model-route.nc";
+        const auto modelReport=directory/"model-route-report.json";
+        const auto modelTime=createModelOutputFixture(checkpoint,modelInput);
+        require(run(quote(modelInput)+" --restart-mode model --output-policy append --delta-t 1e-7 --final-time "+number(modelTime+1e-7)+" --fft-provider reference --report "+quote(modelReport))==0,
+            "runner model-output route failed");
+        requirePortableRunnerPolicy(text(modelReport),"model-output route");
         const auto protectedOutput = directory/"protected-output.nc";
         {
             std::ofstream stream(protectedOutput,std::ios::binary);
