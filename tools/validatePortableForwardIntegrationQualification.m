@@ -25,6 +25,11 @@ requiredSources = ["PortableRuntime/include/WaveVortexRuntime/WVRungeKutta.hpp",
     "CompiledKernel/src/WVTransformConstantStratificationKernel.cpp", ...
     "PortableRuntime/src/WVFieldEvaluationService.cpp","PortableRuntime/src/WVStratifiedFieldEvaluationAdapter.cpp", ...
     "PortableRuntime/src/WVBarotropicQGFieldEvaluationAdapter.cpp"];
+runnerSource = fullfile(root,"PortableRuntime/app/WaveVortexRun.cpp");
+if isfile(runnerSource) && contains(fileread(runnerSource),"WVRunnerVariablePolicy.hpp")
+    requiredSources = [requiredSources,"PortableRuntime/CMakeLists.txt","CompiledKernel/CMakeLists.txt", ...
+        "PortableRuntime/app/WVRunnerVariablePolicy.cpp","PortableRuntime/app/WVRunnerVariablePolicy.hpp"];
+end
 sourcePaths = validateHashes(report.sourceSHA256,root);
 require(all(ismember(requiredSources,sourcePaths)),"Missing required runtime, probe or MATLAB source digest.");
 require(~isempty(report.artifacts),"Complete qualification requires retained execution evidence.");

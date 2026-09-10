@@ -1,0 +1,47 @@
+[
+  {
+    "id": "stratified-qg-256x256x129",
+    "comparison": {
+      "maximumScaleNormalizedError": 0.0,
+      "relativeL2Error": 0.0,
+      "passed": true
+    },
+    "bitwiseEqual": true
+  },
+  {
+    "id": "hydrostatic-256x256x129",
+    "comparison": {
+      "maximumScaleNormalizedError": 0.0,
+      "relativeL2Error": 0.0,
+      "passed": true
+    },
+    "bitwiseEqual": true
+  },
+  {
+    "id": "stratified-qg-512x512x257",
+    "comparison": {
+      "maximumScaleNormalizedError": 0.0,
+      "relativeL2Error": 0.0,
+      "passed": true
+    },
+    "bitwiseEqual": true
+  },
+  {
+    "id": "hydrostatic-512x512x257",
+    "comparison": {
+      "maximumScaleNormalizedError": 0.0,
+      "relativeL2Error": 0.0,
+      "passed": true
+    },
+    "bitwiseEqual": true
+  },
+  {
+    "id": "boussinesq-256x256x129",
+    "comparison": {
+      "maximumScaleNormalizedError": 0.0,
+      "relativeL2Error": 0.0,
+      "passed": true
+    },
+    "bitwiseEqual": true
+  }
+]

@@ -1,0 +1,259 @@
+{
+  "archive": {
+    "bytes": 125200,
+    "fileCount": 59,
+    "path": "qualification-text.json.gz",
+    "sha256": "626c1f874b8c0ef61e3b0df78b125b24d008ed48caf7c8a161b659445407228d",
+    "uncompressedBytes": 1708000
+  },
+  "directFiles": {
+    "build-receipt.json": {
+      "bytes": 2906,
+      "sha256": "816e507253934b15417e74d7417915071372ff4355e5bb810aed6a1385113706"
+    },
+    "verification.json": {
+      "bytes": 4091,
+      "sha256": "2c06a91e00805c7a6bb79c4aed8658ddb09e8e31b451cc248942f0eaf855e6c2"
+    }
+  },
+  "files": {
+    "forward-evidence/analyzer-baseline-comparison.json": {
+      "bytes": 3859,
+      "sha256": "d79b0fc45131a2a7a36b5b8886e504daf64723e7a80baa036ec7fd04f392ae1f"
+    },
+    "forward-evidence/analyzer-results.json": {
+      "bytes": 815,
+      "sha256": "59dcdfd8d1b4008884ee58c2a09e34b48c107e527088f62b5f73466b7b5fc26a"
+    },
+    "forward-evidence/assembly-results.json": {
+      "bytes": 180,
+      "sha256": "7a9d8ccbcd0c2699867703235a9dad52226b3f33e8f0b592a2c1eaa2b58bfef6"
+    },
+    "forward-evidence/catalog-results.json": {
+      "bytes": 1645,
+      "sha256": "13b77d44a524438e9cc183652f22538f33d13b29589e05b51f33af9f311f4a58"
+    },
+    "forward-evidence/compiled-results.json": {
+      "bytes": 960,
+      "sha256": "7dc0c50e9f073904e2ddc699e61f9ea6ad4a68673cfb6ba4cce0743b6858002c"
+    },
+    "forward-evidence/forward-barotropic-qg-rk45-native-fftw.json": {
+      "bytes": 25211,
+      "sha256": "df2370b5fe665c9ac8deca8039db42a0ca12f117ef01f7ceef0592592577bff0"
+    },
+    "forward-evidence/forward-barotropic-qg-rk45-reference.json": {
+      "bytes": 25203,
+      "sha256": "8c828d553d5ca979c1425be3182fe285db4795d0570cd8eb7caf06b6dceb52f6"
+    },
+    "forward-evidence/forward-boussinesq-rk45-native-fftw.json": {
+      "bytes": 25582,
+      "sha256": "cd5d4e0607179d489e7df20ad94c0902cf35a81fbcf0fc0c083835f5f762eadf"
+    },
+    "forward-evidence/forward-boussinesq-rk45-reference.json": {
+      "bytes": 25423,
+      "sha256": "01efd359e6709c966b7124c484dcc2b186193c8ed84d2831f088b601e32b64f5"
+    },
+    "forward-evidence/forward-constant-hydrostatic-cfl-rk4-native-fftw.json": {
+      "bytes": 25620,
+      "sha256": "24f7c76952f956a80d4d58851ec1979625d2367cd7aaa60d460b54e64b21bf13"
+    },
+    "forward-evidence/forward-constant-hydrostatic-cfl-rk4-reference.json": {
+      "bytes": 25605,
+      "sha256": "4dc49b06bee0a5e70e99209497ec59f2c8785e66592d4a29dec5dadf6ae6023a"
+    },
+    "forward-evidence/forward-constant-nonhydrostatic-rk23-native-fftw.json": {
+      "bytes": 25614,
+      "sha256": "f274aebf48bd7651adebf01e3fa6fbfb3692770252920bf0036546fb41b6890d"
+    },
+    "forward-evidence/forward-constant-nonhydrostatic-rk23-reference.json": {
+      "bytes": 25603,
+      "sha256": "097cad777950893342f70f3e6f63edbc2d6a09f439a7bbef4b1d264ef1768fe0"
+    },
+    "forward-evidence/forward-hydrostatic-rk45-native-fftw.json": {
+      "bytes": 25577,
+      "sha256": "c37f8b82789f6e7d28c3dd0b0c99c632524e7c05d2808c9bad3faa77de9985e3"
+    },
+    "forward-evidence/forward-hydrostatic-rk45-reference.json": {
+      "bytes": 25415,
+      "sha256": "03fc85aeedc1d70559028ab837751c632270d4ce77c53b8a7ba9d24774540089"
+    },
+    "forward-evidence/forward-results.json": {
+      "bytes": 1313,
+      "sha256": "6163035d57fec7283e13d190231462dcc4df22f5a95af1541cffe4a1ace5f073"
+    },
+    "forward-evidence/forward-stratified-qg-rk45-native-fftw.json": {
+      "bytes": 25562,
+      "sha256": "958a526c228a8e4cd6e9e1b0c1979521f4fd51a88c8db3b3a7fc44ab20be10d1"
+    },
+    "forward-evidence/forward-stratified-qg-rk45-reference.json": {
+      "bytes": 25402,
+      "sha256": "ee6fc38f47edb47db5f1f92023cf334227348b3eefcbeb4e11ae776e119f3282"
+    },
+    "forward-evidence/historical-top-level-receipts/native-fftw-v1.json": {
+      "bytes": 117238,
+      "sha256": "9f3b317e5780f8759cd755520ab114c221e0d3beb1eda0d5073391a524238da9"
+    },
+    "forward-evidence/historical-top-level-receipts/reference-v1.json": {
+      "bytes": 117231,
+      "sha256": "f1fefe8fcd9a4a36d58242152fb502b862d11ccbd4c79b9399052014490b1ba7"
+    },
+    "forward-evidence/report-validation-correction.json": {
+      "bytes": 718,
+      "sha256": "2f8ceef2c9c133a59074fb0da3778aafa3b5a31b04755518733eb69c03c09a24"
+    },
+    "logs/build.log": {
+      "bytes": 10218,
+      "sha256": "fe936eeb52ca77fa9f71db7560a6419eb25f63051f6812eb520f7eb051ed549b"
+    },
+    "logs/forward-initial-with-assertion-failure.log": {
+      "bytes": 61053,
+      "sha256": "4890611feab93d019f43b09391011c308df39b51b143df2004c8ed5519e1e1a6"
+    },
+    "logs/postprocessing-corrected.log": {
+      "bytes": 3087,
+      "sha256": "e128b38c862bc1037edc45ed24ba8e32f87fc3dcb808273ef6b70a7a15e7a4d2"
+    },
+    "qualification/current-content-addressed/forward-barotropic-qg-rk45-native-fftw-df2370b5fe665c9ac8deca8039db42a0ca12f117ef01f7ceef0592592577bff0.json": {
+      "bytes": 25211,
+      "sha256": "df2370b5fe665c9ac8deca8039db42a0ca12f117ef01f7ceef0592592577bff0"
+    },
+    "qualification/current-content-addressed/forward-barotropic-qg-rk45-reference-8c828d553d5ca979c1425be3182fe285db4795d0570cd8eb7caf06b6dceb52f6.json": {
+      "bytes": 25203,
+      "sha256": "8c828d553d5ca979c1425be3182fe285db4795d0570cd8eb7caf06b6dceb52f6"
+    },
+    "qualification/current-content-addressed/forward-boussinesq-rk45-native-fftw-cd5d4e0607179d489e7df20ad94c0902cf35a81fbcf0fc0c083835f5f762eadf.json": {
+      "bytes": 25582,
+      "sha256": "cd5d4e0607179d489e7df20ad94c0902cf35a81fbcf0fc0c083835f5f762eadf"
+    },
+    "qualification/current-content-addressed/forward-boussinesq-rk45-reference-01efd359e6709c966b7124c484dcc2b186193c8ed84d2831f088b601e32b64f5.json": {
+      "bytes": 25423,
+      "sha256": "01efd359e6709c966b7124c484dcc2b186193c8ed84d2831f088b601e32b64f5"
+    },
+    "qualification/current-content-addressed/forward-constant-hydrostatic-cfl-rk4-native-fftw-24f7c76952f956a80d4d58851ec1979625d2367cd7aaa60d460b54e64b21bf13.json": {
+      "bytes": 25620,
+      "sha256": "24f7c76952f956a80d4d58851ec1979625d2367cd7aaa60d460b54e64b21bf13"
+    },
+    "qualification/current-content-addressed/forward-constant-hydrostatic-cfl-rk4-reference-4dc49b06bee0a5e70e99209497ec59f2c8785e66592d4a29dec5dadf6ae6023a.json": {
+      "bytes": 25605,
+      "sha256": "4dc49b06bee0a5e70e99209497ec59f2c8785e66592d4a29dec5dadf6ae6023a"
+    },
+    "qualification/current-content-addressed/forward-constant-nonhydrostatic-rk23-native-fftw-f274aebf48bd7651adebf01e3fa6fbfb3692770252920bf0036546fb41b6890d.json": {
+      "bytes": 25614,
+      "sha256": "f274aebf48bd7651adebf01e3fa6fbfb3692770252920bf0036546fb41b6890d"
+    },
+    "qualification/current-content-addressed/forward-constant-nonhydrostatic-rk23-reference-097cad777950893342f70f3e6f63edbc2d6a09f439a7bbef4b1d264ef1768fe0.json": {
+      "bytes": 25603,
+      "sha256": "097cad777950893342f70f3e6f63edbc2d6a09f439a7bbef4b1d264ef1768fe0"
+    },
+    "qualification/current-content-addressed/forward-hydrostatic-rk45-native-fftw-c37f8b82789f6e7d28c3dd0b0c99c632524e7c05d2808c9bad3faa77de9985e3.json": {
+      "bytes": 25577,
+      "sha256": "c37f8b82789f6e7d28c3dd0b0c99c632524e7c05d2808c9bad3faa77de9985e3"
+    },
+    "qualification/current-content-addressed/forward-hydrostatic-rk45-reference-03fc85aeedc1d70559028ab837751c632270d4ce77c53b8a7ba9d24774540089.json": {
+      "bytes": 25415,
+      "sha256": "03fc85aeedc1d70559028ab837751c632270d4ce77c53b8a7ba9d24774540089"
+    },
+    "qualification/current-content-addressed/forward-stratified-qg-rk45-native-fftw-958a526c228a8e4cd6e9e1b0c1979521f4fd51a88c8db3b3a7fc44ab20be10d1.json": {
+      "bytes": 25562,
+      "sha256": "958a526c228a8e4cd6e9e1b0c1979521f4fd51a88c8db3b3a7fc44ab20be10d1"
+    },
+    "qualification/current-content-addressed/forward-stratified-qg-rk45-reference-ee6fc38f47edb47db5f1f92023cf334227348b3eefcbeb4e11ae776e119f3282.json": {
+      "bytes": 25402,
+      "sha256": "ee6fc38f47edb47db5f1f92023cf334227348b3eefcbeb4e11ae776e119f3282"
+    },
+    "qualification/current-top-level/forward-integration-native-fftw-v1.json": {
+      "bytes": 143249,
+      "sha256": "d87afdf02def0f421396fa72cc35d3d439e3078528859eb2e2d646b425b8d52d"
+    },
+    "qualification/current-top-level/forward-integration-reference-v1.json": {
+      "bytes": 142732,
+      "sha256": "9f88ff9710a7d7e6c70be3dc0dcd529557590f4e54c3dea11e7c1e605b902f26"
+    },
+    "scripts/actual-commands.sh": {
+      "bytes": 1367,
+      "sha256": "936032f6b811b6e66597973cd2e1a4e301a91d2999b5cce9d808a52b38632a38"
+    },
+    "scripts/adopt-qualified-policy.py": {
+      "bytes": 8765,
+      "sha256": "b0a7a0e435a75c04769797d8d2c70734905b05e7ce01aa3554158d7b98c700b8"
+    },
+    "scripts/finish-forward-qualification.m": {
+      "bytes": 7358,
+      "sha256": "6183f8adf53f3b4d881e5a39b1d7b28c72076a16c9827cd26347ca81d2dc3f1f"
+    },
+    "scripts/package-default-qualification.py": {
+      "bytes": 17899,
+      "sha256": "df983f00300aba2359c2f645ff24a77dcc43b3292b3978af97b255e60ea887ab"
+    },
+    "scripts/refresh-forward-qualification-attempt1.m": {
+      "bytes": 7832,
+      "sha256": "d81be1d9afed04f3f7acef41f5c44b31e648536735249e2e4cae82859d2b900d"
+    },
+    "scripts/refresh-forward-qualification-corrected.m": {
+      "bytes": 7832,
+      "sha256": "41cc66a772d13ebc6fd0d7f05947b1a0740a148a10c2b3ce51de5238051b7d21"
+    },
+    "source-snapshots/CompiledKernel/CMakeLists.txt": {
+      "bytes": 4020,
+      "sha256": "e133b74121e699325e539f6ba5c424e9bb2739200cb86c54d8077cace2c3b2ea"
+    },
+    "source-snapshots/PortableRuntime/CMakeLists.txt": {
+      "bytes": 33664,
+      "sha256": "d0c100b68f0302ca062ae9e7919843f99813897a5198c135a69afc1919a24876"
+    },
+    "source-snapshots/PortableRuntime/app/WVRunnerVariablePolicy.cpp": {
+      "bytes": 4454,
+      "sha256": "02e695fb461ac734de780efc3bfb52e9b9621a2edbd37893ae9dbbc7d7191bfb"
+    },
+    "source-snapshots/PortableRuntime/app/WVRunnerVariablePolicy.hpp": {
+      "bytes": 1484,
+      "sha256": "c16796f29a84789a37fdf4927bfd03892796d683eb796aef75a0b5c5207d6c94"
+    },
+    "source-snapshots/PortableRuntime/app/WaveVortexRun.cpp": {
+      "bytes": 103110,
+      "sha256": "abb75e0d63cb938469596787033d081d56fbf84f9a53820d38cf99f3c69ceae0"
+    },
+    "source-snapshots/PortableRuntime/tests/TestWVRunnerVariablePolicy.cpp": {
+      "bytes": 4995,
+      "sha256": "6978c037b4d61c420215876ea1faeafb0066c9b980a23f77d41e86f4bfb897e6"
+    },
+    "source-snapshots/PortableRuntime/tests/TestWaveVortexRun.cpp": {
+      "bytes": 61536,
+      "sha256": "0984d74149c0aefe848714240aec2c5c8a563dc24721050e17fa5d3617a16115"
+    },
+    "source-snapshots/PortableRuntime/tests/WVForwardIntegrationProbe.cpp": {
+      "bytes": 2083,
+      "sha256": "8a7b800a5cf6140e89242d4989a0a1ec81bc8e496737cb4dafe830a52068de3a"
+    },
+    "source-snapshots/UnitTests/TestCompiledKernelIntegration.m": {
+      "bytes": 14101,
+      "sha256": "035c3b00654981eb01f12fe4f4593f197973510aa603f9a807f411f7188b5009"
+    },
+    "source-snapshots/UnitTests/TestPortableForwardIntegration.m": {
+      "bytes": 29205,
+      "sha256": "a4d5b8d437855263758ef08339fc142fc1843839363ee38fc0a26dbcb5aa0b35"
+    },
+    "source-snapshots/UnitTests/TestPortableForwardIntegrationCatalog.m": {
+      "bytes": 19825,
+      "sha256": "d9e3cdf312f5665bf151a71b6929ab7d44cc1af4f83a2a84a747a8a8c63d7798"
+    },
+    "source-snapshots/tools/generatePortableForwardIntegrationCatalog.m": {
+      "bytes": 6423,
+      "sha256": "6b4978580ff9aaefbd35948176b49b3f7a1c386418e726983c13708445775ada"
+    },
+    "source-snapshots/tools/prepareWaveVortexModelReleaseCandidate.m": {
+      "bytes": 12330,
+      "sha256": "478a328b6e581bc92054a3b0de3ab8c7b25978a7a5b4e73d4b8a088305f22e2a"
+    },
+    "source-snapshots/tools/validatePortableForwardIntegrationCatalog.m": {
+      "bytes": 1386,
+      "sha256": "dcde7548b3ecddf54d5f8efcee900ebf88e3b0daa847ff97c95baf0f3b20febd"
+    },
+    "source-snapshots/tools/validatePortableForwardIntegrationQualification.m": {
+      "bytes": 17219,
+      "sha256": "65b89f932bc849abf53a9bd95b7909406b929d51fc79124a217215dd1c2ec69d"
+    }
+  },
+  "schema": "wvm-variable-default-qualification-text-index-v1",
+  "sourceCommit": "b71860fc4cc877298abf5dbb39a3716acc5f0cf4"
+}

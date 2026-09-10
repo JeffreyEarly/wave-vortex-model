@@ -365,6 +365,7 @@ function report=compactReport(full)
     report=struct(status=full.status,integrationRequest=full.integrationRequest,termination=full.termination, ...
         state=full.state,acceptedStepCount=full.state.stepCount,rejectedStepCount=full.state.rejectedStepCount, ...
         denseOutputEvaluationCount=full.integrator.denseOutputEvaluationCount);
+    if isfield(full,"variableKernelPolicy"), report.variableKernelPolicy=full.variableKernelPolicy; end
 end
 function value=relativeError(actual,expected)
     value=max(abs(actual(:)-expected(:)))/max(max(abs(expected(:))),realmin);
@@ -384,6 +385,11 @@ function hashes=sourceHashes(root)
     hashes=struct('path',{},'sha256',{});
     sourceRoot=string(getenv("WV_FORWARD_INTEGRATION_SOURCE_ROOT"));
     if sourceRoot=="", sourceRoot=root; end
+    runnerSource=fullfile(sourceRoot,"PortableRuntime/app/WaveVortexRun.cpp");
+    if isfile(runnerSource) && contains(fileread(runnerSource),"WVRunnerVariablePolicy.hpp")
+        paths=[paths,"PortableRuntime/CMakeLists.txt","CompiledKernel/CMakeLists.txt", ...
+            "PortableRuntime/app/WVRunnerVariablePolicy.cpp","PortableRuntime/app/WVRunnerVariablePolicy.hpp"];
+    end
     for index=1:numel(paths)
         file=fullfile(sourceRoot,paths(index));
         if startsWith(paths(index),"UnitTests/"), file=fullfile(root,paths(index)); end

@@ -6,6 +6,7 @@
 #include "WaveVortexRuntime/WVConstantStratificationIntegrationSystem.hpp"
 #include "WaveVortexRuntime/WVLagrangianParticles.hpp"
 #include "WaveVortexRuntime/WVTracer.hpp"
+#include "WaveVortexRuntime/WVVariableKernelServices.hpp"
 
 #include <memory>
 #include <vector>
@@ -23,14 +24,16 @@ public:
       const WVFrozenForcingSchedule &schedule,
       std::shared_ptr<const WVExtensionCatalog> catalog,
       std::unique_ptr<WVFFTEngine> engine,
-      std::unique_ptr<WVHydrostaticIntegrationSystem> &system);
+      std::unique_ptr<WVHydrostaticIntegrationSystem> &system,
+      const WVVariableKernelServices &services = {});
   static WVKernelStatus create(
       std::shared_ptr<const WVStratifiedModalSource> source,
       const WVFrozenForcingSchedule &schedule,
       const WVPortableObserverDescriptor &descriptor,
       std::shared_ptr<const WVExtensionCatalog> catalog,
       std::unique_ptr<WVFFTEngine> engine,
-      std::unique_ptr<WVHydrostaticIntegrationSystem> &system);
+      std::unique_ptr<WVHydrostaticIntegrationSystem> &system,
+      const WVVariableKernelServices &services = {});
 
   ~WVHydrostaticIntegrationSystem() override;
   WVHydrostaticIntegrationSystem(
@@ -88,7 +91,8 @@ private:
       const WVPortableObserverDescriptor *descriptor,
       std::shared_ptr<const WVExtensionCatalog> catalog,
       std::unique_ptr<WVFFTEngine> engine,
-      std::unique_ptr<WVHydrostaticIntegrationSystem> &system);
+      std::unique_ptr<WVHydrostaticIntegrationSystem> &system,
+      const WVVariableKernelServices &services);
   WVHydrostaticIntegrationSystem() = default;
   WVIntegrationStateLayout layout_;
   std::unique_ptr<WVHydrostaticForcingEngine> forcing_;

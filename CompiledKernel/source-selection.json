@@ -104,7 +104,7 @@
     "sourceSHA256": {
       "interface": "28699522bc82de60378d93e7e25e42938f03bc30939e00f010ad0af67216d589",
       "horizontal": "02dda3f33d22e5642b832eb36625a851e3c92a102588c49845f66a9d600be780",
-      "vertical": "460d12936bd9f383400476b0bc8338735ec9216e4fd7489240f6c9d78ab7898b",
+      "vertical": "8ac147cbf170373865e1b5c63077545362fa74bb3083d1bf0ba8b1bfea30bf05",
       "validation": "eb416d6abc47d97d506b4c4fa65e8006b951d07d013c5d96db0f8043b417cc79",
       "referenceFFT": "703724883edd3c05f583c7e68bad46830b1a92e22524a10906d3da366ad64c49",
       "accelerate": "08fa3565ad33dc08ace85b9c708019745a53fca1187d0ebb9b23991ddb4292cc"
@@ -120,8 +120,8 @@
     "runtimeExecutionCapabilityAdded": false,
     "sourceSHA256": {
       "CompiledKernel/include/WaveVortexKernel/WVStratifiedModalSource.hpp": "e82dc0193e48edeae4b41ff8b9ef7cd3f8e74a38b024e019ecae6afffea65a22",
-      "CompiledKernel/include/WaveVortexKernel/WVTransformStratifiedQGKernel.hpp": "d54a21e4b86731fe11a9ea625f94f13e9b91cff12207bb241ab42a922fcb37bc",
-      "CompiledKernel/src/WVTransformStratifiedQGKernel.cpp": "f5c9d4334902139fd16ecfad83eac2c64edc249f2ae815dfca4ecdfcdf595ef5"
+      "CompiledKernel/include/WaveVortexKernel/WVTransformStratifiedQGKernel.hpp": "d71829160dfac6a69fda8b8aa74949adaa14cf1dab995a81c5896319cc0a0b12",
+      "CompiledKernel/src/WVTransformStratifiedQGKernel.cpp": "b015def825f04b80bddedde0d6b7c9e43d352c387b37daf3efe7eebc3f366de6"
     }
   },
   "boussinesqKernel": {
@@ -180,14 +180,35 @@
   },
   "variableSpectralSchedule": {
     "issue": 455,
-    "status": "experimental-opt-in",
+    "status": "qualified-native-runner-default",
     "productionDefault": false,
     "optionsHeader": "CompiledKernel/include/WaveVortexKernel/WVVariableExecutionOptions.hpp",
     "defaultHorizontalSchedule": "full-fft-gather",
     "nativeCandidateHorizontalSchedule": "fftw-streaming-pruned-tile16",
-    "matrixRepresentation": "direct-interleaved; exact persisted groups",
+    "matrixRepresentation": "Compact split fused views in the eligible native runner; established interleaved control remains available. Exact persisted groups and contiguous subsegments are preserved.",
     "streamedHydrostaticRealScratch": "6R (frozen 10R); spectral scratch unchanged",
-    "qualification": ".github/planning/issue-455-variable-matrix-qualification.md",
-    "fullGridDerivativeScratch": "one horizontal real/half-spectrum plane when retained provider is active; all resolved frequencies preserved"
+    "qualification": ".github/ci-evidence/issue-455-variable-final-adoption/decision.json",
+    "streamedBoussinesqRealScratch": "6R (frozen 11R); preserves four target spectra",
+    "boundedDerivativeResources": "Pruned execution prepares one full-frequency derivative plane pair instead of duplicate full-volume resources (#463)",
+    "pointwiseWorkers": "Prepared contiguous-cell executor: native runner up to 8 performance-core workers; portable service default 1.",
+    "sourceSHA256": {
+      "CompiledKernel/include/WaveVortexKernel/WVVariableExecutionOptions.hpp": "84b08b4bfc568807182645d03da46fe2fe0e739e700e67049fdd3b23cdd10924",
+      "CompiledKernel/src/WVVariableComplexBuffer.hpp": "53a81ca2c48811b39f62a59104cafea2330fd1a121f746ab06a14a1eea85aaf2",
+      "CompiledKernel/src/WVTransformStratifiedQGKernel.cpp": "b015def825f04b80bddedde0d6b7c9e43d352c387b37daf3efe7eebc3f366de6",
+      "CompiledKernel/src/WVTransformHydrostaticKernel.cpp": "1f7a7d2621a9c4cb1e1f28e3aba3b346a026c51bad6af90f4ae689308b7e5feb",
+      "CompiledKernel/src/WVTransformBoussinesqKernel.cpp": "49ed4c101c0f241626c5c085cef244c55dc6e3ed2ffd207f8dbf943f1bba3d70",
+      "CompiledKernel/include/WaveVortexKernel/WVTransformStratifiedQGKernel.hpp": "d71829160dfac6a69fda8b8aa74949adaa14cf1dab995a81c5896319cc0a0b12",
+      "CompiledKernel/include/WaveVortexKernel/WVTransformHydrostaticKernel.hpp": "d02d9efd28ac968a65169911131845efa0d9d2240cf5cb9b15e2bd8b4d1954d8",
+      "CompiledKernel/include/WaveVortexKernel/WVTransformBoussinesqKernel.hpp": "1d4ee99a5a64b5da5f0dc79e3af3f9267eaff571adfae531cac675e15c667114"
+    },
+    "fullGridDerivativeScratch": "one horizontal real/half-spectrum plane when retained provider is active; all resolved frequencies preserved",
+    "productionDefaultScope": "Portable kernel constructors retain their established defaults; eligible native runners select the qualified services.",
+    "nativeRunnerDefault": true,
+    "postMeasurementCommentOnlyChange": {
+      "path": "CompiledKernel/include/WaveVortexKernel/WVVariableExecutionOptions.hpp",
+      "measuredSHA256": "df319684fd1a980acadc723b53bfc75e0e0b8d545ef830859eea52626ab7a281",
+      "adoptedSHA256": "84b08b4bfc568807182645d03da46fe2fe0e739e700e67049fdd3b23cdd10924",
+      "scope": "Comments only; enum values, aggregate layout and constructor defaults are unchanged."
+    }
   }
 }

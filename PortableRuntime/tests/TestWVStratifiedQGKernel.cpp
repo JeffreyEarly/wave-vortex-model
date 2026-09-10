@@ -120,7 +120,9 @@ void contracts(const std::shared_ptr<const WVStratifiedModalRecord>& source) {
 void variableScheduleParity(const std::shared_ptr<const WVStratifiedModalRecord>& source) {
     std::unique_ptr<WVTransformStratifiedQGKernel> frozen, candidate;
     require(bool(WVTransformStratifiedQGKernel::create(source,std::make_unique<WVReferenceFFTEngine>(),frozen)),"Frozen schedule setup failed");
-    WVVariableExecutionOptions options{WVRetainedHorizontalSchedule::streamingPrunedTile16,2,true};
+    WVVariableExecutionOptions options{WVRetainedHorizontalSchedule::streamingPrunedTile16,2,true,
+        WVVariableSpectralSchedule::compactSplitFusedViews};
+    options.pointwiseWorkers=2;
     require(bool(WVTransformStratifiedQGKernel::create(source,std::make_unique<WVReferenceFFTEngine>(),candidate, WVCreateScalarMatrixBackend, options)),"Candidate schedule setup failed");
     require(std::string(candidate->horizontalScheduleIdentifier())=="full-fft-gather","Reference provider fallback was not reported");
     const auto& g=source->geometry(); const auto S=g.Nj*g.Nkl;
@@ -131,6 +133,13 @@ void variableScheduleParity(const std::shared_ptr<const WVStratifiedModalRecord>
     require(bool(frozen->nonlinearFlux(in,{frozenOut.data(),in.shape})),"Frozen nonlinear flux failed");
     require(bool(candidate->nonlinearFlux(in,{candidateOut.data(),in.shape})),"Candidate nonlinear flux failed");
     for (std::size_t i=0;i<S;++i) require(std::abs(frozenOut[i].real-candidateOut[i].real)<1e-12 && std::abs(frozenOut[i].imag-candidateOut[i].imag)<1e-12,"Candidate nonlinear flux differs");
+    auto serialOptions=options; serialOptions.pointwiseWorkers=1;
+    std::unique_ptr<WVTransformStratifiedQGKernel> serial; std::vector<WVComplex64> serialOut(S);
+    require(bool(WVTransformStratifiedQGKernel::create(source,std::make_unique<WVReferenceFFTEngine>(),serial,
+        WVCreateScalarMatrixBackend,serialOptions)),"Single-worker candidate setup failed");
+    require(bool(serial->nonlinearFlux(in,{serialOut.data(),in.shape})),"Single-worker candidate flux failed");
+    for (std::size_t i=0;i<S;++i) require(serialOut[i].real==candidateOut[i].real && serialOut[i].imag==candidateOut[i].imag,
+        "Pointwise worker partition changed QG arithmetic");
     const auto R=g.Nx*g.Ny*g.Nz; std::vector<double> frozenUV(2*R),candidateUV(2*R),frozenRaw(R),candidateRaw(R);
     require(bool(frozen->transformA0ToField(in,WVStratifiedQGField::u,{frozenUV.data(),{g.Nx,g.Ny,g.Nz}})) && bool(frozen->transformA0ToField(in,WVStratifiedQGField::v,{frozenUV.data()+R,{g.Nx,g.Ny,g.Nz}})),"Frozen borrowed fields failed");
     require(bool(candidate->transformA0ToField(in,WVStratifiedQGField::u,{candidateUV.data(),{g.Nx,g.Ny,g.Nz}})) && bool(candidate->transformA0ToField(in,WVStratifiedQGField::v,{candidateUV.data()+R,{g.Nx,g.Ny,g.Nz}})),"Candidate borrowed fields failed");
@@ -143,13 +152,40 @@ void variableScheduleParity(const std::shared_ptr<const WVStratifiedModalRecord>
     allocationProbe::calls=0; allocationProbe::counting=true;
     require(bool(candidate->nonlinearFlux(in,candidateFluxView,0,&candidateRawView,&candidateFields)),"Candidate raw flux failed");
     allocationProbe::counting=false; require(allocationProbe::calls==0,"Candidate prepared nonlinear flux allocated");
-    require(frozenRaw==candidateRaw,"Candidate raw borrowed-field tendency differs");
-    require(frozenUV==candidateUV && frozenUV==frozenUVBefore && candidateUV==candidateUVBefore,"Raw evaluation changed or mutated borrowed fields");
+    for (std::size_t i=0;i<R;++i) {
+        require(std::abs(frozenRaw[i]-candidateRaw[i])<1e-12,
+            "Candidate raw borrowed-field tendency differs");
+        require(std::abs(frozenUV[i]-candidateUV[i])<1e-12 &&
+            std::abs(frozenUV[R+i]-candidateUV[R+i])<1e-12,
+            "Candidate borrowed velocity differs");
+    }
+    require(frozenUV==frozenUVBefore && candidateUV==candidateUVBefore,
+        "Raw evaluation mutated borrowed fields");
     for (const auto* output:{&frozenOut,&candidateOut}) for (const auto value:*output)
         require(value.real==17 && value.imag==19,"Raw evaluation wrote spectral flux");
     for (std::size_t i=0;i<S;++i) require(input[i].real==inputBefore[i].real && input[i].imag==inputBefore[i].imag,"Parity evaluation mutated input coefficients");
-    require(candidate->executionOptions().horizontalWorkers==2 && candidate->executionOptions().streamedNonlinear,"Candidate options were not retained");
+    require(candidate->executionOptions().horizontalWorkers==2 && candidate->executionOptions().streamedNonlinear &&
+        candidate->executionOptions().usesCompactSplitViews() && candidate->executionOptions().pointwiseWorkers==2,
+        "Candidate options were not retained");
     require(candidate->persistentBytes()>=candidate->storage().workspaceBytes,"Candidate storage ledger under-reports workspace");
+
+    auto* retained=candidate.get(); WVVariableExecutionOptions invalidWorkerOptions; invalidWorkerOptions.pointwiseWorkers=0;
+    auto status=WVTransformStratifiedQGKernel::create(source,std::make_unique<WVReferenceFFTEngine>(),candidate,
+        WVCreateScalarMatrixBackend,invalidWorkerOptions);
+    require(status.code==WVKernelStatusCode::invalidConfiguration && candidate.get()==retained,
+        "Zero pointwise workers were accepted or replaced the retained kernel");
+    std::unique_ptr<WVTransformStratifiedQGKernel> invalid;
+    WVVariableExecutionOptions invalidOptions;
+    invalidOptions.spectralSchedule=WVVariableSpectralSchedule::compactSplitFusedViews;
+    status=WVTransformStratifiedQGKernel::create(source,std::make_unique<WVReferenceFFTEngine>(),invalid,
+        WVCreateScalarMatrixBackend,invalidOptions);
+    require(status.code==WVKernelStatusCode::invalidConfiguration && !invalid,
+        "Compact split views accepted a non-streaming horizontal schedule");
+    invalidOptions.spectralSchedule=static_cast<WVVariableSpectralSchedule>(99);
+    status=WVTransformStratifiedQGKernel::create(source,std::make_unique<WVReferenceFFTEngine>(),invalid,
+        WVCreateScalarMatrixBackend,invalidOptions);
+    require(status.code==WVKernelStatusCode::invalidConfiguration && !invalid,
+        "Unknown variable spectral schedule was accepted");
 }
 }
 int main() {

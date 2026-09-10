@@ -22,12 +22,15 @@ std::vector<WVComplex64> complexInput(const json& a) { auto r=a.at("real").get<s
 }
 int main(int argc,char** argv) {
     try {
-        if (argc!=5) throw std::runtime_error("Usage: WVStratifiedQGKernelDump record.nc input.json output.json reference|native|native-accelerate[-pruned]");
+        if (argc!=5) throw std::runtime_error("Usage: WVStratifiedQGKernelDump record.nc input.json output.json reference|native|native-accelerate[-pruned|-compact]");
         std::ifstream inputFile(argv[2]); json data; inputFile>>data;
         std::shared_ptr<const WVStratifiedModalRecord> record; require(WVStratifiedModalReader::read(argv[1],record));
         std::unique_ptr<WVFFTEngine> engine;
-        const std::string requestedProvider=argv[4]; const bool pruned=hasSuffix(requestedProvider,"-pruned");
-        const std::string provider=pruned ? requestedProvider.substr(0,requestedProvider.size()-7) : requestedProvider;
+        const std::string requestedProvider=argv[4];
+        const bool compact=hasSuffix(requestedProvider,"-compact");
+        const bool pruned=compact || hasSuffix(requestedProvider,"-pruned");
+        const auto suffixLength=compact ? 8u : (pruned ? 7u : 0u);
+        const std::string provider=suffixLength ? requestedProvider.substr(0,requestedProvider.size()-suffixLength) : requestedProvider;
         if (provider=="reference") engine=std::make_unique<WVReferenceFFTEngine>();
         else {
 #if WV_TEST_NATIVE_FFTW
@@ -36,12 +39,18 @@ int main(int argc,char** argv) {
             throw std::runtime_error("Native FFTW adapter was not built.");
 #endif
         }
-        WVVariableExecutionOptions options; if (pruned) options={WVRetainedHorizontalSchedule::streamingPrunedTile16,2,true};
+        WVVariableExecutionOptions options;
+        if (pruned) options={WVRetainedHorizontalSchedule::streamingPrunedTile16,2,true,
+            compact ? WVVariableSpectralSchedule::compactSplitFusedViews :
+                WVVariableSpectralSchedule::establishedInterleaved};
+        if (compact) options.pointwiseWorkers=2;
         std::unique_ptr<WVTransformStratifiedQGKernel> kernel; require(WVTransformStratifiedQGKernel::create(record,std::move(engine),kernel,provider=="native-accelerate" ? WVCreateAccelerateMatrixBackend : WVCreateScalarMatrixBackend,options));
         const auto& g=kernel->geometry(); const auto S=g.Nj*g.Nkl,R=g.Nx*g.Ny*g.Nz;
         auto a=complexInput(data.at("A0")); if (a.size()!=S) throw std::runtime_error("Wrong coefficient size."); const auto original=a;
         WVComplexConstView A0{a.data(),kernel->spectralShape()}; std::vector<WVComplex64> c(S); WVComplexView out{c.data(),kernel->spectralShape()};
-        json result; result["engine"]=kernel->engineIdentifier(); result["contract"]=WVStratifiedQGKernelContract; result["horizontalSchedule"]=kernel->horizontalScheduleIdentifier(); result["streamedNonlinear"]=kernel->executionOptions().streamedNonlinear;
+        json result; result["engine"]=kernel->engineIdentifier(); result["matrixBackend"]=kernel->matrixBackendIdentifier(); result["contract"]=WVStratifiedQGKernelContract; result["horizontalSchedule"]=kernel->horizontalScheduleIdentifier(); result["streamedNonlinear"]=kernel->executionOptions().streamedNonlinear;
+        result["compactSplitViews"]=kernel->executionOptions().usesCompactSplitViews(); result["pointwiseWorkers"]=kernel->executionOptions().pointwiseWorkers;
+        result["spectralSchedule"]=kernel->executionOptions().usesCompactSplitViews() ? "compact-split-fused-views" : "established-interleaved";
         const auto& f=kernel->factors(); result["factors"]={{"u",complexValues(f.u)},{"v",complexValues(f.v)},{"eta",f.eta},{"pi",f.pi},{"psi",f.psi},{"qgpv",f.qgpv},{"zetaZ",f.zetaZ},{"energy",f.energy},{"enstrophy",f.enstrophy},{"ke",f.kineticEnergy},{"pe",f.potentialEnergy}};
         struct Field { const char* name; WVStratifiedQGField id; bool surface; };
         const Field fields[]={{"u",WVStratifiedQGField::u,false},{"v",WVStratifiedQGField::v,false},{"w",WVStratifiedQGField::w,false},{"eta",WVStratifiedQGField::eta,false},{"pi",WVStratifiedQGField::pi,false},{"p",WVStratifiedQGField::p,false},{"psi",WVStratifiedQGField::psi,false},{"qgpv",WVStratifiedQGField::qgpv,false},{"rho_e",WVStratifiedQGField::rhoE,false},{"rho_total",WVStratifiedQGField::rhoTotal,false},{"zeta_z",WVStratifiedQGField::zetaZ,false},{"ssh",WVStratifiedQGField::ssh,true},{"ssu",WVStratifiedQGField::ssu,true},{"ssv",WVStratifiedQGField::ssv,true}};

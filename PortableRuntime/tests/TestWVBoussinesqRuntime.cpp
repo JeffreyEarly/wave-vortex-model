@@ -7,10 +7,102 @@
 #include "../../tools/compiled-kernel/tests/WVAllocationProbe.hpp"
 #include <iostream>
 #include <limits>
+#include <array>
+#include <cmath>
 using namespace wavevortex;
 using namespace wavevortex::runtime;
 using namespace wavevortex::test_fixture;
 namespace {
+int injectedFactoryCalls = 0;
+WVKernelStatus countingScalarBackend(std::unique_ptr<WVVerticalMatrixBackend> &backend) {
+    ++injectedFactoryCalls;
+    return WVCreateScalarMatrixBackend(backend);
+}
+
+void injectedServices(std::shared_ptr<const WVStratifiedModalRecord> source,
+                      std::shared_ptr<const WVExtensionCatalog> catalog,
+                      const WVFrozenForcingSchedule &schedule) {
+    WVVariableKernelServices services;
+    services.matrixBackendFactory = countingScalarBackend;
+    services.execution = {WVRetainedHorizontalSchedule::streamingPrunedTile16, 2,
+                          true, WVVariableSpectralSchedule::compactSplitFusedViews};
+    std::unique_ptr<WVBoussinesqForcingEngine> baseline, injected;
+    require(bool(WVBoussinesqForcingEngine::create(
+                    source, schedule, catalog,
+                    std::make_unique<WVReferenceFFTEngine>(), baseline)),
+            "Baseline Boussinesq injection fixture failed");
+    require(bool(WVBoussinesqForcingEngine::create(
+                    source, schedule, catalog,
+                    std::make_unique<WVReferenceFFTEngine>(), injected,
+                    services)),
+            "Injected Boussinesq fixture failed");
+    require(injectedFactoryCalls == 11 &&
+                injected->kernel().executionOptions().usesCompactSplitViews(),
+            "Injected Boussinesq services were not retained");
+    const auto shape = baseline->kernel().spectralShape();
+    const auto count = shape.elementCount();
+    std::array<std::vector<WVComplex64>, 3> coefficients, referenceFlux, injectedFlux;
+    for (auto &values : coefficients) values.resize(count, {.001, -.002});
+    WVMutableCoefficients mutableCoefficients{{coefficients[0].data(), shape},
+                                               {coefficients[1].data(), shape},
+                                               {coefficients[2].data(), shape}};
+    require(bool(baseline->kernel().constrainCoefficients(mutableCoefficients)),
+            "Boussinesq injection coefficient constraint failed");
+    for (auto &values : referenceFlux) values.resize(count);
+    for (auto &values : injectedFlux) values.resize(count);
+    WVState state{.37, .11, {{coefficients[0].data(), shape},
+                             {coefficients[1].data(), shape},
+                             {coefficients[2].data(), shape}}};
+    WVFlux reference{{referenceFlux[0].data(), shape}, {referenceFlux[1].data(), shape},
+                     {referenceFlux[2].data(), shape}};
+    WVFlux actual{{injectedFlux[0].data(), shape}, {injectedFlux[1].data(), shape},
+                  {injectedFlux[2].data(), shape}};
+    require(bool(baseline->nonlinearFlux(state, reference)), "Baseline Boussinesq RHS failed");
+    require(bool(injected->nonlinearFlux(state, actual)), "Injected Boussinesq RHS failed");
+    for (std::size_t family = 0; family < 3; ++family)
+        for (std::size_t i = 0; i < count; ++i) {
+            require(std::abs(referenceFlux[family][i].real - injectedFlux[family][i].real) < 1e-12,
+                    "Injected Boussinesq real RHS differs");
+            require(std::abs(referenceFlux[family][i].imag - injectedFlux[family][i].imag) < 1e-12,
+                    "Injected Boussinesq imaginary RHS differs");
+        }
+    std::unique_ptr<WVBoussinesqIntegrationSystem> system;
+    injectedFactoryCalls = 0;
+    require(bool(WVBoussinesqIntegrationSystem::create(
+                    source, schedule, catalog,
+                    std::make_unique<WVReferenceFFTEngine>(), system, services)),
+            "Injected Boussinesq integration fixture failed");
+    require(injectedFactoryCalls == 11 &&
+                system->kernel().executionOptions().usesCompactSplitViews(),
+            "Injected Boussinesq integration services were not forwarded");
+    WVPortableObserverRecord record;
+    for (const auto &family : system->stateLayout().coefficientFamilies())
+        record.stateBlocks.push_back({family.identifier, WVStateScalarType::complex64,
+                                      family.spectralDimensions,
+                                      WVToleranceKind::coefficientEnergyScaled, 1e-6,
+                                      WVStateOwnership::integratorOwned,
+                                      WVRestartRequirement::requiredDynamicState});
+    WVPortableObserverDescriptor descriptor;
+    require(bool(WVPortableObserverDescriptor::create(record, catalog, descriptor)),
+            "Boussinesq injection descriptor creation failed");
+    injectedFactoryCalls = 0;
+    require(bool(WVBoussinesqIntegrationSystem::create(
+                    source, schedule, descriptor, catalog,
+                    std::make_unique<WVReferenceFFTEngine>(), system, services)),
+            "Injected Boussinesq descriptor fixture failed");
+    require(injectedFactoryCalls == 11 &&
+                system->kernel().executionOptions().usesCompactSplitViews(),
+            "Injected Boussinesq descriptor services were not forwarded");
+    WVVariableKernelServices rejected;
+    rejected.matrixBackendFactory = {};
+    auto *old = injected.get();
+    require(!WVBoussinesqForcingEngine::create(
+                source, schedule, catalog,
+                std::make_unique<WVReferenceFFTEngine>(), injected, rejected) &&
+                injected.get() == old,
+            "Empty Boussinesq backend factory replaced the existing engine");
+}
+
 void contracts(std::shared_ptr<const WVStratifiedModalRecord> source) {
     WVExtensionCatalogBuilder builder; require(bool(addBuiltInExtensions(builder)),"Built-ins failed");
     std::shared_ptr<const WVExtensionCatalog> catalog; require(bool(builder.freeze(catalog)),"Catalog failed");
@@ -79,6 +171,7 @@ void contracts(std::shared_ptr<const WVStratifiedModalRecord> source) {
     std::unique_ptr<WVBoussinesqIntegrationSystem> system;
     status=WVBoussinesqIntegrationSystem::create(source,schedule,catalog,std::make_unique<WVReferenceFFTEngine>(),system); require(bool(status),status.message.c_str());
     require(system->stateLayout().coefficientFamilyCount()==3 && system->stateLayout().transformIdentifier()=="WVTransformBoussinesq","Wrong integration layout");
+    injectedServices(source, catalog, schedule);
 }
 }
 int main() {
@@ -87,6 +180,6 @@ int main() {
         { File f(file.path); for(const auto* name:{"WVTransform","AnnotatedClass"}) nc(nc_put_att_text(f.id,NC_GLOBAL,name,std::char_traits<char>::length("WVTransformBoussinesq"),"WVTransformBoussinesq")); }
         std::shared_ptr<const WVStratifiedModalRecord> source; auto status=WVStratifiedModalReader::read(file.path.string(),source); require(bool(status),status.message.c_str());
         std::weak_ptr<const WVStratifiedModalRecord> weak=source;
-        contracts(source); source.reset(); require(weak.expired(),"Runtime retained its scientific owner after destruction"); std::cout<<"Boussinesq runtime contracts passed\n";
+    contracts(source); source.reset(); require(weak.expired(),"Runtime retained its scientific owner after destruction"); std::cout<<"Boussinesq runtime contracts passed\n";
     } catch(const std::exception& e) { allocationProbe::failAfter=-1; allocationProbe::counting=false; std::cerr<<e.what()<<'\n'; return 1; }
 }

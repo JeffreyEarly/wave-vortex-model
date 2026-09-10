@@ -4,6 +4,7 @@
 #include "WaveVortexRuntime/WVForcingTendency.hpp"
 #include "WaveVortexRuntime/WVIntegrationContracts.hpp"
 #include "WaveVortexKernel/WVTransformStratifiedQGKernel.hpp"
+#include "WaveVortexRuntime/WVVariableKernelServices.hpp"
 
 #include <cstddef>
 #include <cstdint>
@@ -94,7 +95,8 @@ public:
       const WVFrozenForcingSchedule &schedule,
       std::shared_ptr<const WVExtensionCatalog> catalog,
       std::unique_ptr<WVFFTEngine> fftEngine,
-      std::unique_ptr<WVStratifiedQGForcingEngine> &forcingEngine);
+      std::unique_ptr<WVStratifiedQGForcingEngine> &forcingEngine,
+      const WVVariableKernelServices &services = {});
 
   ~WVStratifiedQGForcingEngine();
   WVStratifiedQGForcingEngine(const WVStratifiedQGForcingEngine &) = delete;

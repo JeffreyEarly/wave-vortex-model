@@ -609,8 +609,8 @@ WVKernelStatus WVStratifiedQGForcingEngine::create(
     const WVFrozenForcingSchedule &schedule,
     std::shared_ptr<const WVExtensionCatalog> catalog,
     std::unique_ptr<WVFFTEngine> fftEngine,
-    std::unique_ptr<WVStratifiedQGForcingEngine> &forcingEngine) {
-  forcingEngine.reset();
+    std::unique_ptr<WVStratifiedQGForcingEngine> &forcingEngine,
+    const WVVariableKernelServices &services) {
   if (!catalog)
     return {WVKernelStatusCode::invalidPointer,
             "Stratified QG forcing construction requires an extension catalog."};
@@ -630,7 +630,8 @@ WVKernelStatus WVStratifiedQGForcingEngine::create(
         new WVStratifiedQGForcingEngine());
     candidate->catalog_ = std::move(catalog);
     status = WVTransformStratifiedQGKernel::create(
-        std::move(source), std::move(fftEngine), candidate->kernel_);
+        std::move(source), std::move(fftEngine), candidate->kernel_,
+        services.matrixBackendFactory, services.execution);
     if (!status)
       return status;
     candidate->tendencyScratch_.resize(coefficientCount);

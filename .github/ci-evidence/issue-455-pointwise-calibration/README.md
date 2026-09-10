@@ -1,0 +1,7 @@
+# Integrated variable pointwise calibration
+
+Frozen candidate `a3acbf4d`, separate verified build, native FFTW internal workers one and horizontal workers twelve, Accelerate matrix backend with existing process settings. The three pointwise counts were serial (1) and benchmark #23 Lyra's interleaved/compact provisional finalists (4 and 8). The complete five-profile workload set used SQG/Hydrostatic 256×256×129 and 512×512×257 plus capacity-qualified Boussinesq 256×256×129.
+
+Three fresh-process blocks rotated the count order; each process used one warmup and three measured complete flux calls. All 45 runs passed the independent MATLAB comparison. The selected count is eight: geometric complete-flux time 0.1364603 s, versus 0.1415994 s with four and 0.1651395 s with one. Selection chooses the fewest workers within 1% of the fastest all-profile geometric score. Sources and binary were unchanged. This calibrates one uniform worker count; it does not establish default adoption or replace independent-control/full-model gates.
+
+The compressed text archive retains protocol, source/build/harness/fixture/provider identities, every run and sample journal, and the selection. Its index hashes the original text files. First successful binary payloads per profile/count remain in `/private/tmp/wvm455-pointwise-calibration`; only later successfully verified duplicates were removed under the declared retention policy. The 512-grid Boussinesq case remains capacity-excluded.

@@ -378,15 +378,16 @@ WVKernelStatus createStratifiedQGModelSystem(
     const WVPortableObserverDescriptor *descriptor,
     std::shared_ptr<const WVExtensionCatalog> catalog,
     std::unique_ptr<WVFFTEngine> engine,
-    std::unique_ptr<WVResolvedModelSystem> &system) {
+    std::unique_ptr<WVResolvedModelSystem> &system,
+    const WVVariableKernelServices &services) {
   std::unique_ptr<WVStratifiedQGIntegrationSystem> numerical;
   auto status = descriptor == nullptr
                     ? WVStratifiedQGIntegrationSystem::create(
                           std::move(source), schedule, std::move(catalog),
-                          std::move(engine), numerical)
+                          std::move(engine), numerical, services)
                     : WVStratifiedQGIntegrationSystem::create(
                           std::move(source), schedule, *descriptor,
-                          std::move(catalog), std::move(engine), numerical);
+                          std::move(catalog), std::move(engine), numerical, services);
   if (!status)
     return status;
   try {
@@ -405,15 +406,16 @@ WVKernelStatus createHydrostaticModelSystem(
     const WVPortableObserverDescriptor *descriptor,
     std::shared_ptr<const WVExtensionCatalog> catalog,
     std::unique_ptr<WVFFTEngine> engine,
-    std::unique_ptr<WVResolvedModelSystem> &system) {
+    std::unique_ptr<WVResolvedModelSystem> &system,
+    const WVVariableKernelServices &services) {
   std::unique_ptr<WVHydrostaticIntegrationSystem> numerical;
   auto status = descriptor == nullptr
                     ? WVHydrostaticIntegrationSystem::create(
                           std::move(source), schedule, std::move(catalog),
-                          std::move(engine), numerical)
+                          std::move(engine), numerical, services)
                     : WVHydrostaticIntegrationSystem::create(
                           std::move(source), schedule, *descriptor,
-                          std::move(catalog), std::move(engine), numerical);
+                          std::move(catalog), std::move(engine), numerical, services);
   if (!status)
     return status;
   try {
@@ -431,15 +433,16 @@ WVKernelStatus createBoussinesqModelSystem(
     const WVPortableObserverDescriptor *descriptor,
     std::shared_ptr<const WVExtensionCatalog> catalog,
     std::unique_ptr<WVFFTEngine> engine,
-    std::unique_ptr<WVResolvedModelSystem> &system) {
+    std::unique_ptr<WVResolvedModelSystem> &system,
+    const WVVariableKernelServices &services) {
   std::unique_ptr<WVBoussinesqIntegrationSystem> numerical;
   auto status = descriptor == nullptr
                     ? WVBoussinesqIntegrationSystem::create(
                           std::move(source), schedule, std::move(catalog),
-                          std::move(engine), numerical)
+                          std::move(engine), numerical, services)
                     : WVBoussinesqIntegrationSystem::create(
                           std::move(source), schedule, *descriptor,
-                          std::move(catalog), std::move(engine), numerical);
+                          std::move(catalog), std::move(engine), numerical, services);
   if (!status)
     return status;
   try {
@@ -458,19 +461,20 @@ WVKernelStatus createPersistedModelSystem(
     const WVPortableObserverDescriptor *descriptor,
     std::shared_ptr<const WVExtensionCatalog> catalog,
     std::unique_ptr<WVFFTEngine> engine,
-    std::unique_ptr<WVResolvedModelSystem> &system) {
+    std::unique_ptr<WVResolvedModelSystem> &system,
+    const WVVariableKernelServices &services) {
   if (inspection.transformKind==WVPersistedTransformKind::hydrostatic) {
     if (!inspection.stratifiedModalSource || inspection.stratifiedModalSource->N2FunctionPayload().empty()) return invalid("MATLAB-compatible Hydrostatic output requires its N2Function payload.");
-    return createHydrostaticModelSystem(inspection.stratifiedModalSource,schedule,descriptor,std::move(catalog),std::move(engine),system);
+    return createHydrostaticModelSystem(inspection.stratifiedModalSource,schedule,descriptor,std::move(catalog),std::move(engine),system,services);
   }
   if (inspection.transformKind==WVPersistedTransformKind::boussinesq) {
     if (!inspection.stratifiedModalSource || inspection.stratifiedModalSource->N2FunctionPayload().empty()) return invalid("MATLAB-compatible Boussinesq output requires its N2Function payload.");
-    return createBoussinesqModelSystem(inspection.stratifiedModalSource,schedule,descriptor,std::move(catalog),std::move(engine),system);
+    return createBoussinesqModelSystem(inspection.stratifiedModalSource,schedule,descriptor,std::move(catalog),std::move(engine),system,services);
   }
   if (inspection.transformKind == WVPersistedTransformKind::stratifiedQG) {
     if (!inspection.stratifiedModalSource || inspection.stratifiedModalSource->N2FunctionPayload().empty())
       return invalid("MATLAB-compatible SQG model output requires its opaque N2Function persistence payload.");
-    return createStratifiedQGModelSystem(inspection.stratifiedModalSource,schedule,descriptor,std::move(catalog),std::move(engine),system);
+    return createStratifiedQGModelSystem(inspection.stratifiedModalSource,schedule,descriptor,std::move(catalog),std::move(engine),system,services);
   }
   if (inspection.transformKind == WVPersistedTransformKind::barotropicQG)
     return createBarotropicQGModelSystem(

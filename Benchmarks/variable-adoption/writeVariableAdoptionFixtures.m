@@ -35,6 +35,11 @@ for family = options.families
     clear n inertial wave ap am mda
     wvt.t0=17; wvt.t=83;
     wvt.setForcing(WVNonlinearAdvection(wvt));
+    % Persist expensive modal matrices before evaluating the oracle, so a
+    % later diagnostic failure leaves a recoverable scientific source.
+    model=WVModel(wvt);
+    output=model.createNetCDFFileForModelOutput(sourcePath,outputInterval=1,shouldOverwriteExisting=false);
+    output.outputTimesForIntegrationPeriod(wvt.t,wvt.t); output.writeTimeStepToOutputFile(wvt.t); model.closeNetCDFFile();
     if family=="stratified-qg"
         values={wvt.nonlinearFlux()};
     else
@@ -47,9 +52,6 @@ for family = options.families
         assert(fwrite(file,[real(array(:))';imag(array(:))'],"double")==2*numel(array));
     end
     clear fileCleanup Fp Fm F0 values value array
-    model=WVModel(wvt);
-    output=model.createNetCDFFileForModelOutput(sourcePath,outputInterval=1,shouldOverwriteExisting=false);
-    output.outputTimesForIntegrationPeriod(wvt.t,wvt.t); output.writeTimeStepToOutputFile(wvt.t); model.closeNetCDFFile();
     record=struct(id=identity,family=family,grid=grid,Nj=wvt.Nj,Nkl=wvt.Nkl,t=wvt.t,t0=wvt.t0,sourcePath=sourcePath,sourceSHA256=portableCompatibilitySHA256(sourcePath),matlabFluxPath=fluxPath,matlabFluxSHA256=portableCompatibilitySHA256(fluxPath),maximumScaleNormalizedTolerance=1e-10,relativeL2Tolerance=1e-10);
     manifest.cases{end+1}=record;
     fprintf("Wrote %s with Nj=%d Nkl=%d\n",identity,wvt.Nj,wvt.Nkl);

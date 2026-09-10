@@ -117,10 +117,10 @@
     "matlabTracerAdvection": "XY-only on a rank-three grid",
     "qualification": "UnitTests/TestPortableStratifiedQG.m",
     "sourceSHA256": {
-      "PortableRuntime/include/WaveVortexRuntime/WVStratifiedQGForcingEngine.hpp": "ee5f6cef2d03a5f5658a69ca9c84321baa8817d4e466883ff9445f7faccf8ec6",
-      "PortableRuntime/include/WaveVortexRuntime/WVStratifiedQGIntegrationSystem.hpp": "01a6230fb6ed1cd57d66e1f8b7b67a1aef33f21fcb5bbb1d839d6a56360ddc3b",
-      "PortableRuntime/src/WVStratifiedQGForcingEngine.cpp": "e59bb57630fcdfdfa8643db92c79b91e92ba540724182abeb10ca6638d46b7af",
-      "PortableRuntime/src/WVStratifiedQGIntegrationSystem.cpp": "2608eb1acf19f6759232fd42fba15dd31b337acecb80e13f8044a22388302488",
+      "PortableRuntime/include/WaveVortexRuntime/WVStratifiedQGForcingEngine.hpp": "67a97a2c8c7502336b5fe0a403987623168c78c71c33a05e3440b4b9eab4f7e6",
+      "PortableRuntime/include/WaveVortexRuntime/WVStratifiedQGIntegrationSystem.hpp": "f42f36b0323fdeb352f546d485f870862f0198c802f51f036800da2b588f6f72",
+      "PortableRuntime/src/WVStratifiedQGForcingEngine.cpp": "7a352c8e08c473211e87cfb848975e5891f4a48a5bc44caa1b151fb36ddc1e51",
+      "PortableRuntime/src/WVStratifiedQGIntegrationSystem.cpp": "62fd748f58ef2c63685e7b4bf23aed0a840e63258308ab8f0655088d281654ca",
       "PortableRuntime/src/WVStratifiedQGFieldEvaluationAdapter.hpp": "e282d83f41765ff8389c942ed78014c2e40e160e127dfc30b01328649959fd42",
       "PortableRuntime/src/WVStratifiedQGFieldEvaluationAdapter.cpp": "9a84c399834f96bfe4de5405ea9102da9fc60d2a34300237bb45662921f9fba3"
     },
@@ -151,5 +151,50 @@
     "forcingCatalog": "portable-forcing-compatibility-v1.json",
     "numericalParity": "UnitTests/TestPortableBoussinesq.m",
     "performanceQualificationIssue": 304
+  },
+  "variableKernelServices": {
+    "issue": 455,
+    "status": "qualified-explicit-services-with-native-runner-default",
+    "defaultBackend": "scalar-reference-v1",
+    "defaultHorizontalSchedule": "full-fft-gather",
+    "qualification": ".github/ci-evidence/issue-455-variable-final-adoption/decision.json",
+    "sourceSHA256": {
+      "PortableRuntime/include/WaveVortexRuntime/WVVariableKernelServices.hpp": "b759568cbe85ec5e6550f3335ab7200acd6deb2b31730bc99a485cfa19315b67",
+      "PortableRuntime/include/WaveVortexRuntime/WVModel.hpp": "18478fa5f4423988de8ef7f45bc186f2963c74b4e9576fc69615980dfb4d3cd7",
+      "PortableRuntime/src/WVModel.cpp": "6aab778f71f4723da3ad25db2961f1c461ec00dff4aff414015dd91d927b0f4c",
+      "PortableRuntime/src/WVModelTransformAdapters.cpp": "3b67d729660e16877f096e2ed1e07184b6768c044cbead2ea0e49cdffee2c69f"
+    }
+  },
+  "runnerVariablePolicy": {
+    "issue": 455,
+    "identity": "compact-native-variable-v1",
+    "eligibleFreshBuildDefault": true,
+    "nativeAppEntryActualDefault": true,
+    "eligibility": "Apple silicon with native FFTW and Accelerate enabled; explicit CMake cache values remain authoritative.",
+    "transformFamilies": [
+      "stratified-qg",
+      "hydrostatic",
+      "boussinesq"
+    ],
+    "matrixBackend": "accelerate",
+    "matrixBackendImplementation": "accelerate-gemm-v1",
+    "spectralSchedule": "compact-split-fused-views",
+    "horizontalSchedule": "streaming-pruned-tile16",
+    "horizontalWorkers": "min(available performance cores, 12)",
+    "pointwiseWorkers": "min(available performance cores, 8)",
+    "fftwInternalThreads": 1,
+    "generalVerticalOuterWorkers": 1,
+    "blasInternalThreads": "Vendor controlled; process environment is not mutated.",
+    "explicitParallelFFTRequest": "Retains the requested FFTW thread count and selects established full FFT/interleaved execution with Accelerate matrices.",
+    "portableAndNonVariableDefaults": "unchanged",
+    "publicMatlabPreviewFamilies": "unchanged; variable service injection is not exposed",
+    "measurementEvidence": ".github/ci-evidence/issue-455-variable-final-adoption/decision.json",
+    "sourceSHA256": {
+      "PortableRuntime/CMakeLists.txt": "d0c100b68f0302ca062ae9e7919843f99813897a5198c135a69afc1919a24876",
+      "CompiledKernel/CMakeLists.txt": "e133b74121e699325e539f6ba5c424e9bb2739200cb86c54d8077cace2c3b2ea",
+      "PortableRuntime/app/WaveVortexRun.cpp": "abb75e0d63cb938469596787033d081d56fbf84f9a53820d38cf99f3c69ceae0",
+      "PortableRuntime/app/WVRunnerVariablePolicy.cpp": "02e695fb461ac734de780efc3bfb52e9b9621a2edbd37893ae9dbbc7d7191bfb",
+      "PortableRuntime/app/WVRunnerVariablePolicy.hpp": "c16796f29a84789a37fdf4927bfd03892796d683eb796aef75a0b5c5207d6c94"
+    }
   }
 }

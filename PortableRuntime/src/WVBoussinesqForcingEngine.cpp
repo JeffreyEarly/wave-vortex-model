@@ -45,14 +45,14 @@ WVKernelStatus WVBoussinesqForcingEngine::validateSchedule(const WVStratifiedMod
     }
     return WVKernelStatus::ok();
 }
-WVKernelStatus WVBoussinesqForcingEngine::create(std::shared_ptr<const WVStratifiedModalSource> source,const WVFrozenForcingSchedule& schedule,std::shared_ptr<const WVExtensionCatalog> catalog,std::unique_ptr<WVFFTEngine> fft,std::unique_ptr<WVBoussinesqForcingEngine>& result) {
+WVKernelStatus WVBoussinesqForcingEngine::create(std::shared_ptr<const WVStratifiedModalSource> source,const WVFrozenForcingSchedule& schedule,std::shared_ptr<const WVExtensionCatalog> catalog,std::unique_ptr<WVFFTEngine> fft,std::unique_ptr<WVBoussinesqForcingEngine>& result,const WVVariableKernelServices& services) {
     if (!source || !catalog || !fft) return invalid("Boussinesq forcing requires scientific source, catalog and FFT engine.");
     try {
         const auto& g=source->geometry();
         auto s=validateSchedule(g,schedule,{g.Nj,g.Nkl},*catalog); if (!s) return s;
         auto candidate=std::unique_ptr<WVBoussinesqForcingEngine>(new WVBoussinesqForcingEngine);
         candidate->catalog_=std::move(catalog);
-        s=WVTransformBoussinesqKernel::create(std::move(source),std::move(fft),candidate->kernel_); if (!s) return s;
+        s=WVTransformBoussinesqKernel::create(std::move(source),std::move(fft),candidate->kernel_,services.matrixBackendFactory,services.execution); if (!s) return s;
         s=candidate->initialize(schedule); if (!s) return s;
         result=std::move(candidate); return WVKernelStatus::ok();
     } catch (const std::bad_alloc&) { return {WVKernelStatusCode::allocationFailure,"Boussinesq forcing allocation failed."}; }

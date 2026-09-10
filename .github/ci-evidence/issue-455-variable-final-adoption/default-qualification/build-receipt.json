@@ -1,0 +1,93 @@
+{
+  "schema": "wvm-runner-eligible-actual-default-proof-v1",
+  "sourceCommit": "b71860fc4cc877298abf5dbb39a3716acc5f0cf4",
+  "sourceHeadAfterTests": "b71860fc4cc877298abf5dbb39a3716acc5f0cf4",
+  "productionSourceChangesAfterTests": false,
+  "concurrentEvidenceChangesPresent": true,
+  "buildDirectory": "/private/tmp/wvm455-runner-final-default-build",
+  "freshBuildDirectory": true,
+  "platform": {
+    "system": "Darwin",
+    "processor": "arm64",
+    "compiler": "AppleClang 21.0.0.21000101"
+  },
+  "cache": {
+    "buildType": "Release",
+    "nativeFFTW": true,
+    "accelerate": true,
+    "compactVariablePolicy": true,
+    "compactVariablePolicyForcedOnCommandLine": false,
+    "accelerateForcedOnCommandLine": false,
+    "fftwRoot": "/Users/jearly/Documents/OceanKitRepositories/wave-vortex-model/.compiled-backend-cache/provider/native-neon-pthreads"
+  },
+  "compileDefinitions": {
+    "compactVariablePolicy": 1,
+    "nativeFFTW": 1,
+    "sourceCommit": "b71860fc4cc877298abf5dbb39a3716acc5f0cf4"
+  },
+  "binaries": [
+    {
+      "name": "wave-vortex-run",
+      "sha256": "7b301e5eef65afc18386596243f13f9dc0a9b719a25c45032bed2d49d1cf62b5"
+    },
+    {
+      "name": "WVForwardIntegrationProbe",
+      "sha256": "7e2dbb8b6fe61f7979748501ec3664a3dfb7c816b96cc0c7fbd39aa4d671fe73"
+    },
+    {
+      "name": "TestWVRunnerVariablePolicy",
+      "sha256": "9d3d4c76339cff87eed7b2dd2a31793da3abed07470cb1def72dd668c5eba38d"
+    },
+    {
+      "name": "TestWaveVortexRun",
+      "sha256": "127c7132ce34703a294e6884435acf8175f3a25a1449ded5518f9270bf0f5086"
+    },
+    {
+      "name": "TestWVBarotropicQGNativeFFTW",
+      "sha256": "2b1b8ad5137ba6cdaccb1fde2cdcc230e36373b8d63e3a7540f404e938c410c9"
+    }
+  ],
+  "tests": {
+    "requested": 4,
+    "executed": 4,
+    "passed": 4,
+    "failed": 0,
+    "noTestsError": true,
+    "results": [
+      {
+        "name": "runner-variable-policy",
+        "status": "passed",
+        "seconds": 0.433476
+      },
+      {
+        "name": "standalone-runner",
+        "status": "passed",
+        "seconds": 5.71231
+      },
+      {
+        "name": "forward-integration-probe",
+        "status": "passed",
+        "seconds": 0.39338
+      },
+      {
+        "name": "barotropic-qg-native-fftw",
+        "status": "passed",
+        "seconds": 0.20805
+      }
+    ]
+  },
+  "providerProof": {
+    "test": "barotropic-qg-native-fftw",
+    "expectedVersion": "3.3.11",
+    "expectedRoot": "/Users/jearly/Documents/OceanKitRepositories/wave-vortex-model/.compiled-backend-cache/provider/native-neon-pthreads",
+    "passed": true
+  },
+  "commandScript": {
+    "path": "/private/tmp/wvm455-runner-final-default-commands.sh",
+    "sha256": "936032f6b811b6e66597973cd2e1a4e301a91d2999b5cce9d808a52b38632a38"
+  },
+  "log": {
+    "path": "/private/tmp/wvm455-runner-final-default-build.log",
+    "sha256": "fe936eeb52ca77fa9f71db7560a6419eb25f63051f6812eb520f7eb051ed549b"
+  }
+}

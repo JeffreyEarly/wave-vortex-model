@@ -1,0 +1,32 @@
+[
+  {
+    "name": "TestCompiledKernelIntegration/portableCoreHasNoHostOrVendorDependency",
+    "passed": true,
+    "failed": false,
+    "incomplete": false
+  },
+  {
+    "name": "TestCompiledKernelIntegration/repositoryTracksOnlySourceProducts",
+    "passed": true,
+    "failed": false,
+    "incomplete": false
+  },
+  {
+    "name": "TestCompiledKernelIntegration/selectionRecordsTheAcceptedContract",
+    "passed": true,
+    "failed": false,
+    "incomplete": false
+  },
+  {
+    "name": "TestCompiledKernelIntegration/runtimeSelectionRecordsStableSourceAPI",
+    "passed": true,
+    "failed": false,
+    "incomplete": false
+  },
+  {
+    "name": "TestCompiledKernelIntegration/keyRuntimeHashesMatchTheSelection",
+    "passed": true,
+    "failed": false,
+    "incomplete": false
+  }
+]

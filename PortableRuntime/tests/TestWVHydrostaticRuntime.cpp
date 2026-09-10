@@ -7,10 +7,104 @@
 #include "../../tools/compiled-kernel/tests/WVAllocationProbe.hpp"
 #include <iostream>
 #include <limits>
+#include <array>
+#include <cmath>
 using namespace wavevortex;
 using namespace wavevortex::runtime;
 using namespace wavevortex::test_fixture;
 namespace {
+int injectedFactoryCalls = 0;
+WVKernelStatus countingScalarBackend(std::unique_ptr<WVVerticalMatrixBackend> &backend) {
+    ++injectedFactoryCalls;
+    return WVCreateScalarMatrixBackend(backend);
+}
+
+void injectedServices(std::shared_ptr<const WVStratifiedModalRecord> source,
+                      std::shared_ptr<const WVExtensionCatalog> catalog,
+                      const WVFrozenForcingSchedule &schedule) {
+    WVVariableKernelServices services;
+    services.matrixBackendFactory = countingScalarBackend;
+    services.execution = {WVRetainedHorizontalSchedule::streamingPrunedTile16, 2,
+                          true, WVVariableSpectralSchedule::compactSplitFusedViews};
+
+    std::unique_ptr<WVHydrostaticForcingEngine> baseline, injected;
+    require(bool(WVHydrostaticForcingEngine::create(
+                    source, schedule, catalog,
+                    std::make_unique<WVReferenceFFTEngine>(), baseline)),
+            "Baseline Hydrostatic injection fixture failed");
+    require(bool(WVHydrostaticForcingEngine::create(
+                    source, schedule, catalog,
+                    std::make_unique<WVReferenceFFTEngine>(), injected,
+                    services)),
+            "Injected Hydrostatic fixture failed");
+    require(injectedFactoryCalls == 4, "Injected backend factory call count differs");
+    require(injected->kernel().executionOptions().usesCompactSplitViews(),
+            "Injected Hydrostatic execution options were not retained");
+    const auto shape = baseline->kernel().spectralShape();
+    const auto count = shape.elementCount();
+    std::array<std::vector<WVComplex64>, 3> coefficients, referenceFlux, injectedFlux;
+    for (auto &values : coefficients) values.resize(count, {.001, -.002});
+    WVMutableCoefficients mutableCoefficients{{coefficients[0].data(), shape},
+                                               {coefficients[1].data(), shape},
+                                               {coefficients[2].data(), shape}};
+    require(bool(baseline->kernel().constrainCoefficients(mutableCoefficients)),
+            "Hydrostatic injection coefficient constraint failed");
+    for (auto &values : referenceFlux) values.resize(count);
+    for (auto &values : injectedFlux) values.resize(count);
+    WVState state{.37, .11, {{coefficients[0].data(), shape},
+                             {coefficients[1].data(), shape},
+                             {coefficients[2].data(), shape}}};
+    WVFlux reference{{referenceFlux[0].data(), shape}, {referenceFlux[1].data(), shape},
+                     {referenceFlux[2].data(), shape}};
+    WVFlux actual{{injectedFlux[0].data(), shape}, {injectedFlux[1].data(), shape},
+                  {injectedFlux[2].data(), shape}};
+    require(bool(baseline->nonlinearFlux(state, reference)), "Baseline Hydrostatic RHS failed");
+    require(bool(injected->nonlinearFlux(state, actual)), "Injected Hydrostatic RHS failed");
+    for (std::size_t family = 0; family < 3; ++family)
+        for (std::size_t i = 0; i < count; ++i) {
+            require(std::abs(referenceFlux[family][i].real - injectedFlux[family][i].real) < 1e-12,
+                    "Injected Hydrostatic real RHS differs");
+            require(std::abs(referenceFlux[family][i].imag - injectedFlux[family][i].imag) < 1e-12,
+                    "Injected Hydrostatic imaginary RHS differs");
+        }
+
+    std::unique_ptr<WVHydrostaticIntegrationSystem> system;
+    injectedFactoryCalls = 0;
+    require(bool(WVHydrostaticIntegrationSystem::create(
+                    source, schedule, catalog,
+                    std::make_unique<WVReferenceFFTEngine>(), system, services)),
+            "Injected Hydrostatic integration fixture failed");
+    require(injectedFactoryCalls == 4 &&
+                system->kernel().executionOptions().usesCompactSplitViews(),
+            "Injected Hydrostatic integration services were not forwarded");
+    WVPortableObserverRecord record;
+    for (const auto &family : system->stateLayout().coefficientFamilies())
+        record.stateBlocks.push_back({family.identifier, WVStateScalarType::complex64,
+                                      family.spectralDimensions,
+                                      WVToleranceKind::coefficientEnergyScaled, 1e-6,
+                                      WVStateOwnership::integratorOwned,
+                                      WVRestartRequirement::requiredDynamicState});
+    WVPortableObserverDescriptor descriptor;
+    require(bool(WVPortableObserverDescriptor::create(record, catalog, descriptor)),
+            "Hydrostatic injection descriptor creation failed");
+    injectedFactoryCalls = 0;
+    require(bool(WVHydrostaticIntegrationSystem::create(
+                    source, schedule, descriptor, catalog,
+                    std::make_unique<WVReferenceFFTEngine>(), system, services)),
+            "Injected Hydrostatic descriptor fixture failed");
+    require(injectedFactoryCalls == 4 &&
+                system->kernel().executionOptions().usesCompactSplitViews(),
+            "Injected Hydrostatic descriptor services were not forwarded");
+    WVVariableKernelServices rejected;
+    rejected.matrixBackendFactory = {};
+    auto *old = injected.get();
+    require(!WVHydrostaticForcingEngine::create(
+                source, schedule, catalog,
+                std::make_unique<WVReferenceFFTEngine>(), injected, rejected) &&
+                injected.get() == old,
+            "Empty Hydrostatic backend factory replaced the existing engine");
+}
+
 void contracts(std::shared_ptr<const WVStratifiedModalRecord> source) {
     WVExtensionCatalogBuilder builder; require(bool(addBuiltInExtensions(builder)),"Built-ins failed");
     std::shared_ptr<const WVExtensionCatalog> catalog; require(bool(builder.freeze(catalog)),"Catalog failed");
@@ -71,6 +165,7 @@ void contracts(std::shared_ptr<const WVStratifiedModalRecord> source) {
     std::unique_ptr<WVHydrostaticIntegrationSystem> system;
     status=WVHydrostaticIntegrationSystem::create(source,schedule,catalog,std::make_unique<WVReferenceFFTEngine>(),system); require(bool(status),status.message.c_str());
     require(system->stateLayout().coefficientFamilyCount()==3 && system->stateLayout().transformIdentifier()=="WVTransformHydrostatic","Wrong integration layout");
+    injectedServices(source, catalog, schedule);
 }
 }
 int main() {

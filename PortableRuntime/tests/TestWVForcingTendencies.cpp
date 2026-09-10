@@ -6,6 +6,7 @@
 #include "WaveVortexRuntime/WVObserverOutputProvider.hpp"
 #include "WaveVortexRuntime/WVBarotropicQGForcingEngine.hpp"
 #include "WaveVortexRuntime/WVStratifiedQGForcingEngine.hpp"
+#include "WaveVortexRuntime/WVStratifiedQGIntegrationSystem.hpp"
 #include "WaveVortexRuntime/WVHydrostaticForcingEngine.hpp"
 #include "WaveVortexRuntime/WVBoussinesqForcingEngine.hpp"
 #include "WaveVortexRuntime/WVStratifiedModalRecord.hpp"
@@ -24,6 +25,57 @@ using namespace wavevortex::runtime;
 using namespace wavevortex::test_fixture;
 
 namespace {
+int injectedQGFactoryCalls = 0;
+WVKernelStatus countingQGScalarBackend(std::unique_ptr<WVVerticalMatrixBackend> &backend) {
+    ++injectedQGFactoryCalls;
+    return WVCreateScalarMatrixBackend(backend);
+}
+
+void testInjectedQG(std::shared_ptr<const WVStratifiedModalRecord> source,
+                    const WVFrozenForcingSchedule &scheduleValue) {
+    auto catalog = wavevortex::runtime::test::extensionCatalog();
+    WVVariableKernelServices services;
+    services.matrixBackendFactory = countingQGScalarBackend;
+    services.execution = {WVRetainedHorizontalSchedule::streamingPrunedTile16, 2,
+                          true, WVVariableSpectralSchedule::compactSplitFusedViews};
+    std::unique_ptr<WVStratifiedQGForcingEngine> baseline, injected;
+    require(bool(WVStratifiedQGForcingEngine::create(
+                    source, scheduleValue, catalog,
+                    std::make_unique<WVReferenceFFTEngine>(), baseline)),
+            "Baseline QG injection fixture failed");
+    require(bool(WVStratifiedQGForcingEngine::create(
+                    source, scheduleValue, catalog,
+                    std::make_unique<WVReferenceFFTEngine>(), injected,
+                    services)),
+            "Injected QG fixture failed");
+    require(injectedQGFactoryCalls == 4 &&
+                injected->kernel().executionOptions().usesCompactSplitViews(),
+            "Injected QG services were not retained");
+    const auto shape = baseline->kernel().spectralShape();
+    const auto count = shape.elementCount();
+    std::vector<WVComplex64> coefficients(count, {.001, -.002});
+    std::vector<WVComplex64> referenceValues(count), injectedValues(count);
+    WVComplexConstView state{coefficients.data(), shape};
+    WVComplexView reference{referenceValues.data(), shape};
+    WVComplexView actual{injectedValues.data(), shape};
+    require(bool(baseline->evaluateRightHandSide(state, reference)), "Baseline QG RHS failed");
+    require(bool(injected->evaluateRightHandSide(state, actual)), "Injected QG RHS failed");
+    for (std::size_t i = 0; i < count; ++i) {
+        require(std::abs(referenceValues[i].real - injectedValues[i].real) < 1e-12,
+                "Injected QG real RHS differs");
+        require(std::abs(referenceValues[i].imag - injectedValues[i].imag) < 1e-12,
+                "Injected QG imaginary RHS differs");
+    }
+    WVVariableKernelServices rejected;
+    rejected.matrixBackendFactory = {};
+    auto *old = injected.get();
+    require(!WVStratifiedQGForcingEngine::create(
+                source, scheduleValue, catalog,
+                std::make_unique<WVReferenceFFTEngine>(), injected, rejected) &&
+                injected.get() == old,
+            "Empty QG backend factory replaced the existing engine");
+}
+
 struct FailureCounter { std::size_t calls=0,failAt=0; };
 class FailingPlan final : public WVFFTPlan {
 public:
@@ -1093,6 +1145,7 @@ void stratifiedQG() {
     const auto rejectCalls=counter->calls;
     require(engine->kernel().nonlinearFlux(state,flux,0,&raw).code==WVKernelStatusCode::overlappingArrays && counter->calls==rejectCalls,
         "Stratified QG raw alias accepted or rejected after FFT");
+    testInjectedQG(source, scheduleValue);
 }
 
 template<bool Hydrostatic> void stratified(bool unpairedMean=false) {

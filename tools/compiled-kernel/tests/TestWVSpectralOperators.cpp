@@ -3,6 +3,7 @@
 #include "WVAccelerateMatrixBackend.hpp"
 #include "WVAllocationProbe.hpp"
 #include <algorithm>
+#include <array>
 #include <cmath>
 #include <complex>
 #include <cstring>
@@ -55,6 +56,45 @@ struct Buffer {
 std::unique_ptr<WVVerticalMatrixBackend> backend(bool native) {
     std::unique_ptr<WVVerticalMatrixBackend> b;
     require(native ? WVCreateAccelerateMatrixBackend(b) : WVCreateScalarMatrixBackend(b)); return b;
+}
+struct MatrixCall {
+    std::size_t width=0,ldb=0,ldc=0;
+    const void* input=nullptr;
+    void* output=nullptr;
+    double beta=0;
+    bool split=false;
+};
+struct MatrixTrace {
+    std::array<MatrixCall,16> calls{};
+    std::size_t count=0;
+    bool recording=true,overflow=false;
+};
+class TracingBackend final : public WVVerticalMatrixBackend {
+public:
+    TracingBackend(MatrixTrace& trace,std::unique_ptr<WVVerticalMatrixBackend> inner) : trace_(trace),inner_(std::move(inner)) {}
+    const char* identifier() const noexcept override { return "tracing-scalar"; }
+    std::size_t maximumDimension() const noexcept override { return inner_->maximumDimension(); }
+    std::size_t persistentBytes() const noexcept override { return sizeof(*this)+inner_->persistentBytes(); }
+    void split(std::size_t m,std::size_t k,std::size_t n,const double* a,const double* br,const double* bi,
+        std::size_t ldb,double* cr,double* ci,std::size_t ldc,double beta) const noexcept override {
+        record(n,ldb,ldc,br,cr,beta,true); inner_->split(m,k,n,a,br,bi,ldb,cr,ci,ldc,beta);
+    }
+    void interleaved(std::size_t m,std::size_t k,std::size_t n,const WVComplex64* a,const WVComplex64* b,
+        std::size_t ldb,WVComplex64* c,std::size_t ldc,double beta) const noexcept override {
+        record(n,ldb,ldc,b,c,beta,false); inner_->interleaved(m,k,n,a,b,ldb,c,ldc,beta);
+    }
+private:
+    void record(std::size_t width,std::size_t ldb,std::size_t ldc,const void* input,void* output,double beta,bool split) const noexcept {
+        if (!trace_.recording) return;
+        if (trace_.count==trace_.calls.size()) { trace_.overflow=true; return; }
+        trace_.calls[trace_.count++]={width,ldb,ldc,input,output,beta,split};
+    }
+    MatrixTrace& trace_;
+    std::unique_ptr<WVVerticalMatrixBackend> inner_;
+};
+std::unique_ptr<WVVerticalMatrixBackend> tracingBackend(MatrixTrace& trace) {
+    std::unique_ptr<WVVerticalMatrixBackend> inner; require(WVCreateScalarMatrixBackend(inner));
+    return std::make_unique<TracingBackend>(trace,std::move(inner));
 }
 std::unique_ptr<WVFFTEngine> fft(bool native) {
 #if WV_TEST_NATIVE_FFTW
@@ -192,6 +232,79 @@ void verticalCase(WVMatrixAction action, WVComplexRepresentation representation,
     // Same-address and partial cross-component overlap rejected before mutation.
     auto aliased = input.out(); aliased.bytes = std::max(aliased.bytes,output.out().bytes);
     require(op->execute(*w,input.in(),aliased).code == WVKernelStatusCode::overlappingArrays,"Vertical alias accepted");
+}
+void discontiguousDirectSegments(WVComplexRepresentation representation,WVAccumulation accumulation) {
+    VerticalFixture f(WVMatrixAction::reconstruction,representation,accumulation,true);
+    f.spec.groups={{3,0,{0,1,4,5}},{91,1,{2,3,6}}};
+    MatrixTrace trace;
+    std::unique_ptr<WVPreparedVerticalOperator> op;
+    require(WVPreparedVerticalOperator::create(f.spec,tracingBackend(trace),op));
+    std::unique_ptr<WVVerticalWorkspace> workspace; require(op->createWorkspace(workspace));
+    require(op->uniqueMatrixCount()==2,"Direct run segmentation changed exact matrix identities");
+    const auto expectedMatrixBytes=f.spec.input.rows*f.spec.output.rows*2*
+        (representation==WVComplexRepresentation::split ? sizeof(double) : sizeof(WVComplex64));
+    require(op->matrixBytes()==expectedMatrixBytes,"Direct run segmentation duplicated matrix storage");
+
+    Buffer input(f.spec.input),output(f.spec.output);
+    for (std::size_t mode=0;mode<f.spec.input.columns;++mode) {
+        for (std::size_t row=0;row<f.spec.input.rows;++row) input.set(row,mode,{std::sin(0.13*(row+3*mode)),std::cos(0.17*(row+2*mode))});
+        for (std::size_t row=0;row<f.spec.output.rows;++row) output.set(row,mode,{0.4,-0.3});
+    }
+    const auto saved=input;
+    require(op->execute(*workspace,input.in(),output.out()));
+    const std::array<std::size_t,4> starts{{0,4,2,6}},widths{{2,2,2,1}};
+    require(!trace.overflow && trace.count==starts.size(),"Discontiguous exact groups did not produce maximal direct runs");
+    for (std::size_t call=0;call<trace.count;++call) {
+        const auto& item=trace.calls[call];
+        require(item.width==widths[call] && item.ldb==f.spec.input.columnStride && item.ldc==f.spec.output.columnStride,
+            "Direct run used an incorrect backend matrix boundary");
+        require(item.beta==(accumulation==WVAccumulation::add ? 1.0 : 0.0) && item.split==(representation==WVComplexRepresentation::split),
+            "Direct run changed accumulation or representation");
+        if (representation==WVComplexRepresentation::split) {
+            require(item.input==input.r.data()+starts[call]*f.spec.input.columnStride &&
+                item.output==output.r.data()+starts[call]*f.spec.output.columnStride,"Split direct run was not a caller-storage view");
+        } else {
+            require(item.input==input.z.data()+starts[call]*f.spec.input.columnStride &&
+                item.output==output.z.data()+starts[call]*f.spec.output.columnStride,"Interleaved direct run was not a caller-storage view");
+        }
+    }
+    for (const auto& group:f.spec.groups) for (auto mode:group.modes) for (std::size_t row=0;row<f.spec.output.rows;++row) {
+        const auto& matrix=f.spec.matrices[group.matrix].values;
+        std::complex<long double> expected=accumulation==WVAccumulation::add ? std::complex<long double>{0.4,-0.3} : std::complex<long double>{};
+        for (std::size_t j=0;j<f.spec.input.rows;++j) {
+            const auto value=input.get(j,mode);
+            expected+=static_cast<long double>(matrix.data[row*matrix.rowStride+j*matrix.columnStride])*std::complex<long double>{value.real,value.imag};
+        }
+        close(output.get(row,mode),expected);
+    }
+    require(input.equals(saved),"Direct run execution modified its input"); output.paddingUnchanged();
+
+    VerticalFixture packed(WVMatrixAction::reconstruction,representation,accumulation,false);
+    packed.spec.groups={{3,0,{0,1,4,5}},{91,1,{2,3,6}}};
+    MatrixTrace packedTrace;
+    std::unique_ptr<WVPreparedVerticalOperator> packedOp; require(WVPreparedVerticalOperator::create(packed.spec,tracingBackend(packedTrace),packedOp));
+    std::unique_ptr<WVVerticalWorkspace> packedWorkspace; require(packedOp->createWorkspace(packedWorkspace));
+    require(workspace->persistentBytes()<packedWorkspace->persistentBytes(),"Direct segments retained packed group buffers");
+    Buffer packedInput(packed.spec.input),packedOutput(packed.spec.output);
+    for (std::size_t mode=0;mode<packed.spec.input.columns;++mode) for (std::size_t row=0;row<packed.spec.input.rows;++row)
+        packedInput.set(row,mode,{1.0+row+3.0*mode,-2.0-row-5.0*mode});
+    require(packedOp->execute(*packedWorkspace,packedInput.in(),packedOutput.out()));
+    const std::array<std::size_t,2> packedWidths{{4,3}};
+    require(!packedTrace.overflow && packedTrace.count==packedWidths.size(),"Nonunit-stride fallback changed public group call boundaries");
+    for (std::size_t call=0;call<packedTrace.count;++call) {
+        const auto& item=packedTrace.calls[call];
+        require(item.width==packedWidths[call] && item.ldb==packed.spec.input.rows && item.ldc==packed.spec.output.rows && item.beta==0,
+            "Nonunit-stride fallback did not use packed backend storage");
+        require(item.input!=(representation==WVComplexRepresentation::split ? static_cast<const void*>(packedInput.r.data()) : static_cast<const void*>(packedInput.z.data())) &&
+            item.output!=(representation==WVComplexRepresentation::split ? static_cast<void*>(packedOutput.r.data()) : static_cast<void*>(packedOutput.z.data())),
+            "Nonunit-stride fallback unexpectedly used a caller-storage direct view");
+    }
+    const auto bytes=op->persistentBytes()+workspace->persistentBytes();
+    trace.recording=false; allocationProbe::calls=0; allocationProbe::counting=true;
+    for (unsigned repeat=0;repeat<10;++repeat) require(op->execute(*workspace,input.in(),output.out()));
+    allocationProbe::counting=false;
+    require(allocationProbe::calls==0,"Prepared direct run execution allocated");
+    require(op->persistentBytes()+workspace->persistentBytes()==bytes,"Direct run execution changed prepared storage");
 }
 void singleColumn(bool native, WVComplexRepresentation representation) {
     VerticalFixture f(WVMatrixAction::reconstruction,representation,WVAccumulation::overwrite,true);
@@ -405,6 +518,8 @@ int main() {
                             verticalCase(action,representation,accumulation,direct,native,sizes.first,sizes.second);
         for (bool native : {false,true}) if (!native || nativeMatrix)
             for (auto representation : {WVComplexRepresentation::split,WVComplexRepresentation::interleaved}) singleColumn(native,representation);
+        for (auto representation:{WVComplexRepresentation::split,WVComplexRepresentation::interleaved})
+            for (auto accumulation:{WVAccumulation::overwrite,WVAccumulation::add}) discontiguousDirectSegments(representation,accumulation);
         identitiesAndRebuild(); rejectedContracts(); setupFailures(); workspaceConcurrency();
         std::cout << "Spectral operators passed: independent DFT/matrix oracles, split/interleaved layouts, exact groups, aliases, failure cleanup, immutable preparation and zero prepared allocations. Accelerate=" << nativeMatrix << '\n';
         return 0;

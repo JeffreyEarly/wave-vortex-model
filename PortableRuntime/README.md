@@ -84,10 +84,14 @@ ctest --test-dir build/portable --output-on-failure
 On Apple silicon, the optimized runner can be built with:
 
 ```sh
-PortableRuntime/buildWaveVortexRun.sh
+PortableRuntime/buildWaveVortexRun.sh build/native
 ```
 
-The script verifies the pinned FFTW 3.3.11 archive, builds it in the ignored `.compiled-backend-cache`, and writes the executable to `.compiled-backend-cache/runtime-build/wave-vortex-run`. WaveVortexModel distributes no FFTW archive, library, MEX file, or executable. Redistributing a locally linked executable requires compliance with FFTW's GPL license.
+The script verifies the pinned FFTW 3.3.11 archive, builds it in the ignored `.compiled-backend-cache`, and writes the example executable to `build/native/wave-vortex-run`. Omitting the build-directory argument uses `.compiled-backend-cache/runtime-build`. WaveVortexModel distributes no FFTW archive, library, MEX file, or executable. Redistributing a locally linked executable requires compliance with FFTW's GPL license.
+
+For a new CMake cache, `WV_RUNTIME_ENABLE_COMPACT_VARIABLE_POLICY` defaults to `ON` only when configuring on Apple silicon with native FFTW and Accelerate enabled. It defaults to `OFF` for portable, reference-only and other ineligible configurations. An explicit cached `ON` or `OFF` remains authoritative; an ineligible explicit `ON` is rejected. For native SQG, Hydrostatic and Boussinesq execution, the compact policy selects split matrices, pruned horizontal transforms and streamed physical tendencies. Horizontal workers follow available performance cores up to twelve, pointwise workers use up to eight, and FFTW internal threads stay at one. The stages execute in sequence, and the runner does not change process-wide BLAS settings. The `variableKernelPolicy` report records the selection and effective topology.
+
+An explicit `--threads` value greater than one retains its meaning as FFTW internal threads and selects the established full-FFT/interleaved path with Accelerate matrices. Omit that option to use the compact policy when enabled. Reference builds and non-variable transforms retain their existing policies. This runner selection does not expand the public MATLAB compiled preview's supported transform families; C++ applications can separately supply `WVVariableKernelServices` when constructing a persisted model.
 
 ## Density diagnostic foundation
 
@@ -166,7 +170,7 @@ wave-vortex-run saved-model.nc \
     --restart-mode model \
     --output-policy append \
     --delta-t 1 --final-time 100 \
-    --fft-provider native-fftw --threads 18
+    --fft-provider native-fftw
 
 wave-vortex-run saved-model.nc \
     --restart-mode model \

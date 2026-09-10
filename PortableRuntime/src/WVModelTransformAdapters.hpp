@@ -47,7 +47,8 @@ WVKernelStatus createPersistedModelSystem(
     const WVPortableObserverDescriptor *descriptor,
     std::shared_ptr<const WVExtensionCatalog> catalog,
     std::unique_ptr<WVFFTEngine> engine,
-    std::unique_ptr<WVResolvedModelSystem> &system);
+    std::unique_ptr<WVResolvedModelSystem> &system,
+    const WVVariableKernelServices &services);
 WVKernelStatus validatePersistedModelForcingSchedule(
     const WVCheckpointInspection &inspection,
     const WVFrozenForcingSchedule &schedule,

@@ -97,9 +97,10 @@ WVKernelStatus WVHydrostaticIntegrationSystem::create(
     const WVFrozenForcingSchedule &schedule,
     std::shared_ptr<const WVExtensionCatalog> catalog,
     std::unique_ptr<WVFFTEngine> engine,
-    std::unique_ptr<WVHydrostaticIntegrationSystem> &system) {
+    std::unique_ptr<WVHydrostaticIntegrationSystem> &system,
+    const WVVariableKernelServices &services) {
   return createImpl(std::move(source), schedule, nullptr, std::move(catalog),
-                    std::move(engine), system);
+                    std::move(engine), system, services);
 }
 
 WVKernelStatus WVHydrostaticIntegrationSystem::create(
@@ -108,9 +109,10 @@ WVKernelStatus WVHydrostaticIntegrationSystem::create(
     const WVPortableObserverDescriptor &descriptor,
     std::shared_ptr<const WVExtensionCatalog> catalog,
     std::unique_ptr<WVFFTEngine> engine,
-    std::unique_ptr<WVHydrostaticIntegrationSystem> &system) {
+    std::unique_ptr<WVHydrostaticIntegrationSystem> &system,
+    const WVVariableKernelServices &services) {
   return createImpl(std::move(source), schedule, &descriptor, std::move(catalog),
-                    std::move(engine), system);
+                    std::move(engine), system, services);
 }
 
 WVKernelStatus WVHydrostaticIntegrationSystem::createImpl(
@@ -119,7 +121,8 @@ WVKernelStatus WVHydrostaticIntegrationSystem::createImpl(
     const WVPortableObserverDescriptor *descriptor,
     std::shared_ptr<const WVExtensionCatalog> catalog,
     std::unique_ptr<WVFFTEngine> engine,
-    std::unique_ptr<WVHydrostaticIntegrationSystem> &system) {
+    std::unique_ptr<WVHydrostaticIntegrationSystem> &system,
+    const WVVariableKernelServices &services) {
   system.reset();
   if (!catalog)
     return {WVKernelStatusCode::invalidConfiguration,
@@ -136,7 +139,7 @@ WVKernelStatus WVHydrostaticIntegrationSystem::createImpl(
             new WVHydrostaticIntegrationSystem());
     auto status = WVHydrostaticForcingEngine::create(
         std::move(source), schedule, std::move(catalog), std::move(engine),
-        candidate->forcing_);
+        candidate->forcing_, services);
     if (!status)
       return status;
     const auto coefficientShape =

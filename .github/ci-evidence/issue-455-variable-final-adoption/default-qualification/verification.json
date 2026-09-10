@@ -1,0 +1,131 @@
+{
+  "claims": {
+    "ci": false,
+    "localQualificationComplete": true,
+    "merged": false
+  },
+  "codeAnalyzer": {
+    "TestCompiledKernelIntegrationFindings": 9,
+    "analyzedFiles": 5,
+    "baselineComparisonExitCode": 0,
+    "baselineFindings": 9,
+    "findingIdentifier": "PROP",
+    "newFindings": 0,
+    "zeroFindingFiles": 4
+  },
+  "freshBuild": {
+    "accelerateDefault": true,
+    "binaries": [
+      {
+        "name": "wave-vortex-run",
+        "sha256": "7b301e5eef65afc18386596243f13f9dc0a9b719a25c45032bed2d49d1cf62b5"
+      },
+      {
+        "name": "WVForwardIntegrationProbe",
+        "sha256": "7e2dbb8b6fe61f7979748501ec3664a3dfb7c816b96cc0c7fbd39aa4d671fe73"
+      },
+      {
+        "name": "TestWVRunnerVariablePolicy",
+        "sha256": "9d3d4c76339cff87eed7b2dd2a31793da3abed07470cb1def72dd668c5eba38d"
+      },
+      {
+        "name": "TestWaveVortexRun",
+        "sha256": "127c7132ce34703a294e6884435acf8175f3a25a1449ded5518f9270bf0f5086"
+      },
+      {
+        "name": "TestWVBarotropicQGNativeFFTW",
+        "sha256": "2b1b8ad5137ba6cdaccb1fde2cdcc230e36373b8d63e3a7540f404e938c410c9"
+      }
+    ],
+    "buildType": "Release",
+    "compactVariablePolicyDefault": true,
+    "defaultsForcedOnCommandLine": false,
+    "directoryWasFresh": true,
+    "tests": {
+      "executed": 4,
+      "failed": 0,
+      "passed": 4,
+      "requested": 4
+    }
+  },
+  "payloadPolicy": "Text receipts, logs, commands, scripts, and source snapshots only; no numerical payloads or binaries are duplicated.",
+  "provider": {
+    "expectedRoot": "/Users/jearly/Documents/OceanKitRepositories/wave-vortex-model/.compiled-backend-cache/provider/native-neon-pthreads",
+    "expectedVersion": "3.3.11",
+    "passed": true,
+    "test": "barotropic-qg-native-fftw"
+  },
+  "qualificationChecks": {
+    "assemblyPassed": 1,
+    "catalogPassed": 8,
+    "compiledIntegrationPassed": 5
+  },
+  "reportAssertionCorrection": {
+    "cause": "Temporary checker assumed 18 logical workers from a synthetic unit-test topology; actual host reports 16 logical / 12 performance workers.",
+    "correctionSidecar": "forward-evidence/report-validation-correction.json",
+    "independentHostVerification": {
+      "command": "sysctl -n hw.logicalcpu hw.perflevel0.physicalcpu",
+      "logicalWorkers": 16,
+      "performanceWorkers": 12
+    },
+    "initialLogScientificPasses": 12,
+    "initialPostScienceAssertionFailed": true,
+    "scientificRerun": false,
+    "workerPolicyUnchanged": {
+      "fftwInternal": 1,
+      "horizontal": 12,
+      "pointwise": 8
+    }
+  },
+  "schema": "wvm-variable-default-qualification-verification-v1",
+  "scientific": {
+    "configurations": 6,
+    "executedCases": 12,
+    "passedCases": 12,
+    "providers": 2,
+    "rerunAfterReportAssertionCorrection": false
+  },
+  "scope": "local-fresh-default-qualification",
+  "source": {
+    "commit": "b71860fc4cc877298abf5dbb39a3716acc5f0cf4",
+    "concurrentEvidenceChangesPresent": true,
+    "headAfterQualification": "b71860fc4cc877298abf5dbb39a3716acc5f0cf4",
+    "productionSourceChangesAfterTests": false
+  },
+  "variablePolicyPostprocessing": {
+    "families": [
+      "stratified-qg",
+      "hydrostatic",
+      "boussinesq"
+    ],
+    "host": {
+      "logicalWorkers": 16,
+      "performanceWorkers": 12
+    },
+    "lifecyclePoliciesPerFamilyProvider": 6,
+    "native": {
+      "compact": true,
+      "fftwInternalWorkers": 1,
+      "horizontalSchedule": "streaming-pruned-tile16",
+      "horizontalWorkers": 12,
+      "matrixBackend": "accelerate",
+      "pointwiseWorkers": 8,
+      "selection": "compact-native-accelerate",
+      "spectralSchedule": "compact-split-fused-views",
+      "streamedNonlinear": true
+    },
+    "providers": 2,
+    "reference": {
+      "compact": false,
+      "fftwInternalWorkers": 1,
+      "horizontalSchedule": "full-fft",
+      "horizontalWorkers": 1,
+      "matrixBackend": "scalar",
+      "pointwiseWorkers": 1,
+      "selection": "reference-provider",
+      "spectralSchedule": "established-interleaved",
+      "streamedNonlinear": false
+    },
+    "validatedPolicies": 36
+  }
+}

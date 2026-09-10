@@ -1,0 +1,24 @@
+[
+  {
+    "grid": [
+      256,
+      256,
+      129
+    ],
+    "Nj": 85,
+    "Nkl": 6631,
+    "exactGroups": 3374,
+    "groupedScientificArrayGiB": 1.2905982136726379
+  },
+  {
+    "grid": [
+      512,
+      512,
+      257
+    ],
+    "Nj": 170,
+    "Nkl": 26491,
+    "exactGroups": 13336,
+    "groupedScientificArrayGiB": 20.286523699760437
+  }
+]
