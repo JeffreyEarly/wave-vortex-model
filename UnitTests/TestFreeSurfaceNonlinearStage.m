@@ -117,6 +117,45 @@ classdef TestFreeSurfaceNonlinearStage < matlab.unittest.TestCase
             end
         end
 
+        function pureWaveEndpointRoundoffRemainsBoundedAndNonlinear(testCase)
+            for variable = [false,true]
+                [wvt,~] = fixture(variable);
+                original = wvt.coefficientState();
+                context = WVInternal.freeSurfaceNonlinearStage(wvt);
+                column = find(wvt.kNonzero>0 & wvt.lNonzero==0,1);
+                page = wvt.klNonzeroKhUniqueIndex(column);
+                wave = WVInternal.freeSurfaceWavePolarization(wvt.waveF(:,1,page),wvt.waveG(:,1,page),wvt.waveEquivalentDepth(1,page),wvt.kNonzero(column),wvt.lNonzero(column),f=wvt.f,g=wvt.g,rho0=wvt.rho0);
+                for time = [0,327,1e5]
+                    wvt.t=time; wvt.t0=0;
+                    nonlinearNorm = zeros(2,1);
+                    for index = 1:2
+                        amplitude = 2^(1-index);
+                        state = structfun(@(value)zeros(size(value)),original,UniformOutput=false);
+                        state.Aw_p(1,column) = amplitude*exp(.37i)/(2*abs(wave.ssh(1,1,1)));
+                        [rate,diagnostics,stage] = context.evaluate(state);
+                        for family = string(fieldnames(rate)).'
+                            testCase.verifyTrue(all(isfinite(rate.(family)),'all'))
+                        end
+                        thermal = stage.thermodynamics;
+                        testCase.verifyEqual(thermal.label,stage.physical.z-stage.hatted.eta)
+                        testCase.verifyGreaterThanOrEqual(min(thermal.densityLabel,[],'all'),-wvt.Lz)
+                        testCase.verifyLessThanOrEqual(max(thermal.densityLabel,[],'all'),0)
+                        adjustment = thermal.densityLabel-thermal.label;
+                        testCase.verifyEqual(diagnostics.maximumLabelRoundoffAdjustment,max(abs(adjustment),[],'all'))
+                        testCase.verifyLessThanOrEqual(diagnostics.maximumLabelRoundoffAdjustment,32*eps(wvt.Lz))
+                        testCase.verifyEqual(diagnostics.labelRoundoffTolerance,32*eps(wvt.Lz))
+                        testCase.verifyEqual(diagnostics.adjustedLabelCount,nnz(adjustment))
+                        testCase.verifyEqual(wvt.coefficientState(),original)
+                        testCase.verifyEqual([wvt.t,wvt.t0],[time,0])
+                        nonlinearNorm(index) = energyNorm(wvt,rate);
+                    end
+                    % A single wave need not have a retained quadratic term.
+                    % Require quadratic-or-faster decay, not an exact order.
+                    testCase.verifyGreaterThan(nonlinearNorm(1)/nonlinearNorm(2),3.7)
+                end
+            end
+        end
+
         function outOfDomainLabelsFailWithoutChangingState(testCase)
             [wvt,seed] = fixture(false);
             context = WVInternal.freeSurfaceNonlinearStage(wvt);
