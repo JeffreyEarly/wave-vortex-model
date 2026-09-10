@@ -23,3 +23,20 @@ The focused test passed on MATLAB R2026a with the pinned beta dependency exports
 Across all independently evaluated RK stages, the sampled parcel-label range was [-998.096356, -1.80072884] m, strictly inside [-1000, 0] m. The maximum reported weak-solver relative stationarity residual was 8.86551e-13. Native forcing restoration succeeded without an intermediate invalid inventory. Code Analyzer reported no findings in the new test.
 
 The control covers 40 seconds and one qualified truncation. It does not establish a timestep convergence rate, long-time stability, general stratification, conservation of material/APV moments, or convergence of pressure along the reduced trajectory. It preserves and compares the existing instantaneous pressure diagnostic. Particles and tracers are omitted here because their coordinate equations have a separate focused observer qualification. Optional user-directory, undamped-model, and intermediate package-path-removal warnings did not prevent the test from completing.
+
+## Separate-process restart with variable wave counts
+
+`tools/nonlinear-study/runFreeSurfaceNativeRestartCheck.m` supplies an additional cold-start gate. Its write process constructs a separately qualified inventory with per-wavenumber wave counts [3, 2, 0, 3], including one zero-wave page and eight inactive entries in each rectangular wave array. Both horizontal directions and wave signs participate in the seed. The physical source convention, absolute source clock, retained families, integration times, and 5 s RK4 step follow the preceding control.
+
+The write process stores an uninterrupted 367 s reference state, physical fields, full nonlinear energy, scientific operators, and forcing configuration in a MAT file, and a native 347 s checkpoint in NetCDF. The read process starts independently, configures WVM and only its non-provider dependencies, removes any installed InternalModes paths that survive `restoredefaultpath`, and asserts both mode-provider entry points are unavailable before loading checkpoint objects. It restores and continues the native file for 20 s, checks all stored operators/counts, and confirms inactive wave padding remains zero and MDA remains real.
+
+The two separate MATLAB invocations, run from the worktree root outside the macOS sandbox, are:
+
+```sh
+matlab -batch "restoredefaultpath; maxNumCompThreads(2); addpath('tools/nonlinear-study'); runFreeSurfaceNativeRestartCheck('write','/private/tmp/wvm-nonlinear-fresh-restart-20260909','../oceankit-beta-publish');"
+matlab -batch "restoredefaultpath; maxNumCompThreads(2); addpath('tools/nonlinear-study'); runFreeSurfaceNativeRestartCheck('read','/private/tmp/wvm-nonlinear-fresh-restart-20260909','../oceankit-beta-publish');"
+```
+
+The fresh read passed with zero relative coefficient, physical-field, and full-energy errors against the first process's uninterrupted reference. Its final sampled label range was [-998.096315151906, -1.8007518982660529] m, and the weak-solver relative residual was 4.6790371297744243e-13. The mode provider remained unavailable after continuation, `verticalModes` remained empty, and the saved scientific arrays and variable counts were unchanged. Code Analyzer reported no findings in the new verification script.
+
+The durable local evidence is `variable-count-checkpoint.nc`, `variable-count-reference.mat`, `write-result.json`, and `read-result.json` in `/private/tmp/wvm-nonlinear-fresh-restart-20260909`. The read stage appends the 367 s record, so repeat the write stage before rerunning a read. An initial attempted read stopped before restoration when it detected provider paths inherited from installed-package setup; the explicit removal in the final helper addresses that verification-environment issue. This separate-process result establishes the bounded cold-start and variable-prefix continuation gate, with the same physical and trajectory limitations stated above.
