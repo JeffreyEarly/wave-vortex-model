@@ -3,13 +3,22 @@ project(WaveVortexPortableRuntime VERSION 1.0.0 LANGUAGES CXX)
 
 include(CTest)
 option(WV_RUNTIME_ENABLE_NATIVE_FFTW "Build wave-vortex-run with the pinned native FFTW adapter" OFF)
-option(WV_RUNTIME_ENABLE_COMPACT_VARIABLE_POLICY "Select the candidate compact variable-kernel policy in the native runner" OFF)
 option(WV_RUNTIME_BUILD_BENCHMARKS "Build author-only portable-runtime benchmark workers" OFF)
 set(WV_RUNTIME_FFTW_ROOT "" CACHE PATH "Prefix containing the validated FFTW 3.3.11 include and lib folders")
 
 if(NOT TARGET WaveVortex::Kernel)
     add_subdirectory(${CMAKE_CURRENT_LIST_DIR}/../CompiledKernel ${CMAKE_CURRENT_BINARY_DIR}/kernel)
 endif()
+
+set(WV_RUNTIME_COMPACT_VARIABLE_POLICY_DEFAULT OFF)
+if(APPLE AND CMAKE_SYSTEM_PROCESSOR MATCHES "arm64|aarch64" AND
+   WV_RUNTIME_ENABLE_NATIVE_FFTW AND WV_ENABLE_ACCELERATE)
+    set(WV_RUNTIME_COMPACT_VARIABLE_POLICY_DEFAULT ON)
+endif()
+option(WV_RUNTIME_ENABLE_COMPACT_VARIABLE_POLICY
+    "Select the compact variable-kernel policy in the native runner"
+    ${WV_RUNTIME_COMPACT_VARIABLE_POLICY_DEFAULT})
+unset(WV_RUNTIME_COMPACT_VARIABLE_POLICY_DEFAULT)
 
 find_package(netCDF CONFIG QUIET)
 if(TARGET netCDF::netcdf)
