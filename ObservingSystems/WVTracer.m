@@ -3,6 +3,8 @@ classdef WVTracer < WVObservingSystem
     %
     % WVTracer evolves a two- or three-dimensional scalar field alongside
     % the model. The tracer may be antialiased after each flux evaluation.
+    % Free-surface Boussinesq tracers use the fixed reference grid, with
+    % physical horizontal velocity and material reference-coordinate w_i.
 
     properties (GetAccess=public, SetAccess=protected)
         isXYOnly
@@ -78,6 +80,8 @@ classdef WVTracer < WVObservingSystem
             self.updateIntegratorValues(t,y0);
             if self.isXYOnly
                 F_phi = -self.wvt.u .* self.wvt.diffX(self.phi) - self.wvt.v .* self.wvt.diffY(self.phi);
+            elseif isa(self.wvt,'WVTransformFreeSurfaceBoussinesq')
+                F_phi = -self.wvt.u .* self.wvt.diffX(self.phi) - self.wvt.v .* self.wvt.diffY(self.phi) - self.wvt.w_i .* self.wvt.diffZ(self.phi);
             else
                 F_phi = -self.wvt.u .* self.wvt.diffX(self.phi) - self.wvt.v .* self.wvt.diffY(self.phi) - self.wvt.w .* self.wvt.diffZF(self.phi);
             end
