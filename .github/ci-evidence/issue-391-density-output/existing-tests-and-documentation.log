@@ -1,0 +1,105 @@
+[Warning: Directory access failure: /Users/jearly/Documents/MATLAB]
+CI package: Distributions 2.0.0 (/Users/jearly/Documents/OceanKitRepositories/OceanKit/Distributions-2.0.0)
+CI package: SplineCore 2.2.0 (/Users/jearly/Documents/OceanKitRepositories/OceanKit/SplineCore-2.2.0)
+CI package: chebfun 5.7.0 (/Users/jearly/Documents/OceanKitRepositories/OceanKit/chebfun-5.7.0)
+CI package: InternalModes 1.3.0 (/Users/jearly/Documents/OceanKitRepositories/OceanKit/InternalModes-1.3.0)
+CI package: NetCDF 1.0.2 (/Users/jearly/Documents/OceanKitRepositories/OceanKit/NetCDF-1.0.2)
+CI package: ClassAnnotations 1.2.1 (/Users/jearly/Documents/OceanKitRepositories/OceanKit/ClassAnnotations-1.2.1)
+CI package: ClassDocumentation 1.3.2 (/Users/jearly/Documents/OceanKitRepositories/OceanKit/ClassDocumentation-1.3.2)
+CI package: WaveVortexModel 4.3.0 (/Users/jearly/Documents/OceanKitRepositories/wvm-v4-cpp-adoption-audit)
+Running TestPortableVariableCatalog
+BLAS: trying environment BLAS_VERSION...
+BLAS: loading libmwAF_BLAS_ilp64.dylib
+BLAS: loaded libmwAF_BLAS_ilp64.dylib@0x92f4f8b0
+building 12 boussinesq transformation matrices...1...finished.
+building 6 boussinesq transformation matrices...1...finished.
+......
+Done TestPortableVariableCatalog
+__________
+
+Running TestPortableNoMotionProfile
+Ending simulation. Wrote 1 time points to wave-vortex group
+WARNING: package sun.awt.X11 not in java.desktop
+WARNING: package sun.awt.X11 not in java.desktop
+.
+Done TestPortableNoMotionProfile
+__________
+
+Running TestPortableDiagnostics
+Ending simulation. Wrote 1 time points to wave-vortex group
+Ending simulation. Wrote 1 time points to wave-vortex group
+Ending simulation. Wrote 1 time points to wave-vortex group
+Ending simulation. Wrote 1 time points to wave-vortex group
+Ending simulation. Wrote 1 time points to wave-vortex group
+Ending simulation. Wrote 1 time points to wave-vortex group
+Ending simulation. Wrote 1 time points to wave-vortex group
+Ending simulation. Wrote 1 time points to wave-vortex group
+[Warning: The nonlinear flux has no damping and may not be stable.]
+[> In WVModel (line 121)
+In TestPortableDiagnostics/allTransformDiagnosticsMatchMatlab (line 58)]
+Ending simulation. Wrote 1 time points to wave-vortex group
+[Warning: The nonlinear flux has no damping and may not be stable.]
+[> In WVModel (line 121)
+In TestPortableDiagnostics/allTransformDiagnosticsMatchMatlab (line 58)]
+Ending simulation. Wrote 1 time points to wave-vortex group
+[Warning: The nonlinear flux has no damping and may not be stable.]
+[> In WVModel (line 121)
+In TestPortableDiagnostics/allTransformDiagnosticsMatchMatlab (line 58)]
+Ending simulation. Wrote 1 time points to wave-vortex group
+[Warning: The nonlinear flux has no damping and may not be stable.]
+[> In WVModel (line 121)
+In TestPortableDiagnostics/allTransformDiagnosticsMatchMatlab (line 58)]
+Ending simulation. Wrote 1 time points to wave-vortex group
+Ending simulation. Wrote 1 time points to wave-vortex group
+Ending simulation. Wrote 1 time points to wave-vortex group
+Ending simulation. Wrote 1 time points to wave-vortex group
+Ending simulation. Wrote 1 time points to wave-vortex group
+Ending simulation. Wrote 1 time points to wave-vortex group
+Ending simulation. Wrote 1 time points to wave-vortex group
+Ending simulation. Wrote 1 time points to wave-vortex group
+Ending simulation. Wrote 1 time points to wave-vortex group
+building 12 boussinesq transformation matrices...1...finished.
+Ending simulation. Wrote 1 time points to wave-vortex group
+building 20 boussinesq transformation matrices...1...finished.
+Ending simulation. Wrote 1 time points to wave-vortex group
+building 6 boussinesq transformation matrices...1...finished.
+Ending simulation. Wrote 1 time points to wave-vortex group
+building 6 boussinesq transformation matrices...1...finished.
+Ending simulation. Wrote 1 time points to wave-vortex group
+.
+Done TestPortableDiagnostics
+__________
+
+                                              Name                                              Passed    Failed    Incomplete    Duration      Details
+    ________________________________________________________________________________________    ______    ______    __________    ________    ____________
+
+    {'TestPortableVariableCatalog/testGeneratedCatalogMatchesCommittedFiles'               }    true      false       false         18.029    {1×1 struct}
+    {'TestPortableVariableCatalog/testCatalogIdentityAndAnnotationMetadata'                }    true      false       false       0.046887    {1×1 struct}
+    {'TestPortableVariableCatalog/testLegacyMetadataAndGraphFailures'                      }    true      false       false        0.33584    {1×1 struct}
+    {'TestPortableVariableCatalog/testConfigurationAndConditionalDependencies'             }    true      false       false       0.045605    {1×1 struct}
+    {'TestPortableVariableCatalog/testEvaluationLoopsDoNotCompareFieldNames'               }    true      false       false        0.01299    {1×1 struct}
+    {'TestPortableVariableCatalog/testHydrostaticAndNonhydrostaticAnnotationsAgree'        }    true      false       false        0.21201    {1×1 struct}
+    {'TestPortableNoMotionProfile/runtimeReportsDensityReferenceWithoutChangingIntegration'}    true      false       false         2.3764    {1×1 struct}
+    {'TestPortableDiagnostics/allTransformDiagnosticsMatchMatlab'                          }    true      false       false         17.268    {1×1 struct}
+
+ANALYZER UnitTests/TestPortableVariableCatalog.m findings=0
+[]
+ANALYZER UnitTests/TestPortableNoMotionProfile.m findings=0
+[]
+ANALYZER UnitTests/TestPortableDiagnostics.m findings=0
+[]
+ANALYZER tools/generatePortableVariableCatalog.m findings=0
+[]
+** Starting docs:build
+Documentation dependency: ClassDocumentation 1.3.2 (/Users/jearly/Documents/OceanKitRepositories/OceanKit/ClassDocumentation-1.3.2)
+Documentation validation: files=2026, routes=4145, failures=0
+Website documentation rebuilt at /Users/jearly/Documents/OceanKitRepositories/wvm-v4-cpp-adoption-audit/docs
+** Finished docs:build
+
+** Starting docs:check
+Documentation dependency: ClassDocumentation 1.3.2 (/Users/jearly/Documents/OceanKitRepositories/OceanKit/ClassDocumentation-1.3.2)
+Documentation validation: files=2026, routes=4145, failures=0
+Documentation comparison: added=0, removed=0, modified=0, whitespace-only=0, substantive=0
+** Finished docs:check
+
+BLAS: unloading libraries

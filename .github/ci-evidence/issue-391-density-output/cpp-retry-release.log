@@ -1,0 +1,8 @@
+Internal ctest changing into directory: /tmp/wvm-v4-audit-runtime
+Test project /tmp/wvm-v4-audit-runtime
+    Start 24: model-output-netcdf
+1/1 Test #24: model-output-netcdf ..............   Passed    2.17 sec
+
+100% tests passed, 0 tests failed out of 1
+
+Total Test time (real) =   2.17 sec

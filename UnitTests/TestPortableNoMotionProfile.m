@@ -145,7 +145,7 @@ classdef TestPortableNoMotionProfile < matlab.unittest.TestCase
                 testCase.assertEqual(report.state.stepCount,1);
                 contract = report.densityDiagnosticContract;
                 testCase.verifyEqual(string(contract.identifier),"wave-vortex-density-diagnostics-v1");
-                testCase.verifyEqual(string(contract.outputEvaluation),"unavailable");
+                testCase.verifyEqual(string(contract.outputEvaluation),"available");
                 if selection=="initial"
                     testCase.verifyEqual(string(contract.reference),"initial");
                     testCase.verifyEqual(string(contract.profileRecovery),"not-required");

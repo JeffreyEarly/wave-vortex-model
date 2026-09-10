@@ -1063,6 +1063,69 @@ WVKernelStatus WVTransformConstantStratificationKernel::antialiasScalarInPlace(W
     return WVKernelStatus::ok();
 }
 
+WVKernelStatus WVTransformConstantStratificationKernel::transformGGridScalarDerivatives(
+    const WVRealVolumeConstView& scalar, WVRealFieldBundleView& derivatives) {
+    const auto spatial=descriptor_.spatialShape();
+    if(scalar.shape.first!=spatial.first || scalar.shape.second!=spatial.second || scalar.shape.third!=spatial.third)
+        return {WVKernelStatusCode::invalidShape,"G-grid scalar must have shape [Nx,Ny,Nz]."};
+    if(!scalar.data) return {WVKernelStatusCode::invalidPointer,"G-grid scalar storage is missing."};
+    auto status=validateBundle(derivatives,spatial,3,"G-grid derivatives");
+    if(!status) return status;
+    const auto R=spatial.elementCount();
+    if(memoryOverlaps(scalar.data,R*sizeof(double),derivatives.data,3*R*sizeof(double)))
+        return {WVKernelStatusCode::overlappingArrays,"G-grid scalar and derivative arrays must not overlap."};
+    for(std::size_t i=0;i<R;++i) if(!std::isfinite(scalar.data[i]))
+        return {WVKernelStatusCode::invalidConfiguration,"G-grid scalar must be finite."};
+    ExecutionGuard guard(executing_);
+    if(!guard.entered()) return {WVKernelStatusCode::reentrantExecution,"Kernel operations are not reentrant."};
+    const auto& c=descriptor_.configuration();
+    const auto NxHalf=descriptor_.halfSpectrumMappings().NxHalf;
+    const auto halfRows=NxHalf*c.Ny;
+    auto* half=reinterpret_cast<WVComplex64*>(halfSpectrumScratch_.data());
+    status=plans_[horizontalForward1]->execute(scalar.data,half);
+    if(!status) return status;
+    ++metrics_.executionCount; ++metrics_.horizontalExecutionCount;
+    const double scale=1.0/static_cast<double>(c.Nx*c.Ny);
+    // Expand backwards because the single-channel input shares this scratch.
+    for(std::size_t row=halfRows;row-- > 0;) {
+        const auto kIndex=row%NxHalf,lIndex=row/NxHalf;
+        const double k=c.Nx%2==0 && kIndex==c.Nx/2 ? 0.0 : 2*pi*static_cast<double>(kIndex)/c.Lx;
+        const auto lMode=lIndex<(c.Ny+1)/2 ? static_cast<std::int64_t>(lIndex) : static_cast<std::int64_t>(lIndex)-static_cast<std::int64_t>(c.Ny);
+        const double l=c.Ny%2==0 && lIndex==c.Ny/2 ? 0.0 : 2*pi*static_cast<double>(lMode)/c.Ly;
+        for(std::size_t z=c.Nz;z-- > 0;) {
+            const auto value=multiply(half[z+c.Nz*row],scale);
+            half[z+c.Nz*3*row]=multiply(value,WVComplex64{0,k});
+            half[z+c.Nz+3*c.Nz*row]=multiply(value,WVComplex64{0,l});
+            half[z+2*c.Nz+3*c.Nz*row]=value;
+        }
+    }
+    // G has sine basis; the first derivative is its retained cosine series.
+    status=plans_[verticalDST1Storage3]->execute(half+2*c.Nz+1,half+2*c.Nz+1);
+    if(!status) return status;
+    ++metrics_.executionCount; ++metrics_.verticalExecutionCount;
+    normalizeForwardDST(half,c.Nz,halfRows,3,2,1);
+    for(std::size_t row=0;row<halfRows;++row) {
+        const auto base=2*c.Nz+3*c.Nz*row;
+        for(std::size_t j=1;j<c.Nj;++j) half[base+j]=multiply(half[base+j],pi*static_cast<double>(j)/c.Lz);
+        for(std::size_t j=c.Nj;j<c.Nz;++j) half[base+j]={};
+    }
+    normalizeInverseDCT(half,c.Nz,halfRows,3,2,1);
+    status=plans_[verticalDCT1Storage3]->execute(half+2*c.Nz,half+2*c.Nz);
+    if(!status) return status;
+    ++metrics_.executionCount; ++metrics_.verticalExecutionCount;
+    for(const auto row:descriptor_.halfSpectrumMappings().selfConjugateRows)
+        for(std::size_t z=0;z<c.Nz;++z) for(std::size_t channel=0;channel<3;++channel)
+            half[z+c.Nz*channel+3*c.Nz*row].imag=0;
+    auto* result=realScratch_.data()+3*R;
+    status=plans_[horizontalInverse3]->execute(half,result);
+    if(!status) return status;
+    ++metrics_.executionCount; ++metrics_.horizontalExecutionCount;
+    for(std::size_t i=0;i<3*R;++i) if(!std::isfinite(result[i]))
+        return {WVKernelStatusCode::numericalFailure,"G-grid scalar derivative overflowed."};
+    std::copy_n(result,3*R,derivatives.data);
+    return WVKernelStatus::ok();
+}
+
 WVKernelStatus WVTransformConstantStratificationKernel::advectFGridScalar(
     const WVRealVolumeConstView& scalar,
     const WVRealFieldBundleConstView& advectionFields,

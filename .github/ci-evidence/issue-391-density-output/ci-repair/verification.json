@@ -1,0 +1,10 @@
+{
+  "schemaVersion": 1,
+  "scope": "Current kernel source-selection manifest repair; no production change",
+  "failedCIRun": 34415964497,
+  "failedMethod": "TestCompiledKernelIntegration/keyRuntimeHashesMatchTheSelection",
+  "oldKernelSHA256": "61dfb8f7c8ac2d91c90f509efda733884530fe84321bdd5f66210e31ec31c376",
+  "currentKernelSHA256": "2aed16e2b0c2edf6157a3085ac809852f01e80f9d35a73cbac4d71e5065236d4",
+  "focusedMethodsPassed": 5,
+  "historicalQualificationArtifactsChanged": false
+}

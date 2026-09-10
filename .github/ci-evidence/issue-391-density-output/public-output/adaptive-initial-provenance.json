@@ -1,0 +1,7 @@
+{
+  "scope": "Passing first adaptive attempt, not final single-binary qualification",
+  "previousRunnerSHA256": "009956fc5009479e573825d571502f6d81f1d9637be83f1da9bb3d169077e8d8",
+  "observedFinalRunnerSHA256": "6f57eba3d803c79898a63856d9e6c91b7a0b7907ae045fcd3c8ff1473de2f8d1",
+  "qualificationClaim": false,
+  "reason": "Root rebuilt runner during execution to change QG applicability report label; wave scientific code unchanged. Final adaptive method rerun required."
+}

@@ -1,0 +1,16 @@
+root="/Users/jearly/Documents/OceanKitRepositories/wvm-v4-cpp-adoption-audit";
+cd(root); addpath(fullfile(root,"tools"));
+configureCIEnvironment(root,"/Users/jearly/Documents/OceanKitRepositories/OceanKit",documentationPackageSpecifier="ClassDocumentation@1.3.2");
+addpath(fullfile(root,"UnitTests"),"-begin");
+setenv('WV_DENSITY_OUTPUT_RUNNER','/private/tmp/wvm-v4-audit-runtime/wave-vortex-run');
+setenv('WV_DIAGNOSTIC_NATIVE','1');
+setenv('WV_DENSITY_OUTPUT_EVIDENCE','/private/tmp/wvm391-density-public-output');
+suite=testsuite(fullfile(root,"UnitTests","TestPortableDensityOutput.m"));
+suite=suite(~contains(string({suite.Name}),["nonlinearDensityOutputPreservesIntegration","adaptiveDensityOutputAndRestartPreserveIntegration"]));
+assert(numel(suite)==2);
+results=run(suite); disp(table(results));
+stream=fopen('/private/tmp/wvm391-density-public-output-results.json','w');
+fwrite(stream,jsonencode(struct(name={results.Name},passed={results.Passed},failed={results.Failed},incomplete={results.Incomplete},duration={results.Duration}),PrettyPrint=true)); fclose(stream);
+findings=checkcode(fullfile(root,"UnitTests","TestPortableDensityOutput.m"),"-id");
+fprintf("ANALYZER findings=%d\n",numel(findings)); disp(jsonencode(findings,PrettyPrint=true));
+assertSuccess(results); assert(isempty(findings));

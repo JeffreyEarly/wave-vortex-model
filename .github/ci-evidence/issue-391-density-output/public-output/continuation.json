@@ -1,0 +1,326 @@
+{
+  "schema": "portable-density-output-v1",
+  "matlabRelease": "2025b",
+  "rows": [
+    {
+      "configuration": "constant-hydrostatic",
+      "reference": "actual",
+      "provider": "reference",
+      "scenario": "whole",
+      "destinations": [
+        {
+          "rho_nm": 4.5474735088646412E-13,
+          "eta_true": 1.6115109247039072E-10,
+          "ape": 2.6154881206920809E-16,
+          "apv": 5.52892285990772E-17
+        },
+        {
+          "rho_nm": 4.5474735088646412E-13,
+          "eta_true": 1.6115109247039072E-10,
+          "ape": 2.6154881206920809E-16,
+          "apv": 5.52892285990772E-17
+        }
+      ]
+    },
+    {
+      "configuration": "constant-hydrostatic",
+      "reference": "actual",
+      "provider": "reference",
+      "scenario": "cppRestart",
+      "destinations": [
+        {
+          "rho_nm": 4.5474735088646412E-13,
+          "eta_true": 1.6115109247039072E-10,
+          "ape": 2.6154881206920809E-16,
+          "apv": 5.52892285990772E-17
+        },
+        {
+          "rho_nm": 4.5474735088646412E-13,
+          "eta_true": 1.6115109247039072E-10,
+          "ape": 2.6154881206920809E-16,
+          "apv": 5.52892285990772E-17
+        }
+      ]
+    },
+    {
+      "configuration": "constant-hydrostatic",
+      "reference": "actual",
+      "provider": "reference",
+      "scenario": "matlabToCpp",
+      "destinations": [
+        {
+          "rho_nm": 2.2737367544323206E-13,
+          "eta_true": 8.0603967944625765E-11,
+          "ape": 1.3083955808837117E-16,
+          "apv": 5.52892285990772E-17
+        },
+        {
+          "rho_nm": 2.2737367544323206E-13,
+          "eta_true": 8.0603967944625765E-11,
+          "ape": 1.3083955808837117E-16,
+          "apv": 5.52892285990772E-17
+        }
+      ]
+    },
+    {
+      "configuration": "constant-hydrostatic",
+      "reference": "actual",
+      "provider": "reference",
+      "scenario": "cppToMatlab",
+      "destinations": [
+        {
+          "rho_nm": 4.5474735088646412E-13,
+          "eta_true": 1.6115109247039072E-10,
+          "ape": 2.6154881206920809E-16,
+          "apv": 4.5381484215043649E-17
+        },
+        {
+          "rho_nm": 4.5474735088646412E-13,
+          "eta_true": 1.6115109247039072E-10,
+          "ape": 2.6154881206920809E-16,
+          "apv": 4.5381484215043649E-17
+        }
+      ]
+    },
+    {
+      "configuration": "constant-hydrostatic",
+      "reference": "actual",
+      "provider": "native-fftw",
+      "scenario": "whole",
+      "destinations": [
+        {
+          "rho_nm": 4.5474735088646412E-13,
+          "eta_true": 1.6115109247039072E-10,
+          "ape": 2.6154881206920809E-16,
+          "apv": 5.5296004862655235E-17
+        },
+        {
+          "rho_nm": 4.5474735088646412E-13,
+          "eta_true": 1.6115109247039072E-10,
+          "ape": 2.6154881206920809E-16,
+          "apv": 5.5296004862655235E-17
+        }
+      ]
+    },
+    {
+      "configuration": "constant-hydrostatic",
+      "reference": "actual",
+      "provider": "native-fftw",
+      "scenario": "cppRestart",
+      "destinations": [
+        {
+          "rho_nm": 4.5474735088646412E-13,
+          "eta_true": 1.6115109247039072E-10,
+          "ape": 2.6154881206920809E-16,
+          "apv": 5.5296004862655235E-17
+        },
+        {
+          "rho_nm": 4.5474735088646412E-13,
+          "eta_true": 1.6115109247039072E-10,
+          "ape": 2.6154881206920809E-16,
+          "apv": 5.5296004862655235E-17
+        }
+      ]
+    },
+    {
+      "configuration": "constant-hydrostatic",
+      "reference": "actual",
+      "provider": "native-fftw",
+      "scenario": "matlabToCpp",
+      "destinations": [
+        {
+          "rho_nm": 2.2737367544323206E-13,
+          "eta_true": 8.0603967944625765E-11,
+          "ape": 1.3083955808837117E-16,
+          "apv": 5.5296004862655235E-17
+        },
+        {
+          "rho_nm": 2.2737367544323206E-13,
+          "eta_true": 8.0603967944625765E-11,
+          "ape": 1.3083955808837117E-16,
+          "apv": 5.5296004862655235E-17
+        }
+      ]
+    },
+    {
+      "configuration": "constant-hydrostatic",
+      "reference": "actual",
+      "provider": "native-fftw",
+      "scenario": "cppToMatlab",
+      "destinations": [
+        {
+          "rho_nm": 4.5474735088646412E-13,
+          "eta_true": 1.6115109247039072E-10,
+          "ape": 2.6154881206920809E-16,
+          "apv": 4.5374707951465615E-17
+        },
+        {
+          "rho_nm": 4.5474735088646412E-13,
+          "eta_true": 1.6115109247039072E-10,
+          "ape": 2.6154881206920809E-16,
+          "apv": 4.5374707951465615E-17
+        }
+      ]
+    },
+    {
+      "configuration": "hydrostatic",
+      "reference": "initial",
+      "provider": "reference",
+      "scenario": "whole",
+      "destinations": [
+        {
+          "rho_nm": 2.2737367544323206E-13,
+          "eta_true": 2.2737367544323206E-13,
+          "ape": 3.084788114781755E-19,
+          "apv": 5.7174723939665273E-20
+        },
+        {
+          "rho_nm": 2.2737367544323206E-13,
+          "eta_true": 2.2737367544323206E-13,
+          "ape": 3.084788114781755E-19,
+          "apv": 5.7174723939665273E-20
+        }
+      ]
+    },
+    {
+      "configuration": "hydrostatic",
+      "reference": "initial",
+      "provider": "reference",
+      "scenario": "cppRestart",
+      "destinations": [
+        {
+          "rho_nm": 2.2737367544323206E-13,
+          "eta_true": 2.2737367544323206E-13,
+          "ape": 3.084788114781755E-19,
+          "apv": 5.7174723939665273E-20
+        },
+        {
+          "rho_nm": 2.2737367544323206E-13,
+          "eta_true": 2.2737367544323206E-13,
+          "ape": 3.084788114781755E-19,
+          "apv": 5.7174723939665273E-20
+        }
+      ]
+    },
+    {
+      "configuration": "hydrostatic",
+      "reference": "initial",
+      "provider": "reference",
+      "scenario": "matlabToCpp",
+      "destinations": [
+        {
+          "rho_nm": 2.2737367544323206E-13,
+          "eta_true": 2.2737367544323206E-13,
+          "ape": 3.084788114781755E-19,
+          "apv": 5.1669009782512321E-20
+        },
+        {
+          "rho_nm": 2.2737367544323206E-13,
+          "eta_true": 2.2737367544323206E-13,
+          "ape": 3.084788114781755E-19,
+          "apv": 5.1669009782512321E-20
+        }
+      ]
+    },
+    {
+      "configuration": "hydrostatic",
+      "reference": "initial",
+      "provider": "reference",
+      "scenario": "cppToMatlab",
+      "destinations": [
+        {
+          "rho_nm": 2.2737367544323206E-13,
+          "eta_true": 2.2737367544323206E-13,
+          "ape": 2.4208267806976908E-19,
+          "apv": 5.7174723939665273E-20
+        },
+        {
+          "rho_nm": 2.2737367544323206E-13,
+          "eta_true": 2.2737367544323206E-13,
+          "ape": 2.4208267806976908E-19,
+          "apv": 5.7174723939665273E-20
+        }
+      ]
+    },
+    {
+      "configuration": "hydrostatic",
+      "reference": "initial",
+      "provider": "native-fftw",
+      "scenario": "whole",
+      "destinations": [
+        {
+          "rho_nm": 2.2737367544323206E-13,
+          "eta_true": 2.2737367544323206E-13,
+          "ape": 3.084788114781755E-19,
+          "apv": 5.5904174518783822E-20
+        },
+        {
+          "rho_nm": 2.2737367544323206E-13,
+          "eta_true": 2.2737367544323206E-13,
+          "ape": 3.084788114781755E-19,
+          "apv": 5.5904174518783822E-20
+        }
+      ]
+    },
+    {
+      "configuration": "hydrostatic",
+      "reference": "initial",
+      "provider": "native-fftw",
+      "scenario": "cppRestart",
+      "destinations": [
+        {
+          "rho_nm": 2.2737367544323206E-13,
+          "eta_true": 2.2737367544323206E-13,
+          "ape": 3.084788114781755E-19,
+          "apv": 5.5904174518783822E-20
+        },
+        {
+          "rho_nm": 2.2737367544323206E-13,
+          "eta_true": 2.2737367544323206E-13,
+          "ape": 3.084788114781755E-19,
+          "apv": 5.5904174518783822E-20
+        }
+      ]
+    },
+    {
+      "configuration": "hydrostatic",
+      "reference": "initial",
+      "provider": "native-fftw",
+      "scenario": "matlabToCpp",
+      "destinations": [
+        {
+          "rho_nm": 2.2737367544323206E-13,
+          "eta_true": 2.2737367544323206E-13,
+          "ape": 3.084788114781755E-19,
+          "apv": 5.4210108624275222E-20
+        },
+        {
+          "rho_nm": 2.2737367544323206E-13,
+          "eta_true": 2.2737367544323206E-13,
+          "ape": 3.084788114781755E-19,
+          "apv": 5.4210108624275222E-20
+        }
+      ]
+    },
+    {
+      "configuration": "hydrostatic",
+      "reference": "initial",
+      "provider": "native-fftw",
+      "scenario": "cppToMatlab",
+      "destinations": [
+        {
+          "rho_nm": 2.2737367544323206E-13,
+          "eta_true": 2.2737367544323206E-13,
+          "ape": 2.4208267806976908E-19,
+          "apv": 5.5904174518783822E-20
+        },
+        {
+          "rho_nm": 2.2737367544323206E-13,
+          "eta_true": 2.2737367544323206E-13,
+          "ape": 2.4208267806976908E-19,
+          "apv": 5.5904174518783822E-20
+        }
+      ]
+    }
+  ]
+}

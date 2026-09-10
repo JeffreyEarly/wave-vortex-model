@@ -1,0 +1,64 @@
+[Warning: Directory access failure: /Users/jearly/Documents/MATLAB]
+CI package: Distributions 2.0.0 (/Users/jearly/Documents/OceanKitRepositories/OceanKit/Distributions-2.0.0)
+CI package: SplineCore 2.2.0 (/Users/jearly/Documents/OceanKitRepositories/OceanKit/SplineCore-2.2.0)
+CI package: chebfun 5.7.0 (/Users/jearly/Documents/OceanKitRepositories/OceanKit/chebfun-5.7.0)
+CI package: InternalModes 1.3.0 (/Users/jearly/Documents/OceanKitRepositories/OceanKit/InternalModes-1.3.0)
+CI package: NetCDF 1.0.2 (/Users/jearly/Documents/OceanKitRepositories/OceanKit/NetCDF-1.0.2)
+CI package: ClassAnnotations 1.2.1 (/Users/jearly/Documents/OceanKitRepositories/OceanKit/ClassAnnotations-1.2.1)
+CI package: ClassDocumentation 1.3.2 (/Users/jearly/Documents/OceanKitRepositories/OceanKit/ClassDocumentation-1.3.2)
+CI package: WaveVortexModel 4.3.0 (/Users/jearly/Documents/OceanKitRepositories/wvm-v4-pr447-ci-repair)
+Running TestPortableDiagnostics
+BLAS: trying environment BLAS_VERSION...
+BLAS: loading libmwAF_BLAS_ilp64.dylib
+BLAS: loaded libmwAF_BLAS_ilp64.dylib@0x954778b0
+Ending simulation. Wrote 1 time points to wave-vortex group
+Ending simulation. Wrote 1 time points to dense group
+Ending simulation. Wrote 1 time points to wave-vortex group
+WVTransformConstantStratification initialized from Ap, Am, A0.
+Ending simulation. Wrote 3 time points to wave-vortex group
+Ending simulation. Wrote 9 time points to dense group
+WARNING: package sun.awt.X11 not in java.desktop
+WARNING: package sun.awt.X11 not in java.desktop
+Ending simulation. Wrote 1 time points to wave-vortex group
+Ending simulation. Wrote 1 time points to dense group
+Ending simulation. Wrote 1 time points to wave-vortex group
+WVTransformConstantStratification initialized from Ap, Am, A0.
+Ending simulation. Wrote 3 time points to wave-vortex group
+Ending simulation. Wrote 9 time points to dense group
+[Warning: The nonlinear flux has no damping and may not be stable.]
+[> In WVModel (line 121)
+In TestPortableDiagnostics/outputContinuationMatchesMatlab (line 120)]
+Ending simulation. Wrote 1 time points to wave-vortex group
+Ending simulation. Wrote 1 time points to dense group
+Ending simulation. Wrote 1 time points to wave-vortex group
+WVTransformBarotropicQG initialized from A0.
+[Warning: The nonlinear flux has no damping and may not be stable.]
+[> In WVModel (line 121)
+In WVModel.modelFromFile (line 28)
+In TestPortableDiagnostics/outputContinuationMatchesMatlab (line 136)]
+Ending simulation. Wrote 3 time points to wave-vortex group
+Ending simulation. Wrote 9 time points to dense group
+Ending simulation. Wrote 1 time points to wave-vortex group
+Ending simulation. Wrote 1 time points to dense group
+Ending simulation. Wrote 1 time points to wave-vortex group
+WVTransformStratifiedQG initialized from A0.
+Ending simulation. Wrote 3 time points to wave-vortex group
+Ending simulation. Wrote 9 time points to dense group
+Ending simulation. Wrote 1 time points to wave-vortex group
+Ending simulation. Wrote 1 time points to dense group
+Ending simulation. Wrote 1 time points to wave-vortex group
+WVTransformHydrostatic initialized from Ap, Am, A0.
+Ending simulation. Wrote 3 time points to wave-vortex group
+Ending simulation. Wrote 9 time points to dense group
+building 6 boussinesq transformation matrices...1...finished.
+Ending simulation. Wrote 1 time points to wave-vortex group
+Ending simulation. Wrote 1 time points to dense group
+Ending simulation. Wrote 1 time points to wave-vortex group
+WVTransformBoussinesq initialized from Ap, Am, A0.
+Ending simulation. Wrote 3 time points to wave-vortex group
+Ending simulation. Wrote 9 time points to dense group
+.
+Done TestPortableDiagnostics
+__________
+
+BLAS: unloading libraries

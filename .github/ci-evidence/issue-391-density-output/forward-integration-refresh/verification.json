@@ -1,0 +1,70 @@
+{
+  "schemaVersion": 1,
+  "scope": "current source-bound forward-integration qualification after public density-output integration",
+  "sourceCommit": "8d6248c0273d603e29e6e5ca904a40cf339a5261",
+  "parameterizedMethodsPassed": 6,
+  "providerCasesPassed": 12,
+  "methodDurationSeconds": 251.19294154166667,
+  "committedReceiptsMethodPassed": true,
+  "postExecutionSourceAndExecutableHashesVerified": true,
+  "originalReceipts": [
+    {
+      "path": ".github/ci-evidence/issue-391-density-output/forward-integration-refresh/original-forward-integration-reference-v1.json",
+      "sha256": "efafde94eb549f9d5894aea46585a0900d96688981477a70c3d07795b168c7e1"
+    },
+    {
+      "path": ".github/ci-evidence/issue-391-density-output/forward-integration-refresh/original-forward-integration-native-fftw-v1.json",
+      "sha256": "859b277674fd83d2814e2161076be46e6690f26c2f7d86a5d65d4179bb265577"
+    }
+  ],
+  "currentReceipts": [
+    {
+      "path": "PortableRuntime/qualification/forward-integration-reference-v1.json",
+      "sha256": "e75756a2f5b42e4ca6588635451c482165ff8e20ca605d7eb1efe8e9422fff52"
+    },
+    {
+      "path": "PortableRuntime/qualification/forward-integration-native-fftw-v1.json",
+      "sha256": "89b9a0a3a19ac3cbded977baf985b11e5cf5891a6b241e3c99196d3a9579b4ac"
+    }
+  ],
+  "maximumErrors": {
+    "coefficients": 2.066742935413747e-15,
+    "fields": 1.1229037321661902e-15,
+    "tracer": 1.5542843854036618e-15,
+    "particlePosition": 1.8189894035458565e-12,
+    "savedOutput": 2.6396901016129792e-15,
+    "heldAmplitude": 0
+  },
+  "artifacts": [
+    {
+      "path": "execution.log",
+      "originalSHA256": "ba20516c7244e75b8112fdb78aaaca6d2c564d755bebf8ae2a87f7af2a27973a",
+      "retainedSHA256": "25ae89dccdebdcf31c1af2d227cd0ef7378c5b646cf4f538892d63bada9b49e7",
+      "normalization": "Trailing whitespace only."
+    },
+    {
+      "path": "results.json",
+      "originalSHA256": "d458ea809acd84aa6344acd1a550836993b9879bae69316e2eec609bf7a27f5f",
+      "retainedSHA256": "eb1f788bdbd7d250879322b360f636d7a084ec3d6eb3beba144feaa7a991d15e",
+      "normalization": "Trailing whitespace only."
+    },
+    {
+      "path": "collector.log",
+      "originalSHA256": "981b6009d64012d2e9c3aa206e71f6497c614eeb76c906fc35dc3c3889871708",
+      "retainedSHA256": "40a4ca368e55220cd3c46c4f0786e6d3757191103343916267845a4439cbf485",
+      "normalization": "Trailing whitespace and blank lines at EOF only."
+    },
+    {
+      "path": "catalog-results.json",
+      "originalSHA256": "41e48bde86f32488ba3c56c63f6f7c8fa6392e82c5d3eb341aeb40424628700c",
+      "retainedSHA256": "9a5e2b88e0abd58d15dbcd961252db85d1116471b0bfe0bed405b5613799d346",
+      "normalization": "Trailing whitespace only."
+    },
+    {
+      "path": "build.log",
+      "originalSHA256": "d6f67637ac31f0002a248aa522366e9201ea22a199d37b7185f27d9b3d937a56",
+      "retainedSHA256": "d6f67637ac31f0002a248aa522366e9201ea22a199d37b7185f27d9b3d937a56",
+      "normalization": "Trailing whitespace only."
+    }
+  ]
+}

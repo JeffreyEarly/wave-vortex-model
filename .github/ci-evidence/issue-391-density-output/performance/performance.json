@@ -1,0 +1,470 @@
+{
+  "schema": "portable-diagnostic-nonregression-v1",
+  "issue": 391,
+  "maximumRegressionFraction": 0.03,
+  "runsPerExecutable": 8,
+  "method": "One excluded warmup pair, alternating process order, ratio of medians; complete integration includes scheduled output.",
+  "executableSHA256": {
+    "baseline": "990de02d401caa4bb6c05f5b832c331e81f6aa8dffede058c42c49097f60b8fe",
+    "candidate": "6f57eba3d803c79898a63856d9e6c91b7a0b7907ae045fcd3c8ff1473de2f8d1"
+  },
+  "cases": [
+    {
+      "family": "constant",
+      "sourceSHA256": "0cd2aa70695b407673c09e5e135e9f720e622d6a1e92eacc3d1e8252704e5490",
+      "requestSHA256": "3dfade6400a63198fe2f00f26329cbaff38e1ce149cc5a87bb18228314d043d6",
+      "samples": {
+        "baseline": [
+          {
+            "integrationSeconds": 0.54711625,
+            "processSeconds": 1.6965113328769803,
+            "retainedBytes": 6605993,
+            "maximumLiveBytes": 6749626,
+            "stepCount": 64,
+            "rhsEvaluationCount": 256
+          },
+          {
+            "integrationSeconds": 0.546389417,
+            "processSeconds": 1.7012690408155322,
+            "retainedBytes": 6605993,
+            "maximumLiveBytes": 6749626,
+            "stepCount": 64,
+            "rhsEvaluationCount": 256
+          },
+          {
+            "integrationSeconds": 0.545502083,
+            "processSeconds": 1.7153903329744935,
+            "retainedBytes": 6605993,
+            "maximumLiveBytes": 6749626,
+            "stepCount": 64,
+            "rhsEvaluationCount": 256
+          },
+          {
+            "integrationSeconds": 0.548233,
+            "processSeconds": 1.736940042115748,
+            "retainedBytes": 6605993,
+            "maximumLiveBytes": 6749626,
+            "stepCount": 64,
+            "rhsEvaluationCount": 256
+          },
+          {
+            "integrationSeconds": 0.547289417,
+            "processSeconds": 1.6949287499301136,
+            "retainedBytes": 6605993,
+            "maximumLiveBytes": 6749626,
+            "stepCount": 64,
+            "rhsEvaluationCount": 256
+          },
+          {
+            "integrationSeconds": 0.548133292,
+            "processSeconds": 1.7622396661899984,
+            "retainedBytes": 6605993,
+            "maximumLiveBytes": 6749626,
+            "stepCount": 64,
+            "rhsEvaluationCount": 256
+          },
+          {
+            "integrationSeconds": 0.547175,
+            "processSeconds": 1.692362334113568,
+            "retainedBytes": 6605993,
+            "maximumLiveBytes": 6749626,
+            "stepCount": 64,
+            "rhsEvaluationCount": 256
+          },
+          {
+            "integrationSeconds": 0.615323625,
+            "processSeconds": 1.7661747499369085,
+            "retainedBytes": 6605993,
+            "maximumLiveBytes": 6749626,
+            "stepCount": 64,
+            "rhsEvaluationCount": 256
+          }
+        ],
+        "candidate": [
+          {
+            "integrationSeconds": 0.54890275,
+            "processSeconds": 1.7082380838692188,
+            "retainedBytes": 6606081,
+            "maximumLiveBytes": 6749714,
+            "stepCount": 64,
+            "rhsEvaluationCount": 256
+          },
+          {
+            "integrationSeconds": 0.547965792,
+            "processSeconds": 1.708702415926382,
+            "retainedBytes": 6606081,
+            "maximumLiveBytes": 6749714,
+            "stepCount": 64,
+            "rhsEvaluationCount": 256
+          },
+          {
+            "integrationSeconds": 0.545425,
+            "processSeconds": 1.7202997081913054,
+            "retainedBytes": 6606081,
+            "maximumLiveBytes": 6749714,
+            "stepCount": 64,
+            "rhsEvaluationCount": 256
+          },
+          {
+            "integrationSeconds": 0.559291459,
+            "processSeconds": 1.7182035001460463,
+            "retainedBytes": 6606081,
+            "maximumLiveBytes": 6749714,
+            "stepCount": 64,
+            "rhsEvaluationCount": 256
+          },
+          {
+            "integrationSeconds": 0.550483125,
+            "processSeconds": 1.7266991659998894,
+            "retainedBytes": 6606081,
+            "maximumLiveBytes": 6749714,
+            "stepCount": 64,
+            "rhsEvaluationCount": 256
+          },
+          {
+            "integrationSeconds": 0.604435792,
+            "processSeconds": 1.7588681248016655,
+            "retainedBytes": 6606081,
+            "maximumLiveBytes": 6749714,
+            "stepCount": 64,
+            "rhsEvaluationCount": 256
+          },
+          {
+            "integrationSeconds": 0.545541,
+            "processSeconds": 1.7564914589747787,
+            "retainedBytes": 6606081,
+            "maximumLiveBytes": 6749714,
+            "stepCount": 64,
+            "rhsEvaluationCount": 256
+          },
+          {
+            "integrationSeconds": 0.603720041,
+            "processSeconds": 1.7589728338643909,
+            "retainedBytes": 6606081,
+            "maximumLiveBytes": 6749714,
+            "stepCount": 64,
+            "rhsEvaluationCount": 256
+          }
+        ]
+      },
+      "medians": {
+        "baseline": {
+          "integrationSeconds": 0.5472322085,
+          "retainedBytes": 6605993
+        },
+        "candidate": {
+          "integrationSeconds": 0.5496929374999999,
+          "retainedBytes": 6606081
+        }
+      },
+      "runtimeChangeFraction": 0.004496681594720053,
+      "retainedMemoryChangeFraction": 1.332123724617773e-05,
+      "passes": true
+    },
+    {
+      "family": "hydrostatic",
+      "sourceSHA256": "b1c797e746116db899867d6214f74839e718367548c7f4e130c0f702092508d8",
+      "requestSHA256": "81c962ce8362f60b580d43ac134d974cf6bd07dff2ae432f3c6c01dade1990ec",
+      "samples": {
+        "baseline": [
+          {
+            "integrationSeconds": 0.630665792,
+            "processSeconds": 0.6709254579618573,
+            "retainedBytes": 3228805,
+            "maximumLiveBytes": 3292662,
+            "stepCount": 64,
+            "rhsEvaluationCount": 256
+          },
+          {
+            "integrationSeconds": 0.628419333,
+            "processSeconds": 0.6692050839774311,
+            "retainedBytes": 3228805,
+            "maximumLiveBytes": 3292662,
+            "stepCount": 64,
+            "rhsEvaluationCount": 256
+          },
+          {
+            "integrationSeconds": 0.626620625,
+            "processSeconds": 0.6674899579957128,
+            "retainedBytes": 3228805,
+            "maximumLiveBytes": 3292662,
+            "stepCount": 64,
+            "rhsEvaluationCount": 256
+          },
+          {
+            "integrationSeconds": 0.625541833,
+            "processSeconds": 0.6664687918964773,
+            "retainedBytes": 3228805,
+            "maximumLiveBytes": 3292662,
+            "stepCount": 64,
+            "rhsEvaluationCount": 256
+          },
+          {
+            "integrationSeconds": 0.638321334,
+            "processSeconds": 0.6798636659514159,
+            "retainedBytes": 3228805,
+            "maximumLiveBytes": 3292662,
+            "stepCount": 64,
+            "rhsEvaluationCount": 256
+          },
+          {
+            "integrationSeconds": 0.634572625,
+            "processSeconds": 0.675163583131507,
+            "retainedBytes": 3228805,
+            "maximumLiveBytes": 3292662,
+            "stepCount": 64,
+            "rhsEvaluationCount": 256
+          },
+          {
+            "integrationSeconds": 0.643582375,
+            "processSeconds": 0.6856592078693211,
+            "retainedBytes": 3228805,
+            "maximumLiveBytes": 3292662,
+            "stepCount": 64,
+            "rhsEvaluationCount": 256
+          },
+          {
+            "integrationSeconds": 0.64305525,
+            "processSeconds": 0.6827106249984354,
+            "retainedBytes": 3228805,
+            "maximumLiveBytes": 3292662,
+            "stepCount": 64,
+            "rhsEvaluationCount": 256
+          }
+        ],
+        "candidate": [
+          {
+            "integrationSeconds": 0.6252115,
+            "processSeconds": 0.6659039589576423,
+            "retainedBytes": 3229021,
+            "maximumLiveBytes": 3292958,
+            "stepCount": 64,
+            "rhsEvaluationCount": 256
+          },
+          {
+            "integrationSeconds": 0.674417375,
+            "processSeconds": 0.7149863748345524,
+            "retainedBytes": 3229021,
+            "maximumLiveBytes": 3292958,
+            "stepCount": 64,
+            "rhsEvaluationCount": 256
+          },
+          {
+            "integrationSeconds": 0.628763833,
+            "processSeconds": 0.6693580411374569,
+            "retainedBytes": 3229021,
+            "maximumLiveBytes": 3292958,
+            "stepCount": 64,
+            "rhsEvaluationCount": 256
+          },
+          {
+            "integrationSeconds": 0.640500167,
+            "processSeconds": 0.6808919999748468,
+            "retainedBytes": 3229021,
+            "maximumLiveBytes": 3292958,
+            "stepCount": 64,
+            "rhsEvaluationCount": 256
+          },
+          {
+            "integrationSeconds": 0.640308708,
+            "processSeconds": 0.6823263338301331,
+            "retainedBytes": 3229021,
+            "maximumLiveBytes": 3292958,
+            "stepCount": 64,
+            "rhsEvaluationCount": 256
+          },
+          {
+            "integrationSeconds": 0.633947042,
+            "processSeconds": 0.6767268751282245,
+            "retainedBytes": 3229021,
+            "maximumLiveBytes": 3292958,
+            "stepCount": 64,
+            "rhsEvaluationCount": 256
+          },
+          {
+            "integrationSeconds": 0.633204292,
+            "processSeconds": 0.675515207927674,
+            "retainedBytes": 3229021,
+            "maximumLiveBytes": 3292958,
+            "stepCount": 64,
+            "rhsEvaluationCount": 256
+          },
+          {
+            "integrationSeconds": 0.636047375,
+            "processSeconds": 0.6785373329184949,
+            "retainedBytes": 3229021,
+            "maximumLiveBytes": 3292958,
+            "stepCount": 64,
+            "rhsEvaluationCount": 256
+          }
+        ]
+      },
+      "medians": {
+        "baseline": {
+          "integrationSeconds": 0.6326192085,
+          "retainedBytes": 3228805
+        },
+        "candidate": {
+          "integrationSeconds": 0.6349972085,
+          "retainedBytes": 3229021
+        }
+      },
+      "runtimeChangeFraction": 0.003758975333105097,
+      "retainedMemoryChangeFraction": 6.689781513591342e-05,
+      "passes": true
+    },
+    {
+      "family": "boussinesq",
+      "sourceSHA256": "5abd22e797538c0ec41ee00be916c1f151fc0378005eaa97102f1eec7987ba3b",
+      "requestSHA256": "0ea1aad6c8f484c1d80612427607bfe99addd73f4b4bebee753f52b93954ab4c",
+      "samples": {
+        "baseline": [
+          {
+            "integrationSeconds": 0.516514042,
+            "processSeconds": 0.5719608331564814,
+            "retainedBytes": 1587284,
+            "maximumLiveBytes": 1623877,
+            "stepCount": 64,
+            "rhsEvaluationCount": 256
+          },
+          {
+            "integrationSeconds": 0.535397667,
+            "processSeconds": 0.5920344588812441,
+            "retainedBytes": 1587284,
+            "maximumLiveBytes": 1623877,
+            "stepCount": 64,
+            "rhsEvaluationCount": 256
+          },
+          {
+            "integrationSeconds": 0.516384875,
+            "processSeconds": 0.570447291014716,
+            "retainedBytes": 1587284,
+            "maximumLiveBytes": 1623877,
+            "stepCount": 64,
+            "rhsEvaluationCount": 256
+          },
+          {
+            "integrationSeconds": 0.52171175,
+            "processSeconds": 0.5772338751703501,
+            "retainedBytes": 1587284,
+            "maximumLiveBytes": 1623877,
+            "stepCount": 64,
+            "rhsEvaluationCount": 256
+          },
+          {
+            "integrationSeconds": 0.517011875,
+            "processSeconds": 0.5721173330675811,
+            "retainedBytes": 1587284,
+            "maximumLiveBytes": 1623877,
+            "stepCount": 64,
+            "rhsEvaluationCount": 256
+          },
+          {
+            "integrationSeconds": 0.516904792,
+            "processSeconds": 0.5722972499206662,
+            "retainedBytes": 1587284,
+            "maximumLiveBytes": 1623877,
+            "stepCount": 64,
+            "rhsEvaluationCount": 256
+          },
+          {
+            "integrationSeconds": 0.530279209,
+            "processSeconds": 0.5846919170580804,
+            "retainedBytes": 1587284,
+            "maximumLiveBytes": 1623877,
+            "stepCount": 64,
+            "rhsEvaluationCount": 256
+          },
+          {
+            "integrationSeconds": 0.515327542,
+            "processSeconds": 0.5893592920619994,
+            "retainedBytes": 1587284,
+            "maximumLiveBytes": 1623877,
+            "stepCount": 64,
+            "rhsEvaluationCount": 256
+          }
+        ],
+        "candidate": [
+          {
+            "integrationSeconds": 0.516384541,
+            "processSeconds": 0.5738911249209195,
+            "retainedBytes": 1587388,
+            "maximumLiveBytes": 1623981,
+            "stepCount": 64,
+            "rhsEvaluationCount": 256
+          },
+          {
+            "integrationSeconds": 0.52053175,
+            "processSeconds": 0.5755104168783873,
+            "retainedBytes": 1587388,
+            "maximumLiveBytes": 1623981,
+            "stepCount": 64,
+            "rhsEvaluationCount": 256
+          },
+          {
+            "integrationSeconds": 0.51558225,
+            "processSeconds": 0.5697694169357419,
+            "retainedBytes": 1587388,
+            "maximumLiveBytes": 1623981,
+            "stepCount": 64,
+            "rhsEvaluationCount": 256
+          },
+          {
+            "integrationSeconds": 0.516550125,
+            "processSeconds": 0.5711131249554455,
+            "retainedBytes": 1587388,
+            "maximumLiveBytes": 1623981,
+            "stepCount": 64,
+            "rhsEvaluationCount": 256
+          },
+          {
+            "integrationSeconds": 0.515777208,
+            "processSeconds": 0.5699609590228647,
+            "retainedBytes": 1587388,
+            "maximumLiveBytes": 1623981,
+            "stepCount": 64,
+            "rhsEvaluationCount": 256
+          },
+          {
+            "integrationSeconds": 0.534183208,
+            "processSeconds": 0.5895485000219196,
+            "retainedBytes": 1587388,
+            "maximumLiveBytes": 1623981,
+            "stepCount": 64,
+            "rhsEvaluationCount": 256
+          },
+          {
+            "integrationSeconds": 0.504234417,
+            "processSeconds": 0.5599894169718027,
+            "retainedBytes": 1587388,
+            "maximumLiveBytes": 1623981,
+            "stepCount": 64,
+            "rhsEvaluationCount": 256
+          },
+          {
+            "integrationSeconds": 0.514534583,
+            "processSeconds": 0.5693428749218583,
+            "retainedBytes": 1587388,
+            "maximumLiveBytes": 1623981,
+            "stepCount": 64,
+            "rhsEvaluationCount": 256
+          }
+        ]
+      },
+      "medians": {
+        "baseline": {
+          "integrationSeconds": 0.5169583335,
+          "retainedBytes": 1587284
+        },
+        "candidate": {
+          "integrationSeconds": 0.5160808745000001,
+          "retainedBytes": 1587388
+        }
+      },
+      "runtimeChangeFraction": -0.0016973495601844135,
+      "retainedMemoryChangeFraction": 6.552072596965886e-05,
+      "passes": true
+    }
+  ],
+  "passes": true
+}

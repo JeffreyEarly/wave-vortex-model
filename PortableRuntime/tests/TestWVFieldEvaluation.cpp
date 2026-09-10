@@ -364,7 +364,8 @@ void verifyPhaseDiagnostics(bool hydrostatic, bool antialias) {
   }
   for (const auto *name : {"rho_nm", "eta_true", "ape", "apv"}) {
     WVFieldEvaluationPlan invalid;
-    require(!service->createPlan({full(name)}, invalid), "phase support enabled unqualified density evaluation");
+    require(bool(service->createPlan({full(name)}, invalid)), "qualified density full-grid plan rejected");
+    require(!service->createPlan({{"sample",name,positions}}, invalid), "density accepted unsupported position sampling");
   }
 }
 

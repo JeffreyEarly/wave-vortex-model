@@ -127,6 +127,9 @@ inline WVPortableVariableStatus resolvePortableVariablePlan(
     return WVPortableVariableStatus::invalidContract;
   if (requiresSolver && options.noMotionSolver == WVPortableNoMotionSolver::unspecified)
     return WVPortableVariableStatus::requiresNoMotionSolver;
+  if (requiresSolver && options.requireEvaluator &&
+      options.noMotionSolver != WVPortableNoMotionSolver::dampedLeastSquares)
+    return WVPortableVariableStatus::invalidContract;
   output = candidate;
   return WVPortableVariableStatus::supported;
 }

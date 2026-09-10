@@ -4,6 +4,8 @@
 
 ### Portable density foundation
 
+- Added portable full-grid density-profile, true-displacement, APE and APV output using the corrected actual-density default. Coincident outputs share recovery and derivative work, explicit initial-reference selection survives runtime rebinding, and existing MATLAB restart files require no migration.
+
 - Added private qualification of shared C++ density-event evaluation through the existing field service: actual `rho_nm`, selected-reference displacement and APE reuse one recovery and material-height inversion. Demand-driven event storage is released on success or failure, and failed evaluation preserves caller outputs. Public density output and APV remain unavailable pending complete output/restart qualification.
 - Added bounded C++ recovery of the current no-motion density profile using volume-weighted moments and damped least squares, with an exact stable-rest shortcut, explicit convergence and qualification reporting, and failure preservation. Density outputs remain unavailable until model-event evaluation and persistence are qualified.
 - Added a C++ supplied-profile primitive for monotone cubic density, safeguarded inverse material height and stable APE integration, with storage bounded by the vertical profile and no successful-query allocations. Added the optional v2 density diagnostic execution contract: omitted options select actual `rho_nm`, and explicit initial-profile selection is reported without changing MATLAB restart files. The four density outputs remain unavailable pending complete execution-chain qualification.
@@ -13,6 +15,8 @@
 - Added C++ `phase` and `conjPhase` evaluation and split-complex NetCDF output for all four wave-bearing transform configurations with antialiasing on or off. Both reuse the existing event-time phase calculation, preserving `t0` through dense output, restart, append and MATLAB/C++ continuation. Sixteen phase rows are implemented; the four density diagnostics remain explicitly unsupported pending their separate C++ implementation.
 
 ### MATLAB density diagnostics
+
+- Corrected rounding-sized endpoint excursions from the MATLAB density-profile inverse that could make APE fail for valid endpoint densities. Previously in-range results and strict out-of-range query rejection are preserved.
 
 - Bounded displacement inversion to blocks of 1,048,576 parcels, reducing its expanded coefficient array from 688 MiB to at most 32 MiB on the large JAMES state while preserving the solver and bitwise diagnostic results. Three paired local trials measured displacement operation medians of 0.142→0.122 seconds on 256×256×43 and 1.045→1.032 seconds on 512×512×86; the latter is within timing variation.
 - Accelerated exact APE integration by locating each parcel interval once and visiting only crossed intervals in bounded blocks. Three paired local trials on the JAMES 256×256×43 and 512×512×86 states reduced operation medians from 0.304 to 0.108 seconds and 3.578 to 0.756 seconds, with bitwise-identical APE arrays and unchanged small-displacement precision.

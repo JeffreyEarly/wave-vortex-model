@@ -92,6 +92,10 @@ public:
         WVRealFieldBundleView* spatialTendency = nullptr, bool projectFlux = true);
     // Call at setup when scalar advection is configured, before repeated RHS calls.
     WVKernelStatus prepareScalarAdvection();
+    // MATLAB diffX/diffY/diffZG of an arbitrary full-grid G scalar. Horizontal
+    // derivatives retain all non-Nyquist modes; vertical calculus retains Nj.
+    // Reuses existing plans/scratch and publishes [dx,dy,dz] only on success.
+    WVKernelStatus transformGGridScalarDerivatives(const WVRealVolumeConstView& scalar, WVRealFieldBundleView& derivatives);
     WVKernelStatus advectFGridScalar(const WVRealVolumeConstView& scalar, const WVRealFieldBundleConstView& advectionFields, bool shouldAntialias, WVRealVolumeView& rightHandSide);
 
 private:

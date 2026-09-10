@@ -291,6 +291,7 @@ public:
 
   WVIntegrationStateLayout stateLayout;
   bool isDynamicsLinear = false;
+  WVDensityDiagnosticContract densityContract;
   WVPortableObserverDescriptor descriptor;
   std::unique_ptr<WVFieldEvaluationService> ownedFields;
   WVFieldEvaluationService *fields = nullptr;
@@ -629,9 +630,10 @@ WVObserverOutputEvaluationService::~WVObserverOutputEvaluationService() =
 WVKernelStatus WVObserverOutputEvaluationService::create(
     bool isDynamicsLinear, const WVPortableObserverDescriptor &descriptor,
     WVFieldEvaluationService &fieldEvaluationService,
-    std::unique_ptr<WVObserverOutputEvaluationService> &service) {
+    std::unique_ptr<WVObserverOutputEvaluationService> &service,
+    WVDensityDiagnosticContract densityContract) {
   return create({}, isDynamicsLinear, descriptor, nullptr, service,
-                &fieldEvaluationService);
+                &fieldEvaluationService,densityContract);
 }
 
 WVKernelStatus WVObserverOutputEvaluationService::create(
@@ -639,13 +641,18 @@ WVKernelStatus WVObserverOutputEvaluationService::create(
     bool isDynamicsLinear, const WVPortableObserverDescriptor &descriptor,
     std::unique_ptr<WVFFTEngine> engine,
     std::unique_ptr<WVObserverOutputEvaluationService> &service,
-    WVFieldEvaluationService *borrowedFieldEvaluationService) {
+    WVFieldEvaluationService *borrowedFieldEvaluationService,
+    WVDensityDiagnosticContract densityContract) {
   try {
     auto candidate = std::unique_ptr<WVObserverOutputEvaluationService>(
         new WVObserverOutputEvaluationService());
     candidate->impl_ = std::make_unique<Impl>();
     auto &impl = *candidate->impl_;
     impl.isDynamicsLinear = isDynamicsLinear;
+    if (densityContract.reference != WVNoMotionReference::actual &&
+        densityContract.reference != WVNoMotionReference::initial)
+      return invalid("Invalid density diagnostic reference.");
+    impl.densityContract = densityContract;
     impl.descriptor = descriptor;
     const auto &descriptorRecord = impl.descriptor.record();
     WVKernelStatus status;
@@ -979,7 +986,7 @@ WVKernelStatus WVObserverOutputEvaluationService::create(
                                std::vector<WVFieldOutputView> &views) {
       if (requests.empty())
         return WVKernelStatus::ok();
-      auto planStatus = impl.fields->createPlan(requests, plan);
+      auto planStatus = impl.fields->createPlan(requests, plan, impl.densityContract);
       if (!planStatus)
         return planStatus;
       storage.resize(plan.outputCount());
@@ -1529,6 +1536,15 @@ WVObserverOutputEvaluationMetrics WVObserverOutputEvaluationService::metrics() c
     result.diagnosticIntermediateReuseCount=fields.diagnosticIntermediateReuseCount;
     result.diagnosticWorkspaceLiveBytes=fields.diagnosticWorkspaceLiveBytes;
     result.diagnosticWorkspaceHighWaterBytes=fields.diagnosticWorkspaceHighWaterBytes;
+    result.densityRecoveryCount=fields.densityRecoveryCount;
+    result.densityProfileConstructionCount=fields.densityProfileConstructionCount;
+    result.densityInversePassCount=fields.densityInversePassCount;
+    result.densityAPEPassCount=fields.densityAPEPassCount;
+    result.densityAPVPassCount=fields.densityAPVPassCount;
+    result.densityAPVReuseCount=fields.densityAPVReuseCount;
+    result.densityReuseCount=fields.densityReuseCount;
+    result.densityWorkspaceLiveBytes=fields.densityWorkspaceLiveBytes;
+    result.densityWorkspaceHighWaterBytes=fields.densityWorkspaceHighWaterBytes;
     result.eventFieldReuseCount=fields.eventFieldReuseCount;
     result.eventFieldWorkspaceLiveBytes=fields.eventFieldWorkspaceLiveBytes;
     result.eventFieldWorkspaceHighWaterBytes=fields.eventFieldWorkspaceHighWaterBytes;

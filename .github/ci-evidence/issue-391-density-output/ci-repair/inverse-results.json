@@ -1,0 +1,93 @@
+[
+  {
+    "name": "TestDensityDiagnosticReference/productionLinearProfileResolvesBothDisplacementSignsAndTinyEnergy",
+    "passed": true,
+    "failed": false,
+    "incomplete": false,
+    "duration": 0.12310020833333334
+  },
+  {
+    "name": "TestDensityDiagnosticReference/productionTwoNodeProfileUsesLinearPolynomial",
+    "passed": true,
+    "failed": false,
+    "incomplete": false,
+    "duration": 0.0187385
+  },
+  {
+    "name": "TestDensityDiagnosticReference/productionSharpProfileInvertsAZeroEndpointSlope",
+    "passed": true,
+    "failed": false,
+    "incomplete": false,
+    "duration": 0.014310625
+  },
+  {
+    "name": "TestDensityDiagnosticReference/productionCompositionPreservesThreeDimensionalShapes",
+    "passed": true,
+    "failed": false,
+    "incomplete": false,
+    "duration": 0.021534583333333333
+  },
+  {
+    "name": "TestDensityDiagnosticReference/productionNonlinearReconstructionConvergesToAnalyticTruth",
+    "passed": true,
+    "failed": false,
+    "incomplete": false,
+    "duration": 0.049827458333333331
+  },
+  {
+    "name": "TestDensityDiagnosticReference/productionWeakGradientAccuracyAccountsForDensityResolution",
+    "passed": true,
+    "failed": false,
+    "incomplete": false,
+    "duration": 0.014201125
+  },
+  {
+    "name": "TestDensityDiagnosticReference/productionLargeArrayCrossesChunkBoundariesAndManyIntervals",
+    "passed": true,
+    "failed": false,
+    "incomplete": false,
+    "duration": 0.064292416666666671
+  },
+  {
+    "name": "TestDensityDiagnosticReference/productionIrregularIntervalsMatchIndependentQuadrature",
+    "passed": true,
+    "failed": false,
+    "incomplete": false,
+    "duration": 0.058578416666666668
+  },
+  {
+    "name": "TestDensityDiagnosticReference/productionLargeInverseUsesAnalyticNonlinearDensityAcrossChunks",
+    "passed": true,
+    "failed": false,
+    "incomplete": false,
+    "duration": 0.25280275
+  },
+  {
+    "name": "TestDensityDiagnosticReference/productionInversePreservesRowAndEmptyShapes",
+    "passed": true,
+    "failed": false,
+    "incomplete": false,
+    "duration": 0.021051375
+  },
+  {
+    "name": "TestDensityDiagnosticReference/productionInverseEndpointRoundoffRemainsInsideProfile",
+    "passed": true,
+    "failed": false,
+    "incomplete": false,
+    "duration": 0.080953125
+  },
+  {
+    "name": "TestDensityDiagnosticReference/productionRejectsPlateausAndOutOfRangeQueries",
+    "passed": true,
+    "failed": false,
+    "incomplete": false,
+    "duration": 0.03404895833333333
+  },
+  {
+    "name": "TestPortableDensityOutput/ordinaryAndDenseDensityOutputsMatchMatlab",
+    "passed": true,
+    "failed": false,
+    "incomplete": false,
+    "duration": 60.832457416666671
+  }
+]

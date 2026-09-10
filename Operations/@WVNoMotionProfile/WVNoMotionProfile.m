@@ -92,7 +92,15 @@ classdef WVNoMotionProfile
                 if any(active)
                     error('WVNoMotionProfile:InverseDidNotConverge','Density inversion failed to reach the height tolerance.');
                 end
-                z(positions) = base+height;
+                height = base+height;
+                % Endpoint arithmetic can round a converged local inverse
+                % just outside the original knots. Preserve every interior
+                % value and the strict public query bounds used by APE.
+                lowerRoundoff = height < self.z(1) & height >= self.z(1)-heightTolerance;
+                upperRoundoff = height > self.z(end) & height <= self.z(end)+heightTolerance;
+                height(lowerRoundoff) = self.z(1);
+                height(upperRoundoff) = self.z(end);
+                z(positions) = height;
             end
         end
 

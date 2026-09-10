@@ -4,7 +4,6 @@
 #include "WaveVortexRuntime/WVExtensionCatalog.hpp"
 #include "WVReferenceFFTEngine.hpp"
 #include "nlohmann/json.hpp"
-#include "WVDiagnosticFieldPlan.hpp"
 #include "WVFieldEvaluationEventWorkspace.hpp"
 #if WV_TEST_NATIVE_FFTW
 #include "WVNativeFFTWEngine.hpp"
@@ -57,14 +56,12 @@ int main(int argc,char** argv) {
     if(selection=="initial") contract.reference=WVNoMotionReference::initial;
     else if(selection!="actual") throw std::runtime_error("Invalid density reference.");
     WVFieldEvaluationPlan plan;
-    require(detail::WVDiagnosticFieldPlan::createDensityQualification(*fields,requests,contract,plan));
+    require(fields->createPlan(requests,plan,contract));
     std::vector<std::vector<double>> values(names.size());
     std::vector<WVFieldOutputView> views;
     for(std::size_t i=0;i<names.size();++i) {
       values[i].resize(plan.outputs()[i].elementCount);
       views.push_back({values[i].data(),values[i].size()});
-      WVFieldEvaluationPlan rejected;
-      if(fields->createPlan({requests[i]},rejected)) throw std::runtime_error("Public density plan unexpectedly available.");
     }
     const auto retained=fields->persistentBytes()+plan.persistentBytes();
     {
@@ -73,7 +70,7 @@ int main(int argc,char** argv) {
       // Separate coincident consumers prepare each dependency at most once.
       for(std::size_t i=0;i<names.size();++i) {
         WVFieldEvaluationPlan single;
-        require(detail::WVDiagnosticFieldPlan::createDensityQualification(*fields,{requests[i]},contract,single));
+        require(fields->createPlan({requests[i]},single,contract));
         require(fields->evaluate(single,state,&views[i],1));
       }
       const auto prior=values;
@@ -89,6 +86,7 @@ int main(int argc,char** argv) {
     result["metrics"]={{"recoveryCount",metrics.densityRecoveryCount},
       {"profileConstructionCount",metrics.densityProfileConstructionCount},
       {"inversePassCount",metrics.densityInversePassCount},{"apePassCount",metrics.densityAPEPassCount},
+      {"apvPassCount",metrics.densityAPVPassCount},{"apvReuseCount",metrics.densityAPVReuseCount},
       {"reuseCount",metrics.densityReuseCount},{"liveBytes",metrics.densityWorkspaceLiveBytes},
       {"highWaterBytes",metrics.densityWorkspaceHighWaterBytes},
       {"eventLiveBytes",metrics.eventFieldWorkspaceLiveBytes}};

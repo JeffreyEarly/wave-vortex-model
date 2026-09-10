@@ -97,10 +97,10 @@ int main() {
   require(resolve("energy_w") == WVPortableVariableStatus::supported);
   require(plan.primitiveMask == 128);
   options.requireEvaluator = true;
-  require(resolve("eta_true") == WVPortableVariableStatus::intentionalIncompatibility);
+  require(resolve("eta_true") == WVPortableVariableStatus::supported);
   require(resolve("energy_w") == WVPortableVariableStatus::supported);
   require(findExecutablePortableVariable("energy_w") != nullptr);
-  require(findExecutablePortableVariable("eta_true") == nullptr);
+  require(findExecutablePortableVariable("eta_true") != nullptr);
   require(findExecutablePortableVariable("u") != nullptr);
   for (const auto *name : {"phase", "conjPhase"}) {
     const auto *metadata = findExecutablePortableVariable(name);
@@ -130,8 +130,16 @@ int main() {
       require(resolve(name, configuration, portableCoefficientSampling) == WVPortableVariableStatus::notApplicable);
   }
   for (const auto *name : {"rho_nm", "eta_true", "ape", "apv"}) {
-    require(findExecutablePortableVariable(name) == nullptr);
-    require(resolve(name) == WVPortableVariableStatus::intentionalIncompatibility);
+    require(findExecutablePortableVariable(name) != nullptr);
+    for (const auto* configuration : {"constant-hydrostatic-aa0","constant-hydrostatic-aa1",
+        "constant-nonhydrostatic-aa0","constant-nonhydrostatic-aa1",
+        "hydrostatic-aa0","hydrostatic-aa1","boussinesq-aa0","boussinesq-aa1"}) {
+      require(resolve(name,configuration) == WVPortableVariableStatus::supported);
+      require(resolve(name,configuration,portablePositionSampling) == WVPortableVariableStatus::unsupportedSampling);
+    }
+    options.noMotionSolver=WVPortableNoMotionSolver::fminsearch;
+    require(resolve(name) == WVPortableVariableStatus::invalidContract);
+    options.noMotionSolver=WVPortableNoMotionSolver::dampedLeastSquares;
   }
   options.requireEvaluator = false;
   require(resolve("eta_true", "barotropic-aa0") == WVPortableVariableStatus::notApplicable);

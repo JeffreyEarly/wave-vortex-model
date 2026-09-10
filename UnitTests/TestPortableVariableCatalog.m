@@ -111,7 +111,7 @@ classdef TestPortableVariableCatalog < matlab.unittest.TestCase
             testCase.verifyEqual(string(catalog.policy.defaultNoMotionSolver),"dampedLeastSquares");
             testCase.verifyTrue(catalog.policy.shouldUseTrueNoMotionProfileDefault);
             testCase.verifyEqual(string(catalog.policy.noMotionSolvers),["dampedLeastSquares";"lsqnonlin";"fminsearch"]);
-            testCase.verifyEqual(string(hydrostatic.runtimeStatus),"intentional-incompatibility");
+            testCase.verifyEqual(string(hydrostatic.runtimeStatus),"implemented");
             forcing = rows(names=="Fqgpv_portable_catalog_forcing" & string({rows.configuration}).'=="barotropic-aa0");
             testCase.verifyEqual(string(forcing.metadata.units),"s-2");
             testCase.verifyEqual(string(forcing.authority),"forcing-instance-template");

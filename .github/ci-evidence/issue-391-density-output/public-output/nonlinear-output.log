@@ -1,0 +1,74 @@
+[Warning: Directory access failure: /Users/jearly/Documents/MATLAB]
+CI package: Distributions 2.0.0 (/Users/jearly/Documents/OceanKitRepositories/OceanKit/Distributions-2.0.0)
+CI package: SplineCore 2.2.0 (/Users/jearly/Documents/OceanKitRepositories/OceanKit/SplineCore-2.2.0)
+CI package: chebfun 5.7.0 (/Users/jearly/Documents/OceanKitRepositories/OceanKit/chebfun-5.7.0)
+CI package: InternalModes 1.3.0 (/Users/jearly/Documents/OceanKitRepositories/OceanKit/InternalModes-1.3.0)
+CI package: NetCDF 1.0.2 (/Users/jearly/Documents/OceanKitRepositories/OceanKit/NetCDF-1.0.2)
+CI package: ClassAnnotations 1.2.1 (/Users/jearly/Documents/OceanKitRepositories/OceanKit/ClassAnnotations-1.2.1)
+CI package: ClassDocumentation 1.3.2 (/Users/jearly/Documents/OceanKitRepositories/OceanKit/ClassDocumentation-1.3.2)
+CI package: WaveVortexModel 4.3.0 (/Users/jearly/Documents/OceanKitRepositories/wvm-v4-cpp-adoption-audit)
+Running TestPortableDensityOutput
+BLAS: trying environment BLAS_VERSION...
+BLAS: loading libmwAF_BLAS_ilp64.dylib
+BLAS: loaded libmwAF_BLAS_ilp64.dylib@0x947038b0
+Ending simulation. Wrote 1 time points to wave-vortex group
+Ending simulation. Wrote 1 time points to dense group
+WVTransformConstantStratification initialized from Ap, Am, A0.
+Ending simulation. Wrote 3 time points to wave-vortex group
+Ending simulation. Wrote 9 time points to dense group
+Ending simulation. Wrote 1 time points to wave-vortex group
+Ending simulation. Wrote 1 time points to dense group
+WARNING: package sun.awt.X11 not in java.desktop
+WARNING: package sun.awt.X11 not in java.desktop
+WVTransformConstantStratification initialized from Ap, Am, A0.
+Ending simulation. Wrote 3 time points to wave-vortex group
+Ending simulation. Wrote 9 time points to dense group
+DENSITY_NONLINEAR_PASS constant-nonhydrostatic provider=reference profileEvolution=5.7048055168706924e-10
+WVTransformConstantStratification initialized from Ap, Am, A0.
+Ending simulation. Wrote 3 time points to wave-vortex group
+Ending simulation. Wrote 9 time points to dense group
+DENSITY_NONLINEAR_PASS constant-nonhydrostatic provider=native-fftw profileEvolution=5.7048055168706924e-10
+Ending simulation. Wrote 1 time points to wave-vortex group
+Ending simulation. Wrote 1 time points to dense group
+WVTransformHydrostatic initialized from Ap, Am, A0.
+Ending simulation. Wrote 3 time points to wave-vortex group
+Ending simulation. Wrote 9 time points to dense group
+Ending simulation. Wrote 1 time points to wave-vortex group
+Ending simulation. Wrote 1 time points to dense group
+WVTransformHydrostatic initialized from Ap, Am, A0.
+Ending simulation. Wrote 3 time points to wave-vortex group
+Ending simulation. Wrote 9 time points to dense group
+DENSITY_NONLINEAR_PASS hydrostatic provider=reference profileEvolution=7.0076566771604121e-10
+WVTransformHydrostatic initialized from Ap, Am, A0.
+Ending simulation. Wrote 3 time points to wave-vortex group
+Ending simulation. Wrote 9 time points to dense group
+DENSITY_NONLINEAR_PASS hydrostatic provider=native-fftw profileEvolution=7.0076566771604121e-10
+building 6 boussinesq transformation matrices...1...finished.
+Ending simulation. Wrote 1 time points to wave-vortex group
+Ending simulation. Wrote 1 time points to dense group
+WVTransformBoussinesq initialized from Ap, Am, A0.
+Ending simulation. Wrote 3 time points to wave-vortex group
+Ending simulation. Wrote 9 time points to dense group
+building 6 boussinesq transformation matrices...1...finished.
+Ending simulation. Wrote 1 time points to wave-vortex group
+Ending simulation. Wrote 1 time points to dense group
+WVTransformBoussinesq initialized from Ap, Am, A0.
+Ending simulation. Wrote 3 time points to wave-vortex group
+Ending simulation. Wrote 9 time points to dense group
+DENSITY_NONLINEAR_PASS boussinesq provider=reference profileEvolution=7.0099304139148444e-10
+WVTransformBoussinesq initialized from Ap, Am, A0.
+Ending simulation. Wrote 3 time points to wave-vortex group
+Ending simulation. Wrote 9 time points to dense group
+DENSITY_NONLINEAR_PASS boussinesq provider=native-fftw profileEvolution=7.0099304139148444e-10
+.
+Done TestPortableDensityOutput
+__________
+
+                                      Name                                      Passed    Failed    Incomplete    Duration      Details
+    ________________________________________________________________________    ______    ______    __________    ________    ____________
+
+    {'TestPortableDensityOutput/nonlinearDensityOutputPreservesIntegration'}    true      false       false        22.496     {1×1 struct}
+
+ANALYZER findings=0
+[]
+BLAS: unloading libraries

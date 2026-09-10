@@ -1,0 +1,678 @@
+{
+  "schema": "portable-density-output-v1",
+  "matlabRelease": "2025b",
+  "rows": [
+    {
+      "configuration": "constant-hydrostatic",
+      "antialias": false,
+      "reference": "actual",
+      "provider": "reference",
+      "errors": {
+        "rho_nm": 6.730260793119669E-11,
+        "eta_true": 2.3795792003511451E-8,
+        "ape": 9.5645895471782659E-14,
+        "apv": 5.3065502838255119E-14
+      },
+      "ordinaryRecords": 3,
+      "denseRecords": 9,
+      "contract": {
+        "identifier": "wave-vortex-density-diagnostics-v1",
+        "reference": "actual",
+        "profileRecovery": "dampedLeastSquares",
+        "selectionSource": "default",
+        "outputEvaluation": "available"
+      }
+    },
+    {
+      "configuration": "constant-hydrostatic",
+      "antialias": false,
+      "reference": "actual",
+      "provider": "native-fftw",
+      "errors": {
+        "rho_nm": 6.730260793119669E-11,
+        "eta_true": 2.3795792003511451E-8,
+        "ape": 9.5645895471782659E-14,
+        "apv": 5.3065509614518697E-14
+      },
+      "ordinaryRecords": 3,
+      "denseRecords": 9,
+      "contract": {
+        "identifier": "wave-vortex-density-diagnostics-v1",
+        "reference": "actual",
+        "profileRecovery": "dampedLeastSquares",
+        "selectionSource": "default",
+        "outputEvaluation": "available"
+      }
+    },
+    {
+      "configuration": "constant-hydrostatic",
+      "antialias": false,
+      "reference": "initial",
+      "provider": "reference",
+      "errors": {
+        "rho_nm": 6.730260793119669E-11,
+        "eta_true": 5.6843418860808015E-14,
+        "ape": 4.6629163746349234E-19,
+        "apv": 7.0303734622106928E-20
+      },
+      "ordinaryRecords": 3,
+      "denseRecords": 9,
+      "contract": {
+        "identifier": "wave-vortex-density-diagnostics-v1",
+        "reference": "initial",
+        "profileRecovery": "not-required",
+        "selectionSource": "request",
+        "outputEvaluation": "available"
+      }
+    },
+    {
+      "configuration": "constant-hydrostatic",
+      "antialias": false,
+      "reference": "initial",
+      "provider": "native-fftw",
+      "errors": {
+        "rho_nm": 6.730260793119669E-11,
+        "eta_true": 5.6843418860808015E-14,
+        "ape": 4.6629163746349234E-19,
+        "apv": 6.0986372202309624E-20
+      },
+      "ordinaryRecords": 3,
+      "denseRecords": 9,
+      "contract": {
+        "identifier": "wave-vortex-density-diagnostics-v1",
+        "reference": "initial",
+        "profileRecovery": "not-required",
+        "selectionSource": "request",
+        "outputEvaluation": "available"
+      }
+    },
+    {
+      "configuration": "constant-hydrostatic",
+      "antialias": true,
+      "reference": "actual",
+      "provider": "reference",
+      "errors": {
+        "rho_nm": 4.5474735088646412E-13,
+        "eta_true": 1.6115109247039072E-10,
+        "ape": 2.6154881206920809E-16,
+        "apv": 5.52892285990772E-17
+      },
+      "ordinaryRecords": 3,
+      "denseRecords": 9,
+      "contract": {
+        "identifier": "wave-vortex-density-diagnostics-v1",
+        "reference": "actual",
+        "profileRecovery": "dampedLeastSquares",
+        "selectionSource": "default",
+        "outputEvaluation": "available"
+      }
+    },
+    {
+      "configuration": "constant-hydrostatic",
+      "antialias": true,
+      "reference": "actual",
+      "provider": "native-fftw",
+      "errors": {
+        "rho_nm": 4.5474735088646412E-13,
+        "eta_true": 1.6115109247039072E-10,
+        "ape": 2.6154881206920809E-16,
+        "apv": 5.5296004862655235E-17
+      },
+      "ordinaryRecords": 3,
+      "denseRecords": 9,
+      "contract": {
+        "identifier": "wave-vortex-density-diagnostics-v1",
+        "reference": "actual",
+        "profileRecovery": "dampedLeastSquares",
+        "selectionSource": "default",
+        "outputEvaluation": "available"
+      }
+    },
+    {
+      "configuration": "constant-hydrostatic",
+      "antialias": true,
+      "reference": "initial",
+      "provider": "reference",
+      "errors": {
+        "rho_nm": 4.5474735088646412E-13,
+        "eta_true": 2.8421709430404007E-14,
+        "ape": 1.0302038220980428E-19,
+        "apv": 2.3716922523120409E-20
+      },
+      "ordinaryRecords": 3,
+      "denseRecords": 9,
+      "contract": {
+        "identifier": "wave-vortex-density-diagnostics-v1",
+        "reference": "initial",
+        "profileRecovery": "not-required",
+        "selectionSource": "request",
+        "outputEvaluation": "available"
+      }
+    },
+    {
+      "configuration": "constant-hydrostatic",
+      "antialias": true,
+      "reference": "initial",
+      "provider": "native-fftw",
+      "errors": {
+        "rho_nm": 4.5474735088646412E-13,
+        "eta_true": 2.8421709430404007E-14,
+        "ape": 1.0302038220980428E-19,
+        "apv": 1.8634724839594607E-20
+      },
+      "ordinaryRecords": 3,
+      "denseRecords": 9,
+      "contract": {
+        "identifier": "wave-vortex-density-diagnostics-v1",
+        "reference": "initial",
+        "profileRecovery": "not-required",
+        "selectionSource": "request",
+        "outputEvaluation": "available"
+      }
+    },
+    {
+      "configuration": "constant-nonhydrostatic",
+      "antialias": false,
+      "reference": "actual",
+      "provider": "reference",
+      "errors": {
+        "rho_nm": 7.0031092036515474E-11,
+        "eta_true": 2.4760652195254806E-8,
+        "ape": 9.0989734502539444E-14,
+        "apv": 5.4754920215949188E-14
+      },
+      "ordinaryRecords": 3,
+      "denseRecords": 9,
+      "contract": {
+        "identifier": "wave-vortex-density-diagnostics-v1",
+        "reference": "actual",
+        "profileRecovery": "dampedLeastSquares",
+        "selectionSource": "default",
+        "outputEvaluation": "available"
+      }
+    },
+    {
+      "configuration": "constant-nonhydrostatic",
+      "antialias": false,
+      "reference": "actual",
+      "provider": "native-fftw",
+      "errors": {
+        "rho_nm": 7.0031092036515474E-11,
+        "eta_true": 2.4760652195254806E-8,
+        "ape": 9.0989734502539444E-14,
+        "apv": 5.4754920215949188E-14
+      },
+      "ordinaryRecords": 3,
+      "denseRecords": 9,
+      "contract": {
+        "identifier": "wave-vortex-density-diagnostics-v1",
+        "reference": "actual",
+        "profileRecovery": "dampedLeastSquares",
+        "selectionSource": "default",
+        "outputEvaluation": "available"
+      }
+    },
+    {
+      "configuration": "constant-nonhydrostatic",
+      "antialias": false,
+      "reference": "initial",
+      "provider": "reference",
+      "errors": {
+        "rho_nm": 7.0031092036515474E-11,
+        "eta_true": 5.6843418860808015E-14,
+        "ape": 2.4373373057242492E-19,
+        "apv": 7.538593230563273E-20
+      },
+      "ordinaryRecords": 3,
+      "denseRecords": 9,
+      "contract": {
+        "identifier": "wave-vortex-density-diagnostics-v1",
+        "reference": "initial",
+        "profileRecovery": "not-required",
+        "selectionSource": "request",
+        "outputEvaluation": "available"
+      }
+    },
+    {
+      "configuration": "constant-nonhydrostatic",
+      "antialias": false,
+      "reference": "initial",
+      "provider": "native-fftw",
+      "errors": {
+        "rho_nm": 7.0031092036515474E-11,
+        "eta_true": 5.6843418860808015E-14,
+        "ape": 2.4373373057242492E-19,
+        "apv": 7.453889935837843E-20
+      },
+      "ordinaryRecords": 3,
+      "denseRecords": 9,
+      "contract": {
+        "identifier": "wave-vortex-density-diagnostics-v1",
+        "reference": "initial",
+        "profileRecovery": "not-required",
+        "selectionSource": "request",
+        "outputEvaluation": "available"
+      }
+    },
+    {
+      "configuration": "constant-nonhydrostatic",
+      "antialias": true,
+      "reference": "actual",
+      "provider": "reference",
+      "errors": {
+        "rho_nm": 2.2737367544323206E-13,
+        "eta_true": 8.0717654782347381E-11,
+        "ape": 1.2861349594598276E-16,
+        "apv": 5.0783013319684323E-17
+      },
+      "ordinaryRecords": 3,
+      "denseRecords": 9,
+      "contract": {
+        "identifier": "wave-vortex-density-diagnostics-v1",
+        "reference": "actual",
+        "profileRecovery": "dampedLeastSquares",
+        "selectionSource": "default",
+        "outputEvaluation": "available"
+      }
+    },
+    {
+      "configuration": "constant-nonhydrostatic",
+      "antialias": true,
+      "reference": "actual",
+      "provider": "native-fftw",
+      "errors": {
+        "rho_nm": 2.2737367544323206E-13,
+        "eta_true": 8.0717654782347381E-11,
+        "ape": 1.2861349594598276E-16,
+        "apv": 5.078640145147334E-17
+      },
+      "ordinaryRecords": 3,
+      "denseRecords": 9,
+      "contract": {
+        "identifier": "wave-vortex-density-diagnostics-v1",
+        "reference": "actual",
+        "profileRecovery": "dampedLeastSquares",
+        "selectionSource": "default",
+        "outputEvaluation": "available"
+      }
+    },
+    {
+      "configuration": "constant-nonhydrostatic",
+      "antialias": true,
+      "reference": "initial",
+      "provider": "reference",
+      "errors": {
+        "rho_nm": 2.2737367544323206E-13,
+        "eta_true": 2.8421709430404007E-14,
+        "ape": 1.0275568441378731E-19,
+        "apv": 2.2022856628611809E-20
+      },
+      "ordinaryRecords": 3,
+      "denseRecords": 9,
+      "contract": {
+        "identifier": "wave-vortex-density-diagnostics-v1",
+        "reference": "initial",
+        "profileRecovery": "not-required",
+        "selectionSource": "request",
+        "outputEvaluation": "available"
+      }
+    },
+    {
+      "configuration": "constant-nonhydrostatic",
+      "antialias": true,
+      "reference": "initial",
+      "provider": "native-fftw",
+      "errors": {
+        "rho_nm": 2.2737367544323206E-13,
+        "eta_true": 2.8421709430404007E-14,
+        "ape": 1.0275568441378731E-19,
+        "apv": 1.8634724839594607E-20
+      },
+      "ordinaryRecords": 3,
+      "denseRecords": 9,
+      "contract": {
+        "identifier": "wave-vortex-density-diagnostics-v1",
+        "reference": "initial",
+        "profileRecovery": "not-required",
+        "selectionSource": "request",
+        "outputEvaluation": "available"
+      }
+    },
+    {
+      "configuration": "hydrostatic",
+      "antialias": false,
+      "reference": "actual",
+      "provider": "reference",
+      "errors": {
+        "rho_nm": 2.2737367544323206E-13,
+        "eta_true": 6.0481397667899728E-11,
+        "ape": 1.9781369222160515E-16,
+        "apv": 1.7018585976233402E-17
+      },
+      "ordinaryRecords": 3,
+      "denseRecords": 9,
+      "contract": {
+        "identifier": "wave-vortex-density-diagnostics-v1",
+        "reference": "actual",
+        "profileRecovery": "dampedLeastSquares",
+        "selectionSource": "default",
+        "outputEvaluation": "available"
+      }
+    },
+    {
+      "configuration": "hydrostatic",
+      "antialias": false,
+      "reference": "actual",
+      "provider": "native-fftw",
+      "errors": {
+        "rho_nm": 2.2737367544323206E-13,
+        "eta_true": 6.0481397667899728E-11,
+        "ape": 1.9781369222160515E-16,
+        "apv": 1.7005033449077334E-17
+      },
+      "ordinaryRecords": 3,
+      "denseRecords": 9,
+      "contract": {
+        "identifier": "wave-vortex-density-diagnostics-v1",
+        "reference": "actual",
+        "profileRecovery": "dampedLeastSquares",
+        "selectionSource": "default",
+        "outputEvaluation": "available"
+      }
+    },
+    {
+      "configuration": "hydrostatic",
+      "antialias": false,
+      "reference": "initial",
+      "provider": "reference",
+      "errors": {
+        "rho_nm": 2.2737367544323206E-13,
+        "eta_true": 1.1652900866465643E-12,
+        "ape": 4.58595549044299E-19,
+        "apv": 1.1011428314305904E-19
+      },
+      "ordinaryRecords": 3,
+      "denseRecords": 9,
+      "contract": {
+        "identifier": "wave-vortex-density-diagnostics-v1",
+        "reference": "initial",
+        "profileRecovery": "not-required",
+        "selectionSource": "request",
+        "outputEvaluation": "available"
+      }
+    },
+    {
+      "configuration": "hydrostatic",
+      "antialias": false,
+      "reference": "initial",
+      "provider": "native-fftw",
+      "errors": {
+        "rho_nm": 2.2737367544323206E-13,
+        "eta_true": 1.1652900866465643E-12,
+        "ape": 4.58595549044299E-19,
+        "apv": 1.0333801956502464E-19
+      },
+      "ordinaryRecords": 3,
+      "denseRecords": 9,
+      "contract": {
+        "identifier": "wave-vortex-density-diagnostics-v1",
+        "reference": "initial",
+        "profileRecovery": "not-required",
+        "selectionSource": "request",
+        "outputEvaluation": "available"
+      }
+    },
+    {
+      "configuration": "hydrostatic",
+      "antialias": true,
+      "reference": "actual",
+      "provider": "reference",
+      "errors": {
+        "rho_nm": 2.2737367544323206E-13,
+        "eta_true": 3.950617610826157E-11,
+        "ape": 1.1442941308350727E-16,
+        "apv": 9.8374406494114441E-18
+      },
+      "ordinaryRecords": 3,
+      "denseRecords": 9,
+      "contract": {
+        "identifier": "wave-vortex-density-diagnostics-v1",
+        "reference": "actual",
+        "profileRecovery": "dampedLeastSquares",
+        "selectionSource": "default",
+        "outputEvaluation": "available"
+      }
+    },
+    {
+      "configuration": "hydrostatic",
+      "antialias": true,
+      "reference": "actual",
+      "provider": "native-fftw",
+      "errors": {
+        "rho_nm": 2.2737367544323206E-13,
+        "eta_true": 3.950617610826157E-11,
+        "ape": 1.1442941308350727E-16,
+        "apv": 9.8408287812004613E-18
+      },
+      "ordinaryRecords": 3,
+      "denseRecords": 9,
+      "contract": {
+        "identifier": "wave-vortex-density-diagnostics-v1",
+        "reference": "actual",
+        "profileRecovery": "dampedLeastSquares",
+        "selectionSource": "default",
+        "outputEvaluation": "available"
+      }
+    },
+    {
+      "configuration": "hydrostatic",
+      "antialias": true,
+      "reference": "initial",
+      "provider": "reference",
+      "errors": {
+        "rho_nm": 2.2737367544323206E-13,
+        "eta_true": 2.2737367544323206E-13,
+        "ape": 3.084788114781755E-19,
+        "apv": 5.7174723939665273E-20
+      },
+      "ordinaryRecords": 3,
+      "denseRecords": 9,
+      "contract": {
+        "identifier": "wave-vortex-density-diagnostics-v1",
+        "reference": "initial",
+        "profileRecovery": "not-required",
+        "selectionSource": "request",
+        "outputEvaluation": "available"
+      }
+    },
+    {
+      "configuration": "hydrostatic",
+      "antialias": true,
+      "reference": "initial",
+      "provider": "native-fftw",
+      "errors": {
+        "rho_nm": 2.2737367544323206E-13,
+        "eta_true": 2.2737367544323206E-13,
+        "ape": 3.084788114781755E-19,
+        "apv": 5.5904174518783822E-20
+      },
+      "ordinaryRecords": 3,
+      "denseRecords": 9,
+      "contract": {
+        "identifier": "wave-vortex-density-diagnostics-v1",
+        "reference": "initial",
+        "profileRecovery": "not-required",
+        "selectionSource": "request",
+        "outputEvaluation": "available"
+      }
+    },
+    {
+      "configuration": "boussinesq",
+      "antialias": false,
+      "reference": "actual",
+      "provider": "reference",
+      "errors": {
+        "rho_nm": 2.2737367544323206E-13,
+        "eta_true": 6.0367710830178112E-11,
+        "ape": 1.7617178866102096E-16,
+        "apv": 1.696098773582011E-17
+      },
+      "ordinaryRecords": 3,
+      "denseRecords": 9,
+      "contract": {
+        "identifier": "wave-vortex-density-diagnostics-v1",
+        "reference": "actual",
+        "profileRecovery": "dampedLeastSquares",
+        "selectionSource": "default",
+        "outputEvaluation": "available"
+      }
+    },
+    {
+      "configuration": "boussinesq",
+      "antialias": false,
+      "reference": "actual",
+      "provider": "native-fftw",
+      "errors": {
+        "rho_nm": 2.2737367544323206E-13,
+        "eta_true": 6.0367710830178112E-11,
+        "ape": 1.7617178866102096E-16,
+        "apv": 1.6957599604031093E-17
+      },
+      "ordinaryRecords": 3,
+      "denseRecords": 9,
+      "contract": {
+        "identifier": "wave-vortex-density-diagnostics-v1",
+        "reference": "actual",
+        "profileRecovery": "dampedLeastSquares",
+        "selectionSource": "default",
+        "outputEvaluation": "available"
+      }
+    },
+    {
+      "configuration": "boussinesq",
+      "antialias": false,
+      "reference": "initial",
+      "provider": "reference",
+      "errors": {
+        "rho_nm": 2.2737367544323206E-13,
+        "eta_true": 1.1652900866465643E-12,
+        "ape": 4.0363766914627581E-19,
+        "apv": 8.7244393567192935E-20
+      },
+      "ordinaryRecords": 3,
+      "denseRecords": 9,
+      "contract": {
+        "identifier": "wave-vortex-density-diagnostics-v1",
+        "reference": "initial",
+        "profileRecovery": "not-required",
+        "selectionSource": "request",
+        "outputEvaluation": "available"
+      }
+    },
+    {
+      "configuration": "boussinesq",
+      "antialias": false,
+      "reference": "initial",
+      "provider": "native-fftw",
+      "errors": {
+        "rho_nm": 2.2737367544323206E-13,
+        "eta_true": 1.1652900866465643E-12,
+        "ape": 4.0363766914627581E-19,
+        "apv": 8.6397360619938635E-20
+      },
+      "ordinaryRecords": 3,
+      "denseRecords": 9,
+      "contract": {
+        "identifier": "wave-vortex-density-diagnostics-v1",
+        "reference": "initial",
+        "profileRecovery": "not-required",
+        "selectionSource": "request",
+        "outputEvaluation": "available"
+      }
+    },
+    {
+      "configuration": "boussinesq",
+      "antialias": true,
+      "reference": "actual",
+      "provider": "reference",
+      "errors": {
+        "rho_nm": 2.2737367544323206E-13,
+        "eta_true": 5.7639226724859327E-11,
+        "ape": 1.133785098937607E-16,
+        "apv": 1.4916250201148229E-17
+      },
+      "ordinaryRecords": 3,
+      "denseRecords": 9,
+      "contract": {
+        "identifier": "wave-vortex-density-diagnostics-v1",
+        "reference": "actual",
+        "profileRecovery": "dampedLeastSquares",
+        "selectionSource": "default",
+        "outputEvaluation": "available"
+      }
+    },
+    {
+      "configuration": "boussinesq",
+      "antialias": true,
+      "reference": "actual",
+      "provider": "native-fftw",
+      "errors": {
+        "rho_nm": 2.2737367544323206E-13,
+        "eta_true": 5.7639226724859327E-11,
+        "ape": 1.133785098937607E-16,
+        "apv": 1.4919638332937246E-17
+      },
+      "ordinaryRecords": 3,
+      "denseRecords": 9,
+      "contract": {
+        "identifier": "wave-vortex-density-diagnostics-v1",
+        "reference": "actual",
+        "profileRecovery": "dampedLeastSquares",
+        "selectionSource": "default",
+        "outputEvaluation": "available"
+      }
+    },
+    {
+      "configuration": "boussinesq",
+      "antialias": true,
+      "reference": "initial",
+      "provider": "reference",
+      "errors": {
+        "rho_nm": 2.2737367544323206E-13,
+        "eta_true": 2.2737367544323206E-13,
+        "ape": 3.042965863011074E-19,
+        "apv": 7.538593230563273E-20
+      },
+      "ordinaryRecords": 3,
+      "denseRecords": 9,
+      "contract": {
+        "identifier": "wave-vortex-density-diagnostics-v1",
+        "reference": "initial",
+        "profileRecovery": "not-required",
+        "selectionSource": "request",
+        "outputEvaluation": "available"
+      }
+    },
+    {
+      "configuration": "boussinesq",
+      "antialias": true,
+      "reference": "initial",
+      "provider": "native-fftw",
+      "errors": {
+        "rho_nm": 2.2737367544323206E-13,
+        "eta_true": 2.2737367544323206E-13,
+        "ape": 3.042965863011074E-19,
+        "apv": 7.6656481726514181E-20
+      },
+      "ordinaryRecords": 3,
+      "denseRecords": 9,
+      "contract": {
+        "identifier": "wave-vortex-density-diagnostics-v1",
+        "reference": "initial",
+        "profileRecovery": "not-required",
+        "selectionSource": "request",
+        "outputEvaluation": "available"
+      }
+    }
+  ]
+}

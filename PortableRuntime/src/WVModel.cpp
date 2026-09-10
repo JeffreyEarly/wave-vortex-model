@@ -492,7 +492,8 @@ WVKernelStatus WVModel::createFromModelOutputInspection(
     WVModelOutputConfiguration outputConfiguration,
     std::unique_ptr<WVFFTEngine> engine,
     const WVModelIntegratorConfiguration &integratorConfiguration,
-    WVModel &model, WVModelState &state) {
+    WVModel &model, WVModelState &state,
+    WVDensityDiagnosticContract densityContract) {
 #if !defined(WV_MODEL_ENABLE_OUTPUT) || WV_MODEL_ENABLE_OUTPUT
 
   if (!catalog || outputConfiguration.catalog() != catalog)
@@ -532,7 +533,7 @@ WVKernelStatus WVModel::createFromModelOutputInspection(
     return status;
 
   status = candidate.openOutput(candidateState, std::move(outputConfiguration),
-                                inspection.isDynamicsLinear);
+                                inspection.isDynamicsLinear,densityContract);
   if (!status)
     return status;
   state = std::move(candidateState);
@@ -541,6 +542,7 @@ WVKernelStatus WVModel::createFromModelOutputInspection(
 #else
   (void)inspection;
   (void)outputConfiguration;
+  (void)densityContract;
   (void)engine;
   (void)integratorConfiguration;
   (void)model;
@@ -626,7 +628,7 @@ WVKernelStatus WVModel::initializeObserverState(WVModelState &state) {
 
 WVKernelStatus WVModel::openOutput(
     WVModelState &state, WVModelOutputConfiguration outputConfiguration,
-    bool isDynamicsLinear) {
+    bool isDynamicsLinear, WVDensityDiagnosticContract densityContract) {
 #if !defined(WV_MODEL_ENABLE_OUTPUT) || WV_MODEL_ENABLE_OUTPUT
   if (impl_->outputOpen)
     return invalid("WVModel already has an open output graph.");
@@ -645,7 +647,7 @@ WVKernelStatus WVModel::openOutput(
   std::unique_ptr<WVObserverOutputEvaluationService> outputEvaluation;
   status = WVObserverOutputEvaluationService::create(
       isDynamicsLinear, outputConfiguration.descriptor(),
-      *fieldEvaluationService, outputEvaluation);
+      *fieldEvaluationService, outputEvaluation,densityContract);
   if (!status)
     return status;
   for (const auto &declared : outputConfiguration.observationSchemas()) {
@@ -683,6 +685,7 @@ WVKernelStatus WVModel::openOutput(
 #else
   (void)state;
   (void)outputConfiguration;
+  (void)densityContract;
   (void)isDynamicsLinear;
   return {WVKernelStatusCode::unsupportedOperation,
           "This adapter does not include model-output persistence."};

@@ -1,0 +1,16 @@
+[
+  {
+    "name": "TestPortableDensityOutput/ordinaryAndDenseDensityOutputsMatchMatlab",
+    "passed": true,
+    "failed": false,
+    "incomplete": false,
+    "duration": 50.767593166666664
+  },
+  {
+    "name": "TestPortableDensityOutput/twoDestinationsContinueInBothDirections",
+    "passed": true,
+    "failed": false,
+    "incomplete": false,
+    "duration": 33.84681175
+  }
+]

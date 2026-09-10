@@ -37,8 +37,9 @@ classdef TestPortableDiagnostics < matlab.unittest.TestCase
                         configuration = family+"-aa"+double(antialias);
                         rows = catalog.contracts(string({catalog.contracts.configuration})==configuration);
                         names = reshape(arrayfun(@(row)string(row.metadata.name),rows),1,[]);
-                        rejected = intersect(names,["rho_nm","eta_true","ape","apv"],"stable");
-                        names = names(~endsWith(names,"_portable_catalog_forcing") & ~ismember(names,["Ap","Am","A0",rejected]));
+                        % Nonlinear density fits have dedicated analytic and bounded-parity coverage.
+                        densityFields = intersect(names,["rho_nm","eta_true","ape","apv"],"stable");
+                        names = names(~endsWith(names,"_portable_catalog_forcing") & ~ismember(names,["Ap","Am","A0",densityFields]));
                         for row = reshape(rows,1,[])
                             if string(row.authority)=="known-variable-factory"
                                 if string(row.component)==""
@@ -61,7 +62,7 @@ classdef TestPortableDiagnostics < matlab.unittest.TestCase
                         file.writeTimeStepToOutputFile(wvt.t);
                         model.closeNetCDFFile();
                         request = fullfile(testCase.folder,"request.json");
-                        writeText(request,jsonencode(struct(fields=names,rejected=rejected)));
+                        writeText(request,jsonencode(struct(fields=names)));
                         for provider = testCase.providers
                             resultPath = fullfile(testCase.folder,"result.json");
                             [status,output] = cleanSystem(shellQuote(testCase.executable)+" "+shellQuote(checkpoint)+" "+shellQuote(request)+" "+shellQuote(resultPath)+" "+provider);
@@ -83,7 +84,6 @@ classdef TestPortableDiagnostics < matlab.unittest.TestCase
                             testCase.verifyEqual(actual.scratchLiveBytes,0);
                             testCase.verifyEqual(actual.diagnosticEvaluations,1);
                             testCase.verifyLessThan(actual.primitiveOutputs,numel(names));
-                            if ~isempty(rejected), testCase.verifyEqual(sort(string(fieldnames(actual.rejected))),sort(rejected(:))); end
                         end
                     end
                 end
@@ -107,6 +107,10 @@ classdef TestPortableDiagnostics < matlab.unittest.TestCase
                 % Forcing templates require actual instance bindings, covered
                 % by TestPortableStableForcing's output continuation matrix.
                 rows = rows([rows.ordinal]>=23 & string({rows.runtimeStatus})=="implemented" & string({rows.authority})~="forcing-instance-template");
+                % Density recovery has its own prospective error bounds and
+                % complete output/continuation coverage in TestPortableDensityOutput.
+                densityNames = ["rho_nm","eta_true","ape","apv"];
+                rows = rows(~ismember(arrayfun(@(row)string(row.metadata.name),rows),densityNames));
                 names = reshape(arrayfun(@(row)string(row.metadata.name),rows),1,[]);
                 for row = reshape(rows,1,[])
                     if string(row.authority)=="known-variable-factory"

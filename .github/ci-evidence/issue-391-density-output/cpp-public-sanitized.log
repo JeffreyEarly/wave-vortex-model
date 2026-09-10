@@ -1,0 +1,16 @@
+Internal ctest changing into directory: /tmp/wvm395-standalone-sanitized
+Test project /tmp/wvm395-standalone-sanitized
+    Start  4: portable-variable-catalog
+1/5 Test  #4: portable-variable-catalog ........   Passed    0.23 sec
+    Start  8: density-field-evaluation
+2/5 Test  #8: density-field-evaluation .........   Passed    0.29 sec
+    Start 24: model-output-netcdf
+3/5 Test #24: model-output-netcdf ..............   Passed    5.17 sec
+    Start 27: field-evaluation
+4/5 Test #27: field-evaluation .................   Passed    0.34 sec
+    Start 28: observer-output-evaluation
+5/5 Test #28: observer-output-evaluation .......   Passed    0.33 sec
+
+100% tests passed, 0 tests failed out of 5
+
+Total Test time (real) =   6.36 sec

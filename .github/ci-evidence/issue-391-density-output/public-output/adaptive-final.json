@@ -1,0 +1,70 @@
+{
+  "schema": "portable-density-output-v1",
+  "matlabRelease": "2025b",
+  "rows": [
+    {
+      "configuration": "hydrostatic",
+      "provider": "reference",
+      "method": "adaptive-rk45",
+      "errors": {
+        "rho_nm": 2.2737367544323206E-13,
+        "eta_true": 4.7293724492192268E-11,
+        "ape": 1.1477645836386512E-16,
+        "apv": 1.0826775131804467E-17
+      },
+      "restartErrors": {
+        "rho_nm": 2.2737367544323206E-13,
+        "eta_true": 4.7293724492192268E-11,
+        "ape": 1.1477645836386512E-16,
+        "apv": 1.0826775131804467E-17
+      },
+      "density": {
+        "recoveryCount": 8,
+        "profileConstructionCount": 8,
+        "inversePassCount": 8,
+        "apePassCount": 8,
+        "apvPassCount": 8,
+        "apvReuseCount": 0,
+        "reuseCount": 0,
+        "workspaceLiveBytes": 0,
+        "workspaceHighWaterBytes": 18040
+      },
+      "coefficientsExactlyEqual": true,
+      "stepCount": 4,
+      "rejectedStepCount": 0,
+      "rhsEvaluationCount": 25
+    },
+    {
+      "configuration": "hydrostatic",
+      "provider": "native-fftw",
+      "method": "adaptive-rk45",
+      "errors": {
+        "rho_nm": 2.2737367544323206E-13,
+        "eta_true": 4.7293724492192268E-11,
+        "ape": 1.1477645836386512E-16,
+        "apv": 1.0825081065909958E-17
+      },
+      "restartErrors": {
+        "rho_nm": 2.2737367544323206E-13,
+        "eta_true": 4.7293724492192268E-11,
+        "ape": 1.1477645836386512E-16,
+        "apv": 1.0825081065909958E-17
+      },
+      "density": {
+        "recoveryCount": 8,
+        "profileConstructionCount": 8,
+        "inversePassCount": 8,
+        "apePassCount": 8,
+        "apvPassCount": 8,
+        "apvReuseCount": 0,
+        "reuseCount": 0,
+        "workspaceLiveBytes": 0,
+        "workspaceHighWaterBytes": 18040
+      },
+      "coefficientsExactlyEqual": true,
+      "stepCount": 4,
+      "rejectedStepCount": 0,
+      "rhsEvaluationCount": 25
+    }
+  ]
+}

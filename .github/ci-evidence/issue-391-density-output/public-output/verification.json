@@ -1,0 +1,124 @@
+{
+  "schemaVersion": 1,
+  "scope": "public density NetCDF output, continuation and nonlinear observational invariance",
+  "matlabRelease": "R2026a",
+  "ordinaryDenseCells": 32,
+  "twoDestinationScenarios": 16,
+  "nonlinearCells": 6,
+  "initialReferenceReportChecks": 2,
+  "methodsPassed": 4,
+  "analyzerFindings": 0,
+  "initialTwoMethodsRuntimeSeconds": 84.61440491666667,
+  "nonlinearMethodRuntimeSeconds": 22.495839500000002,
+  "finalSourceAndRunnerHashesVerified": true,
+  "linearExecutionProvenance": "Linear matrix and continuation passed against the retained linear-tested-source.m.txt and exact SHA-matched linear-tested-WaveVortexRun.cpp.txt. Subsequent app changes were report-only: include event workspace in memory upper bounds and distinguish selected versus executed profile recovery. Nonlinear method and two initial-reference report checks passed against final report semantics; unchanged numerical output methods were not repeated.",
+  "retryFixtureCorrection": "The first density extension of the arbitrary tiny-amplitude forcing fixture failed strict moment qualification before injected sink failure. Preserve original nonzero forcing retry and add exact stable-rest density retry instead; no solver residual relaxation. Root reran model-output-netcdf successfully in 2.17 seconds.",
+  "artifacts": [
+    {
+      "path": "linear-output.log",
+      "originalSHA256": "51020cd1f142a52cf683f4cbc2b99d69b377e8edd6be5eae48f68cc3a69bbced",
+      "retainedSHA256": "b327b55c04de3210ee983b22de79fc434db91c42225c7dde8dfd43cd026b7a8b",
+      "normalization": "Trailing line whitespace only."
+    },
+    {
+      "path": "linear-results.json",
+      "originalSHA256": "f63b785129fd8d9a0c2d57efb62289e4fc4b83adadf264f87642e5d16a6bd0e2",
+      "retainedSHA256": "7b79657d42988ac29ec7363bbdadbfb60302cd9145089a8dfd94c1f631471516",
+      "normalization": "Trailing line whitespace only."
+    },
+    {
+      "path": "nonlinear-output.log",
+      "originalSHA256": "bceb84b1e7faa45bbf0e94f374ff1b1daa39834a2d9763cba6ea648fc1c8260c",
+      "retainedSHA256": "adefdf5995e36cbcad3937e08bb8a02876f895d8e431289e495f0f6ba361757e",
+      "normalization": "Trailing line whitespace only."
+    },
+    {
+      "path": "nonlinear-results.json",
+      "originalSHA256": "7c51eff3f0013fcb4505cb46fad5a98d53265e1476ac07360342577c0a635438",
+      "retainedSHA256": "62bff4abce416d0d0902e43ee72694c169f5418773f72c3eca30ef8179a30939",
+      "normalization": "Trailing line whitespace only."
+    },
+    {
+      "path": "ordinary-dense.json",
+      "sha256": "2227e59fa5688b6fad40678720bca610117785e6186f745c7f48d1fb7dee558a"
+    },
+    {
+      "path": "continuation.json",
+      "sha256": "f368c877224720fc741dec0df53940f4222b7d55e0f2cef6f044c1c1b380b954"
+    },
+    {
+      "path": "nonlinear.json",
+      "sha256": "e43b1df9dd925cabf175d6a65c89e3b046fb0883d008fcc40bdb01f502299439"
+    },
+    {
+      "path": "retry-initial-test-source.cpp.txt",
+      "sha256": "09804b9e0a7874f6188012f4091ff8a9813ff39707d928e8d92bcf71d1b56a89"
+    },
+    {
+      "path": "retry-initial-cpp.log",
+      "sha256": "b6ee73e58f085984d0d64d7b5c0df67327ad6e1eb82034236cf92033beabb885"
+    },
+    {
+      "path": "linear-tested-source.m.txt",
+      "sha256": "7da1c6651a413f156af5250fcdcc4eac61c04d44fd6a9c501ec41b10cf22cc9f"
+    },
+    {
+      "path": "linear-tested-WaveVortexRun.cpp.txt",
+      "sha256": "65ecd05ab3c040acfe8c27d7593e8814b3a1e6bb8cb9263fc8dbfe983d1cec26"
+    },
+    {
+      "path": "execution-source-binding.json",
+      "sha256": "eb7095e8a910d1712d323c0318ab0cb86f403ec4cddfe1b3c8f086e6531d184d"
+    },
+    {
+      "path": "nonlinear-source-binding.json",
+      "sha256": "71e7d9b6ae6581c05f14cc5961a8e197fd9e2a5e5c47e1fc05fb9fab4dd9c52f"
+    },
+    {
+      "path": "adaptive-final.log",
+      "originalSHA256": "d3276b2d47cba56b9be631245f89823b34c26cee17a044706a1f7d651ef0566b",
+      "retainedSHA256": "006e728925ca672129e191e58488d5a4a17ba52839ce60028a3152cb88513b94",
+      "normalization": "Trailing line whitespace only."
+    },
+    {
+      "path": "adaptive-final-results.json",
+      "originalSHA256": "e30ac71058905b59a2b2baeabf2b9057143971b8cd8c959d7ca363e453190de0",
+      "retainedSHA256": "02552a9e10293f5234b0375835bc859599f60b46d6a82eead45fed3ff4272b42",
+      "normalization": "Trailing line whitespace only."
+    },
+    {
+      "path": "adaptive-final.json",
+      "originalSHA256": "d7c92fcfa3830e1e825d74a4d890d9ab72450ee087033aa672dd4ee32304bfee",
+      "retainedSHA256": "9ca6b2877368c3c088059069fb3602aed4d20116e1a73040981870e5921c6132",
+      "normalization": "Trailing line whitespace only."
+    },
+    {
+      "path": "adaptive-source-binding.json",
+      "sha256": "623c0eefa3323868f1f81ed0728905931dcffaf4c0fbc5d5232e492c21e62f9d"
+    },
+    {
+      "path": "nonlinear-tested-source.m.txt",
+      "sha256": "4e2fd0a19a3eea0ef713ac086543fcaa07ccc815d76eac0ec7133f5d175d8d5a"
+    },
+    {
+      "path": "adaptive-initial-provenance.json",
+      "sha256": "9183a1827cfe6a56b3b498588a0c4f472807466a4cf85c36fecab41eb40faf4d"
+    },
+    {
+      "path": "adaptive-initial-mixed-binary.log",
+      "sha256": "1016c1cfec4e72489487bd1a76c44575ceb8a954374914958a0040778802943c"
+    },
+    {
+      "path": "adaptive-initial-mixed-binary-results.json",
+      "sha256": "e67bf961674415685b04d103cb5d1e39f7489f3874bc9c448d80d7702358cbde"
+    },
+    {
+      "path": "adaptive-initial-mixed-binary.json",
+      "sha256": "9ca6b2877368c3c088059069fb3602aed4d20116e1a73040981870e5921c6132"
+    }
+  ],
+  "adaptiveProviderCases": 2,
+  "adaptiveControl": "Hydrostatic nonlinear actual-profile RK45 ordinary/dense output and split/restart/append; accepted/rejected/RHS counts and all saved coefficients exactly equal matched no-density-output controls.",
+  "adaptiveMethodRuntimeSeconds": 13.75670125,
+  "adaptiveAttemptProvenance": "First passing attempt overlapped a runner rebuild for the QG-only applicability report label. Retained as potentially mixed provenance; only the fourth method repeated and passed with final runner hash6f57eba3d803c79898a63856d9e6c91b7a0b7907ae045fcd3c8ff1473de2f8d1, hashes verified after execution."
+}

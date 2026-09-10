@@ -47,6 +47,7 @@ void WVFieldEvaluationEventScope::release() noexcept {
   if(service_->barotropicQG_) service_->barotropicQG_->eventWorkspace_=nullptr;
   for(auto& field:workspace_.fields_) std::vector<double>{}.swap(field);
   workspace_.density_.release();
+  workspace_.releaseAPV();
   std::vector<double>{}.swap(workspace_.densitySource_);
   std::vector<double>{}.swap(workspace_.densityHeights_);
   std::vector<double>{}.swap(workspace_.densityWeights_);
@@ -724,9 +725,12 @@ WVKernelStatus WVFieldEvaluationService::createBorrowing(WVBoussinesqForcingEngi
 }
 WVKernelStatus WVFieldEvaluationService::createPlan(
     const std::vector<WVFieldRequest> &requests,
-    WVFieldEvaluationPlan &plan) const {
+    WVFieldEvaluationPlan &plan, WVDensityDiagnosticContract densityContract) const {
+  if (densityContract.reference != WVNoMotionReference::actual &&
+      densityContract.reference != WVNoMotionReference::initial)
+    return {WVKernelStatusCode::invalidConfiguration,"Invalid density diagnostic reference."};
   if (detail::WVDiagnosticFieldPlan::required(requests,stratified_ != nullptr))
-    return detail::WVDiagnosticFieldPlan::create(*this,requests,plan);
+    return detail::WVDiagnosticFieldPlan::create(*this,requests,plan,densityContract);
   if (barotropicQG_)
     return barotropicQG_->createPlan(requests, plan);
   if (stratified_)

@@ -1,0 +1,222 @@
+{
+  "schema": "portable-density-output-v1",
+  "matlabRelease": "2025b",
+  "rows": [
+    {
+      "configuration": "constant-nonhydrostatic",
+      "provider": "reference",
+      "errors": {
+        "rho_nm": 4.5474735088646412E-13,
+        "eta_true": 1.6117951417982113E-10,
+        "ape": 2.5703861970543005E-16,
+        "apv": 6.0381590677970054E-17
+      },
+      "profileEvolution": 5.7048055168706924E-10,
+      "density": {
+        "recoveryCount": 8,
+        "profileConstructionCount": 8,
+        "inversePassCount": 8,
+        "apePassCount": 8,
+        "apvPassCount": 8,
+        "apvReuseCount": 0,
+        "reuseCount": 0,
+        "workspaceLiveBytes": 0,
+        "workspaceHighWaterBytes": 18040
+      },
+      "withoutDensity": {
+        "recoveryCount": 0,
+        "profileConstructionCount": 0,
+        "inversePassCount": 0,
+        "apePassCount": 0,
+        "apvPassCount": 0,
+        "apvReuseCount": 0,
+        "reuseCount": 0,
+        "workspaceLiveBytes": 0,
+        "workspaceHighWaterBytes": 0
+      },
+      "stepCount": 4,
+      "rhsEvaluationCount": 16,
+      "coefficientsExactlyEqual": true
+    },
+    {
+      "configuration": "constant-nonhydrostatic",
+      "provider": "native-fftw",
+      "errors": {
+        "rho_nm": 4.5474735088646412E-13,
+        "eta_true": 1.6117951417982113E-10,
+        "ape": 2.5703861970543005E-16,
+        "apv": 6.038667287565358E-17
+      },
+      "profileEvolution": 5.7048055168706924E-10,
+      "density": {
+        "recoveryCount": 8,
+        "profileConstructionCount": 8,
+        "inversePassCount": 8,
+        "apePassCount": 8,
+        "apvPassCount": 8,
+        "apvReuseCount": 0,
+        "reuseCount": 0,
+        "workspaceLiveBytes": 0,
+        "workspaceHighWaterBytes": 18040
+      },
+      "withoutDensity": {
+        "recoveryCount": 0,
+        "profileConstructionCount": 0,
+        "inversePassCount": 0,
+        "apePassCount": 0,
+        "apvPassCount": 0,
+        "apvReuseCount": 0,
+        "reuseCount": 0,
+        "workspaceLiveBytes": 0,
+        "workspaceHighWaterBytes": 0
+      },
+      "stepCount": 4,
+      "rhsEvaluationCount": 16,
+      "coefficientsExactlyEqual": true
+    },
+    {
+      "configuration": "hydrostatic",
+      "provider": "reference",
+      "errors": {
+        "rho_nm": 2.2737367544323206E-13,
+        "eta_true": 4.7293724492192268E-11,
+        "ape": 1.1477645836386512E-16,
+        "apv": 1.0826775131804467E-17
+      },
+      "profileEvolution": 7.0076566771604121E-10,
+      "density": {
+        "recoveryCount": 8,
+        "profileConstructionCount": 8,
+        "inversePassCount": 8,
+        "apePassCount": 8,
+        "apvPassCount": 8,
+        "apvReuseCount": 0,
+        "reuseCount": 0,
+        "workspaceLiveBytes": 0,
+        "workspaceHighWaterBytes": 18040
+      },
+      "withoutDensity": {
+        "recoveryCount": 0,
+        "profileConstructionCount": 0,
+        "inversePassCount": 0,
+        "apePassCount": 0,
+        "apvPassCount": 0,
+        "apvReuseCount": 0,
+        "reuseCount": 0,
+        "workspaceLiveBytes": 0,
+        "workspaceHighWaterBytes": 0
+      },
+      "stepCount": 4,
+      "rhsEvaluationCount": 16,
+      "coefficientsExactlyEqual": true
+    },
+    {
+      "configuration": "hydrostatic",
+      "provider": "native-fftw",
+      "errors": {
+        "rho_nm": 2.2737367544323206E-13,
+        "eta_true": 4.7293724492192268E-11,
+        "ape": 1.1477645836386512E-16,
+        "apv": 1.0825081065909958E-17
+      },
+      "profileEvolution": 7.0076566771604121E-10,
+      "density": {
+        "recoveryCount": 8,
+        "profileConstructionCount": 8,
+        "inversePassCount": 8,
+        "apePassCount": 8,
+        "apvPassCount": 8,
+        "apvReuseCount": 0,
+        "reuseCount": 0,
+        "workspaceLiveBytes": 0,
+        "workspaceHighWaterBytes": 18040
+      },
+      "withoutDensity": {
+        "recoveryCount": 0,
+        "profileConstructionCount": 0,
+        "inversePassCount": 0,
+        "apePassCount": 0,
+        "apvPassCount": 0,
+        "apvReuseCount": 0,
+        "reuseCount": 0,
+        "workspaceLiveBytes": 0,
+        "workspaceHighWaterBytes": 0
+      },
+      "stepCount": 4,
+      "rhsEvaluationCount": 16,
+      "coefficientsExactlyEqual": true
+    },
+    {
+      "configuration": "boussinesq",
+      "provider": "reference",
+      "errors": {
+        "rho_nm": 2.2737367544323206E-13,
+        "eta_true": 4.75210981676355E-11,
+        "ape": 1.131429156204158E-16,
+        "apv": 1.2739375526704677E-17
+      },
+      "profileEvolution": 7.0099304139148444E-10,
+      "density": {
+        "recoveryCount": 8,
+        "profileConstructionCount": 8,
+        "inversePassCount": 8,
+        "apePassCount": 8,
+        "apvPassCount": 8,
+        "apvReuseCount": 0,
+        "reuseCount": 0,
+        "workspaceLiveBytes": 0,
+        "workspaceHighWaterBytes": 18040
+      },
+      "withoutDensity": {
+        "recoveryCount": 0,
+        "profileConstructionCount": 0,
+        "inversePassCount": 0,
+        "apePassCount": 0,
+        "apvPassCount": 0,
+        "apvReuseCount": 0,
+        "reuseCount": 0,
+        "workspaceLiveBytes": 0,
+        "workspaceHighWaterBytes": 0
+      },
+      "stepCount": 4,
+      "rhsEvaluationCount": 16,
+      "coefficientsExactlyEqual": true
+    },
+    {
+      "configuration": "boussinesq",
+      "provider": "native-fftw",
+      "errors": {
+        "rho_nm": 2.2737367544323206E-13,
+        "eta_true": 4.75210981676355E-11,
+        "ape": 1.131429156204158E-16,
+        "apv": 1.2742763658493694E-17
+      },
+      "profileEvolution": 7.0099304139148444E-10,
+      "density": {
+        "recoveryCount": 8,
+        "profileConstructionCount": 8,
+        "inversePassCount": 8,
+        "apePassCount": 8,
+        "apvPassCount": 8,
+        "apvReuseCount": 0,
+        "reuseCount": 0,
+        "workspaceLiveBytes": 0,
+        "workspaceHighWaterBytes": 18040
+      },
+      "withoutDensity": {
+        "recoveryCount": 0,
+        "profileConstructionCount": 0,
+        "inversePassCount": 0,
+        "apePassCount": 0,
+        "apvPassCount": 0,
+        "apvReuseCount": 0,
+        "reuseCount": 0,
+        "workspaceLiveBytes": 0,
+        "workspaceHighWaterBytes": 0
+      },
+      "stepCount": 4,
+      "rhsEvaluationCount": 16,
+      "coefficientsExactlyEqual": true
+    }
+  ]
+}
