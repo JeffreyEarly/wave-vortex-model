@@ -1,0 +1,115 @@
+{
+  "codeAnalyzer": [
+    {
+      "findingCount": 3,
+      "path": "@WVModel/WVModel.m"
+    },
+    {
+      "findingCount": 0,
+      "path": "UnitTests/TestSQGTracerConvenience.m"
+    }
+  ],
+  "coverage": {
+    "savedSpatialShape": [
+      8,
+      6,
+      9
+    ],
+    "savedTracerDimensions": [
+      "/x",
+      "/y",
+      "/z",
+      "t"
+    ],
+    "sqgFirstRHSComparedToExplicitHorizontalControl": true,
+    "sqgIntegrationComparedToExplicitHorizontalControl": true,
+    "sqgSaveRestartComparedToUninterruptedExplicitHorizontalControl": true,
+    "transformSelection": [
+      "stratified-qg",
+      "barotropic-qg",
+      "hydrostatic",
+      "boussinesq"
+    ]
+  },
+  "environment": {
+    "cleanPathBootstrap": true,
+    "matlabRelease": "2025b",
+    "oceanKitRoot": "/Users/jearly/Documents/OceanKitRepositories/OceanKit",
+    "packageSnapshots": [
+      "Distributions-2.0.0",
+      "SplineCore-2.2.0",
+      "chebfun-5.7.0",
+      "InternalModes-1.3.0",
+      "NetCDF-1.0.2",
+      "ClassAnnotations-1.2.1"
+    ],
+    "platform": "MACA64",
+    "resolvedWVModel": "/Users/jearly/Documents/OceanKitRepositories/wvm-v4-issue467-tracer/@WVModel/WVModel.m",
+    "resolvedWVNonlinearAdvection": "/Users/jearly/Documents/OceanKitRepositories/wvm-v4-issue467-tracer/Forcing/WVNonlinearAdvection.m"
+  },
+  "issue": 467,
+  "preFixReproduction": "pre-fix-reproduction.json",
+  "reporting": {
+    "authoritativeLog": "qualification.log.gz",
+    "codeAnalyzerRerunAfterReportingFailure": false,
+    "correction": "reporting-correction.json",
+    "failureCause": "The temporary driver retained MATLAB duration objects, which jsonencode could not serialize.",
+    "failureStage": "receipt-serialization-after-tests-and-code-analyzer",
+    "matlabProcessExitWasNonzero": true,
+    "qualificationChecksCompletedBeforeSerialization": true,
+    "scientificTestsRerunAfterReportingFailure": false
+  },
+  "schema": "wvm-sqg-tracer-convenience-qualification-v1",
+  "source": {
+    "commit": "9641226c206342712b5df871ee3bfb37a44469fa",
+    "parentCommit": "a74ed4e61bc1bc57f731c999d7d404f8732f8679",
+    "productionFile": "@WVModel/WVModel.m",
+    "productionSHA256": "9ca451c9968ce33ddd0d79763f7ba14de6933806328fb9b3fca55f564939cfca",
+    "root": "/Users/jearly/Documents/OceanKitRepositories/wvm-v4-issue467-tracer",
+    "testFile": "UnitTests/TestSQGTracerConvenience.m",
+    "testSHA256": "cceb6220b67e11ce7a88326e412bd6a2e247da6e80e8b2274a77e45e18b8e058"
+  },
+  "summary": {
+    "executed": 5,
+    "failed": 0,
+    "incomplete": 0,
+    "passed": 5
+  },
+  "tests": [
+    {
+      "failed": false,
+      "incomplete": false,
+      "name": "TestSQGTracerConvenience/convenienceUsesTransformVelocityCapability",
+      "passed": true,
+      "reportedDurationSeconds": 3.7463
+    },
+    {
+      "failed": false,
+      "incomplete": false,
+      "name": "TestSQGTracerConvenience/sqgConvenienceMatchesExplicitHorizontalRHSAndIntegration",
+      "passed": true,
+      "reportedDurationSeconds": 1.214
+    },
+    {
+      "failed": false,
+      "incomplete": false,
+      "name": "TestSQGTracerConvenience/sqgConvenienceTracerRestartsWithXYZLayout",
+      "passed": true,
+      "reportedDurationSeconds": 2.1113
+    },
+    {
+      "failed": false,
+      "incomplete": false,
+      "name": "TestObservingSystems/particleAndTracerFacadesExposeCurrentState",
+      "passed": true,
+      "reportedDurationSeconds": 0.8246
+    },
+    {
+      "failed": false,
+      "incomplete": false,
+      "name": "TestWVModelOutputPersistence/barotropicParticlesAndTracerRoundTrip",
+      "passed": true,
+      "reportedDurationSeconds": 0.73092
+    }
+  ]
+}

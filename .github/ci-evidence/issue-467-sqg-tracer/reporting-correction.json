@@ -1,0 +1,20 @@
+{
+  "codeAnalyzerRerun": false,
+  "completedBeforeFailure": {
+    "codeAnalyzerFiles": 2,
+    "focusedTestsPassed": 5
+  },
+  "correction": "The committed receipt was assembled from the unchanged diary result table and source hashes.",
+  "failure": {
+    "cause": "Duration values were left as MATLAB duration objects in the temporary driver.",
+    "driverSHA256": "61d2b94acd1fdeb567ed8c68ed705d1b99d18898594b31c00589557f5aa2e995",
+    "qualificationLogArchiveSHA256": "0aaa25ef0612131fdc158da5649be2714e1f57b0c0b2dbadb0d74f58d70bf1b9",
+    "qualificationLogUncompressedSHA256": "7c5cf5cbbef1960dacf373f29b6efd48bc1e8f163224d1244d9c3a6b64eaafca",
+    "stage": "jsonencode of receipt"
+  },
+  "schema": "wvm-sqg-tracer-qualification-reporting-correction-v1",
+  "scientificTestsRerun": false,
+  "sourceChangedAfterQualification": false,
+  "sourceCommit": "9641226c206342712b5df871ee3bfb37a44469fa",
+  "status": "qualification-complete-reporting-corrected"
+}
