@@ -158,6 +158,11 @@ public:
     if(evaluation_ || initialized_ || owner_)
       return {WVKernelStatusCode::invalidConfiguration,"Cannot prepare active forcing diagnostic storage."};
     try {
+      // Low memory needs this one prefix scratch allocation. Reserve it before
+      // releasing any reuse-policy storage so allocation failure leaves the
+      // current policy's prepared workspace intact.
+      if(policy==WVVariableEvaluationPolicy::lowMemory)
+        staged.reserve(stages.size()*spatial.elementCount());
       flux.resize(coefficientElements_); previous.resize(coefficientElements_);
       temporary.resize(coefficientElements_);
       cumulative.resize(spatial.elementCount()); raw.resize(spatial.elementCount());
@@ -194,8 +199,6 @@ public:
         std::vector<double>().swap(gridCalculusValues_);
         std::vector<double>().swap(constantLaplacianValues_);
       }
-      if(policy==WVVariableEvaluationPolicy::lowMemory)
-        staged.reserve(stages.size()*spatial.elementCount());
       if(policy==WVVariableEvaluationPolicy::reuse) {
         prefix.resize(stages.size());
         for(std::size_t index=0;index<stages.size();++index) {

@@ -825,8 +825,8 @@ WVKernelStatus WVBarotropicQGForcingEngine::beginStateEvaluation(
   return WVKernelStatus::ok();
 }
 
-WVKernelStatus WVBarotropicQGForcingEngine::setVariableEvaluationPolicy(
-    WVVariableEvaluationPolicy policy) {
+WVKernelStatus WVBarotropicQGForcingEngine::validateVariableEvaluationPolicyChange(
+    WVVariableEvaluationPolicy policy) const noexcept {
   if (executing_ || evaluation_.active())
     return {WVKernelStatusCode::reentrantExecution,
             "Cannot change an active evaluation policy."};
@@ -834,14 +834,23 @@ WVKernelStatus WVBarotropicQGForcingEngine::setVariableEvaluationPolicy(
       policy != WVVariableEvaluationPolicy::lowMemory)
     return {WVKernelStatusCode::invalidConfiguration,
             "Unknown variable evaluation policy."};
+  return WVKernelStatus::ok();
+}
+
+WVKernelStatus WVBarotropicQGForcingEngine::setVariableEvaluationPolicy(
+    WVVariableEvaluationPolicy policy) {
+  auto status=validateVariableEvaluationPolicyChange(policy);
+  if(!status) return status;
   if (policy == WVVariableEvaluationPolicy::reuse &&
       nonlinearScratch_.size() != kernel_->descriptor().Nkl()) {
+    std::vector<WVComplex64> prepared;
     try {
-      nonlinearScratch_.resize(kernel_->descriptor().Nkl());
+      prepared.resize(kernel_->descriptor().Nkl());
     } catch (const std::bad_alloc &) {
       return {WVKernelStatusCode::allocationFailure,
               "Unable to allocate the Barotropic QG nonlinear cache."};
     }
+    nonlinearScratch_.swap(prepared);
   } else if (policy == WVVariableEvaluationPolicy::lowMemory) {
     std::vector<WVComplex64>().swap(nonlinearScratch_);
   }

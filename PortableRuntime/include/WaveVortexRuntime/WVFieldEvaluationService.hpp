@@ -469,6 +469,8 @@ public:
 
   WVKernelStatus setVariableEvaluationPolicy(
       WVVariableEvaluationPolicy policy);
+  WVKernelStatus validateVariableEvaluationPolicyChange(
+      WVVariableEvaluationPolicy policy) const noexcept;
   WVVariableEvaluationPolicy variableEvaluationPolicy() const noexcept {
     return variableEvaluationPolicy_;
   }
@@ -592,6 +594,9 @@ private:
   WVKernelStatus prepareDensityEventArena(std::size_t sampleCount,
       std::size_t profileCount,std::uint8_t demands,
       WVNoMotionReference reference,bool apvNeeded) const;
+  WVKernelStatus createPlanImpl(const std::vector<WVFieldRequest>& requests,
+      WVFieldEvaluationPlan& plan,WVDensityDiagnosticContract densityContract,
+      bool prepareScientificDependencies) const;
   WVKernelStatus initializeScratch();
   WVKernelStatus evaluatePlanBatch(const PlanInvocation *invocations,
                                    std::size_t invocationCount,

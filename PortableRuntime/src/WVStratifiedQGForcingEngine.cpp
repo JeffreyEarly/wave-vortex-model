@@ -827,8 +827,8 @@ WVKernelStatus WVStratifiedQGForcingEngine::beginStateEvaluation(
   return WVKernelStatus::ok();
 }
 
-WVKernelStatus WVStratifiedQGForcingEngine::setVariableEvaluationPolicy(
-    WVVariableEvaluationPolicy policy) {
+WVKernelStatus WVStratifiedQGForcingEngine::validateVariableEvaluationPolicyChange(
+    WVVariableEvaluationPolicy policy) const noexcept {
   if (executing_ || evaluation_.active())
     return {WVKernelStatusCode::reentrantExecution,
             "Cannot change an active evaluation policy."};
@@ -836,26 +836,31 @@ WVKernelStatus WVStratifiedQGForcingEngine::setVariableEvaluationPolicy(
       policy != WVVariableEvaluationPolicy::lowMemory)
     return {WVKernelStatusCode::invalidConfiguration,
             "Unknown variable evaluation policy."};
+  return WVKernelStatus::ok();
+}
+
+WVKernelStatus WVStratifiedQGForcingEngine::setVariableEvaluationPolicy(
+    WVVariableEvaluationPolicy policy) {
+  auto status=validateVariableEvaluationPolicyChange(policy);
+  if(!status) return status;
   if (policy == WVVariableEvaluationPolicy::reuse &&
       (velocityScratch_.size() !=
            3 * kernel_->spatialShape().elementCount() ||
        nonlinearScratch_.size() != tendencyScratch_.size())) {
+    std::vector<double> preparedVelocity;
+    std::vector<WVComplex64> preparedNonlinear;
     try {
-      velocityScratch_.resize(3 * kernel_->spatialShape().elementCount());
-      nonlinearScratch_.resize(tendencyScratch_.size());
+      if(velocityScratch_.size()!=3*kernel_->spatialShape().elementCount())
+        preparedVelocity.resize(3*kernel_->spatialShape().elementCount());
+      if(nonlinearScratch_.size()!=tendencyScratch_.size())
+        preparedNonlinear.resize(tendencyScratch_.size());
     } catch (const std::bad_alloc &) {
       return {WVKernelStatusCode::allocationFailure,
               "Unable to allocate the Stratified QG velocity cache."};
     }
+    if(!preparedVelocity.empty()) velocityScratch_.swap(preparedVelocity);
+    if(!preparedNonlinear.empty()) nonlinearScratch_.swap(preparedNonlinear);
   } else if (policy == WVVariableEvaluationPolicy::lowMemory) {
-    try {
-      std::vector<double> lowMemoryVelocity(
-          3 * kernel_->spatialShape().elementCount());
-      velocityScratch_.swap(lowMemoryVelocity);
-    } catch (const std::bad_alloc &) {
-      return {WVKernelStatusCode::allocationFailure,
-              "Unable to configure the Stratified QG low-memory workspace."};
-    }
     std::vector<WVComplex64>().swap(nonlinearScratch_);
   }
   evaluationPolicy_ = policy;

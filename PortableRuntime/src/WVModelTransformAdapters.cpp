@@ -14,6 +14,38 @@ WVKernelStatus invalid(std::string message) {
   return {WVKernelStatusCode::invalidConfiguration, std::move(message)};
 }
 
+template<class System>
+WVKernelStatus setVariableEvaluationPolicyTransaction(
+    System& system,WVVariableEvaluationPolicy policy) {
+  auto* fields=system.fieldEvaluationService();
+  auto status=system.validateVariableEvaluationPolicyChange(policy);
+  if(!status) return status;
+  if(fields) {
+    status=fields->validateVariableEvaluationPolicyChange(policy);
+    if(!status) return status;
+  }
+  if(policy==WVVariableEvaluationPolicy::lowMemory) {
+    if(fields) {
+      status=fields->setVariableEvaluationPolicy(policy);
+      if(!status) return status;
+    }
+    // Every forcing family validates above and commits low memory without
+    // allocation, so this second commit cannot strand mismatched policies.
+    return system.setVariableEvaluationPolicy(policy);
+  }
+  status=system.setVariableEvaluationPolicy(policy);
+  if(!status) return status;
+  if(!fields) return status;
+  status=fields->setVariableEvaluationPolicy(policy);
+  if(!status) {
+    // Reuse preparation is transactional. Its rollback releases caches and
+    // therefore cannot allocate or fail after the successful preflight.
+    (void)system.setVariableEvaluationPolicy(
+        WVVariableEvaluationPolicy::lowMemory);
+  }
+  return status;
+}
+
 class ConstantStratificationModelSystem final
     : public WVResolvedModelSystem {
 public:
@@ -28,11 +60,7 @@ public:
     return *system_;
   }
   WVKernelStatus setVariableEvaluationPolicy(WVVariableEvaluationPolicy policy) override {
-    if(auto* fields=system_->fieldEvaluationService(); fields && fields->evaluationSessionActive())
-      return invalid("Cannot change variable evaluation policy during an output session.");
-    auto status=system_->setVariableEvaluationPolicy(policy);
-    if(status) if(auto* fields=system_->fieldEvaluationService()) status=fields->setVariableEvaluationPolicy(policy);
-    return status;
+    return setVariableEvaluationPolicyTransaction(*system_,policy);
   }
   void setLinearDynamics(bool linear) noexcept override {
     system_->setLinearDynamics(linear);
@@ -94,11 +122,7 @@ public:
     return *system_;
   }
   WVKernelStatus setVariableEvaluationPolicy(WVVariableEvaluationPolicy policy) override {
-    if(auto* fields=system_->fieldEvaluationService(); fields && fields->evaluationSessionActive())
-      return invalid("Cannot change variable evaluation policy during an output session.");
-    auto status=system_->setVariableEvaluationPolicy(policy);
-    if(status) if(auto* fields=system_->fieldEvaluationService()) status=fields->setVariableEvaluationPolicy(policy);
-    return status;
+    return setVariableEvaluationPolicyTransaction(*system_,policy);
   }
   void setLinearDynamics(bool linear) noexcept override {
     system_->setLinearDynamics(linear);
@@ -192,11 +216,7 @@ public:
     return *system_;
   }
   WVKernelStatus setVariableEvaluationPolicy(WVVariableEvaluationPolicy policy) override {
-    if(auto* fields=system_->fieldEvaluationService(); fields && fields->evaluationSessionActive())
-      return invalid("Cannot change variable evaluation policy during an output session.");
-    auto status=system_->setVariableEvaluationPolicy(policy);
-    if(status) if(auto* fields=system_->fieldEvaluationService()) status=fields->setVariableEvaluationPolicy(policy);
-    return status;
+    return setVariableEvaluationPolicyTransaction(*system_,policy);
   }
   void setLinearDynamics(bool linear) noexcept override {
     system_->setLinearDynamics(linear);
@@ -281,11 +301,7 @@ public:
     return *system_;
   }
   WVKernelStatus setVariableEvaluationPolicy(WVVariableEvaluationPolicy policy) override {
-    if(auto* fields=system_->fieldEvaluationService(); fields && fields->evaluationSessionActive())
-      return invalid("Cannot change variable evaluation policy during an output session.");
-    auto status=system_->setVariableEvaluationPolicy(policy);
-    if(status) if(auto* fields=system_->fieldEvaluationService()) status=fields->setVariableEvaluationPolicy(policy);
-    return status;
+    return setVariableEvaluationPolicyTransaction(*system_,policy);
   }
   void setLinearDynamics(bool linear) noexcept override {
     system_->setLinearDynamics(linear);
@@ -372,11 +388,7 @@ public:
     return *system_;
   }
   WVKernelStatus setVariableEvaluationPolicy(WVVariableEvaluationPolicy policy) override {
-    if(auto* fields=system_->fieldEvaluationService(); fields && fields->evaluationSessionActive())
-      return invalid("Cannot change variable evaluation policy during an output session.");
-    auto status=system_->setVariableEvaluationPolicy(policy);
-    if(status) if(auto* fields=system_->fieldEvaluationService()) status=fields->setVariableEvaluationPolicy(policy);
-    return status;
+    return setVariableEvaluationPolicyTransaction(*system_,policy);
   }
   void setLinearDynamics(bool linear) noexcept override {
     system_->setLinearDynamics(linear);

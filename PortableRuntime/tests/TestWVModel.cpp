@@ -2,6 +2,7 @@
 #include "WVTestExtensionCatalog.hpp"
 #include "WaveVortexRuntime/WVModel.hpp"
 #include "WVReferenceFFTEngine.hpp"
+#include "WVAllocationProbe.hpp"
 
 #include <algorithm>
 #include <cmath>
@@ -197,10 +198,80 @@ void controlledCFLSelectionPreservesFixedSteps() {
           "CFL controlled stop and resume changed the fixed trajectory");
 }
 
+void variablePolicyChangeIsTransactional() {
+  auto checkpoint=readFixture();
+  const auto nonlinear=std::find_if(checkpoint.forcingSchedule.entries.begin(),
+      checkpoint.forcingSchedule.entries.end(),[](const auto& entry) {
+        return entry.typeIdentifier=="WVNonlinearAdvection";
+      });
+  require(nonlinear!=checkpoint.forcingSchedule.entries.end(),
+      "Transactional policy fixture lacks nonlinear forcing");
+  auto repeated=*nonlinear;
+  repeated.name="second nonlinear advection";
+  repeated.ordinal=0;
+  for(const auto& entry:checkpoint.forcingSchedule.entries)
+    repeated.ordinal=std::max(repeated.ordinal,entry.ordinal+1);
+  checkpoint.forcingSchedule.entries.push_back(std::move(repeated));
+
+  WVPortableObserverRecord record;
+  const auto shape=checkpoint.state.coefficients.shape;
+  for(const char* identifier:{"Ap","Am","A0"})
+    record.stateBlocks.push_back({identifier,WVStateScalarType::complex64,
+        {shape.rows,shape.columns},WVToleranceKind::coefficientEnergyScaled,
+        1e-10,WVStateOwnership::integratorOwned,
+        WVRestartRequirement::requiredDynamicState});
+  WVObserverRecord coefficients;
+  coefficients.identifier="coefficients";
+  coefficients.name="Wave-vortex coefficients";
+  coefficients.typeIdentifier="WVCoefficients";
+  coefficients.stateBlockIdentifiers={"Ap","Am","A0"};
+  record.observers.push_back(std::move(coefficients));
+  WVPortableObserverDescriptor descriptor;
+  auto status=WVPortableObserverDescriptor::create(
+      record,test::extensionCatalog(),descriptor);
+  require(bool(status),status.message);
+
+  WVModel model;
+  status=WVModel::create(test::extensionCatalog(),checkpoint.configuration,
+      checkpoint.forcingSchedule,descriptor,
+      std::make_unique<WVReferenceFFTEngine>(),{},model);
+  require(bool(status),status.message);
+  require(bool(model.setVariableEvaluationPolicy(
+      WVVariableEvaluationPolicy::lowMemory)),
+      "Transactional model low-memory setup failed");
+  const auto lowMetrics=model.metrics();
+
+  // The forcing cache is the first allocation. Fail the following field-arena
+  // preparation and require the model-level rollback to restore both policies.
+  allocationProbe::calls=0;
+  allocationProbe::counting=true;
+  allocationProbe::failAfter=1;
+  status=model.setVariableEvaluationPolicy(WVVariableEvaluationPolicy::reuse);
+  allocationProbe::failAfter=-1;
+  allocationProbe::counting=false;
+  const auto failedAllocationCalls=allocationProbe::calls.load();
+  const auto failedMetrics=model.metrics();
+  require(status.code==WVKernelStatusCode::allocationFailure &&
+      failedAllocationCalls>=2 &&
+      failedMetrics.forcing.workspaceCapacityBytes==
+          lowMetrics.forcing.workspaceCapacityBytes &&
+      failedMetrics.integrationSystemPersistentBytes==
+          lowMetrics.integrationSystemPersistentBytes,
+      "Failed field preparation left model policy participants mismatched");
+  require(bool(model.setVariableEvaluationPolicy(
+              WVVariableEvaluationPolicy::reuse)) &&
+          bool(model.setVariableEvaluationPolicy(
+              WVVariableEvaluationPolicy::lowMemory)) &&
+          model.metrics().integrationSystemPersistentBytes==
+              lowMetrics.integrationSystemPersistentBytes,
+      "Transactional model policy retry changed low-memory storage");
+}
+
 } // namespace
 
 int main() {
   try {
+    variablePolicyChangeIsTransactional();
     controlledCFLSelectionPreservesFixedSteps();
     fixedFacadeMatchesDirectIntegrator();
     adaptiveFacadeAdvances();

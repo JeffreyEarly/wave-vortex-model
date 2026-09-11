@@ -119,20 +119,31 @@ WVKernelStatus WVBoussinesqForcingEngine::initialize(const WVFrozenForcingSchedu
     metrics_.workspaceHighWaterBytes=metrics_.workspaceCapacityBytes;
     return WVKernelStatus::ok();
 }
-WVKernelStatus WVBoussinesqForcingEngine::setVariableEvaluationPolicy(WVVariableEvaluationPolicy policy) {
+WVKernelStatus WVBoussinesqForcingEngine::validateVariableEvaluationPolicyChange(
+    WVVariableEvaluationPolicy policy) const noexcept {
     if(evaluation_.active() || executing_) return {WVKernelStatusCode::reentrantExecution,"Cannot change an active evaluation policy."};
     if(policy!=WVVariableEvaluationPolicy::reuse && policy!=WVVariableEvaluationPolicy::lowMemory)
         return {WVKernelStatusCode::invalidConfiguration,"Unknown variable evaluation policy."};
+    return WVKernelStatus::ok();
+}
+WVKernelStatus WVBoussinesqForcingEngine::setVariableEvaluationPolicy(WVVariableEvaluationPolicy policy) {
+    auto status=validateVariableEvaluationPolicyChange(policy); if(!status) return status;
     const auto wholeFluxCount=std::count_if(forcing_.begin(),forcing_.end(),[](const auto& forcing){return forcing->producesCompleteFlux();});
+    std::vector<WVComplex64> preparedNonlinear;
+    std::vector<double> preparedCalculus;
     try {
-        if(policy==WVVariableEvaluationPolicy::reuse && wholeFluxCount>1 && nonlinearCache_.empty()) nonlinearCache_.resize(3*kernel().spectralShape().elementCount());
+        if(policy==WVVariableEvaluationPolicy::reuse && wholeFluxCount>1 && nonlinearCache_.empty())
+            preparedNonlinear.resize(3*kernel().spectralShape().elementCount());
         if(policy==WVVariableEvaluationPolicy::reuse && gridCalculus_.empty()) {
             const auto slots=std::count_if(gridCalculusUseCount_.begin(),gridCalculusUseCount_.end(),
                 [](std::size_t count){return count>1;});
-            gridCalculus_.resize(slots*kernel().spatialShape().elementCount());
+            preparedCalculus.resize(slots*kernel().spatialShape().elementCount());
         }
     } catch(const std::bad_alloc&) {return {WVKernelStatusCode::allocationFailure,"Unable to allocate shared nonlinear result."};}
-    if(policy==WVVariableEvaluationPolicy::lowMemory) {
+    if(policy==WVVariableEvaluationPolicy::reuse) {
+        if(!preparedNonlinear.empty()) nonlinearCache_.swap(preparedNonlinear);
+        if(!preparedCalculus.empty()) gridCalculus_.swap(preparedCalculus);
+    } else {
         std::vector<WVComplex64>{}.swap(nonlinearCache_);
         std::vector<double>{}.swap(gridCalculus_);
     }

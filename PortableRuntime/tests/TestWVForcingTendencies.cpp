@@ -372,9 +372,21 @@ void fieldService(Engine& engine,const WVState& state,WVShape4D spatial,
     require(data[forcingOutputCount]==data.front(),"Repeated forcing channel differs");
     require(engine.tendencyMetrics().forcingEvaluationCount==count+engine.forcingCount(),
         "Field service repeated a contribution across channels/outputs");
-    require(service->persistentBytes()==persistent && plan.persistentBytes()==planBytes &&
-        service->metrics().servicePersistentBytes==persistent && service->metrics().diagnosticWorkspaceLiveBytes==0,
-        "Bound field service retained diagnostic workspace or miscounted persistent bytes");
+    if(!(service->persistentBytes()==persistent &&
+        plan.persistentBytes()==planBytes &&
+        service->metrics().servicePersistentBytes==persistent &&
+        service->metrics().diagnosticWorkspaceLiveBytes==0))
+      throw std::runtime_error(
+          std::string("Bound ")+
+          (std::is_same_v<Engine,WVStratifiedQGForcingEngine> ? "stratified-qg" :
+           std::is_same_v<Engine,WVBarotropicQGForcingEngine> ? "barotropic-qg" :
+           std::is_same_v<Engine,WVConstantStratificationForcingEngine> ? "constant" :
+           std::is_same_v<Engine,WVHydrostaticForcingEngine> ? "hydrostatic" : "boussinesq")+
+          " field service retained diagnostic workspace or miscounted persistent bytes before="+
+          std::to_string(persistent)+" after="+
+          std::to_string(service->persistentBytes())+" metric="+
+          std::to_string(service->metrics().servicePersistentBytes)+" live="+
+          std::to_string(service->metrics().diagnosticWorkspaceLiveBytes));
     if(engine.forcingCount()>1) {
       WVFieldEvaluationPlan firstForcing,firstTwoForcings;
       require(bool(service->createPlan({requests[0]},firstForcing)) &&
@@ -430,8 +442,13 @@ void fieldService(Engine& engine,const WVState& state,WVShape4D spatial,
     double movingForcingValue=99;
     WVFieldOutputView movingForcingView{&movingForcingValue,1};
     const double forcingX=0,forcingY=0,forcingZ=0;
-    require(bool(service->evaluateMoving(movingForcing,integrationState,
-        {&forcingX,&forcingY,&forcingZ,1},&movingForcingView,1)) &&
+    const auto movingForcingStatus=service->evaluateMoving(movingForcing,
+        integrationState,{&forcingX,&forcingY,&forcingZ,1},
+        &movingForcingView,1);
+    if(!movingForcingStatus)
+      throw std::runtime_error("Forcing diagnostic moving evaluation failed: "+
+          movingForcingStatus.message);
+    require(
         movingForcingValue==sampledForcingValue,
         "Forcing diagnostic moving sample differs from fixed position");
     std::unique_ptr<WVFieldEvaluationService> metricService;

@@ -30,6 +30,8 @@ public:
     bool stateEvaluationActive() const noexcept { return evaluation_.active(); }
     WVKernelStatus validateStateEvaluation(const WVState&) const;
     WVKernelStatus setVariableEvaluationPolicy(WVVariableEvaluationPolicy policy);
+    WVKernelStatus validateVariableEvaluationPolicyChange(
+        WVVariableEvaluationPolicy policy) const noexcept;
     const WVVariableEvaluationMetrics& variableEvaluationMetrics() const noexcept { return evaluation_.metrics(); }
     WVKernelStatus nonlinearFlux(const WVState&,WVFlux&);
     WVKernelStatus physicalFields(const WVState&,WVRealFieldBundleConstView&);

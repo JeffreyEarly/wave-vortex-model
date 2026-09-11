@@ -1479,15 +1479,24 @@ WVKernelStatus WVForcingExecutionContext::linearCoefficientTendency(double rate)
     return engine_->addLinearCoefficientTendency(*state_,rate,*flux_);
 }
 
-WVKernelStatus WVConstantStratificationForcingEngine::setVariableEvaluationPolicy(WVVariableEvaluationPolicy policy) {
+WVKernelStatus WVConstantStratificationForcingEngine::validateVariableEvaluationPolicyChange(
+    WVVariableEvaluationPolicy policy) const noexcept {
     if(evaluation_.active() || executing_) return {WVKernelStatusCode::reentrantExecution,"Cannot change an active evaluation policy."};
     if(policy!=WVVariableEvaluationPolicy::reuse && policy!=WVVariableEvaluationPolicy::lowMemory)
         return {WVKernelStatusCode::invalidConfiguration,"Unknown variable evaluation policy."};
+    return WVKernelStatus::ok();
+}
+WVKernelStatus WVConstantStratificationForcingEngine::setVariableEvaluationPolicy(WVVariableEvaluationPolicy policy) {
+    auto status=validateVariableEvaluationPolicyChange(policy); if(!status) return status;
     const auto wholeFluxCount=std::count_if(forcing_.begin(),forcing_.end(),[](const auto& forcing){return forcing->producesCompleteFlux();});
+    std::vector<WVComplex64> preparedNonlinear;
     try {
-        if(policy==WVVariableEvaluationPolicy::reuse && wholeFluxCount>1 && nonlinearCache_.empty()) nonlinearCache_.resize(3*kernel_->descriptor().spectralShape().elementCount());
+        if(policy==WVVariableEvaluationPolicy::reuse && wholeFluxCount>1 && nonlinearCache_.empty())
+            preparedNonlinear.resize(3*kernel_->descriptor().spectralShape().elementCount());
     } catch(const std::bad_alloc&) {return {WVKernelStatusCode::allocationFailure,"Unable to allocate shared nonlinear result."};}
-    if(policy==WVVariableEvaluationPolicy::lowMemory) std::vector<WVComplex64>{}.swap(nonlinearCache_);
+    if(policy==WVVariableEvaluationPolicy::reuse) {
+        if(!preparedNonlinear.empty()) nonlinearCache_.swap(preparedNonlinear);
+    } else std::vector<WVComplex64>{}.swap(nonlinearCache_);
     evaluationPolicy_=policy;
     metrics_.workspaceCapacityBytes=vectorBytes(physicalFields_)+vectorBytes(forcingFields_)+vectorBytes(temporaryFlux_)+vectorBytes(nonlinearCache_);
     metrics_.workspaceHighWaterBytes=std::max(metrics_.workspaceHighWaterBytes,metrics_.workspaceCapacityBytes);

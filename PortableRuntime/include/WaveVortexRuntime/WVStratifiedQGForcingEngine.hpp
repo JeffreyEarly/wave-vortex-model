@@ -144,6 +144,8 @@ public:
   // Linear evolution retains instances for diagnostics and amplitude constraints.
   // Only their ordinary coefficient RHS contributions are disabled.
   WVKernelStatus setVariableEvaluationPolicy(WVVariableEvaluationPolicy policy);
+  WVKernelStatus validateVariableEvaluationPolicyChange(
+      WVVariableEvaluationPolicy policy) const noexcept;
   const WVVariableEvaluationMetrics& variableEvaluationMetrics() const noexcept { return evaluation_.metrics(); }
   void setLinearDynamics(bool linear) noexcept { linearDynamics_ = linear; }
 

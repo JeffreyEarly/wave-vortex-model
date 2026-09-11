@@ -362,8 +362,8 @@ const WVKernelStatus& WVFieldEvaluationSession::status() const noexcept {
   return impl_ ? impl_->scope.status() : inactive;
 }
 
-WVKernelStatus WVFieldEvaluationService::setVariableEvaluationPolicy(
-    WVVariableEvaluationPolicy policy) {
+WVKernelStatus WVFieldEvaluationService::validateVariableEvaluationPolicyChange(
+    WVVariableEvaluationPolicy policy) const noexcept {
   if(eventWorkspace_)
     return {WVKernelStatusCode::invalidConfiguration,
             "Cannot change variable evaluation policy during an active session."};
@@ -371,6 +371,13 @@ WVKernelStatus WVFieldEvaluationService::setVariableEvaluationPolicy(
       policy!=WVVariableEvaluationPolicy::lowMemory)
     return {WVKernelStatusCode::invalidConfiguration,
             "Unknown variable evaluation policy."};
+  return WVKernelStatus::ok();
+}
+
+WVKernelStatus WVFieldEvaluationService::setVariableEvaluationPolicy(
+    WVVariableEvaluationPolicy policy) {
+  auto validation=validateVariableEvaluationPolicyChange(policy);
+  if(!validation) return validation;
   if(policy==variableEvaluationPolicy_) return WVKernelStatus::ok();
   if(policy==WVVariableEvaluationPolicy::lowMemory) {
     if(forcing_ && eventArenaForcingPrepared_) {
@@ -1159,6 +1166,13 @@ WVKernelStatus WVFieldEvaluationService::createBorrowing(WVBoussinesqForcingEngi
 WVKernelStatus WVFieldEvaluationService::createPlan(
     const std::vector<WVFieldRequest> &requests,
     WVFieldEvaluationPlan &plan, WVDensityDiagnosticContract densityContract) const {
+  return createPlanImpl(requests,plan,densityContract,true);
+}
+
+WVKernelStatus WVFieldEvaluationService::createPlanImpl(
+    const std::vector<WVFieldRequest> &requests,
+    WVFieldEvaluationPlan &plan,WVDensityDiagnosticContract densityContract,
+    bool prepareScientificDependencies) const {
   if (densityContract.reference != WVNoMotionReference::actual &&
       densityContract.reference != WVNoMotionReference::initial)
     return {WVKernelStatusCode::invalidConfiguration,"Invalid density diagnostic reference."};
@@ -1171,11 +1185,13 @@ WVKernelStatus WVFieldEvaluationService::createPlan(
     const bool prepareForcing=candidate.diagnosticPlan_ &&
         candidate.diagnosticPlan_->hasForcingDiagnostics();
     const bool forcingPreparedBefore=eventArenaForcingPrepared_;
-    eventArenaForcingPrepared_|=prepareForcing;
-    const auto arenaStatus=prepareEventArena(candidate);
-    if(!arenaStatus) {
-      eventArenaForcingPrepared_=forcingPreparedBefore;
-      return arenaStatus;
+    if(prepareScientificDependencies) eventArenaForcingPrepared_|=prepareForcing;
+    if(prepareScientificDependencies) {
+      const auto arenaStatus=prepareEventArena(candidate);
+      if(!arenaStatus) {
+        eventArenaForcingPrepared_=forcingPreparedBefore;
+        return arenaStatus;
+      }
     }
     plan=std::move(candidate);
     return WVKernelStatus::ok();
@@ -1184,8 +1200,10 @@ WVKernelStatus WVFieldEvaluationService::createPlan(
     WVFieldEvaluationPlan candidate;
     const auto status=barotropicQG_->createPlan(requests, candidate);
     if(!status) return status;
-    const auto arenaStatus=prepareEventArena(candidate);
-    if(!arenaStatus) return arenaStatus;
+    if(prepareScientificDependencies) {
+      const auto arenaStatus=prepareEventArena(candidate);
+      if(!arenaStatus) return arenaStatus;
+    }
     plan=std::move(candidate);
     return WVKernelStatus::ok();
   }
@@ -1193,8 +1211,10 @@ WVKernelStatus WVFieldEvaluationService::createPlan(
     WVFieldEvaluationPlan candidate;
     const auto status=stratified_->createPlan(requests, candidate);
     if(!status) return status;
-    const auto arenaStatus=prepareEventArena(candidate);
-    if(!arenaStatus) return arenaStatus;
+    if(prepareScientificDependencies) {
+      const auto arenaStatus=prepareEventArena(candidate);
+      if(!arenaStatus) return arenaStatus;
+    }
     plan=std::move(candidate);
     return WVKernelStatus::ok();
   }
@@ -1410,8 +1430,10 @@ WVKernelStatus WVFieldEvaluationService::createPlan(
       candidate.requests_.push_back(std::move(resolved));
       candidate.outputs_.push_back(std::move(output));
     }
-    const auto arenaStatus=prepareEventArena(candidate);
-    if(!arenaStatus) return arenaStatus;
+    if(prepareScientificDependencies) {
+      const auto arenaStatus=prepareEventArena(candidate);
+      if(!arenaStatus) return arenaStatus;
+    }
     plan = std::move(candidate);
     return WVKernelStatus::ok();
   } catch (const std::bad_alloc &) {
@@ -1427,7 +1449,10 @@ WVKernelStatus WVFieldEvaluationService::createPlan(
 WVKernelStatus WVFieldEvaluationService::evaluate(
     const WVFieldEvaluationPlan &plan, const WVState &state,
     WVFieldOutputView *outputs, std::size_t outputCount, const std::uint8_t *activeOutputs) {
-  if(!eventWorkspace_) {
+  const bool anyActive=outputCount && (!activeOutputs ||
+      std::any_of(activeOutputs,activeOutputs+outputCount,
+          [](std::uint8_t selected) {return selected!=0;}));
+  if(!eventWorkspace_ && anyActive) {
     if (!transform_)
       return {WVKernelStatusCode::unsupportedOperation,
           "This transform requires coefficient-family state views."};
@@ -1466,7 +1491,10 @@ WVKernelStatus WVFieldEvaluationService::evaluate(
 WVKernelStatus WVFieldEvaluationService::evaluate(
     const WVFieldEvaluationPlan &plan, const WVIntegrationState &state,
     WVFieldOutputView *outputs, std::size_t outputCount, const std::uint8_t *activeOutputs) {
-  if(!eventWorkspace_) {
+  const bool anyActive=outputCount && (!activeOutputs ||
+      std::any_of(activeOutputs,activeOutputs+outputCount,
+          [](std::uint8_t selected) {return selected!=0;}));
+  if(!eventWorkspace_ && anyActive) {
     detail::WVFieldEvaluationEventScope scope(*this,state);
     if(!scope.status()) return scope.status();
     return evaluate(plan,state,outputs,outputCount,activeOutputs);
@@ -3346,7 +3374,10 @@ WVKernelStatus WVFieldEvaluationService::evaluateMoving(
     const WVMovingFieldEvaluationPlan &plan, const WVState &state,
     WVMovingPositionView positions, WVFieldOutputView *outputs,
     std::size_t outputCount, const std::uint8_t *activeOutputs) {
-  if(!eventWorkspace_) {
+  const bool anyActive=outputCount && (!activeOutputs ||
+      std::any_of(activeOutputs,activeOutputs+outputCount,
+          [](std::uint8_t selected) {return selected!=0;}));
+  if(!eventWorkspace_ && anyActive) {
     if (!transform_)
       return {WVKernelStatusCode::unsupportedOperation,
           "This transform requires coefficient-family state views."};
@@ -3365,7 +3396,10 @@ WVKernelStatus WVFieldEvaluationService::evaluateMoving(
     const WVMovingFieldEvaluationPlan &plan,
     const WVIntegrationState &state, WVMovingPositionView positions,
     WVFieldOutputView *outputs, std::size_t outputCount, const std::uint8_t *activeOutputs) {
-  if(!eventWorkspace_) {
+  const bool anyActive=outputCount && (!activeOutputs ||
+      std::any_of(activeOutputs,activeOutputs+outputCount,
+          [](std::uint8_t selected) {return selected!=0;}));
+  if(!eventWorkspace_ && anyActive) {
     detail::WVFieldEvaluationEventScope scope(*this,state);
     if(!scope.status()) return scope.status();
     return evaluateMoving(plan,state,positions,outputs,outputCount,
@@ -3533,8 +3567,8 @@ WVKernelStatus WVFieldEvaluationService::evaluateSampledMovingImpl(
                               ? "u"
                               : (barotropicQG_ ? "qgpv" : "ssu");
       WVFieldEvaluationPlan sampler;
-      status = createPlan({{"moving-sampler", proxy, std::move(sampling)}},
-                          sampler);
+      status = createPlanImpl(
+          {{"moving-sampler", proxy, std::move(sampling)}},sampler,{},false);
       if (!status)
         return status;
       transientSamplerBytes = sampler.persistentBytes();

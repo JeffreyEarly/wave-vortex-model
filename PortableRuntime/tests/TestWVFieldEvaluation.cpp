@@ -1523,6 +1523,14 @@ void verifyVariableEvaluationSessions() {
       standaloneProducerAfter.reconstructions[0][0][0]==
           standaloneProducerBefore.reconstructions[0][0][0]+4,
       "standalone field calls did not use one fresh producer scope each");
+  const std::uint8_t inactiveField=0;
+  const std::array<std::uint8_t,2> inactiveMoving{};
+  require(bool(service->evaluate(first,state,&fullView,1,&inactiveField)) &&
+      bool(service->evaluateMoving(moving,state,movingPosition,movingViews,2,
+          inactiveMoving.data())) &&
+      service->metrics().variableEvaluation.contexts==standaloneAfter.contexts &&
+      !service->evaluationSessionActive(),
+      "inactive standalone calls opened an event scope");
 
   const auto preparedArenaBytes=service->metrics().eventFieldArenaPlannedBytes;
   const auto preparedPersistentBytes=service->persistentBytes();

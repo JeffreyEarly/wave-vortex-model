@@ -382,11 +382,11 @@ WVKernelStatus WVDiagnosticFieldPlan::prepareEventArena(
               WVDensityEventEvaluation::apeDemand;
       apvNeeded|=output.variable==Variable::apv;
     }
+    visitPortableExecution(output.execution,[&](Variable node,bool) {
+      phase|=node==Variable::Apt || node==Variable::Amt ||
+          node==Variable::phase || node==Variable::conjPhase;
+    });
     if(output.specification.isComplex) {
-      visitPortableExecution(output.execution,[&](Variable node,bool) {
-        phase|=node==Variable::Apt || node==Variable::Amt ||
-            node==Variable::phase || node==Variable::conjPhase;
-      });
       const auto finalNode=output.execution.count ?
           output.execution.order[output.execution.count-1] : output.variable;
       const auto status=service.prepareEventField(

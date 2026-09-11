@@ -82,6 +82,10 @@ public:
   WVKernelStatus setVariableEvaluationPolicy(WVVariableEvaluationPolicy policy) {
     return forcingEngine_->setVariableEvaluationPolicy(policy);
   }
+  WVKernelStatus validateVariableEvaluationPolicyChange(
+      WVVariableEvaluationPolicy policy) const noexcept {
+    return forcingEngine_->validateVariableEvaluationPolicyChange(policy);
+  }
   const WVVariableEvaluationMetrics& variableEvaluationMetrics() const noexcept {
     return forcingEngine_->variableEvaluationMetrics();
   }

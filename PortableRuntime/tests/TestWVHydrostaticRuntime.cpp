@@ -173,6 +173,29 @@ void contracts(std::shared_ptr<const WVStratifiedModalRecord> source) {
         require(engine->kernel().metrics().stateValidationCount==2,"New state reused validation");
     }
     require(bool(engine->setVariableEvaluationPolicy(WVVariableEvaluationPolicy::reuse)),"Default restoration failed");
+    auto transactionSchedule=schedule;
+    auto secondNonlinear=entry;
+    secondNonlinear.name="second nonlinear advection";
+    secondNonlinear.ordinal=1;
+    transactionSchedule.entries.push_back(std::move(secondNonlinear));
+    std::unique_ptr<WVHydrostaticForcingEngine> transactionEngine;
+    require(bool(WVHydrostaticForcingEngine::create(source,transactionSchedule,
+        catalog,std::make_unique<WVReferenceFFTEngine>(),transactionEngine)) &&
+        bool(transactionEngine->setVariableEvaluationPolicy(
+            WVVariableEvaluationPolicy::lowMemory)),
+        "Transactional policy fixture failed");
+    const auto lowPolicyBytes=transactionEngine->persistentBytes();
+    allocationProbe::failAfter=0;
+    status=transactionEngine->setVariableEvaluationPolicy(
+        WVVariableEvaluationPolicy::reuse);
+    allocationProbe::failAfter=-1;
+    require(status.code==WVKernelStatusCode::allocationFailure &&
+        transactionEngine->persistentBytes()==lowPolicyBytes &&
+        bool(transactionEngine->nonlinearFlux(state,flux)),
+        "Failed reuse preparation published caches or damaged low-memory evaluation");
+    require(bool(transactionEngine->setVariableEvaluationPolicy(
+        WVVariableEvaluationPolicy::reuse)),
+        "Transactional policy retry failed");
     // Adaptive damping consumes only the horizontal velocity pair.
     WVFrozenForcingSchedule dampingSchedule;
     dampingSchedule.entries.push_back({"WVAdaptiveDamping",1,"adaptive damping",WVForcingStage::spectral,255,0,"",{"wave-vortex-forcing-configuration-v1",1,{}}});

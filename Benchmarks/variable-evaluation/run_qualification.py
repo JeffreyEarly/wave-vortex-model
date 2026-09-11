@@ -8,6 +8,7 @@ for writing. Timing is meaningful only after the numerical comparisons pass.
 
 import argparse
 import copy
+import datetime
 import importlib.util
 import json
 import math
@@ -61,6 +62,7 @@ def main():
     warmups = 0 if args.smoke else 2
     helper.save(args.output / "protocol.json", {
         "kind": "correctness-smoke" if args.smoke else "performance-qualification",
+        "startedAtUTC": datetime.datetime.now(datetime.timezone.utc).isoformat(),
         "warmupPairs": warmups, "measuredPairs": measured_count,
         "order": "baseline/reuse/low-memory, reversed on alternate pairs",
         "numericalGate": "exact metadata and integration decisions; manifest scientific tolerances (zero by default)",
@@ -205,6 +207,7 @@ def main():
                    for path, digest in source_hashes.items())
         helper.save(args.output / "summary.json", {
             "qualified": not args.smoke and all(row["runtimePassed"] and row["lowMemoryPassed"] and not row["requiresRuntimeInvestigation"] for row in summaries),
+            "finishedAtUTC": datetime.datetime.now(datetime.timezone.utc).isoformat(),
             "allNumericalComparisonsPassed": True, "allIntegrationDecisionsIdentical": True,
             "postflightUnchanged": True,
             "profiles": summaries,
