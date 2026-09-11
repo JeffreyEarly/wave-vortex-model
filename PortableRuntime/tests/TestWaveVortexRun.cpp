@@ -301,11 +301,13 @@ int main() {
         }
         const auto output = directory/"output.nc";
         const auto report = directory/"report.json";
-        require(run(quote(input)+" "+quote(output)+" --delta-t 0.037 --steps 2 --fft-provider reference --report "+quote(report)) == 0,"runner step execution failed");
+        require(run(quote(input)+" "+quote(output)+" --delta-t 1e-5 --steps 2 --fft-provider reference --report "+quote(report)) == 0,"runner step execution failed");
         WVCheckpoint checkpoint;
         auto status = WVCheckpointReader::read(output.string(), *test::extensionCatalog(),checkpoint);
         require(static_cast<bool>(status),status.message);
-        require(checkpoint.state.t > 8.949 && checkpoint.state.t < 9.025,"runner did not advance the selected state");
+        require(checkpoint.state.t > 8.949 && checkpoint.state.t < 9.025 &&
+                    hasFiniteState(checkpoint),
+                "runner did not produce a finite advanced state");
         require(std::filesystem::file_size(report) > 0,"runner did not write its report");
         const auto reportText = text(report);
         requirePortableRunnerPolicy(reportText,"checkpoint route");
@@ -558,7 +560,7 @@ int main() {
         require(rk45ReportText.find("\"id\":\"adaptive-rk45\"") != std::string::npos && rk45ReportText.find("\"controller\":\"matlab-ode45-v1\"") != std::string::npos && rk45ReportText.find("\"workspaceStateEquivalentCount\":7") != std::string::npos && rk45ReportText.find("\"denseHistoryStateEquivalentCount\":0") != std::string::npos && rk45ReportText.find("\"buffer\":\"k2/k7\"") != std::string::npos && rk45ReportText.find("\"producer\":\"second-stage then endpoint right-hand side\"") != std::string::npos && rk45ReportText.find("\"integratorStorageLedger\":") != std::string::npos && rk45ReportText.find("\"byteLedgerAgreement\":true") != std::string::npos && rk45ReportText.find("\"sharedAbstractionStateSizedCopyCount\":0") != std::string::npos && rk45ReportText.find("\"diagnosticBytes\":") != std::string::npos,"adaptive RK45 runner report omitted method or exact memory diagnostics");
         const auto rk78Output = directory/"adaptive-rk78-output.nc";
         const auto rk78Report = directory/"adaptive-rk78-report.json";
-        require(run(quote(input)+" "+quote(rk78Output)+" --delta-t 0.037 --initial-step 0.02 --maximum-step 0.01 --steps 2 --integrator adaptive-rk78 --relative-tolerance 1e-3 --absolute-tolerance 1e-6 --fft-provider reference --report "+quote(rk78Report)) == 0,"adaptive RK78 runner execution failed");
+        require(run(quote(input)+" "+quote(rk78Output)+" --delta-t 0.037 --initial-step 1e-5 --maximum-step 1e-5 --steps 2 --integrator adaptive-rk78 --relative-tolerance 1e-3 --absolute-tolerance 1e-6 --fft-provider reference --report "+quote(rk78Report)) == 0,"adaptive RK78 runner execution failed");
         WVCheckpoint rk78Checkpoint;
         status = WVCheckpointReader::read(rk78Output.string(), *test::extensionCatalog(),rk78Checkpoint);
         require(static_cast<bool>(status) && rk78Checkpoint.state.t > checkpoint.state.t-0.074,"adaptive RK78 runner output is not readable or did not advance");
