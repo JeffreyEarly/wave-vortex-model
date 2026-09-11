@@ -66,15 +66,12 @@ WVKernelStatus WVHydrostaticForcingEngine::initialize(const WVFrozenForcingSched
     std::vector<const WVFrozenForcingEntry*> entries;
     for (const auto& e:schedule.entries) { entries.push_back(&e); preparation_.hasAdaptiveDamping|=catalog_->forcings().registration(e.typeIdentifier,e.contractVersion)->providesAdaptiveDamping; }
     for(const auto& e:schedule.entries) {
-        if(e.typeIdentifier=="WVHorizontalDamping")
-            for(const auto field:{0U,1U,3U}) for(std::size_t kind=0;kind<2;++kind)
-                ++gridCalculusUseCount_[4*field+kind];
-        if(e.typeIdentifier=="WVVerticalDamping") {
-            ++gridCalculusUseCount_[4*0+2]; ++gridCalculusUseCount_[4*1+2];
-            ++gridCalculusUseCount_[4*3+3];
-        }
-        if(e.typeIdentifier=="WVVerticalDiffusivity")
-            ++gridCalculusUseCount_[4*3+3];
+        const auto* registration=catalog_->forcings().registration(
+            e.typeIdentifier,e.contractVersion);
+        if(!registration) return invalid("Forcing evaluation dependencies are unavailable.");
+        for(std::size_t i=0;i<gridCalculusUseCount_.size();++i)
+            gridCalculusUseCount_[i]+=
+                registration->evaluationDependencies.hydrostaticGridCalculusUseCount[i];
     }
     for(const auto* entry:entries) {
         const auto& prepare=catalog_->forcings().registration(entry->typeIdentifier,entry->contractVersion)->prepareHydrostaticResolution;
@@ -453,6 +450,16 @@ WVKernelStatus WVHydrostaticForcingEngine::createErrorPolicy(double tolerance,st
 std::size_t WVHydrostaticForcingEngine::persistentBytes() const noexcept {
     return sizeof(*this)+evaluation_.persistentBytes()+(kernel_ ? kernel_->persistentBytes() : 0)+metrics_.scheduleBytes+metrics_.derivedOperatorBytes+metrics_.workspaceCapacityBytes;
 }
+
+const WVForcingEvaluationDependencies*
+WVHydrostaticForcingEngine::forcingEvaluationDependencies(
+    std::size_t index) const noexcept {
+    const auto* forcing=forcingInstance(index);
+    if(!forcing || !catalog_) return nullptr;
+    const auto* registration=catalog_->forcings().registration(
+        forcing->typeIdentifier(),forcing->contractVersion());
+    return registration ? &registration->evaluationDependencies : nullptr;
+}
 WVKernelStatus WVHydrostaticForcingEngine::evaluateForcingTendencies(
     const WVState& state,const WVForcingTendencyOutput* outputs,std::size_t count,
     const WVRealFieldBundleConstView* preparedPhysical,
@@ -476,9 +483,12 @@ WVKernelStatus WVHydrostaticForcingEngine::evaluateForcingTendencies(
             local->gridCalculusUseCount=gridCalculusUseCount_;
             std::vector<WVForcingStage> stages;
             local->nonlinearUseCount=0;
-            for(const auto& forcing:forcing_) {
+            for(std::size_t index=0;index<forcing_.size();++index) {
+                const auto& forcing=forcing_[index];
                 stages.push_back(forcing->stage());
-                local->nonlinearUseCount+=forcing->typeIdentifier()=="WVNonlinearAdvection";
+                const auto* dependencies=forcingEvaluationDependencies(index);
+                if(!dependencies) return invalid("Forcing evaluation dependencies are unavailable.");
+                local->nonlinearUseCount+=dependencies->nonlinearUseCount;
             }
             status=localLedger.context.prepare(detail::WVForcingDiagnosticWorkspace::dependencyKeys(
                 forcing_.size(),&gridCalculusUseCount_));

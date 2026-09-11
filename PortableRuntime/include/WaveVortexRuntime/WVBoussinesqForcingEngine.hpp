@@ -14,6 +14,8 @@ public:
     const WVForcing* forcingInstance(std::size_t index) const noexcept {
         return index<forcing_.size() ? forcing_[index].get() : nullptr;
     }
+    const WVForcingEvaluationDependencies*
+    forcingEvaluationDependencies(std::size_t index) const noexcept;
     // Optional u/v/w/eta fields must describe this exact state and time.
     // They are borrowed for this invocation and must not alias state or outputs.
     WVKernelStatus evaluateForcingTendencies(const WVState&,

@@ -1,4 +1,5 @@
 #pragma once
+#include "WaveVortexRuntime/WVForcingContracts.hpp"
 #include "WaveVortexRuntime/WVForcingTendency.hpp"
 #include "WaveVortexRuntime/WVForcing.hpp"
 #include "WaveVortexRuntime/WVPortableVariablePlan.hpp"
@@ -45,43 +46,27 @@ public:
       bool prefixQualified=true,physicalNeeded=false;
       for(std::size_t index=0;index<engine.forcingCount();++index) {
         const auto* instance=engine.forcingInstance(index);
-        if(instance->typeIdentifier()=="WVNonlinearAdvection")
-          ++candidate->nonlinearUseCount_;
-        if(instance->typeIdentifier()=="WVAdaptiveDamping")
-          candidate->horizontalMaximumNeeded_=true;
+        const auto* dependencies=engine.forcingEvaluationDependencies(index);
+        if(!dependencies)
+          return {WVKernelStatusCode::invalidConfiguration,
+              "Forcing evaluation dependencies are unavailable."};
+        candidate->nonlinearUseCount_+=dependencies->nonlinearUseCount;
+        candidate->horizontalMaximumNeeded_|=dependencies->horizontalMaximumNeeded;
         if constexpr(std::is_same_v<Engine,
             WVConstantStratificationForcingEngine>) {
-          if(instance->typeIdentifier()=="WVHorizontalDamping")
-            ++candidate->constantLaplacianUseCount_[0];
-          if(instance->typeIdentifier()=="WVVerticalDamping" ||
-              instance->typeIdentifier()=="WVVerticalDiffusivity")
-            ++candidate->constantLaplacianUseCount_[1];
+          for(std::size_t i=0;i<candidate->constantLaplacianUseCount_.size();++i)
+            candidate->constantLaplacianUseCount_[i]+=
+                dependencies->constantLaplacianUseCount[i];
         } else if constexpr(std::is_same_v<Engine,
             WVHydrostaticForcingEngine>) {
-          if(instance->typeIdentifier()=="WVHorizontalDamping")
-            for(const auto field:{0U,1U,3U}) for(std::size_t kind=0;kind<2;++kind)
-              ++candidate->gridCalculusUseCount_[4*field+kind];
-          if(instance->typeIdentifier()=="WVVerticalDamping") {
-            ++candidate->gridCalculusUseCount_[4*0+2];
-            ++candidate->gridCalculusUseCount_[4*1+2];
-            ++candidate->gridCalculusUseCount_[4*3+3];
-          }
-          if(instance->typeIdentifier()=="WVVerticalDiffusivity")
-            ++candidate->gridCalculusUseCount_[4*3+3];
+          for(std::size_t i=0;i<candidate->gridCalculusUseCount_.size();++i)
+            candidate->gridCalculusUseCount_[i]+=
+                dependencies->hydrostaticGridCalculusUseCount[i];
         } else if constexpr(std::is_same_v<Engine,
             WVBoussinesqForcingEngine>) {
-          if(instance->typeIdentifier()=="WVHorizontalDamping")
-            for(std::size_t field=0;field<4;++field)
-              for(std::size_t kind=0;kind<2;++kind)
-                ++candidate->gridCalculusUseCount_[4*field+kind];
-          if(instance->typeIdentifier()=="WVVerticalDamping") {
-            ++candidate->gridCalculusUseCount_[4*0+2];
-            ++candidate->gridCalculusUseCount_[4*1+2];
-            ++candidate->gridCalculusUseCount_[4*2+3];
-            ++candidate->gridCalculusUseCount_[4*3+3];
-          }
-          if(instance->typeIdentifier()=="WVVerticalDiffusivity")
-            ++candidate->gridCalculusUseCount_[4*3+3];
+          for(std::size_t i=0;i<candidate->gridCalculusUseCount_.size();++i)
+            candidate->gridCalculusUseCount_[i]+=
+                dependencies->boussinesqGridCalculusUseCount[i];
         }
         if(instance->ordinal()>std::numeric_limits<std::uint32_t>::max())
           return {WVKernelStatusCode::invalidConfiguration,"Forcing instance ordinal exceeds the graph contract."};

@@ -655,6 +655,16 @@ void WVBarotropicQGForcingExecutionContext::zeroSelectedTendencies(
 
 WVBarotropicQGForcingEngine::~WVBarotropicQGForcingEngine() = default;
 
+const WVForcingEvaluationDependencies*
+WVBarotropicQGForcingEngine::forcingEvaluationDependencies(
+    std::size_t index) const noexcept {
+  const auto* forcing=forcingInstance(index);
+  if(!forcing || !catalog_) return nullptr;
+  const auto* registration=catalog_->forcings().registration(
+      forcing->typeIdentifier(),forcing->contractVersion());
+  return registration ? &registration->evaluationDependencies : nullptr;
+}
+
 WVKernelStatus WVBarotropicQGForcingEngine::validateSchedule(
     const WVTransformBarotropicQGConfiguration &configuration,
     const WVFrozenForcingSchedule &schedule, std::size_t coefficientCount,
@@ -1003,9 +1013,13 @@ WVKernelStatus WVBarotropicQGForcingEngine::evaluateForcingTendencies(
       local=std::make_unique<detail::WVForcingDiagnosticWorkspace>(spectral,spatial,1,2);
       std::vector<WVForcingStage> stages;
       local->nonlinearUseCount=0;
-      for(const auto& forcing:forcing_) {
+      for(std::size_t index=0;index<forcing_.size();++index) {
+        const auto& forcing=forcing_[index];
         stages.push_back(forcing->stage());
-        local->nonlinearUseCount+=forcing->typeIdentifier()=="WVNonlinearAdvection";
+        const auto* dependencies=forcingEvaluationDependencies(index);
+        if(!dependencies) return {WVKernelStatusCode::invalidConfiguration,
+            "Forcing evaluation dependencies are unavailable."};
+        local->nonlinearUseCount+=dependencies->nonlinearUseCount;
       }
       status=localLedger.context.prepare(
           detail::WVForcingDiagnosticWorkspace::dependencyKeys(forcing_.size()));

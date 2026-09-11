@@ -1057,6 +1057,16 @@ WVKernelStatus createBoussinesqExplicitAntialiasing(const WVFrozenForcingEntry& 
 
 WVConstantStratificationForcingEngine::~WVConstantStratificationForcingEngine() = default;
 
+const WVForcingEvaluationDependencies*
+WVConstantStratificationForcingEngine::forcingEvaluationDependencies(
+    std::size_t index) const noexcept {
+    const auto* forcing=forcingInstance(index);
+    if(!forcing || !catalog_) return nullptr;
+    const auto* registration=catalog_->forcings().registration(
+        forcing->typeIdentifier(),forcing->contractVersion());
+    return registration ? &registration->evaluationDependencies : nullptr;
+}
+
 WVKernelStatus WVConstantStratificationForcingEngine::validateSchedule(
     const WVTransformConstantStratificationConfiguration& configuration,
     const WVFrozenForcingSchedule& schedule,
@@ -1117,11 +1127,13 @@ WVKernelStatus WVConstantStratificationForcingEngine::initialize(const WVFrozenF
     entries.reserve(schedule.entries.size());
     for (const auto& entry : schedule.entries) entries.push_back(&entry);
     for(const auto& entry:schedule.entries) {
-        if(entry.typeIdentifier=="WVHorizontalDamping")
-            ++constantLaplacianUseCount_[0];
-        if(entry.typeIdentifier=="WVVerticalDamping" ||
-            entry.typeIdentifier=="WVVerticalDiffusivity")
-            ++constantLaplacianUseCount_[1];
+        const auto* registration=catalog_->forcings().registration(
+            entry.typeIdentifier,entry.contractVersion);
+        if(!registration) return {WVKernelStatusCode::invalidConfiguration,
+            "Forcing evaluation dependencies are unavailable."};
+        for(std::size_t i=0;i<constantLaplacianUseCount_.size();++i)
+            constantLaplacianUseCount_[i]+=
+                registration->evaluationDependencies.constantLaplacianUseCount[i];
     }
     std::stable_sort(entries.begin(),entries.end(),[](const auto* left,const auto* right) {
         if (stageRank(left->stage) != stageRank(right->stage)) return stageRank(left->stage) < stageRank(right->stage);
@@ -1597,9 +1609,13 @@ WVKernelStatus WVConstantStratificationForcingEngine::evaluateForcingTendencies(
             local->requiresFourChannelTendencySelection=c.isHydrostatic;
             std::vector<WVForcingStage> stages;
             local->nonlinearUseCount=0;
-            for(const auto& forcing:forcing_) {
+            for(std::size_t index=0;index<forcing_.size();++index) {
+                const auto& forcing=forcing_[index];
                 stages.push_back(forcing->stage());
-                local->nonlinearUseCount+=forcing->typeIdentifier()=="WVNonlinearAdvection";
+                const auto* dependencies=forcingEvaluationDependencies(index);
+                if(!dependencies) return {WVKernelStatusCode::invalidConfiguration,
+                    "Forcing evaluation dependencies are unavailable."};
+                local->nonlinearUseCount+=dependencies->nonlinearUseCount;
             }
             status=localLedger.context.prepare(detail::WVForcingDiagnosticWorkspace::dependencyKeys(
                 forcing_.size(),nullptr,&constantLaplacianUseCount_));

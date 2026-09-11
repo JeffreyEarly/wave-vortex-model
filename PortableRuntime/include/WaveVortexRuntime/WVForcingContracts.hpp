@@ -9,6 +9,8 @@
 #include "WaveVortexKernel/WVTransformBoussinesqKernel.hpp"
 
 #include <cstdint>
+#include <array>
+#include <cstddef>
 #include <functional>
 #include <memory>
 #include <string>
@@ -74,6 +76,18 @@ using WVStratifiedQGForcingFactory = std::function<WVKernelStatus(
 using WVHydrostaticForcingFactory = std::function<WVKernelStatus(const WVFrozenForcingEntry&, WVTransformHydrostaticKernel&, const WVForcingPreparation&, std::unique_ptr<WVForcing>&)>;
 using WVBoussinesqForcingFactory = std::function<WVKernelStatus(const WVFrozenForcingEntry&, WVTransformBoussinesqKernel&, const WVForcingPreparation&, std::unique_ptr<WVForcing>&)>;
 
+// Data-only evaluation requirements declared by each forcing registration.
+// Constant Laplacian entries are [horizontal, vertical]. Variable-
+// stratification grid-calculus entries are [field*4+kind], with fields
+// [u,v,w,eta] and kinds [Dxx,Dyy,F-Dzz,G-Dzz].
+struct WVForcingEvaluationDependencies {
+  std::size_t nonlinearUseCount = 0;
+  bool horizontalMaximumNeeded = false;
+  std::array<std::size_t, 2> constantLaplacianUseCount{};
+  std::array<std::size_t, 16> hydrostaticGridCalculusUseCount{};
+  std::array<std::size_t, 16> boussinesqGridCalculusUseCount{};
+};
+
 struct WVForcingFactoryRegistration {
   std::string matlabClassName;
   std::uint32_t contractVersion = WVPortablePairContractVersion;
@@ -107,6 +121,7 @@ struct WVForcingFactoryRegistration {
       prepareBoussinesqResolution = {};
   // Data-only diagnostic metadata may be resolved before creating FFT plans.
   bool supportsTendencyDiagnostics = false;
+  WVForcingEvaluationDependencies evaluationDependencies = {};
 };
 
 std::vector<WVForcingFactoryRegistration> builtInForcingFactories();
