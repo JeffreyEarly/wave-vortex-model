@@ -342,6 +342,51 @@ void testNumerics(std::size_t Nx, std::size_t Ny,
                 relativeError(spatialEnstrophy, spectralEnstrophy) < tolerance,
             "spectral/spatial invariant parity");
 
+    WVBarotropicQGOperationWorkspace adaptiveWorkspace;
+    double preparedMaximum=0.0,reusedMaximum=0.0,expectedMaximum=0.0;
+    for (std::size_t index=0;index<u.size();++index)
+        expectedMaximum=std::max(expectedMaximum,
+            std::sqrt(u[index]*u[index]+v[index]*v[index]));
+    const auto reductionsBefore=kernel->metrics().horizontalSpeedMaximumReductionCount;
+    require(bool(kernel->horizontalSpeedMaximum(input,preparedMaximum,adaptiveWorkspace)) &&
+                bool(kernel->horizontalSpeedMaximum(input,reusedMaximum,adaptiveWorkspace)),
+            "prepared horizontal speed maximum");
+    std::vector<double> adaptiveOperator(kernel->descriptor().Nkl(),0.125);
+    std::fill(actualFlux.begin(),actualFlux.end(),WVComplex64{});
+    require(bool(kernel->addAdaptiveDamping(input,adaptiveOperator,fluxView,false,adaptiveWorkspace)),
+            "adaptive damping with prepared maximum");
+    require(preparedMaximum==reusedMaximum &&
+                relativeError(preparedMaximum,expectedMaximum)<tolerance &&
+                kernel->metrics().horizontalSpeedMaximumReductionCount==reductionsBefore+1,
+            "adaptive damping repeated or changed the speed reduction");
+    for (std::size_t index=0;index<actualFlux.size();++index) {
+        const auto scale=preparedMaximum*adaptiveOperator[index];
+        require(actualFlux[index].real==A0[index].real*scale &&
+                    actualFlux[index].imag==A0[index].imag*scale,
+                "adaptive damping changed after prepared reduction reuse");
+    }
+
+    const auto validationBeforeScope=kernel->metrics().stateValidationCount;
+    auto mutableInputStorage=A0;
+    WVComplexConstView scopedInput{mutableInputStorage.data(),kernel->descriptor().spectralShape()};
+    WVComplexView mutableInput{mutableInputStorage.data(),kernel->descriptor().spectralShape()};
+    int evaluationOwner=0;
+    require(bool(kernel->beginStateEvaluation(scopedInput,&evaluationOwner)),"begin Barotropic QG state evaluation");
+    require(kernel->evolveA0(scopedInput,817.0,mutableInput).code==WVKernelStatusCode::overlappingArrays,
+        "scoped Barotropic evolution mutated the active immutable state");
+    std::size_t modified=0;
+    require(kernel->constrainA0(mutableInput,modified).code==WVKernelStatusCode::overlappingArrays,
+        "scoped Barotropic constraint mutated the active immutable state");
+    auto registered=A0;
+    WVComplexConstView registeredView{registered.data(),kernel->descriptor().spectralShape()};
+    require(bool(kernel->addStateEvaluationView(registeredView,&evaluationOwner)),"register Barotropic QG state view");
+    std::vector<double> registeredField(Nx*Ny);
+    WVRealView registeredFieldView{registeredField.data(),kernel->descriptor().spatialShape()};
+    require(bool(kernel->transformA0ToField(registeredView,WVBarotropicQGField::u,registeredFieldView)),
+        "registered Barotropic QG state view was rejected");
+    require(kernel->metrics().stateValidationCount==validationBeforeScope+2,"Barotropic registered state view skipped validation");
+    require(bool(kernel->endStateEvaluation()),"end Barotropic QG state evaluation");
+
     std::vector<WVComplex64> evolved(A0.size());
     WVComplexView evolvedView{evolved.data(),
                               kernel->descriptor().spectralShape()};

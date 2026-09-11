@@ -161,6 +161,14 @@ WVKernelStatus WVTransformBoussinesqKernel::outputs(WVMutableCoefficients a) con
     s=disjoint(a.Ap.data,S_*sizeof(WVComplex64),a.A0.data,S_*sizeof(WVComplex64)); if (!s) return s;
     return disjoint(a.Am.data,S_*sizeof(WVComplex64),a.A0.data,S_*sizeof(WVComplex64));
 }
+WVKernelStatus WVTransformBoussinesqKernel::mutableOutputOutsidePreparedState(WVMutableCoefficients a) const {
+    if (!stateEvaluationActive_) return WVKernelStatus::ok();
+    for (const auto output:{a.Ap,a.Am,a.A0}) for (std::size_t stateIndex=0;stateIndex<preparedStateViewCount_;++stateIndex)
+        for (const auto input:{preparedStateViews_[stateIndex].coefficients.Ap,preparedStateViews_[stateIndex].coefficients.Am,preparedStateViews_[stateIndex].coefficients.A0})
+            if (overlap(output.data,S_*sizeof(WVComplex64),input.data,S_*sizeof(WVComplex64)))
+                return {WVKernelStatusCode::overlappingArrays,"Mutable coefficient output overlaps an active immutable boussinesq state view."};
+    return WVKernelStatus::ok();
+}
 WVKernelStatus WVTransformBoussinesqKernel::coefficients(const WVCoefficients& a) const {
     for (auto x : {a.Ap,a.Am,a.A0}) {
         auto s=spectral(x); if (!s) return s;
@@ -169,16 +177,142 @@ WVKernelStatus WVTransformBoussinesqKernel::coefficients(const WVCoefficients& a
     }
     return WVKernelStatus::ok();
 }
-WVKernelStatus WVTransformBoussinesqKernel::state(const WVState& a) const {
+WVKernelStatus WVTransformBoussinesqKernel::stateContents(const WVState& a) const {
     auto s=coefficients(a.coefficients); if (!s) return s;
     if (!std::isfinite(a.t) || !std::isfinite(a.t0) || !std::isfinite(a.t-a.t0)) return {WVKernelStatusCode::invalidConfiguration,"Nonfinite boussinesq time or elapsed time."};
     for (const auto& f:factors_) if (!std::isfinite(f.omega*(a.t-a.t0))) return {WVKernelStatusCode::numericalFailure,"Boussinesq phase overflow."};
     return WVKernelStatus::ok();
 }
+WVKernelStatus WVTransformBoussinesqKernel::state(const WVState& a) {
+    ++metrics_.stateValidationCount;
+    return stateContents(a);
+}
 WVKernelStatus WVTransformBoussinesqKernel::preparePhase(double t,double t0) {
     if (!std::isfinite(t) || !std::isfinite(t0) || !std::isfinite(t-t0)) return {WVKernelStatusCode::invalidConfiguration,"Nonfinite boussinesq time or elapsed time."};
     for (const auto& f:factors_) if (!std::isfinite(f.omega*(t-t0))) return {WVKernelStatusCode::numericalFailure,"Boussinesq phase overflow."};
+    ++metrics_.phasePreparationCount;
     for (std::size_t i=0;i<S_;++i) { const double a=factors_[i].omega*(t-t0); phase_[i]={std::cos(a),std::sin(a)}; }
+    return WVKernelStatus::ok();
+}
+bool WVTransformBoussinesqKernel::matchesStateEvaluation(const WVState& a) const noexcept {
+    const auto sameView=[](WVComplexConstView x,WVComplexConstView y) {
+        return x.data==y.data && x.shape.rows==y.shape.rows && x.shape.columns==y.shape.columns;
+    };
+    if (!stateEvaluationActive_ || a.t!=preparedState_.t || a.t0!=preparedState_.t0) return false;
+    for (std::size_t i=0;i<preparedStateViewCount_;++i) if (
+        sameView(a.coefficients.Ap,preparedStateViews_[i].coefficients.Ap) &&
+        sameView(a.coefficients.Am,preparedStateViews_[i].coefficients.Am) &&
+        sameView(a.coefficients.A0,preparedStateViews_[i].coefficients.A0)) return true;
+    return false;
+}
+WVKernelStatus WVTransformBoussinesqKernel::validateStateEvaluation(
+    const WVState& a) const noexcept {
+    if (!matchesStateEvaluation(a))
+        return {WVKernelStatusCode::invalidConfiguration,
+            "State does not belong to the active Boussinesq evaluation."};
+    return WVKernelStatus::ok();
+}
+std::size_t WVTransformBoussinesqKernel::stateEvaluationComponent(
+    const WVState& a) const noexcept {
+    const auto sameView=[](WVComplexConstView x,WVComplexConstView y) {
+        return x.data==y.data && x.shape.rows==y.shape.rows && x.shape.columns==y.shape.columns;
+    };
+    if (!stateEvaluationActive_) return 0;
+    for (std::size_t i=0;i<preparedStateViewCount_;++i) if (
+        sameView(a.coefficients.Ap,preparedStateViews_[i].coefficients.Ap) &&
+        sameView(a.coefficients.Am,preparedStateViews_[i].coefficients.Am) &&
+        sameView(a.coefficients.A0,preparedStateViews_[i].coefficients.A0))
+        return preparedStateComponents_[i];
+    return 0;
+}
+WVKernelStatus WVTransformBoussinesqKernel::validateStateForCall(const WVState& a) {
+    if (!stateEvaluationActive_) return state(a);
+    if (!matchesStateEvaluation(a))
+        return {WVKernelStatusCode::invalidConfiguration,"State does not match the active Boussinesq evaluation."};
+    return WVKernelStatus::ok();
+}
+WVKernelStatus WVTransformBoussinesqKernel::preparePhaseForCall(const WVState& a) {
+    if (stateEvaluationActive_) {
+        if (!matchesStateEvaluation(a))
+            return {WVKernelStatusCode::invalidConfiguration,"State does not match the active Boussinesq evaluation."};
+        return WVKernelStatus::ok();
+    }
+    return preparePhase(a.t,a.t0);
+}
+WVKernelStatus WVTransformBoussinesqKernel::prepareProjectionPhaseForCall(double t,double t0) {
+    if (stateEvaluationActive_) {
+        if (t!=preparedState_.t || t0!=preparedState_.t0)
+            return {WVKernelStatusCode::invalidConfiguration,"Projection time does not match the active Boussinesq evaluation."};
+        return WVKernelStatus::ok();
+    }
+    return preparePhase(t,t0);
+}
+WVKernelStatus WVTransformBoussinesqKernel::beginStateEvaluation(const WVState& a) {
+    return beginStateEvaluation(a,nullptr);
+}
+WVKernelStatus WVTransformBoussinesqKernel::beginStateEvaluation(const WVState& a,const void* evaluationOwner) {
+    ActiveCall guard(active_); if (!guard.entered) return reentrant();
+    if (stateEvaluationActive_)
+        return {WVKernelStatusCode::reentrantExecution,"Boussinesq state evaluation is already active."};
+    auto s=state(a); if (!s) return s;
+    s=preparePhase(a.t,a.t0); if (!s) return s;
+    preparedState_=a;
+    preparedStateViews_[0]=a;
+    preparedStateComponents_[0]=0;
+    preparedStateViewCount_=1;
+    preparedStateOwner_=evaluationOwner;
+    stateEvaluationActive_=true;
+    return WVKernelStatus::ok();
+}
+WVKernelStatus WVTransformBoussinesqKernel::addStateEvaluationView(
+    const WVState& a,const void* evaluationOwner,std::size_t componentIdentity) {
+    ActiveCall guard(active_); if (!guard.entered) return reentrant();
+    if (!stateEvaluationActive_)
+        return {WVKernelStatusCode::invalidConfiguration,"No boussinesq state evaluation is active."};
+    if (evaluationOwner==nullptr || evaluationOwner!=preparedStateOwner_)
+        return {WVKernelStatusCode::invalidConfiguration,"Boussinesq state view owner does not match the active evaluation."};
+    if (a.t!=preparedState_.t || a.t0!=preparedState_.t0)
+        return {WVKernelStatusCode::invalidConfiguration,"Additional boussinesq state view must use the active evaluation times."};
+    if (componentIdentity>=5)
+        return {WVKernelStatusCode::invalidConfiguration,"Boussinesq component identity is out of range."};
+    if (matchesStateEvaluation(a))
+        return stateEvaluationComponent(a)==componentIdentity ? WVKernelStatus::ok() :
+            WVKernelStatus{WVKernelStatusCode::invalidConfiguration,
+                "Boussinesq state view is already registered with another component identity."};
+    if (preparedStateViewCount_==preparedStateViews_.size())
+        return {WVKernelStatusCode::invalidConfiguration,"Boussinesq state evaluation view capacity exceeded."};
+    auto s=state(a); if (!s) return s;
+    preparedStateViews_[preparedStateViewCount_]=a;
+    preparedStateComponents_[preparedStateViewCount_++]=componentIdentity;
+    return WVKernelStatus::ok();
+}
+WVKernelStatus WVTransformBoussinesqKernel::endStateEvaluation() {
+    ActiveCall guard(active_); if (!guard.entered) return reentrant();
+    if (!stateEvaluationActive_)
+        return {WVKernelStatusCode::invalidConfiguration,"No Boussinesq state evaluation is active."};
+    preparedState_={};
+    for (auto& stateView:preparedStateViews_) stateView={};
+    preparedStateComponents_={};
+    preparedStateViewCount_=0;
+    preparedStateOwner_=nullptr;
+    stateEvaluationActive_=false;
+    return WVKernelStatus::ok();
+}
+WVKernelStatus WVTransformBoussinesqKernel::validateFluxOutput(const WVState& a,const WVFlux& b) {
+    auto s=validateStateForCall(a); if (!s) return s;
+    WVMutableCoefficients target{b.Fp,b.Fm,b.F0}; s=outputs(target); if (!s) return s;
+    for (auto inputView : {a.coefficients.Ap,a.coefficients.Am,a.coefficients.A0})
+        for (auto outputView : {b.Fp,b.Fm,b.F0}) {
+            s=disjoint(inputView.data,S_*sizeof(WVComplex64),outputView.data,S_*sizeof(WVComplex64)); if (!s) return s;
+        }
+    return WVKernelStatus::ok();
+}
+WVKernelStatus WVTransformBoussinesqKernel::preparedPhase(const WVState& a,WVComplexConstView& result) {
+    result={};
+    auto s=validateStateForCall(a); if (!s) return s;
+    ActiveCall guard(active_); if (!guard.entered) return reentrant();
+    s=preparePhaseForCall(a); if (!s) return s;
+    result={phase_.data(),spectralShape()};
     return WVKernelStatus::ok();
 }
 WVComplexOutput WVTransformBoussinesqKernel::modalView(std::size_t slot) { return spectralStorage_->output(slot*S_,S_); }
@@ -256,29 +390,36 @@ WVKernelStatus WVTransformBoussinesqKernel::projectSpectralFields(WVComplexInput
     return WVKernelStatus::ok();
 }
 WVKernelStatus WVTransformBoussinesqKernel::transformUVEtaToWaveVortex(WVRealVolumeConstView u,WVRealVolumeConstView v,WVRealVolumeConstView eta,double t,double t0,WVMutableCoefficients b) {
-    auto s=outputs(b); if (!s) return s;
+    auto s=outputs(b); if (!s) return s; s=mutableOutputOutsidePreparedState(b); if (!s) return s;
     for (auto a : {u,v,eta}) { s=volume(a); if (!s) return s; for (auto out : {b.Ap,b.Am,b.A0}) { s=disjoint(a.data,R_*sizeof(double),out.data,S_*sizeof(WVComplex64)); if (!s) return s; } }
     ActiveCall guard(active_); if (!guard.entered) return reentrant();
-    s=preparePhase(t,t0); if (!s) return s;
+    s=prepareProjectionPhaseForCall(t,t0); if (!s) return s;
     return projectFields(u.data,v.data,nullptr,eta.data,b);
 }
 
 WVKernelStatus WVTransformBoussinesqKernel::transformUVWEtaToWaveVortex(WVRealVolumeConstView u,WVRealVolumeConstView v,WVRealVolumeConstView w,WVRealVolumeConstView eta,double t,double t0,WVMutableCoefficients b) {
-    auto s=outputs(b); if (!s) return s;
+    auto s=outputs(b); if (!s) return s; s=mutableOutputOutsidePreparedState(b); if (!s) return s;
     for (auto a:{u,v,w,eta}) { s=volume(a); if (!s) return s; for (auto out:{b.Ap,b.Am,b.A0}) { s=disjoint(a.data,R_*sizeof(double),out.data,S_*sizeof(WVComplex64)); if (!s) return s; } }
     ActiveCall guard(active_); if (!guard.entered) return reentrant();
-    s=preparePhase(t,t0); if (!s) return s;
+    s=prepareProjectionPhaseForCall(t,t0); if (!s) return s;
     return projectFields(u.data,v.data,w.data,eta.data,b);
 }
 
 WVKernelStatus WVTransformBoussinesqKernel::reconstruct(const WVCoefficients& a,WVBoussinesqField field,
-    WVBoussinesqDerivative derivative,WVBoussinesqComponent component,double* b) {
+    WVBoussinesqDerivative derivative,WVBoussinesqComponent component,double* b,bool countPrimary,
+    std::size_t metricComponent) {
+    if (countPrimary) {
+        if (metricComponent>=5) metricComponent=static_cast<std::size_t>(component);
+        ++metrics_.fieldReconstructionCount[static_cast<std::size_t>(field)];
+        ++metrics_.reconstructionCount[static_cast<std::size_t>(field)]
+            [static_cast<std::size_t>(derivative)][metricComponent];
+    }
     const auto& g=geometry();
     if (field==WVBoussinesqField::zetaX || field==WVBoussinesqField::zetaY) {
         const bool x=field==WVBoussinesqField::zetaX;
-        auto s=reconstruct(a,x ? WVBoussinesqField::w : WVBoussinesqField::u,x ? WVBoussinesqDerivative::y : WVBoussinesqDerivative::z,component,b); if (!s) return s;
+        auto s=reconstruct(a,x ? WVBoussinesqField::w : WVBoussinesqField::u,x ? WVBoussinesqDerivative::y : WVBoussinesqDerivative::z,component,b,countPrimary,metricComponent); if (!s) return s;
         auto* auxiliary=real_.data()+(executionOptions_.streamedNonlinear ? 5 : 8)*R_;
-        s=reconstruct(a,x ? WVBoussinesqField::v : WVBoussinesqField::w,x ? WVBoussinesqDerivative::z : WVBoussinesqDerivative::x,component,auxiliary); if (!s) return s;
+        s=reconstruct(a,x ? WVBoussinesqField::v : WVBoussinesqField::w,x ? WVBoussinesqDerivative::z : WVBoussinesqDerivative::x,component,auxiliary,countPrimary,metricComponent); if (!s) return s;
         for (std::size_t i=0;i<R_;++i) b[i]-=auxiliary[i];
         return WVKernelStatus::ok();
     }
@@ -325,7 +466,7 @@ WVKernelStatus WVTransformBoussinesqKernel::reconstruct(const WVCoefficients& a,
     if (dz) { s=verticalCalculus(b,G ? WVBoussinesqFamily::G : WVBoussinesqFamily::F,1,false,b); if (!s) return s; }
     if (density) {
         const double* eta=nullptr;
-        if (dz) { auto* auxiliary=real_.data()+(executionOptions_.streamedNonlinear ? 5 : 8)*R_; s=reconstruct(a,WVBoussinesqField::eta,WVBoussinesqDerivative::value,component,auxiliary); if (!s) return s; eta=auxiliary; }
+        if (dz) { auto* auxiliary=real_.data()+(executionOptions_.streamedNonlinear ? 5 : 8)*R_; s=reconstruct(a,WVBoussinesqField::eta,WVBoussinesqDerivative::value,component,auxiliary,countPrimary,metricComponent); if (!s) return s; eta=auxiliary; }
         const auto plane=R_/g.Nz;
         for (std::size_t z=0;z<g.Nz;++z) for (std::size_t xy=0;xy<plane;++xy) {
             const auto i=xy+plane*z;
@@ -340,31 +481,92 @@ WVKernelStatus WVTransformBoussinesqKernel::transformStateField(const WVState& a
     if (field<WVBoussinesqField::u || field>WVBoussinesqField::ssv || derivative<WVBoussinesqDerivative::value || derivative>WVBoussinesqDerivative::z || !valid(component) ||
         ((field==WVBoussinesqField::zetaX || field==WVBoussinesqField::zetaY) && derivative!=WVBoussinesqDerivative::value) ||
         (field==WVBoussinesqField::rhoTotal && component!=WVBoussinesqComponent::all)) return unsupported();
-    auto s=state(a); if (!s) return s; s=volume({b.data,b.shape},surface(field)); if (!s) return s;
+    auto s=validateStateForCall(a); if (!s) return s; s=volume({b.data,b.shape},surface(field)); if (!s) return s;
     const auto bytes=(surface(field) ? R_/geometry().Nz : R_)*sizeof(double);
     for (auto x : {a.coefficients.Ap,a.coefficients.Am,a.coefficients.A0}) { s=disjoint(x.data,S_*sizeof(WVComplex64),b.data,bytes); if (!s) return s; }
     ActiveCall guard(active_); if (!guard.entered) return reentrant();
-    s=preparePhase(a.t,a.t0); if (!s) return s;
+    s=preparePhaseForCall(a); if (!s) return s;
     auto* fullField=real_.data()+(executionOptions_.streamedNonlinear ? 5 : 9)*R_;
-    s=reconstruct(a.coefficients,field,derivative,component,surface(field) ? fullField : b.data); if (!s) return s;
+    const auto metricComponent=component==WVBoussinesqComponent::all ?
+        stateEvaluationComponent(a) : static_cast<std::size_t>(component);
+    s=reconstruct(a.coefficients,field,derivative,component,
+        surface(field) ? fullField : b.data,true,metricComponent); if (!s) return s;
     if (surface(field)) { const auto plane=R_/geometry().Nz; std::copy_n(fullField+R_-plane,plane,b.data); }
     return WVKernelStatus::ok();
 }
+WVKernelStatus WVTransformBoussinesqKernel::transformCoefficientTendencyToUVWEta(
+    const WVState& a,WVRealFieldBundleView& fields) {
+    const auto& g=geometry();
+    if (fields.shape.first!=g.Nx || fields.shape.second!=g.Ny ||
+        fields.shape.third!=g.Nz || fields.shape.fourth!=4)
+        return {WVKernelStatusCode::invalidShape,"Coefficient tendency requires [Nx,Ny,Nz,4] fields."};
+    ++metrics_.derivedValidationCount;
+    auto status=stateContents(a); if (!status) return status;
+    const auto bytes=4*R_*sizeof(double);
+    if (!addressFits(fields.data,bytes,alignof(double)))
+        return {WVKernelStatusCode::invalidPointer,"Invalid coefficient tendency field storage."};
+    for (const auto input:{a.coefficients.Ap,a.coefficients.Am,a.coefficients.A0}) {
+        status=disjoint(input.data,S_*sizeof(WVComplex64),fields.data,bytes);
+        if (!status) return status;
+    }
+    ActiveCall guard(active_); if (!guard.entered) return reentrant();
+    status=prepareProjectionPhaseForCall(a.t,a.t0); if (!status) return status;
+    const WVBoussinesqField names[]={WVBoussinesqField::u,WVBoussinesqField::v,
+        WVBoussinesqField::w,WVBoussinesqField::eta};
+    for (std::size_t channel=0;channel<4;++channel) {
+        status=reconstruct(a.coefficients,names[channel],WVBoussinesqDerivative::value,
+            WVBoussinesqComponent::all,fields.data+channel*R_,false);
+        if (!status) return status;
+        ++metrics_.tendencyReconstructionCount[channel];
+    }
+    return WVKernelStatus::ok();
+}
+WVKernelStatus WVTransformBoussinesqKernel::combinePreparedHorizontalVorticity(
+    WVBoussinesqField field,WVRealVolumeConstView first,WVRealVolumeConstView second,
+    WVRealVolumeView output) const {
+    if (field!=WVBoussinesqField::zetaX && field!=WVBoussinesqField::zetaY)
+        return unsupported();
+    auto status=volume(first); if (!status) return status;
+    status=volume(second); if (!status) return status;
+    status=volume({output.data,output.shape}); if (!status) return status;
+    status=disjoint(first.data,R_*sizeof(double),output.data,R_*sizeof(double)); if (!status) return status;
+    status=disjoint(second.data,R_*sizeof(double),output.data,R_*sizeof(double)); if (!status) return status;
+    for (std::size_t i=0;i<R_;++i) output.data[i]=first.data[i]-second.data[i];
+    return WVKernelStatus::ok();
+}
+WVKernelStatus WVTransformBoussinesqKernel::combinePreparedDensityZDerivative(
+    WVBoussinesqField field,WVRealVolumeConstView etaZ,WVRealVolumeConstView eta,
+    WVRealVolumeView output) const {
+    if (field!=WVBoussinesqField::rhoE && field!=WVBoussinesqField::rhoTotal)
+        return unsupported();
+    auto status=volume(etaZ); if (!status) return status;
+    status=volume(eta); if (!status) return status;
+    status=volume({output.data,output.shape}); if (!status) return status;
+    status=disjoint(etaZ.data,R_*sizeof(double),output.data,R_*sizeof(double)); if (!status) return status;
+    status=disjoint(eta.data,R_*sizeof(double),output.data,R_*sizeof(double)); if (!status) return status;
+    const auto& g=geometry(); const auto plane=R_/g.Nz;
+    for (std::size_t z=0;z<g.Nz;++z) for (std::size_t xy=0;xy<plane;++xy) {
+        const auto i=xy+plane*z; const double scale=(g.rho0/g.g)*g.N2[z];
+        output.data[i]=scale*(etaZ.data[i]+g.dLnN2[z]*eta.data[i]);
+        if (field==WVBoussinesqField::rhoTotal) output.data[i]-=scale;
+    }
+    return WVKernelStatus::ok();
+}
 WVKernelStatus WVTransformBoussinesqKernel::evolveCoefficients(const WVState& a,WVMutableCoefficients b) {
-    auto s=state(a); if (!s) return s; s=outputs(b); if (!s) return s;
+    auto s=validateStateForCall(a); if (!s) return s; s=outputs(b); if (!s) return s; s=mutableOutputOutsidePreparedState(b); if (!s) return s;
     const WVComplexConstView inputs[]={a.coefficients.Ap,a.coefficients.Am,a.coefficients.A0}; const WVComplexView targets[]={b.Ap,b.Am,b.A0};
     for (std::size_t i=0;i<3;++i) for (std::size_t j=0;j<3;++j) if (i!=j || inputs[i].data!=targets[j].data) {
         s=disjoint(inputs[i].data,S_*sizeof(WVComplex64),targets[j].data,S_*sizeof(WVComplex64)); if (!s) return s;
     }
     ActiveCall guard(active_); if (!guard.entered) return reentrant();
-    s=preparePhase(a.t,a.t0); if (!s) return s;
+    s=preparePhaseForCall(a); if (!s) return s;
     for (std::size_t i=0;i<S_;++i) {
         b.Ap.data[i]=multiply(a.coefficients.Ap.data[i],phase_[i]); b.Am.data[i]=multiply(a.coefficients.Am.data[i],conjugate(phase_[i])); b.A0.data[i]=a.coefficients.A0.data[i];
     }
     return WVKernelStatus::ok();
 }
 WVKernelStatus WVTransformBoussinesqKernel::constrainCoefficients(WVMutableCoefficients a) const {
-    auto s=outputs(a); if (!s) return s; s=coefficients(view(a)); if (!s) return s;
+    auto s=outputs(a); if (!s) return s; s=coefficients(view(a)); if (!s) return s; s=mutableOutputOutsidePreparedState(a); if (!s) return s;
     for (std::size_t i=0;i<S_;++i) {
         const auto& f=factors_[i];
         if (!f.wave && !f.inertial) { a.Ap.data[i]={}; a.Am.data[i]={}; }
@@ -375,11 +577,11 @@ WVKernelStatus WVTransformBoussinesqKernel::constrainCoefficients(WVMutableCoeff
     return WVKernelStatus::ok();
 }
 WVKernelStatus WVTransformBoussinesqKernel::nonlinearFlux(const WVState& a,WVFlux& b,
-    WVRealFieldBundleView* spatialTendency,const WVRealFieldBundleConstView* preparedFields,bool projectFlux) {
+    WVRealFieldBundleView* spatialTendency,const WVRealFieldBundleConstView* preparedFields,
+    bool projectFlux,WVStateDerivativeAccess* derivativeAccess) {
     if (!projectFlux && !spatialTendency)
         return {WVKernelStatusCode::invalidConfiguration,"Spatial-only nonlinear evaluation requires output storage."};
-    auto s=state(a); if (!s) return s; WVMutableCoefficients target{b.Fp,b.Fm,b.F0}; s=outputs(target); if (!s) return s;
-    for (auto x : {a.coefficients.Ap,a.coefficients.Am,a.coefficients.A0}) for (auto y : {b.Fp,b.Fm,b.F0}) { s=disjoint(x.data,S_*sizeof(WVComplex64),y.data,S_*sizeof(WVComplex64)); if (!s) return s; }
+    auto s=validateFluxOutput(a,b); if (!s) return s; WVMutableCoefficients target{b.Fp,b.Fm,b.F0};
     const auto validateBundle = [&](const double* data,WVShape4D shape,std::size_t count) {
         if (shape.first!=geometry().Nx || shape.second!=geometry().Ny ||
             shape.third!=geometry().Nz || shape.fourth!=count)
@@ -409,8 +611,34 @@ WVKernelStatus WVTransformBoussinesqKernel::nonlinearFlux(const WVState& a,WVFlu
         }
     }
     ActiveCall guard(active_); if (!guard.entered) return reentrant();
-    s=preparePhase(a.t,a.t0); if (!s) return s;
+    s=preparePhaseForCall(a); if (!s) return s;
     const WVBoussinesqField fields[]={WVBoussinesqField::u,WVBoussinesqField::v,WVBoussinesqField::w,WVBoussinesqField::eta};
+    const auto derivativeFor=[&](WVBoussinesqField field,WVBoussinesqDerivative derivative,
+        double* scratch,const double*& values,const double* productOutput) {
+        WVRealVolumeConstView cached{};
+        if (derivativeAccess && derivativeAccess->lookup) {
+            auto status=derivativeAccess->lookup(derivativeAccess->context,
+                static_cast<std::size_t>(field),static_cast<std::size_t>(derivative),cached);
+            if (!status) return status;
+        }
+        if (cached.data) {
+            auto status=volume(cached); if (!status) return status;
+            status=disjoint(cached.data,R_*sizeof(double),productOutput,R_*sizeof(double));
+            if (!status) return status;
+            values=cached.data;
+            return WVKernelStatus::ok();
+        }
+        auto status=reconstruct(a.coefficients,field,derivative,
+            WVBoussinesqComponent::all,scratch); if (!status) return status;
+        if (derivativeAccess && derivativeAccess->capture) {
+            status=derivativeAccess->capture(derivativeAccess->context,
+                static_cast<std::size_t>(field),static_cast<std::size_t>(derivative),
+                {scratch,spatialShape()});
+            if (!status) return status;
+        }
+        values=scratch;
+        return WVKernelStatus::ok();
+    };
     const bool borrowed=executionOptions_.streamedNonlinear && preparedFields;
     const double* advectionFields=borrowed ? preparedFields->data : real_.data();
     if (executionOptions_.streamedNonlinear) {
@@ -423,12 +651,17 @@ WVKernelStatus WVTransformBoussinesqKernel::nonlinearFlux(const WVState& a,WVFlu
         for (std::size_t targetIndex=0;targetIndex<4;++targetIndex) {
             const auto field=targetFields[targetIndex]; const auto outputChannel=outputChannels[targetIndex];
             std::fill_n(flux,R_,0);
+            // These direct modal first derivatives are single-use nonlinear
+            // operands. Grid Laplacians intentionally use sequential horizontal
+            // calculus or the order-two vertical operator from retained values.
             for (std::size_t axis=0;axis<3;++axis) {
-                s=reconstruct(a.coefficients,field,static_cast<WVBoussinesqDerivative>(axis+1),WVBoussinesqComponent::all,derivative); if (!s) return s;
+                const double* derivativeValues=nullptr;
+                s=derivativeFor(field,static_cast<WVBoussinesqDerivative>(axis+1),
+                    derivative,derivativeValues,flux); if (!s) return s;
                 pointwise_->execute(R_,[&](std::size_t begin,std::size_t end) {
                     for (std::size_t i=begin;i<end;++i) {
                         const double correction=field==WVBoussinesqField::eta && axis==2 ? advectionFields[3*R_+i]*geometry().dLnN2[i/(R_/geometry().Nz)] : 0;
-                        flux[i]-=advectionFields[axis*R_+i]*(derivative[i]+correction);
+                        flux[i]-=advectionFields[axis*R_+i]*(derivativeValues[i]+correction);
                     }
                 });
             }
@@ -444,11 +677,13 @@ WVKernelStatus WVTransformBoussinesqKernel::nonlinearFlux(const WVState& a,WVFlu
         const auto field=fields[targetIndex]; auto* flux=real_.data()+(4+targetIndex)*R_;
         std::fill_n(flux,R_,0);
         for (std::size_t axis=0;axis<3;++axis) {
-            s=reconstruct(a.coefficients,field,static_cast<WVBoussinesqDerivative>(axis+1),WVBoussinesqComponent::all,real_.data()+10*R_); if (!s) return s;
+            const double* derivativeValues=nullptr;
+            s=derivativeFor(field,static_cast<WVBoussinesqDerivative>(axis+1),
+                real_.data()+10*R_,derivativeValues,flux); if (!s) return s;
             pointwise_->execute(R_,[&](std::size_t begin,std::size_t end) {
                 for (std::size_t i=begin;i<end;++i) {
                     const double correction=targetIndex==3 && axis==2 ? advectionFields[3*R_+i]*geometry().dLnN2[i/(R_/geometry().Nz)] : 0;
-                    flux[i]-=advectionFields[axis*R_+i]*(real_[10*R_+i]+correction);
+                    flux[i]-=advectionFields[axis*R_+i]*(derivativeValues[i]+correction);
                 }
             });
         }
@@ -476,9 +711,9 @@ WVKernelStatus WVTransformBoussinesqKernel::totalEnstrophy(const WVCoefficients&
 }
 WVKernelStatus WVTransformBoussinesqKernel::totalEnergySpatiallyIntegrated(const WVState& a,double& value,WVBoussinesqComponent component) {
     if (!valid(component)) return unsupported();
-    auto s=state(a); if (!s) return s;
+    auto s=validateStateForCall(a); if (!s) return s;
     ActiveCall guard(active_); if (!guard.entered) return reentrant();
-    s=preparePhase(a.t,a.t0); if (!s) return s;
+    s=preparePhaseForCall(a); if (!s) return s;
     const WVBoussinesqField fields[]={WVBoussinesqField::u,WVBoussinesqField::v,WVBoussinesqField::w,WVBoussinesqField::eta};
     for (std::size_t i=0;i<4;++i) { s=reconstruct(a.coefficients,fields[i],WVBoussinesqDerivative::value,component,real_.data()+i*R_); if (!s) return s; }
     double sum=0; const auto plane=R_/geometry().Nz;

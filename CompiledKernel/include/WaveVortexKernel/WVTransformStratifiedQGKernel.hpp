@@ -21,6 +21,12 @@ struct WVStratifiedQGStorage {
     std::size_t spectralScratchBytes = 0, realScratchBytes = 0, factorBytes = 0;
     std::size_t providerBytesLowerBound = 0, planBytesLowerBound = 0;
 };
+struct WVStratifiedQGKernelMetrics {
+    std::size_t stateValidationCount = 0;
+    std::array<std::size_t,14> fieldReconstructionCount{};
+    std::array<std::array<std::size_t,4>,14> reconstructionCount{};
+    std::array<std::array<std::array<std::size_t,5>,4>,14> componentReconstructionCount{};
+};
 
 // One owned mutable workspace, canonical interleaved [Nj,Nkl] coefficients and
 // column-major [Nx,Ny,Nz] fields. No wave coefficient arrays or eigenproblem.
@@ -37,6 +43,8 @@ public:
     const WVStratifiedModalGeometry& geometry() const noexcept { return source_->geometry(); }
     const WVStratifiedQGModeFactors& factors() const noexcept { return factors_; }
     const WVStratifiedQGStorage& storage() const noexcept { return storage_; }
+    const WVStratifiedQGKernelMetrics& metrics() const noexcept { return metrics_; }
+    void resetMetrics() noexcept { metrics_ = {}; }
     const char* matrixBackendIdentifier() const noexcept { return vertical_[0]->backendIdentifier(); }
     std::size_t persistentBytes() const noexcept {
         return sizeof(*this)+storage_.sharedScientificBytes+storage_.preparedBytes+storage_.workspaceBytes+storage_.spectralScratchBytes+storage_.realScratchBytes+storage_.factorBytes;
@@ -44,6 +52,15 @@ public:
     const std::string& engineIdentifier() const noexcept { return engineIdentifier_; }
     WVShape2D spectralShape() const noexcept { return {geometry().Nj,geometry().Nkl}; }
     WVShape3D spatialShape() const noexcept { return {geometry().Nx,geometry().Ny,geometry().Nz}; }
+
+    // The borrowed A0 array remains immutable until endStateEvaluation().
+    WVKernelStatus beginStateEvaluation(WVComplexConstView);
+    WVKernelStatus beginStateEvaluation(WVComplexConstView, const void* evaluationOwner);
+    WVKernelStatus addStateEvaluationView(WVComplexConstView,
+        const void* evaluationOwner, std::size_t componentIdentity = 0);
+    WVKernelStatus endStateEvaluation();
+    bool stateEvaluationActive() const noexcept { return stateEvaluationActive_; }
+    WVKernelStatus validateStateEvaluation(WVComplexConstView) const noexcept;
 
     // Projection preserves the horizontal mean just as MATLAB's raw transform
     // does. Reconstructed QG fields mask all horizontal means as MATLAB does.
@@ -55,6 +72,10 @@ public:
         WVRealVolumeConstView eta, WVComplexView);
     WVKernelStatus transformA0ToField(WVComplexConstView, WVStratifiedQGField,
         WVRealVolumeView, WVStratifiedQGDerivative = WVStratifiedQGDerivative::value);
+    // Convert exact prepared eta_z and eta operands to rho_e,z or rho_total,z.
+    WVKernelStatus combinePreparedDensityZDerivative(WVStratifiedQGField,
+        WVRealVolumeConstView etaZ, WVRealVolumeConstView eta,
+        WVRealVolumeView output) const;
     // Surface fields use [Nx,Ny,1]; other fields use [Nx,Ny,Nz].
     // Optional raw output captures the spatial contribution instead of projecting
     // it. Prepared [u,v] fields may be borrowed for one diagnostic invocation.
@@ -80,6 +101,11 @@ public:
 private:
     WVTransformStratifiedQGKernel() = default;
     WVKernelStatus spectral(WVComplexConstView) const;
+    WVKernelStatus validateState(WVComplexConstView) const;
+    WVKernelStatus validateStateForCall(WVComplexConstView) const;
+    WVKernelStatus mutableOutputOutsidePreparedState(WVComplexView) const;
+    bool matchesStateEvaluation(WVComplexConstView) const noexcept;
+    std::size_t stateEvaluationComponent(WVComplexConstView) const noexcept;
     WVKernelStatus volume(WVRealVolumeConstView, bool surface = false) const;
     WVKernelStatus disjoint(const void*, std::size_t, const void*, std::size_t) const;
     WVKernelStatus validateDiagnosticBuffers(WVComplexConstView, WVComplexView,
@@ -91,6 +117,7 @@ private:
     std::shared_ptr<const WVStratifiedModalSource> source_;
     WVStratifiedQGModeFactors factors_;
     WVStratifiedQGStorage storage_;
+    mutable WVStratifiedQGKernelMetrics metrics_;
     std::string engineIdentifier_, engineLibraryIdentity_;
     std::unique_ptr<WVRetainedHorizontalOperator> horizontal_;
     std::unique_ptr<WVRetainedHorizontalWorkspace> horizontalWorkspace_;
@@ -99,6 +126,12 @@ private:
     std::unique_ptr<spectral_detail::WVVariableComplexBuffer> modalSpectral_, gridSpectral_;
     std::unique_ptr<kernel_detail::WVPreparedModeExecutor> pointwise_;
     std::vector<double> real_;
+    WVComplexConstView preparedState_{};
+    std::array<WVComplexConstView,5> preparedStateViews_{};
+    std::array<std::size_t,5> preparedStateComponents_{};
+    std::size_t preparedStateViewCount_ = 0;
+    const void* preparedStateOwner_ = nullptr;
+    bool stateEvaluationActive_ = false;
     std::size_t S_ = 0, R_ = 0, H_ = 0;
     std::atomic<bool> active_{false};
 };

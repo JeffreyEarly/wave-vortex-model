@@ -20,6 +20,28 @@ void require(bool condition, const char* message) {
     }
 }
 
+struct DerivativeAccessProbe {
+    std::size_t cachedField=0,cachedDerivative=0,captures=0;
+    WVRealVolumeConstView cached{};
+    bool failLookup=false,failCapture=false;
+    static WVKernelStatus lookup(void* context,std::size_t field,std::size_t derivative,
+        WVRealVolumeConstView& result) {
+        auto& probe=*static_cast<DerivativeAccessProbe*>(context);
+        if (probe.failLookup)
+            return {WVKernelStatusCode::invalidConfiguration,"Injected derivative lookup failure."};
+        result=field==probe.cachedField && derivative==probe.cachedDerivative ? probe.cached : WVRealVolumeConstView{};
+        return WVKernelStatus::ok();
+    }
+    static WVKernelStatus capture(void* context,std::size_t,std::size_t,WVRealVolumeConstView) {
+        auto& probe=*static_cast<DerivativeAccessProbe*>(context);
+        ++probe.captures;
+        return probe.failCapture ?
+            WVKernelStatus{WVKernelStatusCode::invalidConfiguration,"Injected derivative capture failure."} :
+            WVKernelStatus::ok();
+    }
+    WVStateDerivativeAccess access() { return {this,lookup,capture}; }
+};
+
 std::complex<double> standardComplex(WVComplex64 value) { return {value.real,value.imag}; }
 
 void requireComplexClose(WVComplex64 actual, std::complex<double> expected, const char* message) {
@@ -441,6 +463,102 @@ void testNonlinearFlux(bool hydrostatic) {
     WVRealFieldBundleView rawView{raw.data(),{config.Nx,config.Ny,config.Nz,channels}};
     WVRealFieldBundleView derivativeView{derivatives.data(),velocityView.shape};
     require(bool(kernel->transformWaveVortexToUVW(state,velocityView)),"prepare shared velocity");
+    std::vector<double> horizontalVelocity(2*R);
+    WVRealFieldBundleView horizontalVelocityView{horizontalVelocity.data(),{config.Nx,config.Ny,config.Nz,2}};
+    require(kernel->transformWaveVortexToUV(state,horizontalVelocityView).code==WVKernelStatusCode::invalidConfiguration,
+        "optional horizontal-velocity transform ran before setup preparation");
+    require(bool(kernel->prepareHorizontalVelocityTransform()),"prepare optional horizontal-velocity transform");
+    require(kernel->metrics().planCount==19,"optional horizontal-velocity transform did not add exactly two plans");
+    const auto validationBeforeScope=kernel->metrics().stateValidationCount;
+    const auto phaseBeforeScope=kernel->metrics().phasePreparationCount;
+    int evaluationOwner=0;
+    require(bool(kernel->beginStateEvaluation(state,&evaluationOwner)),"begin horizontal-velocity state evaluation");
+    require(bool(kernel->transformWaveVortexToUV(state,horizontalVelocityView)),"reconstruct horizontal velocity");
+    WVComplexConstView scopedPhase;
+    require(bool(kernel->preparedPhase(state,scopedPhase)) && scopedPhase.data!=nullptr &&
+            scopedPhase.shape.rows==shape.rows && scopedPhase.shape.columns==shape.columns,
+        "scoped constant-stratification phase was unavailable");
+    WVMutableCoefficients activeStateOutput{{Ap.data(),shape},{Am.data(),shape},{A0.data(),shape}};
+    const WVRealFieldBundleConstView projectionFields{
+        hydrostatic ? velocity.data() : raw.data(),
+        {config.Nx,config.Ny,config.Nz,hydrostatic ? 3U : 4U}};
+    const auto mutationStatus=hydrostatic ?
+        kernel->transformUVEtaToWaveVortex(projectionFields,state.t,state.t0,activeStateOutput) :
+        kernel->transformUVWEtaToWaveVortex(projectionFields,state.t,state.t0,activeStateOutput);
+    require(mutationStatus.code==WVKernelStatusCode::overlappingArrays,
+        "scoped projection mutated the active immutable constant-stratification state");
+    auto registeredAp=Ap,registeredAm=Am,registeredA0=A0;
+    WVState registeredState{state.t,state.t0,{{registeredAp.data(),shape},{registeredAm.data(),shape},{registeredA0.data(),shape}}};
+    std::vector<double> tendencyFields(4*R);
+    WVRealFieldBundleView tendencyView{tendencyFields.data(),{config.Nx,config.Ny,config.Nz,4}};
+    const auto primaryBeforeTendency=kernel->metrics().reconstructionCount;
+    const auto derivedValidationBefore=kernel->metrics().derivedValidationCount;
+    const auto tendencyBefore=kernel->metrics().tendencyReconstructionCount;
+    require(bool(kernel->transformCoefficientTendencyToUVWEta(registeredState,tendencyView)),
+        "constant derived coefficient tendency was rejected by the active primary-state scope");
+    require(kernel->metrics().stateValidationCount==validationBeforeScope+1 &&
+            kernel->metrics().derivedValidationCount==derivedValidationBefore+1 &&
+            kernel->metrics().reconstructionCount==primaryBeforeTendency,
+        "constant derived tendency validation or production was attributed to the primary state");
+    for (std::size_t field=0;field<4;++field)
+        require(kernel->metrics().tendencyReconstructionCount[field]==tendencyBefore[field]+1,
+            "constant derived tendency field production was not counted");
+    require(bool(kernel->addStateEvaluationView(registeredState,&evaluationOwner,2)),"register constant-stratification state view");
+    require(bool(kernel->transformWaveVortexToUV(registeredState,horizontalVelocityView)),"registered constant-stratification state view was rejected");
+    require(kernel->metrics().stateValidationCount==validationBeforeScope+2 &&
+            kernel->metrics().phasePreparationCount==phaseBeforeScope+1,
+        "constant-stratification registered view skipped validation or repeated phase preparation");
+    require(kernel->metrics().reconstructionCount[0][0][2]==1 &&
+            kernel->metrics().reconstructionCount[1][0][2]==1,
+        "registered constant-stratification component production lost its identity");
+    require(bool(kernel->endStateEvaluation()),"end horizontal-velocity state evaluation");
+    std::vector<double> fFieldAndDerivatives(4*R);
+    WVRealFieldBundleView fFieldDerivativeView{
+        fFieldAndDerivatives.data(),{config.Nx,config.Ny,config.Nz,4}};
+    const auto piCountsBefore=kernel->metrics().reconstructionCount[4];
+    require(bool(kernel->transformToSpatialDomainWithFAllDerivatives(
+                WVConstantFField::pi,state.coefficients.Ap,state.coefficients.A0,
+                fFieldDerivativeView)),"identified F-field derivative reconstruction");
+    for (std::size_t derivative=0;derivative<4;++derivative)
+        require(kernel->metrics().reconstructionCount[4][derivative][0]==
+                    piCountsBefore[derivative][0]+1,
+                "identified F-field producer count");
+    require(!kernel->transformToSpatialDomainWithFAllDerivatives(
+                static_cast<WVConstantFField>(99),state.coefficients.Ap,
+                state.coefficients.A0,fFieldDerivativeView),
+            "unknown identified F-field accepted");
+    require(bool(kernel->beginStateEvaluation(state)),"begin derivative access scope");
+    require(bool(kernel->transformStateFieldDerivatives(state,WVDynamicalField::u,derivativeView)),
+        "prepare cached constant derivative");
+    DerivativeAccessProbe derivativeProbe;
+    derivativeProbe.cachedField=static_cast<std::size_t>(WVDynamicalField::u);
+    derivativeProbe.cachedDerivative=3;
+    derivativeProbe.cached={derivatives.data()+2*R,{config.Nx,config.Ny,config.Nz}};
+    auto derivativeAccess=derivativeProbe.access();
+    const auto uCountsBefore=kernel->metrics().reconstructionCount[0];
+    require(bool(kernel->nonlinearFluxUsingAdvectionFields(state,flux,
+                {velocity.data(),velocityView.shape},nullptr,true,&derivativeAccess)),
+        "constant nonlinear derivative reuse failed");
+    require(kernel->metrics().reconstructionCount[0][1][0]==uCountsBefore[1][0]+1 &&
+            kernel->metrics().reconstructionCount[0][2][0]==uCountsBefore[2][0]+1 &&
+            kernel->metrics().reconstructionCount[0][3][0]==uCountsBefore[3][0] &&
+            derivativeProbe.captures==(hydrostatic ? 8U : 11U),
+        "constant nonlinear path reproduced a cached derivative or missed capture");
+    derivativeProbe.failLookup=true;
+    require(!kernel->nonlinearFluxUsingAdvectionFields(state,flux,
+                {velocity.data(),velocityView.shape},nullptr,true,&derivativeAccess),
+        "constant nonlinear derivative lookup failure was ignored");
+    derivativeProbe.failLookup=false;
+    derivativeProbe.failCapture=true;
+    derivativeProbe.cachedField=99;
+    require(!kernel->nonlinearFluxUsingAdvectionFields(state,flux,
+                {velocity.data(),velocityView.shape},nullptr,true,&derivativeAccess),
+        "constant nonlinear derivative capture failure was ignored");
+    require(bool(kernel->endStateEvaluation()),"end derivative access scope");
+    for (std::size_t field=0;field<2;++field) for (std::size_t i=0;i<R;++i)
+        require(std::abs(horizontalVelocity[field*R+i]-velocity[field*R+i])<=
+                1e-12*std::max(1.0,std::abs(velocity[field*R+i])),
+            "two-channel horizontal velocity differs from the three-channel reconstruction");
     const auto velocityBefore = velocity;
     const auto retainedBytes = kernel->persistentBytes();
     const auto reconstructionCount = kernel->metrics().advectionVelocityReconstructionCount;

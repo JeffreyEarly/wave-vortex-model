@@ -1,6 +1,7 @@
 #pragma once
 
 #include "WVFFTEngine.hpp"
+#include "WVVariableExecutionOptions.hpp"
 
 #include <memory>
 #include <vector>
@@ -32,6 +33,7 @@ struct WVConstantKernelExecutionOptions {
 enum class WVLaplacianDirection : std::uint8_t { horizontal, vertical };
 
 enum class WVDynamicalField : std::uint8_t { u, v, w, eta };
+enum class WVConstantFField : std::uint8_t { pi, psi, qgpv };
 
 struct WVKernelMetrics {
     std::size_t descriptorBytes = 0;
@@ -52,6 +54,13 @@ struct WVKernelMetrics {
     std::size_t scalarAdvectionCount = 0;
     std::size_t scalarAntialiasCount = 0;
     std::size_t bytesCopied = 0;
+    std::size_t stateValidationCount = 0;
+    std::size_t derivedValidationCount = 0;
+    std::size_t phasePreparationCount = 0;
+    std::array<std::size_t,4> tendencyReconstructionCount{};
+    // Field indices align with WVHydrostaticField so producer metrics have one
+    // identity across constant and variable stratification families.
+    std::array<std::array<std::array<std::size_t,5>,4>,16> reconstructionCount{};
     double phaseSeconds = 0.0;
     double reconstructionSeconds = 0.0;
     double derivativeReconstructionSeconds = 0.0;
@@ -95,26 +104,51 @@ public:
     std::size_t phaseReservationBytes() const noexcept;
     void setStageInstrumentation(bool enabled) noexcept;
     std::size_t persistentBytes() const noexcept;
-    std::size_t scratchBytes() const noexcept { return (halfSpectrumScratch_.size() + realScratch_.size()) * sizeof(double); }
+    std::size_t scratchBytes() const noexcept { return (halfSpectrumScratch_.size() + realScratch_.size()) * sizeof(double) + preparedPhase_.size()*sizeof(WVComplex64); }
+
+    // The borrowed coefficient arrays remain immutable until the matching end.
+    WVKernelStatus beginStateEvaluation(const WVState&);
+    WVKernelStatus beginStateEvaluation(const WVState&, const void* evaluationOwner);
+    WVKernelStatus addStateEvaluationView(const WVState&, const void* evaluationOwner,
+        std::size_t componentIdentity = 0);
+    WVKernelStatus endStateEvaluation();
+    bool stateEvaluationActive() const noexcept { return stateEvaluationActive_; }
+    WVKernelStatus validateStateEvaluation(const WVState&) const noexcept;
+    // Borrowed until the next kernel operation; scoped calls reuse the active phase.
+    WVKernelStatus preparedPhase(const WVState&, WVComplexConstView&);
+    // Prepare the optional two-channel inverse during model setup. The
+    // transform itself never allocates plans in an evaluation scope.
+    WVKernelStatus prepareHorizontalVelocityTransform();
 
     WVKernelStatus transformUVEtaToWaveVortex(const WVRealFieldBundleConstView& fields, double t, double t0, WVMutableCoefficients& coefficients);
     WVKernelStatus transformUVWEtaToWaveVortex(const WVRealFieldBundleConstView& fields, double t, double t0, WVMutableCoefficients& coefficients);
     WVKernelStatus transformWaveVortexToUVWEta(const WVState& state, WVRealFieldBundleView& fields);
+    // Reconstruct a validated derived coefficient tendency without admitting it
+    // as a primary state view in an active immutable evaluation.
+    WVKernelStatus transformCoefficientTendencyToUVWEta(
+        const WVState& tendency, WVRealFieldBundleView& fields);
     WVKernelStatus transformWaveVortexToUVW(const WVState& state, WVRealFieldBundleView& fields);
+    WVKernelStatus transformWaveVortexToUV(const WVState& state, WVRealFieldBundleView& fields);
     WVKernelStatus transformStateFieldDerivatives(const WVState& state, WVDynamicalField field, WVRealFieldBundleView& derivatives);
     WVKernelStatus transformToSpatialDomainWithFAllDerivatives(const WVComplexConstView& Apm, const WVComplexConstView& A0, WVRealFieldBundleView& fields);
+    WVKernelStatus transformToSpatialDomainWithFAllDerivatives(WVConstantFField field,
+        const WVComplexConstView& Apm, const WVComplexConstView& A0,
+        WVRealFieldBundleView& fields, std::size_t componentIdentity = 0);
     WVKernelStatus transformToSpatialDomainWithGAllDerivatives(const WVComplexConstView& Apm, const WVComplexConstView& A0, WVRealFieldBundleView& fields);
     // Add physical velocity/displacement Laplacian forcing in coefficient space.
     // Reuses the descriptor's field/projection factors and caller-owned flux.
     WVKernelStatus addLaplacianDamping(const WVState& state, double nu, double kappa,
         WVLaplacianDirection direction, WVFlux& flux);
-    WVKernelStatus nonlinearFlux(const WVState& state, WVFlux& flux);
-    WVKernelStatus nonlinearFluxWithAdvectionFields(const WVState& state, WVFlux& flux, WVRealFieldBundleView& advectionFields);
+    WVKernelStatus nonlinearFlux(const WVState& state, WVFlux& flux,
+        WVStateDerivativeAccess* derivativeAccess = nullptr);
+    WVKernelStatus nonlinearFluxWithAdvectionFields(const WVState& state, WVFlux& flux,
+        WVRealFieldBundleView& advectionFields, WVStateDerivativeAccess* derivativeAccess = nullptr);
     // Optional observation output receives raw spatial tendencies before modal
     // projection, in [u,v,eta] or [u,v,w,eta] order. Storage is caller owned.
     // With projectFlux=false, spatialTendency is required and flux is untouched.
     WVKernelStatus nonlinearFluxUsingAdvectionFields(const WVState& state, WVFlux& flux, const WVRealFieldBundleConstView& advectionFields,
-        WVRealFieldBundleView* spatialTendency = nullptr, bool projectFlux = true);
+        WVRealFieldBundleView* spatialTendency = nullptr, bool projectFlux = true,
+        WVStateDerivativeAccess* derivativeAccess = nullptr);
     // Call at setup when scalar advection is configured, before repeated RHS calls.
     WVKernelStatus prepareScalarAdvection();
     // MATLAB diffX/diffY/diffZG of an arbitrary full-grid G scalar. Horizontal
@@ -125,16 +159,27 @@ public:
 
 private:
     WVTransformConstantStratificationKernel();
+    WVKernelStatus validateStateContents(const WVState&) const;
+    WVKernelStatus validateState(const WVState&);
+    WVKernelStatus validateStateForCall(const WVState&);
+    WVKernelStatus validateStateAndFluxForCall(const WVState&,const WVFlux&);
+    WVKernelStatus validateMutableOutputOutsidePreparedState(const WVMutableCoefficients&) const;
+    bool matchesStateEvaluation(const WVState&) const noexcept;
+    std::size_t stateEvaluationComponent(const WVState&) const noexcept;
+    WVKernelStatus prepareStatePhase(const WVState&);
+    WVComplexConstView phaseForPreparedState() const noexcept;
     WVKernelStatus preparePlans();
     WVKernelStatus transformUVEtaToWaveVortexImpl(const WVRealFieldBundleConstView& fields, double t, double t0, WVMutableCoefficients& coefficients, WVComplexConstView phaseValues = {});
     WVKernelStatus transformUVWEtaToWaveVortexImpl(const WVRealFieldBundleConstView& fields, double t, double t0, WVMutableCoefficients& coefficients, WVComplexConstView phaseValues = {});
-    WVKernelStatus transformWaveVortexToUVWEtaImpl(const WVState& state, WVRealFieldBundleView& fields, const WVCoefficients* evolvedCoefficients = nullptr);
+    WVKernelStatus transformWaveVortexToUVWEtaImpl(const WVState& state, WVRealFieldBundleView& fields, const WVCoefficients* evolvedCoefficients = nullptr, WVComplexConstView phaseValues = {}, WVComplex64* generatedPhase = nullptr, bool countPrimaryReconstruction = true);
     WVKernelStatus transformWaveVortexToUVWImpl(const WVState& state, WVRealFieldBundleView& fields, const WVCoefficients* evolvedCoefficients, WVComplexConstView phaseValues = {}, WVComplex64* generatedPhase = nullptr);
+    WVKernelStatus transformWaveVortexToUVImpl(const WVState& state, WVRealFieldBundleView& fields, WVComplexConstView phaseValues = {}, WVComplex64* generatedPhase = nullptr);
     WVKernelStatus transformToSpatialDomainWithDerivativesImpl(const WVCoefficients& evolvedCoefficients, std::size_t target, WVRealFieldBundleView& derivatives);
-    WVKernelStatus transformToSpatialDomainWithDerivativesFromStateImpl(const WVState& state, WVComplexConstView phaseValues, std::size_t target, WVRealFieldBundleView& derivatives, WVComplex64* generatedPhase = nullptr);
+    WVKernelStatus transformToSpatialDomainWithDerivativesFromStateImpl(const WVState& state, WVComplexConstView phaseValues, std::size_t target, WVRealFieldBundleView& derivatives, WVComplex64* generatedPhase = nullptr, const std::array<bool,3>* derivativeMask = nullptr);
     WVKernelStatus projectSingleFluxTargetImpl(const WVRealFieldBundleConstView& field, std::size_t target, WVComplexConstView phaseValues, WVFlux& flux);
     WVKernelStatus nonlinearFluxImpl(const WVState& state, WVFlux& flux, WVRealFieldBundleView* advectionFields, bool advectionFieldsPrepared = false,
-        WVRealFieldBundleView* spatialTendency = nullptr, bool projectFlux = true);
+        WVRealFieldBundleView* spatialTendency = nullptr, bool projectFlux = true,
+        WVComplexConstView phaseValues = {}, WVStateDerivativeAccess* derivativeAccess = nullptr);
     WVKernelStatus ensureScalarInversePlan();
     WVKernelStatus ensureScalarPlans();
     WVKernelStatus prepareCompactScalarDerivatives(const WVRealVolumeConstView& scalar, bool sine);
@@ -152,6 +197,14 @@ private:
     std::vector<std::uint8_t> scalarAntialiasRows_;
     std::vector<double> halfSpectrumScratch_;
     std::vector<double> realScratch_;
+    std::vector<WVComplex64> preparedPhase_;
+    WVState preparedState_{};
+    std::array<WVState,5> preparedStateViews_{};
+    std::array<std::size_t,5> preparedStateComponents_{};
+    std::size_t preparedStateViewCount_ = 0;
+    const void* preparedStateOwner_ = nullptr;
+    bool stateEvaluationActive_ = false;
+    bool preparedPhaseReady_ = false;
     mutable WVKernelMetrics metrics_;
     std::unique_ptr<kernel_detail::WVPreparedModeExecutor> coefficientExecutor_;
     bool executing_ = false;

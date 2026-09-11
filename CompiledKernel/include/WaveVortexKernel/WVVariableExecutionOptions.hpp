@@ -2,6 +2,17 @@
 #include "WVSpectralOperators.hpp"
 
 namespace wavevortex {
+// Optional event-owned bridge between a nonlinear transform and typed output
+// derivative storage. An empty lookup result is a cache miss. Capture may be a
+// no-op when the output plan proves the derivative cannot be consumed again.
+struct WVStateDerivativeAccess {
+    void* context = nullptr;
+    WVKernelStatus (*lookup)(void*,std::size_t field,std::size_t derivative,
+        WVRealVolumeConstView&) = nullptr;
+    WVKernelStatus (*capture)(void*,std::size_t field,std::size_t derivative,
+        WVRealVolumeConstView) = nullptr;
+};
+
 enum class WVVariableSpectralSchedule {
     establishedInterleaved,
     compactSplitFusedViews
