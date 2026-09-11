@@ -1,0 +1,18 @@
+17333  29.7 /Library/Bitdefender/AVP/product/bin/BDLDaemon.app/Contents/MacOS/BDLDaemon
+95407  11.5 /Applications/ChatGPT.app/Contents/Resources/codex
+18309   7.2 /Applications/ChatGPT.app/Contents/Frameworks/Codex Framework.framework/Versions/152.0.7977.83/Helpers/Codex (Renderer).app/Contents/MacOS/Codex (Renderer)
+  363   6.0 /System/Library/Frameworks/CoreServices.framework/Versions/A/Frameworks/FSEvents.framework/Versions/A/Support/fseventsd
+14277   4.8 /System/Library/Frameworks/CoreServices.framework/Versions/A/Frameworks/Metadata.framework/Versions/A/Support/mds_stores
+  389   3.0 /System/Library/Frameworks/CoreServices.framework/Versions/A/Frameworks/Metadata.framework/Versions/A/Support/mds
+  450   0.6 /usr/sbin/mDNSResponder
+  810   0.4 /usr/sbin/distnoted
+  417   0.4 /usr/sbin/distnoted
+95383   0.2 /Applications/ChatGPT.app/Contents/Frameworks/Codex Framework.framework/Versions/152.0.7977.83/Helpers/Codex (Service).app/Contents/MacOS/Codex (Service)
+95358   0.2 /Applications/ChatGPT.app/Contents/MacOS/ChatGPT
+95382   0.1 /Applications/ChatGPT.app/Contents/Frameworks/Codex Framework.framework/Versions/152.0.7977.83/Helpers/Codex (Service).app/Contents/MacOS/Codex (Service)
+19941   0.1 /Applications/GitHub Desktop.app/Contents/MacOS/GitHub Desktop
+99717   0.0 /System/Library/Frameworks/AppKit.framework/Versions/C/XPCServices/ThemeWidgetControlViewService.xpc/Contents/MacOS/ThemeWidgetControlViewService
+99708   0.0 /System/Library/Frameworks/Metal.framework/Versions/A/XPCServices/MTLCompilerService.xpc/Contents/MacOS/MTLCompilerService
+99707   0.0 /System/Library/Frameworks/Metal.framework/Versions/A/XPCServices/MTLCompilerService.xpc/Contents/MacOS/MTLCompilerService
+98946   0.0 /Applications/ChatGPT.app/Contents/Resources/cua_node/bin/node
+98945   0.0 /Applications/ChatGPT.app/Contents/Resources/cua_node/bin/node_repl
