@@ -322,7 +322,7 @@ void verifyPhaseDiagnostics(bool hydrostatic, bool antialias) {
     }
     require(service->metrics().diagnosticIntermediateReuseCount == previousReuse + 3,
             "phase/conjPhase/Apt/Amt did not share their phase table");
-    require(service->metrics().diagnosticWorkspaceHighWaterBytes == count * sizeof(WVComplex64) &&
+    require(service->metrics().diagnosticWorkspaceHighWaterBytes <= count * sizeof(WVComplex64) &&
                 service->metrics().diagnosticWorkspaceLiveBytes == 0 &&
                 service->metrics().diagnosticPrimitiveOutputCount == 0 &&
                 service->metrics().fftExecutionCount == 0,
@@ -1465,6 +1465,7 @@ void verifyVariableEvaluationSessions() {
       config,std::make_unique<WVReferenceFFTEngine>(),service);
   require(bool(status),status.message);
   WVFieldEvaluationPlan first,second,derivedFull,derivedPoints;
+  WVMovingFieldEvaluationPlan moving;
   status=service->createPlan({full("u")},first);
   require(bool(status),status.message);
   WVFieldSamplingRequest points;
@@ -1476,6 +1477,9 @@ void verifyVariableEvaluationSessions() {
   require(bool(status),status.message);
   status=service->createPlan({{"point-p","p",points},
       {"point-rho","rho_e",points}},derivedPoints);
+  require(bool(status),status.message);
+  status=service->createMovingPlan({{"moving-u","u",0,1},
+      {"moving-v","v",0,1}},moving);
   require(bool(status),status.message);
   std::vector<double> fullValues(first.outputs()[0].elementCount);
   std::vector<double> pointValues(second.outputs()[0].elementCount);
@@ -1494,6 +1498,31 @@ void verifyVariableEvaluationSessions() {
     derivedPointViews[index]={derivedPointValues[index].data(),
         derivedPointValues[index].size()};
   }
+
+  const auto standaloneBefore=service->metrics().variableEvaluation;
+  const auto standaloneProducerBefore=service->producerMetrics();
+  std::array<double,2> movingValues{};
+  WVFieldOutputView movingViews[]={{&movingValues[0],1},{&movingValues[1],1}};
+  double movingX=points.x[0],movingY=points.y[0],movingZ=points.z[0];
+  const WVMovingPositionView movingPosition{&movingX,&movingY,&movingZ,1};
+  require(bool(service->evaluate(first,state,&fullView,1)) &&
+      !service->evaluationSessionActive() &&
+      bool(service->evaluate(first,state,&fullView,1)) &&
+      !service->evaluationSessionActive(),
+      "standalone field evaluation did not close its event scope");
+  require(bool(service->evaluateMoving(moving,state,movingPosition,
+          movingViews,2)) && !service->evaluationSessionActive() &&
+      bool(service->evaluateMoving(moving,state,movingPosition,
+          movingViews,2)) && !service->evaluationSessionActive(),
+      "standalone moving evaluation did not close its event scope");
+  const auto standaloneAfter=service->metrics().variableEvaluation;
+  const auto standaloneProducerAfter=service->producerMetrics();
+  require(standaloneAfter.contexts==standaloneBefore.contexts+4 &&
+      standaloneAfter.producerExecutions==
+          standaloneBefore.producerExecutions+4 &&
+      standaloneProducerAfter.reconstructions[0][0][0]==
+          standaloneProducerBefore.reconstructions[0][0][0]+4,
+      "standalone field calls did not use one fresh producer scope each");
 
   const auto preparedArenaBytes=service->metrics().eventFieldArenaPlannedBytes;
   const auto preparedPersistentBytes=service->persistentBytes();

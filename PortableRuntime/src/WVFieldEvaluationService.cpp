@@ -1427,6 +1427,14 @@ WVKernelStatus WVFieldEvaluationService::createPlan(
 WVKernelStatus WVFieldEvaluationService::evaluate(
     const WVFieldEvaluationPlan &plan, const WVState &state,
     WVFieldOutputView *outputs, std::size_t outputCount, const std::uint8_t *activeOutputs) {
+  if(!eventWorkspace_) {
+    if (!transform_)
+      return {WVKernelStatusCode::unsupportedOperation,
+          "This transform requires coefficient-family state views."};
+    detail::WVFieldEvaluationEventScope scope(*this,{state});
+    if(!scope.status()) return scope.status();
+    return evaluate(plan,state,outputs,outputCount,activeOutputs);
+  }
   if(eventWorkspace_) {
     const auto status=eventWorkspace_->validateState({state});
     if(!status) return status;
@@ -1458,6 +1466,11 @@ WVKernelStatus WVFieldEvaluationService::evaluate(
 WVKernelStatus WVFieldEvaluationService::evaluate(
     const WVFieldEvaluationPlan &plan, const WVIntegrationState &state,
     WVFieldOutputView *outputs, std::size_t outputCount, const std::uint8_t *activeOutputs) {
+  if(!eventWorkspace_) {
+    detail::WVFieldEvaluationEventScope scope(*this,state);
+    if(!scope.status()) return scope.status();
+    return evaluate(plan,state,outputs,outputCount,activeOutputs);
+  }
   if(eventWorkspace_) {
     const auto status=eventWorkspace_->validateState({state});
     if(!status) return status;
@@ -3333,6 +3346,15 @@ WVKernelStatus WVFieldEvaluationService::evaluateMoving(
     const WVMovingFieldEvaluationPlan &plan, const WVState &state,
     WVMovingPositionView positions, WVFieldOutputView *outputs,
     std::size_t outputCount, const std::uint8_t *activeOutputs) {
+  if(!eventWorkspace_) {
+    if (!transform_)
+      return {WVKernelStatusCode::unsupportedOperation,
+          "This transform requires coefficient-family state views."};
+    detail::WVFieldEvaluationEventScope scope(*this,{state});
+    if(!scope.status()) return scope.status();
+    return evaluateMoving(plan,state,positions,outputs,outputCount,
+        activeOutputs);
+  }
   if (plan.sampledPlan_)
     return evaluateSampledMovingImpl(plan, {state}, positions, outputs,
                                      outputCount, activeOutputs);
@@ -3343,6 +3365,12 @@ WVKernelStatus WVFieldEvaluationService::evaluateMoving(
     const WVMovingFieldEvaluationPlan &plan,
     const WVIntegrationState &state, WVMovingPositionView positions,
     WVFieldOutputView *outputs, std::size_t outputCount, const std::uint8_t *activeOutputs) {
+  if(!eventWorkspace_) {
+    detail::WVFieldEvaluationEventScope scope(*this,state);
+    if(!scope.status()) return scope.status();
+    return evaluateMoving(plan,state,positions,outputs,outputCount,
+        activeOutputs);
+  }
   if(eventWorkspace_) {
     const auto status=eventWorkspace_->validateState(state);
     if(!status) return status;
