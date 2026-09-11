@@ -20,6 +20,8 @@ Advect a scalar tracer with a WVModel velocity field
 
 WVTracer evolves a two- or three-dimensional scalar field alongside
 the model. The tracer may be antialiased after each flux evaluation.
+Free-surface Boussinesq tracers use the fixed reference grid, with
+physical horizontal velocity and material reference-coordinate w_i.
 
 
 ## Topics

@@ -55,11 +55,15 @@ classdef TestFreeSurfaceQGCoefficientStorageBenchmark < matlab.unittest.TestCase
                 ["small-zero-endpoint" "small-one-endpoint" "small-two-endpoint"])
             testCase.verifyEqual([results.cases.activeEndpointCount],[0 1 2])
             testCase.verifyEqual(results.decision.status,"complete")
+            testCase.verifyEqual(results.configuration.gramTolerance,1e-2)
             testCase.verifyTrue(ismember(results.decision.selectedStrategy,["separate" "packed"]))
             for benchmarkCase = reshape(results.cases,1,[])
                 strategies = benchmarkCase.strategies;
                 testCase.verifyEqual(string({strategies.id}),["separate" "packed"])
                 testCase.verifyTrue(all(arrayfun(@(strategy)strategy.correctness.passed,strategies)))
+                for strategy = reshape(strategies,1,[])
+                    testCase.verifyEqual(strategy.scientificConfiguration.gramTolerance,results.configuration.gramTolerance)
+                end
                 testCase.verifyEqual(string({strategies(1).operations.id}), ...
                     ["reconstruction" "projection" "complete-rhs" "integrator-copy-update" "fixed-rk4-step"])
                 testCase.verifyEqual(strategies(1).stateStorage.componentCount,3)

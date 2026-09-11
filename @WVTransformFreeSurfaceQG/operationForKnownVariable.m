@@ -39,6 +39,7 @@ for name = names
     switch name
         case "psi", units = 'm2 s-1'; description = 'geostrophic streamfunction';
         case "eta", units = 'm'; description = 'isopycnal displacement including the MDA mean';
+        case "eta_i", units = 'm'; description = 'interior displacement on the reference grid including the MDA mean';
         case "qgpv", units = 's-1'; description = 'full QGPV including the MDA mean';
         case "ssh", units = 'm'; description = 'sea-surface height in the zero-mean gauge'; dimensions = {'x','y'};
         case {"ssu","ssv"}, units = 'm s-1'; description = 'surface horizontal velocity'; dimensions = {'x','y'};

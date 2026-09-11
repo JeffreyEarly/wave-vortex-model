@@ -6,6 +6,7 @@ arguments
     options.strategyIds (1,:) string = ["separate" "packed"]
     options.smallNxyz (1,3) double {mustBeInteger,mustBePositive} = [64 64 33]
     options.representativeNxyz (1,3) double {mustBeInteger,mustBePositive} = [256 256 129]
+    options.gramTolerance (1,1) double {mustBeReal,mustBeFinite,mustBeNonnegative} = 1e-2
     options.Lxyz (1,3) double {mustBePositive} = [150e3 150e3 1000]
     options.seed (1,1) double {mustBeInteger,mustBeNonnegative} = 34322
     options.warmupCount (1,1) double {mustBeInteger,mustBeNonnegative} = 1

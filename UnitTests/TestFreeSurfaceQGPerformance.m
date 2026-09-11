@@ -8,7 +8,7 @@ classdef TestFreeSurfaceQGPerformance < matlab.unittest.TestCase
                         g0=endpoints(1),gd=endpoints(2),gramTolerance=.1,shouldAntialias=antialias);
                     state=TestFreeSurfaceQGPerformance.mixedState(w);
                     for multiplier=[1 -2]
-                        w.Ag_q=multiplier*state.Ag_q; w.Ag_0=multiplier*state.Ag_0; w.Amda=state.Amda;
+                        w.Ag_q=multiplier*state.Ag_q; w.Ag_0=multiplier*state.Ag_0; w.Amda=multiplier*state.Amda;
                         [q,u,v,b,ub,vb,phiHat]=w.quasigeostrophicSpatialState();
                         [psi,~,qHat]=w.reconstructSpectralState();
                         testCase.verifyEqual(phiHat,psi(:,w.klNonzero))
@@ -18,9 +18,14 @@ classdef TestFreeSurfaceQGPerformance < matlab.unittest.TestCase
                         [~,endpointsHat]=w.transformStateBack(w.Ag_q,w.Ag_0);
                         padded=complex(zeros(w.Nz,w.Nkl));
                         padded(1:w.activeEndpointCount,w.klNonzero)=endpointsHat;
+                        iz=[w.Nz 1]; iz=iz(w.activeEndpoint);
+                        % transformStateBack supplies only nonzero wavenumbers;
+                        % physical endpoint anomalies also contain the MDA mean.
+                        meanIndex=find(hypot(w.k,w.l)==0,1);
+                        meanDisplacement=w.mdaG*w.Amda;
+                        padded(1:w.activeEndpointCount,meanIndex)=meanDisplacement(iz);
                         expected=w.transformToSpatialDomainWithFourier(padded);
                         testCase.verifyEqual(b,expected(:,:,1:w.activeEndpointCount))
-                        iz=[w.Nz 1]; iz=iz(w.activeEndpoint);
                         testCase.verifyEqual(ub,u(:,:,iz))
                         testCase.verifyEqual(vb,v(:,:,iz))
                         spatial=zeros(w.spatialMatrixSize); spatial(:,:,1:w.activeEndpointCount)=b;

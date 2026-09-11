@@ -47,6 +47,19 @@ classdef TestFreeSurfaceBoussinesqTransform < matlab.unittest.TestCase
             testCase.verifyEqual(full.p(:,:,end),w.rho0*w.g*full.ssh,AbsTol=1e-10)
         end
 
+        function customComponentsRegisterInteriorDisplacement(testCase)
+            w = newTransform("constant",33); assignState(w,mixedState(w));
+            component = WVFlowComponent(w,coefficientMasks=struct(Aw_p=true,Aw_m=true,Ag_0=true));
+            component.name = 'waves and boundary modes';
+            component.shortName = 'waveboundary';
+            component.abbreviatedName = 'waveboundary';
+            w.addFlowComponent(component);
+            expected = w.reconstructFields(["u","eta_i","ssh"],flowComponent=component);
+            testCase.verifyEqual(w.eta_i_waveboundary,expected.eta_i)
+            testCase.verifyEqual(w.u_waveboundary,expected.u)
+            testCase.verifyEqual(w.ssh_waveboundary,expected.ssh)
+        end
+
         function energyIncludesBalancedCrossTermsAndConserves(testCase)
             w = newTransform("exponential",65); assignState(w,mixedState(w));
             fields=w.reconstructFields(["u","v","w","eta","ssh"]);
@@ -94,12 +107,12 @@ classdef TestFreeSurfaceBoussinesqTransform < matlab.unittest.TestCase
             w.t0=111; testCase.verifyFalse(isKey(w.variableCache,'u'))
             testCase.verifyGreaterThan(norm(at111(:)-w.u(:)),1e-6)
             testCase.verifyEqual(w.scientificState(),operators)
-            balanced=w.reconstructFields(["u","eta","p","ssh"],flowComponent=w.flowComponentWithName('balanced'));
-            balancedCache=w.u_balanced;
+            balanced=w.reconstructFields(["u_hat","eta","p","ssh"],flowComponent=w.flowComponentWithName('balanced'));
+            balancedCache=w.u_hat_balanced;
             w.t=1e5;
-            testCase.verifyTrue(isKey(w.variableCache,'u_balanced'))
-            testCase.verifyEqual(w.u_balanced,balancedCache)
-            testCase.verifyEqual(w.reconstructFields(["u","eta","p","ssh"],flowComponent=w.flowComponentWithName('balanced')),balanced)
+            testCase.verifyTrue(isKey(w.variableCache,'u_hat_balanced'))
+            testCase.verifyEqual(w.u_hat_balanced,balancedCache)
+            testCase.verifyEqual(w.reconstructFields(["u_hat","eta","p","ssh"],flowComponent=w.flowComponentWithName('balanced')),balanced)
         end
 
         function linearEquationsAndEndpointsHoldForMixedState(testCase)
@@ -153,7 +166,7 @@ classdef TestFreeSurfaceBoussinesqTransform < matlab.unittest.TestCase
             testCase.verifyError(@()assignFamily(w,'Aw_p',zeros(1,1)),'WVTransformFreeSurfaceBoussinesq:InvalidCoefficient')
             testCase.verifyError(@()assignFamily(w,'Amda',1i*ones(size(w.Amda))),'WVTransformFreeSurfaceBoussinesq:InvalidCoefficient')
             testCase.verifyError(@()w.projectFields(struct()),'WVTransformFreeSurfaceBoussinesq:InvalidFields')
-            testCase.verifyError(@()w.nonlinearFlux(),'WVTransformFreeSurfaceBoussinesq:NonlinearDynamicsUnavailable')
+            testCase.verifyError(@()w.nonlinearFlux(),'WVTransformFreeSurfaceBoussinesq:UseCanonicalFamilies')
             testCase.verifyError(@()WVTransformFreeSurfaceBoussinesq.fromStratification([1e5 1e5 1000],[8 8 33],shouldAntialias=true,N2Function=@(z)1e-10*ones(size(z))),'WVTransformFreeSurfaceBoussinesq:UnsupportedStratification')
         end
     end
@@ -215,6 +228,9 @@ end
 function assignFamily(w,name,value), w.(name)=value; end
 function value=physicalEnergyOfFields(w,fields)
 weights=reshape(w.verticalQuadratureWeights,1,1,[]); N2=reshape(w.N2,1,1,[]);
+ssh=w.ssh; gamma=1+ssh/w.Lz; alpha=reshape(1+w.z/w.Lz,1,1,[]);
+fields.w=fields.w-alpha.*(fields.u.*w.diffX(ssh)+fields.v.*w.diffY(ssh));
+fields.u=gamma.*fields.u; fields.v=gamma.*fields.v;
 value=sum(weights.*(fields.u.^2+fields.v.^2+fields.w.^2+N2.*fields.eta.^2),'all')/(2*w.Nx*w.Ny)+w.g*mean(fields.ssh.^2,'all')/2;
 end
 function value=coefficientEnergyError(w,actual,expected)

@@ -1,0 +1,14 @@
+Name,Passed,Failed,Incomplete,Duration
+"TestFreeSurfaceOutputRestart/partialPayloadDoesNotRestoreObserverState(modelType=boussinesq,partialPayload=oneVariable)",1,0,0,6.71367054166667
+"TestFreeSurfaceOutputRestart/partialPayloadDoesNotRestoreObserverState(modelType=boussinesq,partialPayload=allObservers)",1,0,0,3.462150625
+"TestFreeSurfaceOutputRestart/scheduledOutputsAndContinuationAgree(modelType=boussinesq)",1,0,0,6.052325625
+"TestFreeSurfaceOutputRestart/unwrittenSharedObserversRestoreFromCommittedGroup(modelType=boussinesq,emptyGroupPayload=false)",1,0,0,3.03608216666667
+"TestFreeSurfaceOutputRestart/unwrittenSharedObserversRestoreFromCommittedGroup(modelType=boussinesq,emptyGroupPayload=true)",1,0,0,2.66162316666667
+"TestFreeSurfaceOutputRestart/observerWithoutSavedStateIsRejected(modelType=boussinesq,observerType=particles)",1,0,0,2.14258008333333
+"TestFreeSurfaceOutputRestart/observerWithoutSavedStateIsRejected(modelType=boussinesq,observerType=tracer)",1,0,0,2.448219
+"TestFreeSurfaceOutputRestart/eachFileRestoresOnlyItsOwnOutputGraph(modelType=boussinesq)",1,0,0,2.626164
+"TestFreeSurfaceOutputRestart/noCommitAndRecordHolesAreRejected(modelType=boussinesq)",1,0,0,5.4541965
+"TestFreeSurfaceOutputRestart/duplicateCompleteStreamsAreRejected(modelType=boussinesq)",1,0,0,3.003994375
+"TestFreeSurfaceQGCoefficientStorageBenchmark/reducedMatrixIsCorrectAndAccountsForStorage",1,0,0,6.804164875
+"TestFreeSurfaceQGPerformance/endpointPlanesMatchPaddedTransformsAndFollowState",1,0,0,5.29837675
+"TestFreeSurfaceResolutionTransfer/pureFamiliesAndStrictRequests",1,0,0,5.15977125

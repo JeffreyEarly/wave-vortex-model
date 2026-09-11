@@ -26,6 +26,9 @@ if isempty(names) || length(unique(names)) ~= length(names) || any(~ismember(nam
     error('WVTransform:UnknownVariable','Request distinct Boussinesq fields listed by namesOfTransformVariables.')
 end
 component = options.flowComponent;
+if ~isempty(component) && any(ismember(names,"z_physical"))
+    error('WVTransform:TotalStateVariable','z_physical describes the total state and has no component partition.')
+end
 suffix = "";
 if ~isempty(component)
     if ~isscalar(component) || component.wvt ~= self
@@ -43,16 +46,20 @@ for name = names
     dimensions = {'x','y','z'};
     switch name
         case "psi", units = 'm2 s-1'; description = 'geostrophic streamfunction';
-        case {"eta","eta_i"}, units = 'm'; description = 'total or interior displacement including the MDA mean';
-        case "p", units = 'Pa'; description = 'pressure anomaly including hydrostatic MDA';
+        case "eta", units = 'm'; description = 'total material displacement including the MDA mean';
+        case "eta_i", units = 'm'; description = 'parcel-label displacement relative to the fixed reference column';
+        case "z_physical", units = 'm'; description = 'physical height of the moving mesh';
+        case "p", units = 'Pa'; description = 'linear modal pressure anomaly including hydrostatic MDA';
+        case {"u_hat","v_hat","w_hat"}, units = 'm s-1'; description = 'hatted modal velocity on the fixed reference column';
+        case "w_i", units = 'm s-1'; description = 'material reference-coordinate velocity';
         case "qgpv", units = 's-1'; description = 'full QGPV including the MDA mean';
         case "ssh", units = 'm'; description = 'sea-surface height in the zero-mean gauge'; dimensions = {'x','y'};
         case {"ssu","ssv"}, units = 'm s-1'; description = 'surface horizontal velocity'; dimensions = {'x','y'};
         case "uvMax", units = 'm s-1'; description = 'maximum horizontal speed'; dimensions = {};
-        otherwise, units = 'm s-1'; description = 'horizontal velocity';
+        otherwise, units = 'm s-1'; description = 'physical velocity on the moving mesh';
     end
     annotation = WVVariableAnnotation(char(name+suffix),dimensions,units,description);
-    annotation.isVariableWithLinearTimeStep = isTimeDependent;
+    annotation.isVariableWithLinearTimeStep = isTimeDependent || ismember(name,["u","v","w","ssu","ssv","w_i","z_physical"]);
     annotation.isVariableWithNonlinearTimeStep = true;
     annotation.isDependentOnApAmA0 = true;
     annotations(end+1) = annotation;

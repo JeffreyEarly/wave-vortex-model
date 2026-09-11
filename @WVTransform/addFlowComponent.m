@@ -13,7 +13,7 @@ arguments
     flowComponent (1,:) WVFlowComponent {mustBeNonempty}
 end
 
-standardVariableNames = {'u','v','w','eta','p','ssh','ssu','ssv','psi','qgpv'};
+standardVariableNames = {'u','v','w','u_hat','v_hat','w_hat','eta','eta_i','p','ssh','ssu','ssv','w_i','psi','qgpv'};
 supportedVariableNames = self.namesOfTransformVariables();
 variableNames = standardVariableNames(ismember(standardVariableNames,supportedVariableNames));
 

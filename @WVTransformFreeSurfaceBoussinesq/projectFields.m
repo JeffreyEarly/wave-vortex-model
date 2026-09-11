@@ -1,7 +1,8 @@
 function [state,assessment] = projectFields(self,fields)
 % Project an admissible instantaneous state into stored reference-time modes.
 %
-% Recover APV from curl(u,v)-f*d(eta)/dz, then residual endpoint density
+% Invert the moving-mesh map for physical u/v/w using the supplied SSH.
+% Recover APV from hatted curl(u,v)-f*d(eta)/dz, then residual endpoint density
 % anomalies, and finally waves from w and the remaining displacement.
 % Balanced families reuse the provider's signed Galerkin matrices on the
 % qualified fixed quadrature. Wave and inertial families use the sampled
@@ -10,9 +11,9 @@ function [state,assessment] = projectFields(self,fields)
 %
 % - Topic: Reconstruct and project fields
 % - Declaration: [state,assessment] = projectFields(fields)
-% - Parameter fields: real u,v,w,eta arrays Nx by Ny by Nz and ssh Nx by Ny; eta is total displacement
+% - Parameter fields: real physical u,v,w and total-displacement eta arrays Nx by Ny by Nz and ssh Nx by Ny; eta is total displacement
 % - Returns state: reference-time Aw_p,Aw_m,Ag_q,Ag_0,Aio,Amda coefficients without mutation
-% - Returns assessment: positive field-energy residual and boundary/continuity diagnostics; continuity uses the Frobenius residual divided by the sum of individual derivative-term norms
+% - Returns assessment: positive quadratic hatted-field energy residual and reference boundary/continuity diagnostics; continuity uses the Frobenius residual divided by the sum of individual derivative-term norms
 arguments (Input)
     self (1,1) WVTransformFreeSurfaceBoussinesq
     fields (1,1) struct
@@ -30,6 +31,14 @@ for name = ["u","v","w","eta","ssh"]
         error('WVTransformFreeSurfaceBoussinesq:InvalidFields','%s must have shape %s.',name,mat2str(shape))
     end
 end
+gamma = 1+fields.ssh/self.Lz;
+if any(gamma<=0,'all')
+    error('WV:InvalidFreeSurfaceGeometry','Physical column depth must be positive.');
+end
+alpha = reshape(1+self.z/self.Lz,1,1,[]);
+fields.w = fields.w-alpha.*(fields.u.*self.diffX(fields.ssh)+fields.v.*self.diffY(fields.ssh));
+fields.u = gamma.*fields.u;
+fields.v = gamma.*fields.v;
 for name = ["u","v","w","eta"], spectral.(name) = self.transformFromSpatialDomainWithFourier(fields.(name)); end
 sshVolume = repmat(fields.ssh,1,1,self.Nz);
 sshSpectral = self.transformFromSpatialDomainWithFourier(sshVolume);

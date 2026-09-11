@@ -312,6 +312,15 @@ classdef WVTransformFreeSurfaceQG < WVGeometryDoublyPeriodicStratified & WVTrans
         % Reconstructed isopycnal displacement including MDA.
         % - Topic: Evaluate physical fields
         eta
+        % Interior displacement on the fixed reference grid, including MDA.
+        %
+        % Subtract the surface lift from total displacement:
+        % $$\eta_i = \eta - (1 + z/L_z)\,\mathrm{ssh}.$$
+        % Here `z` is reference depth; this diagnostic does not change the
+        % small-surface-amplitude QG evolution.
+        %
+        % - Topic: Evaluate physical fields
+        eta_i
         % Reconstructed full QGPV field, including the horizontal-mean MDA contribution.
         % - Topic: Evaluate physical fields
         qgpv
@@ -658,6 +667,10 @@ classdef WVTransformFreeSurfaceQG < WVGeometryDoublyPeriodicStratified & WVTrans
             value = self.variableWithName('eta');
         end
 
+        function value = get.eta_i(self)
+            value = self.variableWithName('eta_i');
+        end
+
         function value = get.qgpv(self)
             value = self.variableWithName('qgpv');
         end
@@ -779,7 +792,7 @@ classdef WVTransformFreeSurfaceQG < WVGeometryDoublyPeriodicStratified & WVTrans
         function names = namesOfTransformVariables()
             % List physical fields supported by ordinary QG operations.
             % - Topic: Evaluate physical fields
-            names = {'psi','u','v','eta','qgpv','ssh','ssu','ssv','uvMax'};
+            names = {'psi','u','v','eta','eta_i','qgpv','ssh','ssu','ssv','uvMax'};
         end
 
         function propertyAnnotations = classDefinedPropertyAnnotations()

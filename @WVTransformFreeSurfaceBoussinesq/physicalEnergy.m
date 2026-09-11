@@ -1,6 +1,8 @@
 function diagnostics = physicalEnergy(self,options)
-% Evaluate positive physical energy including every selected cross term.
+% Evaluate the positive quadratic physical norm with every selected cross term.
 %
+% This is the linear reference-geometry inventory; use nonlinearEnergy for
+% full moving-volume kinetic, APE and surface energy.
 % Energy is the horizontal average of one half the depth integral of
 % u^2+v^2+w^2+N2*eta^2 plus g*ssh^2/2, per unit reference density.
 % Units are m3 s-2. Selected balanced subfamilies generally have cross terms;

@@ -31,6 +31,10 @@ arguments
     options.F0_j double = 0
 end
 
+if isa(self,'WVTransformFreeSurfaceBoussinesq')
+    error('WVTransformFreeSurfaceBoussinesq:UseCanonicalFamilies','Three-array energy flux does not describe this six-family transform. Use coefficientTendency diagnostics for physical work and the resolved energy rate, and nonlinearEnergy for the moving-volume inventory.');
+end
+
 % The phase is tricky here. It is wound forward for the flux,
 % as it should be... but then it is wound back to zero. This is
 % equivalent ignoring the phase below here.

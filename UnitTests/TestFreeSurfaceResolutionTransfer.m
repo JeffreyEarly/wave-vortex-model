@@ -121,7 +121,7 @@ classdef TestFreeSurfaceResolutionTransfer < matlab.unittest.TestCase
             testCase.verifyEqual([a.sourceEnergy a.targetEnergy a.errorEnergy a.relativeFieldError],[0 0 0 0])
             testCase.verifyError(@()w.coefficientStateForTransform(target,modeTolerance=1e-12),'WV:TransferModeMismatch')
             qg=newTransform("qg","exponential");
-            testCase.verifyError(@()qg.waveVortexTransformWithResolution([8 8 65],apvModeCount=100),'IMBasisSet:InvalidDiscreteModeCount')
+            testCase.verifyError(@()qg.waveVortexTransformWithResolution([8 8 65],apvModeCount=100),'IMBasisSet:InsufficientDiscreteSamples')
             testCase.verifyEqual(qg.apvModeCount,3)
         end
         function activeAndInactiveEndpointsSurviveTransfer(testCase)

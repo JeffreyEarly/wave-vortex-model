@@ -14,6 +14,10 @@ end
 arguments (Output)
     wvt (1,1) WVTransformFreeSurfaceBoussinesq
 end
+convention = CAAnnotatedClass.propertyValuesFromGroup(group,{'fieldConvention'});
+if string(convention.fieldConvention)~=WVTransformFreeSurfaceBoussinesq.fieldConvention
+    error('WVTransform:UnsupportedFieldConvention','The saved field interpretation does not match the physical-velocity upper-constant beta convention.');
+end
 [Lxyz,Nxyz,args] = WVGeometryDoublyPeriodicStratified.requiredPropertiesForGeometryFromGroup(group);
 state = struct(args{:});
 state.Lxyz = Lxyz; state.Nxyz = Nxyz;

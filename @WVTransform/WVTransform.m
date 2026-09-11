@@ -1038,6 +1038,7 @@ classdef WVTransform < matlab.mixin.indexing.RedefinesDot & CAAnnotatedClass
             spatialForcing = WVTransform.sortForcingByPriority(spatialForcing);
             spectralForcing = WVTransform.sortForcingByPriority(spectralForcing);
             amplitudeForcing = WVTransform.sortForcingByPriority(amplitudeForcing);
+            self.validateForcingInventory([spatialForcing spectralForcing amplitudeForcing]);
         end
 
         function commitForcingRegistry(self,spatialForcing,spectralForcing,amplitudeForcing,nameMap)
@@ -1064,6 +1065,13 @@ classdef WVTransform < matlab.mixin.indexing.RedefinesDot & CAAnnotatedClass
     methods (Access=protected)
         % protected — Access from methods in class or subclasses
         varargout = interpolatedFieldAtPosition(self,x,y,z,method,varargin);
+
+        function validateForcingInventory(~,~)
+            % Validate subclass constraints on the effective named registry.
+            % The base transform adds no constraints beyond forcing category
+            % and ownership validation. Subclasses may reject the staged
+            % inventory here, before registry state or callbacks change.
+        end
     end
 
     methods (Static)

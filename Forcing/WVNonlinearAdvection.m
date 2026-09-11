@@ -5,7 +5,7 @@ classdef WVNonlinearAdvection < WVForcing
     % momentum, thermodynamic, or quasigeostrophic potential-vorticity
     % (QGPV) equation appropriate to the transform.
     %
-    % For nonhydrostatic transforms,
+    % For legacy nonhydrostatic transforms,
     %
     % $$
     % \begin{align}
@@ -41,10 +41,14 @@ classdef WVNonlinearAdvection < WVForcing
     %
     % ### Notes
     %
-    % Every supported transform installs this forcing by default. A
+    % Each legacy transform installs this forcing by default. A
     % nonlinear `WVModel` evaluates it automatically. Analytical linear
     % evolution does not evaluate nonlinear forcing, so the object does not
     % need to be removed when using linear evolution.
+    % Free-surface Boussinesq transforms remain linear by default. Adding
+    % this forcing requires horizontal antialiasing and an inventory
+    % constructed with quadratic-product qualification. Its callback adds
+    % the manuscript -N-P sources in hatted coordinates using modal pressure.
     %
     % ### Example
     %
@@ -78,6 +82,10 @@ classdef WVNonlinearAdvection < WVForcing
             % - Declaration: contract = portableImplementationContract(self)
             % - Returns contract: versioned data-only forcing contract
             % - Developer: true
+            if isa(self.wvt,'WVTransformFreeSurfaceBoussinesq')
+                contract = WVInternal.portableImplementationContract(string(class(self)),"WVNonlinearAdvection","unavailable","The mapped free-surface Boussinesq advection has no qualified portable implementation.",struct());
+                return
+            end
             payload = struct("name",string(self.name),"forcingTypes",string(self.forcingType),"priority",self.priority);
             contract = self.supportedPortableImplementationContract("WVNonlinearAdvection",payload);
         end
@@ -110,6 +118,11 @@ classdef WVNonlinearAdvection < WVForcing
         end
 
         function [Fu, Fv, Fw, Feta] = addNonhydrostaticSpatialForcing(self, wvt, Fu, Fv, Fw, Feta)
+            if isa(wvt,'WVTransformFreeSurfaceBoussinesq')
+                [u,v,w,eta] = wvt.nonlinearAdvectionSources();
+                Fu=Fu+u; Fv=Fv+v; Fw=Fw+w; Feta=Feta+eta;
+                return
+            end
             Fu = Fu - (wvt.u .* wvt.diffX(wvt.u)   + wvt.v .* wvt.diffY(wvt.u)   + wvt.w .*  wvt.diffZF(wvt.u));
             Fv = Fv - (wvt.u .* wvt.diffX(wvt.v)   + wvt.v .* wvt.diffY(wvt.v)   + wvt.w .*  wvt.diffZF(wvt.v));
             Fw = Fw - (wvt.u .* wvt.diffX(wvt.w)   + wvt.v .* wvt.diffY(wvt.w)   + wvt.w .*  wvt.diffZG(wvt.w));

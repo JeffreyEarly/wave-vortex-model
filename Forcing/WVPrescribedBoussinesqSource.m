@@ -4,7 +4,11 @@ classdef WVPrescribedBoussinesqSource < WVForcing
     % Each rate is multiplied by cos(frequency*(t-referenceTime)+phase).
     % Momentum rates are in m/s^2; etaRate is the source of total displacement
     % in m/s. The pattern includes its endpoint values, not boundary sheets.
-    % This experimental source uses the free-surface Boussinesq projector.
+    % sourceCoordinates="reference" specifies hatted momentum rates for
+    % the linear source projector. sourceCoordinates="physical" specifies
+    % physical momentum rates for the mapped nonlinear equations. Both use
+    % samples on the transform's reference grid. The callback returns the
+    % declared patterns; the receiving equation performs any coordinate map.
     %
     % ```matlab
     % force = WVPrescribedBoussinesqSource(wvt,uRate=1e-7*ones(wvt.Nx,wvt.Ny,wvt.Nz));
@@ -30,6 +34,13 @@ classdef WVPrescribedBoussinesqSource < WVForcing
         % Total-displacement source pattern in m/s.
         % - Topic: Inspect forcing configuration
         etaRate
+        % Coordinate convention for momentum rates: "reference" or "physical".
+        %
+        % Reference rates act on hatted velocity. Physical rates act on
+        % physical velocity; their samples still use the reference grid.
+        % etaRate always specifies a source of total displacement.
+        % - Topic: Inspect forcing configuration
+        sourceCoordinates (1,1) string
         % Angular forcing frequency in rad/s; zero gives a constant source.
         % - Topic: Inspect forcing configuration
         frequency
@@ -50,6 +61,7 @@ classdef WVPrescribedBoussinesqSource < WVForcing
             % - Parameter options.vRate: Nx by Ny by Nz meridional acceleration; default zero
             % - Parameter options.wRate: Nx by Ny by Nz vertical acceleration; default zero
             % - Parameter options.etaRate: Nx by Ny by Nz total-displacement source; default zero
+            % - Parameter options.sourceCoordinates: "reference" (default) for hatted momentum rates, or "physical" for physical momentum rates sampled on the reference grid
             % - Parameter options.frequency: nonnegative angular frequency; default zero
             % - Parameter options.referenceTime: absolute forcing time origin; default zero
             % - Parameter options.phase: phase at referenceTime; default zero
@@ -60,6 +72,7 @@ classdef WVPrescribedBoussinesqSource < WVForcing
                 options.vRate double {mustBeReal,mustBeFinite} = zeros(wvt.Nx,wvt.Ny,wvt.Nz)
                 options.wRate double {mustBeReal,mustBeFinite} = zeros(wvt.Nx,wvt.Ny,wvt.Nz)
                 options.etaRate double {mustBeReal,mustBeFinite} = zeros(wvt.Nx,wvt.Ny,wvt.Nz)
+                options.sourceCoordinates (1,1) string {mustBeMember(options.sourceCoordinates,["reference","physical"])} = "reference"
                 options.frequency (1,1) double {mustBeReal,mustBeFinite,mustBeNonnegative} = 0
                 options.referenceTime (1,1) double {mustBeReal,mustBeFinite} = 0
                 options.phase (1,1) double {mustBeReal,mustBeFinite} = 0
@@ -73,7 +86,11 @@ classdef WVPrescribedBoussinesqSource < WVForcing
             for name = string(fieldnames(options)).', self.(name)=options.(name); end
         end
         function [u,v,w,eta] = addNonhydrostaticSpatialForcing(self,wvt,u,v,w,eta)
-            % Add sources at the current absolute model time.
+            % Add declared-coordinate sources at the current absolute model time.
+            %
+            % No coordinate mapping is performed here. The receiver must
+            % interpret momentum rates using sourceCoordinates; eta is
+            % always a total-displacement source.
             % - Topic: Implement forcing evaluation
             scale=cos(self.frequency*(wvt.t-self.referenceTime)+self.phase);
             u=u+scale*self.uRate; v=v+scale*self.vRate;
@@ -89,12 +106,12 @@ classdef WVPrescribedBoussinesqSource < WVForcing
             % - Topic: Forcing persistence
             % - Declaration: force = forcingWithResolutionOfTransform(target)
             % - Parameter target: compatible free-surface Boussinesq target
-            % - Returns force: target-owned source with unchanged absolute clock
+            % - Returns force: target-owned source with unchanged absolute clock and coordinate convention
             arguments (Input)
                 self WVPrescribedBoussinesqSource
                 target WVTransformFreeSurfaceBoussinesq
             end
-            options=struct(frequency=self.frequency,referenceTime=self.referenceTime,phase=self.phase);
+            options=struct(frequency=self.frequency,referenceTime=self.referenceTime,phase=self.phase,sourceCoordinates=self.sourceCoordinates);
             for name=["uRate","vRate","wRate","etaRate"]
                 [options.(name),residual]=WVInternal.freeSurfaceSpatialTransfer(self.wvt,target,self.(name));
                 if residual>1e-8
@@ -125,17 +142,18 @@ classdef WVPrescribedBoussinesqSource < WVForcing
     end
     methods (Static)
         function names = classRequiredPropertyNames()
-            names={'uRate','vRate','wRate','etaRate','frequency','referenceTime','phase'};
+            names={'uRate','vRate','wRate','etaRate','sourceCoordinates','frequency','referenceTime','phase'};
         end
         function a = classDefinedPropertyAnnotations()
             a=CAPropertyAnnotation.empty(0,0);
             for name=["uRate","vRate","wRate","etaRate"]
                 units='m s-2'; if name=="etaRate", units='m s-1'; end
-                a(end+1)=CANumericProperty(char(name),{'x','y','z'},units,char(name));
+                a(end+1)=CANumericProperty(char(name),{'x','y','z'},units,char(name)); %#ok<AGROW> Four fixed rate annotations.
             end
             a(end+1)=CANumericProperty('frequency',{},'rad s-1','angular forcing frequency');
             a(end+1)=CANumericProperty('referenceTime',{},'s','absolute forcing reference time');
             a(end+1)=CANumericProperty('phase',{},'rad','forcing phase at reference time');
+            a(end+1)=CAPropertyAnnotation('sourceCoordinates','momentum-rate coordinates: reference hatted velocity or physical velocity, sampled on the reference grid');
         end
     end
 end
