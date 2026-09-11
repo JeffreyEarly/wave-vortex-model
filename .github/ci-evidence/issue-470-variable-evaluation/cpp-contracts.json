@@ -1,0 +1,727 @@
+{
+  "finalRuntimeSourceCommit": "c45705ef",
+  "fullSuiteSourceCommit": "bdc57f7f",
+  "verification": "One full 57-test run per configuration; failed and directly affected cases rerun after corrections.",
+  "builds": {
+    "release": {
+      "fullSuite": {
+        "rawReceiptPath": "/private/tmp/wvm470-release-ctest.xml",
+        "sha256": "93736c1414bd1e0ad79505a77e977dd5c12d53ae7f5493cbf9ff986e1602e7b7",
+        "tests": [
+          {
+            "name": "WVKernelContract",
+            "seconds": 0.245279,
+            "passed": true
+          },
+          {
+            "name": "WVBarotropicQGKernel",
+            "seconds": 0.180402,
+            "passed": true
+          },
+          {
+            "name": "WVPreparedModeExecutor",
+            "seconds": 0.178115,
+            "passed": true
+          },
+          {
+            "name": "WVAllocationProbe",
+            "seconds": 0.186498,
+            "passed": true
+          },
+          {
+            "name": "WVNativeFFTWOwnership",
+            "seconds": 0.331919,
+            "passed": true
+          },
+          {
+            "name": "WVSpectralOperators",
+            "seconds": 0.211854,
+            "passed": true
+          },
+          {
+            "name": "WVPrunedHorizontal",
+            "seconds": 0.215888,
+            "passed": true
+          },
+          {
+            "name": "WVCompactConstantSchedule",
+            "seconds": 0.496437,
+            "passed": true
+          },
+          {
+            "name": "portable-implementation-contract",
+            "seconds": 0.194032,
+            "passed": true
+          },
+          {
+            "name": "portable-typed-record",
+            "seconds": 0.170533,
+            "passed": true
+          },
+          {
+            "name": "observation-schema-batch",
+            "seconds": 0.172596,
+            "passed": true
+          },
+          {
+            "name": "portable-variable-catalog",
+            "seconds": 0.177592,
+            "passed": true
+          },
+          {
+            "name": "no-motion-profile",
+            "seconds": 0.186965,
+            "passed": true
+          },
+          {
+            "name": "no-motion-profile-recovery",
+            "seconds": 0.174676,
+            "passed": true
+          },
+          {
+            "name": "density-event-evaluation",
+            "seconds": 0.173801,
+            "passed": true
+          },
+          {
+            "name": "density-field-evaluation",
+            "seconds": 0.221441,
+            "passed": true
+          },
+          {
+            "name": "observer-adapter",
+            "seconds": 0.186943,
+            "passed": true
+          },
+          {
+            "name": "extension-catalog",
+            "seconds": 0.20364,
+            "passed": true
+          },
+          {
+            "name": "forcing-compatibility-catalog",
+            "seconds": 0.186438,
+            "passed": true
+          },
+          {
+            "name": "stratified-modal-record",
+            "seconds": 0.394586,
+            "passed": true
+          },
+          {
+            "name": "allocation-probe",
+            "seconds": 0.0103742,
+            "passed": true
+          },
+          {
+            "name": "checkpoint-reader",
+            "seconds": 0.370213,
+            "passed": true
+          },
+          {
+            "name": "checkpoint-writer",
+            "seconds": 0.341662,
+            "passed": false
+          },
+          {
+            "name": "variable-evaluation",
+            "seconds": 0.191779,
+            "passed": true
+          },
+          {
+            "name": "forcing-diagnostic-session",
+            "seconds": 0.171678,
+            "passed": true
+          },
+          {
+            "name": "forcing-and-rk4",
+            "seconds": 0.259336,
+            "passed": true
+          },
+          {
+            "name": "forcing-tendencies",
+            "seconds": 0.663336,
+            "passed": true
+          },
+          {
+            "name": "unified-integration",
+            "seconds": 0.217744,
+            "passed": true
+          },
+          {
+            "name": "barotropic-qg-integration",
+            "seconds": 0.206403,
+            "passed": true
+          },
+          {
+            "name": "barotropic-qg-forcing",
+            "seconds": 0.213029,
+            "passed": true
+          },
+          {
+            "name": "barotropic-qg-model-output",
+            "seconds": 0.671485,
+            "passed": true
+          },
+          {
+            "name": "output-orchestration",
+            "seconds": 0.217485,
+            "passed": true
+          },
+          {
+            "name": "output-occurrence",
+            "seconds": 0.189434,
+            "passed": true
+          },
+          {
+            "name": "model-output-netcdf",
+            "seconds": 2.82107,
+            "passed": true
+          },
+          {
+            "name": "model-output-configuration",
+            "seconds": 0.250362,
+            "passed": true
+          },
+          {
+            "name": "model-facade",
+            "seconds": 0.359612,
+            "passed": true
+          },
+          {
+            "name": "field-evaluation",
+            "seconds": 0.260616,
+            "passed": true
+          },
+          {
+            "name": "observer-output-evaluation",
+            "seconds": 0.218146,
+            "passed": true
+          },
+          {
+            "name": "observation-occurrence",
+            "seconds": 0.347191,
+            "passed": true
+          },
+          {
+            "name": "lagrangian-particles",
+            "seconds": 0.245858,
+            "passed": true
+          },
+          {
+            "name": "runner-variable-policy",
+            "seconds": 0.170049,
+            "passed": true
+          },
+          {
+            "name": "standalone-runner",
+            "seconds": 5.01261,
+            "passed": true
+          },
+          {
+            "name": "forward-integration-probe",
+            "seconds": 0.345553,
+            "passed": true
+          },
+          {
+            "name": "barotropic-qg-native-fftw",
+            "seconds": 0.188729,
+            "passed": true
+          },
+          {
+            "name": "extended-runner-composition",
+            "seconds": 0.00568817,
+            "passed": true
+          },
+          {
+            "name": "run-request",
+            "seconds": 0.228201,
+            "passed": true
+          },
+          {
+            "name": "observer-dispatch-source-policy",
+            "seconds": 0.29681,
+            "passed": true
+          },
+          {
+            "name": "forcing-dispatch-source-policy",
+            "seconds": 0.0273772,
+            "passed": false
+          },
+          {
+            "name": "runtime-architecture-source-policy",
+            "seconds": 0.108866,
+            "passed": true
+          },
+          {
+            "name": "barotropic-qg-architecture-source-policy",
+            "seconds": 0.0152334,
+            "passed": true
+          },
+          {
+            "name": "output-schedule-dispatch-source-policy",
+            "seconds": 0.104658,
+            "passed": true
+          },
+          {
+            "name": "observation-occurrence-source-policy",
+            "seconds": 0.0678828,
+            "passed": true
+          },
+          {
+            "name": "stratified-qg-kernel",
+            "seconds": 0.232192,
+            "passed": true
+          },
+          {
+            "name": "hydrostatic-kernel",
+            "seconds": 0.209795,
+            "passed": true
+          },
+          {
+            "name": "hydrostatic-runtime",
+            "seconds": 0.220614,
+            "passed": true
+          },
+          {
+            "name": "boussinesq-kernel",
+            "seconds": 0.619615,
+            "passed": true
+          },
+          {
+            "name": "boussinesq-runtime",
+            "seconds": 0.276772,
+            "passed": true
+          }
+        ]
+      },
+      "corrections": {
+        "rawReceiptPath": "/private/tmp/wvm470-release-corrections.xml",
+        "sha256": "f8e91de2b54b5d14ffa1879cc01dbd88509a2074bce061e8a69248986a8eb7a3",
+        "tests": [
+          {
+            "name": "extension-catalog",
+            "seconds": 0.280829,
+            "passed": true
+          },
+          {
+            "name": "checkpoint-writer",
+            "seconds": 0.391395,
+            "passed": true
+          },
+          {
+            "name": "forcing-and-rk4",
+            "seconds": 0.312094,
+            "passed": true
+          },
+          {
+            "name": "forcing-tendencies",
+            "seconds": 0.699264,
+            "passed": true
+          },
+          {
+            "name": "barotropic-qg-integration",
+            "seconds": 0.252759,
+            "passed": true
+          },
+          {
+            "name": "barotropic-qg-forcing",
+            "seconds": 0.223559,
+            "passed": true
+          },
+          {
+            "name": "model-facade",
+            "seconds": 0.370348,
+            "passed": true
+          },
+          {
+            "name": "field-evaluation",
+            "seconds": 0.276907,
+            "passed": true
+          },
+          {
+            "name": "forcing-dispatch-source-policy",
+            "seconds": 0.0662109,
+            "passed": true
+          },
+          {
+            "name": "runtime-architecture-source-policy",
+            "seconds": 0.0881924,
+            "passed": true
+          },
+          {
+            "name": "hydrostatic-runtime",
+            "seconds": 0.275281,
+            "passed": true
+          },
+          {
+            "name": "boussinesq-runtime",
+            "seconds": 0.255915,
+            "passed": true
+          }
+        ]
+      },
+      "all57ContractsPassedAfterCorrections": true
+    },
+    "sanitized": {
+      "fullSuite": {
+        "rawReceiptPath": "/private/tmp/wvm470-sanitized-ctest.xml",
+        "sha256": "c68a553aa9a09832834d19fbe5f0092841efe026348d8406deab29ee0c823192",
+        "tests": [
+          {
+            "name": "WVKernelContract",
+            "seconds": 0.274379,
+            "passed": true
+          },
+          {
+            "name": "WVBarotropicQGKernel",
+            "seconds": 0.307451,
+            "passed": true
+          },
+          {
+            "name": "WVPreparedModeExecutor",
+            "seconds": 0.199068,
+            "passed": true
+          },
+          {
+            "name": "WVAllocationProbe",
+            "seconds": 0.32675,
+            "passed": true
+          },
+          {
+            "name": "WVNativeFFTWOwnership",
+            "seconds": 0.472148,
+            "passed": true
+          },
+          {
+            "name": "WVSpectralOperators",
+            "seconds": 0.307747,
+            "passed": true
+          },
+          {
+            "name": "WVPrunedHorizontal",
+            "seconds": 0.317425,
+            "passed": true
+          },
+          {
+            "name": "WVCompactConstantSchedule",
+            "seconds": 0.620312,
+            "passed": true
+          },
+          {
+            "name": "portable-implementation-contract",
+            "seconds": 0.275814,
+            "passed": true
+          },
+          {
+            "name": "portable-typed-record",
+            "seconds": 0.266529,
+            "passed": true
+          },
+          {
+            "name": "observation-schema-batch",
+            "seconds": 0.258266,
+            "passed": true
+          },
+          {
+            "name": "portable-variable-catalog",
+            "seconds": 0.275923,
+            "passed": true
+          },
+          {
+            "name": "no-motion-profile",
+            "seconds": 0.268747,
+            "passed": true
+          },
+          {
+            "name": "no-motion-profile-recovery",
+            "seconds": 0.261686,
+            "passed": true
+          },
+          {
+            "name": "density-event-evaluation",
+            "seconds": 0.250137,
+            "passed": true
+          },
+          {
+            "name": "density-field-evaluation",
+            "seconds": 0.380146,
+            "passed": true
+          },
+          {
+            "name": "observer-adapter",
+            "seconds": 0.303611,
+            "passed": true
+          },
+          {
+            "name": "extension-catalog",
+            "seconds": 0.359743,
+            "passed": true
+          },
+          {
+            "name": "forcing-compatibility-catalog",
+            "seconds": 0.26792,
+            "passed": true
+          },
+          {
+            "name": "stratified-modal-record",
+            "seconds": 0.490212,
+            "passed": true
+          },
+          {
+            "name": "allocation-probe",
+            "seconds": 0.035843,
+            "passed": true
+          },
+          {
+            "name": "checkpoint-reader",
+            "seconds": 0.49556,
+            "passed": true
+          },
+          {
+            "name": "checkpoint-writer",
+            "seconds": 0.522182,
+            "passed": false
+          },
+          {
+            "name": "variable-evaluation",
+            "seconds": 0.271331,
+            "passed": true
+          },
+          {
+            "name": "forcing-diagnostic-session",
+            "seconds": 0.246985,
+            "passed": true
+          },
+          {
+            "name": "forcing-and-rk4",
+            "seconds": 0.433035,
+            "passed": true
+          },
+          {
+            "name": "forcing-tendencies",
+            "seconds": 1.05474,
+            "passed": true
+          },
+          {
+            "name": "unified-integration",
+            "seconds": 0.374584,
+            "passed": true
+          },
+          {
+            "name": "barotropic-qg-integration",
+            "seconds": 0.387155,
+            "passed": true
+          },
+          {
+            "name": "barotropic-qg-forcing",
+            "seconds": 0.357829,
+            "passed": true
+          },
+          {
+            "name": "barotropic-qg-model-output",
+            "seconds": 1.18594,
+            "passed": true
+          },
+          {
+            "name": "output-orchestration",
+            "seconds": 0.344002,
+            "passed": true
+          },
+          {
+            "name": "output-occurrence",
+            "seconds": 0.319129,
+            "passed": true
+          },
+          {
+            "name": "model-output-netcdf",
+            "seconds": 4.92871,
+            "passed": true
+          },
+          {
+            "name": "model-output-configuration",
+            "seconds": 0.425447,
+            "passed": true
+          },
+          {
+            "name": "model-facade",
+            "seconds": 0.601139,
+            "passed": true
+          },
+          {
+            "name": "field-evaluation",
+            "seconds": 0.428153,
+            "passed": true
+          },
+          {
+            "name": "observer-output-evaluation",
+            "seconds": 0.393648,
+            "passed": true
+          },
+          {
+            "name": "observation-occurrence",
+            "seconds": 0.580212,
+            "passed": true
+          },
+          {
+            "name": "lagrangian-particles",
+            "seconds": 0.409532,
+            "passed": true
+          },
+          {
+            "name": "runner-variable-policy",
+            "seconds": 0.261867,
+            "passed": true
+          },
+          {
+            "name": "standalone-runner",
+            "seconds": 8.71192,
+            "passed": true
+          },
+          {
+            "name": "forward-integration-probe",
+            "seconds": 0.804057,
+            "passed": true
+          },
+          {
+            "name": "barotropic-qg-native-fftw",
+            "seconds": 0.287118,
+            "passed": true
+          },
+          {
+            "name": "extended-runner-composition",
+            "seconds": 0.047832,
+            "passed": true
+          },
+          {
+            "name": "run-request",
+            "seconds": 0.306537,
+            "passed": true
+          },
+          {
+            "name": "observer-dispatch-source-policy",
+            "seconds": 0.260141,
+            "passed": true
+          },
+          {
+            "name": "forcing-dispatch-source-policy",
+            "seconds": 0.0220386,
+            "passed": false
+          },
+          {
+            "name": "runtime-architecture-source-policy",
+            "seconds": 0.0749917,
+            "passed": true
+          },
+          {
+            "name": "barotropic-qg-architecture-source-policy",
+            "seconds": 0.0129557,
+            "passed": true
+          },
+          {
+            "name": "output-schedule-dispatch-source-policy",
+            "seconds": 0.0875172,
+            "passed": true
+          },
+          {
+            "name": "observation-occurrence-source-policy",
+            "seconds": 0.0540649,
+            "passed": true
+          },
+          {
+            "name": "stratified-qg-kernel",
+            "seconds": 0.32578,
+            "passed": true
+          },
+          {
+            "name": "hydrostatic-kernel",
+            "seconds": 0.35345,
+            "passed": true
+          },
+          {
+            "name": "hydrostatic-runtime",
+            "seconds": 0.376341,
+            "passed": true
+          },
+          {
+            "name": "boussinesq-kernel",
+            "seconds": 0.736687,
+            "passed": true
+          },
+          {
+            "name": "boussinesq-runtime",
+            "seconds": 0.461394,
+            "passed": true
+          }
+        ]
+      },
+      "corrections": {
+        "rawReceiptPath": "/private/tmp/wvm470-sanitized-corrections.xml",
+        "sha256": "6bdbbf1a3bc1bcaee205f9053617daf9bae5247ee6296aa8a38ab7b95c7cecca",
+        "tests": [
+          {
+            "name": "extension-catalog",
+            "seconds": 0.379589,
+            "passed": true
+          },
+          {
+            "name": "checkpoint-writer",
+            "seconds": 0.615339,
+            "passed": true
+          },
+          {
+            "name": "forcing-and-rk4",
+            "seconds": 0.429141,
+            "passed": true
+          },
+          {
+            "name": "forcing-tendencies",
+            "seconds": 1.08768,
+            "passed": true
+          },
+          {
+            "name": "barotropic-qg-integration",
+            "seconds": 0.350813,
+            "passed": true
+          },
+          {
+            "name": "barotropic-qg-forcing",
+            "seconds": 0.332306,
+            "passed": true
+          },
+          {
+            "name": "model-facade",
+            "seconds": 0.577156,
+            "passed": true
+          },
+          {
+            "name": "field-evaluation",
+            "seconds": 0.435657,
+            "passed": true
+          },
+          {
+            "name": "forcing-dispatch-source-policy",
+            "seconds": 0.0714009,
+            "passed": true
+          },
+          {
+            "name": "runtime-architecture-source-policy",
+            "seconds": 0.084886,
+            "passed": true
+          },
+          {
+            "name": "hydrostatic-runtime",
+            "seconds": 0.422798,
+            "passed": true
+          },
+          {
+            "name": "boussinesq-runtime",
+            "seconds": 0.427024,
+            "passed": true
+          }
+        ]
+      },
+      "all57ContractsPassedAfterCorrections": true
+    }
+  }
+}
