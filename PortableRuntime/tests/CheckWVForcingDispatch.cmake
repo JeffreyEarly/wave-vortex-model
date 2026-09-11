@@ -18,7 +18,7 @@ set(forcing_class_literals
 list(APPEND forcing_class_literals WVNarrowBandGeostrophicForcing)
 
 foreach(source IN LISTS forcing_sources)
-    if(source MATCHES "/WVForcingContracts\.cpp$")
+    if(source MATCHES "/WVForcingContracts[.]cpp$")
         continue()
     endif()
     file(READ "${source}" contents)

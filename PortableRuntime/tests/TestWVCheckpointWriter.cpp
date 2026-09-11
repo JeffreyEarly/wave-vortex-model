@@ -62,6 +62,12 @@ bool sameComplex(const std::vector<WVComplex64>& left, const std::vector<WVCompl
     return true;
 }
 
+bool finiteComplex(const std::vector<WVComplex64>& values) {
+    return std::all_of(values.begin(), values.end(), [](const auto value) {
+        return std::isfinite(value.real) && std::isfinite(value.imag);
+    });
+}
+
 bool sameTypedRecord(const WVPortableTypedRecord& left, const WVPortableTypedRecord& right) {
     if (left.schemaIdentifier != right.schemaIdentifier || left.schemaVersion != right.schemaVersion || left.values.size() != right.values.size()) return false;
     for (std::size_t index = 0; index < left.values.size(); ++index) {
@@ -130,6 +136,7 @@ void synchronizeTime(WVCheckpoint& checkpoint, const WVMutableIntegrationState& 
 }
 
 void testRestartContinuation() {
+    constexpr double step = 1e-5;
     for (const char* name : {"forcing-mixed-hydrostatic.nc", "forcing-mixed-nonhydrostatic.nc"}) {
         auto uninterrupted = read(fixture(name));
         auto prefix = uninterrupted;
@@ -143,9 +150,11 @@ void testRestartContinuation() {
         require(static_cast<bool>(result), result.message);
         result = prefixIntegrator.prepareStateAfterRestart(prefixState);
         require(static_cast<bool>(result), result.message);
-        result = uninterruptedIntegrator.advanceToTime(uninterruptedState, uninterruptedState.waveVortex.t + 0.275, 0.1);
+        result = uninterruptedIntegrator.step(uninterruptedState, step);
         require(static_cast<bool>(result), result.message);
-        result = prefixIntegrator.advanceToTime(prefixState, prefixState.waveVortex.t + 0.2, 0.1);
+        result = uninterruptedIntegrator.step(uninterruptedState, step);
+        require(static_cast<bool>(result), result.message);
+        result = prefixIntegrator.step(prefixState, step);
         require(static_cast<bool>(result), result.message);
         synchronizeTime(prefix, prefixState);
 
@@ -160,8 +169,15 @@ void testRestartContinuation() {
         auto restartedState = mutableState(restarted);
         result = restartedIntegrator.prepareStateAfterRestart(restartedState);
         require(static_cast<bool>(result), result.message);
-        result = restartedIntegrator.advanceToTime(restartedState, uninterruptedState.waveVortex.t, 0.1);
+        result = restartedIntegrator.step(restartedState, step);
         require(static_cast<bool>(result), result.message);
+        require(finiteComplex(uninterrupted.state.coefficients.Ap) &&
+                    finiteComplex(uninterrupted.state.coefficients.Am) &&
+                    finiteComplex(uninterrupted.state.coefficients.A0) &&
+                    finiteComplex(restarted.state.coefficients.Ap) &&
+                    finiteComplex(restarted.state.coefficients.Am) &&
+                    finiteComplex(restarted.state.coefficients.A0),
+                "checkpoint restart continuation produced nonfinite coefficients");
         require(restartedState.waveVortex.t == uninterruptedState.waveVortex.t && sameComplex(restarted.state.coefficients.Ap, uninterrupted.state.coefficients.Ap) && sameComplex(restarted.state.coefficients.Am, uninterrupted.state.coefficients.Am) && sameComplex(restarted.state.coefficients.A0, uninterrupted.state.coefficients.A0), "checkpoint restart continuation differs from uninterrupted RK4");
     }
 }
