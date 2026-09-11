@@ -400,7 +400,9 @@ void testNumericalForcingMatrix() {
                         static_cast<std::size_t>(WVBarotropicQGField::v)][0] == 1 &&
                     repeatedDamping->variableEvaluationMetrics()
                             .producerExecutions == 1 &&
-                    repeatedDamping->variableEvaluationMetrics().cacheHits == 1,
+                    repeatedDamping->variableEvaluationMetrics().cacheHits == 1 &&
+                    repeatedDamping->metrics().horizontalSpeedReductionCount == 1 &&
+                    repeatedDamping->kernel().metrics().horizontalSpeedMaximumReductionCount == 1,
                 "Repeated Barotropic QG damping missed its cached speed reduction");
         std::vector<WVComplex64> activeState=A0;
         const WVComplexConstView activeInput{

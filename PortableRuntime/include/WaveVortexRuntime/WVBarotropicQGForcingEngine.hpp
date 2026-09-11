@@ -35,6 +35,7 @@ struct WVBarotropicQGForcingEngineMetrics {
   std::size_t resolvedAmplitudeCount = 0;
   std::size_t physicalFieldReconstructionCount = 0;
   std::size_t physicalFieldReuseCount = 0;
+  std::size_t horizontalSpeedReductionCount = 0;
   std::size_t spatialTendencyProjectionCount = 0;
   std::size_t stateConstraintElementWrites = 0;
 };

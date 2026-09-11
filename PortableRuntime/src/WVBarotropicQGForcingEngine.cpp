@@ -592,7 +592,11 @@ WVKernelStatus WVBarotropicQGForcingExecutionContext::nonlinearAdvection() {
 WVKernelStatus WVBarotropicQGForcingExecutionContext::adaptiveDamping(
     const std::vector<double> &dampingOperator) {
   auto producer = [&](double& maximum) {
-    return engine_->kernel().horizontalSpeedMaximum(A0_,maximum,workspace_);
+    const auto before=engine_->kernel().metrics().horizontalSpeedMaximumReductionCount;
+    const auto status=engine_->kernel().horizontalSpeedMaximum(A0_,maximum,workspace_);
+    engine_->metrics_.horizontalSpeedReductionCount+=
+        engine_->kernel().metrics().horizontalSpeedMaximumReductionCount-before;
+    return status;
   };
   const auto status = diagnosticWorkspace_ ?
       diagnosticWorkspace_->evaluateHorizontalMaximum(
@@ -875,8 +879,12 @@ WVKernelStatus WVBarotropicQGForcingEngine::horizontalSpeedMaximum(
   auto status = evaluation_.evaluate(
       {WVVariableEvaluationNode::reduction, 0}, sizeof(double), [&] {
         WVBarotropicQGOperationWorkspace workspace;
-        return kernel_->horizontalSpeedMaximum(
+        const auto before=kernel_->metrics().horizontalSpeedMaximumReductionCount;
+        const auto status=kernel_->horizontalSpeedMaximum(
             A0, horizontalSpeedMaximum_, workspace);
+        metrics_.horizontalSpeedReductionCount+=
+            kernel_->metrics().horizontalSpeedMaximumReductionCount-before;
+        return status;
       });
   if (status)
     maximum = horizontalSpeedMaximum_;

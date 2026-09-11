@@ -155,6 +155,7 @@ public:
     metrics.kernel.nonlinearFluxCallCount = kernel.nonlinearFluxCallCount;
     metrics.kernel.bytesCopied = kernel.bytesCopied;
     const auto &forcing = metrics.barotropicQGForcing;
+    metrics.forcing.horizontalSpeedReductionCount=forcing.horizontalSpeedReductionCount;
     metrics.forcing.scheduleBytes = forcing.scheduleBytes;
     metrics.forcing.derivedOperatorBytes = forcing.derivedOperatorBytes;
     metrics.forcing.workspaceCapacityBytes = forcing.workspaceCapacityBytes;
