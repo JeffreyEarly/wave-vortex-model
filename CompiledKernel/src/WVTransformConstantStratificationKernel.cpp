@@ -5,6 +5,7 @@
 #include <array>
 
 #include <algorithm>
+#include <atomic>
 #include <cmath>
 #include <chrono>
 #include <limits>
@@ -815,17 +816,36 @@ void WVTransformConstantStratificationKernel::setStageInstrumentation(bool enabl
     metrics_.coefficientProjectionSeconds = 0.0;
 }
 
-WVKernelStatus WVTransformConstantStratificationKernel::validateStateContents(const WVState& state) const {
+WVKernelStatus WVTransformConstantStratificationKernel::validateStateContents(
+    const WVState& state,bool allowPreparedExecutor) {
     if (!std::isfinite(state.t) || !std::isfinite(state.t0) || !std::isfinite(state.t-state.t0))
         return {WVKernelStatusCode::invalidConfiguration,"State times and elapsed time must be finite."};
     const auto spectral=descriptor_.spectralShape();
     const WVKernelStatus statuses[]={validateSpectral(state.coefficients.Ap,spectral,"Ap"),
         validateSpectral(state.coefficients.Am,spectral,"Am"),validateSpectral(state.coefficients.A0,spectral,"A0")};
     for (const auto& status:statuses) if (!status) return status;
-    for (const auto view:{state.coefficients.Ap,state.coefficients.Am,state.coefficients.A0})
-        for (std::size_t i=0;i<spectral.elementCount();++i)
-            if (!std::isfinite(view.data[i].real) || !std::isfinite(view.data[i].imag))
-                return {WVKernelStatusCode::numericalFailure,"Nonfinite constant-stratification coefficient."};
+    const WVComplexConstView views[]={state.coefficients.Ap,state.coefficients.Am,
+        state.coefficients.A0};
+    const auto count=spectral.elementCount();
+    std::atomic<bool> coefficientsFinite{true};
+    const auto scanCoefficients=[&](std::size_t begin,std::size_t end) {
+        while(begin<end) {
+            const auto viewIndex=begin/count;
+            const auto viewBegin=begin-viewIndex*count;
+            const auto viewEnd=std::min(count,end-viewIndex*count);
+            const auto* values=views[viewIndex].data;
+            for(std::size_t i=viewBegin;i<viewEnd;++i)
+                if(!std::isfinite(values[i].real) || !std::isfinite(values[i].imag)) {
+                    coefficientsFinite.store(false,std::memory_order_relaxed);
+                    return;
+                }
+            begin+=viewEnd-viewBegin;
+        }
+    };
+    if(allowPreparedExecutor) coefficientExecutor_->execute(3*count,scanCoefficients);
+    else scanCoefficients(0,3*count);
+    if(!coefficientsFinite.load(std::memory_order_relaxed))
+        return {WVKernelStatusCode::numericalFailure,"Nonfinite constant-stratification coefficient."};
     const double elapsed=state.t-state.t0;
     for (const auto frequency:descriptor_.verticalModes().omega)
         if (!std::isfinite(frequency*elapsed))
@@ -833,9 +853,10 @@ WVKernelStatus WVTransformConstantStratificationKernel::validateStateContents(co
     return WVKernelStatus::ok();
 }
 
-WVKernelStatus WVTransformConstantStratificationKernel::validateState(const WVState& state) {
+WVKernelStatus WVTransformConstantStratificationKernel::validateState(
+    const WVState& state,bool allowPreparedExecutor) {
     ++metrics_.stateValidationCount;
-    return validateStateContents(state);
+    return validateStateContents(state,allowPreparedExecutor);
 }
 
 bool WVTransformConstantStratificationKernel::matchesStateEvaluation(const WVState& state) const noexcept {
@@ -913,9 +934,13 @@ WVKernelStatus WVTransformConstantStratificationKernel::prepareStatePhase(const 
     if (!std::isfinite(state.t) || !std::isfinite(state.t0) || !std::isfinite(elapsed))
         return {WVKernelStatusCode::invalidConfiguration,"State times and elapsed time must be finite."};
     const auto& omega=descriptor_.verticalModes().omega;
-    for (std::size_t i=0;i<preparedPhase_.size();++i)
-        if (!std::isfinite(omega[i]*elapsed))
-            return {WVKernelStatusCode::numericalFailure,"Constant-stratification phase overflow."};
+    // Every registered active view was validated with these exact times and
+    // immutable coefficients. Standalone and foreign-state phase requests keep
+    // the full overflow scan.
+    if(!stateEvaluationActive_ || !matchesStateEvaluation(state))
+        for (std::size_t i=0;i<preparedPhase_.size();++i)
+            if (!std::isfinite(omega[i]*elapsed))
+                return {WVKernelStatusCode::numericalFailure,"Constant-stratification phase overflow."};
     coefficientExecutor_->execute(preparedPhase_.size(),[&](std::size_t begin,std::size_t end) {
         for (std::size_t i=begin;i<end;++i) preparedPhase_[i]=phase(omega[i]*elapsed);
     });
@@ -938,7 +963,7 @@ WVKernelStatus WVTransformConstantStratificationKernel::beginStateEvaluation(
     if (!guard.entered()) return {WVKernelStatusCode::reentrantExecution,"Kernel operations are not reentrant."};
     if (stateEvaluationActive_)
         return {WVKernelStatusCode::reentrantExecution,"Constant-stratification state evaluation is already active."};
-    auto status=validateState(state); if (!status) return status;
+    auto status=validateState(state,true); if (!status) return status;
     preparedState_=state;
     preparedStateViews_[0]=state;
     preparedStateComponents_[0]=0;
@@ -967,7 +992,7 @@ WVKernelStatus WVTransformConstantStratificationKernel::addStateEvaluationView(
                 "Constant-stratification state view is already registered with another component identity."};
     if (preparedStateViewCount_==preparedStateViews_.size())
         return {WVKernelStatusCode::invalidConfiguration,"Constant-stratification state evaluation view capacity exceeded."};
-    auto status=validateState(state); if (!status) return status;
+    auto status=validateState(state,true); if (!status) return status;
     preparedStateViews_[preparedStateViewCount_]=state;
     preparedStateComponents_[preparedStateViewCount_++]=componentIdentity;
     return WVKernelStatus::ok();

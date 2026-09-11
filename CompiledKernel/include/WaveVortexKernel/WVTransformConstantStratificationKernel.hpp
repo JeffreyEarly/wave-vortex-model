@@ -159,8 +159,10 @@ public:
 
 private:
     WVTransformConstantStratificationKernel();
-    WVKernelStatus validateStateContents(const WVState&) const;
-    WVKernelStatus validateState(const WVState&);
+    WVKernelStatus validateStateContents(const WVState&,
+        bool allowPreparedExecutor = false);
+    WVKernelStatus validateState(const WVState&,
+        bool allowPreparedExecutor = false);
     WVKernelStatus validateStateForCall(const WVState&);
     WVKernelStatus validateStateAndFluxForCall(const WVState&,const WVFlux&);
     WVKernelStatus validateMutableOutputOutsidePreparedState(const WVMutableCoefficients&) const;

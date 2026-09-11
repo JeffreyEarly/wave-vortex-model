@@ -6,6 +6,7 @@
 #include <cmath>
 #include <complex>
 #include <iostream>
+#include <limits>
 #include <memory>
 #include <stdexcept>
 #include <vector>
@@ -503,6 +504,10 @@ void testNonlinearFlux(bool hydrostatic) {
     for (std::size_t field=0;field<4;++field)
         require(kernel->metrics().tendencyReconstructionCount[field]==tendencyBefore[field]+1,
             "constant derived tendency field production was not counted");
+    WVComplexConstView foreignPhase;
+    require(kernel->preparedPhase(registeredState,foreignPhase).code==
+                WVKernelStatusCode::invalidConfiguration && !foreignPhase.data,
+        "unregistered same-time state reused an active validated phase");
     require(bool(kernel->addStateEvaluationView(registeredState,&evaluationOwner,2)),"register constant-stratification state view");
     require(bool(kernel->transformWaveVortexToUV(registeredState,horizontalVelocityView)),"registered constant-stratification state view was rejected");
     require(kernel->metrics().stateValidationCount==validationBeforeScope+2 &&
@@ -512,6 +517,24 @@ void testNonlinearFlux(bool hydrostatic) {
             kernel->metrics().reconstructionCount[1][0][2]==1,
         "registered constant-stratification component production lost its identity");
     require(bool(kernel->endStateEvaluation()),"end horizontal-velocity state evaluation");
+    const std::array<std::vector<WVComplex64>*,3> coefficientFamilies{
+        &Ap,&Am,&A0};
+    for(std::size_t family=0;family<coefficientFamilies.size();++family) {
+        auto& values=*coefficientFamilies[family];
+        const auto index=(family+1)*count/coefficientFamilies.size()-1;
+        const auto saved=values[index];
+        values[index].imag=std::numeric_limits<double>::infinity();
+        const auto validationsBeforeFailure=kernel->metrics().stateValidationCount;
+        const auto invalidState=kernel->beginStateEvaluation(state);
+        require(invalidState.code==WVKernelStatusCode::numericalFailure &&
+                    !kernel->stateEvaluationActive() &&
+                    kernel->metrics().stateValidationCount==validationsBeforeFailure+1,
+            "parallel constant-state validation missed a nonfinite coefficient or retained a failed scope");
+        values[index]=saved;
+    }
+    require(bool(kernel->beginStateEvaluation(state)) &&
+                bool(kernel->endStateEvaluation()),
+        "constant-state validation did not recover after a parallel scan failure");
     std::vector<double> fFieldAndDerivatives(4*R);
     WVRealFieldBundleView fFieldDerivativeView{
         fFieldAndDerivatives.data(),{config.Nx,config.Ny,config.Nz,4}};
@@ -611,6 +634,30 @@ void testNonlinearFlux(bool hydrostatic) {
     require(status.code == WVKernelStatusCode::overlappingArrays,"overlapping nonlinear-flux arrays were accepted");
 }
 
+void testStandalonePhaseOverflowValidation() {
+    auto config=configuration(4,4,false);
+    config.Nz=5;
+    config.Nj=3;
+    config.N0=1e100;
+    std::unique_ptr<WVTransformConstantStratificationKernel> kernel;
+    auto status=WVTransformConstantStratificationKernel::create(
+        config,std::make_unique<wavevortex::test::WVReferenceFFTEngine>(),kernel);
+    require(bool(status) && kernel,"phase-overflow kernel construction failed");
+    const auto spatial=kernel->descriptor().spatialShape();
+    const auto spectral=kernel->descriptor().spectralShape();
+    std::vector<double> fields(4*spatial.elementCount());
+    std::vector<WVComplex64> Ap(spectral.elementCount()),
+        Am(spectral.elementCount()),A0(spectral.elementCount());
+    WVMutableCoefficients coefficients{{Ap.data(),spectral},{Am.data(),spectral},
+        {A0.data(),spectral}};
+    const WVRealFieldBundleConstView input{fields.data(),
+        {spatial.first,spatial.second,spatial.third,4}};
+    status=kernel->transformUVWEtaToWaveVortex(input,
+        std::numeric_limits<double>::max(),0.0,coefficients);
+    require(status.code==WVKernelStatusCode::numericalFailure,
+        "standalone constant phase overflow validation was skipped");
+}
+
 [[maybe_unused]] void testFusedTransformRoundTrip(bool hydrostatic) {
     auto config = configuration(6, 5, hydrostatic);
     config.Nz = 7;
@@ -663,6 +710,7 @@ int main() {
     testReferenceHorizontalRoundTrip();
     testFusedTransformRoundTrip(true);
     testFusedTransformRoundTrip(false);
+    testStandalonePhaseOverflowValidation();
     testNonlinearFlux(true);
     testNonlinearFlux(false);
     std::cout << "WaveVortex kernel contract tests passed\n";
