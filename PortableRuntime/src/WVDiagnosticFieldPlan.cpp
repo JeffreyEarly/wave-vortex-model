@@ -142,6 +142,31 @@ WVKernelStatus WVDiagnosticFieldPlan::createImpl(const WVFieldEvaluationService&
       list.push_back({"diagnostic-"+std::to_string(group)+"-"+std::to_string(index),std::move(name),sampling});
       return index;
     };
+    const auto prepareSampler = [&](Output &output,
+                                    WVPortableNaturalRank rank,
+                                    const WVFieldSamplingRequest &sampling) {
+      if (sampling.kind == WVFieldSamplingKind::fullGrid)
+        return WVKernelStatus::ok();
+      if (rank != WVPortableNaturalRank::volume &&
+          rank != WVPortableNaturalRank::horizontal)
+        return invalid("Only gridded diagnostics support sampled output: " +
+                       output.specification.fieldName);
+      const char *proxy = rank == WVPortableNaturalRank::volume
+                              ? "u"
+                              : (plan->isBarotropic_ ? "qgpv" : "ssu");
+      WVFieldEvaluationPlan sampler;
+      auto samplerStatus = service.createPlan(
+          {{"diagnostic-sampler", proxy, sampling}}, sampler);
+      if (!samplerStatus)
+        return samplerStatus;
+      output.sampled = true;
+      output.sampling = sampling;
+      output.sampler = std::move(sampler);
+      output.specification.dimensions = output.sampler.outputs().front().dimensions;
+      output.specification.elementCount =
+          output.sampler.outputs().front().elementCount;
+      return WVKernelStatus::ok();
+    };
     for(const auto& request:requests) {
       if(request.identifier.empty() || !identifiers.insert(request.identifier).second)
         return invalid("Diagnostic output identifiers must be nonempty and unique.");
@@ -163,6 +188,8 @@ WVKernelStatus WVDiagnosticFieldPlan::createImpl(const WVFieldEvaluationService&
         output.specification.dimensions=plan->isBarotropic_ ? std::vector<std::size_t>{plan->spatial_.first,plan->spatial_.second} :
             std::vector<std::size_t>{plan->spatial_.first,plan->spatial_.second,plan->spatial_.third};
         output.specification.elementCount=plan->spatial_.elementCount();
+        auto samplerStatus=prepareSampler(output,bound.contract->metadata.naturalRank,request.sampling);
+        if(!samplerStatus) return samplerStatus;
         plan->outputs_.push_back(std::move(output));
         continue;
       }
@@ -185,8 +212,6 @@ WVKernelStatus WVDiagnosticFieldPlan::createImpl(const WVFieldEvaluationService&
       output.specification.samplingKind=request.sampling.kind;
       switch(m->identifier) {
         case Variable::rho_nm: case Variable::eta_true: case Variable::ape: case Variable::apv:
-          if(request.sampling.kind!=WVFieldSamplingKind::fullGrid)
-            return unsupported("Density qualification requires its full natural grid.");
           output.density=true;
           output.dependency=dependency(0,"rho_total",{});
           plan->densityDependency_=output.dependency;
@@ -231,21 +256,27 @@ WVKernelStatus WVDiagnosticFieldPlan::createImpl(const WVFieldEvaluationService&
             output.group=static_cast<std::size_t>(component);
             base=base.substr(0,base.rfind('_'));
           }
-          if(request.sampling.kind==WVFieldSamplingKind::fullGrid) {
-            if(base=="ssu" || base=="ssv" || base=="ssh") {
-              output.surface=true;
-              base=base=="ssu" ? "u" : base=="ssv" ? "v" : "pi";
-            } else if(base=="uvMax" || base=="wMax") {
+          if((m->ordinal>=23 || request.sampling.kind==WVFieldSamplingKind::fullGrid) &&
+              (base=="ssu" || base=="ssv" || base=="ssh")) {
+            output.surface=true;
+            base=base=="ssu" ? "u" : base=="ssv" ? "v" : "pi";
+          } else if(request.sampling.kind==WVFieldSamplingKind::fullGrid &&
+                    (base=="uvMax" || base=="wMax")) {
               output.extrema=true;
               output.auxiliaries[0]=dependency(0,base=="uvMax" ? "u" : "w",{});
               if(base=="uvMax") output.auxiliaries[1]=dependency(0,"v",{});
               output.specification.elementCount=1;
               break;
-            }
           }
-          output.dependency=dependency(output.group,base,request.sampling);
+          output.dependency=dependency(output.group,base,
+              m->ordinal>=23 && request.sampling.kind!=WVFieldSamplingKind::fullGrid ?
+                  WVFieldSamplingRequest{} : request.sampling);
           break;
         }
+      }
+      if(m->ordinal>=23) {
+        auto samplerStatus=prepareSampler(output,m->naturalRank,request.sampling);
+        if(!samplerStatus) return samplerStatus;
       }
       plan->outputs_.push_back(std::move(output));
     }
@@ -258,7 +289,7 @@ WVKernelStatus WVDiagnosticFieldPlan::createImpl(const WVFieldEvaluationService&
     }
     WVFieldEvaluationPlan candidate;
     for(auto& output:plan->outputs_) {
-      if(!output.density && !output.forcing && !output.specification.isComplex && !output.extrema && output.variable!=Variable::totalEnergySpatiallyIntegrated) {
+      if(!output.sampled && !output.density && !output.forcing && !output.specification.isComplex && !output.extrema && output.variable!=Variable::totalEnergySpatiallyIntegrated) {
         const auto& primitive=plan->groups_[output.group].fields.outputs()[output.dependency];
         output.specification.dimensions=primitive.dimensions;
         output.specification.elementCount=primitive.elementCount;
@@ -299,7 +330,9 @@ WVKernelStatus WVDiagnosticFieldPlan::rebind(const WVFieldEvaluationService& ser
           return invalid("Rebinding would change the resolved forcing identity, stage, or ordered prefix.");
       }
       WVFieldSamplingRequest sampling;
-      if(!output.forcing && !output.specification.isComplex && !output.extrema && output.variable!=Variable::totalEnergySpatiallyIntegrated)
+      if(output.sampled)
+        sampling=output.sampling;
+      else if(!output.forcing && !output.specification.isComplex && !output.extrema && output.variable!=Variable::totalEnergySpatiallyIntegrated)
         sampling=groups_[output.group].requests[output.dependency].sampling;
       requests.push_back({output.specification.identifier,output.specification.fieldName,std::move(sampling)});
     }
@@ -401,7 +434,12 @@ WVKernelStatus WVDiagnosticFieldPlan::evaluate(WVFieldEvaluationService& service
     }
   }
   auto& metrics=service.stratified_ ? service.stratified_->metrics_ : service.barotropicQG_ ? service.barotropicQG_->metrics_ : service.metrics_;
-  struct ResetLive { WVFieldEvaluationMetrics& metrics; ~ResetLive() {metrics.diagnosticWorkspaceLiveBytes=0;} } reset{metrics};
+  const auto outerWorkspaceBytes=metrics.diagnosticWorkspaceLiveBytes;
+  struct ResetLive {
+    WVFieldEvaluationMetrics& metrics;
+    std::size_t outerBytes;
+    ~ResetLive() {metrics.diagnosticWorkspaceLiveBytes=outerBytes;}
+  } reset{metrics,outerWorkspaceBytes};
   std::uint8_t densityDemands=0;
   bool needsAPV=false;
   for(std::size_t index=0;index<count;++index) if(active(index) && outputs_[index].density) {
@@ -464,8 +502,11 @@ WVKernelStatus WVDiagnosticFieldPlan::evaluate(WVFieldEvaluationService& service
       bytes+=(forcingPhysical.capacity()+densityDerivatives.capacity())*sizeof(double);
       bytes+=forcingFields.capacity()*sizeof(std::vector<double>)+forcingViews.capacity()*sizeof(WVForcingTendencyOutput);
       for(const auto& buffer:forcingFields) bytes+=buffer.capacity()*sizeof(double);
-      metrics.diagnosticWorkspaceLiveBytes=bytes;
-      metrics.diagnosticWorkspaceHighWaterBytes=std::max(metrics.diagnosticWorkspaceHighWaterBytes,bytes);
+      metrics.diagnosticWorkspaceLiveBytes=outerWorkspaceBytes+bytes;
+      metrics.diagnosticWorkspaceHighWaterBytes=std::max(
+          metrics.diagnosticWorkspaceHighWaterBytes,
+          metrics.diagnosticWorkspaceLiveBytes+
+              metrics.densityWorkspaceLiveBytes);
     };
     for(std::size_t group=0;group<groups_.size();++group) {
       const auto& plan=groups_[group].fields;
@@ -582,7 +623,25 @@ WVKernelStatus WVDiagnosticFieldPlan::evaluate(WVFieldEvaluationService& service
     for(std::size_t index=0;index<count;++index) {
       if(!active(index)) continue;
       const auto& output=outputs_[index];
-      if(output.density) {
+      if(output.sampled) {
+        const double* source=nullptr;
+        if(output.density) {
+          const auto field=output.variable==Variable::rho_nm ? WVDensityEventField::rhoNm :
+              output.variable==Variable::eta_true ? WVDensityEventField::etaTrue : WVDensityEventField::ape;
+          const auto values=output.variable==Variable::apv ? service.eventWorkspace_->apvView() : service.eventWorkspace_->densityView(field);
+          source=values.data;
+        } else if(output.forcing) {
+          source=forcingFields[output.forcingSlot].data()+
+              output.forcingChannel*spatial_.elementCount();
+        } else {
+          const auto& field=fields[output.group][output.dependency];
+          const auto offset=output.surface ?
+              (spatial_.third-1)*spatial_.first*spatial_.second : 0;
+          source=field.data()+offset;
+        }
+        const auto status=service.samplePreparedField(output.sampler,source,outputs[index]);
+        if(!status) return status;
+      } else if(output.density) {
         const auto field=output.variable==Variable::rho_nm ? WVDensityEventField::rhoNm :
             output.variable==Variable::eta_true ? WVDensityEventField::etaTrue : WVDensityEventField::ape;
         const auto values=output.variable==Variable::apv ? service.eventWorkspace_->apvView() : service.eventWorkspace_->densityView(field);
@@ -662,7 +721,7 @@ WVKernelStatus WVDiagnosticFieldPlan::evaluate(WVFieldEvaluationService& service
       else ++primitiveReferences;
     }
     metrics.diagnosticIntermediateReuseCount+=primitiveReferences-primitiveCount+(phaseReferences ? phaseReferences-1 : 0);
-    metrics.diagnosticWorkspaceLiveBytes=0;
+    metrics.diagnosticWorkspaceLiveBytes=outerWorkspaceBytes;
     return WVKernelStatus::ok();
   } catch(const std::bad_alloc&) {
     return {WVKernelStatusCode::allocationFailure,"Unable to allocate event-scoped diagnostic scratch."};
@@ -674,7 +733,10 @@ std::size_t WVDiagnosticFieldPlan::persistentBytes() const noexcept {
   bytes+=(densityHeights_.capacity()+densityWeights_.capacity()+densityInitial_.capacity())*sizeof(double);
   for(const auto& output:outputs_)
     bytes+=output.specification.identifier.capacity()+output.specification.fieldName.capacity()+
-        output.specification.dimensions.capacity()*sizeof(std::size_t);
+        output.specification.dimensions.capacity()*sizeof(std::size_t)+
+        (output.sampled ? output.sampler.persistentBytes()-sizeof(output.sampler) : 0)+
+        (output.sampling.x.capacity()+output.sampling.y.capacity()+output.sampling.z.capacity())*sizeof(double)+
+        (output.sampling.xIndices.capacity()+output.sampling.yIndices.capacity())*sizeof(std::size_t);
   for(const auto& group:groups_) {
     bytes+=group.fields.persistentBytes()-sizeof(group.fields)+group.requests.capacity()*sizeof(WVFieldRequest);
     for(const auto& request:group.requests)

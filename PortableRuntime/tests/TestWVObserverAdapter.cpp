@@ -1,5 +1,7 @@
 #include "WVObserverAdapter.hpp"
 #include "WVTestExtensionCatalog.hpp"
+#include "WaveVortexRuntime/WVIntegrationState.hpp"
+#include "WaveVortexRuntime/WVObserverOutputProvider.hpp"
 
 #include <cstdlib>
 #include <iostream>
@@ -208,5 +210,96 @@ int main() {
           "tracer must expose one named value channel");
   require(detail::movingFieldVariableName(tracer, channels.front()) == "dye",
           "tracer variable name changed");
+
+  WVPortableObserverRecord sampledRecord;
+  for (const char *name : {"particle-x", "particle-y"})
+    sampledRecord.stateBlocks.push_back(
+        {name, WVStateScalarType::real64, {2},
+         WVToleranceKind::uniformAbsolute, 1e-6,
+         WVStateOwnership::integratorOwned,
+         WVRestartRequirement::requiredDynamicState});
+  WVObserverRecord mooring;
+  mooring.identifier = "diagnostic-mooring";
+  mooring.name = "diagnostic_mooring";
+  mooring.typeIdentifier = "WVMooring";
+  mooring.fieldNames = {"eta_true"};
+  mooring.x = {0.0};
+  mooring.y = {0.0};
+  sampledRecord.observers.push_back(mooring);
+  particles.identifier = "diagnostic-particles";
+  particles.name = "diagnostic_particles";
+  particles.fieldNames = {"eta_true", "apv"};
+  particles.stateBlockIdentifiers = {"particle-x", "particle-y"};
+  particles.x = {0.0, 1.0};
+  particles.y = {0.0, 1.0};
+  particles.z = {-0.25, -0.75};
+  particles.isXYOnly = true;
+  particles.horizontalAbsoluteTolerance = 1e-6;
+  sampledRecord.observers.push_back(particles);
+  WVPortableObserverDescriptor sampledDescriptor;
+  require(static_cast<bool>(WVPortableObserverDescriptor::create(
+              sampledRecord, catalog, sampledDescriptor)),
+          "sampled diagnostic observer descriptor failed");
+
+  WVTransformStateDescription stateDescription;
+  stateDescription.transformIdentifier = "constant-stratification";
+  stateDescription.spatialDimensions = {4, 3, 5};
+  for (const char *name : {"Ap", "Am", "A0"})
+    stateDescription.coefficientFamilies.push_back(
+        {name, {5, 12}, WVToleranceKind::coefficientEnergyScaled});
+  WVIntegrationStateLayout stateLayout;
+  require(static_cast<bool>(WVIntegrationStateLayout::createCoefficientOnly(
+              std::move(stateDescription), stateLayout)),
+          "sampled diagnostic state layout failed");
+  wavevortex::WVTransformConstantStratificationConfiguration configuration;
+  configuration.Nx = 4;
+  configuration.Ny = 3;
+  configuration.Nz = 5;
+  configuration.Lx = 4.0;
+  configuration.Ly = 3.0;
+  configuration.Lz = 1.0;
+  WVObserverOutputPlanningContext planning;
+  planning.configuration = &configuration;
+  planning.stateBlocks = sampledRecord.stateBlocks.data();
+  planning.stateBlockCount = sampledRecord.stateBlocks.size();
+  planning.stateLayout = &stateLayout;
+  for (std::size_t index = 0; index < sampledDescriptor.observers().size();
+       ++index) {
+    const auto &sampledObserver = sampledDescriptor.observers()[index];
+    const auto *resolved = sampledDescriptor.resolvedObserver(sampledObserver);
+    require(resolved != nullptr, "sampled diagnostic observer was unresolved");
+    WVObserverOutputPlan output;
+    require(static_cast<bool>(resolved->outputPlan(sampledObserver, planning,
+                                                   output)),
+            "sampled diagnostic output planning rejected a diagnostic");
+    const auto expectedSource =
+        index == 0 ? WVObserverOutputChannelSource::sampledField
+                   : WVObserverOutputChannelSource::movingField;
+    const auto sampledChannels = static_cast<std::size_t>(std::count_if(
+        output.channels.begin(), output.channels.end(), [&](const auto &channel) {
+          return channel.source == expectedSource &&
+                 (channel.sourceIdentifier == "eta_true" ||
+                  channel.sourceIdentifier == "apv");
+        }));
+    require(sampledChannels == sampledObserver.fieldNames.size(),
+            "sampled diagnostic observer used the wrong output route");
+    for (const char *unsupported :
+         {"Ap", "Apt", "rho_nm", "totalEnergySpatiallyIntegrated"}) {
+      auto rejectedRecord = sampledRecord;
+      rejectedRecord.observers[index].fieldNames = {unsupported};
+      WVPortableObserverDescriptor rejectedDescriptor;
+      require(static_cast<bool>(WVPortableObserverDescriptor::create(
+                  rejectedRecord, catalog, rejectedDescriptor)),
+              "unsupported-rank observer descriptor setup failed");
+      const auto &rejectedObserver = rejectedDescriptor.observers()[index];
+      const auto *rejectedResolved =
+          rejectedDescriptor.resolvedObserver(rejectedObserver);
+      WVObserverOutputPlan rejected;
+      require(rejectedResolved != nullptr &&
+                  !rejectedResolved->outputPlan(rejectedObserver, planning,
+                                                rejected),
+              "observer sampling admitted an unsupported rank");
+    }
+  }
   return 0;
 }

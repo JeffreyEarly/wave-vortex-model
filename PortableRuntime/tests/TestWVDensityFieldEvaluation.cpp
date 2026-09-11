@@ -111,7 +111,7 @@ void verifyConfiguration(bool hydrostatic,bool antialias) {
   auto eta=planFor(*service,WVNoMotionReference::actual,{"eta_true"});
   auto initial=planFor(*service,WVNoMotionReference::initial,{"ape","rho_nm","eta_true"});
   auto initialOnly=planFor(*service,WVNoMotionReference::initial,{"eta_true","ape"});
-  for(const char* name:{"rho_nm","eta_true","ape","apv"}) {
+  for(const char* name:{"rho_nm"}) {
     WVFieldEvaluationPlan publicPlan;
     require(bool(service->createPlan({{"public",name,{}}},publicPlan)),"public density full-grid output unavailable");
     WVFieldSamplingRequest sampling; sampling.kind=WVFieldSamplingKind::positions;
@@ -189,6 +189,212 @@ void verifyConfiguration(bool hydrostatic,bool antialias) {
     maxAPV=std::max(maxAPV,std::abs(expected));
   }
   require(maxAPV>1e-9,"APV scientific control is trivial");
+
+  const std::array<const char*,3> sampledNames{"apv","eta_true","ape"};
+  WVFieldSamplingRequest sampledPositions;
+  sampledPositions.kind=WVFieldSamplingKind::positions;
+  sampledPositions.interpolation=WVPositionInterpolation::linear;
+  sampledPositions.x={0,c.Lx/2,c.Lx,c.Lx/4};
+  sampledPositions.y={0,c.Ly/2,c.Ly,c.Ly/4};
+  sampledPositions.z={-c.Lz,z[2],0,1};
+  std::vector<WVFieldRequest> sampledRequests;
+  for(std::size_t i=0;i<sampledNames.size();++i)
+    sampledRequests.push_back({"sample-"+std::to_string(i),sampledNames[i],sampledPositions});
+  WVFieldEvaluationPlan fixedSamples;
+  require(bool(service->createPlan(sampledRequests,fixedSamples,{WVNoMotionReference::initial})),
+      "sampled density position plan failed");
+  Outputs fixedSampleValues(fixedSamples);
+  require(bool(service->evaluate(fixedSamples,state,fixedSampleValues.views.data(),fixedSampleValues.views.size())),
+      "sampled density position evaluation failed");
+  const std::array<std::size_t,3> expectedGridIndices{
+      0,2+c.Nx*(2+c.Ny*2),c.Nx*c.Ny*(c.Nz-1)};
+  for(std::size_t field=0;field<sampledNames.size();++field) {
+    for(std::size_t point=0;point<expectedGridIndices.size();++point)
+      close(fixedSampleValues.values[field][point],available.values[field][expectedGridIndices[point]],
+          2e-13,"sampled density grid knot differs from full field");
+    require(fixedSampleValues.values[field].back()==0,
+        "sampled density did not use zero vertical extrapolation");
+  }
+
+  WVFieldSamplingRequest profiles;
+  profiles.kind=WVFieldSamplingKind::fixedVerticalProfiles;
+  profiles.xIndices={1,c.Nx};profiles.yIndices={1,c.Ny};
+  std::vector<WVFieldRequest> profileRequests;
+  for(std::size_t i=0;i<sampledNames.size();++i)
+    profileRequests.push_back({"profile-"+std::to_string(i),sampledNames[i],profiles});
+  WVFieldEvaluationPlan profilePlan;
+  require(bool(service->createPlan(profileRequests,profilePlan,{WVNoMotionReference::initial})),
+      "sampled density profile plan failed");
+  Outputs profileValues(profilePlan);
+  require(bool(service->evaluate(profilePlan,state,profileValues.views.data(),profileValues.views.size())),
+      "sampled density profile evaluation failed");
+  for(std::size_t field=0;field<sampledNames.size();++field)
+    for(std::size_t level=0;level<c.Nz;++level) {
+      close(profileValues.values[field][level],available.values[field][c.Nx*c.Ny*level],
+          2e-13,"first density profile differs from full field");
+      close(profileValues.values[field][level+c.Nz],
+          available.values[field][c.Nx-1+c.Nx*(c.Ny-1+c.Ny*level)],2e-13,
+          "last density profile differs from full field");
+    }
+
+  std::vector<WVMovingFieldRequest> movingRequests;
+  for(std::size_t i=0;i<sampledNames.size();++i)
+    movingRequests.push_back({"moving-"+std::to_string(i),sampledNames[i],0,
+        sampledPositions.x.size(),WVPositionInterpolation::linear});
+  WVMovingFieldEvaluationPlan movingPlan;
+  require(bool(service->createMovingPlan(movingRequests,movingPlan,{WVNoMotionReference::initial})),
+      "sampled density moving plan failed");
+  std::vector<std::vector<double>> movingStorage(3,std::vector<double>(sampledPositions.x.size(),-919));
+  std::vector<WVFieldOutputView> movingViews;
+  for(auto& values:movingStorage) movingViews.push_back({values.data(),values.size()});
+  require(bool(service->evaluateMoving(movingPlan,state,
+      {sampledPositions.x.data(),sampledPositions.y.data(),sampledPositions.z.data(),sampledPositions.x.size()},
+      movingViews.data(),movingViews.size())),"sampled density moving evaluation failed");
+  require(movingStorage==fixedSampleValues.values,
+      "moving density interpolation differs from fixed sampling");
+  const auto movingPeak=service->metrics().diagnosticWorkspaceHighWaterBytes;
+  require(service->metrics().diagnosticWorkspaceLiveBytes==0,
+      "moving density retained temporary workspace");
+  require(bool(service->evaluateMoving(movingPlan,state,
+      {sampledPositions.x.data(),sampledPositions.y.data(),sampledPositions.z.data(),sampledPositions.x.size()},
+      movingViews.data(),movingViews.size())) &&
+      service->metrics().diagnosticWorkspaceHighWaterBytes==movingPeak,
+      "moving density replay grew temporary workspace");
+
+  std::unique_ptr<WVFieldEvaluationService> metricService;
+  require(bool(WVFieldEvaluationService::create(
+              c, std::make_unique<WVReferenceFFTEngine>(), metricService)),
+      "nested density metric service creation failed");
+  WVMovingFieldEvaluationPlan metricMovingPlan;
+  require(bool(metricService->createMovingPlan(
+              movingRequests, metricMovingPlan,
+              {WVNoMotionReference::initial})),
+      "nested density metric moving plan failed");
+  std::vector<std::vector<double>> metricMovingStorage(
+      sampledNames.size(), std::vector<double>(sampledPositions.x.size()));
+  std::vector<WVFieldOutputView> metricMovingViews;
+  for (auto &values : metricMovingStorage)
+    metricMovingViews.push_back({values.data(), values.size()});
+  require(bool(metricService->evaluateMoving(
+              metricMovingPlan, state,
+              {sampledPositions.x.data(), sampledPositions.y.data(),
+               sampledPositions.z.data(), sampledPositions.x.size()},
+              metricMovingViews.data(), metricMovingViews.size())),
+      "nested density metric moving evaluation failed");
+  const auto metricMoving = metricService->metrics();
+  require(metricMoving.diagnosticWorkspaceLiveBytes == 0 &&
+              metricMoving.densityWorkspaceLiveBytes == 0 &&
+              metricMoving.diagnosticWorkspaceHighWaterBytes >=
+                  sampledNames.size() * R * sizeof(double) +
+                      metricMoving.densityWorkspaceHighWaterBytes,
+      "moving density metrics omit concurrently live outer or recovery storage");
+
+  std::vector<WVEventFieldRequest> eventRequests;
+  for(std::size_t i=0;i<sampledNames.size();++i)
+    eventRequests.push_back({"event-"+std::to_string(i),sampledNames[i],0,
+        WVPositionInterpolation::linear});
+  WVEventFieldEvaluationPlan eventPlan;
+  require(bool(service->createEventPlan(eventRequests,eventPlan,{WVNoMotionReference::initial})),
+      "sampled density event plan failed");
+  const std::size_t eventExtents[]={2,2};
+  WVEventPositionSetView eventPositions{sampledPositions.x.data(),sampledPositions.y.data(),
+      sampledPositions.z.data(),sampledPositions.x.size(),eventExtents,2};
+  WVPreparedFieldGeometry eventGeometry;
+  require(bool(service->prepareEventGeometry(eventPlan,&eventPositions,1,eventGeometry)),
+      "sampled density event geometry failed");
+  Outputs eventFirst(fixedSamples),eventSecond(fixedSamples);
+  WVEventFieldEvaluationBatchEntry eventEntries[]{
+      {&eventPlan,&eventGeometry,eventFirst.views.data(),eventFirst.views.size()},
+      {&eventPlan,&eventGeometry,eventSecond.views.data(),eventSecond.views.size()}};
+  const auto eventInversePasses=service->metrics().densityInversePassCount;
+  require(bool(service->evaluateEventBatch(state,eventEntries,2)),
+      "sampled density event batch failed");
+  require(eventFirst.values==fixedSampleValues.values && eventSecond.values==fixedSampleValues.values,
+      "sampled density event differs from fixed sampling");
+  require(service->metrics().densityInversePassCount==eventInversePasses+1,
+      "sampled density event batch did not reuse inversion");
+  const auto eventPeak=service->metrics().eventFieldWorkspaceHighWaterBytes;
+  require(service->metrics().eventFieldWorkspaceLiveBytes==0,
+      "sampled density event retained temporary workspace");
+  require(eventPeak >=
+              2 * sampledNames.size() * sampledPositions.x.size() *
+                      sizeof(double) +
+                  service->metrics().densityWorkspaceHighWaterBytes,
+      "sampled event metrics omit staging or nested density storage");
+
+  WVEventFieldEvaluationPlan composedEventPlan;
+  require(bool(service->createEventPlan(
+      {{"composed-event-apv","apv",0,WVPositionInterpolation::linear}},
+      composedEventPlan,{WVNoMotionReference::actual})),
+      "composed density event plan failed");
+  WVPreparedFieldGeometry composedEventGeometry;
+  require(bool(service->prepareEventGeometry(
+      composedEventPlan,&eventPositions,1,composedEventGeometry)),
+      "composed density event geometry failed");
+  const auto composedRecoveries=service->metrics().densityRecoveryCount;
+  {
+    WVFieldEvaluationEventScope composed(*service,state,true,true);
+    require(bool(composed.status()),"composed density event scope failed");
+    Outputs fullDensity(actualAPV);
+    require(bool(service->evaluate(actualAPV,state,fullDensity.views.data(),
+                                   fullDensity.views.size())),
+        "composed full-grid density evaluation failed");
+    std::vector<std::vector<double>> composedEventStorage(
+        2,std::vector<double>(sampledPositions.x.size(),-919));
+    WVFieldOutputView composedEventViews[]{
+        {composedEventStorage[0].data(),composedEventStorage[0].size()},
+        {composedEventStorage[1].data(),composedEventStorage[1].size()}};
+    WVEventFieldEvaluationBatchEntry composedEntries[]{
+        {&composedEventPlan,&composedEventGeometry,&composedEventViews[0],1},
+        {&composedEventPlan,&composedEventGeometry,&composedEventViews[1],1}};
+    require(bool(service->evaluateEventBatch(state,composedEntries,2)),
+        "composed sampled event batch failed");
+    require(composedEventStorage[0]==composedEventStorage[1] &&
+        std::all_of(composedEventStorage[0].begin(),
+                    composedEventStorage[0].end(),
+                    [](double value) {return std::isfinite(value);}),
+        "composed sampled event changed density values");
+    require(service->metrics().densityRecoveryCount==composedRecoveries+1,
+        "composed full-grid and sampled event did not share density recovery");
+    auto incompatibleState=state;
+    incompatibleState.waveVortex.t+=1;
+    std::vector<std::vector<double>> rejectedStorage(
+        2,std::vector<double>(sampledPositions.x.size(),-919));
+    WVFieldOutputView rejectedViews[]{
+        {rejectedStorage[0].data(),rejectedStorage[0].size()},
+        {rejectedStorage[1].data(),rejectedStorage[1].size()}};
+    WVEventFieldEvaluationBatchEntry rejectedEntries[]{
+        {&composedEventPlan,&composedEventGeometry,&rejectedViews[0],1},
+        {&composedEventPlan,&composedEventGeometry,&rejectedViews[1],1}};
+    require(!service->evaluateEventBatch(incompatibleState,rejectedEntries,2) &&
+        std::all_of(rejectedStorage.begin(),rejectedStorage.end(),
+            [](const auto& values) {return std::all_of(values.begin(),values.end(),
+                [](double value) {return value==-919;});}),
+        "composed sampled event accepted a different state or published output");
+    require(service->metrics().eventFieldWorkspaceLiveBytes>0,
+        "composed sampled event released its caller-owned event workspace");
+  }
+  require(service->metrics().eventFieldWorkspaceLiveBytes==0 &&
+      service->metrics().densityWorkspaceLiveBytes==0,
+      "composed sampled event retained outer event workspace");
+
+  WVEventFieldEvaluationPlan conflictingPlan;
+  require(bool(service->createEventPlan(eventRequests,conflictingPlan,{WVNoMotionReference::actual})),
+      "conflicting density event plan failed");
+  WVPreparedFieldGeometry conflictingGeometry;
+  require(bool(service->prepareEventGeometry(conflictingPlan,&eventPositions,1,conflictingGeometry)),
+      "conflicting density event geometry failed");
+  Outputs stagedFirst(fixedSamples),stagedSecond(fixedSamples);
+  WVEventFieldEvaluationBatchEntry conflictingEntries[]{
+      {&eventPlan,&eventGeometry,stagedFirst.views.data(),stagedFirst.views.size()},
+      {&conflictingPlan,&conflictingGeometry,stagedSecond.views.data(),stagedSecond.views.size()}};
+  require(!service->evaluateEventBatch(state,conflictingEntries,2) &&
+      stagedFirst.untouched() && stagedSecond.untouched(),
+      "failing sampled event sibling published staged output");
+  require(service->metrics().eventFieldWorkspaceLiveBytes==0 &&
+      service->metrics().eventFieldWorkspaceHighWaterBytes==eventPeak,
+      "failed sampled event replay retained or grew workspace");
+
   WVFieldEvaluationPlan total;
   require(bool(service->createPlan({{"rho","rho_total",{}}},total)),"total density plan failed");
   Outputs totalValues(total);

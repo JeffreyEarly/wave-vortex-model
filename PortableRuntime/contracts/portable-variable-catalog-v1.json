@@ -641,7 +641,11 @@
       "isDependentOnApAmA0": true,
       "portableKind": "diagnostic",
       "naturalRank": "volume",
-      "samplingModes": "fullGrid",
+      "samplingModes": [
+        "fullGrid",
+        "fixedVerticalProfiles",
+        "positions"
+      ],
       "primitiveDependencyMask": 0,
       "movingPrimitiveChannel": -1,
       "netCDFAttributes": []
@@ -662,7 +666,11 @@
       "isDependentOnApAmA0": true,
       "portableKind": "diagnostic",
       "naturalRank": "volume",
-      "samplingModes": "fullGrid",
+      "samplingModes": [
+        "fullGrid",
+        "fixedVerticalProfiles",
+        "positions"
+      ],
       "primitiveDependencyMask": 0,
       "movingPrimitiveChannel": -1,
       "netCDFAttributes": []
@@ -684,7 +692,11 @@
       "isDependentOnApAmA0": true,
       "portableKind": "diagnostic",
       "naturalRank": "volume",
-      "samplingModes": "fullGrid",
+      "samplingModes": [
+        "fullGrid",
+        "fixedVerticalProfiles",
+        "positions"
+      ],
       "primitiveDependencyMask": 0,
       "movingPrimitiveChannel": -1,
       "netCDFAttributes": []
@@ -706,7 +718,11 @@
       "isDependentOnApAmA0": true,
       "portableKind": "diagnostic",
       "naturalRank": "volume",
-      "samplingModes": "fullGrid",
+      "samplingModes": [
+        "fullGrid",
+        "fixedVerticalProfiles",
+        "positions"
+      ],
       "primitiveDependencyMask": 0,
       "movingPrimitiveChannel": -1,
       "netCDFAttributes": []
@@ -728,7 +744,11 @@
       "isDependentOnApAmA0": true,
       "portableKind": "diagnostic",
       "naturalRank": "volume",
-      "samplingModes": "fullGrid",
+      "samplingModes": [
+        "fullGrid",
+        "fixedVerticalProfiles",
+        "positions"
+      ],
       "primitiveDependencyMask": 0,
       "movingPrimitiveChannel": -1,
       "netCDFAttributes": []
@@ -750,7 +770,11 @@
       "isDependentOnApAmA0": true,
       "portableKind": "diagnostic",
       "naturalRank": "volume",
-      "samplingModes": "fullGrid",
+      "samplingModes": [
+        "fullGrid",
+        "fixedVerticalProfiles",
+        "positions"
+      ],
       "primitiveDependencyMask": 0,
       "movingPrimitiveChannel": -1,
       "netCDFAttributes": []
@@ -772,7 +796,11 @@
       "isDependentOnApAmA0": true,
       "portableKind": "diagnostic",
       "naturalRank": "volume",
-      "samplingModes": "fullGrid",
+      "samplingModes": [
+        "fullGrid",
+        "fixedVerticalProfiles",
+        "positions"
+      ],
       "primitiveDependencyMask": 0,
       "movingPrimitiveChannel": -1,
       "netCDFAttributes": []
@@ -887,7 +915,11 @@
       "isDependentOnApAmA0": true,
       "portableKind": "diagnostic",
       "naturalRank": "volume",
-      "samplingModes": "fullGrid",
+      "samplingModes": [
+        "fullGrid",
+        "fixedVerticalProfiles",
+        "positions"
+      ],
       "primitiveDependencyMask": 1,
       "movingPrimitiveChannel": -1,
       "netCDFAttributes": []
@@ -909,7 +941,11 @@
       "isDependentOnApAmA0": true,
       "portableKind": "diagnostic",
       "naturalRank": "volume",
-      "samplingModes": "fullGrid",
+      "samplingModes": [
+        "fullGrid",
+        "fixedVerticalProfiles",
+        "positions"
+      ],
       "primitiveDependencyMask": 1,
       "movingPrimitiveChannel": -1,
       "netCDFAttributes": []
@@ -931,7 +967,11 @@
       "isDependentOnApAmA0": true,
       "portableKind": "diagnostic",
       "naturalRank": "volume",
-      "samplingModes": "fullGrid",
+      "samplingModes": [
+        "fullGrid",
+        "fixedVerticalProfiles",
+        "positions"
+      ],
       "primitiveDependencyMask": 1,
       "movingPrimitiveChannel": -1,
       "netCDFAttributes": []
@@ -953,7 +993,11 @@
       "isDependentOnApAmA0": true,
       "portableKind": "diagnostic",
       "naturalRank": "volume",
-      "samplingModes": "fullGrid",
+      "samplingModes": [
+        "fullGrid",
+        "fixedVerticalProfiles",
+        "positions"
+      ],
       "primitiveDependencyMask": 1,
       "movingPrimitiveChannel": -1,
       "netCDFAttributes": []
@@ -975,7 +1019,11 @@
       "isDependentOnApAmA0": true,
       "portableKind": "diagnostic",
       "naturalRank": "volume",
-      "samplingModes": "fullGrid",
+      "samplingModes": [
+        "fullGrid",
+        "fixedVerticalProfiles",
+        "positions"
+      ],
       "primitiveDependencyMask": 1,
       "movingPrimitiveChannel": -1,
       "netCDFAttributes": []
@@ -1015,7 +1063,11 @@
       "isDependentOnApAmA0": true,
       "portableKind": "diagnostic",
       "naturalRank": "volume",
-      "samplingModes": "fullGrid",
+      "samplingModes": [
+        "fullGrid",
+        "fixedVerticalProfiles",
+        "positions"
+      ],
       "primitiveDependencyMask": 2,
       "movingPrimitiveChannel": -1,
       "netCDFAttributes": []
@@ -1037,7 +1089,11 @@
       "isDependentOnApAmA0": true,
       "portableKind": "diagnostic",
       "naturalRank": "volume",
-      "samplingModes": "fullGrid",
+      "samplingModes": [
+        "fullGrid",
+        "fixedVerticalProfiles",
+        "positions"
+      ],
       "primitiveDependencyMask": 2,
       "movingPrimitiveChannel": -1,
       "netCDFAttributes": []
@@ -1059,7 +1115,11 @@
       "isDependentOnApAmA0": true,
       "portableKind": "diagnostic",
       "naturalRank": "volume",
-      "samplingModes": "fullGrid",
+      "samplingModes": [
+        "fullGrid",
+        "fixedVerticalProfiles",
+        "positions"
+      ],
       "primitiveDependencyMask": 2,
       "movingPrimitiveChannel": -1,
       "netCDFAttributes": []
@@ -1081,7 +1141,11 @@
       "isDependentOnApAmA0": true,
       "portableKind": "diagnostic",
       "naturalRank": "volume",
-      "samplingModes": "fullGrid",
+      "samplingModes": [
+        "fullGrid",
+        "fixedVerticalProfiles",
+        "positions"
+      ],
       "primitiveDependencyMask": 2,
       "movingPrimitiveChannel": -1,
       "netCDFAttributes": []
@@ -1141,7 +1205,10 @@
       "isDependentOnApAmA0": true,
       "portableKind": "diagnostic",
       "naturalRank": "horizontal",
-      "samplingModes": "fullGrid",
+      "samplingModes": [
+        "fullGrid",
+        "positions"
+      ],
       "primitiveDependencyMask": 2,
       "movingPrimitiveChannel": -1,
       "netCDFAttributes": []
@@ -1162,7 +1229,10 @@
       "isDependentOnApAmA0": true,
       "portableKind": "diagnostic",
       "naturalRank": "horizontal",
-      "samplingModes": "fullGrid",
+      "samplingModes": [
+        "fullGrid",
+        "positions"
+      ],
       "primitiveDependencyMask": 2,
       "movingPrimitiveChannel": -1,
       "netCDFAttributes": []
@@ -1183,7 +1253,10 @@
       "isDependentOnApAmA0": true,
       "portableKind": "diagnostic",
       "naturalRank": "horizontal",
-      "samplingModes": "fullGrid",
+      "samplingModes": [
+        "fullGrid",
+        "positions"
+      ],
       "primitiveDependencyMask": 2,
       "movingPrimitiveChannel": -1,
       "netCDFAttributes": []
@@ -1204,7 +1277,10 @@
       "isDependentOnApAmA0": true,
       "portableKind": "diagnostic",
       "naturalRank": "horizontal",
-      "samplingModes": "fullGrid",
+      "samplingModes": [
+        "fullGrid",
+        "positions"
+      ],
       "primitiveDependencyMask": 2,
       "movingPrimitiveChannel": -1,
       "netCDFAttributes": []
@@ -1225,7 +1301,10 @@
       "isDependentOnApAmA0": true,
       "portableKind": "diagnostic",
       "naturalRank": "horizontal",
-      "samplingModes": "fullGrid",
+      "samplingModes": [
+        "fullGrid",
+        "positions"
+      ],
       "primitiveDependencyMask": 1,
       "movingPrimitiveChannel": -1,
       "netCDFAttributes": []
@@ -1246,7 +1325,10 @@
       "isDependentOnApAmA0": true,
       "portableKind": "diagnostic",
       "naturalRank": "horizontal",
-      "samplingModes": "fullGrid",
+      "samplingModes": [
+        "fullGrid",
+        "positions"
+      ],
       "primitiveDependencyMask": 1,
       "movingPrimitiveChannel": -1,
       "netCDFAttributes": []
@@ -1267,7 +1349,10 @@
       "isDependentOnApAmA0": true,
       "portableKind": "diagnostic",
       "naturalRank": "horizontal",
-      "samplingModes": "fullGrid",
+      "samplingModes": [
+        "fullGrid",
+        "positions"
+      ],
       "primitiveDependencyMask": 1,
       "movingPrimitiveChannel": -1,
       "netCDFAttributes": []
@@ -1288,7 +1373,10 @@
       "isDependentOnApAmA0": true,
       "portableKind": "diagnostic",
       "naturalRank": "horizontal",
-      "samplingModes": "fullGrid",
+      "samplingModes": [
+        "fullGrid",
+        "positions"
+      ],
       "primitiveDependencyMask": 1,
       "movingPrimitiveChannel": -1,
       "netCDFAttributes": []
@@ -1309,7 +1397,10 @@
       "isDependentOnApAmA0": true,
       "portableKind": "diagnostic",
       "naturalRank": "horizontal",
-      "samplingModes": "fullGrid",
+      "samplingModes": [
+        "fullGrid",
+        "positions"
+      ],
       "primitiveDependencyMask": 1,
       "movingPrimitiveChannel": -1,
       "netCDFAttributes": []
@@ -1330,7 +1421,10 @@
       "isDependentOnApAmA0": true,
       "portableKind": "diagnostic",
       "naturalRank": "horizontal",
-      "samplingModes": "fullGrid",
+      "samplingModes": [
+        "fullGrid",
+        "positions"
+      ],
       "primitiveDependencyMask": 1,
       "movingPrimitiveChannel": -1,
       "netCDFAttributes": []
@@ -1351,7 +1445,10 @@
       "isDependentOnApAmA0": true,
       "portableKind": "diagnostic",
       "naturalRank": "horizontal",
-      "samplingModes": "fullGrid",
+      "samplingModes": [
+        "fullGrid",
+        "positions"
+      ],
       "primitiveDependencyMask": 1,
       "movingPrimitiveChannel": -1,
       "netCDFAttributes": []
@@ -1372,7 +1469,10 @@
       "isDependentOnApAmA0": true,
       "portableKind": "diagnostic",
       "naturalRank": "horizontal",
-      "samplingModes": "fullGrid",
+      "samplingModes": [
+        "fullGrid",
+        "positions"
+      ],
       "primitiveDependencyMask": 1,
       "movingPrimitiveChannel": -1,
       "netCDFAttributes": []
@@ -1430,7 +1530,11 @@
       "isDependentOnApAmA0": true,
       "portableKind": "diagnostic",
       "naturalRank": "volume",
-      "samplingModes": "fullGrid",
+      "samplingModes": [
+        "fullGrid",
+        "fixedVerticalProfiles",
+        "positions"
+      ],
       "primitiveDependencyMask": 1,
       "movingPrimitiveChannel": -1,
       "netCDFAttributes": []
@@ -1452,7 +1556,11 @@
       "isDependentOnApAmA0": true,
       "portableKind": "diagnostic",
       "naturalRank": "volume",
-      "samplingModes": "fullGrid",
+      "samplingModes": [
+        "fullGrid",
+        "fixedVerticalProfiles",
+        "positions"
+      ],
       "primitiveDependencyMask": 1,
       "movingPrimitiveChannel": -1,
       "netCDFAttributes": []
@@ -1474,7 +1582,11 @@
       "isDependentOnApAmA0": true,
       "portableKind": "diagnostic",
       "naturalRank": "volume",
-      "samplingModes": "fullGrid",
+      "samplingModes": [
+        "fullGrid",
+        "fixedVerticalProfiles",
+        "positions"
+      ],
       "primitiveDependencyMask": 1,
       "movingPrimitiveChannel": -1,
       "netCDFAttributes": []
@@ -1496,7 +1608,11 @@
       "isDependentOnApAmA0": true,
       "portableKind": "diagnostic",
       "naturalRank": "volume",
-      "samplingModes": "fullGrid",
+      "samplingModes": [
+        "fullGrid",
+        "fixedVerticalProfiles",
+        "positions"
+      ],
       "primitiveDependencyMask": 1,
       "movingPrimitiveChannel": -1,
       "netCDFAttributes": []
@@ -1518,7 +1634,11 @@
       "isDependentOnApAmA0": true,
       "portableKind": "diagnostic",
       "naturalRank": "volume",
-      "samplingModes": "fullGrid",
+      "samplingModes": [
+        "fullGrid",
+        "fixedVerticalProfiles",
+        "positions"
+      ],
       "primitiveDependencyMask": 1,
       "movingPrimitiveChannel": -1,
       "netCDFAttributes": []
@@ -1540,7 +1660,11 @@
       "isDependentOnApAmA0": true,
       "portableKind": "diagnostic",
       "naturalRank": "volume",
-      "samplingModes": "fullGrid",
+      "samplingModes": [
+        "fullGrid",
+        "fixedVerticalProfiles",
+        "positions"
+      ],
       "primitiveDependencyMask": 1,
       "movingPrimitiveChannel": -1,
       "netCDFAttributes": []
@@ -1562,7 +1686,11 @@
       "isDependentOnApAmA0": true,
       "portableKind": "diagnostic",
       "naturalRank": "volume",
-      "samplingModes": "fullGrid",
+      "samplingModes": [
+        "fullGrid",
+        "fixedVerticalProfiles",
+        "positions"
+      ],
       "primitiveDependencyMask": 1,
       "movingPrimitiveChannel": -1,
       "netCDFAttributes": []
@@ -1584,7 +1712,11 @@
       "isDependentOnApAmA0": true,
       "portableKind": "diagnostic",
       "naturalRank": "volume",
-      "samplingModes": "fullGrid",
+      "samplingModes": [
+        "fullGrid",
+        "fixedVerticalProfiles",
+        "positions"
+      ],
       "primitiveDependencyMask": 1,
       "movingPrimitiveChannel": -1,
       "netCDFAttributes": []
@@ -1606,7 +1738,11 @@
       "isDependentOnApAmA0": true,
       "portableKind": "diagnostic",
       "naturalRank": "volume",
-      "samplingModes": "fullGrid",
+      "samplingModes": [
+        "fullGrid",
+        "fixedVerticalProfiles",
+        "positions"
+      ],
       "primitiveDependencyMask": 1,
       "movingPrimitiveChannel": -1,
       "netCDFAttributes": []
@@ -1628,7 +1764,11 @@
       "isDependentOnApAmA0": true,
       "portableKind": "diagnostic",
       "naturalRank": "volume",
-      "samplingModes": "fullGrid",
+      "samplingModes": [
+        "fullGrid",
+        "fixedVerticalProfiles",
+        "positions"
+      ],
       "primitiveDependencyMask": 1,
       "movingPrimitiveChannel": -1,
       "netCDFAttributes": []
@@ -1650,7 +1790,11 @@
       "isDependentOnApAmA0": true,
       "portableKind": "diagnostic",
       "naturalRank": "volume",
-      "samplingModes": "fullGrid",
+      "samplingModes": [
+        "fullGrid",
+        "fixedVerticalProfiles",
+        "positions"
+      ],
       "primitiveDependencyMask": 1,
       "movingPrimitiveChannel": -1,
       "netCDFAttributes": []
@@ -1672,7 +1816,11 @@
       "isDependentOnApAmA0": true,
       "portableKind": "diagnostic",
       "naturalRank": "volume",
-      "samplingModes": "fullGrid",
+      "samplingModes": [
+        "fullGrid",
+        "fixedVerticalProfiles",
+        "positions"
+      ],
       "primitiveDependencyMask": 1,
       "movingPrimitiveChannel": -1,
       "netCDFAttributes": []
@@ -2195,7 +2343,11 @@
         "isDependentOnApAmA0": true,
         "portableKind": "diagnostic",
         "naturalRank": "volume",
-        "samplingModes": "fullGrid",
+        "samplingModes": [
+          "fullGrid",
+          "fixedVerticalProfiles",
+          "positions"
+        ],
         "primitiveDependencyMask": 0,
         "movingPrimitiveChannel": -1,
         "netCDFAttributes": []
@@ -2204,7 +2356,7 @@
       "trueProfileDependencies": "rho_nm",
       "intermediateMask": 256,
       "runtimeStatus": "implemented",
-      "samplingRestriction": "Full natural grid only; interpolation and reductions are not supported.",
+      "samplingRestriction": "Full natural grid, vertical profiles, and fixed/event/moving positions; interpolation is qualified for these spatial samples. Reductions remain unsupported.",
       "configurationRestriction": "The wave-vortex-density-diagnostics-v1 runtime contract defaults to actual density with dampedLeastSquares recovery. Explicit initial reference applies to displacement, APE and APV; rho_nm always describes current density. Legacy MATLAB solver choices are not inferred from saved files.",
       "catalogStatus": "supported",
       "netCDF": {
@@ -2250,7 +2402,11 @@
         "isDependentOnApAmA0": true,
         "portableKind": "diagnostic",
         "naturalRank": "volume",
-        "samplingModes": "fullGrid",
+        "samplingModes": [
+          "fullGrid",
+          "fixedVerticalProfiles",
+          "positions"
+        ],
         "primitiveDependencyMask": 0,
         "movingPrimitiveChannel": -1,
         "netCDFAttributes": []
@@ -2264,7 +2420,7 @@
       "trueProfileDependencies": [],
       "intermediateMask": 128,
       "runtimeStatus": "implemented",
-      "samplingRestriction": "Full natural grid only; interpolation and reductions are not supported.",
+      "samplingRestriction": "Full natural grid, vertical profiles, and fixed/event/moving positions; interpolation is qualified for these spatial samples. Reductions remain unsupported.",
       "configurationRestriction": "The wave-vortex-density-diagnostics-v1 runtime contract defaults to actual density with dampedLeastSquares recovery. Explicit initial reference applies to displacement, APE and APV; rho_nm always describes current density. Legacy MATLAB solver choices are not inferred from saved files.",
       "catalogStatus": "supported",
       "netCDF": {
@@ -2425,7 +2581,11 @@
         "isDependentOnApAmA0": true,
         "portableKind": "diagnostic",
         "naturalRank": "volume",
-        "samplingModes": "fullGrid",
+        "samplingModes": [
+          "fullGrid",
+          "fixedVerticalProfiles",
+          "positions"
+        ],
         "primitiveDependencyMask": 1,
         "movingPrimitiveChannel": -1,
         "netCDFAttributes": []
@@ -2480,7 +2640,11 @@
         "isDependentOnApAmA0": true,
         "portableKind": "diagnostic",
         "naturalRank": "volume",
-        "samplingModes": "fullGrid",
+        "samplingModes": [
+          "fullGrid",
+          "fixedVerticalProfiles",
+          "positions"
+        ],
         "primitiveDependencyMask": 1,
         "movingPrimitiveChannel": -1,
         "netCDFAttributes": []
@@ -2538,7 +2702,11 @@
         "isDependentOnApAmA0": true,
         "portableKind": "diagnostic",
         "naturalRank": "volume",
-        "samplingModes": "fullGrid",
+        "samplingModes": [
+          "fullGrid",
+          "fixedVerticalProfiles",
+          "positions"
+        ],
         "primitiveDependencyMask": 1,
         "movingPrimitiveChannel": -1,
         "netCDFAttributes": []
@@ -2593,7 +2761,11 @@
         "isDependentOnApAmA0": true,
         "portableKind": "diagnostic",
         "naturalRank": "volume",
-        "samplingModes": "fullGrid",
+        "samplingModes": [
+          "fullGrid",
+          "fixedVerticalProfiles",
+          "positions"
+        ],
         "primitiveDependencyMask": 1,
         "movingPrimitiveChannel": -1,
         "netCDFAttributes": []
@@ -2602,7 +2774,7 @@
       "trueProfileDependencies": "rho_nm",
       "intermediateMask": 8256,
       "runtimeStatus": "implemented",
-      "samplingRestriction": "Full natural grid only; interpolation and reductions are not supported.",
+      "samplingRestriction": "Full natural grid, vertical profiles, and fixed/event/moving positions; interpolation is qualified for these spatial samples. Reductions remain unsupported.",
       "configurationRestriction": "The wave-vortex-density-diagnostics-v1 runtime contract defaults to actual density with dampedLeastSquares recovery. Explicit initial reference applies to displacement, APE and APV; rho_nm always describes current density. Legacy MATLAB solver choices are not inferred from saved files.",
       "catalogStatus": "supported",
       "netCDF": {
@@ -2648,7 +2820,11 @@
         "isDependentOnApAmA0": true,
         "portableKind": "diagnostic",
         "naturalRank": "volume",
-        "samplingModes": "fullGrid",
+        "samplingModes": [
+          "fullGrid",
+          "fixedVerticalProfiles",
+          "positions"
+        ],
         "primitiveDependencyMask": 1,
         "movingPrimitiveChannel": -1,
         "netCDFAttributes": []
@@ -2812,7 +2988,11 @@
         "isDependentOnApAmA0": true,
         "portableKind": "diagnostic",
         "naturalRank": "volume",
-        "samplingModes": "fullGrid",
+        "samplingModes": [
+          "fullGrid",
+          "fixedVerticalProfiles",
+          "positions"
+        ],
         "primitiveDependencyMask": 2,
         "movingPrimitiveChannel": -1,
         "netCDFAttributes": []
@@ -2867,7 +3047,11 @@
         "isDependentOnApAmA0": true,
         "portableKind": "diagnostic",
         "naturalRank": "volume",
-        "samplingModes": "fullGrid",
+        "samplingModes": [
+          "fullGrid",
+          "fixedVerticalProfiles",
+          "positions"
+        ],
         "primitiveDependencyMask": 2,
         "movingPrimitiveChannel": -1,
         "netCDFAttributes": []
@@ -2925,7 +3109,11 @@
         "isDependentOnApAmA0": true,
         "portableKind": "diagnostic",
         "naturalRank": "volume",
-        "samplingModes": "fullGrid",
+        "samplingModes": [
+          "fullGrid",
+          "fixedVerticalProfiles",
+          "positions"
+        ],
         "primitiveDependencyMask": 2,
         "movingPrimitiveChannel": -1,
         "netCDFAttributes": []
@@ -2980,7 +3168,11 @@
         "isDependentOnApAmA0": true,
         "portableKind": "diagnostic",
         "naturalRank": "volume",
-        "samplingModes": "fullGrid",
+        "samplingModes": [
+          "fullGrid",
+          "fixedVerticalProfiles",
+          "positions"
+        ],
         "primitiveDependencyMask": 2,
         "movingPrimitiveChannel": -1,
         "netCDFAttributes": []
@@ -3335,7 +3527,7 @@
       "trueProfileDependencies": [],
       "intermediateMask": 48,
       "runtimeStatus": "implemented",
-      "samplingRestriction": "Full natural grid only; interpolation and reductions are not supported.",
+      "samplingRestriction": "Full natural grid, vertical profiles, and fixed/event/moving positions; interpolation is qualified for these spatial samples. Reductions remain unsupported.",
       "configurationRestriction": "The wave-vortex-density-diagnostics-v1 runtime contract defaults to actual density with dampedLeastSquares recovery. Explicit initial reference applies to displacement, APE and APV; rho_nm always describes current density. Legacy MATLAB solver choices are not inferred from saved files.",
       "catalogStatus": "supported",
       "netCDF": {
@@ -3490,7 +3682,10 @@
         "isDependentOnApAmA0": true,
         "portableKind": "diagnostic",
         "naturalRank": "horizontal",
-        "samplingModes": "fullGrid",
+        "samplingModes": [
+          "fullGrid",
+          "positions"
+        ],
         "primitiveDependencyMask": 2,
         "movingPrimitiveChannel": -1,
         "netCDFAttributes": []
@@ -3542,7 +3737,10 @@
         "isDependentOnApAmA0": true,
         "portableKind": "diagnostic",
         "naturalRank": "horizontal",
-        "samplingModes": "fullGrid",
+        "samplingModes": [
+          "fullGrid",
+          "positions"
+        ],
         "primitiveDependencyMask": 2,
         "movingPrimitiveChannel": -1,
         "netCDFAttributes": []
@@ -3597,7 +3795,10 @@
         "isDependentOnApAmA0": true,
         "portableKind": "diagnostic",
         "naturalRank": "horizontal",
-        "samplingModes": "fullGrid",
+        "samplingModes": [
+          "fullGrid",
+          "positions"
+        ],
         "primitiveDependencyMask": 2,
         "movingPrimitiveChannel": -1,
         "netCDFAttributes": []
@@ -3649,7 +3850,10 @@
         "isDependentOnApAmA0": true,
         "portableKind": "diagnostic",
         "naturalRank": "horizontal",
-        "samplingModes": "fullGrid",
+        "samplingModes": [
+          "fullGrid",
+          "positions"
+        ],
         "primitiveDependencyMask": 2,
         "movingPrimitiveChannel": -1,
         "netCDFAttributes": []
@@ -3763,7 +3967,10 @@
         "isDependentOnApAmA0": true,
         "portableKind": "diagnostic",
         "naturalRank": "horizontal",
-        "samplingModes": "fullGrid",
+        "samplingModes": [
+          "fullGrid",
+          "positions"
+        ],
         "primitiveDependencyMask": 1,
         "movingPrimitiveChannel": -1,
         "netCDFAttributes": []
@@ -3815,7 +4022,10 @@
         "isDependentOnApAmA0": true,
         "portableKind": "diagnostic",
         "naturalRank": "horizontal",
-        "samplingModes": "fullGrid",
+        "samplingModes": [
+          "fullGrid",
+          "positions"
+        ],
         "primitiveDependencyMask": 1,
         "movingPrimitiveChannel": -1,
         "netCDFAttributes": []
@@ -3870,7 +4080,10 @@
         "isDependentOnApAmA0": true,
         "portableKind": "diagnostic",
         "naturalRank": "horizontal",
-        "samplingModes": "fullGrid",
+        "samplingModes": [
+          "fullGrid",
+          "positions"
+        ],
         "primitiveDependencyMask": 1,
         "movingPrimitiveChannel": -1,
         "netCDFAttributes": []
@@ -3922,7 +4135,10 @@
         "isDependentOnApAmA0": true,
         "portableKind": "diagnostic",
         "naturalRank": "horizontal",
-        "samplingModes": "fullGrid",
+        "samplingModes": [
+          "fullGrid",
+          "positions"
+        ],
         "primitiveDependencyMask": 1,
         "movingPrimitiveChannel": -1,
         "netCDFAttributes": []
@@ -4036,7 +4252,10 @@
         "isDependentOnApAmA0": true,
         "portableKind": "diagnostic",
         "naturalRank": "horizontal",
-        "samplingModes": "fullGrid",
+        "samplingModes": [
+          "fullGrid",
+          "positions"
+        ],
         "primitiveDependencyMask": 1,
         "movingPrimitiveChannel": -1,
         "netCDFAttributes": []
@@ -4088,7 +4307,10 @@
         "isDependentOnApAmA0": true,
         "portableKind": "diagnostic",
         "naturalRank": "horizontal",
-        "samplingModes": "fullGrid",
+        "samplingModes": [
+          "fullGrid",
+          "positions"
+        ],
         "primitiveDependencyMask": 1,
         "movingPrimitiveChannel": -1,
         "netCDFAttributes": []
@@ -4143,7 +4365,10 @@
         "isDependentOnApAmA0": true,
         "portableKind": "diagnostic",
         "naturalRank": "horizontal",
-        "samplingModes": "fullGrid",
+        "samplingModes": [
+          "fullGrid",
+          "positions"
+        ],
         "primitiveDependencyMask": 1,
         "movingPrimitiveChannel": -1,
         "netCDFAttributes": []
@@ -4195,7 +4420,10 @@
         "isDependentOnApAmA0": true,
         "portableKind": "diagnostic",
         "naturalRank": "horizontal",
-        "samplingModes": "fullGrid",
+        "samplingModes": [
+          "fullGrid",
+          "positions"
+        ],
         "primitiveDependencyMask": 1,
         "movingPrimitiveChannel": -1,
         "netCDFAttributes": []
@@ -4414,7 +4642,11 @@
         "isDependentOnApAmA0": true,
         "portableKind": "diagnostic",
         "naturalRank": "volume",
-        "samplingModes": "fullGrid",
+        "samplingModes": [
+          "fullGrid",
+          "fixedVerticalProfiles",
+          "positions"
+        ],
         "primitiveDependencyMask": 1,
         "movingPrimitiveChannel": -1,
         "netCDFAttributes": []
@@ -4469,7 +4701,11 @@
         "isDependentOnApAmA0": true,
         "portableKind": "diagnostic",
         "naturalRank": "volume",
-        "samplingModes": "fullGrid",
+        "samplingModes": [
+          "fullGrid",
+          "fixedVerticalProfiles",
+          "positions"
+        ],
         "primitiveDependencyMask": 1,
         "movingPrimitiveChannel": -1,
         "netCDFAttributes": []
@@ -4527,7 +4763,11 @@
         "isDependentOnApAmA0": true,
         "portableKind": "diagnostic",
         "naturalRank": "volume",
-        "samplingModes": "fullGrid",
+        "samplingModes": [
+          "fullGrid",
+          "fixedVerticalProfiles",
+          "positions"
+        ],
         "primitiveDependencyMask": 1,
         "movingPrimitiveChannel": -1,
         "netCDFAttributes": []
@@ -4582,7 +4822,11 @@
         "isDependentOnApAmA0": true,
         "portableKind": "diagnostic",
         "naturalRank": "volume",
-        "samplingModes": "fullGrid",
+        "samplingModes": [
+          "fullGrid",
+          "fixedVerticalProfiles",
+          "positions"
+        ],
         "primitiveDependencyMask": 1,
         "movingPrimitiveChannel": -1,
         "netCDFAttributes": []
@@ -4755,7 +4999,11 @@
         "isDependentOnApAmA0": true,
         "portableKind": "diagnostic",
         "naturalRank": "volume",
-        "samplingModes": "fullGrid",
+        "samplingModes": [
+          "fullGrid",
+          "fixedVerticalProfiles",
+          "positions"
+        ],
         "primitiveDependencyMask": 1,
         "movingPrimitiveChannel": -1,
         "netCDFAttributes": []
@@ -4810,7 +5058,11 @@
         "isDependentOnApAmA0": true,
         "portableKind": "diagnostic",
         "naturalRank": "volume",
-        "samplingModes": "fullGrid",
+        "samplingModes": [
+          "fullGrid",
+          "fixedVerticalProfiles",
+          "positions"
+        ],
         "primitiveDependencyMask": 1,
         "movingPrimitiveChannel": -1,
         "netCDFAttributes": []
@@ -4868,7 +5120,11 @@
         "isDependentOnApAmA0": true,
         "portableKind": "diagnostic",
         "naturalRank": "volume",
-        "samplingModes": "fullGrid",
+        "samplingModes": [
+          "fullGrid",
+          "fixedVerticalProfiles",
+          "positions"
+        ],
         "primitiveDependencyMask": 1,
         "movingPrimitiveChannel": -1,
         "netCDFAttributes": []
@@ -4923,7 +5179,11 @@
         "isDependentOnApAmA0": true,
         "portableKind": "diagnostic",
         "naturalRank": "volume",
-        "samplingModes": "fullGrid",
+        "samplingModes": [
+          "fullGrid",
+          "fixedVerticalProfiles",
+          "positions"
+        ],
         "primitiveDependencyMask": 1,
         "movingPrimitiveChannel": -1,
         "netCDFAttributes": []
@@ -5093,7 +5353,11 @@
         "isDependentOnApAmA0": true,
         "portableKind": "diagnostic",
         "naturalRank": "volume",
-        "samplingModes": "fullGrid",
+        "samplingModes": [
+          "fullGrid",
+          "fixedVerticalProfiles",
+          "positions"
+        ],
         "primitiveDependencyMask": 1,
         "movingPrimitiveChannel": -1,
         "netCDFAttributes": []
@@ -5148,7 +5412,11 @@
         "isDependentOnApAmA0": true,
         "portableKind": "diagnostic",
         "naturalRank": "volume",
-        "samplingModes": "fullGrid",
+        "samplingModes": [
+          "fullGrid",
+          "fixedVerticalProfiles",
+          "positions"
+        ],
         "primitiveDependencyMask": 1,
         "movingPrimitiveChannel": -1,
         "netCDFAttributes": []
@@ -5206,7 +5474,11 @@
         "isDependentOnApAmA0": true,
         "portableKind": "diagnostic",
         "naturalRank": "volume",
-        "samplingModes": "fullGrid",
+        "samplingModes": [
+          "fullGrid",
+          "fixedVerticalProfiles",
+          "positions"
+        ],
         "primitiveDependencyMask": 1,
         "movingPrimitiveChannel": -1,
         "netCDFAttributes": []
@@ -5261,7 +5533,11 @@
         "isDependentOnApAmA0": true,
         "portableKind": "diagnostic",
         "naturalRank": "volume",
-        "samplingModes": "fullGrid",
+        "samplingModes": [
+          "fullGrid",
+          "fixedVerticalProfiles",
+          "positions"
+        ],
         "primitiveDependencyMask": 1,
         "movingPrimitiveChannel": -1,
         "netCDFAttributes": []
@@ -5736,7 +6012,11 @@
         "isDependentOnApAmA0": true,
         "portableKind": "diagnostic",
         "naturalRank": "volume",
-        "samplingModes": "fullGrid",
+        "samplingModes": [
+          "fullGrid",
+          "fixedVerticalProfiles",
+          "positions"
+        ],
         "primitiveDependencyMask": 0,
         "movingPrimitiveChannel": -1,
         "netCDFAttributes": []
@@ -5795,7 +6075,11 @@
         "isDependentOnApAmA0": true,
         "portableKind": "diagnostic",
         "naturalRank": "volume",
-        "samplingModes": "fullGrid",
+        "samplingModes": [
+          "fullGrid",
+          "fixedVerticalProfiles",
+          "positions"
+        ],
         "primitiveDependencyMask": 0,
         "movingPrimitiveChannel": -1,
         "netCDFAttributes": []
@@ -5854,7 +6138,11 @@
         "isDependentOnApAmA0": true,
         "portableKind": "diagnostic",
         "naturalRank": "volume",
-        "samplingModes": "fullGrid",
+        "samplingModes": [
+          "fullGrid",
+          "fixedVerticalProfiles",
+          "positions"
+        ],
         "primitiveDependencyMask": 0,
         "movingPrimitiveChannel": -1,
         "netCDFAttributes": []
@@ -6231,7 +6519,11 @@
         "isDependentOnApAmA0": true,
         "portableKind": "diagnostic",
         "naturalRank": "volume",
-        "samplingModes": "fullGrid",
+        "samplingModes": [
+          "fullGrid",
+          "fixedVerticalProfiles",
+          "positions"
+        ],
         "primitiveDependencyMask": 0,
         "movingPrimitiveChannel": -1,
         "netCDFAttributes": []
@@ -6240,7 +6532,7 @@
       "trueProfileDependencies": "rho_nm",
       "intermediateMask": 256,
       "runtimeStatus": "implemented",
-      "samplingRestriction": "Full natural grid only; interpolation and reductions are not supported.",
+      "samplingRestriction": "Full natural grid, vertical profiles, and fixed/event/moving positions; interpolation is qualified for these spatial samples. Reductions remain unsupported.",
       "configurationRestriction": "The wave-vortex-density-diagnostics-v1 runtime contract defaults to actual density with dampedLeastSquares recovery. Explicit initial reference applies to displacement, APE and APV; rho_nm always describes current density. Legacy MATLAB solver choices are not inferred from saved files.",
       "catalogStatus": "supported",
       "netCDF": {
@@ -6286,7 +6578,11 @@
         "isDependentOnApAmA0": true,
         "portableKind": "diagnostic",
         "naturalRank": "volume",
-        "samplingModes": "fullGrid",
+        "samplingModes": [
+          "fullGrid",
+          "fixedVerticalProfiles",
+          "positions"
+        ],
         "primitiveDependencyMask": 0,
         "movingPrimitiveChannel": -1,
         "netCDFAttributes": []
@@ -6300,7 +6596,7 @@
       "trueProfileDependencies": [],
       "intermediateMask": 128,
       "runtimeStatus": "implemented",
-      "samplingRestriction": "Full natural grid only; interpolation and reductions are not supported.",
+      "samplingRestriction": "Full natural grid, vertical profiles, and fixed/event/moving positions; interpolation is qualified for these spatial samples. Reductions remain unsupported.",
       "configurationRestriction": "The wave-vortex-density-diagnostics-v1 runtime contract defaults to actual density with dampedLeastSquares recovery. Explicit initial reference applies to displacement, APE and APV; rho_nm always describes current density. Legacy MATLAB solver choices are not inferred from saved files.",
       "catalogStatus": "supported",
       "netCDF": {
@@ -6461,7 +6757,11 @@
         "isDependentOnApAmA0": true,
         "portableKind": "diagnostic",
         "naturalRank": "volume",
-        "samplingModes": "fullGrid",
+        "samplingModes": [
+          "fullGrid",
+          "fixedVerticalProfiles",
+          "positions"
+        ],
         "primitiveDependencyMask": 1,
         "movingPrimitiveChannel": -1,
         "netCDFAttributes": []
@@ -6516,7 +6816,11 @@
         "isDependentOnApAmA0": true,
         "portableKind": "diagnostic",
         "naturalRank": "volume",
-        "samplingModes": "fullGrid",
+        "samplingModes": [
+          "fullGrid",
+          "fixedVerticalProfiles",
+          "positions"
+        ],
         "primitiveDependencyMask": 1,
         "movingPrimitiveChannel": -1,
         "netCDFAttributes": []
@@ -6574,7 +6878,11 @@
         "isDependentOnApAmA0": true,
         "portableKind": "diagnostic",
         "naturalRank": "volume",
-        "samplingModes": "fullGrid",
+        "samplingModes": [
+          "fullGrid",
+          "fixedVerticalProfiles",
+          "positions"
+        ],
         "primitiveDependencyMask": 1,
         "movingPrimitiveChannel": -1,
         "netCDFAttributes": []
@@ -6629,7 +6937,11 @@
         "isDependentOnApAmA0": true,
         "portableKind": "diagnostic",
         "naturalRank": "volume",
-        "samplingModes": "fullGrid",
+        "samplingModes": [
+          "fullGrid",
+          "fixedVerticalProfiles",
+          "positions"
+        ],
         "primitiveDependencyMask": 1,
         "movingPrimitiveChannel": -1,
         "netCDFAttributes": []
@@ -6638,7 +6950,7 @@
       "trueProfileDependencies": "rho_nm",
       "intermediateMask": 8256,
       "runtimeStatus": "implemented",
-      "samplingRestriction": "Full natural grid only; interpolation and reductions are not supported.",
+      "samplingRestriction": "Full natural grid, vertical profiles, and fixed/event/moving positions; interpolation is qualified for these spatial samples. Reductions remain unsupported.",
       "configurationRestriction": "The wave-vortex-density-diagnostics-v1 runtime contract defaults to actual density with dampedLeastSquares recovery. Explicit initial reference applies to displacement, APE and APV; rho_nm always describes current density. Legacy MATLAB solver choices are not inferred from saved files.",
       "catalogStatus": "supported",
       "netCDF": {
@@ -6684,7 +6996,11 @@
         "isDependentOnApAmA0": true,
         "portableKind": "diagnostic",
         "naturalRank": "volume",
-        "samplingModes": "fullGrid",
+        "samplingModes": [
+          "fullGrid",
+          "fixedVerticalProfiles",
+          "positions"
+        ],
         "primitiveDependencyMask": 1,
         "movingPrimitiveChannel": -1,
         "netCDFAttributes": []
@@ -6848,7 +7164,11 @@
         "isDependentOnApAmA0": true,
         "portableKind": "diagnostic",
         "naturalRank": "volume",
-        "samplingModes": "fullGrid",
+        "samplingModes": [
+          "fullGrid",
+          "fixedVerticalProfiles",
+          "positions"
+        ],
         "primitiveDependencyMask": 2,
         "movingPrimitiveChannel": -1,
         "netCDFAttributes": []
@@ -6903,7 +7223,11 @@
         "isDependentOnApAmA0": true,
         "portableKind": "diagnostic",
         "naturalRank": "volume",
-        "samplingModes": "fullGrid",
+        "samplingModes": [
+          "fullGrid",
+          "fixedVerticalProfiles",
+          "positions"
+        ],
         "primitiveDependencyMask": 2,
         "movingPrimitiveChannel": -1,
         "netCDFAttributes": []
@@ -6961,7 +7285,11 @@
         "isDependentOnApAmA0": true,
         "portableKind": "diagnostic",
         "naturalRank": "volume",
-        "samplingModes": "fullGrid",
+        "samplingModes": [
+          "fullGrid",
+          "fixedVerticalProfiles",
+          "positions"
+        ],
         "primitiveDependencyMask": 2,
         "movingPrimitiveChannel": -1,
         "netCDFAttributes": []
@@ -7016,7 +7344,11 @@
         "isDependentOnApAmA0": true,
         "portableKind": "diagnostic",
         "naturalRank": "volume",
-        "samplingModes": "fullGrid",
+        "samplingModes": [
+          "fullGrid",
+          "fixedVerticalProfiles",
+          "positions"
+        ],
         "primitiveDependencyMask": 2,
         "movingPrimitiveChannel": -1,
         "netCDFAttributes": []
@@ -7371,7 +7703,7 @@
       "trueProfileDependencies": [],
       "intermediateMask": 48,
       "runtimeStatus": "implemented",
-      "samplingRestriction": "Full natural grid only; interpolation and reductions are not supported.",
+      "samplingRestriction": "Full natural grid, vertical profiles, and fixed/event/moving positions; interpolation is qualified for these spatial samples. Reductions remain unsupported.",
       "configurationRestriction": "The wave-vortex-density-diagnostics-v1 runtime contract defaults to actual density with dampedLeastSquares recovery. Explicit initial reference applies to displacement, APE and APV; rho_nm always describes current density. Legacy MATLAB solver choices are not inferred from saved files.",
       "catalogStatus": "supported",
       "netCDF": {
@@ -7526,7 +7858,10 @@
         "isDependentOnApAmA0": true,
         "portableKind": "diagnostic",
         "naturalRank": "horizontal",
-        "samplingModes": "fullGrid",
+        "samplingModes": [
+          "fullGrid",
+          "positions"
+        ],
         "primitiveDependencyMask": 2,
         "movingPrimitiveChannel": -1,
         "netCDFAttributes": []
@@ -7578,7 +7913,10 @@
         "isDependentOnApAmA0": true,
         "portableKind": "diagnostic",
         "naturalRank": "horizontal",
-        "samplingModes": "fullGrid",
+        "samplingModes": [
+          "fullGrid",
+          "positions"
+        ],
         "primitiveDependencyMask": 2,
         "movingPrimitiveChannel": -1,
         "netCDFAttributes": []
@@ -7633,7 +7971,10 @@
         "isDependentOnApAmA0": true,
         "portableKind": "diagnostic",
         "naturalRank": "horizontal",
-        "samplingModes": "fullGrid",
+        "samplingModes": [
+          "fullGrid",
+          "positions"
+        ],
         "primitiveDependencyMask": 2,
         "movingPrimitiveChannel": -1,
         "netCDFAttributes": []
@@ -7685,7 +8026,10 @@
         "isDependentOnApAmA0": true,
         "portableKind": "diagnostic",
         "naturalRank": "horizontal",
-        "samplingModes": "fullGrid",
+        "samplingModes": [
+          "fullGrid",
+          "positions"
+        ],
         "primitiveDependencyMask": 2,
         "movingPrimitiveChannel": -1,
         "netCDFAttributes": []
@@ -7799,7 +8143,10 @@
         "isDependentOnApAmA0": true,
         "portableKind": "diagnostic",
         "naturalRank": "horizontal",
-        "samplingModes": "fullGrid",
+        "samplingModes": [
+          "fullGrid",
+          "positions"
+        ],
         "primitiveDependencyMask": 1,
         "movingPrimitiveChannel": -1,
         "netCDFAttributes": []
@@ -7851,7 +8198,10 @@
         "isDependentOnApAmA0": true,
         "portableKind": "diagnostic",
         "naturalRank": "horizontal",
-        "samplingModes": "fullGrid",
+        "samplingModes": [
+          "fullGrid",
+          "positions"
+        ],
         "primitiveDependencyMask": 1,
         "movingPrimitiveChannel": -1,
         "netCDFAttributes": []
@@ -7906,7 +8256,10 @@
         "isDependentOnApAmA0": true,
         "portableKind": "diagnostic",
         "naturalRank": "horizontal",
-        "samplingModes": "fullGrid",
+        "samplingModes": [
+          "fullGrid",
+          "positions"
+        ],
         "primitiveDependencyMask": 1,
         "movingPrimitiveChannel": -1,
         "netCDFAttributes": []
@@ -7958,7 +8311,10 @@
         "isDependentOnApAmA0": true,
         "portableKind": "diagnostic",
         "naturalRank": "horizontal",
-        "samplingModes": "fullGrid",
+        "samplingModes": [
+          "fullGrid",
+          "positions"
+        ],
         "primitiveDependencyMask": 1,
         "movingPrimitiveChannel": -1,
         "netCDFAttributes": []
@@ -8072,7 +8428,10 @@
         "isDependentOnApAmA0": true,
         "portableKind": "diagnostic",
         "naturalRank": "horizontal",
-        "samplingModes": "fullGrid",
+        "samplingModes": [
+          "fullGrid",
+          "positions"
+        ],
         "primitiveDependencyMask": 1,
         "movingPrimitiveChannel": -1,
         "netCDFAttributes": []
@@ -8124,7 +8483,10 @@
         "isDependentOnApAmA0": true,
         "portableKind": "diagnostic",
         "naturalRank": "horizontal",
-        "samplingModes": "fullGrid",
+        "samplingModes": [
+          "fullGrid",
+          "positions"
+        ],
         "primitiveDependencyMask": 1,
         "movingPrimitiveChannel": -1,
         "netCDFAttributes": []
@@ -8179,7 +8541,10 @@
         "isDependentOnApAmA0": true,
         "portableKind": "diagnostic",
         "naturalRank": "horizontal",
-        "samplingModes": "fullGrid",
+        "samplingModes": [
+          "fullGrid",
+          "positions"
+        ],
         "primitiveDependencyMask": 1,
         "movingPrimitiveChannel": -1,
         "netCDFAttributes": []
@@ -8231,7 +8596,10 @@
         "isDependentOnApAmA0": true,
         "portableKind": "diagnostic",
         "naturalRank": "horizontal",
-        "samplingModes": "fullGrid",
+        "samplingModes": [
+          "fullGrid",
+          "positions"
+        ],
         "primitiveDependencyMask": 1,
         "movingPrimitiveChannel": -1,
         "netCDFAttributes": []
@@ -8450,7 +8818,11 @@
         "isDependentOnApAmA0": true,
         "portableKind": "diagnostic",
         "naturalRank": "volume",
-        "samplingModes": "fullGrid",
+        "samplingModes": [
+          "fullGrid",
+          "fixedVerticalProfiles",
+          "positions"
+        ],
         "primitiveDependencyMask": 1,
         "movingPrimitiveChannel": -1,
         "netCDFAttributes": []
@@ -8505,7 +8877,11 @@
         "isDependentOnApAmA0": true,
         "portableKind": "diagnostic",
         "naturalRank": "volume",
-        "samplingModes": "fullGrid",
+        "samplingModes": [
+          "fullGrid",
+          "fixedVerticalProfiles",
+          "positions"
+        ],
         "primitiveDependencyMask": 1,
         "movingPrimitiveChannel": -1,
         "netCDFAttributes": []
@@ -8563,7 +8939,11 @@
         "isDependentOnApAmA0": true,
         "portableKind": "diagnostic",
         "naturalRank": "volume",
-        "samplingModes": "fullGrid",
+        "samplingModes": [
+          "fullGrid",
+          "fixedVerticalProfiles",
+          "positions"
+        ],
         "primitiveDependencyMask": 1,
         "movingPrimitiveChannel": -1,
         "netCDFAttributes": []
@@ -8618,7 +8998,11 @@
         "isDependentOnApAmA0": true,
         "portableKind": "diagnostic",
         "naturalRank": "volume",
-        "samplingModes": "fullGrid",
+        "samplingModes": [
+          "fullGrid",
+          "fixedVerticalProfiles",
+          "positions"
+        ],
         "primitiveDependencyMask": 1,
         "movingPrimitiveChannel": -1,
         "netCDFAttributes": []
@@ -8791,7 +9175,11 @@
         "isDependentOnApAmA0": true,
         "portableKind": "diagnostic",
         "naturalRank": "volume",
-        "samplingModes": "fullGrid",
+        "samplingModes": [
+          "fullGrid",
+          "fixedVerticalProfiles",
+          "positions"
+        ],
         "primitiveDependencyMask": 1,
         "movingPrimitiveChannel": -1,
         "netCDFAttributes": []
@@ -8846,7 +9234,11 @@
         "isDependentOnApAmA0": true,
         "portableKind": "diagnostic",
         "naturalRank": "volume",
-        "samplingModes": "fullGrid",
+        "samplingModes": [
+          "fullGrid",
+          "fixedVerticalProfiles",
+          "positions"
+        ],
         "primitiveDependencyMask": 1,
         "movingPrimitiveChannel": -1,
         "netCDFAttributes": []
@@ -8904,7 +9296,11 @@
         "isDependentOnApAmA0": true,
         "portableKind": "diagnostic",
         "naturalRank": "volume",
-        "samplingModes": "fullGrid",
+        "samplingModes": [
+          "fullGrid",
+          "fixedVerticalProfiles",
+          "positions"
+        ],
         "primitiveDependencyMask": 1,
         "movingPrimitiveChannel": -1,
         "netCDFAttributes": []
@@ -8959,7 +9355,11 @@
         "isDependentOnApAmA0": true,
         "portableKind": "diagnostic",
         "naturalRank": "volume",
-        "samplingModes": "fullGrid",
+        "samplingModes": [
+          "fullGrid",
+          "fixedVerticalProfiles",
+          "positions"
+        ],
         "primitiveDependencyMask": 1,
         "movingPrimitiveChannel": -1,
         "netCDFAttributes": []
@@ -9129,7 +9529,11 @@
         "isDependentOnApAmA0": true,
         "portableKind": "diagnostic",
         "naturalRank": "volume",
-        "samplingModes": "fullGrid",
+        "samplingModes": [
+          "fullGrid",
+          "fixedVerticalProfiles",
+          "positions"
+        ],
         "primitiveDependencyMask": 1,
         "movingPrimitiveChannel": -1,
         "netCDFAttributes": []
@@ -9184,7 +9588,11 @@
         "isDependentOnApAmA0": true,
         "portableKind": "diagnostic",
         "naturalRank": "volume",
-        "samplingModes": "fullGrid",
+        "samplingModes": [
+          "fullGrid",
+          "fixedVerticalProfiles",
+          "positions"
+        ],
         "primitiveDependencyMask": 1,
         "movingPrimitiveChannel": -1,
         "netCDFAttributes": []
@@ -9242,7 +9650,11 @@
         "isDependentOnApAmA0": true,
         "portableKind": "diagnostic",
         "naturalRank": "volume",
-        "samplingModes": "fullGrid",
+        "samplingModes": [
+          "fullGrid",
+          "fixedVerticalProfiles",
+          "positions"
+        ],
         "primitiveDependencyMask": 1,
         "movingPrimitiveChannel": -1,
         "netCDFAttributes": []
@@ -9297,7 +9709,11 @@
         "isDependentOnApAmA0": true,
         "portableKind": "diagnostic",
         "naturalRank": "volume",
-        "samplingModes": "fullGrid",
+        "samplingModes": [
+          "fullGrid",
+          "fixedVerticalProfiles",
+          "positions"
+        ],
         "primitiveDependencyMask": 1,
         "movingPrimitiveChannel": -1,
         "netCDFAttributes": []
@@ -9772,7 +10188,11 @@
         "isDependentOnApAmA0": true,
         "portableKind": "diagnostic",
         "naturalRank": "volume",
-        "samplingModes": "fullGrid",
+        "samplingModes": [
+          "fullGrid",
+          "fixedVerticalProfiles",
+          "positions"
+        ],
         "primitiveDependencyMask": 0,
         "movingPrimitiveChannel": -1,
         "netCDFAttributes": []
@@ -9831,7 +10251,11 @@
         "isDependentOnApAmA0": true,
         "portableKind": "diagnostic",
         "naturalRank": "volume",
-        "samplingModes": "fullGrid",
+        "samplingModes": [
+          "fullGrid",
+          "fixedVerticalProfiles",
+          "positions"
+        ],
         "primitiveDependencyMask": 0,
         "movingPrimitiveChannel": -1,
         "netCDFAttributes": []
@@ -9890,7 +10314,11 @@
         "isDependentOnApAmA0": true,
         "portableKind": "diagnostic",
         "naturalRank": "volume",
-        "samplingModes": "fullGrid",
+        "samplingModes": [
+          "fullGrid",
+          "fixedVerticalProfiles",
+          "positions"
+        ],
         "primitiveDependencyMask": 0,
         "movingPrimitiveChannel": -1,
         "netCDFAttributes": []
@@ -10267,7 +10695,11 @@
         "isDependentOnApAmA0": true,
         "portableKind": "diagnostic",
         "naturalRank": "volume",
-        "samplingModes": "fullGrid",
+        "samplingModes": [
+          "fullGrid",
+          "fixedVerticalProfiles",
+          "positions"
+        ],
         "primitiveDependencyMask": 0,
         "movingPrimitiveChannel": -1,
         "netCDFAttributes": []
@@ -10276,7 +10708,7 @@
       "trueProfileDependencies": "rho_nm",
       "intermediateMask": 256,
       "runtimeStatus": "implemented",
-      "samplingRestriction": "Full natural grid only; interpolation and reductions are not supported.",
+      "samplingRestriction": "Full natural grid, vertical profiles, and fixed/event/moving positions; interpolation is qualified for these spatial samples. Reductions remain unsupported.",
       "configurationRestriction": "The wave-vortex-density-diagnostics-v1 runtime contract defaults to actual density with dampedLeastSquares recovery. Explicit initial reference applies to displacement, APE and APV; rho_nm always describes current density. Legacy MATLAB solver choices are not inferred from saved files.",
       "catalogStatus": "supported",
       "netCDF": {
@@ -10322,7 +10754,11 @@
         "isDependentOnApAmA0": true,
         "portableKind": "diagnostic",
         "naturalRank": "volume",
-        "samplingModes": "fullGrid",
+        "samplingModes": [
+          "fullGrid",
+          "fixedVerticalProfiles",
+          "positions"
+        ],
         "primitiveDependencyMask": 0,
         "movingPrimitiveChannel": -1,
         "netCDFAttributes": []
@@ -10336,7 +10772,7 @@
       "trueProfileDependencies": [],
       "intermediateMask": 128,
       "runtimeStatus": "implemented",
-      "samplingRestriction": "Full natural grid only; interpolation and reductions are not supported.",
+      "samplingRestriction": "Full natural grid, vertical profiles, and fixed/event/moving positions; interpolation is qualified for these spatial samples. Reductions remain unsupported.",
       "configurationRestriction": "The wave-vortex-density-diagnostics-v1 runtime contract defaults to actual density with dampedLeastSquares recovery. Explicit initial reference applies to displacement, APE and APV; rho_nm always describes current density. Legacy MATLAB solver choices are not inferred from saved files.",
       "catalogStatus": "supported",
       "netCDF": {
@@ -10497,7 +10933,11 @@
         "isDependentOnApAmA0": true,
         "portableKind": "diagnostic",
         "naturalRank": "volume",
-        "samplingModes": "fullGrid",
+        "samplingModes": [
+          "fullGrid",
+          "fixedVerticalProfiles",
+          "positions"
+        ],
         "primitiveDependencyMask": 1,
         "movingPrimitiveChannel": -1,
         "netCDFAttributes": []
@@ -10552,7 +10992,11 @@
         "isDependentOnApAmA0": true,
         "portableKind": "diagnostic",
         "naturalRank": "volume",
-        "samplingModes": "fullGrid",
+        "samplingModes": [
+          "fullGrid",
+          "fixedVerticalProfiles",
+          "positions"
+        ],
         "primitiveDependencyMask": 1,
         "movingPrimitiveChannel": -1,
         "netCDFAttributes": []
@@ -10610,7 +11054,11 @@
         "isDependentOnApAmA0": true,
         "portableKind": "diagnostic",
         "naturalRank": "volume",
-        "samplingModes": "fullGrid",
+        "samplingModes": [
+          "fullGrid",
+          "fixedVerticalProfiles",
+          "positions"
+        ],
         "primitiveDependencyMask": 1,
         "movingPrimitiveChannel": -1,
         "netCDFAttributes": []
@@ -10665,7 +11113,11 @@
         "isDependentOnApAmA0": true,
         "portableKind": "diagnostic",
         "naturalRank": "volume",
-        "samplingModes": "fullGrid",
+        "samplingModes": [
+          "fullGrid",
+          "fixedVerticalProfiles",
+          "positions"
+        ],
         "primitiveDependencyMask": 1,
         "movingPrimitiveChannel": -1,
         "netCDFAttributes": []
@@ -10674,7 +11126,7 @@
       "trueProfileDependencies": "rho_nm",
       "intermediateMask": 8256,
       "runtimeStatus": "implemented",
-      "samplingRestriction": "Full natural grid only; interpolation and reductions are not supported.",
+      "samplingRestriction": "Full natural grid, vertical profiles, and fixed/event/moving positions; interpolation is qualified for these spatial samples. Reductions remain unsupported.",
       "configurationRestriction": "The wave-vortex-density-diagnostics-v1 runtime contract defaults to actual density with dampedLeastSquares recovery. Explicit initial reference applies to displacement, APE and APV; rho_nm always describes current density. Legacy MATLAB solver choices are not inferred from saved files.",
       "catalogStatus": "supported",
       "netCDF": {
@@ -10720,7 +11172,11 @@
         "isDependentOnApAmA0": true,
         "portableKind": "diagnostic",
         "naturalRank": "volume",
-        "samplingModes": "fullGrid",
+        "samplingModes": [
+          "fullGrid",
+          "fixedVerticalProfiles",
+          "positions"
+        ],
         "primitiveDependencyMask": 1,
         "movingPrimitiveChannel": -1,
         "netCDFAttributes": []
@@ -10884,7 +11340,11 @@
         "isDependentOnApAmA0": true,
         "portableKind": "diagnostic",
         "naturalRank": "volume",
-        "samplingModes": "fullGrid",
+        "samplingModes": [
+          "fullGrid",
+          "fixedVerticalProfiles",
+          "positions"
+        ],
         "primitiveDependencyMask": 2,
         "movingPrimitiveChannel": -1,
         "netCDFAttributes": []
@@ -10939,7 +11399,11 @@
         "isDependentOnApAmA0": true,
         "portableKind": "diagnostic",
         "naturalRank": "volume",
-        "samplingModes": "fullGrid",
+        "samplingModes": [
+          "fullGrid",
+          "fixedVerticalProfiles",
+          "positions"
+        ],
         "primitiveDependencyMask": 2,
         "movingPrimitiveChannel": -1,
         "netCDFAttributes": []
@@ -10997,7 +11461,11 @@
         "isDependentOnApAmA0": true,
         "portableKind": "diagnostic",
         "naturalRank": "volume",
-        "samplingModes": "fullGrid",
+        "samplingModes": [
+          "fullGrid",
+          "fixedVerticalProfiles",
+          "positions"
+        ],
         "primitiveDependencyMask": 2,
         "movingPrimitiveChannel": -1,
         "netCDFAttributes": []
@@ -11052,7 +11520,11 @@
         "isDependentOnApAmA0": true,
         "portableKind": "diagnostic",
         "naturalRank": "volume",
-        "samplingModes": "fullGrid",
+        "samplingModes": [
+          "fullGrid",
+          "fixedVerticalProfiles",
+          "positions"
+        ],
         "primitiveDependencyMask": 2,
         "movingPrimitiveChannel": -1,
         "netCDFAttributes": []
@@ -11407,7 +11879,7 @@
       "trueProfileDependencies": [],
       "intermediateMask": 48,
       "runtimeStatus": "implemented",
-      "samplingRestriction": "Full natural grid only; interpolation and reductions are not supported.",
+      "samplingRestriction": "Full natural grid, vertical profiles, and fixed/event/moving positions; interpolation is qualified for these spatial samples. Reductions remain unsupported.",
       "configurationRestriction": "The wave-vortex-density-diagnostics-v1 runtime contract defaults to actual density with dampedLeastSquares recovery. Explicit initial reference applies to displacement, APE and APV; rho_nm always describes current density. Legacy MATLAB solver choices are not inferred from saved files.",
       "catalogStatus": "supported",
       "netCDF": {
@@ -11562,7 +12034,10 @@
         "isDependentOnApAmA0": true,
         "portableKind": "diagnostic",
         "naturalRank": "horizontal",
-        "samplingModes": "fullGrid",
+        "samplingModes": [
+          "fullGrid",
+          "positions"
+        ],
         "primitiveDependencyMask": 2,
         "movingPrimitiveChannel": -1,
         "netCDFAttributes": []
@@ -11614,7 +12089,10 @@
         "isDependentOnApAmA0": true,
         "portableKind": "diagnostic",
         "naturalRank": "horizontal",
-        "samplingModes": "fullGrid",
+        "samplingModes": [
+          "fullGrid",
+          "positions"
+        ],
         "primitiveDependencyMask": 2,
         "movingPrimitiveChannel": -1,
         "netCDFAttributes": []
@@ -11669,7 +12147,10 @@
         "isDependentOnApAmA0": true,
         "portableKind": "diagnostic",
         "naturalRank": "horizontal",
-        "samplingModes": "fullGrid",
+        "samplingModes": [
+          "fullGrid",
+          "positions"
+        ],
         "primitiveDependencyMask": 2,
         "movingPrimitiveChannel": -1,
         "netCDFAttributes": []
@@ -11721,7 +12202,10 @@
         "isDependentOnApAmA0": true,
         "portableKind": "diagnostic",
         "naturalRank": "horizontal",
-        "samplingModes": "fullGrid",
+        "samplingModes": [
+          "fullGrid",
+          "positions"
+        ],
         "primitiveDependencyMask": 2,
         "movingPrimitiveChannel": -1,
         "netCDFAttributes": []
@@ -11835,7 +12319,10 @@
         "isDependentOnApAmA0": true,
         "portableKind": "diagnostic",
         "naturalRank": "horizontal",
-        "samplingModes": "fullGrid",
+        "samplingModes": [
+          "fullGrid",
+          "positions"
+        ],
         "primitiveDependencyMask": 1,
         "movingPrimitiveChannel": -1,
         "netCDFAttributes": []
@@ -11887,7 +12374,10 @@
         "isDependentOnApAmA0": true,
         "portableKind": "diagnostic",
         "naturalRank": "horizontal",
-        "samplingModes": "fullGrid",
+        "samplingModes": [
+          "fullGrid",
+          "positions"
+        ],
         "primitiveDependencyMask": 1,
         "movingPrimitiveChannel": -1,
         "netCDFAttributes": []
@@ -11942,7 +12432,10 @@
         "isDependentOnApAmA0": true,
         "portableKind": "diagnostic",
         "naturalRank": "horizontal",
-        "samplingModes": "fullGrid",
+        "samplingModes": [
+          "fullGrid",
+          "positions"
+        ],
         "primitiveDependencyMask": 1,
         "movingPrimitiveChannel": -1,
         "netCDFAttributes": []
@@ -11994,7 +12487,10 @@
         "isDependentOnApAmA0": true,
         "portableKind": "diagnostic",
         "naturalRank": "horizontal",
-        "samplingModes": "fullGrid",
+        "samplingModes": [
+          "fullGrid",
+          "positions"
+        ],
         "primitiveDependencyMask": 1,
         "movingPrimitiveChannel": -1,
         "netCDFAttributes": []
@@ -12108,7 +12604,10 @@
         "isDependentOnApAmA0": true,
         "portableKind": "diagnostic",
         "naturalRank": "horizontal",
-        "samplingModes": "fullGrid",
+        "samplingModes": [
+          "fullGrid",
+          "positions"
+        ],
         "primitiveDependencyMask": 1,
         "movingPrimitiveChannel": -1,
         "netCDFAttributes": []
@@ -12160,7 +12659,10 @@
         "isDependentOnApAmA0": true,
         "portableKind": "diagnostic",
         "naturalRank": "horizontal",
-        "samplingModes": "fullGrid",
+        "samplingModes": [
+          "fullGrid",
+          "positions"
+        ],
         "primitiveDependencyMask": 1,
         "movingPrimitiveChannel": -1,
         "netCDFAttributes": []
@@ -12215,7 +12717,10 @@
         "isDependentOnApAmA0": true,
         "portableKind": "diagnostic",
         "naturalRank": "horizontal",
-        "samplingModes": "fullGrid",
+        "samplingModes": [
+          "fullGrid",
+          "positions"
+        ],
         "primitiveDependencyMask": 1,
         "movingPrimitiveChannel": -1,
         "netCDFAttributes": []
@@ -12267,7 +12772,10 @@
         "isDependentOnApAmA0": true,
         "portableKind": "diagnostic",
         "naturalRank": "horizontal",
-        "samplingModes": "fullGrid",
+        "samplingModes": [
+          "fullGrid",
+          "positions"
+        ],
         "primitiveDependencyMask": 1,
         "movingPrimitiveChannel": -1,
         "netCDFAttributes": []
@@ -12487,7 +12995,11 @@
         "isDependentOnApAmA0": true,
         "portableKind": "diagnostic",
         "naturalRank": "volume",
-        "samplingModes": "fullGrid",
+        "samplingModes": [
+          "fullGrid",
+          "fixedVerticalProfiles",
+          "positions"
+        ],
         "primitiveDependencyMask": 1,
         "movingPrimitiveChannel": -1,
         "netCDFAttributes": []
@@ -12542,7 +13054,11 @@
         "isDependentOnApAmA0": true,
         "portableKind": "diagnostic",
         "naturalRank": "volume",
-        "samplingModes": "fullGrid",
+        "samplingModes": [
+          "fullGrid",
+          "fixedVerticalProfiles",
+          "positions"
+        ],
         "primitiveDependencyMask": 1,
         "movingPrimitiveChannel": -1,
         "netCDFAttributes": []
@@ -12600,7 +13116,11 @@
         "isDependentOnApAmA0": true,
         "portableKind": "diagnostic",
         "naturalRank": "volume",
-        "samplingModes": "fullGrid",
+        "samplingModes": [
+          "fullGrid",
+          "fixedVerticalProfiles",
+          "positions"
+        ],
         "primitiveDependencyMask": 1,
         "movingPrimitiveChannel": -1,
         "netCDFAttributes": []
@@ -12655,7 +13175,11 @@
         "isDependentOnApAmA0": true,
         "portableKind": "diagnostic",
         "naturalRank": "volume",
-        "samplingModes": "fullGrid",
+        "samplingModes": [
+          "fullGrid",
+          "fixedVerticalProfiles",
+          "positions"
+        ],
         "primitiveDependencyMask": 1,
         "movingPrimitiveChannel": -1,
         "netCDFAttributes": []
@@ -12828,7 +13352,11 @@
         "isDependentOnApAmA0": true,
         "portableKind": "diagnostic",
         "naturalRank": "volume",
-        "samplingModes": "fullGrid",
+        "samplingModes": [
+          "fullGrid",
+          "fixedVerticalProfiles",
+          "positions"
+        ],
         "primitiveDependencyMask": 1,
         "movingPrimitiveChannel": -1,
         "netCDFAttributes": []
@@ -12883,7 +13411,11 @@
         "isDependentOnApAmA0": true,
         "portableKind": "diagnostic",
         "naturalRank": "volume",
-        "samplingModes": "fullGrid",
+        "samplingModes": [
+          "fullGrid",
+          "fixedVerticalProfiles",
+          "positions"
+        ],
         "primitiveDependencyMask": 1,
         "movingPrimitiveChannel": -1,
         "netCDFAttributes": []
@@ -12941,7 +13473,11 @@
         "isDependentOnApAmA0": true,
         "portableKind": "diagnostic",
         "naturalRank": "volume",
-        "samplingModes": "fullGrid",
+        "samplingModes": [
+          "fullGrid",
+          "fixedVerticalProfiles",
+          "positions"
+        ],
         "primitiveDependencyMask": 1,
         "movingPrimitiveChannel": -1,
         "netCDFAttributes": []
@@ -12996,7 +13532,11 @@
         "isDependentOnApAmA0": true,
         "portableKind": "diagnostic",
         "naturalRank": "volume",
-        "samplingModes": "fullGrid",
+        "samplingModes": [
+          "fullGrid",
+          "fixedVerticalProfiles",
+          "positions"
+        ],
         "primitiveDependencyMask": 1,
         "movingPrimitiveChannel": -1,
         "netCDFAttributes": []
@@ -13166,7 +13706,11 @@
         "isDependentOnApAmA0": true,
         "portableKind": "diagnostic",
         "naturalRank": "volume",
-        "samplingModes": "fullGrid",
+        "samplingModes": [
+          "fullGrid",
+          "fixedVerticalProfiles",
+          "positions"
+        ],
         "primitiveDependencyMask": 1,
         "movingPrimitiveChannel": -1,
         "netCDFAttributes": []
@@ -13221,7 +13765,11 @@
         "isDependentOnApAmA0": true,
         "portableKind": "diagnostic",
         "naturalRank": "volume",
-        "samplingModes": "fullGrid",
+        "samplingModes": [
+          "fullGrid",
+          "fixedVerticalProfiles",
+          "positions"
+        ],
         "primitiveDependencyMask": 1,
         "movingPrimitiveChannel": -1,
         "netCDFAttributes": []
@@ -13279,7 +13827,11 @@
         "isDependentOnApAmA0": true,
         "portableKind": "diagnostic",
         "naturalRank": "volume",
-        "samplingModes": "fullGrid",
+        "samplingModes": [
+          "fullGrid",
+          "fixedVerticalProfiles",
+          "positions"
+        ],
         "primitiveDependencyMask": 1,
         "movingPrimitiveChannel": -1,
         "netCDFAttributes": []
@@ -13334,7 +13886,11 @@
         "isDependentOnApAmA0": true,
         "portableKind": "diagnostic",
         "naturalRank": "volume",
-        "samplingModes": "fullGrid",
+        "samplingModes": [
+          "fullGrid",
+          "fixedVerticalProfiles",
+          "positions"
+        ],
         "primitiveDependencyMask": 1,
         "movingPrimitiveChannel": -1,
         "netCDFAttributes": []
@@ -13809,7 +14365,11 @@
         "isDependentOnApAmA0": true,
         "portableKind": "diagnostic",
         "naturalRank": "volume",
-        "samplingModes": "fullGrid",
+        "samplingModes": [
+          "fullGrid",
+          "fixedVerticalProfiles",
+          "positions"
+        ],
         "primitiveDependencyMask": 0,
         "movingPrimitiveChannel": -1,
         "netCDFAttributes": []
@@ -13868,7 +14428,11 @@
         "isDependentOnApAmA0": true,
         "portableKind": "diagnostic",
         "naturalRank": "volume",
-        "samplingModes": "fullGrid",
+        "samplingModes": [
+          "fullGrid",
+          "fixedVerticalProfiles",
+          "positions"
+        ],
         "primitiveDependencyMask": 0,
         "movingPrimitiveChannel": -1,
         "netCDFAttributes": []
@@ -13927,7 +14491,11 @@
         "isDependentOnApAmA0": true,
         "portableKind": "diagnostic",
         "naturalRank": "volume",
-        "samplingModes": "fullGrid",
+        "samplingModes": [
+          "fullGrid",
+          "fixedVerticalProfiles",
+          "positions"
+        ],
         "primitiveDependencyMask": 0,
         "movingPrimitiveChannel": -1,
         "netCDFAttributes": []
@@ -13986,7 +14554,11 @@
         "isDependentOnApAmA0": true,
         "portableKind": "diagnostic",
         "naturalRank": "volume",
-        "samplingModes": "fullGrid",
+        "samplingModes": [
+          "fullGrid",
+          "fixedVerticalProfiles",
+          "positions"
+        ],
         "primitiveDependencyMask": 0,
         "movingPrimitiveChannel": -1,
         "netCDFAttributes": []
@@ -14363,7 +14935,11 @@
         "isDependentOnApAmA0": true,
         "portableKind": "diagnostic",
         "naturalRank": "volume",
-        "samplingModes": "fullGrid",
+        "samplingModes": [
+          "fullGrid",
+          "fixedVerticalProfiles",
+          "positions"
+        ],
         "primitiveDependencyMask": 0,
         "movingPrimitiveChannel": -1,
         "netCDFAttributes": []
@@ -14372,7 +14948,7 @@
       "trueProfileDependencies": "rho_nm",
       "intermediateMask": 256,
       "runtimeStatus": "implemented",
-      "samplingRestriction": "Full natural grid only; interpolation and reductions are not supported.",
+      "samplingRestriction": "Full natural grid, vertical profiles, and fixed/event/moving positions; interpolation is qualified for these spatial samples. Reductions remain unsupported.",
       "configurationRestriction": "The wave-vortex-density-diagnostics-v1 runtime contract defaults to actual density with dampedLeastSquares recovery. Explicit initial reference applies to displacement, APE and APV; rho_nm always describes current density. Legacy MATLAB solver choices are not inferred from saved files.",
       "catalogStatus": "supported",
       "netCDF": {
@@ -14418,7 +14994,11 @@
         "isDependentOnApAmA0": true,
         "portableKind": "diagnostic",
         "naturalRank": "volume",
-        "samplingModes": "fullGrid",
+        "samplingModes": [
+          "fullGrid",
+          "fixedVerticalProfiles",
+          "positions"
+        ],
         "primitiveDependencyMask": 0,
         "movingPrimitiveChannel": -1,
         "netCDFAttributes": []
@@ -14432,7 +15012,7 @@
       "trueProfileDependencies": [],
       "intermediateMask": 128,
       "runtimeStatus": "implemented",
-      "samplingRestriction": "Full natural grid only; interpolation and reductions are not supported.",
+      "samplingRestriction": "Full natural grid, vertical profiles, and fixed/event/moving positions; interpolation is qualified for these spatial samples. Reductions remain unsupported.",
       "configurationRestriction": "The wave-vortex-density-diagnostics-v1 runtime contract defaults to actual density with dampedLeastSquares recovery. Explicit initial reference applies to displacement, APE and APV; rho_nm always describes current density. Legacy MATLAB solver choices are not inferred from saved files.",
       "catalogStatus": "supported",
       "netCDF": {
@@ -14593,7 +15173,11 @@
         "isDependentOnApAmA0": true,
         "portableKind": "diagnostic",
         "naturalRank": "volume",
-        "samplingModes": "fullGrid",
+        "samplingModes": [
+          "fullGrid",
+          "fixedVerticalProfiles",
+          "positions"
+        ],
         "primitiveDependencyMask": 1,
         "movingPrimitiveChannel": -1,
         "netCDFAttributes": []
@@ -14648,7 +15232,11 @@
         "isDependentOnApAmA0": true,
         "portableKind": "diagnostic",
         "naturalRank": "volume",
-        "samplingModes": "fullGrid",
+        "samplingModes": [
+          "fullGrid",
+          "fixedVerticalProfiles",
+          "positions"
+        ],
         "primitiveDependencyMask": 1,
         "movingPrimitiveChannel": -1,
         "netCDFAttributes": []
@@ -14706,7 +15294,11 @@
         "isDependentOnApAmA0": true,
         "portableKind": "diagnostic",
         "naturalRank": "volume",
-        "samplingModes": "fullGrid",
+        "samplingModes": [
+          "fullGrid",
+          "fixedVerticalProfiles",
+          "positions"
+        ],
         "primitiveDependencyMask": 1,
         "movingPrimitiveChannel": -1,
         "netCDFAttributes": []
@@ -14761,7 +15353,11 @@
         "isDependentOnApAmA0": true,
         "portableKind": "diagnostic",
         "naturalRank": "volume",
-        "samplingModes": "fullGrid",
+        "samplingModes": [
+          "fullGrid",
+          "fixedVerticalProfiles",
+          "positions"
+        ],
         "primitiveDependencyMask": 1,
         "movingPrimitiveChannel": -1,
         "netCDFAttributes": []
@@ -14770,7 +15366,7 @@
       "trueProfileDependencies": "rho_nm",
       "intermediateMask": 8256,
       "runtimeStatus": "implemented",
-      "samplingRestriction": "Full natural grid only; interpolation and reductions are not supported.",
+      "samplingRestriction": "Full natural grid, vertical profiles, and fixed/event/moving positions; interpolation is qualified for these spatial samples. Reductions remain unsupported.",
       "configurationRestriction": "The wave-vortex-density-diagnostics-v1 runtime contract defaults to actual density with dampedLeastSquares recovery. Explicit initial reference applies to displacement, APE and APV; rho_nm always describes current density. Legacy MATLAB solver choices are not inferred from saved files.",
       "catalogStatus": "supported",
       "netCDF": {
@@ -14816,7 +15412,11 @@
         "isDependentOnApAmA0": true,
         "portableKind": "diagnostic",
         "naturalRank": "volume",
-        "samplingModes": "fullGrid",
+        "samplingModes": [
+          "fullGrid",
+          "fixedVerticalProfiles",
+          "positions"
+        ],
         "primitiveDependencyMask": 1,
         "movingPrimitiveChannel": -1,
         "netCDFAttributes": []
@@ -14980,7 +15580,11 @@
         "isDependentOnApAmA0": true,
         "portableKind": "diagnostic",
         "naturalRank": "volume",
-        "samplingModes": "fullGrid",
+        "samplingModes": [
+          "fullGrid",
+          "fixedVerticalProfiles",
+          "positions"
+        ],
         "primitiveDependencyMask": 2,
         "movingPrimitiveChannel": -1,
         "netCDFAttributes": []
@@ -15035,7 +15639,11 @@
         "isDependentOnApAmA0": true,
         "portableKind": "diagnostic",
         "naturalRank": "volume",
-        "samplingModes": "fullGrid",
+        "samplingModes": [
+          "fullGrid",
+          "fixedVerticalProfiles",
+          "positions"
+        ],
         "primitiveDependencyMask": 2,
         "movingPrimitiveChannel": -1,
         "netCDFAttributes": []
@@ -15093,7 +15701,11 @@
         "isDependentOnApAmA0": true,
         "portableKind": "diagnostic",
         "naturalRank": "volume",
-        "samplingModes": "fullGrid",
+        "samplingModes": [
+          "fullGrid",
+          "fixedVerticalProfiles",
+          "positions"
+        ],
         "primitiveDependencyMask": 2,
         "movingPrimitiveChannel": -1,
         "netCDFAttributes": []
@@ -15148,7 +15760,11 @@
         "isDependentOnApAmA0": true,
         "portableKind": "diagnostic",
         "naturalRank": "volume",
-        "samplingModes": "fullGrid",
+        "samplingModes": [
+          "fullGrid",
+          "fixedVerticalProfiles",
+          "positions"
+        ],
         "primitiveDependencyMask": 2,
         "movingPrimitiveChannel": -1,
         "netCDFAttributes": []
@@ -15503,7 +16119,7 @@
       "trueProfileDependencies": [],
       "intermediateMask": 48,
       "runtimeStatus": "implemented",
-      "samplingRestriction": "Full natural grid only; interpolation and reductions are not supported.",
+      "samplingRestriction": "Full natural grid, vertical profiles, and fixed/event/moving positions; interpolation is qualified for these spatial samples. Reductions remain unsupported.",
       "configurationRestriction": "The wave-vortex-density-diagnostics-v1 runtime contract defaults to actual density with dampedLeastSquares recovery. Explicit initial reference applies to displacement, APE and APV; rho_nm always describes current density. Legacy MATLAB solver choices are not inferred from saved files.",
       "catalogStatus": "supported",
       "netCDF": {
@@ -15658,7 +16274,10 @@
         "isDependentOnApAmA0": true,
         "portableKind": "diagnostic",
         "naturalRank": "horizontal",
-        "samplingModes": "fullGrid",
+        "samplingModes": [
+          "fullGrid",
+          "positions"
+        ],
         "primitiveDependencyMask": 2,
         "movingPrimitiveChannel": -1,
         "netCDFAttributes": []
@@ -15710,7 +16329,10 @@
         "isDependentOnApAmA0": true,
         "portableKind": "diagnostic",
         "naturalRank": "horizontal",
-        "samplingModes": "fullGrid",
+        "samplingModes": [
+          "fullGrid",
+          "positions"
+        ],
         "primitiveDependencyMask": 2,
         "movingPrimitiveChannel": -1,
         "netCDFAttributes": []
@@ -15765,7 +16387,10 @@
         "isDependentOnApAmA0": true,
         "portableKind": "diagnostic",
         "naturalRank": "horizontal",
-        "samplingModes": "fullGrid",
+        "samplingModes": [
+          "fullGrid",
+          "positions"
+        ],
         "primitiveDependencyMask": 2,
         "movingPrimitiveChannel": -1,
         "netCDFAttributes": []
@@ -15817,7 +16442,10 @@
         "isDependentOnApAmA0": true,
         "portableKind": "diagnostic",
         "naturalRank": "horizontal",
-        "samplingModes": "fullGrid",
+        "samplingModes": [
+          "fullGrid",
+          "positions"
+        ],
         "primitiveDependencyMask": 2,
         "movingPrimitiveChannel": -1,
         "netCDFAttributes": []
@@ -15931,7 +16559,10 @@
         "isDependentOnApAmA0": true,
         "portableKind": "diagnostic",
         "naturalRank": "horizontal",
-        "samplingModes": "fullGrid",
+        "samplingModes": [
+          "fullGrid",
+          "positions"
+        ],
         "primitiveDependencyMask": 1,
         "movingPrimitiveChannel": -1,
         "netCDFAttributes": []
@@ -15983,7 +16614,10 @@
         "isDependentOnApAmA0": true,
         "portableKind": "diagnostic",
         "naturalRank": "horizontal",
-        "samplingModes": "fullGrid",
+        "samplingModes": [
+          "fullGrid",
+          "positions"
+        ],
         "primitiveDependencyMask": 1,
         "movingPrimitiveChannel": -1,
         "netCDFAttributes": []
@@ -16038,7 +16672,10 @@
         "isDependentOnApAmA0": true,
         "portableKind": "diagnostic",
         "naturalRank": "horizontal",
-        "samplingModes": "fullGrid",
+        "samplingModes": [
+          "fullGrid",
+          "positions"
+        ],
         "primitiveDependencyMask": 1,
         "movingPrimitiveChannel": -1,
         "netCDFAttributes": []
@@ -16090,7 +16727,10 @@
         "isDependentOnApAmA0": true,
         "portableKind": "diagnostic",
         "naturalRank": "horizontal",
-        "samplingModes": "fullGrid",
+        "samplingModes": [
+          "fullGrid",
+          "positions"
+        ],
         "primitiveDependencyMask": 1,
         "movingPrimitiveChannel": -1,
         "netCDFAttributes": []
@@ -16204,7 +16844,10 @@
         "isDependentOnApAmA0": true,
         "portableKind": "diagnostic",
         "naturalRank": "horizontal",
-        "samplingModes": "fullGrid",
+        "samplingModes": [
+          "fullGrid",
+          "positions"
+        ],
         "primitiveDependencyMask": 1,
         "movingPrimitiveChannel": -1,
         "netCDFAttributes": []
@@ -16256,7 +16899,10 @@
         "isDependentOnApAmA0": true,
         "portableKind": "diagnostic",
         "naturalRank": "horizontal",
-        "samplingModes": "fullGrid",
+        "samplingModes": [
+          "fullGrid",
+          "positions"
+        ],
         "primitiveDependencyMask": 1,
         "movingPrimitiveChannel": -1,
         "netCDFAttributes": []
@@ -16311,7 +16957,10 @@
         "isDependentOnApAmA0": true,
         "portableKind": "diagnostic",
         "naturalRank": "horizontal",
-        "samplingModes": "fullGrid",
+        "samplingModes": [
+          "fullGrid",
+          "positions"
+        ],
         "primitiveDependencyMask": 1,
         "movingPrimitiveChannel": -1,
         "netCDFAttributes": []
@@ -16363,7 +17012,10 @@
         "isDependentOnApAmA0": true,
         "portableKind": "diagnostic",
         "naturalRank": "horizontal",
-        "samplingModes": "fullGrid",
+        "samplingModes": [
+          "fullGrid",
+          "positions"
+        ],
         "primitiveDependencyMask": 1,
         "movingPrimitiveChannel": -1,
         "netCDFAttributes": []
@@ -16583,7 +17235,11 @@
         "isDependentOnApAmA0": true,
         "portableKind": "diagnostic",
         "naturalRank": "volume",
-        "samplingModes": "fullGrid",
+        "samplingModes": [
+          "fullGrid",
+          "fixedVerticalProfiles",
+          "positions"
+        ],
         "primitiveDependencyMask": 1,
         "movingPrimitiveChannel": -1,
         "netCDFAttributes": []
@@ -16638,7 +17294,11 @@
         "isDependentOnApAmA0": true,
         "portableKind": "diagnostic",
         "naturalRank": "volume",
-        "samplingModes": "fullGrid",
+        "samplingModes": [
+          "fullGrid",
+          "fixedVerticalProfiles",
+          "positions"
+        ],
         "primitiveDependencyMask": 1,
         "movingPrimitiveChannel": -1,
         "netCDFAttributes": []
@@ -16696,7 +17356,11 @@
         "isDependentOnApAmA0": true,
         "portableKind": "diagnostic",
         "naturalRank": "volume",
-        "samplingModes": "fullGrid",
+        "samplingModes": [
+          "fullGrid",
+          "fixedVerticalProfiles",
+          "positions"
+        ],
         "primitiveDependencyMask": 1,
         "movingPrimitiveChannel": -1,
         "netCDFAttributes": []
@@ -16751,7 +17415,11 @@
         "isDependentOnApAmA0": true,
         "portableKind": "diagnostic",
         "naturalRank": "volume",
-        "samplingModes": "fullGrid",
+        "samplingModes": [
+          "fullGrid",
+          "fixedVerticalProfiles",
+          "positions"
+        ],
         "primitiveDependencyMask": 1,
         "movingPrimitiveChannel": -1,
         "netCDFAttributes": []
@@ -16924,7 +17592,11 @@
         "isDependentOnApAmA0": true,
         "portableKind": "diagnostic",
         "naturalRank": "volume",
-        "samplingModes": "fullGrid",
+        "samplingModes": [
+          "fullGrid",
+          "fixedVerticalProfiles",
+          "positions"
+        ],
         "primitiveDependencyMask": 1,
         "movingPrimitiveChannel": -1,
         "netCDFAttributes": []
@@ -16979,7 +17651,11 @@
         "isDependentOnApAmA0": true,
         "portableKind": "diagnostic",
         "naturalRank": "volume",
-        "samplingModes": "fullGrid",
+        "samplingModes": [
+          "fullGrid",
+          "fixedVerticalProfiles",
+          "positions"
+        ],
         "primitiveDependencyMask": 1,
         "movingPrimitiveChannel": -1,
         "netCDFAttributes": []
@@ -17037,7 +17713,11 @@
         "isDependentOnApAmA0": true,
         "portableKind": "diagnostic",
         "naturalRank": "volume",
-        "samplingModes": "fullGrid",
+        "samplingModes": [
+          "fullGrid",
+          "fixedVerticalProfiles",
+          "positions"
+        ],
         "primitiveDependencyMask": 1,
         "movingPrimitiveChannel": -1,
         "netCDFAttributes": []
@@ -17092,7 +17772,11 @@
         "isDependentOnApAmA0": true,
         "portableKind": "diagnostic",
         "naturalRank": "volume",
-        "samplingModes": "fullGrid",
+        "samplingModes": [
+          "fullGrid",
+          "fixedVerticalProfiles",
+          "positions"
+        ],
         "primitiveDependencyMask": 1,
         "movingPrimitiveChannel": -1,
         "netCDFAttributes": []
@@ -17262,7 +17946,11 @@
         "isDependentOnApAmA0": true,
         "portableKind": "diagnostic",
         "naturalRank": "volume",
-        "samplingModes": "fullGrid",
+        "samplingModes": [
+          "fullGrid",
+          "fixedVerticalProfiles",
+          "positions"
+        ],
         "primitiveDependencyMask": 1,
         "movingPrimitiveChannel": -1,
         "netCDFAttributes": []
@@ -17317,7 +18005,11 @@
         "isDependentOnApAmA0": true,
         "portableKind": "diagnostic",
         "naturalRank": "volume",
-        "samplingModes": "fullGrid",
+        "samplingModes": [
+          "fullGrid",
+          "fixedVerticalProfiles",
+          "positions"
+        ],
         "primitiveDependencyMask": 1,
         "movingPrimitiveChannel": -1,
         "netCDFAttributes": []
@@ -17375,7 +18067,11 @@
         "isDependentOnApAmA0": true,
         "portableKind": "diagnostic",
         "naturalRank": "volume",
-        "samplingModes": "fullGrid",
+        "samplingModes": [
+          "fullGrid",
+          "fixedVerticalProfiles",
+          "positions"
+        ],
         "primitiveDependencyMask": 1,
         "movingPrimitiveChannel": -1,
         "netCDFAttributes": []
@@ -17430,7 +18126,11 @@
         "isDependentOnApAmA0": true,
         "portableKind": "diagnostic",
         "naturalRank": "volume",
-        "samplingModes": "fullGrid",
+        "samplingModes": [
+          "fullGrid",
+          "fixedVerticalProfiles",
+          "positions"
+        ],
         "primitiveDependencyMask": 1,
         "movingPrimitiveChannel": -1,
         "netCDFAttributes": []
@@ -17905,7 +18605,11 @@
         "isDependentOnApAmA0": true,
         "portableKind": "diagnostic",
         "naturalRank": "volume",
-        "samplingModes": "fullGrid",
+        "samplingModes": [
+          "fullGrid",
+          "fixedVerticalProfiles",
+          "positions"
+        ],
         "primitiveDependencyMask": 0,
         "movingPrimitiveChannel": -1,
         "netCDFAttributes": []
@@ -17964,7 +18668,11 @@
         "isDependentOnApAmA0": true,
         "portableKind": "diagnostic",
         "naturalRank": "volume",
-        "samplingModes": "fullGrid",
+        "samplingModes": [
+          "fullGrid",
+          "fixedVerticalProfiles",
+          "positions"
+        ],
         "primitiveDependencyMask": 0,
         "movingPrimitiveChannel": -1,
         "netCDFAttributes": []
@@ -18023,7 +18731,11 @@
         "isDependentOnApAmA0": true,
         "portableKind": "diagnostic",
         "naturalRank": "volume",
-        "samplingModes": "fullGrid",
+        "samplingModes": [
+          "fullGrid",
+          "fixedVerticalProfiles",
+          "positions"
+        ],
         "primitiveDependencyMask": 0,
         "movingPrimitiveChannel": -1,
         "netCDFAttributes": []
@@ -18082,7 +18794,11 @@
         "isDependentOnApAmA0": true,
         "portableKind": "diagnostic",
         "naturalRank": "volume",
-        "samplingModes": "fullGrid",
+        "samplingModes": [
+          "fullGrid",
+          "fixedVerticalProfiles",
+          "positions"
+        ],
         "primitiveDependencyMask": 0,
         "movingPrimitiveChannel": -1,
         "netCDFAttributes": []
@@ -18909,7 +19625,10 @@
         "isDependentOnApAmA0": true,
         "portableKind": "diagnostic",
         "naturalRank": "horizontal",
-        "samplingModes": "fullGrid",
+        "samplingModes": [
+          "fullGrid",
+          "positions"
+        ],
         "primitiveDependencyMask": 0,
         "movingPrimitiveChannel": -1,
         "netCDFAttributes": []
@@ -19730,7 +20449,10 @@
         "isDependentOnApAmA0": true,
         "portableKind": "diagnostic",
         "naturalRank": "horizontal",
-        "samplingModes": "fullGrid",
+        "samplingModes": [
+          "fullGrid",
+          "positions"
+        ],
         "primitiveDependencyMask": 0,
         "movingPrimitiveChannel": -1,
         "netCDFAttributes": []
@@ -20885,7 +21607,11 @@
         "isDependentOnApAmA0": true,
         "portableKind": "diagnostic",
         "naturalRank": "volume",
-        "samplingModes": "fullGrid",
+        "samplingModes": [
+          "fullGrid",
+          "fixedVerticalProfiles",
+          "positions"
+        ],
         "primitiveDependencyMask": 0,
         "movingPrimitiveChannel": -1,
         "netCDFAttributes": []
@@ -22042,7 +22768,11 @@
         "isDependentOnApAmA0": true,
         "portableKind": "diagnostic",
         "naturalRank": "volume",
-        "samplingModes": "fullGrid",
+        "samplingModes": [
+          "fullGrid",
+          "fixedVerticalProfiles",
+          "positions"
+        ],
         "primitiveDependencyMask": 0,
         "movingPrimitiveChannel": -1,
         "netCDFAttributes": []
@@ -22415,7 +23145,11 @@
         "isDependentOnApAmA0": true,
         "portableKind": "diagnostic",
         "naturalRank": "volume",
-        "samplingModes": "fullGrid",
+        "samplingModes": [
+          "fullGrid",
+          "fixedVerticalProfiles",
+          "positions"
+        ],
         "primitiveDependencyMask": 0,
         "movingPrimitiveChannel": -1,
         "netCDFAttributes": []
@@ -22424,7 +23158,7 @@
       "trueProfileDependencies": "rho_nm",
       "intermediateMask": 256,
       "runtimeStatus": "implemented",
-      "samplingRestriction": "Full natural grid only; interpolation and reductions are not supported.",
+      "samplingRestriction": "Full natural grid, vertical profiles, and fixed/event/moving positions; interpolation is qualified for these spatial samples. Reductions remain unsupported.",
       "configurationRestriction": "The wave-vortex-density-diagnostics-v1 runtime contract defaults to actual density with dampedLeastSquares recovery. Explicit initial reference applies to displacement, APE and APV; rho_nm always describes current density. Legacy MATLAB solver choices are not inferred from saved files.",
       "catalogStatus": "supported",
       "netCDF": {
@@ -22470,7 +23204,11 @@
         "isDependentOnApAmA0": true,
         "portableKind": "diagnostic",
         "naturalRank": "volume",
-        "samplingModes": "fullGrid",
+        "samplingModes": [
+          "fullGrid",
+          "fixedVerticalProfiles",
+          "positions"
+        ],
         "primitiveDependencyMask": 0,
         "movingPrimitiveChannel": -1,
         "netCDFAttributes": []
@@ -22484,7 +23222,7 @@
       "trueProfileDependencies": [],
       "intermediateMask": 128,
       "runtimeStatus": "implemented",
-      "samplingRestriction": "Full natural grid only; interpolation and reductions are not supported.",
+      "samplingRestriction": "Full natural grid, vertical profiles, and fixed/event/moving positions; interpolation is qualified for these spatial samples. Reductions remain unsupported.",
       "configurationRestriction": "The wave-vortex-density-diagnostics-v1 runtime contract defaults to actual density with dampedLeastSquares recovery. Explicit initial reference applies to displacement, APE and APV; rho_nm always describes current density. Legacy MATLAB solver choices are not inferred from saved files.",
       "catalogStatus": "supported",
       "netCDF": {
@@ -22645,7 +23383,11 @@
         "isDependentOnApAmA0": true,
         "portableKind": "diagnostic",
         "naturalRank": "volume",
-        "samplingModes": "fullGrid",
+        "samplingModes": [
+          "fullGrid",
+          "fixedVerticalProfiles",
+          "positions"
+        ],
         "primitiveDependencyMask": 1,
         "movingPrimitiveChannel": -1,
         "netCDFAttributes": []
@@ -22700,7 +23442,11 @@
         "isDependentOnApAmA0": true,
         "portableKind": "diagnostic",
         "naturalRank": "volume",
-        "samplingModes": "fullGrid",
+        "samplingModes": [
+          "fullGrid",
+          "fixedVerticalProfiles",
+          "positions"
+        ],
         "primitiveDependencyMask": 1,
         "movingPrimitiveChannel": -1,
         "netCDFAttributes": []
@@ -22758,7 +23504,11 @@
         "isDependentOnApAmA0": true,
         "portableKind": "diagnostic",
         "naturalRank": "volume",
-        "samplingModes": "fullGrid",
+        "samplingModes": [
+          "fullGrid",
+          "fixedVerticalProfiles",
+          "positions"
+        ],
         "primitiveDependencyMask": 1,
         "movingPrimitiveChannel": -1,
         "netCDFAttributes": []
@@ -22813,7 +23563,11 @@
         "isDependentOnApAmA0": true,
         "portableKind": "diagnostic",
         "naturalRank": "volume",
-        "samplingModes": "fullGrid",
+        "samplingModes": [
+          "fullGrid",
+          "fixedVerticalProfiles",
+          "positions"
+        ],
         "primitiveDependencyMask": 1,
         "movingPrimitiveChannel": -1,
         "netCDFAttributes": []
@@ -22822,7 +23576,7 @@
       "trueProfileDependencies": "rho_nm",
       "intermediateMask": 8256,
       "runtimeStatus": "implemented",
-      "samplingRestriction": "Full natural grid only; interpolation and reductions are not supported.",
+      "samplingRestriction": "Full natural grid, vertical profiles, and fixed/event/moving positions; interpolation is qualified for these spatial samples. Reductions remain unsupported.",
       "configurationRestriction": "The wave-vortex-density-diagnostics-v1 runtime contract defaults to actual density with dampedLeastSquares recovery. Explicit initial reference applies to displacement, APE and APV; rho_nm always describes current density. Legacy MATLAB solver choices are not inferred from saved files.",
       "catalogStatus": "supported",
       "netCDF": {
@@ -22868,7 +23622,11 @@
         "isDependentOnApAmA0": true,
         "portableKind": "diagnostic",
         "naturalRank": "volume",
-        "samplingModes": "fullGrid",
+        "samplingModes": [
+          "fullGrid",
+          "fixedVerticalProfiles",
+          "positions"
+        ],
         "primitiveDependencyMask": 1,
         "movingPrimitiveChannel": -1,
         "netCDFAttributes": []
@@ -23032,7 +23790,11 @@
         "isDependentOnApAmA0": true,
         "portableKind": "diagnostic",
         "naturalRank": "volume",
-        "samplingModes": "fullGrid",
+        "samplingModes": [
+          "fullGrid",
+          "fixedVerticalProfiles",
+          "positions"
+        ],
         "primitiveDependencyMask": 2,
         "movingPrimitiveChannel": -1,
         "netCDFAttributes": []
@@ -23087,7 +23849,11 @@
         "isDependentOnApAmA0": true,
         "portableKind": "diagnostic",
         "naturalRank": "volume",
-        "samplingModes": "fullGrid",
+        "samplingModes": [
+          "fullGrid",
+          "fixedVerticalProfiles",
+          "positions"
+        ],
         "primitiveDependencyMask": 2,
         "movingPrimitiveChannel": -1,
         "netCDFAttributes": []
@@ -23145,7 +23911,11 @@
         "isDependentOnApAmA0": true,
         "portableKind": "diagnostic",
         "naturalRank": "volume",
-        "samplingModes": "fullGrid",
+        "samplingModes": [
+          "fullGrid",
+          "fixedVerticalProfiles",
+          "positions"
+        ],
         "primitiveDependencyMask": 2,
         "movingPrimitiveChannel": -1,
         "netCDFAttributes": []
@@ -23200,7 +23970,11 @@
         "isDependentOnApAmA0": true,
         "portableKind": "diagnostic",
         "naturalRank": "volume",
-        "samplingModes": "fullGrid",
+        "samplingModes": [
+          "fullGrid",
+          "fixedVerticalProfiles",
+          "positions"
+        ],
         "primitiveDependencyMask": 2,
         "movingPrimitiveChannel": -1,
         "netCDFAttributes": []
@@ -23598,7 +24372,7 @@
       "trueProfileDependencies": [],
       "intermediateMask": 48,
       "runtimeStatus": "implemented",
-      "samplingRestriction": "Full natural grid only; interpolation and reductions are not supported.",
+      "samplingRestriction": "Full natural grid, vertical profiles, and fixed/event/moving positions; interpolation is qualified for these spatial samples. Reductions remain unsupported.",
       "configurationRestriction": "The wave-vortex-density-diagnostics-v1 runtime contract defaults to actual density with dampedLeastSquares recovery. Explicit initial reference applies to displacement, APE and APV; rho_nm always describes current density. Legacy MATLAB solver choices are not inferred from saved files.",
       "catalogStatus": "supported",
       "netCDF": {
@@ -23753,7 +24527,10 @@
         "isDependentOnApAmA0": true,
         "portableKind": "diagnostic",
         "naturalRank": "horizontal",
-        "samplingModes": "fullGrid",
+        "samplingModes": [
+          "fullGrid",
+          "positions"
+        ],
         "primitiveDependencyMask": 2,
         "movingPrimitiveChannel": -1,
         "netCDFAttributes": []
@@ -23805,7 +24582,10 @@
         "isDependentOnApAmA0": true,
         "portableKind": "diagnostic",
         "naturalRank": "horizontal",
-        "samplingModes": "fullGrid",
+        "samplingModes": [
+          "fullGrid",
+          "positions"
+        ],
         "primitiveDependencyMask": 2,
         "movingPrimitiveChannel": -1,
         "netCDFAttributes": []
@@ -23860,7 +24640,10 @@
         "isDependentOnApAmA0": true,
         "portableKind": "diagnostic",
         "naturalRank": "horizontal",
-        "samplingModes": "fullGrid",
+        "samplingModes": [
+          "fullGrid",
+          "positions"
+        ],
         "primitiveDependencyMask": 2,
         "movingPrimitiveChannel": -1,
         "netCDFAttributes": []
@@ -23912,7 +24695,10 @@
         "isDependentOnApAmA0": true,
         "portableKind": "diagnostic",
         "naturalRank": "horizontal",
-        "samplingModes": "fullGrid",
+        "samplingModes": [
+          "fullGrid",
+          "positions"
+        ],
         "primitiveDependencyMask": 2,
         "movingPrimitiveChannel": -1,
         "netCDFAttributes": []
@@ -24026,7 +24812,10 @@
         "isDependentOnApAmA0": true,
         "portableKind": "diagnostic",
         "naturalRank": "horizontal",
-        "samplingModes": "fullGrid",
+        "samplingModes": [
+          "fullGrid",
+          "positions"
+        ],
         "primitiveDependencyMask": 1,
         "movingPrimitiveChannel": -1,
         "netCDFAttributes": []
@@ -24078,7 +24867,10 @@
         "isDependentOnApAmA0": true,
         "portableKind": "diagnostic",
         "naturalRank": "horizontal",
-        "samplingModes": "fullGrid",
+        "samplingModes": [
+          "fullGrid",
+          "positions"
+        ],
         "primitiveDependencyMask": 1,
         "movingPrimitiveChannel": -1,
         "netCDFAttributes": []
@@ -24133,7 +24925,10 @@
         "isDependentOnApAmA0": true,
         "portableKind": "diagnostic",
         "naturalRank": "horizontal",
-        "samplingModes": "fullGrid",
+        "samplingModes": [
+          "fullGrid",
+          "positions"
+        ],
         "primitiveDependencyMask": 1,
         "movingPrimitiveChannel": -1,
         "netCDFAttributes": []
@@ -24185,7 +24980,10 @@
         "isDependentOnApAmA0": true,
         "portableKind": "diagnostic",
         "naturalRank": "horizontal",
-        "samplingModes": "fullGrid",
+        "samplingModes": [
+          "fullGrid",
+          "positions"
+        ],
         "primitiveDependencyMask": 1,
         "movingPrimitiveChannel": -1,
         "netCDFAttributes": []
@@ -24299,7 +25097,10 @@
         "isDependentOnApAmA0": true,
         "portableKind": "diagnostic",
         "naturalRank": "horizontal",
-        "samplingModes": "fullGrid",
+        "samplingModes": [
+          "fullGrid",
+          "positions"
+        ],
         "primitiveDependencyMask": 1,
         "movingPrimitiveChannel": -1,
         "netCDFAttributes": []
@@ -24351,7 +25152,10 @@
         "isDependentOnApAmA0": true,
         "portableKind": "diagnostic",
         "naturalRank": "horizontal",
-        "samplingModes": "fullGrid",
+        "samplingModes": [
+          "fullGrid",
+          "positions"
+        ],
         "primitiveDependencyMask": 1,
         "movingPrimitiveChannel": -1,
         "netCDFAttributes": []
@@ -24406,7 +25210,10 @@
         "isDependentOnApAmA0": true,
         "portableKind": "diagnostic",
         "naturalRank": "horizontal",
-        "samplingModes": "fullGrid",
+        "samplingModes": [
+          "fullGrid",
+          "positions"
+        ],
         "primitiveDependencyMask": 1,
         "movingPrimitiveChannel": -1,
         "netCDFAttributes": []
@@ -24458,7 +25265,10 @@
         "isDependentOnApAmA0": true,
         "portableKind": "diagnostic",
         "naturalRank": "horizontal",
-        "samplingModes": "fullGrid",
+        "samplingModes": [
+          "fullGrid",
+          "positions"
+        ],
         "primitiveDependencyMask": 1,
         "movingPrimitiveChannel": -1,
         "netCDFAttributes": []
@@ -24677,7 +25487,11 @@
         "isDependentOnApAmA0": true,
         "portableKind": "diagnostic",
         "naturalRank": "volume",
-        "samplingModes": "fullGrid",
+        "samplingModes": [
+          "fullGrid",
+          "fixedVerticalProfiles",
+          "positions"
+        ],
         "primitiveDependencyMask": 1,
         "movingPrimitiveChannel": -1,
         "netCDFAttributes": []
@@ -24732,7 +25546,11 @@
         "isDependentOnApAmA0": true,
         "portableKind": "diagnostic",
         "naturalRank": "volume",
-        "samplingModes": "fullGrid",
+        "samplingModes": [
+          "fullGrid",
+          "fixedVerticalProfiles",
+          "positions"
+        ],
         "primitiveDependencyMask": 1,
         "movingPrimitiveChannel": -1,
         "netCDFAttributes": []
@@ -24790,7 +25608,11 @@
         "isDependentOnApAmA0": true,
         "portableKind": "diagnostic",
         "naturalRank": "volume",
-        "samplingModes": "fullGrid",
+        "samplingModes": [
+          "fullGrid",
+          "fixedVerticalProfiles",
+          "positions"
+        ],
         "primitiveDependencyMask": 1,
         "movingPrimitiveChannel": -1,
         "netCDFAttributes": []
@@ -24845,7 +25667,11 @@
         "isDependentOnApAmA0": true,
         "portableKind": "diagnostic",
         "naturalRank": "volume",
-        "samplingModes": "fullGrid",
+        "samplingModes": [
+          "fullGrid",
+          "fixedVerticalProfiles",
+          "positions"
+        ],
         "primitiveDependencyMask": 1,
         "movingPrimitiveChannel": -1,
         "netCDFAttributes": []
@@ -25018,7 +25844,11 @@
         "isDependentOnApAmA0": true,
         "portableKind": "diagnostic",
         "naturalRank": "volume",
-        "samplingModes": "fullGrid",
+        "samplingModes": [
+          "fullGrid",
+          "fixedVerticalProfiles",
+          "positions"
+        ],
         "primitiveDependencyMask": 1,
         "movingPrimitiveChannel": -1,
         "netCDFAttributes": []
@@ -25073,7 +25903,11 @@
         "isDependentOnApAmA0": true,
         "portableKind": "diagnostic",
         "naturalRank": "volume",
-        "samplingModes": "fullGrid",
+        "samplingModes": [
+          "fullGrid",
+          "fixedVerticalProfiles",
+          "positions"
+        ],
         "primitiveDependencyMask": 1,
         "movingPrimitiveChannel": -1,
         "netCDFAttributes": []
@@ -25131,7 +25965,11 @@
         "isDependentOnApAmA0": true,
         "portableKind": "diagnostic",
         "naturalRank": "volume",
-        "samplingModes": "fullGrid",
+        "samplingModes": [
+          "fullGrid",
+          "fixedVerticalProfiles",
+          "positions"
+        ],
         "primitiveDependencyMask": 1,
         "movingPrimitiveChannel": -1,
         "netCDFAttributes": []
@@ -25186,7 +26024,11 @@
         "isDependentOnApAmA0": true,
         "portableKind": "diagnostic",
         "naturalRank": "volume",
-        "samplingModes": "fullGrid",
+        "samplingModes": [
+          "fullGrid",
+          "fixedVerticalProfiles",
+          "positions"
+        ],
         "primitiveDependencyMask": 1,
         "movingPrimitiveChannel": -1,
         "netCDFAttributes": []
@@ -25356,7 +26198,11 @@
         "isDependentOnApAmA0": true,
         "portableKind": "diagnostic",
         "naturalRank": "volume",
-        "samplingModes": "fullGrid",
+        "samplingModes": [
+          "fullGrid",
+          "fixedVerticalProfiles",
+          "positions"
+        ],
         "primitiveDependencyMask": 1,
         "movingPrimitiveChannel": -1,
         "netCDFAttributes": []
@@ -25411,7 +26257,11 @@
         "isDependentOnApAmA0": true,
         "portableKind": "diagnostic",
         "naturalRank": "volume",
-        "samplingModes": "fullGrid",
+        "samplingModes": [
+          "fullGrid",
+          "fixedVerticalProfiles",
+          "positions"
+        ],
         "primitiveDependencyMask": 1,
         "movingPrimitiveChannel": -1,
         "netCDFAttributes": []
@@ -25469,7 +26319,11 @@
         "isDependentOnApAmA0": true,
         "portableKind": "diagnostic",
         "naturalRank": "volume",
-        "samplingModes": "fullGrid",
+        "samplingModes": [
+          "fullGrid",
+          "fixedVerticalProfiles",
+          "positions"
+        ],
         "primitiveDependencyMask": 1,
         "movingPrimitiveChannel": -1,
         "netCDFAttributes": []
@@ -25524,7 +26378,11 @@
         "isDependentOnApAmA0": true,
         "portableKind": "diagnostic",
         "naturalRank": "volume",
-        "samplingModes": "fullGrid",
+        "samplingModes": [
+          "fullGrid",
+          "fixedVerticalProfiles",
+          "positions"
+        ],
         "primitiveDependencyMask": 1,
         "movingPrimitiveChannel": -1,
         "netCDFAttributes": []
@@ -25999,7 +26857,11 @@
         "isDependentOnApAmA0": true,
         "portableKind": "diagnostic",
         "naturalRank": "volume",
-        "samplingModes": "fullGrid",
+        "samplingModes": [
+          "fullGrid",
+          "fixedVerticalProfiles",
+          "positions"
+        ],
         "primitiveDependencyMask": 0,
         "movingPrimitiveChannel": -1,
         "netCDFAttributes": []
@@ -26058,7 +26920,11 @@
         "isDependentOnApAmA0": true,
         "portableKind": "diagnostic",
         "naturalRank": "volume",
-        "samplingModes": "fullGrid",
+        "samplingModes": [
+          "fullGrid",
+          "fixedVerticalProfiles",
+          "positions"
+        ],
         "primitiveDependencyMask": 0,
         "movingPrimitiveChannel": -1,
         "netCDFAttributes": []
@@ -26117,7 +26983,11 @@
         "isDependentOnApAmA0": true,
         "portableKind": "diagnostic",
         "naturalRank": "volume",
-        "samplingModes": "fullGrid",
+        "samplingModes": [
+          "fullGrid",
+          "fixedVerticalProfiles",
+          "positions"
+        ],
         "primitiveDependencyMask": 0,
         "movingPrimitiveChannel": -1,
         "netCDFAttributes": []
@@ -26494,7 +27364,11 @@
         "isDependentOnApAmA0": true,
         "portableKind": "diagnostic",
         "naturalRank": "volume",
-        "samplingModes": "fullGrid",
+        "samplingModes": [
+          "fullGrid",
+          "fixedVerticalProfiles",
+          "positions"
+        ],
         "primitiveDependencyMask": 0,
         "movingPrimitiveChannel": -1,
         "netCDFAttributes": []
@@ -26503,7 +27377,7 @@
       "trueProfileDependencies": "rho_nm",
       "intermediateMask": 256,
       "runtimeStatus": "implemented",
-      "samplingRestriction": "Full natural grid only; interpolation and reductions are not supported.",
+      "samplingRestriction": "Full natural grid, vertical profiles, and fixed/event/moving positions; interpolation is qualified for these spatial samples. Reductions remain unsupported.",
       "configurationRestriction": "The wave-vortex-density-diagnostics-v1 runtime contract defaults to actual density with dampedLeastSquares recovery. Explicit initial reference applies to displacement, APE and APV; rho_nm always describes current density. Legacy MATLAB solver choices are not inferred from saved files.",
       "catalogStatus": "supported",
       "netCDF": {
@@ -26549,7 +27423,11 @@
         "isDependentOnApAmA0": true,
         "portableKind": "diagnostic",
         "naturalRank": "volume",
-        "samplingModes": "fullGrid",
+        "samplingModes": [
+          "fullGrid",
+          "fixedVerticalProfiles",
+          "positions"
+        ],
         "primitiveDependencyMask": 0,
         "movingPrimitiveChannel": -1,
         "netCDFAttributes": []
@@ -26563,7 +27441,7 @@
       "trueProfileDependencies": [],
       "intermediateMask": 128,
       "runtimeStatus": "implemented",
-      "samplingRestriction": "Full natural grid only; interpolation and reductions are not supported.",
+      "samplingRestriction": "Full natural grid, vertical profiles, and fixed/event/moving positions; interpolation is qualified for these spatial samples. Reductions remain unsupported.",
       "configurationRestriction": "The wave-vortex-density-diagnostics-v1 runtime contract defaults to actual density with dampedLeastSquares recovery. Explicit initial reference applies to displacement, APE and APV; rho_nm always describes current density. Legacy MATLAB solver choices are not inferred from saved files.",
       "catalogStatus": "supported",
       "netCDF": {
@@ -26724,7 +27602,11 @@
         "isDependentOnApAmA0": true,
         "portableKind": "diagnostic",
         "naturalRank": "volume",
-        "samplingModes": "fullGrid",
+        "samplingModes": [
+          "fullGrid",
+          "fixedVerticalProfiles",
+          "positions"
+        ],
         "primitiveDependencyMask": 1,
         "movingPrimitiveChannel": -1,
         "netCDFAttributes": []
@@ -26779,7 +27661,11 @@
         "isDependentOnApAmA0": true,
         "portableKind": "diagnostic",
         "naturalRank": "volume",
-        "samplingModes": "fullGrid",
+        "samplingModes": [
+          "fullGrid",
+          "fixedVerticalProfiles",
+          "positions"
+        ],
         "primitiveDependencyMask": 1,
         "movingPrimitiveChannel": -1,
         "netCDFAttributes": []
@@ -26837,7 +27723,11 @@
         "isDependentOnApAmA0": true,
         "portableKind": "diagnostic",
         "naturalRank": "volume",
-        "samplingModes": "fullGrid",
+        "samplingModes": [
+          "fullGrid",
+          "fixedVerticalProfiles",
+          "positions"
+        ],
         "primitiveDependencyMask": 1,
         "movingPrimitiveChannel": -1,
         "netCDFAttributes": []
@@ -26892,7 +27782,11 @@
         "isDependentOnApAmA0": true,
         "portableKind": "diagnostic",
         "naturalRank": "volume",
-        "samplingModes": "fullGrid",
+        "samplingModes": [
+          "fullGrid",
+          "fixedVerticalProfiles",
+          "positions"
+        ],
         "primitiveDependencyMask": 1,
         "movingPrimitiveChannel": -1,
         "netCDFAttributes": []
@@ -26901,7 +27795,7 @@
       "trueProfileDependencies": "rho_nm",
       "intermediateMask": 8256,
       "runtimeStatus": "implemented",
-      "samplingRestriction": "Full natural grid only; interpolation and reductions are not supported.",
+      "samplingRestriction": "Full natural grid, vertical profiles, and fixed/event/moving positions; interpolation is qualified for these spatial samples. Reductions remain unsupported.",
       "configurationRestriction": "The wave-vortex-density-diagnostics-v1 runtime contract defaults to actual density with dampedLeastSquares recovery. Explicit initial reference applies to displacement, APE and APV; rho_nm always describes current density. Legacy MATLAB solver choices are not inferred from saved files.",
       "catalogStatus": "supported",
       "netCDF": {
@@ -26947,7 +27841,11 @@
         "isDependentOnApAmA0": true,
         "portableKind": "diagnostic",
         "naturalRank": "volume",
-        "samplingModes": "fullGrid",
+        "samplingModes": [
+          "fullGrid",
+          "fixedVerticalProfiles",
+          "positions"
+        ],
         "primitiveDependencyMask": 1,
         "movingPrimitiveChannel": -1,
         "netCDFAttributes": []
@@ -27111,7 +28009,11 @@
         "isDependentOnApAmA0": true,
         "portableKind": "diagnostic",
         "naturalRank": "volume",
-        "samplingModes": "fullGrid",
+        "samplingModes": [
+          "fullGrid",
+          "fixedVerticalProfiles",
+          "positions"
+        ],
         "primitiveDependencyMask": 2,
         "movingPrimitiveChannel": -1,
         "netCDFAttributes": []
@@ -27166,7 +28068,11 @@
         "isDependentOnApAmA0": true,
         "portableKind": "diagnostic",
         "naturalRank": "volume",
-        "samplingModes": "fullGrid",
+        "samplingModes": [
+          "fullGrid",
+          "fixedVerticalProfiles",
+          "positions"
+        ],
         "primitiveDependencyMask": 2,
         "movingPrimitiveChannel": -1,
         "netCDFAttributes": []
@@ -27224,7 +28130,11 @@
         "isDependentOnApAmA0": true,
         "portableKind": "diagnostic",
         "naturalRank": "volume",
-        "samplingModes": "fullGrid",
+        "samplingModes": [
+          "fullGrid",
+          "fixedVerticalProfiles",
+          "positions"
+        ],
         "primitiveDependencyMask": 2,
         "movingPrimitiveChannel": -1,
         "netCDFAttributes": []
@@ -27279,7 +28189,11 @@
         "isDependentOnApAmA0": true,
         "portableKind": "diagnostic",
         "naturalRank": "volume",
-        "samplingModes": "fullGrid",
+        "samplingModes": [
+          "fullGrid",
+          "fixedVerticalProfiles",
+          "positions"
+        ],
         "primitiveDependencyMask": 2,
         "movingPrimitiveChannel": -1,
         "netCDFAttributes": []
@@ -27677,7 +28591,7 @@
       "trueProfileDependencies": [],
       "intermediateMask": 48,
       "runtimeStatus": "implemented",
-      "samplingRestriction": "Full natural grid only; interpolation and reductions are not supported.",
+      "samplingRestriction": "Full natural grid, vertical profiles, and fixed/event/moving positions; interpolation is qualified for these spatial samples. Reductions remain unsupported.",
       "configurationRestriction": "The wave-vortex-density-diagnostics-v1 runtime contract defaults to actual density with dampedLeastSquares recovery. Explicit initial reference applies to displacement, APE and APV; rho_nm always describes current density. Legacy MATLAB solver choices are not inferred from saved files.",
       "catalogStatus": "supported",
       "netCDF": {
@@ -27832,7 +28746,10 @@
         "isDependentOnApAmA0": true,
         "portableKind": "diagnostic",
         "naturalRank": "horizontal",
-        "samplingModes": "fullGrid",
+        "samplingModes": [
+          "fullGrid",
+          "positions"
+        ],
         "primitiveDependencyMask": 2,
         "movingPrimitiveChannel": -1,
         "netCDFAttributes": []
@@ -27884,7 +28801,10 @@
         "isDependentOnApAmA0": true,
         "portableKind": "diagnostic",
         "naturalRank": "horizontal",
-        "samplingModes": "fullGrid",
+        "samplingModes": [
+          "fullGrid",
+          "positions"
+        ],
         "primitiveDependencyMask": 2,
         "movingPrimitiveChannel": -1,
         "netCDFAttributes": []
@@ -27939,7 +28859,10 @@
         "isDependentOnApAmA0": true,
         "portableKind": "diagnostic",
         "naturalRank": "horizontal",
-        "samplingModes": "fullGrid",
+        "samplingModes": [
+          "fullGrid",
+          "positions"
+        ],
         "primitiveDependencyMask": 2,
         "movingPrimitiveChannel": -1,
         "netCDFAttributes": []
@@ -27991,7 +28914,10 @@
         "isDependentOnApAmA0": true,
         "portableKind": "diagnostic",
         "naturalRank": "horizontal",
-        "samplingModes": "fullGrid",
+        "samplingModes": [
+          "fullGrid",
+          "positions"
+        ],
         "primitiveDependencyMask": 2,
         "movingPrimitiveChannel": -1,
         "netCDFAttributes": []
@@ -28105,7 +29031,10 @@
         "isDependentOnApAmA0": true,
         "portableKind": "diagnostic",
         "naturalRank": "horizontal",
-        "samplingModes": "fullGrid",
+        "samplingModes": [
+          "fullGrid",
+          "positions"
+        ],
         "primitiveDependencyMask": 1,
         "movingPrimitiveChannel": -1,
         "netCDFAttributes": []
@@ -28157,7 +29086,10 @@
         "isDependentOnApAmA0": true,
         "portableKind": "diagnostic",
         "naturalRank": "horizontal",
-        "samplingModes": "fullGrid",
+        "samplingModes": [
+          "fullGrid",
+          "positions"
+        ],
         "primitiveDependencyMask": 1,
         "movingPrimitiveChannel": -1,
         "netCDFAttributes": []
@@ -28212,7 +29144,10 @@
         "isDependentOnApAmA0": true,
         "portableKind": "diagnostic",
         "naturalRank": "horizontal",
-        "samplingModes": "fullGrid",
+        "samplingModes": [
+          "fullGrid",
+          "positions"
+        ],
         "primitiveDependencyMask": 1,
         "movingPrimitiveChannel": -1,
         "netCDFAttributes": []
@@ -28264,7 +29199,10 @@
         "isDependentOnApAmA0": true,
         "portableKind": "diagnostic",
         "naturalRank": "horizontal",
-        "samplingModes": "fullGrid",
+        "samplingModes": [
+          "fullGrid",
+          "positions"
+        ],
         "primitiveDependencyMask": 1,
         "movingPrimitiveChannel": -1,
         "netCDFAttributes": []
@@ -28378,7 +29316,10 @@
         "isDependentOnApAmA0": true,
         "portableKind": "diagnostic",
         "naturalRank": "horizontal",
-        "samplingModes": "fullGrid",
+        "samplingModes": [
+          "fullGrid",
+          "positions"
+        ],
         "primitiveDependencyMask": 1,
         "movingPrimitiveChannel": -1,
         "netCDFAttributes": []
@@ -28430,7 +29371,10 @@
         "isDependentOnApAmA0": true,
         "portableKind": "diagnostic",
         "naturalRank": "horizontal",
-        "samplingModes": "fullGrid",
+        "samplingModes": [
+          "fullGrid",
+          "positions"
+        ],
         "primitiveDependencyMask": 1,
         "movingPrimitiveChannel": -1,
         "netCDFAttributes": []
@@ -28485,7 +29429,10 @@
         "isDependentOnApAmA0": true,
         "portableKind": "diagnostic",
         "naturalRank": "horizontal",
-        "samplingModes": "fullGrid",
+        "samplingModes": [
+          "fullGrid",
+          "positions"
+        ],
         "primitiveDependencyMask": 1,
         "movingPrimitiveChannel": -1,
         "netCDFAttributes": []
@@ -28537,7 +29484,10 @@
         "isDependentOnApAmA0": true,
         "portableKind": "diagnostic",
         "naturalRank": "horizontal",
-        "samplingModes": "fullGrid",
+        "samplingModes": [
+          "fullGrid",
+          "positions"
+        ],
         "primitiveDependencyMask": 1,
         "movingPrimitiveChannel": -1,
         "netCDFAttributes": []
@@ -28756,7 +29706,11 @@
         "isDependentOnApAmA0": true,
         "portableKind": "diagnostic",
         "naturalRank": "volume",
-        "samplingModes": "fullGrid",
+        "samplingModes": [
+          "fullGrid",
+          "fixedVerticalProfiles",
+          "positions"
+        ],
         "primitiveDependencyMask": 1,
         "movingPrimitiveChannel": -1,
         "netCDFAttributes": []
@@ -28811,7 +29765,11 @@
         "isDependentOnApAmA0": true,
         "portableKind": "diagnostic",
         "naturalRank": "volume",
-        "samplingModes": "fullGrid",
+        "samplingModes": [
+          "fullGrid",
+          "fixedVerticalProfiles",
+          "positions"
+        ],
         "primitiveDependencyMask": 1,
         "movingPrimitiveChannel": -1,
         "netCDFAttributes": []
@@ -28869,7 +29827,11 @@
         "isDependentOnApAmA0": true,
         "portableKind": "diagnostic",
         "naturalRank": "volume",
-        "samplingModes": "fullGrid",
+        "samplingModes": [
+          "fullGrid",
+          "fixedVerticalProfiles",
+          "positions"
+        ],
         "primitiveDependencyMask": 1,
         "movingPrimitiveChannel": -1,
         "netCDFAttributes": []
@@ -28924,7 +29886,11 @@
         "isDependentOnApAmA0": true,
         "portableKind": "diagnostic",
         "naturalRank": "volume",
-        "samplingModes": "fullGrid",
+        "samplingModes": [
+          "fullGrid",
+          "fixedVerticalProfiles",
+          "positions"
+        ],
         "primitiveDependencyMask": 1,
         "movingPrimitiveChannel": -1,
         "netCDFAttributes": []
@@ -29097,7 +30063,11 @@
         "isDependentOnApAmA0": true,
         "portableKind": "diagnostic",
         "naturalRank": "volume",
-        "samplingModes": "fullGrid",
+        "samplingModes": [
+          "fullGrid",
+          "fixedVerticalProfiles",
+          "positions"
+        ],
         "primitiveDependencyMask": 1,
         "movingPrimitiveChannel": -1,
         "netCDFAttributes": []
@@ -29152,7 +30122,11 @@
         "isDependentOnApAmA0": true,
         "portableKind": "diagnostic",
         "naturalRank": "volume",
-        "samplingModes": "fullGrid",
+        "samplingModes": [
+          "fullGrid",
+          "fixedVerticalProfiles",
+          "positions"
+        ],
         "primitiveDependencyMask": 1,
         "movingPrimitiveChannel": -1,
         "netCDFAttributes": []
@@ -29210,7 +30184,11 @@
         "isDependentOnApAmA0": true,
         "portableKind": "diagnostic",
         "naturalRank": "volume",
-        "samplingModes": "fullGrid",
+        "samplingModes": [
+          "fullGrid",
+          "fixedVerticalProfiles",
+          "positions"
+        ],
         "primitiveDependencyMask": 1,
         "movingPrimitiveChannel": -1,
         "netCDFAttributes": []
@@ -29265,7 +30243,11 @@
         "isDependentOnApAmA0": true,
         "portableKind": "diagnostic",
         "naturalRank": "volume",
-        "samplingModes": "fullGrid",
+        "samplingModes": [
+          "fullGrid",
+          "fixedVerticalProfiles",
+          "positions"
+        ],
         "primitiveDependencyMask": 1,
         "movingPrimitiveChannel": -1,
         "netCDFAttributes": []
@@ -29435,7 +30417,11 @@
         "isDependentOnApAmA0": true,
         "portableKind": "diagnostic",
         "naturalRank": "volume",
-        "samplingModes": "fullGrid",
+        "samplingModes": [
+          "fullGrid",
+          "fixedVerticalProfiles",
+          "positions"
+        ],
         "primitiveDependencyMask": 1,
         "movingPrimitiveChannel": -1,
         "netCDFAttributes": []
@@ -29490,7 +30476,11 @@
         "isDependentOnApAmA0": true,
         "portableKind": "diagnostic",
         "naturalRank": "volume",
-        "samplingModes": "fullGrid",
+        "samplingModes": [
+          "fullGrid",
+          "fixedVerticalProfiles",
+          "positions"
+        ],
         "primitiveDependencyMask": 1,
         "movingPrimitiveChannel": -1,
         "netCDFAttributes": []
@@ -29548,7 +30538,11 @@
         "isDependentOnApAmA0": true,
         "portableKind": "diagnostic",
         "naturalRank": "volume",
-        "samplingModes": "fullGrid",
+        "samplingModes": [
+          "fullGrid",
+          "fixedVerticalProfiles",
+          "positions"
+        ],
         "primitiveDependencyMask": 1,
         "movingPrimitiveChannel": -1,
         "netCDFAttributes": []
@@ -29603,7 +30597,11 @@
         "isDependentOnApAmA0": true,
         "portableKind": "diagnostic",
         "naturalRank": "volume",
-        "samplingModes": "fullGrid",
+        "samplingModes": [
+          "fullGrid",
+          "fixedVerticalProfiles",
+          "positions"
+        ],
         "primitiveDependencyMask": 1,
         "movingPrimitiveChannel": -1,
         "netCDFAttributes": []
@@ -30078,7 +31076,11 @@
         "isDependentOnApAmA0": true,
         "portableKind": "diagnostic",
         "naturalRank": "volume",
-        "samplingModes": "fullGrid",
+        "samplingModes": [
+          "fullGrid",
+          "fixedVerticalProfiles",
+          "positions"
+        ],
         "primitiveDependencyMask": 0,
         "movingPrimitiveChannel": -1,
         "netCDFAttributes": []
@@ -30137,7 +31139,11 @@
         "isDependentOnApAmA0": true,
         "portableKind": "diagnostic",
         "naturalRank": "volume",
-        "samplingModes": "fullGrid",
+        "samplingModes": [
+          "fullGrid",
+          "fixedVerticalProfiles",
+          "positions"
+        ],
         "primitiveDependencyMask": 0,
         "movingPrimitiveChannel": -1,
         "netCDFAttributes": []
@@ -30196,7 +31202,11 @@
         "isDependentOnApAmA0": true,
         "portableKind": "diagnostic",
         "naturalRank": "volume",
-        "samplingModes": "fullGrid",
+        "samplingModes": [
+          "fullGrid",
+          "fixedVerticalProfiles",
+          "positions"
+        ],
         "primitiveDependencyMask": 0,
         "movingPrimitiveChannel": -1,
         "netCDFAttributes": []
@@ -30573,7 +31583,11 @@
         "isDependentOnApAmA0": true,
         "portableKind": "diagnostic",
         "naturalRank": "volume",
-        "samplingModes": "fullGrid",
+        "samplingModes": [
+          "fullGrid",
+          "fixedVerticalProfiles",
+          "positions"
+        ],
         "primitiveDependencyMask": 0,
         "movingPrimitiveChannel": -1,
         "netCDFAttributes": []
@@ -30582,7 +31596,7 @@
       "trueProfileDependencies": "rho_nm",
       "intermediateMask": 256,
       "runtimeStatus": "implemented",
-      "samplingRestriction": "Full natural grid only; interpolation and reductions are not supported.",
+      "samplingRestriction": "Full natural grid, vertical profiles, and fixed/event/moving positions; interpolation is qualified for these spatial samples. Reductions remain unsupported.",
       "configurationRestriction": "The wave-vortex-density-diagnostics-v1 runtime contract defaults to actual density with dampedLeastSquares recovery. Explicit initial reference applies to displacement, APE and APV; rho_nm always describes current density. Legacy MATLAB solver choices are not inferred from saved files.",
       "catalogStatus": "supported",
       "netCDF": {
@@ -30628,7 +31642,11 @@
         "isDependentOnApAmA0": true,
         "portableKind": "diagnostic",
         "naturalRank": "volume",
-        "samplingModes": "fullGrid",
+        "samplingModes": [
+          "fullGrid",
+          "fixedVerticalProfiles",
+          "positions"
+        ],
         "primitiveDependencyMask": 0,
         "movingPrimitiveChannel": -1,
         "netCDFAttributes": []
@@ -30642,7 +31660,7 @@
       "trueProfileDependencies": [],
       "intermediateMask": 128,
       "runtimeStatus": "implemented",
-      "samplingRestriction": "Full natural grid only; interpolation and reductions are not supported.",
+      "samplingRestriction": "Full natural grid, vertical profiles, and fixed/event/moving positions; interpolation is qualified for these spatial samples. Reductions remain unsupported.",
       "configurationRestriction": "The wave-vortex-density-diagnostics-v1 runtime contract defaults to actual density with dampedLeastSquares recovery. Explicit initial reference applies to displacement, APE and APV; rho_nm always describes current density. Legacy MATLAB solver choices are not inferred from saved files.",
       "catalogStatus": "supported",
       "netCDF": {
@@ -30803,7 +31821,11 @@
         "isDependentOnApAmA0": true,
         "portableKind": "diagnostic",
         "naturalRank": "volume",
-        "samplingModes": "fullGrid",
+        "samplingModes": [
+          "fullGrid",
+          "fixedVerticalProfiles",
+          "positions"
+        ],
         "primitiveDependencyMask": 1,
         "movingPrimitiveChannel": -1,
         "netCDFAttributes": []
@@ -30858,7 +31880,11 @@
         "isDependentOnApAmA0": true,
         "portableKind": "diagnostic",
         "naturalRank": "volume",
-        "samplingModes": "fullGrid",
+        "samplingModes": [
+          "fullGrid",
+          "fixedVerticalProfiles",
+          "positions"
+        ],
         "primitiveDependencyMask": 1,
         "movingPrimitiveChannel": -1,
         "netCDFAttributes": []
@@ -30916,7 +31942,11 @@
         "isDependentOnApAmA0": true,
         "portableKind": "diagnostic",
         "naturalRank": "volume",
-        "samplingModes": "fullGrid",
+        "samplingModes": [
+          "fullGrid",
+          "fixedVerticalProfiles",
+          "positions"
+        ],
         "primitiveDependencyMask": 1,
         "movingPrimitiveChannel": -1,
         "netCDFAttributes": []
@@ -30971,7 +32001,11 @@
         "isDependentOnApAmA0": true,
         "portableKind": "diagnostic",
         "naturalRank": "volume",
-        "samplingModes": "fullGrid",
+        "samplingModes": [
+          "fullGrid",
+          "fixedVerticalProfiles",
+          "positions"
+        ],
         "primitiveDependencyMask": 1,
         "movingPrimitiveChannel": -1,
         "netCDFAttributes": []
@@ -30980,7 +32014,7 @@
       "trueProfileDependencies": "rho_nm",
       "intermediateMask": 8256,
       "runtimeStatus": "implemented",
-      "samplingRestriction": "Full natural grid only; interpolation and reductions are not supported.",
+      "samplingRestriction": "Full natural grid, vertical profiles, and fixed/event/moving positions; interpolation is qualified for these spatial samples. Reductions remain unsupported.",
       "configurationRestriction": "The wave-vortex-density-diagnostics-v1 runtime contract defaults to actual density with dampedLeastSquares recovery. Explicit initial reference applies to displacement, APE and APV; rho_nm always describes current density. Legacy MATLAB solver choices are not inferred from saved files.",
       "catalogStatus": "supported",
       "netCDF": {
@@ -31026,7 +32060,11 @@
         "isDependentOnApAmA0": true,
         "portableKind": "diagnostic",
         "naturalRank": "volume",
-        "samplingModes": "fullGrid",
+        "samplingModes": [
+          "fullGrid",
+          "fixedVerticalProfiles",
+          "positions"
+        ],
         "primitiveDependencyMask": 1,
         "movingPrimitiveChannel": -1,
         "netCDFAttributes": []
@@ -31190,7 +32228,11 @@
         "isDependentOnApAmA0": true,
         "portableKind": "diagnostic",
         "naturalRank": "volume",
-        "samplingModes": "fullGrid",
+        "samplingModes": [
+          "fullGrid",
+          "fixedVerticalProfiles",
+          "positions"
+        ],
         "primitiveDependencyMask": 2,
         "movingPrimitiveChannel": -1,
         "netCDFAttributes": []
@@ -31245,7 +32287,11 @@
         "isDependentOnApAmA0": true,
         "portableKind": "diagnostic",
         "naturalRank": "volume",
-        "samplingModes": "fullGrid",
+        "samplingModes": [
+          "fullGrid",
+          "fixedVerticalProfiles",
+          "positions"
+        ],
         "primitiveDependencyMask": 2,
         "movingPrimitiveChannel": -1,
         "netCDFAttributes": []
@@ -31303,7 +32349,11 @@
         "isDependentOnApAmA0": true,
         "portableKind": "diagnostic",
         "naturalRank": "volume",
-        "samplingModes": "fullGrid",
+        "samplingModes": [
+          "fullGrid",
+          "fixedVerticalProfiles",
+          "positions"
+        ],
         "primitiveDependencyMask": 2,
         "movingPrimitiveChannel": -1,
         "netCDFAttributes": []
@@ -31358,7 +32408,11 @@
         "isDependentOnApAmA0": true,
         "portableKind": "diagnostic",
         "naturalRank": "volume",
-        "samplingModes": "fullGrid",
+        "samplingModes": [
+          "fullGrid",
+          "fixedVerticalProfiles",
+          "positions"
+        ],
         "primitiveDependencyMask": 2,
         "movingPrimitiveChannel": -1,
         "netCDFAttributes": []
@@ -31756,7 +32810,7 @@
       "trueProfileDependencies": [],
       "intermediateMask": 48,
       "runtimeStatus": "implemented",
-      "samplingRestriction": "Full natural grid only; interpolation and reductions are not supported.",
+      "samplingRestriction": "Full natural grid, vertical profiles, and fixed/event/moving positions; interpolation is qualified for these spatial samples. Reductions remain unsupported.",
       "configurationRestriction": "The wave-vortex-density-diagnostics-v1 runtime contract defaults to actual density with dampedLeastSquares recovery. Explicit initial reference applies to displacement, APE and APV; rho_nm always describes current density. Legacy MATLAB solver choices are not inferred from saved files.",
       "catalogStatus": "supported",
       "netCDF": {
@@ -31911,7 +32965,10 @@
         "isDependentOnApAmA0": true,
         "portableKind": "diagnostic",
         "naturalRank": "horizontal",
-        "samplingModes": "fullGrid",
+        "samplingModes": [
+          "fullGrid",
+          "positions"
+        ],
         "primitiveDependencyMask": 2,
         "movingPrimitiveChannel": -1,
         "netCDFAttributes": []
@@ -31963,7 +33020,10 @@
         "isDependentOnApAmA0": true,
         "portableKind": "diagnostic",
         "naturalRank": "horizontal",
-        "samplingModes": "fullGrid",
+        "samplingModes": [
+          "fullGrid",
+          "positions"
+        ],
         "primitiveDependencyMask": 2,
         "movingPrimitiveChannel": -1,
         "netCDFAttributes": []
@@ -32018,7 +33078,10 @@
         "isDependentOnApAmA0": true,
         "portableKind": "diagnostic",
         "naturalRank": "horizontal",
-        "samplingModes": "fullGrid",
+        "samplingModes": [
+          "fullGrid",
+          "positions"
+        ],
         "primitiveDependencyMask": 2,
         "movingPrimitiveChannel": -1,
         "netCDFAttributes": []
@@ -32070,7 +33133,10 @@
         "isDependentOnApAmA0": true,
         "portableKind": "diagnostic",
         "naturalRank": "horizontal",
-        "samplingModes": "fullGrid",
+        "samplingModes": [
+          "fullGrid",
+          "positions"
+        ],
         "primitiveDependencyMask": 2,
         "movingPrimitiveChannel": -1,
         "netCDFAttributes": []
@@ -32184,7 +33250,10 @@
         "isDependentOnApAmA0": true,
         "portableKind": "diagnostic",
         "naturalRank": "horizontal",
-        "samplingModes": "fullGrid",
+        "samplingModes": [
+          "fullGrid",
+          "positions"
+        ],
         "primitiveDependencyMask": 1,
         "movingPrimitiveChannel": -1,
         "netCDFAttributes": []
@@ -32236,7 +33305,10 @@
         "isDependentOnApAmA0": true,
         "portableKind": "diagnostic",
         "naturalRank": "horizontal",
-        "samplingModes": "fullGrid",
+        "samplingModes": [
+          "fullGrid",
+          "positions"
+        ],
         "primitiveDependencyMask": 1,
         "movingPrimitiveChannel": -1,
         "netCDFAttributes": []
@@ -32291,7 +33363,10 @@
         "isDependentOnApAmA0": true,
         "portableKind": "diagnostic",
         "naturalRank": "horizontal",
-        "samplingModes": "fullGrid",
+        "samplingModes": [
+          "fullGrid",
+          "positions"
+        ],
         "primitiveDependencyMask": 1,
         "movingPrimitiveChannel": -1,
         "netCDFAttributes": []
@@ -32343,7 +33418,10 @@
         "isDependentOnApAmA0": true,
         "portableKind": "diagnostic",
         "naturalRank": "horizontal",
-        "samplingModes": "fullGrid",
+        "samplingModes": [
+          "fullGrid",
+          "positions"
+        ],
         "primitiveDependencyMask": 1,
         "movingPrimitiveChannel": -1,
         "netCDFAttributes": []
@@ -32457,7 +33535,10 @@
         "isDependentOnApAmA0": true,
         "portableKind": "diagnostic",
         "naturalRank": "horizontal",
-        "samplingModes": "fullGrid",
+        "samplingModes": [
+          "fullGrid",
+          "positions"
+        ],
         "primitiveDependencyMask": 1,
         "movingPrimitiveChannel": -1,
         "netCDFAttributes": []
@@ -32509,7 +33590,10 @@
         "isDependentOnApAmA0": true,
         "portableKind": "diagnostic",
         "naturalRank": "horizontal",
-        "samplingModes": "fullGrid",
+        "samplingModes": [
+          "fullGrid",
+          "positions"
+        ],
         "primitiveDependencyMask": 1,
         "movingPrimitiveChannel": -1,
         "netCDFAttributes": []
@@ -32564,7 +33648,10 @@
         "isDependentOnApAmA0": true,
         "portableKind": "diagnostic",
         "naturalRank": "horizontal",
-        "samplingModes": "fullGrid",
+        "samplingModes": [
+          "fullGrid",
+          "positions"
+        ],
         "primitiveDependencyMask": 1,
         "movingPrimitiveChannel": -1,
         "netCDFAttributes": []
@@ -32616,7 +33703,10 @@
         "isDependentOnApAmA0": true,
         "portableKind": "diagnostic",
         "naturalRank": "horizontal",
-        "samplingModes": "fullGrid",
+        "samplingModes": [
+          "fullGrid",
+          "positions"
+        ],
         "primitiveDependencyMask": 1,
         "movingPrimitiveChannel": -1,
         "netCDFAttributes": []
@@ -32836,7 +33926,11 @@
         "isDependentOnApAmA0": true,
         "portableKind": "diagnostic",
         "naturalRank": "volume",
-        "samplingModes": "fullGrid",
+        "samplingModes": [
+          "fullGrid",
+          "fixedVerticalProfiles",
+          "positions"
+        ],
         "primitiveDependencyMask": 1,
         "movingPrimitiveChannel": -1,
         "netCDFAttributes": []
@@ -32891,7 +33985,11 @@
         "isDependentOnApAmA0": true,
         "portableKind": "diagnostic",
         "naturalRank": "volume",
-        "samplingModes": "fullGrid",
+        "samplingModes": [
+          "fullGrid",
+          "fixedVerticalProfiles",
+          "positions"
+        ],
         "primitiveDependencyMask": 1,
         "movingPrimitiveChannel": -1,
         "netCDFAttributes": []
@@ -32949,7 +34047,11 @@
         "isDependentOnApAmA0": true,
         "portableKind": "diagnostic",
         "naturalRank": "volume",
-        "samplingModes": "fullGrid",
+        "samplingModes": [
+          "fullGrid",
+          "fixedVerticalProfiles",
+          "positions"
+        ],
         "primitiveDependencyMask": 1,
         "movingPrimitiveChannel": -1,
         "netCDFAttributes": []
@@ -33004,7 +34106,11 @@
         "isDependentOnApAmA0": true,
         "portableKind": "diagnostic",
         "naturalRank": "volume",
-        "samplingModes": "fullGrid",
+        "samplingModes": [
+          "fullGrid",
+          "fixedVerticalProfiles",
+          "positions"
+        ],
         "primitiveDependencyMask": 1,
         "movingPrimitiveChannel": -1,
         "netCDFAttributes": []
@@ -33177,7 +34283,11 @@
         "isDependentOnApAmA0": true,
         "portableKind": "diagnostic",
         "naturalRank": "volume",
-        "samplingModes": "fullGrid",
+        "samplingModes": [
+          "fullGrid",
+          "fixedVerticalProfiles",
+          "positions"
+        ],
         "primitiveDependencyMask": 1,
         "movingPrimitiveChannel": -1,
         "netCDFAttributes": []
@@ -33232,7 +34342,11 @@
         "isDependentOnApAmA0": true,
         "portableKind": "diagnostic",
         "naturalRank": "volume",
-        "samplingModes": "fullGrid",
+        "samplingModes": [
+          "fullGrid",
+          "fixedVerticalProfiles",
+          "positions"
+        ],
         "primitiveDependencyMask": 1,
         "movingPrimitiveChannel": -1,
         "netCDFAttributes": []
@@ -33290,7 +34404,11 @@
         "isDependentOnApAmA0": true,
         "portableKind": "diagnostic",
         "naturalRank": "volume",
-        "samplingModes": "fullGrid",
+        "samplingModes": [
+          "fullGrid",
+          "fixedVerticalProfiles",
+          "positions"
+        ],
         "primitiveDependencyMask": 1,
         "movingPrimitiveChannel": -1,
         "netCDFAttributes": []
@@ -33345,7 +34463,11 @@
         "isDependentOnApAmA0": true,
         "portableKind": "diagnostic",
         "naturalRank": "volume",
-        "samplingModes": "fullGrid",
+        "samplingModes": [
+          "fullGrid",
+          "fixedVerticalProfiles",
+          "positions"
+        ],
         "primitiveDependencyMask": 1,
         "movingPrimitiveChannel": -1,
         "netCDFAttributes": []
@@ -33515,7 +34637,11 @@
         "isDependentOnApAmA0": true,
         "portableKind": "diagnostic",
         "naturalRank": "volume",
-        "samplingModes": "fullGrid",
+        "samplingModes": [
+          "fullGrid",
+          "fixedVerticalProfiles",
+          "positions"
+        ],
         "primitiveDependencyMask": 1,
         "movingPrimitiveChannel": -1,
         "netCDFAttributes": []
@@ -33570,7 +34696,11 @@
         "isDependentOnApAmA0": true,
         "portableKind": "diagnostic",
         "naturalRank": "volume",
-        "samplingModes": "fullGrid",
+        "samplingModes": [
+          "fullGrid",
+          "fixedVerticalProfiles",
+          "positions"
+        ],
         "primitiveDependencyMask": 1,
         "movingPrimitiveChannel": -1,
         "netCDFAttributes": []
@@ -33628,7 +34758,11 @@
         "isDependentOnApAmA0": true,
         "portableKind": "diagnostic",
         "naturalRank": "volume",
-        "samplingModes": "fullGrid",
+        "samplingModes": [
+          "fullGrid",
+          "fixedVerticalProfiles",
+          "positions"
+        ],
         "primitiveDependencyMask": 1,
         "movingPrimitiveChannel": -1,
         "netCDFAttributes": []
@@ -33683,7 +34817,11 @@
         "isDependentOnApAmA0": true,
         "portableKind": "diagnostic",
         "naturalRank": "volume",
-        "samplingModes": "fullGrid",
+        "samplingModes": [
+          "fullGrid",
+          "fixedVerticalProfiles",
+          "positions"
+        ],
         "primitiveDependencyMask": 1,
         "movingPrimitiveChannel": -1,
         "netCDFAttributes": []
@@ -34158,7 +35296,11 @@
         "isDependentOnApAmA0": true,
         "portableKind": "diagnostic",
         "naturalRank": "volume",
-        "samplingModes": "fullGrid",
+        "samplingModes": [
+          "fullGrid",
+          "fixedVerticalProfiles",
+          "positions"
+        ],
         "primitiveDependencyMask": 0,
         "movingPrimitiveChannel": -1,
         "netCDFAttributes": []
@@ -34217,7 +35359,11 @@
         "isDependentOnApAmA0": true,
         "portableKind": "diagnostic",
         "naturalRank": "volume",
-        "samplingModes": "fullGrid",
+        "samplingModes": [
+          "fullGrid",
+          "fixedVerticalProfiles",
+          "positions"
+        ],
         "primitiveDependencyMask": 0,
         "movingPrimitiveChannel": -1,
         "netCDFAttributes": []
@@ -34276,7 +35422,11 @@
         "isDependentOnApAmA0": true,
         "portableKind": "diagnostic",
         "naturalRank": "volume",
-        "samplingModes": "fullGrid",
+        "samplingModes": [
+          "fullGrid",
+          "fixedVerticalProfiles",
+          "positions"
+        ],
         "primitiveDependencyMask": 0,
         "movingPrimitiveChannel": -1,
         "netCDFAttributes": []
@@ -34335,7 +35485,11 @@
         "isDependentOnApAmA0": true,
         "portableKind": "diagnostic",
         "naturalRank": "volume",
-        "samplingModes": "fullGrid",
+        "samplingModes": [
+          "fullGrid",
+          "fixedVerticalProfiles",
+          "positions"
+        ],
         "primitiveDependencyMask": 0,
         "movingPrimitiveChannel": -1,
         "netCDFAttributes": []
@@ -34712,7 +35866,11 @@
         "isDependentOnApAmA0": true,
         "portableKind": "diagnostic",
         "naturalRank": "volume",
-        "samplingModes": "fullGrid",
+        "samplingModes": [
+          "fullGrid",
+          "fixedVerticalProfiles",
+          "positions"
+        ],
         "primitiveDependencyMask": 0,
         "movingPrimitiveChannel": -1,
         "netCDFAttributes": []
@@ -34721,7 +35879,7 @@
       "trueProfileDependencies": "rho_nm",
       "intermediateMask": 256,
       "runtimeStatus": "implemented",
-      "samplingRestriction": "Full natural grid only; interpolation and reductions are not supported.",
+      "samplingRestriction": "Full natural grid, vertical profiles, and fixed/event/moving positions; interpolation is qualified for these spatial samples. Reductions remain unsupported.",
       "configurationRestriction": "The wave-vortex-density-diagnostics-v1 runtime contract defaults to actual density with dampedLeastSquares recovery. Explicit initial reference applies to displacement, APE and APV; rho_nm always describes current density. Legacy MATLAB solver choices are not inferred from saved files.",
       "catalogStatus": "supported",
       "netCDF": {
@@ -34767,7 +35925,11 @@
         "isDependentOnApAmA0": true,
         "portableKind": "diagnostic",
         "naturalRank": "volume",
-        "samplingModes": "fullGrid",
+        "samplingModes": [
+          "fullGrid",
+          "fixedVerticalProfiles",
+          "positions"
+        ],
         "primitiveDependencyMask": 0,
         "movingPrimitiveChannel": -1,
         "netCDFAttributes": []
@@ -34781,7 +35943,7 @@
       "trueProfileDependencies": [],
       "intermediateMask": 128,
       "runtimeStatus": "implemented",
-      "samplingRestriction": "Full natural grid only; interpolation and reductions are not supported.",
+      "samplingRestriction": "Full natural grid, vertical profiles, and fixed/event/moving positions; interpolation is qualified for these spatial samples. Reductions remain unsupported.",
       "configurationRestriction": "The wave-vortex-density-diagnostics-v1 runtime contract defaults to actual density with dampedLeastSquares recovery. Explicit initial reference applies to displacement, APE and APV; rho_nm always describes current density. Legacy MATLAB solver choices are not inferred from saved files.",
       "catalogStatus": "supported",
       "netCDF": {
@@ -34942,7 +36104,11 @@
         "isDependentOnApAmA0": true,
         "portableKind": "diagnostic",
         "naturalRank": "volume",
-        "samplingModes": "fullGrid",
+        "samplingModes": [
+          "fullGrid",
+          "fixedVerticalProfiles",
+          "positions"
+        ],
         "primitiveDependencyMask": 1,
         "movingPrimitiveChannel": -1,
         "netCDFAttributes": []
@@ -34997,7 +36163,11 @@
         "isDependentOnApAmA0": true,
         "portableKind": "diagnostic",
         "naturalRank": "volume",
-        "samplingModes": "fullGrid",
+        "samplingModes": [
+          "fullGrid",
+          "fixedVerticalProfiles",
+          "positions"
+        ],
         "primitiveDependencyMask": 1,
         "movingPrimitiveChannel": -1,
         "netCDFAttributes": []
@@ -35055,7 +36225,11 @@
         "isDependentOnApAmA0": true,
         "portableKind": "diagnostic",
         "naturalRank": "volume",
-        "samplingModes": "fullGrid",
+        "samplingModes": [
+          "fullGrid",
+          "fixedVerticalProfiles",
+          "positions"
+        ],
         "primitiveDependencyMask": 1,
         "movingPrimitiveChannel": -1,
         "netCDFAttributes": []
@@ -35110,7 +36284,11 @@
         "isDependentOnApAmA0": true,
         "portableKind": "diagnostic",
         "naturalRank": "volume",
-        "samplingModes": "fullGrid",
+        "samplingModes": [
+          "fullGrid",
+          "fixedVerticalProfiles",
+          "positions"
+        ],
         "primitiveDependencyMask": 1,
         "movingPrimitiveChannel": -1,
         "netCDFAttributes": []
@@ -35119,7 +36297,7 @@
       "trueProfileDependencies": "rho_nm",
       "intermediateMask": 8256,
       "runtimeStatus": "implemented",
-      "samplingRestriction": "Full natural grid only; interpolation and reductions are not supported.",
+      "samplingRestriction": "Full natural grid, vertical profiles, and fixed/event/moving positions; interpolation is qualified for these spatial samples. Reductions remain unsupported.",
       "configurationRestriction": "The wave-vortex-density-diagnostics-v1 runtime contract defaults to actual density with dampedLeastSquares recovery. Explicit initial reference applies to displacement, APE and APV; rho_nm always describes current density. Legacy MATLAB solver choices are not inferred from saved files.",
       "catalogStatus": "supported",
       "netCDF": {
@@ -35165,7 +36343,11 @@
         "isDependentOnApAmA0": true,
         "portableKind": "diagnostic",
         "naturalRank": "volume",
-        "samplingModes": "fullGrid",
+        "samplingModes": [
+          "fullGrid",
+          "fixedVerticalProfiles",
+          "positions"
+        ],
         "primitiveDependencyMask": 1,
         "movingPrimitiveChannel": -1,
         "netCDFAttributes": []
@@ -35329,7 +36511,11 @@
         "isDependentOnApAmA0": true,
         "portableKind": "diagnostic",
         "naturalRank": "volume",
-        "samplingModes": "fullGrid",
+        "samplingModes": [
+          "fullGrid",
+          "fixedVerticalProfiles",
+          "positions"
+        ],
         "primitiveDependencyMask": 2,
         "movingPrimitiveChannel": -1,
         "netCDFAttributes": []
@@ -35384,7 +36570,11 @@
         "isDependentOnApAmA0": true,
         "portableKind": "diagnostic",
         "naturalRank": "volume",
-        "samplingModes": "fullGrid",
+        "samplingModes": [
+          "fullGrid",
+          "fixedVerticalProfiles",
+          "positions"
+        ],
         "primitiveDependencyMask": 2,
         "movingPrimitiveChannel": -1,
         "netCDFAttributes": []
@@ -35442,7 +36632,11 @@
         "isDependentOnApAmA0": true,
         "portableKind": "diagnostic",
         "naturalRank": "volume",
-        "samplingModes": "fullGrid",
+        "samplingModes": [
+          "fullGrid",
+          "fixedVerticalProfiles",
+          "positions"
+        ],
         "primitiveDependencyMask": 2,
         "movingPrimitiveChannel": -1,
         "netCDFAttributes": []
@@ -35497,7 +36691,11 @@
         "isDependentOnApAmA0": true,
         "portableKind": "diagnostic",
         "naturalRank": "volume",
-        "samplingModes": "fullGrid",
+        "samplingModes": [
+          "fullGrid",
+          "fixedVerticalProfiles",
+          "positions"
+        ],
         "primitiveDependencyMask": 2,
         "movingPrimitiveChannel": -1,
         "netCDFAttributes": []
@@ -35895,7 +37093,7 @@
       "trueProfileDependencies": [],
       "intermediateMask": 48,
       "runtimeStatus": "implemented",
-      "samplingRestriction": "Full natural grid only; interpolation and reductions are not supported.",
+      "samplingRestriction": "Full natural grid, vertical profiles, and fixed/event/moving positions; interpolation is qualified for these spatial samples. Reductions remain unsupported.",
       "configurationRestriction": "The wave-vortex-density-diagnostics-v1 runtime contract defaults to actual density with dampedLeastSquares recovery. Explicit initial reference applies to displacement, APE and APV; rho_nm always describes current density. Legacy MATLAB solver choices are not inferred from saved files.",
       "catalogStatus": "supported",
       "netCDF": {
@@ -36050,7 +37248,10 @@
         "isDependentOnApAmA0": true,
         "portableKind": "diagnostic",
         "naturalRank": "horizontal",
-        "samplingModes": "fullGrid",
+        "samplingModes": [
+          "fullGrid",
+          "positions"
+        ],
         "primitiveDependencyMask": 2,
         "movingPrimitiveChannel": -1,
         "netCDFAttributes": []
@@ -36102,7 +37303,10 @@
         "isDependentOnApAmA0": true,
         "portableKind": "diagnostic",
         "naturalRank": "horizontal",
-        "samplingModes": "fullGrid",
+        "samplingModes": [
+          "fullGrid",
+          "positions"
+        ],
         "primitiveDependencyMask": 2,
         "movingPrimitiveChannel": -1,
         "netCDFAttributes": []
@@ -36157,7 +37361,10 @@
         "isDependentOnApAmA0": true,
         "portableKind": "diagnostic",
         "naturalRank": "horizontal",
-        "samplingModes": "fullGrid",
+        "samplingModes": [
+          "fullGrid",
+          "positions"
+        ],
         "primitiveDependencyMask": 2,
         "movingPrimitiveChannel": -1,
         "netCDFAttributes": []
@@ -36209,7 +37416,10 @@
         "isDependentOnApAmA0": true,
         "portableKind": "diagnostic",
         "naturalRank": "horizontal",
-        "samplingModes": "fullGrid",
+        "samplingModes": [
+          "fullGrid",
+          "positions"
+        ],
         "primitiveDependencyMask": 2,
         "movingPrimitiveChannel": -1,
         "netCDFAttributes": []
@@ -36323,7 +37533,10 @@
         "isDependentOnApAmA0": true,
         "portableKind": "diagnostic",
         "naturalRank": "horizontal",
-        "samplingModes": "fullGrid",
+        "samplingModes": [
+          "fullGrid",
+          "positions"
+        ],
         "primitiveDependencyMask": 1,
         "movingPrimitiveChannel": -1,
         "netCDFAttributes": []
@@ -36375,7 +37588,10 @@
         "isDependentOnApAmA0": true,
         "portableKind": "diagnostic",
         "naturalRank": "horizontal",
-        "samplingModes": "fullGrid",
+        "samplingModes": [
+          "fullGrid",
+          "positions"
+        ],
         "primitiveDependencyMask": 1,
         "movingPrimitiveChannel": -1,
         "netCDFAttributes": []
@@ -36430,7 +37646,10 @@
         "isDependentOnApAmA0": true,
         "portableKind": "diagnostic",
         "naturalRank": "horizontal",
-        "samplingModes": "fullGrid",
+        "samplingModes": [
+          "fullGrid",
+          "positions"
+        ],
         "primitiveDependencyMask": 1,
         "movingPrimitiveChannel": -1,
         "netCDFAttributes": []
@@ -36482,7 +37701,10 @@
         "isDependentOnApAmA0": true,
         "portableKind": "diagnostic",
         "naturalRank": "horizontal",
-        "samplingModes": "fullGrid",
+        "samplingModes": [
+          "fullGrid",
+          "positions"
+        ],
         "primitiveDependencyMask": 1,
         "movingPrimitiveChannel": -1,
         "netCDFAttributes": []
@@ -36596,7 +37818,10 @@
         "isDependentOnApAmA0": true,
         "portableKind": "diagnostic",
         "naturalRank": "horizontal",
-        "samplingModes": "fullGrid",
+        "samplingModes": [
+          "fullGrid",
+          "positions"
+        ],
         "primitiveDependencyMask": 1,
         "movingPrimitiveChannel": -1,
         "netCDFAttributes": []
@@ -36648,7 +37873,10 @@
         "isDependentOnApAmA0": true,
         "portableKind": "diagnostic",
         "naturalRank": "horizontal",
-        "samplingModes": "fullGrid",
+        "samplingModes": [
+          "fullGrid",
+          "positions"
+        ],
         "primitiveDependencyMask": 1,
         "movingPrimitiveChannel": -1,
         "netCDFAttributes": []
@@ -36703,7 +37931,10 @@
         "isDependentOnApAmA0": true,
         "portableKind": "diagnostic",
         "naturalRank": "horizontal",
-        "samplingModes": "fullGrid",
+        "samplingModes": [
+          "fullGrid",
+          "positions"
+        ],
         "primitiveDependencyMask": 1,
         "movingPrimitiveChannel": -1,
         "netCDFAttributes": []
@@ -36755,7 +37986,10 @@
         "isDependentOnApAmA0": true,
         "portableKind": "diagnostic",
         "naturalRank": "horizontal",
-        "samplingModes": "fullGrid",
+        "samplingModes": [
+          "fullGrid",
+          "positions"
+        ],
         "primitiveDependencyMask": 1,
         "movingPrimitiveChannel": -1,
         "netCDFAttributes": []
@@ -36975,7 +38209,11 @@
         "isDependentOnApAmA0": true,
         "portableKind": "diagnostic",
         "naturalRank": "volume",
-        "samplingModes": "fullGrid",
+        "samplingModes": [
+          "fullGrid",
+          "fixedVerticalProfiles",
+          "positions"
+        ],
         "primitiveDependencyMask": 1,
         "movingPrimitiveChannel": -1,
         "netCDFAttributes": []
@@ -37030,7 +38268,11 @@
         "isDependentOnApAmA0": true,
         "portableKind": "diagnostic",
         "naturalRank": "volume",
-        "samplingModes": "fullGrid",
+        "samplingModes": [
+          "fullGrid",
+          "fixedVerticalProfiles",
+          "positions"
+        ],
         "primitiveDependencyMask": 1,
         "movingPrimitiveChannel": -1,
         "netCDFAttributes": []
@@ -37088,7 +38330,11 @@
         "isDependentOnApAmA0": true,
         "portableKind": "diagnostic",
         "naturalRank": "volume",
-        "samplingModes": "fullGrid",
+        "samplingModes": [
+          "fullGrid",
+          "fixedVerticalProfiles",
+          "positions"
+        ],
         "primitiveDependencyMask": 1,
         "movingPrimitiveChannel": -1,
         "netCDFAttributes": []
@@ -37143,7 +38389,11 @@
         "isDependentOnApAmA0": true,
         "portableKind": "diagnostic",
         "naturalRank": "volume",
-        "samplingModes": "fullGrid",
+        "samplingModes": [
+          "fullGrid",
+          "fixedVerticalProfiles",
+          "positions"
+        ],
         "primitiveDependencyMask": 1,
         "movingPrimitiveChannel": -1,
         "netCDFAttributes": []
@@ -37316,7 +38566,11 @@
         "isDependentOnApAmA0": true,
         "portableKind": "diagnostic",
         "naturalRank": "volume",
-        "samplingModes": "fullGrid",
+        "samplingModes": [
+          "fullGrid",
+          "fixedVerticalProfiles",
+          "positions"
+        ],
         "primitiveDependencyMask": 1,
         "movingPrimitiveChannel": -1,
         "netCDFAttributes": []
@@ -37371,7 +38625,11 @@
         "isDependentOnApAmA0": true,
         "portableKind": "diagnostic",
         "naturalRank": "volume",
-        "samplingModes": "fullGrid",
+        "samplingModes": [
+          "fullGrid",
+          "fixedVerticalProfiles",
+          "positions"
+        ],
         "primitiveDependencyMask": 1,
         "movingPrimitiveChannel": -1,
         "netCDFAttributes": []
@@ -37429,7 +38687,11 @@
         "isDependentOnApAmA0": true,
         "portableKind": "diagnostic",
         "naturalRank": "volume",
-        "samplingModes": "fullGrid",
+        "samplingModes": [
+          "fullGrid",
+          "fixedVerticalProfiles",
+          "positions"
+        ],
         "primitiveDependencyMask": 1,
         "movingPrimitiveChannel": -1,
         "netCDFAttributes": []
@@ -37484,7 +38746,11 @@
         "isDependentOnApAmA0": true,
         "portableKind": "diagnostic",
         "naturalRank": "volume",
-        "samplingModes": "fullGrid",
+        "samplingModes": [
+          "fullGrid",
+          "fixedVerticalProfiles",
+          "positions"
+        ],
         "primitiveDependencyMask": 1,
         "movingPrimitiveChannel": -1,
         "netCDFAttributes": []
@@ -37654,7 +38920,11 @@
         "isDependentOnApAmA0": true,
         "portableKind": "diagnostic",
         "naturalRank": "volume",
-        "samplingModes": "fullGrid",
+        "samplingModes": [
+          "fullGrid",
+          "fixedVerticalProfiles",
+          "positions"
+        ],
         "primitiveDependencyMask": 1,
         "movingPrimitiveChannel": -1,
         "netCDFAttributes": []
@@ -37709,7 +38979,11 @@
         "isDependentOnApAmA0": true,
         "portableKind": "diagnostic",
         "naturalRank": "volume",
-        "samplingModes": "fullGrid",
+        "samplingModes": [
+          "fullGrid",
+          "fixedVerticalProfiles",
+          "positions"
+        ],
         "primitiveDependencyMask": 1,
         "movingPrimitiveChannel": -1,
         "netCDFAttributes": []
@@ -37767,7 +39041,11 @@
         "isDependentOnApAmA0": true,
         "portableKind": "diagnostic",
         "naturalRank": "volume",
-        "samplingModes": "fullGrid",
+        "samplingModes": [
+          "fullGrid",
+          "fixedVerticalProfiles",
+          "positions"
+        ],
         "primitiveDependencyMask": 1,
         "movingPrimitiveChannel": -1,
         "netCDFAttributes": []
@@ -37822,7 +39100,11 @@
         "isDependentOnApAmA0": true,
         "portableKind": "diagnostic",
         "naturalRank": "volume",
-        "samplingModes": "fullGrid",
+        "samplingModes": [
+          "fullGrid",
+          "fixedVerticalProfiles",
+          "positions"
+        ],
         "primitiveDependencyMask": 1,
         "movingPrimitiveChannel": -1,
         "netCDFAttributes": []
@@ -38297,7 +39579,11 @@
         "isDependentOnApAmA0": true,
         "portableKind": "diagnostic",
         "naturalRank": "volume",
-        "samplingModes": "fullGrid",
+        "samplingModes": [
+          "fullGrid",
+          "fixedVerticalProfiles",
+          "positions"
+        ],
         "primitiveDependencyMask": 0,
         "movingPrimitiveChannel": -1,
         "netCDFAttributes": []
@@ -38356,7 +39642,11 @@
         "isDependentOnApAmA0": true,
         "portableKind": "diagnostic",
         "naturalRank": "volume",
-        "samplingModes": "fullGrid",
+        "samplingModes": [
+          "fullGrid",
+          "fixedVerticalProfiles",
+          "positions"
+        ],
         "primitiveDependencyMask": 0,
         "movingPrimitiveChannel": -1,
         "netCDFAttributes": []
@@ -38415,7 +39705,11 @@
         "isDependentOnApAmA0": true,
         "portableKind": "diagnostic",
         "naturalRank": "volume",
-        "samplingModes": "fullGrid",
+        "samplingModes": [
+          "fullGrid",
+          "fixedVerticalProfiles",
+          "positions"
+        ],
         "primitiveDependencyMask": 0,
         "movingPrimitiveChannel": -1,
         "netCDFAttributes": []
@@ -38474,7 +39768,11 @@
         "isDependentOnApAmA0": true,
         "portableKind": "diagnostic",
         "naturalRank": "volume",
-        "samplingModes": "fullGrid",
+        "samplingModes": [
+          "fullGrid",
+          "fixedVerticalProfiles",
+          "positions"
+        ],
         "primitiveDependencyMask": 0,
         "movingPrimitiveChannel": -1,
         "netCDFAttributes": []

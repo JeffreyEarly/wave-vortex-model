@@ -30,6 +30,10 @@ public:
                           const WVIntegrationState &state,
                           WVFieldOutputView *outputs,
                           std::size_t outputCount, const std::uint8_t *activeOutputs = nullptr);
+  WVKernelStatus samplePreparedField(const WVFieldEvaluationPlan &plan,
+                                     const double *source,
+                                     WVFieldOutputView output);
+  void recordSampledMoving(std::size_t positionCount) noexcept;
   WVKernelStatus createMovingPlan(
       const std::vector<WVMovingFieldRequest> &requests,
       WVMovingFieldEvaluationPlan &plan) const;
@@ -60,6 +64,7 @@ public:
   bool isCompatibleWith(const WVIntegrationStateLayout &layout) const noexcept;
   const WVStratifiedModalGeometry &configuration() const noexcept;
   const WVFieldEvaluationMetrics &metrics() const noexcept { return metrics_; }
+  WVFieldEvaluationMetrics &mutableMetrics() noexcept { return metrics_; }
   std::size_t persistentBytes() const noexcept;
 
 private:

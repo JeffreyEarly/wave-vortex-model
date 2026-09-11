@@ -969,7 +969,8 @@ WVKernelStatus WVObserverOutputEvaluationService::create(
       }
       WVEventFieldEvaluationPlan eventPlan;
       if (!eventRequests.empty()) {
-        status = impl.fields->createEventPlan(eventRequests, eventPlan);
+        status = impl.fields->createEventPlan(eventRequests, eventPlan,
+                                              impl.densityContract);
         if (!status)
           return status;
       }
@@ -1021,7 +1022,8 @@ WVKernelStatus WVObserverOutputEvaluationService::create(
     impl.activeTimeSeriesOutputs.resize(impl.timeSeriesFieldPlan.outputCount());
     if (!movingRequests.empty()) {
       status = impl.fields->createMovingPlan(movingRequests,
-                                             impl.movingFieldPlan);
+                                             impl.movingFieldPlan,
+                                             impl.densityContract);
       if (!status)
         return status;
       impl.activeMovingOutputs.resize(impl.movingFieldPlan.outputCount());

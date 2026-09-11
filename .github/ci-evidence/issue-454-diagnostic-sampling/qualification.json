@@ -1,0 +1,115 @@
+{
+  "schema": "wvm-diagnostic-sampling-qualification-v1",
+  "implementationCommit": "ec2802519246ad518243657bb40ffb04e04cf6f9",
+  "integrationCommit": "d1ef3303bc93b412f3c55b60c873d3681cf5124f",
+  "matlabRelease": "2025b",
+  "samplingTests": [
+    {
+      "name": "TestPortableFieldSamplingMatrix/declaredPortableSamplingMatchesMatlab",
+      "passed": true,
+      "failed": false,
+      "incomplete": false,
+      "durationSeconds": 41.005917458333336
+    },
+    {
+      "name": "TestPortableFieldSamplingMatrix/densitySamplingPreservesReferenceSelection",
+      "passed": true,
+      "failed": false,
+      "incomplete": false,
+      "durationSeconds": 12.243346791666665
+    }
+  ],
+  "samplingComparisons": [
+    {
+      "receipt": "screen-parity-matrix.json",
+      "comparisons": 7136,
+      "maximumToleranceFraction": 0.0008616086514102936,
+      "maximumInterpolationToleranceFraction": 0.00028948398947109094
+    },
+    {
+      "receipt": "screen-parity-density-reference.json",
+      "comparisons": 576,
+      "maximumToleranceFraction": 0.00020288529759383744,
+      "maximumInterpolationToleranceFraction": 0.0002042503281402088
+    }
+  ],
+  "dumpSHA256": "dcc868554c2c8a6d1c0399c7ceb3d7be789cfa0d29cf1957be2ea8baaae96a68",
+  "sourceSHA256": {
+    "PortableRuntime/COMPATIBILITY.md": "15e202c70871a6d3071b4d8a3a4be03d3f371cb1072c67e505fe2ecd351c8b8d",
+    "PortableRuntime/VARIABLES.md": "d35443dbbcd358e7b10a687921c9d98c3380669d4ef58ec3930f82085e2325c7",
+    "PortableRuntime/contracts/portable-compatibility-matrix-v1.json": "15c6c24d11be9ef4b7e2fd057bed199be08bacf756e500191af1f8db9ad46278",
+    "PortableRuntime/contracts/portable-variable-catalog-v1.json": "5f8b11199e7dcdaf7ece2efbc0bbc7ed648a498de757ca779c6fa5ac34bfbc96",
+    "PortableRuntime/contracts/portable-variable-supplement-v1.json": "c2e1724fb5eb7f3fbe58e8dcca30197eae5966afb88718a70e0049e6563e4d57",
+    "PortableRuntime/include/WaveVortexRuntime/WVFieldEvaluationService.hpp": "a9371303246dac4bfe9fa576476d4f3cb2f4ec84f0af8baccf09d92752b0bb54",
+    "PortableRuntime/include/WaveVortexRuntime/generated/WVPortableVariableCatalog.hpp": "483628bbe99aae674ef5d06a67ef874e3bc13f82d3b298233fa875f6fd3bd7a8",
+    "PortableRuntime/include/WaveVortexRuntime/generated/WVPortableVariableContracts.hpp": "66d5189e29ded23c8a661349c1f4cbc672cd4f8d47ce0be532cf5fb7bcab0815",
+    "PortableRuntime/src/WVBarotropicQGFieldEvaluationAdapter.cpp": "d461b45c1869a100787e443ef947ed65e037ac0e46544a0c9c9d57e13518af5a",
+    "PortableRuntime/src/WVBarotropicQGFieldEvaluationAdapter.hpp": "01f09207e1cbe444328ca9b591528a0acaafce8103671e1997d90263fec2e9bf",
+    "PortableRuntime/src/WVDiagnosticFieldPlan.cpp": "5324eeac8c733740ffdb8a95f02d3ed06abe043c02be6345c958e92e4093e1e6",
+    "PortableRuntime/src/WVDiagnosticFieldPlan.hpp": "c0af1a6603b67efd3c01b34864cb3a5bbae23e71053c809dbd897c737c5b62d0",
+    "PortableRuntime/src/WVFieldEvaluationEventWorkspace.hpp": "fe83f98268cffbc2dd19804e7fa3b283e3b2d907450f52e42d3972d87c3d2bea",
+    "PortableRuntime/src/WVFieldEvaluationService.cpp": "c1bbcd07d0a675ffdec2287e1634c3c78432663a074d377ec577963675c1a676",
+    "PortableRuntime/src/WVObserverAdapter.cpp": "ead622c9fcfcd94606a4b7c5ee0dcfabebcd435a90620abe45af9c94138290b5",
+    "PortableRuntime/src/WVObserverOutputEvaluationService.cpp": "e92e2eee39bc6491424e8e4b7ca1fdfa8755173b51682951aabaf3348a0f30b0",
+    "PortableRuntime/src/WVStratifiedFieldEvaluationAdapter.cpp": "0bf8c75a318c56649ffaf2a2f592a0cabd9d7450d72698ee469e45ecbd9b9cb7",
+    "PortableRuntime/src/WVStratifiedFieldEvaluationAdapter.hpp": "cb1e18f0ba38b7140d4da7e6d3d1daeb32588b4e859be069ce8ee73a1147db40",
+    "PortableRuntime/tests/TestWVDensityFieldEvaluation.cpp": "55eb6641f1d6cb164d58be4bc889d2191358ffa7455c0cbcc76c3c0d1a3bd53e",
+    "PortableRuntime/tests/TestWVFieldEvaluation.cpp": "9f825814d0cded231687979c511d2666d66db26b413628060c9e553bf9abb317",
+    "PortableRuntime/tests/TestWVForcingTendencies.cpp": "70b66acc01ab2d5ccd678229f5baffc3e2dc0697da87e08e0d41c884de00293c",
+    "PortableRuntime/tests/TestWVObserverAdapter.cpp": "240ec88cb159aae87a2f914f86b42478853e000a5221a71f9a156721a820ac68",
+    "PortableRuntime/tests/TestWVPortableVariableCatalog.cpp": "417ceeb3685d5a6260b6ab899a9134791ec2b5132772217e3ea3893798c0a2b8",
+    "PortableRuntime/tests/WVStratifiedQGFieldDump.cpp": "0ae6ef6f805bb338c1fc43828c0e1d5eddb3ca6be46e06b59cefb485d275494d",
+    "UnitTests/TestPortableCompatibilityMatrix.m": "a8621d1b843adf1cf120762717cdcdde00c18e8cf54b9c5fbb1ac469c488366a",
+    "UnitTests/TestPortableFieldSamplingMatrix.m": "a5de83a67fedd6a719551a03a8f44d3da53e481ad931a8942b09e08d3ded432a",
+    "UnitTests/TestPortableSamplingOutput.m": "8064c89279f66a7067e6ca71ad6386ce95b146a7d7d39419d689285a43485131",
+    "tools/ci/route.py": "881e336227ef1630830c7559e21e0ede72b843a81e689ef5801b34aead070e2f",
+    "tools/generatePortableCompatibilityMatrix.m": "60c6784732ee09d0ddb1febf42fd0e49fac85ad607c56181aac7873e0a42d347",
+    "tools/generatePortableVariableCatalog.m": "cf2861562235aaaec3bf5631a3edde8c64c0b18e9832d37129b92876d29667a3",
+    "tools/portableCompatibilityDefinition.m": "741e604c1a033ad2c6aa22a4059b8ab776f7d239d0661866c084998c6d975fe2"
+  },
+  "outputQualification": {
+    "schema": "wvm-portable-sampling-output-final-v1",
+    "worktreeHead": "d1ef3303bc93b412f3c55b60c873d3681cf5124f",
+    "nativeBuildSourceHead": "a74ed4e61bc1bc57f731c999d7d404f8732f8679",
+    "portableRuntimeClosureSHA256": "e098361ae9aebc5ffb69239489034e5c311107139993b668e7af7da64acc64c8",
+    "runner": "/private/tmp/wvm454-sampling-native-release/wave-vortex-run",
+    "runnerSHA256": "c8e87d1c51a3f30e634fd33c24a7df2ff612973f52419d9a24908c86a6bc12bd",
+    "testSourceSHA256": "8064c89279f66a7067e6ca71ad6386ce95b146a7d7d39419d689285a43485131",
+    "matlabRelease": "2025b",
+    "wvModelPath": "/Users/jearly/Documents/OceanKitRepositories/wvm-v4-issue454-sampling/@WVModel/WVModel.m",
+    "testPath": "/Users/jearly/Documents/OceanKitRepositories/wvm-v4-issue454-sampling/UnitTests/TestPortableSamplingOutput.m",
+    "providers": [
+      "reference",
+      "native-fftw"
+    ],
+    "results": [
+      {
+        "name": "TestPortableSamplingOutput/ordinaryAndDenseSamplesMatchMatlab",
+        "passed": true,
+        "failed": false,
+        "incomplete": false,
+        "durationSeconds": 27.299567375
+      },
+      {
+        "name": "TestPortableSamplingOutput/sampledDiagnosticsPreserveIntegration",
+        "passed": true,
+        "failed": false,
+        "incomplete": false,
+        "durationSeconds": 7.828610333333334
+      },
+      {
+        "name": "TestPortableSamplingOutput/twoDestinationsContinueInBothDirections",
+        "passed": true,
+        "failed": false,
+        "incomplete": false,
+        "durationSeconds": 26.157970041666665
+      }
+    ],
+    "allPassed": true
+  },
+  "outputDetailRows": {
+    "ordinary-dense.json": 8,
+    "integration-control.json": 2,
+    "continuation.json": 2
+  }
+}

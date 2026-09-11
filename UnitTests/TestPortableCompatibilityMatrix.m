@@ -11,12 +11,12 @@ classdef TestPortableCompatibilityMatrix < matlab.unittest.TestCase
         end
     end
     methods (Test, TestTags={'full'})
-        function authoritativeInventoryAndTrackedGaps(testCase)
+        function authoritativeInventoryHasNoUnqualifiedSamplingGaps(testCase)
             result=validatePortableCompatibilityMatrix(testCase.matrix,repositoryRoot=testCase.root,expected=testCase.matrix);
             testCase.verifyGreaterThan(result.rowCount,666);
-            testCase.verifyGreaterThan(result.unqualifiedCount,0);
+            testCase.verifyEqual(result.unqualifiedCount,0);
             testCase.verifyFalse(testCase.matrix.readiness.standardParityReady);
-            testCase.verifyError(@()validatePortableCompatibilityMatrix(testCase.matrix,repositoryRoot=testCase.root,expected=testCase.matrix,requireComplete=true),'WaveVortexModel:CompatibilityIncomplete');
+            testCase.verifyEqual(validatePortableCompatibilityMatrix(testCase.matrix,repositoryRoot=testCase.root,expected=testCase.matrix,requireComplete=true).unqualifiedCount,0);
         end
         function generatedAssemblyMatchesCommittedFiles(testCase)
             output=string(tempname); mkdir(output); cleanup=onCleanup(@()rmdir(output,'s'));
@@ -42,26 +42,18 @@ classdef TestPortableCompatibilityMatrix < matlab.unittest.TestCase
             index=find(arrayfun(@(w)~isempty(w.coverage.rowIds),candidate.witnesses),1);
             candidate.witnesses(index).coverage.rowIds(1)=[]; testCase.reject(candidate);
         end
-        function movingSamplingStagesRemainExplicit(testCase)
+        function samplingGapsAreRemovedFromTheStandardSlice(testCase)
             rows=testCase.matrix.rows;
-            moving=rows(string({rows.reason})=="matlab-supported-moving-sampling-not-implemented");
-            testCase.verifyNumElements(moving,40);
-            for row=reshape(moving,1,[])
-                testCase.verifyEqual(row.status,"unqualified");
-                testCase.verifyEqual(row.issue,454);
-                testCase.verifyEqual(row.axes.stage,"moving");
-                base=rows(string({rows.id})==erase(row.id,"/moving"));
-                testCase.assertNumElements(base,1);
-                testCase.verifyEqual(base.status,"supported");
-                testCase.verifyEqual(base.axes.stage,"fixed-and-event");
-            end
+            issueRows=rows([rows.issue]==454);
+            testCase.verifyEmpty(issueRows);
+            testCase.verifyFalse(testCase.matrix.readiness.standardParityReady);
         end
-        function unqualifiedSamplingCannotBecomeAnExclusion(testCase)
+        function supportedSamplingCannotBecomeAGapOrExclusion(testCase)
             candidate=testCase.matrix;
-            index=find(string({candidate.rows.reason})=="matlab-supported-sampling-not-implemented",1);
+            index=find(string({candidate.rows.slice})=="fields",1);
             testCase.assertNotEmpty(index);
             candidate.rows(index).status="intentional-incompatibility"; testCase.reject(candidate);
-            candidate=testCase.matrix; candidate.rows(index).issue=0; testCase.reject(candidate);
+            candidate=testCase.matrix; candidate.rows(index).status="unqualified"; candidate.rows(index).issue=454; candidate.rows(index).reason="matlab-supported-sampling-not-implemented"; testCase.reject(candidate);
             candidate=testCase.matrix; candidate.readiness.standardParityReady=true; testCase.reject(candidate);
         end
     end

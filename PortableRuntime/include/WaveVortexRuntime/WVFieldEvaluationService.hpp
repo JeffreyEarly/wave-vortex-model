@@ -22,6 +22,7 @@ namespace wavevortex::runtime {
 
 struct WVIntegrationState;
 class WVIntegrationStateLayout;
+class WVFieldEvaluationService;
 class WVConstantStratificationForcingEngine;
 class WVBarotropicQGForcingEngine;
 class WVStratifiedQGForcingEngine;
@@ -36,6 +37,7 @@ class WVDiagnosticFieldPlan;
 class WVForcingDiagnosticBinding;
 class WVFieldEvaluationEventWorkspace;
 class WVFieldEvaluationEventScope;
+class WVSampledMovingFieldPlan;
 }
 
 enum class WVFieldSamplingKind : std::uint8_t {
@@ -160,6 +162,11 @@ private:
   std::uint64_t fingerprint_ = 0;
   std::shared_ptr<const void> transformPlan_;
   std::size_t transformPlanBytes_ = 0;
+  bool genericSampling_ = false;
+  std::string configurationIdentifier_;
+  WVDensityDiagnosticContract densityContract_;
+  const WVFieldEvaluationService *owner_ = nullptr;
+  std::shared_ptr<const std::uint8_t> planIdentity_;
 
   friend class WVFieldEvaluationService;
   friend class detail::WVBarotropicQGFieldEvaluationAdapter;
@@ -190,6 +197,7 @@ private:
   std::size_t positionCount_ = 0;
   std::shared_ptr<const void> transformPlan_;
   std::size_t transformPlanBytes_ = 0;
+  std::shared_ptr<const detail::WVSampledMovingFieldPlan> sampledPlan_;
   friend class WVFieldEvaluationService;
   friend class detail::WVBarotropicQGFieldEvaluationAdapter;
   friend class detail::WVStratifiedFieldEvaluationAdapter;
@@ -308,6 +316,7 @@ private:
   std::size_t positionCount_ = 0;
   std::size_t borrowedCoordinateBytes_ = 0;
   std::uint64_t fieldPlanFingerprint_ = 0;
+  std::shared_ptr<const std::uint8_t> planIdentity_;
   std::uint64_t geometryFingerprint_ = 0;
   std::shared_ptr<const void> transformGeometry_;
   std::size_t transformGeometryBytes_ = 0;
@@ -448,7 +457,8 @@ public:
                           const std::uint8_t *activeOutputs = nullptr);
   WVKernelStatus
   createMovingPlan(const std::vector<WVMovingFieldRequest> &requests,
-                   WVMovingFieldEvaluationPlan &plan) const;
+                   WVMovingFieldEvaluationPlan &plan,
+                   WVDensityDiagnosticContract densityContract = {}) const;
   // Selection also skips coordinate values belonging only to inactive requests.
   WVKernelStatus evaluateMoving(const WVMovingFieldEvaluationPlan &plan,
                                 const WVState &state,
@@ -473,7 +483,8 @@ public:
       std::size_t outputCount, const std::uint8_t *activeOutputs = nullptr);
   WVKernelStatus
   createEventPlan(const std::vector<WVEventFieldRequest> &requests,
-                  WVEventFieldEvaluationPlan &plan);
+                  WVEventFieldEvaluationPlan &plan,
+                  WVDensityDiagnosticContract densityContract = {});
   WVKernelStatus
   prepareEventGeometry(const WVEventFieldEvaluationPlan &plan,
                        const WVEventPositionSetView *positionSets,
@@ -531,6 +542,19 @@ private:
       const WVRealFieldBundleConstView *advectionFields,
       WVMovingPositionView positions, WVFieldOutputView *outputs,
       std::size_t outputCount, const std::uint8_t *activeOutputs = nullptr);
+  WVKernelStatus evaluateSampledMovingImpl(
+      const WVMovingFieldEvaluationPlan &plan,
+      const WVIntegrationState &state, WVMovingPositionView positions,
+      WVFieldOutputView *outputs, std::size_t outputCount,
+      const std::uint8_t *activeOutputs);
+  WVKernelStatus samplePreparedField(const WVFieldEvaluationPlan &plan,
+                                     const double *source,
+                                     WVFieldOutputView output);
+  WVKernelStatus evaluateSampledEventBatch(
+      const WVIntegrationState &state,
+      const WVEventFieldEvaluationBatchEntry *entries,
+      std::size_t entryCount);
+  WVFieldEvaluationMetrics &mutableMetrics() noexcept;
   class MovingWorkspace;
   std::unique_ptr<WVTransformConstantStratificationKernel> ownedTransform_;
   WVTransformConstantStratificationKernel *transform_ = nullptr;

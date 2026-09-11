@@ -32,9 +32,12 @@ private:
     WVPortableVariable variable = WVPortableVariable::invalid;
     std::size_t group = 0, dependency = 0;
     bool surface = false, extrema = false, verticalMean = false, forcing = false, density = false;
+    bool sampled = false;
     std::size_t forcingSlot=0,forcingChannel=0,forcingPhysicalChannels=0;
     std::array<std::size_t,4> auxiliaries{};
     WVFieldOutputSpecification specification;
+    WVFieldEvaluationPlan sampler;
+    WVFieldSamplingRequest sampling;
   };
   struct Group {
     WVFieldEvaluationPlan fields;
