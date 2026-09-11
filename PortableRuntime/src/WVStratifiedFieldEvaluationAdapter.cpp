@@ -16,6 +16,27 @@
 
 namespace wavevortex::runtime::detail {
 namespace {
+WVPortableVariable portableField(WVHydrostaticField field) noexcept {
+  switch(field) {
+  case WVHydrostaticField::u:return WVPortableVariable::u;
+  case WVHydrostaticField::v:return WVPortableVariable::v;
+  case WVHydrostaticField::w:return WVPortableVariable::w;
+  case WVHydrostaticField::eta:return WVPortableVariable::eta;
+  case WVHydrostaticField::pi:return WVPortableVariable::pi;
+  case WVHydrostaticField::p:return WVPortableVariable::p;
+  case WVHydrostaticField::psi:return WVPortableVariable::psi;
+  case WVHydrostaticField::qgpv:return WVPortableVariable::qgpv;
+  case WVHydrostaticField::rhoE:return WVPortableVariable::rhoE;
+  case WVHydrostaticField::rhoTotal:return WVPortableVariable::rhoTotal;
+  case WVHydrostaticField::zetaX:return WVPortableVariable::zetaX;
+  case WVHydrostaticField::zetaY:return WVPortableVariable::zetaY;
+  case WVHydrostaticField::zetaZ:return WVPortableVariable::zetaZ;
+  case WVHydrostaticField::ssh:return WVPortableVariable::ssh;
+  case WVHydrostaticField::ssu:return WVPortableVariable::ssu;
+  case WVHydrostaticField::ssv:return WVPortableVariable::ssv;
+  }
+  return WVPortableVariable::invalid;
+}
 
 WVKernelStatus invalid(std::string message) {
   return {WVKernelStatusCode::invalidConfiguration, std::move(message)};
@@ -491,6 +512,72 @@ struct WVStratifiedFieldEvaluationAdapter::MovingInterpolationWorkspace {
 WVStratifiedFieldEvaluationAdapter::~WVStratifiedFieldEvaluationAdapter() =
     default;
 
+WVKernelStatus WVStratifiedFieldEvaluationAdapter::beginStateEvaluation(
+    const WVIntegrationState& state,const void* owner) {
+  WVState coefficients;
+  const auto status=coefficientView(state,configuration(),coefficients);
+  if(!status) return status;
+  if(hydrostaticKernel_) return hydrostaticKernel_->beginStateEvaluation(coefficients,owner);
+  if(boussinesqKernel_) return boussinesqKernel_->beginStateEvaluation(coefficients,owner);
+  return kernel_->beginStateEvaluation(coefficients.coefficients.A0,owner);
+}
+
+WVKernelStatus WVStratifiedFieldEvaluationAdapter::addStateEvaluationView(
+    const WVIntegrationState& state,const void* owner,
+    std::size_t componentIdentity) {
+  WVState coefficients;
+  const auto status=coefficientView(state,configuration(),coefficients);
+  if(!status) return status;
+  if(hydrostaticKernel_) return hydrostaticKernel_->addStateEvaluationView(
+      coefficients,owner,componentIdentity);
+  if(boussinesqKernel_) return boussinesqKernel_->addStateEvaluationView(
+      coefficients,owner,componentIdentity);
+  return kernel_->addStateEvaluationView(
+      coefficients.coefficients.A0,owner,componentIdentity);
+}
+
+void WVStratifiedFieldEvaluationAdapter::endStateEvaluation() noexcept {
+  if(hydrostaticKernel_) (void)hydrostaticKernel_->endStateEvaluation();
+  else if(boussinesqKernel_) (void)boussinesqKernel_->endStateEvaluation();
+  else if(kernel_) (void)kernel_->endStateEvaluation();
+}
+
+WVVariableProducerMetrics
+WVStratifiedFieldEvaluationAdapter::producerMetrics() const noexcept {
+  WVVariableProducerMetrics result;
+  if(hydrostaticKernel_) {
+    const auto& metrics=hydrostaticKernel_->metrics();
+    result.stateValidations=metrics.stateValidationCount;
+    result.phasePreparations=metrics.phasePreparationCount;
+    result.derivedValidations=metrics.derivedValidationCount;
+    result.tendencyReconstructions=metrics.tendencyReconstructionCount;
+    result.reconstructions=metrics.reconstructionCount;
+  } else if(boussinesqKernel_) {
+    const auto& metrics=boussinesqKernel_->metrics();
+    result.stateValidations=metrics.stateValidationCount;
+    result.phasePreparations=metrics.phasePreparationCount;
+    result.derivedValidations=metrics.derivedValidationCount;
+    result.tendencyReconstructions=metrics.tendencyReconstructionCount;
+    result.reconstructions=metrics.reconstructionCount;
+  } else {
+    const auto& metrics=kernel_->metrics();
+    result.stateValidations=metrics.stateValidationCount;
+    result.horizontalSpeedReductions=
+        metrics.horizontalSpeedMaximumReductionCount;
+    for(std::size_t field=0;field<metrics.componentReconstructionCount.size();++field)
+      for(std::size_t derivative=0;
+          derivative<metrics.componentReconstructionCount[field].size();++derivative)
+        result.reconstructions[field][derivative]=
+            metrics.componentReconstructionCount[field][derivative];
+  }
+  result.horizontalSpeedReductions+=
+      outputProducerMetrics_.horizontalSpeedReductions;
+  result.verticalSpeedReductions+=
+      outputProducerMetrics_.verticalSpeedReductions;
+  result.energyReductions+=outputProducerMetrics_.energyReductions;
+  return result;
+}
+
 WVKernelStatus WVStratifiedFieldEvaluationAdapter::create(
     std::shared_ptr<const WVStratifiedModalSource> source,
     std::unique_ptr<WVFFTEngine> engine,
@@ -737,7 +824,27 @@ WVKernelStatus WVStratifiedFieldEvaluationAdapter::evaluate(
     if (activeOutputs && !activeOutputs[request.output]) continue;
     if (request.scalar != ScalarField::none) {
       double value = 0.0;
-      status=scalarValue(amplitudes,static_cast<unsigned>(request.scalar),value);
+      const auto variable=request.scalar==ScalarField::energy ?
+          WVPortableVariable::energy : request.scalar==ScalarField::uvMax ?
+          WVPortableVariable::uvMax : WVPortableVariable::wMax;
+      const auto produce=[&]() {
+        const auto produced=scalarValue(
+            amplitudes,static_cast<unsigned>(request.scalar),value);
+        if(produced) {
+          if(request.scalar==ScalarField::energy)
+            ++outputProducerMetrics_.energyReductions;
+          else if(request.scalar==ScalarField::uvMax &&
+              (hydrostaticKernel_ || boussinesqKernel_))
+            ++outputProducerMetrics_.horizontalSpeedReductions;
+          else ++outputProducerMetrics_.verticalSpeedReductions;
+        }
+        return produced;
+      };
+      bool reused=false;
+      status=eventWorkspace_ ? eventWorkspace_->evaluate(
+          {WVVariableEvaluationNode::reduction,
+            static_cast<std::uint32_t>(variable)},&value,1,produce,reused) :
+          produce();
       if (!status)
         return status;
       outputs[request.output].data[0] = value;
@@ -1217,11 +1324,66 @@ WVKernelStatus WVStratifiedFieldEvaluationAdapter::transformField(const WVState&
   }
   bool reused=false;
   const auto operation=[&](){return transformUncachedField(state,field,out);};
-  const auto status=eventWorkspace_ ? eventWorkspace_->evaluate(static_cast<std::size_t>(field),state,out.data,out.shape.elementCount(),operation,reused) : operation();
+  const WVVariableEvaluationKey key{WVVariableEvaluationNode::physicalField,
+      static_cast<std::uint32_t>(portableField(field)),
+      eventWorkspace_ ? eventWorkspace_->component() : 0u};
+  const auto status=eventWorkspace_ ? eventWorkspace_->evaluate(key,out.data,
+      out.shape.elementCount(),operation,reused) : operation();
   if(wasReused) *wasReused=reused;
   return status;
 }
 WVKernelStatus WVStratifiedFieldEvaluationAdapter::transformUncachedField(const WVState& state,WVHydrostaticField field,WVRealVolumeView out) {
+  if(eventWorkspace_ && (field==WVHydrostaticField::zetaX ||
+      field==WVHydrostaticField::zetaY) &&
+      (hydrostaticKernel_ || boussinesqKernel_)) {
+    const auto shape=out.shape;
+    const auto component=eventWorkspace_->component();
+    const auto evaluateDerivative=[&](WVHydrostaticField source,
+        std::uint32_t derivative,std::vector<double>& storage) {
+      const WVVariableEvaluationKey key{WVVariableEvaluationNode::derivative,
+          static_cast<std::uint32_t>(portableField(source)),component,
+          derivative};
+      bool reused=false;
+      WVRealVolumeView destination{storage.data(),shape};
+      const auto operation=[&]() {
+        if(hydrostaticKernel_)
+          return hydrostaticKernel_->transformStateField(state,source,
+              destination,static_cast<WVHydrostaticDerivative>(derivative));
+        WVBoussinesqField mapped=source==WVHydrostaticField::u ?
+            WVBoussinesqField::u : source==WVHydrostaticField::v ?
+            WVBoussinesqField::v : WVBoussinesqField::w;
+        return boussinesqKernel_->transformStateField(state,mapped,destination,
+            static_cast<WVBoussinesqDerivative>(derivative));
+      };
+      return eventWorkspace_->evaluate(key,storage.data(),storage.size(),
+          operation,reused);
+    };
+    const auto firstField=field==WVHydrostaticField::zetaX ?
+        WVHydrostaticField::w : WVHydrostaticField::u;
+    const auto firstDerivative=field==WVHydrostaticField::zetaX ?
+        static_cast<std::uint32_t>(WVHydrostaticDerivative::y) :
+        static_cast<std::uint32_t>(WVHydrostaticDerivative::z);
+    const auto secondField=field==WVHydrostaticField::zetaX ?
+        WVHydrostaticField::v : WVHydrostaticField::w;
+    const auto secondDerivative=field==WVHydrostaticField::zetaX ?
+        static_cast<std::uint32_t>(WVHydrostaticDerivative::z) :
+        static_cast<std::uint32_t>(WVHydrostaticDerivative::x);
+    auto status=evaluateDerivative(firstField,firstDerivative,fieldScratch_);
+    if(!status) return status;
+    status=evaluateDerivative(secondField,secondDerivative,speedScratch_);
+    if(!status) return status;
+    const WVRealVolumeConstView first{fieldScratch_.data(),shape};
+    const WVRealVolumeConstView second{speedScratch_.data(),shape};
+    if(hydrostaticKernel_)
+      return hydrostaticKernel_->combinePreparedHorizontalVorticity(
+          field,first,second,out,
+          static_cast<WVHydrostaticComponent>(component));
+    const auto target=field==WVHydrostaticField::zetaX ?
+        WVBoussinesqField::zetaX : WVBoussinesqField::zetaY;
+    return boussinesqKernel_->combinePreparedHorizontalVorticity(
+        target,first,second,out,
+        static_cast<WVBoussinesqComponent>(component));
+  }
   if (hydrostaticKernel_) return hydrostaticKernel_->transformStateField(state,field,out);
   if (boussinesqKernel_) {
     WVBoussinesqField mapped;

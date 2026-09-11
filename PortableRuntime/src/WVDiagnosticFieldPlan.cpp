@@ -36,13 +36,27 @@ bool overlap(const void* a,std::size_t n,const void* b,std::size_t m) {
   const auto x=reinterpret_cast<std::uintptr_t>(a),y=reinterpret_cast<std::uintptr_t>(b);
   return x<=y ? y-x<n : x-y<m;
 }
+template<class Visitor>
+void visitPortableExecution(const WVPortableVariablePlan& plan,Visitor&& visitor) {
+  for(std::size_t index=0;index<plan.count;++index)
+    visitor(plan.order[index],index+1==plan.count);
+}
+WVVariableEvaluationKey scratchKey(std::uint64_t signature,std::size_t group,
+    std::size_t slot,std::uint32_t stage) {
+  return {WVVariableEvaluationNode::registeredVariable,
+      static_cast<std::uint32_t>(slot),static_cast<std::uint32_t>(group),
+      0,0,0,stage,signature | (1ULL<<63)};
+}
 }
 
 bool WVDiagnosticFieldPlan::required(const std::vector<WVFieldRequest>& requests,bool stratified) noexcept {
   for(const auto& request:requests) {
     if(isPortableForcingVariableName(request.fieldName)) return true;
     const auto* metadata=findPortableVariable(request.fieldName);
-    if(metadata && (metadata->ordinal>=23 || (stratified && metadata->identifier==Variable::rhoBar))) return true;
+    if(metadata && (metadata->ordinal>=23 ||
+        metadata->identifier==Variable::uvMax ||
+        metadata->identifier==Variable::wMax ||
+        (stratified && metadata->identifier==Variable::rhoBar))) return true;
   }
   return false;
 }
@@ -106,6 +120,14 @@ WVKernelStatus WVDiagnosticFieldPlan::createImpl(const WVFieldEvaluationService&
     return invalid("Density reference selection is invalid.");
   try {
     auto plan=std::shared_ptr<WVDiagnosticFieldPlan>(new WVDiagnosticFieldPlan);
+    for(const auto& request:requests) {
+      for(const auto character:request.fieldName) {
+        plan->scratchSignature_^=static_cast<unsigned char>(character);
+        plan->scratchSignature_*=1099511628211ULL;
+      }
+      plan->scratchSignature_^=static_cast<std::uint8_t>(request.sampling.kind);
+      plan->scratchSignature_*=1099511628211ULL;
+    }
     auto status=plan->configure(service); if(!status) return status;
     plan->densityQualification_=densityQualification;
     plan->densityContract_=densityContract;
@@ -177,11 +199,14 @@ WVKernelStatus WVDiagnosticFieldPlan::createImpl(const WVFieldEvaluationService&
         WVForcingDiagnosticBinding::Output bound;
         auto binding=service.forcing_->resolve(request.fieldName,plan->configuration_,static_cast<std::uint8_t>(samplingBit(request.sampling.kind)),bound);
         if(!binding) return binding;
-        plan->forcingPhysicalChannels_=std::max(plan->forcingPhysicalChannels_,bound.physicalChannels);
+        plan->forcingPhysicalChannels_=std::max(plan->forcingPhysicalChannels_,
+            bound.physicalChannels);
         const auto found=std::find(plan->forcingIndices_.begin(),plan->forcingIndices_.end(),bound.executionIndex);
         const auto slot=static_cast<std::size_t>(found-plan->forcingIndices_.begin());
-        if(found==plan->forcingIndices_.end()) plan->forcingIndices_.push_back(bound.executionIndex);
-        Output output; output.variable=bound.contract->metadata.identifier; output.forcing=true;
+        if(found==plan->forcingIndices_.end())
+          plan->forcingIndices_.push_back(bound.executionIndex);
+        Output output; output.variable=bound.contract->metadata.identifier;
+        output.execution=bound.plan; output.forcing=true;
         output.forcingSlot=slot; output.forcingChannel=bound.channel; output.forcingPhysicalChannels=bound.physicalChannels;
         output.specification.identifier=request.identifier; output.specification.fieldName=request.fieldName;
         output.specification.samplingKind=request.sampling.kind;
@@ -193,21 +218,28 @@ WVKernelStatus WVDiagnosticFieldPlan::createImpl(const WVFieldEvaluationService&
         plan->outputs_.push_back(std::move(output));
         continue;
       }
-      // Mixing legacy and diagnostic fields must preserve configuration applicability.
-      if(!contract) return unsupported("Diagnostic is unavailable on this transform: "+request.fieldName);
+      // Constant-stratification rho_bar is a legacy natural-grid field.  It has
+      // no generated diagnostic contract, but it remains a valid dependency
+      // when a request batch also contains a canonical reduction.
+      const bool legacyConstantRhoBar=!contract && plan->constant_ &&
+          m->identifier==Variable::rhoBar;
+      if(!contract && !legacyConstantRhoBar)
+        return unsupported("Diagnostic is unavailable on this transform: "+request.fieldName);
       if(m->ordinal>=23 && (contract->metadata.samplingMask & (m->naturalRank==WVPortableNaturalRank::coefficient && request.sampling.kind==WVFieldSamplingKind::fullGrid ? static_cast<std::size_t>(portableCoefficientSampling) : samplingBit(request.sampling.kind)))==0)
         return unsupported("Diagnostic sampling contract is unsupported: "+request.fieldName);
-      if(m->ordinal>=23 && !densityQualification) {
-        WVPortableVariablePlan resolved;
-        WVPortableVariableOptions options; options.source=WVPortableOperationSource::builtIn; options.requireEvaluator=true;
-        options.noMotionSolver=WVPortableNoMotionSolver::dampedLeastSquares;
-        options.shouldUseTrueNoMotionProfile=densityContract.reference==WVNoMotionReference::actual;
-        const auto sampling=m->naturalRank==WVPortableNaturalRank::coefficient ? static_cast<std::size_t>(portableCoefficientSampling) : samplingBit(request.sampling.kind);
-        const auto resolution=resolvePortableVariablePlan(request.fieldName,plan->configuration_,static_cast<std::uint8_t>(sampling),options,resolved);
+      WVPortableVariablePlan resolved;
+      WVPortableVariableOptions options; options.source=WVPortableOperationSource::builtIn;
+      options.requireEvaluator=m->ordinal>=23 && !densityQualification;
+      options.noMotionSolver=WVPortableNoMotionSolver::dampedLeastSquares;
+      options.shouldUseTrueNoMotionProfile=densityContract.reference==WVNoMotionReference::actual;
+      const auto sampling=m->naturalRank==WVPortableNaturalRank::coefficient ? static_cast<std::size_t>(portableCoefficientSampling) : samplingBit(request.sampling.kind);
+      if(!legacyConstantRhoBar) {
+        const auto resolution=resolvePortableVariablePlan(request.fieldName,plan->configuration_,
+            static_cast<std::uint8_t>(sampling),options,resolved);
         if(resolution!=WVPortableVariableStatus::supported)
           return unsupported(std::string(contract->configurationRestriction)+": "+request.fieldName);
       }
-      Output output; output.variable=m->identifier;
+      Output output; output.variable=m->identifier; output.execution=resolved;
       output.specification.identifier=request.identifier; output.specification.fieldName=request.fieldName;
       output.specification.samplingKind=request.sampling.kind;
       switch(m->identifier) {
@@ -304,12 +336,124 @@ WVKernelStatus WVDiagnosticFieldPlan::createImpl(const WVFieldEvaluationService&
       }
       candidate.outputs_.push_back(output.specification);
     }
+    status=plan->prepareEventArena(service);
+    if(!status) return status;
     candidate.diagnosticPlan_=std::move(plan);
     result=std::move(candidate);
     return WVKernelStatus::ok();
   } catch(const std::bad_alloc&) {
     return {WVKernelStatusCode::allocationFailure,"Unable to allocate the diagnostic dependency plan."};
   }
+}
+
+WVKernelStatus WVDiagnosticFieldPlan::prepareEventArena(
+    const WVFieldEvaluationService& service) const {
+  const auto R=spatial_.elementCount();
+  const auto S=spectral_.elementCount();
+  for(std::size_t group=0;group<groups_.size();++group) {
+    if(groups_[group].fields.outputCount()) {
+      const auto status=service.prepareEventArena(
+          groups_[group].fields,static_cast<std::uint32_t>(group));
+      if(!status) return status;
+    }
+    for(std::size_t output=0;output<groups_[group].fields.outputCount();++output) {
+      const auto status=service.prepareEventField(scratchKey(
+          scratchSignature_,group,output,16),
+          groups_[group].fields.outputs()[output].elementCount,false);
+      if(!status) return status;
+    }
+    if(group && !groups_[group].requests.empty())
+      for(std::uint32_t family=0;family<3;++family) {
+        const auto status=service.prepareEventField(
+            {WVVariableEvaluationNode::componentCoefficients,family,
+              static_cast<std::uint32_t>(group)},S,true);
+        if(!status) return status;
+      }
+  }
+  bool phase=false;
+  std::uint8_t densityDemands=0;
+  bool apvNeeded=false;
+  for(const auto& output:outputs_) {
+    if(output.density) {
+      densityDemands|=output.variable==Variable::rho_nm ?
+          WVDensityEventEvaluation::rhoNmDemand :
+          (output.variable==Variable::eta_true || output.variable==Variable::apv) ?
+              WVDensityEventEvaluation::etaTrueDemand :
+              WVDensityEventEvaluation::apeDemand;
+      apvNeeded|=output.variable==Variable::apv;
+    }
+    if(output.specification.isComplex) {
+      visitPortableExecution(output.execution,[&](Variable node,bool) {
+        phase|=node==Variable::Apt || node==Variable::Amt ||
+            node==Variable::phase || node==Variable::conjPhase;
+      });
+      const auto finalNode=output.execution.count ?
+          output.execution.order[output.execution.count-1] : output.variable;
+      const auto status=service.prepareEventField(
+          {WVVariableEvaluationNode::registeredVariable,
+            static_cast<std::uint32_t>(finalNode),
+            static_cast<std::uint32_t>(output.group)},S,true);
+      if(!status) return status;
+    }
+    if(output.variable==Variable::totalEnergySpatiallyIntegrated ||
+        output.verticalMean || output.extrema) {
+      const auto status=service.prepareEventField(
+          {WVVariableEvaluationNode::reduction,
+            static_cast<std::uint32_t>(output.variable)},
+          output.specification.elementCount,false);
+      if(!status) return status;
+    }
+  }
+  if(phase) {
+    const auto status=service.prepareEventField(
+        {WVVariableEvaluationNode::phaseFactors},S,true);
+    if(!status) return status;
+  }
+  if(densityDemands) {
+    const auto status=service.prepareDensityEventArena(
+        R,densityHeights_.size(),densityDemands,
+        densityContract_.reference,apvNeeded);
+    if(!status) return status;
+  }
+  if(!forcingIndices_.empty()) {
+    service.eventArenaForcingPrepared_=true;
+    if(service.forcing_->horizontalMaximumNeeded()) {
+      const auto status=service.prepareEventField(
+          {WVVariableEvaluationNode::reduction,
+            static_cast<std::uint32_t>(WVPortableVariable::uvMax)},1,false);
+      if(!status) return status;
+    }
+    const auto channels=isQG_ ? 1u : isHydrostatic_ ? 3u : 4u;
+    for(const auto index:forcingIndices_) {
+      const auto status=service.prepareEventField(
+          {WVVariableEvaluationNode::forcingTendency,
+            static_cast<std::uint32_t>(isQG_ ?
+              WVPortableVariable::Fqgpv_portable_catalog_forcing :
+              WVPortableVariable::Fu_portable_catalog_forcing),0,0,0,
+            static_cast<std::uint32_t>(index),1},channels*R,false);
+      if(!status) return status;
+    }
+    for(std::size_t slot=0;slot<forcingIndices_.size();++slot) {
+      const auto status=service.prepareEventField(scratchKey(
+          scratchSignature_,0,slot,17),
+          channels*R,false);
+      if(!status) return status;
+    }
+    if(forcingPhysicalChannels_) {
+      const auto status=service.prepareEventField(scratchKey(
+          scratchSignature_,0,0,18),
+          forcingPhysicalChannels_*R,false);
+      if(!status) return status;
+    }
+  }
+  if(std::any_of(outputs_.begin(),outputs_.end(),[](const auto& output) {
+      return output.variable==Variable::apv;
+    })) {
+    const auto status=service.prepareEventField(scratchKey(
+        scratchSignature_,0,0,19),3*R,false);
+    if(!status) return status;
+  }
+  return service.prepareEventArena(0);
 }
 
 WVKernelStatus WVDiagnosticFieldPlan::rebind(const WVFieldEvaluationService& service,WVFieldEvaluationPlan& result) const {
@@ -375,7 +519,13 @@ double WVDiagnosticFieldPlan::stratification(std::size_t z) const noexcept {
 WVKernelStatus WVDiagnosticFieldPlan::evaluate(WVFieldEvaluationService& service,const WVIntegrationState& input,
     WVFieldOutputView* outputs,std::size_t count,const std::uint8_t* activeOutputs) const {
   if(owner_!=&service) return invalid("The diagnostic plan belongs to a different field service.");
-  if(count!=outputs_.size() || (count && !outputs)) return invalid("Diagnostic output-view count is invalid.");
+  if(service.eventWorkspace_) {
+    const auto stateStatus=service.eventWorkspace_->validateState(input);
+    if(!stateStatus) return stateStatus;
+  }
+  if(count!=outputs_.size() || (count && !outputs))
+    return {WVKernelStatusCode::invalidShape,
+        "Diagnostic output-view count is invalid."};
   const auto active=[&](std::size_t index) {return !activeOutputs || activeOutputs[index];};
   WVState amplitudes=input.waveVortex;
   if(input.coefficientFamilyCount) {
@@ -434,6 +584,14 @@ WVKernelStatus WVDiagnosticFieldPlan::evaluate(WVFieldEvaluationService& service
     }
   }
   auto& metrics=service.stratified_ ? service.stratified_->metrics_ : service.barotropicQG_ ? service.barotropicQG_->metrics_ : service.metrics_;
+  auto& producerMetrics=service.stratified_ ?
+      service.stratified_->outputProducerMetrics_ : service.barotropicQG_ ?
+      service.barotropicQG_->outputProducerMetrics_ :
+      service.outputProducerMetrics_;
+  const auto outputWritesBefore=metrics.outputElementWriteCount;
+  std::size_t activeOutputElements=0;
+  for(std::size_t index=0;index<count;++index)
+    if(active(index)) activeOutputElements+=outputs_[index].specification.elementCount;
   const auto outerWorkspaceBytes=metrics.diagnosticWorkspaceLiveBytes;
   struct ResetLive {
     WVFieldEvaluationMetrics& metrics;
@@ -465,11 +623,18 @@ WVKernelStatus WVDiagnosticFieldPlan::evaluate(WVFieldEvaluationService& service
       const auto& output=outputs_[index];
       if(output.density) {
         if(!service.eventWorkspace_->hasDensitySource()) activeDependencies[0][output.dependency]=1;
-        if(output.variable==Variable::apv && !service.eventWorkspace_->hasAPV())
+        if(output.variable==Variable::apv &&
+            !service.eventWorkspace_->hasAPV(densityContract_.reference))
           for(std::size_t axis=0;axis<3;++axis) activeDependencies[0][output.auxiliaries[axis]]=1;
       } else if(output.forcing) {
         activeForcing[output.forcingSlot]=1;
-        physicalChannels=std::max(physicalChannels,output.forcingPhysicalChannels);
+        const WVVariableEvaluationKey key{WVVariableEvaluationNode::forcingTendency,
+            static_cast<std::uint32_t>(isQG_ ?
+                WVPortableVariable::Fqgpv_portable_catalog_forcing :
+                WVPortableVariable::Fu_portable_catalog_forcing),0,0,0,
+            static_cast<std::uint32_t>(forcingIndices_[output.forcingSlot]),1};
+        if(!service.eventWorkspace_ || !service.eventWorkspace_->ready(key))
+          physicalChannels=std::max(physicalChannels,output.forcingPhysicalChannels);
       } else if(!output.specification.isComplex) {
         if(output.variable==Variable::totalEnergySpatiallyIntegrated)
           for(std::size_t channel=0;channel<(isHydrostatic_ ? 3u : 4u);++channel)
@@ -489,24 +654,68 @@ WVKernelStatus WVDiagnosticFieldPlan::evaluate(WVFieldEvaluationService& service
     std::vector<WVForcingTendencyOutput> forcingViews;
     std::vector<double> forcingPhysical;
     std::vector<double> densityDerivatives;
+    struct ScratchUse {WVVariableEvaluationKey key; std::vector<double>* storage;};
+    std::vector<ScratchUse> scratchUses;
+    struct ScratchGuard {
+      WVFieldEvaluationEventWorkspace* workspace;
+      std::vector<ScratchUse>& uses;
+      ~ScratchGuard() {
+        if(workspace) for(auto use=uses.rbegin();use!=uses.rend();++use)
+          workspace->returnScratch(use->key,*use->storage);
+      }
+    } scratchGuard{service.eventWorkspace_,scratchUses};
+    const auto checkout=[&](const WVVariableEvaluationKey& key,
+        std::size_t elements,std::vector<double>& storage) {
+      WVKernelStatus status=WVKernelStatus::ok();
+      if(service.eventWorkspace_)
+        status=service.eventWorkspace_->checkoutScratch(key,elements,storage);
+      else try {storage.resize(elements);}
+      catch(const std::bad_alloc&) {
+        status={WVKernelStatusCode::allocationFailure,
+            "Unable to allocate standalone diagnostic scratch storage."};
+      }
+      if(status) scratchUses.push_back({key,&storage});
+      return status;
+    };
     std::size_t primitiveCount=0;
     const auto account=[&](std::size_t viewBytes) {
       std::size_t bytes=viewBytes+activeForcing.capacity()*sizeof(std::uint8_t);
+      std::size_t additional=bytes;
       for(const auto& selection:activeDependencies) bytes+=selection.capacity()*sizeof(std::uint8_t);
+      for(const auto& selection:activeDependencies)
+        additional+=selection.capacity()*sizeof(std::uint8_t);
       for(const auto& group:fields) {
         bytes+=group.capacity()*sizeof(std::vector<double>);
+        additional+=group.capacity()*sizeof(std::vector<double>);
         for(const auto& buffer:group) bytes+=buffer.capacity()*sizeof(double);
       }
       for(const auto& buffer:masked) bytes+=buffer.capacity()*sizeof(WVComplex64);
       bytes+=phases.capacity()*sizeof(WVComplex64);
       bytes+=(forcingPhysical.capacity()+densityDerivatives.capacity())*sizeof(double);
-      bytes+=forcingFields.capacity()*sizeof(std::vector<double>)+forcingViews.capacity()*sizeof(WVForcingTendencyOutput);
+      bytes+=forcingFields.capacity()*sizeof(std::vector<double>)+
+          forcingViews.capacity()*sizeof(WVForcingTendencyOutput);
+      additional+=forcingFields.capacity()*sizeof(std::vector<double>)+
+          forcingViews.capacity()*sizeof(WVForcingTendencyOutput);
       for(const auto& buffer:forcingFields) bytes+=buffer.capacity()*sizeof(double);
+      if(!service.eventWorkspace_) {
+        for(const auto& group:fields)
+          for(const auto& buffer:group)
+            additional+=buffer.capacity()*sizeof(double);
+        for(const auto& buffer:masked)
+          additional+=buffer.capacity()*sizeof(WVComplex64);
+        additional+=phases.capacity()*sizeof(WVComplex64)+
+            (forcingPhysical.capacity()+densityDerivatives.capacity())*
+                sizeof(double);
+        for(const auto& buffer:forcingFields)
+          additional+=buffer.capacity()*sizeof(double);
+      } else additional+=service.eventWorkspace_->externalWorkspaceBytes();
       metrics.diagnosticWorkspaceLiveBytes=outerWorkspaceBytes+bytes;
       metrics.diagnosticWorkspaceHighWaterBytes=std::max(
           metrics.diagnosticWorkspaceHighWaterBytes,
           metrics.diagnosticWorkspaceLiveBytes+
               metrics.densityWorkspaceLiveBytes);
+      metrics.additionalTransientHighWaterBytes=std::max(
+          metrics.additionalTransientHighWaterBytes,additional);
     };
     for(std::size_t group=0;group<groups_.size();++group) {
       const auto& plan=groups_[group].fields;
@@ -515,7 +724,11 @@ WVKernelStatus WVDiagnosticFieldPlan::evaluate(WVFieldEvaluationService& service
       fields[group].resize(plan.outputCount());
       for(std::size_t output=0;output<plan.outputCount();++output) {
         if(!activeDependencies[group][output]) continue;
-        auto& buffer=fields[group][output]; buffer.resize(plan.outputs()[output].elementCount);
+        auto& buffer=fields[group][output];
+        const auto scratchStatus=checkout(scratchKey(
+            scratchSignature_,group,output,16),
+            plan.outputs()[output].elementCount,buffer);
+        if(!scratchStatus) return scratchStatus;
         views[output]={buffer.data(),buffer.size()};
         ++primitiveCount;
       }
@@ -524,38 +737,74 @@ WVKernelStatus WVDiagnosticFieldPlan::evaluate(WVFieldEvaluationService& service
       std::array<WVCoefficientFamilyConstView,3> selectedFamilies{};
       if(group) {
         for(std::size_t family=0;family<3;++family) {
-          masked[family].resize(n);
-          for(std::size_t index=0;index<n;++index)
-            masked[family][index]=keep(group,family,index) ? coefficients[family][index] : WVComplex64{};
+          if(service.eventWorkspace_) {
+            const WVComplex64* prepared=nullptr;
+            const auto componentStatus=service.eventWorkspace_->componentCoefficients(
+                static_cast<std::uint32_t>(group),static_cast<std::uint32_t>(family),n,
+                [&](WVComplex64* destination) {
+                  for(std::size_t index=0;index<n;++index)
+                    destination[index]=keep(group,family,index) ? coefficients[family][index] : WVComplex64{};
+                },prepared);
+            if(!componentStatus) return componentStatus;
+            masked[family].clear();
+            selected.waveVortex.coefficients.Ap = family==0 ? WVComplexConstView{prepared,spectral_} : selected.waveVortex.coefficients.Ap;
+            selected.waveVortex.coefficients.Am = family==1 ? WVComplexConstView{prepared,spectral_} : selected.waveVortex.coefficients.Am;
+            selected.waveVortex.coefficients.A0 = family==2 ? WVComplexConstView{prepared,spectral_} : selected.waveVortex.coefficients.A0;
+          } else {
+            masked[family].resize(n);
+            for(std::size_t index=0;index<n;++index)
+              masked[family][index]=keep(group,family,index) ? coefficients[family][index] : WVComplex64{};
+          }
         }
-        selected.waveVortex={amplitudes.t,amplitudes.t0,{{masked[0].data(),spectral_},{masked[1].data(),spectral_},{masked[2].data(),spectral_}}};
+        if(!service.eventWorkspace_)
+          selected.waveVortex={amplitudes.t,amplitudes.t0,{{masked[0].data(),spectral_},{masked[1].data(),spectral_},{masked[2].data(),spectral_}}};
         if(input.coefficientFamilyCount) {
-          for(std::size_t family=0;family<3;++family) selectedFamilies[family]={input.coefficientFamilies[family].layout,masked[family].data()};
+          for(std::size_t family=0;family<3;++family) selectedFamilies[family]={
+              input.coefficientFamilies[family].layout,
+              service.eventWorkspace_ ? (family==0 ? selected.waveVortex.coefficients.Ap.data :
+                  family==1 ? selected.waveVortex.coefficients.Am.data : selected.waveVortex.coefficients.A0.data) :
+                  masked[family].data()};
           selected.coefficientFamilies=selectedFamilies.data();
         }
       }
+      if(service.eventWorkspace_ && service.stateEvaluationActive_ && group) {
+        const auto registrationStatus=service.addStateEvaluationView(
+            selected,static_cast<std::size_t>(group));
+        if(!registrationStatus) return registrationStatus;
+      }
+      if(service.eventWorkspace_)
+        service.eventWorkspace_->setComponent(static_cast<std::uint32_t>(group),&selected);
       account(views.capacity()*sizeof(WVFieldOutputView));
-      const auto status=service.evaluate(plan,selected,views.data(),views.size(),activeDependencies[group].data()); if(!status) return status;
+      const auto status=service.evaluate(plan,selected,views.data(),views.size(),activeDependencies[group].data());
+      if(service.eventWorkspace_) {
+        service.eventWorkspace_->setComponent(0);
+        if(group) for(std::size_t family=0;family<3;++family)
+          service.eventWorkspace_->releaseComponentCoefficients(
+              static_cast<std::uint32_t>(group),static_cast<std::uint32_t>(family));
+      }
+      if(!status) return status;
     }
     if(densityDemands) {
       auto* workspace=service.eventWorkspace_;
-      if(!workspace->hasDensitySource()) {
-        const WVDensityEventGeometry geometry{&densityHeights_,&densityWeights_,&densityInitial_,Lz_,densityGravity_,densityReference_};
-        bool preserveSource=false;
-        for(std::size_t index=0;index<count;++index) {
-          const auto& output=outputs_[index];
-          preserveSource|=active(index) && !output.density && !output.forcing && !output.specification.isComplex &&
-              output.group==0 && output.dependency==densityDependency_;
-        }
-        const auto status=workspace->bindDensity(fields[0][densityDependency_],spatial_,geometry,densityContract_,preserveSource);
-        if(!status) return status;
+      const WVDensityEventGeometry geometry{&densityHeights_,&densityWeights_,&densityInitial_,Lz_,densityGravity_,densityReference_};
+      bool preserveSource=false;
+      for(std::size_t index=0;index<count;++index) {
+        const auto& output=outputs_[index];
+        preserveSource|=active(index) && !output.density && !output.forcing && !output.specification.isComplex &&
+            output.group==0 && output.dependency==densityDependency_;
       }
-      auto status=workspace->prepareDensity(densityDemands);
+      const auto densityStatus=workspace->bindDensity(fields[0][densityDependency_],spatial_,geometry,densityContract_,preserveSource);
+      if(!densityStatus) return densityStatus;
+      auto status=workspace->prepareDensity(densityDemands,densityContract_);
       if(!status) return status;
       if(needsAPV) {
         const auto R=spatial_.elementCount();
-        status=workspace->prepareAPV(R,[&](WVDensityEventView eta,double* apv) {
-          densityDerivatives.resize(3*R); account(0);
+        status=workspace->prepareAPV(R,densityContract_.reference,[&](WVDensityEventView eta,double* apv) {
+          const auto scratchStatus=checkout(scratchKey(
+              scratchSignature_,0,0,19),3*R,
+              densityDerivatives);
+          if(!scratchStatus) return scratchStatus;
+          account(0);
           WVRealVolumeConstView displacement{eta.data,spatial_};
           if(constant_) {
             WVRealFieldBundleView derivatives{densityDerivatives.data(),{spatial_.first,spatial_.second,spatial_.third,3}};
@@ -589,34 +838,107 @@ WVKernelStatus WVDiagnosticFieldPlan::evaluate(WVFieldEvaluationService& service
     if(std::any_of(activeForcing.begin(),activeForcing.end(),[](auto value){return value!=0;})) {
       const std::size_t channels=isQG_ ? 1 : isHydrostatic_ ? 3 : 4;
       forcingFields.resize(forcingIndices_.size());
-      for(std::size_t slot=0;slot<forcingIndices_.size();++slot) {
-        if(!activeForcing[slot]) continue;
-        auto& buffer=forcingFields[slot]; buffer.resize(channels*spatial_.elementCount());
-        forcingViews.push_back({forcingIndices_[slot],{buffer.data(),{spatial_.first,spatial_.second,spatial_.third,channels}}});
-      }
       WVRealFieldBundleConstView prepared;
       if(physicalChannels) {
         const auto R=spatial_.elementCount();
-        forcingPhysical.resize(physicalChannels*R);
+        const auto scratchStatus=checkout(scratchKey(
+            scratchSignature_,0,0,18),
+            physicalChannels*R,forcingPhysical);
+        if(!scratchStatus) return scratchStatus;
         for(std::size_t channel=0;channel<physicalChannels;++channel)
           std::copy_n(fields[0][forcingPhysicalDependencies_[channel]].data(),R,forcingPhysical.data()+channel*R);
         prepared={forcingPhysical.data(),{spatial_.first,spatial_.second,spatial_.third,physicalChannels}};
       }
       account(0);
-      const auto status=service.forcing_->evaluate(amplitudes,forcingViews.data(),forcingViews.size(),physicalChannels ? &prepared : nullptr);
+      std::vector<WVVariableEvaluationKey> forcingKeys;
+      std::vector<WVFieldOutputView> forcingCacheViews;
+      forcingKeys.reserve(forcingIndices_.size());
+      forcingCacheViews.reserve(forcingIndices_.size());
+      forcingViews.reserve(forcingIndices_.size());
+      for(std::size_t slot=0;slot<forcingIndices_.size();++slot) {
+        if(!activeForcing[slot]) continue;
+        auto& buffer=forcingFields[slot];
+        const auto scratchStatus=checkout(scratchKey(
+            scratchSignature_,0,slot,17),
+            channels*spatial_.elementCount(),buffer);
+        if(!scratchStatus) return scratchStatus;
+        const WVVariableEvaluationKey key{WVVariableEvaluationNode::forcingTendency,
+            static_cast<std::uint32_t>(isQG_ ?
+                WVPortableVariable::Fqgpv_portable_catalog_forcing :
+                WVPortableVariable::Fu_portable_catalog_forcing),0,0,0,
+            static_cast<std::uint32_t>(forcingIndices_[slot]),1};
+        if(service.eventWorkspace_ && service.eventWorkspace_->ready(key)) {
+          bool reused=false;
+          const auto copied=service.eventWorkspace_->evaluate(
+              key,buffer.data(),buffer.size(),[]() {
+                return WVKernelStatus{WVKernelStatusCode::invalidConfiguration,
+                    "A ready forcing tendency unexpectedly requested production."};
+              },reused);
+          if(!copied) return copied;
+          continue;
+        }
+        forcingKeys.push_back(key);
+        forcingCacheViews.push_back({buffer.data(),buffer.size()});
+        forcingViews.push_back({forcingIndices_[slot],{buffer.data(),
+            {spatial_.first,spatial_.second,spatial_.third,channels}}});
+      }
+      const auto operation=[&]() {
+        WVForcingDiagnosticWorkspace* forcingWorkspace=nullptr;
+        if(service.eventWorkspace_) {
+          const auto workspaceStatus=service.eventWorkspace_->forcingWorkspace(
+              *service.forcing_,forcingWorkspace);
+          if(!workspaceStatus) return workspaceStatus;
+        }
+        return service.forcing_->evaluate(amplitudes,forcingViews.data(),forcingViews.size(),
+            physicalChannels ? &prepared : nullptr,forcingWorkspace);
+      };
+      account(forcingKeys.capacity()*sizeof(WVVariableEvaluationKey)+
+          forcingCacheViews.capacity()*sizeof(WVFieldOutputView));
+      bool forcingReused=false;
+      const auto status=forcingKeys.empty() ? WVKernelStatus::ok() :
+          service.eventWorkspace_ ? service.eventWorkspace_->evaluateGroup(
+              forcingKeys,forcingCacheViews,operation,forcingReused) : operation();
       metrics.diagnosticWorkspaceHighWaterBytes=std::max(metrics.diagnosticWorkspaceHighWaterBytes,
           metrics.diagnosticWorkspaceLiveBytes+service.forcing_->metrics().workspaceLastPeakBytes);
       if(!status) return status;
     }
     bool needsPhase=false;
     for(std::size_t index=0;index<count;++index) if(active(index))
-      needsPhase|=outputs_[index].variable==Variable::Apt || outputs_[index].variable==Variable::Amt ||
-          outputs_[index].variable==Variable::phase || outputs_[index].variable==Variable::conjPhase;
+      visitPortableExecution(outputs_[index].execution,[&](Variable node,bool) {
+        needsPhase|=node==Variable::Apt || node==Variable::Amt ||
+            node==Variable::phase || node==Variable::conjPhase;
+      });
+    const std::vector<WVComplex64>* phaseValues=nullptr;
+    const WVComplex64* phaseData=nullptr;
+    const WVVariableEvaluationKey phaseKey{WVVariableEvaluationNode::phaseFactors};
     if(needsPhase) {
-      phases.resize(n);
-      for(std::size_t index=0;index<n;++index) {
-        const double angle=omega(index)*(amplitudes.t-amplitudes.t0);
-        phases[index]={std::cos(angle),std::sin(angle)};
+      const auto preparePhases=[&](WVComplex64* destination) {
+        WVComplexConstView prepared;
+        WVKernelStatus status;
+        if(constant_) status=service.transform_->preparedPhase(amplitudes,prepared);
+        else if(hydrostatic_)
+          status=service.stratified_->hydrostaticKernel_->preparedPhase(
+              amplitudes,prepared);
+        else if(boussinesq_)
+          status=service.stratified_->boussinesqKernel_->preparedPhase(
+              amplitudes,prepared);
+        else return WVKernelStatus{WVKernelStatusCode::unsupportedOperation,
+            "This diagnostic transform has no phase factors."};
+        if(!status) return status;
+        std::copy_n(prepared.data,n,destination);
+        return WVKernelStatus::ok();
+      };
+      if(service.eventWorkspace_) {
+        const auto phaseStatus=service.eventWorkspace_->complexView(
+            phaseKey,n,preparePhases,phaseValues);
+        if(!phaseStatus) return phaseStatus;
+        phaseData=phaseValues->data();
+      } else {
+        phases.resize(n);
+        const auto phaseStatus=preparePhases(phases.data());
+        if(!phaseStatus) return phaseStatus;
+        phaseValues=&phases;
+        phaseData=phases.data();
       }
     }
     account(0);
@@ -628,7 +950,8 @@ WVKernelStatus WVDiagnosticFieldPlan::evaluate(WVFieldEvaluationService& service
         if(output.density) {
           const auto field=output.variable==Variable::rho_nm ? WVDensityEventField::rhoNm :
               output.variable==Variable::eta_true ? WVDensityEventField::etaTrue : WVDensityEventField::ape;
-          const auto values=output.variable==Variable::apv ? service.eventWorkspace_->apvView() : service.eventWorkspace_->densityView(field);
+          const auto values=output.variable==Variable::apv ? service.eventWorkspace_->apvView(densityContract_.reference) :
+              service.eventWorkspace_->densityView(field,densityContract_.reference);
           source=values.data;
         } else if(output.forcing) {
           source=forcingFields[output.forcingSlot].data()+
@@ -644,63 +967,112 @@ WVKernelStatus WVDiagnosticFieldPlan::evaluate(WVFieldEvaluationService& service
       } else if(output.density) {
         const auto field=output.variable==Variable::rho_nm ? WVDensityEventField::rhoNm :
             output.variable==Variable::eta_true ? WVDensityEventField::etaTrue : WVDensityEventField::ape;
-        const auto values=output.variable==Variable::apv ? service.eventWorkspace_->apvView() : service.eventWorkspace_->densityView(field);
+        const auto values=output.variable==Variable::apv ? service.eventWorkspace_->apvView(densityContract_.reference) :
+            service.eventWorkspace_->densityView(field,densityContract_.reference);
         std::copy_n(values.data,values.elementCount,outputs[index].data);
       } else if(output.forcing) {
         const auto R=spatial_.elementCount();
         std::copy_n(forcingFields[output.forcingSlot].data()+output.forcingChannel*R,R,outputs[index].data);
-      } else if(output.variable==Variable::phase || output.variable==Variable::conjPhase) {
-        // Reuse the same event-time phase as Apt/Amt; phase output does not
-        // depend on coefficient amplitudes or allocate another workspace.
-        for(std::size_t coefficient=0;coefficient<n;++coefficient) {
-          auto phase=phases[coefficient];
-          if(output.variable==Variable::conjPhase) phase.imag=-phase.imag;
-          outputs[index].complexData[coefficient]=phase;
-        }
       } else if(output.specification.isComplex) {
-        const auto family=output.variable==Variable::Apt ? 0 : output.variable==Variable::Amt ? 1 : 2;
-        for(std::size_t coefficient=0;coefficient<n;++coefficient) {
-          const auto a=coefficients[family][coefficient];
-          if(family==2) outputs[index].complexData[coefficient]=a;
-          else {
-            auto phase=phases[coefficient]; if(family==1) phase.imag=-phase.imag;
-            outputs[index].complexData[coefficient]={a.real*phase.real-a.imag*phase.imag,a.real*phase.imag+a.imag*phase.real};
-          }
+        const auto produce=[&](WVComplex64* destination) {
+          if(output.variable==Variable::phase || output.variable==Variable::conjPhase) {
+            for(std::size_t coefficient=0;coefficient<n;++coefficient) {
+              auto phase=phaseData[coefficient];
+              if(output.variable==Variable::conjPhase) phase.imag=-phase.imag;
+              destination[coefficient]=phase;
+            }
+          } else {
+            const auto family=output.variable==Variable::Apt ? 0 : output.variable==Variable::Amt ? 1 : 2;
+            for(std::size_t coefficient=0;coefficient<n;++coefficient) {
+              const auto a=coefficients[family][coefficient];
+              if(family==2) destination[coefficient]=a;
+              else {
+                auto phase=phaseData[coefficient]; if(family==1) phase.imag=-phase.imag;
+                destination[coefficient]={a.real*phase.real-a.imag*phase.imag,a.real*phase.imag+a.imag*phase.real};
+              }
+            }
+            }
+          return WVKernelStatus::ok();
+        };
+        if(service.eventWorkspace_) {
+          const auto finalNode=output.execution.count ?
+              output.execution.order[output.execution.count-1] : output.variable;
+          const WVVariableEvaluationKey key{WVVariableEvaluationNode::registeredVariable,
+              static_cast<std::uint32_t>(finalNode),static_cast<std::uint32_t>(output.group)};
+          const std::vector<WVComplex64>* values=nullptr;
+          const auto status=service.eventWorkspace_->complexView(key,n,produce,values);
+          if(!status) return status;
+          std::copy(values->begin(),values->end(),outputs[index].complexData);
+          service.eventWorkspace_->releaseComplex(key);
+        } else {
+          const auto status=produce(outputs[index].complexData);
+          if(!status) return status;
         }
       } else if(output.variable==Variable::totalEnergySpatiallyIntegrated) {
-        const auto& u=fields[0][output.auxiliaries[0]];
-        const auto& v=fields[0][output.auxiliaries[1]];
-        const auto& eta=fields[0][output.auxiliaries[2]];
-        const auto horizontal=spatial_.first*spatial_.second;
-        double integral=0;
-        for(std::size_t z=0;z<spatial_.third;++z) {
-          double horizontalSum=0;
-          for(std::size_t point=0;point<horizontal;++point) {
-            const auto i=point+horizontal*z;
-            double value=u[i]*u[i]+v[i]*v[i]+stratification(z)*eta[i]*eta[i];
-            if(!isHydrostatic_) { const double w=fields[0][output.auxiliaries[3]][i]; value+=w*w; }
-            horizontalSum+=value;
+        const auto produce=[&]() {
+          const auto& u=fields[0][output.auxiliaries[0]];
+          const auto& v=fields[0][output.auxiliaries[1]];
+          const auto& eta=fields[0][output.auxiliaries[2]];
+          const auto horizontal=spatial_.first*spatial_.second;
+          double integral=0;
+          for(std::size_t z=0;z<spatial_.third;++z) {
+            double horizontalSum=0;
+            for(std::size_t point=0;point<horizontal;++point) {
+              const auto i=point+horizontal*z;
+              double value=u[i]*u[i]+v[i]*v[i]+stratification(z)*eta[i]*eta[i];
+              if(!isHydrostatic_) { const double w=fields[0][output.auxiliaries[3]][i]; value+=w*w; }
+              horizontalSum+=value;
+            }
+            integral+=weight(z)*horizontalSum/static_cast<double>(horizontal);
           }
-          integral+=weight(z)*horizontalSum/static_cast<double>(horizontal);
-        }
-        outputs[index].data[0]=integral/2;
+          outputs[index].data[0]=integral/2;
+          ++producerMetrics.energyReductions;
+          return WVKernelStatus::ok();
+        };
+        bool reused=false;
+        const WVVariableEvaluationKey key{WVVariableEvaluationNode::reduction,
+            static_cast<std::uint32_t>(output.variable)};
+        const auto status=service.eventWorkspace_ ? service.eventWorkspace_->evaluate(
+            key,outputs[index].data,1,produce,reused) : produce();
+        if(!status) return status;
       } else if(output.verticalMean) {
-        const auto& source=fields[0][output.dependency];
-        const auto plane=spatial_.first*spatial_.second;
-        for(std::size_t z=0;z<spatial_.third;++z) {
-          double sum=0;
-          for(std::size_t i=0;i<plane;++i) sum+=source[z*plane+i];
-          outputs[index].data[z]=sum/static_cast<double>(plane);
-        }
+        const auto produce=[&]() {
+          const auto& source=fields[0][output.dependency];
+          const auto plane=spatial_.first*spatial_.second;
+          for(std::size_t z=0;z<spatial_.third;++z) {
+            double sum=0;
+            for(std::size_t i=0;i<plane;++i) sum+=source[z*plane+i];
+            outputs[index].data[z]=sum/static_cast<double>(plane);
+          }
+          return WVKernelStatus::ok();
+        };
+        bool reused=false;
+        const WVVariableEvaluationKey key{WVVariableEvaluationNode::reduction,
+            static_cast<std::uint32_t>(output.variable)};
+        const auto status=service.eventWorkspace_ ? service.eventWorkspace_->evaluate(
+            key,outputs[index].data,outputs[index].elementCount,produce,reused) : produce();
+        if(!status) return status;
       } else if(output.extrema) {
-        const auto& first=fields[0][output.auxiliaries[0]];
-        double maximum=0;
-        for(std::size_t point=0;point<first.size();++point) {
-          const double value=output.variable==Variable::uvMax ?
-              (constant_ || isBarotropic_ ? std::sqrt(first[point]*first[point]+fields[0][output.auxiliaries[1]][point]*fields[0][output.auxiliaries[1]][point]) : std::hypot(first[point],fields[0][output.auxiliaries[1]][point])) : std::abs(first[point]);
-          maximum=std::max(maximum,value);
-        }
-        outputs[index].data[0]=maximum;
+        const auto produce=[&]() {
+          const auto& first=fields[0][output.auxiliaries[0]];
+          double maximum=0;
+          for(std::size_t point=0;point<first.size();++point) {
+            const double value=output.variable==Variable::uvMax ?
+                (constant_ || isBarotropic_ ? std::sqrt(first[point]*first[point]+fields[0][output.auxiliaries[1]][point]*fields[0][output.auxiliaries[1]][point]) : std::hypot(first[point],fields[0][output.auxiliaries[1]][point])) : std::abs(first[point]);
+            maximum=std::max(maximum,value);
+          }
+          outputs[index].data[0]=maximum;
+          if(output.variable==Variable::uvMax) {
+            ++producerMetrics.horizontalSpeedReductions;
+          } else ++producerMetrics.verticalSpeedReductions;
+          return WVKernelStatus::ok();
+        };
+        bool reused=false;
+        const WVVariableEvaluationKey key{WVVariableEvaluationNode::reduction,
+            static_cast<std::uint32_t>(output.variable)};
+        const auto status=service.eventWorkspace_ ? service.eventWorkspace_->evaluate(
+            key,outputs[index].data,1,produce,reused) : produce();
+        if(!status) return status;
       } else {
         const auto& source=fields[output.group][output.dependency];
         const auto offset=output.surface ? (spatial_.third-1)*spatial_.first*spatial_.second : 0;
@@ -721,7 +1093,15 @@ WVKernelStatus WVDiagnosticFieldPlan::evaluate(WVFieldEvaluationService& service
       else ++primitiveReferences;
     }
     metrics.diagnosticIntermediateReuseCount+=primitiveReferences-primitiveCount+(phaseReferences ? phaseReferences-1 : 0);
+    if(needsPhase && service.eventWorkspace_)
+      service.eventWorkspace_->releaseComplex(phaseKey);
+    if(densityDemands && service.eventWorkspace_)
+      service.eventWorkspace_->finishDensityUse(densityContract_);
     metrics.diagnosticWorkspaceLiveBytes=outerWorkspaceBytes;
+    // Nested primitive plans write into event scratch.  Public write accounting
+    // describes caller-owned outputs, independent of how many cached
+    // dependencies were materialized to produce them.
+    metrics.outputElementWriteCount=outputWritesBefore+activeOutputElements;
     return WVKernelStatus::ok();
   } catch(const std::bad_alloc&) {
     return {WVKernelStatusCode::allocationFailure,"Unable to allocate event-scoped diagnostic scratch."};

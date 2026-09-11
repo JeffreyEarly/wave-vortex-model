@@ -99,12 +99,27 @@ void contracts(const std::shared_ptr<const WVStratifiedModalRecord>& source) {
         kernel->metrics().reconstructionCount[static_cast<std::size_t>(WVStratifiedQGField::eta)]
             [static_cast<std::size_t>(WVStratifiedQGDerivative::value)]==1 &&
         kernel->metrics().reconstructionCount[static_cast<std::size_t>(WVStratifiedQGField::rhoTotal)]
-            [static_cast<std::size_t>(WVStratifiedQGDerivative::z)]==0,
+            [static_cast<std::size_t>(WVStratifiedQGDerivative::z)]==1 &&
+        kernel->metrics().componentReconstructionCount[static_cast<std::size_t>(WVStratifiedQGField::rhoTotal)]
+            [static_cast<std::size_t>(WVStratifiedQGDerivative::z)][0]==1,
         "Prepared QG density derivative repeated a producer");
-    require(kernel->combinePreparedDensityZDerivative(WVStratifiedQGField::rhoTotal,
+    require(bool(kernel->combinePreparedDensityZDerivative(WVStratifiedQGField::rhoTotal,
         {compoundEtaZ.data(),kernel->spatialShape()},{compoundEta.data(),kernel->spatialShape()},
-        {compoundEta.data(),kernel->spatialShape()}).code==WVKernelStatusCode::overlappingArrays,
-        "Prepared QG density output alias was accepted");
+        {compoundEtaZ.data(),kernel->spatialShape()},2)),
+        "Exact prepared QG density alias was rejected");
+    for(std::size_t i=0;i<R;++i)
+        require(std::abs(compoundEtaZ[i]-compoundReference[i])<=1e-12*
+            std::max(1.0,std::abs(compoundReference[i])),
+            "Exact prepared QG density alias changed values");
+    require(kernel->metrics().componentReconstructionCount[static_cast<std::size_t>(WVStratifiedQGField::rhoTotal)]
+            [static_cast<std::size_t>(WVStratifiedQGDerivative::z)][2]==1,
+        "Prepared QG density component attribution failed");
+    std::vector<double> partialCompound(R+1);
+    std::copy_n(compoundReference.data(),R,partialCompound.data());
+    require(kernel->combinePreparedDensityZDerivative(WVStratifiedQGField::rhoTotal,
+        {partialCompound.data(),kernel->spatialShape()},{compoundEta.data(),kernel->spatialShape()},
+        {partialCompound.data()+1,kernel->spatialShape()}).code==WVKernelStatusCode::overlappingArrays,
+        "Partial prepared QG density alias was accepted");
     require(!kernel->combinePreparedDensityZDerivative(WVStratifiedQGField::u,
         {compoundEtaZ.data(),kernel->spatialShape()},{compoundEta.data(),kernel->spatialShape()},
         {compoundResult.data(),kernel->spatialShape()}),"Invalid prepared QG density target was accepted");

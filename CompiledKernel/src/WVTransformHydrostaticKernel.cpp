@@ -479,33 +479,52 @@ WVKernelStatus WVTransformHydrostaticKernel::transformCoefficientTendencyToUVEta
 }
 WVKernelStatus WVTransformHydrostaticKernel::combinePreparedHorizontalVorticity(
     WVHydrostaticField field,WVRealVolumeConstView first,WVRealVolumeConstView second,
-    WVRealVolumeView output) const {
-    if (field!=WVHydrostaticField::zetaX && field!=WVHydrostaticField::zetaY)
+    WVRealVolumeView output,WVHydrostaticComponent component) {
+    if ((field!=WVHydrostaticField::zetaX && field!=WVHydrostaticField::zetaY) ||
+        !valid(component))
         return unsupported();
     auto status=volume(first); if (!status) return status;
     status=volume(second); if (!status) return status;
     status=volume({output.data,output.shape}); if (!status) return status;
-    status=disjoint(first.data,R_*sizeof(double),output.data,R_*sizeof(double)); if (!status) return status;
-    status=disjoint(second.data,R_*sizeof(double),output.data,R_*sizeof(double)); if (!status) return status;
+    if(first.data!=output.data) {
+        status=disjoint(first.data,R_*sizeof(double),output.data,R_*sizeof(double)); if (!status) return status;
+    }
+    if(second.data!=output.data) {
+        status=disjoint(second.data,R_*sizeof(double),output.data,R_*sizeof(double)); if (!status) return status;
+    }
     for (std::size_t i=0;i<R_;++i) output.data[i]=first.data[i]-second.data[i];
+    ++metrics_.fieldReconstructionCount[static_cast<std::size_t>(field)];
+    ++metrics_.reconstructionCount[static_cast<std::size_t>(field)]
+        [static_cast<std::size_t>(WVHydrostaticDerivative::value)]
+        [static_cast<std::size_t>(component)];
     return WVKernelStatus::ok();
 }
 WVKernelStatus WVTransformHydrostaticKernel::combinePreparedDensityZDerivative(
     WVHydrostaticField field,WVRealVolumeConstView etaZ,WVRealVolumeConstView eta,
-    WVRealVolumeView output) const {
-    if (field!=WVHydrostaticField::rhoE && field!=WVHydrostaticField::rhoTotal)
+    WVRealVolumeView output,WVHydrostaticComponent component) {
+    if ((field!=WVHydrostaticField::rhoE && field!=WVHydrostaticField::rhoTotal) ||
+        !valid(component) ||
+        (field==WVHydrostaticField::rhoTotal && component!=WVHydrostaticComponent::all))
         return unsupported();
     auto status=volume(etaZ); if (!status) return status;
     status=volume(eta); if (!status) return status;
     status=volume({output.data,output.shape}); if (!status) return status;
-    status=disjoint(etaZ.data,R_*sizeof(double),output.data,R_*sizeof(double)); if (!status) return status;
-    status=disjoint(eta.data,R_*sizeof(double),output.data,R_*sizeof(double)); if (!status) return status;
+    if(etaZ.data!=output.data) {
+        status=disjoint(etaZ.data,R_*sizeof(double),output.data,R_*sizeof(double)); if (!status) return status;
+    }
+    if(eta.data!=output.data) {
+        status=disjoint(eta.data,R_*sizeof(double),output.data,R_*sizeof(double)); if (!status) return status;
+    }
     const auto& g=geometry(); const auto plane=R_/g.Nz;
     for (std::size_t z=0;z<g.Nz;++z) for (std::size_t xy=0;xy<plane;++xy) {
         const auto i=xy+plane*z; const double scale=(g.rho0/g.g)*g.N2[z];
         output.data[i]=scale*(etaZ.data[i]+g.dLnN2[z]*eta.data[i]);
         if (field==WVHydrostaticField::rhoTotal) output.data[i]-=scale;
     }
+    ++metrics_.fieldReconstructionCount[static_cast<std::size_t>(field)];
+    ++metrics_.reconstructionCount[static_cast<std::size_t>(field)]
+        [static_cast<std::size_t>(WVHydrostaticDerivative::z)]
+        [static_cast<std::size_t>(component)];
     return WVKernelStatus::ok();
 }
 WVKernelStatus WVTransformHydrostaticKernel::evolveCoefficients(const WVState& a,WVMutableCoefficients b) {
@@ -604,8 +623,8 @@ WVKernelStatus WVTransformHydrostaticKernel::nonlinearFlux(const WVState& a,WVFl
         for (std::size_t targetIndex=0;targetIndex<3;++targetIndex) {
             const auto field=fields[targetIndex==2 ? 3 : targetIndex];
             std::fill_n(flux,R_,0);
-            // These direct modal first derivatives are single-use nonlinear
-            // operands. Grid Laplacians intentionally use sequential horizontal
+            // These direct modal first derivatives use separate dependency keys
+            // from grid Laplacians, which preserve sequential horizontal
             // calculus or the order-two vertical operator from retained values.
             for (std::size_t axis=0;axis<3;++axis) {
                 const double* derivativeValues=nullptr;

@@ -148,8 +148,24 @@ void contracts(const std::shared_ptr<const WVStratifiedModalRecord>& source) {
         kernel->metrics().reconstructionCount[static_cast<std::size_t>(WVHydrostaticField::v)]
             [static_cast<std::size_t>(WVHydrostaticDerivative::z)]
             [static_cast<std::size_t>(WVHydrostaticComponent::all)]==1 &&
-        kernel->metrics().fieldReconstructionCount[static_cast<std::size_t>(WVHydrostaticField::zetaX)]==0,
+        kernel->metrics().reconstructionCount[static_cast<std::size_t>(WVHydrostaticField::zetaX)]
+            [static_cast<std::size_t>(WVHydrostaticDerivative::value)]
+            [static_cast<std::size_t>(WVHydrostaticComponent::all)]==1,
         "Prepared horizontal vorticity changed values or repeated a producer");
+    require(bool(kernel->combinePreparedHorizontalVorticity(WVHydrostaticField::zetaX,
+        {compoundFirst.data(),volume},{compoundSecond.data(),volume},
+        {compoundFirst.data(),volume},WVHydrostaticComponent::geostrophic)) &&
+        compoundFirst==compoundReference &&
+        kernel->metrics().reconstructionCount[static_cast<std::size_t>(WVHydrostaticField::zetaX)]
+            [static_cast<std::size_t>(WVHydrostaticDerivative::value)]
+            [static_cast<std::size_t>(WVHydrostaticComponent::geostrophic)]==1,
+        "Exact prepared vorticity alias or component attribution failed");
+    std::vector<double> partialCompound(R+1);
+    std::copy_n(compoundReference.data(),R,partialCompound.data());
+    require(kernel->combinePreparedHorizontalVorticity(WVHydrostaticField::zetaX,
+        {partialCompound.data(),volume},{compoundSecond.data(),volume},
+        {partialCompound.data()+1,volume}).code==WVKernelStatusCode::overlappingArrays,
+        "Partial prepared vorticity alias was accepted");
     require(bool(kernel->transformStateField(state,WVHydrostaticField::rhoTotal,
         {compoundReference.data(),volume},WVHydrostaticDerivative::z)),"Reference density derivative failed");
     kernel->resetMetrics();
@@ -170,12 +186,23 @@ void contracts(const std::shared_ptr<const WVStratifiedModalRecord>& source) {
         kernel->metrics().reconstructionCount[static_cast<std::size_t>(WVHydrostaticField::eta)]
             [static_cast<std::size_t>(WVHydrostaticDerivative::value)]
             [static_cast<std::size_t>(WVHydrostaticComponent::all)]==1 &&
-        kernel->metrics().fieldReconstructionCount[static_cast<std::size_t>(WVHydrostaticField::rhoTotal)]==0,
+        kernel->metrics().reconstructionCount[static_cast<std::size_t>(WVHydrostaticField::rhoTotal)]
+            [static_cast<std::size_t>(WVHydrostaticDerivative::z)]
+            [static_cast<std::size_t>(WVHydrostaticComponent::all)]==1,
         "Prepared density derivative repeated a producer");
-    require(kernel->combinePreparedHorizontalVorticity(WVHydrostaticField::zetaX,
+    require(bool(kernel->combinePreparedDensityZDerivative(WVHydrostaticField::rhoTotal,
         {compoundFirst.data(),volume},{compoundSecond.data(),volume},
-        {compoundFirst.data(),volume}).code==WVKernelStatusCode::overlappingArrays,
-        "Prepared compound output alias was accepted");
+        {compoundFirst.data(),volume})),
+        "Exact prepared density alias was rejected");
+    for(std::size_t i=0;i<R;++i)
+        require(std::abs(compoundFirst[i]-compoundReference[i])<=1e-12*
+            std::max(1.0,std::abs(compoundReference[i])),
+            "Exact prepared density alias changed values");
+    std::copy_n(compoundReference.data(),R,partialCompound.data());
+    require(kernel->combinePreparedDensityZDerivative(WVHydrostaticField::rhoTotal,
+        {partialCompound.data(),volume},{compoundSecond.data(),volume},
+        {partialCompound.data()+1,volume}).code==WVKernelStatusCode::overlappingArrays,
+        "Partial prepared density alias was accepted");
     require(!kernel->combinePreparedDensityZDerivative(WVHydrostaticField::u,
         {compoundFirst.data(),volume},{compoundSecond.data(),volume},
         {compoundResult.data(),volume}),"Invalid prepared density target was accepted");

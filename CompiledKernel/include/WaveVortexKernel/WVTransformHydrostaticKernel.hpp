@@ -91,14 +91,17 @@ public:
     WVKernelStatus transformCoefficientTendencyToUVEta(
         const WVState& tendency, WVRealFieldBundleView& fields);
     // Combine exact prepared derivative operands without another reconstruction.
-    // zetaX expects (w_y,v_z); zetaY expects (u_z,w_x).
+    // zetaX expects (w_y,v_z); zetaY expects (u_z,w_x). Either input may be
+    // the exact output view; partial overlap remains invalid.
     WVKernelStatus combinePreparedHorizontalVorticity(WVHydrostaticField,
         WVRealVolumeConstView firstDerivative, WVRealVolumeConstView secondDerivative,
-        WVRealVolumeView output) const;
+        WVRealVolumeView output,
+        WVHydrostaticComponent = WVHydrostaticComponent::all);
     // Convert exact prepared eta_z and eta operands to rho_e,z or rho_total,z.
     WVKernelStatus combinePreparedDensityZDerivative(WVHydrostaticField,
         WVRealVolumeConstView etaZ, WVRealVolumeConstView eta,
-        WVRealVolumeView output) const;
+        WVRealVolumeView output,
+        WVHydrostaticComponent = WVHydrostaticComponent::all);
     // Linear phase evolution gives current-time coefficients; stored amplitudes
     // are stationary under the f-plane linear dynamics. Exact in-place allowed.
     WVKernelStatus evolveCoefficients(const WVState&, WVMutableCoefficients);

@@ -27,6 +27,13 @@ public:
   const WVIntegrationSystem &integrationSystem() const noexcept override {
     return *system_;
   }
+  WVKernelStatus setVariableEvaluationPolicy(WVVariableEvaluationPolicy policy) override {
+    if(auto* fields=system_->fieldEvaluationService(); fields && fields->evaluationSessionActive())
+      return invalid("Cannot change variable evaluation policy during an output session.");
+    auto status=system_->setVariableEvaluationPolicy(policy);
+    if(status) if(auto* fields=system_->fieldEvaluationService()) status=fields->setVariableEvaluationPolicy(policy);
+    return status;
+  }
   void setLinearDynamics(bool linear) noexcept override {
     system_->setLinearDynamics(linear);
   }
@@ -44,6 +51,23 @@ public:
     return system_->initializeParticleState(state);
   }
   void populateMetrics(WVModelMetrics &metrics) const noexcept override {
+    metrics.variableEvaluation=system_->variableEvaluationMetrics();
+    if (const auto* fields=system_->fieldEvaluationService()) {
+      const auto outputProducers=fields->producerMetrics();
+      metrics.variableProducers.horizontalSpeedReductions=outputProducers.horizontalSpeedReductions;
+      metrics.variableProducers.verticalSpeedReductions=outputProducers.verticalSpeedReductions;
+      metrics.variableProducers.energyReductions=outputProducers.energyReductions;
+      metrics.variableProducers.reconstructions=outputProducers.reconstructions;
+    }
+    metrics.variableProducers.horizontalSpeedReductions += system_->forcingMetrics().horizontalSpeedReductionCount;
+    metrics.variableProducers.verticalSpeedReductions += system_->forcingMetrics().verticalSpeedReductionCount;
+    const auto& producers=system_->kernelMetrics();
+    metrics.variableProducers.stateValidations=producers.stateValidationCount;
+    metrics.variableProducers.phasePreparations=producers.phasePreparationCount;
+    metrics.variableProducers.derivedValidations=producers.derivedValidationCount;
+    metrics.variableProducers.tendencyReconstructions=producers.tendencyReconstructionCount;
+    if(!system_->fieldEvaluationService())
+      metrics.variableProducers.reconstructions=producers.reconstructionCount;
     metrics.kernel = system_->kernelMetrics();
     metrics.forcing = system_->forcingMetrics();
     metrics.integratedObservers = system_->metrics();
@@ -69,6 +93,13 @@ public:
   const WVIntegrationSystem &integrationSystem() const noexcept override {
     return *system_;
   }
+  WVKernelStatus setVariableEvaluationPolicy(WVVariableEvaluationPolicy policy) override {
+    if(auto* fields=system_->fieldEvaluationService(); fields && fields->evaluationSessionActive())
+      return invalid("Cannot change variable evaluation policy during an output session.");
+    auto status=system_->setVariableEvaluationPolicy(policy);
+    if(status) if(auto* fields=system_->fieldEvaluationService()) status=fields->setVariableEvaluationPolicy(policy);
+    return status;
+  }
   void setLinearDynamics(bool linear) noexcept override {
     system_->setLinearDynamics(linear);
   }
@@ -86,6 +117,24 @@ public:
     return system_->initializeParticleState(state);
   }
   void populateMetrics(WVModelMetrics &metrics) const noexcept override {
+    metrics.variableEvaluation=system_->variableEvaluationMetrics();
+    if (const auto* fields=system_->fieldEvaluationService()) {
+      const auto outputProducers=fields->producerMetrics();
+      metrics.variableProducers.horizontalSpeedReductions=outputProducers.horizontalSpeedReductions;
+      metrics.variableProducers.verticalSpeedReductions=outputProducers.verticalSpeedReductions;
+      metrics.variableProducers.energyReductions=outputProducers.energyReductions;
+      metrics.variableProducers.reconstructions=outputProducers.reconstructions;
+    }
+    const auto& producers=system_->kernel().metrics();
+    if (!system_->fieldEvaluationService())
+      metrics.variableProducers.horizontalSpeedReductions=producers.horizontalSpeedMaximumReductionCount;
+    metrics.variableProducers.stateValidations=producers.stateValidationCount;
+    if(!system_->fieldEvaluationService()) {
+      for(std::size_t field=0;field<producers.componentReconstructionCount.size();++field)
+        for(std::size_t derivative=0;derivative<producers.componentReconstructionCount[field].size();++derivative)
+          metrics.variableProducers.reconstructions[field][derivative]=
+              producers.componentReconstructionCount[field][derivative];
+    }
     metrics.barotropicQGKernel = system_->kernel().metrics();
     metrics.barotropicQGForcing = system_->forcingMetrics();
     metrics.integratedObservers = system_->metrics();
@@ -141,6 +190,13 @@ public:
   const WVIntegrationSystem &integrationSystem() const noexcept override {
     return *system_;
   }
+  WVKernelStatus setVariableEvaluationPolicy(WVVariableEvaluationPolicy policy) override {
+    if(auto* fields=system_->fieldEvaluationService(); fields && fields->evaluationSessionActive())
+      return invalid("Cannot change variable evaluation policy during an output session.");
+    auto status=system_->setVariableEvaluationPolicy(policy);
+    if(status) if(auto* fields=system_->fieldEvaluationService()) status=fields->setVariableEvaluationPolicy(policy);
+    return status;
+  }
   void setLinearDynamics(bool linear) noexcept override {
     system_->setLinearDynamics(linear);
   }
@@ -158,6 +214,25 @@ public:
     return system_->initializeParticleState(state);
   }
   void populateMetrics(WVModelMetrics &metrics) const noexcept override {
+    metrics.variableEvaluation=system_->variableEvaluationMetrics();
+    if (const auto* fields=system_->fieldEvaluationService()) {
+      const auto outputProducers=fields->producerMetrics();
+      metrics.variableProducers.horizontalSpeedReductions=outputProducers.horizontalSpeedReductions;
+      metrics.variableProducers.verticalSpeedReductions=outputProducers.verticalSpeedReductions;
+      metrics.variableProducers.energyReductions=outputProducers.energyReductions;
+      metrics.variableProducers.reconstructions=outputProducers.reconstructions;
+    }
+    const auto& producers=system_->kernel().metrics();
+    if (!system_->fieldEvaluationService())
+      metrics.variableProducers.horizontalSpeedReductions=producers.horizontalSpeedMaximumReductionCount;
+    metrics.variableProducers.horizontalSpeedReductions += system_->forcingMetrics().horizontalSpeedMaximumReductionCount;
+    metrics.variableProducers.stateValidations=producers.stateValidationCount;
+    if(!system_->fieldEvaluationService()) {
+      for(std::size_t field=0;field<producers.componentReconstructionCount.size();++field)
+        for(std::size_t derivative=0;derivative<producers.componentReconstructionCount[field].size();++derivative)
+          metrics.variableProducers.reconstructions[field][derivative]=
+              producers.componentReconstructionCount[field][derivative];
+    }
     metrics.integratedObservers = system_->metrics();
     const auto& storage = system_->kernel().storage();
     metrics.kernel.descriptorBytes = storage.sharedScientificBytes + storage.factorBytes;
@@ -169,6 +244,7 @@ public:
     metrics.kernel.scratchHighWaterBytes = metrics.kernel.scratchCapacityBytes;
     metrics.kernel.realScratchCapacityBytes = storage.realScratchBytes;
     const auto &forcing = system_->forcingMetrics();
+    metrics.forcing.horizontalSpeedReductionCount = forcing.horizontalSpeedMaximumReductionCount;
     metrics.forcing.scheduleBytes = forcing.scheduleBytes;
     metrics.forcing.derivedOperatorBytes = forcing.derivedOperatorBytes;
     metrics.forcing.workspaceCapacityBytes = forcing.workspaceCapacityBytes;
@@ -203,6 +279,13 @@ public:
   const WVIntegrationSystem &integrationSystem() const noexcept override {
     return *system_;
   }
+  WVKernelStatus setVariableEvaluationPolicy(WVVariableEvaluationPolicy policy) override {
+    if(auto* fields=system_->fieldEvaluationService(); fields && fields->evaluationSessionActive())
+      return invalid("Cannot change variable evaluation policy during an output session.");
+    auto status=system_->setVariableEvaluationPolicy(policy);
+    if(status) if(auto* fields=system_->fieldEvaluationService()) status=fields->setVariableEvaluationPolicy(policy);
+    return status;
+  }
   void setLinearDynamics(bool linear) noexcept override {
     system_->setLinearDynamics(linear);
   }
@@ -220,6 +303,23 @@ public:
     return system_->initializeParticleState(state);
   }
   void populateMetrics(WVModelMetrics &metrics) const noexcept override {
+    metrics.variableEvaluation=system_->variableEvaluationMetrics();
+    if (const auto* fields=system_->fieldEvaluationService()) {
+      const auto outputProducers=fields->producerMetrics();
+      metrics.variableProducers.horizontalSpeedReductions=outputProducers.horizontalSpeedReductions;
+      metrics.variableProducers.verticalSpeedReductions=outputProducers.verticalSpeedReductions;
+      metrics.variableProducers.energyReductions=outputProducers.energyReductions;
+      metrics.variableProducers.reconstructions=outputProducers.reconstructions;
+    }
+    metrics.variableProducers.horizontalSpeedReductions += system_->forcingMetrics().horizontalSpeedReductionCount;
+    metrics.variableProducers.verticalSpeedReductions += system_->forcingMetrics().verticalSpeedReductionCount;
+    const auto& producers=system_->kernel().metrics();
+    metrics.variableProducers.stateValidations=producers.stateValidationCount;
+    metrics.variableProducers.phasePreparations=producers.phasePreparationCount;
+    metrics.variableProducers.derivedValidations=producers.derivedValidationCount;
+    metrics.variableProducers.tendencyReconstructions=producers.tendencyReconstructionCount;
+    if(!system_->fieldEvaluationService())
+      metrics.variableProducers.reconstructions=producers.reconstructionCount;
     metrics.integratedObservers = system_->metrics();
     const auto& storage = system_->kernel().storage();
     metrics.kernel.descriptorBytes = storage.sharedScientificBytes + storage.factorBytes;
@@ -231,6 +331,11 @@ public:
     metrics.kernel.scratchHighWaterBytes = metrics.kernel.scratchCapacityBytes;
     metrics.kernel.realScratchCapacityBytes = storage.realScratchBytes;
     const auto &forcing = system_->forcingMetrics();
+    metrics.forcing.nonlinearProducerCount = forcing.nonlinearProducerCount;
+    metrics.forcing.horizontalSpeedReductionCount = forcing.horizontalSpeedReductionCount;
+    metrics.forcing.verticalSpeedReductionCount = forcing.verticalSpeedReductionCount;
+    metrics.forcing.gridCalculusProducerCount = forcing.gridCalculusProducerCount;
+    metrics.forcing.constantLaplacianProducerCount = forcing.constantLaplacianProducerCount;
     metrics.forcing.scheduleBytes = forcing.scheduleBytes;
     metrics.forcing.derivedOperatorBytes = forcing.derivedOperatorBytes;
     metrics.forcing.workspaceCapacityBytes = forcing.workspaceCapacityBytes;
@@ -265,6 +370,13 @@ public:
   const WVIntegrationSystem &integrationSystem() const noexcept override {
     return *system_;
   }
+  WVKernelStatus setVariableEvaluationPolicy(WVVariableEvaluationPolicy policy) override {
+    if(auto* fields=system_->fieldEvaluationService(); fields && fields->evaluationSessionActive())
+      return invalid("Cannot change variable evaluation policy during an output session.");
+    auto status=system_->setVariableEvaluationPolicy(policy);
+    if(status) if(auto* fields=system_->fieldEvaluationService()) status=fields->setVariableEvaluationPolicy(policy);
+    return status;
+  }
   void setLinearDynamics(bool linear) noexcept override {
     system_->setLinearDynamics(linear);
   }
@@ -282,6 +394,23 @@ public:
     return system_->initializeParticleState(state);
   }
   void populateMetrics(WVModelMetrics &metrics) const noexcept override {
+    metrics.variableEvaluation=system_->variableEvaluationMetrics();
+    if (const auto* fields=system_->fieldEvaluationService()) {
+      const auto outputProducers=fields->producerMetrics();
+      metrics.variableProducers.horizontalSpeedReductions=outputProducers.horizontalSpeedReductions;
+      metrics.variableProducers.verticalSpeedReductions=outputProducers.verticalSpeedReductions;
+      metrics.variableProducers.energyReductions=outputProducers.energyReductions;
+      metrics.variableProducers.reconstructions=outputProducers.reconstructions;
+    }
+    metrics.variableProducers.horizontalSpeedReductions += system_->forcingMetrics().horizontalSpeedReductionCount;
+    metrics.variableProducers.verticalSpeedReductions += system_->forcingMetrics().verticalSpeedReductionCount;
+    const auto& producers=system_->kernel().metrics();
+    metrics.variableProducers.stateValidations=producers.stateValidationCount;
+    metrics.variableProducers.phasePreparations=producers.phasePreparationCount;
+    metrics.variableProducers.derivedValidations=producers.derivedValidationCount;
+    metrics.variableProducers.tendencyReconstructions=producers.tendencyReconstructionCount;
+    if(!system_->fieldEvaluationService())
+      metrics.variableProducers.reconstructions=producers.reconstructionCount;
     metrics.integratedObservers = system_->metrics();
     const auto& storage = system_->kernel().storage();
     metrics.kernel.descriptorBytes = storage.sharedScientificBytes + storage.factorBytes;
@@ -293,6 +422,11 @@ public:
     metrics.kernel.scratchHighWaterBytes = metrics.kernel.scratchCapacityBytes;
     metrics.kernel.realScratchCapacityBytes = storage.realScratchBytes;
     const auto &forcing = system_->forcingMetrics();
+    metrics.forcing.nonlinearProducerCount = forcing.nonlinearProducerCount;
+    metrics.forcing.horizontalSpeedReductionCount = forcing.horizontalSpeedReductionCount;
+    metrics.forcing.verticalSpeedReductionCount = forcing.verticalSpeedReductionCount;
+    metrics.forcing.gridCalculusProducerCount = forcing.gridCalculusProducerCount;
+    metrics.forcing.constantLaplacianProducerCount = forcing.constantLaplacianProducerCount;
     metrics.forcing.scheduleBytes = forcing.scheduleBytes;
     metrics.forcing.derivedOperatorBytes = forcing.derivedOperatorBytes;
     metrics.forcing.workspaceCapacityBytes = forcing.workspaceCapacityBytes;

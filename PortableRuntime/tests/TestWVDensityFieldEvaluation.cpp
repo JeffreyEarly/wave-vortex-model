@@ -127,7 +127,10 @@ void verifyConfiguration(bool hydrostatic,bool antialias) {
   require(inactive.untouched() && service->metrics().densityWorkspaceHighWaterBytes==0 &&
       service->metrics().densityRecoveryCount==0,"inactive density allocated or evaluated");
   Outputs rest(combined);
-  require(bool(service->evaluate(combined,state,rest.views.data(),rest.views.size())),"direct rest evaluation failed");
+  const auto restStatus=service->evaluate(
+      combined,state,rest.views.data(),rest.views.size());
+  if(!restStatus) throw std::runtime_error(
+      "direct rest evaluation failed: "+restStatus.message);
   const auto& z=descriptor.verticalModes().z;
   const double scale=c.rho0*c.N0*c.N0/c.g;
   for(std::size_t k=0;k<c.Nz;++k) close(rest.values[0][k],c.rho0-scale*z[k],1e-12,"rest profile mismatch");
@@ -142,7 +145,8 @@ void verifyConfiguration(bool hydrostatic,bool antialias) {
   require(changed.values[0]!=rest.values[0],"same-pointer mutation reused the previous profile");
   for(std::size_t field=1;field<3;++field) for(double x:changed.values[field]) close(x,0,1e-9,"stable current-profile diagnostic nonzero");
   Outputs approximation(initial);
-  require(bool(service->evaluate(initial,state,approximation.views.data(),approximation.views.size())),"mixed initial-reference evaluation failed");
+  const auto initialStatus=service->evaluate(initial,state,approximation.views.data(),approximation.views.size());
+  if(!initialStatus) throw std::runtime_error("mixed initial-reference evaluation failed: "+initialStatus.message);
   require(approximation.values[1]==changed.values[0],"initial reference changed meaning of rho_nm");
   bool nonzero=false;
   for(std::size_t k=0;k<c.Nz;++k) {
@@ -385,15 +389,19 @@ void verifyConfiguration(bool hydrostatic,bool antialias) {
   require(bool(service->prepareEventGeometry(conflictingPlan,&eventPositions,1,conflictingGeometry)),
       "conflicting density event geometry failed");
   Outputs stagedFirst(fixedSamples),stagedSecond(fixedSamples);
+  Outputs expectedActual(fixedSamples);
+  require(bool(service->evaluateEvent(conflictingPlan,conflictingGeometry,state,
+      expectedActual.views.data(),expectedActual.views.size())),
+      "actual-reference sampled density event failed");
   WVEventFieldEvaluationBatchEntry conflictingEntries[]{
       {&eventPlan,&eventGeometry,stagedFirst.views.data(),stagedFirst.views.size()},
       {&conflictingPlan,&conflictingGeometry,stagedSecond.views.data(),stagedSecond.views.size()}};
-  require(!service->evaluateEventBatch(state,conflictingEntries,2) &&
-      stagedFirst.untouched() && stagedSecond.untouched(),
-      "failing sampled event sibling published staged output");
-  require(service->metrics().eventFieldWorkspaceLiveBytes==0 &&
-      service->metrics().eventFieldWorkspaceHighWaterBytes==eventPeak,
-      "failed sampled event replay retained or grew workspace");
+  require(bool(service->evaluateEventBatch(state,conflictingEntries,2)) &&
+      stagedFirst.values==fixedSampleValues.values &&
+      stagedSecond.values==expectedActual.values,
+      "one output event did not preserve distinct density references");
+  require(service->metrics().eventFieldWorkspaceLiveBytes==0,
+      "mixed-reference sampled event retained workspace");
 
   WVFieldEvaluationPlan total;
   require(bool(service->createPlan({{"rho","rho_total",{}}},total)),"total density plan failed");
@@ -442,6 +450,34 @@ void verifyConfiguration(bool hydrostatic,bool antialias) {
     require(service->metrics().densityWorkspaceHighWaterBytes<=peak+R*sizeof(double),"APV replay retained unbounded event storage");
   }
   require(service->metrics().densityWorkspaceLiveBytes==0,"APV event retained storage");
+  require(bool(service->setVariableEvaluationPolicy(
+      WVVariableEvaluationPolicy::lowMemory)),
+      "density low-memory policy rejected");
+  const auto lowBefore=service->metrics();
+  {
+    WVFieldEvaluationSession session;
+    require(bool(service->beginEvaluationSession(state,session)),
+        "density low-memory session rejected");
+    Outputs first(apvOnly),second(apvOnly);
+    require(bool(service->evaluate(apvOnly,state,first.views.data(),
+        first.views.size())) &&
+        bool(service->evaluate(apvOnly,state,second.views.data(),
+        second.views.size())),"density low-memory replay failed");
+    require(first.values==second.values,
+        "density low-memory replay changed APV values");
+    require(service->metrics().densityInversePassCount==
+        lowBefore.densityInversePassCount+2 &&
+        service->metrics().densityAPVPassCount==
+        lowBefore.densityAPVPassCount+2,
+        "density low-memory replay reused an evicted inverse or APV");
+  }
+  require(service->metrics().densityWorkspaceLiveBytes==0 &&
+      service->metrics().variableEvaluation.recomputations>
+          lowBefore.variableEvaluation.recomputations,
+      "density low-memory replay retained derived state or missed recomputation");
+  require(bool(service->setVariableEvaluationPolicy(
+      WVVariableEvaluationPolicy::reuse)),
+      "density reuse policy restoration failed");
   Ap[horizontal*c.Nj+1]={};Am[horizontal*c.Nj+1]={};
 
   const auto before=service->metrics();
@@ -458,8 +494,11 @@ void verifyConfiguration(bool hydrostatic,bool antialias) {
         service->metrics().densityProfileConstructionCount==before.densityProfileConstructionCount+1 &&
         service->metrics().densityInversePassCount==before.densityInversePassCount+1 &&
         service->metrics().densityAPEPassCount==before.densityAPEPassCount+1,"coincident event repeated an expensive density stage");
-    Outputs wrongReference(initialOnly);
-    require(!service->evaluate(initialOnly,state,wrongReference.views.data(),wrongReference.views.size()) && wrongReference.untouched(),"active event accepted a changed reference");
+    Outputs otherReference(initialOnly);
+    require(bool(service->evaluate(initialOnly,state,otherReference.views.data(),otherReference.views.size())) &&
+        otherReference.values[0]==approximationOnly.values[0] &&
+        otherReference.values[1]==approximationOnly.values[1],
+        "active event did not preserve the initial density reference");
     auto dense=state; dense.waveVortex.t+=.25;
     Outputs wrongTime(combined);
     require(!service->evaluate(combined,dense,wrongTime.views.data(),wrongTime.views.size()) && wrongTime.untouched(),"active event accepted a different dense state");

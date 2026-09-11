@@ -336,13 +336,96 @@ void testNumericalForcingMatrix() {
                     metrics.physicalFieldReconstructionCount == 1 &&
                     metrics.physicalFieldReuseCount == 4 &&
                     metrics.spatialTendencyProjectionCount == 4 &&
-                    metrics.workspaceCapacityBytes == 0,
+                    metrics.workspaceCapacityBytes ==
+                        composed->kernel().descriptor().Nkl() *
+                            sizeof(WVComplex64),
                 "RHS-scoped field reuse/projection metrics mismatch");
+        const auto &cacheKernelMetrics = composed->kernel().metrics();
+        require(cacheKernelMetrics.stateValidationCount == 1 &&
+                    cacheKernelMetrics.reconstructionCount[
+                        static_cast<std::size_t>(WVBarotropicQGField::u)][0] == 1 &&
+                    cacheKernelMetrics.reconstructionCount[
+                        static_cast<std::size_t>(WVBarotropicQGField::v)][0] == 1 &&
+                    cacheKernelMetrics.reconstructionCount[
+                        static_cast<std::size_t>(WVBarotropicQGField::qgpv)][1] == 1 &&
+                    cacheKernelMetrics.reconstructionCount[
+                        static_cast<std::size_t>(WVBarotropicQGField::qgpv)][2] == 1,
+                "Barotropic QG repeated validation or shared field producers");
+        require(composed->variableEvaluationMetrics().contexts == 1,
+                "Barotropic QG RHS did not own one variable evaluation");
         require(composed->scheduleIdentifier() ==
                     "wave-vortex-forcing-v1:WVNonlinearAdvection,"
                     "WVBottomFrictionQuadratic,WVBottomFrictionLinear,"
                     "WVBetaPlanePVAdvection,WVAdaptiveDamping",
                 "stage/priority/original-ordinal order mismatch");
+        auto secondNonlinear = nonlinear();
+        secondNonlinear.name = "second nonlinear advection";
+        secondNonlinear.ordinal = 10;
+        auto repeated = createEngine(
+            value, schedule({nonlinear(), secondNonlinear}));
+        const auto repeatedActual = evaluate(*repeated, A0);
+        const auto repeatedExpected = add(nonlinearActual, nonlinearActual);
+        require(maximumRelativeError(repeatedActual, repeatedExpected) == 0.0 &&
+                    repeated->kernel().metrics().reconstructionCount[
+                        static_cast<std::size_t>(WVBarotropicQGField::qgpv)][1] == 1 &&
+                    repeated->kernel().metrics().reconstructionCount[
+                        static_cast<std::size_t>(WVBarotropicQGField::qgpv)][2] == 1 &&
+                    repeated->variableEvaluationMetrics().producerExecutions == 1 &&
+                    repeated->variableEvaluationMetrics().cacheHits == 1,
+                "Repeated Barotropic QG nonlinear forcing missed its cached tendency");
+        auto repeatedLow = createEngine(
+            value, schedule({nonlinear(), secondNonlinear}));
+        require(bool(repeatedLow->setVariableEvaluationPolicy(
+                    WVVariableEvaluationPolicy::lowMemory)),
+                "Barotropic QG low-memory setup failed");
+        const auto repeatedLowActual = evaluate(*repeatedLow, A0);
+        require(maximumRelativeError(repeatedLowActual, repeatedExpected) == 0.0 &&
+                    repeatedLow->variableEvaluationMetrics().producerExecutions == 2 &&
+                    repeatedLow->variableEvaluationMetrics().recomputations == 1 &&
+                    repeatedLow->variableEvaluationMetrics().evictions == 2 &&
+                    repeatedLow->metrics().workspaceCapacityBytes == 0,
+                "Barotropic QG low-memory nonlinear recomputation was not explicit");
+        auto secondDamping = damping();
+        secondDamping.name = "second adaptive damping";
+        secondDamping.ordinal = 10;
+        auto repeatedDamping = createEngine(
+            value, schedule({damping(), secondDamping}));
+        const auto repeatedDampingActual = evaluate(*repeatedDamping, A0);
+        const auto repeatedDampingExpected = add(dampingActual, dampingActual);
+        require(maximumRelativeError(
+                    repeatedDampingActual, repeatedDampingExpected) == 0.0 &&
+                    repeatedDamping->kernel().metrics().reconstructionCount[
+                        static_cast<std::size_t>(WVBarotropicQGField::u)][0] == 1 &&
+                    repeatedDamping->kernel().metrics().reconstructionCount[
+                        static_cast<std::size_t>(WVBarotropicQGField::v)][0] == 1 &&
+                    repeatedDamping->variableEvaluationMetrics()
+                            .producerExecutions == 1 &&
+                    repeatedDamping->variableEvaluationMetrics().cacheHits == 1,
+                "Repeated Barotropic QG damping missed its cached speed reduction");
+        std::vector<WVComplex64> activeState=A0;
+        const WVComplexConstView activeInput{
+            activeState.data(), input.shape};
+        WVComplexView mutableActive{activeState.data(), input.shape};
+        std::vector<WVComplex64> foreignState=A0;
+        const WVComplexConstView foreignInput{
+            foreignState.data(), input.shape};
+        std::vector<WVComplex64> rejectedOutput(A0.size());
+        WVComplexView rejectedOutputView{
+            rejectedOutput.data(), input.shape};
+        require(bool(repeatedLow->beginStateEvaluation(activeInput)),
+                "Barotropic QG state evaluation begin failed");
+        require(repeatedLow->setVariableEvaluationPolicy(
+                    WVVariableEvaluationPolicy::reuse).code ==
+                    WVKernelStatusCode::reentrantExecution &&
+                    repeatedLow->restoreForcingAmplitudes(mutableActive)
+                            .status.code ==
+                        WVKernelStatusCode::reentrantExecution &&
+                    repeatedLow->evaluateRightHandSide(
+                        foreignInput, rejectedOutputView).code ==
+                        WVKernelStatusCode::invalidConfiguration,
+                "Barotropic QG active-state ownership or mutation guard failed");
+        require(bool(repeatedLow->endStateEvaluation()),
+                "Barotropic QG state evaluation end failed");
         const auto &kernelMetrics = composed->kernel().metrics();
         const auto halfRows =
             composed->kernel().descriptor().halfSpectrumMappings().NxHalf *
@@ -581,29 +664,65 @@ void testGenericIntegratorsConstraintsAndRestart() {
 
   {
     auto system = createSystem(forcingSchedule);
+    require(bool(system->setVariableEvaluationPolicy(
+                WVVariableEvaluationPolicy::reuse)),
+            "RK4 evaluation policy setup failed");
     StateStorage state(system->stateLayout());
+    StateStorage dense(system->stateLayout());
     initializeState(state, system->kernel().descriptor());
-    WVFixedStepRK4 integrator(*system, {false});
-    require(static_cast<bool>(integrator.prepareStateAfterRestart(state.state)),
-            "RK4 restart preparation failed");
+    WVFixedStepRK4 integrator(*system, {true});
+    require(static_cast<bool>(integrator.prepareStateAfterRestart(state.state)) &&
+                system->variableEvaluationMetrics().liveBytes==0,
+            "RK4 restart preparation retained an evaluation");
+    const auto validationsBefore=system->kernel().metrics().stateValidationCount;
+    const auto contextsBefore=system->variableEvaluationMetrics().contexts;
     require(static_cast<bool>(integrator.step(state.state, 1e-3)),
             "RK4 QG forcing step failed");
+    const auto validationsAfter=system->kernel().metrics().stateValidationCount;
+    const auto contextsAfter=system->variableEvaluationMetrics().contexts;
+    require(validationsAfter>validationsBefore &&
+                validationsAfter-validationsBefore==contextsAfter-contextsBefore &&
+                system->variableEvaluationMetrics().liveBytes==0,
+            "RK4 QG validation and evaluation lifecycles diverged");
+    require(bool(integrator.evaluateDenseOutput(5e-4,dense.state)) &&
+                system->kernel().metrics().stateValidationCount-validationsAfter==
+                    system->variableEvaluationMetrics().contexts-contextsAfter &&
+                system->variableEvaluationMetrics().liveBytes==0,
+            "RK4 QG dense output retained or reopened an RHS evaluation");
     requireFixed(state, 1, fixedValue, "RK4 fixed amplitude not restored");
   }
   {
     auto system = createSystem(forcingSchedule);
+    require(bool(system->setVariableEvaluationPolicy(
+                WVVariableEvaluationPolicy::lowMemory)),
+            "RK23 evaluation policy setup failed");
     StateStorage state(system->stateLayout());
+    StateStorage dense(system->stateLayout());
     initializeState(state, system->kernel().descriptor());
     WVAdaptiveRK23Options options;
     options.relativeTolerance = 1e-8;
     options.absoluteToleranceScale = 1e-10;
     options.maximumStepSize = 1e-3;
-    options.retainDenseOutput = false;
+    options.retainDenseOutput = true;
     WVAdaptiveRK23 integrator(*system, options);
-    require(static_cast<bool>(integrator.prepareStateAfterRestart(state.state)),
-            "RK23 restart preparation failed");
+    require(static_cast<bool>(integrator.prepareStateAfterRestart(state.state)) &&
+                system->variableEvaluationMetrics().liveBytes==0,
+            "RK23 restart preparation retained an evaluation");
+    const auto validationsBefore=system->kernel().metrics().stateValidationCount;
+    const auto contextsBefore=system->variableEvaluationMetrics().contexts;
     require(static_cast<bool>(integrator.step(state.state, 1e-3)),
             "RK23 QG forcing step failed");
+    const auto validationsAfter=system->kernel().metrics().stateValidationCount;
+    const auto contextsAfter=system->variableEvaluationMetrics().contexts;
+    require(validationsAfter>validationsBefore &&
+                validationsAfter-validationsBefore==contextsAfter-contextsBefore &&
+                system->variableEvaluationMetrics().liveBytes==0,
+            "RK23 QG validation and evaluation lifecycles diverged");
+    require(bool(integrator.evaluateDenseOutput(5e-4,dense.state)) &&
+                system->kernel().metrics().stateValidationCount-validationsAfter==
+                    system->variableEvaluationMetrics().contexts-contextsAfter &&
+                system->variableEvaluationMetrics().liveBytes==0,
+            "RK23 QG dense output retained or reopened an RHS evaluation");
     requireFixed(state, 1, fixedValue, "RK23 fixed amplitude not restored");
   }
   {
@@ -621,14 +740,21 @@ void testGenericIntegratorsConstraintsAndRestart() {
     options.absoluteToleranceScale = 1e-14;
     options.retainDenseOutput = false;
     WVAdaptiveRK23 integrator(*system, options);
-    require(static_cast<bool>(integrator.prepareStateAfterRestart(state.state)),
-            "rejection-path RK23 restart preparation failed");
+    require(static_cast<bool>(integrator.prepareStateAfterRestart(state.state)) &&
+                system->variableEvaluationMetrics().liveBytes==0,
+            "rejection-path RK23 restart preparation retained an evaluation");
+    const auto validationsBefore=system->kernel().metrics().stateValidationCount;
+    const auto contextsBefore=system->variableEvaluationMetrics().contexts;
     require(static_cast<bool>(integrator.step(state.state, 10.0)),
             "rejection-path RK23 QG forcing step failed");
     require(integrator.metrics().rejectedStepCount > 0,
             "real QG RK23 fixture did not exercise a rejected trial");
     requireFixed(state, 1, fixedValue,
                  "rejected RK23 trial changed fixed-amplitude state");
+    require(system->kernel().metrics().stateValidationCount-validationsBefore==
+                system->variableEvaluationMetrics().contexts-contextsBefore &&
+                system->variableEvaluationMetrics().liveBytes==0,
+            "Rejected RK23 trial leaked or reused an evaluation scope");
   }
   {
     auto system = createSystem(forcingSchedule);

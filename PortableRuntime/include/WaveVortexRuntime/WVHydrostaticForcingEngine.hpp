@@ -1,5 +1,6 @@
 #pragma once
 #include "WVForcingTendency.hpp"
+#include "WaveVortexRuntime/WVVariableEvaluation.hpp"
 #include "WVForcingEngine.hpp"
 #include "WaveVortexKernel/WVTransformHydrostaticKernel.hpp"
 #include "WaveVortexRuntime/WVVariableKernelServices.hpp"
@@ -16,11 +17,20 @@ public:
     // Optional u/v/w/eta fields must describe this exact state and time.
     // They are borrowed for this invocation and must not alias state or outputs.
     WVKernelStatus evaluateForcingTendencies(const WVState&,
-        const WVForcingTendencyOutput*,std::size_t, const WVRealFieldBundleConstView* preparedPhysical = nullptr);
+        const WVForcingTendencyOutput*,std::size_t,
+        const WVRealFieldBundleConstView* preparedPhysical = nullptr,
+        detail::WVForcingDiagnosticWorkspace* session = nullptr);
     const WVForcingTendencyMetrics& tendencyMetrics() const noexcept { return tendencyMetrics_; }
 
     static WVKernelStatus validateSchedule(const WVStratifiedModalGeometry&,const WVFrozenForcingSchedule&,WVShape2D,const WVExtensionCatalog&);
     static WVKernelStatus create(std::shared_ptr<const WVStratifiedModalSource>,const WVFrozenForcingSchedule&,std::shared_ptr<const WVExtensionCatalog>,std::unique_ptr<WVFFTEngine>,std::unique_ptr<WVHydrostaticForcingEngine>&,const WVVariableKernelServices& services = {});
+    // Borrowed coefficients must stay immutable until endStateEvaluation().
+    WVKernelStatus beginStateEvaluation(const WVState&);
+    void endStateEvaluation() noexcept;
+    bool stateEvaluationActive() const noexcept { return evaluation_.active(); }
+    WVKernelStatus validateStateEvaluation(const WVState&) const;
+    WVKernelStatus setVariableEvaluationPolicy(WVVariableEvaluationPolicy policy);
+    const WVVariableEvaluationMetrics& variableEvaluationMetrics() const noexcept { return evaluation_.metrics(); }
     WVKernelStatus nonlinearFlux(const WVState&,WVFlux&);
     WVKernelStatus physicalFields(const WVState&,WVRealFieldBundleConstView&);
     WVStateConstraintResult restoreForcingAmplitudes(WVMutableCoefficients&);
@@ -41,6 +51,8 @@ private:
     WVHydrostaticForcingEngine()=default;
     WVKernelStatus initialize(const WVFrozenForcingSchedule&);
     WVKernelStatus addNonlinearFlux(const WVState&,WVFlux&);
+    WVKernelStatus gridSecondDerivative(WVRealVolumeConstView,std::size_t field,
+        std::size_t kind,WVHydrostaticFamily,const double*& result);
     WVKernelStatus addProjectedSpatialTendency(const WVState&,WVRealFieldBundleConstView,WVFlux&);
     WVRealFieldBundleView clearedSpatialTendency();
     WVKernelStatus addLaplacianDamping(const WVState&,double,double,WVLaplacianDirection,WVFlux&);
@@ -51,11 +63,20 @@ private:
     std::shared_ptr<const WVExtensionCatalog> catalog_;
     std::vector<std::unique_ptr<WVForcing>> forcing_;
     std::vector<double> physical_,spatial_,derivative_;
-    std::vector<WVComplex64> temporary_;
+    std::vector<double> gridCalculus_;
+    std::array<std::size_t,16> gridCalculusUseCount_{};
+    std::array<int,16> gridCalculusSlots_{};
+    std::vector<WVComplex64> temporary_, nonlinearCache_;
     WVForcingPreparation preparation_;
     WVForcingEngineMetrics metrics_;
     std::string scheduleIdentifier_;
-    bool physicalValid_=false,executing_=false;
+    bool executing_=false;
+    WVVariableEvaluationPolicy evaluationPolicy_=WVVariableEvaluationPolicy::reuse;
+    WVVariableEvaluationContext evaluation_;
+    WVState evaluationState_{};
+    double horizontalMaximum_=0,verticalMaximum_=0;
+    WVKernelStatus ensurePhysicalField(const WVState&,std::size_t);
+    WVKernelStatus horizontalSpeedMaximum(const WVState&,double&);
     detail::WVForcingDiagnosticWorkspace* diagnosticWorkspace_=nullptr;
     WVForcingTendencyMetrics tendencyMetrics_;
     friend class WVForcingExecutionContext;

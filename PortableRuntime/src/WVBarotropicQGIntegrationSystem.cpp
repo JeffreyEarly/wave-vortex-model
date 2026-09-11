@@ -457,6 +457,13 @@ WVKernelStatus WVBarotropicQGIntegrationSystem::evaluateRightHandSide(
   const WVComplexConstView A0View{
       A0.data, {1, A0.layout->elementCount}};
   WVComplexView F0View{F0.data, {1, F0.layout->elementCount}};
+  status = forcingEngine_->beginStateEvaluation(A0View);
+  if (!status)
+    return status;
+  struct EvaluationGuard {
+    WVBarotropicQGForcingEngine &engine;
+    ~EvaluationGuard() { (void)engine.endStateEvaluation(); }
+  } evaluationGuard{*forcingEngine_};
   const bool needsAdvectionFields = !tracers_.empty() || !particles_.empty();
   WVRealFieldBundleConstView advectionFields;
   const auto forcingStarted = std::chrono::steady_clock::now();
@@ -547,7 +554,10 @@ WVBarotropicQGIntegrationSystem::enforceStateConstraints(
   auto result = forcingEngine_->restoreForcingAmplitudes(A0View);
   if (!result)
     return result;
-  const auto realityModified = kernel().enforceReality(A0View);
+  std::size_t realityModified = 0;
+  const auto realityStatus = kernel().constrainA0(A0View, realityModified);
+  if (!realityStatus)
+    return {realityStatus, result.modifiedCoefficientCount, false};
   result.modifiedCoefficientCount += realityModified;
   result.fsalCompatible = result.fsalCompatible && realityModified == 0;
   return result;
@@ -602,7 +612,8 @@ WVBarotropicQGIntegrationSystem::evaluateFixedTimeStepCandidates(
   const auto A0 = coefficientFamilyView(layout_, state, 0);
   WVComplexConstView A0View{A0.data, {1, A0.layout->elementCount}};
   WVFixedTimeStepCandidates result;
-  status = kernel().uvMax(A0View, result.maximumHorizontalSpeed);
+  status = forcingEngine_->horizontalSpeedMaximum(
+      A0View, result.maximumHorizontalSpeed);
   if (!status)
     return status;
   if (!std::isfinite(result.maximumHorizontalSpeed) ||

@@ -326,10 +326,18 @@ WVRunRequestStatus parseExecution(const json &value, bool isV1,
                               isV1 ? std::set<std::string>{"fftProvider", "threads"}
                                    : std::set<std::string>{},
                               isV1 ? std::set<std::string>{"fftProvider", "threads"}
-                                   : std::set<std::string>{"fftProvider", "threads", "densityDiagnostics"},
+                                   : std::set<std::string>{"fftProvider", "threads", "densityDiagnostics", "variableEvaluationPolicy"},
                               "execution");
   if (!status)
     return status;
+  if (value.contains("variableEvaluationPolicy")) {
+    std::string policy;
+    status=stringValue(value,"variableEvaluationPolicy","execution",policy);
+    if(!status) return status;
+    if(policy=="reuse") request.variableEvaluationPolicy=WVVariableEvaluationPolicy::reuse;
+    else if(policy=="low-memory") request.variableEvaluationPolicy=WVVariableEvaluationPolicy::lowMemory;
+    else return invalid("execution.variableEvaluationPolicy must be reuse or low-memory.");
+  }
   if (value.contains("densityDiagnostics")) {
     const auto &density = value.at("densityDiagnostics");
     const std::string location = "execution.densityDiagnostics";

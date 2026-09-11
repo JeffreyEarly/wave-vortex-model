@@ -10,6 +10,7 @@
 #include "WaveVortexRuntime/WVObserverContracts.hpp"
 #include "WaveVortexRuntime/generated/WVPortableVariableCatalog.hpp"
 #include "WaveVortexRuntime/WVPortableVariablePlan.hpp"
+#include "WaveVortexRuntime/WVVariableEvaluation.hpp"
 
 #include <array>
 #include <cstddef>
@@ -23,6 +24,7 @@ namespace wavevortex::runtime {
 struct WVIntegrationState;
 class WVIntegrationStateLayout;
 class WVFieldEvaluationService;
+class WVFieldEvaluationSession;
 class WVConstantStratificationForcingEngine;
 class WVBarotropicQGForcingEngine;
 class WVStratifiedQGForcingEngine;
@@ -36,6 +38,7 @@ class WVStratifiedFieldEvaluationAdapter;
 class WVDiagnosticFieldPlan;
 class WVForcingDiagnosticBinding;
 class WVFieldEvaluationEventWorkspace;
+class WVFieldEvaluationArena;
 class WVFieldEvaluationEventScope;
 class WVSampledMovingFieldPlan;
 }
@@ -370,6 +373,8 @@ struct WVFieldEvaluationMetrics {
   std::size_t eventFieldReuseCount = 0;
   std::size_t eventFieldWorkspaceLiveBytes = 0;
   std::size_t eventFieldWorkspaceHighWaterBytes = 0;
+  std::size_t eventFieldArenaPlannedBytes = 0;
+  std::size_t eventFieldArenaPeakBytes = 0;
   std::size_t eventBatchInvocationWorkspaceBytes = 0;
   std::size_t eventPositionSetCount = 0;
   std::size_t eventPositionCount = 0;
@@ -385,6 +390,9 @@ struct WVFieldEvaluationMetrics {
   std::size_t diagnosticIntermediateReuseCount = 0;
   std::size_t diagnosticWorkspaceLiveBytes = 0;
   std::size_t diagnosticWorkspaceHighWaterBytes = 0;
+  // Peak allocation beyond servicePersistentBytes. Prepared arena capacities
+  // checked out during an event are excluded from this additive value.
+  std::size_t additionalTransientHighWaterBytes = 0;
   std::size_t densityRecoveryCount = 0;
   std::size_t densityProfileConstructionCount = 0;
   std::size_t densityInversePassCount = 0;
@@ -395,6 +403,27 @@ struct WVFieldEvaluationMetrics {
   std::size_t densityWorkspaceLiveBytes = 0;
   std::size_t densityWorkspaceHighWaterBytes = 0;
   std::size_t catalogBytes = portableVariableCatalogBytes();
+  WVVariableEvaluationMetrics variableEvaluation;
+};
+
+// Explicit immutable-state lifetime for callers that issue several field
+// queries for one output event. The session is tied to one service and one
+// borrowed state; ending it invalidates all event-scoped result views.
+class WVFieldEvaluationSession final {
+public:
+  WVFieldEvaluationSession();
+  ~WVFieldEvaluationSession();
+  WVFieldEvaluationSession(const WVFieldEvaluationSession &) = delete;
+  WVFieldEvaluationSession &operator=(const WVFieldEvaluationSession &) = delete;
+  WVFieldEvaluationSession(WVFieldEvaluationSession &&) noexcept;
+  WVFieldEvaluationSession &operator=(WVFieldEvaluationSession &&) noexcept;
+  bool active() const noexcept;
+  const WVKernelStatus &status() const noexcept;
+
+private:
+  class Impl;
+  std::unique_ptr<Impl> impl_;
+  friend class WVFieldEvaluationService;
 };
 
 class WVFieldEvaluationService final {
@@ -437,6 +466,15 @@ public:
   WVFieldEvaluationService(WVFieldEvaluationService &&) = delete;
   WVFieldEvaluationService &operator=(WVFieldEvaluationService &&) = delete;
   ~WVFieldEvaluationService();
+
+  WVKernelStatus setVariableEvaluationPolicy(
+      WVVariableEvaluationPolicy policy);
+  WVVariableEvaluationPolicy variableEvaluationPolicy() const noexcept {
+    return variableEvaluationPolicy_;
+  }
+  bool evaluationSessionActive() const noexcept { return eventWorkspace_ != nullptr; }
+  WVKernelStatus beginEvaluationSession(const WVIntegrationState &state,
+                                        WVFieldEvaluationSession &session);
 
   static std::vector<std::string> supportedFieldNames();
   const std::vector<WVPortableForcingVariableBinding>& forcingVariableBindings() const noexcept;
@@ -520,6 +558,7 @@ public:
   bool isCompatibleWith(
       const WVFieldEvaluationService &other) const noexcept;
   const WVFieldEvaluationMetrics &metrics() const noexcept;
+  WVVariableProducerMetrics producerMetrics() const noexcept;
   std::size_t persistentBytes() const noexcept;
 
 private:
@@ -532,7 +571,27 @@ private:
   friend class detail::WVDiagnosticFieldPlan;
   friend class detail::WVFieldEvaluationEventScope;
   detail::WVFieldEvaluationEventWorkspace* eventWorkspace_ = nullptr;
-  WVFieldEvaluationService() = default;
+  WVVariableEvaluationPolicy variableEvaluationPolicy_ =
+      WVVariableEvaluationPolicy::reuse;
+  WVVariableEvaluationContext variableEvaluationContext_;
+  WVKernelStatus variableEvaluationPreparationStatus_ = WVKernelStatus::ok();
+  mutable std::unique_ptr<detail::WVFieldEvaluationArena> eventArena_;
+  mutable bool eventArenaForcingPrepared_ = false;
+  WVFieldEvaluationService();
+  WVKernelStatus beginStateEvaluation(const WVIntegrationState&,const void* owner);
+  WVKernelStatus addStateEvaluationView(const WVIntegrationState&,
+      std::size_t componentIdentity);
+  void endStateEvaluation() noexcept;
+  WVKernelStatus prepareForcingEvaluationContext();
+  WVKernelStatus prepareEventArena(std::size_t requestCount) const;
+  WVKernelStatus prepareEventArena(const WVFieldEvaluationPlan&,
+      std::uint32_t componentIdentity=0) const;
+  WVKernelStatus prepareEventArena(const WVEventFieldEvaluationPlan&) const;
+  WVKernelStatus prepareEventField(const WVVariableEvaluationKey&,
+      std::size_t elements,bool complex) const;
+  WVKernelStatus prepareDensityEventArena(std::size_t sampleCount,
+      std::size_t profileCount,std::uint8_t demands,
+      WVNoMotionReference reference,bool apvNeeded) const;
   WVKernelStatus initializeScratch();
   WVKernelStatus evaluatePlanBatch(const PlanInvocation *invocations,
                                    std::size_t invocationCount,
@@ -556,6 +615,7 @@ private:
       std::size_t entryCount);
   WVFieldEvaluationMetrics &mutableMetrics() noexcept;
   class MovingWorkspace;
+  class SampledMovingWorkspace;
   std::unique_ptr<WVTransformConstantStratificationKernel> ownedTransform_;
   WVTransformConstantStratificationKernel *transform_ = nullptr;
   std::unique_ptr<detail::WVBarotropicQGFieldEvaluationAdapter>
@@ -563,11 +623,14 @@ private:
   std::unique_ptr<detail::WVStratifiedFieldEvaluationAdapter> stratified_;
   std::unique_ptr<detail::WVForcingDiagnosticBinding> forcing_;
   std::unique_ptr<MovingWorkspace> movingWorkspace_;
+  mutable std::unique_ptr<SampledMovingWorkspace> sampledMovingWorkspace_;
   std::vector<double> realScratch_;
   std::vector<WVComplex64> complexScratch_;
   std::vector<PlanInvocation> eventBatchInvocations_;
   mutable WVFieldEvaluationMetrics metrics_;
+  mutable WVVariableProducerMetrics outputProducerMetrics_;
   bool executing_ = false;
+  bool stateEvaluationActive_ = false;
 };
 
 } // namespace wavevortex::runtime

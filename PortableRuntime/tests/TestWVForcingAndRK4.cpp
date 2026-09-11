@@ -258,6 +258,50 @@ void testForcingTrafficAccounting() {
     require(metrics.workspaceLiveBytes == 0 && metrics.workspaceMaximumLiveBytes == 0,"nonlinear-only forcing-workspace liveness is not zero");
 }
 
+void testIntegrationEvaluationLifecycle() {
+    for (const bool hydrostatic : {true, false}) {
+        for (const auto policy : {WVVariableEvaluationPolicy::reuse,
+                                  WVVariableEvaluationPolicy::lowMemory}) {
+            auto system = createSystem(hydrostatic, nonlinearSchedule());
+            require(bool(system->setVariableEvaluationPolicy(policy)),
+                    "Integration evaluation policy setup failed");
+            OwnedState owned(system->kernel().descriptor().spectralShape());
+            OwnedState dense(system->kernel().descriptor().spectralShape());
+            auto state = owned.integrationView();
+            auto denseState = dense.integrationView();
+            WVFixedStepRK4 integrator(*system, {true});
+            require(bool(integrator.prepareStateAfterRestart(state)),
+                    "Integration lifecycle restart preparation failed");
+            require(system->variableEvaluationMetrics().liveBytes == 0,
+                    "Restart preparation retained a stale evaluation scope");
+            const auto validationBefore =
+                system->kernel().metrics().stateValidationCount;
+            const auto contextsBefore =
+                system->variableEvaluationMetrics().contexts;
+            require(bool(integrator.step(state, 0.01)),
+                    "Integration lifecycle step failed");
+            const auto validationAfter =
+                system->kernel().metrics().stateValidationCount;
+            const auto contextsAfter =
+                system->variableEvaluationMetrics().contexts;
+            require(validationAfter > validationBefore &&
+                        validationAfter - validationBefore ==
+                            contextsAfter - contextsBefore &&
+                        system->variableEvaluationMetrics().liveBytes == 0,
+                    "RHS validation and evaluation-scope lifecycles diverged");
+            require(bool(integrator.evaluateDenseOutput(
+                        state.waveVortex.t - 0.005, denseState)),
+                    "Integration lifecycle dense output failed");
+            require(system->kernel().metrics().stateValidationCount -
+                            validationAfter ==
+                        system->variableEvaluationMetrics().contexts -
+                            contextsAfter &&
+                        system->variableEvaluationMetrics().liveBytes == 0,
+                    "Dense output retained or reopened an RHS evaluation");
+        }
+    }
+}
+
 void testMatlabCFLFixtures() {
     constexpr double cfl = 0.4;
     struct Fixture {
@@ -398,6 +442,28 @@ void testRK4DeterminismRestartAndFailure() {
     require(exactlyEqual(failed.values,originalValues) && failedState.waveVortex.t == originalTime,"failed RK4 step modified the caller-owned state");
 }
 
+void testNonlinearDampingEvaluationReuse() {
+    for(bool hydrostatic:{true,false}) for(auto policy:{WVVariableEvaluationPolicy::reuse,WVVariableEvaluationPolicy::lowMemory}) {
+        auto schedule=nonlinearSchedule();
+        schedule.entries.push_back(entry("WVAdaptiveDamping","adaptive",WVForcingStage::spectral,100));
+        schedule.entries.push_back(entry("WVAdaptiveDamping","adaptive-second",WVForcingStage::spectral,101));
+        auto engine=createEngine(hydrostatic,schedule);
+        require(bool(engine->setVariableEvaluationPolicy(policy)),"Policy selection failed");
+        OwnedState state(engine->kernel().descriptor().spectralShape());
+        std::vector<WVComplex64> values(3*state.shape.elementCount());
+        auto flux=fluxView(values,state.shape);
+        require(bool(engine->nonlinearFlux(state.view(),flux)),"Nonlinear plus damping failed");
+        require(engine->kernel().metrics().stateValidationCount==1 && engine->kernel().metrics().phasePreparationCount==1,"Combined forcing duplicated state preparation");
+        for(std::size_t channel=0;channel<3;++channel)
+            require(engine->kernel().metrics().reconstructionCount[channel][0][0]==1,"Damping reconstructed shared velocity");
+        require(engine->variableEvaluationMetrics().producerExecutions==2,"Repeated damping recomputed its reduction");
+        const auto previous=engine->kernel().metrics().stateValidationCount;
+        state.values[0].real+=.001;
+        require(bool(engine->nonlinearFlux(state.view(),flux)),"Mutated state failed");
+        require(engine->kernel().metrics().stateValidationCount==previous+1,"New evaluation reused stale validation");
+    }
+}
+
 void testSpectralForcing() {
     WVFrozenForcingSchedule schedule;
     schedule.entries.push_back(entry("WVAdaptiveDamping","adaptive",WVForcingStage::spectral,100));
@@ -410,8 +476,9 @@ void testSpectralForcing() {
     const auto status = engine->nonlinearFlux(state.view(),flux);
     require(static_cast<bool>(status),"adaptive/beta forcing failed");
     requireFinite(values,"adaptive/beta forcing produced non-finite output");
+    require(engine->kernel().metrics().reconstructionCount[2][0][0]==0 && engine->kernel().metrics().reconstructionCount[3][0][0]==0,"Horizontal damping reconstructed w or eta");
     require(engine->metrics().resolvedSpectralCount == 2,"spectral forcing dispatch was not resolved at construction");
-    const auto expectedWorkspace = 4*configuration(false).Nx*configuration(false).Ny*configuration(false).Nz*sizeof(double);
+    const auto expectedWorkspace = 2*configuration(false).Nx*configuration(false).Ny*configuration(false).Nz*sizeof(double);
     require(engine->metrics().workspaceCapacityBytes == expectedWorkspace,"spectral forcing did not allocate only its required physical-field workspace");
 }
 
@@ -524,7 +591,7 @@ void testLinearBottomFrictionFormula(bool hydrostatic, std::size_t Nz, double ra
     const double expectedWeight = value.Lz/(2.0*static_cast<double>(Nz-1));
     require(engine->kernel().descriptor().bottomQuadratureWeight() == expectedWeight,"descriptor bottom quadrature weight changed");
     require(engine->kernel().descriptor().verticalModes().bottomQuadratureWeight == expectedWeight,"descriptor did not retain its bottom quadrature weight");
-    require(engine->metrics().workspaceCapacityBytes == (4+q)*R*sizeof(double),"linear friction added storage beyond the shared physical and tendency fields");
+    require(engine->metrics().workspaceCapacityBytes == (3+q)*R*sizeof(double),"linear friction added storage beyond the shared physical and tendency fields");
     require(engine->metrics().physicalFieldReconstructionCount == 1 && engine->metrics().spatialTendencyProjectionCount == 1,"linear friction did not use one reconstruction and one generic projection");
 }
 
@@ -544,6 +611,7 @@ void testSharedBottomFrictionOperations(bool hydrostatic) {
     std::vector<double> fields(3*R);
     WVRealFieldBundleView fieldView{fields.data(),{spatial.first,spatial.second,spatial.third,3}};
     WVConstantStratificationRightHandSideContext context;
+    require(bool(engine->beginStateEvaluation(state.view())),"Shared friction scope failed");
     const auto status = engine->evaluateRightHandSideWithContext(state.view(),flux,fieldView,context);
     require(static_cast<bool>(status),"ordered shared bottom-friction evaluation failed: "+status.message);
     requireFinite(values,"shared bottom-friction evaluation produced non-finite output");
@@ -553,6 +621,7 @@ void testSharedBottomFrictionOperations(bool hydrostatic) {
     require(engine->metrics().spatialTendencyProjectionCount == 2,"bottom-friction forcings did not share generic projection");
     const auto q = hydrostatic ? 3U : 4U;
     require(engine->metrics().spatialTendencyClearElementWrites == 2*q*R,"bottom-friction forcings did not clear the shared tendency exactly once each");
+    engine->endStateEvaluation();
 }
 
 void testLinearBottomFrictionIntegrationAndFailures(bool hydrostatic) {
@@ -633,7 +702,7 @@ void testQuadraticAndPseudo(bool hydrostatic) {
     const auto& value = configuration(hydrostatic);
     const auto R = value.Nx*value.Ny*value.Nz;
     const auto q = hydrostatic ? 3U : 4U;
-    require(engine->metrics().workspaceCapacityBytes == (4+q)*R*sizeof(double),"quadratic forcing did not allocate only its required real-field workspace");
+    require(engine->metrics().workspaceCapacityBytes == (3+q)*R*sizeof(double),"quadratic forcing did not allocate only its required real-field workspace");
 }
 
 void testMultipleWholeFluxProducers() {
@@ -648,12 +717,22 @@ void testMultipleWholeFluxProducers() {
     auto singleFlux = fluxView(single,state.shape);
     auto status = engine->nonlinearFlux(state.view(),flux);
     require(static_cast<bool>(status),"multiple whole-flux producers failed");
+    require(engine->kernel().metrics().nonlinearFluxCallCount==1,"Repeated nonlinear forcing recalculated its shared result");
     status = direct->nonlinearFlux(state.view(),singleFlux);
     require(static_cast<bool>(status),"single whole-flux control failed");
     for (std::size_t index = 0; index < values.size(); ++index) {
         require(std::abs(values[index].real-2.0*single[index].real) <= 1e-13 && std::abs(values[index].imag-2.0*single[index].imag) <= 1e-13,"temporary whole-flux accumulation changed the result");
     }
-    require(engine->metrics().workspaceCapacityBytes == values.size()*sizeof(WVComplex64),"multiple whole-flux producers did not allocate exactly one temporary tendency");
+    require(engine->metrics().workspaceCapacityBytes == 2*values.size()*sizeof(WVComplex64)+3*engine->kernel().descriptor().spatialShape().elementCount()*sizeof(double),"multiple whole-flux producers did not account for shared velocity, nonlinear result and temporary tendency");
+    const auto retained=engine->persistentBytes();
+    require(bool(engine->setVariableEvaluationPolicy(WVVariableEvaluationPolicy::lowMemory)),"Low-memory selection failed");
+    require(engine->persistentBytes()<retained,"Low-memory did not release retained nonlinear result");
+    const auto priorCalls=engine->kernel().metrics().nonlinearFluxCallCount;
+    require(bool(engine->nonlinearFlux(state.view(),flux)),"Low-memory repeated forcing failed");
+    require(engine->kernel().metrics().nonlinearFluxCallCount==priorCalls+2 && engine->variableEvaluationMetrics().recomputations==1,"Low-memory repeated work was not explicit");
+    for(std::size_t index=0;index<values.size();++index)
+        require(std::abs(values[index].real-2*single[index].real)<=1e-13 && std::abs(values[index].imag-2*single[index].imag)<=1e-13,"Low-memory forcing changed the result");
+
 }
 
 void testRightHandSideContextIdentity() {
@@ -667,12 +746,17 @@ void testRightHandSideContextIdentity() {
     std::vector<double> fields(3*R),scalar(R,1.0),scalarFlux(R);
     WVRealFieldBundleView fieldView{fields.data(),{spatial.first,spatial.second,spatial.third,3}};
     WVConstantStratificationRightHandSideContext context;
+    require(bool(first->beginStateEvaluation(state.view())),"begin RHS context failed");
     auto status = first->evaluateRightHandSideWithContext(state.view(),flux,fieldView,context);
     require(static_cast<bool>(status) && context.hasAdvectionFields(),"RHS context was not prepared");
     const WVRealVolumeConstView scalarView{scalar.data(),spatial};
     WVRealVolumeView scalarFluxView{scalarFlux.data(),spatial};
     status = second->advectFGridScalar(context,scalarView,false,scalarFluxView);
     require(status.code == WVKernelStatusCode::invalidConfiguration,"a foreign RHS context was accepted");
+    require(bool(first->advectFGridScalar(context,scalarView,false,scalarFluxView)),"active RHS context rejected");
+    first->endStateEvaluation();
+    require(!context.hasAdvectionFields() && !context.advectionFields().data,"ended RHS view retained access");
+    require(bool(first->beginStateEvaluation(state.view())),"replacement scope failed");
     WVConstantStratificationRightHandSideContext replacement;
     status = first->evaluateRightHandSideWithContext(state.view(),flux,fieldView,replacement);
     require(static_cast<bool>(status),"replacement RHS context failed");
@@ -680,6 +764,7 @@ void testRightHandSideContextIdentity() {
     require(status.code == WVKernelStatusCode::invalidConfiguration,"a stale RHS context was accepted");
     status = first->advectFGridScalar(replacement,scalarView,false,scalarFluxView);
     require(static_cast<bool>(status),"current RHS context was rejected");
+    first->endStateEvaluation();
 }
 
 void testStableClosurePreflightAndDecay() {
@@ -753,6 +838,50 @@ void testStableClosurePreflightAndDecay() {
     }
 }
 
+void testRepeatedConstantDiagnosticLaplacianReuse() {
+    for(const bool hydrostatic:{true,false}) for(const bool horizontal:{true,false}) {
+        auto config=configuration(hydrostatic); config.shouldAntialias=false;
+        auto damping=forcingConfiguration();
+        damping.values.push_back(realValue("nu",{0.125}));
+        damping.values.push_back(realValue("kappa",{0.25}));
+        const auto* identity=horizontal ? "WVHorizontalDamping" :
+            "WVVerticalDamping";
+        WVFrozenForcingSchedule schedule;
+        schedule.entries.push_back(entry(identity,"laplacian one",
+            WVForcingStage::spatial,127,damping));
+        schedule.entries.push_back(entry(identity,"laplacian two",
+            WVForcingStage::spatial,128,damping));
+        schedule.entries[1].ordinal=1;
+        auto engine=createEngine(config,schedule);
+        OwnedState state(engine->stateShape());
+        const auto shape=engine->kernel().descriptor().spatialShape();
+        const auto channels=hydrostatic ? 3U : 4U;
+        const auto R=shape.elementCount();
+        const WVShape4D outputShape{shape.first,shape.second,shape.third,channels};
+        std::vector<double> first(channels*R),second(channels*R);
+        WVForcingTendencyOutput outputs[]={{0,{first.data(),outputShape}},
+            {1,{second.data(),outputShape}}};
+        const auto direction=horizontal ? 0U : 1U;
+        const auto reuseBefore=
+            engine->metrics().constantLaplacianProducerCount[direction];
+        require(bool(engine->evaluateForcingTendencies(state.view(),outputs,2)) &&
+                first==second &&
+                engine->metrics().constantLaplacianProducerCount[direction]==
+                    reuseBefore+1,
+            "Repeated constant diagnostic Laplacians did not share their unscaled producer");
+        require(bool(engine->setVariableEvaluationPolicy(
+            WVVariableEvaluationPolicy::lowMemory)),
+            "Constant diagnostic Laplacian low-memory selection failed");
+        const auto lowBefore=
+            engine->metrics().constantLaplacianProducerCount[direction];
+        require(bool(engine->evaluateForcingTendencies(state.view(),outputs,2)) &&
+                first==second &&
+                engine->metrics().constantLaplacianProducerCount[direction]==
+                    lowBefore+2,
+            "Low-memory constant diagnostic Laplacians retained an unscaled producer");
+    }
+}
+
 void testValidation() {
     auto schedule = nonlinearSchedule();
     schedule.profileVersion = 99;
@@ -773,8 +902,10 @@ int main() {
         testNonlinearCompatibility(false);
         testFixedAmplitudeAndRK4();
         testForcingTrafficAccounting();
+        testIntegrationEvaluationLifecycle();
         testMatlabCFLFixtures();
         testRK4DeterminismRestartAndFailure();
+        testNonlinearDampingEvaluationReuse();
         testSpectralForcing();
         testZeroVerticalResolutionPreservesUniformMode();
         testCoefficientErrorPolicyStorage();
@@ -792,6 +923,7 @@ int main() {
         testMultipleWholeFluxProducers();
         testRightHandSideContextIdentity();
         testStableClosurePreflightAndDecay();
+        testRepeatedConstantDiagnosticLaplacianReuse();
         testValidation();
         std::cout << "Portable forcing and RK4 tests passed.\n";
         return 0;

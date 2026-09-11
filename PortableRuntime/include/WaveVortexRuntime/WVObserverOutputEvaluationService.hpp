@@ -30,9 +30,12 @@ struct WVObserverOutputEvaluationMetrics {
   std::size_t diagnosticIntermediateReuseCount = 0;
   std::size_t diagnosticWorkspaceLiveBytes = 0;
   std::size_t diagnosticWorkspaceHighWaterBytes = 0;
+  std::size_t additionalTransientHighWaterBytes = 0;
   std::size_t eventFieldReuseCount = 0;
   std::size_t eventFieldWorkspaceLiveBytes = 0;
   std::size_t eventFieldWorkspaceHighWaterBytes = 0;
+  std::size_t eventFieldArenaPlannedBytes = 0;
+  std::size_t eventFieldArenaPeakBytes = 0;
   std::size_t densityRecoveryCount = 0;
   std::size_t densityProfileConstructionCount = 0;
   std::size_t densityInversePassCount = 0;
@@ -42,6 +45,8 @@ struct WVObserverOutputEvaluationMetrics {
   std::size_t densityReuseCount = 0;
   std::size_t densityWorkspaceLiveBytes = 0;
   std::size_t densityWorkspaceHighWaterBytes = 0;
+  WVVariableEvaluationMetrics variableEvaluation;
+  WVVariableProducerMetrics variableProducers;
   double evaluationSeconds = 0.0;
 };
 

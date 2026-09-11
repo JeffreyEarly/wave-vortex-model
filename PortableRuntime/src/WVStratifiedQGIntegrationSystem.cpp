@@ -339,8 +339,6 @@ WVKernelStatus WVStratifiedQGIntegrationSystem::createImpl(
     candidate->z_.resize(positionOffset);
     for (const auto& particle : candidate->particles_)
       std::copy(particle.record.z.begin(),particle.record.z.end(),candidate->z_.begin()+particle.positionOffset);
-    if (!candidate->tracers_.empty() || !candidate->particles_.empty())
-      candidate->advectionStorage_.resize(3*candidate->kernel().spatialShape().elementCount());
     candidate->velocityStorage_.resize(velocityRequests.size());
     candidate->velocityViews_.resize(velocityRequests.size());
     for (std::size_t index = 0; index < velocityRequests.size(); ++index) {
@@ -395,18 +393,19 @@ WVKernelStatus WVStratifiedQGIntegrationSystem::evaluateRightHandSide(
   const WVComplexConstView A0View{
       A0.data, kernel().spectralShape()};
   WVComplexView F0View{F0.data, kernel().spectralShape()};
+  status = forcingEngine_->beginStateEvaluation(A0View);
+  if (!status)
+    return status;
+  struct EvaluationGuard {
+    WVStratifiedQGForcingEngine &engine;
+    ~EvaluationGuard() { (void)engine.endStateEvaluation(); }
+  } evaluationGuard{*forcingEngine_};
   const bool needsAdvectionFields = !tracers_.empty() || !particles_.empty();
   WVRealFieldBundleConstView advectionFields;
   const auto forcingStarted = std::chrono::steady_clock::now();
   status = forcingEngine_->evaluateRightHandSide(
-      A0View, F0View);
-  if (status && needsAdvectionFields) {
-    const auto shape = kernel().spatialShape();
-    const auto count = shape.elementCount();
-    status = kernel().transformA0ToField(A0View,WVStratifiedQGField::u,{advectionStorage_.data(),shape});
-    if (status) status = kernel().transformA0ToField(A0View,WVStratifiedQGField::v,{advectionStorage_.data()+count,shape});
-    advectionFields = {advectionStorage_.data(),{shape.first,shape.second,shape.third,3}};
-  }
+      A0View, F0View,
+      needsAdvectionFields ? &advectionFields : nullptr);
   if (!status)
     return status;
   observerMetrics_.waveVortexFluxSeconds += std::chrono::duration<double>(
@@ -541,7 +540,8 @@ WVStratifiedQGIntegrationSystem::evaluateFixedTimeStepCandidates(
   const auto A0 = coefficientFamilyView(layout_, state, 0);
   WVComplexConstView A0View{A0.data, kernel().spectralShape()};
   WVFixedTimeStepCandidates result;
-  status = kernel().uvMax(A0View, result.maximumHorizontalSpeed);
+  status = forcingEngine_->horizontalSpeedMaximum(
+      A0View, result.maximumHorizontalSpeed);
   if (!status)
     return status;
   if (!std::isfinite(result.maximumHorizontalSpeed) ||
@@ -579,7 +579,7 @@ WVStratifiedQGIntegrationSystem::persistentBytes() const noexcept {
                       velocityStorage_.capacity() *
                           sizeof(std::vector<double>) +
                       velocityViews_.capacity() * sizeof(WVFieldOutputView) +
-                      (x_.capacity() + y_.capacity() + z_.capacity() + advectionStorage_.capacity()) * sizeof(double);
+                      (x_.capacity() + y_.capacity() + z_.capacity()) * sizeof(double);
   for (const auto &values : velocityStorage_)
     bytes += values.capacity() * sizeof(double);
   return bytes;

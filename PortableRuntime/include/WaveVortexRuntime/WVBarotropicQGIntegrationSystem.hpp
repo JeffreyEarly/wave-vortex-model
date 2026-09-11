@@ -106,6 +106,12 @@ public:
     return forcingEngine_->scheduleIdentifier();
   }
 
+  WVKernelStatus setVariableEvaluationPolicy(WVVariableEvaluationPolicy policy) {
+    return forcingEngine_->setVariableEvaluationPolicy(policy);
+  }
+  const WVVariableEvaluationMetrics& variableEvaluationMetrics() const noexcept {
+    return forcingEngine_->variableEvaluationMetrics();
+  }
   void setLinearDynamics(bool linear) noexcept { forcingEngine_->setLinearDynamics(linear); }
 
 private:

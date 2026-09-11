@@ -24,12 +24,14 @@ public:
   WVKernelStatus evaluate(WVFieldEvaluationService&, const WVIntegrationState&,
       WVFieldOutputView*, std::size_t, const std::uint8_t* activeOutputs = nullptr) const;
   std::size_t persistentBytes() const noexcept;
+  WVKernelStatus prepareEventArena(const WVFieldEvaluationService&) const;
   bool hasForcingDiagnostics() const noexcept {return !forcingIndices_.empty();}
   bool hasDensityDiagnostics() const noexcept {return hasDensity_;}
 
 private:
   struct Output {
     WVPortableVariable variable = WVPortableVariable::invalid;
+    WVPortableVariablePlan execution;
     std::size_t group = 0, dependency = 0;
     bool surface = false, extrema = false, verticalMean = false, forcing = false, density = false;
     bool sampled = false;
@@ -70,6 +72,7 @@ private:
   std::vector<Output> outputs_;
   std::vector<std::size_t> forcingIndices_;
   std::size_t forcingPhysicalChannels_=0;
+  std::uint64_t scratchSignature_=1469598103934665603ULL;
   std::array<std::size_t,4> forcingPhysicalDependencies_{};
 };
 

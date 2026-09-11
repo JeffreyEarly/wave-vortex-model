@@ -1,6 +1,7 @@
 #pragma once
 
 #include "WaveVortexKernel/WVKernelTypes.hpp"
+#include "WaveVortexRuntime/WVVariableEvaluation.hpp"
 
 #include <cstddef>
 
@@ -16,6 +17,7 @@ struct WVForcingTendencyOutput {
 };
 
 struct WVForcingTendencyMetrics {
+  WVVariableEvaluationMetrics standaloneVariableEvaluation;
   std::size_t evaluationCount = 0;
   std::size_t forcingEvaluationCount = 0;
   std::size_t spatialProjectionCount = 0;

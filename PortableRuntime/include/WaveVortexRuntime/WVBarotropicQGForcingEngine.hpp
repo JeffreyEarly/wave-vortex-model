@@ -1,4 +1,5 @@
 #pragma once
+#include "WaveVortexRuntime/WVVariableEvaluation.hpp"
 
 #include "WaveVortexRuntime/WVForcingSchedule.hpp"
 #include "WaveVortexRuntime/WVForcingTendency.hpp"
@@ -55,6 +56,7 @@ private:
   WVComplexView F0_;
   bool outputInitialized_ = false;
   WVBarotropicQGOperationWorkspace workspace_;
+  detail::WVForcingDiagnosticWorkspace* diagnosticWorkspace_ = nullptr;
   friend class WVBarotropicQGForcingEngine;
 };
 
@@ -104,6 +106,14 @@ public:
                                        WVComplexView &F0,
                                        WVRealFieldBundleConstView *
                                            advectionFields = nullptr);
+  // The borrowed A0 array must remain immutable until endStateEvaluation().
+  WVKernelStatus beginStateEvaluation(const WVComplexConstView &A0);
+  WVKernelStatus endStateEvaluation();
+  bool stateEvaluationActive() const noexcept { return evaluation_.active(); }
+  WVKernelStatus
+  validateStateEvaluation(const WVComplexConstView &A0) const noexcept;
+  WVKernelStatus horizontalSpeedMaximum(const WVComplexConstView &A0,
+                                        double &maximum);
   WVStateConstraintResult restoreForcingAmplitudes(WVComplexView &A0);
 
   const WVTransformBarotropicQGKernel &kernel() const noexcept {
@@ -124,15 +134,25 @@ public:
   // Optional u/v fields must describe this exact state and time.
   // They are borrowed for this invocation and must not alias state or outputs.
   WVKernelStatus evaluateForcingTendencies(const WVComplexConstView&,
-      const WVForcingTendencyOutput*,std::size_t, const WVRealFieldBundleConstView* preparedPhysical = nullptr);
+      const WVForcingTendencyOutput*,std::size_t,
+      const WVRealFieldBundleConstView* preparedPhysical = nullptr,
+      detail::WVForcingDiagnosticWorkspace* session = nullptr);
   const WVForcingTendencyMetrics& tendencyMetrics() const noexcept { return tendencyMetrics_; }
 
   // Linear evolution retains instances for diagnostics and amplitude constraints.
   // Only their ordinary coefficient RHS contributions are disabled.
+  WVKernelStatus setVariableEvaluationPolicy(WVVariableEvaluationPolicy policy);
+  const WVVariableEvaluationMetrics& variableEvaluationMetrics() const noexcept { return evaluation_.metrics(); }
   void setLinearDynamics(bool linear) noexcept { linearDynamics_ = linear; }
 
 private:
   bool linearDynamics_ = false;
+  WVVariableEvaluationContext evaluation_;
+  WVVariableEvaluationPolicy evaluationPolicy_=WVVariableEvaluationPolicy::reuse;
+  WVComplexConstView evaluationState_{};
+  bool evaluationOwnsKernelScope_=false;
+  double horizontalSpeedMaximum_ = 0.0;
+  std::vector<WVComplex64> nonlinearScratch_;
   WVBarotropicQGForcingEngine() = default;
   WVKernelStatus initialize(const WVFrozenForcingSchedule &schedule);
   void initializeOutputWithZeros(WVComplexView &F0);

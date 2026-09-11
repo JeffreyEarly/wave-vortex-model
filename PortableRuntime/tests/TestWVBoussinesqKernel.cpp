@@ -148,8 +148,24 @@ void contracts(const std::shared_ptr<const WVStratifiedModalRecord>& source) {
         kernel->metrics().reconstructionCount[static_cast<std::size_t>(WVBoussinesqField::v)]
             [static_cast<std::size_t>(WVBoussinesqDerivative::z)]
             [static_cast<std::size_t>(WVBoussinesqComponent::all)]==1 &&
-        kernel->metrics().fieldReconstructionCount[static_cast<std::size_t>(WVBoussinesqField::zetaX)]==0,
+        kernel->metrics().reconstructionCount[static_cast<std::size_t>(WVBoussinesqField::zetaX)]
+            [static_cast<std::size_t>(WVBoussinesqDerivative::value)]
+            [static_cast<std::size_t>(WVBoussinesqComponent::all)]==1,
         "Prepared horizontal vorticity changed values or repeated a producer");
+    require(bool(kernel->combinePreparedHorizontalVorticity(WVBoussinesqField::zetaX,
+        {compoundFirst.data(),volume},{compoundSecond.data(),volume},
+        {compoundFirst.data(),volume},WVBoussinesqComponent::geostrophic)) &&
+        compoundFirst==compoundReference &&
+        kernel->metrics().reconstructionCount[static_cast<std::size_t>(WVBoussinesqField::zetaX)]
+            [static_cast<std::size_t>(WVBoussinesqDerivative::value)]
+            [static_cast<std::size_t>(WVBoussinesqComponent::geostrophic)]==1,
+        "Exact prepared vorticity alias or component attribution failed");
+    std::vector<double> partialCompound(R+1);
+    std::copy_n(compoundReference.data(),R,partialCompound.data());
+    require(kernel->combinePreparedHorizontalVorticity(WVBoussinesqField::zetaX,
+        {partialCompound.data(),volume},{compoundSecond.data(),volume},
+        {partialCompound.data()+1,volume}).code==WVKernelStatusCode::overlappingArrays,
+        "Partial prepared vorticity alias was accepted");
     require(bool(kernel->transformStateField(state,WVBoussinesqField::rhoTotal,
         {compoundReference.data(),volume},WVBoussinesqDerivative::z)),"Reference density derivative failed");
     kernel->resetMetrics();
@@ -170,12 +186,23 @@ void contracts(const std::shared_ptr<const WVStratifiedModalRecord>& source) {
         kernel->metrics().reconstructionCount[static_cast<std::size_t>(WVBoussinesqField::eta)]
             [static_cast<std::size_t>(WVBoussinesqDerivative::value)]
             [static_cast<std::size_t>(WVBoussinesqComponent::all)]==1 &&
-        kernel->metrics().fieldReconstructionCount[static_cast<std::size_t>(WVBoussinesqField::rhoTotal)]==0,
+        kernel->metrics().reconstructionCount[static_cast<std::size_t>(WVBoussinesqField::rhoTotal)]
+            [static_cast<std::size_t>(WVBoussinesqDerivative::z)]
+            [static_cast<std::size_t>(WVBoussinesqComponent::all)]==1,
         "Prepared density derivative repeated a producer");
-    require(kernel->combinePreparedHorizontalVorticity(WVBoussinesqField::zetaX,
+    require(bool(kernel->combinePreparedDensityZDerivative(WVBoussinesqField::rhoTotal,
         {compoundFirst.data(),volume},{compoundSecond.data(),volume},
-        {compoundFirst.data(),volume}).code==WVKernelStatusCode::overlappingArrays,
-        "Prepared compound output alias was accepted");
+        {compoundFirst.data(),volume})),
+        "Exact prepared density alias was rejected");
+    for(std::size_t i=0;i<R;++i)
+        require(std::abs(compoundFirst[i]-compoundReference[i])<=1e-12*
+            std::max(1.0,std::abs(compoundReference[i])),
+            "Exact prepared density alias changed values");
+    std::copy_n(compoundReference.data(),R,partialCompound.data());
+    require(kernel->combinePreparedDensityZDerivative(WVBoussinesqField::rhoTotal,
+        {partialCompound.data(),volume},{compoundSecond.data(),volume},
+        {partialCompound.data()+1,volume}).code==WVKernelStatusCode::overlappingArrays,
+        "Partial prepared density alias was accepted");
     require(!kernel->combinePreparedDensityZDerivative(WVBoussinesqField::u,
         {compoundFirst.data(),volume},{compoundSecond.data(),volume},
         {compoundResult.data(),volume}),"Invalid prepared density target was accepted");

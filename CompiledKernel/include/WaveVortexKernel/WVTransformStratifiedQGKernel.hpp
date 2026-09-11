@@ -23,6 +23,7 @@ struct WVStratifiedQGStorage {
 };
 struct WVStratifiedQGKernelMetrics {
     std::size_t stateValidationCount = 0;
+    std::size_t horizontalSpeedMaximumReductionCount = 0;
     std::array<std::size_t,14> fieldReconstructionCount{};
     std::array<std::array<std::size_t,4>,14> reconstructionCount{};
     std::array<std::array<std::array<std::size_t,5>,4>,14> componentReconstructionCount{};
@@ -75,7 +76,7 @@ public:
     // Convert exact prepared eta_z and eta operands to rho_e,z or rho_total,z.
     WVKernelStatus combinePreparedDensityZDerivative(WVStratifiedQGField,
         WVRealVolumeConstView etaZ, WVRealVolumeConstView eta,
-        WVRealVolumeView output) const;
+        WVRealVolumeView output, std::size_t componentIdentity = 0);
     // Surface fields use [Nx,Ny,1]; other fields use [Nx,Ny,Nz].
     // Optional raw output captures the spatial contribution instead of projecting
     // it. Prepared [u,v] fields may be borrowed for one diagnostic invocation.

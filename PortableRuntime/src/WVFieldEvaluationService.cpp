@@ -23,8 +23,15 @@
 namespace wavevortex::runtime {
 namespace detail {
 WVFieldEvaluationEventScope::WVFieldEvaluationEventScope(WVFieldEvaluationService& service,const WVIntegrationState& state,bool enabled,bool retainPrimitiveFields)
-    : workspace_(state) {
+    : workspace_(state,service.variableEvaluationContext_,*service.eventArena_,
+          service.variableEvaluationPolicy_,enabled) {
   if(!enabled) return;
+  if(!service.variableEvaluationPreparationStatus_) {
+    workspace_.endEvaluation();
+    status_=service.variableEvaluationPreparationStatus_;
+    return;
+  }
+  if(!workspace_.status()) {status_=workspace_.status(); return;}
   if(service.eventWorkspace_) {
     status_={WVKernelStatusCode::reentrantExecution,"An output field event is already active."};
     return;
@@ -39,24 +46,378 @@ WVFieldEvaluationEventScope::WVFieldEvaluationEventScope(WVFieldEvaluationServic
     service.barotropicQG_->eventWorkspace_=&workspace_;
     workspace_.metrics_=&service.barotropicQG_->metrics_;
   } else workspace_.metrics_=&service.metrics_;
+  status_=service.beginStateEvaluation(state,&workspace_);
+  if(!status_) {
+    release();
+    return;
+  }
+  service.stateEvaluationActive_=true;
+  kernelEvaluationActive_=true;
 }
 void WVFieldEvaluationEventScope::release() noexcept {
   if(!service_) return;
+  auto variableMetrics=workspace_.evaluationMetrics();
+  workspace_.endForcingEvaluation();
+  workspace_.endEvaluation();
+  if(kernelEvaluationActive_) {
+    service_->endStateEvaluation();
+    service_->stateEvaluationActive_=false;
+    kernelEvaluationActive_=false;
+  }
   service_->eventWorkspace_=nullptr;
   if(service_->stratified_) service_->stratified_->eventWorkspace_=nullptr;
   if(service_->barotropicQG_) service_->barotropicQG_->eventWorkspace_=nullptr;
-  for(auto& field:workspace_.fields_) std::vector<double>{}.swap(field);
-  workspace_.density_.release();
-  workspace_.releaseAPV();
-  std::vector<double>{}.swap(workspace_.densitySource_);
-  std::vector<double>{}.swap(workspace_.densityHeights_);
-  std::vector<double>{}.swap(workspace_.densityWeights_);
-  std::vector<double>{}.swap(workspace_.densityInitial_);
+  for(auto& field:workspace_.realFields_) {
+    field->values.clear();
+    field->assigned=false;
+  }
+  for(auto& field:workspace_.complexFields_) {
+    field->values.clear();
+    field->assigned=false;
+  }
+  for(auto& density:workspace_.density_) density.resetRetainingCapacity();
+  for(auto& values:workspace_.apv_) values.clear();
+  workspace_.apvReady_={};
+  workspace_.densitySource_.clear();
+  workspace_.densityHeights_.clear();
+  workspace_.densityWeights_.clear();
+  workspace_.densityInitial_.clear();
   workspace_.metrics_->densityWorkspaceLiveBytes=0;
   workspace_.metrics_->eventFieldWorkspaceLiveBytes=0;
+  auto& aggregate=workspace_.metrics_->variableEvaluation;
+  aggregate.contexts+=variableMetrics.contexts;
+  aggregate.producerExecutions+=variableMetrics.producerExecutions;
+  aggregate.cacheHits+=variableMetrics.cacheHits;
+  aggregate.evictions+=variableMetrics.evictions;
+  aggregate.recomputations+=variableMetrics.recomputations;
+  aggregate.duplicateExecutions+=variableMetrics.duplicateExecutions;
+  aggregate.liveBytes=0;
+  aggregate.highWaterBytes=std::max(aggregate.highWaterBytes,
+                                    variableMetrics.highWaterBytes);
   service_=nullptr;
 }
 } // namespace detail
+
+WVFieldEvaluationService::WVFieldEvaluationService() {
+  eventArena_=std::make_unique<detail::WVFieldEvaluationArena>();
+  variableEvaluationPreparationStatus_=
+      detail::WVFieldEvaluationEventWorkspace::prepareEvaluationContext(
+          variableEvaluationContext_);
+}
+
+WVKernelStatus WVFieldEvaluationService::prepareEventArena(
+    std::size_t requestCount) const {
+  (void)requestCount;
+  auto status=eventArena_->preparePolicy(variableEvaluationPolicy_);
+  if(status && forcing_ && eventArenaForcingPrepared_)
+    status=eventArena_->prepareForcing(*forcing_,variableEvaluationPolicy_);
+  auto& metrics=const_cast<WVFieldEvaluationService*>(this)->mutableMetrics();
+  metrics.eventFieldArenaPlannedBytes=eventArena_->plannedBytes;
+  metrics.eventFieldArenaPeakBytes=eventArena_->peakBytes;
+  metrics.servicePersistentBytes=persistentBytes();
+  return status;
+}
+
+WVKernelStatus WVFieldEvaluationService::prepareEventField(
+    const WVVariableEvaluationKey& key,std::size_t elements,bool complex) const {
+  const auto status=complex ? eventArena_->prepareComplex(key,elements) :
+      eventArena_->prepareReal(key,elements);
+  if(status) {
+    if(!complex && key.node==WVVariableEvaluationNode::derivative) {
+      WVShape3D shape;
+      if(stratified_) {
+        const auto& geometry=stratified_->configuration();
+        shape={geometry.Nx,geometry.Ny,geometry.Nz};
+      } else if(barotropicQG_) {
+        const auto& configuration=barotropicQG_->configuration();
+        shape={configuration.Nx,configuration.Ny,1};
+      } else shape=transform_->descriptor().spatialShape();
+      eventArena_->setPreparedVolumeShape(key,shape);
+    }
+    auto& metrics=const_cast<WVFieldEvaluationService*>(this)->mutableMetrics();
+    metrics.eventFieldArenaPlannedBytes=eventArena_->plannedBytes;
+    metrics.eventFieldArenaPeakBytes=eventArena_->peakBytes;
+    metrics.servicePersistentBytes=persistentBytes();
+  }
+  return status;
+}
+
+WVKernelStatus WVFieldEvaluationService::prepareDensityEventArena(
+    std::size_t sampleCount,std::size_t profileCount,std::uint8_t demands,
+    WVNoMotionReference reference,bool apvNeeded) const {
+  const auto status=eventArena_->prepareDensity(
+      sampleCount,profileCount,demands,reference,apvNeeded);
+  if(status) {
+    auto& metrics=const_cast<WVFieldEvaluationService*>(this)->mutableMetrics();
+    metrics.eventFieldArenaPlannedBytes=eventArena_->plannedBytes;
+    metrics.eventFieldArenaPeakBytes=eventArena_->peakBytes;
+    metrics.servicePersistentBytes=persistentBytes();
+  }
+  return status;
+}
+
+WVKernelStatus WVFieldEvaluationService::prepareEventArena(
+    const WVFieldEvaluationPlan& plan,std::uint32_t componentIdentity) const {
+  constexpr std::uint64_t primitiveValueMask=1ULL<<0;
+  constexpr std::uint64_t pressureHeightMask=1ULL<<1;
+  constexpr std::uint64_t streamfunctionMask=1ULL<<2;
+  constexpr std::uint64_t potentialVorticityMask=1ULL<<3;
+  constexpr std::uint64_t uDerivativeMask=1ULL<<4;
+  constexpr std::uint64_t vDerivativeMask=1ULL<<5;
+  constexpr std::uint64_t wDerivativeMask=1ULL<<6;
+  if(plan.diagnosticPlan_)
+    return componentIdentity ? WVKernelStatus{WVKernelStatusCode::invalidConfiguration,
+        "A diagnostic plan cannot be nested as a component dependency."} :
+        plan.diagnosticPlan_->prepareEventArena(*this);
+  std::size_t R=0;
+  if(stratified_) {
+    const auto& geometry=stratified_->configuration();
+    R=geometry.Nx*geometry.Ny*geometry.Nz;
+  } else if(barotropicQG_) {
+    const auto& configuration=barotropicQG_->configuration();
+    R=configuration.Nx*configuration.Ny;
+  } else R=transform_->descriptor().spatialShape().elementCount();
+  const auto prepareReal=[&](WVVariableEvaluationKey key,std::size_t elements) {
+    return prepareEventField(key,elements,false);
+  };
+  if(transform_) {
+    if(plan.dependencyMask_&primitiveValueMask) {
+      auto status=prepareReal({WVVariableEvaluationNode::physicalField,
+          static_cast<std::uint32_t>(WVPortableVariable::u),componentIdentity,
+          0,0,0,1},4*R);
+      if(!status) return status;
+    }
+    const struct {std::uint64_t mask; WVPortableVariable field;} derivatives[]={{
+        uDerivativeMask,WVPortableVariable::u},{vDerivativeMask,WVPortableVariable::v},
+        {wDerivativeMask,WVPortableVariable::w}};
+    for(const auto& dependency:derivatives) if(plan.dependencyMask_&dependency.mask) {
+      for(std::uint32_t axis=1;axis<=3;++axis) {
+        const auto status=prepareReal({WVVariableEvaluationNode::derivative,
+            static_cast<std::uint32_t>(dependency.field),componentIdentity,axis},R);
+        if(!status) return status;
+      }
+    }
+    const struct {std::uint64_t mask; WVPortableVariable field;} fused[]={{
+        pressureHeightMask,WVPortableVariable::pi},{streamfunctionMask,WVPortableVariable::psi},
+        {potentialVorticityMask,WVPortableVariable::qgpv}};
+    for(const auto& dependency:fused) if(plan.dependencyMask_&dependency.mask) {
+      const auto status=prepareReal({WVVariableEvaluationNode::physicalField,
+          static_cast<std::uint32_t>(dependency.field),componentIdentity},4*R);
+      if(!status) return status;
+    }
+    for(const auto& output:plan.outputs_) {
+      const auto* metadata=findPortableVariable(output.fieldName);
+      if(!metadata) continue;
+      const auto field=metadata->identifier;
+      if(field==WVPortableVariable::p || field==WVPortableVariable::rhoE ||
+          field==WVPortableVariable::rhoTotal ||
+          field==WVPortableVariable::zetaX ||
+          field==WVPortableVariable::zetaY ||
+          field==WVPortableVariable::zetaZ) {
+        const auto status=prepareReal({WVVariableEvaluationNode::physicalField,
+            static_cast<std::uint32_t>(field),componentIdentity},R);
+        if(!status) return status;
+      } else if(field==WVPortableVariable::energy) {
+        const auto status=prepareReal({WVVariableEvaluationNode::reduction,
+            static_cast<std::uint32_t>(field)},1);
+        if(!status) return status;
+      }
+    }
+    return prepareEventArena(0);
+  }
+  for(const auto& output:plan.outputs_) {
+    auto* metadata=findPortableVariable(output.fieldName);
+    if(!metadata) continue;
+    auto field=metadata->identifier;
+    if(field==WVPortableVariable::ssu) field=WVPortableVariable::u;
+    else if(field==WVPortableVariable::ssv) field=WVPortableVariable::v;
+    else if(field==WVPortableVariable::ssh) field=WVPortableVariable::pi;
+    if(field==WVPortableVariable::totalEnergySpatiallyIntegrated ||
+        field==WVPortableVariable::energy) {
+      const auto status=prepareReal({WVVariableEvaluationNode::reduction,
+          static_cast<std::uint32_t>(field)},1);
+      if(!status) return status;
+      continue;
+    }
+    if(field==WVPortableVariable::uvMax) {
+      auto status=prepareReal({WVVariableEvaluationNode::reduction,
+          static_cast<std::uint32_t>(field)},1);
+      if(!status) return status;
+      for(const auto velocity:{WVPortableVariable::u,WVPortableVariable::v}) {
+        status=prepareReal({WVVariableEvaluationNode::physicalField,
+            static_cast<std::uint32_t>(velocity),componentIdentity},R);
+        if(!status) return status;
+      }
+      continue;
+    }
+    if(field==WVPortableVariable::wMax) {
+      auto status=prepareReal({WVVariableEvaluationNode::reduction,
+          static_cast<std::uint32_t>(field)},1);
+      if(!status) return status;
+      field=WVPortableVariable::w;
+    }
+    auto status=prepareReal({WVVariableEvaluationNode::physicalField,
+        static_cast<std::uint32_t>(field),componentIdentity},R);
+    if(!status) return status;
+    if((field==WVPortableVariable::zetaX || field==WVPortableVariable::zetaY) &&
+        stratified_ && (stratified_->configuration().transformClass==
+          "WVTransformHydrostatic" || stratified_->configuration().transformClass==
+          "WVTransformBoussinesq")) {
+      const auto first=field==WVPortableVariable::zetaX ?
+          WVPortableVariable::w : WVPortableVariable::u;
+      const auto firstAxis=field==WVPortableVariable::zetaX ? 2u : 3u;
+      const auto second=field==WVPortableVariable::zetaX ?
+          WVPortableVariable::v : WVPortableVariable::w;
+      const auto secondAxis=field==WVPortableVariable::zetaX ? 3u : 1u;
+      status=prepareReal({WVVariableEvaluationNode::derivative,
+          static_cast<std::uint32_t>(first),componentIdentity,firstAxis},R);
+      if(!status) return status;
+      status=prepareReal({WVVariableEvaluationNode::derivative,
+          static_cast<std::uint32_t>(second),componentIdentity,secondAxis},R);
+      if(!status) return status;
+    }
+  }
+  return prepareEventArena(0);
+}
+
+WVKernelStatus WVFieldEvaluationService::prepareEventArena(
+    const WVEventFieldEvaluationPlan& plan) const {
+  WVFieldEvaluationPlan fields;
+  fields.dependencyMask_=plan.dependencyMask_;
+  fields.requestedFieldMask_=plan.requestedFieldMask_;
+  try {
+    fields.outputs_.reserve(plan.outputs_.size());
+    for(const auto& output:plan.outputs_)
+      fields.outputs_.push_back({output.identifier,output.fieldName,
+          WVFieldSamplingKind::fullGrid,{},0,false});
+  } catch(const std::bad_alloc&) {
+    return {WVKernelStatusCode::allocationFailure,
+        "Unable to prepare sampled output-event dependencies."};
+  }
+  return prepareEventArena(fields);
+}
+
+WVKernelStatus WVFieldEvaluationService::beginStateEvaluation(
+    const WVIntegrationState& state,const void* owner) {
+  if(stratified_) return stratified_->beginStateEvaluation(state,owner);
+  if(barotropicQG_) return barotropicQG_->beginStateEvaluation(state,owner);
+  return transform_->beginStateEvaluation(state.waveVortex,owner);
+}
+
+WVKernelStatus WVFieldEvaluationService::addStateEvaluationView(
+    const WVIntegrationState& state,std::size_t componentIdentity) {
+  if(!stateEvaluationActive_) return WVKernelStatus::ok();
+  if(stratified_) return stratified_->addStateEvaluationView(
+      state,eventWorkspace_,componentIdentity);
+  if(barotropicQG_) return barotropicQG_->addStateEvaluationView(
+      state,eventWorkspace_,componentIdentity);
+  return transform_->addStateEvaluationView(
+      state.waveVortex,eventWorkspace_,componentIdentity);
+}
+
+void WVFieldEvaluationService::endStateEvaluation() noexcept {
+  if(stratified_) stratified_->endStateEvaluation();
+  else if(barotropicQG_) barotropicQG_->endStateEvaluation();
+  else (void)transform_->endStateEvaluation();
+}
+
+WVKernelStatus WVFieldEvaluationService::prepareForcingEvaluationContext() {
+  std::vector<WVVariableEvaluationKey> keys;
+  try {
+    keys.reserve(forcingVariableBindings().size()*2);
+    for(std::uint32_t index=0;index<forcingVariableBindings().size();++index) {
+      keys.push_back({WVVariableEvaluationNode::forcingTendency,
+          static_cast<std::uint32_t>(WVPortableVariable::Fu_portable_catalog_forcing),
+          0,0,0,index,1});
+      keys.push_back({WVVariableEvaluationNode::forcingTendency,
+          static_cast<std::uint32_t>(WVPortableVariable::Fqgpv_portable_catalog_forcing),
+          0,0,0,index,1});
+    }
+    const auto dependencies=forcing_->dependencyKeys();
+    keys.insert(keys.end(),dependencies.begin(),dependencies.end());
+  } catch(const std::bad_alloc&) {
+    return {WVKernelStatusCode::allocationFailure,
+        "Unable to prepare forcing variable evaluation keys."};
+  }
+  return variableEvaluationContext_.prepare(keys);
+}
+
+class WVFieldEvaluationSession::Impl final {
+public:
+  Impl(WVFieldEvaluationService& service,const WVIntegrationState& state)
+      : scope(service,state,true,true) {}
+  detail::WVFieldEvaluationEventScope scope;
+};
+
+WVFieldEvaluationSession::WVFieldEvaluationSession()=default;
+WVFieldEvaluationSession::~WVFieldEvaluationSession()=default;
+WVFieldEvaluationSession::WVFieldEvaluationSession(WVFieldEvaluationSession&&) noexcept=default;
+WVFieldEvaluationSession& WVFieldEvaluationSession::operator=(WVFieldEvaluationSession&&) noexcept=default;
+bool WVFieldEvaluationSession::active() const noexcept {
+  return impl_ && static_cast<bool>(impl_->scope.status());
+}
+const WVKernelStatus& WVFieldEvaluationSession::status() const noexcept {
+  static const WVKernelStatus inactive{WVKernelStatusCode::invalidConfiguration,
+      "Field evaluation session is inactive."};
+  return impl_ ? impl_->scope.status() : inactive;
+}
+
+WVKernelStatus WVFieldEvaluationService::setVariableEvaluationPolicy(
+    WVVariableEvaluationPolicy policy) {
+  if(eventWorkspace_)
+    return {WVKernelStatusCode::invalidConfiguration,
+            "Cannot change variable evaluation policy during an active session."};
+  if(policy!=WVVariableEvaluationPolicy::reuse &&
+      policy!=WVVariableEvaluationPolicy::lowMemory)
+    return {WVKernelStatusCode::invalidConfiguration,
+            "Unknown variable evaluation policy."};
+  if(policy==variableEvaluationPolicy_) return WVKernelStatus::ok();
+  if(policy==WVVariableEvaluationPolicy::lowMemory) {
+    if(forcing_ && eventArenaForcingPrepared_) {
+      const auto status=eventArena_->prepareForcing(*forcing_,policy);
+      if(!status) return status;
+    }
+    eventArena_->clearReal();
+    variableEvaluationPolicy_=policy;
+  } else {
+    variableEvaluationPolicy_=policy;
+    const auto status=prepareEventArena(0);
+    if(!status) {
+      variableEvaluationPolicy_=WVVariableEvaluationPolicy::lowMemory;
+      eventArena_->clearReal();
+      if(forcing_ && eventArenaForcingPrepared_) (void)eventArena_->prepareForcing(
+          *forcing_,WVVariableEvaluationPolicy::lowMemory);
+      return status;
+    }
+  }
+  auto& metrics=mutableMetrics();
+  metrics.eventFieldArenaPlannedBytes=eventArena_->plannedBytes;
+  metrics.eventFieldArenaPeakBytes=eventArena_->peakBytes;
+  metrics.servicePersistentBytes=persistentBytes();
+  return WVKernelStatus::ok();
+}
+
+WVKernelStatus WVFieldEvaluationService::beginEvaluationSession(
+    const WVIntegrationState& state,WVFieldEvaluationSession& session) {
+  if(!variableEvaluationPreparationStatus_)
+    return variableEvaluationPreparationStatus_;
+  if(session.impl_)
+    return {WVKernelStatusCode::invalidConfiguration,
+            "Field evaluation session is already active."};
+  if(eventWorkspace_)
+    return {WVKernelStatusCode::reentrantExecution,
+            "A field evaluation session is already active."};
+  try {
+    auto candidate=std::make_unique<WVFieldEvaluationSession::Impl>(*this,state);
+    const auto status=candidate->scope.status();
+    if(!status) return status;
+    session.impl_=std::move(candidate);
+    return WVKernelStatus::ok();
+  } catch(const std::bad_alloc&) {
+    return {WVKernelStatusCode::allocationFailure,
+            "Unable to create a field evaluation session."};
+  }
+}
 
 bool WVFieldEvaluationPlan::hasDensityDiagnostics() const noexcept {
   return diagnosticPlan_ && diagnosticPlan_->hasDensityDiagnostics();
@@ -409,6 +770,43 @@ public:
 };
 } // namespace detail
 
+class WVFieldEvaluationService::SampledMovingWorkspace final {
+public:
+  WVKernelStatus prepare(const WVFieldEvaluationPlan& fullGridPlan,
+      const std::vector<detail::WVSampledMovingFieldPlan::Request>& requests) {
+    try {
+      const auto count=fullGridPlan.outputCount();
+      fullStorage.resize(count);
+      fullViews.resize(count);
+      selection.resize(count);
+      sampledStorage.resize(count);
+      for(const auto& request:requests) {
+        fullStorage[request.outputIndex].reserve(
+            fullGridPlan.outputs()[request.outputIndex].elementCount);
+        sampledStorage[request.outputIndex].reserve(request.positionCount);
+      }
+      return WVKernelStatus::ok();
+    } catch(const std::bad_alloc&) {
+      return {WVKernelStatusCode::allocationFailure,
+          "Unable to prepare sampled moving-field storage."};
+    }
+  }
+  std::vector<std::vector<double>> fullStorage;
+  std::vector<WVFieldOutputView> fullViews;
+  std::vector<std::uint8_t> selection;
+  std::vector<std::vector<double>> sampledStorage;
+  std::size_t persistentBytes() const noexcept {
+    std::size_t bytes=sizeof(*this)+
+        fullStorage.capacity()*sizeof(std::vector<double>)+
+        fullViews.capacity()*sizeof(WVFieldOutputView)+
+        selection.capacity()*sizeof(std::uint8_t)+
+        sampledStorage.capacity()*sizeof(std::vector<double>);
+    for(const auto& values:fullStorage) bytes+=values.capacity()*sizeof(double);
+    for(const auto& values:sampledStorage) bytes+=values.capacity()*sizeof(double);
+    return bytes;
+  }
+};
+
 std::size_t WVMovingFieldEvaluationPlan::persistentBytes() const noexcept {
   std::size_t bytes = sizeof(*this) +
                       requests_.capacity() * sizeof(ResolvedRequest) +
@@ -727,30 +1125,35 @@ WVKernelStatus WVFieldEvaluationService::createBorrowing(WVConstantStratificatio
   std::unique_ptr<WVFieldEvaluationService> candidate;
   auto status=createBorrowing(engine.kernel(),candidate); if(!status) return status;
   status=detail::WVForcingDiagnosticBinding::create<WVConstantStratificationForcingEngine,false>(engine,candidate->forcing_); if(!status) return status;
+  status=candidate->prepareForcingEvaluationContext(); if(!status) return status;
   result=std::move(candidate); return WVKernelStatus::ok();
 }
 WVKernelStatus WVFieldEvaluationService::createBorrowing(WVBarotropicQGForcingEngine& engine,std::unique_ptr<WVFieldEvaluationService>& result) {
   std::unique_ptr<WVFieldEvaluationService> candidate;
   auto status=createBorrowing(engine.kernel(),candidate); if(!status) return status;
   status=detail::WVForcingDiagnosticBinding::create<WVBarotropicQGForcingEngine,true>(engine,candidate->forcing_); if(!status) return status;
+  status=candidate->prepareForcingEvaluationContext(); if(!status) return status;
   result=std::move(candidate); return WVKernelStatus::ok();
 }
 WVKernelStatus WVFieldEvaluationService::createBorrowing(WVStratifiedQGForcingEngine& engine,std::unique_ptr<WVFieldEvaluationService>& result) {
   std::unique_ptr<WVFieldEvaluationService> candidate;
   auto status=createBorrowing(engine.kernel(),candidate); if(!status) return status;
   status=detail::WVForcingDiagnosticBinding::create<WVStratifiedQGForcingEngine,true>(engine,candidate->forcing_); if(!status) return status;
+  status=candidate->prepareForcingEvaluationContext(); if(!status) return status;
   result=std::move(candidate); return WVKernelStatus::ok();
 }
 WVKernelStatus WVFieldEvaluationService::createBorrowing(WVHydrostaticForcingEngine& engine,std::unique_ptr<WVFieldEvaluationService>& result) {
   std::unique_ptr<WVFieldEvaluationService> candidate;
   auto status=createBorrowing(engine.kernel(),candidate); if(!status) return status;
   status=detail::WVForcingDiagnosticBinding::create<WVHydrostaticForcingEngine,false>(engine,candidate->forcing_); if(!status) return status;
+  status=candidate->prepareForcingEvaluationContext(); if(!status) return status;
   result=std::move(candidate); return WVKernelStatus::ok();
 }
 WVKernelStatus WVFieldEvaluationService::createBorrowing(WVBoussinesqForcingEngine& engine,std::unique_ptr<WVFieldEvaluationService>& result) {
   std::unique_ptr<WVFieldEvaluationService> candidate;
   auto status=createBorrowing(engine.kernel(),candidate); if(!status) return status;
   status=detail::WVForcingDiagnosticBinding::create<WVBoussinesqForcingEngine,false>(engine,candidate->forcing_); if(!status) return status;
+  status=candidate->prepareForcingEvaluationContext(); if(!status) return status;
   result=std::move(candidate); return WVKernelStatus::ok();
 }
 WVKernelStatus WVFieldEvaluationService::createPlan(
@@ -760,11 +1163,41 @@ WVKernelStatus WVFieldEvaluationService::createPlan(
       densityContract.reference != WVNoMotionReference::initial)
     return {WVKernelStatusCode::invalidConfiguration,"Invalid density diagnostic reference."};
   if (detail::WVDiagnosticFieldPlan::required(requests,stratified_ != nullptr))
-    return detail::WVDiagnosticFieldPlan::create(*this,requests,plan,densityContract);
-  if (barotropicQG_)
-    return barotropicQG_->createPlan(requests, plan);
-  if (stratified_)
-    return stratified_->createPlan(requests, plan);
+  {
+    WVFieldEvaluationPlan candidate;
+    const auto status=detail::WVDiagnosticFieldPlan::create(
+        *this,requests,candidate,densityContract);
+    if(!status) return status;
+    const bool prepareForcing=candidate.diagnosticPlan_ &&
+        candidate.diagnosticPlan_->hasForcingDiagnostics();
+    const bool forcingPreparedBefore=eventArenaForcingPrepared_;
+    eventArenaForcingPrepared_|=prepareForcing;
+    const auto arenaStatus=prepareEventArena(candidate);
+    if(!arenaStatus) {
+      eventArenaForcingPrepared_=forcingPreparedBefore;
+      return arenaStatus;
+    }
+    plan=std::move(candidate);
+    return WVKernelStatus::ok();
+  }
+  if (barotropicQG_) {
+    WVFieldEvaluationPlan candidate;
+    const auto status=barotropicQG_->createPlan(requests, candidate);
+    if(!status) return status;
+    const auto arenaStatus=prepareEventArena(candidate);
+    if(!arenaStatus) return arenaStatus;
+    plan=std::move(candidate);
+    return WVKernelStatus::ok();
+  }
+  if (stratified_) {
+    WVFieldEvaluationPlan candidate;
+    const auto status=stratified_->createPlan(requests, candidate);
+    if(!status) return status;
+    const auto arenaStatus=prepareEventArena(candidate);
+    if(!arenaStatus) return arenaStatus;
+    plan=std::move(candidate);
+    return WVKernelStatus::ok();
+  }
   try {
     WVFieldEvaluationPlan candidate;
     const auto &configuration = transform_->descriptor().configuration();
@@ -977,6 +1410,8 @@ WVKernelStatus WVFieldEvaluationService::createPlan(
       candidate.requests_.push_back(std::move(resolved));
       candidate.outputs_.push_back(std::move(output));
     }
+    const auto arenaStatus=prepareEventArena(candidate);
+    if(!arenaStatus) return arenaStatus;
     plan = std::move(candidate);
     return WVKernelStatus::ok();
   } catch (const std::bad_alloc &) {
@@ -992,7 +1427,29 @@ WVKernelStatus WVFieldEvaluationService::createPlan(
 WVKernelStatus WVFieldEvaluationService::evaluate(
     const WVFieldEvaluationPlan &plan, const WVState &state,
     WVFieldOutputView *outputs, std::size_t outputCount, const std::uint8_t *activeOutputs) {
-  if (plan.diagnosticPlan_) return plan.diagnosticPlan_->evaluate(*this,{state},outputs,outputCount,activeOutputs);
+  if(eventWorkspace_) {
+    const auto status=eventWorkspace_->validateState({state});
+    if(!status) return status;
+  }
+  if (plan.diagnosticPlan_) {
+    auto& metrics=stratified_ ? stratified_->mutableMetrics() :
+        barotropicQG_ ? barotropicQG_->mutableMetrics() : metrics_;
+    const auto evaluationsBefore=metrics.evaluationCount;
+    const auto batchesBefore=metrics.coincidentBatchCount;
+    const auto status=plan.diagnosticPlan_->evaluate(
+        *this,{state},outputs,outputCount,activeOutputs);
+    if(status) {
+      std::size_t activeCount=0;
+      for(std::size_t i=0;i<outputCount;++i)
+        activeCount+=!activeOutputs || activeOutputs[i];
+      metrics.evaluationCount=evaluationsBefore+1;
+      metrics.coincidentBatchCount=batchesBefore+(activeCount>1 ? 1 : 0);
+      metrics.lastPlanBytes=plan.persistentBytes();
+      metrics.maximumPlanBytes=std::max(
+          metrics.maximumPlanBytes,metrics.lastPlanBytes);
+    }
+    return status;
+  }
   if (!transform_) return {WVKernelStatusCode::unsupportedOperation,"This transform requires coefficient-family state views."};
   const PlanInvocation invocation{&plan, outputs, outputCount, activeOutputs};
   return evaluatePlanBatch(&invocation, 1, state);
@@ -1001,7 +1458,29 @@ WVKernelStatus WVFieldEvaluationService::evaluate(
 WVKernelStatus WVFieldEvaluationService::evaluate(
     const WVFieldEvaluationPlan &plan, const WVIntegrationState &state,
     WVFieldOutputView *outputs, std::size_t outputCount, const std::uint8_t *activeOutputs) {
-  if (plan.diagnosticPlan_) return plan.diagnosticPlan_->evaluate(*this,state,outputs,outputCount,activeOutputs);
+  if(eventWorkspace_) {
+    const auto status=eventWorkspace_->validateState({state});
+    if(!status) return status;
+  }
+  if (plan.diagnosticPlan_) {
+    auto& metrics=stratified_ ? stratified_->mutableMetrics() :
+        barotropicQG_ ? barotropicQG_->mutableMetrics() : metrics_;
+    const auto evaluationsBefore=metrics.evaluationCount;
+    const auto batchesBefore=metrics.coincidentBatchCount;
+    const auto status=plan.diagnosticPlan_->evaluate(
+        *this,state,outputs,outputCount,activeOutputs);
+    if(status) {
+      std::size_t activeCount=0;
+      for(std::size_t i=0;i<outputCount;++i)
+        activeCount+=!activeOutputs || activeOutputs[i];
+      metrics.evaluationCount=evaluationsBefore+1;
+      metrics.coincidentBatchCount=batchesBefore+(activeCount>1 ? 1 : 0);
+      metrics.lastPlanBytes=plan.persistentBytes();
+      metrics.maximumPlanBytes=std::max(
+          metrics.maximumPlanBytes,metrics.lastPlanBytes);
+    }
+    return status;
+  }
   if (barotropicQG_)
     return barotropicQG_->evaluate(plan, state, outputs, outputCount, activeOutputs);
   if (stratified_)
@@ -1294,7 +1773,11 @@ WVFieldEvaluationService::evaluatePlanBatch(const PlanInvocation *invocations,
         {configuration.Nx, configuration.Ny, configuration.Nz, 4}};
     bool reused=false;
     const auto operation=[&]() {return invokeTransform([&]() { return transform_->transformWaveVortexToUVWEta(state, primitiveBundle); });};
-    auto status = eventWorkspace_ ? eventWorkspace_->evaluate(0,state,primitiveBundle.data,4*fieldElements,operation,reused) : operation();
+    const WVVariableEvaluationKey primitiveKey{
+        WVVariableEvaluationNode::physicalField,
+        static_cast<std::uint32_t>(WVPortableVariable::u),
+        eventWorkspace_ ? eventWorkspace_->component() : 0u,0,0,0,1};
+    auto status = eventWorkspace_ ? eventWorkspace_->evaluate(primitiveKey,primitiveBundle.data,4*fieldElements,operation,reused) : operation();
     if(reused) ++metrics_.primitiveFieldReuseCount;
     if (!status)
       return status;
@@ -1362,22 +1845,49 @@ WVFieldEvaluationService::evaluatePlanBatch(const PlanInvocation *invocations,
     if (fieldRequested(WVFieldEvaluationPlan::Field::rhoE) ||
         fieldRequested(WVFieldEvaluationPlan::Field::rhoTotal)) {
       updateScratchHighWater(5 * fieldElements, 0);
-      for (std::size_t index = 0; index < fieldElements; ++index)
-        derived[index] = densityScale * eta[index];
-      if (fieldRequested(WVFieldEvaluationPlan::Field::rhoE))
+      if (fieldRequested(WVFieldEvaluationPlan::Field::rhoE)) {
+        const auto produce=[&]() {
+          for (std::size_t index = 0; index < fieldElements; ++index)
+            derived[index] = densityScale * eta[index];
+          ++outputProducerMetrics_.reconstructions[
+              static_cast<std::size_t>(WVHydrostaticField::rhoE)][0]
+              [eventWorkspace_ ? eventWorkspace_->component() : 0u];
+          return WVKernelStatus::ok();
+        };
+        bool reusedDensity=false;
+        const auto densityStatus=eventWorkspace_ ? eventWorkspace_->evaluate(
+            {WVVariableEvaluationNode::physicalField,
+              static_cast<std::uint32_t>(WVPortableVariable::rhoE),
+              eventWorkspace_->component()},derived,fieldElements,produce,
+            reusedDensity) : produce();
+        if(!densityStatus) return densityStatus;
         writeField(WVFieldEvaluationPlan::Field::rhoE,
                    WVFieldEvaluationPlan::NativeRank::volume, derived);
+      }
       if (fieldRequested(WVFieldEvaluationPlan::Field::rhoTotal)) {
-        for (std::size_t z = 0; z < configuration.Nz; ++z) {
-          const double rhoNoMotion =
-              configuration.rho0 - densityScale *
-                                       transform_->descriptor().verticalModes().z[z];
-          for (std::size_t horizontal = 0; horizontal < horizontalElements;
-               ++horizontal) {
-            const auto index = horizontal + horizontalElements * z;
-            derived[index] = rhoNoMotion + densityScale * eta[index];
+        const auto produce=[&]() {
+          for (std::size_t z = 0; z < configuration.Nz; ++z) {
+            const double rhoNoMotion=
+                configuration.rho0-densityScale*
+                    transform_->descriptor().verticalModes().z[z];
+            for (std::size_t horizontal=0;
+                horizontal<horizontalElements;++horizontal) {
+              const auto index=horizontal+horizontalElements*z;
+              derived[index]=rhoNoMotion+densityScale*eta[index];
+            }
           }
-        }
+          ++outputProducerMetrics_.reconstructions[
+              static_cast<std::size_t>(WVHydrostaticField::rhoTotal)][0]
+              [eventWorkspace_ ? eventWorkspace_->component() : 0u];
+          return WVKernelStatus::ok();
+        };
+        bool reusedDensity=false;
+        const auto densityStatus=eventWorkspace_ ? eventWorkspace_->evaluate(
+            {WVVariableEvaluationNode::physicalField,
+              static_cast<std::uint32_t>(WVPortableVariable::rhoTotal),
+              eventWorkspace_->component()},derived,fieldElements,produce,
+            reusedDensity) : produce();
+        if(!densityStatus) return densityStatus;
         writeField(WVFieldEvaluationPlan::Field::rhoTotal,
                    WVFieldEvaluationPlan::NativeRank::volume, derived);
       }
@@ -1405,7 +1915,11 @@ WVFieldEvaluationService::evaluatePlanBatch(const PlanInvocation *invocations,
     const auto &horizontalModes = transform_->descriptor().fourierModes();
     auto *wave = complexScratch_.data();
     auto *zeroFrequency = wave + coefficientElements;
-    const double elapsed = state.t - state.t0;
+    WVComplexConstView phases;
+    if(field==WVFieldEvaluationPlan::Field::pi) {
+      const auto phaseStatus=transform_->preparedPhase(state,phases);
+      if(!phaseStatus) return phaseStatus;
+    }
     const double f = modes.coriolisFrequency;
     for (std::size_t mode = 0; mode < horizontalModes.size(); ++mode) {
       const double Kh2 = horizontalModes[mode].Kh * horizontalModes[mode].Kh;
@@ -1414,8 +1928,7 @@ WVFieldEvaluationService::evaluatePlanBatch(const PlanInvocation *invocations,
         wave[index] = {};
         zeroFrequency[index] = {};
         if (field == WVFieldEvaluationPlan::Field::pi) {
-          const WVComplex64 phase{std::cos(modes.omega[index] * elapsed),
-                                  std::sin(modes.omega[index] * elapsed)};
+          const auto phase=phases.data[index];
           const auto positive = multiply(state.coefficients.Ap.data[index], phase);
           const auto negative =
               multiply(state.coefficients.Am.data[index], conjugate(phase));
@@ -1448,12 +1961,12 @@ WVFieldEvaluationService::evaluatePlanBatch(const PlanInvocation *invocations,
         }
       }
     }
+    return WVKernelStatus::ok();
   };
 
   bool fFieldReused=false;
   auto evaluateFField = [&](WVFieldEvaluationPlan::Field field) {
     fFieldReused=false;
-    fillFFieldCoefficients(field);
     updateScratchHighWater(4 * fieldElements, 2 * coefficientElements);
     WVRealFieldBundleView fieldAndDerivatives{
         realScratch_.data(),
@@ -1461,11 +1974,21 @@ WVFieldEvaluationService::evaluatePlanBatch(const PlanInvocation *invocations,
     const WVComplexConstView wave{complexScratch_.data(), spectral};
     const WVComplexConstView zeroFrequency{
         complexScratch_.data() + coefficientElements, spectral};
-    const auto operation=[&]() {return invokeTransform([&]() {
-      return transform_->transformToSpatialDomainWithFAllDerivatives(
-          wave, zeroFrequency, fieldAndDerivatives);
-    });};
-    const auto status=eventWorkspace_ ? eventWorkspace_->evaluate(static_cast<std::size_t>(field),state,realScratch_.data(),fieldElements,operation,fFieldReused) : operation();
+    const auto identifiedField=field==WVFieldEvaluationPlan::Field::pi ?
+        WVConstantFField::pi : field==WVFieldEvaluationPlan::Field::psi ?
+        WVConstantFField::psi : WVConstantFField::qgpv;
+    const auto operation=[&]() {
+      const auto coefficientStatus=fillFFieldCoefficients(field);
+      if(!coefficientStatus) return coefficientStatus;
+      return invokeTransform([&]() {
+        return transform_->transformToSpatialDomainWithFAllDerivatives(
+            identifiedField,wave,zeroFrequency,fieldAndDerivatives,
+            eventWorkspace_ ? eventWorkspace_->component() : 0);
+      });
+    };
+    const auto status=eventWorkspace_ ? eventWorkspace_->evaluate(
+        static_cast<std::size_t>(field),state,realScratch_.data(),
+        4*fieldElements,operation,fFieldReused) : operation();
     if(fFieldReused) ++metrics_.primitiveFieldReuseCount;
     return status;
   };
@@ -1484,8 +2007,21 @@ WVFieldEvaluationService::evaluatePlanBatch(const PlanInvocation *invocations,
       double *pressure = realScratch_.data() + 4 * fieldElements;
       updateScratchHighWater(5 * fieldElements, 2 * coefficientElements);
       const double pressureScale = configuration.rho0 * configuration.g;
-      for (std::size_t index = 0; index < fieldElements; ++index)
-        pressure[index] = pressureScale * pressureHeightField[index];
+      const auto producePressure=[&]() {
+        for (std::size_t index = 0; index < fieldElements; ++index)
+          pressure[index] = pressureScale * pressureHeightField[index];
+        ++outputProducerMetrics_.reconstructions[
+            static_cast<std::size_t>(WVHydrostaticField::p)][0]
+            [eventWorkspace_ ? eventWorkspace_->component() : 0u];
+        return WVKernelStatus::ok();
+      };
+      bool pressureReused=false;
+      const auto pressureStatus=eventWorkspace_ ? eventWorkspace_->evaluate(
+          {WVVariableEvaluationNode::physicalField,
+            static_cast<std::uint32_t>(WVPortableVariable::p),
+            eventWorkspace_->component()},pressure,fieldElements,
+          producePressure,pressureReused) : producePressure();
+      if(!pressureStatus) return pressureStatus;
       writeField(WVFieldEvaluationPlan::Field::p,
                  WVFieldEvaluationPlan::NativeRank::volume, pressure);
     }
@@ -1523,7 +2059,9 @@ WVFieldEvaluationService::evaluatePlanBatch(const PlanInvocation *invocations,
     const auto &horizontalModes = transform_->descriptor().fourierModes();
     const double f = modes.coriolisFrequency;
     double energy = 0.0;
-    for (std::size_t mode = 0; mode < horizontalModes.size(); ++mode) {
+    const auto produceEnergy=[&]() {
+      energy=0.0;
+      for (std::size_t mode = 0; mode < horizontalModes.size(); ++mode) {
       const double Kh = horizontalModes[mode].Kh;
       const double Kh2 = Kh * Kh;
       for (std::size_t j = 0; j < configuration.Nj; ++j) {
@@ -1559,7 +2097,16 @@ WVFieldEvaluationService::evaluatePlanBatch(const PlanInvocation *invocations,
                   zeroFactor *
                       squaredMagnitude(state.coefficients.A0.data[index]);
       }
-    }
+      }
+      ++outputProducerMetrics_.energyReductions;
+      return WVKernelStatus::ok();
+    };
+    bool energyReused=false;
+    const auto energyStatus=eventWorkspace_ ? eventWorkspace_->evaluate(
+        {WVVariableEvaluationNode::reduction,
+          static_cast<std::uint32_t>(WVPortableVariable::energy)},
+        &energy,1,produceEnergy,energyReused) : produceEnergy();
+    if(!energyStatus) return energyStatus;
     writeField(WVFieldEvaluationPlan::Field::energy,
                WVFieldEvaluationPlan::NativeRank::scalar, &energy);
   }
@@ -1572,17 +2119,59 @@ WVFieldEvaluationService::evaluatePlanBatch(const PlanInvocation *invocations,
     double *zetaY = zetaX + fieldElements;
     double *zetaZ = zetaY + fieldElements;
     double *derivatives = zetaZ + fieldElements;
-    std::fill(zetaX, zetaX + 3 * fieldElements, 0.0);
+    const bool requestedZeta[]={
+        fieldRequested(WVFieldEvaluationPlan::Field::zetaX),
+        fieldRequested(WVFieldEvaluationPlan::Field::zetaY),
+        fieldRequested(WVFieldEvaluationPlan::Field::zetaZ)};
+    const WVPortableVariable zetaVariables[]={WVPortableVariable::zetaX,
+        WVPortableVariable::zetaY,WVPortableVariable::zetaZ};
+    double* zetaFields[]={zetaX,zetaY,zetaZ};
+    bool cachedZeta[3]{};
+    for(std::size_t index=0;index<3;++index) {
+      if(!requestedZeta[index]) continue;
+      const WVVariableEvaluationKey key{WVVariableEvaluationNode::physicalField,
+          static_cast<std::uint32_t>(zetaVariables[index]),
+          eventWorkspace_ ? eventWorkspace_->component() : 0u};
+      if(eventWorkspace_ && eventWorkspace_->ready(key)) {
+        bool reused=false;
+        const auto status=eventWorkspace_->evaluate(key,zetaFields[index],
+            fieldElements,[]() {
+              return WVKernelStatus{WVKernelStatusCode::invalidConfiguration,
+                  "A ready vorticity field unexpectedly requested production."};
+            },reused);
+        if(!status) return status;
+        cachedZeta[index]=true;
+      } else std::fill_n(zetaFields[index],fieldElements,0.0);
+    }
     WVRealFieldBundleView derivativeBundle{
         derivatives,
         {configuration.Nx, configuration.Ny, configuration.Nz, 3}};
     const auto evaluateDerivatives=[&](WVDynamicalField field) {
       bool reused=false;
+      const auto portableField=field==WVDynamicalField::u ? WVPortableVariable::u :
+          field==WVDynamicalField::v ? WVPortableVariable::v :
+          field==WVDynamicalField::w ? WVPortableVariable::w :
+          WVPortableVariable::eta;
       const auto operation=[&]() {return invokeTransform([&]() {
         return transform_->transformStateFieldDerivatives(state,field,derivativeBundle);
       });};
-      const auto key=detail::WVFieldEvaluationEventWorkspace::dynamicalDerivativeKeyBase+static_cast<std::size_t>(field);
-      const auto status=eventWorkspace_ ? eventWorkspace_->evaluate(key,state,derivatives,3*fieldElements,operation,reused) : operation();
+      std::vector<WVVariableEvaluationKey> keys;
+      std::vector<WVFieldOutputView> derivativeViews;
+      try {
+        keys.reserve(3); derivativeViews.reserve(3);
+        for(std::uint32_t axis=1;axis<=3;++axis) {
+          keys.push_back({WVVariableEvaluationNode::derivative,
+              static_cast<std::uint32_t>(portableField),
+              eventWorkspace_ ? eventWorkspace_->component() : 0u,axis});
+          derivativeViews.push_back({derivatives+(axis-1)*fieldElements,
+              fieldElements});
+        }
+      } catch(const std::bad_alloc&) {
+        return WVKernelStatus{WVKernelStatusCode::allocationFailure,
+            "Unable to prepare derivative cache views."};
+      }
+      const auto status=eventWorkspace_ ? eventWorkspace_->evaluateGroup(
+          keys,derivativeViews,operation,reused) : operation();
       if(status) {
         if(reused) ++metrics_.primitiveFieldReuseCount;
         else ++metrics_.primitiveFieldEvaluationCount;
@@ -1596,8 +2185,8 @@ WVFieldEvaluationService::evaluatePlanBatch(const PlanInvocation *invocations,
       const double *uy = derivatives + fieldElements;
       const double *uz = uy + fieldElements;
       for (std::size_t index = 0; index < fieldElements; ++index) {
-        zetaY[index] += uz[index];
-        zetaZ[index] -= uy[index];
+        if(requestedZeta[1] && !cachedZeta[1]) zetaY[index] += uz[index];
+        if(requestedZeta[2] && !cachedZeta[2]) zetaZ[index] -= uy[index];
       }
     }
     if ((dependencyMask & vDerivatives) != 0) {
@@ -1607,8 +2196,8 @@ WVFieldEvaluationService::evaluatePlanBatch(const PlanInvocation *invocations,
       const double *vx = derivatives;
       const double *vz = derivatives + 2 * fieldElements;
       for (std::size_t index = 0; index < fieldElements; ++index) {
-        zetaX[index] -= vz[index];
-        zetaZ[index] += vx[index];
+        if(requestedZeta[0] && !cachedZeta[0]) zetaX[index] -= vz[index];
+        if(requestedZeta[2] && !cachedZeta[2]) zetaZ[index] += vx[index];
       }
     }
     if ((dependencyMask & wDerivatives) != 0) {
@@ -1618,9 +2207,24 @@ WVFieldEvaluationService::evaluatePlanBatch(const PlanInvocation *invocations,
       const double *wx = derivatives;
       const double *wy = derivatives + fieldElements;
       for (std::size_t index = 0; index < fieldElements; ++index) {
-        zetaX[index] += wy[index];
-        zetaY[index] -= wx[index];
+        if(requestedZeta[0] && !cachedZeta[0]) zetaX[index] += wy[index];
+        if(requestedZeta[1] && !cachedZeta[1]) zetaY[index] -= wx[index];
       }
+    }
+    for(std::size_t index=0;index<3;++index) {
+      if(!requestedZeta[index] || cachedZeta[index]) continue;
+      const auto produced=[&]() {
+        ++outputProducerMetrics_.reconstructions[10+index][0]
+            [eventWorkspace_ ? eventWorkspace_->component() : 0u];
+        return WVKernelStatus::ok();
+      };
+      bool reused=false;
+      const auto status=eventWorkspace_ ? eventWorkspace_->evaluate(
+          {WVVariableEvaluationNode::physicalField,
+            static_cast<std::uint32_t>(zetaVariables[index]),
+            eventWorkspace_->component()},zetaFields[index],fieldElements,
+          produced,reused) : produced();
+      if(!status) return status;
     }
     if (fieldRequested(WVFieldEvaluationPlan::Field::zetaX))
       writeField(WVFieldEvaluationPlan::Field::zetaX,
@@ -1801,6 +2405,8 @@ WVKernelStatus WVFieldEvaluationService::createEventPlan(
       }
       candidate.fingerprint_ = fingerprint;
       const auto planBytes = candidate.persistentBytes();
+      const auto arenaStatus=prepareEventArena(candidate);
+      if(!arenaStatus) return arenaStatus;
       plan = std::move(candidate);
       auto &eventMetrics = mutableMetrics();
       ++eventMetrics.eventPlanCreationCount;
@@ -1816,12 +2422,20 @@ WVKernelStatus WVFieldEvaluationService::createEventPlan(
   }
   if (barotropicQG_) {
     const auto status = barotropicQG_->createEventPlan(requests, plan);
-    if (status) plan.owner_ = this;
+    if (status) {
+      const auto arenaStatus=prepareEventArena(plan);
+      if(!arenaStatus) return arenaStatus;
+      plan.owner_ = this;
+    }
     return status;
   }
   if (stratified_) {
     const auto status = stratified_->createEventPlan(requests, plan);
-    if (status) plan.owner_ = this;
+    if (status) {
+      const auto arenaStatus=prepareEventArena(plan);
+      if(!arenaStatus) return arenaStatus;
+      plan.owner_ = this;
+    }
     return status;
   }
   try {
@@ -1908,6 +2522,8 @@ WVKernelStatus WVFieldEvaluationService::createEventPlan(
     }
     candidate.fingerprint_ = fingerprint;
     const auto planBytes = candidate.persistentBytes();
+    const auto arenaStatus=prepareEventArena(candidate);
+    if(!arenaStatus) return arenaStatus;
     plan = std::move(candidate);
     ++metrics_.eventPlanCreationCount;
     metrics_.eventPlanFieldResolutionCount += requests.size();
@@ -2623,6 +3239,11 @@ WVKernelStatus WVFieldEvaluationService::createMovingPlan(
                                implementation->fullGridPlan, densityContract);
       if (!status)
         return status;
+      if(!sampledMovingWorkspace_)
+        sampledMovingWorkspace_=std::make_unique<SampledMovingWorkspace>();
+      status=sampledMovingWorkspace_->prepare(
+          implementation->fullGridPlan,implementation->requests);
+      if(!status) return status;
       WVMovingFieldEvaluationPlan candidate;
       candidate.positionCount_ = positionCount;
       candidate.sampledPlan_ = implementation;
@@ -2639,10 +3260,23 @@ WVKernelStatus WVFieldEvaluationService::createMovingPlan(
               "Unable to allocate a sampled moving-field plan."};
     }
   }
-  if (barotropicQG_)
-    return barotropicQG_->createMovingPlan(requests, plan);
-  if (stratified_)
-    return stratified_->createMovingPlan(requests, plan);
+  if (barotropicQG_ || stratified_) {
+    const auto status=barotropicQG_ ?
+        barotropicQG_->createMovingPlan(requests,plan) :
+        stratified_->createMovingPlan(requests,plan);
+    if(!status) return status;
+    WVFieldEvaluationPlan fields;
+    try {
+      fields.outputs_.reserve(requests.size());
+      for(const auto& request:requests)
+        fields.outputs_.push_back({request.identifier,request.fieldName,
+            WVFieldSamplingKind::fullGrid,{},0,false});
+    } catch(const std::bad_alloc&) {
+      return {WVKernelStatusCode::allocationFailure,
+          "Unable to prepare moving output-event dependencies."};
+    }
+    return prepareEventArena(fields);
+  }
   try {
     WVMovingFieldEvaluationPlan candidate;
     candidate.configuration_ = transform_->descriptor().configuration();
@@ -2683,6 +3317,10 @@ WVKernelStatus WVFieldEvaluationService::createMovingPlan(
            WVFieldSamplingKind::positions, {request.positionCount},
            request.positionCount});
     }
+    WVFieldEvaluationPlan fields;
+    fields.dependencyMask_=primitiveValues;
+    const auto arenaStatus=prepareEventArena(fields);
+    if(!arenaStatus) return arenaStatus;
     plan = std::move(candidate);
     return WVKernelStatus::ok();
   } catch (const std::bad_alloc &) {
@@ -2705,6 +3343,10 @@ WVKernelStatus WVFieldEvaluationService::evaluateMoving(
     const WVMovingFieldEvaluationPlan &plan,
     const WVIntegrationState &state, WVMovingPositionView positions,
     WVFieldOutputView *outputs, std::size_t outputCount, const std::uint8_t *activeOutputs) {
+  if(eventWorkspace_) {
+    const auto status=eventWorkspace_->validateState(state);
+    if(!status) return status;
+  }
   if (plan.sampledPlan_)
     return evaluateSampledMovingImpl(plan, state, positions, outputs,
                                      outputCount, activeOutputs);
@@ -2723,6 +3365,10 @@ WVKernelStatus WVFieldEvaluationService::evaluateMovingFromAdvectionFields(
     const WVRealFieldBundleConstView &advectionFields,
     WVMovingPositionView positions, WVFieldOutputView *outputs,
     std::size_t outputCount, const std::uint8_t *activeOutputs) {
+  if(eventWorkspace_) {
+    const auto status=eventWorkspace_->validateState({state});
+    if(!status) return status;
+  }
   if (plan.sampledPlan_)
     return {WVKernelStatusCode::unsupportedOperation,
             "Derived moving fields cannot be evaluated from prepared "
@@ -2799,27 +3445,30 @@ WVKernelStatus WVFieldEvaluationService::evaluateSampledMovingImpl(
     }
   } resetWorkspace{workspaceMetrics, outerWorkspaceBytes};
   try {
-    std::vector<std::vector<double>> fullStorage(outputCount);
-    std::vector<WVFieldOutputView> fullViews(outputCount);
-    std::vector<std::uint8_t> selection(outputCount, 0);
-    std::vector<std::vector<double>> sampledStorage(outputCount);
+    if(!sampledMovingWorkspace_ ||
+        sampledMovingWorkspace_->fullStorage.size()<outputCount)
+      return invalid("Sampled moving-field storage was not prepared.");
+    auto& fullStorage=sampledMovingWorkspace_->fullStorage;
+    auto& fullViews=sampledMovingWorkspace_->fullViews;
+    auto& selection=sampledMovingWorkspace_->selection;
+    auto& sampledStorage=sampledMovingWorkspace_->sampledStorage;
+    for(std::size_t index=0;index<outputCount;++index) {
+      fullStorage[index].clear();
+      sampledStorage[index].clear();
+      fullViews[index]={};
+      selection[index]=0;
+    }
     std::size_t transientSamplerBytes = 0;
     const auto accountWorkspace = [&]() {
-      std::size_t bytes =
-          fullStorage.capacity() * sizeof(std::vector<double>) +
-          fullViews.capacity() * sizeof(WVFieldOutputView) +
-          selection.capacity() * sizeof(std::uint8_t) +
-          sampledStorage.capacity() * sizeof(std::vector<double>) +
-          transientSamplerBytes;
-      for (const auto &field : fullStorage)
-        bytes += field.capacity() * sizeof(double);
-      for (const auto &field : sampledStorage)
-        bytes += field.capacity() * sizeof(double);
+      const std::size_t bytes=transientSamplerBytes;
       workspaceMetrics.diagnosticWorkspaceLiveBytes =
           outerWorkspaceBytes + bytes;
       workspaceMetrics.diagnosticWorkspaceHighWaterBytes = std::max(
           workspaceMetrics.diagnosticWorkspaceHighWaterBytes,
           workspaceMetrics.diagnosticWorkspaceLiveBytes);
+      workspaceMetrics.additionalTransientHighWaterBytes=std::max(
+          workspaceMetrics.additionalTransientHighWaterBytes,
+          transientSamplerBytes);
     };
     for (const auto &request : implementation->requests) {
       if (activeOutputs && !activeOutputs[request.outputIndex])
@@ -2905,6 +3554,10 @@ WVKernelStatus WVFieldEvaluationService::evaluateMovingImpl(
     const WVRealFieldBundleConstView *preparedAdvectionFields,
     WVMovingPositionView positions, WVFieldOutputView *outputs,
     std::size_t outputCount, const std::uint8_t *activeOutputs) {
+  if(eventWorkspace_) {
+    const auto status=eventWorkspace_->validateState({state});
+    if(!status) return status;
+  }
   if (!transform_) return {WVKernelStatusCode::unsupportedOperation,"This transform requires coefficient-family state views."};
   if (!sameTransformConfiguration(
           plan.configuration_, transform_->descriptor().configuration()))
@@ -2962,7 +3615,11 @@ WVKernelStatus WVFieldEvaluationService::evaluateMovingImpl(
         {configuration.Nx, configuration.Ny, configuration.Nz, 4}};
     const auto before = transform_->metrics().executionCount;
     const auto operation=[&](){return transform_->transformWaveVortexToUVWEta(state, fields);};
-    const auto status = eventWorkspace_ ? eventWorkspace_->evaluate(0,state,fields.data,4*R,operation,primitiveReused) : operation();
+    const WVVariableEvaluationKey primitiveKey{
+        WVVariableEvaluationNode::physicalField,
+        static_cast<std::uint32_t>(WVPortableVariable::u),
+        eventWorkspace_ ? eventWorkspace_->component() : 0u,0,0,0,1};
+    const auto status = eventWorkspace_ ? eventWorkspace_->evaluate(primitiveKey,fields.data,4*R,operation,primitiveReused) : operation();
     if (!status)
       return status;
     metrics_.fftExecutionCount += transform_->metrics().executionCount - before;
@@ -3216,6 +3873,32 @@ WVFieldEvaluationService::metrics() const noexcept {
   return metrics_;
 }
 
+WVVariableProducerMetrics
+WVFieldEvaluationService::producerMetrics() const noexcept {
+  if(stratified_) return stratified_->producerMetrics();
+  if(barotropicQG_) return barotropicQG_->producerMetrics();
+  WVVariableProducerMetrics result;
+  const auto& metrics=transform_->metrics();
+  result.stateValidations=metrics.stateValidationCount;
+  result.phasePreparations=metrics.phasePreparationCount;
+  result.derivedValidations=metrics.derivedValidationCount;
+  result.tendencyReconstructions=metrics.tendencyReconstructionCount;
+  result.reconstructions=metrics.reconstructionCount;
+  result.horizontalSpeedReductions=
+      outputProducerMetrics_.horizontalSpeedReductions;
+  result.verticalSpeedReductions=outputProducerMetrics_.verticalSpeedReductions;
+  result.energyReductions=outputProducerMetrics_.energyReductions;
+  for(std::size_t field=0;field<result.reconstructions.size();++field)
+    for(std::size_t derivative=0;
+        derivative<result.reconstructions[field].size();++derivative)
+      for(std::size_t component=0;
+          component<result.reconstructions[field][derivative].size();
+          ++component)
+        result.reconstructions[field][derivative][component]+=
+            outputProducerMetrics_.reconstructions[field][derivative][component];
+  return result;
+}
+
 WVFieldEvaluationMetrics &WVFieldEvaluationService::mutableMetrics() noexcept {
   if (stratified_)
     return stratified_->mutableMetrics();
@@ -3226,10 +3909,15 @@ WVFieldEvaluationMetrics &WVFieldEvaluationService::mutableMetrics() noexcept {
 
 std::size_t WVFieldEvaluationService::persistentBytes() const noexcept {
   const auto forcingBytes=forcing_ ? forcing_->persistentBytes() : 0;
-  if(stratified_) return sizeof(*this)+stratified_->persistentBytes()+forcingBytes;
+  const auto evaluationBytes=variableEvaluationContext_.persistentBytes();
+  const auto arenaBytes=eventArena_ ? eventArena_->persistentBytes() : 0;
+  const auto sampledMovingBytes=sampledMovingWorkspace_ ?
+      sampledMovingWorkspace_->persistentBytes() : 0;
+  if(stratified_) return sizeof(*this)+stratified_->persistentBytes()+forcingBytes+evaluationBytes+arenaBytes+sampledMovingBytes;
   if (barotropicQG_)
-    return sizeof(*this) + barotropicQG_->persistentBytes()+forcingBytes;
-  return sizeof(*this) + forcingBytes +
+    return sizeof(*this) + barotropicQG_->persistentBytes()+forcingBytes+evaluationBytes+arenaBytes+sampledMovingBytes;
+  return sizeof(*this) + forcingBytes + evaluationBytes + arenaBytes +
+         sampledMovingBytes+
          (ownedTransform_ ? transform_->persistentBytes() : 0) +
          realScratch_.capacity() * sizeof(double) +
          complexScratch_.capacity() * sizeof(WVComplex64) +

@@ -351,6 +351,8 @@ WVKernelStatus WVModel::createFromCheckpoint(
         std::move(engine), candidate->resolvedSystem, services);
     if (!status)
       return status;
+    status = candidate->resolvedSystem->setVariableEvaluationPolicy(services.variableEvaluationPolicy);
+    if(!status) return status;
     status = candidate->configureIntegrator(integratorConfiguration);
     if (!status)
       return status;
@@ -514,7 +516,8 @@ WVKernelStatus WVModel::createFromModelOutputInspection(
       std::move(engine), candidateImpl->resolvedSystem, services);
   if (status) {
     candidateImpl->resolvedSystem->setLinearDynamics(inspection.isDynamicsLinear);
-    status = candidateImpl->configureIntegrator(integratorConfiguration);
+    status = candidateImpl->resolvedSystem->setVariableEvaluationPolicy(services.variableEvaluationPolicy);
+    if(status) status = candidateImpl->configureIntegrator(integratorConfiguration);
   }
   if (status) {
     candidateImpl->catalog = catalog;
@@ -621,6 +624,11 @@ WVKernelStatus WVModel::create(
     return {WVKernelStatusCode::allocationFailure,
             "WVModel allocation failed."};
   }
+}
+
+WVKernelStatus WVModel::setVariableEvaluationPolicy(WVVariableEvaluationPolicy policy) {
+  if(!impl_ || !impl_->resolvedSystem) return invalid("Variable evaluation policy requires a constructed model.");
+  return impl_->resolvedSystem->setVariableEvaluationPolicy(policy);
 }
 
 WVKernelStatus WVModel::prepareStateAfterRestart(WVModelState &state) {

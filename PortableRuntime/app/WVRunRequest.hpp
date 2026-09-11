@@ -1,6 +1,7 @@
 #pragma once
 
 #include "WaveVortexRuntime/WVDensityDiagnosticContract.hpp"
+#include "WaveVortexRuntime/WVVariableEvaluationPolicy.hpp"
 
 #include <cstddef>
 #include <cstdint>
@@ -83,6 +84,7 @@ struct WVRunRequest {
   std::size_t threads = 0;
   bool hasFFTProvider = false;
   bool hasThreads = false;
+  WVVariableEvaluationPolicy variableEvaluationPolicy=WVVariableEvaluationPolicy::reuse;
   WVDensityDiagnosticContract densityDiagnostics;
   bool hasDensityDiagnostics = false;
   std::string report;

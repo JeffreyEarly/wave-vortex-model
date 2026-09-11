@@ -1,4 +1,5 @@
 #pragma once
+#include "WaveVortexRuntime/WVVariableEvaluation.hpp"
 
 #include "WaveVortexRuntime/WVForcingSchedule.hpp"
 #include "WaveVortexRuntime/WVForcingTendency.hpp"
@@ -36,6 +37,7 @@ struct WVStratifiedQGForcingEngineMetrics {
   std::size_t physicalFieldReconstructionCount = 0;
   std::size_t physicalFieldReuseCount = 0;
   std::size_t spatialTendencyProjectionCount = 0;
+  std::size_t horizontalSpeedMaximumReductionCount = 0;
   std::size_t stateConstraintElementWrites = 0;
 };
 
@@ -103,8 +105,17 @@ public:
   WVStratifiedQGForcingEngine &
   operator=(const WVStratifiedQGForcingEngine &) = delete;
 
-  WVKernelStatus evaluateRightHandSide(const WVComplexConstView &A0,
-                                       WVComplexView &F0);
+  WVKernelStatus evaluateRightHandSide(
+      const WVComplexConstView &A0, WVComplexView &F0,
+      WVRealFieldBundleConstView *advectionFields = nullptr);
+  // The borrowed A0 array must remain immutable until endStateEvaluation().
+  WVKernelStatus beginStateEvaluation(const WVComplexConstView &A0);
+  WVKernelStatus endStateEvaluation();
+  bool stateEvaluationActive() const noexcept { return evaluation_.active(); }
+  WVKernelStatus
+  validateStateEvaluation(const WVComplexConstView &A0) const noexcept;
+  WVKernelStatus horizontalSpeedMaximum(WVComplexConstView A0,
+                                        double &maximum);
   WVStateConstraintResult restoreForcingAmplitudes(WVComplexView &A0);
 
   const WVTransformStratifiedQGKernel &kernel() const noexcept {
@@ -125,15 +136,23 @@ public:
   // Optional u/v fields must describe this exact state and time.
   // They are borrowed for this invocation and must not alias state or outputs.
   WVKernelStatus evaluateForcingTendencies(const WVComplexConstView&,
-      const WVForcingTendencyOutput*,std::size_t, const WVRealFieldBundleConstView* preparedPhysical = nullptr);
+      const WVForcingTendencyOutput*,std::size_t,
+      const WVRealFieldBundleConstView* preparedPhysical = nullptr,
+      detail::WVForcingDiagnosticWorkspace* session = nullptr);
   const WVForcingTendencyMetrics& tendencyMetrics() const noexcept { return tendencyMetrics_; }
 
   // Linear evolution retains instances for diagnostics and amplitude constraints.
   // Only their ordinary coefficient RHS contributions are disabled.
+  WVKernelStatus setVariableEvaluationPolicy(WVVariableEvaluationPolicy policy);
+  const WVVariableEvaluationMetrics& variableEvaluationMetrics() const noexcept { return evaluation_.metrics(); }
   void setLinearDynamics(bool linear) noexcept { linearDynamics_ = linear; }
 
 private:
   bool linearDynamics_ = false;
+  WVVariableEvaluationContext evaluation_;
+  WVVariableEvaluationPolicy evaluationPolicy_=WVVariableEvaluationPolicy::reuse;
+  WVComplexConstView evaluationState_{};
+  bool evaluationOwnsKernelScope_=false;
   WVStratifiedQGForcingEngine() = default;
   WVKernelStatus initialize(const WVFrozenForcingSchedule &schedule);
   void initializeOutputWithZeros(WVComplexView &F0);
@@ -144,9 +163,16 @@ private:
   WVStratifiedQGForcingEngineMetrics metrics_;
   std::string scheduleIdentifier_;
   std::vector<WVComplex64> tendencyScratch_;
+  std::vector<WVComplex64> nonlinearScratch_;
+  std::vector<double> velocityScratch_;
+  WVRealFieldBundleConstView evaluationVelocity_{};
+  double horizontalSpeedMaximum_ = 0.0;
   detail::WVForcingDiagnosticWorkspace* diagnosticWorkspace_ = nullptr;
   WVForcingTendencyMetrics tendencyMetrics_;
   WVKernelStatus diagnosticVelocity(WVComplexConstView,WVRealFieldBundleConstView&);
+  WVKernelStatus computeHorizontalSpeedMaximum(WVComplexConstView,double&);
+  WVKernelStatus evaluationVelocity(WVComplexConstView,
+                                    WVRealFieldBundleConstView &);
   bool executing_ = false;
   friend class WVStratifiedQGForcingExecutionContext;
 };

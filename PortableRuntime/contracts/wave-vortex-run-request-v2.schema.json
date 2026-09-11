@@ -85,6 +85,7 @@
       "properties": {
         "fftProvider": {"enum": ["native-fftw", "reference"]},
         "threads": {"type": "integer", "minimum": 1},
+        "variableEvaluationPolicy": {"enum": ["reuse", "low-memory"], "default": "reuse"},
         "densityDiagnostics": {
           "type": "object",
           "additionalProperties": false,

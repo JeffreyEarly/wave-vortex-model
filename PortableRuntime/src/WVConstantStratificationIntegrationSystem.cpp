@@ -1,3 +1,4 @@
+#include "WVScopedStateEvaluation.hpp"
 #include "WaveVortexRuntime/WVConstantStratificationIntegrationSystem.hpp"
 #include "WVObserverAdapter.hpp"
 
@@ -327,6 +328,8 @@ WVConstantStratificationIntegrationSystem::evaluateRightHandSide(
     bool &value;
     ~Guard() { value = false; }
   } guard{executing_};
+  detail::WVScopedStateEvaluation<WVConstantStratificationForcingEngine> evaluation(*forcing_,state.waveVortex);
+  if(!evaluation.status()) return evaluation.status();
   const bool needsAdvectionContext = !particles_.empty() || !tracers_.empty();
   WVConstantStratificationRightHandSideContext context;
   auto advectionStorage = needsAdvectionContext

@@ -35,6 +35,8 @@ struct WVModelIntegratorConfiguration {
 };
 
 struct WVModelMetrics {
+  WVVariableEvaluationMetrics variableEvaluation;
+  WVVariableProducerMetrics variableProducers;
   std::size_t modelPersistentBytes = 0;
   std::size_t catalogPersistentBytes = 0;
   std::size_t statePersistentBytes = 0;
@@ -214,6 +216,8 @@ public:
       const WVModelIntegratorConfiguration &integratorConfiguration,
       WVModel &model);
 
+  // Runtime-only policy; caches never become checkpoint state.
+  WVKernelStatus setVariableEvaluationPolicy(WVVariableEvaluationPolicy policy);
   WVKernelStatus prepareStateAfterRestart(WVModelState &state);
   WVKernelStatus initializeObserverState(WVModelState &state);
   // Attach one already compiled transform-neutral output graph to this model.

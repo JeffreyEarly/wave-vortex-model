@@ -64,22 +64,104 @@ WVKernelStatus WVDensityEventEvaluation::create(
                !(initial < (*geometry.initialProfile)[i - 1]))))
       return invalid("Density event geometry requires finite ordered heights and stable initial density.");
   }
+  if(output.lowMemoryStorage_) {
+    const auto demands=output.lowMemoryDemands_;
+    const bool derived=(demands&(etaTrueDemand|apeDemand))!=0;
+    const bool combined=(demands&(etaTrueDemand|apeDemand))==
+        (etaTrueDemand|apeDemand);
+    const bool actual=(demands&rhoNmDemand) ||
+        (contract.reference==WVNoMotionReference::actual && derived);
+    if((derived && output.lowPrimary_.capacity()<nx*ny*nz) ||
+        (combined && output.lowSecondary_.capacity()<nx*ny*nz) ||
+        (actual && output.actualProfile_.capacity()<nz))
+      return invalid("Prepared low-memory density storage is incompatible with the event.");
+  }
   // No current-field scan or scientific allocation until a demand is active.
-  WVDensityEventEvaluation candidate;
-  candidate.density_ = density;
-  candidate.geometry_ = geometry;
-  candidate.contract_ = contract;
-  candidate.options_ = options;
-  candidate.sampleCount_ = nx * ny * nz;
-  candidate.initialized_ = true;
-  output = std::move(candidate);
+  // Rebinding preserves capacities prepared by the service-owned event arena.
+  output.resetRetainingCapacity();
+  output.density_ = density;
+  output.geometry_ = geometry;
+  output.contract_ = contract;
+  output.options_ = options;
+  output.sampleCount_ = nx * ny * nz;
+  output.initialized_ = true;
   return WVKernelStatus::ok();
+}
+
+WVKernelStatus WVDensityEventEvaluation::reserveStorage(
+    std::size_t sampleCount,std::size_t profileCount,std::uint8_t demands,
+    WVNoMotionReference reference) {
+  if((demands&~(rhoNmDemand|etaTrueDemand|apeDemand))!=0)
+    return invalid("Density event storage demand is invalid.");
+  try {
+    lowMemoryStorage_=false;
+    lowMemoryDemands_=0;
+    std::vector<double>{}.swap(lowPrimary_);
+    std::vector<double>{}.swap(lowSecondary_);
+    if((demands&rhoNmDemand) ||
+        (reference==WVNoMotionReference::actual &&
+          (demands&(etaTrueDemand|apeDemand))))
+      actualProfile_.reserve(profileCount);
+    if(demands&(etaTrueDemand|apeDemand))
+      materialHeights_.reserve(sampleCount);
+    if(demands&etaTrueDemand) etaTrue_.reserve(sampleCount);
+    if(demands&apeDemand) ape_.reserve(sampleCount);
+    account();
+    return WVKernelStatus::ok();
+  } catch(const std::bad_alloc&) {
+    account();
+    return {WVKernelStatusCode::allocationFailure,
+        "Unable to prepare density event storage."};
+  } catch(const std::length_error&) {
+    account();
+    return {WVKernelStatusCode::sizeOverflow,
+        "Prepared density event storage exceeds vector capacity."};
+  }
+}
+
+WVKernelStatus WVDensityEventEvaluation::reserveLowMemoryStorage(
+    std::size_t sampleCount,std::size_t profileCount,std::uint8_t demands,
+    WVNoMotionReference reference) {
+  if((demands&~(rhoNmDemand|etaTrueDemand|apeDemand))!=0)
+    return invalid("Density event low-memory storage demand is invalid.");
+  if(initialized_)
+    return invalid("Cannot resize low-memory density storage during an event.");
+  try {
+    lowMemoryStorage_=true;
+    lowMemoryDemands_=demands;
+    std::vector<double>{}.swap(materialHeights_);
+    std::vector<double>{}.swap(etaTrue_);
+    std::vector<double>{}.swap(ape_);
+    const bool derived=(demands&(etaTrueDemand|apeDemand))!=0;
+    const bool actual=(demands&rhoNmDemand) ||
+        (reference==WVNoMotionReference::actual && derived);
+    if(actual)
+      actualProfile_.reserve(profileCount);
+    else std::vector<double>{}.swap(actualProfile_);
+    if(derived)
+      lowPrimary_.reserve(sampleCount);
+    else std::vector<double>{}.swap(lowPrimary_);
+    if((demands&(etaTrueDemand|apeDemand))==(etaTrueDemand|apeDemand))
+      lowSecondary_.reserve(sampleCount);
+    else std::vector<double>{}.swap(lowSecondary_);
+    account();
+    return WVKernelStatus::ok();
+  } catch(const std::bad_alloc&) {
+    account();
+    return {WVKernelStatusCode::allocationFailure,
+        "Unable to prepare low-memory density event storage."};
+  } catch(const std::length_error&) {
+    account();
+    return {WVKernelStatusCode::sizeOverflow,
+        "Prepared low-memory density storage exceeds vector capacity."};
+  }
 }
 
 void WVDensityEventEvaluation::account() noexcept {
   metrics_.liveBytes = sizeof(double) *
       (actualProfile_.capacity() + materialHeights_.capacity() +
-       etaTrue_.capacity() + ape_.capacity()) +
+       etaTrue_.capacity() + ape_.capacity() + lowPrimary_.capacity() +
+       lowSecondary_.capacity()) +
       profile_.retainedBytes() - sizeof(profile_);
   metrics_.highWaterBytes = std::max(metrics_.highWaterBytes, metrics_.liveBytes);
 }
@@ -135,11 +217,12 @@ WVKernelStatus WVDensityEventEvaluation::invert() {
   if (inverseReady_)
     return WVKernelStatus::ok();
   ++metrics_.inverseAttemptCount;
-  materialHeights_.resize(sampleCount_);
+  auto& material=lowMemoryStorage_ ? lowPrimary_ : materialHeights_;
+  material.resize(sampleCount_);
   account();
   for (std::size_t i = 0; i < sampleCount_; ++i) {
     ++metrics_.inverseSampleCount;
-    const auto status = profile_.inverse(density_.data[i], materialHeights_[i]);
+    const auto status = profile_.inverse(density_.data[i], material[i]);
     if (!status)
       return status;
   }
@@ -151,16 +234,29 @@ WVKernelStatus WVDensityEventEvaluation::invert() {
 WVKernelStatus WVDensityEventEvaluation::formEta() {
   if (etaReady_)
     return WVKernelStatus::ok();
-  etaTrue_.resize(sampleCount_);
+  auto* material=lowMemoryStorage_ ? lowPrimary_.data() : materialHeights_.data();
+  double* destination=nullptr;
+  if(lowMemoryStorage_) {
+    const bool preserveMaterial=(lowMemoryDemands_&apeDemand)!=0 && !apeReady_;
+    auto& values=preserveMaterial ? lowSecondary_ : lowPrimary_;
+    values.resize(sampleCount_);
+    if(!preserveMaterial) material=values.data();
+    destination=values.data();
+    etaLowSlot_=preserveMaterial ? 1 : 0;
+    if(!preserveMaterial) inverseReady_=false;
+  } else {
+    etaTrue_.resize(sampleCount_);
+    destination=etaTrue_.data();
+  }
   account();
   const auto plane = density_.shape.first * density_.shape.second;
   for (std::size_t z = 0; z < density_.shape.third; ++z) {
     for (std::size_t point = 0; point < plane; ++point) {
       const auto i = z * plane + point;
-      const double displacement = (*geometry_.heights)[z] - materialHeights_[i];
+      const double displacement = (*geometry_.heights)[z] - material[i];
       if (!std::isfinite(displacement))
         return {WVKernelStatusCode::numericalFailure, "Density event displacement overflowed."};
-      etaTrue_[i] = displacement;
+      destination[i] = displacement;
     }
   }
   etaReady_ = true;
@@ -171,7 +267,18 @@ WVKernelStatus WVDensityEventEvaluation::formAPE() {
   if (apeReady_)
     return WVKernelStatus::ok();
   ++metrics_.apeAttemptCount;
-  ape_.resize(sampleCount_);
+  auto* material=lowMemoryStorage_ ? lowPrimary_.data() : materialHeights_.data();
+  double* destination=nullptr;
+  if(lowMemoryStorage_) {
+    lowPrimary_.resize(sampleCount_);
+    material=lowPrimary_.data();
+    destination=lowPrimary_.data();
+    apeLowSlot_=0;
+    inverseReady_=false;
+  } else {
+    ape_.resize(sampleCount_);
+    destination=ape_.data();
+  }
   account();
   const auto plane = density_.shape.first * density_.shape.second;
   for (std::size_t z = 0; z < density_.shape.third; ++z) {
@@ -179,8 +286,8 @@ WVKernelStatus WVDensityEventEvaluation::formAPE() {
       const auto i = z * plane + point;
       ++metrics_.apeSampleCount;
       const auto status = profile_.availablePotentialEnergy(
-          (*geometry_.heights)[z], materialHeights_[i], geometry_.gravity,
-          geometry_.referenceDensity, ape_[i]);
+          (*geometry_.heights)[z], material[i], geometry_.gravity,
+          geometry_.referenceDensity, destination[i]);
       if (!status)
         return status;
     }
@@ -197,6 +304,8 @@ WVKernelStatus WVDensityEventEvaluation::prepare(std::uint8_t demands) {
     return invalid("Density event demand contains an unknown diagnostic.");
   if (!initialized_)
     return invalid("Density event is not initialized.");
+  if(lowMemoryStorage_ && (demands&~lowMemoryDemands_)!=0)
+    return invalid("Density event demand was not prepared for low-memory execution.");
   const std::size_t reused =
       ((demands & rhoNmDemand) && actualReady_ ? 1u : 0u) +
       ((demands & etaTrueDemand) && etaReady_ ? 1u : 0u) +
@@ -211,15 +320,30 @@ WVKernelStatus WVDensityEventEvaluation::prepare(std::uint8_t demands) {
       auto status = prepareProfile();
       if (!status)
         return status;
-      status = invert();
-      if (!status)
-        return status;
-      if (demands & etaTrueDemand) {
+      const bool needsEta=(demands&etaTrueDemand) && !etaReady_;
+      const bool needsAPE=(demands&apeDemand) && !apeReady_;
+      if(lowMemoryStorage_ && !inverseReady_ && (needsEta || needsAPE)) {
+        // Preserve an earlier result that occupies the primary slot before it
+        // is reused for a new inversion during a demand extension.
+        if((etaReady_ && etaLowSlot_==0) || (apeReady_ && apeLowSlot_==0)) {
+          lowSecondary_.resize(sampleCount_);
+          std::copy_n(lowPrimary_.data(),sampleCount_,lowSecondary_.data());
+          if(etaReady_ && etaLowSlot_==0) etaLowSlot_=1;
+          if(apeReady_ && apeLowSlot_==0) apeLowSlot_=1;
+          account();
+        }
+      }
+      if(needsEta || needsAPE) {
+        status = invert();
+        if (!status)
+          return status;
+      }
+      if (needsEta) {
         status = formEta();
         if (!status)
           return status;
       }
-      if (demands & apeDemand) {
+      if (needsAPE) {
         status = formAPE();
         if (!status)
           return status;
@@ -243,16 +367,27 @@ WVDensityEventView WVDensityEventEvaluation::view(WVDensityEventField field) con
     return actualReady_ ? WVDensityEventView{actualProfile_.data(), actualProfile_.size()} :
                           WVDensityEventView{};
   case WVDensityEventField::etaTrue:
-    return etaReady_ ? WVDensityEventView{etaTrue_.data(), etaTrue_.size()} : WVDensityEventView{};
+    if(!etaReady_) return {};
+    if(lowMemoryStorage_) {
+      const auto& values=etaLowSlot_==0 ? lowPrimary_ : lowSecondary_;
+      return {values.data(),values.size()};
+    }
+    return {etaTrue_.data(), etaTrue_.size()};
   case WVDensityEventField::ape:
-    return apeReady_ ? WVDensityEventView{ape_.data(), ape_.size()} : WVDensityEventView{};
+    if(!apeReady_) return {};
+    if(lowMemoryStorage_) {
+      const auto& values=apeLowSlot_==0 ? lowPrimary_ : lowSecondary_;
+      return {values.data(),values.size()};
+    }
+    return {ape_.data(), ape_.size()};
   }
   return {};
 }
 
 WVDensityEventView WVDensityEventEvaluation::materialHeights() const noexcept {
-  return inverseReady_ ? WVDensityEventView{materialHeights_.data(), materialHeights_.size()} :
-                         WVDensityEventView{};
+  if(!inverseReady_) return {};
+  const auto& values=lowMemoryStorage_ ? lowPrimary_ : materialHeights_;
+  return {values.data(),values.size()};
 }
 
 WVKernelStatus WVDensityEventEvaluation::validateOutputs(
@@ -285,7 +420,8 @@ WVKernelStatus WVDensityEventEvaluation::validateOutputs(
       return overlapStatus();
     const std::vector<double> *vectors[] = {
         geometry_.heights, geometry_.integrationWeights, geometry_.initialProfile,
-        &actualProfile_, &materialHeights_, &etaTrue_, &ape_};
+        &actualProfile_, &materialHeights_, &etaTrue_, &ape_, &lowPrimary_,
+        &lowSecondary_};
     for (const auto *values : vectors)
       if (overlaps(output.data, bytes, values->data(), values->capacity() * sizeof(double)))
         return overlapStatus();
@@ -322,11 +458,51 @@ void WVDensityEventEvaluation::release() noexcept {
   std::vector<double>{}.swap(materialHeights_);
   std::vector<double>{}.swap(etaTrue_);
   std::vector<double>{}.swap(ape_);
-  profile_ = WVNoMotionProfile{};
+  std::vector<double>{}.swap(lowPrimary_);
+  std::vector<double>{}.swap(lowSecondary_);
+  profile_=WVNoMotionProfile{};
   density_ = {};
   geometry_ = {};
   sampleCount_ = 0;
-  initialized_ = actualReady_ = profileReady_ = inverseReady_ = etaReady_ = apeReady_ = false;
+  lowMemoryDemands_=0;
+  etaLowSlot_=apeLowSlot_=-1;
+  lowMemoryStorage_=false;
+  initialized_ = false;
+  actualReady_=profileReady_=inverseReady_=etaReady_=apeReady_=false;
+  account();
+}
+
+void WVDensityEventEvaluation::resetRetainingCapacity() noexcept {
+  actualProfile_.clear();
+  materialHeights_.clear();
+  etaTrue_.clear();
+  ape_.clear();
+  lowPrimary_.clear();
+  lowSecondary_.clear();
+  profile_=WVNoMotionProfile{};
+  density_={};
+  geometry_={};
+  sampleCount_=0;
+  initialized_=false;
+  etaLowSlot_=apeLowSlot_=-1;
+  actualReady_=profileReady_=inverseReady_=etaReady_=apeReady_=false;
+  account();
+}
+
+void WVDensityEventEvaluation::discardDerived() noexcept {
+  if(lowMemoryStorage_) {
+    actualProfile_.clear();
+    lowPrimary_.clear();
+    lowSecondary_.clear();
+  } else {
+    std::vector<double>{}.swap(actualProfile_);
+    std::vector<double>{}.swap(materialHeights_);
+    std::vector<double>{}.swap(etaTrue_);
+    std::vector<double>{}.swap(ape_);
+  }
+  profile_ = WVNoMotionProfile{};
+  etaLowSlot_=apeLowSlot_=-1;
+  actualReady_ = profileReady_ = inverseReady_ = etaReady_ = apeReady_ = false;
   account();
 }
 

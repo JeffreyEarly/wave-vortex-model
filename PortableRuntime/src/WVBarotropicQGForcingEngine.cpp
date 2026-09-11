@@ -23,6 +23,30 @@ std::size_t vectorBytes(const std::vector<T> &values) noexcept {
   return values.capacity() * sizeof(T);
 }
 
+class ScopedBarotropicQGEvaluation final {
+public:
+  ScopedBarotropicQGEvaluation(WVBarotropicQGForcingEngine &engine,
+                               const WVComplexConstView &state)
+      : engine_(engine) {
+    if (engine_.stateEvaluationActive())
+      status_ = engine_.validateStateEvaluation(state);
+    else {
+      status_ = engine_.beginStateEvaluation(state);
+      owns_ = static_cast<bool>(status_);
+    }
+  }
+  ~ScopedBarotropicQGEvaluation() {
+    if (owns_)
+      (void)engine_.endStateEvaluation();
+  }
+  const WVKernelStatus &status() const noexcept { return status_; }
+
+private:
+  WVBarotropicQGForcingEngine &engine_;
+  bool owns_ = false;
+  WVKernelStatus status_ = WVKernelStatus::ok();
+};
+
 std::size_t stageRank(WVForcingStage stage) noexcept {
   return static_cast<std::size_t>(stage);
 }
@@ -522,20 +546,70 @@ void WVBarotropicQGForcingExecutionContext::filterTendency(const std::vector<std
 }
 
 WVKernelStatus WVBarotropicQGForcingExecutionContext::nonlinearAdvection() {
-  const auto status = engine_->kernel().addPotentialVorticityAdvection(
-      A0_, F0_, outputInitialized_, workspace_);
-  if (status)
+  if (workspace_.spatialTendency != nullptr) {
+    const auto status = engine_->kernel().addPotentialVorticityAdvection(
+        A0_, F0_, outputInitialized_, workspace_);
+    if (status)
+      outputInitialized_ = true;
+    return status;
+  }
+  const WVVariableEvaluationKey nonlinear{
+      WVVariableEvaluationNode::forcingTendency, 0};
+  if (engine_->evaluationPolicy_ == WVVariableEvaluationPolicy::lowMemory) {
+    const auto status = engine_->evaluation_.evaluate(
+        nonlinear, engine_->nonlinearScratch_.size() * sizeof(WVComplex64),
+        [&] {
+          return engine_->kernel().addPotentialVorticityAdvection(
+              A0_, F0_, outputInitialized_, workspace_);
+        });
+    if (status)
+      outputInitialized_ = true;
+    (void)engine_->evaluation_.evict(nonlinear);
+    return status;
+  }
+  const auto status = engine_->evaluation_.evaluate(
+      nonlinear, engine_->nonlinearScratch_.size() * sizeof(WVComplex64), [&] {
+        WVComplexView output{engine_->nonlinearScratch_.data(), F0_.shape};
+        return engine_->kernel().addPotentialVorticityAdvection(
+            A0_, output, false, workspace_);
+      });
+  if (!status)
+    return status;
+  if (!outputInitialized_) {
+    std::copy(engine_->nonlinearScratch_.begin(),
+              engine_->nonlinearScratch_.end(), F0_.data);
     outputInitialized_ = true;
-  return status;
+  } else {
+    for (std::size_t index = 0; index < engine_->nonlinearScratch_.size();
+         ++index) {
+      F0_.data[index].real += engine_->nonlinearScratch_[index].real;
+      F0_.data[index].imag += engine_->nonlinearScratch_[index].imag;
+    }
+  }
+  return WVKernelStatus::ok();
 }
 
 WVKernelStatus WVBarotropicQGForcingExecutionContext::adaptiveDamping(
     const std::vector<double> &dampingOperator) {
-  const auto status = engine_->kernel().addAdaptiveDamping(
+  auto producer = [&](double& maximum) {
+    return engine_->kernel().horizontalSpeedMaximum(A0_,maximum,workspace_);
+  };
+  const auto status = diagnosticWorkspace_ ?
+      diagnosticWorkspace_->evaluateHorizontalMaximum(
+          engine_->horizontalSpeedMaximum_,producer) :
+      engine_->evaluation_.evaluate(
+          {WVVariableEvaluationNode::reduction, 0}, sizeof(double), [&] {
+            return producer(engine_->horizontalSpeedMaximum_);
+          });
+  if (!status)
+    return status;
+  workspace_.horizontalSpeedMaximum=engine_->horizontalSpeedMaximum_;
+  workspace_.horizontalSpeedMaximumPrepared=true;
+  const auto dampingStatus = engine_->kernel().addAdaptiveDamping(
       A0_, dampingOperator, F0_, outputInitialized_, workspace_);
-  if (status)
+  if (dampingStatus)
     outputInitialized_ = true;
-  return status;
+  return dampingStatus;
 }
 
 WVKernelStatus WVBarotropicQGForcingExecutionContext::linearBottomFriction(
@@ -713,11 +787,100 @@ WVKernelStatus WVBarotropicQGForcingEngine::initialize(
     identifier << entries[index]->typeIdentifier;
   }
   scheduleIdentifier_ = identifier.str();
+  nonlinearScratch_.resize(kernel_->descriptor().Nkl());
+  auto status = evaluation_.prepare(
+      {{WVVariableEvaluationNode::physicalField, 0},
+       {WVVariableEvaluationNode::reduction, 0},
+       {WVVariableEvaluationNode::forcingTendency, 0}});
+  if (!status)
+    return status;
   metrics_.scheduleBytes =
       scheduleIdentifier_.capacity() +
       forcing_.capacity() * sizeof(std::unique_ptr<WVBarotropicQGForcing>);
-  metrics_.workspaceCapacityBytes = 0;
+  metrics_.workspaceCapacityBytes = vectorBytes(nonlinearScratch_);
   return WVKernelStatus::ok();
+}
+
+WVKernelStatus WVBarotropicQGForcingEngine::beginStateEvaluation(
+    const WVComplexConstView &A0) {
+  if (evaluation_.active() || executing_)
+    return {WVKernelStatusCode::reentrantExecution,
+            "Barotropic QG state evaluation is already active."};
+  const bool ownsKernelScope=!kernel_->stateEvaluationActive();
+  auto status = ownsKernelScope ? kernel_->beginStateEvaluation(A0) :
+                                  kernel_->validateStateEvaluation(A0);
+  if (!status)
+    return status;
+  status = evaluation_.begin(this, evaluationPolicy_);
+  if (!status) {
+    if (ownsKernelScope) (void)kernel_->endStateEvaluation();
+    return status;
+  }
+  evaluationOwnsKernelScope_=ownsKernelScope;
+  evaluationState_ = A0;
+  return WVKernelStatus::ok();
+}
+
+WVKernelStatus WVBarotropicQGForcingEngine::setVariableEvaluationPolicy(
+    WVVariableEvaluationPolicy policy) {
+  if (executing_ || evaluation_.active())
+    return {WVKernelStatusCode::reentrantExecution,
+            "Cannot change an active evaluation policy."};
+  if (policy != WVVariableEvaluationPolicy::reuse &&
+      policy != WVVariableEvaluationPolicy::lowMemory)
+    return {WVKernelStatusCode::invalidConfiguration,
+            "Unknown variable evaluation policy."};
+  if (policy == WVVariableEvaluationPolicy::reuse &&
+      nonlinearScratch_.size() != kernel_->descriptor().Nkl()) {
+    try {
+      nonlinearScratch_.resize(kernel_->descriptor().Nkl());
+    } catch (const std::bad_alloc &) {
+      return {WVKernelStatusCode::allocationFailure,
+              "Unable to allocate the Barotropic QG nonlinear cache."};
+    }
+  } else if (policy == WVVariableEvaluationPolicy::lowMemory) {
+    std::vector<WVComplex64>().swap(nonlinearScratch_);
+  }
+  evaluationPolicy_ = policy;
+  metrics_.workspaceCapacityBytes = vectorBytes(nonlinearScratch_);
+  return WVKernelStatus::ok();
+}
+
+WVKernelStatus WVBarotropicQGForcingEngine::endStateEvaluation() {
+  if (!evaluation_.active())
+    return {WVKernelStatusCode::invalidConfiguration,
+            "Barotropic QG state evaluation is not active."};
+  evaluation_.end();
+  evaluationState_ = {};
+  const bool ownsKernelScope=evaluationOwnsKernelScope_;
+  evaluationOwnsKernelScope_=false;
+  return ownsKernelScope ? kernel_->endStateEvaluation() : WVKernelStatus::ok();
+}
+
+WVKernelStatus WVBarotropicQGForcingEngine::validateStateEvaluation(
+    const WVComplexConstView &A0) const noexcept {
+  if (!evaluation_.active() || A0.data != evaluationState_.data ||
+      A0.shape.rows != evaluationState_.shape.rows ||
+      A0.shape.columns != evaluationState_.shape.columns)
+    return {WVKernelStatusCode::invalidConfiguration,
+            "Barotropic QG coefficients do not belong to the active evaluation."};
+  return WVKernelStatus::ok();
+}
+
+WVKernelStatus WVBarotropicQGForcingEngine::horizontalSpeedMaximum(
+    const WVComplexConstView &A0, double &maximum) {
+  ScopedBarotropicQGEvaluation evaluation(*this, A0);
+  if (!evaluation.status())
+    return evaluation.status();
+  auto status = evaluation_.evaluate(
+      {WVVariableEvaluationNode::reduction, 0}, sizeof(double), [&] {
+        WVBarotropicQGOperationWorkspace workspace;
+        return kernel_->horizontalSpeedMaximum(
+            A0, horizontalSpeedMaximum_, workspace);
+      });
+  if (status)
+    maximum = horizontalSpeedMaximum_;
+  return status;
 }
 
 void WVBarotropicQGForcingEngine::initializeOutputWithZeros(
@@ -744,6 +907,9 @@ WVKernelStatus WVBarotropicQGForcingEngine::evaluateRightHandSide(
   if (A0.data == F0.data)
     return {WVKernelStatusCode::overlappingArrays,
             "Barotropic QG A0 and F0 must not overlap."};
+  ScopedBarotropicQGEvaluation evaluation(*this, A0);
+  if (!evaluation.status())
+    return evaluation.status();
   executing_ = true;
   struct Guard {
     bool &value;
@@ -762,10 +928,22 @@ WVKernelStatus WVBarotropicQGForcingEngine::evaluateRightHandSide(
   if (!context.outputInitialized_)
     initializeOutputWithZeros(F0);
   if (advectionFields != nullptr) {
-    const auto status = kernel_->prepareAdvectionFields(
-        A0, context.workspace_, *advectionFields);
+    const auto status = evaluation_.evaluate(
+        {WVVariableEvaluationNode::physicalField, 0},
+        2 * kernel_->descriptor().spatialShape().elementCount() *
+            sizeof(double),
+        [&] {
+          return kernel_->prepareAdvectionFields(
+              A0, context.workspace_, *advectionFields);
+        });
     if (!status)
       return status;
+    if (advectionFields->data == nullptr) {
+      const auto status = kernel_->prepareAdvectionFields(
+          A0, context.workspace_, *advectionFields);
+      if (!status)
+        return status;
+    }
   }
   metrics_.physicalFieldReconstructionCount +=
       context.workspace_.physicalFieldReconstructionCount;
@@ -778,7 +956,9 @@ WVKernelStatus WVBarotropicQGForcingEngine::evaluateRightHandSide(
 }
 
 WVKernelStatus WVBarotropicQGForcingEngine::evaluateForcingTendencies(
-    const WVComplexConstView& A0,const WVForcingTendencyOutput* outputs,std::size_t count, const WVRealFieldBundleConstView* preparedPhysical) {
+    const WVComplexConstView& A0,const WVForcingTendencyOutput* outputs,
+    std::size_t count,const WVRealFieldBundleConstView* preparedPhysical,
+    detail::WVForcingDiagnosticWorkspace* session) {
   if (executing_) return {WVKernelStatusCode::reentrantExecution,"Forcing diagnostics require an idle engine."};
   tendencyMetrics_.workspaceLastPeakBytes=0;
   const auto spectral=kernel().descriptor().spectralShape();
@@ -797,14 +977,56 @@ WVKernelStatus WVBarotropicQGForcingEngine::evaluateForcingTendencies(
   for (std::size_t i=0;i<spectral.elementCount();++i)
     if (!std::isfinite(A0.data[i].real) || !std::isfinite(A0.data[i].imag))
       return {WVKernelStatusCode::invalidConfiguration,"QG diagnostic state must be finite."};
+  ScopedBarotropicQGEvaluation evaluation(*this, A0);
+  if (!evaluation.status()) return evaluation.status();
   try {
-    detail::WVForcingDiagnosticWorkspace work(spectral,spatial,1,0);
+    detail::WVForcingDiagnosticLedger localLedger(tendencyMetrics_);
+    std::unique_ptr<detail::WVForcingDiagnosticWorkspace> local;
+    if (!session) {
+      local=std::make_unique<detail::WVForcingDiagnosticWorkspace>(spectral,spatial,1,2);
+      std::vector<WVForcingStage> stages;
+      local->nonlinearUseCount=0;
+      for(const auto& forcing:forcing_) {
+        stages.push_back(forcing->stage());
+        local->nonlinearUseCount+=forcing->typeIdentifier()=="WVNonlinearAdvection";
+      }
+      status=localLedger.context.prepare(
+          detail::WVForcingDiagnosticWorkspace::dependencyKeys(forcing_.size()));
+      if(!status) return status;
+      status=localLedger.context.begin(this,evaluationPolicy_); if(!status) return status;
+      status=local->beginScopedEvaluation(localLedger.context,stages); if(!status) return status;
+      session=local.get();
+    }
+    auto& work=*session;
+    status=work.bind(this,state); if (!status) return status;
+    const auto S=spectral.elementCount();
+    const auto R=plane.elementCount();
+    if (work.spectral.rows!=spectral.rows || work.spectral.columns!=spectral.columns ||
+        work.spatial.first!=spatial.first || work.spatial.second!=spatial.second ||
+        work.spatial.third!=spatial.third || work.spatial.fourth!=spatial.fourth ||
+        work.flux.size()!=S || work.previous.size()!=S || work.temporary.size()!=S ||
+        work.cumulative.size()!=spatial.elementCount() || work.raw.size()!=spatial.elementCount() ||
+        work.physical.size()!=2*R)
+      return {WVKernelStatusCode::invalidShape,
+              "Forcing diagnostic session has incompatible Barotropic QG storage."};
     auto flux=work.fluxView();
-    status=kernel().evolveA0(A0,0,flux.F0); if (!status) return status;
-    std::fill(work.flux.begin(),work.flux.end(),WVComplex64{});
+    if (!work.initialized()) {
+      if (preparedPhysical) {
+        std::copy_n(preparedPhysical->data,preparedPhysical->shape.elementCount(),
+                    work.physical.data());
+        work.physicalPrepared=true;
+      }
+      status=kernel().evolveA0(A0,0,flux.F0); if (!status) return status;
+      std::fill(work.flux.begin(),work.flux.end(),WVComplex64{});
+      work.markInitialized();
+    }
     WVBarotropicQGForcingExecutionContext context;
     context.engine_=this; context.A0_=A0; context.outputInitialized_=true;
-    context.workspace_.preparedVelocity=preparedPhysical;
+    context.diagnosticWorkspace_=&work;
+    WVRealFieldBundleConstView persistentVelocity{
+        work.physical.data(),{plane.rows,plane.columns,1,2}};
+    if (work.physicalPrepared)
+      context.workspace_.preparedVelocity=&persistentVelocity;
     executing_=true;
     struct Guard {
       WVBarotropicQGForcingEngine& engine;
@@ -826,6 +1048,15 @@ WVKernelStatus WVBarotropicQGForcingEngine::evaluateForcingTendencies(
         context.F0_=destination.F0;
         context.workspace_.spatialTendency=forcing.stage()==WVForcingStage::spatial ? &raw : nullptr;
         context.workspace_.spatialTendencyCaptured=false;
+        if (forcing.requiresDiagnosticPhysicalFields() &&
+            !work.physicalPrepared) {
+          WVRealFieldBundleConstView fields;
+          const auto prepared=kernel().prepareAdvectionFields(A0,context.workspace_,fields);
+          if (!prepared) return prepared;
+          std::copy_n(fields.data,2*R,work.physical.data());
+          work.physicalPrepared=true;
+          context.workspace_.preparedVelocity=&persistentVelocity;
+        }
         const auto result=forcing.addRightHandSide(context);
         work.spatialCaptured=context.workspace_.spatialTendencyCaptured;
         return result;
@@ -844,6 +1075,10 @@ WVKernelStatus WVBarotropicQGForcingEngine::evaluateForcingTendencies(
 
 WVStateConstraintResult
 WVBarotropicQGForcingEngine::restoreForcingAmplitudes(WVComplexView &A0) {
+  if (evaluation_.active() || executing_)
+    return {{WVKernelStatusCode::reentrantExecution,
+             "Barotropic QG constraints cannot mutate an active evaluation."},
+            0, false};
   const auto expected = kernel_->descriptor().spectralShape();
   if (A0.shape.rows != expected.rows || A0.shape.columns != expected.columns)
     return {{WVKernelStatusCode::invalidShape,
@@ -871,7 +1106,9 @@ WVBarotropicQGForcingEngine::restoreForcingAmplitudes(WVComplexView &A0) {
 std::size_t WVBarotropicQGForcingEngine::persistentBytes() const noexcept {
   return sizeof(*this) +
          (kernel_ == nullptr ? 0 : kernel_->persistentBytes()) +
-         metrics_.scheduleBytes + metrics_.derivedOperatorBytes;
+         metrics_.scheduleBytes + metrics_.derivedOperatorBytes +
+         metrics_.workspaceCapacityBytes +
+         evaluation_.persistentBytes();
 }
 
 } // namespace wavevortex::runtime

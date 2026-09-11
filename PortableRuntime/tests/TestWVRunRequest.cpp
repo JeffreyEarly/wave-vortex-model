@@ -77,6 +77,20 @@ int main() {
                 request.destinations.size() == 1 &&
                 request.destinations.front().fileIdentifier == "primary",
             "output destination contract was decoded incorrectly");
+    require(request.variableEvaluationPolicy==wavevortex::runtime::WVVariableEvaluationPolicy::reuse,
+            "Existing request did not select reuse");
+    for(const std::string selection:{"reuse","low-memory","invalid"}) {
+      auto policyRequest=v2Request(R"({"finalTime":12})");
+      const auto offset=policyRequest.find("\"threads\":1");
+      policyRequest.insert(offset,"\"variableEvaluationPolicy\":\""+selection+"\",");
+      write(root/"policy.json",policyRequest);
+      WVRunRequest selected;
+      const auto parsed=decodeRunRequest((root/"policy.json").string(),selected);
+      require(bool(parsed)==(selection!="invalid"),"Evaluation policy acceptance incorrect");
+      if(parsed) require(selected.variableEvaluationPolicy==(selection=="reuse" ?
+          wavevortex::runtime::WVVariableEvaluationPolicy::reuse : wavevortex::runtime::WVVariableEvaluationPolicy::lowMemory),
+          "Evaluation policy decoded incorrectly");
+    }
     const auto originalWorkingDirectory = std::filesystem::current_path();
     std::filesystem::current_path(root / "subdirectory");
     status = decodeRunRequest("../request.json", request);

@@ -15,7 +15,7 @@ namespace wavevortex::runtime {
 
 enum class WVVariableEvaluationNode : std::uint8_t {
   registeredVariable, phaseFactors, physicalField, derivative, reduction,
-  componentCoefficients, projection, forcingTendency
+  componentCoefficients, projection, forcingTendency, gridCalculus
 };
 
 // Owner and immutable state are bound by the enclosing evaluation. Geometry is
@@ -42,6 +42,11 @@ struct WVVariableEvaluationMetrics {
 // Field indices follow each transform's field enum; derivative zero is value.
 struct WVVariableProducerMetrics {
   std::size_t stateValidations = 0, phasePreparations = 0;
+  std::size_t derivedValidations = 0;
+  std::size_t horizontalSpeedReductions = 0;
+  std::size_t verticalSpeedReductions = 0;
+  std::size_t energyReductions = 0;
+  std::array<std::size_t,4> tendencyReconstructions{};
   std::array<std::array<std::array<std::size_t,5>,4>,16> reconstructions{};
 };
 

@@ -323,20 +323,30 @@ WVKernelStatus WVTransformStratifiedQGKernel::transformA0ToField(WVComplexConstV
 }
 WVKernelStatus WVTransformStratifiedQGKernel::combinePreparedDensityZDerivative(
     WVStratifiedQGField field,WVRealVolumeConstView etaZ,WVRealVolumeConstView eta,
-    WVRealVolumeView output) const {
-    if (field!=WVStratifiedQGField::rhoE && field!=WVStratifiedQGField::rhoTotal)
+    WVRealVolumeView output,std::size_t componentIdentity) {
+    if ((field!=WVStratifiedQGField::rhoE && field!=WVStratifiedQGField::rhoTotal) ||
+        componentIdentity>=5)
         return {WVKernelStatusCode::unsupportedOperation,"Prepared density combination requires rhoE or rhoTotal."};
     auto status=volume(etaZ); if (!status) return status;
     status=volume(eta); if (!status) return status;
     status=volume({output.data,output.shape}); if (!status) return status;
-    status=disjoint(etaZ.data,R_*sizeof(double),output.data,R_*sizeof(double)); if (!status) return status;
-    status=disjoint(eta.data,R_*sizeof(double),output.data,R_*sizeof(double)); if (!status) return status;
+    if(etaZ.data!=output.data) {
+        status=disjoint(etaZ.data,R_*sizeof(double),output.data,R_*sizeof(double)); if (!status) return status;
+    }
+    if(eta.data!=output.data) {
+        status=disjoint(eta.data,R_*sizeof(double),output.data,R_*sizeof(double)); if (!status) return status;
+    }
     const auto& g=geometry(); const auto plane=R_/g.Nz;
     for (std::size_t z=0;z<g.Nz;++z) for (std::size_t xy=0;xy<plane;++xy) {
         const auto i=xy+plane*z; const double scale=(g.rho0/g.g)*g.N2[z];
         output.data[i]=scale*(etaZ.data[i]+g.dLnN2[z]*eta.data[i]);
         if (field==WVStratifiedQGField::rhoTotal) output.data[i]-=scale;
     }
+    ++metrics_.fieldReconstructionCount[static_cast<std::size_t>(field)];
+    ++metrics_.reconstructionCount[static_cast<std::size_t>(field)]
+        [static_cast<std::size_t>(WVStratifiedQGDerivative::z)];
+    ++metrics_.componentReconstructionCount[static_cast<std::size_t>(field)]
+        [static_cast<std::size_t>(WVStratifiedQGDerivative::z)][componentIdentity];
     return WVKernelStatus::ok();
 }
 WVKernelStatus WVTransformStratifiedQGKernel::transformUVEtaToA0(WVRealVolumeConstView u,WVRealVolumeConstView v,WVRealVolumeConstView eta,WVComplexView b) {
@@ -525,7 +535,9 @@ WVKernelStatus WVTransformStratifiedQGKernel::uvMax(WVComplexConstView a,double&
     auto status=validateStateForCall(a); if (!status) return status; ActiveCall guard(active_); if (!guard.entered) return reentrant();
     status=reconstruct(a,WVStratifiedQGField::u,WVStratifiedQGDerivative::value,real_.data()); if (!status) return status;
     status=reconstruct(a,WVStratifiedQGField::v,WVStratifiedQGDerivative::value,real_.data()+R_); if (!status) return status;
-    double maximum=0; for (std::size_t i=0;i<R_;++i) maximum=std::max(maximum,std::hypot(real_[i],real_[R_+i])); value=maximum; return WVKernelStatus::ok();
+    double maximum=0; for (std::size_t i=0;i<R_;++i) maximum=std::max(maximum,std::hypot(real_[i],real_[R_+i]));
+    value=maximum; ++metrics_.horizontalSpeedMaximumReductionCount;
+    return WVKernelStatus::ok();
 }
 WVKernelStatus WVTransformStratifiedQGKernel::advectScalarWithAdvectionFields(WVRealVolumeConstView scalar, WVRealFieldBundleConstView fields, bool antialias, WVRealVolumeView output) {
     auto status = volume(scalar); if (!status) return status;

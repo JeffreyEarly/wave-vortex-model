@@ -1307,11 +1307,9 @@ WVKernelStatus WVObserverOutputEvaluationService::prepare(
     }
   impl_->preparedEventOrdinal = event.eventOrdinal;
   impl_->preparedScheduledTime = event.scheduledTime;
-  const bool sharePrimitiveFields=impl_->hasForcingOutputs() &&
-      ((!impl_->movingFieldViews.empty() && needsMoving) ||
-       std::any_of(impl_->eventFieldPlans.begin(),impl_->eventFieldPlans.end(),[](const auto& plan){return plan.outputCount()!=0;}));
-  const bool shareFields=sharePrimitiveFields || impl_->timeSeriesFieldPlan.hasDensityDiagnostics();
-  detail::WVFieldEvaluationEventScope sharedFields(*impl_->fields,event.state,shareFields,sharePrimitiveFields);
+  // Every route for this immutable output event shares one canonical variable
+  // execution context. Sampling geometry remains occurrence-owned.
+  detail::WVFieldEvaluationEventScope sharedFields(*impl_->fields,event.state,true,true);
   if(!sharedFields.status()) return sharedFields.status();
   auto status = impl_->evaluate(event.state, false, needsMoving, metrics_);
   if (status) {
@@ -1538,6 +1536,7 @@ WVObserverOutputEvaluationMetrics WVObserverOutputEvaluationService::metrics() c
     result.diagnosticIntermediateReuseCount=fields.diagnosticIntermediateReuseCount;
     result.diagnosticWorkspaceLiveBytes=fields.diagnosticWorkspaceLiveBytes;
     result.diagnosticWorkspaceHighWaterBytes=fields.diagnosticWorkspaceHighWaterBytes;
+    result.additionalTransientHighWaterBytes=fields.additionalTransientHighWaterBytes;
     result.densityRecoveryCount=fields.densityRecoveryCount;
     result.densityProfileConstructionCount=fields.densityProfileConstructionCount;
     result.densityInversePassCount=fields.densityInversePassCount;
@@ -1550,6 +1549,10 @@ WVObserverOutputEvaluationMetrics WVObserverOutputEvaluationService::metrics() c
     result.eventFieldReuseCount=fields.eventFieldReuseCount;
     result.eventFieldWorkspaceLiveBytes=fields.eventFieldWorkspaceLiveBytes;
     result.eventFieldWorkspaceHighWaterBytes=fields.eventFieldWorkspaceHighWaterBytes;
+    result.eventFieldArenaPlannedBytes=fields.eventFieldArenaPlannedBytes;
+    result.eventFieldArenaPeakBytes=fields.eventFieldArenaPeakBytes;
+    result.variableEvaluation=fields.variableEvaluation;
+    result.variableProducers=impl_->fields->producerMetrics();
   }
   return result;
 }

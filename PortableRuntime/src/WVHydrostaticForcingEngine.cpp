@@ -2,6 +2,7 @@
 #include "WaveVortexRuntime/WVExtensionCatalog.hpp"
 #include "WaveVortexRuntime/WVForcingContracts.hpp"
 #include "WVForcingDiagnosticWorkspace.hpp"
+#include "WVScopedStateEvaluation.hpp"
 #include <algorithm>
 #include <cmath>
 #include <limits>
@@ -52,6 +53,7 @@ WVKernelStatus WVHydrostaticForcingEngine::create(std::shared_ptr<const WVStrati
         auto s=validateSchedule(g,schedule,{g.Nj,g.Nkl},*catalog); if (!s) return s;
         auto candidate=std::unique_ptr<WVHydrostaticForcingEngine>(new WVHydrostaticForcingEngine);
         candidate->catalog_=std::move(catalog);
+        candidate->evaluationPolicy_=services.variableEvaluationPolicy;
         s=WVTransformHydrostaticKernel::create(std::move(source),std::move(fft),candidate->kernel_,services.matrixBackendFactory,services.execution); if (!s) return s;
         s=candidate->initialize(schedule); if (!s) return s;
         result=std::move(candidate); return WVKernelStatus::ok();
@@ -63,6 +65,17 @@ WVKernelStatus WVHydrostaticForcingEngine::initialize(const WVFrozenForcingSched
     for (std::size_t m=0;m<g.Nkl;++m) preparation_.maximumHorizontalComponent=std::max({preparation_.maximumHorizontalComponent,std::abs(g.k[m]),std::abs(g.l[m])});
     std::vector<const WVFrozenForcingEntry*> entries;
     for (const auto& e:schedule.entries) { entries.push_back(&e); preparation_.hasAdaptiveDamping|=catalog_->forcings().registration(e.typeIdentifier,e.contractVersion)->providesAdaptiveDamping; }
+    for(const auto& e:schedule.entries) {
+        if(e.typeIdentifier=="WVHorizontalDamping")
+            for(const auto field:{0U,1U,3U}) for(std::size_t kind=0;kind<2;++kind)
+                ++gridCalculusUseCount_[4*field+kind];
+        if(e.typeIdentifier=="WVVerticalDamping") {
+            ++gridCalculusUseCount_[4*0+2]; ++gridCalculusUseCount_[4*1+2];
+            ++gridCalculusUseCount_[4*3+3];
+        }
+        if(e.typeIdentifier=="WVVerticalDiffusivity")
+            ++gridCalculusUseCount_[4*3+3];
+    }
     for(const auto* entry:entries) {
         const auto& prepare=catalog_->forcings().registration(entry->typeIdentifier,entry->contractVersion)->prepareHydrostaticResolution;
         if(prepare) { const auto status=prepare(*entry,kernel(),preparation_); if(!status) return status; }
@@ -82,24 +95,94 @@ WVKernelStatus WVHydrostaticForcingEngine::initialize(const WVFrozenForcingSched
     scheduleIdentifier_=identifier.str();
     const auto R=kernel().spatialShape().elementCount(),S=kernel().spectralShape().elementCount();
     physical_.resize(4*R); spatial_.resize(3*R); derivative_.resize(2*R); temporary_.resize(3*S);
+    gridCalculusSlots_.fill(-1);
+    std::size_t calculusSlots=0;
+    for(std::size_t index=0;index<gridCalculusUseCount_.size();++index)
+        if(gridCalculusUseCount_[index]>1)
+            gridCalculusSlots_[index]=static_cast<int>(calculusSlots++);
+    if(evaluationPolicy_==WVVariableEvaluationPolicy::reuse)
+        gridCalculus_.resize(calculusSlots*R);
+    const auto wholeFluxCount=std::count_if(forcing_.begin(),forcing_.end(),[](const auto& forcing){return forcing->producesCompleteFlux();});
+    if(wholeFluxCount>1 && evaluationPolicy_==WVVariableEvaluationPolicy::reuse) nonlinearCache_.resize(3*S);
+    std::vector<WVVariableEvaluationKey> evaluationKeys{
+        {WVVariableEvaluationNode::physicalField,0}, {WVVariableEvaluationNode::physicalField,1},
+        {WVVariableEvaluationNode::physicalField,2}, {WVVariableEvaluationNode::physicalField,3},
+        {WVVariableEvaluationNode::reduction,0}, {WVVariableEvaluationNode::reduction,1},
+        {WVVariableEvaluationNode::forcingTendency,0}};
+    for(std::size_t index=0;index<gridCalculusUseCount_.size();++index)
+        if(gridCalculusUseCount_[index]>1)
+            evaluationKeys.push_back({WVVariableEvaluationNode::gridCalculus,
+                static_cast<std::uint32_t>(index/4),0,
+                static_cast<std::uint32_t>(index%4)});
+    auto prepared=evaluation_.prepare(evaluationKeys);
+    if(!prepared) return prepared;
     metrics_.scheduleBytes=scheduleIdentifier_.capacity()+forcing_.capacity()*sizeof(std::unique_ptr<WVForcing>);
-    metrics_.workspaceCapacityBytes=(physical_.capacity()+spatial_.capacity()+derivative_.capacity())*sizeof(double)+temporary_.capacity()*sizeof(WVComplex64);
+    metrics_.workspaceCapacityBytes=(physical_.capacity()+spatial_.capacity()+derivative_.capacity()+gridCalculus_.capacity())*sizeof(double)+(temporary_.capacity()+nonlinearCache_.capacity())*sizeof(WVComplex64);
     metrics_.workspaceHighWaterBytes=metrics_.workspaceCapacityBytes;
     return WVKernelStatus::ok();
 }
+WVKernelStatus WVHydrostaticForcingEngine::setVariableEvaluationPolicy(WVVariableEvaluationPolicy policy) {
+    if(evaluation_.active() || executing_) return {WVKernelStatusCode::reentrantExecution,"Cannot change an active evaluation policy."};
+    if(policy!=WVVariableEvaluationPolicy::reuse && policy!=WVVariableEvaluationPolicy::lowMemory)
+        return {WVKernelStatusCode::invalidConfiguration,"Unknown variable evaluation policy."};
+    const auto wholeFluxCount=std::count_if(forcing_.begin(),forcing_.end(),[](const auto& forcing){return forcing->producesCompleteFlux();});
+    try {
+        if(policy==WVVariableEvaluationPolicy::reuse && wholeFluxCount>1 && nonlinearCache_.empty()) nonlinearCache_.resize(3*kernel().spectralShape().elementCount());
+        if(policy==WVVariableEvaluationPolicy::reuse && gridCalculus_.empty()) {
+            const auto slots=std::count_if(gridCalculusUseCount_.begin(),gridCalculusUseCount_.end(),
+                [](std::size_t count){return count>1;});
+            gridCalculus_.resize(slots*kernel().spatialShape().elementCount());
+        }
+    } catch(const std::bad_alloc&) {return {WVKernelStatusCode::allocationFailure,"Unable to allocate shared nonlinear result."};}
+    if(policy==WVVariableEvaluationPolicy::lowMemory) {
+        std::vector<WVComplex64>{}.swap(nonlinearCache_);
+        std::vector<double>{}.swap(gridCalculus_);
+    }
+    evaluationPolicy_=policy;
+    metrics_.workspaceCapacityBytes=(physical_.capacity()+spatial_.capacity()+derivative_.capacity()+gridCalculus_.capacity())*sizeof(double)+(temporary_.capacity()+nonlinearCache_.capacity())*sizeof(WVComplex64);
+    metrics_.workspaceHighWaterBytes=std::max(metrics_.workspaceHighWaterBytes,metrics_.workspaceCapacityBytes);
+    return WVKernelStatus::ok();
+}
+WVKernelStatus WVHydrostaticForcingEngine::beginStateEvaluation(const WVState& state) {
+    if (evaluation_.active() || executing_) return {WVKernelStatusCode::reentrantExecution,"State evaluation is already active."};
+    auto status=kernel().beginStateEvaluation(state); if(!status) return status;
+    status=evaluation_.begin(this,evaluationPolicy_);
+    if(!status) {kernel().endStateEvaluation(); return status;}
+    evaluationState_=state;
+    return WVKernelStatus::ok();
+}
+void WVHydrostaticForcingEngine::endStateEvaluation() noexcept {
+    evaluation_.end(); kernel().endStateEvaluation(); evaluationState_={};
+}
+WVKernelStatus WVHydrostaticForcingEngine::validateStateEvaluation(const WVState& state) const {
+    if(!evaluation_.active() || state.t!=evaluationState_.t || state.t0!=evaluationState_.t0)
+        return invalid("State does not belong to the active evaluation.");
+    const WVComplexConstView a[]={state.coefficients.Ap,state.coefficients.Am,state.coefficients.A0};
+    const WVComplexConstView b[]={evaluationState_.coefficients.Ap,evaluationState_.coefficients.Am,evaluationState_.coefficients.A0};
+    for(std::size_t i=0;i<3;++i) if(a[i].data!=b[i].data || a[i].shape.rows!=b[i].shape.rows || a[i].shape.columns!=b[i].shape.columns)
+        return invalid("Coefficients do not belong to the active evaluation.");
+    return WVKernelStatus::ok();
+}
+WVKernelStatus WVHydrostaticForcingEngine::ensurePhysicalField(const WVState& state,std::size_t channel) {
+    const auto shape=kernel().spatialShape(); const auto R=shape.elementCount();
+    const WVHydrostaticField names[]={WVHydrostaticField::u,WVHydrostaticField::v,WVHydrostaticField::w,WVHydrostaticField::eta};
+    return evaluation_.evaluate({WVVariableEvaluationNode::physicalField,static_cast<std::uint32_t>(channel)},R*sizeof(double),[&] {
+        return kernel().transformStateField(state,names[channel],{physical_.data()+channel*R,shape});
+    });
+}
 WVKernelStatus WVHydrostaticForcingEngine::nonlinearFlux(const WVState& state,WVFlux& flux) {
     if (executing_) return {WVKernelStatusCode::reentrantExecution,"Hydrostatic forcing workspace is active."};
+    detail::WVScopedStateEvaluation<WVHydrostaticForcingEngine> evaluation(*this,state);
+    if(!evaluation.status()) return evaluation.status();
     const auto bytes=kernel().spectralShape().elementCount()*sizeof(WVComplex64);
     for (auto input:{state.coefficients.Ap,state.coefficients.Am,state.coefficients.A0})
         for (auto output:{flux.Fp,flux.Fm,flux.F0}) {
             const auto a=reinterpret_cast<std::uintptr_t>(input.data),b=reinterpret_cast<std::uintptr_t>(output.data);
             if (a && b && (a<=b ? b-a<bytes : a-b<bytes)) return {WVKernelStatusCode::overlappingArrays,"Hydrostatic RHS output overlaps its input state."};
         }
-    // The kernel's phase operation validates all coefficient pointers, aliases,
-    // values and time before user output can be cleared or written.
-    auto s=kernel().evolveCoefficients(state,{flux.Fp,flux.Fm,flux.F0}); if (!s) return s;
+    // Validate output storage before clearing it; state was validated at scope entry.
+    auto s=kernel().validateFluxOutput(state,flux); if (!s) return s;
     executing_=true; struct Guard { bool& x; ~Guard(){x=false;} } guard{executing_};
-    physicalValid_=false;
     for (auto x:{flux.Fp,flux.Fm,flux.F0}) std::fill_n(x.data,x.shape.elementCount(),WVComplex64{});
     WVForcingExecutionContext context; bool initialized=true;
     context.hydrostatic_=this; context.state_=&state; context.flux_=&flux; context.outputInitialized_=&initialized;
@@ -121,17 +204,20 @@ WVKernelStatus WVHydrostaticForcingEngine::physicalFields(const WVState& state,W
         fields={work.physical.data(),{shape.first,shape.second,shape.third,4}};
         return WVKernelStatus::ok();
     }
-    // Reuse is limited to one explicitly active RHS evaluation. External calls
-    // always reconstruct, even when a caller mutates coefficients in place.
-    if (!executing_) physicalValid_=false;
-    const auto shape=kernel().spatialShape(); const auto R=shape.elementCount();
-    if (!physicalValid_) {
-        const WVHydrostaticField names[]={WVHydrostaticField::u,WVHydrostaticField::v,WVHydrostaticField::w,WVHydrostaticField::eta};
-        for (std::size_t i=0;i<4;++i) { auto s=kernel().transformStateField(state,names[i],{physical_.data()+i*R,shape}); if (!s) return s; }
-        physicalValid_=true; ++metrics_.physicalFieldReconstructionCount;
-    } else ++metrics_.physicalFieldReuseCount;
-    fields={physical_.data(),{shape.first,shape.second,shape.third,4}}; return WVKernelStatus::ok();
+    detail::WVScopedStateEvaluation<WVHydrostaticForcingEngine> evaluation(*this,state);
+    if(!evaluation.status()) return evaluation.status();
+    const auto shape=kernel().spatialShape();
+    bool reconstructed=false;
+    for(std::size_t channel=0;channel<4;++channel) {
+        reconstructed|=!evaluation_.ready({WVVariableEvaluationNode::physicalField,static_cast<std::uint32_t>(channel)});
+        auto status=ensurePhysicalField(state,channel); if(!status) return status;
+    }
+    if(reconstructed) ++metrics_.physicalFieldReconstructionCount;
+    else ++metrics_.physicalFieldReuseCount;
+    fields={physical_.data(),{shape.first,shape.second,shape.third,4}};
+    return WVKernelStatus::ok();
 }
+
 WVRealFieldBundleView WVHydrostaticForcingEngine::clearedSpatialTendency() {
     std::fill(spatial_.begin(),spatial_.end(),0); const auto g=kernel().spatialShape(); return {spatial_.data(),{g.first,g.second,g.third,3}};
 }
@@ -154,28 +240,105 @@ WVKernelStatus WVHydrostaticForcingEngine::addNonlinearFlux(const WVState& state
         diagnosticWorkspace_->spatialCaptured=true;
         auto raw=diagnosticWorkspace_->rawView();
         auto temporary=diagnosticWorkspace_->temporaryView();
-        return kernel().nonlinearFlux(state,temporary,&raw,&fields,false);
+        return diagnosticWorkspace_->evaluateNonlinearRaw([&] {
+            ++metrics_.nonlinearProducerCount;
+            return kernel().nonlinearFlux(state,temporary,&raw,&fields,false,diagnosticWorkspace_->stateDerivativeAccess());
+        });
     }
     const auto S=kernel().spectralShape().elementCount(); const auto shape=kernel().spectralShape();
-    WVFlux tmp{{temporary_.data(),shape},{temporary_.data()+S,shape},{temporary_.data()+2*S,shape}};
-    auto s=kernel().nonlinearFlux(state,tmp); if (!s) return s;
+    auto& storage=nonlinearCache_.empty() ? temporary_ : nonlinearCache_;
+    WVFlux tmp{{storage.data(),shape},{storage.data()+S,shape},{storage.data()+2*S,shape}};
+    const auto produce=[&] {
+        WVRealFieldBundleConstView fields;
+        auto status=physicalFields(state,fields); if(!status) return status;
+        ++metrics_.nonlinearProducerCount;
+        return kernel().nonlinearFlux(state,tmp,nullptr,&fields);
+    };
+    const auto status=(nonlinearCache_.empty() && evaluationPolicy_==WVVariableEvaluationPolicy::reuse) ? produce() : evaluation_.evaluate({WVVariableEvaluationNode::forcingTendency,0},3*S*sizeof(WVComplex64),produce);
+    if(!status) return status;
     const WVComplexView target[]={flux.Fp,flux.Fm,flux.F0};
-    for(int j=0;j<3;++j) for(std::size_t i=0;i<S;++i) target[j].data[i]=add(target[j].data[i],temporary_[j*S+i]);
+    for(int j=0;j<3;++j) for(std::size_t i=0;i<S;++i) target[j].data[i]=add(target[j].data[i],storage[j*S+i]);
+    evaluation_.evict({WVVariableEvaluationNode::forcingTendency,0});
     return WVKernelStatus::ok();
 }
+
+WVKernelStatus WVHydrostaticForcingEngine::gridSecondDerivative(
+    WVRealVolumeConstView input,std::size_t field,std::size_t kind,
+    WVHydrostaticFamily family,const double*& result) {
+    result=nullptr;
+    if(field>=4 || kind>=4) return invalid("Unknown Hydrostatic grid-calculus identity.");
+    const auto shape=kernel().spatialShape(); const auto R=shape.elementCount();
+    auto* access=diagnosticWorkspace_ ? diagnosticWorkspace_->stateCalculusAccess() : nullptr;
+    const auto calculusKind=static_cast<detail::WVGridCalculusKind>(kind);
+    WVRealVolumeConstView cached{};
+    if(access && access->lookup) {
+        auto status=access->lookup(access->context,field,calculusKind,cached);
+        if(!status) return status;
+    }
+    if(cached.data) {
+        if(cached.shape.first!=shape.first || cached.shape.second!=shape.second ||
+            cached.shape.third!=shape.third)
+            return invalid("Cached Hydrostatic grid derivative has an incompatible shape.");
+        result=cached.data; return WVKernelStatus::ok();
+    }
+    const auto produce=[&](double* destination) {
+        WVKernelStatus status;
+        if(kind<2) {
+            const bool x=kind==0;
+            status=kernel().differentiateHorizontal(input,x,{derivative_.data(),shape});
+            if(status) status=kernel().differentiateHorizontal(
+                {derivative_.data(),shape},x,{destination,shape});
+        } else status=kernel().differentiateVertical(input,family,2,{destination,shape});
+        if(status) ++metrics_.gridCalculusProducerCount[field][kind];
+        return status;
+    };
+    double* scratch=derivative_.data()+(kind<2 ? R : 0);
+    const auto index=4*field+kind;
+    if(access) {
+        auto status=produce(scratch); if(!status) return status;
+        if(access->capture) {
+            status=access->capture(access->context,field,calculusKind,{scratch,shape});
+            if(!status) return status;
+        }
+        result=scratch; return WVKernelStatus::ok();
+    }
+    if(gridCalculusUseCount_[index]>1 && evaluation_.active()) {
+        const auto key=detail::WVForcingDiagnosticWorkspace::gridCalculusKey(field,calculusKind);
+        if(evaluationPolicy_==WVVariableEvaluationPolicy::reuse) {
+            const auto slot=gridCalculusSlots_[index];
+            if(slot<0 || gridCalculus_.size()<(static_cast<std::size_t>(slot)+1)*R)
+                return invalid("Hydrostatic grid-calculus cache was not prepared.");
+            auto* destination=gridCalculus_.data()+static_cast<std::size_t>(slot)*R;
+            const auto status=evaluation_.evaluate(key,R*sizeof(double),[&] {
+                return produce(destination);
+            });
+            if(status) result=destination;
+            return status;
+        }
+        const auto status=evaluation_.evaluate(key,0,[&] {return produce(scratch);});
+        if(status) evaluation_.evict(key);
+        if(status) result=scratch;
+        return status;
+    }
+    const auto status=produce(scratch); if(status) result=scratch; return status;
+}
+
 WVKernelStatus WVHydrostaticForcingEngine::addLaplacianDamping(const WVState& state,double nu,double kappa,WVLaplacianDirection direction,WVFlux& flux) {
     WVRealFieldBundleConstView fields; auto s=physicalFields(state,fields); if (!s) return s;
     const auto shape=kernel().spatialShape(); const auto R=shape.elementCount(); auto tendency=clearedSpatialTendency();
     for (std::size_t j=0;j<3;++j) {
-        const double coefficient=j==2 ? kappa : nu; const WVRealVolumeConstView a{fields.data+(j==2 ? 3 : j)*R,shape};
+        const double coefficient=j==2 ? kappa : nu; const std::size_t field=j==2 ? 3 : j;
+        const WVRealVolumeConstView a{fields.data+field*R,shape};
         if (direction==WVLaplacianDirection::vertical) {
-            s=kernel().differentiateVertical(a,j==2 ? WVHydrostaticFamily::G : WVHydrostaticFamily::F,2,{derivative_.data(),shape}); if (!s) return s;
-            for(std::size_t i=0;i<R;++i) tendency.data[j*R+i]=coefficient*(derivative_[i]-(j==2 ? kernel().geometry().dLnN2[i/(shape.first*shape.second)] : 0));
+            const double* derivative=nullptr;
+            s=gridSecondDerivative(a,field,j==2 ? 3 : 2,
+                j==2 ? WVHydrostaticFamily::G : WVHydrostaticFamily::F,derivative); if(!s) return s;
+            for(std::size_t i=0;i<R;++i) tendency.data[j*R+i]=coefficient*(derivative[i]-(j==2 ? kernel().geometry().dLnN2[i/(shape.first*shape.second)] : 0));
         } else {
-            for(bool x:{true,false}) {
-                s=kernel().differentiateHorizontal(a,x,{derivative_.data(),shape}); if (!s) return s;
-                s=kernel().differentiateHorizontal({derivative_.data(),shape},x,{derivative_.data()+R,shape}); if (!s) return s;
-                for(std::size_t i=0;i<R;++i) tendency.data[j*R+i]+=coefficient*derivative_[R+i];
+            for(std::size_t kind=0;kind<2;++kind) {
+                const double* derivative=nullptr;
+                s=gridSecondDerivative(a,field,kind,WVHydrostaticFamily::F,derivative); if(!s) return s;
+                for(std::size_t i=0;i<R;++i) tendency.data[j*R+i]+=coefficient*derivative[i];
             }
         }
     }
@@ -184,18 +347,49 @@ WVKernelStatus WVHydrostaticForcingEngine::addLaplacianDamping(const WVState& st
 WVKernelStatus WVHydrostaticForcingEngine::addVerticalDiffusivity(const WVState& state,double kappa,bool forceMean,WVFlux& flux) {
     WVRealFieldBundleConstView fields; auto s=physicalFields(state,fields); if (!s) return s;
     const auto shape=kernel().spatialShape(); const auto R=shape.elementCount(); auto tendency=clearedSpatialTendency();
-    s=kernel().differentiateVertical({fields.data+3*R,shape},WVHydrostaticFamily::G,2,{derivative_.data(),shape}); if (!s) return s;
-    for (std::size_t i=0;i<R;++i) tendency.data[2*R+i]=kappa*(derivative_[i]-(forceMean ? kernel().geometry().dLnN2[i/(shape.first*shape.second)] : 0));
+    const double* derivative=nullptr;
+    s=gridSecondDerivative({fields.data+3*R,shape},3,3,WVHydrostaticFamily::G,derivative); if(!s) return s;
+    for (std::size_t i=0;i<R;++i) tendency.data[2*R+i]=kappa*(derivative[i]-(forceMean ? kernel().geometry().dLnN2[i/(shape.first*shape.second)] : 0));
     return addProjectedSpatialTendency(state,{tendency.data,tendency.shape},flux);
 }
+WVKernelStatus WVHydrostaticForcingEngine::horizontalSpeedMaximum(const WVState& state,double& uv) {
+    if(diagnosticWorkspace_) {
+        return diagnosticWorkspace_->evaluateHorizontalMaximum(uv,[&](double& maximum) {
+            WVRealFieldBundleConstView fields; auto status=physicalFields(state,fields); if(!status) return status;
+            const auto R=kernel().spatialShape().elementCount(); maximum=0;
+            for(std::size_t i=0;i<R;++i) maximum=std::max(maximum,std::hypot(fields.data[i],fields.data[R+i]));
+            ++metrics_.horizontalSpeedReductionCount;
+            return WVKernelStatus::ok();
+        });
+    }
+    detail::WVScopedStateEvaluation<WVHydrostaticForcingEngine> scope(*this,state);
+    if(!scope.status()) return scope.status();
+    auto status=evaluation_.evaluate({WVVariableEvaluationNode::reduction,0},sizeof(double),[&] {
+        for(std::size_t c=0;c<2;++c) {auto s=ensurePhysicalField(state,c); if(!s) return s;}
+        const auto R=kernel().spatialShape().elementCount(); horizontalMaximum_=0;
+        for(std::size_t i=0;i<R;++i) horizontalMaximum_=std::max(horizontalMaximum_,std::hypot(physical_[i],physical_[R+i]));
+        ++metrics_.horizontalSpeedReductionCount;
+        return WVKernelStatus::ok();
+    });
+    if(status) uv=horizontalMaximum_;
+    return status;
+}
 WVKernelStatus WVHydrostaticForcingEngine::speedMaxima(const WVState& state,double& uv,double& w) {
-    WVRealFieldBundleConstView fields; auto s=physicalFields(state,fields); if (!s) return s;
-    const auto R=kernel().spatialShape().elementCount(); uv=0; w=0;
-    for(std::size_t i=0;i<R;++i) { uv=std::max(uv,std::hypot(fields.data[i],fields.data[R+i])); w=std::max(w,std::abs(fields.data[2*R+i])); }
-    return WVKernelStatus::ok();
+    detail::WVScopedStateEvaluation<WVHydrostaticForcingEngine> scope(*this,state);
+    if(!scope.status()) return scope.status();
+    auto status=horizontalSpeedMaximum(state,uv); if(!status) return status;
+    status=evaluation_.evaluate({WVVariableEvaluationNode::reduction,1},sizeof(double),[&] {
+        auto s=ensurePhysicalField(state,2); if(!s) return s;
+        const auto R=kernel().spatialShape().elementCount(); verticalMaximum_=0;
+        for(std::size_t i=0;i<R;++i) verticalMaximum_=std::max(verticalMaximum_,std::abs(physical_[2*R+i]));
+        ++metrics_.verticalSpeedReductionCount;
+        return WVKernelStatus::ok();
+    });
+    if(status) w=verticalMaximum_;
+    return status;
 }
 WVKernelStatus WVHydrostaticForcingEngine::addAdaptiveDamping(const WVState& state,const std::vector<double>& damping,WVFlux& flux) {
-    double uv,w; auto s=speedMaxima(state,uv,w); if (!s) return s;
+    double uv; auto s=horizontalSpeedMaximum(state,uv); if (!s) return s;
     const WVComplexConstView a[]={state.coefficients.Ap,state.coefficients.Am,state.coefficients.A0}; const WVComplexView b[]={flux.Fp,flux.Fm,flux.F0};
     for (int j=0;j<3;++j) for(std::size_t i=0;i<damping.size();++i) b[j].data[i]=add(b[j].data[i],scale(a[j].data[i],uv*damping[i]));
     return WVKernelStatus::ok();
@@ -206,14 +400,17 @@ WVKernelStatus WVHydrostaticForcingEngine::addPseudoTopographicGeneration(const 
     const double ramp=c.rampDuration==0 || elapsed>=c.rampDuration ? 1 : .5*(1-std::cos(pi*elapsed/c.rampDuration));
     const WVComplex64 oscillation{std::cos(c.frequency*elapsed),-std::sin(c.frequency*elapsed)};
     const double u=ramp*multiply(c.barotropicVelocityAmplitude[0],oscillation).real,v=ramp*multiply(c.barotropicVelocityAmplitude[1],oscillation).real;
+    WVComplexConstView phases;
+    const auto phaseStatus=kernel().preparedPhase(state,phases); if(!phaseStatus) return phaseStatus;
     for(std::size_t i=0;i<o.responsePlusX.size();++i) {
-        const double angle=kernel().factors()[i].omega*(state.t-state.t0); const WVComplex64 phase{std::cos(angle),std::sin(angle)};
+        const auto phase=phases.data[i];
         flux.Fp.data[i]=add(flux.Fp.data[i],multiply(add(scale(o.responsePlusX[i],u),scale(o.responsePlusY[i],v)),conjugate(phase)));
         flux.Fm.data[i]=add(flux.Fm.data[i],multiply(add(scale(o.responseMinusX[i],u),scale(o.responseMinusY[i],v)),phase));
     }
     return WVKernelStatus::ok();
 }
 WVStateConstraintResult WVHydrostaticForcingEngine::restoreForcingAmplitudes(WVMutableCoefficients& a) {
+    if(evaluation_.active()) return {{WVKernelStatusCode::invalidConfiguration,"Cannot constrain coefficients during an immutable evaluation."},0,false};
     // Match MATLAB's forcing-owned accepted-state restoration. The transform's
     // modal validity is established by its input/projection contracts.
     for(auto view:{a.Ap,a.Am,a.A0}) if (!view.data || view.shape.rows!=kernel().geometry().Nj || view.shape.columns!=kernel().geometry().Nkl) return {invalid("Invalid Hydrostatic accepted-state shape."),0,false};
@@ -243,10 +440,12 @@ WVKernelStatus WVHydrostaticForcingEngine::createErrorPolicy(double tolerance,st
     } catch(const std::bad_alloc&) { return {WVKernelStatusCode::allocationFailure,"Hydrostatic tolerance allocation failed."}; }
 }
 std::size_t WVHydrostaticForcingEngine::persistentBytes() const noexcept {
-    return sizeof(*this)+(kernel_ ? kernel_->persistentBytes() : 0)+metrics_.scheduleBytes+metrics_.derivedOperatorBytes+metrics_.workspaceCapacityBytes;
+    return sizeof(*this)+evaluation_.persistentBytes()+(kernel_ ? kernel_->persistentBytes() : 0)+metrics_.scheduleBytes+metrics_.derivedOperatorBytes+metrics_.workspaceCapacityBytes;
 }
 WVKernelStatus WVHydrostaticForcingEngine::evaluateForcingTendencies(
-    const WVState& state,const WVForcingTendencyOutput* outputs,std::size_t count, const WVRealFieldBundleConstView* preparedPhysical) {
+    const WVState& state,const WVForcingTendencyOutput* outputs,std::size_t count,
+    const WVRealFieldBundleConstView* preparedPhysical,
+    detail::WVForcingDiagnosticWorkspace* session) {
     if (executing_) return {WVKernelStatusCode::reentrantExecution,"Forcing diagnostics require an idle engine."};
     tendencyMetrics_.workspaceLastPeakBytes=0;
     const auto shape=kernel().spatialShape();
@@ -256,15 +455,47 @@ WVKernelStatus WVHydrostaticForcingEngine::evaluateForcingTendencies(
     if (!status || !count) return status;
     status=detail::validatePreparedDiagnosticFields(preparedPhysical,spatial,4,state,outputs,count);
     if (!status) return status;
+    detail::WVScopedStateEvaluation<WVTransformHydrostaticKernel> kernelScope(kernel(),state);
+    if(!kernelScope.status()) return kernelScope.status();
     try {
-        detail::WVForcingDiagnosticWorkspace work(kernel().spectralShape(),spatial);
-        if (preparedPhysical) {
-            std::copy_n(preparedPhysical->data,preparedPhysical->shape.elementCount(),work.physical.data());
-            work.physicalPrepared=true;
+        detail::WVForcingDiagnosticLedger localLedger(tendencyMetrics_);
+        std::unique_ptr<detail::WVForcingDiagnosticWorkspace> local;
+        if (!session) {
+            local=std::make_unique<detail::WVForcingDiagnosticWorkspace>(kernel().spectralShape(),spatial);
+            local->gridCalculusUseCount=gridCalculusUseCount_;
+            std::vector<WVForcingStage> stages;
+            local->nonlinearUseCount=0;
+            for(const auto& forcing:forcing_) {
+                stages.push_back(forcing->stage());
+                local->nonlinearUseCount+=forcing->typeIdentifier()=="WVNonlinearAdvection";
+            }
+            status=localLedger.context.prepare(detail::WVForcingDiagnosticWorkspace::dependencyKeys(
+                forcing_.size(),&gridCalculusUseCount_));
+            if(!status) return status;
+            status=localLedger.context.begin(this,evaluationPolicy_); if(!status) return status;
+            status=local->beginScopedEvaluation(localLedger.context,stages); if(!status) return status;
+            session=local.get();
         }
+        auto& work=*session;
+        status=work.bind(this,state); if (!status) return status;
+        const auto spectral=kernel().spectralShape(); const auto S=spectral.elementCount();
+        if (work.spectral.rows!=spectral.rows || work.spectral.columns!=spectral.columns ||
+            work.spatial.first!=spatial.first || work.spatial.second!=spatial.second ||
+            work.spatial.third!=spatial.third || work.spatial.fourth!=spatial.fourth ||
+            work.flux.size()!=3*S || work.previous.size()!=3*S || work.temporary.size()!=3*S ||
+            work.cumulative.size()!=spatial.elementCount() || work.raw.size()!=spatial.elementCount() ||
+            work.physical.size()!=4*R)
+            return {WVKernelStatusCode::invalidShape,"Forcing diagnostic session has incompatible Hydrostatic storage."};
         auto flux=work.fluxView();
-        status=kernel().evolveCoefficients(state,{flux.Fp,flux.Fm,flux.F0}); if (!status) return status;
-        std::fill(work.flux.begin(),work.flux.end(),WVComplex64{});
+        if (!work.initialized()) {
+            if (preparedPhysical) {
+                std::copy_n(preparedPhysical->data,preparedPhysical->shape.elementCount(),work.physical.data());
+                work.physicalPrepared=true;
+            }
+            status=kernel().evolveCoefficients(state,{flux.Fp,flux.Fm,flux.F0}); if (!status) return status;
+            std::fill(work.flux.begin(),work.flux.end(),WVComplex64{});
+            work.markInitialized();
+        }
         executing_=true; diagnosticWorkspace_=&work;
         struct Guard {
             WVHydrostaticForcingEngine& engine;
@@ -272,7 +503,7 @@ WVKernelStatus WVHydrostaticForcingEngine::evaluateForcingTendencies(
                 engine.tendencyMetrics_.workspaceLastPeakBytes=engine.diagnosticWorkspace_->bytes();
                 engine.tendencyMetrics_.workspaceHighWaterBytes=std::max(engine.tendencyMetrics_.workspaceHighWaterBytes,engine.diagnosticWorkspace_->bytes());
                 engine.tendencyMetrics_.workspaceLiveBytes=0;
-                engine.diagnosticWorkspace_=nullptr; engine.executing_=false; engine.physicalValid_=false;
+                engine.diagnosticWorkspace_=nullptr; engine.executing_=false;
             }
         } guard{*this};
         tendencyMetrics_.workspaceLiveBytes=work.bytes();
@@ -293,12 +524,7 @@ WVKernelStatus WVHydrostaticForcingEngine::evaluateForcingTendencies(
                 const auto spectral=kernel().spectralShape(); const auto S=spectral.elementCount();
                 const WVState delta{state.t,state.t0,{{difference.data(),spectral},
                     {difference.data()+S,spectral},{difference.data()+2*S,spectral}}};
-                const WVHydrostaticField names[]={WVHydrostaticField::u,WVHydrostaticField::v,WVHydrostaticField::eta};
-                for (std::size_t channel=0;channel<3;++channel) {
-                    auto result=kernel().transformStateField(delta,names[channel],{destination.data+channel*R,shape});
-                    if (!result) return result;
-                }
-                return WVKernelStatus::ok();
+                return kernel().transformCoefficientTendencyToUVEta(delta,destination);
             });
     } catch (const std::bad_alloc&) {
         return {WVKernelStatusCode::allocationFailure,"Unable to allocate event forcing diagnostic workspace."};
