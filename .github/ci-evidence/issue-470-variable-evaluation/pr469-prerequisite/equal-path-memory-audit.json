@@ -1,0 +1,24 @@
+{
+  "constant-nonhydrostatic-composite-256": {
+    "identicalInputPath": true,
+    "storageDeltas": {
+      "integrationSystem": 16,
+      "modelOutputEvaluation": 510,
+      "modelOutput": 510,
+      "occurrenceWorkspace": 64,
+      "knownPersistent": 16,
+      "fullModelPersistent": 526
+    }
+  },
+  "variable-hydrostatic-composite-large": {
+    "identicalInputPath": true,
+    "storageDeltas": {
+      "integrationSystem": 16,
+      "modelOutputEvaluation": 510,
+      "modelOutput": 510,
+      "occurrenceWorkspace": 64,
+      "knownPersistent": 16,
+      "fullModelPersistent": 526
+    }
+  }
+}

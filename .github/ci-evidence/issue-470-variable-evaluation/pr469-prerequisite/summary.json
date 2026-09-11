@@ -1,0 +1,45 @@
+{
+  "passed": false,
+  "profiles": [
+    {
+      "profile": "constant-nonhydrostatic-composite-256",
+      "integrationRatio": 0.9880332785177042,
+      "ratios": [
+        1.0048214990963715,
+        1.0057493349410875,
+        1.0078836015954256,
+        0.9900773575149461,
+        0.9485983547489004,
+        0.9825235116303772,
+        0.9671170709909372,
+        0.9991024681674233
+      ],
+      "maximumRetainedDeltaBytes": 526,
+      "peakRSSRatio": 1.0000189716363326
+    },
+    {
+      "profile": "variable-hydrostatic-composite-large",
+      "integrationRatio": 0.9926249216593628,
+      "ratios": [
+        0.9761222416579428,
+        1.006478414814547,
+        0.9910809191394642,
+        1.0048537761815188,
+        0.9727730585806917,
+        0.9854067089397491,
+        1.005837929074607,
+        0.9990924636716736
+      ],
+      "maximumRetainedDeltaBytes": 718,
+      "peakRSSRatio": 1.0000301656500263
+    }
+  ],
+  "equalProfileBootstrap95": [
+    0.9815060345599993,
+    0.9980056568388098
+  ],
+  "allScientificComparisonsPassed": true,
+  "measuredPairs": 16,
+  "warmupPairs": 4,
+  "postflightUnchanged": true
+}

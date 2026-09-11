@@ -1,0 +1,147 @@
+{
+  "status": "baseline-numerical-repeatability-audit",
+  "performanceQualified": false,
+  "reason": "Smoke executions while other work was active; timing excluded. Baseline coefficients are not bitwise reproducible across process launches. Candidate qualification retains existing 1e-10 relative / 1e-12 absolute scientific tolerances and exact integration decisions.",
+  "baseline": {
+    "path": "/private/tmp/wvm454-sampling-native-release/wave-vortex-run",
+    "sha256": "0d6d8eeedbec4411939d2f8a9b0ceae42e6e615a6380905dfe78d5220141107e",
+    "reportedSource": {
+      "commit": "6bfc9164e327482f19318f02cefc076755185489"
+    }
+  },
+  "fixture": {
+    "path": "/private/tmp/wvm-unified-evaluation-qualification/eddytide-source.nc",
+    "sha256": "509f828e0dbf341c5b7cf50358b1effe6de7e43dd126179cb7ff597e83d7390f"
+  },
+  "runs": [
+    {
+      "directory": "/private/tmp/wvm-unified-evaluation-qualification/smoke-1/eddytide-256x256x28-0-baseline",
+      "reportSHA256": "6744fa3e9f3d6fdd89a07710f84d4ecee67f98c536ae9027dfa56778b96fd0d2",
+      "state": {
+        "initialTime": 103680000,
+        "finalTime": 103683600,
+        "deltaT": 300,
+        "stepCount": 12,
+        "rejectedStepCount": 0,
+        "rhsEvaluationCount": 156,
+        "shape": [
+          18,
+          11439
+        ]
+      },
+      "firstNormalizedError": 2.945192176583332e-07
+    },
+    {
+      "directory": "/private/tmp/wvm-unified-evaluation-qualification/baseline-repeat",
+      "reportSHA256": "66810b041c6b3d26b655cb9893fac9ccf4e4f6902b10051c86cd8656a72f7c56",
+      "state": {
+        "initialTime": 103680000,
+        "finalTime": 103683600,
+        "deltaT": 300,
+        "stepCount": 12,
+        "rejectedStepCount": 0,
+        "rhsEvaluationCount": 156,
+        "shape": [
+          18,
+          11439
+        ]
+      },
+      "firstNormalizedError": 2.9452385838031317e-07
+    }
+  ],
+  "identicalIntegrationDecisions": true,
+  "scientificDifferences": [
+    {
+      "variable": "Ap_real",
+      "maximumAbsoluteDifference": 6.054591506973739e-18,
+      "scaleRelativeDifference": 1.2576665359259553e-16
+    },
+    {
+      "variable": "Ap_imag",
+      "maximumAbsoluteDifference": 6.650902701840766e-18,
+      "scaleRelativeDifference": 3.055063364314995e-16
+    },
+    {
+      "variable": "Am_real",
+      "maximumAbsoluteDifference": 6.146071065277203e-18,
+      "scaleRelativeDifference": 4.2009408422968304e-16
+    },
+    {
+      "variable": "Am_imag",
+      "maximumAbsoluteDifference": 6.893154124755496e-18,
+      "scaleRelativeDifference": 4.356164766089873e-16
+    },
+    {
+      "variable": "A0_real",
+      "maximumAbsoluteDifference": 8.673617379884035e-19,
+      "scaleRelativeDifference": 1.1180940060470403e-16
+    },
+    {
+      "variable": "A0_imag",
+      "maximumAbsoluteDifference": 6.637975781721729e-21,
+      "scaleRelativeDifference": 2.3235742788339346e-16
+    }
+  ],
+  "additionalProfiles": [
+    {
+      "profile": "constant-nonhydrostatic-composite-256",
+      "runs": [
+        {
+          "directory": "/private/tmp/wvm-unified-evaluation-qualification/large-smoke-1/constant-nonhydrostatic-composite-256-0-baseline",
+          "reportSHA256": "dfc3d0ad2ed7207c8a718fb68ab012689bb2ef9d43709f1c906ab26705eb2770"
+        },
+        {
+          "directory": "/private/tmp/wvm-unified-evaluation-qualification/constant-baseline-repeat",
+          "reportSHA256": "d2b9f0930c57d3abbd428d020d7a2e9e095b7536650ce5b7df2bf5f6dab41f60"
+        }
+      ],
+      "scientificDifferences": [
+        {
+          "variable": "wave-vortex/Ap_real",
+          "maximumAbsoluteDifference": 5.421010862427522e-20,
+          "scaleRelativeDifference": 8.414874303858383e-17
+        },
+        {
+          "variable": "wave-vortex/u",
+          "maximumAbsoluteDifference": 1.1102230246251565e-16,
+          "scaleRelativeDifference": 3.9025032835979096e-16
+        },
+        {
+          "variable": "tracers/dye",
+          "maximumAbsoluteDifference": 1.1102230246251565e-16,
+          "scaleRelativeDifference": 1.1102230017234437e-16
+        }
+      ]
+    },
+    {
+      "profile": "variable-hydrostatic-composite-large",
+      "runs": [
+        {
+          "directory": "/private/tmp/wvm-unified-evaluation-qualification/variable-smoke-1/variable-hydrostatic-composite-large-0-baseline",
+          "reportSHA256": "f20927bd7d5422048def3d340ff607b15bf5a8c617b11b753c62f08e4c197fee"
+        },
+        {
+          "directory": "/private/tmp/wvm-unified-evaluation-qualification/variable-baseline-repeat",
+          "reportSHA256": "fccebb183fc50949968586fdb1565ff46bc43850fab4d3c830ba822e0d96b8b0"
+        }
+      ],
+      "scientificDifferences": [
+        {
+          "variable": "wave-vortex/Ap_real",
+          "maximumAbsoluteDifference": 5.421010862427522e-20,
+          "scaleRelativeDifference": 8.414874303858375e-17
+        },
+        {
+          "variable": "wave-vortex/u",
+          "maximumAbsoluteDifference": 1.3877787807814457e-17,
+          "scaleRelativeDifference": 3.5699190815018075e-16
+        },
+        {
+          "variable": "tracers/dye",
+          "maximumAbsoluteDifference": 1.1102230246251565e-16,
+          "scaleRelativeDifference": 1.1102229047244768e-16
+        }
+      ]
+    }
+  ]
+}
