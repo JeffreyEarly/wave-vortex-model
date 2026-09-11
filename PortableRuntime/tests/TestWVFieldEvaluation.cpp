@@ -540,8 +540,8 @@ void verifyDiagnosticSamplingRoutes() {
                                  profileViews.data(), profileViews.size())),
           "diagnostic fixed-profile evaluation failed");
   const auto plane = config.Nx * config.Ny;
-  for (const auto pair : {std::pair<std::size_t, std::size_t>{0, 1},
-                          std::pair<std::size_t, std::size_t>{2, 3}})
+  for (const auto &pair : {std::pair<std::size_t, std::size_t>{0, 1},
+                           std::pair<std::size_t, std::size_t>{2, 3}})
     for (std::size_t z = 0; z < config.Nz; ++z) {
       requireClose(profileStorage[pair.second][z],
                    profileStorage[pair.first][plane * z],
