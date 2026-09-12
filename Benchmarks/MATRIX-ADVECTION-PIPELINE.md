@@ -1,6 +1,6 @@
 # Matrix scheduling and immediate FFT advection consumption
 
-This optimization experiment follows the shared-gradient pipeline in PR #476. [Issue #477](https://github.com/JeffreyEarly/wave-vortex-model/issues/477) tracks adoption qualification. The owner requested both directions. The implementation and focused verification are complete; a full idle-host performance campaign, source-linked consumer qualification and required hosted checks remain adoption gates. The experiment does not change MATLAB science, checkpoint formats, tracer algorithms or a running experiment.
+This optimization follows the shared-gradient pipeline in PR #476. [Issue #477](https://github.com/JeffreyEarly/wave-vortex-model/issues/477) tracks adoption qualification. The owner requested both directions. The implementation, final paired performance campaign and source-linked consumer qualification are complete. Required hosted checks gate merging. The experiment does not change MATLAB science, checkpoint formats, tracer algorithms or a running experiment.
 
 ## Changes
 
@@ -56,4 +56,25 @@ Photos background activity was present immediately before the run; the 36 record
 
 The exploratory compiled runtime was frozen at `e8806710`; the [adoption ledger](../.github/planning/issue-477-adoption.md) records subsequent qualification and a narrow invalid-worker-count error-boundary correction. The local branches and raw archive retain separate experiments, failed checks, provider/binary/input hashes, requests and numerical comparisons. The combined screen is exploratory: Photos background services used about one core immediately before it, and a process-activity journal records the measurement period. It does not replace formal idle-host qualification.
 
-Before merging, complete the idle-host paired campaign, refresh source-linked consumer receipts against the final source, and pass required hosted CI. Retain the exact independent reconstruction/projection controls for future qualification. Reprofile the accepted combination before selecting another larger refactor.
+The final qualification below supersedes the exploratory timing screen. Required hosted CI gates merging. Retain the exact independent reconstruction/projection controls for future qualification; reprofile the qualified combination before selecting another larger refactor.
+
+## Final adoption qualification
+
+The frozen candidate is `400ed1f1`, compared with the exact preserved qualified PR #476 executable. Two warmup pairs and eight measured alternating pairs ran per fixture under `reuse`, using the existing immutable manifest, controls and scientific tolerances. All 32 measured scientific comparisons (plus eight warmup comparisons), state and integration decisions passed. Duplicate evaluator executions were zero. Executable, fixture, provider-library and source hashes were unchanged after measurement.
+
+| Workload | Integration reduction | Paired bootstrap 95% interval for reduction | Process-lifetime reduction |
+| --- | ---: | ---: | ---: |
+| EddyTide, 256 × 256 × 28 | 7.00% | 5.81–8.41% | 6.79% |
+| Constant-stratification control | 1.05% | −0.23–2.36% | 0.15% |
+| Larger Hydrostatic | 3.65% | 3.00–4.29% | 2.98% |
+| Boussinesq, 256 × 256 × 129 | 39.54% | 38.72–40.34% | 1.29% |
+
+The unchanged constant control is consistent with measurement variation. Boussinesq's short continuation spends approximately 34 seconds in loading/preparation per process; the integration reduction is the relevant result for longer runs. None of the integration or process-lifetime ratios requires the protocol's greater-than-3% regression investigation. The manifest requires improvement for both EddyTide and Boussinesq, which both pass; the generic protocol's abbreviated prose names only EddyTide.
+
+The host was idle at preflight and no competing build, MATLAB, profile or experiment workload ran. Ten-second process observations captured intermittent system-service activity, including macOS media analysis. These snapshots cannot exclude brief overlap with individual integration windows; preserve this qualification caveat rather than claiming perfect quiescence. The paired confidence intervals and the earlier independent screens support the measured direction and scale. No unrelated process or experiment was changed.
+
+Added owned peak is unchanged from the exploratory screen: 366,240 bytes for EddyTide, 212,384 bytes for larger Hydrostatic, 584,280 bytes for Boussinesq and 32 bytes for the constant control. RSS is reported separately in the machine-readable summary. Low-memory timing and storage are not qualified in this campaign: `candidatePolicies` contains only `reuse`, and `lowMemoryPassed` is null. The generic protocol's low-memory storage text is therefore inapplicable. A separate low-memory replay covers scientific correctness and exact step decisions only.
+
+Final source-linked qualification at `5947ac0d` passed all six families with both providers and the strict committed-receipts catalog check. Candidate `400ed1f1` adds those receipts and verification evidence without changing compiled inputs. The narrow invalid-worker-count factory correction at `5947ac0d` was separately checked under Release, ASan/UBSan and GCC. Subsequent adoption finalization changes documentation, evidence and source-selection metadata only.
+
+See [the final decision](../.github/ci-evidence/matrix-advection-adoption/decision.json), [performance summary](../.github/ci-evidence/matrix-advection-adoption/performance-summary.json) and [archive hashes](../.github/ci-evidence/matrix-advection-adoption/archive.json). Raw outputs, protocols and profiles are retained under `OceanKitRepositories/wave-vortex-model-benchmark-artifacts/matrix-advection-adoption-20260912`.

@@ -195,13 +195,16 @@
       "PortableRuntime/app/WaveVortexRun.cpp": "751169a10aa191d88ff705f808d6b15b34723cea788ab99adf82a65df45457b4",
       "PortableRuntime/app/WVRunnerVariablePolicy.cpp": "de780aaa1947c4094f21f46f466eee2402f1fc33309e0a2e8bee32961efb9af0",
       "PortableRuntime/app/WVRunnerVariablePolicy.hpp": "c16796f29a84789a37fdf4927bfd03892796d683eb796aef75a0b5c5207d6c94"
-    }
+    },
+    "matrixAdvectionQualification": ".github/ci-evidence/matrix-advection-adoption/decision.json"
   },
   "matrixAdvectionExploration": {
-    "status": "prototype; adoption qualification pending",
+    "status": "qualified-native-runner-default",
     "report": "Benchmarks/MATRIX-ADVECTION-PIPELINE.md",
     "frozenRuntimeCommit": "e8806710",
     "scope": "Immediate inverse derivative consumption for compact Hydrostatic/Boussinesq; exact inertial-column projection and persistent matrix-group workers for Boussinesq.",
-    "issue": 477
+    "issue": 477,
+    "qualifiedRuntimeCommit": "400ed1f1213795c95b04875dd54b0564d299545d",
+    "qualification": ".github/ci-evidence/matrix-advection-adoption/decision.json"
   }
 }

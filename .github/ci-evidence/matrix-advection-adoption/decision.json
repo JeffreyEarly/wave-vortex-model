@@ -1,0 +1,26 @@
+{
+  "issue": 477,
+  "status": "accepted-local-performance-and-scientific-qualification",
+  "mergeGate": "Required / WaveVortexModel must pass before merging.",
+  "candidateCommit": "400ed1f1213795c95b04875dd54b0564d299545d",
+  "sourceLinkedQualificationCommit": "5947ac0d",
+  "baseline": "Exact preserved qualified shared-gradient PR #476 runner.",
+  "compiledInputEquivalence": "Receipt source 5947ac0d and frozen candidate 400ed1f1 have identical compiled inputs; 400ed1f1 adds receipts and verification evidence. Subsequent adoption finalization changes evidence, documentation and source-selection metadata only.",
+  "performance": "Two warmup pairs and eight measured alternating pairs per fixture. Both EddyTide and Boussinesq must improve per the frozen manifest. Other integration/lifetime ratios above 1.03 require investigation. All measured gates passed.",
+  "numerical": "All 32 measured paired scientific comparisons pass unchanged tolerances; state and integration decisions identical; zero duplicate producer executions. Eight warmup comparisons also passed.",
+  "memoryPolicy": "Only reuse is performance-qualified. Generic protocol low-memory storage text is inapplicable: candidatePolicies is [reuse], lowMemoryPassed is null. Separate low-memory replay covers correctness, not timing or storage qualification.",
+  "providerAndBinaryPostflightUnchanged": true,
+  "hostCaveat": "See host-observations.json; idle preflight with intermittent OS/service activity during measurement.",
+  "evidence": [
+    "performance-summary.json",
+    "performance-pairs.json",
+    "source-linked-results.json",
+    "source-linked-catalog-results.json",
+    "verification.json",
+    "host-observations.json",
+    "archive.json",
+    "low-memory-correctness.json"
+  ],
+  "retainedLogNormalization": "Trailing whitespace/final blank lines removed from two committed exploration log copies; raw logs remain archived unchanged.",
+  "lowMemoryCorrectness": "All four fixtures passed scientific tolerance and exact state/step comparisons against the qualified reuse outputs."
+}

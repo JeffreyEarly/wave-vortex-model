@@ -1,4 +1,4 @@
-[Warning: Directory access failure: /Users/jearly/Documents/MATLAB] 
+[Warning: Directory access failure: /Users/jearly/Documents/MATLAB]
 CI package: Distributions 2.0.0 (/Users/jearly/Documents/OceanKitRepositories/OceanKit/Distributions-2.0.0)
 CI package: SplineCore 2.2.0 (/Users/jearly/Documents/OceanKitRepositories/OceanKit/SplineCore-2.2.0)
 CI package: chebfun 5.7.0 (/Users/jearly/Documents/OceanKitRepositories/OceanKit/chebfun-5.7.0)
@@ -11,4 +11,3 @@ Running TestCompiledKernelIntegration
 .
 Done TestCompiledKernelIntegration
 __________
-

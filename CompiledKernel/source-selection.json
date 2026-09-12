@@ -211,13 +211,16 @@
       "measuredSHA256": "df319684fd1a980acadc723b53bfc75e0e0b8d545ef830859eea52626ab7a281",
       "adoptedSHA256": "84b08b4bfc568807182645d03da46fe2fe0e739e700e67049fdd3b23cdd10924",
       "scope": "Comments only; enum values, aggregate layout and constructor defaults are unchanged."
-    }
+    },
+    "matrixAdvectionQualification": ".github/ci-evidence/matrix-advection-adoption/decision.json"
   },
   "matrixAdvectionExploration": {
-    "status": "prototype; adoption qualification pending",
+    "status": "qualified-native-runner-default",
     "report": "Benchmarks/MATRIX-ADVECTION-PIPELINE.md",
     "frozenRuntimeCommit": "e8806710",
     "scope": "Immediate inverse derivative consumption for compact Hydrostatic/Boussinesq; exact inertial-column projection and persistent matrix-group workers for Boussinesq.",
-    "issue": 477
+    "issue": 477,
+    "qualifiedRuntimeCommit": "400ed1f1213795c95b04875dd54b0564d299545d",
+    "qualification": ".github/ci-evidence/matrix-advection-adoption/decision.json"
   }
 }
