@@ -133,3 +133,5 @@ results = runWaveVortexBuiltinStorageBenchmark
 The ledger covers compact Fourier mappings, the reused builtin inverse buffer, dense vertical transform matrices, and known forward/inverse result arrays. MATLAB-internal FFT work storage remains explicitly opaque. Each case runs in three fresh MATLAB processes by default while ordinary production caches stay warm.
 
 `WVTransformConstantStratificationSpeedTest`, `ProfileableSpeedTest`, and `ForcingSpectralMaskPerformanceTest` remain historical investigation scripts. Deterministic correctness checks belong in `UnitTests`; mixed scientific investigations belong in `DeveloperExperiments`.
+
+See [shared Hydrostatic/Boussinesq field and gradient preparation](SHARED-GRADIENT-PIPELINE.md) for the subsequent model-level pipeline optimization.

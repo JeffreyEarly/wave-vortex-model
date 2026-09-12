@@ -11,7 +11,7 @@ using namespace wavevortex::test_fixture;
 static_assert(!std::is_copy_assignable<WVStratifiedModalRecord>::value,"Published scientific records must not be reassigned.");
 static_assert(!std::is_move_assignable<WVStratifiedModalRecord>::value,"Published scientific records must not be moved over.");
 namespace {
-struct Counters { int plans=0,engines=0,created=0,failAt=-1,executed=0; };
+struct Counters { int plans=0,engines=0,created=0,failAt=-1,executed=0,failExecuteAt=-1; };
 struct DerivativeAccessProbe {
     std::size_t cachedField=0,cachedDerivative=0,captures=0;
     WVRealVolumeConstView cached{};
@@ -40,7 +40,11 @@ class Plan final : public WVFFTPlan {
 public:
     Plan(std::unique_ptr<WVFFTPlan> p,Counters& c):plan_(std::move(p)),counters_(c) { ++counters_.plans; }
     ~Plan() override { --counters_.plans; }
-    WVKernelStatus execute(const void* a,void* b) override { ++counters_.executed; return plan_->execute(a,b); }
+    WVKernelStatus execute(const void* a,void* b) override {
+        if(counters_.executed++==counters_.failExecuteAt)
+            return {WVKernelStatusCode::fftExecutionFailure,"Injected FFT execution failure."};
+        return plan_->execute(a,b);
+    }
     std::size_t persistentBytes() const noexcept override { return plan_->persistentBytes(); }
 };
 class Engine final : public WVFFTEngine {
@@ -230,7 +234,8 @@ void contracts(const std::shared_ptr<const WVStratifiedModalRecord>& source) {
     auto status=kernel->nonlinearFlux(state,flux); require(bool(status),status.message.c_str());
     const auto referenceFlux=b,referenceState=a;
     const auto retainedBytes=kernel->persistentBytes();
-    std::vector<double> raw(4*R),physical(4*R),gradient(R),expected(4*R,0);
+    std::vector<double> raw(4*R),physical(4*R),gradient(R),expected(4*R,0),
+        absoluteContributions(4*R,0);
     WVRealFieldBundleView rawView{raw.data(),{g.Nx,g.Ny,g.Nz,4}};
     const WVBoussinesqField dynamical[]={WVBoussinesqField::u,WVBoussinesqField::v,WVBoussinesqField::w,WVBoussinesqField::eta};
     for(std::size_t channel=0;channel<4;++channel)
@@ -246,11 +251,53 @@ void contracts(const std::shared_ptr<const WVStratifiedModalRecord>& source) {
             require(bool(kernel->transformStateField(state,dynamical[target],{gradient.data(),volume},static_cast<WVBoussinesqDerivative>(axis+1))),"Independent tendency derivative");
             for(std::size_t i=0;i<R;++i) {
                 const double correction=target==3 && axis==2 ? physical[3*R+i]*g.dLnN2[i/(g.Nx*g.Ny)] : 0;
-                expected[channel*R+i]-=physical[axis*R+i]*(gradient[i]+correction);
+                const double contribution=physical[axis*R+i]*(gradient[i]+correction);
+                expected[channel*R+i]-=contribution;
+                absoluteContributions[channel*R+i]+=std::abs(contribution);
             }
         }
     }
-    require(raw==expected && physical==physicalBefore,"Raw tendencies precede projection and preserve borrowed fields");
+    const double roundoffFactor=8*std::numeric_limits<double>::epsilon();
+    const auto rawMatchesExpected=[&]() {
+        for(std::size_t i=0;i<raw.size();++i)
+            if(!(std::abs(raw[i]-expected[i])<=
+                    roundoffFactor*absoluteContributions[i])) return false;
+        return true;
+    };
+    const bool rawWithinRoundoff=rawMatchesExpected();
+    if(!rawWithinRoundoff || physical!=physicalBefore) {
+        std::size_t firstRaw=raw.size(),firstPhysical=physical.size();
+        double firstRawBound=0,maximumRawError=0,maximumPhysicalError=0;
+        for(std::size_t i=0;i<raw.size();++i) {
+            const auto error=std::abs(raw[i]-expected[i]);
+            const auto bound=roundoffFactor*absoluteContributions[i];
+            if(!(error<=bound) && firstRaw==raw.size()) {
+                firstRaw=i;
+                firstRawBound=bound;
+            }
+            if(!std::isfinite(error) || error>maximumRawError) maximumRawError=error;
+        }
+        for(std::size_t i=0;i<physical.size();++i) {
+            const auto error=std::abs(physical[i]-physicalBefore[i]);
+            if(physical[i]!=physicalBefore[i] && firstPhysical==physical.size()) firstPhysical=i;
+            if(!std::isfinite(error) || error>maximumPhysicalError) maximumPhysicalError=error;
+        }
+        const auto precision=std::cerr.precision(17);
+        std::cerr<<"Boussinesq raw mismatch: firstRaw="<<firstRaw;
+        if(firstRaw<raw.size())
+            std::cerr<<" actual="<<raw[firstRaw]<<" expected="<<expected[firstRaw]
+                <<" bound="<<firstRawBound;
+        std::cerr<<" maxRawAbs="<<maximumRawError
+            <<" borrowedEqual="<<(physical==physicalBefore)
+            <<" firstBorrowed="<<firstPhysical;
+        if(firstPhysical<physical.size())
+            std::cerr<<" actualBorrowed="<<physical[firstPhysical]
+                <<" expectedBorrowed="<<physicalBefore[firstPhysical];
+        std::cerr<<" maxBorrowedAbs="<<maximumPhysicalError<<'\n';
+        std::cerr.precision(precision);
+    }
+    require(rawWithinRoundoff && physical==physicalBefore,
+        "Raw tendencies precede projection and preserve borrowed fields");
     require(bool(kernel->transformStateField(state,WVBoussinesqField::u,
         {gradient.data(),volume},WVBoussinesqDerivative::z)),
         "Prepare cached Boussinesq derivative");
@@ -261,7 +308,7 @@ void contracts(const std::shared_ptr<const WVStratifiedModalRecord>& source) {
     derivativeProbe.cached={gradient.data(),volume};
     auto derivativeAccess=derivativeProbe.access();
     require(bool(kernel->nonlinearFlux(state,flux,&rawView,&prepared,false,
-                &derivativeAccess)) && raw==expected,
+                &derivativeAccess)) && rawMatchesExpected(),
         "Boussinesq nonlinear derivative reuse changed the spatial tendency");
     require(kernel->metrics().reconstructionCount
                 [static_cast<std::size_t>(WVBoussinesqField::u)]
@@ -285,8 +332,9 @@ void contracts(const std::shared_ptr<const WVStratifiedModalRecord>& source) {
     for (auto& values:b) std::fill(values.begin(),values.end(),WVComplex64{17,19});
     const auto rawStart=counters.executed;
     require(bool(kernel->nonlinearFlux(state,flux,&rawView,&prepared,false)),"Spatial-only nonlinear tendency");
-    require(raw==expected && physical==physicalBefore && counters.executed-rawStart<fullExecutions,
+    require(rawMatchesExpected() && physical==physicalBefore && counters.executed-rawStart<fullExecutions,
         "Spatial-only evaluation changed the tendency or retained redundant projection work");
+    const auto rawBeforeInvalid=raw;
     for(const auto& values:b) for(const auto value:values)
         require(value.real==17 && value.imag==19,"Spatial-only evaluation wrote spectral flux");
     const auto rejectedStart=counters.executed;
@@ -298,7 +346,7 @@ void contracts(const std::shared_ptr<const WVStratifiedModalRecord>& source) {
     require(kernel->nonlinearFlux(state,flux,&badRaw,&prepared).code==WVKernelStatusCode::invalidShape,"Wrong tendency channel count accepted");
     badRaw=rawView; badRaw.data=nullptr;
     require(kernel->nonlinearFlux(state,flux,&badRaw,&prepared).code==WVKernelStatusCode::invalidPointer,"Null tendency output accepted");
-    require(raw==expected && physical==physicalBefore,"Invalid observation mutated output");
+    require(raw==rawBeforeInvalid && physical==physicalBefore,"Invalid observation mutated output");
     allocationProbe::calls=0; allocationProbe::counting=true;
     require(bool(kernel->nonlinearFlux(state,flux,&rawView,&prepared)),"Prepared observation failed");
     allocationProbe::counting=false;
@@ -455,6 +503,203 @@ void variableScheduleParity(const std::shared_ptr<const WVStratifiedModalRecord>
         "Unknown variable spectral schedule was accepted");
 }
 
+void sharedFieldGradientParity(const std::shared_ptr<const WVStratifiedModalRecord>& source,
+    bool compact) {
+    WVVariableExecutionOptions sharedOptions;
+    if (compact) {
+        sharedOptions={WVRetainedHorizontalSchedule::streamingPrunedTile16,2,true};
+        sharedOptions.spectralSchedule=WVVariableSpectralSchedule::compactSplitFusedViews;
+        sharedOptions.pointwiseWorkers=2;
+    }
+    auto independentOptions=sharedOptions;
+    independentOptions.sharedFieldGradients=false;
+    std::unique_ptr<WVTransformBoussinesqKernel> shared,independent;
+    require(bool(WVTransformBoussinesqKernel::create(source,
+        std::make_unique<WVReferenceFFTEngine>(),shared,WVCreateScalarMatrixBackend,
+        sharedOptions)),"Shared Boussinesq field-gradient kernel setup failed");
+    require(bool(WVTransformBoussinesqKernel::create(source,
+        std::make_unique<WVReferenceFFTEngine>(),independent,WVCreateScalarMatrixBackend,
+        independentOptions)),"Independent Boussinesq field-gradient kernel setup failed");
+
+    const auto& g=source->geometry();
+    const auto S=g.Nj*g.Nkl,R=g.Nx*g.Ny*g.Nz;
+    const WVShape2D spectralShape{g.Nj,g.Nkl};
+    const WVShape3D spatialShape{g.Nx,g.Ny,g.Nz};
+    std::array<std::vector<WVComplex64>,3> coefficients;
+    for(std::size_t family=0;family<coefficients.size();++family) {
+        coefficients[family].resize(S);
+        for(std::size_t i=0;i<S;++i)
+            coefficients[family][i]={.003*std::sin(.13*i+family),
+                -.002*std::cos(.19*i+2*family)};
+    }
+    WVMutableCoefficients mutableCoefficients{{coefficients[0].data(),spectralShape},
+        {coefficients[1].data(),spectralShape},{coefficients[2].data(),spectralShape}};
+    require(bool(shared->constrainCoefficients(mutableCoefficients)),
+        "Shared Boussinesq field-gradient input constraints failed");
+    const WVState state{83,17,{{coefficients[0].data(),spectralShape},
+        {coefficients[1].data(),spectralShape},{coefficients[2].data(),spectralShape}}};
+    std::vector<double> sharedField(R),independentField(R);
+    require(bool(shared->beginStateEvaluation(state)),
+        "Shared Boussinesq field-gradient scope begin failed");
+    require(bool(independent->beginStateEvaluation(state)),
+        "Independent Boussinesq field-gradient scope begin failed");
+    shared->resetMetrics();
+    independent->resetMetrics();
+    struct FieldComponent { WVBoussinesqField field; WVBoussinesqComponent component; };
+    const FieldComponent keys[]={
+        {WVBoussinesqField::u,WVBoussinesqComponent::all},
+        {WVBoussinesqField::u,WVBoussinesqComponent::wave},
+        {WVBoussinesqField::v,WVBoussinesqComponent::all},
+        {WVBoussinesqField::v,WVBoussinesqComponent::inertial},
+        {WVBoussinesqField::w,WVBoussinesqComponent::all},
+        {WVBoussinesqField::w,WVBoussinesqComponent::geostrophic},
+        {WVBoussinesqField::eta,WVBoussinesqComponent::all},
+        {WVBoussinesqField::eta,WVBoussinesqComponent::meanDensityAnomaly}};
+    for(const auto key:keys) for(std::size_t derivative=0;derivative<4;++derivative) {
+        const auto d=static_cast<WVBoussinesqDerivative>(derivative);
+        require(bool(shared->transformStateField(state,key.field,
+            {sharedField.data(),spatialShape},d,key.component)),
+            "Shared Boussinesq field-gradient reconstruction failed");
+        require(bool(independent->transformStateField(state,key.field,
+            {independentField.data(),spatialShape},d,key.component)),
+            "Independent Boussinesq field-gradient reconstruction failed");
+        for(std::size_t i=0;i<R;++i)
+            require(std::abs(sharedField[i]-independentField[i])<=1e-12*
+                std::max(1.0,std::abs(independentField[i])),
+                "Shared Boussinesq reconstruction differs from the independent path");
+    }
+    const auto sharedFieldMetrics=shared->metrics();
+    const auto independentFieldMetrics=independent->metrics();
+    require(sharedFieldMetrics.coefficientAssemblyCount==8 &&
+            sharedFieldMetrics.verticalPreparationCount==16 &&
+            sharedFieldMetrics.verticalOperatorExecutionCount==32 &&
+            sharedFieldMetrics.horizontalSpectrumReuseCount==24 &&
+            sharedFieldMetrics.preparedVerticalDerivativeCount==8,
+        "Shared Boussinesq producers did not execute once per field/component key");
+    require(independentFieldMetrics.coefficientAssemblyCount==32 &&
+            independentFieldMetrics.verticalPreparationCount==64 &&
+            independentFieldMetrics.horizontalSpectrumReuseCount==0 &&
+            independentFieldMetrics.preparedVerticalDerivativeCount==0,
+        "Independent Boussinesq qualification path unexpectedly reused preparation");
+    require(bool(shared->endStateEvaluation()),
+        "Shared Boussinesq field-gradient scope end failed");
+    require(bool(independent->endStateEvaluation()),
+        "Independent Boussinesq field-gradient scope end failed");
+
+    auto foreignCoefficients=coefficients;
+    WVState foreignState=state;
+    foreignState.coefficients={{foreignCoefficients[0].data(),spectralShape},
+        {foreignCoefficients[1].data(),spectralShape},
+        {foreignCoefficients[2].data(),spectralShape}};
+    int evaluationOwner=0;
+    require(bool(shared->beginStateEvaluation(state,&evaluationOwner)),
+        "Registered Boussinesq view scope begin failed");
+    require(bool(shared->addStateEvaluationView(foreignState,&evaluationOwner,2)),
+        "Registered Boussinesq view setup failed");
+    shared->resetMetrics();
+    require(bool(shared->transformStateField(foreignState,WVBoussinesqField::u,
+        {sharedField.data(),spatialShape})),"First registered Boussinesq view failed");
+    require(bool(shared->transformStateField(foreignState,WVBoussinesqField::u,
+        {sharedField.data(),spatialShape},WVBoussinesqDerivative::x)),
+        "Registered Boussinesq view horizontal reuse failed");
+    require(bool(shared->removeStateEvaluationView(foreignState,&evaluationOwner,2)),
+        "Prepared Boussinesq view removal failed");
+    require(bool(shared->addStateEvaluationView(foreignState,&evaluationOwner,2)),
+        "Same-storage Boussinesq view re-add failed");
+    require(bool(shared->transformStateField(foreignState,WVBoussinesqField::u,
+        {sharedField.data(),spatialShape})),"Re-added Boussinesq view failed");
+    require(shared->metrics().coefficientAssemblyCount==2 &&
+            shared->metrics().verticalPreparationCount==4 &&
+            shared->metrics().horizontalSpectrumReuseCount==1,
+        "Re-added Boussinesq view reused an invalid generation or lost in-view reuse");
+    require(bool(shared->endStateEvaluation()),"Registered Boussinesq view scope end failed");
+
+    shared->resetMetrics();
+    require(bool(shared->transformStateField(state,WVBoussinesqField::u,
+        {sharedField.data(),spatialShape})),"First standalone Boussinesq preparation failed");
+    require(bool(shared->transformStateField(state,WVBoussinesqField::u,
+        {sharedField.data(),spatialShape})),"Second standalone Boussinesq preparation failed");
+    require(shared->metrics().coefficientAssemblyCount==2 &&
+            shared->metrics().verticalPreparationCount==4,
+        "Standalone Boussinesq operations published preparation across calls");
+
+    std::array<std::vector<WVComplex64>,3> sharedFluxStorage,independentFluxStorage;
+    for(auto& values:sharedFluxStorage) values.resize(S);
+    for(auto& values:independentFluxStorage) values.resize(S);
+    WVFlux sharedFlux{{sharedFluxStorage[0].data(),spectralShape},
+        {sharedFluxStorage[1].data(),spectralShape},{sharedFluxStorage[2].data(),spectralShape}};
+    WVFlux independentFlux{{independentFluxStorage[0].data(),spectralShape},
+        {independentFluxStorage[1].data(),spectralShape},
+        {independentFluxStorage[2].data(),spectralShape}};
+    require(bool(shared->beginStateEvaluation(state)),
+        "Shared Boussinesq nonlinear scope begin failed");
+    require(bool(independent->beginStateEvaluation(state)),
+        "Independent Boussinesq nonlinear scope begin failed");
+    shared->resetMetrics();
+    independent->resetMetrics();
+    require(bool(shared->nonlinearFlux(state,sharedFlux)),
+        "Shared Boussinesq nonlinear preparation failed");
+    require(bool(independent->nonlinearFlux(state,independentFlux)),
+        "Independent Boussinesq nonlinear preparation failed");
+    for(std::size_t family=0;family<3;++family) for(std::size_t i=0;i<S;++i) {
+        require(std::abs(sharedFluxStorage[family][i].real-
+                    independentFluxStorage[family][i].real)<=1e-12*
+                    std::max(1.0,std::abs(independentFluxStorage[family][i].real)) &&
+                std::abs(sharedFluxStorage[family][i].imag-
+                    independentFluxStorage[family][i].imag)<=1e-12*
+                    std::max(1.0,std::abs(independentFluxStorage[family][i].imag)),
+            "Shared Boussinesq nonlinear flux differs from the independent path");
+    }
+    require(shared->metrics().coefficientAssemblyCount==4 &&
+            shared->metrics().verticalPreparationCount==8 &&
+            shared->metrics().verticalOperatorExecutionCount==24 &&
+            shared->metrics().horizontalSpectrumReuseCount==12 &&
+            shared->metrics().preparedVerticalDerivativeCount==4,
+        "Scoped Boussinesq nonlinear evaluation did not share the expected producers");
+    require(independent->metrics().coefficientAssemblyCount==16 &&
+            independent->metrics().verticalPreparationCount==32,
+        "Independent Boussinesq nonlinear path did not execute all producers");
+    require(bool(shared->endStateEvaluation()),"Shared Boussinesq nonlinear scope end failed");
+    require(bool(independent->endStateEvaluation()),
+        "Independent Boussinesq nonlinear scope end failed");
+
+    shared->resetMetrics();
+    require(bool(shared->nonlinearFlux(state,sharedFlux)),
+        "Standalone shared Boussinesq nonlinear preparation failed");
+    require(shared->metrics().coefficientAssemblyCount==4 &&
+            shared->metrics().verticalPreparationCount==8 &&
+            shared->metrics().verticalOperatorExecutionCount==24 &&
+            shared->metrics().horizontalSpectrumReuseCount==12 &&
+            shared->metrics().preparedVerticalDerivativeCount==4,
+        "Standalone Boussinesq nonlinear evaluation lost operation-local sharing");
+
+    Counters failureCounters;
+    std::unique_ptr<WVTransformBoussinesqKernel> failureKernel;
+    require(bool(WVTransformBoussinesqKernel::create(source,
+        std::make_unique<Engine>(failureCounters),failureKernel,
+        WVCreateScalarMatrixBackend,sharedOptions)),
+        "Boussinesq consumer-failure kernel setup failed");
+    require(bool(failureKernel->beginStateEvaluation(state)),
+        "Boussinesq consumer-failure scope begin failed");
+    failureKernel->resetMetrics();
+    failureCounters.failExecuteAt=failureCounters.executed;
+    require(failureKernel->transformStateField(state,WVBoussinesqField::u,
+                {sharedField.data(),spatialShape}).code==
+            WVKernelStatusCode::fftExecutionFailure,
+        "Injected Boussinesq horizontal inverse failure was not preserved");
+    failureCounters.failExecuteAt=-1;
+    require(bool(failureKernel->transformStateField(state,WVBoussinesqField::u,
+        {sharedField.data(),spatialShape})),
+        "Boussinesq retry after horizontal inverse failure failed");
+    require(failureKernel->metrics().coefficientAssemblyCount==1 &&
+            failureKernel->metrics().verticalPreparationCount==2 &&
+            failureKernel->metrics().verticalOperatorExecutionCount==2 &&
+            failureKernel->metrics().horizontalSpectrumReuseCount==1,
+        "Boussinesq retry repeated a successfully published vertical product");
+    require(bool(failureKernel->endStateEvaluation()),
+        "Boussinesq consumer-failure scope end failed");
+}
+
 void modalContracts(const std::filesystem::path& path) {
     std::shared_ptr<const WVStratifiedModalRecord> original; auto status=WVStratifiedModalReader::read(path.string(),original); require(bool(status),status.message.c_str());
     require(original->groups().size()==3 && original->groups()[2].columns==std::vector<std::size_t>{2},"Persisted wave group was lost");
@@ -501,6 +746,8 @@ int main() {
         contracts(source);
         variableScheduleParity(source);
         variableScheduleParity(source,true);
+        sharedFieldGradientParity(source,false);
+        sharedFieldGradientParity(source,true);
         std::unique_ptr<WVTransformBoussinesqKernel> kernel; require(bool(WVTransformBoussinesqKernel::create(source,std::make_unique<WVReferenceFFTEngine>(),kernel)),"Lifetime setup failed");
         std::weak_ptr<const WVStratifiedModalRecord> weak=source; source.reset(); require(!weak.expired(),"Kernel lost scientific owner"); kernel.reset(); require(weak.expired(),"Scientific owner leaked");
         std::cout<<"Boussinesq kernel contracts passed\n"; return 0;

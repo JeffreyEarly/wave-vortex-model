@@ -28,7 +28,16 @@ def main():
     parser.add_argument("--output", type=pathlib.Path, required=True)
     parser.add_argument("--smoke", action="store_true",
                         help="One correctness pair, explicitly not performance qualification")
+    parser.add_argument("--maximum-low-memory-ratio", type=float, default=1.03,
+                        help="Explicit owned-memory growth budget; recorded in the protocol")
+    parser.add_argument("--policies", nargs="+", choices=("reuse", "low-memory"),
+                        default=["reuse", "low-memory"],
+                        help="Candidate policies to qualify; reuse is required")
     args = parser.parse_args()
+    if "reuse" not in args.policies or len(set(args.policies)) != len(args.policies):
+        parser.error("Candidate policies must be unique and include reuse")
+    if not math.isfinite(args.maximum_low_memory_ratio) or args.maximum_low_memory_ratio < 1:
+        parser.error("The owned-memory ratio budget must be finite and at least one")
     root = pathlib.Path(__file__).resolve().parents[2]
     helper_path = root / "Benchmarks/constant-adoption/run_model_adoption.py"
     spec = importlib.util.spec_from_file_location("model_adoption", helper_path)
@@ -49,8 +58,7 @@ def main():
         assert not source_dirty, "Commit the candidate runtime source before qualification"
 
     binaries = {"baseline": args.baseline.resolve(),
-                "reuse": args.candidate.resolve(),
-                "low-memory": args.candidate.resolve()}
+                **{policy: args.candidate.resolve() for policy in args.policies}}
     frozen = {str(path): helper.digest(path) for path in
               [*binaries.values(), args.manifest, pathlib.Path(__file__), helper_path]}
     for profile in profiles:
@@ -64,10 +72,12 @@ def main():
         "kind": "correctness-smoke" if args.smoke else "performance-qualification",
         "startedAtUTC": datetime.datetime.now(datetime.timezone.utc).isoformat(),
         "warmupPairs": warmups, "measuredPairs": measured_count,
-        "order": "baseline/reuse/low-memory, reversed on alternate pairs",
+        "order": "/".join(binaries)+", reversed on alternate pairs",
+        "candidatePolicies": args.policies,
         "numericalGate": "exact metadata and integration decisions; manifest scientific tolerances (zero by default)",
         "runtimeGate": "EddyTide improvement; investigate each other reuse ratio above 1.03",
-        "storageGate": "low-memory maximum-live owned bytes no more than baseline times 1.03; retained capacity reported separately because preparation moves allocations before evaluations",
+        "storageGate": "low-memory maximum-live owned bytes no more than baseline times the explicit ratio budget; retained capacity reported separately",
+        "maximumLowMemoryRatio": args.maximum_low_memory_ratio,
         "profiles": profiles, "frozenSHA256": frozen,
         "host": {"platform": platform.platform(), "machine": platform.machine(),
                  "logicalCPUCount": os.cpu_count(),
@@ -137,7 +147,7 @@ def main():
                     print(profile["id"], index, role,
                           report["timingSeconds"]["integrate"], flush=True)
                 baseline = pair["runs"]["baseline"]
-                for role in ("reuse", "low-memory"):
+                for role in args.policies:
                     candidate = pair["runs"][role]
                     assert candidate["state"] == baseline["state"], (profile["id"], role, "state")
                     # Exclude the wall-clock duration of selecting controls.
@@ -172,7 +182,7 @@ def main():
         for profile in profiles:
             measured = [pair for pair in pairs if pair["profile"] == profile["id"] and not pair["warmup"]]
             row = {"profile": profile["id"], "policies": {}}
-            for role in ("reuse", "low-memory"):
+            for role in args.policies:
                 ratios = [pair["runs"][role]["timingSeconds"]["integrate"] /
                           pair["runs"]["baseline"]["timingSeconds"]["integrate"] for pair in measured]
                 logs = helper.np.log(ratios)
@@ -200,13 +210,14 @@ def main():
             row["requiresRuntimeInvestigation"] = (
                 row["policies"]["reuse"]["integrationRatio"] > 1.03 or
                 row["policies"]["reuse"]["completeLifetimeRatio"] > 1.03)
-            row["lowMemoryPassed"] = row["policies"]["low-memory"]["maximumLiveRatio"] <= 1.03
+            row["lowMemoryPassed"] = (row["policies"]["low-memory"]["maximumLiveRatio"] <= args.maximum_low_memory_ratio
+                                      if "low-memory" in row["policies"] else None)
             summaries.append(row)
         assert all(helper.digest(path) == digest for path, digest in frozen.items())
         assert all(helper.digest(root / path) == digest
                    for path, digest in source_hashes.items())
         helper.save(args.output / "summary.json", {
-            "qualified": not args.smoke and all(row["runtimePassed"] and row["lowMemoryPassed"] and not row["requiresRuntimeInvestigation"] for row in summaries),
+            "qualified": not args.smoke and all(row["runtimePassed"] and row["lowMemoryPassed"] is not False and not row["requiresRuntimeInvestigation"] for row in summaries),
             "finishedAtUTC": datetime.datetime.now(datetime.timezone.utc).isoformat(),
             "allNumericalComparisonsPassed": True, "allIntegrationDecisionsIdentical": True,
             "postflightUnchanged": True,

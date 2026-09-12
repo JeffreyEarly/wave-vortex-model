@@ -1683,6 +1683,11 @@ int wavevortex::runtime::runWaveVortex(
     report << ",\"kernelProducers\":{\"stateValidations\":" << producers.stateValidations
            << ",\"phasePreparations\":" << producers.phasePreparations
            << ",\"derivedValidations\":" << producers.derivedValidations
+           << ",\"coefficientAssemblies\":" << producers.coefficientAssemblies
+           << ",\"verticalOperatorExecutions\":" << producers.verticalOperatorExecutions
+           << ",\"verticalPreparations\":" << producers.verticalPreparations
+           << ",\"horizontalSpectrumReuses\":" << producers.horizontalSpectrumReuses
+           << ",\"preparedVerticalDerivatives\":" << producers.preparedVerticalDerivatives
            << ",\"horizontalSpeedReductions\":" << producers.horizontalSpeedReductions
            << ",\"verticalSpeedReductions\":" << producers.verticalSpeedReductions
            << ",\"energyReductions\":" << producers.energyReductions

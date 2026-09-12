@@ -7,7 +7,7 @@
 
 namespace wavevortex {
 namespace spectral_detail { class WVVariableComplexBuffer; }
-namespace kernel_detail { class WVPreparedModeExecutor; }
+namespace kernel_detail { class WVPreparedFieldCache; class WVPreparedModeExecutor; }
 inline constexpr const char* WVBoussinesqKernelContract = "wave-vortex-boussinesq-kernel-v1";
 enum class WVBoussinesqField { u, v, w, eta, pi, p, psi, qgpv, rhoE, rhoTotal, zetaX, zetaY, zetaZ, ssh, ssu, ssv };
 enum class WVBoussinesqDerivative { value, x, y, z };
@@ -30,6 +30,11 @@ struct WVBoussinesqKernelMetrics {
     std::size_t stateValidationCount = 0;
     std::size_t derivedValidationCount = 0;
     std::size_t phasePreparationCount = 0;
+    std::size_t coefficientAssemblyCount = 0;
+    std::size_t verticalPreparationCount = 0;
+    std::size_t horizontalSpectrumReuseCount = 0;
+    std::size_t preparedVerticalDerivativeCount = 0;
+    std::size_t verticalOperatorExecutionCount = 0;
     std::array<std::size_t,4> tendencyReconstructionCount{};
     std::array<std::size_t,16> fieldReconstructionCount{};
     std::array<std::array<std::array<std::size_t,5>,4>,16> reconstructionCount{};
@@ -49,7 +54,7 @@ public:
     const char* horizontalScheduleIdentifier() const noexcept { return horizontalWorkspace_->scheduleIdentifier(); }
     const WVStratifiedModalGeometry& geometry() const noexcept { return source_->geometry(); }
     const std::vector<WVBoussinesqModeFactors>& factors() const noexcept { return factors_; }
-    const WVBoussinesqStorage& storage() const noexcept { return storage_; }
+    const WVBoussinesqStorage& storage() const noexcept;
     const WVBoussinesqKernelMetrics& metrics() const noexcept { return metrics_; }
     void resetMetrics() noexcept { metrics_ = {}; }
     const std::string& engineIdentifier() const noexcept { return engineIdentifier_; }
@@ -146,6 +151,7 @@ private:
     WVKernelStatus state(const WVState&);
     bool matchesStateEvaluation(const WVState&) const noexcept;
     std::size_t stateEvaluationComponent(const WVState&) const noexcept;
+    std::size_t fieldPreparationView(const WVCoefficients&) const noexcept;
     WVKernelStatus validateStateForCall(const WVState&);
     WVKernelStatus preparePhaseForCall(const WVState&);
     WVKernelStatus prepareProjectionPhaseForCall(double t,double t0);
@@ -165,7 +171,7 @@ private:
     WVVariableExecutionOptions executionOptions_;
     std::shared_ptr<const WVStratifiedModalSource> source_;
     std::vector<WVBoussinesqModeFactors> factors_;
-    WVBoussinesqStorage storage_;
+    mutable WVBoussinesqStorage storage_;
     WVBoussinesqKernelMetrics metrics_;
     std::string engineIdentifier_,engineLibraryIdentity_;
     std::unique_ptr<WVRetainedHorizontalOperator> horizontal_;
@@ -173,16 +179,19 @@ private:
     std::array<std::unique_ptr<WVPreparedVerticalOperator>,11> vertical_;
     std::array<std::unique_ptr<WVVerticalWorkspace>,11> verticalWorkspace_;
     std::unique_ptr<spectral_detail::WVVariableComplexBuffer> spectralStorage_;
+    std::unique_ptr<kernel_detail::WVPreparedFieldCache> fieldCache_;
     std::unique_ptr<kernel_detail::WVPreparedModeExecutor> pointwise_;
     std::vector<WVComplex64> phase_;
     std::vector<double> real_;
     WVState preparedState_{};
     std::array<WVState,5> preparedStateViews_{};
     std::array<std::size_t,5> preparedStateComponents_{};
+    std::array<std::size_t,5> preparedStateViewIds_{};
     std::size_t preparedStateViewCount_ = 0;
+    std::size_t nextStateViewId_ = 1;
     const void* preparedStateOwner_ = nullptr;
     bool stateEvaluationActive_ = false;
-    std::size_t S_ = 0,R_ = 0,H_ = 0;
+    std::size_t S_ = 0,R_ = 0,H_ = 0,baseSpectralScratchBytes_ = 0;
     std::atomic<bool> active_{false};
 };
 } // namespace wavevortex

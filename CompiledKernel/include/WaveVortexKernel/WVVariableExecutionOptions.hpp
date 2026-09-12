@@ -32,6 +32,10 @@ struct WVVariableExecutionOptions {
     // Prepared pointwise workers partition independent physical-grid cells.
     // The default preserves established serial arithmetic for direct kernel callers.
     std::size_t pointwiseWorkers = 1;
+    // Reuse modal and horizontal-spectrum preparation within one evaluation.
+    // Disabling this retains the independent reconstruction path for parity
+    // qualification; it is not a separate scientific or memory policy.
+    bool sharedFieldGradients = true;
     bool usesCompactSplitViews() const noexcept {
         return spectralSchedule==WVVariableSpectralSchedule::compactSplitFusedViews;
     }
