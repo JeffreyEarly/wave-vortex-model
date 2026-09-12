@@ -3,7 +3,7 @@
   "schemaVersion": 1,
   "scope": "forward-integration",
   "status": "complete",
-  "sourceCommit": "5947ac0d27b231dcc46cc4e3e027f700e623876e",
+  "sourceCommit": "23adc8db40900854946eb0f4efff37c0e8fb6a91",
   "provider": "native-fftw",
   "matlabRelease": "2025b",
   "platform": "MACA64",
@@ -209,8 +209,8 @@
         }
       ],
       "timingSeconds": {
-        "sharedMatlabPreparation": 8.5551039583333335,
-        "providerLifecycle": 16.969729833333332
+        "sharedMatlabPreparation": 9.438230625,
+        "providerLifecycle": 16.96806425
       },
       "runs": {
         "whole": {
@@ -242,7 +242,7 @@
             "selectedStep": 4,
             "effectiveIntegrationStep": 4,
             "transientWorkspaceMaximumLiveBytes": 10368,
-            "candidateEvaluationSeconds": 0.000210875,
+            "candidateEvaluationSeconds": 0.000216542,
             "noFallback": true
           },
           "termination": {
@@ -281,6 +281,7 @@
             "streamedNonlinear": false,
             "horizontalWorkers": 1,
             "fusedDerivativeAdvection": false,
+            "sharedInverseColumns": false,
             "pointwiseWorkers": 1,
             "verticalGroupWorkers": 1,
             "inertialOnlyProjection": true,
@@ -320,7 +321,7 @@
             "selectedStep": 4,
             "effectiveIntegrationStep": 4,
             "transientWorkspaceMaximumLiveBytes": 10368,
-            "candidateEvaluationSeconds": 0.0002055,
+            "candidateEvaluationSeconds": 0.000201291,
             "noFallback": true
           },
           "termination": {
@@ -359,6 +360,7 @@
             "streamedNonlinear": false,
             "horizontalWorkers": 1,
             "fusedDerivativeAdvection": false,
+            "sharedInverseColumns": false,
             "pointwiseWorkers": 1,
             "verticalGroupWorkers": 1,
             "inertialOnlyProjection": true,
@@ -398,7 +400,7 @@
             "selectedStep": 4,
             "effectiveIntegrationStep": 4,
             "transientWorkspaceMaximumLiveBytes": 10368,
-            "candidateEvaluationSeconds": 0.000203833,
+            "candidateEvaluationSeconds": 0.000179542,
             "noFallback": true
           },
           "termination": {
@@ -437,6 +439,7 @@
             "streamedNonlinear": false,
             "horizontalWorkers": 1,
             "fusedDerivativeAdvection": false,
+            "sharedInverseColumns": false,
             "pointwiseWorkers": 1,
             "verticalGroupWorkers": 1,
             "inertialOnlyProjection": true,
@@ -476,7 +479,7 @@
             "selectedStep": 4,
             "effectiveIntegrationStep": 4,
             "transientWorkspaceMaximumLiveBytes": 10368,
-            "candidateEvaluationSeconds": 0.000235916,
+            "candidateEvaluationSeconds": 0.000163583,
             "noFallback": true
           },
           "termination": {
@@ -515,6 +518,7 @@
             "streamedNonlinear": false,
             "horizontalWorkers": 1,
             "fusedDerivativeAdvection": false,
+            "sharedInverseColumns": false,
             "pointwiseWorkers": 1,
             "verticalGroupWorkers": 1,
             "inertialOnlyProjection": true,
@@ -554,7 +558,7 @@
             "selectedStep": 4,
             "effectiveIntegrationStep": 4,
             "transientWorkspaceMaximumLiveBytes": 10368,
-            "candidateEvaluationSeconds": 0.000242667,
+            "candidateEvaluationSeconds": 0.000189083,
             "noFallback": true
           },
           "termination": {
@@ -593,6 +597,7 @@
             "streamedNonlinear": false,
             "horizontalWorkers": 1,
             "fusedDerivativeAdvection": false,
+            "sharedInverseColumns": false,
             "pointwiseWorkers": 1,
             "verticalGroupWorkers": 1,
             "inertialOnlyProjection": true,
@@ -632,7 +637,7 @@
             "selectedStep": 4,
             "effectiveIntegrationStep": 4,
             "transientWorkspaceMaximumLiveBytes": 10368,
-            "candidateEvaluationSeconds": 0.000162541,
+            "candidateEvaluationSeconds": 0.000226667,
             "noFallback": true
           },
           "termination": {
@@ -671,6 +676,7 @@
             "streamedNonlinear": false,
             "horizontalWorkers": 1,
             "fusedDerivativeAdvection": false,
+            "sharedInverseColumns": false,
             "pointwiseWorkers": 1,
             "verticalGroupWorkers": 1,
             "inertialOnlyProjection": true,
@@ -883,8 +889,8 @@
         }
       ],
       "timingSeconds": {
-        "sharedMatlabPreparation": 4.8375422916666668,
-        "providerLifecycle": 15.815170208333333
+        "sharedMatlabPreparation": 4.90008,
+        "providerLifecycle": 15.916264083333333
       },
       "runs": {
         "whole": {
@@ -955,6 +961,7 @@
             "streamedNonlinear": false,
             "horizontalWorkers": 1,
             "fusedDerivativeAdvection": false,
+            "sharedInverseColumns": false,
             "pointwiseWorkers": 1,
             "verticalGroupWorkers": 1,
             "inertialOnlyProjection": true,
@@ -1033,6 +1040,7 @@
             "streamedNonlinear": false,
             "horizontalWorkers": 1,
             "fusedDerivativeAdvection": false,
+            "sharedInverseColumns": false,
             "pointwiseWorkers": 1,
             "verticalGroupWorkers": 1,
             "inertialOnlyProjection": true,
@@ -1111,6 +1119,7 @@
             "streamedNonlinear": false,
             "horizontalWorkers": 1,
             "fusedDerivativeAdvection": false,
+            "sharedInverseColumns": false,
             "pointwiseWorkers": 1,
             "verticalGroupWorkers": 1,
             "inertialOnlyProjection": true,
@@ -1189,6 +1198,7 @@
             "streamedNonlinear": false,
             "horizontalWorkers": 1,
             "fusedDerivativeAdvection": false,
+            "sharedInverseColumns": false,
             "pointwiseWorkers": 1,
             "verticalGroupWorkers": 1,
             "inertialOnlyProjection": true,
@@ -1267,6 +1277,7 @@
             "streamedNonlinear": false,
             "horizontalWorkers": 1,
             "fusedDerivativeAdvection": false,
+            "sharedInverseColumns": false,
             "pointwiseWorkers": 1,
             "verticalGroupWorkers": 1,
             "inertialOnlyProjection": true,
@@ -1345,6 +1356,7 @@
             "streamedNonlinear": false,
             "horizontalWorkers": 1,
             "fusedDerivativeAdvection": false,
+            "sharedInverseColumns": false,
             "pointwiseWorkers": 1,
             "verticalGroupWorkers": 1,
             "inertialOnlyProjection": true,
@@ -1557,8 +1569,8 @@
         }
       ],
       "timingSeconds": {
-        "sharedMatlabPreparation": 3.402293,
-        "providerLifecycle": 9.9520100833333327
+        "sharedMatlabPreparation": 3.4864013333333332,
+        "providerLifecycle": 9.9921630416666662
       },
       "runs": {
         "whole": {
@@ -1626,6 +1638,7 @@
             "streamedNonlinear": false,
             "horizontalWorkers": 1,
             "fusedDerivativeAdvection": false,
+            "sharedInverseColumns": false,
             "pointwiseWorkers": 1,
             "verticalGroupWorkers": 1,
             "inertialOnlyProjection": true,
@@ -1701,6 +1714,7 @@
             "streamedNonlinear": false,
             "horizontalWorkers": 1,
             "fusedDerivativeAdvection": false,
+            "sharedInverseColumns": false,
             "pointwiseWorkers": 1,
             "verticalGroupWorkers": 1,
             "inertialOnlyProjection": true,
@@ -1776,6 +1790,7 @@
             "streamedNonlinear": false,
             "horizontalWorkers": 1,
             "fusedDerivativeAdvection": false,
+            "sharedInverseColumns": false,
             "pointwiseWorkers": 1,
             "verticalGroupWorkers": 1,
             "inertialOnlyProjection": true,
@@ -1851,6 +1866,7 @@
             "streamedNonlinear": false,
             "horizontalWorkers": 1,
             "fusedDerivativeAdvection": false,
+            "sharedInverseColumns": false,
             "pointwiseWorkers": 1,
             "verticalGroupWorkers": 1,
             "inertialOnlyProjection": true,
@@ -1926,6 +1942,7 @@
             "streamedNonlinear": false,
             "horizontalWorkers": 1,
             "fusedDerivativeAdvection": false,
+            "sharedInverseColumns": false,
             "pointwiseWorkers": 1,
             "verticalGroupWorkers": 1,
             "inertialOnlyProjection": true,
@@ -2001,6 +2018,7 @@
             "streamedNonlinear": false,
             "horizontalWorkers": 1,
             "fusedDerivativeAdvection": false,
+            "sharedInverseColumns": false,
             "pointwiseWorkers": 1,
             "verticalGroupWorkers": 1,
             "inertialOnlyProjection": true,
@@ -2213,8 +2231,8 @@
         }
       ],
       "timingSeconds": {
-        "sharedMatlabPreparation": 5.3961105416666664,
-        "providerLifecycle": 15.522726708333334
+        "sharedMatlabPreparation": 5.5620119583333336,
+        "providerLifecycle": 15.520136375
       },
       "runs": {
         "whole": {
@@ -2285,6 +2303,7 @@
             "streamedNonlinear": true,
             "horizontalWorkers": 12,
             "fusedDerivativeAdvection": false,
+            "sharedInverseColumns": false,
             "pointwiseWorkers": 8,
             "verticalGroupWorkers": 1,
             "inertialOnlyProjection": true,
@@ -2363,6 +2382,7 @@
             "streamedNonlinear": true,
             "horizontalWorkers": 12,
             "fusedDerivativeAdvection": false,
+            "sharedInverseColumns": false,
             "pointwiseWorkers": 8,
             "verticalGroupWorkers": 1,
             "inertialOnlyProjection": true,
@@ -2441,6 +2461,7 @@
             "streamedNonlinear": true,
             "horizontalWorkers": 12,
             "fusedDerivativeAdvection": false,
+            "sharedInverseColumns": false,
             "pointwiseWorkers": 8,
             "verticalGroupWorkers": 1,
             "inertialOnlyProjection": true,
@@ -2519,6 +2540,7 @@
             "streamedNonlinear": true,
             "horizontalWorkers": 12,
             "fusedDerivativeAdvection": false,
+            "sharedInverseColumns": false,
             "pointwiseWorkers": 8,
             "verticalGroupWorkers": 1,
             "inertialOnlyProjection": true,
@@ -2597,6 +2619,7 @@
             "streamedNonlinear": true,
             "horizontalWorkers": 12,
             "fusedDerivativeAdvection": false,
+            "sharedInverseColumns": false,
             "pointwiseWorkers": 8,
             "verticalGroupWorkers": 1,
             "inertialOnlyProjection": true,
@@ -2675,6 +2698,7 @@
             "streamedNonlinear": true,
             "horizontalWorkers": 12,
             "fusedDerivativeAdvection": false,
+            "sharedInverseColumns": false,
             "pointwiseWorkers": 8,
             "verticalGroupWorkers": 1,
             "inertialOnlyProjection": true,
@@ -2887,8 +2911,8 @@
         }
       ],
       "timingSeconds": {
-        "sharedMatlabPreparation": 7.079851,
-        "providerLifecycle": 20.313510666666666
+        "sharedMatlabPreparation": 7.179624375,
+        "providerLifecycle": 20.260997625
       },
       "runs": {
         "whole": {
@@ -2959,6 +2983,7 @@
             "streamedNonlinear": true,
             "horizontalWorkers": 12,
             "fusedDerivativeAdvection": true,
+            "sharedInverseColumns": true,
             "pointwiseWorkers": 8,
             "verticalGroupWorkers": 1,
             "inertialOnlyProjection": true,
@@ -3037,6 +3062,7 @@
             "streamedNonlinear": true,
             "horizontalWorkers": 12,
             "fusedDerivativeAdvection": true,
+            "sharedInverseColumns": true,
             "pointwiseWorkers": 8,
             "verticalGroupWorkers": 1,
             "inertialOnlyProjection": true,
@@ -3115,6 +3141,7 @@
             "streamedNonlinear": true,
             "horizontalWorkers": 12,
             "fusedDerivativeAdvection": true,
+            "sharedInverseColumns": true,
             "pointwiseWorkers": 8,
             "verticalGroupWorkers": 1,
             "inertialOnlyProjection": true,
@@ -3193,6 +3220,7 @@
             "streamedNonlinear": true,
             "horizontalWorkers": 12,
             "fusedDerivativeAdvection": true,
+            "sharedInverseColumns": true,
             "pointwiseWorkers": 8,
             "verticalGroupWorkers": 1,
             "inertialOnlyProjection": true,
@@ -3271,6 +3299,7 @@
             "streamedNonlinear": true,
             "horizontalWorkers": 12,
             "fusedDerivativeAdvection": true,
+            "sharedInverseColumns": true,
             "pointwiseWorkers": 8,
             "verticalGroupWorkers": 1,
             "inertialOnlyProjection": true,
@@ -3349,6 +3378,7 @@
             "streamedNonlinear": true,
             "horizontalWorkers": 12,
             "fusedDerivativeAdvection": true,
+            "sharedInverseColumns": true,
             "pointwiseWorkers": 8,
             "verticalGroupWorkers": 1,
             "inertialOnlyProjection": true,
@@ -3561,8 +3591,8 @@
         }
       ],
       "timingSeconds": {
-        "sharedMatlabPreparation": 7.7675030416666671,
-        "providerLifecycle": 22.870495666666667
+        "sharedMatlabPreparation": 7.8430706666666667,
+        "providerLifecycle": 22.877562625
       },
       "runs": {
         "whole": {
@@ -3633,6 +3663,7 @@
             "streamedNonlinear": true,
             "horizontalWorkers": 12,
             "fusedDerivativeAdvection": true,
+            "sharedInverseColumns": false,
             "pointwiseWorkers": 8,
             "verticalGroupWorkers": 8,
             "inertialOnlyProjection": true,
@@ -3711,6 +3742,7 @@
             "streamedNonlinear": true,
             "horizontalWorkers": 12,
             "fusedDerivativeAdvection": true,
+            "sharedInverseColumns": false,
             "pointwiseWorkers": 8,
             "verticalGroupWorkers": 8,
             "inertialOnlyProjection": true,
@@ -3789,6 +3821,7 @@
             "streamedNonlinear": true,
             "horizontalWorkers": 12,
             "fusedDerivativeAdvection": true,
+            "sharedInverseColumns": false,
             "pointwiseWorkers": 8,
             "verticalGroupWorkers": 8,
             "inertialOnlyProjection": true,
@@ -3867,6 +3900,7 @@
             "streamedNonlinear": true,
             "horizontalWorkers": 12,
             "fusedDerivativeAdvection": true,
+            "sharedInverseColumns": false,
             "pointwiseWorkers": 8,
             "verticalGroupWorkers": 8,
             "inertialOnlyProjection": true,
@@ -3945,6 +3979,7 @@
             "streamedNonlinear": true,
             "horizontalWorkers": 12,
             "fusedDerivativeAdvection": true,
+            "sharedInverseColumns": false,
             "pointwiseWorkers": 8,
             "verticalGroupWorkers": 8,
             "inertialOnlyProjection": true,
@@ -4023,6 +4058,7 @@
             "streamedNonlinear": true,
             "horizontalWorkers": 12,
             "fusedDerivativeAdvection": true,
+            "sharedInverseColumns": false,
             "pointwiseWorkers": 8,
             "verticalGroupWorkers": 8,
             "inertialOnlyProjection": true,
@@ -4063,7 +4099,7 @@
     },
     {
       "path": "PortableRuntime/app/WaveVortexRun.cpp",
-      "sha256": "751169a10aa191d88ff705f808d6b15b34723cea788ab99adf82a65df45457b4"
+      "sha256": "d7a111084b0939b9267fe9eb589d2ccfdebb76f0914cc4d7de18a84ef1dc3d75"
     },
     {
       "path": "PortableRuntime/src/WVFieldEvaluationService.cpp",
@@ -4071,7 +4107,7 @@
     },
     {
       "path": "PortableRuntime/src/WVStratifiedFieldEvaluationAdapter.cpp",
-      "sha256": "6c9fee576662fdd3852cad7719b080fcea8f821832f6631ee398dc8b864ff667"
+      "sha256": "075af525e7323a9de153e069fe443debbde4362e33cbd51176d73fbfd6709d71"
     },
     {
       "path": "PortableRuntime/src/WVBarotropicQGFieldEvaluationAdapter.cpp",
@@ -4091,7 +4127,7 @@
     },
     {
       "path": "PortableRuntime/CMakeLists.txt",
-      "sha256": "0783a3519eea4eb0bf1a39f0c23b13e87f2c54510736d6d82f32f1aa7dc56a27"
+      "sha256": "7ec3df79c71095692b8fd8534ba4f3ef1076e007ef685f3f48d9bceea6ab44e8"
     },
     {
       "path": "CompiledKernel/CMakeLists.txt",
@@ -4099,7 +4135,7 @@
     },
     {
       "path": "PortableRuntime/app/WVRunnerVariablePolicy.cpp",
-      "sha256": "de780aaa1947c4094f21f46f466eee2402f1fc33309e0a2e8bee32961efb9af0"
+      "sha256": "7cce1cd0594d1cbc458a25948c0bb0a6a6513baddf8c531bf8fc008c906b3ad1"
     },
     {
       "path": "PortableRuntime/app/WVRunnerVariablePolicy.hpp",
@@ -4107,47 +4143,47 @@
     }
   ],
   "buildSource": {
-    "root": "/Users/jearly/Documents/OceanKitRepositories/wvm-v4-advection-pipeline",
-    "commit": "5947ac0d27b231dcc46cc4e3e027f700e623876e"
+    "root": "/Users/jearly/Documents/OceanKitRepositories/wvm-v4-shared-inverse-columns",
+    "commit": "23adc8db40900854946eb0f4efff37c0e8fb6a91"
   },
   "executionBinaries": [
     {
       "role": "runner",
-      "path": "/private/tmp/wvm477-pipeline-release/bin/wave-vortex-run",
-      "sha256": "547986eeee418000101ab66c413174c9c1a1ae29dfcc7f9d3c87898581c265f2",
-      "sourceCommit": "5947ac0d27b231dcc46cc4e3e027f700e623876e"
+      "path": "/private/tmp/wvm481-native/bin/wave-vortex-run",
+      "sha256": "8cb1edd6f64ff56c345c77ef012ab40933f9cb2e81e5cd44f1fa62a45487baea",
+      "sourceCommit": "23adc8db40900854946eb0f4efff37c0e8fb6a91"
     },
     {
       "role": "probe",
-      "path": "/private/tmp/wvm477-pipeline-release/bin/WVForwardIntegrationProbe",
-      "sha256": "80297e1016b0d8acca20397a7f53f5b5efdc1172c00e4de0036f59d63c5f82e4",
-      "sourceCommit": "5947ac0d27b231dcc46cc4e3e027f700e623876e"
+      "path": "/private/tmp/wvm481-native/bin/WVForwardIntegrationProbe",
+      "sha256": "a6340a2bdfe1781e28a2e884e8f73749edb2344e12dc67182f145d9078e01381",
+      "sourceCommit": "23adc8db40900854946eb0f4efff37c0e8fb6a91"
     }
   ],
   "artifacts": [
     {
-      "path": "PortableRuntime/qualification/forward-integration-evidence-v1/forward-constant-hydrostatic-cfl-rk4-native-fftw-0acde92549522ede90e75ac429fa2a416f991b7aee334a5d548a5a03e92f1f55.json",
-      "sha256": "0acde92549522ede90e75ac429fa2a416f991b7aee334a5d548a5a03e92f1f55"
+      "path": "PortableRuntime/qualification/forward-integration-evidence-v1/forward-constant-hydrostatic-cfl-rk4-native-fftw-80a183f06031dfa53a83e7a0a73f404f1d60101d48ce56387054def5f096022b.json",
+      "sha256": "80a183f06031dfa53a83e7a0a73f404f1d60101d48ce56387054def5f096022b"
     },
     {
-      "path": "PortableRuntime/qualification/forward-integration-evidence-v1/forward-constant-nonhydrostatic-rk23-native-fftw-859a39dea9fe677520ec468128ca3a1494af66bbe98745846c9995817091fa74.json",
-      "sha256": "859a39dea9fe677520ec468128ca3a1494af66bbe98745846c9995817091fa74"
+      "path": "PortableRuntime/qualification/forward-integration-evidence-v1/forward-constant-nonhydrostatic-rk23-native-fftw-d923adedb0c59c6fef540964fd30234f061aecfb633dc9f3ab2baa95a6acdc00.json",
+      "sha256": "d923adedb0c59c6fef540964fd30234f061aecfb633dc9f3ab2baa95a6acdc00"
     },
     {
-      "path": "PortableRuntime/qualification/forward-integration-evidence-v1/forward-barotropic-qg-rk45-native-fftw-3751c68aaf80fa69abdd6f8226e1c2b590b4b082f49be76c3b8e356681584365.json",
-      "sha256": "3751c68aaf80fa69abdd6f8226e1c2b590b4b082f49be76c3b8e356681584365"
+      "path": "PortableRuntime/qualification/forward-integration-evidence-v1/forward-barotropic-qg-rk45-native-fftw-50560a1f85d85d635b5a02ba96de7d74e0c2b90d5a57c9df9d2653a62b6390ca.json",
+      "sha256": "50560a1f85d85d635b5a02ba96de7d74e0c2b90d5a57c9df9d2653a62b6390ca"
     },
     {
-      "path": "PortableRuntime/qualification/forward-integration-evidence-v1/forward-stratified-qg-rk45-native-fftw-d3f6f6c18ff05e23862f5c8ee5b142fc036baa25997a51e5bd10d2614f0bfedf.json",
-      "sha256": "d3f6f6c18ff05e23862f5c8ee5b142fc036baa25997a51e5bd10d2614f0bfedf"
+      "path": "PortableRuntime/qualification/forward-integration-evidence-v1/forward-stratified-qg-rk45-native-fftw-f60e385503e9c2456d6092000fa3906a88d203db93231e10fb75dbf617760c36.json",
+      "sha256": "f60e385503e9c2456d6092000fa3906a88d203db93231e10fb75dbf617760c36"
     },
     {
-      "path": "PortableRuntime/qualification/forward-integration-evidence-v1/forward-hydrostatic-rk45-native-fftw-4900a49fccd2872d7a581d6328c901422fb20f56f764e50cdeb4d8ff1e7edce6.json",
-      "sha256": "4900a49fccd2872d7a581d6328c901422fb20f56f764e50cdeb4d8ff1e7edce6"
+      "path": "PortableRuntime/qualification/forward-integration-evidence-v1/forward-hydrostatic-rk45-native-fftw-1e546fb50597d0bf5a7fbf120cfe497a945c0aa02a098ddcfb39d2bb8710d334.json",
+      "sha256": "1e546fb50597d0bf5a7fbf120cfe497a945c0aa02a098ddcfb39d2bb8710d334"
     },
     {
-      "path": "PortableRuntime/qualification/forward-integration-evidence-v1/forward-boussinesq-rk45-native-fftw-9ade62c3fc52ac24785166385eaada88115e6a76bf3b485a6b2d53bac6f0344e.json",
-      "sha256": "9ade62c3fc52ac24785166385eaada88115e6a76bf3b485a6b2d53bac6f0344e"
+      "path": "PortableRuntime/qualification/forward-integration-evidence-v1/forward-boussinesq-rk45-native-fftw-4a60a3fd80050b36181c200ebff182f0f50887734491f6ce8f8894f900d476ce.json",
+      "sha256": "4a60a3fd80050b36181c200ebff182f0f50887734491f6ce8f8894f900d476ce"
     }
   ],
   "catalogSHA256": "c9b669fa92d5556526ce9cefac8b9847f52c1ea15c8ab3b00db0f3454adfaef9"

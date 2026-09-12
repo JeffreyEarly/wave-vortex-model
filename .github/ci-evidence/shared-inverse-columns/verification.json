@@ -1,0 +1,29 @@
+{
+  "sourceLinkedCommit": "23adc8db",
+  "allSixConfigurationsBothProvidersPassed": true,
+  "strictCommittedReceiptCheckPassed": true,
+  "nativeCombined": {
+    "passed": 58,
+    "total": 58
+  },
+  "sanitized": "Native operator and both family cases passed ASan/UBSan; leak sanitizer disabled on macOS.",
+  "gcc": "Native operator and final affected family cases passed. Runner compilation on local GCC is blocked by pre-existing macOS Mach SDK static-assert macros; required Linux GCC CI remains the portability gate.",
+  "sourceLinkedRuntimeAndProbe": {
+    "source-linked-runner": "8cb1edd6f64ff56c345c77ef012ab40933f9cb2e81e5cd44f1fa62a45487baea",
+    "source-linked-probe": "a6340a2bdfe1781e28a2e884e8f73749edb2344e12dc67182f145d9078e01381"
+  },
+  "logsSHA256": {
+    "wvm481-combined-tests.log": "00f3fba40048a52cbda093dddb3e180e586353a396eb120ba6723e488eab0939",
+    "wvm481-gcc-gating-tests.log": "1a8fb95408bf951b9046547a89bbba5aac2358f1eed944ca952e1d67fb197484",
+    "wvm481-sanitized-tests.log": "697c3475651cb6c453ebe45e7a0460901b2bee05401824d793d7e727ab0d3d62",
+    "wvm481-sanitized-operator.log": "e4ab2e8df585949e91f5d48bc8279282d2c97ea7435afb8bc267ce8f5e074e38",
+    "wvm481-operator-final.log": "c39182f251a39d1b283998d66b61eb901709a2034d19e7c88bb7f3786db81a52",
+    "wvm481-gcc-operator-final.log": "b6c86ea4827177a938b13533dd788a33281721f4feec6175783d827160500ce7",
+    "wvm481-repository.log": "c07da0c00af35223d1451e64ae54fb1eab2c4b8c1eaac5c9419539558cdc09ab",
+    "wvm481-gcc-gating-build.log": "edbc6fb7a3f34e7c685a8a1c503d2376c4bf78f6e433df7959fce7d25a6e3ee3"
+  },
+  "scope": "C++ scientific transforms and evaluation ownership; MATLAB scientific sources, checkpoints and catalog capabilities unchanged.",
+  "performance": "Pending frozen final campaign",
+  "hostedCI": "Required before merge",
+  "matlabFocusedPassed": 12
+}
