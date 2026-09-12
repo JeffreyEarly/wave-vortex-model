@@ -57,7 +57,7 @@ WVKernelStatus WVTransformHydrostaticKernel::create(std::shared_ptr<const WVStra
         c.S_=product(g.Nj,g.Nkl); c.H_=product(g.Nz,g.Nkl); c.R_=product(product(g.Nx,g.Ny),g.Nz);
         product(product(3,c.S_),sizeof(WVComplex64)); product(product(2,c.H_),sizeof(WVComplex64));
         if (3*c.S_>std::numeric_limits<std::size_t>::max()-2*c.H_) throw std::overflow_error("Hydrostatic spectral scratch extent overflow.");
-        const auto spectralElements=3*c.S_+2*c.H_;
+        auto spectralElements=3*c.S_+2*c.H_;
         product(spectralElements,sizeof(WVComplex64));
         product(product(options.streamedNonlinear ? 6 : 10,c.R_),sizeof(double)); product(c.S_,sizeof(WVHydrostaticModeFactors));
         c.engineIdentifier_=engine->identifier(); c.engineLibraryIdentity_=engine->libraryIdentity();
@@ -67,6 +67,11 @@ WVKernelStatus WVTransformHydrostaticKernel::create(std::shared_ptr<const WVStra
         horizontal.schedule=options.horizontalSchedule; horizontal.outerWorkers=options.horizontalWorkers;
         status=WVRetainedHorizontalOperator::create(horizontal,std::move(engine),c.horizontal_); if (!status) return status;
         status=c.horizontal_->createWorkspace(c.horizontalWorkspace_); if (!status) return status;
+        if (options.tiledNonlinear && options.sharedFieldGradients && options.streamedNonlinear) {
+            status=c.horizontal_->prepareAdvection(*c.horizontalWorkspace_,3);
+            if (!status && status.code!=WVKernelStatusCode::unsupportedOperation) return status;
+            c.tiledNonlinearPrepared_=static_cast<bool>(status);
+        }
         const WVStratifiedModalOperator operations[]={WVStratifiedModalOperator::reconstructF,WVStratifiedModalOperator::projectF,WVStratifiedModalOperator::reconstructG,WVStratifiedModalOperator::projectG};
         for (std::size_t i=0;i<4;++i) {
             const bool reconstruction=i%2==0; const std::string family=i<2 ? "F" : "G";
@@ -114,6 +119,12 @@ WVKernelStatus WVTransformHydrostaticKernel::create(std::shared_ptr<const WVStra
             for (double x : {a.UAp.real,a.UAp.imag,a.VAp.real,a.VAp.imag,a.WAp.imag,a.NAp,a.UA0.imag,a.VA0.imag,
                 a.NA0,a.PA0,a.ApmD.imag,a.ApmN,a.A0Z,a.A0N,a.waveEnergy,a.balancedEnergy,a.psi,a.qgpv,a.enstrophy})
                 if (!std::isfinite(x)) return {WVKernelStatusCode::numericalFailure,"Hydrostatic coefficient factor overflow."};
+        }
+        if (c.tiledNonlinearPrepared_) {
+            if (spectralElements>std::numeric_limits<std::size_t>::max()-c.H_)
+                throw std::overflow_error("Tiled Hydrostatic spectral scratch extent overflow.");
+            spectralElements+=c.H_;
+            product(spectralElements,sizeof(WVComplex64));
         }
         c.spectralStorage_=std::make_unique<WVVariableComplexBuffer>(spectralElements,representation); c.phase_.resize(c.S_); c.real_.resize((options.streamedNonlinear ? 6 : 10)*c.R_);
         if (options.sharedFieldGradients) c.fieldCache_=std::make_unique<kernel_detail::WVPreparedFieldCache>(c.S_,c.H_,representation);
@@ -372,7 +383,7 @@ WVKernelStatus WVTransformHydrostaticKernel::validateFluxOutput(const WVState& a
         for (auto outputView : {b.Fp,b.Fm,b.F0}) {
             s=disjoint(inputView.data,S_*sizeof(WVComplex64),outputView.data,S_*sizeof(WVComplex64)); if (!s) return s;
         }
-    return WVKernelStatus::ok();
+    return mutableOutputOutsidePreparedState(target);
 }
 WVKernelStatus WVTransformHydrostaticKernel::preparedPhase(const WVState& a,WVComplexConstView& result) {
     result={};
@@ -446,14 +457,16 @@ WVKernelStatus WVTransformHydrostaticKernel::transformUVEtaToWaveVortex(WVRealVo
 
 WVKernelStatus WVTransformHydrostaticKernel::reconstruct(const WVCoefficients& a,WVHydrostaticField field,
     WVHydrostaticDerivative derivative,WVHydrostaticComponent component,double* b,bool countPrimary,
-    std::size_t metricComponent,const WVRealOutputConsumer* consumer) {
-    if (countPrimary) {
+    std::size_t metricComponent,const WVRealOutputConsumer* consumer,
+    WVComplexInput* preparedSpectrum,const WVComplexOutput* destination) {
+    if (countPrimary && !preparedSpectrum) {
         if (metricComponent>=5) metricComponent=static_cast<std::size_t>(component);
         ++metrics_.fieldReconstructionCount[static_cast<std::size_t>(field)];
         ++metrics_.reconstructionCount[static_cast<std::size_t>(field)]
             [static_cast<std::size_t>(derivative)][metricComponent];
     }
     const auto& g=geometry();
+    const auto reconstructionGrid=destination ? *destination : gridView();
     if (field==WVHydrostaticField::zetaX || field==WVHydrostaticField::zetaY) {
         const bool x=field==WVHydrostaticField::zetaX;
         auto s=reconstruct(a,x ? WVHydrostaticField::w : WVHydrostaticField::u,x ? WVHydrostaticDerivative::y : WVHydrostaticDerivative::z,component,b,countPrimary,metricComponent); if (!s) return s;
@@ -514,7 +527,7 @@ WVKernelStatus WVTransformHydrostaticKernel::reconstruct(const WVCoefficients& a
         if (prepared) prepared->modalReady=true;
     }
     WVKernelStatus s;
-    auto inverseInput=gridView().input();
+    auto inverseInput=reconstructionGrid.input();
     if (prepared && !dz) {
         if (!prepared->gridReady) {
             ++metrics_.verticalPreparationCount;
@@ -526,11 +539,11 @@ WVKernelStatus WVTransformHydrostaticKernel::reconstruct(const WVCoefficients& a
             pointwise_->execute(H_,[&](std::size_t begin,std::size_t end) {
                 for (std::size_t i=begin;i<end;++i) {
                     const auto mode=i/g.Nz;
-                    write(gridView(),i,multiply(read(prepared->grid().input(),i),
+                    write(reconstructionGrid,i,multiply(read(prepared->grid().input(),i),
                         {0,derivative==WVHydrostaticDerivative::x ? g.k[mode] : g.l[mode]}));
                 }
             });
-            inverseInput=gridView().input();
+            inverseInput=reconstructionGrid.input();
         }
     } else {
         if (prepared) {
@@ -541,10 +554,11 @@ WVKernelStatus WVTransformHydrostaticKernel::reconstruct(const WVCoefficients& a
             ++metrics_.preparedVerticalDerivativeCount;
         }
         ++metrics_.verticalPreparationCount;
-        s=vertical(G!=dz ? 2 : 0,modalView().input(),gridView()); if (!s) return s;
+        s=vertical(G!=dz ? 2 : 0,modalView().input(),reconstructionGrid); if (!s) return s;
     }
     if (dz && !G) for (std::size_t mode=0;mode<g.Nkl;++mode) for (std::size_t z=0;z<g.Nz;++z)
-        write(gridView(),z+g.Nz*mode,scale(read(gridView().input(),z+g.Nz*mode),-g.N2[z]/g.g));
+        write(reconstructionGrid,z+g.Nz*mode,scale(read(reconstructionGrid.input(),z+g.Nz*mode),-g.N2[z]/g.g));
+    if (preparedSpectrum) { *preparedSpectrum=inverseInput; return WVKernelStatus::ok(); }
     s=consumer ? horizontal_->inverseAndConsume(*horizontalWorkspace_,inverseInput,{b,R_*sizeof(double)},*consumer) :
         horizontal_->inverse(*horizontalWorkspace_,inverseInput,{b,R_*sizeof(double)}); if (!s) return s;
     if (density) {
@@ -680,6 +694,70 @@ WVKernelStatus WVTransformHydrostaticKernel::constrainCoefficients(WVMutableCoef
         if (f.meanDensityAnomaly) a.A0.data[i].imag=0;
     }
     return WVKernelStatus::ok();
+}
+WVKernelStatus WVTransformHydrostaticKernel::nonlinearFluxAndFields(
+    const WVState& state,WVFlux& flux,WVRealFieldBundleView fields) {
+    if (!tiledNonlinearPrepared_) return unsupported();
+    auto status=validateFluxOutput(state,flux); if (!status) return status;
+    const auto shape=spatialShape();
+    if (fields.shape.first!=shape.first || fields.shape.second!=shape.second ||
+        fields.shape.third!=shape.third || fields.shape.fourth!=4)
+        return {WVKernelStatusCode::invalidShape,"Tiled nonlinear fields require four full volumes."};
+    if (!addressFits(fields.data,4*R_*sizeof(double),alignof(double)))
+        return {WVKernelStatusCode::invalidPointer,"Invalid tiled physical field storage."};
+    for (const auto input:{state.coefficients.Ap,state.coefficients.Am,state.coefficients.A0}) {
+        status=disjoint(fields.data,4*R_*sizeof(double),input.data,S_*sizeof(WVComplex64)); if (!status) return status;
+    }
+    // Registered immutable views are protected even when they differ from the
+    // primary state passed to this call.
+    for (std::size_t v=0;v<preparedStateViewCount_;++v)
+        for (const auto input:{preparedStateViews_[v].coefficients.Ap,preparedStateViews_[v].coefficients.Am,preparedStateViews_[v].coefficients.A0}) {
+            status=disjoint(fields.data,4*R_*sizeof(double),input.data,S_*sizeof(WVComplex64)); if (!status) return status;
+        }
+    for (const auto output:{flux.Fp,flux.Fm,flux.F0}) {
+        status=disjoint(fields.data,4*R_*sizeof(double),output.data,S_*sizeof(WVComplex64)); if (!status) return status;
+    }
+    ActiveCall guard(active_); if (!guard.entered) return reentrant();
+    kernel_detail::WVPreparedFieldCache::StandaloneScope cacheScope{fieldCache_.get(),!stateEvaluationActive_};
+    status=preparePhaseForCall(state); if (!status) return status;
+    WVRetainedAdvectionWork work;
+    work.targets=3;work.fields={fields.data,4*R_*sizeof(double)};
+    work.densityCorrection={geometry().dLnN2.data(),geometry().Nz*sizeof(double)};
+    const WVHydrostaticField names[]={WVHydrostaticField::u,WVHydrostaticField::v,WVHydrostaticField::w,WVHydrostaticField::eta};
+    for (std::size_t f=0;f<4;++f) {
+        status=reconstruct(state.coefficients,names[f],WVHydrostaticDerivative::value,WVHydrostaticComponent::all,
+            nullptr,true,5,nullptr,&work.base[f]); if (!status) return status;
+    }
+    const std::size_t channels[]={0,1,3,2},slots[]={1,2,0};
+    for (std::size_t t=0;t<work.targets;++t) {
+        work.targetSpectra[t]=gridView(slots[t]);
+        WVComplexInput prepared;
+        status=reconstruct(state.coefficients,names[channels[t]],WVHydrostaticDerivative::z,WVHydrostaticComponent::all,
+            nullptr,true,5,nullptr,&prepared,&work.targetSpectra[t]); if (!status) return status;
+    }
+    WVRetainedAdvectionCounts counts;
+    status=horizontal_->advection(*horizontalWorkspace_,work,counts); if (!status) return status;
+    ++metrics_.tiledNonlinearCount;
+    metrics_.tiledColumnInverseCount+=counts.columnInverses;
+    metrics_.tiledRowInverseCount+=counts.rowInverses;
+    metrics_.tiledReusedColumnCount+=counts.reusedColumns;
+    // Count actual completed physical producers, including streamed derivatives.
+    for (std::size_t f=0;f<4;++f) {
+        ++metrics_.fieldReconstructionCount[static_cast<std::size_t>(names[f])];
+        ++metrics_.reconstructionCount[static_cast<std::size_t>(names[f])][0][0];
+    }
+    for (std::size_t t=0;t<work.targets;++t) for (std::size_t d=1;d<4;++d) {
+        ++metrics_.fieldReconstructionCount[static_cast<std::size_t>(names[channels[t]])];
+        ++metrics_.reconstructionCount[static_cast<std::size_t>(names[channels[t]])][d][0];
+        ++metrics_.derivativeAdvectionConsumerCount;
+    }
+    // x and y requests consumed the same prepared base spectrum.
+    metrics_.horizontalSpectrumReuseCount+=2*work.targets;
+    WVMutableCoefficients target{flux.Fp,flux.Fm,flux.F0};
+    status=vertical(1,work.targetSpectra[0].input(),modalView(1)); if (!status) return status;
+    status=vertical(1,work.targetSpectra[1].input(),modalView(2)); if (!status) return status;
+    status=vertical(3,work.targetSpectra[2].input(),modalView()); if (!status) return status;
+    return projectedFieldsToCoefficients(modalView(1).input(),modalView(2).input(),modalView().input(),target);
 }
 WVKernelStatus WVTransformHydrostaticKernel::nonlinearFlux(const WVState& a,WVFlux& b,
     WVRealFieldBundleView* spatialTendency,const WVRealFieldBundleConstView* preparedFields,

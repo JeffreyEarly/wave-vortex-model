@@ -48,6 +48,8 @@ struct WVRealInput;
 struct WVRealOutput;
 struct WVComplexInput;
 struct WVComplexOutput;
+struct WVRetainedAdvectionWork;
+struct WVRetainedAdvectionCounts;
 
 // Synchronous consumer of completed contiguous physical-grid ranges. Different
 // ranges may be delivered concurrently. The callback must not throw, reenter
@@ -68,6 +70,10 @@ public:
     virtual bool supportsInverseConsumer() const noexcept { return false; }
     virtual WVKernelStatus inverseAndConsume(WVComplexInput, WVRealOutput,
         const WVRealOutputConsumer&);
+    virtual bool supportsAdvection(std::size_t) const noexcept { return false; }
+    virtual WVKernelStatus prepareAdvection(std::size_t);
+    virtual WVKernelStatus advection(const WVRetainedAdvectionWork&,
+        WVRetainedAdvectionCounts&);
     virtual std::size_t persistentBytes() const noexcept = 0;
     virtual std::size_t planBytesLowerBound() const noexcept = 0;
     // persistentBytes includes shared dependencies. Owners of multiple plans

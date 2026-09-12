@@ -45,7 +45,8 @@
     "resolvedForcingTendencyDiagnostics": "issue-315",
     "controlledEarlyTermination": "issue-288",
     "standardForwardIntegrationQualification": "issue-289",
-    "adaptiveDampingEffectiveResolution": "issue-409"
+    "adaptiveDampingEffectiveResolution": "issue-409",
+    "tiledHorizontalAdvection": "issue-489"
   },
   "contract": {
     "version": 4,
@@ -76,7 +77,7 @@
     "coefficientFormulas": "78d647608d8919b33c278c280eb6d2b253dfb0acd8d3330141fbdc845e00864a",
     "kernel": "a07893470f3c9b27a2fe297473660b718f65947424ba879f2a7a91083c644681",
     "integrationSystem": "21d00e8a75de899425ff991896d9d9dedff2201228835d0f97e01bc9dab569eb",
-    "nativeEngine": "66adb6d7bcd27c997c882e97c1f603d03675375f9d532300ff559edc930b7099",
+    "nativeEngine": "eab49474caf32d4c34ea2cfe27defb2ec185172419f369a01de4b3f908641fcd",
     "mexGateway": "b68cc36464bb6b46a3e10c69fa1964c76269aac717cedf88e9657f285a6c8ea6",
     "buildOrchestrator": "d724445240b1b8832746ab8ab95cb8fceefcc86973acf189054949ad5002b0a9"
   },

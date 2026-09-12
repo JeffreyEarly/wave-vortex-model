@@ -69,7 +69,8 @@
     "resolvedForcingTendencyDiagnostics": "issue-315",
     "controlledEarlyTermination": "issue-288",
     "standardForwardIntegrationQualification": "issue-289",
-    "adaptiveDampingEffectiveResolution": "issue-409"
+    "adaptiveDampingEffectiveResolution": "issue-409",
+    "tiledHorizontalAdvection": "issue-489"
   },
   "excluded": [
     "benchmark harnesses and payloads",

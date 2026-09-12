@@ -333,7 +333,8 @@ void sharedResources() {
         }
     };
     std::thread ta([&] { exercise(*opA,*wa,ia,oa); }),tb([&] { exercise(*opB,*wb,ib,ob); });
-    while (ready.load()!=2) std::this_thread::yield(); go=true;
+    while (ready.load()!=2) std::this_thread::yield();
+    go=true;
     ta.join(); tb.join();
     require(rejected>0 && unexpected==0,"Shared resource did not safely reject concurrent peers");
     require(opA->forward(*wa,{ia.data(),ia.size()*sizeof(double)},oa.out()));
@@ -356,6 +357,128 @@ void sharedResources() {
     }
     engine.reset();
     require(WVFFTWEngine::lifetimeMetrics().activePlans==before.activePlans,"Shared resource plans leaked");
+}
+void advectionCase(WVComplexRepresentation representation,WVFourierNormalization normalization,
+    std::size_t targets) {
+    auto spec=specification(12,10,11,representation,normalization,false,true);
+    spec.grid.planeStride=spec.grid.Nx*spec.grid.Ny;
+    spec.modes.erase(std::remove_if(spec.modes.begin(),spec.modes.end(),[&](const auto& mode) {
+        return std::abs(mode.k)==static_cast<std::int64_t>(spec.grid.Nx/2) ||
+            std::abs(mode.l)==static_cast<std::int64_t>(spec.grid.Ny/2);
+    }),spec.modes.end());
+    spec.retained.columns=spec.modes.size();
+    std::unique_ptr<WVRetainedHorizontalOperator> op;
+    require(WVRetainedHorizontalOperator::create(spec,fft(true),op));
+    std::unique_ptr<WVRetainedHorizontalWorkspace> workspace;
+    require(op->createWorkspace(workspace,false));
+    require(op->supportsAdvection(*workspace,targets),"Eligible retained advection was not advertised");
+    require(op->prepareAdvection(*workspace,targets));
+    const auto preparedBytes=workspace->persistentBytes();
+    const auto planes=spec.grid.planes,modes=spec.modes.size();
+    const auto plane=spec.grid.Nx*spec.grid.Ny,volume=plane*planes;
+    std::vector<Buffer> base,target,reference;
+    for (std::size_t field=0;field<4;++field) base.emplace_back(spec.retained);
+    for (std::size_t field=0;field<targets;++field) {
+        target.emplace_back(spec.retained); reference.emplace_back(spec.retained);
+    }
+    for (std::size_t field=0;field<4;++field)
+        for (std::size_t mode=0;mode<modes;++mode)
+            for (std::size_t z=0;z<planes;++z) {
+                const auto& key=spec.modes[mode];
+                const bool self=(2*key.k)%static_cast<std::int64_t>(spec.grid.Nx)==0 &&
+                    (2*key.l)%static_cast<std::int64_t>(spec.grid.Ny)==0;
+                base[field].set(z,mode,{std::sin(.09*(1+field+2*mode+3*z)),
+                    self ? 0 : std::cos(.07*(1+3*field+mode+5*z))});
+            }
+    const auto targetField=[](std::size_t targetIndex) {
+        return targetIndex<2 ? targetIndex : targetIndex==2 ? std::size_t{3} : std::size_t{2};
+    };
+    for (std::size_t targetIndex=0;targetIndex<targets;++targetIndex)
+        for (std::size_t mode=0;mode<modes;++mode)
+            for (std::size_t z=0;z<planes;++z) {
+                const auto& key=spec.modes[mode];
+                const bool self=(2*key.k)%static_cast<std::int64_t>(spec.grid.Nx)==0 &&
+                    (2*key.l)%static_cast<std::int64_t>(spec.grid.Ny)==0;
+                target[targetIndex].set(z,mode,{std::cos(.11*(1+targetIndex+mode+2*z)),
+                    self ? 0 : std::sin(.05*(1+2*targetIndex+3*mode+z))});
+            }
+    const auto immutableBase=base;
+    std::vector<double> fields(4*volume),referenceFields(4*volume),correction(planes);
+    for (std::size_t z=0;z<planes;++z) correction[z]=.1*std::cos(.13*z);
+    for (std::size_t field=0;field<4;++field)
+        require(op->inverse(*workspace,base[field].in(),
+            {referenceFields.data()+field*volume,volume*sizeof(double)}));
+    Buffer product(spec.retained);
+    std::vector<double> derivative(volume),flux(volume);
+    const double kx=2*std::acos(-1.0)/spec.Lx,ky=2*std::acos(-1.0)/spec.Ly;
+    for (std::size_t targetIndex=0;targetIndex<targets;++targetIndex) {
+        const auto field=targetField(targetIndex); std::fill(flux.begin(),flux.end(),0.0);
+        for (std::size_t axis=0;axis<3;++axis) {
+            if (axis<2) {
+                for (std::size_t mode=0;mode<modes;++mode) {
+                    const double factor=(axis==0 ? spec.modes[mode].k*kx : spec.modes[mode].l*ky);
+                    for (std::size_t z=0;z<planes;++z) {
+                        const auto value=base[field].get(z,mode);
+                        product.set(z,mode,{-factor*value.imag,factor*value.real});
+                    }
+                }
+                require(op->inverse(*workspace,product.in(),{derivative.data(),volume*sizeof(double)}));
+            } else {
+                require(op->inverse(*workspace,target[targetIndex].in(),
+                    {derivative.data(),volume*sizeof(double)}));
+            }
+            for (std::size_t i=0;i<volume;++i) {
+                const double density=field==3 && axis==2
+                    ? referenceFields[3*volume+i]*correction[i/plane] : 0.0;
+                flux[i]-=referenceFields[axis*volume+i]*(derivative[i]+density);
+            }
+        }
+        require(op->forward(*workspace,{flux.data(),volume*sizeof(double)},reference[targetIndex].out()));
+    }
+    WVRetainedAdvectionWork work;
+    work.targets=targets; work.fields={fields.data(),fields.size()*sizeof(double)};
+    work.densityCorrection={correction.data(),correction.size()*sizeof(double)};
+    for (std::size_t field=0;field<4;++field) work.base[field]=base[field].in();
+    for (std::size_t targetIndex=0;targetIndex<targets;++targetIndex)
+        work.targetSpectra[targetIndex]=target[targetIndex].out();
+    WVRetainedAdvectionCounts counts;
+    require(op->advection(*workspace,work,counts));
+    require(counts.columnInverses==planes*(4+2*targets) &&
+        counts.rowInverses==planes*(4+3*targets) && counts.reusedColumns==planes*targets,
+        "Retained advection reported incorrect actual FFT counts");
+    for (std::size_t i=0;i<fields.size();++i) close(fields[i],referenceFields[i]);
+    for (std::size_t targetIndex=0;targetIndex<targets;++targetIndex)
+        for (std::size_t mode=0;mode<modes;++mode) for (std::size_t z=0;z<planes;++z) {
+            close(target[targetIndex].get(z,mode).real,reference[targetIndex].get(z,mode).real);
+            close(target[targetIndex].get(z,mode).imag,reference[targetIndex].get(z,mode).imag);
+        }
+    for (std::size_t field=0;field<4;++field)
+        require(base[field].equals(immutableBase[field]),"Retained advection modified a base spectrum");
+    const auto fieldsBefore=fields;
+    const auto baseBefore=base;
+    auto overlapping=work; overlapping.targetSpectra[0]=base[0].out();
+    require(op->advection(*workspace,overlapping,counts).code==WVKernelStatusCode::overlappingArrays,
+        "Retained advection accepted a target/base overlap");
+    require(same(fields,fieldsBefore),"Rejected retained advection changed physical fields");
+    for (std::size_t field=0;field<4;++field)
+        require(base[field].equals(baseBefore[field]),"Rejected retained advection changed a base spectrum");
+    allocationProbe::calls=0; allocationProbe::counting=true;
+    require(op->advection(*workspace,work,counts));
+    allocationProbe::counting=false;
+    require(allocationProbe::calls==0 && workspace->persistentBytes()==preparedBytes,
+        "Prepared retained advection allocated or changed persistent storage");
+}
+void unsupportedAdvection() {
+    auto spec=specification(12,10,3,WVComplexRepresentation::interleaved,
+        WVFourierNormalization::forwardUnit,false,false);
+    spec.grid.planeStride=spec.grid.Nx*spec.grid.Ny;
+    std::unique_ptr<WVRetainedHorizontalOperator> op;
+    require(WVRetainedHorizontalOperator::create(spec,fft(true),op));
+    std::unique_ptr<WVRetainedHorizontalWorkspace> workspace;
+    require(op->createWorkspace(workspace,false));
+    require(!op->supportsAdvection(*workspace,3) &&
+        op->prepareAdvection(*workspace,3).code==WVKernelStatusCode::unsupportedOperation,
+        "x-Nyquist retained layout advertised tiled advection");
 }
 class FailingRetainedEngine final : public WVFFTEngine {
 public:
@@ -388,7 +511,9 @@ int main() {
             }
         horizontalCase(8,6,2,WVComplexRepresentation::split,WVFourierNormalization::forwardUnit,true,true,true);
         horizontalCase(8,6,2,WVComplexRepresentation::interleaved,WVFourierNormalization::forwardUnit,false,false,true);
-        fallbackAndLifetime(); boundedDerivative(); stridedBoundedDerivative(); noFailureFallback(); sharedResources();
+        advectionCase(WVComplexRepresentation::split,WVFourierNormalization::forwardUnit,3);
+        advectionCase(WVComplexRepresentation::interleaved,WVFourierNormalization::unitary,4);
+        unsupportedAdvection(); fallbackAndLifetime(); boundedDerivative(); stridedBoundedDerivative(); noFailureFallback(); sharedResources();
         std::cout << "Pruned horizontal: independent DFT, tile/tail, Hermitian boundaries, strided layouts, immutable inputs, zero prepared allocations, bounded derivatives/fallback and shared lifetimes passed.\n";
         return 0;
     } catch(const std::exception& e) {

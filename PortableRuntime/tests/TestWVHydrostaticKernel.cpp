@@ -1,6 +1,9 @@
 #include "WaveVortexRuntime/WVStratifiedModalRecord.hpp"
 #include "WaveVortexKernel/WVTransformHydrostaticKernel.hpp"
 #include "WVReferenceFFTEngine.hpp"
+#if WV_TEST_NATIVE_FFTW
+#include "WVNativeFFTWEngine.hpp"
+#endif
 #include "../../tools/compiled-kernel/tests/WVAllocationProbe.hpp"
 #include "WVStratifiedModalTestFixture.hpp"
 #include <iostream>
@@ -774,6 +777,86 @@ void sharedFieldGradientParity(const std::shared_ptr<const WVStratifiedModalReco
         require(value.real==17 && value.imag==19,
             "Failed Hydrostatic derivative inverse published spectral output");
 }
+#if WV_TEST_NATIVE_FFTW
+void tiledNonlinearParity(const std::shared_ptr<const WVStratifiedModalRecord>& source) {
+    const auto& g=source->geometry();const auto S=g.Nj*g.Nkl,R=g.Nx*g.Ny*g.Nz;
+    for (bool compact:{false,true}) for (std::size_t workers:{std::size_t{1},std::size_t{3},std::size_t{12}}) {
+        WVVariableExecutionOptions options{WVRetainedHorizontalSchedule::streamingPrunedTile16,workers,true};
+        options.pointwiseWorkers=2;options.fusedDerivativeAdvection=true;
+        if (compact) options.spectralSchedule=WVVariableSpectralSchedule::compactSplitFusedViews;
+        const auto create=[&](bool tiled,std::unique_ptr<WVTransformHydrostaticKernel>& kernel) {
+            std::unique_ptr<WVFFTEngine> engine;require(bool(WVFFTWEngine::create(1,engine)),"Native tiled engine setup failed");
+            auto selected=options;selected.tiledNonlinear=tiled;
+            require(bool(WVTransformHydrostaticKernel::create(source,std::move(engine),kernel,WVCreateScalarMatrixBackend,selected)),"Tiled family setup failed");
+        };
+        std::unique_ptr<WVTransformHydrostaticKernel> baseline,candidate;create(false,baseline);create(true,candidate);
+        require(candidate->supportsTiledNonlinear() && !baseline->supportsTiledNonlinear(),"Tiled opt-in capability mismatch");
+        auto referenceOptions=options;referenceOptions.tiledNonlinear=true;
+        std::unique_ptr<WVTransformHydrostaticKernel> fallback;
+        require(bool(WVTransformHydrostaticKernel::create(source,std::make_unique<WVReferenceFFTEngine>(),fallback,WVCreateScalarMatrixBackend,referenceOptions)) && !fallback->supportsTiledNonlinear(),"Reference provider failed tiled fallback");
+        std::array<std::vector<WVComplex64>,3> input,first,second;
+        for (std::size_t j=0;j<3;++j) {
+            input[j].resize(S);first[j].resize(S);second[j].resize(S);
+            for (std::size_t i=0;i<S;++i) input[j][i]={.001*std::sin(.17*i+j),-.002*std::cos(.11*i+j)};
+        }
+        const auto shape=candidate->spectralShape();const auto volume=candidate->spatialShape();
+        WVMutableCoefficients valid{{input[0].data(),shape},{input[1].data(),shape},{input[2].data(),shape}};
+        require(bool(candidate->constrainCoefficients(valid)),"Tiled input constraints failed");
+        const WVState state{83,17,{{input[0].data(),shape},{input[1].data(),shape},{input[2].data(),shape}}};
+        WVFlux a{{first[0].data(),shape},{first[1].data(),shape},{first[2].data(),shape}};
+        WVFlux b{{second[0].data(),shape},{second[1].data(),shape},{second[2].data(),shape}};
+        std::vector<double> oldFields(4*R),newFields(4*R),scratch(R);
+        const WVRealFieldBundleView output{newFields.data(),{g.Nx,g.Ny,g.Nz,4}};
+        const WVRealFieldBundleConstView borrowed{oldFields.data(),{g.Nx,g.Ny,g.Nz,4}};
+        const WVHydrostaticField names[]={WVHydrostaticField::u,WVHydrostaticField::v,WVHydrostaticField::w,WVHydrostaticField::eta};
+        for (std::size_t pass=0;pass<3;++pass) {
+            // Same time and addresses, new evaluation with modified coefficients.
+            if (pass) {input[0][g.Nj].real*=1.1;require(bool(candidate->constrainCoefficients(valid)),"Tiled changed-state constraints failed");}
+            const auto snapshot=input;
+            baseline->resetMetrics();candidate->resetMetrics();
+            require(bool(baseline->beginStateEvaluation(state)) && bool(candidate->beginStateEvaluation(state)),"Tiled scope begin failed");
+            for (std::size_t f=0;f<4;++f) require(bool(baseline->transformStateField(state,names[f],{oldFields.data()+f*R,volume})),"Legacy fields failed");
+            require(bool(baseline->nonlinearFlux(state,a,nullptr,&borrowed)),"Legacy nonlinear failed");
+            const auto bytes=candidate->persistentBytes();
+            allocationProbe::calls=0;allocationProbe::counting=pass>0;
+            const auto status=candidate->nonlinearFluxAndFields(state,b,output);
+            allocationProbe::counting=false;
+            require(bool(status),status.message.c_str());
+            if (pass) require(allocationProbe::calls==0 && candidate->persistentBytes()==bytes,"Warmed tiled execution allocated");
+            const auto& cm=candidate->metrics();const auto& bm=baseline->metrics();
+            require(cm.tiledNonlinearCount==1 && cm.tiledColumnInverseCount==g.Nz*(4+2*3) &&
+                cm.tiledRowInverseCount==g.Nz*(4+3*3) && cm.tiledReusedColumnCount==g.Nz*3,"Tiled producer counts mismatch");
+            require(cm.coefficientAssemblyCount==bm.coefficientAssemblyCount && cm.verticalOperatorExecutionCount==bm.verticalOperatorExecutionCount && cm.reconstructionCount==bm.reconstructionCount,"Tiled producer or vertical work changed");
+            for (std::size_t i=0;i<4*R;++i) require(oldFields[i]==newFields[i],"Tiled physical field changed");
+            for (std::size_t j=0;j<3;++j) for (std::size_t i=0;i<S;++i) {
+                require(std::abs(first[j][i].real-second[j][i].real)<=1e-12*(1+std::abs(first[j][i].real)) &&
+                    std::abs(first[j][i].imag-second[j][i].imag)<=1e-12*(1+std::abs(first[j][i].imag)),"Tiled projected flux differs");
+                require(input[j][i].real==snapshot[j][i].real && input[j][i].imag==snapshot[j][i].imag,"Tiled input mutated");
+            }
+            require(bool(baseline->endStateEvaluation()) && bool(candidate->endStateEvaluation()),"Tiled scope end failed");
+        }
+        // No public flux API may overwrite another registered immutable view.
+        int owner=0;
+        require(bool(candidate->beginStateEvaluation(state,&owner)),"Tiled alias scope failed");
+        const WVState alternate{state.t,state.t0,{{first[0].data(),shape},{first[1].data(),shape},{first[2].data(),shape}}};
+        require(bool(candidate->addStateEvaluationView(alternate,&owner,1)),"Tiled alternate view registration failed");
+        WVFlux forbidden{{first[0].data(),shape},b.Fm,b.F0};
+        candidate->resetMetrics();
+        require(candidate->nonlinearFluxAndFields(state,forbidden,output).code==WVKernelStatusCode::overlappingArrays &&
+            candidate->nonlinearFlux(state,forbidden).code==WVKernelStatusCode::overlappingArrays &&
+            candidate->metrics().tiledNonlinearCount==0,"Flux overwrote registered immutable view");
+        require(bool(candidate->endStateEvaluation()),"Tiled alias scope end failed");
+        // Invalid public output is rejected before FFT execution, then retry works.
+        candidate->resetMetrics();auto bad=output;bad.shape.fourth=3;
+        require(!candidate->nonlinearFluxAndFields(state,b,bad) && candidate->metrics().tiledNonlinearCount==0,"Invalid tiled output executed");
+        require(bool(candidate->nonlinearFluxAndFields(state,b,output)),"Tiled failure recovery failed");
+        // Calling the established API remains valid even when tiling is prepared.
+        candidate->resetMetrics();require(bool(candidate->nonlinearFlux(state,b,nullptr,&borrowed)) && candidate->metrics().tiledNonlinearCount==0,"Borrowed fields unexpectedly tiled");
+        require(baseline->nonlinearFluxAndFields(state,a,output).code==WVKernelStatusCode::unsupportedOperation,"Disabled tiled API did not reject");
+    }
+}
+#endif
+
 }
 int main() {
     try {
@@ -781,6 +864,14 @@ int main() {
         { File f(file.path); for (const auto* name:{"WVTransform","AnnotatedClass"}) nc(nc_put_att_text(f.id,NC_GLOBAL,name,std::char_traits<char>::length("WVTransformHydrostatic"),"WVTransformHydrostatic")); }
         std::shared_ptr<const WVStratifiedModalRecord> source; auto status=WVStratifiedModalReader::read(file.path.string(),source); require(bool(status),status.message.c_str());
         contracts(source);
+#if WV_TEST_NATIVE_FFTW
+        { Temporary tiledFile; fixture(tiledFile.path);
+          {File f(tiledFile.path);for(const auto* name:{"WVTransform","AnnotatedClass"}) nc(nc_put_att_text(f.id,NC_GLOBAL,name,std::char_traits<char>::length("WVTransformHydrostatic"),"WVTransformHydrostatic"));}
+          for(std::size_t z=0;z<7;++z) change(tiledFile.path,"dLnN2",.001*(z+1),z);
+          std::shared_ptr<const WVStratifiedModalRecord> tiledSource;
+          auto readStatus=WVStratifiedModalReader::read(tiledFile.path.string(),tiledSource);require(bool(readStatus),readStatus.message.c_str());
+          tiledNonlinearParity(tiledSource); }
+#endif
         variableScheduleParity(source);
         variableScheduleParity(source,true);
         sharedFieldGradientParity(source,false);

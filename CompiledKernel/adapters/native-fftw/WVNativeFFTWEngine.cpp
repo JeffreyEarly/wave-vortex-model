@@ -5,6 +5,7 @@
 #include <cmath>
 #include <condition_variable>
 #include <stdexcept>
+#include <system_error>
 #include <thread>
 
 #include <fftw3.h>
@@ -245,12 +246,18 @@ public:
 };
 
 class RetainedFFTWPlan final : public WVRetainedHorizontalPlan {
-    struct Mode { std::size_t row,partner; bool conjugate,self; };
+    struct Mode {
+        std::size_t row,partner;
+        bool conjugate,self;
+        double k,l;
+    };
     static constexpr std::size_t tileWidth=16;
 public:
     explicit RetainedFFTWPlan(const WVRetainedHorizontalSpecification& spec)
         : spec_(spec), workers_(std::min(spec.outerWorkers,spec.grid.planes)),
-          halfSize_((spec.grid.Nx/2+1)*spec.grid.Ny) {
+          halfSize_((spec.grid.Nx/2+1)*spec.grid.Ny),
+          xWavenumberScale_(2*std::acos(-1.0)/spec.Lx),
+          yWavenumberScale_(2*std::acos(-1.0)/spec.Ly) {
         const auto nx=spec.grid.Nx,ny=spec.grid.Ny,half=nx/2+1;
         const auto index=[](std::int64_t k,std::size_t n) { return k<0 ? static_cast<std::size_t>(static_cast<std::int64_t>(n)+k) : static_cast<std::size_t>(k); };
         modes_.reserve(spec.modes.size());
@@ -259,8 +266,11 @@ public:
             const bool conjugate=x>nx/2;
             const auto sx=conjugate?cx:x,sy=conjugate?cy:y,row=sx+half*sy;
             const bool boundary=sx==0 || (nx%2==0 && sx==nx/2);
-            modes_.push_back({row,boundary?sx+half*((ny-sy)%ny):row,conjugate,x==cx&&y==cy});
+            modes_.push_back({row,boundary?sx+half*((ny-sy)%ny):row,conjugate,x==cx&&y==cy,
+                xWavenumberScale_*static_cast<double>(key.k),
+                yWavenumberScale_*static_cast<double>(key.l)});
             activeColumns_=std::max(activeColumns_,sx+1);
+            if ((nx%2==0 && sx==nx/2) || (ny%2==0 && y==ny/2)) hasNyquist_=true;
         }
         const double n=static_cast<double>(nx)*ny;
         if (spec.normalization==WVFourierNormalization::forwardUnit) forwardScale_=1/n;
@@ -295,12 +305,74 @@ public:
         Context context{this,{},output,input,{},&consumer}; resources_->pool.run(inverseTask,&context);
         resources_->active.store(false); return WVKernelStatus::ok();
     }
+    bool supportsAdvection(std::size_t targets) const noexcept override {
+        return (targets==3 || targets==4) && !hasNyquist_ &&
+            spec_.grid.xStride==1 && spec_.grid.yStride==spec_.grid.Nx &&
+            spec_.grid.planeStride==spec_.grid.Nx*spec_.grid.Ny;
+    }
+    WVKernelStatus prepareAdvection(std::size_t targets) override {
+        if (!supportsAdvection(targets))
+            return {WVKernelStatusCode::unsupportedOperation,"Retained FFTW advection requires contiguous planes without Nyquist modes."};
+        if (resources_->active.exchange(true))
+            return {WVKernelStatusCode::reentrantExecution,"Shared retained FFTW resource is active."};
+        WVKernelStatus status=WVKernelStatus::ok();
+        try {
+            const auto maximumPlanes=(spec_.grid.planes/workers_)+
+                (spec_.grid.planes%workers_!=0 ? 1 : 0);
+            const auto depth=std::min(std::size_t{4},maximumPlanes);
+            const auto tile=RetainedFFTWResources::checked(depth,modes_.size());
+            const auto packedPerWorker=RetainedFFTWResources::checked(4+2*targets,tile);
+            const auto stagePerWorker=RetainedFFTWResources::checked(
+                targets,RetainedFFTWResources::checked(activeColumns_,spec_.grid.Ny));
+            const auto realPerWorker=RetainedFFTWResources::checked(2,spec_.grid.Nx*spec_.grid.Ny);
+            std::vector<WVComplex64> packed(
+                RetainedFFTWResources::checked(workers_,packedPerWorker));
+            std::vector<WVComplex64> stages(
+                RetainedFFTWResources::checked(workers_,stagePerWorker));
+            std::vector<double> real(RetainedFFTWResources::checked(workers_,realPerWorker));
+            std::vector<WVRetainedAdvectionCounts> workerCounts(workers_);
+            advectionPacked_.swap(packed); advectionStages_.swap(stages);
+            advectionReal_.swap(real); advectionWorkerCounts_.swap(workerCounts);
+            advectionTargets_=targets; advectionDepth_=depth;
+        } catch (const std::bad_alloc&) {
+            status={WVKernelStatusCode::allocationFailure,"Retained FFTW advection workspace allocation failed."};
+        } catch (const std::length_error&) {
+            status={WVKernelStatusCode::sizeOverflow,"Retained FFTW advection workspace exceeds container limits."};
+        } catch (const std::overflow_error& e) {
+            status={WVKernelStatusCode::sizeOverflow,e.what()};
+        }
+        resources_->active.store(false);
+        return status;
+    }
+    WVKernelStatus advection(const WVRetainedAdvectionWork& work,
+        WVRetainedAdvectionCounts& counts) override {
+        if (!supportsAdvection(work.targets))
+            return {WVKernelStatusCode::unsupportedOperation,"Retained FFTW advection is not supported for this plan."};
+        if (advectionTargets_!=work.targets || !advectionDepth_)
+            return {WVKernelStatusCode::invalidConfiguration,"Retained FFTW advection was not prepared for this target count."};
+        if (resources_->active.exchange(true))
+            return {WVKernelStatusCode::reentrantExecution,"Shared retained FFTW resource is active."};
+        std::fill(advectionWorkerCounts_.begin(),advectionWorkerCounts_.end(),WVRetainedAdvectionCounts{});
+        AdvectionContext context{this,&work};
+        resources_->pool.run(advectionTask,&context);
+        WVRetainedAdvectionCounts result;
+        for (const auto& local:advectionWorkerCounts_) {
+            result.columnInverses+=local.columnInverses;
+            result.rowInverses+=local.rowInverses;
+            result.reusedColumns+=local.reusedColumns;
+        }
+        resources_->active.store(false); counts=result;
+        return WVKernelStatus::ok();
+    }
     const char* identifier() const noexcept override { return "fftw-streaming-pruned-tile16"; }
     std::size_t workerCount() const noexcept override { return workers_; }
     std::size_t persistentBytes() const noexcept override {
         return sizeof(*this)+resources_->bytes()+modes_.capacity()*sizeof(Mode)+
             spec_.modes.capacity()*sizeof(WVRetainedModeKey)+spec_.grid.family.capacity()+
-            spec_.retained.family.capacity()+spec_.retained.modeSet.capacity();
+            spec_.retained.family.capacity()+spec_.retained.modeSet.capacity()+
+            (advectionPacked_.capacity()+advectionStages_.capacity())*sizeof(WVComplex64)+
+            advectionReal_.capacity()*sizeof(double)+
+            advectionWorkerCounts_.capacity()*sizeof(WVRetainedAdvectionCounts);
     }
     // Shared resources include the four handles; opaque FFTW allocations and
     // OS worker stacks remain excluded, as for the full FFT adapter.
@@ -309,12 +381,60 @@ public:
     std::size_t sharedResourceBytes() const noexcept override { return resources_->bytes(); }
 private:
     struct Context { RetainedFFTWPlan* plan; WVRealInput realInput; WVRealOutput realOutput; WVComplexInput complexInput; WVComplexOutput complexOutput; const WVRealOutputConsumer* consumer=nullptr; };
+    struct AdvectionContext { RetainedFFTWPlan* plan; const WVRetainedAdvectionWork* work; };
     static WVComplex64 read(WVComplexInput input,std::size_t i) noexcept {
         return input.interleaved ? input.interleaved[i] : WVComplex64{input.real[i],input.imag[i]};
     }
     static void write(WVComplexOutput output,std::size_t i,WVComplex64 value) noexcept {
         if (output.interleaved) output.interleaved[i]=value;
         else { output.real[i]=value.real; output.imag[i]=value.imag; }
+    }
+    static WVComplex64 multiplyByI(WVComplex64 value,double factor) noexcept {
+        return {-factor*value.imag,factor*value.real};
+    }
+    std::size_t partition(std::size_t worker) const noexcept {
+        return (spec_.grid.planes/workers_)*worker+std::min(worker,spec_.grid.planes%workers_);
+    }
+    std::size_t targetField(std::size_t target) const noexcept {
+        return target<2 ? target : target==2 ? 3 : 2;
+    }
+    void gather(WVComplexInput input,WVComplex64* tile,std::size_t first,
+        std::size_t count) const noexcept {
+        const auto& layout=spec_.retained;
+        std::array<WVComplex64,4*32> block;
+        for (std::size_t firstMode=0;firstMode<modes_.size();firstMode+=32) {
+            const auto countModes=std::min(std::size_t{32},modes_.size()-firstMode);
+            for (std::size_t mode=0;mode<countModes;++mode)
+                for (std::size_t lane=0;lane<count;++lane)
+                    block[mode*4+lane]=read(input,(first+lane)*layout.rowStride+
+                        (firstMode+mode)*layout.columnStride);
+            for (std::size_t lane=0;lane<count;++lane)
+                for (std::size_t mode=0;mode<countModes;++mode)
+                    tile[lane*modes_.size()+firstMode+mode]=block[mode*4+lane];
+        }
+    }
+    void scatter(const WVComplex64* values,WVComplex64* scratch,unsigned derivative) const noexcept {
+        std::fill_n(scratch,halfSize_,WVComplex64{});
+        for (std::size_t mode=0;mode<modes_.size();++mode) {
+            const auto& map=modes_[mode]; auto value=values[mode];
+            if (derivative) value=multiplyByI(value,derivative==1 ? map.k : map.l);
+            if (map.conjugate) value.imag=-value.imag;
+            scratch[map.row]=value;
+            if (map.partner!=map.row) scratch[map.partner]={value.real,-value.imag};
+        }
+    }
+    void inverseY(WVComplex64* scratch,WVRetainedAdvectionCounts& counts) const noexcept {
+        ++counts.columnInverses;
+        fftw_execute_dft(resources_->columnInverse_.get(),reinterpret_cast<fftw_complex*>(scratch),
+            reinterpret_cast<fftw_complex*>(scratch));
+    }
+    void inverseX(WVComplex64* scratch,double* output,
+        WVRetainedAdvectionCounts& counts) const noexcept {
+        ++counts.rowInverses;
+        fftw_execute_dft_c2r(resources_->rowInverse_.get(),
+            reinterpret_cast<fftw_complex*>(scratch),output);
+        if (inverseScale_!=1)
+            for (std::size_t i=0;i<spec_.grid.Nx*spec_.grid.Ny;++i) output[i]*=inverseScale_;
     }
     static void forwardTask(void* pointer,std::size_t worker) noexcept {
         auto& c=*static_cast<Context*>(pointer); auto& p=*c.plan;
@@ -381,11 +501,110 @@ private:
             }
         }
     }
+    static void advectionTask(void* pointer,std::size_t worker) noexcept {
+        auto& context=*static_cast<AdvectionContext*>(pointer);
+        auto& plan=*context.plan; const auto& work=*context.work;
+        const auto& grid=plan.spec_.grid; const auto& layout=plan.spec_.retained;
+        const auto plane=grid.Nx*grid.Ny,volume=plane*grid.planes;
+        const auto tileSize=plan.advectionDepth_*plan.modes_.size();
+        const auto packedPerWorker=(4+2*work.targets)*tileSize;
+        const auto stageSize=plan.activeColumns_*grid.Ny;
+        auto* packed=plan.advectionPacked_.data()+worker*packedPerWorker;
+        auto* stages=plan.advectionStages_.data()+worker*work.targets*stageSize;
+        auto* scratch=plan.resources_->scratch.data()+worker*plan.halfSize_;
+        auto* flux=plan.advectionReal_.data()+worker*2*plane;
+        auto* derivative=flux+plane;
+        auto& counts=plan.advectionWorkerCounts_[worker];
+        const auto begin=plan.partition(worker),end=plan.partition(worker+1);
+        const auto halfWidth=grid.Nx/2+1;
+        for (auto first=begin;first<end;first+=plan.advectionDepth_) {
+            const auto count=std::min(plan.advectionDepth_,end-first);
+            for (std::size_t field=0;field<4;++field)
+                plan.gather(work.base[field],packed+field*tileSize,first,count);
+            for (std::size_t target=0;target<work.targets;++target)
+                plan.gather(work.targetSpectra[target].input(),
+                    packed+(4+target)*tileSize,first,count);
+            for (std::size_t lane=0;lane<count;++lane) {
+                const auto z=first+lane,physicalOffset=z*plane;
+                for (std::size_t field=0;field<4;++field) {
+                    plan.scatter(packed+field*tileSize+lane*plan.modes_.size(),scratch,0);
+                    plan.inverseY(scratch,counts);
+                    const auto target=field<2 ? field : field==3 ? 2 : 3;
+                    if (target<work.targets)
+                        for (std::size_t y=0;y<grid.Ny;++y)
+                            std::copy_n(scratch+y*halfWidth,plan.activeColumns_,
+                                stages+target*stageSize+y*plan.activeColumns_);
+                    plan.inverseX(scratch,work.fields.data+field*volume+physicalOffset,counts);
+                }
+                for (std::size_t target=0;target<work.targets;++target) {
+                    const auto field=plan.targetField(target);
+                    std::fill_n(flux,plane,0.0);
+                    for (std::size_t axis=0;axis<3;++axis) {
+                        if (axis==0) {
+                            std::fill_n(scratch,plan.halfSize_,WVComplex64{});
+                            const auto* stage=stages+target*stageSize;
+                            for (std::size_t y=0;y<grid.Ny;++y)
+                                for (std::size_t x=0;x<plan.activeColumns_;++x)
+                                    scratch[x+y*halfWidth]=multiplyByI(
+                                        stage[x+y*plan.activeColumns_],
+                                        plan.xWavenumberScale_*static_cast<double>(x));
+                            ++counts.reusedColumns;
+                        } else {
+                            const auto* source=packed+(axis==1 ? field : 4+target)*tileSize+
+                                lane*plan.modes_.size();
+                            plan.scatter(source,scratch,axis==1 ? 2U : 0U);
+                            plan.inverseY(scratch,counts);
+                        }
+                        plan.inverseX(scratch,derivative,counts);
+                        const auto* velocity=work.fields.data+axis*volume+physicalOffset;
+                        const auto* etaField=work.fields.data+3*volume+physicalOffset;
+                        for (std::size_t i=0;i<plane;++i) {
+                            const double correction=field==3 && axis==2
+                                ? etaField[i]*work.densityCorrection.data[z] : 0.0;
+                            flux[i]-=velocity[i]*(derivative[i]+correction);
+                        }
+                    }
+                    fftw_execute_dft_r2c(plan.resources_->rowForward_.get(),flux,
+                        reinterpret_cast<fftw_complex*>(scratch));
+                    fftw_execute_dft(plan.resources_->columnForward_.get(),
+                        reinterpret_cast<fftw_complex*>(scratch),reinterpret_cast<fftw_complex*>(scratch));
+                    auto* projected=packed+(4+work.targets+target)*tileSize+
+                        lane*plan.modes_.size();
+                    for (std::size_t mode=0;mode<plan.modes_.size();++mode) {
+                        const auto& map=plan.modes_[mode]; auto value=scratch[map.row];
+                        value.real*=plan.forwardScale_;
+                        value.imag*=map.conjugate ? -plan.forwardScale_ : plan.forwardScale_;
+                        if (map.self) value.imag=0;
+                        projected[mode]=value;
+                    }
+                }
+            }
+            std::array<WVComplex64,4*32> block;
+            for (std::size_t target=0;target<work.targets;++target)
+                for (std::size_t firstMode=0;firstMode<plan.modes_.size();firstMode+=32) {
+                    const auto countModes=std::min(std::size_t{32},plan.modes_.size()-firstMode);
+                    const auto* projected=packed+(4+work.targets+target)*tileSize;
+                    for (std::size_t lane=0;lane<count;++lane)
+                        for (std::size_t mode=0;mode<countModes;++mode)
+                            block[mode*4+lane]=projected[lane*plan.modes_.size()+firstMode+mode];
+                    for (std::size_t mode=0;mode<countModes;++mode)
+                        for (std::size_t lane=0;lane<count;++lane)
+                            write(work.targetSpectra[target],(first+lane)*layout.rowStride+
+                                (firstMode+mode)*layout.columnStride,block[mode*4+lane]);
+                }
+        }
+    }
     WVRetainedHorizontalSpecification spec_;
     std::size_t workers_,halfSize_,activeColumns_=0;
     std::vector<Mode> modes_;
     double forwardScale_=1,inverseScale_=1;
+    double xWavenumberScale_=0,yWavenumberScale_=0;
     std::shared_ptr<RetainedFFTWResources> resources_;
+    bool hasNyquist_=false;
+    std::size_t advectionTargets_=0,advectionDepth_=0;
+    std::vector<WVComplex64> advectionPacked_,advectionStages_;
+    std::vector<double> advectionReal_;
+    std::vector<WVRetainedAdvectionCounts> advectionWorkerCounts_;
 };
 
 } // namespace

@@ -39,6 +39,9 @@ struct WVVariableExecutionOptions {
     // Consume completed inverse planes in nonlinear advection, retaining the
     // ordinary derivative output and success-only evaluator capture.
     bool fusedDerivativeAdvection = false;
+    // Fuse first physical-field production and nonlinear advection in short
+    // native horizontal tiles. Direct callers opt in; other paths remain valid.
+    bool tiledNonlinear = false;
     // Boussinesq projection needs the grouped wave-F result only at the exact
     // zero horizontal mode. Disable for a full-coverage qualification oracle.
     bool inertialOnlyProjection = true;

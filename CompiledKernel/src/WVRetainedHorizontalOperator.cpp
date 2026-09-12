@@ -263,6 +263,90 @@ WVKernelStatus WVRetainedHorizontalOperator::inverseAndConsume(WVRetainedHorizon
     for (std::size_t p=0;p<g.planes;++p) consumePlane(p);
     return WVKernelStatus::ok();
 }
+WVKernelStatus WVRetainedHorizontalOperator::prepareAdvection(
+    WVRetainedHorizontalWorkspace& workspace,std::size_t targets) const {
+    auto& w=*workspace.data_;
+    if (w.owner!=data_)
+        return {WVKernelStatusCode::invalidConfiguration,"Workspace belongs to another horizontal operator."};
+    if (!w.retained || !w.retained->supportsAdvection(targets))
+        return {WVKernelStatusCode::unsupportedOperation,"Workspace has no compatible retained advection schedule."};
+    ActiveCall guard(w.active);
+    if (!guard.entered)
+        return {WVKernelStatusCode::reentrantExecution,"Horizontal workspace is active."};
+    return w.retained->prepareAdvection(targets);
+}
+bool WVRetainedHorizontalOperator::supportsAdvection(
+    const WVRetainedHorizontalWorkspace& workspace,std::size_t targets) const noexcept {
+    const auto& w=*workspace.data_;
+    return w.owner==data_ && w.retained && w.retained->supportsAdvection(targets);
+}
+WVKernelStatus WVRetainedHorizontalOperator::advection(
+    WVRetainedHorizontalWorkspace& workspace,const WVRetainedAdvectionWork& work,
+    WVRetainedAdvectionCounts& counts) const {
+    auto& w=*workspace.data_; const auto& d=*data_;
+    if (w.owner!=data_)
+        return {WVKernelStatusCode::invalidConfiguration,"Workspace belongs to another horizontal operator."};
+    if (work.targets!=3 && work.targets!=4)
+        return {WVKernelStatusCode::invalidConfiguration,"Retained advection requires three or four targets."};
+    if (!w.retained || !w.retained->supportsAdvection(work.targets))
+        return {WVKernelStatusCode::unsupportedOperation,"Workspace has no compatible retained advection schedule."};
+    const auto volumeBytes=product(product(d.planeSize,d.spec.grid.planes),sizeof(double));
+    if (volumeBytes>static_cast<std::size_t>(PTRDIFF_MAX)/4)
+        return {WVKernelStatusCode::sizeOverflow,"Advection physical-field span overflows ptrdiff_t."};
+    const auto fieldBytes=4*volumeBytes;
+    if (work.fields.bytes<fieldBytes)
+        return {WVKernelStatusCode::invalidShape,"Advection physical-field capacity is too small."};
+    if (!addressFits(work.fields.data,fieldBytes,alignof(double)))
+        return {WVKernelStatusCode::invalidPointer,"Invalid advection physical-field storage."};
+    const auto correctionBytes=product(d.spec.grid.planes,sizeof(double));
+    if (work.densityCorrection.bytes<correctionBytes)
+        return {WVKernelStatusCode::invalidShape,"Advection density-correction capacity is too small."};
+    if (!addressFits(work.densityCorrection.data,correctionBytes,alignof(double)))
+        return {WVKernelStatusCode::invalidPointer,"Invalid advection density-correction storage."};
+    if (overlap(work.fields.data,fieldBytes,work.densityCorrection.data,correctionBytes))
+        return {WVKernelStatusCode::overlappingArrays,"Advection fields overlap density correction."};
+    for (std::size_t field=0;field<4;++field) {
+        auto status=validateStorage(d.spec.retained.representation,d.complexSpan,work.base[field]);
+        if (!status) return status;
+        if (realOverlap(work.fields.data,fieldBytes,work.base[field],d.complexSpan) ||
+            realOverlap(work.densityCorrection.data,correctionBytes,work.base[field],d.complexSpan))
+            return {WVKernelStatusCode::overlappingArrays,"Advection base spectra overlap real storage."};
+    }
+    for (std::size_t target=0;target<work.targets;++target) {
+        const auto output=work.targetSpectra[target].input();
+        auto status=validateStorage(d.spec.retained.representation,d.complexSpan,output);
+        if (!status) return status;
+        if (realOverlap(work.fields.data,fieldBytes,output,d.complexSpan) ||
+            realOverlap(work.densityCorrection.data,correctionBytes,output,d.complexSpan))
+            return {WVKernelStatusCode::overlappingArrays,"Advection target spectra overlap real storage."};
+        for (std::size_t field=0;field<4;++field)
+            if (storageOverlap(output,d.complexSpan,work.base[field],d.complexSpan))
+                return {WVKernelStatusCode::overlappingArrays,"Advection target spectra overlap base spectra."};
+        for (std::size_t other=0;other<target;++other)
+            if (storageOverlap(output,d.complexSpan,work.targetSpectra[other].input(),d.complexSpan))
+                return {WVKernelStatusCode::overlappingArrays,"Advection target spectra overlap each other."};
+    }
+    // Every input is checked before the first target or physical field can be written.
+    const auto& layout=d.spec.retained;
+    const auto hermitian=[&](WVComplexInput input) {
+        for (std::size_t mode=0;mode<d.mapping.size();++mode) if (d.mapping[mode].self)
+            for (std::size_t plane=0;plane<d.spec.grid.planes;++plane)
+                if (read(input,plane*layout.rowStride+mode*layout.columnStride).imag!=0) return false;
+        return true;
+    };
+    for (const auto& input:work.base) if (!hermitian(input))
+        return {WVKernelStatusCode::invalidConfiguration,"Advection base self-conjugate values must be real."};
+    for (std::size_t target=0;target<work.targets;++target)
+        if (!hermitian(work.targetSpectra[target].input()))
+            return {WVKernelStatusCode::invalidConfiguration,"Advection target self-conjugate values must be real."};
+    for (std::size_t plane=0;plane<d.spec.grid.planes;++plane)
+        if (!std::isfinite(work.densityCorrection.data[plane]))
+            return {WVKernelStatusCode::invalidConfiguration,"Advection density correction must be finite."};
+    ActiveCall guard(w.active);
+    if (!guard.entered)
+        return {WVKernelStatusCode::reentrantExecution,"Horizontal workspace is active."};
+    return w.retained->advection(work,counts);
+}
 WVKernelStatus WVRetainedHorizontalOperator::spatialDerivative(WVRetainedHorizontalWorkspace& workspace, WVRealInput input, WVRealOutput output, bool xDerivative) const {
     auto& w = *workspace.data_; const auto& d = *data_;
     if (!w.derivativePrepared) return {WVKernelStatusCode::unsupportedOperation,"Workspace omitted full-grid derivative preparation."};
