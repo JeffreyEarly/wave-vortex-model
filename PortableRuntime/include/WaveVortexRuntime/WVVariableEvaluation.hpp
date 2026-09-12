@@ -43,6 +43,9 @@ struct WVVariableEvaluationMetrics {
 struct WVVariableProducerMetrics {
   std::size_t stateValidations = 0, phasePreparations = 0;
   std::size_t derivedValidations = 0;
+  std::size_t coefficientAssemblies = 0, verticalPreparations = 0;
+  std::size_t verticalOperatorExecutions = 0;
+  std::size_t horizontalSpectrumReuses = 0, preparedVerticalDerivatives = 0;
   std::size_t horizontalSpeedReductions = 0;
   std::size_t verticalSpeedReductions = 0;
   std::size_t energyReductions = 0;

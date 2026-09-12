@@ -1,0 +1,22 @@
+{
+  "directory": "OceanKitRepositories/wave-vortex-model-benchmark-artifacts/shared-gradient-pipeline-20260911",
+  "files": {
+    "qualification/protocol.json": "dab3d9dac2adea11ae183fdcd4bd4eea50fed652f49bdb417ed9085ea20dae43",
+    "qualification/pairs.json": "6d9818e19b5ae60900de57abdbdeabf479718a9364642baa47d15004ffdb0343",
+    "qualification/summary.json": "5ac0f106d2c4251163bff6ae78f32efe186ff898c7076f1907831e9f9a60b568",
+    "qualification-manifest.json": "d1ea8a3b5b1b43b2b6b12f2e59a05d4b736a69df935199c5cf6baac1b62b76d4",
+    "verification.json": "fb32fad3987a8ea539389487d7f5597b882f4693408b150e36f1ef0bb247d748",
+    "low-memory-smoke/summary.json": "38c87d861d768111e721cad50422f488f530720b6af2259f76289ca9d17107b8",
+    "prepare_bouss_fixture.py": "c506d91f2892b9bd767f1c799045959444e0e956e926a22ec65109c79ab7d1f3",
+    "profile_bouss.py": "3946d8d04e753f224ed25320f205252c26be250239326de0d58238c825790b62",
+    "bouss-manifest.json": "08a00124434032aff8e069f9817d051c06f1bb760a4407c8f99eaefb5188c816",
+    "run_qualification.py": "2f7bd9b5221c6b562edb0d22758089ab6143e13b158ca20f3bd7cbe6f7d9ae99",
+    "run_model_adoption.py": "1d79353dd96421ecab5610291c60eecbabfc3bddbcbfd413b9f4ddfbdbcefec4",
+    "qualification.log": "c39d57045ff6e4a56ddde7decd50c21c0b6f0af104ceab9b70518b1e0608bc80",
+    "low-memory.log": "5d6d895b0d2fd8fe56912076a4862db41469e0ac1437d41aabfa3fa8f2f49768",
+    "boussinesq-256x256x129-no-observers-baseline-integration/sample-summary.json": "84198792a3cd9b9491487a0447f896d2ef97a91cfdda4c323084f0aec60be2b6",
+    "boussinesq-256x256x129-no-observers-baseline-integration/sample.txt": "b66243be6a65b6a2aa5e7bf8a7397266daaf5d981cdb2853699122382949d275",
+    "README.md": "cd4cca38bfa28e1983ee58c630594990cfb16d6a8a85ab1932c82964bd6a5b2b",
+    "low_memory_smoke.py": "437733234b2d4ed482291cc5730be7497a43dddca3f635dc13b42b71b6580aef"
+  }
+}

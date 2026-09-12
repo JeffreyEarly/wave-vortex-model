@@ -334,6 +334,11 @@ public:
     metrics.variableProducers.stateValidations=producers.stateValidationCount;
     metrics.variableProducers.phasePreparations=producers.phasePreparationCount;
     metrics.variableProducers.derivedValidations=producers.derivedValidationCount;
+    metrics.variableProducers.coefficientAssemblies=producers.coefficientAssemblyCount;
+    metrics.variableProducers.verticalOperatorExecutions=producers.verticalOperatorExecutionCount;
+    metrics.variableProducers.verticalPreparations=producers.verticalPreparationCount;
+    metrics.variableProducers.horizontalSpectrumReuses=producers.horizontalSpectrumReuseCount;
+    metrics.variableProducers.preparedVerticalDerivatives=producers.preparedVerticalDerivativeCount;
     metrics.variableProducers.tendencyReconstructions=producers.tendencyReconstructionCount;
     if(!system_->fieldEvaluationService())
       metrics.variableProducers.reconstructions=producers.reconstructionCount;
@@ -421,6 +426,11 @@ public:
     metrics.variableProducers.stateValidations=producers.stateValidationCount;
     metrics.variableProducers.phasePreparations=producers.phasePreparationCount;
     metrics.variableProducers.derivedValidations=producers.derivedValidationCount;
+    metrics.variableProducers.coefficientAssemblies=producers.coefficientAssemblyCount;
+    metrics.variableProducers.verticalOperatorExecutions=producers.verticalOperatorExecutionCount;
+    metrics.variableProducers.verticalPreparations=producers.verticalPreparationCount;
+    metrics.variableProducers.horizontalSpectrumReuses=producers.horizontalSpectrumReuseCount;
+    metrics.variableProducers.preparedVerticalDerivatives=producers.preparedVerticalDerivativeCount;
     metrics.variableProducers.tendencyReconstructions=producers.tendencyReconstructionCount;
     if(!system_->fieldEvaluationService())
       metrics.variableProducers.reconstructions=producers.reconstructionCount;

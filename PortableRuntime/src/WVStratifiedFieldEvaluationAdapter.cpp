@@ -564,6 +564,11 @@ WVStratifiedFieldEvaluationAdapter::producerMetrics() const noexcept {
     result.stateValidations=metrics.stateValidationCount;
     result.phasePreparations=metrics.phasePreparationCount;
     result.derivedValidations=metrics.derivedValidationCount;
+    result.coefficientAssemblies=metrics.coefficientAssemblyCount;
+    result.verticalOperatorExecutions=metrics.verticalOperatorExecutionCount;
+    result.verticalPreparations=metrics.verticalPreparationCount;
+    result.horizontalSpectrumReuses=metrics.horizontalSpectrumReuseCount;
+    result.preparedVerticalDerivatives=metrics.preparedVerticalDerivativeCount;
     result.tendencyReconstructions=metrics.tendencyReconstructionCount;
     result.reconstructions=metrics.reconstructionCount;
   } else if(boussinesqKernel_) {
@@ -571,6 +576,11 @@ WVStratifiedFieldEvaluationAdapter::producerMetrics() const noexcept {
     result.stateValidations=metrics.stateValidationCount;
     result.phasePreparations=metrics.phasePreparationCount;
     result.derivedValidations=metrics.derivedValidationCount;
+    result.coefficientAssemblies=metrics.coefficientAssemblyCount;
+    result.verticalOperatorExecutions=metrics.verticalOperatorExecutionCount;
+    result.verticalPreparations=metrics.verticalPreparationCount;
+    result.horizontalSpectrumReuses=metrics.horizontalSpectrumReuseCount;
+    result.preparedVerticalDerivatives=metrics.preparedVerticalDerivativeCount;
     result.tendencyReconstructions=metrics.tendencyReconstructionCount;
     result.reconstructions=metrics.reconstructionCount;
   } else {

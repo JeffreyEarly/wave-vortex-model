@@ -1,9 +1,11 @@
 #include "WaveVortexKernel/WVTransformBoussinesqKernel.hpp"
+#include "WVPreparedFieldCache.hpp"
 #include "WVSpectralValidation.hpp"
 #include "WVPreparedModeExecutor.hpp"
 #include "WVVariableComplexBuffer.hpp"
 #include <algorithm>
 #include <cmath>
+#include <limits>
 #include <system_error>
 
 namespace wavevortex {
@@ -125,20 +127,28 @@ WVKernelStatus WVTransformBoussinesqKernel::create(std::shared_ptr<const WVStrat
         const auto maximumElements=static_cast<std::size_t>(PTRDIFF_MAX);
         if (modalElements>maximumElements || gridElements>maximumElements-modalElements) throw std::overflow_error("Boussinesq spectral scratch overflow.");
         c.spectralStorage_=std::make_unique<WVVariableComplexBuffer>(modalElements+gridElements,representation);
+        if (options.sharedFieldGradients)
+            c.fieldCache_=std::make_unique<kernel_detail::WVPreparedFieldCache>(2*c.S_,c.H_,representation);
         c.pointwise_=std::make_unique<kernel_detail::WVPreparedModeExecutor>(std::min(options.pointwiseWorkers,c.R_));
         c.phase_.resize(c.S_); c.real_.resize((options.streamedNonlinear ? 6 : 11)*c.R_);
         auto& s=c.storage_; s.sharedScientificBytes=c.source_->persistentBytes(); s.preparedBytes=c.horizontal_->persistentBytes();
         s.workspaceBytes=c.horizontalWorkspace_->persistentBytes()+sizeof(WVVariableComplexBuffer)+c.pointwise_->persistentBytes(); s.providerBytesLowerBound=c.horizontal_->providerBytesLowerBound(); s.planBytesLowerBound=c.horizontalWorkspace_->planBytesLowerBound();
         for (std::size_t i=0;i<c.vertical_.size();++i) { s.preparedBytes+=c.vertical_[i]->persistentBytes(); s.workspaceBytes+=c.verticalWorkspace_[i]->persistentBytes(); }
-        s.spectralScratchBytes=c.spectralStorage_->capacityBytes()+c.phase_.capacity()*sizeof(WVComplex64);
+        c.baseSpectralScratchBytes_=c.spectralStorage_->capacityBytes()+c.phase_.capacity()*sizeof(WVComplex64);
+        s.spectralScratchBytes=c.baseSpectralScratchBytes_;
         s.realScratchBytes=c.real_.capacity()*sizeof(double); s.factorBytes=c.factors_.capacity()*sizeof(WVBoussinesqModeFactors);
         result=std::move(candidate); return WVKernelStatus::ok();
     } catch (const std::bad_alloc&) { return {WVKernelStatusCode::allocationFailure,"Boussinesq setup allocation failed."}; }
       catch (const std::overflow_error& e) { return {WVKernelStatusCode::sizeOverflow,e.what()}; }
       catch (const std::system_error& e) { return {WVKernelStatusCode::allocationFailure,e.what()}; }
 }
+const WVBoussinesqStorage& WVTransformBoussinesqKernel::storage() const noexcept {
+    storage_.spectralScratchBytes=baseSpectralScratchBytes_+
+        (fieldCache_ ? fieldCache_->capacityBytes() : 0);
+    return storage_;
+}
 std::size_t WVTransformBoussinesqKernel::persistentBytes() const noexcept {
-    const auto& s=storage_; return sizeof(*this)+s.sharedScientificBytes+s.preparedBytes+s.workspaceBytes+s.spectralScratchBytes+s.realScratchBytes+s.factorBytes;
+    const auto& s=storage(); return sizeof(*this)+s.sharedScientificBytes+s.preparedBytes+s.workspaceBytes+s.spectralScratchBytes+s.realScratchBytes+s.factorBytes;
 }
 WVKernelStatus WVTransformBoussinesqKernel::spectral(WVComplexConstView a) const {
     if (a.shape.rows!=geometry().Nj || a.shape.columns!=geometry().Nkl) return {WVKernelStatusCode::invalidShape,"Expected canonical [Nj,Nkl] coefficients."};
@@ -231,6 +241,19 @@ std::size_t WVTransformBoussinesqKernel::stateEvaluationComponent(
         return preparedStateComponents_[i];
     return 0;
 }
+std::size_t WVTransformBoussinesqKernel::fieldPreparationView(
+    const WVCoefficients& a) const noexcept {
+    const auto sameView=[](WVComplexConstView x,WVComplexConstView y) {
+        return x.data==y.data && x.shape.rows==y.shape.rows && x.shape.columns==y.shape.columns;
+    };
+    if (!stateEvaluationActive_) return 0;
+    for (std::size_t i=0;i<preparedStateViewCount_;++i) if (
+        sameView(a.Ap,preparedStateViews_[i].coefficients.Ap) &&
+        sameView(a.Am,preparedStateViews_[i].coefficients.Am) &&
+        sameView(a.A0,preparedStateViews_[i].coefficients.A0))
+        return preparedStateViewIds_[i];
+    return 0;
+}
 WVKernelStatus WVTransformBoussinesqKernel::validateStateForCall(const WVState& a) {
     if (!stateEvaluationActive_) return state(a);
     if (!matchesStateEvaluation(a))
@@ -243,6 +266,7 @@ WVKernelStatus WVTransformBoussinesqKernel::preparePhaseForCall(const WVState& a
             return {WVKernelStatusCode::invalidConfiguration,"State does not match the active Boussinesq evaluation."};
         return WVKernelStatus::ok();
     }
+    if (fieldCache_) fieldCache_->clear();
     return preparePhase(a.t,a.t0);
 }
 WVKernelStatus WVTransformBoussinesqKernel::prepareProjectionPhaseForCall(double t,double t0) {
@@ -264,9 +288,12 @@ WVKernelStatus WVTransformBoussinesqKernel::beginStateEvaluation(const WVState& 
     preparedState_=a;
     preparedStateViews_[0]=a;
     preparedStateComponents_[0]=0;
+    preparedStateViewIds_={};
+    nextStateViewId_=1;
     preparedStateViewCount_=1;
     preparedStateOwner_=evaluationOwner;
     stateEvaluationActive_=true;
+    if (fieldCache_) fieldCache_->clear();
     // state(a) validated this exact registered view, including every phase
     // product, so phase preparation must not repeat the same finite scan.
     s=preparePhase(a.t,a.t0,&a);
@@ -274,6 +301,7 @@ WVKernelStatus WVTransformBoussinesqKernel::beginStateEvaluation(const WVState& 
         preparedState_={};
         preparedStateViews_[0]={};
         preparedStateComponents_[0]=0;
+        preparedStateViewIds_[0]=0;
         preparedStateViewCount_=0;
         preparedStateOwner_=nullptr;
         stateEvaluationActive_=false;
@@ -299,8 +327,12 @@ WVKernelStatus WVTransformBoussinesqKernel::addStateEvaluationView(
     if (preparedStateViewCount_==preparedStateViews_.size())
         return {WVKernelStatusCode::invalidConfiguration,"Boussinesq state evaluation view capacity exceeded."};
     auto s=state(a); if (!s) return s;
+    if (nextStateViewId_==std::numeric_limits<std::size_t>::max())
+        return {WVKernelStatusCode::sizeOverflow,"Boussinesq state view generation overflow."};
     preparedStateViews_[preparedStateViewCount_]=a;
-    preparedStateComponents_[preparedStateViewCount_++]=componentIdentity;
+    preparedStateComponents_[preparedStateViewCount_]=componentIdentity;
+    preparedStateViewIds_[preparedStateViewCount_]=nextStateViewId_++;
+    ++preparedStateViewCount_;
     return WVKernelStatus::ok();
 }
 WVKernelStatus WVTransformBoussinesqKernel::removeStateEvaluationView(
@@ -322,13 +354,16 @@ WVKernelStatus WVTransformBoussinesqKernel::removeStateEvaluationView(
         sameView(a.coefficients.Ap,preparedStateViews_[i].coefficients.Ap) &&
         sameView(a.coefficients.Am,preparedStateViews_[i].coefficients.Am) &&
         sameView(a.coefficients.A0,preparedStateViews_[i].coefficients.A0)) {
+        if (fieldCache_) fieldCache_->invalidateView(preparedStateViewIds_[i]);
         for(std::size_t j=i+1;j<preparedStateViewCount_;++j) {
             preparedStateViews_[j-1]=preparedStateViews_[j];
             preparedStateComponents_[j-1]=preparedStateComponents_[j];
+            preparedStateViewIds_[j-1]=preparedStateViewIds_[j];
         }
         --preparedStateViewCount_;
         preparedStateViews_[preparedStateViewCount_]={};
         preparedStateComponents_[preparedStateViewCount_]=0;
+        preparedStateViewIds_[preparedStateViewCount_]=0;
         return WVKernelStatus::ok();
     }
     return {WVKernelStatusCode::invalidConfiguration,
@@ -338,9 +373,11 @@ WVKernelStatus WVTransformBoussinesqKernel::endStateEvaluation() {
     ActiveCall guard(active_); if (!guard.entered) return reentrant();
     if (!stateEvaluationActive_)
         return {WVKernelStatusCode::invalidConfiguration,"No Boussinesq state evaluation is active."};
+    if (fieldCache_) fieldCache_->clear();
     preparedState_={};
     for (auto& stateView:preparedStateViews_) stateView={};
     preparedStateComponents_={};
+    preparedStateViewIds_={};
     preparedStateViewCount_=0;
     preparedStateOwner_=nullptr;
     stateEvaluationActive_=false;
@@ -366,6 +403,7 @@ WVKernelStatus WVTransformBoussinesqKernel::preparedPhase(const WVState& a,WVCom
 WVComplexOutput WVTransformBoussinesqKernel::modalView(std::size_t slot) { return spectralStorage_->output(slot*S_,S_); }
 WVComplexOutput WVTransformBoussinesqKernel::gridView(std::size_t slot) { return spectralStorage_->output(6*S_+slot*H_,H_); }
 WVKernelStatus WVTransformBoussinesqKernel::vertical(std::size_t operation,WVComplexInput a,WVComplexOutput b) {
+    ++metrics_.verticalOperatorExecutionCount;
     return vertical_[operation]->execute(*verticalWorkspace_[operation],a,b);
 }
 WVKernelStatus WVTransformBoussinesqKernel::project(const double* a,WVComplexOutput b,WVBoussinesqFamily family) {
@@ -479,39 +517,81 @@ WVKernelStatus WVTransformBoussinesqKernel::reconstruct(const WVCoefficients& a,
     if (field==WVBoussinesqField::ssv) field=WVBoussinesqField::v;
     const bool G=field==WVBoussinesqField::w || field==WVBoussinesqField::eta;
     const bool dz=derivative==WVBoussinesqDerivative::z;
-    const auto wave=modalView(),balancedView=modalView(1);
-    for (std::size_t i=0;i<S_;++i) {
-        const auto& f=factors_[i]; const auto mode=i/g.Nj; WVComplex64 p{},m{},z{};
-        switch(field) {
-            case WVBoussinesqField::u: p=f.UAp; m=conjugate(p); z=f.UA0; break;
-            case WVBoussinesqField::v: p=f.VAp; m=conjugate(p); z=f.VA0; break;
-            case WVBoussinesqField::w: p=f.WAp; m=p; break;
-            case WVBoussinesqField::eta: p={f.NAp,0}; m={-f.NAp,0}; z={f.NA0,0}; break;
-            case WVBoussinesqField::pi: p={f.NAp,0}; m={-f.NAp,0}; z={f.PA0,0}; break;
-            case WVBoussinesqField::p: p={g.rho0*g.g*f.NAp,0}; m=scale(p,-1); z={g.rho0*g.g*f.PA0,0}; break;
-            case WVBoussinesqField::psi: z={f.psi,0}; break;
-            case WVBoussinesqField::qgpv: z={f.qgpv,0}; break;
-            case WVBoussinesqField::zetaZ:
-                p=subtract(multiply(f.VAp,{0,g.k[mode]}),multiply(f.UAp,{0,g.l[mode]}));
-                m=subtract(multiply(conjugate(f.VAp),{0,g.k[mode]}),multiply(conjugate(f.UAp),{0,g.l[mode]}));
-                z=subtract(multiply(f.VA0,{0,g.k[mode]}),multiply(f.UA0,{0,g.l[mode]})); break;
-            default: return unsupported();
-        }
-        WVComplex64 value{},balanced{};
-        if (selected(f,component,true)) value=add(multiply(multiply(p,a.Ap.data[i]),phase_[i]),multiply(multiply(m,a.Am.data[i]),conjugate(phase_[i])));
-        if (selected(f,component,false)) balanced=multiply(z,a.A0.data[i]);
-        if (derivative==WVBoussinesqDerivative::x) { value=multiply(value,{0,g.k[mode]}); balanced=multiply(balanced,{0,g.k[mode]}); }
-        if (derivative==WVBoussinesqDerivative::y) { value=multiply(value,{0,g.l[mode]}); balanced=multiply(balanced,{0,g.l[mode]}); }
-        write(wave,i,value); write(balancedView,i,balanced);
+    kernel_detail::WVPreparedFieldCache::Entry* prepared=nullptr;
+    if (countPrimary && fieldCache_) {
+        auto s=fieldCache_->acquire({fieldPreparationView(a),static_cast<std::size_t>(field),
+            static_cast<std::size_t>(component)},prepared);
+        if (!s) return s;
     }
-    const auto combined=gridView(),balancedGrid=gridView(1);
-    auto s=vertical(G ? 6 : 4,wave.input(),combined); if (!s) return s;
-    s=vertical(G ? 2 : 0,balancedView.input(),balancedGrid); if (!s) return s;
-    for (std::size_t i=0;i<H_;++i) write(combined,i,add(read(combined.input(),i),read(balancedGrid.input(),i)));
-    s=horizontal_->inverse(*horizontalWorkspace_,combined.input(),{b,R_*sizeof(double)}); if (!s) return s;
+    const auto wave=prepared ? prepared->modal(0,S_) : modalView();
+    const auto balancedView=prepared ? prepared->modal(S_,S_) : modalView(1);
+    if (!prepared || !prepared->modalReady) {
+        ++metrics_.coefficientAssemblyCount;
+        for (std::size_t i=0;i<S_;++i) {
+            const auto& f=factors_[i]; const auto mode=i/g.Nj; WVComplex64 p{},m{},z{};
+            switch(field) {
+                case WVBoussinesqField::u: p=f.UAp; m=conjugate(p); z=f.UA0; break;
+                case WVBoussinesqField::v: p=f.VAp; m=conjugate(p); z=f.VA0; break;
+                case WVBoussinesqField::w: p=f.WAp; m=p; break;
+                case WVBoussinesqField::eta: p={f.NAp,0}; m={-f.NAp,0}; z={f.NA0,0}; break;
+                case WVBoussinesqField::pi: p={f.NAp,0}; m={-f.NAp,0}; z={f.PA0,0}; break;
+                case WVBoussinesqField::p: p={g.rho0*g.g*f.NAp,0}; m=scale(p,-1); z={g.rho0*g.g*f.PA0,0}; break;
+                case WVBoussinesqField::psi: z={f.psi,0}; break;
+                case WVBoussinesqField::qgpv: z={f.qgpv,0}; break;
+                case WVBoussinesqField::zetaZ:
+                    p=subtract(multiply(f.VAp,{0,g.k[mode]}),multiply(f.UAp,{0,g.l[mode]}));
+                    m=subtract(multiply(conjugate(f.VAp),{0,g.k[mode]}),multiply(conjugate(f.UAp),{0,g.l[mode]}));
+                    z=subtract(multiply(f.VA0,{0,g.k[mode]}),multiply(f.UA0,{0,g.l[mode]})); break;
+                default: return unsupported();
+            }
+            WVComplex64 value{},balanced{};
+            if (selected(f,component,true)) value=add(multiply(multiply(p,a.Ap.data[i]),phase_[i]),multiply(multiply(m,a.Am.data[i]),conjugate(phase_[i])));
+            if (selected(f,component,false)) balanced=multiply(z,a.A0.data[i]);
+            if (!prepared && derivative==WVBoussinesqDerivative::x) { value=multiply(value,{0,g.k[mode]}); balanced=multiply(balanced,{0,g.k[mode]}); }
+            if (!prepared && derivative==WVBoussinesqDerivative::y) { value=multiply(value,{0,g.l[mode]}); balanced=multiply(balanced,{0,g.l[mode]}); }
+            write(wave,i,value); write(balancedView,i,balanced);
+        }
+        if (prepared) prepared->modalReady=true;
+    }
+    const auto combined=prepared ? prepared->grid() : gridView();
+    if (!prepared || !prepared->gridReady) {
+        const auto balancedGrid=gridView(1);
+        ++metrics_.verticalPreparationCount;
+        auto s=vertical(G ? 6 : 4,wave.input(),combined); if (!s) return s;
+        ++metrics_.verticalPreparationCount;
+        s=vertical(G ? 2 : 0,balancedView.input(),balancedGrid); if (!s) return s;
+        for (std::size_t i=0;i<H_;++i) write(combined,i,add(read(combined.input(),i),read(balancedGrid.input(),i)));
+        if (prepared) prepared->gridReady=true;
+    } else ++metrics_.horizontalSpectrumReuseCount;
+    auto horizontalInput=combined.input();
+    if (prepared && (derivative==WVBoussinesqDerivative::x || derivative==WVBoussinesqDerivative::y)) {
+        const auto derivativeGrid=gridView();
+        pointwise_->execute(H_,[&](std::size_t begin,std::size_t end) {
+            for (std::size_t i=begin;i<end;++i) {
+                const auto mode=i/g.Nz;
+                const WVComplex64 multiplier={0,derivative==WVBoussinesqDerivative::x ? g.k[mode] : g.l[mode]};
+                write(derivativeGrid,i,multiply(read(combined.input(),i),multiplier));
+            }
+        });
+        horizontalInput=derivativeGrid.input();
+    } else if (prepared && dz) {
+        auto s=vertical(G ? 3 : 1,combined.input(),modalView()); if (!s) return s;
+        if (G) pointwise_->execute(S_,[&](std::size_t begin,std::size_t end) {
+            for (std::size_t i=begin;i<end;++i)
+                write(modalView(),i,scale(read(modalView().input(),i),1/g.h_0[i%g.Nj]));
+        });
+        s=vertical(G ? 0 : 2,modalView().input(),gridView()); if (!s) return s;
+        if (!G) pointwise_->execute(H_,[&](std::size_t begin,std::size_t end) {
+            for (std::size_t i=begin;i<end;++i)
+                write(gridView(),i,scale(read(gridView().input(),i),-g.N2[i%g.Nz]/g.g));
+        });
+        ++metrics_.preparedVerticalDerivativeCount;
+        horizontalInput=gridView().input();
+    }
+    auto s=horizontal_->inverse(*horizontalWorkspace_,horizontalInput,{b,R_*sizeof(double)}); if (!s) return s;
     // v4 defines vertical derivatives through the shared F/G calculus, even
     // for wave fields. Preserve that finite-resolution MATLAB operation.
-    if (dz) { s=verticalCalculus(b,G ? WVBoussinesqFamily::G : WVBoussinesqFamily::F,1,false,b); if (!s) return s; }
+    if (dz && !prepared) { s=verticalCalculus(b,G ? WVBoussinesqFamily::G : WVBoussinesqFamily::F,1,false,b); if (!s) return s; }
     if (density) {
         const double* eta=nullptr;
         if (dz) { auto* auxiliary=real_.data()+(executionOptions_.streamedNonlinear ? 5 : 8)*R_; s=reconstruct(a,WVBoussinesqField::eta,WVBoussinesqDerivative::value,component,auxiliary,countPrimary,metricComponent); if (!s) return s; eta=auxiliary; }
@@ -533,6 +613,7 @@ WVKernelStatus WVTransformBoussinesqKernel::transformStateField(const WVState& a
     const auto bytes=(surface(field) ? R_/geometry().Nz : R_)*sizeof(double);
     for (auto x : {a.coefficients.Ap,a.coefficients.Am,a.coefficients.A0}) { s=disjoint(x.data,S_*sizeof(WVComplex64),b.data,bytes); if (!s) return s; }
     ActiveCall guard(active_); if (!guard.entered) return reentrant();
+    kernel_detail::WVPreparedFieldCache::StandaloneScope cacheScope{fieldCache_.get(),!stateEvaluationActive_};
     s=preparePhaseForCall(a); if (!s) return s;
     auto* fullField=real_.data()+(executionOptions_.streamedNonlinear ? 5 : 9)*R_;
     const auto metricComponent=component==WVBoussinesqComponent::all ?
@@ -678,8 +759,11 @@ WVKernelStatus WVTransformBoussinesqKernel::nonlinearFlux(const WVState& a,WVFlu
         }
     }
     ActiveCall guard(active_); if (!guard.entered) return reentrant();
+    kernel_detail::WVPreparedFieldCache::StandaloneScope cacheScope{fieldCache_.get(),!stateEvaluationActive_};
     s=preparePhaseForCall(a); if (!s) return s;
     const WVBoussinesqField fields[]={WVBoussinesqField::u,WVBoussinesqField::v,WVBoussinesqField::w,WVBoussinesqField::eta};
+    const bool borrowed=executionOptions_.streamedNonlinear && preparedFields;
+    const double* advectionFields=borrowed ? preparedFields->data : real_.data();
     const auto derivativeFor=[&](WVBoussinesqField field,WVBoussinesqDerivative derivative,
         double* scratch,const double*& values,const double* productOutput) {
         WVRealVolumeConstView cached{};
@@ -706,8 +790,6 @@ WVKernelStatus WVTransformBoussinesqKernel::nonlinearFlux(const WVState& a,WVFlu
         values=scratch;
         return WVKernelStatus::ok();
     };
-    const bool borrowed=executionOptions_.streamedNonlinear && preparedFields;
-    const double* advectionFields=borrowed ? preparedFields->data : real_.data();
     if (executionOptions_.streamedNonlinear) {
         if (!preparedFields) for (std::size_t i=0;i<4;++i) {
             s=reconstruct(a.coefficients,fields[i],WVBoussinesqDerivative::value,WVBoussinesqComponent::all,real_.data()+i*R_); if (!s) return s;
@@ -780,6 +862,7 @@ WVKernelStatus WVTransformBoussinesqKernel::totalEnergySpatiallyIntegrated(const
     if (!valid(component)) return unsupported();
     auto s=validateStateForCall(a); if (!s) return s;
     ActiveCall guard(active_); if (!guard.entered) return reentrant();
+    kernel_detail::WVPreparedFieldCache::StandaloneScope cacheScope{fieldCache_.get(),!stateEvaluationActive_};
     s=preparePhaseForCall(a); if (!s) return s;
     const WVBoussinesqField fields[]={WVBoussinesqField::u,WVBoussinesqField::v,WVBoussinesqField::w,WVBoussinesqField::eta};
     for (std::size_t i=0;i<4;++i) { s=reconstruct(a.coefficients,fields[i],WVBoussinesqDerivative::value,component,real_.data()+i*R_); if (!s) return s; }
