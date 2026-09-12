@@ -26,6 +26,33 @@ classdef TestPortableForwardIntegrationCatalog < matlab.unittest.TestCase
                 validatePortableForwardIntegrationQualification(receipt,testCase.catalog,repositoryRoot=testCase.repositoryRoot);
             end
         end
+        function executableRevisionMustMatchDeclaredBuild(testCase)
+            expected = string(repmat('a',1,40));
+            stale = string(repmat('b',1,40));
+            for executable = ["/fixture/wave-vortex-run","/fixture/WVForwardIntegrationProbe"]
+                report = struct(source=struct(commit=expected));
+                TestPortableForwardIntegration.validateExecutableSource(report,executable,expected);
+                report.source.commit = stale;
+                try
+                    TestPortableForwardIntegration.validateExecutableSource(report,executable,expected);
+                    testCase.assertFail("A stale executable must be rejected before its report can become a receipt.");
+                catch exception
+                    testCase.verifyEqual(string(exception.identifier),"WaveVortexModel:ExecutableSourceMismatch");
+                    testCase.verifySubstring(string(exception.message),executable);
+                    testCase.verifySubstring(string(exception.message),expected);
+                    testCase.verifySubstring(string(exception.message),stale);
+                end
+            end
+        end
+        function executableRevisionCannotBeMissingOrMalformed(testCase)
+            expected = string(repmat('a',1,40));
+            reports = {struct(),struct(source=struct()),struct(source=[]), ...
+                struct(source=struct(commit=[])),struct(source=struct(commit="")), ...
+                struct(source=struct(commit=[expected,expected])),struct(source=struct(commit=missing))};
+            for k = 1:numel(reports)
+                testCase.verifyError(@()TestPortableForwardIntegration.validateExecutableSource(reports{k},"/fixture/wave-vortex-run",expected),"WaveVortexModel:ExecutableSourceMismatch");
+            end
+        end
         function collectorRejectsMissingOrMixedExecutionSources(testCase)
             [receipt,root] = testCase.receiptFixture();
             evidenceDirectory = fullfile(root,"fragments");
