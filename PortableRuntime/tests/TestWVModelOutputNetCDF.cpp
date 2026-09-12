@@ -4688,7 +4688,7 @@ void testControlledStopRestartGraph() {
         require(a.additionalBlocks[block].realData[index] ==
                     b.additionalBlocks[block].realData[index],
                 "particle and tracer state must restore exactly");
-    for (const auto &pair :
+    for (const auto pair :
          {std::make_pair(&state.checkpoint().state.coefficients.Ap,
                          &resumedState.checkpoint().state.coefficients.Ap),
           std::make_pair(&state.checkpoint().state.coefficients.Am,
