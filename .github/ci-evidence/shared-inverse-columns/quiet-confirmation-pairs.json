@@ -1,0 +1,74 @@
+[
+  {
+    "columnReuses": 3744,
+    "profile": "eddytide-256x256x28",
+    "pair": 0,
+    "ratio": 0.9869865233884605,
+    "baselineSeconds": 19.711488917,
+    "candidateSeconds": 19.454973917,
+    "numericalPassed": true,
+    "stateDecisionsIdentical": true,
+    "baselineOwnedPeak": 537380525,
+    "candidateOwnedPeak": 576839581
+  },
+  {
+    "columnReuses": 3744,
+    "profile": "eddytide-256x256x28",
+    "pair": 1,
+    "ratio": 0.9550575772772704,
+    "baselineSeconds": 20.230696209,
+    "candidateSeconds": 19.321479708,
+    "numericalPassed": true,
+    "stateDecisionsIdentical": true,
+    "baselineOwnedPeak": 537380525,
+    "candidateOwnedPeak": 576839581
+  },
+  {
+    "columnReuses": 3744,
+    "profile": "eddytide-256x256x28",
+    "pair": 2,
+    "ratio": 0.9591394716277205,
+    "baselineSeconds": 20.2497565,
+    "candidateSeconds": 19.42234075,
+    "numericalPassed": true,
+    "stateDecisionsIdentical": true,
+    "baselineOwnedPeak": 537380525,
+    "candidateOwnedPeak": 576839581
+  },
+  {
+    "columnReuses": 128,
+    "profile": "boussinesq-256x256x129-no-observers",
+    "pair": 0,
+    "ratio": 0.9920485925983337,
+    "baselineSeconds": 2.973278667,
+    "candidateSeconds": 2.949636917,
+    "numericalPassed": true,
+    "stateDecisionsIdentical": true,
+    "baselineOwnedPeak": 5309977063,
+    "candidateOwnedPeak": 5491747543
+  },
+  {
+    "columnReuses": 128,
+    "profile": "boussinesq-256x256x129-no-observers",
+    "pair": 1,
+    "ratio": 0.9857717509660899,
+    "baselineSeconds": 2.986918833,
+    "candidateSeconds": 2.944420208,
+    "numericalPassed": true,
+    "stateDecisionsIdentical": true,
+    "baselineOwnedPeak": 5309977063,
+    "candidateOwnedPeak": 5491747543
+  },
+  {
+    "columnReuses": 128,
+    "profile": "boussinesq-256x256x129-no-observers",
+    "pair": 2,
+    "ratio": 1.025005105381134,
+    "baselineSeconds": 2.867474458,
+    "candidateSeconds": 2.939175959,
+    "numericalPassed": true,
+    "stateDecisionsIdentical": true,
+    "baselineOwnedPeak": 5309977063,
+    "candidateOwnedPeak": 5491747543
+  }
+]

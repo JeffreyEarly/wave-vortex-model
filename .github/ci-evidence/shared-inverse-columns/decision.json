@@ -1,0 +1,29 @@
+{
+  "issue": 481,
+  "status": "not-adopted",
+  "mergeGate": "No production PR or merge: measured effect does not justify automatic adoption.",
+  "candidateCommit": "12f0173df908103530b5f8fa6e6ec3795318eef0",
+  "sourceLinkedQualificationCommit": "0e46b3bc",
+  "baseline": "Exact accepted PR #478 runner, SHA256 in archive.json.",
+  "automaticScope": "Experimental branch only: native compact Hydrostatic runner with reuse policy and validated nonlinear forcing dependency. Main stays unchanged.",
+  "boussinesq": "Explicit C++ option is correctness-tested; quiet three-pair screen showed no benefit (ratio 1.000795) for an additional 182 MB, so the runner keeps it off.",
+  "performance": "Planned two warmup/eight measured alternating pairs per fixture. Both Hydrostatic targets completed all eight measured pairs: EddyTide improves only 0.57%, while larger Hydrostatic is 0.30% slower. Both uncertainty intervals include no benefit, missing the initial roughly 2% credible-model-benefit criterion. Remaining unchanged Boussinesq controls were deliberately stopped; no full qualification is claimed.",
+  "numerical": "All 34 completed pairs passed existing scientific tolerances and exact integration decisions; zero duplicate executions. Both Hydrostatic targets and constant control completed eight measured pairs plus two warmups. Boussinesq control stopped after two measured pairs plus two warmups; no full control qualification is claimed.",
+  "memory": "Retained active Fourier-x/physical-y columns add 39.46 MB EddyTide and 181.77 MB larger Hydrostatic. Four standard field slots are preallocated. Only reuse was measured; no low-memory storage or runtime qualification is claimed.",
+  "lifecycle": "Explicit evaluation/view invalidation, exact workspace ownership, success-only readiness, actual column FFT counts and transactional preparation. Switching an existing reuse engine to low-memory does not reclaim already allocated stages.",
+  "providerAndBinaryPostflightUnchanged": true,
+  "compiledInputEquivalence": "The receipt commit adds only qualification evidence; compiled implementation inputs equal 23adc8db and the final receipt source 0e46b3bc. The final executable is reconfigured at the receipt commit.",
+  "hostCaveat": "See host-observations.json for idle preflight and any observed service activity.",
+  "evidence": [
+    "performance-summary.json",
+    "performance-pairs.json",
+    "verification.json",
+    "source-linked-results.json",
+    "source-linked-catalog-results.json",
+    "matlab-results.json",
+    "pilot-pairs.json",
+    "quiet-confirmation-pairs.json",
+    "host-observations.json",
+    "archive.json"
+  ]
+}

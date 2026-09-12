@@ -225,8 +225,8 @@
   },
   "sharedInverseColumns": {
     "issue": 481,
-    "status": "qualification-pending",
-    "automaticScope": "Native compact Hydrostatic runner, reuse policy, validated nonlinear forcing dependency.",
+    "status": "experiment-not-adopted",
+    "automaticScope": "Unmerged experimental candidate only: native compact Hydrostatic runner, reuse policy, validated nonlinear forcing dependency. Not adopted on main.",
     "optionalScope": "Direct C++ Boussinesq opt-in is correctness-tested; quiet screen showed no model benefit, so runner default remains off.",
     "contract": "Reuse inverse-y preparation between value and x derivative in an explicitly invalidated prepared-field entry. Unsupported even-x Nyquist layouts retain the established path.",
     "memory": "Additional full-depth active Fourier-x/physical-y columns are preallocated and reported; low-memory and damping-only model schedules disable retention.",
@@ -242,6 +242,7 @@
       "CompiledKernel/src/WVTransformBoussinesqKernel.cpp": "34a0a2acbe1073015547a5bc705a27eaa5800946afc25be0c1b621eff10754de",
       "CompiledKernel/src/WVTransformHydrostaticKernel.cpp": "cc8b365c8002b45af0caa245f4ddfc0f04a3023163b8e8b5e1f6085aa05efcf3"
     },
-    "qualification": ".github/ci-evidence/shared-inverse-columns/decision.json"
+    "qualification": ".github/ci-evidence/shared-inverse-columns/decision.json",
+    "measuredRuntimeCommit": "12f0173df908103530b5f8fa6e6ec3795318eef0"
   }
 }

@@ -23,8 +23,8 @@
     "wvm481-gcc-gating-build.log": "edbc6fb7a3f34e7c685a8a1c503d2376c4bf78f6e433df7959fce7d25a6e3ee3"
   },
   "scope": "C++ scientific transforms and evaluation ownership; MATLAB scientific sources, checkpoints and catalog capabilities unchanged.",
-  "performance": "Pending frozen final campaign",
-  "hostedCI": "Required before merge",
+  "performance": "Rejected after complete eight-pair comparisons for both Hydrostatic targets; partial remaining unchanged Boussinesq control explicitly excluded from full qualification.",
+  "hostedCI": "Not run: no production PR or merge for rejected optimization.",
   "matlabFocusedPassed": 12,
   "observedEmbeddedSourceCommit": "0e46b3bc2b83db227bb7507f25e4687b4c4c4d9a",
   "supersededInitialReceipts": "Initial receipts labeled checkout23adc8db while runner embedded60287e19; numerical code matched but identity was stale. They are archived locally and replaced by correctly linked0e46b3bc receipts. Follow-up issue488 adds an automatic guard."

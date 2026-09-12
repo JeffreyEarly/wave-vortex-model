@@ -1,0 +1,93 @@
+{
+  "sampleCount": 107,
+  "intervalSeconds": 10,
+  "preflight": {
+    "unixTime": 1789220912.91417,
+    "processes": [
+      {
+        "pid": 519,
+        "cpuPercent": 2.5,
+        "executable": "/usr/libexec/airportd"
+      },
+      {
+        "pid": 1884,
+        "cpuPercent": 7.5,
+        "executable": "/System/Cryptexes/App/usr/libexec/SafariBookmarksSyncAgent"
+      }
+    ]
+  },
+  "workload": "Only the paired qualification campaign; no competing builds, MATLAB, profiling or experiment was scheduled or modified.",
+  "limitations": "Process snapshots cannot exclude short OS/service bursts between observations.",
+  "aboveTenPercentNonHarnessObservations": [
+    {
+      "unixTime": 1789221063.502899,
+      "processes": [
+        {
+          "pid": 1,
+          "cpuPercent": 36.1,
+          "executable": "/sbin/launchd"
+        }
+      ]
+    },
+    {
+      "unixTime": 1789221093.6192262,
+      "processes": [
+        {
+          "pid": 1,
+          "cpuPercent": 21.8,
+          "executable": "/sbin/launchd"
+        }
+      ]
+    },
+    {
+      "unixTime": 1789221123.7412128,
+      "processes": [
+        {
+          "pid": 1,
+          "cpuPercent": 16.6,
+          "executable": "/sbin/launchd"
+        }
+      ]
+    },
+    {
+      "unixTime": 1789221344.565793,
+      "processes": [
+        {
+          "pid": 621,
+          "cpuPercent": 11.5,
+          "executable": "/System/Library/CoreServices/Software Update.app/Contents/Resources/softwareupdated"
+        },
+        {
+          "pid": 69342,
+          "cpuPercent": 14.1,
+          "executable": "/usr/libexec/mdmclient"
+        },
+        {
+          "pid": 69343,
+          "cpuPercent": 10.8,
+          "executable": "/System/Library/CoreServices/ManagedClient.app/Contents/MacOS/ManagedClient"
+        }
+      ]
+    },
+    {
+      "unixTime": 1789221765.930042,
+      "processes": [
+        {
+          "pid": 14277,
+          "cpuPercent": 13.3,
+          "executable": "/System/Library/Frameworks/CoreServices.framework/Versions/A/Frameworks/Metadata.framework/Versions/A/Support/mds_stores"
+        }
+      ]
+    },
+    {
+      "unixTime": 1789221866.2257652,
+      "processes": [
+        {
+          "pid": 69769,
+          "cpuPercent": 11.8,
+          "executable": "/System/Library/Frameworks/AddressBook.framework/Versions/A/Helpers/AddressBookManager.app/Contents/MacOS/AddressBookManager"
+        }
+      ]
+    }
+  ]
+}

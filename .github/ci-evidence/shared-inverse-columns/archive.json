@@ -1,0 +1,44 @@
+{
+  "archive": "/Users/jearly/Documents/OceanKitRepositories/wave-vortex-model-benchmark-artifacts/shared-inverse-columns-20260912",
+  "filesSHA256": {
+    "qualification/protocol.json": "4805e016d4017e7948ffebd8e2322acfe9e3738852aa0dc7cac71f73159740c8",
+    "qualification/pairs.json": "c541c45d0cfb64c1cbe9663d840e3e0579aaefc165bb9bb5efc61465df5be169",
+    "analysis-summary.json": "2e98a69447407ee67321db60cd56ed050cdcf337353ba134afbdde277c313206",
+    "host-activity.json": "c4cc883bc21ead693ad976d3e639f5692a1f0062242183df9b9732cd381acefb",
+    "frozen-build.json": "5d6da6f74807daabbbf088e59720b76e12fd55c355565d95f3f57c5f0b209416",
+    "CMakeCache.txt": "111904c8d9536dd446a151d7cecab29504da51149246516dbee5e9660a17865d",
+    "pilot/protocol.json": "46d83a993d94a5e632919119e0c318748c25f02fb72937b5abcc4be9d747995d",
+    "quiet-confirmation/protocol.json": "6928cd415d8addece6ba65249d7e22d19f48ec4640ac70dec78ce832a39d0b15",
+    "deliberate-stop.json": "88eff59010b7e4c4b0139a46ad5548a8fe78867c0f95bc348aa67e03822fb429",
+    "analyze-stopped-campaign.py": "f60caee1b912397ff7fb6f77ccde0c0fe29efe246e1eb1c2f7e46c1e80c746ec"
+  },
+  "frozenBuild": {
+    "sourceCommit": "12f0173df908103530b5f8fa6e6ec3795318eef0",
+    "sourceLinkedQualificationCommit": "0e46b3bc",
+    "compiledInputEquivalence": "The receipt commit adds only qualification evidence; compiled implementation inputs equal 23adc8db and the final receipt source 0e46b3bc. The final executable is reconfigured at the receipt commit.",
+    "filesSHA256": {
+      "/Users/jearly/Documents/OceanKitRepositories/wave-vortex-model-benchmark-artifacts/shared-inverse-columns-20260912/qualified-candidate-wave-vortex-run": "5a459164a03fb9420b1729c75afe3d0cf31ffa5e8565fdae78c2e5e0491fc2bf",
+      "/Users/jearly/Documents/OceanKitRepositories/wave-vortex-model-benchmark-artifacts/matrix-advection-adoption-20260912/qualified-candidate-wave-vortex-run": "832d4e38e870de021489561a82da578ab2d4539927ee20c949beadcc5e68f27c",
+      "/Users/jearly/Documents/OceanKitRepositories/wave-vortex-model/.compiled-backend-cache/provider/native-neon-pthreads/lib/libfftw3.3.dylib": "b0dec1a21815db76726d48fe9b49cc34502b8fd7f4cccdfb0a54d50e39abef2c",
+      "/Users/jearly/Documents/OceanKitRepositories/wave-vortex-model/.compiled-backend-cache/provider/native-neon-pthreads/lib/libfftw3_threads.3.dylib": "064e6e17ca492204cb41aaf6ef739f6d5d22cc774699760e25166f5f8dffc359"
+    },
+    "baseline": "Exact accepted PR #478 binary, qualified at 400ed1f1.",
+    "automaticScope": "Hydrostatic native compact reuse with nonlinear forcing dependency only.",
+    "protocol": "Two warmups and eight alternating pairs per profile; reuse only. Boussinesq and constant are unchanged controls. Extended H/B integration windows reduce timing noise.",
+    "idlePreflight": {
+      "unixTime": 1789220912.91417,
+      "processes": [
+        {
+          "pid": 519,
+          "cpuPercent": 2.5,
+          "executable": "/usr/libexec/airportd"
+        },
+        {
+          "pid": 1884,
+          "cpuPercent": 7.5,
+          "executable": "/System/Cryptexes/App/usr/libexec/SafariBookmarksSyncAgent"
+        }
+      ]
+    }
+  }
+}

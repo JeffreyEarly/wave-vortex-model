@@ -1,0 +1,110 @@
+[
+  {
+    "columnReuses": 3744,
+    "profile": "eddytide-256x256x28",
+    "pair": 0,
+    "ratio": 0.9579389413901128,
+    "baselineSeconds": 20.149689,
+    "candidateSeconds": 19.30217175,
+    "numericalPassed": true,
+    "stateDecisionsIdentical": true,
+    "baselineOwnedPeak": 537380453,
+    "candidateOwnedPeak": 576839541
+  },
+  {
+    "columnReuses": 3744,
+    "profile": "eddytide-256x256x28",
+    "pair": 1,
+    "ratio": 0.9721982194117733,
+    "baselineSeconds": 19.883886834,
+    "candidateSeconds": 19.331079375,
+    "numericalPassed": true,
+    "stateDecisionsIdentical": true,
+    "baselineOwnedPeak": 537380453,
+    "candidateOwnedPeak": 576839541
+  },
+  {
+    "columnReuses": 3744,
+    "profile": "eddytide-256x256x28",
+    "pair": 2,
+    "ratio": 0.9878868166078465,
+    "baselineSeconds": 19.588911958,
+    "candidateSeconds": 19.351627875,
+    "numericalPassed": true,
+    "stateDecisionsIdentical": true,
+    "baselineOwnedPeak": 537380453,
+    "candidateOwnedPeak": 576839541
+  },
+  {
+    "columnReuses": 96,
+    "profile": "variable-hydrostatic-composite-large",
+    "pair": 0,
+    "ratio": 0.931036013380516,
+    "baselineSeconds": 5.957168417,
+    "candidateSeconds": 5.546338334,
+    "numericalPassed": true,
+    "stateDecisionsIdentical": true,
+    "baselineOwnedPeak": 2313797693,
+    "candidateOwnedPeak": 2495568461
+  },
+  {
+    "columnReuses": 96,
+    "profile": "variable-hydrostatic-composite-large",
+    "pair": 1,
+    "ratio": 1.0241393858572247,
+    "baselineSeconds": 5.625994083,
+    "candidateSeconds": 5.761802125,
+    "numericalPassed": true,
+    "stateDecisionsIdentical": true,
+    "baselineOwnedPeak": 2313797693,
+    "candidateOwnedPeak": 2495568461
+  },
+  {
+    "columnReuses": 96,
+    "profile": "variable-hydrostatic-composite-large",
+    "pair": 2,
+    "ratio": 0.963911530667631,
+    "baselineSeconds": 5.903588125,
+    "candidateSeconds": 5.690536666,
+    "numericalPassed": true,
+    "stateDecisionsIdentical": true,
+    "baselineOwnedPeak": 2313797693,
+    "candidateOwnedPeak": 2495568461
+  },
+  {
+    "columnReuses": 128,
+    "profile": "boussinesq-256x256x129-no-observers",
+    "pair": 0,
+    "ratio": 0.9362412863324485,
+    "baselineSeconds": 3.043768292,
+    "candidateSeconds": 2.849701541,
+    "numericalPassed": true,
+    "stateDecisionsIdentical": true,
+    "baselineOwnedPeak": 5309976815,
+    "candidateOwnedPeak": 5491747415
+  },
+  {
+    "columnReuses": 128,
+    "profile": "boussinesq-256x256x129-no-observers",
+    "pair": 1,
+    "ratio": 0.9684028126697026,
+    "baselineSeconds": 3.032946667,
+    "candidateSeconds": 2.937114083,
+    "numericalPassed": true,
+    "stateDecisionsIdentical": true,
+    "baselineOwnedPeak": 5309976815,
+    "candidateOwnedPeak": 5491747415
+  },
+  {
+    "columnReuses": 128,
+    "profile": "boussinesq-256x256x129-no-observers",
+    "pair": 2,
+    "ratio": 0.9977933187671991,
+    "baselineSeconds": 2.954398625,
+    "candidateSeconds": 2.947879209,
+    "numericalPassed": true,
+    "stateDecisionsIdentical": true,
+    "baselineOwnedPeak": 5309976815,
+    "candidateOwnedPeak": 5491747415
+  }
+]

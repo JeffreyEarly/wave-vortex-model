@@ -1,0 +1,130 @@
+{
+  "kind": "analysis of deliberately stopped campaign; not full performance qualification",
+  "qualified": false,
+  "adopted": false,
+  "reason": "Both complete Hydrostatic eight-pair comparisons miss the initial roughly 2% credible benefit criterion; stop remaining unchanged Boussinesq controls.",
+  "completedPairs": 34,
+  "allNumericalComparisonsPassed": true,
+  "allIntegrationDecisionsIdentical": true,
+  "comparisonScope": "Completed pairs only; interrupted Boussinesq pair and unrun controls are not counted.",
+  "postflightUnchanged": true,
+  "finishedAtUTC": "2026-09-12T14:07:40.007357+00:00",
+  "profiles": [
+    {
+      "profile": "eddytide-256x256x28",
+      "measuredPairs": 8,
+      "warmupPairs": 2,
+      "measurementComplete": true,
+      "policies": {
+        "reuse": {
+          "integrationRatio": 0.9943349751850541,
+          "pairedBootstrap95": [
+            0.9788518186254112,
+            1.0070122002277013
+          ],
+          "completeLifetimeRatio": 0.994350634291255,
+          "completeLifetimeBootstrap95": [
+            0.9789891389077299,
+            1.006939181025482
+          ],
+          "ratios": [
+            0.9511150608116895,
+            1.0123286060010916,
+            1.003428923517008,
+            0.9751934990991458,
+            1.0049469414212697,
+            0.9894756163519247,
+            1.013141240292923,
+            1.0067265504375695
+          ],
+          "maximumLiveRatio": 1.0734284483527277,
+          "additionalOwnedPeakBytes": 39459024
+        }
+      }
+    },
+    {
+      "profile": "constant-nonhydrostatic-composite-256",
+      "measuredPairs": 8,
+      "warmupPairs": 2,
+      "measurementComplete": true,
+      "policies": {
+        "reuse": {
+          "integrationRatio": 0.9949966434568887,
+          "pairedBootstrap95": [
+            0.9737668419232346,
+            1.0162756034825549
+          ],
+          "completeLifetimeRatio": 0.9971278110674132,
+          "completeLifetimeBootstrap95": [
+            0.9926641450326295,
+            1.001539005005773
+          ],
+          "ratios": [
+            0.9728940787943199,
+            0.9940852100111801,
+            0.9806495092348203,
+            1.0407907521565443,
+            0.9424077157218247,
+            1.014355536432802,
+            1.034083719184787,
+            0.9845137255700211
+          ],
+          "maximumLiveRatio": 1.0000000404158058,
+          "additionalOwnedPeakBytes": 80
+        }
+      }
+    },
+    {
+      "profile": "variable-hydrostatic-composite-large",
+      "measuredPairs": 8,
+      "warmupPairs": 2,
+      "measurementComplete": true,
+      "policies": {
+        "reuse": {
+          "integrationRatio": 1.0029559598725593,
+          "pairedBootstrap95": [
+            0.9770854069832584,
+            1.0262265094244856
+          ],
+          "completeLifetimeRatio": 1.0006765433049734,
+          "completeLifetimeBootstrap95": [
+            0.9790710668464441,
+            1.0203773151451567
+          ],
+          "ratios": [
+            1.0079823219339448,
+            0.9951097770630943,
+            1.0257586269431567,
+            1.0196042358727726,
+            1.0390980330947248,
+            1.0451996322443657,
+            0.9433512332561507,
+            0.9526316292965555
+          ],
+          "maximumLiveRatio": 1.0785591815815536,
+          "additionalOwnedPeakBytes": 181770192
+        }
+      }
+    },
+    {
+      "profile": "boussinesq-256x256x129-no-observers",
+      "measuredPairs": 2,
+      "warmupPairs": 2,
+      "measurementComplete": false,
+      "policies": {
+        "reuse": {
+          "integrationRatio": 1.0072808879010875,
+          "pairedBootstrap95": null,
+          "completeLifetimeRatio": 0.9987978756575512,
+          "completeLifetimeBootstrap95": null,
+          "ratios": [
+            1.003741964037255,
+            1.010832289057454
+          ],
+          "maximumLiveRatio": 1.0000000045197932,
+          "additionalOwnedPeakBytes": 24
+        }
+      }
+    }
+  ]
+}
