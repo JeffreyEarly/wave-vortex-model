@@ -14,6 +14,7 @@ public:
     const char* identifier() const noexcept override { return "accelerate-gemm-v1"; }
     std::size_t maximumDimension() const noexcept override { return INT_MAX; }
     std::size_t persistentBytes() const noexcept override { return sizeof(*this); }
+    bool supportsConcurrentCalls() const noexcept override { return true; }
     void split(std::size_t m, std::size_t k, std::size_t n, const double* a, const double* br, const double* bi,
         std::size_t ldb, double* cr, double* ci, std::size_t ldc, double beta) const noexcept override {
         cblas_dgemm(CblasColMajor,CblasNoTrans,CblasNoTrans,static_cast<int>(m),static_cast<int>(n),static_cast<int>(k),1,a,static_cast<int>(m),br,static_cast<int>(ldb),beta,cr,static_cast<int>(ldc));

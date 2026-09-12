@@ -435,11 +435,15 @@ void contracts(const std::shared_ptr<const WVStratifiedModalRecord>& source) {
 }
 void variableScheduleParity(const std::shared_ptr<const WVStratifiedModalRecord>& source,bool compact = false) {
     std::unique_ptr<WVTransformBoussinesqKernel> frozen, candidate;
-    require(bool(WVTransformBoussinesqKernel::create(source,std::make_unique<WVReferenceFFTEngine>(),frozen)),"Frozen schedule setup failed");
+    WVVariableExecutionOptions frozenOptions;
+    frozenOptions.inertialOnlyProjection=false;
+    require(bool(WVTransformBoussinesqKernel::create(source,std::make_unique<WVReferenceFFTEngine>(),frozen,
+        WVCreateScalarMatrixBackend,frozenOptions)),"Frozen schedule setup failed");
     WVVariableExecutionOptions options{WVRetainedHorizontalSchedule::streamingPrunedTile16,2,true};
     if (compact) options.spectralSchedule=WVVariableSpectralSchedule::compactSplitFusedViews;
     options.pointwiseWorkers=2;
     options.fusedDerivativeAdvection=true;
+    options.verticalGroupWorkers=2;
     Counters candidateCounters;
     require(bool(WVTransformBoussinesqKernel::create(source,std::make_unique<Engine>(candidateCounters),candidate, WVCreateScalarMatrixBackend, options)),"Candidate schedule setup failed");
     require(std::string(candidate->horizontalScheduleIdentifier())=="full-fft-gather","Reference provider fallback was not reported");
@@ -452,6 +456,7 @@ void variableScheduleParity(const std::shared_ptr<const WVStratifiedModalRecord>
     const WVState state{83,17,{{input[0].data(),{g.Nj,g.Nkl}},{input[1].data(),{g.Nj,g.Nkl}},{input[2].data(),{g.Nj,g.Nkl}}}};
     WVFlux frozenFlux{{frozenOut[0].data(),{g.Nj,g.Nkl}},{frozenOut[1].data(),{g.Nj,g.Nkl}},{frozenOut[2].data(),{g.Nj,g.Nkl}}};
     WVFlux candidateFlux{{candidateOut[0].data(),{g.Nj,g.Nkl}},{candidateOut[1].data(),{g.Nj,g.Nkl}},{candidateOut[2].data(),{g.Nj,g.Nkl}}};
+    frozen->resetMetrics(); candidate->resetMetrics();
     require(bool(frozen->nonlinearFlux(state,frozenFlux)),"Frozen nonlinear flux failed");
     require(bool(candidate->nonlinearFlux(state,candidateFlux)),"Candidate nonlinear flux failed");
     require(!frozen->executionOptions().fusedDerivativeAdvection &&
@@ -459,6 +464,10 @@ void variableScheduleParity(const std::shared_ptr<const WVStratifiedModalRecord>
         candidate->metrics().derivativeAdvectionConsumerCount==12,
         "Boussinesq fused derivative consumers were not explicit or complete");
     for (std::size_t j=0;j<3;++j) for (std::size_t i=0;i<S;++i) require(std::abs(frozenOut[j][i].real-candidateOut[j][i].real)<1e-12 && std::abs(frozenOut[j][i].imag-candidateOut[j][i].imag)<1e-12,"Candidate nonlinear flux differs");
+    require(frozen->metrics().verticalOperatorExecutionCount==candidate->metrics().verticalOperatorExecutionCount &&
+        frozen->metrics().verticalMatrixGroupExecutionCount==
+            candidate->metrics().verticalMatrixGroupExecutionCount+2*(source->groups().size()-1),
+        "Inertial-only projection did not replace two full grouped wave projections with two exact columns");
     auto serialOptions=options; serialOptions.pointwiseWorkers=1;
     std::unique_ptr<WVTransformBoussinesqKernel> serial; std::array<std::vector<WVComplex64>,3> serialOut;
     for (auto& values:serialOut) values.resize(S);
@@ -521,7 +530,9 @@ void variableScheduleParity(const std::shared_ptr<const WVStratifiedModalRecord>
         "Boussinesq streamed scratch accounting differs");
     require(candidate->executionOptions().horizontalWorkers==2 && candidate->executionOptions().streamedNonlinear &&
         candidate->executionOptions().usesCompactSplitViews()==compact && candidate->executionOptions().pointwiseWorkers==2 &&
-        candidate->executionOptions().fusedDerivativeAdvection,
+        candidate->executionOptions().fusedDerivativeAdvection &&
+        candidate->executionOptions().inertialOnlyProjection && !frozen->executionOptions().inertialOnlyProjection &&
+        candidate->executionOptions().verticalGroupWorkers==2 && frozen->executionOptions().verticalGroupWorkers==1,
         "Candidate options were not retained");
     require(candidate->persistentBytes()>=candidate->storage().workspaceBytes,"Candidate storage ledger under-reports workspace");
 
@@ -530,6 +541,12 @@ void variableScheduleParity(const std::shared_ptr<const WVStratifiedModalRecord>
         WVCreateScalarMatrixBackend,invalidWorkerOptions);
     require(status.code==WVKernelStatusCode::invalidConfiguration && candidate.get()==retained,
         "Zero pointwise workers were accepted or replaced the retained kernel");
+    WVVariableExecutionOptions invalidVerticalWorkerOptions;
+    invalidVerticalWorkerOptions.verticalGroupWorkers=0;
+    status=WVTransformBoussinesqKernel::create(source,std::make_unique<WVReferenceFFTEngine>(),candidate,
+        WVCreateScalarMatrixBackend,invalidVerticalWorkerOptions);
+    require(status.code==WVKernelStatusCode::invalidConfiguration && candidate.get()==retained,
+        "Zero vertical group workers were accepted or replaced the retained kernel");
     std::unique_ptr<WVTransformBoussinesqKernel> invalid;
     WVVariableExecutionOptions invalidOptions;
     invalidOptions.spectralSchedule=WVVariableSpectralSchedule::compactSplitFusedViews;
