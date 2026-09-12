@@ -1,0 +1,46 @@
+profile,Nx,Nz,apvModes,waveModes,kernel,seconds
+constant,8,33,3,4,displacement thermodynamics,0.0004069
+constant,8,33,3,4,density geometry thermodynamics,0.00040775
+constant,8,33,3,4,source transforms and projection,0.000293591666666667
+constant,8,33,3,4,cold modal and grid reconstruction,0.00135095
+constant,8,33,3,4,coefficient inverse,0.00308181666666667
+constant,16,65,3,4,displacement thermodynamics,0.000972233333333333
+constant,16,65,3,4,density geometry thermodynamics,0.00101250833333333
+constant,16,65,3,4,source transforms and projection,0.000958208333333333
+constant,16,65,3,4,cold modal and grid reconstruction,0.002036675
+constant,16,65,3,4,coefficient inverse,0.00598838333333333
+constant,16,65,6,8,displacement thermodynamics,0.000984683333333333
+constant,16,65,6,8,density geometry thermodynamics,0.0009955
+constant,16,65,6,8,source transforms and projection,0.00100223333333333
+constant,16,65,6,8,cold modal and grid reconstruction,0.00208991666666667
+constant,16,65,6,8,coefficient inverse,0.00683375833333333
+exponential,8,33,3,4,displacement thermodynamics,0.000559858333333333
+exponential,8,33,3,4,density geometry thermodynamics,0.000589491666666667
+exponential,8,33,3,4,source transforms and projection,0.000165166666666667
+exponential,8,33,3,4,cold modal and grid reconstruction,0.000949783333333333
+exponential,8,33,3,4,coefficient inverse,0.00969844166666667
+exponential,16,65,3,4,displacement thermodynamics,0.00135124166666667
+exponential,16,65,3,4,density geometry thermodynamics,0.00137963333333333
+exponential,16,65,3,4,source transforms and projection,0.000928791666666667
+exponential,16,65,3,4,cold modal and grid reconstruction,0.00202354166666667
+exponential,16,65,3,4,coefficient inverse,0.024616975
+exponential,16,65,6,8,displacement thermodynamics,0.00135995833333333
+exponential,16,65,6,8,density geometry thermodynamics,0.00137774166666667
+exponential,16,65,6,8,source transforms and projection,0.000940108333333333
+exponential,16,65,6,8,cold modal and grid reconstruction,0.00207845
+exponential,16,65,6,8,coefficient inverse,0.028318575
+exponential,8,33,10,12,displacement thermodynamics,0.000396058333333333
+exponential,8,33,10,12,density geometry thermodynamics,0.000396991666666667
+exponential,8,33,10,12,source transforms and projection,0.000190975
+exponential,8,33,10,12,cold modal and grid reconstruction,0.000921925
+exponential,8,33,10,12,coefficient inverse,0.0111459666666667
+exponential,8,65,10,12,displacement thermodynamics,0.0005346
+exponential,8,65,10,12,density geometry thermodynamics,0.0005275
+exponential,8,65,10,12,source transforms and projection,0.000320733333333333
+exponential,8,65,10,12,cold modal and grid reconstruction,0.001004
+exponential,8,65,10,12,coefficient inverse,0.013738525
+exponential,16,65,10,12,displacement thermodynamics,0.00130548333333333
+exponential,16,65,10,12,density geometry thermodynamics,0.00135998333333333
+exponential,16,65,10,12,source transforms and projection,0.00105863333333333
+exponential,16,65,10,12,cold modal and grid reconstruction,0.00218255
+exponential,16,65,10,12,coefficient inverse,0.0300258833333333

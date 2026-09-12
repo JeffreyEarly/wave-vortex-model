@@ -1,0 +1,203 @@
+{
+  "domain_m": [
+    100000,
+    100000,
+    1000
+  ],
+  "start_s": 327,
+  "duration_s": 160,
+  "diagnostic_interval_s": 40,
+  "profiles": [
+    "constant N2=1e-4 s^-2",
+    "exponential N2=1e-4 exp(z/650) s^-2"
+  ],
+  "cases": [
+    {
+      "name": "linear",
+      "seed": "waves",
+      "amplitude": 0.0001
+    },
+    {
+      "name": "waves",
+      "seed": "waves",
+      "amplitude": 0.1
+    },
+    {
+      "name": "mixed",
+      "seed": "mixed",
+      "amplitude": 0.1
+    }
+  ],
+  "grids": [
+    [
+      8,
+      8,
+      33
+    ],
+    [
+      16,
+      16,
+      33
+    ],
+    [
+      16,
+      16,
+      65
+    ],
+    [
+      16,
+      16,
+      65
+    ],
+    [
+      24,
+      24,
+      129
+    ]
+  ],
+  "mode_counts_apv_wave_mda_io": [
+    [
+      3,
+      4,
+      2,
+      3
+    ],
+    [
+      3,
+      4,
+      2,
+      3
+    ],
+    [
+      3,
+      4,
+      2,
+      3
+    ],
+    [
+      6,
+      8,
+      4,
+      6
+    ],
+    [
+      10,
+      12,
+      8,
+      8
+    ]
+  ],
+  "timesteps_s": [
+    20,
+    10,
+    5
+  ],
+  "reference_timestep_s": 2.5,
+  "reference_checks": "Compare reference to timestep 1.25 and increased mode count on the final reference grid. Require differences below one quarter of a claimed error target; otherwise label that target unqualified.",
+  "error_targets": [
+    {
+      "velocity_rms_m_s": 0.001,
+      "density_rms_kg_m3": 0.001,
+      "ssh_rms_m": 0.01
+    },
+    {
+      "velocity_rms_m_s": 0.0001,
+      "density_rms_kg_m3": 0.0001,
+      "ssh_rms_m": 0.001
+    },
+    {
+      "velocity_rms_m_s": 1e-05,
+      "density_rms_kg_m3": 1e-05,
+      "ssh_rms_m": 0.0001
+    }
+  ],
+  "comparison_grid": "24 by 24 periodic horizontal points and 101 uniformly spaced reference depths, with physical fields reconstructed using each state's SSH; errors on the common reference-coordinate domain and physical-z dependence explicitly retained.",
+  "norm": "Unweighted common-grid RMS separately for vector physical velocity, physical density, and SSH; maximum across recorded times including initialization. No relative division by vanishing states.",
+  "time_integrator": "Fixed-step classical RK4 in oscillation-removed coefficients; four accepted RHS evaluations per step, zero rejected steps. Record failures without clipping or timestep repair.",
+  "variants": [
+    "optimized displacement #482",
+    "native total density: changed finite projection and modal-pressure closure, labeled separately",
+    "inverse-map density: same finite displacement evolution, qualification control only"
+  ],
+  "forcing": "Unforced trajectories; thermodynamic source/work controls covered by analytic tests. No forcing-performance conclusion.",
+  "pressure": "Current physical-height reference and p(surface)=rho0*g*ssh for both; old reference split tested by explicit pressure conversion, not a second physical problem.",
+  "scope": "Authoring-only; no production replacement, advection-form change, memory work, or release gate. Record setup separately and include validity/inversion costs in all RHS timings. Timings are local MATLAB evidence.",
+  "supplemental_resolution_search": {
+    "reason": "The native exponential cases require more modes. Test those modes on smaller evaluation grids before attributing the fine-reference grid cost to the formulation. Error targets are unchanged.",
+    "cases": [
+      "exponential-waves",
+      "exponential-mixed"
+    ],
+    "configurations": [
+      {
+        "id": 6,
+        "grid": [
+          8,
+          8,
+          33
+        ],
+        "modes": [
+          10,
+          12,
+          8,
+          8
+        ]
+      },
+      {
+        "id": 7,
+        "grid": [
+          8,
+          8,
+          65
+        ],
+        "modes": [
+          10,
+          12,
+          8,
+          8
+        ]
+      },
+      {
+        "id": 8,
+        "grid": [
+          16,
+          16,
+          65
+        ],
+        "modes": [
+          10,
+          12,
+          8,
+          8
+        ]
+      }
+    ]
+  },
+  "fixed_factory_defaults": {
+    "latitude_degrees": 30,
+    "rotation_rate_s_inverse": 7.2921e-05,
+    "f_s_inverse": 7.2921e-05,
+    "g_m_s2": 9.81,
+    "rho0_kg_m3": 1025,
+    "nEVP": 256,
+    "note": "Values fixed by the inspected factory revision throughout all runs; made explicit here for reproduction."
+  },
+  "long_duration_control": {
+    "duration_s": 2000,
+    "profiles": [
+      "exponential"
+    ],
+    "cases": [
+      "waves",
+      "mixed"
+    ],
+    "timesteps_s": [
+      20,
+      10
+    ],
+    "reference_timestep_s": 5,
+    "reference_checks": "dt=2.5 and the same increased-mode reference as the primary comparison",
+    "diagnostic_interval_s": 40,
+    "reason": "Check whether the short-time conclusions survive roughly two external-wave periods; report separately without changing the primary targets."
+  }
+}

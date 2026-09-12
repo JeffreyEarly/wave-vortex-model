@@ -1,0 +1,7 @@
+{
+  "matlab": "26.1.0.3312084 (R2026a) Update 4",
+  "computer": "MACA64",
+  "cpu": "Apple M5 Max",
+  "sourceRevision": "cf343b95523240a5de658dcfd309401032b9ad80",
+  "timing": "Five alternating-order trials; five RHS evaluations per sample; contexts warmed; coefficient assignments invalidate state caches normally."
+}
