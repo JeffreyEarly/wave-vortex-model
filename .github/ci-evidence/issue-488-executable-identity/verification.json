@@ -1,0 +1,25 @@
+{
+  "harnessCommit": "9ba9d3a0",
+  "buildCommit": "72fc2bdd2ff02bbc431ed36fcdf6dab2e5015c0c",
+  "numericalRuntimeChanged": false,
+  "focusedRegressionTests": 2,
+  "forwardConfigurations": 6,
+  "providers": [
+    "reference",
+    "native-fftw"
+  ],
+  "catalogAndCompatibilityTests": 17,
+  "codeAnalyzerFindings": 0,
+  "archiveRelativeToWorkspace": "wave-vortex-model-benchmark-artifacts/executable-identity-20260912",
+  "SHA256": {
+    "wvm488-focused.log": "24d0369a2a7ee27f6ee7784d5b48d57aa026c0d5c683698623e6b0526b3ebf69",
+    "wvm488-forward.log": "207a182e63efdc5b4cfac9673bdf863a08718014e062d27173bd6f47712d5766",
+    "wvm488-finish.log": "0343d64f4e41ed22a88123ea2089e3488698bad004bd4e6e4a2f63082fc1650e",
+    "wvm488-focused-script-name-error.log": "b240aabfbc776492c9271e88e99b81ed5051210dde80b3583167429b83d4c27d",
+    "focused.m": "5a9ae552eebff12fa63be6aa6b89ad1d169ba5491f637ea8abda8c5a7b4965c0",
+    "run_forward.m": "9ffd5dd4ebe9d539c97887e32100445dd4c814dffe7992608a6f9026e1398046",
+    "finish.m": "6ac0c4fe8a0b47a190ffef88298b0a992c5edf3e887d6cff631e8d2902735d4f",
+    "catalog-results.json": "73bc3bda8fbdceaebc21271d8b1fc532f515a11d2c8709dbd6ea90a6b6eae545",
+    "forward/results.json": "bdaf96557e84a340427fea7128283ce765860fe5c7fc58299795fe195065f03f"
+  }
+}
