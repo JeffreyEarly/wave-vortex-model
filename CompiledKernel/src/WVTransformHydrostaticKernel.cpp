@@ -437,31 +437,39 @@ WVKernelStatus WVTransformHydrostaticKernel::reconstruct(const WVCoefficients& a
     if (field==WVHydrostaticField::ssv) field=WVHydrostaticField::v;
     const bool G=field==WVHydrostaticField::w || field==WVHydrostaticField::eta;
     const bool dz=derivative==WVHydrostaticDerivative::z;
-    for (std::size_t i=0;i<S_;++i) {
-        const auto& f=factors_[i]; const auto mode=i/g.Nj; WVComplex64 p{},m{},z{};
-        switch(field) {
-            case WVHydrostaticField::u: p=f.UAp; m=conjugate(p); z=f.UA0; break;
-            case WVHydrostaticField::v: p=f.VAp; m=conjugate(p); z=f.VA0; break;
-            case WVHydrostaticField::w: p=f.WAp; m=p; break;
-            case WVHydrostaticField::eta: p={f.NAp,0}; m={-f.NAp,0}; z={f.NA0,0}; break;
-            case WVHydrostaticField::pi: p={f.NAp,0}; m={-f.NAp,0}; z={f.PA0,0}; break;
-            case WVHydrostaticField::p: p={g.rho0*g.g*f.NAp,0}; m=scale(p,-1); z={g.rho0*g.g*f.PA0,0}; break;
-            case WVHydrostaticField::psi: z={f.psi,0}; break;
-            case WVHydrostaticField::qgpv: z={f.qgpv,0}; break;
-            case WVHydrostaticField::zetaZ:
-                p=subtract(multiply(f.VAp,{0,g.k[mode]}),multiply(f.UAp,{0,g.l[mode]}));
-                m=subtract(multiply(conjugate(f.VAp),{0,g.k[mode]}),multiply(conjugate(f.UAp),{0,g.l[mode]}));
-                z=subtract(multiply(f.VA0,{0,g.k[mode]}),multiply(f.UA0,{0,g.l[mode]})); break;
-            default: return unsupported();
+    if (field<WVHydrostaticField::u ||
+        (field>WVHydrostaticField::qgpv && field!=WVHydrostaticField::zetaZ)) return unsupported();
+    // Independent coefficients preserve their arithmetic order. The prepared
+    // executor joins before the vertical operator reuses the modal storage.
+    const auto modal=modalView();
+    const auto assemble=[&](std::size_t begin,std::size_t end) {
+        for (std::size_t i=begin;i<end;++i) {
+            const auto& f=factors_[i]; const auto mode=i/g.Nj; WVComplex64 p{},m{},z{};
+            switch(field) {
+                case WVHydrostaticField::u: p=f.UAp; m=conjugate(p); z=f.UA0; break;
+                case WVHydrostaticField::v: p=f.VAp; m=conjugate(p); z=f.VA0; break;
+                case WVHydrostaticField::w: p=f.WAp; m=p; break;
+                case WVHydrostaticField::eta: p={f.NAp,0}; m={-f.NAp,0}; z={f.NA0,0}; break;
+                case WVHydrostaticField::pi: p={f.NAp,0}; m={-f.NAp,0}; z={f.PA0,0}; break;
+                case WVHydrostaticField::p: p={g.rho0*g.g*f.NAp,0}; m=scale(p,-1); z={g.rho0*g.g*f.PA0,0}; break;
+                case WVHydrostaticField::psi: z={f.psi,0}; break;
+                case WVHydrostaticField::qgpv: z={f.qgpv,0}; break;
+                case WVHydrostaticField::zetaZ:
+                    p=subtract(multiply(f.VAp,{0,g.k[mode]}),multiply(f.UAp,{0,g.l[mode]}));
+                    m=subtract(multiply(conjugate(f.VAp),{0,g.k[mode]}),multiply(conjugate(f.UAp),{0,g.l[mode]}));
+                    z=subtract(multiply(f.VA0,{0,g.k[mode]}),multiply(f.UA0,{0,g.l[mode]})); break;
+                default: break; // Field was validated before dispatch.
+            }
+            WVComplex64 value{};
+            if (selected(f,component,true)) value=add(multiply(multiply(p,a.Ap.data[i]),phase_[i]),multiply(multiply(m,a.Am.data[i]),conjugate(phase_[i])));
+            if (selected(f,component,false)) value=add(value,multiply(z,a.A0.data[i]));
+            if (derivative==WVHydrostaticDerivative::x) value=multiply(value,{0,g.k[mode]});
+            if (derivative==WVHydrostaticDerivative::y) value=multiply(value,{0,g.l[mode]});
+            if (dz && G) value=scale(value,1/g.h_0[i%g.Nj]);
+            write(modal,i,value);
         }
-        WVComplex64 value{};
-        if (selected(f,component,true)) value=add(multiply(multiply(p,a.Ap.data[i]),phase_[i]),multiply(multiply(m,a.Am.data[i]),conjugate(phase_[i])));
-        if (selected(f,component,false)) value=add(value,multiply(z,a.A0.data[i]));
-        if (derivative==WVHydrostaticDerivative::x) value=multiply(value,{0,g.k[mode]});
-        if (derivative==WVHydrostaticDerivative::y) value=multiply(value,{0,g.l[mode]});
-        if (dz && G) value=scale(value,1/g.h_0[i%g.Nj]);
-        write(modalView(),i,value);
-    }
+    };
+    pointwise_->execute(S_,assemble);
     auto s=vertical(G!=dz ? 2 : 0,modalView().input(),gridView()); if (!s) return s;
     if (dz && !G) for (std::size_t mode=0;mode<g.Nkl;++mode) for (std::size_t z=0;z<g.Nz;++z)
         write(gridView(),z+g.Nz*mode,scale(read(gridView().input(),z+g.Nz*mode),-g.N2[z]/g.g));
