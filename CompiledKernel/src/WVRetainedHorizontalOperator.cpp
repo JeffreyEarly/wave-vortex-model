@@ -94,6 +94,40 @@ std::size_t WVRetainedHorizontalWorkspace::sharedResourceBytes() const noexcept 
 std::size_t WVRetainedHorizontalWorkspace::workerCount() const noexcept {
     return data_->retained ? data_->retained->workerCount() : 1;
 }
+bool WVRetainedHorizontalWorkspace::supportsInverseStage() const noexcept {
+    return data_->retained && data_->retained->supportsInverseStage();
+}
+WVKernelStatus WVRetainedHorizontalOperator::createInverseStage(WVRetainedHorizontalWorkspace& workspace,
+    WVRealInput multipliers,std::unique_ptr<WVRetainedInverseStage>& result) const {
+    auto& w=*workspace.data_;
+    if (w.owner!=data_) return {WVKernelStatusCode::invalidConfiguration,"Foreign horizontal workspace."};
+    if (!workspace.supportsInverseStage()) return {WVKernelStatusCode::unsupportedOperation,"No reusable inverse stage."};
+    const auto bytes=data_->mapping.size()*sizeof(double);
+    if (multipliers.bytes!=bytes) return {WVKernelStatusCode::invalidShape,"Expected one x multiplier per retained mode."};
+    if (!addressFits(multipliers.data,bytes,alignof(double))) return {WVKernelStatusCode::invalidPointer,"Invalid x multipliers."};
+    for (std::size_t i=0;i<data_->mapping.size();++i)
+        if (!std::isfinite(multipliers.data[i])) return {WVKernelStatusCode::invalidConfiguration,"Nonfinite x multiplier."};
+    ActiveCall guard(w.active); if (!guard.entered) return {WVKernelStatusCode::reentrantExecution,"Horizontal workspace is active."};
+    std::unique_ptr<WVRetainedInverseStage> candidate;
+    auto status=w.retained->createInverseStage(multipliers,candidate); if (!status) return status;
+    if (!candidate) return {WVKernelStatusCode::fftPlanFailure,"Provider omitted successful inverse stage."};
+    result=std::move(candidate); return WVKernelStatus::ok();
+}
+WVKernelStatus WVRetainedHorizontalOperator::inverseWithStage(WVRetainedHorizontalWorkspace& workspace,
+    WVComplexInput input,WVRealOutput output,WVRetainedInverseStage& stage,bool xDerivative,
+    const WVRealOutputConsumer& consumer) const {
+    auto& w=*workspace.data_; const auto& d=*data_;
+    if (w.owner!=data_) return {WVKernelStatusCode::invalidConfiguration,"Foreign horizontal workspace."};
+    auto status=validateHorizontalBuffers(d,{output.data,output.bytes},input); if (!status) return status;
+    if (!workspace.supportsInverseStage()) return {WVKernelStatusCode::unsupportedOperation,"No reusable inverse stage."};
+    const auto& g=d.spec.grid;
+    if (consumer.consume && (g.xStride!=1 || g.yStride!=g.Nx || g.planeStride!=d.planeSize))
+        return {WVKernelStatusCode::invalidConfiguration,"Inverse consumers require contiguous physical output."};
+    ActiveCall guard(w.active); if (!guard.entered) return {WVKernelStatusCode::reentrantExecution,"Horizontal workspace is active."};
+    // Native stage preflight validates ownership and the selected self-mode
+    // constraint before touching output; x-zero modes need not constrain base imag.
+    return w.retained->inverseWithStage(input,output,stage,xDerivative,consumer);
+}
 std::size_t WVRetainedHorizontalOperator::persistentBytes() const noexcept {
     return sizeof(*this)+sizeof(*data_)+identityBytes(data_->spec.retained)+data_->spec.grid.family.capacity()+
         data_->spec.modes.capacity()*sizeof(WVRetainedModeKey)+data_->mapping.capacity()*sizeof(HorizontalMode);

@@ -51,6 +51,14 @@ inline WVKernelStatus WVRetainedHorizontalPlan::inverseAndConsume(WVComplexInput
     WVRealOutput,const WVRealOutputConsumer&) {
     return {WVKernelStatusCode::unsupportedOperation,"Provider has no inverse consumer."};
 }
+inline WVKernelStatus WVRetainedHorizontalPlan::createInverseStage(WVRealInput,
+    std::unique_ptr<WVRetainedInverseStage>&) {
+    return {WVKernelStatusCode::unsupportedOperation,"Provider has no reusable inverse stage."};
+}
+inline WVKernelStatus WVRetainedHorizontalPlan::inverseWithStage(WVComplexInput,WVRealOutput,
+    WVRetainedInverseStage&,bool,const WVRealOutputConsumer&) {
+    return {WVKernelStatusCode::unsupportedOperation,"Provider has no reusable inverse stage."};
+}
 struct WVRetainedModeKey { std::int64_t k = 0, l = 0; };
 enum class WVRetainedHorizontalSchedule { fullFFT, streamingPrunedTile16 };
 struct WVRetainedHorizontalSpecification {
@@ -81,6 +89,7 @@ public:
     const void* sharedResourceIdentity() const noexcept;
     std::size_t sharedResourceBytes() const noexcept;
     std::size_t workerCount() const noexcept;
+    bool supportsInverseStage() const noexcept;
 private:
     friend class WVRetainedHorizontalOperator;
     WVRetainedHorizontalWorkspace();
@@ -96,6 +105,16 @@ public:
     // With a retained provider, prepared full-grid derivatives also stream
     // through one plane; their frequency coverage is still the entire grid.
     WVKernelStatus createWorkspace(std::unique_ptr<WVRetainedHorizontalWorkspace>&, bool prepareSpatialDerivative = true) const;
+    // Multipliers are immutable physical k values in retained-mode order,
+    // copied at preparation. Unsupported providers/layouts do not allocate a stage.
+    WVKernelStatus createInverseStage(WVRetainedHorizontalWorkspace&,WVRealInput xMultipliers,
+        std::unique_ptr<WVRetainedInverseStage>&) const;
+    // The caller explicitly invalidates the stage at its evaluation boundary.
+    // First use computes inverse-y; subsequent value/x uses share that result.
+    // x remains the modal first derivative, with multiplication reassociated
+    // after inverse-y. Readiness and consumer capture publish only on success.
+    WVKernelStatus inverseWithStage(WVRetainedHorizontalWorkspace&,WVComplexInput,WVRealOutput,
+        WVRetainedInverseStage&,bool xDerivative,const WVRealOutputConsumer& = {}) const;
     WVKernelStatus forward(WVRetainedHorizontalWorkspace&, WVRealInput, WVComplexOutput) const;
     WVKernelStatus inverse(WVRetainedHorizontalWorkspace&, WVComplexInput, WVRealOutput) const;
     // Consumer ranges refer to a contiguous [Nx,Ny,planes] output. The complete

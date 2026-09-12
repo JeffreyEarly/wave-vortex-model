@@ -1,6 +1,11 @@
 #include "WaveVortexRuntime/WVStratifiedModalRecord.hpp"
+#include "WaveVortexRuntime/WVHydrostaticForcingEngine.hpp"
+#include "WaveVortexRuntime/WVExtensionCatalog.hpp"
 #include "WaveVortexKernel/WVTransformHydrostaticKernel.hpp"
 #include "WVReferenceFFTEngine.hpp"
+#if WV_TEST_NATIVE_FFTW
+#include "WVNativeFFTWEngine.hpp"
+#endif
 #include "../../tools/compiled-kernel/tests/WVAllocationProbe.hpp"
 #include "WVStratifiedModalTestFixture.hpp"
 #include <iostream>
@@ -40,6 +45,64 @@ struct DerivativeAccessProbe {
     }
     WVStateDerivativeAccess access() {return {this,lookup,capture};}
 };
+#if WV_TEST_NATIVE_FFTW
+void sharedInverseColumnForcingGate(
+    std::shared_ptr<const WVStratifiedModalRecord> source) {
+    WVExtensionCatalogBuilder builder;
+    require(bool(addBuiltInExtensions(builder)),
+        "Hydrostatic inverse-column gate built-ins failed");
+    std::shared_ptr<const WVExtensionCatalog> catalog;
+    require(bool(builder.freeze(catalog)),
+        "Hydrostatic inverse-column gate catalog failed");
+    const auto* registration=catalog->forcings().registration(
+        "WVNonlinearAdvection",1);
+    WVFrozenForcingEntry nonlinearEntry;
+    nonlinearEntry.typeIdentifier=registration->matlabClassName;
+    nonlinearEntry.contractVersion=1;
+    nonlinearEntry.name=registration->defaultName;
+    nonlinearEntry.stage=registration->stage;
+    nonlinearEntry.priority=registration->priority;
+    nonlinearEntry.configuration={"wave-vortex-forcing-configuration-v1",1,{}};
+    WVFrozenForcingSchedule emptySchedule,dampingSchedule,nonlinearSchedule;
+    dampingSchedule.entries.push_back({"WVAdaptiveDamping",1,"adaptive damping",
+        WVForcingStage::spectral,255,0,"",
+        {"wave-vortex-forcing-configuration-v1",1,{}}});
+    nonlinearSchedule.entries.push_back(nonlinearEntry);
+
+    WVVariableKernelServices services;
+    services.execution={WVRetainedHorizontalSchedule::streamingPrunedTile16,2,
+        true,WVVariableSpectralSchedule::compactSplitFusedViews};
+    services.execution.pointwiseWorkers=2;
+    services.execution.sharedInverseColumns=true;
+    auto create=[&](const WVFrozenForcingSchedule& schedule,
+                    const WVVariableKernelServices& selectedServices,
+                    std::unique_ptr<WVHydrostaticForcingEngine>& engine) {
+        std::unique_ptr<WVFFTEngine> fft;
+        require(bool(WVFFTWEngine::create(1,fft)),
+            "Hydrostatic inverse-column gate FFT setup failed");
+        const auto status=WVHydrostaticForcingEngine::create(source,schedule,
+            catalog,std::move(fft),engine,selectedServices);
+        require(bool(status),status.message.c_str());
+    };
+    std::unique_ptr<WVHydrostaticForcingEngine> empty,damping,nonlinear,lowMemory;
+    create(emptySchedule,services,empty);
+    create(dampingSchedule,services,damping);
+    create(nonlinearSchedule,services,nonlinear);
+    auto lowMemoryServices=services;
+    lowMemoryServices.variableEvaluationPolicy=WVVariableEvaluationPolicy::lowMemory;
+    create(nonlinearSchedule,lowMemoryServices,lowMemory);
+    require(!empty->kernel().executionOptions().sharedInverseColumns &&
+            !damping->kernel().executionOptions().sharedInverseColumns &&
+            nonlinear->kernel().executionOptions().sharedInverseColumns &&
+            !lowMemory->kernel().executionOptions().sharedInverseColumns,
+        "Hydrostatic forcing demand did not gate shared inverse columns");
+    const auto unprepared=empty->kernel().storage().spectralScratchBytes;
+    require(damping->kernel().storage().spectralScratchBytes==unprepared &&
+            lowMemory->kernel().storage().spectralScratchBytes==unprepared &&
+            nonlinear->kernel().storage().spectralScratchBytes>unprepared,
+        "Hydrostatic inverse-stage storage did not follow forcing demand");
+}
+#endif
 class Plan final : public WVFFTPlan {
     std::unique_ptr<WVFFTPlan> plan_; Counters& counters_;
 public:
@@ -544,24 +607,40 @@ void variableScheduleParity(const std::shared_ptr<const WVStratifiedModalRecord>
 }
 
 void sharedFieldGradientParity(const std::shared_ptr<const WVStratifiedModalRecord>& source,
-    bool compact) {
+    bool compact,bool native = false) {
     WVVariableExecutionOptions sharedOptions{WVRetainedHorizontalSchedule::fullFFT,2,true};
     sharedOptions.pointwiseWorkers=2;
     sharedOptions.fusedDerivativeAdvection=true;
+    sharedOptions.sharedInverseColumns=true;
     if (compact) {
         sharedOptions={WVRetainedHorizontalSchedule::streamingPrunedTile16,2,true};
         sharedOptions.spectralSchedule=WVVariableSpectralSchedule::compactSplitFusedViews;
         sharedOptions.pointwiseWorkers=2;
         sharedOptions.fusedDerivativeAdvection=true;
+        sharedOptions.sharedInverseColumns=true;
     }
     auto independentOptions=sharedOptions;
     independentOptions.sharedFieldGradients=false;
     std::unique_ptr<WVTransformHydrostaticKernel> shared,independent;
+    std::unique_ptr<WVFFTEngine> sharedEngine,independentEngine;
+#if WV_TEST_NATIVE_FFTW
+    if(native) {
+        require(bool(WVFFTWEngine::create(1,sharedEngine)) &&
+            bool(WVFFTWEngine::create(1,independentEngine)),
+            "Native shared inverse-column engines failed");
+    } else
+#else
+    (void)native;
+#endif
+    {
+        sharedEngine=std::make_unique<WVReferenceFFTEngine>();
+        independentEngine=std::make_unique<WVReferenceFFTEngine>();
+    }
     require(bool(WVTransformHydrostaticKernel::create(source,
-        std::make_unique<WVReferenceFFTEngine>(),shared,WVCreateScalarMatrixBackend,
+        std::move(sharedEngine),shared,WVCreateScalarMatrixBackend,
         sharedOptions)),"Shared field-gradient kernel setup failed");
     require(bool(WVTransformHydrostaticKernel::create(source,
-        std::make_unique<WVReferenceFFTEngine>(),independent,WVCreateScalarMatrixBackend,
+        std::move(independentEngine),independent,WVCreateScalarMatrixBackend,
         independentOptions)),"Independent field-gradient kernel setup failed");
 
     const auto& g=source->geometry();
@@ -618,17 +697,48 @@ void sharedFieldGradientParity(const std::shared_ptr<const WVStratifiedModalReco
             sharedFieldMetrics.verticalPreparationCount==16 &&
             sharedFieldMetrics.verticalOperatorExecutionCount==16 &&
             sharedFieldMetrics.horizontalSpectrumReuseCount==16 &&
-            sharedFieldMetrics.preparedVerticalDerivativeCount==8,
+            sharedFieldMetrics.preparedVerticalDerivativeCount==8 &&
+            sharedFieldMetrics.horizontalColumnPreparationCount==(native ? 6u : 0u) &&
+            sharedFieldMetrics.horizontalColumnReuseCount==(native ? 6u : 0u),
         "Shared field-gradient producers did not execute once per field/component key");
     require(independentFieldMetrics.coefficientAssemblyCount==32 &&
             independentFieldMetrics.verticalPreparationCount==32 &&
             independentFieldMetrics.verticalOperatorExecutionCount==32 &&
             independentFieldMetrics.horizontalSpectrumReuseCount==0 &&
-            independentFieldMetrics.preparedVerticalDerivativeCount==0,
+            independentFieldMetrics.preparedVerticalDerivativeCount==0 &&
+            independentFieldMetrics.horizontalColumnPreparationCount==0 &&
+            independentFieldMetrics.horizontalColumnReuseCount==0,
         "Independent field-gradient qualification path unexpectedly reused preparation");
     require(bool(shared->endStateEvaluation()),"Shared field-gradient scope end failed");
     require(bool(independent->endStateEvaluation()),
         "Independent field-gradient scope end failed");
+
+    if(native) {
+        require(bool(shared->beginStateEvaluation(state)) &&
+            bool(independent->beginStateEvaluation(state)),
+            "Density-alias inverse-column scope begin failed");
+        shared->resetMetrics();
+        independent->resetMetrics();
+        for(const auto derivative:{WVHydrostaticDerivative::value,WVHydrostaticDerivative::x}) {
+            require(bool(shared->transformStateField(state,WVHydrostaticField::rhoE,
+                {sharedField.data(),spatialShape},derivative)) &&
+                bool(independent->transformStateField(state,WVHydrostaticField::rhoE,
+                {independentField.data(),spatialShape},derivative)),
+                "Density-alias inverse-column reconstruction failed");
+            for(std::size_t i=0;i<R;++i)
+                require(std::abs(sharedField[i]-independentField[i])<=1e-12*
+                    std::max(1.0,std::abs(independentField[i])),
+                    "Density alias changed shared inverse-column values");
+        }
+        require(shared->metrics().horizontalColumnPreparationCount==1 &&
+                shared->metrics().horizontalColumnReuseCount==1 &&
+                independent->metrics().horizontalColumnPreparationCount==0 &&
+                independent->metrics().horizontalColumnReuseCount==0,
+            "Density alias did not share the normalized eta inverse stage");
+        require(bool(shared->endStateEvaluation()) &&
+            bool(independent->endStateEvaluation()),
+            "Density-alias inverse-column scope end failed");
+    }
 
     // Removing and re-adding the exact coefficient storage must assign a new
     // registered-view generation. Reuse within either generation remains valid.
@@ -656,7 +766,9 @@ void sharedFieldGradientParity(const std::shared_ptr<const WVStratifiedModalReco
         {sharedField.data(),spatialShape})),"Re-added registered-view preparation failed");
     require(shared->metrics().coefficientAssemblyCount==2 &&
             shared->metrics().verticalPreparationCount==2 &&
-            shared->metrics().horizontalSpectrumReuseCount==1,
+            shared->metrics().horizontalSpectrumReuseCount==1 &&
+            shared->metrics().horizontalColumnPreparationCount==(native ? 2u : 0u) &&
+            shared->metrics().horizontalColumnReuseCount==(native ? 1u : 0u),
         "Re-added same-storage view reused an invalid generation or lost in-view reuse");
     require(bool(shared->endStateEvaluation()),
         "Registered-view field-gradient scope end failed");
@@ -667,7 +779,9 @@ void sharedFieldGradientParity(const std::shared_ptr<const WVStratifiedModalReco
     require(bool(shared->transformStateField(state,WVHydrostaticField::u,
         {sharedField.data(),spatialShape})),"Second standalone shared preparation failed");
     require(shared->metrics().coefficientAssemblyCount==2 &&
-            shared->metrics().verticalPreparationCount==2,
+            shared->metrics().verticalPreparationCount==2 &&
+            shared->metrics().horizontalColumnPreparationCount==(native ? 2u : 0u) &&
+            shared->metrics().horizontalColumnReuseCount==0,
         "Standalone operations published shared preparation across call boundaries");
 
     std::array<std::vector<WVComplex64>,3> sharedFluxStorage,independentFluxStorage;
@@ -714,16 +828,41 @@ void sharedFieldGradientParity(const std::shared_ptr<const WVStratifiedModalReco
             shared->metrics().verticalOperatorExecutionCount==10 &&
             shared->metrics().horizontalSpectrumReuseCount==6 &&
             shared->metrics().preparedVerticalDerivativeCount==3 &&
-            shared->metrics().derivativeAdvectionConsumerCount==9,
+            shared->metrics().derivativeAdvectionConsumerCount==9 &&
+            shared->metrics().horizontalColumnPreparationCount==(native ? 3u : 0u) &&
+            shared->metrics().horizontalColumnReuseCount==(native ? 3u : 0u),
         "Scoped nonlinear evaluation did not share four assemblies and seven vertical products");
     require(independent->metrics().coefficientAssemblyCount==13 &&
             independent->metrics().verticalPreparationCount==13 &&
-            independent->metrics().derivativeAdvectionConsumerCount==9,
+            independent->metrics().derivativeAdvectionConsumerCount==9 &&
+            independent->metrics().horizontalColumnPreparationCount==0 &&
+            independent->metrics().horizontalColumnReuseCount==0,
         "Independent nonlinear qualification path did not execute all thirteen producers");
     require(bool(shared->endStateEvaluation()),
         "Shared nonlinear preparation scope end failed");
     require(bool(independent->endStateEvaluation()),
         "Independent nonlinear preparation scope end failed");
+
+    if(native) {
+        std::vector<double> cachedX(R);
+        require(bool(independent->transformStateField(state,WVHydrostaticField::u,
+            {cachedX.data(),spatialShape},WVHydrostaticDerivative::x)),
+            "Independent cached-x fixture failed");
+        DerivativeAccessProbe derivativeProbe;
+        derivativeProbe.cachedField=static_cast<std::size_t>(WVHydrostaticField::u);
+        derivativeProbe.cachedDerivative=static_cast<std::size_t>(WVHydrostaticDerivative::x);
+        derivativeProbe.cached={cachedX.data(),spatialShape};
+        auto derivativeAccess=derivativeProbe.access();
+        require(bool(shared->beginStateEvaluation(state)),"Cached-x shared scope begin failed");
+        shared->resetMetrics();
+        require(bool(shared->nonlinearFlux(state,sharedFlux,&sharedRawView,nullptr,true,
+            &derivativeAccess)),"Cached-x shared nonlinear evaluation failed");
+        require(shared->metrics().horizontalColumnPreparationCount==3 &&
+                shared->metrics().horizontalColumnReuseCount==2 &&
+                shared->metrics().derivativeAdvectionConsumerCount==8,
+            "Cached Hydrostatic x derivative did not suppress exactly one column reuse");
+        require(bool(shared->endStateEvaluation()),"Cached-x shared scope end failed");
+    }
 
     shared->resetMetrics();
     require(bool(shared->nonlinearFlux(state,sharedFlux)),
@@ -733,7 +872,9 @@ void sharedFieldGradientParity(const std::shared_ptr<const WVStratifiedModalReco
             shared->metrics().verticalOperatorExecutionCount==10 &&
             shared->metrics().horizontalSpectrumReuseCount==6 &&
             shared->metrics().preparedVerticalDerivativeCount==3 &&
-            shared->metrics().derivativeAdvectionConsumerCount==9,
+            shared->metrics().derivativeAdvectionConsumerCount==9 &&
+            shared->metrics().horizontalColumnPreparationCount==(native ? 3u : 0u) &&
+            shared->metrics().horizontalColumnReuseCount==(native ? 3u : 0u),
         "Standalone nonlinear evaluation did not retain operation-local sharing");
 
     // The horizontal inverse consumes an already completed vertical product.
@@ -785,6 +926,10 @@ int main() {
         variableScheduleParity(source,true);
         sharedFieldGradientParity(source,false);
         sharedFieldGradientParity(source,true);
+#if WV_TEST_NATIVE_FFTW
+        sharedInverseColumnForcingGate(source);
+        sharedFieldGradientParity(source,true,true);
+#endif
         std::unique_ptr<WVTransformHydrostaticKernel> kernel; require(bool(WVTransformHydrostaticKernel::create(source,std::make_unique<WVReferenceFFTEngine>(),kernel)),"Lifetime setup failed");
         std::weak_ptr<const WVStratifiedModalRecord> weak=source; source.reset(); require(!weak.expired(),"Kernel lost scientific owner"); kernel.reset(); require(weak.expired(),"Scientific owner leaked");
         std::cout<<"Hydrostatic kernel contracts passed\n"; return 0;

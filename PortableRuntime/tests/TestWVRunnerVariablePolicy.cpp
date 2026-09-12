@@ -23,6 +23,7 @@ void established(const WVRunnerVariablePolicy& policy,const char* message) {
     require(policy.execution.pointwiseWorkers==1,message);
     require(policy.execution.verticalGroupWorkers==1,message);
     require(!policy.execution.fusedDerivativeAdvection,message);
+    require(!policy.execution.sharedInverseColumns,message);
 }
 
 } // namespace
@@ -59,7 +60,9 @@ int main() {
                     (kind==WVPersistedTransformKind::boussinesq ? 8 : 1) &&
                 policy.execution.fusedDerivativeAdvection==
                     (kind==WVPersistedTransformKind::hydrostatic ||
-                     kind==WVPersistedTransformKind::boussinesq),
+                     kind==WVPersistedTransformKind::boussinesq) &&
+                policy.execution.sharedInverseColumns==
+                    (kind==WVPersistedTransformKind::hydrostatic),
                 "Native compact topology differs");
         }
 
@@ -82,12 +85,14 @@ int main() {
         policy=selectRunnerVariablePolicy(true,WVPersistedTransformKind::boussinesq,
             "native-fftw",8,false,{4,2});
         require(policy.execution.horizontalWorkers==2 && policy.execution.pointwiseWorkers==2 &&
-            policy.execution.verticalGroupWorkers==2 && policy.execution.fusedDerivativeAdvection,
+            policy.execution.verticalGroupWorkers==2 && policy.execution.fusedDerivativeAdvection &&
+            !policy.execution.sharedInverseColumns,
             "Compact topology exceeded host performance workers");
         policy=selectRunnerVariablePolicy(true,WVPersistedTransformKind::boussinesq,
             "native-fftw",24,false,{24,16});
         require(policy.execution.horizontalWorkers==12 && policy.execution.pointwiseWorkers==8 &&
-            policy.execution.verticalGroupWorkers==8 && policy.execution.fusedDerivativeAdvection,
+            policy.execution.verticalGroupWorkers==8 && policy.execution.fusedDerivativeAdvection &&
+            !policy.execution.sharedInverseColumns,
             "Compact topology exceeded its calibrated worker bounds");
         require(std::string(runnerMatrixBackendIdentifier(WVRunnerMatrixBackend::accelerate))=="accelerate" &&
             std::string(runnerTransformKindIdentifier(WVPersistedTransformKind::boussinesq))=="boussinesq" &&

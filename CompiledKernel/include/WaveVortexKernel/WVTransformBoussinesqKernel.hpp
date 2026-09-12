@@ -35,6 +35,7 @@ struct WVBoussinesqKernelMetrics {
     std::size_t derivativeAdvectionConsumerCount = 0;
     std::size_t horizontalSpectrumReuseCount = 0;
     std::size_t preparedVerticalDerivativeCount = 0;
+    std::size_t horizontalColumnPreparationCount = 0, horizontalColumnReuseCount = 0;
     std::size_t verticalOperatorExecutionCount = 0;
     std::size_t verticalMatrixGroupExecutionCount = 0;
     std::array<std::size_t,4> tendencyReconstructionCount{};

@@ -897,6 +897,7 @@ std::string variablePolicyJSON(const cli::WVRunnerVariablePolicy& policy,
            << ",\"streamedNonlinear\":" << (execution.streamedNonlinear ? "true" : "false")
            << ",\"horizontalWorkers\":" << execution.horizontalWorkers
            << ",\"fusedDerivativeAdvection\":" << (execution.fusedDerivativeAdvection ? "true" : "false")
+           << ",\"sharedInverseColumns\":" << (execution.sharedInverseColumns ? "true" : "false")
            << ",\"pointwiseWorkers\":" << execution.pointwiseWorkers
            << ",\"verticalGroupWorkers\":" << execution.verticalGroupWorkers
            << ",\"inertialOnlyProjection\":" << (execution.inertialOnlyProjection ? "true" : "false")
@@ -1038,9 +1039,17 @@ int wavevortex::runtime::runWaveVortex(
 
     const auto hostTopology=cli::runnerHostTopology();
     const auto requestedFFTThreads=options.threads;
-    const auto variablePolicy=cli::selectRunnerVariablePolicy(
+    auto variablePolicy=cli::selectRunnerVariablePolicy(
         WV_RUNTIME_ENABLE_COMPACT_VARIABLE_POLICY!=0,inspection.transformKind,
         options.provider,options.threads,options.hasRequestedThreads,hostTopology);
+    variablePolicy.execution.sharedInverseColumns=
+        variablePolicy.execution.sharedInverseColumns &&
+        options.variableEvaluationPolicy==WVVariableEvaluationPolicy::reuse &&
+        std::any_of(activeForcingSchedule.entries.begin(),activeForcingSchedule.entries.end(),
+            [&](const auto& entry) {
+                return catalog->forcings().registration(entry.typeIdentifier,entry.contractVersion)
+                    ->evaluationDependencies.nonlinearUseCount>0;
+            });
     options.threads=variablePolicy.effectiveFFTThreads;
     WVVariableKernelServices variableServices;
     variableServices.execution=variablePolicy.execution;
@@ -1691,6 +1700,8 @@ int wavevortex::runtime::runWaveVortex(
            << ",\"verticalMatrixGroupExecutions\":" << producers.verticalMatrixGroupExecutions
            << ",\"verticalPreparations\":" << producers.verticalPreparations
            << ",\"horizontalSpectrumReuses\":" << producers.horizontalSpectrumReuses
+           << ",\"columnPreparations\":" << producers.columnPreparations
+           << ",\"columnReuses\":" << producers.columnReuses
            << ",\"derivativeAdvectionConsumers\":" << producers.derivativeAdvectionConsumers
            << ",\"preparedVerticalDerivatives\":" << producers.preparedVerticalDerivatives
            << ",\"horizontalSpeedReductions\":" << producers.horizontalSpeedReductions

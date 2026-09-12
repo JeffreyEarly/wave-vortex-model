@@ -51,10 +51,19 @@ WVKernelStatus WVHydrostaticForcingEngine::create(std::shared_ptr<const WVStrati
     try {
         const auto& g=source->geometry();
         auto s=validateSchedule(g,schedule,{g.Nj,g.Nkl},*catalog); if (!s) return s;
+        auto execution=services.execution;
+        execution.sharedInverseColumns=execution.sharedInverseColumns &&
+            services.variableEvaluationPolicy==WVVariableEvaluationPolicy::reuse &&
+            std::any_of(schedule.entries.begin(),schedule.entries.end(),
+                [&](const auto& entry) {
+                    return catalog->forcings().registration(
+                        entry.typeIdentifier,entry.contractVersion)
+                            ->evaluationDependencies.nonlinearUseCount>0;
+                });
         auto candidate=std::unique_ptr<WVHydrostaticForcingEngine>(new WVHydrostaticForcingEngine);
         candidate->catalog_=std::move(catalog);
         candidate->evaluationPolicy_=services.variableEvaluationPolicy;
-        s=WVTransformHydrostaticKernel::create(std::move(source),std::move(fft),candidate->kernel_,services.matrixBackendFactory,services.execution); if (!s) return s;
+        s=WVTransformHydrostaticKernel::create(std::move(source),std::move(fft),candidate->kernel_,services.matrixBackendFactory,execution); if (!s) return s;
         s=candidate->initialize(schedule); if (!s) return s;
         result=std::move(candidate); return WVKernelStatus::ok();
     } catch (const std::bad_alloc&) { return {WVKernelStatusCode::allocationFailure,"Hydrostatic forcing allocation failed."}; }

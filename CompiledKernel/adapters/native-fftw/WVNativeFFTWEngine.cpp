@@ -5,6 +5,7 @@
 #include <cmath>
 #include <condition_variable>
 #include <stdexcept>
+#include <system_error>
 #include <thread>
 
 #include <fftw3.h>
@@ -247,6 +248,26 @@ public:
 class RetainedFFTWPlan final : public WVRetainedHorizontalPlan {
     struct Mode { std::size_t row,partner; bool conjugate,self; };
     static constexpr std::size_t tileWidth=16;
+    class InverseStage final : public WVRetainedInverseStage {
+    public:
+        InverseStage(std::shared_ptr<const char> owner,std::size_t elements,std::size_t columns,std::size_t workers)
+            : owner(std::move(owner)),values(elements),xFactors(columns),columnCounts(workers*8) {}
+        void invalidate() noexcept override { valid=false; }
+        bool ready() const noexcept override { return valid; }
+        std::size_t columnExecutionCount() const noexcept override {
+            std::size_t count=0;
+            for (std::size_t i=0;i<columnCounts.size();i+=8) count+=columnCounts[i];
+            return count;
+        }
+        std::size_t persistentBytes() const noexcept override {
+            return sizeof(*this)+values.capacity()*sizeof(WVComplex64)+xFactors.capacity()*sizeof(double)+columnCounts.capacity()*sizeof(std::size_t);
+        }
+        const std::shared_ptr<const char> owner;
+        std::vector<WVComplex64> values;
+        std::vector<double> xFactors;
+        std::vector<std::size_t> columnCounts; // One separate cache line per worker.
+        bool valid=false;
+    };
 public:
     explicit RetainedFFTWPlan(const WVRetainedHorizontalSpecification& spec)
         : spec_(spec), workers_(std::min(spec.outerWorkers,spec.grid.planes)),
@@ -295,6 +316,53 @@ public:
         Context context{this,{},output,input,{},&consumer}; resources_->pool.run(inverseTask,&context);
         resources_->active.store(false); return WVKernelStatus::ok();
     }
+    bool supportsInverseStage() const noexcept override {
+        // A retained even-x Nyquist column has ambiguous signed k under the
+        // Hermitian partner construction; keep that layout on the ordinary path.
+        return spec_.grid.Nx%2 || activeColumns_<=spec_.grid.Nx/2;
+    }
+    WVKernelStatus createInverseStage(WVRealInput multipliers,
+        std::unique_ptr<WVRetainedInverseStage>& result) override {
+        if (!supportsInverseStage()) return {WVKernelStatusCode::unsupportedOperation,"Inverse-stage x Nyquist layout is unsupported."};
+        try {
+            const auto count=RetainedFFTWResources::checked(spec_.grid.planes,
+                RetainedFFTWResources::checked(spec_.grid.Ny,activeColumns_));
+            RetainedFFTWResources::checked(count,sizeof(WVComplex64));
+            auto stage=std::make_unique<InverseStage>(stageOwner_,count,activeColumns_,workers_);
+            std::vector<bool> seen(activeColumns_,false);
+            const auto half=spec_.grid.Nx/2+1;
+            for (std::size_t m=0;m<modes_.size();++m) {
+                const auto column=modes_[m].row%half;
+                const double factor=modes_[m].conjugate ? -multipliers.data[m] : multipliers.data[m];
+                if ((column==0 && factor!=0) || (seen[column] && stage->xFactors[column]!=factor))
+                    return {WVKernelStatusCode::invalidConfiguration,"Physical x multiplier is not constant on the folded Fourier column."};
+                stage->xFactors[column]=factor; seen[column]=true;
+            }
+            result=std::move(stage); return WVKernelStatus::ok();
+        } catch (const std::bad_alloc&) { return {WVKernelStatusCode::allocationFailure,"Inverse-stage preparation allocation failed."}; }
+          catch (const std::length_error&) { return {WVKernelStatusCode::sizeOverflow,"Inverse-stage storage exceeds capacity."}; }
+          catch (const std::overflow_error& e) { return {WVKernelStatusCode::sizeOverflow,e.what()}; }
+    }
+    WVKernelStatus inverseWithStage(WVComplexInput input,WVRealOutput output,
+        WVRetainedInverseStage& opaque,bool xDerivative,const WVRealOutputConsumer& consumer) override {
+        auto* stage=dynamic_cast<InverseStage*>(&opaque);
+        if (!stage || stage->owner!=stageOwner_)
+            return {WVKernelStatusCode::invalidConfiguration,"Inverse stage belongs to another retained workspace."};
+        const auto& layout=spec_.retained;
+        for (std::size_t m=0;m<modes_.size();++m) if (modes_[m].self)
+            for (std::size_t z=0;z<spec_.grid.planes;++z) {
+                const auto value=read(input,z*layout.rowStride+m*layout.columnStride);
+                // Every supported self mode has kx=0. Preserve the old
+                // materialized-product rejection of nonfinite self values.
+                const double imag=xDerivative ? value.real*0.0+value.imag*0.0 : value.imag;
+                if (imag!=0) return {WVKernelStatusCode::invalidConfiguration,"Self-conjugate Fourier values must be real."};
+            }
+        if (resources_->active.exchange(true)) return {WVKernelStatusCode::reentrantExecution,"Shared retained FFTW resource is active."};
+        Context context{this,{},output,input,{},&consumer,stage,xDerivative,stage->ready()};
+        resources_->pool.run(inverseStageTask,&context);
+        stage->valid=true;
+        resources_->active.store(false); return WVKernelStatus::ok();
+    }
     const char* identifier() const noexcept override { return "fftw-streaming-pruned-tile16"; }
     std::size_t workerCount() const noexcept override { return workers_; }
     std::size_t persistentBytes() const noexcept override {
@@ -308,7 +376,7 @@ public:
     const void* sharedResourceIdentity() const noexcept override { return resources_.get(); }
     std::size_t sharedResourceBytes() const noexcept override { return resources_->bytes(); }
 private:
-    struct Context { RetainedFFTWPlan* plan; WVRealInput realInput; WVRealOutput realOutput; WVComplexInput complexInput; WVComplexOutput complexOutput; const WVRealOutputConsumer* consumer=nullptr; };
+    struct Context { RetainedFFTWPlan* plan; WVRealInput realInput; WVRealOutput realOutput; WVComplexInput complexInput; WVComplexOutput complexOutput; const WVRealOutputConsumer* consumer=nullptr; InverseStage* stage=nullptr; bool xDerivative=false, reuseStage=false; };
     static WVComplex64 read(WVComplexInput input,std::size_t i) noexcept {
         return input.interleaved ? input.interleaved[i] : WVComplex64{input.real[i],input.imag[i]};
     }
@@ -381,6 +449,58 @@ private:
             }
         }
     }
+    static void inverseStageTask(void* pointer,std::size_t worker) noexcept {
+        auto& c=*static_cast<Context*>(pointer); auto& p=*c.plan;
+        const auto& g=p.spec_.grid; const auto& layout=p.spec_.retained;
+        const auto half=g.Nx/2+1,columns=p.activeColumns_;
+        auto* scratch=p.resources_->scratch.data()+worker*p.halfSize_;
+        auto* tile=p.resources_->tile.data()+worker*tileWidth*p.modes_.size();
+        const auto partition=[&](std::size_t w) { return (g.planes/p.workers_)*w+std::min(w,g.planes%p.workers_); };
+        const auto begin=partition(worker),end=partition(worker+1);
+        for (auto base=begin;base<end;base+=tileWidth) {
+            const auto count=std::min(tileWidth,end-base);
+            if (!c.reuseStage) {
+                std::array<WVComplex64,tileWidth*32> block;
+                for (std::size_t first=0;first<p.modes_.size();first+=32) {
+                    const auto modes=std::min(std::size_t{32},p.modes_.size()-first);
+                    for (std::size_t m=0;m<modes;++m) for (std::size_t lane=0;lane<count;++lane)
+                        block[m*tileWidth+lane]=read(c.complexInput,(base+lane)*layout.rowStride+(first+m)*layout.columnStride);
+                    for (std::size_t lane=0;lane<count;++lane) for (std::size_t m=0;m<modes;++m)
+                        tile[lane*p.modes_.size()+first+m]=block[m*tileWidth+lane];
+                }
+            }
+            for (std::size_t lane=0;lane<count;++lane) {
+                auto* saved=c.stage->values.data()+(base+lane)*g.Ny*columns;
+                if (!c.reuseStage) {
+                    std::fill(scratch,scratch+p.halfSize_,WVComplex64{});
+                    for (std::size_t m=0;m<p.modes_.size();++m) {
+                        const auto& map=p.modes_[m]; auto value=tile[lane*p.modes_.size()+m];
+                        if (map.conjugate) value.imag=-value.imag;
+                        scratch[map.row]=value;
+                        if (map.partner!=map.row) scratch[map.partner]={value.real,-value.imag};
+                    }
+                    ++c.stage->columnCounts[worker*8];
+                    fftw_execute_dft(p.resources_->columnInverse_.get(),reinterpret_cast<fftw_complex*>(scratch),reinterpret_cast<fftw_complex*>(scratch));
+                    for (std::size_t y=0;y<g.Ny;++y) std::copy_n(scratch+y*half,columns,saved+y*columns);
+                } else {
+                    std::fill(scratch,scratch+p.halfSize_,WVComplex64{});
+                    for (std::size_t y=0;y<g.Ny;++y) std::copy_n(saved+y*columns,columns,scratch+y*half);
+                }
+                if (c.xDerivative) for (std::size_t y=0;y<g.Ny;++y) for (std::size_t x=0;x<columns;++x) {
+                    const auto value=scratch[y*half+x]; const auto factor=c.stage->xFactors[x];
+                    scratch[y*half+x]={value.real*0.0-value.imag*factor,value.real*factor+value.imag*0.0};
+                }
+                auto* output=c.realOutput.data+(base+lane)*g.planeStride;
+                fftw_execute_dft_c2r(p.resources_->rowInverse_.get(),reinterpret_cast<fftw_complex*>(scratch),output);
+                if (p.inverseScale_!=1) for (std::size_t i=0;i<g.Nx*g.Ny;++i) output[i]*=p.inverseScale_;
+                if (c.consumer && c.consumer->consume) {
+                    const auto first=(base+lane)*g.planeStride;
+                    c.consumer->consume(c.consumer->context,first,first+g.Nx*g.Ny,c.realOutput.data);
+                }
+            }
+        }
+    }
+    const std::shared_ptr<const char> stageOwner_=std::make_shared<const char>(0);
     WVRetainedHorizontalSpecification spec_;
     std::size_t workers_,halfSize_,activeColumns_=0;
     std::vector<Mode> modes_;

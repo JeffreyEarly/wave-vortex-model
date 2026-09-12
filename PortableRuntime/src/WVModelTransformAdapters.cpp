@@ -338,6 +338,8 @@ public:
     metrics.variableProducers.verticalOperatorExecutions=producers.verticalOperatorExecutionCount;
     metrics.variableProducers.verticalPreparations=producers.verticalPreparationCount;
     metrics.variableProducers.horizontalSpectrumReuses=producers.horizontalSpectrumReuseCount;
+    metrics.variableProducers.columnPreparations=producers.horizontalColumnPreparationCount;
+    metrics.variableProducers.columnReuses=producers.horizontalColumnReuseCount;
     metrics.variableProducers.derivativeAdvectionConsumers=producers.derivativeAdvectionConsumerCount;
     metrics.variableProducers.preparedVerticalDerivatives=producers.preparedVerticalDerivativeCount;
     metrics.variableProducers.tendencyReconstructions=producers.tendencyReconstructionCount;
@@ -432,6 +434,8 @@ public:
     metrics.variableProducers.verticalMatrixGroupExecutions=producers.verticalMatrixGroupExecutionCount;
     metrics.variableProducers.verticalPreparations=producers.verticalPreparationCount;
     metrics.variableProducers.horizontalSpectrumReuses=producers.horizontalSpectrumReuseCount;
+    metrics.variableProducers.columnPreparations=producers.horizontalColumnPreparationCount;
+    metrics.variableProducers.columnReuses=producers.horizontalColumnReuseCount;
     metrics.variableProducers.derivativeAdvectionConsumers=producers.derivativeAdvectionConsumerCount;
     metrics.variableProducers.preparedVerticalDerivatives=producers.preparedVerticalDerivativeCount;
     metrics.variableProducers.tendencyReconstructions=producers.tendencyReconstructionCount;

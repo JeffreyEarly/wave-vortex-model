@@ -117,6 +117,10 @@ WVKernelStatus WVTransformHydrostaticKernel::create(std::shared_ptr<const WVStra
         }
         c.spectralStorage_=std::make_unique<WVVariableComplexBuffer>(spectralElements,representation); c.phase_.resize(c.S_); c.real_.resize((options.streamedNonlinear ? 6 : 10)*c.R_);
         if (options.sharedFieldGradients) c.fieldCache_=std::make_unique<kernel_detail::WVPreparedFieldCache>(c.S_,c.H_,representation);
+        if (options.sharedInverseColumns && c.fieldCache_ && c.horizontalWorkspace_->supportsInverseStage()) {
+            status=c.fieldCache_->prepareInverseStages(*c.horizontal_,*c.horizontalWorkspace_,
+                {g.k.data(),g.k.size()*sizeof(double)}); if (!status) return status;
+        }
         c.pointwise_=std::make_unique<kernel_detail::WVPreparedModeExecutor>(std::min(options.pointwiseWorkers,c.R_));
         auto& s=c.storage_; s.sharedScientificBytes=c.source_->persistentBytes(); s.preparedBytes=c.horizontal_->persistentBytes();
         s.workspaceBytes=c.horizontalWorkspace_->persistentBytes()+sizeof(WVVariableComplexBuffer)+c.pointwise_->persistentBytes(); s.providerBytesLowerBound=c.horizontal_->providerBytesLowerBound(); s.planBytesLowerBound=c.horizontalWorkspace_->planBytesLowerBound();
@@ -480,6 +484,9 @@ WVKernelStatus WVTransformHydrostaticKernel::reconstruct(const WVCoefficients& a
             static_cast<std::size_t>(component)},prepared);
         if (!status) return status;
     }
+    const bool stagedInverse=prepared && prepared->inverseStage &&
+        (field==WVHydrostaticField::u || field==WVHydrostaticField::v || field==WVHydrostaticField::eta) &&
+        (derivative==WVHydrostaticDerivative::value || derivative==WVHydrostaticDerivative::x);
     const auto modal=prepared ? prepared->modal(0,S_) : modalView();
     const auto assemble=[&](std::size_t begin,std::size_t end) {
         for (std::size_t i=begin;i<end;++i) {
@@ -522,7 +529,7 @@ WVKernelStatus WVTransformHydrostaticKernel::reconstruct(const WVCoefficients& a
             prepared->gridReady=true;
         } else ++metrics_.horizontalSpectrumReuseCount;
         inverseInput=prepared->grid().input();
-        if (derivative!=WVHydrostaticDerivative::value) {
+        if (derivative!=WVHydrostaticDerivative::value && !stagedInverse) {
             pointwise_->execute(H_,[&](std::size_t begin,std::size_t end) {
                 for (std::size_t i=begin;i<end;++i) {
                     const auto mode=i/g.Nz;
@@ -545,8 +552,18 @@ WVKernelStatus WVTransformHydrostaticKernel::reconstruct(const WVCoefficients& a
     }
     if (dz && !G) for (std::size_t mode=0;mode<g.Nkl;++mode) for (std::size_t z=0;z<g.Nz;++z)
         write(gridView(),z+g.Nz*mode,scale(read(gridView().input(),z+g.Nz*mode),-g.N2[z]/g.g));
-    s=consumer ? horizontal_->inverseAndConsume(*horizontalWorkspace_,inverseInput,{b,R_*sizeof(double)},*consumer) :
-        horizontal_->inverse(*horizontalWorkspace_,inverseInput,{b,R_*sizeof(double)}); if (!s) return s;
+    if (stagedInverse) {
+        const bool wasReady=prepared->inverseStage->ready();
+        s=horizontal_->inverseWithStage(*horizontalWorkspace_,prepared->grid().input(),
+            {b,R_*sizeof(double)},*prepared->inverseStage,
+            derivative==WVHydrostaticDerivative::x,consumer ? *consumer : WVRealOutputConsumer{});
+        if (!s) return s;
+        if (wasReady) ++metrics_.horizontalColumnReuseCount;
+        else ++metrics_.horizontalColumnPreparationCount;
+    } else {
+        s=consumer ? horizontal_->inverseAndConsume(*horizontalWorkspace_,inverseInput,{b,R_*sizeof(double)},*consumer) :
+            horizontal_->inverse(*horizontalWorkspace_,inverseInput,{b,R_*sizeof(double)}); if (!s) return s;
+    }
     if (density) {
         double* eta=nullptr;
         if (dz) {

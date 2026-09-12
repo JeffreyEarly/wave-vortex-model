@@ -162,7 +162,7 @@
       "PortableRuntime/include/WaveVortexRuntime/WVVariableKernelServices.hpp": "b759568cbe85ec5e6550f3335ab7200acd6deb2b31730bc99a485cfa19315b67",
       "PortableRuntime/include/WaveVortexRuntime/WVModel.hpp": "18478fa5f4423988de8ef7f45bc186f2963c74b4e9576fc69615980dfb4d3cd7",
       "PortableRuntime/src/WVModel.cpp": "6aab778f71f4723da3ad25db2961f1c461ec00dff4aff414015dd91d927b0f4c",
-      "PortableRuntime/src/WVModelTransformAdapters.cpp": "f518920a8d0db74b2d6a25be3380d680e0b94a6164c306fe47cf431e1d33f2a9"
+      "PortableRuntime/src/WVModelTransformAdapters.cpp": "061f3590ded8755e5976f4c083761c12c4e5fdbc39125d2784000957979cbacd"
     }
   },
   "runnerVariablePolicy": {
@@ -190,10 +190,10 @@
     "publicMatlabPreviewFamilies": "unchanged; variable service injection is not exposed",
     "measurementEvidence": ".github/ci-evidence/issue-455-variable-final-adoption/decision.json",
     "sourceSHA256": {
-      "PortableRuntime/CMakeLists.txt": "0783a3519eea4eb0bf1a39f0c23b13e87f2c54510736d6d82f32f1aa7dc56a27",
+      "PortableRuntime/CMakeLists.txt": "7ec3df79c71095692b8fd8534ba4f3ef1076e007ef685f3f48d9bceea6ab44e8",
       "CompiledKernel/CMakeLists.txt": "e133b74121e699325e539f6ba5c424e9bb2739200cb86c54d8077cace2c3b2ea",
-      "PortableRuntime/app/WaveVortexRun.cpp": "751169a10aa191d88ff705f808d6b15b34723cea788ab99adf82a65df45457b4",
-      "PortableRuntime/app/WVRunnerVariablePolicy.cpp": "de780aaa1947c4094f21f46f466eee2402f1fc33309e0a2e8bee32961efb9af0",
+      "PortableRuntime/app/WaveVortexRun.cpp": "d7a111084b0939b9267fe9eb589d2ccfdebb76f0914cc4d7de18a84ef1dc3d75",
+      "PortableRuntime/app/WVRunnerVariablePolicy.cpp": "7cce1cd0594d1cbc458a25948c0bb0a6a6513baddf8c531bf8fc008c906b3ad1",
       "PortableRuntime/app/WVRunnerVariablePolicy.hpp": "c16796f29a84789a37fdf4927bfd03892796d683eb796aef75a0b5c5207d6c94"
     },
     "matrixAdvectionQualification": ".github/ci-evidence/matrix-advection-adoption/decision.json"
@@ -206,5 +206,23 @@
     "issue": 477,
     "qualifiedRuntimeCommit": "400ed1f1213795c95b04875dd54b0564d299545d",
     "qualification": ".github/ci-evidence/matrix-advection-adoption/decision.json"
+  },
+  "sharedInverseColumns": {
+    "issue": 481,
+    "status": "qualification-pending",
+    "automaticScope": "Native compact Hydrostatic runner, reuse policy, validated nonlinear forcing dependency.",
+    "optionalScope": "Direct C++ Boussinesq opt-in is correctness-tested; quiet screen showed no model benefit, so runner default remains off.",
+    "contract": "Reuse inverse-y preparation between value and x derivative in an explicitly invalidated prepared-field entry. Unsupported even-x Nyquist layouts retain the established path.",
+    "memory": "Additional full-depth active Fourier-x/physical-y columns are preallocated and reported; low-memory and damping-only model schedules disable retention.",
+    "sourceSHA256": {
+      "PortableRuntime/app/WVRunnerVariablePolicy.cpp": "7cce1cd0594d1cbc458a25948c0bb0a6a6513baddf8c531bf8fc008c906b3ad1",
+      "PortableRuntime/app/WaveVortexRun.cpp": "d7a111084b0939b9267fe9eb589d2ccfdebb76f0914cc4d7de18a84ef1dc3d75",
+      "PortableRuntime/include/WaveVortexRuntime/WVVariableEvaluation.hpp": "87883409e87742b2d9434e56da0ab40d7a27ef5edb00f00ee8f2278088c67ca8",
+      "PortableRuntime/src/WVBoussinesqForcingEngine.cpp": "c58f85e66ed562b40b6b77582eab269feab17825c8e00bd5a99cf01946af7aa1",
+      "PortableRuntime/src/WVHydrostaticForcingEngine.cpp": "da6e4effeaf0389246cf759d2364b62d7050996085d72712ad047c669b7b1029",
+      "PortableRuntime/src/WVModelTransformAdapters.cpp": "061f3590ded8755e5976f4c083761c12c4e5fdbc39125d2784000957979cbacd",
+      "PortableRuntime/src/WVStratifiedFieldEvaluationAdapter.cpp": "075af525e7323a9de153e069fe443debbde4362e33cbd51176d73fbfd6709d71"
+    },
+    "qualification": ".github/ci-evidence/shared-inverse-columns/decision.json"
   }
 }

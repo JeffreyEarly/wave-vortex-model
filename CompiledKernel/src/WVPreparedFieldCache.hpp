@@ -1,6 +1,7 @@
 #pragma once
 
 #include "WVVariableComplexBuffer.hpp"
+#include "WaveVortexKernel/WVSpectralOperators.hpp"
 #include <memory>
 #include <limits>
 #include <stdexcept>
@@ -30,6 +31,7 @@ public:
             : data(modalElements+gridElements,representation), modalElements(modalElements), gridElements(gridElements) {}
         spectral_detail::WVVariableComplexBuffer data;
         const std::size_t modalElements,gridElements;
+        std::unique_ptr<WVRetainedInverseStage> inverseStage;
         WVPreparedFieldKey key{};
         bool occupied = false, modalReady = false, gridReady = false;
         WVComplexOutput modal(std::size_t offset,std::size_t count) { return data.output(offset,count); }
@@ -46,6 +48,15 @@ public:
         entries_.reserve(maxEntries);
         for (std::size_t i=0;i<4;++i) entries_.push_back(makeEntry());
     }
+    WVKernelStatus prepareInverseStages(const WVRetainedHorizontalOperator& op,
+        WVRetainedHorizontalWorkspace& workspace,WVRealInput multipliers) {
+        for (auto& entry:entries_) {
+            auto status=op.createInverseStage(workspace,multipliers,entry->inverseStage);
+            if (!status) return status;
+        }
+        stageOperator_=&op; stageWorkspace_=&workspace; stageMultipliers_=multipliers;
+        return WVKernelStatus::ok();
+    }
     WVKernelStatus acquire(WVPreparedFieldKey key,Entry*& result) {
         result=nullptr;
         for (auto& entry:entries_) if (entry->occupied && entry->key==key) {
@@ -56,7 +67,14 @@ public:
         if (!available) {
             if (entries_.size()==maxEntries)
                 return {WVKernelStatusCode::invalidConfiguration,"Prepared field key capacity exceeded."};
-            try { entries_.push_back(makeEntry()); available=entries_.back().get(); }
+            try {
+                auto entry=makeEntry();
+                if (stageOperator_) {
+                    auto status=stageOperator_->createInverseStage(*stageWorkspace_,stageMultipliers_,entry->inverseStage);
+                    if (!status) return status;
+                }
+                entries_.push_back(std::move(entry)); available=entries_.back().get();
+            }
             catch (const std::bad_alloc&) {
                 return {WVKernelStatusCode::allocationFailure,"Prepared field allocation failed."};
             }
@@ -72,7 +90,7 @@ public:
     void clear() noexcept { for (auto& entry:entries_) reset(*entry); }
     std::size_t capacityBytes() const noexcept {
         std::size_t bytes=sizeof(*this)+entries_.capacity()*sizeof(std::unique_ptr<Entry>);
-        for (const auto& entry:entries_) bytes+=sizeof(Entry)+entry->data.capacityBytes();
+        for (const auto& entry:entries_) bytes+=sizeof(Entry)+entry->data.capacityBytes()+(entry->inverseStage ? entry->inverseStage->persistentBytes() : 0);
         return bytes;
     }
 private:
@@ -82,8 +100,12 @@ private:
         return std::make_unique<Entry>(modalElements_,gridElements_,representation_);
     }
     static void reset(Entry& entry) noexcept {
+        if (entry.inverseStage) entry.inverseStage->invalidate();
         entry.key={}; entry.occupied=false; entry.modalReady=false; entry.gridReady=false;
     }
+    const WVRetainedHorizontalOperator* stageOperator_=nullptr;
+    WVRetainedHorizontalWorkspace* stageWorkspace_=nullptr;
+    WVRealInput stageMultipliers_{};
     std::size_t modalElements_,gridElements_;
     WVComplexRepresentation representation_;
     std::vector<std::unique_ptr<Entry>> entries_;

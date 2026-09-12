@@ -58,6 +58,19 @@ struct WVRealOutputConsumer {
     void (*consume)(void*,std::size_t begin,std::size_t end,const double*) noexcept = nullptr;
 };
 
+// Opaque inverse-y result owned by one retained workspace. Validity is explicit:
+// invalidate before changing the borrowed source state, even at the same time
+// and address. Prepared storage survives invalidation; no state identity is inferred.
+class WVRetainedInverseStage {
+public:
+    virtual ~WVRetainedInverseStage() = default;
+    virtual void invalidate() noexcept = 0;
+    virtual bool ready() const noexcept = 0;
+    // Cumulative actual column FFT executions; invalidation preserves telemetry.
+    virtual std::size_t columnExecutionCount() const noexcept = 0;
+    virtual std::size_t persistentBytes() const noexcept = 0;
+};
+
 // Optional prepared retained transform. The enclosing operator validates all
 // buffers, Hermitian constraints and exclusive workspace use before execution.
 class WVRetainedHorizontalPlan {
@@ -65,6 +78,11 @@ public:
     virtual ~WVRetainedHorizontalPlan() = default;
     virtual WVKernelStatus forward(WVRealInput, WVComplexOutput) = 0;
     virtual WVKernelStatus inverse(WVComplexInput, WVRealOutput) = 0;
+    virtual bool supportsInverseStage() const noexcept { return false; }
+    virtual WVKernelStatus createInverseStage(WVRealInput xMultipliers,
+        std::unique_ptr<WVRetainedInverseStage>&);
+    virtual WVKernelStatus inverseWithStage(WVComplexInput,WVRealOutput,
+        WVRetainedInverseStage&,bool xDerivative,const WVRealOutputConsumer&);
     virtual bool supportsInverseConsumer() const noexcept { return false; }
     virtual WVKernelStatus inverseAndConsume(WVComplexInput, WVRealOutput,
         const WVRealOutputConsumer&);

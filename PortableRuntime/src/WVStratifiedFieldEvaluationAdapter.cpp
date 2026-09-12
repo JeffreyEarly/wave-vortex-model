@@ -568,6 +568,8 @@ WVStratifiedFieldEvaluationAdapter::producerMetrics() const noexcept {
     result.verticalOperatorExecutions=metrics.verticalOperatorExecutionCount;
     result.verticalPreparations=metrics.verticalPreparationCount;
     result.horizontalSpectrumReuses=metrics.horizontalSpectrumReuseCount;
+    result.columnPreparations=metrics.horizontalColumnPreparationCount;
+    result.columnReuses=metrics.horizontalColumnReuseCount;
     result.derivativeAdvectionConsumers=metrics.derivativeAdvectionConsumerCount;
     result.preparedVerticalDerivatives=metrics.preparedVerticalDerivativeCount;
     result.tendencyReconstructions=metrics.tendencyReconstructionCount;
@@ -582,6 +584,8 @@ WVStratifiedFieldEvaluationAdapter::producerMetrics() const noexcept {
     result.verticalMatrixGroupExecutions=metrics.verticalMatrixGroupExecutionCount;
     result.verticalPreparations=metrics.verticalPreparationCount;
     result.horizontalSpectrumReuses=metrics.horizontalSpectrumReuseCount;
+    result.columnPreparations=metrics.horizontalColumnPreparationCount;
+    result.columnReuses=metrics.horizontalColumnReuseCount;
     result.derivativeAdvectionConsumers=metrics.derivativeAdvectionConsumerCount;
     result.preparedVerticalDerivatives=metrics.preparedVerticalDerivativeCount;
     result.tendencyReconstructions=metrics.tendencyReconstructionCount;

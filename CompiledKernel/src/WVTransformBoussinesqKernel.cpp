@@ -147,6 +147,10 @@ WVKernelStatus WVTransformBoussinesqKernel::create(std::shared_ptr<const WVStrat
         c.spectralStorage_=std::make_unique<WVVariableComplexBuffer>(modalElements+gridElements,representation);
         if (options.sharedFieldGradients)
             c.fieldCache_=std::make_unique<kernel_detail::WVPreparedFieldCache>(2*c.S_,c.H_,representation);
+        if (options.sharedInverseColumns && c.fieldCache_ && c.horizontalWorkspace_->supportsInverseStage()) {
+            status=c.fieldCache_->prepareInverseStages(*c.horizontal_,*c.horizontalWorkspace_,
+                {g.k.data(),g.k.size()*sizeof(double)}); if (!status) return status;
+        }
         c.pointwise_=std::make_unique<kernel_detail::WVPreparedModeExecutor>(std::min(options.pointwiseWorkers,c.R_));
         c.phase_.resize(c.S_); c.real_.resize((options.streamedNonlinear ? 6 : 11)*c.R_);
         auto& s=c.storage_; s.sharedScientificBytes=c.source_->persistentBytes(); s.preparedBytes=c.horizontal_->persistentBytes();
@@ -560,6 +564,10 @@ WVKernelStatus WVTransformBoussinesqKernel::reconstruct(const WVCoefficients& a,
             static_cast<std::size_t>(component)},prepared);
         if (!s) return s;
     }
+    const bool stagedInverse=prepared && prepared->inverseStage &&
+        (field==WVBoussinesqField::u || field==WVBoussinesqField::v ||
+            field==WVBoussinesqField::w || field==WVBoussinesqField::eta) &&
+        (derivative==WVBoussinesqDerivative::value || derivative==WVBoussinesqDerivative::x);
     const auto wave=prepared ? prepared->modal(0,S_) : modalView();
     const auto balancedView=prepared ? prepared->modal(S_,S_) : modalView(1);
     if (!prepared || !prepared->modalReady) {
@@ -601,7 +609,7 @@ WVKernelStatus WVTransformBoussinesqKernel::reconstruct(const WVCoefficients& a,
         if (prepared) prepared->gridReady=true;
     } else ++metrics_.horizontalSpectrumReuseCount;
     auto horizontalInput=combined.input();
-    if (prepared && (derivative==WVBoussinesqDerivative::x || derivative==WVBoussinesqDerivative::y)) {
+    if (prepared && (derivative==WVBoussinesqDerivative::x || derivative==WVBoussinesqDerivative::y) && !stagedInverse) {
         const auto derivativeGrid=gridView();
         pointwise_->execute(H_,[&](std::size_t begin,std::size_t end) {
             for (std::size_t i=begin;i<end;++i) {
@@ -626,8 +634,19 @@ WVKernelStatus WVTransformBoussinesqKernel::reconstruct(const WVCoefficients& a,
         horizontalInput=gridView().input();
     }
     const bool consumeInInverse=consumer && (!dz || prepared);
-    auto s=consumeInInverse ? horizontal_->inverseAndConsume(*horizontalWorkspace_,horizontalInput,{b,R_*sizeof(double)},*consumer) :
-        horizontal_->inverse(*horizontalWorkspace_,horizontalInput,{b,R_*sizeof(double)}); if (!s) return s;
+    WVKernelStatus s;
+    if (stagedInverse) {
+        const bool wasReady=prepared->inverseStage->ready();
+        s=horizontal_->inverseWithStage(*horizontalWorkspace_,combined.input(),
+            {b,R_*sizeof(double)},*prepared->inverseStage,
+            derivative==WVBoussinesqDerivative::x,consumer ? *consumer : WVRealOutputConsumer{});
+        if (!s) return s;
+        if (wasReady) ++metrics_.horizontalColumnReuseCount;
+        else ++metrics_.horizontalColumnPreparationCount;
+    } else {
+        s=consumeInInverse ? horizontal_->inverseAndConsume(*horizontalWorkspace_,horizontalInput,{b,R_*sizeof(double)},*consumer) :
+            horizontal_->inverse(*horizontalWorkspace_,horizontalInput,{b,R_*sizeof(double)}); if (!s) return s;
+    }
     // v4 defines vertical derivatives through the shared F/G calculus, even
     // for wave fields. Preserve that finite-resolution MATLAB operation.
     if (dz && !prepared) { s=verticalCalculus(b,G ? WVBoussinesqFamily::G : WVBoussinesqFamily::F,1,false,b); if (!s) return s; }

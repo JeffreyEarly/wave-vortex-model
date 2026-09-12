@@ -39,6 +39,8 @@ struct WVVariableExecutionOptions {
     // Consume completed inverse planes in nonlinear advection, retaining the
     // ordinary derivative output and success-only evaluator capture.
     bool fusedDerivativeAdvection = false;
+    // Explicit evaluation-owned inverse-y preparation for value/x reconstruction.
+    bool sharedInverseColumns = false;
     // Boussinesq projection needs the grouped wave-F result only at the exact
     // zero horizontal mode. Disable for a full-coverage qualification oracle.
     bool inertialOnlyProjection = true;
