@@ -233,5 +233,13 @@
       "CompiledKernel/adapters/native-fftw/WVNativeFFTWEngine.cpp": "76fe16ed98a7a4022663e2bbe1c42f10ad1638603a75d7584f58f7303fef3315",
       "CompiledKernel/adapters/native-fftw/WVNativeAdvectionArithmetic.hpp": "432e0cd3b6958166a8c68788fa1e13d8283e330f0ba9a8abc5255517fdfafa35"
     }
+  },
+  "preparedAssemblyProjection": {
+    "issue": 495,
+    "scope": "Existing pointwise executor for Hydrostatic projection and Boussinesq assembly/projection; fuse Boussinesq vertical-velocity divergence consumption; skip unused has-W balanced divergence.",
+    "sourceSHA256": {
+      "CompiledKernel/src/WVTransformHydrostaticKernel.cpp": "3eb002fce3671081ccbd778d135959b8aff5482fdd3a812bd93189288802b31c",
+      "CompiledKernel/src/WVTransformBoussinesqKernel.cpp": "4a8ae972beb4e8fd47811c640f27aa927e762a59a2d84532e1eb10c26e9ede35"
+    }
   }
 }
