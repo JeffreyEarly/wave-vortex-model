@@ -54,7 +54,7 @@ The subsequent correctness/storage smoke used a frozen copy of the development e
 
 ## Remaining gates
 
-The latest runtime source is `45107911`. Its complete native Release/ASan suites, hardened allocation-retry checks, and affected MATLAB density/diagnostics comparisons pass. All twelve exact-source forward lifecycle executions and fifteen catalog/matrix checks also pass. The final corrected-source frozen campaign passes; required hosted checks and merge remain pending. Earlier passing benchmark campaigns are preserved below and do not qualify later runtime corrections. Production MATLAB behavior and checkpoint formats are unchanged; the sole MATLAB test edit corrects C++ prepared-memory accounting.
+The latest runtime source is `45107911`. Its complete native Release/ASan suites, hardened allocation-retry checks, and affected MATLAB density/diagnostics comparisons pass. All twelve exact-source forward lifecycle executions and fifteen catalog/matrix checks also pass. The final corrected-source frozen campaign passes; required hosted checks and merge remain pending. Earlier passing benchmark campaigns are preserved below and do not qualify later runtime corrections. Production MATLAB behavior and checkpoint formats are unchanged; the MATLAB test edits correct C++ prepared-memory and compact spectral storage accounting.
 
 ## Final review and performance follow-up
 
@@ -77,3 +77,5 @@ The completed hosted run `34664175939` exposed additional diagnostic integration
 Exact-source lifecycle refresh at `45107911` passed all twelve reference/native executions and fifteen catalog/matrix checks. All corrected source is committed; only final timing/storage qualification and hosted integration remain.
 
 The corrected-source frozen campaign at `3f2b3639` passed all numerical, exact integration-decision, producer, storage and postflight gates. Reuse integration ratios are 0.573006 (EddyTide), 1.003252 (large constant) and 0.784468 (variable Hydrostatic). Low-memory maximum live owned storage is at most 1.006187 of baseline. All pairs and intervals are preserved in [final corrected-source evidence](../ci-evidence/issue-470-variable-evaluation/performance-corrected-final/README.md). Only required hosted checks and merge remain.
+
+Hosted run `34666648219` passed Linux Release and sanitized contracts, both package checks, and both release density batches. MATLAB batch 0 exposed one remaining legacy assertion in `TestBarotropicQGCompiledKernel`: default reuse owns one compact complex spectral tendency (16 × Nkl bytes), so zero forcing workspace is no longer the contract. The assertion now checks that exact buffer size, excluding any extra physical-grid field. All sixteen local parity cases and Code Analyzer pass; repository checks pass. Only this MATLAB test and evidence change, so the frozen runtime/performance evidence remains valid. [Correction receipt](../ci-evidence/issue-470-variable-evaluation/barotropic-workspace-assertion.json).

@@ -1,0 +1,15 @@
+{
+  "failedHostedRun": 34666648219,
+  "diagnosis": "Legacy MATLAB C++ test expected zero forcing workspace. Default reuse intentionally retains one compact complex spectral nonlinear tendency, exactly 16*Nkl bytes; no physical-grid field is owned by forcing.",
+  "changedFile": "UnitTests/TestBarotropicQGCompiledKernel.m",
+  "passedParityCases": 16,
+  "codeAnalyzerFindings": 0,
+  "numericalTolerancesChanged": false,
+  "runtimeSourceChanged": false,
+  "verification": "Focused MATLAB method and repository checks pass. Final frozen campaign remains valid because all compiled source is unchanged. Required CI must pass on the new head.",
+  "logs": {
+    "/private/tmp/wvm471-barotropic-workspace-test.log": "7e7bdfc0977c18ce8146e8ac3f684b9e00adac9fbf94b6800f7cb2016a5a3c29",
+    "/private/tmp/wvm471-barotropic-workspace-checkcode.log": "84648915ce6a5ec496a953fe34213fbe282fa82634efd08d933300be940fb652",
+    "/private/tmp/wvm471-barotropic-repository-check.log": "c07da0c00af35223d1451e64ae54fb1eab2c4b8c1eaac5c9419539558cdc09ab"
+  }
+}
