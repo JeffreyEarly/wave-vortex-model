@@ -1,0 +1,19 @@
+{
+  "passed": true,
+  "fragmentsChecked": 12,
+  "actualExecutedBinaryPreflight": {
+    "runner": {
+      "path": "/private/tmp/wvm489-native/bin/wave-vortex-run",
+      "sha256": "5e00648723698e430f465d2a07ceaa612fb3476d0fe3568dede339c240338d1b",
+      "embeddedSourceCommit": "78025904a58e0195f28540f7bddf51e50b59525b",
+      "status": "complete"
+    },
+    "probe": {
+      "path": "/private/tmp/wvm489-native/bin/WVForwardIntegrationProbe",
+      "sha256": "55e5aca9c48e189d515f6cd0e762c05e1b4ad30cf24749967b1bff886b3387f7",
+      "embeddedSourceCommit": "78025904a58e0195f28540f7bddf51e50b59525b",
+      "status": "stopped"
+    }
+  },
+  "method": "Every fragment executable hash equals the unchanged binary whose embedded revision was independently executed and checked. Compact reports do not retain source identity."
+}

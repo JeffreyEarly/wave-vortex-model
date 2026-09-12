@@ -1,0 +1,86 @@
+[
+  {
+    "name": "TestHydrostaticCompiledKernel/variableStratificationMatchesMatlab",
+    "passed": true,
+    "failed": false,
+    "incomplete": false,
+    "duration": 24.2254685
+  },
+  {
+    "name": "TestHydrostaticCompiledKernel/retainedSubsetAndSouthernLatitude",
+    "passed": true,
+    "failed": false,
+    "incomplete": false,
+    "duration": 2.1328589166666667
+  },
+  {
+    "name": "TestBoussinesqCompiledKernel/variableStratificationMatchesMatlab",
+    "passed": true,
+    "failed": false,
+    "incomplete": false,
+    "duration": 32.587784458333338
+  },
+  {
+    "name": "TestBoussinesqCompiledKernel/weakSurfaceStratificationMatchesMatlab",
+    "passed": true,
+    "failed": false,
+    "incomplete": false,
+    "duration": 2.4393442916666666
+  },
+  {
+    "name": "TestBoussinesqCompiledKernel/discontiguousGroupsAndNonuniformGrid",
+    "passed": true,
+    "failed": false,
+    "incomplete": false,
+    "duration": 3.428623625
+  },
+  {
+    "name": "TestBoussinesqCompiledKernel/approachesHydrostaticLimit",
+    "passed": true,
+    "failed": false,
+    "incomplete": false,
+    "duration": 2.4388752083333332
+  },
+  {
+    "name": "TestBoussinesqCompiledKernel/retainedSubsetAndSouthernLatitude",
+    "passed": true,
+    "failed": false,
+    "incomplete": false,
+    "duration": 3.5060427083333332
+  },
+  {
+    "name": "TestCompiledKernelIntegration/portableCoreHasNoHostOrVendorDependency",
+    "passed": true,
+    "failed": false,
+    "incomplete": false,
+    "duration": 0.049271791666666669
+  },
+  {
+    "name": "TestCompiledKernelIntegration/repositoryTracksOnlySourceProducts",
+    "passed": true,
+    "failed": false,
+    "incomplete": false,
+    "duration": 0.050561125
+  },
+  {
+    "name": "TestCompiledKernelIntegration/selectionRecordsTheAcceptedContract",
+    "passed": true,
+    "failed": false,
+    "incomplete": false,
+    "duration": 0.016764958333333333
+  },
+  {
+    "name": "TestCompiledKernelIntegration/runtimeSelectionRecordsStableSourceAPI",
+    "passed": true,
+    "failed": false,
+    "incomplete": false,
+    "duration": 0.019264083333333334
+  },
+  {
+    "name": "TestCompiledKernelIntegration/keyRuntimeHashesMatchTheSelection",
+    "passed": true,
+    "failed": false,
+    "incomplete": false,
+    "duration": 0.126913
+  }
+]

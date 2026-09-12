@@ -1,0 +1,214 @@
+{
+  "preflight": {
+    "unixTime": 1789226818.7640069,
+    "processes": [
+      {
+        "pid": 389,
+        "cpuPercent": 1.8,
+        "executable": "/System/Library/Frameworks/CoreServices.framework/Versions/A/Frameworks/Metadata.framework/Versions/A/Support/mds"
+      },
+      {
+        "pid": 95382,
+        "cpuPercent": 2.4,
+        "executable": "/Applications/ChatGPT.app/Contents/Frameworks/Codex Framework.framework/Versions/152.0.7977.83/Helpers/Codex (Service).app/Contents/MacOS/Codex (Service)"
+      }
+    ]
+  },
+  "sampleCount": 146,
+  "intervalSeconds": 10,
+  "unrelatedAbove10Percent": [
+    {
+      "unixTime": 1789226878.994415,
+      "pid": 1316,
+      "cpuPercent": 27.9,
+      "executable": "/System/Library/PrivateFrameworks/IDS.framework/identityservicesd.app/Contents/MacOS/identityservicesd"
+    },
+    {
+      "unixTime": 1789226878.994415,
+      "pid": 1337,
+      "cpuPercent": 11.7,
+      "executable": "/System/Library/PrivateFrameworks/CloudKitDaemon.framework/Support/cloudd"
+    },
+    {
+      "unixTime": 1789226878.994415,
+      "pid": 1341,
+      "cpuPercent": 12.5,
+      "executable": "/usr/libexec/findmylocateagent"
+    },
+    {
+      "unixTime": 1789226878.994415,
+      "pid": 1390,
+      "cpuPercent": 15.5,
+      "executable": "/System/Library/PrivateFrameworks/ScreenTimeCore.framework/Versions/A/ScreenTimeAgent"
+    },
+    {
+      "unixTime": 1789226878.994415,
+      "pid": 1392,
+      "cpuPercent": 19.1,
+      "executable": "/System/Library/Frameworks/Contacts.framework/Support/contactsd"
+    },
+    {
+      "unixTime": 1789226878.994415,
+      "pid": 1418,
+      "cpuPercent": 50.7,
+      "executable": "/usr/libexec/searchpartyuseragent"
+    },
+    {
+      "unixTime": 1789226878.994415,
+      "pid": 17333,
+      "cpuPercent": 12.1,
+      "executable": "/Library/Bitdefender/AVP/product/bin/BDLDaemon.app/Contents/MacOS/BDLDaemon"
+    },
+    {
+      "unixTime": 1789227049.646831,
+      "pid": 17333,
+      "cpuPercent": 11.4,
+      "executable": "/Library/Bitdefender/AVP/product/bin/BDLDaemon.app/Contents/MacOS/BDLDaemon"
+    },
+    {
+      "unixTime": 1789227099.834228,
+      "pid": 409,
+      "cpuPercent": 17.8,
+      "executable": "/usr/libexec/locationd"
+    },
+    {
+      "unixTime": 1789227099.834228,
+      "pid": 572,
+      "cpuPercent": 32.6,
+      "executable": "/Library/Application Support/Mosyle/MosyleMDM.app/Contents/MacOS/MosyleMDM"
+    },
+    {
+      "unixTime": 1789227180.145302,
+      "pid": 438,
+      "cpuPercent": 11.9,
+      "executable": "/System/Library/CoreServices/loginwindow.app/Contents/MacOS/loginwindow"
+    },
+    {
+      "unixTime": 1789227240.358453,
+      "pid": 438,
+      "cpuPercent": 15.6,
+      "executable": "/System/Library/CoreServices/loginwindow.app/Contents/MacOS/loginwindow"
+    },
+    {
+      "unixTime": 1789227360.7973828,
+      "pid": 438,
+      "cpuPercent": 14.8,
+      "executable": "/System/Library/CoreServices/loginwindow.app/Contents/MacOS/loginwindow"
+    },
+    {
+      "unixTime": 1789227421.009345,
+      "pid": 438,
+      "cpuPercent": 17.7,
+      "executable": "/System/Library/CoreServices/loginwindow.app/Contents/MacOS/loginwindow"
+    },
+    {
+      "unixTime": 1789227471.1671538,
+      "pid": 389,
+      "cpuPercent": 13.2,
+      "executable": "/System/Library/Frameworks/CoreServices.framework/Versions/A/Frameworks/Metadata.framework/Versions/A/Support/mds"
+    },
+    {
+      "unixTime": 1789227471.1671538,
+      "pid": 1432,
+      "cpuPercent": 46.0,
+      "executable": "/usr/libexec/siriknowledged"
+    },
+    {
+      "unixTime": 1789227471.1671538,
+      "pid": 1503,
+      "cpuPercent": 62.8,
+      "executable": "/usr/libexec/duetexpertd"
+    },
+    {
+      "unixTime": 1789227471.1671538,
+      "pid": 1846,
+      "cpuPercent": 14.6,
+      "executable": "/System/Library/Frameworks/CoreServices.framework/Versions/A/Frameworks/Metadata.framework/Versions/A/Support/mdbulkimport"
+    },
+    {
+      "unixTime": 1789227481.2065558,
+      "pid": 1386,
+      "cpuPercent": 156.4,
+      "executable": "/System/Library/Frameworks/CoreServices.framework/Versions/A/Frameworks/Metadata.framework/Versions/A/Support/corespotlightd"
+    },
+    {
+      "unixTime": 1789227601.5698938,
+      "pid": 438,
+      "cpuPercent": 12.5,
+      "executable": "/System/Library/CoreServices/loginwindow.app/Contents/MacOS/loginwindow"
+    },
+    {
+      "unixTime": 1789227802.174245,
+      "pid": 554,
+      "cpuPercent": 18.9,
+      "executable": "/System/Library/CoreServices/TimeMachine/backupd"
+    },
+    {
+      "unixTime": 1789227802.174245,
+      "pid": 1352,
+      "cpuPercent": 11.9,
+      "executable": "/System/Library/PrivateFrameworks/FileProvider.framework/Support/fileproviderd"
+    },
+    {
+      "unixTime": 1789227802.174245,
+      "pid": 1415,
+      "cpuPercent": 12.8,
+      "executable": "/System/Library/PrivateFrameworks/CacheDelete.framework/deleted_helper"
+    },
+    {
+      "unixTime": 1789227812.204704,
+      "pid": 363,
+      "cpuPercent": 90.9,
+      "executable": "/System/Library/Frameworks/CoreServices.framework/Versions/A/Frameworks/FSEvents.framework/Versions/A/Support/fseventsd"
+    },
+    {
+      "unixTime": 1789227982.7070742,
+      "pid": 1503,
+      "cpuPercent": 98.8,
+      "executable": "/usr/libexec/duetexpertd"
+    },
+    {
+      "unixTime": 1789228072.9733918,
+      "pid": 17333,
+      "cpuPercent": 12.1,
+      "executable": "/Library/Bitdefender/AVP/product/bin/BDLDaemon.app/Contents/MacOS/BDLDaemon"
+    },
+    {
+      "unixTime": 1789228072.9733918,
+      "pid": 83054,
+      "cpuPercent": 13.8,
+      "executable": "/usr/libexec/mdmclient"
+    },
+    {
+      "unixTime": 1789228082.998028,
+      "pid": 1567,
+      "cpuPercent": 26.5,
+      "executable": "/System/Applications/Weather.app/Contents/PlugIns/WeatherWidget.appex/Contents/MacOS/WeatherWidget"
+    },
+    {
+      "unixTime": 1789228082.998028,
+      "pid": 83069,
+      "cpuPercent": 10.3,
+      "executable": "/System/Library/Frameworks/CFNetwork.framework/Versions/A/Support/CFNetworkAgent"
+    },
+    {
+      "unixTime": 1789228093.0322602,
+      "pid": 95407,
+      "cpuPercent": 40.5,
+      "executable": "/Applications/ChatGPT.app/Contents/Resources/codex"
+    },
+    {
+      "unixTime": 1789228233.465249,
+      "pid": 1,
+      "cpuPercent": 15.1,
+      "executable": "/sbin/launchd"
+    },
+    {
+      "unixTime": 1789228263.5564759,
+      "pid": 1,
+      "cpuPercent": 39.9,
+      "executable": "/sbin/launchd"
+    }
+  ],
+  "caveat": "Process snapshots cannot exclude short activity between samples; no unrelated processes or experiments were altered."
+}

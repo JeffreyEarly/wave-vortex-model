@@ -1,0 +1,12 @@
+{
+  "implementationCommit": "78025904a58e0195f28540f7bddf51e50b59525b",
+  "nativeRelease": "58/58; focused H/B runtime rerun after constructor-only gate",
+  "sanitized": "58/58 ASan/UBSan, includes final gate",
+  "gcc14": "Native provider/operator plus four H/B kernel/runtime tests passed",
+  "matlabParity": "12/12 scientific/source checks, compact dump probes execute tiled path",
+  "forwardRestart": "Six family cases, both providers; 12 retained fragments",
+  "strictCatalog": "All catalog tests passed; see source-linked-catalog-results.json",
+  "independentReview": "Provider/operator and family/evaluator lifecycle reviews complete; no remaining blocker",
+  "hostedCI": "Required gate pending",
+  "compiledInputEquivalence": "Later receipt/report/evidence changes do not modify compiled inputs at 78025904."
+}

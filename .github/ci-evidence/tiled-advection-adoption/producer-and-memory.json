@@ -1,0 +1,54 @@
+[
+  {
+    "profile": "eddytide-256x256x28",
+    "ownedPeakAddedBytes": 96461240,
+    "baselineOwnedPeakBytes": 537380605,
+    "candidateOwnedPeakBytes": 633841845,
+    "otherProducerWorkIdentical": true,
+    "actualTiledCounts": {
+      "tiledNonlinearExecutions": 1248,
+      "tiledColumnInverses": 349440,
+      "tiledRowInverses": 454272,
+      "tiledReusedColumns": 104832
+    }
+  },
+  {
+    "profile": "constant-nonhydrostatic-composite-256",
+    "ownedPeakAddedBytes": 366616,
+    "baselineOwnedPeakBytes": 1979423608,
+    "candidateOwnedPeakBytes": 1979790224,
+    "otherProducerWorkIdentical": true,
+    "actualTiledCounts": {
+      "tiledNonlinearExecutions": 0,
+      "tiledColumnInverses": 0,
+      "tiledRowInverses": 0,
+      "tiledReusedColumns": 0
+    }
+  },
+  {
+    "profile": "variable-hydrostatic-composite-large",
+    "ownedPeakAddedBytes": 89983464,
+    "baselineOwnedPeakBytes": 2313799461,
+    "candidateOwnedPeakBytes": 2403782925,
+    "otherProducerWorkIdentical": true,
+    "actualTiledCounts": {
+      "tiledNonlinearExecutions": 32,
+      "tiledColumnInverses": 41280,
+      "tiledRowInverses": 53664,
+      "tiledReusedColumns": 12384
+    }
+  },
+  {
+    "profile": "boussinesq-256x256x129-no-observers",
+    "ownedPeakAddedBytes": 90709368,
+    "baselineOwnedPeakBytes": 5309977575,
+    "candidateOwnedPeakBytes": 5400686943,
+    "otherProducerWorkIdentical": true,
+    "actualTiledCounts": {
+      "tiledNonlinearExecutions": 32,
+      "tiledColumnInverses": 49536,
+      "tiledRowInverses": 66048,
+      "tiledReusedColumns": 16512
+    }
+  }
+]

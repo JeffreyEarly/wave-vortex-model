@@ -1,0 +1,10 @@
+{
+  "issue": 489,
+  "status": "accepted-local-performance-and-scientific-qualification",
+  "candidateCommit": "78025904a58e0195f28540f7bddf51e50b59525b",
+  "baseline": "Exact qualified PR #478 runner, SHA256 832d4e38e870de021489561a82da578ab2d4539927ee20c949beadcc5e68f27c",
+  "performance": "Two warmup and eight measured alternating pairs per profile; all improvement/regression gates pass.",
+  "numerical": "All 40 comparisons pass unchanged tolerances, integration decisions identical, no duplicate evaluator executions and unchanged other actual producer counts.",
+  "memoryPolicy": "Reuse performance qualified; added owned storage reported. Low-memory timing/storage not qualified, focused fallback correctness passed.",
+  "mergeGate": "Required / WaveVortexModel must pass before merging."
+}
