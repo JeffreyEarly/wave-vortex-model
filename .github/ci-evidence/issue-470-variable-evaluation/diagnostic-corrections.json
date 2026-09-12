@@ -1,0 +1,70 @@
+{
+  "runtimeSourceCommit": "451079113f4c5bff715972503373edfbbec4dd5f",
+  "failedHostedRun": 34664175939,
+  "diagnoses": [
+    {
+      "symptom": "Linux UBSan null vector reference in the second sampled density request.",
+      "correction": "Pass no source when density is already bound while preserving reference initialization/retry. Complete geometry copies before swapping prepared source buffers; rollback partial binding."
+    },
+    {
+      "symptom": "Density probe retained-storage assertion and missing density reuse metrics.",
+      "correction": "Create every probe plan before measuring retained storage; count successful ready-key density requests at the shared evaluator. Preserve scientific producer counts."
+    },
+    {
+      "symptom": "Batched geostrophic/component energies differed from independent evaluations and MATLAB.",
+      "correction": "Include component identity in energy reduction keys, prepared arena entries and execution-plan registration. Add exact forward/reverse batch/session tests under both policies."
+    },
+    {
+      "symptom": "Legacy peak-memory assertion double-counted prepared diagnostic storage.",
+      "correction": "The C++ integration test in MATLAB adds only diagnosticEvaluation.additionalTransientHighWaterBytes to retained storage. No MATLAB scientific code or numerical tolerances changed."
+    }
+  ],
+  "hardenedDensity": {
+    "passed": true,
+    "compiler": "Apple Clang 21.0.0",
+    "flags": "-fsanitize=address,undefined -fno-omit-frame-pointer -D_LIBCPP_HARDENING_MODE=_LIBCPP_HARDENING_MODE_DEBUG",
+    "environment": {
+      "ASAN_OPTIONS": "detect_leaks=0:halt_on_error=1",
+      "UBSAN_OPTIONS": "halt_on_error=1:print_stacktrace=1"
+    },
+    "limitation": "Apple ASan does not support leak detection. Hosted Linux sanitizer remains required.",
+    "buildCommand": "cmake --build /private/tmp/wvm471-hardened --target TestWVDensityFieldEvaluation --parallel 4",
+    "buildLog": "/private/tmp/wvm471-hardened-latest-density-normal-build.log",
+    "runLog": "/private/tmp/wvm471-hardened-latest-density-normal-run.log",
+    "supersededAttempt": "The earlier /fast build linked stale header implementations and failed the density-reuse assertion. The normal dependency-aware rebuild passes unchanged source, including allocation sweeps.",
+    "runLogSHA256": "54e448a23406c0d8fbe801c30e2f35a46ef743fb1352de35816a5ece07bd077a"
+  },
+  "matlabDensity": {
+    "passedMethods": 3,
+    "failedMethods": 0,
+    "coefficientDrivenParityRows": 32,
+    "providers": [
+      "reference",
+      "native"
+    ],
+    "sourceScope": "Verified after the density corrections and before the unrelated component-energy changes; the final combined native suites include density coverage at the stated source commit."
+  },
+  "matlabDiagnostics": {
+    "passedMethods": 2,
+    "failedMethods": 0,
+    "providers": [
+      "reference",
+      "native"
+    ],
+    "coverage": "All transform diagnostics and multi-destination/dense/restart continuation."
+  },
+  "codeAnalyzer": {
+    "file": "UnitTests/TestPortableDiagnostics.m",
+    "findings": 0
+  },
+  "verificationPending": [
+    "new frozen performance campaign",
+    "required hosted integration checks and merge"
+  ],
+  "exactSourceForwardLifecycle": {
+    "sourceCommit": "45107911",
+    "passedReferenceNativeExecutions": 12,
+    "passedCatalogMatrixTests": 15,
+    "rawEvidencePath": "/private/tmp/wvm471-forward-45107911"
+  }
+}

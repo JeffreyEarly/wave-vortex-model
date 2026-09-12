@@ -12,7 +12,7 @@ Canonical portable-variable contracts remain authoritative. Runtime execution ke
 
 ## Verification ledger
 
-This ledger records development checks, not final qualification. Repeat successful gates only when subsequent edits affect them.
+This ledger records development checks and final qualification, including superseded campaigns. Repeat successful gates only when subsequent edits affect them.
 
 - Shared context test passed: repeated access, owner/generation rejection, cycles, failed producer recovery, pinning, low-memory eviction/recomputation and new-state invalidation.
 - Hydrostatic and Boussinesq focused runtime tests passed after scope integration: shared nonlinear/passive fields, cached speed reductions, one state validation and phase preparation, foreign-state rejection, mutation between scopes, damping-only horizontal reconstruction, allocation-free prepared execution.
@@ -54,7 +54,7 @@ The subsequent correctness/storage smoke used a frozen copy of the development e
 
 ## Remaining gates
 
-Required hosted checks and reviewed integration. Final idle-host performance qualification passed; details follow below. Repository boundaries, whitespace, the 51 Python policy tests and the 1,754-row/75-witness compatibility assembly pass. All-family producer/lifecycle, compound output/density-reference, allocation/recovery, Release/sanitizer and exact-source MATLAB gates have passed. Issue #470 and the coordinated goal remain open until these gates are complete.
+The latest runtime source is `45107911`. Its complete native Release/ASan suites, hardened allocation-retry checks, and affected MATLAB density/diagnostics comparisons pass. All twelve exact-source forward lifecycle executions and fifteen catalog/matrix checks also pass. A new frozen performance campaign, required hosted checks and merge remain pending. Earlier passing benchmark campaigns are preserved below and do not qualify later runtime corrections. Production MATLAB behavior and checkpoint formats are unchanged; the sole MATLAB test edit corrects C++ prepared-memory accounting.
 
 ## Final review and performance follow-up
 
@@ -71,3 +71,7 @@ Six affected contracts pass in both native Release and ASan/UBSan after the cach
 The final portable-source frozen campaign at `5b6b5fab` passed after all GCC corrections. Reuse integration ratios are 0.575672 (EddyTide), 1.025320 (large constant) and 0.782726 (variable Hydrostatic). Low-memory peak owned storage is at most 1.006187 of baseline. All numerical comparisons, exact integration decisions, independent producer gates and postflight hashes pass. The constant uncertainty interval remains wide and is explicitly reported. [Final evidence](../ci-evidence/issue-470-variable-evaluation/performance-portable-final/README.md). Required hosted checks and merge remain pending.
 
 Hosted run `34664175939` passed the Linux GCC Release build and both package-install checks, then exposed two stale source-selection hashes in the MATLAB smoke batch. The correction updates only `CompiledKernel/source-selection.json`; all five `TestCompiledKernelIntegration` methods and repository checks pass locally. [Correction receipt](../ci-evidence/issue-470-variable-evaluation/source-selection-refresh.json). Compiled source and the final performance evidence are unchanged.
+
+The completed hosted run `34664175939` exposed additional diagnostic integration gaps: an empty local density dependency on cache reuse, missing shared-cache density reuse counts, loss of a prepared scratch buffer during density binding, and component-energy reduction keys missing component identity. Commit `45107911` corrects these with allocation-failure/same-session retry and ordered component-energy regressions. All 57 native contracts pass again in Release (20.82 s) and ASan/UBSan (34.06 s), and the allocation sweep passes libc++ debug hardening with sanitizers. All three density MATLAB methods (32 coefficient-driven reference/native rows) and both affected all-transform/output-continuation methods pass at unchanged numerical tolerances. One MATLAB test memory assertion now uses additional transient bytes instead of double-counting prepared storage; production MATLAB is unchanged, and Code Analyzer has zero findings. [Combined receipt](../ci-evidence/issue-470-variable-evaluation/cpp-contracts-corrected.json) and [diagnosis/parity evidence](../ci-evidence/issue-470-variable-evaluation/diagnostic-corrections.json). Refresh exact-source lifecycle receipts and repeat frozen performance before the next hosted submission.
+
+Exact-source lifecycle refresh at `45107911` passed all twelve reference/native executions and fifteen catalog/matrix checks. All corrected source is committed; only final timing/storage qualification and hosted integration remain.

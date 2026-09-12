@@ -1,0 +1,16 @@
+[
+  {
+    "name": "TestPortableDiagnostics/allTransformDiagnosticsMatchMatlab",
+    "passed": true,
+    "failed": false,
+    "incomplete": false,
+    "duration": 19.441146833333331
+  },
+  {
+    "name": "TestPortableDiagnostics/outputContinuationMatchesMatlab",
+    "passed": true,
+    "failed": false,
+    "incomplete": false,
+    "duration": 118.79132958333334
+  }
+]

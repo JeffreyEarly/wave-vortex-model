@@ -169,7 +169,7 @@
       "id": "witness-ordinary-fields",
       "path": "UnitTests/TestPortableDiagnostics.m",
       "schema": "qualification-source",
-      "sha256": "09fff50e78e2f4cb184329c48759ea0b02f6407bbd64ac0801a879b4afb8c168"
+      "sha256": "3274fbe6035f102fb5bed449b4516513f13d025b0956a208ad894728cc1c294b"
     },
     {
       "id": "witness-density-fields",

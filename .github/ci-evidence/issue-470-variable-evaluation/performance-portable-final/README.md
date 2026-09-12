@@ -1,4 +1,6 @@
-# Final portable-source qualification
+# Third qualification campaign
+
+This passing campaign predates the final density-lifetime and component-energy corrections in `45107911`. Those changes require a fresh frozen campaign; these measurements remain historical evidence.
 
 The frozen campaign at `5b6b5fab` **passed** after all GCC portability corrections. Runtime and test source is `5600a760`; the later commit adds exact-source qualification receipts. The separately qualified PR #469 baseline is unchanged. All local builds and tests were stopped, and macOS maintenance finished before the recorded idle-host preflight. The campaign used two warmup and eight alternating measured pairs for each profile and policy. Source, binary and fixture hashes remained unchanged through postflight. The production EddyTide experiment was untouched.
 

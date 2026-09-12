@@ -1,5 +1,5 @@
 {
-  "runtimeSourceCommit": "5600a760",
+  "runtimeSourceCommit": "45107911",
   "pythonPolicyTests": {
     "passed": 51,
     "failed": 0
@@ -17,6 +17,13 @@
     "log": "/private/tmp/wvm470-docs-check.log"
   },
   "finalPolicyLog": "/private/tmp/wvm470-final-policy-tests.log",
-  "finalRepositoryLog": "/private/tmp/wvm471-final-repository-check.log",
-  "nativeCompilationObjectEquivalence": "Historical dbdafe24 include-only correction; see native-include-equivalence.json. The later cache-copy correction requires a new performance campaign."
+  "finalRepositoryLog": "/private/tmp/wvm471-corrected-repository-check.log",
+  "nativeCompilationObjectEquivalence": "Historical include-only correction; subsequent runtime changes require their separately recorded frozen campaigns.",
+  "matlabTestChanges": [
+    "UnitTests/TestPortableDiagnostics.m: use additional transient bytes when checking total owned storage"
+  ],
+  "codeAnalyzer": {
+    "findings": 0,
+    "receipt": "diagnostic-code-analyzer.json"
+  }
 }
