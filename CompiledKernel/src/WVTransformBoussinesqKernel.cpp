@@ -47,8 +47,8 @@ WVKernelStatus WVTransformBoussinesqKernel::create(std::shared_ptr<const WVStrat
         if (options.spectralSchedule!=WVVariableSpectralSchedule::establishedInterleaved &&
             options.spectralSchedule!=WVVariableSpectralSchedule::compactSplitFusedViews)
             return {WVKernelStatusCode::invalidConfiguration,"Unknown variable spectral schedule."};
-        if (!options.pointwiseWorkers)
-            return {WVKernelStatusCode::invalidConfiguration,"Pointwise worker count must be positive."};
+        if (!options.pointwiseWorkers || !options.verticalGroupWorkers)
+            return {WVKernelStatusCode::invalidConfiguration,"Pointwise and vertical group worker counts must be positive."};
         if (options.usesCompactSplitViews() &&
             (options.horizontalSchedule!=WVRetainedHorizontalSchedule::streamingPrunedTile16 || !options.streamedNonlinear))
             return {WVKernelStatusCode::invalidConfiguration,"Compact split views require the streaming pruned nonlinear schedule."};
@@ -83,7 +83,12 @@ WVKernelStatus WVTransformBoussinesqKernel::create(std::shared_ptr<const WVStrat
             WVComplexLayout out{outRows,g.Nkl,1,outRows,representation,outputs[i],c.source_->modeSetIdentity()};
             std::unique_ptr<WVVerticalMatrixBackend> backend; status=factory(backend); if (!status) return status;
             status=c.source_->prepareVertical(operations[i],in,out,std::move(backend),c.vertical_[i]); if (!status) return status;
-            status=c.vertical_[i]->createWorkspace(c.verticalWorkspace_[i]); if (!status) return status;
+            if (options.verticalGroupWorkers>1 && !c.vertical_[i]->supportsConcurrentCalls())
+                return {WVKernelStatusCode::unsupportedOperation,"Vertical group workers require a concurrent matrix backend."};
+            status=c.vertical_[i]->createWorkspace(options.verticalGroupWorkers,c.verticalWorkspace_[i]); if (!status) return status;
+        }
+        if (options.verticalGroupWorkers>1) {
+            status=WVVerticalGroupExecutor::create(options.verticalGroupWorkers,c.verticalGroups_); if (!status) return status;
         }
         const double f=2*g.rotationRate*std::sin(g.latitude*pi/180);
         if (!std::isfinite(f) || f==0 || !std::isfinite(g.g) || !(g.g>0) || !std::isfinite(g.Lz) || !(g.Lz>0) || !std::isfinite(g.rho0) || !(g.rho0>0))
@@ -144,7 +149,8 @@ WVKernelStatus WVTransformBoussinesqKernel::create(std::shared_ptr<const WVStrat
         c.pointwise_=std::make_unique<kernel_detail::WVPreparedModeExecutor>(std::min(options.pointwiseWorkers,c.R_));
         c.phase_.resize(c.S_); c.real_.resize((options.streamedNonlinear ? 6 : 11)*c.R_);
         auto& s=c.storage_; s.sharedScientificBytes=c.source_->persistentBytes(); s.preparedBytes=c.horizontal_->persistentBytes();
-        s.workspaceBytes=c.horizontalWorkspace_->persistentBytes()+sizeof(WVVariableComplexBuffer)+c.pointwise_->persistentBytes(); s.providerBytesLowerBound=c.horizontal_->providerBytesLowerBound(); s.planBytesLowerBound=c.horizontalWorkspace_->planBytesLowerBound();
+        s.workspaceBytes=c.horizontalWorkspace_->persistentBytes()+sizeof(WVVariableComplexBuffer)+c.pointwise_->persistentBytes()+
+            (c.verticalGroups_ ? c.verticalGroups_->persistentBytes() : 0); s.providerBytesLowerBound=c.horizontal_->providerBytesLowerBound(); s.planBytesLowerBound=c.horizontalWorkspace_->planBytesLowerBound();
         for (std::size_t i=0;i<c.vertical_.size();++i) { s.preparedBytes+=c.vertical_[i]->persistentBytes(); s.workspaceBytes+=c.verticalWorkspace_[i]->persistentBytes(); }
         c.baseSpectralScratchBytes_=c.spectralStorage_->capacityBytes()+c.phase_.capacity()*sizeof(WVComplex64);
         s.spectralScratchBytes=c.baseSpectralScratchBytes_;
@@ -416,7 +422,9 @@ WVComplexOutput WVTransformBoussinesqKernel::modalView(std::size_t slot) { retur
 WVComplexOutput WVTransformBoussinesqKernel::gridView(std::size_t slot) { return spectralStorage_->output(6*S_+slot*H_,H_); }
 WVKernelStatus WVTransformBoussinesqKernel::vertical(std::size_t operation,WVComplexInput a,WVComplexOutput b) {
     ++metrics_.verticalOperatorExecutionCount;
-    auto status=vertical_[operation]->execute(*verticalWorkspace_[operation],a,b);
+    auto status=verticalGroups_ ?
+        vertical_[operation]->execute(*verticalWorkspace_[operation],*verticalGroups_,a,b) :
+        vertical_[operation]->execute(*verticalWorkspace_[operation],a,b);
     if (status) metrics_.verticalMatrixGroupExecutionCount+=vertical_[operation]->preparedGroupCount();
     return status;
 }

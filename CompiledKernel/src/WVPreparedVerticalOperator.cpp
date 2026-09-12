@@ -1,7 +1,9 @@
 #include "WVSpectralValidation.hpp"
+#include "WVPreparedModeExecutor.hpp"
 #include <cstring>
 #include <new>
 #include <set>
+#include <system_error>
 
 namespace wavevortex {
 namespace spectral_detail {
@@ -30,6 +32,12 @@ struct VerticalWorkspaceData {
     std::shared_ptr<const VerticalData> owner;
     std::vector<double> br, bi, cr, ci;
     std::vector<WVComplex64> b, c;
+    std::size_t groupWorkers = 1;
+    std::atomic<bool> active{false};
+};
+struct VerticalGroupExecutorData {
+    explicit VerticalGroupExecutorData(std::size_t workers):executor(workers) {}
+    kernel_detail::WVPreparedModeExecutor executor;
     std::atomic<bool> active{false};
 };
 class ScalarBackend final : public WVVerticalMatrixBackend {
@@ -37,6 +45,7 @@ public:
     const char* identifier() const noexcept override { return "scalar-reference-v1"; }
     std::size_t maximumDimension() const noexcept override { return PTRDIFF_MAX; }
     std::size_t persistentBytes() const noexcept override { return sizeof(*this); }
+    bool supportsConcurrentCalls() const noexcept override { return true; }
     void split(std::size_t m, std::size_t k, std::size_t n, const double* a, const double* br, const double* bi,
         std::size_t ldb, double* cr, double* ci, std::size_t ldc, double beta) const noexcept override {
         for (std::size_t col = 0; col < n; ++col) for (std::size_t row = 0; row < m; ++row) {
@@ -68,6 +77,29 @@ WVKernelStatus WVCreateScalarMatrixBackend(std::unique_ptr<WVVerticalMatrixBacke
     try { result = std::make_unique<ScalarBackend>(); return WVKernelStatus::ok(); }
     catch (const std::bad_alloc&) { return {WVKernelStatusCode::allocationFailure,"Scalar backend allocation failed."}; }
 }
+WVVerticalGroupExecutor::WVVerticalGroupExecutor() = default;
+WVVerticalGroupExecutor::~WVVerticalGroupExecutor() = default;
+WVKernelStatus WVVerticalGroupExecutor::create(std::size_t workers,
+    std::unique_ptr<WVVerticalGroupExecutor>& result) {
+    try {
+        if (!workers)
+            return {WVKernelStatusCode::invalidConfiguration,"A vertical group executor requires a worker."};
+        auto executor=std::unique_ptr<WVVerticalGroupExecutor>(new WVVerticalGroupExecutor);
+        executor->data_=std::make_unique<VerticalGroupExecutorData>(workers);
+        result=std::move(executor);
+        return WVKernelStatus::ok();
+    } catch (const std::bad_alloc&) {
+        return {WVKernelStatusCode::allocationFailure,"Vertical group executor allocation failed."};
+    } catch (const std::system_error& e) {
+        return {WVKernelStatusCode::allocationFailure,e.what()};
+    }
+}
+std::size_t WVVerticalGroupExecutor::workerCount() const noexcept {
+    return data_->executor.workerCount();
+}
+std::size_t WVVerticalGroupExecutor::persistentBytes() const noexcept {
+    return sizeof(*this)+sizeof(*data_)+data_->executor.persistentBytes()-sizeof(data_->executor);
+}
 WVVerticalWorkspace::WVVerticalWorkspace() = default;
 WVVerticalWorkspace::~WVVerticalWorkspace() = default;
 std::size_t WVVerticalWorkspace::persistentBytes() const noexcept {
@@ -89,6 +121,9 @@ std::size_t WVPreparedVerticalOperator::persistentBytes() const noexcept {
 }
 std::size_t WVPreparedVerticalOperator::uniqueMatrixCount() const noexcept { return data_->matrices.size(); }
 std::size_t WVPreparedVerticalOperator::preparedGroupCount() const noexcept { return data_->groups.size(); }
+bool WVPreparedVerticalOperator::supportsConcurrentCalls() const noexcept {
+    return data_->backend->supportsConcurrentCalls();
+}
 const char* WVPreparedVerticalOperator::backendIdentifier() const noexcept { return data_->backend->identifier(); }
 WVKernelStatus WVPreparedVerticalOperator::create(const WVVerticalSpecification& spec,
     std::unique_ptr<WVVerticalMatrixBackend> backend, std::unique_ptr<WVPreparedVerticalOperator>& result) {
@@ -199,25 +234,29 @@ WVKernelStatus WVPreparedVerticalOperator::create(const WVVerticalSpecification&
       catch (const std::invalid_argument& e) { return {WVKernelStatusCode::invalidConfiguration,e.what()}; }
 }
 WVKernelStatus WVPreparedVerticalOperator::createWorkspace(std::unique_ptr<WVVerticalWorkspace>& result) const {
+    return createWorkspace(1,result);
+}
+WVKernelStatus WVPreparedVerticalOperator::createWorkspace(std::size_t groupWorkers,
+    std::unique_ptr<WVVerticalWorkspace>& result) const {
     try {
+        if (!groupWorkers)
+            return {WVKernelStatusCode::invalidConfiguration,"Vertical group worker count must be positive."};
         auto w = std::unique_ptr<WVVerticalWorkspace>(new WVVerticalWorkspace);
-        w->data_ = std::make_unique<VerticalWorkspaceData>(); auto& ws = *w->data_; ws.owner = data_;
-        const auto b = product(data_->input.rows,data_->packedColumns), c = product(data_->output.rows,data_->packedColumns);
+        w->data_ = std::make_unique<VerticalWorkspaceData>(); auto& ws = *w->data_; ws.owner = data_; ws.groupWorkers=groupWorkers;
+        const auto b = product(product(data_->input.rows,data_->packedColumns),groupWorkers);
+        const auto c = product(product(data_->output.rows,data_->packedColumns),groupWorkers);
         if (data_->input.representation == WVComplexRepresentation::interleaved) { ws.b.resize(b); ws.c.resize(c); }
         else { ws.br.resize(b); ws.bi.resize(b); ws.cr.resize(c); ws.ci.resize(c); }
         result = std::move(w); return WVKernelStatus::ok();
     } catch (const std::bad_alloc&) { return {WVKernelStatusCode::allocationFailure,"Vertical workspace allocation failed."}; }
 }
-WVKernelStatus WVPreparedVerticalOperator::execute(WVVerticalWorkspace& workspace, WVComplexInput input, WVComplexOutput output) const {
-    auto& w = *workspace.data_; const auto& d = *data_;
-    if (w.owner != data_) return {WVKernelStatusCode::invalidConfiguration,"Workspace belongs to another vertical operator."};
-    auto status = validateStorage(d.input.representation,d.inputSpan,input); if (!status) return status;
-    status = validateStorage(d.output.representation,d.outputSpan,output.input()); if (!status) return status;
-    if (storageOverlap(input,d.inputSpan,output.input(),d.outputSpan)) return {WVKernelStatusCode::overlappingArrays,"Vertical input and output overlap."};
-    ActiveCall guard(w.active); if (!guard.entered) return {WVKernelStatusCode::reentrantExecution,"Vertical workspace is active."};
+static void executePreparedGroups(const VerticalData& d,VerticalWorkspaceData& w,
+    WVComplexInput input,WVComplexOutput output,double beta,std::size_t worker,
+    std::size_t begin,std::size_t end) {
     const auto m = d.output.rows, k = d.input.rows;
-    const double beta = d.accumulation == WVAccumulation::add ? 1 : 0;
-    for (const auto& group : d.groups) {
+    const auto packedBStride=k*d.packedColumns,packedCStride=m*d.packedColumns;
+    for (std::size_t groupIndex=begin;groupIndex<end;++groupIndex) {
+        const auto& group=d.groups[groupIndex];
         const auto& a = d.matrices[group.matrix]; const auto n = group.modes.size();
         const auto bOffset = group.modes.front()*d.input.columnStride, cOffset = group.modes.front()*d.output.columnStride;
         if (group.direct) {
@@ -226,20 +265,61 @@ WVKernelStatus WVPreparedVerticalOperator::execute(WVVerticalWorkspace& workspac
             else d.backend->split(m,k,n,a.real.data(),input.real+bOffset,input.imag+bOffset,d.input.columnStride,output.real+cOffset,output.imag+cOffset,d.output.columnStride,beta);
         } else {
             const bool split = d.input.representation == WVComplexRepresentation::split;
-            WVComplexOutput packedB{split ? nullptr : w.b.data(),split ? w.br.data() : nullptr,split ? w.bi.data() : nullptr,0};
-            WVComplexInput packedC{split ? nullptr : w.c.data(),split ? w.cr.data() : nullptr,split ? w.ci.data() : nullptr,0};
+            WVComplexOutput packedB{split ? nullptr : w.b.data()+worker*packedBStride,
+                split ? w.br.data()+worker*packedBStride : nullptr,
+                split ? w.bi.data()+worker*packedBStride : nullptr,0};
+            WVComplexOutput packedC{split ? nullptr : w.c.data()+worker*packedCStride,
+                split ? w.cr.data()+worker*packedCStride : nullptr,
+                split ? w.ci.data()+worker*packedCStride : nullptr,0};
             for (std::size_t col = 0; col < n; ++col) for (std::size_t row = 0; row < k; ++row)
                 write(packedB,row+k*col,read(input,row*d.input.rowStride+group.modes[col]*d.input.columnStride));
-            if (split) d.backend->split(m,k,n,a.real.data(),w.br.data(),w.bi.data(),k,w.cr.data(),w.ci.data(),m,0);
-            else d.backend->interleaved(m,k,n,a.complex.data(),w.b.data(),k,w.c.data(),m,0);
+            if (split) d.backend->split(m,k,n,a.real.data(),packedB.real,packedB.imag,k,
+                packedC.real,packedC.imag,m,0);
+            else d.backend->interleaved(m,k,n,a.complex.data(),packedB.interleaved,k,
+                packedC.interleaved,m,0);
             for (std::size_t col = 0; col < n; ++col) for (std::size_t row = 0; row < m; ++row) {
                 const auto target = row*d.output.rowStride+group.modes[col]*d.output.columnStride;
-                auto value = read(packedC,row+m*col);
+                auto value = read(packedC.input(),row+m*col);
                 if (beta != 0) { const auto old = read(output.input(),target); value.real += old.real; value.imag += old.imag; }
                 write(output,target,value);
             }
         }
     }
+}
+WVKernelStatus WVPreparedVerticalOperator::execute(WVVerticalWorkspace& workspace, WVComplexInput input, WVComplexOutput output) const {
+    auto& w = *workspace.data_; const auto& d = *data_;
+    if (w.owner != data_) return {WVKernelStatusCode::invalidConfiguration,"Workspace belongs to another vertical operator."};
+    auto status = validateStorage(d.input.representation,d.inputSpan,input); if (!status) return status;
+    status = validateStorage(d.output.representation,d.outputSpan,output.input()); if (!status) return status;
+    if (storageOverlap(input,d.inputSpan,output.input(),d.outputSpan)) return {WVKernelStatusCode::overlappingArrays,"Vertical input and output overlap."};
+    ActiveCall guard(w.active); if (!guard.entered) return {WVKernelStatusCode::reentrantExecution,"Vertical workspace is active."};
+    executePreparedGroups(d,w,input,output,d.accumulation==WVAccumulation::add ? 1 : 0,
+        0,0,d.groups.size());
+    return WVKernelStatus::ok();
+}
+WVKernelStatus WVPreparedVerticalOperator::execute(WVVerticalWorkspace& workspace,
+    WVVerticalGroupExecutor& executor,WVComplexInput input,WVComplexOutput output) const {
+    auto& w=*workspace.data_; const auto& d=*data_; auto& e=*executor.data_;
+    if (w.owner!=data_) return {WVKernelStatusCode::invalidConfiguration,"Workspace belongs to another vertical operator."};
+    if (!d.backend->supportsConcurrentCalls())
+        return {WVKernelStatusCode::unsupportedOperation,"Vertical matrix backend does not permit concurrent calls."};
+    if (w.groupWorkers!=e.executor.workerCount())
+        return {WVKernelStatusCode::invalidConfiguration,"Vertical workspace and group executor worker counts differ."};
+    auto status=validateStorage(d.input.representation,d.inputSpan,input); if (!status) return status;
+    status=validateStorage(d.output.representation,d.outputSpan,output.input()); if (!status) return status;
+    if (storageOverlap(input,d.inputSpan,output.input(),d.outputSpan))
+        return {WVKernelStatusCode::overlappingArrays,"Vertical input and output overlap."};
+    ActiveCall workspaceGuard(w.active); if (!workspaceGuard.entered)
+        return {WVKernelStatusCode::reentrantExecution,"Vertical workspace is active."};
+    ActiveCall executorGuard(e.active); if (!executorGuard.entered)
+        return {WVKernelStatusCode::reentrantExecution,"Vertical group executor is active."};
+    const auto workers=e.executor.workerCount();
+    const auto block=d.groups.size()/workers+(d.groups.size()%workers!=0);
+    const double beta=d.accumulation==WVAccumulation::add ? 1 : 0;
+    e.executor.execute(d.groups.size(),[&](std::size_t begin,std::size_t end) {
+        if (begin==end) return;
+        executePreparedGroups(d,w,input,output,beta,begin/block,begin,end);
+    });
     return WVKernelStatus::ok();
 }
 WVKernelStatus WVPreparedVerticalOperator::executeColumn(WVVerticalWorkspace& workspace,

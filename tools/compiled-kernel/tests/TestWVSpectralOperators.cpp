@@ -71,10 +71,14 @@ struct MatrixTrace {
 };
 class TracingBackend final : public WVVerticalMatrixBackend {
 public:
-    TracingBackend(MatrixTrace& trace,std::unique_ptr<WVVerticalMatrixBackend> inner) : trace_(trace),inner_(std::move(inner)) {}
+    TracingBackend(MatrixTrace& trace,std::unique_ptr<WVVerticalMatrixBackend> inner,
+        bool concurrent = true) : trace_(trace),inner_(std::move(inner)),concurrent_(concurrent) {}
     const char* identifier() const noexcept override { return "tracing-scalar"; }
     std::size_t maximumDimension() const noexcept override { return inner_->maximumDimension(); }
     std::size_t persistentBytes() const noexcept override { return sizeof(*this)+inner_->persistentBytes(); }
+    bool supportsConcurrentCalls() const noexcept override {
+        return concurrent_ && inner_->supportsConcurrentCalls();
+    }
     void split(std::size_t m,std::size_t k,std::size_t n,const double* a,const double* br,const double* bi,
         std::size_t ldb,double* cr,double* ci,std::size_t ldc,double beta) const noexcept override {
         record(n,ldb,ldc,br,cr,beta,true); inner_->split(m,k,n,a,br,bi,ldb,cr,ci,ldc,beta);
@@ -91,9 +95,11 @@ private:
     }
     MatrixTrace& trace_;
     std::unique_ptr<WVVerticalMatrixBackend> inner_;
+    bool concurrent_;
 };
-std::unique_ptr<WVVerticalMatrixBackend> tracingBackend(MatrixTrace& trace,bool native = false) {
-    return std::make_unique<TracingBackend>(trace,backend(native));
+std::unique_ptr<WVVerticalMatrixBackend> tracingBackend(MatrixTrace& trace,bool native = false,
+    bool concurrent = true) {
+    return std::make_unique<TracingBackend>(trace,backend(native),concurrent);
 }
 std::unique_ptr<WVFFTEngine> fft(bool native) {
 #if WV_TEST_NATIVE_FFTW
@@ -367,6 +373,57 @@ void selectedVerticalColumn(WVComplexRepresentation representation,
     require(allocationProbe::calls==0 && op->persistentBytes()+workspace->persistentBytes()==bytes,
         "Selected vertical execution allocated or changed prepared storage");
 }
+void parallelVerticalGroups(WVComplexRepresentation representation,
+    WVAccumulation accumulation,bool direct,bool native) {
+    VerticalFixture f(WVMatrixAction::projection,representation,accumulation,direct);
+    std::unique_ptr<WVPreparedVerticalOperator> op;
+    require(WVPreparedVerticalOperator::create(f.spec,backend(native),op));
+    require(op->supportsConcurrentCalls(),"Concurrent backend capability was not retained");
+    std::unique_ptr<WVVerticalWorkspace> serial,parallel;
+    require(op->createWorkspace(serial)); require(op->createWorkspace(3,parallel));
+    std::unique_ptr<WVVerticalGroupExecutor> executor;
+    require(WVVerticalGroupExecutor::create(3,executor));
+    Buffer input(f.spec.input),oracle(f.spec.output),candidate(f.spec.output);
+    for (std::size_t mode=0;mode<f.spec.input.columns;++mode) {
+        for (std::size_t row=0;row<f.spec.input.rows;++row)
+            input.set(row,mode,{std::sin(.19*(row+3*mode)),std::cos(.23*(row+2*mode))});
+        for (std::size_t row=0;row<f.spec.output.rows;++row) {
+            oracle.set(row,mode,{.7,-.2}); candidate.set(row,mode,{.7,-.2});
+        }
+    }
+    const auto inputBefore=input;
+    require(op->execute(*serial,input.in(),oracle.out()));
+    require(op->execute(*parallel,*executor,input.in(),candidate.out()));
+    require(candidate.equals(oracle) && input.equals(inputBefore),
+        "Static parallel vertical groups changed the result or input");
+    candidate.paddingUnchanged();
+    const auto beforeMismatch=candidate;
+    require(op->execute(*serial,*executor,input.in(),candidate.out()).code==
+        WVKernelStatusCode::invalidConfiguration && candidate.equals(beforeMismatch),
+        "Parallel execution accepted mismatched preallocated scratch");
+    if (direct) require(parallel->persistentBytes()==serial->persistentBytes(),
+        "All-direct vertical groups allocated per-worker packing scratch");
+    else require(parallel->persistentBytes()>serial->persistentBytes(),
+        "Packed vertical groups did not preallocate per-worker scratch");
+    const auto bytes=op->persistentBytes()+parallel->persistentBytes()+executor->persistentBytes();
+    allocationProbe::calls=0; allocationProbe::counting=true;
+    for (unsigned repeat=0;repeat<10;++repeat)
+        require(op->execute(*parallel,*executor,input.in(),candidate.out()));
+    allocationProbe::counting=false;
+    require(allocationProbe::calls==0 &&
+        op->persistentBytes()+parallel->persistentBytes()+executor->persistentBytes()==bytes,
+        "Parallel vertical group execution allocated or changed prepared storage");
+
+    MatrixTrace trace;
+    std::unique_ptr<WVPreparedVerticalOperator> serialOnly;
+    require(WVPreparedVerticalOperator::create(f.spec,tracingBackend(trace,false,false),serialOnly));
+    std::unique_ptr<WVVerticalWorkspace> serialOnlyWorkspace;
+    require(serialOnly->createWorkspace(3,serialOnlyWorkspace));
+    const auto beforeRejected=candidate;
+    require(serialOnly->execute(*serialOnlyWorkspace,*executor,input.in(),candidate.out()).code==
+        WVKernelStatusCode::unsupportedOperation && candidate.equals(beforeRejected) && trace.count==0,
+        "Parallel execution silently accepted a nonconcurrent backend");
+}
 void singleColumn(bool native, WVComplexRepresentation representation) {
     VerticalFixture f(WVMatrixAction::reconstruction,representation,WVAccumulation::overwrite,true);
     f.spec.input.columns = f.spec.output.columns = 1;
@@ -585,6 +642,10 @@ int main() {
             for (auto representation:{WVComplexRepresentation::split,WVComplexRepresentation::interleaved})
                 for (auto accumulation:{WVAccumulation::overwrite,WVAccumulation::add})
                     for (bool direct:{false,true}) selectedVerticalColumn(representation,accumulation,direct,native);
+        for (bool native:{false,true}) if (!native || nativeMatrix)
+            for (auto representation:{WVComplexRepresentation::split,WVComplexRepresentation::interleaved})
+                for (auto accumulation:{WVAccumulation::overwrite,WVAccumulation::add})
+                    for (bool direct:{false,true}) parallelVerticalGroups(representation,accumulation,direct,native);
         identitiesAndRebuild(); rejectedContracts(); setupFailures(); workspaceConcurrency();
         std::cout << "Spectral operators passed: independent DFT/matrix oracles, split/interleaved layouts, exact groups, aliases, failure cleanup, immutable preparation and zero prepared allocations. Accelerate=" << nativeMatrix << '\n';
         return 0;

@@ -437,6 +437,7 @@ void variableScheduleParity(const std::shared_ptr<const WVStratifiedModalRecord>
     WVVariableExecutionOptions options{WVRetainedHorizontalSchedule::streamingPrunedTile16,2,true};
     if (compact) options.spectralSchedule=WVVariableSpectralSchedule::compactSplitFusedViews;
     options.pointwiseWorkers=2;
+    options.verticalGroupWorkers=2;
     require(bool(WVTransformBoussinesqKernel::create(source,std::make_unique<WVReferenceFFTEngine>(),candidate, WVCreateScalarMatrixBackend, options)),"Candidate schedule setup failed");
     require(std::string(candidate->horizontalScheduleIdentifier())=="full-fft-gather","Reference provider fallback was not reported");
     const auto& g=source->geometry(); const auto S=g.Nj*g.Nkl,R=g.Nx*g.Ny*g.Nz;
@@ -489,7 +490,8 @@ void variableScheduleParity(const std::shared_ptr<const WVStratifiedModalRecord>
         "Boussinesq streamed scratch accounting differs");
     require(candidate->executionOptions().horizontalWorkers==2 && candidate->executionOptions().streamedNonlinear &&
         candidate->executionOptions().usesCompactSplitViews()==compact && candidate->executionOptions().pointwiseWorkers==2 &&
-        candidate->executionOptions().inertialOnlyProjection && !frozen->executionOptions().inertialOnlyProjection,
+        candidate->executionOptions().inertialOnlyProjection && !frozen->executionOptions().inertialOnlyProjection &&
+        candidate->executionOptions().verticalGroupWorkers==2 && frozen->executionOptions().verticalGroupWorkers==1,
         "Candidate options were not retained");
     require(candidate->persistentBytes()>=candidate->storage().workspaceBytes,"Candidate storage ledger under-reports workspace");
 
@@ -498,6 +500,12 @@ void variableScheduleParity(const std::shared_ptr<const WVStratifiedModalRecord>
         WVCreateScalarMatrixBackend,invalidWorkerOptions);
     require(status.code==WVKernelStatusCode::invalidConfiguration && candidate.get()==retained,
         "Zero pointwise workers were accepted or replaced the retained kernel");
+    WVVariableExecutionOptions invalidVerticalWorkerOptions;
+    invalidVerticalWorkerOptions.verticalGroupWorkers=0;
+    status=WVTransformBoussinesqKernel::create(source,std::make_unique<WVReferenceFFTEngine>(),candidate,
+        WVCreateScalarMatrixBackend,invalidVerticalWorkerOptions);
+    require(status.code==WVKernelStatusCode::invalidConfiguration && candidate.get()==retained,
+        "Zero vertical group workers were accepted or replaced the retained kernel");
     std::unique_ptr<WVTransformBoussinesqKernel> invalid;
     WVVariableExecutionOptions invalidOptions;
     invalidOptions.spectralSchedule=WVVariableSpectralSchedule::compactSplitFusedViews;

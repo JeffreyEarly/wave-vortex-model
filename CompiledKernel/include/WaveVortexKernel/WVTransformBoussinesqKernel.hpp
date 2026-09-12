@@ -180,6 +180,7 @@ private:
     std::unique_ptr<WVRetainedHorizontalWorkspace> horizontalWorkspace_;
     std::array<std::unique_ptr<WVPreparedVerticalOperator>,11> vertical_;
     std::array<std::unique_ptr<WVVerticalWorkspace>,11> verticalWorkspace_;
+    std::unique_ptr<WVVerticalGroupExecutor> verticalGroups_;
     std::unique_ptr<spectral_detail::WVVariableComplexBuffer> spectralStorage_;
     std::unique_ptr<kernel_detail::WVPreparedFieldCache> fieldCache_;
     std::unique_ptr<kernel_detail::WVPreparedModeExecutor> pointwise_;
