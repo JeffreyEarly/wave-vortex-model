@@ -33,6 +33,8 @@ struct WVHydrostaticKernelMetrics {
     std::size_t coefficientAssemblyCount = 0, verticalPreparationCount = 0;
     std::size_t verticalOperatorExecutionCount = 0;
     std::size_t derivativeAdvectionConsumerCount = 0;
+    std::size_t tiledNonlinearCount = 0, tiledColumnInverseCount = 0;
+    std::size_t tiledRowInverseCount = 0, tiledReusedColumnCount = 0;
     std::size_t horizontalSpectrumReuseCount = 0, preparedVerticalDerivativeCount = 0;
     std::array<std::size_t,4> tendencyReconstructionCount{};
     std::array<std::size_t,16> fieldReconstructionCount{};
@@ -116,6 +118,10 @@ public:
     // Caller-owned observation output captures the raw spatial contribution.
     // Prepared [u,v,w,eta] fields may be shared within one observation event.
     // With projectFlux=false, spatialTendency is required and flux is untouched.
+    // Produces the complete physical bundle and projected flux together. Caller
+    // publishes evaluator nodes only after success; requires prepared native support.
+    bool supportsTiledNonlinear() const noexcept { return tiledNonlinearPrepared_; }
+    WVKernelStatus nonlinearFluxAndFields(const WVState&, WVFlux&, WVRealFieldBundleView);
     WVKernelStatus nonlinearFlux(const WVState&, WVFlux&,
         WVRealFieldBundleView* spatialTendency = nullptr,
         const WVRealFieldBundleConstView* preparedFields = nullptr, bool projectFlux = true,
@@ -160,11 +166,13 @@ private:
     WVKernelStatus project(const double*,WVComplexOutput,WVHydrostaticFamily);
     WVKernelStatus reconstruct(const WVCoefficients&,WVHydrostaticField,
         WVHydrostaticDerivative,WVHydrostaticComponent,double*,bool countPrimary = true,
-        std::size_t metricComponent = 5,const WVRealOutputConsumer* consumer = nullptr);
+        std::size_t metricComponent = 5,const WVRealOutputConsumer* consumer = nullptr,
+        WVComplexInput* preparedSpectrum = nullptr,const WVComplexOutput* destination = nullptr);
     WVKernelStatus projectFields(const double*,const double*,const double*,WVMutableCoefficients);
     WVKernelStatus projectedFieldsToCoefficients(
         WVComplexInput,WVComplexInput,WVComplexInput,WVMutableCoefficients);
     WVKernelStatus verticalCalculus(const double*,WVHydrostaticFamily,unsigned,bool,double*);
+    bool tiledNonlinearPrepared_ = false;
     WVVariableExecutionOptions executionOptions_;
     std::shared_ptr<const WVStratifiedModalSource> source_;
     std::vector<WVHydrostaticModeFactors> factors_;

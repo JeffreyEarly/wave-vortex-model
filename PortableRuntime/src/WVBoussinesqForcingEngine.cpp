@@ -54,7 +54,14 @@ WVKernelStatus WVBoussinesqForcingEngine::create(std::shared_ptr<const WVStratif
         auto candidate=std::unique_ptr<WVBoussinesqForcingEngine>(new WVBoussinesqForcingEngine);
         candidate->catalog_=std::move(catalog);
         candidate->evaluationPolicy_=services.variableEvaluationPolicy;
-        s=WVTransformBoussinesqKernel::create(std::move(source),std::move(fft),candidate->kernel_,services.matrixBackendFactory,services.execution); if (!s) return s;
+        auto execution=services.execution;
+        bool hasNonlinear=false;
+        for (const auto& entry:schedule.entries)
+            hasNonlinear|=candidate->catalog_->forcings().registration(entry.typeIdentifier,entry.contractVersion)->evaluationDependencies.nonlinearUseCount!=0;
+        // Prepare tiled scratch only for a workload that declares its consumer.
+        execution.tiledNonlinear=execution.tiledNonlinear && hasNonlinear &&
+            services.variableEvaluationPolicy==WVVariableEvaluationPolicy::reuse;
+        s=WVTransformBoussinesqKernel::create(std::move(source),std::move(fft),candidate->kernel_,services.matrixBackendFactory,execution); if (!s) return s;
         s=candidate->initialize(schedule); if (!s) return s;
         result=std::move(candidate); return WVKernelStatus::ok();
     } catch (const std::bad_alloc&) { return {WVKernelStatusCode::allocationFailure,"Boussinesq forcing allocation failed."}; }
@@ -92,6 +99,8 @@ WVKernelStatus WVBoussinesqForcingEngine::initialize(const WVFrozenForcingSchedu
     scheduleIdentifier_=identifier.str();
     const auto R=kernel().spatialShape().elementCount(),S=kernel().spectralShape().elementCount();
     physical_.resize(4*R); spatial_.resize(4*R); derivative_.resize(2*R); temporary_.resize(3*S);
+    for (std::uint32_t channel=0;channel<4;++channel)
+        physicalGroup_.push_back({{WVVariableEvaluationNode::physicalField,channel},R*sizeof(double)});
     gridCalculusSlots_.fill(-1);
     std::size_t calculusSlots=0;
     for(std::size_t index=0;index<gridCalculusUseCount_.size();++index)
@@ -255,6 +264,18 @@ WVKernelStatus WVBoussinesqForcingEngine::addNonlinearFlux(const WVState& state,
     auto& storage=nonlinearCache_.empty() ? temporary_ : nonlinearCache_;
     WVFlux tmp{{storage.data(),shape},{storage.data()+S,shape},{storage.data()+2*S,shape}};
     const auto produce=[&] {
+        bool allEmpty=true;
+        for (const auto& node:physicalGroup_) allEmpty&=!evaluation_.ready(node.first);
+        if (evaluationPolicy_==WVVariableEvaluationPolicy::reuse && allEmpty && kernel().supportsTiledNonlinear()) {
+            const auto grid=kernel().spatialShape();
+            const auto result=evaluation_.evaluateGroup(physicalGroup_,[&] {
+                ++metrics_.nonlinearProducerCount;
+                return kernel().nonlinearFluxAndFields(state,tmp,
+                    {physical_.data(),{grid.first,grid.second,grid.third,4}});
+            });
+            if (result) ++metrics_.physicalFieldReconstructionCount;
+            return result;
+        }
         WVRealFieldBundleConstView fields;
         auto status=physicalFields(state,fields); if(!status) return status;
         ++metrics_.nonlinearProducerCount;
@@ -445,7 +466,7 @@ WVKernelStatus WVBoussinesqForcingEngine::createErrorPolicy(double tolerance,std
     } catch(const std::bad_alloc&) { return {WVKernelStatusCode::allocationFailure,"Boussinesq tolerance allocation failed."}; }
 }
 std::size_t WVBoussinesqForcingEngine::persistentBytes() const noexcept {
-    return sizeof(*this)+evaluation_.persistentBytes()+(kernel_ ? kernel_->persistentBytes() : 0)+metrics_.scheduleBytes+metrics_.derivedOperatorBytes+metrics_.workspaceCapacityBytes;
+    return sizeof(*this)+physicalGroup_.capacity()*sizeof(decltype(physicalGroup_)::value_type)+evaluation_.persistentBytes()+(kernel_ ? kernel_->persistentBytes() : 0)+metrics_.scheduleBytes+metrics_.derivedOperatorBytes+metrics_.workspaceCapacityBytes;
 }
 
 const WVForcingEvaluationDependencies*

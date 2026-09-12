@@ -78,6 +78,7 @@ private:
     bool executing_=false;
     WVVariableEvaluationPolicy evaluationPolicy_=WVVariableEvaluationPolicy::reuse;
     WVVariableEvaluationContext evaluation_;
+    std::vector<std::pair<WVVariableEvaluationKey,std::size_t>> physicalGroup_;
     WVState evaluationState_{};
     double horizontalMaximum_=0,verticalMaximum_=0;
     WVKernelStatus ensurePhysicalField(const WVState&,std::size_t);

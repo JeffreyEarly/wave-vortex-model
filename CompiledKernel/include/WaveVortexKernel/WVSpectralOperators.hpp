@@ -1,6 +1,7 @@
 #pragma once
 
 #include "WVFFTEngine.hpp"
+#include <array>
 #include <cstdint>
 #include <memory>
 #include <string>
@@ -47,9 +48,32 @@ struct WVRealGridLayout {
 };
 struct WVRealInput { const double* data = nullptr; std::size_t bytes = 0; };
 struct WVRealOutput { double* data = nullptr; std::size_t bytes = 0; };
+struct WVRetainedAdvectionWork {
+    // Prepared value spectra ordered u, v, w, eta; execution preserves them.
+    std::array<WVComplexInput,4> base;
+    // Ordered u, v, eta, w. Each active target begins as its prepared vertical
+    // derivative spectrum and is replaced by the projected nonlinear flux.
+    std::array<WVComplexOutput,4> targetSpectra;
+    // Four contiguous [Nx,Ny,Nz] volumes ordered u, v, w, eta.
+    WVRealOutput fields;
+    WVRealInput densityCorrection;
+    std::size_t targets = 0;
+};
+struct WVRetainedAdvectionCounts {
+    std::size_t columnInverses = 0;
+    std::size_t rowInverses = 0;
+    std::size_t reusedColumns = 0;
+};
 inline WVKernelStatus WVRetainedHorizontalPlan::inverseAndConsume(WVComplexInput,
     WVRealOutput,const WVRealOutputConsumer&) {
     return {WVKernelStatusCode::unsupportedOperation,"Provider has no inverse consumer."};
+}
+inline WVKernelStatus WVRetainedHorizontalPlan::prepareAdvection(std::size_t) {
+    return {WVKernelStatusCode::unsupportedOperation,"Provider has no retained advection schedule."};
+}
+inline WVKernelStatus WVRetainedHorizontalPlan::advection(
+    const WVRetainedAdvectionWork&,WVRetainedAdvectionCounts&) {
+    return {WVKernelStatusCode::unsupportedOperation,"Provider has no retained advection schedule."};
 }
 struct WVRetainedModeKey { std::int64_t k = 0, l = 0; };
 enum class WVRetainedHorizontalSchedule { fullFFT, streamingPrunedTile16 };
@@ -102,6 +126,10 @@ public:
     // output is retained, including when consumers run inside provider workers.
     WVKernelStatus inverseAndConsume(WVRetainedHorizontalWorkspace&, WVComplexInput,
         WVRealOutput,const WVRealOutputConsumer&) const;
+    WVKernelStatus prepareAdvection(WVRetainedHorizontalWorkspace&,std::size_t targets) const;
+    bool supportsAdvection(const WVRetainedHorizontalWorkspace&,std::size_t targets) const noexcept;
+    WVKernelStatus advection(WVRetainedHorizontalWorkspace&,const WVRetainedAdvectionWork&,
+        WVRetainedAdvectionCounts&) const;
     std::size_t persistentBytes() const noexcept;
     std::size_t providerBytesLowerBound() const noexcept;
     // Full-grid derivative before retained-mode projection (e.g. passive tracers).

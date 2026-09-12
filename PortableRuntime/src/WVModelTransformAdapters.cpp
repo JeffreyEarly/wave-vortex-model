@@ -339,6 +339,11 @@ public:
     metrics.variableProducers.verticalPreparations=producers.verticalPreparationCount;
     metrics.variableProducers.horizontalSpectrumReuses=producers.horizontalSpectrumReuseCount;
     metrics.variableProducers.derivativeAdvectionConsumers=producers.derivativeAdvectionConsumerCount;
+    metrics.variableProducers.tiledNonlinearExecutions=producers.tiledNonlinearCount;
+    metrics.variableProducers.tiledColumnInverses=producers.tiledColumnInverseCount;
+    metrics.variableProducers.tiledRowInverses=producers.tiledRowInverseCount;
+    metrics.variableProducers.tiledReusedColumns=producers.tiledReusedColumnCount;
+
     metrics.variableProducers.preparedVerticalDerivatives=producers.preparedVerticalDerivativeCount;
     metrics.variableProducers.tendencyReconstructions=producers.tendencyReconstructionCount;
     if(!system_->fieldEvaluationService())
@@ -433,6 +438,11 @@ public:
     metrics.variableProducers.verticalPreparations=producers.verticalPreparationCount;
     metrics.variableProducers.horizontalSpectrumReuses=producers.horizontalSpectrumReuseCount;
     metrics.variableProducers.derivativeAdvectionConsumers=producers.derivativeAdvectionConsumerCount;
+    metrics.variableProducers.tiledNonlinearExecutions=producers.tiledNonlinearCount;
+    metrics.variableProducers.tiledColumnInverses=producers.tiledColumnInverseCount;
+    metrics.variableProducers.tiledRowInverses=producers.tiledRowInverseCount;
+    metrics.variableProducers.tiledReusedColumns=producers.tiledReusedColumnCount;
+
     metrics.variableProducers.preparedVerticalDerivatives=producers.preparedVerticalDerivativeCount;
     metrics.variableProducers.tendencyReconstructions=producers.tendencyReconstructionCount;
     if(!system_->fieldEvaluationService())

@@ -36,7 +36,7 @@ int main(int argc,char** argv) {
         } else throw std::runtime_error("Unknown provider.");
         std::unique_ptr<WVTransformHydrostaticKernel> kernel;
         WVVariableExecutionOptions options; if (pruned) options={WVRetainedHorizontalSchedule::streamingPrunedTile16,2,true};
-        if (compact) { options.spectralSchedule=WVVariableSpectralSchedule::compactSplitFusedViews; options.pointwiseWorkers=2; options.fusedDerivativeAdvection=true; }
+        if (compact) { options.spectralSchedule=WVVariableSpectralSchedule::compactSplitFusedViews; options.pointwiseWorkers=2; options.fusedDerivativeAdvection=true; options.tiledNonlinear=true; }
         require(WVTransformHydrostaticKernel::create(record,std::move(engine),kernel,provider=="native-accelerate" ? WVCreateAccelerateMatrixBackend : WVCreateScalarMatrixBackend,options)); record.reset();
         const auto& g=kernel->geometry(); const auto S=g.Nj*g.Nkl,R=g.Nx*g.Ny*g.Nz; const auto shape=kernel->spectralShape(); const auto volume=kernel->spatialShape();
         std::array<std::vector<WVComplex64>,3> a,c;
@@ -46,6 +46,11 @@ int main(int argc,char** argv) {
         WVState state{data.at("t"),data.at("t0"),{{a[0].data(),shape},{a[1].data(),shape},{a[2].data(),shape}}};
         WVMutableCoefficients out{{c[0].data(),shape},{c[1].data(),shape},{c[2].data(),shape}};
         WVFlux flux{out.Ap,out.Am,out.A0};
+        std::vector<double> tiledFields(kernel->supportsTiledNonlinear() ? 4*R : 0);
+        const auto nonlinear=[&](const WVState& sample,WVFlux& target) {
+            return kernel->supportsTiledNonlinear() ? kernel->nonlinearFluxAndFields(sample,target,
+                {tiledFields.data(),{g.Nx,g.Ny,g.Nz,4}}) : kernel->nonlinearFlux(sample,target);
+        };
         auto packed=[&]() { return json{{"Ap",complexValues(c[0])},{"Am",complexValues(c[1])},{"A0",complexValues(c[2])}}; };
         json result; result["engine"]=kernel->engineIdentifier(); result["backend"]=kernel->matrixBackendIdentifier(); result["contract"]=WVHydrostaticKernelContract; result["horizontalSchedule"]=kernel->horizontalScheduleIdentifier(); result["streamedNonlinear"]=kernel->executionOptions().streamedNonlinear; result["compactSplitViews"]=kernel->executionOptions().usesCompactSplitViews(); result["pointwiseWorkers"]=kernel->executionOptions().pointwiseWorkers;
         const auto& factors=kernel->factors();
@@ -72,7 +77,7 @@ int main(int argc,char** argv) {
         for (auto* x:{&u,&v,&eta,&q}) if (x->size()!=R) throw std::runtime_error("Wrong spatial input size.");
         require(kernel->transformUVEtaToWaveVortex({u.data(),volume},{v.data(),volume},{eta.data(),volume},state.t,state.t0,out)); result["project"]=packed();
         require(kernel->evolveCoefficients(state,out)); result["evolved"]=packed();
-        require(kernel->nonlinearFlux(state,flux)); result["flux"]=packed();
+        require(nonlinear(state,flux)); result["flux"]=packed();
         double scalar=0; require(kernel->totalEnstrophy(state.coefficients,scalar)); result["enstrophy"]=scalar;
         const char* components[]={"all","wave","inertial","geostrophic","meanDensityAnomaly"};
         for (int component=0;component<5;++component) {
@@ -109,7 +114,7 @@ int main(int argc,char** argv) {
                 }
                 WVState sample{state.t+dt*(step+fraction),state.t0,{{stage[0].data(),shape},{stage[1].data(),shape},{stage[2].data(),shape}}};
                 WVFlux target{{slopes[k][0].data(),shape},{slopes[k][1].data(),shape},{slopes[k][2].data(),shape}};
-                require(kernel->nonlinearFlux(sample,target));
+                require(nonlinear(sample,target));
             }
             for (int j=0;j<3;++j) for (std::size_t i=0;i<S;++i) {
                 trajectory[j][i].real+=dt/6*(slopes[0][j][i].real+2*slopes[1][j][i].real+2*slopes[2][j][i].real+slopes[3][j][i].real);
@@ -120,12 +125,12 @@ int main(int argc,char** argv) {
         const auto bytes=kernel->persistentBytes();
         allocationProbe::calls=0; allocationProbe::counting=true;
         for (int i=0;i<3;++i) {
-            require(kernel->nonlinearFlux(state,flux)); require(kernel->transformStateField(state,WVHydrostaticField::rhoE,{U.data(),volume},WVHydrostaticDerivative::z));
+            require(nonlinear(state,flux)); require(kernel->transformStateField(state,WVHydrostaticField::rhoE,{U.data(),volume},WVHydrostaticDerivative::z));
             require(kernel->transformUVEtaToWaveVortex({u.data(),volume},{v.data(),volume},{eta.data(),volume},state.t,state.t0,out));
             require(kernel->differentiateVertical({q.data(),volume},WVHydrostaticFamily::F,4,{U.data(),volume}));
             require(kernel->integrateVertical({q.data(),volume},WVHydrostaticFamily::G,{U.data(),volume}));
         }
-        allocationProbe::counting=false; result["preparedAllocations"]=allocationProbe::calls.load();
+        allocationProbe::counting=false; result["tiledNonlinearExecutions"]=kernel->metrics().tiledNonlinearCount; result["preparedAllocations"]=allocationProbe::calls.load();
         bool unchanged=true; for (int j=0;j<3;++j) for (std::size_t i=0;i<S;++i) unchanged=unchanged && a[j][i].real==original[j][i].real && a[j][i].imag==original[j][i].imag;
         result["inputPreserved"]=unchanged; result["storageStable"]=bytes==kernel->persistentBytes(); result["realScratchBytes"]=kernel->storage().realScratchBytes;
         kernel.reset(); result["ownerReleased"]=owner.expired();

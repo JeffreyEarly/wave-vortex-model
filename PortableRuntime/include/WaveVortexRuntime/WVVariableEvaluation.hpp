@@ -48,6 +48,8 @@ struct WVVariableProducerMetrics {
   std::size_t verticalMatrixGroupExecutions = 0;
   std::size_t horizontalSpectrumReuses = 0, preparedVerticalDerivatives = 0;
   std::size_t derivativeAdvectionConsumers = 0;
+  std::size_t tiledNonlinearExecutions = 0, tiledColumnInverses = 0;
+  std::size_t tiledRowInverses = 0, tiledReusedColumns = 0;
   std::size_t horizontalSpeedReductions = 0;
   std::size_t verticalSpeedReductions = 0;
   std::size_t energyReductions = 0;

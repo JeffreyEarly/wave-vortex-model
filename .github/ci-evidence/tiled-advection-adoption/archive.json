@@ -1,0 +1,63 @@
+{
+  "archive": "/Users/jearly/Documents/OceanKitRepositories/wave-vortex-model-benchmark-artifacts/tiled-advection-adoption-20260912",
+  "filesSHA256": {
+    "qualification/protocol.json": "ab39eb37efb51a638267c3ace75d175155bc4b0fc04b692a705d32b39accc5dd",
+    "qualification/pairs.json": "b6904df177af805e66788cd2dc5de9fc3ff253a3f000272c3c36cd0b5d609860",
+    "qualification/summary.json": "9b967dc6c8ea1cc4e07855d75d4c1e4ed58799dae9a8d865fb565ac4b94d6422",
+    "host-activity.json": "209a1fc9e05b692c0e7350ebfbdf3770f8a60128ed5b42c1598d6aea3789d71f",
+    "frozen-build.json": "0ba07d074896e9d4f63d13c8b4d2b0fdb25507cff5f5fcc731c5729842afffed",
+    "CMakeCache.txt": "3ac3e10e1caeb78bbb77aaa7c7673c6a38987ea1e0960a73c71e0b6d7af84143",
+    "run-campaign.py": "60dc82369dbf2c225a091a406faaf43d2fdaac19ec16af2c622755e4a933cb14",
+    "qualification-manifest.json": "17f72036f7ca36fb2a942def92fb080741b80caf07615b5f4dd8279084844669",
+    "verification/forward-provenance-check.json": "e049b36c2c8a9f5c37bada7d9c5fb5eb98977e7dfe9961b5ef117e2e9d1d4ba2",
+    "verification/run_wvm489_collect.m": "0176e3190778ef2ed7b9db22dd2e89f669308a53dbb99f44789df9c6850b6797",
+    "verification/run_wvm489_forward.m": "2aa5f0c286364009158b93f27cb58377a2ef3cc5871f692e5879466712e9ce3b",
+    "verification/run_wvm489_parity.m": "fa979c765cb7363ff2865be8363147d34e220b22f167184878e50dd3efc20459",
+    "verification/wvm489-combined-build.log": "5496b20a8b5c6dd171b48752fe6cfb5eab0a8eab23dc2c882735eef1b896574a",
+    "verification/wvm489-combined-matlab-results.json": "7a26009a3b14229a2f3b4791af54bca3531fcd02538dcb782b7b548620c8d8dd",
+    "verification/wvm489-combined-tests.log": "ed69d03ce4f7429ea6fb9c231c86907613ac3d7b2f806ad640e076e259a41057",
+    "verification/wvm489-configure.sh": "0cd4203243040d345f11ea205f8aebeb8ed0c9a6eb2ed61851f467f0a6795c68",
+    "verification/wvm489-forward.log": "b274bea740a6d44b366b3a2867fc3aac27ea094b3fe85a9507e98588dcda442c",
+    "verification/wvm489-gating-build.log": "a7a323c97bc260c62b7d68823fb0ccedbf7694dc371ee6ddf05c6a9527d72ed1",
+    "verification/wvm489-gating-tests.log": "dbbe36c06a589e569ca9af3af2e96447d526bf10cddd23c453caca55db4d3168",
+    "verification/wvm489-gcc-final-build.log": "aeb999a06b8294e9d65e1b8d188b048467976f67abc476b4554611741a217971",
+    "verification/wvm489-gcc-final-tests.log": "5863f56db7468d4289407da1d6bdd77a98a3da31c11d6f6fbf8a318e015fd4bb",
+    "verification/wvm489-gcc-operator-tests.log": "291913fafe73633bf304975ecda4924f54afb00439746eb57dfc6b961960ba66",
+    "verification/wvm489-matlab-parity.log": "edccf86c2e761515d63b7ac0635e379675eb503afb459be2b7adb2de39e57bcd",
+    "verification/wvm489-provenance.py": "b26325ac17bf99feb36e4aa06ae3421b4b2208c88a268414f2b2d76247811fd5",
+    "verification/wvm489-sanitized-build.log": "1608c9f3b1605a51206cb5b682406a15e5fbd3462b98005c3d00a115faa5746e",
+    "verification/wvm489-sanitized-tests.log": "e851e959e682414db057d2a4b160760d2cc7f644e80670bff98b98050d8a82f5",
+    "verification/wvm489-collect.log": "60be4893e01ed90f16264e605fad14cea6c61dd53dde277e6d254766d92724ec",
+    "verification/wvm489-catalog-results.json": "63ae3c9d5ef11bbc65c170a56b218af19a884c33b4cf28e2fe3aaf14744fc355",
+    "verification/wvm489-finalize-evidence.py": "5e33822abf50b348314483cc77b9d3b23a2b546ceadce0df9732e3dc41a64fc7"
+  },
+  "frozenBuild": {
+    "sourceCommit": "78025904a58e0195f28540f7bddf51e50b59525b",
+    "sourceLinkedQualificationCommit": "78025904a58e0195f28540f7bddf51e50b59525b",
+    "compiledInputEquivalence": "Frozen executable and actual runner/probe report.source.commit verified at this implementation revision before forward receipts.",
+    "filesSHA256": {
+      "/Users/jearly/Documents/OceanKitRepositories/wave-vortex-model-benchmark-artifacts/tiled-advection-adoption-20260912/qualified-candidate-wave-vortex-run": "5e00648723698e430f465d2a07ceaa612fb3476d0fe3568dede339c240338d1b",
+      "/Users/jearly/Documents/OceanKitRepositories/wave-vortex-model-benchmark-artifacts/matrix-advection-adoption-20260912/qualified-candidate-wave-vortex-run": "832d4e38e870de021489561a82da578ab2d4539927ee20c949beadcc5e68f27c",
+      "/Users/jearly/Documents/OceanKitRepositories/wave-vortex-model/.compiled-backend-cache/provider/native-neon-pthreads/lib/libfftw3.3.dylib": "b0dec1a21815db76726d48fe9b49cc34502b8fd7f4cccdfb0a54d50e39abef2c",
+      "/Users/jearly/Documents/OceanKitRepositories/wave-vortex-model/.compiled-backend-cache/provider/native-neon-pthreads/lib/libfftw3_threads.3.dylib": "064e6e17ca492204cb41aaf6ef739f6d5d22cc774699760e25166f5f8dffc359"
+    },
+    "baseline": "Exact accepted PR #478 binary, qualified at 400ed1f1.",
+    "automaticScope": "Hydrostatic and Boussinesq native compact reuse with a declared nonlinear consumer and initially empty physical nodes.",
+    "protocol": "Two warmups and eight alternating pairs per profile; reuse only. Both MM models accelerated; constant is the unaffected control. Extended integration windows reduce timing noise.",
+    "idlePreflight": {
+      "unixTime": 1789226818.7640069,
+      "processes": [
+        {
+          "pid": 389,
+          "cpuPercent": 1.8,
+          "executable": "/System/Library/Frameworks/CoreServices.framework/Versions/A/Frameworks/Metadata.framework/Versions/A/Support/mds"
+        },
+        {
+          "pid": 95382,
+          "cpuPercent": 2.4,
+          "executable": "/Applications/ChatGPT.app/Contents/Frameworks/Codex Framework.framework/Versions/152.0.7977.83/Helpers/Codex (Service).app/Contents/MacOS/Codex (Service)"
+        }
+      ]
+    }
+  }
+}

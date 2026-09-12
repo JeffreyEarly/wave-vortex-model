@@ -1,0 +1,58 @@
+[
+  {
+    "name": "TestPortableForwardIntegrationCatalog/regenerationMatchesCommittedArtifacts",
+    "passed": true,
+    "failed": false,
+    "incomplete": false,
+    "duration": 0.14725408333333331
+  },
+  {
+    "name": "TestPortableForwardIntegrationCatalog/committedReceiptsEstablishExecutedQualification",
+    "passed": true,
+    "failed": false,
+    "incomplete": false,
+    "duration": 0.10486741666666667
+  },
+  {
+    "name": "TestPortableForwardIntegrationCatalog/collectorRejectsMissingOrMixedExecutionSources",
+    "passed": true,
+    "failed": false,
+    "incomplete": false,
+    "duration": 0.24456258333333333
+  },
+  {
+    "name": "TestPortableForwardIntegrationCatalog/supportRowsAndExclusionsAreComplete",
+    "passed": true,
+    "failed": false,
+    "incomplete": false,
+    "duration": 0.067012
+  },
+  {
+    "name": "TestPortableForwardIntegrationCatalog/executionRequiresEveryCaseAndExactScope",
+    "passed": true,
+    "failed": false,
+    "incomplete": false,
+    "duration": 0.21297179166666669
+  },
+  {
+    "name": "TestPortableForwardIntegrationCatalog/sourceAndArtifactDigestsCannotGoStale",
+    "passed": true,
+    "failed": false,
+    "incomplete": false,
+    "duration": 0.16652466666666665
+  },
+  {
+    "name": "TestPortableForwardIntegrationCatalog/numericalAndRetainedEvidenceCannotBePromoted",
+    "passed": true,
+    "failed": false,
+    "incomplete": false,
+    "duration": 0.26469325
+  },
+  {
+    "name": "TestPortableForwardIntegrationCatalog/inheritedProofPreservesOriginalArtifactAndCorrections",
+    "passed": true,
+    "failed": false,
+    "incomplete": false,
+    "duration": 0.17788570833333331
+  }
+]

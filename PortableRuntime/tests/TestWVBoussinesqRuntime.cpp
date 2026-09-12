@@ -6,6 +6,9 @@
 #include "WVReferenceFFTEngine.hpp"
 #include "WVBoussinesqModalTestFixture.hpp"
 #include "../../tools/compiled-kernel/tests/WVAllocationProbe.hpp"
+#if WV_TEST_NATIVE_FFTW
+#include "WVNativeFFTWEngine.hpp"
+#endif
 #include <algorithm>
 #include <iostream>
 #include <limits>
@@ -22,6 +25,256 @@ WVKernelStatus countingScalarBackend(std::unique_ptr<WVVerticalMatrixBackend> &b
     ++injectedFactoryCalls;
     return WVCreateScalarMatrixBackend(backend);
 }
+
+#if WV_TEST_NATIVE_FFTW
+void nativeTiledLifecycle(std::shared_ptr<const WVStratifiedModalRecord> source,
+                          std::shared_ptr<const WVExtensionCatalog> catalog,
+                          const WVFrozenForcingSchedule &schedule) {
+    const auto createEngine = [&](bool tiled,bool nonlinear=true) {
+        WVVariableKernelServices services;
+        services.execution.horizontalSchedule =
+            WVRetainedHorizontalSchedule::streamingPrunedTile16;
+        services.execution.horizontalWorkers = 2;
+        services.execution.streamedNonlinear = true;
+        services.execution.spectralSchedule =
+            WVVariableSpectralSchedule::compactSplitFusedViews;
+        services.execution.pointwiseWorkers = 2;
+        services.execution.sharedFieldGradients = true;
+        services.execution.fusedDerivativeAdvection = true;
+        services.execution.tiledNonlinear = tiled;
+        std::unique_ptr<WVFFTEngine> fft;
+        require(bool(WVFFTWEngine::create(1,fft)),
+                "Native Boussinesq tiled FFT fixture failed");
+        std::unique_ptr<WVBoussinesqForcingEngine> result;
+        auto selectedSchedule=schedule;
+        if (!nonlinear) selectedSchedule.entries.clear();
+        const auto status = WVBoussinesqForcingEngine::create(
+            source,selectedSchedule,catalog,std::move(fft),result,services);
+        require(bool(status),status.message.c_str());
+        return result;
+    };
+    auto noNonlinear=createEngine(true,false);
+    require(!noNonlinear->kernel().supportsTiledNonlinear(),"Unused tiled workspace was prepared");
+    auto baseline = createEngine(false);
+    auto candidate = createEngine(true);
+    require(!baseline->kernel().supportsTiledNonlinear() &&
+                candidate->kernel().supportsTiledNonlinear(),
+            "Boussinesq tiled option did not control native capability");
+
+    const auto spectral = candidate->kernel().spectralShape();
+    const auto spatial = candidate->kernel().spatialShape();
+    const auto S = spectral.elementCount(), R = spatial.elementCount();
+    std::array<std::vector<WVComplex64>,3> coefficients;
+    for (std::size_t family=0;family<coefficients.size();++family) {
+        coefficients[family].resize(S);
+        for (std::size_t index=0;index<S;++index)
+            coefficients[family][index]={
+                1e-3*std::sin(.17*static_cast<double>(index+3*family+1)),
+                1e-3*std::cos(.11*static_cast<double>(2*index+family+1))};
+    }
+    WVMutableCoefficients mutableState{{coefficients[0].data(),spectral},
+        {coefficients[1].data(),spectral},{coefficients[2].data(),spectral}};
+    require(bool(baseline->kernel().constrainCoefficients(mutableState)),
+            "Boussinesq tiled coefficient constraint failed");
+    const auto stateView = [&] {
+        return WVState{.37,.11,{{coefficients[0].data(),spectral},
+            {coefficients[1].data(),spectral},
+            {coefficients[2].data(),spectral}}};
+    };
+    const auto fluxView = [&](std::array<std::vector<WVComplex64>,3>& values) {
+        for (auto& family:values) family.resize(S);
+        return WVFlux{{values[0].data(),spectral},{values[1].data(),spectral},
+            {values[2].data(),spectral}};
+    };
+    const auto requireClose = [](const auto& actual,const auto& expected,
+                                 const char* message) {
+        require(actual.size()==expected.size(),message);
+        for (std::size_t index=0;index<actual.size();++index)
+            require(std::abs(actual[index]-expected[index])<1e-12,message);
+    };
+    const auto requireComplexClose = [](const auto& actual,const auto& expected,
+                                        const char* message) {
+        for (std::size_t family=0;family<actual.size();++family) {
+            require(actual[family].size()==expected[family].size(),message);
+            for (std::size_t index=0;index<actual[family].size();++index) {
+                require(std::abs(actual[family][index].real-
+                    expected[family][index].real)<1e-12,message);
+                require(std::abs(actual[family][index].imag-
+                    expected[family][index].imag)<1e-12,message);
+            }
+        }
+    };
+
+    std::array<std::vector<WVComplex64>,3> baselineFlux,candidateFlux;
+    auto baselineOutput=fluxView(baselineFlux);
+    auto candidateOutput=fluxView(candidateFlux);
+    auto state=stateView();
+    require(bool(baseline->beginStateEvaluation(state)) &&
+                bool(baseline->nonlinearFlux(state,baselineOutput)),
+            "Boussinesq option-off scoped RHS failed");
+    WVRealFieldBundleConstView baselineFields;
+    require(bool(baseline->physicalFields(state,baselineFields)),
+            "Boussinesq option-off physical fields failed");
+    std::vector<double> expectedFields(baselineFields.data,
+        baselineFields.data+4*R);
+    baseline->endStateEvaluation();
+    require(baseline->kernel().metrics().tiledNonlinearCount==0 &&
+                baseline->variableEvaluationMetrics().producerExecutions==4,
+            "Boussinesq option-off path executed tiled nonlinear work");
+
+    candidate->kernel().resetMetrics();
+    require(bool(candidate->beginStateEvaluation(state)) &&
+                bool(candidate->nonlinearFlux(state,candidateOutput)),
+            "Boussinesq grouped tiled RHS failed");
+    const auto groupedProducers=candidate->variableEvaluationMetrics().producerExecutions;
+    const auto groupedMetrics=candidate->kernel().metrics();
+    require(groupedProducers==1 && groupedMetrics.tiledNonlinearCount==1 &&
+                groupedMetrics.tiledColumnInverseCount==12*spatial.third &&
+                groupedMetrics.tiledRowInverseCount==16*spatial.third &&
+                groupedMetrics.tiledReusedColumnCount==4*spatial.third,
+            "Boussinesq grouped tiled producer counts changed");
+    WVRealFieldBundleConstView groupedFields;
+    require(bool(candidate->physicalFields(state,groupedFields)) &&
+                candidate->variableEvaluationMetrics().producerExecutions==
+                    groupedProducers,
+            "Boussinesq grouped physical fields were not cached");
+    std::vector<double> actualFields(groupedFields.data,groupedFields.data+4*R);
+    requireClose(actualFields,expectedFields,
+                 "Boussinesq tiled physical fields differ");
+    requireComplexClose(candidateFlux,baselineFlux,
+                        "Boussinesq tiled RHS differs");
+    double uv=0,w=0;
+    require(bool(candidate->speedMaxima(state,uv,w)),
+            "Boussinesq grouped speed maxima failed");
+    const auto reducedProducers=candidate->variableEvaluationMetrics().producerExecutions;
+    require(bool(candidate->speedMaxima(state,uv,w)) &&
+                candidate->variableEvaluationMetrics().producerExecutions==
+                    reducedProducers &&
+                candidate->kernel().metrics().tiledNonlinearCount==1,
+            "Boussinesq grouped fields were not reused by reductions");
+    candidate->endStateEvaluation();
+    require(candidate->variableEvaluationMetrics().liveBytes==0,
+            "Boussinesq grouped fields survived their scope");
+
+    candidate->kernel().resetMetrics();
+    const auto readyProducers=
+        candidate->variableEvaluationMetrics().producerExecutions;
+    require(bool(candidate->beginStateEvaluation(state)),
+            "Boussinesq ready-first scope failed");
+    WVRealFieldBundleConstView readyFields;
+    require(bool(candidate->physicalFields(state,readyFields)) &&
+                bool(candidate->nonlinearFlux(state,candidateOutput)) &&
+                candidate->kernel().metrics().tiledNonlinearCount==0 &&
+                candidate->variableEvaluationMetrics().producerExecutions-
+                    readyProducers==4,
+            "Boussinesq ready-first request did not use the fallback");
+    requireComplexClose(candidateFlux,baselineFlux,
+                        "Boussinesq ready-first fallback RHS differs");
+    candidate->endStateEvaluation();
+
+    candidate->kernel().resetMetrics();
+    const auto partialProducers=
+        candidate->variableEvaluationMetrics().producerExecutions;
+    require(bool(candidate->beginStateEvaluation(state)) &&
+                bool(candidate->speedMaxima(state,uv,w)) &&
+                bool(candidate->nonlinearFlux(state,candidateOutput)) &&
+                candidate->kernel().metrics().tiledNonlinearCount==0 &&
+                candidate->variableEvaluationMetrics().producerExecutions-
+                    partialProducers==6,
+            "Boussinesq partial-ready request did not use the fallback");
+    WVRealFieldBundleConstView completedFields;
+    require(bool(candidate->physicalFields(state,completedFields)),
+            "Boussinesq partial-ready fallback did not complete fields");
+    requireComplexClose(candidateFlux,baselineFlux,
+                        "Boussinesq partial-ready fallback RHS differs");
+    requireClose(std::vector<double>(completedFields.data,
+                     completedFields.data+4*R),expectedFields,
+                 "Boussinesq partial-ready fallback fields differ");
+    candidate->endStateEvaluation();
+
+    require(bool(candidate->setVariableEvaluationPolicy(
+                WVVariableEvaluationPolicy::lowMemory)),
+            "Boussinesq tiled low-memory policy failed");
+    candidate->kernel().resetMetrics();
+    const auto lowMemoryProducers=
+        candidate->variableEvaluationMetrics().producerExecutions;
+    require(bool(candidate->beginStateEvaluation(state)) &&
+                bool(candidate->nonlinearFlux(state,candidateOutput)) &&
+                candidate->kernel().metrics().tiledNonlinearCount==0 &&
+                candidate->variableEvaluationMetrics().producerExecutions-
+                    lowMemoryProducers==5,
+            "Boussinesq low-memory request executed tiled nonlinear work");
+    requireComplexClose(candidateFlux,baselineFlux,
+                        "Boussinesq low-memory fallback RHS differs");
+    candidate->endStateEvaluation();
+    require(bool(candidate->setVariableEvaluationPolicy(
+                WVVariableEvaluationPolicy::reuse)),
+            "Boussinesq tiled reuse policy restoration failed");
+
+    for (auto& family:coefficients)
+        for (auto& value:family) {value.real*=.5;value.imag*=.5;}
+    state=stateView();
+    candidate->kernel().resetMetrics();
+    require(bool(candidate->beginStateEvaluation(state)) &&
+                bool(candidate->nonlinearFlux(state,candidateOutput)),
+            "Boussinesq changed in-place state tiled RHS failed");
+    WVRealFieldBundleConstView changedFields;
+    require(bool(candidate->physicalFields(state,changedFields)) &&
+                candidate->kernel().metrics().tiledNonlinearCount==1,
+            "Boussinesq changed in-place state reused the prior scope");
+    bool changed=false;
+    for (std::size_t index=0;index<4*R;++index)
+        changed|=changedFields.data[index]!=actualFields[index];
+    require(changed,"Boussinesq changed in-place state retained old fields");
+    candidate->endStateEvaluation();
+
+    std::size_t meanDensity=S;
+    for (std::size_t index=0;index<S;++index)
+        if (candidate->kernel().factors()[index].meanDensityAnomaly) {
+            meanDensity=index;
+            break;
+        }
+    require(meanDensity<S,
+            "Boussinesq tiled fixture has no mean-density zero mode");
+    const auto validMeanImag=coefficients[2][meanDensity].imag;
+    coefficients[2][meanDensity].imag=1e-4;
+    state=stateView();
+    for (auto& family:candidateFlux)
+        std::fill(family.begin(),family.end(),WVComplex64{17,19});
+    const auto failedProducers=
+        candidate->variableEvaluationMetrics().producerExecutions;
+    candidate->kernel().resetMetrics();
+    require(bool(candidate->beginStateEvaluation(state)),
+            "Boussinesq malformed tiled scope failed to begin");
+    const auto malformed=candidate->nonlinearFlux(state,candidateOutput);
+    require(malformed.code==WVKernelStatusCode::invalidConfiguration &&
+                candidate->variableEvaluationMetrics().producerExecutions==
+                    failedProducers &&
+                candidate->variableEvaluationMetrics().liveBytes==0 &&
+                candidate->kernel().metrics().tiledNonlinearCount==0,
+            "Boussinesq malformed tiled fields were published");
+    for (const auto& family:candidateFlux)
+        for (const auto& value:family)
+            require(value.real==0 && value.imag==0,
+                    "Boussinesq malformed tiled flux was partially accumulated");
+    candidate->endStateEvaluation();
+
+    coefficients[2][meanDensity].imag=validMeanImag;
+    state=stateView();
+    require(bool(baseline->beginStateEvaluation(state)) &&
+                bool(baseline->nonlinearFlux(state,baselineOutput)),
+            "Boussinesq restored option-off oracle failed");
+    baseline->endStateEvaluation();
+    candidate->kernel().resetMetrics();
+    require(bool(candidate->beginStateEvaluation(state)) &&
+                bool(candidate->nonlinearFlux(state,candidateOutput)) &&
+                candidate->kernel().metrics().tiledNonlinearCount==1,
+            "Boussinesq restored tiled state did not recover");
+    requireComplexClose(candidateFlux,baselineFlux,
+                        "Boussinesq restored tiled RHS differs");
+    candidate->endStateEvaluation();
+}
+#endif
 
 void injectedServices(std::shared_ptr<const WVStratifiedModalRecord> source,
                       std::shared_ptr<const WVExtensionCatalog> catalog,
@@ -271,6 +524,9 @@ void contracts(std::shared_ptr<const WVStratifiedModalRecord> source) {
                 "Boussinesq dense output retained or reopened an RHS evaluation");
     }
     injectedServices(source, catalog, schedule);
+#if WV_TEST_NATIVE_FFTW
+    nativeTiledLifecycle(source,catalog,schedule);
+#endif
 }
 }
 int main() {
