@@ -1,0 +1,14 @@
+{
+  "sourceLinkedCommit": "5947ac0d",
+  "allSixConfigurationsBothProvidersPassed": true,
+  "strictCommittedReceiptCheckPassed": true,
+  "sourceLinkedRuntimeAndProbe": {
+    "source-linked-runner": "547986eeee418000101ab66c413174c9c1a1ae29dfcc7f9d3c87898581c265f2",
+    "source-linked-probe": "80297e1016b0d8acca20397a7f53f5b5efdc1172c00e4de0036f59d63c5f82e4"
+  },
+  "scope": "Actual six-family MATLAB/native forward, restart, continuation and controlled-stop comparisons. Exact source-linked receipts retained; historical receipts not rewritten.",
+  "reuse": "Previous native/family/sanitizer/scientific evidence plus Release/sanitizer/GCC regression coverage for the added invalid-count catch. Successful numerical code unchanged.",
+  "archive": "/Users/jearly/Documents/OceanKitRepositories/wave-vortex-model-benchmark-artifacts/matrix-advection-adoption-20260912",
+  "performance": "pending",
+  "hostedCI": "pending"
+}
