@@ -1,4 +1,4 @@
-function [fields,omega] = freeSurfaceWavePolarization(F,G,h,k,l,options)
+function [fields,omega] = fullBoussinesqWaveReference(F,G,h,k,l,options)
 % Reconstruct linear free-surface wave polarizations from stored resolved modes.
 %
 % Columns of F and G are paired modes on an increasing bottom-to-surface
@@ -34,7 +34,6 @@ arguments (Input)
     options.f (1,1) double {mustBeReal,mustBeFinite,mustBeNonzero}
     options.g (1,1) double {mustBeReal,mustBeFinite,mustBePositive} = 9.81
     options.rho0 (1,1) double {mustBeReal,mustBeFinite,mustBePositive} = 1025
-    options.variables (1,:) string = ["u","v","w","eta","p","ssh"]
 end
 arguments (Output)
     fields (1,1) struct
@@ -50,15 +49,10 @@ end
 h = h.';
 omega = sqrt(options.f^2+options.g*h*kh^2);
 sigma = reshape([1 -1],1,1,2);
-fields = struct();
-selected = any(options.variables.'==["u","v","w","eta","p","ssh"],1);
-if selected(1), fields.u = F.*(k*omega-1i*sigma*options.f*l)./(omega*kh); end
-if selected(2), fields.v = F.*(l*omega+1i*sigma*options.f*k)./(omega*kh); end
-if selected(3), fields.w = repmat(-1i*kh*h.*G,1,1,2); end
-if selected(4), fields.eta = -sigma.*(kh*h./omega).*G; end
-if any(selected(5:6))
-    pressure = -sigma.*(options.rho0*options.g*kh*h./omega).*F;
-    if selected(5), fields.p=pressure; end
-    if selected(6), fields.ssh=pressure(end,:,:)/(options.rho0*options.g); end
-end
+fields.u = F.*(k*omega-1i*sigma*options.f*l)./(omega*kh);
+fields.v = F.*(l*omega+1i*sigma*options.f*k)./(omega*kh);
+fields.w = repmat(-1i*kh*h.*G,1,1,2);
+fields.eta = -sigma.*(kh*h./omega).*G;
+fields.p = -sigma.*(options.rho0*options.g*kh*h./omega).*F;
+fields.ssh = fields.p(end,:,:)/(options.rho0*options.g);
 end

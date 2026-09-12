@@ -71,6 +71,7 @@ classdef WVTransformFreeSurfaceBoussinesq < WVGeometryDoublyPeriodicStratified &
     end
 
     properties (Transient, Access=private)
+        surfaceGeometry_ = []
         % Factors depend only on the immutable scientific representation.
         thermodynamics_ = []
     end
@@ -426,6 +427,14 @@ classdef WVTransformFreeSurfaceBoussinesq < WVGeometryDoublyPeriodicStratified &
     end
 
     methods (Access = private)
+        function geometry = surfaceGeometry(self)
+            if isempty(self.surfaceGeometry_)
+                self.surfaceGeometry_ = WVGeometryDoublyPeriodic([self.Lx self.Ly],[self.Nx self.Ny],Nz=1, ...
+                    shouldAntialias=self.shouldAntialias,shouldExcludeNyquist=self.shouldExcludeNyquist, ...
+                    shouldExcludeConjugates=self.shouldExcludeConjugates,conjugateDimension=self.conjugateDimension);
+            end
+            geometry = self.surfaceGeometry_;
+        end
         function context = thermodynamicContext(self)
             if isempty(self.thermodynamics_)
                 self.thermodynamics_ = WVInternal.freeSurfaceThermodynamics(self);

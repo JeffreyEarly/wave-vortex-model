@@ -25,7 +25,15 @@ while ~all(isKey(self.variableCache,variableNames))
         error("No variable named '%s' is registered with this transform.",missingName)
     end
     annotation = self.operationVariableNameMap(missingName);
-    self.performOperation(annotation.modelOp);
+    operation = annotation.modelOp;
+    % This operation supports partial outputs without changing the cache.
+    if isa(operation,'WVInternal.FreeSurfaceFieldOperation')
+        missing = string(variableNames(~isKey(self.variableCache,variableNames)));
+        selected = intersect(missing,string({operation.outputVariables.name}),'stable');
+        operation.computeSelected(self,selected);
+    else
+        self.performOperation(operation);
+    end
 end
 
 varargout = cell(size(variableNames));

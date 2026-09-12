@@ -66,11 +66,5 @@ for name = names
 end
 operationName = "boussinesqFields"+suffix;
 if isscalar(names), operationName = names+suffix; end
-operation = WVOperation(char(operationName),annotations,@compute);
-
-    function varargout = compute(wvt)
-        fields = wvt.reconstructFields(names,flowComponent=component);
-        varargout = cell(1,length(names));
-        for iName = 1:length(names), varargout{iName} = fields.(names(iName)); end
-    end
+operation = WVInternal.FreeSurfaceFieldOperation(char(operationName),annotations,names,component);
 end
