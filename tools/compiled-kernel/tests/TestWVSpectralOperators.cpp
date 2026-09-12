@@ -704,6 +704,18 @@ void workspaceConcurrency() {
     for (int i = 0; i < 10; ++i) require(op->forward(*two,context.real,b.out()));
     worker.join(); require(a.equals(b),"Independent workspaces interfered");
 }
+void verticalExecutorLimits() {
+    std::unique_ptr<WVVerticalGroupExecutor> executor;
+    const auto maximum=std::numeric_limits<std::size_t>::max();
+    require(WVVerticalGroupExecutor::create(maximum,executor).code==WVKernelStatusCode::sizeOverflow && !executor,
+        "Oversized executor count escaped or published an executor");
+    require(WVVerticalGroupExecutor::create(1,executor));
+    const auto* retained=executor.get();
+    require(WVVerticalGroupExecutor::create(maximum,executor).code==WVKernelStatusCode::sizeOverflow && executor.get()==retained,
+        "Oversized executor count replaced a valid executor");
+    require(WVVerticalGroupExecutor::create(0,executor).code==WVKernelStatusCode::invalidConfiguration && executor.get()==retained,
+        "Zero executor count replaced a valid executor");
+}
 } // namespace
 int main() {
     try {
@@ -740,7 +752,7 @@ int main() {
             for (auto representation:{WVComplexRepresentation::split,WVComplexRepresentation::interleaved})
                 for (auto accumulation:{WVAccumulation::overwrite,WVAccumulation::add})
                     for (bool direct:{false,true}) parallelVerticalGroups(representation,accumulation,direct,native);
-        parallelVerticalReentry();
+        parallelVerticalReentry(); verticalExecutorLimits();
         identitiesAndRebuild(); rejectedContracts(); setupFailures(); workspaceConcurrency();
         std::cout << "Spectral operators passed: independent DFT/matrix oracles, split/interleaved layouts, exact groups, aliases, failure cleanup, immutable preparation and zero prepared allocations. Accelerate=" << nativeMatrix << '\n';
         return 0;

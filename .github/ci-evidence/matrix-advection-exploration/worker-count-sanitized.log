@@ -1,0 +1,8 @@
+Internal ctest changing into directory: /tmp/wvm477-sanitized
+Test project /tmp/wvm477-sanitized
+    Start 6: WVSpectralOperators
+1/1 Test #6: WVSpectralOperators ..............   Passed    0.34 sec
+
+100% tests passed, 0 tests failed out of 1
+
+Total Test time (real) =   0.35 sec

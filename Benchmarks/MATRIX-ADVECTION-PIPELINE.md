@@ -54,6 +54,6 @@ Photos background activity was present immediately before the run; the 36 record
 
 ## Delivery boundary
 
-Compiled runtime is frozen at `e8806710`; later source-selection and report edits do not alter compiled inputs. The local branches and raw archive retain separate experiments, failed checks, provider/binary/input hashes, requests and numerical comparisons. The combined screen is exploratory: Photos background services used about one core immediately before it, and a process-activity journal records the measurement period. It does not replace formal idle-host qualification.
+The exploratory compiled runtime was frozen at `e8806710`; the [adoption ledger](../.github/planning/issue-477-adoption.md) records subsequent qualification and a narrow invalid-worker-count error-boundary correction. The local branches and raw archive retain separate experiments, failed checks, provider/binary/input hashes, requests and numerical comparisons. The combined screen is exploratory: Photos background services used about one core immediately before it, and a process-activity journal records the measurement period. It does not replace formal idle-host qualification.
 
 Before merging, complete the idle-host paired campaign, refresh source-linked consumer receipts against the final source, and pass required hosted CI. Retain the exact independent reconstruction/projection controls for future qualification. Reprofile the accepted combination before selecting another larger refactor.

@@ -92,6 +92,8 @@ WVKernelStatus WVVerticalGroupExecutor::create(std::size_t workers,
         return {WVKernelStatusCode::allocationFailure,"Vertical group executor allocation failed."};
     } catch (const std::system_error& e) {
         return {WVKernelStatusCode::allocationFailure,e.what()};
+    } catch (const std::length_error& e) {
+        return {WVKernelStatusCode::sizeOverflow,e.what()};
     }
 }
 std::size_t WVVerticalGroupExecutor::workerCount() const noexcept {

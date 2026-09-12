@@ -1,0 +1,8 @@
+Internal ctest changing into directory: /tmp/wvm477-gcc
+Test project /tmp/wvm477-gcc
+    Start 5: WVSpectralOperators
+1/1 Test #5: WVSpectralOperators ..............   Passed    0.30 sec
+
+100% tests passed, 0 tests failed out of 1
+
+Total Test time (real) =   0.30 sec

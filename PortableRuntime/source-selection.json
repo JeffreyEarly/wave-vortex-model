@@ -190,7 +190,7 @@
     "publicMatlabPreviewFamilies": "unchanged; variable service injection is not exposed",
     "measurementEvidence": ".github/ci-evidence/issue-455-variable-final-adoption/decision.json",
     "sourceSHA256": {
-      "PortableRuntime/CMakeLists.txt": "d0c100b68f0302ca062ae9e7919843f99813897a5198c135a69afc1919a24876",
+      "PortableRuntime/CMakeLists.txt": "0783a3519eea4eb0bf1a39f0c23b13e87f2c54510736d6d82f32f1aa7dc56a27",
       "CompiledKernel/CMakeLists.txt": "e133b74121e699325e539f6ba5c424e9bb2739200cb86c54d8077cace2c3b2ea",
       "PortableRuntime/app/WaveVortexRun.cpp": "751169a10aa191d88ff705f808d6b15b34723cea788ab99adf82a65df45457b4",
       "PortableRuntime/app/WVRunnerVariablePolicy.cpp": "de780aaa1947c4094f21f46f466eee2402f1fc33309e0a2e8bee32961efb9af0",
