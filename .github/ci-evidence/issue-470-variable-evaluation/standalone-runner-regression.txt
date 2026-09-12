@@ -1,0 +1,29 @@
+Standalone runner finite-state regression receipt
+Date: 2026-09-11
+
+Baseline commit: 67397ec9cabab4a0c13f37b7c8e2c672354097cb
+Candidate commit: c379b18880d966c50b5eec416bd32cd2e40a24aa
+Fixture: PortableRuntime/tests/fixtures/forcing-mixed-hydrostatic.nc
+
+First failing request:
+  --delta-t 0.037 --steps 2 --fft-provider reference
+
+One-step comparison at delta-t 0.037:
+  Baseline output SHA-256: a96faa6090b01173a9e86f7657bfdccb8d005ab1dcf744f2728e83a17baa17bb
+  Candidate output SHA-256: a96faa6090b01173a9e86f7657bfdccb8d005ab1dcf744f2728e83a17baa17bb
+  Result: exact full-file equality. The shared first accepted state already contains coefficients of order 1e42.
+
+Two-step comparison at delta-t 0.037:
+  Baseline status: complete, 2 accepted steps / 8 RHS evaluations, but the written checkpoint contains NaN coefficients.
+  Candidate status: failed at integrate, 1 accepted step / 7 RHS evaluations, "Nonfinite constant-stratification coefficient."
+  Diagnosis: the new finite-state validation exposes a pre-existing unstable test step; it does not change the first-step trajectory.
+
+Correction:
+  The fixed-RK4 smoke request now uses the established stable 1e-5 step and asserts that the output state is finite.
+  The RK78 smoke request retains relativeTolerance=1e-3 and absoluteTolerance=1e-6 while using stable initial/maximum steps of 1e-5; its former 0.01 initial trial produced a nonfinite intermediate stage before adaptive rejection.
+
+Focused verification:
+  ctest --test-dir /tmp/wvm470-runner-regression -R '^standalone-runner$' --output-on-failure
+  PASS: 1/1, 4.93 seconds
+  ctest --test-dir /tmp/wvm470-runner-regression-compact -R '^standalone-runner$' --output-on-failure
+  PASS with compact variable policy and native FFTW enabled: 1/1, 5.49 seconds

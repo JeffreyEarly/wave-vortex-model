@@ -65,7 +65,14 @@ public:
   const WVStratifiedModalGeometry &configuration() const noexcept;
   const WVFieldEvaluationMetrics &metrics() const noexcept { return metrics_; }
   WVFieldEvaluationMetrics &mutableMetrics() noexcept { return metrics_; }
+  WVVariableProducerMetrics producerMetrics() const noexcept;
   std::size_t persistentBytes() const noexcept;
+  WVKernelStatus beginStateEvaluation(const WVIntegrationState&,const void* owner);
+  WVKernelStatus addStateEvaluationView(const WVIntegrationState&,const void* owner,
+      std::size_t componentIdentity);
+  WVKernelStatus removeStateEvaluationView(const WVIntegrationState&,const void* owner,
+      std::size_t componentIdentity);
+  void endStateEvaluation() noexcept;
 
 private:
   friend class WVDiagnosticFieldPlan;
@@ -92,6 +99,7 @@ private:
   std::vector<double> fieldScratch_;
   std::unique_ptr<MovingInterpolationWorkspace> movingInterpolation_;
   WVFieldEvaluationMetrics metrics_;
+  WVVariableProducerMetrics outputProducerMetrics_;
   bool executing_ = false;
 };
 

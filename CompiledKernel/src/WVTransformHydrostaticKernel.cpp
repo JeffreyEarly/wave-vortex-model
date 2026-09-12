@@ -148,6 +148,14 @@ WVKernelStatus WVTransformHydrostaticKernel::outputs(WVMutableCoefficients a) co
     s=disjoint(a.Ap.data,S_*sizeof(WVComplex64),a.A0.data,S_*sizeof(WVComplex64)); if (!s) return s;
     return disjoint(a.Am.data,S_*sizeof(WVComplex64),a.A0.data,S_*sizeof(WVComplex64));
 }
+WVKernelStatus WVTransformHydrostaticKernel::mutableOutputOutsidePreparedState(WVMutableCoefficients a) const {
+    if (!stateEvaluationActive_) return WVKernelStatus::ok();
+    for (const auto output:{a.Ap,a.Am,a.A0}) for (std::size_t stateIndex=0;stateIndex<preparedStateViewCount_;++stateIndex)
+        for (const auto input:{preparedStateViews_[stateIndex].coefficients.Ap,preparedStateViews_[stateIndex].coefficients.Am,preparedStateViews_[stateIndex].coefficients.A0})
+            if (overlap(output.data,S_*sizeof(WVComplex64),input.data,S_*sizeof(WVComplex64)))
+                return {WVKernelStatusCode::overlappingArrays,"Mutable coefficient output overlaps an active immutable hydrostatic state view."};
+    return WVKernelStatus::ok();
+}
 WVKernelStatus WVTransformHydrostaticKernel::coefficients(const WVCoefficients& a) const {
     for (auto x : {a.Ap,a.Am,a.A0}) {
         auto s=spectral(x); if (!s) return s;
@@ -156,16 +164,190 @@ WVKernelStatus WVTransformHydrostaticKernel::coefficients(const WVCoefficients& 
     }
     return WVKernelStatus::ok();
 }
-WVKernelStatus WVTransformHydrostaticKernel::state(const WVState& a) const {
+WVKernelStatus WVTransformHydrostaticKernel::stateContents(const WVState& a) const {
     auto s=coefficients(a.coefficients); if (!s) return s;
     if (!std::isfinite(a.t) || !std::isfinite(a.t0) || !std::isfinite(a.t-a.t0)) return {WVKernelStatusCode::invalidConfiguration,"Nonfinite hydrostatic time or elapsed time."};
     for (const auto& f:factors_) if (!std::isfinite(f.omega*(a.t-a.t0))) return {WVKernelStatusCode::numericalFailure,"Hydrostatic phase overflow."};
     return WVKernelStatus::ok();
 }
-WVKernelStatus WVTransformHydrostaticKernel::preparePhase(double t,double t0) {
-    if (!std::isfinite(t) || !std::isfinite(t0) || !std::isfinite(t-t0)) return {WVKernelStatusCode::invalidConfiguration,"Nonfinite hydrostatic time or elapsed time."};
-    for (const auto& f:factors_) if (!std::isfinite(f.omega*(t-t0))) return {WVKernelStatusCode::numericalFailure,"Hydrostatic phase overflow."};
+WVKernelStatus WVTransformHydrostaticKernel::state(const WVState& a) {
+    ++metrics_.stateValidationCount;
+    return stateContents(a);
+}
+WVKernelStatus WVTransformHydrostaticKernel::preparePhase(
+    double t,double t0,const WVState* validatedState) {
+    const bool exactValidatedState=validatedState!=nullptr &&
+        stateEvaluationActive_ && matchesStateEvaluation(*validatedState) &&
+        validatedState->t==t && validatedState->t0==t0;
+    if (!exactValidatedState) {
+        if (!std::isfinite(t) || !std::isfinite(t0) || !std::isfinite(t-t0)) return {WVKernelStatusCode::invalidConfiguration,"Nonfinite hydrostatic time or elapsed time."};
+        for (const auto& f:factors_) if (!std::isfinite(f.omega*(t-t0))) return {WVKernelStatusCode::numericalFailure,"Hydrostatic phase overflow."};
+    }
+    ++metrics_.phasePreparationCount;
     for (std::size_t i=0;i<S_;++i) { const double a=factors_[i].omega*(t-t0); phase_[i]={std::cos(a),std::sin(a)}; }
+    return WVKernelStatus::ok();
+}
+bool WVTransformHydrostaticKernel::matchesStateEvaluation(const WVState& a) const noexcept {
+    const auto sameView=[](WVComplexConstView x,WVComplexConstView y) {
+        return x.data==y.data && x.shape.rows==y.shape.rows && x.shape.columns==y.shape.columns;
+    };
+    if (!stateEvaluationActive_ || a.t!=preparedState_.t || a.t0!=preparedState_.t0) return false;
+    for (std::size_t i=0;i<preparedStateViewCount_;++i) if (
+        sameView(a.coefficients.Ap,preparedStateViews_[i].coefficients.Ap) &&
+        sameView(a.coefficients.Am,preparedStateViews_[i].coefficients.Am) &&
+        sameView(a.coefficients.A0,preparedStateViews_[i].coefficients.A0)) return true;
+    return false;
+}
+WVKernelStatus WVTransformHydrostaticKernel::validateStateEvaluation(
+    const WVState& a) const noexcept {
+    if (!matchesStateEvaluation(a))
+        return {WVKernelStatusCode::invalidConfiguration,
+            "State does not belong to the active Hydrostatic evaluation."};
+    return WVKernelStatus::ok();
+}
+std::size_t WVTransformHydrostaticKernel::stateEvaluationComponent(
+    const WVState& a) const noexcept {
+    const auto sameView=[](WVComplexConstView x,WVComplexConstView y) {
+        return x.data==y.data && x.shape.rows==y.shape.rows && x.shape.columns==y.shape.columns;
+    };
+    if (!stateEvaluationActive_) return 0;
+    for (std::size_t i=0;i<preparedStateViewCount_;++i) if (
+        sameView(a.coefficients.Ap,preparedStateViews_[i].coefficients.Ap) &&
+        sameView(a.coefficients.Am,preparedStateViews_[i].coefficients.Am) &&
+        sameView(a.coefficients.A0,preparedStateViews_[i].coefficients.A0))
+        return preparedStateComponents_[i];
+    return 0;
+}
+WVKernelStatus WVTransformHydrostaticKernel::validateStateForCall(const WVState& a) {
+    if (!stateEvaluationActive_) return state(a);
+    if (!matchesStateEvaluation(a))
+        return {WVKernelStatusCode::invalidConfiguration,"State does not match the active hydrostatic evaluation."};
+    return WVKernelStatus::ok();
+}
+WVKernelStatus WVTransformHydrostaticKernel::preparePhaseForCall(const WVState& a) {
+    if (stateEvaluationActive_) {
+        if (!matchesStateEvaluation(a))
+            return {WVKernelStatusCode::invalidConfiguration,"State does not match the active hydrostatic evaluation."};
+        return WVKernelStatus::ok();
+    }
+    return preparePhase(a.t,a.t0);
+}
+WVKernelStatus WVTransformHydrostaticKernel::prepareProjectionPhaseForCall(double t,double t0) {
+    if (stateEvaluationActive_) {
+        if (t!=preparedState_.t || t0!=preparedState_.t0)
+            return {WVKernelStatusCode::invalidConfiguration,"Projection time does not match the active hydrostatic evaluation."};
+        return WVKernelStatus::ok();
+    }
+    return preparePhase(t,t0);
+}
+WVKernelStatus WVTransformHydrostaticKernel::beginStateEvaluation(const WVState& a) {
+    return beginStateEvaluation(a,nullptr);
+}
+WVKernelStatus WVTransformHydrostaticKernel::beginStateEvaluation(const WVState& a,const void* evaluationOwner) {
+    ActiveCall guard(active_); if (!guard.entered) return reentrant();
+    if (stateEvaluationActive_)
+        return {WVKernelStatusCode::reentrantExecution,"Hydrostatic state evaluation is already active."};
+    auto s=state(a); if (!s) return s;
+    preparedState_=a;
+    preparedStateViews_[0]=a;
+    preparedStateComponents_[0]=0;
+    preparedStateViewCount_=1;
+    preparedStateOwner_=evaluationOwner;
+    stateEvaluationActive_=true;
+    // state(a) validated this exact registered view, including every phase
+    // product, so phase preparation must not repeat the same finite scan.
+    s=preparePhase(a.t,a.t0,&a);
+    if (!s) {
+        preparedState_={};
+        preparedStateViews_[0]={};
+        preparedStateComponents_[0]=0;
+        preparedStateViewCount_=0;
+        preparedStateOwner_=nullptr;
+        stateEvaluationActive_=false;
+        return s;
+    }
+    return WVKernelStatus::ok();
+}
+WVKernelStatus WVTransformHydrostaticKernel::addStateEvaluationView(
+    const WVState& a,const void* evaluationOwner,std::size_t componentIdentity) {
+    ActiveCall guard(active_); if (!guard.entered) return reentrant();
+    if (!stateEvaluationActive_)
+        return {WVKernelStatusCode::invalidConfiguration,"No hydrostatic state evaluation is active."};
+    if (evaluationOwner==nullptr || evaluationOwner!=preparedStateOwner_)
+        return {WVKernelStatusCode::invalidConfiguration,"Hydrostatic state view owner does not match the active evaluation."};
+    if (a.t!=preparedState_.t || a.t0!=preparedState_.t0)
+        return {WVKernelStatusCode::invalidConfiguration,"Additional hydrostatic state view must use the active evaluation times."};
+    if (componentIdentity>=5)
+        return {WVKernelStatusCode::invalidConfiguration,"Hydrostatic component identity is out of range."};
+    if (matchesStateEvaluation(a))
+        return stateEvaluationComponent(a)==componentIdentity ? WVKernelStatus::ok() :
+            WVKernelStatus{WVKernelStatusCode::invalidConfiguration,
+                "Hydrostatic state view is already registered with another component identity."};
+    if (preparedStateViewCount_==preparedStateViews_.size())
+        return {WVKernelStatusCode::invalidConfiguration,"Hydrostatic state evaluation view capacity exceeded."};
+    auto s=state(a); if (!s) return s;
+    preparedStateViews_[preparedStateViewCount_]=a;
+    preparedStateComponents_[preparedStateViewCount_++]=componentIdentity;
+    return WVKernelStatus::ok();
+}
+WVKernelStatus WVTransformHydrostaticKernel::removeStateEvaluationView(
+    const WVState& a,const void* evaluationOwner,std::size_t componentIdentity) {
+    ActiveCall guard(active_); if (!guard.entered) return reentrant();
+    if (!stateEvaluationActive_)
+        return {WVKernelStatusCode::invalidConfiguration,"No hydrostatic state evaluation is active."};
+    if (evaluationOwner==nullptr || evaluationOwner!=preparedStateOwner_)
+        return {WVKernelStatusCode::invalidConfiguration,"Hydrostatic state view owner does not match the active evaluation."};
+    if (componentIdentity==0 || componentIdentity>=5)
+        return {WVKernelStatusCode::invalidConfiguration,"The primary hydrostatic state view cannot be removed."};
+    if (a.t!=preparedState_.t || a.t0!=preparedState_.t0)
+        return {WVKernelStatusCode::invalidConfiguration,"Removed hydrostatic state view must use the active evaluation times."};
+    const auto sameView=[](WVComplexConstView x,WVComplexConstView y) {
+        return x.data==y.data && x.shape.rows==y.shape.rows && x.shape.columns==y.shape.columns;
+    };
+    for(std::size_t i=1;i<preparedStateViewCount_;++i) if (
+        preparedStateComponents_[i]==componentIdentity &&
+        sameView(a.coefficients.Ap,preparedStateViews_[i].coefficients.Ap) &&
+        sameView(a.coefficients.Am,preparedStateViews_[i].coefficients.Am) &&
+        sameView(a.coefficients.A0,preparedStateViews_[i].coefficients.A0)) {
+        for(std::size_t j=i+1;j<preparedStateViewCount_;++j) {
+            preparedStateViews_[j-1]=preparedStateViews_[j];
+            preparedStateComponents_[j-1]=preparedStateComponents_[j];
+        }
+        --preparedStateViewCount_;
+        preparedStateViews_[preparedStateViewCount_]={};
+        preparedStateComponents_[preparedStateViewCount_]=0;
+        return WVKernelStatus::ok();
+    }
+    return {WVKernelStatusCode::invalidConfiguration,
+        "Hydrostatic state view is not registered for this component."};
+}
+WVKernelStatus WVTransformHydrostaticKernel::endStateEvaluation() {
+    ActiveCall guard(active_); if (!guard.entered) return reentrant();
+    if (!stateEvaluationActive_)
+        return {WVKernelStatusCode::invalidConfiguration,"No hydrostatic state evaluation is active."};
+    preparedState_={};
+    for (auto& stateView:preparedStateViews_) stateView={};
+    preparedStateComponents_={};
+    preparedStateViewCount_=0;
+    preparedStateOwner_=nullptr;
+    stateEvaluationActive_=false;
+    return WVKernelStatus::ok();
+}
+WVKernelStatus WVTransformHydrostaticKernel::validateFluxOutput(const WVState& a,const WVFlux& b) {
+    auto s=validateStateForCall(a); if (!s) return s;
+    WVMutableCoefficients target{b.Fp,b.Fm,b.F0}; s=outputs(target); if (!s) return s;
+    for (auto inputView : {a.coefficients.Ap,a.coefficients.Am,a.coefficients.A0})
+        for (auto outputView : {b.Fp,b.Fm,b.F0}) {
+            s=disjoint(inputView.data,S_*sizeof(WVComplex64),outputView.data,S_*sizeof(WVComplex64)); if (!s) return s;
+        }
+    return WVKernelStatus::ok();
+}
+WVKernelStatus WVTransformHydrostaticKernel::preparedPhase(const WVState& a,WVComplexConstView& result) {
+    result={};
+    auto s=validateStateForCall(a); if (!s) return s;
+    ActiveCall guard(active_); if (!guard.entered) return reentrant();
+    s=preparePhaseForCall(a); if (!s) return s;
+    result={phase_.data(),spectralShape()};
     return WVKernelStatus::ok();
 }
 WVComplexOutput WVTransformHydrostaticKernel::modalView(std::size_t slot) { return spectralStorage_->output(slot*S_,S_); }
@@ -222,21 +404,28 @@ WVKernelStatus WVTransformHydrostaticKernel::projectedFieldsToCoefficients(
     return WVKernelStatus::ok();
 }
 WVKernelStatus WVTransformHydrostaticKernel::transformUVEtaToWaveVortex(WVRealVolumeConstView u,WVRealVolumeConstView v,WVRealVolumeConstView eta,double t,double t0,WVMutableCoefficients b) {
-    auto s=outputs(b); if (!s) return s;
+    auto s=outputs(b); if (!s) return s; s=mutableOutputOutsidePreparedState(b); if (!s) return s;
     for (auto a : {u,v,eta}) { s=volume(a); if (!s) return s; for (auto out : {b.Ap,b.Am,b.A0}) { s=disjoint(a.data,R_*sizeof(double),out.data,S_*sizeof(WVComplex64)); if (!s) return s; } }
     ActiveCall guard(active_); if (!guard.entered) return reentrant();
-    s=preparePhase(t,t0); if (!s) return s;
+    s=prepareProjectionPhaseForCall(t,t0); if (!s) return s;
     return projectFields(u.data,v.data,eta.data,b);
 }
 
 WVKernelStatus WVTransformHydrostaticKernel::reconstruct(const WVCoefficients& a,WVHydrostaticField field,
-    WVHydrostaticDerivative derivative,WVHydrostaticComponent component,double* b) {
+    WVHydrostaticDerivative derivative,WVHydrostaticComponent component,double* b,bool countPrimary,
+    std::size_t metricComponent) {
+    if (countPrimary) {
+        if (metricComponent>=5) metricComponent=static_cast<std::size_t>(component);
+        ++metrics_.fieldReconstructionCount[static_cast<std::size_t>(field)];
+        ++metrics_.reconstructionCount[static_cast<std::size_t>(field)]
+            [static_cast<std::size_t>(derivative)][metricComponent];
+    }
     const auto& g=geometry();
     if (field==WVHydrostaticField::zetaX || field==WVHydrostaticField::zetaY) {
         const bool x=field==WVHydrostaticField::zetaX;
-        auto s=reconstruct(a,x ? WVHydrostaticField::w : WVHydrostaticField::u,x ? WVHydrostaticDerivative::y : WVHydrostaticDerivative::z,component,b); if (!s) return s;
+        auto s=reconstruct(a,x ? WVHydrostaticField::w : WVHydrostaticField::u,x ? WVHydrostaticDerivative::y : WVHydrostaticDerivative::z,component,b,countPrimary,metricComponent); if (!s) return s;
         auto* auxiliary=real_.data()+(executionOptions_.streamedNonlinear ? 5 : 8)*R_;
-        s=reconstruct(a,x ? WVHydrostaticField::v : WVHydrostaticField::w,x ? WVHydrostaticDerivative::z : WVHydrostaticDerivative::x,component,auxiliary); if (!s) return s;
+        s=reconstruct(a,x ? WVHydrostaticField::v : WVHydrostaticField::w,x ? WVHydrostaticDerivative::z : WVHydrostaticDerivative::x,component,auxiliary,countPrimary,metricComponent); if (!s) return s;
         for (std::size_t i=0;i<R_;++i) b[i]-=auxiliary[i];
         return WVKernelStatus::ok();
     }
@@ -281,7 +470,7 @@ WVKernelStatus WVTransformHydrostaticKernel::reconstruct(const WVCoefficients& a
         double* eta=nullptr;
         if (dz) {
             eta=real_.data()+(executionOptions_.streamedNonlinear ? 5 : 8)*R_;
-            s=reconstruct(a,WVHydrostaticField::eta,WVHydrostaticDerivative::value,component,eta); if (!s) return s;
+            s=reconstruct(a,WVHydrostaticField::eta,WVHydrostaticDerivative::value,component,eta,countPrimary,metricComponent); if (!s) return s;
         }
         const auto plane=R_/g.Nz;
         for (std::size_t z=0;z<g.Nz;++z) for (std::size_t xy=0;xy<plane;++xy) {
@@ -297,31 +486,110 @@ WVKernelStatus WVTransformHydrostaticKernel::transformStateField(const WVState& 
     if (field<WVHydrostaticField::u || field>WVHydrostaticField::ssv || derivative<WVHydrostaticDerivative::value || derivative>WVHydrostaticDerivative::z || !valid(component) ||
         ((field==WVHydrostaticField::zetaX || field==WVHydrostaticField::zetaY) && derivative!=WVHydrostaticDerivative::value) ||
         (field==WVHydrostaticField::rhoTotal && component!=WVHydrostaticComponent::all)) return unsupported();
-    auto s=state(a); if (!s) return s; s=volume({b.data,b.shape},surface(field)); if (!s) return s;
+    auto s=validateStateForCall(a); if (!s) return s; s=volume({b.data,b.shape},surface(field)); if (!s) return s;
     const auto bytes=(surface(field) ? R_/geometry().Nz : R_)*sizeof(double);
     for (auto x : {a.coefficients.Ap,a.coefficients.Am,a.coefficients.A0}) { s=disjoint(x.data,S_*sizeof(WVComplex64),b.data,bytes); if (!s) return s; }
     ActiveCall guard(active_); if (!guard.entered) return reentrant();
-    s=preparePhase(a.t,a.t0); if (!s) return s;
+    s=preparePhaseForCall(a); if (!s) return s;
     auto* fullField=real_.data()+(executionOptions_.streamedNonlinear ? 5 : 9)*R_;
-    s=reconstruct(a.coefficients,field,derivative,component,surface(field) ? fullField : b.data); if (!s) return s;
+    const auto metricComponent=component==WVHydrostaticComponent::all ?
+        stateEvaluationComponent(a) : static_cast<std::size_t>(component);
+    s=reconstruct(a.coefficients,field,derivative,component,
+        surface(field) ? fullField : b.data,true,metricComponent); if (!s) return s;
     if (surface(field)) { const auto plane=R_/geometry().Nz; std::copy_n(fullField+R_-plane,plane,b.data); }
     return WVKernelStatus::ok();
 }
+WVKernelStatus WVTransformHydrostaticKernel::transformCoefficientTendencyToUVEta(
+    const WVState& a,WVRealFieldBundleView& fields) {
+    const auto& g=geometry();
+    if (fields.shape.first!=g.Nx || fields.shape.second!=g.Ny ||
+        fields.shape.third!=g.Nz || fields.shape.fourth!=3)
+        return {WVKernelStatusCode::invalidShape,"Coefficient tendency requires [Nx,Ny,Nz,3] fields."};
+    ++metrics_.derivedValidationCount;
+    auto status=stateContents(a); if (!status) return status;
+    const auto bytes=3*R_*sizeof(double);
+    if (!addressFits(fields.data,bytes,alignof(double)))
+        return {WVKernelStatusCode::invalidPointer,"Invalid coefficient tendency field storage."};
+    for (const auto input:{a.coefficients.Ap,a.coefficients.Am,a.coefficients.A0}) {
+        status=disjoint(input.data,S_*sizeof(WVComplex64),fields.data,bytes);
+        if (!status) return status;
+    }
+    ActiveCall guard(active_); if (!guard.entered) return reentrant();
+    status=prepareProjectionPhaseForCall(a.t,a.t0); if (!status) return status;
+    const WVHydrostaticField names[]={WVHydrostaticField::u,WVHydrostaticField::v,WVHydrostaticField::eta};
+    for (std::size_t channel=0;channel<3;++channel) {
+        status=reconstruct(a.coefficients,names[channel],WVHydrostaticDerivative::value,
+            WVHydrostaticComponent::all,fields.data+channel*R_,false);
+        if (!status) return status;
+        ++metrics_.tendencyReconstructionCount[channel];
+    }
+    return WVKernelStatus::ok();
+}
+WVKernelStatus WVTransformHydrostaticKernel::combinePreparedHorizontalVorticity(
+    WVHydrostaticField field,WVRealVolumeConstView first,WVRealVolumeConstView second,
+    WVRealVolumeView output,WVHydrostaticComponent component) {
+    if ((field!=WVHydrostaticField::zetaX && field!=WVHydrostaticField::zetaY) ||
+        !valid(component))
+        return unsupported();
+    auto status=volume(first); if (!status) return status;
+    status=volume(second); if (!status) return status;
+    status=volume({output.data,output.shape}); if (!status) return status;
+    if(first.data!=output.data) {
+        status=disjoint(first.data,R_*sizeof(double),output.data,R_*sizeof(double)); if (!status) return status;
+    }
+    if(second.data!=output.data) {
+        status=disjoint(second.data,R_*sizeof(double),output.data,R_*sizeof(double)); if (!status) return status;
+    }
+    for (std::size_t i=0;i<R_;++i) output.data[i]=first.data[i]-second.data[i];
+    ++metrics_.fieldReconstructionCount[static_cast<std::size_t>(field)];
+    ++metrics_.reconstructionCount[static_cast<std::size_t>(field)]
+        [static_cast<std::size_t>(WVHydrostaticDerivative::value)]
+        [static_cast<std::size_t>(component)];
+    return WVKernelStatus::ok();
+}
+WVKernelStatus WVTransformHydrostaticKernel::combinePreparedDensityZDerivative(
+    WVHydrostaticField field,WVRealVolumeConstView etaZ,WVRealVolumeConstView eta,
+    WVRealVolumeView output,WVHydrostaticComponent component) {
+    if ((field!=WVHydrostaticField::rhoE && field!=WVHydrostaticField::rhoTotal) ||
+        !valid(component) ||
+        (field==WVHydrostaticField::rhoTotal && component!=WVHydrostaticComponent::all))
+        return unsupported();
+    auto status=volume(etaZ); if (!status) return status;
+    status=volume(eta); if (!status) return status;
+    status=volume({output.data,output.shape}); if (!status) return status;
+    if(etaZ.data!=output.data) {
+        status=disjoint(etaZ.data,R_*sizeof(double),output.data,R_*sizeof(double)); if (!status) return status;
+    }
+    if(eta.data!=output.data) {
+        status=disjoint(eta.data,R_*sizeof(double),output.data,R_*sizeof(double)); if (!status) return status;
+    }
+    const auto& g=geometry(); const auto plane=R_/g.Nz;
+    for (std::size_t z=0;z<g.Nz;++z) for (std::size_t xy=0;xy<plane;++xy) {
+        const auto i=xy+plane*z; const double scale=(g.rho0/g.g)*g.N2[z];
+        output.data[i]=scale*(etaZ.data[i]+g.dLnN2[z]*eta.data[i]);
+        if (field==WVHydrostaticField::rhoTotal) output.data[i]-=scale;
+    }
+    ++metrics_.fieldReconstructionCount[static_cast<std::size_t>(field)];
+    ++metrics_.reconstructionCount[static_cast<std::size_t>(field)]
+        [static_cast<std::size_t>(WVHydrostaticDerivative::z)]
+        [static_cast<std::size_t>(component)];
+    return WVKernelStatus::ok();
+}
 WVKernelStatus WVTransformHydrostaticKernel::evolveCoefficients(const WVState& a,WVMutableCoefficients b) {
-    auto s=state(a); if (!s) return s; s=outputs(b); if (!s) return s;
+    auto s=validateStateForCall(a); if (!s) return s; s=outputs(b); if (!s) return s; s=mutableOutputOutsidePreparedState(b); if (!s) return s;
     const WVComplexConstView inputs[]={a.coefficients.Ap,a.coefficients.Am,a.coefficients.A0}; const WVComplexView targets[]={b.Ap,b.Am,b.A0};
     for (std::size_t i=0;i<3;++i) for (std::size_t j=0;j<3;++j) if (i!=j || inputs[i].data!=targets[j].data) {
         s=disjoint(inputs[i].data,S_*sizeof(WVComplex64),targets[j].data,S_*sizeof(WVComplex64)); if (!s) return s;
     }
     ActiveCall guard(active_); if (!guard.entered) return reentrant();
-    s=preparePhase(a.t,a.t0); if (!s) return s;
+    s=preparePhaseForCall(a); if (!s) return s;
     for (std::size_t i=0;i<S_;++i) {
         b.Ap.data[i]=multiply(a.coefficients.Ap.data[i],phase_[i]); b.Am.data[i]=multiply(a.coefficients.Am.data[i],conjugate(phase_[i])); b.A0.data[i]=a.coefficients.A0.data[i];
     }
     return WVKernelStatus::ok();
 }
 WVKernelStatus WVTransformHydrostaticKernel::constrainCoefficients(WVMutableCoefficients a) const {
-    auto s=outputs(a); if (!s) return s; s=coefficients(view(a)); if (!s) return s;
+    auto s=outputs(a); if (!s) return s; s=coefficients(view(a)); if (!s) return s; s=mutableOutputOutsidePreparedState(a); if (!s) return s;
     for (std::size_t i=0;i<S_;++i) {
         const auto& f=factors_[i];
         if (!f.wave && !f.inertial) { a.Ap.data[i]={}; a.Am.data[i]={}; }
@@ -332,11 +600,11 @@ WVKernelStatus WVTransformHydrostaticKernel::constrainCoefficients(WVMutableCoef
     return WVKernelStatus::ok();
 }
 WVKernelStatus WVTransformHydrostaticKernel::nonlinearFlux(const WVState& a,WVFlux& b,
-    WVRealFieldBundleView* spatialTendency,const WVRealFieldBundleConstView* preparedFields,bool projectFlux) {
+    WVRealFieldBundleView* spatialTendency,const WVRealFieldBundleConstView* preparedFields,
+    bool projectFlux,WVStateDerivativeAccess* derivativeAccess) {
     if (!projectFlux && !spatialTendency)
         return {WVKernelStatusCode::invalidConfiguration,"Spatial-only nonlinear evaluation requires output storage."};
-    auto s=state(a); if (!s) return s; WVMutableCoefficients target{b.Fp,b.Fm,b.F0}; s=outputs(target); if (!s) return s;
-    for (auto x : {a.coefficients.Ap,a.coefficients.Am,a.coefficients.A0}) for (auto y : {b.Fp,b.Fm,b.F0}) { s=disjoint(x.data,S_*sizeof(WVComplex64),y.data,S_*sizeof(WVComplex64)); if (!s) return s; }
+    auto s=validateFluxOutput(a,b); if (!s) return s; WVMutableCoefficients target{b.Fp,b.Fm,b.F0};
     const auto validateBundle = [&](const double* data,WVShape4D shape,std::size_t count) {
         if (shape.first!=geometry().Nx || shape.second!=geometry().Ny ||
             shape.third!=geometry().Nz || shape.fourth!=count)
@@ -366,8 +634,34 @@ WVKernelStatus WVTransformHydrostaticKernel::nonlinearFlux(const WVState& a,WVFl
         }
     }
     ActiveCall guard(active_); if (!guard.entered) return reentrant();
-    s=preparePhase(a.t,a.t0); if (!s) return s;
+    s=preparePhaseForCall(a); if (!s) return s;
     const WVHydrostaticField fields[]={WVHydrostaticField::u,WVHydrostaticField::v,WVHydrostaticField::w,WVHydrostaticField::eta};
+    const auto derivativeFor=[&](WVHydrostaticField field,WVHydrostaticDerivative derivative,
+        double* scratch,const double*& values,const double* productOutput) {
+        WVRealVolumeConstView cached{};
+        if (derivativeAccess && derivativeAccess->lookup) {
+            auto status=derivativeAccess->lookup(derivativeAccess->context,
+                static_cast<std::size_t>(field),static_cast<std::size_t>(derivative),cached);
+            if (!status) return status;
+        }
+        if (cached.data) {
+            auto status=volume(cached); if (!status) return status;
+            status=disjoint(cached.data,R_*sizeof(double),productOutput,R_*sizeof(double));
+            if (!status) return status;
+            values=cached.data;
+            return WVKernelStatus::ok();
+        }
+        auto status=reconstruct(a.coefficients,field,derivative,
+            WVHydrostaticComponent::all,scratch); if (!status) return status;
+        if (derivativeAccess && derivativeAccess->capture) {
+            status=derivativeAccess->capture(derivativeAccess->context,
+                static_cast<std::size_t>(field),static_cast<std::size_t>(derivative),
+                {scratch,spatialShape()});
+            if (!status) return status;
+        }
+        values=scratch;
+        return WVKernelStatus::ok();
+    };
     if (executionOptions_.streamedNonlinear) {
         const double* advectionFields=preparedFields ? preparedFields->data : real_.data();
         if (!preparedFields) for (std::size_t i=0;i<4;++i) {
@@ -377,12 +671,17 @@ WVKernelStatus WVTransformHydrostaticKernel::nonlinearFlux(const WVState& a,WVFl
         for (std::size_t targetIndex=0;targetIndex<3;++targetIndex) {
             const auto field=fields[targetIndex==2 ? 3 : targetIndex];
             std::fill_n(flux,R_,0);
+            // These direct modal first derivatives use separate dependency keys
+            // from grid Laplacians, which preserve sequential horizontal
+            // calculus or the order-two vertical operator from retained values.
             for (std::size_t axis=0;axis<3;++axis) {
-                s=reconstruct(a.coefficients,field,static_cast<WVHydrostaticDerivative>(axis+1),WVHydrostaticComponent::all,derivative); if (!s) return s;
+                const double* derivativeValues=nullptr;
+                s=derivativeFor(field,static_cast<WVHydrostaticDerivative>(axis+1),
+                    derivative,derivativeValues,flux); if (!s) return s;
                 pointwise_->execute(R_,[&](std::size_t begin,std::size_t end) {
                     for (std::size_t i=begin;i<end;++i) {
                         const double correction=targetIndex==2 && axis==2 ? advectionFields[3*R_+i]*geometry().dLnN2[i/(R_/geometry().Nz)] : 0;
-                        flux[i]-=advectionFields[axis*R_+i]*(derivative[i]+correction);
+                        flux[i]-=advectionFields[axis*R_+i]*(derivativeValues[i]+correction);
                     }
                 });
             }
@@ -400,11 +699,13 @@ WVKernelStatus WVTransformHydrostaticKernel::nonlinearFlux(const WVState& a,WVFl
         const auto field=fields[targetIndex==2 ? 3 : targetIndex]; auto* flux=real_.data()+(4+targetIndex)*R_;
         std::fill_n(flux,R_,0);
         for (std::size_t axis=0;axis<3;++axis) {
-            s=reconstruct(a.coefficients,field,static_cast<WVHydrostaticDerivative>(axis+1),WVHydrostaticComponent::all,real_.data()+7*R_); if (!s) return s;
+            const double* derivativeValues=nullptr;
+            s=derivativeFor(field,static_cast<WVHydrostaticDerivative>(axis+1),
+                real_.data()+7*R_,derivativeValues,flux); if (!s) return s;
             pointwise_->execute(R_,[&](std::size_t begin,std::size_t end) {
                 for (std::size_t i=begin;i<end;++i) {
                     const double correction=targetIndex==2 && axis==2 ? real_[3*R_+i]*geometry().dLnN2[i/(R_/geometry().Nz)] : 0;
-                    flux[i]-=real_[axis*R_+i]*(real_[7*R_+i]+correction);
+                    flux[i]-=real_[axis*R_+i]*(derivativeValues[i]+correction);
                 }
             });
         }
@@ -432,9 +733,9 @@ WVKernelStatus WVTransformHydrostaticKernel::totalEnstrophy(const WVCoefficients
 }
 WVKernelStatus WVTransformHydrostaticKernel::totalEnergySpatiallyIntegrated(const WVState& a,double& value,WVHydrostaticComponent component) {
     if (!valid(component)) return unsupported();
-    auto s=state(a); if (!s) return s;
+    auto s=validateStateForCall(a); if (!s) return s;
     ActiveCall guard(active_); if (!guard.entered) return reentrant();
-    s=preparePhase(a.t,a.t0); if (!s) return s;
+    s=preparePhaseForCall(a); if (!s) return s;
     const WVHydrostaticField fields[]={WVHydrostaticField::u,WVHydrostaticField::v,WVHydrostaticField::eta};
     for (std::size_t i=0;i<3;++i) { s=reconstruct(a.coefficients,fields[i],WVHydrostaticDerivative::value,component,real_.data()+i*R_); if (!s) return s; }
     double sum=0; const auto plane=R_/geometry().Nz;

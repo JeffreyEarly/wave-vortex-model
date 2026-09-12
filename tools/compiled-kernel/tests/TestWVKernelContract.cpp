@@ -6,6 +6,7 @@
 #include <cmath>
 #include <complex>
 #include <iostream>
+#include <limits>
 #include <memory>
 #include <stdexcept>
 #include <vector>
@@ -19,6 +20,28 @@ void require(bool condition, const char* message) {
         throw std::runtime_error(message);
     }
 }
+
+struct DerivativeAccessProbe {
+    std::size_t cachedField=0,cachedDerivative=0,captures=0;
+    WVRealVolumeConstView cached{};
+    bool failLookup=false,failCapture=false;
+    static WVKernelStatus lookup(void* context,std::size_t field,std::size_t derivative,
+        WVRealVolumeConstView& result) {
+        auto& probe=*static_cast<DerivativeAccessProbe*>(context);
+        if (probe.failLookup)
+            return {WVKernelStatusCode::invalidConfiguration,"Injected derivative lookup failure."};
+        result=field==probe.cachedField && derivative==probe.cachedDerivative ? probe.cached : WVRealVolumeConstView{};
+        return WVKernelStatus::ok();
+    }
+    static WVKernelStatus capture(void* context,std::size_t,std::size_t,WVRealVolumeConstView) {
+        auto& probe=*static_cast<DerivativeAccessProbe*>(context);
+        ++probe.captures;
+        return probe.failCapture ?
+            WVKernelStatus{WVKernelStatusCode::invalidConfiguration,"Injected derivative capture failure."} :
+            WVKernelStatus::ok();
+    }
+    WVStateDerivativeAccess access() { return {this,lookup,capture}; }
+};
 
 std::complex<double> standardComplex(WVComplex64 value) { return {value.real,value.imag}; }
 
@@ -441,6 +464,137 @@ void testNonlinearFlux(bool hydrostatic) {
     WVRealFieldBundleView rawView{raw.data(),{config.Nx,config.Ny,config.Nz,channels}};
     WVRealFieldBundleView derivativeView{derivatives.data(),velocityView.shape};
     require(bool(kernel->transformWaveVortexToUVW(state,velocityView)),"prepare shared velocity");
+    std::vector<double> horizontalVelocity(2*R);
+    WVRealFieldBundleView horizontalVelocityView{horizontalVelocity.data(),{config.Nx,config.Ny,config.Nz,2}};
+    require(kernel->transformWaveVortexToUV(state,horizontalVelocityView).code==WVKernelStatusCode::invalidConfiguration,
+        "optional horizontal-velocity transform ran before setup preparation");
+    require(bool(kernel->prepareHorizontalVelocityTransform()),"prepare optional horizontal-velocity transform");
+    require(kernel->metrics().planCount==19,"optional horizontal-velocity transform did not add exactly two plans");
+    const auto validationBeforeScope=kernel->metrics().stateValidationCount;
+    const auto phaseBeforeScope=kernel->metrics().phasePreparationCount;
+    int evaluationOwner=0;
+    require(bool(kernel->beginStateEvaluation(state,&evaluationOwner)),"begin horizontal-velocity state evaluation");
+    require(bool(kernel->transformWaveVortexToUV(state,horizontalVelocityView)),"reconstruct horizontal velocity");
+    WVComplexConstView scopedPhase;
+    require(bool(kernel->preparedPhase(state,scopedPhase)) && scopedPhase.data!=nullptr &&
+            scopedPhase.shape.rows==shape.rows && scopedPhase.shape.columns==shape.columns,
+        "scoped constant-stratification phase was unavailable");
+    WVMutableCoefficients activeStateOutput{{Ap.data(),shape},{Am.data(),shape},{A0.data(),shape}};
+    const WVRealFieldBundleConstView projectionFields{
+        hydrostatic ? velocity.data() : raw.data(),
+        {config.Nx,config.Ny,config.Nz,hydrostatic ? 3U : 4U}};
+    const auto mutationStatus=hydrostatic ?
+        kernel->transformUVEtaToWaveVortex(projectionFields,state.t,state.t0,activeStateOutput) :
+        kernel->transformUVWEtaToWaveVortex(projectionFields,state.t,state.t0,activeStateOutput);
+    require(mutationStatus.code==WVKernelStatusCode::overlappingArrays,
+        "scoped projection mutated the active immutable constant-stratification state");
+    auto registeredAp=Ap,registeredAm=Am,registeredA0=A0;
+    WVState registeredState{state.t,state.t0,{{registeredAp.data(),shape},{registeredAm.data(),shape},{registeredA0.data(),shape}}};
+    std::vector<double> tendencyFields(4*R);
+    WVRealFieldBundleView tendencyView{tendencyFields.data(),{config.Nx,config.Ny,config.Nz,4}};
+    const auto primaryBeforeTendency=kernel->metrics().reconstructionCount;
+    const auto derivedValidationBefore=kernel->metrics().derivedValidationCount;
+    const auto tendencyBefore=kernel->metrics().tendencyReconstructionCount;
+    require(bool(kernel->transformCoefficientTendencyToUVWEta(registeredState,tendencyView)),
+        "constant derived coefficient tendency was rejected by the active primary-state scope");
+    require(kernel->metrics().stateValidationCount==validationBeforeScope+1 &&
+            kernel->metrics().derivedValidationCount==derivedValidationBefore+1 &&
+            kernel->metrics().reconstructionCount==primaryBeforeTendency,
+        "constant derived tendency validation or production was attributed to the primary state");
+    for (std::size_t field=0;field<4;++field)
+        require(kernel->metrics().tendencyReconstructionCount[field]==tendencyBefore[field]+1,
+            "constant derived tendency field production was not counted");
+    WVComplexConstView foreignPhase;
+    require(kernel->preparedPhase(registeredState,foreignPhase).code==
+                WVKernelStatusCode::invalidConfiguration && !foreignPhase.data,
+        "unregistered same-time state reused an active validated phase");
+    require(bool(kernel->addStateEvaluationView(registeredState,&evaluationOwner,2)),"register constant-stratification state view");
+    require(bool(kernel->transformWaveVortexToUV(registeredState,horizontalVelocityView)),"registered constant-stratification state view was rejected");
+    require(kernel->metrics().stateValidationCount==validationBeforeScope+2 &&
+            kernel->metrics().phasePreparationCount==phaseBeforeScope+1,
+        "constant-stratification registered view skipped validation or repeated phase preparation");
+    require(kernel->metrics().reconstructionCount[0][0][2]==1 &&
+            kernel->metrics().reconstructionCount[1][0][2]==1,
+        "registered constant-stratification component production lost its identity");
+    int foreignOwner=0;
+    require(!kernel->removeStateEvaluationView(state,&evaluationOwner,0),
+        "primary constant-stratification state view was removed");
+    require(!kernel->removeStateEvaluationView(registeredState,&foreignOwner,2),
+        "foreign owner removed a constant-stratification state view");
+    require(bool(kernel->removeStateEvaluationView(registeredState,&evaluationOwner,2)),
+        "constant-stratification state view removal failed");
+    require(!kernel->validateStateEvaluation(registeredState) &&
+                !kernel->removeStateEvaluationView(registeredState,&evaluationOwner,2),
+        "removed constant-stratification state view remained registered");
+    require(bool(kernel->addStateEvaluationView(registeredState,&evaluationOwner,3)) &&
+                bool(kernel->validateStateEvaluation(registeredState)),
+        "constant-stratification state view storage could not be re-registered");
+    require(bool(kernel->endStateEvaluation()),"end horizontal-velocity state evaluation");
+    const std::array<std::vector<WVComplex64>*,3> coefficientFamilies{
+        &Ap,&Am,&A0};
+    for(std::size_t family=0;family<coefficientFamilies.size();++family) {
+        auto& values=*coefficientFamilies[family];
+        const auto index=(family+1)*count/coefficientFamilies.size()-1;
+        const auto saved=values[index];
+        values[index].imag=std::numeric_limits<double>::infinity();
+        const auto validationsBeforeFailure=kernel->metrics().stateValidationCount;
+        const auto invalidState=kernel->beginStateEvaluation(state);
+        require(invalidState.code==WVKernelStatusCode::numericalFailure &&
+                    !kernel->stateEvaluationActive() &&
+                    kernel->metrics().stateValidationCount==validationsBeforeFailure+1,
+            "parallel constant-state validation missed a nonfinite coefficient or retained a failed scope");
+        values[index]=saved;
+    }
+    require(bool(kernel->beginStateEvaluation(state)) &&
+                bool(kernel->endStateEvaluation()),
+        "constant-state validation did not recover after a parallel scan failure");
+    std::vector<double> fFieldAndDerivatives(4*R);
+    WVRealFieldBundleView fFieldDerivativeView{
+        fFieldAndDerivatives.data(),{config.Nx,config.Ny,config.Nz,4}};
+    const auto piCountsBefore=kernel->metrics().reconstructionCount[4];
+    require(bool(kernel->transformToSpatialDomainWithFAllDerivatives(
+                WVConstantFField::pi,state.coefficients.Ap,state.coefficients.A0,
+                fFieldDerivativeView)),"identified F-field derivative reconstruction");
+    for (std::size_t derivative=0;derivative<4;++derivative)
+        require(kernel->metrics().reconstructionCount[4][derivative][0]==
+                    piCountsBefore[derivative][0]+1,
+                "identified F-field producer count");
+    require(!kernel->transformToSpatialDomainWithFAllDerivatives(
+                static_cast<WVConstantFField>(99),state.coefficients.Ap,
+                state.coefficients.A0,fFieldDerivativeView),
+            "unknown identified F-field accepted");
+    require(bool(kernel->beginStateEvaluation(state)),"begin derivative access scope");
+    require(bool(kernel->transformStateFieldDerivatives(state,WVDynamicalField::u,derivativeView)),
+        "prepare cached constant derivative");
+    DerivativeAccessProbe derivativeProbe;
+    derivativeProbe.cachedField=static_cast<std::size_t>(WVDynamicalField::u);
+    derivativeProbe.cachedDerivative=3;
+    derivativeProbe.cached={derivatives.data()+2*R,{config.Nx,config.Ny,config.Nz}};
+    auto derivativeAccess=derivativeProbe.access();
+    const auto uCountsBefore=kernel->metrics().reconstructionCount[0];
+    require(bool(kernel->nonlinearFluxUsingAdvectionFields(state,flux,
+                {velocity.data(),velocityView.shape},nullptr,true,&derivativeAccess)),
+        "constant nonlinear derivative reuse failed");
+    require(kernel->metrics().reconstructionCount[0][1][0]==uCountsBefore[1][0]+1 &&
+            kernel->metrics().reconstructionCount[0][2][0]==uCountsBefore[2][0]+1 &&
+            kernel->metrics().reconstructionCount[0][3][0]==uCountsBefore[3][0] &&
+            derivativeProbe.captures==(hydrostatic ? 8U : 11U),
+        "constant nonlinear path reproduced a cached derivative or missed capture");
+    derivativeProbe.failLookup=true;
+    require(!kernel->nonlinearFluxUsingAdvectionFields(state,flux,
+                {velocity.data(),velocityView.shape},nullptr,true,&derivativeAccess),
+        "constant nonlinear derivative lookup failure was ignored");
+    derivativeProbe.failLookup=false;
+    derivativeProbe.failCapture=true;
+    derivativeProbe.cachedField=99;
+    require(!kernel->nonlinearFluxUsingAdvectionFields(state,flux,
+                {velocity.data(),velocityView.shape},nullptr,true,&derivativeAccess),
+        "constant nonlinear derivative capture failure was ignored");
+    require(bool(kernel->endStateEvaluation()),"end derivative access scope");
+    for (std::size_t field=0;field<2;++field) for (std::size_t i=0;i<R;++i)
+        require(std::abs(horizontalVelocity[field*R+i]-velocity[field*R+i])<=
+                1e-12*std::max(1.0,std::abs(velocity[field*R+i])),
+            "two-channel horizontal velocity differs from the three-channel reconstruction");
     const auto velocityBefore = velocity;
     const auto retainedBytes = kernel->persistentBytes();
     const auto reconstructionCount = kernel->metrics().advectionVelocityReconstructionCount;
@@ -491,6 +645,30 @@ void testNonlinearFlux(bool hydrostatic) {
     WVFlux overlapping{{Ap.data(),shape},{Fm.data(),shape},{F0.data(),shape}};
     status = kernel->nonlinearFlux(state,overlapping);
     require(status.code == WVKernelStatusCode::overlappingArrays,"overlapping nonlinear-flux arrays were accepted");
+}
+
+void testStandalonePhaseOverflowValidation() {
+    auto config=configuration(4,4,false);
+    config.Nz=5;
+    config.Nj=3;
+    config.N0=1e100;
+    std::unique_ptr<WVTransformConstantStratificationKernel> kernel;
+    auto status=WVTransformConstantStratificationKernel::create(
+        config,std::make_unique<wavevortex::test::WVReferenceFFTEngine>(),kernel);
+    require(bool(status) && kernel,"phase-overflow kernel construction failed");
+    const auto spatial=kernel->descriptor().spatialShape();
+    const auto spectral=kernel->descriptor().spectralShape();
+    std::vector<double> fields(4*spatial.elementCount());
+    std::vector<WVComplex64> Ap(spectral.elementCount()),
+        Am(spectral.elementCount()),A0(spectral.elementCount());
+    WVMutableCoefficients coefficients{{Ap.data(),spectral},{Am.data(),spectral},
+        {A0.data(),spectral}};
+    const WVRealFieldBundleConstView input{fields.data(),
+        {spatial.first,spatial.second,spatial.third,4}};
+    status=kernel->transformUVWEtaToWaveVortex(input,
+        std::numeric_limits<double>::max(),0.0,coefficients);
+    require(status.code==WVKernelStatusCode::numericalFailure,
+        "standalone constant phase overflow validation was skipped");
 }
 
 [[maybe_unused]] void testFusedTransformRoundTrip(bool hydrostatic) {
@@ -545,6 +723,7 @@ int main() {
     testReferenceHorizontalRoundTrip();
     testFusedTransformRoundTrip(true);
     testFusedTransformRoundTrip(false);
+    testStandalonePhaseOverflowValidation();
     testNonlinearFlux(true);
     testNonlinearFlux(false);
     std::cout << "WaveVortex kernel contract tests passed\n";

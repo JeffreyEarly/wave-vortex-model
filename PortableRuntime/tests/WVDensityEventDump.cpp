@@ -64,6 +64,9 @@ int main(int argc,char** argv) {
     else if(selection!="actual") throw std::runtime_error("Invalid density reference.");
     WVFieldEvaluationPlan plan;
     require(fields->createPlan(requests,plan,contract));
+    std::vector<WVFieldEvaluationPlan> singlePlans(names.size());
+    for(std::size_t i=0;i<names.size();++i)
+      require(fields->createPlan({requests[i]},singlePlans[i],contract));
     std::vector<std::vector<double>> values(names.size());
     std::vector<WVFieldOutputView> views;
     for(std::size_t i=0;i<names.size();++i) {
@@ -71,7 +74,9 @@ int main(int argc,char** argv) {
       views.push_back({values[i].data(),values[i].size()});
     }
     const auto retainedBytes=[&] {
-      return fields->persistentBytes()+plan.persistentBytes()+(constantKernel ? constantKernel->persistentBytes() : 0);
+      auto bytes=fields->persistentBytes()+plan.persistentBytes()+(constantKernel ? constantKernel->persistentBytes() : 0);
+      for(const auto& single:singlePlans) bytes+=single.persistentBytes();
+      return bytes;
     };
     const auto retained=retainedBytes();
     {
@@ -79,9 +84,7 @@ int main(int argc,char** argv) {
       require(event.status());
       // Separate coincident consumers prepare each dependency at most once.
       for(std::size_t i=0;i<names.size();++i) {
-        WVFieldEvaluationPlan single;
-        require(fields->createPlan({requests[i]},single,contract));
-        require(fields->evaluate(single,state,&views[i],1));
+        require(fields->evaluate(singlePlans[i],state,&views[i],1));
       }
       const auto prior=values;
       require(fields->evaluate(plan,state,views.data(),views.size()));

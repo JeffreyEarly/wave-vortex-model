@@ -1,0 +1,30 @@
+{
+  "kind": "build-option-comparison",
+  "candidateSourceCommit": "4d8dbf37",
+  "targets": [
+    {
+      "target": "kernel",
+      "baseline": {
+        "CXX_DEFINES": "-DWV_KERNEL_COMPACT_CONSTANT_CANDIDATE=1 -DWV_KERNEL_COMPACT_HORIZONTAL_WORKERS=12 -DWV_KERNEL_COMPACT_POINTWISE_WORKERS=12",
+        "CXX_FLAGS": "-O3 -DNDEBUG -std=c++17 -isysroot /Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX26.5.sdk -fPIC -Wall -Wextra -Wpedantic -Werror"
+      },
+      "candidate": {
+        "CXX_DEFINES": "-DWV_KERNEL_COMPACT_CONSTANT_CANDIDATE=1 -DWV_KERNEL_COMPACT_HORIZONTAL_WORKERS=12 -DWV_KERNEL_COMPACT_POINTWISE_WORKERS=12",
+        "CXX_FLAGS": "-O3 -DNDEBUG -std=c++17 -isysroot /Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX26.5.sdk -fPIC -Wall -Wextra -Wpedantic -Werror"
+      },
+      "matched": true
+    },
+    {
+      "target": "runtime",
+      "baseline": {
+        "CXX_DEFINES": "-DWV_KERNEL_COMPACT_CONSTANT_CANDIDATE=1 -DWV_KERNEL_COMPACT_HORIZONTAL_WORKERS=12 -DWV_KERNEL_COMPACT_POINTWISE_WORKERS=12",
+        "CXX_FLAGS": "-O3 -DNDEBUG -std=c++17 -isysroot /Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX26.5.sdk -fPIC -Wall -Wextra -Wpedantic -Werror"
+      },
+      "candidate": {
+        "CXX_DEFINES": "-DWV_KERNEL_COMPACT_CONSTANT_CANDIDATE=1 -DWV_KERNEL_COMPACT_HORIZONTAL_WORKERS=12 -DWV_KERNEL_COMPACT_POINTWISE_WORKERS=12",
+        "CXX_FLAGS": "-O3 -DNDEBUG -std=c++17 -isysroot /Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX26.5.sdk -fPIC -Wall -Wextra -Wpedantic -Werror"
+      },
+      "matched": true
+    }
+  ]
+}

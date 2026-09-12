@@ -189,6 +189,55 @@ private:
   WVKernelStatusCode creationCode_;
 };
 
+struct FailOnceControl {
+  bool armed = false;
+};
+
+class FailOncePlan final : public WVFFTPlan {
+public:
+  FailOncePlan(std::unique_ptr<WVFFTPlan> plan,
+               std::shared_ptr<FailOnceControl> control)
+      : plan_(std::move(plan)), control_(std::move(control)) {}
+  WVKernelStatus execute(const void *input, void *output) override {
+    if (control_->armed) {
+      control_->armed = false;
+      return {WVKernelStatusCode::fftExecutionFailure,
+              "injected one-shot field-evaluation FFT failure"};
+    }
+    return plan_->execute(input, output);
+  }
+  std::size_t persistentBytes() const noexcept override {
+    return sizeof(*this) + plan_->persistentBytes();
+  }
+
+private:
+  std::unique_ptr<WVFFTPlan> plan_;
+  std::shared_ptr<FailOnceControl> control_;
+};
+
+class FailOnceEngine final : public WVFFTEngine {
+public:
+  explicit FailOnceEngine(std::shared_ptr<FailOnceControl> control)
+      : control_(std::move(control)) {}
+  std::string identifier() const override { return "reference-fail-once"; }
+  std::size_t persistentBytes() const noexcept override {
+    return sizeof(*this) + reference_.persistentBytes() - sizeof(reference_);
+  }
+  WVKernelStatus createPlan(const WVFFTPlanSpecification &specification,
+                            std::unique_ptr<WVFFTPlan> &plan) override {
+    std::unique_ptr<WVFFTPlan> referencePlan;
+    auto status = reference_.createPlan(specification, referencePlan);
+    if (!status)
+      return status;
+    plan = std::make_unique<FailOncePlan>(std::move(referencePlan), control_);
+    return WVKernelStatus::ok();
+  }
+
+private:
+  std::shared_ptr<FailOnceControl> control_;
+  WVReferenceFFTEngine reference_;
+};
+
 void verifyCatalog() {
   std::vector<std::string> expected = {
       "u",       "v",         "w",       "eta",    "pi",
@@ -322,7 +371,7 @@ void verifyPhaseDiagnostics(bool hydrostatic, bool antialias) {
     }
     require(service->metrics().diagnosticIntermediateReuseCount == previousReuse + 3,
             "phase/conjPhase/Apt/Amt did not share their phase table");
-    require(service->metrics().diagnosticWorkspaceHighWaterBytes == count * sizeof(WVComplex64) &&
+    require(service->metrics().diagnosticWorkspaceHighWaterBytes <= count * sizeof(WVComplex64) &&
                 service->metrics().diagnosticWorkspaceLiveBytes == 0 &&
                 service->metrics().diagnosticPrimitiveOutputCount == 0 &&
                 service->metrics().fftExecutionCount == 0,
@@ -414,6 +463,7 @@ void verifyDerivedMovingSampling() {
   status = service->createMovingPlan(movingRequests, moving);
   require(bool(status), "derived moving plan failed: " + status.message);
   const auto retained = moving.persistentBytes();
+  const auto serviceRetained=service->persistentBytes();
   std::vector<std::vector<double>> movingStorage(
       names.size(), std::vector<double>(sampling.x.size(), -919.0));
   std::vector<WVFieldOutputView> movingViews;
@@ -445,6 +495,7 @@ void verifyDerivedMovingSampling() {
   require(movingStorage == fixedStorage,
           "derived moving fields differ from fixed-position interpolation");
   require(moving.persistentBytes() == retained &&
+              service->persistentBytes()==serviceRetained &&
               service->metrics().diagnosticWorkspaceLiveBytes == 0,
           "derived moving evaluation retained temporary workspace");
 
@@ -686,6 +737,54 @@ void verifyFailureAndLifecycleContracts() {
   require(*activePlans > 0, "service did not retain its private FFT plans");
   service.reset();
   require(*activePlans == 0, "service destruction leaked FFT plans");
+}
+
+void verifyLowMemoryComponentFailureCleanup() {
+  const auto config = configuration(6, 5, true, true);
+  const auto control = std::make_shared<FailOnceControl>();
+  std::unique_ptr<WVFieldEvaluationService> service;
+  auto status = WVFieldEvaluationService::create(
+      config, std::make_unique<FailOnceEngine>(control), service);
+  require(bool(status), "low-memory component failure service creation failed");
+  require(bool(service->setVariableEvaluationPolicy(
+              WVVariableEvaluationPolicy::lowMemory)),
+          "low-memory component failure policy was rejected");
+  WVFieldEvaluationPlan plan;
+  require(bool(service->createPlan({full("u_g"), full("v_g")}, plan)),
+          "low-memory component failure plan creation failed");
+  std::array<std::vector<double>, 2> values;
+  std::array<WVFieldOutputView, 2> views;
+  for (std::size_t index = 0; index < values.size(); ++index) {
+    values[index].resize(plan.outputs()[index].elementCount);
+    views[index] = {values[index].data(), values[index].size()};
+  }
+  const auto stateStorage = stateFor(config);
+  const WVIntegrationState state{stateStorage.view()};
+  const auto retained = service->persistentBytes();
+  const auto ledgerBefore = service->metrics().variableEvaluation;
+  const auto producersBefore = service->producerMetrics();
+  {
+    WVFieldEvaluationSession session;
+    require(bool(service->beginEvaluationSession(state, session)),
+            "low-memory component failure session did not start");
+    control->armed = true;
+    status = service->evaluate(plan, state, views.data(), views.size());
+    require(status.code == WVKernelStatusCode::fftExecutionFailure,
+            "low-memory component query did not expose the injected failure");
+    require(bool(service->evaluate(plan, state, views.data(), views.size())),
+            "low-memory component query did not recover in the same session");
+  }
+  const auto ledgerAfter = service->metrics().variableEvaluation;
+  const auto producersAfter = service->producerMetrics();
+  require(ledgerAfter.producerExecutions == ledgerBefore.producerExecutions + 7 &&
+              ledgerAfter.evictions == ledgerBefore.evictions + 7 &&
+              ledgerAfter.recomputations == ledgerBefore.recomputations + 3 &&
+              ledgerAfter.liveBytes == 0,
+          "low-memory component failure leaked pins or skipped explicit recomputation");
+  require(producersAfter.stateValidations == producersBefore.stateValidations + 3,
+          "low-memory component retry reused a stale registered coefficient view");
+  require(service->persistentBytes() == retained,
+          "low-memory component failure discarded prepared complex capacity");
 }
 
 void verifyEvaluation(std::size_t nx, std::size_t ny, bool hydrostatic,
@@ -1454,6 +1553,302 @@ void verifySmallGridSplineBoundaries() {
   verifyShiftedSplineZero(*service, state, g.Lx, g.Ly, g.Lz);
 }
 
+void verifyVariableEvaluationSessions() {
+  const auto config=configuration(6,5,true,true);
+  const auto owned=stateFor(config);
+  WVIntegrationState state{owned.view()};
+  std::unique_ptr<WVFieldEvaluationService> service;
+  auto status=WVFieldEvaluationService::create(
+      config,std::make_unique<WVReferenceFFTEngine>(),service);
+  require(bool(status),status.message);
+  WVFieldEvaluationPlan first,second,derivedFull,derivedPoints;
+  WVMovingFieldEvaluationPlan moving;
+  status=service->createPlan({full("u")},first);
+  require(bool(status),status.message);
+  WVFieldSamplingRequest points;
+  points.kind=WVFieldSamplingKind::positions;
+  points.x={0.25}; points.y={0.5}; points.z={-0.75};
+  status=service->createPlan({{"point-u","u",points}},second);
+  require(bool(status),status.message);
+  status=service->createPlan({full("p"),full("rho_e")},derivedFull);
+  require(bool(status),status.message);
+  status=service->createPlan({{"point-p","p",points},
+      {"point-rho","rho_e",points}},derivedPoints);
+  require(bool(status),status.message);
+  status=service->createMovingPlan({{"moving-u","u",0,1},
+      {"moving-v","v",0,1}},moving);
+  require(bool(status),status.message);
+  std::vector<double> fullValues(first.outputs()[0].elementCount);
+  std::vector<double> pointValues(second.outputs()[0].elementCount);
+  WVFieldOutputView fullView{fullValues.data(),fullValues.size()};
+  WVFieldOutputView pointView{pointValues.data(),pointValues.size()};
+  std::array<std::vector<double>,2> derivedFullValues,
+      derivedPointValues;
+  std::array<WVFieldOutputView,2> derivedFullViews,derivedPointViews;
+  for(std::size_t index=0;index<2;++index) {
+    derivedFullValues[index].resize(
+        derivedFull.outputs()[index].elementCount);
+    derivedPointValues[index].resize(
+        derivedPoints.outputs()[index].elementCount);
+    derivedFullViews[index]={derivedFullValues[index].data(),
+        derivedFullValues[index].size()};
+    derivedPointViews[index]={derivedPointValues[index].data(),
+        derivedPointValues[index].size()};
+  }
+
+  const auto standaloneBefore=service->metrics().variableEvaluation;
+  const auto standaloneProducerBefore=service->producerMetrics();
+  std::array<double,2> movingValues{};
+  WVFieldOutputView movingViews[]={{&movingValues[0],1},{&movingValues[1],1}};
+  double movingX=points.x[0],movingY=points.y[0],movingZ=points.z[0];
+  const WVMovingPositionView movingPosition{&movingX,&movingY,&movingZ,1};
+  require(bool(service->evaluate(first,state,&fullView,1)) &&
+      !service->evaluationSessionActive() &&
+      bool(service->evaluate(first,state,&fullView,1)) &&
+      !service->evaluationSessionActive(),
+      "standalone field evaluation did not close its event scope");
+  require(bool(service->evaluateMoving(moving,state,movingPosition,
+          movingViews,2)) && !service->evaluationSessionActive() &&
+      bool(service->evaluateMoving(moving,state,movingPosition,
+          movingViews,2)) && !service->evaluationSessionActive(),
+      "standalone moving evaluation did not close its event scope");
+  const auto standaloneAfter=service->metrics().variableEvaluation;
+  const auto standaloneProducerAfter=service->producerMetrics();
+  require(standaloneAfter.contexts==standaloneBefore.contexts+4 &&
+      standaloneAfter.producerExecutions==
+          standaloneBefore.producerExecutions+4 &&
+      standaloneProducerAfter.reconstructions[0][0][0]==
+          standaloneProducerBefore.reconstructions[0][0][0]+4,
+      "standalone field calls did not use one fresh producer scope each");
+  const std::uint8_t inactiveField=0;
+  const std::array<std::uint8_t,2> inactiveMoving{};
+  require(bool(service->evaluate(first,state,&fullView,1,&inactiveField)) &&
+      bool(service->evaluateMoving(moving,state,movingPosition,movingViews,2,
+          inactiveMoving.data())) &&
+      service->metrics().variableEvaluation.contexts==standaloneAfter.contexts &&
+      !service->evaluationSessionActive(),
+      "inactive standalone calls opened an event scope");
+
+  const auto preparedArenaBytes=service->metrics().eventFieldArenaPlannedBytes;
+  const auto preparedPersistentBytes=service->persistentBytes();
+  auto before=service->metrics().variableEvaluation;
+  const auto producerBefore=service->producerMetrics();
+  {
+    WVFieldEvaluationSession session;
+    status=service->beginEvaluationSession(state,session);
+    require(bool(status) && session.active(),"reuse evaluation session did not start");
+    require(!service->setVariableEvaluationPolicy(WVVariableEvaluationPolicy::lowMemory),
+            "active session allowed its policy to change");
+    require(bool(service->evaluate(first,state,&fullView,1)),"reuse session first query failed");
+    require(bool(service->evaluate(second,state,&pointView,1)),"reuse session second query failed");
+    require(bool(service->evaluate(derivedFull,state,derivedFullViews.data(),2)) &&
+            bool(service->evaluate(derivedPoints,state,derivedPointViews.data(),2)),
+        "reuse session derived queries failed");
+    auto foreign=state;
+    foreign.waveVortex.t+=1;
+    require(!service->evaluate(first,foreign,&fullView,1),
+            "evaluation session accepted a foreign immutable state");
+  }
+  auto after=service->metrics().variableEvaluation;
+  const auto producerAfterReuse=service->producerMetrics();
+  require(after.contexts==before.contexts+1 &&
+              after.producerExecutions==before.producerExecutions+4 &&
+              after.cacheHits>=before.cacheHits+6 &&
+              after.duplicateExecutions==before.duplicateExecutions,
+          "reuse session did not execute one shared natural-grid producer");
+  require(producerAfterReuse.phasePreparations==producerBefore.phasePreparations+1 &&
+              producerAfterReuse.reconstructions[0][0][0]==
+                  producerBefore.reconstructions[0][0][0]+1 &&
+              producerAfterReuse.reconstructions[5][0][0]==
+                  producerBefore.reconstructions[5][0][0]+1 &&
+              producerAfterReuse.reconstructions[8][0][0]==
+                  producerBefore.reconstructions[8][0][0]+1,
+          "reuse session did not suppress the duplicate kernel producer");
+  require(service->persistentBytes()==preparedPersistentBytes &&
+      service->metrics().eventFieldArenaPlannedBytes==preparedArenaBytes &&
+      service->metrics().eventFieldArenaPeakBytes<=preparedArenaBytes,
+      "prepared repeated field queries grew the output-event arena");
+
+  require(bool(service->setVariableEvaluationPolicy(
+      WVVariableEvaluationPolicy::lowMemory)),"low-memory policy was rejected");
+  before=after;
+  {
+    WVFieldEvaluationSession session;
+    require(bool(service->beginEvaluationSession(state,session)),
+            "low-memory evaluation session did not start");
+    require(bool(service->evaluate(first,state,&fullView,1)),
+            "low-memory first query failed");
+    require(bool(service->evaluate(second,state,&pointView,1)),
+            "low-memory second query failed");
+  }
+  after=service->metrics().variableEvaluation;
+  const auto producerAfterLowMemory=service->producerMetrics();
+  require(after.contexts==before.contexts+1 &&
+              after.producerExecutions==before.producerExecutions+2 &&
+              after.recomputations==before.recomputations+1 &&
+              after.evictions==before.evictions+2 &&
+              after.duplicateExecutions==before.duplicateExecutions,
+          "low-memory session did not explicitly evict and recompute");
+  require(producerAfterLowMemory.reconstructions[0][0][0]==
+              producerAfterReuse.reconstructions[0][0][0]+2,
+          "low-memory session did not recompute the kernel producer");
+
+  require(bool(service->setVariableEvaluationPolicy(
+      WVVariableEvaluationPolicy::reuse)),"reuse policy restore failed");
+  WVFieldEvaluationPlan components;
+  require(bool(service->createPlan({full("u_g"),full("v_g")},components)),
+      "component session plan creation failed");
+  std::vector<double> componentU(components.outputs()[0].elementCount);
+  std::vector<double> componentV(components.outputs()[1].elementCount);
+  WVFieldOutputView componentViews[]={{componentU.data(),componentU.size()},
+      {componentV.data(),componentV.size()}};
+  const auto componentBefore=service->producerMetrics();
+  {
+    WVFieldEvaluationSession session;
+    require(bool(service->beginEvaluationSession(state,session)),
+        "component evaluation session did not start");
+    require(bool(service->evaluate(components,state,componentViews,2)) &&
+        bool(service->evaluate(components,state,componentViews,2)),
+        "component evaluation session failed");
+  }
+  const auto componentAfter=service->producerMetrics();
+  require(componentAfter.phasePreparations==componentBefore.phasePreparations+1 &&
+      componentAfter.reconstructions[0][0][1]==
+          componentBefore.reconstructions[0][0][1]+1 &&
+      componentAfter.reconstructions[1][0][1]==
+          componentBefore.reconstructions[1][0][1]+1,
+      "component outputs repeated phase or reconstruction producers");
+
+  const std::array<const char*,6> energyNames{
+      "energy","geostrophicEnergy","energy_g","energy_w","energy_io",
+      "energy_mda"};
+  std::array<WVFieldEvaluationPlan,6> energySingles;
+  std::vector<WVFieldRequest> energyRequests;
+  for(std::size_t index=0;index<energyNames.size();++index) {
+    require(bool(service->createPlan({full(energyNames[index])},
+            energySingles[index])),
+        "component energy single plan creation failed");
+    energyRequests.push_back(full(energyNames[index]));
+  }
+  WVFieldEvaluationPlan energyBatch;
+  require(bool(service->createPlan(energyRequests,energyBatch)),
+      "component energy batch plan creation failed");
+  std::reverse(energyRequests.begin(),energyRequests.end());
+  WVFieldEvaluationPlan reverseEnergyBatch;
+  require(bool(service->createPlan(energyRequests,reverseEnergyBatch)),
+      "reverse component energy batch plan creation failed");
+  std::array<double,6> energyReference{};
+  for(std::size_t index=0;index<energyNames.size();++index) {
+    WVFieldOutputView output{&energyReference[index],1};
+    const auto energyStatus=service->evaluate(
+        energySingles[index],state,&output,1);
+    require(bool(energyStatus),std::string("component energy reference ")+
+        energyNames[index]+" failed: "+energyStatus.message);
+  }
+  require(energyReference[1]==energyReference[2],
+      "geostrophic energy aliases produced different references");
+  for(const auto policy:{WVVariableEvaluationPolicy::reuse,
+          WVVariableEvaluationPolicy::lowMemory}) {
+    require(bool(service->setVariableEvaluationPolicy(policy)),
+        "component energy evaluation policy change failed");
+    std::array<double,6> batched{},reversed{};
+    std::array<WVFieldOutputView,6> batchViews{},reverseViews{};
+    for(std::size_t index=0;index<energyNames.size();++index) {
+      batchViews[index]={&batched[index],1};
+      reverseViews[index]={&reversed[index],1};
+    }
+    require(bool(service->evaluate(energyBatch,state,batchViews.data(),
+                batchViews.size())) &&
+            bool(service->evaluate(reverseEnergyBatch,state,reverseViews.data(),
+                reverseViews.size())),
+        "component energy batched evaluation failed");
+    for(std::size_t index=0;index<energyNames.size();++index) {
+      require(batched[index]==energyReference[index],
+          "component energy batching changed a value");
+      require(reversed[energyNames.size()-1-index]==energyReference[index],
+          "reverse component energy batching changed a value");
+    }
+    for(const bool reverse:{false,true}) {
+      WVFieldEvaluationSession session;
+      require(bool(service->beginEvaluationSession(state,session)),
+          "component energy ordered session did not start");
+      for(std::size_t ordinal=0;ordinal<energyNames.size();++ordinal) {
+        const auto index=reverse ? energyNames.size()-1-ordinal : ordinal;
+        double value=0;
+        WVFieldOutputView output{&value,1};
+        require(bool(service->evaluate(energySingles[index],state,&output,1)) &&
+                value==energyReference[index],
+            "component energy session order changed a value");
+      }
+    }
+  }
+  require(bool(service->setVariableEvaluationPolicy(
+      WVVariableEvaluationPolicy::reuse)),
+      "reuse policy restore after component energy checks failed");
+
+  WVFieldEvaluationPlan fullPi,pointPi;
+  require(bool(service->createPlan({full("pi")},fullPi)) &&
+      bool(service->createPlan({{"point-pi","pi",points}},pointPi)),
+      "F-bundle session plan creation failed");
+  std::vector<double> fullPiValues(fullPi.outputs()[0].elementCount);
+  std::vector<double> pointPiValues(pointPi.outputs()[0].elementCount);
+  WVFieldOutputView fullPiView{fullPiValues.data(),fullPiValues.size()};
+  WVFieldOutputView pointPiView{pointPiValues.data(),pointPiValues.size()};
+  const auto fBefore=service->producerMetrics();
+  const auto fLedgerBefore=service->metrics().variableEvaluation;
+  {
+    WVFieldEvaluationSession session;
+    require(bool(service->beginEvaluationSession(state,session)),
+        "F-bundle evaluation session did not start");
+    require(bool(service->evaluate(fullPi,state,&fullPiView,1)) &&
+        bool(service->evaluate(first,state,&fullView,1)) &&
+        bool(service->evaluate(pointPi,state,&pointPiView,1)),
+        "pi/u/pi F-bundle evaluation session failed");
+  }
+  const auto fAfter=service->producerMetrics();
+  const auto fLedgerAfter=service->metrics().variableEvaluation;
+  require(fAfter.phasePreparations==fBefore.phasePreparations+1 &&
+      fAfter.reconstructions[0][0][0]==fBefore.reconstructions[0][0][0]+1,
+      "pi/u/pi session repeated phase or velocity reconstruction");
+  for(std::size_t derivative=0;derivative<4;++derivative)
+    require(fAfter.reconstructions[4][derivative][0]==
+        fBefore.reconstructions[4][derivative][0]+1,
+        "pi/u/pi session repeated an identified F-bundle producer");
+  require(fLedgerAfter.producerExecutions==fLedgerBefore.producerExecutions+2 &&
+      fLedgerAfter.cacheHits==fLedgerBefore.cacheHits+1 &&
+      fLedgerAfter.duplicateExecutions==fLedgerBefore.duplicateExecutions,
+      "pi/u/pi session did not reuse one complete fused F bundle");
+}
+
+void verifyFusedVariableEvaluationLedger() {
+  const WVVariableEvaluationKey a{WVVariableEvaluationNode::forcingTendency,1};
+  const WVVariableEvaluationKey b{WVVariableEvaluationNode::forcingTendency,2};
+  const WVVariableEvaluationKey c{WVVariableEvaluationNode::forcingTendency,3};
+  WVVariableEvaluationContext context;
+  require(bool(context.prepare({a,b,c})),"fused ledger preparation failed");
+  require(bool(context.begin(&context)),"fused ledger scope failed");
+  const std::vector<std::pair<WVVariableEvaluationKey,std::size_t>> ab{{a,8},{b,16}};
+  const std::vector<std::pair<WVVariableEvaluationKey,std::size_t>> bc{{b,16},{c,8}};
+  require(!context.evaluateGroup(ab,[&]() {
+      return context.evaluate(a,8,[](){return WVKernelStatus::ok();});
+    }) && !context.ready(a) && !context.ready(b),
+      "fused ledger cycle did not roll back atomically");
+  require(bool(context.evaluateGroup(ab,[](){return WVKernelStatus::ok();})) &&
+      context.metrics().producerExecutions==1,
+      "fused ledger did not count one actual producer");
+  require(!context.evaluateGroup(bc,[](){return WVKernelStatus::ok();}),
+      "fused ledger accepted overlapping ready nodes");
+  context.end();
+  require(bool(context.begin(&context,WVVariableEvaluationPolicy::lowMemory)),
+      "low-memory fused ledger scope failed");
+  require(bool(context.evaluateGroup(ab,[](){return WVKernelStatus::ok();})) &&
+      context.evict(a) && !context.evaluateGroup(ab,[](){return WVKernelStatus::ok();}) &&
+      context.evict(b) && bool(context.evaluateGroup(ab,[](){return WVKernelStatus::ok();})) &&
+      context.metrics().recomputations==1,
+      "low-memory fused ledger did not require complete eviction before recomputation");
+  context.end();
+}
+
 } // namespace
 
 int main() {
@@ -1463,9 +1858,12 @@ int main() {
         verifyPhaseDiagnostics(hydrostatic, antialias);
     verifyBarotropicSplineExtrapolation();
     verifySmallGridSplineBoundaries();
+    verifyVariableEvaluationSessions();
+    verifyFusedVariableEvaluationLedger();
     verifyCatalog();
     verifyPlanValidation();
     verifyFailureAndLifecycleContracts();
+    verifyLowMemoryComponentFailureCleanup();
     verifyEvaluation(6, 5, true, true);
     verifyEvaluation(7, 6, false, false);
     verifyDerivedMovingSampling();

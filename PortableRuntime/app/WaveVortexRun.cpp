@@ -78,6 +78,7 @@ struct Options {
         cli::WVRunRequestTimeStepConstraint::notApplicable;
     std::string requestSchemaIdentifier;
     int requestSchemaVersion = 0;
+    WVVariableEvaluationPolicy variableEvaluationPolicy=WVVariableEvaluationPolicy::reuse;
     WVDensityDiagnosticContract densityDiagnostics;
     bool hasDensityDiagnostics = false;
     std::string restartMode = "model";
@@ -447,6 +448,7 @@ bool parseOptions(int argc, char** argv, Options& options, std::string& error) {
     options.timeStepConstraint = request.integration.timeStepConstraint;
     options.requestSchemaIdentifier = request.schemaIdentifier;
     options.requestSchemaVersion = request.schemaVersion;
+    options.variableEvaluationPolicy = request.variableEvaluationPolicy;
     options.densityDiagnostics = request.densityDiagnostics;
     options.hasDensityDiagnostics = request.hasDensityDiagnostics;
     options.restartMode = "model";
@@ -1039,6 +1041,7 @@ int wavevortex::runtime::runWaveVortex(
     options.threads=variablePolicy.effectiveFFTThreads;
     WVVariableKernelServices variableServices;
     variableServices.execution=variablePolicy.execution;
+    variableServices.variableEvaluationPolicy=options.variableEvaluationPolicy;
 #if WV_RUNTIME_ENABLE_COMPACT_VARIABLE_POLICY
     if (variablePolicy.matrixBackend==cli::WVRunnerMatrixBackend::accelerate)
         variableServices.matrixBackendFactory=WVCreateAccelerateMatrixBackend;
@@ -1573,8 +1576,8 @@ int wavevortex::runtime::runWaveVortex(
         staticFullModelPersistentBytes +
         std::max(occurrenceWorkspaceRetainedBytes,
                  occurrenceWorkspaceMaximumLiveBytes) +
-        outputOrchestrationMaximumLiveBytes + outputEvaluationMetrics.diagnosticWorkspaceHighWaterBytes +
-        outputEvaluationMetrics.eventFieldWorkspaceHighWaterBytes;
+        outputOrchestrationMaximumLiveBytes +
+        outputEvaluationMetrics.additionalTransientHighWaterBytes;
     const auto integratorElementReads = fixedMetrics.stageStateConstructionElementReads+fixedMetrics.weightedFluxInitializationElementReads+fixedMetrics.weightedAccumulationElementReads+fixedMetrics.finalStateUpdateElementReads+fixedMetrics.acceptedStateCommitElementReads;
     const auto integratorElementWrites = fixedMetrics.stageStateConstructionElementWrites+fixedMetrics.stageFluxClearElementWrites+fixedMetrics.weightedFluxClearElementWrites+fixedMetrics.weightedFluxInitializationElementWrites+fixedMetrics.weightedAccumulationElementWrites+fixedMetrics.finalStateUpdateElementWrites+fixedMetrics.acceptedStateCommitElementWrites;
     const auto forcingElementReads = forcingMetrics.temporaryAccumulationElementReads+forcingMetrics.outputCopyElementReads;
@@ -1656,6 +1659,63 @@ int wavevortex::runtime::runWaveVortex(
                       selectedFixedStep,integrationInitialStep,
                       effectiveMaximumStep)
                << ',';
+    const auto writeEvaluationMetrics=[&](const WVVariableEvaluationMetrics& value) {
+      report << "{\"contexts\":" << value.contexts
+             << ",\"producerExecutions\":" << value.producerExecutions
+             << ",\"cacheHits\":" << value.cacheHits
+             << ",\"evictions\":" << value.evictions
+             << ",\"recomputations\":" << value.recomputations
+             << ",\"duplicateExecutions\":" << value.duplicateExecutions
+             << ",\"liveBytes\":" << value.liveBytes
+             << ",\"highWaterBytes\":" << value.highWaterBytes << '}';
+    };
+    report << "\"variableEvaluation\":{\"requestedPolicy\":"
+           << quoted(variableEvaluationPolicyIdentifier(options.variableEvaluationPolicy))
+           << ",\"effectivePolicy\":" << quoted(variableEvaluationPolicyIdentifier(options.variableEvaluationPolicy))
+           << ",\"rightHandSide\":";
+    writeEvaluationMetrics(modelMetrics.variableEvaluation);
+    report << ",\"output\":";
+    writeEvaluationMetrics(outputEvaluationMetrics.variableEvaluation);
+    report << ",\"outputArena\":{\"plannedBytes\":"
+           << outputEvaluationMetrics.eventFieldArenaPlannedBytes
+           << ",\"peakBytes\":" << outputEvaluationMetrics.eventFieldArenaPeakBytes << '}';
+    const auto& producers=modelMetrics.variableProducers;
+    report << ",\"kernelProducers\":{\"stateValidations\":" << producers.stateValidations
+           << ",\"phasePreparations\":" << producers.phasePreparations
+           << ",\"derivedValidations\":" << producers.derivedValidations
+           << ",\"horizontalSpeedReductions\":" << producers.horizontalSpeedReductions
+           << ",\"verticalSpeedReductions\":" << producers.verticalSpeedReductions
+           << ",\"energyReductions\":" << producers.energyReductions
+           << ",\"tendencyReconstructions\":[";
+    for(std::size_t field=0;field<producers.tendencyReconstructions.size();++field) {
+      if(field) report << ',';
+      report << producers.tendencyReconstructions[field];
+    }
+    report << "],\"reconstructions\":[";
+    bool firstProducer=true;
+    for(std::size_t f=0;f<producers.reconstructions.size();++f)
+      for(std::size_t d=0;d<producers.reconstructions[f].size();++d)
+        for(std::size_t c=0;c<producers.reconstructions[f][d].size();++c) {
+          const auto count=producers.reconstructions[f][d][c];
+          if(!count) continue;
+          if(!firstProducer) report << ',';
+          firstProducer=false;
+          report << "{\"field\":" << f << ",\"derivative\":" << d
+                 << ",\"component\":" << c << ",\"count\":" << count << '}';
+        }
+    report << "],\"gridCalculus\":[";
+    bool firstCalculus=true;
+    for(std::size_t field=0;field<forcingMetrics.gridCalculusProducerCount.size();++field)
+      for(std::size_t formulation=0;formulation<forcingMetrics.gridCalculusProducerCount[field].size();++formulation) {
+        const auto count=forcingMetrics.gridCalculusProducerCount[field][formulation];
+        if(!count) continue;
+        if(!firstCalculus) report << ',';
+        firstCalculus=false;
+        report << "{\"field\":" << field << ",\"formulation\":" << formulation
+               << ",\"count\":" << count << '}';
+      }
+    report << "],\"constantLaplacian\":[" << forcingMetrics.constantLaplacianProducerCount[0]
+           << ',' << forcingMetrics.constantLaplacianProducerCount[1] << "]}},";
     report << "\"densityDiagnosticContract\":{\"identifier\":"
            << quoted(WVDensityDiagnosticContract::identifier)
            << ",\"reference\":" << quoted(options.densityDiagnostics.referenceIdentifier())
@@ -1700,9 +1760,10 @@ int wavevortex::runtime::runWaveVortex(
            << ",\"primitiveOutputCount\":" << outputEvaluationMetrics.diagnosticPrimitiveOutputCount
            << ",\"intermediateReuseCount\":" << outputEvaluationMetrics.diagnosticIntermediateReuseCount
            << ",\"workspaceLiveBytes\":" << outputEvaluationMetrics.diagnosticWorkspaceLiveBytes
-           << ",\"workspaceHighWaterBytes\":" << outputEvaluationMetrics.diagnosticWorkspaceHighWaterBytes << "},"
-           << "\"forcingOperations\":{\"evaluationCount\":" << forcingMetrics.evaluationCount << ",\"physicalFieldReconstructionCount\":" << forcingMetrics.physicalFieldReconstructionCount << ",\"physicalFieldReuseCount\":" << forcingMetrics.physicalFieldReuseCount << ",\"spatialTendencyProjectionCount\":" << forcingMetrics.spatialTendencyProjectionCount << ",\"spatialTendencyClearElementWrites\":" << forcingMetrics.spatialTendencyClearElementWrites << "},"
-           << "\"livenessBytes\":{\"integratorWorkspaceLive\":" << integratorWorkspaceLiveBytes << ",\"integratorWorkspaceMaximumLive\":" << integratorWorkspaceMaximumLiveBytes << ",\"forcingWorkspaceLive\":" << forcingMetrics.workspaceLiveBytes << ",\"forcingWorkspaceMaximumLive\":" << forcingMetrics.workspaceMaximumLiveBytes << ",\"denseHistoryRetainedWithinWorkspace\":" << denseHistoryBytes << ",\"acceptedStepAdditionalArrayStorage\":0,\"contractAbstractionAdditionalArrayStorage\":0,\"contractAbstractionMaximumLiveArrayStorage\":" << driverInterpolationMaximumLiveBytes << ",\"outputDriverRetained\":0,\"outputDriverMaximumLive\":" << outputDriverMaximumLiveBytes << ",\"outputPlanMaximumLive\":" << outputPlanMaximumLiveBytes << ",\"outputOrchestrationMaximumLive\":" << outputOrchestrationMaximumLiveBytes << ",\"occurrenceWorkspaceRetained\":" << occurrenceWorkspaceRetainedBytes << ",\"occurrenceWorkspaceMaximumLive\":" << occurrenceWorkspaceMaximumLiveBytes << ",\"knownRetained\":" << knownPersistentBytes << ",\"knownMaximumLive\":" << knownPersistentBytes+outputOrchestrationMaximumLiveBytes+outputEvaluationMetrics.diagnosticWorkspaceHighWaterBytes+outputEvaluationMetrics.eventFieldWorkspaceHighWaterBytes << ",\"fullModelRetained\":" << fullModelRetainedBytes << ",\"fullModelMaximumLive\":" << fullModelMaximumLiveBytes << "},"
+           << ",\"workspaceHighWaterBytes\":" << outputEvaluationMetrics.diagnosticWorkspaceHighWaterBytes
+           << ",\"additionalTransientHighWaterBytes\":" << outputEvaluationMetrics.additionalTransientHighWaterBytes << "},"
+           << "\"forcingOperations\":{\"evaluationCount\":" << forcingMetrics.evaluationCount << ",\"physicalFieldReconstructionCount\":" << forcingMetrics.physicalFieldReconstructionCount << ",\"physicalFieldReuseCount\":" << forcingMetrics.physicalFieldReuseCount << ",\"nonlinearProducerCount\":" << forcingMetrics.nonlinearProducerCount << ",\"horizontalSpeedReductionCount\":" << forcingMetrics.horizontalSpeedReductionCount << ",\"verticalSpeedReductionCount\":" << forcingMetrics.verticalSpeedReductionCount << ",\"spatialTendencyProjectionCount\":" << forcingMetrics.spatialTendencyProjectionCount << ",\"spatialTendencyClearElementWrites\":" << forcingMetrics.spatialTendencyClearElementWrites << "},"
+           << "\"livenessBytes\":{\"integratorWorkspaceLive\":" << integratorWorkspaceLiveBytes << ",\"integratorWorkspaceMaximumLive\":" << integratorWorkspaceMaximumLiveBytes << ",\"forcingWorkspaceLive\":" << forcingMetrics.workspaceLiveBytes << ",\"forcingWorkspaceMaximumLive\":" << forcingMetrics.workspaceMaximumLiveBytes << ",\"denseHistoryRetainedWithinWorkspace\":" << denseHistoryBytes << ",\"acceptedStepAdditionalArrayStorage\":0,\"contractAbstractionAdditionalArrayStorage\":0,\"contractAbstractionMaximumLiveArrayStorage\":" << driverInterpolationMaximumLiveBytes << ",\"outputDriverRetained\":0,\"outputDriverMaximumLive\":" << outputDriverMaximumLiveBytes << ",\"outputPlanMaximumLive\":" << outputPlanMaximumLiveBytes << ",\"outputOrchestrationMaximumLive\":" << outputOrchestrationMaximumLiveBytes << ",\"occurrenceWorkspaceRetained\":" << occurrenceWorkspaceRetainedBytes << ",\"occurrenceWorkspaceMaximumLive\":" << occurrenceWorkspaceMaximumLiveBytes << ",\"knownRetained\":" << knownPersistentBytes << ",\"knownMaximumLive\":" << knownPersistentBytes+outputOrchestrationMaximumLiveBytes+outputEvaluationMetrics.additionalTransientHighWaterBytes << ",\"fullModelRetained\":" << fullModelRetainedBytes << ",\"fullModelMaximumLive\":" << fullModelMaximumLiveBytes << "},"
            << "\"rssBytes\":{\"integrationBaseline\":" << integrationBaselineRSS << ",\"processPeak\":" << integrationPeakRSS << ",\"peakIncrementLowerBound\":" << (integrationPeakRSS > integrationBaselineRSS ? integrationPeakRSS-integrationBaselineRSS : 0) << "},"
            << "\"integrationBreakdownSeconds\":{\"rightHandSide\":" << integratedObserverMetrics.rightHandSideSeconds << ",\"waveVortexFlux\":" << integratedObserverMetrics.waveVortexFluxSeconds << ",\"additionalStateClear\":" << integratedObserverMetrics.additionalStateClearSeconds << ",\"tracerAdvection\":" << integratedObserverMetrics.tracerAdvectionSeconds << ",\"tracerForward\":" << kernelMetrics.scalarForwardSeconds << ",\"tracerDerivativeAssembly\":" << kernelMetrics.scalarDerivativeAssemblySeconds << ",\"tracerVerticalDerivative\":" << kernelMetrics.scalarVerticalDerivativeSeconds << ",\"tracerInverse\":" << kernelMetrics.scalarInverseSeconds << ",\"tracerProduct\":" << kernelMetrics.scalarProductSeconds << ",\"tracerAntialias\":" << kernelMetrics.scalarAntialiasSeconds << ",\"particleAdvection\":" << integratedObserverMetrics.particleAdvectionSeconds << ",\"denseInterpolation\":" << driverInterpolationSeconds << ",\"observerEvaluation\":" << outputEvaluationMetrics.evaluationSeconds << ",\"outputPayloadWrite\":" << modelOutputMetrics.payloadWriteSeconds << ",\"outputSynchronization\":" << modelOutputMetrics.synchronizationSeconds << "},"
            << "\"execution\":{\"engine\":" << quoted(model.kernelProviderIdentifier()) << ",\"library\":" << quoted(model.kernelProviderLibraryIdentity()) << ",\"schedule\":" << quoted(model.forcingScheduleIdentifier()) << ",\"planCount\":" << kernelMetrics.planCount << ",\"noFallback\":true}";

@@ -26,6 +26,14 @@ struct WVHydrostaticStorage {
     std::size_t spectralScratchBytes = 0, realScratchBytes = 0, factorBytes = 0;
     std::size_t providerBytesLowerBound = 0, planBytesLowerBound = 0;
 };
+struct WVHydrostaticKernelMetrics {
+    std::size_t stateValidationCount = 0;
+    std::size_t derivedValidationCount = 0;
+    std::size_t phasePreparationCount = 0;
+    std::array<std::size_t,4> tendencyReconstructionCount{};
+    std::array<std::size_t,16> fieldReconstructionCount{};
+    std::array<std::array<std::array<std::size_t,5>,4>,16> reconstructionCount{};
+};
 
 // Immutable scientific source plus one owned mutable workspace. Coefficients
 // are interleaved [Nj,Nkl]; fields are column-major [Nx,Ny,Nz]. Separate kernel
@@ -42,12 +50,34 @@ public:
     const WVStratifiedModalGeometry& geometry() const noexcept { return source_->geometry(); }
     const std::vector<WVHydrostaticModeFactors>& factors() const noexcept { return factors_; }
     const WVHydrostaticStorage& storage() const noexcept { return storage_; }
+    const WVHydrostaticKernelMetrics& metrics() const noexcept { return metrics_; }
+    void resetMetrics() noexcept { metrics_ = {}; }
     const std::string& engineIdentifier() const noexcept { return engineIdentifier_; }
     const std::string& engineLibraryIdentity() const noexcept { return engineLibraryIdentity_; }
     const char* matrixBackendIdentifier() const noexcept { return vertical_[0]->backendIdentifier(); }
     WVShape2D spectralShape() const noexcept { return {geometry().Nj,geometry().Nkl}; }
     WVShape3D spatialShape() const noexcept { return {geometry().Nx,geometry().Ny,geometry().Nz}; }
     std::size_t persistentBytes() const noexcept;
+
+    // Begin an explicit evaluation of one immutable borrowed state. State
+    // validation and phase preparation are reused until endStateEvaluation().
+    // The coefficient arrays and state identity must remain unchanged.
+    WVKernelStatus beginStateEvaluation(const WVState&);
+    WVKernelStatus beginStateEvaluation(const WVState&, const void* evaluationOwner);
+    // Register another immutable coefficient view at the same evaluation
+    // times, retaining the already prepared phase factors.
+    WVKernelStatus addStateEvaluationView(const WVState&, const void* evaluationOwner,
+        std::size_t componentIdentity = 0);
+    WVKernelStatus removeStateEvaluationView(const WVState&, const void* evaluationOwner,
+        std::size_t componentIdentity);
+    WVKernelStatus endStateEvaluation();
+    bool stateEvaluationActive() const noexcept { return stateEvaluationActive_; }
+    WVKernelStatus validateStateEvaluation(const WVState&) const noexcept;
+    // Validate a flux target against the active (or standalone) state without
+    // executing coefficient evolution or projection.
+    WVKernelStatus validateFluxOutput(const WVState&, const WVFlux&);
+    // Borrowed until the next kernel operation; scoped calls reuse the active phase.
+    WVKernelStatus preparedPhase(const WVState&, WVComplexConstView&);
 
     WVKernelStatus transformToSpatial(WVComplexConstView, WVHydrostaticFamily, WVRealVolumeView);
     WVKernelStatus transformFromSpatial(WVRealVolumeConstView, WVHydrostaticFamily, WVComplexView);
@@ -57,6 +87,22 @@ public:
     // other fields support first derivatives. rhoTotal belongs to the full flow.
     WVKernelStatus transformStateField(const WVState&, WVHydrostaticField, WVRealVolumeView,
         WVHydrostaticDerivative = WVHydrostaticDerivative::value,
+        WVHydrostaticComponent = WVHydrostaticComponent::all);
+    // Reconstruct derived [u,v,eta] coefficient tendencies while retaining the
+    // active primary state's matching phase and foreign-state protection.
+    WVKernelStatus transformCoefficientTendencyToUVEta(
+        const WVState& tendency, WVRealFieldBundleView& fields);
+    // Combine exact prepared derivative operands without another reconstruction.
+    // zetaX expects (w_y,v_z); zetaY expects (u_z,w_x). Either input may be
+    // the exact output view; partial overlap remains invalid.
+    WVKernelStatus combinePreparedHorizontalVorticity(WVHydrostaticField,
+        WVRealVolumeConstView firstDerivative, WVRealVolumeConstView secondDerivative,
+        WVRealVolumeView output,
+        WVHydrostaticComponent = WVHydrostaticComponent::all);
+    // Convert exact prepared eta_z and eta operands to rho_e,z or rho_total,z.
+    WVKernelStatus combinePreparedDensityZDerivative(WVHydrostaticField,
+        WVRealVolumeConstView etaZ, WVRealVolumeConstView eta,
+        WVRealVolumeView output,
         WVHydrostaticComponent = WVHydrostaticComponent::all);
     // Linear phase evolution gives current-time coefficients; stored amplitudes
     // are stationary under the f-plane linear dynamics. Exact in-place allowed.
@@ -68,7 +114,8 @@ public:
     // With projectFlux=false, spatialTendency is required and flux is untouched.
     WVKernelStatus nonlinearFlux(const WVState&, WVFlux&,
         WVRealFieldBundleView* spatialTendency = nullptr,
-        const WVRealFieldBundleConstView* preparedFields = nullptr, bool projectFlux = true);
+        const WVRealFieldBundleConstView* preparedFields = nullptr, bool projectFlux = true,
+        WVStateDerivativeAccess* derivativeAccess = nullptr);
     WVKernelStatus totalEnergy(const WVCoefficients&, double&,
         WVHydrostaticComponent = WVHydrostaticComponent::all) const;
     WVKernelStatus totalEnstrophy(const WVCoefficients&, double&) const;
@@ -88,15 +135,23 @@ private:
     WVKernelStatus volume(WVRealVolumeConstView, bool surface = false) const;
     WVKernelStatus coefficients(const WVCoefficients&) const;
     WVKernelStatus outputs(WVMutableCoefficients) const;
-    WVKernelStatus state(const WVState&) const;
+    WVKernelStatus mutableOutputOutsidePreparedState(WVMutableCoefficients) const;
+    WVKernelStatus stateContents(const WVState&) const;
+    WVKernelStatus state(const WVState&);
+    bool matchesStateEvaluation(const WVState&) const noexcept;
+    std::size_t stateEvaluationComponent(const WVState&) const noexcept;
+    WVKernelStatus validateStateForCall(const WVState&);
+    WVKernelStatus preparePhaseForCall(const WVState&);
+    WVKernelStatus prepareProjectionPhaseForCall(double t,double t0);
     WVKernelStatus disjoint(const void*,std::size_t,const void*,std::size_t) const;
-    WVKernelStatus preparePhase(double t,double t0);
+    WVKernelStatus preparePhase(double t,double t0,const WVState* validatedState = nullptr);
     WVComplexOutput modalView(std::size_t slot = 0);
     WVComplexOutput gridView(std::size_t slot = 0);
     WVKernelStatus vertical(std::size_t,WVComplexInput,WVComplexOutput);
     WVKernelStatus project(const double*,WVComplexOutput,WVHydrostaticFamily);
     WVKernelStatus reconstruct(const WVCoefficients&,WVHydrostaticField,
-        WVHydrostaticDerivative,WVHydrostaticComponent,double*);
+        WVHydrostaticDerivative,WVHydrostaticComponent,double*,bool countPrimary = true,
+        std::size_t metricComponent = 5);
     WVKernelStatus projectFields(const double*,const double*,const double*,WVMutableCoefficients);
     WVKernelStatus projectedFieldsToCoefficients(
         WVComplexInput,WVComplexInput,WVComplexInput,WVMutableCoefficients);
@@ -105,6 +160,7 @@ private:
     std::shared_ptr<const WVStratifiedModalSource> source_;
     std::vector<WVHydrostaticModeFactors> factors_;
     WVHydrostaticStorage storage_;
+    WVHydrostaticKernelMetrics metrics_;
     std::string engineIdentifier_,engineLibraryIdentity_;
     std::unique_ptr<WVRetainedHorizontalOperator> horizontal_;
     std::unique_ptr<WVRetainedHorizontalWorkspace> horizontalWorkspace_;
@@ -114,6 +170,12 @@ private:
     std::unique_ptr<kernel_detail::WVPreparedModeExecutor> pointwise_;
     std::vector<WVComplex64> phase_;
     std::vector<double> real_;
+    WVState preparedState_{};
+    std::array<WVState,5> preparedStateViews_{};
+    std::array<std::size_t,5> preparedStateComponents_{};
+    std::size_t preparedStateViewCount_ = 0;
+    const void* preparedStateOwner_ = nullptr;
+    bool stateEvaluationActive_ = false;
     std::size_t S_ = 0,R_ = 0,H_ = 0;
     std::atomic<bool> active_{false};
 };

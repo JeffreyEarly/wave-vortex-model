@@ -2,6 +2,7 @@
 
 #include "WVFFTEngine.hpp"
 
+#include <array>
 #include <cstdint>
 #include <memory>
 #include <string>
@@ -105,7 +106,11 @@ struct WVBarotropicQGKernelMetrics {
     std::size_t forcingFieldReconstructionCount = 0;
     std::size_t forcingFieldReuseCount = 0;
     std::size_t forcingSpatialProjectionCount = 0;
+    std::size_t horizontalSpeedMaximumReductionCount = 0;
     std::size_t bytesCopied = 0;
+    std::size_t stateValidationCount = 0;
+    std::array<std::array<std::size_t,3>,8> reconstructionCount{};
+    std::array<std::array<std::array<std::size_t,5>,3>,8> componentReconstructionCount{};
 };
 
 // RHS-scoped transform workspace state. The numerical storage remains owned
@@ -119,6 +124,8 @@ struct WVBarotropicQGOperationWorkspace {
     const WVRealFieldBundleConstView* preparedVelocity = nullptr;
     bool physicalFieldsPrepared = false;
     bool qgpvDerivativesPrepared = false;
+    bool horizontalSpeedMaximumPrepared = false;
+    double horizontalSpeedMaximum = 0.0;
     std::size_t physicalFieldReconstructionCount = 0;
     std::size_t physicalFieldReuseCount = 0;
     std::size_t spatialTendencyProjectionCount = 0;
@@ -159,6 +166,17 @@ public:
     std::size_t persistentBytes() const noexcept;
     std::size_t scratchBytes() const noexcept;
 
+    // The borrowed A0 array remains immutable until endStateEvaluation().
+    WVKernelStatus beginStateEvaluation(const WVComplexConstView& A0);
+    WVKernelStatus beginStateEvaluation(const WVComplexConstView& A0, const void* evaluationOwner);
+    WVKernelStatus addStateEvaluationView(const WVComplexConstView& A0,
+        const void* evaluationOwner, std::size_t componentIdentity = 0);
+    WVKernelStatus removeStateEvaluationView(const WVComplexConstView& A0,
+        const void* evaluationOwner, std::size_t componentIdentity);
+    WVKernelStatus endStateEvaluation();
+    bool stateEvaluationActive() const noexcept { return stateEvaluationActive_; }
+    WVKernelStatus validateStateEvaluation(const WVComplexConstView& A0) const noexcept;
+
     WVKernelStatus transformQGPVToA0(const WVRealConstView& qgpv,
                                      WVComplexView& A0);
     WVKernelStatus transformA0ToQGPV(const WVComplexConstView& A0,
@@ -184,6 +202,11 @@ public:
         const WVComplexConstView& A0,
         const std::vector<double>& dampingOperator, WVComplexView& F0,
         bool accumulate, WVBarotropicQGOperationWorkspace& workspace);
+    // Reuse the operation workspace's prepared u/v fields and retain the
+    // reduction for subsequent adaptive forcing in the same RHS evaluation.
+    WVKernelStatus horizontalSpeedMaximum(
+        const WVComplexConstView& A0, double& maximumSpeed,
+        WVBarotropicQGOperationWorkspace& workspace);
     WVKernelStatus addLinearBottomFriction(
         const WVComplexConstView& A0, double rate, WVComplexView& F0,
         bool accumulate, WVBarotropicQGOperationWorkspace& workspace);
@@ -216,9 +239,17 @@ public:
         const WVRealFieldBundleConstView& advectionFields,
         bool shouldAntialias, WVRealView& rightHandSide);
     std::size_t enforceReality(WVComplexView& A0) const noexcept;
+    WVKernelStatus constrainA0(WVComplexView& A0, std::size_t& modified) const;
 
 private:
     WVTransformBarotropicQGKernel() = default;
+    WVKernelStatus validateState(const WVComplexConstView&) const;
+    WVKernelStatus validateStateForCall(const WVComplexConstView&) const;
+    WVKernelStatus mutableOutputOutsidePreparedState(const WVComplexView&) const;
+    bool matchesStateEvaluation(const WVComplexConstView&) const noexcept;
+    std::size_t stateEvaluationComponent(const WVComplexConstView&) const noexcept;
+    void recordReconstruction(const WVComplexConstView&,WVBarotropicQGField,
+        std::size_t derivative) const noexcept;
     WVKernelStatus preparePlans();
     WVKernelStatus forward(const WVRealConstView& input, WVComplexView& output,
                            bool accumulate = false);
@@ -230,6 +261,10 @@ private:
     WVKernelStatus ensureForcingFields(
         const WVComplexConstView& A0, bool requireQGPVDerivatives,
         WVBarotropicQGOperationWorkspace& workspace);
+    WVKernelStatus ensureHorizontalSpeedMaximum(
+        const WVComplexConstView& A0,
+        WVBarotropicQGOperationWorkspace& workspace);
+    double reduceHorizontalSpeedMaximum() const noexcept;
     WVKernelStatus inverseQGPVDerivative(const WVComplexConstView& A0,
                                          bool xDerivative,
                                          WVRealView& output);
@@ -258,6 +293,12 @@ private:
     std::vector<WVComplex64> halfSpectrumScratch_;
     std::vector<double> realScratch_;
     mutable WVBarotropicQGKernelMetrics metrics_;
+    WVComplexConstView preparedState_{};
+    std::array<WVComplexConstView,5> preparedStateViews_{};
+    std::array<std::size_t,5> preparedStateComponents_{};
+    std::size_t preparedStateViewCount_ = 0;
+    const void* preparedStateOwner_ = nullptr;
+    bool stateEvaluationActive_ = false;
     bool executing_ = false;
 };
 

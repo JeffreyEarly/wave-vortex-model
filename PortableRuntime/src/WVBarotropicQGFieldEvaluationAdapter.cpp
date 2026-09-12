@@ -16,6 +16,19 @@
 
 namespace wavevortex::runtime::detail {
 namespace {
+WVPortableVariable portableField(WVBarotropicQGField field) noexcept {
+  switch(field) {
+  case WVBarotropicQGField::u:return WVPortableVariable::u;
+  case WVBarotropicQGField::v:return WVPortableVariable::v;
+  case WVBarotropicQGField::eta:return WVPortableVariable::eta;
+  case WVBarotropicQGField::pi:return WVPortableVariable::pi;
+  case WVBarotropicQGField::psi:return WVPortableVariable::psi;
+  case WVBarotropicQGField::qgpv:return WVPortableVariable::qgpv;
+  case WVBarotropicQGField::zetaZ:return WVPortableVariable::zetaZ;
+  case WVBarotropicQGField::ssh:return WVPortableVariable::ssh;
+  }
+  return WVPortableVariable::invalid;
+}
 
 WVKernelStatus invalid(std::string message) {
   return {WVKernelStatusCode::invalidConfiguration, std::move(message)};
@@ -419,6 +432,53 @@ struct WVBarotropicQGFieldEvaluationAdapter::MovingInterpolationWorkspace {
 WVBarotropicQGFieldEvaluationAdapter::~WVBarotropicQGFieldEvaluationAdapter() =
     default;
 
+WVKernelStatus WVBarotropicQGFieldEvaluationAdapter::beginStateEvaluation(
+    const WVIntegrationState& state,const void* owner) {
+  WVComplexConstView coefficients;
+  const auto status=coefficientView(state,*kernel_,coefficients);
+  return status ? kernel_->beginStateEvaluation(coefficients,owner) : status;
+}
+
+WVKernelStatus WVBarotropicQGFieldEvaluationAdapter::addStateEvaluationView(
+    const WVIntegrationState& state,const void* owner,
+    std::size_t componentIdentity) {
+  WVComplexConstView coefficients;
+  const auto status=coefficientView(state,*kernel_,coefficients);
+  return status ? kernel_->addStateEvaluationView(
+      coefficients,owner,componentIdentity) : status;
+}
+
+WVKernelStatus WVBarotropicQGFieldEvaluationAdapter::removeStateEvaluationView(
+    const WVIntegrationState& state,const void* owner,
+    std::size_t componentIdentity) {
+  WVComplexConstView coefficients;
+  const auto status=coefficientView(state,*kernel_,coefficients);
+  return status ? kernel_->removeStateEvaluationView(
+      coefficients,owner,componentIdentity) : status;
+}
+
+void WVBarotropicQGFieldEvaluationAdapter::endStateEvaluation() noexcept {
+  if(kernel_) (void)kernel_->endStateEvaluation();
+}
+
+WVVariableProducerMetrics
+WVBarotropicQGFieldEvaluationAdapter::producerMetrics() const noexcept {
+  WVVariableProducerMetrics result;
+  const auto& metrics=kernel_->metrics();
+  result.stateValidations=metrics.stateValidationCount;
+  result.horizontalSpeedReductions=
+      metrics.horizontalSpeedMaximumReductionCount+
+      outputProducerMetrics_.horizontalSpeedReductions;
+  result.verticalSpeedReductions=outputProducerMetrics_.verticalSpeedReductions;
+  result.energyReductions=outputProducerMetrics_.energyReductions;
+  for(std::size_t field=0;field<metrics.componentReconstructionCount.size();++field)
+    for(std::size_t derivative=0;
+        derivative<metrics.componentReconstructionCount[field].size();++derivative)
+      result.reconstructions[field][derivative]=
+          metrics.componentReconstructionCount[field][derivative];
+  return result;
+}
+
 WVKernelStatus WVBarotropicQGFieldEvaluationAdapter::create(
     const WVTransformBarotropicQGConfiguration &configuration,
     std::unique_ptr<WVFFTEngine> engine,
@@ -561,13 +621,15 @@ WVKernelStatus WVBarotropicQGFieldEvaluationAdapter::createPlan(
 }
 
 WVKernelStatus WVBarotropicQGFieldEvaluationAdapter::transformField(
-    const WVIntegrationState& state,const WVComplexConstView& A0,WVBarotropicQGField field,WVRealView output,bool& reused) {
+    const WVIntegrationState&,const WVComplexConstView& A0,WVBarotropicQGField field,WVRealView output,bool& reused) {
   reused=false;
   const auto operation=[&](){return kernel_->transformA0ToField(A0,field,output);};
   if(!eventWorkspace_) return operation();
   const auto key=field==WVBarotropicQGField::ssh ? WVBarotropicQGField::pi : field;
-  return eventWorkspace_->evaluate(static_cast<std::size_t>(key),
-      {state.waveVortex.t,state.waveVortex.t0,{{},{},A0}},output.data,output.shape.elementCount(),operation,reused);
+  const WVVariableEvaluationKey evaluationKey{WVVariableEvaluationNode::physicalField,
+      static_cast<std::uint32_t>(portableField(key)),eventWorkspace_->component()};
+  return eventWorkspace_->evaluate(evaluationKey,output.data,
+      output.shape.elementCount(),operation,reused);
 }
 
 WVKernelStatus WVBarotropicQGFieldEvaluationAdapter::evaluate(
@@ -607,9 +669,22 @@ WVKernelStatus WVBarotropicQGFieldEvaluationAdapter::evaluate(
     if (activeOutputs && !activeOutputs[request.output]) continue;
     if (request.scalar != ScalarField::none) {
       double value = 0.0;
-      status = request.scalar == ScalarField::energy
-                   ? kernel_->totalEnergy(A0, value)
-                   : kernel_->uvMax(A0, value);
+      const auto variable=request.scalar==ScalarField::energy ?
+          WVPortableVariable::energy : WVPortableVariable::uvMax;
+      const auto produce=[&]() {
+        const auto produced=request.scalar==ScalarField::energy ?
+            kernel_->totalEnergy(A0,value) : kernel_->uvMax(A0,value);
+        if(produced && request.scalar==ScalarField::energy)
+          ++outputProducerMetrics_.energyReductions;
+        return produced;
+      };
+      bool reused=false;
+      const auto component=request.scalar==ScalarField::energy && eventWorkspace_ ?
+          eventWorkspace_->component() : 0u;
+      status=eventWorkspace_ ? eventWorkspace_->evaluate(
+          {WVVariableEvaluationNode::reduction,
+            static_cast<std::uint32_t>(variable),component},&value,1,produce,reused) :
+          produce();
       if (!status)
         return status;
       outputs[request.output].data[0] = value;

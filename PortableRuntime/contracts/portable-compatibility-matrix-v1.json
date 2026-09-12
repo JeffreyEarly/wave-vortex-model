@@ -103,13 +103,13 @@
       "id": "witness-forcing-barotropic-testFixedAmplitudeAndNarrowBand",
       "path": "PortableRuntime/tests/TestWVBarotropicQGForcing.cpp",
       "schema": "qualification-source",
-      "sha256": "43f1ced7ffe8756eb8a91866673b58e89bf7068d535f92c138b7e8e21bd0c885"
+      "sha256": "4ee3bd1eba666bf02e75f9f1c9eaf9cd9e4d8876f096d3a3f74336cbcccafd87"
     },
     {
       "id": "witness-forcing-constant-testFixedAmplitudeAndRK4",
       "path": "PortableRuntime/tests/TestWVForcingAndRK4.cpp",
       "schema": "qualification-source",
-      "sha256": "d2b5092001b1c1c992ea03346413c7266e69c7c30fc67b2a138d63db31dd7b6f"
+      "sha256": "7c716d471e59445da14d50ec1630180b85c0b3efbbeaaf97e9c07638b1b4dffd"
     },
     {
       "id": "witness-forcing-matlab-contracts",
@@ -169,7 +169,7 @@
       "id": "witness-ordinary-fields",
       "path": "UnitTests/TestPortableDiagnostics.m",
       "schema": "qualification-source",
-      "sha256": "09fff50e78e2f4cb184329c48759ea0b02f6407bbd64ac0801a879b4afb8c168"
+      "sha256": "3274fbe6035f102fb5bed449b4516513f13d025b0956a208ad894728cc1c294b"
     },
     {
       "id": "witness-density-fields",
@@ -247,7 +247,7 @@
       "id": "version-wave-vortex-run-request-v2",
       "path": "PortableRuntime/contracts/wave-vortex-run-request-v2.schema.json",
       "schema": "version-authority",
-      "sha256": "9e54932418a46b260de2c6cd4f29b2353058a4d031ef8acd209e21c961b65797"
+      "sha256": "0d5535b11df3a54ea2c9416b27f528dced467c378dd7d7c4ba00adc261cfca9c"
     },
     {
       "id": "version-WVEvenlySpacedOutputSchedule",

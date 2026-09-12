@@ -1,14 +1,23 @@
 #pragma once
+#include "WaveVortexRuntime/WVForcingContracts.hpp"
 #include "WaveVortexRuntime/WVForcingTendency.hpp"
 #include "WaveVortexRuntime/WVForcing.hpp"
 #include "WaveVortexRuntime/WVPortableVariablePlan.hpp"
+#include "WVForcingDiagnosticWorkspace.hpp"
+#include <array>
 #include <limits>
 #include <memory>
 #include <string>
 #include <type_traits>
 #include <vector>
 
-namespace wavevortex::runtime { class WVConstantStratificationForcingEngine; }
+namespace wavevortex::runtime {
+class WVConstantStratificationForcingEngine;
+class WVBarotropicQGForcingEngine;
+class WVStratifiedQGForcingEngine;
+class WVHydrostaticForcingEngine;
+class WVBoussinesqForcingEngine;
+}
 
 namespace wavevortex::runtime::detail {
 
@@ -25,6 +34,7 @@ public:
   };
   struct Output {
     const WVPortableVariableContract* contract=nullptr;
+    WVPortableVariablePlan plan;
     std::size_t executionIndex=0,channel=0,physicalChannels=0;
     std::string_view instanceName;
     std::uint32_t instanceOrdinal=0;
@@ -37,6 +47,28 @@ public:
       bool prefixQualified=true,physicalNeeded=false;
       for(std::size_t index=0;index<engine.forcingCount();++index) {
         const auto* instance=engine.forcingInstance(index);
+        const auto* dependencies=engine.forcingEvaluationDependencies(index);
+        if(!dependencies)
+          return {WVKernelStatusCode::invalidConfiguration,
+              "Forcing evaluation dependencies are unavailable."};
+        candidate->nonlinearUseCount_+=dependencies->nonlinearUseCount;
+        candidate->horizontalMaximumNeeded_|=dependencies->horizontalMaximumNeeded;
+        if constexpr(std::is_same_v<Engine,
+            WVConstantStratificationForcingEngine>) {
+          for(std::size_t i=0;i<candidate->constantLaplacianUseCount_.size();++i)
+            candidate->constantLaplacianUseCount_[i]+=
+                dependencies->constantLaplacianUseCount[i];
+        } else if constexpr(std::is_same_v<Engine,
+            WVHydrostaticForcingEngine>) {
+          for(std::size_t i=0;i<candidate->gridCalculusUseCount_.size();++i)
+            candidate->gridCalculusUseCount_[i]+=
+                dependencies->hydrostaticGridCalculusUseCount[i];
+        } else if constexpr(std::is_same_v<Engine,
+            WVBoussinesqForcingEngine>) {
+          for(std::size_t i=0;i<candidate->gridCalculusUseCount_.size();++i)
+            candidate->gridCalculusUseCount_[i]+=
+                dependencies->boussinesqGridCalculusUseCount[i];
+        }
         if(instance->ordinal()>std::numeric_limits<std::uint32_t>::max())
           return {WVKernelStatusCode::invalidConfiguration,"Forcing instance ordinal exceeds the graph contract."};
         for(const auto& previous:candidate->bindings_) if(previous.instanceOrdinal==instance->ordinal())
@@ -45,12 +77,13 @@ public:
         physicalNeeded|=instance->requiresDiagnosticPhysicalFields();
         candidate->physicalPrefix_.push_back(physicalNeeded);
         candidate->bindings_.push_back({instance->name(),static_cast<std::uint32_t>(instance->ordinal()),prefixQualified});
+        candidate->stages_.push_back(instance->stage());
       }
       candidate->physicalChannels_=QG ? 2 : std::is_same_v<Engine,WVConstantStratificationForcingEngine> ? 3 : 4;
-      candidate->evaluate_=[](void* pointer,const WVState& state,const WVForcingTendencyOutput* outputs,std::size_t count,const WVRealFieldBundleConstView* prepared) {
+      candidate->evaluate_=[](void* pointer,const WVState& state,const WVForcingTendencyOutput* outputs,std::size_t count,const WVRealFieldBundleConstView* prepared,WVForcingDiagnosticWorkspace* session) {
         auto& resolved=*static_cast<Engine*>(pointer);
-        if constexpr(QG) return resolved.evaluateForcingTendencies(state.coefficients.A0,outputs,count,prepared);
-        else return resolved.evaluateForcingTendencies(state,outputs,count,prepared);
+        if constexpr(QG) return resolved.evaluateForcingTendencies(state.coefficients.A0,outputs,count,prepared,session);
+        else return resolved.evaluateForcingTendencies(state,outputs,count,prepared,session);
       };
       candidate->metrics_=[](const void* pointer)->const WVForcingTendencyMetrics& {return static_cast<const Engine*>(pointer)->tendencyMetrics();};
       candidate->instance_=[](const void* pointer,std::size_t index)->Identity {
@@ -58,6 +91,37 @@ public:
         return {instance->typeIdentifier(),instance->name(),instance->contractVersion(),
             instance->stage(),instance->priority(),instance->ordinal()};
       };
+      if constexpr(std::is_same_v<Engine,
+          WVConstantStratificationForcingEngine>) {
+        const auto& descriptor=engine.kernel().descriptor();
+        const auto shape=descriptor.spatialShape();
+        candidate->spectral_=descriptor.spectralShape();
+        const auto& configuration=descriptor.configuration();
+        candidate->requiresFourChannelTendencySelection_=configuration.isHydrostatic;
+        candidate->spatial_={shape.first,shape.second,shape.third,
+            configuration.isHydrostatic ? 3u : 4u};
+      } else if constexpr(std::is_same_v<Engine,
+          WVBarotropicQGForcingEngine>) {
+        const auto& descriptor=engine.kernel().descriptor();
+        const auto shape=descriptor.spatialShape();
+        candidate->spectral_=descriptor.spectralShape();
+        candidate->spatial_={shape.rows,shape.columns,1,1};
+      } else if constexpr(std::is_same_v<Engine,
+          WVStratifiedQGForcingEngine>) {
+        const auto shape=engine.kernel().spatialShape();
+        candidate->spectral_=engine.kernel().spectralShape();
+        candidate->spatial_={shape.first,shape.second,shape.third,1};
+      } else if constexpr(std::is_same_v<Engine,
+          WVHydrostaticForcingEngine>) {
+        const auto shape=engine.kernel().spatialShape();
+        candidate->spectral_=engine.kernel().spectralShape();
+        candidate->spatial_={shape.first,shape.second,shape.third,3};
+      } else {
+        const auto shape=engine.kernel().spatialShape();
+        candidate->spectral_=engine.kernel().spectralShape();
+        candidate->spatial_={shape.first,shape.second,shape.third,4};
+      }
+      candidate->coefficientFamilies_=QG ? 1 : 3;
       result=std::move(candidate);
       return WVKernelStatus::ok();
     } catch(const std::bad_alloc&) {
@@ -73,7 +137,7 @@ public:
     if(status!=WVPortableVariableStatus::supported)
       return {WVKernelStatusCode::unsupportedOperation,"Forcing diagnostic identity, sampling, or instance binding is unsupported or ambiguous: "+std::string(name)};
     for(std::size_t index=0;index<bindings_.size();++index) if(bindings_[index].instanceOrdinal==plan.forcingInstanceOrdinal) {
-      output.contract=plan.output; output.executionIndex=index;
+      output.contract=plan.output; output.plan=plan; output.executionIndex=index;
       output.instanceName=bindings_[index].instanceName; output.instanceOrdinal=bindings_[index].instanceOrdinal;
       output.physicalChannels=physicalPrefix_[index] ? physicalChannels_ : 0;
       switch(plan.output->metadata.identifier) {
@@ -88,8 +152,25 @@ public:
     }
     return {WVKernelStatusCode::invalidConfiguration,"Resolved forcing instance is absent from its execution schedule."};
   }
-  WVKernelStatus evaluate(const WVState& state,const WVForcingTendencyOutput* outputs,std::size_t count,const WVRealFieldBundleConstView* prepared) const {
-    return evaluate_(engine_,state,outputs,count,prepared);
+  WVKernelStatus evaluate(const WVState& state,const WVForcingTendencyOutput* outputs,std::size_t count,const WVRealFieldBundleConstView* prepared,WVForcingDiagnosticWorkspace* session) const {
+    return evaluate_(engine_,state,outputs,count,prepared,session);
+  }
+  std::unique_ptr<WVForcingDiagnosticWorkspace> createWorkspace() const {
+    auto workspace=std::make_unique<WVForcingDiagnosticWorkspace>(
+        spectral_,spatial_,coefficientFamilies_,coefficientFamilies_==1 ? 2 : 4);
+    workspace->nonlinearUseCount=nonlinearUseCount_;
+    workspace->requiresFourChannelTendencySelection=requiresFourChannelTendencySelection_;
+    workspace->gridCalculusUseCount=gridCalculusUseCount_;
+    workspace->constantLaplacianUseCount=constantLaplacianUseCount_;
+    return workspace;
+  }
+  const std::vector<WVForcingStage>& stages() const noexcept {return stages_;}
+  bool horizontalMaximumNeeded() const noexcept {
+    return horizontalMaximumNeeded_;
+  }
+  std::vector<WVVariableEvaluationKey> dependencyKeys() const {
+    return WVForcingDiagnosticWorkspace::dependencyKeys(bindings_.size(),
+        &gridCalculusUseCount_,&constantLaplacianUseCount_);
   }
   bool hasSamePrefix(const WVForcingDiagnosticBinding& other,std::size_t index,std::size_t otherIndex) const noexcept {
     if(index!=otherIndex || index>=bindings_.size() || otherIndex>=other.bindings_.size()) return false;
@@ -103,16 +184,30 @@ public:
   }
   const WVForcingTendencyMetrics& metrics() const {return metrics_(engine_);}
   const std::vector<WVPortableForcingVariableBinding>& bindings() const noexcept {return bindings_;}
+  std::size_t fullSchedulePhysicalChannels() const noexcept {
+    return !physicalPrefix_.empty() && physicalPrefix_.back() ? physicalChannels_ : 0;
+  }
   std::size_t persistentBytes() const noexcept {
-    return sizeof(*this)+bindings_.capacity()*sizeof(WVPortableForcingVariableBinding)+physicalPrefix_.capacity()*sizeof(std::uint8_t);
+    return sizeof(*this)+bindings_.capacity()*sizeof(WVPortableForcingVariableBinding)+
+        physicalPrefix_.capacity()*sizeof(std::uint8_t)+
+        stages_.capacity()*sizeof(WVForcingStage);
   }
 private:
   void* engine_=nullptr;
-  WVKernelStatus (*evaluate_)(void*,const WVState&,const WVForcingTendencyOutput*,std::size_t,const WVRealFieldBundleConstView*)=nullptr;
+  WVKernelStatus (*evaluate_)(void*,const WVState&,const WVForcingTendencyOutput*,std::size_t,const WVRealFieldBundleConstView*,WVForcingDiagnosticWorkspace*)=nullptr;
   const WVForcingTendencyMetrics& (*metrics_)(const void*)=nullptr;
   Identity (*instance_)(const void*,std::size_t)=nullptr;
   std::vector<WVPortableForcingVariableBinding> bindings_;
   std::vector<std::uint8_t> physicalPrefix_;
+  std::vector<WVForcingStage> stages_;
+  WVShape2D spectral_{};
+  WVShape4D spatial_{};
+  std::size_t coefficientFamilies_=3;
   std::size_t physicalChannels_=0;
+  std::size_t nonlinearUseCount_=0;
+  std::array<std::size_t,16> gridCalculusUseCount_{};
+  std::array<std::size_t,2> constantLaplacianUseCount_{};
+  bool requiresFourChannelTendencySelection_=false;
+  bool horizontalMaximumNeeded_=false;
 };
 }

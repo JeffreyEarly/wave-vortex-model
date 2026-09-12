@@ -74,6 +74,16 @@ public:
   // failure. rhoNm always means actual recovery, independently of the selected
   // reference used by etaTrue/ape. A zero demand performs no numerical work.
   WVKernelStatus prepare(std::uint8_t demands);
+  WVKernelStatus reserveStorage(std::size_t sampleCount,
+      std::size_t profileCount,std::uint8_t demands,
+      WVNoMotionReference reference);
+  // Prepare the minimum reusable volume storage for low-memory execution.
+  // One derived field uses one volume; simultaneous eta/APE uses two because
+  // both published values must coexist. Material heights are overwritten in
+  // place after their final consumer.
+  WVKernelStatus reserveLowMemoryStorage(std::size_t sampleCount,
+      std::size_t profileCount,std::uint8_t demands,
+      WVNoMotionReference reference);
 
   // Validate all views and aliasing first, prepare every demand, then publish
   // together. Failure never changes any caller buffer. Duplicate field requests
@@ -91,6 +101,12 @@ public:
   // Frees all owned vector storage and clears the borrowed binding. Counters
   // and high-water values remain available; liveBytes becomes zero.
   void release() noexcept;
+  // Clear this event binding and all ready flags while preserving vector
+  // capacities prepared by the owning output arena.
+  void resetRetainingCapacity() noexcept;
+  // Drop only logical derived values while retaining this immutable binding
+  // and any bounded low-memory capacities prepared for repeated calls.
+  void discardDerived() noexcept;
 
 private:
   WVKernelStatus recoverActual();
@@ -110,7 +126,12 @@ private:
   WVDensityEventMetrics metrics_;
   WVNoMotionProfile profile_;
   std::vector<double> actualProfile_, materialHeights_, etaTrue_, ape_;
+  std::vector<double> lowPrimary_, lowSecondary_;
   std::size_t sampleCount_ = 0;
+  std::uint8_t lowMemoryDemands_ = 0;
+  int etaLowSlot_ = -1;
+  int apeLowSlot_ = -1;
+  bool lowMemoryStorage_ = false;
   bool initialized_ = false;
   bool actualReady_ = false;
   bool profileReady_ = false;

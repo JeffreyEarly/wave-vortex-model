@@ -1,0 +1,26 @@
+{
+  "change": "Refresh two stale keySourceSHA256 values in CompiledKernel/source-selection.json after the unified evaluation implementation. No compiled source or numerical algorithm changed.",
+  "hostedFailureRun": 34664175939,
+  "hostedFailureTest": "TestCompiledKernelIntegration/keyRuntimeHashesMatchTheSelection",
+  "correctedSelection": {
+    "preparedModeExecutor": "817d2a3cd791b51a38e0e427a1d6800d376aaa976ca7100f438599841fabce93",
+    "coefficientFormulas": "78d647608d8919b33c278c280eb6d2b253dfb0acd8d3330141fbdc845e00864a",
+    "kernel": "a07893470f3c9b27a2fe297473660b718f65947424ba879f2a7a91083c644681",
+    "integrationSystem": "21d00e8a75de899425ff991896d9d9dedff2201228835d0f97e01bc9dab569eb",
+    "nativeEngine": "bf22362163ad2899a487fed012c40fa212e5ac74c67e6449eacfc239dad21c4e",
+    "mexGateway": "b68cc36464bb6b46a3e10c69fa1964c76269aac717cedf88e9657f285a6c8ea6",
+    "buildOrchestrator": "d724445240b1b8832746ab8ab95cb8fceefcc86973acf189054949ad5002b0a9"
+  },
+  "focusedMatlabContract": {
+    "class": "TestCompiledKernelIntegration",
+    "passed": 5,
+    "failed": 0,
+    "log": "/private/tmp/wvm471-selection-matlab.log",
+    "logSHA256": "cb11f721facc558236dbffdb51b98cb80e56c13c7f03b3e6d5b185e24a13d089"
+  },
+  "repositoryCheck": {
+    "passed": true,
+    "log": "/private/tmp/wvm471-selection-repository-check.log"
+  },
+  "performance": "The frozen 5b6b5fab compiled implementation is unchanged; no new benchmark or native test run is required for this metadata-only correction."
+}

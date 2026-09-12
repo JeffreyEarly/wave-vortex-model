@@ -12,6 +12,7 @@ public:
   virtual ~WVResolvedModelSystem() = default;
   virtual WVIntegrationSystem &integrationSystem() noexcept = 0;
   virtual const WVIntegrationSystem &integrationSystem() const noexcept = 0;
+  virtual WVKernelStatus setVariableEvaluationPolicy(WVVariableEvaluationPolicy) = 0;
   virtual void setLinearDynamics(bool linear) noexcept = 0;
   virtual const std::string &forcingScheduleIdentifier() const noexcept = 0;
   virtual const std::string &kernelProviderIdentifier() const noexcept = 0;

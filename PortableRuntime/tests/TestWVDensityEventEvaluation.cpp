@@ -277,6 +277,7 @@ void bindingAndLifecycle() {
               event.initialized(), "failed binding destroyed previous valid event");
   require(bool(event.evaluate(&request, 1)) && rho[1] == 1026.5, "first event failed");
   const auto peak = event.metrics().highWaterBytes;
+  const auto recoveries = event.metrics().recoveryCount;
   const auto *samePointer = fixture.density.data();
   event.release();
   require(!event.initialized() && event.metrics().liveBytes == 0 &&
@@ -285,7 +286,8 @@ void bindingAndLifecycle() {
   fixture.density[2] = fixture.density[3] = 1026.75;
   require(fixture.density.data() == samePointer, "lifecycle fixture changed its data address");
   fixture.bind(event, WVNoMotionReference::actual);
-  require(bool(event.evaluate(&request, 1)) && rho[1] == 1026.75 && event.metrics().recoveryCount == 1,
+  require(bool(event.evaluate(&request, 1)) && rho[1] == 1026.75 &&
+              event.metrics().recoveryCount == recoveries + 1,
           "fresh event reused stale same-pointer density");
   for (int i = 0; i < 100; ++i) {
     event.release();
@@ -298,10 +300,68 @@ void bindingAndLifecycle() {
   event.release();
   require(event.metrics().liveBytes == 0, "last event retained workspace");
 }
+
+void lowMemoryPreparedScratch() {
+  Fixture fixture;
+  WVDensityEventEvaluation event;
+  constexpr auto derived=static_cast<std::uint8_t>(
+      WVDensityEventEvaluation::etaTrueDemand|
+      WVDensityEventEvaluation::apeDemand);
+  require(bool(event.reserveLowMemoryStorage(
+      fixture.density.size(),fixture.z.size(),derived,
+      WVNoMotionReference::initial)),
+      "low-memory density scratch preparation failed");
+  fixture.bind(event,WVNoMotionReference::initial);
+  std::vector<double> eta(6),ape(6),etaReplay(6),apeReplay(6);
+  WVDensityEventOutput first[]={{WVDensityEventField::etaTrue,
+      eta.data(),eta.size()},{WVDensityEventField::ape,ape.data(),ape.size()}};
+  require(bool(event.evaluate(first,2)),
+      "prepared low-memory density evaluation failed");
+  const auto* etaStorage=event.view(WVDensityEventField::etaTrue).data;
+  const auto* apeStorage=event.view(WVDensityEventField::ape).data;
+  require(etaStorage && apeStorage && etaStorage!=apeStorage &&
+          !event.materialHeights().data,
+      "low-memory density results did not consume the inverse scratch in place");
+  const auto peak=event.metrics().highWaterBytes;
+  event.discardDerived();
+  require(!event.view(WVDensityEventField::etaTrue).data &&
+          !event.view(WVDensityEventField::ape).data &&
+          event.metrics().liveBytes==2*fixture.density.size()*sizeof(double),
+      "low-memory density discard released capacity or retained a ready value");
+  WVDensityEventOutput second[]={{WVDensityEventField::etaTrue,
+      etaReplay.data(),etaReplay.size()},{WVDensityEventField::ape,
+      apeReplay.data(),apeReplay.size()}};
+  require(bool(event.evaluate(second,2)) && etaReplay==eta && apeReplay==ape &&
+          event.view(WVDensityEventField::etaTrue).data==etaStorage &&
+          event.view(WVDensityEventField::ape).data==apeStorage &&
+          event.metrics().inversePassCount==2 &&
+          event.metrics().apePassCount==2 &&
+          event.metrics().highWaterBytes==peak,
+      "low-memory density replay allocated, changed values or reused evicted work");
+  require(!event.prepare(WVDensityEventEvaluation::rhoNmDemand),
+      "low-memory density accepted an unprepared demand");
+  event.release();
+  require(event.metrics().liveBytes==0,
+      "low-memory density release retained prepared capacity");
+
+  WVDensityEventEvaluation rhoOnly;
+  require(bool(rhoOnly.reserveLowMemoryStorage(
+      fixture.density.size(),fixture.z.size(),
+      WVDensityEventEvaluation::rhoNmDemand,WVNoMotionReference::actual)),
+      "rho_nm-only low-memory preparation failed");
+  fixture.bind(rhoOnly,WVNoMotionReference::actual);
+  require(bool(rhoOnly.prepare(WVDensityEventEvaluation::rhoNmDemand)) &&
+          rhoOnly.metrics().inversePassCount==0,
+      "rho_nm-only low-memory preparation allocated parcel calculus");
+  rhoOnly.discardDerived();
+  require(rhoOnly.metrics().liveBytes==fixture.z.size()*sizeof(double),
+      "rho_nm-only low-memory scratch retained a volume");
+}
 } // namespace
 
 int main() {
   try {
+    lowMemoryPreparedScratch();
     mixedReferencesAndDemandOrder();
     preflightAndTransactionalFailures();
     recoveryFitAndBudgetFailure();

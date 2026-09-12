@@ -23,6 +23,30 @@ std::size_t vectorBytes(const std::vector<T> &values) noexcept {
   return values.capacity() * sizeof(T);
 }
 
+class ScopedStratifiedQGEvaluation final {
+public:
+  ScopedStratifiedQGEvaluation(WVStratifiedQGForcingEngine &engine,
+                              WVComplexConstView state)
+      : engine_(engine) {
+    if (engine_.stateEvaluationActive())
+      status_ = engine_.validateStateEvaluation(state);
+    else {
+      status_ = engine_.beginStateEvaluation(state);
+      owns_ = static_cast<bool>(status_);
+    }
+  }
+  ~ScopedStratifiedQGEvaluation() {
+    if (owns_)
+      (void)engine_.endStateEvaluation();
+  }
+  const WVKernelStatus &status() const noexcept { return status_; }
+
+private:
+  WVStratifiedQGForcingEngine &engine_;
+  bool owns_ = false;
+  WVKernelStatus status_ = WVKernelStatus::ok();
+};
+
 std::size_t stageRank(WVForcingStage stage) noexcept {
   return static_cast<std::size_t>(stage);
 }
@@ -466,23 +490,68 @@ WVKernelStatus WVStratifiedQGForcingExecutionContext::nonlinearAdvection() {
     if (result) engine_->metrics_.physicalFieldReconstructionCount+=2;
     return result;
   }
-  const auto status = engine_->kernel().nonlinearFlux(A0_,{engine_->tendencyScratch_.data(),F0_.shape});
-  if (status) {
-    engine_->metrics_.physicalFieldReconstructionCount += 4;
+  if (engine_->evaluationPolicy_ == WVVariableEvaluationPolicy::lowMemory) {
+    WVRealFieldBundleConstView fields;
+    auto status = engine_->evaluationVelocity(A0_, fields);
+    if (!status)
+      return status;
+    status = engine_->kernel().nonlinearFlux(
+        A0_, {engine_->tendencyScratch_.data(), F0_.shape}, 0, nullptr,
+        &fields);
+    if (status) {
+      engine_->metrics_.physicalFieldReconstructionCount += 2;
+      engine_->metrics_.spatialTendencyProjectionCount += 1;
+    }
+    (void)engine_->evaluation_.evict(
+        {WVVariableEvaluationNode::physicalField, 0});
+    (void)engine_->evaluation_.evict(
+        {WVVariableEvaluationNode::physicalField, 1});
+    return accumulate(status);
+  }
+  const WVVariableEvaluationKey nonlinear{
+      WVVariableEvaluationNode::forcingTendency, 0};
+  const bool ready = engine_->evaluation_.ready(nonlinear);
+  auto status = engine_->evaluation_.evaluate(
+      nonlinear, engine_->nonlinearScratch_.size() * sizeof(WVComplex64), [&] {
+        WVRealFieldBundleConstView fields;
+        auto prepared = engine_->evaluationVelocity(A0_, fields);
+        if (!prepared)
+          return prepared;
+        return engine_->kernel().nonlinearFlux(
+            A0_, {engine_->nonlinearScratch_.data(), F0_.shape}, 0, nullptr,
+            &fields);
+      });
+  if (!status)
+    return status;
+  if (!ready) {
+    engine_->metrics_.physicalFieldReconstructionCount += 2;
     engine_->metrics_.spatialTendencyProjectionCount += 1;
   }
-  return accumulate(status);
+  std::copy(engine_->nonlinearScratch_.begin(),
+            engine_->nonlinearScratch_.end(), engine_->tendencyScratch_.begin());
+  return accumulate(WVKernelStatus::ok());
 }
 WVKernelStatus WVStratifiedQGForcingExecutionContext::adaptiveDamping(const std::vector<double> &damping) {
   double speed=0;
   if (engine_->diagnosticWorkspace_) {
-    WVRealFieldBundleConstView fields;
-    auto status=engine_->diagnosticVelocity(A0_,fields); if (!status) return status;
-    const auto R=engine_->kernel().spatialShape().elementCount();
-    for (std::size_t i=0;i<R;++i) speed=std::max(speed,std::hypot(fields.data[i],fields.data[R+i]));
+    auto status=engine_->diagnosticWorkspace_->evaluateHorizontalMaximum(
+        speed,[&](double& maximum) {
+          return engine_->computeHorizontalSpeedMaximum(A0_,maximum);
+        });
+    if (!status) return status;
   } else {
-    auto status=engine_->kernel().uvMax(A0_,speed); if (!status) return status;
-    engine_->metrics_.physicalFieldReconstructionCount+=2;
+    if (engine_->evaluationPolicy_ == WVVariableEvaluationPolicy::lowMemory) {
+      auto status=engine_->horizontalSpeedMaximum(A0_,speed);
+      if (!status) return status;
+      (void)engine_->evaluation_.evict(
+          {WVVariableEvaluationNode::reduction, 0});
+      (void)engine_->evaluation_.evict(
+          {WVVariableEvaluationNode::physicalField, 0});
+      (void)engine_->evaluation_.evict(
+          {WVVariableEvaluationNode::physicalField, 1});
+    } else {
+      auto status=engine_->horizontalSpeedMaximum(A0_,speed); if (!status) return status;
+    }
   }
   if (!outputInitialized_) { engine_->initializeOutputWithZeros(F0_); outputInitialized_=true; }
   for (std::size_t i=0;i<damping.size();++i) {
@@ -517,9 +586,31 @@ WVKernelStatus WVStratifiedQGForcingExecutionContext::quadraticBottomFriction(do
     work.spatialCaptured=bool(result);
     return result;
   }
-  const auto status = engine_->kernel().quadraticBottomFrictionFlux(A0_,drag,{engine_->tendencyScratch_.data(),F0_.shape});
+  if (engine_->evaluationPolicy_ == WVVariableEvaluationPolicy::lowMemory) {
+    WVRealFieldBundleConstView fields;
+    auto status = engine_->evaluationVelocity(A0_, fields);
+    if (!status)
+      return status;
+    status = engine_->kernel().quadraticBottomFrictionFlux(
+        A0_, drag, {engine_->tendencyScratch_.data(), F0_.shape}, nullptr,
+        &fields);
+    if (status) {
+      engine_->metrics_.spatialTendencyProjectionCount += 2;
+    }
+    (void)engine_->evaluation_.evict(
+        {WVVariableEvaluationNode::physicalField, 0});
+    (void)engine_->evaluation_.evict(
+        {WVVariableEvaluationNode::physicalField, 1});
+    return accumulate(status);
+  }
+  WVRealFieldBundleConstView fields;
+  auto status = engine_->evaluationVelocity(A0_, fields);
+  if (!status)
+    return status;
+  status = engine_->kernel().quadraticBottomFrictionFlux(
+      A0_, drag, {engine_->tendencyScratch_.data(), F0_.shape}, nullptr,
+      &fields);
   if (status) {
-    engine_->metrics_.physicalFieldReconstructionCount += 2;
     engine_->metrics_.spatialTendencyProjectionCount += 2;
   }
   return accumulate(status);
@@ -558,6 +649,16 @@ void WVStratifiedQGForcingExecutionContext::zeroSelectedTendencies(
 }
 
 WVStratifiedQGForcingEngine::~WVStratifiedQGForcingEngine() = default;
+
+const WVForcingEvaluationDependencies*
+WVStratifiedQGForcingEngine::forcingEvaluationDependencies(
+    std::size_t index) const noexcept {
+  const auto* forcing=forcingInstance(index);
+  if(!forcing || !catalog_) return nullptr;
+  const auto* registration=catalog_->forcings().registration(
+      forcing->typeIdentifier(),forcing->contractVersion());
+  return registration ? &registration->evaluationDependencies : nullptr;
+}
 
 WVKernelStatus WVStratifiedQGForcingEngine::validateSchedule(
     const WVStratifiedModalGeometry &configuration,
@@ -696,10 +797,181 @@ WVKernelStatus WVStratifiedQGForcingEngine::initialize(
     identifier << entries[index]->typeIdentifier;
   }
   scheduleIdentifier_ = identifier.str();
+  const auto spatialCount = kernel_->spatialShape().elementCount();
+  velocityScratch_.resize(3 * spatialCount);
+  nonlinearScratch_.resize(tendencyScratch_.size());
+  auto status = evaluation_.prepare(
+      {{WVVariableEvaluationNode::physicalField, 0},
+       {WVVariableEvaluationNode::physicalField, 1},
+       {WVVariableEvaluationNode::reduction, 0},
+       {WVVariableEvaluationNode::forcingTendency, 0}});
+  if (!status)
+    return status;
   metrics_.scheduleBytes =
       scheduleIdentifier_.capacity() +
       forcing_.capacity() * sizeof(std::unique_ptr<WVStratifiedQGForcing>);
-  metrics_.workspaceCapacityBytes = vectorBytes(tendencyScratch_);
+  metrics_.workspaceCapacityBytes = vectorBytes(tendencyScratch_) +
+                                    vectorBytes(nonlinearScratch_) +
+                                    vectorBytes(velocityScratch_);
+  return WVKernelStatus::ok();
+}
+
+WVKernelStatus WVStratifiedQGForcingEngine::beginStateEvaluation(
+    const WVComplexConstView &A0) {
+  if (evaluation_.active() || executing_)
+    return {WVKernelStatusCode::reentrantExecution,
+            "Stratified QG state evaluation is already active."};
+  const bool ownsKernelScope=!kernel_->stateEvaluationActive();
+  auto status = ownsKernelScope ? kernel_->beginStateEvaluation(A0) :
+                                  kernel_->validateStateEvaluation(A0);
+  if (!status)
+    return status;
+  status = evaluation_.begin(this, evaluationPolicy_);
+  if (!status) {
+    if (ownsKernelScope) (void)kernel_->endStateEvaluation();
+    return status;
+  }
+  evaluationOwnsKernelScope_=ownsKernelScope;
+  evaluationState_ = A0;
+  evaluationVelocity_ = {};
+  return WVKernelStatus::ok();
+}
+
+WVKernelStatus WVStratifiedQGForcingEngine::validateVariableEvaluationPolicyChange(
+    WVVariableEvaluationPolicy policy) const noexcept {
+  if (executing_ || evaluation_.active())
+    return {WVKernelStatusCode::reentrantExecution,
+            "Cannot change an active evaluation policy."};
+  if (policy != WVVariableEvaluationPolicy::reuse &&
+      policy != WVVariableEvaluationPolicy::lowMemory)
+    return {WVKernelStatusCode::invalidConfiguration,
+            "Unknown variable evaluation policy."};
+  return WVKernelStatus::ok();
+}
+
+WVKernelStatus WVStratifiedQGForcingEngine::setVariableEvaluationPolicy(
+    WVVariableEvaluationPolicy policy) {
+  auto status=validateVariableEvaluationPolicyChange(policy);
+  if(!status) return status;
+  if (policy == WVVariableEvaluationPolicy::reuse &&
+      (velocityScratch_.size() !=
+           3 * kernel_->spatialShape().elementCount() ||
+       nonlinearScratch_.size() != tendencyScratch_.size())) {
+    std::vector<double> preparedVelocity;
+    std::vector<WVComplex64> preparedNonlinear;
+    try {
+      if(velocityScratch_.size()!=3*kernel_->spatialShape().elementCount())
+        preparedVelocity.resize(3*kernel_->spatialShape().elementCount());
+      if(nonlinearScratch_.size()!=tendencyScratch_.size())
+        preparedNonlinear.resize(tendencyScratch_.size());
+    } catch (const std::bad_alloc &) {
+      return {WVKernelStatusCode::allocationFailure,
+              "Unable to allocate the Stratified QG velocity cache."};
+    }
+    if(!preparedVelocity.empty()) velocityScratch_.swap(preparedVelocity);
+    if(!preparedNonlinear.empty()) nonlinearScratch_.swap(preparedNonlinear);
+  } else if (policy == WVVariableEvaluationPolicy::lowMemory) {
+    std::vector<WVComplex64>().swap(nonlinearScratch_);
+  }
+  evaluationPolicy_ = policy;
+  metrics_.workspaceCapacityBytes = vectorBytes(tendencyScratch_) +
+                                    vectorBytes(nonlinearScratch_) +
+                                    vectorBytes(velocityScratch_);
+  return WVKernelStatus::ok();
+}
+
+WVKernelStatus WVStratifiedQGForcingEngine::endStateEvaluation() {
+  if (!evaluation_.active())
+    return {WVKernelStatusCode::invalidConfiguration,
+            "Stratified QG state evaluation is not active."};
+  evaluation_.end();
+  evaluationState_ = {};
+  evaluationVelocity_ = {};
+  const bool ownsKernelScope=evaluationOwnsKernelScope_;
+  evaluationOwnsKernelScope_=false;
+  return ownsKernelScope ? kernel_->endStateEvaluation() : WVKernelStatus::ok();
+}
+
+WVKernelStatus WVStratifiedQGForcingEngine::validateStateEvaluation(
+    const WVComplexConstView &A0) const noexcept {
+  if (!evaluation_.active() || A0.data != evaluationState_.data ||
+      A0.shape.rows != evaluationState_.shape.rows ||
+      A0.shape.columns != evaluationState_.shape.columns)
+    return {WVKernelStatusCode::invalidConfiguration,
+            "Stratified QG coefficients do not belong to the active evaluation."};
+  return WVKernelStatus::ok();
+}
+
+WVKernelStatus WVStratifiedQGForcingEngine::evaluationVelocity(
+    WVComplexConstView A0, WVRealFieldBundleConstView &fields) {
+  auto status = validateStateEvaluation(A0);
+  if (!status)
+    return status;
+  const auto shape = kernel_->spatialShape();
+  const auto count = shape.elementCount();
+  const auto required = 3 * count;
+  if (velocityScratch_.size() != required) {
+    try {
+      velocityScratch_.resize(required);
+    } catch (const std::bad_alloc &) {
+      return {WVKernelStatusCode::allocationFailure,
+              "Unable to allocate the Stratified QG velocity cache."};
+    }
+    metrics_.workspaceCapacityBytes = vectorBytes(tendencyScratch_) +
+                                      vectorBytes(nonlinearScratch_) +
+                                      vectorBytes(velocityScratch_);
+  }
+  const WVStratifiedQGField names[] = {WVStratifiedQGField::u,
+                                      WVStratifiedQGField::v};
+  for (std::size_t channel = 0; channel < 2; ++channel) {
+    const WVVariableEvaluationKey key{WVVariableEvaluationNode::physicalField,
+                                      static_cast<std::uint32_t>(channel)};
+    const bool ready = evaluation_.ready(key);
+    status = evaluation_.evaluate(key, count * sizeof(double), [&] {
+      return kernel_->transformA0ToField(
+          A0, names[channel],
+          {velocityScratch_.data() + channel * count, shape});
+    });
+    if (!status)
+      return status;
+    if (ready)
+      ++metrics_.physicalFieldReuseCount;
+    else
+      ++metrics_.physicalFieldReconstructionCount;
+  }
+  evaluationVelocity_ = {
+      velocityScratch_.data(),
+      {shape.first, shape.second, shape.third, 2}};
+  fields = evaluationVelocity_;
+  return WVKernelStatus::ok();
+}
+
+WVKernelStatus WVStratifiedQGForcingEngine::horizontalSpeedMaximum(
+    WVComplexConstView A0, double &maximum) {
+  ScopedStratifiedQGEvaluation evaluation(*this, A0);
+  if (!evaluation.status())
+    return evaluation.status();
+  auto status = evaluation_.evaluate(
+      {WVVariableEvaluationNode::reduction, 0}, sizeof(double), [&] {
+        return computeHorizontalSpeedMaximum(A0,horizontalSpeedMaximum_);
+      });
+  if (status)
+    maximum = horizontalSpeedMaximum_;
+  return status;
+}
+
+WVKernelStatus WVStratifiedQGForcingEngine::computeHorizontalSpeedMaximum(
+    WVComplexConstView A0,double& maximum) {
+  WVRealFieldBundleConstView fields;
+  auto status=diagnosticWorkspace_ ? diagnosticVelocity(A0,fields) :
+      evaluationVelocity(A0,fields);
+  if (!status) return status;
+  const auto count=kernel_->spatialShape().elementCount();
+  maximum=0.0;
+  for(std::size_t index=0;index<count;++index)
+    maximum=std::max(maximum,
+        std::hypot(fields.data[index],fields.data[count+index]));
+  ++metrics_.horizontalSpeedMaximumReductionCount;
   return WVKernelStatus::ok();
 }
 
@@ -709,7 +981,10 @@ void WVStratifiedQGForcingEngine::initializeOutputWithZeros(
 }
 
 WVKernelStatus WVStratifiedQGForcingEngine::evaluateRightHandSide(
-    const WVComplexConstView &A0, WVComplexView &F0) {
+    const WVComplexConstView &A0, WVComplexView &F0,
+    WVRealFieldBundleConstView *advectionFields) {
+  if (advectionFields != nullptr)
+    *advectionFields = {};
   if (executing_)
     return {WVKernelStatusCode::reentrantExecution,
             "Stratified QG forcing-engine execution is not reentrant."};
@@ -729,6 +1004,9 @@ WVKernelStatus WVStratifiedQGForcingEngine::evaluateRightHandSide(
   if (inputAddress < outputAddress+bytes && outputAddress < inputAddress+bytes)
     return {WVKernelStatusCode::overlappingArrays,
             "Stratified QG A0 and F0 must not overlap."};
+  ScopedStratifiedQGEvaluation evaluation(*this, A0);
+  if (!evaluation.status())
+    return evaluation.status();
   executing_ = true;
   struct Guard {
     bool &value;
@@ -746,6 +1024,14 @@ WVKernelStatus WVStratifiedQGForcingEngine::evaluateRightHandSide(
   }
   if (!context.outputInitialized_)
     initializeOutputWithZeros(F0);
+  if (advectionFields != nullptr) {
+    WVRealFieldBundleConstView velocity;
+    const auto status = evaluationVelocity(A0, velocity);
+    if (!status)
+      return status;
+    *advectionFields = velocity;
+    advectionFields->shape.fourth = 3;
+  }
   ++metrics_.evaluationCount;
   return WVKernelStatus::ok();
 }
@@ -762,7 +1048,9 @@ WVKernelStatus WVStratifiedQGForcingEngine::diagnosticVelocity(WVComplexConstVie
   return WVKernelStatus::ok();
 }
 WVKernelStatus WVStratifiedQGForcingEngine::evaluateForcingTendencies(
-    const WVComplexConstView& A0,const WVForcingTendencyOutput* outputs,std::size_t count, const WVRealFieldBundleConstView* preparedPhysical) {
+    const WVComplexConstView& A0,const WVForcingTendencyOutput* outputs,
+    std::size_t count,const WVRealFieldBundleConstView* preparedPhysical,
+    detail::WVForcingDiagnosticWorkspace* session) {
   if (executing_) return {WVKernelStatusCode::reentrantExecution,"Forcing diagnostics require an idle engine."};
   tendencyMetrics_.workspaceLastPeakBytes=0;
   const auto spectral=kernel().spectralShape(); const auto volume=kernel().spatialShape();
@@ -777,14 +1065,52 @@ WVKernelStatus WVStratifiedQGForcingEngine::evaluateForcingTendencies(
   const auto address=reinterpret_cast<std::uintptr_t>(A0.data);
   if (!address || address%alignof(WVComplex64) || spectral.elementCount()*sizeof(WVComplex64)>UINTPTR_MAX-address)
     return {WVKernelStatusCode::invalidPointer,"Invalid QG diagnostic state storage."};
-  for (std::size_t i=0;i<spectral.elementCount();++i)
-    if (!std::isfinite(A0.data[i].real) || !std::isfinite(A0.data[i].imag))
-      return {WVKernelStatusCode::invalidConfiguration,"QG diagnostic state must be finite."};
+  ScopedStratifiedQGEvaluation evaluation(*this, A0);
+  if (!evaluation.status())
+    return evaluation.status().code==WVKernelStatusCode::numericalFailure ?
+        WVKernelStatus{WVKernelStatusCode::invalidConfiguration,
+            "QG diagnostic state must be finite."} : evaluation.status();
   try {
-    detail::WVForcingDiagnosticWorkspace work(spectral,spatial,1,2);
-    if (preparedPhysical) {
-      std::copy_n(preparedPhysical->data,preparedPhysical->shape.elementCount(),work.physical.data());
-      work.physicalPrepared=true;
+    detail::WVForcingDiagnosticLedger localLedger(tendencyMetrics_);
+    std::unique_ptr<detail::WVForcingDiagnosticWorkspace> local;
+    if (!session) {
+      local=std::make_unique<detail::WVForcingDiagnosticWorkspace>(spectral,spatial,1,2);
+      std::vector<WVForcingStage> stages;
+      local->nonlinearUseCount=0;
+      for(std::size_t index=0;index<forcing_.size();++index) {
+        const auto& forcing=forcing_[index];
+        stages.push_back(forcing->stage());
+        const auto* dependencies=forcingEvaluationDependencies(index);
+        if(!dependencies) return {WVKernelStatusCode::invalidConfiguration,
+            "Forcing evaluation dependencies are unavailable."};
+        local->nonlinearUseCount+=dependencies->nonlinearUseCount;
+      }
+      status=localLedger.context.prepare(
+          detail::WVForcingDiagnosticWorkspace::dependencyKeys(forcing_.size()));
+      if(!status) return status;
+      status=localLedger.context.begin(this,evaluationPolicy_); if(!status) return status;
+      status=local->beginScopedEvaluation(localLedger.context,stages); if(!status) return status;
+      session=local.get();
+    }
+    auto& work=*session;
+    status=work.bind(this,state); if (!status) return status;
+    const auto S=spectral.elementCount();
+    const auto R=volume.elementCount();
+    if (work.spectral.rows!=spectral.rows || work.spectral.columns!=spectral.columns ||
+        work.spatial.first!=spatial.first || work.spatial.second!=spatial.second ||
+        work.spatial.third!=spatial.third || work.spatial.fourth!=spatial.fourth ||
+        work.flux.size()!=S || work.previous.size()!=S || work.temporary.size()!=S ||
+        work.cumulative.size()!=spatial.elementCount() || work.raw.size()!=spatial.elementCount() ||
+        work.physical.size()!=2*R)
+      return {WVKernelStatusCode::invalidShape,
+              "Forcing diagnostic session has incompatible Stratified QG storage."};
+    if (!work.initialized()) {
+      if (preparedPhysical) {
+        std::copy_n(preparedPhysical->data,preparedPhysical->shape.elementCount(),
+                    work.physical.data());
+        work.physicalPrepared=true;
+      }
+      work.markInitialized();
     }
     WVStratifiedQGForcingExecutionContext context;
     context.engine_=this; context.A0_=A0; context.outputInitialized_=true;
@@ -817,6 +1143,10 @@ WVKernelStatus WVStratifiedQGForcingEngine::evaluateForcingTendencies(
 
 WVStateConstraintResult
 WVStratifiedQGForcingEngine::restoreForcingAmplitudes(WVComplexView &A0) {
+  if (evaluation_.active() || executing_)
+    return {{WVKernelStatusCode::reentrantExecution,
+             "Stratified QG constraints cannot mutate an active evaluation."},
+            0, false};
   const auto expected = kernel_->spectralShape();
   if (A0.shape.rows != expected.rows || A0.shape.columns != expected.columns)
     return {{WVKernelStatusCode::invalidShape,
@@ -844,7 +1174,8 @@ WVStratifiedQGForcingEngine::restoreForcingAmplitudes(WVComplexView &A0) {
 std::size_t WVStratifiedQGForcingEngine::persistentBytes() const noexcept {
   return sizeof(*this) +
          (kernel_ == nullptr ? 0 : kernel_->persistentBytes()) +
-         metrics_.scheduleBytes + metrics_.derivedOperatorBytes + metrics_.workspaceCapacityBytes;
+         metrics_.scheduleBytes + metrics_.derivedOperatorBytes +
+         metrics_.workspaceCapacityBytes + evaluation_.persistentBytes();
 }
 
 } // namespace wavevortex::runtime

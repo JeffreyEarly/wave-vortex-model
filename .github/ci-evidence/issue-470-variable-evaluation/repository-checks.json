@@ -1,0 +1,29 @@
+{
+  "runtimeSourceCommit": "45107911",
+  "pythonPolicyTests": {
+    "passed": 51,
+    "failed": 0
+  },
+  "repositoryBoundaries": "passed",
+  "compatibilityMatrixRows": 1754,
+  "compatibilityWitnesses": 75,
+  "whitespace": "passed",
+  "matlabScientificSourceChanged": false,
+  "documentationCheck": {
+    "passed": true,
+    "files": 2026,
+    "routes": 4145,
+    "generatedDifferences": 0,
+    "log": "/private/tmp/wvm470-docs-check.log"
+  },
+  "finalPolicyLog": "/private/tmp/wvm470-final-policy-tests.log",
+  "finalRepositoryLog": "/private/tmp/wvm471-corrected-repository-check.log",
+  "nativeCompilationObjectEquivalence": "Historical include-only correction; subsequent runtime changes require their separately recorded frozen campaigns.",
+  "matlabTestChanges": [
+    "UnitTests/TestPortableDiagnostics.m: use additional transient bytes when checking total owned storage"
+  ],
+  "codeAnalyzer": {
+    "findings": 0,
+    "receipt": "diagnostic-code-analyzer.json"
+  }
+}

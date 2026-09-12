@@ -1,0 +1,11 @@
+{
+  "/private/tmp/wvm469-final-performance/driver.py": "d8a5db3f9b782c8e45fb327e938c6f5d84bc5e0de30e7759ec4fab62e1c32f2c",
+  "/Users/jearly/Documents/OceanKitRepositories/wvm-v4-issue454-sampling/Benchmarks/constant-adoption/run_model_adoption.py": "1d79353dd96421ecab5610291c60eecbabfc3bddbcbfd413b9f4ddfbdbcefec4",
+  "/private/tmp/wvm455-large-model-fixtures/manifest.json": "62389f6926fc66a3f87015231fd80d5333338b00f91c2f7a317c686ad72c963a",
+  "/private/tmp/wvm455-large-model-fixtures/constant-nonhydrostatic-composite-256-source.nc": "5c5400c0207146f804a2f9592cbb8c57b5be0795c346f5053fde9fb27f3765da",
+  "/private/tmp/wvm455-large-model-fixtures/constant-nonhydrostatic-composite-256-reference.nc": "e69eff60158d1987b8fc2cff5efb90b29ec2cb5448f9fc0b2dbd4255cfa4a214",
+  "/private/tmp/wvm455-large-model-fixtures/constant-nonhydrostatic-composite-256-request.json": "4d906e52f4a7d0729d8cce4fc9ab74d199fcdadde1c452a9ed2be8958d72a6e7",
+  "/private/tmp/wvm455-variable-model-large/manifest.json": "118947cab0c3679c7558a6a23f032493eb1e87312a5516d7e8322fb36d545875",
+  "/private/tmp/wvm455-variable-model-large/variable-hydrostatic-composite-large-source.nc": "e1280212c150e17a578333641155c2de37828f0d5921fb9ab91ef86b03b632ad",
+  "/private/tmp/wvm455-variable-model-large/variable-hydrostatic-composite-large-matlab-reference.nc": "375171b9c732ee99143723951320ccf33cad8c93454b5825c87074ca170b759d"
+}

@@ -1,3 +1,4 @@
+#include "WVScopedStateEvaluation.hpp"
 #include "WaveVortexRuntime/WVBoussinesqIntegrationSystem.hpp"
 #include "WVObserverAdapter.hpp"
 
@@ -315,6 +316,8 @@ WVBoussinesqIntegrationSystem::evaluateRightHandSide(
     bool &value;
     ~Guard() { value = false; }
   } guard{executing_};
+  detail::WVScopedStateEvaluation<WVBoussinesqForcingEngine> evaluation(*forcing_,state.waveVortex);
+  if(!evaluation.status()) return evaluation.status();
   const bool needsAdvectionContext = !particles_.empty() || !tracers_.empty();
   WVRealFieldBundleConstView advection;
   const auto waveVortexFluxStarted = std::chrono::steady_clock::now();

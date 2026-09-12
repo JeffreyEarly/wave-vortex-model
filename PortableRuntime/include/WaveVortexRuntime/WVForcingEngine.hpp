@@ -1,4 +1,5 @@
 #pragma once
+#include "WaveVortexRuntime/WVVariableEvaluation.hpp"
 #include "WVForcingTendency.hpp"
 
 #include "WaveVortexRuntime/WVIntegrationContracts.hpp"
@@ -6,6 +7,7 @@
 #include "WaveVortexKernel/WVTransformConstantStratificationKernel.hpp"
 
 #include <memory>
+#include <array>
 #include <cstdint>
 #include <string>
 #include <vector>
@@ -13,15 +15,17 @@
 namespace wavevortex::runtime {
 
 class WVExtensionCatalog;
+struct WVForcingEvaluationDependencies;
 
 class WVConstantStratificationRightHandSideContext final {
 public:
-    bool hasAdvectionFields() const noexcept { return advectionFields_.data != nullptr; }
-    WVRealFieldBundleConstView advectionFields() const noexcept { return advectionFields_; }
+    bool hasAdvectionFields() const noexcept { return evaluation_ && evaluation_->active() && evaluation_->generation()==generation_ && advectionFields_.data; }
+    WVRealFieldBundleConstView advectionFields() const noexcept { return hasAdvectionFields() ? advectionFields_ : WVRealFieldBundleConstView{}; }
     std::uint64_t generation() const noexcept { return generation_; }
 
 private:
     const void* owner_ = nullptr;
+    const WVVariableEvaluationContext* evaluation_ = nullptr;
     WVRealFieldBundleConstView advectionFields_;
     std::uint64_t generation_ = 0;
     friend class WVConstantStratificationForcingEngine;
@@ -39,6 +43,11 @@ struct WVForcingEngineMetrics {
     std::size_t resolvedAmplitudeCount = 0;
     std::size_t physicalFieldReconstructionCount = 0;
     std::size_t physicalFieldReuseCount = 0;
+    std::size_t nonlinearProducerCount = 0;
+    std::size_t horizontalSpeedReductionCount = 0;
+    std::size_t verticalSpeedReductionCount = 0;
+    std::array<std::array<std::size_t,4>,4> gridCalculusProducerCount{};
+    std::array<std::size_t,2> constantLaplacianProducerCount{};
     std::size_t spatialTendencyProjectionCount = 0;
     std::size_t accumulatorClearElementWrites = 0;
     std::size_t spatialTendencyClearElementWrites = 0;
@@ -63,10 +72,14 @@ public:
     const WVForcing* forcingInstance(std::size_t index) const noexcept {
         return index<forcing_.size() ? forcing_[index].get() : nullptr;
     }
+    const WVForcingEvaluationDependencies*
+    forcingEvaluationDependencies(std::size_t index) const noexcept;
     // Optional u/v/w fields must describe this exact state and time.
     // They are borrowed for this invocation and must not alias state or outputs.
     WVKernelStatus evaluateForcingTendencies(const WVState&,
-        const WVForcingTendencyOutput*,std::size_t, const WVRealFieldBundleConstView* preparedPhysical = nullptr);
+        const WVForcingTendencyOutput*,std::size_t,
+        const WVRealFieldBundleConstView* preparedPhysical = nullptr,
+        detail::WVForcingDiagnosticWorkspace* session = nullptr);
     const WVForcingTendencyMetrics& tendencyMetrics() const noexcept { return tendencyMetrics_; }
 
     // Validate the frozen schedule without constructing transforms, plans, or
@@ -88,6 +101,10 @@ public:
     WVConstantStratificationForcingEngine(const WVConstantStratificationForcingEngine&) = delete;
     WVConstantStratificationForcingEngine& operator=(const WVConstantStratificationForcingEngine&) = delete;
 
+    WVKernelStatus beginStateEvaluation(const WVState&);
+    void endStateEvaluation() noexcept;
+    bool stateEvaluationActive() const noexcept { return evaluation_.active(); }
+    WVKernelStatus validateStateEvaluation(const WVState&) const;
     WVKernelStatus nonlinearFlux(const WVState& state, WVFlux& flux);
     WVKernelStatus evaluateRightHandSideWithContext(
         const WVState& state, WVFlux& rightHandSide,
@@ -110,10 +127,16 @@ public:
 
     // Linear evolution retains instances for diagnostics and amplitude constraints.
     // Only their ordinary coefficient RHS contributions are disabled.
+  WVKernelStatus setVariableEvaluationPolicy(WVVariableEvaluationPolicy policy);
+  WVKernelStatus validateVariableEvaluationPolicyChange(
+      WVVariableEvaluationPolicy policy) const noexcept;
+  const WVVariableEvaluationMetrics& variableEvaluationMetrics() const noexcept { return evaluation_.metrics(); }
     void setLinearDynamics(bool linear) noexcept { linearDynamics_ = linear; }
 
 private:
     bool linearDynamics_ = false;
+  WVVariableEvaluationContext evaluation_;
+  WVVariableEvaluationPolicy evaluationPolicy_=WVVariableEvaluationPolicy::reuse;
     WVConstantStratificationForcingEngine() = default;
 
     WVKernelStatus initialize(const WVFrozenForcingSchedule& schedule);
@@ -129,20 +152,22 @@ private:
     void initializeOutputWithZeros(WVFlux& flux, bool& outputInitialized);
     WVKernelStatus addNonlinearFlux(const WVState& state, WVFlux& flux, bool& outputInitialized, WVRealFieldBundleView* externalFields, bool& externalFieldsPrepared);
     WVKernelStatus diagnosticLaplacian(const WVState&,double,double,WVLaplacianDirection,WVFlux&,bool&);
-    void clearEvaluationWorkspace() noexcept;
 
     std::unique_ptr<WVTransformConstantStratificationKernel> kernel_;
     std::shared_ptr<const WVExtensionCatalog> catalog_;
     std::vector<std::unique_ptr<WVForcing>> forcing_;
     std::vector<double> physicalFields_;
     std::vector<double> forcingFields_;
-    std::vector<WVComplex64> temporaryFlux_;
+    std::vector<WVComplex64> temporaryFlux_, nonlinearCache_;
     WVForcingEngineMetrics metrics_;
     WVForcingPreparation preparation_;
     std::string scheduleIdentifier_;
-    bool physicalFieldsValid_ = false;
+    WVState evaluationState_{};
+    WVRealFieldBundleView evaluationFields_{};
+    std::size_t physicalFieldCount_=3;
+    std::array<std::size_t,2> constantLaplacianUseCount_{};
+    double horizontalMaximum_=0;
     bool executing_ = false;
-    std::uint64_t evaluationGeneration_ = 0;
     detail::WVForcingDiagnosticWorkspace* diagnosticWorkspace_=nullptr;
     WVForcingTendencyMetrics tendencyMetrics_;
     friend class WVForcingExecutionContext;

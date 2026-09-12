@@ -82,6 +82,16 @@ public:
   }
   std::size_t persistentBytes() const noexcept override;
 
+  WVKernelStatus setVariableEvaluationPolicy(WVVariableEvaluationPolicy policy) {
+    return forcing_->setVariableEvaluationPolicy(policy);
+  }
+  WVKernelStatus validateVariableEvaluationPolicyChange(
+      WVVariableEvaluationPolicy policy) const noexcept {
+    return forcing_->validateVariableEvaluationPolicyChange(policy);
+  }
+  const WVVariableEvaluationMetrics& variableEvaluationMetrics() const noexcept {
+    return forcing_->variableEvaluationMetrics();
+  }
   void setLinearDynamics(bool linear) noexcept { forcing_->setLinearDynamics(linear); }
 
 private:

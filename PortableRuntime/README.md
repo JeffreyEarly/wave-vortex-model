@@ -19,6 +19,8 @@ Output schedules are resolved by exact source-linked identity and version. `WVOu
 
 ## Source API v1
 
+The [variable evaluation lifecycle](VARIABLE-EVALUATION.md) describes shared RHS/output scopes, the default `reuse` and optional `low-memory` policies, and the scoped field-query API.
+
 `wave-vortex-portable-source-api-v1`, version 1.0, identifies the C++ extension and embedding surface under development: source-API identity constants; explicit catalog construction and capability discovery; `WVObservingSystem`, `WVOutputSchedule`, and `WVForcing`; their construction/planning records and data-only `WVObservationSchema`/`WVObservationBatch` boundary; `WVModelOutputConfiguration`; `WVModel`; and `runWaveVortex()`. Legacy MATLAB-encoding adapters, declarations under `PortableRuntime/src`, `detail` namespaces, and undocumented implementation declarations are not extension APIs.
 
 Consumers select one WaveVortexModel checkout and compile the runtime, application-owned catalog, statically linked extensions, and runner together. Rebuild the complete application whenever that checkout changes. The currently unused C++ API may change without backward source compatibility; it promises no binary ABI across commits, compilers, or build configurations. MATLAB APIs and persisted scientific behavior retain backward compatibility. It provides no dynamic discovery, separately loadable plug-in, or distributed runtime/extension binary.

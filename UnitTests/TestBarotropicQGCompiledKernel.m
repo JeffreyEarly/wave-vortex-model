@@ -170,7 +170,10 @@ classdef TestBarotropicQGCompiledKernel < matlab.unittest.TestCase
                         testCase.verifyEqual(forcing.fieldReuseCount,4,diagnostic)
                         testCase.verifyEqual(forcing.projectionCount,4,diagnostic)
                         testCase.verifyEqual(forcing.forcingCallCount,5,diagnostic)
-                        testCase.verifyEqual(forcing.workspaceCapacityBytes,0,diagnostic)
+                        % The forcing engine retains exactly one compact spectral
+                        % tendency. It must not retain an Nx-by-Ny grid field.
+                        expectedWorkspaceCapacityBytes = 16*forcing.Nkl;
+                        testCase.verifyEqual(forcing.workspaceCapacityBytes,expectedWorkspaceCapacityBytes,diagnostic)
                         if isequal(definition.Nxy,[9 6]) && j == 1 && shouldAntialias
                             endpointPairs = { ...
                                 "rk4Endpoint","fixed"; ...

@@ -160,8 +160,9 @@ classdef TestPortableDiagnostics < matlab.unittest.TestCase
                             if family~="stratified-qg"
                                 testCase.verifyGreaterThan(report.diagnosticEvaluation.workspaceHighWaterBytes,0);
                             end
+                            % Prepared scientific buffers are already counted in retained storage.
                             testCase.verifyGreaterThanOrEqual(report.livenessBytes.fullModelMaximumLive, ...
-                                report.livenessBytes.fullModelRetained+report.diagnosticEvaluation.workspaceHighWaterBytes);
+                                report.livenessBytes.fullModelRetained+report.diagnosticEvaluation.additionalTransientHighWaterBytes);
                         end
                         for groupName = ["wave-vortex","dense"]
                             info = ncinfo(controlPath,"/"+groupName);

@@ -5,6 +5,7 @@
 #include <array>
 
 #include <algorithm>
+#include <atomic>
 #include <cmath>
 #include <chrono>
 #include <limits>
@@ -25,7 +26,7 @@ struct WVCompactHorizontalGroup {
 struct WVCompactConstantSchedule {
     WVHalfSpectrumMappings mapping;
     WVConstantKernelExecutionOptions options;
-    std::array<std::shared_ptr<WVCompactHorizontalGroup>,3> horizontal;
+    std::array<std::shared_ptr<WVCompactHorizontalGroup>,4> horizontal;
     std::vector<std::unique_ptr<WVFFTPlan>> scalarPlans;
     std::unique_ptr<WVPreparedModeExecutor> pointwise;
     std::size_t persistentBytes() const noexcept {
@@ -79,7 +80,8 @@ constexpr double pi = 3.141592653589793238462643383279502884;
 #endif
 
 enum PlanIndex : std::size_t {
-    horizontalForward3, horizontalForward4, horizontalInverse3, horizontalInverse4,
+    horizontalForward3, horizontalForward4, horizontalInverse2, horizontalInverse3, horizontalInverse4,
+    verticalDCT2Storage2,
     verticalDCT2Storage3, verticalDST1Storage3, verticalDST2Storage3, verticalDCT1Storage3,
     verticalDCT2Storage4, verticalDST2Storage4,
     verticalDCT3Storage4, verticalDST3Storage4,
@@ -286,6 +288,7 @@ void assembleDerivativeSpectraForMode(
     std::size_t Nz,
     std::size_t Nj,
     std::size_t mode,
+    const std::array<bool,3>* derivativeMask,
     CoefficientSource&& source) {
     const auto storageRow = mapping.storageRowsByWVIndex[mode];
     const auto& horizontal = horizontalModes[mode];
@@ -293,10 +296,35 @@ void assembleDerivativeSpectraForMode(
     for (std::size_t j = 0; j < Nj; ++j) {
         const auto index = j + Nj * mode;
         const auto value = coefficientValueForField<Target>(modes,index,source(index));
-        const auto derivatives = detail::normalizedDerivativeSpectrum<cosine,Conjugated>(value,horizontal.k,horizontal.l,modes.verticalWavenumber[j],j == 0 || j + 1 == Nz);
-        half[j + Nz * 0 + Nz * 3 * storageRow] = derivatives.x;
-        half[j + Nz * 1 + Nz * 3 * storageRow] = derivatives.y;
-        half[j + Nz * 2 + Nz * 3 * storageRow] = derivatives.z;
+        if (!derivativeMask) {
+            const auto derivatives = detail::normalizedDerivativeSpectrum<cosine,Conjugated>(value,
+                horizontal.k,horizontal.l,modes.verticalWavenumber[j],j == 0 || j + 1 == Nz);
+            half[j + Nz * 0 + Nz * 3 * storageRow] = derivatives.x;
+            half[j + Nz * 1 + Nz * 3 * storageRow] = derivatives.y;
+            half[j + Nz * 2 + Nz * 3 * storageRow] = derivatives.z;
+            continue;
+        }
+        const auto oriented=Conjugated ? conjugate(value) : value;
+        if ((*derivativeMask)[0]) {
+            auto derivative=multiply(oriented,WVComplex64{0.0,Conjugated ? -horizontal.k : horizontal.k});
+            if constexpr (cosine) derivative=multiply(derivative,0.5);
+            else if (j == 0 || j + 1 == Nz) derivative={};
+            else derivative=multiply(derivative,0.5);
+            half[j + Nz * 0 + Nz * 3 * storageRow]=derivative;
+        }
+        if ((*derivativeMask)[1]) {
+            auto derivative=multiply(oriented,WVComplex64{0.0,Conjugated ? -horizontal.l : horizontal.l});
+            if constexpr (cosine) derivative=multiply(derivative,0.5);
+            else if (j == 0 || j + 1 == Nz) derivative={};
+            else derivative=multiply(derivative,0.5);
+            half[j + Nz * 1 + Nz * 3 * storageRow]=derivative;
+        }
+        if ((*derivativeMask)[2]) {
+            auto derivative=multiply(oriented,cosine ? -modes.verticalWavenumber[j] : modes.verticalWavenumber[j]);
+            if constexpr (cosine) derivative=(j == 0 || j + 1 == Nz) ? WVComplex64{} : multiply(derivative,0.5);
+            else derivative=multiply(derivative,0.5);
+            half[j + Nz * 2 + Nz * 3 * storageRow]=derivative;
+        }
     }
 }
 
@@ -321,6 +349,27 @@ void assembleVelocitySpectraForMode(
         values[1] = multiply(values[1],0.5);
         values[2] = j == 0 || j + 1 == Nz ? WVComplex64{} : multiply(values[2],0.5);
         for (std::size_t target = 0; target < 3; ++target) half[j + Nz * target + Nz * 3 * storageRow] = Conjugated ? conjugate(values[target]) : values[target];
+    }
+}
+
+template <bool Conjugated, typename CoefficientSource>
+void assembleHorizontalVelocitySpectraForMode(
+    WVComplex64* half,
+    const WVHalfSpectrumMappings& mapping,
+    const WVConstantStratificationModes& modes,
+    std::size_t Nz,
+    std::size_t Nj,
+    std::size_t mode,
+    CoefficientSource&& source) {
+    const auto storageRow = mapping.storageRowsByWVIndex[mode];
+    for (std::size_t j = 0; j < Nj; ++j) {
+        const auto index = j + Nj * mode;
+        const auto coefficients = source(index);
+        WVComplex64 values[] = {
+            multiply(coefficientValueForField<0>(modes,index,coefficients),0.5),
+            multiply(coefficientValueForField<1>(modes,index,coefficients),0.5)};
+        for (std::size_t target = 0; target < 2; ++target)
+            half[j + Nz * target + Nz * 2 * storageRow] = Conjugated ? conjugate(values[target]) : values[target];
     }
 }
 
@@ -517,9 +566,10 @@ WVKernelStatus WVTransformConstantStratificationKernel::create(
         const auto realElements = checkedProduct(candidate->descriptor_.spatialShape().elementCount(),realChannels);
         candidate->halfSpectrumScratch_.resize(2 * halfElements);
         candidate->realScratch_.resize(realElements);
+        candidate->preparedPhase_.resize(candidate->descriptor_.spectralShape().elementCount());
         candidate->metrics_.halfSpectrumScratchCapacityBytes = candidate->halfSpectrumScratch_.capacity() * sizeof(double);
         candidate->metrics_.realScratchCapacityBytes = candidate->realScratch_.capacity() * sizeof(double);
-        candidate->metrics_.scratchCapacityBytes = candidate->metrics_.halfSpectrumScratchCapacityBytes + candidate->metrics_.realScratchCapacityBytes;
+        candidate->metrics_.scratchCapacityBytes = candidate->metrics_.halfSpectrumScratchCapacityBytes + candidate->metrics_.realScratchCapacityBytes + candidate->preparedPhase_.capacity()*sizeof(WVComplex64);
         candidate->metrics_.scratchHighWaterBytes = candidate->scratchBytes();
         const auto halfRows = candidate->descriptor_.halfSpectrumMappings().NxHalf * configuration.Ny;
         candidate->scalarAntialiasRows_.assign(halfRows,0);
@@ -558,7 +608,8 @@ WVKernelStatus WVTransformConstantStratificationKernel::preparePlans() {
     const auto& c = descriptor_.configuration();
     const auto halfRows = executionRowCount();
     const WVFFTPlanSpecification specifications[] = {
-        horizontalSpecification(c, 3, true), horizontalSpecification(c, 4, true), horizontalSpecification(c, 3, false), horizontalSpecification(c, 4, false),
+        horizontalSpecification(c, 3, true), horizontalSpecification(c, 4, true), horizontalSpecification(c, 2, false), horizontalSpecification(c, 3, false), horizontalSpecification(c, 4, false),
+        verticalSpecification(c,halfRows,2,2,false),
         verticalSpecification(c,halfRows,3,2,false), verticalSpecification(c,halfRows,3,1,true), verticalSpecification(c,halfRows,3,2,true), verticalSpecification(c,halfRows,3,1,false),
         verticalSpecification(c,halfRows,4,2,false), verticalSpecification(c,halfRows,4,2,true),
         verticalSpecification(c,halfRows,4,3,false), verticalSpecification(c,halfRows,4,3,true),
@@ -566,13 +617,14 @@ WVKernelStatus WVTransformConstantStratificationKernel::preparePlans() {
         ,horizontalSpecification(c,1,true), verticalSpecification(c,halfRows,1,1,false), verticalSpecification(c,halfRows,1,1,true)
     };
     for (std::size_t i = 0; i < planCount; ++i) {
+        if (i==horizontalInverse2 || i==verticalDCT2Storage2) continue;
         WVKernelStatus status;
         const bool horizontal = i == horizontalForward3 || i == horizontalForward4 ||
-            i == horizontalInverse3 || i == horizontalInverse4 || i == horizontalForward1;
+            i == horizontalInverse2 || i == horizontalInverse3 || i == horizontalInverse4 || i == horizontalForward1;
         if (compact_ && horizontal) {
             const auto channels = i == horizontalForward1 ? 1U :
-                (i == horizontalForward4 || i == horizontalInverse4 ? 4U : 3U);
-            const auto groupIndex = channels == 1 ? 0U : (channels == 3 ? 1U : 2U);
+                (i == horizontalInverse2 ? 2U : (i == horizontalForward4 || i == horizontalInverse4 ? 4U : 3U));
+            const auto groupIndex = channels == 1 ? 0U : (channels == 3 ? 1U : (channels == 4 ? 2U : 3U));
             auto& group = compact_->horizontal[groupIndex];
             if (!group) {
                 group = std::make_shared<kernel_detail::WVCompactHorizontalGroup>();
@@ -604,6 +656,64 @@ WVKernelStatus WVTransformConstantStratificationKernel::preparePlans() {
     }
     metrics_.planCount = plans_.size();
     return WVKernelStatus::ok();
+}
+
+WVKernelStatus WVTransformConstantStratificationKernel::prepareHorizontalVelocityTransform() {
+    ExecutionGuard guard(executing_);
+    if (!guard.entered()) return {WVKernelStatusCode::reentrantExecution,"Kernel operations are not reentrant."};
+    if (stateEvaluationActive_)
+        return {WVKernelStatusCode::invalidConfiguration,"Prepare the horizontal-velocity transform before beginning a state evaluation."};
+    if (plans_[horizontalInverse2] && plans_[verticalDCT2Storage2]) return WVKernelStatus::ok();
+    try {
+        const auto& c=descriptor_.configuration();
+        std::unique_ptr<WVFFTPlan> horizontal;
+        std::unique_ptr<WVFFTPlan> vertical;
+        std::shared_ptr<kernel_detail::WVCompactHorizontalGroup> compactGroup;
+        WVKernelStatus status;
+        if (compact_) {
+            compactGroup=std::make_shared<kernel_detail::WVCompactHorizontalGroup>();
+            WVRetainedHorizontalSpecification specification;
+            const auto planes=c.Nz*2;
+            specification.grid={c.Nx,c.Ny,planes,1,c.Nx,c.Nx*c.Ny,"constant-horizontal-velocity"};
+            specification.retained={planes,descriptor_.Nkl(),1,planes,WVComplexRepresentation::interleaved,
+                "constant-horizontal-velocity","constant-stored-orbits"};
+            specification.Lx=c.Lx;
+            specification.Ly=c.Ly;
+            specification.schedule=WVRetainedHorizontalSchedule::streamingPrunedTile16;
+            specification.outerWorkers=compact_->options.horizontalOuterWorkers;
+            const auto& original=descriptor_.halfSpectrumMappings();
+            for (const auto row:original.storageRowsByWVIndex) {
+                const auto y=row/original.NxHalf;
+                const auto l=y<(c.Ny+1)/2 ? static_cast<std::int64_t>(y) :
+                    static_cast<std::int64_t>(y)-static_cast<std::int64_t>(c.Ny);
+                specification.modes.push_back({static_cast<std::int64_t>(row%original.NxHalf),l});
+            }
+            status=WVRetainedHorizontalOperator::createShared(specification,engine_,compactGroup->operation);
+            if (!status) return status;
+            status=compactGroup->operation->createWorkspace(compactGroup->workspace,false);
+            if (!status) return status;
+            compactGroup->realBytes=descriptor_.spatialShape().elementCount()*2*sizeof(double);
+            compactGroup->complexBytes=c.Nz*2*descriptor_.Nkl()*sizeof(WVComplex64);
+            horizontal=std::make_unique<WVCompactHorizontalPlan>(compactGroup,false);
+        } else {
+            status=engine_->createPlan(horizontalSpecification(c,2,false),horizontal);
+            if (!status) return status;
+        }
+        status=engine_->createPlan(verticalSpecification(c,executionRowCount(),2,2,false),vertical);
+        if (!status) return status;
+        if (!horizontal || !vertical)
+            return {WVKernelStatusCode::fftPlanFailure,"FFT engine returned an empty horizontal-velocity plan."};
+        plans_[horizontalInverse2]=std::move(horizontal);
+        plans_[verticalDCT2Storage2]=std::move(vertical);
+        if (compact_) compact_->horizontal[3]=std::move(compactGroup);
+        return WVKernelStatus::ok();
+    } catch (const std::bad_alloc&) {
+        return {WVKernelStatusCode::allocationFailure,"Unable to prepare the horizontal-velocity transform."};
+    } catch (const std::overflow_error& error) {
+        return {WVKernelStatusCode::sizeOverflow,error.what()};
+    } catch (const std::system_error& error) {
+        return {WVKernelStatusCode::allocationFailure,error.what()};
+    }
 }
 
 std::size_t WVTransformConstantStratificationKernel::persistentBytes() const noexcept {
@@ -641,7 +751,8 @@ WVTransformConstantStratificationKernel::metrics() const noexcept {
         }
     }
     metrics_.halfSpectrumScratchCapacityBytes=halfSpectrumScratch_.capacity()*sizeof(double);
-    metrics_.scratchCapacityBytes=metrics_.halfSpectrumScratchCapacityBytes+metrics_.realScratchCapacityBytes;
+    metrics_.scratchCapacityBytes=metrics_.halfSpectrumScratchCapacityBytes+metrics_.realScratchCapacityBytes+
+        preparedPhase_.capacity()*sizeof(WVComplex64);
     metrics_.scratchHighWaterBytes=std::max(metrics_.scratchHighWaterBytes,scratchBytes());
     return metrics_;
 }
@@ -705,6 +816,249 @@ void WVTransformConstantStratificationKernel::setStageInstrumentation(bool enabl
     metrics_.coefficientProjectionSeconds = 0.0;
 }
 
+WVKernelStatus WVTransformConstantStratificationKernel::validateStateContents(
+    const WVState& state,bool allowPreparedExecutor) {
+    if (!std::isfinite(state.t) || !std::isfinite(state.t0) || !std::isfinite(state.t-state.t0))
+        return {WVKernelStatusCode::invalidConfiguration,"State times and elapsed time must be finite."};
+    const auto spectral=descriptor_.spectralShape();
+    const WVKernelStatus statuses[]={validateSpectral(state.coefficients.Ap,spectral,"Ap"),
+        validateSpectral(state.coefficients.Am,spectral,"Am"),validateSpectral(state.coefficients.A0,spectral,"A0")};
+    for (const auto& status:statuses) if (!status) return status;
+    const WVComplexConstView views[]={state.coefficients.Ap,state.coefficients.Am,
+        state.coefficients.A0};
+    const auto count=spectral.elementCount();
+    std::atomic<bool> coefficientsFinite{true};
+    const auto scanCoefficients=[&](std::size_t begin,std::size_t end) {
+        while(begin<end) {
+            const auto viewIndex=begin/count;
+            const auto viewBegin=begin-viewIndex*count;
+            const auto viewEnd=std::min(count,end-viewIndex*count);
+            const auto* values=views[viewIndex].data;
+            for(std::size_t i=viewBegin;i<viewEnd;++i)
+                if(!std::isfinite(values[i].real) || !std::isfinite(values[i].imag)) {
+                    coefficientsFinite.store(false,std::memory_order_relaxed);
+                    return;
+                }
+            begin+=viewEnd-viewBegin;
+        }
+    };
+    if(allowPreparedExecutor) coefficientExecutor_->execute(3*count,scanCoefficients);
+    else scanCoefficients(0,3*count);
+    if(!coefficientsFinite.load(std::memory_order_relaxed))
+        return {WVKernelStatusCode::numericalFailure,"Nonfinite constant-stratification coefficient."};
+    const double elapsed=state.t-state.t0;
+    for (const auto frequency:descriptor_.verticalModes().omega)
+        if (!std::isfinite(frequency*elapsed))
+            return {WVKernelStatusCode::numericalFailure,"Constant-stratification phase overflow."};
+    return WVKernelStatus::ok();
+}
+
+WVKernelStatus WVTransformConstantStratificationKernel::validateState(
+    const WVState& state,bool allowPreparedExecutor) {
+    ++metrics_.stateValidationCount;
+    return validateStateContents(state,allowPreparedExecutor);
+}
+
+bool WVTransformConstantStratificationKernel::matchesStateEvaluation(const WVState& state) const noexcept {
+    const auto sameView=[](WVComplexConstView a,WVComplexConstView b) {
+        return a.data==b.data && a.shape.rows==b.shape.rows && a.shape.columns==b.shape.columns;
+    };
+    if (!stateEvaluationActive_ || state.t!=preparedState_.t || state.t0!=preparedState_.t0) return false;
+    for (std::size_t i=0;i<preparedStateViewCount_;++i) if (
+        sameView(state.coefficients.Ap,preparedStateViews_[i].coefficients.Ap) &&
+        sameView(state.coefficients.Am,preparedStateViews_[i].coefficients.Am) &&
+        sameView(state.coefficients.A0,preparedStateViews_[i].coefficients.A0)) return true;
+    return false;
+}
+
+WVKernelStatus WVTransformConstantStratificationKernel::validateStateEvaluation(
+    const WVState& state) const noexcept {
+    if (!matchesStateEvaluation(state))
+        return {WVKernelStatusCode::invalidConfiguration,
+            "State does not belong to the active constant-stratification evaluation."};
+    return WVKernelStatus::ok();
+}
+
+std::size_t WVTransformConstantStratificationKernel::stateEvaluationComponent(
+    const WVState& state) const noexcept {
+    const auto sameView=[](WVComplexConstView a,WVComplexConstView b) {
+        return a.data==b.data && a.shape.rows==b.shape.rows && a.shape.columns==b.shape.columns;
+    };
+    if (!stateEvaluationActive_) return 0;
+    for (std::size_t i=0;i<preparedStateViewCount_;++i) if (
+        sameView(state.coefficients.Ap,preparedStateViews_[i].coefficients.Ap) &&
+        sameView(state.coefficients.Am,preparedStateViews_[i].coefficients.Am) &&
+        sameView(state.coefficients.A0,preparedStateViews_[i].coefficients.A0))
+        return preparedStateComponents_[i];
+    return 0;
+}
+
+WVKernelStatus WVTransformConstantStratificationKernel::validateStateForCall(const WVState& state) {
+    if (!stateEvaluationActive_) return validateState(state);
+    if (!matchesStateEvaluation(state))
+        return {WVKernelStatusCode::invalidConfiguration,"State does not match the active constant-stratification evaluation."};
+    return WVKernelStatus::ok();
+}
+
+WVKernelStatus WVTransformConstantStratificationKernel::validateStateAndFluxForCall(const WVState& state,const WVFlux& flux) {
+    auto status=validateStateForCall(state); if (!status) return status;
+    const auto spectral=descriptor_.spectralShape();
+    const WVKernelStatus outputStatuses[]={validateSpectral(flux.Fp,spectral,"Fp"),
+        validateSpectral(flux.Fm,spectral,"Fm"),validateSpectral(flux.F0,spectral,"F0")};
+    for (const auto& value:outputStatuses) if (!value) return value;
+    const auto bytes=spectral.elementCount()*sizeof(WVComplex64);
+    const void* inputs[]={state.coefficients.Ap.data,state.coefficients.Am.data,state.coefficients.A0.data};
+    const void* outputs[]={flux.Fp.data,flux.Fm.data,flux.F0.data};
+    for (std::size_t i=0;i<3;++i) {
+        for (std::size_t j=i+1;j<3;++j) if (memoryOverlaps(outputs[i],bytes,outputs[j],bytes))
+            return {WVKernelStatusCode::overlappingArrays,"Flux outputs must not overlap."};
+        for (const auto* input:inputs) if (memoryOverlaps(outputs[i],bytes,input,bytes))
+            return {WVKernelStatusCode::overlappingArrays,"Flux outputs must not overlap state inputs."};
+    }
+    return WVKernelStatus::ok();
+}
+
+WVKernelStatus WVTransformConstantStratificationKernel::validateMutableOutputOutsidePreparedState(
+    const WVMutableCoefficients& output) const {
+    if (!stateEvaluationActive_) return WVKernelStatus::ok();
+    const auto bytes=descriptor_.spectralShape().elementCount()*sizeof(WVComplex64);
+    for (const auto target:{output.Ap,output.Am,output.A0}) for (std::size_t stateIndex=0;stateIndex<preparedStateViewCount_;++stateIndex)
+        for (const auto input:{preparedStateViews_[stateIndex].coefficients.Ap,preparedStateViews_[stateIndex].coefficients.Am,preparedStateViews_[stateIndex].coefficients.A0})
+            if (memoryOverlaps(target.data,bytes,input.data,bytes))
+                return {WVKernelStatusCode::overlappingArrays,"Mutable coefficient output overlaps an active immutable constant-stratification state view."};
+    return WVKernelStatus::ok();
+}
+
+WVKernelStatus WVTransformConstantStratificationKernel::prepareStatePhase(const WVState& state) {
+    const double elapsed=state.t-state.t0;
+    if (!std::isfinite(state.t) || !std::isfinite(state.t0) || !std::isfinite(elapsed))
+        return {WVKernelStatusCode::invalidConfiguration,"State times and elapsed time must be finite."};
+    const auto& omega=descriptor_.verticalModes().omega;
+    // Every registered active view was validated with these exact times and
+    // immutable coefficients. Standalone and foreign-state phase requests keep
+    // the full overflow scan.
+    if(!stateEvaluationActive_ || !matchesStateEvaluation(state))
+        for (std::size_t i=0;i<preparedPhase_.size();++i)
+            if (!std::isfinite(omega[i]*elapsed))
+                return {WVKernelStatusCode::numericalFailure,"Constant-stratification phase overflow."};
+    coefficientExecutor_->execute(preparedPhase_.size(),[&](std::size_t begin,std::size_t end) {
+        for (std::size_t i=begin;i<end;++i) preparedPhase_[i]=phase(omega[i]*elapsed);
+    });
+    ++metrics_.phasePreparationCount;
+    if (stateEvaluationActive_) preparedPhaseReady_=true;
+    return WVKernelStatus::ok();
+}
+
+WVComplexConstView WVTransformConstantStratificationKernel::phaseForPreparedState() const noexcept {
+    return {preparedPhase_.data(),descriptor_.spectralShape()};
+}
+
+WVKernelStatus WVTransformConstantStratificationKernel::beginStateEvaluation(const WVState& state) {
+    return beginStateEvaluation(state,nullptr);
+}
+
+WVKernelStatus WVTransformConstantStratificationKernel::beginStateEvaluation(
+    const WVState& state,const void* evaluationOwner) {
+    ExecutionGuard guard(executing_);
+    if (!guard.entered()) return {WVKernelStatusCode::reentrantExecution,"Kernel operations are not reentrant."};
+    if (stateEvaluationActive_)
+        return {WVKernelStatusCode::reentrantExecution,"Constant-stratification state evaluation is already active."};
+    auto status=validateState(state,true); if (!status) return status;
+    preparedState_=state;
+    preparedStateViews_[0]=state;
+    preparedStateComponents_[0]=0;
+    preparedStateViewCount_=1;
+    preparedStateOwner_=evaluationOwner;
+    preparedPhaseReady_=false;
+    stateEvaluationActive_=true;
+    return WVKernelStatus::ok();
+}
+
+WVKernelStatus WVTransformConstantStratificationKernel::addStateEvaluationView(
+    const WVState& state,const void* evaluationOwner,std::size_t componentIdentity) {
+    ExecutionGuard guard(executing_);
+    if (!guard.entered()) return {WVKernelStatusCode::reentrantExecution,"Kernel operations are not reentrant."};
+    if (!stateEvaluationActive_)
+        return {WVKernelStatusCode::invalidConfiguration,"No constant-stratification state evaluation is active."};
+    if (evaluationOwner==nullptr || evaluationOwner!=preparedStateOwner_)
+        return {WVKernelStatusCode::invalidConfiguration,"Constant-stratification state view owner does not match the active evaluation."};
+    if (state.t!=preparedState_.t || state.t0!=preparedState_.t0)
+        return {WVKernelStatusCode::invalidConfiguration,"Additional constant-stratification state view must use the active evaluation times."};
+    if (componentIdentity>=5)
+        return {WVKernelStatusCode::invalidConfiguration,"Constant-stratification component identity is out of range."};
+    if (matchesStateEvaluation(state))
+        return stateEvaluationComponent(state)==componentIdentity ? WVKernelStatus::ok() :
+            WVKernelStatus{WVKernelStatusCode::invalidConfiguration,
+                "Constant-stratification state view is already registered with another component identity."};
+    if (preparedStateViewCount_==preparedStateViews_.size())
+        return {WVKernelStatusCode::invalidConfiguration,"Constant-stratification state evaluation view capacity exceeded."};
+    auto status=validateState(state,true); if (!status) return status;
+    preparedStateViews_[preparedStateViewCount_]=state;
+    preparedStateComponents_[preparedStateViewCount_++]=componentIdentity;
+    return WVKernelStatus::ok();
+}
+
+WVKernelStatus WVTransformConstantStratificationKernel::removeStateEvaluationView(
+    const WVState& state,const void* evaluationOwner,std::size_t componentIdentity) {
+    ExecutionGuard guard(executing_);
+    if (!guard.entered()) return {WVKernelStatusCode::reentrantExecution,"Kernel operations are not reentrant."};
+    if (!stateEvaluationActive_)
+        return {WVKernelStatusCode::invalidConfiguration,"No constant-stratification state evaluation is active."};
+    if (evaluationOwner==nullptr || evaluationOwner!=preparedStateOwner_)
+        return {WVKernelStatusCode::invalidConfiguration,"Constant-stratification state view owner does not match the active evaluation."};
+    if (componentIdentity==0 || componentIdentity>=5)
+        return {WVKernelStatusCode::invalidConfiguration,"The primary constant-stratification state view cannot be removed."};
+    if (state.t!=preparedState_.t || state.t0!=preparedState_.t0)
+        return {WVKernelStatusCode::invalidConfiguration,"Removed constant-stratification state view must use the active evaluation times."};
+    const auto sameView=[](WVComplexConstView a,WVComplexConstView b) {
+        return a.data==b.data && a.shape.rows==b.shape.rows && a.shape.columns==b.shape.columns;
+    };
+    for(std::size_t i=1;i<preparedStateViewCount_;++i) if (
+        preparedStateComponents_[i]==componentIdentity &&
+        sameView(state.coefficients.Ap,preparedStateViews_[i].coefficients.Ap) &&
+        sameView(state.coefficients.Am,preparedStateViews_[i].coefficients.Am) &&
+        sameView(state.coefficients.A0,preparedStateViews_[i].coefficients.A0)) {
+        for(std::size_t j=i+1;j<preparedStateViewCount_;++j) {
+            preparedStateViews_[j-1]=preparedStateViews_[j];
+            preparedStateComponents_[j-1]=preparedStateComponents_[j];
+        }
+        --preparedStateViewCount_;
+        preparedStateViews_[preparedStateViewCount_]={};
+        preparedStateComponents_[preparedStateViewCount_]=0;
+        return WVKernelStatus::ok();
+    }
+    return {WVKernelStatusCode::invalidConfiguration,
+        "Constant-stratification state view is not registered for this component."};
+}
+
+WVKernelStatus WVTransformConstantStratificationKernel::endStateEvaluation() {
+    ExecutionGuard guard(executing_);
+    if (!guard.entered()) return {WVKernelStatusCode::reentrantExecution,"Kernel operations are not reentrant."};
+    if (!stateEvaluationActive_)
+        return {WVKernelStatusCode::invalidConfiguration,"No constant-stratification state evaluation is active."};
+    preparedState_={};
+    for (auto& stateView:preparedStateViews_) stateView={};
+    preparedStateComponents_={};
+    preparedStateViewCount_=0;
+    preparedStateOwner_=nullptr;
+    stateEvaluationActive_=false;
+    preparedPhaseReady_=false;
+    return WVKernelStatus::ok();
+}
+
+WVKernelStatus WVTransformConstantStratificationKernel::preparedPhase(
+    const WVState& state,WVComplexConstView& result) {
+    result={};
+    auto status=validateStateForCall(state); if (!status) return status;
+    ExecutionGuard guard(executing_);
+    if (!guard.entered()) return {WVKernelStatusCode::reentrantExecution,"Kernel operations are not reentrant."};
+    if (!stateEvaluationActive_ || !preparedPhaseReady_) {
+        status=prepareStatePhase(state); if (!status) return status;
+    }
+    result=phaseForPreparedState();
+    return WVKernelStatus::ok();
+}
+
 WVKernelStatus WVTransformConstantStratificationKernel::transformUVEtaToWaveVortex(
     const WVRealFieldBundleConstView& fields, double t, double t0, WVMutableCoefficients& coefficients) {
     if (!descriptor_.configuration().isHydrostatic) return {WVKernelStatusCode::invalidConfiguration, "transformUVEtaToWaveVortex requires a hydrostatic kernel."};
@@ -714,9 +1068,17 @@ WVKernelStatus WVTransformConstantStratificationKernel::transformUVEtaToWaveVort
     const WVKernelStatus outputStatuses[] = {validateSpectral(coefficients.Ap, spectral, "Ap"), validateSpectral(coefficients.Am, spectral, "Am"), validateSpectral(coefficients.A0, spectral, "A0")};
     for (const auto& value : outputStatuses) if (!value) return value;
     if (const auto ownership = validateForwardOwnership(fields,coefficients,spectral); !ownership) return ownership;
+    if (const auto ownership=validateMutableOutputOutsidePreparedState(coefficients); !ownership) return ownership;
     ExecutionGuard guard(executing_);
     if (!guard.entered()) return {WVKernelStatusCode::reentrantExecution, "Kernel operations are not reentrant."};
-    return transformUVEtaToWaveVortexImpl(fields,t,t0,coefficients);
+    WVComplexConstView phaseValues;
+    if (stateEvaluationActive_) {
+        if (t!=preparedState_.t || t0!=preparedState_.t0)
+            return {WVKernelStatusCode::invalidConfiguration,"Projection time does not match the active constant-stratification evaluation."};
+        if (!preparedPhaseReady_) { auto phaseStatus=prepareStatePhase(preparedState_); if (!phaseStatus) return phaseStatus; }
+        phaseValues=phaseForPreparedState();
+    } else { auto phaseStatus=prepareStatePhase({t,t0,{}}); if (!phaseStatus) return phaseStatus; phaseValues=phaseForPreparedState(); }
+    return transformUVEtaToWaveVortexImpl(fields,t,t0,coefficients,phaseValues);
 }
 
 WVKernelStatus WVTransformConstantStratificationKernel::transformUVEtaToWaveVortexImpl(
@@ -764,10 +1126,11 @@ WVKernelStatus WVTransformConstantStratificationKernel::addLaplacianDamping(
     if (!std::isfinite(nu) || !std::isfinite(kappa) || nu < 0.0 || kappa < 0.0 ||
         (direction != WVLaplacianDirection::horizontal && direction != WVLaplacianDirection::vertical))
         return {WVKernelStatusCode::invalidConfiguration,"Laplacian damping requires finite nonnegative coefficients and a valid direction."};
-    const auto status = validateStateAndFlux(descriptor_,state,flux);
+    auto status = validateStateAndFluxForCall(state,flux);
     if (!status) return status;
     ExecutionGuard guard(executing_);
     if (!guard.entered()) return {WVKernelStatusCode::reentrantExecution,"Kernel operations are not reentrant."};
+    if (!stateEvaluationActive_ || !preparedPhaseReady_) { status=prepareStatePhase(state); if (!status) return status; }
     const auto& c = descriptor_.configuration();
     const auto& modes = descriptor_.verticalModes();
     for (std::size_t kl = 0; kl < descriptor_.Nkl(); ++kl) {
@@ -777,7 +1140,7 @@ WVKernelStatus WVTransformConstantStratificationKernel::addLaplacianDamping(
             const double wavenumber = direction == WVLaplacianDirection::horizontal ? horizontal.Kh : modes.verticalWavenumber[j];
             const double velocityRate = -nu*wavenumber*wavenumber;
             const double displacementRate = -kappa*wavenumber*wavenumber;
-            const auto phaseValue = phase(modes.omega[index]*(state.t-state.t0));
+            const auto phaseValue = phaseForPreparedState().data[index];
             const auto evolved = evolveWaveVortexCoefficients(state.coefficients.Ap.data[index],state.coefficients.Am.data[index],state.coefficients.A0.data[index],phaseValue);
             const auto U = multiply(coefficientValueForField<0>(modes,index,evolved),velocityRate);
             const auto V = multiply(coefficientValueForField<1>(modes,index,evolved),velocityRate);
@@ -814,9 +1177,17 @@ WVKernelStatus WVTransformConstantStratificationKernel::transformUVWEtaToWaveVor
     const WVKernelStatus outputStatuses[] = {validateSpectral(coefficients.Ap, spectral, "Ap"), validateSpectral(coefficients.Am, spectral, "Am"), validateSpectral(coefficients.A0, spectral, "A0")};
     for (const auto& value : outputStatuses) if (!value) return value;
     if (const auto ownership = validateForwardOwnership(fields,coefficients,spectral); !ownership) return ownership;
+    if (const auto ownership=validateMutableOutputOutsidePreparedState(coefficients); !ownership) return ownership;
     ExecutionGuard guard(executing_);
     if (!guard.entered()) return {WVKernelStatusCode::reentrantExecution, "Kernel operations are not reentrant."};
-    return transformUVWEtaToWaveVortexImpl(fields,t,t0,coefficients);
+    WVComplexConstView phaseValues;
+    if (stateEvaluationActive_) {
+        if (t!=preparedState_.t || t0!=preparedState_.t0)
+            return {WVKernelStatusCode::invalidConfiguration,"Projection time does not match the active constant-stratification evaluation."};
+        if (!preparedPhaseReady_) { auto phaseStatus=prepareStatePhase(preparedState_); if (!phaseStatus) return phaseStatus; }
+        phaseValues=phaseForPreparedState();
+    } else { auto phaseStatus=prepareStatePhase({t,t0,{}}); if (!phaseStatus) return phaseStatus; phaseValues=phaseForPreparedState(); }
+    return transformUVWEtaToWaveVortexImpl(fields,t,t0,coefficients,phaseValues);
 }
 
 WVKernelStatus WVTransformConstantStratificationKernel::transformUVWEtaToWaveVortexImpl(
@@ -856,35 +1227,78 @@ WVKernelStatus WVTransformConstantStratificationKernel::transformUVWEtaToWaveVor
 
 WVKernelStatus WVTransformConstantStratificationKernel::transformWaveVortexToUVWEta(const WVState& state, WVRealFieldBundleView& fields) {
     auto status = validateBundle(fields, descriptor_.spatialShape(), 4, "Reconstructed fields"); if (!status) return status;
+    status=validateStateForCall(state); if (!status) return status;
     const auto spectral = descriptor_.spectralShape();
-    const WVKernelStatus inputStatuses[] = {validateSpectral(state.coefficients.Ap, spectral, "Ap"), validateSpectral(state.coefficients.Am, spectral, "Am"), validateSpectral(state.coefficients.A0, spectral, "A0")};
-    for (const auto& value : inputStatuses) if (!value) return value;
     if (const auto ownership = validateInverseOwnership(state,fields,spectral); !ownership) return ownership;
     ExecutionGuard guard(executing_); if (!guard.entered()) return {WVKernelStatusCode::reentrantExecution, "Kernel operations are not reentrant."};
-    return transformWaveVortexToUVWEtaImpl(state,fields);
+    const bool generatePhase=!stateEvaluationActive_ || !preparedPhaseReady_;
+    status=transformWaveVortexToUVWEtaImpl(state,fields,nullptr,
+        generatePhase ? WVComplexConstView{} : phaseForPreparedState(),
+        generatePhase ? preparedPhase_.data() : nullptr);
+    if (status && generatePhase) { ++metrics_.phasePreparationCount; if (stateEvaluationActive_) preparedPhaseReady_=true; }
+    return status;
+}
+
+WVKernelStatus WVTransformConstantStratificationKernel::transformCoefficientTendencyToUVWEta(
+    const WVState& state,WVRealFieldBundleView& fields) {
+    auto status=validateBundle(fields,descriptor_.spatialShape(),4,"Coefficient tendency fields");
+    if (!status) return status;
+    ++metrics_.derivedValidationCount;
+    status=validateStateContents(state); if (!status) return status;
+    if (stateEvaluationActive_ &&
+        (state.t!=preparedState_.t || state.t0!=preparedState_.t0))
+        return {WVKernelStatusCode::invalidConfiguration,
+            "Coefficient tendency times do not match the active evaluation."};
+    if (const auto ownership=validateInverseOwnership(state,fields,descriptor_.spectralShape()); !ownership)
+        return ownership;
+    ExecutionGuard guard(executing_);
+    if (!guard.entered())
+        return {WVKernelStatusCode::reentrantExecution,"Kernel operations are not reentrant."};
+    const bool generatePhase=!stateEvaluationActive_ || !preparedPhaseReady_;
+    status=transformWaveVortexToUVWEtaImpl(state,fields,nullptr,
+        generatePhase ? WVComplexConstView{} : phaseForPreparedState(),
+        generatePhase ? preparedPhase_.data() : nullptr,false);
+    if (status) for (auto& count:metrics_.tendencyReconstructionCount) ++count;
+    if (status && generatePhase) {
+        ++metrics_.phasePreparationCount;
+        if (stateEvaluationActive_) preparedPhaseReady_=true;
+    }
+    return status;
 }
 
 WVKernelStatus WVTransformConstantStratificationKernel::transformWaveVortexToUVW(const WVState& state, WVRealFieldBundleView& fields) {
     auto status = validateBundle(fields,descriptor_.spatialShape(),3,"Advection fields");
     if (!status) return status;
     const auto spectral = descriptor_.spectralShape();
-    const WVKernelStatus inputStatuses[] = {
-        validateSpectral(state.coefficients.Ap,spectral,"Ap"),
-        validateSpectral(state.coefficients.Am,spectral,"Am"),
-        validateSpectral(state.coefficients.A0,spectral,"A0")};
-    for (const auto& value : inputStatuses) if (!value) return value;
+    status=validateStateForCall(state); if (!status) return status;
     if (const auto ownership = validateInverseOwnership(state,fields,spectral); !ownership) return ownership;
     ExecutionGuard guard(executing_);
     if (!guard.entered()) return {WVKernelStatusCode::reentrantExecution,"Kernel operations are not reentrant."};
-    const auto& c = descriptor_.configuration();
-    const auto halfFieldElements = executionRowCount() * c.Nz;
-    auto* phaseStorage = reinterpret_cast<WVComplex64*>(halfSpectrumScratch_.data()) + 3 * halfFieldElements;
-    const auto count = spectral.elementCount();
-    const auto& omega = descriptor_.verticalModes().omega;
-    const double elapsed = state.t-state.t0;
-    if (!compact_) for (std::size_t index = 0; index < count; ++index) phaseStorage[index] = phase(omega[index]*elapsed);
+    const bool generatePhase=!stateEvaluationActive_ || !preparedPhaseReady_;
     ++metrics_.advectionVelocityReconstructionCount;
-    return transformWaveVortexToUVWImpl(state,fields,nullptr,{phaseStorage,spectral},compact_ ? phaseStorage : nullptr);
+    status=transformWaveVortexToUVWImpl(state,fields,nullptr,
+        generatePhase ? WVComplexConstView{} : phaseForPreparedState(),
+        generatePhase ? preparedPhase_.data() : nullptr);
+    if (status && generatePhase) { ++metrics_.phasePreparationCount; if (stateEvaluationActive_) preparedPhaseReady_=true; }
+    return status;
+}
+
+WVKernelStatus WVTransformConstantStratificationKernel::transformWaveVortexToUV(
+    const WVState& state, WVRealFieldBundleView& fields) {
+    auto status=validateBundle(fields,descriptor_.spatialShape(),2,"Horizontal velocity fields");
+    if (!status) return status;
+    status=validateStateForCall(state); if (!status) return status;
+    if (const auto ownership=validateInverseOwnership(state,fields,descriptor_.spectralShape()); !ownership) return ownership;
+    ExecutionGuard guard(executing_);
+    if (!guard.entered()) return {WVKernelStatusCode::reentrantExecution,"Kernel operations are not reentrant."};
+    if (!plans_[horizontalInverse2] || !plans_[verticalDCT2Storage2])
+        return {WVKernelStatusCode::invalidConfiguration,"Call prepareHorizontalVelocityTransform during model setup before requesting horizontal velocity."};
+    const bool generatePhase=!stateEvaluationActive_ || !preparedPhaseReady_;
+    status=transformWaveVortexToUVImpl(state,fields,
+        generatePhase ? WVComplexConstView{} : phaseForPreparedState(),
+        generatePhase ? preparedPhase_.data() : nullptr);
+    if (status && generatePhase) { ++metrics_.phasePreparationCount; if (stateEvaluationActive_) preparedPhaseReady_=true; }
+    return status;
 }
 
 WVKernelStatus WVTransformConstantStratificationKernel::transformStateFieldDerivatives(
@@ -895,25 +1309,19 @@ WVKernelStatus WVTransformConstantStratificationKernel::transformStateFieldDeriv
     auto status = validateBundle(derivatives,descriptor_.spatialShape(),3,"Field derivatives");
     if (!status) return status;
     const auto spectral = descriptor_.spectralShape();
-    const WVKernelStatus inputStatuses[] = {
-        validateSpectral(state.coefficients.Ap,spectral,"Ap"),
-        validateSpectral(state.coefficients.Am,spectral,"Am"),
-        validateSpectral(state.coefficients.A0,spectral,"A0")};
-    for (const auto& value : inputStatuses) if (!value) return value;
+    status=validateStateForCall(state); if (!status) return status;
     if (const auto ownership = validateInverseOwnership(state,derivatives,spectral); !ownership) return ownership;
     ExecutionGuard guard(executing_);
     if (!guard.entered()) return {WVKernelStatusCode::reentrantExecution,"Kernel operations are not reentrant."};
-    const auto& c = descriptor_.configuration();
-    const auto halfFieldElements = executionRowCount() * c.Nz;
-    auto* phaseStorage = reinterpret_cast<WVComplex64*>(halfSpectrumScratch_.data()) + 3 * halfFieldElements;
-    const auto coefficientCount = spectral.elementCount();
-    const auto& omega = descriptor_.verticalModes().omega;
-    const double elapsed = state.t-state.t0;
-    if (!compact_) for (std::size_t index = 0; index < coefficientCount; ++index) phaseStorage[index] = phase(omega[index]*elapsed);
-    return transformToSpatialDomainWithDerivativesFromStateImpl(state,{phaseStorage,spectral},target,derivatives,compact_ ? phaseStorage : nullptr);
+    const bool generatePhase=!stateEvaluationActive_ || !preparedPhaseReady_;
+    status=transformToSpatialDomainWithDerivativesFromStateImpl(state,
+        generatePhase ? WVComplexConstView{} : phaseForPreparedState(),target,derivatives,
+        generatePhase ? preparedPhase_.data() : nullptr);
+    if (status && generatePhase) { ++metrics_.phasePreparationCount; if (stateEvaluationActive_) preparedPhaseReady_=true; }
+    return status;
 }
 
-WVKernelStatus WVTransformConstantStratificationKernel::transformWaveVortexToUVWEtaImpl(const WVState& state, WVRealFieldBundleView& fields, const WVCoefficients* evolvedCoefficients) {
+WVKernelStatus WVTransformConstantStratificationKernel::transformWaveVortexToUVWEtaImpl(const WVState& state, WVRealFieldBundleView& fields, const WVCoefficients* evolvedCoefficients, WVComplexConstView phaseValues, WVComplex64* generatedPhase, bool countPrimaryReconstruction) {
     const auto& c = descriptor_.configuration(); const auto& mapping = executionMapping(); const auto& modes = descriptor_.verticalModes();
     const std::size_t halfRows = executionRowCount(); auto* half = reinterpret_cast<WVComplex64*>(halfSpectrumScratch_.data());
     std::fill(half,half + c.Nz * 4 * halfRows,WVComplex64{});
@@ -922,7 +1330,8 @@ WVKernelStatus WVTransformConstantStratificationKernel::transformWaveVortexToUVW
         for (std::size_t iMode = begin; iMode < end; ++iMode) {
         if (evolvedCoefficients == nullptr) {
             auto source = [&](std::size_t index) {
-                const auto p = phase(modes.omega[index] * (state.t - state.t0));
+                const auto p = generatedPhase ?
+                    (generatedPhase[index]=phase(modes.omega[index]*(state.t-state.t0))) : phaseValues.data[index];
                 return evolveWaveVortexCoefficients(state.coefficients.Ap.data[index],state.coefficients.Am.data[index],state.coefficients.A0.data[index],p);
             };
             if (mapping.conjugatesStoredValueByWVIndex[iMode]) assembleFieldSpectraForMode<true>(half,mapping,modes,c.Nz,c.Nj,iMode,source);
@@ -943,6 +1352,11 @@ WVKernelStatus WVTransformConstantStratificationKernel::transformWaveVortexToUVW
     metrics_.executionCount += 2; metrics_.verticalExecutionCount += 2;
     execute = plans_[horizontalInverse4]->execute(half, fields.data); if (!execute) return execute;
     ++metrics_.executionCount; ++metrics_.horizontalExecutionCount;
+    if (countPrimaryReconstruction) {
+        const auto component=stateEvaluationComponent(state);
+        for (std::size_t field=0;field<4;++field)
+            ++metrics_.reconstructionCount[field][0][component];
+    }
     return WVKernelStatus::ok();
 }
 
@@ -974,6 +1388,45 @@ WVKernelStatus WVTransformConstantStratificationKernel::transformWaveVortexToUVW
     metrics_.executionCount += 2; metrics_.verticalExecutionCount += 2;
     execute = plans_[horizontalInverse3]->execute(half,fields.data); if (!execute) return execute;
     ++metrics_.executionCount; ++metrics_.horizontalExecutionCount;
+    const auto component=stateEvaluationComponent(state);
+    for (std::size_t field=0;field<3;++field)
+        ++metrics_.reconstructionCount[field][0][component];
+    return WVKernelStatus::ok();
+}
+
+WVKernelStatus WVTransformConstantStratificationKernel::transformWaveVortexToUVImpl(
+    const WVState& state, WVRealFieldBundleView& fields, WVComplexConstView phaseValues,
+    WVComplex64* generatedPhase) {
+    const auto& c=descriptor_.configuration();
+    const auto& mapping=executionMapping();
+    const auto& modes=descriptor_.verticalModes();
+    const std::size_t halfRows=executionRowCount();
+    auto* half=reinterpret_cast<WVComplex64*>(halfSpectrumScratch_.data());
+    std::fill(half,half+c.Nz*2*halfRows,WVComplex64{});
+    const auto coefficientAssemblyStart=std::chrono::steady_clock::now();
+    coefficientExecutor_->execute(descriptor_.Nkl(),[&](std::size_t begin,std::size_t end) {
+        for (std::size_t iMode=begin;iMode<end;++iMode) {
+            auto source=[&](std::size_t index) {
+                const auto phaseValue=generatedPhase ?
+                    (generatedPhase[index]=phase(modes.omega[index]*(state.t-state.t0))) : phaseValues.data[index];
+                return evolveWaveVortexCoefficients(state.coefficients.Ap.data[index],state.coefficients.Am.data[index],state.coefficients.A0.data[index],phaseValue);
+            };
+            if (mapping.conjugatesStoredValueByWVIndex[iMode])
+                assembleHorizontalVelocitySpectraForMode<true>(half,mapping,modes,c.Nz,c.Nj,iMode,source);
+            else
+                assembleHorizontalVelocitySpectraForMode<false>(half,mapping,modes,c.Nz,c.Nj,iMode,source);
+        }
+    });
+    if (stageInstrumentationEnabled_)
+        metrics_.coefficientAssemblySeconds=std::chrono::duration<double>(std::chrono::steady_clock::now()-coefficientAssemblyStart).count();
+    completeHermitianBoundaries(half,mapping,c.Nz,2);
+    auto execute=plans_[verticalDCT2Storage2]->execute(half,half); if (!execute) return execute;
+    ++metrics_.executionCount; ++metrics_.verticalExecutionCount;
+    execute=plans_[horizontalInverse2]->execute(half,fields.data); if (!execute) return execute;
+    ++metrics_.executionCount; ++metrics_.horizontalExecutionCount;
+    const auto component=stateEvaluationComponent(state);
+    ++metrics_.reconstructionCount[0][0][component];
+    ++metrics_.reconstructionCount[1][0][component];
     return WVKernelStatus::ok();
 }
 
@@ -1009,6 +1462,24 @@ WVKernelStatus WVTransformConstantStratificationKernel::transformToSpatialDomain
     metrics_.executionCount += 2; metrics_.verticalExecutionCount += 2;
     normalizeInverseDCT(half,c.Nz,halfRows,4,0,3); normalizeInverseDST(half,c.Nz,halfRows,4,3,1);
     execute = plans_[horizontalInverse4]->execute(half, fields.data); if (!execute) return execute; ++metrics_.executionCount; ++metrics_.horizontalExecutionCount; return WVKernelStatus::ok();
+}
+
+WVKernelStatus WVTransformConstantStratificationKernel::transformToSpatialDomainWithFAllDerivatives(
+    WVConstantFField field,const WVComplexConstView& Apm,const WVComplexConstView& A0,
+    WVRealFieldBundleView& fields,std::size_t componentIdentity) {
+    if (componentIdentity>=5)
+        return {WVKernelStatusCode::invalidConfiguration,"Constant-stratification component identity is out of range."};
+    std::size_t target=0;
+    switch(field) {
+        case WVConstantFField::pi: target=4; break;
+        case WVConstantFField::psi: target=6; break;
+        case WVConstantFField::qgpv: target=7; break;
+        default: return {WVKernelStatusCode::unsupportedOperation,"Unknown constant-stratification F field."};
+    }
+    const auto status=transformToSpatialDomainWithFAllDerivatives(Apm,A0,fields);
+    if (status) for (std::size_t derivative=0;derivative<4;++derivative)
+        ++metrics_.reconstructionCount[target][derivative][componentIdentity];
+    return status;
 }
 
 WVKernelStatus WVTransformConstantStratificationKernel::transformToSpatialDomainWithGAllDerivatives(const WVComplexConstView& Apm, const WVComplexConstView& A0, WVRealFieldBundleView& fields) {
@@ -1049,8 +1520,8 @@ WVKernelStatus WVTransformConstantStratificationKernel::transformToSpatialDomain
         coefficientExecutor_->execute(descriptor_.Nkl(),[&](std::size_t begin, std::size_t end) {
             for (std::size_t mode = begin; mode < end; ++mode) {
                 auto source = [&](std::size_t index) { return EvolvedWaveVortexCoefficients{evolvedCoefficients.Ap.data[index],evolvedCoefficients.Am.data[index],evolvedCoefficients.A0.data[index]}; };
-                if (mapping.conjugatesStoredValueByWVIndex[mode]) assembleDerivativeSpectraForMode<resolvedTarget,true>(half,mapping,modes,descriptor_.fourierModes(),c.Nz,c.Nj,mode,source);
-                else assembleDerivativeSpectraForMode<resolvedTarget,false>(half,mapping,modes,descriptor_.fourierModes(),c.Nz,c.Nj,mode,source);
+                if (mapping.conjugatesStoredValueByWVIndex[mode]) assembleDerivativeSpectraForMode<resolvedTarget,true>(half,mapping,modes,descriptor_.fourierModes(),c.Nz,c.Nj,mode,nullptr,source);
+                else assembleDerivativeSpectraForMode<resolvedTarget,false>(half,mapping,modes,descriptor_.fourierModes(),c.Nz,c.Nj,mode,nullptr,source);
             }
         });
     };
@@ -1077,7 +1548,9 @@ WVKernelStatus WVTransformConstantStratificationKernel::transformToSpatialDomain
 }
 
 WVKernelStatus WVTransformConstantStratificationKernel::transformToSpatialDomainWithDerivativesFromStateImpl(
-    const WVState& state, WVComplexConstView phaseValues, std::size_t target, WVRealFieldBundleView& derivatives, WVComplex64* generatedPhase) {
+    const WVState& state, WVComplexConstView phaseValues, std::size_t target,
+    WVRealFieldBundleView& derivatives, WVComplex64* generatedPhase,
+    const std::array<bool,3>* derivativeMask) {
     const auto& c = descriptor_.configuration();
     const auto& mapping = executionMapping();
     const auto& modes = descriptor_.verticalModes();
@@ -1093,8 +1566,8 @@ WVKernelStatus WVTransformConstantStratificationKernel::transformToSpatialDomain
                 auto source = [&](std::size_t index) { const auto phaseValue = generatedPhase ?
                     (generatedPhase[index]=phase(modes.omega[index]*(state.t-state.t0))) : phaseValues.data[index];
                 return evolveWaveVortexCoefficients(state.coefficients.Ap.data[index],state.coefficients.Am.data[index],state.coefficients.A0.data[index],phaseValue); };
-                if (mapping.conjugatesStoredValueByWVIndex[mode]) assembleDerivativeSpectraForMode<resolvedTarget,true>(half,mapping,modes,descriptor_.fourierModes(),c.Nz,c.Nj,mode,source);
-                else assembleDerivativeSpectraForMode<resolvedTarget,false>(half,mapping,modes,descriptor_.fourierModes(),c.Nz,c.Nj,mode,source);
+                if (mapping.conjugatesStoredValueByWVIndex[mode]) assembleDerivativeSpectraForMode<resolvedTarget,true>(half,mapping,modes,descriptor_.fourierModes(),c.Nz,c.Nj,mode,derivativeMask,source);
+                else assembleDerivativeSpectraForMode<resolvedTarget,false>(half,mapping,modes,descriptor_.fourierModes(),c.Nz,c.Nj,mode,derivativeMask,source);
             }
         });
     };
@@ -1115,6 +1588,10 @@ WVKernelStatus WVTransformConstantStratificationKernel::transformToSpatialDomain
     metrics_.executionCount += 2; metrics_.verticalExecutionCount += 2;
     execute = plans_[horizontalInverse3]->execute(half,derivatives.data); if (!execute) return execute;
     ++metrics_.executionCount; ++metrics_.horizontalExecutionCount;
+    const auto component=stateEvaluationComponent(state);
+    for (std::size_t derivative=1;derivative<4;++derivative)
+        if (!derivativeMask || (*derivativeMask)[derivative-1])
+            ++metrics_.reconstructionCount[target][derivative][component];
     return WVKernelStatus::ok();
 }
 
@@ -1497,32 +1974,39 @@ WVKernelStatus WVTransformConstantStratificationKernel::advectFGridScalar(
     return WVKernelStatus::ok();
 }
 
-WVKernelStatus WVTransformConstantStratificationKernel::nonlinearFlux(const WVState& state, WVFlux& flux) {
-    auto status = validateStateAndFlux(descriptor_,state,flux);
+WVKernelStatus WVTransformConstantStratificationKernel::nonlinearFlux(
+    const WVState& state,WVFlux& flux,WVStateDerivativeAccess* derivativeAccess) {
+    auto status = validateStateAndFluxForCall(state,flux);
     if (!status) return status;
     ExecutionGuard guard(executing_);
     if (!guard.entered()) return {WVKernelStatusCode::reentrantExecution,"Kernel operations are not reentrant."};
-    return nonlinearFluxImpl(state,flux,nullptr,false);
+    return nonlinearFluxImpl(state,flux,nullptr,false,nullptr,true,
+        stateEvaluationActive_ && preparedPhaseReady_ ? phaseForPreparedState() : WVComplexConstView{},
+        derivativeAccess);
 }
 
 WVKernelStatus WVTransformConstantStratificationKernel::nonlinearFluxWithAdvectionFields(
-    const WVState& state, WVFlux& flux, WVRealFieldBundleView& advectionFields) {
-    auto status = validateStateAndFlux(descriptor_,state,flux);
+    const WVState& state,WVFlux& flux,WVRealFieldBundleView& advectionFields,
+    WVStateDerivativeAccess* derivativeAccess) {
+    auto status = validateStateAndFluxForCall(state,flux);
     if (!status) return status;
     status = validateBundle(advectionFields,descriptor_.spatialShape(),3,"Advection fields");
     if (!status) return status;
     if (const auto ownership = validateInverseOwnership(state,advectionFields,descriptor_.spectralShape()); !ownership) return ownership;
     ExecutionGuard guard(executing_);
     if (!guard.entered()) return {WVKernelStatusCode::reentrantExecution,"Kernel operations are not reentrant."};
-    return nonlinearFluxImpl(state,flux,&advectionFields,false);
+    return nonlinearFluxImpl(state,flux,&advectionFields,false,nullptr,true,
+        stateEvaluationActive_ && preparedPhaseReady_ ? phaseForPreparedState() : WVComplexConstView{},
+        derivativeAccess);
 }
 
 WVKernelStatus WVTransformConstantStratificationKernel::nonlinearFluxUsingAdvectionFields(
     const WVState& state, WVFlux& flux, const WVRealFieldBundleConstView& advectionFields,
-    WVRealFieldBundleView* spatialTendency, bool projectFlux) {
+    WVRealFieldBundleView* spatialTendency,bool projectFlux,
+    WVStateDerivativeAccess* derivativeAccess) {
     if (!projectFlux && !spatialTendency)
         return {WVKernelStatusCode::invalidConfiguration,"Spatial-only nonlinear evaluation requires output storage."};
-    auto status = validateStateAndFlux(descriptor_,state,flux);
+    auto status = validateStateAndFluxForCall(state,flux);
     if (!status) return status;
     status = validateBundle(advectionFields,descriptor_.spatialShape(),3,"Prepared advection fields");
     if (!status) return status;
@@ -1545,25 +2029,22 @@ WVKernelStatus WVTransformConstantStratificationKernel::nonlinearFluxUsingAdvect
     }
     ExecutionGuard guard(executing_);
     if (!guard.entered()) return {WVKernelStatusCode::reentrantExecution,"Kernel operations are not reentrant."};
-    return nonlinearFluxImpl(state,flux,&mutableView,true,spatialTendency,projectFlux);
+    return nonlinearFluxImpl(state,flux,&mutableView,true,spatialTendency,projectFlux,
+        stateEvaluationActive_ && preparedPhaseReady_ ? phaseForPreparedState() : WVComplexConstView{},
+        derivativeAccess);
 }
 
 WVKernelStatus WVTransformConstantStratificationKernel::nonlinearFluxImpl(
     const WVState& state, WVFlux& flux, WVRealFieldBundleView* retainedAdvectionFields, bool advectionFieldsPrepared,
-    WVRealFieldBundleView* spatialTendency, bool projectFlux) {
+    WVRealFieldBundleView* spatialTendency,bool projectFlux,WVComplexConstView preparedPhaseValues,
+    WVStateDerivativeAccess* derivativeAccess) {
     WVKernelStatus status = WVKernelStatus::ok();
 
     const auto spectral = descriptor_.spectralShape();
     const auto phaseEvaluationCount = spectral.elementCount();
-    const auto& modes = descriptor_.verticalModes();
     using Clock = std::chrono::steady_clock;
     auto stageStart = Clock::now();
-    const auto& c = descriptor_.configuration();
-    const auto halfFieldElements = executionRowCount() * c.Nz;
-    auto* phaseStorage = reinterpret_cast<WVComplex64*>(halfSpectrumScratch_.data()) + 3 * halfFieldElements;
-    const double elapsed = state.t - state.t0;
     for (std::size_t index = 0; index < phaseEvaluationCount; ++index) {
-        if (!compact_) phaseStorage[index] = phase(modes.omega[index] * elapsed);
         if (projectFlux) {
             flux.Fp.data[index] = {};
             flux.Fm.data[index] = {};
@@ -1573,7 +2054,7 @@ WVKernelStatus WVTransformConstantStratificationKernel::nonlinearFluxImpl(
     if (stageInstrumentationEnabled_) metrics_.phaseSeconds = compact_ ? 0.0 : std::chrono::duration<double>(Clock::now() - stageStart).count();
     ++metrics_.nonlinearFluxCallCount;
     metrics_.nonlinearFluxPhaseEvaluationCount += phaseEvaluationCount;
-    const WVComplexConstView phaseValues{phaseStorage,spectral};
+    WVComplexConstView phaseValues=preparedPhaseValues;
 
     const auto spatial = descriptor_.spatialShape();
     const auto fieldElements = spatial.elementCount();
@@ -1581,11 +2062,20 @@ WVKernelStatus WVTransformConstantStratificationKernel::nonlinearFluxImpl(
     auto& advectingFields = retainedAdvectionFields == nullptr ? internalAdvectionFields : *retainedAdvectionFields;
     stageStart = Clock::now();
     if (!advectionFieldsPrepared) {
-        // Generate the phase while constructing the first retained spectrum.
-        // Supplied velocities instead generate it in the first derivative pass.
-        status = transformWaveVortexToUVWImpl(state,advectingFields,nullptr,phaseValues,compact_ ? phaseStorage : nullptr);
+        const bool generatePhase=phaseValues.data==nullptr;
+        status = transformWaveVortexToUVWImpl(state,advectingFields,nullptr,phaseValues,
+            generatePhase ? preparedPhase_.data() : nullptr);
         if (!status) return status;
+        if (generatePhase) {
+            ++metrics_.phasePreparationCount;
+            if (stateEvaluationActive_) preparedPhaseReady_=true;
+            phaseValues=phaseForPreparedState();
+        }
         ++metrics_.advectionVelocityReconstructionCount;
+    } else if (phaseValues.data==nullptr) {
+        status=prepareStatePhase(state);
+        if (!status) return status;
+        phaseValues=phaseForPreparedState();
     }
     if (stageInstrumentationEnabled_) metrics_.reconstructionSeconds = std::chrono::duration<double>(Clock::now() - stageStart).count();
 
@@ -1599,20 +2089,53 @@ WVKernelStatus WVTransformConstantStratificationKernel::nonlinearFluxImpl(
     for (std::size_t iTarget = 0; iTarget < targetCount; ++iTarget) {
         double* derivativeData = realScratch_.data() + 3 * fieldElements;
         WVRealFieldBundleView derivatives{derivativeData,{spatial.first,spatial.second,spatial.third,3}};
+        std::array<bool,3> missing{true,true,true};
+        std::array<const double*,3> derivativeValues{};
+        if (derivativeAccess && derivativeAccess->lookup) for (std::size_t axis=0;axis<3;++axis) {
+            WVRealVolumeConstView cached{};
+            status=derivativeAccess->lookup(derivativeAccess->context,targets[iTarget],axis+1,cached);
+            if (!status) return status;
+            if (!cached.data) continue;
+            if (cached.shape.first!=spatial.first || cached.shape.second!=spatial.second ||
+                cached.shape.third!=spatial.third)
+                return {WVKernelStatusCode::invalidShape,"Cached constant derivative has an incompatible shape."};
+            WVRealFieldBundleView cachedBundle{const_cast<double*>(cached.data),
+                {spatial.first,spatial.second,spatial.third,1}};
+            status=validateBundle(cachedBundle,spatial,1,"Cached constant derivative");
+            if (!status) return status;
+            if (memoryOverlaps(cached.data,fieldElements*sizeof(double),derivativeData,
+                    fieldElements*sizeof(double)))
+                return {WVKernelStatusCode::overlappingArrays,"Cached constant derivative overlaps nonlinear product storage."};
+            missing[axis]=false;
+            derivativeValues[axis]=cached.data;
+        }
         stageStart = Clock::now();
-        status = transformToSpatialDomainWithDerivativesFromStateImpl(state,phaseValues,targets[iTarget],derivatives,
-            compact_ && advectionFieldsPrepared && iTarget==0 ? phaseStorage : nullptr);
-        if (!status) return status;
+        if (missing[0] || missing[1] || missing[2]) {
+            status=transformToSpatialDomainWithDerivativesFromStateImpl(
+                state,phaseValues,targets[iTarget],derivatives,nullptr,&missing);
+            if (!status) return status;
+            for (std::size_t axis=0;axis<3;++axis) if (missing[axis]) {
+                derivativeValues[axis]=derivativeData+axis*fieldElements;
+                if (derivativeAccess && derivativeAccess->capture) {
+                    status=derivativeAccess->capture(derivativeAccess->context,
+                        targets[iTarget],axis+1,
+                        {derivativeValues[axis],spatial});
+                    if (!status) return status;
+                }
+            }
+        }
         if (stageInstrumentationEnabled_) derivativeSeconds += std::chrono::duration<double>(Clock::now() - stageStart).count();
         const double* WV_KERNEL_RESTRICT U = advectingFields.data;
         const double* WV_KERNEL_RESTRICT V = U + fieldElements;
         const double* WV_KERNEL_RESTRICT W = V + fieldElements;
         double* WV_KERNEL_RESTRICT dx = derivativeData;
-        const double* WV_KERNEL_RESTRICT dy = dx + fieldElements;
-        const double* WV_KERNEL_RESTRICT dz = dy + fieldElements;
+        const double* WV_KERNEL_RESTRICT sourceDx=derivativeValues[0];
+        const double* WV_KERNEL_RESTRICT sourceDy=derivativeValues[1];
+        const double* WV_KERNEL_RESTRICT sourceDz=derivativeValues[2];
         stageStart = Clock::now();
         auto product = [&](std::size_t begin, std::size_t end) {
-            for (std::size_t i=begin;i<end;++i) dx[i]=-(U[i]*dx[i]+V[i]*dy[i]+W[i]*dz[i]);
+            for (std::size_t i=begin;i<end;++i)
+                dx[i]=-(U[i]*sourceDx[i]+V[i]*sourceDy[i]+W[i]*sourceDz[i]);
         };
         if (compact_ && fieldElements >= 4096) compact_->pointwise->execute(fieldElements,product);
         else product(0,fieldElements);

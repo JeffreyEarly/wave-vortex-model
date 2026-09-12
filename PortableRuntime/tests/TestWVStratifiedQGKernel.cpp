@@ -76,6 +76,54 @@ void contracts(const std::shared_ptr<const WVStratifiedModalRecord>& source) {
     status=kernel->advectScalarWithAdvectionFields(tracerInput,advection,false,{tracer.data()+1,kernel->spatialShape()});
     require(status.code==WVKernelStatusCode::overlappingArrays,"Partial tracer alias accepted");
     require(bool(kernel->nonlinearFlux(input,output)),"Flux failed");
+    std::vector<double> compoundReference(R),compoundEtaZ(R),compoundEta(R),compoundResult(R);
+    require(bool(kernel->beginStateEvaluation(input)),"Compound producer scope begin failed");
+    require(bool(kernel->transformA0ToField(input,WVStratifiedQGField::rhoTotal,
+        {compoundReference.data(),kernel->spatialShape()},WVStratifiedQGDerivative::z)),
+        "Reference QG density derivative failed");
+    kernel->resetMetrics();
+    require(bool(kernel->transformA0ToField(input,WVStratifiedQGField::eta,
+        {compoundEtaZ.data(),kernel->spatialShape()},WVStratifiedQGDerivative::z)),
+        "Prepared QG eta_z failed");
+    require(bool(kernel->transformA0ToField(input,WVStratifiedQGField::eta,
+        {compoundEta.data(),kernel->spatialShape()})),"Prepared QG eta failed");
+    require(bool(kernel->combinePreparedDensityZDerivative(WVStratifiedQGField::rhoTotal,
+        {compoundEtaZ.data(),kernel->spatialShape()},{compoundEta.data(),kernel->spatialShape()},
+        {compoundResult.data(),kernel->spatialShape()})),"Prepared QG density combination failed");
+    for(std::size_t i=0;i<R;++i)
+        require(std::abs(compoundResult[i]-compoundReference[i])<=1e-12*
+            std::max(1.0,std::abs(compoundReference[i])),
+            "Prepared QG density derivative changed values");
+    require(kernel->metrics().reconstructionCount[static_cast<std::size_t>(WVStratifiedQGField::eta)]
+            [static_cast<std::size_t>(WVStratifiedQGDerivative::z)]==1 &&
+        kernel->metrics().reconstructionCount[static_cast<std::size_t>(WVStratifiedQGField::eta)]
+            [static_cast<std::size_t>(WVStratifiedQGDerivative::value)]==1 &&
+        kernel->metrics().reconstructionCount[static_cast<std::size_t>(WVStratifiedQGField::rhoTotal)]
+            [static_cast<std::size_t>(WVStratifiedQGDerivative::z)]==1 &&
+        kernel->metrics().componentReconstructionCount[static_cast<std::size_t>(WVStratifiedQGField::rhoTotal)]
+            [static_cast<std::size_t>(WVStratifiedQGDerivative::z)][0]==1,
+        "Prepared QG density derivative repeated a producer");
+    require(bool(kernel->combinePreparedDensityZDerivative(WVStratifiedQGField::rhoTotal,
+        {compoundEtaZ.data(),kernel->spatialShape()},{compoundEta.data(),kernel->spatialShape()},
+        {compoundEtaZ.data(),kernel->spatialShape()},2)),
+        "Exact prepared QG density alias was rejected");
+    for(std::size_t i=0;i<R;++i)
+        require(std::abs(compoundEtaZ[i]-compoundReference[i])<=1e-12*
+            std::max(1.0,std::abs(compoundReference[i])),
+            "Exact prepared QG density alias changed values");
+    require(kernel->metrics().componentReconstructionCount[static_cast<std::size_t>(WVStratifiedQGField::rhoTotal)]
+            [static_cast<std::size_t>(WVStratifiedQGDerivative::z)][2]==1,
+        "Prepared QG density component attribution failed");
+    std::vector<double> partialCompound(R+1);
+    std::copy_n(compoundReference.data(),R,partialCompound.data());
+    require(kernel->combinePreparedDensityZDerivative(WVStratifiedQGField::rhoTotal,
+        {partialCompound.data(),kernel->spatialShape()},{compoundEta.data(),kernel->spatialShape()},
+        {partialCompound.data()+1,kernel->spatialShape()}).code==WVKernelStatusCode::overlappingArrays,
+        "Partial prepared QG density alias was accepted");
+    require(!kernel->combinePreparedDensityZDerivative(WVStratifiedQGField::u,
+        {compoundEtaZ.data(),kernel->spatialShape()},{compoundEta.data(),kernel->spatialShape()},
+        {compoundResult.data(),kernel->spatialShape()}),"Invalid prepared QG density target was accepted");
+    require(bool(kernel->endStateEvaluation()),"Compound producer scope end failed");
     allocationProbe::calls=0; allocationProbe::counting=true;
     for (int i=0;i<5;++i) {
         require(bool(kernel->advectScalarWithAdvectionFields(tracerInput,advection,true,tracerOutput)),"Prepared tracer allocation test failed");
@@ -88,6 +136,33 @@ void contracts(const std::shared_ptr<const WVStratifiedModalRecord>& source) {
     }
     allocationProbe::counting=false; require(allocationProbe::calls==0,"Prepared allocation");
     for (std::size_t i=0;i<S;++i) require(a[i].real==saved[i].real && a[i].imag==saved[i].imag,"Input mutated");
+    kernel->resetMetrics();
+    int evaluationOwner=0;
+    require(bool(kernel->beginStateEvaluation(input,&evaluationOwner)),"Begin Stratified QG state evaluation failed");
+    require(kernel->evolveA0(input,19,{a.data(),input.shape}).code==WVKernelStatusCode::overlappingArrays,
+        "Scoped Stratified QG evolution mutated the active immutable state");
+    require(kernel->transformQGPVToA0({spatial.data(),kernel->spatialShape()},{a.data(),input.shape}).code==WVKernelStatusCode::overlappingArrays,
+        "Scoped Stratified QG projection mutated the active immutable state");
+    auto registered=a;
+    WVComplexConstView registeredInput{registered.data(),input.shape};
+    require(bool(kernel->addStateEvaluationView(registeredInput,&evaluationOwner,2)),"Register Stratified QG state view failed");
+    require(bool(kernel->transformA0ToField(registeredInput,WVStratifiedQGField::u,{spatial.data(),kernel->spatialShape()})),
+        "Registered Stratified QG state view was rejected");
+    require(kernel->metrics().stateValidationCount==2,"Stratified QG registered state view skipped validation");
+    int foreignOwner=0;
+    require(!kernel->removeStateEvaluationView(input,&evaluationOwner,0),
+        "Primary Stratified QG state view was removed");
+    require(!kernel->removeStateEvaluationView(registeredInput,&foreignOwner,2),
+        "Foreign owner removed a Stratified QG state view");
+    require(bool(kernel->removeStateEvaluationView(registeredInput,&evaluationOwner,2)),
+        "Stratified QG state view removal failed");
+    require(!kernel->validateStateEvaluation(registeredInput) &&
+                !kernel->removeStateEvaluationView(registeredInput,&evaluationOwner,2),
+        "Removed Stratified QG state view remained registered");
+    require(bool(kernel->addStateEvaluationView(registeredInput,&evaluationOwner,3)) &&
+                bool(kernel->validateStateEvaluation(registeredInput)),
+        "Stratified QG state view storage could not be re-registered");
+    require(bool(kernel->endStateEvaluation()),"End Stratified QG state evaluation failed");
     require(bool(kernel->evolveA0(input,19,{a.data(),input.shape})),"In-place stationary evolution failed");
     const auto* old=kernel.get();
     status=WVTransformStratifiedQGKernel::create({},std::make_unique<WVReferenceFFTEngine>(),kernel);

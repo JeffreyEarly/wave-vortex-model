@@ -195,6 +195,36 @@ std::vector<WVForcingFactoryRegistration> builtInForcingFactories() {
        detail::createStratifiedQGFixedAmplitude}};
   for (auto& registration:factories) {
     registration.supportsTendencyDiagnostics=true;
+    if (registration.matlabClassName=="WVNonlinearAdvection")
+      registration.evaluationDependencies.nonlinearUseCount=1;
+    if (registration.matlabClassName=="WVAdaptiveDamping")
+      registration.evaluationDependencies.horizontalMaximumNeeded=true;
+    if (registration.matlabClassName=="WVHorizontalDamping") {
+      ++registration.evaluationDependencies.constantLaplacianUseCount[0];
+      // u/v/eta require Dxx and Dyy in the hydrostatic family.
+      for (const auto field:{0U,1U,3U}) for (std::size_t kind=0;kind<2;++kind)
+        ++registration.evaluationDependencies.hydrostaticGridCalculusUseCount[4*field+kind];
+      // u/v/w/eta require Dxx and Dyy in the Boussinesq family.
+      for (std::size_t field=0;field<4;++field) for (std::size_t kind=0;kind<2;++kind)
+        ++registration.evaluationDependencies.boussinesqGridCalculusUseCount[4*field+kind];
+    }
+    if (registration.matlabClassName=="WVVerticalDamping") {
+      ++registration.evaluationDependencies.constantLaplacianUseCount[1];
+      // Hydrostatic u/v use F-Dzz; eta uses G-Dzz.
+      for (const auto field:{0U,1U})
+        ++registration.evaluationDependencies.hydrostaticGridCalculusUseCount[4*field+2];
+      ++registration.evaluationDependencies.hydrostaticGridCalculusUseCount[4*3+3];
+      // Boussinesq u/v use F-Dzz; w/eta use G-Dzz.
+      for (const auto field:{0U,1U})
+        ++registration.evaluationDependencies.boussinesqGridCalculusUseCount[4*field+2];
+      for (const auto field:{2U,3U})
+        ++registration.evaluationDependencies.boussinesqGridCalculusUseCount[4*field+3];
+    }
+    if (registration.matlabClassName=="WVVerticalDiffusivity") {
+      ++registration.evaluationDependencies.constantLaplacianUseCount[1];
+      ++registration.evaluationDependencies.hydrostaticGridCalculusUseCount[4*3+3];
+      ++registration.evaluationDependencies.boussinesqGridCalculusUseCount[4*3+3];
+    }
     if (registration.matlabClassName=="WVNonlinearAdvection") registration.hydrostaticFactory=detail::createHydrostaticNonlinearAdvectionForcing;
     if (registration.matlabClassName=="WVNonlinearAdvection") registration.boussinesqFactory=detail::createBoussinesqNonlinearAdvectionForcing;
     if (registration.matlabClassName=="WVAntialiasing") { registration.hydrostaticFactory=detail::createHydrostaticExplicitAntialiasing; registration.prepareHydrostaticResolution=detail::prepareHydrostaticExplicitAntialiasing; }

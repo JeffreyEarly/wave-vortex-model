@@ -109,6 +109,126 @@ WVKernelStatus WVTransformStratifiedQGKernel::spectral(WVComplexConstView a) con
     if (!addressFits(a.data,S_*sizeof(WVComplex64),alignof(WVComplex64))) return {WVKernelStatusCode::invalidPointer,"Invalid coefficient storage."};
     return WVKernelStatus::ok();
 }
+WVKernelStatus WVTransformStratifiedQGKernel::validateState(WVComplexConstView a) const {
+    ++metrics_.stateValidationCount;
+    auto status=spectral(a); if (!status) return status;
+    for (std::size_t i=0;i<S_;++i)
+        if (!std::isfinite(a.data[i].real) || !std::isfinite(a.data[i].imag))
+            return {WVKernelStatusCode::numericalFailure,"Nonfinite Stratified QG coefficient."};
+    return WVKernelStatus::ok();
+}
+bool WVTransformStratifiedQGKernel::matchesStateEvaluation(WVComplexConstView a) const noexcept {
+    if (!stateEvaluationActive_) return false;
+    for (std::size_t i=0;i<preparedStateViewCount_;++i) if (
+        a.data==preparedStateViews_[i].data &&
+        a.shape.rows==preparedStateViews_[i].shape.rows &&
+        a.shape.columns==preparedStateViews_[i].shape.columns) return true;
+    return false;
+}
+std::size_t WVTransformStratifiedQGKernel::stateEvaluationComponent(
+    WVComplexConstView a) const noexcept {
+    if (!stateEvaluationActive_) return 0;
+    for (std::size_t i=0;i<preparedStateViewCount_;++i) if (
+        a.data==preparedStateViews_[i].data &&
+        a.shape.rows==preparedStateViews_[i].shape.rows &&
+        a.shape.columns==preparedStateViews_[i].shape.columns)
+        return preparedStateComponents_[i];
+    return 0;
+}
+WVKernelStatus WVTransformStratifiedQGKernel::validateStateEvaluation(
+    WVComplexConstView a) const noexcept {
+    if (!matchesStateEvaluation(a))
+        return {WVKernelStatusCode::invalidConfiguration,
+            "A0 does not belong to the active Stratified QG evaluation."};
+    return WVKernelStatus::ok();
+}
+WVKernelStatus WVTransformStratifiedQGKernel::validateStateForCall(WVComplexConstView a) const {
+    if (!stateEvaluationActive_) return validateState(a);
+    if (!matchesStateEvaluation(a))
+        return {WVKernelStatusCode::invalidConfiguration,"A0 does not match the active Stratified QG evaluation."};
+    return WVKernelStatus::ok();
+}
+WVKernelStatus WVTransformStratifiedQGKernel::mutableOutputOutsidePreparedState(WVComplexView output) const {
+    if (!stateEvaluationActive_) return WVKernelStatus::ok();
+    for (std::size_t i=0;i<preparedStateViewCount_;++i)
+        if (overlap(output.data,S_*sizeof(WVComplex64),preparedStateViews_[i].data,S_*sizeof(WVComplex64)))
+            return {WVKernelStatusCode::overlappingArrays,"Mutable A0 output overlaps an active immutable Stratified QG state view."};
+    return WVKernelStatus::ok();
+}
+WVKernelStatus WVTransformStratifiedQGKernel::beginStateEvaluation(WVComplexConstView a) {
+    return beginStateEvaluation(a,nullptr);
+}
+WVKernelStatus WVTransformStratifiedQGKernel::beginStateEvaluation(WVComplexConstView a,const void* evaluationOwner) {
+    ActiveCall guard(active_); if (!guard.entered) return reentrant();
+    if (stateEvaluationActive_)
+        return {WVKernelStatusCode::reentrantExecution,"Stratified QG state evaluation is already active."};
+    auto status=validateState(a); if (!status) return status;
+    preparedState_=a;
+    preparedStateViews_[0]=a;
+    preparedStateComponents_[0]=0;
+    preparedStateViewCount_=1;
+    preparedStateOwner_=evaluationOwner;
+    stateEvaluationActive_=true;
+    return WVKernelStatus::ok();
+}
+WVKernelStatus WVTransformStratifiedQGKernel::addStateEvaluationView(
+    WVComplexConstView a,const void* evaluationOwner,std::size_t componentIdentity) {
+    ActiveCall guard(active_); if (!guard.entered) return reentrant();
+    if (!stateEvaluationActive_)
+        return {WVKernelStatusCode::invalidConfiguration,"No Stratified QG state evaluation is active."};
+    if (evaluationOwner==nullptr || evaluationOwner!=preparedStateOwner_)
+        return {WVKernelStatusCode::invalidConfiguration,"Stratified QG state view owner does not match the active evaluation."};
+    if (componentIdentity>=5)
+        return {WVKernelStatusCode::invalidConfiguration,"Stratified QG component identity is out of range."};
+    if (matchesStateEvaluation(a))
+        return stateEvaluationComponent(a)==componentIdentity ? WVKernelStatus::ok() :
+            WVKernelStatus{WVKernelStatusCode::invalidConfiguration,
+                "Stratified QG state view is already registered with another component identity."};
+    if (preparedStateViewCount_==preparedStateViews_.size())
+        return {WVKernelStatusCode::invalidConfiguration,"Stratified QG state evaluation view capacity exceeded."};
+    auto status=validateState(a); if (!status) return status;
+    preparedStateViews_[preparedStateViewCount_]=a;
+    preparedStateComponents_[preparedStateViewCount_++]=componentIdentity;
+    return WVKernelStatus::ok();
+}
+WVKernelStatus WVTransformStratifiedQGKernel::removeStateEvaluationView(
+    WVComplexConstView a,const void* evaluationOwner,std::size_t componentIdentity) {
+    ActiveCall guard(active_); if (!guard.entered) return reentrant();
+    if (!stateEvaluationActive_)
+        return {WVKernelStatusCode::invalidConfiguration,"No Stratified QG state evaluation is active."};
+    if (evaluationOwner==nullptr || evaluationOwner!=preparedStateOwner_)
+        return {WVKernelStatusCode::invalidConfiguration,"Stratified QG state view owner does not match the active evaluation."};
+    if (componentIdentity==0 || componentIdentity>=5)
+        return {WVKernelStatusCode::invalidConfiguration,"The primary Stratified QG state view cannot be removed."};
+    for(std::size_t i=1;i<preparedStateViewCount_;++i) if (
+        preparedStateComponents_[i]==componentIdentity &&
+        a.data==preparedStateViews_[i].data &&
+        a.shape.rows==preparedStateViews_[i].shape.rows &&
+        a.shape.columns==preparedStateViews_[i].shape.columns) {
+        for(std::size_t j=i+1;j<preparedStateViewCount_;++j) {
+            preparedStateViews_[j-1]=preparedStateViews_[j];
+            preparedStateComponents_[j-1]=preparedStateComponents_[j];
+        }
+        --preparedStateViewCount_;
+        preparedStateViews_[preparedStateViewCount_]={};
+        preparedStateComponents_[preparedStateViewCount_]=0;
+        return WVKernelStatus::ok();
+    }
+    return {WVKernelStatusCode::invalidConfiguration,
+        "Stratified QG state view is not registered for this component."};
+}
+WVKernelStatus WVTransformStratifiedQGKernel::endStateEvaluation() {
+    ActiveCall guard(active_); if (!guard.entered) return reentrant();
+    if (!stateEvaluationActive_)
+        return {WVKernelStatusCode::invalidConfiguration,"No Stratified QG state evaluation is active."};
+    preparedState_={};
+    for (auto& stateView:preparedStateViews_) stateView={};
+    preparedStateComponents_={};
+    preparedStateViewCount_=0;
+    preparedStateOwner_=nullptr;
+    stateEvaluationActive_=false;
+    return WVKernelStatus::ok();
+}
 WVKernelStatus WVTransformStratifiedQGKernel::volume(WVRealVolumeConstView a,bool isSurface) const {
     const auto& g=geometry(); const auto nz=isSurface ? 1 : g.Nz;
     if (a.shape.first!=g.Nx || a.shape.second!=g.Ny || a.shape.third!=nz) return {WVKernelStatusCode::invalidShape,"Unexpected QG field shape."};
@@ -161,6 +281,7 @@ WVKernelStatus WVTransformStratifiedQGKernel::project(const double* a,WVComplexO
 }
 WVKernelStatus WVTransformStratifiedQGKernel::transformQGPVToA0(WVRealVolumeConstView a,WVComplexView b) {
     auto status=volume(a); if (!status) return status; status=spectral({b.data,b.shape}); if (!status) return status;
+    status=mutableOutputOutsidePreparedState(b); if (!status) return status;
     status=disjoint(a.data,R_*sizeof(double),b.data,S_*sizeof(WVComplex64)); if (!status) return status;
     ActiveCall guard(active_); if (!guard.entered) return reentrant();
     if (!executionOptions_.usesCompactSplitViews()) return project(a.data,output(b.data,S_));
@@ -168,6 +289,10 @@ WVKernelStatus WVTransformStratifiedQGKernel::transformQGPVToA0(WVRealVolumeCons
     copy(modal.input(),b.data,S_); return WVKernelStatus::ok();
 }
 WVKernelStatus WVTransformStratifiedQGKernel::reconstruct(WVComplexConstView a,WVStratifiedQGField field,WVStratifiedQGDerivative derivative,double* b) {
+    ++metrics_.fieldReconstructionCount[static_cast<std::size_t>(field)];
+    ++metrics_.reconstructionCount[static_cast<std::size_t>(field)][static_cast<std::size_t>(derivative)];
+    ++metrics_.componentReconstructionCount[static_cast<std::size_t>(field)]
+        [static_cast<std::size_t>(derivative)][stateEvaluationComponent(a)];
     const auto& g=geometry(); const bool density=field==WVStratifiedQGField::rhoE || field==WVStratifiedQGField::rhoTotal;
     const bool totalDensity=field==WVStratifiedQGField::rhoTotal;
     if (density) field=WVStratifiedQGField::eta;
@@ -215,15 +340,44 @@ WVKernelStatus WVTransformStratifiedQGKernel::reconstruct(WVComplexConstView a,W
 }
 WVKernelStatus WVTransformStratifiedQGKernel::transformA0ToField(WVComplexConstView a,WVStratifiedQGField field,WVRealVolumeView b,WVStratifiedQGDerivative derivative) {
     if (!fieldValid(field) || !derivativeValid(derivative)) return {WVKernelStatusCode::unsupportedOperation,"Unknown QG field or derivative."};
-    auto status=spectral(a); if (!status) return status; status=volume({b.data,b.shape},surface(field)); if (!status) return status;
+    auto status=validateStateForCall(a); if (!status) return status; status=volume({b.data,b.shape},surface(field)); if (!status) return status;
     status=disjoint(a.data,S_*sizeof(WVComplex64),b.data,(surface(field) ? R_/geometry().Nz : R_)*sizeof(double)); if (!status) return status;
     ActiveCall guard(active_); if (!guard.entered) return reentrant();
     status=reconstruct(a,field,derivative,surface(field) ? real_.data() : b.data); if (!status) return status;
     if (surface(field)) { const auto plane=R_/geometry().Nz; std::copy_n(real_.data()+R_-plane,plane,b.data); }
     return WVKernelStatus::ok();
 }
+WVKernelStatus WVTransformStratifiedQGKernel::combinePreparedDensityZDerivative(
+    WVStratifiedQGField field,WVRealVolumeConstView etaZ,WVRealVolumeConstView eta,
+    WVRealVolumeView output,std::size_t componentIdentity) {
+    if ((field!=WVStratifiedQGField::rhoE && field!=WVStratifiedQGField::rhoTotal) ||
+        componentIdentity>=5)
+        return {WVKernelStatusCode::unsupportedOperation,"Prepared density combination requires rhoE or rhoTotal."};
+    auto status=volume(etaZ); if (!status) return status;
+    status=volume(eta); if (!status) return status;
+    status=volume({output.data,output.shape}); if (!status) return status;
+    if(etaZ.data!=output.data) {
+        status=disjoint(etaZ.data,R_*sizeof(double),output.data,R_*sizeof(double)); if (!status) return status;
+    }
+    if(eta.data!=output.data) {
+        status=disjoint(eta.data,R_*sizeof(double),output.data,R_*sizeof(double)); if (!status) return status;
+    }
+    const auto& g=geometry(); const auto plane=R_/g.Nz;
+    for (std::size_t z=0;z<g.Nz;++z) for (std::size_t xy=0;xy<plane;++xy) {
+        const auto i=xy+plane*z; const double scale=(g.rho0/g.g)*g.N2[z];
+        output.data[i]=scale*(etaZ.data[i]+g.dLnN2[z]*eta.data[i]);
+        if (field==WVStratifiedQGField::rhoTotal) output.data[i]-=scale;
+    }
+    ++metrics_.fieldReconstructionCount[static_cast<std::size_t>(field)];
+    ++metrics_.reconstructionCount[static_cast<std::size_t>(field)]
+        [static_cast<std::size_t>(WVStratifiedQGDerivative::z)];
+    ++metrics_.componentReconstructionCount[static_cast<std::size_t>(field)]
+        [static_cast<std::size_t>(WVStratifiedQGDerivative::z)][componentIdentity];
+    return WVKernelStatus::ok();
+}
 WVKernelStatus WVTransformStratifiedQGKernel::transformUVEtaToA0(WVRealVolumeConstView u,WVRealVolumeConstView v,WVRealVolumeConstView eta,WVComplexView b) {
     auto status=spectral({b.data,b.shape}); if (!status) return status;
+    status=mutableOutputOutsidePreparedState(b); if (!status) return status;
     for (const auto& a : {u,v,eta}) { status=volume(a); if (!status) return status; status=disjoint(a.data,R_*sizeof(double),b.data,S_*sizeof(WVComplex64)); if (!status) return status; }
     ActiveCall guard(active_); if (!guard.entered) return reentrant();
     auto modal=modalSpectral_->output(0,S_),auxiliary=modalSpectral_->output(S_,S_);
@@ -248,7 +402,7 @@ WVKernelStatus WVTransformStratifiedQGKernel::transformUVEtaToA0(WVRealVolumeCon
 WVKernelStatus WVTransformStratifiedQGKernel::nonlinearFlux(WVComplexConstView a,WVComplexView b,double beta,
     WVRealVolumeView* raw,const WVRealFieldBundleConstView* preparedUV) {
     if (!std::isfinite(beta)) return {WVKernelStatusCode::invalidConfiguration,"Beta must be finite."};
-    auto status=spectral(a); if (!status) return status; status=spectral({b.data,b.shape}); if (!status) return status;
+    auto status=validateStateForCall(a); if (!status) return status; status=spectral({b.data,b.shape}); if (!status) return status;
     status=disjoint(a.data,S_*sizeof(WVComplex64),b.data,S_*sizeof(WVComplex64)); if (!status) return status;
     status=validateDiagnosticBuffers(a,b,raw,preparedUV); if (!status) return status;
     ActiveCall guard(active_); if (!guard.entered) return reentrant();
@@ -273,7 +427,7 @@ WVKernelStatus WVTransformStratifiedQGKernel::nonlinearFlux(WVComplexConstView a
 }
 WVKernelStatus WVTransformStratifiedQGKernel::verticalDiffusivityFlux(WVComplexConstView a,double kappaZ,WVComplexView b,WVRealVolumeView* raw) {
     if (!std::isfinite(kappaZ) || kappaZ<0) return {WVKernelStatusCode::invalidConfiguration,"Vertical diffusivity must be finite and nonnegative."};
-    auto status=spectral(a); if (!status) return status; status=spectral({b.data,b.shape}); if (!status) return status;
+    auto status=validateStateForCall(a); if (!status) return status; status=spectral({b.data,b.shape}); if (!status) return status;
     status=disjoint(a.data,S_*sizeof(WVComplex64),b.data,S_*sizeof(WVComplex64)); if (!status) return status;
     status=validateDiagnosticBuffers(a,b,raw); if (!status) return status;
     ActiveCall guard(active_); if (!guard.entered) return reentrant();
@@ -299,7 +453,7 @@ WVKernelStatus WVTransformStratifiedQGKernel::verticalDiffusivityFlux(WVComplexC
 }
 WVKernelStatus WVTransformStratifiedQGKernel::linearBottomFrictionFlux(WVComplexConstView a,double rate,WVComplexView b,WVRealVolumeView* raw) {
     if (!std::isfinite(rate) || rate<0) return {WVKernelStatusCode::invalidConfiguration,"Bottom friction must be finite and nonnegative."};
-    auto status=spectral(a); if (!status) return status; status=spectral({b.data,b.shape}); if (!status) return status;
+    auto status=validateStateForCall(a); if (!status) return status; status=spectral({b.data,b.shape}); if (!status) return status;
     status=disjoint(a.data,S_*sizeof(WVComplex64),b.data,S_*sizeof(WVComplex64)); if (!status) return status;
     status=validateDiagnosticBuffers(a,b,raw); if (!status) return status;
     ActiveCall guard(active_); if (!guard.entered) return reentrant();
@@ -316,7 +470,7 @@ WVKernelStatus WVTransformStratifiedQGKernel::linearBottomFrictionFlux(WVComplex
 WVKernelStatus WVTransformStratifiedQGKernel::quadraticBottomFrictionFlux(WVComplexConstView a,double dragCoefficient,WVComplexView b,
     WVRealVolumeView* raw,const WVRealFieldBundleConstView* preparedUV) {
     if (!std::isfinite(dragCoefficient) || dragCoefficient<0) return {WVKernelStatusCode::invalidConfiguration,"Quadratic drag must be finite and nonnegative."};
-    auto status=spectral(a); if (!status) return status; status=spectral({b.data,b.shape}); if (!status) return status;
+    auto status=validateStateForCall(a); if (!status) return status; status=spectral({b.data,b.shape}); if (!status) return status;
     status=disjoint(a.data,S_*sizeof(WVComplex64),b.data,S_*sizeof(WVComplex64)); if (!status) return status;
     status=validateDiagnosticBuffers(a,b,raw,preparedUV); if (!status) return status;
     ActiveCall guard(active_); if (!guard.entered) return reentrant();
@@ -357,14 +511,16 @@ WVKernelStatus WVTransformStratifiedQGKernel::quadraticBottomFrictionFlux(WVComp
     return WVKernelStatus::ok();
 }
 WVKernelStatus WVTransformStratifiedQGKernel::linearFlux(WVComplexConstView a,WVComplexView b,double beta) const {
-    auto status=spectral(a); if (!status) return status; status=spectral({b.data,b.shape}); if (!status) return status;
+    auto status=validateStateForCall(a); if (!status) return status; status=spectral({b.data,b.shape}); if (!status) return status;
+    status=mutableOutputOutsidePreparedState(b); if (!status) return status;
     if (!std::isfinite(beta)) return {WVKernelStatusCode::invalidConfiguration,"Beta must be finite."};
     if (a.data!=b.data) { status=disjoint(a.data,S_*sizeof(WVComplex64),b.data,S_*sizeof(WVComplex64)); if (!status) return status; }
     for (std::size_t i=0;i<S_;++i) b.data[i]=multiply(a.data[i],scale(factors_.v[i],-beta));
     return WVKernelStatus::ok();
 }
 WVKernelStatus WVTransformStratifiedQGKernel::evolveA0(WVComplexConstView a,double time,WVComplexView b,double beta) const {
-    auto status=spectral(a); if (!status) return status; status=spectral({b.data,b.shape}); if (!status) return status;
+    auto status=validateStateForCall(a); if (!status) return status; status=spectral({b.data,b.shape}); if (!status) return status;
+    status=mutableOutputOutsidePreparedState(b); if (!status) return status;
     if (!std::isfinite(time) || !std::isfinite(beta)) return {WVKernelStatusCode::invalidConfiguration,"Elapsed time and beta must be finite."};
     if (a.data!=b.data) { status=disjoint(a.data,S_*sizeof(WVComplex64),b.data,S_*sizeof(WVComplex64)); if (!status) return status; }
     for (std::size_t i=0;i<S_;++i) if (!std::isfinite(-beta*factors_.v[i].imag*time)) return {WVKernelStatusCode::numericalFailure,"Linear phase overflow."};
@@ -372,17 +528,17 @@ WVKernelStatus WVTransformStratifiedQGKernel::evolveA0(WVComplexConstView a,doub
     return WVKernelStatus::ok();
 }
 WVKernelStatus WVTransformStratifiedQGKernel::totalEnergy(WVComplexConstView a,double& energy) const {
-    auto status=spectral(a); if (!status) return status; double sum=0;
+    auto status=validateStateForCall(a); if (!status) return status; double sum=0;
     for (std::size_t i=0;i<S_;++i) sum+=factors_.energy[i]*(a.data[i].real*a.data[i].real+a.data[i].imag*a.data[i].imag);
     energy=sum; return WVKernelStatus::ok();
 }
 WVKernelStatus WVTransformStratifiedQGKernel::totalEnstrophy(WVComplexConstView a,double& value) const {
-    auto status=spectral(a); if (!status) return status; double sum=0;
+    auto status=validateStateForCall(a); if (!status) return status; double sum=0;
     for (std::size_t i=0;i<S_;++i) sum+=factors_.enstrophy[i]*(a.data[i].real*a.data[i].real+a.data[i].imag*a.data[i].imag);
     value=sum; return WVKernelStatus::ok();
 }
 WVKernelStatus WVTransformStratifiedQGKernel::totalEnergySpatiallyIntegrated(WVComplexConstView a,double& value) {
-    auto status=spectral(a); if (!status) return status; ActiveCall guard(active_); if (!guard.entered) return reentrant();
+    auto status=validateStateForCall(a); if (!status) return status; ActiveCall guard(active_); if (!guard.entered) return reentrant();
     const WVStratifiedQGField fields[]={WVStratifiedQGField::u,WVStratifiedQGField::v,WVStratifiedQGField::eta};
     for (std::size_t i=0;i<3;++i) { status=reconstruct(a,fields[i],WVStratifiedQGDerivative::value,real_.data()+i*R_); if (!status) return status; }
     double sum=0; const auto plane=R_/geometry().Nz;
@@ -390,7 +546,7 @@ WVKernelStatus WVTransformStratifiedQGKernel::totalEnergySpatiallyIntegrated(WVC
     value=sum/(2*plane); return WVKernelStatus::ok();
 }
 WVKernelStatus WVTransformStratifiedQGKernel::totalEnstrophySpatiallyIntegrated(WVComplexConstView a,double& value) {
-    auto status=spectral(a); if (!status) return status; ActiveCall guard(active_); if (!guard.entered) return reentrant();
+    auto status=validateStateForCall(a); if (!status) return status; ActiveCall guard(active_); if (!guard.entered) return reentrant();
     status=reconstruct(a,WVStratifiedQGField::qgpv,WVStratifiedQGDerivative::value,real_.data()); if (!status) return status;
     double sum=0; const auto plane=R_/geometry().Nz;
     // Match MATLAB WVGeostrophicMethods.totalEnstrophySpatiallyIntegrated:
@@ -402,10 +558,12 @@ WVKernelStatus WVTransformStratifiedQGKernel::totalEnstrophySpatiallyIntegrated(
     value=sum/(2*plane); return WVKernelStatus::ok();
 }
 WVKernelStatus WVTransformStratifiedQGKernel::uvMax(WVComplexConstView a,double& value) {
-    auto status=spectral(a); if (!status) return status; ActiveCall guard(active_); if (!guard.entered) return reentrant();
+    auto status=validateStateForCall(a); if (!status) return status; ActiveCall guard(active_); if (!guard.entered) return reentrant();
     status=reconstruct(a,WVStratifiedQGField::u,WVStratifiedQGDerivative::value,real_.data()); if (!status) return status;
     status=reconstruct(a,WVStratifiedQGField::v,WVStratifiedQGDerivative::value,real_.data()+R_); if (!status) return status;
-    double maximum=0; for (std::size_t i=0;i<R_;++i) maximum=std::max(maximum,std::hypot(real_[i],real_[R_+i])); value=maximum; return WVKernelStatus::ok();
+    double maximum=0; for (std::size_t i=0;i<R_;++i) maximum=std::max(maximum,std::hypot(real_[i],real_[R_+i]));
+    value=maximum; ++metrics_.horizontalSpeedMaximumReductionCount;
+    return WVKernelStatus::ok();
 }
 WVKernelStatus WVTransformStratifiedQGKernel::advectScalarWithAdvectionFields(WVRealVolumeConstView scalar, WVRealFieldBundleConstView fields, bool antialias, WVRealVolumeView output) {
     auto status = volume(scalar); if (!status) return status;

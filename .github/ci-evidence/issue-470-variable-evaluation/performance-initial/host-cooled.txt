@@ -1,0 +1,12 @@
+95407  12.0 /Applications/ChatGPT.app/Contents/Resources/codex
+95382   2.9 /Applications/ChatGPT.app/Contents/Frameworks/Codex Framework.framework/Versions/152.0.7977.83/Helpers/Codex (Service).app/Contents/MacOS/Codex (Service)
+18309   1.4 /Applications/ChatGPT.app/Contents/Frameworks/Codex Framework.framework/Versions/152.0.7977.83/Helpers/Codex (Renderer).app/Contents/MacOS/Codex (Renderer)
+67572   0.7 /Applications/Dropbox.app/Contents/PlugIns/DropboxFileProvider.appex/Contents/MacOS/DropboxFileProvider
+  450   0.6 /usr/sbin/mDNSResponder
+95414   0.4 /Applications/ChatGPT.app/Contents/Frameworks/Codex Framework.framework/Versions/152.0.7977.83/Helpers/Codex (Renderer).app/Contents/MacOS/Codex (Renderer)
+64614   0.4 /System/Library/PrivateFrameworks/CoreThreadRadio.framework/threadradiod
+17333   0.4 /Library/Bitdefender/AVP/product/bin/BDLDaemon.app/Contents/MacOS/BDLDaemon
+ 1489   0.4 /Applications/BeyondTrust Jump Client - nwra.beyondtrustcloud.com.app/Contents/MacOS/sra-pin
+95358   0.3 /Applications/ChatGPT.app/Contents/MacOS/ChatGPT
+19941   0.3 /Applications/GitHub Desktop.app/Contents/MacOS/GitHub Desktop
+ 1326   0.3 /System/Library/CoreServices/Finder.app/Contents/MacOS/Finder

@@ -12,6 +12,29 @@ static_assert(!std::is_copy_assignable<WVStratifiedModalRecord>::value,"Publishe
 static_assert(!std::is_move_assignable<WVStratifiedModalRecord>::value,"Published scientific records must not be moved over.");
 namespace {
 struct Counters { int plans=0,engines=0,created=0,failAt=-1,executed=0; };
+struct DerivativeAccessProbe {
+    std::size_t cachedField=0,cachedDerivative=0,captures=0;
+    WVRealVolumeConstView cached{};
+    bool failLookup=false,failCapture=false;
+    static WVKernelStatus lookup(void* context,std::size_t field,std::size_t derivative,
+        WVRealVolumeConstView& result) {
+        auto& probe=*static_cast<DerivativeAccessProbe*>(context);
+        if(probe.failLookup)
+            return {WVKernelStatusCode::invalidConfiguration,"Injected derivative lookup failure."};
+        result=field==probe.cachedField && derivative==probe.cachedDerivative ?
+            probe.cached : WVRealVolumeConstView{};
+        return WVKernelStatus::ok();
+    }
+    static WVKernelStatus capture(void* context,std::size_t,std::size_t,
+        WVRealVolumeConstView) {
+        auto& probe=*static_cast<DerivativeAccessProbe*>(context);
+        ++probe.captures;
+        return probe.failCapture ?
+            WVKernelStatus{WVKernelStatusCode::invalidConfiguration,
+                "Injected derivative capture failure."} : WVKernelStatus::ok();
+    }
+    WVStateDerivativeAccess access() {return {this,lookup,capture};}
+};
 class Plan final : public WVFFTPlan {
     std::unique_ptr<WVFFTPlan> plan_; Counters& counters_;
 public:
@@ -48,6 +71,162 @@ void contracts(const std::shared_ptr<const WVStratifiedModalRecord>& source) {
     WVMutableCoefficients out{{b[0].data(),shape},{b[1].data(),shape},{b[2].data(),shape}};
     WVFlux flux{out.Ap,out.Am,out.A0};
     std::vector<double> spatial(R,29),scratch(R,31); WVRealVolumeView field{spatial.data(),volume};
+    kernel->resetMetrics();
+    int evaluationOwner=0,foreignOwner=0;
+    require(bool(kernel->beginStateEvaluation(state,&evaluationOwner)),"Begin scoped state evaluation failed");
+    require(kernel->metrics().stateValidationCount==1 && kernel->metrics().phasePreparationCount==1,
+        "Scoped setup did not validate and prepare phase exactly once");
+    require(!kernel->beginStateEvaluation(state),"Nested state evaluation was accepted");
+    require(bool(kernel->transformStateField(state,WVBoussinesqField::u,field)),"Scoped field reconstruction failed");
+    WVComplexConstView scopedPhase;
+    require(bool(kernel->preparedPhase(state,scopedPhase)) && scopedPhase.data!=nullptr && scopedPhase.shape.rows==shape.rows && scopedPhase.shape.columns==shape.columns,
+        "Scoped prepared phase was unavailable");
+    require(bool(kernel->transformUVEtaToWaveVortex({spatial.data(),volume},{spatial.data(),volume},{spatial.data(),volume},state.t,state.t0,out)),
+        "Matching scoped projection was rejected");
+    require(kernel->evolveCoefficients(state,amplitudes).code==WVKernelStatusCode::overlappingArrays,
+        "Scoped evolution mutated the active immutable state");
+    require(kernel->constrainCoefficients(amplitudes).code==WVKernelStatusCode::overlappingArrays,
+        "Scoped constraints mutated the active immutable state");
+    require(kernel->transformUVEtaToWaveVortex({spatial.data(),volume},{spatial.data(),volume},{spatial.data(),volume},state.t,state.t0,amplitudes).code==WVKernelStatusCode::overlappingArrays,
+        "Scoped projection mutated the active immutable state");
+    require(kernel->metrics().stateValidationCount==1 && kernel->metrics().phasePreparationCount==1 &&
+        kernel->metrics().reconstructionCount[static_cast<std::size_t>(WVBoussinesqField::u)]
+            [static_cast<std::size_t>(WVBoussinesqDerivative::value)]
+            [static_cast<std::size_t>(WVBoussinesqComponent::all)]==1,
+        "Scoped calls repeated preparation or lost reconstruction metrics");
+    require(!kernel->transformUVEtaToWaveVortex({spatial.data(),volume},{spatial.data(),volume},{spatial.data(),volume},state.t+1,state.t0,out),
+        "Mismatched scoped projection time was accepted");
+    auto registeredCoefficients=a;
+    auto foreignState=state;
+    foreignState.coefficients={{registeredCoefficients[0].data(),shape},{registeredCoefficients[1].data(),shape},{registeredCoefficients[2].data(),shape}};
+    require(!kernel->transformStateField(foreignState,WVBoussinesqField::u,field),"Foreign scoped state was accepted");
+    std::vector<double> tendencyFields(4*R);
+    WVRealFieldBundleView tendencyBundle{tendencyFields.data(),{g.Nx,g.Ny,g.Nz,4}};
+    require(bool(kernel->transformCoefficientTendencyToUVWEta(foreignState,tendencyBundle)),
+        "Derived coefficient tendency was rejected by the active primary-state scope");
+    require(kernel->metrics().stateValidationCount==1 &&
+        kernel->metrics().derivedValidationCount==1 &&
+        kernel->metrics().tendencyReconstructionCount==std::array<std::size_t,4>{1,1,1,1} &&
+        kernel->metrics().reconstructionCount[static_cast<std::size_t>(WVBoussinesqField::u)]
+            [static_cast<std::size_t>(WVBoussinesqDerivative::value)]
+            [static_cast<std::size_t>(WVBoussinesqComponent::all)]==1,
+        "Derived tendency validation or production was attributed to the primary state");
+    require(!kernel->addStateEvaluationView(foreignState,&foreignOwner),"Foreign evaluation owner registered a state view");
+    require(bool(kernel->addStateEvaluationView(foreignState,&evaluationOwner,2)),"Additional immutable state view was rejected");
+    const auto registeredStatus=kernel->transformStateField(foreignState,WVBoussinesqField::u,field);
+    require(bool(registeredStatus),registeredStatus.message.c_str());
+    require(kernel->metrics().stateValidationCount==2 && kernel->metrics().phasePreparationCount==1,
+        "Additional state view skipped validation or repeated phase preparation");
+    require(kernel->metrics().reconstructionCount[static_cast<std::size_t>(WVBoussinesqField::u)]
+            [static_cast<std::size_t>(WVBoussinesqDerivative::value)][2]==1,
+        "Registered Boussinesq component production lost its component identity");
+    require(!kernel->removeStateEvaluationView(state,&evaluationOwner,0),
+        "Primary Boussinesq state view was removed");
+    require(!kernel->removeStateEvaluationView(foreignState,&foreignOwner,2),
+        "Foreign owner removed a Boussinesq state view");
+    require(bool(kernel->removeStateEvaluationView(foreignState,&evaluationOwner,2)),
+        "Boussinesq state view removal failed");
+    require(!kernel->validateStateEvaluation(foreignState) &&
+                !kernel->removeStateEvaluationView(foreignState,&evaluationOwner,2),
+        "Removed Boussinesq state view remained registered");
+    require(bool(kernel->addStateEvaluationView(foreignState,&evaluationOwner,3)) &&
+                bool(kernel->validateStateEvaluation(foreignState)),
+        "Boussinesq state view storage could not be re-registered");
+    require(bool(kernel->endStateEvaluation()),"End scoped state evaluation failed");
+    const auto savedScopedCoefficient=a[0][0]; a[0][0].real=std::numeric_limits<double>::infinity();
+    require(!kernel->beginStateEvaluation(state),"New scope skipped validation for mutated same-pointer state");
+    a[0][0]=savedScopedCoefficient;
+    kernel->resetMetrics();
+    require(bool(kernel->transformStateField(state,WVBoussinesqField::u,field)),"Standalone field reconstruction failed");
+    require(bool(kernel->transformStateField(state,WVBoussinesqField::v,field)),"Second standalone field reconstruction failed");
+    require(kernel->metrics().stateValidationCount==2 && kernel->metrics().phasePreparationCount==2,
+        "Standalone calls did not perform fresh state preparation");
+    std::vector<double> compoundReference(R),compoundFirst(R),compoundSecond(R),compoundResult(R);
+    require(bool(kernel->beginStateEvaluation(state)),"Compound producer scope begin failed");
+    require(bool(kernel->transformStateField(state,WVBoussinesqField::zetaX,
+        {compoundReference.data(),volume})),"Reference horizontal vorticity failed");
+    kernel->resetMetrics();
+    require(bool(kernel->transformStateField(state,WVBoussinesqField::w,
+        {compoundFirst.data(),volume},WVBoussinesqDerivative::y)),"Prepared w_y failed");
+    require(bool(kernel->transformStateField(state,WVBoussinesqField::v,
+        {compoundSecond.data(),volume},WVBoussinesqDerivative::z)),"Prepared v_z failed");
+    require(bool(kernel->combinePreparedHorizontalVorticity(WVBoussinesqField::zetaX,
+        {compoundFirst.data(),volume},{compoundSecond.data(),volume},
+        {compoundResult.data(),volume})),"Prepared horizontal vorticity combination failed");
+    require(compoundResult==compoundReference &&
+        kernel->metrics().reconstructionCount[static_cast<std::size_t>(WVBoussinesqField::w)]
+            [static_cast<std::size_t>(WVBoussinesqDerivative::y)]
+            [static_cast<std::size_t>(WVBoussinesqComponent::all)]==1 &&
+        kernel->metrics().reconstructionCount[static_cast<std::size_t>(WVBoussinesqField::v)]
+            [static_cast<std::size_t>(WVBoussinesqDerivative::z)]
+            [static_cast<std::size_t>(WVBoussinesqComponent::all)]==1 &&
+        kernel->metrics().reconstructionCount[static_cast<std::size_t>(WVBoussinesqField::zetaX)]
+            [static_cast<std::size_t>(WVBoussinesqDerivative::value)]
+            [static_cast<std::size_t>(WVBoussinesqComponent::all)]==1,
+        "Prepared horizontal vorticity changed values or repeated a producer");
+    require(bool(kernel->combinePreparedHorizontalVorticity(WVBoussinesqField::zetaX,
+        {compoundFirst.data(),volume},{compoundSecond.data(),volume},
+        {compoundFirst.data(),volume},WVBoussinesqComponent::geostrophic)) &&
+        compoundFirst==compoundReference &&
+        kernel->metrics().reconstructionCount[static_cast<std::size_t>(WVBoussinesqField::zetaX)]
+            [static_cast<std::size_t>(WVBoussinesqDerivative::value)]
+            [static_cast<std::size_t>(WVBoussinesqComponent::geostrophic)]==1,
+        "Exact prepared vorticity alias or component attribution failed");
+    std::vector<double> partialCompound(R+1);
+    std::copy_n(compoundReference.data(),R,partialCompound.data());
+    require(kernel->combinePreparedHorizontalVorticity(WVBoussinesqField::zetaX,
+        {partialCompound.data(),volume},{compoundSecond.data(),volume},
+        {partialCompound.data()+1,volume}).code==WVKernelStatusCode::overlappingArrays,
+        "Partial prepared vorticity alias was accepted");
+    require(bool(kernel->transformStateField(state,WVBoussinesqField::rhoTotal,
+        {compoundReference.data(),volume},WVBoussinesqDerivative::z)),"Reference density derivative failed");
+    kernel->resetMetrics();
+    require(bool(kernel->transformStateField(state,WVBoussinesqField::eta,
+        {compoundFirst.data(),volume},WVBoussinesqDerivative::z)),"Prepared eta_z failed");
+    require(bool(kernel->transformStateField(state,WVBoussinesqField::eta,
+        {compoundSecond.data(),volume})),"Prepared eta failed");
+    require(bool(kernel->combinePreparedDensityZDerivative(WVBoussinesqField::rhoTotal,
+        {compoundFirst.data(),volume},{compoundSecond.data(),volume},
+        {compoundResult.data(),volume})),"Prepared density derivative combination failed");
+    for(std::size_t i=0;i<R;++i)
+        require(std::abs(compoundResult[i]-compoundReference[i])<=1e-12*
+            std::max(1.0,std::abs(compoundReference[i])),
+            "Prepared density derivative changed values");
+    require(kernel->metrics().reconstructionCount[static_cast<std::size_t>(WVBoussinesqField::eta)]
+            [static_cast<std::size_t>(WVBoussinesqDerivative::z)]
+            [static_cast<std::size_t>(WVBoussinesqComponent::all)]==1 &&
+        kernel->metrics().reconstructionCount[static_cast<std::size_t>(WVBoussinesqField::eta)]
+            [static_cast<std::size_t>(WVBoussinesqDerivative::value)]
+            [static_cast<std::size_t>(WVBoussinesqComponent::all)]==1 &&
+        kernel->metrics().reconstructionCount[static_cast<std::size_t>(WVBoussinesqField::rhoTotal)]
+            [static_cast<std::size_t>(WVBoussinesqDerivative::z)]
+            [static_cast<std::size_t>(WVBoussinesqComponent::all)]==1,
+        "Prepared density derivative repeated a producer");
+    require(bool(kernel->combinePreparedDensityZDerivative(WVBoussinesqField::rhoTotal,
+        {compoundFirst.data(),volume},{compoundSecond.data(),volume},
+        {compoundFirst.data(),volume})),
+        "Exact prepared density alias was rejected");
+    for(std::size_t i=0;i<R;++i)
+        require(std::abs(compoundFirst[i]-compoundReference[i])<=1e-12*
+            std::max(1.0,std::abs(compoundReference[i])),
+            "Exact prepared density alias changed values");
+    std::copy_n(compoundReference.data(),R,partialCompound.data());
+    require(kernel->combinePreparedDensityZDerivative(WVBoussinesqField::rhoTotal,
+        {partialCompound.data(),volume},{compoundSecond.data(),volume},
+        {partialCompound.data()+1,volume}).code==WVKernelStatusCode::overlappingArrays,
+        "Partial prepared density alias was accepted");
+    require(!kernel->combinePreparedDensityZDerivative(WVBoussinesqField::u,
+        {compoundFirst.data(),volume},{compoundSecond.data(),volume},
+        {compoundResult.data(),volume}),"Invalid prepared density target was accepted");
+    require(bool(kernel->endStateEvaluation()),"Compound producer scope end failed");
+    std::fill(spatial.begin(),spatial.end(),29);
+    allocationProbe::calls=0; allocationProbe::counting=true;
+    require(bool(kernel->beginStateEvaluation(state)),"Allocation probe scope begin failed");
+    require(bool(kernel->transformStateField(state,WVBoussinesqField::u,field)),"Allocation probe scoped field failed");
+    require(bool(kernel->endStateEvaluation()),"Allocation probe scope end failed");
+    allocationProbe::counting=false;
+    require(allocationProbe::calls==0,"Scoped state preparation or reuse allocated");
+    std::fill(spatial.begin(),spatial.end(),29);
     auto status=kernel->nonlinearFlux(state,flux); require(bool(status),status.message.c_str());
     const auto referenceFlux=b,referenceState=a;
     const auto retainedBytes=kernel->persistentBytes();
@@ -72,6 +251,34 @@ void contracts(const std::shared_ptr<const WVStratifiedModalRecord>& source) {
         }
     }
     require(raw==expected && physical==physicalBefore,"Raw tendencies precede projection and preserve borrowed fields");
+    require(bool(kernel->transformStateField(state,WVBoussinesqField::u,
+        {gradient.data(),volume},WVBoussinesqDerivative::z)),
+        "Prepare cached Boussinesq derivative");
+    kernel->resetMetrics();
+    DerivativeAccessProbe derivativeProbe;
+    derivativeProbe.cachedField=static_cast<std::size_t>(WVBoussinesqField::u);
+    derivativeProbe.cachedDerivative=static_cast<std::size_t>(WVBoussinesqDerivative::z);
+    derivativeProbe.cached={gradient.data(),volume};
+    auto derivativeAccess=derivativeProbe.access();
+    require(bool(kernel->nonlinearFlux(state,flux,&rawView,&prepared,false,
+                &derivativeAccess)) && raw==expected,
+        "Boussinesq nonlinear derivative reuse changed the spatial tendency");
+    require(kernel->metrics().reconstructionCount
+                [static_cast<std::size_t>(WVBoussinesqField::u)]
+                [static_cast<std::size_t>(WVBoussinesqDerivative::z)]
+                [static_cast<std::size_t>(WVBoussinesqComponent::all)]==0 &&
+            derivativeProbe.captures==11,
+        "Boussinesq nonlinear path reproduced a cached derivative or missed capture");
+    derivativeProbe.failLookup=true;
+    require(!kernel->nonlinearFlux(state,flux,&rawView,&prepared,false,
+                &derivativeAccess),
+        "Boussinesq nonlinear derivative lookup failure was ignored");
+    derivativeProbe.failLookup=false;
+    derivativeProbe.failCapture=true;
+    derivativeProbe.cachedField=99;
+    require(!kernel->nonlinearFlux(state,flux,&rawView,&prepared,false,
+                &derivativeAccess),
+        "Boussinesq nonlinear derivative capture failure was ignored");
     for(std::size_t channel=0;channel<3;++channel) for(std::size_t i=0;i<S;++i)
         require(b[channel][i].real==referenceFlux[channel][i].real && b[channel][i].imag==referenceFlux[channel][i].imag &&
                 a[channel][i].real==referenceState[channel][i].real && a[channel][i].imag==referenceState[channel][i].imag,"Observation changed flux or input state");

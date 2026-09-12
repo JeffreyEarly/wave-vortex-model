@@ -522,6 +522,173 @@ std::size_t WVTransformBarotropicQGKernel::scratchBytes() const noexcept {
     return bytes(halfSpectrumScratch_) + bytes(realScratch_);
 }
 
+WVKernelStatus WVTransformBarotropicQGKernel::validateState(
+    const WVComplexConstView& A0) const {
+    ++metrics_.stateValidationCount;
+    auto status=validateSpectral(A0,descriptor_.spectralShape(),"A0");
+    if (!status) return status;
+    for (std::size_t i=0;i<A0.shape.elementCount();++i)
+        if (!std::isfinite(A0.data[i].real) || !std::isfinite(A0.data[i].imag))
+            return {WVKernelStatusCode::numericalFailure,"Nonfinite Barotropic QG coefficient."};
+    return WVKernelStatus::ok();
+}
+
+bool WVTransformBarotropicQGKernel::matchesStateEvaluation(
+    const WVComplexConstView& A0) const noexcept {
+    if (!stateEvaluationActive_) return false;
+    for (std::size_t i=0;i<preparedStateViewCount_;++i) if (
+        A0.data==preparedStateViews_[i].data &&
+        A0.shape.rows==preparedStateViews_[i].shape.rows &&
+        A0.shape.columns==preparedStateViews_[i].shape.columns) return true;
+    return false;
+}
+
+std::size_t WVTransformBarotropicQGKernel::stateEvaluationComponent(
+    const WVComplexConstView& A0) const noexcept {
+    if (!stateEvaluationActive_) return 0;
+    for (std::size_t i=0;i<preparedStateViewCount_;++i) if (
+        A0.data==preparedStateViews_[i].data &&
+        A0.shape.rows==preparedStateViews_[i].shape.rows &&
+        A0.shape.columns==preparedStateViews_[i].shape.columns)
+        return preparedStateComponents_[i];
+    return 0;
+}
+
+void WVTransformBarotropicQGKernel::recordReconstruction(
+    const WVComplexConstView& A0,WVBarotropicQGField field,
+    std::size_t derivative) const noexcept {
+    const auto fieldIndex=static_cast<std::size_t>(field);
+    ++metrics_.reconstructionCount[fieldIndex][derivative];
+    ++metrics_.componentReconstructionCount[fieldIndex][derivative]
+        [stateEvaluationComponent(A0)];
+}
+
+WVKernelStatus WVTransformBarotropicQGKernel::validateStateEvaluation(
+    const WVComplexConstView& A0) const noexcept {
+    if (!matchesStateEvaluation(A0))
+        return {WVKernelStatusCode::invalidConfiguration,
+                "A0 does not belong to the active Barotropic QG evaluation."};
+    return WVKernelStatus::ok();
+}
+
+WVKernelStatus WVTransformBarotropicQGKernel::validateStateForCall(
+    const WVComplexConstView& A0) const {
+    if (!stateEvaluationActive_) return validateState(A0);
+    if (!matchesStateEvaluation(A0))
+        return {WVKernelStatusCode::invalidConfiguration,
+                "A0 does not match the active Barotropic QG evaluation."};
+    return WVKernelStatus::ok();
+}
+
+WVKernelStatus WVTransformBarotropicQGKernel::mutableOutputOutsidePreparedState(
+    const WVComplexView& output) const {
+    if (!stateEvaluationActive_) return WVKernelStatus::ok();
+    const auto bytes=descriptor_.spectralShape().elementCount()*sizeof(WVComplex64);
+    for (std::size_t i=0;i<preparedStateViewCount_;++i)
+        if (overlaps(output.data,bytes,preparedStateViews_[i].data,bytes))
+            return {WVKernelStatusCode::overlappingArrays,"Mutable A0 output overlaps an active immutable Barotropic QG state view."};
+    return WVKernelStatus::ok();
+}
+
+WVKernelStatus WVTransformBarotropicQGKernel::beginStateEvaluation(
+    const WVComplexConstView& A0) {
+    return beginStateEvaluation(A0,nullptr);
+}
+
+WVKernelStatus WVTransformBarotropicQGKernel::beginStateEvaluation(
+    const WVComplexConstView& A0,const void* evaluationOwner) {
+    if (executing_)
+        return {WVKernelStatusCode::reentrantExecution,
+                "The Barotropic QG kernel is not reentrant."};
+    ExecutionGuard guard(executing_);
+    if (stateEvaluationActive_)
+        return {WVKernelStatusCode::reentrantExecution,
+                "Barotropic QG state evaluation is already active."};
+    auto status=validateState(A0); if (!status) return status;
+    preparedState_=A0;
+    preparedStateViews_[0]=A0;
+    preparedStateComponents_[0]=0;
+    preparedStateViewCount_=1;
+    preparedStateOwner_=evaluationOwner;
+    stateEvaluationActive_=true;
+    return WVKernelStatus::ok();
+}
+
+WVKernelStatus WVTransformBarotropicQGKernel::addStateEvaluationView(
+    const WVComplexConstView& A0,const void* evaluationOwner,
+    std::size_t componentIdentity) {
+    if (executing_)
+        return {WVKernelStatusCode::reentrantExecution,"The Barotropic QG kernel is not reentrant."};
+    ExecutionGuard guard(executing_);
+    if (!stateEvaluationActive_)
+        return {WVKernelStatusCode::invalidConfiguration,"No Barotropic QG state evaluation is active."};
+    if (evaluationOwner==nullptr || evaluationOwner!=preparedStateOwner_)
+        return {WVKernelStatusCode::invalidConfiguration,"Barotropic QG state view owner does not match the active evaluation."};
+    if (componentIdentity>=5)
+        return {WVKernelStatusCode::invalidConfiguration,"Barotropic QG component identity is out of range."};
+    if (matchesStateEvaluation(A0))
+        return stateEvaluationComponent(A0)==componentIdentity ? WVKernelStatus::ok() :
+            WVKernelStatus{WVKernelStatusCode::invalidConfiguration,
+                "Barotropic QG state view is already registered with another component identity."};
+    if (preparedStateViewCount_==preparedStateViews_.size())
+        return {WVKernelStatusCode::invalidConfiguration,"Barotropic QG state evaluation view capacity exceeded."};
+    auto status=validateState(A0); if (!status) return status;
+    preparedStateViews_[preparedStateViewCount_]=A0;
+    preparedStateComponents_[preparedStateViewCount_++]=componentIdentity;
+    return WVKernelStatus::ok();
+}
+
+WVKernelStatus WVTransformBarotropicQGKernel::removeStateEvaluationView(
+    const WVComplexConstView& A0,const void* evaluationOwner,
+    std::size_t componentIdentity) {
+    if (executing_)
+        return {WVKernelStatusCode::reentrantExecution,
+                "The Barotropic QG kernel is not reentrant."};
+    ExecutionGuard guard(executing_);
+    if (!stateEvaluationActive_)
+        return {WVKernelStatusCode::invalidConfiguration,
+                "No Barotropic QG state evaluation is active."};
+    if (evaluationOwner==nullptr || evaluationOwner!=preparedStateOwner_)
+        return {WVKernelStatusCode::invalidConfiguration,
+                "Barotropic QG state view owner does not match the active evaluation."};
+    if (componentIdentity==0 || componentIdentity>=5)
+        return {WVKernelStatusCode::invalidConfiguration,
+                "The primary Barotropic QG state view cannot be removed."};
+    for(std::size_t i=1;i<preparedStateViewCount_;++i) if (
+        preparedStateComponents_[i]==componentIdentity &&
+        A0.data==preparedStateViews_[i].data &&
+        A0.shape.rows==preparedStateViews_[i].shape.rows &&
+        A0.shape.columns==preparedStateViews_[i].shape.columns) {
+        for(std::size_t j=i+1;j<preparedStateViewCount_;++j) {
+            preparedStateViews_[j-1]=preparedStateViews_[j];
+            preparedStateComponents_[j-1]=preparedStateComponents_[j];
+        }
+        --preparedStateViewCount_;
+        preparedStateViews_[preparedStateViewCount_]={};
+        preparedStateComponents_[preparedStateViewCount_]=0;
+        return WVKernelStatus::ok();
+    }
+    return {WVKernelStatusCode::invalidConfiguration,
+            "Barotropic QG state view is not registered for this component."};
+}
+
+WVKernelStatus WVTransformBarotropicQGKernel::endStateEvaluation() {
+    if (executing_)
+        return {WVKernelStatusCode::reentrantExecution,
+                "The Barotropic QG kernel is not reentrant."};
+    ExecutionGuard guard(executing_);
+    if (!stateEvaluationActive_)
+        return {WVKernelStatusCode::invalidConfiguration,
+                "No Barotropic QG state evaluation is active."};
+    preparedState_={};
+    for (auto& stateView:preparedStateViews_) stateView={};
+    preparedStateComponents_={};
+    preparedStateViewCount_=0;
+    preparedStateOwner_=nullptr;
+    stateEvaluationActive_=false;
+    return WVKernelStatus::ok();
+}
+
 const WVComplex64* WVTransformBarotropicQGKernel::complexFactors(
     WVBarotropicQGField field) const noexcept {
     if (field == WVBarotropicQGField::u)
@@ -671,6 +838,8 @@ WVKernelStatus WVTransformBarotropicQGKernel::transformQGPVToA0(
     if (!status) return status;
     status = validateSpectral(A0, descriptor_.spectralShape(), "A0");
     if (!status) return status;
+    status=mutableOutputOutsidePreparedState(A0);
+    if (!status) return status;
     const auto spatialBytes = descriptor_.spatialShape().elementCount() *
                               sizeof(double);
     const auto spectralBytes = descriptor_.spectralShape().elementCount() *
@@ -721,7 +890,7 @@ WVKernelStatus WVTransformBarotropicQGKernel::transformA0ToField(
     if (executing_)
         return {WVKernelStatusCode::reentrantExecution,
                 "The Barotropic QG kernel is not reentrant."};
-    auto status = validateSpectral(A0, descriptor_.spectralShape(), "A0");
+    auto status = validateStateForCall(A0);
     if (!status) return status;
     status = validateSpatial(output, descriptor_.spatialShape(), "Field");
     if (!status) return status;
@@ -737,7 +906,10 @@ WVKernelStatus WVTransformBarotropicQGKernel::transformA0ToField(
     status = complex != nullptr
         ? inverse(A0, complex, output)
         : inverse(A0, realFactors(field), output);
-    if (status) ++metrics_.fieldEvaluationCount;
+    if (status) {
+        ++metrics_.fieldEvaluationCount;
+        recordReconstruction(A0,field,0);
+    }
     return status;
 }
 
@@ -748,7 +920,7 @@ WVTransformBarotropicQGKernel::transformA0ToFieldWithDerivatives(
     if (executing_)
         return {WVKernelStatusCode::reentrantExecution,
                 "The Barotropic QG kernel is not reentrant."};
-    auto status = validateSpectral(A0, descriptor_.spectralShape(), "A0");
+    auto status = validateStateForCall(A0);
     if (!status) return status;
     const auto spatial = descriptor_.spatialShape();
     if (output.shape.first != spatial.rows ||
@@ -802,16 +974,20 @@ WVTransformBarotropicQGKernel::transformA0ToFieldWithDerivatives(
     }
     ++metrics_.fieldEvaluationCount;
     ++metrics_.derivativeEvaluationCount;
+    for (std::size_t derivative=0;derivative<3;++derivative)
+        recordReconstruction(A0,field,derivative);
     return WVKernelStatus::ok();
 }
 
 WVKernelStatus WVTransformBarotropicQGKernel::evolveA0(
     const WVComplexConstView& A0, double elapsedTime,
     WVComplexView& evolvedA0) const {
-    auto status = validateSpectral(A0, descriptor_.spectralShape(), "A0");
+    auto status = validateStateForCall(A0);
     if (!status) return status;
     status = validateSpectral(evolvedA0, descriptor_.spectralShape(),
                               "Evolved A0");
+    if (!status) return status;
+    status=mutableOutputOutsidePreparedState(evolvedA0);
     if (!status) return status;
     if (!std::isfinite(elapsedTime))
         return {WVKernelStatusCode::invalidConfiguration,
@@ -869,13 +1045,17 @@ WVKernelStatus WVTransformBarotropicQGKernel::inverseNonlinearFields(
     if (!status) return status;
     ++metrics_.executionCount;
     ++metrics_.inverseExecutionCount;
+    recordReconstruction(A0,WVBarotropicQGField::u,0);
+    recordReconstruction(A0,WVBarotropicQGField::v,0);
+    recordReconstruction(A0,WVBarotropicQGField::qgpv,1);
+    recordReconstruction(A0,WVBarotropicQGField::qgpv,2);
     return WVKernelStatus::ok();
 }
 
 WVKernelStatus WVTransformBarotropicQGKernel::validateForcingOperation(
     const WVComplexConstView& A0, const WVComplexView& F0,
     const WVRealView* spatialTendency, const WVRealFieldBundleConstView* preparedVelocity) const {
-    auto status = validateSpectral(A0, descriptor_.spectralShape(), "A0");
+    auto status = validateStateForCall(A0);
     if (!status) return status;
     status = validateSpectral(F0, descriptor_.spectralShape(), "F0");
     if (!status) return status;
@@ -984,6 +1164,29 @@ WVKernelStatus WVTransformBarotropicQGKernel::ensureForcingFields(
         workspace.qgpvDerivativesPrepared = true;
     }
     return WVKernelStatus::ok();
+}
+
+WVKernelStatus WVTransformBarotropicQGKernel::ensureHorizontalSpeedMaximum(
+    const WVComplexConstView& A0,
+    WVBarotropicQGOperationWorkspace& workspace) {
+    if (workspace.horizontalSpeedMaximumPrepared)
+        return WVKernelStatus::ok();
+    auto status=ensureForcingFields(A0,false,workspace);
+    if (!status) return status;
+    workspace.horizontalSpeedMaximum=reduceHorizontalSpeedMaximum();
+    workspace.horizontalSpeedMaximumPrepared=true;
+    return WVKernelStatus::ok();
+}
+
+double WVTransformBarotropicQGKernel::reduceHorizontalSpeedMaximum() const noexcept {
+    const auto R=descriptor_.spatialShape().elementCount();
+    const double* u=realScratch_.data(); const double* v=u+R;
+    double maximumSpeed=0.0;
+    for (std::size_t index=0;index<R;++index)
+        maximumSpeed=std::max(maximumSpeed,
+            std::sqrt(u[index]*u[index]+v[index]*v[index]));
+    ++metrics_.horizontalSpeedMaximumReductionCount;
+    return maximumSpeed;
 }
 
 WVKernelStatus WVTransformBarotropicQGKernel::spatialDerivative(
@@ -1127,24 +1330,29 @@ WVKernelStatus WVTransformBarotropicQGKernel::addAdaptiveDamping(
         return {WVKernelStatusCode::invalidShape,
                 "The Barotropic QG damping operator has the wrong length."};
     ExecutionGuard guard(executing_);
-    status = ensureForcingFields(A0, false, workspace);
+    status = ensureHorizontalSpeedMaximum(A0, workspace);
     if (!status) return status;
-    const auto R = descriptor_.spatialShape().elementCount();
-    const double* u = realScratch_.data();
-    const double* v = u + R;
-    double maximumSpeed = 0.0;
-    for (std::size_t index = 0; index < R; ++index)
-        maximumSpeed = std::max(
-            maximumSpeed,
-            std::sqrt(u[index] * u[index] + v[index] * v[index]));
     for (std::size_t index = 0; index < descriptor_.Nkl(); ++index) {
         const auto value = multiply(
-            A0.data[index], maximumSpeed * dampingOperator[index]);
+            A0.data[index], workspace.horizontalSpeedMaximum * dampingOperator[index]);
         F0.data[index] = accumulate
             ? WVComplex64{F0.data[index].real + value.real,
                           F0.data[index].imag + value.imag}
             : value;
     }
+    return WVKernelStatus::ok();
+}
+
+WVKernelStatus WVTransformBarotropicQGKernel::horizontalSpeedMaximum(
+    const WVComplexConstView& A0,double& maximumSpeed,
+    WVBarotropicQGOperationWorkspace& workspace) {
+    if (executing_)
+        return {WVKernelStatusCode::reentrantExecution,
+                "The Barotropic QG kernel is not reentrant."};
+    auto status=validateStateForCall(A0); if (!status) return status;
+    ExecutionGuard guard(executing_);
+    status=ensureHorizontalSpeedMaximum(A0,workspace); if (!status) return status;
+    maximumSpeed=workspace.horizontalSpeedMaximum;
     return WVKernelStatus::ok();
 }
 
@@ -1271,8 +1479,7 @@ WVKernelStatus WVTransformBarotropicQGKernel::nonlinearFlux(
 
 WVKernelStatus WVTransformBarotropicQGKernel::totalEnergy(
     const WVComplexConstView& A0, double& energy) const {
-    const auto status = validateSpectral(A0, descriptor_.spectralShape(),
-                                         "A0");
+    const auto status = validateStateForCall(A0);
     if (!status) return status;
     energy = 0.0;
     const auto& factors = descriptor_.modes().energyFactor;
@@ -1285,8 +1492,7 @@ WVKernelStatus WVTransformBarotropicQGKernel::totalEnergy(
 
 WVKernelStatus WVTransformBarotropicQGKernel::totalEnstrophy(
     const WVComplexConstView& A0, double& enstrophy) const {
-    const auto status = validateSpectral(A0, descriptor_.spectralShape(),
-                                         "A0");
+    const auto status = validateStateForCall(A0);
     if (!status) return status;
     enstrophy = 0.0;
     const auto& factors = descriptor_.modes().enstrophyFactor;
@@ -1303,7 +1509,7 @@ WVTransformBarotropicQGKernel::totalEnergySpatiallyIntegrated(
     if (executing_)
         return {WVKernelStatusCode::reentrantExecution,
                 "The Barotropic QG kernel is not reentrant."};
-    auto status = validateSpectral(A0, descriptor_.spectralShape(), "A0");
+    auto status = validateStateForCall(A0);
     if (!status) return status;
     ExecutionGuard guard(executing_);
     const auto spatial = descriptor_.spatialShape();
@@ -1317,6 +1523,9 @@ WVTransformBarotropicQGKernel::totalEnergySpatiallyIntegrated(
     if (!status) return status;
     status = inverse(A0, descriptor_.modes().etaFactor.data(), eta);
     if (!status) return status;
+    recordReconstruction(A0,WVBarotropicQGField::u,0);
+    recordReconstruction(A0,WVBarotropicQGField::v,0);
+    recordReconstruction(A0,WVBarotropicQGField::eta,0);
     double sum = 0.0;
     for (std::size_t index = 0; index < R; ++index)
         sum += descriptor_.configuration().h *
@@ -1335,7 +1544,7 @@ WVTransformBarotropicQGKernel::totalEnstrophySpatiallyIntegrated(
     if (executing_)
         return {WVKernelStatusCode::reentrantExecution,
                 "The Barotropic QG kernel is not reentrant."};
-    auto status = validateSpectral(A0, descriptor_.spectralShape(), "A0");
+    auto status = validateStateForCall(A0);
     if (!status) return status;
     ExecutionGuard guard(executing_);
     const auto spatial = descriptor_.spatialShape();
@@ -1343,6 +1552,7 @@ WVTransformBarotropicQGKernel::totalEnstrophySpatiallyIntegrated(
     WVRealView qgpv{realScratch_.data(), spatial};
     status = inverse(A0, descriptor_.modes().qgpvFactor.data(), qgpv);
     if (!status) return status;
+    recordReconstruction(A0,WVBarotropicQGField::qgpv,0);
     double sum = 0.0;
     for (std::size_t index = 0; index < R; ++index)
         sum += qgpv.data[index] * qgpv.data[index];
@@ -1356,7 +1566,7 @@ WVKernelStatus WVTransformBarotropicQGKernel::uvMax(
     if (executing_)
         return {WVKernelStatusCode::reentrantExecution,
                 "The Barotropic QG kernel is not reentrant."};
-    auto status = validateSpectral(A0, descriptor_.spectralShape(), "A0");
+    auto status = validateStateForCall(A0);
     if (!status) return status;
     ExecutionGuard guard(executing_);
     const auto spatial = descriptor_.spatialShape();
@@ -1367,12 +1577,9 @@ WVKernelStatus WVTransformBarotropicQGKernel::uvMax(
     if (!status) return status;
     status = inverse(A0, descriptor_.modes().vFactor.data(), v);
     if (!status) return status;
-    maximumSpeed = 0.0;
-    for (std::size_t index = 0; index < R; ++index)
-        maximumSpeed = std::max(
-            maximumSpeed,
-            std::sqrt(u.data[index] * u.data[index] +
-                      v.data[index] * v.data[index]));
+    recordReconstruction(A0,WVBarotropicQGField::u,0);
+    recordReconstruction(A0,WVBarotropicQGField::v,0);
+    maximumSpeed = reduceHorizontalSpeedMaximum();
     return WVKernelStatus::ok();
 }
 
@@ -1382,7 +1589,7 @@ WVKernelStatus WVTransformBarotropicQGKernel::advectScalar(
     if (executing_)
         return {WVKernelStatusCode::reentrantExecution,
                 "The Barotropic QG kernel is not reentrant."};
-    auto status = validateSpectral(A0, descriptor_.spectralShape(), "A0");
+    auto status = validateStateForCall(A0);
     if (!status) return status;
     status = validateSpatial(scalar, descriptor_.spatialShape(), "scalar");
     if (!status) return status;
@@ -1405,6 +1612,8 @@ WVKernelStatus WVTransformBarotropicQGKernel::advectScalar(
     if (!status) return status;
     status = inverse(A0, descriptor_.modes().vFactor.data(), v);
     if (!status) return status;
+    recordReconstruction(A0,WVBarotropicQGField::u,0);
+    recordReconstruction(A0,WVBarotropicQGField::v,0);
     status = spatialDerivative(scalar, true, dx);
     if (!status) return status;
     status = spatialDerivative(scalar, false, dy);
@@ -1426,7 +1635,7 @@ WVKernelStatus WVTransformBarotropicQGKernel::prepareAdvectionFields(
     if (executing_)
         return {WVKernelStatusCode::reentrantExecution,
                 "The Barotropic QG kernel is not reentrant."};
-    auto status = validateSpectral(A0, descriptor_.spectralShape(), "A0");
+    auto status = validateStateForCall(A0);
     if (!status) return status;
     ExecutionGuard guard(executing_);
     status = ensureForcingFields(A0, false, workspace);
@@ -1485,7 +1694,13 @@ std::size_t WVTransformBarotropicQGKernel::enforceReality(
     WVComplexView& A0) const noexcept {
     if (A0.data == nullptr ||
         A0.shape.rows != descriptor_.spectralShape().rows ||
-        A0.shape.columns != descriptor_.spectralShape().columns)
+        A0.shape.columns != descriptor_.spectralShape().columns ||
+        (stateEvaluationActive_ && [&] {
+            const auto bytes=descriptor_.spectralShape().elementCount()*sizeof(WVComplex64);
+            for (std::size_t i=0;i<preparedStateViewCount_;++i)
+                if (overlaps(A0.data,bytes,preparedStateViews_[i].data,bytes)) return true;
+            return false;
+        }()))
         return 0;
     std::size_t modified = 0;
     const auto& modes = descriptor_.fourierModes();
@@ -1503,6 +1718,30 @@ std::size_t WVTransformBarotropicQGKernel::enforceReality(
         }
     }
     return modified;
+}
+
+WVKernelStatus WVTransformBarotropicQGKernel::constrainA0(
+    WVComplexView& A0, std::size_t& modified) const {
+    modified=0;
+    auto status=validateSpectral(A0,descriptor_.spectralShape(),"A0");
+    if (!status) return status;
+    status=mutableOutputOutsidePreparedState(A0);
+    if (!status) return status;
+    const auto& modes=descriptor_.fourierModes();
+    for (std::size_t index=0;index<modes.size();++index) {
+        if (descriptor_.modes().qgpvFactor[index]==0.0 &&
+            (A0.data[index].real!=0.0 || A0.data[index].imag!=0.0)) {
+            A0.data[index]={};
+            ++modified;
+            continue;
+        }
+        if (modes[index].dftPrimaryIndex==modes[index].dftConjugateIndex &&
+            A0.data[index].imag!=0.0) {
+            A0.data[index].imag=0.0;
+            ++modified;
+        }
+    }
+    return WVKernelStatus::ok();
 }
 
 } // namespace wavevortex

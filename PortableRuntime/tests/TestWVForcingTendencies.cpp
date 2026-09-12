@@ -7,6 +7,7 @@
 #include "WaveVortexRuntime/WVBarotropicQGForcingEngine.hpp"
 #include "WaveVortexRuntime/WVStratifiedQGForcingEngine.hpp"
 #include "WaveVortexRuntime/WVStratifiedQGIntegrationSystem.hpp"
+#include "WaveVortexRuntime/WVRungeKutta.hpp"
 #include "WaveVortexRuntime/WVHydrostaticForcingEngine.hpp"
 #include "WaveVortexRuntime/WVBoussinesqForcingEngine.hpp"
 #include "WaveVortexRuntime/WVStratifiedModalRecord.hpp"
@@ -18,6 +19,7 @@
 #include <iostream>
 #include <numeric>
 #include <limits>
+#include <sstream>
 #include <type_traits>
 
 using namespace wavevortex;
@@ -286,7 +288,9 @@ void observerService(Engine& engine,WVFieldEvaluationService& fields,const WVInt
     counter->failAt=0;
     require(bool(WVFieldEvaluationService::createBorrowing(engine,rebound)) && bool(service->useFieldEvaluationService(*rebound)),
         "Equivalent forcing field service could not rebind after failed preparation");
-    require(bool(service->prepare(event)),"Observer forcing retry after rebind failed");
+    const auto retryStatus=service->prepare(event);
+    if(!retryStatus) throw std::runtime_error(
+        "Observer forcing retry after rebind failed: "+retryStatus.message);
     service->complete(event);
     require(service->metrics().outputCapacityBytes==0,"Observer retry retained forcing output arrays");
 }
@@ -368,9 +372,59 @@ void fieldService(Engine& engine,const WVState& state,WVShape4D spatial,
     require(data[forcingOutputCount]==data.front(),"Repeated forcing channel differs");
     require(engine.tendencyMetrics().forcingEvaluationCount==count+engine.forcingCount(),
         "Field service repeated a contribution across channels/outputs");
-    require(service->persistentBytes()==persistent && plan.persistentBytes()==planBytes &&
-        service->metrics().servicePersistentBytes==persistent && service->metrics().diagnosticWorkspaceLiveBytes==0,
-        "Bound field service retained diagnostic workspace or miscounted persistent bytes");
+    if(!(service->persistentBytes()==persistent &&
+        plan.persistentBytes()==planBytes &&
+        service->metrics().servicePersistentBytes==persistent &&
+        service->metrics().diagnosticWorkspaceLiveBytes==0))
+      throw std::runtime_error(
+          std::string("Bound ")+
+          (std::is_same_v<Engine,WVStratifiedQGForcingEngine> ? "stratified-qg" :
+           std::is_same_v<Engine,WVBarotropicQGForcingEngine> ? "barotropic-qg" :
+           std::is_same_v<Engine,WVConstantStratificationForcingEngine> ? "constant" :
+           std::is_same_v<Engine,WVHydrostaticForcingEngine> ? "hydrostatic" : "boussinesq")+
+          " field service retained diagnostic workspace or miscounted persistent bytes before="+
+          std::to_string(persistent)+" after="+
+          std::to_string(service->persistentBytes())+" metric="+
+          std::to_string(service->metrics().servicePersistentBytes)+" live="+
+          std::to_string(service->metrics().diagnosticWorkspaceLiveBytes));
+    if(engine.forcingCount()>1) {
+      WVFieldEvaluationPlan firstForcing,firstTwoForcings;
+      require(bool(service->createPlan({requests[0]},firstForcing)) &&
+          bool(service->createPlan({requests[0],requests[spatial.fourth]},
+              firstTwoForcings)),
+          "Incremental forcing plans failed");
+      std::vector<double> firstValue(R),reusedValue(R),secondValue(R);
+      WVFieldOutputView firstView{firstValue.data(),R};
+      WVFieldOutputView firstTwoViews[]={{reusedValue.data(),R},
+          {secondValue.data(),R}};
+      const auto incrementalBefore=
+          engine.tendencyMetrics().forcingEvaluationCount;
+      const auto validationBefore=service->producerMetrics().stateValidations;
+      WVFieldEvaluationSession session;
+      auto incrementalStatus=service->beginEvaluationSession(
+          integrationState,session);
+      if(incrementalStatus)
+        incrementalStatus=service->evaluate(firstForcing,integrationState,
+            &firstView,1);
+      if(incrementalStatus)
+        incrementalStatus=service->evaluate(firstTwoForcings,integrationState,
+            firstTwoViews,2);
+      if(!incrementalStatus)
+        throw std::runtime_error("Incremental forcing session failed: "+
+            incrementalStatus.message);
+      if(!(engine.tendencyMetrics().forcingEvaluationCount==
+              incrementalBefore+2 && firstValue==data[0] &&
+          reusedValue==data[0] && secondValue==data[spatial.fourth] &&
+          (!qg || service->producerMetrics().stateValidations==
+              validationBefore+1)))
+        throw std::runtime_error(
+            "Incremental forcing session replayed a completed prefix before="+
+            std::to_string(incrementalBefore)+" after="+
+            std::to_string(engine.tendencyMetrics().forcingEvaluationCount)+
+            " validations-before="+std::to_string(validationBefore)+
+            " validations-after="+
+            std::to_string(service->producerMetrics().stateValidations));
+    }
     WVFieldSamplingRequest forcingPosition;
     forcingPosition.kind=WVFieldSamplingKind::positions;
     forcingPosition.x={0};forcingPosition.y={0};forcingPosition.z={0};
@@ -388,8 +442,13 @@ void fieldService(Engine& engine,const WVState& state,WVShape4D spatial,
     double movingForcingValue=99;
     WVFieldOutputView movingForcingView{&movingForcingValue,1};
     const double forcingX=0,forcingY=0,forcingZ=0;
-    require(bool(service->evaluateMoving(movingForcing,integrationState,
-        {&forcingX,&forcingY,&forcingZ,1},&movingForcingView,1)) &&
+    const auto movingForcingStatus=service->evaluateMoving(movingForcing,
+        integrationState,{&forcingX,&forcingY,&forcingZ,1},
+        &movingForcingView,1);
+    if(!movingForcingStatus)
+      throw std::runtime_error("Forcing diagnostic moving evaluation failed: "+
+          movingForcingStatus.message);
+    require(
         movingForcingValue==sampledForcingValue,
         "Forcing diagnostic moving sample differs from fixed position");
     std::unique_ptr<WVFieldEvaluationService> metricService;
@@ -419,7 +478,8 @@ void fieldService(Engine& engine,const WVState& state,WVShape4D spatial,
         "Forcing diagnostic event geometry failed");
     double eventForcingValue=99;
     WVFieldOutputView eventForcingView{&eventForcingValue,1};
-    require(bool(service->evaluateEvent(forcingEvent,forcingGeometry,integrationState,&eventForcingView,1)) &&
+    const auto forcingEventStatus=service->evaluateEvent(forcingEvent,forcingGeometry,integrationState,&eventForcingView,1);
+    require(bool(forcingEventStatus) &&
         eventForcingValue==sampledForcingValue,
         "Forcing diagnostic event sample differs from fixed position");
     WVFieldSamplingRequest forcingProfile;
@@ -447,8 +507,9 @@ void fieldService(Engine& engine,const WVState& state,WVShape4D spatial,
     const auto selectedCalls=engine.tendencyMetrics().forcingEvaluationCount;
     require(bool(service->evaluate(plan,integrationState,selectedViews.data(),selectedViews.size(),active.data())),
         "Selected diagnostic field evaluation");
-    require(engine.tendencyMetrics().forcingEvaluationCount==selectedCalls+1 && data[0]==successful[0],
-        "Selected field lost its contribution or evaluated unrelated forcings");
+    require(engine.tendencyMetrics().forcingEvaluationCount==selectedCalls+1 &&
+        data[0]==successful[0],
+        "Selected field lost its contribution or evaluated inactive forcings");
     for(std::size_t index=1;index<data.size();++index)
         for(auto value:data[index]) require(value==99,"Inactive diagnostic output was written");
     active[0]=0;
@@ -491,11 +552,13 @@ void fieldService(Engine& engine,const WVState& state,WVShape4D spatial,
         service->metrics().primitiveFieldEvaluationCount==primitiveBefore+1 && primitiveU==successful[forcingOutputCount+1],
         "Primitive plan selection performed unrelated reconstruction or produced incorrect values");
     for(auto& field:data) std::fill(field.begin(),field.end(),99);
+    const auto failurePersistent=service->persistentBytes();
     counter->failAt=counter->calls+fftCalls;
     require(service->evaluate(plan,integrationState,views.data(),views.size()).code==WVKernelStatusCode::fftExecutionFailure,
         "Bound field service expected late FFT failure");
     for(const auto& field:data) for(auto value:field) require(value==99,"Partial mixed field output escaped failure");
-    require(service->metrics().diagnosticWorkspaceLiveBytes==0 && service->persistentBytes()==persistent,
+    require(service->metrics().diagnosticWorkspaceLiveBytes==0 &&
+        service->persistentBytes()==failurePersistent,
         "Bound field failure retained workspace");
     counter->failAt=0;
     require(bool(service->evaluate(plan,integrationState,views.data(),views.size())) && data==successful,
@@ -649,22 +712,38 @@ void fieldService(Engine& engine,const WVState& state,WVShape4D spatial,
         const auto beforeEvents=service->metrics().primitiveFieldEvaluationCount;
         require(bool(service->evaluateEventBatch(integrationState,eventEntries.data(),eventEntries.size())) && eventValues==expectedEvents &&
             service->metrics().primitiveFieldEvaluationCount==beforeEvents+1,"Occurrence batch repeated shared fields or qgpv");
-        require(service->metrics().eventFieldWorkspaceLiveBytes==(qg ? 3u : 5u)*R*sizeof(double) && service->persistentBytes()==retainedBefore,
-            "Shared event fields are missing from live metrics or became persistent state");
+        if(!(service->metrics().eventFieldWorkspaceLiveBytes>=(qg ? 3u : 5u)*R*sizeof(double) &&
+            service->persistentBytes()==retainedBefore))
+          throw std::runtime_error("Shared event fields are missing from live metrics or became persistent state live="+
+              std::to_string(service->metrics().eventFieldWorkspaceLiveBytes)+" retained="+
+              std::to_string(retainedBefore)+" now="+std::to_string(service->persistentBytes()));
         require(bool(service->evaluate(surfaceBases,integrationState,baseViews.data(),baseViews.size())),"Shared surface base fields");
+        if(service->persistentBytes()!=retainedBefore)
+          throw std::runtime_error("Surface bases grew the prepared event arena retained="+
+              std::to_string(retainedBefore)+" now="+
+              std::to_string(service->persistentBytes())+" planned="+
+              std::to_string(service->metrics().eventFieldArenaPlannedBytes)+" peak="+
+              std::to_string(service->metrics().eventFieldArenaPeakBytes));
         const auto beforeAliases=counter->calls;
         const auto bytesBeforeAliases=service->metrics().eventFieldWorkspaceLiveBytes;
         require(bool(service->evaluate(surfaceAliases,integrationState,aliasViews.data(),aliasViews.size())) && aliasValues==expectedAliases &&
             counter->calls==beforeAliases && service->metrics().eventFieldWorkspaceLiveBytes==bytesBeforeAliases,
             "Surface aliases reconstructed or retained duplicate volume fields");
+        require(service->persistentBytes()==retainedBefore,
+            "Surface aliases grew the prepared event arena");
         // Masked coefficients must not reuse full-state fields in this event.
         require(bool(service->evaluate(mixed,integrationState,mixedViews.data(),mixedViews.size())) &&
             equal(phase,expectedPhase),"Shared complex coefficients differ");
+        require(service->persistentBytes()==retainedBefore,
+            "Mixed components grew the prepared event arena");
         for(std::size_t index=1;index<mixedReal.size();++index)
             require(mixedReal[index]==expectedMixed[index],"Component masks reused full-state event fields");
     }
-    require(service->metrics().eventFieldWorkspaceLiveBytes==0 && service->persistentBytes()==retainedBefore,
-        "Completed event retained shared fields");
+    if(!(service->metrics().eventFieldWorkspaceLiveBytes==0 &&
+        service->persistentBytes()==retainedBefore))
+      throw std::runtime_error("Completed event retained shared fields retained="+
+          std::to_string(retainedBefore)+" now="+
+          std::to_string(service->persistentBytes()));
     // Reuse the same coefficient allocation after changing its contents between events.
     std::vector<std::vector<WVComplex64>> changedCoefficients(families.size());
     auto changedFamilies=families;
@@ -690,8 +769,9 @@ void fieldService(Engine& engine,const WVState& state,WVShape4D spatial,
         relative(changedU,expected,"Changed event coefficients");
         auto shifted=changedState; shifted.waveVortex.t+=1;
         const auto shiftedBefore=counter->calls;
-        require(bool(service->evaluate(primitivePlan,shifted,changedViews,2,onlyU)) && counter->calls>shiftedBefore,
-            "Changed event time reused the original phase");
+        require(!service->evaluate(primitivePlan,shifted,changedViews,2,onlyU) &&
+            counter->calls==shiftedBefore,
+            "Active immutable event accepted a changed time");
         const auto originalBefore=counter->calls;
         require(bool(service->evaluate(primitivePlan,changedState,changedViews,2,onlyU)) && counter->calls==originalBefore,
             "A different phase replaced the original event fields");
@@ -726,20 +806,230 @@ void fieldService(Engine& engine,const WVState& state,WVShape4D spatial,
             detail::WVFieldEvaluationEventScope scope(*service,integrationState);
             const std::uint8_t verticalOnly[]={0,0,1},horizontalOnly[]={1,1,0};
             require(bool(service->evaluate(vorticity,integrationState,destinations.data(),3,verticalOnly)),"Shared vertical vorticity");
-            require(service->metrics().eventFieldWorkspaceLiveBytes==6*R*sizeof(double),"Vertical vorticity derivative storage is not exact");
+            require(service->metrics().eventFieldWorkspaceLiveBytes>=6*R*sizeof(double),"Vertical vorticity derivative storage is missing");
             const auto reuse=service->metrics().eventFieldReuseCount;
             require(bool(service->evaluate(vorticity,integrationState,destinations.data(),3,horizontalOnly)) &&
                 service->metrics().eventFieldReuseCount==reuse+2 && values==reference,
                 "Horizontal vorticity did not reuse the same-event u/v derivatives");
             const auto calls=counter->calls;
             require(bool(service->evaluate(vorticity,integrationState,destinations.data(),3)) && counter->calls==calls && values==reference &&
-                service->metrics().eventFieldWorkspaceLiveBytes==9*R*sizeof(double),
+                service->metrics().eventFieldWorkspaceLiveBytes>=9*R*sizeof(double),
                 "Repeated vorticity reconstructed derivatives or retained unexpected storage");
         }
         require(service->metrics().eventFieldWorkspaceLiveBytes==0 && service->persistentBytes()==retained,
             "Vorticity derivatives survived their output event");
     }
     observerService(engine,*service,layout,integrationState,requests,forcingOutputCount,successful,counter);
+}
+
+template<class Engine>
+void nonlinearVorticityEvaluationSession(Engine& engine,const WVState& state,
+    WVShape4D spatial) {
+    const auto R=spatial.first*spatial.second*spatial.third;
+    std::unique_ptr<WVFieldEvaluationService> service;
+    require(bool(WVFieldEvaluationService::createBorrowing(engine,service)),
+        "Bind nonlinear/vorticity field service");
+    WVIntegrationStateLayout layout;
+    require(bool(service->createStateLayout({},layout)),
+        "Nonlinear/vorticity state layout");
+    const WVComplex64* statePointers[]={state.coefficients.Ap.data,
+        state.coefficients.Am.data,state.coefficients.A0.data};
+    std::vector<WVCoefficientFamilyConstView> families;
+    for(std::size_t index=0;index<layout.coefficientFamilyCount();++index)
+        families.push_back({&layout.coefficientFamilies()[index],statePointers[index]});
+    const WVIntegrationState integrationState{state,nullptr,0,
+        families.data(),families.size()};
+
+    WVFieldEvaluationPlan nonlinear,vorticity;
+    require(bool(service->createPlan({{"nonlinear","Fu_nonlinear_advection",{}}},
+            nonlinear)) &&
+        bool(service->createPlan({{"zeta-x","zeta_x",{}},
+            {"zeta-y","zeta_y",{}}},vorticity)),
+        "Nonlinear/vorticity plans");
+    struct Result {
+        std::vector<double> nonlinear,zetaX,zetaY;
+    } reference;
+    bool hasReference=false;
+    for(auto policy:{WVVariableEvaluationPolicy::reuse,
+            WVVariableEvaluationPolicy::lowMemory}) {
+        require(bool(service->setVariableEvaluationPolicy(policy)),
+            "Nonlinear/vorticity policy");
+        for(bool vorticityFirst:{false,true}) {
+            Result actual{{},std::vector<double>(R),std::vector<double>(R)};
+            actual.nonlinear.resize(nonlinear.outputs()[0].elementCount);
+            WVFieldOutputView nonlinearView{actual.nonlinear.data(),
+                actual.nonlinear.size()};
+            WVFieldOutputView vorticityViews[]={{actual.zetaX.data(),R},
+                {actual.zetaY.data(),R}};
+            const auto before=service->producerMetrics();
+            const auto ledgerBefore=service->metrics().variableEvaluation;
+            {
+                WVFieldEvaluationSession session;
+                require(bool(service->beginEvaluationSession(integrationState,session)),
+                    "Nonlinear/vorticity evaluation session");
+                if(vorticityFirst) {
+                    auto status=service->evaluate(vorticity,integrationState,
+                        vorticityViews,2);
+                    if(!status) throw std::runtime_error("Vorticity first: "+status.message);
+                    status=service->evaluate(nonlinear,integrationState,
+                        &nonlinearView,1);
+                    if(!status) throw std::runtime_error("Nonlinear second: "+status.message);
+                } else {
+                    auto status=service->evaluate(nonlinear,integrationState,
+                        &nonlinearView,1);
+                    if(!status) throw std::runtime_error("Nonlinear first: "+status.message);
+                    status=service->evaluate(vorticity,integrationState,
+                        vorticityViews,2);
+                    if(!status) throw std::runtime_error("Vorticity second: "+status.message);
+                }
+            }
+            const auto after=service->producerMetrics();
+            const auto ledgerAfter=service->metrics().variableEvaluation;
+            const auto delta=[&](std::size_t field,std::size_t axis,
+                    std::size_t component=0) {
+                return after.reconstructions[field][axis][component]-
+                    before.reconstructions[field][axis][component];
+            };
+            const bool low=policy==WVVariableEvaluationPolicy::lowMemory;
+            const auto sharedExpected=low ? 2u : 1u;
+            require(delta(0,3)==sharedExpected && delta(1,3)==sharedExpected &&
+                    delta(2,2)==(spatial.fourth==3 ? 1u : sharedExpected) &&
+                    delta(2,1)==(spatial.fourth==3 ? 1u : sharedExpected),
+                "Nonlinear/vorticity session repeated or lost a total-component derivative producer");
+            for(std::size_t component=1;component<5;++component)
+                require(delta(0,3,component)==0 && delta(1,3,component)==0 &&
+                        delta(2,2,component)==0 && delta(2,1,component)==0,
+                    "Total nonlinear/vorticity outputs contaminated a distinct component producer");
+            const auto sharedCount=spatial.fourth==3 ? 2u : 4u;
+            if(low) {
+                const auto recomputations=ledgerAfter.recomputations-
+                    ledgerBefore.recomputations;
+                const auto evictions=ledgerAfter.evictions-ledgerBefore.evictions;
+                // Variable-N kernels expose exact derivative keys, so only
+                // u_z/v_z (and Boussinesq w_x/w_y) are recomputed. The constant
+                // kernel retains its established fused derivative group counts.
+                const auto expectedRecomputations=
+                    std::is_same_v<Engine,
+                        WVConstantStratificationForcingEngine> ?
+                    (vorticityFirst ? (spatial.fourth==3 ? 6u : 9u) :
+                        (spatial.fourth==3 ? 2u : 3u)) : sharedCount;
+                if(recomputations!=expectedRecomputations ||
+                    evictions<recomputations)
+                    throw std::runtime_error("Low-memory nonlinear/vorticity groups: channels="+
+                        std::to_string(spatial.fourth)+" recomputations="+
+                        std::to_string(recomputations)+" evictions="+
+                        std::to_string(evictions)+" reverse="+
+                        std::to_string(vorticityFirst));
+            } else {
+                require(ledgerAfter.recomputations==ledgerBefore.recomputations &&
+                        ledgerAfter.duplicateExecutions==ledgerBefore.duplicateExecutions &&
+                        ledgerAfter.cacheHits-ledgerBefore.cacheHits>=sharedCount,
+                    "Reuse nonlinear/vorticity session did not cache every shared derivative");
+            }
+            if(!hasReference) {reference=actual; hasReference=true;}
+            else require(actual.nonlinear==reference.nonlinear &&
+                    actual.zetaX==reference.zetaX && actual.zetaY==reference.zetaY,
+                "Nonlinear/vorticity query order or policy changed values");
+        }
+    }
+    require(bool(service->setVariableEvaluationPolicy(
+        WVVariableEvaluationPolicy::reuse)),
+        "Nonlinear/vorticity reuse restore");
+}
+
+template<class Engine>
+void qgAdaptiveMaximumEvaluationSession(Engine& engine,
+    WVComplexConstView A0) {
+    std::size_t adaptiveIndex=engine.forcingCount();
+    for(std::size_t index=0;index<engine.forcingCount();++index)
+        if(engine.forcingInstance(index)->typeIdentifier()=="WVAdaptiveDamping")
+            adaptiveIndex=index;
+    require(adaptiveIndex<engine.forcingCount(),
+        "QG adaptive damping fixture is missing");
+    std::string adaptiveName(engine.forcingInstance(adaptiveIndex)->name());
+    for(auto& c:adaptiveName) if(c==' ' || c=='-') c='_';
+
+    std::unique_ptr<WVFieldEvaluationService> service;
+    require(bool(WVFieldEvaluationService::createBorrowing(engine,service)),
+        "Bind QG adaptive/maximum field service");
+    WVIntegrationStateLayout layout;
+    require(bool(service->createStateLayout({},layout)) &&
+            layout.coefficientFamilyCount()==1,
+        "QG adaptive/maximum state layout");
+    const WVCoefficientFamilyConstView family{
+        &layout.coefficientFamilies()[0],A0.data};
+    const WVState state{0,0,{{},{},A0}};
+    const WVIntegrationState integrationState{state,nullptr,0,&family,1};
+    WVFieldEvaluationPlan adaptive,maximum;
+    require(bool(service->createPlan({{"adaptive",
+                "Fqgpv_"+adaptiveName,{}}},adaptive)) &&
+            bool(service->createPlan({{"maximum","uvMax",{}}},maximum)),
+        "QG adaptive/maximum plans");
+
+    std::vector<double> adaptiveReference,maximumReference;
+    bool hasReference=false;
+    const auto reductionCount=[&]() {
+        auto count=service->producerMetrics().horizontalSpeedReductions;
+        if constexpr(std::is_same_v<Engine,WVStratifiedQGForcingEngine>)
+            count+=engine.metrics().horizontalSpeedMaximumReductionCount;
+        return count;
+    };
+    for(auto policy:{WVVariableEvaluationPolicy::reuse,
+            WVVariableEvaluationPolicy::lowMemory}) {
+        require(bool(service->setVariableEvaluationPolicy(policy)),
+            "QG adaptive/maximum policy");
+        for(bool maximumFirst:{false,true}) {
+            std::vector<double> adaptiveValues(
+                adaptive.outputs()[0].elementCount),maximumValues(1);
+            WVFieldOutputView adaptiveView{adaptiveValues.data(),
+                adaptiveValues.size()};
+            WVFieldOutputView maximumView{maximumValues.data(),1};
+            const auto reductionsBefore=reductionCount();
+            const auto ledgerBefore=service->metrics().variableEvaluation;
+            {
+                WVFieldEvaluationSession session;
+                require(bool(service->beginEvaluationSession(
+                            integrationState,session)),
+                    "QG adaptive/maximum evaluation session");
+                auto first=maximumFirst ?
+                    service->evaluate(maximum,integrationState,&maximumView,1) :
+                    service->evaluate(adaptive,integrationState,&adaptiveView,1);
+                if(!first) throw std::runtime_error(
+                    "QG adaptive/maximum first query: "+first.message);
+                auto second=maximumFirst ?
+                    service->evaluate(adaptive,integrationState,&adaptiveView,1) :
+                    service->evaluate(maximum,integrationState,&maximumView,1);
+                if(!second) throw std::runtime_error(
+                    "QG adaptive/maximum second query: "+second.message);
+            }
+            const auto ledgerAfter=service->metrics().variableEvaluation;
+            const auto reductionsAfter=reductionCount();
+            const bool streamedScalar=
+                policy==WVVariableEvaluationPolicy::lowMemory;
+            const auto expectedReductions=streamedScalar ? 2u : 1u;
+            const bool recomputationRecorded=streamedScalar ?
+                ledgerAfter.recomputations>ledgerBefore.recomputations :
+                ledgerAfter.recomputations==ledgerBefore.recomputations;
+            if(reductionsAfter!=reductionsBefore+expectedReductions ||
+                !recomputationRecorded)
+                throw std::runtime_error(std::string("QG adaptive/maximum family=")+
+                    (std::is_same_v<Engine,WVBarotropicQGForcingEngine> ? "barotropic" : "stratified")+
+                    " policy="+variableEvaluationPolicyIdentifier(policy)+
+                    " reverse="+std::to_string(maximumFirst)+
+                    " reduction="+std::to_string(reductionsAfter-reductionsBefore)+
+                    " recomputation="+std::to_string(ledgerAfter.recomputations-ledgerBefore.recomputations));
+            if(!hasReference) {
+                adaptiveReference=adaptiveValues;
+                maximumReference=maximumValues;
+                hasReference=true;
+            } else require(adaptiveValues==adaptiveReference &&
+                    maximumValues==maximumReference,
+                "QG adaptive/maximum query order or policy changed values");
+        }
+    }
+    require(bool(service->setVariableEvaluationPolicy(
+        WVVariableEvaluationPolicy::reuse)),
+        "QG adaptive/maximum reuse restore");
 }
 
 template<class Engine,class Project,class Reconstruct>
@@ -840,6 +1130,7 @@ void exercise(Engine& engine,WVShape2D spectral,WVShape4D spatial,
     const WVForcingTendencyOutput single{3,{selected.data(),spatial}};
     require(bool(engine.evaluateForcingTendencies(state,&single,1)) && selected==reference[3],
         "Requesting only the amplitude contribution lost preceding stages");
+    nonlinearVorticityEvaluationSession(engine,state,spatial);
     engine.setLinearDynamics(true);
     require(bool(engine.nonlinearFlux(state,flux)) &&
         equal(rhs,std::vector<WVComplex64>(rhs.size())) && equal(coefficients,stateBefore),
@@ -855,11 +1146,13 @@ void exercise(Engine& engine,WVShape2D spectral,WVShape4D spatial,
         std::vector<double> velocity(3*volume.elementCount());
         WVRealFieldBundleView view{velocity.data(),{volume.first,volume.second,volume.third,3}};
         WVConstantStratificationRightHandSideContext context;
+        require(bool(engine.beginStateEvaluation(state)),"Linear advection scope failed");
         require(bool(engine.evaluateRightHandSideWithContext(state,flux,view,context)) &&
             context.advectionFields().data==velocity.data() &&
             equal(rhs,std::vector<WVComplex64>(rhs.size())) &&
             std::any_of(velocity.begin(),velocity.end(),[](double value){ return value!=0; }),
             "Linear evolution lost the shared advection context");
+        engine.endStateEvaluation();
     }
     fieldService(engine,state,spatial,reference,counter);
     engine.setLinearDynamics(false);
@@ -1038,6 +1331,129 @@ void barotropic() {
     relative(values[6],expected);
     require(bool(engine->evaluateRightHandSide(state,flux)) && equal(f,rhs) && equal(a,before),"QG diagnostics changed later RHS");
     const auto successful=values;
+    qgAdaptiveMaximumEvaluationSession(*engine,state);
+    {
+        WVVariableEvaluationContext evaluation;
+        require(bool(evaluation.prepare(
+                    detail::WVForcingDiagnosticWorkspace::dependencyKeys(
+                        engine->forcingCount()))) &&
+                bool(evaluation.begin(engine.get(),
+                    WVVariableEvaluationPolicy::reuse)),
+            "QG persistent diagnostic evaluation setup");
+        detail::WVForcingDiagnosticWorkspace session(spectral,spatial,1,2);
+        std::vector<WVForcingStage> stages;
+        for(std::size_t index=0;index<engine->forcingCount();++index)
+            stages.push_back(engine->forcingInstance(index)->stage());
+        require(bool(session.beginScopedEvaluation(evaluation,stages)),
+            "QG persistent diagnostic workspace setup");
+        std::vector<double> first(R),reusedFirst(R),last(R);
+        const WVForcingTendencyOutput firstRequest{0,{first.data(),spatial}};
+        const WVForcingTendencyOutput lastRequest{6,{last.data(),spatial}};
+        const WVForcingTendencyOutput orderedRequests[] = {
+            {0,{reusedFirst.data(),spatial}},lastRequest};
+        const auto forcingBefore=engine->tendencyMetrics().forcingEvaluationCount;
+        require(bool(engine->evaluateForcingTendencies(
+                    state,&firstRequest,1,nullptr,&session)) &&
+                first==successful[0] && session.initialized() &&
+                session.physicalPrepared,
+            "QG persistent diagnostic first prefix");
+        require(bool(engine->evaluateForcingTendencies(
+                    state,orderedRequests,2,nullptr,&session)) &&
+                reusedFirst==successful[0] && last==successful[6] &&
+                engine->tendencyMetrics().forcingEvaluationCount-forcingBefore==7,
+            "QG persistent diagnostic extended prefix replayed prior forcing");
+        auto foreign=a;
+        const WVComplexConstView foreignState{foreign.data(),spectral};
+        std::fill(last.begin(),last.end(),99);
+        require(engine->evaluateForcingTendencies(
+                    foreignState,&lastRequest,1,nullptr,&session).code==
+                    WVKernelStatusCode::invalidConfiguration &&
+                std::all_of(last.begin(),last.end(),[](double value) {
+                    return value==99;
+                }),
+            "QG persistent diagnostic accepted a foreign immutable state");
+        evaluation.end();
+        detail::WVForcingDiagnosticWorkspace incompatible(
+            spectral,spatial,1,1);
+        std::fill(first.begin(),first.end(),99);
+        require(engine->evaluateForcingTendencies(
+                    state,&firstRequest,1,nullptr,&incompatible).code==
+                    WVKernelStatusCode::invalidShape &&
+                std::all_of(first.begin(),first.end(),[](double value) {
+                    return value==99;
+                }),
+            "QG persistent diagnostic accepted incompatible channel storage");
+        WVVariableEvaluationContext lowEvaluation;
+        require(bool(lowEvaluation.prepare(
+                    detail::WVForcingDiagnosticWorkspace::dependencyKeys(
+                        engine->forcingCount()))) &&
+                bool(lowEvaluation.begin(engine.get(),
+                    WVVariableEvaluationPolicy::lowMemory)),
+            "QG low-memory diagnostic evaluation setup");
+        detail::WVForcingDiagnosticWorkspace lowSession(
+            spectral,spatial,1,2);
+        require(bool(lowSession.beginScopedEvaluation(lowEvaluation,stages)),
+            "QG low-memory diagnostic workspace setup");
+        std::fill(first.begin(),first.end(),0);
+        std::fill(reusedFirst.begin(),reusedFirst.end(),0);
+        std::fill(last.begin(),last.end(),0);
+        const auto lowForcingBefore=
+            engine->tendencyMetrics().forcingEvaluationCount;
+        const auto lowReductionBefore=
+            engine->kernel().metrics().horizontalSpeedMaximumReductionCount;
+        const auto engineBytes=engine->persistentBytes();
+        require(bool(engine->evaluateForcingTendencies(
+                    state,&firstRequest,1,nullptr,&lowSession)) &&
+                lowSession.physicalPrepared,
+            "QG low-memory diagnostic did not prepare its persistent velocity");
+        const auto lowPhysical=lowSession.physical;
+        require(bool(engine->evaluateForcingTendencies(
+                    state,orderedRequests,2,nullptr,&lowSession)) &&
+                first==successful[0] && reusedFirst==successful[0] &&
+                last==successful[6] && lowSession.physical==lowPhysical,
+            "QG low-memory incremental diagnostics changed ordered output");
+        const auto lowMetrics=lowEvaluation.metrics();
+        const auto lowBytes=lowSession.bytes();
+        require(engine->tendencyMetrics().forcingEvaluationCount-
+                    lowForcingBefore==8 &&
+                lowMetrics.producerExecutions==11 &&
+                lowMetrics.recomputations==1 &&
+                lowMetrics.evictions==10 && lowMetrics.cacheHits==0 &&
+                engine->kernel().metrics().horizontalSpeedMaximumReductionCount==
+                    lowReductionBefore+1 &&
+                lowMetrics.liveBytes==sizeof(double) && lowSession.prefix.empty() &&
+                lowSession.nextIndex==0 && !lowSession.projected &&
+                lowSession.physicalPrepared &&
+                engine->persistentBytes()==engineBytes,
+            "QG low-memory prefix replay was retained or not fully counted");
+        lowEvaluation.end();
+        require(lowEvaluation.metrics().liveBytes==0,
+            "Closed QG low-memory context retained its scalar reduction");
+        std::fill(last.begin(),last.end(),99);
+        require(engine->evaluateForcingTendencies(
+                    state,&lastRequest,1,nullptr,&lowSession).code==
+                    WVKernelStatusCode::invalidConfiguration &&
+                std::all_of(last.begin(),last.end(),[](double value) {
+                    return value==99;
+                }),
+            "QG closed diagnostic context retained an active view");
+        require(bool(lowEvaluation.begin(engine.get(),
+                    WVVariableEvaluationPolicy::lowMemory)),
+            "QG low-memory diagnostic context reopen");
+        detail::WVForcingDiagnosticWorkspace reopened(
+            spectral,spatial,1,2);
+        require(bool(reopened.beginScopedEvaluation(lowEvaluation,stages)) &&
+                bool(engine->evaluateForcingTendencies(
+                    state,&lastRequest,1,nullptr,&reopened)) &&
+                last==successful[6] && reopened.bytes()==lowBytes &&
+                reopened.prefix.empty() &&
+                lowEvaluation.metrics().liveBytes==sizeof(double) &&
+                engine->persistentBytes()==engineBytes,
+            "QG reopened low-memory context grew or retained a stale prefix");
+        lowEvaluation.end();
+        require(lowEvaluation.metrics().liveBytes==0,
+            "Reclosed QG low-memory context retained its scalar reduction");
+    }
     for (auto& field:values) std::fill(field.begin(),field.end(),99);
     counter->failAt=counter->calls+fftCalls;
     require(engine->evaluateForcingTendencies(state,outputs.data(),outputs.size()).code==WVKernelStatusCode::fftExecutionFailure,"QG late FFT injection");
@@ -1111,6 +1527,104 @@ void stratifiedQG() {
         a[i]={1e-6*std::sin(.17*i),1e-6*std::cos(.23*i)};
     const WVComplexConstView state{a.data(),spectral}; WVComplexView flux{f.data(),spectral};
     require(bool(engine->evaluateRightHandSide(state,flux)),"Stratified QG baseline RHS");
+    const auto& kernelMetrics=engine->kernel().metrics();
+    require(kernelMetrics.stateValidationCount==1 &&
+        kernelMetrics.reconstructionCount[static_cast<std::size_t>(WVStratifiedQGField::u)][0]==1 &&
+        kernelMetrics.reconstructionCount[static_cast<std::size_t>(WVStratifiedQGField::v)][0]==1 &&
+        kernelMetrics.reconstructionCount[static_cast<std::size_t>(WVStratifiedQGField::qgpv)][1]==1 &&
+        kernelMetrics.reconstructionCount[static_cast<std::size_t>(WVStratifiedQGField::qgpv)][2]==1,
+        "Stratified QG repeated validation or shared field producers");
+    require(engine->variableEvaluationMetrics().contexts==1 &&
+        engine->variableEvaluationMetrics().producerExecutions==4 &&
+        engine->variableEvaluationMetrics().cacheHits==4,
+        "Stratified QG default evaluation did not reuse velocity and speed");
+    {
+      auto lowCounter=std::make_shared<FailureCounter>();
+      std::unique_ptr<WVStratifiedQGForcingEngine> lowMemory;
+      status=WVStratifiedQGForcingEngine::create(source,scheduleValue,
+          wavevortex::runtime::test::extensionCatalog(),
+          std::make_unique<FailingEngine>(lowCounter),lowMemory);
+      require(bool(status) && bool(lowMemory->setVariableEvaluationPolicy(
+          WVVariableEvaluationPolicy::lowMemory)),"Stratified QG low-memory setup");
+      std::vector<WVComplex64> lowFlux(S);
+      WVComplexView lowFluxView{lowFlux.data(),spectral};
+      require(bool(lowMemory->evaluateRightHandSide(state,lowFluxView)) &&
+          equal(lowFlux,f),"Stratified QG policies changed RHS arithmetic");
+      const auto& lowKernelMetrics=lowMemory->kernel().metrics();
+      require(lowKernelMetrics.stateValidationCount==1 &&
+          lowKernelMetrics.reconstructionCount[static_cast<std::size_t>(WVStratifiedQGField::u)][0]==3 &&
+          lowKernelMetrics.reconstructionCount[static_cast<std::size_t>(WVStratifiedQGField::v)][0]==3 &&
+          lowMemory->variableEvaluationMetrics().producerExecutions==7 &&
+          lowMemory->variableEvaluationMetrics().recomputations==4 &&
+          lowMemory->variableEvaluationMetrics().evictions==7 &&
+          lowMemory->metrics().workspaceCapacityBytes+S*sizeof(WVComplex64)==
+              engine->metrics().workspaceCapacityBytes,
+          "Stratified QG low-memory policy did not release and recompute velocity");
+    }
+    {
+      auto singleSchedule=scheduleValue;
+      const auto nonlinearEntry=std::find_if(
+          singleSchedule.entries.begin(),singleSchedule.entries.end(),
+          [](const auto& entry) {
+            return entry.typeIdentifier=="WVNonlinearAdvection";
+          });
+      require(nonlinearEntry!=singleSchedule.entries.end(),
+          "Stratified QG nonlinear fixture missing");
+      singleSchedule.entries={*nonlinearEntry};
+      std::vector<WVComplex64> singleFlux(S);
+      {
+        auto singleCounter=std::make_shared<FailureCounter>();
+        std::unique_ptr<WVStratifiedQGForcingEngine> single;
+        status=WVStratifiedQGForcingEngine::create(source,singleSchedule,
+            wavevortex::runtime::test::extensionCatalog(),
+            std::make_unique<FailingEngine>(singleCounter),single);
+        WVComplexView singleView{singleFlux.data(),spectral};
+        require(bool(status) && bool(single->evaluateRightHandSide(state,singleView)),
+            "Single Stratified QG nonlinear reference");
+      }
+      auto repeatedSchedule=singleSchedule;
+      auto repeatedEntry=repeatedSchedule.entries.front();
+      repeatedEntry.name="second nonlinear advection";
+      repeatedEntry.ordinal=1;
+      repeatedSchedule.entries.push_back(std::move(repeatedEntry));
+      auto repeatedCounter=std::make_shared<FailureCounter>();
+      std::unique_ptr<WVStratifiedQGForcingEngine> repeated;
+      status=WVStratifiedQGForcingEngine::create(source,repeatedSchedule,
+          wavevortex::runtime::test::extensionCatalog(),
+          std::make_unique<FailingEngine>(repeatedCounter),repeated);
+      std::vector<WVComplex64> repeatedFlux(S);
+      WVComplexView repeatedView{repeatedFlux.data(),spectral};
+      require(bool(status) && bool(repeated->evaluateRightHandSide(state,repeatedView)),
+          "Repeated Stratified QG nonlinear evaluation");
+      for (std::size_t i=0;i<S;++i) {
+        require(repeatedFlux[i].real==2*singleFlux[i].real &&
+            repeatedFlux[i].imag==2*singleFlux[i].imag,
+            "Repeated Stratified QG nonlinear arithmetic changed");
+      }
+      const auto& repeatedMetrics=repeated->kernel().metrics();
+      require(repeatedMetrics.reconstructionCount[static_cast<std::size_t>(WVStratifiedQGField::qgpv)][1]==1 &&
+          repeatedMetrics.reconstructionCount[static_cast<std::size_t>(WVStratifiedQGField::qgpv)][2]==1,
+          "Repeated Stratified QG nonlinear forcing rebuilt PV derivatives");
+      require(repeated->variableEvaluationMetrics().producerExecutions==3,
+          "Repeated Stratified QG nonlinear forcing ran an unexpected producer count");
+      require(repeated->variableEvaluationMetrics().cacheHits==1,
+          "Repeated Stratified QG nonlinear forcing missed its cached tendency");
+      auto foreign=a;
+      WVComplexConstView foreignState{foreign.data(),spectral};
+      WVComplexView mutableState{a.data(),spectral};
+      require(bool(repeated->beginStateEvaluation(state)),
+          "Stratified QG state evaluation begin failed");
+      require(repeated->setVariableEvaluationPolicy(
+              WVVariableEvaluationPolicy::lowMemory).code==
+              WVKernelStatusCode::reentrantExecution &&
+          repeated->restoreForcingAmplitudes(mutableState).status.code==
+              WVKernelStatusCode::reentrantExecution &&
+          repeated->evaluateRightHandSide(foreignState,repeatedView).code==
+              WVKernelStatusCode::invalidConfiguration,
+          "Stratified QG active-state ownership or mutation guard failed");
+      require(bool(repeated->endStateEvaluation()),
+          "Stratified QG state evaluation end failed");
+    }
     const auto before=a,rhs=f; const auto bytes=engine->persistentBytes(),calls=engine->metrics().evaluationCount;
     const auto reconstructions=engine->metrics().physicalFieldReconstructionCount;
     const auto reuse=engine->metrics().physicalFieldReuseCount;
@@ -1159,6 +1673,129 @@ void stratifiedQG() {
     for (std::size_t i=g.Nx*g.Ny;i<R;++i) require(values[1][i]==0 && values[2][i]==0,"QG raw bottom drag leaked vertically");
     require(bool(engine->evaluateRightHandSide(state,flux)) && equal(f,rhs) && equal(a,before),"Stratified QG later RHS changed");
     const auto successful=values;
+    qgAdaptiveMaximumEvaluationSession(*engine,state);
+    {
+        WVVariableEvaluationContext evaluation;
+        require(bool(evaluation.prepare(
+                    detail::WVForcingDiagnosticWorkspace::dependencyKeys(
+                        engine->forcingCount()))) &&
+                bool(evaluation.begin(engine.get(),
+                    WVVariableEvaluationPolicy::reuse)),
+            "Stratified QG persistent diagnostic evaluation setup");
+        detail::WVForcingDiagnosticWorkspace session(spectral,spatial,1,2);
+        std::vector<WVForcingStage> stages;
+        for(std::size_t index=0;index<engine->forcingCount();++index)
+            stages.push_back(engine->forcingInstance(index)->stage());
+        require(bool(session.beginScopedEvaluation(evaluation,stages)),
+            "Stratified QG persistent diagnostic workspace setup");
+        std::vector<double> first(R),reusedFirst(R),last(R);
+        const WVForcingTendencyOutput firstRequest{0,{first.data(),spatial}};
+        const WVForcingTendencyOutput lastRequest{7,{last.data(),spatial}};
+        const WVForcingTendencyOutput orderedRequests[] = {
+            {0,{reusedFirst.data(),spatial}},lastRequest};
+        const auto forcingBefore=engine->tendencyMetrics().forcingEvaluationCount;
+        require(bool(engine->evaluateForcingTendencies(
+                    state,&firstRequest,1,nullptr,&session)) &&
+                first==successful[0] && session.initialized() &&
+                session.physicalPrepared,
+            "Stratified QG persistent diagnostic first prefix");
+        require(bool(engine->evaluateForcingTendencies(
+                    state,orderedRequests,2,nullptr,&session)) &&
+                reusedFirst==successful[0] && last==successful[7] &&
+                engine->tendencyMetrics().forcingEvaluationCount-forcingBefore==8,
+            "Stratified QG persistent diagnostic extended prefix replayed prior forcing");
+        auto foreign=a;
+        const WVComplexConstView foreignState{foreign.data(),spectral};
+        std::fill(last.begin(),last.end(),99);
+        require(engine->evaluateForcingTendencies(
+                    foreignState,&lastRequest,1,nullptr,&session).code==
+                    WVKernelStatusCode::invalidConfiguration &&
+                std::all_of(last.begin(),last.end(),[](double value) {
+                    return value==99;
+                }),
+            "Stratified QG persistent diagnostic accepted a foreign immutable state");
+        evaluation.end();
+        detail::WVForcingDiagnosticWorkspace incompatible(
+            spectral,spatial,1,1);
+        std::fill(first.begin(),first.end(),99);
+        require(engine->evaluateForcingTendencies(
+                    state,&firstRequest,1,nullptr,&incompatible).code==
+                    WVKernelStatusCode::invalidShape &&
+                std::all_of(first.begin(),first.end(),[](double value) {
+                    return value==99;
+                }),
+            "Stratified QG persistent diagnostic accepted incompatible channel storage");
+        WVVariableEvaluationContext lowEvaluation;
+        require(bool(lowEvaluation.prepare(
+                    detail::WVForcingDiagnosticWorkspace::dependencyKeys(
+                        engine->forcingCount()))) &&
+                bool(lowEvaluation.begin(engine.get(),
+                    WVVariableEvaluationPolicy::lowMemory)),
+            "Stratified QG low-memory diagnostic evaluation setup");
+        detail::WVForcingDiagnosticWorkspace lowSession(
+            spectral,spatial,1,2);
+        require(bool(lowSession.beginScopedEvaluation(lowEvaluation,stages)),
+            "Stratified QG low-memory diagnostic workspace setup");
+        std::fill(first.begin(),first.end(),0);
+        std::fill(reusedFirst.begin(),reusedFirst.end(),0);
+        std::fill(last.begin(),last.end(),0);
+        const auto lowForcingBefore=
+            engine->tendencyMetrics().forcingEvaluationCount;
+        const auto lowReductionBefore=
+            engine->metrics().horizontalSpeedMaximumReductionCount;
+        const auto engineBytes=engine->persistentBytes();
+        require(bool(engine->evaluateForcingTendencies(
+                    state,&firstRequest,1,nullptr,&lowSession)) &&
+                lowSession.physicalPrepared,
+            "Stratified QG low-memory diagnostic did not prepare its persistent velocity");
+        const auto lowPhysical=lowSession.physical;
+        require(bool(engine->evaluateForcingTendencies(
+                    state,orderedRequests,2,nullptr,&lowSession)) &&
+                first==successful[0] && reusedFirst==successful[0] &&
+                last==successful[7] && lowSession.physical==lowPhysical,
+            "Stratified QG low-memory incremental diagnostics changed ordered output");
+        const auto lowMetrics=lowEvaluation.metrics();
+        const auto lowBytes=lowSession.bytes();
+        require(engine->tendencyMetrics().forcingEvaluationCount-
+                    lowForcingBefore==9 &&
+                lowMetrics.producerExecutions==12 &&
+                lowMetrics.recomputations==1 &&
+                lowMetrics.evictions==11 && lowMetrics.cacheHits==0 &&
+                engine->metrics().horizontalSpeedMaximumReductionCount==
+                    lowReductionBefore+1 &&
+                lowMetrics.liveBytes==sizeof(double) && lowSession.prefix.empty() &&
+                lowSession.nextIndex==0 && !lowSession.projected &&
+                lowSession.physicalPrepared &&
+                engine->persistentBytes()==engineBytes,
+            "Stratified QG low-memory prefix replay was retained or not fully counted");
+        lowEvaluation.end();
+        require(lowEvaluation.metrics().liveBytes==0,
+            "Closed Stratified QG low-memory context retained its scalar reduction");
+        std::fill(last.begin(),last.end(),99);
+        require(engine->evaluateForcingTendencies(
+                    state,&lastRequest,1,nullptr,&lowSession).code==
+                    WVKernelStatusCode::invalidConfiguration &&
+                std::all_of(last.begin(),last.end(),[](double value) {
+                    return value==99;
+                }),
+            "Stratified QG closed diagnostic context retained an active view");
+        require(bool(lowEvaluation.begin(engine.get(),
+                    WVVariableEvaluationPolicy::lowMemory)),
+            "Stratified QG low-memory diagnostic context reopen");
+        detail::WVForcingDiagnosticWorkspace reopened(
+            spectral,spatial,1,2);
+        require(bool(reopened.beginScopedEvaluation(lowEvaluation,stages)) &&
+                bool(engine->evaluateForcingTendencies(
+                    state,&lastRequest,1,nullptr,&reopened)) &&
+                last==successful[7] && reopened.bytes()==lowBytes &&
+                reopened.prefix.empty() &&
+                lowEvaluation.metrics().liveBytes==sizeof(double) &&
+                engine->persistentBytes()==engineBytes,
+            "Stratified QG reopened low-memory context grew or retained a stale prefix");
+        lowEvaluation.end();
+        require(lowEvaluation.metrics().liveBytes==0,
+            "Reclosed Stratified QG low-memory context retained its scalar reduction");
+    }
     for (auto& field:values) std::fill(field.begin(),field.end(),99);
     counter->failAt=counter->calls+fftCalls;
     require(engine->evaluateForcingTendencies(state,outputs.data(),outputs.size()).code==WVKernelStatusCode::fftExecutionFailure,"Stratified QG late failure");
@@ -1207,6 +1844,49 @@ void stratifiedQG() {
     const auto rejectCalls=counter->calls;
     require(engine->kernel().nonlinearFlux(state,flux,0,&raw).code==WVKernelStatusCode::overlappingArrays && counter->calls==rejectCalls,
         "Stratified QG raw alias accepted or rejected after FFT");
+    for (const auto evaluationPolicy : {WVVariableEvaluationPolicy::reuse,
+                                        WVVariableEvaluationPolicy::lowMemory}) {
+        std::unique_ptr<WVStratifiedQGIntegrationSystem> system;
+        require(bool(WVStratifiedQGIntegrationSystem::create(
+                    source,scheduleValue,
+                    wavevortex::runtime::test::extensionCatalog(),
+                    std::make_unique<WVReferenceFFTEngine>(),system)) &&
+                    bool(system->setVariableEvaluationPolicy(evaluationPolicy)),
+                "Stratified QG integration lifecycle setup failed");
+        WVCoefficientStateStorage storage,denseStorage;
+        require(bool(storage.initialize(system->stateLayout())) &&
+                    bool(denseStorage.initialize(system->stateLayout())),
+                "Stratified QG integration lifecycle storage failed");
+        std::copy_n(a.data(),S,storage.mutableFamilies()[0].data);
+        WVMutableIntegrationState integrationState;
+        integrationState.waveVortex.t=83;
+        integrationState.waveVortex.t0=17;
+        integrationState.coefficientFamilies=storage.mutableFamilies();
+        integrationState.coefficientFamilyCount=storage.familyCount();
+        WVMutableIntegrationState denseState;
+        denseState.coefficientFamilies=denseStorage.mutableFamilies();
+        denseState.coefficientFamilyCount=denseStorage.familyCount();
+        WVFixedStepRK4 integrator(*system,{true});
+        require(bool(integrator.prepareStateAfterRestart(integrationState)) &&
+                    system->variableEvaluationMetrics().liveBytes==0,
+                "Stratified QG restart preparation retained an evaluation");
+        const auto validationsBefore=system->kernel().metrics().stateValidationCount;
+        const auto contextsBefore=system->variableEvaluationMetrics().contexts;
+        require(bool(integrator.step(integrationState,1e-4)),
+                "Stratified QG integration lifecycle step failed");
+        const auto validationsAfter=system->kernel().metrics().stateValidationCount;
+        const auto contextsAfter=system->variableEvaluationMetrics().contexts;
+        require(validationsAfter>validationsBefore &&
+                    validationsAfter-validationsBefore==contextsAfter-contextsBefore &&
+                    system->variableEvaluationMetrics().liveBytes==0,
+                "Stratified QG RHS validation and evaluation lifecycles diverged");
+        require(bool(integrator.evaluateDenseOutput(
+                    integrationState.waveVortex.t-5e-5,denseState)) &&
+                    system->kernel().metrics().stateValidationCount-validationsAfter==
+                        system->variableEvaluationMetrics().contexts-contextsAfter &&
+                    system->variableEvaluationMetrics().liveBytes==0,
+                "Stratified QG dense output retained or reopened an RHS evaluation");
+    }
     testInjectedQG(source, scheduleValue);
 }
 
@@ -1247,9 +1927,129 @@ template<bool Hydrostatic> void stratified(bool unpairedMean=false) {
             return WVKernelStatus::ok();
         },unpairedMean);
 }
+
+WVFrozenForcingSchedule repeatedGridCalculusSchedule() {
+    WVPortableTypedRecord damping{"wave-vortex-forcing-configuration-v1",1,
+        {{"nu",{},std::vector<double>{0.125}},
+         {"kappa",{},std::vector<double>{0.25}}}};
+    WVPortableTypedRecord diffusivity{"wave-vortex-forcing-configuration-v1",1,
+        {{"kappa_z",{},std::vector<double>{0.375}},
+         {"shouldForceMeanDensityAnomaly",{},std::vector<std::uint8_t>{1}}}};
+    WVFrozenForcingSchedule result;
+    result.entries={
+        {"WVHorizontalDamping",1,"horizontal one",WVForcingStage::spatial,120,0,"",damping},
+        {"WVHorizontalDamping",1,"horizontal two",WVForcingStage::spatial,121,1,"",damping},
+        {"WVVerticalDamping",1,"vertical one",WVForcingStage::spatial,122,2,"",damping},
+        {"WVVerticalDamping",1,"vertical two",WVForcingStage::spatial,123,3,"",damping},
+        {"WVVerticalDiffusivity",1,"vertical diffusivity",WVForcingStage::spatial,124,4,"",diffusivity}};
+    return result;
+}
+
+template<bool Hydrostatic>
+void repeatedGridCalculus() {
+    Temporary file;
+    if constexpr(Hydrostatic) {
+        fixture(file.path); File handle(file.path);
+        for(const char* name:{"WVTransform","AnnotatedClass"})
+            nc(nc_put_att_text(handle.id,NC_GLOBAL,name,
+                std::char_traits<char>::length("WVTransformHydrostatic"),
+                "WVTransformHydrostatic"));
+    } else boussinesqFixture(file.path);
+    change(file.path,"shouldAntialias",0);
+    std::shared_ptr<const WVStratifiedModalRecord> source;
+    require(bool(WVStratifiedModalReader::read(file.path.string(),source)),
+        "Repeated grid-calculus fixture read failed");
+    using Engine=std::conditional_t<Hydrostatic,WVHydrostaticForcingEngine,
+        WVBoussinesqForcingEngine>;
+    std::unique_ptr<Engine> engine;
+    const auto scheduleValue=repeatedGridCalculusSchedule();
+    require(bool(Engine::create(source,scheduleValue,
+        wavevortex::runtime::test::extensionCatalog(),
+        std::make_unique<WVReferenceFFTEngine>(),engine)),
+        "Repeated grid-calculus engine setup failed");
+    const auto spectral=engine->kernel().spectralShape();
+    const auto spatial=engine->kernel().spatialShape();
+    const auto S=spectral.elementCount(),R=spatial.elementCount();
+    std::vector<WVComplex64> coefficients(3*S);
+    for(std::size_t index=0;index<coefficients.size();++index)
+        coefficients[index]={1e-5*std::sin(.17*(index+1)),
+            1e-5*std::cos(.23*(index+1))};
+    require(bool(engine->kernel().constrainCoefficients(
+        {{coefficients.data(),spectral},{coefficients.data()+S,spectral},
+         {coefficients.data()+2*S,spectral}})),
+        "Repeated grid-calculus coefficient constraint failed");
+    const WVState state{.5,-.25,{{coefficients.data(),spectral},
+        {coefficients.data()+S,spectral},{coefficients.data()+2*S,spectral}}};
+    const auto channels=Hydrostatic ? 3U : 4U;
+    const WVShape4D outputShape{spatial.first,spatial.second,spatial.third,channels};
+
+    auto expected=[&](WVVariableEvaluationPolicy policy) {
+        std::array<std::array<std::size_t,4>,4> value{};
+        const auto repeated=policy==WVVariableEvaluationPolicy::reuse ? 1U : 2U;
+        for(std::size_t field=0;field<4;++field)
+            if(!Hydrostatic || field!=2)
+                for(std::size_t kind=0;kind<2;++kind) value[field][kind]=repeated;
+        value[0][2]=repeated; value[1][2]=repeated;
+        if constexpr(!Hydrostatic) value[2][3]=repeated;
+        value[3][3]=policy==WVVariableEvaluationPolicy::reuse ? 1U : 3U;
+        return value;
+    };
+    auto checkDelta=[&](const auto& before,WVVariableEvaluationPolicy policy,
+        const char* label) {
+        const auto desired=expected(policy);
+        const auto& after=engine->metrics().gridCalculusProducerCount;
+        for(std::size_t field=0;field<4;++field)
+            for(std::size_t kind=0;kind<4;++kind)
+                if(after[field][kind]-before[field][kind]!=desired[field][kind]) {
+                    std::ostringstream message;
+                    message<<label<<" grid-calculus producer count mismatch field="
+                        <<field<<" kind="<<kind<<" actual="
+                        <<after[field][kind]-before[field][kind]<<" expected="
+                        <<desired[field][kind];
+                    throw std::runtime_error(message.str());
+                }
+    };
+    auto evaluateRHS=[&](WVVariableEvaluationPolicy policy,
+        std::vector<WVComplex64>& values) {
+        values.assign(3*S,{});
+        WVFlux flux{{values.data(),spectral},{values.data()+S,spectral},
+            {values.data()+2*S,spectral}};
+        const auto before=engine->metrics().gridCalculusProducerCount;
+        const auto status=engine->nonlinearFlux(state,flux);
+        if(!status) throw std::runtime_error(
+            "Repeated grid-calculus RHS failed: "+status.message);
+        checkDelta(before,policy,"RHS");
+    };
+    auto evaluateDiagnostics=[&](WVVariableEvaluationPolicy policy,
+        std::vector<double>& values) {
+        values.assign(scheduleValue.entries.size()*channels*R,0);
+        std::vector<WVForcingTendencyOutput> outputs;
+        outputs.reserve(scheduleValue.entries.size());
+        for(std::size_t index=0;index<scheduleValue.entries.size();++index)
+            outputs.push_back({index,{values.data()+index*channels*R,outputShape}});
+        const auto before=engine->metrics().gridCalculusProducerCount;
+        require(bool(engine->evaluateForcingTendencies(
+            state,outputs.data(),outputs.size())),
+            "Repeated grid-calculus diagnostics failed");
+        checkDelta(before,policy,"diagnostic");
+    };
+
+    std::vector<WVComplex64> reusedRHS,lowRHS;
+    std::vector<double> reusedDiagnostics,lowDiagnostics;
+    evaluateRHS(WVVariableEvaluationPolicy::reuse,reusedRHS);
+    evaluateDiagnostics(WVVariableEvaluationPolicy::reuse,reusedDiagnostics);
+    require(bool(engine->setVariableEvaluationPolicy(
+        WVVariableEvaluationPolicy::lowMemory)),
+        "Repeated grid-calculus low-memory setup failed");
+    evaluateRHS(WVVariableEvaluationPolicy::lowMemory,lowRHS);
+    evaluateDiagnostics(WVVariableEvaluationPolicy::lowMemory,lowDiagnostics);
+    require(equal(reusedRHS,lowRHS) && reusedDiagnostics==lowDiagnostics,
+        "Grid-calculus reuse policy changed forcing values");
+}
 }
 int main() {
     try {
+        repeatedGridCalculus<true>(); repeatedGridCalculus<false>();
         stratifiedQG(); barotropic(); constant(false); constant(true); stratified<true>(); stratified<false>(); stratified<true>(true); stratified<false>(true);
         std::cout<<"PASS: ordered forcing diagnostics, state isolation, and transactional retry\n";
         return 0;

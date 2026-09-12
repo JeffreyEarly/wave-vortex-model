@@ -1,0 +1,121 @@
+{
+  "warmupPairs": 2,
+  "measuredPairs": 8,
+  "order": "alternating",
+  "comparison": "complete NetCDF graph control/candidate at existing MATLAB/native 1e-10/1e-12 tolerances, with exact metadata and integration controls; baseline self-repeat evidence documents native final-bit variability",
+  "timingGate": "each profile geometric integration ratio <=1.03; equal-profile paired-bootstrap upper95 <=1.03",
+  "memoryGate": "each profile max owned retained increase <=368 bytes derived fixed metadata allowance; no new scientific volume; peak RSS reported",
+  "profiles": [
+    {
+      "id": "constant-nonhydrostatic-composite-256",
+      "sourcePath": "/private/tmp/wvm455-large-model-fixtures/constant-nonhydrostatic-composite-256-source.nc",
+      "referencePath": "/private/tmp/wvm455-large-model-fixtures/constant-nonhydrostatic-composite-256-reference.nc",
+      "requestPath": "/private/tmp/wvm455-large-model-fixtures/constant-nonhydrostatic-composite-256-request.json",
+      "sourceSHA256": "5c5400c0207146f804a2f9592cbb8c57b5be0795c346f5053fde9fb27f3765da",
+      "referenceSHA256": "e69eff60158d1987b8fc2cff5efb90b29ec2cb5448f9fc0b2dbd4255cfa4a214",
+      "requestSHA256": "4d906e52f4a7d0729d8cce4fc9ab74d199fcdadde1c452a9ed2be8958d72a6e7",
+      "isHydrostatic": false,
+      "composite": true,
+      "outputCounts": {
+        "waveVortex": 2,
+        "dense": 1,
+        "particles": 2,
+        "tracers": 2
+      },
+      "manifestPath": "/private/tmp/wvm455-large-model-fixtures/manifest.json",
+      "manifestSHA256": "62389f6926fc66a3f87015231fd80d5333338b00f91c2f7a317c686ad72c963a",
+      "steps": 4,
+      "request": {
+        "schemaIdentifier": "wave-vortex-run-request-v2",
+        "schemaVersion": 2,
+        "modelFiles": [
+          "/private/tmp/wvm455-large-model-fixtures/constant-nonhydrostatic-composite-256-source.nc"
+        ],
+        "integration": {
+          "method": "fixed-rk4",
+          "finalTime": 2,
+          "initialStep": 0.5
+        },
+        "output": {
+          "policy": "append",
+          "destinations": {}
+        },
+        "execution": {
+          "fftProvider": "native-fftw",
+          "threads": 16
+        },
+        "report": "/private/tmp/wvm455-large-model-fixtures/constant-nonhydrostatic-composite-256-report.json"
+      }
+    },
+    {
+      "id": "variable-hydrostatic-composite-large",
+      "family": "hydrostatic",
+      "grid": [
+        256,
+        256,
+        129
+      ],
+      "Nj": 85,
+      "Nkl": 6631,
+      "sourcePath": "/private/tmp/wvm455-variable-model-large/variable-hydrostatic-composite-large-source.nc",
+      "referencePath": "/private/tmp/wvm455-variable-model-large/variable-hydrostatic-composite-large-matlab-reference.nc",
+      "sourceSHA256": "e1280212c150e17a578333641155c2de37828f0d5921fb9ab91ef86b03b632ad",
+      "referenceSHA256": "375171b9c732ee99143723951320ccf33cad8c93454b5825c87074ca170b759d",
+      "sourceBytes": 164021038.0,
+      "referenceBytes": 395558170.0,
+      "usableBytesBefore": 14995189760.0,
+      "usableBytesAfter": 14432210944.0,
+      "capabilities": {
+        "fullXYZTracer": true,
+        "tracerAdvection": "three-dimensional-xyz",
+        "movingParticles": true,
+        "denseEulerianU": true
+      },
+      "capacityEstimate": {
+        "realVolumeBytes": 67633152.0,
+        "modalComplexBytes": 9018160.0,
+        "coefficientFamilyCount": 3,
+        "coefficientRecordBytes": 27054480.0,
+        "outputPayloadLowerBoundBytes": 392274720.0
+      },
+      "expectedStepCount": 1,
+      "expectedRHSEvaluationCount": 4,
+      "expectedCoefficientRecords": 2,
+      "expectedDenseRecords": 1,
+      "expectedParticleRecords": 2,
+      "expectedTracerRecords": 2,
+      "manifestPath": "/private/tmp/wvm455-variable-model-large/manifest.json",
+      "manifestSHA256": "118947cab0c3679c7558a6a23f032493eb1e87312a5516d7e8322fb36d545875",
+      "steps": 1,
+      "request": {
+        "schemaIdentifier": "wave-vortex-run-request-v2",
+        "schemaVersion": 2,
+        "integration": {
+          "method": "fixed-rk4",
+          "finalTime": 0.5,
+          "initialStep": 0.5
+        },
+        "output": {
+          "policy": "append",
+          "destinations": {}
+        },
+        "execution": {
+          "fftProvider": "native-fftw",
+          "threads": 1
+        }
+      }
+    }
+  ],
+  "binaries": {
+    "control": {
+      "path": "/private/tmp/wvm455-runner-final-default-build/wave-vortex-run",
+      "sha256": "7b301e5eef65afc18386596243f13f9dc0a9b719a25c45032bed2d49d1cf62b5"
+    },
+    "candidate": {
+      "path": "/private/tmp/wvm454-sampling-native-release/wave-vortex-run",
+      "sha256": "0d6d8eeedbec4411939d2f8a9b0ceae42e6e615a6380905dfe78d5220141107e"
+    }
+  },
+  "driverSHA256": "d8a5db3f9b782c8e45fb327e938c6f5d84bc5e0de30e7759ec4fab62e1c32f2c",
+  "helperSHA256": "1d79353dd96421ecab5610291c60eecbabfc3bddbcbfd413b9f4ddfbdbcefec4"
+}

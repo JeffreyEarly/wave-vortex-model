@@ -163,6 +163,33 @@ int main() {
   std::shared_ptr<const WVExtensionCatalog> builtIns;
   require(static_cast<bool>(makeBuiltInExtensionCatalog(builtIns)),
           "built-in catalog construction failed");
+  const auto* nonlinearDependencies=builtIns->forcings().registration(
+      "WVNonlinearAdvection",WVPortablePairContractVersion);
+  const auto* adaptiveDependencies=builtIns->forcings().registration(
+      "WVAdaptiveDamping",WVPortablePairContractVersion);
+  const auto* horizontalDependencies=builtIns->forcings().registration(
+      "WVHorizontalDamping",WVPortablePairContractVersion);
+  const auto* verticalDependencies=builtIns->forcings().registration(
+      "WVVerticalDamping",WVPortablePairContractVersion);
+  const auto* diffusivityDependencies=builtIns->forcings().registration(
+      "WVVerticalDiffusivity",WVPortablePairContractVersion);
+  require(nonlinearDependencies &&
+              nonlinearDependencies->evaluationDependencies.nonlinearUseCount==1 &&
+              adaptiveDependencies &&
+              adaptiveDependencies->evaluationDependencies.horizontalMaximumNeeded &&
+              horizontalDependencies &&
+              horizontalDependencies->evaluationDependencies.constantLaplacianUseCount[0]==1 &&
+              verticalDependencies &&
+              verticalDependencies->evaluationDependencies.constantLaplacianUseCount[1]==1 &&
+              diffusivityDependencies &&
+              diffusivityDependencies->evaluationDependencies.constantLaplacianUseCount[1]==1 &&
+              horizontalDependencies->evaluationDependencies.hydrostaticGridCalculusUseCount[0]==1 &&
+              horizontalDependencies->evaluationDependencies.boussinesqGridCalculusUseCount[8]==1 &&
+              verticalDependencies->evaluationDependencies.hydrostaticGridCalculusUseCount[15]==1 &&
+              verticalDependencies->evaluationDependencies.boussinesqGridCalculusUseCount[11]==1 &&
+              diffusivityDependencies->evaluationDependencies.hydrostaticGridCalculusUseCount[15]==1 &&
+              diffusivityDependencies->evaluationDependencies.boussinesqGridCalculusUseCount[15]==1,
+          "built-in forcing evaluation dependencies were not registered exactly");
 
   // A failed add poisons the builder and a failed freeze clears any prior
   // usable output catalog rather than publishing a valid subset.
@@ -362,6 +389,11 @@ int main() {
       wavevortex::runtime::test::linearCoefficientRegistration();
   auto forcingV2 = forcingV1;
   forcingV2.contractVersion = 2;
+  forcingV2.evaluationDependencies.nonlinearUseCount=2;
+  forcingV2.evaluationDependencies.horizontalMaximumNeeded=true;
+  forcingV2.evaluationDependencies.constantLaplacianUseCount[1]=3;
+  forcingV2.evaluationDependencies.hydrostaticGridCalculusUseCount[15]=4;
+  forcingV2.evaluationDependencies.boussinesqGridCalculusUseCount[11]=5;
   require(static_cast<bool>(forcingVersionBuilder.addForcingFactory(
               std::move(forcingV1))) &&
               static_cast<bool>(forcingVersionBuilder.addForcingFactory(
@@ -395,6 +427,15 @@ int main() {
                       .capability("UnavailableForcing", 1)
                       .status == WVPortableCapabilityStatus::unavailable,
           "forcing version/unavailable capability semantics failed");
+  const auto* customDependencies=forcingVersionCatalog->forcings().registration(
+      wavevortex::runtime::test::LinearCoefficientForcingIdentifier,2);
+  require(customDependencies &&
+              customDependencies->evaluationDependencies.nonlinearUseCount==2 &&
+              customDependencies->evaluationDependencies.horizontalMaximumNeeded &&
+              customDependencies->evaluationDependencies.constantLaplacianUseCount[1]==3 &&
+              customDependencies->evaluationDependencies.hydrostaticGridCalculusUseCount[15]==4 &&
+              customDependencies->evaluationDependencies.boussinesqGridCalculusUseCount[11]==5,
+          "custom forcing evaluation dependencies were not preserved");
 
   // Descriptor resolution creates exactly one distinct immutable
   // implementation for each record and retains the catalog lifetime.

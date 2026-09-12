@@ -1,10 +1,15 @@
 #include "WaveVortexRuntime/WVBarotropicQGIntegrationSystem.hpp"
 #include "WaveVortexRuntime/WVRungeKutta.hpp"
+#include "WaveVortexRuntime/WVStratifiedModalRecord.hpp"
+#include "WaveVortexRuntime/WVStratifiedQGIntegrationSystem.hpp"
 #include "WVReferenceFFTEngine.hpp"
+#include "WVStratifiedModalTestFixture.hpp"
+#include "WVTestExtensionCatalog.hpp"
 
 #include <algorithm>
 #include <cmath>
 #include <cstdlib>
+#include <filesystem>
 #include <iostream>
 #include <memory>
 #include <string>
@@ -354,12 +359,241 @@ void testMatlabCFLFixture() {
           "zero-velocity QG candidates are infinite");
 }
 
+WVFrozenForcingSchedule stratifiedQGPassiveSchedule() {
+  const WVPortableTypedRecord empty{
+      "wave-vortex-forcing-configuration-v1", 1, {}};
+  WVFrozenForcingSchedule schedule;
+  schedule.entries = {
+      {"WVAdaptiveDamping", 1, "adaptive damping",
+       WVForcingStage::spectral, 255, 1, "", empty},
+      {"WVNonlinearAdvection", 1, "nonlinear advection",
+       WVForcingStage::spatial, 127, 0, "", empty}};
+  return schedule;
+}
+
+WVPortableObserverDescriptor stratifiedQGPassiveDescriptor(
+    const WVStratifiedModalGeometry &geometry,
+    const std::shared_ptr<const WVExtensionCatalog> &catalog) {
+  WVPortableObserverRecord record;
+  record.stateBlocks = {
+      {"A0", WVStateScalarType::complex64, {geometry.Nj, geometry.Nkl},
+       WVToleranceKind::coefficientEnergyScaled, 0.0,
+       WVStateOwnership::integratorOwned,
+       WVRestartRequirement::requiredDynamicState},
+      {"particle-x", WVStateScalarType::real64, {2},
+       WVToleranceKind::uniformAbsolute, 1e-6,
+       WVStateOwnership::integratorOwned,
+       WVRestartRequirement::requiredDynamicState},
+      {"particle-y", WVStateScalarType::real64, {2},
+       WVToleranceKind::uniformAbsolute, 1e-6,
+       WVStateOwnership::integratorOwned,
+       WVRestartRequirement::requiredDynamicState},
+      {"tracer", WVStateScalarType::real64,
+       {geometry.Nx, geometry.Ny, geometry.Nz},
+       WVToleranceKind::uniformAbsolute, 1e-8,
+       WVStateOwnership::integratorOwned,
+       WVRestartRequirement::requiredDynamicState}};
+  WVObserverRecord coefficients;
+  coefficients.identifier = "coefficients";
+  coefficients.name = "coefficients";
+  coefficients.typeIdentifier = "WVCoefficients";
+  coefficients.stateBlockIdentifiers = {"A0"};
+  record.observers.push_back(std::move(coefficients));
+  WVObserverRecord particles;
+  particles.identifier = "particles";
+  particles.name = "particles";
+  particles.typeIdentifier = "WVLagrangianParticles";
+  particles.stateBlockIdentifiers = {"particle-x", "particle-y"};
+  particles.x = {0.17 * geometry.Lx, 0.71 * geometry.Lx};
+  particles.y = {0.23 * geometry.Ly, 0.64 * geometry.Ly};
+  particles.z = {geometry.z[1], geometry.z[geometry.Nz - 2]};
+  particles.isXYOnly = true;
+  particles.horizontalAbsoluteTolerance = 1e-6;
+  particles.advectionInterpolation = WVPositionInterpolation::linear;
+  record.observers.push_back(std::move(particles));
+  WVObserverRecord tracer;
+  tracer.identifier = "tracer";
+  tracer.name = "tracer";
+  tracer.typeIdentifier = "WVTracer";
+  tracer.stateBlockIdentifiers = {"tracer"};
+  tracer.isXYOnly = true;
+  tracer.shouldAntialias = true;
+  record.observers.push_back(std::move(tracer));
+  WVPortableObserverDescriptor descriptor;
+  const auto status =
+      WVPortableObserverDescriptor::create(record, catalog, descriptor);
+  require(static_cast<bool>(status),
+          "Stratified QG passive observer descriptor: " + status.message);
+  return descriptor;
+}
+
+struct StratifiedQGPassiveState {
+  WVCoefficientStateStorage coefficients;
+  WVCoefficientStateStorage fluxCoefficients;
+  WVAdditionalStateStorage additional;
+  WVAdditionalStateStorage fluxAdditional;
+  WVMutableIntegrationState state;
+  WVIntegrationFlux flux;
+  std::vector<WVCoefficientFamilyConstView> coefficientViews;
+  std::vector<WVAdditionalStateBlockConstView> blockViews;
+
+  explicit StratifiedQGPassiveState(const WVIntegrationStateLayout &layout) {
+    require(static_cast<bool>(coefficients.initialize(layout)) &&
+                static_cast<bool>(fluxCoefficients.initialize(layout)) &&
+                static_cast<bool>(additional.initialize(layout)) &&
+                static_cast<bool>(fluxAdditional.initialize(layout)),
+            "Stratified QG passive state allocation");
+    state.waveVortex.t = 2.0;
+    state.waveVortex.t0 = -1.0;
+    state.coefficientFamilies = coefficients.mutableFamilies();
+    state.coefficientFamilyCount = coefficients.familyCount();
+    state.additionalBlocks = additional.mutableBlocks();
+    state.additionalBlockCount = additional.blockCount();
+    flux.coefficientFamilies = fluxCoefficients.mutableFamilies();
+    flux.coefficientFamilyCount = fluxCoefficients.familyCount();
+    flux.additionalBlocks = fluxAdditional.mutableBlocks();
+    flux.additionalBlockCount = fluxAdditional.blockCount();
+  }
+
+  WVIntegrationState constView() {
+    return integrationConstView(state, coefficientViews, blockViews);
+  }
+};
+
+std::size_t additionalBlock(const WVMutableIntegrationState &state,
+                            const std::string &identifier) {
+  for (std::size_t index = 0; index < state.additionalBlockCount; ++index)
+    if (state.additionalBlocks[index].layout->identifier == identifier)
+      return index;
+  require(false, "Missing Stratified QG passive state block " + identifier);
+  return 0;
+}
+
+void initializeStratifiedQGPassiveState(
+    StratifiedQGPassiveState &storage,
+    WVStratifiedQGIntegrationSystem &system,
+    const WVStratifiedModalGeometry &geometry) {
+  auto &family = storage.coefficients.mutableFamilies()[0];
+  for (std::size_t index = 0; index < family.layout->elementCount; ++index) {
+    const double value = static_cast<double>(index + 1);
+    family.data[index] = {1e-6 * std::sin(0.19 * value),
+                          1e-6 * std::cos(0.13 * value)};
+  }
+  require(static_cast<bool>(system.initializeParticleState(storage.state)),
+          "Stratified QG passive particle initialization");
+  auto &tracer = storage.state.additionalBlocks[
+      additionalBlock(storage.state, "tracer")];
+  const double pi = std::acos(-1.0);
+  for (std::size_t z = 0; z < geometry.Nz; ++z)
+    for (std::size_t y = 0; y < geometry.Ny; ++y)
+      for (std::size_t x = 0; x < geometry.Nx; ++x) {
+        const auto index = x + geometry.Nx * (y + geometry.Ny * z);
+        tracer.realData[index] =
+            std::sin(2.0 * pi * static_cast<double>(x) / geometry.Nx) +
+            0.25 * std::cos(2.0 * pi * static_cast<double>(y) / geometry.Ny) +
+            0.01 * geometry.z[z];
+      }
+}
+
+std::vector<double> stratifiedQGPassiveOutput(
+    StratifiedQGPassiveState &storage) {
+  std::vector<double> values;
+  const auto &family = storage.fluxCoefficients.mutableFamilies()[0];
+  values.reserve(2 * family.layout->elementCount);
+  for (std::size_t index = 0; index < family.layout->elementCount; ++index) {
+    values.push_back(family.data[index].real);
+    values.push_back(family.data[index].imag);
+  }
+  for (std::size_t block = 0; block < storage.flux.additionalBlockCount;
+       ++block) {
+    const auto &view = storage.flux.additionalBlocks[block];
+    values.insert(values.end(), view.realData,
+                  view.realData + view.layout->elementCount);
+  }
+  return values;
+}
+
+void testStratifiedQGPassiveEvaluationScopes() {
+  wavevortex::test_fixture::Temporary file;
+  wavevortex::test_fixture::fixture(file.path);
+  std::shared_ptr<const WVStratifiedModalRecord> source;
+  const auto readStatus =
+      WVStratifiedModalReader::read(file.path.string(), source);
+  require(static_cast<bool>(readStatus),
+          "Stratified QG passive modal fixture");
+  const auto catalog = test::makeExtensionCatalog();
+  const auto descriptor =
+      stratifiedQGPassiveDescriptor(source->geometry(), catalog);
+  std::vector<double> reference;
+  for (const auto policy : {WVVariableEvaluationPolicy::reuse,
+                            WVVariableEvaluationPolicy::lowMemory}) {
+    std::unique_ptr<WVStratifiedQGIntegrationSystem> system;
+    auto status = WVStratifiedQGIntegrationSystem::create(
+        source, stratifiedQGPassiveSchedule(), descriptor, catalog,
+        std::make_unique<WVReferenceFFTEngine>(), system);
+    require(static_cast<bool>(status) && system,
+            "Stratified QG passive integration setup: " + status.message);
+    status = system->setVariableEvaluationPolicy(policy);
+    require(static_cast<bool>(status),
+            "Stratified QG passive policy setup: " + status.message);
+    StratifiedQGPassiveState storage(system->stateLayout());
+    initializeStratifiedQGPassiveState(storage, *system, source->geometry());
+    const auto validationsBefore = system->kernel().metrics().stateValidationCount;
+    const auto contextsBefore = system->variableEvaluationMetrics().contexts;
+    const auto uBefore = system->kernel().metrics().reconstructionCount[
+        static_cast<std::size_t>(WVStratifiedQGField::u)][0];
+    const auto vBefore = system->kernel().metrics().reconstructionCount[
+        static_cast<std::size_t>(WVStratifiedQGField::v)][0];
+    status = system->evaluateRightHandSide(storage.constView(), storage.flux);
+    require(static_cast<bool>(status),
+            "Stratified QG passive RHS: " + status.message);
+    const auto output = stratifiedQGPassiveOutput(storage);
+    if (reference.empty())
+      reference = output;
+    else
+      require(output == reference,
+              "Stratified QG passive outputs changed with cache policy");
+    const auto &evaluation = system->variableEvaluationMetrics();
+    const auto &kernel = system->kernel().metrics();
+    require(kernel.stateValidationCount == validationsBefore + 1 &&
+                evaluation.contexts == contextsBefore + 1 &&
+                evaluation.liveBytes == 0 &&
+                system->metrics().tracerEvaluationCount == 1 &&
+                system->metrics().velocityFieldEvaluationCount == 1 &&
+                system->metrics().sharedRightHandSideContextCount == 1,
+            "Stratified QG passive consumers escaped their RHS scope");
+    const auto expectedReconstructions =
+        policy == WVVariableEvaluationPolicy::reuse ? 1u : 3u;
+    require(kernel.reconstructionCount[
+                static_cast<std::size_t>(WVStratifiedQGField::u)][0] ==
+                uBefore + expectedReconstructions &&
+                kernel.reconstructionCount[
+                static_cast<std::size_t>(WVStratifiedQGField::v)][0] ==
+                vBefore + expectedReconstructions,
+            "Stratified QG passive RHS velocity producer count changed");
+    if (policy == WVVariableEvaluationPolicy::reuse)
+      require(evaluation.producerExecutions == 4 &&
+                  evaluation.cacheHits == 4 &&
+                  evaluation.recomputations == 0 &&
+                  evaluation.duplicateExecutions == 0,
+              "Stratified QG passive reuse duplicated a velocity producer");
+    else
+      require(evaluation.producerExecutions == 7 &&
+                  evaluation.cacheHits == 0 &&
+                  evaluation.recomputations == 4 &&
+                  evaluation.evictions == 5 &&
+                  evaluation.duplicateExecutions == 0,
+              "Stratified QG passive low-memory recomputation was not explicit");
+  }
+}
+
 } // namespace
 
 int main() {
   testConfigurationDecode();
   testSystemAndIntegrators();
   testMatlabCFLFixture();
-  std::cout << "Barotropic QG integration tests passed\n";
+  testStratifiedQGPassiveEvaluationScopes();
+  std::cout << "QG integration tests passed\n";
   return 0;
 }

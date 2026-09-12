@@ -1,12 +1,16 @@
 #include "WaveVortexRuntime/WVHydrostaticForcingEngine.hpp"
 #include "WaveVortexRuntime/WVHydrostaticIntegrationSystem.hpp"
+#include "WaveVortexRuntime/WVRungeKutta.hpp"
 #include "WaveVortexRuntime/WVExtensionCatalog.hpp"
 #include "WaveVortexRuntime/WVStratifiedModalRecord.hpp"
 #include "WVReferenceFFTEngine.hpp"
 #include "WVStratifiedModalTestFixture.hpp"
 #include "../../tools/compiled-kernel/tests/WVAllocationProbe.hpp"
+#include <algorithm>
 #include <iostream>
 #include <limits>
+#include <string>
+#include <stdexcept>
 #include <array>
 #include <cmath>
 using namespace wavevortex;
@@ -139,6 +143,71 @@ void contracts(std::shared_ptr<const WVStratifiedModalRecord> source) {
     require(!engine->kernel().advectScalarWithAdvectionFields({scalar.data(),volume},badFields,false,{out.data(),volume}),"Invalid tracer field shape accepted");
     require(!engine->kernel().advectScalarWithAdvectionFields({scalar.data(),volume},fields,false,{scalar.data(),volume}),"Aliased tracer output accepted");
     for(auto value:out) require(value==29,"Invalid tracer operation mutated output");
+    // One immutable scope spans forcing and subsequent passive consumers.
+    for(auto evaluationPolicy:{WVVariableEvaluationPolicy::reuse,WVVariableEvaluationPolicy::lowMemory}) {
+        require(bool(engine->setVariableEvaluationPolicy(evaluationPolicy)),"Policy selection failed");
+        engine->kernel().resetMetrics();
+        require(bool(engine->beginStateEvaluation(state)),"Evaluation scope failed");
+        require(!engine->beginStateEvaluation(state),"Nested evaluation accepted");
+        require(!engine->setVariableEvaluationPolicy(evaluationPolicy),"Active policy change accepted");
+        require(bool(engine->nonlinearFlux(state,flux)),"Scoped RHS failed");
+        const auto produced=engine->kernel().metrics().fieldReconstructionCount;
+        WVRealFieldBundleConstView reused;
+        require(bool(engine->physicalFields(state,reused)),"Passive consumer failed");
+        double uv=0,w=0;
+        require(bool(engine->speedMaxima(state,uv,w)),"Speed reduction failed");
+        const auto afterReduction=engine->variableEvaluationMetrics().producerExecutions;
+        require(bool(engine->speedMaxima(state,uv,w)),"Speed reduction reuse failed");
+        require(engine->variableEvaluationMetrics().producerExecutions==afterReduction,"Repeated speed reduction executed");
+        require(engine->kernel().metrics().fieldReconstructionCount==produced,"Passive consumer reconstructed fields");
+        require(engine->kernel().metrics().stateValidationCount==1,"State validated more than once");
+        require(engine->kernel().metrics().phasePreparationCount==1,"Phase prepared more than once");
+        auto foreign=state; foreign.t+=1;
+        require(!engine->physicalFields(foreign,reused),"Foreign state used active cache");
+        engine->endStateEvaluation();
+        require(engine->variableEvaluationMetrics().liveBytes==0,"Cache validity survived scope");
+        a[0][0].real+=.001;
+        require(bool(engine->kernel().constrainCoefficients(amplitudes)),"Mutated state constraint failed");
+        const auto newStateStatus=engine->physicalFields(state,reused);
+        require(bool(newStateStatus),newStateStatus.message.c_str());
+        require(engine->kernel().metrics().stateValidationCount==2,"New state reused validation");
+    }
+    require(bool(engine->setVariableEvaluationPolicy(WVVariableEvaluationPolicy::reuse)),"Default restoration failed");
+    auto transactionSchedule=schedule;
+    auto secondNonlinear=entry;
+    secondNonlinear.name="second nonlinear advection";
+    secondNonlinear.ordinal=1;
+    transactionSchedule.entries.push_back(std::move(secondNonlinear));
+    std::unique_ptr<WVHydrostaticForcingEngine> transactionEngine;
+    require(bool(WVHydrostaticForcingEngine::create(source,transactionSchedule,
+        catalog,std::make_unique<WVReferenceFFTEngine>(),transactionEngine)) &&
+        bool(transactionEngine->setVariableEvaluationPolicy(
+            WVVariableEvaluationPolicy::lowMemory)),
+        "Transactional policy fixture failed");
+    const auto lowPolicyBytes=transactionEngine->persistentBytes();
+    allocationProbe::failAfter=0;
+    status=transactionEngine->setVariableEvaluationPolicy(
+        WVVariableEvaluationPolicy::reuse);
+    allocationProbe::failAfter=-1;
+    require(status.code==WVKernelStatusCode::allocationFailure &&
+        transactionEngine->persistentBytes()==lowPolicyBytes &&
+        bool(transactionEngine->nonlinearFlux(state,flux)),
+        "Failed reuse preparation published caches or damaged low-memory evaluation");
+    require(bool(transactionEngine->setVariableEvaluationPolicy(
+        WVVariableEvaluationPolicy::reuse)),
+        "Transactional policy retry failed");
+    // Adaptive damping consumes only the horizontal velocity pair.
+    WVFrozenForcingSchedule dampingSchedule;
+    dampingSchedule.entries.push_back({"WVAdaptiveDamping",1,"adaptive damping",WVForcingStage::spectral,255,0,"",{"wave-vortex-forcing-configuration-v1",1,{}}});
+    std::unique_ptr<WVHydrostaticForcingEngine> dampingEngine;
+    require(bool(WVHydrostaticForcingEngine::create(source,dampingSchedule,catalog,std::make_unique<WVReferenceFFTEngine>(),dampingEngine)),"Damping fixture failed");
+    require(bool(dampingEngine->nonlinearFlux(state,flux)),"Damping RHS failed");
+    require(dampingEngine->kernel().metrics().fieldReconstructionCount[2]==0 &&
+            dampingEngine->kernel().metrics().fieldReconstructionCount[3]==0,"Horizontal damping reconstructed w or eta");
+    dampingSchedule.entries.insert(dampingSchedule.entries.begin(),entry);
+    require(bool(WVHydrostaticForcingEngine::create(source,dampingSchedule,catalog,std::make_unique<WVReferenceFFTEngine>(),dampingEngine)),"Combined forcing fixture failed");
+    require(bool(dampingEngine->nonlinearFlux(state,flux)),"Combined forcing RHS failed");
+    require(dampingEngine->kernel().metrics().stateValidationCount==1 && dampingEngine->kernel().metrics().phasePreparationCount==1,"Combined forcing duplicated state preparation");
     const auto bytes=engine->persistentBytes();
     allocationProbe::calls=0; allocationProbe::counting=true;
     for(int i=0;i<4;++i) {
@@ -165,6 +234,59 @@ void contracts(std::shared_ptr<const WVStratifiedModalRecord> source) {
     std::unique_ptr<WVHydrostaticIntegrationSystem> system;
     status=WVHydrostaticIntegrationSystem::create(source,schedule,catalog,std::make_unique<WVReferenceFFTEngine>(),system); require(bool(status),status.message.c_str());
     require(system->stateLayout().coefficientFamilyCount()==3 && system->stateLayout().transformIdentifier()=="WVTransformHydrostatic","Wrong integration layout");
+    for (const auto evaluationPolicy : {WVVariableEvaluationPolicy::reuse,
+                                        WVVariableEvaluationPolicy::lowMemory}) {
+        require(bool(system->setVariableEvaluationPolicy(evaluationPolicy)),
+                "Hydrostatic integration policy setup failed");
+        WVCoefficientStateStorage storage, denseStorage;
+        require(bool(storage.initialize(system->stateLayout())) &&
+                    bool(denseStorage.initialize(system->stateLayout())),
+                "Hydrostatic integration lifecycle storage failed");
+        for (std::size_t family=0;family<3;++family)
+            std::copy_n(a[family].data(),S,
+                        storage.mutableFamilies()[family].data);
+        WVMutableIntegrationState integrationState;
+        integrationState.waveVortex.t=83;
+        integrationState.waveVortex.t0=17;
+        integrationState.coefficientFamilies=storage.mutableFamilies();
+        integrationState.coefficientFamilyCount=storage.familyCount();
+        const auto coefficientShape=system->stateLayout().coefficientShape();
+        integrationState.waveVortex.coefficients={
+            {storage.mutableFamilies()[0].data,coefficientShape},
+            {storage.mutableFamilies()[1].data,coefficientShape},
+            {storage.mutableFamilies()[2].data,coefficientShape}};
+        WVMutableIntegrationState denseState;
+        denseState.coefficientFamilies=denseStorage.mutableFamilies();
+        denseState.coefficientFamilyCount=denseStorage.familyCount();
+        denseState.waveVortex.coefficients={
+            {denseStorage.mutableFamilies()[0].data,coefficientShape},
+            {denseStorage.mutableFamilies()[1].data,coefficientShape},
+            {denseStorage.mutableFamilies()[2].data,coefficientShape}};
+        WVFixedStepRK4 integrator(*system,{true});
+        const auto restartStatus=integrator.prepareStateAfterRestart(integrationState);
+        if (!restartStatus || system->variableEvaluationMetrics().liveBytes!=0)
+            throw std::runtime_error(
+                "Hydrostatic restart preparation failed (" +
+                restartStatus.message + ") or retained " +
+                std::to_string(system->variableEvaluationMetrics().liveBytes) +
+                " evaluation bytes");
+        const auto validationsBefore=system->kernel().metrics().stateValidationCount;
+        const auto contextsBefore=system->variableEvaluationMetrics().contexts;
+        require(bool(integrator.step(integrationState,1e-4)),
+                "Hydrostatic integration lifecycle step failed");
+        const auto validationsAfter=system->kernel().metrics().stateValidationCount;
+        const auto contextsAfter=system->variableEvaluationMetrics().contexts;
+        require(validationsAfter>validationsBefore &&
+                    validationsAfter-validationsBefore==contextsAfter-contextsBefore &&
+                    system->variableEvaluationMetrics().liveBytes==0,
+                "Hydrostatic RHS validation and evaluation lifecycles diverged");
+        require(bool(integrator.evaluateDenseOutput(
+                    integrationState.waveVortex.t-5e-5,denseState)) &&
+                    system->kernel().metrics().stateValidationCount-validationsAfter==
+                        system->variableEvaluationMetrics().contexts-contextsAfter &&
+                    system->variableEvaluationMetrics().liveBytes==0,
+                "Hydrostatic dense output retained or reopened an RHS evaluation");
+    }
     injectedServices(source, catalog, schedule);
 }
 }
