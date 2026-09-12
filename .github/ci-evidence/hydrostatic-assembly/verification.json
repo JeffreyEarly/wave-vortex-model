@@ -1,0 +1,48 @@
+{
+  "schema": "wvm-hydrostatic-assembly-verification-v1",
+  "candidateSourceCommit": "3e907c1034565f5d8cb1d34eb3177a20ad7df0f2",
+  "candidateExecutableSHA256": "e4c0e3e96764be5c5be3380c1130ee8a0bd43199840285becf4cc668afc98cef",
+  "baselineExecutableSHA256": "f1a642a4fe53176f257b8a5bd8b8bf9ad3cfa5481fdc4d9c892b19d13cdaa3e9",
+  "checks": {
+    "release": {
+      "passed": true,
+      "count": 57
+    },
+    "asanUbsan": {
+      "passed": true,
+      "count": 57,
+      "note": "Six non-instrumented script checks passed initially. Fifty-one binaries initially could not start because Apple ASan does not support detect_leaks=1; those 51 passed with detect_leaks=0 and ASan/UBSan enabled. Linux CI retains leak checks."
+    },
+    "gcc14HydrostaticKernel": {
+      "passed": true
+    },
+    "matlab": {
+      "passed": true,
+      "methods": 22
+    },
+    "independentReview": {
+      "passed": true,
+      "reviewer": "kernel_evaluation",
+      "scope": "production dispatch/lifetime/arithmetic and all-field parity regression"
+    },
+    "repositoryAndCompatibility": {
+      "passed": true
+    },
+    "documentation": {
+      "passed": true,
+      "generatedDifferences": 0
+    }
+  },
+  "sourceSHA256": {
+    "CompiledKernel/src/WVTransformHydrostaticKernel.cpp": "83386b76aef1112e379dffa5249ae2715a94e328f0a36d0a1f72842a92455813",
+    "CompiledKernel/source-selection.json": "e6101fa53d0d870a198be6c8ed0a5b9a9b110142f42f3058046007f2ff3407be",
+    "PortableRuntime/tests/TestWVHydrostaticKernel.cpp": "dccae84c94f825701bf968eadd4e65d1fe6bca466c712e3e60352f0568370f97"
+  },
+  "archivedLogSHA256": {
+    "release-tests.log": "dd401c3a24c0236c27b9d369e0e8ffdb64dcd0471cba2e7e947b1939aaee5e61",
+    "sanitized-tests.log": "eeb85f7a8c95b1f114e6b74bece3157e3aeeb8c91e4bdaf8fb74a2959ad10a19",
+    "sanitized-retry-tests.log": "7ec58c717dac9acc664e3cbbbdc7230b6cadd7222f5995ba202e05363d9aab9d",
+    "gcc-build.log": "5c469b0eac284e426e2c17946722511d7baa450d345f61511337369b60c61380",
+    "matlab-results.json": "b59398b8f72e596a9bc173ba41a1563135aff273432a43d7ff427c45345d84a5"
+  }
+}

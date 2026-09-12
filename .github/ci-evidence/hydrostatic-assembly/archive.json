@@ -1,0 +1,13 @@
+{
+  "artifactDirectory": "OceanKitRepositories/wave-vortex-model-benchmark-artifacts/hydrostatic-assembly-20260911",
+  "files": {
+    "qualification/protocol.json": "522669dae888993542520293e62241a64e01f2aab4187e73895e815a8c040698",
+    "qualification/summary.json": "bce77240b93133999bb9b533b51276b2095096568af4b6e6da9725c0afe76c60",
+    "qualification/pairs.json": "98887b5f2ccbcbf0dc993680014ed8684a9da9f022cbbb05c9ccf9cd5197b78b",
+    "verification.json": "11bfc6126847b88276a602d2193be38df1d4515af2df0459bfdf1835500f9c9f",
+    "replay-manifest.json": "1103cfe90148900bed15b23b3304338de450c1b04c639fdcc003299c82502a21",
+    "vdsp/assembly.cpp": "c8cc23c02332322c407583da1f923aec8b89ef7f3f37ee544ef8d90f798f03e4",
+    "vdsp/timing.log": "ad0a364c898d8f8d239b1e3c301d683f1d60c209b7c4c32a584123517c0f1ee7",
+    "vdsp/timing-eddy.log": "7978d3dd1cb978f8243d99bbec9dbdf837edf759934626b727ce45c7c72841a1"
+  }
+}

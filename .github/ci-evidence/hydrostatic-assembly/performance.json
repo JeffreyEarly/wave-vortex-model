@@ -1,0 +1,183 @@
+{
+  "qualified": true,
+  "finishedAtUTC": "2026-09-12T03:36:46.307278+00:00",
+  "allNumericalComparisonsPassed": true,
+  "allIntegrationDecisionsIdentical": true,
+  "postflightUnchanged": true,
+  "profiles": [
+    {
+      "profile": "eddytide-256x256x28",
+      "policies": {
+        "reuse": {
+          "completeLifetimeRatio": 0.8953391286998825,
+          "completeLifetimeBootstrap95": [
+            0.8875062710519852,
+            0.9013619603711192
+          ],
+          "integrationRatio": 0.8924198373796676,
+          "pairedBootstrap95": [
+            0.8842913111931502,
+            0.8991312783859716
+          ],
+          "ratios": [
+            0.8684527459929448,
+            0.9072930468590684,
+            0.8937364586988099,
+            0.888929986777419,
+            0.8991657697230818,
+            0.8957311867609772,
+            0.888461925248807,
+            0.8981040105880269
+          ],
+          "maximumRetainedRatio": 0.9999999837870549,
+          "maximumLiveRatio": 0.9999999841058251,
+          "maximumPeakRSSBytes": 581779456
+        },
+        "low-memory": {
+          "completeLifetimeRatio": 0.8886614344985362,
+          "completeLifetimeBootstrap95": [
+            0.8801981112548791,
+            0.8973806966983264
+          ],
+          "integrationRatio": 0.8848691748314884,
+          "pairedBootstrap95": [
+            0.8777575794977279,
+            0.8916298014971509
+          ],
+          "ratios": [
+            0.8846971295516899,
+            0.8812895034707745,
+            0.8778658283128143,
+            0.8989442144578417,
+            0.8860381897180867,
+            0.89720118686141,
+            0.8882287733595975,
+            0.8651497989456718
+          ],
+          "maximumRetainedRatio": 1.0000000324258902,
+          "maximumLiveRatio": 1.0000000635766997,
+          "maximumPeakRSSBytes": 571424768
+        }
+      },
+      "runtimePassed": true,
+      "requiresRuntimeInvestigation": false,
+      "lowMemoryPassed": true
+    },
+    {
+      "profile": "constant-nonhydrostatic-composite-256",
+      "policies": {
+        "reuse": {
+          "completeLifetimeRatio": 1.0006416196196073,
+          "completeLifetimeBootstrap95": [
+            0.9942981357587021,
+            1.0050759519381038
+          ],
+          "integrationRatio": 1.0049842521727574,
+          "pairedBootstrap95": [
+            0.9894488282563305,
+            1.017426846620357
+          ],
+          "ratios": [
+            1.0048475131591168,
+            1.0016595383412967,
+            1.0007530006877876,
+            1.0073667381659972,
+            1.0314901820158198,
+            1.0147385998854634,
+            0.9593117104276722,
+            1.0213162120540562
+          ],
+          "maximumRetainedRatio": 0.9999998979061985,
+          "maximumLiveRatio": 0.999999838336768,
+          "maximumPeakRSSBytes": 2444410880
+        },
+        "low-memory": {
+          "completeLifetimeRatio": 0.9975615293429092,
+          "completeLifetimeBootstrap95": [
+            0.9916072485092008,
+            1.0022321313762341
+          ],
+          "integrationRatio": 0.9885300169929752,
+          "pairedBootstrap95": [
+            0.9718489320361853,
+            1.0037207342541417
+          ],
+          "ratios": [
+            1.0050970775404446,
+            0.9904510653325587,
+            1.0083050779304064,
+            0.9713219956315294,
+            0.976885318621557,
+            1.0210652463503704,
+            0.9443102459590653,
+            0.9929123212043092
+          ],
+          "maximumRetainedRatio": 0.8561473834795973,
+          "maximumLiveRatio": 0.8633275756569073,
+          "maximumPeakRSSBytes": 2174009344
+        }
+      },
+      "runtimePassed": true,
+      "requiresRuntimeInvestigation": false,
+      "lowMemoryPassed": true
+    },
+    {
+      "profile": "variable-hydrostatic-composite-large",
+      "policies": {
+        "reuse": {
+          "completeLifetimeRatio": 0.9675699041826789,
+          "completeLifetimeBootstrap95": [
+            0.9573453835741925,
+            0.9757359813864284
+          ],
+          "integrationRatio": 0.955289775864712,
+          "pairedBootstrap95": [
+            0.9423837627535022,
+            0.9661321188773289
+          ],
+          "ratios": [
+            0.9168430714341915,
+            0.961816169479452,
+            0.9612328895898504,
+            0.958751821784982,
+            0.9545247495563405,
+            0.9815400176271726,
+            0.9506948303376145,
+            0.95812637440287
+          ],
+          "maximumRetainedRatio": 0.9999999060165811,
+          "maximumLiveRatio": 0.9999998524361888,
+          "maximumPeakRSSBytes": 2445328384
+        },
+        "low-memory": {
+          "completeLifetimeRatio": 0.9688020436645052,
+          "completeLifetimeBootstrap95": [
+            0.9647441017631518,
+            0.9730309279120045
+          ],
+          "integrationRatio": 0.9537090839576029,
+          "pairedBootstrap95": [
+            0.9379597080792117,
+            0.9650541476866659
+          ],
+          "ratios": [
+            0.906003858563734,
+            0.9598301645306362,
+            0.9672662701030607,
+            0.9712331148028692,
+            0.9555424207915927,
+            0.9699806124569752,
+            0.9555291434335997,
+            0.9459679529301646
+          ],
+          "maximumRetainedRatio": 0.90465407709303,
+          "maximumLiveRatio": 0.908717631093536,
+          "maximumPeakRSSBytes": 2377711616
+        }
+      },
+      "runtimePassed": true,
+      "requiresRuntimeInvestigation": false,
+      "lowMemoryPassed": true
+    }
+  ]
+}
