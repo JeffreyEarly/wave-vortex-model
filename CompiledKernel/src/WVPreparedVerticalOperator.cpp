@@ -249,6 +249,7 @@ WVKernelStatus WVPreparedVerticalOperator::createWorkspace(std::size_t groupWork
         else { ws.br.resize(b); ws.bi.resize(b); ws.cr.resize(c); ws.ci.resize(c); }
         result = std::move(w); return WVKernelStatus::ok();
     } catch (const std::bad_alloc&) { return {WVKernelStatusCode::allocationFailure,"Vertical workspace allocation failed."}; }
+      catch (const std::overflow_error& e) { return {WVKernelStatusCode::sizeOverflow,e.what()}; }
 }
 static void executePreparedGroups(const VerticalData& d,VerticalWorkspaceData& w,
     WVComplexInput input,WVComplexOutput output,double beta,std::size_t worker,

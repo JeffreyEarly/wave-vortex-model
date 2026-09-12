@@ -403,8 +403,14 @@ void parallelVerticalGroups(WVComplexRepresentation representation,
         "Parallel execution accepted mismatched preallocated scratch");
     if (direct) require(parallel->persistentBytes()==serial->persistentBytes(),
         "All-direct vertical groups allocated per-worker packing scratch");
-    else require(parallel->persistentBytes()>serial->persistentBytes(),
-        "Packed vertical groups did not preallocate per-worker scratch");
+    else {
+        require(parallel->persistentBytes()>serial->persistentBytes(),
+            "Packed vertical groups did not preallocate per-worker scratch");
+        std::unique_ptr<WVVerticalWorkspace> overflow;
+        require(op->createWorkspace(std::numeric_limits<std::size_t>::max(),overflow).code==
+            WVKernelStatusCode::sizeOverflow && !overflow,
+            "Packed vertical worker scratch overflow was accepted or published");
+    }
     const auto bytes=op->persistentBytes()+parallel->persistentBytes()+executor->persistentBytes();
     allocationProbe::calls=0; allocationProbe::counting=true;
     for (unsigned repeat=0;repeat<10;++repeat)
