@@ -43,7 +43,7 @@ int main(int argc,char** argv) {
         if (pruned) options={WVRetainedHorizontalSchedule::streamingPrunedTile16,2,true,
             compact ? WVVariableSpectralSchedule::compactSplitFusedViews :
                 WVVariableSpectralSchedule::establishedInterleaved};
-        if (compact) options.pointwiseWorkers=2;
+        if (compact) { options.pointwiseWorkers=2; options.fusedDerivativeAdvection=true; options.verticalGroupWorkers=2; }
         require(WVTransformBoussinesqKernel::create(record,std::move(engine),kernel,provider=="native-accelerate" ? WVCreateAccelerateMatrixBackend : WVCreateScalarMatrixBackend,options)); record.reset();
         const auto& g=kernel->geometry(); const auto S=g.Nj*g.Nkl,R=g.Nx*g.Ny*g.Nz; const auto shape=kernel->spectralShape(); const auto volume=kernel->spatialShape();
         std::array<std::vector<WVComplex64>,3> a,c;

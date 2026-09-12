@@ -21,6 +21,8 @@ void established(const WVRunnerVariablePolicy& policy,const char* message) {
     require(!policy.execution.streamedNonlinear,message);
     require(policy.execution.spectralSchedule==WVVariableSpectralSchedule::establishedInterleaved,message);
     require(policy.execution.pointwiseWorkers==1,message);
+    require(policy.execution.verticalGroupWorkers==1,message);
+    require(!policy.execution.fusedDerivativeAdvection,message);
 }
 
 } // namespace
@@ -52,15 +54,23 @@ int main() {
             require(policy.execution.horizontalSchedule==WVRetainedHorizontalSchedule::streamingPrunedTile16 &&
                 policy.execution.horizontalWorkers==12 && policy.execution.streamedNonlinear &&
                 policy.execution.spectralSchedule==WVVariableSpectralSchedule::compactSplitFusedViews &&
-                policy.execution.pointwiseWorkers==8,"Native compact topology differs");
+                policy.execution.pointwiseWorkers==8 &&
+                policy.execution.verticalGroupWorkers==
+                    (kind==WVPersistedTransformKind::boussinesq ? 8 : 1) &&
+                policy.execution.fusedDerivativeAdvection==
+                    (kind==WVPersistedTransformKind::hydrostatic ||
+                     kind==WVPersistedTransformKind::boussinesq),
+                "Native compact topology differs");
         }
 
-        policy=selectRunnerVariablePolicy(true,WVPersistedTransformKind::hydrostatic,
-            "native-fftw",4,true,host);
-        established(policy,"Explicit FFT threads did not retain established execution");
-        require(policy.selection=="established-explicit-fft-threads" &&
-            policy.matrixBackend==WVRunnerMatrixBackend::accelerate &&
-            policy.effectiveFFTThreads==4,"Explicit FFT selection was silently changed");
+        for (const auto kind:{WVPersistedTransformKind::stratifiedQG,
+                WVPersistedTransformKind::hydrostatic,WVPersistedTransformKind::boussinesq}) {
+            policy=selectRunnerVariablePolicy(true,kind,"native-fftw",4,true,host);
+            established(policy,"Explicit FFT threads did not retain established execution");
+            require(policy.selection=="established-explicit-fft-threads" &&
+                policy.matrixBackend==WVRunnerMatrixBackend::accelerate &&
+                policy.effectiveFFTThreads==4,"Explicit FFT selection was silently changed");
+        }
 
         policy=selectRunnerVariablePolicy(true,WVPersistedTransformKind::stratifiedQG,
             "reference",1,false,host);
@@ -71,11 +81,13 @@ int main() {
 
         policy=selectRunnerVariablePolicy(true,WVPersistedTransformKind::boussinesq,
             "native-fftw",8,false,{4,2});
-        require(policy.execution.horizontalWorkers==2 && policy.execution.pointwiseWorkers==2,
+        require(policy.execution.horizontalWorkers==2 && policy.execution.pointwiseWorkers==2 &&
+            policy.execution.verticalGroupWorkers==2 && policy.execution.fusedDerivativeAdvection,
             "Compact topology exceeded host performance workers");
         policy=selectRunnerVariablePolicy(true,WVPersistedTransformKind::boussinesq,
             "native-fftw",24,false,{24,16});
-        require(policy.execution.horizontalWorkers==12 && policy.execution.pointwiseWorkers==8,
+        require(policy.execution.horizontalWorkers==12 && policy.execution.pointwiseWorkers==8 &&
+            policy.execution.verticalGroupWorkers==8 && policy.execution.fusedDerivativeAdvection,
             "Compact topology exceeded its calibrated worker bounds");
         require(std::string(runnerMatrixBackendIdentifier(WVRunnerMatrixBackend::accelerate))=="accelerate" &&
             std::string(runnerTransformKindIdentifier(WVPersistedTransformKind::boussinesq))=="boussinesq" &&

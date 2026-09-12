@@ -36,7 +36,7 @@ int main(int argc,char** argv) {
         } else throw std::runtime_error("Unknown provider.");
         std::unique_ptr<WVTransformHydrostaticKernel> kernel;
         WVVariableExecutionOptions options; if (pruned) options={WVRetainedHorizontalSchedule::streamingPrunedTile16,2,true};
-        if (compact) { options.spectralSchedule=WVVariableSpectralSchedule::compactSplitFusedViews; options.pointwiseWorkers=2; }
+        if (compact) { options.spectralSchedule=WVVariableSpectralSchedule::compactSplitFusedViews; options.pointwiseWorkers=2; options.fusedDerivativeAdvection=true; }
         require(WVTransformHydrostaticKernel::create(record,std::move(engine),kernel,provider=="native-accelerate" ? WVCreateAccelerateMatrixBackend : WVCreateScalarMatrixBackend,options)); record.reset();
         const auto& g=kernel->geometry(); const auto S=g.Nj*g.Nkl,R=g.Nx*g.Ny*g.Nz; const auto shape=kernel->spectralShape(); const auto volume=kernel->spatialShape();
         std::array<std::vector<WVComplex64>,3> a,c;
