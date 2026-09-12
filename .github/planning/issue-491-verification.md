@@ -1,0 +1,24 @@
+# Tiled scratch and SIMD follow-up (#491)
+
+User authorized proceeding while PR #490 CI completed. Worktree `wvm-v4-tiled-scratch-simd`, branch `perf/tiled-scratch-simd`; no v5 or experiment edits. Started approximately 2026-09-12 16:15 UTC. The workflow, prior profile and spectral benchmark #24 negative result were reviewed before implementation. No MATLAB scientific change, package metadata change or released snapshot edit.
+
+Baseline: frozen qualified PR #490 executable at `78025904`, now merged as `1ec6d768`. Main's compiled tree equals qualified report head `6550c166`. The preceding post-tiled assessment commit `e90f2abd` is included in this follow-up. One provider writer and one independent tests/review worker assist the coordinator; only the coordinator schedules compute.
+
+## Hypotheses and boundaries
+
+1. Reuse the already-owned 16-plane native tile for four base fields and overwrite each dead z tile with its projected flux. This removes `(4+T)WDM` complex values without crossing ownership boundaries. Expected full-model reductions: 46,122,048 bytes EddyTide, 35,648,256 larger Hydrostatic, 40,740,864 Boussinesq.
+2. Split ordinary and density-z accumulation into private disjoint-span helpers, preserving expression/axis order and `+0.0`. Inspect vectorization and test signed zeros/cancellation before judging the complete stage. No fast-math, reassociation, vendor sweep, tracer work or wider borrowed-workspace API.
+
+## Ledger
+
+- Frozen exploratory memory-only executable and native library retained before adding SIMD. Original operator test passed; all four native H/B kernel/runtime tests passed. The first CTest regular expression selected only the operator because runtime names are lowercase; the separate explicit family run covers all four, and logs show actual selection.
+- Independent tests add exact reduced capacity, alternating fused/ordinary calls through shared resources, depth-4 plus depth-1 tail, bit-exact repeated outputs, unchanged counts and zero warmed allocation. Direct helper tests cover ±0, finite mixed signs, nonzero density and cancellation-sensitive operation order.
+- New shared-resource tests initially had two invalid mixed-type auto declarations. Both Clang and GCC rejected them. An ungated shell sequence nevertheless ran stale native test executables; that apparent 5/5 result does not qualify the new tests. Subsequent build/test sequences must fail immediately on build failure. Both compilers emit vector instructions for private helpers; actual fresh test qualification follows after the declaration correction. The stage binaries used the newly built native library (the runner/library target completed before the separate test compile failed), so stage evidence is unaffected.
+- Four fresh-process blocks per T=3/4, Nz=28/129 stage passed all full-output comparisons with maximum scaled error below 1e-12, unchanged FFT counts and measured reduced workspace. Nine measured samples and two warmups per process. Combined/baseline ratios: 0.95025, 0.95832, 0.94393, 0.93870. SIMD/memory-only ratios: 0.93526, 0.96104, 0.93974, 0.94741. Memory-only timing is approximately neutral (ratios 1.01603, 0.99717, 1.00446, 0.99081). These exclude vertical MM, assembly and integrator work.
+- PR #490 merged successfully at 16:17 UTC, issue #489 is closed, and its ancestry was integrated without a compiled-input change. Final implementation freeze and qualification remain pending the complete-model screen and GCC/review results.
+
+Raw experiments, mode fixtures, compiler disassembly, output hashes and stage results: `OceanKitRepositories/wave-vortex-model-benchmark-artifacts/tiled-scratch-simd-20260912`. Repository bench driver uses the actual native operator, not the previous standalone prototype. Only full-model paired qualification can support a new integration speedup claim.
+
+- Corrected fresh Clang and GCC builds passed the native operator and four H/B kernel/runtime tests (5/5 each); every build/test sequence now stops on error. Independent lifetime/arithmetic review has no outstanding finding.
+- Combined two-pair pilot passed all six full-output and integration-control comparisons, with exact predicted memory reductions. EddyTide ratio 1.00863; larger Hydrostatic 0.97832. Boussinesq pairs 0.97822 and 0.63976 contain a slow baseline outlier (4.14 s versus 2.69 s) and do not establish a credible 21% gain. The complete stage is faster, but any full-model speed claim awaits the frozen paired campaign; memory reduction is the primary established benefit.
+- Final qualification will run combined native/sanitizer, 12 affected MATLAB/source checks, and six-family forward/restart coverage once. Existing receipts retain their old provenance until collection; unchanged receipt fingerprints alone cannot establish equivalence of the modified native provider. No repeated GCC run is needed absent a further code change.
