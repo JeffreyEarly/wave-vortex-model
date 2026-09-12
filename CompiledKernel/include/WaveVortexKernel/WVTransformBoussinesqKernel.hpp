@@ -32,6 +32,7 @@ struct WVBoussinesqKernelMetrics {
     std::size_t phasePreparationCount = 0;
     std::size_t coefficientAssemblyCount = 0;
     std::size_t verticalPreparationCount = 0;
+    std::size_t derivativeAdvectionConsumerCount = 0;
     std::size_t horizontalSpectrumReuseCount = 0;
     std::size_t preparedVerticalDerivativeCount = 0;
     std::size_t verticalOperatorExecutionCount = 0;
@@ -163,7 +164,7 @@ private:
     WVKernelStatus project(const double*,WVComplexOutput,WVBoussinesqFamily);
     WVKernelStatus reconstruct(const WVCoefficients&,WVBoussinesqField,
         WVBoussinesqDerivative,WVBoussinesqComponent,double*,bool countPrimary = true,
-        std::size_t metricComponent = 5);
+        std::size_t metricComponent = 5,const WVRealOutputConsumer* consumer = nullptr);
     WVKernelStatus projectFields(const double*,const double*,const double*,const double*,WVMutableCoefficients);
     WVKernelStatus projectSpectralFields(WVComplexInput,WVComplexInput,WVComplexInput,WVComplexInput,
         WVComplexOutput,bool,WVMutableCoefficients);

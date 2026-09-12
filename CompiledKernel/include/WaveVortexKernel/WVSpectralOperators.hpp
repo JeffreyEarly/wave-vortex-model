@@ -46,6 +46,10 @@ struct WVRealGridLayout {
 };
 struct WVRealInput { const double* data = nullptr; std::size_t bytes = 0; };
 struct WVRealOutput { double* data = nullptr; std::size_t bytes = 0; };
+inline WVKernelStatus WVRetainedHorizontalPlan::inverseAndConsume(WVComplexInput,
+    WVRealOutput,const WVRealOutputConsumer&) {
+    return {WVKernelStatusCode::unsupportedOperation,"Provider has no inverse consumer."};
+}
 struct WVRetainedModeKey { std::int64_t k = 0, l = 0; };
 enum class WVRetainedHorizontalSchedule { fullFFT, streamingPrunedTile16 };
 struct WVRetainedHorizontalSpecification {
@@ -93,6 +97,10 @@ public:
     WVKernelStatus createWorkspace(std::unique_ptr<WVRetainedHorizontalWorkspace>&, bool prepareSpatialDerivative = true) const;
     WVKernelStatus forward(WVRetainedHorizontalWorkspace&, WVRealInput, WVComplexOutput) const;
     WVKernelStatus inverse(WVRetainedHorizontalWorkspace&, WVComplexInput, WVRealOutput) const;
+    // Consumer ranges refer to a contiguous [Nx,Ny,planes] output. The complete
+    // output is retained, including when consumers run inside provider workers.
+    WVKernelStatus inverseAndConsume(WVRetainedHorizontalWorkspace&, WVComplexInput,
+        WVRealOutput,const WVRealOutputConsumer&) const;
     std::size_t persistentBytes() const noexcept;
     std::size_t providerBytesLowerBound() const noexcept;
     // Full-grid derivative before retained-mode projection (e.g. passive tracers).

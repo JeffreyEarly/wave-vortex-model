@@ -88,6 +88,9 @@ WVRunnerVariablePolicy selectRunnerVariablePolicy(
     policy.execution.streamedNonlinear=true;
     policy.execution.spectralSchedule=WVVariableSpectralSchedule::compactSplitFusedViews;
     policy.execution.pointwiseWorkers=std::min(maximumPointwiseWorkers,performanceWorkers);
+    policy.execution.fusedDerivativeAdvection=
+        transformKind==WVPersistedTransformKind::hydrostatic ||
+        transformKind==WVPersistedTransformKind::boussinesq;
     return policy;
 }
 

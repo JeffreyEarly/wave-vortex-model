@@ -1,5 +1,6 @@
 #include "WaveVortexKernel/WVTransformBoussinesqKernel.hpp"
 #include "WVPreparedFieldCache.hpp"
+#include "WVAdvectionConsumer.hpp"
 #include "WVSpectralValidation.hpp"
 #include "WVPreparedModeExecutor.hpp"
 #include "WVVariableComplexBuffer.hpp"
@@ -493,7 +494,7 @@ WVKernelStatus WVTransformBoussinesqKernel::transformUVWEtaToWaveVortex(WVRealVo
 
 WVKernelStatus WVTransformBoussinesqKernel::reconstruct(const WVCoefficients& a,WVBoussinesqField field,
     WVBoussinesqDerivative derivative,WVBoussinesqComponent component,double* b,bool countPrimary,
-    std::size_t metricComponent) {
+    std::size_t metricComponent,const WVRealOutputConsumer* consumer) {
     if (countPrimary) {
         if (metricComponent>=5) metricComponent=static_cast<std::size_t>(component);
         ++metrics_.fieldReconstructionCount[static_cast<std::size_t>(field)];
@@ -588,10 +589,13 @@ WVKernelStatus WVTransformBoussinesqKernel::reconstruct(const WVCoefficients& a,
         ++metrics_.preparedVerticalDerivativeCount;
         horizontalInput=gridView().input();
     }
-    auto s=horizontal_->inverse(*horizontalWorkspace_,horizontalInput,{b,R_*sizeof(double)}); if (!s) return s;
+    const bool consumeInInverse=consumer && (!dz || prepared);
+    auto s=consumeInInverse ? horizontal_->inverseAndConsume(*horizontalWorkspace_,horizontalInput,{b,R_*sizeof(double)},*consumer) :
+        horizontal_->inverse(*horizontalWorkspace_,horizontalInput,{b,R_*sizeof(double)}); if (!s) return s;
     // v4 defines vertical derivatives through the shared F/G calculus, even
     // for wave fields. Preserve that finite-resolution MATLAB operation.
     if (dz && !prepared) { s=verticalCalculus(b,G ? WVBoussinesqFamily::G : WVBoussinesqFamily::F,1,false,b); if (!s) return s; }
+    if (consumer && !consumeInInverse) consumer->consume(consumer->context,0,R_,b);
     if (density) {
         const double* eta=nullptr;
         if (dz) { auto* auxiliary=real_.data()+(executionOptions_.streamedNonlinear ? 5 : 8)*R_; s=reconstruct(a,WVBoussinesqField::eta,WVBoussinesqDerivative::value,component,auxiliary,countPrimary,metricComponent); if (!s) return s; eta=auxiliary; }
@@ -765,7 +769,8 @@ WVKernelStatus WVTransformBoussinesqKernel::nonlinearFlux(const WVState& a,WVFlu
     const bool borrowed=executionOptions_.streamedNonlinear && preparedFields;
     const double* advectionFields=borrowed ? preparedFields->data : real_.data();
     const auto derivativeFor=[&](WVBoussinesqField field,WVBoussinesqDerivative derivative,
-        double* scratch,const double*& values,const double* productOutput) {
+        double* scratch,const double*& values,const double* productOutput,
+        const WVRealOutputConsumer* consumer = nullptr,bool* consumed = nullptr) {
         WVRealVolumeConstView cached{};
         if (derivativeAccess && derivativeAccess->lookup) {
             auto status=derivativeAccess->lookup(derivativeAccess->context,
@@ -780,7 +785,11 @@ WVKernelStatus WVTransformBoussinesqKernel::nonlinearFlux(const WVState& a,WVFlu
             return WVKernelStatus::ok();
         }
         auto status=reconstruct(a.coefficients,field,derivative,
-            WVBoussinesqComponent::all,scratch); if (!status) return status;
+            WVBoussinesqComponent::all,scratch,true,5,consumer); if (!status) return status;
+        if (consumer) {
+            ++metrics_.derivativeAdvectionConsumerCount;
+            if (consumed) *consumed=true;
+        }
         if (derivativeAccess && derivativeAccess->capture) {
             status=derivativeAccess->capture(derivativeAccess->context,
                 static_cast<std::size_t>(field),static_cast<std::size_t>(derivative),
@@ -804,14 +813,16 @@ WVKernelStatus WVTransformBoussinesqKernel::nonlinearFlux(const WVState& a,WVFlu
             // from grid Laplacians, which preserve sequential horizontal
             // calculus or the order-two vertical operator from retained values.
             for (std::size_t axis=0;axis<3;++axis) {
+                kernel_detail::WVAdvectionConsumer advection{flux,advectionFields+axis*R_,
+                    advectionFields+3*R_,geometry().dLnN2.data(),R_/geometry().Nz,field==WVBoussinesqField::eta && axis==2};
+                const WVRealOutputConsumer consumer{&advection,kernel_detail::WVAdvectionConsumer::consume};
+                bool consumed=false;
                 const double* derivativeValues=nullptr;
                 s=derivativeFor(field,static_cast<WVBoussinesqDerivative>(axis+1),
-                    derivative,derivativeValues,flux); if (!s) return s;
-                pointwise_->execute(R_,[&](std::size_t begin,std::size_t end) {
-                    for (std::size_t i=begin;i<end;++i) {
-                        const double correction=field==WVBoussinesqField::eta && axis==2 ? advectionFields[3*R_+i]*geometry().dLnN2[i/(R_/geometry().Nz)] : 0;
-                        flux[i]-=advectionFields[axis*R_+i]*(derivativeValues[i]+correction);
-                    }
+                    derivative,derivativeValues,flux,
+                    executionOptions_.fusedDerivativeAdvection ? &consumer : nullptr,&consumed); if (!s) return s;
+                if (!consumed) pointwise_->execute(R_,[&](std::size_t begin,std::size_t end) {
+                    kernel_detail::WVAdvectionConsumer::consume(&advection,begin,end,derivativeValues);
                 });
             }
             if (spatialTendency) std::copy_n(flux,R_,spatialTendency->data+outputChannel*R_);

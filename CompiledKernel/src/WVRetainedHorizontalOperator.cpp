@@ -209,16 +209,31 @@ WVKernelStatus WVRetainedHorizontalOperator::forward(WVRetainedHorizontalWorkspa
     return WVKernelStatus::ok();
 }
 WVKernelStatus WVRetainedHorizontalOperator::inverse(WVRetainedHorizontalWorkspace& workspace, WVComplexInput input, WVRealOutput output) const {
+    return inverseAndConsume(workspace,input,output,{});
+}
+WVKernelStatus WVRetainedHorizontalOperator::inverseAndConsume(WVRetainedHorizontalWorkspace& workspace,
+    WVComplexInput input,WVRealOutput output,const WVRealOutputConsumer& consumer) const {
     auto& w = *workspace.data_; const auto& d = *data_;
     if (w.owner != data_) return {WVKernelStatusCode::invalidConfiguration,"Workspace belongs to another horizontal operator."};
     auto status = validateHorizontalBuffers(d,{output.data,output.bytes},input); if (!status) return status;
     ActiveCall guard(w.active); if (!guard.entered) return {WVKernelStatusCode::reentrantExecution,"Horizontal workspace is active."};
     const auto& g = d.spec.grid; const auto& l = d.spec.retained;
+    if (consumer.consume && (g.xStride!=1 || g.yStride!=g.Nx || g.planeStride!=d.planeSize))
+        return {WVKernelStatusCode::invalidConfiguration,"Inverse consumers require contiguous physical output."};
+    const auto consumePlane=[&](std::size_t p) {
+        if (consumer.consume) consumer.consume(consumer.context,p*d.planeSize,(p+1)*d.planeSize,output.data);
+    };
     // Validate all self-conjugate values before writing any caller output.
     for (std::size_t mode = 0; mode < d.mapping.size(); ++mode) if (d.mapping[mode].self)
         for (std::size_t p = 0; p < g.planes; ++p) if (read(input,p*l.rowStride+mode*l.columnStride).imag != 0)
             return {WVKernelStatusCode::invalidConfiguration,"Self-conjugate Fourier values must be real."};
-    if (w.retained) return w.retained->inverse(input,output);
+    if (w.retained) {
+        if (consumer.consume && w.retained->supportsInverseConsumer())
+            return w.retained->inverseAndConsume(input,output,consumer);
+        status=w.retained->inverse(input,output);
+        if (status) for (std::size_t p=0;p<g.planes;++p) consumePlane(p);
+        return status;
+    }
     if (!w.batchedFullFFT) {
         for (std::size_t p = 0; p < g.planes; ++p) {
             std::fill(w.half.begin(),w.half.end(),WVComplex64{});
@@ -231,6 +246,7 @@ WVKernelStatus WVRetainedHorizontalOperator::inverse(WVRetainedHorizontalWorkspa
             status = w.inverse->execute(w.half.data(),w.real.data()); if (!status) return status;
             for (std::size_t y = 0; y < g.Ny; ++y) for (std::size_t x = 0; x < g.Nx; ++x)
                 output.data[p*g.planeStride+y*g.yStride+x*g.xStride] = d.inverseScale*w.real[y*g.Nx+x];
+            consumePlane(p);
         }
         return WVKernelStatus::ok();
     }
@@ -244,6 +260,7 @@ WVKernelStatus WVRetainedHorizontalOperator::inverse(WVRetainedHorizontalWorkspa
     status = w.inverse->execute(w.half.data(),w.real.data()); if (!status) return status;
     for (std::size_t p = 0; p < g.planes; ++p) for (std::size_t y = 0; y < g.Ny; ++y) for (std::size_t x = 0; x < g.Nx; ++x)
         output.data[p*g.planeStride+y*g.yStride+x*g.xStride] = d.inverseScale*w.real[p*d.planeSize+y*g.Nx+x];
+    for (std::size_t p=0;p<g.planes;++p) consumePlane(p);
     return WVKernelStatus::ok();
 }
 WVKernelStatus WVRetainedHorizontalOperator::spatialDerivative(WVRetainedHorizontalWorkspace& workspace, WVRealInput input, WVRealOutput output, bool xDerivative) const {
