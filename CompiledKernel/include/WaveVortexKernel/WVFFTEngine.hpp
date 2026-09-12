@@ -49,6 +49,15 @@ struct WVRealOutput;
 struct WVComplexInput;
 struct WVComplexOutput;
 
+// Synchronous consumer of completed contiguous physical-grid ranges. Different
+// ranges may be delivered concurrently. The callback must not throw, reenter
+// the transform, mutate its inputs, or publish an evaluation result. Its context
+// lives until inverseAndConsume returns; publish only after that call succeeds.
+struct WVRealOutputConsumer {
+    void* context = nullptr;
+    void (*consume)(void*,std::size_t begin,std::size_t end,const double*) noexcept = nullptr;
+};
+
 // Optional prepared retained transform. The enclosing operator validates all
 // buffers, Hermitian constraints and exclusive workspace use before execution.
 class WVRetainedHorizontalPlan {
@@ -56,6 +65,9 @@ public:
     virtual ~WVRetainedHorizontalPlan() = default;
     virtual WVKernelStatus forward(WVRealInput, WVComplexOutput) = 0;
     virtual WVKernelStatus inverse(WVComplexInput, WVRealOutput) = 0;
+    virtual bool supportsInverseConsumer() const noexcept { return false; }
+    virtual WVKernelStatus inverseAndConsume(WVComplexInput, WVRealOutput,
+        const WVRealOutputConsumer&);
     virtual std::size_t persistentBytes() const noexcept = 0;
     virtual std::size_t planBytesLowerBound() const noexcept = 0;
     // persistentBytes includes shared dependencies. Owners of multiple plans

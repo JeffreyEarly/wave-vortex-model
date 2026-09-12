@@ -286,8 +286,13 @@ public:
         resources_->active.store(false); return WVKernelStatus::ok();
     }
     WVKernelStatus inverse(WVComplexInput input,WVRealOutput output) override {
+        return inverseAndConsume(input,output,{});
+    }
+    bool supportsInverseConsumer() const noexcept override { return true; }
+    WVKernelStatus inverseAndConsume(WVComplexInput input,WVRealOutput output,
+        const WVRealOutputConsumer& consumer) override {
         if (resources_->active.exchange(true)) return {WVKernelStatusCode::reentrantExecution,"Shared retained FFTW resource is active."};
-        Context context{this,{},output,input,{}}; resources_->pool.run(inverseTask,&context);
+        Context context{this,{},output,input,{},&consumer}; resources_->pool.run(inverseTask,&context);
         resources_->active.store(false); return WVKernelStatus::ok();
     }
     const char* identifier() const noexcept override { return "fftw-streaming-pruned-tile16"; }
@@ -303,7 +308,7 @@ public:
     const void* sharedResourceIdentity() const noexcept override { return resources_.get(); }
     std::size_t sharedResourceBytes() const noexcept override { return resources_->bytes(); }
 private:
-    struct Context { RetainedFFTWPlan* plan; WVRealInput realInput; WVRealOutput realOutput; WVComplexInput complexInput; WVComplexOutput complexOutput; };
+    struct Context { RetainedFFTWPlan* plan; WVRealInput realInput; WVRealOutput realOutput; WVComplexInput complexInput; WVComplexOutput complexOutput; const WVRealOutputConsumer* consumer=nullptr; };
     static WVComplex64 read(WVComplexInput input,std::size_t i) noexcept {
         return input.interleaved ? input.interleaved[i] : WVComplex64{input.real[i],input.imag[i]};
     }
@@ -369,6 +374,10 @@ private:
                 auto* output=c.realOutput.data+(base+lane)*g.planeStride;
                 fftw_execute_dft_c2r(p.resources_->rowInverse_.get(),reinterpret_cast<fftw_complex*>(scratch),output);
                 if (p.inverseScale_!=1) for (std::size_t i=0;i<g.Nx*g.Ny;++i) output[i]*=p.inverseScale_;
+                if (c.consumer && c.consumer->consume) {
+                    const auto begin=(base+lane)*g.planeStride;
+                    c.consumer->consume(c.consumer->context,begin,begin+g.Nx*g.Ny,c.realOutput.data);
+                }
             }
         }
     }

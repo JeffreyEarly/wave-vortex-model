@@ -1,0 +1,15 @@
+{
+  "rawArchive": "/Users/jearly/Documents/OceanKitRepositories/wave-vortex-model-benchmark-artifacts/matrix-advection-20260911",
+  "frozenCompiledSourceMatchesCurrent": true,
+  "filesSHA256": {
+    "combined-screen/protocol.json": "668b737220b79f731434632a1caa19ad4747101fc49675b99a6cd1fd00cacae2",
+    "combined-screen/fixture-manifest.json": "d1ea8a3b5b1b43b2b6b12f2e59a05d4b736a69df935199c5cf6baac1b62b76d4",
+    "combined-screen/pairs.json": "180766c8ad7c20c67e691fa3ecb561da588f445a6bbe373bfe6e2c89fb154635",
+    "combined-screen/summary.json": "c8c486e64b909e24fbfb8c47920d55e43af56189eebc275f7f77488d89588d48",
+    "combined-screen/host-activity.json": "076cf3fa6e1112563596428016f61ea0664a0daa85cbec826319ef3c1d933362",
+    "combined-screen/host-caveat.json": "fe9fcdf26d28a8addaf1671d80bc37f8ca7a93526cd7d0fa4f341515f3f79d9f",
+    "combined-screen/build-CMakeCache.txt": "ba89f70e4380a09d3a35aafae3bf1f7e9dde9f98b4203ac7138f675a7069594a",
+    "matrix-workers-initial/runs.json": "de781ad76dc8e6ee167f2cad3c1da297b67cc899bfb314b37e5f8282da4bac18",
+    "matrix-workers-initial/summary.json": "4556233dccfa4541b26feca1b98e1aa1fbcc9673a63190591ee11eabec0fa78c"
+  }
+}

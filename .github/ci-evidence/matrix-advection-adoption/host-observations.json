@@ -1,0 +1,364 @@
+{
+  "sampleCount": 94,
+  "intervalSeconds": 10,
+  "kind": "idle-host preflight; background OS/service bursts recorded during campaign",
+  "activeComputeWorkload": "Only this qualification campaign; no competing build, MATLAB, profiling or experiment process scheduled or changed.",
+  "limitations": "Ten-second process snapshots cannot exclude short overlap with individual integration windows. Media analysis and other system services occasionally became active. These observations are retained; no perfect quiescence claim.",
+  "aboveTenPercentNonHarnessObservations": [
+    {
+      "unixTime": 1789212279.745091,
+      "processes": [
+        {
+          "pid": 1370,
+          "cpuPercent": 59.0,
+          "executable": "/System/Library/PrivateFrameworks/CacheDelete.framework/deleted"
+        },
+        {
+          "pid": 1337,
+          "cpuPercent": 43.0,
+          "executable": "/System/Library/PrivateFrameworks/CloudKitDaemon.framework/Support/cloudd"
+        },
+        {
+          "pid": 458,
+          "cpuPercent": 35.0,
+          "executable": "/usr/libexec/mobileassetd"
+        },
+        {
+          "pid": 583,
+          "cpuPercent": 18.2,
+          "executable": "/usr/libexec/triald_system"
+        },
+        {
+          "pid": 1440,
+          "cpuPercent": 13.3,
+          "executable": "/usr/libexec/triald"
+        },
+        {
+          "pid": 1308,
+          "cpuPercent": 12.1,
+          "executable": "/System/Library/Frameworks/Accounts.framework/Versions/A/Support/accountsd"
+        },
+        {
+          "pid": 1300,
+          "cpuPercent": 10.3,
+          "executable": "/usr/libexec/containermanagerd"
+        }
+      ]
+    },
+    {
+      "unixTime": 1789212319.86202,
+      "processes": [
+        {
+          "pid": 17333,
+          "cpuPercent": 20.6,
+          "executable": "/Library/Bitdefender/AVP/product/bin/BDLDaemon.app/Contents/MacOS/BDLDaemon"
+        }
+      ]
+    },
+    {
+      "unixTime": 1789212329.89128,
+      "processes": [
+        {
+          "pid": 1511,
+          "cpuPercent": 79.9,
+          "executable": "/System/Library/PrivateFrameworks/MediaAnalysis.framework/Versions/A/mediaanalysisd"
+        }
+      ]
+    },
+    {
+      "unixTime": 1789212349.9460711,
+      "processes": [
+        {
+          "pid": 17333,
+          "cpuPercent": 44.9,
+          "executable": "/Library/Bitdefender/AVP/product/bin/BDLDaemon.app/Contents/MacOS/BDLDaemon"
+        },
+        {
+          "pid": 95407,
+          "cpuPercent": 10.6,
+          "executable": "/Applications/ChatGPT.app/Contents/Resources/codex"
+        }
+      ]
+    },
+    {
+      "unixTime": 1789212420.143649,
+      "processes": [
+        {
+          "pid": 1503,
+          "cpuPercent": 24.3,
+          "executable": "/usr/libexec/duetexpertd"
+        }
+      ]
+    },
+    {
+      "unixTime": 1789212450.219757,
+      "processes": [
+        {
+          "pid": 1337,
+          "cpuPercent": 17.0,
+          "executable": "/System/Library/PrivateFrameworks/CloudKitDaemon.framework/Support/cloudd"
+        },
+        {
+          "pid": 1379,
+          "cpuPercent": 10.4,
+          "executable": "/System/Library/PrivateFrameworks/UsageTracking.framework/Versions/A/UsageTrackingAgent"
+        }
+      ]
+    },
+    {
+      "unixTime": 1789212470.277014,
+      "processes": [
+        {
+          "pid": 1511,
+          "cpuPercent": 66.4,
+          "executable": "/System/Library/PrivateFrameworks/MediaAnalysis.framework/Versions/A/mediaanalysisd"
+        }
+      ]
+    },
+    {
+      "unixTime": 1789212480.3093948,
+      "processes": [
+        {
+          "pid": 1511,
+          "cpuPercent": 99.3,
+          "executable": "/System/Library/PrivateFrameworks/MediaAnalysis.framework/Versions/A/mediaanalysisd"
+        },
+        {
+          "pid": 438,
+          "cpuPercent": 10.6,
+          "executable": "/System/Library/CoreServices/loginwindow.app/Contents/MacOS/loginwindow"
+        }
+      ]
+    },
+    {
+      "unixTime": 1789212490.343869,
+      "processes": [
+        {
+          "pid": 1511,
+          "cpuPercent": 99.6,
+          "executable": "/System/Library/PrivateFrameworks/MediaAnalysis.framework/Versions/A/mediaanalysisd"
+        }
+      ]
+    },
+    {
+      "unixTime": 1789212540.4958029,
+      "processes": [
+        {
+          "pid": 438,
+          "cpuPercent": 14.0,
+          "executable": "/System/Library/CoreServices/loginwindow.app/Contents/MacOS/loginwindow"
+        }
+      ]
+    },
+    {
+      "unixTime": 1789212600.682694,
+      "processes": [
+        {
+          "pid": 438,
+          "cpuPercent": 17.5,
+          "executable": "/System/Library/CoreServices/loginwindow.app/Contents/MacOS/loginwindow"
+        }
+      ]
+    },
+    {
+      "unixTime": 1789212660.8503659,
+      "processes": [
+        {
+          "pid": 438,
+          "cpuPercent": 17.4,
+          "executable": "/System/Library/CoreServices/loginwindow.app/Contents/MacOS/loginwindow"
+        }
+      ]
+    },
+    {
+      "unixTime": 1789212680.914461,
+      "processes": [
+        {
+          "pid": 53007,
+          "cpuPercent": 22.6,
+          "executable": "/usr/libexec/remindd"
+        },
+        {
+          "pid": 1308,
+          "cpuPercent": 11.8,
+          "executable": "/System/Library/Frameworks/Accounts.framework/Versions/A/Support/accountsd"
+        }
+      ]
+    },
+    {
+      "unixTime": 1789212721.031272,
+      "processes": [
+        {
+          "pid": 438,
+          "cpuPercent": 16.8,
+          "executable": "/System/Library/CoreServices/loginwindow.app/Contents/MacOS/loginwindow"
+        }
+      ]
+    },
+    {
+      "unixTime": 1789212751.113915,
+      "processes": [
+        {
+          "pid": 1386,
+          "cpuPercent": 138.7,
+          "executable": "/System/Library/Frameworks/CoreServices.framework/Versions/A/Frameworks/Metadata.framework/Versions/A/Support/corespotlightd"
+        }
+      ]
+    },
+    {
+      "unixTime": 1789212781.203933,
+      "processes": [
+        {
+          "pid": 438,
+          "cpuPercent": 11.8,
+          "executable": "/System/Library/CoreServices/loginwindow.app/Contents/MacOS/loginwindow"
+        }
+      ]
+    },
+    {
+      "unixTime": 1789212801.2683609,
+      "processes": [
+        {
+          "pid": 435,
+          "cpuPercent": 18.8,
+          "executable": "/System/Library/PrivateFrameworks/SkyLight.framework/Resources/WindowServer"
+        }
+      ]
+    },
+    {
+      "unixTime": 1789212831.360675,
+      "processes": [
+        {
+          "pid": 53108,
+          "cpuPercent": 22.1,
+          "executable": "/Applications/NoMachine.app/Contents/Frameworks/bin/nxcodec.bin"
+        },
+        {
+          "pid": 435,
+          "cpuPercent": 10.4,
+          "executable": "/System/Library/PrivateFrameworks/SkyLight.framework/Resources/WindowServer"
+        }
+      ]
+    },
+    {
+      "unixTime": 1789212841.390111,
+      "processes": [
+        {
+          "pid": 53108,
+          "cpuPercent": 54.1,
+          "executable": "/Applications/NoMachine.app/Contents/Frameworks/bin/nxcodec.bin"
+        },
+        {
+          "pid": 435,
+          "cpuPercent": 42.2,
+          "executable": "/System/Library/PrivateFrameworks/SkyLight.framework/Resources/WindowServer"
+        },
+        {
+          "pid": 1497,
+          "cpuPercent": 12.7,
+          "executable": "/Applications/NoMachine.app/Contents/MacOS/nxnode"
+        }
+      ]
+    },
+    {
+      "unixTime": 1789212851.421833,
+      "processes": [
+        {
+          "pid": 53108,
+          "cpuPercent": 57.2,
+          "executable": "/Applications/NoMachine.app/Contents/Frameworks/bin/nxcodec.bin"
+        },
+        {
+          "pid": 435,
+          "cpuPercent": 42.7,
+          "executable": "/System/Library/PrivateFrameworks/SkyLight.framework/Resources/WindowServer"
+        },
+        {
+          "pid": 67572,
+          "cpuPercent": 26.3,
+          "executable": "/Applications/Dropbox.app/Contents/PlugIns/DropboxFileProvider.appex/Contents/MacOS/DropboxFileProvider"
+        },
+        {
+          "pid": 1497,
+          "cpuPercent": 13.0,
+          "executable": "/Applications/NoMachine.app/Contents/MacOS/nxnode"
+        }
+      ]
+    },
+    {
+      "unixTime": 1789212861.4545212,
+      "processes": [
+        {
+          "pid": 53108,
+          "cpuPercent": 71.0,
+          "executable": "/Applications/NoMachine.app/Contents/Frameworks/bin/nxcodec.bin"
+        },
+        {
+          "pid": 435,
+          "cpuPercent": 42.7,
+          "executable": "/System/Library/PrivateFrameworks/SkyLight.framework/Resources/WindowServer"
+        },
+        {
+          "pid": 67572,
+          "cpuPercent": 24.7,
+          "executable": "/Applications/Dropbox.app/Contents/PlugIns/DropboxFileProvider.appex/Contents/MacOS/DropboxFileProvider"
+        },
+        {
+          "pid": 1497,
+          "cpuPercent": 11.6,
+          "executable": "/Applications/NoMachine.app/Contents/MacOS/nxnode"
+        }
+      ]
+    },
+    {
+      "unixTime": 1789212871.4819179,
+      "processes": [
+        {
+          "pid": 67572,
+          "cpuPercent": 26.4,
+          "executable": "/Applications/Dropbox.app/Contents/PlugIns/DropboxFileProvider.appex/Contents/MacOS/DropboxFileProvider"
+        }
+      ]
+    },
+    {
+      "unixTime": 1789212881.514501,
+      "processes": [
+        {
+          "pid": 67572,
+          "cpuPercent": 30.0,
+          "executable": "/Applications/Dropbox.app/Contents/PlugIns/DropboxFileProvider.appex/Contents/MacOS/DropboxFileProvider"
+        }
+      ]
+    },
+    {
+      "unixTime": 1789212891.5484622,
+      "processes": [
+        {
+          "pid": 67572,
+          "cpuPercent": 31.8,
+          "executable": "/Applications/Dropbox.app/Contents/PlugIns/DropboxFileProvider.appex/Contents/MacOS/DropboxFileProvider"
+        }
+      ]
+    },
+    {
+      "unixTime": 1789212901.583061,
+      "processes": [
+        {
+          "pid": 438,
+          "cpuPercent": 10.2,
+          "executable": "/System/Library/CoreServices/loginwindow.app/Contents/MacOS/loginwindow"
+        }
+      ]
+    },
+    {
+      "unixTime": 1789212971.800852,
+      "processes": [
+        {
+          "pid": 17333,
+          "cpuPercent": 14.5,
+          "executable": "/Library/Bitdefender/AVP/product/bin/BDLDaemon.app/Contents/MacOS/BDLDaemon"
+        }
+      ]
+    }
+  ]
+}

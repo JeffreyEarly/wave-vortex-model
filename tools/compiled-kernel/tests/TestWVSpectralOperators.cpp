@@ -4,11 +4,15 @@
 #include "WVAllocationProbe.hpp"
 #include <algorithm>
 #include <array>
+#include <atomic>
+#include <chrono>
 #include <cmath>
 #include <complex>
+#include <condition_variable>
 #include <cstring>
 #include <iostream>
 #include <limits>
+#include <mutex>
 #include <stdexcept>
 #include <thread>
 #if WV_TEST_NATIVE_FFTW
@@ -71,10 +75,14 @@ struct MatrixTrace {
 };
 class TracingBackend final : public WVVerticalMatrixBackend {
 public:
-    TracingBackend(MatrixTrace& trace,std::unique_ptr<WVVerticalMatrixBackend> inner) : trace_(trace),inner_(std::move(inner)) {}
+    TracingBackend(MatrixTrace& trace,std::unique_ptr<WVVerticalMatrixBackend> inner,
+        bool concurrent = true) : trace_(trace),inner_(std::move(inner)),concurrent_(concurrent) {}
     const char* identifier() const noexcept override { return "tracing-scalar"; }
     std::size_t maximumDimension() const noexcept override { return inner_->maximumDimension(); }
     std::size_t persistentBytes() const noexcept override { return sizeof(*this)+inner_->persistentBytes(); }
+    bool supportsConcurrentCalls() const noexcept override {
+        return concurrent_ && inner_->supportsConcurrentCalls();
+    }
     void split(std::size_t m,std::size_t k,std::size_t n,const double* a,const double* br,const double* bi,
         std::size_t ldb,double* cr,double* ci,std::size_t ldc,double beta) const noexcept override {
         record(n,ldb,ldc,br,cr,beta,true); inner_->split(m,k,n,a,br,bi,ldb,cr,ci,ldc,beta);
@@ -91,11 +99,61 @@ private:
     }
     MatrixTrace& trace_;
     std::unique_ptr<WVVerticalMatrixBackend> inner_;
+    bool concurrent_;
 };
-std::unique_ptr<WVVerticalMatrixBackend> tracingBackend(MatrixTrace& trace) {
-    std::unique_ptr<WVVerticalMatrixBackend> inner; require(WVCreateScalarMatrixBackend(inner));
-    return std::make_unique<TracingBackend>(trace,std::move(inner));
+std::unique_ptr<WVVerticalMatrixBackend> tracingBackend(MatrixTrace& trace,bool native = false,
+    bool concurrent = true) {
+    return std::make_unique<TracingBackend>(trace,backend(native),concurrent);
 }
+class BlockingGate {
+public:
+    void blockFirstCall() noexcept {
+        if (claimed_.exchange(true)) return;
+        std::unique_lock<std::mutex> lock(mutex_);
+        entered_=true; condition_.notify_all();
+        if (!condition_.wait_for(lock,std::chrono::seconds(5),[this] { return released_; }))
+            timedOut_=true;
+    }
+    bool waitUntilEntered() {
+        std::unique_lock<std::mutex> lock(mutex_);
+        return condition_.wait_for(lock,std::chrono::seconds(5),[this] { return entered_; });
+    }
+    void release() {
+        { std::lock_guard<std::mutex> lock(mutex_); released_=true; }
+        condition_.notify_all();
+    }
+    bool timedOut() const {
+        std::lock_guard<std::mutex> lock(mutex_); return timedOut_;
+    }
+private:
+    std::atomic<bool> claimed_{false};
+    mutable std::mutex mutex_;
+    std::condition_variable condition_;
+    bool entered_=false,released_=false,timedOut_=false;
+};
+class BlockingBackend final : public WVVerticalMatrixBackend {
+public:
+    explicit BlockingBackend(BlockingGate& gate):gate_(gate),inner_(backend(false)) {}
+    const char* identifier() const noexcept override { return "blocking-scalar"; }
+    std::size_t maximumDimension() const noexcept override { return inner_->maximumDimension(); }
+    std::size_t persistentBytes() const noexcept override {
+        return sizeof(*this)+inner_->persistentBytes();
+    }
+    bool supportsConcurrentCalls() const noexcept override { return true; }
+    void split(std::size_t m,std::size_t k,std::size_t n,const double* a,
+        const double* br,const double* bi,std::size_t ldb,double* cr,double* ci,
+        std::size_t ldc,double beta) const noexcept override {
+        gate_.blockFirstCall(); inner_->split(m,k,n,a,br,bi,ldb,cr,ci,ldc,beta);
+    }
+    void interleaved(std::size_t m,std::size_t k,std::size_t n,const WVComplex64* a,
+        const WVComplex64* b,std::size_t ldb,WVComplex64* c,std::size_t ldc,
+        double beta) const noexcept override {
+        gate_.blockFirstCall(); inner_->interleaved(m,k,n,a,b,ldb,c,ldc,beta);
+    }
+private:
+    BlockingGate& gate_;
+    std::unique_ptr<WVVerticalMatrixBackend> inner_;
+};
 std::unique_ptr<WVFFTEngine> fft(bool native) {
 #if WV_TEST_NATIVE_FFTW
     if (native) { std::unique_ptr<WVFFTEngine> e; require(WVFFTWEngine::create(1,e)); return e; }
@@ -306,6 +364,160 @@ void discontiguousDirectSegments(WVComplexRepresentation representation,WVAccumu
     require(allocationProbe::calls==0,"Prepared direct run execution allocated");
     require(op->persistentBytes()+workspace->persistentBytes()==bytes,"Direct run execution changed prepared storage");
 }
+void selectedVerticalColumn(WVComplexRepresentation representation,
+    WVAccumulation accumulation,bool direct,bool native) {
+    VerticalFixture f(WVMatrixAction::projection,representation,accumulation,direct);
+    MatrixTrace trace;
+    std::unique_ptr<WVPreparedVerticalOperator> op;
+    require(WVPreparedVerticalOperator::create(f.spec,tracingBackend(trace,native),op));
+    std::unique_ptr<WVVerticalWorkspace> workspace; require(op->createWorkspace(workspace));
+    require(op->preparedGroupCount()==2,"Prepared full-group count differs");
+    Buffer input(f.spec.input),output(f.spec.output);
+    for (std::size_t mode=0;mode<f.spec.input.columns;++mode) {
+        for (std::size_t row=0;row<f.spec.input.rows;++row)
+            input.set(row,mode,{std::sin(.13*(row+3*mode)),std::cos(.17*(row+2*mode))});
+        for (std::size_t row=0;row<f.spec.output.rows;++row) output.set(row,mode,{.4,-.3});
+    }
+    const auto inputBefore=input,outputBefore=output;
+    const std::size_t selected=direct ? 5 : 3;
+    require(op->executeColumn(*workspace,input.in(),output.out(),selected));
+    require(!trace.overflow && trace.count==1 && trace.calls[0].width==1,
+        "Selected vertical column did not issue one matrix call");
+    const auto& matrix=f.spec.matrices[1].values;
+    for (std::size_t mode=0;mode<f.spec.output.columns;++mode)
+        for (std::size_t row=0;row<f.spec.output.rows;++row) {
+            if (mode!=selected) {
+                const auto expected=outputBefore.get(row,mode),actual=output.get(row,mode);
+                require(actual.real==expected.real && actual.imag==expected.imag,
+                    "Selected vertical execution changed another column");
+                continue;
+            }
+            std::complex<long double> expected=accumulation==WVAccumulation::add ?
+                std::complex<long double>{.4,-.3} : std::complex<long double>{};
+            for (std::size_t j=0;j<f.spec.input.rows;++j) {
+                const auto value=input.get(j,mode);
+                expected+=static_cast<long double>(matrix.data[row*matrix.rowStride+j*matrix.columnStride])*
+                    std::complex<long double>{value.real,value.imag};
+            }
+            close(output.get(row,mode),expected);
+        }
+    require(input.equals(inputBefore),"Selected vertical execution modified input");
+    output.paddingUnchanged();
+    const auto selectedResult=output;
+    require(op->executeColumn(*workspace,input.in(),output.out(),f.spec.input.columns).code==
+        WVKernelStatusCode::invalidShape && output.equals(selectedResult),
+        "Out-of-range selected vertical column was accepted or changed output");
+    auto aliased=input.out(); aliased.bytes=std::max(aliased.bytes,output.out().bytes);
+    require(op->executeColumn(*workspace,input.in(),aliased,selected).code==
+        WVKernelStatusCode::overlappingArrays && input.equals(inputBefore),
+        "Selected vertical column accepted overlapping storage or changed input");
+    std::unique_ptr<WVPreparedVerticalOperator> foreign;
+    require(WVPreparedVerticalOperator::create(f.spec,backend(native),foreign));
+    std::unique_ptr<WVVerticalWorkspace> foreignWorkspace;
+    require(foreign->createWorkspace(foreignWorkspace));
+    require(op->executeColumn(*foreignWorkspace,input.in(),output.out(),selected).code==
+        WVKernelStatusCode::invalidConfiguration && output.equals(selectedResult),
+        "Selected vertical column accepted a foreign workspace or changed output");
+    const auto bytes=op->persistentBytes()+workspace->persistentBytes();
+    trace.recording=false; allocationProbe::calls=0; allocationProbe::counting=true;
+    for (unsigned repeat=0;repeat<10;++repeat)
+        require(op->executeColumn(*workspace,input.in(),output.out(),selected));
+    allocationProbe::counting=false;
+    require(allocationProbe::calls==0 && op->persistentBytes()+workspace->persistentBytes()==bytes,
+        "Selected vertical execution allocated or changed prepared storage");
+}
+void parallelVerticalGroups(WVComplexRepresentation representation,
+    WVAccumulation accumulation,bool direct,bool native) {
+    VerticalFixture f(WVMatrixAction::projection,representation,accumulation,direct);
+    std::unique_ptr<WVPreparedVerticalOperator> op;
+    require(WVPreparedVerticalOperator::create(f.spec,backend(native),op));
+    require(op->supportsConcurrentCalls(),"Concurrent backend capability was not retained");
+    std::unique_ptr<WVVerticalWorkspace> serial,parallel;
+    require(op->createWorkspace(serial)); require(op->createWorkspace(3,parallel));
+    std::unique_ptr<WVVerticalGroupExecutor> executor;
+    require(WVVerticalGroupExecutor::create(3,executor));
+    Buffer input(f.spec.input),oracle(f.spec.output),candidate(f.spec.output);
+    for (std::size_t mode=0;mode<f.spec.input.columns;++mode) {
+        for (std::size_t row=0;row<f.spec.input.rows;++row)
+            input.set(row,mode,{std::sin(.19*(row+3*mode)),std::cos(.23*(row+2*mode))});
+        for (std::size_t row=0;row<f.spec.output.rows;++row) {
+            oracle.set(row,mode,{.7,-.2}); candidate.set(row,mode,{.7,-.2});
+        }
+    }
+    const auto inputBefore=input;
+    require(op->execute(*serial,input.in(),oracle.out()));
+    require(op->execute(*parallel,*executor,input.in(),candidate.out()));
+    require(candidate.equals(oracle) && input.equals(inputBefore),
+        "Static parallel vertical groups changed the result or input");
+    candidate.paddingUnchanged();
+    const auto beforeMismatch=candidate;
+    require(op->execute(*serial,*executor,input.in(),candidate.out()).code==
+        WVKernelStatusCode::invalidConfiguration && candidate.equals(beforeMismatch),
+        "Parallel execution accepted mismatched preallocated scratch");
+    if (direct) require(parallel->persistentBytes()==serial->persistentBytes(),
+        "All-direct vertical groups allocated per-worker packing scratch");
+    else {
+        require(parallel->persistentBytes()>serial->persistentBytes(),
+            "Packed vertical groups did not preallocate per-worker scratch");
+        std::unique_ptr<WVVerticalWorkspace> overflow;
+        require(op->createWorkspace(std::numeric_limits<std::size_t>::max(),overflow).code==
+            WVKernelStatusCode::sizeOverflow && !overflow,
+            "Packed vertical worker scratch overflow was accepted or published");
+    }
+    const auto bytes=op->persistentBytes()+parallel->persistentBytes()+executor->persistentBytes();
+    allocationProbe::calls=0; allocationProbe::counting=true;
+    for (unsigned repeat=0;repeat<10;++repeat)
+        require(op->execute(*parallel,*executor,input.in(),candidate.out()));
+    allocationProbe::counting=false;
+    require(allocationProbe::calls==0 &&
+        op->persistentBytes()+parallel->persistentBytes()+executor->persistentBytes()==bytes,
+        "Parallel vertical group execution allocated or changed prepared storage");
+
+    MatrixTrace trace;
+    std::unique_ptr<WVPreparedVerticalOperator> serialOnly;
+    require(WVPreparedVerticalOperator::create(f.spec,tracingBackend(trace,false,false),serialOnly));
+    std::unique_ptr<WVVerticalWorkspace> serialOnlyWorkspace;
+    require(serialOnly->createWorkspace(3,serialOnlyWorkspace));
+    const auto beforeRejected=candidate;
+    require(serialOnly->execute(*serialOnlyWorkspace,*executor,input.in(),candidate.out()).code==
+        WVKernelStatusCode::unsupportedOperation && candidate.equals(beforeRejected) && trace.count==0,
+        "Parallel execution silently accepted a nonconcurrent backend");
+}
+void parallelVerticalReentry() {
+    VerticalFixture f(WVMatrixAction::projection,WVComplexRepresentation::split,
+        WVAccumulation::overwrite,false);
+    BlockingGate gate;
+    std::unique_ptr<WVPreparedVerticalOperator> op;
+    require(WVPreparedVerticalOperator::create(f.spec,
+        std::make_unique<BlockingBackend>(gate),op));
+    std::unique_ptr<WVVerticalWorkspace> activeWorkspace,otherWorkspace;
+    require(op->createWorkspace(3,activeWorkspace));
+    require(op->createWorkspace(3,otherWorkspace));
+    std::unique_ptr<WVVerticalGroupExecutor> activeExecutor,otherExecutor;
+    require(WVVerticalGroupExecutor::create(3,activeExecutor));
+    require(WVVerticalGroupExecutor::create(3,otherExecutor));
+    Buffer input(f.spec.input),activeOutput(f.spec.output),rejectedOutput(f.spec.output);
+    const auto inputBefore=input,rejectedBefore=rejectedOutput;
+    WVKernelStatus activeStatus;
+    std::thread active([&] {
+        activeStatus=op->execute(*activeWorkspace,*activeExecutor,input.in(),activeOutput.out());
+    });
+    if (!gate.waitUntilEntered()) {
+        gate.release(); active.join();
+        require(false,"Timed out waiting for the blocking vertical backend");
+    }
+    const auto workspaceReentry=op->execute(*activeWorkspace,*otherExecutor,
+        input.in(),rejectedOutput.out());
+    const auto executorReentry=op->execute(*otherWorkspace,*activeExecutor,
+        input.in(),rejectedOutput.out());
+    gate.release(); active.join();
+    require(activeStatus && !gate.timedOut(),
+        "Blocking vertical execution failed or exceeded its bounded wait");
+    require(workspaceReentry.code==WVKernelStatusCode::reentrantExecution &&
+        executorReentry.code==WVKernelStatusCode::reentrantExecution &&
+        rejectedOutput.equals(rejectedBefore) && input.equals(inputBefore),
+        "Active vertical workspace/executor reentry was accepted or published output");
+}
 void singleColumn(bool native, WVComplexRepresentation representation) {
     VerticalFixture f(WVMatrixAction::reconstruction,representation,WVAccumulation::overwrite,true);
     f.spec.input.columns = f.spec.output.columns = 1;
@@ -492,6 +704,18 @@ void workspaceConcurrency() {
     for (int i = 0; i < 10; ++i) require(op->forward(*two,context.real,b.out()));
     worker.join(); require(a.equals(b),"Independent workspaces interfered");
 }
+void verticalExecutorLimits() {
+    std::unique_ptr<WVVerticalGroupExecutor> executor;
+    const auto maximum=std::numeric_limits<std::size_t>::max();
+    require(WVVerticalGroupExecutor::create(maximum,executor).code==WVKernelStatusCode::sizeOverflow && !executor,
+        "Oversized executor count escaped or published an executor");
+    require(WVVerticalGroupExecutor::create(1,executor));
+    const auto* retained=executor.get();
+    require(WVVerticalGroupExecutor::create(maximum,executor).code==WVKernelStatusCode::sizeOverflow && executor.get()==retained,
+        "Oversized executor count replaced a valid executor");
+    require(WVVerticalGroupExecutor::create(0,executor).code==WVKernelStatusCode::invalidConfiguration && executor.get()==retained,
+        "Zero executor count replaced a valid executor");
+}
 } // namespace
 int main() {
     try {
@@ -520,6 +744,15 @@ int main() {
             for (auto representation : {WVComplexRepresentation::split,WVComplexRepresentation::interleaved}) singleColumn(native,representation);
         for (auto representation:{WVComplexRepresentation::split,WVComplexRepresentation::interleaved})
             for (auto accumulation:{WVAccumulation::overwrite,WVAccumulation::add}) discontiguousDirectSegments(representation,accumulation);
+        for (bool native:{false,true}) if (!native || nativeMatrix)
+            for (auto representation:{WVComplexRepresentation::split,WVComplexRepresentation::interleaved})
+                for (auto accumulation:{WVAccumulation::overwrite,WVAccumulation::add})
+                    for (bool direct:{false,true}) selectedVerticalColumn(representation,accumulation,direct,native);
+        for (bool native:{false,true}) if (!native || nativeMatrix)
+            for (auto representation:{WVComplexRepresentation::split,WVComplexRepresentation::interleaved})
+                for (auto accumulation:{WVAccumulation::overwrite,WVAccumulation::add})
+                    for (bool direct:{false,true}) parallelVerticalGroups(representation,accumulation,direct,native);
+        parallelVerticalReentry(); verticalExecutorLimits();
         identitiesAndRebuild(); rejectedContracts(); setupFailures(); workspaceConcurrency();
         std::cout << "Spectral operators passed: independent DFT/matrix oracles, split/interleaved layouts, exact groups, aliases, failure cleanup, immutable preparation and zero prepared allocations. Accelerate=" << nativeMatrix << '\n';
         return 0;

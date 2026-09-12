@@ -7,6 +7,7 @@
 #include <vector>
 
 namespace wavevortex {
+namespace spectral_detail { struct VerticalGroupExecutorData; }
 
 // Internal numerical service contract, independent of kernel contract 4 and
 // portable extension source API v1. Scientific checkpoint records do not store it.
@@ -46,6 +47,10 @@ struct WVRealGridLayout {
 };
 struct WVRealInput { const double* data = nullptr; std::size_t bytes = 0; };
 struct WVRealOutput { double* data = nullptr; std::size_t bytes = 0; };
+inline WVKernelStatus WVRetainedHorizontalPlan::inverseAndConsume(WVComplexInput,
+    WVRealOutput,const WVRealOutputConsumer&) {
+    return {WVKernelStatusCode::unsupportedOperation,"Provider has no inverse consumer."};
+}
 struct WVRetainedModeKey { std::int64_t k = 0, l = 0; };
 enum class WVRetainedHorizontalSchedule { fullFFT, streamingPrunedTile16 };
 struct WVRetainedHorizontalSpecification {
@@ -93,6 +98,10 @@ public:
     WVKernelStatus createWorkspace(std::unique_ptr<WVRetainedHorizontalWorkspace>&, bool prepareSpatialDerivative = true) const;
     WVKernelStatus forward(WVRetainedHorizontalWorkspace&, WVRealInput, WVComplexOutput) const;
     WVKernelStatus inverse(WVRetainedHorizontalWorkspace&, WVComplexInput, WVRealOutput) const;
+    // Consumer ranges refer to a contiguous [Nx,Ny,planes] output. The complete
+    // output is retained, including when consumers run inside provider workers.
+    WVKernelStatus inverseAndConsume(WVRetainedHorizontalWorkspace&, WVComplexInput,
+        WVRealOutput,const WVRealOutputConsumer&) const;
     std::size_t persistentBytes() const noexcept;
     std::size_t providerBytesLowerBound() const noexcept;
     // Full-grid derivative before retained-mode projection (e.g. passive tracers).
@@ -143,12 +152,31 @@ public:
     virtual const char* identifier() const noexcept = 0;
     virtual std::size_t maximumDimension() const noexcept = 0;
     virtual std::size_t persistentBytes() const noexcept = 0;
+    // True only when independent calls on this immutable backend may execute
+    // concurrently. Scheduling policy remains outside the backend.
+    virtual bool supportsConcurrentCalls() const noexcept { return false; }
     virtual void split(std::size_t m, std::size_t k, std::size_t n, const double* a,
         const double* br, const double* bi, std::size_t ldb, double* cr, double* ci, std::size_t ldc, double beta) const noexcept = 0;
     virtual void interleaved(std::size_t m, std::size_t k, std::size_t n, const WVComplex64* a,
         const WVComplex64* b, std::size_t ldb, WVComplex64* c, std::size_t ldc, double beta) const noexcept = 0;
 };
 WVKernelStatus WVCreateScalarMatrixBackend(std::unique_ptr<WVVerticalMatrixBackend>&);
+
+// One persistent synchronous executor may be shared by every prepared vertical
+// operator owned by a kernel. It statically partitions the prepared group list.
+class WVVerticalGroupExecutor {
+public:
+    static WVKernelStatus create(std::size_t workers,std::unique_ptr<WVVerticalGroupExecutor>&);
+    ~WVVerticalGroupExecutor();
+    WVVerticalGroupExecutor(const WVVerticalGroupExecutor&) = delete;
+    WVVerticalGroupExecutor& operator=(const WVVerticalGroupExecutor&) = delete;
+    std::size_t workerCount() const noexcept;
+    std::size_t persistentBytes() const noexcept;
+private:
+    friend class WVPreparedVerticalOperator;
+    WVVerticalGroupExecutor();
+    std::unique_ptr<spectral_detail::VerticalGroupExecutorData> data_;
+};
 
 class WVVerticalWorkspace {
 public:
@@ -165,10 +193,19 @@ class WVPreparedVerticalOperator {
 public:
     static WVKernelStatus create(const WVVerticalSpecification&, std::unique_ptr<WVVerticalMatrixBackend>, std::unique_ptr<WVPreparedVerticalOperator>&);
     WVKernelStatus createWorkspace(std::unique_ptr<WVVerticalWorkspace>&) const;
+    WVKernelStatus createWorkspace(std::size_t groupWorkers,std::unique_ptr<WVVerticalWorkspace>&) const;
     WVKernelStatus execute(WVVerticalWorkspace&, WVComplexInput, WVComplexOutput) const;
+    WVKernelStatus execute(WVVerticalWorkspace&, WVVerticalGroupExecutor&,
+        WVComplexInput,WVComplexOutput) const;
+    // Execute the exact prepared scientific matrix assigned to one retained
+    // column. Other output columns are untouched.
+    WVKernelStatus executeColumn(WVVerticalWorkspace&, WVComplexInput, WVComplexOutput,
+        std::size_t retainedColumn) const;
     std::size_t persistentBytes() const noexcept;
     std::size_t matrixBytes() const noexcept;
     std::size_t uniqueMatrixCount() const noexcept;
+    std::size_t preparedGroupCount() const noexcept;
+    bool supportsConcurrentCalls() const noexcept;
     const char* backendIdentifier() const noexcept;
 private:
     WVPreparedVerticalOperator() = default;

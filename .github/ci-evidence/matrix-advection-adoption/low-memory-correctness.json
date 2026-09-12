@@ -1,0 +1,43 @@
+{
+  "kind": "correctness smoke, not timing qualification",
+  "binarySHA256": "832d4e38e870de021489561a82da578ab2d4539927ee20c949beadcc5e68f27c",
+  "rawSummarySHA256": "1197e492ae004f48f97923894ed50d45b4f92a0fc5046f708239aad030fa0a52",
+  "results": [
+    {
+      "profile": "eddytide-256x256x28",
+      "numericalPassed": true,
+      "stateAndStepDecisionsIdentical": true,
+      "ownedMaximumLiveBytes": 537374293,
+      "reuseOwnedMaximumLiveBytes": 537374333,
+      "reportSHA256": "b474e9295ce9333169afeb6fc4f871f51e1be63b2ab5548abcb51a509a8cc22c",
+      "comparisonSHA256": "c50a4607c23b023ff521f887043fee44b1bcf504bc2a424fd588ec07b7ec60ab"
+    },
+    {
+      "profile": "constant-nonhydrostatic-composite-256",
+      "numericalPassed": true,
+      "stateAndStepDecisionsIdentical": true,
+      "ownedMaximumLiveBytes": 1708890680,
+      "reuseOwnedMaximumLiveBytes": 1979423608,
+      "reportSHA256": "416c3c83d3514860c9a788862d0363cc7867793ee1fae932b6464b5f3d94258d",
+      "comparisonSHA256": "b2f1b7bcfd80fb6545a671cd07922b27ebc892ff597fc95ff5bd7f25d93685d7"
+    },
+    {
+      "profile": "variable-hydrostatic-composite-large",
+      "numericalPassed": true,
+      "stateAndStepDecisionsIdentical": true,
+      "ownedMaximumLiveBytes": 2110900573,
+      "reuseOwnedMaximumLiveBytes": 2313800357,
+      "reportSHA256": "c9deb0a399c4769f56587653e6714bff37070747404d692139086bfc948dd043",
+      "comparisonSHA256": "36426ba438b05b7bc5edebd9a42c8bff101e65eff254cab7f99df46b341f03f5"
+    },
+    {
+      "profile": "boussinesq-256x256x129-no-observers",
+      "numericalPassed": true,
+      "stateAndStepDecisionsIdentical": true,
+      "ownedMaximumLiveBytes": 5242344295,
+      "reuseOwnedMaximumLiveBytes": 5309977575,
+      "reportSHA256": "e306507bb5f613baa864dfaab7fd97d8cee6b421cffd31b3cd275aff02264075",
+      "comparisonSHA256": "d32c7a9a431f52ab1102ec07cb3312e00778b7c5ae86397d6c48ffbd31e7ff37"
+    }
+  ]
+}

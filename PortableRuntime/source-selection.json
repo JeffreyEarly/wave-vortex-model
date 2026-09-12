@@ -162,7 +162,7 @@
       "PortableRuntime/include/WaveVortexRuntime/WVVariableKernelServices.hpp": "b759568cbe85ec5e6550f3335ab7200acd6deb2b31730bc99a485cfa19315b67",
       "PortableRuntime/include/WaveVortexRuntime/WVModel.hpp": "18478fa5f4423988de8ef7f45bc186f2963c74b4e9576fc69615980dfb4d3cd7",
       "PortableRuntime/src/WVModel.cpp": "6aab778f71f4723da3ad25db2961f1c461ec00dff4aff414015dd91d927b0f4c",
-      "PortableRuntime/src/WVModelTransformAdapters.cpp": "3b67d729660e16877f096e2ed1e07184b6768c044cbead2ea0e49cdffee2c69f"
+      "PortableRuntime/src/WVModelTransformAdapters.cpp": "f518920a8d0db74b2d6a25be3380d680e0b94a6164c306fe47cf431e1d33f2a9"
     }
   },
   "runnerVariablePolicy": {
@@ -183,18 +183,28 @@
     "horizontalWorkers": "min(available performance cores, 12)",
     "pointwiseWorkers": "min(available performance cores, 8)",
     "fftwInternalThreads": 1,
-    "generalVerticalOuterWorkers": 1,
+    "generalVerticalOuterWorkers": "1; eligible compact Boussinesq selects min(available performance cores, 8).",
     "blasInternalThreads": "Vendor controlled; process environment is not mutated.",
     "explicitParallelFFTRequest": "Retains the requested FFTW thread count and selects established full FFT/interleaved execution with Accelerate matrices.",
     "portableAndNonVariableDefaults": "unchanged",
     "publicMatlabPreviewFamilies": "unchanged; variable service injection is not exposed",
     "measurementEvidence": ".github/ci-evidence/issue-455-variable-final-adoption/decision.json",
     "sourceSHA256": {
-      "PortableRuntime/CMakeLists.txt": "d0c100b68f0302ca062ae9e7919843f99813897a5198c135a69afc1919a24876",
+      "PortableRuntime/CMakeLists.txt": "0783a3519eea4eb0bf1a39f0c23b13e87f2c54510736d6d82f32f1aa7dc56a27",
       "CompiledKernel/CMakeLists.txt": "e133b74121e699325e539f6ba5c424e9bb2739200cb86c54d8077cace2c3b2ea",
-      "PortableRuntime/app/WaveVortexRun.cpp": "abb75e0d63cb938469596787033d081d56fbf84f9a53820d38cf99f3c69ceae0",
-      "PortableRuntime/app/WVRunnerVariablePolicy.cpp": "02e695fb461ac734de780efc3bfb52e9b9621a2edbd37893ae9dbbc7d7191bfb",
+      "PortableRuntime/app/WaveVortexRun.cpp": "751169a10aa191d88ff705f808d6b15b34723cea788ab99adf82a65df45457b4",
+      "PortableRuntime/app/WVRunnerVariablePolicy.cpp": "de780aaa1947c4094f21f46f466eee2402f1fc33309e0a2e8bee32961efb9af0",
       "PortableRuntime/app/WVRunnerVariablePolicy.hpp": "c16796f29a84789a37fdf4927bfd03892796d683eb796aef75a0b5c5207d6c94"
-    }
+    },
+    "matrixAdvectionQualification": ".github/ci-evidence/matrix-advection-adoption/decision.json"
+  },
+  "matrixAdvectionExploration": {
+    "status": "qualified-native-runner-default",
+    "report": "Benchmarks/MATRIX-ADVECTION-PIPELINE.md",
+    "frozenRuntimeCommit": "e8806710",
+    "scope": "Immediate inverse derivative consumption for compact Hydrostatic/Boussinesq; exact inertial-column projection and persistent matrix-group workers for Boussinesq.",
+    "issue": 477,
+    "qualifiedRuntimeCommit": "400ed1f1213795c95b04875dd54b0564d299545d",
+    "qualification": ".github/ci-evidence/matrix-advection-adoption/decision.json"
   }
 }

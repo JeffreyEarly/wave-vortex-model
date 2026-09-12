@@ -3,7 +3,7 @@
   "schemaVersion": 1,
   "scope": "forward-integration",
   "status": "complete",
-  "sourceCommit": "60516944ea5225b16950368175d6a151d9a732d6",
+  "sourceCommit": "5947ac0d27b231dcc46cc4e3e027f700e623876e",
   "provider": "native-fftw",
   "matlabRelease": "2025b",
   "platform": "MACA64",
@@ -209,8 +209,8 @@
         }
       ],
       "timingSeconds": {
-        "sharedMatlabPreparation": 9.0230249166666674,
-        "providerLifecycle": 17.117440458333334
+        "sharedMatlabPreparation": 8.5551039583333335,
+        "providerLifecycle": 16.969729833333332
       },
       "runs": {
         "whole": {
@@ -242,7 +242,7 @@
             "selectedStep": 4,
             "effectiveIntegrationStep": 4,
             "transientWorkspaceMaximumLiveBytes": 10368,
-            "candidateEvaluationSeconds": 0.000128292,
+            "candidateEvaluationSeconds": 0.000210875,
             "noFallback": true
           },
           "termination": {
@@ -280,7 +280,10 @@
             "horizontalSchedule": "full-fft",
             "streamedNonlinear": false,
             "horizontalWorkers": 1,
+            "fusedDerivativeAdvection": false,
             "pointwiseWorkers": 1,
+            "verticalGroupWorkers": 1,
+            "inertialOnlyProjection": true,
             "requestedFFTThreads": [],
             "effectiveFFTThreads": 16,
             "hostLogicalWorkers": 16,
@@ -317,7 +320,7 @@
             "selectedStep": 4,
             "effectiveIntegrationStep": 4,
             "transientWorkspaceMaximumLiveBytes": 10368,
-            "candidateEvaluationSeconds": 0.000161708,
+            "candidateEvaluationSeconds": 0.0002055,
             "noFallback": true
           },
           "termination": {
@@ -355,7 +358,10 @@
             "horizontalSchedule": "full-fft",
             "streamedNonlinear": false,
             "horizontalWorkers": 1,
+            "fusedDerivativeAdvection": false,
             "pointwiseWorkers": 1,
+            "verticalGroupWorkers": 1,
+            "inertialOnlyProjection": true,
             "requestedFFTThreads": [],
             "effectiveFFTThreads": 16,
             "hostLogicalWorkers": 16,
@@ -392,7 +398,7 @@
             "selectedStep": 4,
             "effectiveIntegrationStep": 4,
             "transientWorkspaceMaximumLiveBytes": 10368,
-            "candidateEvaluationSeconds": 0.000187125,
+            "candidateEvaluationSeconds": 0.000203833,
             "noFallback": true
           },
           "termination": {
@@ -430,7 +436,10 @@
             "horizontalSchedule": "full-fft",
             "streamedNonlinear": false,
             "horizontalWorkers": 1,
+            "fusedDerivativeAdvection": false,
             "pointwiseWorkers": 1,
+            "verticalGroupWorkers": 1,
+            "inertialOnlyProjection": true,
             "requestedFFTThreads": [],
             "effectiveFFTThreads": 16,
             "hostLogicalWorkers": 16,
@@ -467,7 +476,7 @@
             "selectedStep": 4,
             "effectiveIntegrationStep": 4,
             "transientWorkspaceMaximumLiveBytes": 10368,
-            "candidateEvaluationSeconds": 0.000206417,
+            "candidateEvaluationSeconds": 0.000235916,
             "noFallback": true
           },
           "termination": {
@@ -505,7 +514,10 @@
             "horizontalSchedule": "full-fft",
             "streamedNonlinear": false,
             "horizontalWorkers": 1,
+            "fusedDerivativeAdvection": false,
             "pointwiseWorkers": 1,
+            "verticalGroupWorkers": 1,
+            "inertialOnlyProjection": true,
             "requestedFFTThreads": [],
             "effectiveFFTThreads": 16,
             "hostLogicalWorkers": 16,
@@ -542,7 +554,7 @@
             "selectedStep": 4,
             "effectiveIntegrationStep": 4,
             "transientWorkspaceMaximumLiveBytes": 10368,
-            "candidateEvaluationSeconds": 0.000152708,
+            "candidateEvaluationSeconds": 0.000242667,
             "noFallback": true
           },
           "termination": {
@@ -580,7 +592,10 @@
             "horizontalSchedule": "full-fft",
             "streamedNonlinear": false,
             "horizontalWorkers": 1,
+            "fusedDerivativeAdvection": false,
             "pointwiseWorkers": 1,
+            "verticalGroupWorkers": 1,
+            "inertialOnlyProjection": true,
             "requestedFFTThreads": [],
             "effectiveFFTThreads": 16,
             "hostLogicalWorkers": 16,
@@ -617,7 +632,7 @@
             "selectedStep": 4,
             "effectiveIntegrationStep": 4,
             "transientWorkspaceMaximumLiveBytes": 10368,
-            "candidateEvaluationSeconds": 0.000223666,
+            "candidateEvaluationSeconds": 0.000162541,
             "noFallback": true
           },
           "termination": {
@@ -655,7 +670,10 @@
             "horizontalSchedule": "full-fft",
             "streamedNonlinear": false,
             "horizontalWorkers": 1,
+            "fusedDerivativeAdvection": false,
             "pointwiseWorkers": 1,
+            "verticalGroupWorkers": 1,
+            "inertialOnlyProjection": true,
             "requestedFFTThreads": [],
             "effectiveFFTThreads": 16,
             "hostLogicalWorkers": 16,
@@ -865,8 +883,8 @@
         }
       ],
       "timingSeconds": {
-        "sharedMatlabPreparation": 4.9082385833333335,
-        "providerLifecycle": 15.967858708333333
+        "sharedMatlabPreparation": 4.8375422916666668,
+        "providerLifecycle": 15.815170208333333
       },
       "runs": {
         "whole": {
@@ -936,7 +954,10 @@
             "horizontalSchedule": "full-fft",
             "streamedNonlinear": false,
             "horizontalWorkers": 1,
+            "fusedDerivativeAdvection": false,
             "pointwiseWorkers": 1,
+            "verticalGroupWorkers": 1,
+            "inertialOnlyProjection": true,
             "requestedFFTThreads": [],
             "effectiveFFTThreads": 16,
             "hostLogicalWorkers": 16,
@@ -1011,7 +1032,10 @@
             "horizontalSchedule": "full-fft",
             "streamedNonlinear": false,
             "horizontalWorkers": 1,
+            "fusedDerivativeAdvection": false,
             "pointwiseWorkers": 1,
+            "verticalGroupWorkers": 1,
+            "inertialOnlyProjection": true,
             "requestedFFTThreads": [],
             "effectiveFFTThreads": 16,
             "hostLogicalWorkers": 16,
@@ -1086,7 +1110,10 @@
             "horizontalSchedule": "full-fft",
             "streamedNonlinear": false,
             "horizontalWorkers": 1,
+            "fusedDerivativeAdvection": false,
             "pointwiseWorkers": 1,
+            "verticalGroupWorkers": 1,
+            "inertialOnlyProjection": true,
             "requestedFFTThreads": [],
             "effectiveFFTThreads": 16,
             "hostLogicalWorkers": 16,
@@ -1161,7 +1188,10 @@
             "horizontalSchedule": "full-fft",
             "streamedNonlinear": false,
             "horizontalWorkers": 1,
+            "fusedDerivativeAdvection": false,
             "pointwiseWorkers": 1,
+            "verticalGroupWorkers": 1,
+            "inertialOnlyProjection": true,
             "requestedFFTThreads": [],
             "effectiveFFTThreads": 16,
             "hostLogicalWorkers": 16,
@@ -1236,7 +1266,10 @@
             "horizontalSchedule": "full-fft",
             "streamedNonlinear": false,
             "horizontalWorkers": 1,
+            "fusedDerivativeAdvection": false,
             "pointwiseWorkers": 1,
+            "verticalGroupWorkers": 1,
+            "inertialOnlyProjection": true,
             "requestedFFTThreads": [],
             "effectiveFFTThreads": 16,
             "hostLogicalWorkers": 16,
@@ -1311,7 +1344,10 @@
             "horizontalSchedule": "full-fft",
             "streamedNonlinear": false,
             "horizontalWorkers": 1,
+            "fusedDerivativeAdvection": false,
             "pointwiseWorkers": 1,
+            "verticalGroupWorkers": 1,
+            "inertialOnlyProjection": true,
             "requestedFFTThreads": [],
             "effectiveFFTThreads": 16,
             "hostLogicalWorkers": 16,
@@ -1521,8 +1557,8 @@
         }
       ],
       "timingSeconds": {
-        "sharedMatlabPreparation": 3.479146625,
-        "providerLifecycle": 10.039879125
+        "sharedMatlabPreparation": 3.402293,
+        "providerLifecycle": 9.9520100833333327
       },
       "runs": {
         "whole": {
@@ -1589,7 +1625,10 @@
             "horizontalSchedule": "full-fft",
             "streamedNonlinear": false,
             "horizontalWorkers": 1,
+            "fusedDerivativeAdvection": false,
             "pointwiseWorkers": 1,
+            "verticalGroupWorkers": 1,
+            "inertialOnlyProjection": true,
             "requestedFFTThreads": [],
             "effectiveFFTThreads": 16,
             "hostLogicalWorkers": 16,
@@ -1661,7 +1700,10 @@
             "horizontalSchedule": "full-fft",
             "streamedNonlinear": false,
             "horizontalWorkers": 1,
+            "fusedDerivativeAdvection": false,
             "pointwiseWorkers": 1,
+            "verticalGroupWorkers": 1,
+            "inertialOnlyProjection": true,
             "requestedFFTThreads": [],
             "effectiveFFTThreads": 16,
             "hostLogicalWorkers": 16,
@@ -1733,7 +1775,10 @@
             "horizontalSchedule": "full-fft",
             "streamedNonlinear": false,
             "horizontalWorkers": 1,
+            "fusedDerivativeAdvection": false,
             "pointwiseWorkers": 1,
+            "verticalGroupWorkers": 1,
+            "inertialOnlyProjection": true,
             "requestedFFTThreads": [],
             "effectiveFFTThreads": 16,
             "hostLogicalWorkers": 16,
@@ -1805,7 +1850,10 @@
             "horizontalSchedule": "full-fft",
             "streamedNonlinear": false,
             "horizontalWorkers": 1,
+            "fusedDerivativeAdvection": false,
             "pointwiseWorkers": 1,
+            "verticalGroupWorkers": 1,
+            "inertialOnlyProjection": true,
             "requestedFFTThreads": [],
             "effectiveFFTThreads": 16,
             "hostLogicalWorkers": 16,
@@ -1877,7 +1925,10 @@
             "horizontalSchedule": "full-fft",
             "streamedNonlinear": false,
             "horizontalWorkers": 1,
+            "fusedDerivativeAdvection": false,
             "pointwiseWorkers": 1,
+            "verticalGroupWorkers": 1,
+            "inertialOnlyProjection": true,
             "requestedFFTThreads": [],
             "effectiveFFTThreads": 16,
             "hostLogicalWorkers": 16,
@@ -1949,7 +2000,10 @@
             "horizontalSchedule": "full-fft",
             "streamedNonlinear": false,
             "horizontalWorkers": 1,
+            "fusedDerivativeAdvection": false,
             "pointwiseWorkers": 1,
+            "verticalGroupWorkers": 1,
+            "inertialOnlyProjection": true,
             "requestedFFTThreads": [],
             "effectiveFFTThreads": 16,
             "hostLogicalWorkers": 16,
@@ -2159,8 +2213,8 @@
         }
       ],
       "timingSeconds": {
-        "sharedMatlabPreparation": 5.496145666666667,
-        "providerLifecycle": 15.67426975
+        "sharedMatlabPreparation": 5.3961105416666664,
+        "providerLifecycle": 15.522726708333334
       },
       "runs": {
         "whole": {
@@ -2230,7 +2284,10 @@
             "horizontalSchedule": "streaming-pruned-tile16",
             "streamedNonlinear": true,
             "horizontalWorkers": 12,
+            "fusedDerivativeAdvection": false,
             "pointwiseWorkers": 8,
+            "verticalGroupWorkers": 1,
+            "inertialOnlyProjection": true,
             "requestedFFTThreads": [],
             "effectiveFFTThreads": 1,
             "hostLogicalWorkers": 16,
@@ -2305,7 +2362,10 @@
             "horizontalSchedule": "streaming-pruned-tile16",
             "streamedNonlinear": true,
             "horizontalWorkers": 12,
+            "fusedDerivativeAdvection": false,
             "pointwiseWorkers": 8,
+            "verticalGroupWorkers": 1,
+            "inertialOnlyProjection": true,
             "requestedFFTThreads": [],
             "effectiveFFTThreads": 1,
             "hostLogicalWorkers": 16,
@@ -2380,7 +2440,10 @@
             "horizontalSchedule": "streaming-pruned-tile16",
             "streamedNonlinear": true,
             "horizontalWorkers": 12,
+            "fusedDerivativeAdvection": false,
             "pointwiseWorkers": 8,
+            "verticalGroupWorkers": 1,
+            "inertialOnlyProjection": true,
             "requestedFFTThreads": [],
             "effectiveFFTThreads": 1,
             "hostLogicalWorkers": 16,
@@ -2455,7 +2518,10 @@
             "horizontalSchedule": "streaming-pruned-tile16",
             "streamedNonlinear": true,
             "horizontalWorkers": 12,
+            "fusedDerivativeAdvection": false,
             "pointwiseWorkers": 8,
+            "verticalGroupWorkers": 1,
+            "inertialOnlyProjection": true,
             "requestedFFTThreads": [],
             "effectiveFFTThreads": 1,
             "hostLogicalWorkers": 16,
@@ -2530,7 +2596,10 @@
             "horizontalSchedule": "streaming-pruned-tile16",
             "streamedNonlinear": true,
             "horizontalWorkers": 12,
+            "fusedDerivativeAdvection": false,
             "pointwiseWorkers": 8,
+            "verticalGroupWorkers": 1,
+            "inertialOnlyProjection": true,
             "requestedFFTThreads": [],
             "effectiveFFTThreads": 1,
             "hostLogicalWorkers": 16,
@@ -2605,7 +2674,10 @@
             "horizontalSchedule": "streaming-pruned-tile16",
             "streamedNonlinear": true,
             "horizontalWorkers": 12,
+            "fusedDerivativeAdvection": false,
             "pointwiseWorkers": 8,
+            "verticalGroupWorkers": 1,
+            "inertialOnlyProjection": true,
             "requestedFFTThreads": [],
             "effectiveFFTThreads": 1,
             "hostLogicalWorkers": 16,
@@ -2815,8 +2887,8 @@
         }
       ],
       "timingSeconds": {
-        "sharedMatlabPreparation": 7.3378604166666666,
-        "providerLifecycle": 20.669394083333334
+        "sharedMatlabPreparation": 7.079851,
+        "providerLifecycle": 20.313510666666666
       },
       "runs": {
         "whole": {
@@ -2886,7 +2958,10 @@
             "horizontalSchedule": "streaming-pruned-tile16",
             "streamedNonlinear": true,
             "horizontalWorkers": 12,
+            "fusedDerivativeAdvection": true,
             "pointwiseWorkers": 8,
+            "verticalGroupWorkers": 1,
+            "inertialOnlyProjection": true,
             "requestedFFTThreads": [],
             "effectiveFFTThreads": 1,
             "hostLogicalWorkers": 16,
@@ -2961,7 +3036,10 @@
             "horizontalSchedule": "streaming-pruned-tile16",
             "streamedNonlinear": true,
             "horizontalWorkers": 12,
+            "fusedDerivativeAdvection": true,
             "pointwiseWorkers": 8,
+            "verticalGroupWorkers": 1,
+            "inertialOnlyProjection": true,
             "requestedFFTThreads": [],
             "effectiveFFTThreads": 1,
             "hostLogicalWorkers": 16,
@@ -3036,7 +3114,10 @@
             "horizontalSchedule": "streaming-pruned-tile16",
             "streamedNonlinear": true,
             "horizontalWorkers": 12,
+            "fusedDerivativeAdvection": true,
             "pointwiseWorkers": 8,
+            "verticalGroupWorkers": 1,
+            "inertialOnlyProjection": true,
             "requestedFFTThreads": [],
             "effectiveFFTThreads": 1,
             "hostLogicalWorkers": 16,
@@ -3111,7 +3192,10 @@
             "horizontalSchedule": "streaming-pruned-tile16",
             "streamedNonlinear": true,
             "horizontalWorkers": 12,
+            "fusedDerivativeAdvection": true,
             "pointwiseWorkers": 8,
+            "verticalGroupWorkers": 1,
+            "inertialOnlyProjection": true,
             "requestedFFTThreads": [],
             "effectiveFFTThreads": 1,
             "hostLogicalWorkers": 16,
@@ -3186,7 +3270,10 @@
             "horizontalSchedule": "streaming-pruned-tile16",
             "streamedNonlinear": true,
             "horizontalWorkers": 12,
+            "fusedDerivativeAdvection": true,
             "pointwiseWorkers": 8,
+            "verticalGroupWorkers": 1,
+            "inertialOnlyProjection": true,
             "requestedFFTThreads": [],
             "effectiveFFTThreads": 1,
             "hostLogicalWorkers": 16,
@@ -3261,7 +3348,10 @@
             "horizontalSchedule": "streaming-pruned-tile16",
             "streamedNonlinear": true,
             "horizontalWorkers": 12,
+            "fusedDerivativeAdvection": true,
             "pointwiseWorkers": 8,
+            "verticalGroupWorkers": 1,
+            "inertialOnlyProjection": true,
             "requestedFFTThreads": [],
             "effectiveFFTThreads": 1,
             "hostLogicalWorkers": 16,
@@ -3471,8 +3561,8 @@
         }
       ],
       "timingSeconds": {
-        "sharedMatlabPreparation": 7.884898625,
-        "providerLifecycle": 22.638793833333335
+        "sharedMatlabPreparation": 7.7675030416666671,
+        "providerLifecycle": 22.870495666666667
       },
       "runs": {
         "whole": {
@@ -3542,7 +3632,10 @@
             "horizontalSchedule": "streaming-pruned-tile16",
             "streamedNonlinear": true,
             "horizontalWorkers": 12,
+            "fusedDerivativeAdvection": true,
             "pointwiseWorkers": 8,
+            "verticalGroupWorkers": 8,
+            "inertialOnlyProjection": true,
             "requestedFFTThreads": [],
             "effectiveFFTThreads": 1,
             "hostLogicalWorkers": 16,
@@ -3617,7 +3710,10 @@
             "horizontalSchedule": "streaming-pruned-tile16",
             "streamedNonlinear": true,
             "horizontalWorkers": 12,
+            "fusedDerivativeAdvection": true,
             "pointwiseWorkers": 8,
+            "verticalGroupWorkers": 8,
+            "inertialOnlyProjection": true,
             "requestedFFTThreads": [],
             "effectiveFFTThreads": 1,
             "hostLogicalWorkers": 16,
@@ -3692,7 +3788,10 @@
             "horizontalSchedule": "streaming-pruned-tile16",
             "streamedNonlinear": true,
             "horizontalWorkers": 12,
+            "fusedDerivativeAdvection": true,
             "pointwiseWorkers": 8,
+            "verticalGroupWorkers": 8,
+            "inertialOnlyProjection": true,
             "requestedFFTThreads": [],
             "effectiveFFTThreads": 1,
             "hostLogicalWorkers": 16,
@@ -3767,7 +3866,10 @@
             "horizontalSchedule": "streaming-pruned-tile16",
             "streamedNonlinear": true,
             "horizontalWorkers": 12,
+            "fusedDerivativeAdvection": true,
             "pointwiseWorkers": 8,
+            "verticalGroupWorkers": 8,
+            "inertialOnlyProjection": true,
             "requestedFFTThreads": [],
             "effectiveFFTThreads": 1,
             "hostLogicalWorkers": 16,
@@ -3842,7 +3944,10 @@
             "horizontalSchedule": "streaming-pruned-tile16",
             "streamedNonlinear": true,
             "horizontalWorkers": 12,
+            "fusedDerivativeAdvection": true,
             "pointwiseWorkers": 8,
+            "verticalGroupWorkers": 8,
+            "inertialOnlyProjection": true,
             "requestedFFTThreads": [],
             "effectiveFFTThreads": 1,
             "hostLogicalWorkers": 16,
@@ -3917,7 +4022,10 @@
             "horizontalSchedule": "streaming-pruned-tile16",
             "streamedNonlinear": true,
             "horizontalWorkers": 12,
+            "fusedDerivativeAdvection": true,
             "pointwiseWorkers": 8,
+            "verticalGroupWorkers": 8,
+            "inertialOnlyProjection": true,
             "requestedFFTThreads": [],
             "effectiveFFTThreads": 1,
             "hostLogicalWorkers": 16,
@@ -3955,7 +4063,7 @@
     },
     {
       "path": "PortableRuntime/app/WaveVortexRun.cpp",
-      "sha256": "7c8a4ebbe8c218b61b425afeafc4eea84ee49ce8ed17d4249302b5d5c8e9fed2"
+      "sha256": "751169a10aa191d88ff705f808d6b15b34723cea788ab99adf82a65df45457b4"
     },
     {
       "path": "PortableRuntime/src/WVFieldEvaluationService.cpp",
@@ -3963,7 +4071,7 @@
     },
     {
       "path": "PortableRuntime/src/WVStratifiedFieldEvaluationAdapter.cpp",
-      "sha256": "56e231e97ef9d8a8e9b6d43309247e4105e6dc1c253f19d8f7897fdc929b758f"
+      "sha256": "6c9fee576662fdd3852cad7719b080fcea8f821832f6631ee398dc8b864ff667"
     },
     {
       "path": "PortableRuntime/src/WVBarotropicQGFieldEvaluationAdapter.cpp",
@@ -3991,7 +4099,7 @@
     },
     {
       "path": "PortableRuntime/app/WVRunnerVariablePolicy.cpp",
-      "sha256": "02e695fb461ac734de780efc3bfb52e9b9621a2edbd37893ae9dbbc7d7191bfb"
+      "sha256": "de780aaa1947c4094f21f46f466eee2402f1fc33309e0a2e8bee32961efb9af0"
     },
     {
       "path": "PortableRuntime/app/WVRunnerVariablePolicy.hpp",
@@ -3999,47 +4107,47 @@
     }
   ],
   "buildSource": {
-    "root": "/Users/jearly/Documents/OceanKitRepositories/wvm-v4-unified-evaluation",
-    "commit": "60516944ea5225b16950368175d6a151d9a732d6"
+    "root": "/Users/jearly/Documents/OceanKitRepositories/wvm-v4-advection-pipeline",
+    "commit": "5947ac0d27b231dcc46cc4e3e027f700e623876e"
   },
   "executionBinaries": [
     {
       "role": "runner",
-      "path": "/private/tmp/wvm470-ci-release/bin/wave-vortex-run",
-      "sha256": "cc748bab8281cf47c459c45840b5aaa67b89a71715337f59b26198b7267c60f6",
-      "sourceCommit": "60516944ea5225b16950368175d6a151d9a732d6"
+      "path": "/private/tmp/wvm477-pipeline-release/bin/wave-vortex-run",
+      "sha256": "547986eeee418000101ab66c413174c9c1a1ae29dfcc7f9d3c87898581c265f2",
+      "sourceCommit": "5947ac0d27b231dcc46cc4e3e027f700e623876e"
     },
     {
       "role": "probe",
-      "path": "/private/tmp/wvm470-ci-release/bin/WVForwardIntegrationProbe",
-      "sha256": "c2da7d07d3b937eabfc18bc88de1a9497b6772273b8c48379181c1bcafe26e3e",
-      "sourceCommit": "60516944ea5225b16950368175d6a151d9a732d6"
+      "path": "/private/tmp/wvm477-pipeline-release/bin/WVForwardIntegrationProbe",
+      "sha256": "80297e1016b0d8acca20397a7f53f5b5efdc1172c00e4de0036f59d63c5f82e4",
+      "sourceCommit": "5947ac0d27b231dcc46cc4e3e027f700e623876e"
     }
   ],
   "artifacts": [
     {
-      "path": "PortableRuntime/qualification/forward-integration-evidence-v1/forward-constant-hydrostatic-cfl-rk4-native-fftw-e7e4b93747d1ed7a4ed0aef3d91deda530fcea179456c6b53e6740246a40ef48.json",
-      "sha256": "e7e4b93747d1ed7a4ed0aef3d91deda530fcea179456c6b53e6740246a40ef48"
+      "path": "PortableRuntime/qualification/forward-integration-evidence-v1/forward-constant-hydrostatic-cfl-rk4-native-fftw-0acde92549522ede90e75ac429fa2a416f991b7aee334a5d548a5a03e92f1f55.json",
+      "sha256": "0acde92549522ede90e75ac429fa2a416f991b7aee334a5d548a5a03e92f1f55"
     },
     {
-      "path": "PortableRuntime/qualification/forward-integration-evidence-v1/forward-constant-nonhydrostatic-rk23-native-fftw-b0c88f232a2228ee8f1cfadf810c455121659499666e1729b86a62ecd8065983.json",
-      "sha256": "b0c88f232a2228ee8f1cfadf810c455121659499666e1729b86a62ecd8065983"
+      "path": "PortableRuntime/qualification/forward-integration-evidence-v1/forward-constant-nonhydrostatic-rk23-native-fftw-859a39dea9fe677520ec468128ca3a1494af66bbe98745846c9995817091fa74.json",
+      "sha256": "859a39dea9fe677520ec468128ca3a1494af66bbe98745846c9995817091fa74"
     },
     {
-      "path": "PortableRuntime/qualification/forward-integration-evidence-v1/forward-barotropic-qg-rk45-native-fftw-c2227eeebd75c212c578fec643345ef64cd6a78a7c9404f9de8690dbb8145f29.json",
-      "sha256": "c2227eeebd75c212c578fec643345ef64cd6a78a7c9404f9de8690dbb8145f29"
+      "path": "PortableRuntime/qualification/forward-integration-evidence-v1/forward-barotropic-qg-rk45-native-fftw-3751c68aaf80fa69abdd6f8226e1c2b590b4b082f49be76c3b8e356681584365.json",
+      "sha256": "3751c68aaf80fa69abdd6f8226e1c2b590b4b082f49be76c3b8e356681584365"
     },
     {
-      "path": "PortableRuntime/qualification/forward-integration-evidence-v1/forward-stratified-qg-rk45-native-fftw-1395cdf96d939a2ca885a5edeaabf06552155961c87c6683b54a9e4f245d4ea1.json",
-      "sha256": "1395cdf96d939a2ca885a5edeaabf06552155961c87c6683b54a9e4f245d4ea1"
+      "path": "PortableRuntime/qualification/forward-integration-evidence-v1/forward-stratified-qg-rk45-native-fftw-d3f6f6c18ff05e23862f5c8ee5b142fc036baa25997a51e5bd10d2614f0bfedf.json",
+      "sha256": "d3f6f6c18ff05e23862f5c8ee5b142fc036baa25997a51e5bd10d2614f0bfedf"
     },
     {
-      "path": "PortableRuntime/qualification/forward-integration-evidence-v1/forward-hydrostatic-rk45-native-fftw-fa391efa3f6c093d8c74f1591262a21395020c8ca51b9fcab324b73d2c9e675c.json",
-      "sha256": "fa391efa3f6c093d8c74f1591262a21395020c8ca51b9fcab324b73d2c9e675c"
+      "path": "PortableRuntime/qualification/forward-integration-evidence-v1/forward-hydrostatic-rk45-native-fftw-4900a49fccd2872d7a581d6328c901422fb20f56f764e50cdeb4d8ff1e7edce6.json",
+      "sha256": "4900a49fccd2872d7a581d6328c901422fb20f56f764e50cdeb4d8ff1e7edce6"
     },
     {
-      "path": "PortableRuntime/qualification/forward-integration-evidence-v1/forward-boussinesq-rk45-native-fftw-49f88d36294b2d1c4366c15baf0c017b552ff6f97a27cf2a394948d7abd66000.json",
-      "sha256": "49f88d36294b2d1c4366c15baf0c017b552ff6f97a27cf2a394948d7abd66000"
+      "path": "PortableRuntime/qualification/forward-integration-evidence-v1/forward-boussinesq-rk45-native-fftw-9ade62c3fc52ac24785166385eaada88115e6a76bf3b485a6b2d53bac6f0344e.json",
+      "sha256": "9ade62c3fc52ac24785166385eaada88115e6a76bf3b485a6b2d53bac6f0344e"
     }
   ],
   "catalogSHA256": "c9b669fa92d5556526ce9cefac8b9847f52c1ea15c8ab3b00db0f3454adfaef9"

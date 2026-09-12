@@ -1,0 +1,14 @@
+Internal ctest changing into directory: /tmp/wvm477-pipeline-release
+Test project /tmp/wvm477-pipeline-release
+    Start 6: WVSpectralOperators
+1/1 Test #6: WVSpectralOperators ..............***Failed    0.32 sec
+vector
+
+
+0% tests passed, 1 tests failed out of 1
+
+Total Test time (real) =   0.32 sec
+
+The following tests FAILED:
+	  6 - WVSpectralOperators (Failed)
+Errors while running CTest

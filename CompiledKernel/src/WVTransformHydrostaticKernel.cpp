@@ -2,6 +2,7 @@
 #include "WVSpectralValidation.hpp"
 #include "WVPreparedModeExecutor.hpp"
 #include "WVPreparedFieldCache.hpp"
+#include "WVAdvectionConsumer.hpp"
 #include "WVVariableComplexBuffer.hpp"
 #include <algorithm>
 #include <cmath>
@@ -445,7 +446,7 @@ WVKernelStatus WVTransformHydrostaticKernel::transformUVEtaToWaveVortex(WVRealVo
 
 WVKernelStatus WVTransformHydrostaticKernel::reconstruct(const WVCoefficients& a,WVHydrostaticField field,
     WVHydrostaticDerivative derivative,WVHydrostaticComponent component,double* b,bool countPrimary,
-    std::size_t metricComponent) {
+    std::size_t metricComponent,const WVRealOutputConsumer* consumer) {
     if (countPrimary) {
         if (metricComponent>=5) metricComponent=static_cast<std::size_t>(component);
         ++metrics_.fieldReconstructionCount[static_cast<std::size_t>(field)];
@@ -544,7 +545,8 @@ WVKernelStatus WVTransformHydrostaticKernel::reconstruct(const WVCoefficients& a
     }
     if (dz && !G) for (std::size_t mode=0;mode<g.Nkl;++mode) for (std::size_t z=0;z<g.Nz;++z)
         write(gridView(),z+g.Nz*mode,scale(read(gridView().input(),z+g.Nz*mode),-g.N2[z]/g.g));
-    s=horizontal_->inverse(*horizontalWorkspace_,inverseInput,{b,R_*sizeof(double)}); if (!s) return s;
+    s=consumer ? horizontal_->inverseAndConsume(*horizontalWorkspace_,inverseInput,{b,R_*sizeof(double)},*consumer) :
+        horizontal_->inverse(*horizontalWorkspace_,inverseInput,{b,R_*sizeof(double)}); if (!s) return s;
     if (density) {
         double* eta=nullptr;
         if (dz) {
@@ -718,7 +720,8 @@ WVKernelStatus WVTransformHydrostaticKernel::nonlinearFlux(const WVState& a,WVFl
     s=preparePhaseForCall(a); if (!s) return s;
     const WVHydrostaticField fields[]={WVHydrostaticField::u,WVHydrostaticField::v,WVHydrostaticField::w,WVHydrostaticField::eta};
     const auto derivativeFor=[&](WVHydrostaticField field,WVHydrostaticDerivative derivative,
-        double* scratch,const double*& values,const double* productOutput) {
+        double* scratch,const double*& values,const double* productOutput,
+        const WVRealOutputConsumer* consumer = nullptr,bool* consumed = nullptr) {
         WVRealVolumeConstView cached{};
         if (derivativeAccess && derivativeAccess->lookup) {
             auto status=derivativeAccess->lookup(derivativeAccess->context,
@@ -733,7 +736,11 @@ WVKernelStatus WVTransformHydrostaticKernel::nonlinearFlux(const WVState& a,WVFl
             return WVKernelStatus::ok();
         }
         auto status=reconstruct(a.coefficients,field,derivative,
-            WVHydrostaticComponent::all,scratch); if (!status) return status;
+            WVHydrostaticComponent::all,scratch,true,5,consumer); if (!status) return status;
+        if (consumer) {
+            ++metrics_.derivativeAdvectionConsumerCount;
+            if (consumed) *consumed=true;
+        }
         if (derivativeAccess && derivativeAccess->capture) {
             status=derivativeAccess->capture(derivativeAccess->context,
                 static_cast<std::size_t>(field),static_cast<std::size_t>(derivative),
@@ -756,14 +763,16 @@ WVKernelStatus WVTransformHydrostaticKernel::nonlinearFlux(const WVState& a,WVFl
             // from grid Laplacians, which preserve sequential horizontal
             // calculus or the order-two vertical operator from retained values.
             for (std::size_t axis=0;axis<3;++axis) {
+                kernel_detail::WVAdvectionConsumer advection{flux,advectionFields+axis*R_,
+                    advectionFields+3*R_,geometry().dLnN2.data(),R_/geometry().Nz,targetIndex==2 && axis==2};
+                const WVRealOutputConsumer consumer{&advection,kernel_detail::WVAdvectionConsumer::consume};
+                bool consumed=false;
                 const double* derivativeValues=nullptr;
                 s=derivativeFor(field,static_cast<WVHydrostaticDerivative>(axis+1),
-                    derivative,derivativeValues,flux); if (!s) return s;
-                pointwise_->execute(R_,[&](std::size_t begin,std::size_t end) {
-                    for (std::size_t i=begin;i<end;++i) {
-                        const double correction=targetIndex==2 && axis==2 ? advectionFields[3*R_+i]*geometry().dLnN2[i/(R_/geometry().Nz)] : 0;
-                        flux[i]-=advectionFields[axis*R_+i]*(derivativeValues[i]+correction);
-                    }
+                    derivative,derivativeValues,flux,
+                    executionOptions_.fusedDerivativeAdvection ? &consumer : nullptr,&consumed); if (!s) return s;
+                if (!consumed) pointwise_->execute(R_,[&](std::size_t begin,std::size_t end) {
+                    kernel_detail::WVAdvectionConsumer::consume(&advection,begin,end,derivativeValues);
                 });
             }
             if (spatialTendency) std::copy_n(flux,R_,spatialTendency->data+targetIndex*R_);

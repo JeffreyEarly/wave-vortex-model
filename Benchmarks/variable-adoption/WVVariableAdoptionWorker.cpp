@@ -31,6 +31,7 @@ template<class Kernel, class Execute>
 json measure(Kernel& kernel,Execute execute,std::size_t warmups,std::size_t samples,std::chrono::steady_clock::time_point preparationStart) {
     const double preparationSeconds=std::chrono::duration<double>(std::chrono::steady_clock::now()-preparationStart).count();
     for (std::size_t i=0;i<warmups;++i) require(execute());
+    kernel.resetMetrics();
     const auto bytes=kernel.persistentBytes();
     std::vector<double> times(samples);
     for (auto& time:times) {
@@ -53,7 +54,7 @@ json measure(Kernel& kernel,Execute execute,std::size_t warmups,std::size_t samp
 }
 int main(int argc,char** argv) {
     try {
-        if (argc!=7 && argc!=8) throw std::runtime_error("Usage: worker INPUT frozen|pruned|streamed|pruned-streamed|compact WORKERS WARMUPS SAMPLES OUTPUT [POINTWISE_WORKERS]");
+        if (argc<7 || argc>9) throw std::runtime_error("Usage: worker INPUT frozen|pruned|streamed|pruned-streamed|compact WORKERS WARMUPS SAMPLES OUTPUT [POINTWISE_WORKERS] [VERTICAL_GROUP_WORKERS]");
         const std::string selection=argv[2];
         if (selection!="frozen" && selection!="pruned" && selection!="streamed" && selection!="pruned-streamed" && selection!="compact")
             throw std::runtime_error("Unknown execution selection.");
@@ -61,7 +62,13 @@ int main(int argc,char** argv) {
         if (!workers || !samples) throw std::runtime_error("Workers and samples must be positive.");
         if (std::filesystem::exists(argv[6])) throw std::runtime_error("Refusing to overwrite an existing payload.");
         WVVariableExecutionOptions options;
-        if (argc==8) options.pointwiseWorkers=count(argv[7]);
+        if (argc>=8) options.pointwiseWorkers=count(argv[7]);
+        if (argc==9) options.verticalGroupWorkers=count(argv[8]);
+        if (!options.pointwiseWorkers || !options.verticalGroupWorkers)
+            throw std::runtime_error("Pointwise and vertical group workers must be positive.");
+        if (selection=="frozen" && (options.pointwiseWorkers!=1 || options.verticalGroupWorkers!=1))
+            throw std::runtime_error("The frozen selection requires one pointwise and vertical group worker.");
+        if (selection=="frozen") options.inertialOnlyProjection=false;
         if (selection=="pruned" || selection=="pruned-streamed" || selection=="compact") {
             options.horizontalSchedule=WVRetainedHorizontalSchedule::streamingPrunedTile16;
             options.horizontalWorkers=workers;
@@ -106,11 +113,19 @@ int main(int argc,char** argv) {
             std::unique_ptr<WVTransformBoussinesqKernel> kernel;
             require(WVTransformBoussinesqKernel::create(checkpoint.stratifiedModalSource,std::move(fft),kernel,WVCreateAccelerateMatrixBackend,options));
             result=measure(*kernel,[&] { return kernel->nonlinearFlux(state,flux); },warmups,samples,preparationStart);
+            if (kernel->metrics().verticalOperatorExecutionCount%samples ||
+                kernel->metrics().verticalMatrixGroupExecutionCount%samples)
+                throw std::runtime_error("Boussinesq vertical execution counts differ between timed RHS samples.");
+            result["verticalOperatorExecutionCount"]=kernel->metrics().verticalOperatorExecutionCount;
+            result["verticalMatrixGroupExecutionCount"]=kernel->metrics().verticalMatrixGroupExecutionCount;
+            result["verticalOperatorsPerRHS"]=kernel->metrics().verticalOperatorExecutionCount/samples;
+            result["verticalMatrixGroupsPerRHS"]=kernel->metrics().verticalMatrixGroupExecutionCount/samples;
         } else throw std::runtime_error("Unsupported transform family.");
         rusage usage{}; if (getrusage(RUSAGE_SELF,&usage)!=0) throw std::runtime_error("Cannot measure peak RSS.");
         result["peakRSSBytes"]=static_cast<std::size_t>(usage.ru_maxrss);
         result["schema"]="wvm-variable-screening-v1"; result["family"]=g.transformClass;
         result["pointwiseWorkers"]=options.pointwiseWorkers;
+        result["verticalGroupWorkers"]=options.verticalGroupWorkers;
         result["selection"]=selection; result["horizontalWorkers"]=options.horizontalWorkers;
         result["grid"]={g.Nx,g.Ny,g.Nz}; result["warmups"]=warmups;
         result["matrixBackend"]="accelerate";

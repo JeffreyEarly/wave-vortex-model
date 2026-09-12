@@ -36,6 +36,15 @@ struct WVVariableExecutionOptions {
     // Disabling this retains the independent reconstruction path for parity
     // qualification; it is not a separate scientific or memory policy.
     bool sharedFieldGradients = true;
+    // Consume completed inverse planes in nonlinear advection, retaining the
+    // ordinary derivative output and success-only evaluator capture.
+    bool fusedDerivativeAdvection = false;
+    // Boussinesq projection needs the grouped wave-F result only at the exact
+    // zero horizontal mode. Disable for a full-coverage qualification oracle.
+    bool inertialOnlyProjection = true;
+    // Persistent outer workers for independent prepared vertical matrix groups.
+    // One preserves serial backend execution for direct kernel callers.
+    std::size_t verticalGroupWorkers = 1;
     bool usesCompactSplitViews() const noexcept {
         return spectralSchedule==WVVariableSpectralSchedule::compactSplitFusedViews;
     }

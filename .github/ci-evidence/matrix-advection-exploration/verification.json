@@ -1,0 +1,34 @@
+{
+  "status": "exploration; final adoption qualification pending",
+  "runtimeCommit": "e8806710",
+  "nativeRelease": {
+    "suitePassed": 58,
+    "testOnlyLifetimeFixRerunPassed": 2
+  },
+  "sanitized": {
+    "initialPassed": 5,
+    "initialFailed": 2,
+    "correctedRerunPassed": 2,
+    "correction": "Instrumentation counters now outlive kernel FFT plans; runtime unchanged."
+  },
+  "gcc14": {
+    "passed": 3,
+    "runnerLimitation": "Installed Apple SDK Mach assertions fail under local GCC. Linux runner CI is required."
+  },
+  "matlab": {
+    "scientificParityPassed": 7,
+    "sourceChecksInitialPassed": 4,
+    "sourceHashRerunPassed": 1
+  },
+  "sourceMetadata": "Changed current source hashes refreshed; historical baseline receipts preserved. Metadata does not alter the compiled candidate.",
+  "archive": "/Users/jearly/Documents/OceanKitRepositories/wave-vortex-model-benchmark-artifacts/matrix-advection-20260911",
+  "matlabSourceChanges": false,
+  "requiredBeforeMerge": [
+    "Idle-host final paired performance qualification",
+    "Source-linked consumer receipts against final source",
+    "Required hosted CI"
+  ],
+  "adoptionIssue": 477,
+  "prerequisiteMerge": "5a41977b",
+  "integrationTreeUnchangedMerge": "a16da09c"
+}

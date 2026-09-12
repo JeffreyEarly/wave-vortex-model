@@ -32,6 +32,7 @@ struct WVHydrostaticKernelMetrics {
     std::size_t phasePreparationCount = 0;
     std::size_t coefficientAssemblyCount = 0, verticalPreparationCount = 0;
     std::size_t verticalOperatorExecutionCount = 0;
+    std::size_t derivativeAdvectionConsumerCount = 0;
     std::size_t horizontalSpectrumReuseCount = 0, preparedVerticalDerivativeCount = 0;
     std::array<std::size_t,4> tendencyReconstructionCount{};
     std::array<std::size_t,16> fieldReconstructionCount{};
@@ -159,7 +160,7 @@ private:
     WVKernelStatus project(const double*,WVComplexOutput,WVHydrostaticFamily);
     WVKernelStatus reconstruct(const WVCoefficients&,WVHydrostaticField,
         WVHydrostaticDerivative,WVHydrostaticComponent,double*,bool countPrimary = true,
-        std::size_t metricComponent = 5);
+        std::size_t metricComponent = 5,const WVRealOutputConsumer* consumer = nullptr);
     WVKernelStatus projectFields(const double*,const double*,const double*,WVMutableCoefficients);
     WVKernelStatus projectedFieldsToCoefficients(
         WVComplexInput,WVComplexInput,WVComplexInput,WVMutableCoefficients);
