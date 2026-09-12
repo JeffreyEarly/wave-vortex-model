@@ -26,6 +26,7 @@
 #include <sstream>
 #include <stdexcept>
 #include <string>
+#include <utility>
 #include <vector>
 
 using namespace wavevortex;
@@ -4688,13 +4689,16 @@ void testControlledStopRestartGraph() {
         require(a.additionalBlocks[block].realData[index] ==
                     b.additionalBlocks[block].realData[index],
                 "particle and tracer state must restore exactly");
-    for (const auto pair :
-         {std::make_pair(&state.checkpoint().state.coefficients.Ap,
-                         &resumedState.checkpoint().state.coefficients.Ap),
-          std::make_pair(&state.checkpoint().state.coefficients.Am,
-                         &resumedState.checkpoint().state.coefficients.Am),
-          std::make_pair(&state.checkpoint().state.coefficients.A0,
-                         &resumedState.checkpoint().state.coefficients.A0)})
+    const std::array<std::pair<const std::vector<WVComplex64> *,
+                               const std::vector<WVComplex64> *>, 3>
+        coefficientPairs{{
+            {&state.checkpoint().state.coefficients.Ap,
+             &resumedState.checkpoint().state.coefficients.Ap},
+            {&state.checkpoint().state.coefficients.Am,
+             &resumedState.checkpoint().state.coefficients.Am},
+            {&state.checkpoint().state.coefficients.A0,
+             &resumedState.checkpoint().state.coefficients.A0}}};
+    for (const auto &pair : coefficientPairs)
       for (std::size_t index = 0; index < pair.first->size(); ++index)
         require((*pair.first)[index].real == (*pair.second)[index].real &&
                     (*pair.first)[index].imag == (*pair.second)[index].imag,
