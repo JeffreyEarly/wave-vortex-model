@@ -133,6 +133,27 @@ classdef TestPortableForwardIntegration < matlab.unittest.TestCase
             end
         end
     end
+    methods (Static,Hidden)
+        function validateExecutableSource(report,executablePath,expectedCommit)
+            arguments
+                report (1,1) struct
+                executablePath (1,1) string
+                expectedCommit (1,1) string
+            end
+            actualCommit = "<missing>";
+            if isfield(report,"source") && isstruct(report.source) && isscalar(report.source) && isfield(report.source,"commit")
+                value = report.source.commit;
+                if (ischar(value) && isrow(value)) || (isstring(value) && isscalar(value))
+                    actualCommit = string(value);
+                end
+            end
+            if ismissing(actualCommit) || actualCommit~=expectedCommit || strlength(expectedCommit)==0
+                error("WaveVortexModel:ExecutableSourceMismatch", ...
+                    "Executable %s reports source revision %s; expected %s. Reconfigure and relink this executable against the declared build source before qualification.", ...
+                    executablePath,actualCommit,expectedCommit);
+            end
+        end
+    end
     methods (Access=private)
         function [paths,initial,definition] = authorModel(testCase,definition)
             grid = [8 6 9];
@@ -232,15 +253,18 @@ classdef TestPortableForwardIntegration < matlab.unittest.TestCase
                 WVModel.writePortableRunRequest(request,paths,method=definition.method,finalTime=finalTime,initialStep=definition.initialStep,maximumStep=definition.maximumStep, ...
                     relativeTolerance=definition.relativeTolerance,absoluteToleranceScale=definition.absoluteTolerance,fftProvider=provider,reportPath=reportPath);
             end
-            executable = shellQuote(testCase.runner);
+            executablePath = testCase.runner;
+            executable = shellQuote(executablePath);
             if shouldStop
                 after = 1;
                 if definition.stopBoundary == "output-occurrence", after=2; end
-                executable = shellQuote(testCase.probe)+" --stop-boundary "+definition.stopBoundary+" --stop-after "+after;
+                executablePath = testCase.probe;
+                executable = shellQuote(executablePath)+" --stop-boundary "+definition.stopBoundary+" --stop-after "+after;
             end
             [status,output] = cleanSystem(executable+" --request "+shellQuote(request));
             testCase.assertEqual(status,0,output);
             report = jsondecode(fileread(reportPath));
+            TestPortableForwardIntegration.validateExecutableSource(report,executablePath,testCase.provenance.buildSource.commit);
             testCase.assertTrue(report.integrationRequest.noFallback);
             testCase.assertTrue(report.execution.noFallback);
             testCase.assertEqual(string(report.provider.id),provider);
