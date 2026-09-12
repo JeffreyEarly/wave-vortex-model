@@ -387,13 +387,13 @@ void contracts(const std::shared_ptr<const WVStratifiedModalRecord>& source) {
 }
 
 void variableScheduleParity(const std::shared_ptr<const WVStratifiedModalRecord>& source,bool compact = false) {
+    Counters candidateCounters; // Outlives the instrumented plans owned by candidate.
     std::unique_ptr<WVTransformHydrostaticKernel> frozen, candidate;
     require(bool(WVTransformHydrostaticKernel::create(source,std::make_unique<WVReferenceFFTEngine>(),frozen)),"Frozen schedule setup failed");
     WVVariableExecutionOptions options{WVRetainedHorizontalSchedule::streamingPrunedTile16,2,true};
     if (compact) options.spectralSchedule=WVVariableSpectralSchedule::compactSplitFusedViews;
     options.pointwiseWorkers=2;
     options.fusedDerivativeAdvection=true;
-    Counters candidateCounters;
     require(bool(WVTransformHydrostaticKernel::create(source,std::make_unique<Engine>(candidateCounters),candidate, WVCreateScalarMatrixBackend, options)),"Candidate schedule setup failed");
     require(std::string(candidate->horizontalScheduleIdentifier())=="full-fft-gather","Reference provider fallback was not reported");
     const auto& g=source->geometry(); const auto S=g.Nj*g.Nkl,R=g.Nx*g.Ny*g.Nz;

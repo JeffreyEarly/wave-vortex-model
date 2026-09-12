@@ -434,6 +434,7 @@ void contracts(const std::shared_ptr<const WVStratifiedModalRecord>& source) {
     require(succeeded,"Allocation sweep never succeeded");
 }
 void variableScheduleParity(const std::shared_ptr<const WVStratifiedModalRecord>& source,bool compact = false) {
+    Counters candidateCounters; // Outlives the instrumented plans owned by candidate.
     std::unique_ptr<WVTransformBoussinesqKernel> frozen, candidate;
     WVVariableExecutionOptions frozenOptions;
     frozenOptions.inertialOnlyProjection=false;
@@ -444,7 +445,6 @@ void variableScheduleParity(const std::shared_ptr<const WVStratifiedModalRecord>
     options.pointwiseWorkers=2;
     options.fusedDerivativeAdvection=true;
     options.verticalGroupWorkers=2;
-    Counters candidateCounters;
     require(bool(WVTransformBoussinesqKernel::create(source,std::make_unique<Engine>(candidateCounters),candidate, WVCreateScalarMatrixBackend, options)),"Candidate schedule setup failed");
     require(std::string(candidate->horizontalScheduleIdentifier())=="full-fft-gather","Reference provider fallback was not reported");
     const auto& g=source->geometry(); const auto S=g.Nj*g.Nkl,R=g.Nx*g.Ny*g.Nz;
