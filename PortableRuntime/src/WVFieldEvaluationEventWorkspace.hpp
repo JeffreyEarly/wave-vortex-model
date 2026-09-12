@@ -403,7 +403,7 @@ public:
       const auto status=evaluation_.evaluate(key,cached->capacity()*sizeof(double),[](){return WVKernelStatus::ok();});
       if(!status) return status;
       const auto& values=*cached;
-      std::copy(values.begin(),values.end(),output);
+      std::copy_n(values.data(),count,output);
       reused=true;
       ++metrics_->eventFieldReuseCount;
       noteVariableBytes();

@@ -197,10 +197,16 @@ private:
   struct Entry {WVVariableEvaluationKey key; State state=State::empty; std::size_t executions=0,bytes=0,pins=0;};
   static WVKernelStatus invalid(const char* message) {return {WVKernelStatusCode::invalidConfiguration,message};}
   Entry* find(const WVVariableEvaluationKey& key) noexcept {
-    for(auto& entry:entries_) if(entry.key==key) return &entry; return nullptr;
+    for(auto& entry:entries_) {
+      if(entry.key==key) return &entry;
+    }
+    return nullptr;
   }
   const Entry* find(const WVVariableEvaluationKey& key) const noexcept {
-    for(const auto& entry:entries_) if(entry.key==key) return &entry; return nullptr;
+    for(const auto& entry:entries_) {
+      if(entry.key==key) return &entry;
+    }
+    return nullptr;
   }
   std::vector<Entry> entries_;
   const void* owner_=nullptr;
