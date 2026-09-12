@@ -1,0 +1,122 @@
+Internal ctest changing into directory: /tmp/wvm477-pipeline-release
+Test project /tmp/wvm477-pipeline-release
+      Start  1: WVKernelContract
+ 1/58 Test  #1: WVKernelContract ...........................   Passed    0.29 sec
+      Start  2: WVBarotropicQGKernel
+ 2/58 Test  #2: WVBarotropicQGKernel .......................   Passed    0.20 sec
+      Start  3: WVPreparedModeExecutor
+ 3/58 Test  #3: WVPreparedModeExecutor .....................   Passed    0.18 sec
+      Start  4: WVAllocationProbe
+ 4/58 Test  #4: WVAllocationProbe ..........................   Passed    0.18 sec
+      Start  5: WVNativeFFTWOwnership
+ 5/58 Test  #5: WVNativeFFTWOwnership ......................   Passed    0.33 sec
+      Start  6: WVSpectralOperators
+ 6/58 Test  #6: WVSpectralOperators ........................   Passed    0.27 sec
+      Start  7: WVPrunedHorizontal
+ 7/58 Test  #7: WVPrunedHorizontal .........................   Passed    0.25 sec
+      Start  8: WVCompactConstantSchedule
+ 8/58 Test  #8: WVCompactConstantSchedule ..................   Passed    0.47 sec
+      Start  9: portable-implementation-contract
+ 9/58 Test  #9: portable-implementation-contract ...........   Passed    0.22 sec
+      Start 10: portable-typed-record
+10/58 Test #10: portable-typed-record ......................   Passed    0.18 sec
+      Start 11: observation-schema-batch
+11/58 Test #11: observation-schema-batch ...................   Passed    0.18 sec
+      Start 12: portable-variable-catalog
+12/58 Test #12: portable-variable-catalog ..................   Passed    0.19 sec
+      Start 13: no-motion-profile
+13/58 Test #13: no-motion-profile ..........................   Passed    0.21 sec
+      Start 14: no-motion-profile-recovery
+14/58 Test #14: no-motion-profile-recovery .................   Passed    0.20 sec
+      Start 15: density-event-evaluation
+15/58 Test #15: density-event-evaluation ...................   Passed    0.20 sec
+      Start 16: density-field-evaluation
+16/58 Test #16: density-field-evaluation ...................   Passed    0.31 sec
+      Start 17: observer-adapter
+17/58 Test #17: observer-adapter ...........................   Passed    0.24 sec
+      Start 18: extension-catalog
+18/58 Test #18: extension-catalog ..........................   Passed    0.21 sec
+      Start 19: forcing-compatibility-catalog
+19/58 Test #19: forcing-compatibility-catalog ..............   Passed    0.21 sec
+      Start 20: stratified-modal-record
+20/58 Test #20: stratified-modal-record ....................   Passed    0.37 sec
+      Start 21: allocation-probe
+21/58 Test #21: allocation-probe ...........................   Passed    0.00 sec
+      Start 22: checkpoint-reader
+22/58 Test #22: checkpoint-reader ..........................   Passed    0.42 sec
+      Start 23: checkpoint-writer
+23/58 Test #23: checkpoint-writer ..........................   Passed    0.49 sec
+      Start 24: variable-evaluation
+24/58 Test #24: variable-evaluation ........................   Passed    0.23 sec
+      Start 25: prepared-field-cache
+25/58 Test #25: prepared-field-cache .......................   Passed    0.19 sec
+      Start 26: forcing-diagnostic-session
+26/58 Test #26: forcing-diagnostic-session .................   Passed    0.19 sec
+      Start 27: forcing-and-rk4
+27/58 Test #27: forcing-and-rk4 ............................   Passed    0.30 sec
+      Start 28: forcing-tendencies
+28/58 Test #28: forcing-tendencies .........................   Passed    0.68 sec
+      Start 29: unified-integration
+29/58 Test #29: unified-integration ........................   Passed    0.27 sec
+      Start 30: barotropic-qg-integration
+30/58 Test #30: barotropic-qg-integration ..................   Passed    0.23 sec
+      Start 31: barotropic-qg-forcing
+31/58 Test #31: barotropic-qg-forcing ......................   Passed    0.24 sec
+      Start 32: barotropic-qg-model-output
+32/58 Test #32: barotropic-qg-model-output .................   Passed    0.61 sec
+      Start 33: output-orchestration
+33/58 Test #33: output-orchestration .......................   Passed    0.27 sec
+      Start 34: output-occurrence
+34/58 Test #34: output-occurrence ..........................   Passed    0.21 sec
+      Start 35: model-output-netcdf
+35/58 Test #35: model-output-netcdf ........................   Passed    2.53 sec
+      Start 36: model-output-configuration
+36/58 Test #36: model-output-configuration .................   Passed    0.32 sec
+      Start 37: model-facade
+37/58 Test #37: model-facade ...............................   Passed    0.37 sec
+      Start 38: field-evaluation
+38/58 Test #38: field-evaluation ...........................   Passed    0.26 sec
+      Start 39: observer-output-evaluation
+39/58 Test #39: observer-output-evaluation .................   Passed    0.24 sec
+      Start 40: observation-occurrence
+40/58 Test #40: observation-occurrence .....................   Passed    0.39 sec
+      Start 41: lagrangian-particles
+41/58 Test #41: lagrangian-particles .......................   Passed    0.29 sec
+      Start 42: runner-variable-policy
+42/58 Test #42: runner-variable-policy .....................   Passed    0.19 sec
+      Start 43: standalone-runner
+43/58 Test #43: standalone-runner ..........................   Passed    4.72 sec
+      Start 44: forward-integration-probe
+44/58 Test #44: forward-integration-probe ..................   Passed    0.41 sec
+      Start 45: barotropic-qg-native-fftw
+45/58 Test #45: barotropic-qg-native-fftw ..................   Passed    0.21 sec
+      Start 46: extended-runner-composition
+46/58 Test #46: extended-runner-composition ................   Passed    0.01 sec
+      Start 47: run-request
+47/58 Test #47: run-request ................................   Passed    0.33 sec
+      Start 48: observer-dispatch-source-policy
+48/58 Test #48: observer-dispatch-source-policy ............   Passed    0.29 sec
+      Start 49: forcing-dispatch-source-policy
+49/58 Test #49: forcing-dispatch-source-policy .............   Passed    0.06 sec
+      Start 50: runtime-architecture-source-policy
+50/58 Test #50: runtime-architecture-source-policy .........   Passed    0.08 sec
+      Start 51: barotropic-qg-architecture-source-policy
+51/58 Test #51: barotropic-qg-architecture-source-policy ...   Passed    0.01 sec
+      Start 52: output-schedule-dispatch-source-policy
+52/58 Test #52: output-schedule-dispatch-source-policy .....   Passed    0.09 sec
+      Start 53: observation-occurrence-source-policy
+53/58 Test #53: observation-occurrence-source-policy .......   Passed    0.06 sec
+      Start 54: stratified-qg-kernel
+54/58 Test #54: stratified-qg-kernel .......................   Passed    0.27 sec
+      Start 55: hydrostatic-kernel
+55/58 Test #55: hydrostatic-kernel .........................   Passed    0.37 sec
+      Start 56: hydrostatic-runtime
+56/58 Test #56: hydrostatic-runtime ........................   Passed    0.32 sec
+      Start 57: boussinesq-kernel
+57/58 Test #57: boussinesq-kernel ..........................   Passed    0.57 sec
+      Start 58: boussinesq-runtime
+58/58 Test #58: boussinesq-runtime .........................   Passed    0.31 sec
+
+100% tests passed, 0 tests failed out of 58
+
+Total Test time (real) =  21.96 sec

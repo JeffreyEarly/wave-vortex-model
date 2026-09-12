@@ -1,0 +1,55 @@
+{
+  "schema": "wvm-boussinesq-vertical-group-screen-summary-v1",
+  "workers": {
+    "1": {
+      "runPreparationSeconds": [
+        2.353749584,
+        2.348912
+      ],
+      "medianPreparationSeconds": 2.3513307919999997,
+      "runMedianRHSSeconds": [
+        0.1222106045,
+        0.1242733955
+      ],
+      "medianOfRunMedianRHSSeconds": 0.12324199999999999
+    },
+    "2": {
+      "runPreparationSeconds": [
+        2.347979458,
+        2.350820208
+      ],
+      "medianPreparationSeconds": 2.349399833,
+      "runMedianRHSSeconds": [
+        0.1043803125,
+        0.1080738335
+      ],
+      "medianOfRunMedianRHSSeconds": 0.106227073
+    },
+    "4": {
+      "runPreparationSeconds": [
+        2.350082917,
+        2.349154167
+      ],
+      "medianPreparationSeconds": 2.349618542,
+      "runMedianRHSSeconds": [
+        0.0934460415,
+        0.09556933349999999
+      ],
+      "medianOfRunMedianRHSSeconds": 0.09450768749999999
+    },
+    "8": {
+      "runPreparationSeconds": [
+        2.347804458,
+        2.350412875
+      ],
+      "medianPreparationSeconds": 2.3491086665000003,
+      "runMedianRHSSeconds": [
+        0.090820875,
+        0.0912354795
+      ],
+      "medianOfRunMedianRHSSeconds": 0.09102817725
+    }
+  },
+  "allScientificComparisonsPassed": true,
+  "allPayloadsBitwiseIdentical": false
+}

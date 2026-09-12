@@ -76,7 +76,7 @@
     "coefficientFormulas": "78d647608d8919b33c278c280eb6d2b253dfb0acd8d3330141fbdc845e00864a",
     "kernel": "a07893470f3c9b27a2fe297473660b718f65947424ba879f2a7a91083c644681",
     "integrationSystem": "21d00e8a75de899425ff991896d9d9dedff2201228835d0f97e01bc9dab569eb",
-    "nativeEngine": "bf22362163ad2899a487fed012c40fa212e5ac74c67e6449eacfc239dad21c4e",
+    "nativeEngine": "66adb6d7bcd27c997c882e97c1f603d03675375f9d532300ff559edc930b7099",
     "mexGateway": "b68cc36464bb6b46a3e10c69fa1964c76269aac717cedf88e9657f285a6c8ea6",
     "buildOrchestrator": "d724445240b1b8832746ab8ab95cb8fceefcc86973acf189054949ad5002b0a9"
   },
@@ -102,12 +102,12 @@
     "matrixIdentity": "exact-source-and-name",
     "placement": "out-of-place",
     "sourceSHA256": {
-      "interface": "28699522bc82de60378d93e7e25e42938f03bc30939e00f010ad0af67216d589",
-      "horizontal": "02dda3f33d22e5642b832eb36625a851e3c92a102588c49845f66a9d600be780",
-      "vertical": "8ac147cbf170373865e1b5c63077545362fa74bb3083d1bf0ba8b1bfea30bf05",
+      "interface": "86d5fb2a286a1f94aef1280db2a4a607fed4344d390efe47c0c501f409f53228",
+      "horizontal": "eb41647f87da5a4959eb3a5ee5f06979f94cae51df20dc066077e80d9e830a16",
+      "vertical": "3f4553fb7abbb3b93caefa925fa761facd41c3d9ee5cffae72a17143ac97c9f5",
       "validation": "eb416d6abc47d97d506b4c4fa65e8006b951d07d013c5d96db0f8043b417cc79",
       "referenceFFT": "703724883edd3c05f583c7e68bad46830b1a92e22524a10906d3da366ad64c49",
-      "accelerate": "08fa3565ad33dc08ace85b9c708019745a53fca1187d0ebb9b23991ddb4292cc"
+      "accelerate": "1a79f66611d315e85d23446268de2125f0cd20d9866542881414152162289dd5"
     },
     "optionalHorizontalSchedule": "fftw-streaming-pruned-tile16"
   },
@@ -155,7 +155,7 @@
       "pointwiseSerialBelowRealElements": 4096
     },
     "sourceSHA256": {
-      "CompiledKernel/include/WaveVortexKernel/WVFFTEngine.hpp": "10e0fcb9c2053f848889e4d806233588e0432f49d59c1211c146c8343c0ba9df",
+      "CompiledKernel/include/WaveVortexKernel/WVFFTEngine.hpp": "49fae3f70ccf492312c3bd5d52d713f9b38a8f3e7f1791275bbf0e2fa9ffdb4f",
       "CompiledKernel/include/WaveVortexKernel/WVTransformConstantStratificationKernel.hpp": "805b5b58fb6943b23f5301af3fb94c0790577b113b4636f163e34297dc969903",
       "CompiledKernel/adapters/native-fftw/WVNativeFFTWEngine.hpp": "7285f9989e604d2056a36eec275b95389bf386c3a5c7f5140086206f6ecf251b",
       "@WVCompiledBackend/private/wvCompiledBackendConstants.m": "6b8833c89efb0d55dca397bc752194e18c9cd7128aff4a9959b8dad12300ae78",
@@ -192,15 +192,16 @@
     "boundedDerivativeResources": "Pruned execution prepares one full-frequency derivative plane pair instead of duplicate full-volume resources (#463)",
     "pointwiseWorkers": "Prepared contiguous-cell executor: native runner up to 8 performance-core workers; portable service default 1.",
     "sourceSHA256": {
-      "CompiledKernel/include/WaveVortexKernel/WVVariableExecutionOptions.hpp": "865d650f2d2a4ffc20b1808a1fcf7f14225d51425a4aaae2910b157c94fc9c53",
+      "CompiledKernel/include/WaveVortexKernel/WVVariableExecutionOptions.hpp": "75af8244b15fc5a81236f0faa372c73624e4607d516e6a974a1ab3e19d34e553",
       "CompiledKernel/src/WVVariableComplexBuffer.hpp": "53a81ca2c48811b39f62a59104cafea2330fd1a121f746ab06a14a1eea85aaf2",
       "CompiledKernel/src/WVTransformStratifiedQGKernel.cpp": "5c1930910de14b9f86238692a52a2f5324643b4a2b3f8c6a30f845547a62b48d",
-      "CompiledKernel/src/WVTransformHydrostaticKernel.cpp": "8224993a6b67b15c2c32cc7a0de659eae389ecbc024dc5e1e2f996270c7c5b67",
-      "CompiledKernel/src/WVTransformBoussinesqKernel.cpp": "14114a8cfa676758b4c366acd1195abab48415a63ba31d175ca770b66c023064",
+      "CompiledKernel/src/WVTransformHydrostaticKernel.cpp": "970e938d5e0eefa295409e1fc7896a7a4cdca68c7aa2419386df20b55157d12c",
+      "CompiledKernel/src/WVTransformBoussinesqKernel.cpp": "6edf409320c2005e328d5be498dc36363d18d913436ffab7dbc145ff66944321",
       "CompiledKernel/include/WaveVortexKernel/WVTransformStratifiedQGKernel.hpp": "0970bc8c8c27cf6e00f8e6557030d1b828be6a312edc2232b7ea4b8a7f6a495f",
-      "CompiledKernel/include/WaveVortexKernel/WVTransformHydrostaticKernel.hpp": "ef38a7810ca85bba7859c79fdefb19b9ad7ef10a17d1f292b6f6c839e536c9cc",
-      "CompiledKernel/include/WaveVortexKernel/WVTransformBoussinesqKernel.hpp": "4a6c4c752c196a3b2b57df2d30aea95098aea2386004a9ed66833d883ac81ce6",
-      "CompiledKernel/src/WVPreparedFieldCache.hpp": "22777b3b45f6403a0c1761901e5b7e30193ce2b226e8bacde31ece73aae4b94b"
+      "CompiledKernel/include/WaveVortexKernel/WVTransformHydrostaticKernel.hpp": "3feb167709f463e522c38cc7b7d66cae582cd9571447f7ac25cdc1ec60da20bf",
+      "CompiledKernel/include/WaveVortexKernel/WVTransformBoussinesqKernel.hpp": "05166c3b2b0975a7018073054ad579cbe68f4ea730b9436972414dd30b6e93ab",
+      "CompiledKernel/src/WVPreparedFieldCache.hpp": "22777b3b45f6403a0c1761901e5b7e30193ce2b226e8bacde31ece73aae4b94b",
+      "CompiledKernel/src/WVAdvectionConsumer.hpp": "f47c9b9454d83f8bf4c9affae8151dd89d809ba2c2e5553185c336c2ffbe20b4"
     },
     "fullGridDerivativeScratch": "one horizontal real/half-spectrum plane when retained provider is active; all resolved frequencies preserved",
     "productionDefaultScope": "Portable kernel constructors retain their established defaults; eligible native runners select the qualified services.",
@@ -211,5 +212,11 @@
       "adoptedSHA256": "84b08b4bfc568807182645d03da46fe2fe0e739e700e67049fdd3b23cdd10924",
       "scope": "Comments only; enum values, aggregate layout and constructor defaults are unchanged."
     }
+  },
+  "matrixAdvectionExploration": {
+    "status": "local prototype; delivery qualification pending",
+    "report": "Benchmarks/MATRIX-ADVECTION-PIPELINE.md",
+    "frozenRuntimeCommit": "e8806710",
+    "scope": "Immediate inverse derivative consumption for compact Hydrostatic/Boussinesq; exact inertial-column projection and persistent matrix-group workers for Boussinesq."
   }
 }

@@ -1,0 +1,10 @@
+Internal ctest changing into directory: /tmp/wvm477-pipeline-release
+Test project /tmp/wvm477-pipeline-release
+    Start 55: hydrostatic-kernel
+1/2 Test #55: hydrostatic-kernel ...............   Passed    0.42 sec
+    Start 57: boussinesq-kernel
+2/2 Test #57: boussinesq-kernel ................   Passed    0.52 sec
+
+100% tests passed, 0 tests failed out of 2
+
+Total Test time (real) =   0.95 sec

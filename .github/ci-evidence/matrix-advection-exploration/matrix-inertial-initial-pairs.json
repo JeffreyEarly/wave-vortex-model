@@ -1,0 +1,24 @@
+[
+  {
+    "profile": "boussinesq-256x256x129-no-observers",
+    "pair": 0,
+    "ratio": 0.8941840470265676,
+    "baselineSeconds": 0.624998709,
+    "candidateSeconds": 0.558863875,
+    "numericalPassed": true,
+    "stateDecisionsIdentical": true,
+    "baselineOwnedPeak": 5309392783,
+    "candidateOwnedPeak": 5309976695
+  },
+  {
+    "profile": "boussinesq-256x256x129-no-observers",
+    "pair": 1,
+    "ratio": 0.8990478839252752,
+    "baselineSeconds": 0.624726875,
+    "candidateSeconds": 0.561659375,
+    "numericalPassed": true,
+    "stateDecisionsIdentical": true,
+    "baselineOwnedPeak": 5309392783,
+    "candidateOwnedPeak": 5309976695
+  }
+]

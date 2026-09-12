@@ -1,0 +1,10 @@
+Internal ctest changing into directory: /tmp/wvm477-gcc
+Test project /tmp/wvm477-gcc
+    Start 52: hydrostatic-kernel
+1/2 Test #52: hydrostatic-kernel ...............   Passed    0.63 sec
+    Start 54: boussinesq-kernel
+2/2 Test #54: boussinesq-kernel ................   Passed    0.76 sec
+
+100% tests passed, 0 tests failed out of 2
+
+Total Test time (real) =   1.39 sec

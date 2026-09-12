@@ -1,0 +1,362 @@
+Internal ctest changing into directory: /tmp/wvm477-sanitized
+Test project /tmp/wvm477-sanitized
+    Start  6: WVSpectralOperators
+1/7 Test  #6: WVSpectralOperators ..............   Passed    0.39 sec
+    Start 42: runner-variable-policy
+2/7 Test #42: runner-variable-policy ...........   Passed    0.28 sec
+    Start 45: barotropic-qg-native-fftw
+3/7 Test #45: barotropic-qg-native-fftw ........   Passed    0.27 sec
+    Start 55: hydrostatic-kernel
+4/7 Test #55: hydrostatic-kernel ...............Subprocess aborted***Exception:   0.55 sec
+=================================================================
+==38974==ERROR: AddressSanitizer: stack-use-after-scope on address 0x00016b9ac950 at pc 0x000104478274 bp 0x00016b9ac4f0 sp 0x00016b9ac4e8
+READ of size 4 at 0x00016b9ac950 thread T0
+==38974==WARNING: external symbolizer didn't start up correctly!
+==38974==WARNING: Can't write to symbolizer at fd 4
+==38974==WARNING: external symbolizer didn't start up correctly!
+==38974==WARNING: Can't write to symbolizer at fd 5
+==38974==WARNING: external symbolizer didn't start up correctly!
+==38974==WARNING: Can't write to symbolizer at fd 6
+==38974==WARNING: external symbolizer didn't start up correctly!
+==38974==WARNING: Can't write to symbolizer at fd 7
+==38974==WARNING: external symbolizer didn't start up correctly!
+==38974==WARNING: Failed to use and restart external symbolizer!
+    #0 0x000104478270 in (anonymous namespace)::Plan::~Plan()+0x23c (/private/tmp/wvm477-sanitized/bin/TestWVHydrostaticKernel:arm64+0x100028270)
+    #1 0x0001044782c4 in (anonymous namespace)::Plan::~Plan()+0x18 (/private/tmp/wvm477-sanitized/bin/TestWVHydrostaticKernel:arm64+0x1000282c4)
+    #2 0x0001044db744 in wavevortex::spectral_detail::HorizontalWorkspaceData::~HorizontalWorkspaceData()+0xec (/private/tmp/wvm477-sanitized/bin/TestWVHydrostaticKernel:arm64+0x10008b744)
+    #3 0x0001044db554 in std::__1::unique_ptr<wavevortex::spectral_detail::HorizontalWorkspaceData, std::__1::default_delete<wavevortex::spectral_detail::HorizontalWorkspaceData>>::reset[abi:nqe210106](wavevortex::spectral_detail::HorizontalWorkspaceData*)+0x58 (/private/tmp/wvm477-sanitized/bin/TestWVHydrostaticKernel:arm64+0x10008b554)
+    #4 0x0001044c4500 in wavevortex::WVRetainedHorizontalWorkspace::~WVRetainedHorizontalWorkspace()+0x28 (/private/tmp/wvm477-sanitized/bin/TestWVHydrostaticKernel:arm64+0x100074500)
+    #5 0x0001045340dc in std::__1::unique_ptr<wavevortex::WVRetainedHorizontalWorkspace, std::__1::default_delete<wavevortex::WVRetainedHorizontalWorkspace>>::reset[abi:nqe210106](wavevortex::WVRetainedHorizontalWorkspace*)+0x58 (/private/tmp/wvm477-sanitized/bin/TestWVHydrostaticKernel:arm64+0x1000e40dc)
+    #6 0x000104500de8 in wavevortex::WVTransformHydrostaticKernel::~WVTransformHydrostaticKernel()+0xa0 (/private/tmp/wvm477-sanitized/bin/TestWVHydrostaticKernel:arm64+0x1000b0de8)
+    #7 0x000104471dac in std::__1::unique_ptr<wavevortex::WVTransformHydrostaticKernel, std::__1::default_delete<wavevortex::WVTransformHydrostaticKernel>>::reset[abi:nqe210106](wavevortex::WVTransformHydrostaticKernel*)+0x58 (/private/tmp/wvm477-sanitized/bin/TestWVHydrostaticKernel:arm64+0x100021dac)
+    #8 0x000104468220 in (anonymous namespace)::variableScheduleParity(std::__1::shared_ptr<wavevortex::runtime::WVStratifiedModalRecord const> const&, bool)+0x5db0 (/private/tmp/wvm477-sanitized/bin/TestWVHydrostaticKernel:arm64+0x100018220)
+    #9 0x000104451c48 in main+0x278 (/private/tmp/wvm477-sanitized/bin/TestWVHydrostaticKernel:arm64+0x100001c48)
+    #10 0x000189f484e0 in start+0x1b4c (/usr/lib/dyld:arm64e+0x204e0)
+
+Address 0x00016b9ac950 is located in stack of thread T0 at offset 528 in frame
+    #0 0x00010446247c in (anonymous namespace)::variableScheduleParity(std::__1::shared_ptr<wavevortex::runtime::WVStratifiedModalRecord const> const&, bool)+0xc (/private/tmp/wvm477-sanitized/bin/TestWVHydrostaticKernel:arm64+0x10001247c)
+
+  This frame has 108 object(s):
+    [32, 40) '__f.addr'
+    [64, 72) '__f.addr'
+    [96, 104) '__f.addr'
+    [128, 136) '__f.addr'
+    [160, 168) 'frozen' (line 390)
+    [192, 200) 'candidate' (line 390)
+    [224, 256) 'ref.tmp' (line 391)
+    [288, 304) 'agg.tmp'
+    [320, 328) 'agg.tmp'
+    [352, 360) 'ref.tmp' (line 391)
+    [384, 416) 'agg.tmp'
+    [448, 496) 'agg.tmp' (line 391)
+    [528, 552) 'candidateCounters' (line 396) <== Memory access at offset 528 is inside this variable
+    [592, 624) 'ref.tmp' (line 397)
+    [656, 672) 'agg.tmp'
+    [688, 696) 'agg.tmp'
+    [720, 728) 'ref.tmp' (line 397)
+    [752, 784) 'agg.tmp'
+    [816, 864) 'agg.tmp' (line 397)
+    [896, 920) 'ref.tmp' (line 398)
+    [960, 1032) 'input' (line 400)
+    [1072, 1144) 'frozenOut' (line 400)
+    [1184, 1256) 'candidateOut' (line 400)
+    [1296, 1328) 'ref.tmp' (line 403)
+    [1360, 1432) 'agg.tmp' (line 403)
+    [1472, 1544) 'inputBefore' (line 404)
+    [1584, 1672) 'state' (line 405)
+    [1712, 1784) 'frozenFlux' (line 406)
+    [1824, 1896) 'candidateFlux' (line 407)
+    [1936, 1968) 'ref.tmp' (line 408)
+    [2000, 2032) 'ref.tmp' (line 409)
+    [2064, 2072) 'serial' (line 416)
+    [2096, 2168) 'serialOut' (line 416)
+    [2208, 2240) 'ref.tmp' (line 418)
+    [2272, 2288) 'agg.tmp'
+    [2304, 2312) 'agg.tmp'
+    [2336, 2344) 'ref.tmp' (line 418)
+    [2368, 2400) 'agg.tmp'
+    [2432, 2480) 'agg.tmp' (line 418)
+    [2512, 2584) 'serialFlux' (line 420)
+    [2624, 2656) 'ref.tmp' (line 421)
+    [2688, 2744) 'ref.tmp' (line 427)
+    [2784, 2872) 'timedState' (line 428)
+    [2912, 2928) 'ref.tmp' (line 429)
+    [2944, 2976) 'ref.tmp' (line 430)
+    [3008, 3032) 'phases' (line 431)
+    [3072, 3104) 'ref.tmp' (line 432)
+    [3136, 3168) 'ref.tmp' (line 438)
+    [3200, 3224) 'speedU' (line 443)
+    [3264, 3288) 'speedV' (line 443)
+    [3328, 3352) 'scales' (line 444)
+    [3392, 3408) 'ref.tmp' (line 452)
+    [3424, 3432) 'actual' (line 453)
+    [3456, 3488) 'status' (line 455)
+    [3520, 3552) 'agg.tmp' (line 455)
+    [3584, 3616) 'agg.tmp' (line 455)
+    [3648, 3656) 'maximum' (line 464)
+    [3680, 3712) 'ref.tmp' (line 465)
+    [3744, 3776) 'agg.tmp' (line 465)
+    [3808, 3840) 'agg.tmp' (line 465)
+    [3872, 3904) 'ref.tmp' (line 469)
+    [3936, 3968) 'agg.tmp' (line 469)
+    [4000, 4032) 'agg.tmp' (line 469)
+    [4064, 4096) 'ref.tmp' (line 472)
+    [4128, 4160) 'agg.tmp' (line 472)
+    [4192, 4224) 'agg.tmp' (line 472)
+    [4256, 4280) 'serialField' (line 476)
+    [4320, 4344) 'parallelField' (line 476)
+    [4384, 4416) 'ref.tmp' (line 485)
+    [4448, 4480) 'agg.tmp' (line 485)
+    [4512, 4544) 'ref.tmp' (line 486)
+    [4576, 4608) 'agg.tmp' (line 486)
+    [4640, 4664) 'ff' (line 490)
+    [4704, 4728) 'cf' (line 490)
+    [4768, 4792) 'fr' (line 490)
+    [4832, 4856) 'cr' (line 490)
+    [4896, 4928) 'ref.tmp' (line 492)
+    [4960, 4992) 'agg.tmp' (line 492)
+    [5024, 5056) 'ref.tmp' (line 492)
+    [5088, 5120) 'agg.tmp' (line 492)
+    [5152, 5176) 'ffBefore' (line 493)
+    [5216, 5240) 'cfBefore' (line 493)
+    [5280, 5320) 'ffields' (line 494)
+    [5360, 5400) 'cfields' (line 494)
+    [5440, 5480) 'frv' (line 494)
+    [5520, 5560) 'crv' (line 494)
+    [5600, 5632) 'ref.tmp' (line 495)
+    [5664, 5696) 'ref.tmp' (line 495)
+    [5728, 5744) 'ref.tmp' (line 500)
+    [5760, 5792) 'ref.tmp' (line 501)
+    [5824, 5856) 'ref.tmp' (line 503)
+    [5888, 5904) 'ref.tmp' (line 507)
+    [5920, 5944) 'cachedDerivative' (line 509)
+    [5984, 6008) 'captureReference' (line 509)
+    [6048, 6072) 'capturedDerivative' (line 509)
+    [6112, 6144) 'ref.tmp' (line 510)
+    [6176, 6208) 'agg.tmp' (line 510)
+    [6240, 6272) 'ref.tmp' (line 510)
+    [6304, 6336) 'agg.tmp' (line 512)
+    [6368, 6456) 'derivativeProbe' (line 515)
+    [6496, 6520) 'derivativeAccess' (line 522)
+    [6560, 6592) 'ref.tmp' (line 525)
+    [6624, 6656) 'status' (line 540)
+    [6688, 6704) 'agg.tmp'
+    [6720, 6728) 'agg.tmp'
+    [6752, 6760) 'ref.tmp' (line 540)
+    [6784, 6816) 'agg.tmp'
+    [6848, 6896) 'agg.tmp' (line 540)
+HINT: this may be a false positive if your program uses some custom stack unwind mechanism, swapcontext or vfork
+      (longjmp and C++ exceptions *are* supported)
+SUMMARY: AddressSanitizer: stack-use-after-scope (/private/tmp/wvm477-sanitized/bin/TestWVHydrostaticKernel:arm64+0x100028270) in (anonymous namespace)::Plan::~Plan()+0x23c
+Shadow bytes around the buggy address:
+  0x00016b9ac680: 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00
+  0x00016b9ac700: 00 00 00 00 00 00 00 00 f1 f1 f1 f1 f8 f2 f2 f2
+  0x00016b9ac780: f8 f2 f2 f2 f8 f2 f2 f2 f8 f2 f2 f2 00 f2 f2 f2
+  0x00016b9ac800: 00 f2 f2 f2 f8 f8 f8 f8 f2 f2 f2 f2 00 00 f2 f2
+  0x00016b9ac880: 00 f2 f2 f2 f8 f2 f2 f2 00 00 00 00 f2 f2 f2 f2
+=>0x00016b9ac900: f8 f8 f8 f8 f8 f8 f2 f2 f2 f2[f8]f8 f8 f2 f2 f2
+  0x00016b9ac980: f2 f2 f8 f8 f8 f8 f2 f2 f2 f2 00 00 f2 f2 00 f2
+  0x00016b9aca00: f2 f2 f8 f2 f2 f2 00 00 00 00 f2 f2 f2 f2 f8 f8
+  0x00016b9aca80: f8 f8 f8 f8 f2 f2 f2 f2 f8 f8 f8 f2 f2 f2 f2 f2
+  0x00016b9acb00: f8 f8 f8 f8 f8 f8 f8 f8 f8 f2 f2 f2 f2 f2 f8 f8
+  0x00016b9acb80: f8 f8 f8 f8 f8 f8 f8 f2 f2 f2 f2 f2 f8 f8 f8 f8
+Shadow byte legend (one shadow byte represents 8 application bytes):
+  Addressable:           00
+  Partially addressable: 01 02 03 04 05 06 07 
+  Heap left redzone:       fa
+  Freed heap region:       fd
+  Stack left redzone:      f1
+  Stack mid redzone:       f2
+  Stack right redzone:     f3
+  Stack after return:      f5
+  Stack use after scope:   f8
+  Global redzone:          f9
+  Global init order:       f6
+  Poisoned by user:        f7
+  Container overflow:      fc
+  Array cookie:            ac
+  Intra object redzone:    bb
+  ASan internal:           fe
+  Left alloca redzone:     ca
+  Right alloca redzone:    cb
+==38974==ABORTING
+
+    Start 56: hydrostatic-runtime
+5/7 Test #56: hydrostatic-runtime ..............   Passed    0.44 sec
+    Start 57: boussinesq-kernel
+6/7 Test #57: boussinesq-kernel ................Subprocess aborted***Exception:   0.84 sec
+=================================================================
+==38981==ERROR: AddressSanitizer: stack-use-after-scope on address 0x00016aec0590 at pc 0x000104f6f000 bp 0x00016aec00c0 sp 0x00016aec00b8
+READ of size 4 at 0x00016aec0590 thread T0
+==38981==WARNING: external symbolizer didn't start up correctly!
+==38981==WARNING: Can't write to symbolizer at fd 4
+==38981==WARNING: external symbolizer didn't start up correctly!
+==38981==WARNING: Can't write to symbolizer at fd 5
+==38981==WARNING: external symbolizer didn't start up correctly!
+==38981==WARNING: Can't write to symbolizer at fd 6
+==38981==WARNING: external symbolizer didn't start up correctly!
+==38981==WARNING: Can't write to symbolizer at fd 7
+==38981==WARNING: external symbolizer didn't start up correctly!
+==38981==WARNING: Failed to use and restart external symbolizer!
+    #0 0x000104f6effc in (anonymous namespace)::Plan::~Plan()+0x23c (/private/tmp/wvm477-sanitized/bin/TestWVBoussinesqKernel:arm64+0x100032ffc)
+    #1 0x000104f6f050 in (anonymous namespace)::Plan::~Plan()+0x18 (/private/tmp/wvm477-sanitized/bin/TestWVBoussinesqKernel:arm64+0x100033050)
+    #2 0x000104fcf150 in wavevortex::spectral_detail::HorizontalWorkspaceData::~HorizontalWorkspaceData()+0xec (/private/tmp/wvm477-sanitized/bin/TestWVBoussinesqKernel:arm64+0x100093150)
+    #3 0x000104fcef60 in std::__1::unique_ptr<wavevortex::spectral_detail::HorizontalWorkspaceData, std::__1::default_delete<wavevortex::spectral_detail::HorizontalWorkspaceData>>::reset[abi:nqe210106](wavevortex::spectral_detail::HorizontalWorkspaceData*)+0x58 (/private/tmp/wvm477-sanitized/bin/TestWVBoussinesqKernel:arm64+0x100092f60)
+    #4 0x000104fb7f0c in wavevortex::WVRetainedHorizontalWorkspace::~WVRetainedHorizontalWorkspace()+0x28 (/private/tmp/wvm477-sanitized/bin/TestWVBoussinesqKernel:arm64+0x10007bf0c)
+    #5 0x00010502e090 in std::__1::unique_ptr<wavevortex::WVRetainedHorizontalWorkspace, std::__1::default_delete<wavevortex::WVRetainedHorizontalWorkspace>>::reset[abi:nqe210106](wavevortex::WVRetainedHorizontalWorkspace*)+0x58 (/private/tmp/wvm477-sanitized/bin/TestWVBoussinesqKernel:arm64+0x1000f2090)
+    #6 0x000104ff4344 in wavevortex::WVTransformBoussinesqKernel::~WVTransformBoussinesqKernel()+0x164 (/private/tmp/wvm477-sanitized/bin/TestWVBoussinesqKernel:arm64+0x1000b8344)
+    #7 0x000104f5fa58 in std::__1::unique_ptr<wavevortex::WVTransformBoussinesqKernel, std::__1::default_delete<wavevortex::WVTransformBoussinesqKernel>>::reset[abi:nqe210106](wavevortex::WVTransformBoussinesqKernel*)+0x58 (/private/tmp/wvm477-sanitized/bin/TestWVBoussinesqKernel:arm64+0x100023a58)
+    #8 0x000104f55e24 in (anonymous namespace)::variableScheduleParity(std::__1::shared_ptr<wavevortex::runtime::WVStratifiedModalRecord const> const&, bool)+0x5664 (/private/tmp/wvm477-sanitized/bin/TestWVBoussinesqKernel:arm64+0x100019e24)
+    #9 0x000104f3e7a4 in main+0xdd4 (/private/tmp/wvm477-sanitized/bin/TestWVBoussinesqKernel:arm64+0x1000027a4)
+    #10 0x000189f484e0 in start+0x1b4c (/usr/lib/dyld:arm64e+0x204e0)
+
+Address 0x00016aec0590 is located in stack of thread T0 at offset 624 in frame
+    #0 0x000104f507cc in (anonymous namespace)::variableScheduleParity(std::__1::shared_ptr<wavevortex::runtime::WVStratifiedModalRecord const> const&, bool)+0xc (/private/tmp/wvm477-sanitized/bin/TestWVBoussinesqKernel:arm64+0x1000147cc)
+
+  This frame has 99 object(s):
+    [32, 40) '__f.addr'
+    [64, 72) '__f.addr'
+    [96, 104) '__f.addr'
+    [128, 136) '__f.addr'
+    [160, 168) '__f.addr'
+    [192, 200) '__f.addr'
+    [224, 232) '__f.addr'
+    [256, 264) 'frozen' (line 437)
+    [288, 296) 'candidate' (line 437)
+    [320, 352) 'ref.tmp' (line 440)
+    [384, 400) 'agg.tmp'
+    [416, 424) 'agg.tmp'
+    [448, 456) 'ref.tmp' (line 440)
+    [480, 512) 'agg.tmp'
+    [544, 592) 'agg.tmp' (line 440)
+    [624, 648) 'candidateCounters' (line 447) <== Memory access at offset 624 is inside this variable
+    [688, 720) 'ref.tmp' (line 448)
+    [752, 768) 'agg.tmp'
+    [784, 792) 'agg.tmp'
+    [816, 824) 'ref.tmp' (line 448)
+    [848, 880) 'agg.tmp'
+    [912, 960) 'agg.tmp' (line 448)
+    [992, 1016) 'ref.tmp' (line 449)
+    [1056, 1128) 'input' (line 451)
+    [1168, 1240) 'frozenOut' (line 451)
+    [1280, 1352) 'candidateOut' (line 451)
+    [1392, 1424) 'ref.tmp' (line 454)
+    [1456, 1528) 'agg.tmp' (line 454)
+    [1568, 1640) 'inputBefore' (line 455)
+    [1680, 1768) 'state' (line 456)
+    [1808, 1880) 'frozenFlux' (line 457)
+    [1920, 1992) 'candidateFlux' (line 458)
+    [2032, 2064) 'ref.tmp' (line 460)
+    [2096, 2128) 'ref.tmp' (line 461)
+    [2160, 2168) 'serial' (line 472)
+    [2192, 2264) 'serialOut' (line 472)
+    [2304, 2336) 'ref.tmp' (line 474)
+    [2368, 2384) 'agg.tmp'
+    [2400, 2408) 'agg.tmp'
+    [2432, 2440) 'ref.tmp' (line 474)
+    [2464, 2496) 'agg.tmp'
+    [2528, 2576) 'agg.tmp' (line 474)
+    [2608, 2680) 'serialFlux' (line 476)
+    [2720, 2752) 'ref.tmp' (line 477)
+    [2784, 2808) 'ff' (line 481)
+    [2848, 2872) 'cf' (line 481)
+    [2912, 2936) 'fr' (line 481)
+    [2976, 3000) 'cr' (line 481)
+    [3040, 3072) 'ref.tmp' (line 483)
+    [3104, 3136) 'agg.tmp' (line 483)
+    [3168, 3200) 'ref.tmp' (line 483)
+    [3232, 3264) 'agg.tmp' (line 483)
+    [3296, 3320) 'ffBefore' (line 484)
+    [3360, 3384) 'cfBefore' (line 484)
+    [3424, 3464) 'ffields' (line 489)
+    [3504, 3544) 'cfields' (line 489)
+    [3584, 3624) 'frv' (line 489)
+    [3664, 3704) 'crv' (line 489)
+    [3744, 3776) 'ref.tmp' (line 490)
+    [3808, 3840) 'ref.tmp' (line 490)
+    [3872, 3888) 'ref.tmp' (line 495)
+    [3904, 3936) 'ref.tmp' (line 496)
+    [3968, 4000) 'ref.tmp' (line 498)
+    [4032, 4048) 'ref.tmp' (line 502)
+    [4064, 4088) 'cachedDerivative' (line 504)
+    [4128, 4152) 'captureReference' (line 504)
+    [4192, 4216) 'capturedDerivative' (line 504)
+    [4256, 4288) 'ref.tmp' (line 505)
+    [4320, 4352) 'agg.tmp' (line 505)
+    [4384, 4416) 'ref.tmp' (line 505)
+    [4448, 4480) 'agg.tmp' (line 507)
+    [4512, 4600) 'derivativeProbe' (line 510)
+    [4640, 4664) 'derivativeAccess' (line 517)
+    [4704, 4736) 'ref.tmp' (line 520)
+    [4768, 4800) 'status' (line 540)
+    [4832, 4848) 'agg.tmp'
+    [4864, 4872) 'agg.tmp'
+    [4896, 4904) 'ref.tmp' (line 540)
+    [4928, 4960) 'agg.tmp'
+    [4992, 5040) 'agg.tmp' (line 540)
+    [5072, 5104) 'ref.tmp' (line 546)
+    [5136, 5152) 'agg.tmp'
+    [5168, 5176) 'agg.tmp'
+    [5200, 5208) 'ref.tmp' (line 546)
+    [5232, 5264) 'agg.tmp'
+    [5296, 5344) 'agg.tmp' (line 546)
+    [5376, 5384) 'invalid' (line 550)
+    [5408, 5440) 'ref.tmp' (line 553)
+    [5472, 5488) 'agg.tmp'
+    [5504, 5512) 'agg.tmp'
+    [5536, 5544) 'ref.tmp' (line 553)
+    [5568, 5600) 'agg.tmp'
+    [5632, 5680) 'agg.tmp' (line 553)
+    [5712, 5744) 'ref.tmp' (line 558)
+    [5776, 5792) 'agg.tmp'
+    [5808, 5816) 'agg.tmp'
+    [5840, 5848) 'ref.tmp' (line 558)
+    [5872, 5904) 'agg.tmp'
+    [5936, 5984) 'agg.tmp' (line 558)
+HINT: this may be a false positive if your program uses some custom stack unwind mechanism, swapcontext or vfork
+      (longjmp and C++ exceptions *are* supported)
+SUMMARY: AddressSanitizer: stack-use-after-scope (/private/tmp/wvm477-sanitized/bin/TestWVBoussinesqKernel:arm64+0x100032ffc) in (anonymous namespace)::Plan::~Plan()+0x23c
+Shadow bytes around the buggy address:
+  0x00016aec0300: 00 00 00 00 f1 f1 f1 f1 f8 f2 f2 f2 f8 f2 f2 f2
+  0x00016aec0380: f8 f2 f2 f2 f8 f2 f2 f2 f8 f2 f2 f2 f8 f2 f2 f2
+  0x00016aec0400: f8 f2 f2 f2 00 f2 f2 f2 00 f2 f2 f2 f8 f8 f8 f8
+  0x00016aec0480: f2 f2 f2 f2 00 00 f2 f2 00 f2 f2 f2 f8 f2 f2 f2
+  0x00016aec0500: 00 00 00 00 f2 f2 f2 f2 f8 f8 f8 f8 f8 f8 f2 f2
+=>0x00016aec0580: f2 f2[f8]f8 f8 f2 f2 f2 f2 f2 f8 f8 f8 f8 f2 f2
+  0x00016aec0600: f2 f2 00 00 f2 f2 00 f2 f2 f2 f8 f2 f2 f2 00 00
+  0x00016aec0680: 00 00 f2 f2 f2 f2 f8 f8 f8 f8 f8 f8 f2 f2 f2 f2
+  0x00016aec0700: f8 f8 f8 f2 f2 f2 f2 f2 f8 f8 f8 f8 f8 f8 f8 f8
+  0x00016aec0780: f8 f2 f2 f2 f2 f2 f8 f8 f8 f8 f8 f8 f8 f8 f8 f2
+  0x00016aec0800: f2 f2 f2 f2 f8 f8 f8 f8 f8 f8 f8 f8 f8 f2 f2 f2
+Shadow byte legend (one shadow byte represents 8 application bytes):
+  Addressable:           00
+  Partially addressable: 01 02 03 04 05 06 07 
+  Heap left redzone:       fa
+  Freed heap region:       fd
+  Stack left redzone:      f1
+  Stack mid redzone:       f2
+  Stack right redzone:     f3
+  Stack after return:      f5
+  Stack use after scope:   f8
+  Global redzone:          f9
+  Global init order:       f6
+  Poisoned by user:        f7
+  Container overflow:      fc
+  Array cookie:            ac
+  Intra object redzone:    bb
+  ASan internal:           fe
+  Left alloca redzone:     ca
+  Right alloca redzone:    cb
+==38981==ABORTING
+
+    Start 58: boussinesq-runtime
+7/7 Test #58: boussinesq-runtime ...............   Passed    0.41 sec
+
+71% tests passed, 2 tests failed out of 7
+
+Total Test time (real) =   3.20 sec
+
+The following tests FAILED:
+	 55 - hydrostatic-kernel (Subprocess aborted)
+	 57 - boussinesq-kernel (Subprocess aborted)
+Errors while running CTest
