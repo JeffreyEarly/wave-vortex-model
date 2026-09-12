@@ -1,4 +1,4 @@
-function tendency = projectSources(self,sources)
+function tendency = fullBoussinesqProjectionReference(self,sources)
 % Project volume acceleration and total-displacement sources into resolved modes.
 %
 % This is the linear hatted-equation source projector. Inputs are reference
@@ -52,20 +52,19 @@ for p = 1:length(self.khUnique)
     if count == 0, continue; end
     modes = 1:count;
     phase = exp(1i*self.waveFrequency(modes,p)*(self.t-self.t0));
-    % Apply each vertical basis once to the whole wavenumber group. The
-    % two propagation signs share these four pairings.
-    F = self.waveF(:,modes,p); G = self.waveG(:,modes,p);
-    U = F'*(weights.*spectral.u(:,indices(columns)));
-    V = F'*(weights.*spectral.v(:,indices(columns)));
-    W = G'*(weights.*spectral.w(:,indices(columns)));
-    E = G'*((weights.*self.N2).*spectral.eta(:,indices(columns)));
-    k = self.kNonzero(columns).'; l = self.lNonzero(columns).';
-    kh = self.khUnique(p); h = self.waveEquivalentDepth(modes,p);
-    omega = self.waveFrequency(modes,p);
-    common = (k.*U+l.*V)/kh+1i*kh*h.*W;
-    signed = (1i*self.f./(omega*kh)).*(l.*U-k.*V)-(kh*h./omega).*E;
-    tendency.Aw_p(modes,columns) = ((common+signed)./(2*h))./phase;
-    tendency.Aw_m(modes,columns) = ((common-signed)./(2*h)).*phase;
+    for j = columns.'
+        index = indices(j);
+        pol = WVInternal.freeSurfaceWavePolarization(self.waveF(:,modes,p),self.waveG(:,modes,p),self.waveEquivalentDepth(modes,p),self.kNonzero(j),self.lNonzero(j),f=self.f,g=self.g,rho0=self.rho0);
+        pair = complex(zeros(2*count,1));
+        for name = ["u","v","w","eta"]
+            metric = weights;
+            if name=="eta", metric=metric.*self.N2; end
+            pair = pair+reshape(pol.(name),self.Nz,[])'*(metric.*spectral.(name)(:,index));
+        end
+        pair = reshape(pair,[],2)./(2*self.waveEquivalentDepth(modes,p));
+        tendency.Aw_p(modes,j) = pair(:,1)./phase;
+        tendency.Aw_m(modes,j) = pair(:,2).*phase;
+    end
 end
 meanIndex = find(self.k==0 & self.l==0,1);
 tendency.Aio = .5*exp(-1i*self.f*(self.t-self.t0))*self.inertialFForward*(spectral.u(:,meanIndex)-1i*spectral.v(:,meanIndex));

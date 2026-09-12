@@ -1,0 +1,7 @@
+functionName,baselineCalls,selectedCalls
+WVFastTransformDoublyPeriodicMatlab.transformToSpatialDomainWithFourier,6,5
+WVFastTransformDoublyPeriodicMatlab.transformFromSpatialDomainWithFourier,4,4
+WVFastTransformDoublyPeriodicMatlab.diffX,7,7
+WVFastTransformDoublyPeriodicMatlab.diffY,7,7
+freeSurfaceWavePolarization,10,0
+fullBoussinesqWaveReference,10,0

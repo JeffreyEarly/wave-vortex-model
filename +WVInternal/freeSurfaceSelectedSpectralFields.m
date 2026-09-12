@@ -26,14 +26,20 @@ for p = 1:length(self.khUnique)
     if count==0 || isempty(waveNames), continue; end
     modes = 1:count;
     phase = exp(1i*self.waveFrequency(modes,p)*(self.t-self.t0));
-    for c = 1:length(columns)
-        j = columns(c); index = indices(c);
-        polarizations = WVInternal.freeSurfaceWavePolarization(self.waveF(rows,modes,p),self.waveG(rows,modes,p),self.waveEquivalentDepth(modes,p),self.kNonzero(j),self.lNonzero(j),f=self.f,g=self.g,rho0=self.rho0,variables=waveNames);
-        a = [state.Aw_p(modes,j).*phase;state.Aw_m(modes,j).*conj(phase)];
-        for name = waveNames
-            fields.(name)(:,index) = fields.(name)(:,index)+reshape(polarizations.(name),Z,[])*a;
-        end
-    end
+    % The two wave signs share F and G. Combine amplitudes before applying
+    % the vertical matrices, batching columns with the same mode inventory.
+    plus = state.Aw_p(modes,columns).*phase;
+    minus = state.Aw_m(modes,columns).*conj(phase);
+    sumAmplitude = plus+minus; differenceAmplitude = plus-minus;
+    k = self.kNonzero(columns).'; l = self.lNonzero(columns).';
+    kh = self.khUnique(p); h = self.waveEquivalentDepth(modes,p);
+    omega = self.waveFrequency(modes,p);
+    F = self.waveF(rows,modes,p); G = self.waveG(rows,modes,p);
+    if selected(1), fields.u(:,indices)=fields.u(:,indices)+F*((k/kh).*sumAmplitude-(1i*self.f*l./(omega*kh)).*differenceAmplitude); end
+    if selected(2), fields.v(:,indices)=fields.v(:,indices)+F*((l/kh).*sumAmplitude+(1i*self.f*k./(omega*kh)).*differenceAmplitude); end
+    if selected(3), fields.w(:,indices)=G*((-1i*kh*h).*sumAmplitude); end
+    if selected(4), fields.eta(:,indices)=fields.eta(:,indices)+G*((-kh*h./omega).*differenceAmplitude); end
+    if selected(5), fields.p(:,indices)=fields.p(:,indices)+F*((-self.rho0*self.g*kh*h./omega).*differenceAmplitude); end
 end
 meanIndex = find(self.k==0 & self.l==0,1);
 if any(selected([1 2]))
