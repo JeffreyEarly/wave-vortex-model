@@ -36,15 +36,22 @@ def compare(actual, reference):
 
 
 
-def validate_report(report, case, selection, workers, samples):
+def validate_report(report, case, selection, workers, vertical_workers, samples):
     families = {"stratified-qg": "WVTransformStratifiedQG", "hydrostatic": "WVTransformHydrostatic", "boussinesq": "WVTransformBoussinesq"}
     expected_schedule = "fftw-streaming-pruned-tile16" if "pruned" in selection else "full-fft-gather"
     expected_workers = workers if "pruned" in selection else 1
     if (report["schema"] != "wvm-variable-screening-v1" or report["family"] != families[case["family"]]
             or report["grid"] != case["grid"] or report["selection"] != selection
             or report["horizontalSchedule"] != expected_schedule or report["horizontalWorkers"] != expected_workers
+            or report["verticalGroupWorkers"] != (1 if selection == "frozen" else vertical_workers)
             or report["matrixBackend"] != "accelerate" or report["provider"]["fftThreads"] != 1):
         raise ValueError("Worker metadata differs from the declared workload")
+    if case["family"] == "boussinesq":
+        if (report.get("verticalOperatorsPerRHS", 0) <= 0 or
+                report.get("verticalMatrixGroupsPerRHS", 0) <= 0 or
+                report["verticalOperatorExecutionCount"] != report["verticalOperatorsPerRHS"] * samples or
+                report["verticalMatrixGroupExecutionCount"] != report["verticalMatrixGroupsPerRHS"] * samples):
+            raise ValueError("Boussinesq vertical execution counts are incomplete")
     times = report["samplesSeconds"]
     if len(times) != samples or not all(np.isfinite(x) and x > 0 for x in times):
         raise ValueError("Invalid timing sample inventory")
@@ -56,14 +63,19 @@ def main():
     parser.add_argument("worker", type=Path)
     parser.add_argument("output", type=Path)
     parser.add_argument("--workers", type=int, default=12)
+    parser.add_argument("--vertical-workers", type=int, default=1,
+                        help="Prepared vertical matrix-group workers for optimized selections")
     parser.add_argument("--smoke", action="store_true", help="One block, no warmup, one sample; correctness only")
     args = parser.parse_args()
-    if args.workers <= 0:
-        parser.error("workers must be positive")
+    if args.workers <= 0 or args.vertical_workers <= 0:
+        parser.error("horizontal and vertical workers must be positive")
     args.output.mkdir(parents=True, exist_ok=False)
     root = Path(__file__).resolve().parents[2]
     worker = args.worker.resolve()
     manifest = json.loads(args.manifest.read_text())
+    if args.vertical_workers > 1 and any(
+            case["family"] != "boussinesq" for case in manifest["cases"]):
+        raise ValueError("Vertical matrix-group screening requires a Boussinesq-only fixture manifest")
     write(args.output / "fixture-manifest.json", manifest)
     source_paths = [p for directory in ("CompiledKernel", "PortableRuntime", "Benchmarks/variable-adoption")
                     for p in (root / directory).rglob("*") if p.is_file() and p.suffix in (".cpp", ".hpp", ".py", ".m", ".txt")]
@@ -72,7 +84,8 @@ def main():
                   "manifestSHA256": sha(args.manifest), "fixtureSourceCommit": manifest["sourceCommit"], "sourceCommit": subprocess.check_output(["git", "rev-parse", "HEAD"], cwd=root, text=True).strip(),
                   "sources": {str(p.relative_to(root)): sha(p) for p in sorted(source_paths)},
                   "environment": {key: value for key, value in os.environ.items() if key.startswith(("VECLIB_", "OMP_", "OPENBLAS_", "MKL_", "DYLD_"))},
-                  "workers": args.workers, "blocks": 1 if args.smoke else 4, "warmups": 0 if args.smoke else 2,
+                  "workers": args.workers, "verticalWorkers": args.vertical_workers,
+                  "blocks": 1 if args.smoke else 4, "warmups": 0 if args.smoke else 2,
                   "samples": 1 if args.smoke else 4, "decision": "correctness-smoke" if args.smoke else "screening-only"}
     (args.output / "source.diff").write_bytes(subprocess.check_output(["git", "diff", "HEAD"], cwd=root))
     write(args.output / "provenance.json", provenance)
@@ -88,7 +101,8 @@ def main():
                 name = f'{case["id"]}-{block}-{selection}'
                 payload = args.output / (name + ".bin")
                 command = [str(worker), case["sourcePath"], selection, str(args.workers),
-                           str(provenance["warmups"]), str(provenance["samples"]), str(payload)]
+                           str(provenance["warmups"]), str(provenance["samples"]), str(payload), "1",
+                           str(1 if selection == "frozen" else args.vertical_workers)]
                 start = time.time()
                 run = {"id": name, "case": case["id"], "block": block, "selection": selection, "command": command}
                 with (args.output / (name + ".stdout")).open("w") as stdout, (args.output / (name + ".stderr")).open("w") as stderr:
@@ -100,7 +114,8 @@ def main():
                     raise RuntimeError("Worker failed; evidence retained: " + name)
                 report = json.loads((args.output / (name + ".stdout")).read_text())
                 run["report"] = report
-                validate_report(report, case, selection, args.workers, provenance["samples"])
+                validate_report(report, case, selection, args.workers, args.vertical_workers,
+                                provenance["samples"])
                 for key in ("baseLibrary", "threadLibrary"):
                     report["provider"][key+"SHA256"] = sha(report["provider"][key])
                 if first_frozen is None:
