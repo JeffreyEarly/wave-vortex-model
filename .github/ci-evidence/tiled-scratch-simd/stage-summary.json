@@ -1,0 +1,30 @@
+[
+  {
+    "nz": 28,
+    "targets": 3,
+    "memoryToBaseline": 1.0160274205090398,
+    "simdToMemory": 0.93526425636946,
+    "simdToBaseline": 0.9502541298933677
+  },
+  {
+    "nz": 28,
+    "targets": 4,
+    "memoryToBaseline": 0.9971673736713527,
+    "simdToMemory": 0.9610449228010604,
+    "simdToBaseline": 0.9583226416497211
+  },
+  {
+    "nz": 129,
+    "targets": 3,
+    "memoryToBaseline": 1.0044625425555467,
+    "simdToMemory": 0.9397401387559351,
+    "simdToBaseline": 0.9439337691162888
+  },
+  {
+    "nz": 129,
+    "targets": 4,
+    "memoryToBaseline": 0.9908080488028127,
+    "simdToMemory": 0.9474083311679634,
+    "simdToBaseline": 0.9386998000240588
+  }
+]

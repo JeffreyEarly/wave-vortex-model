@@ -16,6 +16,7 @@ This is the working policy for further C++ optimization, recorded after issue #4
 - Use cheaper models and moderate reasoning for mechanical adapters, repository scans, bounded tests, and log triage. Use stronger reasoning for numerical algorithms, ownership/lifetime design, and subtle correctness review. Escalate based on difficulty, not by default.
 - Reuse workers within an increment. Give new workers a compact task brief with paths, interfaces, exclusions, and acceptance checks rather than the entire conversation. Return a diff summary, exact tests/results, and unresolved findings.
 - Only one owner schedules shared builds, MATLAB runs, and final benchmarks. Timing qualification requires an idle host; do not compete with the experiment or other workers. Do not alter a running experiment to obtain a benchmark window.
+- Check free disk space before a campaign. Budget for retained representative outputs, both active pair outputs, and failure headroom; process memory is a separate budget. After successful comparison, redundant generated payloads may be removed with their hashes and comparison records preserved. If storage interrupts a campaign, retain completed evidence and resume only the incomplete workload after rechecking frozen identities.
 
 ## Detect cheap failures before expensive qualification
 

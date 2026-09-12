@@ -1,0 +1,466 @@
+[
+  {
+    "nz": 28,
+    "targets": 3,
+    "block": 0,
+    "medianSeconds": {
+      "baseline": 0.005818791,
+      "memory-only": 0.005743916,
+      "simd": 0.005471375
+    },
+    "comparisons": {
+      "memory-only": {
+        "bitwiseEqual": false,
+        "maximumScaledError": 7.121935299145531e-16,
+        "workspaceBytes": 87153882,
+        "ratioToBaseline": 0.9871322066731731
+      },
+      "simd": {
+        "bitwiseEqual": true,
+        "maximumScaledError": 0.0,
+        "workspaceBytes": 87153882,
+        "ratioToBaseline": 0.9402941263915475
+      }
+    },
+    "outputSHA256": {
+      "baseline": "5006edcea39f07422cd33a40ac6a7bd253660687989acfd8dba56dbf2e104c77",
+      "memory-only": "df2e40d3fa1d2217e95a4a180a996ebf8a34034f938ad7a67a7d074ba68789c4",
+      "simd": "5006edcea39f07422cd33a40ac6a7bd253660687989acfd8dba56dbf2e104c77"
+    }
+  },
+  {
+    "nz": 28,
+    "targets": 3,
+    "block": 1,
+    "medianSeconds": {
+      "baseline": 0.005733792,
+      "simd": 0.00560725,
+      "memory-only": 0.005871333
+    },
+    "comparisons": {
+      "memory-only": {
+        "bitwiseEqual": false,
+        "maximumScaledError": 1.3022967404151827e-15,
+        "workspaceBytes": 87153882,
+        "ratioToBaseline": 1.0239877902791032
+      },
+      "simd": {
+        "bitwiseEqual": false,
+        "maximumScaledError": 1.3022967404151827e-15,
+        "workspaceBytes": 87153882,
+        "ratioToBaseline": 0.9779304864913133
+      }
+    },
+    "outputSHA256": {
+      "baseline": "757efc0699af63f72b2be2ab3b39faadf73d276293b0961fbf6fb58dc74b97fd",
+      "simd": "abfa0f684c51e4d142301299bccf0efd4726f4e738781c42aaf0d75511ece5d6",
+      "memory-only": "27307bdac367afc95d6f6274afdefbec6fb2caf0532a65bcb33a4cc9826acda3"
+    }
+  },
+  {
+    "nz": 28,
+    "targets": 3,
+    "block": 2,
+    "medianSeconds": {
+      "simd": 0.005422792,
+      "baseline": 0.00582125,
+      "memory-only": 0.00616625
+    },
+    "comparisons": {
+      "memory-only": {
+        "bitwiseEqual": false,
+        "maximumScaledError": 1.3022967404151829e-15,
+        "workspaceBytes": 87153882,
+        "ratioToBaseline": 1.0592656216448357
+      },
+      "simd": {
+        "bitwiseEqual": false,
+        "maximumScaledError": 3.255741851037957e-16,
+        "workspaceBytes": 87153882,
+        "ratioToBaseline": 0.9315511273351943
+      }
+    },
+    "outputSHA256": {
+      "simd": "334605442b68cdfad13f88aa007e5707e6ece656722619f3d86360fbd5355582",
+      "baseline": "bc4fa8f7247e09f6baec48891194055099985428a902f56143a8b0fdbceeb060",
+      "memory-only": "55b099554e9644ee4c07e11d1058a0daba4662c71f3b7a4de08602499cedfa5d"
+    }
+  },
+  {
+    "nz": 28,
+    "targets": 3,
+    "block": 3,
+    "medianSeconds": {
+      "simd": 0.005516125,
+      "memory-only": 0.005767667,
+      "baseline": 0.005795
+    },
+    "comparisons": {
+      "memory-only": {
+        "bitwiseEqual": false,
+        "maximumScaledError": 7.732386896215148e-16,
+        "workspaceBytes": 87153882,
+        "ratioToBaseline": 0.9952833477135462
+      },
+      "simd": {
+        "bitwiseEqual": false,
+        "maximumScaledError": 1.3022967404151827e-15,
+        "workspaceBytes": 87153882,
+        "ratioToBaseline": 0.9518766177739432
+      }
+    },
+    "outputSHA256": {
+      "simd": "0f59a741efc14c76b3abb6424ec58c14390948965a61e1473525c806e9143059",
+      "memory-only": "1c79474fd87cc5610240b50985e7fb13273f1a9f9e58c93abb60242eede914b0",
+      "baseline": "72d920d4267a6a2677d7269cad8fcdad6d366f42b2f0aff888d13818d76817f6"
+    }
+  },
+  {
+    "nz": 28,
+    "targets": 4,
+    "block": 0,
+    "medianSeconds": {
+      "baseline": 0.007172417,
+      "memory-only": 0.007163167,
+      "simd": 0.006744541
+    },
+    "comparisons": {
+      "memory-only": {
+        "bitwiseEqual": false,
+        "maximumScaledError": 1.3022967404151827e-15,
+        "workspaceBytes": 97969818,
+        "ratioToBaseline": 0.9987103371150896
+      },
+      "simd": {
+        "bitwiseEqual": false,
+        "maximumScaledError": 1.3022967404151827e-15,
+        "workspaceBytes": 97969818,
+        "ratioToBaseline": 0.9403442382114703
+      }
+    },
+    "outputSHA256": {
+      "baseline": "edccda4fca337a9c99d07b5906b4b090849a63b5f6b020f75a5075bb3f5d5611",
+      "memory-only": "6bf7e87946a4b979f859e6a220f325bb3fa7fdaf7b1b272652fa9c03fd09ee91",
+      "simd": "7c9448f5cd1904707d21b28b4d9e78b147905185d2e09af8e16e6b158affb8f5"
+    }
+  },
+  {
+    "nz": 28,
+    "targets": 4,
+    "block": 1,
+    "medianSeconds": {
+      "baseline": 0.007237666,
+      "simd": 0.006918666,
+      "memory-only": 0.007100042
+    },
+    "comparisons": {
+      "memory-only": {
+        "bitwiseEqual": false,
+        "maximumScaledError": 1.3022967404151827e-15,
+        "workspaceBytes": 97969818,
+        "ratioToBaseline": 0.9809850302569917
+      },
+      "simd": {
+        "bitwiseEqual": false,
+        "maximumScaledError": 1.3022967404151827e-15,
+        "workspaceBytes": 97969818,
+        "ratioToBaseline": 0.9559250178165171
+      }
+    },
+    "outputSHA256": {
+      "baseline": "0043e472aa82fb62a4d4c610fa50133bcc0648f5ab07b9ffcb1fbbee742d655b",
+      "simd": "9fae2dbf17e8ca01725aa4a04909a85dc53610676f7433003af293ecbc251b4a",
+      "memory-only": "7c9448f5cd1904707d21b28b4d9e78b147905185d2e09af8e16e6b158affb8f5"
+    }
+  },
+  {
+    "nz": 28,
+    "targets": 4,
+    "block": 2,
+    "medianSeconds": {
+      "simd": 0.00698025,
+      "baseline": 0.007178417,
+      "memory-only": 0.007141459
+    },
+    "comparisons": {
+      "memory-only": {
+        "bitwiseEqual": false,
+        "maximumScaledError": 1.3022967404151827e-15,
+        "workspaceBytes": 97969818,
+        "ratioToBaseline": 0.9948515111340007
+      },
+      "simd": {
+        "bitwiseEqual": false,
+        "maximumScaledError": 1.3022967404151827e-15,
+        "workspaceBytes": 97969818,
+        "ratioToBaseline": 0.9723940528949488
+      }
+    },
+    "outputSHA256": {
+      "simd": "560ac809611656df396e038e7c4de38698bea89c25d2e973b5023ea113e9a257",
+      "baseline": "0043e472aa82fb62a4d4c610fa50133bcc0648f5ab07b9ffcb1fbbee742d655b",
+      "memory-only": "e2e0be704ce8fc256a0fd576f504f0f6841f25cecdd869138bd1dc6dcbe41216"
+    }
+  },
+  {
+    "nz": 28,
+    "targets": 4,
+    "block": 3,
+    "medianSeconds": {
+      "simd": 0.006845708,
+      "memory-only": 0.00719675,
+      "baseline": 0.007094542
+    },
+    "comparisons": {
+      "memory-only": {
+        "bitwiseEqual": false,
+        "maximumScaledError": 1.3022967404151827e-15,
+        "workspaceBytes": 97969818,
+        "ratioToBaseline": 1.01440656775307
+      },
+      "simd": {
+        "bitwiseEqual": false,
+        "maximumScaledError": 3.9936169965155154e-16,
+        "workspaceBytes": 97969818,
+        "ratioToBaseline": 0.9649259952228065
+      }
+    },
+    "outputSHA256": {
+      "simd": "cce4e34753b03d8d52e957801172269dfbb1132368d88eaee9ad9fcd3e27c8ed",
+      "memory-only": "b813bb4ce7997fb0ad7f136ddd15e3a3190ab9e5d705454172942d51ec8c7127",
+      "baseline": "5589447e5dc5f01071d695f7e668b4b7b5a4d1ce6ebb092fd9f7d9174fb52da6"
+    }
+  },
+  {
+    "nz": 129,
+    "targets": 3,
+    "block": 0,
+    "medianSeconds": {
+      "baseline": 0.020094791,
+      "memory-only": 0.020096042,
+      "simd": 0.019382209
+    },
+    "comparisons": {
+      "memory-only": {
+        "bitwiseEqual": false,
+        "maximumScaledError": 7.25645346406486e-16,
+        "workspaceBytes": 67625690,
+        "ratioToBaseline": 1.000062254939601
+      },
+      "simd": {
+        "bitwiseEqual": false,
+        "maximumScaledError": 7.878435189556134e-16,
+        "workspaceBytes": 67625690,
+        "ratioToBaseline": 0.9645389693279218
+      }
+    },
+    "outputSHA256": {
+      "baseline": "f66b901b8bf195c5814137f4038adbc8ea45d10c2f7117730011d69766eca339",
+      "memory-only": "bae1927ce19083e8e759007b371d246a3c2644e7163ec350f44944b7b245cf8a",
+      "simd": "52eca347989c352489f7d2f127cb5baa5b1191e0c3cb83f92af1a3e9d21d2566"
+    }
+  },
+  {
+    "nz": 129,
+    "targets": 3,
+    "block": 1,
+    "medianSeconds": {
+      "baseline": 0.020181458,
+      "simd": 0.01904275,
+      "memory-only": 0.021637958
+    },
+    "comparisons": {
+      "memory-only": {
+        "bitwiseEqual": false,
+        "maximumScaledError": 7.256453464064863e-16,
+        "workspaceBytes": 67625690,
+        "ratioToBaseline": 1.072170206929549
+      },
+      "simd": {
+        "bitwiseEqual": false,
+        "maximumScaledError": 6.648470571513819e-16,
+        "workspaceBytes": 67625690,
+        "ratioToBaseline": 0.9435765245504066
+      }
+    },
+    "outputSHA256": {
+      "baseline": "637591b53b4403496eba9682e8434cd90bb8807b311f4d96ea5b3c4a7cd5a828",
+      "simd": "f66b901b8bf195c5814137f4038adbc8ea45d10c2f7117730011d69766eca339",
+      "memory-only": "3427718f27a1e7befab67153822766be7ccd3b50c4306d45101104181a7a0ff9"
+    }
+  },
+  {
+    "nz": 129,
+    "targets": 3,
+    "block": 2,
+    "medianSeconds": {
+      "simd": 0.019445084,
+      "baseline": 0.020281834,
+      "memory-only": 0.020325792
+    },
+    "comparisons": {
+      "memory-only": {
+        "bitwiseEqual": false,
+        "maximumScaledError": 6.738135359488799e-16,
+        "workspaceBytes": 67625690,
+        "ratioToBaseline": 1.0021673582379187
+      },
+      "simd": {
+        "bitwiseEqual": false,
+        "maximumScaledError": 8.51835291975208e-16,
+        "workspaceBytes": 67625690,
+        "ratioToBaseline": 0.958743869020918
+      }
+    },
+    "outputSHA256": {
+      "simd": "637591b53b4403496eba9682e8434cd90bb8807b311f4d96ea5b3c4a7cd5a828",
+      "baseline": "805120ac72235c7fc221461af7cb8fa722c0c9e57434da308840c749ecb87486",
+      "memory-only": "8437dfe0cc43ad3091a8a1f822dbff4c4680c926a573ab6d7abacc2501e8ea05"
+    }
+  },
+  {
+    "nz": 129,
+    "targets": 3,
+    "block": 3,
+    "medianSeconds": {
+      "simd": 0.019280375,
+      "memory-only": 0.020074875,
+      "baseline": 0.021190875
+    },
+    "comparisons": {
+      "memory-only": {
+        "bitwiseEqual": false,
+        "maximumScaledError": 7.479529392953047e-16,
+        "workspaceBytes": 67625690,
+        "ratioToBaseline": 0.9473358226123272
+      },
+      "simd": {
+        "bitwiseEqual": false,
+        "maximumScaledError": 6.219817254912737e-16,
+        "workspaceBytes": 67625690,
+        "ratioToBaseline": 0.90984326980363
+      }
+    },
+    "outputSHA256": {
+      "simd": "637591b53b4403496eba9682e8434cd90bb8807b311f4d96ea5b3c4a7cd5a828",
+      "memory-only": "b2fe537d877af19e351d6afa3b31ade28ca1b7d2c7ecfb2d2b2f2941d264211d",
+      "baseline": "cd916e7c477239c4beed126fe6f0863acf826c3993130803d3d8d0836b853df3"
+    }
+  },
+  {
+    "nz": 129,
+    "targets": 4,
+    "block": 0,
+    "medianSeconds": {
+      "baseline": 0.024991583,
+      "memory-only": 0.024919958,
+      "simd": 0.02316525
+    },
+    "comparisons": {
+      "memory-only": {
+        "bitwiseEqual": false,
+        "maximumScaledError": 8.51835291975208e-16,
+        "workspaceBytes": 76945370,
+        "ratioToBaseline": 0.997134035086933
+      },
+      "simd": {
+        "bitwiseEqual": false,
+        "maximumScaledError": 6.419972697786815e-16,
+        "workspaceBytes": 76945370,
+        "ratioToBaseline": 0.9269220761245895
+      }
+    },
+    "outputSHA256": {
+      "baseline": "13e4c7a6b4a1bdc3540c0d7ab3ed80d4d168f8c984c5095a72baa72a1f68173b",
+      "memory-only": "857a238ae295896eb4ef7b03453828fe899197c4bdf962495db32e3a4327b66c",
+      "simd": "cd669f191bb7e2fae8222b575f4691ba84def35fb5a041f653017aff6adeb47d"
+    }
+  },
+  {
+    "nz": 129,
+    "targets": 4,
+    "block": 1,
+    "medianSeconds": {
+      "baseline": 0.025252375,
+      "simd": 0.023761458,
+      "memory-only": 0.025008458
+    },
+    "comparisons": {
+      "memory-only": {
+        "bitwiseEqual": false,
+        "maximumScaledError": 8.905123419510744e-16,
+        "workspaceBytes": 76945370,
+        "ratioToBaseline": 0.9903408293279345
+      },
+      "simd": {
+        "bitwiseEqual": false,
+        "maximumScaledError": 7.826603379098529e-16,
+        "workspaceBytes": 76945370,
+        "ratioToBaseline": 0.9409593355080462
+      }
+    },
+    "outputSHA256": {
+      "baseline": "4b395a4611db923ce802732a2687d96abe986a3c63a55e39608137d32cd27dfd",
+      "simd": "13e4c7a6b4a1bdc3540c0d7ab3ed80d4d168f8c984c5095a72baa72a1f68173b",
+      "memory-only": "24879e9219dcb886313920fff78d202a10d286aa35efdbc2b1b956a30d923ba0"
+    }
+  },
+  {
+    "nz": 129,
+    "targets": 4,
+    "block": 2,
+    "medianSeconds": {
+      "simd": 0.023758625,
+      "baseline": 0.02521675,
+      "memory-only": 0.02485475
+    },
+    "comparisons": {
+      "memory-only": {
+        "bitwiseEqual": false,
+        "maximumScaledError": 8.085762431386558e-16,
+        "workspaceBytes": 76945370,
+        "ratioToBaseline": 0.9856444625100379
+      },
+      "simd": {
+        "bitwiseEqual": false,
+        "maximumScaledError": 8.085762431386558e-16,
+        "workspaceBytes": 76945370,
+        "ratioToBaseline": 0.9421763312084229
+      }
+    },
+    "outputSHA256": {
+      "simd": "f1680ec527460456998b7fe4668ecd85c6f4ee5d35f690e675e176972003cb41",
+      "baseline": "cbdb2732eeab74605133a8f42df333799c290ce3aeb2f4a3e74ad1b022e47dd9",
+      "memory-only": "f1680ec527460456998b7fe4668ecd85c6f4ee5d35f690e675e176972003cb41"
+    }
+  },
+  {
+    "nz": 129,
+    "targets": 4,
+    "block": 3,
+    "medianSeconds": {
+      "simd": 0.023765375,
+      "memory-only": 0.024904833,
+      "baseline": 0.025152667
+    },
+    "comparisons": {
+      "memory-only": {
+        "bitwiseEqual": false,
+        "maximumScaledError": 9.128877616845883e-16,
+        "workspaceBytes": 76945370,
+        "ratioToBaseline": 0.99014681027662
+      },
+      "simd": {
+        "bitwiseEqual": false,
+        "maximumScaledError": 8.076739845602767e-16,
+        "workspaceBytes": 76945370,
+        "ratioToBaseline": 0.9448451331224637
+      }
+    },
+    "outputSHA256": {
+      "simd": "13e4c7a6b4a1bdc3540c0d7ab3ed80d4d168f8c984c5095a72baa72a1f68173b",
+      "memory-only": "1341054918b9343571225e2e0a65c1d857f1208d90b8de8d1bc0afdcdc3c67e6",
+      "baseline": "2fd98e6751a8b9125da6be4982118d413e1543498a114df09871dca9d1141d58"
+    }
+  }
+]

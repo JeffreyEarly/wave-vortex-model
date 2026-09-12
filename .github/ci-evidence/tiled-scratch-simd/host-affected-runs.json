@@ -1,0 +1,559 @@
+[
+  {
+    "profile": "eddytide-256x256x28",
+    "pair": -1,
+    "role": "reuse",
+    "hits": [
+      {
+        "unixTime": 1789231680.691424,
+        "pid": 438,
+        "cpuPercent": 15.0,
+        "executable": "/System/Library/CoreServices/loginwindow.app/Contents/MacOS/loginwindow"
+      }
+    ]
+  },
+  {
+    "profile": "eddytide-256x256x28",
+    "pair": 1,
+    "role": "reuse",
+    "hits": [
+      {
+        "unixTime": 1789231740.92154,
+        "pid": 438,
+        "cpuPercent": 12.1,
+        "executable": "/System/Library/CoreServices/loginwindow.app/Contents/MacOS/loginwindow"
+      }
+    ]
+  },
+  {
+    "profile": "eddytide-256x256x28",
+    "pair": 2,
+    "role": "reuse",
+    "hits": [
+      {
+        "unixTime": 1789231801.1485848,
+        "pid": 438,
+        "cpuPercent": 14.0,
+        "executable": "/System/Library/CoreServices/loginwindow.app/Contents/MacOS/loginwindow"
+      }
+    ]
+  },
+  {
+    "profile": "eddytide-256x256x28",
+    "pair": 4,
+    "role": "reuse",
+    "hits": [
+      {
+        "unixTime": 1789231861.370564,
+        "pid": 438,
+        "cpuPercent": 15.3,
+        "executable": "/System/Library/CoreServices/loginwindow.app/Contents/MacOS/loginwindow"
+      }
+    ]
+  },
+  {
+    "profile": "eddytide-256x256x28",
+    "pair": 5,
+    "role": "reuse",
+    "hits": [
+      {
+        "unixTime": 1789231881.448491,
+        "pid": 1370,
+        "cpuPercent": 15.4,
+        "executable": "/System/Library/PrivateFrameworks/CacheDelete.framework/deleted"
+      },
+      {
+        "unixTime": 1789231881.448491,
+        "pid": 1415,
+        "cpuPercent": 11.6,
+        "executable": "/System/Library/PrivateFrameworks/CacheDelete.framework/deleted_helper"
+      },
+      {
+        "unixTime": 1789231891.4845052,
+        "pid": 458,
+        "cpuPercent": 11.2,
+        "executable": "/usr/libexec/mobileassetd"
+      },
+      {
+        "unixTime": 1789231891.4845052,
+        "pid": 554,
+        "cpuPercent": 48.5,
+        "executable": "/System/Library/CoreServices/TimeMachine/backupd"
+      }
+    ]
+  },
+  {
+    "profile": "constant-nonhydrostatic-composite-256",
+    "pair": 0,
+    "role": "reuse",
+    "hits": [
+      {
+        "unixTime": 1789232021.9440918,
+        "pid": 409,
+        "cpuPercent": 13.3,
+        "executable": "/usr/libexec/locationd"
+      },
+      {
+        "unixTime": 1789232021.9440918,
+        "pid": 572,
+        "cpuPercent": 23.8,
+        "executable": "/Library/Application Support/Mosyle/MosyleMDM.app/Contents/MacOS/MosyleMDM"
+      }
+    ]
+  },
+  {
+    "profile": "constant-nonhydrostatic-composite-256",
+    "pair": 7,
+    "role": "reuse",
+    "hits": [
+      {
+        "unixTime": 1789232132.351342,
+        "pid": 403,
+        "cpuPercent": 20.4,
+        "executable": "/System/Library/PrivateFrameworks/ApplePushService.framework/apsd"
+      },
+      {
+        "unixTime": 1789232132.351342,
+        "pid": 1316,
+        "cpuPercent": 49.3,
+        "executable": "/System/Library/PrivateFrameworks/IDS.framework/identityservicesd.app/Contents/MacOS/identityservicesd"
+      }
+    ]
+  },
+  {
+    "profile": "variable-hydrostatic-composite-large",
+    "pair": -1,
+    "role": "reuse",
+    "hits": [
+      {
+        "unixTime": 1789232162.454485,
+        "pid": 1392,
+        "cpuPercent": 42.0,
+        "executable": "/System/Library/Frameworks/Contacts.framework/Support/contactsd"
+      },
+      {
+        "unixTime": 1789232162.454485,
+        "pid": 57105,
+        "cpuPercent": 22.0,
+        "executable": "/System/Library/PrivateFrameworks/ContactsDonation.framework/Versions/A/Support/contactsdonationagent"
+      }
+    ]
+  },
+  {
+    "profile": "variable-hydrostatic-composite-large",
+    "pair": 0,
+    "role": "baseline",
+    "hits": [
+      {
+        "unixTime": 1789232172.483741,
+        "pid": 17333,
+        "cpuPercent": 18.6,
+        "executable": "/Library/Bitdefender/AVP/product/bin/BDLDaemon.app/Contents/MacOS/BDLDaemon"
+      }
+    ]
+  },
+  {
+    "profile": "variable-hydrostatic-composite-large",
+    "pair": 0,
+    "role": "reuse",
+    "hits": [
+      {
+        "unixTime": 1789232182.522877,
+        "pid": 11642,
+        "cpuPercent": 85.3,
+        "executable": "/System/Library/PrivateFrameworks/XprotectFramework.framework/Versions/A/XPCServices/XprotectService.xpc/Contents/MacOS/XprotectService"
+      }
+    ]
+  },
+  {
+    "profile": "variable-hydrostatic-composite-large",
+    "pair": 2,
+    "role": "reuse",
+    "hits": [
+      {
+        "unixTime": 1789232212.624068,
+        "pid": 1386,
+        "cpuPercent": 88.6,
+        "executable": "/System/Library/Frameworks/CoreServices.framework/Versions/A/Frameworks/Metadata.framework/Versions/A/Support/corespotlightd"
+      }
+    ]
+  },
+  {
+    "profile": "variable-hydrostatic-composite-large",
+    "pair": 3,
+    "role": "reuse",
+    "hits": [
+      {
+        "unixTime": 1789232222.650398,
+        "pid": 1386,
+        "cpuPercent": 99.9,
+        "executable": "/System/Library/Frameworks/CoreServices.framework/Versions/A/Frameworks/Metadata.framework/Versions/A/Support/corespotlightd"
+      },
+      {
+        "unixTime": 1789232222.650398,
+        "pid": 1440,
+        "cpuPercent": 30.4,
+        "executable": "/usr/libexec/triald"
+      }
+    ]
+  },
+  {
+    "profile": "variable-hydrostatic-composite-large",
+    "pair": 5,
+    "role": "reuse",
+    "hits": [
+      {
+        "unixTime": 1789232252.751498,
+        "pid": 554,
+        "cpuPercent": 13.8,
+        "executable": "/System/Library/CoreServices/TimeMachine/backupd"
+      },
+      {
+        "unixTime": 1789232252.751498,
+        "pid": 583,
+        "cpuPercent": 15.7,
+        "executable": "/usr/libexec/triald_system"
+      },
+      {
+        "unixTime": 1789232252.751498,
+        "pid": 1337,
+        "cpuPercent": 32.9,
+        "executable": "/System/Library/PrivateFrameworks/CloudKitDaemon.framework/Support/cloudd"
+      },
+      {
+        "unixTime": 1789232252.751498,
+        "pid": 1352,
+        "cpuPercent": 52.9,
+        "executable": "/System/Library/PrivateFrameworks/FileProvider.framework/Support/fileproviderd"
+      },
+      {
+        "unixTime": 1789232252.751498,
+        "pid": 1353,
+        "cpuPercent": 33.8,
+        "executable": "/usr/libexec/pkd"
+      },
+      {
+        "unixTime": 1789232252.751498,
+        "pid": 1370,
+        "cpuPercent": 40.8,
+        "executable": "/System/Library/PrivateFrameworks/CacheDelete.framework/deleted"
+      },
+      {
+        "unixTime": 1789232252.751498,
+        "pid": 1386,
+        "cpuPercent": 30.3,
+        "executable": "/System/Library/Frameworks/CoreServices.framework/Versions/A/Frameworks/Metadata.framework/Versions/A/Support/corespotlightd"
+      }
+    ]
+  },
+  {
+    "profile": "variable-hydrostatic-composite-large",
+    "pair": 5,
+    "role": "baseline",
+    "hits": [
+      {
+        "unixTime": 1789232262.785355,
+        "pid": 554,
+        "cpuPercent": 19.1,
+        "executable": "/System/Library/CoreServices/TimeMachine/backupd"
+      },
+      {
+        "unixTime": 1789232262.785355,
+        "pid": 1308,
+        "cpuPercent": 11.7,
+        "executable": "/System/Library/Frameworks/Accounts.framework/Versions/A/Support/accountsd"
+      },
+      {
+        "unixTime": 1789232262.785355,
+        "pid": 1337,
+        "cpuPercent": 38.9,
+        "executable": "/System/Library/PrivateFrameworks/CloudKitDaemon.framework/Support/cloudd"
+      }
+    ]
+  },
+  {
+    "profile": "variable-hydrostatic-composite-large",
+    "pair": 7,
+    "role": "reuse",
+    "hits": [
+      {
+        "unixTime": 1789232282.858416,
+        "pid": 458,
+        "cpuPercent": 21.4,
+        "executable": "/usr/libexec/mobileassetd"
+      },
+      {
+        "unixTime": 1789232282.858416,
+        "pid": 554,
+        "cpuPercent": 28.9,
+        "executable": "/System/Library/CoreServices/TimeMachine/backupd"
+      },
+      {
+        "unixTime": 1789232282.858416,
+        "pid": 1352,
+        "cpuPercent": 62.7,
+        "executable": "/System/Library/PrivateFrameworks/FileProvider.framework/Support/fileproviderd"
+      },
+      {
+        "unixTime": 1789232282.858416,
+        "pid": 1386,
+        "cpuPercent": 33.8,
+        "executable": "/System/Library/Frameworks/CoreServices.framework/Versions/A/Frameworks/Metadata.framework/Versions/A/Support/corespotlightd"
+      }
+    ]
+  },
+  {
+    "profile": "variable-hydrostatic-composite-large",
+    "pair": 7,
+    "role": "baseline",
+    "hits": [
+      {
+        "unixTime": 1789232292.891825,
+        "pid": 458,
+        "cpuPercent": 15.0,
+        "executable": "/usr/libexec/mobileassetd"
+      },
+      {
+        "unixTime": 1789232292.891825,
+        "pid": 554,
+        "cpuPercent": 36.3,
+        "executable": "/System/Library/CoreServices/TimeMachine/backupd"
+      }
+    ]
+  },
+  {
+    "profile": "boussinesq-256x256x129-no-observers",
+    "pair": -2,
+    "role": "baseline",
+    "hits": [
+      {
+        "unixTime": 1789232608.824971,
+        "pid": 1419,
+        "cpuPercent": 83.2,
+        "executable": "/System/Library/PrivateFrameworks/PhotoLibraryServices.framework/Versions/A/Support/photolibraryd"
+      }
+    ]
+  },
+  {
+    "profile": "boussinesq-256x256x129-no-observers",
+    "pair": -2,
+    "role": "reuse",
+    "hits": [
+      {
+        "unixTime": 1789232628.880842,
+        "pid": 554,
+        "cpuPercent": 39.6,
+        "executable": "/System/Library/CoreServices/TimeMachine/backupd"
+      },
+      {
+        "unixTime": 1789232628.880842,
+        "pid": 1419,
+        "cpuPercent": 86.2,
+        "executable": "/System/Library/PrivateFrameworks/PhotoLibraryServices.framework/Versions/A/Support/photolibraryd"
+      },
+      {
+        "unixTime": 1789232638.914571,
+        "pid": 1392,
+        "cpuPercent": 11.7,
+        "executable": "/System/Library/Frameworks/Contacts.framework/Support/contactsd"
+      }
+    ]
+  },
+  {
+    "profile": "boussinesq-256x256x129-no-observers",
+    "pair": -1,
+    "role": "baseline",
+    "hits": [
+      {
+        "unixTime": 1789232709.1142862,
+        "pid": 554,
+        "cpuPercent": 37.3,
+        "executable": "/System/Library/CoreServices/TimeMachine/backupd"
+      },
+      {
+        "unixTime": 1789232709.1142862,
+        "pid": 93244,
+        "cpuPercent": 12.7,
+        "executable": "/System/Library/Frameworks/WebKit.framework/Versions/A/XPCServices/com.apple.WebKit.Networking.xpc/Contents/MacOS/com.apple.WebKit.Networking"
+      }
+    ]
+  },
+  {
+    "profile": "boussinesq-256x256x129-no-observers",
+    "pair": 0,
+    "role": "reuse",
+    "hits": [
+      {
+        "unixTime": 1789232789.348045,
+        "pid": 1337,
+        "cpuPercent": 11.5,
+        "executable": "/System/Library/PrivateFrameworks/CloudKitDaemon.framework/Support/cloudd"
+      }
+    ]
+  },
+  {
+    "profile": "boussinesq-256x256x129-no-observers",
+    "pair": 1,
+    "role": "reuse",
+    "hits": [
+      {
+        "unixTime": 1789232829.45892,
+        "pid": 14277,
+        "cpuPercent": 91.8,
+        "executable": "/System/Library/Frameworks/CoreServices.framework/Versions/A/Frameworks/Metadata.framework/Versions/A/Support/mds_stores"
+      },
+      {
+        "unixTime": 1789232839.492934,
+        "pid": 14277,
+        "cpuPercent": 99.0,
+        "executable": "/System/Library/Frameworks/CoreServices.framework/Versions/A/Frameworks/Metadata.framework/Versions/A/Support/mds_stores"
+      },
+      {
+        "unixTime": 1789232849.5264692,
+        "pid": 14277,
+        "cpuPercent": 97.3,
+        "executable": "/System/Library/Frameworks/CoreServices.framework/Versions/A/Frameworks/Metadata.framework/Versions/A/Support/mds_stores"
+      }
+    ]
+  },
+  {
+    "profile": "boussinesq-256x256x129-no-observers",
+    "pair": 1,
+    "role": "baseline",
+    "hits": [
+      {
+        "unixTime": 1789232859.557863,
+        "pid": 389,
+        "cpuPercent": 42.2,
+        "executable": "/System/Library/Frameworks/CoreServices.framework/Versions/A/Frameworks/Metadata.framework/Versions/A/Support/mds"
+      },
+      {
+        "unixTime": 1789232859.557863,
+        "pid": 14277,
+        "cpuPercent": 82.9,
+        "executable": "/System/Library/Frameworks/CoreServices.framework/Versions/A/Frameworks/Metadata.framework/Versions/A/Support/mds_stores"
+      }
+    ]
+  },
+  {
+    "profile": "boussinesq-256x256x129-no-observers",
+    "pair": 2,
+    "role": "baseline",
+    "hits": [
+      {
+        "unixTime": 1789232899.683272,
+        "pid": 93437,
+        "cpuPercent": 10.6,
+        "executable": "/System/Library/Frameworks/CoreServices.framework/Versions/A/Frameworks/Metadata.framework/Versions/A/Support/mdworker_shared"
+      }
+    ]
+  },
+  {
+    "profile": "boussinesq-256x256x129-no-observers",
+    "pair": 4,
+    "role": "baseline",
+    "hits": [
+      {
+        "unixTime": 1789233060.155744,
+        "pid": 438,
+        "cpuPercent": 12.5,
+        "executable": "/System/Library/CoreServices/loginwindow.app/Contents/MacOS/loginwindow"
+      }
+    ]
+  },
+  {
+    "profile": "boussinesq-256x256x129-no-observers",
+    "pair": 4,
+    "role": "reuse",
+    "hits": [
+      {
+        "unixTime": 1789233110.301684,
+        "pid": 1386,
+        "cpuPercent": 125.7,
+        "executable": "/System/Library/Frameworks/CoreServices.framework/Versions/A/Frameworks/Metadata.framework/Versions/A/Support/corespotlightd"
+      },
+      {
+        "unixTime": 1789233120.327071,
+        "pid": 438,
+        "cpuPercent": 13.4,
+        "executable": "/System/Library/CoreServices/loginwindow.app/Contents/MacOS/loginwindow"
+      }
+    ]
+  },
+  {
+    "profile": "boussinesq-256x256x129-no-observers",
+    "pair": 5,
+    "role": "baseline",
+    "hits": [
+      {
+        "unixTime": 1789233180.4944918,
+        "pid": 438,
+        "cpuPercent": 15.6,
+        "executable": "/System/Library/CoreServices/loginwindow.app/Contents/MacOS/loginwindow"
+      }
+    ]
+  },
+  {
+    "profile": "boussinesq-256x256x129-no-observers",
+    "pair": 6,
+    "role": "baseline",
+    "hits": [
+      {
+        "unixTime": 1789233240.679788,
+        "pid": 438,
+        "cpuPercent": 14.0,
+        "executable": "/System/Library/CoreServices/loginwindow.app/Contents/MacOS/loginwindow"
+      }
+    ]
+  },
+  {
+    "profile": "boussinesq-256x256x129-no-observers",
+    "pair": 7,
+    "role": "reuse",
+    "hits": [
+      {
+        "unixTime": 1789233300.857841,
+        "pid": 438,
+        "cpuPercent": 16.7,
+        "executable": "/System/Library/CoreServices/loginwindow.app/Contents/MacOS/loginwindow"
+      },
+      {
+        "unixTime": 1789233300.857841,
+        "pid": 1315,
+        "cpuPercent": 11.6,
+        "executable": "/System/Library/PrivateFrameworks/TCC.framework/Support/tccd"
+      },
+      {
+        "unixTime": 1789233300.857841,
+        "pid": 1320,
+        "cpuPercent": 15.5,
+        "executable": "/usr/libexec/trustd"
+      },
+      {
+        "unixTime": 1789233300.857841,
+        "pid": 2618,
+        "cpuPercent": 18.9,
+        "executable": "/System/Library/PrivateFrameworks/DataAccess.framework/Support/dataaccessd"
+      },
+      {
+        "unixTime": 1789233300.857841,
+        "pid": 18309,
+        "cpuPercent": 86.0,
+        "executable": "/Applications/ChatGPT.app/Contents/Frameworks/Codex Framework.framework/Versions/152.0.7977.83/Helpers/Codex (Renderer).app/Contents/MacOS/Codex (Renderer)"
+      }
+    ]
+  },
+  {
+    "profile": "boussinesq-256x256x129-no-observers",
+    "pair": 7,
+    "role": "baseline",
+    "hits": [
+      {
+        "unixTime": 1789233361.034822,
+        "pid": 438,
+        "cpuPercent": 15.1,
+        "executable": "/System/Library/CoreServices/loginwindow.app/Contents/MacOS/loginwindow"
+      }
+    ]
+  }
+]

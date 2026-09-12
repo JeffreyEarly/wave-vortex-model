@@ -1,0 +1,12 @@
+{
+  "issue": 491,
+  "status": "accepted-local-performance-and-scientific-qualification",
+  "candidateCommit": "0a819a495101370c7edd174a9fbd62d5a8715541",
+  "baseline": "Exact qualified PR #490 runner, SHA256 5e00648723698e430f465d2a07ceaa612fb3476d0fe3568dede339c240338d1b",
+  "performance": "Original gates pass: EddyTide measured 2.17% faster (paired 95% interval 1.37\u20132.91%); other mean ratios stay below the 3% investigation threshold.",
+  "numerical": "All 40 comparisons pass unchanged tolerances, integration decisions identical, no duplicate evaluator executions and unchanged other actual producer counts.",
+  "memoryPolicy": "Provider scratch falls by the exact predicted capacities. Full-model totals include additional 8\u2013128 byte output/orchestration differences, reported separately. Low-memory timing is not qualified; existing fallback correctness is covered.",
+  "mergeGate": "Required / WaveVortexModel must pass before merging.",
+  "interpretation": "Primary benefit is exact owned-storage reduction. Larger Hydrostatic and Boussinesq timing is inconclusive; do not claim the nominal 5.51% Boussinesq gain. Ordinary OS activity and an order effect are retained in the evidence.",
+  "campaignRecovery": "Disk exhaustion interrupted only the initial Boussinesq warmup; completed first-three-profile measurements retained and Boussinesq alone resumed after frozen-identity checks."
+}

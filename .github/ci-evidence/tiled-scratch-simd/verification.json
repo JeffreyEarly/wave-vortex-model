@@ -1,0 +1,12 @@
+{
+  "implementationCommit": "0a819a495101370c7edd174a9fbd62d5a8715541",
+  "nativeRelease": "58/58 at frozen implementation",
+  "sanitized": "58/58 ASan/UBSan; unsupported macOS leak-detection invocation excluded",
+  "gcc14": "Native provider/operator plus four H/B kernel/runtime tests passed",
+  "matlabParity": "12/12 scientific/source checks, compact dump probes execute tiled path",
+  "forwardRestart": "Six family cases, both providers; 12 retained fragments",
+  "strictCatalog": "All catalog tests passed; see source-linked-catalog-results.json",
+  "independentReview": "Independent provider alias/lifetime/arithmetic review complete; no remaining blocker",
+  "hostedCI": "Required gate pending",
+  "compiledInputEquivalence": "Later receipt/report/evidence changes do not modify compiled inputs at 0a819a49."
+}

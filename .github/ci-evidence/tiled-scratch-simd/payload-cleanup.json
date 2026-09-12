@@ -1,0 +1,86 @@
+[
+  {
+    "path": "combined-pilot/0-0-baseline/output.nc",
+    "bytes": 20121707,
+    "sha256": "d90e3dfeb210d33edb5ef7b1905460450588f8cd61e86b6381b19bd852d02953",
+    "reason": "Successful pilot output; comparison retained"
+  },
+  {
+    "path": "combined-pilot/0-0-candidate/output.nc",
+    "bytes": 20121707,
+    "sha256": "d8f04ba361821ed94ce351a8326c37e034ff3d02d19af701888452fe27fa8952",
+    "reason": "Successful pilot output; comparison retained"
+  },
+  {
+    "path": "combined-pilot/2-0-baseline/output.nc",
+    "bytes": 1062048502,
+    "sha256": "505dcf7d5fdb79e896dda208e4b41af58c167be7e4be26f72ac373dd6bcbd5da",
+    "reason": "Successful pilot output; comparison retained"
+  },
+  {
+    "path": "combined-pilot/2-0-candidate/output.nc",
+    "bytes": 1062048502,
+    "sha256": "a300d263b33a55881f1427019e9355bb0ead4c01569e97006039108d50cb76f9",
+    "reason": "Successful pilot output; comparison retained"
+  },
+  {
+    "path": "combined-pilot/3-0-baseline/output.nc",
+    "bytes": 2245584327,
+    "sha256": "e66416db39cd8614fd28cf910c25a73aa9bc857261aae9c3983367d6a05eb39c",
+    "reason": "Successful pilot output; comparison retained"
+  },
+  {
+    "path": "combined-pilot/3-0-candidate/output.nc",
+    "bytes": 2245584327,
+    "sha256": "21a5b2c134e50d5e481a3f0bc12c2f89a22d3069b99599199ea9263d64946879",
+    "reason": "Successful pilot output; comparison retained"
+  },
+  {
+    "path": "qualification/eddytide-256x256x28-0-baseline/output.nc",
+    "bytes": 20121707,
+    "sha256": "6500004664e9168c3a7fc9f7efd87ed73e136c5baf96200aa4a63078684099c9",
+    "reason": "Completed qualified pair; full comparison and original hash retained"
+  },
+  {
+    "path": "qualification/eddytide-256x256x28-0-reuse/output.nc",
+    "bytes": 20121707,
+    "sha256": "c8f6294e695c7977663c9e982dad62fd71e7bc533e70d820fdb5cb7a8b17ef82",
+    "reason": "Completed qualified pair; full comparison and original hash retained"
+  },
+  {
+    "path": "qualification/constant-nonhydrostatic-composite-256-0-baseline/output.nc",
+    "bytes": 403225199,
+    "sha256": "0d0d2b84a9e0f68fe8f38e09d9faa308d54b099896e970bc05ecd075e5184662",
+    "reason": "Completed qualified pair; full comparison and original hash retained"
+  },
+  {
+    "path": "qualification/constant-nonhydrostatic-composite-256-0-reuse/output.nc",
+    "bytes": 403225199,
+    "sha256": "6d6fc5309a217f1d74f76f65cfa55616bffd450e076a37f4c824f0bec36516d3",
+    "reason": "Completed qualified pair; full comparison and original hash retained"
+  },
+  {
+    "path": "qualification/variable-hydrostatic-composite-large-0-baseline/output.nc",
+    "bytes": 1062048502,
+    "sha256": "ccba3b87af4a4d4ea2c7cd5a3c91dd0bfcbc8b8900c4fa0889bdc4561990aedb",
+    "reason": "Completed qualified pair; full comparison and original hash retained"
+  },
+  {
+    "path": "qualification/variable-hydrostatic-composite-large-0-reuse/output.nc",
+    "bytes": 1062048502,
+    "sha256": "7d0b0bdb578319421a06696f5b71b83300891970be80f1393aa8c7e4fe8abd17",
+    "reason": "Completed qualified pair; full comparison and original hash retained"
+  },
+  {
+    "path": "qualification/boussinesq-256x256x129-no-observers--2-baseline/output.nc",
+    "bytes": 2245584327,
+    "sha256": "a6dc56e03f41e53dc4b3179326151faf1f4450f55c91747edd9fc45230b7da98",
+    "reason": "Aborted disk-full warmup; reports retained, pair will be repeated"
+  },
+  {
+    "path": "qualification/boussinesq-256x256x129-no-observers--2-reuse/output.nc",
+    "bytes": 2245584327,
+    "sha256": "93f04daf6fbe670c2e7503c7aef1f9e85d59ac80974b7d2d6380cc81374f8dda",
+    "reason": "Aborted disk-full warmup; reports retained, pair will be repeated"
+  }
+]

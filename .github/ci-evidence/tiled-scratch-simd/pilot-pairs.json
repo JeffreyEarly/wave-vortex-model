@@ -1,0 +1,74 @@
+[
+  {
+    "tiledReusedColumns": 104832,
+    "profile": "eddytide-256x256x28",
+    "pair": 0,
+    "ratio": 1.0086501357714008,
+    "baselineSeconds": 16.970200917,
+    "candidateSeconds": 17.116995459,
+    "numericalPassed": true,
+    "stateDecisionsIdentical": true,
+    "baselineOwnedPeak": 633841725,
+    "candidateOwnedPeak": 587719677
+  },
+  {
+    "tiledReusedColumns": 104832,
+    "profile": "eddytide-256x256x28",
+    "pair": 1,
+    "ratio": 1.008609706733544,
+    "baselineSeconds": 17.263944708,
+    "candidateSeconds": 17.412582209,
+    "numericalPassed": true,
+    "stateDecisionsIdentical": true,
+    "baselineOwnedPeak": 633841725,
+    "candidateOwnedPeak": 587719677
+  },
+  {
+    "tiledReusedColumns": 12384,
+    "profile": "variable-hydrostatic-composite-large",
+    "pair": 0,
+    "ratio": 0.9686570156543244,
+    "baselineSeconds": 5.403165542,
+    "candidateSeconds": 5.233814209,
+    "numericalPassed": true,
+    "stateDecisionsIdentical": true,
+    "baselineOwnedPeak": 2403781445,
+    "candidateOwnedPeak": 2368133189
+  },
+  {
+    "tiledReusedColumns": 12384,
+    "profile": "variable-hydrostatic-composite-large",
+    "pair": 1,
+    "ratio": 0.9880845282903226,
+    "baselineSeconds": 5.364156666,
+    "candidateSeconds": 5.300240209,
+    "numericalPassed": true,
+    "stateDecisionsIdentical": true,
+    "baselineOwnedPeak": 2403781445,
+    "candidateOwnedPeak": 2368133189
+  },
+  {
+    "tiledReusedColumns": 16512,
+    "profile": "boussinesq-256x256x129-no-observers",
+    "pair": 0,
+    "ratio": 0.9782154218729215,
+    "baselineSeconds": 2.688562875,
+    "candidateSeconds": 2.629993667,
+    "numericalPassed": true,
+    "stateDecisionsIdentical": true,
+    "baselineOwnedPeak": 5400686303,
+    "candidateOwnedPeak": 5359945439
+  },
+  {
+    "tiledReusedColumns": 16512,
+    "profile": "boussinesq-256x256x129-no-observers",
+    "pair": 1,
+    "ratio": 0.6397595999276029,
+    "baselineSeconds": 4.141700583,
+    "candidateSeconds": 2.649692708,
+    "numericalPassed": true,
+    "stateDecisionsIdentical": true,
+    "baselineOwnedPeak": 5400686303,
+    "candidateOwnedPeak": 5359945439
+  }
+]

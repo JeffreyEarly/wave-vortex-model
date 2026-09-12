@@ -1,0 +1,79 @@
+{
+  "sourceCommit": "0a819a495101370c7edd174a9fbd62d5a8715541",
+  "verifiedExecutables": {
+    "runner": {
+      "path": "/private/tmp/wvm491-native/bin/wave-vortex-run",
+      "sha256": "c9da6aff33d46560a5bb545d1add21a0d37aa0382c93f67dc7bc53c5e5d092ee",
+      "embeddedSourceCommit": "0a819a495101370c7edd174a9fbd62d5a8715541",
+      "status": "complete"
+    },
+    "probe": {
+      "path": "/private/tmp/wvm491-native/bin/WVForwardIntegrationProbe",
+      "sha256": "a898deaa7343228a7618b0f427b2ba89cd80b88d7bba48bb15d8f812f79308c1",
+      "embeddedSourceCommit": "0a819a495101370c7edd174a9fbd62d5a8715541",
+      "status": "stopped"
+    }
+  },
+  "fragments": [
+    {
+      "fragment": "forward-stratified-qg-rk45-native-fftw.json",
+      "sha256": "1b407f324d8da62d59a080f4e7eec80a0ff770c279e62b162741a69dc09aa0e0",
+      "executablesMatch": true
+    },
+    {
+      "fragment": "forward-boussinesq-rk45-reference.json",
+      "sha256": "83b59632670b8067858d8dd8dea9c4dcbf1c6ba1d177d44f0a7405eed1aae978",
+      "executablesMatch": true
+    },
+    {
+      "fragment": "forward-constant-nonhydrostatic-rk23-reference.json",
+      "sha256": "b2e37fa23f2e0775e8abb36569b7e1f387e655ec64afa8a9d8f3cdbaf0f6d760",
+      "executablesMatch": true
+    },
+    {
+      "fragment": "forward-stratified-qg-rk45-reference.json",
+      "sha256": "0fb8b9e9ae8ebeeb69bdd4a054a8e8296709707ecb77d21ca4436324595a0855",
+      "executablesMatch": true
+    },
+    {
+      "fragment": "forward-boussinesq-rk45-native-fftw.json",
+      "sha256": "32e0a9ca364a715739d2da0af83bfe20be132643facf9fbd70115e3418997ad1",
+      "executablesMatch": true
+    },
+    {
+      "fragment": "forward-constant-hydrostatic-cfl-rk4-reference.json",
+      "sha256": "05bb71ce308fdee8758872cc38d6ec116f24193ef7b394a69950538c41d00ad2",
+      "executablesMatch": true
+    },
+    {
+      "fragment": "forward-constant-hydrostatic-cfl-rk4-native-fftw.json",
+      "sha256": "a7fb4bcbcbf4460ac91f83bbd26a19d64ba8218199ce7e6f0113bbe6de40e5e2",
+      "executablesMatch": true
+    },
+    {
+      "fragment": "forward-constant-nonhydrostatic-rk23-native-fftw.json",
+      "sha256": "1e4d55ce6b521084e5ad5eeb6f8a133eb2c511c3283e01334b4146f7a52d20a0",
+      "executablesMatch": true
+    },
+    {
+      "fragment": "forward-barotropic-qg-rk45-native-fftw.json",
+      "sha256": "d9608b3bf7f6f5967e9fedbd1cd8cb0671a20b59d7b60f60bc6568b8423c6a55",
+      "executablesMatch": true
+    },
+    {
+      "fragment": "forward-hydrostatic-rk45-native-fftw.json",
+      "sha256": "396a6b9b54d26c328bcd06a064977ecedb4312ae3fa6a0548d4e3caab28ed2df",
+      "executablesMatch": true
+    },
+    {
+      "fragment": "forward-hydrostatic-rk45-reference.json",
+      "sha256": "72fae6ad77b3fbffcd4fdabd93c3b24b10d6e77fe7d8a333ba521db5821c5841",
+      "executablesMatch": true
+    },
+    {
+      "fragment": "forward-barotropic-qg-rk45-reference.json",
+      "sha256": "11d3714d88e26e6400d58f7f9b92c3dad356cb3e7a50bd9ad80a8cc2f7e8ada8",
+      "executablesMatch": true
+    }
+  ]
+}
