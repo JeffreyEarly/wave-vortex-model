@@ -2,6 +2,8 @@
 
 This folder contains authoring-only performance tools and historical profiling scripts. It is not included on the WaveVortexModel runtime package path.
 
+Before C++ optimization, follow the [C++ optimization workflow](CPP-OPTIMIZATION.md) for profiling, delegation, early correctness checks, and final qualification.
+
 ## Reproducible benchmark suites
 
 `runWaveVortexBenchmark` is the canonical performance and memory entry point. It measures a state-advanced `nonlinearFlux()` call while retaining ordinary production caches. State changes use the public `t`, `Ap`, `Am`, and `A0` setters; the runner never clears the variable cache explicitly.
