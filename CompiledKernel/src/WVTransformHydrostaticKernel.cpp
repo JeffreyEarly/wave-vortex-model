@@ -4,6 +4,7 @@
 #include "WVVariableComplexBuffer.hpp"
 #include <algorithm>
 #include <cmath>
+#include <mutex>
 #include <system_error>
 
 namespace wavevortex {
@@ -184,7 +185,12 @@ WVKernelStatus WVTransformHydrostaticKernel::preparePhase(
         for (const auto& f:factors_) if (!std::isfinite(f.omega*(t-t0))) return {WVKernelStatusCode::numericalFailure,"Hydrostatic phase overflow."};
     }
     ++metrics_.phasePreparationCount;
-    for (std::size_t i=0;i<S_;++i) { const double a=factors_[i].omega*(t-t0); phase_[i]={std::cos(a),std::sin(a)}; }
+    pointwise_->execute(S_,[&](std::size_t begin,std::size_t end) {
+        for (std::size_t i=begin;i<end;++i) {
+            const double a=factors_[i].omega*(t-t0);
+            phase_[i]={std::cos(a),std::sin(a)};
+        }
+    });
     return WVKernelStatus::ok();
 }
 bool WVTransformHydrostaticKernel::matchesStateEvaluation(const WVState& a) const noexcept {
@@ -732,6 +738,25 @@ WVKernelStatus WVTransformHydrostaticKernel::totalEnergy(const WVCoefficients& a
     }
     if (!std::isfinite(sum)) return {WVKernelStatusCode::numericalFailure,"Hydrostatic energy overflow."};
     value=sum; return WVKernelStatus::ok();
+}
+WVKernelStatus WVTransformHydrostaticKernel::reduceHorizontalSpeedMaximum(
+    WVRealVolumeConstView u,WVRealVolumeConstView v,double& value) {
+    auto status=volume(u); if (!status) return status;
+    status=volume(v); if (!status) return status;
+    ActiveCall guard(active_); if (!guard.entered) return reentrant();
+    double maximum=0;
+    std::mutex merge;
+    pointwise_->execute(R_,[&](std::size_t begin,std::size_t end) {
+        double local=0;
+        for (std::size_t i=begin;i<end;++i)
+            local=std::max(local,std::hypot(u.data[i],v.data[i]));
+        // Each chunk retains the serial hypot/max semantics, including robust
+        // scaling and ignored NaN contributions. Only one merge per chunk.
+        std::lock_guard<std::mutex> lock(merge);
+        maximum=std::max(maximum,local);
+    });
+    value=maximum;
+    return WVKernelStatus::ok();
 }
 WVKernelStatus WVTransformHydrostaticKernel::totalEnstrophy(const WVCoefficients& a,double& value) const {
     auto s=coefficients(a); if (!s) return s; double sum=0;

@@ -116,6 +116,10 @@ public:
         WVRealFieldBundleView* spatialTendency = nullptr,
         const WVRealFieldBundleConstView* preparedFields = nullptr, bool projectFlux = true,
         WVStateDerivativeAccess* derivativeAccess = nullptr);
+    // Reduce supplied physical fields with the prepared workers. The caller's
+    // evaluation owns caching; this operation retains no field or result.
+    WVKernelStatus reduceHorizontalSpeedMaximum(WVRealVolumeConstView u,
+        WVRealVolumeConstView v, double& maximum);
     WVKernelStatus totalEnergy(const WVCoefficients&, double&,
         WVHydrostaticComponent = WVHydrostaticComponent::all) const;
     WVKernelStatus totalEnstrophy(const WVCoefficients&, double&) const;

@@ -1450,6 +1450,9 @@ WVKernelStatus WVStratifiedFieldEvaluationAdapter::scalarValue(const WVState& st
   const auto shape=boussinesqKernel_ ? boussinesqKernel_->spatialShape() : hydrostaticKernel_->spatialShape();
   auto s=transformField(state,scalar==static_cast<unsigned>(ScalarField::wMax) ? WVHydrostaticField::w : WVHydrostaticField::u,{fieldScratch_.data(),shape}); if (!s) return s;
   if (scalar==static_cast<unsigned>(ScalarField::uvMax)) { s=transformField(state,WVHydrostaticField::v,{speedScratch_.data(),shape}); if (!s) return s; }
+  if (hydrostaticKernel_ && scalar==static_cast<unsigned>(ScalarField::uvMax))
+    return hydrostaticKernel_->reduceHorizontalSpeedMaximum(
+        {fieldScratch_.data(),shape},{speedScratch_.data(),shape},value);
   value=0; for (std::size_t i=0;i<fieldScratch_.size();++i) value=std::max(value,scalar==static_cast<unsigned>(ScalarField::wMax) ? std::abs(fieldScratch_[i]) : std::hypot(fieldScratch_[i],speedScratch_[i]));
   return WVKernelStatus::ok();
 }
