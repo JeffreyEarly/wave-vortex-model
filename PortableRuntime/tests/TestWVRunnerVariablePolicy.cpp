@@ -23,6 +23,7 @@ void established(const WVRunnerVariablePolicy& policy,const char* message) {
     require(policy.execution.pointwiseWorkers==1,message);
     require(policy.execution.verticalGroupWorkers==1,message);
     require(!policy.execution.fusedDerivativeAdvection,message);
+    require(!policy.execution.fusedDerivativeLoading,message);
 }
 
 } // namespace
@@ -57,6 +58,7 @@ int main() {
                 policy.execution.pointwiseWorkers==8 &&
                 policy.execution.verticalGroupWorkers==
                     (kind==WVPersistedTransformKind::boussinesq ? 8 : 1) &&
+                policy.execution.fusedDerivativeLoading==policy.execution.fusedDerivativeAdvection &&
                 policy.execution.fusedDerivativeAdvection==
                     (kind==WVPersistedTransformKind::hydrostatic ||
                      kind==WVPersistedTransformKind::boussinesq),

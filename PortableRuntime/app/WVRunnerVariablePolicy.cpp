@@ -93,6 +93,7 @@ WVRunnerVariablePolicy selectRunnerVariablePolicy(
     policy.execution.fusedDerivativeAdvection=
         transformKind==WVPersistedTransformKind::hydrostatic ||
         transformKind==WVPersistedTransformKind::boussinesq;
+    policy.execution.fusedDerivativeLoading=policy.execution.fusedDerivativeAdvection;
     return policy;
 }
 

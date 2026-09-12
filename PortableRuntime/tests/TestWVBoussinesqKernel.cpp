@@ -444,6 +444,7 @@ void variableScheduleParity(const std::shared_ptr<const WVStratifiedModalRecord>
     if (compact) options.spectralSchedule=WVVariableSpectralSchedule::compactSplitFusedViews;
     options.pointwiseWorkers=2;
     options.fusedDerivativeAdvection=true;
+    options.fusedDerivativeLoading=true;
     options.verticalGroupWorkers=2;
     require(bool(WVTransformBoussinesqKernel::create(source,std::make_unique<Engine>(candidateCounters),candidate, WVCreateScalarMatrixBackend, options)),"Candidate schedule setup failed");
     require(std::string(candidate->horizontalScheduleIdentifier())=="full-fft-gather","Reference provider fallback was not reported");
@@ -461,7 +462,7 @@ void variableScheduleParity(const std::shared_ptr<const WVStratifiedModalRecord>
     require(bool(candidate->nonlinearFlux(state,candidateFlux)),"Candidate nonlinear flux failed");
     require(!frozen->executionOptions().fusedDerivativeAdvection &&
         candidate->executionOptions().fusedDerivativeAdvection &&
-        candidate->metrics().derivativeAdvectionConsumerCount==12,
+        candidate->metrics().derivativeAdvectionConsumerCount==12 && candidate->metrics().derivativeSpectrumLoadingCount==8,
         "Boussinesq fused derivative consumers were not explicit or complete");
     for (std::size_t j=0;j<3;++j) for (std::size_t i=0;i<S;++i) require(std::abs(frozenOut[j][i].real-candidateOut[j][i].real)<1e-12 && std::abs(frozenOut[j][i].imag-candidateOut[j][i].imag)<1e-12,"Candidate nonlinear flux differs");
     require(frozen->metrics().verticalOperatorExecutionCount==candidate->metrics().verticalOperatorExecutionCount &&
@@ -524,6 +525,15 @@ void variableScheduleParity(const std::shared_ptr<const WVStratifiedModalRecord>
         derivativeProbe.captures==11 && capturedDerivative==captureReference &&
         cf==cfBefore,
         "Boussinesq cached derivative repeated an inverse/consumer or lost capture");
+    // An x-derivative cache hit must also bypass multiplier execution.
+    derivativeProbe.cachedDerivative=static_cast<std::size_t>(WVBoussinesqDerivative::x);
+    derivativeProbe.cached={captureReference.data(),{g.Nx,g.Ny,g.Nz}};
+    derivativeProbe.captures=0;
+    candidate->resetMetrics();
+    require(bool(candidate->nonlinearFlux(state,candidateFlux,&crv,&cfields,false,&derivativeAccess)) &&
+        candidate->metrics().derivativeSpectrumLoadingCount==7 &&
+        derivativeProbe.captures==11,
+        "Cached horizontal derivative repeated a multiplied inverse");
     for (std::size_t j=0;j<3;++j) for (std::size_t i=0;i<S;++i)
         require(input[j][i].real==inputBefore[j][i].real && input[j][i].imag==inputBefore[j][i].imag,"Parity evaluation mutated input coefficients");
     require(frozen->storage().realScratchBytes==11*R*sizeof(double) && candidate->storage().realScratchBytes==6*R*sizeof(double),
@@ -566,11 +576,13 @@ void sharedFieldGradientParity(const std::shared_ptr<const WVStratifiedModalReco
     WVVariableExecutionOptions sharedOptions{WVRetainedHorizontalSchedule::fullFFT,2,true};
     sharedOptions.pointwiseWorkers=2;
     sharedOptions.fusedDerivativeAdvection=true;
+    sharedOptions.fusedDerivativeLoading=true;
     if (compact) {
         sharedOptions={WVRetainedHorizontalSchedule::streamingPrunedTile16,2,true};
         sharedOptions.spectralSchedule=WVVariableSpectralSchedule::compactSplitFusedViews;
         sharedOptions.pointwiseWorkers=2;
         sharedOptions.fusedDerivativeAdvection=true;
+    sharedOptions.fusedDerivativeLoading=true;
     }
     auto independentOptions=sharedOptions;
     independentOptions.sharedFieldGradients=false;
@@ -729,11 +741,13 @@ void sharedFieldGradientParity(const std::shared_ptr<const WVStratifiedModalReco
             shared->metrics().verticalOperatorExecutionCount==24 &&
             shared->metrics().horizontalSpectrumReuseCount==12 &&
             shared->metrics().preparedVerticalDerivativeCount==4 &&
-            shared->metrics().derivativeAdvectionConsumerCount==12,
+            shared->metrics().derivativeAdvectionConsumerCount==12 &&
+            shared->metrics().derivativeSpectrumLoadingCount==8,
         "Scoped Boussinesq nonlinear evaluation did not share the expected producers");
     require(independent->metrics().coefficientAssemblyCount==16 &&
             independent->metrics().verticalPreparationCount==32 &&
-            independent->metrics().derivativeAdvectionConsumerCount==12,
+            independent->metrics().derivativeAdvectionConsumerCount==12 &&
+            independent->metrics().derivativeSpectrumLoadingCount==0,
         "Independent Boussinesq nonlinear path did not execute all producers");
     require(bool(shared->endStateEvaluation()),"Shared Boussinesq nonlinear scope end failed");
     require(bool(independent->endStateEvaluation()),
@@ -747,7 +761,8 @@ void sharedFieldGradientParity(const std::shared_ptr<const WVStratifiedModalReco
             shared->metrics().verticalOperatorExecutionCount==24 &&
             shared->metrics().horizontalSpectrumReuseCount==12 &&
             shared->metrics().preparedVerticalDerivativeCount==4 &&
-            shared->metrics().derivativeAdvectionConsumerCount==12,
+            shared->metrics().derivativeAdvectionConsumerCount==12 &&
+            shared->metrics().derivativeSpectrumLoadingCount==8,
         "Standalone Boussinesq nonlinear evaluation lost operation-local sharing");
 
     Counters failureCounters;

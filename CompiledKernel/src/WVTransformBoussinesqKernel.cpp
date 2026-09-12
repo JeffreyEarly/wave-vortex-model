@@ -601,16 +601,21 @@ WVKernelStatus WVTransformBoussinesqKernel::reconstruct(const WVCoefficients& a,
         if (prepared) prepared->gridReady=true;
     } else ++metrics_.horizontalSpectrumReuseCount;
     auto horizontalInput=combined.input();
+    WVImaginaryModeMultiplier inverseMultiplier;
     if (prepared && (derivative==WVBoussinesqDerivative::x || derivative==WVBoussinesqDerivative::y)) {
-        const auto derivativeGrid=gridView();
-        pointwise_->execute(H_,[&](std::size_t begin,std::size_t end) {
-            for (std::size_t i=begin;i<end;++i) {
-                const auto mode=i/g.Nz;
-                const WVComplex64 multiplier={0,derivative==WVBoussinesqDerivative::x ? g.k[mode] : g.l[mode]};
-                write(derivativeGrid,i,multiply(read(combined.input(),i),multiplier));
-            }
-        });
-        horizontalInput=derivativeGrid.input();
+        if (executionOptions_.fusedDerivativeLoading && horizontalWorkspace_->supportsInverseMultiplier()) {
+            inverseMultiplier={derivative==WVBoussinesqDerivative::x ? g.k.data() : g.l.data(),g.Nkl};
+        } else {
+            const auto derivativeGrid=gridView();
+            pointwise_->execute(H_,[&](std::size_t begin,std::size_t end) {
+                for (std::size_t i=begin;i<end;++i) {
+                    const auto mode=i/g.Nz;
+                    const WVComplex64 multiplier={0,derivative==WVBoussinesqDerivative::x ? g.k[mode] : g.l[mode]};
+                    write(derivativeGrid,i,multiply(read(combined.input(),i),multiplier));
+                }
+            });
+            horizontalInput=derivativeGrid.input();
+        }
     } else if (prepared && dz) {
         auto s=vertical(G ? 3 : 1,combined.input(),modalView()); if (!s) return s;
         if (G) pointwise_->execute(S_,[&](std::size_t begin,std::size_t end) {
@@ -626,8 +631,11 @@ WVKernelStatus WVTransformBoussinesqKernel::reconstruct(const WVCoefficients& a,
         horizontalInput=gridView().input();
     }
     const bool consumeInInverse=consumer && (!dz || prepared);
-    auto s=consumeInInverse ? horizontal_->inverseAndConsume(*horizontalWorkspace_,horizontalInput,{b,R_*sizeof(double)},*consumer) :
+    auto s=inverseMultiplier.values ? horizontal_->inverseWithMultiplier(*horizontalWorkspace_,horizontalInput,
+        {b,R_*sizeof(double)},inverseMultiplier,consumer ? *consumer : WVRealOutputConsumer{}) :
+        consumeInInverse ? horizontal_->inverseAndConsume(*horizontalWorkspace_,horizontalInput,{b,R_*sizeof(double)},*consumer) :
         horizontal_->inverse(*horizontalWorkspace_,horizontalInput,{b,R_*sizeof(double)}); if (!s) return s;
+    if (inverseMultiplier.values) ++metrics_.derivativeSpectrumLoadingCount;
     // v4 defines vertical derivatives through the shared F/G calculus, even
     // for wave fields. Preserve that finite-resolution MATLAB operation.
     if (dz && !prepared) { s=verticalCalculus(b,G ? WVBoussinesqFamily::G : WVBoussinesqFamily::F,1,false,b); if (!s) return s; }

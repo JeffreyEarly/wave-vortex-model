@@ -33,6 +33,7 @@ struct WVBoussinesqKernelMetrics {
     std::size_t coefficientAssemblyCount = 0;
     std::size_t verticalPreparationCount = 0;
     std::size_t derivativeAdvectionConsumerCount = 0;
+    std::size_t derivativeSpectrumLoadingCount = 0;
     std::size_t horizontalSpectrumReuseCount = 0;
     std::size_t preparedVerticalDerivativeCount = 0;
     std::size_t verticalOperatorExecutionCount = 0;

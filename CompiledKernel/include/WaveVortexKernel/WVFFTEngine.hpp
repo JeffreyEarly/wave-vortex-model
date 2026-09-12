@@ -49,6 +49,19 @@ struct WVRealOutput;
 struct WVComplexInput;
 struct WVComplexOutput;
 
+// Borrowed, immutable imaginary multipliers in the original retained-mode
+// order, shared by all planes. An empty view selects the ordinary inverse.
+// Keep the full complex product order used by materialized derivatives.
+struct WVImaginaryModeMultiplier {
+    const double* values = nullptr;
+    std::size_t count = 0;
+    WVComplex64 apply(WVComplex64 value,std::size_t mode) const noexcept {
+        if (!values) return value;
+        const double factor=values[mode];
+        return {value.real*0.0-value.imag*factor,value.real*factor+value.imag*0.0};
+    }
+};
+
 // Synchronous consumer of completed contiguous physical-grid ranges. Different
 // ranges may be delivered concurrently. The callback must not throw, reenter
 // the transform, mutate its inputs, or publish an evaluation result. Its context
@@ -68,6 +81,9 @@ public:
     virtual bool supportsInverseConsumer() const noexcept { return false; }
     virtual WVKernelStatus inverseAndConsume(WVComplexInput, WVRealOutput,
         const WVRealOutputConsumer&);
+    virtual bool supportsInverseMultiplier() const noexcept { return false; }
+    virtual WVKernelStatus inverseWithMultiplier(WVComplexInput, WVRealOutput,
+        WVImaginaryModeMultiplier,const WVRealOutputConsumer&);
     virtual std::size_t persistentBytes() const noexcept = 0;
     virtual std::size_t planBytesLowerBound() const noexcept = 0;
     // persistentBytes includes shared dependencies. Owners of multiple plans

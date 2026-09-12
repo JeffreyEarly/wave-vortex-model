@@ -94,6 +94,9 @@ std::size_t WVRetainedHorizontalWorkspace::sharedResourceBytes() const noexcept 
 std::size_t WVRetainedHorizontalWorkspace::workerCount() const noexcept {
     return data_->retained ? data_->retained->workerCount() : 1;
 }
+bool WVRetainedHorizontalWorkspace::supportsInverseMultiplier() const noexcept {
+    return !data_->retained || data_->retained->supportsInverseMultiplier();
+}
 std::size_t WVRetainedHorizontalOperator::persistentBytes() const noexcept {
     return sizeof(*this)+sizeof(*data_)+identityBytes(data_->spec.retained)+data_->spec.grid.family.capacity()+
         data_->spec.modes.capacity()*sizeof(WVRetainedModeKey)+data_->mapping.capacity()*sizeof(HorizontalMode);
@@ -213,11 +216,30 @@ WVKernelStatus WVRetainedHorizontalOperator::inverse(WVRetainedHorizontalWorkspa
 }
 WVKernelStatus WVRetainedHorizontalOperator::inverseAndConsume(WVRetainedHorizontalWorkspace& workspace,
     WVComplexInput input,WVRealOutput output,const WVRealOutputConsumer& consumer) const {
+    return inverseWithMultiplier(workspace,input,output,{},consumer);
+}
+WVKernelStatus WVRetainedHorizontalOperator::inverseWithMultiplier(WVRetainedHorizontalWorkspace& workspace,
+    WVComplexInput input,WVRealOutput output,WVImaginaryModeMultiplier multiplier,
+    const WVRealOutputConsumer& consumer) const {
     auto& w = *workspace.data_; const auto& d = *data_;
     if (w.owner != data_) return {WVKernelStatusCode::invalidConfiguration,"Workspace belongs to another horizontal operator."};
     auto status = validateHorizontalBuffers(d,{output.data,output.bytes},input); if (!status) return status;
     ActiveCall guard(w.active); if (!guard.entered) return {WVKernelStatusCode::reentrantExecution,"Horizontal workspace is active."};
     const auto& g = d.spec.grid; const auto& l = d.spec.retained;
+    if (multiplier.values || multiplier.count) {
+        if (multiplier.count!=d.mapping.size())
+            return {WVKernelStatusCode::invalidShape,"Inverse multiplier count must match retained modes."};
+        const auto bytes=multiplier.count*sizeof(double);
+        if (!addressFits(multiplier.values,bytes,alignof(double)))
+            return {WVKernelStatusCode::invalidPointer,"Invalid inverse multiplier storage."};
+        if (overlap(multiplier.values,bytes,output.data,d.realSpan))
+            return {WVKernelStatusCode::overlappingArrays,"Inverse multiplier and output overlap."};
+        for (std::size_t mode=0;mode<multiplier.count;++mode)
+            if (!std::isfinite(multiplier.values[mode]))
+                return {WVKernelStatusCode::invalidConfiguration,"Inverse multipliers must be finite."};
+        if (!workspace.supportsInverseMultiplier())
+            return {WVKernelStatusCode::unsupportedOperation,"Provider has no inverse multiplier."};
+    }
     if (consumer.consume && (g.xStride!=1 || g.yStride!=g.Nx || g.planeStride!=d.planeSize))
         return {WVKernelStatusCode::invalidConfiguration,"Inverse consumers require contiguous physical output."};
     const auto consumePlane=[&](std::size_t p) {
@@ -225,9 +247,11 @@ WVKernelStatus WVRetainedHorizontalOperator::inverseAndConsume(WVRetainedHorizon
     };
     // Validate all self-conjugate values before writing any caller output.
     for (std::size_t mode = 0; mode < d.mapping.size(); ++mode) if (d.mapping[mode].self)
-        for (std::size_t p = 0; p < g.planes; ++p) if (read(input,p*l.rowStride+mode*l.columnStride).imag != 0)
+        for (std::size_t p = 0; p < g.planes; ++p) if (multiplier.apply(read(input,p*l.rowStride+mode*l.columnStride),mode).imag != 0)
             return {WVKernelStatusCode::invalidConfiguration,"Self-conjugate Fourier values must be real."};
     if (w.retained) {
+        if (multiplier.values)
+            return w.retained->inverseWithMultiplier(input,output,multiplier,consumer);
         if (consumer.consume && w.retained->supportsInverseConsumer())
             return w.retained->inverseAndConsume(input,output,consumer);
         status=w.retained->inverse(input,output);
@@ -238,7 +262,7 @@ WVKernelStatus WVRetainedHorizontalOperator::inverseAndConsume(WVRetainedHorizon
         for (std::size_t p = 0; p < g.planes; ++p) {
             std::fill(w.half.begin(),w.half.end(),WVComplex64{});
             for (std::size_t mode = 0; mode < d.mapping.size(); ++mode) {
-                const auto& map = d.mapping[mode]; auto value = read(input,p*l.rowStride+mode*l.columnStride);
+                const auto& map = d.mapping[mode]; auto value = multiplier.apply(read(input,p*l.rowStride+mode*l.columnStride),mode);
                 if (map.conjugate) value.imag = -value.imag;
                 w.half[map.row] = value;
                 if (map.partner != map.row) w.half[map.partner] = {value.real,-value.imag};
@@ -252,7 +276,7 @@ WVKernelStatus WVRetainedHorizontalOperator::inverseAndConsume(WVRetainedHorizon
     }
     std::fill(w.half.begin(),w.half.end(),WVComplex64{});
     for (std::size_t mode = 0; mode < d.mapping.size(); ++mode) for (std::size_t p = 0; p < g.planes; ++p) {
-        const auto& map = d.mapping[mode]; auto value = read(input,p*l.rowStride+mode*l.columnStride);
+        const auto& map = d.mapping[mode]; auto value = multiplier.apply(read(input,p*l.rowStride+mode*l.columnStride),mode);
         if (map.conjugate) value.imag = -value.imag;
         w.half[p*d.halfSize+map.row] = value;
         if (map.partner != map.row) w.half[p*d.halfSize+map.partner] = {value.real,-value.imag};

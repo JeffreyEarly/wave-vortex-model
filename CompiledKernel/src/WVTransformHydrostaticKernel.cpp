@@ -515,6 +515,7 @@ WVKernelStatus WVTransformHydrostaticKernel::reconstruct(const WVCoefficients& a
     }
     WVKernelStatus s;
     auto inverseInput=gridView().input();
+    WVImaginaryModeMultiplier inverseMultiplier;
     if (prepared && !dz) {
         if (!prepared->gridReady) {
             ++metrics_.verticalPreparationCount;
@@ -522,7 +523,10 @@ WVKernelStatus WVTransformHydrostaticKernel::reconstruct(const WVCoefficients& a
             prepared->gridReady=true;
         } else ++metrics_.horizontalSpectrumReuseCount;
         inverseInput=prepared->grid().input();
-        if (derivative!=WVHydrostaticDerivative::value) {
+        if (derivative!=WVHydrostaticDerivative::value &&
+            executionOptions_.fusedDerivativeLoading && horizontalWorkspace_->supportsInverseMultiplier()) {
+            inverseMultiplier={derivative==WVHydrostaticDerivative::x ? g.k.data() : g.l.data(),g.Nkl};
+        } else if (derivative!=WVHydrostaticDerivative::value) {
             pointwise_->execute(H_,[&](std::size_t begin,std::size_t end) {
                 for (std::size_t i=begin;i<end;++i) {
                     const auto mode=i/g.Nz;
@@ -545,8 +549,11 @@ WVKernelStatus WVTransformHydrostaticKernel::reconstruct(const WVCoefficients& a
     }
     if (dz && !G) for (std::size_t mode=0;mode<g.Nkl;++mode) for (std::size_t z=0;z<g.Nz;++z)
         write(gridView(),z+g.Nz*mode,scale(read(gridView().input(),z+g.Nz*mode),-g.N2[z]/g.g));
-    s=consumer ? horizontal_->inverseAndConsume(*horizontalWorkspace_,inverseInput,{b,R_*sizeof(double)},*consumer) :
+    s=inverseMultiplier.values ? horizontal_->inverseWithMultiplier(*horizontalWorkspace_,inverseInput,
+        {b,R_*sizeof(double)},inverseMultiplier,consumer ? *consumer : WVRealOutputConsumer{}) :
+        consumer ? horizontal_->inverseAndConsume(*horizontalWorkspace_,inverseInput,{b,R_*sizeof(double)},*consumer) :
         horizontal_->inverse(*horizontalWorkspace_,inverseInput,{b,R_*sizeof(double)}); if (!s) return s;
+    if (inverseMultiplier.values) ++metrics_.derivativeSpectrumLoadingCount;
     if (density) {
         double* eta=nullptr;
         if (dz) {

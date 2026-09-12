@@ -5,6 +5,7 @@
 #include <cmath>
 #include <condition_variable>
 #include <stdexcept>
+#include <system_error>
 #include <thread>
 
 #include <fftw3.h>
@@ -291,8 +292,14 @@ public:
     bool supportsInverseConsumer() const noexcept override { return true; }
     WVKernelStatus inverseAndConsume(WVComplexInput input,WVRealOutput output,
         const WVRealOutputConsumer& consumer) override {
+        return inverseWithMultiplier(input,output,{},consumer);
+    }
+    bool supportsInverseMultiplier() const noexcept override { return true; }
+    WVKernelStatus inverseWithMultiplier(WVComplexInput input,WVRealOutput output,
+        WVImaginaryModeMultiplier multiplier,const WVRealOutputConsumer& consumer) override {
         if (resources_->active.exchange(true)) return {WVKernelStatusCode::reentrantExecution,"Shared retained FFTW resource is active."};
-        Context context{this,{},output,input,{},&consumer}; resources_->pool.run(inverseTask,&context);
+        Context context{this,{},output,input,{},&consumer,multiplier};
+        resources_->pool.run(multiplier.values ? inverseTask<true> : inverseTask<false>,&context);
         resources_->active.store(false); return WVKernelStatus::ok();
     }
     const char* identifier() const noexcept override { return "fftw-streaming-pruned-tile16"; }
@@ -308,7 +315,7 @@ public:
     const void* sharedResourceIdentity() const noexcept override { return resources_.get(); }
     std::size_t sharedResourceBytes() const noexcept override { return resources_->bytes(); }
 private:
-    struct Context { RetainedFFTWPlan* plan; WVRealInput realInput; WVRealOutput realOutput; WVComplexInput complexInput; WVComplexOutput complexOutput; const WVRealOutputConsumer* consumer=nullptr; };
+    struct Context { RetainedFFTWPlan* plan; WVRealInput realInput; WVRealOutput realOutput; WVComplexInput complexInput; WVComplexOutput complexOutput; const WVRealOutputConsumer* consumer=nullptr; WVImaginaryModeMultiplier multiplier{}; };
     static WVComplex64 read(WVComplexInput input,std::size_t i) noexcept {
         return input.interleaved ? input.interleaved[i] : WVComplex64{input.real[i],input.imag[i]};
     }
@@ -345,6 +352,7 @@ private:
             }
         }
     }
+    template<bool Multiply>
     static void inverseTask(void* pointer,std::size_t worker) noexcept {
         auto& c=*static_cast<Context*>(pointer); auto& p=*c.plan;
         const auto& g=p.spec_.grid; const auto& layout=p.spec_.retained;
@@ -357,8 +365,11 @@ private:
             std::array<WVComplex64,tileWidth*32> block;
             for (std::size_t first=0;first<p.modes_.size();first+=32) {
                 const auto modes=std::min(std::size_t{32},p.modes_.size()-first);
-                for (std::size_t m=0;m<modes;++m) for (std::size_t lane=0;lane<count;++lane)
-                    block[m*tileWidth+lane]=read(c.complexInput,(base+lane)*layout.rowStride+(first+m)*layout.columnStride);
+                for (std::size_t m=0;m<modes;++m) for (std::size_t lane=0;lane<count;++lane) {
+                    auto value=read(c.complexInput,(base+lane)*layout.rowStride+(first+m)*layout.columnStride);
+                    if constexpr (Multiply) value=c.multiplier.apply(value,first+m);
+                    block[m*tileWidth+lane]=value;
+                }
                 for (std::size_t lane=0;lane<count;++lane) for (std::size_t m=0;m<modes;++m)
                     tile[lane*p.modes_.size()+first+m]=block[m*tileWidth+lane];
             }

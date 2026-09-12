@@ -7,6 +7,7 @@
 #include <complex>
 #include <cstring>
 #include <iostream>
+#include <limits>
 #include <stdexcept>
 #include <atomic>
 #include <thread>
@@ -46,6 +47,29 @@ struct Buffer {
             if (z.empty()) require(r[n] == 121 && i[n] == 122,"Split padding changed");
             else require(z[n].real == 121 && z[n].imag == 122,"Complex padding changed");
         }
+    }
+};
+struct ConsumerProbe {
+    std::size_t size;
+    std::unique_ptr<std::atomic<unsigned>[]> visits;
+    std::atomic<std::size_t> calls{0};
+    std::atomic<bool> invalidRange{false};
+    explicit ConsumerProbe(std::size_t count) : size(count), visits(new std::atomic<unsigned>[count]) { reset(); }
+    void reset() noexcept {
+        calls=0; invalidRange=false;
+        for (std::size_t n=0;n<size;++n) visits[n]=0;
+    }
+    static void consume(void* context,std::size_t begin,std::size_t end,const double*) noexcept {
+        auto& probe=*static_cast<ConsumerProbe*>(context);
+        ++probe.calls;
+        if (begin>end || end>probe.size) { probe.invalidRange=true; return; }
+        for (std::size_t n=begin;n<end;++n) ++probe.visits[n];
+    }
+    WVRealOutputConsumer consumer() noexcept { return {this,&consume}; }
+    void requireExactly(unsigned expected) const {
+        require(!invalidRange.load(),"Inverse consumer received an invalid range");
+        require(calls.load()>0,"Inverse consumer was not invoked");
+        for (std::size_t n=0;n<size;++n) require(visits[n].load()==expected,"Inverse consumer ranges did not cover output exactly once");
     }
 };
 std::unique_ptr<WVFFTEngine> fft(bool native) {
@@ -170,6 +194,155 @@ void horizontalCase(std::size_t nx, std::size_t ny, std::size_t planes, WVComple
     const auto before=output;
     require(op->inverse(*w,retained.in(),destination).code==WVKernelStatusCode::invalidConfiguration,"Nonreal self-conjugate coefficient accepted");
     require(same(output,before),"Rejected inverse modified output");
+}
+
+void multiplierCase(std::size_t nx,std::size_t ny,std::size_t planes,WVComplexRepresentation representation,
+    WVFourierNormalization normalization,bool native) {
+    auto spec=specification(nx,ny,planes,representation,normalization,false,true);
+    spec.grid.planeStride=nx*ny;
+    std::unique_ptr<WVRetainedHorizontalOperator> op;
+    require(WVRetainedHorizontalOperator::create(spec,fft(native),op));
+    std::unique_ptr<WVRetainedHorizontalWorkspace> workspace;
+    require(op->createWorkspace(workspace,false));
+    require(workspace->supportsInverseMultiplier(),"Prepared provider omitted inverse-multiplier capability");
+    require(std::string(workspace->scheduleIdentifier())==(native ? "fftw-streaming-pruned-tile16" : "plane-streamed-full-fft-gather"),
+        "Inverse-multiplier case selected the wrong implementation");
+
+    Buffer retained(spec.retained),materialized(spec.retained);
+    for (std::size_t mode=0;mode<spec.modes.size();++mode) for (std::size_t p=0;p<planes;++p) {
+        const auto key=spec.modes[mode];
+        const bool self=(2*key.k)%static_cast<std::int64_t>(nx)==0 && (2*key.l)%static_cast<std::int64_t>(ny)==0;
+        retained.set(p,mode,{0.07*(1+p)+0.011*key.k-0.013*key.l,self ? 0.0 : 0.03*(1+mode)-0.017*p});
+    }
+    const auto saved=retained;
+    std::vector<double> factors(spec.modes.size());
+    const auto oldProduct=[](WVComplex64 value,double factor) {
+        const WVComplex64 multiplier{0,factor};
+        return WVComplex64{value.real*multiplier.real-value.imag*multiplier.imag,
+            value.real*multiplier.imag+value.imag*multiplier.real};
+    };
+    bool positive=false,negative=false;
+    for (std::size_t mode=0;mode<spec.modes.size();++mode) {
+        const auto key=spec.modes[mode];
+        const bool self=(2*key.k)%static_cast<std::int64_t>(nx)==0 && (2*key.l)%static_cast<std::int64_t>(ny)==0;
+        factors[mode]=self ? 0.0 : 0.19*key.k+0.07*key.l;
+        positive=positive || factors[mode]>0; negative=negative || factors[mode]<0;
+        for (std::size_t p=0;p<planes;++p) materialized.set(p,mode,oldProduct(retained.get(p,mode),factors[mode]));
+    }
+    require(positive && negative,"Multiplier case omitted signed retained modes");
+    const auto savedFactors=factors;
+    const auto size=nx*ny*planes;
+    std::vector<double> expected(size,654),actual(size,987);
+    require(op->inverse(*workspace,materialized.in(),{expected.data(),expected.size()*sizeof(double)}));
+    ConsumerProbe probe(size);
+    require(op->inverseWithMultiplier(*workspace,retained.in(),{actual.data(),actual.size()*sizeof(double)},
+        {factors.data(),factors.size()},probe.consumer()));
+    probe.requireExactly(1);
+    require(same(actual,expected),"Fused inverse multiplier differs from the explicitly materialized product");
+
+    const auto pi=std::acos(-1.0L);
+    const long double inverseScale=normalization==WVFourierNormalization::inverseUnit ? 1.0L/(nx*ny) :
+        normalization==WVFourierNormalization::unitary ? 1/std::sqrt(static_cast<long double>(nx*ny)) : 1;
+    for (std::size_t p=0;p<planes;++p) for (std::size_t y=0;y<ny;++y) for (std::size_t x=0;x<nx;++x) {
+        long double oracle=0;
+        for (std::size_t mode=0;mode<spec.modes.size();++mode) {
+            const auto key=spec.modes[mode];
+            const auto value=oldProduct(retained.get(p,mode),factors[mode]);
+            const bool self=(2*key.k)%static_cast<std::int64_t>(nx)==0 && (2*key.l)%static_cast<std::int64_t>(ny)==0;
+            const long double angle=2*pi*(static_cast<long double>(key.k)*x/nx+static_cast<long double>(key.l)*y/ny);
+            oracle+=(self ? 1 : 2)*(value.real*std::cos(angle)-value.imag*std::sin(angle));
+        }
+        close(actual[p*nx*ny+y*nx+x],static_cast<double>(inverseScale*oracle));
+    }
+    require(retained.equals(saved) && same(factors,savedFactors),"Inverse multiplier modified a borrowed input");
+    retained.paddingUnchanged(); materialized.paddingUnchanged();
+
+    probe.reset();
+    allocationProbe::calls=0; allocationProbe::counting=true;
+    for (unsigned repeat=0;repeat<3;++repeat)
+        require(op->inverseWithMultiplier(*workspace,retained.in(),{actual.data(),actual.size()*sizeof(double)},
+            {factors.data(),factors.size()},probe.consumer()));
+    allocationProbe::counting=false;
+    require(allocationProbe::calls==0,"Prepared inverse multiplier allocated");
+    probe.requireExactly(3);
+    require(same(actual,expected) && retained.equals(saved) && same(factors,savedFactors),"Warmed inverse multiplier changed its result or inputs");
+}
+
+void multiplierValidation() {
+    constexpr std::size_t nx=8,ny=6,planes=3;
+    auto spec=specification(nx,ny,planes,WVComplexRepresentation::split,WVFourierNormalization::forwardUnit,false,true);
+    spec.grid.planeStride=nx*ny;
+    std::unique_ptr<WVRetainedHorizontalOperator> op;
+    require(WVRetainedHorizontalOperator::create(spec,fft(true),op));
+    std::unique_ptr<WVRetainedHorizontalWorkspace> workspace;
+    require(op->createWorkspace(workspace,false));
+    Buffer retained(spec.retained);
+    for (std::size_t mode=0;mode<spec.modes.size();++mode) for (std::size_t p=0;p<planes;++p) retained.set(p,mode,{0,0});
+    std::size_t zeroMode=spec.modes.size();
+    for (std::size_t mode=0;mode<spec.modes.size();++mode) if (spec.modes[mode].k==0 && spec.modes[mode].l==0) zeroMode=mode;
+    require(zeroMode<spec.modes.size(),"Multiplier validation omitted the zero mode");
+    std::vector<double> factors(spec.modes.size(),0.25);
+    for (std::size_t mode=0;mode<spec.modes.size();++mode) {
+        const auto key=spec.modes[mode];
+        if ((2*key.k)%static_cast<std::int64_t>(nx)==0 && (2*key.l)%static_cast<std::int64_t>(ny)==0) factors[mode]=0;
+    }
+    std::vector<double> output(nx*ny*planes,4321);
+    ConsumerProbe probe(output.size());
+    auto reject=[&](WVImaginaryModeMultiplier multiplier,WVKernelStatusCode code,const char* message) {
+        std::fill(output.begin(),output.end(),4321); const auto before=output; probe.reset();
+        const auto status=op->inverseWithMultiplier(*workspace,retained.in(),{output.data(),output.size()*sizeof(double)},multiplier,probe.consumer());
+        require(status.code==code,message);
+        require(same(output,before),"Rejected inverse multiplier modified output");
+        require(probe.calls.load()==0,"Rejected inverse multiplier invoked its consumer");
+    };
+    reject({factors.data(),factors.size()-1},WVKernelStatusCode::invalidShape,"Short inverse multiplier accepted");
+    reject({factors.data(),factors.size()+1},WVKernelStatusCode::invalidShape,"Long inverse multiplier accepted");
+    reject({nullptr,factors.size()},WVKernelStatusCode::invalidPointer,"Null inverse multiplier accepted");
+    std::vector<unsigned char> unaligned(factors.size()*sizeof(double)+1);
+    reject({reinterpret_cast<const double*>(unaligned.data()+1),factors.size()},WVKernelStatusCode::invalidPointer,"Unaligned inverse multiplier accepted");
+    const auto invalidAddress=std::numeric_limits<std::uintptr_t>::max() & ~std::uintptr_t(alignof(double)-1);
+    reject({reinterpret_cast<const double*>(invalidAddress),factors.size()},WVKernelStatusCode::invalidPointer,"Overflowing inverse multiplier span accepted");
+    reject({output.data(),factors.size()},WVKernelStatusCode::overlappingArrays,"Inverse multiplier overlapping output accepted");
+    factors[1]=std::numeric_limits<double>::quiet_NaN();
+    reject({factors.data(),factors.size()},WVKernelStatusCode::invalidConfiguration,"NaN inverse multiplier accepted");
+    factors[1]=std::numeric_limits<double>::infinity();
+    reject({factors.data(),factors.size()},WVKernelStatusCode::invalidConfiguration,"Infinite inverse multiplier accepted");
+    factors[1]=0.25;
+
+    // Validation is applied to the multiplied value: an imaginary base self
+    // can become real, while a real base self can become imaginary.
+    retained.set(planes-1,zeroMode,{0,1}); factors[zeroMode]=1;
+    probe.reset();
+    require(op->inverseWithMultiplier(*workspace,retained.in(),{output.data(),output.size()*sizeof(double)},
+        {factors.data(),factors.size()},probe.consumer()));
+    probe.requireExactly(1);
+    retained.set(planes-1,zeroMode,{1,0});
+    reject({factors.data(),factors.size()},WVKernelStatusCode::invalidConfiguration,"Imaginary multiplied self-conjugate value accepted");
+
+    // Every rejected preflight released the workspace and preserved recovery.
+    retained.set(planes-1,zeroMode,{1,0}); factors[zeroMode]=0; probe.reset();
+    require(op->inverseWithMultiplier(*workspace,retained.in(),{output.data(),output.size()*sizeof(double)},
+        {factors.data(),factors.size()},probe.consumer()));
+    probe.requireExactly(1);
+}
+
+void unsupportedMultiplierProvider() {
+    auto spec=specification(8,6,2,WVComplexRepresentation::interleaved,WVFourierNormalization::forwardUnit,false,true);
+    spec.grid.planeStride=spec.grid.Nx*spec.grid.Ny;
+    std::unique_ptr<WVRetainedHorizontalOperator> op;
+    require(WVRetainedHorizontalOperator::create(spec,std::make_unique<RetainedReferenceEngine>(),op));
+    std::unique_ptr<WVRetainedHorizontalWorkspace> workspace;
+    require(op->createWorkspace(workspace,false));
+    require(!workspace->supportsInverseMultiplier(),"Legacy retained provider advertised inverse-multiplier support");
+    Buffer retained(spec.retained);
+    for (std::size_t mode=0;mode<spec.modes.size();++mode) for (std::size_t p=0;p<spec.grid.planes;++p) retained.set(p,mode,{0,0});
+    std::vector<double> factors(spec.modes.size(),0),output(spec.grid.planeStride*spec.grid.planes,654);
+    const auto before=output;
+    ConsumerProbe probe(output.size());
+    require(op->inverseWithMultiplier(*workspace,retained.in(),{output.data(),output.size()*sizeof(double)},
+        {factors.data(),factors.size()},probe.consumer()).code==WVKernelStatusCode::unsupportedOperation,
+        "Legacy retained provider silently fell back for an inverse multiplier");
+    require(same(output,before) && probe.calls.load()==0,"Unsupported inverse multiplier published output");
 }
 
 void fallbackAndLifetime() {
@@ -333,7 +506,8 @@ void sharedResources() {
         }
     };
     std::thread ta([&] { exercise(*opA,*wa,ia,oa); }),tb([&] { exercise(*opB,*wb,ib,ob); });
-    while (ready.load()!=2) std::this_thread::yield(); go=true;
+    while (ready.load()!=2) std::this_thread::yield();
+    go=true;
     ta.join(); tb.join();
     require(rejected>0 && unexpected==0,"Shared resource did not safely reject concurrent peers");
     require(opA->forward(*wa,{ia.data(),ia.size()*sizeof(double)},oa.out()));
@@ -388,8 +562,12 @@ int main() {
             }
         horizontalCase(8,6,2,WVComplexRepresentation::split,WVFourierNormalization::forwardUnit,true,true,true);
         horizontalCase(8,6,2,WVComplexRepresentation::interleaved,WVFourierNormalization::forwardUnit,false,false,true);
+        multiplierCase(12,10,17,WVComplexRepresentation::interleaved,WVFourierNormalization::forwardUnit,true);
+        multiplierCase(9,7,5,WVComplexRepresentation::split,WVFourierNormalization::unitary,true);
+        multiplierCase(9,7,3,WVComplexRepresentation::interleaved,WVFourierNormalization::inverseUnit,false);
+        multiplierValidation(); unsupportedMultiplierProvider();
         fallbackAndLifetime(); boundedDerivative(); stridedBoundedDerivative(); noFailureFallback(); sharedResources();
-        std::cout << "Pruned horizontal: independent DFT, tile/tail, Hermitian boundaries, strided layouts, immutable inputs, zero prepared allocations, bounded derivatives/fallback and shared lifetimes passed.\n";
+        std::cout << "Pruned horizontal: independent DFT, fused retained multipliers, tile/tail, Hermitian boundaries, strided layouts, immutable inputs, zero prepared allocations, bounded derivatives/fallback and shared lifetimes passed.\n";
         return 0;
     } catch(const std::exception& e) {
         allocationProbe::counting=false; allocationProbe::failAfter=-1;

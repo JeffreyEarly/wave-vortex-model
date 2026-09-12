@@ -33,6 +33,7 @@ struct WVHydrostaticKernelMetrics {
     std::size_t coefficientAssemblyCount = 0, verticalPreparationCount = 0;
     std::size_t verticalOperatorExecutionCount = 0;
     std::size_t derivativeAdvectionConsumerCount = 0;
+    std::size_t derivativeSpectrumLoadingCount = 0;
     std::size_t horizontalSpectrumReuseCount = 0, preparedVerticalDerivativeCount = 0;
     std::array<std::size_t,4> tendencyReconstructionCount{};
     std::array<std::size_t,16> fieldReconstructionCount{};

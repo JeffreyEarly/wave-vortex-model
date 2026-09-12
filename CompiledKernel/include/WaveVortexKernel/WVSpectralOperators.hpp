@@ -51,6 +51,10 @@ inline WVKernelStatus WVRetainedHorizontalPlan::inverseAndConsume(WVComplexInput
     WVRealOutput,const WVRealOutputConsumer&) {
     return {WVKernelStatusCode::unsupportedOperation,"Provider has no inverse consumer."};
 }
+inline WVKernelStatus WVRetainedHorizontalPlan::inverseWithMultiplier(WVComplexInput,
+    WVRealOutput,WVImaginaryModeMultiplier,const WVRealOutputConsumer&) {
+    return {WVKernelStatusCode::unsupportedOperation,"Provider has no inverse multiplier."};
+}
 struct WVRetainedModeKey { std::int64_t k = 0, l = 0; };
 enum class WVRetainedHorizontalSchedule { fullFFT, streamingPrunedTile16 };
 struct WVRetainedHorizontalSpecification {
@@ -81,6 +85,7 @@ public:
     const void* sharedResourceIdentity() const noexcept;
     std::size_t sharedResourceBytes() const noexcept;
     std::size_t workerCount() const noexcept;
+    bool supportsInverseMultiplier() const noexcept;
 private:
     friend class WVRetainedHorizontalOperator;
     WVRetainedHorizontalWorkspace();
@@ -102,6 +107,13 @@ public:
     // output is retained, including when consumers run inside provider workers.
     WVKernelStatus inverseAndConsume(WVRetainedHorizontalWorkspace&, WVComplexInput,
         WVRealOutput,const WVRealOutputConsumer&) const;
+    // Multiplies in caller mode order before Hermitian embedding. All factors
+    // must be finite; resulting self-conjugate values must be real, matching
+    // the materialized-spectrum inverse. The view must outlive the call and
+    // must not overlap output. Unsupported retained providers return status
+    // without allocating fallback storage or invoking the consumer.
+    WVKernelStatus inverseWithMultiplier(WVRetainedHorizontalWorkspace&,WVComplexInput,
+        WVRealOutput,WVImaginaryModeMultiplier,const WVRealOutputConsumer& = {}) const;
     std::size_t persistentBytes() const noexcept;
     std::size_t providerBytesLowerBound() const noexcept;
     // Full-grid derivative before retained-mode projection (e.g. passive tracers).
