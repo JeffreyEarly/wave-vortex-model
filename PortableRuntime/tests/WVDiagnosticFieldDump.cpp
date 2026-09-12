@@ -62,9 +62,6 @@ int main(int argc,char** argv) {
     require(fields->evaluate(plan,state,views.data(),views.size()));
     const auto metrics=fields->metrics();
     if(metrics.diagnosticWorkspaceLiveBytes) throw std::runtime_error("Evaluation left diagnostic scratch live.");
-    // The first complete request establishes bounded lazy prepared-field cache
-    // capacity. Independent requests and replay must reuse that capacity.
-    const auto retained=fields->persistentBytes()+plan.persistentBytes();
     json result;
     for(std::size_t i=0;i<names.size();++i) {
       auto& value=result["fields"][names[i]];
@@ -79,28 +76,34 @@ int main(int argc,char** argv) {
     result["primitiveOutputs"]=metrics.diagnosticPrimitiveOutputCount;
     result["scratchHighWaterBytes"]=metrics.diagnosticWorkspaceHighWaterBytes;
     result["scratchLiveBytes"]=metrics.diagnosticWorkspaceLiveBytes;
-    result["retainedBytes"]=retained;
     for(std::size_t i=0;i<before.size();++i)
       if(std::memcmp(before[i].data(),families[i].data,before[i].size()*sizeof(WVComplex64)))
         throw std::runtime_error("Diagnostic evaluation modified coefficient state.");
-    // Every output is identical when requested independently, and a replay has no hidden state.
-    for(std::size_t i=0;i<names.size();++i) {
-      WVFieldEvaluationPlan single;require(fields->createPlan({requests[i]},single));
-      auto re=real[i];auto im=complex[i];
-      WVFieldOutputView view{re.data(),views[i].elementCount,im.data()};
-      require(fields->evaluate(single,state,&view,1));
-      if(re!=real[i] || (!im.empty() && std::memcmp(im.data(),complex[i].data(),im.size()*sizeof(WVComplex64))))
-        throw std::runtime_error("Diagnostic batching changed values: "+names[i]);
-    }
-    if(retained!=fields->persistentBytes()+plan.persistentBytes())
-      throw std::runtime_error("Independent diagnostic requests grew retained storage.");
-    if(fields->metrics().diagnosticWorkspaceLiveBytes)
-      throw std::runtime_error("Independent diagnostic request left scratch live.");
+    const auto evaluateSingles=[&] {
+      for(std::size_t i=0;i<names.size();++i) {
+        WVFieldEvaluationPlan single;require(fields->createPlan({requests[i]},single));
+        auto re=real[i];auto im=complex[i];
+        WVFieldOutputView view{re.data(),views[i].elementCount,im.data()};
+        require(fields->evaluate(single,state,&view,1));
+        if(fields->metrics().diagnosticWorkspaceLiveBytes)
+          throw std::runtime_error("Independent diagnostic request left scratch live.");
+        if(re!=real[i] || (!im.empty() && std::memcmp(im.data(),complex[i].data(),im.size()*sizeof(WVComplex64))))
+          throw std::runtime_error("Diagnostic batching changed values: "+names[i]);
+      }
+    };
+    // Combined and independently planned requests can establish different
+    // bounded prepared-field peaks. Warm both before fixing retained capacity.
+    evaluateSingles();
+    const auto retained=fields->persistentBytes()+plan.persistentBytes();
+    result["retainedBytes"]=retained;
     require(fields->evaluate(plan,state,views.data(),views.size()));
     if(retained!=fields->persistentBytes()+plan.persistentBytes())
       throw std::runtime_error("Diagnostic replay grew retained storage.");
     if(fields->metrics().diagnosticWorkspaceLiveBytes)
       throw std::runtime_error("Diagnostic replay left scratch live.");
+    evaluateSingles();
+    if(retained!=fields->persistentBytes()+plan.persistentBytes())
+      throw std::runtime_error("Independent diagnostic replay grew retained storage.");
     auto invalidFamilies=families;
     auto malformed=layout.coefficientFamilies()[0];malformed.elementCount=1;
     invalidFamilies[0].layout=&malformed;
