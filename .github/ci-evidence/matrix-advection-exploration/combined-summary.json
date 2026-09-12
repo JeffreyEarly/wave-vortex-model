@@ -1,0 +1,60 @@
+{
+  "classification": "four-pair exploratory complete-model screen; not final adoption qualification",
+  "runtimeCommit": "e8806710",
+  "profiles": {
+    "eddytide-256x256x28": {
+      "pairs": 4,
+      "geometricIntegrationRatio": 0.9219589502073764,
+      "reductionPercent": 7.804104979262361,
+      "ratioRange": [
+        0.8972083517397894,
+        0.9421607820196222
+      ],
+      "meanBaselineSeconds": 2.7141761665,
+      "meanCandidateSeconds": 2.502379875,
+      "maximumExtraOwnedBytes": 366240,
+      "maximumOwnedGrowthPercent": 0.068200104731031
+    },
+    "constant-nonhydrostatic-composite-256": {
+      "pairs": 4,
+      "geometricIntegrationRatio": 0.9858055817634254,
+      "reductionPercent": 1.4194418236574635,
+      "ratioRange": [
+        0.977113121405403,
+        1.0015512002692448
+      ],
+      "meanBaselineSeconds": 1.6079015,
+      "meanCandidateSeconds": 1.58520921875,
+      "maximumExtraOwnedBytes": 32,
+      "maximumOwnedGrowthPercent": 1.6166336047618302e-06
+    },
+    "variable-hydrostatic-composite-large": {
+      "pairs": 4,
+      "geometricIntegrationRatio": 0.9662117960091134,
+      "reductionPercent": 3.3788203990886556,
+      "ratioRange": [
+        0.9509169863808411,
+        0.9738515181249509
+      ],
+      "meanBaselineSeconds": 0.75786605225,
+      "meanCandidateSeconds": 0.73226882275,
+      "maximumExtraOwnedBytes": 212384,
+      "maximumOwnedGrowthPercent": 0.009179860590058375
+    },
+    "boussinesq-256x256x129-no-observers": {
+      "pairs": 4,
+      "geometricIntegrationRatio": 0.6132843878127291,
+      "reductionPercent": 38.67156121872709,
+      "ratioRange": [
+        0.5933762388458567,
+        0.6252362788705578
+      ],
+      "meanBaselineSeconds": 0.63491300025,
+      "meanCandidateSeconds": 0.38948992725,
+      "maximumExtraOwnedBytes": 584280,
+      "maximumOwnedGrowthPercent": 0.011004648515688942
+    }
+  },
+  "allNumericalComparisonsPassed": true,
+  "allStateAndStepDecisionsIdentical": true
+}

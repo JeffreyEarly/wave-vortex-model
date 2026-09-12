@@ -1,0 +1,14 @@
+{
+  "kind": "exploratory paired screen, not final qualification",
+  "startedUTC": "2026-09-12T06:38:40.366580+00:00",
+  "binarySHA256": {
+    "baseline": "4a507bab619ff6184af7cfba1ce77f7508daaf116d0a59f0f58ed3166f2afdae",
+    "candidate": "0d47b2e341405f839aedc47d9a67cbdacde13319fbdb5109922bcea677faebb7"
+  },
+  "sourceSHA256": "970e938d5e0eefa295409e1fc7896a7a4cdca68c7aa2419386df20b55157d12c",
+  "host": "macOS-26.6.1-arm64-arm-64bit",
+  "environment": {},
+  "pairs": 4,
+  "warmups": 0,
+  "profiles": "0,1,2,3"
+}

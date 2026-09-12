@@ -4,6 +4,8 @@ This folder contains authoring-only performance tools and historical profiling s
 
 Before C++ optimization, follow the [C++ optimization workflow](CPP-OPTIMIZATION.md) for profiling, delegation, early correctness checks, and final qualification. The [post-cache profile](POST-CACHE-PROFILE.md) and [Hydrostatic assembly investigation](HYDROSTATIC-ASSEMBLY.md), followed by [speed reduction and phase preparation](HYDROSTATIC-SPEED-PHASE.md), record the next measured bottleneck, selected implementation and rejected alternatives.
 
+The [matrix and immediate FFT advection experiment](MATRIX-ADVECTION-PIPELINE.md) records the following implementation, isolated and combined screens, and remaining adoption gates.
+
 ## Reproducible benchmark suites
 
 `runWaveVortexBenchmark` is the canonical performance and memory entry point. It measures a state-advanced `nonlinearFlux()` call while retaining ordinary production caches. State changes use the public `t`, `Ap`, `Am`, and `A0` setters; the runner never clears the variable cache explicitly.

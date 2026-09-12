@@ -1,0 +1,8 @@
+{
+  "classification": "exploratory screen, not idle-host qualification",
+  "backgroundActivity": "Photos analysis/library services observed around 98-110% CPU (about one core) immediately before run. No process was stopped, suspended or reprioritized.",
+  "earlierScreens": "Initial separate pipeline and inertial/group screens preceded this activity.",
+  "runtimeFrozenCommit": "e8806710",
+  "metadataOnlyChanges": "Two source-selection JSON files refreshed after compilation; no compiled inputs changed.",
+  "groupSweepDifference": "Standalone worker sweep used 12 pointwise workers; production runner uses 8. Combined screen validates the actual runner policy."
+}

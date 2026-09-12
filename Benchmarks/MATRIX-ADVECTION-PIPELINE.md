@@ -28,6 +28,21 @@ Integration screens used two alternating baseline/candidate pairs per profile. M
 
 These reductions are measured at different boundaries and must not be added. All output/flux comparisons passed. Flux differences in the worker sweep were at most approximately 5.1e-16 relative L2; repeated serial controls also showed final-bit variation.
 
+## Combined complete-model screen
+
+Four alternating baseline/candidate pairs per fixture used the frozen runner and identical integration controls. All sixteen scientific output comparisons and state/step decisions passed, with zero duplicate evaluator executions. Timings below measure integration, excluding checkpoint loading, preparation and output. No warmup campaign or production-default qualification is claimed.
+
+| Workload | Integration-time reduction | Added owned peak |
+| --- | ---: | ---: |
+| EddyTide | 7.80% | 366,240 bytes |
+| Constant-stratification control | 1.42% | 32 bytes |
+| Larger Hydrostatic | 3.38% | 212,384 bytes |
+| Boussinesq | 38.67% | 584,280 bytes |
+
+The constant-stratification control is unchanged scientifically; its small timing shift is treated as ordinary measurement variation. EddyTide owned storage grows 0.068%, with no added physical-grid derivative buffer. Generic vertical operators retain an exact column-to-matrix lookup. Boussinesq selects eight vertical workers in the actual runner and retains its established eight pointwise workers.
+
+Photos background activity was present immediately before the run; the 36 recorded host samples during the campaign show it had settled. Preserve that caveat and repeat the formal idle-host campaign before adoption. The independent screens and the combined result agree on both optimization directions. Compact results and hashes are in [the evidence directory](../.github/ci-evidence/matrix-advection-exploration/combined-summary.json).
+
 ## Verification ledger
 
 - Combined native Release suite: 58/58 passed. Subsequent test-only lifetime correction reran only the two affected kernels successfully.
@@ -35,7 +50,7 @@ These reductions are measured at different boundaries and must not be added. All
 - GCC 14: operator and both family kernel tests passed. The local runner target cannot compile the installed Apple SDK Mach header assertions with GCC; actual Linux runner CI remains required.
 - MATLAB: all seven affected Hydrostatic/Boussinesq scientific parity methods passed, including compact consumers and concurrent Boussinesq matrix groups. Four integration/source checks passed initially; the stale native-engine identity check passed on focused rerun after updating source-selection metadata. No MATLAB source changed.
 - Independent review covered consumer lifetime, derivative cache hits, normalization, density correction, partial inertial output, exact group mapping, worker scratch, failure publication, overflow, reentry and the combined conflict resolution.
-- Prerequisite PR #476 cache-capacity probe corrections were verified under Release and sanitizers and pushed separately. Its runtime baseline is unchanged.
+- Prerequisite PR #476 cache-capacity probe corrections were verified under Release and sanitizers and pushed separately. PR #476 merged as `5a41977b` and issue #475 is closed. The incoming main tree was byte-identical to `39afaa13`, already present in this experiment; merge `a16da09c` records that ancestry without changing the experiment tree. The v4 main checkout is synchronized.
 
 ## Delivery boundary
 
