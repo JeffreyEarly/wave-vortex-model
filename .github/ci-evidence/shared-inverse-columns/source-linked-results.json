@@ -4,41 +4,41 @@
     "passed": true,
     "failed": false,
     "incomplete": false,
-    "duration": 47.264173291666673
+    "duration": 46.665968208333339
   },
   {
     "name": "TestPortableForwardIntegration/representativeLifecycleMatchesMatlab(configuration=constantNonhydrostatic)",
     "passed": true,
     "failed": false,
     "incomplete": false,
-    "duration": 37.34450558333333
+    "duration": 37.043330833333336
   },
   {
     "name": "TestPortableForwardIntegration/representativeLifecycleMatchesMatlab(configuration=barotropic)",
     "passed": true,
     "failed": false,
     "incomplete": false,
-    "duration": 24.02582625
+    "duration": 23.930828333333334
   },
   {
     "name": "TestPortableForwardIntegration/representativeLifecycleMatchesMatlab(configuration=stratifiedQG)",
     "passed": true,
     "failed": false,
     "incomplete": false,
-    "duration": 38.70814775
+    "duration": 38.419791083333337
   },
   {
     "name": "TestPortableForwardIntegration/representativeLifecycleMatchesMatlab(configuration=hydrostatic)",
     "passed": true,
     "failed": false,
     "incomplete": false,
-    "duration": 49.275751791666664
+    "duration": 49.098393916666666
   },
   {
     "name": "TestPortableForwardIntegration/representativeLifecycleMatchesMatlab(configuration=boussinesq)",
     "passed": true,
     "failed": false,
     "incomplete": false,
-    "duration": 54.748496583333335
+    "duration": 54.662806374999995
   }
 ]

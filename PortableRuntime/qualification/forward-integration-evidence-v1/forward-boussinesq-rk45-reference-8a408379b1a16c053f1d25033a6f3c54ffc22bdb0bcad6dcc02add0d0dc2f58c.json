@@ -3,24 +3,24 @@
   "schemaVersion": 1,
   "scope": "forward-integration",
   "status": "complete",
-  "sourceCommit": "23adc8db40900854946eb0f4efff37c0e8fb6a91",
+  "sourceCommit": "0e46b3bc2b83db227bb7507f25e4687b4c4c4d9a",
   "provider": "reference",
   "matlabRelease": "2025b",
   "platform": "MACA64",
   "cases": {
-    "id": "forward-hydrostatic-rk45",
-    "configuration": "hydrostatic",
+    "id": "forward-boussinesq-rk45",
+    "configuration": "boussinesq",
     "profile": "adaptive-rk45",
-    "testName": "TestPortableForwardIntegration/representativeLifecycleMatchesMatlab(configuration=hydrostatic)",
+    "testName": "TestPortableForwardIntegration/representativeLifecycleMatchesMatlab(configuration=boussinesq)",
     "passed": true,
     "failed": false,
     "incomplete": false,
     "provider": "reference",
     "scope": "forward-integration",
     "controls": {
-      "id": "forward-hydrostatic-rk45",
-      "configuration": "hydrostatic",
-      "parameter": "hydrostatic",
+      "id": "forward-boussinesq-rk45",
+      "configuration": "boussinesq",
+      "parameter": "boussinesq",
       "profile": "adaptive-rk45",
       "method": "adaptive-rk45",
       "initialTime": 17,
@@ -30,133 +30,133 @@
       "maximumStep": 4,
       "relativeTolerance": 1E-9,
       "absoluteTolerance": 1E-10,
-      "stopBoundary": "accepted-step",
+      "stopBoundary": "output-occurrence",
       "heldIndex": 6,
       "heldReal": -4.3578788620679385E-7,
       "heldImag": -1.1360104734654344E-7
     },
     "evolution": {
-      "coefficients": 0.0771949333895197,
-      "particlePosition": 0.63820751311033064,
-      "tracer": 0.00014087915215243996
+      "coefficients": 0.077197679786716725,
+      "particlePosition": 0.63832355325570234,
+      "tracer": 0.00014092432052659198
     },
     "outcomes": {
       "whole": [
         {
-          "coefficients": 2.0667429354137469E-15,
-          "fields": 1.0609520656446633E-15,
-          "tracer": 1.5542843854036618E-15,
-          "particlePosition": 6.8212102632969618E-13,
-          "savedOutput": 2.0667426412961928E-15,
+          "coefficients": 1.5514471209425781E-15,
+          "fields": 7.500610107253097E-16,
+          "tracer": 1.5542843697317047E-15,
+          "particlePosition": 4.5474735088646412E-13,
+          "savedOutput": 2.1696310858444164E-15,
           "heldAmplitude": 0,
           "restoredStateExact": true
         },
         {
-          "coefficients": 2.0667429354137469E-15,
-          "fields": 1.0609520656446633E-15,
-          "tracer": 1.5542843854036618E-15,
-          "particlePosition": 6.8212102632969618E-13,
-          "savedOutput": 2.0667426412961928E-15,
+          "coefficients": 1.5514471209425781E-15,
+          "fields": 7.500610107253097E-16,
+          "tracer": 1.5542843697317047E-15,
+          "particlePosition": 4.5474735088646412E-13,
+          "savedOutput": 1.9526679772599747E-15,
           "heldAmplitude": 0,
           "restoredStateExact": true
         }
       ],
       "split": [
         {
-          "coefficients": 2.0667429354137469E-15,
-          "fields": 1.0609520656446633E-15,
-          "tracer": 1.5542843854036618E-15,
-          "particlePosition": 6.8212102632969618E-13,
-          "savedOutput": 2.0667426412961928E-15,
+          "coefficients": 1.5514471209425781E-15,
+          "fields": 7.500610107253097E-16,
+          "tracer": 1.5542843697317047E-15,
+          "particlePosition": 4.5474735088646412E-13,
+          "savedOutput": 2.1696310858444164E-15,
           "heldAmplitude": 0,
           "restoredStateExact": true
         },
         {
-          "coefficients": 2.0667429354137469E-15,
-          "fields": 1.0609520656446633E-15,
-          "tracer": 1.5542843854036618E-15,
-          "particlePosition": 6.8212102632969618E-13,
-          "savedOutput": 2.0667426412961928E-15,
+          "coefficients": 1.5514471209425781E-15,
+          "fields": 7.500610107253097E-16,
+          "tracer": 1.5542843697317047E-15,
+          "particlePosition": 4.5474735088646412E-13,
+          "savedOutput": 1.9526679772599747E-15,
           "heldAmplitude": 0,
           "restoredStateExact": true
         }
       ],
       "matlabToCpp": [
         {
-          "coefficients": 1.2173507614064242E-15,
-          "fields": 6.4319328990530386E-16,
-          "tracer": 9.9918281918806835E-16,
-          "particlePosition": 2.8421709430404007E-13,
-          "savedOutput": 1.6010131165645184E-15,
+          "coefficients": 8.876221066950652E-16,
+          "fields": 8.5721258368606825E-16,
+          "tracer": 8.8816249698954562E-16,
+          "particlePosition": 2.2737367544323206E-13,
+          "savedOutput": 1.6006287989914011E-15,
           "heldAmplitude": 0,
           "restoredStateExact": true
         },
         {
-          "coefficients": 1.2173507614064242E-15,
-          "fields": 6.4319328990530386E-16,
-          "tracer": 9.9918281918806835E-16,
-          "particlePosition": 2.8421709430404007E-13,
-          "savedOutput": 1.6010131165645184E-15,
+          "coefficients": 8.876221066950652E-16,
+          "fields": 8.5721258368606825E-16,
+          "tracer": 8.8816249698954562E-16,
+          "particlePosition": 2.2737367544323206E-13,
+          "savedOutput": 1.6006287989914011E-15,
           "heldAmplitude": 0,
           "restoredStateExact": true
         }
       ],
       "cppToMatlab": [
         {
-          "coefficients": 1.430822032209517E-15,
-          "fields": 6.8961884266903116E-16,
-          "tracer": 6.6612187945871226E-16,
-          "particlePosition": 4.5474735088646412E-13,
-          "savedOutput": 1.76111442822097E-15,
+          "coefficients": 6.8544330582207466E-16,
+          "fields": 5.3575786480379259E-16,
+          "tracer": 7.7714218486585237E-16,
+          "particlePosition": 2.2737367544323206E-13,
+          "savedOutput": 1.8674002654899677E-15,
           "heldAmplitude": 0,
           "restoredStateExact": true
         },
         {
-          "coefficients": 1.430822032209517E-15,
-          "fields": 6.8961884266903116E-16,
-          "tracer": 6.6612187945871226E-16,
-          "particlePosition": 4.5474735088646412E-13,
-          "savedOutput": 1.76111442822097E-15,
+          "coefficients": 6.8544330582207466E-16,
+          "fields": 5.3575786480379259E-16,
+          "tracer": 7.7714218486585237E-16,
+          "particlePosition": 2.2737367544323206E-13,
+          "savedOutput": 1.8674002654899677E-15,
           "heldAmplitude": 0,
           "restoredStateExact": true
         }
       ],
       "stoppedCpp": [
         {
-          "coefficients": 2.0667429354137469E-15,
-          "fields": 1.0609520656446633E-15,
-          "tracer": 1.5542843854036618E-15,
-          "particlePosition": 6.8212102632969618E-13,
-          "savedOutput": 2.0667426412961928E-15,
+          "coefficients": 1.5514471209425781E-15,
+          "fields": 7.500610107253097E-16,
+          "tracer": 1.5542843697317047E-15,
+          "particlePosition": 4.5474735088646412E-13,
+          "savedOutput": 2.1696310858444164E-15,
           "heldAmplitude": 0,
           "restoredStateExact": true
         },
         {
-          "coefficients": 2.0667429354137469E-15,
-          "fields": 1.0609520656446633E-15,
-          "tracer": 1.5542843854036618E-15,
-          "particlePosition": 6.8212102632969618E-13,
-          "savedOutput": 2.0667426412961928E-15,
+          "coefficients": 1.5514471209425781E-15,
+          "fields": 7.500610107253097E-16,
+          "tracer": 1.5542843697317047E-15,
+          "particlePosition": 4.5474735088646412E-13,
+          "savedOutput": 1.9526679772599747E-15,
           "heldAmplitude": 0,
           "restoredStateExact": true
         }
       ],
       "stoppedMatlab": [
         {
-          "coefficients": 7.9490112900528727E-16,
-          "fields": 5.3047603282233164E-16,
-          "tracer": 4.4408125297247481E-16,
-          "particlePosition": 2.2737367544323206E-13,
-          "savedOutput": 1.7077473243354861E-15,
+          "coefficients": 3.1796045180568068E-16,
+          "fields": 5.257825384230616E-16,
+          "tracer": 4.4408124849477281E-16,
+          "particlePosition": 1.1368683772161603E-13,
+          "savedOutput": 1.6006287989914011E-15,
           "heldAmplitude": 0,
           "restoredStateExact": true
         },
         {
-          "coefficients": 7.9490112900528727E-16,
-          "fields": 5.3047603282233164E-16,
-          "tracer": 4.4408125297247481E-16,
-          "particlePosition": 2.2737367544323206E-13,
-          "savedOutput": 1.7077473243354861E-15,
+          "coefficients": 3.1796045180568068E-16,
+          "fields": 5.257825384230616E-16,
+          "tracer": 4.4408124849477281E-16,
+          "particlePosition": 1.1368683772161603E-13,
+          "savedOutput": 1.6006287989914011E-15,
           "heldAmplitude": 0,
           "restoredStateExact": true
         }
@@ -169,11 +169,11 @@
     },
     "stop": {
       "reason": "stop-requested",
-      "requestedBoundary": "accepted-step",
-      "requestedAtAcceptedTime": 21,
-      "requestedAtOutputTime": [],
+      "requestedBoundary": "output-occurrence",
+      "requestedAtAcceptedTime": 29,
+      "requestedAtOutputTime": 27,
       "finalAcceptedTime": 37,
-      "callbackEvaluationCount": 2,
+      "callbackEvaluationCount": 5,
       "stopWorkspaceMaximumLiveBytes": 17272
     },
     "checks": [
@@ -207,8 +207,8 @@
       }
     ],
     "timingSeconds": {
-      "sharedMatlabPreparation": 7.179624375,
-      "providerLifecycle": 21.742198625
+      "sharedMatlabPreparation": 7.8518935,
+      "providerLifecycle": 23.717672916666668
     },
     "runs": {
       "whole": {
@@ -270,7 +270,7 @@
         "variableKernelPolicy": {
           "buildEnabled": true,
           "variableTransform": true,
-          "transformKind": "hydrostatic",
+          "transformKind": "boussinesq",
           "selection": "reference-provider",
           "compact": false,
           "matrixBackend": "scalar",
@@ -349,7 +349,7 @@
         "variableKernelPolicy": {
           "buildEnabled": true,
           "variableTransform": true,
-          "transformKind": "hydrostatic",
+          "transformKind": "boussinesq",
           "selection": "reference-provider",
           "compact": false,
           "matrixBackend": "scalar",
@@ -428,7 +428,7 @@
         "variableKernelPolicy": {
           "buildEnabled": true,
           "variableTransform": true,
-          "transformKind": "hydrostatic",
+          "transformKind": "boussinesq",
           "selection": "reference-provider",
           "compact": false,
           "matrixBackend": "scalar",
@@ -507,7 +507,7 @@
         "variableKernelPolicy": {
           "buildEnabled": true,
           "variableTransform": true,
-          "transformKind": "hydrostatic",
+          "transformKind": "boussinesq",
           "selection": "reference-provider",
           "compact": false,
           "matrixBackend": "scalar",
@@ -561,11 +561,11 @@
         },
         "termination": {
           "reason": "stop-requested",
-          "requestedBoundary": "accepted-step",
-          "requestedAtAcceptedTime": 21,
-          "requestedAtOutputTime": [],
+          "requestedBoundary": "output-occurrence",
+          "requestedAtAcceptedTime": 29,
+          "requestedAtOutputTime": 27,
           "finalAcceptedTime": 37,
-          "callbackEvaluationCount": 2,
+          "callbackEvaluationCount": 5,
           "stopWorkspaceMaximumLiveBytes": 17272
         },
         "state": {
@@ -586,7 +586,7 @@
         "variableKernelPolicy": {
           "buildEnabled": true,
           "variableTransform": true,
-          "transformKind": "hydrostatic",
+          "transformKind": "boussinesq",
           "selection": "reference-provider",
           "compact": false,
           "matrixBackend": "scalar",
@@ -665,7 +665,7 @@
         "variableKernelPolicy": {
           "buildEnabled": true,
           "variableTransform": true,
-          "transformKind": "hydrostatic",
+          "transformKind": "boussinesq",
           "selection": "reference-provider",
           "compact": false,
           "matrixBackend": "scalar",
@@ -759,20 +759,20 @@
   ],
   "buildSource": {
     "root": "/Users/jearly/Documents/OceanKitRepositories/wvm-v4-shared-inverse-columns",
-    "commit": "23adc8db40900854946eb0f4efff37c0e8fb6a91"
+    "commit": "0e46b3bc2b83db227bb7507f25e4687b4c4c4d9a"
   },
   "executionBinaries": [
     {
       "role": "runner",
       "path": "/private/tmp/wvm481-native/bin/wave-vortex-run",
-      "sha256": "8cb1edd6f64ff56c345c77ef012ab40933f9cb2e81e5cd44f1fa62a45487baea",
-      "sourceCommit": "23adc8db40900854946eb0f4efff37c0e8fb6a91"
+      "sha256": "4707b83e6259b53511d7acfcfc11acb7f5e4a41605072cac202602d7df064e01",
+      "sourceCommit": "0e46b3bc2b83db227bb7507f25e4687b4c4c4d9a"
     },
     {
       "role": "probe",
       "path": "/private/tmp/wvm481-native/bin/WVForwardIntegrationProbe",
-      "sha256": "a6340a2bdfe1781e28a2e884e8f73749edb2344e12dc67182f145d9078e01381",
-      "sourceCommit": "23adc8db40900854946eb0f4efff37c0e8fb6a91"
+      "sha256": "39e90b4469617679fdbd0ee246ecf5b280c6ebbe1c02b50e1c07dd6bb563aded",
+      "sourceCommit": "0e46b3bc2b83db227bb7507f25e4687b4c4c4d9a"
     }
   ],
   "artifacts": [],

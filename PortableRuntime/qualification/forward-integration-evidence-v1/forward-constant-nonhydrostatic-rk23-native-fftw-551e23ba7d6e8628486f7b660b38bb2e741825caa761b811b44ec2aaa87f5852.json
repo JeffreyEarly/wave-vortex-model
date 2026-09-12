@@ -3,26 +3,26 @@
   "schemaVersion": 1,
   "scope": "forward-integration",
   "status": "complete",
-  "sourceCommit": "23adc8db40900854946eb0f4efff37c0e8fb6a91",
-  "provider": "reference",
+  "sourceCommit": "0e46b3bc2b83db227bb7507f25e4687b4c4c4d9a",
+  "provider": "native-fftw",
   "matlabRelease": "2025b",
   "platform": "MACA64",
   "cases": {
-    "id": "forward-boussinesq-rk45",
-    "configuration": "boussinesq",
-    "profile": "adaptive-rk45",
-    "testName": "TestPortableForwardIntegration/representativeLifecycleMatchesMatlab(configuration=boussinesq)",
+    "id": "forward-constant-nonhydrostatic-rk23",
+    "configuration": "constant-nonhydrostatic",
+    "profile": "adaptive-rk23",
+    "testName": "TestPortableForwardIntegration/representativeLifecycleMatchesMatlab(configuration=constantNonhydrostatic)",
     "passed": true,
     "failed": false,
     "incomplete": false,
-    "provider": "reference",
+    "provider": "native-fftw",
     "scope": "forward-integration",
     "controls": {
-      "id": "forward-boussinesq-rk45",
-      "configuration": "boussinesq",
-      "parameter": "boussinesq",
-      "profile": "adaptive-rk45",
-      "method": "adaptive-rk45",
+      "id": "forward-constant-nonhydrostatic-rk23",
+      "configuration": "constant-nonhydrostatic",
+      "parameter": "constantNonhydrostatic",
+      "profile": "adaptive-rk23",
+      "method": "adaptive-rk23",
       "initialTime": 17,
       "splitTime": 77,
       "finalTime": 137,
@@ -31,132 +31,132 @@
       "relativeTolerance": 1E-9,
       "absoluteTolerance": 1E-10,
       "stopBoundary": "output-occurrence",
-      "heldIndex": 6,
-      "heldReal": -4.3578788620679385E-7,
-      "heldImag": -1.1360104734654344E-7
+      "heldIndex": 7,
+      "heldReal": -4.9122630631216624E-7,
+      "heldImag": -2.5242305229992879E-7
     },
     "evolution": {
-      "coefficients": 0.077197679786716725,
-      "particlePosition": 0.63832355325570234,
-      "tracer": 0.00014092432052659198
+      "coefficients": 0.16055559809397177,
+      "particlePosition": 0.2723208203637455,
+      "tracer": 0.0001844535533704339
     },
     "outcomes": {
       "whole": [
         {
-          "coefficients": 1.5514471209425781E-15,
-          "fields": 7.500610107253097E-16,
-          "tracer": 1.5542843697317047E-15,
-          "particlePosition": 4.5474735088646412E-13,
-          "savedOutput": 2.1696310858444164E-15,
+          "coefficients": 8.8330562210586167E-16,
+          "fields": 1.0257066405618069E-15,
+          "tracer": 8.8819898526261742E-16,
+          "particlePosition": 2.2737367544323206E-13,
+          "savedOutput": 2.3408572599209439E-15,
           "heldAmplitude": 0,
           "restoredStateExact": true
         },
         {
-          "coefficients": 1.5514471209425781E-15,
-          "fields": 7.500610107253097E-16,
-          "tracer": 1.5542843697317047E-15,
-          "particlePosition": 4.5474735088646412E-13,
-          "savedOutput": 1.9526679772599747E-15,
+          "coefficients": 8.8330562210586167E-16,
+          "fields": 1.0257066405618069E-15,
+          "tracer": 8.8819898526261742E-16,
+          "particlePosition": 2.2737367544323206E-13,
+          "savedOutput": 2.3408572599209439E-15,
           "heldAmplitude": 0,
           "restoredStateExact": true
         }
       ],
       "split": [
         {
-          "coefficients": 1.5514471209425781E-15,
-          "fields": 7.500610107253097E-16,
-          "tracer": 1.5542843697317047E-15,
-          "particlePosition": 4.5474735088646412E-13,
-          "savedOutput": 2.1696310858444164E-15,
+          "coefficients": 8.8330562210586167E-16,
+          "fields": 1.0257066405618069E-15,
+          "tracer": 8.8819898526261742E-16,
+          "particlePosition": 2.2737367544323206E-13,
+          "savedOutput": 2.3408572599209439E-15,
           "heldAmplitude": 0,
           "restoredStateExact": true
         },
         {
-          "coefficients": 1.5514471209425781E-15,
-          "fields": 7.500610107253097E-16,
-          "tracer": 1.5542843697317047E-15,
-          "particlePosition": 4.5474735088646412E-13,
-          "savedOutput": 1.9526679772599747E-15,
+          "coefficients": 8.8330562210586167E-16,
+          "fields": 1.0257066405618069E-15,
+          "tracer": 8.8819898526261742E-16,
+          "particlePosition": 2.2737367544323206E-13,
+          "savedOutput": 2.3408572599209439E-15,
           "heldAmplitude": 0,
           "restoredStateExact": true
         }
       ],
       "matlabToCpp": [
         {
-          "coefficients": 8.876221066950652E-16,
-          "fields": 8.5721258368606825E-16,
-          "tracer": 8.8816249698954562E-16,
-          "particlePosition": 2.2737367544323206E-13,
-          "savedOutput": 1.6006287989914011E-15,
+          "coefficients": 4.9378285398411192E-16,
+          "fields": 5.1285332028090344E-16,
+          "tracer": 5.5512436578913586E-16,
+          "particlePosition": 1.1368683772161603E-13,
+          "savedOutput": 9.0826628109196152E-16,
           "heldAmplitude": 0,
           "restoredStateExact": true
         },
         {
-          "coefficients": 8.876221066950652E-16,
-          "fields": 8.5721258368606825E-16,
-          "tracer": 8.8816249698954562E-16,
-          "particlePosition": 2.2737367544323206E-13,
-          "savedOutput": 1.6006287989914011E-15,
+          "coefficients": 4.9378285398411192E-16,
+          "fields": 5.1285332028090344E-16,
+          "tracer": 5.5512436578913586E-16,
+          "particlePosition": 1.1368683772161603E-13,
+          "savedOutput": 9.0826628109196152E-16,
           "heldAmplitude": 0,
           "restoredStateExact": true
         }
       ],
       "cppToMatlab": [
         {
-          "coefficients": 6.8544330582207466E-16,
-          "fields": 5.3575786480379259E-16,
-          "tracer": 7.7714218486585237E-16,
-          "particlePosition": 2.2737367544323206E-13,
-          "savedOutput": 1.8674002654899677E-15,
+          "coefficients": 7.8463322953718586E-16,
+          "fields": 6.8380442704120449E-16,
+          "tracer": 5.5512436578913586E-16,
+          "particlePosition": 1.1368683772161603E-13,
+          "savedOutput": 2.0420244182289083E-15,
           "heldAmplitude": 0,
           "restoredStateExact": true
         },
         {
-          "coefficients": 6.8544330582207466E-16,
-          "fields": 5.3575786480379259E-16,
-          "tracer": 7.7714218486585237E-16,
-          "particlePosition": 2.2737367544323206E-13,
-          "savedOutput": 1.8674002654899677E-15,
+          "coefficients": 7.8463322953718586E-16,
+          "fields": 6.8380442704120449E-16,
+          "tracer": 5.5512436578913586E-16,
+          "particlePosition": 1.1368683772161603E-13,
+          "savedOutput": 2.0420244182289083E-15,
           "heldAmplitude": 0,
           "restoredStateExact": true
         }
       ],
       "stoppedCpp": [
         {
-          "coefficients": 1.5514471209425781E-15,
-          "fields": 7.500610107253097E-16,
-          "tracer": 1.5542843697317047E-15,
-          "particlePosition": 4.5474735088646412E-13,
-          "savedOutput": 2.1696310858444164E-15,
+          "coefficients": 8.8330562210586167E-16,
+          "fields": 1.0257066405618069E-15,
+          "tracer": 8.8819898526261742E-16,
+          "particlePosition": 2.2737367544323206E-13,
+          "savedOutput": 2.3408572599209439E-15,
           "heldAmplitude": 0,
           "restoredStateExact": true
         },
         {
-          "coefficients": 1.5514471209425781E-15,
-          "fields": 7.500610107253097E-16,
-          "tracer": 1.5542843697317047E-15,
-          "particlePosition": 4.5474735088646412E-13,
-          "savedOutput": 1.9526679772599747E-15,
+          "coefficients": 8.8330562210586167E-16,
+          "fields": 1.0257066405618069E-15,
+          "tracer": 8.8819898526261742E-16,
+          "particlePosition": 2.2737367544323206E-13,
+          "savedOutput": 2.3408572599209439E-15,
           "heldAmplitude": 0,
           "restoredStateExact": true
         }
       ],
       "stoppedMatlab": [
         {
-          "coefficients": 3.1796045180568068E-16,
-          "fields": 5.257825384230616E-16,
-          "tracer": 4.4408124849477281E-16,
+          "coefficients": 4.7490514197262868E-16,
+          "fields": 4.2934637577590438E-16,
+          "tracer": 3.3307461947348156E-16,
           "particlePosition": 1.1368683772161603E-13,
-          "savedOutput": 1.6006287989914011E-15,
+          "savedOutput": 1.1953313667681416E-15,
           "heldAmplitude": 0,
           "restoredStateExact": true
         },
         {
-          "coefficients": 3.1796045180568068E-16,
-          "fields": 5.257825384230616E-16,
-          "tracer": 4.4408124849477281E-16,
+          "coefficients": 4.7490514197262868E-16,
+          "fields": 4.2934637577590438E-16,
+          "tracer": 3.3307461947348156E-16,
           "particlePosition": 1.1368683772161603E-13,
-          "savedOutput": 1.6006287989914011E-15,
+          "savedOutput": 1.1953313667681416E-15,
           "heldAmplitude": 0,
           "restoredStateExact": true
         }
@@ -207,16 +207,16 @@
       }
     ],
     "timingSeconds": {
-      "sharedMatlabPreparation": 7.8430706666666667,
-      "providerLifecycle": 23.8764065
+      "sharedMatlabPreparation": 4.9331840833333329,
+      "providerLifecycle": 15.889020333333333
     },
     "runs": {
       "whole": {
         "status": "complete",
         "integrationRequest": {
-          "requestedMethod": "adaptive-rk45",
-          "activeMethod": "adaptive-rk45",
-          "controller": "matlab-ode45-v1",
+          "requestedMethod": "adaptive-rk23",
+          "activeMethod": "adaptive-rk23",
+          "controller": "matlab-ode23-v1",
           "requestedInitialStep": 4,
           "requestedMaximumStep": 4,
           "requestedRelativeTolerance": 1E-9,
@@ -258,9 +258,9 @@
           "deltaT": 4,
           "stepCount": 30,
           "rejectedStepCount": 0,
-          "rhsEvaluationCount": 210,
+          "rhsEvaluationCount": 120,
           "shape": [
-            4,
+            5,
             8
           ]
         },
@@ -269,9 +269,9 @@
         "denseOutputEvaluationCount": 18,
         "variableKernelPolicy": {
           "buildEnabled": true,
-          "variableTransform": true,
-          "transformKind": "boussinesq",
-          "selection": "reference-provider",
+          "variableTransform": false,
+          "transformKind": "constant-stratification",
+          "selection": "non-variable-transform",
           "compact": false,
           "matrixBackend": "scalar",
           "spectralSchedule": "established-interleaved",
@@ -284,7 +284,7 @@
           "verticalGroupWorkers": 1,
           "inertialOnlyProjection": true,
           "requestedFFTThreads": [],
-          "effectiveFFTThreads": 1,
+          "effectiveFFTThreads": 16,
           "hostLogicalWorkers": 16,
           "hostPerformanceWorkers": 12,
           "noFallback": true
@@ -293,9 +293,9 @@
       "firstSegment": {
         "status": "complete",
         "integrationRequest": {
-          "requestedMethod": "adaptive-rk45",
-          "activeMethod": "adaptive-rk45",
-          "controller": "matlab-ode45-v1",
+          "requestedMethod": "adaptive-rk23",
+          "activeMethod": "adaptive-rk23",
+          "controller": "matlab-ode23-v1",
           "requestedInitialStep": 4,
           "requestedMaximumStep": 4,
           "requestedRelativeTolerance": 1E-9,
@@ -337,9 +337,9 @@
           "deltaT": 4,
           "stepCount": 15,
           "rejectedStepCount": 0,
-          "rhsEvaluationCount": 105,
+          "rhsEvaluationCount": 60,
           "shape": [
-            4,
+            5,
             8
           ]
         },
@@ -348,9 +348,9 @@
         "denseOutputEvaluationCount": 9,
         "variableKernelPolicy": {
           "buildEnabled": true,
-          "variableTransform": true,
-          "transformKind": "boussinesq",
-          "selection": "reference-provider",
+          "variableTransform": false,
+          "transformKind": "constant-stratification",
+          "selection": "non-variable-transform",
           "compact": false,
           "matrixBackend": "scalar",
           "spectralSchedule": "established-interleaved",
@@ -363,7 +363,7 @@
           "verticalGroupWorkers": 1,
           "inertialOnlyProjection": true,
           "requestedFFTThreads": [],
-          "effectiveFFTThreads": 1,
+          "effectiveFFTThreads": 16,
           "hostLogicalWorkers": 16,
           "hostPerformanceWorkers": 12,
           "noFallback": true
@@ -372,9 +372,9 @@
       "secondSegment": {
         "status": "complete",
         "integrationRequest": {
-          "requestedMethod": "adaptive-rk45",
-          "activeMethod": "adaptive-rk45",
-          "controller": "matlab-ode45-v1",
+          "requestedMethod": "adaptive-rk23",
+          "activeMethod": "adaptive-rk23",
+          "controller": "matlab-ode23-v1",
           "requestedInitialStep": 4,
           "requestedMaximumStep": 4,
           "requestedRelativeTolerance": 1E-9,
@@ -416,9 +416,9 @@
           "deltaT": 4,
           "stepCount": 15,
           "rejectedStepCount": 0,
-          "rhsEvaluationCount": 105,
+          "rhsEvaluationCount": 60,
           "shape": [
-            4,
+            5,
             8
           ]
         },
@@ -427,9 +427,9 @@
         "denseOutputEvaluationCount": 9,
         "variableKernelPolicy": {
           "buildEnabled": true,
-          "variableTransform": true,
-          "transformKind": "boussinesq",
-          "selection": "reference-provider",
+          "variableTransform": false,
+          "transformKind": "constant-stratification",
+          "selection": "non-variable-transform",
           "compact": false,
           "matrixBackend": "scalar",
           "spectralSchedule": "established-interleaved",
@@ -442,7 +442,7 @@
           "verticalGroupWorkers": 1,
           "inertialOnlyProjection": true,
           "requestedFFTThreads": [],
-          "effectiveFFTThreads": 1,
+          "effectiveFFTThreads": 16,
           "hostLogicalWorkers": 16,
           "hostPerformanceWorkers": 12,
           "noFallback": true
@@ -451,9 +451,9 @@
       "matlabToCpp": {
         "status": "complete",
         "integrationRequest": {
-          "requestedMethod": "adaptive-rk45",
-          "activeMethod": "adaptive-rk45",
-          "controller": "matlab-ode45-v1",
+          "requestedMethod": "adaptive-rk23",
+          "activeMethod": "adaptive-rk23",
+          "controller": "matlab-ode23-v1",
           "requestedInitialStep": 4,
           "requestedMaximumStep": 4,
           "requestedRelativeTolerance": 1E-9,
@@ -495,9 +495,9 @@
           "deltaT": 4,
           "stepCount": 15,
           "rejectedStepCount": 0,
-          "rhsEvaluationCount": 105,
+          "rhsEvaluationCount": 60,
           "shape": [
-            4,
+            5,
             8
           ]
         },
@@ -506,9 +506,9 @@
         "denseOutputEvaluationCount": 9,
         "variableKernelPolicy": {
           "buildEnabled": true,
-          "variableTransform": true,
-          "transformKind": "boussinesq",
-          "selection": "reference-provider",
+          "variableTransform": false,
+          "transformKind": "constant-stratification",
+          "selection": "non-variable-transform",
           "compact": false,
           "matrixBackend": "scalar",
           "spectralSchedule": "established-interleaved",
@@ -521,7 +521,7 @@
           "verticalGroupWorkers": 1,
           "inertialOnlyProjection": true,
           "requestedFFTThreads": [],
-          "effectiveFFTThreads": 1,
+          "effectiveFFTThreads": 16,
           "hostLogicalWorkers": 16,
           "hostPerformanceWorkers": 12,
           "noFallback": true
@@ -530,9 +530,9 @@
       "stopped": {
         "status": "stopped",
         "integrationRequest": {
-          "requestedMethod": "adaptive-rk45",
-          "activeMethod": "adaptive-rk45",
-          "controller": "matlab-ode45-v1",
+          "requestedMethod": "adaptive-rk23",
+          "activeMethod": "adaptive-rk23",
+          "controller": "matlab-ode23-v1",
           "requestedInitialStep": 4,
           "requestedMaximumStep": 4,
           "requestedRelativeTolerance": 1E-9,
@@ -574,9 +574,9 @@
           "deltaT": 4,
           "stepCount": 5,
           "rejectedStepCount": 0,
-          "rhsEvaluationCount": 35,
+          "rhsEvaluationCount": 20,
           "shape": [
-            4,
+            5,
             8
           ]
         },
@@ -585,9 +585,9 @@
         "denseOutputEvaluationCount": 3,
         "variableKernelPolicy": {
           "buildEnabled": true,
-          "variableTransform": true,
-          "transformKind": "boussinesq",
-          "selection": "reference-provider",
+          "variableTransform": false,
+          "transformKind": "constant-stratification",
+          "selection": "non-variable-transform",
           "compact": false,
           "matrixBackend": "scalar",
           "spectralSchedule": "established-interleaved",
@@ -600,7 +600,7 @@
           "verticalGroupWorkers": 1,
           "inertialOnlyProjection": true,
           "requestedFFTThreads": [],
-          "effectiveFFTThreads": 1,
+          "effectiveFFTThreads": 16,
           "hostLogicalWorkers": 16,
           "hostPerformanceWorkers": 12,
           "noFallback": true
@@ -609,9 +609,9 @@
       "stoppedResume": {
         "status": "complete",
         "integrationRequest": {
-          "requestedMethod": "adaptive-rk45",
-          "activeMethod": "adaptive-rk45",
-          "controller": "matlab-ode45-v1",
+          "requestedMethod": "adaptive-rk23",
+          "activeMethod": "adaptive-rk23",
+          "controller": "matlab-ode23-v1",
           "requestedInitialStep": 4,
           "requestedMaximumStep": 4,
           "requestedRelativeTolerance": 1E-9,
@@ -653,9 +653,9 @@
           "deltaT": 4,
           "stepCount": 25,
           "rejectedStepCount": 0,
-          "rhsEvaluationCount": 175,
+          "rhsEvaluationCount": 100,
           "shape": [
-            4,
+            5,
             8
           ]
         },
@@ -664,9 +664,9 @@
         "denseOutputEvaluationCount": 15,
         "variableKernelPolicy": {
           "buildEnabled": true,
-          "variableTransform": true,
-          "transformKind": "boussinesq",
-          "selection": "reference-provider",
+          "variableTransform": false,
+          "transformKind": "constant-stratification",
+          "selection": "non-variable-transform",
           "compact": false,
           "matrixBackend": "scalar",
           "spectralSchedule": "established-interleaved",
@@ -679,7 +679,7 @@
           "verticalGroupWorkers": 1,
           "inertialOnlyProjection": true,
           "requestedFFTThreads": [],
-          "effectiveFFTThreads": 1,
+          "effectiveFFTThreads": 16,
           "hostLogicalWorkers": 16,
           "hostPerformanceWorkers": 12,
           "noFallback": true
@@ -759,20 +759,20 @@
   ],
   "buildSource": {
     "root": "/Users/jearly/Documents/OceanKitRepositories/wvm-v4-shared-inverse-columns",
-    "commit": "23adc8db40900854946eb0f4efff37c0e8fb6a91"
+    "commit": "0e46b3bc2b83db227bb7507f25e4687b4c4c4d9a"
   },
   "executionBinaries": [
     {
       "role": "runner",
       "path": "/private/tmp/wvm481-native/bin/wave-vortex-run",
-      "sha256": "8cb1edd6f64ff56c345c77ef012ab40933f9cb2e81e5cd44f1fa62a45487baea",
-      "sourceCommit": "23adc8db40900854946eb0f4efff37c0e8fb6a91"
+      "sha256": "4707b83e6259b53511d7acfcfc11acb7f5e4a41605072cac202602d7df064e01",
+      "sourceCommit": "0e46b3bc2b83db227bb7507f25e4687b4c4c4d9a"
     },
     {
       "role": "probe",
       "path": "/private/tmp/wvm481-native/bin/WVForwardIntegrationProbe",
-      "sha256": "a6340a2bdfe1781e28a2e884e8f73749edb2344e12dc67182f145d9078e01381",
-      "sourceCommit": "23adc8db40900854946eb0f4efff37c0e8fb6a91"
+      "sha256": "39e90b4469617679fdbd0ee246ecf5b280c6ebbe1c02b50e1c07dd6bb563aded",
+      "sourceCommit": "0e46b3bc2b83db227bb7507f25e4687b4c4c4d9a"
     }
   ],
   "artifacts": [],

@@ -1,5 +1,5 @@
 {
-  "sourceLinkedCommit": "23adc8db",
+  "sourceLinkedCommit": "0e46b3bc",
   "allSixConfigurationsBothProvidersPassed": true,
   "strictCommittedReceiptCheckPassed": true,
   "nativeCombined": {
@@ -9,8 +9,8 @@
   "sanitized": "Native operator and both family cases passed ASan/UBSan; leak sanitizer disabled on macOS.",
   "gcc": "Native operator and final affected family cases passed. Runner compilation on local GCC is blocked by pre-existing macOS Mach SDK static-assert macros; required Linux GCC CI remains the portability gate.",
   "sourceLinkedRuntimeAndProbe": {
-    "source-linked-runner": "8cb1edd6f64ff56c345c77ef012ab40933f9cb2e81e5cd44f1fa62a45487baea",
-    "source-linked-probe": "a6340a2bdfe1781e28a2e884e8f73749edb2344e12dc67182f145d9078e01381"
+    "source-linked-runner": "4707b83e6259b53511d7acfcfc11acb7f5e4a41605072cac202602d7df064e01",
+    "source-linked-probe": "39e90b4469617679fdbd0ee246ecf5b280c6ebbe1c02b50e1c07dd6bb563aded"
   },
   "logsSHA256": {
     "wvm481-combined-tests.log": "00f3fba40048a52cbda093dddb3e180e586353a396eb120ba6723e488eab0939",
@@ -25,5 +25,7 @@
   "scope": "C++ scientific transforms and evaluation ownership; MATLAB scientific sources, checkpoints and catalog capabilities unchanged.",
   "performance": "Pending frozen final campaign",
   "hostedCI": "Required before merge",
-  "matlabFocusedPassed": 12
+  "matlabFocusedPassed": 12,
+  "observedEmbeddedSourceCommit": "0e46b3bc2b83db227bb7507f25e4687b4c4c4d9a",
+  "supersededInitialReceipts": "Initial receipts labeled checkout23adc8db while runner embedded60287e19; numerical code matched but identity was stale. They are archived locally and replaced by correctly linked0e46b3bc receipts. Follow-up issue488 adds an automatic guard."
 }

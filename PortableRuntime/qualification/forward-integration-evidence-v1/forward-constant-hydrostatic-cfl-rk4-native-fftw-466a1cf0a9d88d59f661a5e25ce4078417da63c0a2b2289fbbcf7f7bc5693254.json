@@ -3,7 +3,7 @@
   "schemaVersion": 1,
   "scope": "forward-integration",
   "status": "complete",
-  "sourceCommit": "23adc8db40900854946eb0f4efff37c0e8fb6a91",
+  "sourceCommit": "0e46b3bc2b83db227bb7507f25e4687b4c4c4d9a",
   "provider": "native-fftw",
   "matlabRelease": "2025b",
   "platform": "MACA64",
@@ -208,8 +208,8 @@
       }
     ],
     "timingSeconds": {
-      "sharedMatlabPreparation": 9.438230625,
-      "providerLifecycle": 16.96806425
+      "sharedMatlabPreparation": 8.6265279583333339,
+      "providerLifecycle": 17.019913708333334
     },
     "runs": {
       "whole": {
@@ -241,7 +241,7 @@
           "selectedStep": 4,
           "effectiveIntegrationStep": 4,
           "transientWorkspaceMaximumLiveBytes": 10368,
-          "candidateEvaluationSeconds": 0.000216542,
+          "candidateEvaluationSeconds": 0.000195292,
           "noFallback": true
         },
         "termination": {
@@ -320,7 +320,7 @@
           "selectedStep": 4,
           "effectiveIntegrationStep": 4,
           "transientWorkspaceMaximumLiveBytes": 10368,
-          "candidateEvaluationSeconds": 0.000201291,
+          "candidateEvaluationSeconds": 0.000200875,
           "noFallback": true
         },
         "termination": {
@@ -399,7 +399,7 @@
           "selectedStep": 4,
           "effectiveIntegrationStep": 4,
           "transientWorkspaceMaximumLiveBytes": 10368,
-          "candidateEvaluationSeconds": 0.000179542,
+          "candidateEvaluationSeconds": 0.000157334,
           "noFallback": true
         },
         "termination": {
@@ -478,7 +478,7 @@
           "selectedStep": 4,
           "effectiveIntegrationStep": 4,
           "transientWorkspaceMaximumLiveBytes": 10368,
-          "candidateEvaluationSeconds": 0.000163583,
+          "candidateEvaluationSeconds": 0.000208875,
           "noFallback": true
         },
         "termination": {
@@ -557,7 +557,7 @@
           "selectedStep": 4,
           "effectiveIntegrationStep": 4,
           "transientWorkspaceMaximumLiveBytes": 10368,
-          "candidateEvaluationSeconds": 0.000189083,
+          "candidateEvaluationSeconds": 0.000216208,
           "noFallback": true
         },
         "termination": {
@@ -636,7 +636,7 @@
           "selectedStep": 4,
           "effectiveIntegrationStep": 4,
           "transientWorkspaceMaximumLiveBytes": 10368,
-          "candidateEvaluationSeconds": 0.000226667,
+          "candidateEvaluationSeconds": 0.000204709,
           "noFallback": true
         },
         "termination": {
@@ -760,20 +760,20 @@
   ],
   "buildSource": {
     "root": "/Users/jearly/Documents/OceanKitRepositories/wvm-v4-shared-inverse-columns",
-    "commit": "23adc8db40900854946eb0f4efff37c0e8fb6a91"
+    "commit": "0e46b3bc2b83db227bb7507f25e4687b4c4c4d9a"
   },
   "executionBinaries": [
     {
       "role": "runner",
       "path": "/private/tmp/wvm481-native/bin/wave-vortex-run",
-      "sha256": "8cb1edd6f64ff56c345c77ef012ab40933f9cb2e81e5cd44f1fa62a45487baea",
-      "sourceCommit": "23adc8db40900854946eb0f4efff37c0e8fb6a91"
+      "sha256": "4707b83e6259b53511d7acfcfc11acb7f5e4a41605072cac202602d7df064e01",
+      "sourceCommit": "0e46b3bc2b83db227bb7507f25e4687b4c4c4d9a"
     },
     {
       "role": "probe",
       "path": "/private/tmp/wvm481-native/bin/WVForwardIntegrationProbe",
-      "sha256": "a6340a2bdfe1781e28a2e884e8f73749edb2344e12dc67182f145d9078e01381",
-      "sourceCommit": "23adc8db40900854946eb0f4efff37c0e8fb6a91"
+      "sha256": "39e90b4469617679fdbd0ee246ecf5b280c6ebbe1c02b50e1c07dd6bb563aded",
+      "sourceCommit": "0e46b3bc2b83db227bb7507f25e4687b4c4c4d9a"
     }
   ],
   "artifacts": [],
