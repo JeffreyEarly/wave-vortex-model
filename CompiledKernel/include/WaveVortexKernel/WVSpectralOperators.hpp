@@ -166,9 +166,14 @@ public:
     static WVKernelStatus create(const WVVerticalSpecification&, std::unique_ptr<WVVerticalMatrixBackend>, std::unique_ptr<WVPreparedVerticalOperator>&);
     WVKernelStatus createWorkspace(std::unique_ptr<WVVerticalWorkspace>&) const;
     WVKernelStatus execute(WVVerticalWorkspace&, WVComplexInput, WVComplexOutput) const;
+    // Execute the exact prepared scientific matrix assigned to one retained
+    // column. Other output columns are untouched.
+    WVKernelStatus executeColumn(WVVerticalWorkspace&, WVComplexInput, WVComplexOutput,
+        std::size_t retainedColumn) const;
     std::size_t persistentBytes() const noexcept;
     std::size_t matrixBytes() const noexcept;
     std::size_t uniqueMatrixCount() const noexcept;
+    std::size_t preparedGroupCount() const noexcept;
     const char* backendIdentifier() const noexcept;
 private:
     WVPreparedVerticalOperator() = default;

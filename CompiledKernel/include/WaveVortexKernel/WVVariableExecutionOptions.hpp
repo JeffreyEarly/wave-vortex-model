@@ -36,6 +36,9 @@ struct WVVariableExecutionOptions {
     // Disabling this retains the independent reconstruction path for parity
     // qualification; it is not a separate scientific or memory policy.
     bool sharedFieldGradients = true;
+    // Boussinesq projection needs the grouped wave-F result only at the exact
+    // zero horizontal mode. Disable for a full-coverage qualification oracle.
+    bool inertialOnlyProjection = true;
     bool usesCompactSplitViews() const noexcept {
         return spectralSchedule==WVVariableSpectralSchedule::compactSplitFusedViews;
     }

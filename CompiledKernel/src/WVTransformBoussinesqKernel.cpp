@@ -123,6 +123,18 @@ WVKernelStatus WVTransformBoussinesqKernel::create(std::shared_ptr<const WVStrat
                 a.NA0,a.PA0,a.ApmD.imag,a.ApmN,a.A0Z,a.A0N,a.waveEnergy,a.balancedEnergy,a.psi,a.qgpv,a.enstrophy})
                 if (!std::isfinite(x)) return {WVKernelStatusCode::numericalFailure,"Boussinesq coefficient factor overflow."};
         }
+        c.inertialMode_=g.Nkl;
+        bool exactInertialIdentity=true;
+        for (std::size_t mode=0;mode<g.Nkl;++mode) {
+            const bool exactZero=g.modes[mode].k==0 && g.modes[mode].l==0;
+            const bool inertial=c.factors_[g.Nj*mode].inertial;
+            if (exactZero!=inertial) exactInertialIdentity=false;
+            if (exactZero) {
+                if (c.inertialMode_!=g.Nkl) exactInertialIdentity=false;
+                c.inertialMode_=mode;
+            }
+        }
+        if (!exactInertialIdentity) c.inertialMode_=g.Nkl;
         const auto modalElements=product(6,c.S_),gridElements=product(5,c.H_);
         const auto maximumElements=static_cast<std::size_t>(PTRDIFF_MAX);
         if (modalElements>maximumElements || gridElements>maximumElements-modalElements) throw std::overflow_error("Boussinesq spectral scratch overflow.");
@@ -404,7 +416,16 @@ WVComplexOutput WVTransformBoussinesqKernel::modalView(std::size_t slot) { retur
 WVComplexOutput WVTransformBoussinesqKernel::gridView(std::size_t slot) { return spectralStorage_->output(6*S_+slot*H_,H_); }
 WVKernelStatus WVTransformBoussinesqKernel::vertical(std::size_t operation,WVComplexInput a,WVComplexOutput b) {
     ++metrics_.verticalOperatorExecutionCount;
-    return vertical_[operation]->execute(*verticalWorkspace_[operation],a,b);
+    auto status=vertical_[operation]->execute(*verticalWorkspace_[operation],a,b);
+    if (status) metrics_.verticalMatrixGroupExecutionCount+=vertical_[operation]->preparedGroupCount();
+    return status;
+}
+WVKernelStatus WVTransformBoussinesqKernel::verticalColumn(std::size_t operation,WVComplexInput a,
+    WVComplexOutput b,std::size_t retainedColumn) {
+    ++metrics_.verticalOperatorExecutionCount;
+    auto status=vertical_[operation]->executeColumn(*verticalWorkspace_[operation],a,b,retainedColumn);
+    if (status) ++metrics_.verticalMatrixGroupExecutionCount;
+    return status;
 }
 WVKernelStatus WVTransformBoussinesqKernel::project(const double* a,WVComplexOutput b,WVBoussinesqFamily family) {
     auto s=horizontal_->forward(*horizontalWorkspace_,{a,R_*sizeof(double)},gridView()); if (!s) return s;
@@ -466,7 +487,14 @@ WVKernelStatus WVTransformBoussinesqKernel::projectSpectralFields(WVComplexInput
         for (std::size_t i=0;i<S_;++i) { const auto mode=i/g.Nj; write(divergence,i,add(read(divergence.input(),i),multiply(read(temp.input(),i),{0,std::hypot(g.k[mode],g.l[mode])/2}))); }
     }
     // Fio is the zero-wavenumber wave F basis, not the balanced F basis.
-    s=vertical(5,uh,U); if (!s) return s; s=vertical(5,vh,V); if (!s) return s;
+    // Only the exact inertial column consumes these two projections.
+    if (executionOptions_.inertialOnlyProjection && inertialMode_<g.Nkl) {
+        s=verticalColumn(5,uh,U,inertialMode_); if (!s) return s;
+        s=verticalColumn(5,vh,V,inertialMode_); if (!s) return s;
+    } else {
+        s=vertical(5,uh,U); if (!s) return s;
+        s=vertical(5,vh,V); if (!s) return s;
+    }
     for (std::size_t i=0;i<S_;++i) {
         const auto& f=factors_[i]; const auto n=scale(read(density.input(),i),f.ApmN);
         auto ap=add(read(divergence.input(),i),n),am=subtract(read(divergence.input(),i),n);

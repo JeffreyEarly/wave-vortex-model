@@ -23,6 +23,7 @@ struct VerticalData {
     std::size_t Nz, Nj, inputSpan, outputSpan, packedColumns = 0;
     std::vector<PreparedMatrix> matrices;
     std::vector<PreparedGroup> groups;
+    std::vector<std::size_t> columnMatrices;
     std::unique_ptr<WVVerticalMatrixBackend> backend;
 };
 struct VerticalWorkspaceData {
@@ -80,12 +81,14 @@ std::size_t WVPreparedVerticalOperator::matrixBytes() const noexcept {
 }
 std::size_t WVPreparedVerticalOperator::persistentBytes() const noexcept {
     std::size_t bytes = sizeof(*this)+sizeof(*data_)+identityBytes(data_->input)+identityBytes(data_->output)+matrixBytes()+
-        data_->matrices.capacity()*sizeof(PreparedMatrix)+data_->groups.capacity()*sizeof(PreparedGroup)+data_->backend->persistentBytes();
+        data_->matrices.capacity()*sizeof(PreparedMatrix)+data_->groups.capacity()*sizeof(PreparedGroup)+
+        data_->columnMatrices.capacity()*sizeof(std::size_t)+data_->backend->persistentBytes();
     for (const auto& m : data_->matrices) bytes += m.identity.source.capacity()+m.identity.name.capacity();
     for (const auto& g : data_->groups) bytes += g.modes.capacity()*sizeof(std::size_t);
     return bytes;
 }
 std::size_t WVPreparedVerticalOperator::uniqueMatrixCount() const noexcept { return data_->matrices.size(); }
+std::size_t WVPreparedVerticalOperator::preparedGroupCount() const noexcept { return data_->groups.size(); }
 const char* WVPreparedVerticalOperator::backendIdentifier() const noexcept { return data_->backend->identifier(); }
 WVKernelStatus WVPreparedVerticalOperator::create(const WVVerticalSpecification& spec,
     std::unique_ptr<WVVerticalMatrixBackend> backend, std::unique_ptr<WVPreparedVerticalOperator>& result) {
@@ -115,6 +118,7 @@ WVKernelStatus WVPreparedVerticalOperator::create(const WVVerticalSpecification&
         auto d = std::make_shared<VerticalData>();
         d->input = spec.input; d->output = spec.output; d->action = spec.action; d->accumulation = spec.accumulation;
         d->Nz = spec.Nz; d->Nj = spec.Nj; d->inputSpan = inputSpan; d->outputSpan = outputSpan; d->backend = std::move(backend);
+        d->columnMatrices.resize(spec.input.columns);
         std::vector<std::size_t> matrixIndices;
         for (const auto& source : spec.matrices) {
             const auto& m = source.values;
@@ -165,6 +169,7 @@ WVKernelStatus WVPreparedVerticalOperator::create(const WVVerticalSpecification&
                 const auto mode = source.modes[i];
                 if (mode >= visited.size() || visited[mode]) return {WVKernelStatusCode::invalidConfiguration,"Vertical group membership is invalid or repeated."};
                 visited[mode] = true;
+                d->columnMatrices[mode] = matrixIndices[source.matrix];
             }
             usedMatrices[source.matrix] = true;
             if (!directLayout) {
@@ -234,6 +239,53 @@ WVKernelStatus WVPreparedVerticalOperator::execute(WVVerticalWorkspace& workspac
                 write(output,target,value);
             }
         }
+    }
+    return WVKernelStatus::ok();
+}
+WVKernelStatus WVPreparedVerticalOperator::executeColumn(WVVerticalWorkspace& workspace,
+    WVComplexInput input,WVComplexOutput output,std::size_t retainedColumn) const {
+    auto& w=*workspace.data_; const auto& d=*data_;
+    if (w.owner!=data_) return {WVKernelStatusCode::invalidConfiguration,"Workspace belongs to another vertical operator."};
+    auto status=validateStorage(d.input.representation,d.inputSpan,input); if (!status) return status;
+    status=validateStorage(d.output.representation,d.outputSpan,output.input()); if (!status) return status;
+    if (storageOverlap(input,d.inputSpan,output.input(),d.outputSpan))
+        return {WVKernelStatusCode::overlappingArrays,"Vertical input and output overlap."};
+    if (retainedColumn>=d.input.columns)
+        return {WVKernelStatusCode::invalidShape,"Vertical retained column is out of range."};
+    ActiveCall guard(w.active); if (!guard.entered)
+        return {WVKernelStatusCode::reentrantExecution,"Vertical workspace is active."};
+    const auto m=d.output.rows,k=d.input.rows;
+    const double beta=d.accumulation==WVAccumulation::add ? 1 : 0;
+    const auto& a=d.matrices[d.columnMatrices[retainedColumn]];
+    const auto bOffset=retainedColumn*d.input.columnStride;
+    const auto cOffset=retainedColumn*d.output.columnStride;
+    const auto limit=d.backend->maximumDimension();
+    const bool direct=d.input.rowStride==1 && d.output.rowStride==1 &&
+        d.input.columnStride>=k && d.output.columnStride>=m &&
+        d.input.columnStride<=limit && d.output.columnStride<=limit;
+    if (direct) {
+        if (d.input.representation==WVComplexRepresentation::interleaved)
+            d.backend->interleaved(m,k,1,a.complex.data(),input.interleaved+bOffset,
+                d.input.columnStride,output.interleaved+cOffset,d.output.columnStride,beta);
+        else d.backend->split(m,k,1,a.real.data(),input.real+bOffset,input.imag+bOffset,
+            d.input.columnStride,output.real+cOffset,output.imag+cOffset,d.output.columnStride,beta);
+        return WVKernelStatus::ok();
+    }
+    const bool split=d.input.representation==WVComplexRepresentation::split;
+    WVComplexOutput packedB{split ? nullptr : w.b.data(),split ? w.br.data() : nullptr,
+        split ? w.bi.data() : nullptr,0};
+    WVComplexInput packedC{split ? nullptr : w.c.data(),split ? w.cr.data() : nullptr,
+        split ? w.ci.data() : nullptr,0};
+    for (std::size_t row=0;row<k;++row)
+        write(packedB,row,read(input,row*d.input.rowStride+bOffset));
+    if (split) d.backend->split(m,k,1,a.real.data(),w.br.data(),w.bi.data(),k,
+        w.cr.data(),w.ci.data(),m,0);
+    else d.backend->interleaved(m,k,1,a.complex.data(),w.b.data(),k,w.c.data(),m,0);
+    for (std::size_t row=0;row<m;++row) {
+        const auto target=row*d.output.rowStride+cOffset;
+        auto value=read(packedC,row);
+        if (beta!=0) { const auto old=read(output.input(),target); value.real+=old.real; value.imag+=old.imag; }
+        write(output,target,value);
     }
     return WVKernelStatus::ok();
 }

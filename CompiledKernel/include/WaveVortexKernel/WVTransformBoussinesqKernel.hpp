@@ -35,6 +35,7 @@ struct WVBoussinesqKernelMetrics {
     std::size_t horizontalSpectrumReuseCount = 0;
     std::size_t preparedVerticalDerivativeCount = 0;
     std::size_t verticalOperatorExecutionCount = 0;
+    std::size_t verticalMatrixGroupExecutionCount = 0;
     std::array<std::size_t,4> tendencyReconstructionCount{};
     std::array<std::size_t,16> fieldReconstructionCount{};
     std::array<std::array<std::array<std::size_t,5>,4>,16> reconstructionCount{};
@@ -160,6 +161,7 @@ private:
     WVComplexOutput modalView(std::size_t slot = 0);
     WVComplexOutput gridView(std::size_t slot = 0);
     WVKernelStatus vertical(std::size_t,WVComplexInput,WVComplexOutput);
+    WVKernelStatus verticalColumn(std::size_t,WVComplexInput,WVComplexOutput,std::size_t);
     WVKernelStatus project(const double*,WVComplexOutput,WVBoussinesqFamily);
     WVKernelStatus reconstruct(const WVCoefficients&,WVBoussinesqField,
         WVBoussinesqDerivative,WVBoussinesqComponent,double*,bool countPrimary = true,
@@ -191,7 +193,7 @@ private:
     std::size_t nextStateViewId_ = 1;
     const void* preparedStateOwner_ = nullptr;
     bool stateEvaluationActive_ = false;
-    std::size_t S_ = 0,R_ = 0,H_ = 0,baseSpectralScratchBytes_ = 0;
+    std::size_t S_ = 0,R_ = 0,H_ = 0,inertialMode_ = 0,baseSpectralScratchBytes_ = 0;
     std::atomic<bool> active_{false};
 };
 } // namespace wavevortex

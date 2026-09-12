@@ -92,9 +92,8 @@ private:
     MatrixTrace& trace_;
     std::unique_ptr<WVVerticalMatrixBackend> inner_;
 };
-std::unique_ptr<WVVerticalMatrixBackend> tracingBackend(MatrixTrace& trace) {
-    std::unique_ptr<WVVerticalMatrixBackend> inner; require(WVCreateScalarMatrixBackend(inner));
-    return std::make_unique<TracingBackend>(trace,std::move(inner));
+std::unique_ptr<WVVerticalMatrixBackend> tracingBackend(MatrixTrace& trace,bool native = false) {
+    return std::make_unique<TracingBackend>(trace,backend(native));
 }
 std::unique_ptr<WVFFTEngine> fft(bool native) {
 #if WV_TEST_NATIVE_FFTW
@@ -305,6 +304,68 @@ void discontiguousDirectSegments(WVComplexRepresentation representation,WVAccumu
     allocationProbe::counting=false;
     require(allocationProbe::calls==0,"Prepared direct run execution allocated");
     require(op->persistentBytes()+workspace->persistentBytes()==bytes,"Direct run execution changed prepared storage");
+}
+void selectedVerticalColumn(WVComplexRepresentation representation,
+    WVAccumulation accumulation,bool direct,bool native) {
+    VerticalFixture f(WVMatrixAction::projection,representation,accumulation,direct);
+    MatrixTrace trace;
+    std::unique_ptr<WVPreparedVerticalOperator> op;
+    require(WVPreparedVerticalOperator::create(f.spec,tracingBackend(trace,native),op));
+    std::unique_ptr<WVVerticalWorkspace> workspace; require(op->createWorkspace(workspace));
+    require(op->preparedGroupCount()==2,"Prepared full-group count differs");
+    Buffer input(f.spec.input),output(f.spec.output);
+    for (std::size_t mode=0;mode<f.spec.input.columns;++mode) {
+        for (std::size_t row=0;row<f.spec.input.rows;++row)
+            input.set(row,mode,{std::sin(.13*(row+3*mode)),std::cos(.17*(row+2*mode))});
+        for (std::size_t row=0;row<f.spec.output.rows;++row) output.set(row,mode,{.4,-.3});
+    }
+    const auto inputBefore=input,outputBefore=output;
+    const std::size_t selected=direct ? 5 : 3;
+    require(op->executeColumn(*workspace,input.in(),output.out(),selected));
+    require(!trace.overflow && trace.count==1 && trace.calls[0].width==1,
+        "Selected vertical column did not issue one matrix call");
+    const auto& matrix=f.spec.matrices[1].values;
+    for (std::size_t mode=0;mode<f.spec.output.columns;++mode)
+        for (std::size_t row=0;row<f.spec.output.rows;++row) {
+            if (mode!=selected) {
+                const auto expected=outputBefore.get(row,mode),actual=output.get(row,mode);
+                require(actual.real==expected.real && actual.imag==expected.imag,
+                    "Selected vertical execution changed another column");
+                continue;
+            }
+            std::complex<long double> expected=accumulation==WVAccumulation::add ?
+                std::complex<long double>{.4,-.3} : std::complex<long double>{};
+            for (std::size_t j=0;j<f.spec.input.rows;++j) {
+                const auto value=input.get(j,mode);
+                expected+=static_cast<long double>(matrix.data[row*matrix.rowStride+j*matrix.columnStride])*
+                    std::complex<long double>{value.real,value.imag};
+            }
+            close(output.get(row,mode),expected);
+        }
+    require(input.equals(inputBefore),"Selected vertical execution modified input");
+    output.paddingUnchanged();
+    const auto selectedResult=output;
+    require(op->executeColumn(*workspace,input.in(),output.out(),f.spec.input.columns).code==
+        WVKernelStatusCode::invalidShape && output.equals(selectedResult),
+        "Out-of-range selected vertical column was accepted or changed output");
+    auto aliased=input.out(); aliased.bytes=std::max(aliased.bytes,output.out().bytes);
+    require(op->executeColumn(*workspace,input.in(),aliased,selected).code==
+        WVKernelStatusCode::overlappingArrays && input.equals(inputBefore),
+        "Selected vertical column accepted overlapping storage or changed input");
+    std::unique_ptr<WVPreparedVerticalOperator> foreign;
+    require(WVPreparedVerticalOperator::create(f.spec,backend(native),foreign));
+    std::unique_ptr<WVVerticalWorkspace> foreignWorkspace;
+    require(foreign->createWorkspace(foreignWorkspace));
+    require(op->executeColumn(*foreignWorkspace,input.in(),output.out(),selected).code==
+        WVKernelStatusCode::invalidConfiguration && output.equals(selectedResult),
+        "Selected vertical column accepted a foreign workspace or changed output");
+    const auto bytes=op->persistentBytes()+workspace->persistentBytes();
+    trace.recording=false; allocationProbe::calls=0; allocationProbe::counting=true;
+    for (unsigned repeat=0;repeat<10;++repeat)
+        require(op->executeColumn(*workspace,input.in(),output.out(),selected));
+    allocationProbe::counting=false;
+    require(allocationProbe::calls==0 && op->persistentBytes()+workspace->persistentBytes()==bytes,
+        "Selected vertical execution allocated or changed prepared storage");
 }
 void singleColumn(bool native, WVComplexRepresentation representation) {
     VerticalFixture f(WVMatrixAction::reconstruction,representation,WVAccumulation::overwrite,true);
@@ -520,6 +581,10 @@ int main() {
             for (auto representation : {WVComplexRepresentation::split,WVComplexRepresentation::interleaved}) singleColumn(native,representation);
         for (auto representation:{WVComplexRepresentation::split,WVComplexRepresentation::interleaved})
             for (auto accumulation:{WVAccumulation::overwrite,WVAccumulation::add}) discontiguousDirectSegments(representation,accumulation);
+        for (bool native:{false,true}) if (!native || nativeMatrix)
+            for (auto representation:{WVComplexRepresentation::split,WVComplexRepresentation::interleaved})
+                for (auto accumulation:{WVAccumulation::overwrite,WVAccumulation::add})
+                    for (bool direct:{false,true}) selectedVerticalColumn(representation,accumulation,direct,native);
         identitiesAndRebuild(); rejectedContracts(); setupFailures(); workspaceConcurrency();
         std::cout << "Spectral operators passed: independent DFT/matrix oracles, split/interleaved layouts, exact groups, aliases, failure cleanup, immutable preparation and zero prepared allocations. Accelerate=" << nativeMatrix << '\n';
         return 0;
