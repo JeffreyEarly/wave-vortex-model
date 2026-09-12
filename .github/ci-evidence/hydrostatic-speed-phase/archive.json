@@ -1,0 +1,14 @@
+{
+  "directory": "OceanKitRepositories/wave-vortex-model-benchmark-artifacts/hydrostatic-speed-phase-20260911",
+  "files": {
+    "qualification/protocol.json": "543edd6d2f7514065a7b69a6c53174ef3f6dbc30f1a92139d18460261faf95f7",
+    "qualification/pairs.json": "ba2731a2c43083f7cb90d6bc5a6585ccb8d547112fa48e61471e0af558385936",
+    "qualification/summary.json": "ade93f26de25365e52f0fe3791895cf0f1b8f8f2c13dd3c3a756a2b082f08c00",
+    "verification.json": "0dae9b3df5297d41f960acf3f1d1ae0d47a68e8e91d3bdb4b26fae59e408b64e",
+    "phase-screen/phase.cpp": "05b2763a5ffdcf4cd15893899af500252ec46c9d50c4c15ac55da72d7c721ed0",
+    "phase-screen/correctness.log": "75719e51c6ee0cbd9ea8b2f15d41ebf30fffc0f9018c921e538cbbae19e92f69",
+    "phase-screen/timing-parallel.log": "28ac2cf685341dd4ffdabb1b0fcff4f16f20f8a39c6985743199e22a4810f064",
+    "eddytide-256x256x28-baseline/sample.txt": "9eda5cb8587c8ce838ef8bbe36db34b8da0adcddb4acff901cba61fd61772903",
+    "eddytide-256x256x28-baseline/sample-summary.json": "2f50240d177f286f17c80701550f53a7410de31563370bcd7204b98cb6fd7019"
+  }
+}

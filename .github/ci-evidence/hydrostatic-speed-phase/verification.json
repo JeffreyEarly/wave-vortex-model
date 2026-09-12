@@ -1,0 +1,62 @@
+{
+  "schema": "hydrostatic-speed-phase-verification-v1",
+  "runtimeCommit": "72278e2c371def74a38195498694b3971b832dec",
+  "checks": {
+    "releaseContracts": {
+      "passed": true,
+      "count": 57
+    },
+    "asanUbsanContracts": {
+      "passed": true,
+      "count": 57,
+      "note": "Apple ASan requires detect_leaks=0; ASan/UBSan and allocation checks enabled."
+    },
+    "gcc14Hydrostatic": {
+      "passed": true,
+      "count": 2
+    },
+    "matlabKernelAndSourceSelection": {
+      "passed": true,
+      "methods": 7
+    },
+    "independentReview": {
+      "passed": true,
+      "reviewer": "kernel_evaluation",
+      "scope": "reduction arithmetic, ownership, phase lifetime and tests"
+    },
+    "forwardIntegration": {
+      "passed": true,
+      "cases": 6,
+      "providers": 2,
+      "catalogMethods": 15
+    },
+    "documentation": {
+      "passed": true,
+      "generatedDifferences": 0
+    },
+    "pr473Integration": {
+      "passed": true,
+      "mergeCommit": "be656012f2bb02856e8fe15d372159770bebaa77",
+      "note": "PR473 merged tree equals3cec040e. Merge of main into candidate changes no tracked tree content (git diff --cached HEAD verified empty); prior source checks remain valid."
+    }
+  },
+  "sourceSHA256": {
+    "CompiledKernel/src/WVTransformHydrostaticKernel.cpp": "b5139aeced7855d2b6441c48cfd01bd0fc12043e6a09f353835e35d29fe244c9",
+    "CompiledKernel/include/WaveVortexKernel/WVTransformHydrostaticKernel.hpp": "a5c9a0902e67803bd96faa25e18c60206ea8cba96892ac8a24512aebc989025f",
+    "PortableRuntime/src/WVHydrostaticForcingEngine.cpp": "73da5e83e1f993f08b4caddfd2de198a77fa826a6a547a5256882c18d6943a10",
+    "PortableRuntime/src/WVStratifiedFieldEvaluationAdapter.cpp": "c652419ff70a0ca4b0cd784db891c90e57bcf9502c1a17fbd24d173b3e59b493",
+    "PortableRuntime/tests/TestWVHydrostaticKernel.cpp": "e3761082ef97bef2ac01830f1dbc5542f98f83c6fea4c34c5697c65c6c7d92f8",
+    "CompiledKernel/source-selection.json": "cf1bb51cf0e7178f658f04e56fc25b60956fb5a28828d29d169c6705e39d29e5"
+  },
+  "logSHA256": {
+    "speed-phase-gcc-build.log": "2f88ec1c367cc9c91fa53044a80f252a20165e72dd91f7d148b6c13adad2cd07",
+    "speed-phase-sanitized-build.log": "175bfd27f8f1a6dc4886d88cbfd54b3d517e2a2610b165476fdb947e2de6213d",
+    "speed-phase-gcc-tests.log": "8313a5a9211e9d079ef495a46dcaf2340f99b49593582e8f53dbf20ce2944932",
+    "speed-phase-sanitized-tests.log": "13c6a1a00f887d3180b3bc334b65d8709279848b762c5541cb904157b8186a06",
+    "speed-phase-release-tests.log": "b0689388e3faddf037250b5f843eb132cc436a79fb4f52e16a2b2711924ada30",
+    "speed-phase-release-build.log": "98bd746ec447e4806c0f7e51f78b8001e77f4e968d2be4b4366c760d2af23dd1",
+    "speed-phase-matlab.log": "d1a68304731f3ccd7243a864a693e74a7ab53ca6105ee1d876a04730f3147fbe"
+  },
+  "frozenCommit": "8c2b816d771cd0746e4d09354045c2ec35ee7fc0",
+  "candidateExecutableSHA256": "e2db370649ec24826d0ff10fa38dd257c6e313c5aa22b0983df5a424b5ae19bc"
+}

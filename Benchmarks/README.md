@@ -2,7 +2,7 @@
 
 This folder contains authoring-only performance tools and historical profiling scripts. It is not included on the WaveVortexModel runtime package path.
 
-Before C++ optimization, follow the [C++ optimization workflow](CPP-OPTIMIZATION.md) for profiling, delegation, early correctness checks, and final qualification. The [post-cache profile](POST-CACHE-PROFILE.md) and [Hydrostatic assembly investigation](HYDROSTATIC-ASSEMBLY.md) record the next measured bottleneck, selected implementation and rejected alternatives.
+Before C++ optimization, follow the [C++ optimization workflow](CPP-OPTIMIZATION.md) for profiling, delegation, early correctness checks, and final qualification. The [post-cache profile](POST-CACHE-PROFILE.md) and [Hydrostatic assembly investigation](HYDROSTATIC-ASSEMBLY.md), followed by [speed reduction and phase preparation](HYDROSTATIC-SPEED-PHASE.md), record the next measured bottleneck, selected implementation and rejected alternatives.
 
 ## Reproducible benchmark suites
 

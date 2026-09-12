@@ -1,5 +1,7 @@
 # Hydrostatic coefficient assembly optimization
 
+The subsequent [speed/phase increment](HYDROSTATIC-SPEED-PHASE.md) builds on this qualified implementation. Fused `u/v/w` assembly remains a separate recorded follow-up.
+
 ## Decision and boundary
 
 Adopt contiguous coefficient ranges on the existing prepared pointwise executor. Each coefficient retains its original field/component selection, complex multiplication/addition order, derivative scaling, and split/interleaved output. Dispatch joins before the vertical transform reuses modal storage. A one-worker executor executes inline. No new full-grid arrays, workers, cache keys, MATLAB behavior, or checkpoint fields are introduced. Small-grid speed tuning is outside this increment.
@@ -62,4 +64,4 @@ Every output comparison passed at the existing tolerances; integration controls 
 
 The combined sanitizer suite also passed: six script checks passed initially, and all 51 instrumented binaries passed on retry after disabling unsupported Apple LeakSanitizer startup. ASan and UBSan stayed enabled. The initial startup failures are preserved; Linux required CI retains its leak checks. No source correction or repeated performance campaign was needed.
 
-[Performance summary](../.github/ci-evidence/hydrostatic-assembly/performance.json), [verification ledger](../.github/ci-evidence/hydrostatic-assembly/verification.json), and [archive hashes](../.github/ci-evidence/hydrostatic-assembly/archive.json) bind the evidence. The artifact archive includes exact input copies and a separate replay manifest; the originally executed protocol remains unchanged. Required hosted CI remains the merge gate.
+[Performance summary](../.github/ci-evidence/hydrostatic-assembly/performance.json), [verification ledger](../.github/ci-evidence/hydrostatic-assembly/verification.json), and [archive hashes](../.github/ci-evidence/hydrostatic-assembly/archive.json) bind the evidence. The artifact archive includes exact input copies and a separate replay manifest; the originally executed protocol remains unchanged. PR #473 merged at `be656012` after required hosted CI passed.
