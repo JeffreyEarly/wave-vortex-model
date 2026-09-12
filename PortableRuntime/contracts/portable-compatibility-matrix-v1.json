@@ -187,7 +187,7 @@
       "id": "witness-forward-compositions",
       "path": "UnitTests/TestPortableForwardIntegration.m",
       "schema": "qualification-source",
-      "sha256": "f40aafd055afd2d8ef3131d444b5f1e571ff0521fb70a1f6f2c66183b4a403b6"
+      "sha256": "a9873d9f0a30dd5a9d7b13cd9be75217553312eb4b4e8570f63173d94e607aa6"
     },
     {
       "id": "witness-density-output",
