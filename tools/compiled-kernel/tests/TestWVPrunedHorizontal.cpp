@@ -1,5 +1,6 @@
 #include "WaveVortexKernel/WVSpectralOperators.hpp"
 #include <WVReferenceFFTEngine.hpp>
+#include "WVNativeAdvectionArithmetic.hpp"
 #include "WVNativeFFTWEngine.hpp"
 #include "WVAllocationProbe.hpp"
 #include <algorithm>
@@ -7,6 +8,7 @@
 #include <complex>
 #include <cstring>
 #include <iostream>
+#include <limits>
 #include <stdexcept>
 #include <atomic>
 #include <thread>
@@ -96,6 +98,98 @@ WVRetainedHorizontalSpecification specification(std::size_t nx,std::size_t ny,st
     std::reverse(s.modes.begin(),s.modes.end());
     s.retained={planes,s.modes.size(),2,2*planes+3,representation,"F","explicit-ordered-orbits"};
     return s;
+}
+WVRetainedHorizontalSpecification advectionSpecification(std::size_t planes,
+    WVComplexRepresentation representation,WVFourierNormalization normalization) {
+    auto spec=specification(12,10,planes,representation,normalization,false,true);
+    spec.grid.planeStride=spec.grid.Nx*spec.grid.Ny;
+    spec.modes.erase(std::remove_if(spec.modes.begin(),spec.modes.end(),[&](const auto& mode) {
+        return std::abs(mode.k)==static_cast<std::int64_t>(spec.grid.Nx/2) ||
+            std::abs(mode.l)==static_cast<std::int64_t>(spec.grid.Ny/2);
+    }),spec.modes.end());
+    spec.retained.columns=spec.modes.size();
+    return spec;
+}
+std::size_t activeColumns(const WVRetainedHorizontalSpecification& spec) {
+    std::size_t columns=0;
+    for (const auto& mode:spec.modes) {
+        const auto x=mode.k<0 ? static_cast<std::size_t>(
+            static_cast<std::int64_t>(spec.grid.Nx)+mode.k) :
+            static_cast<std::size_t>(mode.k);
+        const auto selected=x>spec.grid.Nx/2 ? (spec.grid.Nx-x)%spec.grid.Nx : x;
+        columns=std::max(columns,selected+1);
+    }
+    return columns;
+}
+void requireAdvectionCapacity(const WVRetainedHorizontalSpecification& spec,
+    const WVRetainedHorizontalWorkspace& workspace,std::size_t targets,
+    std::size_t before,std::size_t after) {
+    const auto workers=workspace.workerCount();
+    const auto maximumPlanes=spec.grid.planes/workers+
+        (spec.grid.planes%workers!=0 ? 1 : 0);
+    const auto depth=std::min(std::size_t{4},maximumPlanes);
+    const auto modes=spec.modes.size(),columns=activeColumns(spec);
+    const auto packed=workers*targets*depth*modes*sizeof(WVComplex64);
+    const auto stages=workers*targets*columns*spec.grid.Ny*sizeof(WVComplex64);
+    const auto real=workers*2*spec.grid.Nx*spec.grid.Ny*sizeof(double);
+    const auto counts=workers*sizeof(WVRetainedAdvectionCounts);
+    require(after-before==packed+stages+real+counts,
+        "Prepared advection retained unexpected scratch capacity");
+    const auto formerPacked=workers*(4+2*targets)*depth*modes*sizeof(WVComplex64);
+    const auto expectedReduction=workers*(4+targets)*depth*modes*sizeof(WVComplex64);
+    require(formerPacked-packed==expectedReduction,
+        "Prepared advection packed-storage reduction changed");
+}
+void advectionArithmetic() {
+    constexpr std::size_t count=19;
+    std::vector<double> ordinaryFlux(count),ordinaryVelocity(count),ordinaryDerivative(count);
+    for (std::size_t i=0;i<count;++i) {
+        ordinaryFlux[i]=(i%2 ? -1.0 : 1.0)*(.125+.03125*i);
+        ordinaryVelocity[i]=(i%3 ? -0x1.23456789abcdep-2 : 0x1.abcdef012345p+1);
+        ordinaryDerivative[i]=(i%4 ? 0x1.0123456789abcp-7 : -0x1.fedcba9876543p+3);
+    }
+    ordinaryFlux[0]=0.0; ordinaryVelocity[0]=1.0; ordinaryDerivative[0]=-0.0;
+    ordinaryFlux[1]=-0.0; ordinaryVelocity[1]=1.0; ordinaryDerivative[1]=0.0;
+    ordinaryFlux[2]=0.0; ordinaryVelocity[2]=-1.0; ordinaryDerivative[2]=-0.0;
+    ordinaryFlux[3]=-0.0; ordinaryVelocity[3]=-1.0; ordinaryDerivative[3]=0.0;
+    auto ordinaryExpected=ordinaryFlux;
+    for (std::size_t i=0;i<count;++i)
+        ordinaryExpected[i]-=ordinaryVelocity[i]*(ordinaryDerivative[i]+0.0);
+    native_detail::accumulateAdvection(count,ordinaryFlux.data(),ordinaryVelocity.data(),
+        ordinaryDerivative.data());
+    require(same(ordinaryFlux,ordinaryExpected),
+        "Specialized ordinary advection changed established arithmetic");
+    bool positiveZero=false,negativeZero=false;
+    for (std::size_t i=0;i<4;++i) if (ordinaryExpected[i]==0) {
+        positiveZero|=!std::signbit(ordinaryExpected[i]);
+        negativeZero|=std::signbit(ordinaryExpected[i]);
+    }
+    require(positiveZero && negativeZero,
+        "Ordinary advection signed-zero fixture lost coverage");
+
+    std::vector<double> densityFlux(count),densityVelocity(count),densityDerivative(count),eta(count);
+    constexpr double densityCorrection=0x1.0000000000001p-4;
+    for (std::size_t i=0;i<count;++i) {
+        densityFlux[i]=(i%2 ? -1.0 : 1.0)*(.375+.0625*i);
+        densityVelocity[i]=(i%3 ? 0x1.3456789abcdep+1 : -0x1.bcdef01234567p-1);
+        eta[i]=(i%2 ? -1.0 : 1.0)*(0x1.0123456789abcp+20+16.0*i);
+        const double correction=eta[i]*densityCorrection;
+        densityDerivative[i]=i%4 ? -correction :
+            std::nextafter(-correction,std::numeric_limits<double>::infinity());
+    }
+    densityFlux[0]=0.0; densityVelocity[0]=1.0;
+    eta[0]=-0.0; densityDerivative[0]=0.0;
+    densityFlux[1]=-0.0; densityVelocity[1]=1.0;
+    eta[1]=0.0; densityDerivative[1]=-0.0;
+    auto densityExpected=densityFlux;
+    for (std::size_t i=0;i<count;++i) {
+        const double correction=eta[i]*densityCorrection;
+        densityExpected[i]-=densityVelocity[i]*(densityDerivative[i]+correction);
+    }
+    native_detail::accumulateDensityAdvection(count,densityFlux.data(),densityVelocity.data(),
+        densityDerivative.data(),eta.data(),densityCorrection);
+    require(same(densityFlux,densityExpected),
+        "Specialized density advection changed multiply-add order");
 }
 void horizontalCase(std::size_t nx, std::size_t ny, std::size_t planes, WVComplexRepresentation representation,
     WVFourierNormalization normalization, bool native, bool padded, bool pruned) {
@@ -360,20 +454,16 @@ void sharedResources() {
 }
 void advectionCase(WVComplexRepresentation representation,WVFourierNormalization normalization,
     std::size_t targets) {
-    auto spec=specification(12,10,11,representation,normalization,false,true);
-    spec.grid.planeStride=spec.grid.Nx*spec.grid.Ny;
-    spec.modes.erase(std::remove_if(spec.modes.begin(),spec.modes.end(),[&](const auto& mode) {
-        return std::abs(mode.k)==static_cast<std::int64_t>(spec.grid.Nx/2) ||
-            std::abs(mode.l)==static_cast<std::int64_t>(spec.grid.Ny/2);
-    }),spec.modes.end());
-    spec.retained.columns=spec.modes.size();
+    auto spec=advectionSpecification(11,representation,normalization);
     std::unique_ptr<WVRetainedHorizontalOperator> op;
     require(WVRetainedHorizontalOperator::create(spec,fft(true),op));
     std::unique_ptr<WVRetainedHorizontalWorkspace> workspace;
     require(op->createWorkspace(workspace,false));
     require(op->supportsAdvection(*workspace,targets),"Eligible retained advection was not advertised");
+    const auto unpreparedBytes=workspace->persistentBytes();
     require(op->prepareAdvection(*workspace,targets));
     const auto preparedBytes=workspace->persistentBytes();
+    requireAdvectionCapacity(spec,*workspace,targets,unpreparedBytes,preparedBytes);
     const auto planes=spec.grid.planes,modes=spec.modes.size();
     const auto plane=spec.grid.Nx*spec.grid.Ny,volume=plane*planes;
     std::vector<Buffer> base,target,reference;
@@ -468,6 +558,131 @@ void advectionCase(WVComplexRepresentation representation,WVFourierNormalization
     require(allocationProbe::calls==0 && workspace->persistentBytes()==preparedBytes,
         "Prepared retained advection allocated or changed persistent storage");
 }
+struct SharedAdvectionFixture {
+    const WVRetainedHorizontalSpecification& spec;
+    std::size_t targets;
+    std::vector<Buffer> base,target,initialTarget;
+    std::vector<double> fields,correction;
+    SharedAdvectionFixture(const WVRetainedHorizontalSpecification& specification,
+        std::size_t targetCount,double seed) : spec(specification),targets(targetCount),
+        fields(4*spec.grid.Nx*spec.grid.Ny*spec.grid.planes),correction(spec.grid.planes) {
+        for (std::size_t field=0;field<4;++field) base.emplace_back(spec.retained);
+        for (std::size_t targetIndex=0;targetIndex<targets;++targetIndex)
+            target.emplace_back(spec.retained);
+        for (std::size_t field=0;field<4;++field)
+            for (std::size_t mode=0;mode<spec.modes.size();++mode)
+                for (std::size_t z=0;z<spec.grid.planes;++z) {
+                    const auto& key=spec.modes[mode];
+                    const bool self=(2*key.k)%static_cast<std::int64_t>(spec.grid.Nx)==0 &&
+                        (2*key.l)%static_cast<std::int64_t>(spec.grid.Ny)==0;
+                    base[field].set(z,mode,{std::sin(seed+.07*(field+2*mode+3*z)),
+                        self ? 0 : std::cos(seed+.05*(2*field+mode+4*z))});
+                }
+        for (std::size_t targetIndex=0;targetIndex<targets;++targetIndex)
+            for (std::size_t mode=0;mode<spec.modes.size();++mode)
+                for (std::size_t z=0;z<spec.grid.planes;++z) {
+                    const auto& key=spec.modes[mode];
+                    const bool self=(2*key.k)%static_cast<std::int64_t>(spec.grid.Nx)==0 &&
+                        (2*key.l)%static_cast<std::int64_t>(spec.grid.Ny)==0;
+                    target[targetIndex].set(z,mode,{std::cos(seed+.09*(targetIndex+mode+2*z)),
+                        self ? 0 : std::sin(seed+.03*(2*targetIndex+3*mode+z))});
+                }
+        initialTarget=target;
+        for (std::size_t z=0;z<spec.grid.planes;++z)
+            correction[z]=.04*std::cos(seed+.11*z);
+    }
+    void reset() {
+        for (std::size_t index=0;index<target.size();++index) {
+            std::copy(initialTarget[index].z.begin(),initialTarget[index].z.end(),
+                target[index].z.begin());
+            std::copy(initialTarget[index].r.begin(),initialTarget[index].r.end(),
+                target[index].r.begin());
+            std::copy(initialTarget[index].i.begin(),initialTarget[index].i.end(),
+                target[index].i.begin());
+        }
+        std::fill(fields.begin(),fields.end(),-77.0);
+    }
+    WVRetainedAdvectionWork work() {
+        WVRetainedAdvectionWork result;
+        result.targets=targets;
+        result.fields={fields.data(),fields.size()*sizeof(double)};
+        result.densityCorrection={correction.data(),correction.size()*sizeof(double)};
+        for (std::size_t field=0;field<4;++field) result.base[field]=base[field].in();
+        for (std::size_t targetIndex=0;targetIndex<targets;++targetIndex)
+            result.targetSpectra[targetIndex]=target[targetIndex].out();
+        return result;
+    }
+};
+void sharedAdvectionTileReuse() {
+    auto a=advectionSpecification(11,WVComplexRepresentation::split,
+        WVFourierNormalization::forwardUnit);
+    auto b=advectionSpecification(13,WVComplexRepresentation::interleaved,
+        WVFourierNormalization::unitary);
+    auto engine=std::shared_ptr<WVFFTEngine>(fft(true));
+    std::unique_ptr<WVRetainedHorizontalOperator> opA,opB;
+    require(WVRetainedHorizontalOperator::createShared(a,engine,opA));
+    require(WVRetainedHorizontalOperator::createShared(b,engine,opB));
+    std::unique_ptr<WVRetainedHorizontalWorkspace> wa,wb;
+    require(opA->createWorkspace(wa,false)); require(opB->createWorkspace(wb,false));
+    require(wa->sharedResourceIdentity()==wb->sharedResourceIdentity(),
+        "Advection peers did not share retained FFT resources");
+    const auto beforeA=wa->persistentBytes(),beforeB=wb->persistentBytes();
+    require(opA->prepareAdvection(*wa,3)); require(opB->prepareAdvection(*wb,4));
+    requireAdvectionCapacity(a,*wa,3,beforeA,wa->persistentBytes());
+    requireAdvectionCapacity(b,*wb,4,beforeB,wb->persistentBytes());
+    const auto preparedA=wa->persistentBytes(),preparedB=wb->persistentBytes();
+    SharedAdvectionFixture fa(a,3,.17),fb(b,4,.29);
+    const auto fused=[&](WVRetainedHorizontalOperator& op,
+        WVRetainedHorizontalWorkspace& workspace,SharedAdvectionFixture& fixture) {
+        fixture.reset(); auto work=fixture.work(); WVRetainedAdvectionCounts counts;
+        require(op.advection(workspace,work,counts));
+        require(counts.columnInverses==fixture.spec.grid.planes*(4+2*fixture.targets) &&
+            counts.rowInverses==fixture.spec.grid.planes*(4+3*fixture.targets) &&
+            counts.reusedColumns==fixture.spec.grid.planes*fixture.targets,
+            "Shared-resource advection counts changed");
+    };
+    std::vector<double> ordinaryAInput(a.grid.Nx*a.grid.Ny*a.grid.planes),
+        ordinaryAOutput(ordinaryAInput.size());
+    std::vector<double> ordinaryBInput(b.grid.Nx*b.grid.Ny*b.grid.planes),
+        ordinaryBOutput(ordinaryBInput.size());
+    for (std::size_t i=0;i<ordinaryAInput.size();++i)
+        ordinaryAInput[i]=std::sin(.53+.013*i);
+    for (std::size_t i=0;i<ordinaryBInput.size();++i)
+        ordinaryBInput[i]=std::sin(.41+.013*i);
+    Buffer ordinaryARetained(a.retained),ordinaryBRetained(b.retained);
+    const auto ordinary=[&](WVRetainedHorizontalOperator& op,
+        WVRetainedHorizontalWorkspace& workspace,std::vector<double>& input,
+        Buffer& retained,std::vector<double>& output) {
+        require(op.forward(workspace,{input.data(),input.size()*sizeof(double)},retained.out()));
+        require(op.inverse(workspace,retained.in(),{output.data(),output.size()*sizeof(double)}));
+    };
+    fused(*opA,*wa,fa);
+    const auto fieldsA=fa.fields;
+    const auto targetsA=fa.target;
+    ordinary(*opB,*wb,ordinaryBInput,ordinaryBRetained,ordinaryBOutput);
+    fused(*opA,*wa,fa);
+    require(same(fa.fields,fieldsA),"Ordinary peer changed shared-tile advection fields");
+    for (std::size_t target=0;target<fa.targets;++target)
+        require(fa.target[target].equals(targetsA[target]),
+            "Ordinary peer changed shared-tile advection spectra");
+    fused(*opB,*wb,fb);
+    const auto fieldsB=fb.fields;
+    const auto targetsB=fb.target;
+    ordinary(*opA,*wa,ordinaryAInput,ordinaryARetained,ordinaryAOutput);
+    fused(*opB,*wb,fb);
+    require(same(fb.fields,fieldsB),"Ordinary peer changed tail-tile advection fields");
+    for (std::size_t target=0;target<fb.targets;++target)
+        require(fb.target[target].equals(targetsB[target]),
+            "Ordinary peer changed tail-tile advection spectra");
+    allocationProbe::calls=0; allocationProbe::counting=true;
+    fused(*opA,*wa,fa);
+    ordinary(*opB,*wb,ordinaryBInput,ordinaryBRetained,ordinaryBOutput);
+    fused(*opB,*wb,fb);
+    allocationProbe::counting=false;
+    require(allocationProbe::calls==0 && wa->persistentBytes()==preparedA &&
+        wb->persistentBytes()==preparedB,
+        "Alternating shared-resource execution allocated or changed capacity");
+}
 void unsupportedAdvection() {
     auto spec=specification(12,10,3,WVComplexRepresentation::interleaved,
         WVFourierNormalization::forwardUnit,false,false);
@@ -513,6 +728,8 @@ int main() {
         horizontalCase(8,6,2,WVComplexRepresentation::interleaved,WVFourierNormalization::forwardUnit,false,false,true);
         advectionCase(WVComplexRepresentation::split,WVFourierNormalization::forwardUnit,3);
         advectionCase(WVComplexRepresentation::interleaved,WVFourierNormalization::unitary,4);
+        advectionArithmetic();
+        sharedAdvectionTileReuse();
         unsupportedAdvection(); fallbackAndLifetime(); boundedDerivative(); stridedBoundedDerivative(); noFailureFallback(); sharedResources();
         std::cout << "Pruned horizontal: independent DFT, tile/tail, Hermitian boundaries, strided layouts, immutable inputs, zero prepared allocations, bounded derivatives/fallback and shared lifetimes passed.\n";
         return 0;

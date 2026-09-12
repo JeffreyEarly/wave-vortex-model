@@ -46,7 +46,8 @@
     "controlledEarlyTermination": "issue-288",
     "standardForwardIntegrationQualification": "issue-289",
     "adaptiveDampingEffectiveResolution": "issue-409",
-    "tiledHorizontalAdvection": "issue-489"
+    "tiledHorizontalAdvection": "issue-489",
+    "tiledScratchAndArithmetic": "issue-491"
   },
   "contract": {
     "version": 4,
@@ -77,7 +78,7 @@
     "coefficientFormulas": "78d647608d8919b33c278c280eb6d2b253dfb0acd8d3330141fbdc845e00864a",
     "kernel": "a07893470f3c9b27a2fe297473660b718f65947424ba879f2a7a91083c644681",
     "integrationSystem": "21d00e8a75de899425ff991896d9d9dedff2201228835d0f97e01bc9dab569eb",
-    "nativeEngine": "eab49474caf32d4c34ea2cfe27defb2ec185172419f369a01de4b3f908641fcd",
+    "nativeEngine": "76fe16ed98a7a4022663e2bbe1c42f10ad1638603a75d7584f58f7303fef3315",
     "mexGateway": "b68cc36464bb6b46a3e10c69fa1964c76269aac717cedf88e9657f285a6c8ea6",
     "buildOrchestrator": "d724445240b1b8832746ab8ab95cb8fceefcc86973acf189054949ad5002b0a9"
   },
@@ -223,5 +224,14 @@
     "issue": 477,
     "qualifiedRuntimeCommit": "400ed1f1213795c95b04875dd54b0564d299545d",
     "qualification": ".github/ci-evidence/matrix-advection-adoption/decision.json"
+  },
+  "tiledScratchAndArithmetic": {
+    "issue": 491,
+    "scope": "Provider-owned base tile reuse, last-use target-z overwrite and private disjoint ordinary/density accumulation loops.",
+    "packedComplexCapacity": "T*W*D*M; four base tiles use existing 16*W*M capacity, D<=4",
+    "sourceSHA256": {
+      "CompiledKernel/adapters/native-fftw/WVNativeFFTWEngine.cpp": "76fe16ed98a7a4022663e2bbe1c42f10ad1638603a75d7584f58f7303fef3315",
+      "CompiledKernel/adapters/native-fftw/WVNativeAdvectionArithmetic.hpp": "432e0cd3b6958166a8c68788fa1e13d8283e330f0ba9a8abc5255517fdfafa35"
+    }
   }
 }

@@ -1,0 +1,86 @@
+[
+  {
+    "name": "TestHydrostaticCompiledKernel/variableStratificationMatchesMatlab",
+    "passed": true,
+    "failed": false,
+    "incomplete": false,
+    "duration": 24.830114541666667
+  },
+  {
+    "name": "TestHydrostaticCompiledKernel/retainedSubsetAndSouthernLatitude",
+    "passed": true,
+    "failed": false,
+    "incomplete": false,
+    "duration": 2.1901784166666669
+  },
+  {
+    "name": "TestBoussinesqCompiledKernel/variableStratificationMatchesMatlab",
+    "passed": true,
+    "failed": false,
+    "incomplete": false,
+    "duration": 33.00373775
+  },
+  {
+    "name": "TestBoussinesqCompiledKernel/weakSurfaceStratificationMatchesMatlab",
+    "passed": true,
+    "failed": false,
+    "incomplete": false,
+    "duration": 2.4634109166666667
+  },
+  {
+    "name": "TestBoussinesqCompiledKernel/discontiguousGroupsAndNonuniformGrid",
+    "passed": true,
+    "failed": false,
+    "incomplete": false,
+    "duration": 3.4755002083333335
+  },
+  {
+    "name": "TestBoussinesqCompiledKernel/approachesHydrostaticLimit",
+    "passed": true,
+    "failed": false,
+    "incomplete": false,
+    "duration": 2.4569807916666666
+  },
+  {
+    "name": "TestBoussinesqCompiledKernel/retainedSubsetAndSouthernLatitude",
+    "passed": true,
+    "failed": false,
+    "incomplete": false,
+    "duration": 3.5685972083333333
+  },
+  {
+    "name": "TestCompiledKernelIntegration/portableCoreHasNoHostOrVendorDependency",
+    "passed": true,
+    "failed": false,
+    "incomplete": false,
+    "duration": 0.052477916666666666
+  },
+  {
+    "name": "TestCompiledKernelIntegration/repositoryTracksOnlySourceProducts",
+    "passed": true,
+    "failed": false,
+    "incomplete": false,
+    "duration": 0.057479416666666665
+  },
+  {
+    "name": "TestCompiledKernelIntegration/selectionRecordsTheAcceptedContract",
+    "passed": true,
+    "failed": false,
+    "incomplete": false,
+    "duration": 0.019213208333333332
+  },
+  {
+    "name": "TestCompiledKernelIntegration/runtimeSelectionRecordsStableSourceAPI",
+    "passed": true,
+    "failed": false,
+    "incomplete": false,
+    "duration": 0.020374541666666666
+  },
+  {
+    "name": "TestCompiledKernelIntegration/keyRuntimeHashesMatchTheSelection",
+    "passed": true,
+    "failed": false,
+    "incomplete": false,
+    "duration": 0.12742608333333333
+  }
+]

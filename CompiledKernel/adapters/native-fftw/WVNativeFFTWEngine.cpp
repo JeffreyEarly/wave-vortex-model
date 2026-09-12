@@ -1,4 +1,5 @@
 #include "WVNativeFFTWEngine.hpp"
+#include "WVNativeAdvectionArithmetic.hpp"
 #include "WaveVortexKernel/WVSpectralOperators.hpp"
 #include <algorithm>
 #include <array>
@@ -321,7 +322,7 @@ public:
                 (spec_.grid.planes%workers_!=0 ? 1 : 0);
             const auto depth=std::min(std::size_t{4},maximumPlanes);
             const auto tile=RetainedFFTWResources::checked(depth,modes_.size());
-            const auto packedPerWorker=RetainedFFTWResources::checked(4+2*targets,tile);
+            const auto packedPerWorker=RetainedFFTWResources::checked(targets,tile);
             const auto stagePerWorker=RetainedFFTWResources::checked(
                 targets,RetainedFFTWResources::checked(activeColumns_,spec_.grid.Ny));
             const auto realPerWorker=RetainedFFTWResources::checked(2,spec_.grid.Nx*spec_.grid.Ny);
@@ -507,9 +508,12 @@ private:
         const auto& grid=plan.spec_.grid; const auto& layout=plan.spec_.retained;
         const auto plane=grid.Nx*grid.Ny,volume=plane*grid.planes;
         const auto tileSize=plan.advectionDepth_*plan.modes_.size();
-        const auto packedPerWorker=(4+2*work.targets)*tileSize;
+        const auto packedPerWorker=work.targets*tileSize;
         const auto stageSize=plan.activeColumns_*grid.Ny;
         auto* packed=plan.advectionPacked_.data()+worker*packedPerWorker;
+        // The shared retained tile owns 16 planes per worker. Four base fields
+        // require at most 4*depth planes, and prepared advection caps depth at 4.
+        auto* baseTiles=plan.resources_->tile.data()+worker*tileWidth*plan.modes_.size();
         auto* stages=plan.advectionStages_.data()+worker*work.targets*stageSize;
         auto* scratch=plan.resources_->scratch.data()+worker*plan.halfSize_;
         auto* flux=plan.advectionReal_.data()+worker*2*plane;
@@ -520,14 +524,14 @@ private:
         for (auto first=begin;first<end;first+=plan.advectionDepth_) {
             const auto count=std::min(plan.advectionDepth_,end-first);
             for (std::size_t field=0;field<4;++field)
-                plan.gather(work.base[field],packed+field*tileSize,first,count);
+                plan.gather(work.base[field],baseTiles+field*tileSize,first,count);
             for (std::size_t target=0;target<work.targets;++target)
                 plan.gather(work.targetSpectra[target].input(),
-                    packed+(4+target)*tileSize,first,count);
+                    packed+target*tileSize,first,count);
             for (std::size_t lane=0;lane<count;++lane) {
                 const auto z=first+lane,physicalOffset=z*plane;
                 for (std::size_t field=0;field<4;++field) {
-                    plan.scatter(packed+field*tileSize+lane*plan.modes_.size(),scratch,0);
+                    plan.scatter(baseTiles+field*tileSize+lane*plan.modes_.size(),scratch,0);
                     plan.inverseY(scratch,counts);
                     const auto target=field<2 ? field : field==3 ? 2 : 3;
                     if (target<work.targets)
@@ -550,26 +554,26 @@ private:
                                         plan.xWavenumberScale_*static_cast<double>(x));
                             ++counts.reusedColumns;
                         } else {
-                            const auto* source=packed+(axis==1 ? field : 4+target)*tileSize+
-                                lane*plan.modes_.size();
+                            const auto* source=(axis==1 ? baseTiles+field*tileSize :
+                                packed+target*tileSize)+lane*plan.modes_.size();
                             plan.scatter(source,scratch,axis==1 ? 2U : 0U);
                             plan.inverseY(scratch,counts);
                         }
                         plan.inverseX(scratch,derivative,counts);
                         const auto* velocity=work.fields.data+axis*volume+physicalOffset;
                         const auto* etaField=work.fields.data+3*volume+physicalOffset;
-                        for (std::size_t i=0;i<plane;++i) {
-                            const double correction=field==3 && axis==2
-                                ? etaField[i]*work.densityCorrection.data[z] : 0.0;
-                            flux[i]-=velocity[i]*(derivative[i]+correction);
-                        }
+                        if (field==3 && axis==2)
+                            native_detail::accumulateDensityAdvection(plane,flux,velocity,
+                                derivative,etaField,work.densityCorrection.data[z]);
+                        else
+                            native_detail::accumulateAdvection(plane,flux,velocity,derivative);
                     }
                     fftw_execute_dft_r2c(plan.resources_->rowForward_.get(),flux,
                         reinterpret_cast<fftw_complex*>(scratch));
                     fftw_execute_dft(plan.resources_->columnForward_.get(),
                         reinterpret_cast<fftw_complex*>(scratch),reinterpret_cast<fftw_complex*>(scratch));
-                    auto* projected=packed+(4+work.targets+target)*tileSize+
-                        lane*plan.modes_.size();
+                    // Axis z was the target tile's last read for this lane.
+                    auto* projected=packed+target*tileSize+lane*plan.modes_.size();
                     for (std::size_t mode=0;mode<plan.modes_.size();++mode) {
                         const auto& map=plan.modes_[mode]; auto value=scratch[map.row];
                         value.real*=plan.forwardScale_;
@@ -583,7 +587,7 @@ private:
             for (std::size_t target=0;target<work.targets;++target)
                 for (std::size_t firstMode=0;firstMode<plan.modes_.size();firstMode+=32) {
                     const auto countModes=std::min(std::size_t{32},plan.modes_.size()-firstMode);
-                    const auto* projected=packed+(4+work.targets+target)*tileSize;
+                    const auto* projected=packed+target*tileSize;
                     for (std::size_t lane=0;lane<count;++lane)
                         for (std::size_t mode=0;mode<countModes;++mode)
                             block[mode*4+lane]=projected[lane*plan.modes_.size()+firstMode+mode];
