@@ -407,6 +407,55 @@ void variableScheduleParity(const std::shared_ptr<const WVStratifiedModalRecord>
     for (std::size_t j=0;j<3;++j) for (std::size_t i=0;i<S;++i)
         require(serialOut[j][i].real==candidateOut[j][i].real && serialOut[j][i].imag==candidateOut[j][i].imag,
             "Pointwise worker partition changed hydrostatic arithmetic");
+    // Phases are recomputed from the current time pair, including repeated,
+    // reversed and extreme finite times, without recurrence or new storage.
+    for (double time:{17.0,83.0,-83.0,1e12,1e300,83.0,17.0}) {
+        auto timedState=state; timedState.t=time;
+        for (auto* target:{serial.get(),candidate.get()}) {
+            require(bool(target->beginStateEvaluation(timedState)),"Phase partition scope failed");
+            WVComplexConstView phases;
+            require(bool(target->preparedPhase(timedState,phases)),"Prepared phases were unavailable");
+            for (std::size_t i=0;i<S;++i) {
+                const double angle=target->factors()[i].omega*(time-timedState.t0);
+                require(phases.data[i].real==std::cos(angle) && phases.data[i].imag==std::sin(angle),
+                    "Phase workers changed scalar trigonometry or reused an old time");
+            }
+            require(bool(target->endStateEvaluation()),"Phase partition scope release failed");
+        }
+    }
+    // Compare reduction with the serial hypot/max oracle, including magnitudes
+    // for which an unscaled square/sum/sqrt would overflow or underflow.
+    std::vector<double> speedU(R),speedV(R);
+    const double scales[]={1.0,1e308,std::numeric_limits<double>::denorm_min()};
+    for (double magnitude:scales) {
+        for (std::size_t i=0;i<R;++i) {
+            speedU[i]=magnitude*(i%2 ? 1.0 : -.5);
+            speedV[i]=magnitude*(i%3 ? -.75 : .25);
+        }
+        double expected=0;
+        for (std::size_t i=0;i<R;++i) expected=std::max(expected,std::hypot(speedU[i],speedV[i]));
+        for (auto* target:{serial.get(),candidate.get()}) {
+            double actual=-1;
+            allocationProbe::calls=0; allocationProbe::counting=true;
+            auto status=target->reduceHorizontalSpeedMaximum(
+                {speedU.data(),{g.Nx,g.Ny,g.Nz}},{speedV.data(),{g.Nx,g.Ny,g.Nz}},actual);
+            allocationProbe::counting=false;
+            require(bool(status) && actual==expected,"Speed reduction changed robust hypot arithmetic");
+            require(allocationProbe::calls==0,"Prepared speed reduction allocated");
+        }
+    }
+    std::fill(speedU.begin(),speedU.end(),std::numeric_limits<double>::quiet_NaN());
+    std::fill(speedV.begin(),speedV.end(),0.0);
+    double maximum=-1;
+    require(bool(candidate->reduceHorizontalSpeedMaximum({speedU.data(),{g.Nx,g.Ny,g.Nz}},
+        {speedV.data(),{g.Nx,g.Ny,g.Nz}},maximum)) && maximum==0,
+        "NaN speed contributions changed the existing max policy");
+    speedU.back()=std::numeric_limits<double>::infinity();
+    require(bool(candidate->reduceHorizontalSpeedMaximum({speedU.data(),{g.Nx,g.Ny,g.Nz}},
+        {speedV.data(),{g.Nx,g.Ny,g.Nz}},maximum)) && std::isinf(maximum),"Infinite speed was lost");
+    maximum=17;
+    require(!candidate->reduceHorizontalSpeedMaximum({nullptr,{g.Nx,g.Ny,g.Nz}},
+        {speedV.data(),{g.Nx,g.Ny,g.Nz}},maximum) && maximum==17,"Invalid speed input published a result");
     // Exercise every field dispatch and component with the same spectral layout
     // on one and two workers, including surface aliases and compound fields.
     std::vector<double> serialField(R),parallelField(R);

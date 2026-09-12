@@ -195,10 +195,10 @@
       "CompiledKernel/include/WaveVortexKernel/WVVariableExecutionOptions.hpp": "84b08b4bfc568807182645d03da46fe2fe0e739e700e67049fdd3b23cdd10924",
       "CompiledKernel/src/WVVariableComplexBuffer.hpp": "53a81ca2c48811b39f62a59104cafea2330fd1a121f746ab06a14a1eea85aaf2",
       "CompiledKernel/src/WVTransformStratifiedQGKernel.cpp": "b015def825f04b80bddedde0d6b7c9e43d352c387b37daf3efe7eebc3f366de6",
-      "CompiledKernel/src/WVTransformHydrostaticKernel.cpp": "83386b76aef1112e379dffa5249ae2715a94e328f0a36d0a1f72842a92455813",
+      "CompiledKernel/src/WVTransformHydrostaticKernel.cpp": "b5139aeced7855d2b6441c48cfd01bd0fc12043e6a09f353835e35d29fe244c9",
       "CompiledKernel/src/WVTransformBoussinesqKernel.cpp": "49ed4c101c0f241626c5c085cef244c55dc6e3ed2ffd207f8dbf943f1bba3d70",
       "CompiledKernel/include/WaveVortexKernel/WVTransformStratifiedQGKernel.hpp": "d71829160dfac6a69fda8b8aa74949adaa14cf1dab995a81c5896319cc0a0b12",
-      "CompiledKernel/include/WaveVortexKernel/WVTransformHydrostaticKernel.hpp": "d02d9efd28ac968a65169911131845efa0d9d2240cf5cb9b15e2bd8b4d1954d8",
+      "CompiledKernel/include/WaveVortexKernel/WVTransformHydrostaticKernel.hpp": "a5c9a0902e67803bd96faa25e18c60206ea8cba96892ac8a24512aebc989025f",
       "CompiledKernel/include/WaveVortexKernel/WVTransformBoussinesqKernel.hpp": "1d4ee99a5a64b5da5f0dc79e3af3f9267eaff571adfae531cac675e15c667114"
     },
     "fullGridDerivativeScratch": "one horizontal real/half-spectrum plane when retained provider is active; all resolved frequencies preserved",

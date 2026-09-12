@@ -364,8 +364,10 @@ WVKernelStatus WVHydrostaticForcingEngine::horizontalSpeedMaximum(const WVState&
     if(diagnosticWorkspace_) {
         return diagnosticWorkspace_->evaluateHorizontalMaximum(uv,[&](double& maximum) {
             WVRealFieldBundleConstView fields; auto status=physicalFields(state,fields); if(!status) return status;
-            const auto R=kernel().spatialShape().elementCount(); maximum=0;
-            for(std::size_t i=0;i<R;++i) maximum=std::max(maximum,std::hypot(fields.data[i],fields.data[R+i]));
+            const auto shape=kernel().spatialShape(); const auto R=shape.elementCount();
+            status=kernel().reduceHorizontalSpeedMaximum(
+                {fields.data,shape},{fields.data+R,shape},maximum);
+            if(!status) return status;
             ++metrics_.horizontalSpeedReductionCount;
             return WVKernelStatus::ok();
         });
@@ -374,8 +376,10 @@ WVKernelStatus WVHydrostaticForcingEngine::horizontalSpeedMaximum(const WVState&
     if(!scope.status()) return scope.status();
     auto status=evaluation_.evaluate({WVVariableEvaluationNode::reduction,0},sizeof(double),[&] {
         for(std::size_t c=0;c<2;++c) {auto s=ensurePhysicalField(state,c); if(!s) return s;}
-        const auto R=kernel().spatialShape().elementCount(); horizontalMaximum_=0;
-        for(std::size_t i=0;i<R;++i) horizontalMaximum_=std::max(horizontalMaximum_,std::hypot(physical_[i],physical_[R+i]));
+        const auto shape=kernel().spatialShape(); const auto R=shape.elementCount();
+        auto reduced=kernel().reduceHorizontalSpeedMaximum(
+            {physical_.data(),shape},{physical_.data()+R,shape},horizontalMaximum_);
+        if(!reduced) return reduced;
         ++metrics_.horizontalSpeedReductionCount;
         return WVKernelStatus::ok();
     });
