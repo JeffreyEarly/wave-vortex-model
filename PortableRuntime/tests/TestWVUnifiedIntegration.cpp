@@ -1,8 +1,11 @@
 #include "WaveVortexRuntime/WVRungeKutta.hpp"
 #include "WVTestExtensionCatalog.hpp"
+#include "../src/WVOrderedRKCombination.hpp"
 
 #include <algorithm>
+#include <array>
 #include <cmath>
+#include <cstring>
 #include <cstdlib>
 #include <iostream>
 #include <limits>
@@ -20,6 +23,164 @@ void require(bool condition, const std::string &message) {
     std::exit(1);
   }
 }
+
+#if defined(_MSC_VER)
+#define WV_TEST_NOINLINE __declspec(noinline)
+#elif defined(__clang__) || defined(__GNUC__)
+#define WV_TEST_NOINLINE __attribute__((noinline))
+#else
+#define WV_TEST_NOINLINE
+#endif
+
+template <class T>
+bool sameBits(const std::vector<T> &first, const std::vector<T> &second) {
+  return first.size() == second.size() &&
+         std::memcmp(first.data(), second.data(), first.size() * sizeof(T)) ==
+             0;
+}
+
+WV_TEST_NOINLINE void legacySetScaled(double *destination,
+                                      const double *input, double weight,
+                                      std::size_t count) noexcept {
+  for (std::size_t index = 0; index < count; ++index)
+    destination[index] = weight * input[index];
+}
+
+WV_TEST_NOINLINE void legacyAddScaled(double *destination,
+                                      const double *input, double weight,
+                                      std::size_t count) noexcept {
+  for (std::size_t index = 0; index < count; ++index)
+    destination[index] = destination[index] + weight * input[index];
+}
+
+WV_TEST_NOINLINE void legacyAffine(double *destination, const double *base,
+                                   double step, std::size_t count) noexcept {
+  for (std::size_t index = 0; index < count; ++index)
+    destination[index] = base[index] + step * destination[index];
+}
+
+WV_TEST_NOINLINE void legacySetScaled(WVComplex64 *destination,
+                                      const WVComplex64 *input, double weight,
+                                      std::size_t count) noexcept {
+  for (std::size_t index = 0; index < count; ++index)
+    destination[index] = {weight * input[index].real,
+                          weight * input[index].imag};
+}
+
+WV_TEST_NOINLINE void legacyAddScaled(WVComplex64 *destination,
+                                      const WVComplex64 *input, double weight,
+                                      std::size_t count) noexcept {
+  for (std::size_t index = 0; index < count; ++index) {
+    destination[index].real =
+        destination[index].real + weight * input[index].real;
+    destination[index].imag =
+        destination[index].imag + weight * input[index].imag;
+  }
+}
+
+WV_TEST_NOINLINE void legacyAffine(WVComplex64 *destination,
+                                   const WVComplex64 *base, double step,
+                                   std::size_t count) noexcept {
+  for (std::size_t index = 0; index < count; ++index)
+    destination[index] = {base[index].real + step * destination[index].real,
+                          base[index].imag + step * destination[index].imag};
+}
+
+template <std::size_t N, class T>
+WV_TEST_NOINLINE void legacyOrderedWeightedAffine(
+    T *destination, const T *base, const std::array<const T *, N> &inputs,
+    const std::array<double, N> &weights, std::size_t count,
+    double step) noexcept {
+  legacySetScaled(destination, inputs[0], weights[0], count);
+  for (std::size_t term = 1; term < N; ++term)
+    legacyAddScaled(destination, inputs[term], weights[term], count);
+  legacyAffine(destination, base, step, count);
+}
+
+template <std::size_t N> void orderedRKCombinationCase() {
+  constexpr std::size_t count = 19;
+  std::array<double, N> weights{};
+  std::array<std::vector<double>, N> realStorage;
+  std::array<std::vector<WVComplex64>, N> complexStorage;
+  std::array<const double *, N> realInputs{};
+  std::array<const WVComplex64 *, N> complexInputs{};
+  for (std::size_t term = 0; term < N; ++term) {
+    weights[term] = (term % 2 == 0 ? 1.0 : -1.0) *
+                    (0x1.0000000000001p-2 + 0x1p-6 * term);
+    realStorage[term].resize(count);
+    complexStorage[term].resize(count);
+    for (std::size_t index = 0; index < count; ++index) {
+      const double magnitude =
+          0x1.fffffffffffffp+18 + 0x1.0000000000001p-5 *
+                                        (3 * term + 5 * index + 1);
+      const double value = ((term + index) % 2 == 0 ? 1.0 : -1.0) *
+                           magnitude;
+      realStorage[term][index] = value;
+      complexStorage[term][index] = {
+          value, ((2 * term + index) % 3 == 0 ? -1.0 : 1.0) *
+                     (0x1.0123456789abcp-7 + 0x1p-12 * index)};
+    }
+    realInputs[term] = realStorage[term].data();
+    complexInputs[term] = complexStorage[term].data();
+  }
+  // Make the first two mathematical products cancel at one element without
+  // making either weight a unit value. The rounding residual detects a
+  // compiler contracting the first product across its legacy stored boundary.
+  realStorage[0][2] = -weights[1];
+  realStorage[1][2] = weights[0];
+  complexStorage[0][2] = {-weights[1], weights[1]};
+  complexStorage[1][2] = {weights[0], -weights[0]};
+  std::vector<double> realBase(count);
+  std::vector<WVComplex64> complexBase(count);
+  for (std::size_t index = 0; index < count; ++index) {
+    realBase[index] = (index % 2 == 0 ? 1.0 : -1.0) *
+                      (0x1.23456789abcdep-3 + 0x1p-10 * index);
+    complexBase[index] = {
+        realBase[index],
+        (index % 3 == 0 ? -1.0 : 1.0) *
+            (0x1.bcdef01234567p+2 + 0x1p-8 * index)};
+  }
+  constexpr double step = -0x1.0000000000001p-3;
+  std::vector<double> expectedReal(count), actualReal(count);
+  std::vector<WVComplex64> expectedComplex(count), actualComplex(count);
+  legacyOrderedWeightedAffine(expectedReal.data(), realBase.data(), realInputs,
+                              weights, count, step);
+  legacyOrderedWeightedAffine(expectedComplex.data(), complexBase.data(),
+                              complexInputs, weights, count, step);
+  rk_detail::orderedWeightedAffine(actualReal.data(), realBase.data(), realInputs,
+                                   weights, count, step);
+  rk_detail::orderedWeightedAffine(actualComplex.data(), complexBase.data(),
+                                   complexInputs, weights, count, step);
+  require(sameBits(actualReal, expectedReal) &&
+              sameBits(actualComplex, expectedComplex),
+          "RK ordered combination changed legacy pass arithmetic for N=" +
+              std::to_string(N));
+}
+
+void testOrderedRKCombinations() {
+  orderedRKCombinationCase<2>();
+  orderedRKCombinationCase<3>();
+  orderedRKCombinationCase<4>();
+  orderedRKCombinationCase<5>();
+  orderedRKCombinationCase<6>();
+  orderedRKCombinationCase<7>();
+  orderedRKCombinationCase<8>();
+  orderedRKCombinationCase<9>();
+
+  const std::array<double, 2> weights{0.5, 0.25};
+  const std::array<double, 2> first{0.0, -0.0};
+  const std::array<double, 2> second{0.0, -0.0};
+  const std::array<const double *, 2> inputs{first.data(), second.data()};
+  const std::array<double, 2> base{0.0, -0.0};
+  std::array<double, 2> output{};
+  rk_detail::orderedWeightedAffine(output.data(), base.data(), inputs, weights,
+                                   output.size(), 0.5);
+  require(output[0] == 0.0 && !std::signbit(output[0]) && output[1] == 0.0 &&
+              std::signbit(output[1]),
+          "RK ordered combination changed signed-zero arithmetic");
+}
+
+#undef WV_TEST_NOINLINE
 
 WVPortableObserverRecord record() {
   WVPortableObserverRecord result;
@@ -1816,6 +1977,7 @@ void testComplexDynamicState() {
 } // namespace
 
 int main() {
+  testOrderedRKCombinations();
   WVPortableObserverDescriptor descriptor;
   WVIntegrationStateLayout layout;
   testContracts(descriptor, layout);

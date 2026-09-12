@@ -1,6 +1,9 @@
 #include "WaveVortexRuntime/WVRungeKutta.hpp"
 
+#include "WVOrderedRKCombination.hpp"
+
 #include <algorithm>
+#include <array>
 #include <chrono>
 #include <cmath>
 #include <cstdint>
@@ -207,6 +210,46 @@ public:
       complex_[i] = scaledSum(complex_[i], source.complex_[i], scale);
     for (std::size_t i = 0; i < real_.size(); ++i)
       real_[i] += scale * source.real_[i];
+  }
+  template <std::size_t N>
+  void setOrderedAffine(
+      const WVIntegrationState &base,
+      const std::array<const IntegrationBuffer *, N> &increments,
+      const std::array<double, N> &weights, double step) noexcept {
+    for (std::size_t family = 0; family < layout_->coefficientFamilyCount();
+         ++family) {
+      const auto coefficients = coefficientFamilyView(*layout_, base, family);
+      const auto &metadata = layout_->coefficientFamilies()[family];
+      std::array<const WVComplex64 *, N> inputs{};
+      for (std::size_t term = 0; term < N; ++term)
+        inputs[term] = increments[term]->complex_.data() +
+                       metadata.scalarOffset;
+      rk_detail::orderedWeightedAffine(
+          complex_.data() + metadata.scalarOffset, coefficients.data, inputs,
+          weights, metadata.elementCount, step);
+    }
+    for (std::size_t block = 0; block < base.additionalBlockCount; ++block) {
+      const auto &blockLayout = *base.additionalBlocks[block].layout;
+      if (blockLayout.scalarType == WVStateScalarType::real64) {
+        std::array<const double *, N> inputs{};
+        for (std::size_t term = 0; term < N; ++term)
+          inputs[term] = increments[term]->real_.data() +
+                         blockLayout.scalarOffset;
+        rk_detail::orderedWeightedAffine(
+            real_.data() + blockLayout.scalarOffset,
+            base.additionalBlocks[block].realData, inputs, weights,
+            blockLayout.elementCount, step);
+      } else {
+        const auto offset = coefficientCount_ + blockLayout.scalarOffset;
+        std::array<const WVComplex64 *, N> inputs{};
+        for (std::size_t term = 0; term < N; ++term)
+          inputs[term] = increments[term]->complex_.data() + offset;
+        rk_detail::orderedWeightedAffine(
+            complex_.data() + offset,
+            base.additionalBlocks[block].complexData, inputs, weights,
+            blockLayout.elementCount, step);
+      }
+    }
   }
   void setWeightedCandidate(const WVIntegrationState &base, double h,
                             const IntegrationBuffer &k1, double w1,
@@ -2403,10 +2446,13 @@ WVKernelStatus WVAdaptiveRK78::stepImplementation(
     if (!status)
       return status;
 
-    workspace_->stage.setScaled(workspace_->k1, RK78MethodPolicy::a31);
-    workspace_->stage.addScaled(workspace_->k2OrK3OrK5,
-                                RK78MethodPolicy::a32);
-    workspace_->stage.setAffine(baseView, workspace_->stage, h);
+    workspace_->stage.setOrderedAffine(
+        baseView,
+        std::array<const IntegrationBuffer *, 2>{
+            &workspace_->k1, &workspace_->k2OrK3OrK5},
+        std::array<double, 2>{RK78MethodPolicy::a31,
+                              RK78MethodPolicy::a32},
+        h);
     status = constrain(system_, workspace_->stage,
                        t + h * RK78MethodPolicy::c3, t0);
     if (!status)
@@ -2416,10 +2462,13 @@ WVKernelStatus WVAdaptiveRK78::stepImplementation(
     if (!status)
       return status;
 
-    workspace_->stage.setScaled(workspace_->k1, RK78MethodPolicy::a41);
-    workspace_->stage.addScaled(workspace_->k2OrK3OrK5,
-                                RK78MethodPolicy::a43);
-    workspace_->stage.setAffine(baseView, workspace_->stage, h);
+    workspace_->stage.setOrderedAffine(
+        baseView,
+        std::array<const IntegrationBuffer *, 2>{
+            &workspace_->k1, &workspace_->k2OrK3OrK5},
+        std::array<double, 2>{RK78MethodPolicy::a41,
+                              RK78MethodPolicy::a43},
+        h);
     status = constrain(system_, workspace_->stage,
                        t + h * RK78MethodPolicy::c4, t0);
     if (!status)
@@ -2429,12 +2478,15 @@ WVKernelStatus WVAdaptiveRK78::stepImplementation(
     if (!status)
       return status;
 
-    workspace_->stage.setScaled(workspace_->k1, RK78MethodPolicy::a51);
-    workspace_->stage.addScaled(workspace_->k2OrK3OrK5,
-                                RK78MethodPolicy::a53);
-    workspace_->stage.addScaled(workspace_->k4OrK13,
-                                RK78MethodPolicy::a54);
-    workspace_->stage.setAffine(baseView, workspace_->stage, h);
+    workspace_->stage.setOrderedAffine(
+        baseView,
+        std::array<const IntegrationBuffer *, 3>{
+            &workspace_->k1, &workspace_->k2OrK3OrK5,
+            &workspace_->k4OrK13},
+        std::array<double, 3>{RK78MethodPolicy::a51,
+                              RK78MethodPolicy::a53,
+                              RK78MethodPolicy::a54},
+        h);
     status = constrain(system_, workspace_->stage,
                        t + h * RK78MethodPolicy::c5, t0);
     if (!status)
@@ -2444,12 +2496,15 @@ WVKernelStatus WVAdaptiveRK78::stepImplementation(
     if (!status)
       return status;
 
-    workspace_->stage.setScaled(workspace_->k1, RK78MethodPolicy::a61);
-    workspace_->stage.addScaled(workspace_->k4OrK13,
-                                RK78MethodPolicy::a64);
-    workspace_->stage.addScaled(workspace_->k2OrK3OrK5,
-                                RK78MethodPolicy::a65);
-    workspace_->stage.setAffine(baseView, workspace_->stage, h);
+    workspace_->stage.setOrderedAffine(
+        baseView,
+        std::array<const IntegrationBuffer *, 3>{
+            &workspace_->k1, &workspace_->k4OrK13,
+            &workspace_->k2OrK3OrK5},
+        std::array<double, 3>{RK78MethodPolicy::a61,
+                              RK78MethodPolicy::a64,
+                              RK78MethodPolicy::a65},
+        h);
     status = constrain(system_, workspace_->stage,
                        t + h * RK78MethodPolicy::c6, t0);
     if (!status)
@@ -2459,13 +2514,16 @@ WVKernelStatus WVAdaptiveRK78::stepImplementation(
     if (!status)
       return status;
 
-    workspace_->stage.setScaled(workspace_->k1, RK78MethodPolicy::a71);
-    workspace_->stage.addScaled(workspace_->k4OrK13,
-                                RK78MethodPolicy::a74);
-    workspace_->stage.addScaled(workspace_->k2OrK3OrK5,
-                                RK78MethodPolicy::a75);
-    workspace_->stage.addScaled(workspace_->k6, RK78MethodPolicy::a76);
-    workspace_->stage.setAffine(baseView, workspace_->stage, h);
+    workspace_->stage.setOrderedAffine(
+        baseView,
+        std::array<const IntegrationBuffer *, 4>{
+            &workspace_->k1, &workspace_->k4OrK13,
+            &workspace_->k2OrK3OrK5, &workspace_->k6},
+        std::array<double, 4>{RK78MethodPolicy::a71,
+                              RK78MethodPolicy::a74,
+                              RK78MethodPolicy::a75,
+                              RK78MethodPolicy::a76},
+        h);
     status = constrain(system_, workspace_->stage,
                        t + h * RK78MethodPolicy::c7, t0);
     if (!status)
@@ -2475,14 +2533,17 @@ WVKernelStatus WVAdaptiveRK78::stepImplementation(
     if (!status)
       return status;
 
-    workspace_->stage.setScaled(workspace_->k1, RK78MethodPolicy::a81);
-    workspace_->stage.addScaled(workspace_->k4OrK13,
-                                RK78MethodPolicy::a84);
-    workspace_->stage.addScaled(workspace_->k2OrK3OrK5,
-                                RK78MethodPolicy::a85);
-    workspace_->stage.addScaled(workspace_->k6, RK78MethodPolicy::a86);
-    workspace_->stage.addScaled(workspace_->k7, RK78MethodPolicy::a87);
-    workspace_->stage.setAffine(baseView, workspace_->stage, h);
+    workspace_->stage.setOrderedAffine(
+        baseView,
+        std::array<const IntegrationBuffer *, 5>{
+            &workspace_->k1, &workspace_->k4OrK13,
+            &workspace_->k2OrK3OrK5, &workspace_->k6, &workspace_->k7},
+        std::array<double, 5>{RK78MethodPolicy::a81,
+                              RK78MethodPolicy::a84,
+                              RK78MethodPolicy::a85,
+                              RK78MethodPolicy::a86,
+                              RK78MethodPolicy::a87},
+        h);
     status = constrain(system_, workspace_->stage,
                        t + h * RK78MethodPolicy::c8, t0);
     if (!status)
@@ -2492,15 +2553,19 @@ WVKernelStatus WVAdaptiveRK78::stepImplementation(
     if (!status)
       return status;
 
-    workspace_->stage.setScaled(workspace_->k1, RK78MethodPolicy::a91);
-    workspace_->stage.addScaled(workspace_->k4OrK13,
-                                RK78MethodPolicy::a94);
-    workspace_->stage.addScaled(workspace_->k2OrK3OrK5,
-                                RK78MethodPolicy::a95);
-    workspace_->stage.addScaled(workspace_->k6, RK78MethodPolicy::a96);
-    workspace_->stage.addScaled(workspace_->k7, RK78MethodPolicy::a97);
-    workspace_->stage.addScaled(workspace_->k8, RK78MethodPolicy::a98);
-    workspace_->stage.setAffine(baseView, workspace_->stage, h);
+    workspace_->stage.setOrderedAffine(
+        baseView,
+        std::array<const IntegrationBuffer *, 6>{
+            &workspace_->k1, &workspace_->k4OrK13,
+            &workspace_->k2OrK3OrK5, &workspace_->k6, &workspace_->k7,
+            &workspace_->k8},
+        std::array<double, 6>{RK78MethodPolicy::a91,
+                              RK78MethodPolicy::a94,
+                              RK78MethodPolicy::a95,
+                              RK78MethodPolicy::a96,
+                              RK78MethodPolicy::a97,
+                              RK78MethodPolicy::a98},
+        h);
     status = constrain(system_, workspace_->stage,
                        t + h * RK78MethodPolicy::c9, t0);
     if (!status)
@@ -2510,16 +2575,20 @@ WVKernelStatus WVAdaptiveRK78::stepImplementation(
     if (!status)
       return status;
 
-    workspace_->stage.setScaled(workspace_->k1, RK78MethodPolicy::a101);
-    workspace_->stage.addScaled(workspace_->k4OrK13,
-                                RK78MethodPolicy::a104);
-    workspace_->stage.addScaled(workspace_->k2OrK3OrK5,
-                                RK78MethodPolicy::a105);
-    workspace_->stage.addScaled(workspace_->k6, RK78MethodPolicy::a106);
-    workspace_->stage.addScaled(workspace_->k7, RK78MethodPolicy::a107);
-    workspace_->stage.addScaled(workspace_->k8, RK78MethodPolicy::a108);
-    workspace_->stage.addScaled(workspace_->k9, RK78MethodPolicy::a109);
-    workspace_->stage.setAffine(baseView, workspace_->stage, h);
+    workspace_->stage.setOrderedAffine(
+        baseView,
+        std::array<const IntegrationBuffer *, 7>{
+            &workspace_->k1, &workspace_->k4OrK13,
+            &workspace_->k2OrK3OrK5, &workspace_->k6, &workspace_->k7,
+            &workspace_->k8, &workspace_->k9},
+        std::array<double, 7>{RK78MethodPolicy::a101,
+                              RK78MethodPolicy::a104,
+                              RK78MethodPolicy::a105,
+                              RK78MethodPolicy::a106,
+                              RK78MethodPolicy::a107,
+                              RK78MethodPolicy::a108,
+                              RK78MethodPolicy::a109},
+        h);
     status = constrain(system_, workspace_->stage,
                        t + h * RK78MethodPolicy::c10, t0);
     if (!status)
@@ -2529,18 +2598,21 @@ WVKernelStatus WVAdaptiveRK78::stepImplementation(
     if (!status)
       return status;
 
-    workspace_->stage.setScaled(workspace_->k1, RK78MethodPolicy::a111);
-    workspace_->stage.addScaled(workspace_->k4OrK13,
-                                RK78MethodPolicy::a114);
-    workspace_->stage.addScaled(workspace_->k2OrK3OrK5,
-                                RK78MethodPolicy::a115);
-    workspace_->stage.addScaled(workspace_->k6, RK78MethodPolicy::a116);
-    workspace_->stage.addScaled(workspace_->k7, RK78MethodPolicy::a117);
-    workspace_->stage.addScaled(workspace_->k8, RK78MethodPolicy::a118);
-    workspace_->stage.addScaled(workspace_->k9, RK78MethodPolicy::a119);
-    workspace_->stage.addScaled(workspace_->k10,
-                                RK78MethodPolicy::a1110);
-    workspace_->stage.setAffine(baseView, workspace_->stage, h);
+    workspace_->stage.setOrderedAffine(
+        baseView,
+        std::array<const IntegrationBuffer *, 8>{
+            &workspace_->k1, &workspace_->k4OrK13,
+            &workspace_->k2OrK3OrK5, &workspace_->k6, &workspace_->k7,
+            &workspace_->k8, &workspace_->k9, &workspace_->k10},
+        std::array<double, 8>{RK78MethodPolicy::a111,
+                              RK78MethodPolicy::a114,
+                              RK78MethodPolicy::a115,
+                              RK78MethodPolicy::a116,
+                              RK78MethodPolicy::a117,
+                              RK78MethodPolicy::a118,
+                              RK78MethodPolicy::a119,
+                              RK78MethodPolicy::a1110},
+        h);
     status = constrain(system_, workspace_->stage,
                        t + h * RK78MethodPolicy::c11, t0);
     if (!status)
@@ -2550,20 +2622,23 @@ WVKernelStatus WVAdaptiveRK78::stepImplementation(
     if (!status)
       return status;
 
-    workspace_->stage.setScaled(workspace_->k1, RK78MethodPolicy::a121);
-    workspace_->stage.addScaled(workspace_->k4OrK13,
-                                RK78MethodPolicy::a124);
-    workspace_->stage.addScaled(workspace_->k2OrK3OrK5,
-                                RK78MethodPolicy::a125);
-    workspace_->stage.addScaled(workspace_->k6, RK78MethodPolicy::a126);
-    workspace_->stage.addScaled(workspace_->k7, RK78MethodPolicy::a127);
-    workspace_->stage.addScaled(workspace_->k8, RK78MethodPolicy::a128);
-    workspace_->stage.addScaled(workspace_->k9, RK78MethodPolicy::a129);
-    workspace_->stage.addScaled(workspace_->k10,
-                                RK78MethodPolicy::a1210);
-    workspace_->stage.addScaled(workspace_->k11,
-                                RK78MethodPolicy::a1211);
-    workspace_->stage.setAffine(baseView, workspace_->stage, h);
+    workspace_->stage.setOrderedAffine(
+        baseView,
+        std::array<const IntegrationBuffer *, 9>{
+            &workspace_->k1, &workspace_->k4OrK13,
+            &workspace_->k2OrK3OrK5, &workspace_->k6, &workspace_->k7,
+            &workspace_->k8, &workspace_->k9, &workspace_->k10,
+            &workspace_->k11},
+        std::array<double, 9>{RK78MethodPolicy::a121,
+                              RK78MethodPolicy::a124,
+                              RK78MethodPolicy::a125,
+                              RK78MethodPolicy::a126,
+                              RK78MethodPolicy::a127,
+                              RK78MethodPolicy::a128,
+                              RK78MethodPolicy::a129,
+                              RK78MethodPolicy::a1210,
+                              RK78MethodPolicy::a1211},
+        h);
     status = constrain(system_, workspace_->stage, t + h, t0);
     if (!status)
       return status;
@@ -2571,18 +2646,21 @@ WVKernelStatus WVAdaptiveRK78::stepImplementation(
     if (!status)
       return status;
 
-    workspace_->stage.setScaled(workspace_->k1, RK78MethodPolicy::a131);
-    workspace_->stage.addScaled(workspace_->k4OrK13,
-                                RK78MethodPolicy::a134);
-    workspace_->stage.addScaled(workspace_->k2OrK3OrK5,
-                                RK78MethodPolicy::a135);
-    workspace_->stage.addScaled(workspace_->k6, RK78MethodPolicy::a136);
-    workspace_->stage.addScaled(workspace_->k7, RK78MethodPolicy::a137);
-    workspace_->stage.addScaled(workspace_->k8, RK78MethodPolicy::a138);
-    workspace_->stage.addScaled(workspace_->k9, RK78MethodPolicy::a139);
-    workspace_->stage.addScaled(workspace_->k10,
-                                RK78MethodPolicy::a1310);
-    workspace_->stage.setAffine(baseView, workspace_->stage, h);
+    workspace_->stage.setOrderedAffine(
+        baseView,
+        std::array<const IntegrationBuffer *, 8>{
+            &workspace_->k1, &workspace_->k4OrK13,
+            &workspace_->k2OrK3OrK5, &workspace_->k6, &workspace_->k7,
+            &workspace_->k8, &workspace_->k9, &workspace_->k10},
+        std::array<double, 8>{RK78MethodPolicy::a131,
+                              RK78MethodPolicy::a134,
+                              RK78MethodPolicy::a135,
+                              RK78MethodPolicy::a136,
+                              RK78MethodPolicy::a137,
+                              RK78MethodPolicy::a138,
+                              RK78MethodPolicy::a139,
+                              RK78MethodPolicy::a1310},
+        h);
     status = constrain(system_, workspace_->stage, t + h, t0);
     if (!status)
       return status;
@@ -2590,15 +2668,17 @@ WVKernelStatus WVAdaptiveRK78::stepImplementation(
     if (!status)
       return status;
 
-    workspace_->stage.setScaled(workspace_->k1, RK78MethodPolicy::b1);
-    workspace_->stage.addScaled(workspace_->k6, RK78MethodPolicy::b6);
-    workspace_->stage.addScaled(workspace_->k7, RK78MethodPolicy::b7);
-    workspace_->stage.addScaled(workspace_->k8, RK78MethodPolicy::b8);
-    workspace_->stage.addScaled(workspace_->k9, RK78MethodPolicy::b9);
-    workspace_->stage.addScaled(workspace_->k10, RK78MethodPolicy::b10);
-    workspace_->stage.addScaled(workspace_->k11, RK78MethodPolicy::b11);
-    workspace_->stage.addScaled(workspace_->k12, RK78MethodPolicy::b12);
-    workspace_->stage.setAffine(baseView, workspace_->stage, h);
+    workspace_->stage.setOrderedAffine(
+        baseView,
+        std::array<const IntegrationBuffer *, 8>{
+            &workspace_->k1, &workspace_->k6, &workspace_->k7,
+            &workspace_->k8, &workspace_->k9, &workspace_->k10,
+            &workspace_->k11, &workspace_->k12},
+        std::array<double, 8>{RK78MethodPolicy::b1, RK78MethodPolicy::b6,
+                              RK78MethodPolicy::b7, RK78MethodPolicy::b8,
+                              RK78MethodPolicy::b9, RK78MethodPolicy::b10,
+                              RK78MethodPolicy::b11, RK78MethodPolicy::b12},
+        h);
     auto candidateState = workspace_->stage.mutableState(t + h, t0);
     const auto endpointConstraint =
         system_.enforceStateConstraints(candidateState);

@@ -4,7 +4,7 @@ This is the working policy for further C++ optimization, recorded after issue #4
 
 ## Start with one measurable hypothesis
 
-1. Profile the latest qualified implementation on a representative user workload. Reuse frozen fixtures and record binary, source, provider, thread count, memory policy, and sampling window. Separate integration, output, preparation, and process lifetime. Sampling percentages are estimates of CPU attribution, not measured end-to-end speedups.
+1. Profile the latest qualified implementation on a representative user workload. Reuse frozen fixtures and record binary, source, provider, thread count, memory policy, and sampling window. Separate integration, output, preparation, and process lifetime. Budget the campaign from startup and comparison costs too, especially for large persisted matrix tables. Check baseline repeatability before imposing an exact whole-model numerical gate. Sampling percentages are estimates of CPU attribution, not measured end-to-end speedups.
 2. Read the existing spectral-kernel-benchmarks history, closed-issue conclusions, and linked adoption decisions relevant to the proposed algorithm. Reuse the recorded investigation; do not repeat rejected experiments without identifying a changed assumption.
 3. Choose one bottleneck and estimate the maximum possible whole-model benefit from its measured share. State the intended change, affected families, correctness checks, memory constraints, and go/no-go criterion before implementation. Do not pursue tiny-grid speedups unless the owner changes that preference.
 4. Use a 30–45 minute investigation checkpoint as a default planning target, not a correctness deadline. At that point report evidence and decide whether to continue, narrow the experiment, or reject it. Do not turn an unsuccessful local optimization into an unrequested architecture rewrite.
@@ -20,7 +20,7 @@ This is the working policy for further C++ optimization, recorded after issue #4
 
 ## Detect cheap failures before expensive qualification
 
-1. Run repository/provenance checks and the affected warning-clean compiler builds early. Check supported GCC as well as local Clang before declaring a C++ candidate ready; use actual Linux CI where local SDK constraints prevent a complete GCC build.
+1. Run repository/provenance checks and the affected warning-clean compiler builds early. Check supported GCC as well as local Clang before declaring a C++ candidate ready; use actual Linux CI where local SDK constraints prevent a complete GCC build. When adding a private compiled helper, search for sibling source paths in receipt and export lists and add its fingerprint before freezing.
 2. Run the affected native tests and targeted MATLAB comparisons while editing. Include consumer combinations implicated by the change: components, density references, forcing order, sampling, retries, and storage expectations where relevant. Audit existing assertions when ownership/accounting changes.
 3. Finish independent correctness review and resolve findings before freezing the final runtime candidate. Do not call an intermediate candidate final while a review may still change runtime code.
 4. Run the appropriate combined native suite and affected MATLAB comparisons, then freeze source, executable, fixtures, and benchmark protocol. Use short exploratory timings during development; run the full required paired campaign for the reviewed candidate.
