@@ -1,5 +1,5 @@
 {
-  "runtimeSourceCommit": "c45705ef",
+  "runtimeSourceCommit": "4d8dbf37",
   "pythonPolicyTests": {
     "passed": 51,
     "failed": 0
@@ -15,5 +15,7 @@
     "routes": 4145,
     "generatedDifferences": 0,
     "log": "/private/tmp/wvm470-docs-check.log"
-  }
+  },
+  "finalPolicyLog": "/private/tmp/wvm470-final-policy-tests.log",
+  "finalRepositoryLog": "/private/tmp/wvm470-final-repository-check.log"
 }
