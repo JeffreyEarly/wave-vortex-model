@@ -198,9 +198,10 @@
     }
   },
   "matrixAdvectionExploration": {
-    "status": "local prototype; delivery qualification pending",
+    "status": "prototype; adoption qualification pending",
     "report": "Benchmarks/MATRIX-ADVECTION-PIPELINE.md",
     "frozenRuntimeCommit": "e8806710",
-    "scope": "Immediate inverse derivative consumption for compact Hydrostatic/Boussinesq; exact inertial-column projection and persistent matrix-group workers for Boussinesq."
+    "scope": "Immediate inverse derivative consumption for compact Hydrostatic/Boussinesq; exact inertial-column projection and persistent matrix-group workers for Boussinesq.",
+    "issue": 477
   }
 }

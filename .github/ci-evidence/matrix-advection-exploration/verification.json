@@ -27,5 +27,8 @@
     "Idle-host final paired performance qualification",
     "Source-linked consumer receipts against final source",
     "Required hosted CI"
-  ]
+  ],
+  "adoptionIssue": 477,
+  "prerequisiteMerge": "5a41977b",
+  "integrationTreeUnchangedMerge": "a16da09c"
 }

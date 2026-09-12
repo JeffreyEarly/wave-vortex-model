@@ -1,6 +1,6 @@
 # Matrix scheduling and immediate FFT advection consumption
 
-This is a local optimization experiment following the shared-gradient pipeline in PR #476. The owner requested both directions. The implementation and focused verification are complete; a full idle-host performance campaign, source-linked consumer qualification and required hosted checks remain adoption gates. The experiment does not change MATLAB science, checkpoint formats, tracer algorithms or a running experiment.
+This optimization experiment follows the shared-gradient pipeline in PR #476. [Issue #477](https://github.com/JeffreyEarly/wave-vortex-model/issues/477) tracks adoption qualification. The owner requested both directions. The implementation and focused verification are complete; a full idle-host performance campaign, source-linked consumer qualification and required hosted checks remain adoption gates. The experiment does not change MATLAB science, checkpoint formats, tracer algorithms or a running experiment.
 
 ## Changes
 
