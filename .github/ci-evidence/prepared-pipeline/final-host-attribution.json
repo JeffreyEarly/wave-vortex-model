@@ -1,0 +1,708 @@
+[
+  {
+    "profile": "eddytide-256x256x28",
+    "pair": -2,
+    "warmup": true,
+    "role": "baseline",
+    "estimatedIntegrationStartUnix": 1789254621.5507414,
+    "estimatedIntegrationEndUnix": 1789254638.038751,
+    "hostSamples": 8,
+    "unrelatedPeaksAbove10Percent": {
+      "/Library/Bitdefender/AVP/product/bin/BDLDaemon.app/Contents/MacOS/BDLDaemon": 26.6,
+      "/Applications/ChatGPT.app/Contents/Resources/codex": 11.4,
+      "/usr/libexec/syspolicyd": 36.5
+    }
+  },
+  {
+    "profile": "eddytide-256x256x28",
+    "pair": -2,
+    "warmup": true,
+    "role": "reuse",
+    "estimatedIntegrationStartUnix": 1789254638.2641122,
+    "estimatedIntegrationEndUnix": 1789254653.5154796,
+    "hostSamples": 8,
+    "unrelatedPeaksAbove10Percent": {
+      "/System/Library/PrivateFrameworks/XprotectFramework.framework/Versions/A/XPCServices/XprotectService.xpc/Contents/MacOS/XprotectService": 26.7,
+      "/Library/Bitdefender/AVP/product/bin/BDLDaemon.app/Contents/MacOS/BDLDaemon": 17.9,
+      "/Applications/ChatGPT.app/Contents/Resources/codex": 14.4
+    }
+  },
+  {
+    "profile": "eddytide-256x256x28",
+    "pair": -1,
+    "warmup": true,
+    "role": "reuse",
+    "estimatedIntegrationStartUnix": 1789254653.9892628,
+    "estimatedIntegrationEndUnix": 1789254669.4410026,
+    "hostSamples": 8,
+    "unrelatedPeaksAbove10Percent": {
+      "/System/Library/CoreServices/loginwindow.app/Contents/MacOS/loginwindow": 19.0
+    }
+  },
+  {
+    "profile": "eddytide-256x256x28",
+    "pair": -1,
+    "warmup": true,
+    "role": "baseline",
+    "estimatedIntegrationStartUnix": 1789254669.5845978,
+    "estimatedIntegrationEndUnix": 1789254686.0530958,
+    "hostSamples": 8,
+    "unrelatedPeaksAbove10Percent": {}
+  },
+  {
+    "profile": "eddytide-256x256x28",
+    "pair": 0,
+    "warmup": false,
+    "role": "baseline",
+    "estimatedIntegrationStartUnix": 1789254686.2348077,
+    "estimatedIntegrationEndUnix": 1789254702.7885296,
+    "hostSamples": 8,
+    "unrelatedPeaksAbove10Percent": {
+      "/Library/Bitdefender/AVP/product/bin/BDLDaemon.app/Contents/MacOS/BDLDaemon": 11.0,
+      "/Applications/ChatGPT.app/Contents/Resources/codex": 25.5,
+      "/sbin/launchd": 39.1,
+      "gh": 10.6
+    }
+  },
+  {
+    "profile": "eddytide-256x256x28",
+    "pair": 0,
+    "warmup": false,
+    "role": "reuse",
+    "estimatedIntegrationStartUnix": 1789254702.9343941,
+    "estimatedIntegrationEndUnix": 1789254718.4258614,
+    "hostSamples": 8,
+    "unrelatedPeaksAbove10Percent": {
+      "/Library/Bitdefender/AVP/product/bin/BDLDaemon.app/Contents/MacOS/BDLDaemon": 16.5,
+      "/Applications/ChatGPT.app/Contents/Resources/codex": 18.2
+    }
+  },
+  {
+    "profile": "eddytide-256x256x28",
+    "pair": 1,
+    "warmup": false,
+    "role": "reuse",
+    "estimatedIntegrationStartUnix": 1789254718.6080012,
+    "estimatedIntegrationEndUnix": 1789254734.353143,
+    "hostSamples": 7,
+    "unrelatedPeaksAbove10Percent": {
+      "/System/Library/CoreServices/loginwindow.app/Contents/MacOS/loginwindow": 11.8
+    }
+  },
+  {
+    "profile": "eddytide-256x256x28",
+    "pair": 1,
+    "warmup": false,
+    "role": "baseline",
+    "estimatedIntegrationStartUnix": 1789254734.498152,
+    "estimatedIntegrationEndUnix": 1789254751.2447715,
+    "hostSamples": 8,
+    "unrelatedPeaksAbove10Percent": {
+      "/Library/Bitdefender/AVP/product/bin/BDLDaemon.app/Contents/MacOS/BDLDaemon": 17.5,
+      "/Applications/ChatGPT.app/Contents/Resources/codex": 11.9,
+      "/System/Library/PrivateFrameworks/CloudKitDaemon.framework/Support/cloudd": 14.3
+    }
+  },
+  {
+    "profile": "eddytide-256x256x28",
+    "pair": 2,
+    "warmup": false,
+    "role": "baseline",
+    "estimatedIntegrationStartUnix": 1789254753.4886608,
+    "estimatedIntegrationEndUnix": 1789254770.3068163,
+    "hostSamples": 8,
+    "unrelatedPeaksAbove10Percent": {
+      "/Library/Bitdefender/AVP/product/bin/BDLDaemon.app/Contents/MacOS/BDLDaemon": 13.8,
+      "/Applications/ChatGPT.app/Contents/Resources/codex": 25.8
+    }
+  },
+  {
+    "profile": "eddytide-256x256x28",
+    "pair": 2,
+    "warmup": false,
+    "role": "reuse",
+    "estimatedIntegrationStartUnix": 1789254770.4696527,
+    "estimatedIntegrationEndUnix": 1789254786.2387154,
+    "hostSamples": 8,
+    "unrelatedPeaksAbove10Percent": {
+      "/Library/Bitdefender/AVP/product/bin/BDLDaemon.app/Contents/MacOS/BDLDaemon": 22.1,
+      "/Applications/ChatGPT.app/Contents/Resources/codex": 16.0,
+      "/System/Library/CoreServices/loginwindow.app/Contents/MacOS/loginwindow": 10.9
+    }
+  },
+  {
+    "profile": "eddytide-256x256x28",
+    "pair": 3,
+    "warmup": false,
+    "role": "reuse",
+    "estimatedIntegrationStartUnix": 1789254786.436767,
+    "estimatedIntegrationEndUnix": 1789254801.9533684,
+    "hostSamples": 8,
+    "unrelatedPeaksAbove10Percent": {}
+  },
+  {
+    "profile": "eddytide-256x256x28",
+    "pair": 3,
+    "warmup": false,
+    "role": "baseline",
+    "estimatedIntegrationStartUnix": 1789254802.1105025,
+    "estimatedIntegrationEndUnix": 1789254819.0988867,
+    "hostSamples": 8,
+    "unrelatedPeaksAbove10Percent": {
+      "/sbin/launchd": 12.7
+    }
+  },
+  {
+    "profile": "eddytide-256x256x28",
+    "pair": 4,
+    "warmup": false,
+    "role": "baseline",
+    "estimatedIntegrationStartUnix": 1789254819.2968268,
+    "estimatedIntegrationEndUnix": 1789254836.1796968,
+    "hostSamples": 8,
+    "unrelatedPeaksAbove10Percent": {
+      "/Library/Bitdefender/AVP/product/bin/BDLDaemon.app/Contents/MacOS/BDLDaemon": 30.9,
+      "/Applications/ChatGPT.app/Contents/Resources/codex": 16.1
+    }
+  },
+  {
+    "profile": "eddytide-256x256x28",
+    "pair": 4,
+    "warmup": false,
+    "role": "reuse",
+    "estimatedIntegrationStartUnix": 1789254836.345399,
+    "estimatedIntegrationEndUnix": 1789254852.1355388,
+    "hostSamples": 7,
+    "unrelatedPeaksAbove10Percent": {
+      "/System/Library/CoreServices/loginwindow.app/Contents/MacOS/loginwindow": 15.8
+    }
+  },
+  {
+    "profile": "eddytide-256x256x28",
+    "pair": 5,
+    "warmup": false,
+    "role": "reuse",
+    "estimatedIntegrationStartUnix": 1789254852.3403413,
+    "estimatedIntegrationEndUnix": 1789254868.0307403,
+    "hostSamples": 8,
+    "unrelatedPeaksAbove10Percent": {}
+  },
+  {
+    "profile": "eddytide-256x256x28",
+    "pair": 5,
+    "warmup": false,
+    "role": "baseline",
+    "estimatedIntegrationStartUnix": 1789254868.1898816,
+    "estimatedIntegrationEndUnix": 1789254884.7829592,
+    "hostSamples": 8,
+    "unrelatedPeaksAbove10Percent": {
+      "/Library/Bitdefender/AVP/product/bin/BDLDaemon.app/Contents/MacOS/BDLDaemon": 14.2
+    }
+  },
+  {
+    "profile": "eddytide-256x256x28",
+    "pair": 6,
+    "warmup": false,
+    "role": "baseline",
+    "estimatedIntegrationStartUnix": 1789254884.9822054,
+    "estimatedIntegrationEndUnix": 1789254902.221195,
+    "hostSamples": 9,
+    "unrelatedPeaksAbove10Percent": {
+      "/System/Library/Frameworks/CoreServices.framework/Versions/A/Frameworks/Metadata.framework/Versions/A/Support/corespotlightd": 127.5
+    }
+  },
+  {
+    "profile": "eddytide-256x256x28",
+    "pair": 6,
+    "warmup": false,
+    "role": "reuse",
+    "estimatedIntegrationStartUnix": 1789254902.3820357,
+    "estimatedIntegrationEndUnix": 1789254918.2328646,
+    "hostSamples": 8,
+    "unrelatedPeaksAbove10Percent": {
+      "/sbin/launchd": 36.5,
+      "/Library/Bitdefender/AVP/product/bin/BDLDaemon.app/Contents/MacOS/BDLDaemon": 11.4
+    }
+  },
+  {
+    "profile": "eddytide-256x256x28",
+    "pair": 7,
+    "warmup": false,
+    "role": "reuse",
+    "estimatedIntegrationStartUnix": 1789254918.4328022,
+    "estimatedIntegrationEndUnix": 1789254934.3332129,
+    "hostSamples": 8,
+    "unrelatedPeaksAbove10Percent": {
+      "/usr/libexec/pkd": 36.5,
+      "/System/Library/PrivateFrameworks/CacheDelete.framework/deleted": 52.0,
+      "/Library/Bitdefender/AVP/product/bin/BDLDaemon.app/Contents/MacOS/BDLDaemon": 33.2,
+      "/sbin/launchd": 10.5,
+      "/System/Library/CoreServices/TimeMachine/backupd": 21.0,
+      "/System/Volumes/Preboot/Cryptexes/App/System/Applications/Safari.app/Contents/PlugIns/CacheDeleteExtension.appex/Contents/MacOS/CacheDeleteExtension": 18.3
+    }
+  },
+  {
+    "profile": "eddytide-256x256x28",
+    "pair": 7,
+    "warmup": false,
+    "role": "baseline",
+    "estimatedIntegrationStartUnix": 1789254934.4944367,
+    "estimatedIntegrationEndUnix": 1789254951.5814679,
+    "hostSamples": 8,
+    "unrelatedPeaksAbove10Percent": {
+      "/System/Library/PrivateFrameworks/CloudKitDaemon.framework/Support/cloudd": 24.9,
+      "/Applications/ChatGPT.app/Contents/Resources/codex": 10.1,
+      "/System/Library/PrivateFrameworks/ScreenTimeCore.framework/Versions/A/ScreenTimeAgent": 34.4,
+      "/System/Library/PrivateFrameworks/IMTransferServices.framework/IMTransferAgent.app/Contents/MacOS/IMTransferAgent": 10.9
+    }
+  },
+  {
+    "profile": "variable-hydrostatic-composite-large",
+    "pair": -2,
+    "warmup": true,
+    "role": "baseline",
+    "estimatedIntegrationStartUnix": 1789254951.9987488,
+    "estimatedIntegrationEndUnix": 1789254957.415764,
+    "hostSamples": 3,
+    "unrelatedPeaksAbove10Percent": {
+      "/Library/Bitdefender/AVP/product/bin/BDLDaemon.app/Contents/MacOS/BDLDaemon": 22.7
+    }
+  },
+  {
+    "profile": "variable-hydrostatic-composite-large",
+    "pair": -2,
+    "warmup": true,
+    "role": "reuse",
+    "estimatedIntegrationStartUnix": 1789254958.2161107,
+    "estimatedIntegrationEndUnix": 1789254963.6349435,
+    "hostSamples": 3,
+    "unrelatedPeaksAbove10Percent": {
+      "/System/Library/CoreServices/loginwindow.app/Contents/MacOS/loginwindow": 14.8
+    }
+  },
+  {
+    "profile": "variable-hydrostatic-composite-large",
+    "pair": -1,
+    "warmup": true,
+    "role": "reuse",
+    "estimatedIntegrationStartUnix": 1789254965.228907,
+    "estimatedIntegrationEndUnix": 1789254970.4841843,
+    "hostSamples": 2,
+    "unrelatedPeaksAbove10Percent": {}
+  },
+  {
+    "profile": "variable-hydrostatic-composite-large",
+    "pair": -1,
+    "warmup": true,
+    "role": "baseline",
+    "estimatedIntegrationStartUnix": 1789254971.2905383,
+    "estimatedIntegrationEndUnix": 1789254976.608652,
+    "hostSamples": 2,
+    "unrelatedPeaksAbove10Percent": {}
+  },
+  {
+    "profile": "variable-hydrostatic-composite-large",
+    "pair": 0,
+    "warmup": false,
+    "role": "baseline",
+    "estimatedIntegrationStartUnix": 1789254978.2792027,
+    "estimatedIntegrationEndUnix": 1789254983.691107,
+    "hostSamples": 3,
+    "unrelatedPeaksAbove10Percent": {}
+  },
+  {
+    "profile": "variable-hydrostatic-composite-large",
+    "pair": 0,
+    "warmup": false,
+    "role": "reuse",
+    "estimatedIntegrationStartUnix": 1789254984.4976606,
+    "estimatedIntegrationEndUnix": 1789254989.7831826,
+    "hostSamples": 3,
+    "unrelatedPeaksAbove10Percent": {}
+  },
+  {
+    "profile": "variable-hydrostatic-composite-large",
+    "pair": 1,
+    "warmup": false,
+    "role": "reuse",
+    "estimatedIntegrationStartUnix": 1789254991.4844635,
+    "estimatedIntegrationEndUnix": 1789254996.7606974,
+    "hostSamples": 2,
+    "unrelatedPeaksAbove10Percent": {}
+  },
+  {
+    "profile": "variable-hydrostatic-composite-large",
+    "pair": 1,
+    "warmup": false,
+    "role": "baseline",
+    "estimatedIntegrationStartUnix": 1789254997.5375545,
+    "estimatedIntegrationEndUnix": 1789255003.0360975,
+    "hostSamples": 2,
+    "unrelatedPeaksAbove10Percent": {}
+  },
+  {
+    "profile": "variable-hydrostatic-composite-large",
+    "pair": 2,
+    "warmup": false,
+    "role": "baseline",
+    "estimatedIntegrationStartUnix": 1789255004.7351797,
+    "estimatedIntegrationEndUnix": 1789255010.0595918,
+    "hostSamples": 3,
+    "unrelatedPeaksAbove10Percent": {}
+  },
+  {
+    "profile": "variable-hydrostatic-composite-large",
+    "pair": 2,
+    "warmup": false,
+    "role": "reuse",
+    "estimatedIntegrationStartUnix": 1789255010.8817015,
+    "estimatedIntegrationEndUnix": 1789255016.2405357,
+    "hostSamples": 3,
+    "unrelatedPeaksAbove10Percent": {}
+  },
+  {
+    "profile": "variable-hydrostatic-composite-large",
+    "pair": 3,
+    "warmup": false,
+    "role": "reuse",
+    "estimatedIntegrationStartUnix": 1789255017.9695108,
+    "estimatedIntegrationEndUnix": 1789255023.321073,
+    "hostSamples": 2,
+    "unrelatedPeaksAbove10Percent": {}
+  },
+  {
+    "profile": "variable-hydrostatic-composite-large",
+    "pair": 3,
+    "warmup": false,
+    "role": "baseline",
+    "estimatedIntegrationStartUnix": 1789255026.213097,
+    "estimatedIntegrationEndUnix": 1789255031.5150492,
+    "hostSamples": 2,
+    "unrelatedPeaksAbove10Percent": {}
+  },
+  {
+    "profile": "variable-hydrostatic-composite-large",
+    "pair": 4,
+    "warmup": false,
+    "role": "baseline",
+    "estimatedIntegrationStartUnix": 1789255033.2322094,
+    "estimatedIntegrationEndUnix": 1789255038.5912945,
+    "hostSamples": 3,
+    "unrelatedPeaksAbove10Percent": {}
+  },
+  {
+    "profile": "variable-hydrostatic-composite-large",
+    "pair": 4,
+    "warmup": false,
+    "role": "reuse",
+    "estimatedIntegrationStartUnix": 1789255039.406247,
+    "estimatedIntegrationEndUnix": 1789255044.6881635,
+    "hostSamples": 3,
+    "unrelatedPeaksAbove10Percent": {}
+  },
+  {
+    "profile": "variable-hydrostatic-composite-large",
+    "pair": 5,
+    "warmup": false,
+    "role": "reuse",
+    "estimatedIntegrationStartUnix": 1789255046.3807971,
+    "estimatedIntegrationEndUnix": 1789255051.6823683,
+    "hostSamples": 2,
+    "unrelatedPeaksAbove10Percent": {}
+  },
+  {
+    "profile": "variable-hydrostatic-composite-large",
+    "pair": 5,
+    "warmup": false,
+    "role": "baseline",
+    "estimatedIntegrationStartUnix": 1789255052.4916334,
+    "estimatedIntegrationEndUnix": 1789255057.841906,
+    "hostSamples": 2,
+    "unrelatedPeaksAbove10Percent": {}
+  },
+  {
+    "profile": "variable-hydrostatic-composite-large",
+    "pair": 6,
+    "warmup": false,
+    "role": "baseline",
+    "estimatedIntegrationStartUnix": 1789255059.5119412,
+    "estimatedIntegrationEndUnix": 1789255064.8717034,
+    "hostSamples": 3,
+    "unrelatedPeaksAbove10Percent": {}
+  },
+  {
+    "profile": "variable-hydrostatic-composite-large",
+    "pair": 6,
+    "warmup": false,
+    "role": "reuse",
+    "estimatedIntegrationStartUnix": 1789255065.6860166,
+    "estimatedIntegrationEndUnix": 1789255070.90516,
+    "hostSamples": 3,
+    "unrelatedPeaksAbove10Percent": {}
+  },
+  {
+    "profile": "variable-hydrostatic-composite-large",
+    "pair": 7,
+    "warmup": false,
+    "role": "reuse",
+    "estimatedIntegrationStartUnix": 1789255072.5932415,
+    "estimatedIntegrationEndUnix": 1789255077.869649,
+    "hostSamples": 3,
+    "unrelatedPeaksAbove10Percent": {}
+  },
+  {
+    "profile": "variable-hydrostatic-composite-large",
+    "pair": 7,
+    "warmup": false,
+    "role": "baseline",
+    "estimatedIntegrationStartUnix": 1789255078.6851068,
+    "estimatedIntegrationEndUnix": 1789255084.069882,
+    "hostSamples": 3,
+    "unrelatedPeaksAbove10Percent": {
+      "/System/Library/CoreServices/loginwindow.app/Contents/MacOS/loginwindow": 13.8
+    }
+  },
+  {
+    "profile": "boussinesq-256x256x129-rk78",
+    "pair": -2,
+    "warmup": true,
+    "role": "baseline",
+    "estimatedIntegrationStartUnix": 1789255119.4954226,
+    "estimatedIntegrationEndUnix": 1789255123.6534734,
+    "hostSamples": 2,
+    "unrelatedPeaksAbove10Percent": {}
+  },
+  {
+    "profile": "boussinesq-256x256x129-rk78",
+    "pair": -2,
+    "warmup": true,
+    "role": "reuse",
+    "estimatedIntegrationStartUnix": 1789255160.4322298,
+    "estimatedIntegrationEndUnix": 1789255164.5267546,
+    "hostSamples": 2,
+    "unrelatedPeaksAbove10Percent": {
+      "/System/Library/PrivateFrameworks/CacheDelete.framework/deleted": 56.0,
+      "/usr/libexec/mobileassetd": 11.0,
+      "/System/Library/CoreServices/TimeMachine/backupd": 29.4
+    }
+  },
+  {
+    "profile": "boussinesq-256x256x129-rk78",
+    "pair": -1,
+    "warmup": true,
+    "role": "reuse",
+    "estimatedIntegrationStartUnix": 1789255209.3940454,
+    "estimatedIntegrationEndUnix": 1789255213.090642,
+    "hostSamples": 1,
+    "unrelatedPeaksAbove10Percent": {}
+  },
+  {
+    "profile": "boussinesq-256x256x129-rk78",
+    "pair": -1,
+    "warmup": true,
+    "role": "baseline",
+    "estimatedIntegrationStartUnix": 1789255247.7499578,
+    "estimatedIntegrationEndUnix": 1789255252.1863477,
+    "hostSamples": 3,
+    "unrelatedPeaksAbove10Percent": {
+      "/usr/libexec/triald_system": 19.2,
+      "/System/Library/PrivateFrameworks/CloudKitDaemon.framework/Support/cloudd": 36.5
+    }
+  },
+  {
+    "profile": "boussinesq-256x256x129-rk78",
+    "pair": 0,
+    "warmup": false,
+    "role": "baseline",
+    "estimatedIntegrationStartUnix": 1789255296.494325,
+    "estimatedIntegrationEndUnix": 1789255300.6479855,
+    "hostSamples": 2,
+    "unrelatedPeaksAbove10Percent": {}
+  },
+  {
+    "profile": "boussinesq-256x256x129-rk78",
+    "pair": 0,
+    "warmup": false,
+    "role": "reuse",
+    "estimatedIntegrationStartUnix": 1789255335.5648522,
+    "estimatedIntegrationEndUnix": 1789255339.726817,
+    "hostSamples": 2,
+    "unrelatedPeaksAbove10Percent": {
+      "/System/Library/PrivateFrameworks/CacheDelete.framework/deleted": 13.9,
+      "/System/Library/CoreServices/TimeMachine/backupd": 16.8,
+      "/usr/libexec/triald_system": 15.0,
+      "/System/Library/PrivateFrameworks/CloudKitDaemon.framework/Support/cloudd": 12.8
+    }
+  },
+  {
+    "profile": "boussinesq-256x256x129-rk78",
+    "pair": 1,
+    "warmup": false,
+    "role": "reuse",
+    "estimatedIntegrationStartUnix": 1789255384.1996918,
+    "estimatedIntegrationEndUnix": 1789255387.9146674,
+    "hostSamples": 2,
+    "unrelatedPeaksAbove10Percent": {}
+  },
+  {
+    "profile": "boussinesq-256x256x129-rk78",
+    "pair": 1,
+    "warmup": false,
+    "role": "baseline",
+    "estimatedIntegrationStartUnix": 1789255422.7215946,
+    "estimatedIntegrationEndUnix": 1789255426.9959435,
+    "hostSamples": 2,
+    "unrelatedPeaksAbove10Percent": {}
+  },
+  {
+    "profile": "boussinesq-256x256x129-rk78",
+    "pair": 2,
+    "warmup": false,
+    "role": "baseline",
+    "estimatedIntegrationStartUnix": 1789255471.531958,
+    "estimatedIntegrationEndUnix": 1789255475.885726,
+    "hostSamples": 2,
+    "unrelatedPeaksAbove10Percent": {
+      "/System/Library/PrivateFrameworks/AppleNeuralEngine.framework/XPCServices/ANECompilerService.xpc/Contents/MacOS/ANECompilerService": 100.0
+    }
+  },
+  {
+    "profile": "boussinesq-256x256x129-rk78",
+    "pair": 2,
+    "warmup": false,
+    "role": "reuse",
+    "estimatedIntegrationStartUnix": 1789255525.514009,
+    "estimatedIntegrationEndUnix": 1789255529.7345831,
+    "hostSamples": 2,
+    "unrelatedPeaksAbove10Percent": {}
+  },
+  {
+    "profile": "boussinesq-256x256x129-rk78",
+    "pair": 3,
+    "warmup": false,
+    "role": "reuse",
+    "estimatedIntegrationStartUnix": 1789255605.528728,
+    "estimatedIntegrationEndUnix": 1789255609.27371,
+    "hostSamples": 1,
+    "unrelatedPeaksAbove10Percent": {}
+  },
+  {
+    "profile": "boussinesq-256x256x129-rk78",
+    "pair": 3,
+    "warmup": false,
+    "role": "baseline",
+    "estimatedIntegrationStartUnix": 1789255658.4458232,
+    "estimatedIntegrationEndUnix": 1789255662.9483347,
+    "hostSamples": 2,
+    "unrelatedPeaksAbove10Percent": {
+      "/usr/libexec/pkd": 24.4,
+      "/System/Library/PrivateFrameworks/CacheDelete.framework/deleted": 30.3,
+      "/System/Library/Frameworks/CoreServices.framework/Versions/A/Frameworks/Metadata.framework/Versions/A/Support/corespotlightd": 10.6,
+      "/sbin/launchd": 10.3,
+      "/System/Library/CoreServices/TimeMachine/backupd": 16.1,
+      "/System/Volumes/Preboot/Cryptexes/App/System/Applications/Safari.app/Contents/PlugIns/CacheDeleteExtension.appex/Contents/MacOS/CacheDeleteExtension": 12.7
+    }
+  },
+  {
+    "profile": "boussinesq-256x256x129-rk78",
+    "pair": 4,
+    "warmup": false,
+    "role": "baseline",
+    "estimatedIntegrationStartUnix": 1789255707.4037797,
+    "estimatedIntegrationEndUnix": 1789255711.5408454,
+    "hostSamples": 2,
+    "unrelatedPeaksAbove10Percent": {}
+  },
+  {
+    "profile": "boussinesq-256x256x129-rk78",
+    "pair": 4,
+    "warmup": false,
+    "role": "reuse",
+    "estimatedIntegrationStartUnix": 1789255746.2241313,
+    "estimatedIntegrationEndUnix": 1789255750.3797266,
+    "hostSamples": 2,
+    "unrelatedPeaksAbove10Percent": {
+      "/usr/libexec/pkd": 35.2,
+      "/System/Library/PrivateFrameworks/CacheDelete.framework/deleted": 60.1,
+      "/System/Library/Frameworks/CoreServices.framework/Versions/A/Frameworks/Metadata.framework/Versions/A/Support/corespotlightd": 12.3,
+      "/sbin/launchd": 11.0,
+      "/System/Library/CoreServices/TimeMachine/backupd": 17.6,
+      "/System/Volumes/Preboot/Cryptexes/App/System/Applications/Safari.app/Contents/PlugIns/CacheDeleteExtension.appex/Contents/MacOS/CacheDeleteExtension": 15.8,
+      "/System/Library/Frameworks/WebKit.framework/Versions/A/XPCServices/com.apple.WebKit.Networking.xpc/Contents/MacOS/com.apple.WebKit.Networking": 11.1
+    }
+  },
+  {
+    "profile": "boussinesq-256x256x129-rk78",
+    "pair": 5,
+    "warmup": false,
+    "role": "reuse",
+    "estimatedIntegrationStartUnix": 1789255795.065938,
+    "estimatedIntegrationEndUnix": 1789255798.7378795,
+    "hostSamples": 1,
+    "unrelatedPeaksAbove10Percent": {}
+  },
+  {
+    "profile": "boussinesq-256x256x129-rk78",
+    "pair": 5,
+    "warmup": false,
+    "role": "baseline",
+    "estimatedIntegrationStartUnix": 1789255833.394336,
+    "estimatedIntegrationEndUnix": 1789255838.2191267,
+    "hostSamples": 3,
+    "unrelatedPeaksAbove10Percent": {
+      "/sbin/launchd": 28.8,
+      "/usr/libexec/triald_system": 13.5,
+      "/System/Library/Frameworks/Accounts.framework/Versions/A/Support/accountsd": 12.6,
+      "/System/Library/PrivateFrameworks/CloudKitDaemon.framework/Support/cloudd": 43.7
+    }
+  },
+  {
+    "profile": "boussinesq-256x256x129-rk78",
+    "pair": 6,
+    "warmup": false,
+    "role": "baseline",
+    "estimatedIntegrationStartUnix": 1789255882.5346918,
+    "estimatedIntegrationEndUnix": 1789255886.6734078,
+    "hostSamples": 2,
+    "unrelatedPeaksAbove10Percent": {}
+  },
+  {
+    "profile": "boussinesq-256x256x129-rk78",
+    "pair": 6,
+    "warmup": false,
+    "role": "reuse",
+    "estimatedIntegrationStartUnix": 1789255921.5807588,
+    "estimatedIntegrationEndUnix": 1789255925.6863222,
+    "hostSamples": 2,
+    "unrelatedPeaksAbove10Percent": {
+      "/usr/libexec/pkd": 17.8,
+      "/System/Library/PrivateFrameworks/CacheDelete.framework/deleted": 22.8,
+      "/System/Library/CoreServices/TimeMachine/backupd": 26.0,
+      "/usr/libexec/triald_system": 10.7
+    }
+  },
+  {
+    "profile": "boussinesq-256x256x129-rk78",
+    "pair": 7,
+    "warmup": false,
+    "role": "reuse",
+    "estimatedIntegrationStartUnix": 1789255970.112242,
+    "estimatedIntegrationEndUnix": 1789255973.887535,
+    "hostSamples": 2,
+    "unrelatedPeaksAbove10Percent": {}
+  },
+  {
+    "profile": "boussinesq-256x256x129-rk78",
+    "pair": 7,
+    "warmup": false,
+    "role": "baseline",
+    "estimatedIntegrationStartUnix": 1789256008.6552057,
+    "estimatedIntegrationEndUnix": 1789256013.7149284,
+    "hostSamples": 3,
+    "unrelatedPeaksAbove10Percent": {
+      "/usr/libexec/triald_system": 12.4,
+      "/System/Library/Frameworks/Accounts.framework/Versions/A/Support/accountsd": 12.6,
+      "/System/Library/PrivateFrameworks/CloudKitDaemon.framework/Support/cloudd": 44.2
+    }
+  }
+]

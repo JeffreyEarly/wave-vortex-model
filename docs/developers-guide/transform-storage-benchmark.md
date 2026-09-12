@@ -1,13 +1,13 @@
 ---
 layout: default
-title: Transform storage benchmark
+title: MATLAB builtin transform storage benchmark
 parent: Developers guide
 nav_order: 9
 ---
 
-# Transform storage benchmark
+# MATLAB builtin transform storage benchmark
 
-The builtin storage diagnostic separates exact application-owned arrays from whole-process resident memory. It does not infer MATLAB copy-on-write behavior or internal FFT work buffers from source code.
+This developer benchmark covers MATLAB's builtin transform implementation. It is separate from the matched compiled interface measurements on the [Benchmarks](/benchmarks) page. The diagnostic separates exact application-owned arrays from whole-process resident memory; it does not infer MATLAB copy-on-write behavior or internal FFT work buffers from source code.
 
 ## Exact storage ledger
 
@@ -24,4 +24,4 @@ addpath("Benchmarks")
 results = runWaveVortexBuiltinStorageBenchmark
 ```
 
-The JSON artifact retains raw samples, medians, ranges, sampler identity, exact ledgers, source identity, and structured failures. The Markdown summary reports known storage and RSS without combining them into a synthetic memory estimate.
+The JSON artifact retains raw samples, medians, ranges, sampler identity, exact ledgers, source identity, and structured failures. The Markdown summary reports known storage and RSS without combining them into a synthetic memory estimate. Storage artifacts are engineering diagnostics rather than cataloged public performance datasets.

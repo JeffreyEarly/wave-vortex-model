@@ -53,6 +53,11 @@ classdef TestBenchmarkWebsiteDocumentation < matlab.unittest.TestCase
             copyfile(fullfile(testCase.repositoryRoot,"Documentation","WebsiteDocumentation","compiled-execution","benchmarks.md"),fullfile(secondBuild,"compiled-execution","benchmarks.md"));
             generateBenchmarkWebsiteDocumentation(root,secondBuild);
 
+            for buildFolder = [firstBuild secondBuild]
+                mkdir(fullfile(buildFolder,"developers-guide"));
+                copyfile(fullfile(testCase.repositoryRoot,"Documentation","WebsiteDocumentation","developers-guide","transform-storage-benchmark.md"),fullfile(buildFolder,"developers-guide","transform-storage-benchmark.md"));
+            end
+
             comparison = compareDocumentationTrees(firstBuild,secondBuild);
             testCase.verifyTrue(comparison.IsEqual,strjoin(comparison.Substantive,newline));
             page = string(fileread(fullfile(firstBuild,"compiled-execution","benchmarks.md")));
@@ -160,7 +165,16 @@ classdef TestBenchmarkWebsiteDocumentation < matlab.unittest.TestCase
             testCase.verifyEqual(numel(strfind(summary,"benchmark-fastest")),2)
             testCase.verifyEqual(numel(strfind(summary,"benchmark-lowest-memory")),2)
             testCase.verifyFalse(contains(summary,"Fixed RK4"))
-            testCase.verifyFalse(contains(summary,"fresh processes"))
+            testCase.verifySubstring(summary,first.datasetId)
+            testCase.verifySubstring(summary,"collected 2026-08-25")
+            testCase.verifySubstring(summary,"source commit `"+string(first.source.commit)+"`")
+            testCase.verifySubstring(summary,"Donut (Apple M5 Max) with 18 threads")
+            testCase.verifySubstring(summary,"`native-neon-pthreads` 3.3.11")
+            testCase.verifySubstring(summary,"medians of 3 fresh processes")
+            testCase.verifySubstring(summary,"Runtime starts immediately before integration")
+            testCase.verifySubstring(summary,"required output delivery")
+            testCase.verifySubstring(summary,"total live process tree RSS")
+            testCase.verifySubstring(summary,"does not include later native runtime changes")
 
             testCase.verifySubstring(comparison,"### Coefficients only")
             testCase.verifySubstring(comparison,"### Composite graph with dense output")
