@@ -69,3 +69,7 @@ assertSuccess(runtests('UnitTests/TestFreeSurfaceRHSReuse.m'));
 The study compares complete unforced coefficient tendencies with setup excluded. Cold calls clear field caches; warm calls reuse them; overlap includes the preceding `u_hat,p,ssh` request; successive calls advance the clock. Five alternating batches of 30 evaluations give median call times. States populate all six families with variable stratification and unequal retained counts. These measurements concern runtime and accuracy only.
 
 Direct spectral pressure gradients are assessed separately, assuming pressure is already available in spectral form. Production keeps the directional derivatives: using the candidate in the cache-backed RHS would require sharing the transient spectral pressure from reconstruction, and the isolated kernel timings alone do not establish a complete-RHS benefit. No new pressure cache or derivative backend is introduced.
+
+## Follow-up
+
+The [remaining scheduling assessment](../rhs-scheduling-study/README.md) completes #484 against the later optimized thermodynamic baseline. It records the final pressure/setup decision, coefficient-copy and source-assembly improvements, and fresh-process complete-callback timings. The measurements above remain the evidence for the earlier wave-factorization increment.

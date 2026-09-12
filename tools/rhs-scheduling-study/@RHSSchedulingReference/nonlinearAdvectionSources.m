@@ -6,7 +6,7 @@ function [u,v,w,eta] = nonlinearAdvectionSources(self)
 % the time-dependent basis; it is not added to these coefficient sources.
 % Prescribed forcing is mapped separately by spatialFluxForForcingWithName.
 arguments (Input)
-    self (1,1) WVTransformFreeSurfaceBoussinesq
+    self (1,1) RHSSchedulingReference
 end
 arguments (Output)
     u (:,:,:) double
@@ -20,7 +20,7 @@ physicalZ = reshape(self.z,1,1,[])+reshape(1+self.z/self.Lz,1,1,[]).*hatted.ssh;
 thermodynamics = self.thermodynamicContext();
 thermal = thermodynamics.evaluateNonlinear(physicalZ,hatted.eta,hatted.ssh,self.N2);
 derivative = struct(x=@(field)self.diffX(field),y=@(field)self.diffY(field),xi=@(field)self.diffZ(field));
-terms = WVInternal.freeSurfaceNonlinearTerms(hatted,hatted.p,self.z,self.Lz,self.f,self.rho0,self.N2,thermal.buoyancyRemainder,derivative,includeDiagnostics=false);
+terms = schedulingReferenceTerms(hatted,hatted.p,self.z,self.Lz,self.f,self.rho0,self.N2,thermal.buoyancyRemainder,derivative);
 u = terms.source.u;
 v = terms.source.v;
 w = terms.source.w;

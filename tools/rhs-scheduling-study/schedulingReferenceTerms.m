@@ -1,4 +1,4 @@
-function terms = freeSurfaceNonlinearTerms(hatted,pressure,xi,D,f,rho0,N2,buoyancyRemainder,derivative,options)
+function terms = schedulingReferenceTerms(hatted,pressure,xi,D,f,rho0,N2,buoyancyRemainder,derivative)
 % Evaluate Appendix C terms before applying any modal source projector.
 %
 % Literal transcription of eq:projection-ready-nonlinear-advection-terms,
@@ -21,7 +21,6 @@ arguments (Input)
     N2 (:,1) double {mustBePositive}
     buoyancyRemainder (:,:,:) double {mustBeReal,mustBeFinite}
     derivative (1,1) struct
-    options.includeDiagnostics (1,1) logical = true
 end
 alpha = reshape(1+xi/D,1,1,[]);
 depth = D*alpha;
@@ -50,12 +49,6 @@ N.w = (divergence(physicalW)+(surfaceW/D).*physicalW)./gamma ...
     +depth.*(H.u.*logGammaX+H.v.*logGammaY+hatted.u.*derivative.x(surfaceW./(D*gamma))+hatted.v.*derivative.y(surfaceW./(D*gamma)));
 P.w = (-hatted.ssh./(D+hatted.ssh)).*pressureXi/rho0+buoyancyRemainder;
 N.eta = divergence(hatted.eta)./gamma+(surfaceW./(D*gamma)).*hatted.eta-alpha.*(hatted.u.*sshX+hatted.v.*sshY)./gamma;
-% The coefficient RHS needs only these four sources. Preserve the complete
-% term inventory for existing diagnostic and mathematical-reference callers.
-if ~options.includeDiagnostics
-    terms = struct(source=struct(u=-N.u-P.u,v=-N.v-P.v,w=-N.w-P.w,eta=-N.eta));
-    return
-end
 P.eta = zeros(size(N.eta));
 linear = struct(u=f*hatted.v-pressureX/rho0,v=-f*hatted.u-pressureY/rho0,w=-reshape(N2,1,1,[]).*hatted.eta-pressureXi/rho0,eta=hatted.w);
 source = struct(); total = struct();

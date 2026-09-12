@@ -18,7 +18,7 @@ function fields = reconstructFields(self,variableNames,options)
 % - Parameter options.flowComponent: component of this transform; empty selects all
 % - Returns fields: named Nx by Ny by Nz arrays; surface fields are Nx by Ny
 arguments (Input)
-    self (1,1) WVTransformFreeSurfaceBoussinesq
+    self (1,1) RHSSchedulingReference
     variableNames (1,:) string {mustBeNonempty}
     options.flowComponent WVFlowComponent = WVFlowComponent.empty(0,0)
 end
@@ -96,13 +96,7 @@ for index = find(surface)
 end
 volumeNames=rawNames(volume); surfaceNames=rawNames(surface);
 if ~isempty(volumeNames) || ~isempty(surfaceNames)
-    if isempty(component)
-        % Canonical family order; avoid constructing mutable annotations just
-        % to copy the total state. Component selection keeps its shared protocol.
-        state = struct(Aw_p=self.Aw_p,Aw_m=self.Aw_m,Ag_q=self.Ag_q,Ag_0=self.Ag_0,Aio=self.Aio,Amda=self.Amda);
-    else
-        state = self.coefficientState(flowComponent=component);
-    end
+    state = self.coefficientState(flowComponent=component);
     if ~isempty(volumeNames)
         spectral = WVInternal.freeSurfaceSelectedSpectralFields(self,state,volumeNames,1:self.Nz);
         for name = volumeNames

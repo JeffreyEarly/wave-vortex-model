@@ -1,4 +1,4 @@
-function fields = reconstructFields(self,variableNames,options)
+function [fields,pressureGradient] = reconstructFields(self,variableNames,options)
 % Reconstruct selected fields on the reference samples and moving mesh.
 %
 % u/v/w are physical velocities; u_hat/v_hat/w_hat are the modal variables.
@@ -24,6 +24,7 @@ arguments (Input)
 end
 arguments (Output)
     fields (1,1) struct
+    pressureGradient (1,1) struct
 end
 if any(~ismember(variableNames,string(self.namesOfTransformVariables())))
     error('WVTransform:UnknownVariable','Request fields listed by namesOfTransformVariables.')
@@ -35,7 +36,7 @@ component = options.flowComponent;
 if ~isempty(component) && (~isscalar(component) || component.wvt ~= self)
     error('WVTransform:InvalidComponent','Select one component belonging to this transform.')
 end
-fields = struct();
+fields = struct(); pressureGradient=struct();
 needed = variableNames;
 hasValue = false(size(variableNames));
 for index = 1:numel(variableNames)
@@ -48,6 +49,7 @@ if isempty(needed), return; end
 rawNames = ["u","v","w","eta","p","qgpv"];
 volume = false(1,6); surface = false(1,6);
 for name = needed
+    if name=="p" && ~isempty(fieldnames(pressureGradient)), continue; end
     switch name
         case {"u","u_hat"}, volume(1)=true;
         case {"v","v_hat"}, volume(2)=true;
@@ -96,23 +98,31 @@ for index = find(surface)
 end
 volumeNames=rawNames(volume); surfaceNames=rawNames(surface);
 if ~isempty(volumeNames) || ~isempty(surfaceNames)
-    if isempty(component)
-        % Canonical family order; avoid constructing mutable annotations just
-        % to copy the total state. Component selection keeps its shared protocol.
-        state = struct(Aw_p=self.Aw_p,Aw_m=self.Aw_m,Ag_q=self.Ag_q,Ag_0=self.Ag_0,Aio=self.Aio,Amda=self.Amda);
+    if isempty(component) && any(self.strategy==["state","stateSource"])
+        state=struct(Aw_p=self.Aw_p,Aw_m=self.Aw_m,Ag_q=self.Ag_q,Ag_0=self.Ag_0,Aio=self.Aio,Amda=self.Amda);
     else
         state = self.coefficientState(flowComponent=component);
     end
     if ~isempty(volumeNames)
         spectral = WVInternal.freeSurfaceSelectedSpectralFields(self,state,volumeNames,1:self.Nz);
         for name = volumeNames
+            if name=="p" && nargout>1 && any(volume(1:4)) && any(self.strategy==["spectral","combined"])
+                pressureGradient.x=self.transformToSpatialDomainWithFourier(spectral.p.*(1i*self.k.'));
+                pressureGradient.y=self.transformToSpatialDomainWithFourier(spectral.p.*(1i*self.l.'));
+                pressureGradient.xi=self.transformToSpatialDomainWithFourier(self.verticalDerivativeMatrix*spectral.p);
+                geometry=self.studySurfaceGeometry();
+                endpoint.ssh=geometry.transformToSpatialDomainWithFourier(spectral.p(end,:))/(self.rho0*self.g);
+                % No sampled pressure is manufactured or entered into the cache.
+                % The RHS consumes supplied gradients and never reads fields.p.
+                continue
+            end
             sampled.(name)=self.transformToSpatialDomainWithFourier(spectral.(name));
             if any(needed==sampleName(name)), remember(sampleName(name),sampled.(name),component); end
         end
     end
     if ~isempty(surfaceNames)
         spectral = WVInternal.freeSurfaceSelectedSpectralFields(self,state,surfaceNames,self.Nz);
-        geometry = self.surfaceGeometry();
+        geometry = self.studySurfaceGeometry();
         for name = surfaceNames, endpoint.(name)=geometry.transformToSpatialDomainWithFourier(spectral.(name)); end
     end
 end
@@ -131,7 +141,7 @@ if needsGeometry
         [found,totalSSH]=cached("ssh",WVFlowComponent.empty(0,0));
         if ~found
             total = WVInternal.freeSurfaceSelectedSpectralFields(self,self.coefficientState(),"p",self.Nz);
-            geometry=self.surfaceGeometry();
+            geometry=self.studySurfaceGeometry();
             totalSSH=geometry.transformToSpatialDomainWithFourier(total.p)/(self.rho0*self.g);
             remember("ssh",totalSSH,WVFlowComponent.empty(0,0));
         end
@@ -145,6 +155,7 @@ if any(needed.'==["w","w_i","z_physical","eta_i"],'all'), alpha=reshape(1+self.z
 if any(needed=="u" | needed=="w"), physicalU=sampled.u./gamma; end
 if any(needed=="v" | needed=="w"), physicalV=sampled.v./gamma; end
 for name = needed
+    if name=="p" && ~isempty(fieldnames(pressureGradient)), continue; end
     switch name
         case "u", value=physicalU;
         case "v", value=physicalV;
