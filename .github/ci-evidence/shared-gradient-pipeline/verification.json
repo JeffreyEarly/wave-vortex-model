@@ -1,0 +1,93 @@
+{
+  "runtimeImplementationCommit": "d87ede4e",
+  "qualifiedPrerequisiteMerge": "a212b272",
+  "combinedVerificationCommit": "60516944",
+  "frozenCandidateCommit": "aefc6484",
+  "compiledSourceEquivalence": "Only source-linked JSON receipts changed between combined verification and frozen candidate; runner reconfigured to embed final commit.",
+  "nativeRelease": {
+    "passed": 58,
+    "failed": 0,
+    "seconds": 21.19
+  },
+  "asanUbsan": {
+    "passed": 58,
+    "failed": 0,
+    "seconds": 35.7,
+    "appleLeakSanitizerDisabled": true,
+    "linuxLeakChecksUnchanged": true
+  },
+  "gcc14": {
+    "passed": [
+      "hydrostatic-kernel",
+      "hydrostatic-runtime",
+      "boussinesq-kernel",
+      "boussinesq-runtime"
+    ],
+    "correction": "One-ulp test-side raw-flux discrepancy (1.3552527156068805e-20); bounded by 8 epsilon times summed absolute advection contributions. Borrowed fields still exact; scientific tolerances unchanged."
+  },
+  "matlabParity": {
+    "passedMethods": 12,
+    "providersAndLayouts": "Both MM families, supported reference/native/Accelerate and compact/pruned combinations"
+  },
+  "forwardIntegration": {
+    "passedMethods": 6,
+    "configurations": 6,
+    "providers": [
+      "reference",
+      "native-fftw"
+    ],
+    "catalogAndCompatibilityMethods": 15
+  },
+  "documentation": {
+    "files": 2026,
+    "routes": 4145,
+    "failures": 0,
+    "generatedDifferences": 0
+  },
+  "reviews": [
+    {
+      "role": "shared lifecycle and independent tests",
+      "model": "gpt-5.6-sol",
+      "findingsResolved": true
+    },
+    {
+      "role": "Boussinesq family and independent Hydrostatic review",
+      "model": "gpt-5.6-sol",
+      "findingsResolved": true
+    }
+  ],
+  "limitations": [
+    "Arbitrary wide diagnostic plans may allocate beyond four preallocated numerical entries on first use; bounded, accounted and never silently evicted.",
+    "Matrix backend methods return void noexcept; tests cover partial cache readiness and a failed downstream inverse, not an injected backend error status."
+  ],
+  "logSHA256": {
+    "verification-logs/wvm-gradient-gcc-final-build.log": "05d9cffe9e61e3514f79090129fa9481af3ee6e36f4a11d69c6c821b22c6b925",
+    "verification-logs/wvm-gradient-freeze-configure.log": "8047bea46a51956ee424fcd0de3372203a450a67b951135dbd559a65be246caa",
+    "verification-logs/wvm-gradient-sanitized-build.log": "c1b88f42a6256e59915ae8b9b636f059bfc0ca028ed69d591ebf49a144fcadc9",
+    "verification-logs/wvm-gradient-focused.log": "2463b09e8efcf8b037fcc41d4242f09dcff646ec95bfe72444d9545b36192d32",
+    "verification-logs/forward-results.json": "1b3680319108daa8807eda52497ecbd4fed5be42501406073c995d6ec2dbb551",
+    "verification-logs/wvm-gradient-build3.log": "320d934ab7220320a3fab68b1c572b66cd8473a7524f7e9f7663541a2caa988f",
+    "verification-logs/wvm-gradient-build2.log": "7e5cf30eb0c6ac8c4afb0825982beac934374495f948830c4b3e69b13122a600",
+    "verification-logs/wvm-gradient-sanitized-test.log": "48f161752b90639b118996763cb2391efee4409e1c6a60ff1018742794c52e1f",
+    "verification-logs/wvm-gradient-build.log": "bdac40abc42b617e02140d4c573d1c17b599dd092f976a5f5518b6b6ce13213e",
+    "verification-logs/wvm-gradient-freeze-build.log": "810ce2f7f715b1880884f3b486e72f31e86d6b44ab1538cad25b1a2063fdf016",
+    "verification-logs/wvm-gradient-release-build.log": "161137ef60f290802342021152aa06f671e5eeed98141592aa51f3fb85dc8737",
+    "verification-logs/wvm-gradient-gcc-final-test.log": "a62dba9cca59a605c88b0198d3ca83b83064e676e0ce5355c70942a065d33f41",
+    "verification-logs/wvm-gradient-sanitized-configure.log": "9a6fceadf0fa07dc4f2e8d0f241fe89e3fae3ff4d8e5d338657565982947add4",
+    "verification-logs/wvm-gradient-forward.log": "80c1d69f198c03cedba75b17391ed2b43cf4a033f7df843e596d5e661b198bb7",
+    "verification-logs/forward-catalog-results.json": "e05b1037fc93bcf261609724562eb2f2b59c2580f7af4391b2bd8bb78840ca70",
+    "verification-logs/wvm-gradient-release-configure.log": "8047bea46a51956ee424fcd0de3372203a450a67b951135dbd559a65be246caa",
+    "verification-logs/wvm-gradient-gcc.log": "67f8ad0c4e6db0f448d8726c17ba551d3e7472366edefb93cf6e452aacfe01a3",
+    "verification-logs/wvm-gradient-matlab-results.json": "f459b0f8e83b5e56db4e6d08c3f54a45ba3eea1baf44f733bd4a5a6df5a62e47",
+    "verification-logs/wvm-gradient-release-test.log": "4abe3774291fbb89ca0af4b895a17002ac0d46123fb43483a4295b17e50ba330",
+    "verification-logs/wvm-gradient-configure.log": "8047bea46a51956ee424fcd0de3372203a450a67b951135dbd559a65be246caa",
+    "verification-logs/wvm-gradient-matlab.log": "ef9d40f5923c9b38c03d3edb3a5be5b0073cbb6789b979a494d64dc20b965095",
+    "verification-logs/wvm-gradient-gcc-diagnostic-build.log": "05d9cffe9e61e3514f79090129fa9481af3ee6e36f4a11d69c6c821b22c6b925"
+  },
+  "lowMemoryCorrectness": {
+    "passedFixtures": 4,
+    "summary": "low-memory-smoke/summary.json",
+    "timingQualified": false,
+    "formerStorageGrowthTargetApplied": false
+  }
+}
