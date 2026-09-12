@@ -58,7 +58,6 @@
     "findings": 0
   },
   "verificationPending": [
-    "new frozen performance campaign",
     "required hosted integration checks and merge"
   ],
   "exactSourceForwardLifecycle": {
@@ -66,5 +65,6 @@
     "passedReferenceNativeExecutions": 12,
     "passedCatalogMatrixTests": 15,
     "rawEvidencePath": "/private/tmp/wvm471-forward-45107911"
-  }
+  },
+  "finalPerformanceEvidence": "performance-corrected-final/summary.json"
 }

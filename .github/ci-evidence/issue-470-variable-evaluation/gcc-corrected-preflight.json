@@ -1,0 +1,11 @@
+{
+  "sourceCommit": "3f2b36399893d29bb49b69bb6bb19d80e48d18c9",
+  "compiler": "Homebrew GCC 14.2.0_1",
+  "passed": true,
+  "scope": "Normal dependency-aware runtime build, then changed field and density test compilation/linking; source warning-clean. No SDK workaround or substitute runner. Hosted Linux CI remains required.",
+  "logs": {
+    "/private/tmp/wvm471-gcc-final-runtime-build.log": "d78194ad267777894795edfb52656231c7a98a04537b6fa1d86b86ab56c57541",
+    "/private/tmp/wvm471-gcc-final-field-build.log": "0b4254b742a6d80c254a2e9fbead343be750ba25cec02cf7b2057e8a9d29c229",
+    "/private/tmp/wvm471-gcc-final-density-build.log": "b65e7fc1f2a089cd93c2f286931e4ea86f3dba190f61a74f96f664a151e970e9"
+  }
+}

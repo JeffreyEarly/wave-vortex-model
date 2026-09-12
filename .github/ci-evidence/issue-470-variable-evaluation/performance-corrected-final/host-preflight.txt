@@ -1,0 +1,20 @@
+95407 95358  10.6  0.4    07:37:05 /Applications/ChatGPT.app/Contents/Resources/codex
+18309 95358   3.4  0.9    05:04:56 /Applications/ChatGPT.app/Contents/Frameworks/Codex Framework.framework/Versions/152.0.7977.83/Helpers/Codex (Renderer).app/Contents/MacOS/Codex (Renderer)
+95382 95358   2.5  0.2    07:37:06 /Applications/ChatGPT.app/Contents/Frameworks/Codex Framework.framework/Versions/152.0.7977.83/Helpers/Codex (Service).app/Contents/MacOS/Codex (Service)
+ 1489     1   1.3  0.1 24-08:57:14 /Applications/BeyondTrust Jump Client - nwra.beyondtrustcloud.com.app/Contents/MacOS/sra-pin
+ 1884     1   0.7  0.0 24-08:57:01 /System/Cryptexes/App/usr/libexec/SafariBookmarksSyncAgent
+17333     1   0.5  1.6 01-11:38:09 /Library/Bitdefender/AVP/product/bin/BDLDaemon.app/Contents/MacOS/BDLDaemon
+95414 95358   0.3  0.3    07:37:05 /Applications/ChatGPT.app/Contents/Frameworks/Codex Framework.framework/Versions/152.0.7977.83/Helpers/Codex (Renderer).app/Contents/MacOS/Codex (Renderer)
+  389     1   0.2  0.1 24-08:57:43 /System/Library/Frameworks/CoreServices.framework/Versions/A/Frameworks/Metadata.framework/Versions/A/Support/mds
+98304     1   0.1  0.0       02:48 /System/Library/Frameworks/CoreServices.framework/Versions/A/Frameworks/Metadata.framework/Versions/A/Support/mdworker_shared
+95358     1   0.1  0.5    07:37:08 /Applications/ChatGPT.app/Contents/MacOS/ChatGPT
+14277     1   0.1  1.3 01-11:46:26 /System/Library/Frameworks/CoreServices.framework/Versions/A/Frameworks/Metadata.framework/Versions/A/Support/mds_stores
+  577     1   0.1  0.0 24-08:57:41 /etc/NX/nxserver
+  450     1   0.1  0.0 24-08:57:43 /usr/sbin/mDNSResponder
+99717     1   0.0  0.0 03-07:39:52 /System/Library/Frameworks/AppKit.framework/Versions/C/XPCServices/ThemeWidgetControlViewService.xpc/Contents/MacOS/ThemeWidgetControlViewService
+99708     1   0.0  0.0    05:49:32 /System/Library/Frameworks/Metal.framework/Versions/A/XPCServices/MTLCompilerService.xpc/Contents/MacOS/MTLCompilerService
+99707     1   0.0  0.0    05:49:32 /System/Library/Frameworks/Metal.framework/Versions/A/XPCServices/MTLCompilerService.xpc/Contents/MacOS/MTLCompilerService
+98946 95407   0.0  0.1    06:03:21 /Applications/ChatGPT.app/Contents/Resources/cua_node/bin/node
+98945 95407   0.0  0.0    06:03:21 /Applications/ChatGPT.app/Contents/Resources/cua_node/bin/node_repl
+98944 95407   0.0  0.0    06:03:21 /Applications/ChatGPT.app/Contents/Resources/cua_node/bin/node
+98851     1   0.0  0.0    06:05:31 /System/Library/Frameworks/VideoToolbox.framework/Versions/A/XPCServices/VTDecoderXPCService.xpc/Contents/MacOS/VTDecoderXPCService
