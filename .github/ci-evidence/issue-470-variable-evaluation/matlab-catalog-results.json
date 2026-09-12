@@ -4,104 +4,104 @@
     "passed": true,
     "failed": false,
     "incomplete": false,
-    "duration": 0.134633
+    "duration": 0.13265820833333333
   },
   {
     "name": "TestPortableForwardIntegrationCatalog/committedReceiptsEstablishExecutedQualification",
     "passed": true,
     "failed": false,
     "incomplete": false,
-    "duration": 0.15002033333333334
+    "duration": 0.15024525
   },
   {
     "name": "TestPortableForwardIntegrationCatalog/collectorRejectsMissingOrMixedExecutionSources",
     "passed": true,
     "failed": false,
     "incomplete": false,
-    "duration": 0.33307566666666666
+    "duration": 0.330141625
   },
   {
     "name": "TestPortableForwardIntegrationCatalog/supportRowsAndExclusionsAreComplete",
     "passed": true,
     "failed": false,
     "incomplete": false,
-    "duration": 0.097137125
+    "duration": 0.097798333333333334
   },
   {
     "name": "TestPortableForwardIntegrationCatalog/executionRequiresEveryCaseAndExactScope",
     "passed": true,
     "failed": false,
     "incomplete": false,
-    "duration": 0.27725629166666665
+    "duration": 0.27254208333333335
   },
   {
     "name": "TestPortableForwardIntegrationCatalog/sourceAndArtifactDigestsCannotGoStale",
     "passed": true,
     "failed": false,
     "incomplete": false,
-    "duration": 0.19304708333333331
+    "duration": 0.18740258333333332
   },
   {
     "name": "TestPortableForwardIntegrationCatalog/numericalAndRetainedEvidenceCannotBePromoted",
     "passed": true,
     "failed": false,
     "incomplete": false,
-    "duration": 0.36524166666666669
+    "duration": 0.35855120833333337
   },
   {
     "name": "TestPortableForwardIntegrationCatalog/inheritedProofPreservesOriginalArtifactAndCorrections",
     "passed": true,
     "failed": false,
     "incomplete": false,
-    "duration": 0.24319854166666666
+    "duration": 0.234462
   },
   {
     "name": "TestPortableCompatibilityMatrix/authoritativeInventoryHasNoUnqualifiedSamplingGaps",
     "passed": true,
     "failed": false,
     "incomplete": false,
-    "duration": 10.101460708333335
+    "duration": 9.9735532083333336
   },
   {
     "name": "TestPortableCompatibilityMatrix/generatedAssemblyMatchesCommittedFiles",
     "passed": true,
     "failed": false,
     "incomplete": false,
-    "duration": 6.4262598333333329
+    "duration": 6.519033875
   },
   {
     "name": "TestPortableCompatibilityMatrix/removedAndDuplicateRowsAreRejected",
     "passed": true,
     "failed": false,
     "incomplete": false,
-    "duration": 0.254300125
+    "duration": 0.25818816666666666
   },
   {
     "name": "TestPortableCompatibilityMatrix/staleAuthorityAndInventoriesAreRejected",
     "passed": true,
     "failed": false,
     "incomplete": false,
-    "duration": 6.628348541666667
+    "duration": 6.6110784166666665
   },
   {
     "name": "TestPortableCompatibilityMatrix/unresolvedAndContradictoryFixturesAreRejected",
     "passed": true,
     "failed": false,
     "incomplete": false,
-    "duration": 0.33997466666666665
+    "duration": 0.333215125
   },
   {
     "name": "TestPortableCompatibilityMatrix/samplingGapsAreRemovedFromTheStandardSlice",
     "passed": true,
     "failed": false,
     "incomplete": false,
-    "duration": 0.0035892083333333331
+    "duration": 0.0037254166666666668
   },
   {
     "name": "TestPortableCompatibilityMatrix/supportedSamplingCannotBecomeAGapOrExclusion",
     "passed": true,
     "failed": false,
     "incomplete": false,
-    "duration": 3.1165633333333331
+    "duration": 3.0963070416666665
   }
 ]

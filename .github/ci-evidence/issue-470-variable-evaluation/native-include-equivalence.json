@@ -1,0 +1,334 @@
+{
+  "beforeRuntimeSourceCommit": "4d8dbf37",
+  "afterRuntimeSourceCommit": "dbdafe24",
+  "change": "Six explicit #include <array> directives; no implementation or algorithm changes.",
+  "artifacts": [
+    {
+      "path": "/private/tmp/wvm470-ci-release/kernel-contracts/kernel/libWaveVortexKernel.a",
+      "beforeSHA256": "a5bb6dd42187580b55993319545edbe5704af7cce348e584958a9613c0a86fc5",
+      "afterSHA256": "faa02eddac6cf17abbf184dc8c71328d322e2bf42650a9233d2c98307addddd0",
+      "identical": false
+    },
+    {
+      "path": "/private/tmp/wvm470-ci-release/portable-runtime/libWaveVortexPortableRuntime.a",
+      "beforeSHA256": "90e112c86544a6e2b4666fb9596f0428b47b57f479f1944c83928b037f4e67c1",
+      "afterSHA256": "5470d507d6e4677d1fe5cf47a6381b3cf8a3535967f2e9bc30aea5fb6f763a76",
+      "identical": false
+    },
+    {
+      "path": "/private/tmp/wvm470-ci-release/kernel-contracts/kernel/CMakeFiles/WaveVortexKernel.dir/src/WVPreparedVerticalOperator.cpp.o",
+      "beforeSHA256": "2f80abc212edab72e8ec626246f0c73d8acaf3e56c7a40c6a16971d20308b2a6",
+      "afterSHA256": "2f80abc212edab72e8ec626246f0c73d8acaf3e56c7a40c6a16971d20308b2a6",
+      "identical": true
+    },
+    {
+      "path": "/private/tmp/wvm470-ci-release/kernel-contracts/kernel/CMakeFiles/WaveVortexKernel.dir/src/WVRetainedHorizontalOperator.cpp.o",
+      "beforeSHA256": "7e2e216100567485a758269046c36c8921bc4da363a2edd327a199e115e31beb",
+      "afterSHA256": "7e2e216100567485a758269046c36c8921bc4da363a2edd327a199e115e31beb",
+      "identical": true
+    },
+    {
+      "path": "/private/tmp/wvm470-ci-release/kernel-contracts/kernel/CMakeFiles/WaveVortexKernel.dir/src/WVTransformHydrostaticKernel.cpp.o",
+      "beforeSHA256": "4f06f84229a36da4aef4f6e1f890fc50e4fb4c22d2420d298981f8645a91e31f",
+      "afterSHA256": "4f06f84229a36da4aef4f6e1f890fc50e4fb4c22d2420d298981f8645a91e31f",
+      "identical": true
+    },
+    {
+      "path": "/private/tmp/wvm470-ci-release/kernel-contracts/kernel/CMakeFiles/WaveVortexKernel.dir/src/WVTransformBarotropicQGKernel.cpp.o",
+      "beforeSHA256": "d0af2441e9ece9c1595dc2b568dcbc4d78ec3bdb4573f3c785210ccd15737ba8",
+      "afterSHA256": "d0af2441e9ece9c1595dc2b568dcbc4d78ec3bdb4573f3c785210ccd15737ba8",
+      "identical": true
+    },
+    {
+      "path": "/private/tmp/wvm470-ci-release/kernel-contracts/kernel/CMakeFiles/WaveVortexKernel.dir/src/WVTransformBoussinesqKernel.cpp.o",
+      "beforeSHA256": "cd7ff67151c85092b781196f2724d0fe76d527efda0b431525606d295f6d8796",
+      "afterSHA256": "cd7ff67151c85092b781196f2724d0fe76d527efda0b431525606d295f6d8796",
+      "identical": true
+    },
+    {
+      "path": "/private/tmp/wvm470-ci-release/kernel-contracts/kernel/CMakeFiles/WaveVortexKernel.dir/src/WVTransformStratifiedQGKernel.cpp.o",
+      "beforeSHA256": "76c2e962bd111b1fbbd40548e098b33726b6f2047610d2220d69fbb1895d0bab",
+      "afterSHA256": "76c2e962bd111b1fbbd40548e098b33726b6f2047610d2220d69fbb1895d0bab",
+      "identical": true
+    },
+    {
+      "path": "/private/tmp/wvm470-ci-release/kernel-contracts/kernel/CMakeFiles/WaveVortexKernel.dir/src/WVKernelTypes.cpp.o",
+      "beforeSHA256": "4c36841c1a7864e4073f46931d861b720cc13eee593f38e5ef0f084208525262",
+      "afterSHA256": "4c36841c1a7864e4073f46931d861b720cc13eee593f38e5ef0f084208525262",
+      "identical": true
+    },
+    {
+      "path": "/private/tmp/wvm470-ci-release/kernel-contracts/kernel/CMakeFiles/WaveVortexKernel.dir/src/WVTransformConstantStratificationKernel.cpp.o",
+      "beforeSHA256": "836410c7ed10d645d9952d65ede6fd2a2187876bb023de632b937ec06a71d814",
+      "afterSHA256": "836410c7ed10d645d9952d65ede6fd2a2187876bb023de632b937ec06a71d814",
+      "identical": true
+    },
+    {
+      "path": "/private/tmp/wvm470-ci-release/portable-runtime/CMakeFiles/WaveVortexPortableRuntime.dir/src/WVHydrostaticIntegrationSystem.cpp.o",
+      "beforeSHA256": "8d9bfc0b7759eb158aac6d31833239c134d0a902871957387a75172173d19f8f",
+      "afterSHA256": "8d9bfc0b7759eb158aac6d31833239c134d0a902871957387a75172173d19f8f",
+      "identical": true
+    },
+    {
+      "path": "/private/tmp/wvm470-ci-release/portable-runtime/CMakeFiles/WaveVortexPortableRuntime.dir/src/WVObserverContracts.cpp.o",
+      "beforeSHA256": "38191d15f3c1461380b84f5eb6f0016b6d3fcb731e465c4be71f69142a7b52e2",
+      "afterSHA256": "38191d15f3c1461380b84f5eb6f0016b6d3fcb731e465c4be71f69142a7b52e2",
+      "identical": true
+    },
+    {
+      "path": "/private/tmp/wvm470-ci-release/portable-runtime/CMakeFiles/WaveVortexPortableRuntime.dir/src/WVModelOutputTransformAdapters.cpp.o",
+      "beforeSHA256": "bd626c944f172356d5c6797acc0a5baec471ff6f6966fc034633b8b50250602b",
+      "afterSHA256": "bd626c944f172356d5c6797acc0a5baec471ff6f6966fc034633b8b50250602b",
+      "identical": true
+    },
+    {
+      "path": "/private/tmp/wvm470-ci-release/portable-runtime/CMakeFiles/WaveVortexPortableRuntime.dir/src/WVOutputTransformAdapters.cpp.o",
+      "beforeSHA256": "826d9cb81074f7773892255398cad71864f2545e5337f7ef84c29770cf8d821c",
+      "afterSHA256": "826d9cb81074f7773892255398cad71864f2545e5337f7ef84c29770cf8d821c",
+      "identical": true
+    },
+    {
+      "path": "/private/tmp/wvm470-ci-release/portable-runtime/CMakeFiles/WaveVortexPortableRuntime.dir/src/WVModelOutputNetCDFWriter.cpp.o",
+      "beforeSHA256": "1eff56750e9698dcd28bdc86338e621c8a3fa02928110357ca84939fb5db0e6c",
+      "afterSHA256": "1eff56750e9698dcd28bdc86338e621c8a3fa02928110357ca84939fb5db0e6c",
+      "identical": true
+    },
+    {
+      "path": "/private/tmp/wvm470-ci-release/portable-runtime/CMakeFiles/WaveVortexPortableRuntime.dir/src/WVObservation.cpp.o",
+      "beforeSHA256": "95a25564ab52e3c4cb54c946470c45d5ff4e2ba270649322e042ede0059d10a8",
+      "afterSHA256": "95a25564ab52e3c4cb54c946470c45d5ff4e2ba270649322e042ede0059d10a8",
+      "identical": true
+    },
+    {
+      "path": "/private/tmp/wvm470-ci-release/portable-runtime/CMakeFiles/WaveVortexPortableRuntime.dir/src/WVModel.cpp.o",
+      "beforeSHA256": "61b1d1b872205176f13e4083655ebb542b0b2077cd7820856406d19ed5372a40",
+      "afterSHA256": "61b1d1b872205176f13e4083655ebb542b0b2077cd7820856406d19ed5372a40",
+      "identical": true
+    },
+    {
+      "path": "/private/tmp/wvm470-ci-release/portable-runtime/CMakeFiles/WaveVortexPortableRuntime.dir/src/WVHydrostaticForcingEngine.cpp.o",
+      "beforeSHA256": "5f3016efa195de7e0129f6cc725f8612989bb0f6f855a2a87210c22cf352860b",
+      "afterSHA256": "5f3016efa195de7e0129f6cc725f8612989bb0f6f855a2a87210c22cf352860b",
+      "identical": true
+    },
+    {
+      "path": "/private/tmp/wvm470-ci-release/portable-runtime/CMakeFiles/WaveVortexPortableRuntime.dir/src/WVNoMotionProfile.cpp.o",
+      "beforeSHA256": "f9b229c18914a75e8c810a3f063bb1478a087236e3264272224f81c65a8e99a9",
+      "afterSHA256": "f9b229c18914a75e8c810a3f063bb1478a087236e3264272224f81c65a8e99a9",
+      "identical": true
+    },
+    {
+      "path": "/private/tmp/wvm470-ci-release/portable-runtime/CMakeFiles/WaveVortexPortableRuntime.dir/src/WVBoussinesqForcingEngine.cpp.o",
+      "beforeSHA256": "be2505042be1f796cbfcca89d2513dbcd6611cd7a6e3a88cf70cde7529c4dace",
+      "afterSHA256": "be2505042be1f796cbfcca89d2513dbcd6611cd7a6e3a88cf70cde7529c4dace",
+      "identical": true
+    },
+    {
+      "path": "/private/tmp/wvm470-ci-release/portable-runtime/CMakeFiles/WaveVortexPortableRuntime.dir/src/WVCheckpointWriter.cpp.o",
+      "beforeSHA256": "7bf70c645d66ce8b61be2f3299f8448bfb852e59dcb8e00cbcf9cd0a71c5b2ff",
+      "afterSHA256": "7bf70c645d66ce8b61be2f3299f8448bfb852e59dcb8e00cbcf9cd0a71c5b2ff",
+      "identical": true
+    },
+    {
+      "path": "/private/tmp/wvm470-ci-release/portable-runtime/CMakeFiles/WaveVortexPortableRuntime.dir/src/WVBarotropicQGForcingEngine.cpp.o",
+      "beforeSHA256": "611c036112dea834d32e4922e172bd3284168c2b4f8c74abdb5a3465802db60e",
+      "afterSHA256": "611c036112dea834d32e4922e172bd3284168c2b4f8c74abdb5a3465802db60e",
+      "identical": true
+    },
+    {
+      "path": "/private/tmp/wvm470-ci-release/portable-runtime/CMakeFiles/WaveVortexPortableRuntime.dir/src/WVBarotropicQGIntegrationSystem.cpp.o",
+      "beforeSHA256": "1e9929aacea6c97c89abf1e2645a97482439e405b30a228bd1567a6ac5b095aa",
+      "afterSHA256": "1e9929aacea6c97c89abf1e2645a97482439e405b30a228bd1567a6ac5b095aa",
+      "identical": true
+    },
+    {
+      "path": "/private/tmp/wvm470-ci-release/portable-runtime/CMakeFiles/WaveVortexPortableRuntime.dir/src/WVStratifiedFieldEvaluationAdapter.cpp.o",
+      "beforeSHA256": "77a80b81ff76f5a32bc19226d7e822689ad3ace99f23629b48caf58048bbd4dc",
+      "afterSHA256": "77a80b81ff76f5a32bc19226d7e822689ad3ace99f23629b48caf58048bbd4dc",
+      "identical": true
+    },
+    {
+      "path": "/private/tmp/wvm470-ci-release/portable-runtime/CMakeFiles/WaveVortexPortableRuntime.dir/src/WVPortableImplementationContract.cpp.o",
+      "beforeSHA256": "e4ce50dad7bbb9397a0802d47448f6f223d27c4dee04507310bcad6320ea19d7",
+      "afterSHA256": "e4ce50dad7bbb9397a0802d47448f6f223d27c4dee04507310bcad6320ea19d7",
+      "identical": true
+    },
+    {
+      "path": "/private/tmp/wvm470-ci-release/portable-runtime/CMakeFiles/WaveVortexPortableRuntime.dir/src/WVOutputSchedule.cpp.o",
+      "beforeSHA256": "b615604f7ebade51db6d46ad17dbd5eae458afaf0aa2ad65e4e7a03a81817f82",
+      "afterSHA256": "b615604f7ebade51db6d46ad17dbd5eae458afaf0aa2ad65e4e7a03a81817f82",
+      "identical": true
+    },
+    {
+      "path": "/private/tmp/wvm470-ci-release/portable-runtime/CMakeFiles/WaveVortexPortableRuntime.dir/src/WVStratifiedQGForcingEngine.cpp.o",
+      "beforeSHA256": "612df010ea7537f49ea364514177d56a2388d95fc910ea519ab61eae2c3a4a59",
+      "afterSHA256": "612df010ea7537f49ea364514177d56a2388d95fc910ea519ab61eae2c3a4a59",
+      "identical": true
+    },
+    {
+      "path": "/private/tmp/wvm470-ci-release/portable-runtime/CMakeFiles/WaveVortexPortableRuntime.dir/src/WVBoussinesqIntegrationSystem.cpp.o",
+      "beforeSHA256": "83cc62164e397d0b4cdfc4540d71068e97f7c0c0f69dad258cfbb0eb5991fb75",
+      "afterSHA256": "83cc62164e397d0b4cdfc4540d71068e97f7c0c0f69dad258cfbb0eb5991fb75",
+      "identical": true
+    },
+    {
+      "path": "/private/tmp/wvm470-ci-release/portable-runtime/CMakeFiles/WaveVortexPortableRuntime.dir/src/WVForcingContracts.cpp.o",
+      "beforeSHA256": "a70da6a39e3258fa5ae49056e4ef6fb0d876dc5b93055c21c2b4b71b17353549",
+      "afterSHA256": "a70da6a39e3258fa5ae49056e4ef6fb0d876dc5b93055c21c2b4b71b17353549",
+      "identical": true
+    },
+    {
+      "path": "/private/tmp/wvm470-ci-release/portable-runtime/CMakeFiles/WaveVortexPortableRuntime.dir/src/WVNoMotionProfileRecovery.cpp.o",
+      "beforeSHA256": "232aaa0d69f27d378bc3429211db443b64435c968dd77ebd2d81d88548de477c",
+      "afterSHA256": "232aaa0d69f27d378bc3429211db443b64435c968dd77ebd2d81d88548de477c",
+      "identical": true
+    },
+    {
+      "path": "/private/tmp/wvm470-ci-release/portable-runtime/CMakeFiles/WaveVortexPortableRuntime.dir/src/WVFieldEvaluationService.cpp.o",
+      "beforeSHA256": "c7b041e189b1c764a195b27b62cf3dca11caf1c629949c1043f95233fd77c1f0",
+      "afterSHA256": "c7b041e189b1c764a195b27b62cf3dca11caf1c629949c1043f95233fd77c1f0",
+      "identical": true
+    },
+    {
+      "path": "/private/tmp/wvm470-ci-release/portable-runtime/CMakeFiles/WaveVortexPortableRuntime.dir/src/WVDiagnosticFieldPlan.cpp.o",
+      "beforeSHA256": "7f67e149de9f68d0952bc3077a9d986ac972be9aa623f0244314be376599e80c",
+      "afterSHA256": "7f67e149de9f68d0952bc3077a9d986ac972be9aa623f0244314be376599e80c",
+      "identical": true
+    },
+    {
+      "path": "/private/tmp/wvm470-ci-release/portable-runtime/CMakeFiles/WaveVortexPortableRuntime.dir/src/WVForcingScheduleDecoder.cpp.o",
+      "beforeSHA256": "a3bb28db820cafcb9f0e35fbeca2231563e0133e24d3aa95aa0e8cc668e8c11e",
+      "afterSHA256": "a3bb28db820cafcb9f0e35fbeca2231563e0133e24d3aa95aa0e8cc668e8c11e",
+      "identical": true
+    },
+    {
+      "path": "/private/tmp/wvm470-ci-release/portable-runtime/CMakeFiles/WaveVortexPortableRuntime.dir/src/WVNetCDF.cpp.o",
+      "beforeSHA256": "02f9d9fd507bf56006f13d2c7880bdbbc08329df6f776d78a7c5d8d72ecea680",
+      "afterSHA256": "02f9d9fd507bf56006f13d2c7880bdbbc08329df6f776d78a7c5d8d72ecea680",
+      "identical": true
+    },
+    {
+      "path": "/private/tmp/wvm470-ci-release/portable-runtime/CMakeFiles/WaveVortexPortableRuntime.dir/src/WVPortableTypedRecord.cpp.o",
+      "beforeSHA256": "95ee901eef42714cf7fc4db8821182bc3ebd621cc4b88cbca67c72f404337266",
+      "afterSHA256": "95ee901eef42714cf7fc4db8821182bc3ebd621cc4b88cbca67c72f404337266",
+      "identical": true
+    },
+    {
+      "path": "/private/tmp/wvm470-ci-release/portable-runtime/CMakeFiles/WaveVortexPortableRuntime.dir/src/WVModelOutputNetCDFReader.cpp.o",
+      "beforeSHA256": "fee7df501b94d4847fda44b7706eff1901624ef3ea9e9ed0484b05a3b2dbc7d0",
+      "afterSHA256": "fee7df501b94d4847fda44b7706eff1901624ef3ea9e9ed0484b05a3b2dbc7d0",
+      "identical": true
+    },
+    {
+      "path": "/private/tmp/wvm470-ci-release/portable-runtime/CMakeFiles/WaveVortexPortableRuntime.dir/src/WVExtensionCatalog.cpp.o",
+      "beforeSHA256": "897429bda065bdf585eba16cdca71c21caa52ef2d090558e80e1fa1c0ee381d4",
+      "afterSHA256": "897429bda065bdf585eba16cdca71c21caa52ef2d090558e80e1fa1c0ee381d4",
+      "identical": true
+    },
+    {
+      "path": "/private/tmp/wvm470-ci-release/portable-runtime/CMakeFiles/WaveVortexPortableRuntime.dir/src/WVObserverOutputEvaluationService.cpp.o",
+      "beforeSHA256": "49fed7df0b74af931768d6b08f74f7951ed26b9a0085e4ec7663d9c1684e2fb7",
+      "afterSHA256": "49fed7df0b74af931768d6b08f74f7951ed26b9a0085e4ec7663d9c1684e2fb7",
+      "identical": true
+    },
+    {
+      "path": "/private/tmp/wvm470-ci-release/portable-runtime/CMakeFiles/WaveVortexPortableRuntime.dir/src/WVNoMotionDensityMoments.cpp.o",
+      "beforeSHA256": "f7bc2decb898b6e25a3210c2daf6a313ea6b3e4135a5b0c24c23df61801e63f0",
+      "afterSHA256": "f7bc2decb898b6e25a3210c2daf6a313ea6b3e4135a5b0c24c23df61801e63f0",
+      "identical": true
+    },
+    {
+      "path": "/private/tmp/wvm470-ci-release/portable-runtime/CMakeFiles/WaveVortexPortableRuntime.dir/src/WVIntegrationState.cpp.o",
+      "beforeSHA256": "c6066ca66f3ced0ad36fb7ff7cc9f00832717a2016495babbdcb4ca02f5c9e6c",
+      "afterSHA256": "c6066ca66f3ced0ad36fb7ff7cc9f00832717a2016495babbdcb4ca02f5c9e6c",
+      "identical": true
+    },
+    {
+      "path": "/private/tmp/wvm470-ci-release/portable-runtime/CMakeFiles/WaveVortexPortableRuntime.dir/src/WVDensityEventEvaluation.cpp.o",
+      "beforeSHA256": "7dd2a8b411365696a4a57a221d5c606bc187dc58097610175dc70ba9663e8eb8",
+      "afterSHA256": "7dd2a8b411365696a4a57a221d5c606bc187dc58097610175dc70ba9663e8eb8",
+      "identical": true
+    },
+    {
+      "path": "/private/tmp/wvm470-ci-release/portable-runtime/CMakeFiles/WaveVortexPortableRuntime.dir/src/WVForcingEngine.cpp.o",
+      "beforeSHA256": "a4db9f4b48706f704d47b9286ff5cd69cdabfdce432af87c384670f0b51a55e5",
+      "afterSHA256": "a4db9f4b48706f704d47b9286ff5cd69cdabfdce432af87c384670f0b51a55e5",
+      "identical": true
+    },
+    {
+      "path": "/private/tmp/wvm470-ci-release/portable-runtime/CMakeFiles/WaveVortexPortableRuntime.dir/src/WVObserverAdapter.cpp.o",
+      "beforeSHA256": "7e38ff91178277a84f6e02d727c9ff546f493f78e57927e3b0e3164292dbaa9d",
+      "afterSHA256": "7e38ff91178277a84f6e02d727c9ff546f493f78e57927e3b0e3164292dbaa9d",
+      "identical": true
+    },
+    {
+      "path": "/private/tmp/wvm470-ci-release/portable-runtime/CMakeFiles/WaveVortexPortableRuntime.dir/src/WVStratifiedModalRecord.cpp.o",
+      "beforeSHA256": "74dd1ccac8452671ee89377de6a77c12c02b4a000e0ea0f4461c860d90addf79",
+      "afterSHA256": "74dd1ccac8452671ee89377de6a77c12c02b4a000e0ea0f4461c860d90addf79",
+      "identical": true
+    },
+    {
+      "path": "/private/tmp/wvm470-ci-release/portable-runtime/CMakeFiles/WaveVortexPortableRuntime.dir/src/WVOutputOrchestration.cpp.o",
+      "beforeSHA256": "eb887eda6e3483f37602386581b774be767a87aee0f05cb4640978f9f8500d43",
+      "afterSHA256": "eb887eda6e3483f37602386581b774be767a87aee0f05cb4640978f9f8500d43",
+      "identical": true
+    },
+    {
+      "path": "/private/tmp/wvm470-ci-release/portable-runtime/CMakeFiles/WaveVortexPortableRuntime.dir/src/WVRungeKutta.cpp.o",
+      "beforeSHA256": "e9bc16b29e033e0c485357b7304ff80ee8167f07e87a11b6b9d624928a05b4be",
+      "afterSHA256": "e9bc16b29e033e0c485357b7304ff80ee8167f07e87a11b6b9d624928a05b4be",
+      "identical": true
+    },
+    {
+      "path": "/private/tmp/wvm470-ci-release/portable-runtime/CMakeFiles/WaveVortexPortableRuntime.dir/src/WVObserverSampleSource.cpp.o",
+      "beforeSHA256": "1666ede5dad9ba0674ef83fa28ef5b4e1b9399c3a293bf9460f3a670b63fcaf3",
+      "afterSHA256": "1666ede5dad9ba0674ef83fa28ef5b4e1b9399c3a293bf9460f3a670b63fcaf3",
+      "identical": true
+    },
+    {
+      "path": "/private/tmp/wvm470-ci-release/portable-runtime/CMakeFiles/WaveVortexPortableRuntime.dir/src/WVStratifiedQGIntegrationSystem.cpp.o",
+      "beforeSHA256": "75a10cbd1759a0ef631e227dcc4e7d8aea030721399070401d8b8f231bb944f5",
+      "afterSHA256": "75a10cbd1759a0ef631e227dcc4e7d8aea030721399070401d8b8f231bb944f5",
+      "identical": true
+    },
+    {
+      "path": "/private/tmp/wvm470-ci-release/portable-runtime/CMakeFiles/WaveVortexPortableRuntime.dir/src/WVModelOutputConfiguration.cpp.o",
+      "beforeSHA256": "124120a42e096d46b37c7f69bb58a84335be98ef1aa29fe3dd1d40b2fae11f22",
+      "afterSHA256": "124120a42e096d46b37c7f69bb58a84335be98ef1aa29fe3dd1d40b2fae11f22",
+      "identical": true
+    },
+    {
+      "path": "/private/tmp/wvm470-ci-release/portable-runtime/CMakeFiles/WaveVortexPortableRuntime.dir/src/WVModelTransformAdapters.cpp.o",
+      "beforeSHA256": "c3e1c98c5168f495264af2a884ec428a1417047913e070788c1929ef74501051",
+      "afterSHA256": "c3e1c98c5168f495264af2a884ec428a1417047913e070788c1929ef74501051",
+      "identical": true
+    },
+    {
+      "path": "/private/tmp/wvm470-ci-release/portable-runtime/CMakeFiles/WaveVortexPortableRuntime.dir/src/WVLegacyObservationNetCDFAdapter.cpp.o",
+      "beforeSHA256": "9e246fdc76406c6f7bce5132f8934b146a7bc4654c4a7cf44373f73a6b84e643",
+      "afterSHA256": "9e246fdc76406c6f7bce5132f8934b146a7bc4654c4a7cf44373f73a6b84e643",
+      "identical": true
+    },
+    {
+      "path": "/private/tmp/wvm470-ci-release/portable-runtime/CMakeFiles/WaveVortexPortableRuntime.dir/src/WVCheckpointTransformAdapters.cpp.o",
+      "beforeSHA256": "ed52d97a96245fda0fded0ec97557522b75228536c28183f3d1412be5b53e229",
+      "afterSHA256": "ed52d97a96245fda0fded0ec97557522b75228536c28183f3d1412be5b53e229",
+      "identical": true
+    },
+    {
+      "path": "/private/tmp/wvm470-ci-release/portable-runtime/CMakeFiles/WaveVortexPortableRuntime.dir/src/WVConstantStratificationIntegrationSystem.cpp.o",
+      "beforeSHA256": "914bdfa297ff4905a1c2885e42740b7e9c837cad9e9b79e0c1ddf83abd2f1115",
+      "afterSHA256": "914bdfa297ff4905a1c2885e42740b7e9c837cad9e9b79e0c1ddf83abd2f1115",
+      "identical": true
+    },
+    {
+      "path": "/private/tmp/wvm470-ci-release/portable-runtime/CMakeFiles/WaveVortexPortableRuntime.dir/src/WVBarotropicQGFieldEvaluationAdapter.cpp.o",
+      "beforeSHA256": "a818e288b6b27cd36ba823c908ff817b12b549de41df67b7fbbb221104b23e17",
+      "afterSHA256": "a818e288b6b27cd36ba823c908ff817b12b549de41df67b7fbbb221104b23e17",
+      "identical": true
+    }
+  ],
+  "allCompilationObjectsIdentical": true,
+  "identicalCompilationObjectCount": 52,
+  "archiveNote": "Archive container hashes changed after rebuilding; every constituent kernel/runtime compilation object is byte-identical. No performance claim relies on archive byte identity."
+}

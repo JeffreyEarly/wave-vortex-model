@@ -1,5 +1,5 @@
 {
-  "runtimeSourceCommit": "4d8dbf37",
+  "runtimeSourceCommit": "dbdafe24",
   "pythonPolicyTests": {
     "passed": 51,
     "failed": 0
@@ -17,5 +17,6 @@
     "log": "/private/tmp/wvm470-docs-check.log"
   },
   "finalPolicyLog": "/private/tmp/wvm470-final-policy-tests.log",
-  "finalRepositoryLog": "/private/tmp/wvm470-final-repository-check.log"
+  "finalRepositoryLog": "/private/tmp/wvm471-include-repository-check.log",
+  "nativeCompilationObjectEquivalence": "native-include-equivalence.json"
 }
