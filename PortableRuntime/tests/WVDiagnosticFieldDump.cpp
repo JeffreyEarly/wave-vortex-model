@@ -59,8 +59,12 @@ int main(int argc,char** argv) {
       if(spec.isComplex) {complex[i].resize(spec.elementCount);views.push_back({nullptr,spec.elementCount,complex[i].data()});}
       else {real[i].resize(spec.elementCount);views.push_back({real[i].data(),spec.elementCount});}
     }
-    const auto retained=fields->persistentBytes()+plan.persistentBytes();
     require(fields->evaluate(plan,state,views.data(),views.size()));
+    const auto metrics=fields->metrics();
+    if(metrics.diagnosticWorkspaceLiveBytes) throw std::runtime_error("Evaluation left diagnostic scratch live.");
+    // The first complete request establishes bounded lazy prepared-field cache
+    // capacity. Independent requests and replay must reuse that capacity.
+    const auto retained=fields->persistentBytes()+plan.persistentBytes();
     json result;
     for(std::size_t i=0;i<names.size();++i) {
       auto& value=result["fields"][names[i]];
@@ -71,13 +75,11 @@ int main(int argc,char** argv) {
         value["real"]=re;value["imag"]=im;
       } else value["real"]=real[i];
     }
-    const auto metrics=fields->metrics();
     result["diagnosticEvaluations"]=metrics.diagnosticEvaluationCount;
     result["primitiveOutputs"]=metrics.diagnosticPrimitiveOutputCount;
     result["scratchHighWaterBytes"]=metrics.diagnosticWorkspaceHighWaterBytes;
     result["scratchLiveBytes"]=metrics.diagnosticWorkspaceLiveBytes;
     result["retainedBytes"]=retained;
-    if(retained!=fields->persistentBytes()+plan.persistentBytes()) throw std::runtime_error("Evaluation retained diagnostic scratch.");
     for(std::size_t i=0;i<before.size();++i)
       if(std::memcmp(before[i].data(),families[i].data,before[i].size()*sizeof(WVComplex64)))
         throw std::runtime_error("Diagnostic evaluation modified coefficient state.");
@@ -90,7 +92,15 @@ int main(int argc,char** argv) {
       if(re!=real[i] || (!im.empty() && std::memcmp(im.data(),complex[i].data(),im.size()*sizeof(WVComplex64))))
         throw std::runtime_error("Diagnostic batching changed values: "+names[i]);
     }
+    if(retained!=fields->persistentBytes()+plan.persistentBytes())
+      throw std::runtime_error("Independent diagnostic requests grew retained storage.");
+    if(fields->metrics().diagnosticWorkspaceLiveBytes)
+      throw std::runtime_error("Independent diagnostic request left scratch live.");
     require(fields->evaluate(plan,state,views.data(),views.size()));
+    if(retained!=fields->persistentBytes()+plan.persistentBytes())
+      throw std::runtime_error("Diagnostic replay grew retained storage.");
+    if(fields->metrics().diagnosticWorkspaceLiveBytes)
+      throw std::runtime_error("Diagnostic replay left scratch live.");
     auto invalidFamilies=families;
     auto malformed=layout.coefficientFamilies()[0];malformed.elementCount=1;
     invalidFamilies[0].layout=&malformed;

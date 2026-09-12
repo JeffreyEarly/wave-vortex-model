@@ -78,7 +78,6 @@ int main(int argc,char** argv) {
       for(const auto& single:singlePlans) bytes+=single.persistentBytes();
       return bytes;
     };
-    const auto retained=retainedBytes();
     {
       detail::WVFieldEvaluationEventScope event(*fields,state,true,false);
       require(event.status());
@@ -90,12 +89,17 @@ int main(int argc,char** argv) {
       require(fields->evaluate(plan,state,views.data(),views.size()));
       if(prior!=values) throw std::runtime_error("Coincident density batching changed values.");
     }
+    const auto metrics=fields->metrics();
+    if(metrics.densityWorkspaceLiveBytes || metrics.eventFieldWorkspaceLiveBytes)
+      throw std::runtime_error("Evaluation left event scratch live.");
+    // The first event establishes bounded lazy prepared-field cache capacity.
+    // Replays must reuse that capacity while event scratch remains transient.
+    const auto retained=retainedBytes();
     json result;
     for(std::size_t i=0;i<names.size();++i) {
       result["fields"][names[i]]["dimensions"]=plan.outputs()[i].dimensions;
       result["fields"][names[i]]["real"]=values[i];
     }
-    const auto metrics=fields->metrics();
     result["metrics"]={{"recoveryCount",metrics.densityRecoveryCount},
       {"profileConstructionCount",metrics.densityProfileConstructionCount},
       {"inversePassCount",metrics.densityInversePassCount},{"apePassCount",metrics.densityAPEPassCount},
@@ -105,8 +109,6 @@ int main(int argc,char** argv) {
       {"eventLiveBytes",metrics.eventFieldWorkspaceLiveBytes}};
     result["reference"]=selection;
     result["retainedBytes"]=retained;
-    if(retained!=retainedBytes()) throw std::runtime_error("Evaluation retained density scratch.");
-    if(metrics.densityWorkspaceLiveBytes || metrics.eventFieldWorkspaceLiveBytes) throw std::runtime_error("Evaluation left event scratch live.");
     for(std::size_t i=0;i<before.size();++i)
       if(std::memcmp(before[i].data(),families[i].data,before[i].size()*sizeof(WVComplex64)))
         throw std::runtime_error("Density evaluation modified coefficient state.");
