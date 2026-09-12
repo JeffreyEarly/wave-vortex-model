@@ -1,5 +1,7 @@
 # Post-cache C++ profile, 2026-09-11
 
+Follow-up: the [Hydrostatic assembly investigation](HYDROSTATIC-ASSEMBLY.md) implements and qualifies the recommendation below, records the vDSP screen, and identifies the next pipeline experiments. This page remains the pre-optimization profile.
+
 This exploratory profile selects the next bounded optimization after PR #471. It follows [the C++ optimization workflow](CPP-OPTIMIZATION.md). No runtime or MATLAB scientific source was changed, and this is not a new speedup qualification.
 
 ## Source and workload

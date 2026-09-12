@@ -407,6 +407,22 @@ void variableScheduleParity(const std::shared_ptr<const WVStratifiedModalRecord>
     for (std::size_t j=0;j<3;++j) for (std::size_t i=0;i<S;++i)
         require(serialOut[j][i].real==candidateOut[j][i].real && serialOut[j][i].imag==candidateOut[j][i].imag,
             "Pointwise worker partition changed hydrostatic arithmetic");
+    // Exercise every field dispatch and component with the same spectral layout
+    // on one and two workers, including surface aliases and compound fields.
+    std::vector<double> serialField(R),parallelField(R);
+    for (int field=static_cast<int>(WVHydrostaticField::u);field<=static_cast<int>(WVHydrostaticField::ssv);++field) {
+        const auto name=static_cast<WVHydrostaticField>(field);
+        const bool compound=name==WVHydrostaticField::zetaX || name==WVHydrostaticField::zetaY;
+        for (int derivative=0;derivative<(compound ? 1 : 4);++derivative) for (int component=0;component<5;++component) {
+            if (name==WVHydrostaticField::rhoTotal && component!=0) continue;
+            const auto d=static_cast<WVHydrostaticDerivative>(derivative);
+            const auto c=static_cast<WVHydrostaticComponent>(component);
+            const WVShape3D shape{g.Nx,g.Ny,name>=WVHydrostaticField::ssh ? 1 : g.Nz};
+            require(bool(serial->transformStateField(state,name,{serialField.data(),shape},d,c)),"Serial field partition reference failed");
+            require(bool(candidate->transformStateField(state,name,{parallelField.data(),shape},d,c)),"Parallel field partition failed");
+            require(serialField==parallelField,"Coefficient worker partition changed field arithmetic");
+        }
+    }
     std::vector<double> ff(4*R),cf(4*R),fr(3*R),cr(3*R);
     const WVHydrostaticField fields[]={WVHydrostaticField::u,WVHydrostaticField::v,WVHydrostaticField::w,WVHydrostaticField::eta};
     for (std::size_t j=0;j<4;++j) { require(bool(frozen->transformStateField(state,fields[j],{ff.data()+j*R,{g.Nx,g.Ny,g.Nz}})),"Frozen borrowed fields failed"); require(bool(candidate->transformStateField(state,fields[j],{cf.data()+j*R,{g.Nx,g.Ny,g.Nz}})),"Candidate borrowed fields failed"); }
