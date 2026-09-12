@@ -1,6 +1,6 @@
 # Second unified-evaluation qualification campaign
 
-This is the passing campaign before the final GCC cache-copy portability correction. That later correction changes four native output compilation objects and requires a fresh campaign; the include-only equivalence below does not cover it. These measurements are preserved as historical evidence.
+This is the passing campaign before the final GCC cache-copy portability correction. That later correction changes four native output compilation objects and requires a fresh campaign; the include-only equivalence below does not cover it. These measurements are preserved as historical evidence; the [final portable-source campaign](../performance-portable-final/README.md) passed.
 
 The frozen campaign at `29c80e7c` **passed**. Runtime implementation source is `4d8dbf37`; the later commit adds qualification receipts. The separately qualified PR #469 baseline is unchanged. The idle-host campaign used two warmup and eight alternating measured pairs for each profile and policy. `protocol.json` records exact source, binary, fixture and environment identities, `pairs.json` records every run, and `summary.json` records the acceptance result. Source and executable hashes remained unchanged through postflight. The production experiment was untouched.
 

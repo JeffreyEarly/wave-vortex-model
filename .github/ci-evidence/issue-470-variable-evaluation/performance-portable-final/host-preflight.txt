@@ -1,0 +1,20 @@
+95407 95358  14.4  0.4    06:48:37 /Applications/ChatGPT.app/Contents/Resources/codex
+18309 95358   2.7  0.8    04:16:28 /Applications/ChatGPT.app/Contents/Frameworks/Codex Framework.framework/Versions/152.0.7977.83/Helpers/Codex (Renderer).app/Contents/MacOS/Codex (Renderer)
+95382 95358   1.3  0.2    06:48:38 /Applications/ChatGPT.app/Contents/Frameworks/Codex Framework.framework/Versions/152.0.7977.83/Helpers/Codex (Service).app/Contents/MacOS/Codex (Service)
+17333     1   0.6  1.5 01-10:49:41 /Library/Bitdefender/AVP/product/bin/BDLDaemon.app/Contents/MacOS/BDLDaemon
+  810     1   0.5  0.0 24-08:09:08 /usr/sbin/distnoted
+  450     1   0.5  0.0 24-08:09:15 /usr/sbin/mDNSResponder
+  417     1   0.5  0.0 24-08:09:15 /usr/sbin/distnoted
+95414 95358   0.3  0.3    06:48:37 /Applications/ChatGPT.app/Contents/Frameworks/Codex Framework.framework/Versions/152.0.7977.83/Helpers/Codex (Renderer).app/Contents/MacOS/Codex (Renderer)
+95358     1   0.3  0.5    06:48:40 /Applications/ChatGPT.app/Contents/MacOS/ChatGPT
+95383 95358   0.1  0.1    06:48:38 /Applications/ChatGPT.app/Contents/Frameworks/Codex Framework.framework/Versions/152.0.7977.83/Helpers/Codex (Service).app/Contents/MacOS/Codex (Service)
+67572     1   0.1  0.2 02-06:53:36 /Applications/Dropbox.app/Contents/PlugIns/DropboxFileProvider.appex/Contents/MacOS/DropboxFileProvider
+  577     1   0.1  0.0 24-08:09:13 /etc/NX/nxserver
+  435     1   0.1  0.3 24-08:09:15 /System/Library/PrivateFrameworks/SkyLight.framework/Resources/WindowServer
+  427     1   0.1  0.0 24-08:09:15 /usr/sbin/bluetoothd
+99717     1   0.0  0.0 03-06:51:24 /System/Library/Frameworks/AppKit.framework/Versions/C/XPCServices/ThemeWidgetControlViewService.xpc/Contents/MacOS/ThemeWidgetControlViewService
+99708     1   0.0  0.0    05:01:04 /System/Library/Frameworks/Metal.framework/Versions/A/XPCServices/MTLCompilerService.xpc/Contents/MacOS/MTLCompilerService
+99707     1   0.0  0.0    05:01:04 /System/Library/Frameworks/Metal.framework/Versions/A/XPCServices/MTLCompilerService.xpc/Contents/MacOS/MTLCompilerService
+98946 95407   0.0  0.1    05:14:53 /Applications/ChatGPT.app/Contents/Resources/cua_node/bin/node
+98945 95407   0.0  0.0    05:14:53 /Applications/ChatGPT.app/Contents/Resources/cua_node/bin/node_repl
+98944 95407   0.0  0.0    05:14:53 /Applications/ChatGPT.app/Contents/Resources/cua_node/bin/node
