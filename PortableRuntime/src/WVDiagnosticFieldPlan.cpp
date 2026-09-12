@@ -848,7 +848,14 @@ WVKernelStatus WVDiagnosticFieldPlan::evaluate(WVFieldEvaluationService& service
         preserveSource|=active(index) && !output.density && !output.forcing && !output.specification.isComplex &&
             output.group==0 && output.dependency==densityDependency_;
       }
-      const auto densityStatus=workspace->bindDensity(fields[0][densityDependency_],spatial_,geometry,densityContract_,preserveSource);
+      std::vector<double>* densitySource=nullptr;
+      if(!workspace->hasDensitySource()) {
+        if(densityDependency_>=fields[0].size())
+          return invalid("Density source storage was not prepared for this event.");
+        densitySource=&fields[0][densityDependency_];
+      }
+      const auto densityStatus=workspace->bindDensity(
+          densitySource,spatial_,geometry,densityContract_,preserveSource);
       if(!densityStatus) return densityStatus;
       auto status=workspace->prepareDensity(densityDemands,densityContract_);
       if(!status) return status;

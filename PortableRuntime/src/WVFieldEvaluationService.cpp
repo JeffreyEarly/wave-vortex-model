@@ -221,7 +221,7 @@ WVKernelStatus WVFieldEvaluationService::prepareEventArena(
         if(!status) return status;
       } else if(field==WVPortableVariable::energy) {
         const auto status=prepareReal({WVVariableEvaluationNode::reduction,
-            static_cast<std::uint32_t>(field)},1);
+            static_cast<std::uint32_t>(field),componentIdentity},1);
         if(!status) return status;
       }
     }
@@ -237,7 +237,8 @@ WVKernelStatus WVFieldEvaluationService::prepareEventArena(
     if(field==WVPortableVariable::totalEnergySpatiallyIntegrated ||
         field==WVPortableVariable::energy) {
       const auto status=prepareReal({WVVariableEvaluationNode::reduction,
-          static_cast<std::uint32_t>(field)},1);
+          static_cast<std::uint32_t>(field),
+          field==WVPortableVariable::energy ? componentIdentity : 0u},1);
       if(!status) return status;
       continue;
     }
@@ -2160,7 +2161,8 @@ WVFieldEvaluationService::evaluatePlanBatch(const PlanInvocation *invocations,
     bool energyReused=false;
     const auto energyStatus=eventWorkspace_ ? eventWorkspace_->evaluate(
         {WVVariableEvaluationNode::reduction,
-          static_cast<std::uint32_t>(WVPortableVariable::energy)},
+          static_cast<std::uint32_t>(WVPortableVariable::energy),
+          eventWorkspace_->component()},
         &energy,1,produceEnergy,energyReused) : produceEnergy();
     if(!energyStatus) return energyStatus;
     writeField(WVFieldEvaluationPlan::Field::energy,

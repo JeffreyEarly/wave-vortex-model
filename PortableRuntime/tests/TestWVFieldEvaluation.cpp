@@ -1719,6 +1719,73 @@ void verifyVariableEvaluationSessions() {
           componentBefore.reconstructions[1][0][1]+1,
       "component outputs repeated phase or reconstruction producers");
 
+  const std::array<const char*,6> energyNames{
+      "energy","geostrophicEnergy","energy_g","energy_w","energy_io",
+      "energy_mda"};
+  std::array<WVFieldEvaluationPlan,6> energySingles;
+  std::vector<WVFieldRequest> energyRequests;
+  for(std::size_t index=0;index<energyNames.size();++index) {
+    require(bool(service->createPlan({full(energyNames[index])},
+            energySingles[index])),
+        "component energy single plan creation failed");
+    energyRequests.push_back(full(energyNames[index]));
+  }
+  WVFieldEvaluationPlan energyBatch;
+  require(bool(service->createPlan(energyRequests,energyBatch)),
+      "component energy batch plan creation failed");
+  std::reverse(energyRequests.begin(),energyRequests.end());
+  WVFieldEvaluationPlan reverseEnergyBatch;
+  require(bool(service->createPlan(energyRequests,reverseEnergyBatch)),
+      "reverse component energy batch plan creation failed");
+  std::array<double,6> energyReference{};
+  for(std::size_t index=0;index<energyNames.size();++index) {
+    WVFieldOutputView output{&energyReference[index],1};
+    const auto energyStatus=service->evaluate(
+        energySingles[index],state,&output,1);
+    require(bool(energyStatus),std::string("component energy reference ")+
+        energyNames[index]+" failed: "+energyStatus.message);
+  }
+  require(energyReference[1]==energyReference[2],
+      "geostrophic energy aliases produced different references");
+  for(const auto policy:{WVVariableEvaluationPolicy::reuse,
+          WVVariableEvaluationPolicy::lowMemory}) {
+    require(bool(service->setVariableEvaluationPolicy(policy)),
+        "component energy evaluation policy change failed");
+    std::array<double,6> batched{},reversed{};
+    std::array<WVFieldOutputView,6> batchViews{},reverseViews{};
+    for(std::size_t index=0;index<energyNames.size();++index) {
+      batchViews[index]={&batched[index],1};
+      reverseViews[index]={&reversed[index],1};
+    }
+    require(bool(service->evaluate(energyBatch,state,batchViews.data(),
+                batchViews.size())) &&
+            bool(service->evaluate(reverseEnergyBatch,state,reverseViews.data(),
+                reverseViews.size())),
+        "component energy batched evaluation failed");
+    for(std::size_t index=0;index<energyNames.size();++index) {
+      require(batched[index]==energyReference[index],
+          "component energy batching changed a value");
+      require(reversed[energyNames.size()-1-index]==energyReference[index],
+          "reverse component energy batching changed a value");
+    }
+    for(const bool reverse:{false,true}) {
+      WVFieldEvaluationSession session;
+      require(bool(service->beginEvaluationSession(state,session)),
+          "component energy ordered session did not start");
+      for(std::size_t ordinal=0;ordinal<energyNames.size();++ordinal) {
+        const auto index=reverse ? energyNames.size()-1-ordinal : ordinal;
+        double value=0;
+        WVFieldOutputView output{&value,1};
+        require(bool(service->evaluate(energySingles[index],state,&output,1)) &&
+                value==energyReference[index],
+            "component energy session order changed a value");
+      }
+    }
+  }
+  require(bool(service->setVariableEvaluationPolicy(
+      WVVariableEvaluationPolicy::reuse)),
+      "reuse policy restore after component energy checks failed");
+
   WVFieldEvaluationPlan fullPi,pointPi;
   require(bool(service->createPlan({full("pi")},fullPi)) &&
       bool(service->createPlan({{"point-pi","pi",points}},pointPi)),

@@ -237,6 +237,8 @@ public:
           keys.push_back({WVVariableEvaluationNode::registeredVariable,variable.ordinal,component});
           keys.push_back({WVVariableEvaluationNode::physicalField,variable.ordinal,component});
           keys.push_back({WVVariableEvaluationNode::physicalField,variable.ordinal,component,0,0,0,1});
+          if(component && variable.ordinal==static_cast<std::uint32_t>(WVPortableVariable::energy))
+            keys.push_back({WVVariableEvaluationNode::reduction,variable.ordinal,component});
         }
         keys.push_back({WVVariableEvaluationNode::reduction,variable.ordinal});
         for(std::uint32_t reference=0;reference<2;++reference)
@@ -671,19 +673,42 @@ public:
     return WVKernelStatus::ok();
   }
   bool hasDensitySource() const noexcept {return !densitySource_.empty();}
-  WVKernelStatus bindDensity(std::vector<double>& source,WVShape3D shape,
+  WVKernelStatus bindDensity(std::vector<double>* source,WVShape3D shape,
       WVDensityEventGeometry geometry,WVDensityDiagnosticContract contract,bool preserveSource=false) {
     if(densitySource_.empty()) {
-      if(preserveSource) densitySource_=source; else densitySource_=std::move(source);
-      account();
-      densityHeights_=*geometry.heights; account();
-      densityWeights_=*geometry.integrationWeights; account();
-      densityInitial_=*geometry.initialProfile; account();
-      densityShape_=shape;
-      densityGeometry_=geometry;
-      densityGeometry_.heights=&densityHeights_;
-      densityGeometry_.integrationWeights=&densityWeights_;
-      densityGeometry_.initialProfile=&densityInitial_;
+      if(!source)
+        return {WVKernelStatusCode::invalidConfiguration,
+            "Density source storage was not prepared for this event."};
+      if(!geometry.heights || !geometry.integrationWeights ||
+          !geometry.initialProfile)
+        return {WVKernelStatusCode::invalidPointer,
+            "Density event geometry is incomplete."};
+      bool movedSource=false;
+      try {
+        // Complete every potentially allocating geometry copy before moving
+        // the produced source. Both source buffers belong to the prepared
+        // arena, so swapping also preserves their capacities for later events.
+        densityHeights_=*geometry.heights;
+        densityWeights_=*geometry.integrationWeights;
+        densityInitial_=*geometry.initialProfile;
+        if(preserveSource) densitySource_=*source;
+        else {densitySource_.swap(*source); movedSource=true;}
+        densityShape_=shape;
+        densityGeometry_=geometry;
+        densityGeometry_.heights=&densityHeights_;
+        densityGeometry_.integrationWeights=&densityWeights_;
+        densityGeometry_.initialProfile=&densityInitial_;
+      } catch(...) {
+        if(movedSource) densitySource_.swap(*source);
+        else densitySource_.clear();
+        densityHeights_.clear();
+        densityWeights_.clear();
+        densityInitial_.clear();
+        densityShape_={};
+        densityGeometry_={};
+        account();
+        throw;
+      }
     }
     WVKernelStatus status=WVKernelStatus::ok();
     for(const auto reference:{WVNoMotionReference::actual,WVNoMotionReference::initial}) {
@@ -714,10 +739,12 @@ public:
           static_cast<std::uint32_t>(request.variable),0,0,
           request.variable==WVPortableVariable::rho_nm ? 0u :
               static_cast<std::uint32_t>(contract.reference)};
+      const bool reused=evaluation_.ready(key);
       status=evaluation_.evaluate(key,count*sizeof(double),[&]() {
         return density_[selected].prepare(request.demand);
       });
       if(!status) break;
+      if(reused) ++metrics_->densityReuseCount;
       noteVariableBytes();
     }
     for(std::size_t reference=0;reference<density_.size();++reference) {

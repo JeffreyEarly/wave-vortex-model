@@ -855,9 +855,11 @@ WVKernelStatus WVStratifiedFieldEvaluationAdapter::evaluate(
         return produced;
       };
       bool reused=false;
+      const auto component=request.scalar==ScalarField::energy && eventWorkspace_ ?
+          eventWorkspace_->component() : 0u;
       status=eventWorkspace_ ? eventWorkspace_->evaluate(
           {WVVariableEvaluationNode::reduction,
-            static_cast<std::uint32_t>(variable)},&value,1,produce,reused) :
+            static_cast<std::uint32_t>(variable),component},&value,1,produce,reused) :
           produce();
       if (!status)
         return status;
