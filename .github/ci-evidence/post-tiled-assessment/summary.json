@@ -1,0 +1,385 @@
+{
+  "kind": "post-tiled-exploratory-assessment",
+  "profiles": [
+    {
+      "profile": "eddytide-256x256x28-first",
+      "sourceCommit": "78025904a58e0195f28540f7bddf51e50b59525b",
+      "binarySHA256": "5e00648723698e430f465d2a07ceaa612fb3476d0fe3568dede339c240338d1b",
+      "categories": {
+        "main": {
+          "totalSamples": 14078,
+          "counts": {
+            "Tiled adapter/advection arithmetic": 2786,
+            "FFT library": 3283,
+            "Wait": 486,
+            "FFT adapter movement/control": 11,
+            "Integrator/state arithmetic/control": 1929,
+            "Projection pointwise arithmetic": 1188,
+            "BLAS library": 1599,
+            "Field assembly/derivative arithmetic": 1025,
+            "Speed reduction": 327,
+            "Damping pointwise arithmetic": 306,
+            "State validation": 726,
+            "Phase preparation": 401,
+            "Matrix adapter/packing": 11
+          },
+          "percent": {
+            "FFT library": 23.32,
+            "Tiled adapter/advection arithmetic": 19.79,
+            "Integrator/state arithmetic/control": 13.7,
+            "BLAS library": 11.36,
+            "Projection pointwise arithmetic": 8.44,
+            "Field assembly/derivative arithmetic": 7.28,
+            "State validation": 5.16,
+            "Wait": 3.45,
+            "Phase preparation": 2.85,
+            "Speed reduction": 2.32,
+            "Damping pointwise arithmetic": 2.17,
+            "FFT adapter movement/control": 0.08,
+            "Matrix adapter/packing": 0.08
+          }
+        },
+        "allActive": {
+          "totalSamples": 79277,
+          "counts": {
+            "Tiled adapter/advection arithmetic": 30382,
+            "FFT library": 30221,
+            "FFT adapter movement/control": 11,
+            "Integrator/state arithmetic/control": 1929,
+            "Projection pointwise arithmetic": 1188,
+            "BLAS library": 1599,
+            "Field assembly/derivative arithmetic": 6664,
+            "Speed reduction": 327,
+            "Damping pointwise arithmetic": 306,
+            "State validation": 726,
+            "Phase preparation": 3125,
+            "Matrix adapter/packing": 11,
+            "Other runtime/control": 2788
+          },
+          "percent": {
+            "Tiled adapter/advection arithmetic": 38.32,
+            "FFT library": 38.12,
+            "Field assembly/derivative arithmetic": 8.41,
+            "Phase preparation": 3.94,
+            "Other runtime/control": 3.52,
+            "Integrator/state arithmetic/control": 2.43,
+            "BLAS library": 2.02,
+            "Projection pointwise arithmetic": 1.5,
+            "State validation": 0.92,
+            "Speed reduction": 0.41,
+            "Damping pointwise arithmetic": 0.39,
+            "FFT adapter movement/control": 0.01,
+            "Matrix adapter/packing": 0.01
+          }
+        },
+        "mainWaitByStage": {
+          "totalSamples": 486,
+          "counts": {
+            "FFT adapter movement/control": 75,
+            "Field assembly/derivative arithmetic": 240,
+            "Speed reduction": 35,
+            "Phase preparation": 136
+          },
+          "percent": {
+            "Field assembly/derivative arithmetic": 49.38,
+            "Phase preparation": 27.98,
+            "FFT adapter movement/control": 15.43,
+            "Speed reduction": 7.2
+          }
+        },
+        "mainInclusive": {
+          "Kernel::nonlinearFluxAndFields(": 72.86,
+          "RetainedFFTWPlan::advectionTask": 43.11,
+          "WVAdaptiveRK78::stepImplementation(": 100.0,
+          "projectedFieldsToCoefficients(": 8.44,
+          "Kernel::reconstruct(": 17.09,
+          "WVPreparedVerticalOperator::execute": 11.44,
+          "horizontalSpeedMaximum(": 2.57,
+          "stateContents(": 5.16,
+          "preparePhase(": 3.81
+        }
+      },
+      "state": {
+        "initialTime": 103680000,
+        "finalTime": 103716000,
+        "deltaT": 300,
+        "stepCount": 120,
+        "rejectedStepCount": 0,
+        "rhsEvaluationCount": 1560,
+        "shape": [
+          18,
+          11439
+        ]
+      },
+      "sampleWindowSeconds": 20,
+      "sampleIntervalMilliseconds": 1,
+      "sampleDelaySeconds": 3,
+      "retainedModes": 11439,
+      "workers": 12,
+      "tileDepth": 3,
+      "targets": 3,
+      "providerLocalSavingBytes": 46122048,
+      "secondaryRealLoanSavingBytes": 12582912,
+      "duplicateRHSExecutions": 0,
+      "duplicateOutputExecutions": 0,
+      "scope": "Exploratory CPU attribution, not uninstrumented performance qualification."
+    },
+    {
+      "profile": "variable-hydrostatic-composite-large-first",
+      "sourceCommit": "78025904a58e0195f28540f7bddf51e50b59525b",
+      "binarySHA256": "5e00648723698e430f465d2a07ceaa612fb3476d0fe3568dede339c240338d1b",
+      "categories": {
+        "main": {
+          "totalSamples": 14805,
+          "counts": {
+            "Tracer/scalar derivative arithmetic": 6602,
+            "BLAS library": 1131,
+            "Wait": 179,
+            "FFT library": 4720,
+            "Tiled adapter/advection arithmetic": 778,
+            "FFT adapter movement/control": 5,
+            "Projection pointwise arithmetic": 299,
+            "Field assembly/derivative arithmetic": 298,
+            "Matrix adapter/packing": 19,
+            "Other runtime/control": 501,
+            "State validation": 203,
+            "Phase preparation": 70
+          },
+          "percent": {
+            "Tracer/scalar derivative arithmetic": 44.59,
+            "FFT library": 31.88,
+            "BLAS library": 7.64,
+            "Tiled adapter/advection arithmetic": 5.25,
+            "Other runtime/control": 3.38,
+            "Projection pointwise arithmetic": 2.02,
+            "Field assembly/derivative arithmetic": 2.01,
+            "State validation": 1.37,
+            "Wait": 1.21,
+            "Phase preparation": 0.47,
+            "Matrix adapter/packing": 0.13,
+            "FFT adapter movement/control": 0.03
+          }
+        },
+        "allActive": {
+          "totalSamples": 40601,
+          "counts": {
+            "Tracer/scalar derivative arithmetic": 6602,
+            "BLAS library": 2292,
+            "FFT library": 17686,
+            "Tiled adapter/advection arithmetic": 9583,
+            "FFT adapter movement/control": 505,
+            "Projection pointwise arithmetic": 299,
+            "Field assembly/derivative arithmetic": 1872,
+            "Matrix adapter/packing": 19,
+            "Other runtime/control": 988,
+            "State validation": 203,
+            "Phase preparation": 552
+          },
+          "percent": {
+            "FFT library": 43.56,
+            "Tiled adapter/advection arithmetic": 23.6,
+            "Tracer/scalar derivative arithmetic": 16.26,
+            "BLAS library": 5.65,
+            "Field assembly/derivative arithmetic": 4.61,
+            "Other runtime/control": 2.43,
+            "Phase preparation": 1.36,
+            "FFT adapter movement/control": 1.24,
+            "Projection pointwise arithmetic": 0.74,
+            "State validation": 0.5,
+            "Matrix adapter/packing": 0.05
+          }
+        },
+        "mainWaitByStage": {
+          "totalSamples": 179,
+          "counts": {
+            "Tracer/scalar derivative arithmetic": 92,
+            "FFT adapter movement/control": 17,
+            "Matrix adapter/packing": 22,
+            "Field assembly/derivative arithmetic": 42,
+            "Phase preparation": 6
+          },
+          "percent": {
+            "Tracer/scalar derivative arithmetic": 51.4,
+            "Field assembly/derivative arithmetic": 23.46,
+            "Matrix adapter/packing": 12.29,
+            "FFT adapter movement/control": 9.5,
+            "Phase preparation": 3.35
+          }
+        },
+        "mainInclusive": {
+          "advectScalarWithAdvectionFields(": 74.7,
+          "verticalCalculus(": 41.05,
+          "WVPreparedVerticalOperator::execute": 8.75,
+          "HorizontalOperator::forward(": 0.74,
+          "HorizontalOperator::inverse": 0.7,
+          "Kernel::nonlinearFluxAndFields(": 20.03,
+          "RetainedFFTWPlan::advectionTask": 12.55,
+          "projectedFieldsToCoefficients(": 2.02,
+          "Kernel::reconstruct(": 4.34,
+          "stateContents(": 1.37,
+          "preparePhase(": 0.51
+        }
+      },
+      "state": {
+        "initialTime": 0,
+        "finalTime": 40,
+        "deltaT": 0.5,
+        "stepCount": 80,
+        "rejectedStepCount": 0,
+        "rhsEvaluationCount": 320,
+        "shape": [
+          85,
+          6631
+        ]
+      },
+      "sampleWindowSeconds": 20,
+      "sampleIntervalMilliseconds": 1,
+      "sampleDelaySeconds": 10,
+      "retainedModes": 6631,
+      "workers": 12,
+      "tileDepth": 4,
+      "targets": 3,
+      "providerLocalSavingBytes": 35648256,
+      "secondaryRealLoanSavingBytes": 12582912,
+      "duplicateRHSExecutions": 0,
+      "duplicateOutputExecutions": 0,
+      "scope": "Exploratory CPU attribution, not uninstrumented performance qualification."
+    },
+    {
+      "profile": "boussinesq-256x256x129-no-observers-first",
+      "sourceCommit": "78025904a58e0195f28540f7bddf51e50b59525b",
+      "binarySHA256": "5e00648723698e430f465d2a07ceaa612fb3476d0fe3568dede339c240338d1b",
+      "categories": {
+        "main": {
+          "totalSamples": 13817,
+          "counts": {
+            "Tiled adapter/advection arithmetic": 1940,
+            "FFT library": 2637,
+            "Wait": 1101,
+            "BLAS library": 3873,
+            "Matrix adapter/packing": 163,
+            "Projection pointwise arithmetic": 849,
+            "Field assembly/derivative arithmetic": 1605,
+            "Other runtime/control": 325,
+            "Phase preparation": 942,
+            "State validation": 380,
+            "FFT adapter movement/control": 2
+          },
+          "percent": {
+            "BLAS library": 28.03,
+            "FFT library": 19.09,
+            "Tiled adapter/advection arithmetic": 14.04,
+            "Field assembly/derivative arithmetic": 11.62,
+            "Wait": 7.97,
+            "Phase preparation": 6.82,
+            "Projection pointwise arithmetic": 6.14,
+            "State validation": 2.75,
+            "Other runtime/control": 2.35,
+            "Matrix adapter/packing": 1.18,
+            "FFT adapter movement/control": 0.01
+          }
+        },
+        "allActive": {
+          "totalSamples": 84262,
+          "counts": {
+            "Tiled adapter/advection arithmetic": 22992,
+            "FFT library": 30826,
+            "BLAS library": 25053,
+            "Matrix adapter/packing": 775,
+            "Projection pointwise arithmetic": 849,
+            "Field assembly/derivative arithmetic": 1737,
+            "Other runtime/control": 706,
+            "Phase preparation": 942,
+            "State validation": 380,
+            "FFT adapter movement/control": 2
+          },
+          "percent": {
+            "FFT library": 36.58,
+            "BLAS library": 29.73,
+            "Tiled adapter/advection arithmetic": 27.29,
+            "Field assembly/derivative arithmetic": 2.06,
+            "Phase preparation": 1.12,
+            "Projection pointwise arithmetic": 1.01,
+            "Matrix adapter/packing": 0.92,
+            "Other runtime/control": 0.84,
+            "State validation": 0.45,
+            "FFT adapter movement/control": 0.0
+          }
+        },
+        "mainWaitByStage": {
+          "totalSamples": 1101,
+          "counts": {
+            "FFT adapter movement/control": 28,
+            "Matrix adapter/packing": 1073
+          },
+          "percent": {
+            "Matrix adapter/packing": 97.46,
+            "FFT adapter movement/control": 2.54
+          }
+        },
+        "mainInclusive": {
+          "Kernel::nonlinearFluxAndFields(": 87.14,
+          "RetainedFFTWPlan::advectionTask": 33.13,
+          "WVPreparedVerticalOperator::execute": 36.04,
+          "projectSpectralFields(": 18.43,
+          "Kernel::reconstruct(": 35.36,
+          "preparePhase(": 6.82,
+          "stateContents(": 2.75
+        }
+      },
+      "state": {
+        "initialTime": 83,
+        "finalTime": 163,
+        "deltaT": 0.5,
+        "stepCount": 160,
+        "rejectedStepCount": 0,
+        "rhsEvaluationCount": 640,
+        "shape": [
+          85,
+          6631
+        ]
+      },
+      "sampleWindowSeconds": 20,
+      "sampleIntervalMilliseconds": 1,
+      "sampleDelaySeconds": 45,
+      "retainedModes": 6631,
+      "workers": 12,
+      "tileDepth": 4,
+      "targets": 4,
+      "providerLocalSavingBytes": 40740864,
+      "secondaryRealLoanSavingBytes": 12582912,
+      "duplicateRHSExecutions": 0,
+      "duplicateOutputExecutions": 0,
+      "scope": "Exploratory CPU attribution, not uninstrumented performance qualification."
+    }
+  ],
+  "archive": "/Users/jearly/Documents/OceanKitRepositories/wave-vortex-model-benchmark-artifacts/tiled-advection-adoption-20260912/post-adoption-profile",
+  "filesSHA256": {
+    "eddytide-256x256x28-first/sample.txt": "98b4165c1880bd61eb771619979ab402b9020591cd61cc53f50fc2bf96ca6091",
+    "eddytide-256x256x28-first/sample-summary.json": "10a603df8e1cc46f252289dc07cf98c62332061f4d34920a5101410f26e4a721",
+    "eddytide-256x256x28-first/category-summary.json": "0caf171d399c3f3a8d81597d1cdf43986609f8d835281b8a68f48fe24c933992",
+    "eddytide-256x256x28-first/protocol.json": "0067df69ffa3e42ccebdf5592c92485653d97dd85002b7d5e1d0891c7fc88e14",
+    "eddytide-256x256x28-first/request.json": "3e7fb3ff61a41afd396b92d0b780b70c8b7c53bff5d787eaf3b0c49c27d574d3",
+    "eddytide-256x256x28-first/report.json": "7021bee6f13091b622faf862ea909db201dddd0a1a587dc6e5067e2d85826876",
+    "eddytide-256x256x28-first/sample-command.log": "26920f7cddc24c9e80fd895ca1d32e3ee83195caafef14f0d6cada3aaef35007",
+    "variable-hydrostatic-composite-large-first/sample.txt": "c79f766541770b01516297f77278379d277605d5c0daee83fa4c8d1a8e65bb5e",
+    "variable-hydrostatic-composite-large-first/sample-summary.json": "b91f167707cfe7ff3ea6948b5b0eed886e0be0f10f68d28bf1edbc988fde7f06",
+    "variable-hydrostatic-composite-large-first/category-summary.json": "c15942d4b23ccd4e40f815b2c19925048a0d97bbbda150e22a9ba01e9231d6b0",
+    "variable-hydrostatic-composite-large-first/protocol.json": "55c86a5095a10149865376e31fc6b44565cc4c1b6f2d8233738c22f3216f78fb",
+    "variable-hydrostatic-composite-large-first/request.json": "7fee9f18a6981337ab9687272d9dcfe4f04c710b9f9a689fe84c5abca3c9a317",
+    "variable-hydrostatic-composite-large-first/report.json": "766808e71a2ec5d66e54a13c05eb67009c10ceb22da5b89fe5c90a716e441c1c",
+    "variable-hydrostatic-composite-large-first/sample-command.log": "b6d82ced7d9880c85cacaedef31d3aa07c93062aad7f078466e1f5fba1c8b682",
+    "boussinesq-256x256x129-no-observers-first/sample.txt": "00e688b3341804e6c865a92b6310dd6984213e2db9b494027f088e646fba651c",
+    "boussinesq-256x256x129-no-observers-first/sample-summary.json": "93c69d047a851211608678fc9160e19c352594515f45f0af39c06ffa8bba6679",
+    "boussinesq-256x256x129-no-observers-first/category-summary.json": "ca65b989ff3b0b6c95cd8c2db372351e69d0c4e76b045954a71bdf25771efc91",
+    "boussinesq-256x256x129-no-observers-first/protocol.json": "17501108c510a08429914297aebd10e5410443a33228dd7d60d4ef58e99dfb0c",
+    "boussinesq-256x256x129-no-observers-first/request.json": "dd995e5c5a3506392d47f10f474d7c3e2dca06cb65efb0ecc4a2b10749a704b0",
+    "boussinesq-256x256x129-no-observers-first/report.json": "c882e5013c1e78aad1a21bf4f749f467d079813a2a28a43900816d06f2efee13",
+    "boussinesq-256x256x129-no-observers-first/sample-command.log": "d29ae77a6d037d8ce88133f8549396bc1c0a2bfa5b49e8e4d933016a6e17f70c",
+    "profile.py": "75bb9ff0a26a366eb04eb015b7a07cad1c703d05fc05a113059309eeed34ed4e",
+    "categorize.py": "a12d3b6f2bb954079733f57cd88515f9a3163494970add872d4d248f00ad0837",
+    "summarize_samples.py": "7b29c8d3f8b5715a78f3fb482f517db0f81e284517a5e780f5bc9bd3ec4bb678",
+    "tiled-disassembly.txt": "476d9d00db0185f0ec0a20724d90b9e1e7984b3eb306ded2ee08adfb04135c27"
+  },
+  "note": "One 20-second window per fixture. Aggregated leaf offsets cannot resolve exact per-loop cost. No source or numerical algorithms changed."
+}
