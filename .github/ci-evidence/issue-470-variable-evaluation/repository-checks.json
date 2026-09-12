@@ -1,5 +1,5 @@
 {
-  "runtimeSourceCommit": "dbdafe24",
+  "runtimeSourceCommit": "5600a760",
   "pythonPolicyTests": {
     "passed": 51,
     "failed": 0
@@ -17,6 +17,6 @@
     "log": "/private/tmp/wvm470-docs-check.log"
   },
   "finalPolicyLog": "/private/tmp/wvm470-final-policy-tests.log",
-  "finalRepositoryLog": "/private/tmp/wvm471-include-repository-check.log",
-  "nativeCompilationObjectEquivalence": "native-include-equivalence.json"
+  "finalRepositoryLog": "/private/tmp/wvm471-final-repository-check.log",
+  "nativeCompilationObjectEquivalence": "Historical dbdafe24 include-only correction; see native-include-equivalence.json. The later cache-copy correction requires a new performance campaign."
 }

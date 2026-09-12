@@ -1,0 +1,128 @@
+{
+  "sourceCommit": "5600a76046909853be245cef6d064c4d8c6f83f2",
+  "scope": "Post-integration GCC portability corrections: explicit array includes, evaluator loop braces, explicit cache-copy bound, and pointer-pair test storage. Scientific algorithms and tolerances are unchanged.",
+  "nativeFocusedChecks": {
+    "copy-release": {
+      "rawReceiptPath": "/private/tmp/wvm471-copy-release.xml",
+      "sha256": "271e27284ad60d51784f5be5d0397c8c87421da736957c5d5d8a972cc385d90c",
+      "tests": [
+        {
+          "name": "density-field-evaluation",
+          "seconds": 0.420032,
+          "passed": true
+        },
+        {
+          "name": "forcing-tendencies",
+          "seconds": 0.688093,
+          "passed": true
+        },
+        {
+          "name": "model-output-netcdf",
+          "seconds": 2.77576,
+          "passed": true
+        },
+        {
+          "name": "model-facade",
+          "seconds": 0.396251,
+          "passed": true
+        },
+        {
+          "name": "field-evaluation",
+          "seconds": 0.279123,
+          "passed": true
+        },
+        {
+          "name": "observer-output-evaluation",
+          "seconds": 0.223718,
+          "passed": true
+        }
+      ],
+      "passed": 6,
+      "failed": 0
+    },
+    "copy-sanitized": {
+      "rawReceiptPath": "/private/tmp/wvm471-copy-sanitized.xml",
+      "sha256": "a9f8746dbc7bee39d1b5508e3868a9f477ba0ec8e6df593caaf300f1b613e316",
+      "tests": [
+        {
+          "name": "density-field-evaluation",
+          "seconds": 0.466904,
+          "passed": true
+        },
+        {
+          "name": "forcing-tendencies",
+          "seconds": 1.08598,
+          "passed": true
+        },
+        {
+          "name": "model-output-netcdf",
+          "seconds": 5.05667,
+          "passed": true
+        },
+        {
+          "name": "model-facade",
+          "seconds": 0.629895,
+          "passed": true
+        },
+        {
+          "name": "field-evaluation",
+          "seconds": 0.445765,
+          "passed": true
+        },
+        {
+          "name": "observer-output-evaluation",
+          "seconds": 0.431248,
+          "passed": true
+        }
+      ],
+      "passed": 6,
+      "failed": 0
+    },
+    "pairs-release": {
+      "rawReceiptPath": "/private/tmp/wvm471-pairs-release.xml",
+      "sha256": "65fa130089355ebb830a077c0e6df52a7e618daee3efc74a48db8d365e3a559b",
+      "tests": [
+        {
+          "name": "model-output-netcdf",
+          "seconds": 2.19927,
+          "passed": true
+        }
+      ],
+      "passed": 1,
+      "failed": 0
+    },
+    "pairs-sanitized": {
+      "rawReceiptPath": "/private/tmp/wvm471-pairs-sanitized.xml",
+      "sha256": "11b64f4c4eeb71bceb8864a557efe9014f1932021b26a69b18335da102a80e35",
+      "tests": [
+        {
+          "name": "model-output-netcdf",
+          "seconds": 4.25022,
+          "passed": true
+        }
+      ],
+      "passed": 1,
+      "failed": 0
+    }
+  },
+  "gccPreflight": {
+    "compiler": "Homebrew GCC 14.2.0_1, /opt/homebrew/bin/g++-14",
+    "runtimeCompilation": "All kernel and portable runtime sources compile warning-clean with -Werror.",
+    "testCompilation": "All generated Test*/fast test sources compile warning-clean after corrected restart pair storage.",
+    "focusedExecutionsPassed": [
+      "TestWVKernelContract",
+      "TestWVBarotropicQGKernel",
+      "TestWVHydrostaticKernel",
+      "TestWVBoussinesqKernel",
+      "TestWVStratifiedQGKernel",
+      "TestWVFieldEvaluation",
+      "TestWVForcingTendencies",
+      "TestWVForcingAndRK4",
+      "TestWVForcingDiagnosticSession",
+      "TestWVVariableEvaluation"
+    ],
+    "limitation": "Full local GCC runner build is blocked by clang-only Apple SDK mach/message.h macros. Runner-dependent tests cannot execute without that binary. No substitute binary or production SDK workaround was used; hosted Linux CI remains required.",
+    "receiptLocation": "Final compile sweep and focused executions are preserved in the coordinating agent tool outputs; no separate raw log files were retained for those checks. /private/tmp/wvm471-gcc-build.log preserves the initial pre-fix compile failure."
+  },
+  "performanceApplicability": "The explicit-bound cache copy changes four native output objects; the earlier include-only equivalence receipt does not qualify this change. A new frozen campaign is required."
+}

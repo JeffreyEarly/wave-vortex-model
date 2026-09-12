@@ -3,7 +3,7 @@
   "schemaVersion": 1,
   "scope": "forward-integration",
   "status": "complete",
-  "sourceCommit": "dbdafe2429649ec8c067fb9510feca0fa227ca18",
+  "sourceCommit": "5600a76046909853be245cef6d064c4d8c6f83f2",
   "provider": "reference",
   "matlabRelease": "2025b",
   "platform": "MACA64",
@@ -209,8 +209,8 @@
         }
       ],
       "timingSeconds": {
-        "sharedMatlabPreparation": 8.664870375,
-        "providerLifecycle": 20.584245375
+        "sharedMatlabPreparation": 8.7164862916666674,
+        "providerLifecycle": 20.665426791666668
       },
       "runs": {
         "whole": {
@@ -242,7 +242,7 @@
             "selectedStep": 4,
             "effectiveIntegrationStep": 4,
             "transientWorkspaceMaximumLiveBytes": 10368,
-            "candidateEvaluationSeconds": 0.000359042,
+            "candidateEvaluationSeconds": 0.000359792,
             "noFallback": true
           },
           "termination": {
@@ -317,7 +317,7 @@
             "selectedStep": 4,
             "effectiveIntegrationStep": 4,
             "transientWorkspaceMaximumLiveBytes": 10368,
-            "candidateEvaluationSeconds": 0.000308417,
+            "candidateEvaluationSeconds": 0.000304959,
             "noFallback": true
           },
           "termination": {
@@ -392,7 +392,7 @@
             "selectedStep": 4,
             "effectiveIntegrationStep": 4,
             "transientWorkspaceMaximumLiveBytes": 10368,
-            "candidateEvaluationSeconds": 0.000308667,
+            "candidateEvaluationSeconds": 0.000304375,
             "noFallback": true
           },
           "termination": {
@@ -467,7 +467,7 @@
             "selectedStep": 4,
             "effectiveIntegrationStep": 4,
             "transientWorkspaceMaximumLiveBytes": 10368,
-            "candidateEvaluationSeconds": 0.00031,
+            "candidateEvaluationSeconds": 0.000311167,
             "noFallback": true
           },
           "termination": {
@@ -542,7 +542,7 @@
             "selectedStep": 4,
             "effectiveIntegrationStep": 4,
             "transientWorkspaceMaximumLiveBytes": 10368,
-            "candidateEvaluationSeconds": 0.000336041,
+            "candidateEvaluationSeconds": 0.000350875,
             "noFallback": true
           },
           "termination": {
@@ -617,7 +617,7 @@
             "selectedStep": 4,
             "effectiveIntegrationStep": 4,
             "transientWorkspaceMaximumLiveBytes": 10368,
-            "candidateEvaluationSeconds": 0.000308125,
+            "candidateEvaluationSeconds": 0.000308083,
             "noFallback": true
           },
           "termination": {
@@ -865,8 +865,8 @@
         }
       ],
       "timingSeconds": {
-        "sharedMatlabPreparation": 4.9106012916666666,
-        "providerLifecycle": 16.338268666666668
+        "sharedMatlabPreparation": 4.9666684583333334,
+        "providerLifecycle": 16.370337875
       },
       "runs": {
         "whole": {
@@ -1521,8 +1521,8 @@
         }
       ],
       "timingSeconds": {
-        "sharedMatlabPreparation": 3.540854375,
-        "providerLifecycle": 10.592679291666666
+        "sharedMatlabPreparation": 3.6284225,
+        "providerLifecycle": 10.82966525
       },
       "runs": {
         "whole": {
@@ -2159,8 +2159,8 @@
         }
       ],
       "timingSeconds": {
-        "sharedMatlabPreparation": 5.4183862916666667,
-        "providerLifecycle": 17.647838875
+        "sharedMatlabPreparation": 5.4566705833333335,
+        "providerLifecycle": 17.563980458333333
       },
       "runs": {
         "whole": {
@@ -2815,8 +2815,8 @@
         }
       ],
       "timingSeconds": {
-        "sharedMatlabPreparation": 7.1246852083333332,
-        "providerLifecycle": 21.978116041666667
+        "sharedMatlabPreparation": 7.1779100833333329,
+        "providerLifecycle": 21.923728041666667
       },
       "runs": {
         "whole": {
@@ -3471,8 +3471,8 @@
         }
       ],
       "timingSeconds": {
-        "sharedMatlabPreparation": 7.769053,
-        "providerLifecycle": 24.162981041666665
+        "sharedMatlabPreparation": 7.784469708333333,
+        "providerLifecycle": 24.071713791666667
       },
       "runs": {
         "whole": {
@@ -4000,46 +4000,46 @@
   ],
   "buildSource": {
     "root": "/Users/jearly/Documents/OceanKitRepositories/wvm-v4-unified-evaluation",
-    "commit": "dbdafe2429649ec8c067fb9510feca0fa227ca18"
+    "commit": "5600a76046909853be245cef6d064c4d8c6f83f2"
   },
   "executionBinaries": [
     {
       "role": "runner",
       "path": "/private/tmp/wvm470-ci-release/bin/wave-vortex-run",
-      "sha256": "91325084bf4ccc44ee6f590a2d4e5cf99fa1f4c23e2af0fb53def9aa16de252d",
-      "sourceCommit": "dbdafe2429649ec8c067fb9510feca0fa227ca18"
+      "sha256": "b031f58570a863d97e0ad68571d3236dd632515971633268c8eca68757f3a195",
+      "sourceCommit": "5600a76046909853be245cef6d064c4d8c6f83f2"
     },
     {
       "role": "probe",
       "path": "/private/tmp/wvm470-ci-release/bin/WVForwardIntegrationProbe",
-      "sha256": "78ea1630eba1d840fa30dcb586e3f9bfcbbc1925c50472fecb6093f77d0aa6fe",
-      "sourceCommit": "dbdafe2429649ec8c067fb9510feca0fa227ca18"
+      "sha256": "b9ada275082522729dfbc266ef2c6770b5bbbe78fe9d1dbad5cdaa9a1c1a7f3e",
+      "sourceCommit": "5600a76046909853be245cef6d064c4d8c6f83f2"
     }
   ],
   "artifacts": [
     {
-      "path": "PortableRuntime/qualification/forward-integration-evidence-v1/forward-constant-hydrostatic-cfl-rk4-reference-47238c38bd2eef1c74a3b7348a29676a056ee69f47088b79acfcca374d789744.json",
-      "sha256": "47238c38bd2eef1c74a3b7348a29676a056ee69f47088b79acfcca374d789744"
+      "path": "PortableRuntime/qualification/forward-integration-evidence-v1/forward-constant-hydrostatic-cfl-rk4-reference-013e79f58f8daa898d8130832629b0e2cc6d9e3261e04b5781d714d1a29f4ce1.json",
+      "sha256": "013e79f58f8daa898d8130832629b0e2cc6d9e3261e04b5781d714d1a29f4ce1"
     },
     {
-      "path": "PortableRuntime/qualification/forward-integration-evidence-v1/forward-constant-nonhydrostatic-rk23-reference-7e8fac2a370710032e0bd37fcb370343d87ac97c50b2a16c0fb22d6b151f79c5.json",
-      "sha256": "7e8fac2a370710032e0bd37fcb370343d87ac97c50b2a16c0fb22d6b151f79c5"
+      "path": "PortableRuntime/qualification/forward-integration-evidence-v1/forward-constant-nonhydrostatic-rk23-reference-8918a8cb3667d06fdc197188178ee7553367db518a441ecc51f81ccd029907a7.json",
+      "sha256": "8918a8cb3667d06fdc197188178ee7553367db518a441ecc51f81ccd029907a7"
     },
     {
-      "path": "PortableRuntime/qualification/forward-integration-evidence-v1/forward-barotropic-qg-rk45-reference-21b7c15cc51573d9a01beabf70f6fd3931b9bc8e15afb2d10b4c308bdbfbbcee.json",
-      "sha256": "21b7c15cc51573d9a01beabf70f6fd3931b9bc8e15afb2d10b4c308bdbfbbcee"
+      "path": "PortableRuntime/qualification/forward-integration-evidence-v1/forward-barotropic-qg-rk45-reference-1328096c5bbc5928f4122bdbc067c7d7a0dd9e1122ac389274bb4aa9a800b60c.json",
+      "sha256": "1328096c5bbc5928f4122bdbc067c7d7a0dd9e1122ac389274bb4aa9a800b60c"
     },
     {
-      "path": "PortableRuntime/qualification/forward-integration-evidence-v1/forward-stratified-qg-rk45-reference-8bf0be6f6e190c156a75ef6a04ef6db2a1fdc14908bff565d13095d6371c77b3.json",
-      "sha256": "8bf0be6f6e190c156a75ef6a04ef6db2a1fdc14908bff565d13095d6371c77b3"
+      "path": "PortableRuntime/qualification/forward-integration-evidence-v1/forward-stratified-qg-rk45-reference-ba834520b8776a81d7ba55cd0b54d567c68ee92dc07cb1d31d5301786c7427d4.json",
+      "sha256": "ba834520b8776a81d7ba55cd0b54d567c68ee92dc07cb1d31d5301786c7427d4"
     },
     {
-      "path": "PortableRuntime/qualification/forward-integration-evidence-v1/forward-hydrostatic-rk45-reference-e1cf698a7be079d8d05004f391eeda6f244d8163adf9a7d0424a9ed32dc59314.json",
-      "sha256": "e1cf698a7be079d8d05004f391eeda6f244d8163adf9a7d0424a9ed32dc59314"
+      "path": "PortableRuntime/qualification/forward-integration-evidence-v1/forward-hydrostatic-rk45-reference-63bce3213b78b60b3bfe778adfc7ae6a58e3f781b94d2cdddb888252e5bdca9a.json",
+      "sha256": "63bce3213b78b60b3bfe778adfc7ae6a58e3f781b94d2cdddb888252e5bdca9a"
     },
     {
-      "path": "PortableRuntime/qualification/forward-integration-evidence-v1/forward-boussinesq-rk45-reference-fc2b375c2ab0c4f58026718f81a3df61d4649a8bb94157cfc6213666e4e05065.json",
-      "sha256": "fc2b375c2ab0c4f58026718f81a3df61d4649a8bb94157cfc6213666e4e05065"
+      "path": "PortableRuntime/qualification/forward-integration-evidence-v1/forward-boussinesq-rk45-reference-ccf48e8429903a17da4f6478cc1bb2148819e546c73e22e555e353b2f2d0965d.json",
+      "sha256": "ccf48e8429903a17da4f6478cc1bb2148819e546c73e22e555e353b2f2d0965d"
     }
   ],
   "catalogSHA256": "c9b669fa92d5556526ce9cefac8b9847f52c1ea15c8ab3b00db0f3454adfaef9"
