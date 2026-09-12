@@ -11,6 +11,7 @@
 #include <limits>
 #include <memory>
 #include <new>
+#include <utility>
 #include <vector>
 
 namespace wavevortex::runtime::detail {
@@ -32,6 +33,16 @@ struct WVFieldEvaluationComplexEntry {
 };
 class WVFieldEvaluationArena final {
 public:
+  WVKernelStatus prepareGroupNodes(std::size_t count) {
+    try {
+      groupNodes.reserve(count);
+      notePrepared();
+      return WVKernelStatus::ok();
+    } catch(const std::bad_alloc&) {
+      return {WVKernelStatusCode::allocationFailure,
+          "Unable to prepare fused output-event metadata."};
+    }
+  }
   WVKernelStatus prepareReal(const WVVariableEvaluationKey& key,
       std::size_t elements) {
     try {
@@ -178,7 +189,8 @@ public:
   std::size_t persistentBytes() const noexcept {
     std::size_t bytes=sizeof(*this)+
         realFields.capacity()*sizeof(std::unique_ptr<WVFieldEvaluationRealEntry>)+
-        complexFields.capacity()*sizeof(std::unique_ptr<WVFieldEvaluationComplexEntry>);
+        complexFields.capacity()*sizeof(std::unique_ptr<WVFieldEvaluationComplexEntry>)+
+        groupNodes.capacity()*sizeof(decltype(groupNodes)::value_type);
     for(const auto& entry:realFields)
       bytes+=sizeof(*entry)+entry->values.capacity()*sizeof(double);
     for(const auto& entry:complexFields)
@@ -193,6 +205,7 @@ public:
   void notePeak() noexcept {peakBytes=std::max(peakBytes,persistentBytes());}
   std::vector<std::unique_ptr<WVFieldEvaluationRealEntry>> realFields;
   std::vector<std::unique_ptr<WVFieldEvaluationComplexEntry>> complexFields;
+  std::vector<std::pair<WVVariableEvaluationKey,std::size_t>> groupNodes;
   std::unique_ptr<WVForcingDiagnosticWorkspace> forcingWorkspace;
   std::vector<double> densitySource;
   std::vector<double> densityHeights,densityWeights,densityInitial;
@@ -250,6 +263,7 @@ public:
       bool enabled=true)
       : t_(state.waveVortex.t), t0_(state.waveVortex.t0),
         realFields_(arena.realFields),complexFields_(arena.complexFields),
+        groupNodes_(arena.groupNodes),
         evaluation_(evaluation),arena_(arena),
         evaluationMetricsBefore_(evaluation.metrics()),
         densitySource_(arena.densitySource),
@@ -431,24 +445,23 @@ public:
         std::forward<Operation>(operation),reused);
   }
 
-  template<class Operation>
-  WVKernelStatus evaluateGroup(const std::vector<WVVariableEvaluationKey>& keys,
-      const std::vector<WVFieldOutputView>& outputs,Operation&& operation,
+  template<class Keys,class Outputs,class Operation>
+  WVKernelStatus evaluateGroup(const Keys& keys,const Outputs& outputs,Operation&& operation,
       bool& reused) {
     reused=false;
     if(keys.size()!=outputs.size() || keys.empty())
       return {WVKernelStatusCode::invalidConfiguration,
           "A fused output producer requires one nonempty output per key."};
+    if(!groupNodes_.empty() || keys.size()>groupNodes_.capacity())
+      return {WVKernelStatusCode::invalidConfiguration,
+          "Fused output-event metadata was not prepared for this workload."};
+    struct ClearNodes {
+      std::vector<std::pair<WVVariableEvaluationKey,std::size_t>>& nodes;
+      ~ClearNodes() {nodes.clear();}
+    } clearNodes{groupNodes_};
     if(policy()==WVVariableEvaluationPolicy::lowMemory) {
-      std::vector<std::pair<WVVariableEvaluationKey,std::size_t>> nodes;
-      try {
-        nodes.reserve(keys.size());
-        for(const auto& key:keys) nodes.push_back({key,0});
-      } catch(const std::bad_alloc&) {
-        return {WVKernelStatusCode::allocationFailure,
-            "Unable to prepare a low-memory fused output evaluation."};
-      }
-      const auto status=evaluation_.evaluateGroup(nodes,
+      for(const auto& key:keys) groupNodes_.push_back({key,0});
+      const auto status=evaluation_.evaluateGroup(groupNodes_,
           std::forward<Operation>(operation));
       if(!status) return status;
       noteVariableBytes();
@@ -456,20 +469,18 @@ public:
       account();
       return WVKernelStatus::ok();
     }
-    std::vector<std::pair<WVVariableEvaluationKey,std::size_t>> nodes;
     try {
-      nodes.reserve(keys.size());
       for(std::size_t index=0;index<keys.size();++index) {
         auto& values=real(keys[index],outputs[index].elementCount);
         values.reserve(outputs[index].elementCount);
-        nodes.push_back({keys[index],values.capacity()*sizeof(double)});
+        groupNodes_.push_back({keys[index],values.capacity()*sizeof(double)});
       }
     } catch(const std::bad_alloc&) {
       return {WVKernelStatusCode::allocationFailure,
           "Unable to reserve fused output variable storage."};
     }
     bool produced=false;
-    const auto status=evaluation_.evaluateGroup(nodes,[&]() {
+    const auto status=evaluation_.evaluateGroup(groupNodes_,[&]() {
       const auto result=operation();
       if(!result) return result;
       for(std::size_t index=0;index<keys.size();++index) {
@@ -539,7 +550,12 @@ public:
   }
   void releaseComplex(const WVVariableEvaluationKey& key) noexcept {
     evaluation_.unpin(key);
-    if(evaluation_.evict(key)) if(auto* values=findComplex(key)) std::vector<WVComplex64>{}.swap(*values);
+    if(evaluation_.evict(key)) for(auto& entry:complexFields_)
+      if(entry->assigned && entry->key==key) {
+        if(entry->prepared) entry->values.clear();
+        else std::vector<WVComplex64>{}.swap(entry->values);
+        break;
+      }
     account();
   }
   WVKernelStatus checkoutScratch(const WVVariableEvaluationKey& key,
@@ -769,6 +785,7 @@ private:
   using ComplexEntry=WVFieldEvaluationComplexEntry;
   std::vector<std::unique_ptr<RealEntry>>& realFields_;
   std::vector<std::unique_ptr<ComplexEntry>>& complexFields_;
+  std::vector<std::pair<WVVariableEvaluationKey,std::size_t>>& groupNodes_;
   WVVariableEvaluationContext& evaluation_;
   WVFieldEvaluationArena& arena_;
   WVVariableEvaluationMetrics evaluationMetricsBefore_;

@@ -638,6 +638,40 @@ WVKernelStatus WVTransformBarotropicQGKernel::addStateEvaluationView(
     return WVKernelStatus::ok();
 }
 
+WVKernelStatus WVTransformBarotropicQGKernel::removeStateEvaluationView(
+    const WVComplexConstView& A0,const void* evaluationOwner,
+    std::size_t componentIdentity) {
+    if (executing_)
+        return {WVKernelStatusCode::reentrantExecution,
+                "The Barotropic QG kernel is not reentrant."};
+    ExecutionGuard guard(executing_);
+    if (!stateEvaluationActive_)
+        return {WVKernelStatusCode::invalidConfiguration,
+                "No Barotropic QG state evaluation is active."};
+    if (evaluationOwner==nullptr || evaluationOwner!=preparedStateOwner_)
+        return {WVKernelStatusCode::invalidConfiguration,
+                "Barotropic QG state view owner does not match the active evaluation."};
+    if (componentIdentity==0 || componentIdentity>=5)
+        return {WVKernelStatusCode::invalidConfiguration,
+                "The primary Barotropic QG state view cannot be removed."};
+    for(std::size_t i=1;i<preparedStateViewCount_;++i) if (
+        preparedStateComponents_[i]==componentIdentity &&
+        A0.data==preparedStateViews_[i].data &&
+        A0.shape.rows==preparedStateViews_[i].shape.rows &&
+        A0.shape.columns==preparedStateViews_[i].shape.columns) {
+        for(std::size_t j=i+1;j<preparedStateViewCount_;++j) {
+            preparedStateViews_[j-1]=preparedStateViews_[j];
+            preparedStateComponents_[j-1]=preparedStateComponents_[j];
+        }
+        --preparedStateViewCount_;
+        preparedStateViews_[preparedStateViewCount_]={};
+        preparedStateComponents_[preparedStateViewCount_]=0;
+        return WVKernelStatus::ok();
+    }
+    return {WVKernelStatusCode::invalidConfiguration,
+            "Barotropic QG state view is not registered for this component."};
+}
+
 WVKernelStatus WVTransformBarotropicQGKernel::endStateEvaluation() {
     if (executing_)
         return {WVKernelStatusCode::reentrantExecution,

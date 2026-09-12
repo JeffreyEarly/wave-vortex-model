@@ -68,6 +68,8 @@ public:
     // times, retaining the already prepared phase factors.
     WVKernelStatus addStateEvaluationView(const WVState&, const void* evaluationOwner,
         std::size_t componentIdentity = 0);
+    WVKernelStatus removeStateEvaluationView(const WVState&, const void* evaluationOwner,
+        std::size_t componentIdentity);
     WVKernelStatus endStateEvaluation();
     bool stateEvaluationActive() const noexcept { return stateEvaluationActive_; }
     WVKernelStatus validateStateEvaluation(const WVState&) const noexcept;
@@ -142,7 +144,7 @@ private:
     WVKernelStatus preparePhaseForCall(const WVState&);
     WVKernelStatus prepareProjectionPhaseForCall(double t,double t0);
     WVKernelStatus disjoint(const void*,std::size_t,const void*,std::size_t) const;
-    WVKernelStatus preparePhase(double t,double t0);
+    WVKernelStatus preparePhase(double t,double t0,const WVState* validatedState = nullptr);
     WVComplexOutput modalView(std::size_t slot = 0);
     WVComplexOutput gridView(std::size_t slot = 0);
     WVKernelStatus vertical(std::size_t,WVComplexInput,WVComplexOutput);

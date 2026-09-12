@@ -145,10 +145,23 @@ void contracts(const std::shared_ptr<const WVStratifiedModalRecord>& source) {
         "Scoped Stratified QG projection mutated the active immutable state");
     auto registered=a;
     WVComplexConstView registeredInput{registered.data(),input.shape};
-    require(bool(kernel->addStateEvaluationView(registeredInput,&evaluationOwner)),"Register Stratified QG state view failed");
+    require(bool(kernel->addStateEvaluationView(registeredInput,&evaluationOwner,2)),"Register Stratified QG state view failed");
     require(bool(kernel->transformA0ToField(registeredInput,WVStratifiedQGField::u,{spatial.data(),kernel->spatialShape()})),
         "Registered Stratified QG state view was rejected");
     require(kernel->metrics().stateValidationCount==2,"Stratified QG registered state view skipped validation");
+    int foreignOwner=0;
+    require(!kernel->removeStateEvaluationView(input,&evaluationOwner,0),
+        "Primary Stratified QG state view was removed");
+    require(!kernel->removeStateEvaluationView(registeredInput,&foreignOwner,2),
+        "Foreign owner removed a Stratified QG state view");
+    require(bool(kernel->removeStateEvaluationView(registeredInput,&evaluationOwner,2)),
+        "Stratified QG state view removal failed");
+    require(!kernel->validateStateEvaluation(registeredInput) &&
+                !kernel->removeStateEvaluationView(registeredInput,&evaluationOwner,2),
+        "Removed Stratified QG state view remained registered");
+    require(bool(kernel->addStateEvaluationView(registeredInput,&evaluationOwner,3)) &&
+                bool(kernel->validateStateEvaluation(registeredInput)),
+        "Stratified QG state view storage could not be re-registered");
     require(bool(kernel->endStateEvaluation()),"End Stratified QG state evaluation failed");
     require(bool(kernel->evolveA0(input,19,{a.data(),input.shape})),"In-place stationary evolution failed");
     const auto* old=kernel.get();

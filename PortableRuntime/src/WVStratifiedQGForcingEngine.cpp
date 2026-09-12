@@ -1065,11 +1065,11 @@ WVKernelStatus WVStratifiedQGForcingEngine::evaluateForcingTendencies(
   const auto address=reinterpret_cast<std::uintptr_t>(A0.data);
   if (!address || address%alignof(WVComplex64) || spectral.elementCount()*sizeof(WVComplex64)>UINTPTR_MAX-address)
     return {WVKernelStatusCode::invalidPointer,"Invalid QG diagnostic state storage."};
-  for (std::size_t i=0;i<spectral.elementCount();++i)
-    if (!std::isfinite(A0.data[i].real) || !std::isfinite(A0.data[i].imag))
-      return {WVKernelStatusCode::invalidConfiguration,"QG diagnostic state must be finite."};
   ScopedStratifiedQGEvaluation evaluation(*this, A0);
-  if (!evaluation.status()) return evaluation.status();
+  if (!evaluation.status())
+    return evaluation.status().code==WVKernelStatusCode::numericalFailure ?
+        WVKernelStatus{WVKernelStatusCode::invalidConfiguration,
+            "QG diagnostic state must be finite."} : evaluation.status();
   try {
     detail::WVForcingDiagnosticLedger localLedger(tendencyMetrics_);
     std::unique_ptr<detail::WVForcingDiagnosticWorkspace> local;

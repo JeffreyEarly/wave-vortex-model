@@ -583,6 +583,8 @@ private:
   WVKernelStatus beginStateEvaluation(const WVIntegrationState&,const void* owner);
   WVKernelStatus addStateEvaluationView(const WVIntegrationState&,
       std::size_t componentIdentity);
+  WVKernelStatus removeStateEvaluationView(const WVIntegrationState&,
+      std::size_t componentIdentity);
   void endStateEvaluation() noexcept;
   WVKernelStatus prepareForcingEvaluationContext();
   WVKernelStatus prepareEventArena(std::size_t requestCount) const;

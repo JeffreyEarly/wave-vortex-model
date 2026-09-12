@@ -111,6 +111,8 @@ public:
     WVKernelStatus beginStateEvaluation(const WVState&, const void* evaluationOwner);
     WVKernelStatus addStateEvaluationView(const WVState&, const void* evaluationOwner,
         std::size_t componentIdentity = 0);
+    WVKernelStatus removeStateEvaluationView(const WVState&, const void* evaluationOwner,
+        std::size_t componentIdentity);
     WVKernelStatus endStateEvaluation();
     bool stateEvaluationActive() const noexcept { return stateEvaluationActive_; }
     WVKernelStatus validateStateEvaluation(const WVState&) const noexcept;

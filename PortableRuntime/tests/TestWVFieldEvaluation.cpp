@@ -189,6 +189,55 @@ private:
   WVKernelStatusCode creationCode_;
 };
 
+struct FailOnceControl {
+  bool armed = false;
+};
+
+class FailOncePlan final : public WVFFTPlan {
+public:
+  FailOncePlan(std::unique_ptr<WVFFTPlan> plan,
+               std::shared_ptr<FailOnceControl> control)
+      : plan_(std::move(plan)), control_(std::move(control)) {}
+  WVKernelStatus execute(const void *input, void *output) override {
+    if (control_->armed) {
+      control_->armed = false;
+      return {WVKernelStatusCode::fftExecutionFailure,
+              "injected one-shot field-evaluation FFT failure"};
+    }
+    return plan_->execute(input, output);
+  }
+  std::size_t persistentBytes() const noexcept override {
+    return sizeof(*this) + plan_->persistentBytes();
+  }
+
+private:
+  std::unique_ptr<WVFFTPlan> plan_;
+  std::shared_ptr<FailOnceControl> control_;
+};
+
+class FailOnceEngine final : public WVFFTEngine {
+public:
+  explicit FailOnceEngine(std::shared_ptr<FailOnceControl> control)
+      : control_(std::move(control)) {}
+  std::string identifier() const override { return "reference-fail-once"; }
+  std::size_t persistentBytes() const noexcept override {
+    return sizeof(*this) + reference_.persistentBytes() - sizeof(reference_);
+  }
+  WVKernelStatus createPlan(const WVFFTPlanSpecification &specification,
+                            std::unique_ptr<WVFFTPlan> &plan) override {
+    std::unique_ptr<WVFFTPlan> referencePlan;
+    auto status = reference_.createPlan(specification, referencePlan);
+    if (!status)
+      return status;
+    plan = std::make_unique<FailOncePlan>(std::move(referencePlan), control_);
+    return WVKernelStatus::ok();
+  }
+
+private:
+  std::shared_ptr<FailOnceControl> control_;
+  WVReferenceFFTEngine reference_;
+};
+
 void verifyCatalog() {
   std::vector<std::string> expected = {
       "u",       "v",         "w",       "eta",    "pi",
@@ -688,6 +737,54 @@ void verifyFailureAndLifecycleContracts() {
   require(*activePlans > 0, "service did not retain its private FFT plans");
   service.reset();
   require(*activePlans == 0, "service destruction leaked FFT plans");
+}
+
+void verifyLowMemoryComponentFailureCleanup() {
+  const auto config = configuration(6, 5, true, true);
+  const auto control = std::make_shared<FailOnceControl>();
+  std::unique_ptr<WVFieldEvaluationService> service;
+  auto status = WVFieldEvaluationService::create(
+      config, std::make_unique<FailOnceEngine>(control), service);
+  require(bool(status), "low-memory component failure service creation failed");
+  require(bool(service->setVariableEvaluationPolicy(
+              WVVariableEvaluationPolicy::lowMemory)),
+          "low-memory component failure policy was rejected");
+  WVFieldEvaluationPlan plan;
+  require(bool(service->createPlan({full("u_g"), full("v_g")}, plan)),
+          "low-memory component failure plan creation failed");
+  std::array<std::vector<double>, 2> values;
+  std::array<WVFieldOutputView, 2> views;
+  for (std::size_t index = 0; index < values.size(); ++index) {
+    values[index].resize(plan.outputs()[index].elementCount);
+    views[index] = {values[index].data(), values[index].size()};
+  }
+  const auto stateStorage = stateFor(config);
+  const WVIntegrationState state{stateStorage.view()};
+  const auto retained = service->persistentBytes();
+  const auto ledgerBefore = service->metrics().variableEvaluation;
+  const auto producersBefore = service->producerMetrics();
+  {
+    WVFieldEvaluationSession session;
+    require(bool(service->beginEvaluationSession(state, session)),
+            "low-memory component failure session did not start");
+    control->armed = true;
+    status = service->evaluate(plan, state, views.data(), views.size());
+    require(status.code == WVKernelStatusCode::fftExecutionFailure,
+            "low-memory component query did not expose the injected failure");
+    require(bool(service->evaluate(plan, state, views.data(), views.size())),
+            "low-memory component query did not recover in the same session");
+  }
+  const auto ledgerAfter = service->metrics().variableEvaluation;
+  const auto producersAfter = service->producerMetrics();
+  require(ledgerAfter.producerExecutions == ledgerBefore.producerExecutions + 7 &&
+              ledgerAfter.evictions == ledgerBefore.evictions + 7 &&
+              ledgerAfter.recomputations == ledgerBefore.recomputations + 3 &&
+              ledgerAfter.liveBytes == 0,
+          "low-memory component failure leaked pins or skipped explicit recomputation");
+  require(producersAfter.stateValidations == producersBefore.stateValidations + 3,
+          "low-memory component retry reused a stale registered coefficient view");
+  require(service->persistentBytes() == retained,
+          "low-memory component failure discarded prepared complex capacity");
 }
 
 void verifyEvaluation(std::size_t nx, std::size_t ny, bool hydrostatic,
@@ -1699,6 +1796,7 @@ int main() {
     verifyCatalog();
     verifyPlanValidation();
     verifyFailureAndLifecycleContracts();
+    verifyLowMemoryComponentFailureCleanup();
     verifyEvaluation(6, 5, true, true);
     verifyEvaluation(7, 6, false, false);
     verifyDerivedMovingSampling();

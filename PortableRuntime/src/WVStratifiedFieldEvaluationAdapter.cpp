@@ -536,6 +536,20 @@ WVKernelStatus WVStratifiedFieldEvaluationAdapter::addStateEvaluationView(
       coefficients.coefficients.A0,owner,componentIdentity);
 }
 
+WVKernelStatus WVStratifiedFieldEvaluationAdapter::removeStateEvaluationView(
+    const WVIntegrationState& state,const void* owner,
+    std::size_t componentIdentity) {
+  WVState coefficients;
+  const auto status=coefficientView(state,configuration(),coefficients);
+  if(!status) return status;
+  if(hydrostaticKernel_) return hydrostaticKernel_->removeStateEvaluationView(
+      coefficients,owner,componentIdentity);
+  if(boussinesqKernel_) return boussinesqKernel_->removeStateEvaluationView(
+      coefficients,owner,componentIdentity);
+  return kernel_->removeStateEvaluationView(
+      coefficients.coefficients.A0,owner,componentIdentity);
+}
+
 void WVStratifiedFieldEvaluationAdapter::endStateEvaluation() noexcept {
   if(hydrostaticKernel_) (void)hydrostaticKernel_->endStateEvaluation();
   else if(boussinesqKernel_) (void)boussinesqKernel_->endStateEvaluation();

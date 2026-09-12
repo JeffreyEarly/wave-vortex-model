@@ -174,9 +174,15 @@ WVKernelStatus WVTransformHydrostaticKernel::state(const WVState& a) {
     ++metrics_.stateValidationCount;
     return stateContents(a);
 }
-WVKernelStatus WVTransformHydrostaticKernel::preparePhase(double t,double t0) {
-    if (!std::isfinite(t) || !std::isfinite(t0) || !std::isfinite(t-t0)) return {WVKernelStatusCode::invalidConfiguration,"Nonfinite hydrostatic time or elapsed time."};
-    for (const auto& f:factors_) if (!std::isfinite(f.omega*(t-t0))) return {WVKernelStatusCode::numericalFailure,"Hydrostatic phase overflow."};
+WVKernelStatus WVTransformHydrostaticKernel::preparePhase(
+    double t,double t0,const WVState* validatedState) {
+    const bool exactValidatedState=validatedState!=nullptr &&
+        stateEvaluationActive_ && matchesStateEvaluation(*validatedState) &&
+        validatedState->t==t && validatedState->t0==t0;
+    if (!exactValidatedState) {
+        if (!std::isfinite(t) || !std::isfinite(t0) || !std::isfinite(t-t0)) return {WVKernelStatusCode::invalidConfiguration,"Nonfinite hydrostatic time or elapsed time."};
+        for (const auto& f:factors_) if (!std::isfinite(f.omega*(t-t0))) return {WVKernelStatusCode::numericalFailure,"Hydrostatic phase overflow."};
+    }
     ++metrics_.phasePreparationCount;
     for (std::size_t i=0;i<S_;++i) { const double a=factors_[i].omega*(t-t0); phase_[i]={std::cos(a),std::sin(a)}; }
     return WVKernelStatus::ok();
@@ -242,13 +248,24 @@ WVKernelStatus WVTransformHydrostaticKernel::beginStateEvaluation(const WVState&
     if (stateEvaluationActive_)
         return {WVKernelStatusCode::reentrantExecution,"Hydrostatic state evaluation is already active."};
     auto s=state(a); if (!s) return s;
-    s=preparePhase(a.t,a.t0); if (!s) return s;
     preparedState_=a;
     preparedStateViews_[0]=a;
     preparedStateComponents_[0]=0;
     preparedStateViewCount_=1;
     preparedStateOwner_=evaluationOwner;
     stateEvaluationActive_=true;
+    // state(a) validated this exact registered view, including every phase
+    // product, so phase preparation must not repeat the same finite scan.
+    s=preparePhase(a.t,a.t0,&a);
+    if (!s) {
+        preparedState_={};
+        preparedStateViews_[0]={};
+        preparedStateComponents_[0]=0;
+        preparedStateViewCount_=0;
+        preparedStateOwner_=nullptr;
+        stateEvaluationActive_=false;
+        return s;
+    }
     return WVKernelStatus::ok();
 }
 WVKernelStatus WVTransformHydrostaticKernel::addStateEvaluationView(
@@ -272,6 +289,37 @@ WVKernelStatus WVTransformHydrostaticKernel::addStateEvaluationView(
     preparedStateViews_[preparedStateViewCount_]=a;
     preparedStateComponents_[preparedStateViewCount_++]=componentIdentity;
     return WVKernelStatus::ok();
+}
+WVKernelStatus WVTransformHydrostaticKernel::removeStateEvaluationView(
+    const WVState& a,const void* evaluationOwner,std::size_t componentIdentity) {
+    ActiveCall guard(active_); if (!guard.entered) return reentrant();
+    if (!stateEvaluationActive_)
+        return {WVKernelStatusCode::invalidConfiguration,"No hydrostatic state evaluation is active."};
+    if (evaluationOwner==nullptr || evaluationOwner!=preparedStateOwner_)
+        return {WVKernelStatusCode::invalidConfiguration,"Hydrostatic state view owner does not match the active evaluation."};
+    if (componentIdentity==0 || componentIdentity>=5)
+        return {WVKernelStatusCode::invalidConfiguration,"The primary hydrostatic state view cannot be removed."};
+    if (a.t!=preparedState_.t || a.t0!=preparedState_.t0)
+        return {WVKernelStatusCode::invalidConfiguration,"Removed hydrostatic state view must use the active evaluation times."};
+    const auto sameView=[](WVComplexConstView x,WVComplexConstView y) {
+        return x.data==y.data && x.shape.rows==y.shape.rows && x.shape.columns==y.shape.columns;
+    };
+    for(std::size_t i=1;i<preparedStateViewCount_;++i) if (
+        preparedStateComponents_[i]==componentIdentity &&
+        sameView(a.coefficients.Ap,preparedStateViews_[i].coefficients.Ap) &&
+        sameView(a.coefficients.Am,preparedStateViews_[i].coefficients.Am) &&
+        sameView(a.coefficients.A0,preparedStateViews_[i].coefficients.A0)) {
+        for(std::size_t j=i+1;j<preparedStateViewCount_;++j) {
+            preparedStateViews_[j-1]=preparedStateViews_[j];
+            preparedStateComponents_[j-1]=preparedStateComponents_[j];
+        }
+        --preparedStateViewCount_;
+        preparedStateViews_[preparedStateViewCount_]={};
+        preparedStateComponents_[preparedStateViewCount_]=0;
+        return WVKernelStatus::ok();
+    }
+    return {WVKernelStatusCode::invalidConfiguration,
+        "Hydrostatic state view is not registered for this component."};
 }
 WVKernelStatus WVTransformHydrostaticKernel::endStateEvaluation() {
     ActiveCall guard(active_); if (!guard.entered) return reentrant();

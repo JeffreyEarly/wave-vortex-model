@@ -191,6 +191,32 @@ WVKernelStatus WVTransformStratifiedQGKernel::addStateEvaluationView(
     preparedStateComponents_[preparedStateViewCount_++]=componentIdentity;
     return WVKernelStatus::ok();
 }
+WVKernelStatus WVTransformStratifiedQGKernel::removeStateEvaluationView(
+    WVComplexConstView a,const void* evaluationOwner,std::size_t componentIdentity) {
+    ActiveCall guard(active_); if (!guard.entered) return reentrant();
+    if (!stateEvaluationActive_)
+        return {WVKernelStatusCode::invalidConfiguration,"No Stratified QG state evaluation is active."};
+    if (evaluationOwner==nullptr || evaluationOwner!=preparedStateOwner_)
+        return {WVKernelStatusCode::invalidConfiguration,"Stratified QG state view owner does not match the active evaluation."};
+    if (componentIdentity==0 || componentIdentity>=5)
+        return {WVKernelStatusCode::invalidConfiguration,"The primary Stratified QG state view cannot be removed."};
+    for(std::size_t i=1;i<preparedStateViewCount_;++i) if (
+        preparedStateComponents_[i]==componentIdentity &&
+        a.data==preparedStateViews_[i].data &&
+        a.shape.rows==preparedStateViews_[i].shape.rows &&
+        a.shape.columns==preparedStateViews_[i].shape.columns) {
+        for(std::size_t j=i+1;j<preparedStateViewCount_;++j) {
+            preparedStateViews_[j-1]=preparedStateViews_[j];
+            preparedStateComponents_[j-1]=preparedStateComponents_[j];
+        }
+        --preparedStateViewCount_;
+        preparedStateViews_[preparedStateViewCount_]={};
+        preparedStateComponents_[preparedStateViewCount_]=0;
+        return WVKernelStatus::ok();
+    }
+    return {WVKernelStatusCode::invalidConfiguration,
+        "Stratified QG state view is not registered for this component."};
+}
 WVKernelStatus WVTransformStratifiedQGKernel::endStateEvaluation() {
     ActiveCall guard(active_); if (!guard.entered) return reentrant();
     if (!stateEvaluationActive_)

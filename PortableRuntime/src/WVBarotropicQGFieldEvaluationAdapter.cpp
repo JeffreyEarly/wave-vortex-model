@@ -448,6 +448,15 @@ WVKernelStatus WVBarotropicQGFieldEvaluationAdapter::addStateEvaluationView(
       coefficients,owner,componentIdentity) : status;
 }
 
+WVKernelStatus WVBarotropicQGFieldEvaluationAdapter::removeStateEvaluationView(
+    const WVIntegrationState& state,const void* owner,
+    std::size_t componentIdentity) {
+  WVComplexConstView coefficients;
+  const auto status=coefficientView(state,*kernel_,coefficients);
+  return status ? kernel_->removeStateEvaluationView(
+      coefficients,owner,componentIdentity) : status;
+}
+
 void WVBarotropicQGFieldEvaluationAdapter::endStateEvaluation() noexcept {
   if(kernel_) (void)kernel_->endStateEvaluation();
 }

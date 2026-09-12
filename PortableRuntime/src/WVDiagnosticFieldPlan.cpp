@@ -453,7 +453,7 @@ WVKernelStatus WVDiagnosticFieldPlan::prepareEventArena(
         scratchSignature_,0,0,19),3*R,false);
     if(!status) return status;
   }
-  return service.prepareEventArena(0);
+  return service.prepareEventArena(forcingIndices_.size());
 }
 
 WVKernelStatus WVDiagnosticFieldPlan::rebind(const WVFieldEvaluationService& service,WVFieldEvaluationPlan& result) const {
@@ -519,6 +519,7 @@ double WVDiagnosticFieldPlan::stratification(std::size_t z) const noexcept {
 WVKernelStatus WVDiagnosticFieldPlan::evaluate(WVFieldEvaluationService& service,const WVIntegrationState& input,
     WVFieldOutputView* outputs,std::size_t count,const std::uint8_t* activeOutputs) const {
   if(owner_!=&service) return invalid("The diagnostic plan belongs to a different field service.");
+  const bool preparedState=service.eventWorkspace_ && service.stateEvaluationActive_;
   if(service.eventWorkspace_) {
     const auto stateStatus=service.eventWorkspace_->validateState(input);
     if(!stateStatus) return stateStatus;
@@ -549,15 +550,17 @@ WVKernelStatus WVDiagnosticFieldPlan::evaluate(WVFieldEvaluationService& service
       return invalid("Diagnostic coefficient view has the wrong shape.");
   const WVComplex64* coefficients[]={amplitudes.coefficients.Ap.data,amplitudes.coefficients.Am.data,amplitudes.coefficients.A0.data};
   const auto n=spectral_.elementCount();
-  if(!std::isfinite(amplitudes.t) || !std::isfinite(amplitudes.t0) || !std::isfinite(amplitudes.t-amplitudes.t0)) return invalid("Diagnostic state times and elapsed time must be finite.");
+  if(!preparedState && (!std::isfinite(amplitudes.t) || !std::isfinite(amplitudes.t0) ||
+      !std::isfinite(amplitudes.t-amplitudes.t0)))
+    return invalid("Diagnostic state times and elapsed time must be finite.");
   if(input.additionalBlockCount && !input.additionalBlocks) return invalid("Diagnostic additional state views are missing.");
   for(std::size_t block=0;block<input.additionalBlockCount;++block)
     if(!input.additionalBlocks[block].layout) return invalid("Diagnostic additional state layout is missing.");
-  if(!isQG_) for(std::size_t index=0;index<n;++index)
+  if(!preparedState && !isQG_) for(std::size_t index=0;index<n;++index)
     if(!std::isfinite(omega(index)*(amplitudes.t-amplitudes.t0))) return invalid("Diagnostic phase would overflow.");
   for(std::size_t family=isQG_ ? 2 : 0;family<3;++family) {
     if(!coefficients[family]) return invalid("Diagnostic coefficients are missing.");
-    for(std::size_t index=0;index<n;++index)
+    if(!preparedState) for(std::size_t index=0;index<n;++index)
       if(!std::isfinite(coefficients[family][index].real) || !std::isfinite(coefficients[family][index].imag))
         return invalid("Diagnostic coefficients must be finite.");
   }
@@ -612,6 +615,14 @@ WVKernelStatus WVDiagnosticFieldPlan::evaluate(WVFieldEvaluationService& service
     const auto status=service.eventWorkspace_->validateDensityBinding(amplitudes,densityContract_);
     if(!status) return status;
   }
+  struct DensityUseGuard {
+    WVFieldEvaluationEventWorkspace* workspace;
+    WVDensityDiagnosticContract contract;
+    ~DensityUseGuard() {
+      if(workspace) workspace->finishDensityUse(contract);
+    }
+  } densityUseGuard{densityDemands ? service.eventWorkspace_ : nullptr,
+      densityContract_};
   try {
     std::array<std::vector<std::uint8_t>,5> activeDependencies;
     for(std::size_t group=0;group<groups_.size();++group)
@@ -656,6 +667,10 @@ WVKernelStatus WVDiagnosticFieldPlan::evaluate(WVFieldEvaluationService& service
     std::vector<double> densityDerivatives;
     struct ScratchUse {WVVariableEvaluationKey key; std::vector<double>* storage;};
     std::vector<ScratchUse> scratchUses;
+    std::size_t scratchUseCount=forcingIndices_.size()+
+        (forcingPhysicalChannels_ ? 1u : 0u)+(needsAPV ? 1u : 0u);
+    for(const auto& group:groups_) scratchUseCount+=group.fields.outputCount();
+    scratchUses.reserve(scratchUseCount);
     struct ScratchGuard {
       WVFieldEvaluationEventWorkspace* workspace;
       std::vector<ScratchUse>& uses;
@@ -681,6 +696,8 @@ WVKernelStatus WVDiagnosticFieldPlan::evaluate(WVFieldEvaluationService& service
     const auto account=[&](std::size_t viewBytes) {
       std::size_t bytes=viewBytes+activeForcing.capacity()*sizeof(std::uint8_t);
       std::size_t additional=bytes;
+      bytes+=scratchUses.capacity()*sizeof(ScratchUse);
+      additional+=scratchUses.capacity()*sizeof(ScratchUse);
       for(const auto& selection:activeDependencies) bytes+=selection.capacity()*sizeof(std::uint8_t);
       for(const auto& selection:activeDependencies)
         additional+=selection.capacity()*sizeof(std::uint8_t);
@@ -735,6 +752,44 @@ WVKernelStatus WVDiagnosticFieldPlan::evaluate(WVFieldEvaluationService& service
       WVIntegrationState selected=input;
       selected.waveVortex=amplitudes;
       std::array<WVCoefficientFamilyConstView,3> selectedFamilies{};
+      struct ComponentUseGuard {
+        WVFieldEvaluationService& service;
+        WVFieldEvaluationEventWorkspace* workspace;
+        WVIntegrationState& state;
+        std::uint32_t component;
+        std::size_t acquired=0;
+        bool selected=false,registered=false,armed=true;
+        void releasePins() noexcept {
+          while(acquired) {
+            --acquired;
+            workspace->releaseComponentCoefficients(component,
+                static_cast<std::uint32_t>(acquired));
+          }
+        }
+        void fallback() noexcept {
+          if(!armed || !workspace) return;
+          if(selected) workspace->setComponent(0);
+          // A failed unregister must keep the coefficient storage pinned. This
+          // preserves the kernel's borrowed immutable view until event teardown.
+          if(registered && workspace->policy()==WVVariableEvaluationPolicy::lowMemory &&
+              !service.removeStateEvaluationView(state,component)) return;
+          releasePins();
+          armed=false;
+        }
+        WVKernelStatus release() {
+          if(!armed || !workspace) return WVKernelStatus::ok();
+          if(selected) workspace->setComponent(0);
+          if(registered && workspace->policy()==WVVariableEvaluationPolicy::lowMemory) {
+            const auto status=service.removeStateEvaluationView(state,component);
+            if(!status) return status;
+          }
+          releasePins();
+          armed=false;
+          return WVKernelStatus::ok();
+        }
+        ~ComponentUseGuard() {fallback();}
+      } componentUse{service,service.eventWorkspace_,selected,
+          static_cast<std::uint32_t>(group)};
       if(group) {
         for(std::size_t family=0;family<3;++family) {
           if(service.eventWorkspace_) {
@@ -746,6 +801,7 @@ WVKernelStatus WVDiagnosticFieldPlan::evaluate(WVFieldEvaluationService& service
                     destination[index]=keep(group,family,index) ? coefficients[family][index] : WVComplex64{};
                 },prepared);
             if(!componentStatus) return componentStatus;
+            ++componentUse.acquired;
             masked[family].clear();
             selected.waveVortex.coefficients.Ap = family==0 ? WVComplexConstView{prepared,spectral_} : selected.waveVortex.coefficients.Ap;
             selected.waveVortex.coefficients.Am = family==1 ? WVComplexConstView{prepared,spectral_} : selected.waveVortex.coefficients.Am;
@@ -771,18 +827,17 @@ WVKernelStatus WVDiagnosticFieldPlan::evaluate(WVFieldEvaluationService& service
         const auto registrationStatus=service.addStateEvaluationView(
             selected,static_cast<std::size_t>(group));
         if(!registrationStatus) return registrationStatus;
+        componentUse.registered=true;
       }
-      if(service.eventWorkspace_)
+      if(service.eventWorkspace_) {
         service.eventWorkspace_->setComponent(static_cast<std::uint32_t>(group),&selected);
+        componentUse.selected=true;
+      }
       account(views.capacity()*sizeof(WVFieldOutputView));
       const auto status=service.evaluate(plan,selected,views.data(),views.size(),activeDependencies[group].data());
-      if(service.eventWorkspace_) {
-        service.eventWorkspace_->setComponent(0);
-        if(group) for(std::size_t family=0;family<3;++family)
-          service.eventWorkspace_->releaseComponentCoefficients(
-              static_cast<std::uint32_t>(group),static_cast<std::uint32_t>(family));
-      }
       if(!status) return status;
+      const auto componentReleaseStatus=componentUse.release();
+      if(!componentReleaseStatus) return componentReleaseStatus;
     }
     if(densityDemands) {
       auto* workspace=service.eventWorkspace_;
@@ -911,6 +966,12 @@ WVKernelStatus WVDiagnosticFieldPlan::evaluate(WVFieldEvaluationService& service
     const std::vector<WVComplex64>* phaseValues=nullptr;
     const WVComplex64* phaseData=nullptr;
     const WVVariableEvaluationKey phaseKey{WVVariableEvaluationNode::phaseFactors};
+    struct ComplexUseGuard {
+      WVFieldEvaluationEventWorkspace* workspace;
+      WVVariableEvaluationKey key;
+      bool armed=false;
+      ~ComplexUseGuard() {if(armed) workspace->releaseComplex(key);}
+    } phaseUse{service.eventWorkspace_,phaseKey};
     if(needsPhase) {
       const auto preparePhases=[&](WVComplex64* destination) {
         WVComplexConstView prepared;
@@ -932,6 +993,7 @@ WVKernelStatus WVDiagnosticFieldPlan::evaluate(WVFieldEvaluationService& service
         const auto phaseStatus=service.eventWorkspace_->complexView(
             phaseKey,n,preparePhases,phaseValues);
         if(!phaseStatus) return phaseStatus;
+        phaseUse.armed=true;
         phaseData=phaseValues->data();
       } else {
         phases.resize(n);
@@ -1002,8 +1064,8 @@ WVKernelStatus WVDiagnosticFieldPlan::evaluate(WVFieldEvaluationService& service
           const std::vector<WVComplex64>* values=nullptr;
           const auto status=service.eventWorkspace_->complexView(key,n,produce,values);
           if(!status) return status;
+          ComplexUseGuard outputUse{service.eventWorkspace_,key,true};
           std::copy(values->begin(),values->end(),outputs[index].complexData);
-          service.eventWorkspace_->releaseComplex(key);
         } else {
           const auto status=produce(outputs[index].complexData);
           if(!status) return status;
@@ -1093,10 +1155,6 @@ WVKernelStatus WVDiagnosticFieldPlan::evaluate(WVFieldEvaluationService& service
       else ++primitiveReferences;
     }
     metrics.diagnosticIntermediateReuseCount+=primitiveReferences-primitiveCount+(phaseReferences ? phaseReferences-1 : 0);
-    if(needsPhase && service.eventWorkspace_)
-      service.eventWorkspace_->releaseComplex(phaseKey);
-    if(densityDemands && service.eventWorkspace_)
-      service.eventWorkspace_->finishDensityUse(densityContract_);
     metrics.diagnosticWorkspaceLiveBytes=outerWorkspaceBytes;
     // Nested primitive plans write into event scratch.  Public write accounting
     // describes caller-owned outputs, independent of how many cached

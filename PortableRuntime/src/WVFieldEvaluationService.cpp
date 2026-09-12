@@ -58,12 +58,12 @@ void WVFieldEvaluationEventScope::release() noexcept {
   if(!service_) return;
   auto variableMetrics=workspace_.evaluationMetrics();
   workspace_.endForcingEvaluation();
-  workspace_.endEvaluation();
   if(kernelEvaluationActive_) {
     service_->endStateEvaluation();
     service_->stateEvaluationActive_=false;
     kernelEvaluationActive_=false;
   }
+  workspace_.endEvaluation();
   service_->eventWorkspace_=nullptr;
   if(service_->stratified_) service_->stratified_->eventWorkspace_=nullptr;
   if(service_->barotropicQG_) service_->barotropicQG_->eventWorkspace_=nullptr;
@@ -107,8 +107,8 @@ WVFieldEvaluationService::WVFieldEvaluationService() {
 
 WVKernelStatus WVFieldEvaluationService::prepareEventArena(
     std::size_t requestCount) const {
-  (void)requestCount;
-  auto status=eventArena_->preparePolicy(variableEvaluationPolicy_);
+  auto status=eventArena_->prepareGroupNodes(requestCount);
+  if(status) status=eventArena_->preparePolicy(variableEvaluationPolicy_);
   if(status && forcing_ && eventArenaForcingPrepared_)
     status=eventArena_->prepareForcing(*forcing_,variableEvaluationPolicy_);
   auto& metrics=const_cast<WVFieldEvaluationService*>(this)->mutableMetrics();
@@ -180,6 +180,7 @@ WVKernelStatus WVFieldEvaluationService::prepareEventArena(
   const auto prepareReal=[&](WVVariableEvaluationKey key,std::size_t elements) {
     return prepareEventField(key,elements,false);
   };
+  std::size_t fusedGroupSize=0;
   if(transform_) {
     if(plan.dependencyMask_&primitiveValueMask) {
       auto status=prepareReal({WVVariableEvaluationNode::physicalField,
@@ -191,6 +192,7 @@ WVKernelStatus WVFieldEvaluationService::prepareEventArena(
         uDerivativeMask,WVPortableVariable::u},{vDerivativeMask,WVPortableVariable::v},
         {wDerivativeMask,WVPortableVariable::w}};
     for(const auto& dependency:derivatives) if(plan.dependencyMask_&dependency.mask) {
+      fusedGroupSize=3;
       for(std::uint32_t axis=1;axis<=3;++axis) {
         const auto status=prepareReal({WVVariableEvaluationNode::derivative,
             static_cast<std::uint32_t>(dependency.field),componentIdentity,axis},R);
@@ -223,7 +225,7 @@ WVKernelStatus WVFieldEvaluationService::prepareEventArena(
         if(!status) return status;
       }
     }
-    return prepareEventArena(0);
+    return prepareEventArena(fusedGroupSize);
   }
   for(const auto& output:plan.outputs_) {
     auto* metadata=findPortableVariable(output.fieldName);
@@ -277,7 +279,7 @@ WVKernelStatus WVFieldEvaluationService::prepareEventArena(
       if(!status) return status;
     }
   }
-  return prepareEventArena(0);
+  return prepareEventArena(fusedGroupSize);
 }
 
 WVKernelStatus WVFieldEvaluationService::prepareEventArena(
@@ -312,6 +314,19 @@ WVKernelStatus WVFieldEvaluationService::addStateEvaluationView(
   if(barotropicQG_) return barotropicQG_->addStateEvaluationView(
       state,eventWorkspace_,componentIdentity);
   return transform_->addStateEvaluationView(
+      state.waveVortex,eventWorkspace_,componentIdentity);
+}
+
+WVKernelStatus WVFieldEvaluationService::removeStateEvaluationView(
+    const WVIntegrationState& state,std::size_t componentIdentity) {
+  if(!stateEvaluationActive_ || !eventWorkspace_)
+    return {WVKernelStatusCode::invalidConfiguration,
+        "No field state evaluation is active."};
+  if(stratified_) return stratified_->removeStateEvaluationView(
+      state,eventWorkspace_,componentIdentity);
+  if(barotropicQG_) return barotropicQG_->removeStateEvaluationView(
+      state,eventWorkspace_,componentIdentity);
+  return transform_->removeStateEvaluationView(
       state.waveVortex,eventWorkspace_,componentIdentity);
 }
 
@@ -2196,20 +2211,14 @@ WVFieldEvaluationService::evaluatePlanBatch(const PlanInvocation *invocations,
       const auto operation=[&]() {return invokeTransform([&]() {
         return transform_->transformStateFieldDerivatives(state,field,derivativeBundle);
       });};
-      std::vector<WVVariableEvaluationKey> keys;
-      std::vector<WVFieldOutputView> derivativeViews;
-      try {
-        keys.reserve(3); derivativeViews.reserve(3);
-        for(std::uint32_t axis=1;axis<=3;++axis) {
-          keys.push_back({WVVariableEvaluationNode::derivative,
-              static_cast<std::uint32_t>(portableField),
-              eventWorkspace_ ? eventWorkspace_->component() : 0u,axis});
-          derivativeViews.push_back({derivatives+(axis-1)*fieldElements,
-              fieldElements});
-        }
-      } catch(const std::bad_alloc&) {
-        return WVKernelStatus{WVKernelStatusCode::allocationFailure,
-            "Unable to prepare derivative cache views."};
+      std::array<WVVariableEvaluationKey,3> keys;
+      std::array<WVFieldOutputView,3> derivativeViews;
+      for(std::uint32_t axis=1;axis<=3;++axis) {
+        keys[axis-1]={WVVariableEvaluationNode::derivative,
+            static_cast<std::uint32_t>(portableField),
+            eventWorkspace_ ? eventWorkspace_->component() : 0u,axis};
+        derivativeViews[axis-1]={derivatives+(axis-1)*fieldElements,
+            fieldElements};
       }
       const auto status=eventWorkspace_ ? eventWorkspace_->evaluateGroup(
           keys,derivativeViews,operation,reused) : operation();

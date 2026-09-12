@@ -379,12 +379,25 @@ void testNumerics(std::size_t Nx, std::size_t Ny,
         "scoped Barotropic constraint mutated the active immutable state");
     auto registered=A0;
     WVComplexConstView registeredView{registered.data(),kernel->descriptor().spectralShape()};
-    require(bool(kernel->addStateEvaluationView(registeredView,&evaluationOwner)),"register Barotropic QG state view");
+    require(bool(kernel->addStateEvaluationView(registeredView,&evaluationOwner,2)),"register Barotropic QG state view");
     std::vector<double> registeredField(Nx*Ny);
     WVRealView registeredFieldView{registeredField.data(),kernel->descriptor().spatialShape()};
     require(bool(kernel->transformA0ToField(registeredView,WVBarotropicQGField::u,registeredFieldView)),
         "registered Barotropic QG state view was rejected");
     require(kernel->metrics().stateValidationCount==validationBeforeScope+2,"Barotropic registered state view skipped validation");
+    int foreignOwner=0;
+    require(!kernel->removeStateEvaluationView(scopedInput,&evaluationOwner,0),
+        "primary Barotropic QG state view was removed");
+    require(!kernel->removeStateEvaluationView(registeredView,&foreignOwner,2),
+        "foreign owner removed a Barotropic QG state view");
+    require(bool(kernel->removeStateEvaluationView(registeredView,&evaluationOwner,2)),
+        "Barotropic QG state view removal failed");
+    require(!kernel->validateStateEvaluation(registeredView) &&
+                !kernel->removeStateEvaluationView(registeredView,&evaluationOwner,2),
+        "removed Barotropic QG state view remained registered");
+    require(bool(kernel->addStateEvaluationView(registeredView,&evaluationOwner,3)) &&
+                bool(kernel->validateStateEvaluation(registeredView)),
+        "Barotropic QG state view storage could not be re-registered");
     require(bool(kernel->endStateEvaluation()),"end Barotropic QG state evaluation");
 
     std::vector<WVComplex64> evolved(A0.size());

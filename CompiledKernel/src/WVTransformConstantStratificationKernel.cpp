@@ -998,6 +998,39 @@ WVKernelStatus WVTransformConstantStratificationKernel::addStateEvaluationView(
     return WVKernelStatus::ok();
 }
 
+WVKernelStatus WVTransformConstantStratificationKernel::removeStateEvaluationView(
+    const WVState& state,const void* evaluationOwner,std::size_t componentIdentity) {
+    ExecutionGuard guard(executing_);
+    if (!guard.entered()) return {WVKernelStatusCode::reentrantExecution,"Kernel operations are not reentrant."};
+    if (!stateEvaluationActive_)
+        return {WVKernelStatusCode::invalidConfiguration,"No constant-stratification state evaluation is active."};
+    if (evaluationOwner==nullptr || evaluationOwner!=preparedStateOwner_)
+        return {WVKernelStatusCode::invalidConfiguration,"Constant-stratification state view owner does not match the active evaluation."};
+    if (componentIdentity==0 || componentIdentity>=5)
+        return {WVKernelStatusCode::invalidConfiguration,"The primary constant-stratification state view cannot be removed."};
+    if (state.t!=preparedState_.t || state.t0!=preparedState_.t0)
+        return {WVKernelStatusCode::invalidConfiguration,"Removed constant-stratification state view must use the active evaluation times."};
+    const auto sameView=[](WVComplexConstView a,WVComplexConstView b) {
+        return a.data==b.data && a.shape.rows==b.shape.rows && a.shape.columns==b.shape.columns;
+    };
+    for(std::size_t i=1;i<preparedStateViewCount_;++i) if (
+        preparedStateComponents_[i]==componentIdentity &&
+        sameView(state.coefficients.Ap,preparedStateViews_[i].coefficients.Ap) &&
+        sameView(state.coefficients.Am,preparedStateViews_[i].coefficients.Am) &&
+        sameView(state.coefficients.A0,preparedStateViews_[i].coefficients.A0)) {
+        for(std::size_t j=i+1;j<preparedStateViewCount_;++j) {
+            preparedStateViews_[j-1]=preparedStateViews_[j];
+            preparedStateComponents_[j-1]=preparedStateComponents_[j];
+        }
+        --preparedStateViewCount_;
+        preparedStateViews_[preparedStateViewCount_]={};
+        preparedStateComponents_[preparedStateViewCount_]=0;
+        return WVKernelStatus::ok();
+    }
+    return {WVKernelStatusCode::invalidConfiguration,
+        "Constant-stratification state view is not registered for this component."};
+}
+
 WVKernelStatus WVTransformConstantStratificationKernel::endStateEvaluation() {
     ExecutionGuard guard(executing_);
     if (!guard.entered()) return {WVKernelStatusCode::reentrantExecution,"Kernel operations are not reentrant."};

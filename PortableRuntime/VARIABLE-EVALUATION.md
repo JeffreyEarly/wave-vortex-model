@@ -39,6 +39,8 @@ An owner and a monotonically advancing evaluation generation establish cache ide
 
 Kernel constraints and projections reject writes into active borrowed coefficient arrays. This protects mutations performed through the C++ API; it cannot intercept a caller writing directly into its own buffer. Nested evaluation scopes, dependency cycles and incompatible extents are errors. Failed producers publish no cache entry, and later requests can retry them.
 
+Component coefficient views are explicitly unregistered before low-memory eviction. Scoped cleanup releases pins on both success and failure, including retries within the same session. Prepared complex buffers retain their capacity after logical eviction; subsequent requests recompute their values without repeating allocation. Event teardown closes kernel registrations before clearing the evaluation arena.
+
 The constant-stratification `evaluateRightHandSideWithContext` API returns borrowed advection fields and therefore requires an explicit `beginStateEvaluation`/`endStateEvaluation` scope. The integration system owns this scope through the last tracer and particle consumer. An expired or foreign RHS context is rejected, and its field accessor returns an empty view.
 
 ## Metrics and qualification

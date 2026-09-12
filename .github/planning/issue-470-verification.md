@@ -55,3 +55,9 @@ The subsequent correctness/storage smoke used a frozen copy of the development e
 ## Remaining gates
 
 Idle-host performance qualification, required hosted checks and reviewed integration. Repository boundaries, whitespace, the 51 Python policy tests and the 1,754-row/75-witness compatibility assembly pass. All-family producer/lifecycle, compound output/density-reference, allocation/recovery, Release/sanitizer and exact-source MATLAB gates have passed. Issue #470 and the coordinated goal remain open until these gates are complete.
+
+## Final review and performance follow-up
+
+The first frozen campaign at `c657c99c` passed all numerical, integration-decision and low-memory storage comparisons. EddyTide integration improved by 42.5% and the large variable Hydrostatic case by 21.4%. The large constant case regressed by 3.08%, triggering investigation; [all original pairs and the diagnosis are preserved](../ci-evidence/issue-470-variable-evaluation/performance-initial/README.md). Guarded constant-state validation now uses the existing prepared executor, while standalone preflight remains serial. The duplicate phase overflow scan is skipped only for a matching registered immutable state. Eight directly affected checks passed in Release and ASan/UBSan at `50a2e14d`, including failure/retry, foreign-state and standalone overflow coverage. This change still requires final end-to-end performance qualification.
+
+Independent final review found output failure cleanup and low-memory component-registration lifetime gaps, plus incomplete accounting for temporary fused-output metadata. These are being corrected before the final source freeze. Previous successful receipts are preserved, but the affected checks and source-linked MATLAB qualification must be refreshed after these corrections. The goal remains active.

@@ -516,6 +516,19 @@ void testNonlinearFlux(bool hydrostatic) {
     require(kernel->metrics().reconstructionCount[0][0][2]==1 &&
             kernel->metrics().reconstructionCount[1][0][2]==1,
         "registered constant-stratification component production lost its identity");
+    int foreignOwner=0;
+    require(!kernel->removeStateEvaluationView(state,&evaluationOwner,0),
+        "primary constant-stratification state view was removed");
+    require(!kernel->removeStateEvaluationView(registeredState,&foreignOwner,2),
+        "foreign owner removed a constant-stratification state view");
+    require(bool(kernel->removeStateEvaluationView(registeredState,&evaluationOwner,2)),
+        "constant-stratification state view removal failed");
+    require(!kernel->validateStateEvaluation(registeredState) &&
+                !kernel->removeStateEvaluationView(registeredState,&evaluationOwner,2),
+        "removed constant-stratification state view remained registered");
+    require(bool(kernel->addStateEvaluationView(registeredState,&evaluationOwner,3)) &&
+                bool(kernel->validateStateEvaluation(registeredState)),
+        "constant-stratification state view storage could not be re-registered");
     require(bool(kernel->endStateEvaluation()),"end horizontal-velocity state evaluation");
     const std::array<std::vector<WVComplex64>*,3> coefficientFamilies{
         &Ap,&Am,&A0};

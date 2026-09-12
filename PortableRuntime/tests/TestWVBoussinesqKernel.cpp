@@ -120,6 +120,18 @@ void contracts(const std::shared_ptr<const WVStratifiedModalRecord>& source) {
     require(kernel->metrics().reconstructionCount[static_cast<std::size_t>(WVBoussinesqField::u)]
             [static_cast<std::size_t>(WVBoussinesqDerivative::value)][2]==1,
         "Registered Boussinesq component production lost its component identity");
+    require(!kernel->removeStateEvaluationView(state,&evaluationOwner,0),
+        "Primary Boussinesq state view was removed");
+    require(!kernel->removeStateEvaluationView(foreignState,&foreignOwner,2),
+        "Foreign owner removed a Boussinesq state view");
+    require(bool(kernel->removeStateEvaluationView(foreignState,&evaluationOwner,2)),
+        "Boussinesq state view removal failed");
+    require(!kernel->validateStateEvaluation(foreignState) &&
+                !kernel->removeStateEvaluationView(foreignState,&evaluationOwner,2),
+        "Removed Boussinesq state view remained registered");
+    require(bool(kernel->addStateEvaluationView(foreignState,&evaluationOwner,3)) &&
+                bool(kernel->validateStateEvaluation(foreignState)),
+        "Boussinesq state view storage could not be re-registered");
     require(bool(kernel->endStateEvaluation()),"End scoped state evaluation failed");
     const auto savedScopedCoefficient=a[0][0]; a[0][0].real=std::numeric_limits<double>::infinity();
     require(!kernel->beginStateEvaluation(state),"New scope skipped validation for mutated same-pointer state");
