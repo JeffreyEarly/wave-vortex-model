@@ -579,6 +579,7 @@ WVStratifiedFieldEvaluationAdapter::producerMetrics() const noexcept {
     result.derivedValidations=metrics.derivedValidationCount;
     result.coefficientAssemblies=metrics.coefficientAssemblyCount;
     result.verticalOperatorExecutions=metrics.verticalOperatorExecutionCount;
+    result.verticalMatrixGroupExecutions=metrics.verticalMatrixGroupExecutionCount;
     result.verticalPreparations=metrics.verticalPreparationCount;
     result.horizontalSpectrumReuses=metrics.horizontalSpectrumReuseCount;
     result.derivativeAdvectionConsumers=metrics.derivativeAdvectionConsumerCount;

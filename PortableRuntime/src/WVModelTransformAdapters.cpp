@@ -429,6 +429,7 @@ public:
     metrics.variableProducers.derivedValidations=producers.derivedValidationCount;
     metrics.variableProducers.coefficientAssemblies=producers.coefficientAssemblyCount;
     metrics.variableProducers.verticalOperatorExecutions=producers.verticalOperatorExecutionCount;
+    metrics.variableProducers.verticalMatrixGroupExecutions=producers.verticalMatrixGroupExecutionCount;
     metrics.variableProducers.verticalPreparations=producers.verticalPreparationCount;
     metrics.variableProducers.horizontalSpectrumReuses=producers.horizontalSpectrumReuseCount;
     metrics.variableProducers.derivativeAdvectionConsumers=producers.derivativeAdvectionConsumerCount;

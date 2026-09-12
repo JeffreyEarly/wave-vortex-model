@@ -45,6 +45,7 @@ struct WVVariableProducerMetrics {
   std::size_t derivedValidations = 0;
   std::size_t coefficientAssemblies = 0, verticalPreparations = 0;
   std::size_t verticalOperatorExecutions = 0;
+  std::size_t verticalMatrixGroupExecutions = 0;
   std::size_t horizontalSpectrumReuses = 0, preparedVerticalDerivatives = 0;
   std::size_t derivativeAdvectionConsumers = 0;
   std::size_t horizontalSpeedReductions = 0;

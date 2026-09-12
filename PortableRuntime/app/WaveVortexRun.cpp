@@ -898,6 +898,8 @@ std::string variablePolicyJSON(const cli::WVRunnerVariablePolicy& policy,
            << ",\"horizontalWorkers\":" << execution.horizontalWorkers
            << ",\"fusedDerivativeAdvection\":" << (execution.fusedDerivativeAdvection ? "true" : "false")
            << ",\"pointwiseWorkers\":" << execution.pointwiseWorkers
+           << ",\"verticalGroupWorkers\":" << execution.verticalGroupWorkers
+           << ",\"inertialOnlyProjection\":" << (execution.inertialOnlyProjection ? "true" : "false")
            << ",\"requestedFFTThreads\":" << (hasRequestedThreads ? std::to_string(requestedThreads) : "null")
            << ",\"effectiveFFTThreads\":" << policy.effectiveFFTThreads
            << ",\"hostLogicalWorkers\":" << topology.logicalWorkers
@@ -1686,6 +1688,7 @@ int wavevortex::runtime::runWaveVortex(
            << ",\"derivedValidations\":" << producers.derivedValidations
            << ",\"coefficientAssemblies\":" << producers.coefficientAssemblies
            << ",\"verticalOperatorExecutions\":" << producers.verticalOperatorExecutions
+           << ",\"verticalMatrixGroupExecutions\":" << producers.verticalMatrixGroupExecutions
            << ",\"verticalPreparations\":" << producers.verticalPreparations
            << ",\"horizontalSpectrumReuses\":" << producers.horizontalSpectrumReuses
            << ",\"derivativeAdvectionConsumers\":" << producers.derivativeAdvectionConsumers
