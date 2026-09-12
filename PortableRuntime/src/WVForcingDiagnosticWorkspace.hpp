@@ -5,6 +5,7 @@
 #include "WaveVortexRuntime/WVForcingTendency.hpp"
 #include "WaveVortexRuntime/WVVariableEvaluation.hpp"
 
+#include <array>
 #include <algorithm>
 #include <cmath>
 #include <limits>

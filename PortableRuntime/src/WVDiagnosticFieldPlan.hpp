@@ -1,4 +1,5 @@
 #pragma once
+#include <array>
 
 #include "WaveVortexRuntime/WVFieldEvaluationService.hpp"
 #include "WaveVortexRuntime/WVPortableVariablePlan.hpp"

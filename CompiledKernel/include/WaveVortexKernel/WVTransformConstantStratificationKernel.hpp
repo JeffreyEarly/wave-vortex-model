@@ -3,6 +3,7 @@
 #include "WVFFTEngine.hpp"
 #include "WVVariableExecutionOptions.hpp"
 
+#include <array>
 #include <memory>
 #include <vector>
 

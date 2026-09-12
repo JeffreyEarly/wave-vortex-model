@@ -1,4 +1,5 @@
 #pragma once
+#include <array>
 #include "WVForcingTendency.hpp"
 #include "WaveVortexRuntime/WVVariableEvaluation.hpp"
 #include "WVForcingEngine.hpp"

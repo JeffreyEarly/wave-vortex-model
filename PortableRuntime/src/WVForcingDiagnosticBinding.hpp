@@ -4,6 +4,7 @@
 #include "WaveVortexRuntime/WVForcing.hpp"
 #include "WaveVortexRuntime/WVPortableVariablePlan.hpp"
 #include "WVForcingDiagnosticWorkspace.hpp"
+#include <array>
 #include <limits>
 #include <memory>
 #include <string>
