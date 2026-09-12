@@ -1,0 +1,5 @@
+form,volumeX,volumeY,volumeXi,volumeAdjointXi,surfaceX,surfaceY
+divergence,5,5,5,0,2,2
+advective,5,5,5,0,2,2
+split,9,9,9,0,2,2
+compatible,9,9,5,4,2,2

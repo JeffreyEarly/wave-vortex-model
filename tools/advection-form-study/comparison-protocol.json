@@ -1,0 +1,140 @@
+{
+  "domain_m": [
+    100000,
+    100000,
+    1000
+  ],
+  "start_s": 327,
+  "duration_s": 160,
+  "diagnostic_interval_s": 40,
+  "profiles": [
+    "constant N2=1e-4 s^-2",
+    "exponential N2=1e-4 exp(z/650) s^-2"
+  ],
+  "cases": [
+    {
+      "name": "linear",
+      "seed": "waves",
+      "amplitude": 0.0001
+    },
+    {
+      "name": "waves",
+      "seed": "waves",
+      "amplitude": 0.1
+    },
+    {
+      "name": "mixed",
+      "seed": "mixed",
+      "amplitude": 0.1
+    }
+  ],
+  "grids": [
+    [
+      8,
+      8,
+      33
+    ],
+    [
+      16,
+      16,
+      33
+    ],
+    [
+      16,
+      16,
+      65
+    ],
+    [
+      16,
+      16,
+      65
+    ],
+    [
+      24,
+      24,
+      129
+    ]
+  ],
+  "mode_counts_apv_wave_mda_io": [
+    [
+      3,
+      4,
+      2,
+      3
+    ],
+    [
+      3,
+      4,
+      2,
+      3
+    ],
+    [
+      3,
+      4,
+      2,
+      3
+    ],
+    [
+      6,
+      8,
+      4,
+      6
+    ],
+    [
+      10,
+      12,
+      8,
+      8
+    ]
+  ],
+  "timesteps_s": [
+    20,
+    10,
+    5
+  ],
+  "reference_timestep_s": 2.5,
+  "reference_checks": "Compare reference to timestep 1.25 and increased mode count on the final reference grid. Require differences below one quarter of a claimed error target; otherwise label that target unqualified.",
+  "error_targets": [
+    {
+      "velocity_rms_m_s": 0.001,
+      "density_rms_kg_m3": 0.001,
+      "ssh_rms_m": 0.01
+    },
+    {
+      "velocity_rms_m_s": 0.0001,
+      "density_rms_kg_m3": 0.0001,
+      "ssh_rms_m": 0.001
+    },
+    {
+      "velocity_rms_m_s": 1e-05,
+      "density_rms_kg_m3": 1e-05,
+      "ssh_rms_m": 0.0001
+    }
+  ],
+  "comparison_grid": "24 by 24 periodic horizontal points and 101 uniformly spaced reference depths, with physical fields reconstructed using each state's SSH; errors on the common reference-coordinate domain and physical-z dependence explicitly retained.",
+  "norm": "Unweighted common-grid RMS separately for vector physical velocity, physical density, and SSH; maximum across recorded times including initialization. No relative division by vanishing states.",
+  "time_integrator": "Fixed-step classical RK4 in oscillation-removed coefficients; four accepted RHS evaluations per step, zero rejected steps. Record failures without clipping or timestep repair.",
+  "variants": [
+    "divergence",
+    "advective via continuity",
+    "arithmetic split",
+    "quadrature-adjoint compatible split"
+  ],
+  "forcing": "Unforced trajectories; thermodynamic source/work controls covered by analytic tests. No forcing-performance conclusion.",
+  "pressure": "Current physical-height reference and p(surface)=rho0*g*ssh for both; old reference split tested by explicit pressure conversion, not a second physical problem.",
+  "scope": "Authoring assessment of advection only; exact displacement, modal pressure, production dense derivative backend fixed. No memory work, production replacement, or release gate.",
+  "fixed_factory_defaults": {
+    "latitude_degrees": 30,
+    "rotation_rate_s_inverse": 7.2921e-05,
+    "f_s_inverse": 7.2921e-05,
+    "g_m_s2": 9.81,
+    "rho0_kg_m3": 1025,
+    "nEVP": 256,
+    "note": "Values fixed by the inspected factory revision throughout all runs; made explicit here for reproduction."
+  },
+  "source_refinement": "Fixed mode inventories [3,4,2,3], (Nx,Nz)=(8,17),(8,33),(16,33),(16,65),(32,129),(48,129),(32,257). Compare mixed-state sources and six coefficient families at amplitudes 1e-4,.1,.4 and clocks327,901.",
+  "manufactured": "Independent analytical scalar references: Fourier frequencies2,3; vertical cos(6*pi*s) and endpoint exponentials; Nx8,16,32,64 and Nz9,17,33,65. Report errors and scalar weighted-budget defect separately.",
+  "timing": "After all concurrent simulations finish, three RHS warmups and a complete untimed trajectory for each small-grid variant, followed by five alternating-order trials with state setters invalidating field caches. Record complete RHS and160-second trajectories including diagnostics. Do not select an algorithm on a single trial.",
+  "long_control": "Exponential wave/mixed trajectories2000s, small and higher mode inventories, all four forms at dt20/10; referencesdt5 withdt2.5 and increased-mode checks. Primary error targets unchanged.",
+  "adoption_rule": "Recommend a change only for a repeatable accuracy/cost benefit at the declared physical targets, exceeding timing variability on multiple representative configurations, with no unexplained loss of source convergence or invariant behavior. Isolated scalar budget identities or a single fastest trial are insufficient. Otherwise retain production divergence."
+}
