@@ -55,3 +55,5 @@ installation.
 Sample timing includes beginning the state scope, nonlinear flux/field production, and ending the scope. It excludes loading, preparation, validation, damping, integration and output. These are exploratory RHS timings, not full-model acceptance. Each block requires at least one warmup to establish replay evidence.
 
 Freeze and build the same benchmark sources for every role. The driver rejects stale embedded worker/CMake hashes, differing compiler/provider/execution options, differing producer counts, numerical disagreement, or modified frozen files. It journals completed blocks and explicit failure receipts. Only one worker receives work at a time. Check and record host activity externally; this driver does not assert that the host is idle. Resident roles require enough RAM for both prepared kernels, reported separately from kernel-owned storage.
+
+See [the initial screen and qualification results](RESULTS.md) for the selected assembly/projection candidate and its pending quiet-host adoption gate.

@@ -1,0 +1,684 @@
+[
+  {
+    "profile": "eddytide-256x256x28",
+    "pair": -2,
+    "warmup": true,
+    "role": "baseline",
+    "startUnix": 1789244565.2028046,
+    "endUnix": 1789244582.1815393,
+    "hostSamples": 8,
+    "unrelatedPeaksAbove10Percent": {
+      "/System/Library/CoreServices/loginwindow.app/Contents/MacOS/loginwindow": 14.6
+    }
+  },
+  {
+    "profile": "eddytide-256x256x28",
+    "pair": -2,
+    "warmup": true,
+    "role": "reuse",
+    "startUnix": 1789244582.183398,
+    "endUnix": 1789244598.417818,
+    "hostSamples": 8,
+    "unrelatedPeaksAbove10Percent": {
+      "/usr/libexec/syspolicyd": 11.6,
+      "/System/Library/PrivateFrameworks/XprotectFramework.framework/Versions/A/XPCServices/XprotectService.xpc/Contents/MacOS/XprotectService": 15.1,
+      "/System/Library/CoreServices/talagentd": 50.2,
+      "/Library/Bitdefender/AVP/product/bin/BDLDaemon.app/Contents/MacOS/BDLDaemon": 11.6
+    }
+  },
+  {
+    "profile": "eddytide-256x256x28",
+    "pair": -1,
+    "warmup": true,
+    "role": "reuse",
+    "startUnix": 1789244598.4558604,
+    "endUnix": 1789244614.227055,
+    "hostSamples": 8,
+    "unrelatedPeaksAbove10Percent": {
+      "/Library/Bitdefender/AVP/product/bin/BDLDaemon.app/Contents/MacOS/BDLDaemon": 10.5
+    }
+  },
+  {
+    "profile": "eddytide-256x256x28",
+    "pair": -1,
+    "warmup": true,
+    "role": "baseline",
+    "startUnix": 1789244614.228744,
+    "endUnix": 1789244631.4110484,
+    "hostSamples": 8,
+    "unrelatedPeaksAbove10Percent": {}
+  },
+  {
+    "profile": "eddytide-256x256x28",
+    "pair": 0,
+    "warmup": false,
+    "role": "baseline",
+    "startUnix": 1789244631.4460175,
+    "endUnix": 1789244648.1998487,
+    "hostSamples": 8,
+    "unrelatedPeaksAbove10Percent": {
+      "/System/Library/PrivateFrameworks/MediaAnalysis.framework/Versions/A/mediaanalysisd": 65.5,
+      "/sbin/launchd": 29.8
+    }
+  },
+  {
+    "profile": "eddytide-256x256x28",
+    "pair": 0,
+    "warmup": false,
+    "role": "reuse",
+    "startUnix": 1789244648.201469,
+    "endUnix": 1789244664.0369308,
+    "hostSamples": 7,
+    "unrelatedPeaksAbove10Percent": {}
+  },
+  {
+    "profile": "eddytide-256x256x28",
+    "pair": 1,
+    "warmup": false,
+    "role": "reuse",
+    "startUnix": 1789244664.0754254,
+    "endUnix": 1789244679.740815,
+    "hostSamples": 7,
+    "unrelatedPeaksAbove10Percent": {
+      "/System/Library/PrivateFrameworks/MediaAnalysis.framework/Versions/A/mediaanalysisd": 31.8
+    }
+  },
+  {
+    "profile": "eddytide-256x256x28",
+    "pair": 1,
+    "warmup": false,
+    "role": "baseline",
+    "startUnix": 1789244679.7423615,
+    "endUnix": 1789244696.673688,
+    "hostSamples": 9,
+    "unrelatedPeaksAbove10Percent": {
+      "/System/Library/PrivateFrameworks/MediaAnalysis.framework/Versions/A/mediaanalysisd": 62.8
+    }
+  },
+  {
+    "profile": "eddytide-256x256x28",
+    "pair": 2,
+    "warmup": false,
+    "role": "baseline",
+    "startUnix": 1789244696.7112818,
+    "endUnix": 1789244713.8211265,
+    "hostSamples": 8,
+    "unrelatedPeaksAbove10Percent": {
+      "/System/Library/CoreServices/loginwindow.app/Contents/MacOS/loginwindow": 11.9
+    }
+  },
+  {
+    "profile": "eddytide-256x256x28",
+    "pair": 2,
+    "warmup": false,
+    "role": "reuse",
+    "startUnix": 1789244713.8227358,
+    "endUnix": 1789244729.9338286,
+    "hostSamples": 8,
+    "unrelatedPeaksAbove10Percent": {
+      "/System/Library/PrivateFrameworks/MediaAnalysis.framework/Versions/A/mediaanalysisd": 18.0
+    }
+  },
+  {
+    "profile": "eddytide-256x256x28",
+    "pair": 3,
+    "warmup": false,
+    "role": "reuse",
+    "startUnix": 1789244729.9698179,
+    "endUnix": 1789244745.7334332,
+    "hostSamples": 8,
+    "unrelatedPeaksAbove10Percent": {}
+  },
+  {
+    "profile": "eddytide-256x256x28",
+    "pair": 3,
+    "warmup": false,
+    "role": "baseline",
+    "startUnix": 1789244745.7351756,
+    "endUnix": 1789244762.9766757,
+    "hostSamples": 8,
+    "unrelatedPeaksAbove10Percent": {
+      "/System/Library/PrivateFrameworks/MediaAnalysis.framework/Versions/A/mediaanalysisd": 104.9
+    }
+  },
+  {
+    "profile": "eddytide-256x256x28",
+    "pair": 4,
+    "warmup": false,
+    "role": "baseline",
+    "startUnix": 1789244763.0148392,
+    "endUnix": 1789244779.9708853,
+    "hostSamples": 8,
+    "unrelatedPeaksAbove10Percent": {
+      "/sbin/launchd": 14.1
+    }
+  },
+  {
+    "profile": "eddytide-256x256x28",
+    "pair": 4,
+    "warmup": false,
+    "role": "reuse",
+    "startUnix": 1789244779.9724975,
+    "endUnix": 1789244796.0281932,
+    "hostSamples": 8,
+    "unrelatedPeaksAbove10Percent": {
+      "/Library/Bitdefender/AVP/product/bin/BDLDaemon.app/Contents/MacOS/BDLDaemon": 10.6,
+      "/System/Library/PrivateFrameworks/MediaAnalysis.framework/Versions/A/mediaanalysisd": 100.0
+    }
+  },
+  {
+    "profile": "eddytide-256x256x28",
+    "pair": 5,
+    "warmup": false,
+    "role": "reuse",
+    "startUnix": 1789244796.068984,
+    "endUnix": 1789244812.25201,
+    "hostSamples": 8,
+    "unrelatedPeaksAbove10Percent": {
+      "/System/Library/PrivateFrameworks/MediaAnalysis.framework/Versions/A/mediaanalysisd": 100.2,
+      "/System/Library/PrivateFrameworks/PhotoLibraryServices.framework/Versions/A/Support/photolibraryd": 16.6
+    }
+  },
+  {
+    "profile": "eddytide-256x256x28",
+    "pair": 5,
+    "warmup": false,
+    "role": "baseline",
+    "startUnix": 1789244812.2536469,
+    "endUnix": 1789244829.2129252,
+    "hostSamples": 9,
+    "unrelatedPeaksAbove10Percent": {
+      "/System/Library/PrivateFrameworks/MediaAnalysis.framework/Versions/A/mediaanalysisd": 99.6,
+      "/System/Library/CoreServices/loginwindow.app/Contents/MacOS/loginwindow": 17.2
+    }
+  },
+  {
+    "profile": "eddytide-256x256x28",
+    "pair": 6,
+    "warmup": false,
+    "role": "baseline",
+    "startUnix": 1789244829.261142,
+    "endUnix": 1789244846.3918228,
+    "hostSamples": 8,
+    "unrelatedPeaksAbove10Percent": {}
+  },
+  {
+    "profile": "eddytide-256x256x28",
+    "pair": 6,
+    "warmup": false,
+    "role": "reuse",
+    "startUnix": 1789244846.3934264,
+    "endUnix": 1789244862.465961,
+    "hostSamples": 8,
+    "unrelatedPeaksAbove10Percent": {
+      "/sbin/launchd": 27.7
+    }
+  },
+  {
+    "profile": "eddytide-256x256x28",
+    "pair": 7,
+    "warmup": false,
+    "role": "reuse",
+    "startUnix": 1789244862.5090642,
+    "endUnix": 1789244878.6557493,
+    "hostSamples": 8,
+    "unrelatedPeaksAbove10Percent": {
+      "/usr/libexec/triald_system": 12.8,
+      "/System/Library/PrivateFrameworks/CacheDelete.framework/deleted": 42.3,
+      "/usr/libexec/mobileassetd": 12.9,
+      "/System/Library/CoreServices/TimeMachine/backupd": 34.3,
+      "/System/Applications/Music.app/Contents/PlugIns/MusicCacheExtension.appex/Contents/MacOS/MusicCacheExtension": 12.9,
+      "/usr/libexec/pkd": 11.0,
+      "/System/Library/PrivateFrameworks/CloudKitDaemon.framework/Support/cloudd": 26.0
+    }
+  },
+  {
+    "profile": "eddytide-256x256x28",
+    "pair": 7,
+    "warmup": false,
+    "role": "baseline",
+    "startUnix": 1789244878.6574233,
+    "endUnix": 1789244895.7063904,
+    "hostSamples": 8,
+    "unrelatedPeaksAbove10Percent": {
+      "/System/Library/Frameworks/Accounts.framework/Versions/A/Support/accountsd": 12.3,
+      "/System/Library/PrivateFrameworks/CloudKitDaemon.framework/Support/cloudd": 46.0,
+      "/usr/libexec/pkd": 19.0,
+      "/System/Library/PrivateFrameworks/CacheDelete.framework/deleted": 26.5,
+      "/System/Library/CoreServices/TimeMachine/backupd": 25.9
+    }
+  },
+  {
+    "profile": "variable-hydrostatic-composite-large",
+    "pair": -2,
+    "warmup": true,
+    "role": "baseline",
+    "startUnix": 1789244895.7641919,
+    "endUnix": 1789244902.115991,
+    "hostSamples": 3,
+    "unrelatedPeaksAbove10Percent": {
+      "/Library/Bitdefender/AVP/product/bin/BDLDaemon.app/Contents/MacOS/BDLDaemon": 15.3
+    }
+  },
+  {
+    "profile": "variable-hydrostatic-composite-large",
+    "pair": -2,
+    "warmup": true,
+    "role": "reuse",
+    "startUnix": 1789244902.1622756,
+    "endUnix": 1789244909.3649116,
+    "hostSamples": 4,
+    "unrelatedPeaksAbove10Percent": {
+      "/System/Library/CoreServices/TimeMachine/backupd": 13.5,
+      "/usr/libexec/triald_system": 14.5,
+      "/System/Library/PrivateFrameworks/CacheDelete.framework/deleted": 11.1,
+      "/System/Library/Frameworks/CoreServices.framework/Versions/A/Frameworks/Metadata.framework/Versions/A/Support/corespotlightd": 45.3,
+      "/System/Library/Frameworks/CoreServices.framework/Versions/A/Frameworks/Metadata.framework/Versions/A/Support/managedcorespotlightd": 29.4
+    }
+  },
+  {
+    "profile": "variable-hydrostatic-composite-large",
+    "pair": -1,
+    "warmup": true,
+    "role": "reuse",
+    "startUnix": 1789244910.4488122,
+    "endUnix": 1789244916.539026,
+    "hostSamples": 3,
+    "unrelatedPeaksAbove10Percent": {
+      "/System/Library/Frameworks/CoreServices.framework/Versions/A/Frameworks/Metadata.framework/Versions/A/Support/corespotlightd": 31.7,
+      "/usr/libexec/mobileassetd": 22.6,
+      "/System/Library/CoreServices/TimeMachine/backupd": 21.7,
+      "/System/Library/PrivateFrameworks/FileProvider.framework/Support/fileproviderd": 70.5,
+      "/System/Library/PrivateFrameworks/CacheDelete.framework/deleted": 47.6,
+      "/usr/libexec/triald_system": 23.1,
+      "/System/Library/PrivateFrameworks/CloudKitDaemon.framework/Support/cloudd": 26.6,
+      "/usr/libexec/PerfPowerServices": 15.4
+    }
+  },
+  {
+    "profile": "variable-hydrostatic-composite-large",
+    "pair": -1,
+    "warmup": true,
+    "role": "baseline",
+    "startUnix": 1789244916.5655284,
+    "endUnix": 1789244923.4074292,
+    "hostSamples": 4,
+    "unrelatedPeaksAbove10Percent": {
+      "/System/Library/CoreServices/TimeMachine/backupd": 43.0,
+      "/Library/Application Support/Mosyle/MosyleMDM.app/Contents/MacOS/MosyleMDM": 13.2,
+      "/System/Library/PrivateFrameworks/CacheDelete.framework/deleted": 32.1,
+      "/Library/Bitdefender/AVP/product/bin/BDLDaemon.app/Contents/MacOS/BDLDaemon": 12.6,
+      "/usr/libexec/mobileassetd": 14.4,
+      "/System/Library/Frameworks/CoreServices.framework/Versions/A/Frameworks/Metadata.framework/Versions/A/Support/corespotlightd": 121.0,
+      "/usr/libexec/triald": 12.7,
+      "/usr/libexec/pkd": 51.5
+    }
+  },
+  {
+    "profile": "variable-hydrostatic-composite-large",
+    "pair": 0,
+    "warmup": false,
+    "role": "baseline",
+    "startUnix": 1789244924.5281882,
+    "endUnix": 1789244930.6571705,
+    "hostSamples": 3,
+    "unrelatedPeaksAbove10Percent": {
+      "/System/Library/CoreServices/TimeMachine/backupd": 32.3,
+      "/System/Library/PrivateFrameworks/FileProvider.framework/Support/fileproviderd": 69.5,
+      "/System/Library/Frameworks/CoreServices.framework/Versions/A/Frameworks/Metadata.framework/Versions/A/Support/corespotlightd": 33.8,
+      "/System/Library/Frameworks/WebKit.framework/Versions/A/XPCServices/com.apple.WebKit.Networking.xpc/Contents/MacOS/com.apple.WebKit.Networking": 13.1,
+      "/System/Library/PrivateFrameworks/CloudKitDaemon.framework/Support/cloudd": 14.0
+    }
+  },
+  {
+    "profile": "variable-hydrostatic-composite-large",
+    "pair": 0,
+    "warmup": false,
+    "role": "reuse",
+    "startUnix": 1789244930.6850138,
+    "endUnix": 1789244938.0106428,
+    "hostSamples": 4,
+    "unrelatedPeaksAbove10Percent": {
+      "/usr/libexec/triald_system": 12.3,
+      "/System/Library/Frameworks/Accounts.framework/Versions/A/Support/accountsd": 10.2,
+      "/System/Library/PrivateFrameworks/CloudKitDaemon.framework/Support/cloudd": 38.7,
+      "/usr/libexec/pkd": 26.1,
+      "/System/Library/PrivateFrameworks/CacheDelete.framework/deleted": 45.3,
+      "/System/Library/CoreServices/TimeMachine/backupd": 25.8,
+      "/System/Library/Frameworks/CoreServices.framework/Versions/A/Frameworks/Metadata.framework/Versions/A/Support/mds": 17.0,
+      "/System/Library/Frameworks/CoreServices.framework/Versions/A/Frameworks/Metadata.framework/Versions/A/Support/corespotlightd": 17.8,
+      "/System/Library/Frameworks/CoreServices.framework/Versions/A/Frameworks/Metadata.framework/Versions/A/Support/managedcorespotlightd": 14.5
+    }
+  },
+  {
+    "profile": "variable-hydrostatic-composite-large",
+    "pair": 1,
+    "warmup": false,
+    "role": "reuse",
+    "startUnix": 1789244939.159328,
+    "endUnix": 1789244945.2034445,
+    "hostSamples": 3,
+    "unrelatedPeaksAbove10Percent": {
+      "/usr/libexec/mobileassetd": 10.6,
+      "/System/Library/CoreServices/TimeMachine/backupd": 19.4,
+      "/System/Library/Frameworks/CoreServices.framework/Versions/A/Frameworks/Metadata.framework/Versions/A/Support/corespotlightd": 58.8,
+      "/System/Library/Frameworks/CoreServices.framework/Versions/A/Frameworks/Metadata.framework/Versions/A/Support/managedcorespotlightd": 18.1,
+      "/System/Library/PrivateFrameworks/FileProvider.framework/Support/fileproviderd": 67.0,
+      "/System/Library/PrivateFrameworks/CacheDelete.framework/deleted": 10.1,
+      "/System/Library/Frameworks/Accounts.framework/Versions/A/Support/accountsd": 11.5,
+      "/System/Library/PrivateFrameworks/CloudKitDaemon.framework/Support/cloudd": 39.3
+    }
+  },
+  {
+    "profile": "variable-hydrostatic-composite-large",
+    "pair": 1,
+    "warmup": false,
+    "role": "baseline",
+    "startUnix": 1789244945.2313478,
+    "endUnix": 1789244952.5575562,
+    "hostSamples": 4,
+    "unrelatedPeaksAbove10Percent": {
+      "/usr/libexec/mobileassetd": 53.8,
+      "/System/Library/CoreServices/TimeMachine/backupd": 28.9,
+      "/usr/libexec/triald_system": 59.6,
+      "/System/Library/PrivateFrameworks/CacheDelete.framework/deleted": 65.3,
+      "/usr/libexec/triald": 57.0,
+      "/Library/Bitdefender/AVP/product/bin/BDLDaemon.app/Contents/MacOS/BDLDaemon": 11.7,
+      "/System/Library/Frameworks/CoreServices.framework/Versions/A/Frameworks/Metadata.framework/Versions/A/Support/mds": 12.6,
+      "/System/Library/Frameworks/CoreServices.framework/Versions/A/Frameworks/Metadata.framework/Versions/A/Support/corespotlightd": 17.9,
+      "/System/Library/Frameworks/CoreServices.framework/Versions/A/Frameworks/Metadata.framework/Versions/A/Support/managedcorespotlightd": 16.2
+    }
+  },
+  {
+    "profile": "variable-hydrostatic-composite-large",
+    "pair": 2,
+    "warmup": false,
+    "role": "baseline",
+    "startUnix": 1789244953.6953664,
+    "endUnix": 1789244959.9189699,
+    "hostSamples": 3,
+    "unrelatedPeaksAbove10Percent": {
+      "/System/Library/PrivateFrameworks/FileProvider.framework/Support/fileproviderd": 65.5,
+      "/usr/libexec/pkd": 11.9,
+      "/System/Library/PrivateFrameworks/CacheDelete.framework/deleted": 55.3,
+      "/System/Library/Frameworks/CoreServices.framework/Versions/A/Frameworks/Metadata.framework/Versions/A/Support/corespotlightd": 31.5,
+      "/System/Library/Frameworks/Accounts.framework/Versions/A/Support/accountsd": 12.4,
+      "/System/Library/PrivateFrameworks/CloudKitDaemon.framework/Support/cloudd": 43.0,
+      "/usr/libexec/mobileassetd": 50.9,
+      "/System/Library/CoreServices/TimeMachine/backupd": 21.3,
+      "/usr/libexec/triald_system": 48.3,
+      "/System/Library/CoreServices/TimeMachine/backupd-helper": 14.5,
+      "/usr/libexec/triald": 47.9
+    }
+  },
+  {
+    "profile": "variable-hydrostatic-composite-large",
+    "pair": 2,
+    "warmup": false,
+    "role": "reuse",
+    "startUnix": 1789244959.953742,
+    "endUnix": 1789244967.111274,
+    "hostSamples": 3,
+    "unrelatedPeaksAbove10Percent": {
+      "/System/Library/Frameworks/CoreServices.framework/Versions/A/Frameworks/FSEvents.framework/Versions/A/Support/fseventsd": 37.4,
+      "/usr/libexec/opendirectoryd": 10.9,
+      "/System/Library/CoreServices/TimeMachine/backupd": 18.5,
+      "/usr/libexec/pkd": 12.6,
+      "/usr/libexec/triald": 22.6,
+      "/System/Library/Frameworks/CoreServices.framework/Versions/A/Frameworks/Metadata.framework/Versions/A/Support/mds": 49.2,
+      "/System/Library/Frameworks/CoreServices.framework/Versions/A/Frameworks/Metadata.framework/Versions/A/Support/corespotlightd": 57.7,
+      "/System/Library/Frameworks/CoreServices.framework/Versions/A/Frameworks/Metadata.framework/Versions/A/Support/managedcorespotlightd": 15.1
+    }
+  },
+  {
+    "profile": "variable-hydrostatic-composite-large",
+    "pair": 3,
+    "warmup": false,
+    "role": "reuse",
+    "startUnix": 1789244968.266039,
+    "endUnix": 1789244974.2529743,
+    "hostSamples": 3,
+    "unrelatedPeaksAbove10Percent": {
+      "/usr/libexec/mobileassetd": 14.2,
+      "/System/Library/CoreServices/TimeMachine/backupd": 44.0,
+      "/System/Library/PrivateFrameworks/FileProvider.framework/Support/fileproviderd": 56.7,
+      "/usr/libexec/pkd": 33.9,
+      "/System/Library/PrivateFrameworks/CacheDelete.framework/deleted": 35.8,
+      "/System/Library/Frameworks/CoreServices.framework/Versions/A/Frameworks/Metadata.framework/Versions/A/Support/corespotlightd": 31.6,
+      "/usr/libexec/triald_system": 11.3,
+      "/System/Library/PrivateFrameworks/CloudKitDaemon.framework/Support/cloudd": 38.5,
+      "/sbin/launchd": 30.5
+    }
+  },
+  {
+    "profile": "variable-hydrostatic-composite-large",
+    "pair": 3,
+    "warmup": false,
+    "role": "baseline",
+    "startUnix": 1789244974.2811747,
+    "endUnix": 1789244981.5499728,
+    "hostSamples": 3,
+    "unrelatedPeaksAbove10Percent": {}
+  },
+  {
+    "profile": "variable-hydrostatic-composite-large",
+    "pair": 4,
+    "warmup": false,
+    "role": "baseline",
+    "startUnix": 1789244982.720262,
+    "endUnix": 1789244988.8358371,
+    "hostSamples": 3,
+    "unrelatedPeaksAbove10Percent": {
+      "/usr/libexec/mobileassetd": 20.9,
+      "/System/Library/CoreServices/TimeMachine/backupd": 27.1,
+      "/System/Library/PrivateFrameworks/FileProvider.framework/Support/fileproviderd": 54.4,
+      "/usr/libexec/pkd": 27.6,
+      "/System/Library/PrivateFrameworks/CacheDelete.framework/deleted": 35.2,
+      "/System/Library/Frameworks/CoreServices.framework/Versions/A/Frameworks/Metadata.framework/Versions/A/Support/corespotlightd": 30.0,
+      "/System/Library/Frameworks/Accounts.framework/Versions/A/Support/accountsd": 11.9,
+      "/System/Library/PrivateFrameworks/CloudKitDaemon.framework/Support/cloudd": 43.3,
+      "/usr/libexec/triald_system": 17.5,
+      "/System/Library/CoreServices/TimeMachine/backupd-helper": 11.1,
+      "/usr/libexec/triald": 16.9
+    }
+  },
+  {
+    "profile": "variable-hydrostatic-composite-large",
+    "pair": 4,
+    "warmup": false,
+    "role": "reuse",
+    "startUnix": 1789244988.8635156,
+    "endUnix": 1789244995.9465754,
+    "hostSamples": 3,
+    "unrelatedPeaksAbove10Percent": {
+      "/usr/libexec/pkd": 24.3,
+      "/System/Library/Frameworks/CoreServices.framework/Versions/A/Frameworks/Metadata.framework/Versions/A/Support/mds": 32.9,
+      "/System/Library/CoreServices/TimeMachine/backupd": 11.5,
+      "/System/Library/PrivateFrameworks/CacheDelete.framework/deleted": 11.1,
+      "/System/Library/Frameworks/CoreServices.framework/Versions/A/Frameworks/Metadata.framework/Versions/A/Support/corespotlightd": 41.4
+    }
+  },
+  {
+    "profile": "variable-hydrostatic-composite-large",
+    "pair": 5,
+    "warmup": false,
+    "role": "reuse",
+    "startUnix": 1789244997.1533728,
+    "endUnix": 1789245003.2197437,
+    "hostSamples": 3,
+    "unrelatedPeaksAbove10Percent": {
+      "/usr/libexec/mobileassetd": 43.5,
+      "/System/Library/CoreServices/TimeMachine/backupd": 28.0,
+      "/System/Library/PrivateFrameworks/FileProvider.framework/Support/fileproviderd": 67.0,
+      "/System/Library/PrivateFrameworks/CacheDelete.framework/deleted": 51.4,
+      "/System/Library/Frameworks/CoreServices.framework/Versions/A/Frameworks/Metadata.framework/Versions/A/Support/corespotlightd": 31.7,
+      "/System/Library/CoreServices/loginwindow.app/Contents/MacOS/loginwindow": 16.3,
+      "/usr/libexec/triald_system": 38.3,
+      "/System/Library/Frameworks/Accounts.framework/Versions/A/Support/accountsd": 10.2,
+      "/System/Library/PrivateFrameworks/CloudKitDaemon.framework/Support/cloudd": 38.4,
+      "/usr/libexec/pkd": 20.1,
+      "/System/Library/CoreServices/TimeMachine/backupd-helper": 18.9,
+      "/usr/libexec/triald": 38.8
+    }
+  },
+  {
+    "profile": "variable-hydrostatic-composite-large",
+    "pair": 5,
+    "warmup": false,
+    "role": "baseline",
+    "startUnix": 1789245003.2472513,
+    "endUnix": 1789245010.5158384,
+    "hostSamples": 3,
+    "unrelatedPeaksAbove10Percent": {
+      "/System/Library/CoreServices/TimeMachine/backupd": 15.8,
+      "/usr/libexec/pkd": 13.3,
+      "/usr/libexec/triald": 13.2,
+      "/System/Library/Frameworks/CoreServices.framework/Versions/A/Frameworks/FSEvents.framework/Versions/A/Support/fseventsd": 40.0
+    }
+  },
+  {
+    "profile": "variable-hydrostatic-composite-large",
+    "pair": 6,
+    "warmup": false,
+    "role": "baseline",
+    "startUnix": 1789245011.6963136,
+    "endUnix": 1789245017.7777777,
+    "hostSamples": 3,
+    "unrelatedPeaksAbove10Percent": {
+      "/usr/libexec/mobileassetd": 17.0,
+      "/System/Library/CoreServices/TimeMachine/backupd": 34.2,
+      "/System/Library/PrivateFrameworks/FileProvider.framework/Support/fileproviderd": 61.3,
+      "/usr/libexec/pkd": 36.2,
+      "/System/Library/PrivateFrameworks/CacheDelete.framework/deleted": 44.4,
+      "/System/Library/Frameworks/CoreServices.framework/Versions/A/Frameworks/Metadata.framework/Versions/A/Support/corespotlightd": 32.0,
+      "/usr/libexec/triald_system": 11.7,
+      "/System/Library/Frameworks/Accounts.framework/Versions/A/Support/accountsd": 11.0,
+      "/System/Library/PrivateFrameworks/CloudKitDaemon.framework/Support/cloudd": 40.5,
+      "/usr/libexec/triald": 11.0
+    }
+  },
+  {
+    "profile": "variable-hydrostatic-composite-large",
+    "pair": 6,
+    "warmup": false,
+    "role": "reuse",
+    "startUnix": 1789245017.8066454,
+    "endUnix": 1789245024.8996286,
+    "hostSamples": 3,
+    "unrelatedPeaksAbove10Percent": {
+      "/usr/libexec/pkd": 15.6,
+      "/System/Library/Frameworks/CoreServices.framework/Versions/A/Frameworks/Metadata.framework/Versions/A/Support/mds": 33.6,
+      "/System/Library/Frameworks/CoreServices.framework/Versions/A/Frameworks/Metadata.framework/Versions/A/Support/corespotlightd": 43.5,
+      "/System/Library/Frameworks/CoreServices.framework/Versions/A/Frameworks/Metadata.framework/Versions/A/Support/managedcorespotlightd": 39.4
+    }
+  },
+  {
+    "profile": "variable-hydrostatic-composite-large",
+    "pair": 7,
+    "warmup": false,
+    "role": "reuse",
+    "startUnix": 1789245026.0648897,
+    "endUnix": 1789245032.2260458,
+    "hostSamples": 3,
+    "unrelatedPeaksAbove10Percent": {
+      "/System/Library/CoreServices/TimeMachine/backupd": 40.9,
+      "/System/Library/PrivateFrameworks/CloudKitDaemon.framework/Support/cloudd": 22.0,
+      "/System/Library/PrivateFrameworks/FileProvider.framework/Support/fileproviderd": 69.9,
+      "/System/Library/Frameworks/CoreServices.framework/Versions/A/Frameworks/Metadata.framework/Versions/A/Support/corespotlightd": 31.9,
+      "/usr/libexec/triald": 10.5,
+      "/usr/libexec/triald_system": 30.8,
+      "/System/Library/PrivateFrameworks/CacheDelete.framework/deleted": 40.3,
+      "/usr/libexec/mobileassetd": 10.1
+    }
+  },
+  {
+    "profile": "variable-hydrostatic-composite-large",
+    "pair": 7,
+    "warmup": false,
+    "role": "baseline",
+    "startUnix": 1789245032.2520645,
+    "endUnix": 1789245039.544211,
+    "hostSamples": 3,
+    "unrelatedPeaksAbove10Percent": {
+      "/sbin/launchd": 28.3
+    }
+  },
+  {
+    "profile": "boussinesq-256x256x129-rk78",
+    "pair": -2,
+    "warmup": true,
+    "role": "baseline",
+    "startUnix": 1789245040.9746046,
+    "endUnix": 1789245080.3077455,
+    "hostSamples": 19,
+    "unrelatedPeaksAbove10Percent": {
+      "/System/Library/CoreServices/TimeMachine/backupd": 50.3,
+      "/System/Library/PrivateFrameworks/CloudKitDaemon.framework/Support/cloudd": 24.6,
+      "/System/Library/PrivateFrameworks/FileProvider.framework/Support/fileproviderd": 69.5,
+      "/System/Library/Frameworks/CoreServices.framework/Versions/A/Frameworks/Metadata.framework/Versions/A/Support/corespotlightd": 31.2,
+      "/usr/libexec/triald": 17.0,
+      "/System/Library/Frameworks/WebKit.framework/Versions/A/XPCServices/com.apple.WebKit.Networking.xpc/Contents/MacOS/com.apple.WebKit.Networking": 13.7,
+      "/usr/libexec/mobileassetd": 10.2,
+      "/System/Library/Frameworks/CoreServices.framework/Versions/A/Frameworks/FSEvents.framework/Versions/A/Support/fseventsd": 21.3
+    }
+  },
+  {
+    "profile": "boussinesq-256x256x129-rk78",
+    "pair": -2,
+    "warmup": true,
+    "role": "reuse",
+    "startUnix": 1789245082.8925867,
+    "endUnix": 1789245122.1455872,
+    "hostSamples": 19,
+    "unrelatedPeaksAbove10Percent": {
+      "/System/Library/CoreServices/TimeMachine/backupd": 52.6,
+      "/System/Library/PrivateFrameworks/CloudKitDaemon.framework/Support/cloudd": 13.2,
+      "/usr/libexec/triald": 10.3,
+      "/usr/libexec/triald_system": 22.5,
+      "/System/Library/PrivateFrameworks/CacheDelete.framework/deleted": 24.0,
+      "/Library/Bitdefender/AVP/product/bin/BDLDaemon.app/Contents/MacOS/BDLDaemon": 27.6,
+      "/Applications/ChatGPT.app/Contents/Resources/codex": 86.7
+    }
+  },
+  {
+    "profile": "boussinesq-256x256x129-rk78",
+    "pair": -1,
+    "warmup": true,
+    "role": "reuse",
+    "startUnix": 1789245124.5530887,
+    "endUnix": 1789245163.112727,
+    "hostSamples": 19,
+    "unrelatedPeaksAbove10Percent": {
+      "/System/Library/CoreServices/TimeMachine/backupd": 47.9,
+      "/System/Library/PrivateFrameworks/FileProvider.framework/Support/fileproviderd": 67.1,
+      "/System/Library/Frameworks/CoreServices.framework/Versions/A/Frameworks/Metadata.framework/Versions/A/Support/corespotlightd": 31.4,
+      "/usr/libexec/mobileassetd": 15.7,
+      "/usr/libexec/pkd": 33.1,
+      "/System/Library/PrivateFrameworks/CacheDelete.framework/deleted": 53.4,
+      "/System/Library/Frameworks/Accounts.framework/Versions/A/Support/accountsd": 11.9,
+      "/System/Library/PrivateFrameworks/CloudKitDaemon.framework/Support/cloudd": 43.9,
+      "/usr/libexec/triald_system": 18.9,
+      "/System/Library/CoreServices/Finder.app/Contents/MacOS/Finder": 12.0
+    }
+  },
+  {
+    "profile": "boussinesq-256x256x129-rk78",
+    "pair": -1,
+    "warmup": true,
+    "role": "baseline",
+    "startUnix": 1789245164.9055128,
+    "endUnix": 1789245204.4541957,
+    "hostSamples": 19,
+    "unrelatedPeaksAbove10Percent": {
+      "/sbin/launchd": 10.4,
+      "/System/Library/CoreServices/TimeMachine/backupd": 24.2,
+      "/System/Volumes/Preboot/Cryptexes/App/System/Applications/Safari.app/Contents/PlugIns/CacheDeleteExtension.appex/Contents/MacOS/CacheDeleteExtension": 20.7,
+      "/System/Library/PrivateFrameworks/TCC.framework/Support/tccd": 10.3,
+      "/System/Library/Frameworks/Accounts.framework/Versions/A/Support/accountsd": 12.6,
+      "/System/Library/PrivateFrameworks/CloudKitDaemon.framework/Support/cloudd": 42.9,
+      "/System/Library/PrivateFrameworks/CacheDelete.framework/deleted": 10.3,
+      "/System/Library/CoreServices/loginwindow.app/Contents/MacOS/loginwindow": 14.0,
+      "/System/Library/PrivateFrameworks/CoreParsec.framework/parsec-fbf": 15.1
+    }
+  }
+]

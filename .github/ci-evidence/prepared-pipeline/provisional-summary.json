@@ -1,0 +1,77 @@
+{
+  "qualified": false,
+  "status": "pending-quiet-host-performance-qualification",
+  "runtimeCommit": "ed6049a2504dad833e93c9221b66ea68db1ac404",
+  "reason": "Idle preflight passed, but observed background CPU contaminated measured pairs. Remaining timing repetitions stopped; no samples selected by timing and no automatic adoption.",
+  "completedComparisons": 22,
+  "allCompletedNumericalComparisonsPassed": true,
+  "allCompletedIntegrationDecisionsIdentical": true,
+  "binaryAndProviderPostflightUnchanged": {
+    "/Users/jearly/Documents/OceanKitRepositories/wave-vortex-model-benchmark-artifacts/prepared-pipeline-20260912/qualified-candidate-wave-vortex-run": true,
+    "/Users/jearly/Documents/OceanKitRepositories/wave-vortex-model-benchmark-artifacts/rk78-combinations-20260912/qualified-candidate-wave-vortex-run": true,
+    "/Users/jearly/Documents/OceanKitRepositories/wave-vortex-model/.compiled-backend-cache/provider/native-neon-pthreads/lib/libfftw3.3.dylib": true,
+    "/Users/jearly/Documents/OceanKitRepositories/wave-vortex-model/.compiled-backend-cache/provider/native-neon-pthreads/lib/libfftw3_threads.3.dylib": true
+  },
+  "profiles": [
+    {
+      "profile": "eddytide-256x256x28",
+      "completedWarmupPairs": 2,
+      "completedMeasuredPairs": 8,
+      "integrationRatios": [
+        0.9445106036470325,
+        0.9254534935654419,
+        0.940692080264417,
+        0.9138960446444293,
+        0.9462291071604534,
+        0.9541419392106868,
+        0.937134222912114,
+        0.9468765936649456
+      ],
+      "qualified": false,
+      "provisionalIntegrationRatio": 0.9385367305687417,
+      "provisionalBootstrap95": [
+        0.9294463197930029,
+        0.9463858499124901
+      ],
+      "maximumRetainedRatio": 1.0,
+      "maximumLiveRatio": 1.0,
+      "producerRecordsIdentical": true
+    },
+    {
+      "profile": "variable-hydrostatic-composite-large",
+      "completedWarmupPairs": 2,
+      "completedMeasuredPairs": 8,
+      "integrationRatios": [
+        1.2227307068898023,
+        0.8154168002476428,
+        1.1716561015794176,
+        0.8161479468442051,
+        1.1761588955432025,
+        0.8158070498581502,
+        1.191864947530509,
+        0.8212174671147356
+      ],
+      "qualified": false,
+      "provisionalIntegrationRatio": 0.9862846527659844,
+      "provisionalBootstrap95": [
+        0.8567533560110379,
+        1.1323195213999608
+      ],
+      "maximumRetainedRatio": 1.0,
+      "maximumLiveRatio": 1.0,
+      "producerRecordsIdentical": true
+    },
+    {
+      "profile": "boussinesq-256x256x129-rk78",
+      "completedWarmupPairs": 2,
+      "completedMeasuredPairs": 0,
+      "integrationRatios": [],
+      "qualified": false,
+      "maximumRetainedRatio": 1.0,
+      "maximumLiveRatio": 1.0,
+      "producerRecordsIdentical": true
+    }
+  ],
+  "archive": "wave-vortex-model-benchmark-artifacts/prepared-pipeline-20260912",
+  "hostObservationLimit": "ps CPU percentages are averaged samples, not continuous instantaneous measurements. Request/run JSON mtimes conservatively bound process plus output hashing, not the integration interval alone."
+}
