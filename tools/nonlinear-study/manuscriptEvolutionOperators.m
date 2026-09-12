@@ -14,7 +14,7 @@ study=struct(rhs=@rhs,observe=@observe,seed=@seed,sample=@sample,phaseRate=@phas
     function [rate,terms,hatted] = rhs(time,state)
         hatted=sample(time,state,options.padding);
         [integralN2,~]=thermodynamics(hatted);
-        terms=evaluateManuscriptNonlinearTerms(hatted,hatted.p,wvt.z,wvt.Lz,wvt.f,wvt.rho0,wvt.N2,integralN2,derivative);
+        terms=evaluateManuscriptNonlinearTerms(hatted,hatted.p,wvt.z,wvt.Lz,wvt.f,wvt.rho0,wvt.N2,integralN2-reshape(wvt.N2,1,1,[]).*hatted.eta,derivative);
         source=struct();
         for name=["u","v","w","eta"], source.(name)=restrict(terms.source.(name),wvt.Nx,wvt.Ny); end
         rate=wvt.projectSources(source);

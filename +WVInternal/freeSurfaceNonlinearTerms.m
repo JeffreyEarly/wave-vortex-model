@@ -1,10 +1,11 @@
-function terms = freeSurfaceNonlinearTerms(hatted,pressure,xi,D,f,rho0,N2,integratedN2,derivative)
+function terms = freeSurfaceNonlinearTerms(hatted,pressure,xi,D,f,rho0,N2,buoyancyRemainder,derivative)
 % Evaluate Appendix C terms before applying any modal source projector.
 %
 % Literal transcription of eq:projection-ready-nonlinear-advection-terms,
 % eq:projection-ready-nonlinear-pressure-terms and
 % eq:projection-ready-displacement-advection. pressure is supplied in Pa;
-% integratedN2 is integral from z-eta to z of the stated reference N_+^2.
+% buoyancyRemainder is the directly evaluated integral of N_+^2-N2(xi)
+% from z-eta to z, with the caller's endpoint label convention.
 % The caller selects pressure/reference approximations and label validity.
 % There is no pressure solve, projection, metric solve or constraint repair.
 % H includes pressure before entering N_w. Derivatives hold xi fixed.
@@ -18,7 +19,7 @@ arguments (Input)
     f (1,1) double
     rho0 (1,1) double {mustBePositive}
     N2 (:,1) double {mustBePositive}
-    integratedN2 (:,:,:) double {mustBeReal,mustBeFinite}
+    buoyancyRemainder (:,:,:) double {mustBeReal,mustBeFinite}
     derivative (1,1) struct
 end
 alpha = reshape(1+xi/D,1,1,[]);
@@ -46,7 +47,7 @@ H.u = -N.u+f*hatted.v-pressureX/rho0-P.u;
 H.v = -N.v-f*hatted.u-pressureY/rho0-P.v;
 N.w = (divergence(physicalW)+(surfaceW/D).*physicalW)./gamma ...
     +depth.*(H.u.*logGammaX+H.v.*logGammaY+hatted.u.*derivative.x(surfaceW./(D*gamma))+hatted.v.*derivative.y(surfaceW./(D*gamma)));
-P.w = (1./gamma-1).*pressureXi/rho0+integratedN2-reshape(N2,1,1,[]).*hatted.eta;
+P.w = (-hatted.ssh./(D+hatted.ssh)).*pressureXi/rho0+buoyancyRemainder;
 N.eta = divergence(hatted.eta)./gamma+(surfaceW./(D*gamma)).*hatted.eta-alpha.*(hatted.u.*sshX+hatted.v.*sshY)./gamma;
 P.eta = zeros(size(N.eta));
 linear = struct(u=f*hatted.v-pressureX/rho0,v=-f*hatted.u-pressureY/rho0,w=-reshape(N2,1,1,[]).*hatted.eta-pressureXi/rho0,eta=hatted.w);

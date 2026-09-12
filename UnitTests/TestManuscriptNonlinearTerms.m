@@ -6,9 +6,22 @@ classdef TestManuscriptNonlinearTerms < matlab.unittest.TestCase
         end
     end
     methods (Test, TestTags="full")
+        function tinySurfacePressureCorrectionSurvivesUnitStretchRounding(testCase)
+            xi = [-1000;0];
+            zero = zeros(2,2,2);
+            hatted = struct(u=zero,v=zero,w=zero,eta=zero,ssh=[0,1e-14;-1e-14,1e-8]);
+            derivative = struct(x=@(a)zeros(size(a)),y=@(a)zeros(size(a)),xi=@(a)ones(size(a)));
+            terms = evaluateManuscriptNonlinearTerms(hatted,zero,xi,1000,0,1025,1e-4*ones(2,1),zero,derivative);
+            expected = repmat(-hatted.ssh./(1025*(1000+hatted.ssh)),1,1,2);
+            testCase.verifyEqual(terms.P.w,expected,RelTol=3e-16)
+            testCase.verifyEqual(1+hatted.ssh(1,2)/1000,1)
+            testCase.verifyLessThan(terms.P.w(1,2,1),0)
+            testCase.verifyGreaterThan(terms.P.w(2,1,1),0)
+        end
+
         function mappedRatesSatisfyPhysicalMaterialEquations(testCase)
             [hatted,pressure,buoyancy,xi,Lz,f,rho0,derivative] = manufacturedState();
-            terms = evaluateManuscriptNonlinearTerms(hatted,pressure,xi,Lz,f,rho0,1e-4*ones(size(xi)),-buoyancy,derivative);
+            terms = evaluateManuscriptNonlinearTerms(hatted,pressure,xi,Lz,f,rho0,1e-4*ones(size(xi)),-buoyancy-1e-4*hatted.eta,derivative);
             tendency = terms.total;
             testCase.verifyLessThan(max(abs(derivative.x(hatted.u)+derivative.y(hatted.v)+derivative.xi(hatted.w)),[],'all'),2e-14)
             testCase.verifyEqual(hatted.w(:,:,1),zeros(size(hatted.ssh)),AbsTol=0)
@@ -84,7 +97,7 @@ classdef TestManuscriptNonlinearTerms < matlab.unittest.TestCase
             hatted.ssh(:) = 0;
             buoyancy = -1e-4*hatted.eta;
             pressure = rho0*buoyancy.*reshape(xi,1,1,[]);
-            terms = evaluateManuscriptNonlinearTerms(hatted,pressure,xi,Lz,f,rho0,1e-4*ones(size(xi)),-buoyancy,derivative);
+            terms = evaluateManuscriptNonlinearTerms(hatted,pressure,xi,Lz,f,rho0,1e-4*ones(size(xi)),-buoyancy-1e-4*hatted.eta,derivative);
             tendency = terms.total;
             testCase.verifyEqual(tendency.u,f*hatted.v,AbsTol=2e-14)
             testCase.verifyEqual(tendency.v,-f*hatted.u,AbsTol=2e-14)
@@ -101,7 +114,7 @@ classdef TestManuscriptNonlinearTerms < matlab.unittest.TestCase
         function nonlinearSignsMatchAdvectiveAndCartesianPressureTerms(testCase)
             [hatted,pressure,buoyancy,xi,Lz,f,rho0,derivative]=manufacturedState();
             N2=1e-4*ones(size(xi));
-            terms=evaluateManuscriptNonlinearTerms(hatted,pressure,xi,Lz,f,rho0,N2,-buoyancy,derivative);
+            terms=evaluateManuscriptNonlinearTerms(hatted,pressure,xi,Lz,f,rho0,N2,-buoyancy-1e-4*hatted.eta,derivative);
             physical=inverseMap(hatted,xi,Lz,derivative);
             gamma=1+hatted.ssh/Lz;
             alpha=reshape(1+xi/Lz,1,1,[]);

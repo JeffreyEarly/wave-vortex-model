@@ -31,6 +31,42 @@ classdef TestFreeSurfaceNonlinearEvolution < matlab.unittest.TestCase
             testCase.verifyEqual(wvt.coefficientState(),original)
         end
 
+        function stableCorrectionsReachEverySourceAndCoefficientFamily(testCase)
+            [wvt,study,state] = fixture();
+            wvt.addForcing(WVNonlinearAdvection(wvt));
+            derivative = struct(x=@(a)wvt.diffX(a),y=@(a)wvt.diffY(a),xi=@(a)wvt.diffZ(a));
+            context = WVInternal.freeSurfaceThermodynamics(wvt);
+            for amplitude = [1,1e-8,1e-12]
+                scaled = structfun(@(a)amplitude*a,state,UniformOutput=false);
+                setState(wvt,scaled)
+                h = study.sample(wvt.t,scaled,1);
+                z = reshape(wvt.z,1,1,[])+reshape(1+wvt.z/wvt.Lz,1,1,[]).*h.ssh;
+                thermal = context.evaluateNonlinear(z,h.eta,h.ssh,wvt.N2);
+                % Constant-stratification oracle, including bounded label
+                % adjustment. It uses no buoyancy quadrature/subtraction.
+                adjustment = min(0,max(-wvt.Lz,z-h.eta))-(z-h.eta);
+                remainder = -1e-4*(max(z,0)+adjustment);
+                expected = evaluateManuscriptNonlinearTerms(h,h.p,wvt.z,wvt.Lz,wvt.f,wvt.rho0,wvt.N2,remainder,derivative);
+                [actual.u,actual.v,actual.w,actual.eta] = wvt.nonlinearAdvectionSources();
+                for name = ["u","v","w","eta"]
+                    testCase.verifyEqual(actual.(name),expected.source.(name),AbsTol=1e-12*max(abs(expected.source.(name)),[],'all')+1e-30)
+                end
+                rate = wvt.coefficientTendency();
+                reference = wvt.projectSources(expected.source);
+                testCase.verifyEqual(sort(string(fieldnames(rate))),sort(["Ag_q";"Ag_0";"Aw_p";"Aw_m";"Aio";"Amda"]))
+                for family = string(fieldnames(rate)).'
+                    testCase.verifyEqual(rate.(family),reference.(family),AbsTol=1e-12*max(abs(reference.(family)),[],'all')+1e-30)
+                end
+                oldRemainder = -thermal.buoyancy-reshape(wvt.N2,1,1,[]).*h.eta;
+                oldPressure = (1./(1+h.ssh/wvt.Lz)-1).*derivative.xi(h.p)/wvt.rho0;
+                exactPressure = -h.ssh.*derivative.xi(h.p)./(wvt.rho0*(wvt.Lz+h.ssh));
+                oldError = max(abs(oldRemainder+oldPressure-remainder-exactPressure),[],'all');
+                newError = max(abs(expected.P.w-remainder-exactPressure),[],'all');
+                fprintf('Stable corrections: amplitude=%g, old/new maximum P_w error=%.3g / %.3g m s^-2\n',amplitude,oldError,newError);
+                testCase.verifyLessThanOrEqual(newError,oldError+realmin)
+            end
+        end
+
         function nonlinearEnergyUsesPhysicalVolumeAndQuadraticSurface(testCase)
             [wvt,~,~] = fixture();
             diagnostics = wvt.nonlinearEnergy();

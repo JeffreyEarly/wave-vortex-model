@@ -83,6 +83,46 @@ classdef TestFreeSurfaceThermodynamics < matlab.unittest.TestCase
             testCase.verifyError(@()context.evaluate(z,eta,zeros(2)),'WV:ParcelLabelDomain')
         end
 
+        function constantRemainderHandlesSignedIntervalsAndSurfaceCrossings(testCase)
+            wvt = newTransform(@(z)1e-4+zeros(size(z)));
+            context = WVInternal.freeSurfaceThermodynamics(wvt);
+            eta = reshape([1e-3,-1e-3,1e-11,-1e-11,0,2,-2,1e-12],2,2,2);
+            z = -500+zeros(size(eta));
+            z(6) = 1; z(8) = 1e-12;
+            fields = context.evaluateNonlinear(z,eta,zeros(2),1e-4*ones(2,1));
+            testCase.verifyEqual(fields.buoyancyRemainder,-1e-4*max(z,0))
+            ordinary = context.evaluate(z,eta,zeros(2));
+            testCase.verifyEqual(rmfield(fields,'buoyancyRemainder'),ordinary)
+            z = cat(3,-wvt.Lz*ones(2),zeros(2));
+            eta = cat(3,8*eps(wvt.Lz)*ones(2),-8*eps(wvt.Lz)*ones(2));
+            fields = context.evaluateNonlinear(z,eta,zeros(2),1e-4*ones(2,1));
+            testCase.verifyEqual(fields.buoyancyRemainder,-1e-4*eta)
+        end
+
+        function variableRemainderMatchesSignedAnalyticIntervals(testCase)
+            N0 = 1e-4; slope = 5e-8;
+            wvt = newTransform(@(z)N0+slope*z);
+            context = WVInternal.freeSurfaceThermodynamics(wvt);
+            xi = -400;
+            amplitude = 10.^(-1:-2:-11);
+            eta = [amplitude;-amplitude];
+            offset = 0.3*eta;
+            z = xi+offset;
+            fields = context.evaluateNonlinear(z,eta,zeros(size(eta)),N0+slope*xi);
+            expected = slope*eta.*(offset-eta/2);
+            % Profile and coordinate evaluation set an absolute error floor;
+            % this test does not assume tiny coordinate shifts remain exact.
+            bound = 16*eps(N0)*abs(eta)+4*abs(slope)*eps(abs(xi))*abs(eta);
+            testCase.verifyLessThanOrEqual(abs(fields.buoyancyRemainder-expected),bound)
+            testCase.verifyEqual(fields.buoyancyRemainder(:,1),expected(:,1),RelTol=1e-8)
+            z = [1,-3]; eta = [2,-2]; xi = -2;
+            fields = context.evaluateNonlinear(z,eta,zeros(size(z)),N0+slope*xi);
+            upper = min(z,0); label = z-eta;
+            % Keep the negative interval inside the parcel-label domain.
+            testCase.verifyEqual(fields.buoyancyRemainder, ...
+                N0*(upper-label)+slope*(upper.^2-label.^2)/2-(N0+slope*xi)*eta,AbsTol=1e-19)
+        end
+
         function outOfDomainLabelsAndInvalidGeometryFailExplicitly(testCase)
             wvt = newTransform(@(z)1e-4+zeros(size(z)));
             context = WVInternal.freeSurfaceThermodynamics(wvt);
