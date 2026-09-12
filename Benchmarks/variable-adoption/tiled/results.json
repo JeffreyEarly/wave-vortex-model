@@ -1,0 +1,378 @@
+{
+  "analysis": {
+    "summary": [
+      {
+        "family": "hydro",
+        "nz": 28,
+        "blocks": 4,
+        "pairsPerBlock": 9,
+        "medianBlockRatio": 0.7031269724017148,
+        "blockRatioRange": [
+          0.6859887717753004,
+          0.7456155609928751
+        ],
+        "baselineMilliseconds": 8.3550835,
+        "candidateMilliseconds": 5.920499500000001,
+        "scratchMiB": [
+          32.88726806640625,
+          107.87548828125
+        ]
+      },
+      {
+        "family": "bouss",
+        "nz": 28,
+        "blocks": 4,
+        "pairsPerBlock": 9,
+        "medianBlockRatio": 0.6883036982375528,
+        "blockRatioRange": [
+          0.6870906893960692,
+          0.7187585502295704
+        ],
+        "baselineMilliseconds": 10.462312500000001,
+        "candidateMilliseconds": 7.1286249999999995,
+        "scratchMiB": [
+          32.88726806640625,
+          128.6630859375
+        ]
+      },
+      {
+        "family": "hydro",
+        "nz": 129,
+        "blocks": 4,
+        "pairsPerBlock": 9,
+        "medianBlockRatio": 0.7350092992758661,
+        "blockRatioRange": [
+          0.7089558295469072,
+          0.7700270324727357
+        ],
+        "baselineMilliseconds": 32.827917,
+        "candidateMilliseconds": 23.256124999999997,
+        "scratchMiB": [
+          151.51634216308594,
+          107.87548828125
+        ]
+      },
+      {
+        "family": "bouss",
+        "nz": 129,
+        "blocks": 4,
+        "pairsPerBlock": 9,
+        "medianBlockRatio": 0.711699905873708,
+        "blockRatioRange": [
+          0.6961486751398109,
+          0.7735458046203155
+        ],
+        "baselineMilliseconds": 42.287811999999995,
+        "candidateMilliseconds": 30.3516455,
+        "scratchMiB": [
+          151.51634216308594,
+          128.6630859375
+        ]
+      }
+    ],
+    "maxErrors": {
+      "fieldError": 0,
+      "fluxError": 3.8636271062914257e-17,
+      "projectionError": 6.775981438101495e-20,
+      "directOracleError": 2.0897476517000576e-16
+    },
+    "representativeProcesses": 28
+  },
+  "pilot": [
+    {
+      "name": "hydro-28-t1-s0-b0",
+      "ratioMedian": 0.9496068768192901,
+      "baselineMedian": 0.007895042,
+      "candidateMedian": 0.007403792,
+      "scratchMiB": [
+        32.88726806640625,
+        32.9454345703125
+      ]
+    },
+    {
+      "name": "hydro-28-t1-s1-b0",
+      "ratioMedian": 0.8536986517433308,
+      "baselineMedian": 0.008436166,
+      "candidateMedian": 0.007183875,
+      "scratchMiB": [
+        32.88726806640625,
+        45.0391845703125
+      ]
+    },
+    {
+      "name": "hydro-28-t4-s0-b0",
+      "ratioMedian": 0.7322829639588401,
+      "baselineMedian": 0.009028041,
+      "candidateMedian": 0.006305333,
+      "scratchMiB": [
+        32.88726806640625,
+        95.78173828125
+      ]
+    },
+    {
+      "name": "hydro-28-t4-s1-b0",
+      "ratioMedian": 0.7062924376341312,
+      "baselineMedian": 0.008279208,
+      "candidateMedian": 0.005847542,
+      "scratchMiB": [
+        32.88726806640625,
+        107.87548828125
+      ]
+    },
+    {
+      "name": "hydro-28-t16-s0-b0",
+      "ratioMedian": 0.7310234149206315,
+      "baselineMedian": 0.008090791,
+      "candidateMedian": 0.005915166,
+      "scratchMiB": [
+        32.88726806640625,
+        347.126953125
+      ]
+    },
+    {
+      "name": "hydro-28-t16-s1-b0",
+      "ratioMedian": 0.6690591517418931,
+      "baselineMedian": 0.008684833,
+      "candidateMedian": 0.005810667,
+      "scratchMiB": [
+        32.88726806640625,
+        359.220703125
+      ]
+    },
+    {
+      "name": "bouss-129-t1-s0-b0",
+      "ratioMedian": 1.0267695491731261,
+      "baselineMedian": 0.03841275,
+      "candidateMedian": 0.039441042,
+      "scratchMiB": [
+        151.51634216308594,
+        37.134521484375
+      ]
+    },
+    {
+      "name": "bouss-129-t1-s1-b0",
+      "ratioMedian": 0.8456012407778233,
+      "baselineMedian": 0.045394042,
+      "candidateMedian": 0.037773458,
+      "scratchMiB": [
+        151.51634216308594,
+        53.259521484375
+      ]
+    },
+    {
+      "name": "bouss-129-t4-s0-b0",
+      "ratioMedian": 0.6991301629332252,
+      "baselineMedian": 0.056644666,
+      "candidateMedian": 0.040282708,
+      "scratchMiB": [
+        151.51634216308594,
+        112.5380859375
+      ]
+    },
+    {
+      "name": "bouss-129-t4-s1-b0",
+      "ratioMedian": 0.701684015149036,
+      "baselineMedian": 0.042220583,
+      "candidateMedian": 0.029182834,
+      "scratchMiB": [
+        151.51634216308594,
+        128.6630859375
+      ]
+    },
+    {
+      "name": "bouss-129-t16-s0-b0",
+      "ratioMedian": 0.6212377348261818,
+      "baselineMedian": 0.042883208,
+      "candidateMedian": 0.026619125,
+      "scratchMiB": [
+        151.51634216308594,
+        414.15234375
+      ]
+    },
+    {
+      "name": "bouss-129-t16-s1-b0",
+      "ratioMedian": 0.6004061227797066,
+      "baselineMedian": 0.054160833,
+      "candidateMedian": 0.030565625,
+      "scratchMiB": [
+        151.51634216308594,
+        430.27734375
+      ]
+    }
+  ],
+  "confirmation": [
+    {
+      "name": "hydro-28-t4-s1-b0",
+      "ratioMedian": 0.6859887717753004,
+      "baselineMedian": 0.008685667,
+      "candidateMedian": 0.005991291,
+      "scratchMiB": [
+        32.88726806640625,
+        107.87548828125
+      ]
+    },
+    {
+      "name": "bouss-129-t4-s1-b0",
+      "ratioMedian": 0.7122760776754942,
+      "baselineMedian": 0.040792666,
+      "candidateMedian": 0.028786917,
+      "scratchMiB": [
+        151.51634216308594,
+        128.6630859375
+      ]
+    },
+    {
+      "name": "hydro-129-t4-s1-b0",
+      "ratioMedian": 0.7427279567499268,
+      "baselineMedian": 0.032744042,
+      "candidateMedian": 0.023230292,
+      "scratchMiB": [
+        151.51634216308594,
+        107.87548828125
+      ]
+    },
+    {
+      "name": "bouss-28-t4-s1-b0",
+      "ratioMedian": 0.6871672187461662,
+      "baselineMedian": 0.010445459,
+      "candidateMedian": 0.007155958,
+      "scratchMiB": [
+        32.88726806640625,
+        128.6630859375
+      ]
+    },
+    {
+      "name": "hydro-28-t4-s1-b1",
+      "ratioMedian": 0.7456155609928751,
+      "baselineMedian": 0.008115917,
+      "candidateMedian": 0.006018875,
+      "scratchMiB": [
+        32.88726806640625,
+        107.87548828125
+      ]
+    },
+    {
+      "name": "bouss-129-t4-s1-b1",
+      "ratioMedian": 0.7111237340719219,
+      "baselineMedian": 0.043782958,
+      "candidateMedian": 0.031650666,
+      "scratchMiB": [
+        151.51634216308594,
+        128.6630859375
+      ]
+    },
+    {
+      "name": "hydro-129-t4-s1-b1",
+      "ratioMedian": 0.7272906418018054,
+      "baselineMedian": 0.032911792,
+      "candidateMedian": 0.023281958,
+      "scratchMiB": [
+        151.51634216308594,
+        107.87548828125
+      ]
+    },
+    {
+      "name": "bouss-28-t4-s1-b1",
+      "ratioMedian": 0.6870906893960692,
+      "baselineMedian": 0.010948459,
+      "candidateMedian": 0.007457667,
+      "scratchMiB": [
+        32.88726806640625,
+        128.6630859375
+      ]
+    },
+    {
+      "name": "hydro-28-t4-s1-b2",
+      "ratioMedian": 0.7097365342361326,
+      "baselineMedian": 0.008268209,
+      "candidateMedian": 0.005797292,
+      "scratchMiB": [
+        32.88726806640625,
+        107.87548828125
+      ]
+    },
+    {
+      "name": "bouss-129-t4-s1-b2",
+      "ratioMedian": 0.6961486751398109,
+      "baselineMedian": 0.053791334,
+      "candidateMedian": 0.038420083,
+      "scratchMiB": [
+        151.51634216308594,
+        128.6630859375
+      ]
+    },
+    {
+      "name": "hydro-129-t4-s1-b2",
+      "ratioMedian": 0.7700270324727357,
+      "baselineMedian": 0.030383458,
+      "candidateMedian": 0.023307292,
+      "scratchMiB": [
+        151.51634216308594,
+        107.87548828125
+      ]
+    },
+    {
+      "name": "bouss-28-t4-s1-b2",
+      "ratioMedian": 0.7187585502295704,
+      "baselineMedian": 0.0099285,
+      "candidateMedian": 0.007069917,
+      "scratchMiB": [
+        32.88726806640625,
+        128.6630859375
+      ]
+    },
+    {
+      "name": "hydro-28-t4-s1-b3",
+      "ratioMedian": 0.6965174105672971,
+      "baselineMedian": 0.008441958,
+      "candidateMedian": 0.005849708,
+      "scratchMiB": [
+        32.88726806640625,
+        107.87548828125
+      ]
+    },
+    {
+      "name": "bouss-129-t4-s1-b3",
+      "ratioMedian": 0.7735458046203155,
+      "baselineMedian": 0.038342708,
+      "candidateMedian": 0.029052625,
+      "scratchMiB": [
+        151.51634216308594,
+        128.6630859375
+      ]
+    },
+    {
+      "name": "hydro-129-t4-s1-b3",
+      "ratioMedian": 0.7089558295469072,
+      "baselineMedian": 0.033372084,
+      "candidateMedian": 0.023149,
+      "scratchMiB": [
+        151.51634216308594,
+        107.87548828125
+      ]
+    },
+    {
+      "name": "bouss-28-t4-s1-b3",
+      "ratioMedian": 0.6894401777289395,
+      "baselineMedian": 0.010479166,
+      "candidateMedian": 0.007101292,
+      "scratchMiB": [
+        32.88726806640625,
+        128.6630859375
+      ]
+    }
+  ],
+  "manifest": {
+    "sourceCommit": "de3d6682f9499394d9386909c381028992370e00",
+    "acceptedBase": "60287e1993b1a5a91ee8249eca94ee8f45dda801",
+    "hashes": {
+      "/Users/jearly/Documents/OceanKitRepositories/wave-vortex-model-benchmark-artifacts/tiled-advection-screen-20260912/wv-tiled-screen": "6a908326d20b8b081e07be866500d38cae0ed500c7bc03b1d205ea7d0f0467b8",
+      "/Users/jearly/Documents/OceanKitRepositories/wave-vortex-model-benchmark-artifacts/tiled-advection-screen-20260912/source.tar": "8fe87117d25015ad48fadc39df066b13189bf2b44cce0fdc4c128554969e856f",
+      "/Users/jearly/Documents/OceanKitRepositories/wave-vortex-model/.compiled-backend-cache/provider/native-neon-pthreads/lib/libfftw3.3.dylib": "b0dec1a21815db76726d48fe9b49cc34502b8fd7f4cccdfb0a54d50e39abef2c",
+      "/Users/jearly/Documents/OceanKitRepositories/wave-vortex-model/.compiled-backend-cache/provider/native-neon-pthreads/lib/libfftw3_threads.3.dylib": "064e6e17ca492204cb41aaf6ef739f6d5d22cc774699760e25166f5f8dffc359"
+    },
+    "compiler": "Apple clang version 21.0.0 (clang-2100.1.1.101)\nTarget: arm64-apple-darwin25.6.0\nThread model: posix\nInstalledDir: /Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin\n",
+    "checks": "Eight analytical/mapping/partition/tail cases under Clang Release, GCC Release and ASan/UBSan Debug. Final code review found no blocker."
+  },
+  "rawArchive": "OceanKitRepositories/wave-vortex-model-benchmark-artifacts/tiled-advection-screen-20260912"
+}
