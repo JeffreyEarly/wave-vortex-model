@@ -267,8 +267,57 @@ end
 function [markdown,provenance] = currentInterfaceRecordContextMarkdown(dataset)
 release = "Release "+string(dataset.source.version)+" · "+string(dataset.platform.displayName)+" · collected "+extractBefore(string(dataset.collectedAt),"T");
 boundary = "Median integration time and peak process memory from three fresh runs; startup and preparation are excluded.";
-provenance = "<details markdown=""1""><summary>Record provenance</summary><p>Dataset <code>"+xmlEscape(dataset.datasetId)+"</code>; source commit <code>"+xmlEscape(dataset.source.commit)+"</code>; provider <code>"+xmlEscape(dataset.provider.id)+" "+xmlEscape(dataset.provider.version)+"</code>; "+string(itemAt(dataset.cases,1).contract.processRunCount)+" fresh processes.</p></details>";
+contract = itemAt(dataset.cases,1).contract;
+platformText = "MATLAB "+string(dataset.platform.matlabVersion)+"; configured thread budget "+string(dataset.platform.threadCount)+".";
+policyText = currentCompiledExecutionPolicyMarkdown(dataset);
+rangesText = currentIntegrationRangesMarkdown(dataset);
+provenance = "<details markdown=""1""><summary>Record provenance</summary><p>Dataset <code>"+xmlEscape(dataset.datasetId)+"</code>; source commit <code>"+xmlEscape(dataset.source.commit)+"</code>; provider <code>"+xmlEscape(dataset.provider.id)+" "+xmlEscape(dataset.provider.version)+"</code>; "+string(contract.processRunCount)+" fresh processes; "+xmlEscape(platformText)+"</p><p>"+xmlEscape(policyText)+"</p><p>"+xmlEscape(rangesText)+"</p></details>";
 markdown = "<p>"+xmlEscape(release)+"</p><p>"+xmlEscape(boundary)+"</p>";
+end
+
+function markdown = currentCompiledExecutionPolicyMarkdown(dataset)
+parts = strings(0,1);
+for iCase = 1:numel(dataset.cases)
+    interfaces = itemAt(dataset.cases,iCase).interfaces;
+    for iInterface = 1:numel(interfaces)
+        item = itemAt(interfaces,iInterface);
+        if string(item.id)=="matlab-builtin" || ~isfield(item,"executionPolicy")
+            continue
+        end
+        policy = item.executionPolicy;
+        text = string(item.id)+": "+string(policy.selection)+"; FFT threads "+string(policy.actualFFTThreads)+"; budget "+string(policy.configuredThreadBudget);
+        if isfield(policy,"horizontalWorkers")
+            text = text+"; horizontal workers "+string(policy.horizontalWorkers)+"; pointwise workers "+string(policy.pointwiseWorkers);
+        end
+        parts(end+1,1) = text; %#ok<AGROW>
+    end
+end
+parts = unique(parts,"stable");
+if isempty(parts)
+    markdown = "Compiled execution policy details were not recorded in this dataset.";
+else
+    markdown = "Compiled execution policy: "+strjoin(parts,"; ");
+end
+end
+
+function markdown = currentIntegrationRangesMarkdown(dataset)
+parts = strings(0,1);
+for iCase = 1:numel(dataset.cases)
+    benchmarkCase = itemAt(dataset.cases,iCase);
+    for iInterface = 1:numel(benchmarkCase.interfaces)
+        item = itemAt(benchmarkCase.interfaces,iInterface);
+        if ~isfield(item,"integrationSamplesSeconds") || isempty(item.integrationSamplesSeconds)
+            continue
+        end
+        samples = double(item.integrationSamplesSeconds);
+        parts(end+1,1) = string(benchmarkCase.workload)+" / "+string(item.id)+": "+sprintf("%.4g–%.4g s",min(samples),max(samples)); %#ok<AGROW>
+    end
+end
+if isempty(parts)
+    markdown = "Observed integration-time ranges were not recorded in this dataset.";
+else
+    markdown = "Observed integration-time ranges: "+strjoin(parts,"; ");
+end
 end
 
 function benchmarkCase = interfaceCaseForWorkload(dataset,integrator,workload,model)
