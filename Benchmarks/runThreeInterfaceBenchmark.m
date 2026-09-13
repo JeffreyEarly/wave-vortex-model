@@ -59,12 +59,14 @@ if options.shouldWriteArtifacts
     mkdir(options.outputDirectory);
 end
 results = initializeResult(options,repositoryRoot,physicalEvidence,stepControlEvidence);
-workFolder = string(tempname);
+failureRoot = fullfile(options.archiveDirectory,"failures");
+if ~isfolder(failureRoot), mkdir(failureRoot); end
+workFolder = string(tempname(failureRoot));
 mkdir(workFolder);
-workCleanup = onCleanup(@()removeFolder(workFolder));
-results.configuration.storagePreflight = verifyTemporaryCapacity(workFolder,options);
-activeStage = "provider";
+activeStage = "storage-preflight";
 try
+    results.configuration.storagePreflight = verifyTemporaryCapacity(workFolder,options);
+    activeStage = "provider";
     capabilities = WVCompiledBackend.capabilities();
     if ~capabilities.isAvailable
         error("WaveVortexBenchmark:ValidatedProviderCacheRequired","The three-interface benchmark requires the prevalidated native FFTW provider cache; provider selection or construction is not performed by the benchmark.");
@@ -106,9 +108,11 @@ try
         activeStage = "correctness-repeat";
         repeatMask = [results.runs.repeatIndex] == iRepeat;
         repeatComparison = aggregate(results.runs(repeatMask),definitions,1e-12);
-        [results.runs(repeatMask),releasedBytes] = releaseValidatedOutputs(results.runs(repeatMask),workFolder);
-        completeRepeatRunCount = nnz(repeatMask & string({results.runs.status})=="complete");
-        results.repeatComparisonEvidence(end+1,1) = struct("repeatIndex",iRepeat,"comparison",repeatComparison,"releasedRunCount",completeRepeatRunCount,"releasedBytes",releasedBytes);
+        results.repeatComparisonEvidence(end+1,1) = struct("repeatIndex",iRepeat,"comparison",repeatComparison,"releasedRunCount",0,"releasedBytes",0);
+        checkpoint(results,options);
+        [results.runs(repeatMask),releasedBytes] = releaseThreeInterfaceBenchmarkOutputs(results.runs(repeatMask),repeatComparison,workFolder);
+        results.repeatComparisonEvidence(end).releasedRunCount = nnz(repeatMask & string({results.runs.status})=="complete");
+        results.repeatComparisonEvidence(end).releasedBytes = releasedBytes;
         checkpoint(results,options);
         activeStage = "workers";
     end
@@ -134,10 +138,20 @@ catch exception
     results.status = "failed";
     results.completedAtUTC = utcTimestamp;
     results.failure = struct("stage",activeStage,"identifier",string(exception.identifier),"message",string(exception.message),"report",string(getReport(exception,"extended","hyperlinks","off")));
-    writeArtifacts(results,options);
+    results.failureArtifacts = struct("directory",workFolder,"policy","retain current failed workload within the preflight storage budget; validated previous-repeat outputs were released");
+    % Failure evidence lives in the archive from the start: no second copy or
+    % destructive exception cleanup, even if writing the receipt also fails.
+    try
+        writeText(fullfile(workFolder,"three-interface-benchmark.json"),jsonencode(results,PrettyPrint=true));
+        writeArtifacts(results,options);
+    catch artifactException
+        exception = addCause(exception,artifactException);
+    end
+    fprintf(2,"Failed benchmark evidence retained at %s\n",workFolder);
     rethrow(exception)
 end
-clear workCleanup stateCleanup
+removeFolder(workFolder);
+clear stateCleanup
 end
 
 function [options,state,physicalEvidence,stepControlEvidence] = resolveBenchmarkContract(options)
@@ -331,12 +345,14 @@ if startsWith(interface,"matlab-")
     statement = "addpath('"+replace(benchmarkFolder,"'","''")+"'); threeInterfaceMatlabWorker('"+replace(configPath,"'","''")+"','"+replace(outputPath,"'","''")+"')";
     workerCommand = sprintf('"%s" -batch "%s"',fullfile(matlabroot,"bin","matlab"),replace(statement,'"','\"'));
     command = sampledCommand(workerCommand,samplePath,phasePath,stdoutPath,stderrPath,options,benchmarkFolder);
+    writeText(fullfile(sampleFolder,"command.txt"),workerCommand);
     [exitCode,~] = system(command);
     processWallSeconds = toc(processTimer);
     commandOutput = readCommandOutput(stdoutPath,stderrPath);
     if exitCode ~= 0 || ~isfile(outputPath)
         run = emptyRun;
         run.interface = interface; run.case = definition; run.repeatIndex = repeatIndex;
+        run.diagnostics.workerOutput = readThreeInterfaceWorkerDiagnostics(stdoutPath,stderrPath);
         run.failure = struct("identifier","WaveVortexBenchmark:MatlabInterfaceWorkerFailed","message",string(commandOutput),"report",string(commandOutput));
         return
     end
@@ -363,17 +379,20 @@ else
         end
     end
     command = sampledCommand(workerCommand,samplePath,phasePath,stdoutPath,stderrPath,options,benchmarkFolder);
+    writeText(fullfile(sampleFolder,"command.txt"),workerCommand);
     [exitCode,~] = system(command);
     processWallSeconds = toc(processTimer);
     commandOutput = readCommandOutput(stdoutPath,stderrPath);
     if exitCode ~= 0
         run = emptyRun; run.interface = interface; run.case = definition; run.repeatIndex = repeatIndex;
+        run.diagnostics.workerOutput = readThreeInterfaceWorkerDiagnostics(stdoutPath,stderrPath);
         run.failure = struct("identifier","WaveVortexBenchmark:StandaloneInterfaceWorkerFailed","message",string(commandOutput),"report",string(commandOutput));
         return
     end
     value = jsondecode(fileread(stdoutPath));
     run = normalizeStandaloneRun(value,definition,repeatIndex,processWallSeconds,inputPath,comparisonPath,capabilities,processMemory(samplePath,options.samplingIntervalSeconds));
 end
+run.diagnostics.workerOutput = readThreeInterfaceWorkerDiagnostics(stdoutPath,stderrPath);
 end
 
 function run = normalizeMatlabRun(value,repeatIndex,processWallSeconds,memory)
@@ -489,28 +508,6 @@ for iCase = 1:numel(definitions)
 end
 if ~usesRepeatEvidence && all(arrayfun(@(definition)isfield(definition,"workload"),definitions))
     comparison = validateEndpointTrajectoryIndependence(comparison,runs,definitions,tolerance);
-end
-end
-
-function [runs,releasedBytes] = releaseValidatedOutputs(runs,workFolder)
-releasedBytes = 0;
-for iRun = 1:numel(runs)
-    if string(runs(iRun).status) ~= "complete"
-        continue
-    end
-    pathname = string(runs(iRun).output.path);
-    runs(iRun).output.retention = "released-after-repeat-correctness";
-    runs(iRun).output.releasedBytes = 0;
-    if pathname == "" || ~isfile(pathname)
-        continue
-    end
-    if ~startsWith(pathname,workFolder+filesep)
-        error("WaveVortexBenchmark:UnsafeOutputRelease","Refusing to release a validated output outside the benchmark temporary directory: %s",pathname);
-    end
-    information = dir(pathname);
-    runs(iRun).output.releasedBytes = information.bytes;
-    releasedBytes = releasedBytes+information.bytes;
-    delete(pathname);
 end
 end
 
@@ -909,9 +906,8 @@ command = shellQuote(sampler)+" "+shellQuote(samplePath)+" "+shellQuote(phasePat
 end
 
 function output = readCommandOutput(stdoutPath,stderrPath)
-output = "";
-if isfile(stdoutPath), output = string(fileread(stdoutPath)); end
-if isfile(stderrPath), output = output+newline+string(fileread(stderrPath)); end
+diagnostics = readThreeInterfaceWorkerDiagnostics(stdoutPath,stderrPath);
+output = diagnostics.stdout.text+newline+diagnostics.stderr.text;
 end
 
 function memory = processMemory(samplePath,interval)

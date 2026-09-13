@@ -245,6 +245,9 @@ classdef TestBenchmarkWebsiteDocumentation < matlab.unittest.TestCase
             provenance = extractBetween(page,"<details markdown=""1""><summary>Record provenance</summary>","</details>");
             testCase.verifyNotEmpty(provenance);
             testCase.verifyTrue(all(contains(provenance,"source commit")));
+            testCase.verifySubstring(page,"configured thread budget");
+            testCase.verifySubstring(page,"Compiled execution policy");
+            testCase.verifySubstring(page,"Observed integration-time ranges");
             testCase.verifyEqual(numel(strfind(page,"Coefficients only")),3);
             testCase.verifyEqual(numel(strfind(page,"Composite dense output")),3);
             testCase.verifyFalse(contains(page,"Recent native optimization evidence"));
@@ -266,6 +269,8 @@ classdef TestBenchmarkWebsiteDocumentation < matlab.unittest.TestCase
             testCase.verifySubstring(page,"Hydrostatic exponential")
             testCase.verifySubstring(page,"MATLAB + compiled core")
             testCase.verifyFalse(contains(page,"MATLAB compiled core is unavailable for variable-stratification models."))
+            testCase.verifySubstring(page,"Compiled execution policy: matlab-compiled: compact-native-accelerate; FFT threads 1; budget 18; horizontal workers 12; pointwise workers 8")
+            testCase.verifySubstring(page,"coefficient-endpoint / matlab-compiled: 0.5–0.5 s")
         end
 
         function currentSelectorDoesNotBackfillOlderModelCohort(testCase)
