@@ -1,8 +1,8 @@
 classdef (Sealed) WVCompiledTransformBackend < handle
     % Own one compiled variable-evaluation transform session.
     %
-    % This developer-facing adapter is the initial Hydrostatic proof for the
-    % in-memory stratified modal-source bridge. It owns only the native handle
+    % This developer-facing adapter provides the in-memory Hydrostatic,
+    % Boussinesq and Stratified QG modal-source bridge. It owns only the native handle
     % and immutable shape/module identity; the native session owns modal data,
     % prepared operators, and evaluation workspaces.
     %
@@ -28,15 +28,18 @@ classdef (Sealed) WVCompiledTransformBackend < handle
 
     methods (Static)
         function backend = create(wvt)
-            % Create a compiled Hydrostatic transform session.
+            % Create a compiled stratified transform session.
             %
             % - Developer: true
             % - Topic: Compiled transform internals
             % - Declaration: backend = WVCompiledTransformBackend.create(wvt)
-            % - Parameter wvt: Hydrostatic transform supplying the modal source
+            % - Parameter wvt: stratified transform supplying its solved modal source
             % - Returns backend: owning compiled transform session
             arguments
-                wvt (1,1) WVTransformHydrostatic
+                wvt (1,1) WVTransform
+            end
+            if ~ismember(string(class(wvt)),["WVTransformHydrostatic" "WVTransformBoussinesq" "WVTransformStratifiedQG"])
+                error("WaveVortexModel:CompiledTransformUnsupportedFamily","Compiled MATLAB support currently covers Hydrostatic, Boussinesq and Stratified QG transforms.")
             end
             capabilities = WVCompiledBackend.capabilities();
             WVCompiledTransformBackend.validateCapabilities(capabilities);
@@ -65,21 +68,45 @@ classdef (Sealed) WVCompiledTransformBackend < handle
             % - Declaration: result = evaluate(wvt,variableNames,options)
             % - Parameter wvt: source transform whose state is evaluated
             % - Parameter variableNames: prepared variable names
-            % - Parameter options.shouldEvaluateFlux: also return three flux cells; default false
+            % - Parameter options.shouldEvaluateFlux: also return three wave flux cells or one QG flux cell; default false
             % - Returns result: scalar native result struct with values, flux, and metrics
             arguments
                 self (1,1) WVCompiledTransformBackend
-                wvt (1,1) WVTransformHydrostatic
+                wvt (1,1) WVTransform
                 variableNames
                 options.shouldEvaluateFlux (1,1) logical = false
             end
             self.assertActive();
             self.assertMatchingTransform(wvt);
             variableNames = WVCompiledTransformBackend.normalizeVariableNames(variableNames);
-            if ~isequal(size(wvt.Ap),[self.Nj self.Nkl]) || ~isequal(size(wvt.Am),[self.Nj self.Nkl]) || ~isequal(size(wvt.A0),[self.Nj self.Nkl])
-                error("WaveVortexModel:CompiledTransformShape","The evaluated transform coefficient arrays do not match the compiled session shape.")
+            [Ap,Am,A0] = WVCompiledTransformBackend.stateArrays(wvt,self.Nj,self.Nkl);
+            result = feval(char(self.moduleName),'transformEvaluate',self.transformHandle,Ap,Am,A0,wvt.t,wvt.t0,variableNames,options.shouldEvaluateFlux);
+        end
+
+        function result = operation(self,wvt,operationName,inputs,options)
+            % Invoke one explicitly supported compiled numerical primitive.
+            %
+            % - Developer: true
+            % - Topic: Compiled transform internals
+            % - Declaration: result = operation(wvt,operationName,inputs,options)
+            % - Parameter wvt: source transform identifying this session
+            % - Parameter operationName: native primitive identifier
+            % - Parameter inputs: ordered input arrays borrowed for this call
+            % - Parameter options: primitive-specific options
+            % - Returns result: ordered values and native execution metrics
+            arguments
+                self (1,1) WVCompiledTransformBackend
+                wvt (1,1) WVTransform
+                operationName (1,1) string
+                inputs (1,:) cell = cell(1,0)
+                options (1,1) struct = struct()
             end
-            result = feval(char(self.moduleName),'transformEvaluate',self.transformHandle,complex(wvt.Ap),complex(wvt.Am),complex(wvt.A0),wvt.t,wvt.t0,variableNames,options.shouldEvaluateFlux);
+            self.assertActive();
+            self.assertMatchingTransform(wvt);
+            if ~ismember(string(class(wvt)),["WVTransformHydrostatic" "WVTransformBoussinesq" "WVTransformStratifiedQG"])
+                error("WaveVortexModel:CompiledTransformUnsupportedFamily","Compiled operation family is not supported.")
+            end
+            result = feval(char(self.moduleName),'transformOperation',self.transformHandle,char(operationName),inputs,options);
         end
 
         function value = metadata(self)
@@ -155,8 +182,8 @@ classdef (Sealed) WVCompiledTransformBackend < handle
                     ~isfield(capabilities.module,"identityValidated") || ~capabilities.module.identityValidated
                 error("WaveVortexModel:CompiledTransformCapabilityMismatch","The installed compiled module does not have a validated identity.")
             end
-            if ~isfield(capabilities.module,"matlabTransformBridgeVersion") || capabilities.module.matlabTransformBridgeVersion ~= 1
-                error("WaveVortexModel:CompiledTransformCapabilityMismatch","The installed module predates the MATLAB transform bridge. Rebuild with WVCompiledBackend.build().")
+            if ~isfield(capabilities.module,"matlabTransformBridgeVersion") || capabilities.module.matlabTransformBridgeVersion < 2
+                error("WaveVortexModel:CompiledTransformCapabilityMismatch","The installed module predates the MATLAB transform operation bridge. Rebuild with WVCompiledBackend.build().")
             end
         end
 
@@ -172,6 +199,18 @@ classdef (Sealed) WVCompiledTransformBackend < handle
             end
             if isempty(variableNames)
                 error("WaveVortexModel:CompiledTransformVariables","At least one variable name is required.")
+            end
+        end
+
+        function [Ap,Am,A0] = stateArrays(wvt,Nj,Nkl)
+            empty = complex(zeros(0,0));
+            if ismember(string(class(wvt)),["WVTransformHydrostatic" "WVTransformBoussinesq"])
+                Ap = complex(wvt.Ap); Am = complex(wvt.Am); A0 = complex(wvt.A0);
+            else
+                Ap = empty; Am = empty; A0 = complex(wvt.A0);
+            end
+            if ~isequal(size(A0),[Nj Nkl]) || (~isempty(Ap) && ~isequal(size(Ap),[Nj Nkl])) || (~isempty(Am) && ~isequal(size(Am),[Nj Nkl]))
+                error("WaveVortexModel:CompiledTransformShape","The evaluated transform coefficient arrays do not match the compiled session shape.")
             end
         end
     end

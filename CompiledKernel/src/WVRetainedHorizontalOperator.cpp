@@ -348,7 +348,12 @@ WVKernelStatus WVRetainedHorizontalOperator::advection(
     return w.retained->advection(work,counts);
 }
 WVKernelStatus WVRetainedHorizontalOperator::spatialDerivative(WVRetainedHorizontalWorkspace& workspace, WVRealInput input, WVRealOutput output, bool xDerivative) const {
+    return spatialDerivative(workspace,input,output,xDerivative,1);
+}
+WVKernelStatus WVRetainedHorizontalOperator::spatialDerivative(WVRetainedHorizontalWorkspace& workspace,
+    WVRealInput input,WVRealOutput output,bool xDerivative,unsigned order) const {
     auto& w = *workspace.data_; const auto& d = *data_;
+    if (!order) return {WVKernelStatusCode::invalidConfiguration,"Horizontal derivative order must be positive."};
     if (!w.derivativePrepared) return {WVKernelStatusCode::unsupportedOperation,"Workspace omitted full-grid derivative preparation."};
     if (w.owner != data_) return {WVKernelStatusCode::invalidConfiguration,"Workspace belongs to another horizontal operator."};
     if (input.bytes < d.realSpan || output.bytes < d.realSpan) return {WVKernelStatusCode::invalidShape,"Derivative grid capacity is too small."};
@@ -358,12 +363,37 @@ WVKernelStatus WVRetainedHorizontalOperator::spatialDerivative(WVRetainedHorizon
     ActiveCall guard(w.active); if (!guard.entered) return {WVKernelStatusCode::reentrantExecution,"Horizontal workspace is active."};
     const auto& g = d.spec.grid;
     const auto half = g.Nx/2+1;
+    if (order>1) {
+        const auto n=xDerivative ? g.Nx : g.Ny;
+        const double maximum=2*std::acos(-1.0)*static_cast<double>(n/2)/
+            (xDerivative ? d.spec.Lx : d.spec.Ly);
+        if (!std::isfinite(std::pow(maximum,order)))
+            return {WVKernelStatusCode::numericalFailure,"Horizontal derivative multiplier overflow."};
+    }
     const auto differentiate = [&](WVComplex64* values) {
         for (std::size_t y = 0; y < g.Ny; ++y) for (std::size_t x = 0; x < half; ++x) {
             const auto i = xDerivative ? x : y, n = xDerivative ? g.Nx : g.Ny;
             const auto mode = i <= n/2 ? static_cast<std::int64_t>(i) : static_cast<std::int64_t>(i)-static_cast<std::int64_t>(n);
-            const double k = n%2 == 0 && i == n/2 ? 0.0 : 2*std::acos(-1.0)*mode/(xDerivative ? d.spec.Lx : d.spec.Ly)/d.planeSize;
-            auto& value = values[y*half+x]; value = {-k*value.imag,k*value.real};
+            auto& value = values[y*half+x];
+            if (order==1) {
+                const double k = n%2 == 0 && i == n/2 ? 0.0 :
+                    2*std::acos(-1.0)*mode/(xDerivative ? d.spec.Lx : d.spec.Ly)/d.planeSize;
+                value = {-k*value.imag,k*value.real};
+                continue;
+            }
+            if (n%2==0 && i==n/2 && order%2) { value={}; continue; }
+            const double wave=2*std::acos(-1.0)*static_cast<double>(mode)/
+                (xDerivative ? d.spec.Lx : d.spec.Ly);
+            const double magnitude=std::pow(wave,order)/d.planeSize;
+            WVComplex64 factor;
+            switch (order%4) {
+                case 0: factor={magnitude,0}; break;
+                case 1: factor={0,magnitude}; break;
+                case 2: factor={-magnitude,0}; break;
+                default: factor={0,-magnitude}; break;
+            }
+            value={value.real*factor.real-value.imag*factor.imag,
+                value.real*factor.imag+value.imag*factor.real};
         }
     };
     if (!w.batchedFullFFT) {

@@ -90,6 +90,11 @@ public:
 
     WVKernelStatus transformToSpatial(WVComplexConstView, WVBoussinesqFamily, WVRealVolumeView);
     WVKernelStatus transformFromSpatial(WVRealVolumeConstView, WVBoussinesqFamily, WVComplexView);
+    WVKernelStatus applyVertical(WVStratifiedModalOperator, WVComplexConstView, WVComplexView);
+    WVKernelStatus applyVerticalColumn(WVStratifiedModalOperator, std::size_t retainedColumn,
+        WVComplexConstView inputColumn, WVComplexView outputColumn);
+    WVKernelStatus horizontalForward(WVRealVolumeConstView, WVComplexView);
+    WVKernelStatus horizontalInverse(WVComplexConstView, WVRealVolumeView);
     WVKernelStatus transformUVEtaToWaveVortex(WVRealVolumeConstView u, WVRealVolumeConstView v,
         WVRealVolumeConstView eta, double t, double t0, WVMutableCoefficients);
     WVKernelStatus transformUVWEtaToWaveVortex(WVRealVolumeConstView u, WVRealVolumeConstView v,
@@ -143,6 +148,8 @@ public:
         unsigned order, WVRealVolumeView);
     // Full-grid horizontal derivatives retain modes outside the compact map.
     WVKernelStatus differentiateHorizontal(WVRealVolumeConstView, bool xDerivative, WVRealVolumeView);
+    WVKernelStatus differentiateHorizontal(WVRealVolumeConstView, bool xDerivative,
+        unsigned order, WVRealVolumeView);
     WVKernelStatus integrateVertical(WVRealVolumeConstView, WVBoussinesqFamily, WVRealVolumeView);
     // Unpreconditioned wave F values at one vertical index, [Nj,Nkl].
     WVKernelStatus waveModeVerticalStructureAtIndex(std::size_t, WVRealView);
@@ -155,6 +162,7 @@ private:
     WVKernelStatus coefficients(const WVCoefficients&) const;
     WVKernelStatus outputs(WVMutableCoefficients) const;
     WVKernelStatus mutableOutputOutsidePreparedState(WVMutableCoefficients) const;
+    WVKernelStatus mutableOutputOutsidePreparedState(const void*,std::size_t) const;
     WVKernelStatus stateContents(const WVState&) const;
     WVKernelStatus state(const WVState&);
     bool matchesStateEvaluation(const WVState&) const noexcept;

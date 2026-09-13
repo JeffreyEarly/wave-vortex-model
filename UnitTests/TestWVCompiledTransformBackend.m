@@ -54,10 +54,10 @@ classdef TestWVCompiledTransformBackend < matlab.unittest.TestCase
             clear secondCleanup cleanup
         end
 
-        function nonHydrostaticTransformIsRejectedBeforeNativeCall(testCase)
+        function unsupportedTransformIsRejectedBeforeNativeCall(testCase)
             transform = WVTransformConstantStratification([4000 3000 1000],[6 6 5],isHydrostatic=false,shouldAntialias=false);
             cleanup = onCleanup(@()delete(transform));
-            testCase.verifyError(@()WVCompiledTransformBackend.create(transform),"MATLAB:validation:UnableToConvert");
+            testCase.verifyError(@()WVCompiledTransformBackend.create(transform),"WaveVortexModel:CompiledTransformUnsupportedFamily");
             clear cleanup
         end
 

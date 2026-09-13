@@ -301,6 +301,12 @@ if(BUILD_TESTING)
         target_compile_options(TestWVOwnedStratifiedModalSource PRIVATE -Wall -Wextra -Wpedantic -Werror)
     endif()
     add_test(NAME owned-stratified-modal-source COMMAND TestWVOwnedStratifiedModalSource)
+    add_executable(TestWVMatlabRawPrimitives tests/TestWVMatlabRawPrimitives.cpp)
+    target_link_libraries(TestWVMatlabRawPrimitives PRIVATE WaveVortex::PortableRuntime WaveVortex::ReferenceFFT ${WAVEVORTEX_NETCDF_TARGET})
+    if(CMAKE_CXX_COMPILER_ID MATCHES "AppleClang|Clang|GNU")
+        target_compile_options(TestWVMatlabRawPrimitives PRIVATE -Wall -Wextra -Wpedantic -Werror)
+    endif()
+    add_test(NAME matlab-raw-primitives COMMAND TestWVMatlabRawPrimitives)
     if(NOT TARGET TestWVAllocationProbe)
         add_executable(TestWVAllocationProbe
             ../tools/compiled-kernel/tests/TestWVAllocationProbe.cpp

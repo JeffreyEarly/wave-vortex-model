@@ -68,6 +68,15 @@ public:
     // Projection preserves the horizontal mean just as MATLAB's raw transform
     // does. Reconstructed QG fields mask all horizontal means as MATLAB does.
     WVKernelStatus transformQGPVToA0(WVRealVolumeConstView, WVComplexView);
+    WVKernelStatus applyVertical(WVStratifiedModalOperator, WVComplexConstView, WVComplexView);
+    WVKernelStatus applyVerticalColumn(WVStratifiedModalOperator, std::size_t retainedColumn,
+        WVComplexConstView inputColumn, WVComplexView outputColumn);
+    WVKernelStatus horizontalForward(WVRealVolumeConstView, WVComplexView);
+    WVKernelStatus horizontalInverse(WVComplexConstView, WVRealVolumeView);
+    WVKernelStatus differentiateHorizontal(WVRealVolumeConstView, bool xDerivative,
+        WVRealVolumeView);
+    WVKernelStatus differentiateHorizontal(WVRealVolumeConstView, bool xDerivative,
+        unsigned order, WVRealVolumeView);
     // Diagnostic modal inverse preserves the mean and projects self-conjugate
     // Fourier values to their real part; ordinary field masks are unchanged.
     WVKernelStatus transformSpectralTendencyToSpatial(WVComplexConstView, WVRealVolumeView);
@@ -107,6 +116,7 @@ private:
     WVKernelStatus validateState(WVComplexConstView) const;
     WVKernelStatus validateStateForCall(WVComplexConstView) const;
     WVKernelStatus mutableOutputOutsidePreparedState(WVComplexView) const;
+    WVKernelStatus mutableOutputOutsidePreparedState(const void*,std::size_t) const;
     bool matchesStateEvaluation(WVComplexConstView) const noexcept;
     std::size_t stateEvaluationComponent(WVComplexConstView) const noexcept;
     WVKernelStatus volume(WVRealVolumeConstView, bool surface = false) const;
@@ -116,6 +126,8 @@ private:
     WVKernelStatus project(const double*, WVComplexOutput, std::size_t operation = 1);
     WVKernelStatus reconstruct(WVComplexConstView, WVStratifiedQGField, WVStratifiedQGDerivative, double*);
     WVKernelStatus vertical(std::size_t operation, WVComplexInput, WVComplexOutput);
+    WVKernelStatus verticalColumn(std::size_t operation, WVComplexInput, WVComplexOutput,
+        std::size_t retainedColumn);
     WVVariableExecutionOptions executionOptions_;
     std::shared_ptr<const WVStratifiedModalSource> source_;
     WVStratifiedQGModeFactors factors_;

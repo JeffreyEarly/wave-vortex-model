@@ -12,6 +12,7 @@ using namespace spectral_detail;
 constexpr double pi = 3.1415926535897932384626433832795;
 WVComplex64 scale(WVComplex64 a,double b) { return {a.real*b,a.imag*b}; }
 WVComplex64 multiply(WVComplex64 a,WVComplex64 b) { return {a.real*b.real-a.imag*b.imag,a.real*b.imag+a.imag*b.real}; }
+WVComplexInput input(const WVComplex64* p,std::size_t n) { return {p,nullptr,nullptr,n*sizeof(WVComplex64)}; }
 WVComplexOutput output(WVComplex64* p,std::size_t n) { return {p,nullptr,nullptr,n*sizeof(WVComplex64)}; }
 void copy(WVComplexInput source,WVComplex64* destination,std::size_t count) {
     for (std::size_t i=0;i<count;++i) destination[i]=read(source,i);
@@ -22,6 +23,16 @@ void copy(const WVComplex64* source,WVComplexOutput destination,std::size_t coun
 bool surface(WVStratifiedQGField f) { return f==WVStratifiedQGField::ssh || f==WVStratifiedQGField::ssu || f==WVStratifiedQGField::ssv; }
 bool fieldValid(WVStratifiedQGField f) { return f>=WVStratifiedQGField::u && f<=WVStratifiedQGField::ssv; }
 bool derivativeValid(WVStratifiedQGDerivative d) { return d>=WVStratifiedQGDerivative::value && d<=WVStratifiedQGDerivative::z; }
+bool verticalOperation(WVStratifiedModalOperator operation,std::size_t& index,
+    bool& inputModal,bool& outputModal) {
+    switch(operation) {
+        case WVStratifiedModalOperator::reconstructF: index=0; inputModal=true; outputModal=false; return true;
+        case WVStratifiedModalOperator::projectF: index=1; inputModal=false; outputModal=true; return true;
+        case WVStratifiedModalOperator::reconstructG: index=2; inputModal=true; outputModal=false; return true;
+        case WVStratifiedModalOperator::projectG: index=3; inputModal=false; outputModal=true; return true;
+        default: return false;
+    }
+}
 WVKernelStatus reentrant() { return {WVKernelStatusCode::reentrantExecution,"Stratified QG workspace is already active."}; }
 }
 WVTransformStratifiedQGKernel::~WVTransformStratifiedQGKernel() = default;
@@ -149,10 +160,14 @@ WVKernelStatus WVTransformStratifiedQGKernel::validateStateForCall(WVComplexCons
     return WVKernelStatus::ok();
 }
 WVKernelStatus WVTransformStratifiedQGKernel::mutableOutputOutsidePreparedState(WVComplexView output) const {
+    return mutableOutputOutsidePreparedState(output.data,S_*sizeof(WVComplex64));
+}
+WVKernelStatus WVTransformStratifiedQGKernel::mutableOutputOutsidePreparedState(
+    const void* output,std::size_t bytes) const {
     if (!stateEvaluationActive_) return WVKernelStatus::ok();
     for (std::size_t i=0;i<preparedStateViewCount_;++i)
-        if (overlap(output.data,S_*sizeof(WVComplex64),preparedStateViews_[i].data,S_*sizeof(WVComplex64)))
-            return {WVKernelStatusCode::overlappingArrays,"Mutable A0 output overlaps an active immutable Stratified QG state view."};
+        if (overlap(output,bytes,preparedStateViews_[i].data,S_*sizeof(WVComplex64)))
+            return {WVKernelStatusCode::overlappingArrays,"Mutable output overlaps an active immutable Stratified QG state view."};
     return WVKernelStatus::ok();
 }
 WVKernelStatus WVTransformStratifiedQGKernel::beginStateEvaluation(WVComplexConstView a) {
@@ -274,6 +289,10 @@ WVKernelStatus WVTransformStratifiedQGKernel::transformSpectralTendencyToSpatial
 WVKernelStatus WVTransformStratifiedQGKernel::vertical(std::size_t operation,WVComplexInput a,WVComplexOutput b) {
     return vertical_[operation]->execute(*verticalWorkspace_[operation],a,b);
 }
+WVKernelStatus WVTransformStratifiedQGKernel::verticalColumn(std::size_t operation,WVComplexInput a,
+    WVComplexOutput b,std::size_t retainedColumn) {
+    return vertical_[operation]->executeColumn(*verticalWorkspace_[operation],a,b,retainedColumn);
+}
 WVKernelStatus WVTransformStratifiedQGKernel::project(const double* a,WVComplexOutput b,std::size_t operation) {
     auto grid=gridSpectral_->output(0,H_);
     auto status=horizontal_->forward(*horizontalWorkspace_,{a,R_*sizeof(double)},grid); if (!status) return status;
@@ -287,6 +306,93 @@ WVKernelStatus WVTransformStratifiedQGKernel::transformQGPVToA0(WVRealVolumeCons
     if (!executionOptions_.usesCompactSplitViews()) return project(a.data,output(b.data,S_));
     auto modal=modalSpectral_->output(0,S_); status=project(a.data,modal); if (!status) return status;
     copy(modal.input(),b.data,S_); return WVKernelStatus::ok();
+}
+WVKernelStatus WVTransformStratifiedQGKernel::applyVertical(WVStratifiedModalOperator operation,
+    WVComplexConstView a,WVComplexView b) {
+    std::size_t index=0; bool inputModal=false,outputModal=false;
+    if (!verticalOperation(operation,index,inputModal,outputModal))
+        return {WVKernelStatusCode::unsupportedOperation,"Unsupported Stratified QG vertical operation."};
+    const auto& g=geometry(); const auto inputRows=inputModal ? g.Nj : g.Nz;
+    const auto outputRows=outputModal ? g.Nj : g.Nz;
+    if (a.shape.rows!=inputRows || a.shape.columns!=g.Nkl ||
+        b.shape.rows!=outputRows || b.shape.columns!=g.Nkl)
+        return {WVKernelStatusCode::invalidShape,"Unexpected Stratified QG vertical-transform shape."};
+    const auto inputCount=inputRows*g.Nkl,outputCount=outputRows*g.Nkl;
+    if (!addressFits(a.data,inputCount*sizeof(WVComplex64),alignof(WVComplex64)) ||
+        !addressFits(b.data,outputCount*sizeof(WVComplex64),alignof(WVComplex64)))
+        return {WVKernelStatusCode::invalidPointer,"Invalid Stratified QG vertical-transform storage."};
+    auto status=mutableOutputOutsidePreparedState(b.data,outputCount*sizeof(WVComplex64)); if (!status) return status;
+    status=disjoint(a.data,inputCount*sizeof(WVComplex64),b.data,outputCount*sizeof(WVComplex64)); if (!status) return status;
+    ActiveCall guard(active_); if (!guard.entered) return reentrant();
+    if (!executionOptions_.usesCompactSplitViews()) return vertical(index,input(a.data,inputCount),output(b.data,outputCount));
+    const auto in=inputModal ? modalSpectral_->output(0,S_) : gridSpectral_->output(0,H_);
+    const auto out=outputModal ? modalSpectral_->output(inputModal ? S_ : 0,S_) : gridSpectral_->output(0,H_);
+    copy(a.data,in,inputCount); status=vertical(index,in.input(),out); if (!status) return status;
+    copy(out.input(),b.data,outputCount); return WVKernelStatus::ok();
+}
+WVKernelStatus WVTransformStratifiedQGKernel::applyVerticalColumn(WVStratifiedModalOperator operation,
+    std::size_t retainedColumn,WVComplexConstView a,WVComplexView b) {
+    std::size_t index=0; bool inputModal=false,outputModal=false;
+    if (!verticalOperation(operation,index,inputModal,outputModal))
+        return {WVKernelStatusCode::unsupportedOperation,"Unsupported Stratified QG vertical operation."};
+    const auto& g=geometry(); const auto inputRows=inputModal ? g.Nj : g.Nz;
+    const auto outputRows=outputModal ? g.Nj : g.Nz;
+    if (retainedColumn>=g.Nkl || a.shape.rows!=inputRows || a.shape.columns!=1 ||
+        b.shape.rows!=outputRows || b.shape.columns!=1)
+        return {WVKernelStatusCode::invalidShape,"Unexpected Stratified QG vertical-column shape or retained column."};
+    if (!addressFits(a.data,inputRows*sizeof(WVComplex64),alignof(WVComplex64)) ||
+        !addressFits(b.data,outputRows*sizeof(WVComplex64),alignof(WVComplex64)))
+        return {WVKernelStatusCode::invalidPointer,"Invalid Stratified QG vertical-column storage."};
+    auto status=mutableOutputOutsidePreparedState(b.data,outputRows*sizeof(WVComplex64)); if (!status) return status;
+    status=disjoint(a.data,inputRows*sizeof(WVComplex64),b.data,outputRows*sizeof(WVComplex64)); if (!status) return status;
+    ActiveCall guard(active_); if (!guard.entered) return reentrant();
+    const auto in=inputModal ? modalSpectral_->output(0,S_) : gridSpectral_->output(0,H_);
+    const auto out=outputModal ? modalSpectral_->output(inputModal ? S_ : 0,S_) : gridSpectral_->output(0,H_);
+    const auto inputOffset=retainedColumn*inputRows,outputOffset=retainedColumn*outputRows;
+    for (std::size_t row=0;row<inputRows;++row) write(in,inputOffset+row,a.data[row]);
+    status=verticalColumn(index,in.input(),out,retainedColumn); if (!status) return status;
+    for (std::size_t row=0;row<outputRows;++row) b.data[row]=read(out.input(),outputOffset+row);
+    return WVKernelStatus::ok();
+}
+WVKernelStatus WVTransformStratifiedQGKernel::horizontalForward(WVRealVolumeConstView a,WVComplexView b) {
+    const auto& g=geometry(); auto status=volume(a); if (!status) return status;
+    if (b.shape.rows!=g.Nz || b.shape.columns!=g.Nkl)
+        return {WVKernelStatusCode::invalidShape,"Expected Stratified QG Fourier [Nz,Nkl] output."};
+    if (!addressFits(b.data,H_*sizeof(WVComplex64),alignof(WVComplex64)))
+        return {WVKernelStatusCode::invalidPointer,"Invalid Stratified QG Fourier output storage."};
+    status=mutableOutputOutsidePreparedState(b.data,H_*sizeof(WVComplex64)); if (!status) return status;
+    status=disjoint(a.data,R_*sizeof(double),b.data,H_*sizeof(WVComplex64)); if (!status) return status;
+    ActiveCall guard(active_); if (!guard.entered) return reentrant();
+    if (!executionOptions_.usesCompactSplitViews())
+        return horizontal_->forward(*horizontalWorkspace_,{a.data,R_*sizeof(double)},output(b.data,H_));
+    auto grid=gridSpectral_->output(0,H_); status=horizontal_->forward(*horizontalWorkspace_,{a.data,R_*sizeof(double)},grid); if (!status) return status;
+    copy(grid.input(),b.data,H_); return WVKernelStatus::ok();
+}
+WVKernelStatus WVTransformStratifiedQGKernel::horizontalInverse(WVComplexConstView a,WVRealVolumeView b) {
+    const auto& g=geometry(); auto status=volume({b.data,b.shape}); if (!status) return status;
+    if (a.shape.rows!=g.Nz || a.shape.columns!=g.Nkl)
+        return {WVKernelStatusCode::invalidShape,"Expected Stratified QG Fourier [Nz,Nkl] input."};
+    if (!addressFits(a.data,H_*sizeof(WVComplex64),alignof(WVComplex64)))
+        return {WVKernelStatusCode::invalidPointer,"Invalid Stratified QG Fourier input storage."};
+    status=mutableOutputOutsidePreparedState(b.data,R_*sizeof(double)); if (!status) return status;
+    status=disjoint(a.data,H_*sizeof(WVComplex64),b.data,R_*sizeof(double)); if (!status) return status;
+    ActiveCall guard(active_); if (!guard.entered) return reentrant();
+    auto values=input(a.data,H_);
+    if (executionOptions_.usesCompactSplitViews()) { auto grid=gridSpectral_->output(0,H_); copy(a.data,grid,H_); values=grid.input(); }
+    return horizontal_->inverse(*horizontalWorkspace_,values,{b.data,R_*sizeof(double)});
+}
+WVKernelStatus WVTransformStratifiedQGKernel::differentiateHorizontal(WVRealVolumeConstView a,
+    bool xDerivative,WVRealVolumeView b) {
+    return differentiateHorizontal(a,xDerivative,1,b);
+}
+WVKernelStatus WVTransformStratifiedQGKernel::differentiateHorizontal(WVRealVolumeConstView a,
+    bool xDerivative,unsigned order,WVRealVolumeView b) {
+    auto status=volume(a); if (!status) return status; status=volume({b.data,b.shape}); if (!status) return status;
+    status=mutableOutputOutsidePreparedState(b.data,R_*sizeof(double)); if (!status) return status;
+    status=disjoint(a.data,R_*sizeof(double),b.data,R_*sizeof(double)); if (!status) return status;
+    ActiveCall guard(active_); if (!guard.entered) return reentrant();
+    return horizontal_->spatialDerivative(*horizontalWorkspace_,{a.data,R_*sizeof(double)},
+        {b.data,R_*sizeof(double)},xDerivative,order);
 }
 WVKernelStatus WVTransformStratifiedQGKernel::reconstruct(WVComplexConstView a,WVStratifiedQGField field,WVStratifiedQGDerivative derivative,double* b) {
     ++metrics_.fieldReconstructionCount[static_cast<std::size_t>(field)];

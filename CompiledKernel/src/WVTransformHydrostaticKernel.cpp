@@ -20,6 +20,22 @@ WVComplex64 conjugate(WVComplex64 a) { return {a.real,-a.imag}; }
 WVComplex64 multiply(WVComplex64 a,WVComplex64 b) { return {a.real*b.real-a.imag*b.imag,a.real*b.imag+a.imag*b.real}; }
 WVComplexInput input(const WVComplex64* p,std::size_t n) { return {p,nullptr,nullptr,n*sizeof(WVComplex64)}; }
 WVComplexOutput output(WVComplex64* p,std::size_t n) { return {p,nullptr,nullptr,n*sizeof(WVComplex64)}; }
+void copy(WVComplexInput source,WVComplex64* destination,std::size_t count) {
+    for (std::size_t i=0;i<count;++i) destination[i]=read(source,i);
+}
+void copy(const WVComplex64* source,WVComplexOutput destination,std::size_t count) {
+    for (std::size_t i=0;i<count;++i) write(destination,i,source[i]);
+}
+bool verticalOperation(WVStratifiedModalOperator operation,std::size_t& index,
+    bool& inputModal,bool& outputModal) {
+    switch(operation) {
+        case WVStratifiedModalOperator::reconstructF: index=0; inputModal=true; outputModal=false; return true;
+        case WVStratifiedModalOperator::projectF: index=1; inputModal=false; outputModal=true; return true;
+        case WVStratifiedModalOperator::reconstructG: index=2; inputModal=true; outputModal=false; return true;
+        case WVStratifiedModalOperator::projectG: index=3; inputModal=false; outputModal=true; return true;
+        default: return false;
+    }
+}
 WVCoefficients view(WVMutableCoefficients a) { return {{a.Ap.data,a.Ap.shape},{a.Am.data,a.Am.shape},{a.A0.data,a.A0.shape}}; }
 bool valid(WVHydrostaticFamily f) { return f==WVHydrostaticFamily::F || f==WVHydrostaticFamily::G; }
 bool valid(WVHydrostaticComponent c) { return c>=WVHydrostaticComponent::all && c<=WVHydrostaticComponent::meanDensityAnomaly; }
@@ -169,11 +185,19 @@ WVKernelStatus WVTransformHydrostaticKernel::outputs(WVMutableCoefficients a) co
     return disjoint(a.Am.data,S_*sizeof(WVComplex64),a.A0.data,S_*sizeof(WVComplex64));
 }
 WVKernelStatus WVTransformHydrostaticKernel::mutableOutputOutsidePreparedState(WVMutableCoefficients a) const {
+    for (const auto output:{a.Ap,a.Am,a.A0}) {
+        auto status=mutableOutputOutsidePreparedState(output.data,S_*sizeof(WVComplex64));
+        if (!status) return status;
+    }
+    return WVKernelStatus::ok();
+}
+WVKernelStatus WVTransformHydrostaticKernel::mutableOutputOutsidePreparedState(
+    const void* output,std::size_t bytes) const {
     if (!stateEvaluationActive_) return WVKernelStatus::ok();
-    for (const auto output:{a.Ap,a.Am,a.A0}) for (std::size_t stateIndex=0;stateIndex<preparedStateViewCount_;++stateIndex)
+    for (std::size_t stateIndex=0;stateIndex<preparedStateViewCount_;++stateIndex)
         for (const auto input:{preparedStateViews_[stateIndex].coefficients.Ap,preparedStateViews_[stateIndex].coefficients.Am,preparedStateViews_[stateIndex].coefficients.A0})
-            if (overlap(output.data,S_*sizeof(WVComplex64),input.data,S_*sizeof(WVComplex64)))
-                return {WVKernelStatusCode::overlappingArrays,"Mutable coefficient output overlaps an active immutable hydrostatic state view."};
+            if (overlap(output,bytes,input.data,S_*sizeof(WVComplex64)))
+                return {WVKernelStatusCode::overlappingArrays,"Mutable output overlaps an active immutable hydrostatic state view."};
     return WVKernelStatus::ok();
 }
 WVKernelStatus WVTransformHydrostaticKernel::coefficients(const WVCoefficients& a) const {
@@ -399,6 +423,11 @@ WVKernelStatus WVTransformHydrostaticKernel::vertical(std::size_t operation,WVCo
     ++metrics_.verticalOperatorExecutionCount;
     return vertical_[operation]->execute(*verticalWorkspace_[operation],a,b);
 }
+WVKernelStatus WVTransformHydrostaticKernel::verticalColumn(std::size_t operation,WVComplexInput a,
+    WVComplexOutput b,std::size_t retainedColumn) {
+    ++metrics_.verticalOperatorExecutionCount;
+    return vertical_[operation]->executeColumn(*verticalWorkspace_[operation],a,b,retainedColumn);
+}
 WVKernelStatus WVTransformHydrostaticKernel::project(const double* a,WVComplexOutput b,WVHydrostaticFamily family) {
     auto s=horizontal_->forward(*horizontalWorkspace_,{a,R_*sizeof(double)},gridView()); if (!s) return s;
     return vertical(family==WVHydrostaticFamily::F ? 1 : 3,gridView().input(),b);
@@ -425,6 +454,78 @@ WVKernelStatus WVTransformHydrostaticKernel::transformFromSpatial(WVRealVolumeCo
     s=project(a.data,modalView(),family); if (!s) return s;
     for (std::size_t i=0;i<S_;++i) b.data[i]=read(modalView().input(),i);
     return WVKernelStatus::ok();
+}
+WVKernelStatus WVTransformHydrostaticKernel::applyVertical(WVStratifiedModalOperator operation,
+    WVComplexConstView a,WVComplexView b) {
+    std::size_t index=0; bool inputModal=false,outputModal=false;
+    if (!verticalOperation(operation,index,inputModal,outputModal)) return unsupported();
+    const auto& g=geometry(); const auto inputRows=inputModal ? g.Nj : g.Nz;
+    const auto outputRows=outputModal ? g.Nj : g.Nz;
+    if (a.shape.rows!=inputRows || a.shape.columns!=g.Nkl ||
+        b.shape.rows!=outputRows || b.shape.columns!=g.Nkl)
+        return {WVKernelStatusCode::invalidShape,"Unexpected hydrostatic vertical-transform shape."};
+    const auto inputCount=inputRows*g.Nkl,outputCount=outputRows*g.Nkl;
+    if (!addressFits(a.data,inputCount*sizeof(WVComplex64),alignof(WVComplex64)) ||
+        !addressFits(b.data,outputCount*sizeof(WVComplex64),alignof(WVComplex64)))
+        return {WVKernelStatusCode::invalidPointer,"Invalid hydrostatic vertical-transform storage."};
+    auto status=mutableOutputOutsidePreparedState(b.data,outputCount*sizeof(WVComplex64)); if (!status) return status;
+    status=disjoint(a.data,inputCount*sizeof(WVComplex64),b.data,outputCount*sizeof(WVComplex64)); if (!status) return status;
+    ActiveCall guard(active_); if (!guard.entered) return reentrant();
+    if (!executionOptions_.usesCompactSplitViews()) return vertical(index,input(a.data,inputCount),output(b.data,outputCount));
+    const auto in=inputModal ? modalView() : gridView();
+    const auto out=outputModal ? modalView(inputModal ? 1 : 0) : gridView(inputModal ? 0 : 1);
+    copy(a.data,in,inputCount); status=vertical(index,in.input(),out); if (!status) return status;
+    copy(out.input(),b.data,outputCount); return WVKernelStatus::ok();
+}
+WVKernelStatus WVTransformHydrostaticKernel::applyVerticalColumn(WVStratifiedModalOperator operation,
+    std::size_t retainedColumn,WVComplexConstView a,WVComplexView b) {
+    std::size_t index=0; bool inputModal=false,outputModal=false;
+    if (!verticalOperation(operation,index,inputModal,outputModal)) return unsupported();
+    const auto& g=geometry(); const auto inputRows=inputModal ? g.Nj : g.Nz;
+    const auto outputRows=outputModal ? g.Nj : g.Nz;
+    if (retainedColumn>=g.Nkl || a.shape.rows!=inputRows || a.shape.columns!=1 ||
+        b.shape.rows!=outputRows || b.shape.columns!=1)
+        return {WVKernelStatusCode::invalidShape,"Unexpected hydrostatic vertical-column shape or retained column."};
+    if (!addressFits(a.data,inputRows*sizeof(WVComplex64),alignof(WVComplex64)) ||
+        !addressFits(b.data,outputRows*sizeof(WVComplex64),alignof(WVComplex64)))
+        return {WVKernelStatusCode::invalidPointer,"Invalid hydrostatic vertical-column storage."};
+    auto status=mutableOutputOutsidePreparedState(b.data,outputRows*sizeof(WVComplex64)); if (!status) return status;
+    status=disjoint(a.data,inputRows*sizeof(WVComplex64),b.data,outputRows*sizeof(WVComplex64)); if (!status) return status;
+    ActiveCall guard(active_); if (!guard.entered) return reentrant();
+    const auto in=inputModal ? modalView() : gridView();
+    const auto out=outputModal ? modalView(inputModal ? 1 : 0) : gridView(inputModal ? 0 : 1);
+    const auto inputOffset=retainedColumn*inputRows,outputOffset=retainedColumn*outputRows;
+    for (std::size_t row=0;row<inputRows;++row) write(in,inputOffset+row,a.data[row]);
+    status=verticalColumn(index,in.input(),out,retainedColumn); if (!status) return status;
+    for (std::size_t row=0;row<outputRows;++row) b.data[row]=read(out.input(),outputOffset+row);
+    return WVKernelStatus::ok();
+}
+WVKernelStatus WVTransformHydrostaticKernel::horizontalForward(WVRealVolumeConstView a,WVComplexView b) {
+    const auto& g=geometry(); auto status=volume(a); if (!status) return status;
+    if (b.shape.rows!=g.Nz || b.shape.columns!=g.Nkl)
+        return {WVKernelStatusCode::invalidShape,"Expected hydrostatic Fourier [Nz,Nkl] output."};
+    if (!addressFits(b.data,H_*sizeof(WVComplex64),alignof(WVComplex64)))
+        return {WVKernelStatusCode::invalidPointer,"Invalid hydrostatic Fourier output storage."};
+    status=mutableOutputOutsidePreparedState(b.data,H_*sizeof(WVComplex64)); if (!status) return status;
+    status=disjoint(a.data,R_*sizeof(double),b.data,H_*sizeof(WVComplex64)); if (!status) return status;
+    ActiveCall guard(active_); if (!guard.entered) return reentrant();
+    if (!executionOptions_.usesCompactSplitViews())
+        return horizontal_->forward(*horizontalWorkspace_,{a.data,R_*sizeof(double)},output(b.data,H_));
+    auto grid=gridView(); status=horizontal_->forward(*horizontalWorkspace_,{a.data,R_*sizeof(double)},grid); if (!status) return status;
+    copy(grid.input(),b.data,H_); return WVKernelStatus::ok();
+}
+WVKernelStatus WVTransformHydrostaticKernel::horizontalInverse(WVComplexConstView a,WVRealVolumeView b) {
+    const auto& g=geometry(); auto status=volume({b.data,b.shape}); if (!status) return status;
+    if (a.shape.rows!=g.Nz || a.shape.columns!=g.Nkl)
+        return {WVKernelStatusCode::invalidShape,"Expected hydrostatic Fourier [Nz,Nkl] input."};
+    if (!addressFits(a.data,H_*sizeof(WVComplex64),alignof(WVComplex64)))
+        return {WVKernelStatusCode::invalidPointer,"Invalid hydrostatic Fourier input storage."};
+    status=mutableOutputOutsidePreparedState(b.data,R_*sizeof(double)); if (!status) return status;
+    status=disjoint(a.data,H_*sizeof(WVComplex64),b.data,R_*sizeof(double)); if (!status) return status;
+    ActiveCall guard(active_); if (!guard.entered) return reentrant();
+    auto values=input(a.data,H_);
+    if (executionOptions_.usesCompactSplitViews()) { auto grid=gridView(); copy(a.data,grid,H_); values=grid.input(); }
+    return horizontal_->inverse(*horizontalWorkspace_,values,{b.data,R_*sizeof(double)});
 }
 WVKernelStatus WVTransformHydrostaticKernel::projectFields(const double* u,const double* v,const double* eta,WVMutableCoefficients b) {
     const auto U=modalView(),V=modalView(1),N=modalView(2);
@@ -994,10 +1095,15 @@ WVKernelStatus WVTransformHydrostaticKernel::integrateVertical(WVRealVolumeConst
     return verticalCalculus(a.data,family,1,true,b.data);
 }
 WVKernelStatus WVTransformHydrostaticKernel::differentiateHorizontal(WVRealVolumeConstView a,bool xDerivative,WVRealVolumeView b) {
+    return differentiateHorizontal(a,xDerivative,1,b);
+}
+WVKernelStatus WVTransformHydrostaticKernel::differentiateHorizontal(WVRealVolumeConstView a,
+    bool xDerivative,unsigned order,WVRealVolumeView b) {
     auto s=volume(a); if (!s) return s; s=volume({b.data,b.shape}); if (!s) return s;
+    s=mutableOutputOutsidePreparedState(b.data,R_*sizeof(double)); if (!s) return s;
     s=disjoint(a.data,R_*sizeof(double),b.data,R_*sizeof(double)); if (!s) return s;
     ActiveCall guard(active_); if (!guard.entered) return reentrant();
-    return horizontal_->spatialDerivative(*horizontalWorkspace_,{a.data,R_*sizeof(double)},{b.data,R_*sizeof(double)},xDerivative);
+    return horizontal_->spatialDerivative(*horizontalWorkspace_,{a.data,R_*sizeof(double)},{b.data,R_*sizeof(double)},xDerivative,order);
 }
 WVKernelStatus WVTransformHydrostaticKernel::advectScalarWithAdvectionFields(WVRealVolumeConstView a,WVRealFieldBundleConstView fields,bool antialias,WVRealVolumeView b,bool xyOnly) {
     auto s=volume(a); if (!s) return s; s=volume({b.data,b.shape}); if (!s) return s;
