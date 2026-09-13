@@ -1,0 +1,185 @@
+{
+  "graphs": [
+    {
+      "reference": "compiled-coefficient-endpoint",
+      "candidate": "matlab-coefficient-endpoint",
+      "comparison": {
+        "passed": true,
+        "maximumRelativeError": 2.3829101423207703E-12,
+        "maximumAbsoluteError": 5.4074800193149031E-14,
+        "variableCount": 40,
+        "recordCount": 14,
+        "categories": [
+          {
+            "name": "metadata",
+            "variableCount": 33,
+            "maximumAbsoluteError": 0,
+            "maximumRelativeError": 0,
+            "passed": true
+          },
+          {
+            "name": "times",
+            "variableCount": 1,
+            "maximumAbsoluteError": 0,
+            "maximumRelativeError": 0,
+            "passed": true
+          },
+          {
+            "name": "coefficients",
+            "variableCount": 6,
+            "maximumAbsoluteError": 5.4074800193149031E-14,
+            "maximumRelativeError": 2.3829101423207703E-12,
+            "passed": true
+          }
+        ],
+        "differences": []
+      }
+    },
+    {
+      "reference": "compiled-composite-dense-output",
+      "candidate": "matlab-composite-dense-output",
+      "comparison": {
+        "passed": true,
+        "maximumRelativeError": 2.2324209524848381E-12,
+        "maximumAbsoluteError": 5.3660201282390574E-14,
+        "variableCount": 70,
+        "recordCount": 64,
+        "categories": [
+          {
+            "name": "metadata",
+            "variableCount": 48,
+            "maximumAbsoluteError": 0,
+            "maximumRelativeError": 0,
+            "passed": true
+          },
+          {
+            "name": "times",
+            "variableCount": 4,
+            "maximumAbsoluteError": 0,
+            "maximumRelativeError": 0,
+            "passed": true
+          },
+          {
+            "name": "coefficients",
+            "variableCount": 6,
+            "maximumAbsoluteError": 5.3660201282390574E-14,
+            "maximumRelativeError": 2.2324209524848381E-12,
+            "passed": true
+          },
+          {
+            "name": "eulerianFields",
+            "variableCount": 1,
+            "maximumAbsoluteError": 6.591949208711867E-16,
+            "maximumRelativeError": 2.4196959415437032E-15,
+            "passed": true
+          },
+          {
+            "name": "moorings",
+            "variableCount": 5,
+            "maximumAbsoluteError": 1.8735013540549517E-16,
+            "maximumRelativeError": 2.6004561977550383E-15,
+            "passed": true
+          },
+          {
+            "name": "particles",
+            "variableCount": 5,
+            "maximumAbsoluteError": 2.8421709430404007E-14,
+            "maximumRelativeError": 3.5181607899985006E-15,
+            "passed": true
+          },
+          {
+            "name": "tracers",
+            "variableCount": 1,
+            "maximumAbsoluteError": 1.4432899320127035E-15,
+            "maximumRelativeError": 1.443279254789074E-15,
+            "passed": true
+          }
+        ],
+        "differences": []
+      }
+    },
+    {
+      "reference": "compiled-composite-dense-output",
+      "candidate": "hybrid-horizontal-composite",
+      "comparison": {
+        "passed": true,
+        "maximumRelativeError": 4.7718493898029546E-13,
+        "maximumAbsoluteError": 1.8189894035458565E-12,
+        "variableCount": 70,
+        "recordCount": 64,
+        "categories": [
+          {
+            "name": "metadata",
+            "variableCount": 48,
+            "maximumAbsoluteError": 0,
+            "maximumRelativeError": 0,
+            "passed": true
+          },
+          {
+            "name": "times",
+            "variableCount": 4,
+            "maximumAbsoluteError": 0,
+            "maximumRelativeError": 0,
+            "passed": true
+          },
+          {
+            "name": "coefficients",
+            "variableCount": 6,
+            "maximumAbsoluteError": 1.1785711295786427E-14,
+            "maximumRelativeError": 4.7718493898029546E-13,
+            "passed": true
+          },
+          {
+            "name": "eulerianFields",
+            "variableCount": 1,
+            "maximumAbsoluteError": 2.2204460492503131E-16,
+            "maximumRelativeError": 8.150554750463E-16,
+            "passed": true
+          },
+          {
+            "name": "moorings",
+            "variableCount": 5,
+            "maximumAbsoluteError": 1.0755285551056204E-16,
+            "maximumRelativeError": 1.492854483896411E-15,
+            "passed": true
+          },
+          {
+            "name": "particles",
+            "variableCount": 5,
+            "maximumAbsoluteError": 1.8189894035458565E-12,
+            "maximumRelativeError": 1.2104148432256746E-14,
+            "passed": true
+          },
+          {
+            "name": "tracers",
+            "variableCount": 1,
+            "maximumAbsoluteError": 1.1102230246251565E-15,
+            "maximumRelativeError": 1.1102148113762107E-15,
+            "passed": true
+          }
+        ],
+        "differences": []
+      }
+    }
+  ],
+  "endpoints": [
+    {
+      "reference": "compiled-coefficient-endpoint",
+      "candidate": "compiled-composite-dense-output",
+      "passed": true,
+      "maximumRelativeError": 1.211083725674438E-12
+    },
+    {
+      "reference": "matlab-coefficient-endpoint",
+      "candidate": "matlab-composite-dense-output",
+      "passed": true,
+      "maximumRelativeError": 0
+    },
+    {
+      "reference": "compiled-coefficient-endpoint",
+      "candidate": "hybrid-horizontal-composite",
+      "passed": true,
+      "maximumRelativeError": 8.6047593233275161E-13
+    }
+  ]
+}

@@ -1,0 +1,227 @@
+{
+  "scope": "Boussinesq warm primitive diagnostic only; no whole-workload claim",
+  "fixture": "/Users/jearly/Documents/OceanKitRepositories/wave-vortex-model-benchmark-artifacts/tiled-scratch-simd-20260912/qualification-boussinesq/boussinesq-256x256x129-no-observers-0-baseline/output.nc",
+  "Nxyz": [
+    256,
+    256,
+    129
+  ],
+  "names": [
+    "compiledDiffZF",
+    "matlabDiffZF",
+    "compiledDiffX",
+    "matlabDiffX"
+  ],
+  "samples": [
+    [
+      0.011957958333333333,
+      0.008204958333333333,
+      0.007792416666666666,
+      0.007865416666666666,
+      0.007881541666666667,
+      0.007786625,
+      0.007799208333333333
+    ],
+    [
+      0.018575458333333333,
+      0.011154,
+      0.011176041666666667,
+      0.011096833333333334,
+      0.011222708333333333,
+      0.010745041666666667,
+      0.011618083333333333
+    ],
+    [
+      0.002978875,
+      0.0028934583333333334,
+      0.00280425,
+      0.0028860416666666665,
+      0.003034583333333333,
+      0.003702041666666667,
+      0.002989083333333333
+    ],
+    [
+      0.0037069166666666665,
+      0.0034819166666666666,
+      0.0034765,
+      0.003637375,
+      0.0035231666666666666,
+      0.003468291666666667,
+      0.0035030416666666665
+    ]
+  ],
+  "medians": [
+    0.007865416666666666,
+    0.011176041666666667,
+    0.002978875,
+    0.0035030416666666665
+  ],
+  "maximumAbsoluteErrors": [
+    5.019093728955357e-18,
+    2.710505431213761e-19
+  ],
+  "compiledMetadata": {
+    "schemaVersion": "1.0.0",
+    "requestedBackend": "compiled",
+    "activeBackend": "compiled",
+    "scope": "shared compiled transform primitives and scoped variable evaluation",
+    "provider": {
+      "id": "native-neon-pthreads",
+      "version": "3.3.11",
+      "sourceURL": "https://fftw.org/pub/fftw/fftw-3.3.11.tar.gz",
+      "sourceURLs": [
+        "https://fftw.org/pub/fftw/fftw-3.3.11.tar.gz",
+        "http://fftw.org/pub/fftw/fftw-3.3.11.tar.gz"
+      ],
+      "sourceSHA256": "5630c24cdeb33b131612f7eb4b1a9934234754f9f388ff8617458d0be6f239a1",
+      "threadBackend": "pthreads",
+      "configureFlags": "--host=aarch64-apple-darwin --enable-neon --enable-threads --disable-fortran --disable-openmp --enable-shared --disable-static",
+      "compilerFlags": "-O3 -mcpu=native",
+      "deploymentTarget": "13.3",
+      "simd": "NEON",
+      "sharedLibraries": true,
+      "fortran": false,
+      "openmp": false,
+      "kernelScope": "constant hydrostatic/nonhydrostatic, Hydrostatic, Boussinesq, Stratified QG and Barotropic QG"
+    },
+    "libraries": {
+      "base": {
+        "path": "/Users/jearly/Library/Caches/WaveVortexModel/compiled-backend-v1/maca64/R2025b/21ebfc89e75343aae7d673333f8417b91b2c0158d7ec4d85582ed67bb9ce21e3/provider/native-neon-pthreads/lib/libfftw3.3.dylib",
+        "version": "fftw-3.3.11-neon",
+        "sha256": "2a1969c627417941c84b477884568d4c55ea1d7f3d78ef47ab28fd8b541f9f00"
+      },
+      "thread": {
+        "path": "/Users/jearly/Library/Caches/WaveVortexModel/compiled-backend-v1/maca64/R2025b/21ebfc89e75343aae7d673333f8417b91b2c0158d7ec4d85582ed67bb9ce21e3/provider/native-neon-pthreads/lib/libfftw3_threads.3.dylib",
+        "version": "fftw-3.3.11-neon",
+        "sha256": "5d9e204040e6ecdedb2ea69956093caf382b3a44b9da79edcf90a5720630356b"
+      },
+      "openmp": {
+        "path": "",
+        "version": "",
+        "sha256": "",
+        "detected": false
+      }
+    },
+    "module": {
+      "name": "wv_compiled_backend_mex",
+      "path": "/Users/jearly/Library/Caches/WaveVortexModel/compiled-backend-v1/maca64/R2025b/308f8eb0dfad855921c648654a76edd1d2f07a6f1c0387cf9b79692663705f04/module/wv_compiled_backend_mex.mexmaca64",
+      "sha256": "a16e7d1cc83707d028f1665dbdd5cff9f411e0c99072d9e7334b3cbeb25796fa",
+      "engine": "fftw",
+      "isInstalled": true,
+      "identityValidated": true,
+      "loadedBeforeInspection": false,
+      "loadedAfterInspection": false,
+      "nonlinearFluxSchedule": "retained-compact-streamed-target-three-channel-v1",
+      "executionScheduleVersion": 1,
+      "workerPolicyIdentifier": "constant-stage-workers-v1",
+      "requestedHorizontalWorkers": 12,
+      "requestedPointwiseWorkers": 12,
+      "planCountMeaning": "logical-prepared-operation-slots",
+      "matlabTransformBridgeVersion": 9
+    },
+    "contract": {
+      "version": 4,
+      "threadCount": 16,
+      "defaultThreadRule": "min(18,maxNumCompThreads)",
+      "planCount": 17,
+      "planCountMeaning": "logical-prepared-operation-slots",
+      "matlabTransformBridgeVersion": 9
+    },
+    "sourceIdentity": {
+      "schemaVersion": "1.0.0",
+      "manifest": {
+        "schemaVersion": "1.0.0",
+        "algorithm": "sha256(path-tab-content-sha256-newline-v1)",
+        "aggregateSHA256": "91487ae2e6311d95e0d41aaa591247bba420c0a7ca943cee0e664c88873454e1",
+        "fileCount": 319
+      },
+      "moduleSHA256": "a16e7d1cc83707d028f1665dbdd5cff9f411e0c99072d9e7334b3cbeb25796fa",
+      "baseLibrarySHA256": "2a1969c627417941c84b477884568d4c55ea1d7f3d78ef47ab28fd8b541f9f00",
+      "threadLibrarySHA256": "5d9e204040e6ecdedb2ea69956093caf382b3a44b9da79edcf90a5720630356b",
+      "providerId": "native-neon-pthreads",
+      "providerSourceSHA256": "5630c24cdeb33b131612f7eb4b1a9934234754f9f388ff8617458d0be6f239a1"
+    },
+    "storage": {
+      "transformClass": "WVTransformBoussinesq",
+      "scope": "call-scoped stratified fields, nonlinear flux and raw primitives",
+      "matrixBackend": "accelerate",
+      "policy": "compact-native-accelerate",
+      "effectiveFFTThreads": 1,
+      "horizontalWorkers": 12,
+      "pointwiseWorkers": 8,
+      "sourceBytes": 1388838690.0,
+      "kernelBytes": 4234723130.0,
+      "engineBytes": 4938111165.0,
+      "fieldServiceBytes": 136593562.0,
+      "preparedPlanBytes": 224,
+      "planPreparations": 0,
+      "evaluations": 0,
+      "stateInputBytes": 0,
+      "stateInputCopyBytes": 0,
+      "outputBytes": 1082130432.0,
+      "stateValidations": 0,
+      "phasePreparations": 0,
+      "producerExecutions": 0,
+      "cacheHits": 0,
+      "duplicateExecutions": 0,
+      "liveEvaluationBytes": 0,
+      "peakEvaluationBytes": 0,
+      "tiledNonlinearExecutions": 0,
+      "primitiveExecutions": 16,
+      "nonlinearProducerExecutions": 0,
+      "physicalReconstructionExecutions": 0,
+      "stateStorageBytes": 27054480.0,
+      "scopedEvaluations": 0,
+      "coefficientOnlyEvaluations": 0,
+      "evaluationActive": 0,
+      "evaluationToken": 0,
+      "densityRecoveries": 0,
+      "densityProfileConstructions": 0,
+      "densityInversePasses": 0,
+      "densityAPEPasses": 0,
+      "plannedEvaluationBytes": 0,
+      "densityRecovery": []
+    },
+    "runtimeMetrics": {
+      "transformClass": "WVTransformBoussinesq",
+      "scope": "call-scoped stratified fields, nonlinear flux and raw primitives",
+      "matrixBackend": "accelerate",
+      "policy": "compact-native-accelerate",
+      "effectiveFFTThreads": 1,
+      "horizontalWorkers": 12,
+      "pointwiseWorkers": 8,
+      "sourceBytes": 1388838690.0,
+      "kernelBytes": 4234723130.0,
+      "engineBytes": 4938111165.0,
+      "fieldServiceBytes": 136593562.0,
+      "preparedPlanBytes": 224,
+      "planPreparations": 0,
+      "evaluations": 0,
+      "stateInputBytes": 0,
+      "stateInputCopyBytes": 0,
+      "outputBytes": 1082130432.0,
+      "stateValidations": 0,
+      "phasePreparations": 0,
+      "producerExecutions": 0,
+      "cacheHits": 0,
+      "duplicateExecutions": 0,
+      "liveEvaluationBytes": 0,
+      "peakEvaluationBytes": 0,
+      "tiledNonlinearExecutions": 0,
+      "primitiveExecutions": 16,
+      "nonlinearProducerExecutions": 0,
+      "physicalReconstructionExecutions": 0,
+      "stateStorageBytes": 27054480.0,
+      "scopedEvaluations": 0,
+      "coefficientOnlyEvaluations": 0,
+      "evaluationActive": 0,
+      "evaluationToken": 0,
+      "densityRecoveries": 0,
+      "densityProfileConstructions": 0,
+      "densityInversePasses": 0,
+      "densityAPEPasses": 0,
+      "plannedEvaluationBytes": 0,
+      "densityRecovery": []
+    }
+  }
+}

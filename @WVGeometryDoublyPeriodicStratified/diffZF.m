@@ -24,6 +24,11 @@ mustBeMember(size(u,1),self.Nx);
 mustBeMember(size(u,2),self.Ny);
 mustBeMember(size(u,3),self.Nz);
 if self.usesCompiledTransform()
+    if (isa(self,'WVTransformHydrostatic') || isa(self,'WVTransformBoussinesq')) && isreal(u)
+        values = self.compiledPrimitive("verticalVolumeCalculus",{u},struct("inputIsF",true,"order",options.n,"integral",false));
+        du = values{1};
+        return
+    end
     input = reshape(permute(u,[3 1 2]),self.Nz,[]);
     values = self.compiledPrimitive("verticalCalculus",{input},struct("inputIsF",true,"order",options.n,"integral",false));
     du = permute(reshape(values{1},self.Nz,self.Nx,self.Ny),[2 3 1]);

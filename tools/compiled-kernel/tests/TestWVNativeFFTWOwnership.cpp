@@ -178,6 +178,68 @@ void failurePaths() {
     require(!plannerOverlap, "FFTW planning/destruction overlapped");
     balanced();
 }
+WVRetainedHorizontalSpecification retainedDerivativeSpecification() {
+    WVRetainedHorizontalSpecification specification;
+    specification.grid={8,6,5,1,8,48,"F"};
+    specification.retained={5,4,1,5,WVComplexRepresentation::interleaved,
+        "F","retained-derivative-failure-modes"};
+    specification.Lx=15000; specification.Ly=12000;
+    specification.modes={{0,0},{1,0},{0,1},{1,1}};
+    specification.normalization=WVFourierNormalization::forwardUnit;
+    specification.schedule=WVRetainedHorizontalSchedule::streamingPrunedTile16;
+    specification.outerWorkers=2;
+    return specification;
+}
+void retainedDerivativePreparationFailures() {
+    for (int failedYPlan : {0,1}) {
+        auto provider=std::shared_ptr<WVFFTEngine>(engine());
+        std::unique_ptr<WVRetainedHorizontalOperator> op;
+        require(WVRetainedHorizontalOperator::createShared(
+            retainedDerivativeSpecification(),provider,op));
+        std::unique_ptr<WVRetainedHorizontalWorkspace> compact;
+        require(op->createWorkspace(compact,false));
+        const auto compactPointer=compact.get();
+        const auto before=WVFFTWEngine::lifetimeMetrics();
+        const auto rawBefore=rawPlans.load(),buffersBefore=buffers.load();
+
+        failPlan=failedYPlan;
+        require(op->createWorkspace(compact,true).code==
+                    WVKernelStatusCode::fftPlanFailure &&
+                compact.get()==compactPointer,
+            "Partial retained derivative preparation replaced the existing workspace");
+        failPlan=-1;
+        const auto failed=WVFFTWEngine::lifetimeMetrics();
+        require(failed.activePlans==before.activePlans &&
+                failed.totalPlansCreated==before.totalPlansCreated+1 &&
+                failed.totalPlansDestroyed==before.totalPlansDestroyed+1 &&
+                rawPlans.load()==rawBefore && buffers.load()==buffersBefore,
+            "Partial retained derivative preparation leaked a plan or buffer");
+
+        std::unique_ptr<WVRetainedHorizontalWorkspace> derivative;
+        require(op->createWorkspace(derivative,true));
+        const auto prepared=WVFFTWEngine::lifetimeMetrics();
+        require(prepared.activePlans==before.activePlans+2 &&
+                prepared.totalPlansCreated==failed.totalPlansCreated+2 &&
+                rawPlans.load()==rawBefore+2 && buffers.load()==buffersBefore,
+            "Retained derivative preparation retry did not own exactly two y-axis plans");
+
+        // Replacing an already prepared workspace constructs the complete retry
+        // before releasing the prior one, and leaves the live ownership count stable.
+        require(op->createWorkspace(derivative,true));
+        const auto repeated=WVFFTWEngine::lifetimeMetrics();
+        require(repeated.activePlans==prepared.activePlans &&
+                repeated.totalPlansCreated==prepared.totalPlansCreated+2 &&
+                repeated.totalPlansDestroyed==prepared.totalPlansDestroyed+2 &&
+                rawPlans.load()==rawBefore+2 && buffers.load()==buffersBefore,
+            "Repeated retained derivative preparation changed live ownership");
+
+        derivative.reset();
+        require(WVFFTWEngine::lifetimeMetrics().activePlans==before.activePlans &&
+                rawPlans.load()==rawBefore && buffers.load()==buffersBefore,
+            "Retained derivative workspace destruction did not release its y-axis plans");
+        compact.reset(); op.reset(); provider.reset(); balanced();
+    }
+}
 WVTransformConstantStratificationConfiguration configuration(bool hydro) {
     WVTransformConstantStratificationConfiguration c;
     c.Nx=8; c.Ny=6; c.Nz=7; c.Nj=4;
@@ -356,6 +418,7 @@ int main() {
     try {
         preservationAndAliasing(); balanced();
         failurePaths(); balanced();
+        retainedDerivativePreparationFailures(); balanced();
         kernelSetupFailures(); balanced();
         for (bool hydro : {true,false}) for (bool odd : {false,true}) { kernelExecution(hydro,odd); balanced(); }
         std::cout << "Native FFTW preservation, aliasing, RAII failures and prepared execution passed.\n";

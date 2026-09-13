@@ -9,7 +9,17 @@ nav_order: 4
 
 Use this checklist for a maintenance release after every issue assigned to the release milestone is complete or explicitly deferred. Release preparation must not introduce scientific capabilities, unannounced API changes, or documentation changes that were not reviewed on the release branch.
 
-## v4.4 compiled-execution and benchmark qualification
+## v4.4.1 tracer performance patch
+
+- Qualify the reviewed combined horizontal and Hydrostatic/Boussinesq vertical derivative implementation using the [tracer report](https://github.com/JeffreyEarly/wave-vortex-model/blob/main/Benchmarks/TRACER-DERIVATIVES.md). Retain all three fresh-process samples per Hydrostatic coefficient/composite configuration, unchanged numerical tolerances and integration-work checks, and the final source/module/provider identities.
+- Refresh the six source-bound forward-integration configurations, including Boussinesq and downstream tracer evolution, and require the affected native, MATLAB, documentation, analyzer and package checks. Preserve historical receipts whose scientific sources were not changed.
+- Keep the authoring manifest at `4.4.0` through qualification and the reviewed PR. Dispatch the immutable release workflow with `bump: patch` to create `4.4.1` using the public MATLAB package API and promote the complete nonempty `Unreleased` section.
+- Update the benchmark page with the identified follow-up cohort. Preserve the original v4.4.0 publication results, and distinguish Hydrostatic whole-workload qualification from Boussinesq primitive diagnostics.
+- Verify the release tag, authoring version, exported snapshot and installed consumer after publication, following the shared gates below.
+
+## Historical v4.4.0 benchmark qualification
+
+The following records the completed v4.4.0 release campaign; its version transition and publication-cohort requirements are historical.
 
 - Confirm the release commit retains the source-bound implementation qualified by the checked-in issue #507 receipts and the final issue #307 and #310 standard-parity decision. Reuse those passing native, MATLAB, consumer, lifecycle and installed-package results while their tracked scientific and adapter sources remain unchanged; do not repeat unchanged qualification solely for release preparation.
 - Confirm the proposed minor release is `v4.4.0`, the authoring manifest still begins at `4.3.0`, and the release workflow will promote the complete nonempty `Unreleased` body. Release-owned version, date, changelog and generated-documentation changes must not alter the measured scientific implementation.

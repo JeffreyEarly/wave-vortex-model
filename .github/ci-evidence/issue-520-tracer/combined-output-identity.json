@@ -1,0 +1,7 @@
+{
+  "path": "/private/tmp/wvm520/combined_composite.nc",
+  "bytes": 775710922,
+  "sha256": "3627194f6dc2f9c188f307d32be10035d6a72cc4d128ca9ac35da23a85d995a1",
+  "comparison": "combined-comparison.json",
+  "disposition": "removed redundant successful exploratory output after comparison"
+}

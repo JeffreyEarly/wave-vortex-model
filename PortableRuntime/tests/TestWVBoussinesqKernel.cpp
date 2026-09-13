@@ -412,7 +412,7 @@ void contracts(const std::shared_ptr<const WVStratifiedModalRecord>& source) {
     const auto* old=kernel.get();
     status=WVTransformBoussinesqKernel::create({},std::make_unique<WVReferenceFFTEngine>(),kernel);
     require(!status && kernel.get()==old,"Failed setup replaced kernel");
-    for (int fail=0;fail<11;++fail) {
+    for (int fail=0;fail<12;++fail) {
         int count=0; Counters counters;
         status=WVTransformBoussinesqKernel::create(source,std::make_unique<Engine>(counters),kernel,[&](std::unique_ptr<WVVerticalMatrixBackend>& backend) {
             if (count++==fail) return WVKernelStatus{WVKernelStatusCode::allocationFailure,"Injected matrix factory failure."};

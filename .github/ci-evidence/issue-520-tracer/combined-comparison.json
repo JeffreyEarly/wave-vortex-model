@@ -1,0 +1,59 @@
+{
+  "passed": true,
+  "maximumRelativeError": 5.8925135694340294E-13,
+  "maximumAbsoluteError": 1.2196840759592931E-14,
+  "variableCount": 70,
+  "recordCount": 64,
+  "categories": [
+    {
+      "name": "metadata",
+      "variableCount": 48,
+      "maximumAbsoluteError": 0,
+      "maximumRelativeError": 0,
+      "passed": true
+    },
+    {
+      "name": "times",
+      "variableCount": 4,
+      "maximumAbsoluteError": 0,
+      "maximumRelativeError": 0,
+      "passed": true
+    },
+    {
+      "name": "coefficients",
+      "variableCount": 6,
+      "maximumAbsoluteError": 1.2196840759592931E-14,
+      "maximumRelativeError": 5.8925135694340294E-13,
+      "passed": true
+    },
+    {
+      "name": "eulerianFields",
+      "variableCount": 1,
+      "maximumAbsoluteError": 2.0816681711721685E-16,
+      "maximumRelativeError": 7.6411450785590622E-16,
+      "passed": true
+    },
+    {
+      "name": "moorings",
+      "variableCount": 5,
+      "maximumAbsoluteError": 8.3266726846886741E-17,
+      "maximumRelativeError": 1.1557583101133504E-15,
+      "passed": true
+    },
+    {
+      "name": "particles",
+      "variableCount": 5,
+      "maximumAbsoluteError": 2.5587171270657905E-17,
+      "maximumRelativeError": 2.4710891263084704E-15,
+      "passed": true
+    },
+    {
+      "name": "tracers",
+      "variableCount": 1,
+      "maximumAbsoluteError": 1.3322676295501878E-15,
+      "maximumRelativeError": 1.3322577736514528E-15,
+      "passed": true
+    }
+  ],
+  "differences": []
+}

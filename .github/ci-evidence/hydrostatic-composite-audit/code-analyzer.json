@@ -1,0 +1,41 @@
+[
+  {
+    "file": "/Users/jearly/Documents/OceanKitRepositories/wvm-v4-hydrostatic-composite-audit/Benchmarks/hydroCompositePrepare.m",
+    "messages": []
+  },
+  {
+    "file": "/Users/jearly/Documents/OceanKitRepositories/wvm-v4-hydrostatic-composite-audit/Benchmarks/hydroCompositeProfile.m",
+    "messages": [
+      {
+        "id": "NASGU",
+        "message": "Value assigned to variable might be unused.",
+        "fix": 0,
+        "line": 60,
+        "column": [
+          5,
+          16
+        ]
+      },
+      {
+        "id": "NASGU",
+        "message": "Value assigned to variable might be unused.",
+        "fix": 0,
+        "line": 106,
+        "column": [
+          1,
+          5
+        ]
+      },
+      {
+        "id": "NASGU",
+        "message": "Value assigned to variable might be unused.",
+        "fix": 0,
+        "line": 107,
+        "column": [
+          1,
+          3
+        ]
+      }
+    ]
+  }
+]

@@ -26,6 +26,11 @@ if ndims(w) == 3
     mustBeMember(size(w,1),self.Nx);
     mustBeMember(size(w,2),self.Ny);
     mustBeMember(size(w,3),self.Nz);
+    if self.usesCompiledTransform() && (isa(self,'WVTransformHydrostatic') || isa(self,'WVTransformBoussinesq')) && isreal(w)
+        values = self.compiledPrimitive("verticalVolumeCalculus",{w},struct("inputIsF",false,"order",options.n,"integral",true));
+        W = values{1};
+        return
+    end
     w = permute(w,[3 1 2]); % keep adjacent in memory
     w = reshape(w,self.Nz,[]);
     didShift = true;

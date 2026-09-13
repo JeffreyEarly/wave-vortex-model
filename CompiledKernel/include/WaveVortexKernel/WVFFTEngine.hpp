@@ -70,6 +70,12 @@ public:
     virtual bool supportsInverseConsumer() const noexcept { return false; }
     virtual WVKernelStatus inverseAndConsume(WVComplexInput, WVRealOutput,
         const WVRealOutputConsumer&);
+    // Optional full-grid, axis-only derivative; independent of retained modes.
+    virtual bool supportsSpatialDerivative() const noexcept { return false; }
+    virtual WVKernelStatus prepareSpatialDerivative() {
+        return {WVKernelStatusCode::unsupportedOperation,"Provider has no axis derivative."};
+    }
+    virtual WVKernelStatus spatialDerivative(WVRealInput, WVRealOutput, bool, unsigned);
     virtual bool supportsAdvection(std::size_t) const noexcept { return false; }
     virtual WVKernelStatus prepareAdvection(std::size_t);
     virtual WVKernelStatus advection(const WVRetainedAdvectionWork&,

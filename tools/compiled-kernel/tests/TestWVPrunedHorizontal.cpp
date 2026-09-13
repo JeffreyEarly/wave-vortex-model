@@ -298,10 +298,19 @@ void fallbackAndLifetime() {
     const auto final=WVFFTWEngine::lifetimeMetrics();
     require(final.activePlans==initial.activePlans && final.outstandingPlanningBytes==0,"Prepared plan lifetime leaked");
 }
-void boundedDerivative() {
+double harmonicDerivative(bool sine,double amplitude,double phase,double waveNumber,unsigned order) {
+    const auto value=amplitude*std::pow(std::complex<double>(0,waveNumber),static_cast<int>(order))*
+        std::exp(std::complex<double>(0,phase));
+    return sine ? value.imag() : value.real();
+}
+void boundedDerivativeCase(std::size_t nx,std::size_t ny,std::size_t planes,bool padded) {
     const auto initial=WVFFTWEngine::lifetimeMetrics();
-    auto spec=specification(12,10,37,WVComplexRepresentation::interleaved,WVFourierNormalization::forwardUnit,false,true);
-    auto engine=std::shared_ptr<WVFFTEngine>(fft(true));
+    auto spec=specification(nx,ny,planes,WVComplexRepresentation::interleaved,
+        WVFourierNormalization::forwardUnit,padded,true);
+    spec.Lx=5; spec.Ly=7;
+    std::shared_ptr<WVFFTEngine> engine=padded ?
+        std::shared_ptr<WVFFTEngine>(std::make_shared<RetainedReferenceEngine>()) :
+        std::shared_ptr<WVFFTEngine>(fft(true));
     std::unique_ptr<WVRetainedHorizontalOperator> op;
     require(WVRetainedHorizontalOperator::createShared(spec,engine,op));
     std::unique_ptr<WVRetainedHorizontalWorkspace> compact,derivative;
@@ -309,52 +318,98 @@ void boundedDerivative() {
     const auto afterCompact=WVFFTWEngine::lifetimeMetrics();
     require(op->createWorkspace(derivative,true));
     const auto afterPrepare=WVFFTWEngine::lifetimeMetrics();
-    require(std::string(derivative->scheduleIdentifier())=="fftw-streaming-pruned-tile16","Derivative preparation replaced retained execution");
-    require(afterPrepare.activePlans==afterCompact.activePlans+2 && afterPrepare.totalPlansCreated==afterCompact.totalPlansCreated+2,
-        "Bounded derivative did not prepare exactly one full FFT pair");
+    require(std::string(derivative->scheduleIdentifier())==(padded ? "marker-retained" : "fftw-streaming-pruned-tile16"),
+        "Derivative preparation replaced retained execution");
+    if (!padded) {
+        require(afterPrepare.activePlans==afterCompact.activePlans+2 &&
+                afterPrepare.totalPlansCreated==afterCompact.totalPlansCreated+2,
+            "Native retained derivative did not add exactly its two y-axis plans");
+        require(derivative->workerCount()==compact->workerCount(),
+            "Native retained derivative did not reuse the prepared worker count");
+    }
     const auto planeScratch=spec.grid.Nx*spec.grid.Ny*sizeof(double)+(spec.grid.Nx/2+1)*spec.grid.Ny*sizeof(WVComplex64);
     const auto volumeScratch=planeScratch*spec.grid.planes;
-    require(derivative->persistentBytes()>compact->persistentBytes(),"Derivative workspace omitted full-spectrum scratch");
     const auto derivativeScratch=derivative->persistentBytes()-compact->persistentBytes();
-    require(derivativeScratch>=planeScratch && derivativeScratch<volumeScratch,"Retained derivative scratch was not bounded to a plane");
+    require(derivativeScratch<volumeScratch,
+        "Retained derivative scratch was not bounded below a full volume");
+    if (padded) {
+        require(derivativeScratch>=planeScratch,
+            "Generic derivative fallback omitted its prepared plane scratch");
+    } else {
+        const auto half=std::max((spec.grid.Nx/2+1)*spec.grid.Ny,
+            (spec.grid.Ny/2+1)*spec.grid.Nx);
+        const auto expectedScratch=derivative->workerCount()*(
+            spec.grid.Nx*spec.grid.Ny*sizeof(double)+half*sizeof(WVComplex64))+
+            (std::max(spec.grid.Nx,spec.grid.Ny)/2+1)*sizeof(double);
+        require(derivativeScratch==expectedScratch,
+            "Native retained derivative scratch did not match its bounded per-worker storage");
+    }
 
     const auto& g=spec.grid;
     const auto size=1+(g.Nx-1)*g.xStride+(g.Ny-1)*g.yStride+(g.planes-1)*g.planeStride;
-    std::vector<double> input(size,321),dx(size,654),dy(size,987);
+    std::vector<double> input(size,321),output(size,654),legacy(size,987);
     std::vector<bool> written(size,false);
     const double pi=std::acos(-1.0);
+    const auto highX=std::max<std::size_t>(2,nx/2-1),highY=std::max<std::size_t>(2,ny/2-1);
     for (std::size_t p=0;p<g.planes;++p) for (std::size_t y=0;y<g.Ny;++y) for (std::size_t x=0;x<g.Nx;++x) {
         const auto n=p*g.planeStride+y*g.yStride+x*g.xStride; written[n]=true;
-        const double phase=2*pi*(3.0*x/g.Nx+2.0*y/g.Ny)+0.17*p;
-        input[n]=std::sin(phase)+0.25*(x%2 ? -1.0 : 1.0)+0.125*(y%2 ? -1.0 : 1.0);
+        const double xAngle=2*pi*x/g.Nx,yAngle=2*pi*y/g.Ny;
+        input[n]=std::sin(3*xAngle+2*yAngle+0.17*p)+
+            0.2*std::cos(highX*xAngle-highY*yAngle+0.11*p);
+        if (g.Nx%2==0) input[n]+=0.25*std::cos((g.Nx/2)*xAngle);
+        if (g.Ny%2==0) input[n]+=0.125*std::cos((g.Ny/2)*yAngle);
     }
-    const auto original=input,dxBefore=dx,dyBefore=dy;
-    require(op->spatialDerivative(*derivative,{input.data(),input.size()*sizeof(double)-1},{dx.data(),dx.size()*sizeof(double)},true).code==WVKernelStatusCode::invalidShape,
+    const auto original=input,outputBefore=output;
+    require(op->spatialDerivative(*derivative,{input.data(),input.size()*sizeof(double)-1},{output.data(),output.size()*sizeof(double)},true).code==WVKernelStatusCode::invalidShape,
         "Undersized derivative input accepted");
-    require(same(dx,dxBefore),"Rejected derivative input changed output");
-    require(op->spatialDerivative(*derivative,{input.data(),input.size()*sizeof(double)},{dy.data(),dy.size()*sizeof(double)-1},false).code==WVKernelStatusCode::invalidShape,
+    require(same(output,outputBefore),"Rejected derivative input changed output");
+    require(op->spatialDerivative(*derivative,{input.data(),input.size()*sizeof(double)},{output.data(),output.size()*sizeof(double)-1},false).code==WVKernelStatusCode::invalidShape,
         "Undersized derivative output accepted");
-    require(same(dy,dyBefore),"Rejected derivative output changed storage");
-    require(op->spatialDerivative(*derivative,{input.data(),input.size()*sizeof(double)},{dx.data(),dx.size()*sizeof(double)},true));
-    require(op->spatialDerivative(*derivative,{input.data(),input.size()*sizeof(double)},{dy.data(),dy.size()*sizeof(double)},false));
-    for (std::size_t p=0;p<g.planes;++p) for (std::size_t y=0;y<g.Ny;++y) for (std::size_t x=0;x<g.Nx;++x) {
-        const auto n=p*g.planeStride+y*g.yStride+x*g.xStride;
-        const double phase=2*pi*(3.0*x/g.Nx+2.0*y/g.Ny)+0.17*p;
-        close(dx[n],6*pi/spec.Lx*std::cos(phase));
-        close(dy[n],4*pi/spec.Ly*std::cos(phase));
+    require(same(output,outputBefore),"Rejected derivative output changed storage");
+    require(op->spatialDerivative(*derivative,{input.data(),input.size()*sizeof(double)},
+        {output.data(),output.size()*sizeof(double)},true,0).code==WVKernelStatusCode::invalidConfiguration,
+        "Derivative order zero accepted");
+    require(same(output,outputBefore),"Rejected derivative order changed output");
+
+    for (unsigned order=1;order<=4;++order) for (bool xDerivative:{true,false}) {
+        std::fill(output.begin(),output.end(),654);
+        require(op->spatialDerivative(*derivative,{input.data(),input.size()*sizeof(double)},
+            {output.data(),output.size()*sizeof(double)},xDerivative,order));
+        for (std::size_t p=0;p<g.planes;++p) for (std::size_t y=0;y<g.Ny;++y) for (std::size_t x=0;x<g.Nx;++x) {
+            const auto n=p*g.planeStride+y*g.yStride+x*g.xStride;
+            const double xAngle=2*pi*x/g.Nx,yAngle=2*pi*y/g.Ny;
+            const double wave=2*pi*(xDerivative ? 3/spec.Lx : 2/spec.Ly);
+            const double highWave=2*pi*(xDerivative ? static_cast<double>(highX)/spec.Lx : -static_cast<double>(highY)/spec.Ly);
+            double expected=harmonicDerivative(true,1,3*xAngle+2*yAngle+0.17*p,wave,order)+
+                harmonicDerivative(false,0.2,highX*xAngle-highY*yAngle+0.11*p,highWave,order);
+            if (xDerivative && g.Nx%2==0)
+                expected+=harmonicDerivative(false,0.25,(g.Nx/2)*xAngle,pi*g.Nx/spec.Lx,order);
+            if (!xDerivative && g.Ny%2==0)
+                expected+=harmonicDerivative(false,0.125,(g.Ny/2)*yAngle,pi*g.Ny/spec.Ly,order);
+            close(output[n],expected);
+        }
+        for (std::size_t n=0;n<size;++n) if (!written[n])
+            require(output[n]==654,"Derivative changed grid padding");
+        require(same(input,original),"Derivative modified input");
+        if (order==1) {
+            std::fill(legacy.begin(),legacy.end(),987);
+            require(op->spatialDerivative(*derivative,{input.data(),input.size()*sizeof(double)},
+                {legacy.data(),legacy.size()*sizeof(double)},xDerivative));
+            for (std::size_t n=0;n<size;++n) if (written[n]) close(legacy[n],output[n]);
+            for (std::size_t n=0;n<size;++n) if (!written[n])
+                require(legacy[n]==987,"Legacy derivative changed grid padding");
+        }
     }
-    for (std::size_t n=0;n<size;++n) if (!written[n]) {
-        require(dx[n]==654 && dy[n]==987,"Derivative changed grid padding");
-    }
-    require(same(input,original),"Derivative modified input");
     const auto bytes=derivative->persistentBytes(),planBytes=derivative->planBytesLowerBound();
     allocationProbe::calls=0; allocationProbe::counting=true;
     for (unsigned repeat=0;repeat<3;++repeat) {
-        require(op->spatialDerivative(*derivative,{input.data(),input.size()*sizeof(double)},{dx.data(),dx.size()*sizeof(double)},true));
-        require(op->spatialDerivative(*derivative,{input.data(),input.size()*sizeof(double)},{dy.data(),dy.size()*sizeof(double)},false));
+        for (unsigned order=1;order<=4;++order) for (bool xDerivative:{true,false})
+            require(op->spatialDerivative(*derivative,{input.data(),input.size()*sizeof(double)},
+                {output.data(),output.size()*sizeof(double)},xDerivative,order));
     }
     allocationProbe::counting=false;
     require(allocationProbe::calls==0,"Prepared bounded derivative allocated");
+    require(same(input,original),"Repeated derivative modified input");
     require(derivative->persistentBytes()==bytes && derivative->planBytesLowerBound()==planBytes,"Derivative execution changed prepared storage");
     const auto afterExecute=WVFFTWEngine::lifetimeMetrics();
     require(afterExecute.activePlans==afterPrepare.activePlans && afterExecute.totalPlansCreated==afterPrepare.totalPlansCreated,"Derivative execution created FFT plans");
@@ -363,6 +418,14 @@ void boundedDerivative() {
     compact.reset(); op.reset(); engine.reset();
     const auto final=WVFFTWEngine::lifetimeMetrics();
     require(final.activePlans==initial.activePlans && final.outstandingPlanningBytes==0,"Bounded derivative plan lifetime leaked");
+}
+void boundedDerivative() {
+    // Mixed parity makes each axis cover both ordinary and even-grid Nyquist
+    // semantics. High mixed modes lie outside the deliberately pruned retained
+    // set and therefore prove that full-grid caller frequencies are preserved.
+    boundedDerivativeCase(12,9,37,false);
+    boundedDerivativeCase(11,10,19,false);
+    boundedDerivativeCase(9,8,5,true);
 }
 void stridedBoundedDerivative() {
     auto spec=specification(8,6,4,WVComplexRepresentation::interleaved,WVFourierNormalization::forwardUnit,true,true);

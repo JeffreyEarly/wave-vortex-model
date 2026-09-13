@@ -294,7 +294,7 @@ void injectedServices(std::shared_ptr<const WVStratifiedModalRecord> source,
                     std::make_unique<WVReferenceFFTEngine>(), injected,
                     services)),
             "Injected Hydrostatic fixture failed");
-    require(injectedFactoryCalls == 4, "Injected backend factory call count differs");
+    require(injectedFactoryCalls == 5, "Injected backend factory call count differs");
     require(injected->kernel().executionOptions().usesCompactSplitViews(),
             "Injected Hydrostatic execution options were not retained");
     const auto shape = baseline->kernel().spectralShape();
@@ -331,7 +331,7 @@ void injectedServices(std::shared_ptr<const WVStratifiedModalRecord> source,
                     source, schedule, catalog,
                     std::make_unique<WVReferenceFFTEngine>(), system, services)),
             "Injected Hydrostatic integration fixture failed");
-    require(injectedFactoryCalls == 4 &&
+    require(injectedFactoryCalls == 5 &&
                 system->kernel().executionOptions().usesCompactSplitViews(),
             "Injected Hydrostatic integration services were not forwarded");
     WVPortableObserverRecord record;
@@ -349,7 +349,7 @@ void injectedServices(std::shared_ptr<const WVStratifiedModalRecord> source,
                     source, schedule, descriptor, catalog,
                     std::make_unique<WVReferenceFFTEngine>(), system, services)),
             "Injected Hydrostatic descriptor fixture failed");
-    require(injectedFactoryCalls == 4 &&
+    require(injectedFactoryCalls == 5 &&
                 system->kernel().executionOptions().usesCompactSplitViews(),
             "Injected Hydrostatic descriptor services were not forwarded");
     WVVariableKernelServices rejected;

@@ -364,7 +364,7 @@ void contracts(const std::shared_ptr<const WVStratifiedModalRecord>& source) {
     const auto* old=kernel.get();
     status=WVTransformHydrostaticKernel::create({},std::make_unique<WVReferenceFFTEngine>(),kernel);
     require(!status && kernel.get()==old,"Failed setup replaced kernel");
-    for (int fail=0;fail<4;++fail) {
+    for (int fail=0;fail<5;++fail) {
         int count=0; Counters counters;
         status=WVTransformHydrostaticKernel::create(source,std::make_unique<Engine>(counters),kernel,[&](std::unique_ptr<WVVerticalMatrixBackend>& backend) {
             if (count++==fail) return WVKernelStatus{WVKernelStatusCode::allocationFailure,"Injected matrix factory failure."};

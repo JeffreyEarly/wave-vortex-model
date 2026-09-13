@@ -1,0 +1,813 @@
+{
+  "schemaVersion": "wvm520-qualified-hydrostatic-v1",
+  "freeze": {
+    "schemaVersion": "wvm520-combined-freeze-v1",
+    "candidateCommit": "e9cba05235ce1a2f7988f3d402d1a56537067faf",
+    "baselineCommit": "939eb5797053a6c5a3a019e411ef807aa1fb3a4d",
+    "candidate": {
+      "moduleSHA256": "a16e7d1cc83707d028f1665dbdd5cff9f411e0c99072d9e7334b3cbeb25796fa",
+      "sourceAggregateSHA256": "91487ae2e6311d95e0d41aaa591247bba420c0a7ca943cee0e664c88873454e1"
+    },
+    "baseline": {
+      "moduleSHA256": "8fbd7e590b0b0274483540e7ceb966c8b24b20c9ac396f06764d95b2a3cb8c8a",
+      "sourceAggregateSHA256": "209a99eeda112d7b4106821c859eba619a8f2745f44489dc4ed6fb2d8af81700"
+    },
+    "protocol": "Three fresh processes per configuration and workload, balanced paired order, maxNumCompThreads(16), no profiling, 15 accepted/0 rejected,195 endpoint or199 composite RHS; existing output graph tolerance; preserve all samples; investigate >3% regression.",
+    "fixtures": [
+      {
+        "path": "/private/tmp/wvm-hydro-audit/fixtures/matched-hydrostatic-exponential-coefficient-endpoint-model.nc",
+        "sha256": "b41d76fd14a1e8b8c30fa7d18867906fe2eb377b6a6eb7bfc126a4126a2d39e1",
+        "bytes": 47382120
+      },
+      {
+        "path": "/private/tmp/wvm-hydro-audit/fixtures/matched-hydrostatic-exponential-composite-dense-output-model.nc",
+        "sha256": "f540cfccc98d9c4367760294d6dfc52b66ebfeb57363b35a543ac2fd7c64a4d0",
+        "bytes": 183771488
+      }
+    ],
+    "environment": {
+      "hardware": "Apple M4 Max",
+      "memoryBytes": 137438953472,
+      "macOS": "26.6.1 (25G76)",
+      "MATLAB": "R2025b",
+      "MATLABMaximumThreads": 16,
+      "provider": "native-neon-pthreads FFTW3.3.11",
+      "effectiveFFTThreads": 1,
+      "horizontalWorkers": 12,
+      "pointwiseWorkers": 8
+    }
+  },
+  "workloads": [
+    {
+      "workload": "coefficient-endpoint",
+      "baseline": {
+        "samples": [
+          {
+            "repeat": 1,
+            "seconds": 12.503876625,
+            "rhs": 195,
+            "accepted": 15,
+            "rejected": 0,
+            "outputRecordCounts": {
+              "waveVortex": 2,
+              "dense": 0,
+              "particles": 0,
+              "tracers": 0
+            },
+            "moduleSHA256": "8fbd7e590b0b0274483540e7ceb966c8b24b20c9ac396f06764d95b2a3cb8c8a",
+            "sourceAggregateSHA256": "209a99eeda112d7b4106821c859eba619a8f2745f44489dc4ed6fb2d8af81700",
+            "comparison": {
+              "passed": true,
+              "maximumRelativeError": 7.077343437464999e-13,
+              "maximumAbsoluteError": 1.3820541933107222e-14,
+              "variableCount": 40,
+              "recordCount": 14,
+              "categories": [
+                {
+                  "name": "metadata",
+                  "variableCount": 33,
+                  "maximumAbsoluteError": 0,
+                  "maximumRelativeError": 0,
+                  "passed": true
+                },
+                {
+                  "name": "times",
+                  "variableCount": 1,
+                  "maximumAbsoluteError": 0,
+                  "maximumRelativeError": 0,
+                  "passed": true
+                },
+                {
+                  "name": "coefficients",
+                  "variableCount": 6,
+                  "maximumAbsoluteError": 1.3820541933107222e-14,
+                  "maximumRelativeError": 7.077343437464999e-13,
+                  "passed": true
+                }
+              ],
+              "differences": []
+            },
+            "report": "baseline_coefficient_endpoint_1.nc.hydroaudit.json"
+          },
+          {
+            "repeat": 2,
+            "seconds": 12.415889833333333,
+            "rhs": 195,
+            "accepted": 15,
+            "rejected": 0,
+            "outputRecordCounts": {
+              "waveVortex": 2,
+              "dense": 0,
+              "particles": 0,
+              "tracers": 0
+            },
+            "moduleSHA256": "8fbd7e590b0b0274483540e7ceb966c8b24b20c9ac396f06764d95b2a3cb8c8a",
+            "sourceAggregateSHA256": "209a99eeda112d7b4106821c859eba619a8f2745f44489dc4ed6fb2d8af81700",
+            "comparison": {
+              "passed": true,
+              "maximumRelativeError": 7.077343437464999e-13,
+              "maximumAbsoluteError": 1.3820541933107222e-14,
+              "variableCount": 40,
+              "recordCount": 14,
+              "categories": [
+                {
+                  "name": "metadata",
+                  "variableCount": 33,
+                  "maximumAbsoluteError": 0,
+                  "maximumRelativeError": 0,
+                  "passed": true
+                },
+                {
+                  "name": "times",
+                  "variableCount": 1,
+                  "maximumAbsoluteError": 0,
+                  "maximumRelativeError": 0,
+                  "passed": true
+                },
+                {
+                  "name": "coefficients",
+                  "variableCount": 6,
+                  "maximumAbsoluteError": 1.3820541933107222e-14,
+                  "maximumRelativeError": 7.077343437464999e-13,
+                  "passed": true
+                }
+              ],
+              "differences": []
+            },
+            "report": "baseline_coefficient_endpoint_2.nc.hydroaudit.json"
+          },
+          {
+            "repeat": 3,
+            "seconds": 12.461762291666666,
+            "rhs": 195,
+            "accepted": 15,
+            "rejected": 0,
+            "outputRecordCounts": {
+              "waveVortex": 2,
+              "dense": 0,
+              "particles": 0,
+              "tracers": 0
+            },
+            "moduleSHA256": "8fbd7e590b0b0274483540e7ceb966c8b24b20c9ac396f06764d95b2a3cb8c8a",
+            "sourceAggregateSHA256": "209a99eeda112d7b4106821c859eba619a8f2745f44489dc4ed6fb2d8af81700",
+            "comparison": {
+              "passed": true,
+              "maximumRelativeError": 8.604759323327516e-13,
+              "maximumAbsoluteError": 1.9854777544292546e-14,
+              "variableCount": 40,
+              "recordCount": 14,
+              "categories": [
+                {
+                  "name": "metadata",
+                  "variableCount": 33,
+                  "maximumAbsoluteError": 0,
+                  "maximumRelativeError": 0,
+                  "passed": true
+                },
+                {
+                  "name": "times",
+                  "variableCount": 1,
+                  "maximumAbsoluteError": 0,
+                  "maximumRelativeError": 0,
+                  "passed": true
+                },
+                {
+                  "name": "coefficients",
+                  "variableCount": 6,
+                  "maximumAbsoluteError": 1.9854777544292546e-14,
+                  "maximumRelativeError": 8.604759323327516e-13,
+                  "passed": true
+                }
+              ],
+              "differences": []
+            },
+            "report": "baseline_coefficient_endpoint_3.nc.hydroaudit.json"
+          }
+        ],
+        "medianSeconds": 12.461762291666666,
+        "minimumSeconds": 12.415889833333333,
+        "maximumSeconds": 12.503876625
+      },
+      "candidate": {
+        "samples": [
+          {
+            "repeat": 1,
+            "seconds": 12.437828,
+            "rhs": 195,
+            "accepted": 15,
+            "rejected": 0,
+            "outputRecordCounts": {
+              "waveVortex": 2,
+              "dense": 0,
+              "particles": 0,
+              "tracers": 0
+            },
+            "moduleSHA256": "a16e7d1cc83707d028f1665dbdd5cff9f411e0c99072d9e7334b3cbeb25796fa",
+            "sourceAggregateSHA256": "91487ae2e6311d95e0d41aaa591247bba420c0a7ca943cee0e664c88873454e1",
+            "comparison": {
+              "passed": true,
+              "maximumRelativeError": 7.077343437464999e-13,
+              "maximumAbsoluteError": 1.3820541933107222e-14,
+              "variableCount": 40,
+              "recordCount": 14,
+              "categories": [
+                {
+                  "name": "metadata",
+                  "variableCount": 33,
+                  "maximumAbsoluteError": 0,
+                  "maximumRelativeError": 0,
+                  "passed": true
+                },
+                {
+                  "name": "times",
+                  "variableCount": 1,
+                  "maximumAbsoluteError": 0,
+                  "maximumRelativeError": 0,
+                  "passed": true
+                },
+                {
+                  "name": "coefficients",
+                  "variableCount": 6,
+                  "maximumAbsoluteError": 1.3820541933107222e-14,
+                  "maximumRelativeError": 7.077343437464999e-13,
+                  "passed": true
+                }
+              ],
+              "differences": []
+            },
+            "report": "candidate_coefficient_endpoint_1.nc.hydroaudit.json"
+          },
+          {
+            "repeat": 2,
+            "seconds": 12.456794833333333,
+            "rhs": 195,
+            "accepted": 15,
+            "rejected": 0,
+            "outputRecordCounts": {
+              "waveVortex": 2,
+              "dense": 0,
+              "particles": 0,
+              "tracers": 0
+            },
+            "moduleSHA256": "a16e7d1cc83707d028f1665dbdd5cff9f411e0c99072d9e7334b3cbeb25796fa",
+            "sourceAggregateSHA256": "91487ae2e6311d95e0d41aaa591247bba420c0a7ca943cee0e664c88873454e1",
+            "comparison": {
+              "passed": true,
+              "maximumRelativeError": 8.604759323327516e-13,
+              "maximumAbsoluteError": 1.9854777544292546e-14,
+              "variableCount": 40,
+              "recordCount": 14,
+              "categories": [
+                {
+                  "name": "metadata",
+                  "variableCount": 33,
+                  "maximumAbsoluteError": 0,
+                  "maximumRelativeError": 0,
+                  "passed": true
+                },
+                {
+                  "name": "times",
+                  "variableCount": 1,
+                  "maximumAbsoluteError": 0,
+                  "maximumRelativeError": 0,
+                  "passed": true
+                },
+                {
+                  "name": "coefficients",
+                  "variableCount": 6,
+                  "maximumAbsoluteError": 1.9854777544292546e-14,
+                  "maximumRelativeError": 8.604759323327516e-13,
+                  "passed": true
+                }
+              ],
+              "differences": []
+            },
+            "report": "candidate_coefficient_endpoint_2.nc.hydroaudit.json"
+          },
+          {
+            "repeat": 3,
+            "seconds": 12.495818458333334,
+            "rhs": 195,
+            "accepted": 15,
+            "rejected": 0,
+            "outputRecordCounts": {
+              "waveVortex": 2,
+              "dense": 0,
+              "particles": 0,
+              "tracers": 0
+            },
+            "moduleSHA256": "a16e7d1cc83707d028f1665dbdd5cff9f411e0c99072d9e7334b3cbeb25796fa",
+            "sourceAggregateSHA256": "91487ae2e6311d95e0d41aaa591247bba420c0a7ca943cee0e664c88873454e1",
+            "comparison": {
+              "passed": true,
+              "maximumRelativeError": 7.077343437464999e-13,
+              "maximumAbsoluteError": 1.3820541933107222e-14,
+              "variableCount": 40,
+              "recordCount": 14,
+              "categories": [
+                {
+                  "name": "metadata",
+                  "variableCount": 33,
+                  "maximumAbsoluteError": 0,
+                  "maximumRelativeError": 0,
+                  "passed": true
+                },
+                {
+                  "name": "times",
+                  "variableCount": 1,
+                  "maximumAbsoluteError": 0,
+                  "maximumRelativeError": 0,
+                  "passed": true
+                },
+                {
+                  "name": "coefficients",
+                  "variableCount": 6,
+                  "maximumAbsoluteError": 1.3820541933107222e-14,
+                  "maximumRelativeError": 7.077343437464999e-13,
+                  "passed": true
+                }
+              ],
+              "differences": []
+            },
+            "report": "candidate_coefficient_endpoint_3.nc.hydroaudit.json"
+          }
+        ],
+        "medianSeconds": 12.456794833333333,
+        "minimumSeconds": 12.437828,
+        "maximumSeconds": 12.495818458333334
+      },
+      "timeReductionPercent": 0.03986160397758676,
+      "speedup": 1.0003987749978862
+    },
+    {
+      "workload": "composite-dense-output",
+      "baseline": {
+        "samples": [
+          {
+            "repeat": 1,
+            "seconds": 53.73241908333333,
+            "rhs": 199,
+            "accepted": 15,
+            "rejected": 0,
+            "outputRecordCounts": {
+              "waveVortex": 2,
+              "dense": 5,
+              "particles": 5,
+              "tracers": 5
+            },
+            "moduleSHA256": "8fbd7e590b0b0274483540e7ceb966c8b24b20c9ac396f06764d95b2a3cb8c8a",
+            "sourceAggregateSHA256": "209a99eeda112d7b4106821c859eba619a8f2745f44489dc4ed6fb2d8af81700",
+            "comparison": {
+              "passed": true,
+              "maximumRelativeError": 7.808542751933967e-13,
+              "maximumAbsoluteError": 2.842170943040401e-14,
+              "variableCount": 70,
+              "recordCount": 64,
+              "categories": [
+                {
+                  "name": "metadata",
+                  "variableCount": 48,
+                  "maximumAbsoluteError": 0,
+                  "maximumRelativeError": 0,
+                  "passed": true
+                },
+                {
+                  "name": "times",
+                  "variableCount": 4,
+                  "maximumAbsoluteError": 0,
+                  "maximumRelativeError": 0,
+                  "passed": true
+                },
+                {
+                  "name": "coefficients",
+                  "variableCount": 6,
+                  "maximumAbsoluteError": 1.701069840542857e-14,
+                  "maximumRelativeError": 7.808542751933967e-13,
+                  "passed": true
+                },
+                {
+                  "name": "eulerianFields",
+                  "variableCount": 1,
+                  "maximumAbsoluteError": 1.942890293094024e-16,
+                  "maximumRelativeError": 7.131735406655125e-16,
+                  "passed": true
+                },
+                {
+                  "name": "moorings",
+                  "variableCount": 5,
+                  "maximumAbsoluteError": 1.0408340855860843e-16,
+                  "maximumRelativeError": 1.444697887641688e-15,
+                  "passed": true
+                },
+                {
+                  "name": "particles",
+                  "variableCount": 5,
+                  "maximumAbsoluteError": 2.842170943040401e-14,
+                  "maximumRelativeError": 2.973683524879685e-15,
+                  "passed": true
+                },
+                {
+                  "name": "tracers",
+                  "variableCount": 1,
+                  "maximumAbsoluteError": 1.2212453270876722e-15,
+                  "maximumRelativeError": 1.2212362925138319e-15,
+                  "passed": true
+                }
+              ],
+              "differences": []
+            },
+            "report": "baseline_composite_dense_output_1.nc.hydroaudit.json"
+          },
+          {
+            "repeat": 2,
+            "seconds": 53.75683658333333,
+            "rhs": 199,
+            "accepted": 15,
+            "rejected": 0,
+            "outputRecordCounts": {
+              "waveVortex": 2,
+              "dense": 5,
+              "particles": 5,
+              "tracers": 5
+            },
+            "moduleSHA256": "8fbd7e590b0b0274483540e7ceb966c8b24b20c9ac396f06764d95b2a3cb8c8a",
+            "sourceAggregateSHA256": "209a99eeda112d7b4106821c859eba619a8f2745f44489dc4ed6fb2d8af81700",
+            "comparison": {
+              "passed": true,
+              "maximumRelativeError": 4.771849389802955e-13,
+              "maximumAbsoluteError": 1.8189894035458565e-12,
+              "variableCount": 70,
+              "recordCount": 64,
+              "categories": [
+                {
+                  "name": "metadata",
+                  "variableCount": 48,
+                  "maximumAbsoluteError": 0,
+                  "maximumRelativeError": 0,
+                  "passed": true
+                },
+                {
+                  "name": "times",
+                  "variableCount": 4,
+                  "maximumAbsoluteError": 0,
+                  "maximumRelativeError": 0,
+                  "passed": true
+                },
+                {
+                  "name": "coefficients",
+                  "variableCount": 6,
+                  "maximumAbsoluteError": 1.1785711295786427e-14,
+                  "maximumRelativeError": 4.771849389802955e-13,
+                  "passed": true
+                },
+                {
+                  "name": "eulerianFields",
+                  "variableCount": 1,
+                  "maximumAbsoluteError": 2.220446049250313e-16,
+                  "maximumRelativeError": 8.150554750463e-16,
+                  "passed": true
+                },
+                {
+                  "name": "moorings",
+                  "variableCount": 5,
+                  "maximumAbsoluteError": 1.0755285551056204e-16,
+                  "maximumRelativeError": 1.492854483896411e-15,
+                  "passed": true
+                },
+                {
+                  "name": "particles",
+                  "variableCount": 5,
+                  "maximumAbsoluteError": 1.8189894035458565e-12,
+                  "maximumRelativeError": 1.2104148432256746e-14,
+                  "passed": true
+                },
+                {
+                  "name": "tracers",
+                  "variableCount": 1,
+                  "maximumAbsoluteError": 1.2212453270876722e-15,
+                  "maximumRelativeError": 1.2212362925138319e-15,
+                  "passed": true
+                }
+              ],
+              "differences": []
+            },
+            "report": "baseline_composite_dense_output_2.nc.hydroaudit.json"
+          },
+          {
+            "repeat": 3,
+            "seconds": 53.965720375,
+            "rhs": 199,
+            "accepted": 15,
+            "rejected": 0,
+            "outputRecordCounts": {
+              "waveVortex": 2,
+              "dense": 5,
+              "particles": 5,
+              "tracers": 5
+            },
+            "moduleSHA256": "8fbd7e590b0b0274483540e7ceb966c8b24b20c9ac396f06764d95b2a3cb8c8a",
+            "sourceAggregateSHA256": "209a99eeda112d7b4106821c859eba619a8f2745f44489dc4ed6fb2d8af81700",
+            "comparison": {
+              "passed": true,
+              "maximumRelativeError": 6.913714545280219e-13,
+              "maximumAbsoluteError": 1.6672427327613093e-14,
+              "variableCount": 70,
+              "recordCount": 64,
+              "categories": [
+                {
+                  "name": "metadata",
+                  "variableCount": 48,
+                  "maximumAbsoluteError": 0,
+                  "maximumRelativeError": 0,
+                  "passed": true
+                },
+                {
+                  "name": "times",
+                  "variableCount": 4,
+                  "maximumAbsoluteError": 0,
+                  "maximumRelativeError": 0,
+                  "passed": true
+                },
+                {
+                  "name": "coefficients",
+                  "variableCount": 6,
+                  "maximumAbsoluteError": 1.6672427327613093e-14,
+                  "maximumRelativeError": 6.913714545280219e-13,
+                  "passed": true
+                },
+                {
+                  "name": "eulerianFields",
+                  "variableCount": 1,
+                  "maximumAbsoluteError": 2.0816681711721685e-16,
+                  "maximumRelativeError": 7.641145078559062e-16,
+                  "passed": true
+                },
+                {
+                  "name": "moorings",
+                  "variableCount": 5,
+                  "maximumAbsoluteError": 9.71445146547012e-17,
+                  "maximumRelativeError": 1.348384695132242e-15,
+                  "passed": true
+                },
+                {
+                  "name": "particles",
+                  "variableCount": 5,
+                  "maximumAbsoluteError": 2.8189256484623115e-17,
+                  "maximumRelativeError": 2.7223863255940777e-15,
+                  "passed": true
+                },
+                {
+                  "name": "tracers",
+                  "variableCount": 1,
+                  "maximumAbsoluteError": 9.992007221626409e-16,
+                  "maximumRelativeError": 9.991933302385896e-16,
+                  "passed": true
+                }
+              ],
+              "differences": []
+            },
+            "report": "baseline_composite_dense_output_3.nc.hydroaudit.json"
+          }
+        ],
+        "medianSeconds": 53.75683658333333,
+        "minimumSeconds": 53.73241908333333,
+        "maximumSeconds": 53.965720375
+      },
+      "candidate": {
+        "samples": [
+          {
+            "repeat": 1,
+            "seconds": 32.101742875,
+            "rhs": 199,
+            "accepted": 15,
+            "rejected": 0,
+            "outputRecordCounts": {
+              "waveVortex": 2,
+              "dense": 5,
+              "particles": 5,
+              "tracers": 5
+            },
+            "moduleSHA256": "a16e7d1cc83707d028f1665dbdd5cff9f411e0c99072d9e7334b3cbeb25796fa",
+            "sourceAggregateSHA256": "91487ae2e6311d95e0d41aaa591247bba420c0a7ca943cee0e664c88873454e1",
+            "comparison": {
+              "passed": true,
+              "maximumRelativeError": 6.913714545280219e-13,
+              "maximumAbsoluteError": 1.6672427327613093e-14,
+              "variableCount": 70,
+              "recordCount": 64,
+              "categories": [
+                {
+                  "name": "metadata",
+                  "variableCount": 48,
+                  "maximumAbsoluteError": 0,
+                  "maximumRelativeError": 0,
+                  "passed": true
+                },
+                {
+                  "name": "times",
+                  "variableCount": 4,
+                  "maximumAbsoluteError": 0,
+                  "maximumRelativeError": 0,
+                  "passed": true
+                },
+                {
+                  "name": "coefficients",
+                  "variableCount": 6,
+                  "maximumAbsoluteError": 1.6672427327613093e-14,
+                  "maximumRelativeError": 6.913714545280219e-13,
+                  "passed": true
+                },
+                {
+                  "name": "eulerianFields",
+                  "variableCount": 1,
+                  "maximumAbsoluteError": 2.0816681711721685e-16,
+                  "maximumRelativeError": 7.641145078559062e-16,
+                  "passed": true
+                },
+                {
+                  "name": "moorings",
+                  "variableCount": 5,
+                  "maximumAbsoluteError": 9.71445146547012e-17,
+                  "maximumRelativeError": 1.348384695132242e-15,
+                  "passed": true
+                },
+                {
+                  "name": "particles",
+                  "variableCount": 5,
+                  "maximumAbsoluteError": 2.8189256484623115e-17,
+                  "maximumRelativeError": 2.7223863255940777e-15,
+                  "passed": true
+                },
+                {
+                  "name": "tracers",
+                  "variableCount": 1,
+                  "maximumAbsoluteError": 9.992007221626409e-16,
+                  "maximumRelativeError": 9.991933302385896e-16,
+                  "passed": true
+                }
+              ],
+              "differences": []
+            },
+            "report": "candidate_composite_dense_output_1.nc.hydroaudit.json"
+          },
+          {
+            "repeat": 2,
+            "seconds": 31.884296791666667,
+            "rhs": 199,
+            "accepted": 15,
+            "rejected": 0,
+            "outputRecordCounts": {
+              "waveVortex": 2,
+              "dense": 5,
+              "particles": 5,
+              "tracers": 5
+            },
+            "moduleSHA256": "a16e7d1cc83707d028f1665dbdd5cff9f411e0c99072d9e7334b3cbeb25796fa",
+            "sourceAggregateSHA256": "91487ae2e6311d95e0d41aaa591247bba420c0a7ca943cee0e664c88873454e1",
+            "comparison": {
+              "passed": true,
+              "maximumRelativeError": 6.913714545280219e-13,
+              "maximumAbsoluteError": 1.6672427327613093e-14,
+              "variableCount": 70,
+              "recordCount": 64,
+              "categories": [
+                {
+                  "name": "metadata",
+                  "variableCount": 48,
+                  "maximumAbsoluteError": 0,
+                  "maximumRelativeError": 0,
+                  "passed": true
+                },
+                {
+                  "name": "times",
+                  "variableCount": 4,
+                  "maximumAbsoluteError": 0,
+                  "maximumRelativeError": 0,
+                  "passed": true
+                },
+                {
+                  "name": "coefficients",
+                  "variableCount": 6,
+                  "maximumAbsoluteError": 1.6672427327613093e-14,
+                  "maximumRelativeError": 6.913714545280219e-13,
+                  "passed": true
+                },
+                {
+                  "name": "eulerianFields",
+                  "variableCount": 1,
+                  "maximumAbsoluteError": 2.0816681711721685e-16,
+                  "maximumRelativeError": 7.641145078559062e-16,
+                  "passed": true
+                },
+                {
+                  "name": "moorings",
+                  "variableCount": 5,
+                  "maximumAbsoluteError": 9.71445146547012e-17,
+                  "maximumRelativeError": 1.348384695132242e-15,
+                  "passed": true
+                },
+                {
+                  "name": "particles",
+                  "variableCount": 5,
+                  "maximumAbsoluteError": 2.8189256484623115e-17,
+                  "maximumRelativeError": 2.7223863255940777e-15,
+                  "passed": true
+                },
+                {
+                  "name": "tracers",
+                  "variableCount": 1,
+                  "maximumAbsoluteError": 9.992007221626409e-16,
+                  "maximumRelativeError": 9.991933302385896e-16,
+                  "passed": true
+                }
+              ],
+              "differences": []
+            },
+            "report": "candidate_composite_dense_output_2.nc.hydroaudit.json"
+          },
+          {
+            "repeat": 3,
+            "seconds": 32.02358054166667,
+            "rhs": 199,
+            "accepted": 15,
+            "rejected": 0,
+            "outputRecordCounts": {
+              "waveVortex": 2,
+              "dense": 5,
+              "particles": 5,
+              "tracers": 5
+            },
+            "moduleSHA256": "a16e7d1cc83707d028f1665dbdd5cff9f411e0c99072d9e7334b3cbeb25796fa",
+            "sourceAggregateSHA256": "91487ae2e6311d95e0d41aaa591247bba420c0a7ca943cee0e664c88873454e1",
+            "comparison": {
+              "passed": true,
+              "maximumRelativeError": 4.771849389802955e-13,
+              "maximumAbsoluteError": 1.8189894035458565e-12,
+              "variableCount": 70,
+              "recordCount": 64,
+              "categories": [
+                {
+                  "name": "metadata",
+                  "variableCount": 48,
+                  "maximumAbsoluteError": 0,
+                  "maximumRelativeError": 0,
+                  "passed": true
+                },
+                {
+                  "name": "times",
+                  "variableCount": 4,
+                  "maximumAbsoluteError": 0,
+                  "maximumRelativeError": 0,
+                  "passed": true
+                },
+                {
+                  "name": "coefficients",
+                  "variableCount": 6,
+                  "maximumAbsoluteError": 1.1785711295786427e-14,
+                  "maximumRelativeError": 4.771849389802955e-13,
+                  "passed": true
+                },
+                {
+                  "name": "eulerianFields",
+                  "variableCount": 1,
+                  "maximumAbsoluteError": 2.220446049250313e-16,
+                  "maximumRelativeError": 8.150554750463e-16,
+                  "passed": true
+                },
+                {
+                  "name": "moorings",
+                  "variableCount": 5,
+                  "maximumAbsoluteError": 1.0755285551056204e-16,
+                  "maximumRelativeError": 1.492854483896411e-15,
+                  "passed": true
+                },
+                {
+                  "name": "particles",
+                  "variableCount": 5,
+                  "maximumAbsoluteError": 1.8189894035458565e-12,
+                  "maximumRelativeError": 1.2104148432256746e-14,
+                  "passed": true
+                },
+                {
+                  "name": "tracers",
+                  "variableCount": 1,
+                  "maximumAbsoluteError": 1.1102230246251565e-15,
+                  "maximumRelativeError": 1.1102148113762107e-15,
+                  "passed": true
+                }
+              ],
+              "differences": []
+            },
+            "report": "candidate_composite_dense_output_3.nc.hydroaudit.json"
+          }
+        ],
+        "medianSeconds": 32.02358054166667,
+        "minimumSeconds": 31.884296791666667,
+        "maximumSeconds": 32.101742875
+      },
+      "timeReductionPercent": 40.42882249586241,
+      "speedup": 1.6786641491693595
+    }
+  ],
+  "scope": "Hydrostatic exponential MATLAB compiled follow-up; reconstructed fixtures; no new three-interface or memory publication cohort."
+}

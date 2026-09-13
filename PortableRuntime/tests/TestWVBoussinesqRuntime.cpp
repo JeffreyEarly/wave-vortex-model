@@ -293,7 +293,7 @@ void injectedServices(std::shared_ptr<const WVStratifiedModalRecord> source,
                     std::make_unique<WVReferenceFFTEngine>(), injected,
                     services)),
             "Injected Boussinesq fixture failed");
-    require(injectedFactoryCalls == 11 &&
+    require(injectedFactoryCalls == 12 &&
                 injected->kernel().executionOptions().usesCompactSplitViews(),
             "Injected Boussinesq services were not retained");
     const auto shape = baseline->kernel().spectralShape();
@@ -329,7 +329,7 @@ void injectedServices(std::shared_ptr<const WVStratifiedModalRecord> source,
                     source, schedule, catalog,
                     std::make_unique<WVReferenceFFTEngine>(), system, services)),
             "Injected Boussinesq integration fixture failed");
-    require(injectedFactoryCalls == 11 &&
+    require(injectedFactoryCalls == 12 &&
                 system->kernel().executionOptions().usesCompactSplitViews(),
             "Injected Boussinesq integration services were not forwarded");
     WVPortableObserverRecord record;
@@ -347,7 +347,7 @@ void injectedServices(std::shared_ptr<const WVStratifiedModalRecord> source,
                     source, schedule, descriptor, catalog,
                     std::make_unique<WVReferenceFFTEngine>(), system, services)),
             "Injected Boussinesq descriptor fixture failed");
-    require(injectedFactoryCalls == 11 &&
+    require(injectedFactoryCalls == 12 &&
                 system->kernel().executionOptions().usesCompactSplitViews(),
             "Injected Boussinesq descriptor services were not forwarded");
     WVVariableKernelServices rejected;
