@@ -93,7 +93,8 @@ try
     if ~isempty(model) && isvalid(model)
         delete(model);
         model = [];
-    elseif ~isempty(wvt) && isvalid(wvt)
+    end
+    if ~isempty(wvt) && isvalid(wvt)
         delete(wvt);
         wvt = [];
     end
@@ -119,7 +120,8 @@ catch exception
         catch
         end
         delete(model);
-    elseif ~isempty(wvt) && isvalid(wvt)
+    end
+    if ~isempty(wvt) && isvalid(wvt)
         delete(wvt);
     end
     writePhase(phasePath,"failed");
