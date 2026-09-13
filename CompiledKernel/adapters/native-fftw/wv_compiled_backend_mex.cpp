@@ -1,6 +1,7 @@
 #include "mex.h"
 
 #include "WVNativeFFTWEngine.hpp"
+#include "WVMatlabTransformHost.hpp"
 #include "WVModelInternalAccess.hpp"
 #include "WaveVortexRuntime/WVExtensionCatalog.hpp"
 #include "WaveVortexRuntime/WVModel.hpp"
@@ -184,7 +185,9 @@ mxArray* realBundleOutput(WVShape3D spatial, std::size_t channels, WVRealFieldBu
     return value;
 }
 
-void cleanup() { models.clear(); }
+// MATLAB retains one exit callback per MEX. Both handle registries must use
+// this callback so creating either kind last cannot replace the other's cleanup.
+void cleanup() { models.clear(); WVCleanupMatlabTransforms(); }
 
 mxArray* scalarString(const std::string& value) { return mxCreateString(value.c_str()); }
 
@@ -196,8 +199,8 @@ constexpr const char* logicalPlanCountMeaning = "logical-prepared-operation-slot
 constexpr const char* constantWorkerPolicyIdentifier = "constant-stage-workers-v1";
 
 mxArray* moduleInfo(const std::string& expectedOpenMPRuntime) {
-    const char* names[] = {"engine","version","baseLibrary","threadLibrary","openMPRuntimeLibrary","nonlinearFluxSchedule","executionScheduleVersion","workerPolicyIdentifier","requestedHorizontalWorkers","requestedPointwiseWorkers","planCountMeaning"};
-    mxArray* result = mxCreateStructMatrix(1,1,11,names);
+    const char* names[] = {"engine","version","baseLibrary","threadLibrary","openMPRuntimeLibrary","nonlinearFluxSchedule","executionScheduleVersion","workerPolicyIdentifier","requestedHorizontalWorkers","requestedPointwiseWorkers","planCountMeaning","matlabTransformBridgeVersion"};
+    mxArray* result = mxCreateStructMatrix(1,1,12,names);
     const auto identity = WVFFTWEngine::linkedLibraries(expectedOpenMPRuntime);
     mxSetField(result,0,"engine",mxCreateString("fftw"));
     mxSetField(result,0,"version",scalarString(identity.version));
@@ -212,6 +215,7 @@ mxArray* moduleInfo(const std::string& expectedOpenMPRuntime) {
     mxSetField(result,0,"requestedHorizontalWorkers",mxCreateDoubleScalar(compact ? policy.horizontalOuterWorkers : 0));
     mxSetField(result,0,"requestedPointwiseWorkers",mxCreateDoubleScalar(compact ? policy.pointwiseWorkers : 1));
     mxSetField(result,0,"planCountMeaning",mxCreateString(logicalPlanCountMeaning));
+    mxSetField(result,0,"matlabTransformBridgeVersion",mxCreateDoubleScalar(1));
     return result;
 }
 
@@ -222,6 +226,10 @@ void mexFunction(int nlhs, mxArray* plhs[], int nrhs, const mxArray* prhs[]) {
     char commandBuffer[64];
     if (mxGetString(prhs[0],commandBuffer,sizeof(commandBuffer)) != 0) fail("WaveVortexModel:CompiledKernelCommand","Command is too long.");
     const std::string command(commandBuffer);
+    if (WVDispatchMatlabTransform(command,nlhs,plhs,nrhs,prhs)) {
+        if(command=="transformCreate") mexAtExit(cleanup);
+        return;
+    }
     if (command == "moduleInfo") {
         if ((nrhs != 1 && nrhs != 2) || nlhs != 1) fail("WaveVortexModel:CompiledKernelCommand","moduleInfo accepts an optional expected OpenMP runtime path.");
         const auto expectedRuntime = nrhs == 2 ? arbitraryLengthStringInput(prhs[1],"Expected OpenMP runtime") : std::string{};
@@ -230,12 +238,13 @@ void mexFunction(int nlhs, mxArray* plhs[], int nrhs, const mxArray* prhs[]) {
     }
     if (command == "moduleMetrics") {
         if (nrhs != 1 || nlhs != 1) fail("WaveVortexModel:CompiledKernelCommand","moduleMetrics takes no additional inputs.");
-        const char* names[] = {"kernelCount","moduleLocked","activePlans","totalPlansCreated","totalPlansDestroyed","outstandingPlanningBytes","totalPlanningSeconds","providerPlanCountScope"};
-        plhs[0] = mxCreateStructMatrix(1,1,8,names);
+        const char* names[] = {"kernelCount","moduleLocked","activePlans","totalPlansCreated","totalPlansDestroyed","outstandingPlanningBytes","totalPlanningSeconds","providerPlanCountScope","matlabTransformCount"};
+        plhs[0] = mxCreateStructMatrix(1,1,9,names);
         const auto lifetime = WVFFTWEngine::lifetimeMetrics();
-        const double values[] = {static_cast<double>(models.size()),models.empty() ? 0.0 : 1.0,static_cast<double>(lifetime.activePlans),static_cast<double>(lifetime.totalPlansCreated),static_cast<double>(lifetime.totalPlansDestroyed),static_cast<double>(lifetime.outstandingPlanningBytes),lifetime.totalPlanningSeconds};
+        const double values[] = {static_cast<double>(models.size()+WVMatlabTransformCount()),mexIsLocked() ? 1.0 : 0.0,static_cast<double>(lifetime.activePlans),static_cast<double>(lifetime.totalPlansCreated),static_cast<double>(lifetime.totalPlansDestroyed),static_cast<double>(lifetime.outstandingPlanningBytes),lifetime.totalPlanningSeconds};
         for (std::size_t i = 0; i < 7; ++i) mxSetField(plhs[0],0,names[i],mxCreateDoubleScalar(values[i]));
         mxSetField(plhs[0],0,"providerPlanCountScope",mxCreateString("module-global FFTW handles across all contexts; shared resources counted once"));
+        mxSetField(plhs[0],0,"matlabTransformCount",mxCreateDoubleScalar(WVMatlabTransformCount()));
         return;
     }
     if (command == "estimate") {
@@ -249,7 +258,10 @@ void mexFunction(int nlhs, mxArray* plhs[], int nrhs, const mxArray* prhs[]) {
         const auto halfElements = executionRows*c.Nz*4;
         const auto halfSpectrumScratchCapacityBytes = 2 * halfElements * sizeof(double);
         const auto realScratchCapacityBytes = descriptor.spatialShape().elementCount() * 6 * sizeof(double);
-        const auto scratchCapacityBytes = halfSpectrumScratchCapacityBytes + realScratchCapacityBytes;
+        const auto phaseValueBytes = descriptor.spectralShape().elementCount() * sizeof(WVComplex64);
+        const auto scratchCapacityBytes = halfSpectrumScratchCapacityBytes +
+                                          realScratchCapacityBytes +
+                                          phaseValueBytes;
         const auto configuredScalarHalfElements = compact ?
             std::max(halfElements,fullHalfRows*c.Nz) : halfElements;
         const auto configuredScalarScratchCapacityBytes = configuredScalarHalfElements*sizeof(WVComplex64)+realScratchCapacityBytes;
@@ -258,8 +270,8 @@ void mexFunction(int nlhs, mxArray* plhs[], int nrhs, const mxArray* prhs[]) {
                                      descriptor.halfSpectrumMappings().NxHalf *
                                          c.Ny * sizeof(std::uint8_t);
         const auto persistentBytesLowerBound = descriptorBytes + scratchCapacityBytes;
-        const char* names[] = {"contractVersion","planCount","planMemoryAccounting","descriptorBytes","halfSpectrumScratchCapacityBytes","realScratchCapacityBytes","scratchCapacityBytes","persistentBytesLowerBound","stateInputBytes","fluxOutputBytes","knownMaximumLiveOwnedBytesLowerBound","Nx","Ny","Nz","Nj","Nkl","planCountMeaning","nonlinearFluxSchedule","executionScheduleVersion","verticalExecutionRowCount","configuredScalarScratchCapacityBytes","estimateScope"};
-        plhs[0] = mxCreateStructMatrix(1,1,22,names);
+        const char* names[] = {"contractVersion","planCount","planMemoryAccounting","descriptorBytes","halfSpectrumScratchCapacityBytes","realScratchCapacityBytes","scratchCapacityBytes","persistentBytesLowerBound","stateInputBytes","fluxOutputBytes","knownMaximumLiveOwnedBytesLowerBound","Nx","Ny","Nz","Nj","Nkl","planCountMeaning","nonlinearFluxSchedule","executionScheduleVersion","verticalExecutionRowCount","configuredScalarScratchCapacityBytes","phaseValueBytes","estimateScope"};
+        plhs[0] = mxCreateStructMatrix(1,1,23,names);
         mxSetField(plhs[0],0,"contractVersion",mxCreateDoubleScalar(static_cast<double>(WVKernelContractVersion)));
         mxSetField(plhs[0],0,"planCount",mxCreateDoubleScalar(17.0));
         mxSetField(plhs[0],0,"planMemoryAccounting",mxCreateString("FFTW plan storage is opaque before construction"));
@@ -270,6 +282,7 @@ void mexFunction(int nlhs, mxArray* plhs[], int nrhs, const mxArray* prhs[]) {
         mxSetField(plhs[0],0,"executionScheduleVersion",mxCreateDoubleScalar(1.0));
         mxSetField(plhs[0],0,"verticalExecutionRowCount",mxCreateDoubleScalar(executionRows));
         mxSetField(plhs[0],0,"configuredScalarScratchCapacityBytes",mxCreateDoubleScalar(configuredScalarScratchCapacityBytes));
+        mxSetField(plhs[0],0,"phaseValueBytes",mxCreateDoubleScalar(phaseValueBytes));
         mxSetField(plhs[0],0,"estimateScope",mxCreateString("Base descriptor/mask and numerical arena only; provider, shared horizontal resources, executors and management are measured after construction. Scalar envelope is a separate optional configuration."));
         return;
     }

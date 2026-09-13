@@ -106,7 +106,7 @@ try
     module.engine = string(info.engine);
     % Inspect the installed binary; never infer its schedule from newer source
     % defaults. Older modules lacking additive metadata remain valid.
-    for name = ["nonlinearFluxSchedule","executionScheduleVersion","workerPolicyIdentifier","requestedHorizontalWorkers","requestedPointwiseWorkers","planCountMeaning"]
+    for name = ["nonlinearFluxSchedule","executionScheduleVersion","workerPolicyIdentifier","requestedHorizontalWorkers","requestedPointwiseWorkers","planCountMeaning","matlabTransformBridgeVersion"]
         if isfield(info,name), module.(name) = info.(name); end
     end
     module.identityValidated = validateLibraryIdentities(constants,validatedBuild,libraries);

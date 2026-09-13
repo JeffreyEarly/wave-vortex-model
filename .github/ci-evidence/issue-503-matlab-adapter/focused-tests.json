@@ -1,0 +1,49 @@
+{
+  "schemaVersion": 1,
+  "note": "Latest affected-method result; the mixed-handle expectation was corrected from one to two total live kernels before its isolated rerun.",
+  "tests": {
+    "TestWVCompiledTransformBackend/compiledAndLegacyHandlesShareLifecycle": {
+      "passed": true,
+      "failed": false,
+      "incomplete": false,
+      "receipt": "mixed-lifecycle-final.csv"
+    },
+    "TestWVCompiledTransformBackend/compiledSourceIdentityIsDistinct": {
+      "passed": true,
+      "failed": false,
+      "incomplete": false,
+      "receipt": "identity-lifecycle-final2.csv"
+    },
+    "TestWVCompiledTransformBackend/compiledSourceIdentityIsFreshAfterMatReload": {
+      "passed": true,
+      "failed": false,
+      "incomplete": false,
+      "receipt": "identity-lifecycle-final2.csv"
+    },
+    "TestWVCompiledTransformBackend/compiledSourceIdentitySurvivesClearFunctions": {
+      "passed": true,
+      "failed": false,
+      "incomplete": false,
+      "receipt": "identity-lifecycle-final2.csv"
+    },
+    "TestProductionCodeAnalyzer/productionInventoryIsDeterministic": {
+      "passed": true,
+      "failed": false,
+      "incomplete": false,
+      "receipt": "identity-lifecycle-final2.csv"
+    },
+    "TestProductionCodeAnalyzer/reportContainsReleaseLocationsAndDiagnostics": {
+      "passed": true,
+      "failed": false,
+      "incomplete": false,
+      "receipt": "identity-lifecycle-final2.csv"
+    },
+    "TestWVCompiledTransformBackend/hydrostaticCallScopeReusesFieldsAndRecovers": {
+      "passed": true,
+      "failed": false,
+      "incomplete": false,
+      "receipt": "hydrostatic-token-final.csv"
+    }
+  },
+  "passed": true
+}

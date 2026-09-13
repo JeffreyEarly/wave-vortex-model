@@ -245,13 +245,6 @@ WVCheckpointStatus inspectFile(int file, WVStratifiedModalInspection& result) {
     }
     result = std::move(candidate); return WVCheckpointStatus::ok();
 }
-std::uint64_t nextIdentity() {
-    static std::atomic<std::uint64_t> sequence{1};
-    auto next = sequence.load();
-    do { if (next == UINT64_MAX) throw std::overflow_error("Modal record identities exhausted."); }
-    while (!sequence.compare_exchange_weak(next,next+1));
-    return next;
-}
 }
 WVCheckpointStatus WVStratifiedModalReader::inspect(const std::string& path, WVStratifiedModalInspection& result) {
     try {
@@ -265,13 +258,13 @@ WVCheckpointStatus WVStratifiedModalReader::read(const std::string& path, std::s
         detail::WVNetCDFFile file; auto status = detail::WVNetCDFFile::openReadOnly(path,file); if (!status) return status;
         WVStratifiedModalInspection inspection; status = inspectFile(file.id(),inspection); if (!status) return status;
         auto candidate = std::shared_ptr<WVStratifiedModalRecord>(new WVStratifiedModalRecord);
-        candidate->geometry_ = std::move(inspection.geometry);
+        WVStratifiedModalArrays arrays; arrays.geometry=std::move(inspection.geometry);
         struct Matrix { const char* name; std::vector<double>* values; };
-        for (const auto& m : {Matrix{"PF0inv",&candidate->PF0inv_},{"QG0inv",&candidate->QG0inv_},{"PF0",&candidate->PF0_},{"QG0",&candidate->QG0_}}) {
-            status = scanMatrix(file.id(),m.name,candidate->geometry_,m.values); if (!status) return status;
+        for (const auto& m : {Matrix{"PF0inv",&arrays.PF0inv},{"QG0inv",&arrays.QG0inv},{"PF0",&arrays.PF0},{"QG0",&arrays.QG0}}) {
+            status = scanMatrix(file.id(),m.name,arrays.geometry,m.values); if (!status) return status;
         }
-        if (!candidate->geometry_.K2unique.empty()) for (const auto& m : {Matrix{"PFpmInv",&candidate->PFpmInv_},{"QGpmInv",&candidate->QGpmInv_},{"PFpm",&candidate->PFpm_},{"QGpm",&candidate->QGpm_},{"QGwg",&candidate->QGwg_}}) {
-            status=scanWaveArray(file.id(),m.name,candidate->geometry_,m.values); if (!status) return status;
+        if (!arrays.geometry.K2unique.empty()) for (const auto& m : {Matrix{"PFpmInv",&arrays.PFpmInv},{"QGpmInv",&arrays.QGpmInv},{"PFpm",&arrays.PFpm},{"QGpm",&arrays.QGpm},{"QGwg",&arrays.QGwg}}) {
+            status=scanWaveArray(file.id(),m.name,arrays.geometry,m.values); if (!status) return status;
         }
         int functionVariable = -1;
         const int functionCode = nc_inq_varid(file.id(),"N2Function",&functionVariable);
@@ -292,158 +285,29 @@ WVCheckpointStatus WVStratifiedModalReader::read(const std::string& path, std::s
             candidate->N2FunctionPayload_.resize(size);
             code=nc_get_var_uchar(file.id(),functionVariable,candidate->N2FunctionPayload_.data()); if (code != NC_NOERR) return detail::netcdfFailure(code,"Function payload read","N2Function");
         }
-        candidate->groups_.resize(std::max(std::size_t{1},candidate->geometry_.K2unique.size()));
-        for (std::size_t i=0;i<candidate->groups_.size();++i) candidate->groups_[i].identity=i;
-        for (std::size_t i=0;i<candidate->geometry_.Nkl;++i) candidate->groups_[candidate->geometry_.waveGroup.empty() ? 0 : candidate->geometry_.waveGroup[i]].columns.push_back(i);
-        candidate->sourceIdentity_ = std::string(WVStratifiedModalRecordContract)+"/record/"+std::to_string(nextIdentity());
-        candidate->modeSetIdentity_ = candidate->sourceIdentity_+"/horizontal-modes";
+        const auto sourceStatus=WVOwnedStratifiedModalSource::create(std::move(arrays),candidate->source_);
+        if (!sourceStatus) {
+            if (sourceStatus.code==WVKernelStatusCode::allocationFailure)
+                return {WVCheckpointStatusCode::allocationFailure,sourceStatus.message,path};
+            return invalid(sourceStatus.message);
+        }
         result = std::move(candidate); return WVCheckpointStatus::ok();
     } catch (const std::bad_alloc&) { return {WVCheckpointStatusCode::allocationFailure,"Modal record allocation failed.",path}; }
       catch (const std::overflow_error& e) { return invalid(e.what()); }
 }
 std::size_t WVStratifiedModalRecord::persistentBytes() const noexcept {
-    std::size_t bytes = sizeof(*this)+N2FunctionPayload_.capacity()+sourceIdentity_.capacity()+modeSetIdentity_.capacity()+geometry_.transformClass.capacity()+geometry_.modelVersion.capacity()+geometry_.modes.capacity()*sizeof(WVRetainedModeKey);
-    for (const auto* v : {&geometry_.x,&geometry_.y,&geometry_.z,&geometry_.j,&geometry_.k,&geometry_.l,&geometry_.N2,&geometry_.rho_nm0,&geometry_.dLnN2,&geometry_.P0,&geometry_.Q0,&geometry_.h_0,&geometry_.z_int,&PF0inv_,&QG0inv_,&PF0_,&QG0_}) bytes += v->capacity()*sizeof(double);
-    for (const auto* v:{&geometry_.K2unique,&geometry_.h_pm,&geometry_.Ppm,&geometry_.Qpm,&PFpmInv_,&QGpmInv_,&PFpm_,&QGpm_,&QGwg_}) bytes+=v->capacity()*sizeof(double);
-    bytes+=geometry_.waveGroup.capacity()*sizeof(std::size_t);
-    bytes += groups_.capacity()*sizeof(WVScientificModalGroup);
-    for (const auto& group:groups_) bytes += group.columns.capacity()*sizeof(std::size_t);
-    return bytes;
+    return sizeof(*this)+N2FunctionPayload_.capacity()+source_->persistentBytes();
 }
 WVKernelStatus WVStratifiedModalRecord::matrixView(WVStratifiedScientificMatrix matrix, WVVerticalMatrixRecord& result) const {
-    try {
-        const char* name; const char* modal; const char* grid; const std::vector<double>* values; bool inverse;
-        switch(matrix) {
-            case WVStratifiedScientificMatrix::PF0inv: name="PF0inv"; modal="PF0-modal"; grid="F-grid"; values=&PF0inv_; inverse=true; break;
-            case WVStratifiedScientificMatrix::QG0inv: name="QG0inv"; modal="QG0-modal"; grid="G-grid"; values=&QG0inv_; inverse=true; break;
-            case WVStratifiedScientificMatrix::PF0: name="PF0"; modal="PF0-modal"; grid="F-grid"; values=&PF0_; inverse=false; break;
-            case WVStratifiedScientificMatrix::QG0: name="QG0"; modal="QG0-modal"; grid="G-grid"; values=&QG0_; inverse=false; break;
-            default: return {WVKernelStatusCode::invalidConfiguration,"Unknown persisted modal matrix."};
-        }
-        const auto rows=inverse ? geometry_.Nz : geometry_.Nj, columns=inverse ? geometry_.Nj : geometry_.Nz;
-        WVVerticalMatrixRecord candidate{{sourceIdentity_,name},{values->data(),rows,columns,1,rows,values->size()*sizeof(double)},
-            inverse ? WVMatrixAction::reconstruction : WVMatrixAction::projection,inverse ? modal : grid,inverse ? grid : modal};
-        result=std::move(candidate); return WVKernelStatus::ok();
-    } catch(const std::bad_alloc&) { return {WVKernelStatusCode::allocationFailure,"Scientific matrix view allocation failed."}; }
+    return source_->matrixView(matrix,result);
 }
 WVKernelStatus WVStratifiedModalRecord::prepareVertical(WVStratifiedModalOperator operation, WVComplexLayout input, WVComplexLayout output,
     std::unique_ptr<WVVerticalMatrixBackend> backend, std::unique_ptr<WVPreparedVerticalOperator>& result, WVAccumulation accumulation) const {
-    if (operation>=WVStratifiedModalOperator::reconstructFw && operation<=WVStratifiedModalOperator::projectWaveVerticalVelocity)
-        return prepareWaveVertical(operation,std::move(input),std::move(output),std::move(backend),result,accumulation);
-    try {
-        const auto& g = geometry_; const char* name; const char* inFamily; const char* outFamily; WVMatrixAction action;
-        switch (operation) {
-            case WVStratifiedModalOperator::reconstructF: name="Finv"; inFamily="F-modal"; outFamily="F-grid"; action=WVMatrixAction::reconstruction; break;
-            case WVStratifiedModalOperator::projectF: name="F"; inFamily="F-grid"; outFamily="F-modal"; action=WVMatrixAction::projection; break;
-            case WVStratifiedModalOperator::reconstructG: name="Ginv"; inFamily="G-modal"; outFamily="G-grid"; action=WVMatrixAction::reconstruction; break;
-            case WVStratifiedModalOperator::projectG: name="G"; inFamily="G-grid"; outFamily="G-modal"; action=WVMatrixAction::projection; break;
-            case WVStratifiedModalOperator::GToF: name="F*Ginv"; inFamily="G-modal"; outFamily="F-modal"; action=WVMatrixAction::crossFamily; break;
-            case WVStratifiedModalOperator::FToG: name="G*Finv"; inFamily="F-modal"; outFamily="G-modal"; action=WVMatrixAction::crossFamily; break;
-            default: return {WVKernelStatusCode::invalidConfiguration,"Unknown modal operator."};
-        }
-        if (input.family != inFamily || output.family != outFamily || input.columns != g.Nkl || output.columns != g.Nkl || input.modeSet != modeSetIdentity_ || output.modeSet != modeSetIdentity_)
-            return {WVKernelStatusCode::invalidConfiguration,"Modal field family or ordered mode identity disagrees with the scientific record."};
-        const auto rows = action == WVMatrixAction::reconstruction ? g.Nz : g.Nj;
-        const auto columns = action == WVMatrixAction::projection ? g.Nz : g.Nj;
-        std::vector<double> values(product(rows,columns));
-        for (std::size_t c=0; c<columns; ++c) for (std::size_t r=0; r<rows; ++r) {
-            double v=0;
-            switch (operation) {
-                case WVStratifiedModalOperator::reconstructF: v=PF0inv_[r+g.Nz*c]*g.P0[c]; break;
-                case WVStratifiedModalOperator::reconstructG: v=QG0inv_[r+g.Nz*c]*g.Q0[c]; break;
-                case WVStratifiedModalOperator::projectF: v=PF0_[r+g.Nj*c]/g.P0[r]; break;
-                case WVStratifiedModalOperator::projectG: v=QG0_[r+g.Nj*c]/g.Q0[r]; break;
-                case WVStratifiedModalOperator::GToF:
-                    for (std::size_t z=0; z<g.Nz; ++z) v+=(PF0_[r+g.Nj*z]/g.P0[r])*(QG0inv_[z+g.Nz*c]*g.Q0[c]);
-                    break;
-                case WVStratifiedModalOperator::FToG:
-                    for (std::size_t z=0; z<g.Nz; ++z) v+=(QG0_[r+g.Nj*z]/g.Q0[r])*(PF0inv_[z+g.Nz*c]*g.P0[c]);
-                    break;
-                default: break; // Wave operations were dispatched above.
-            }
-            values[r+rows*c]=v;
-        }
-        WVVerticalSpecification spec; spec.sourceIdentity=sourceIdentity_; spec.action=action; spec.Nz=g.Nz; spec.Nj=g.Nj;
-        spec.input=std::move(input); spec.output=std::move(output); spec.accumulation=accumulation;
-        spec.matrices={{{sourceIdentity_,name},{values.data(),rows,columns,1,rows,values.size()*sizeof(double)},action,inFamily,outFamily}};
-        WVVerticalGroup group; group.identity=0; group.matrix=0; group.modes.resize(g.Nkl);
-        for (std::size_t i=0;i<g.Nkl;++i) group.modes[i]=i;
-        spec.groups.push_back(std::move(group));
-        return WVPreparedVerticalOperator::create(spec,std::move(backend),result);
-    } catch (const std::bad_alloc&) { return {WVKernelStatusCode::allocationFailure,"Modal operator preparation allocation failed."}; }
-      catch (const std::overflow_error& e) { return {WVKernelStatusCode::sizeOverflow,e.what()}; }
-}
-WVKernelStatus WVStratifiedModalRecord::prepareWaveVertical(WVStratifiedModalOperator operation,WVComplexLayout input,WVComplexLayout output,
-    std::unique_ptr<WVVerticalMatrixBackend> backend,std::unique_ptr<WVPreparedVerticalOperator>& result,WVAccumulation accumulation) const {
-    try {
-        const auto& g=geometry_;
-        if (g.transformClass!="WVTransformBoussinesq" || groups_.empty()) return {WVKernelStatusCode::unsupportedOperation,"Wave matrices require a Boussinesq source."};
-        const char* name; const char* inFamily; const char* outFamily; WVMatrixAction action;
-        switch (operation) {
-            case WVStratifiedModalOperator::reconstructFw: name="FwInv"; inFamily="Fw-modal"; outFamily="F-grid"; action=WVMatrixAction::reconstruction; break;
-            case WVStratifiedModalOperator::projectFw: name="Fw"; inFamily="F-grid"; outFamily="Fw-modal"; action=WVMatrixAction::projection; break;
-            case WVStratifiedModalOperator::reconstructGw: name="GwInv"; inFamily="Gw-modal"; outFamily="G-grid"; action=WVMatrixAction::reconstruction; break;
-            case WVStratifiedModalOperator::projectGw: name="Gw"; inFamily="G-grid"; outFamily="Gw-modal"; action=WVMatrixAction::projection; break;
-            case WVStratifiedModalOperator::balancedGToWaveG: name="Gwg"; inFamily="G-modal"; outFamily="Gw-modal"; action=WVMatrixAction::crossFamily; break;
-            case WVStratifiedModalOperator::projectWaveDivergence: name="GwDdelta"; inFamily="F-grid"; outFamily="Gw-modal"; action=WVMatrixAction::projection; break;
-            case WVStratifiedModalOperator::projectWaveVerticalVelocity: name="GwVerticalVelocity"; inFamily="G-grid"; outFamily="Gw-modal"; action=WVMatrixAction::projection; break;
-            default: return {WVKernelStatusCode::invalidConfiguration,"Unknown Boussinesq operator."};
-        }
-        if (input.family!=inFamily || output.family!=outFamily || input.columns!=g.Nkl || output.columns!=g.Nkl || input.modeSet!=modeSetIdentity_ || output.modeSet!=modeSetIdentity_)
-            return {WVKernelStatusCode::invalidConfiguration,"Wave field family or exact mode identity disagrees with the source."};
-        const auto rows=action==WVMatrixAction::reconstruction ? g.Nz : g.Nj, columns=action==WVMatrixAction::projection ? g.Nz : g.Nj;
-        const auto plane=product(rows,columns), wavePlane=product(g.Nz,g.Nj);
-        std::vector<double> values(product(plane,groups_.size()));
-        std::vector<double> delta;
-        const double f=2*g.rotationRate*std::sin(g.latitude*pi/180);
-        if (operation==WVStratifiedModalOperator::projectWaveDivergence) {
-            delta.resize(product(g.Nz,g.Nz));
-            for (std::size_t c=0;c<g.Nz;++c) for (std::size_t r=0;r<g.Nz;++r) {
-                double v=0;
-                for (std::size_t j=0;j<g.Nj;++j) v+=QG0inv_[r+g.Nz*j]*(g.Q0[j]/g.P0[j])*PF0_[j+g.Nj*c];
-                delta[r+g.Nz*c]=g.N2[r]/(g.N2[r]-f*f)*v;
-            }
-        }
-        WVVerticalSpecification spec; spec.sourceIdentity=sourceIdentity_; spec.action=action; spec.Nz=g.Nz; spec.Nj=g.Nj;
-        spec.input=std::move(input); spec.output=std::move(output); spec.accumulation=accumulation;
-        for (std::size_t group=0;group<groups_.size();++group) {
-            const auto offset=wavePlane*group,scaleOffset=g.Nj*group;
-            for (std::size_t c=0;c<columns;++c) for (std::size_t r=0;r<rows;++r) {
-                double value=0;
-                switch (operation) {
-                    case WVStratifiedModalOperator::reconstructFw: value=PFpmInv_[r+g.Nz*c+offset]*g.Ppm[c+scaleOffset]; break;
-                    case WVStratifiedModalOperator::projectFw: value=PFpm_[r+g.Nj*c+offset]/g.Ppm[r+scaleOffset]; break;
-                    case WVStratifiedModalOperator::reconstructGw: value=QGpmInv_[r+g.Nz*c+offset]*g.Qpm[c+scaleOffset]; break;
-                    case WVStratifiedModalOperator::projectGw: value=QGpm_[r+g.Nj*c+offset]/g.Qpm[r+scaleOffset]; break;
-                    case WVStratifiedModalOperator::balancedGToWaveG: value=QGwg_[r+g.Nj*c+g.Nj*g.Nj*group]*g.Q0[c]/g.Qpm[r+scaleOffset]; break;
-                    case WVStratifiedModalOperator::projectWaveDivergence:
-                        for (std::size_t z=0;z<g.Nz;++z) value+=(QGpm_[r+g.Nj*z+offset]/g.Qpm[r+scaleOffset])*delta[z+g.Nz*c];
-                        break;
-                    case WVStratifiedModalOperator::projectWaveVerticalVelocity: value=(QGpm_[r+g.Nj*c+offset]/g.Qpm[r+scaleOffset])*g.g/(g.N2[c]-f*f); break;
-                    default: break;
-                }
-                values[r+rows*c+plane*group]=value;
-            }
-            spec.matrices.push_back({{sourceIdentity_,std::string(name)+"/"+std::to_string(groups_[group].identity)},
-                {values.data()+plane*group,rows,columns,1,rows,plane*sizeof(double)},action,inFamily,outFamily});
-            spec.groups.push_back({groups_[group].identity,group,groups_[group].columns});
-        }
-        return WVPreparedVerticalOperator::create(spec,std::move(backend),result);
-    } catch (const std::bad_alloc&) { return {WVKernelStatusCode::allocationFailure,"Wave operator preparation allocation failed."}; }
-      catch (const std::overflow_error& e) { return {WVKernelStatusCode::sizeOverflow,e.what()}; }
+    return source_->prepareVertical(operation,std::move(input),std::move(output),
+        std::move(backend),result,accumulation);
 }
 WVKernelStatus WVStratifiedModalRecord::horizontalSpecification(std::size_t planes, WVComplexRepresentation representation,
     const std::string& family, WVRetainedHorizontalSpecification& result) const {
-    try {
-        const auto& g=geometry_;
-        if (!planes || planes > g.Nz || family.empty() || (representation != WVComplexRepresentation::split && representation != WVComplexRepresentation::interleaved))
-            return {WVKernelStatusCode::invalidConfiguration,"Invalid modal horizontal field layout."};
-        WVRetainedHorizontalSpecification candidate;
-        candidate.grid={g.Nx,g.Ny,planes,1,g.Nx,product(g.Nx,g.Ny),family};
-        candidate.retained={planes,g.Nkl,1,planes,representation,family,modeSetIdentity_};
-        candidate.Lx=g.Lx; candidate.Ly=g.Ly; candidate.modes=g.modes;
-        result=std::move(candidate); return WVKernelStatus::ok();
-    } catch (const std::bad_alloc&) { return {WVKernelStatusCode::allocationFailure,"Modal horizontal specification allocation failed."}; }
-      catch (const std::overflow_error& e) { return {WVKernelStatusCode::sizeOverflow,e.what()}; }
+    return source_->horizontalSpecification(planes,representation,family,result);
 }
 } // namespace wavevortex::runtime

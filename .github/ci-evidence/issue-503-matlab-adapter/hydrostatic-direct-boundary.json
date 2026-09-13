@@ -1,0 +1,97 @@
+{
+  "schemaVersion": "wvm503-hydrostatic-direct-boundary-v1",
+  "classification": "small direct correctness comparison; not performance qualification",
+  "configuration": {
+    "Lxyz": [
+      4000,
+      3000,
+      1000
+    ],
+    "Nxyz": [
+      6,
+      6,
+      5
+    ],
+    "Nj": 3,
+    "N2": "1e-4*exp(z/700)",
+    "shouldAntialias": false,
+    "seed": 503,
+    "uvMax": 0.01,
+    "t0": 2,
+    "t": 7
+  },
+  "boundaries": {
+    "matlab": "WVTransformHydrostatic",
+    "mex": "in-memory WVStratifiedModalArrays copied into WVOwnedStratifiedModalSource",
+    "direct": "NetCDF fixture read by WVHydrostaticKernelDump"
+  },
+  "directPolicy": {
+    "engine": "fftw",
+    "matrixBackend": "accelerate-gemm-v1",
+    "horizontalSchedule": "fftw-streaming-pruned-tile16",
+    "compactSplitViews": true,
+    "pointwiseWorkers": 2
+  },
+  "mexPolicy": {
+    "matrixBackend": "accelerate",
+    "policy": "compact-native-accelerate",
+    "horizontalWorkers": 12,
+    "pointwiseWorkers": 8
+  },
+  "policyDifference": "Both use FFTW, Accelerate, compact split views, and the pruned tiled schedule; the direct test driver fixes horizontal/pointwise workers at 2 while the MEX selects qualified host-topology worker counts.",
+  "fields": [
+    {
+      "name": "u",
+      "matlabDirectRelativeError": 1.8786109113874632E-16,
+      "matlabMexRelativeError": 1.8786109113874632E-16,
+      "directMexRelativeError": 1.8786109113874632E-16,
+      "absoluteTolerancePassed": true
+    },
+    {
+      "name": "v",
+      "matlabDirectRelativeError": 2.7803831721368879E-16,
+      "matlabMexRelativeError": 2.7803831721368879E-16,
+      "directMexRelativeError": 2.7803831721368879E-16,
+      "absoluteTolerancePassed": true
+    },
+    {
+      "name": "w",
+      "matlabDirectRelativeError": 3.6842780948211839E-16,
+      "matlabMexRelativeError": 3.6842780948211839E-16,
+      "directMexRelativeError": 1.2280926982737278E-16,
+      "absoluteTolerancePassed": true
+    },
+    {
+      "name": "eta",
+      "matlabDirectRelativeError": 1.9713498757762152E-16,
+      "matlabMexRelativeError": 2.102773200827963E-16,
+      "directMexRelativeError": 1.5770799006209723E-16,
+      "absoluteTolerancePassed": true
+    }
+  ],
+  "flux": [
+    {
+      "name": "Ap",
+      "matlabDirectRelativeError": 7.558539337662476E-16,
+      "matlabMexRelativeError": 6.6854307591172348E-16,
+      "directMexRelativeError": 4.2902293733994661E-16,
+      "absoluteTolerancePassed": true
+    },
+    {
+      "name": "Am",
+      "matlabDirectRelativeError": 4.4142625858831964E-16,
+      "matlabMexRelativeError": 3.7968876929504188E-16,
+      "directMexRelativeError": 3.1655251056953532E-16,
+      "absoluteTolerancePassed": true
+    },
+    {
+      "name": "A0",
+      "matlabDirectRelativeError": 4.5823105269805542E-16,
+      "matlabMexRelativeError": 3.5640192987626537E-16,
+      "directMexRelativeError": 1.0182912282179012E-16,
+      "absoluteTolerancePassed": true
+    }
+  ],
+  "absoluteTolerance": "2e-10*max(abs(expected))+1e-18 per existing TestHydrostaticCompiledKernel",
+  "passed": true
+}

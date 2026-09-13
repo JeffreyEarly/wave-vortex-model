@@ -1,33 +1,15 @@
 #pragma once
 
-#include "WaveVortexRuntime/WVCheckpointReader.hpp"
-#include "WaveVortexKernel/WVVariableExecutionOptions.hpp"
+#include "WaveVortexRuntime/WVNativeVariablePolicy.hpp"
 
 #include <cstddef>
 #include <string_view>
 
 namespace wavevortex::runtime::cli {
 
-enum class WVRunnerMatrixBackend {
-    scalar,
-    accelerate
-};
-
-struct WVRunnerHostTopology {
-    std::size_t logicalWorkers = 1;
-    std::size_t performanceWorkers = 1;
-};
-
-struct WVRunnerVariablePolicy {
-    bool buildEnabled = false;
-    bool variableTransform = false;
-    bool compact = false;
-    WVPersistedTransformKind transformKind = WVPersistedTransformKind::constantStratification;
-    WVRunnerMatrixBackend matrixBackend = WVRunnerMatrixBackend::scalar;
-    WVVariableExecutionOptions execution;
-    std::size_t effectiveFFTThreads = 1;
-    std::string_view selection = "build-disabled";
-};
+using WVRunnerMatrixBackend = WVNativeMatrixBackend;
+using WVRunnerHostTopology = WVNativeHostTopology;
+using WVRunnerVariablePolicy = WVNativeVariablePolicy;
 
 WVRunnerHostTopology runnerHostTopology() noexcept;
 

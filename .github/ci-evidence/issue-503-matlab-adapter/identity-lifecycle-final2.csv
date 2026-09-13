@@ -1,0 +1,7 @@
+Name,Passed,Failed,Incomplete,Duration,Details
+TestWVCompiledTransformBackend/compiledAndLegacyHandlesShareLifecycle,0,1,0,3.0219945,
+TestWVCompiledTransformBackend/compiledSourceIdentityIsDistinct,1,0,0,1.00960554166667,
+TestWVCompiledTransformBackend/compiledSourceIdentityIsFreshAfterMatReload,1,0,0,0.652779166666667,
+TestWVCompiledTransformBackend/compiledSourceIdentitySurvivesClearFunctions,1,0,0,1.59031220833333,
+TestProductionCodeAnalyzer/productionInventoryIsDeterministic,1,0,0,0.498911916666667,
+TestProductionCodeAnalyzer/reportContainsReleaseLocationsAndDiagnostics,1,0,0,0.287951041666667,

@@ -269,10 +269,14 @@ if isfield(overrides,"MexBuildFunction")
 end
 gateway = fullfile(constants.adapterDirectory,"wv_compiled_backend_mex.cpp");
 engine = fullfile(constants.adapterDirectory,"WVNativeFFTWEngine.cpp");
+transformHost = fullfile(constants.adapterDirectory,"WVMatlabTransformHost.cpp");
+accelerateDirectory = fullfile(constants.packageRoot,"CompiledKernel","adapters","accelerate");
+accelerateSource = fullfile(accelerateDirectory,"WVAccelerateMatrixBackend.cpp");
 % WVModel exposes constant-model commands here, but its compiled factories and
 % diagnostic service also reference the other built-in transform families.
 % Keep their non-output dependency closure linked; NetCDF remains disabled.
 runtimeSources = fullfile(constants.runtimeSourceDirectory,[ ...
+    "WVNativeVariablePolicy.cpp"; ...
     "WVExtensionCatalog.cpp"; ...
     "WVPortableImplementationContract.cpp"; ...
     "WVForcingContracts.cpp"; ...
@@ -328,21 +332,22 @@ coreSources = fullfile(constants.coreSourceDirectory,[ ...
     "WVKernelTypes.cpp"; ...
     "WVRetainedHorizontalOperator.cpp"; ...
     "WVPreparedVerticalOperator.cpp"; ...
+    "WVOwnedStratifiedModalSource.cpp"; ...
     "WVTransformStratifiedQGKernel.cpp"; ...
     "WVTransformHydrostaticKernel.cpp"; ...
     "WVTransformBoussinesqKernel.cpp"; ...
     "WVTransformBarotropicQGKernel.cpp"; ...
     "WVTransformConstantStratificationKernel.cpp"]);
-requiredSources = [string(gateway);string(engine);fullfile(constants.adapterDirectory,"WVNativeFFTWEngine.hpp");coreSources;runtimeHeaders;runtimePrivateHeaders;runtimeSources];
+requiredSources = [string(gateway);string(engine);transformHost;accelerateSource;fullfile(constants.adapterDirectory,"WVMatlabTransformHost.hpp");fullfile(constants.adapterDirectory,"WVNativeFFTWEngine.hpp");coreSources;runtimeHeaders;runtimePrivateHeaders;runtimeSources];
 if any(~isfile(requiredSources))
     error("WaveVortexModel:CompiledBackendSourceMissing","A tracked compiled-backend source file is missing: %s",strjoin(requiredSources(~isfile(requiredSources)),", "));
 end
-compilerFlags = "CXXFLAGS=$CXXFLAGS -std=c++17 -pthread -O3 -mcpu=native -mmacosx-version-min="+constants.deploymentTarget+" -DWV_KERNEL_NATIVE_OPTIMIZATION=1 -DWV_KERNEL_COEFFICIENT_WORKERS=2 -DWV_MODEL_ENABLE_OUTPUT=0";
+compilerFlags = "CXXFLAGS=$CXXFLAGS -std=c++17 -pthread -O3 -mcpu=native -mmacosx-version-min="+constants.deploymentTarget+" -DWV_KERNEL_NATIVE_OPTIMIZATION=1 -DWV_KERNEL_COEFFICIENT_WORKERS=2 -DWV_MODEL_ENABLE_OUTPUT=0 -DWV_HAVE_ACCELERATE=1";
 compilerFlags = compilerFlags+" -DWV_KERNEL_COMPACT_CONSTANT_CANDIDATE="+double(constants.compactConstantDefault)+" -DWV_KERNEL_COMPACT_HORIZONTAL_WORKERS="+constants.horizontalOuterWorkers+" -DWV_KERNEL_COMPACT_POINTWISE_WORKERS="+constants.pointwiseWorkers;
-linkerFlags = "LDFLAGS=$LDFLAGS -pthread -mmacosx-version-min="+constants.deploymentTarget+" -Wl,-rpath,"+fileparts(libraries.base.path);
+linkerFlags = "LDFLAGS=$LDFLAGS -pthread -framework Accelerate -mmacosx-version-min="+constants.deploymentTarget+" -Wl,-rpath,"+fileparts(libraries.base.path);
 coreArguments = cellstr(coreSources);
 runtimeArguments = cellstr(runtimeSources);
-mex("-R2018a",compilerFlags,gateway,coreArguments{:},runtimeArguments{:},engine,"-I"+constants.coreIncludeDirectory,"-I"+constants.runtimeIncludeDirectory,"-I"+constants.runtimeSourceDirectory,"-I"+constants.adapterDirectory,"-I"+fullfile(constants.installDirectory,"include"),linkerFlags,libraries.thread.path,libraries.base.path,"-outdir",constants.stageDirectory,"-output",constants.moduleName);
+mex("-R2018a",compilerFlags,gateway,transformHost,accelerateSource,coreArguments{:},runtimeArguments{:},engine,"-I"+constants.coreIncludeDirectory,"-I"+constants.runtimeIncludeDirectory,"-I"+constants.runtimeSourceDirectory,"-I"+constants.adapterDirectory,"-I"+accelerateDirectory,"-I"+fullfile(constants.installDirectory,"include"),linkerFlags,libraries.thread.path,libraries.base.path,"-outdir",constants.stageDirectory,"-output",constants.moduleName);
 if ~isfile(stagedModule)
     error("WaveVortexModel:CompiledBackendMexMissing","The MEX build did not create the staged module.");
 end
@@ -422,7 +427,7 @@ for iCase = 1:2
     after = feval(char(constants.moduleName),'moduleMetrics');
     lifecyclePassed = after.kernelCount == before.kernelCount && after.activePlans == before.activePlans && after.outstandingPlanningBytes == 0 && after.totalPlansCreated-after.totalPlansDestroyed == after.activePlans;
     maximumRelativeError = max(cell2mat(struct2cell(errors)));
-    estimatePassed = estimate.descriptorBytes == metrics.descriptorBytes && estimate.scratchCapacityBytes == metrics.scratchCapacityBytes && estimate.stateInputBytes == metrics.stateInputBytes && estimate.fluxOutputBytes == metrics.fluxOutputBytes && estimate.knownMaximumLiveOwnedBytesLowerBound+metrics.planBytes+metrics.engineBytes+metrics.kernelManagementBytes == metrics.knownMaximumLiveOwnedBytes && metrics.persistentBytes == metrics.descriptorBytes+metrics.scratchCapacityBytes+metrics.planBytes+metrics.engineBytes+metrics.kernelManagementBytes;
+    estimatePassed = estimate.descriptorBytes == metrics.descriptorBytes && estimate.scratchCapacityBytes == metrics.scratchCapacityBytes && estimate.phaseValueBytes == metrics.phaseValueBytes && estimate.stateInputBytes == metrics.stateInputBytes && estimate.fluxOutputBytes == metrics.fluxOutputBytes && estimate.knownMaximumLiveOwnedBytesLowerBound+metrics.planBytes+metrics.engineBytes+metrics.kernelManagementBytes == metrics.knownMaximumLiveOwnedBytes && metrics.persistentBytes == metrics.descriptorBytes+metrics.scratchCapacityBytes+metrics.planBytes+metrics.engineBytes+metrics.kernelManagementBytes;
     expectedSchedule = "streamed-target-three-channel";
     expectedRows = (floor(wvt.Nx/2)+1)*wvt.Ny;
     expectedHorizontalWorkers = 0;

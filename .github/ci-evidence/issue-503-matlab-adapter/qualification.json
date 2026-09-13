@@ -1,0 +1,50 @@
+{
+  "schemaVersion": "wv-matlab-adapter-foundation-qualification-v1",
+  "issue": 503,
+  "baseCommit": "806ed7ef141c2f8baef451134f9b90f1f390c540",
+  "scope": "Private Hydrostatic exponential in-memory bridge; public family support remains gated on issues 504-507.",
+  "matlabVersion": "25.2.0.3150157 (R2025b) Update 4",
+  "moduleSHA256": "53a595f08fa483a3be96de22384efbe03b558ce39f1644b95c30801032527253",
+  "sourceSHA256": {
+    "CompiledKernel/adapters/native-fftw/WVMatlabTransformHost.cpp": "fc88d7e1f524f88db032527335406e0b27aba95d5842e5e14d133f8e4a64f2f4",
+    "CompiledKernel/adapters/native-fftw/WVMatlabTransformHost.hpp": "eeacdf24a60049504da25c639a8da0d934714beab3b8a7b963aa215f1f26fc30",
+    "CompiledKernel/adapters/native-fftw/wv_compiled_backend_mex.cpp": "c995dc87e61cd6743f8b5872b7186c4ebf5c9ec754e1cfeb24eaf38250045a1f",
+    "CompiledKernel/include/WaveVortexKernel/WVOwnedStratifiedModalSource.hpp": "9eb131d10eb8fa968ded995edd0ecbf484aae69ef2f7860c39da735e516462e4",
+    "CompiledKernel/src/WVOwnedStratifiedModalSource.cpp": "1467a3916dfa52094eba3f64d8e48f329d7e7028a36478cda21814f189e157b3",
+    "PortableRuntime/src/WVStratifiedModalRecord.cpp": "af33628758b911bb43700a6f0af5c6268079b6359864d5edf8e219a613e17307",
+    "PortableRuntime/src/WVNativeVariablePolicy.cpp": "7c34a145e60c89471e3e8633aa9f0a73897379a32bb6fa5f44ce3150860405ba",
+    "@WVTransform/WVTransform.m": "a64876ba54ead8bcbcd9a78a73cc913db6a75a291cd18daf11754c85dd64b583",
+    "@WVCompiledTransformBackend/WVCompiledTransformBackend.m": "896e4af1d6e1f80a84ba661fd84290e6aee9dd641fb901c5de964440941148af",
+    "@WVCompiledTransformBackend/private/wvCompiledStratifiedModalConfiguration.m": "28b14a5a5413c7f5902b9c83702a4d446b18790af342d4ab5f684730618272f5",
+    "@WVCompiledBackend/private/wvCompiledBackendBuild.m": "f26c2e4db5a95a733d87a4f173cc810d7afc5e3f6c5bca2ec1aac6c38340e0c7",
+    "@WVCompiledBackend/private/wvCompiledBackendCapabilities.m": "aaca34c95c35db79977d9c157a06d5a649f163b6ca71ffaa5c06f9f9c8cdb9c1",
+    "@WVCompiledSourceIdentity/WVCompiledSourceIdentity.m": "19bb7aef78f389ab7c466e54161be9b4389ec762b75a1efa0aee5082a156f929"
+  },
+  "checks": {
+    "nativeFocused": [
+      "stratified-modal-record",
+      "owned-stratified-modal-source",
+      "runner-variable-policy"
+    ],
+    "nativeFocusedPassed": true,
+    "mexInstallationSelfTestsPassed": true,
+    "matlabAdapterLifecyclePassed": true,
+    "matFileOwnerIdentityPassed": true,
+    "independentDirectNativeParityPassed": true,
+    "boundaryParityAndStoragePassed": true,
+    "targetedProductionAnalyzerPassed": true,
+    "docsCheckPassed": true,
+    "docsGeneratedDifferences": 0,
+    "clearFunctionsOwnerIdentityPassed": true,
+    "mixedLegacyAndTransformLifetimePassed": true
+  },
+  "deferred": [
+    "Complete public six-configuration adapter operation coverage",
+    "Shared MATLAB event/callback evaluation lifecycle",
+    "Source-set binding in installed MEX capabilities",
+    "Combined suite and clean installed/exported-package qualification",
+    "Controlled release benchmark campaign"
+  ],
+  "boundaryMeasuredModuleSHA256": "25a7125bd3ac8340c1c7579317a0b50c84ff8b1c5c753266a14a66aa35996abe",
+  "postMeasurementChanges": "Unified MEX exit callback for legacy and transform registries; opaque MATLAB handle-token ownership. Native scientific producers, workspace sizes, and call-time numerical paths are unchanged; lifecycle tests rerun, timing observations not repeated."
+}

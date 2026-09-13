@@ -16,6 +16,7 @@ endforeach()
 add_library(WaveVortexKernel STATIC
     src/WVRetainedHorizontalOperator.cpp
     src/WVPreparedVerticalOperator.cpp
+    src/WVOwnedStratifiedModalSource.cpp
     src/WVTransformStratifiedQGKernel.cpp
     src/WVTransformHydrostaticKernel.cpp
     src/WVTransformBoussinesqKernel.cpp
