@@ -86,8 +86,9 @@ classdef TestThreeInterfaceBenchmark < matlab.unittest.TestCase
 
         function matchedVariableModelRejectsObsoleteUnavailableInterface(testCase)
             raw = matchedModelStudyFixture("hydrostatic-exponential");
-            % Retain the old preparation fixture, but it cannot qualify the
-            % completed all-interface publication campaign.
+            index = find(string({raw.runs.interface})=="matlab-compiled",1);
+            raw.runs(index).status = "unavailable";
+            raw.runs(index).failure = struct("identifier","WaveVortexBenchmark:CompiledVariableModelUnavailable","message","obsolete preparation evidence","report","");
             testCase.verifyError(@()validateThreeInterfaceBenchmarkContract(raw), ...
                 "WaveVortexBenchmark:InterfaceAvailability")
         end
@@ -113,6 +114,7 @@ classdef TestThreeInterfaceBenchmark < matlab.unittest.TestCase
         function matchedModelStudyRejectsArbitraryUnavailableFailure(testCase)
             raw = matchedModelStudyFixture("boussinesq-exponential");
             index = find(string({raw.runs.interface})=="matlab-compiled",1);
+            raw.runs(index).status = "unavailable";
             raw.runs(index).failure.identifier = "WaveVortexBenchmark:MatlabInterfaceWorkerFailed";
             raw.runs(index).failure.message = "arbitrary failure";
             testCase.verifyError(@()validateThreeInterfaceBenchmarkContract(raw),"WaveVortexBenchmark:InterfaceAvailability")
@@ -672,25 +674,9 @@ for iRepeat = 1:3
         if startsWith(run.interface,"matlab-")
             run.worker = raw.configuration.matlabWorker;
         end
-        if run.interface=="matlab-compiled" && isExponential
-            run.status = "unavailable";
-            run.processWallSeconds = NaN;
-            run.integrationSeconds = NaN;
-            run.memory = struct();
-            run.provider = struct();
-            run.integrator = struct();
-            run.failure = struct("identifier","WaveVortexBenchmark:CompiledVariableModelUnavailable","message","MATLAB compiled loading is unavailable for variable-stratification transforms; no runtime adapter is included in this benchmark.","report","");
-        else
-            run.status = "complete";
-            run.failure = struct("identifier","","message","","report","");
-        end
+        run.status = "complete";
+        run.failure = struct("identifier","","message","","report","");
         raw.runs(end+1,1) = run; %#ok<AGROW>
-    end
-end
-for iCase = 1:2
-    if isExponential
-        raw.comparison(iCase).interfaces(2).integrationSeconds = NaN;
-        raw.comparison(iCase).interfaces(2).totalPeakRSSBytes = NaN;
     end
 end
 raw.configuration.fixtures = [struct("modelConfiguration",modelConfiguration,"physicalConfiguration",physicalConfiguration,"stratificationProfile",profile,"workload","coefficient-endpoint","sha256",repmat('1',1,64),"bytes",1024); struct("modelConfiguration",modelConfiguration,"physicalConfiguration",physicalConfiguration,"stratificationProfile",profile,"workload","composite-dense-output","sha256",repmat('2',1,64),"bytes",2048)];

@@ -208,7 +208,7 @@ classdef TestBenchmarkWebsiteDocumentation < matlab.unittest.TestCase
             testCase.verifyTrue(isfile(fullfile(buildFolder,"benchmarks","data",first.datasetId+".json")))
         end
 
-        function currentModelCampaignRendersSelectorAndUnavailableCoverage(testCase)
+        function currentModelCampaignRendersSelectorAndCompleteCoverage(testCase)
             [root,buildFolder] = testCase.createFixture("current-model-campaign");
             models = ["constant-nonhydrostatic" "hydrostatic-exponential" "boussinesq-exponential"];
             entries = repmat(struct("datasetId","","artifact",""),1,numel(models));
@@ -219,9 +219,6 @@ classdef TestBenchmarkWebsiteDocumentation < matlab.unittest.TestCase
                 for iCase = 1:numel(dataset.cases)
                     dataset.cases{iCase}.modelConfiguration = models(iModel);
                     dataset.cases{iCase}.id = models(iModel)+"--adaptive-rk78--"+dataset.cases{iCase}.workload;
-                    if iModel > 1
-                        dataset.cases{iCase}.interfaces{2} = struct("id","matlab-compiled","status","unavailable","unavailableReason","MATLAB compiled core is unavailable for this model.");
-                    end
                 end
                 dataset.modelConfiguration = models(iModel);
                 dataset.schemaVersion = "published-three-interface-v4";
@@ -244,7 +241,6 @@ classdef TestBenchmarkWebsiteDocumentation < matlab.unittest.TestCase
                 testCase.verifySubstring(page,"data-model="""+model+"""");
             end
             testCase.verifySubstring(page,"Release 4.0.0");
-            testCase.verifySubstring(page,"MATLAB compiled core is unavailable for variable-stratification models.");
             testCase.verifyFalse(contains(page,"Historical matched record"));
             provenance = extractBetween(page,"<details markdown=""1""><summary>Record provenance</summary>","</details>");
             testCase.verifyNotEmpty(provenance);
@@ -268,8 +264,8 @@ classdef TestBenchmarkWebsiteDocumentation < matlab.unittest.TestCase
 
             page = string(fileread(fullfile(buildFolder,"compiled-execution","benchmarks.md")));
             testCase.verifySubstring(page,"Hydrostatic exponential")
-            testCase.verifySubstring(page,"Unavailable")
-            testCase.verifySubstring(page,"MATLAB compiled core is unavailable for variable-stratification models.")
+            testCase.verifySubstring(page,"MATLAB + compiled core")
+            testCase.verifyFalse(contains(page,"MATLAB compiled core is unavailable for variable-stratification models."))
         end
 
         function currentSelectorDoesNotBackfillOlderModelCohort(testCase)
@@ -301,7 +297,7 @@ classdef TestBenchmarkWebsiteDocumentation < matlab.unittest.TestCase
             testCase.writeCatalog(root,struct([]),entry);
             testCase.verifyError(@()generateBenchmarkWebsiteDocumentation(root,buildFolder),"WaveVortexModel:InvalidThreeInterfaceBenchmark");
             dataset = valid;
-            dataset.cases{1}.interfaces{1} = struct("id","matlab-compiled","status","unavailable");
+            dataset.cases{1}.interfaces{2} = struct("id","matlab-compiled","status","unavailable","unavailableReason","obsolete preparation evidence");
             testCase.writeJson(fullfile(root,entry.artifact),dataset);
             testCase.verifyError(@()generateBenchmarkWebsiteDocumentation(root,buildFolder),"WaveVortexModel:InvalidThreeInterfaceBenchmark");
         end

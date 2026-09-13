@@ -109,12 +109,7 @@ for iCase = 1:numel(dataset.cases)
     valid = valid && modelConfiguration(dataset,benchmarkCase)==declaredModel;
     for iInterface = 1:numel(benchmarkCase.interfaces)
         item = itemAt(benchmarkCase.interfaces,iInterface);
-        unavailable = isfield(item,"status") && string(item.status)=="unavailable";
-        allowedUnavailable = unavailable && declaredModel~="constant-nonhydrostatic" && string(item.id)=="matlab-compiled" && isfield(item,"unavailableReason") && strlength(string(item.unavailableReason))>0;
-        valid = valid && (isInterfaceComplete(item) || allowedUnavailable);
-        if string(item.id)~="matlab-compiled"
-            valid = valid && isInterfaceComplete(item);
-        end
+        valid = valid && isInterfaceComplete(item);
     end
 end
 end
@@ -262,9 +257,6 @@ end
 lines = [lines; "</tbody>"; benchmarkTableEnd];
 if isCurrentCampaign
     [context,provenance] = currentInterfaceRecordContextMarkdown(dataset);
-    if model ~= "constant-nonhydrostatic"
-        lines(end+1,1) = "<p>MATLAB compiled core is unavailable for variable-stratification models.</p>";
-    end
 else
     context = interfaceRecordContextMarkdown(dataset);
     provenance = "";
