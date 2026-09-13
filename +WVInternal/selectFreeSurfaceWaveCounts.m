@@ -3,7 +3,10 @@ function [state,assessment] = selectFreeSurfaceWaveCounts(state,bases,reference,
 assessment=withSelectedConvergence(assessment,counts,inertialCount);
 if options.shouldCheckQuadraticAliasing && any(counts>0)
     data=WVInternal.prepareConstructionProducts(state,bases,reference,vertical,counts,inertialCount,assessment,options);
-    prepared=WVInternal.prepareWaveQuadraticAssessment(data,interactionIndices=1:height(data.inventory.interactions),ensureOutputCoverage=true);
+    % Construction qualifies the complete requested bounded inventory. Study
+    % resource ceilings must not reject an otherwise supported grid size;
+    % physical convergence and product-error checks below remain unchanged.
+    prepared=WVInternal.prepareWaveQuadraticAssessment(data,interactionIndices=1:height(data.inventory.interactions),ensureOutputCoverage=true,productBudget=flintmax,workingMemoryBudget=realmax);
     levels=arrayfun(@WVInternal.constructionModeLevels,counts,UniformOutput=false);
     inertialLevels=WVInternal.constructionModeLevels(inertialCount);
     maxTrials=min(128,sum(counts)+inertialCount+1);
