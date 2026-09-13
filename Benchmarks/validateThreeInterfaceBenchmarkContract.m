@@ -82,7 +82,7 @@ else
     validModel = validModel && (isempty(model.exponentialScaleHeightMeters) || (isscalar(model.exponentialScaleHeightMeters) && isnan(model.exponentialScaleHeightMeters)));
 end
 initial = configuration.initialCondition;
-validInitial = string(initial.id)=="gm1-red-geostrophic-j1-v1" && double(initial.seed)==4001 && double(initial.gmEnergyLevel)==1 && double(initial.geostrophicVerticalMode)==1 && double(initial.geostrophicMaximumSpeedTarget)==0.15;
+validInitial = string(initial.id)=="gm0p5-red-geostrophic-j1-v1" && double(initial.seed)==4001 && double(initial.gmEnergyLevel)==0.5 && double(initial.geostrophicVerticalMode)==1 && double(initial.geostrophicMaximumSpeedTarget)==0.15;
 if ~validModel || ~validInitial
     error("WaveVortexBenchmark:PhysicalProvenance","The artifact physical model or initialization provenance does not match the publication contract.")
 end
@@ -241,12 +241,18 @@ for interface = requiredInterfaces
             continue
         end
         provider = selected(iRun).provider;
-        valid = logical(provider.noFallback) && double(provider.threads) == double(raw.configuration.threadCount);
+        valid = logical(provider.noFallback);
         if interface == "matlab-builtin"
+            valid = valid && double(provider.threads) == double(raw.configuration.threadCount);
             valid = valid && string(provider.id) == "matlab-builtin" && string(provider.baseLibrary) == "" && string(provider.threadLibrary) == "";
         else
             valid = valid && string(provider.id) == string(raw.provider.provider.id) && string(provider.version) == string(raw.provider.provider.version);
             valid = valid && samePath(provider.baseLibrary,raw.provider.libraries.base.path) && samePath(provider.threadLibrary,raw.provider.libraries.thread.path);
+            if isMatchedModelStudy
+                valid = valid && validMatchedCompiledPolicy(provider,raw.configuration.threadCount,string(raw.modelConfiguration),interface);
+            else
+                valid = valid && double(provider.threads) == double(raw.configuration.threadCount);
+            end
         end
         if ~valid
             error("WaveVortexBenchmark:ProviderMismatch","Interface %s did not execute its required transform provider without fallback.",interface);
@@ -257,6 +263,38 @@ for interface = requiredInterfaces
                 error("WaveVortexBenchmark:WorkerIdentity","A MATLAB run did not execute the frozen current worker source.")
             end
         end
+    end
+end
+if isMatchedModelStudy && ismember(string(raw.modelConfiguration),["hydrostatic-exponential" "boussinesq-exponential"])
+    matlabCompiled = caseRuns(string({caseRuns.interface})=="matlab-compiled");
+    standaloneCompiled = caseRuns(string({caseRuns.interface})=="standalone-compiled");
+    policyFields = ["policy" "matrixBackend" "compact" "effectiveFFTThreads" "horizontalWorkers" "pointwiseWorkers"];
+    for field = policyFields
+        matlabValues = arrayfun(@(run)string(run.provider.(field)),matlabCompiled);
+        standaloneValues = arrayfun(@(run)string(run.provider.(field)),standaloneCompiled);
+        if numel(unique(matlabValues))~=1 || numel(unique(standaloneValues))~=1 || matlabValues(1)~=standaloneValues(1)
+            error("WaveVortexBenchmark:ProviderMismatch","The two compiled variable-model interfaces did not execute the same qualified native policy.")
+        end
+    end
+end
+end
+
+function valid = validMatchedCompiledPolicy(provider,configuredThreadBudget,modelConfiguration,interface)
+required = ["configuredThreadBudget" "requestedFFTThreads" "effectiveFFTThreads" "policy" "matrixBackend" "compact" "horizontalWorkers" "pointwiseWorkers"];
+valid = all(isfield(provider,required)) && double(provider.configuredThreadBudget)==double(configuredThreadBudget);
+if ~valid, return, end
+valid = valid && double(provider.threads)==double(provider.effectiveFFTThreads);
+if ismember(modelConfiguration,["hydrostatic-exponential" "boussinesq-exponential"])
+    valid = valid && isempty(provider.requestedFFTThreads) && double(provider.effectiveFFTThreads)==1;
+    valid = valid && string(provider.policy)=="compact-native-accelerate" && string(provider.matrixBackend)=="accelerate" && logical(provider.compact);
+    valid = valid && double(provider.horizontalWorkers)>0 && double(provider.pointwiseWorkers)>0;
+else
+    valid = valid && double(provider.effectiveFFTThreads)==double(configuredThreadBudget);
+    valid = valid && string(provider.policy)=="non-variable-transform";
+    if interface=="matlab-compiled"
+        valid = valid && isempty(provider.requestedFFTThreads);
+    else
+        valid = valid && double(provider.requestedFFTThreads)==double(configuredThreadBudget);
     end
 end
 end

@@ -52,6 +52,9 @@ for iCase = 1:numel(raw.comparison)
             interfaces{iInterface} = struct("id",string(item.id),"status","unavailable","unavailableReason",string(selected(1).failure.message));
         else
             interfaces{iInterface} = struct("id",string(item.id),"status","complete","providerId",string(selected(1).provider.id),"integrationSeconds",double(item.integrationSeconds),"totalPeakRSSBytes",double(item.totalPeakRSSBytes),"integrationRatio",double(item.integrationRatio),"totalRSSRatio",double(item.totalRSSRatio),"integrationSamplesSeconds",double([selected.integrationSeconds]),"totalPeakRSSSamplesBytes",double(arrayfun(@(run)run.memory.totalPeakRSSBytes,selected)),"diagnostics",interfaceDiagnostics(selected));
+            if string(item.id)~="matlab-builtin"
+                interfaces{iInterface}.executionPolicy = executionPolicyRecord(selected(1).provider,string(raw.modelConfiguration),raw.configuration.threadCount);
+            end
         end
     end
     contract = struct("Nxyz",double(definition.Nxyz(:)'),"Lxyz",double(definition.Lxyz(:)'),"modelConfiguration",string(definition.modelConfiguration),"physicalConfiguration",string(definition.physicalConfiguration),"isHydrostatic",logical(definition.isHydrostatic),"stratificationProfile",string(raw.configuration.model.stratificationProfile),"workload",string(definition.workload),"integrator","adaptive-rk78","finalTime",double(definition.finalTime),"outputScheduleSeconds",double(definition.outputScheduleSeconds(:)'),"relativeTolerance",double(definition.relativeTolerance),"absoluteToleranceScale",double(definition.absoluteTolerance),"initialStep",double(definition.initialStep),"maximumStepPolicy",string(definition.maximumStepPolicy),"processRunCount",double(raw.configuration.processRunCount));
@@ -64,6 +67,18 @@ archive = struct("fileName",options.archiveFileName,"sha256",options.archiveSHA2
 provenance = struct("rawSchemaVersion",string(raw.schemaVersion),"rawArtifactSHA256",sha256File(rawArtifactPath),"externalArchive",archive,"fixtures",raw.configuration.fixtures,"initialCondition",raw.configuration.initialCondition,"model",raw.configuration.model,"stepControls",raw.configuration.stepControls,"matlabWorker",raw.configuration.matlabWorker,"standaloneWorkers",raw.configuration.standaloneWorkers);
 source = struct("repository","https://github.com/JeffreyEarly/wave-vortex-model","commit",string(raw.source.commit),"tree",string(raw.source.tree),"sourceDirty",false,"version",options.implementationVersion);
 dataset = struct("schemaVersion","published-three-interface-v4","datasetId",datasetId,"collectedAt",collectedAt,"studyId","matched-model-runtime-v1","modelConfiguration",string(raw.modelConfiguration),"cohortKey",cohortKey,"cohort",cohort,"source",source,"platform",platform,"provider",provider,"provenance",provenance,"cases",{cases});
+end
+
+function value = executionPolicyRecord(provider,modelConfiguration,configuredThreadBudget)
+value = struct("configuredThreadBudget",double(configuredThreadBudget),"actualFFTThreads",double(provider.threads));
+value.requestedFFTThreads = double(provider.requestedFFTThreads);
+value.selection = string(provider.policy);
+if ismember(modelConfiguration,["hydrostatic-exponential" "boussinesq-exponential"])
+    value.matrixBackend = string(provider.matrixBackend);
+    value.compact = logical(provider.compact);
+    value.horizontalWorkers = double(provider.horizontalWorkers);
+    value.pointwiseWorkers = double(provider.pointwiseWorkers);
+end
 end
 
 function dataset = normalizeIntegratorStudy(raw,rawArtifactPath,options)

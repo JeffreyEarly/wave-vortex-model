@@ -169,7 +169,11 @@ end
 modelConfiguration = options.modelConfigurations;
 options.physicalConfigurations = physicalConfigurationFor(modelConfiguration);
 wvt = benchmarkTransform(options.Lxyz,options.Nxyz,modelConfiguration);
-[state,physicalEvidence] = initializeThreeInterfaceIntegratorState(wvt,4001);
+initialConditionId = conditional(isMatchedModelStudy,"gm0p5-red-geostrophic-j1-v1","gm1-red-geostrophic-j1-v1");
+[state,physicalEvidence] = initializeThreeInterfaceIntegratorState(wvt,4001,gmEnergyLevel=conditional(isMatchedModelStudy,0.5,1),initialConditionId=initialConditionId);
+if isMatchedModelStudy
+    wvt.throwErrorIfDensityViolation(A0=wvt.A0,Ap=wvt.Ap,Am=wvt.Am);
+end
 physicalEvidence.model = modelEvidence(wvt,modelConfiguration,options.Lxyz,options.Nxyz);
 model = WVModel(wvt);
 cleanup = onCleanup(@()closeModels(model));
@@ -342,7 +346,11 @@ else
     if definition.id == "nonlinear-flux"
         workerCommand = shellQuote(executables.kernel)+" "+shellQuote(inputPath)+" "+string(min(18,maxNumCompThreads))+" 0 1 "+shellQuote(comparisonPath)+" --phase-file "+shellQuote(phasePath);
     else
-        workerCommand = shellQuote(executables.runner)+" "+shellQuote(inputPath)+" --restart-mode model --output-policy append --delta-t "+numberText(definition.deltaT)+" --final-time "+numberText(definition.finalTime)+" --fft-provider native-fftw --threads "+string(min(18,maxNumCompThreads))+" --phase-file "+shellQuote(phasePath);
+        workerCommand = shellQuote(executables.runner)+" "+shellQuote(inputPath)+" --restart-mode model --output-policy append --delta-t "+numberText(definition.deltaT)+" --final-time "+numberText(definition.finalTime)+" --fft-provider native-fftw";
+        if ~usesMatchedVariablePolicy(definition)
+            workerCommand = workerCommand+" --threads "+string(min(18,maxNumCompThreads));
+        end
+        workerCommand = workerCommand+" --phase-file "+shellQuote(phasePath);
         workerCommand = workerCommand+" --integrator "+definition.requestedIntegrator;
         if isfield(definition,"workload") && string(definition.workload)=="composite-dense-output"
             workerCommand = workerCommand+" --benchmark-model-dense-output 1";
@@ -394,8 +402,24 @@ else
 end
 noFallback = true;
 if isfield(value.execution,"noFallback"), noFallback = logical(value.execution.noFallback); end
-run.provider = struct("id","native-neon-pthreads","version",string(capabilities.provider.version),"threads",double(capabilities.contract.threadCount),"baseLibrary",string(value.provider.baseLibrary),"threadLibrary",string(value.provider.threadLibrary),"noFallback",noFallback);
+if isfield(definition,"modelConfiguration")
+    policy = value.variableKernelPolicy;
+    noFallback = noFallback && logical(policy.noFallback);
+    run.provider = struct("id","native-neon-pthreads","version",string(capabilities.provider.version), ...
+        "threads",double(value.provider.threads),"configuredThreadBudget",double(capabilities.contract.threadCount), ...
+        "requestedFFTThreads",double(policy.requestedFFTThreads),"effectiveFFTThreads",double(policy.effectiveFFTThreads), ...
+        "policy",string(policy.selection),"matrixBackend",string(policy.matrixBackend),"compact",logical(policy.compact), ...
+        "horizontalWorkers",double(policy.horizontalWorkers),"pointwiseWorkers",double(policy.pointwiseWorkers), ...
+        "baseLibrary",string(value.provider.baseLibrary),"threadLibrary",string(value.provider.threadLibrary),"noFallback",noFallback);
+else
+    run.provider = struct("id","native-neon-pthreads","version",string(capabilities.provider.version),"threads",double(capabilities.contract.threadCount),"baseLibrary",string(value.provider.baseLibrary),"threadLibrary",string(value.provider.threadLibrary),"noFallback",noFallback);
+end
 run.failure = emptyFailure;
+end
+
+function value = usesMatchedVariablePolicy(definition)
+value = isfield(definition,"modelConfiguration") && ...
+    ismember(string(definition.modelConfiguration),["hydrostatic-exponential" "boussinesq-exponential"]);
 end
 
 function comparison = aggregate(runs,definitions,tolerance,repeatEvidence)

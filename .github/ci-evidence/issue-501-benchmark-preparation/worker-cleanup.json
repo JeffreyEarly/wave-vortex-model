@@ -1,0 +1,64 @@
+{
+  "status": "passed",
+  "scientificSource": "0c8347c1f07ea049b426bfd21c1856d7471ad2ff",
+  "workerSHA256": "80fedd5dec4e1524e35c976e50b569b9cb3cfb19fa7f3bc42d25c6ab30c94980",
+  "checks": [
+    "successful compiled worker teardown with foreign prior MEX path",
+    "exception teardown after compiled construction; expected UnknownIntegrator preserved"
+  ],
+  "processPolicy": "Each accepted check uses a fresh MATLAB process, matching actual campaign workers. First driver attempted serial workers; second failed closed at capability validation, so exception check was rerun alone. Original failure retained.",
+  "analyzer": "Two unused new catch assignments removed after analyzer; explicit destroy order unchanged. Existing unused input warning remains. Final CI handles analyzer on exact source.",
+  "archive": "../wave-vortex-model-benchmark-artifacts/three-model-worker-cleanup-20260913",
+  "files": [
+    {
+      "file": "failure-fresh-worker.json",
+      "bytes": 1107,
+      "sha256": "ed93ef9917d79c922843cbee6b25067119d78585a5e70edd1ad650b0cd7416c3"
+    },
+    {
+      "file": "failure-config.json",
+      "bytes": 48384,
+      "sha256": "fcd422f04112dff247fe75f932b43eaea2e571eda2fb19d26a7f696fc6f6171e"
+    },
+    {
+      "file": "failure-worker.json",
+      "bytes": 3170,
+      "sha256": "e05500080ddc6af607a399dd07713f575350c3092b103a3eb232485c6b2bac25"
+    },
+    {
+      "file": "success-config.json",
+      "bytes": 48369,
+      "sha256": "909c1e1600ca7c49c2329393f25d0ef92e5652e948d2492291c9d9b1162c2db1"
+    },
+    {
+      "file": "success-worker.json",
+      "bytes": 2455,
+      "sha256": "8331b5c58ce8ce8952fb6e98ea8dc72f5afde10fa3ca88516bca1601a0718402"
+    },
+    {
+      "file": "cleanup-worker-check.log",
+      "bytes": 2329,
+      "sha256": "2bbfdb03e4098a8c58821b0c5f8f8990ca642d1dfe235cd4f386fad7cf4fb04a"
+    },
+    {
+      "file": "cleanup-worker-fresh-failure-check.log",
+      "bytes": 3027,
+      "sha256": "22f1be4e6cb2eed989e5d1332ea327a68b64a1a2d8743a1773de6fec228dcf82"
+    },
+    {
+      "file": "cleanup-worker-analyzer.csv",
+      "bytes": 745,
+      "sha256": "de6831b90e48a2044b8bf22c2db2ef276e7b7490b2d677089b2f27c8f6f65b3f"
+    },
+    {
+      "file": "reproduceCompiledWorkerCleanupOrder.m",
+      "bytes": 4520,
+      "sha256": "b107e9d3f0dc9dae50703dac8d9f5eb445d4cfb1eeb3575b4748fc947a89d0a3"
+    },
+    {
+      "file": "checkCompiledWorkerCleanupOrder.m",
+      "bytes": 1900,
+      "sha256": "920f8c77c3f6f58c443c570af1ab2ef4a866c2f4e0d98bebc971ef5e948e8b40"
+    }
+  ]
+}
