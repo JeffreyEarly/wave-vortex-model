@@ -220,13 +220,18 @@ These items document internal implementation details and are not part of the pri
   + [`variableCache`](/classes/transforms/wvtransform/variablecache.html)
   + [`wvCoefficientDependentVariablesNameMap`](/classes/transforms/wvtransform/wvcoefficientdependentvariablesnamemap.html)
 + Class internals
+  + [`canUseCompiledCoefficientOnlyRightHandSide`](/classes/transforms/wvtransform/canusecompiledcoefficientonlyrighthandside.html) Check the sealed built-in coefficient-only workload.
+  + [`canUseCompiledNonlinearCoefficients`](/classes/transforms/wvtransform/canusecompilednonlinearcoefficients.html) Use the native coefficient boundary for the exact spatial producer.
+  + [`compiledCoefficientOnlyRightHandSide`](/classes/transforms/wvtransform/compiledcoefficientonlyrighthandside.html) Evaluate a complete RHS with no other consumers in its event.
   + [`compiledDensityRecoveryReport`](/classes/transforms/wvtransform/compileddensityrecoveryreport.html) - Developer: true
+  + [`compiledNonlinearCoefficients`](/classes/transforms/wvtransform/compilednonlinearcoefficients.html) Evaluate nonlinear coefficients in the enclosing native scope.
   + [`compiledPrimitive`](/classes/transforms/wvtransform/compiledprimitive.html) - Developer: true
   + [`compiledVariables`](/classes/transforms/wvtransform/compiledvariables.html) - Developer: true
   + [`hasPVComponent`](/classes/transforms/wvtransform/haspvcomponent.html)
   + [`hasWaveComponent`](/classes/transforms/wvtransform/haswavecomponent.html)
   + [`invalidateCompiledRegistry`](/classes/transforms/wvtransform/invalidatecompiledregistry.html) Invalidate compiled derived values before a registry mutation.
   + [`scopedEvaluation`](/classes/transforms/wvtransform/scopedevaluation.html) Reuse compiled dependencies while the MATLAB state is unchanged.
+  + [`tryCompiledCoefficientOnlyRightHandSide`](/classes/transforms/wvtransform/trycompiledcoefficientonlyrighthandside.html) Use the sealed native leaf when its current workload remains eligible.
 + Construction internals
   + [`WVTransform`](/classes/transforms/wvtransform/wvtransform.html) Initialize the internal WVTransform state for a concrete subclass.
 

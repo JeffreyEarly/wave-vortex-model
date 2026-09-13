@@ -3,7 +3,7 @@ layout: default
 title: enstrophyFluxFromNonlinearFlux
 parent: WVTransform
 grand_parent: Transforms
-nav_order: 33
+nav_order: 37
 mathjax: true
 ---
 

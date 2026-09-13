@@ -451,7 +451,7 @@ classdef WVTransform < matlab.mixin.indexing.RedefinesDot & CAAnnotatedClass
             %
             % - Developer: true
             % - Topic: Compiled transform internals
-            flag = self.hasCompiledStandardStateGraph() && numel(self.spatialFluxForcing) == 1;
+            flag = self.hasCompiledStandardStateGraph() && isscalar(self.spatialFluxForcing);
             if ~flag, return, end
             forcing = self.spatialFluxForcing(1);
             flag = string(class(forcing)) == "WVNonlinearAdvection" && ...

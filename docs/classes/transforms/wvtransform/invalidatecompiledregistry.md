@@ -3,7 +3,7 @@ layout: default
 title: invalidateCompiledRegistry
 parent: WVTransform
 grand_parent: Transforms
-nav_order: 56
+nav_order: 60
 mathjax: true
 ---
 
