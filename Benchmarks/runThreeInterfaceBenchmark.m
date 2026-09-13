@@ -169,7 +169,11 @@ end
 modelConfiguration = options.modelConfigurations;
 options.physicalConfigurations = physicalConfigurationFor(modelConfiguration);
 wvt = benchmarkTransform(options.Lxyz,options.Nxyz,modelConfiguration);
-[state,physicalEvidence] = initializeThreeInterfaceIntegratorState(wvt,4001);
+initialConditionId = conditional(isMatchedModelStudy,"gm0p5-red-geostrophic-j1-v1","gm1-red-geostrophic-j1-v1");
+[state,physicalEvidence] = initializeThreeInterfaceIntegratorState(wvt,4001,gmEnergyLevel=conditional(isMatchedModelStudy,0.5,1),initialConditionId=initialConditionId);
+if isMatchedModelStudy
+    wvt.throwErrorIfDensityViolation(A0=wvt.A0,Ap=wvt.Ap,Am=wvt.Am);
+end
 physicalEvidence.model = modelEvidence(wvt,modelConfiguration,options.Lxyz,options.Nxyz);
 model = WVModel(wvt);
 cleanup = onCleanup(@()closeModels(model));

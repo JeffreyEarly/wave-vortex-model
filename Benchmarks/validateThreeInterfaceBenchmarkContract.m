@@ -82,7 +82,7 @@ else
     validModel = validModel && (isempty(model.exponentialScaleHeightMeters) || (isscalar(model.exponentialScaleHeightMeters) && isnan(model.exponentialScaleHeightMeters)));
 end
 initial = configuration.initialCondition;
-validInitial = string(initial.id)=="gm1-red-geostrophic-j1-v1" && double(initial.seed)==4001 && double(initial.gmEnergyLevel)==1 && double(initial.geostrophicVerticalMode)==1 && double(initial.geostrophicMaximumSpeedTarget)==0.15;
+validInitial = string(initial.id)=="gm0p5-red-geostrophic-j1-v1" && double(initial.seed)==4001 && double(initial.gmEnergyLevel)==0.5 && double(initial.geostrophicVerticalMode)==1 && double(initial.geostrophicMaximumSpeedTarget)==0.15;
 if ~validModel || ~validInitial
     error("WaveVortexBenchmark:PhysicalProvenance","The artifact physical model or initialization provenance does not match the publication contract.")
 end

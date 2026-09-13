@@ -9,16 +9,14 @@ nav_order: 4
 
 Use this checklist for a maintenance release after every issue assigned to the release milestone is complete or explicitly deferred. Release preparation must not introduce scientific capabilities, unannounced API changes, or documentation changes that were not reviewed on the release branch.
 
-## v4.3 portable-runtime qualification
+## v4.4 compiled-execution and benchmark qualification
 
-- Confirm issue #287 is the only final open item in milestone 14 before qualification and that its focused branch targets `feature/v4.3-portable-runtime`, not `main`.
-- On Matilda with MATLAB R2026a Update 4, run portable C++ tests; focused MATLAB request, schema, runtime, restart, and interoperability tests; `buildtool test:full`; `buildtool test:optional`; `buildtool analyze`; and `buildtool docs:check`.
-- Verify omitted and explicit v2 defaults are equivalent for constant stratification and Barotropic QG, including post-restoration CFL `0.5`, the one-tenth continuation maximum step, requested-versus-active report fields, v1 round trips, explicit overrides, and no provider fallback.
-- Build the pinned native FFTW runner on Apple silicon and run only short functional provider and integration checks. Confirm the actual automatically bounded thread count and provider identity, and prove native unavailability leaves model output unchanged.
-- Verify fixed RK4 and MATLAB-compatible `ode23`, `ode45`, and `ode78`; supported forcing and observers; compact QG state; exact and dense output; multi-file policies; restart; MATLAB continuation; and tracked-files-only source/export policy.
-- Run the clean exported-package verification and inspect generated-documentation determinism and stable compiled-execution routes. Record any unavailable hosted Linux/R2025b structured-unavailability check explicitly.
-- Treat issue #312's accepted Donut `[256 256 129]` record as frozen release evidence. Do not rerun the canonical performance suite, generate replacement timing or RSS data, commit raw benchmark results, or present startup time as a primary metric.
-- Confirm larger matched-interface cases and unsupported transforms, forcing, observers, platforms, and plug-in models remain documented as deferred rather than inferred from the accepted evidence.
+- Confirm the release commit retains the source-bound implementation qualified by the checked-in issue #507 receipts and the final issue #307 and #310 standard-parity decision. Reuse those passing native, MATLAB, consumer, lifecycle and installed-package results while their tracked scientific and adapter sources remain unchanged; do not repeat unchanged qualification solely for release preparation.
+- Confirm the proposed minor release is `v4.4.0`, the authoring manifest still begins at `4.3.0`, and the release workflow will promote the complete nonempty `Unreleased` body. Release-owned version, date, changelog and generated-documentation changes must not alter the measured scientific implementation.
+- Complete issue #501's frozen 54-process campaign: constant stratification, Hydrostatic and Boussinesq; MATLAB builtin, MATLAB compiled and standalone C++; coefficient-endpoint and composite dense-output workloads; three fresh-process replicates at `[256 256 129]` over 7,168 seconds. Require all numerical, integration-control, artifact and storage gates before publishing the dataset.
+- Bind every published benchmark record to the measured source, executable or module, provider, release-version and environment metadata. Report the measured host, MATLAB release and effective thread policy from recorded provenance; do not substitute a planned machine label or a MATLAB-normalized timing for an absolute interface runtime.
+- Run the focused benchmark contract, schema, website and documentation checks affected by issue #501 and require PR #510's passing hosted checks plus the selected checks for subsequent release-candidate changes. Reuse the unchanged passing PR #509 clean-install and exported-package gates, issue #507 all-six installed qualification, and issue #307/#310 parity receipts after confirming their source identities still match.
+- Inspect the release workflow's ordinary-clone export, require no Git metadata or package-local compiled build artifacts in the payload, and verify its manifest, runtime paths and representative installed consumer. Record the final campaign receipt, source commit, CI runs and validated export before dispatching the immutable minor-release workflow.
 
 ## Review the candidate
 

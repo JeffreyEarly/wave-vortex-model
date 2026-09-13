@@ -128,6 +128,17 @@ classdef TestThreeInterfaceBenchmark < matlab.unittest.TestCase
             testCase.verifyError(@()validateThreeInterfaceBenchmarkContract(raw),"WaveVortexBenchmark:MatchedModelPublicationContract")
         end
 
+        function matchedModelStudyRejectsObsoleteWaveEnergy(testCase)
+            for model = ["constant-nonhydrostatic","hydrostatic-exponential","boussinesq-exponential"]
+                raw = matchedModelStudyFixture(model);
+                raw.configuration.initialCondition.gmEnergyLevel = 1;
+                testCase.verifyError(@()validateThreeInterfaceBenchmarkContract(raw),"WaveVortexBenchmark:PhysicalProvenance")
+                raw = matchedModelStudyFixture(model);
+                raw.configuration.initialCondition.id = "gm1-red-geostrophic-j1-v1";
+                testCase.verifyError(@()validateThreeInterfaceBenchmarkContract(raw),"WaveVortexBenchmark:PhysicalProvenance")
+            end
+        end
+
         function matchedModelStudyRejectsChangedDurationOrSchedule(testCase)
             raw = matchedModelStudyFixture("constant-nonhydrostatic");
             raw.cases(2).finalTime = 128;
@@ -643,6 +654,8 @@ profile = conditional(isExponential,"N2(z) = 2e-5 exp(2 z / 1300) s^-2","N2 = 2e
 raw.configuration.physicalConfigurations = physicalConfiguration;
 raw.configuration.model = struct("id",modelConfiguration,"transformClass",transformClass,"physicalConfiguration",physicalConfiguration,"isHydrostatic",isHydrostatic,"domainMeters",[150e3 150e3 1300],"grid",[256 256 129],"latitudeDegrees",45,"shouldAntialias",true,"stratificationProfile",profile,"N2ReferencePerSecondSquared",2e-5,"exponentialScaleHeightMeters",conditional(isExponential,650,NaN));
 raw.configuration.initialCondition.seed = 4001;
+raw.configuration.initialCondition.id = "gm0p5-red-geostrophic-j1-v1";
+raw.configuration.initialCondition.gmEnergyLevel = 0.5;
 raw.configuration.initialCondition.geostrophicVerticalMode = 1;
 raw.configuration.stepControls.finalTime = 7168;
 for iCase = 1:2

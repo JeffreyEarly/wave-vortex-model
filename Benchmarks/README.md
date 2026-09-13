@@ -65,7 +65,7 @@ The detailed raw result and RSS samples are compressed beneath the external sibl
 
 ### Matched model release campaign
 
-The `matched-model-runtime-v1` study refreshes the primary website comparison while retaining the earlier four-integrator study as historical evidence. It uses the same domain, grid, GM(1)/red-geostrophic initialization recipe and two output workloads, with RK8(7) only and a fixed 7168 s integration. Its model choices are `constant-nonhydrostatic`, `hydrostatic-exponential` and `boussinesq-exponential`. Both exponential models use `N2(z) = 2e-5 exp(2z/1300)` in SI units; constant stratification uses `N2 = 2e-5`.
+The `matched-model-runtime-v1` study refreshes the primary website comparison while retaining the earlier four-integrator study as historical evidence. It uses the same domain, grid, GM(0.5)/red-geostrophic initialization recipe and two output workloads, with RK8(7) only and a fixed 7168 s integration. Its model choices are `constant-nonhydrostatic`, `hydrostatic-exponential` and `boussinesq-exponential`. Both exponential models use `N2(z) = 2e-5 exp(2z/1300)` in SI units; constant stratification uses `N2 = 2e-5`.
 
 Run one model per artifact from the frozen candidate, for example:
 

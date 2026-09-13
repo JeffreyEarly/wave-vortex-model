@@ -1,0 +1,95 @@
+{
+  "schema": "wvm501-full-grid-scientific-preflight-v1",
+  "diagnosedSource": "6274682b828dfe12789c267b3a164412c518596f",
+  "publicationEligible": false,
+  "grid": [
+    256,
+    256,
+    129
+  ],
+  "seed": 4001,
+  "geostrophicMaximumSpeed": 0.15,
+  "previousWaveEnergy": 1,
+  "qualifiedInitialWaveEnergy": 0.5,
+  "reason": "The full-grid exponential models reject GM(1) as outside the no-motion density range. GM(0.5) passes unchanged combined-state validation for both models.",
+  "externalArchiveDirectory": "three-model-full-grid-preflight-6274682b",
+  "externalArchiveManifestSHA256": "6ff91e033fdd2cbf41a10104887e748232bd1c7f86b82ff6a3262d823251874c",
+  "models": [
+    {
+      "model": "hydrostatic-exponential",
+      "constructionSeconds": 1.8456259166666666,
+      "profileRange": [
+        2.2737367544323206e-13,
+        1.174480871648484
+      ],
+      "trials": [
+        {
+          "gmEnergyLevel": 0.25,
+          "valid": true,
+          "minimumDensityMinusRho0": 2.2737367544323206e-13,
+          "maximumDensityMinusRho0": 1.174480871648484,
+          "message": ""
+        },
+        {
+          "gmEnergyLevel": 0.5,
+          "valid": true,
+          "minimumDensityMinusRho0": 2.2737367544323206e-13,
+          "maximumDensityMinusRho0": 1.174480871648484,
+          "message": ""
+        },
+        {
+          "gmEnergyLevel": 0.75,
+          "valid": false,
+          "minimumDensityMinusRho0": -0.0027506862802511023,
+          "maximumDensityMinusRho0": 1.174480871648484,
+          "message": "The no-motion density minus rho0 spans from 0.000 kg m-3 at the surface to 1.174 kg m-3 at the bottom. Any adiabatic re-arrangement of the fluid requires the density anomaly stay within this range.  \tminimum density: -0.003 kg m-3\n\tmaximum density: 1.174 kg m-3\n"
+        },
+        {
+          "gmEnergyLevel": 1,
+          "valid": false,
+          "minimumDensityMinusRho0": -0.005610449270307072,
+          "maximumDensityMinusRho0": 1.174480871648484,
+          "message": "The no-motion density minus rho0 spans from 0.000 kg m-3 at the surface to 1.174 kg m-3 at the bottom. Any adiabatic re-arrangement of the fluid requires the density anomaly stay within this range.  \tminimum density: -0.006 kg m-3\n\tmaximum density: 1.174 kg m-3\n"
+        }
+      ]
+    },
+    {
+      "model": "boussinesq-exponential",
+      "constructionSeconds": 157.46324466666667,
+      "profileRange": [
+        2.2737367544323206e-13,
+        1.174480871648484
+      ],
+      "trials": [
+        {
+          "gmEnergyLevel": 0.25,
+          "valid": true,
+          "minimumDensityMinusRho0": 2.2737367544323206e-13,
+          "maximumDensityMinusRho0": 1.174480871648484,
+          "message": ""
+        },
+        {
+          "gmEnergyLevel": 0.5,
+          "valid": true,
+          "minimumDensityMinusRho0": 2.2737367544323206e-13,
+          "maximumDensityMinusRho0": 1.174480871648484,
+          "message": ""
+        },
+        {
+          "gmEnergyLevel": 0.75,
+          "valid": false,
+          "minimumDensityMinusRho0": -0.002184990228215611,
+          "maximumDensityMinusRho0": 1.174480871648484,
+          "message": "The no-motion density minus rho0 spans from 0.000 kg m-3 at the surface to 1.174 kg m-3 at the bottom. Any adiabatic re-arrangement of the fluid requires the density anomaly stay within this range.  \tminimum density: -0.002 kg m-3\n\tmaximum density: 1.174 kg m-3\n"
+        },
+        {
+          "gmEnergyLevel": 1,
+          "valid": false,
+          "minimumDensityMinusRho0": -0.00460246958323296,
+          "maximumDensityMinusRho0": 1.174480871648484,
+          "message": "The no-motion density minus rho0 spans from 0.000 kg m-3 at the surface to 1.174 kg m-3 at the bottom. Any adiabatic re-arrangement of the fluid requires the density anomaly stay within this range.  \tminimum density: -0.005 kg m-3\n\tmaximum density: 1.174 kg m-3\n"
+        }
+      ]
+    }
+  ]
+}

@@ -14,7 +14,7 @@ The usual starting point is MATLAB at low resolution: it keeps the model easy to
 
 ## MATLAB vs C++
 
-**Setup.** The primary release campaign uses RK78 for a 150 km × 150 km × 1.3 km domain, initialized with GM(1) waves and a first-baroclinic red geostrophic spectrum, for 7168 s. It uses a `256 × 256 × 129` grid. Select constant nonhydrostatic, Hydrostatic exponential, or Boussinesq exponential to view the corresponding measured model configuration; an unavailable panel means that model has not been measured in the selected campaign.
+**Setup.** The primary release campaign uses RK78 for a 150 km × 150 km × 1.3 km domain, initialized with GM(0.5) waves and a first-baroclinic red geostrophic spectrum, for 7168 s. It uses a `256 × 256 × 129` grid. Select constant nonhydrostatic, Hydrostatic exponential, or Boussinesq exponential to view the corresponding measured model configuration; an unavailable panel means that model has not been measured in the selected campaign.
 
 **Conclusion.** Read the winner labels and ratios within the selected release campaign. They describe the recorded source and environment for that campaign.
 
