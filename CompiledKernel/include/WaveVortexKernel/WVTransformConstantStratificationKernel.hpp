@@ -227,7 +227,8 @@ private:
     std::vector<std::unique_ptr<WVFFTPlan>> plans_;
     std::unique_ptr<WVFFTPlan> scalarInversePlan_;
     // Retained-row DCT/DST and one-column DCT/DST plans.
-    std::array<std::unique_ptr<WVFFTPlan>,4> matlabPlans_;
+    std::array<std::unique_ptr<WVFFTPlan>,6> matlabPlans_;
+    std::size_t matlabCalculusColumns_ = 0;
     std::unique_ptr<kernel_detail::WVCompactConstantSchedule> compact_;
     std::vector<std::uint8_t> scalarAntialiasRows_;
     std::vector<double> halfSpectrumScratch_;

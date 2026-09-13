@@ -127,7 +127,8 @@ void testVerticalCalculus(bool hydrostatic,WVConstantNonlinearFluxSchedule sched
         "vertical calculus ran before setup");
     require(bool(k->prepareMatlabPrimitives()),"vertical calculus setup");
     const auto stable=k->persistentBytes(),scratch=k->scratchBytes(),plans=k->metrics().planCount;
-    for(const std::size_t columns:{std::size_t{1},std::size_t{5}}) {
+    for(const std::size_t columns:{std::size_t{1},std::size_t{5},std::size_t{119},
+        std::size_t{120},std::size_t{121},std::size_t{255},std::size_t{256},std::size_t{257}}) {
         std::vector<double> input(c.Nz*columns),output(c.Nz*columns),original;
         for(std::size_t q=0;q<input.size();++q)
             input[q]=.37*std::sin(.41*static_cast<double>(q+1))+

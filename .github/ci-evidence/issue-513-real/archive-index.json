@@ -1,0 +1,13 @@
+{
+  "schemaVersion": "wvm-issue513-raw-archive-v1",
+  "workspaceRelativePath": "wave-vortex-model-benchmark-artifacts/issue-513-vertical-calculus/20260913-v4.4.0-second-stage",
+  "fileCount": 326,
+  "totalBytes": 8934152661,
+  "manifestSHA256": "ac05175ad0e5ed2a4aa5a1f79a3f5b14e383a53272febe36f197c92419871071",
+  "excluded": "native-build and forward-build intermediate object/build directories; frozen executables and configure/build/test logs retained",
+  "frozenSourceCommits": {
+    "baseline": "81692f49a98ceb7b5ef75f345fb5567494eb8b86",
+    "candidate": "8a1840a3129a3aed62efd8e4ac6277bdf063e873"
+  },
+  "priorArchiveUnchanged": "wave-vortex-model-benchmark-artifacts/issue-513-vertical-calculus/20260913-v4.4.0/"
+}

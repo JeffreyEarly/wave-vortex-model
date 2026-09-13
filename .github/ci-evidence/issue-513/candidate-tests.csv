@@ -1,0 +1,9 @@
+Name,Passed,Failed,Incomplete,Duration,Details
+TestWVCompiledConstantVerticalCalculus/volumesMatchMatlabAcrossTileBoundary,1,0,0,8.36659575,
+TestWVCompiledConstantVerticalCalculus/matrixIntegralsMatchMatlabAtTileTails,1,0,0,4.59756583333333,
+TestWVCompiledConstantVerticalCalculus/tracerEvolutionMatchesMatlab,1,0,0,2.211113,
+TestWVCompiledConstantPrimitives/rawVerticalOperationsMatchMatlab,1,0,0,0.977135708333333,
+TestWVCompiledConstantPrimitives/horizontalOperationsMatchMatlab,1,0,0,0.789956916666667,
+TestWVCompiledConstantPrimitives/publicProjectionMatchesMatlabPhaseAndZeroMode,1,0,0,0.757318916666667,
+TestWVCompiledConstantPrimitives/fieldsAndFluxMatchMatlabSeparately,1,0,0,0.816682458333333,
+TestWVCompiledPublicAdapters/verticalCalculusPreservesMatlabLayouts,1,0,0,7.08144516666667,

@@ -1,0 +1,4 @@
+Location,Severity,Fixability,Description,CheckID,LineStart,LineEnd,ColumnStart,ColumnEnd,FullFilename
+issue513Profile.m,,,Value assigned to variable might be unused.,NASGU,60,60,5,16,/Users/jearly/Documents/OceanKitRepositories/wvm-v4-issue513-candidate/Benchmarks/issue513Profile.m
+issue513Profile.m,,,Value assigned to variable might be unused.,NASGU,105,105,1,5,/Users/jearly/Documents/OceanKitRepositories/wvm-v4-issue513-candidate/Benchmarks/issue513Profile.m
+issue513Profile.m,,,Value assigned to variable might be unused.,NASGU,106,106,1,3,/Users/jearly/Documents/OceanKitRepositories/wvm-v4-issue513-candidate/Benchmarks/issue513Profile.m

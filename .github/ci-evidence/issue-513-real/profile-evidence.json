@@ -1,0 +1,1103 @@
+{
+  "comparisonAssertions": {
+    "controlsExact": true,
+    "integratorContractExact": true,
+    "missingProfileBoundaryFields": [],
+    "outputRecordCountsExact": true,
+    "producerPrimitiveCopyDeltasExact": true,
+    "profileOutputComparisonsPassed": true,
+    "runtimeMetricDeltasExact": true
+  },
+  "comparisonNotes": {
+    "algorithmBaseline": "/private/tmp/wvm513/candidate-profile-composite.nc.issue513.json",
+    "combinedCandidate": "/private/tmp/wvm513-real/combined-composite.nc.issue513.json",
+    "numericalComparisonIsSeparate": "Output-comparison JSONs are reported independently; runtime/profile timing deltas are algorithm-baseline versus combined candidate only."
+  },
+  "controls": {
+    "absoluteTolerance": {
+      "baseline": 1e-06,
+      "candidate": 1e-06,
+      "equal": true
+    },
+    "finalTime": {
+      "baseline": 7168,
+      "candidate": 7168,
+      "equal": true
+    },
+    "initialStep": {
+      "baseline": 418.31529239621887,
+      "candidate": 418.31529239621887,
+      "equal": true
+    },
+    "initialTime": {
+      "baseline": 0,
+      "candidate": 0,
+      "equal": true
+    },
+    "integrator": {
+      "baseline": "ode78",
+      "candidate": "ode78",
+      "equal": true
+    },
+    "maximumStep": {
+      "baseline": 716.8,
+      "candidate": 716.8,
+      "equal": true
+    },
+    "maximumStepPolicy": {
+      "baseline": "MATLAB default: 0.1 integration span",
+      "candidate": "MATLAB default: 0.1 integration span",
+      "equal": true
+    },
+    "relativeTolerance": {
+      "baseline": 0.001,
+      "candidate": 0.001,
+      "equal": true
+    }
+  },
+  "integrator": {
+    "absoluteToleranceComponentHashes": {
+      "baseline": [
+        "4274345950450975969",
+        "4274345950450975969",
+        "12519929816211948769",
+        "5399737789812619515",
+        "5399737789812619515",
+        "13259821907563821307",
+        "8691403943112672131"
+      ],
+      "candidate": [
+        "4274345950450975969",
+        "4274345950450975969",
+        "12519929816211948769",
+        "5399737789812619515",
+        "5399737789812619515",
+        "13259821907563821307",
+        "8691403943112672131"
+      ],
+      "equal": true
+    },
+    "absoluteToleranceHash": {
+      "baseline": "93615344982125649",
+      "candidate": "93615344982125649",
+      "equal": true
+    },
+    "absoluteToleranceHashClearedMantissaBits": {
+      "baseline": 20,
+      "candidate": 20,
+      "equal": true
+    },
+    "actual": {
+      "baseline": "adaptive-rk78",
+      "candidate": "adaptive-rk78",
+      "equal": true
+    },
+    "effectiveInitialStep": {
+      "baseline": 418.31529239621887,
+      "candidate": 418.31529239621887,
+      "equal": true
+    },
+    "relativeTolerance": {
+      "baseline": 0.001,
+      "candidate": 0.001,
+      "equal": true
+    },
+    "requested": {
+      "baseline": "adaptive-rk78",
+      "candidate": "adaptive-rk78",
+      "equal": true
+    },
+    "requestedInitialStep": {
+      "baseline": 418.31529239621887,
+      "candidate": 418.31529239621887,
+      "equal": true
+    }
+  },
+  "isolatedPrimitiveArrays": [
+    {
+      "measurementCounterDeltas": {
+        "duplicateExecutions": 0,
+        "nonlinearProducerExecutions": 0,
+        "physicalReconstructionExecutions": 0,
+        "primitiveExecutions": 10,
+        "producerExecutions": 0,
+        "stateInputCopyBytes": 0,
+        "tiledNonlinearExecutions": 0
+      },
+      "measurementMetricDeltas": {
+        "cacheHits": 0,
+        "coefficientOnlyEvaluations": 0,
+        "densityAPEPasses": 0,
+        "densityInversePasses": 0,
+        "densityProfileConstructions": 0,
+        "densityRecoveries": 0,
+        "duplicateExecutions": 0,
+        "effectiveFFTThreads": 0,
+        "engineBytes": 0,
+        "evaluationActive": 0,
+        "evaluationToken": 0,
+        "evaluations": 0,
+        "fieldServiceBytes": 0,
+        "horizontalWorkers": 0,
+        "kernelBytes": 0,
+        "liveEvaluationBytes": 0,
+        "nonlinearProducerExecutions": 0,
+        "outputBytes": 676331520.0,
+        "peakEvaluationBytes": 0,
+        "phasePreparations": 0,
+        "physicalReconstructionExecutions": 0,
+        "planPreparations": 0,
+        "plannedEvaluationBytes": 0,
+        "pointwiseWorkers": 0,
+        "preparedPlanBytes": 0,
+        "primitiveExecutions": 10,
+        "producerExecutions": 0,
+        "scopedEvaluations": 0,
+        "sourceBytes": 0,
+        "stateInputBytes": 0,
+        "stateInputCopyBytes": 0,
+        "stateStorageBytes": 0,
+        "stateValidations": 0,
+        "tiledNonlinearExecutions": 0
+      },
+      "path": "/private/tmp/wvm513-real/combined-primitives.json",
+      "repeatComparison": {
+        "isNumericalCorrectnessGate": false,
+        "operator": "diffZF",
+        "reference": "one untimed warmed repeat",
+        "relativeErrors": [
+          0,
+          0,
+          0,
+          0,
+          0
+        ]
+      },
+      "repeatCount": 5,
+      "timingScope": "isolated diagnostic timings; public derivative and permutation samples are separate and must not be summed as an integration runtime",
+      "timings": {
+        "inputPermuteSeconds": [
+          0.005893541666666667,
+          0.004932708333333333,
+          0.006091958333333333,
+          0.005354,
+          0.0065495833333333335
+        ],
+        "outputPermuteSeconds": [
+          0.00109025,
+          0.001062,
+          0.0010715,
+          0.0011121666666666667,
+          0.001042125
+        ],
+        "publicDiffXSeconds": [
+          0.009887291666666667,
+          0.009901875,
+          0.00696375,
+          0.007118041666666667,
+          0.007270916666666667
+        ],
+        "publicDiffZFSeconds": [
+          0.04719925,
+          0.045046666666666665,
+          0.039396458333333335,
+          0.038833875,
+          0.03946966666666667
+        ]
+      }
+    },
+    {
+      "measurementCounterDeltas": {
+        "duplicateExecutions": 0,
+        "nonlinearProducerExecutions": 0,
+        "physicalReconstructionExecutions": 0,
+        "primitiveExecutions": 10,
+        "producerExecutions": 0,
+        "stateInputCopyBytes": 0,
+        "tiledNonlinearExecutions": 0
+      },
+      "measurementMetricDeltas": {
+        "cacheHits": 0,
+        "coefficientOnlyEvaluations": 0,
+        "densityAPEPasses": 0,
+        "densityInversePasses": 0,
+        "densityProfileConstructions": 0,
+        "densityRecoveries": 0,
+        "duplicateExecutions": 0,
+        "effectiveFFTThreads": 0,
+        "engineBytes": 0,
+        "evaluationActive": 0,
+        "evaluationToken": 0,
+        "evaluations": 0,
+        "fieldServiceBytes": 0,
+        "horizontalWorkers": 0,
+        "kernelBytes": 0,
+        "liveEvaluationBytes": 0,
+        "nonlinearProducerExecutions": 0,
+        "outputBytes": 676331520.0,
+        "peakEvaluationBytes": 0,
+        "phasePreparations": 0,
+        "physicalReconstructionExecutions": 0,
+        "planPreparations": 0,
+        "plannedEvaluationBytes": 0,
+        "pointwiseWorkers": 0,
+        "preparedPlanBytes": 0,
+        "primitiveExecutions": 10,
+        "producerExecutions": 0,
+        "scopedEvaluations": 0,
+        "sourceBytes": 0,
+        "stateInputBytes": 0,
+        "stateInputCopyBytes": 0,
+        "stateStorageBytes": 0,
+        "stateValidations": 0,
+        "tiledNonlinearExecutions": 0
+      },
+      "path": "/private/tmp/wvm513-real/batched-primitives.json",
+      "repeatComparison": {
+        "isNumericalCorrectnessGate": false,
+        "operator": "diffZF",
+        "reference": "one untimed warmed repeat",
+        "relativeErrors": [
+          0,
+          0,
+          0,
+          0,
+          0
+        ]
+      },
+      "repeatCount": 5,
+      "timingScope": "isolated diagnostic timings; public derivative and permutation samples are separate and must not be summed as an integration runtime",
+      "timings": {
+        "inputPermuteSeconds": [
+          0.004703,
+          0.0057422083333333335,
+          0.006479416666666666,
+          0.005859291666666666,
+          0.00569825
+        ],
+        "outputPermuteSeconds": [
+          0.0010722916666666667,
+          0.0010814166666666667,
+          0.001054125,
+          0.0010187083333333333,
+          0.0009912916666666666
+        ],
+        "publicDiffXSeconds": [
+          0.009679916666666667,
+          0.009617416666666666,
+          0.006945416666666667,
+          0.007088916666666667,
+          0.007669958333333333
+        ],
+        "publicDiffZFSeconds": [
+          0.08712204166666666,
+          0.0830165,
+          0.08027766666666666,
+          0.07793233333333334,
+          0.07930241666666667
+        ]
+      }
+    },
+    {
+      "measurementCounterDeltas": {
+        "duplicateExecutions": 0,
+        "nonlinearProducerExecutions": 0,
+        "physicalReconstructionExecutions": 0,
+        "primitiveExecutions": 10,
+        "producerExecutions": 0,
+        "stateInputCopyBytes": 0,
+        "tiledNonlinearExecutions": 0
+      },
+      "measurementMetricDeltas": {
+        "cacheHits": 0,
+        "coefficientOnlyEvaluations": 0,
+        "densityAPEPasses": 0,
+        "densityInversePasses": 0,
+        "densityProfileConstructions": 0,
+        "densityRecoveries": 0,
+        "duplicateExecutions": 0,
+        "effectiveFFTThreads": 0,
+        "engineBytes": 0,
+        "evaluationActive": 0,
+        "evaluationToken": 0,
+        "evaluations": 0,
+        "fieldServiceBytes": 0,
+        "horizontalWorkers": 0,
+        "kernelBytes": 0,
+        "liveEvaluationBytes": 0,
+        "nonlinearProducerExecutions": 0,
+        "outputBytes": 676331520.0,
+        "peakEvaluationBytes": 0,
+        "phasePreparations": 0,
+        "physicalReconstructionExecutions": 0,
+        "planPreparations": 0,
+        "plannedEvaluationBytes": 0,
+        "pointwiseWorkers": 0,
+        "preparedPlanBytes": 0,
+        "primitiveExecutions": 10,
+        "producerExecutions": 0,
+        "scopedEvaluations": 0,
+        "sourceBytes": 0,
+        "stateInputBytes": 0,
+        "stateInputCopyBytes": 0,
+        "stateStorageBytes": 0,
+        "stateValidations": 0,
+        "tiledNonlinearExecutions": 0
+      },
+      "path": "/private/tmp/wvm513-real/real-only-primitives.json",
+      "repeatComparison": {
+        "isNumericalCorrectnessGate": false,
+        "operator": "diffZF",
+        "reference": "one untimed warmed repeat",
+        "relativeErrors": [
+          0,
+          0,
+          0,
+          0,
+          0
+        ]
+      },
+      "repeatCount": 5,
+      "timingScope": "isolated diagnostic timings; public derivative and permutation samples are separate and must not be summed as an integration runtime",
+      "timings": {
+        "inputPermuteSeconds": [
+          0.004715,
+          0.004456708333333333,
+          0.005303208333333333,
+          0.005757625,
+          0.005720875
+        ],
+        "outputPermuteSeconds": [
+          0.001089125,
+          0.0010303333333333334,
+          0.0011072916666666666,
+          0.0010503333333333332,
+          0.000997125
+        ],
+        "publicDiffXSeconds": [
+          0.00975225,
+          0.009847791666666666,
+          0.007358958333333334,
+          0.007025416666666667,
+          0.0073945416666666665
+        ],
+        "publicDiffZFSeconds": [
+          0.07619316666666667,
+          0.07347929166666667,
+          0.06647595833333333,
+          0.06784525,
+          0.06864916666666666
+        ]
+      }
+    },
+    {
+      "measurementCounterDeltas": {
+        "duplicateExecutions": 0,
+        "nonlinearProducerExecutions": 0,
+        "physicalReconstructionExecutions": 0,
+        "primitiveExecutions": 10,
+        "producerExecutions": 0,
+        "stateInputCopyBytes": 0,
+        "tiledNonlinearExecutions": 0
+      },
+      "measurementMetricDeltas": {
+        "cacheHits": 0,
+        "coefficientOnlyEvaluations": 0,
+        "densityAPEPasses": 0,
+        "densityInversePasses": 0,
+        "densityProfileConstructions": 0,
+        "densityRecoveries": 0,
+        "duplicateExecutions": 0,
+        "effectiveFFTThreads": 0,
+        "engineBytes": 0,
+        "evaluationActive": 0,
+        "evaluationToken": 0,
+        "evaluations": 0,
+        "fieldServiceBytes": 0,
+        "horizontalWorkers": 0,
+        "kernelBytes": 0,
+        "liveEvaluationBytes": 0,
+        "nonlinearProducerExecutions": 0,
+        "outputBytes": 676331520.0,
+        "peakEvaluationBytes": 0,
+        "phasePreparations": 0,
+        "physicalReconstructionExecutions": 0,
+        "planPreparations": 0,
+        "plannedEvaluationBytes": 0,
+        "pointwiseWorkers": 0,
+        "preparedPlanBytes": 0,
+        "primitiveExecutions": 10,
+        "producerExecutions": 0,
+        "scopedEvaluations": 0,
+        "sourceBytes": 0,
+        "stateInputBytes": 0,
+        "stateInputCopyBytes": 0,
+        "stateStorageBytes": 0,
+        "stateValidations": 0,
+        "tiledNonlinearExecutions": 0
+      },
+      "path": "/private/tmp/wvm513-real/multiplier-primitives.json",
+      "repeatComparison": {
+        "isNumericalCorrectnessGate": false,
+        "operator": "diffZF",
+        "reference": "one untimed warmed repeat",
+        "relativeErrors": [
+          0,
+          0,
+          0,
+          0,
+          0
+        ]
+      },
+      "repeatCount": 5,
+      "timingScope": "isolated diagnostic timings; public derivative and permutation samples are separate and must not be summed as an integration runtime",
+      "timings": {
+        "inputPermuteSeconds": [
+          0.004693333333333333,
+          0.005466291666666667,
+          0.005226,
+          0.005177458333333333,
+          0.0050075833333333335
+        ],
+        "outputPermuteSeconds": [
+          0.001028,
+          0.0010282916666666667,
+          0.0010189583333333333,
+          0.001012625,
+          0.0010819583333333334
+        ],
+        "publicDiffXSeconds": [
+          0.009425708333333333,
+          0.009835166666666667,
+          0.007160541666666667,
+          0.007162375,
+          0.007250375
+        ],
+        "publicDiffZFSeconds": [
+          0.06211645833333333,
+          0.05755745833333333,
+          0.05240820833333333,
+          0.05127970833333333,
+          0.0505905
+        ]
+      }
+    }
+  ],
+  "outputComparisons": [
+    {
+      "differenceCount": 0,
+      "maximumAbsoluteError": 2.842170943040401e-14,
+      "maximumRelativeError": 1.121709191521678e-12,
+      "passed": true,
+      "path": "/private/tmp/wvm513/profile-output-comparison.json",
+      "recordCount": 64,
+      "variableCount": 58
+    },
+    {
+      "differenceCount": 0,
+      "maximumAbsoluteError": 1.3322676295501878e-15,
+      "maximumRelativeError": 1.332260605404237e-15,
+      "passed": true,
+      "path": "/private/tmp/wvm513-real/profile-output-comparison.json",
+      "recordCount": 64,
+      "variableCount": 58
+    }
+  ],
+  "outputRecordCounts": {
+    "dense": {
+      "baseline": 5,
+      "candidate": 5,
+      "equal": true
+    },
+    "particles": {
+      "baseline": 5,
+      "candidate": 5,
+      "equal": true
+    },
+    "tracers": {
+      "baseline": 5,
+      "candidate": 5,
+      "equal": true
+    },
+    "waveVortex": {
+      "baseline": 2,
+      "candidate": 2,
+      "equal": true
+    }
+  },
+  "phaseAttribution": {
+    "WVCompiledTransformBackend.WVCompiledTransformBackend>WVCompiledTransformBackend.nonlinearCoefficients": {
+      "baseline": {
+        "calls": 160,
+        "childSeconds": 19.297873416666665,
+        "inclusiveTotalSeconds": 19.318315166666665,
+        "present": true,
+        "selfSeconds": 0.020441749999999814,
+        "selfTimeSource": "summary.selfTime"
+      },
+      "candidate": {
+        "calls": 160,
+        "childSeconds": 19.080503041666667,
+        "inclusiveTotalSeconds": 19.101311000000003,
+        "present": true,
+        "selfSeconds": 0.02080795833333582,
+        "selfTimeSource": "summary.selfTime"
+      }
+    },
+    "WVCompiledTransformBackend.WVCompiledTransformBackend>WVCompiledTransformBackend.operation": {
+      "baseline": {
+        "calls": 800,
+        "childSeconds": 14.70018291666667,
+        "inclusiveTotalSeconds": 14.748198249999998,
+        "present": true,
+        "selfSeconds": 0.048015333333328414,
+        "selfTimeSource": "summary.selfTime"
+      },
+      "candidate": {
+        "calls": 800,
+        "childSeconds": 8.644510208333333,
+        "inclusiveTotalSeconds": 8.697218208333332,
+        "present": true,
+        "selfSeconds": 0.05270799999999909,
+        "selfTimeSource": "summary.selfTime"
+      }
+    },
+    "WVGeometryDoublyPeriodic.WVGeometryDoublyPeriodic>WVGeometryDoublyPeriodic.diffX": {
+      "baseline": {
+        "calls": 160,
+        "childSeconds": 1.0720332083333335,
+        "inclusiveTotalSeconds": 1.085036125,
+        "present": true,
+        "selfSeconds": 0.01300291666666653,
+        "selfTimeSource": "summary.selfTime"
+      },
+      "candidate": {
+        "calls": 160,
+        "childSeconds": 1.1393982916666667,
+        "inclusiveTotalSeconds": 1.1528667499999998,
+        "present": true,
+        "selfSeconds": 0.0134684583333331,
+        "selfTimeSource": "summary.selfTime"
+      }
+    },
+    "WVGeometryDoublyPeriodic.WVGeometryDoublyPeriodic>WVGeometryDoublyPeriodic.diffY": {
+      "baseline": {
+        "calls": 160,
+        "childSeconds": 1.1451172916666668,
+        "inclusiveTotalSeconds": 1.1567805833333333,
+        "present": true,
+        "selfSeconds": 0.011663291666666575,
+        "selfTimeSource": "summary.selfTime"
+      },
+      "candidate": {
+        "calls": 160,
+        "childSeconds": 1.2189899583333332,
+        "inclusiveTotalSeconds": 1.2322154166666666,
+        "present": true,
+        "selfSeconds": 0.013225458333333329,
+        "selfTimeSource": "summary.selfTime"
+      }
+    },
+    "WVGeometryDoublyPeriodicStratifiedConstant.diffZF": {
+      "baseline": {
+        "calls": 160,
+        "childSeconds": 11.465617541666665,
+        "inclusiveTotalSeconds": 12.61120525,
+        "present": true,
+        "selfSeconds": 1.1455877083333341,
+        "selfTimeSource": "summary.selfTime"
+      },
+      "candidate": {
+        "calls": 160,
+        "childSeconds": 5.189400583333333,
+        "inclusiveTotalSeconds": 6.430859458333333,
+        "present": true,
+        "selfSeconds": 1.2414588750000002,
+        "selfTimeSource": "summary.selfTime"
+      }
+    },
+    "WVLagrangianParticles>WVLagrangianParticles.fluxAtTime": {
+      "baseline": {
+        "calls": 160,
+        "childSeconds": 2.828052833333333,
+        "inclusiveTotalSeconds": 2.8393821666666668,
+        "present": true,
+        "selfSeconds": 0.011329333333333746,
+        "selfTimeSource": "summary.selfTime"
+      },
+      "candidate": {
+        "calls": 160,
+        "childSeconds": 2.9304195416666663,
+        "inclusiveTotalSeconds": 2.941954708333333,
+        "present": true,
+        "selfSeconds": 0.011535166666666541,
+        "selfTimeSource": "summary.selfTime"
+      }
+    },
+    "WVModel.WVModel>WVModel.integrateToTime": {
+      "baseline": {
+        "calls": 1,
+        "childSeconds": 49.242117750000006,
+        "inclusiveTotalSeconds": 49.24444191666667,
+        "present": true,
+        "selfSeconds": 0.002324166666667793,
+        "selfTimeSource": "summary.selfTime"
+      },
+      "candidate": {
+        "calls": 1,
+        "childSeconds": 43.713664625,
+        "inclusiveTotalSeconds": 43.716027999999994,
+        "present": true,
+        "selfSeconds": 0.0023633749999945053,
+        "selfTimeSource": "summary.selfTime"
+      }
+    },
+    "WVModelAdaptiveTimeStepMethods>WVModelAdaptiveTimeStepMethods.fluxArray": {
+      "baseline": {
+        "calls": 160,
+        "childSeconds": 39.96856575,
+        "inclusiveTotalSeconds": 44.53054920833333,
+        "present": true,
+        "selfSeconds": 4.56198345833333,
+        "selfTimeSource": "summary.selfTime"
+      },
+      "candidate": {
+        "calls": 160,
+        "childSeconds": 34.04392395833332,
+        "inclusiveTotalSeconds": 38.77992458333333,
+        "present": true,
+        "selfSeconds": 4.73600062500001,
+        "selfTimeSource": "summary.selfTime"
+      }
+    },
+    "WVModelAdaptiveTimeStepMethods>WVModelAdaptiveTimeStepMethods.integrateToTimeWithAdaptiveTimeStep": {
+      "baseline": {
+        "calls": 1,
+        "childSeconds": 49.162674125,
+        "inclusiveTotalSeconds": 49.168795125,
+        "present": true,
+        "selfSeconds": 0.006121000000000265,
+        "selfTimeSource": "summary.selfTime"
+      },
+      "candidate": {
+        "calls": 1,
+        "childSeconds": 43.63609966666667,
+        "inclusiveTotalSeconds": 43.64195208333333,
+        "present": true,
+        "selfSeconds": 0.0058524166666629185,
+        "selfTimeSource": "summary.selfTime"
+      }
+    },
+    "WVModelOutputFile>WVModelOutputFile.writeTimeStepToOutputFile": {
+      "baseline": {
+        "calls": 6,
+        "childSeconds": 0.35668825000000004,
+        "inclusiveTotalSeconds": 0.36239379166666663,
+        "present": true,
+        "selfSeconds": 0.0057055416666665915,
+        "selfTimeSource": "summary.selfTime"
+      },
+      "candidate": {
+        "calls": 6,
+        "childSeconds": 0.3864115416666667,
+        "inclusiveTotalSeconds": 0.39210183333333326,
+        "present": true,
+        "selfSeconds": 0.005690291666666569,
+        "selfTimeSource": "summary.selfTime"
+      }
+    },
+    "WVModelOutputGroup>WVModelOutputGroup.writeTimeStepToNetCDFFile": {
+      "baseline": {
+        "calls": 13,
+        "childSeconds": 0.32342491666666673,
+        "inclusiveTotalSeconds": 0.33024250000000005,
+        "present": true,
+        "selfSeconds": 0.006817583333333321,
+        "selfTimeSource": "summary.selfTime"
+      },
+      "candidate": {
+        "calls": 13,
+        "childSeconds": 0.3350992916666667,
+        "inclusiveTotalSeconds": 0.34183604166666665,
+        "present": true,
+        "selfSeconds": 0.006736749999999958,
+        "selfTimeSource": "summary.selfTime"
+      }
+    },
+    "WVTracer>WVTracer.fluxAtTime": {
+      "baseline": {
+        "calls": 160,
+        "childSeconds": 16.326749041666666,
+        "inclusiveTotalSeconds": 16.92263075,
+        "present": true,
+        "selfSeconds": 0.5958817083333336,
+        "selfTimeSource": "summary.selfTime"
+      },
+      "candidate": {
+        "calls": 160,
+        "childSeconds": 10.453638208333333,
+        "inclusiveTotalSeconds": 11.083584916666666,
+        "present": true,
+        "selfSeconds": 0.6299467083333337,
+        "selfTimeSource": "summary.selfTime"
+      }
+    },
+    "WVTransformConstantStratification.WVTransformConstantStratification>WVTransformConstantStratification.nonlinearFlux": {
+      "baseline": {
+        "calls": 160,
+        "childSeconds": 19.429113416666667,
+        "inclusiveTotalSeconds": 19.434899291666667,
+        "present": true,
+        "selfSeconds": 0.0057858750000008285,
+        "selfTimeSource": "summary.selfTime"
+      },
+      "candidate": {
+        "calls": 160,
+        "childSeconds": 19.214514499999996,
+        "inclusiveTotalSeconds": 19.220591958333333,
+        "present": true,
+        "selfSeconds": 0.006077458333336949,
+        "selfTimeSource": "summary.selfTime"
+      }
+    },
+    "WVTransformConstantStratification.WVTransformConstantStratification>WVTransformConstantStratification.nonlinearFluxNonhydrostatic": {
+      "baseline": {
+        "calls": 160,
+        "childSeconds": 19.402200666666666,
+        "inclusiveTotalSeconds": 19.411934624999997,
+        "present": true,
+        "selfSeconds": 0.009733958333331572,
+        "selfTimeSource": "summary.selfTime"
+      },
+      "candidate": {
+        "calls": 160,
+        "childSeconds": 19.186489999999996,
+        "inclusiveTotalSeconds": 19.196313791666665,
+        "present": true,
+        "selfSeconds": 0.009823791666669024,
+        "selfTimeSource": "summary.selfTime"
+      }
+    },
+    "ode78": {
+      "baseline": {
+        "calls": 1,
+        "childSeconds": 45.38632499999999,
+        "inclusiveTotalSeconds": 49.141215333333335,
+        "present": true,
+        "selfSeconds": 3.7548903333333428,
+        "selfTimeSource": "summary.selfTime"
+      },
+      "candidate": {
+        "calls": 1,
+        "childSeconds": 39.66135008333333,
+        "inclusiveTotalSeconds": 43.61623754166666,
+        "present": true,
+        "selfSeconds": 3.9548874583333316,
+        "selfTimeSource": "summary.selfTime"
+      }
+    },
+    "putVar": {
+      "baseline": {
+        "calls": 47,
+        "childSeconds": 0.0011124166666666667,
+        "inclusiveTotalSeconds": 0.1649595,
+        "present": true,
+        "selfSeconds": 0.16384708333333334,
+        "selfTimeSource": "summary.selfTime"
+      },
+      "candidate": {
+        "calls": 47,
+        "childSeconds": 0.00111275,
+        "inclusiveTotalSeconds": 0.17688637499999998,
+        "present": true,
+        "selfSeconds": 0.175773625,
+        "selfTimeSource": "summary.selfTime"
+      }
+    },
+    "wv_compiled_backend_mex": {
+      "baseline": {
+        "calls": 1774,
+        "childSeconds": 0,
+        "inclusiveTotalSeconds": 36.517504833333334,
+        "present": true,
+        "selfSeconds": 36.517504833333334,
+        "selfTimeSource": "summary.selfTime"
+      },
+      "candidate": {
+        "calls": 1774,
+        "childSeconds": 0,
+        "inclusiveTotalSeconds": 30.273424708333334,
+        "present": true,
+        "selfSeconds": 30.273424708333334,
+        "selfTimeSource": "summary.selfTime"
+      }
+    }
+  },
+  "producerPrimitiveCopyCounterDeltas": {
+    "nonlinearProducerExecutions": {
+      "baseline": 160,
+      "candidate": 160,
+      "equal": true
+    },
+    "primitiveExecutions": {
+      "baseline": 800,
+      "candidate": 800,
+      "equal": true
+    },
+    "producerExecutions": {
+      "baseline": 324,
+      "candidate": 324,
+      "equal": true
+    },
+    "stateInputCopyBytes": {
+      "baseline": 7700734800.0,
+      "candidate": 7700734800.0,
+      "equal": true
+    }
+  },
+  "producerPrimitiveCopyCountersEnd": {
+    "nonlinearProducerExecutions": {
+      "baseline": 160,
+      "candidate": 160,
+      "equal": true
+    },
+    "primitiveExecutions": {
+      "baseline": 800,
+      "candidate": 800,
+      "equal": true
+    },
+    "producerExecutions": {
+      "baseline": 329,
+      "candidate": 329,
+      "equal": true
+    },
+    "stateInputCopyBytes": {
+      "baseline": 7840748160.0,
+      "candidate": 7840748160.0,
+      "equal": true
+    }
+  },
+  "run": {
+    "baselineRhsEvaluations": 160,
+    "baselineSeconds": 49.245031708333336,
+    "candidateRhsEvaluations": 160,
+    "candidateSeconds": 43.716624958333334,
+    "deltaSeconds": -5.528406750000002
+  },
+  "runtimeMetricDeltas": {
+    "cacheHits": {
+      "baseline": 480,
+      "candidate": 480,
+      "equal": true
+    },
+    "coefficientOnlyEvaluations": {
+      "baseline": 0,
+      "candidate": 0,
+      "equal": true
+    },
+    "densityAPEPasses": {
+      "baseline": 0,
+      "candidate": 0,
+      "equal": true
+    },
+    "densityInversePasses": {
+      "baseline": 0,
+      "candidate": 0,
+      "equal": true
+    },
+    "densityProfileConstructions": {
+      "baseline": 0,
+      "candidate": 0,
+      "equal": true
+    },
+    "densityRecoveries": {
+      "baseline": 0,
+      "candidate": 0,
+      "equal": true
+    },
+    "duplicateExecutions": {
+      "baseline": 0,
+      "candidate": 0,
+      "equal": true
+    },
+    "effectiveFFTThreads": {
+      "baseline": 0,
+      "candidate": 0,
+      "equal": true
+    },
+    "engineBytes": {
+      "baseline": 0,
+      "candidate": 0,
+      "equal": true
+    },
+    "evaluationActive": {
+      "baseline": 0,
+      "candidate": 0,
+      "equal": true
+    },
+    "evaluationToken": {
+      "baseline": 0,
+      "candidate": 0,
+      "equal": true
+    },
+    "evaluations": {
+      "baseline": 644,
+      "candidate": 644,
+      "equal": true
+    },
+    "fieldServiceBytes": {
+      "baseline": 0,
+      "candidate": 0,
+      "equal": true
+    },
+    "horizontalWorkers": {
+      "baseline": 0,
+      "candidate": 0,
+      "equal": true
+    },
+    "kernelBytes": {
+      "baseline": 0,
+      "candidate": 0,
+      "equal": true
+    },
+    "liveEvaluationBytes": {
+      "baseline": 0,
+      "candidate": 0,
+      "equal": true
+    },
+    "nonlinearProducerExecutions": {
+      "baseline": 160,
+      "candidate": 160,
+      "equal": true
+    },
+    "outputBytes": {
+      "baseline": 87264657408.0,
+      "candidate": 87264657408.0,
+      "equal": true
+    },
+    "peakEvaluationBytes": {
+      "baseline": 254975560.0,
+      "candidate": 254975560.0,
+      "equal": true
+    },
+    "phasePreparations": {
+      "baseline": 164,
+      "candidate": 164,
+      "equal": true
+    },
+    "physicalReconstructionExecutions": {
+      "baseline": 656,
+      "candidate": 656,
+      "equal": true
+    },
+    "planPreparations": {
+      "baseline": 480,
+      "candidate": 480,
+      "equal": true
+    },
+    "plannedEvaluationBytes": {
+      "baseline": 0,
+      "candidate": 0,
+      "equal": true
+    },
+    "pointwiseWorkers": {
+      "baseline": 0,
+      "candidate": 0,
+      "equal": true
+    },
+    "preparedPlanBytes": {
+      "baseline": 0,
+      "candidate": 0,
+      "equal": true
+    },
+    "primitiveExecutions": {
+      "baseline": 800,
+      "candidate": 800,
+      "equal": true
+    },
+    "producerExecutions": {
+      "baseline": 324,
+      "candidate": 324,
+      "equal": true
+    },
+    "scopedEvaluations": {
+      "baseline": 165,
+      "candidate": 165,
+      "equal": true
+    },
+    "sourceBytes": {
+      "baseline": 0,
+      "candidate": 0,
+      "equal": true
+    },
+    "stateInputBytes": {
+      "baseline": 7700734800.0,
+      "candidate": 7700734800.0,
+      "equal": true
+    },
+    "stateInputCopyBytes": {
+      "baseline": 7700734800.0,
+      "candidate": 7700734800.0,
+      "equal": true
+    },
+    "stateStorageBytes": {
+      "baseline": 0,
+      "candidate": 0,
+      "equal": true
+    },
+    "stateValidations": {
+      "baseline": 165,
+      "candidate": 165,
+      "equal": true
+    },
+    "tiledNonlinearExecutions": {
+      "baseline": 0,
+      "candidate": 0,
+      "equal": true
+    }
+  },
+  "schemaVersion": "wvm-issue513-profile-evidence-v1",
+  "sources": {
+    "baseline": "/private/tmp/wvm513/candidate-profile-composite.nc.issue513.json",
+    "baselineFunctions": "/private/tmp/wvm513/candidate-profile-functions.json",
+    "candidate": "/private/tmp/wvm513-real/combined-composite.nc.issue513.json",
+    "candidateFunctions": "/private/tmp/wvm513-real/combined-profile-functions.json"
+  },
+  "storageCountersEnd": {
+    "engineBytes": {
+      "baseline": 718239401.0,
+      "candidate": 718239401.0,
+      "equal": true
+    },
+    "fieldServiceBytes": {
+      "baseline": 2398945291.0,
+      "candidate": 2398945291.0,
+      "equal": true
+    },
+    "kernelBytes": {
+      "baseline": 718238046.0,
+      "candidate": 718238046.0,
+      "equal": true
+    },
+    "outputBytes": {
+      "baseline": 87399923720.0,
+      "candidate": 87399923720.0,
+      "equal": true
+    },
+    "preparedPlanBytes": {
+      "baseline": 492,
+      "candidate": 492,
+      "equal": true
+    },
+    "stateInputCopyBytes": {
+      "baseline": 7840748160.0,
+      "candidate": 7840748160.0,
+      "equal": true
+    },
+    "stateStorageBytes": {
+      "baseline": 46671120.0,
+      "candidate": 46671120.0,
+      "equal": true
+    }
+  }
+}

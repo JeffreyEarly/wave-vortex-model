@@ -1,0 +1,196 @@
+{
+  "Thread_42637067: MCR 0 interpreter thread": {
+    "verticalCalculus": 4908,
+    "fftwSynchronization": 3831,
+    "copy": 283,
+    "clear": 142,
+    "mexAllocation": 29,
+    "nonlinearFlux": 614,
+    "calculusOther": 612,
+    "fftwOtherExecution": 799,
+    "fftwSynchronizationIncludingChildWork": 3497
+  },
+  "Thread_42637135: LXE compiler thread": {
+    "copy": 3
+  },
+  "Thread_42637136: LXE compiler thread": {
+    "copy": 1
+  },
+  "Thread_42637137: LXE compiler thread": {
+    "copy": 1
+  },
+  "Thread_42637334": {
+    "nonlinearFlux": 52
+  },
+  "Thread_42637335": {
+    "nonlinearFlux": 65
+  },
+  "Thread_42637336": {
+    "nonlinearFlux": 51
+  },
+  "Thread_42637337": {
+    "nonlinearFlux": 53
+  },
+  "Thread_42637338": {
+    "nonlinearFlux": 55
+  },
+  "Thread_42637339": {
+    "nonlinearFlux": 51
+  },
+  "Thread_42637340": {
+    "nonlinearFlux": 51
+  },
+  "Thread_42637341": {
+    "nonlinearFlux": 53
+  },
+  "Thread_42637342": {
+    "nonlinearFlux": 52
+  },
+  "Thread_42637343": {
+    "nonlinearFlux": 52
+  },
+  "Thread_42637344": {
+    "nonlinearFlux": 54
+  },
+  "Thread_42637345": {
+    "clear": 9
+  },
+  "Thread_42637346": {
+    "clear": 6
+  },
+  "Thread_42637347": {
+    "clear": 7
+  },
+  "Thread_42637348": {
+    "clear": 5
+  },
+  "Thread_42637349": {
+    "clear": 9
+  },
+  "Thread_42637350": {
+    "clear": 12
+  },
+  "Thread_42637351": {
+    "clear": 3
+  },
+  "Thread_42637352": {
+    "clear": 7
+  },
+  "Thread_42637353": {
+    "clear": 6
+  },
+  "Thread_42637354": {
+    "clear": 5
+  },
+  "Thread_42637355": {
+    "clear": 2
+  },
+  "Thread_42637362": {
+    "copy": 2,
+    "fftwSynchronization": 43
+  },
+  "Thread_42637363": {
+    "fftwSynchronization": 524
+  },
+  "Thread_42637364": {
+    "fftwSynchronization": 45,
+    "copy": 2
+  },
+  "Thread_42637365": {
+    "clear": 1,
+    "fftwSynchronization": 40
+  },
+  "Thread_42637366": {
+    "fftwSynchronization": 594,
+    "clear": 1
+  },
+  "Thread_42637367": {
+    "fftwSynchronization": 463,
+    "copy": 1
+  },
+  "Thread_42637368": {
+    "fftwSynchronization": 604,
+    "copy": 1
+  },
+  "Thread_42637369": {
+    "fftwSynchronization": 478
+  },
+  "Thread_42637370": {
+    "fftwSynchronization": 501,
+    "copy": 3
+  },
+  "Thread_42637371": {
+    "fftwSynchronization": 465,
+    "copy": 1
+  },
+  "Thread_42637372": {
+    "fftwSynchronization": 449
+  },
+  "Thread_42637373": {
+    "clear": 1,
+    "fftwSynchronization": 48
+  },
+  "Thread_42637374": {
+    "fftwSynchronization": 42
+  },
+  "Thread_42637375": {
+    "copy": 1,
+    "fftwSynchronization": 53
+  },
+  "Thread_42637376": {
+    "copy": 2,
+    "fftwSynchronization": 81
+  },
+  "Thread_42637377": {
+    "fftwSynchronization": 470
+  },
+  "Thread_42637378": {
+    "fftwSynchronization": 50
+  },
+  "Thread_42637379": {
+    "clear": 1,
+    "fftwSynchronization": 48
+  },
+  "Thread_42637380": {
+    "fftwSynchronization": 62
+  },
+  "Thread_42637381": {
+    "fftwSynchronization": 463
+  },
+  "Thread_42637382": {
+    "fftwSynchronization": 56
+  },
+  "Thread_42637383": {
+    "copy": 4,
+    "clear": 1,
+    "fftwSynchronization": 52
+  },
+  "Thread_42637384": {
+    "fftwSynchronization": 1064,
+    "clear": 1,
+    "copy": 1
+  },
+  "Thread_42637385": {
+    "copy": 1,
+    "fftwSynchronization": 50
+  },
+  "Thread_42637386": {
+    "fftwSynchronization": 600
+  },
+  "Thread_42637387": {
+    "copy": 1,
+    "fftwSynchronization": 57
+  },
+  "Thread_42637388": {
+    "fftwSynchronization": 530,
+    "copy": 1
+  },
+  "Thread_42637389": {
+    "fftwSynchronization": 118,
+    "copy": 1
+  },
+  "Thread_42637390": {
+    "fftwSynchronization": 719,
+    "copy": 2
+  }
+}

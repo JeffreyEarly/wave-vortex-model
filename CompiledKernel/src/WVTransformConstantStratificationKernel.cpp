@@ -92,6 +92,7 @@ enum PlanIndex : std::size_t {
 };
 enum MatlabPlanIndex : std::size_t {
     matlabRetainedDCT, matlabRetainedDST, matlabColumnDCT, matlabColumnDST,
+    matlabCalculusDCT, matlabCalculusDST,
     matlabPlanCount
 };
 
@@ -234,6 +235,17 @@ WVFFTPlanSpecification verticalSpecification(const WVTransformConstantStratifica
     specification.inputBytes = 2 * c.Nz * halfRows * storageChannels * sizeof(double);
     specification.outputBytes = specification.inputBytes;
     specification.inPlace = true;
+    return specification;
+}
+
+WVFFTPlanSpecification realVerticalCalculusSpecification(const WVTransformConstantStratificationConfiguration& c, std::size_t columns, bool sine) {
+    WVFFTPlanSpecification specification;
+    specification.kind=sine ? WVFFTPlanKind::verticalDSTI : WVFFTPlanKind::verticalDCTI;
+    specification.transformDimensions={{sine ? c.Nz-2 : c.Nz,1,1}};
+    specification.batchDimensions={{columns,static_cast<std::ptrdiff_t>(c.Nz),static_cast<std::ptrdiff_t>(c.Nz)}};
+    specification.inputBytes=c.Nz*columns*sizeof(double);
+    specification.outputBytes=specification.inputBytes;
+    specification.inPlace=true;
     return specification;
 }
 
@@ -767,13 +779,22 @@ WVKernelStatus WVTransformConstantStratificationKernel::prepareMatlabPrimitives(
             prepared[matlabColumnDCT]); if (!status) return status;
         status=engine_->createPlan(verticalSpecification(c,1,1,1,true),
             prepared[matlabColumnDST]); if (!status) return status;
+        // Reuse the existing arena and type-I layout. A bounded batch amortizes
+        // FFTW dispatch and synchronization across full-grid calculus columns.
+        const auto calculusColumns=std::min<std::size_t>(256,halfSpectrumScratch_.size()/(2*c.Nz));
+        status=engine_->createPlan(realVerticalCalculusSpecification(c,calculusColumns,false),
+            prepared[matlabCalculusDCT]); if (!status) return status;
+        status=engine_->createPlan(realVerticalCalculusSpecification(c,calculusColumns,true),
+            prepared[matlabCalculusDST]); if (!status) return status;
         const bool missingColumn=!prepared[matlabColumnDCT] || !prepared[matlabColumnDST];
+        const bool missingCalculus=!prepared[matlabCalculusDCT] || !prepared[matlabCalculusDST];
         const bool missingSchedulePlan=!compact_ &&
             (!prepared[matlabRetainedDCT] || !prepared[matlabRetainedDST]);
-        if (missingColumn || missingSchedulePlan)
+        if (missingColumn || missingCalculus || missingSchedulePlan)
             return {WVKernelStatusCode::fftPlanFailure,
                 "FFT engine returned an empty MATLAB primitive plan."};
         matlabPlans_=std::move(prepared);
+        matlabCalculusColumns_=calculusColumns;
         matlabPrimitivesPrepared_=true;
         return WVKernelStatus::ok();
     } catch (const std::bad_alloc&) {
@@ -1312,37 +1333,68 @@ WVKernelStatus WVTransformConstantStratificationKernel::applyVerticalCalculus(
     if (!guard.entered())
         return {WVKernelStatusCode::reentrantExecution,"Kernel operations are not reentrant."};
 
-    auto* working=reinterpret_cast<WVComplex64*>(halfSpectrumScratch_.data());
+    auto* working=halfSpectrumScratch_.data();
     const bool outputIsF=integral ? !inputIsF : ((order%2)==0 ? inputIsF : !inputIsF);
     const bool inputIsSine=!inputIsF,outputIsSine=!outputIsF;
-    auto* forward=matlabPlans_[inputIsSine ? matlabColumnDST : matlabColumnDCT].get();
-    auto* inverse=matlabPlans_[outputIsSine ? matlabColumnDST : matlabColumnDCT].get();
+    auto* forward=matlabPlans_[inputIsSine ? matlabCalculusDST : matlabCalculusDCT].get();
+    auto* inverse=matlabPlans_[outputIsSine ? matlabCalculusDST : matlabCalculusDCT].get();
     const double derivativeSignsF[]={-1.0,-1.0,1.0,1.0};
     const double derivativeSignsG[]={1.0,-1.0,-1.0,1.0};
     const double derivativeSign=(inputIsF ? derivativeSignsF : derivativeSignsG)[order-1];
-    for (std::size_t column=0;column<input.shape.columns;++column) {
-        for (std::size_t z=0;z<c.Nz;++z)
-            working[z]={input.data[z+c.Nz*column],0.0};
+    // The scientific multipliers depend on mode and operation, not column.
+    // Keep the original arithmetic but evaluate it only once per call.
+    std::vector<double> multipliers;
+    try { multipliers.resize(c.Nz,0.0); }
+    catch (const std::bad_alloc&) {
+        return {WVKernelStatusCode::allocationFailure,"Unable to allocate vertical-calculus multipliers."};
+    }
+    for (std::size_t j=1;j<c.Nj;++j) {
+        const double m=pi*static_cast<double>(j)/c.Lz;
+        multipliers[j]=integral ? (inputIsF ? 1.0 : -1.0)/m :
+            derivativeSign*std::pow(m,static_cast<int>(order));
+    }
+    for (std::size_t firstColumn=0;firstColumn<input.shape.columns;firstColumn+=matlabCalculusColumns_) {
+        const auto columns=std::min(matlabCalculusColumns_,input.shape.columns-firstColumn);
+        for (std::size_t column=0;column<columns;++column)
+            for (std::size_t z=0;z<c.Nz;++z)
+                working[z+c.Nz*column]=input.data[z+c.Nz*(firstColumn+column)];
+        // The prepared batch has a fixed extent. Its unused tail is private
+        // scratch and cannot contribute to any returned column.
+        std::fill(working+c.Nz*columns,working+c.Nz*matlabCalculusColumns_,0.0);
         status=forward->execute(working+(inputIsSine?1:0),working+(inputIsSine?1:0));
         if (!status) return status;
-        if (inputIsSine) normalizeForwardDST(working,c.Nz,1,1,0,1);
-        else normalizeForwardDCT(working,c.Nz,1,1,0,1);
-        for (std::size_t j=0;j<c.Nz;++j) {
-            double multiplier=0.0;
-            if (j<c.Nj && j!=0) {
-                const double m=pi*static_cast<double>(j)/c.Lz;
-                multiplier=integral ? (inputIsF ? 1.0 : -1.0)/m :
-                    derivativeSign*std::pow(m,static_cast<int>(order));
+        const double forwardScale=1.0/static_cast<double>(c.Nz-1);
+        for (std::size_t column=0;column<matlabCalculusColumns_;++column) {
+            auto* values=working+c.Nz*column;
+            if (inputIsSine) {
+                values[0]=0.0;
+                for (std::size_t z=1;z+1<c.Nz;++z) values[z]*=forwardScale;
+                values[c.Nz-1]=0.0;
+            } else {
+                for (std::size_t z=0;z<c.Nz;++z) values[z]*=forwardScale;
+                values[c.Nz-1]*=0.5;
             }
-            working[j]=multiply(working[j],multiplier);
         }
-        if (outputIsSine) normalizeInverseDST(working,c.Nz,1,1,0,1);
-        else normalizeInverseDCT(working,c.Nz,1,1,0,1);
+        for (std::size_t column=0;column<matlabCalculusColumns_;++column) for (std::size_t j=0;j<c.Nz;++j)
+            working[j+c.Nz*column]*=multipliers[j];
+        for (std::size_t column=0;column<matlabCalculusColumns_;++column) {
+            auto* values=working+c.Nz*column;
+            if (outputIsSine) {
+                values[0]=0.0;
+                for (std::size_t z=1;z+1<c.Nz;++z) values[z]*=0.5;
+                values[c.Nz-1]=0.0;
+            } else {
+                for (std::size_t z=0;z<c.Nz;++z) values[z]*=0.5;
+            }
+        }
         status=inverse->execute(working+(outputIsSine?1:0),working+(outputIsSine?1:0));
         if (!status) return status;
-        const double bottom=integral && inputIsSine ? working[0].real : 0.0;
-        for (std::size_t z=0;z<c.Nz;++z)
-            output.data[z+c.Nz*column]=working[z].real-bottom;
+        for (std::size_t column=0;column<columns;++column) {
+            const double bottom=integral && inputIsSine ? working[c.Nz*column] : 0.0;
+            for (std::size_t z=0;z<c.Nz;++z)
+                output.data[z+c.Nz*(firstColumn+column)]=working[z+c.Nz*column]-bottom;
+        }
+        // Count actual plan executions, as for the retained-row transforms.
         metrics_.executionCount+=2; metrics_.verticalExecutionCount+=2;
     }
     return WVKernelStatus::ok();

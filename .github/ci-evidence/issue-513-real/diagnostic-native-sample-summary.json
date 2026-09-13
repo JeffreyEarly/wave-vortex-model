@@ -1,0 +1,216 @@
+{
+  "Thread_42721905: MCR 0 interpreter thread": {
+    "nonlinearFlux": 1460,
+    "clear": 338,
+    "fftwSynchronization": 1348,
+    "copy": 685,
+    "mexAllocation": 63,
+    "verticalCalculus": 1544,
+    "calculusOther": 900,
+    "fftwOtherExecution": 3,
+    "fftwSynchronizationIncludingChildWork": 641
+  },
+  "Thread_42721983: LXE compiler thread": {
+    "copy": 1
+  },
+  "Thread_42721985: LXE compiler thread": {
+    "copy": 1
+  },
+  "Thread_42722218": {
+    "nonlinearFlux": 132
+  },
+  "Thread_42722219": {
+    "nonlinearFlux": 130
+  },
+  "Thread_42722220": {
+    "nonlinearFlux": 132
+  },
+  "Thread_42722221": {
+    "nonlinearFlux": 133
+  },
+  "Thread_42722222": {
+    "nonlinearFlux": 133
+  },
+  "Thread_42722223": {
+    "nonlinearFlux": 132
+  },
+  "Thread_42722224": {
+    "nonlinearFlux": 136
+  },
+  "Thread_42722225": {
+    "nonlinearFlux": 135
+  },
+  "Thread_42722226": {
+    "nonlinearFlux": 134
+  },
+  "Thread_42722227": {
+    "nonlinearFlux": 132
+  },
+  "Thread_42722228": {
+    "nonlinearFlux": 132
+  },
+  "Thread_42722229": {
+    "clear": 17
+  },
+  "Thread_42722230": {
+    "clear": 23
+  },
+  "Thread_42722231": {
+    "clear": 24
+  },
+  "Thread_42722232": {
+    "clear": 13
+  },
+  "Thread_42722233": {
+    "clear": 17
+  },
+  "Thread_42722234": {
+    "clear": 17
+  },
+  "Thread_42722235": {
+    "clear": 14
+  },
+  "Thread_42722236": {
+    "clear": 19
+  },
+  "Thread_42722237": {
+    "clear": 21
+  },
+  "Thread_42722238": {
+    "clear": 20
+  },
+  "Thread_42722239": {
+    "clear": 8
+  },
+  "Thread_42722247": {
+    "fftwSynchronization": 334,
+    "copy": 1,
+    "clear": 1
+  },
+  "Thread_42722248": {
+    "fftwSynchronization": 194
+  },
+  "Thread_42722249": {
+    "copy": 1,
+    "clear": 2,
+    "fftwSynchronization": 167
+  },
+  "Thread_42722250": {
+    "copy": 3,
+    "fftwSynchronization": 152
+  },
+  "Thread_42722251": {
+    "copy": 1,
+    "fftwSynchronization": 164
+  },
+  "Thread_42722252": {
+    "fftwSynchronization": 380,
+    "copy": 1
+  },
+  "Thread_42722253": {
+    "fftwSynchronization": 221,
+    "copy": 4,
+    "clear": 1
+  },
+  "Thread_42722254": {
+    "copy": 3,
+    "fftwSynchronization": 154
+  },
+  "Thread_42722255": {
+    "fftwSynchronization": 168,
+    "copy": 1,
+    "clear": 2
+  },
+  "Thread_42722256": {
+    "fftwSynchronization": 160,
+    "copy": 3,
+    "clear": 2
+  },
+  "Thread_42722257": {
+    "copy": 1,
+    "fftwSynchronization": 150
+  },
+  "Thread_42722258": {
+    "fftwSynchronization": 222,
+    "copy": 2,
+    "clear": 1
+  },
+  "Thread_42722259": {
+    "fftwSynchronization": 219,
+    "copy": 5,
+    "clear": 1
+  },
+  "Thread_42722260": {
+    "copy": 1,
+    "fftwSynchronization": 181
+  },
+  "Thread_42722261": {
+    "copy": 5,
+    "fftwSynchronization": 202
+  },
+  "Thread_42722262": {
+    "copy": 3,
+    "fftwSynchronization": 93
+  },
+  "Thread_42722263": {
+    "clear": 2,
+    "copy": 3,
+    "fftwSynchronization": 146
+  },
+  "Thread_42722264": {
+    "copy": 3,
+    "clear": 1,
+    "fftwSynchronization": 176
+  },
+  "Thread_42722265": {
+    "copy": 4,
+    "clear": 1,
+    "fftwSynchronization": 198
+  },
+  "Thread_42722266": {
+    "copy": 3,
+    "clear": 1,
+    "fftwSynchronization": 107
+  },
+  "Thread_42722267": {
+    "copy": 3,
+    "fftwSynchronization": 129
+  },
+  "Thread_42722268": {
+    "copy": 7,
+    "fftwSynchronization": 225
+  },
+  "Thread_42722269": {
+    "copy": 2,
+    "fftwSynchronization": 133
+  },
+  "Thread_42722270": {
+    "fftwSynchronization": 273,
+    "copy": 2,
+    "clear": 2
+  },
+  "Thread_42722271": {
+    "clear": 1,
+    "copy": 1,
+    "fftwSynchronization": 136
+  },
+  "Thread_42722272": {
+    "clear": 2,
+    "copy": 1,
+    "fftwSynchronization": 187
+  },
+  "Thread_42722273": {
+    "fftwSynchronization": 196,
+    "copy": 2
+  },
+  "Thread_42722274": {
+    "fftwSynchronization": 288,
+    "copy": 1,
+    "clear": 2
+  },
+  "Thread_42722275": {
+    "copy": 4,
+    "clear": 1,
+    "fftwSynchronization": 235
+  }
+}
