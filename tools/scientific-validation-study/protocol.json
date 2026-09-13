@@ -1,0 +1,54 @@
+{
+  "baseline_revision": "7ce00e60",
+  "amplitude": 0.1,
+  "cases": [
+    "constant waves: three longest populated wave periods",
+    "exponential balanced/boundary: two inertial periods",
+    "exponential mixed: three longest populated wave periods"
+  ],
+  "domain_metres": [
+    100000,
+    100000,
+    1000
+  ],
+  "reference_phase_seconds": -17,
+  "start_seconds": 327,
+  "baseline": {
+    "grid": [
+      8,
+      8,
+      129
+    ],
+    "APV": 3,
+    "waves": 4,
+    "MDA": 2,
+    "inertial": 3,
+    "RK4_step_seconds": 20
+  },
+  "controls": {
+    "time_seconds": [
+      40,
+      10
+    ],
+    "vertical_samples": 257,
+    "horizontal_evaluation_padding": 2,
+    "modal_inventory": {
+      "grid": [
+        12,
+        12,
+        129
+      ],
+      "APV": 6,
+      "waves": 8,
+      "MDA": 4,
+      "inertial": 6
+    }
+  },
+  "physical_field_relative_target": 0.001,
+  "comparison_scale": "Initial RMS velocity magnitude, physical density anomaly, and SSH, each floored at 1e-10 in its own units; report initial mismatch separately.",
+  "observation_interval_seconds": 80,
+  "comparison_checkpoints": "About 49, on a common 24x24x101 reference-coordinate observation grid.",
+  "stop_policy": "Stop and report invalid parcel labels or geometry without repair; report inadequate refinement as a negative result, not a universal model failure.",
+  "interpretation": "Refinement distinguishes numerical sensitivity from persistent model/projection residuals; this experiment cannot uniquely assign the latter to pressure closure alone.",
+  "energy_diagnostic": "Stable represented-profile APE; native-mode energy time histories checked on an independently refined physical integration grid."
+}
