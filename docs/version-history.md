@@ -8,6 +8,8 @@ nav_order: 100
 
 ## [Unreleased]
 
+- Qualify the complete bounded product inventory during free-surface Boussinesq construction without applying study resource caps. This permits larger horizontal grids while preserving mode-convergence and quadratic-error checks; standalone study budgets remain unchanged.
+
 ### Free-surface Boussinesq adaptive damping
 
 - Support `WVAdaptiveDamping` with a common horizontal rate for every active Boussinesq mode at each wavenumber, including external surface waves. This preserves combined boundary-anomaly cancellations and dissipates positive quadratic budgets with their actual normalization.
