@@ -24,6 +24,7 @@ classdef (Sealed) WVCompiledTransformBackend < handle
         Nj (1,1) double = 0
         Nkl (1,1) double = 0
         compiledSourceIdentity = []
+        geometryValues = []
     end
 
     methods (Static)
@@ -38,8 +39,8 @@ classdef (Sealed) WVCompiledTransformBackend < handle
             arguments
                 wvt (1,1) WVTransform
             end
-            if ~ismember(string(class(wvt)),["WVTransformHydrostatic" "WVTransformBoussinesq" "WVTransformStratifiedQG"])
-                error("WaveVortexModel:CompiledTransformUnsupportedFamily","Compiled MATLAB support currently covers Hydrostatic, Boussinesq and Stratified QG transforms.")
+            if ~ismember(string(class(wvt)),["WVTransformHydrostatic" "WVTransformBoussinesq" "WVTransformStratifiedQG" "WVTransformBarotropicQG"])
+                error("WaveVortexModel:CompiledTransformUnsupportedFamily","Compiled MATLAB support currently covers Hydrostatic, Boussinesq, Stratified QG and Barotropic QG transforms.")
             end
             capabilities = WVCompiledBackend.capabilities();
             WVCompiledTransformBackend.validateCapabilities(capabilities);
@@ -103,7 +104,7 @@ classdef (Sealed) WVCompiledTransformBackend < handle
             end
             self.assertActive();
             self.assertMatchingTransform(wvt);
-            if ~ismember(string(class(wvt)),["WVTransformHydrostatic" "WVTransformBoussinesq" "WVTransformStratifiedQG"])
+            if ~ismember(string(class(wvt)),["WVTransformHydrostatic" "WVTransformBoussinesq" "WVTransformStratifiedQG" "WVTransformBarotropicQG"])
                 error("WaveVortexModel:CompiledTransformUnsupportedFamily","Compiled operation family is not supported.")
             end
             result = feval(char(self.moduleName),'transformOperation',self.transformHandle,char(operationName),inputs,options);
@@ -142,7 +143,9 @@ classdef (Sealed) WVCompiledTransformBackend < handle
             self.capabilities = capabilities;
             self.moduleName = string(capabilities.module.name);
             self.transformClass = string(class(wvt));
-            self.Nx = wvt.Nx; self.Ny = wvt.Ny; self.Nz = wvt.Nz; self.Nj = wvt.Nj; self.Nkl = wvt.Nkl;
+            self.Nx = wvt.Nx; self.Ny = wvt.Ny; self.Nj = wvt.Nj; self.Nkl = wvt.Nkl;
+            self.geometryValues = WVCompiledTransformBackend.sourceGeometry(wvt);
+            self.Nz = self.geometryValues(3);
             self.compiledSourceIdentity = wvt.compiledSourceIdentity;
             configuration = wvCompiledStratifiedModalConfiguration(wvt);
             handle = [];
@@ -167,13 +170,18 @@ classdef (Sealed) WVCompiledTransformBackend < handle
         end
 
         function assertMatchingTransform(self,wvt)
-            if string(class(wvt)) ~= self.transformClass || ~isvalid(self.compiledSourceIdentity) || ~(wvt.compiledSourceIdentity == self.compiledSourceIdentity) || wvt.Nx ~= self.Nx || wvt.Ny ~= self.Ny || wvt.Nz ~= self.Nz || wvt.Nj ~= self.Nj || wvt.Nkl ~= self.Nkl
+            if string(class(wvt)) ~= self.transformClass || ~isvalid(self.compiledSourceIdentity) || ~(wvt.compiledSourceIdentity == self.compiledSourceIdentity) || wvt.Nx ~= self.Nx || wvt.Ny ~= self.Ny || ~isequal(WVCompiledTransformBackend.sourceGeometry(wvt),self.geometryValues) || wvt.Nj ~= self.Nj || wvt.Nkl ~= self.Nkl
                 error("WaveVortexModel:CompiledTransformMismatch","The evaluated transform does not match the compiled session configuration.")
             end
         end
     end
 
     methods (Static, Access=private)
+        function values = sourceGeometry(wvt)
+            if isa(wvt,"WVTransformBarotropicQG"), nz = 1; else, nz = wvt.Nz; end
+            values = [wvt.Nx wvt.Ny nz wvt.Nj wvt.Nkl wvt.Lx wvt.Ly wvt.Lz wvt.g wvt.latitude wvt.rotationRate wvt.planetaryRadius double(wvt.shouldAntialias)];
+        end
+
         function validateCapabilities(capabilities)
             if ~isstruct(capabilities) || ~isfield(capabilities,"isAvailable") || ~capabilities.isAvailable
                 error("WaveVortexModel:CompiledTransformUnavailable","The compiled transform backend is unavailable. Build native support explicitly before creating a session.")
@@ -182,7 +190,7 @@ classdef (Sealed) WVCompiledTransformBackend < handle
                     ~isfield(capabilities.module,"identityValidated") || ~capabilities.module.identityValidated
                 error("WaveVortexModel:CompiledTransformCapabilityMismatch","The installed compiled module does not have a validated identity.")
             end
-            if ~isfield(capabilities.module,"matlabTransformBridgeVersion") || capabilities.module.matlabTransformBridgeVersion < 2
+            if ~isfield(capabilities.module,"matlabTransformBridgeVersion") || capabilities.module.matlabTransformBridgeVersion < 3
                 error("WaveVortexModel:CompiledTransformCapabilityMismatch","The installed module predates the MATLAB transform operation bridge. Rebuild with WVCompiledBackend.build().")
             end
         end

@@ -1,0 +1,37 @@
+{
+  "scope": "Private Barotropic QG raw and state bridge; public routing and consumer lifecycle remain pending in #505/#506",
+  "sourceBaseCommit": "68577ca05af5e0bb03eaa492b5a345c4f90277d6",
+  "sourceSHA256": {
+    "@WVCompiledTransformBackend/WVCompiledTransformBackend.m": "694e61173a179d9fe793fcbe392c6121d6a3a2ac4df6f95f46c145988751fed3",
+    "@WVCompiledTransformBackend/private/wvCompiledStratifiedModalConfiguration.m": "4666254f98e92b1b481998ea48ef6de30b73f5875c5714e6e0588b8fbcb3fa06",
+    "CompiledKernel/adapters/native-fftw/WVMatlabTransformHost.cpp": "c7224111f446affe7d3a1ef7208bf1a111fb74bf05931fdab672989c909c81ae",
+    "CompiledKernel/adapters/native-fftw/wv_compiled_backend_mex.cpp": "0781e98b7b34b5f92deac3fd2757186794cce1257fe482e422e406b8de947bd3",
+    "CompiledKernel/include/WaveVortexKernel/WVTransformBarotropicQGKernel.hpp": "33361825e5000fd7d299884650d0e0f98c9153d3e232512e4e48e085d88c2150",
+    "CompiledKernel/src/WVTransformBarotropicQGKernel.cpp": "523157aadc2705eae33425042cbe90478682a2e97eb1bd99e02852917cbe6185",
+    "PortableRuntime/tests/TestWVBarotropicMatlabPrimitives.cpp": "956d84e454fefbfe13fc229a5df50f8603288216159edecb2245deb0678defb4",
+    "UnitTests/TestWVCompiledBarotropicPrimitives.m": "e0ab0849b6aae43d23923e98c7a6257d4f9580dde848f77b9b926ea55d02d12f"
+  },
+  "moduleSHA256": "9da595993d181ee00950f58bcaa67d74f725593d0cea663511da3b2d2901e2f7",
+  "matlabTransformBridgeVersion": 3,
+  "nativeTests": [
+    "TestWVBarotropicMatlabPrimitives",
+    "TestWVBarotropicQGNativeFFTW",
+    "TestWVBarotropicQGForcing"
+  ],
+  "matlabTest": "TestWVCompiledBarotropicPrimitives/rawAndStateOperationsMatchMatlab",
+  "coverage": [
+    "j=0,1; antialias=false,true",
+    "mean preserving Fourier and PV projection",
+    "first, second and fourth derivatives including Nyquist",
+    "u,v and nonlinear flux parity; fresh fields-only evaluation",
+    "public h mutation rejected; restored geometry recovers",
+    "no new native primitive storage; zero duplicate producer executions"
+  ],
+  "result": "pass",
+  "matlab": "R2025b Update 4",
+  "codeAnalyzer": "No findings in the two changed adapter MATLAB files and new test",
+  "limitations": [
+    "This receipt fingerprints the increment source subset and tested module, not a full install/export qualification.",
+    "No performance claims or public support completion."
+  ]
+}

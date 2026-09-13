@@ -5,8 +5,18 @@ arguments
     wvt (1,1) WVTransform
 end
 
-if ~ismember(string(class(wvt)),["WVTransformHydrostatic" "WVTransformBoussinesq" "WVTransformStratifiedQG"])
+if ~ismember(string(class(wvt)),["WVTransformHydrostatic" "WVTransformBoussinesq" "WVTransformStratifiedQG" "WVTransformBarotropicQG"])
     error("WaveVortexModel:CompiledTransformUnsupportedFamily","Compiled MATLAB support currently covers Hydrostatic, Boussinesq and Stratified QG transforms.")
+end
+
+if isa(wvt,"WVTransformBarotropicQG")
+    configuration = struct("schemaVersion",'wv-matlab-stratified-modal-source-v1', ...
+        "transformClass",char(class(wvt)),"modelVersion",char(wvt.version), ...
+        "Nx",wvt.Nx,"Ny",wvt.Ny,"Nz",1,"Nj",1,"Nkl",wvt.Nkl, ...
+        "Lx",wvt.Lx,"Ly",wvt.Ly,"Lz",wvt.h,"g",wvt.g,"j",wvt.j, ...
+        "latitude",wvt.latitude,"rotationRate",wvt.rotationRate,"planetaryRadius",wvt.planetaryRadius, ...
+        "shouldAntialias",wvt.shouldAntialias);
+    return
 end
 
 configuration = struct( ...

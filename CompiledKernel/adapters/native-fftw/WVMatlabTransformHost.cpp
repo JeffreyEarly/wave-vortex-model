@@ -6,6 +6,7 @@
 #include "WaveVortexRuntime/WVHydrostaticForcingEngine.hpp"
 #include "WaveVortexRuntime/WVBoussinesqForcingEngine.hpp"
 #include "WaveVortexRuntime/WVStratifiedQGForcingEngine.hpp"
+#include "WaveVortexRuntime/WVBarotropicQGForcingEngine.hpp"
 #include "WaveVortexRuntime/WVFieldEvaluationService.hpp"
 #include "WaveVortexRuntime/WVIntegrationState.hpp"
 #include "WaveVortexRuntime/WVExtensionCatalog.hpp"
@@ -82,18 +83,24 @@ WVStratifiedModalArrays modalArrays(const mxArray* a) {
     WVStratifiedModalArrays data; auto& g=data.geometry;
     g.transformClass=text(field(a,"transformClass"));
     if(g.transformClass!="WVTransformHydrostatic" && g.transformClass!="WVTransformBoussinesq" &&
-       g.transformClass!="WVTransformStratifiedQG")
+       g.transformClass!="WVTransformStratifiedQG" && g.transformClass!="WVTransformBarotropicQG")
         invalid("This modal bridge requires a Hydrostatic, Boussinesq or Stratified QG transform.");
     g.modelVersion=text(field(a,"modelVersion"));
     g.Nx=extent(field(a,"Nx")); g.Ny=extent(field(a,"Ny"));
     g.Nz=extent(field(a,"Nz")); g.Nj=extent(field(a,"Nj")); g.Nkl=extent(field(a,"Nkl"));
     g.Lx=scalar(field(a,"Lx")); g.Ly=scalar(field(a,"Ly")); g.Lz=scalar(field(a,"Lz"));
-    g.g=scalar(field(a,"g")); g.rho0=scalar(field(a,"rho0"));
+    g.g=scalar(field(a,"g"));
+    if(g.transformClass!="WVTransformBarotropicQG") g.rho0=scalar(field(a,"rho0"));
     g.latitude=scalar(field(a,"latitude")); g.rotationRate=scalar(field(a,"rotationRate"));
     g.planetaryRadius=scalar(field(a,"planetaryRadius"));
     const auto* antialias=field(a,"shouldAntialias");
     if(!mxIsLogicalScalar(antialias)) invalid("shouldAntialias must be a scalar logical.");
     g.shouldAntialias=mxIsLogicalScalarTrue(antialias);
+    if(g.transformClass=="WVTransformBarotropicQG") {
+        if(g.Nz!=1 || g.Nj!=1) invalid("Barotropic geometry requires Nz=Nj=1.");
+        const auto j=scalar(field(a,"j")); if(j!=0 && j!=1) invalid("Barotropic mode index must be zero or one.");
+        g.j={j}; return data;
+    }
     g.x=array(field(a,"x"),{g.Nx,1}); g.y=array(field(a,"y"),{g.Ny,1});
     g.z=array(field(a,"z"),{g.Nz,1}); g.j=array(field(a,"j"),{g.Nj,1});
     g.k=array(field(a,"k"),{g.Nkl,1}); g.l=array(field(a,"l"),{g.Nkl,1});
@@ -140,9 +147,12 @@ std::vector<std::string> names(const mxArray* a) {
 struct Host {
     std::shared_ptr<const WVOwnedStratifiedModalSource> source;
     using Engines=std::variant<std::unique_ptr<WVHydrostaticForcingEngine>,
-        std::unique_ptr<WVBoussinesqForcingEngine>,std::unique_ptr<WVStratifiedQGForcingEngine>>;
+        std::unique_ptr<WVBoussinesqForcingEngine>,std::unique_ptr<WVStratifiedQGForcingEngine>,std::unique_ptr<WVBarotropicQGForcingEngine>>;
     Engines engine;
-    bool isQG() const { return source->geometry().transformClass=="WVTransformStratifiedQG"; }
+    WVStratifiedModalGeometry simpleGeometry;
+    const WVStratifiedModalGeometry& geometry() const { return source?source->geometry():simpleGeometry; }
+    bool isBarotropic() const { return geometry().transformClass=="WVTransformBarotropicQG"; }
+    bool isQG() const { return isBarotropic() || geometry().transformClass=="WVTransformStratifiedQG"; }
     template<class F> decltype(auto) visit(F&& f) { return std::visit([&](auto& e)->decltype(auto){return f(*e);},engine); }
     template<class F> decltype(auto) visit(F&& f) const { return std::visit([&](const auto& e)->decltype(auto){return f(*e);},engine); }
     std::unique_ptr<WVFieldEvaluationService> fields;
@@ -155,12 +165,13 @@ struct Host {
     std::size_t evaluations=0, inputBytes=0, outputBytes=0, planPreparations=0, primitiveExecutions=0;
 
     explicit Host(WVStratifiedModalArrays data) {
-        require(WVOwnedStratifiedModalSource::create(std::move(data),source));
-        const auto kind=isQG()?WVPersistedTransformKind::stratifiedQG:
-            source->geometry().transformClass=="WVTransformBoussinesq"?WVPersistedTransformKind::boussinesq:WVPersistedTransformKind::hydrostatic;
+        if(data.geometry.transformClass=="WVTransformBarotropicQG") simpleGeometry=std::move(data.geometry);
+        else require(WVOwnedStratifiedModalSource::create(std::move(data),source));
+        const auto kind=isBarotropic()?WVPersistedTransformKind::barotropicQG:isQG()?WVPersistedTransformKind::stratifiedQG:
+            geometry().transformClass=="WVTransformBoussinesq"?WVPersistedTransformKind::boussinesq:WVPersistedTransformKind::hydrostatic;
         policy=selectNativeVariablePolicy(true,kind,
             "native-fftw",1,false,nativeHostTopology());
-        if(policy.matrixBackend!=WVNativeMatrixBackend::accelerate || !policy.compact)
+        if(!isBarotropic() && (policy.matrixBackend!=WVNativeMatrixBackend::accelerate || !policy.compact))
             invalid("The MATLAB variable backend requires the qualified native Accelerate policy.");
         WVVariableKernelServices services; services.execution=policy.execution;
         services.matrixBackendFactory=WVCreateAccelerateMatrixBackend;
@@ -179,9 +190,18 @@ struct Host {
         } else if(kind==WVPersistedTransformKind::boussinesq) {
             std::unique_ptr<WVBoussinesqForcingEngine> e;
             require(WVBoussinesqForcingEngine::create(source,schedule,catalog,std::move(fft),e,services)); engine=std::move(e);
-        } else {
+        } else if(kind==WVPersistedTransformKind::stratifiedQG) {
             std::unique_ptr<WVStratifiedQGForcingEngine> e;
             require(WVStratifiedQGForcingEngine::create(source,schedule,catalog,std::move(fft),e,services)); engine=std::move(e);
+        }
+        if(isBarotropic()) {
+            const auto& g=geometry(); WVTransformBarotropicQGConfiguration config;
+            config.Nx=g.Nx; config.Ny=g.Ny; config.Lx=g.Lx; config.Ly=g.Ly; config.h=g.Lz; config.j=static_cast<std::uint32_t>(g.j[0]);
+            config.g=g.g; config.latitude=g.latitude; config.rotationRate=g.rotationRate; config.planetaryRadius=g.planetaryRadius; config.shouldAntialias=g.shouldAntialias;
+            std::unique_ptr<WVBarotropicQGForcingEngine> e;
+            require(WVBarotropicQGForcingEngine::create(config,schedule,catalog,std::move(fft),e));
+            if(e->kernel().descriptor().Nkl()!=g.Nkl) invalid("Barotropic retained shape differs from MATLAB.");
+            engine=std::move(e);
         }
         visit([&](auto& e){require(WVFieldEvaluationService::createBorrowing(e,fields));});
         require(fields->createStateLayout({},stateLayout));
@@ -213,12 +233,12 @@ mxArray* metadata(const Host& h) {
         "producerExecutions","cacheHits","duplicateExecutions","liveEvaluationBytes","peakEvaluationBytes","tiledNonlinearExecutions","primitiveExecutions"};
     Array result(mxCreateStructMatrix(1,1,sizeof(keys)/sizeof(keys[0]),keys));
     auto put=[&](const char* key,double v){mxSetField(result.get(),0,key,mxCreateDoubleScalar(v));};
-    mxSetField(result.get(),0,"transformClass",mxCreateString(h.source->geometry().transformClass.c_str()));
+    mxSetField(result.get(),0,"transformClass",mxCreateString(h.geometry().transformClass.c_str()));
     mxSetField(result.get(),0,"scope",mxCreateString("call-scoped stratified fields, nonlinear flux and raw primitives"));
     mxSetField(result.get(),0,"matrixBackend",mxCreateString(nativeMatrixBackendIdentifier(h.policy.matrixBackend)));
     mxSetField(result.get(),0,"policy",mxCreateString(std::string(h.policy.selection).c_str()));
     put("horizontalWorkers",h.policy.execution.horizontalWorkers); put("pointwiseWorkers",h.policy.execution.pointwiseWorkers);
-    put("sourceBytes",h.source->persistentBytes());
+    put("sourceBytes",h.source?h.source->persistentBytes():0);
     h.visit([&](const auto& e){put("kernelBytes",e.kernel().persistentBytes()); put("engineBytes",e.persistentBytes());});
     put("fieldServiceBytes",h.fields->persistentBytes()); put("preparedPlanBytes",h.plan.persistentBytes());
     put("planPreparations",h.planPreparations); put("evaluations",h.evaluations);
@@ -227,7 +247,7 @@ mxArray* metadata(const Host& h) {
         const auto& k=engine.kernel().metrics(); const auto& e=engine.variableEvaluationMetrics();
         const auto& f=h.fields->metrics().variableEvaluation;
         put("stateValidations",k.stateValidationCount);
-        if constexpr(std::is_same_v<std::decay_t<decltype(engine)>,WVStratifiedQGForcingEngine>) {
+        if constexpr((std::is_same_v<std::decay_t<decltype(engine)>,WVStratifiedQGForcingEngine> || std::is_same_v<std::decay_t<decltype(engine)>,WVBarotropicQGForcingEngine>)) {
             put("phasePreparations",0); put("tiledNonlinearExecutions",0);
         } else { put("phasePreparations",k.phasePreparationCount); put("tiledNonlinearExecutions",k.tiledNonlinearCount); }
         put("producerExecutions",e.producerExecutions+f.producerExecutions);
@@ -245,7 +265,7 @@ WVComplexConstView coefficients(const mxArray* a,WVShape2D shape) {
     return {reinterpret_cast<const WVComplex64*>(mxGetComplexDoubles(a)),shape};
 }
 mxArray* evaluate(Host& h,const mxArray* const inputs[]) {
-    const auto& g=h.source->geometry(); const WVShape2D shape{g.Nj,g.Nkl};
+    const auto& g=h.geometry(); const WVShape2D shape{g.Nj,g.Nkl};
     WVState state{scalar(inputs[3]),scalar(inputs[4]),{{},{},coefficients(inputs[2],shape)}};
     if(h.isQG()) {
         if(mxGetNumberOfElements(inputs[0]) || mxGetNumberOfElements(inputs[1])) invalid("QG has only A0 coefficients.");
@@ -295,7 +315,7 @@ mxArray* evaluate(Host& h,const mxArray* const inputs[]) {
         };
         h.visit([&](auto& engine) {
             using Engine=std::decay_t<decltype(engine)>;
-            if constexpr(std::is_same_v<Engine,WVStratifiedQGForcingEngine>) {
+            if constexpr((std::is_same_v<Engine,WVStratifiedQGForcingEngine> || std::is_same_v<Engine,WVBarotropicQGForcingEngine>)) {
                 require(engine.beginStateEvaluation(state.coefficients.A0));
                 struct Scope { Engine& e; ~Scope(){e.endStateEvaluation();} } scope{engine};
                 WVRealFieldBundleConstView physical;
@@ -348,7 +368,7 @@ mxArray* operation(Host& h,const mxArray* nameArray,const mxArray* inputs,const 
     const auto name=text(nameArray);
     if(!inputs || !mxIsCell(inputs)) invalid("Primitive inputs must be a cell array.");
     if(!options || !mxIsStruct(options) || mxGetNumberOfElements(options)!=1) invalid("Primitive options must be a scalar struct.");
-    const auto& g=h.source->geometry(); const WVShape2D modal{g.Nj,g.Nkl}, grid{g.Nz,g.Nkl};
+    const auto& g=h.geometry(); const WVShape2D modal{g.Nj,g.Nkl}, grid{g.Nz,g.Nkl};
     const WVShape3D volume{g.Nx,g.Ny,g.Nz};
     const bool projection=name=="toWaveVortex";
     const std::size_t count=projection&&!h.isQG()?3:1;
@@ -377,27 +397,29 @@ mxArray* operation(Host& h,const mxArray* nameArray,const mxArray* inputs,const 
         if(column) {
             const auto index=extent(field(options,"column"));
             if(index>g.Nkl) invalid("Retained column exceeds the model spectrum.");
-            h.visit([&](auto& e){require(e.kernel().applyVerticalColumn(op,index-1,in,out));});
-        } else h.visit([&](auto& e){require(e.kernel().applyVertical(op,in,out));});
+            h.visit([&](auto& e){if constexpr(std::is_same_v<std::decay_t<decltype(e)>,WVBarotropicQGForcingEngine>) invalid("Barotropic QG has no vertical matrix primitive."); else require(e.kernel().applyVerticalColumn(op,index-1,in,out));});
+        } else h.visit([&](auto& e){if constexpr(std::is_same_v<std::decay_t<decltype(e)>,WVBarotropicQGForcingEngine>) invalid("Barotropic QG has no vertical matrix primitive."); else require(e.kernel().applyVertical(op,in,out));});
     } else if(name=="horizontalForward") {
         expect(1); const auto in=spatial(input(0),volume); auto out=complexOutput(0,grid);
-        h.visit([&](auto& e){require(e.kernel().horizontalForward(in,out));});
+        h.visit([&](auto& e){if constexpr(std::is_same_v<std::decay_t<decltype(e)>,WVBarotropicQGForcingEngine>) require(e.kernel().horizontalForward({in.data,{g.Nx,g.Ny}},out)); else require(e.kernel().horizontalForward(in,out));});
     } else if(name=="horizontalInverse") {
         expect(1); const auto in=coefficients(input(0),grid); auto out=realOutput();
-        h.visit([&](auto& e){require(e.kernel().horizontalInverse(in,out));});
+        h.visit([&](auto& e){if constexpr(std::is_same_v<std::decay_t<decltype(e)>,WVBarotropicQGForcingEngine>) { WVRealView target{out.data,{g.Nx,g.Ny}}; require(e.kernel().horizontalInverse(in,target)); } else require(e.kernel().horizontalInverse(in,out));});
     } else if(name=="differentiateHorizontal") {
         expect(1); const auto direction=text(field(options,"direction"));
         if(direction!="x" && direction!="y") invalid("Derivative direction must be x or y.");
         const auto order=extent(field(options,"order"));
         if(order>std::numeric_limits<unsigned>::max()) invalid("Derivative order is not representable.");
         const auto in=spatial(input(0),volume); auto out=realOutput();
-        h.visit([&](auto& e){require(e.kernel().differentiateHorizontal(in,direction=="x",static_cast<unsigned>(order),out));});
+        h.visit([&](auto& e){if constexpr(std::is_same_v<std::decay_t<decltype(e)>,WVBarotropicQGForcingEngine>) { WVRealView target{out.data,{g.Nx,g.Ny}}; require(e.kernel().differentiateHorizontal({in.data,{g.Nx,g.Ny}},direction=="x",static_cast<unsigned>(order),target)); } else require(e.kernel().differentiateHorizontal(in,direction=="x",static_cast<unsigned>(order),out));});
     } else if(name=="toWaveVortex") {
         const bool bouss=g.transformClass=="WVTransformBoussinesq"; expect(bouss?4:3);
         const auto u=spatial(input(0),volume), v=spatial(input(1),volume), eta=spatial(input(bouss?3:2),volume);
         h.visit([&](auto& e) {
             using Engine=std::decay_t<decltype(e)>;
-            if constexpr(std::is_same_v<Engine,WVStratifiedQGForcingEngine>) {
+            if constexpr(std::is_same_v<Engine,WVBarotropicQGForcingEngine>) {
+                invalid("Barotropic QG supports qgPVToA0 projection.");
+            } else if constexpr(std::is_same_v<Engine,WVStratifiedQGForcingEngine>) {
                 require(e.kernel().transformUVEtaToA0(u,v,eta,complexOutput(0,modal)));
             } else {
                 const double t=scalar(field(options,"t")), t0=scalar(field(options,"t0"));
@@ -410,8 +432,13 @@ mxArray* operation(Host& h,const mxArray* nameArray,const mxArray* inputs,const 
     } else if(name=="qgPVToA0") {
         expect(1); if(!h.isQG()) invalid("qgPVToA0 requires a QG transform.");
         const auto in=spatial(input(0),volume); auto out=complexOutput(0,modal);
-        auto& engine=*std::get<std::unique_ptr<WVStratifiedQGForcingEngine>>(h.engine);
-        require(engine.kernel().transformQGPVToA0(in,out));
+        if(h.isBarotropic()) {
+            auto& engine=*std::get<std::unique_ptr<WVBarotropicQGForcingEngine>>(h.engine);
+            require(engine.kernel().transformQGPVToA0({in.data,{g.Nx,g.Ny}},out));
+        } else {
+            auto& engine=*std::get<std::unique_ptr<WVStratifiedQGForcingEngine>>(h.engine);
+            require(engine.kernel().transformQGPVToA0(in,out));
+        }
     } else invalid("Unknown transform primitive.");
     ++h.primitiveExecutions; h.outputBytes+=bytes;
     mxSetField(result.get(),0,"metrics",metadata(h)); return result.release();

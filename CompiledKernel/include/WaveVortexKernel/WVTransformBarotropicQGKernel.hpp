@@ -181,6 +181,13 @@ public:
                                      WVComplexView& A0);
     WVKernelStatus transformA0ToQGPV(const WVComplexConstView& A0,
                                      WVRealView& qgpv);
+    // Raw retained Fourier transforms preserve the horizontal mean.
+    WVKernelStatus horizontalForward(const WVRealConstView&, WVComplexView&);
+    WVKernelStatus horizontalInverse(const WVComplexConstView&, WVRealView&);
+    WVKernelStatus differentiateHorizontal(const WVRealConstView&,
+        bool xDerivative, WVRealView&);
+    WVKernelStatus differentiateHorizontal(const WVRealConstView&,
+        bool xDerivative, unsigned order, WVRealView&);
     // Raw Fourier inverse for diagnostic contributions, including the mean.
     // Ordinary model fields retain their existing mean mask.
     WVKernelStatus transformSpectralTendencyToSpatial(const WVComplexConstView&, WVRealView&);
@@ -246,6 +253,7 @@ private:
     WVKernelStatus validateState(const WVComplexConstView&) const;
     WVKernelStatus validateStateForCall(const WVComplexConstView&) const;
     WVKernelStatus mutableOutputOutsidePreparedState(const WVComplexView&) const;
+    WVKernelStatus mutableOutputOutsidePreparedState(const void*,std::size_t) const;
     bool matchesStateEvaluation(const WVComplexConstView&) const noexcept;
     std::size_t stateEvaluationComponent(const WVComplexConstView&) const noexcept;
     void recordReconstruction(const WVComplexConstView&,WVBarotropicQGField,
@@ -270,6 +278,9 @@ private:
                                          WVRealView& output);
     WVKernelStatus spatialDerivative(const WVRealConstView& input,
                                      bool xDerivative,
+                                     WVRealView& output);
+    WVKernelStatus spatialDerivative(const WVRealConstView& input,
+                                     bool xDerivative, unsigned order,
                                      WVRealView& output);
     WVKernelStatus antialiasScalarInPlace(WVRealView& scalar);
     WVKernelStatus validateForcingOperation(

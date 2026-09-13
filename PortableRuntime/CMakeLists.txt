@@ -307,6 +307,12 @@ if(BUILD_TESTING)
         target_compile_options(TestWVMatlabRawPrimitives PRIVATE -Wall -Wextra -Wpedantic -Werror)
     endif()
     add_test(NAME matlab-raw-primitives COMMAND TestWVMatlabRawPrimitives)
+    add_executable(TestWVBarotropicMatlabPrimitives tests/TestWVBarotropicMatlabPrimitives.cpp)
+    target_link_libraries(TestWVBarotropicMatlabPrimitives PRIVATE WaveVortex::PortableRuntime WaveVortex::ReferenceFFT)
+    if(CMAKE_CXX_COMPILER_ID MATCHES "AppleClang|Clang|GNU")
+        target_compile_options(TestWVBarotropicMatlabPrimitives PRIVATE -Wall -Wextra -Wpedantic -Werror)
+    endif()
+    add_test(NAME barotropic-matlab-primitives COMMAND TestWVBarotropicMatlabPrimitives)
     if(NOT TARGET TestWVAllocationProbe)
         add_executable(TestWVAllocationProbe
             ../tools/compiled-kernel/tests/TestWVAllocationProbe.cpp
