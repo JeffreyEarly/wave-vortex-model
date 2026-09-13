@@ -10,6 +10,14 @@ arguments
     options.implementationVersion (1,1) string = "unreleased-preview"
 end
 raw = jsondecode(fileread(rawArtifactPath));
+if string(raw.schemaVersion)=="three-interface-benchmark-v3"
+    if string(raw.status)~="complete" || logical(raw.source.isDirty)
+        error("WaveVortexBenchmark:InvalidThreeInterfaceArtifact","Publication requires a complete clean three-interface-benchmark-v3 artifact.");
+    end
+    validateThreeInterfaceBenchmarkContract(raw);
+    dataset = normalizeMatchedModelStudy(raw,rawArtifactPath,options);
+    return
+end
 if string(raw.schemaVersion)=="three-interface-benchmark-v2"
     if string(raw.status)~="complete" || logical(raw.source.isDirty)
         error("WaveVortexBenchmark:InvalidThreeInterfaceArtifact","Publication requires a complete clean three-interface-benchmark-v2 artifact.");
@@ -22,6 +30,40 @@ if string(raw.schemaVersion) ~= "three-interface-benchmark-v1" || string(raw.sta
     error("WaveVortexBenchmark:InvalidThreeInterfaceArtifact","Publication requires a complete clean three-interface-benchmark-v1 artifact.");
 end
 dataset = normalizeLegacy(raw,options);
+end
+
+function dataset = normalizeMatchedModelStudy(raw,rawArtifactPath,options)
+[collectedAt,timestamp] = collectionTime(raw.runId);
+datasetId = "three-interface--"+string(raw.modelConfiguration)+"--"+options.platformId+"--"+timestamp;
+platform = struct("id",options.platformId,"displayName",options.platformName,"processor",string(raw.environment.processor),"physicalMemoryBytes",double(raw.environment.physicalMemoryBytes),"os",string(raw.environment.os),"architecture",string(raw.environment.architecture),"matlabVersion",string(raw.environment.matlabVersion),"threadCount",double(raw.configuration.threadCount));
+provider = struct("id",string(raw.provider.provider.id),"version",string(raw.provider.provider.version),"threadBackend",string(raw.provider.provider.threadBackend),"scope","compiled-interfaces-only","moduleSHA256",string(raw.provider.module.sha256),"identityValidated",logical(raw.provider.module.identityValidated),"openMPDetected",logical(raw.provider.libraries.openmp.detected));
+cohort = struct("sourceCommit",string(raw.source.commit),"sourceTree",string(raw.source.tree),"platformId",options.platformId,"matlabVersion",string(raw.environment.matlabVersion),"threadCount",double(raw.configuration.threadCount),"providerId",string(raw.provider.provider.id),"providerVersion",string(raw.provider.provider.version));
+cohortKey = strjoin([cohort.sourceCommit cohort.sourceTree cohort.platformId cohort.matlabVersion string(cohort.threadCount) cohort.providerId cohort.providerVersion],"|");
+cases = cell(1,numel(raw.comparison));
+for iCase = 1:numel(raw.comparison)
+    comparison = raw.comparison(iCase);
+    definition = raw.cases(iCase);
+    caseRuns = raw.runs(string(arrayfun(@(run)run.case.id,raw.runs,"UniformOutput",false))==string(definition.id));
+    interfaces = cell(1,numel(comparison.interfaces));
+    for iInterface = 1:numel(comparison.interfaces)
+        item = comparison.interfaces(iInterface);
+        selected = caseRuns(string({caseRuns.interface})==string(item.id));
+        if all(string({selected.status})=="unavailable")
+            interfaces{iInterface} = struct("id",string(item.id),"status","unavailable","unavailableReason",string(selected(1).failure.message));
+        else
+            interfaces{iInterface} = struct("id",string(item.id),"status","complete","providerId",string(selected(1).provider.id),"integrationSeconds",double(item.integrationSeconds),"totalPeakRSSBytes",double(item.totalPeakRSSBytes),"integrationRatio",double(item.integrationRatio),"totalRSSRatio",double(item.totalRSSRatio),"integrationSamplesSeconds",double([selected.integrationSeconds]),"totalPeakRSSSamplesBytes",double(arrayfun(@(run)run.memory.totalPeakRSSBytes,selected)),"diagnostics",interfaceDiagnostics(selected));
+        end
+    end
+    contract = struct("Nxyz",double(definition.Nxyz(:)'),"Lxyz",double(definition.Lxyz(:)'),"modelConfiguration",string(definition.modelConfiguration),"physicalConfiguration",string(definition.physicalConfiguration),"isHydrostatic",logical(definition.isHydrostatic),"stratificationProfile",string(raw.configuration.model.stratificationProfile),"workload",string(definition.workload),"integrator","adaptive-rk78","finalTime",double(definition.finalTime),"outputScheduleSeconds",double(definition.outputScheduleSeconds(:)'),"relativeTolerance",double(definition.relativeTolerance),"absoluteToleranceScale",double(definition.absoluteTolerance),"initialStep",double(definition.initialStep),"maximumStepPolicy",string(definition.maximumStepPolicy),"processRunCount",double(raw.configuration.processRunCount));
+    graph = comparison.outputGraph;
+    graphSummary = struct("passed",logical(graph.passed),"variableCount",double(graph.variableCount),"recordCount",double(graph.recordCount),"maximumAbsoluteError",double(graph.maximumAbsoluteError),"maximumRelativeError",double(graph.maximumRelativeError),"categories",graph.categories);
+    correctness = struct("passed",logical(comparison.matchedContractPassed),"maximumRelativeError",double(comparison.maximumRelativeError),"outputAgreementPassed",logical(comparison.outputAgreementPassed),"endpointTrajectoryAgreementPassed",logical(comparison.endpointTrajectoryAgreementPassed),"completeOutputGraph",graphSummary);
+    cases{iCase} = struct("id",string(definition.id),"modelConfiguration",string(definition.modelConfiguration),"physicalConfiguration",string(definition.physicalConfiguration),"isHydrostatic",logical(definition.isHydrostatic),"workload",string(definition.workload),"integrator","adaptive-rk78","contract",contract,"interfaces",{interfaces},"correctness",correctness);
+end
+archive = struct("fileName",options.archiveFileName,"sha256",options.archiveSHA256,"compressedBytes",options.archiveCompressedBytes,"location","external sibling archive ../wave-vortex-model-benchmark-artifacts/three-interface; not distributed with source");
+provenance = struct("rawSchemaVersion",string(raw.schemaVersion),"rawArtifactSHA256",sha256File(rawArtifactPath),"externalArchive",archive,"fixtures",raw.configuration.fixtures,"initialCondition",raw.configuration.initialCondition,"model",raw.configuration.model,"stepControls",raw.configuration.stepControls,"matlabWorker",raw.configuration.matlabWorker,"standaloneWorkers",raw.configuration.standaloneWorkers);
+source = struct("repository","https://github.com/JeffreyEarly/wave-vortex-model","commit",string(raw.source.commit),"tree",string(raw.source.tree),"sourceDirty",false,"version",options.implementationVersion);
+dataset = struct("schemaVersion","published-three-interface-v4","datasetId",datasetId,"collectedAt",collectedAt,"studyId","matched-model-runtime-v1","modelConfiguration",string(raw.modelConfiguration),"cohortKey",cohortKey,"cohort",cohort,"source",source,"platform",platform,"provider",provider,"provenance",provenance,"cases",{cases});
 end
 
 function dataset = normalizeIntegratorStudy(raw,rawArtifactPath,options)
