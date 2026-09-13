@@ -1,0 +1,331 @@
+{
+  "schema": "wave-vortex-final-hosted-qualification-v1",
+  "wvm": {
+    "status": "completed",
+    "conclusion": "success",
+    "headSha": "8b40ca8fe25fe883bc7c75bd7807c853f3a6e176",
+    "attempt": 2,
+    "jobs": [
+      {
+        "databaseId": 103703870043,
+        "name": "Isolated package verification / Exported package / MATLAB R2025b",
+        "status": "completed",
+        "conclusion": "success",
+        "startedAt": "2026-09-13T09:33:33Z",
+        "completedAt": "2026-09-13T09:37:48Z",
+        "url": "https://github.com/JeffreyEarly/wave-vortex-model/actions/runs/34748713522/job/103703870043"
+      },
+      {
+        "databaseId": 103703870206,
+        "name": "Repository and CI policy contracts",
+        "status": "completed",
+        "conclusion": "success",
+        "startedAt": "2026-09-13T08:58:42Z",
+        "completedAt": "2026-09-13T08:58:52Z",
+        "url": "https://github.com/JeffreyEarly/wave-vortex-model/actions/runs/34748713522/job/103703870206"
+      },
+      {
+        "databaseId": 103703870746,
+        "name": "Isolated package verification / Clean install / MATLAB R2025b",
+        "status": "completed",
+        "conclusion": "success",
+        "startedAt": "2026-09-13T08:58:46Z",
+        "completedAt": "2026-09-13T09:00:05Z",
+        "url": "https://github.com/JeffreyEarly/wave-vortex-model/actions/runs/34748713522/job/103703870746"
+      },
+      {
+        "databaseId": 103703870804,
+        "name": "C++ / release / build",
+        "status": "completed",
+        "conclusion": "success",
+        "startedAt": "2026-09-13T08:59:12Z",
+        "completedAt": "2026-09-13T09:02:15Z",
+        "url": "https://github.com/JeffreyEarly/wave-vortex-model/actions/runs/34748713522/job/103703870804"
+      },
+      {
+        "databaseId": 103703871044,
+        "name": "C++ / sanitized / build",
+        "status": "completed",
+        "conclusion": "success",
+        "startedAt": "2026-09-13T08:59:44Z",
+        "completedAt": "2026-09-13T09:09:13Z",
+        "url": "https://github.com/JeffreyEarly/wave-vortex-model/actions/runs/34748713522/job/103703871044"
+      },
+      {
+        "databaseId": 103703871312,
+        "name": "MATLAB / sanitized probes / batch 2 / validate",
+        "status": "completed",
+        "conclusion": "success",
+        "startedAt": "2026-09-13T09:09:45Z",
+        "completedAt": "2026-09-13T09:17:48Z",
+        "url": "https://github.com/JeffreyEarly/wave-vortex-model/actions/runs/34748713522/job/103703871312"
+      },
+      {
+        "databaseId": 103703871324,
+        "name": "MATLAB / R2026a / batch 0 / validate",
+        "status": "completed",
+        "conclusion": "success",
+        "startedAt": "2026-09-13T09:02:23Z",
+        "completedAt": "2026-09-13T09:12:45Z",
+        "url": "https://github.com/JeffreyEarly/wave-vortex-model/actions/runs/34748713522/job/103703871324"
+      },
+      {
+        "databaseId": 103703871364,
+        "name": "MATLAB / R2025b / batch 2 / validate",
+        "status": "completed",
+        "conclusion": "success",
+        "startedAt": "2026-09-13T09:02:29Z",
+        "completedAt": "2026-09-13T09:21:05Z",
+        "url": "https://github.com/JeffreyEarly/wave-vortex-model/actions/runs/34748713522/job/103703871364"
+      },
+      {
+        "databaseId": 103703871395,
+        "name": "MATLAB / sanitized probes / batch 3 / validate",
+        "status": "completed",
+        "conclusion": "success",
+        "startedAt": "2026-09-13T09:09:20Z",
+        "completedAt": "2026-09-13T09:17:42Z",
+        "url": "https://github.com/JeffreyEarly/wave-vortex-model/actions/runs/34748713522/job/103703871395"
+      },
+      {
+        "databaseId": 103703871466,
+        "name": "MATLAB / R2026a / batch 1 / validate",
+        "status": "completed",
+        "conclusion": "success",
+        "startedAt": "2026-09-13T09:02:27Z",
+        "completedAt": "2026-09-13T09:09:06Z",
+        "url": "https://github.com/JeffreyEarly/wave-vortex-model/actions/runs/34748713522/job/103703871466"
+      },
+      {
+        "databaseId": 103703871526,
+        "name": "MATLAB / R2025b / batch 0 / validate",
+        "status": "completed",
+        "conclusion": "success",
+        "startedAt": "2026-09-13T09:02:37Z",
+        "completedAt": "2026-09-13T09:16:03Z",
+        "url": "https://github.com/JeffreyEarly/wave-vortex-model/actions/runs/34748713522/job/103703871526"
+      },
+      {
+        "databaseId": 103703871620,
+        "name": "MATLAB / sanitized probes / batch 0 / validate",
+        "status": "completed",
+        "conclusion": "success",
+        "startedAt": "2026-09-13T09:10:03Z",
+        "completedAt": "2026-09-13T09:21:47Z",
+        "url": "https://github.com/JeffreyEarly/wave-vortex-model/actions/runs/34748713522/job/103703871620"
+      },
+      {
+        "databaseId": 103703871654,
+        "name": "MATLAB / R2026a / batch 3 / validate",
+        "status": "completed",
+        "conclusion": "success",
+        "startedAt": "2026-09-13T09:02:39Z",
+        "completedAt": "2026-09-13T09:17:15Z",
+        "url": "https://github.com/JeffreyEarly/wave-vortex-model/actions/runs/34748713522/job/103703871654"
+      },
+      {
+        "databaseId": 103703871663,
+        "name": "MATLAB / R2025b / batch 3 / validate",
+        "status": "completed",
+        "conclusion": "success",
+        "startedAt": "2026-09-13T09:02:20Z",
+        "completedAt": "2026-09-13T09:17:13Z",
+        "url": "https://github.com/JeffreyEarly/wave-vortex-model/actions/runs/34748713522/job/103703871663"
+      },
+      {
+        "databaseId": 103703871683,
+        "name": "MATLAB / sanitized probes / batch 1 / validate",
+        "status": "completed",
+        "conclusion": "success",
+        "startedAt": "2026-09-13T09:09:42Z",
+        "completedAt": "2026-09-13T09:29:48Z",
+        "url": "https://github.com/JeffreyEarly/wave-vortex-model/actions/runs/34748713522/job/103703871683"
+      },
+      {
+        "databaseId": 103703871732,
+        "name": "MATLAB / R2025b / batch 1 / validate",
+        "status": "completed",
+        "conclusion": "success",
+        "startedAt": "2026-09-13T09:02:35Z",
+        "completedAt": "2026-09-13T09:11:17Z",
+        "url": "https://github.com/JeffreyEarly/wave-vortex-model/actions/runs/34748713522/job/103703871732"
+      },
+      {
+        "databaseId": 103703871735,
+        "name": "MATLAB / R2026a / batch 2 / validate",
+        "status": "completed",
+        "conclusion": "success",
+        "startedAt": "2026-09-13T09:02:27Z",
+        "completedAt": "2026-09-13T09:18:53Z",
+        "url": "https://github.com/JeffreyEarly/wave-vortex-model/actions/runs/34748713522/job/103703871735"
+      },
+      {
+        "databaseId": 103703891683,
+        "name": "Select CI coverage",
+        "status": "completed",
+        "conclusion": "success",
+        "startedAt": "2026-09-13T08:58:33Z",
+        "completedAt": "2026-09-13T08:58:44Z",
+        "url": "https://github.com/JeffreyEarly/wave-vortex-model/actions/runs/34748713522/job/103703891683"
+      },
+      {
+        "databaseId": 103704350288,
+        "name": "Required / WaveVortexModel",
+        "status": "completed",
+        "conclusion": "success",
+        "startedAt": "2026-09-13T09:37:50Z",
+        "completedAt": "2026-09-13T09:37:56Z",
+        "url": "https://github.com/JeffreyEarly/wave-vortex-model/actions/runs/34748713522/job/103704350288"
+      },
+      {
+        "databaseId": 103704363566,
+        "name": "Documentation / MATLAB R2025b",
+        "status": "completed",
+        "conclusion": "skipped",
+        "startedAt": "2026-09-13T09:37:57Z",
+        "completedAt": "2026-09-13T09:37:56Z",
+        "url": "https://github.com/JeffreyEarly/wave-vortex-model/actions/runs/34748713522/job/103704363566"
+      },
+      {
+        "databaseId": 103704363576,
+        "name": "Smoke / MATLAB R2025b",
+        "status": "completed",
+        "conclusion": "skipped",
+        "startedAt": "2026-09-13T09:37:57Z",
+        "completedAt": "2026-09-13T09:37:56Z",
+        "url": "https://github.com/JeffreyEarly/wave-vortex-model/actions/runs/34748713522/job/103704363576"
+      },
+      {
+        "databaseId": 103704363606,
+        "name": "Code Analyzer / MATLAB R2025b",
+        "status": "completed",
+        "conclusion": "skipped",
+        "startedAt": "2026-09-13T09:37:57Z",
+        "completedAt": "2026-09-13T09:37:56Z",
+        "url": "https://github.com/JeffreyEarly/wave-vortex-model/actions/runs/34748713522/job/103704363606"
+      }
+    ]
+  },
+  "ats": {
+    "state": "MERGED",
+    "mergedAt": "2026-09-13T09:07:36Z",
+    "mergeCommit": {
+      "oid": "f8cfb19600b5850a1f45fd0c02c0088e9a671066"
+    },
+    "headRefOid": "03fa036387d2971ce4fba99c9f2286a1227cdb3f",
+    "baseRefOid": "c301d91b512cd2ddbece048af318fc9722d0236e"
+  },
+  "atsSourceLinked": {
+    "status": "completed",
+    "conclusion": "success",
+    "headSha": "03fa036387d2971ce4fba99c9f2286a1227cdb3f",
+    "jobs": [
+      {
+        "databaseId": 103700107804,
+        "name": "Source-only package and exported build / MATLAB R2025b",
+        "status": "completed",
+        "conclusion": "success",
+        "startedAt": "2026-09-13T08:40:42Z",
+        "completedAt": "2026-09-13T08:44:04Z",
+        "url": "https://github.com/satmapkit/AlongTrackSimulator/actions/runs/34748279329/job/103700107804"
+      },
+      {
+        "databaseId": 103700107896,
+        "name": "Documentation / MATLAB R2025b",
+        "status": "completed",
+        "conclusion": "success",
+        "startedAt": "2026-09-13T08:40:42Z",
+        "completedAt": "2026-09-13T08:41:35Z",
+        "url": "https://github.com/satmapkit/AlongTrackSimulator/actions/runs/34748279329/job/103700107896"
+      },
+      {
+        "databaseId": 103700107898,
+        "name": "Source-linked runner / Ubuntu Clang",
+        "status": "completed",
+        "conclusion": "success",
+        "startedAt": "2026-09-13T08:40:42Z",
+        "completedAt": "2026-09-13T08:42:56Z",
+        "url": "https://github.com/satmapkit/AlongTrackSimulator/actions/runs/34748279329/job/103700107898"
+      },
+      {
+        "databaseId": 103700107971,
+        "name": "Source-linked runner / Ubuntu GCC",
+        "status": "completed",
+        "conclusion": "success",
+        "startedAt": "2026-09-13T08:40:42Z",
+        "completedAt": "2026-09-13T08:43:12Z",
+        "url": "https://github.com/satmapkit/AlongTrackSimulator/actions/runs/34748279329/job/103700107971"
+      },
+      {
+        "databaseId": 103700107973,
+        "name": "Source-linked runner / macOS AppleClang",
+        "status": "completed",
+        "conclusion": "success",
+        "startedAt": "2026-09-13T08:40:44Z",
+        "completedAt": "2026-09-13T08:42:41Z",
+        "url": "https://github.com/satmapkit/AlongTrackSimulator/actions/runs/34748279329/job/103700107973"
+      },
+      {
+        "databaseId": 103700107978,
+        "name": "Source-linked runner / Clang ASan and UBSan",
+        "status": "completed",
+        "conclusion": "success",
+        "startedAt": "2026-09-13T08:41:15Z",
+        "completedAt": "2026-09-13T08:47:20Z",
+        "url": "https://github.com/satmapkit/AlongTrackSimulator/actions/runs/34748279329/job/103700107978"
+      },
+      {
+        "databaseId": 103700107997,
+        "name": "MATLAB numerical, authoring, and persistence / R2025b",
+        "status": "completed",
+        "conclusion": "success",
+        "startedAt": "2026-09-13T08:40:41Z",
+        "completedAt": "2026-09-13T08:44:01Z",
+        "url": "https://github.com/satmapkit/AlongTrackSimulator/actions/runs/34748279329/job/103700107997"
+      }
+    ]
+  },
+  "atsPortableCore": {
+    "status": "completed",
+    "conclusion": "success",
+    "headSha": "03fa036387d2971ce4fba99c9f2286a1227cdb3f",
+    "jobs": [
+      {
+        "databaseId": 103700107828,
+        "name": "Portable core / Windows MSVC",
+        "status": "completed",
+        "conclusion": "success",
+        "startedAt": "2026-09-13T08:40:42Z",
+        "completedAt": "2026-09-13T08:41:13Z",
+        "url": "https://github.com/satmapkit/AlongTrackSimulator/actions/runs/34748279355/job/103700107828"
+      },
+      {
+        "databaseId": 103700107977,
+        "name": "Portable core / macOS AppleClang",
+        "status": "completed",
+        "conclusion": "success",
+        "startedAt": "2026-09-13T08:40:44Z",
+        "completedAt": "2026-09-13T08:41:04Z",
+        "url": "https://github.com/satmapkit/AlongTrackSimulator/actions/runs/34748279355/job/103700107977"
+      },
+      {
+        "databaseId": 103700107989,
+        "name": "Portable core / Ubuntu Clang",
+        "status": "completed",
+        "conclusion": "success",
+        "startedAt": "2026-09-13T08:40:42Z",
+        "completedAt": "2026-09-13T08:41:06Z",
+        "url": "https://github.com/satmapkit/AlongTrackSimulator/actions/runs/34748279355/job/103700107989"
+      },
+      {
+        "databaseId": 103700107993,
+        "name": "Portable core / Ubuntu GCC",
+        "status": "completed",
+        "conclusion": "success",
+        "startedAt": "2026-09-13T08:40:42Z",
+        "completedAt": "2026-09-13T08:40:55Z",
+        "url": "https://github.com/satmapkit/AlongTrackSimulator/actions/runs/34748279355/job/103700107993"
+      }
+    ]
+  }
+}

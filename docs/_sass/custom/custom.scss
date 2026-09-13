@@ -49,6 +49,34 @@ textarea {
   min-width: 38rem;
 }
 
+.benchmark-model-selector {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  margin: 1rem 0;
+}
+
+.benchmark-model-selector label {
+  padding: 0.35rem 0.65rem;
+  border: 1px solid #c5c7ce;
+  border-radius: 0.25rem;
+  cursor: pointer;
+}
+
+.benchmark-model-selector input {
+  margin-right: 0.35rem;
+}
+
+.benchmark-model-panel {
+  display: none;
+}
+
+.benchmark-model-selector:has(#benchmark-model-constant-nonhydrostatic:checked) ~ .benchmark-model-panels [data-model="constant-nonhydrostatic"],
+.benchmark-model-selector:has(#benchmark-model-hydrostatic-exponential:checked) ~ .benchmark-model-panels [data-model="hydrostatic-exponential"],
+.benchmark-model-selector:has(#benchmark-model-boussinesq-exponential:checked) ~ .benchmark-model-panels [data-model="boussinesq-exponential"] {
+  display: block;
+}
+
 .benchmark-results-table th,
 .benchmark-results-table td {
   vertical-align: top;

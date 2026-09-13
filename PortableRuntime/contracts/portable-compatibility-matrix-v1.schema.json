@@ -133,10 +133,10 @@
           ],
           "properties": {
             "standardParityReady": {
-              "const": false
+              "const": true
             },
             "decision": {
-              "const": "pending-307"
+              "const": "STANDARD-PORTABLE-PARITY"
             },
             "meaning": {
               "type": "string"

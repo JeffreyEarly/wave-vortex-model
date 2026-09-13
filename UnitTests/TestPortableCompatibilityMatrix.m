@@ -15,7 +15,8 @@ classdef TestPortableCompatibilityMatrix < matlab.unittest.TestCase
             result=validatePortableCompatibilityMatrix(testCase.matrix,repositoryRoot=testCase.root,expected=testCase.matrix);
             testCase.verifyGreaterThan(result.rowCount,666);
             testCase.verifyEqual(result.unqualifiedCount,0);
-            testCase.verifyFalse(testCase.matrix.readiness.standardParityReady);
+            testCase.verifyTrue(testCase.matrix.readiness.standardParityReady);
+            testCase.verifyEqual(testCase.matrix.readiness.decision,"STANDARD-PORTABLE-PARITY");
             testCase.verifyEqual(validatePortableCompatibilityMatrix(testCase.matrix,repositoryRoot=testCase.root,expected=testCase.matrix,requireComplete=true).unqualifiedCount,0);
         end
         function generatedAssemblyMatchesCommittedFiles(testCase)
@@ -46,7 +47,7 @@ classdef TestPortableCompatibilityMatrix < matlab.unittest.TestCase
             rows=testCase.matrix.rows;
             issueRows=rows([rows.issue]==454);
             testCase.verifyEmpty(issueRows);
-            testCase.verifyFalse(testCase.matrix.readiness.standardParityReady);
+            testCase.verifyTrue(testCase.matrix.readiness.standardParityReady);
         end
         function supportedSamplingCannotBecomeAGapOrExclusion(testCase)
             candidate=testCase.matrix;
@@ -54,7 +55,8 @@ classdef TestPortableCompatibilityMatrix < matlab.unittest.TestCase
             testCase.assertNotEmpty(index);
             candidate.rows(index).status="intentional-incompatibility"; testCase.reject(candidate);
             candidate=testCase.matrix; candidate.rows(index).status="unqualified"; candidate.rows(index).issue=454; candidate.rows(index).reason="matlab-supported-sampling-not-implemented"; testCase.reject(candidate);
-            candidate=testCase.matrix; candidate.readiness.standardParityReady=true; testCase.reject(candidate);
+            candidate=testCase.matrix; candidate.readiness.standardParityReady=false; candidate.readiness.decision="pending-307"; testCase.reject(candidate);
+            candidate=testCase.matrix; candidate.readiness.decision="pending-307"; testCase.reject(candidate);
         end
     end
     methods (Access=private)

@@ -8,7 +8,7 @@ arguments
 end
 root=options.repositoryRoot;
 require(string(matrix.schema)=="portable-compatibility-matrix-v1" && matrix.schemaVersion==1 && string(matrix.slice)=="standard","Unknown standard assembly.");
-require(~matrix.readiness.standardParityReady,"Fixture ownership cannot declare executed standard parity.");
+require(logical(matrix.readiness.standardParityReady) && string(matrix.readiness.decision)=="STANDARD-PORTABLE-PARITY","Final standard parity requires the explicit STANDARD-PORTABLE-PARITY decision.");
 sourceIds=string({matrix.sources.id}); witnessIds=string({matrix.witnesses.id}); rowIds=string({matrix.rows.id});
 require(numel(unique(sourceIds))==numel(sourceIds),"Duplicate source identity.");
 require(numel(unique(witnessIds))==numel(witnessIds),"Duplicate fixture identity.");
@@ -47,6 +47,9 @@ for row=reshape(matrix.rows,1,[])
 end
 hasGaps=any(string({matrix.rows.status})=="unqualified");
 require((string(matrix.completion)=="incomplete")==hasGaps,"Completion contradicts exact-pair coverage.");
+if matrix.readiness.standardParityReady
+    require(string(matrix.completion)=="complete" && ~hasGaps,"STANDARD-PORTABLE-PARITY requires complete coverage with zero unqualified rows.");
+end
 expected=options.expected;
 if isempty(expected), expected=portableCompatibilityDefinition(root); end
 require(isequaln(jsondecode(jsonencode(matrix)),jsondecode(jsonencode(expected))),"Assembly differs from current authoritative slices or fixture scopes.");

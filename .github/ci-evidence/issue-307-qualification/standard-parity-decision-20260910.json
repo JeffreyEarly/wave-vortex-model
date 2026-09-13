@@ -1,0 +1,54 @@
+{
+  "schema": "wave-vortex-standard-parity-decision-v1",
+  "decision": "PARTIAL-STANDARD-PORTABLE-PARITY",
+  "standardPortableParity": false,
+  "assemblyCommit": "56a22293665159e5197a79aca0f3d66a703f2c01",
+  "recordedAtUTC": "2026-09-10T00:04:37.173394+00:00",
+  "matrix": {
+    "path": "PortableRuntime/contracts/portable-compatibility-matrix-v1.json",
+    "sha256": "3082cead3726ac946bc20005c6cace4f28c1bbbc6ffa390d418593f7bf229321",
+    "rows": 1794,
+    "counts": {
+      "supported": 1206,
+      "intentional-incompatibility": 22,
+      "unqualified": 566
+    }
+  },
+  "remainingImplementation": {
+    "issue": 454,
+    "absentDiagnosticSamplingModes": 526,
+    "constantMovingPositionCases": 40
+  },
+  "completedLocalGates": [
+    "source-linked ATS consumer 7/7",
+    "native Hydrostatic/Boussinesq lifecycle",
+    "30 complete-lifetime process-memory measurements",
+    "source-equivalent inherited density/integration/runtime qualification",
+    "new declared sampling and expanded observer parity",
+    "assembly/schema/CI/documentation enforcement"
+  ],
+  "qualificationSources": [
+    {
+      "path": ".github/ci-evidence/issue-307-qualification/qualification.json",
+      "sha256": "75c8b3fbdc4368a784eeed6391407b8ae443a03ea94ee20c9f7bc0f5a0e560c4"
+    },
+    {
+      "path": ".github/ci-evidence/issue-307-qualification/integration-binding-ec8001a4.json",
+      "sha256": "04094ce018158ba76da80efa5629b8e7310b55f76ab844a76562cf8dda4b9ced"
+    },
+    {
+      "path": ".github/ci-evidence/issue-306-assembly/matlab/qualification.json",
+      "sha256": "67066d867e4651d47eae76f35da3df95e7c51f68be3afa51a424b5d68740b45f"
+    },
+    {
+      "path": ".github/ci-evidence/issue-306-sampling/final-receipt.md",
+      "sha256": "9641261c49446e57521304c2d9990979dc17d22ca7e75b4a8b57c70762d0027f"
+    }
+  ],
+  "remainingQualification": [
+    "Required hosted checks for the final assembly PR.",
+    "Fresh qualification of #454 before claiming full standard parity.",
+    "Current-source Linux ATS consumer execution has not been supplied by the older pinned ATS workflow."
+  ],
+  "interpretation": "Completed local gates and fixture ownership do not remove known implementation gaps. Original execution identities and receipt bytes remain unchanged."
+}

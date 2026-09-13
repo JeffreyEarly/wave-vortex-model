@@ -4,16 +4,16 @@
   "slice": "standard",
   "completion": "complete",
   "readiness": {
-    "standardParityReady": false,
-    "decision": "pending-307",
-    "meaning": "Fixture coverage is not executed qualification; unqualified rows remain tracked gaps."
+    "standardParityReady": true,
+    "decision": "STANDARD-PORTABLE-PARITY",
+    "meaning": "Executed standard parity qualification is bound by the final #307 decision receipt; the assembly still requires zero unqualified rows."
   },
   "sources": [
     {
       "id": "assembly-definition",
       "path": "tools/portableCompatibilityDefinition.m",
       "schema": "fixture-binding-authority",
-      "sha256": "741e604c1a033ad2c6aa22a4059b8ab776f7d239d0661866c084998c6d975fe2"
+      "sha256": "88520e5690b6d5beb933d60832d6e586c644dc0d23a2c0895252889e837ccc82"
     },
     {
       "id": "known-variable-factory",

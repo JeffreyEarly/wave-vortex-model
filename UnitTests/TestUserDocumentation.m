@@ -171,7 +171,7 @@ classdef TestUserDocumentation < matlab.unittest.TestCase
             testCase.verifySubstring(standalone, ...
                 'WVModel.writePortableRunRequest("run.json","initial-condition.nc",finalTime=86400);')
             testCase.verifySubstring(standalone,"wave-vortex-run --request run.json")
-            testCase.verifySubstring(overview,"Compiled MATLAB backend preview")
+            testCase.verifySubstring(overview,"Compiled MATLAB backend")
             testCase.verifySubstring(overview,"Standalone portable runtime")
             testCase.verifySubstring(overview,"[Benchmarks](/benchmarks)")
             testCase.verifyFalse(contains(benchmarks,"three-interface--m5-max--20260828T143049Z"))
@@ -180,14 +180,12 @@ classdef TestUserDocumentation < matlab.unittest.TestCase
             testCase.verifySubstring(benchmarks,"added complexity is worthwhile")
             matlabCppDescription = extractBetween(benchmarks,"## MATLAB vs C++", ...
                 "<!-- BENCHMARKS:INTERFACE_SUMMARY:START -->");
-            testCase.verifySubstring(matlabCppDescription, ...
-                "nonhydrostatic, constant-stratification flow")
-            testCase.verifySubstring(matlabCppDescription,"0.12 inertial periods")
+            testCase.verifySubstring(matlabCppDescription,"primary release campaign uses RK78")
+            testCase.verifySubstring(matlabCppDescription,"7168 s")
             testCase.verifySubstring(matlabCppDescription,"256 × 256 × 129")
-            testCase.verifySubstring(matlabCppDescription,"ode78 / RK8(7)")
-            testCase.verifySubstring(matlabCppDescription, ...
-                "execution path and output workload vary")
-            testCase.verifySubstring(matlabCppDescription,"selected historical record")
+            testCase.verifySubstring(matlabCppDescription,"Select constant nonhydrostatic")
+            testCase.verifySubstring(matlabCppDescription,"selected campaign")
+            testCase.verifySubstring(matlabCppDescription,"selected release campaign")
             testCase.verifyFalse(contains(matlabCppDescription,"Runtime covers"))
             testCase.verifyFalse(contains(matlabCppDescription,"fresh processes"))
             sections = ["MATLAB vs C++" "MATLAB speed scaling" ...
@@ -206,11 +204,9 @@ classdef TestUserDocumentation < matlab.unittest.TestCase
             testCase.verifySubstring(benchmarks,"doubling both horizontal dimensions")
             testCase.verifySubstring(benchmarks,"varies the integrator down the rows")
             testCase.verifySubstring(benchmarks,"[MATLAB builtin transform storage benchmark](/developers-guide/transform-storage-benchmark.html)")
-            testCase.verifySubstring(benchmarks,"## Recent native optimization evidence")
-            testCase.verifySubstring(benchmarks,"Benchmarks/SHARED-GRADIENT-PIPELINE.md")
-            testCase.verifySubstring(benchmarks,"Benchmarks/TILED-ADVECTION-PIPELINE.md")
-            testCase.verifySubstring(benchmarks,"their relative changes cannot be added")
-            testCase.verifySubstring(benchmarks,"All 30 warmup/measured comparisons")
+            testCase.verifyFalse(contains(benchmarks,"## Recent native optimization evidence"))
+            testCase.verifyFalse(contains(benchmarks,"All 30 warmup/measured comparisons"))
+            testCase.verifySubstring(benchmarks,"The generated interface summary identifies the selected compatible record")
             testCase.verifyMatches(storageBenchmark,'(?m)^title: MATLAB builtin transform storage benchmark$')
             testCase.verifySubstring(storageBenchmark,"covers MATLAB's builtin transform implementation")
             testCase.verifySubstring(storageBenchmark,"separate from the matched compiled interface measurements")

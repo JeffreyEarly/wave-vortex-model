@@ -2,17 +2,14 @@
 
 ## [Unreleased]
 
-### Portable density foundation
+### Compiled execution
 
-- Added portable full-grid density-profile, true-displacement, APE and APV output using the corrected actual-density default. Coincident outputs share recovery and derivative work, explicit initial-reference selection survives runtime rebinding, and existing MATLAB restart files require no migration.
-
-- Added private qualification of shared C++ density-event evaluation through the existing field service: actual `rho_nm`, selected-reference displacement and APE reuse one recovery and material-height inversion. Demand-driven event storage is released on success or failure, and failed evaluation preserves caller outputs. Public density output and APV remain unavailable pending complete output/restart qualification.
-- Added bounded C++ recovery of the current no-motion density profile using volume-weighted moments and damped least squares, with an exact stable-rest shortcut, explicit convergence and qualification reporting, and failure preservation. Density outputs remain unavailable until model-event evaluation and persistence are qualified.
-- Added a C++ supplied-profile primitive for monotone cubic density, safeguarded inverse material height and stable APE integration, with storage bounded by the vertical profile and no successful-query allocations. Added the optional v2 density diagnostic execution contract: omitted options select actual `rho_nm`, and explicit initial-profile selection is reported without changing MATLAB restart files. The four density outputs remain unavailable pending complete execution-chain qualification.
-
-### Portable phase diagnostics
-
-- Added C++ `phase` and `conjPhase` evaluation and split-complex NetCDF output for all four wave-bearing transform configurations with antialiasing on or off. Both reuse the existing event-time phase calculation, preserving `t0` through dense output, restart, append and MATLAB/C++ continuation. Sixteen phase rows are implemented; the four density diagnostics remain explicitly unsupported pending their separate C++ implementation.
+- Extended standalone C++ execution to Hydrostatic, Boussinesq and stratified quasi-geostrophic models, alongside constant-stratification and barotropic configurations. Standard portable variables, forcing, observers, restart and sampling support are documented in the generated compatibility catalog; explicitly unsupported entries remain unavailable.
+- Unified variable evaluation across the six C++ configurations so forcing, tracers, particles and coincident diagnostics reuse shared dependencies within each unchanged-state evaluation. The default reuse policy avoids repeated producer work; an explicit low-memory policy reports deliberate recomputation.
+- Reduced native transform and integration overhead with compact constant-stratification execution, shared field and gradient reconstruction, parallel vertical matrix groups, tiled FFT/advection, reused scratch, and fewer RK78 state-combination memory passes. Performance results remain workload- and machine-specific.
+- Added portable density-profile, true-displacement, APE and APV output using the corrected actual-density default. Coincident outputs share recovery and derivative work, explicit initial-reference selection survives runtime rebinding, and existing MATLAB restart files require no migration.
+- Added bounded C++ recovery of the current no-motion density profile with an exact stable-rest shortcut, explicit convergence reporting and failure preservation. Density inversion and APE integration use a shared monotone cubic profile and bounded workspaces.
+- Added C++ `phase` and `conjPhase` evaluation and split-complex NetCDF output for all four wave-bearing configurations with antialiasing on or off. Both reuse event-time phase preparation and preserve `t0` through dense output, restart, append and MATLAB/C++ continuation.
 
 ### MATLAB density diagnostics
 

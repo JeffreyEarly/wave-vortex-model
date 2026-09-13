@@ -44,10 +44,23 @@ class CompatibilityAssemblyTests(unittest.TestCase):
         with self.assertRaisesRegex(ValueError, 'Untracked qualification gap'):
             check(self.root, catalog)
 
-    def test_catalog_cannot_assert_executed_parity(self):
+    def test_final_readiness_requires_decision_and_complete_coverage(self):
         catalog = copy.deepcopy(self.catalog)
-        catalog['readiness']['standardParityReady'] = True
-        with self.assertRaisesRegex(ValueError, 'cannot declare executed'):
+        catalog['readiness']['standardParityReady'] = False
+        with self.assertRaisesRegex(ValueError, 'explicit STANDARD-PORTABLE-PARITY'):
+            check(self.root, catalog)
+        catalog = copy.deepcopy(self.catalog)
+        catalog['readiness']['decision'] = 'pending-307'
+        with self.assertRaisesRegex(ValueError, 'explicit STANDARD-PORTABLE-PARITY'):
+            check(self.root, catalog)
+        catalog = copy.deepcopy(self.catalog)
+        catalog['completion'] = 'incomplete'
+        with self.assertRaisesRegex(ValueError, 'requires zero unqualified rows'):
+            check(self.root, catalog)
+        catalog = copy.deepcopy(self.catalog)
+        catalog['completion'] = 'incomplete'
+        catalog['rows'][0].update(status='unqualified', issue=454, reason='tracked gap')
+        with self.assertRaisesRegex(ValueError, 'requires zero unqualified rows'):
             check(self.root, catalog)
 
     def test_forcing_schema_contains_every_current_transform(self):

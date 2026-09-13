@@ -1,0 +1,117 @@
+{
+  "schema": "wvm501-three-model-harness-smoke-v1",
+  "sourceCommit": "10448867ea6e546cfbc5117a80102480122ab4e1",
+  "publicationEligible": false,
+  "purpose": "End-to-end correctness of all three benchmark interfaces, not performance qualification.",
+  "grid": [
+    32,
+    32,
+    17
+  ],
+  "finalTimeSeconds": 256,
+  "processRunCountPerCaseAndInterface": 1,
+  "totalProcesses": 18,
+  "models": [
+    {
+      "model": "constant-nonhydrostatic",
+      "status": "complete",
+      "runCount": 6,
+      "interfaces": [
+        "matlab-builtin",
+        "matlab-compiled",
+        "standalone-compiled"
+      ],
+      "comparisons": [
+        {
+          "id": "constant-nonhydrostatic--adaptive-rk78--coefficient-endpoint",
+          "matchedContractPassed": true,
+          "maximumRelativeError": 2.892997674991233e-15
+        },
+        {
+          "id": "constant-nonhydrostatic--adaptive-rk78--composite-dense-output",
+          "matchedContractPassed": true,
+          "maximumRelativeError": 3.711497265484765e-15
+        }
+      ]
+    },
+    {
+      "model": "hydrostatic-exponential",
+      "status": "complete",
+      "runCount": 6,
+      "interfaces": [
+        "matlab-builtin",
+        "matlab-compiled",
+        "standalone-compiled"
+      ],
+      "comparisons": [
+        {
+          "id": "hydrostatic-exponential--adaptive-rk78--coefficient-endpoint",
+          "matchedContractPassed": true,
+          "maximumRelativeError": 2.0789663163814037e-15
+        },
+        {
+          "id": "hydrostatic-exponential--adaptive-rk78--composite-dense-output",
+          "matchedContractPassed": true,
+          "maximumRelativeError": 4.426799033525543e-15
+        }
+      ]
+    },
+    {
+      "model": "boussinesq-exponential",
+      "status": "complete",
+      "runCount": 6,
+      "interfaces": [
+        "matlab-builtin",
+        "matlab-compiled",
+        "standalone-compiled"
+      ],
+      "comparisons": [
+        {
+          "id": "boussinesq-exponential--adaptive-rk78--coefficient-endpoint",
+          "matchedContractPassed": true,
+          "maximumRelativeError": 1.6265332046825946e-15
+        },
+        {
+          "id": "boussinesq-exponential--adaptive-rk78--composite-dense-output",
+          "matchedContractPassed": true,
+          "maximumRelativeError": 2.2863298269400553e-15
+        }
+      ]
+    }
+  ],
+  "archive": {
+    "directory": "../wave-vortex-model-benchmark-artifacts/three-model-smoke-10448867",
+    "files": [
+      {
+        "file": "summary.json",
+        "bytes": 1253671,
+        "sha256": "fbe5dfd699af165f61de500b5f5db6216265c4c7441b716777f1e43e14690c99"
+      },
+      {
+        "file": "three-model-smoke-10448867.log",
+        "bytes": 8593,
+        "sha256": "4a7da333fb8928cf4f92524445d78d21546f97b5a380cfeb4152b5c3ed284bff"
+      },
+      {
+        "file": "runFinalThreeModelSmoke.m",
+        "bytes": 1254,
+        "sha256": "522cc1e3b6559d889480fc63088f0d25e23aa749fb467bed79dd1f5940aad7ec"
+      },
+      {
+        "file": "20260913T095445278Z-three-interface-benchmark.json.gz",
+        "bytes": 52781,
+        "sha256": "bae93051920e0f99e33b64f0b7ac88c461e5c3959d0ad5a896c905dff8828092"
+      },
+      {
+        "file": "20260913T095538758Z-three-interface-benchmark.json.gz",
+        "bytes": 52319,
+        "sha256": "62b61fb78c39c339c0600f73459e460c98081f72bea7b9a4228eab4e32cdc575"
+      },
+      {
+        "file": "20260913T095622651Z-three-interface-benchmark.json.gz",
+        "bytes": 52921,
+        "sha256": "c0dfb6b3172d0e496d7d27dc8490a12d9d42d951c10c204fb5c66506a83c53af"
+      }
+    ]
+  }
+}

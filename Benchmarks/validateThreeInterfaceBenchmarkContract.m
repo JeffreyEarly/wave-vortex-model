@@ -2,17 +2,21 @@ function validateThreeInterfaceBenchmarkContract(raw)
 % Validate the evidence required to publish a matched three-interface run.
 requiredInterfaces = ["matlab-builtin" "matlab-compiled" "standalone-compiled"];
 schemaVersion = string(raw.schemaVersion);
-isIntegratorStudy = schemaVersion == "three-interface-benchmark-v2";
-if ~ismember(schemaVersion,["three-interface-benchmark-v1" "three-interface-benchmark-v2"])
+isIntegratorStudy = ismember(schemaVersion,["three-interface-benchmark-v2" "three-interface-benchmark-v3"]);
+isMatchedModelStudy = schemaVersion == "three-interface-benchmark-v3";
+if ~ismember(schemaVersion,["three-interface-benchmark-v1" "three-interface-benchmark-v2" "three-interface-benchmark-v3"])
     error("WaveVortexBenchmark:MatchedContractFailed","The three-interface benchmark schema is not recognized.");
 end
 tolerance = double(raw.configuration.correctnessTolerance);
 processRunCount = double(raw.configuration.processRunCount);
+if isMatchedModelStudy
+    validateMatchedModelStudy(raw);
+end
 validateCompiledProvider(raw);
 definitions = raw.cases;
 comparisons = raw.comparison;
 caseIds = string({definitions.id});
-validDefinitions = validCaseDefinitions(definitions,isIntegratorStudy);
+validDefinitions = validCaseDefinitions(definitions,isIntegratorStudy,isMatchedModelStudy);
 if isempty(definitions) || numel(definitions) ~= numel(comparisons) || numel(unique(caseIds)) ~= numel(caseIds) || ~validDefinitions
     error("WaveVortexBenchmark:MatchedContractFailed","Publication requires one or more unique recognized benchmark cases.");
 end
@@ -24,16 +28,22 @@ for iCase = 1:numel(definitions)
     end
     comparison = comparisons(comparisonIndex);
     caseRuns = raw.runs(string(arrayfun(@(run)run.case.id,raw.runs,"UniformOutput",false)) == string(definition.id));
-    if numel(caseRuns) ~= processRunCount*numel(requiredInterfaces) || any(string({caseRuns.status}) ~= "complete")
+    if numel(caseRuns) ~= processRunCount*numel(requiredInterfaces)
         error("WaveVortexBenchmark:MatchedContractFailed","Case %s does not contain the required complete fresh-process runs.",string(definition.id));
     end
-    validateIntegrators(caseRuns,definition,comparison);
-    validateAdaptiveWork(caseRuns,definition,comparison,isIntegratorStudy);
-    validateMemory(caseRuns,comparison,isIntegratorStudy);
-    validateRunProviders(caseRuns,requiredInterfaces,raw);
+    if isMatchedModelStudy
+        validateMatchedAvailability(caseRuns,definition,processRunCount);
+    elseif any(string({caseRuns.status}) ~= "complete")
+        error("WaveVortexBenchmark:MatchedContractFailed","Case %s does not contain the required complete fresh-process runs.",string(definition.id));
+    end
+    measuredRuns = caseRuns(string({caseRuns.status})=="complete");
+    validateIntegrators(measuredRuns,definition,comparison);
+    validateAdaptiveWork(measuredRuns,definition,comparison,isIntegratorStudy);
+    validateMemory(measuredRuns,comparison,isIntegratorStudy);
+    validateRunProviders(caseRuns,requiredInterfaces,raw,isMatchedModelStudy);
     validateNumerics(comparison,definition,tolerance);
     if isIntegratorStudy
-        validateIntegratorEvidence(caseRuns,definition,comparison);
+        validateIntegratorEvidence(measuredRuns,definition,comparison);
     end
     if ~logical(comparison.matchedContractPassed)
         error("WaveVortexBenchmark:MatchedContractFailed","Case %s did not pass its matched contract.",string(definition.id));
@@ -41,12 +51,100 @@ for iCase = 1:numel(definitions)
 end
 end
 
-function valid = validCaseDefinitions(definitions,isIntegratorStudy)
+function validateMatchedModelStudy(raw)
+configuration = raw.configuration;
+if string(configuration.studyId)~="matched-model-runtime-v1" || double(configuration.processRunCount)~=3 || ~logical(configuration.publicationEligible)
+    error("WaveVortexBenchmark:MatchedModelPublicationContract","Publication requires the complete three-repeat matched-model-runtime-v1 contract.")
+end
+modelConfiguration = string(raw.modelConfiguration);
+if ~isscalar(modelConfiguration) || ~ismember(modelConfiguration,["constant-nonhydrostatic" "hydrostatic-exponential" "boussinesq-exponential"])
+    error("WaveVortexBenchmark:MatchedModelPublicationContract","Each artifact must identify exactly one recognized model configuration.")
+end
+if ~isequal(double(configuration.Nxyz(:)'),[256 256 129]) || ~isequal(double(configuration.Lxyz(:)'),[150e3 150e3 1300])
+    error("WaveVortexBenchmark:MatchedModelPublicationContract","The matched model grid and domain do not match the publication contract.")
+end
+if ~isequal(reshape(string(configuration.integrators),1,[]),"adaptive-rk78") || ~isequal(reshape(string(configuration.workloads),1,[]),["coefficient-endpoint" "composite-dense-output"])
+    error("WaveVortexBenchmark:MatchedModelPublicationContract","Publication requires RK78 and exactly the two matched workloads.")
+end
+model = configuration.model;
+requiredModel = ["id" "transformClass" "physicalConfiguration" "isHydrostatic" "domainMeters" "grid" "latitudeDegrees" "shouldAntialias" "stratificationProfile" "N2ReferencePerSecondSquared" "exponentialScaleHeightMeters"];
+if ~all(isfield(model,requiredModel)) || string(model.id)~=modelConfiguration || ~isequal(double(model.domainMeters(:)'),[150e3 150e3 1300]) || ~isequal(double(model.grid(:)'),[256 256 129]) || double(model.latitudeDegrees)~=45 || ~logical(model.shouldAntialias) || double(model.N2ReferencePerSecondSquared)~=2e-5
+    error("WaveVortexBenchmark:PhysicalProvenance","The artifact omits required physical model provenance.")
+end
+isExponential = modelConfiguration~="constant-nonhydrostatic";
+expectedClass = conditional(modelConfiguration=="constant-nonhydrostatic","WVTransformConstantStratification",conditional(modelConfiguration=="hydrostatic-exponential","WVTransformHydrostatic","WVTransformBoussinesq"));
+expectedPhysical = conditional(modelConfiguration=="hydrostatic-exponential","hydrostatic","nonhydrostatic");
+expectedProfile = conditional(isExponential,"N2(z) = 2e-5 exp(2 z / 1300) s^-2","N2 = 2e-5 s^-2");
+validModel = string(model.transformClass)==expectedClass && string(model.physicalConfiguration)==expectedPhysical && logical(model.isHydrostatic)==(modelConfiguration=="hydrostatic-exponential") && string(model.stratificationProfile)==expectedProfile;
+if isExponential
+    validModel = validModel && isscalar(model.exponentialScaleHeightMeters) && double(model.exponentialScaleHeightMeters)==650;
+else
+    validModel = validModel && (isempty(model.exponentialScaleHeightMeters) || (isscalar(model.exponentialScaleHeightMeters) && isnan(model.exponentialScaleHeightMeters)));
+end
+initial = configuration.initialCondition;
+validInitial = string(initial.id)=="gm1-red-geostrophic-j1-v1" && double(initial.seed)==4001 && double(initial.gmEnergyLevel)==1 && double(initial.geostrophicVerticalMode)==1 && double(initial.geostrophicMaximumSpeedTarget)==0.15;
+if ~validModel || ~validInitial
+    error("WaveVortexBenchmark:PhysicalProvenance","The artifact physical model or initialization provenance does not match the publication contract.")
+end
+fixtures = configuration.fixtures;
+validFixtures = numel(fixtures)==2 && all(isfield(fixtures,["modelConfiguration" "physicalConfiguration" "stratificationProfile" "workload" "sha256" "bytes"]));
+if validFixtures
+    validFixtures = all(string({fixtures.modelConfiguration})==modelConfiguration) && isequal(sort(string({fixtures.workload})),sort(["coefficient-endpoint" "composite-dense-output"]));
+    validFixtures = validFixtures && all(string({fixtures.physicalConfiguration})==expectedPhysical) && all(string({fixtures.stratificationProfile})==expectedProfile);
+    validFixtures = validFixtures && all(strlength(string({fixtures.sha256}))==64) && all(double([fixtures.bytes])>0);
+end
+if ~validFixtures
+    error("WaveVortexBenchmark:PhysicalProvenance","The two matched fixtures lack physical identity, hashes, or measured sizes.")
+end
+if ~isfield(configuration,"matlabWorker") || strlength(string(configuration.matlabWorker.sha256))~=64 || ~isfield(configuration,"standaloneWorkers") || strlength(string(configuration.standaloneWorkers.runner.sha256))~=64
+    error("WaveVortexBenchmark:WorkerIdentity","The current MATLAB worker source fingerprint is missing.")
+end
+completeRuns = raw.runs(string({raw.runs.status})=="complete");
+if strlength(string(raw.source.commit))~=40 || strlength(string(raw.source.tree))~=40 || any(string({completeRuns.sourceCommit})~=string(raw.source.commit))
+    error("WaveVortexBenchmark:WorkerIdentity","A measured worker does not identify the artifact source commit.")
+end
+if ~isfield(configuration,"standaloneWorkers") || strlength(string(configuration.standaloneWorkers.runner.sha256))~=64
+    error("WaveVortexBenchmark:WorkerIdentity","The frozen standalone runner fingerprint is missing.")
+end
+completeRuns = raw.runs(string({raw.runs.status})=="complete");
+if strlength(string(raw.source.commit))~=40 || strlength(string(raw.source.tree))~=40 || any(string({completeRuns.sourceCommit})~=string(raw.source.commit))
+    error("WaveVortexBenchmark:WorkerIdentity","A measured worker source identity does not match the artifact source.")
+end
+definitions = raw.cases;
+if numel(definitions)~=2 || ~isequal(sort(string({definitions.workload})),sort(["coefficient-endpoint" "composite-dense-output"]))
+    error("WaveVortexBenchmark:MatchedModelPublicationContract","Each matched-model artifact requires exactly the two benchmark workloads.")
+end
+for definition = reshape(definitions,1,[])
+    expectedSchedule = conditional(string(definition.workload)=="composite-dense-output",[0 32 64 96 128],[0 7168]);
+    valid = string(definition.modelConfiguration)==modelConfiguration && string(definition.requestedIntegrator)=="adaptive-rk78" && double(definition.finalTime)==7168;
+    valid = valid && isequal(double(definition.outputScheduleSeconds(:)'),expectedSchedule) && double(definition.seed)==4001;
+    if ~valid
+        error("WaveVortexBenchmark:MatchedModelPublicationContract","A case changed the frozen model, RK78, duration, seed, or output schedule.")
+    end
+end
+end
+
+function validateMatchedAvailability(caseRuns,definition,processRunCount)
+modelConfiguration = string(definition.modelConfiguration);
+for interface = ["matlab-builtin" "matlab-compiled" "standalone-compiled"]
+    selected = caseRuns(string({caseRuns.interface})==interface);
+    if numel(selected)~=processRunCount
+        error("WaveVortexBenchmark:InterfaceAvailability","Interface %s does not contain three explicit run records.",interface)
+    end
+    valid = all(string({selected.status})=="complete");
+    if ~valid
+        error("WaveVortexBenchmark:InterfaceAvailability","Interface %s has invalid completion or unavailability evidence for %s.",interface,modelConfiguration)
+    end
+end
+end
+
+function valid = validCaseDefinitions(definitions,isIntegratorStudy,isMatchedModelStudy)
 if ~isIntegratorStudy
     valid = all(ismember(string({definitions.id}),["nonlinear-flux" "fixed-rk4-continuation" "adaptive-rk23-observer-output"]));
     return
 end
 required = ["physicalConfiguration" "isHydrostatic" "workload" "requestedIntegrator" "integrationStepCount" "denseOutputPointsPerStep" "outputRelativeTolerance" "outputAbsoluteTolerance"];
+if isMatchedModelStudy, required(end+1) = "modelConfiguration"; end
 valid = all(arrayfun(@(definition)all(isfield(definition,required)),definitions));
 if ~valid, return, end
 integrators = ["fixed-rk4" "adaptive-rk23" "adaptive-rk45" "adaptive-rk78"];
@@ -56,8 +154,17 @@ valid = all(ismember(string({definitions.requestedIntegrator}),integrators));
 valid = valid && all(ismember(string({definitions.workload}),workloads));
 valid = valid && all(ismember(string({definitions.physicalConfiguration}),physicalConfigurations));
 for definition = reshape(definitions,1,[])
-    expectedId = string(definition.physicalConfiguration)+"--"+string(definition.requestedIntegrator)+"--"+string(definition.workload);
+    if isMatchedModelStudy
+        expectedId = string(definition.modelConfiguration)+"--"+string(definition.requestedIntegrator)+"--"+string(definition.workload);
+    else
+        expectedId = string(definition.physicalConfiguration)+"--"+string(definition.requestedIntegrator)+"--"+string(definition.workload);
+    end
     valid = valid && string(definition.id)==expectedId && logical(definition.isHydrostatic)==(string(definition.physicalConfiguration)=="hydrostatic");
+    if isMatchedModelStudy
+        modelConfigurations = ["constant-nonhydrostatic" "hydrostatic-exponential" "boussinesq-exponential"];
+        valid = valid && ismember(string(definition.modelConfiguration),modelConfigurations);
+        valid = valid && ((string(definition.modelConfiguration)=="hydrostatic-exponential" && string(definition.physicalConfiguration)=="hydrostatic") || (string(definition.modelConfiguration)~="hydrostatic-exponential" && string(definition.physicalConfiguration)=="nonhydrostatic"));
+    end
 end
 end
 
@@ -123,13 +230,16 @@ if isIntegratorStudy
 end
 end
 
-function validateRunProviders(caseRuns,requiredInterfaces,raw)
+function validateRunProviders(caseRuns,requiredInterfaces,raw,isMatchedModelStudy)
 for interface = requiredInterfaces
     selected = caseRuns(string({caseRuns.interface}) == interface);
     if numel(selected) ~= double(raw.configuration.processRunCount)
         error("WaveVortexBenchmark:ProviderMismatch","Interface %s does not contain the required provider records.",interface);
     end
     for iRun = 1:numel(selected)
+        if string(selected(iRun).status)=="unavailable"
+            continue
+        end
         provider = selected(iRun).provider;
         valid = logical(provider.noFallback) && double(provider.threads) == double(raw.configuration.threadCount);
         if interface == "matlab-builtin"
@@ -140,6 +250,12 @@ for interface = requiredInterfaces
         end
         if ~valid
             error("WaveVortexBenchmark:ProviderMismatch","Interface %s did not execute its required transform provider without fallback.",interface);
+        end
+        if isMatchedModelStudy && startsWith(interface,"matlab-")
+            validWorker = isfield(selected(iRun),"worker") && isfield(selected(iRun).worker,"sha256") && string(selected(iRun).worker.sha256)==string(raw.configuration.matlabWorker.sha256);
+            if ~validWorker
+                error("WaveVortexBenchmark:WorkerIdentity","A MATLAB run did not execute the frozen current worker source.")
+            end
         end
     end
 end
@@ -228,4 +344,12 @@ end
 
 function value = samePath(left,right)
 value = string(left) == string(right);
+end
+
+function value = conditional(condition,trueValue,falseValue)
+if condition
+    value = trueValue;
+else
+    value = falseValue;
+end
 end
