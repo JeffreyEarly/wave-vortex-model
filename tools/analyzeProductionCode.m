@@ -162,7 +162,8 @@ rationale(rotatingPlaneGuardMask) = "The call is guarded by isa(self,""WVTransfo
 
 releaseVersionLine = sourceLineMatches(findings,repositoryRoot,'version\("-release"\)');
 releaseVersionMask = findings.CheckID == "CPROP" & findings.RelativeFile == "@WVTransform/WVTransform.m" & ...
-    contains(findings.Diagnostic,"property 'version'") & releaseVersionLine;
+    (contains(findings.Diagnostic,"property 'version'") | ...
+    contains(findings.Diagnostic,"'version' is also the name of a property")) & releaseVersionLine;
 classification(releaseVersionMask) = "accepted-false-positive";
 rationale(releaseVersionMask) = "version(""-release"") intentionally calls MATLAB's version function while constructing MATLAB-backend metadata.";
 

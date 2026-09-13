@@ -332,7 +332,8 @@ classdef TestWVCompiledBackend < matlab.unittest.TestCase
             originalPath = path;
             cleanup = onCleanup(@()clearCompiledModuleAndRestorePath(originalPath));
             addpath(fixture.Folder,"-begin");
-            feval(char(capabilities.module.name),'moduleInfo');
+            info = feval(char(capabilities.module.name),'moduleInfo');
+            testCase.verifyTrue(isfield(info,"engine"));
             testCase.assertEqual(loadedCompiledModulePath(capabilities.module.name),string(realpath(foreignModule)));
 
             inspected = WVCompiledBackend.capabilities();
