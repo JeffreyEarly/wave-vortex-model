@@ -84,15 +84,30 @@ classdef TestThreeInterfaceBenchmark < matlab.unittest.TestCase
             testCase.verifyTrue(contains(dataset.cohortKey,string(raw.source.commit)))
         end
 
-        function matchedVariableModelPublishesExplicitUnavailableInterface(testCase)
+        function matchedVariableModelRejectsObsoleteUnavailableInterface(testCase)
             raw = matchedModelStudyFixture("hydrostatic-exponential");
-            rawPath = writeRaw(testCase,raw,"matched-hydrostatic.json");
-            dataset = publishedThreeInterfaceBenchmarkFromArtifact(rawPath);
-            compiled = dataset.cases{1}.interfaces{2};
-            testCase.verifyEqual(compiled.status,"unavailable")
-            testCase.verifyEqual(compiled.unavailableReason,"MATLAB compiled loading is unavailable for variable-stratification transforms; no runtime adapter is included in this benchmark.")
-            testCase.verifyEqual(dataset.cases{1}.interfaces{1}.status,"complete")
-            testCase.verifyEqual(dataset.cases{1}.interfaces{3}.status,"complete")
+            % Retain the old preparation fixture, but it cannot qualify the
+            % completed all-interface publication campaign.
+            testCase.verifyError(@()validateThreeInterfaceBenchmarkContract(raw), ...
+                "WaveVortexBenchmark:InterfaceAvailability")
+        end
+
+        function matchedVariableModelAcceptsCompleteCompiledInterface(testCase)
+            raw = matchedModelStudyFixture("hydrostatic-exponential");
+            constant = matchedModelStudyFixture("constant-nonhydrostatic");
+            for iCase = 1:numel(raw.cases)
+                raw.comparison(iCase) = constant.comparison(iCase);
+                raw.comparison(iCase).id = raw.cases(iCase).id;
+            end
+            variableCompiled = find(string({raw.runs.interface})=="matlab-compiled");
+            constantCompiled = find(string({constant.runs.interface})=="matlab-compiled");
+            for iRun = 1:numel(variableCompiled)
+                source = constant.runs(constantCompiled(iRun));
+                source.case = raw.runs(variableCompiled(iRun)).case;
+                source.repeatIndex = raw.runs(variableCompiled(iRun)).repeatIndex;
+                raw.runs(variableCompiled(iRun)) = source;
+            end
+            testCase.verifyWarningFree(@()validateThreeInterfaceBenchmarkContract(raw))
         end
 
         function matchedModelStudyRejectsArbitraryUnavailableFailure(testCase)

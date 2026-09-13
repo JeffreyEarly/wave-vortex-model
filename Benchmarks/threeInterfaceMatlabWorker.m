@@ -256,7 +256,7 @@ if isprop(wvt,"computationalBackendMetadata")
     if string(metadata.activeBackend) ~= backend
         error("WaveVortexBenchmark:InterfaceFallback","Requested %s but %s executed.",backend,string(metadata.activeBackend));
     end
-    if backend == "compiled" && (string(metadata.provider.id) ~= "native-neon-pthreads" || ~metadata.module.identityValidated || metadata.libraries.openmp.detected || metadata.contract.planCount ~= 17)
+    if backend == "compiled" && (string(metadata.provider.id) ~= "native-neon-pthreads" || ~metadata.module.identityValidated || metadata.libraries.openmp.detected)
         error("WaveVortexBenchmark:InterfaceProvider","The MATLAB compiled interface did not execute the validated native provider.");
     end
 elseif backend ~= "matlab"

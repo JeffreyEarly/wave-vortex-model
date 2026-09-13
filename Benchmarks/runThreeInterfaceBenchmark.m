@@ -303,16 +303,6 @@ definitions = available(ismember(string({available.id}),options.caseIds));
 end
 
 function run = runOne(interface,definition,repeatIndex,fixturePath,executables,capabilities,options,repositoryRoot,benchmarkFolder,workFolder)
-if interface == "matlab-compiled" && isfield(definition,"modelConfiguration") && string(definition.modelConfiguration) ~= "constant-nonhydrostatic"
-    run = emptyRun;
-    run.schemaVersion = "three-interface-worker-v1";
-    run.status = "unavailable";
-    run.interface = interface;
-    run.case = definition;
-    run.repeatIndex = repeatIndex;
-    run.failure = struct("identifier","WaveVortexBenchmark:CompiledVariableModelUnavailable","message","MATLAB compiled loading is unavailable for variable-stratification transforms; no runtime adapter is included in this benchmark.","report","");
-    return
-end
 sampleFolder = fullfile(workFolder,sprintf('%s-%s-%d',interface,definition.id,repeatIndex));
 mkdir(sampleFolder);
 inputPath = fullfile(sampleFolder,"model.nc");
@@ -839,7 +829,7 @@ executables = struct("runner",fullfile(buildDirectory,"wave-vortex-run"),"kernel
 end
 
 function validateCapabilities(value)
-if ~value.isAvailable || string(value.provider.id)~="native-neon-pthreads" || ~value.module.identityValidated || value.libraries.openmp.detected || value.contract.planCount~=17 || value.featureValidation.maximumRelativeError>1e-12
+if ~value.isAvailable || string(value.provider.id)~="native-neon-pthreads" || ~value.module.identityValidated || value.libraries.openmp.detected || value.featureValidation.maximumRelativeError>1e-12
     error("WaveVortexBenchmark:ThreeInterfaceCapability","The benchmark requires the validated native FFTW provider.");
 end
 end

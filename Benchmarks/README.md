@@ -73,7 +73,7 @@ Run one model per artifact from the frozen candidate, for example:
 results = runThreeInterfaceBenchmark(studyId="matched-model-runtime-v1",modelConfigurations="hydrostatic-exponential",integrators="adaptive-rk78");
 ```
 
-The constant model measures all three interfaces. Hydrostatic and Boussinesq measure MATLAB builtin and standalone C++; their MATLAB compiled-transform interface is explicitly unavailable. Three fresh-process repeats across the three models and two workloads require 42 measured runs. Unavailable interfaces are never counted as measurements, and genuine worker failures cannot be published as unavailable support.
+All three models measure all three interfaces. Three fresh-process repeats across the three models, three interfaces, and two workloads require 54 measured runs. Unavailable interfaces are retained only for historical artifacts; genuine worker failures cannot be published as unavailable support.
 
 Mode construction, restoration, native FFT planning and prepared transform setup occur before integration timing. The timed interval includes the initial scientific RHS work and required output delivery. The primary memory metric remains total process-tree peak RSS during integration. The four early composite delivery times remain 32, 64, 96 and 128 s, independent of each model's initial CFL estimate.
 

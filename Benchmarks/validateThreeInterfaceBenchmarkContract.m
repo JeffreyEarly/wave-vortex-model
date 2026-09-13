@@ -131,14 +131,7 @@ for interface = ["matlab-builtin" "matlab-compiled" "standalone-compiled"]
     if numel(selected)~=processRunCount
         error("WaveVortexBenchmark:InterfaceAvailability","Interface %s does not contain three explicit run records.",interface)
     end
-    if interface=="matlab-compiled" && modelConfiguration~="constant-nonhydrostatic"
-        valid = all(string({selected.status})=="unavailable");
-        valid = valid && all(string(arrayfun(@(run)run.failure.identifier,selected,"UniformOutput",false))=="WaveVortexBenchmark:CompiledVariableModelUnavailable");
-        expectedReason = "MATLAB compiled loading is unavailable for variable-stratification transforms; no runtime adapter is included in this benchmark.";
-        valid = valid && all(string(arrayfun(@(run)run.failure.message,selected,"UniformOutput",false))==expectedReason);
-    else
-        valid = all(string({selected.status})=="complete");
-    end
+    valid = all(string({selected.status})=="complete");
     if ~valid
         error("WaveVortexBenchmark:InterfaceAvailability","Interface %s has invalid completion or unavailability evidence for %s.",interface,modelConfiguration)
     end

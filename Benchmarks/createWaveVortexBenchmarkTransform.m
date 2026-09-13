@@ -4,9 +4,6 @@ arguments
     benchmarkCase (1,1) struct
     backendId (1,1) string = "builtin"
 end
-if backendId == "compiled" && ~startsWith(string(benchmarkCase.transformId),"constant-")
-    error("WaveVortexBenchmark:UnsupportedBackend","The compiled preview supports only constant-stratification benchmark cases.");
-end
 computationalBackend = conditional(backendId=="compiled","compiled","matlab");
 
 switch benchmarkCase.transformId
@@ -15,13 +12,13 @@ switch benchmarkCase.transformId
     case "constant-hydrostatic"
         wvt = WVTransformConstantStratification(benchmarkCase.Lxyz,benchmarkCase.Nxyz,isHydrostatic=true,shouldAntialias=benchmarkCase.shouldAntialias,computationalBackend=computationalBackend);
     case "hydrostatic"
-        wvt = WVTransformHydrostatic(benchmarkCase.Lxyz,benchmarkCase.Nxyz,N2=@benchmarkN2,shouldAntialias=benchmarkCase.shouldAntialias);
+        wvt = WVTransformHydrostatic(benchmarkCase.Lxyz,benchmarkCase.Nxyz,N2=@benchmarkN2,shouldAntialias=benchmarkCase.shouldAntialias,computationalBackend=computationalBackend);
     case "boussinesq"
-        wvt = WVTransformBoussinesq(benchmarkCase.Lxyz,benchmarkCase.Nxyz,N2=@benchmarkN2,shouldAntialias=benchmarkCase.shouldAntialias);
+        wvt = WVTransformBoussinesq(benchmarkCase.Lxyz,benchmarkCase.Nxyz,N2=@benchmarkN2,shouldAntialias=benchmarkCase.shouldAntialias,computationalBackend=computationalBackend);
     case "stratified-qg"
-        wvt = WVTransformStratifiedQG(benchmarkCase.Lxyz,benchmarkCase.Nxyz,N2=@benchmarkN2,shouldAntialias=benchmarkCase.shouldAntialias);
+        wvt = WVTransformStratifiedQG(benchmarkCase.Lxyz,benchmarkCase.Nxyz,N2=@benchmarkN2,shouldAntialias=benchmarkCase.shouldAntialias,computationalBackend=computationalBackend);
     case "barotropic-qg"
-        wvt = WVTransformBarotropicQG(benchmarkCase.Lxyz,benchmarkCase.Nxyz,shouldAntialias=benchmarkCase.shouldAntialias);
+        wvt = WVTransformBarotropicQG(benchmarkCase.Lxyz,benchmarkCase.Nxyz,shouldAntialias=benchmarkCase.shouldAntialias,computationalBackend=computationalBackend);
     otherwise
         error("WaveVortexBenchmark:UnknownTransform","Unknown transform ID %s.",benchmarkCase.transformId);
 end
