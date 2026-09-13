@@ -1346,10 +1346,13 @@ WVKernelStatus WVConstantStratificationForcingEngine::addNonlinearFlux(
         if (!status) return status;
         diagnosticWorkspace_->spatialCaptured=true;
         auto raw=diagnosticWorkspace_->rawView();
-        auto temporary=diagnosticWorkspace_->temporaryView();
+        auto temporary=diagnosticWorkspace_->captureBuiltinProjection ? flux :
+            diagnosticWorkspace_->temporaryView();
         return diagnosticWorkspace_->evaluateNonlinearRaw([&] {
             ++metrics_.nonlinearProducerCount;
-            return kernel_->nonlinearFluxUsingAdvectionFields(state,temporary,fields,&raw,false,diagnosticWorkspace_->stateDerivativeAccess());
+            return kernel_->nonlinearFluxUsingAdvectionFields(state,temporary,fields,&raw,
+                diagnosticWorkspace_->captureBuiltinProjection,
+                diagnosticWorkspace_->stateDerivativeAccess());
         });
     }
     const auto evaluate = [&](WVFlux& destination) {
@@ -1590,12 +1593,20 @@ WVKernelStatus WVConstantStratificationForcingEngine::evaluateForcingTendencies(
     const WVState& state,const WVForcingTendencyOutput* outputs,std::size_t count,
     const WVRealFieldBundleConstView* preparedPhysical,
     detail::WVForcingDiagnosticWorkspace* session) {
+    return evaluateForcingTendenciesImpl(state,outputs,count,preparedPhysical,
+        session,nullptr);
+}
+WVKernelStatus WVConstantStratificationForcingEngine::evaluateForcingTendenciesImpl(
+    const WVState& state,const WVForcingTendencyOutput* outputs,std::size_t count,
+    const WVRealFieldBundleConstView* preparedPhysical,
+    detail::WVForcingDiagnosticWorkspace* session,
+    WVFlux* builtinNonlinearProjection) {
     if (executing_) return {WVKernelStatusCode::reentrantExecution,"Forcing diagnostics require an idle engine."};
     tendencyMetrics_.workspaceLastPeakBytes=0;
     const auto& c=kernel_->descriptor().configuration();
     const WVShape4D spatial{c.Nx,c.Ny,c.Nz,c.isHydrostatic ? 3U : 4U};
     auto status=detail::validateForcingTendencyOutputs(forcing_,stateShape(),spatial,state,outputs,count);
-    if (!status || !count) return status;
+    if (!status || (!count && !builtinNonlinearProjection)) return status;
     status=detail::validatePreparedDiagnosticFields(preparedPhysical,spatial,3,state,outputs,count);
     if (!status) return status;
     detail::WVScopedStateEvaluation<WVTransformConstantStratificationKernel> kernelScope(kernel(),state);
@@ -1684,7 +1695,7 @@ WVKernelStatus WVConstantStratificationForcingEngine::evaluateForcingTendencies(
                     std::copy_n(fields.data+3*R,R,destination.data+2*R);
                 }
                 return result;
-            });
+            },builtinNonlinearProjection);
     } catch (const std::bad_alloc&) {
         return {WVKernelStatusCode::allocationFailure,"Unable to allocate event forcing diagnostic workspace."};
     }

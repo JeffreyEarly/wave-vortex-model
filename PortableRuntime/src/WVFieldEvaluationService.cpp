@@ -511,6 +511,139 @@ WVKernelStatus WVFieldEvaluationService::beginEvaluationSession(
   }
 }
 
+WVKernelStatus WVFieldEvaluationService::prepareBuiltinNonlinearCoefficientEvaluation() {
+  if(builtinNonlinearPrepared_) return WVKernelStatus::ok();
+  if(eventWorkspace_)
+    return {WVKernelStatusCode::reentrantExecution,
+        "Built-in nonlinear coefficient preparation requires an idle service."};
+  if(!forcing_ || !forcing_->supportsExactBuiltinNonlinear())
+    return {WVKernelStatusCode::unsupportedOperation,
+        "The field service does not own the exact built-in nonlinear forcing schedule."};
+  WVFieldEvaluationPlan candidate;
+  const std::vector<WVFieldRequest> requests{{"builtin-u","u",{}},
+      {"builtin-v","v",{}},{"builtin-w","w",{}},{"builtin-eta","eta",{}}};
+  auto status=createPlan(requests,candidate); if(!status) return status;
+  std::size_t R=0;
+  std::size_t S=0;
+  if(stratified_) {const auto& g=stratified_->configuration(); R=g.Nx*g.Ny*g.Nz; S=g.Nj*g.Nkl;}
+  else {const auto& g=transform_->descriptor().configuration(); R=g.Nx*g.Ny*g.Nz;
+    S=transform_->descriptor().spectralShape().elementCount();}
+  try {builtinNonlinearPhysical_.resize(4*R); builtinNonlinearCoefficients_.resize(3*S);}
+  catch(const std::bad_alloc&) {return {WVKernelStatusCode::allocationFailure,
+      "Unable to prepare built-in nonlinear physical storage."};}
+  const bool previous=eventArenaForcingPrepared_;
+  eventArenaForcingPrepared_=true;
+  status=prepareEventArena(3);
+  if(!status) {eventArenaForcingPrepared_=previous; return status;}
+  builtinNonlinearFieldsPlan_=std::move(candidate);
+  builtinNonlinearPrepared_=true;
+  return WVKernelStatus::ok();
+}
+
+WVKernelStatus WVFieldEvaluationService::evaluateBuiltinNonlinearCoefficients(
+    const WVIntegrationState& state,WVFlux& flux) {
+  if(!builtinNonlinearPrepared_ || !forcing_ ||
+      !forcing_->supportsExactBuiltinNonlinear())
+    return {WVKernelStatusCode::unsupportedOperation,
+        "Built-in nonlinear coefficient evaluation was not prepared."};
+  if(!eventWorkspace_ || !stateEvaluationActive_ ||
+      variableEvaluationPolicy_!=WVVariableEvaluationPolicy::reuse)
+    return {WVKernelStatusCode::invalidConfiguration,
+        "Built-in nonlinear coefficients require an active reuse-policy evaluation."};
+  if(executing_ || !eventWorkspace_->preparationIdle())
+    return {WVKernelStatusCode::reentrantExecution,
+        "Built-in nonlinear coefficients require an idle field producer."};
+  auto status=eventWorkspace_->validateState(state); if(!status) return status;
+  const WVShape2D expected=stratified_ ?
+      WVShape2D{stratified_->configuration().Nj,stratified_->configuration().Nkl} :
+      transform_->descriptor().spectralShape();
+  const WVComplexView coefficientOutputs[]{flux.Fp,flux.Fm,flux.F0};
+  const WVComplexConstView coefficientInputs[]{state.waveVortex.coefficients.Ap,
+      state.waveVortex.coefficients.Am,state.waveVortex.coefficients.A0};
+  const auto coefficientBytes=expected.elementCount()*sizeof(WVComplex64);
+  const auto addressFits=[&](const void* pointer) {
+    const auto address=reinterpret_cast<std::uintptr_t>(pointer);
+    return address && address%alignof(WVComplex64)==0 &&
+        coefficientBytes<=std::numeric_limits<std::uintptr_t>::max()-address;
+  };
+  const auto overlaps=[](const void* first,std::size_t firstBytes,
+      const void* second,std::size_t secondBytes) {
+    const auto a=reinterpret_cast<std::uintptr_t>(first);
+    const auto b=reinterpret_cast<std::uintptr_t>(second);
+    return a<=b ? b-a<firstBytes : a-b<secondBytes;
+  };
+  for(const auto input:coefficientInputs)
+    if(input.shape.rows!=expected.rows || input.shape.columns!=expected.columns)
+      return {WVKernelStatusCode::invalidShape,
+          "Built-in nonlinear coefficient state has the wrong shape."};
+  for(std::size_t output=0;output<3;++output) {
+    const auto view=coefficientOutputs[output];
+    if(view.shape.rows!=expected.rows ||
+        view.shape.columns!=expected.columns)
+      return {WVKernelStatusCode::invalidShape,
+          "Built-in nonlinear coefficient output has the wrong shape."};
+    if(!addressFits(view.data))
+      return {WVKernelStatusCode::invalidPointer,
+          "Built-in nonlinear coefficient output has an invalid address."};
+    for(const auto input:coefficientInputs)
+      if(overlaps(view.data,coefficientBytes,input.data,coefficientBytes))
+        return {WVKernelStatusCode::overlappingArrays,
+            "Built-in nonlinear coefficient output overlaps the immutable state."};
+    for(std::size_t previous=0;previous<output;++previous)
+      if(overlaps(view.data,coefficientBytes,
+          coefficientOutputs[previous].data,coefficientBytes))
+        return {WVKernelStatusCode::overlappingArrays,
+            "Built-in nonlinear coefficient outputs overlap."};
+  }
+  std::size_t R=0;
+  if(stratified_) {const auto& g=stratified_->configuration(); R=g.Nx*g.Ny*g.Nz;}
+  else {const auto& g=transform_->descriptor().configuration(); R=g.Nx*g.Ny*g.Nz;}
+  if(builtinNonlinearPhysical_.size()<4*R)
+    return {WVKernelStatusCode::invalidConfiguration,
+        "Built-in nonlinear physical workspace was not prepared."};
+  WVFieldOutputView outputs[]={{builtinNonlinearPhysical_.data(),R},
+      {builtinNonlinearPhysical_.data()+R,R},{builtinNonlinearPhysical_.data()+2*R,R},
+      {builtinNonlinearPhysical_.data()+3*R,R}};
+  detail::WVForcingDiagnosticWorkspace* workspace=nullptr;
+  status=eventWorkspace_->forcingWorkspace(*forcing_,workspace); if(!status) return status;
+  const WVVariableEvaluationKey primitiveKey{WVVariableEvaluationNode::physicalField,
+      static_cast<std::uint32_t>(WVPortableVariable::u),eventWorkspace_->component(),0,0,0,1};
+  const bool physicalReady=eventWorkspace_->ready(primitiveKey);
+  if(transform_ || physicalReady) {
+    status=evaluate(builtinNonlinearFieldsPlan_,state,outputs,4); if(!status) return status;
+  }
+  executing_=true;
+  struct ResetExecution {bool& executing; ~ResetExecution(){executing=false;}}
+      resetExecution{executing_};
+  const std::size_t channels=transform_ ? 3u : 4u;
+  const auto Nx=stratified_ ? stratified_->configuration().Nx :
+      transform_->descriptor().configuration().Nx;
+  const auto Ny=stratified_ ? stratified_->configuration().Ny :
+      transform_->descriptor().configuration().Ny;
+  const auto Nz=stratified_ ? stratified_->configuration().Nz :
+      transform_->descriptor().configuration().Nz;
+  const WVRealFieldBundleConstView prepared{builtinNonlinearPhysical_.data(),
+      {Nx,Ny,Nz,channels}};
+  const auto S=expected.elementCount();
+  WVFlux staged{{builtinNonlinearCoefficients_.data(),expected},
+      {builtinNonlinearCoefficients_.data()+S,expected},
+      {builtinNonlinearCoefficients_.data()+2*S,expected}};
+  status=forcing_->evaluateBuiltinNonlinear(state.waveVortex,
+      (transform_ || physicalReady) ? &prepared : nullptr,workspace,staged);
+  if(!status) return status;
+  if(!transform_ && !physicalReady) {
+    std::copy_n(workspace->physical.data(),4*R,builtinNonlinearPhysical_.data());
+    bool reused=false;
+    status=eventWorkspace_->evaluate(primitiveKey,builtinNonlinearPhysical_.data(),4*R,
+        [] {return WVKernelStatus::ok();},reused);
+  }
+  if(!status) return status;
+  for(std::size_t family=0;family<3;++family)
+    std::copy_n(builtinNonlinearCoefficients_.data()+family*S,S,
+        coefficientOutputs[family].data);
+  return WVKernelStatus::ok();
+}
+
 bool WVFieldEvaluationPlan::hasDensityDiagnostics() const noexcept {
   return diagnosticPlan_ && diagnosticPlan_->hasDensityDiagnostics();
 }
@@ -4096,11 +4229,14 @@ std::size_t WVFieldEvaluationService::persistentBytes() const noexcept {
   const auto arenaBytes=eventArena_ ? eventArena_->persistentBytes() : 0;
   const auto sampledMovingBytes=sampledMovingWorkspace_ ?
       sampledMovingWorkspace_->persistentBytes() : 0;
-  if(stratified_) return sizeof(*this)+stratified_->persistentBytes()+forcingBytes+evaluationBytes+arenaBytes+sampledMovingBytes;
+  const auto builtinBytes=builtinNonlinearFieldsPlan_.persistentBytes()+
+      builtinNonlinearPhysical_.capacity()*sizeof(double)+
+      builtinNonlinearCoefficients_.capacity()*sizeof(WVComplex64);
+  if(stratified_) return sizeof(*this)+stratified_->persistentBytes()+forcingBytes+evaluationBytes+arenaBytes+sampledMovingBytes+builtinBytes;
   if (barotropicQG_)
-    return sizeof(*this) + barotropicQG_->persistentBytes()+forcingBytes+evaluationBytes+arenaBytes+sampledMovingBytes;
+    return sizeof(*this) + barotropicQG_->persistentBytes()+forcingBytes+evaluationBytes+arenaBytes+sampledMovingBytes+builtinBytes;
   return sizeof(*this) + forcingBytes + evaluationBytes + arenaBytes +
-         sampledMovingBytes+
+         sampledMovingBytes+builtinBytes+
          (ownedTransform_ ? transform_->persistentBytes() : 0) +
          realScratch_.capacity() * sizeof(double) +
          complexScratch_.capacity() * sizeof(WVComplex64) +

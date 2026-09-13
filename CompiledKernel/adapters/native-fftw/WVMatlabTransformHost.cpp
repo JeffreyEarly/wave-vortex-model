@@ -199,6 +199,7 @@ struct Host {
         WVFrozenForcingSchedule schedule; WVFrozenForcingEntry entry;
         entry.typeIdentifier=registration->matlabClassName; entry.contractVersion=1;
         entry.name=registration->defaultName; entry.stage=registration->stage; entry.priority=registration->priority;
+        entry.ordinal=1;
         entry.configuration={"wave-vortex-forcing-configuration-v1",1,{}}; schedule.entries.push_back(entry);
         std::unique_ptr<WVFFTEngine> fft; require(WVFFTWEngine::create(policy.effectiveFFTThreads,fft));
         if(kind==WVPersistedTransformKind::hydrostatic) {
@@ -236,6 +237,7 @@ struct Host {
         }
         visit([&](auto& e){require(WVFieldEvaluationService::createBorrowing(e,fields));});
         require(fields->createStateLayout({},stateLayout));
+        if(!isQG()) require(fields->prepareBuiltinNonlinearCoefficientEvaluation());
         for(std::size_t i=0;i<stateLayout.coefficientFamilyCount();++i)
             stateStorage[i].resize(stateLayout.coefficientFamilies()[i].elementCount);
     }
@@ -281,7 +283,7 @@ mxArray* metadata(const Host& h) {
     const char* keys[]={"transformClass","scope","matrixBackend","policy","effectiveFFTThreads","horizontalWorkers","pointwiseWorkers",
         "sourceBytes","kernelBytes","engineBytes","fieldServiceBytes","preparedPlanBytes","planPreparations","evaluations",
         "stateInputBytes","stateInputCopyBytes","outputBytes","stateValidations","phasePreparations",
-        "producerExecutions","cacheHits","duplicateExecutions","liveEvaluationBytes","peakEvaluationBytes","tiledNonlinearExecutions","primitiveExecutions",
+        "producerExecutions","cacheHits","duplicateExecutions","liveEvaluationBytes","peakEvaluationBytes","tiledNonlinearExecutions","primitiveExecutions","nonlinearProducerExecutions","physicalReconstructionExecutions",
         "stateStorageBytes","scopedEvaluations","evaluationActive","evaluationToken",
         "densityRecoveries","densityProfileConstructions","densityInversePasses","densityAPEPasses","plannedEvaluationBytes","densityRecovery"};
     Array result(mxCreateStructMatrix(1,1,sizeof(keys)/sizeof(keys[0]),keys));
@@ -308,6 +310,17 @@ mxArray* metadata(const Host& h) {
         const auto& k=engine.kernel().metrics(); const auto& e=engine.variableEvaluationMetrics();
         const auto& f=h.fields->metrics().variableEvaluation;
         const auto active=h.fields->activeVariableEvaluationMetrics();
+        if constexpr(std::is_same_v<std::decay_t<decltype(engine)>,WVStratifiedQGForcingEngine> ||
+                     std::is_same_v<std::decay_t<decltype(engine)>,WVBarotropicQGForcingEngine>) {
+            put("nonlinearProducerExecutions",std::numeric_limits<double>::quiet_NaN());
+            put("physicalReconstructionExecutions",std::numeric_limits<double>::quiet_NaN());
+        } else {
+            put("nonlinearProducerExecutions",engine.metrics().nonlinearProducerCount);
+            std::size_t reconstructions=0;
+            for(const auto& field:k.reconstructionCount)
+                for(const auto count:field[0]) reconstructions+=count;
+            put("physicalReconstructionExecutions",reconstructions);
+        }
         put("stateValidations",k.stateValidationCount);
         if constexpr((std::is_same_v<std::decay_t<decltype(engine)>,WVStratifiedQGForcingEngine> || std::is_same_v<std::decay_t<decltype(engine)>,WVBarotropicQGForcingEngine>)) {
             put("phasePreparations",0); put("tiledNonlinearExecutions",0);
@@ -413,6 +426,24 @@ mxArray* queryEvaluation(Host& h,const mxArray* token,const mxArray* requests,co
     h.refreshDensityReport(); require(status);
     ++h.evaluations; h.outputBytes+=bytes;
     mxSetField(result.get(),0,"metrics",metadata(h)); return result.release();
+}
+mxArray* nonlinearCoefficients(Host& h,const mxArray* token) {
+    requireEvaluation(h,token);
+    if(h.isQG()) invalid("The nonlinear coefficient boundary requires a wave transform.");
+    const auto& g=h.geometry(); const WVShape2D shape{g.Nj,g.Nkl};
+    const char* keys[]={"values","metrics"};
+    Array result(mxCreateStructMatrix(1,1,2,keys));
+    auto* values=mxCreateCellMatrix(3,1); mxSetField(result.get(),0,"values",values);
+    WVFlux flux; WVComplexView* channels[]={&flux.Fp,&flux.Fm,&flux.F0};
+    for(std::size_t channel=0;channel<3;++channel) {
+        auto* value=mxCreateDoubleMatrix(shape.rows,shape.columns,mxCOMPLEX);
+        mxSetCell(values,channel,value);
+        *channels[channel]={reinterpret_cast<WVComplex64*>(mxGetComplexDoubles(value)),shape};
+    }
+    require(h.fields->evaluateBuiltinNonlinearCoefficients(h.ownedState,flux));
+    ++h.evaluations; h.outputBytes+=3*shape.elementCount()*sizeof(WVComplex64);
+    mxSetField(result.get(),0,"metrics",metadata(h));
+    return result.release();
 }
 mxArray* evaluate(Host& h,const mxArray* const inputs[]) {
     if(h.session) invalid("Use the active evaluation token to request variables in this scope.");
@@ -678,6 +709,9 @@ bool WVDispatchMatlabTransform(const std::string& command,int nlhs,mxArray* plhs
         } else if(command=="transformQueryEvaluation") {
             if((nrhs!=4 && nrhs!=5) || nlhs!=1) invalid("transformQueryEvaluation takes handle, token, variable names and optional density reference.");
             plhs[0]=queryEvaluation(h,prhs[2],prhs[3],nrhs==5?prhs[4]:nullptr);
+        } else if(command=="transformNonlinearCoefficients") {
+            if(nrhs!=3 || nlhs!=1) invalid("transformNonlinearCoefficients takes handle and token with one output.");
+            plhs[0]=nonlinearCoefficients(h,prhs[2]);
         } else if(command=="transformEndEvaluation") {
             if(nrhs!=3 || nlhs!=0) invalid("transformEndEvaluation takes handle and token with no output.");
             requireEvaluation(h,prhs[2]); h.endEvaluation();

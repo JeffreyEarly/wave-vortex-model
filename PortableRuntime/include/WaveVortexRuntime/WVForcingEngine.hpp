@@ -13,6 +13,7 @@
 #include <vector>
 
 namespace wavevortex::runtime {
+namespace detail { class WVForcingDiagnosticBinding; }
 
 class WVExtensionCatalog;
 struct WVForcingEvaluationDependencies;
@@ -134,6 +135,11 @@ public:
     void setLinearDynamics(bool linear) noexcept { linearDynamics_ = linear; }
 
 private:
+    friend class detail::WVForcingDiagnosticBinding;
+    WVKernelStatus evaluateForcingTendenciesImpl(const WVState&,
+        const WVForcingTendencyOutput*,std::size_t,
+        const WVRealFieldBundleConstView*,detail::WVForcingDiagnosticWorkspace*,
+        WVFlux*);
     bool linearDynamics_ = false;
   WVVariableEvaluationContext evaluation_;
   WVVariableEvaluationPolicy evaluationPolicy_=WVVariableEvaluationPolicy::reuse;

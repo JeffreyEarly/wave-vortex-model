@@ -1,0 +1,248 @@
+{
+  "schema": "wvm507-constant-regression-investigation-v1",
+  "status": "regression-open",
+  "classification": "single-process exploratory pairs; not the final three-pair acceptance campaign",
+  "workload": "Constant nonhydrostatic 256x256x129, retained Nj=85, default nonlinear advection only, two warmups and nine measured full WVModel RHS calls; setup/validation untimed",
+  "measurements": [
+    {
+      "receipt": "constant-baseline-1.json",
+      "receiptSHA256": "95dc2c7ad337013c004c728416f4bb99cabd8fdfba48314aaccecde9520b3fe2",
+      "sourceCommit": "895ad50623a72ab668e2c7f12ff363c3996eb15f",
+      "status": "complete",
+      "family": "WVTransformConstantStratification",
+      "Nxyz": [
+        256,
+        256,
+        129
+      ],
+      "Nj": 85,
+      "timing": {
+        "scope": "one WVModel.fluxAtTimeCellArray call returning all coefficient tendencies",
+        "matlabSeconds": [
+          0.20328920833333333,
+          0.20221795833333334,
+          0.21175391666666665,
+          0.201983,
+          0.19787770833333335,
+          0.19507441666666667,
+          0.18936691666666666,
+          0.19150254166666666,
+          0.19489979166666666
+        ],
+        "compiledSeconds": [
+          0.08254825,
+          0.07781641666666667,
+          0.08444408333333334,
+          0.07898970833333334,
+          0.07750458333333334,
+          0.0780795,
+          0.07930108333333333,
+          0.08202008333333333,
+          0.08162458333333333
+        ],
+        "medianMatlabSeconds": 0.19787770833333335,
+        "medianCompiledSeconds": 0.07930108333333333,
+        "currentCompiledSpeedup": 2.4952711869215745
+      },
+      "parity": {
+        "passed": true,
+        "relativeTolerance": 1e-10,
+        "absoluteTolerance": 1e-12,
+        "maximumRelativeError": 2.229177694548947e-14,
+        "maximumAbsoluteError": 3.867700181212608e-21,
+        "allFinite": true
+      },
+      "identity": {
+        "version": 4,
+        "threadCount": 16,
+        "defaultThreadRule": "min(18,maxNumCompThreads)",
+        "planCount": 17,
+        "planCountMeaning": "logical-prepared-operation-slots"
+      },
+      "metrics": {
+        "stateInputBytes": 46671120.0,
+        "engineBytes": 271
+      }
+    },
+    {
+      "receipt": "constant-candidate-1.json",
+      "receiptSHA256": "b7588e04b13d8d9918ce7e1a193736bbf281637701adaca4cf4d6b9982dd395f",
+      "sourceCommit": "46b4d787dab69803cc9340dfde67afa0c9c1eddc",
+      "status": "complete",
+      "family": "WVTransformConstantStratification",
+      "Nxyz": [
+        256,
+        256,
+        129
+      ],
+      "Nj": 85,
+      "timing": {
+        "scope": "one WVModel.fluxAtTimeCellArray call returning all coefficient tendencies",
+        "matlabSeconds": [
+          0.2023615,
+          0.20041329166666666,
+          0.20764716666666666,
+          0.20154741666666667,
+          0.19575766666666666,
+          0.19060758333333333,
+          0.19003841666666665,
+          0.18781204166666668,
+          0.19525529166666666
+        ],
+        "compiledSeconds": [
+          0.27177029166666666,
+          0.2652587083333333,
+          0.26374870833333336,
+          0.27669129166666667,
+          0.268219375,
+          0.27082575,
+          0.27173604166666665,
+          0.2717829583333333,
+          0.26635841666666665
+        ],
+        "medianMatlabSeconds": 0.19575766666666666,
+        "medianCompiledSeconds": 0.27082575,
+        "currentCompiledSpeedup": 0.7228177773593045
+      },
+      "parity": {
+        "passed": true,
+        "relativeTolerance": 1e-10,
+        "absoluteTolerance": 1e-12,
+        "maximumRelativeError": 2.223077684201704e-14,
+        "maximumAbsoluteError": 3.859786412608522e-21,
+        "allFinite": true
+      },
+      "identity": {
+        "version": 4,
+        "threadCount": 16,
+        "defaultThreadRule": "min(18,maxNumCompThreads)",
+        "planCount": 17,
+        "planCountMeaning": "logical-prepared-operation-slots",
+        "matlabTransformBridgeVersion": 6
+      },
+      "metrics": {
+        "evaluations": 12,
+        "primitiveExecutions": 12,
+        "stateInputBytes": 560053440.0,
+        "stateInputCopyBytes": 560053440.0,
+        "outputBytes": 3806444736.0,
+        "scopedEvaluations": 12,
+        "stateValidations": 12,
+        "phasePreparations": 12,
+        "producerExecutions": 36,
+        "cacheHits": 0,
+        "duplicateExecutions": 0,
+        "plannedEvaluationBytes": 2439544145.0,
+        "liveEvaluationBytes": 0,
+        "peakEvaluationBytes": 811597824.0,
+        "tiledNonlinearExecutions": 0,
+        "sourceBytes": 0,
+        "kernelBytes": 718237942.0,
+        "engineBytes": 718239297.0,
+        "fieldServiceBytes": 2877780875.0,
+        "preparedPlanBytes": 7217,
+        "planPreparations": 1,
+        "stateStorageBytes": 46671120.0,
+        "horizontalWorkers": 12,
+        "pointwiseWorkers": 12,
+        "outputCopyBytes": 3806444736.0,
+        "outputCopyBytesNativeMetric": "outputBytes",
+        "modalSourceBytes": 0
+      }
+    },
+    {
+      "receipt": "constant-candidate-threads-1.json",
+      "receiptSHA256": "de2cafe1cbd108784ca0d93959edc0ec98aa76d74b5cda07847e3f3c2ea3f9de",
+      "sourceCommit": "20a0a947d25ffc5cc9e884ebbf0ff149541523ab",
+      "status": "complete",
+      "family": "WVTransformConstantStratification",
+      "Nxyz": [
+        256,
+        256,
+        129
+      ],
+      "Nj": 85,
+      "timing": {
+        "scope": "one WVModel.fluxAtTimeCellArray call returning all coefficient tendencies",
+        "matlabSeconds": [
+          0.2060015,
+          0.20201420833333333,
+          0.21137608333333333,
+          0.20555629166666667,
+          0.20820879166666667,
+          0.206242375,
+          0.20108120833333334,
+          0.20554525,
+          0.20961741666666667
+        ],
+        "compiledSeconds": [
+          0.16613554166666666,
+          0.16558133333333333,
+          0.16288933333333333,
+          0.15951633333333334,
+          0.16636395833333334,
+          0.17103825,
+          0.17496475,
+          0.16953191666666667,
+          0.16304754166666666
+        ],
+        "medianMatlabSeconds": 0.2060015,
+        "medianCompiledSeconds": 0.16613554166666666,
+        "currentCompiledSpeedup": 1.239960443944741
+      },
+      "parity": {
+        "passed": true,
+        "relativeTolerance": 1e-10,
+        "absoluteTolerance": 1e-12,
+        "maximumRelativeError": 2.2218497844244802e-14,
+        "maximumAbsoluteError": 3.844338249084876e-21,
+        "allFinite": true
+      },
+      "identity": {
+        "version": 4,
+        "threadCount": 16,
+        "defaultThreadRule": "min(18,maxNumCompThreads)",
+        "planCount": 17,
+        "planCountMeaning": "logical-prepared-operation-slots",
+        "matlabTransformBridgeVersion": 7
+      },
+      "metrics": {
+        "evaluations": 12,
+        "primitiveExecutions": 12,
+        "stateInputBytes": 560053440.0,
+        "stateInputCopyBytes": 560053440.0,
+        "outputBytes": 3806444736.0,
+        "scopedEvaluations": 12,
+        "stateValidations": 12,
+        "phasePreparations": 12,
+        "producerExecutions": 36,
+        "cacheHits": 0,
+        "duplicateExecutions": 0,
+        "plannedEvaluationBytes": 2439544145.0,
+        "liveEvaluationBytes": 0,
+        "peakEvaluationBytes": 811597824.0,
+        "tiledNonlinearExecutions": 0,
+        "sourceBytes": 0,
+        "kernelBytes": 718237942.0,
+        "engineBytes": 718239297.0,
+        "fieldServiceBytes": 2877780875.0,
+        "preparedPlanBytes": 7217,
+        "planPreparations": 1,
+        "stateStorageBytes": 46671120.0,
+        "horizontalWorkers": 12,
+        "pointwiseWorkers": 12,
+        "outputCopyBytes": 3806444736.0,
+        "outputCopyBytesNativeMetric": "outputBytes",
+        "modalSourceBytes": 0
+      }
+    }
+  ],
+  "findings": [
+    "The shared MATLAB host hardcoded one FFTW internal thread, unlike the previous compiled adapter contract count of 16 on this host.",
+    "Commit 20a0a947 restores the capability thread count for constant/barotropic families and reports effectiveFFTThreads. H/B/SQG compact policy remains at one FFTW internal thread.",
+    "The constant candidate improved from 270.826 to 166.136 ms/RHS, but remains slower than the 79.301 ms baseline. MATLAB medians were 197.878, 195.758, and 206.002 ms respectively.",
+    "The remaining diagnostic materialization/projection path is under investigation; no performance acceptance or release claim.",
+    "Test-only module activation was corrected in 7e789d33 after a direct MEX test loaded an unrelated legacy module. The exact-module guard correctly rejected it."
+  ],
+  "next": "Recover integration throughput through the same evaluator and producer cache; do not bypass shared calculation ownership."
+}

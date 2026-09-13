@@ -1,6 +1,83 @@
 classdef TestWVCompiledConsumers < matlab.unittest.TestCase
     % Focused consumer tests for compiled state scopes and MATLAB observers.
     methods (Test,TestTags="optional")
+        function modifiedNonlinearDensityCorrectionPreservesMatlabBehavior(testCase)
+            definitions = configurations();
+            for definition = definitions(1:4)
+                expected = definition.create("matlab");
+                actual = definition.create("compiled");
+                cleanup = onCleanup(@()deleteTransforms(expected,actual));
+                seedState(expected,actual);
+                for wvt = [expected actual]
+                    forcing = wvt.forcingWithName("nonlinear advection");
+                    forcing.dLnN2 = forcing.dLnN2 + 1e-3;
+                end
+                expectedFlux = cell(1,3); actualFlux = cell(1,3);
+                [expectedFlux{:}] = expected.nonlinearFlux();
+                before = actual.computationalBackendMetadata.runtimeMetrics;
+                [actualFlux{:}] = actual.nonlinearFlux();
+                for channel = 1:3
+                    verifyNear(testCase,actualFlux{channel},expectedFlux{channel},definition.name+" modified density correction");
+                end
+                after = actual.computationalBackendMetadata.runtimeMetrics;
+                testCase.verifyEqual(after.nonlinearProducerExecutions,before.nonlinearProducerExecutions,definition.name);
+                clear cleanup
+            end
+        end
+
+        function nonlinearCoefficientBoundarySharesRawAndPhysicalFields(testCase)
+            definitions = configurations();
+            for definition = definitions(1:4)
+                expected = definition.create("matlab");
+                actual = definition.create("compiled");
+                cleanup = onCleanup(@()deleteTransforms(expected,actual));
+                seedState(expected,actual);
+                expectedFlux = cell(1,3);
+                [expectedFlux{:}] = expected.nonlinearFlux();
+                names = {'Fu_nonlinear_advection','Fv_nonlinear_advection','Feta_nonlinear_advection'};
+                expectedRaw = cell(1,4);
+                forcing = expected.forcingWithName("nonlinear advection");
+                if isa(actual,'WVTransformBoussinesq') || (isa(actual,'WVTransformConstantStratification') && ~actual.isHydrostatic)
+                    names{end+1} = 'Fw_nonlinear_advection';
+                    [expectedRaw{1},expectedRaw{2},expectedRaw{4},expectedRaw{3}] = forcing.addNonhydrostaticSpatialForcing(expected,0,0,0,0);
+                else
+                    [expectedRaw{1:3}] = forcing.addHydrostaticSpatialForcing(expected,0,0,0);
+                end
+                for rawFirst = [false true]
+                    before = actual.computationalBackendMetadata.runtimeMetrics;
+                    scope = actual.scopedEvaluation();
+                    if rawFirst, actual.compiledVariables(names); end
+                    first = cell(1,3); second = cell(1,3);
+                    [first{:}] = actual.nonlinearFlux();
+                    [second{:}] = actual.nonlinearFlux();
+                    raw = actual.compiledVariables(names);
+                    for channel = 1:3
+                        verifyNear(testCase,first{channel},expectedFlux{channel},definition.name+" coefficient boundary");
+                        testCase.verifyEqual(second{channel},first{channel},definition.name);
+                    end
+                    for channel = 1:numel(names)
+                        verifyNear(testCase,raw{channel},expectedRaw{channel},definition.name+" raw tendency");
+                    end
+                    beforeFields = actual.computationalBackendMetadata.runtimeMetrics;
+                    fieldNames = ["u","v","w","eta"];
+                    fields = actual.compiledVariables(fieldNames);
+                    for fieldIndex = 1:numel(fieldNames)
+                        name = fieldNames(fieldIndex);
+                        verifyNear(testCase,fields{fieldIndex},expected.(name),definition.name+" shared "+name);
+                    end
+                    afterFields = actual.computationalBackendMetadata.runtimeMetrics;
+                    testCase.verifyEqual(afterFields.physicalReconstructionExecutions,beforeFields.physicalReconstructionExecutions,definition.name);
+                    clear scope
+                    after = actual.computationalBackendMetadata.runtimeMetrics;
+                    testCase.verifyEqual(after.nonlinearProducerExecutions-before.nonlinearProducerExecutions,1,definition.name);
+                    testCase.verifyEqual(after.stateValidations-before.stateValidations,1,definition.name);
+                    testCase.verifyEqual(after.phasePreparations-before.phasePreparations,1,definition.name);
+                    testCase.verifyEqual(after.duplicateExecutions-before.duplicateExecutions,0,definition.name);
+                end
+                clear cleanup
+            end
+        end
+
         function nonlinearAdaptiveFluxMatchesAcrossAllFamilies(testCase)
             for definition = configurations()
                 matlabWVT = definition.create("matlab");

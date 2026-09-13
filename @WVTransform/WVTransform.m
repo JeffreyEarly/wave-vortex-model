@@ -446,6 +446,32 @@ classdef WVTransform < matlab.mixin.indexing.RedefinesDot & CAAnnotatedClass
             values = result.values;
         end
 
+        function flag = canUseCompiledNonlinearCoefficients(self)
+            % Use the native coefficient boundary for the exact spatial producer.
+            %
+            % - Developer: true
+            % - Topic: Compiled transform internals
+            flag = self.hasCompiledStandardStateGraph() && numel(self.spatialFluxForcing) == 1;
+            if ~flag, return, end
+            forcing = self.spatialFluxForcing(1);
+            flag = string(class(forcing)) == "WVNonlinearAdvection" && ...
+                string(forcing.name) == "nonlinear advection" && forcing.priority == 127;
+            if flag && isa(self,'WVStratification') && isprop(self,'dLnN2')
+                flag = isequal(forcing.dLnN2,shiftdim(self.dLnN2,-2));
+            elseif flag
+                flag = isequal(forcing.dLnN2,0);
+            end
+        end
+
+        function [Fp,Fm,F0] = compiledNonlinearCoefficients(self)
+            % Evaluate nonlinear coefficients in the enclosing native scope.
+            %
+            % - Developer: true
+            % - Topic: Compiled transform internals
+            result = self.compiledTransformBackend.nonlinearCoefficients(self);
+            [Fp,Fm,F0] = result.values{:};
+        end
+
         function report = compiledDensityRecoveryReport(self)
             % - Developer: true
             % - Topic: Compiled transform internals

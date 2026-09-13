@@ -903,7 +903,8 @@ WVKernelStatus WVTransformBoussinesqKernel::constrainCoefficients(WVMutableCoeff
     return WVKernelStatus::ok();
 }
 WVKernelStatus WVTransformBoussinesqKernel::nonlinearFluxAndFields(
-    const WVState& state,WVFlux& flux,WVRealFieldBundleView fields) {
+    const WVState& state,WVFlux& flux,WVRealFieldBundleView fields,
+    WVRealFieldBundleView* spatialTendency) {
     if (!tiledNonlinearPrepared_) return unsupported();
     auto status=validateFluxOutput(state,flux); if (!status) return status;
     const auto shape=spatialShape();
@@ -924,11 +925,30 @@ WVKernelStatus WVTransformBoussinesqKernel::nonlinearFluxAndFields(
     for (const auto output:{flux.Fp,flux.Fm,flux.F0}) {
         status=disjoint(fields.data,4*R_*sizeof(double),output.data,S_*sizeof(WVComplex64)); if (!status) return status;
     }
+    if (spatialTendency) {
+        if (spatialTendency->shape.first!=shape.first || spatialTendency->shape.second!=shape.second ||
+            spatialTendency->shape.third!=shape.third || spatialTendency->shape.fourth!=4)
+            return {WVKernelStatusCode::invalidShape,"Tiled nonlinear tendencies require four full volumes."};
+        if (!addressFits(spatialTendency->data,4*R_*sizeof(double),alignof(double)))
+            return {WVKernelStatusCode::invalidPointer,"Invalid tiled physical tendency storage."};
+        status=disjoint(spatialTendency->data,4*R_*sizeof(double),fields.data,4*R_*sizeof(double)); if (!status) return status;
+        for (const auto input:{state.coefficients.Ap,state.coefficients.Am,state.coefficients.A0}) {
+            status=disjoint(spatialTendency->data,4*R_*sizeof(double),input.data,S_*sizeof(WVComplex64)); if (!status) return status;
+        }
+        for (std::size_t v=0;v<preparedStateViewCount_;++v)
+            for (const auto input:{preparedStateViews_[v].coefficients.Ap,preparedStateViews_[v].coefficients.Am,preparedStateViews_[v].coefficients.A0}) {
+                status=disjoint(spatialTendency->data,4*R_*sizeof(double),input.data,S_*sizeof(WVComplex64)); if (!status) return status;
+            }
+        for (const auto output:{flux.Fp,flux.Fm,flux.F0}) {
+            status=disjoint(spatialTendency->data,4*R_*sizeof(double),output.data,S_*sizeof(WVComplex64)); if (!status) return status;
+        }
+    }
     ActiveCall guard(active_); if (!guard.entered) return reentrant();
     kernel_detail::WVPreparedFieldCache::StandaloneScope cacheScope{fieldCache_.get(),!stateEvaluationActive_};
     status=preparePhaseForCall(state); if (!status) return status;
     WVRetainedAdvectionWork work;
     work.targets=4;work.fields={fields.data,4*R_*sizeof(double)};
+    if (spatialTendency) work.tendencies={spatialTendency->data,4*R_*sizeof(double)};
     work.densityCorrection={geometry().dLnN2.data(),geometry().Nz*sizeof(double)};
     const WVBoussinesqField names[]={WVBoussinesqField::u,WVBoussinesqField::v,WVBoussinesqField::w,WVBoussinesqField::eta};
     for (std::size_t f=0;f<4;++f) {

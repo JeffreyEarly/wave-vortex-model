@@ -306,11 +306,25 @@ WVKernelStatus WVRetainedHorizontalOperator::advection(
         return {WVKernelStatusCode::invalidPointer,"Invalid advection density-correction storage."};
     if (overlap(work.fields.data,fieldBytes,work.densityCorrection.data,correctionBytes))
         return {WVKernelStatusCode::overlappingArrays,"Advection fields overlap density correction."};
+    const auto tendencyBytes=work.targets*volumeBytes;
+    if ((work.tendencies.data==nullptr)!=(work.tendencies.bytes==0))
+        return {WVKernelStatusCode::invalidPointer,"Incomplete advection tendency storage."};
+    if (work.tendencies.data) {
+        if (work.tendencies.bytes<tendencyBytes)
+            return {WVKernelStatusCode::invalidShape,"Advection tendency capacity is too small."};
+        if (!addressFits(work.tendencies.data,tendencyBytes,alignof(double)))
+            return {WVKernelStatusCode::invalidPointer,"Invalid advection tendency storage."};
+        if (overlap(work.tendencies.data,tendencyBytes,work.fields.data,fieldBytes) ||
+            overlap(work.tendencies.data,tendencyBytes,work.densityCorrection.data,correctionBytes))
+            return {WVKernelStatusCode::overlappingArrays,"Advection tendencies overlap real input storage."};
+    }
     for (std::size_t field=0;field<4;++field) {
         auto status=validateStorage(d.spec.retained.representation,d.complexSpan,work.base[field]);
         if (!status) return status;
         if (realOverlap(work.fields.data,fieldBytes,work.base[field],d.complexSpan) ||
-            realOverlap(work.densityCorrection.data,correctionBytes,work.base[field],d.complexSpan))
+            realOverlap(work.densityCorrection.data,correctionBytes,work.base[field],d.complexSpan) ||
+            (work.tendencies.data && realOverlap(work.tendencies.data,tendencyBytes,
+                work.base[field],d.complexSpan)))
             return {WVKernelStatusCode::overlappingArrays,"Advection base spectra overlap real storage."};
     }
     for (std::size_t target=0;target<work.targets;++target) {
@@ -318,7 +332,9 @@ WVKernelStatus WVRetainedHorizontalOperator::advection(
         auto status=validateStorage(d.spec.retained.representation,d.complexSpan,output);
         if (!status) return status;
         if (realOverlap(work.fields.data,fieldBytes,output,d.complexSpan) ||
-            realOverlap(work.densityCorrection.data,correctionBytes,output,d.complexSpan))
+            realOverlap(work.densityCorrection.data,correctionBytes,output,d.complexSpan) ||
+            (work.tendencies.data && realOverlap(work.tendencies.data,tendencyBytes,
+                output,d.complexSpan)))
             return {WVKernelStatusCode::overlappingArrays,"Advection target spectra overlap real storage."};
         for (std::size_t field=0;field<4;++field)
             if (storageOverlap(output,d.complexSpan,work.base[field],d.complexSpan))

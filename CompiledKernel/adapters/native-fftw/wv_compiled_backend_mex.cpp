@@ -215,7 +215,7 @@ mxArray* moduleInfo(const std::string& expectedOpenMPRuntime) {
     mxSetField(result,0,"requestedHorizontalWorkers",mxCreateDoubleScalar(compact ? policy.horizontalOuterWorkers : 0));
     mxSetField(result,0,"requestedPointwiseWorkers",mxCreateDoubleScalar(compact ? policy.pointwiseWorkers : 1));
     mxSetField(result,0,"planCountMeaning",mxCreateString(logicalPlanCountMeaning));
-    mxSetField(result,0,"matlabTransformBridgeVersion",mxCreateDoubleScalar(7));
+    mxSetField(result,0,"matlabTransformBridgeVersion",mxCreateDoubleScalar(8));
     return result;
 }
 

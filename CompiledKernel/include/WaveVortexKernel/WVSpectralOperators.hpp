@@ -56,6 +56,9 @@ struct WVRetainedAdvectionWork {
     std::array<WVComplexOutput,4> targetSpectra;
     // Four contiguous [Nx,Ny,Nz] volumes ordered u, v, w, eta.
     WVRealOutput fields;
+    // Optional completed physical tendencies. Three-target work is ordered
+    // u, v, eta; four-target work is ordered u, v, w, eta.
+    WVRealOutput tendencies;
     WVRealInput densityCorrection;
     std::size_t targets = 0;
 };

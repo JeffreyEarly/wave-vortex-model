@@ -6,6 +6,7 @@
 #include "WaveVortexKernel/WVTransformBoussinesqKernel.hpp"
 #include "WaveVortexRuntime/WVVariableKernelServices.hpp"
 namespace wavevortex::runtime {
+namespace detail { class WVForcingDiagnosticBinding; }
 // Reuses the resolved WVForcing services; scientific operators are supplied by
 // the immutable Boussinesq source and prepared once at construction.
 class WVBoussinesqForcingEngine final {
@@ -52,6 +53,11 @@ public:
     void setLinearDynamics(bool linear) noexcept { linearDynamics_ = linear; }
 
 private:
+    friend class detail::WVForcingDiagnosticBinding;
+    WVKernelStatus evaluateForcingTendenciesImpl(const WVState&,
+        const WVForcingTendencyOutput*,std::size_t,
+        const WVRealFieldBundleConstView*,detail::WVForcingDiagnosticWorkspace*,
+        WVFlux*);
     bool linearDynamics_ = false;
     WVBoussinesqForcingEngine()=default;
     WVKernelStatus initialize(const WVFrozenForcingSchedule&);

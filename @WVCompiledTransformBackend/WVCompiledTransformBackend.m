@@ -104,6 +104,19 @@ classdef (Sealed) WVCompiledTransformBackend < handle
             flag = all(ismember(string(names),self.supportedVariableNames));
         end
 
+        function result = nonlinearCoefficients(self,wvt)
+            % Return coefficients while retaining shared native dependencies.
+            %
+            % - Developer: true
+            % - Topic: Compiled transform internals
+            arguments
+                self (1,1) WVCompiledTransformBackend
+                wvt (1,1) WVTransform
+            end
+            cleanup = self.scopedEvaluation(wvt); %#ok<NASGU>
+            result = feval(char(self.moduleName),'transformNonlinearCoefficients',self.transformHandle,self.evaluationToken);
+        end
+
         function invalidateEvaluation(self)
             % Close an event before its owning MATLAB state is changed.
             %
@@ -308,7 +321,7 @@ classdef (Sealed) WVCompiledTransformBackend < handle
                     ~isfield(capabilities.module,"identityValidated") || ~capabilities.module.identityValidated
                 error("WaveVortexModel:CompiledTransformCapabilityMismatch","The installed compiled module does not have a validated identity.")
             end
-            if ~isfield(capabilities.module,"matlabTransformBridgeVersion") || capabilities.module.matlabTransformBridgeVersion < 7
+            if ~isfield(capabilities.module,"matlabTransformBridgeVersion") || capabilities.module.matlabTransformBridgeVersion < 8
                 error("WaveVortexModel:CompiledTransformCapabilityMismatch","The installed module predates the MATLAB transform operation bridge. Rebuild with WVCompiledBackend.build().")
             end
             if ~isfield(capabilities,"contract") || ~isfield(capabilities.contract,"threadCount") || ...

@@ -131,7 +131,8 @@ public:
     // Produces the complete physical bundle and projected flux together. Caller
     // publishes evaluator nodes only after success; requires prepared native support.
     bool supportsTiledNonlinear() const noexcept { return tiledNonlinearPrepared_; }
-    WVKernelStatus nonlinearFluxAndFields(const WVState&, WVFlux&, WVRealFieldBundleView);
+    WVKernelStatus nonlinearFluxAndFields(const WVState&, WVFlux&, WVRealFieldBundleView,
+        WVRealFieldBundleView* spatialTendency = nullptr);
     WVKernelStatus nonlinearFlux(const WVState&, WVFlux&,
         WVRealFieldBundleView* spatialTendency = nullptr,
         const WVRealFieldBundleConstView* preparedFields = nullptr, bool projectFlux = true,

@@ -205,6 +205,7 @@ public:
         std::vector<double>().swap(constantLaplacianValues_);
       }
       if(policy==WVVariableEvaluationPolicy::reuse) {
+        builtinNodes.reserve(2);
         prefix.resize(stages.size());
         for(std::size_t index=0;index<stages.size();++index) {
           prefix[index].spatial=stages[index]==WVForcingStage::spatial;
@@ -251,7 +252,7 @@ public:
     initialized_=false; nextIndex=0; projected=false;
     horizontalMaximum_=0; scalarEvaluationOwner=nullptr; horizontalMaximumEvaluator=nullptr;
     derivativeAccess={}; calculusAccess_={};
-    physicalPrepared=false; spatialCaptured=false;
+    physicalPrepared=false; spatialCaptured=false; captureBuiltinProjection=false;
     flux.clear(); previous.clear(); temporary.clear(); laplacianCoefficients.clear();
     nonlinearRaw_.clear(); gridCalculusValues_.clear();
     constantLaplacianValues_.clear();
@@ -343,7 +344,8 @@ public:
         (cumulative.capacity()+raw.capacity()+physical.capacity()+laplacianFields.capacity()+
          staged.capacity()+nonlinearRaw_.capacity()+gridCalculusValues_.capacity()+
          constantLaplacianValues_.capacity())*sizeof(double);
-    bytes+=prefix.capacity()*sizeof(Prefix);
+    bytes+=prefix.capacity()*sizeof(Prefix)+
+        builtinNodes.capacity()*sizeof(decltype(builtinNodes)::value_type);
     bytes+=preparedStages_.capacity()*sizeof(WVForcingStage);
     for(const auto& value:prefix)
       bytes+=value.fields.capacity()*sizeof(double)+value.coefficients.capacity()*sizeof(WVComplex64);
@@ -354,7 +356,9 @@ public:
   WVShape4D spatial;
   std::vector<WVComplex64> flux,previous,temporary,laplacianCoefficients;
   std::vector<double> cumulative,raw,physical,laplacianFields,staged;
+  std::vector<std::pair<WVVariableEvaluationKey,std::size_t>> builtinNodes;
   bool physicalPrepared=false,spatialCaptured=false;
+  bool captureBuiltinProjection=false;
   bool requiresFourChannelTendencySelection=false;
   struct Prefix {
     std::vector<WVComplex64> coefficients;
@@ -541,8 +545,9 @@ WVKernelStatus evaluateForcingTendencySequence(
     const std::vector<std::unique_ptr<Forcing>>& forcing,
     WVForcingDiagnosticWorkspace& work,const WVForcingTendencyOutput* outputs,
     std::size_t count,WVForcingTendencyMetrics& metrics,
-    Execute execute,Project project,Reconstruct reconstruct) {
-  if (!count) return WVKernelStatus::ok();
+    Execute execute,Project project,Reconstruct reconstruct,
+    WVFlux* builtinNonlinearProjection=nullptr) {
+  if (!count && !builtinNonlinearProjection) return WVKernelStatus::ok();
   if(work.reusesPrefix()) {
     std::size_t last=0;
     for(std::size_t output=0;output<count;++output)
@@ -558,6 +563,16 @@ WVKernelStatus evaluateForcingTendencySequence(
         if(!committed) std::copy(work.previous.begin(),work.previous.end(),work.flux.begin());
       }
     };
+    if(builtinNonlinearProjection && work.nextIndex && !work.projected) {
+      std::copy(work.flux.begin(),work.flux.end(),work.previous.begin());
+      FluxRollback rollback{work};
+      const auto status=evaluation.evaluate(work.projectionKey(),0,[&] {
+        return project(work.cumulativeView(),flux);
+      });
+      if(!status) return status;
+      rollback.committed=true; work.projected=true;
+      ++metrics.spatialProjectionCount;
+    }
     while(work.nextIndex<=last) {
       const auto index=work.nextIndex;
       auto& cached=work.prefix[index];
@@ -579,7 +594,14 @@ WVKernelStatus evaluateForcingTendencySequence(
       FluxRollback rollback{work};
       const auto bytes=spatial ? cached.fields.capacity()*sizeof(double) :
           cached.coefficients.capacity()*sizeof(WVComplex64);
-      const auto status=evaluation.evaluate(work.prefixKey(index),bytes,[&]() -> WVKernelStatus {
+      const bool combined=builtinNonlinearProjection && index==0 && spatial;
+      if(combined) {
+        work.builtinNodes.clear();
+        work.builtinNodes.push_back({work.prefixKey(index),bytes});
+        work.builtinNodes.push_back({work.projectionKey(),0});
+        work.captureBuiltinProjection=true;
+      }
+      const auto operation=[&]() -> WVKernelStatus {
         std::fill(work.raw.begin(),work.raw.end(),0.0);
         work.spatialCaptured=false;
         auto produced=execute(*forcing[index],flux);
@@ -599,9 +621,13 @@ WVKernelStatus evaluateForcingTendencySequence(
                                          work.flux[element].imag-work.previous[element].imag};
         }
         return WVKernelStatus::ok();
-      });
+      };
+      const auto status=combined ? evaluation.evaluateGroup(work.builtinNodes,operation) :
+          evaluation.evaluate(work.prefixKey(index),bytes,operation);
+      work.captureBuiltinProjection=false;
       if(!status) return status;
       rollback.committed=true;
+      if(combined) {work.projected=true; ++metrics.spatialProjectionCount;}
       ++work.nextIndex;
     }
     // Materialize only requested physical outputs. Earlier unrequested spectral
@@ -626,6 +652,14 @@ WVKernelStatus evaluateForcingTendencySequence(
       std::copy(cached.fields.begin(),cached.fields.end(),outputs[output].fields.data);
     }
     ++metrics.evaluationCount;
+    if(builtinNonlinearProjection) {
+      const auto S=work.spectral.elementCount();
+      for(std::size_t i=0;i<S;++i) {
+        builtinNonlinearProjection->Fp.data[i]=work.flux[i];
+        builtinNonlinearProjection->Fm.data[i]=work.flux[S+i];
+        builtinNonlinearProjection->F0.data[i]=work.flux[2*S+i];
+      }
+    }
     return WVKernelStatus::ok();
   }
   // Low-memory calls intentionally replay the needed prefix. Every repeated

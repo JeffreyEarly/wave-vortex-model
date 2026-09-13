@@ -478,6 +478,15 @@ public:
   bool evaluationSessionActive() const noexcept { return eventWorkspace_ != nullptr; }
   WVKernelStatus beginEvaluationSession(const WVIntegrationState &state,
                                         WVFieldEvaluationSession &session);
+  // Prepare the event-owned physical, raw-tendency, and projected-coefficient
+  // cache nodes used by the exact built-in nonlinear-advection fast path.
+  // This is a setup operation and performs no scientific computation.
+  WVKernelStatus prepareBuiltinNonlinearCoefficientEvaluation();
+  // Evaluate the exact resolved built-in nonlinear spatial forcing in the
+  // active immutable-state event, publishing its physical fields, raw
+  // tendency, and projected coefficients through the ordinary event caches.
+  WVKernelStatus evaluateBuiltinNonlinearCoefficients(
+      const WVIntegrationState &state, WVFlux &flux);
 
   static std::vector<std::string> supportedFieldNames();
   const std::vector<WVPortableForcingVariableBinding>& forcingVariableBindings() const noexcept;
@@ -649,6 +658,10 @@ private:
       barotropicQG_;
   std::unique_ptr<detail::WVStratifiedFieldEvaluationAdapter> stratified_;
   std::unique_ptr<detail::WVForcingDiagnosticBinding> forcing_;
+  WVFieldEvaluationPlan builtinNonlinearFieldsPlan_;
+  std::vector<double> builtinNonlinearPhysical_;
+  std::vector<WVComplex64> builtinNonlinearCoefficients_;
+  bool builtinNonlinearPrepared_ = false;
   std::unique_ptr<MovingWorkspace> movingWorkspace_;
   mutable std::unique_ptr<SampledMovingWorkspace> sampledMovingWorkspace_;
   std::vector<double> realScratch_;

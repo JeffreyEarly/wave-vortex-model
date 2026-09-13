@@ -142,6 +142,8 @@ classdef WVNonlinearAdvection < WVForcing
             flag = string(class(self)) == "WVNonlinearAdvection" && wvt.hasCompiledStandardStateGraph();
             if flag && isa(wvt,'WVStratification') && isprop(wvt,'dLnN2')
                 flag = isequal(self.dLnN2,shiftdim(wvt.dLnN2,-2));
+            elseif flag
+                flag = isequal(self.dLnN2,0);
             end
         end
     end

@@ -85,6 +85,12 @@ public:
         if constexpr(QG) return resolved.evaluateForcingTendencies(state.coefficients.A0,outputs,count,prepared,session);
         else return resolved.evaluateForcingTendencies(state,outputs,count,prepared,session);
       };
+      if constexpr(!QG) candidate->evaluateBuiltin_=[](void* pointer,const WVState& state,
+          const WVRealFieldBundleConstView* prepared,WVForcingDiagnosticWorkspace* session,
+          WVFlux& flux) {
+        return static_cast<Engine*>(pointer)->evaluateForcingTendenciesImpl(
+            state,nullptr,0,prepared,session,&flux);
+      };
       candidate->metrics_=[](const void* pointer)->const WVForcingTendencyMetrics& {return static_cast<const Engine*>(pointer)->tendencyMetrics();};
       candidate->instance_=[](const void* pointer,std::size_t index)->Identity {
         const auto* instance=static_cast<const Engine*>(pointer)->forcingInstance(index);
@@ -155,6 +161,23 @@ public:
   WVKernelStatus evaluate(const WVState& state,const WVForcingTendencyOutput* outputs,std::size_t count,const WVRealFieldBundleConstView* prepared,WVForcingDiagnosticWorkspace* session) const {
     return evaluate_(engine_,state,outputs,count,prepared,session);
   }
+  bool supportsExactBuiltinNonlinear() const noexcept {
+    if(!evaluateBuiltin_ || bindings_.size()!=1 || stages_.size()!=1 ||
+        stages_[0]!=WVForcingStage::spatial) return false;
+    const auto identity=instance_(engine_,0);
+    return identity.type=="WVNonlinearAdvection" &&
+        identity.version==WVPortablePairContractVersion &&
+        identity.name=="nonlinear advection" && identity.priority==127 &&
+        identity.ordinal==1;
+  }
+  WVKernelStatus evaluateBuiltinNonlinear(const WVState& state,
+      const WVRealFieldBundleConstView* prepared,
+      WVForcingDiagnosticWorkspace* session,WVFlux& flux) const {
+    if(!supportsExactBuiltinNonlinear())
+      return {WVKernelStatusCode::unsupportedOperation,
+          "The resolved forcing schedule is not the exact built-in nonlinear advection."};
+    return evaluateBuiltin_(engine_,state,prepared,session,flux);
+  }
   std::unique_ptr<WVForcingDiagnosticWorkspace> createWorkspace() const {
     auto workspace=std::make_unique<WVForcingDiagnosticWorkspace>(
         spectral_,spatial_,coefficientFamilies_,coefficientFamilies_==1 ? 2 : 4);
@@ -195,6 +218,8 @@ public:
 private:
   void* engine_=nullptr;
   WVKernelStatus (*evaluate_)(void*,const WVState&,const WVForcingTendencyOutput*,std::size_t,const WVRealFieldBundleConstView*,WVForcingDiagnosticWorkspace*)=nullptr;
+  WVKernelStatus (*evaluateBuiltin_)(void*,const WVState&,
+      const WVRealFieldBundleConstView*,WVForcingDiagnosticWorkspace*,WVFlux&)=nullptr;
   const WVForcingTendencyMetrics& (*metrics_)(const void*)=nullptr;
   Identity (*instance_)(const void*,std::size_t)=nullptr;
   std::vector<WVPortableForcingVariableBinding> bindings_;

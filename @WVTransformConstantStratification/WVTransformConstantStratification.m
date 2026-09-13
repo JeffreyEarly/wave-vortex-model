@@ -370,11 +370,15 @@ classdef WVTransformConstantStratification < WVGeometryDoublyPeriodicStratifiedC
 
         function [Fp,Fm,F0] = nonlinearFluxHydrostatic(self)
             scope = self.scopedEvaluation(); %#ok<NASGU>
-            Fu=zeros(self.spatialMatrixSize);Fv=zeros(self.spatialMatrixSize);Feta=zeros(self.spatialMatrixSize); % this isn't good, need to cached
-            for i=1:length(self.spatialFluxForcing)
-                [Fu, Fv, Feta] = self.spatialFluxForcing(i).addHydrostaticSpatialForcing(self, Fu, Fv, Feta);
+            if self.canUseCompiledNonlinearCoefficients()
+                [Fp,Fm,F0] = self.compiledNonlinearCoefficients();
+            else
+                Fu=zeros(self.spatialMatrixSize);Fv=zeros(self.spatialMatrixSize);Feta=zeros(self.spatialMatrixSize); % this isn't good, need to cached
+                for i=1:length(self.spatialFluxForcing)
+                    [Fu, Fv, Feta] = self.spatialFluxForcing(i).addHydrostaticSpatialForcing(self, Fu, Fv, Feta);
+                end
+                [Fp,Fm,F0] = self.transformUVEtaToWaveVortex(Fu, Fv, Feta);
             end
-            [Fp,Fm,F0] = self.transformUVEtaToWaveVortex(Fu, Fv, Feta);
             for i=1:length(self.spectralFluxForcing)
                 [Fp,Fm,F0] = self.spectralFluxForcing(i).addSpectralForcing(self,Fp, Fm, F0);
             end
@@ -385,11 +389,15 @@ classdef WVTransformConstantStratification < WVGeometryDoublyPeriodicStratifiedC
 
         function [Fp,Fm,F0] = nonlinearFluxNonhydrostatic(self)
             scope = self.scopedEvaluation(); %#ok<NASGU>
-            Fu=zeros(self.spatialMatrixSize);Fv=zeros(self.spatialMatrixSize);Fw=zeros(self.spatialMatrixSize);Feta=zeros(self.spatialMatrixSize); % this isn't good, need to cached
-            for i=1:length(self.spatialFluxForcing)
-                [Fu, Fv, Fw, Feta] = self.spatialFluxForcing(i).addNonhydrostaticSpatialForcing(self, Fu, Fv, Fw, Feta);
+            if self.canUseCompiledNonlinearCoefficients()
+                [Fp,Fm,F0] = self.compiledNonlinearCoefficients();
+            else
+                Fu=zeros(self.spatialMatrixSize);Fv=zeros(self.spatialMatrixSize);Fw=zeros(self.spatialMatrixSize);Feta=zeros(self.spatialMatrixSize); % this isn't good, need to cached
+                for i=1:length(self.spatialFluxForcing)
+                    [Fu, Fv, Fw, Feta] = self.spatialFluxForcing(i).addNonhydrostaticSpatialForcing(self, Fu, Fv, Fw, Feta);
+                end
+                [Fp,Fm,F0] = self.transformUVWEtaToWaveVortex(Fu, Fv, Fw, Feta);
             end
-            [Fp,Fm,F0] = self.transformUVWEtaToWaveVortex(Fu, Fv, Fw, Feta);
             for i=1:length(self.spectralFluxForcing)
                 [Fp,Fm,F0] = self.spectralFluxForcing(i).addSpectralForcing(self,Fp, Fm, F0);
             end
