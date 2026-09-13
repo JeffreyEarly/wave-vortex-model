@@ -43,9 +43,56 @@ classdef TestWVCompiledConstantVerticalCalculus < matlab.unittest.TestCase
             end
         end
 
+        function evenGridDerivativesMatchIndependentAnalyticModes(testCase)
+            Nxyz = [18 16 16];
+            for isHydrostatic = [true false]
+                for shouldAntialias = [true false]
+                    [matlabWVT,compiledWVT] = makeTransforms(Nxyz,isHydrostatic,shouldAntialias);
+                    cleanup = onCleanup(@()deleteTransforms(matlabWVT,compiledWVT));
+                    diagnostic = configurationName(Nxyz,isHydrostatic,shouldAntialias);
+                    [F,G,expectedF,expectedG] = evenGridAnalyticVolumes(matlabWVT);
+                    valuesF = {F,complex(F,0.25*F)};
+                    valuesG = {G,complex(G,-0.25*G)};
+                    kinds = ["real" "complex"];
+
+                    % Mid-spectrum modes keep fourth derivatives well scaled on
+                    % the even grid and avoid low-mode cancellation amplification.
+                    for iKind = 1:2
+                        originalF = valuesF{iKind};
+                        originalG = valuesG{iKind};
+                        for order = 1:4
+                            if iKind == 1
+                                expectedFOrder = expectedF{order};
+                                expectedGOrder = expectedG{order};
+                            else
+                                expectedFOrder = complex(expectedF{order},0.25*expectedF{order});
+                                expectedGOrder = complex(expectedG{order},-0.25*expectedG{order});
+                            end
+                            matlabF = matlabWVT.diffZF(valuesF{iKind},n=order);
+                            compiledF = compiledWVT.diffZF(valuesF{iKind},n=order);
+                            matlabG = matlabWVT.diffZG(valuesG{iKind},n=order);
+                            compiledG = compiledWVT.diffZG(valuesG{iKind},n=order);
+                            suffix = diagnostic+" "+kinds(iKind)+" order "+order;
+                            testCase.verifyGreaterThan(norm(expectedFOrder(:)),0,suffix+" analytic diffZF nonzero");
+                            testCase.verifyGreaterThan(norm(expectedGOrder(:)),0,suffix+" analytic diffZG nonzero");
+                            verifyNear(testCase,matlabF,expectedFOrder,1e-12,suffix+" MATLAB diffZF analytic");
+                            verifyNear(testCase,compiledF,expectedFOrder,1e-12,suffix+" compiled diffZF analytic");
+                            verifyNear(testCase,compiledF,matlabF,1e-12,suffix+" diffZF parity");
+                            verifyNear(testCase,matlabG,expectedGOrder,1e-12,suffix+" MATLAB diffZG analytic");
+                            verifyNear(testCase,compiledG,expectedGOrder,1e-12,suffix+" compiled diffZG analytic");
+                            verifyNear(testCase,compiledG,matlabG,1e-12,suffix+" diffZG parity");
+                        end
+                        testCase.verifyEqual(valuesF{iKind},originalF,diagnostic+" "+kinds(iKind)+" diffZF input unchanged");
+                        testCase.verifyEqual(valuesG{iKind},originalG,diagnostic+" "+kinds(iKind)+" diffZG input unchanged");
+                    end
+                    clear cleanup
+                end
+            end
+        end
+
         function matrixIntegralsMatchMatlabAtTileTails(testCase)
             columnCounts = [0 1 255 256 257];
-            gridSizes = {[8 6 9],[18 16 17]};
+            gridSizes = {[8 6 9],[18 16 17],[18 16 16]};
             for isHydrostatic = [true false]
                 for shouldAntialias = [true false]
                     for iGrid = 1:numel(gridSizes)
@@ -115,6 +162,29 @@ F = horizontal.*cos(theta);
 G = horizontal.*sin(theta);
 expectedDzF = -m*horizontal.*sin(theta);
 expectedDzG = m*horizontal.*cos(theta);
+end
+
+function [F,G,expectedF,expectedG] = evenGridAnalyticVolumes(wvt)
+[X,Y,Z] = wvt.xyzGrid;
+horizontal = 1+0.2*cos(2*pi*X/wvt.Lx)+0.1*sin(2*pi*Y/wvt.Ly);
+m6 = 6*pi/wvt.Lz;
+m3 = 3*pi/wvt.Lz;
+theta6 = m6*(Z+wvt.Lz);
+theta3 = m3*(Z+wvt.Lz);
+cosine = cos(theta6)+0.2*cos(theta3);
+sine = sin(theta6)+0.2*sin(theta3);
+F = horizontal.*cosine;
+G = horizontal.*sine;
+expectedF = {
+    -horizontal.*(m6*sin(theta6)+0.2*m3*sin(theta3)), ...
+    -horizontal.*(m6^2*cos(theta6)+0.2*m3^2*cos(theta3)), ...
+    horizontal.*(m6^3*sin(theta6)+0.2*m3^3*sin(theta3)), ...
+    horizontal.*(m6^4*cos(theta6)+0.2*m3^4*cos(theta3))};
+expectedG = {
+    horizontal.*(m6*cos(theta6)+0.2*m3*cos(theta3)), ...
+    -horizontal.*(m6^2*sin(theta6)+0.2*m3^2*sin(theta3)), ...
+    -horizontal.*(m6^3*cos(theta6)+0.2*m3^3*cos(theta3)), ...
+    horizontal.*(m6^4*sin(theta6)+0.2*m3^4*sin(theta3))};
 end
 
 function value = broadbandVolume(wvt)
