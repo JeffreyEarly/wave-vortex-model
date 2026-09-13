@@ -20,6 +20,7 @@ classdef TestWVCompiledPublicAdapters < matlab.unittest.TestCase
                     end
                     complexVolume = complex(volume,.5*flip(volume,3));
                     verifyNear(testCase,feval(derivative,actual,complexVolume),feval(derivative,expected,complexVolume),definition.name+" "+derivative+" complex");
+                    verifyNear(testCase,feval(integral,actual,complexVolume),feval(integral,expected,complexVolume),definition.name+" "+integral+" complex volume");
                 end
                 clear cleanup
             end

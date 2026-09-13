@@ -625,6 +625,20 @@ mxArray* operation(Host& h,const mxArray* nameArray,const mxArray* inputs,const 
             if(index>g.Nkl) invalid("Retained column exceeds the model spectrum.");
             h.visit([&](auto& e){if constexpr(std::is_same_v<std::decay_t<decltype(e)>,WVBarotropicQGForcingEngine>) invalid("Barotropic QG has no vertical matrix primitive."); else require(e.kernel().applyVerticalColumn(op,index-1,in,out));});
         } else h.visit([&](auto& e){if constexpr(std::is_same_v<std::decay_t<decltype(e)>,WVBarotropicQGForcingEngine>) invalid("Barotropic QG has no vertical matrix primitive."); else require(e.kernel().applyVertical(op,in,out));});
+    } else if(name=="verticalVolumeCalculus") {
+        expect(1);
+        const auto* family=field(options,"inputIsF"); const auto* integral=field(options,"integral");
+        if(!mxIsLogicalScalar(family) || !mxIsLogicalScalar(integral)) invalid("Vertical calculus flags must be scalar logicals.");
+        const auto order=extent(field(options,"order")); const bool isIntegral=mxIsLogicalScalarTrue(integral);
+        if(order>4 || (isIntegral && order!=1)) invalid("Vertical calculus supports derivative orders 1..4 and first antiderivatives.");
+        const auto in=spatial(input(0),volume); auto out=realOutput();
+        h.visit([&](auto& e) {
+            if constexpr(std::is_same_v<std::decay_t<decltype(e)>,WVHydrostaticForcingEngine>) {
+                const auto f=mxIsLogicalScalarTrue(family)?WVHydrostaticFamily::F:WVHydrostaticFamily::G;
+                if(isIntegral) require(e.kernel().integrateVertical(in,f,out));
+                else require(e.kernel().differentiateVertical(in,f,static_cast<unsigned>(order),out));
+            } else invalid("Volume vertical calculus requires a Hydrostatic transform.");
+        });
     } else if(name=="verticalCalculus") {
         expect(1);
         if(h.isBarotropic()) invalid("Barotropic QG has no vertical calculus.");

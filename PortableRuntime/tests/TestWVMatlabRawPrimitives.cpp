@@ -5,6 +5,7 @@
 #include "WVReferenceFFTEngine.hpp"
 #include "WVBoussinesqModalTestFixture.hpp"
 #include "WVStratifiedModalTestFixture.hpp"
+#include "../../tools/compiled-kernel/tests/WVAllocationProbe.hpp"
 
 #include <cmath>
 #include <complex>
@@ -215,7 +216,7 @@ std::vector<double> verticalOracle(Kernel& kernel,const WVStratifiedModalGeometr
 template<class Kernel>
 void verticalCalculus(Kernel& kernel,const WVStratifiedModalGeometry& g) {
     const auto persistent=kernel.persistentBytes();
-    for (const auto columns : {std::size_t{1},g.Nkl+2}) {
+    for (const auto columns : {std::size_t{1},g.Nkl+2,g.Nx*g.Ny+3}) {
         const WVShape2D shape{g.Nz,columns};
         std::vector<double> input(shape.elementCount()),actual(input.size());
         for (std::size_t i=0;i<input.size();++i) input[i]=std::sin(.19*i)+.03*i;
@@ -239,6 +240,18 @@ void verticalCalculus(Kernel& kernel,const WVStratifiedModalGeometry& g) {
                 require(std::abs(actual[g.Nz*column])<1e-12,"Raw G integral is not bottom-zero.");
         }
         for (std::size_t i=0;i<input.size();++i) require(input[i]==original[i],"Raw vertical calculus changed its input.");
+        bool warmed=true;
+        allocationProbe::calls=0; allocationProbe::counting=true;
+        for (bool inputIsF : {true,false}) {
+            for (unsigned order=1;order<=4;++order)
+                warmed=static_cast<bool>(kernel.applyVerticalCalculus({input.data(),shape},inputIsF,order,false,{actual.data(),shape})) && warmed;
+            warmed=static_cast<bool>(kernel.applyVerticalCalculus({input.data(),shape},inputIsF,1,true,{actual.data(),shape})) && warmed;
+        }
+        allocationProbe::counting=false;
+        require(warmed,"Warmed raw vertical calculus failed.");
+        require(allocationProbe::calls==0,"Warmed raw vertical calculus allocated.");
+        require(kernel.persistentBytes()==persistent,"Warmed raw vertical calculus changed persistent storage.");
+        for (std::size_t i=0;i<input.size();++i) require(input[i]==original[i],"Warmed raw vertical calculus changed its input.");
     }
     std::vector<double> input(g.Nz*2),output(input.size()); const WVShape2D shape{g.Nz,2};
     require(kernel.applyVerticalCalculus({input.data(),{g.Nz-1,2}},true,1,false,{output.data(),shape}).code==WVKernelStatusCode::invalidShape,
@@ -289,5 +302,5 @@ void families() {
 }
 int main() {
     try { families(); std::cout << "raw MATLAB primitive tests passed\n"; return 0; }
-    catch(const std::exception& error) { std::cerr << error.what() << '\n'; return 1; }
+    catch(const std::exception& error) { allocationProbe::counting=false; std::cerr << error.what() << '\n'; return 1; }
 }

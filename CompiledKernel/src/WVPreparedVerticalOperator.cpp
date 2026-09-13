@@ -73,6 +73,25 @@ public:
 };
 } // namespace spectral_detail
 using namespace spectral_detail;
+void WVVerticalMatrixBackend::real(std::size_t m,std::size_t k,std::size_t n,const double* a,
+    const double* b,std::size_t ldb,double* c,std::size_t ldc,double beta) const noexcept {
+    for (std::size_t column=0;column<n;++column) for (std::size_t row=0;row<m;++row) {
+        double value=0;
+        for (std::size_t j=0;j<k;++j) value+=a[row+m*j]*b[j+ldb*column];
+        const auto i=row+ldc*column;
+        c[i]=beta==0 ? value : value+beta*c[i];
+    }
+}
+void WVVerticalMatrixBackend::rightTranspose(std::size_t m,std::size_t k,std::size_t n,
+    const double* a,std::size_t lda,const double* b,std::size_t ldb,
+    double* c,std::size_t ldc,double beta) const noexcept {
+    for (std::size_t column=0;column<n;++column) for (std::size_t row=0;row<m;++row) {
+        double value=0;
+        for (std::size_t j=0;j<k;++j) value+=a[row+lda*j]*b[column+ldb*j];
+        const auto i=row+ldc*column;
+        c[i]=beta==0 ? value : value+beta*c[i];
+    }
+}
 WVKernelStatus WVCreateScalarMatrixBackend(std::unique_ptr<WVVerticalMatrixBackend>& result) {
     try { result = std::make_unique<ScalarBackend>(); return WVKernelStatus::ok(); }
     catch (const std::bad_alloc&) { return {WVKernelStatusCode::allocationFailure,"Scalar backend allocation failed."}; }

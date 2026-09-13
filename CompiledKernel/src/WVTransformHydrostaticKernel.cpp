@@ -151,9 +151,12 @@ WVKernelStatus WVTransformHydrostaticKernel::create(std::shared_ptr<const WVStra
         c.spectralStorage_=std::make_unique<WVVariableComplexBuffer>(spectralElements,representation); c.phase_.resize(c.S_); c.real_.resize((options.streamedNonlinear ? 6 : 10)*c.R_);
         if (options.sharedFieldGradients) c.fieldCache_=std::make_unique<kernel_detail::WVPreparedFieldCache>(c.S_,c.H_,representation);
         c.pointwise_=std::make_unique<kernel_detail::WVPreparedModeExecutor>(std::min(options.pointwiseWorkers,c.R_));
+        status=c.prepareRealVerticalCalculus(factory); if (!status) return status;
         auto& s=c.storage_; s.sharedScientificBytes=c.source_->persistentBytes(); s.preparedBytes=c.horizontal_->persistentBytes();
         s.workspaceBytes=c.horizontalWorkspace_->persistentBytes()+sizeof(WVVariableComplexBuffer)+c.pointwise_->persistentBytes(); s.providerBytesLowerBound=c.horizontal_->providerBytesLowerBound(); s.planBytesLowerBound=c.horizontalWorkspace_->planBytesLowerBound();
         for (std::size_t i=0;i<4;++i) { s.preparedBytes+=c.vertical_[i]->persistentBytes(); s.workspaceBytes+=c.verticalWorkspace_[i]->persistentBytes(); }
+        for (const auto& matrix:c.realVerticalMatrices_) s.preparedBytes+=matrix.capacity()*sizeof(double);
+        if (c.realVerticalBackend_) s.preparedBytes+=c.realVerticalBackend_->persistentBytes();
         s.spectralScratchBytes=c.spectralStorage_->capacityBytes()+c.phase_.capacity()*sizeof(WVComplex64);
         c.baseSpectralScratchBytes_=s.spectralScratchBytes;
         s.realScratchBytes=c.real_.capacity()*sizeof(double); s.factorBytes=c.factors_.capacity()*sizeof(WVHydrostaticModeFactors);
@@ -1066,12 +1069,99 @@ WVKernelStatus WVTransformHydrostaticKernel::totalEnergySpatiallyIntegrated(cons
     if (!std::isfinite(sum)) return {WVKernelStatusCode::numericalFailure,"Hydrostatic spatial energy overflow."};
     value=sum; return WVKernelStatus::ok();
 }
+WVKernelStatus WVTransformHydrostaticKernel::prepareRealVerticalCalculus(MatrixBackendFactory factory) {
+    // Hydrostatic F0/G0 matrices are independent of horizontal mode. Preserve
+    // the general path for a source providing genuinely different matrices.
+    for (const auto& operation:vertical_) if (operation->uniqueMatrixCount()!=1) return WVKernelStatus::ok();
+    const auto& g=geometry();
+    auto status=factory(realVerticalBackend_); if (!status) return status;
+    if (!realVerticalBackend_ || realVerticalBackend_->maximumDimension()<g.Nz)
+        return {WVKernelStatusCode::invalidConfiguration,"Real vertical backend cannot address the vertical grid."};
+    const auto count=product(g.Nz,g.Nz); product(count,sizeof(double));
+    for (std::size_t operation=0;operation<5;++operation) {
+        auto& matrix=realVerticalMatrices_[operation]; matrix.resize(count);
+        const bool inputIsF=operation==0 || operation==3;
+        const bool integral=operation>=3;
+        const unsigned order=operation==2 ? 2 : 1;
+        status=kernel_detail::applyStratifiedVerticalCalculus(g,g.Nz,inputIsF,order,integral,
+            [](std::size_t column,std::size_t z) { return column==z ? 1.0 : 0.0; },
+            [&](std::size_t column,std::size_t z,double value) { matrix[z+g.Nz*column]=value; },
+            gridView(),gridView(1),modalView(),
+            [&](std::size_t op,WVComplexInput input,WVComplexOutput output) {
+                return vertical_[op]->execute(*verticalWorkspace_[op],input,output);
+            });
+        if (!status) return status;
+        for (double value:matrix) if (!std::isfinite(value))
+            return {WVKernelStatusCode::numericalFailure,"Real vertical derivative matrix overflow."};
+    }
+    return WVKernelStatus::ok();
+}
 WVKernelStatus WVTransformHydrostaticKernel::verticalCalculus(const double* values,WVHydrostaticFamily family,
     unsigned order,bool integral,double* result,std::size_t columns,bool verticalFirst) {
     const auto& g=geometry();
     const auto index=[&](std::size_t column,std::size_t z) {
         return verticalFirst ? z+g.Nz*column : column+columns*z;
     };
+    if (realVerticalBackend_) {
+        std::array<std::size_t,3> operations{};
+        std::size_t operationCount=0;
+        if (integral) operations[operationCount++]=family==WVHydrostaticFamily::F ? 3 : 4;
+        else if (family==WVHydrostaticFamily::F) {
+            operations[operationCount++]=0;
+            if (order>=3) operations[operationCount++]=2;
+            if (order==2 || order==4) operations[operationCount++]=1;
+        } else {
+            if (order==1) operations[operationCount++]=1;
+            else {
+                operations[operationCount++]=2;
+                if (order==3) operations[operationCount++]=1;
+                if (order==4) operations[operationCount++]=2;
+            }
+        }
+        // A physical volume already has layout [horizontal columns,Nz].
+        // Multiply on the right by D^T without permuting either full volume.
+        if (!verticalFirst && columns<=R_/g.Nz && columns<=realVerticalBackend_->maximumDimension()) {
+            const double* input=values;
+            for (std::size_t step=0;step<operationCount;++step) {
+                double* output=step+1==operationCount ? result : real_.data()+(4+step%2)*R_;
+                ++metrics_.verticalOperatorExecutionCount;
+                realVerticalBackend_->rightTranspose(columns,g.Nz,g.Nz,input,columns,
+                    realVerticalMatrices_[operations[step]].data(),g.Nz,output,columns,0);
+                input=output;
+            }
+            return WVKernelStatus::ok();
+        }
+        // These two existing scratch slots are disjoint from advection's x/y/z
+        // derivatives (slots 0:2). No additional physical-volume buffers.
+        const auto capacity=std::min(R_/g.Nz,realVerticalBackend_->maximumDimension());
+        for (std::size_t begin=0;begin<columns;begin+=capacity) {
+            const auto count=std::min(capacity,columns-begin);
+            auto* a=real_.data()+4*R_; auto* b=real_.data()+5*R_;
+            if (verticalFirst) std::copy_n(values+begin*g.Nz,count*g.Nz,a);
+            else pointwise_->execute(count,[&](std::size_t first,std::size_t last) {
+                for (std::size_t block=first;block<last;block+=32) {
+                    const auto end=std::min(last,block+32);
+                    for (std::size_t z=0;z<g.Nz;++z) for (std::size_t column=block;column<end;++column)
+                        a[z+g.Nz*column]=values[index(begin+column,z)];
+                }
+            });
+            const auto apply=[&](std::size_t operation) {
+                ++metrics_.verticalOperatorExecutionCount;
+                realVerticalBackend_->real(g.Nz,g.Nz,count,realVerticalMatrices_[operation].data(),a,g.Nz,b,g.Nz,0);
+                std::swap(a,b);
+            };
+            for (std::size_t step=0;step<operationCount;++step) apply(operations[step]);
+            if (verticalFirst) std::copy_n(a,count*g.Nz,result+begin*g.Nz);
+            else pointwise_->execute(count,[&](std::size_t first,std::size_t last) {
+                for (std::size_t block=first;block<last;block+=32) {
+                    const auto end=std::min(last,block+32);
+                    for (std::size_t z=0;z<g.Nz;++z) for (std::size_t column=block;column<end;++column)
+                        result[index(begin+column,z)]=a[z+g.Nz*column];
+                }
+            });
+        }
+        return WVKernelStatus::ok();
+    }
     return kernel_detail::applyStratifiedVerticalCalculus(g,columns,family==WVHydrostaticFamily::F,
         order,integral,[&](std::size_t column,std::size_t z) { return values[index(column,z)]; },
         [&](std::size_t column,std::size_t z,double value) { result[index(column,z)]=value; },

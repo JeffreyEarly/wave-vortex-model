@@ -193,6 +193,13 @@ public:
     // True only when independent calls on this immutable backend may execute
     // concurrently. Scheduling policy remains outside the backend.
     virtual bool supportsConcurrentCalls() const noexcept { return false; }
+    // Real physical-column work uses the same prepared matrix provider.
+    virtual void real(std::size_t m, std::size_t k, std::size_t n, const double* a,
+        const double* b, std::size_t ldb, double* c, std::size_t ldc, double beta) const noexcept;
+    // C[m,n] = A[m,k] * B[n,k]^T + beta*C for physical volumes.
+    virtual void rightTranspose(std::size_t m, std::size_t k, std::size_t n,
+        const double* a, std::size_t lda, const double* b, std::size_t ldb,
+        double* c, std::size_t ldc, double beta) const noexcept;
     virtual void split(std::size_t m, std::size_t k, std::size_t n, const double* a,
         const double* br, const double* bi, std::size_t ldb, double* cr, double* ci, std::size_t ldc, double beta) const noexcept = 0;
     virtual void interleaved(std::size_t m, std::size_t k, std::size_t n, const WVComplex64* a,
