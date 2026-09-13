@@ -1,9 +1,13 @@
-function evidence = evaluateBoussinesqRHSAssessment(prepared,Nxyz)
+function evidence = evaluateBoussinesqRHSAssessment(prepared,Nxyz,options)
 % Evaluate the complete nonlinear source and fixed modal dual on another grid.
 % No eigensolve, modal fit, closure change, or source filtering is performed.
+% crossingOrder=0 keeps native quadrature; a positive order integrates the
+% buoyancy crossing layer separately. evidence.source always retains the
+% pointwise physical source; only its volume projection receives the load.
 arguments
     prepared (1,1) struct
     Nxyz (1,3) double {mustBeInteger,mustBePositive}
+    options.crossingOrder (1,1) double {mustBeInteger,mustBeNonnegative} = 0
 end
 if ~isfield(prepared,'kind') || prepared.kind~="boussinesqRHSSnapshot-v1"
     error('WV:InvalidRHSAssessment','Supply a prepared Boussinesq RHS snapshot.')
@@ -21,6 +25,9 @@ keys=round([w.k(:)*w.Lx,w.l(:)*w.Ly]/(2*pi));
 otherKeys=round([geometry.k(:)*w.Lx,geometry.l(:)*w.Ly]/(2*pi));
 [found,indices]=ismember(keys,otherKeys,'rows');
 if ~all(found), error('WV:MissingAssessmentWavenumber','The evaluation grid omits a retained wavenumber.'); end
+if options.crossingOrder>0
+    crossing=WVInternal.prepareBuoyancyCrossingProjection(w.N2Function,z,q,w.Lz,options.crossingOrder);
+end
 h=struct();
 for name=["u","v","w","eta","p"]
     value=zeros(nz,numel(geometry.k)); value(:,indices)=M*prepared.spectral.(name);
@@ -29,7 +36,11 @@ end
 h.ssh=h.p(:,:,end)/(w.rho0*w.g);
 physicalZ=reshape(z,1,1,[])+reshape(1+z/w.Lz,1,1,[]).*h.ssh;
 N2=w.N2Function(z); N2=N2(:);
-thermal=prepared.thermodynamics.evaluateNonlinear(physicalZ,h.eta,h.ssh,N2);
+if options.crossingOrder>0
+    thermal=prepared.thermodynamics.evaluateCrossingSplit(physicalZ,h.eta,h.ssh,N2);
+else
+    thermal=prepared.thermodynamics.evaluateNonlinear(physicalZ,h.eta,h.ssh,N2);
+end
 derivative=struct(x=@(a)geometry.diffX(a),y=@(a)geometry.diffY(a),xi=@verticalDerivative);
 terms=WVInternal.freeSurfaceNonlinearTerms(h,h.p,z,w.Lz,w.f,w.rho0,N2,thermal.buoyancyRemainder,derivative);
 source=terms.source;
@@ -37,11 +48,22 @@ for name=["u","v","w","eta"]
     values=geometry.transformFromSpatialDomainWithFourier(source.(name)); spectral.(name)=values(:,indices);
     values=geometry.transformFromSpatialDomainWithFourier(-terms.N.(name)); advective.(name)=values(:,indices);
 end
-rate=project(spectral); advection=project(advective);
+projectionSource=spectral;
+if options.crossingOrder>0
+    load=crossing.load(h.ssh);
+    splitBuoyancy=-thermal.smoothBuoyancyRemainder+load;
+    splitW=-terms.N.w+(h.ssh./(w.Lz+h.ssh)).*verticalDerivative(h.p)/w.rho0+splitBuoyancy;
+    values=geometry.transformFromSpatialDomainWithFourier(splitW);
+    projectionSource.w=values(:,indices);
+end
+rate=project(projectionSource); advection=project(advective);
 zero=zeros(size(spectral.u)); buoyancy=struct(u=zero,v=zero,w=zero,eta=zero);
 values=geometry.transformFromSpatialDomainWithFourier(-thermal.buoyancyRemainder); buoyancy.w=values(:,indices);
+if options.crossingOrder>0
+    values=geometry.transformFromSpatialDomainWithFourier(splitBuoyancy); buoyancy.w=values(:,indices);
+end
 buoyancy=project(buoyancy);
-evidence=struct(snapshot=w,grid=Nxyz,z=z,source=spectral,tendency=rate,advection=advection,buoyancy=buoyancy,minimumGamma=min(1+h.ssh/w.Lz,[],'all'),maximumSSHOverDepth=max(abs(h.ssh),[],'all')/w.Lz,minimumLabel=min(physicalZ-h.eta,[],'all'),maximumLabel=max(physicalZ-h.eta,[],'all'));
+evidence=struct(crossingOrder=options.crossingOrder,snapshot=w,grid=Nxyz,z=z,source=spectral,tendency=rate,advection=advection,buoyancy=buoyancy,minimumGamma=min(1+h.ssh/w.Lz,[],'all'),maximumSSHOverDepth=max(abs(h.ssh),[],'all')/w.Lz,minimumLabel=min(physicalZ-h.eta,[],'all'),maximumLabel=max(physicalZ-h.eta,[],'all'));
     function value=verticalDerivative(a)
         value=reshape(reshape(a,[],nz)*Dz.',size(a));
     end

@@ -24,15 +24,17 @@ energyCoefficients(end+1:coefficientCount) = 0;
 parameters = struct(integralCoefficients=integralCoefficients,energyCoefficients=energyCoefficients,Lz=Lz,g=g,rho0=rho0,profile=profile,I=I,J=J);
 context = struct(evaluate=@(z,eta,ssh)evaluate(parameters,z,eta,ssh),referenceConvention="upper-constant-density",minimumLabel=-Lz,maximumLabel=0);
 context.evaluateNonlinear = @(z,eta,ssh,N2)evaluate(parameters,z,eta,ssh,N2);
+context.evaluateCrossingSplit = @(z,eta,ssh,N2)evaluate(parameters,z,eta,ssh,N2,includeSmoothRemainder=true);
 end
 
-function fields = evaluate(parameters,z,eta,ssh,N2)
+function fields = evaluate(parameters,z,eta,ssh,N2,options)
 arguments (Input)
     parameters (1,1) struct
     z (:,:,:) double {mustBeReal,mustBeFinite}
     eta (:,:,:) double {mustBeReal,mustBeFinite}
     ssh (:,:) double {mustBeReal,mustBeFinite}
     N2 (:,1) double {mustBeReal,mustBeFinite,mustBePositive} = zeros(0,1)
+    options.includeSmoothRemainder (1,1) logical = false
 end
 if ~isequal(size(z),size(eta)) || ~isequal(size(ssh),[size(z,1),size(z,2)])
     error('WV:ThermodynamicShape','Physical height and displacement must share a volume grid, with SSH on its horizontal grid.');
@@ -77,6 +79,15 @@ if ~isempty(N2)
     referenceN2 = reshape(N2,1,1,[]);
     % Keep the original eta in the linear term after a label adjustment.
     fields.buoyancyRemainder = interval.*((fields.N2AtLabel-referenceN2)+variation)-referenceN2.*(crest+labelAdjustment);
+    if options.includeSmoothRemainder
+        % Algebraic polynomial continuation removes the crossing before
+        % source assembly, without subtracting two O(eta) source values.
+        fields.smoothBuoyancyRemainder = fields.buoyancyRemainder;
+        crossing = z>0;
+        [~,~,levels] = ind2sub(size(z),find(crossing));
+        [smoothVariation,~] = WVInternal.chebyshevIntervalAverages(parameters.integralCoefficients,parameters.energyCoefficients,label(crossing),effectiveEta(crossing),parameters.Lz);
+        fields.smoothBuoyancyRemainder(crossing) = effectiveEta(crossing).*((fields.N2AtLabel(crossing)-N2(levels))+smoothVariation)-N2(levels).*labelAdjustment(crossing);
+    end
 end
 fields.apeEta = effectiveEta.*fields.N2AtLabel;
 fields.apeZ = -fields.apeEta-fields.buoyancy;

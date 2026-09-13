@@ -1,0 +1,13 @@
+profile,amplitude,order,firstPassingNz
+constant,0.01,0,65
+constant,0.01,8,13
+constant,0.1,0,25
+constant,0.1,8,13
+constant,1,0,13
+constant,1,8,13
+exponential,0.01,0,65
+exponential,0.01,8,13
+exponential,0.1,0,17
+exponential,0.1,8,13
+exponential,1,0,13
+exponential,1,8,13
