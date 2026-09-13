@@ -97,6 +97,23 @@ public:
         return {instance->typeIdentifier(),instance->name(),instance->contractVersion(),
             instance->stage(),instance->priority(),instance->ordinal()};
       };
+      // The engine owns an immutable resolved schedule, so this setup-time
+      // identity remains valid for the lifetime of the borrowed binding.
+      if(candidate->evaluateBuiltin_ && candidate->bindings_.size()==1 &&
+          candidate->stages_.size()==1) {
+        const auto defaultNonlinear=defaultNonlinearAdvectionSchedule();
+        if(defaultNonlinear.entries.size()==1) {
+          const auto actual=candidate->instance_(candidate->engine_,0);
+          const auto& expected=defaultNonlinear.entries.front();
+          candidate->exactBuiltinNonlinear_=
+              actual.type==expected.typeIdentifier &&
+              actual.version==expected.contractVersion &&
+              actual.name==expected.name && actual.stage==expected.stage &&
+              candidate->stages_[0]==expected.stage &&
+              actual.priority==expected.priority &&
+              actual.ordinal==expected.ordinal;
+        }
+      }
       if constexpr(std::is_same_v<Engine,
           WVConstantStratificationForcingEngine>) {
         const auto& descriptor=engine.kernel().descriptor();
@@ -162,13 +179,7 @@ public:
     return evaluate_(engine_,state,outputs,count,prepared,session);
   }
   bool supportsExactBuiltinNonlinear() const noexcept {
-    if(!evaluateBuiltin_ || bindings_.size()!=1 || stages_.size()!=1 ||
-        stages_[0]!=WVForcingStage::spatial) return false;
-    const auto identity=instance_(engine_,0);
-    return identity.type=="WVNonlinearAdvection" &&
-        identity.version==WVPortablePairContractVersion &&
-        identity.name=="nonlinear advection" && identity.priority==127 &&
-        identity.ordinal==1;
+    return exactBuiltinNonlinear_;
   }
   WVKernelStatus evaluateBuiltinNonlinear(const WVState& state,
       const WVRealFieldBundleConstView* prepared,
@@ -234,5 +245,6 @@ private:
   std::array<std::size_t,2> constantLaplacianUseCount_{};
   bool requiresFourChannelTendencySelection_=false;
   bool horizontalMaximumNeeded_=false;
+  bool exactBuiltinNonlinear_=false;
 };
 }

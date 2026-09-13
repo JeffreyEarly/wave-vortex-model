@@ -1,0 +1,18 @@
+{
+  "schemaVersion": "wvm507-single-dispatch-verification-v1",
+  "sourceCommit": "2a13fe93a896bc2398a82a1ba91955413ad053b7",
+  "matlab": {
+    "passed": 57,
+    "failed": 0,
+    "incomplete": 0,
+    "receipt": "/private/tmp/wvm503/single-dispatch-combined-matlab-tests.csv",
+    "sha256": "9e6e19800fdfd87b4d1fec8ded814d2e327d18cb46e39e58a7949b6e27848b4f"
+  },
+  "native": {
+    "passed": 53,
+    "failed": 1,
+    "failure": "forcing-dispatch-source-policy rejected duplicate built-in forcing class literal in new diagnostic binding",
+    "correction": "Resolve and retain exact immutable default identity from the central forcing schedule during binding construction. Numerical algorithms unchanged; source-policy rerun passes, rebuilt affected native/MATLAB checks pending."
+  },
+  "ciRouting": "Registered TestWVCompiledCoefficientOnlyRHS for compiled MATLAB CI; 20 routing unit tests pass."
+}

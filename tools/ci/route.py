@@ -23,7 +23,8 @@ SHARED_TESTS = ['TestPortableStableForcing', 'TestPortableForcingCompatibility',
                 'TestPortableSamplingOutput']
 COMPILED_MATLAB_TESTS = [
     'TestWVCompiledAdapterRestore', 'TestWVCompiledBackend',
-    'TestWVCompiledBarotropicPrimitives', 'TestWVCompiledConfiguration',
+    'TestWVCompiledBarotropicPrimitives', 'TestWVCompiledCoefficientOnlyRHS',
+    'TestWVCompiledConfiguration',
     'TestWVCompiledConstantPrimitives', 'TestWVCompiledConsumers',
     'TestWVCompiledEvaluationScope', 'TestWVCompiledPublicAdapters',
     'TestWVCompiledSourceIdentity', 'TestWVCompiledStratifiedPrimitives',
