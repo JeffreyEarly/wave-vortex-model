@@ -1,0 +1,17 @@
+{
+  "archiveRelativeToWorkspace": "wave-vortex-model-benchmark-artifacts/prepared-pipeline-20260912/final-acceptance",
+  "SHA256": {
+    "hardware.json": "ca84aa29797f0aa4cf2393e258a071575c95feb941149b17943e4381c7b8f9de",
+    "summarize-final.py": "5dd20267219da40d24b7f767ba0722ce73d69a28d13e01fb808260b60aae6742",
+    "run.py": "db062100e777ba996a8fd1d475928fe3cb8b6d432cc4a468874f1b59f2987eda",
+    "qualify.py": "7f9e2cc755bd1c576674d8b2223c7944f46a8989930933edffaf764be55b10ac",
+    "manifest.json": "da2c262e4e953fb4f5ba8bb28747a5e32b44916e79353270ac7afcf5d17fc101",
+    "frozen-build.json": "252250164d43bb61c5100a69fbc1de9857e0178cc70e3e2dc35a4d3c43392e51",
+    "host-activity.json": "1045ed839d21cfdf62d137b4621790f3dc86b5a7d02f0f14d724d739f3ae092e",
+    "qualification/protocol.json": "409b92c4b31c96b414eb774964c1db7c3fa095870c2db95898f0d342fb4c4731",
+    "qualification/pairs.json": "840a1cfea8e0f4d857290ff551e110fe5878b0796115efbc9e4f27dac41cacd5",
+    "qualification/summary.json": "846cc5f0b8c8d1c8d4d8db7154c8bd464b6510d85453f589877a85fd5125f7d8",
+    "final-summary.json": "e3ebe47a40c649855dee5f94fca42f79c310b84332ad50f4d1ff022eb9107987",
+    "final-host-attribution.json": "c1c86108696b90edbc3ad2ee12b849ee9a63715d2052866fdd388d8b85129b38"
+  }
+}

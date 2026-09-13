@@ -1,0 +1,8 @@
+{
+  "runtimeInputsUnchanged": true,
+  "changedTrackedRuntimeTreePaths": [
+    "PortableRuntime/qualification/forward-integration-native-fftw-v1.json",
+    "PortableRuntime/qualification/forward-integration-reference-v1.json"
+  ],
+  "explanation": "Only newly collected source-linked forward qualification receipts differ after freezing. Compiled scientific/runtime inputs are identical."
+}

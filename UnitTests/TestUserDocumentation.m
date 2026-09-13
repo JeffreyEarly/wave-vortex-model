@@ -148,6 +148,8 @@ classdef TestUserDocumentation < matlab.unittest.TestCase
                 "compiled-execution","compiled-matlab-backend.md"));
             standalone = testCase.readCanonical(fullfile( ...
                 "compiled-execution","standalone-portable-runtime.md"));
+            storageBenchmark = testCase.readCanonical(fullfile( ...
+                "developers-guide","transform-storage-benchmark.md"));
             userGuide = testCase.readCanonical(fullfile("users-guide","index.md"));
             benchmarks = testCase.readCanonical(fullfile( ...
                 "compiled-execution","benchmarks.md"));
@@ -172,7 +174,7 @@ classdef TestUserDocumentation < matlab.unittest.TestCase
             testCase.verifySubstring(overview,"Compiled MATLAB backend preview")
             testCase.verifySubstring(overview,"Standalone portable runtime")
             testCase.verifySubstring(overview,"[Benchmarks](/benchmarks)")
-            testCase.verifySubstring(benchmarks,"three-interface--m5-max--20260828T143049Z")
+            testCase.verifyFalse(contains(benchmarks,"three-interface--m5-max--20260828T143049Z"))
             testCase.verifySubstring(benchmarks,"MATLAB at low resolution")
             testCase.verifySubstring(benchmarks,"build physical understanding")
             testCase.verifySubstring(benchmarks,"added complexity is worthwhile")
@@ -185,7 +187,7 @@ classdef TestUserDocumentation < matlab.unittest.TestCase
             testCase.verifySubstring(matlabCppDescription,"ode78 / RK8(7)")
             testCase.verifySubstring(matlabCppDescription, ...
                 "execution path and output workload vary")
-            testCase.verifySubstring(matlabCppDescription,"Standalone C++ is fastest")
+            testCase.verifySubstring(matlabCppDescription,"selected historical record")
             testCase.verifyFalse(contains(matlabCppDescription,"Runtime covers"))
             testCase.verifyFalse(contains(matlabCppDescription,"fresh processes"))
             sections = ["MATLAB vs C++" "MATLAB speed scaling" ...
@@ -203,6 +205,16 @@ classdef TestUserDocumentation < matlab.unittest.TestCase
             testCase.verifySubstring(benchmarks,"vertical sweeps vary `Nz`")
             testCase.verifySubstring(benchmarks,"doubling both horizontal dimensions")
             testCase.verifySubstring(benchmarks,"varies the integrator down the rows")
+            testCase.verifySubstring(benchmarks,"[MATLAB builtin transform storage benchmark](/developers-guide/transform-storage-benchmark.html)")
+            testCase.verifySubstring(benchmarks,"## Recent native optimization evidence")
+            testCase.verifySubstring(benchmarks,"Benchmarks/SHARED-GRADIENT-PIPELINE.md")
+            testCase.verifySubstring(benchmarks,"Benchmarks/TILED-ADVECTION-PIPELINE.md")
+            testCase.verifySubstring(benchmarks,"their relative changes cannot be added")
+            testCase.verifySubstring(benchmarks,"All 30 warmup/measured comparisons")
+            testCase.verifyMatches(storageBenchmark,'(?m)^title: MATLAB builtin transform storage benchmark$')
+            testCase.verifySubstring(storageBenchmark,"covers MATLAB's builtin transform implementation")
+            testCase.verifySubstring(storageBenchmark,"separate from the matched compiled interface measurements")
+            testCase.verifySubstring(storageBenchmark,"engineering diagnostics rather than cataloged public performance datasets")
             headings = ["## MATLAB vs C++" "## MATLAB speed scaling" ...
                 "## MATLAB memory scaling" "## Integrator comparison"];
             headingLocations = arrayfun(@(heading)strfind(benchmarks,heading),headings);

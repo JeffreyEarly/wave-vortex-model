@@ -435,7 +435,8 @@ WVKernelStatus WVTransformHydrostaticKernel::projectFields(const double* u,const
 }
 WVKernelStatus WVTransformHydrostaticKernel::projectedFieldsToCoefficients(
     WVComplexInput U,WVComplexInput V,WVComplexInput N,WVMutableCoefficients b) {
-    for (std::size_t i=0;i<S_;++i) {
+    pointwise_->execute(S_,[&](std::size_t begin,std::size_t end) {
+      for (std::size_t i=begin;i<end;++i) {
         const auto& f=factors_[i]; const auto mode=i/geometry().Nj; const double k=geometry().k[mode],l=geometry().l[mode];
         const auto zeta=subtract(multiply(read(V,i),{0,k}),multiply(read(U,i),{0,l}));
         const auto delta=scale(add(multiply(read(U,i),{0,k}),multiply(read(V,i),{0,l})),geometry().h_0[i%geometry().Nj]);
@@ -445,6 +446,7 @@ WVKernelStatus WVTransformHydrostaticKernel::projectedFieldsToCoefficients(
         if (f.inertial) { ap=scale(subtract(read(U,i),multiply(read(V,i),{0,1})),.5); am=conjugate(ap); }
         b.Ap.data[i]=multiply(ap,conjugate(phase_[i])); b.Am.data[i]=multiply(am,phase_[i]); b.A0.data[i]=a0;
     }
+    });
     return WVKernelStatus::ok();
 }
 WVKernelStatus WVTransformHydrostaticKernel::transformUVEtaToWaveVortex(WVRealVolumeConstView u,WVRealVolumeConstView v,WVRealVolumeConstView eta,double t,double t0,WVMutableCoefficients b) {

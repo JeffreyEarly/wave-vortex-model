@@ -1,0 +1,278 @@
+{
+  "boussinesq-fusion-screen": {
+    "complete": true,
+    "pairedBlockRatios": [
+      0.9859308669606657,
+      0.9795082928575395,
+      0.9791139558848133,
+      0.98317432557071
+    ],
+    "geometricMeanRatio": 0.9819278719696332,
+    "blockMeansSeconds": [
+      {
+        "worker": "baseline",
+        "mean": 0.07282292179166666
+      },
+      {
+        "worker": "fusion",
+        "mean": 0.07179836641666666
+      },
+      {
+        "worker": "fusion",
+        "mean": 0.07137520825
+      },
+      {
+        "worker": "baseline",
+        "mean": 0.07286840629166666
+      },
+      {
+        "worker": "baseline",
+        "mean": 0.07325008866666667
+      },
+      {
+        "worker": "fusion",
+        "mean": 0.07172018408333333
+      },
+      {
+        "worker": "fusion",
+        "mean": 0.07189173104166667
+      },
+      {
+        "worker": "baseline",
+        "mean": 0.073122059
+      }
+    ],
+    "processLifetimeSeconds": 43.43637249991298,
+    "validationSeconds": 5.618934793,
+    "timedRHSSeconds": 13.892375173,
+    "preparationSeconds": {
+      "baseline": 10.159228501000001,
+      "fusion": 10.183907666
+    },
+    "fluxComparisons": {
+      "baseline": {
+        "absoluteTolerance": 1e-12,
+        "maximumAbsoluteDifference": 0.0,
+        "passed": true,
+        "relativeTolerance": 1e-10
+      },
+      "fusion": {
+        "absoluteTolerance": 1e-12,
+        "maximumAbsoluteDifference": 2.2863272130965685e-21,
+        "passed": true,
+        "relativeTolerance": 1e-10
+      }
+    },
+    "memoryBytes": {
+      "baseline": 4222276248,
+      "fusion": 4222276248
+    }
+  },
+  "boussinesq-parallel-screen": {
+    "complete": true,
+    "pairedBlockRatios": [
+      0.9342906562649841,
+      0.9379112453042282,
+      0.9425312127676271,
+      0.9430105324152852
+    ],
+    "geometricMeanRatio": 0.9394290986709871,
+    "blockMeansSeconds": [
+      {
+        "worker": "baseline",
+        "mean": 0.073865069625
+      },
+      {
+        "worker": "parallel",
+        "mean": 0.069011444375
+      },
+      {
+        "worker": "parallel",
+        "mean": 0.06905880391666666
+      },
+      {
+        "worker": "baseline",
+        "mean": 0.07363042533333333
+      },
+      {
+        "worker": "baseline",
+        "mean": 0.073891894125
+      },
+      {
+        "worker": "parallel",
+        "mean": 0.06964541658333334
+      },
+      {
+        "worker": "parallel",
+        "mean": 0.06989243054166666
+      },
+      {
+        "worker": "baseline",
+        "mean": 0.07411627775
+      }
+    ],
+    "processLifetimeSeconds": 44.54959891596809,
+    "validationSeconds": 5.6640591659999995,
+    "timedRHSSeconds": 13.754682294,
+    "preparationSeconds": {
+      "baseline": 10.307831457999999,
+      "parallel": 10.205578375
+    },
+    "fluxComparisons": {
+      "baseline": {
+        "absoluteTolerance": 1e-12,
+        "maximumAbsoluteDifference": 0.0,
+        "passed": true,
+        "relativeTolerance": 1e-10
+      },
+      "parallel": {
+        "absoluteTolerance": 1e-12,
+        "maximumAbsoluteDifference": 2.541098841762901e-21,
+        "passed": true,
+        "relativeTolerance": 1e-10
+      }
+    },
+    "memoryBytes": {
+      "baseline": 4222276248,
+      "parallel": 4222276248
+    }
+  },
+  "boussinesq-assembly-screen": {
+    "complete": true,
+    "pairedBlockRatios": [
+      0.8881006038668617,
+      0.8750362173436402,
+      0.8799102962730998,
+      0.8846865981863821
+    ],
+    "geometricMeanRatio": 0.8819196323184798,
+    "blockMeansSeconds": [
+      {
+        "worker": "baseline",
+        "mean": 0.07238078641666666
+      },
+      {
+        "worker": "assembly",
+        "mean": 0.064281420125
+      },
+      {
+        "worker": "assembly",
+        "mean": 0.06441795145833333
+      },
+      {
+        "worker": "baseline",
+        "mean": 0.07361746883333334
+      },
+      {
+        "worker": "baseline",
+        "mean": 0.07346928116666666
+      },
+      {
+        "worker": "assembly",
+        "mean": 0.06464637695833333
+      },
+      {
+        "worker": "assembly",
+        "mean": 0.06451671004166666
+      },
+      {
+        "worker": "baseline",
+        "mean": 0.072926062375
+      }
+    ],
+    "processLifetimeSeconds": 43.586910834070295,
+    "validationSeconds": 5.625255124,
+    "timedRHSSeconds": 13.206145377,
+    "preparationSeconds": {
+      "assembly": 10.289415916,
+      "baseline": 10.211885417000001
+    },
+    "fluxComparisons": {
+      "assembly": {
+        "absoluteTolerance": 1e-12,
+        "maximumAbsoluteDifference": 2.541098841762901e-21,
+        "passed": true,
+        "relativeTolerance": 1e-10
+      },
+      "baseline": {
+        "absoluteTolerance": 1e-12,
+        "maximumAbsoluteDifference": 0.0,
+        "passed": true,
+        "relativeTolerance": 1e-10
+      }
+    },
+    "memoryBytes": {
+      "baseline": 4222276248,
+      "assembly": 4222276248
+    }
+  },
+  "hydrostatic-assembly-screen": {
+    "complete": true,
+    "pairedBlockRatios": [
+      0.9303936010773374,
+      0.9352899989337425,
+      0.92613068607253,
+      0.9092725040176913
+    ],
+    "geometricMeanRatio": 0.9252196215350337,
+    "blockMeansSeconds": [
+      {
+        "worker": "baseline",
+        "mean": 0.011200453125
+      },
+      {
+        "worker": "assembly",
+        "mean": 0.010420829916666667
+      },
+      {
+        "worker": "assembly",
+        "mean": 0.010586355958333333
+      },
+      {
+        "worker": "baseline",
+        "mean": 0.011318795208333333
+      },
+      {
+        "worker": "baseline",
+        "mean": 0.0112035555
+      },
+      {
+        "worker": "assembly",
+        "mean": 0.010375956541666667
+      },
+      {
+        "worker": "assembly",
+        "mean": 0.010063758666666667
+      },
+      {
+        "worker": "baseline",
+        "mean": 0.011067923666666667
+      }
+    ],
+    "processLifetimeSeconds": 4.130202458240092,
+    "validationSeconds": 1.303562207,
+    "timedRHSSeconds": 2.069703086,
+    "preparationSeconds": {
+      "assembly": 0.052853667,
+      "baseline": 0.053238209
+    },
+    "fluxComparisons": {
+      "assembly": {
+        "absoluteTolerance": 1e-12,
+        "maximumAbsoluteDifference": 1.7794722927547008e-22,
+        "passed": true,
+        "relativeTolerance": 1e-10
+      },
+      "baseline": {
+        "absoluteTolerance": 1e-12,
+        "maximumAbsoluteDifference": 0.0,
+        "passed": true,
+        "relativeTolerance": 1e-10
+      }
+    },
+    "memoryBytes": {
+      "baseline": 281630917,
+      "assembly": 281630917
+    }
+  }
+}

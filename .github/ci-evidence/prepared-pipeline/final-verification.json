@@ -1,0 +1,24 @@
+{
+  "archiveRelativeToWorkspace": "wave-vortex-model-benchmark-artifacts/prepared-pipeline-20260912/final-verification",
+  "runtimeCommit": "ed6049a2504dad833e93c9221b66ea68db1ac404",
+  "integratedGuardCommit": "280afe5b",
+  "forwardConfigurationCount": 6,
+  "forwardProviderCount": 2,
+  "catalogTestsPassed": 10,
+  "distinctFocusedDocumentationMethodsCovered": 10,
+  "documentationBuildPassed": true,
+  "documentationCheckPassed": true,
+  "newCodeAnalyzerFindings": 0,
+  "runtimeInputEquivalence": true,
+  "SHA256": {
+    "forward/results.json": "1175121e781cd494bd9ec9e9b5fc3c216f41890e3ec72ced89c4ad47cf8146cf",
+    "catalog-results.json": "56ba19c35f71f37943a68770d017ffc07d565c64b374f9f6ddde9f381a0b9b26",
+    "docs-results.json": "43b15d109201289a711a171a1bd12f89efbcbf1dffad7e0e805ef228aa554c06",
+    "docs-recheck-results.json": "27b78dc61dcf4795364dee850a803ec8b4c80f75d993978b6bbd7860222e85fc",
+    "docs-recheck.log": "98741b556de588493b6df9ed18262d4362f965eeb1b4bfdf5ed0d76843a261c2",
+    "analyzer.json": "b41e662b43d11084e3aeebb9f052c642d27a723c4f07be3f1f64d8adacdc4401",
+    "analyzer.log": "2294dfba06995d963a503fafa1072bf76653d8facf615a7727878dd36f18ec81",
+    "runtime-equivalence.diff": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "repository.log": "c07da0c00af35223d1451e64ae54fb1eab2c4b8c1eaac5c9419539558cdc09ab"
+  }
+}

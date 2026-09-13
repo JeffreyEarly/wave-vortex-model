@@ -479,26 +479,30 @@ WVKernelStatus WVTransformBoussinesqKernel::projectSpectralFields(WVComplexInput
     const auto& g=geometry();
     const auto U=modalView(),V=modalView(1),N=modalView(2),density=modalView(3),divergence=modalView(4),temp=modalView(5);
     auto s=vertical(1,uh,U); if (!s) return s; s=vertical(1,vh,V); if (!s) return s; s=vertical(3,nh,N); if (!s) return s;
-    for (std::size_t i=0;i<S_;++i) {
+    pointwise_->execute(S_,[&](std::size_t begin,std::size_t end) {
+      for (std::size_t i=begin;i<end;++i) {
         const auto& f=factors_[i]; const auto mode=i/g.Nj;
         const auto uValue=read(U.input(),i),vValue=read(V.input(),i),nValue=read(N.input(),i);
         const auto zeta=subtract(multiply(vValue,{0,g.k[mode]}),multiply(uValue,{0,g.l[mode]}));
         b.A0.data[i]=add(scale(zeta,f.A0Z),scale(nValue,f.A0N));
         write(N,i,subtract(nValue,scale(b.A0.data[i],f.NA0)));
-        write(U,i,scale(add(multiply(uValue,{0,g.k[mode]}),multiply(vValue,{0,g.l[mode]})),g.h_0[i%g.Nj]));
+        // The has-W projection obtains divergence from the physical spectra below.
+        if (!hasW) write(U,i,scale(add(multiply(uValue,{0,g.k[mode]}),multiply(vValue,{0,g.l[mode]})),g.h_0[i%g.Nj]));
     }
+    });
     s=vertical(8,N.input(),density); if (!s) return s;
     if (!hasW) {
         s=vertical(8,U.input(),divergence); if (!s) return s;
         for (std::size_t i=0;i<S_;++i) write(divergence,i,multiply(read(divergence.input(),i),factors_[i].ApmD));
     } else {
-        for (std::size_t mode=0;mode<g.Nkl;++mode) {
+        pointwise_->execute(g.Nkl,[&](std::size_t begin,std::size_t end) {
+          for (std::size_t mode=begin;mode<end;++mode) {
             const double K=std::hypot(g.k[mode],g.l[mode]);
             for (std::size_t z=0;z<g.Nz;++z) { const auto i=z+g.Nz*mode; write(work,i,K==0 ? WVComplex64{} : scale(add(scale(read(uh,i),g.k[mode]),scale(read(vh,i),g.l[mode])),1/(2*K))); }
         }
+        });
         s=vertical(9,work.input(),divergence); if (!s) return s;
         s=vertical(10,wh,temp); if (!s) return s;
-        for (std::size_t i=0;i<S_;++i) { const auto mode=i/g.Nj; write(divergence,i,add(read(divergence.input(),i),multiply(read(temp.input(),i),{0,std::hypot(g.k[mode],g.l[mode])/2}))); }
     }
     // Fio is the zero-wavenumber wave F basis, not the balanced F basis.
     // Only the exact inertial column consumes these two projections.
@@ -509,12 +513,21 @@ WVKernelStatus WVTransformBoussinesqKernel::projectSpectralFields(WVComplexInput
         s=vertical(5,uh,U); if (!s) return s;
         s=vertical(5,vh,V); if (!s) return s;
     }
-    for (std::size_t i=0;i<S_;++i) {
-        const auto& f=factors_[i]; const auto n=scale(read(density.input(),i),f.ApmN);
-        auto ap=add(read(divergence.input(),i),n),am=subtract(read(divergence.input(),i),n);
-        if (f.inertial) { ap=scale(subtract(read(U.input(),i),multiply(read(V.input(),i),{0,1})),.5); am=conjugate(ap); }
-        b.Ap.data[i]=multiply(ap,conjugate(phase_[i])); b.Am.data[i]=multiply(am,phase_[i]);
+    pointwise_->execute(g.Nkl,[&](std::size_t begin,std::size_t end) {
+      for (std::size_t mode=begin;mode<end;++mode) {
+        const double halfK=hasW ? std::hypot(g.k[mode],g.l[mode])/2 : 0;
+        for (std::size_t j=0;j<g.Nj;++j) {
+            const auto i=j+g.Nj*mode;
+            const auto& f=factors_[i]; const auto n=scale(read(density.input(),i),f.ApmN);
+            // Preserve the divergence addition before adding/subtracting density,
+            // consuming the vertical-velocity projection without a separate pass.
+            const auto d=hasW ? add(read(divergence.input(),i),multiply(read(temp.input(),i),{0,halfK})) : read(divergence.input(),i);
+            auto ap=add(d,n),am=subtract(d,n);
+            if (f.inertial) { ap=scale(subtract(read(U.input(),i),multiply(read(V.input(),i),{0,1})),.5); am=conjugate(ap); }
+            b.Ap.data[i]=multiply(ap,conjugate(phase_[i])); b.Am.data[i]=multiply(am,phase_[i]);
+        }
     }
+    });
     return WVKernelStatus::ok();
 }
 WVKernelStatus WVTransformBoussinesqKernel::transformUVEtaToWaveVortex(WVRealVolumeConstView u,WVRealVolumeConstView v,WVRealVolumeConstView eta,double t,double t0,WVMutableCoefficients b) {
@@ -571,7 +584,12 @@ WVKernelStatus WVTransformBoussinesqKernel::reconstruct(const WVCoefficients& a,
     const auto balancedView=prepared ? prepared->modal(S_,S_) : modalView(1);
     if (!prepared || !prepared->modalReady) {
         ++metrics_.coefficientAssemblyCount;
-        for (std::size_t i=0;i<S_;++i) {
+        // Validate once before dispatch; workers publish disjoint coefficients.
+        if (field<WVBoussinesqField::u ||
+            (field>WVBoussinesqField::qgpv && field!=WVBoussinesqField::zetaZ))
+            return unsupported();
+        pointwise_->execute(S_,[&](std::size_t begin,std::size_t end) {
+          for (std::size_t i=begin;i<end;++i) {
             const auto& f=factors_[i]; const auto mode=i/g.Nj; WVComplex64 p{},m{},z{};
             switch(field) {
                 case WVBoussinesqField::u: p=f.UAp; m=conjugate(p); z=f.UA0; break;
@@ -586,7 +604,7 @@ WVKernelStatus WVTransformBoussinesqKernel::reconstruct(const WVCoefficients& a,
                     p=subtract(multiply(f.VAp,{0,g.k[mode]}),multiply(f.UAp,{0,g.l[mode]}));
                     m=subtract(multiply(conjugate(f.VAp),{0,g.k[mode]}),multiply(conjugate(f.UAp),{0,g.l[mode]}));
                     z=subtract(multiply(f.VA0,{0,g.k[mode]}),multiply(f.UA0,{0,g.l[mode]})); break;
-                default: return unsupported();
+                default: break; // Rejected before dispatch.
             }
             WVComplex64 value{},balanced{};
             if (selected(f,component,true)) value=add(multiply(multiply(p,a.Ap.data[i]),phase_[i]),multiply(multiply(m,a.Am.data[i]),conjugate(phase_[i])));
@@ -595,6 +613,7 @@ WVKernelStatus WVTransformBoussinesqKernel::reconstruct(const WVCoefficients& a,
             if (!prepared && derivative==WVBoussinesqDerivative::y) { value=multiply(value,{0,g.l[mode]}); balanced=multiply(balanced,{0,g.l[mode]}); }
             write(wave,i,value); write(balancedView,i,balanced);
         }
+        });
         if (prepared) prepared->modalReady=true;
     }
     const auto combined=prepared ? prepared->grid() : reconstructionGrid;
@@ -604,7 +623,9 @@ WVKernelStatus WVTransformBoussinesqKernel::reconstruct(const WVCoefficients& a,
         auto s=vertical(G ? 6 : 4,wave.input(),combined); if (!s) return s;
         ++metrics_.verticalPreparationCount;
         s=vertical(G ? 2 : 0,balancedView.input(),balancedGrid); if (!s) return s;
-        for (std::size_t i=0;i<H_;++i) write(combined,i,add(read(combined.input(),i),read(balancedGrid.input(),i)));
+        pointwise_->execute(H_,[&](std::size_t begin,std::size_t end) {
+            for (std::size_t i=begin;i<end;++i) write(combined,i,add(read(combined.input(),i),read(balancedGrid.input(),i)));
+        });
         if (prepared) prepared->gridReady=true;
     } else ++metrics_.horizontalSpectrumReuseCount;
     auto horizontalInput=combined.input();

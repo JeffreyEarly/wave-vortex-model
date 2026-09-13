@@ -139,8 +139,7 @@ for iResolution = 1:size(requiredResolutions,1)
         rows(end+1,:) = [join(string(requiredResolutions(iResolution,:)),"×"),displayInterfaceCase(caseId),interfaceCell(builtin,builtin),interfaceCell(matlabCompiled,builtin),interfaceCell(standalone,builtin)]; %#ok<AGROW>
     end
 end
-contract = itemAt(dataset.cases,1).contract;
-intro = "Matched nonhydrostatic constant-stratification workloads on "+string(dataset.platform.displayName)+" at "+string(dataset.platform.threadCount)+" threads. MATLAB builtin uses MATLAB transforms; MATLAB + compiled core and standalone C++ share validated `"+string(dataset.provider.id)+"` "+string(dataset.provider.version)+". Each cell reports runtime followed by total peak process-tree RSS. Parentheses show speed relative to MATLAB builtin and memory change relative to MATLAB builtin. Values are medians of "+string(contract.processRunCount)+" fresh processes.";
+intro = interfaceRecordContextMarkdown(dataset)+" Each cell reports runtime followed by total peak process-tree RSS. Parentheses show speed relative to MATLAB builtin and memory change relative to MATLAB builtin.";
 markdown = intro+newline+newline+htmlTable(["Resolution" "Workload" "MATLAB builtin" "MATLAB + compiled core" "Standalone C++"],rows);
 end
 
@@ -178,7 +177,16 @@ for workload = workloads
     end
 end
 lines = [lines; "</tbody>"; benchmarkTableEnd];
-markdown = strjoin(lines,newline);
+markdown = interfaceRecordContextMarkdown(dataset)+newline+newline+strjoin(lines,newline);
+end
+
+function markdown = interfaceRecordContextMarkdown(dataset)
+contract = itemAt(dataset.cases,1).contract;
+collectedDate = extractBefore(string(dataset.collectedAt),"T");
+identity = "Historical matched record `"+string(dataset.datasetId)+"`, collected "+collectedDate+", measures WaveVortexModel "+string(dataset.source.version)+" at source commit `"+string(dataset.source.commit)+"` on "+string(dataset.platform.displayName)+" with "+string(dataset.platform.threadCount)+" threads and MATLAB "+string(dataset.platform.matlabVersion)+".";
+provider = "MATLAB builtin uses MATLAB transforms; MATLAB + compiled core and standalone C++ share validated `"+string(dataset.provider.id)+"` "+string(dataset.provider.version)+".";
+measurement = "Values are medians of "+string(contract.processRunCount)+" fresh processes. Runtime starts immediately before integration and ends after required output delivery; startup, construction, provider creation, planning, parsing, and cleanup are excluded. Peak memory is total live process tree RSS sampled during integration and output delivery; allocator and provider storage are not exactly attributable.";
+markdown = identity+" "+provider+" "+measurement+" This dated record does not include later native runtime changes.";
 end
 
 function markdown = integratorComparisonMarkdown(records)

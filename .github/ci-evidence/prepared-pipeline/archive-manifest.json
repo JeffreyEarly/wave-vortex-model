@@ -1,0 +1,30 @@
+{
+  "archiveRelativeToWorkspace": "wave-vortex-model-benchmark-artifacts/prepared-pipeline-20260912",
+  "SHA256": {
+    "frozen-build.json": "89e8b5848f5d40749d415ae1c18b7d04c262ba75a9fa5c779109288224b87081",
+    "qualification-manifest.json": "da2c262e4e953fb4f5ba8bb28747a5e32b44916e79353270ac7afcf5d17fc101",
+    "qualify.py": "9e162d5ae2e421782e94f473266fd179bacd9415d51270e58d21d11fee5edffa",
+    "run-campaign.py": "d2fc3199261514d7a3b318e1899d1168676aa340672b27ad95979d7c701548d4",
+    "host-activity.json": "572cb0b6f8ac8f0e07438cfd36bf22b41ade36f448a173af39640d19b6247e8f",
+    "qualification/protocol.json": "b0d26d4dedb6ff79b9b569357a88a0e27b7db9da24f419fb78cfd7452397b8ec",
+    "qualification/pairs.json": "7321f88c0b31d2805f096cbe962a8b37d79d6e5b28662f179959125355d7ddf0",
+    "qualification/operator-stop.json": "e37d04eb8ca597509bb92b74b5cb0118a00f23723c1f93fb50793b84d18bcce0",
+    "baseline-profile/category-summary.json": "49b1a6435f22c97e5ef6382f622fc79c528e0efab759f36301987d3cbe08a147",
+    "verification/matlab-results.json": "db186829f2e6a5dc7fc7483ded82688cd7e9ccf5318d4fbc5a793cfc4da7aaaa",
+    "boussinesq-fusion-screen/receipt.json": "9cfdaf8944f21de85c363f2604bc3488eee6f257967cb66f666d12740eaee99f",
+    "boussinesq-fusion-screen/blocks.jsonl": "e9bada74f0176c0a6ff2bb746c3f8faf4e8552a0d67bc41a83b70978b43d54eb",
+    "boussinesq-fusion-screen/summary.json": "2e0f50ed2e991dfdf77fcc10593a9ad7dba8519db9a43c99f62117fe878b7b88",
+    "boussinesq-parallel-screen/receipt.json": "2723304d82cafde4f8a585faf9e0af27c43d5046464e90e91723d63698660d6a",
+    "boussinesq-parallel-screen/blocks.jsonl": "9c2656dcb80eb313ad80c996352a8365c106dcfe2c000203ce7b998f5f1e92b5",
+    "boussinesq-parallel-screen/summary.json": "302ae4e2f0c1a4fa169ab22786e4604b29958f05e4d8d2c0b93293963e6b03ba",
+    "boussinesq-assembly-screen/receipt.json": "28cba784f1d898583293e0d98b45f7f900b457da6ede126449f475f3725034d2",
+    "boussinesq-assembly-screen/blocks.jsonl": "1cac8ba6b3003c576d736ce27cecd3a3e0ec10b844af589f8f6f8f944693a9b6",
+    "boussinesq-assembly-screen/summary.json": "e5b71813e89849730481e9b5019b77eb60f7b3d24bc928a249ffae8ed337a391",
+    "hydrostatic-assembly-screen/receipt.json": "163d734298a3fb48fc6974fd3ac93c6fdc3bc2aba9816b3aeb5c732b4d78d3bc",
+    "hydrostatic-assembly-screen/blocks.jsonl": "9ee328f748612292cc68e68a2a9e5509ac0829e11f992324641ebb49ba740d99",
+    "hydrostatic-assembly-screen/summary.json": "32511bdb17fe65089746d6da2fd0204e558d03fa0a86e8bf302bfc29b226d441",
+    "verification/wvm495-collect.log": "4c0d3dc61700fdb4d542c047a68637d0faaf89a68271e43434b823ed6a0d70a4",
+    "verification/catalog-results.json": "f5da05c1ac6fd719ffc4a241a5ab2f1100449dc77802da33c3bd10e7650f76d8",
+    "verification/wvm495-summarize-final.py": "ca0daa6f5801ca334d78e98d635dfa600226bf8dad40fe9fc654c8f043044c68"
+  }
+}

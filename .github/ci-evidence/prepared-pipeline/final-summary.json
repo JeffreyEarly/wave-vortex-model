@@ -1,0 +1,186 @@
+{
+  "qualified": true,
+  "finishedAtUTC": "2026-09-12T23:33:36.642332+00:00",
+  "allNumericalComparisonsPassed": true,
+  "allIntegrationDecisionsIdentical": true,
+  "postflightUnchanged": true,
+  "profiles": [
+    {
+      "profile": "eddytide-256x256x28",
+      "policies": {
+        "reuse": {
+          "completeLifetimeRatio": 0.9327712842638242,
+          "completeLifetimeBootstrap95": [
+            0.9254312297159332,
+            0.9391929019920576
+          ],
+          "integrationRatio": 0.9321850374973711,
+          "pairedBootstrap95": [
+            0.924932042566425,
+            0.9387968394503685
+          ],
+          "ratios": [
+            0.9358298615247213,
+            0.9401982192883763,
+            0.9376214241105439,
+            0.9133653434993384,
+            0.9352758125839978,
+            0.9455990766993182,
+            0.9194755251567113,
+            0.9305543247740014
+          ],
+          "maximumRetainedRatio": 0.999999958464815,
+          "maximumLiveRatio": 0.9999999319403099,
+          "maximumPeakRSSBytes": 656375808
+        }
+      },
+      "runtimePassed": true,
+      "requiresRuntimeInvestigation": false,
+      "lowMemoryPassed": null,
+      "warmupPairs": 2,
+      "measuredPairs": 8,
+      "baselineIntegrationGeometricMeanSeconds": 16.862156313045176,
+      "candidateIntegrationGeometricMeanSeconds": 15.718649814962546,
+      "orderStratifiedIntegrationRatios": {
+        "baselineFirst": 0.932021808237177,
+        "candidateFirst": 0.9323482953446552
+      },
+      "counterbalancedBlockRatios": [
+        0.9380114974574836,
+        0.9254139150159056,
+        0.9404232796132989,
+        0.924998338624683
+      ],
+      "producerRecordsIdentical": true,
+      "maximumAbsoluteOwnedTotalDifferenceBytes": 40,
+      "peakRSSRatioGeometricMean": 1.000124855718893,
+      "maximumScientificAbsoluteDifference": 1.2821114206114717e-17
+    },
+    {
+      "profile": "variable-hydrostatic-composite-large",
+      "policies": {
+        "reuse": {
+          "completeLifetimeRatio": 0.9877144518649968,
+          "completeLifetimeBootstrap95": [
+            0.9765210529418281,
+            0.9983976370227174
+          ],
+          "integrationRatio": 0.985147946825879,
+          "pairedBootstrap95": [
+            0.9746131326532986,
+            0.9958556304367944
+          ],
+          "ratios": [
+            0.9766473375685225,
+            0.9595694343126571,
+            1.0064649861806338,
+            1.0093569782631686,
+            0.9856004259318115,
+            0.9908973565880356,
+            0.9737639870126701,
+            0.9798751733388309
+          ],
+          "maximumRetainedRatio": 0.9999999155450472,
+          "maximumLiveRatio": 0.9999998783851426,
+          "maximumPeakRSSBytes": 2781265920
+        }
+      },
+      "runtimePassed": true,
+      "requiresRuntimeInvestigation": false,
+      "lowMemoryPassed": null,
+      "warmupPairs": 2,
+      "measuredPairs": 8,
+      "baselineIntegrationGeometricMeanSeconds": 5.373541507314536,
+      "candidateIntegrationGeometricMeanSeconds": 5.293733383114554,
+      "orderStratifiedIntegrationRatios": {
+        "baselineFirst": 0.9855366018420385,
+        "candidateFirst": 0.9847594450792392
+      },
+      "counterbalancedBlockRatios": [
+        0.968070727392162,
+        1.0079099449747315,
+        0.9882453423658895,
+        0.9768148010575757
+      ],
+      "producerRecordsIdentical": true,
+      "maximumAbsoluteOwnedTotalDifferenceBytes": 288,
+      "peakRSSRatioGeometricMean": 0.999986744351326,
+      "maximumScientificAbsoluteDifference": 1.1102230246251565e-16
+    },
+    {
+      "profile": "boussinesq-256x256x129-rk78",
+      "policies": {
+        "reuse": {
+          "completeLifetimeRatio": 0.9913701494381023,
+          "completeLifetimeBootstrap95": [
+            0.9805038190396084,
+            1.0012395218930008
+          ],
+          "integrationRatio": 0.8910313296261304,
+          "pairedBootstrap95": [
+            0.8196056667674323,
+            0.9630069358461049
+          ],
+          "ratios": [
+            1.0019992206676576,
+            0.8691325262638979,
+            0.9694072552536128,
+            0.8317539926327785,
+            1.0044789800442757,
+            0.7610571811697332,
+            0.9919896355121792,
+            0.7461462725265214
+          ],
+          "maximumRetainedRatio": 0.9999999855367997,
+          "maximumLiveRatio": 0.9999999769715694,
+          "maximumPeakRSSBytes": 7661993984
+        }
+      },
+      "runtimePassed": true,
+      "requiresRuntimeInvestigation": false,
+      "lowMemoryPassed": null,
+      "warmupPairs": 2,
+      "measuredPairs": 8,
+      "baselineIntegrationGeometricMeanSeconds": 4.419244566202977,
+      "candidateIntegrationGeometricMeanSeconds": 3.9376853617668894,
+      "orderStratifiedIntegrationRatios": {
+        "baselineFirst": 0.9918714946715659,
+        "candidateFirst": 0.8004432374964086
+      },
+      "counterbalancedBlockRatios": [
+        0.9332042187931525,
+        0.8979467439911877,
+        0.8743374297699631,
+        0.8603309647585371
+      ],
+      "producerRecordsIdentical": true,
+      "maximumAbsoluteOwnedTotalDifferenceBytes": 128,
+      "peakRSSRatioGeometricMean": 0.9999863668938992,
+      "maximumScientificAbsoluteDifference": 2.0816681711721685e-17
+    }
+  ],
+  "hardware": {
+    "cpu": "Apple M4 Max",
+    "logicalCPUs": 16,
+    "memoryBytes": 137438953472,
+    "os": "macOS 26.6.1",
+    "compiler": "Apple Clang 21.0.0 (clang-2100.1.1.101)",
+    "provider": "FFTW 3.3.11 NEON/pthreads and Accelerate",
+    "fftwInternalThreads": 1,
+    "horizontalWorkers": 12,
+    "pointwiseWorkers": 8,
+    "verticalGroupWorkers": {
+      "Hydrostatic": 1,
+      "Boussinesq": 8
+    }
+  },
+  "runtimeCommit": "ed6049a2504dad833e93c9221b66ea68db1ac404",
+  "baselineRuntimeCommit": "72fc2bdd2ff02bbc431ed36fcdf6dab2e5015c0c",
+  "baselineMergedRevision": "f65ebf684a403742ed27775de0a2c2aac4a1e2fe",
+  "archiveRelativeToWorkspace": "wave-vortex-model-benchmark-artifacts/prepared-pipeline-20260912/final-acceptance",
+  "completedComparisons": 30,
+  "allPerProcessIdlePreflightsPassed": true,
+  "quietThroughout": false,
+  "hostLimit": "Every process passed the idle preflight. Intermittent unrelated desktop activity occurred during execution; no pair was excluded. Estimated integration windows combine process-launch timestamps and report durations; two-second ps averages cannot prove instantaneous isolation. Preserve the order-stratified Boussinesq sensitivity and do not interpret bootstrap intervals as eliminating host effects.",
+  "adoptionDecision": "Adopt reviewed candidate: complete scientific, control, producer and storage gates pass; all three full paired runtime gates pass, corroborated by resident RHS screens. Timing is an observed paired result with retained host and order caveats, not a perfectly isolated performance guarantee."
+}
