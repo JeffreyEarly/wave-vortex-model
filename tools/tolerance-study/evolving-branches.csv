@@ -1,0 +1,3 @@
+relativeTolerance,rhs,attempts,absoluteControlled,relativeControlled,maximumControllerRelativeToAbsolute,maximumAnyRelativeToAbsolute,waveControlled
+1e-09,10439,803,803,0,7.6052064351877e-08,0.0279239086448383,802
+0.001,10439,803,803,0,0.0760520648241801,27923.9086448382,802

@@ -1,0 +1,37 @@
+{
+  "wvmBase": "c89f38b487890b79a11446f5be496421262ec334",
+  "internalModes": "f2ce3c1",
+  "matlab": "R2026a",
+  "scope": "Historical policy comparison; MATLAB free-surface Boussinesq authoring graph",
+  "rawArtifacts": "/tmp/wv-tolerances",
+  "sourceHashes": {
+    "@WVTransformFreeSurfaceBoussinesq/WVTransformFreeSurfaceBoussinesq.m": "4836e3d421692f090459e9a20a00c136d152c118d89e8e9d1308827a0f360f11",
+    "@WVTransformFreeSurfaceBoussinesq/coefficientAbsoluteTolerances.m": "fd0cb0f3ed9d1c713e073f5206dae838cb0d0028a12a6e3c2c4b3c0378fa7358",
+    "Documentation/Examples/runNonlinearFreeSurfaceBoussinesq.m": "3c0585d577a1120b162f00c84b14deef5c84bb5643f7b70d8c83d89b4e3606e0",
+    "Integrators/WVModelFixedTimeStepMethods.m": "19c579c6391ec8b2f1d71ba97e31d62ccaf41b1a029a4cae880bb395cf509fff",
+    "UnitTests/TestFreeSurfaceBoussinesqEvolution.m": "a97234a77676377e03c701677ef0444005852718b2e6c38cc6a71a5058217476",
+    "Documentation/Examples/makeBoundaryVortex.m": "d35728d53982c690c9da2655db405658ed5d5cc000321c4fa9258850596455c1",
+    "Documentation/Examples/runBoundaryVortex.m": "0e5b855fc746cca32776d3736d4810e43091aa31d4429589c24fbdaa5353fa88",
+    "UnitTests/TestFreeSurfaceAdaptiveIntegration.m": "30c2b2a7b3709be5550cbc01f8b899996fb5a97def8b37de8c0703c4b2dc0cad",
+    "tools/tolerance-study/checkBoundaryVortex.m": "bf69a1c2b35b07e26dd8a82416e38f22962c4812f557dd772cf9e9385cbbe647",
+    "tools/tolerance-study/makeToleranceBoussinesq.m": "3f4c99bfd8d950dd08d68a811727771bbaf8077afa74c8b133ffba492745d641",
+    "tools/tolerance-study/runTolerancePolicyStudy.m": "43a8e13d9d39082bf1084138aeba5a1a11171e3ef986fc10e82568f4ca603fa8",
+    "tools/tolerance-study/summarizeToleranceStudy.m": "8b78e36d01db083b1c65cf0c9160f5167aae31cfdd3b1b66f6df528e4b144d10"
+  },
+  "productionCloseout": {
+    "implementationCommit": "5b26419320a6440206aee2b94ffaf11d56adcb3b",
+    "figureCommit": "654029b0",
+    "matlab": "R2026a",
+    "internalModes": "f2ce3c1",
+    "rawArtifacts": [
+      "/tmp/wv-tolerances/closeout-surface",
+      "/tmp/wv-tolerances/closeout-bottom"
+    ],
+    "deliveredSourceHashes": {
+      "ObservingSystems/WVCoefficients.m": "030ea650a52a5a979878939cafdacc1dfb3017aa65764779c913ceea6785a37b",
+      "+WVInternal/familyCoefficientTolerances.m": "6d061c17146193f7e74896bde1ee2feaa950f35f254b0776f63ae20f2cd31a12",
+      "tools/tolerance-study/runProductionToleranceQualification.m": "d1aa4aaf2f7867e85cd1cf9333038a920acc5cc76fadf9d328e3ed2a6195d093",
+      "tools/tolerance-study/makeEvolvingToleranceBoussinesq.m": "488c6ecf10647104ec524c38ead0ca8f8de3793f99170ba8dd80207ba52c56d7"
+    }
+  }
+}
