@@ -1,6 +1,37 @@
 classdef TestWVCompiledConsumers < matlab.unittest.TestCase
     % Focused consumer tests for compiled state scopes and MATLAB observers.
     methods (Test,TestTags="optional")
+        function nonlinearAndSpeedSharePhysicalProducersInEitherOrder(testCase)
+            definitions = configurations();
+            for definition = definitions(1:4)
+                expected = definition.create("matlab");
+                actual = definition.create("compiled");
+                cleanup = onCleanup(@()deleteTransforms(expected,actual));
+                seedState(expected,actual);
+                expectedFlux = cell(1,3);
+                [expectedFlux{:}] = expected.nonlinearFlux();
+                for speedFirst = [false true]
+                    before = actual.computationalBackendMetadata.runtimeMetrics;
+                    scope = actual.scopedEvaluation();
+                    if speedFirst, actual.compiledVariables("uvMax"); end
+                    flux = cell(1,3); [flux{:}] = actual.nonlinearFlux();
+                    speed = actual.compiledVariables("uvMax");
+                    repeated = actual.compiledVariables("uvMax");
+                    verifyNear(testCase,speed{1},expected.uvMax,definition.name+" speed reduction");
+                    testCase.verifyEqual(repeated,speed,definition.name);
+                    for channel = 1:3
+                        verifyNear(testCase,flux{channel},expectedFlux{channel},definition.name+" speed/flux ordering");
+                    end
+                    clear scope
+                    after = actual.computationalBackendMetadata.runtimeMetrics;
+                    testCase.verifyEqual(after.physicalReconstructionExecutions-before.physicalReconstructionExecutions,4,definition.name);
+                    testCase.verifyEqual(after.nonlinearProducerExecutions-before.nonlinearProducerExecutions,1,definition.name);
+                    testCase.verifyEqual(after.duplicateExecutions-before.duplicateExecutions,0,definition.name);
+                end
+                clear cleanup
+            end
+        end
+
         function modifiedNonlinearDensityCorrectionPreservesMatlabBehavior(testCase)
             definitions = configurations();
             for definition = definitions(1:4)

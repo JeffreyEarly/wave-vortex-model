@@ -609,8 +609,23 @@ WVKernelStatus WVFieldEvaluationService::evaluateBuiltinNonlinearCoefficients(
   const WVVariableEvaluationKey primitiveKey{WVVariableEvaluationNode::physicalField,
       static_cast<std::uint32_t>(WVPortableVariable::u),eventWorkspace_->component(),0,0,0,1};
   const bool physicalReady=eventWorkspace_->ready(primitiveKey);
-  if(transform_ || physicalReady) {
+  bool individualPhysicalReady=false;
+  for(const auto variable:{WVPortableVariable::u,WVPortableVariable::v,
+      WVPortableVariable::w,WVPortableVariable::eta}) {
+    const WVVariableEvaluationKey key{WVVariableEvaluationNode::physicalField,
+        static_cast<std::uint32_t>(variable),eventWorkspace_->component()};
+    individualPhysicalReady|=eventWorkspace_->ready(key);
+  }
+  if(transform_ || physicalReady || individualPhysicalReady) {
     status=evaluate(builtinNonlinearFieldsPlan_,state,outputs,4); if(!status) return status;
+  }
+  bool preparedPhysical=transform_ || physicalReady;
+  if(!transform_ && !physicalReady && individualPhysicalReady) {
+    bool reused=false;
+    status=eventWorkspace_->evaluate(primitiveKey,builtinNonlinearPhysical_.data(),4*R,
+        [] {return WVKernelStatus::ok();},reused);
+    if(!status) return status;
+    preparedPhysical=true;
   }
   executing_=true;
   struct ResetExecution {bool& executing; ~ResetExecution(){executing=false;}}
@@ -629,9 +644,9 @@ WVKernelStatus WVFieldEvaluationService::evaluateBuiltinNonlinearCoefficients(
       {builtinNonlinearCoefficients_.data()+S,expected},
       {builtinNonlinearCoefficients_.data()+2*S,expected}};
   status=forcing_->evaluateBuiltinNonlinear(state.waveVortex,
-      (transform_ || physicalReady) ? &prepared : nullptr,workspace,staged);
+      preparedPhysical ? &prepared : nullptr,workspace,staged);
   if(!status) return status;
-  if(!transform_ && !physicalReady) {
+  if(!transform_ && !preparedPhysical) {
     std::copy_n(workspace->physical.data(),4*R,builtinNonlinearPhysical_.data());
     bool reused=false;
     status=eventWorkspace_->evaluate(primitiveKey,builtinNonlinearPhysical_.data(),4*R,

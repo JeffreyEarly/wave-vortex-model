@@ -532,6 +532,32 @@ public:
       account();
       return WVKernelStatus::ok();
     }
+    const auto firstPhysical=static_cast<std::uint32_t>(WVPortableVariable::u);
+    const auto lastPhysical=static_cast<std::uint32_t>(WVPortableVariable::eta);
+    if(key.node==WVVariableEvaluationNode::physicalField &&
+        key.variable>=firstPhysical && key.variable<=lastPhysical &&
+        key.derivative==0 && key.reference==0 && key.forcingOrdinal==0 &&
+        key.stage==0 && key.geometry==0) {
+      const WVVariableEvaluationKey canonical{
+          WVVariableEvaluationNode::physicalField,firstPhysical,key.component,
+          0,0,0,1};
+      if(evaluation_.ready(canonical)) {
+        auto* values=findReal(canonical);
+        if(!values || values->size()%4!=0 || values->size()/4!=count)
+          return {WVKernelStatusCode::invalidConfiguration,
+              "A cached canonical physical bundle has a different extent."};
+        const auto status=evaluation_.evaluate(canonical,
+            values->capacity()*sizeof(double),
+            [](){return WVKernelStatus::ok();});
+        if(!status) return status;
+        const auto channel=key.variable-firstPhysical;
+        std::copy_n(values->data()+channel*count,count,output);
+        reused=true;
+        ++metrics_->eventFieldReuseCount;
+        noteVariableBytes();
+        return WVKernelStatus::ok();
+      }
+    }
     auto* cached=findReal(key);
     if(evaluation_.ready(key)) {
       if(!cached || cached->size()!=count)

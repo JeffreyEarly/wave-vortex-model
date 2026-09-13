@@ -484,7 +484,8 @@ inline WVKernelStatus validatePreparedDiagnosticFields(
   const auto shape=prepared->shape;
   if(shape.first!=spatial.first || shape.second!=spatial.second || shape.third!=spatial.third || shape.fourth!=channels)
     return {WVKernelStatusCode::invalidShape,"Prepared forcing diagnostic fields have the wrong channels."};
-  const auto bytes=shape.elementCount()*sizeof(double),address=reinterpret_cast<std::uintptr_t>(prepared->data);
+  const auto elements=shape.elementCount();
+  const auto bytes=elements*sizeof(double),address=reinterpret_cast<std::uintptr_t>(prepared->data);
   if(!address || address%alignof(double) || bytes>UINTPTR_MAX-address)
     return {WVKernelStatusCode::invalidPointer,"Invalid prepared forcing diagnostic field storage."};
   for(const auto input:{state.coefficients.Ap,state.coefficients.Am,state.coefficients.A0})
@@ -493,7 +494,7 @@ inline WVKernelStatus validatePreparedDiagnosticFields(
   for(std::size_t index=0;index<count;++index)
     if(forcingArraysOverlap(prepared->data,bytes,outputs[index].fields.data,spatial.elementCount()*sizeof(double)))
       return {WVKernelStatusCode::overlappingArrays,"Prepared forcing fields overlap diagnostic output."};
-  for(std::size_t index=0;index<shape.elementCount();++index)
+  for(std::size_t index=0;index<elements;++index)
     if(!std::isfinite(prepared->data[index]))
       return {WVKernelStatusCode::invalidConfiguration,"Prepared forcing fields must be finite."};
   return WVKernelStatus::ok();
