@@ -188,6 +188,7 @@ private:
     WVKernelStatus projectFields(const double*,const double*,const double*,const double*,WVMutableCoefficients);
     WVKernelStatus projectSpectralFields(WVComplexInput,WVComplexInput,WVComplexInput,WVComplexInput,
         WVComplexOutput,bool,WVMutableCoefficients);
+    WVKernelStatus prepareRealVerticalCalculus(MatrixBackendFactory);
     WVKernelStatus verticalCalculus(const double*,WVBoussinesqFamily,unsigned,bool,double*,
         std::size_t columns,bool verticalFirst);
     bool tiledNonlinearPrepared_ = false;
@@ -201,6 +202,8 @@ private:
     std::unique_ptr<WVRetainedHorizontalWorkspace> horizontalWorkspace_;
     std::array<std::unique_ptr<WVPreparedVerticalOperator>,11> vertical_;
     std::array<std::unique_ptr<WVVerticalWorkspace>,11> verticalWorkspace_;
+    std::unique_ptr<WVVerticalMatrixBackend> realVerticalBackend_;
+    std::array<std::vector<double>,5> realVerticalMatrices_;
     std::unique_ptr<WVVerticalGroupExecutor> verticalGroups_;
     std::unique_ptr<spectral_detail::WVVariableComplexBuffer> spectralStorage_;
     std::unique_ptr<kernel_detail::WVPreparedFieldCache> fieldCache_;

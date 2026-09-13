@@ -23,7 +23,7 @@ if ndims(u) == 3
     mustBeMember(size(u,1),self.Nx);
     mustBeMember(size(u,2),self.Ny);
     mustBeMember(size(u,3),self.Nz);
-    if self.usesCompiledTransform() && isa(self,'WVTransformHydrostatic') && isreal(u)
+    if self.usesCompiledTransform() && (isa(self,'WVTransformHydrostatic') || isa(self,'WVTransformBoussinesq')) && isreal(u)
         values = self.compiledPrimitive("verticalVolumeCalculus",{u},struct("inputIsF",true,"order",options.n,"integral",true));
         U = values{1};
         return

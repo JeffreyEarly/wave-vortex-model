@@ -20,7 +20,7 @@ mustBeMember(size(u,1),self.Nx);
 mustBeMember(size(u,2),self.Ny);
 mustBeMember(size(u,3),self.Nz);
 if self.usesCompiledTransform()
-    if isa(self,'WVTransformHydrostatic') && isreal(u)
+    if (isa(self,'WVTransformHydrostatic') || isa(self,'WVTransformBoussinesq')) && isreal(u)
         values = self.compiledPrimitive("verticalVolumeCalculus",{u},struct("inputIsF",false,"order",options.n,"integral",false));
         du = values{1};
         return

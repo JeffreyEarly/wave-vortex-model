@@ -1102,7 +1102,7 @@ WVKernelStatus WVTransformHydrostaticKernel::verticalCalculus(const double* valu
     const auto index=[&](std::size_t column,std::size_t z) {
         return verticalFirst ? z+g.Nz*column : column+columns*z;
     };
-    if (realVerticalBackend_) {
+    if (realVerticalBackend_ && values!=result) {
         std::array<std::size_t,3> operations{};
         std::size_t operationCount=0;
         if (integral) operations[operationCount++]=family==WVHydrostaticFamily::F ? 3 : 4;

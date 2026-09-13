@@ -637,7 +637,11 @@ mxArray* operation(Host& h,const mxArray* nameArray,const mxArray* inputs,const 
                 const auto f=mxIsLogicalScalarTrue(family)?WVHydrostaticFamily::F:WVHydrostaticFamily::G;
                 if(isIntegral) require(e.kernel().integrateVertical(in,f,out));
                 else require(e.kernel().differentiateVertical(in,f,static_cast<unsigned>(order),out));
-            } else invalid("Volume vertical calculus requires a Hydrostatic transform.");
+            } else if constexpr(std::is_same_v<std::decay_t<decltype(e)>,WVBoussinesqForcingEngine>) {
+                const auto f=mxIsLogicalScalarTrue(family)?WVBoussinesqFamily::F:WVBoussinesqFamily::G;
+                if(isIntegral) require(e.kernel().integrateVertical(in,f,out));
+                else require(e.kernel().differentiateVertical(in,f,static_cast<unsigned>(order),out));
+            } else invalid("Volume vertical calculus requires a Hydrostatic or Boussinesq transform.");
         });
     } else if(name=="verticalCalculus") {
         expect(1);
