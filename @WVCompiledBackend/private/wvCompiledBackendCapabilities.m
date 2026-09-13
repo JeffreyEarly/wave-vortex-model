@@ -88,7 +88,7 @@ capabilities = struct( ...
     "featureValidation",validation, ...
     "storageEstimates",storageEstimates, ...
     "buildAttempt",attempt, ...
-    "cache",struct("root",string(constants.cacheRoot),"isIgnoredLocalState",true), ...
+    "cache",struct("root",string(constants.cacheRoot),"locationPolicy",string(constants.cacheLocationPolicy),"packageKey",string(constants.packageKey),"isIgnoredLocalState",true), ...
     "failure",failure);
 end
 
@@ -101,6 +101,7 @@ module.loadedBeforeInspection = wasLoaded;
 module.path = string(constants.installedModule);
 module.sha256 = sha256File(constants.installedModule);
 try
+    wvCompiledBackendResolveModule(constants.moduleName,constants.installedModule);
     info = feval(char(constants.moduleName),'moduleInfo');
     libraries.base = identityRecord(info.baseLibrary,info.version);
     libraries.thread = identityRecord(info.threadLibrary,info.version);
@@ -229,7 +230,7 @@ value = "'"+replace(string(value),"'","'""'""'")+"'";
 end
 
 function constants = fallbackConstantsRecord
-constants = struct("contractVersion",4,"cacheRoot","","moduleName","wv_compiled_backend_mex","installedModule","","packageRoot","");
+constants = struct("contractVersion",4,"cacheRoot","","cacheLocationPolicy","","packageKey","","moduleName","wv_compiled_backend_mex","installedModule","","packageRoot","");
 end
 
 function support = fallbackSupportRecord

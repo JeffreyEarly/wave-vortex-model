@@ -240,7 +240,7 @@ classdef (Sealed) WVCompiledTransformBackend < handle
 
         function self = WVCompiledTransformBackend(wvt,capabilities)
             self.capabilities = capabilities;
-            self.moduleName = string(capabilities.module.name);
+            self.moduleName = WVCompiledBackend.activateModule(capabilities);
             self.transformClass = string(class(wvt));
             self.Nx = wvt.Nx; self.Ny = wvt.Ny; self.Nj = wvt.Nj; self.Nkl = wvt.Nkl;
             self.geometryValues = WVCompiledTransformBackend.sourceGeometry(wvt);

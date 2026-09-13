@@ -24,6 +24,7 @@ classdef WVCompiledBackend
     methods (Static, Hidden)
         capabilities = capabilitiesForTesting(overrides)
         capabilities = buildForTesting(overrides)
+        moduleName = activateModule(capabilities)
         qualification = qualifySourceIdentity()
         manifest = sourceManifestForTesting(overrides)
     end
