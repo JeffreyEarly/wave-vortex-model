@@ -3,23 +3,9 @@ function data = prepareConstructionProducts(state,bases,reference,vertical,count
 % No wave/APV/MDA eigensolve is performed here.
 timer=tic; D=state.Lxyz(3); N2=state.N2Function; f=2*state.rotationRate*sind(state.latitude);
 inventory=WVInternal.constructionInteractionInventory(state);
-% Reserve the bounded inventory before allocating reference fields.
-nBoundary=state.activeEndpointCount; nAPV=numel(WVInternal.constructionModeLevels(numel(state.apvMode)));
-waveStress=[0;arrayfun(@(n)2*numel(WVInternal.constructionModeLevels(n)),counts)];
-reserved=0;
-for index=1:height(inventory.interactions)
-    row=inventory.interactions(index,:); a=waveStress(row.page1); b=waveStress(row.page2);
-    pairs=a*b+(a+b)*(nAPV+nBoundary)+2*nAPV*nBoundary+nBoundary^2;
-    channels=13; if row.page3==1, channels=10; elseif counts(row.page3-1)==0, channels=0; end
-    reserved=reserved+pairs*channels;
-end
-if reserved>500000
-    error('WV:QuadraticConstructionBudget','The requested construction reserves %d sampled products, exceeding the 500000-product budget. Reduce the horizontal band or explicit candidate counts. No unmeasured map has been accepted.',reserved)
-end
-referenceFieldBytes=48*numel(state.z)*8*(sum(counts)+inertialCount+numel(state.apvMode)+numel(state.mdaMode)+nBoundary*numel(counts));
-if referenceFieldBytes>512*1024^2
-    error('WV:QuadraticConstructionBudget','Reference field storage would exceed 512 MiB. Reduce the horizontal band or explicit candidate counts.')
-end
+% Measure the requested bounded inventory without a fixed study resource cap.
+% Physical convergence and quadratic-error qualification remain mandatory.
+nBoundary=state.activeEndpointCount;
 profile=chebfun(N2,[-D 0]); logarithmicDerivative=diff(log(profile)); dLogN2=@(z)logarithmicDerivative(z);
 nz=numel(state.z); nr=max(65,3*nz); nq=max(97,4*nz);
 rule=IMSolverSpectral(nEVP=nr,coordinateKind="wkb").configuredForEVP(vertical.apvProblem);
