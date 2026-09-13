@@ -25,6 +25,10 @@ Customize the time-stepping
 + `timeStepConstraint`  (fixed) constraint to fix the time step. "advective" (default) ,"oscillatory","min"
 + `integrator`  (adapative) function handle of integrator. @ode78 (default)
 + `absTolerance`  (adapative) absolute tolerance for sqrt(energy). 1e-6 (default)
++ `tolerancePolicy`  "energy" (compatible default) or "family" (recommended v5 componentwise policy)
++ `pvAbsTolerance`  optional PV spectral amplitude scale; empty selects reference calibration
++ `surfaceAbsTolerance`  optional surface displacement spectral amplitude scale; empty selects reference calibration
++ `bottomAbsTolerance`  optional bottom displacement spectral amplitude scale; empty selects reference calibration
 + `relTolerance`  relative tolerance, 1e-3 by default; coefficient error for adaptive stepping or reconstructed RMS error for exponential stepping
 + `shouldShowIntegrationStats`  (adapative) whether to show integration output 0 or 1 (default)
 + `physicalAbsTolerance`  (exponential) RMS floors [1e-13 1e-11 1e-8 1e-8] for QGPV, buoyancy, speed, and endpoint displacement

@@ -5,7 +5,11 @@ classdef WVCoefficients < WVObservingSystem
     % `coefficientStateAnnotations` to a WVModel integrator.
 
     properties (GetAccess=public, SetAccess=public)
-        absTolerance
+        absTolerance (1,1) double {mustBeReal,mustBeFinite,mustBePositive} = 1e-6
+        tolerancePolicy (1,1) string {mustBeMember(tolerancePolicy,["energy","family"])} = "energy"
+        pvAbsTolerance double {mustBeReal,mustBeFinite,mustBePositive} = []
+        surfaceAbsTolerance double {mustBeReal,mustBeFinite,mustBePositive} = []
+        bottomAbsTolerance double {mustBeReal,mustBeFinite,mustBePositive} = []
     end
 
     properties (Access=private)
@@ -15,23 +19,31 @@ classdef WVCoefficients < WVObservingSystem
 
     methods
         function self = WVCoefficients(model,options)
-            %create a new observing system
+            % Create a coefficient observer with local spectral tolerances.
             %
-            % This class is intended to be subclassed, so it generally
-            % assumed that this initialization will not be called directly.
+            % Family scaling is available for v5 free-surface QG and Boussinesq.
+            % Empty invariant scales match the energy floor at the first retained
+            % mode and lowest nonzero wavenumber, separately for each endpoint.
+            % Boundary scales use displacement anomalies, in m^(3/2); PV uses m/s.
             %
             % - Topic: Initialization
-            % - Declaration: self = WVObservingSystem(model,name)
-            % - Parameter model: the WVModel instance
-            % - Parameter name: name of the observing system
-            % - Returns self: a new instance of WVObservingSystem
+            % - Declaration: self = WVCoefficients(model,options)
+            % - Parameter model: owning WVModel
+            % - Parameter options: energy scale, policy, and optional invariant scales
+            % - Returns self: coefficient observing system
             arguments
                 model WVModel
-                options.absTolerance = 1e-6
+                options.absTolerance (1,1) double {mustBeReal,mustBeFinite,mustBePositive} = 1e-6
+                options.tolerancePolicy (1,1) string {mustBeMember(options.tolerancePolicy,["energy","family"])} = "energy"
+                options.pvAbsTolerance double {mustBeReal,mustBeFinite,mustBePositive} = []
+                options.surfaceAbsTolerance double {mustBeReal,mustBeFinite,mustBePositive} = []
+                options.bottomAbsTolerance double {mustBeReal,mustBeFinite,mustBePositive} = []
             end
 
             self@WVObservingSystem(model,"wave-vortex coefficient flux");
-            self.absTolerance = options.absTolerance;
+            for name=string(fieldnames(options)).'
+                self.(name)=options.(name);
+            end
 
             annotations = self.wvt.coefficientStateAnnotations();
             self.coefficientFamilyNames = string({annotations.name});
@@ -62,15 +74,21 @@ classdef WVCoefficients < WVObservingSystem
             % - Developer: true
             familyNames = self.coefficientFamilyNames;
             payload = struct("name",string(self.name),"absTolerance",double(self.absTolerance),"coefficientFamilies",familyNames);
-            if isequal(familyNames,["Ap" "Am" "A0"]) || isequal(familyNames,"A0")
+            if self.tolerancePolicy=="energy" && isempty(self.pvAbsTolerance) && isempty(self.surfaceAbsTolerance) && isempty(self.bottomAbsTolerance) && (isequal(familyNames,["Ap" "Am" "A0"]) || isequal(familyNames,"A0"))
                 contract = self.supportedPortableImplementationContract("WVCoefficients",payload);
             else
-                contract = WVInternal.portableImplementationContract(string(class(self)),"WVCoefficients","unavailable","The portable runtime does not implement this transform's coefficient-family layout.",payload);
+                contract = WVInternal.portableImplementationContract(string(class(self)),"WVCoefficients","unavailable","The portable runtime does not implement this coefficient-family layout or tolerance policy.",payload);
             end
         end
 
         function Y0 = absErrorTolerance(self)
             toleranceState = self.wvt.coefficientAbsoluteTolerances(self.absTolerance);
+            scales=struct(pvAbsTolerance=self.pvAbsTolerance,surfaceAbsTolerance=self.surfaceAbsTolerance,bottomAbsTolerance=self.bottomAbsTolerance);
+            if self.tolerancePolicy=="family"
+                toleranceState=WVInternal.familyCoefficientTolerances(self.wvt,toleranceState,self.absTolerance,scales);
+            elseif any(structfun(@(value)~isempty(value),scales))
+                error('WVCoefficients:InvalidTolerancePolicy','Invariant scales require tolerancePolicy="family".');
+            end
             Y0 = cell(length(self.coefficientFamilyNames),1);
             for iFamily = 1:length(self.coefficientFamilyNames)
                 Y0{iFamily} = toleranceState.(self.coefficientFamilyNames(iFamily));
@@ -157,7 +175,7 @@ classdef WVCoefficients < WVObservingSystem
         end
 
         function vars = classRequiredPropertyNames()
-            vars = {'absTolerance'};
+            vars = {'absTolerance','tolerancePolicy','pvAbsTolerance','surfaceAbsTolerance','bottomAbsTolerance'};
         end
 
         function propertyAnnotations = classDefinedPropertyAnnotations()
@@ -165,6 +183,10 @@ classdef WVCoefficients < WVObservingSystem
                 propertyAnnotations CAPropertyAnnotation
             end
             propertyAnnotations = CAPropertyAnnotation.empty(0,0);
+            propertyAnnotations(end+1) = CAPropertyAnnotation('tolerancePolicy','energy or family adaptive coefficient metric');
+            propertyAnnotations(end+1) = CAPropertyAnnotation('pvAbsTolerance','PV spectral amplitude scale (m s-1); empty selects reference calibration');
+            propertyAnnotations(end+1) = CAPropertyAnnotation('surfaceAbsTolerance','surface displacement spectral amplitude scale (m3/2); empty selects reference calibration');
+            propertyAnnotations(end+1) = CAPropertyAnnotation('bottomAbsTolerance','bottom displacement spectral amplitude scale (m3/2); empty selects reference calibration');
             propertyAnnotations(end+1) = CANumericProperty('absTolerance', {}, 'm2 s-1','coefficient-error scale used to construct mode-dependent adaptive tolerances');
         end
     end

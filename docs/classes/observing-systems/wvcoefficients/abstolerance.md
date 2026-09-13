@@ -14,5 +14,9 @@ coefficient-error scale used to construct mode-dependent adaptive tolerances
 
 ---
 
+## Type
++ Class: `double`
++ Size: `(1,1)`
+
 ## Description
 Real valued property with no dimensions and units of $$\mathrm{m^{2}\,s^{-1}}$$.

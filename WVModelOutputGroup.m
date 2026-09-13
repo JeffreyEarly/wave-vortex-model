@@ -129,7 +129,7 @@ classdef WVModelOutputGroup < handle & matlab.mixin.Heterogeneous & CAAnnotatedC
                     canonicalCoefficients = self.model.wvCoefficientFluxedObservingSystem();
                     if ~isempty(canonicalCoefficients) && canonicalCoefficients ~= observer
                         coefficientSystems{end+1} = canonicalCoefficients;
-                        coefficientTolerances{end+1} = observer.absTolerance;
+                        coefficientTolerances{end+1} = observer;
                         observer = canonicalCoefficients;
                     end
                 end
@@ -149,7 +149,10 @@ classdef WVModelOutputGroup < handle & matlab.mixin.Heterogeneous & CAAnnotatedC
                 self.model.addFluxedObservingSystem(fluxedSystems);
             end
             for iCoefficient = 1:length(coefficientSystems)
-                coefficientSystems{iCoefficient}.absTolerance = coefficientTolerances{iCoefficient};
+                coefficients=coefficientSystems{iCoefficient};
+                for propertyName=string(WVCoefficients.classRequiredPropertyNames())
+                    coefficients.(propertyName)=coefficientTolerances{iCoefficient}.(propertyName);
+                end
             end
             self.observingSystems = registeredSystems;
         end

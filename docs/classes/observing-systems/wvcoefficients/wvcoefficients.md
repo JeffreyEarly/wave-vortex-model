@@ -9,23 +9,25 @@ mathjax: true
 
 #  WVCoefficients
 
-create a new observing system
+Create a coefficient observer with local spectral tolerances.
 
 
 ---
 
 ## Declaration
 ```matlab
- self = WVObservingSystem(model,name)
+ self = WVCoefficients(model,options)
 ```
 ## Parameters
-+ `model`  the WVModel instance
-+ `name`  name of the observing system
++ `model`  owning WVModel
++ `options`  energy scale, policy, and optional invariant scales
 
 ## Returns
-+ `self`  a new instance of WVObservingSystem
++ `self`  coefficient observing system
 
 ## Discussion
 
-This class is intended to be subclassed, so it generally
-assumed that this initialization will not be called directly.
+Family scaling is available for v5 free-surface QG and Boussinesq.
+Empty invariant scales match the energy floor at the first retained
+mode and lowest nonzero wavenumber, separately for each endpoint.
+Boundary scales use displacement anomalies, in m^(3/2); PV uses m/s.

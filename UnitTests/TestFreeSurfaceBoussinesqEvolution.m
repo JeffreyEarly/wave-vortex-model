@@ -42,7 +42,8 @@ classdef TestFreeSurfaceBoussinesqEvolution < matlab.unittest.TestCase
                 actual=w.projectSources(sources);
                 testCase.verifyLessThan(familyError(w,actual,expected),2e-7)
                 addSource(w,sources);
-                testCase.verifyError(@()w.coefficientAbsoluteTolerances(1e-6),'WVTransformFreeSurfaceBoussinesq:AdaptiveIntegrationUnavailable')
+                tolerance=w.coefficientAbsoluteTolerances(1e-6);
+                testCase.verifyTrue(all(tolerance.Aw_p>0,'all'))
                 initial=initialState(w); setState(w,initial);
                 m=WVModel(w); m.setupIntegrator(integratorType="fixed",deltaT=10);
                 m.integrateToTime(527,shouldShowIntegrationDiagnostics=false);
@@ -53,6 +54,31 @@ classdef TestFreeSurfaceBoussinesqEvolution < matlab.unittest.TestCase
                 testCase.verifyTrue(isreal(w.Amda))
             end
         end
+        function adaptiveForcedSolutionAndRestart(testCase)
+            fixture=testCase.applyFixture(matlab.unittest.fixtures.TemporaryFolderFixture);
+            for profile=["constant","exponential"]
+                w=TestFreeSurfaceBoussinesqEvolution.newTransform(profile);
+                [sources,~]=TestFreeSurfaceBoussinesqEvolution.resolvedSource(w);
+                B=w.projectSources(sources); initial=initialState(w);
+                w.t0=31; w.t=127; setState(w,initial); addSource(w,sources);
+                model=WVModel(w);
+                model.setupIntegrator(integratorType="adaptive",tolerancePolicy="family",absTolerance=1e-9,relTolerance=1e-9);
+                filePath=fullfile(fixture.Folder,char(profile+"-adaptive.nc"));
+                model.createNetCDFFileForModelOutput(filePath,outputInterval=400);
+                model.integrateToTime(927,shouldShowIntegrationDiagnostics=false);
+                model.closeNetCDFFile();
+                resumed=WVModel.modelFromFile(filePath);
+                cleanup=onCleanup(@()resumed.closeNetCDFFile());
+                resumed.setupIntegrator(integratorType="adaptive",tolerancePolicy="family",absTolerance=1e-9,relTolerance=1e-9);
+                resumed.integrateToTime(1727,shouldShowIntegrationDiagnostics=false);
+                expected=exactState(w,initial,B,127,1727);
+                testCase.verifyLessThan(familyError(resumed.wvt,resumed.wvt.coefficientState(),expected),1e-6)
+                testCase.verifyTrue(isreal(resumed.wvt.Amda))
+                testCase.verifyEqual(resumed.wvt.t0,31)
+                clear cleanup
+            end
+        end
+
         function fixedStepConvergenceAndRestart(testCase)
             fixture=testCase.applyFixture(matlab.unittest.fixtures.TemporaryFolderFixture);
             for profile=["constant","exponential"]

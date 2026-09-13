@@ -504,7 +504,9 @@ classdef WVModelOutputFile < handle & matlab.mixin.Heterogeneous
                         if isempty(canonicalObserver)
                             error('The restored output contains coefficients, but the model is configured for linear dynamics.');
                         end
-                        canonicalObserver.absTolerance = candidates{1}.absTolerance;
+                        for name=string(WVCoefficients.classRequiredPropertyNames())
+                            canonicalObserver.(name)=candidates{1}.(name);
+                        end
                     else
                         candidateTimes = cellfun(@(group) group.timeOfLastIncrementWrittenToGroup,candidateGroups);
                         timeTolerance = 8*eps(max(1,abs(outputFile.model.t)));

@@ -1,17 +1,20 @@
 ---
 layout: default
-title: errorTolerances
+title: bottomAbsTolerance
 parent: WVCoefficients
 grand_parent: Observing systems
-nav_order: 5
+nav_order: 3
 mathjax: true
 ---
 
-#  errorTolerances
+#  bottomAbsTolerance
 
-
+bottom displacement spectral amplitude scale (m3/2); empty selects reference calibration
 
 > Developer documentation: this item describes internal implementation details.
 
 
 ---
+
+## Type
++ Class: `double`

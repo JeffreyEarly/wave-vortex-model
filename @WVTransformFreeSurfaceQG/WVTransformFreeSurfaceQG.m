@@ -558,12 +558,17 @@ classdef WVTransformFreeSurfaceQG < WVGeometryDoublyPeriodicStratified & WVTrans
             % - Returns tolerances: family-keyed coefficient-local absolute tolerances
             arguments
                 self (1,1) WVTransformFreeSurfaceQG
-                absTolerance (1,1) double {mustBePositive}
+                absTolerance (1,1) double {mustBeReal,mustBeFinite,mustBePositive}
             end
 
             pageIndex = self.klNonzeroKhUniqueIndex;
             radialWavenumber = self.kRadial;
-            radialSpacing = radialWavenumber(2)-radialWavenumber(1);
+            if isempty(radialWavenumber), radialWavenumber=0; end
+            if numel(radialWavenumber)>1
+                radialSpacing = radialWavenumber(2)-radialWavenumber(1);
+            else
+                radialSpacing = min(2*pi./[self.Lx,self.Ly]);
+            end
             horizontalEnergyShare = zeros(1,length(self.khNonzero));
             for iRadial = 1:length(radialWavenumber)
                 isBin = radialWavenumber(iRadial)-radialSpacing/2 < self.khNonzero & self.khNonzero <= radialWavenumber(iRadial)+radialSpacing/2;

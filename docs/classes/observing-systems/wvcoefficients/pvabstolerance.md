@@ -1,17 +1,20 @@
 ---
 layout: default
-title: errorTolerances
+title: pvAbsTolerance
 parent: WVCoefficients
 grand_parent: Observing systems
-nav_order: 5
+nav_order: 7
 mathjax: true
 ---
 
-#  errorTolerances
+#  pvAbsTolerance
 
-
+PV spectral amplitude scale (m s-1); empty selects reference calibration
 
 > Developer documentation: this item describes internal implementation details.
 
 
 ---
+
+## Type
++ Class: `double`

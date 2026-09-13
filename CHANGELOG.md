@@ -2,6 +2,10 @@
 
 ## [Unreleased]
 
+- Enable MATLAB free-surface Boussinesq adaptive integration through the existing `WVModel`/`ode78` path with positive unit-coefficient energy tolerances, retained-wave frequency and physical-speed initial-step selection, and forced/nonlinear restart coverage. Existing v4 and QG defaults are unchanged.
+- Add explicit `tolerancePolicy="family"` for v5 QG and Boussinesq, with independently calibrated or user-specified PV, surface, and bottom scales. Preserve the policy through restart; legacy scalar energy behavior remains the default.
+- Add a deforming zero-APV boundary-vortex example, a bounded policy comparison, and production-setting qualification.
+
 - Qualify the complete bounded product inventory during free-surface Boussinesq construction without applying study resource caps. This permits larger horizontal grids while preserving mode-convergence and quadratic-error checks; standalone study budgets remain unchanged.
 
 ### Free-surface Boussinesq adaptive damping

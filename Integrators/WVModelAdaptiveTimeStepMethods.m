@@ -45,7 +45,9 @@ classdef WVModelAdaptiveTimeStepMethods < handle
             self.arrayLength = sum(nArray);
 
             self.odeOptions = odeset('OutputFcn',@self.timeStepIncrementArray);
-            self.odeOptions = odeset(self.odeOptions,'InitialStep',self.timeStepForCFL(0.5));
+            initialStep=self.timeStepForCFL(0.5);
+            if ~isfinite(initialStep), initialStep=1; end
+            self.odeOptions = odeset(self.odeOptions,'InitialStep',initialStep);
             self.odeOptions = odeset(self.odeOptions,'RelTol',options.relTolerance);
             self.odeOptions = odeset(self.odeOptions,'AbsTol',self.absErrorToleranceArray);
             self.odeOptions = odeset(self.odeOptions,'Refine',1); % must be set to 1

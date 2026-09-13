@@ -35,7 +35,7 @@ The [short-case report](../Validation/Issue353ShortSeasonalQG.md) documents proc
 
 ## Nonlinear free-surface Boussinesq
 
-`runNonlinearFreeSurfaceBoussinesq` runs a deterministic 200-second, mixed-family inviscid case with fixed five-second RK4 stepping. It constructs the resolved adiabatic inventory with horizontal antialiasing and quadratic qualification, explicitly registers `WVNonlinearAdvection`, and uses ordinary `WVModel` NetCDF output. No nonlinear forcing is installed by Boussinesq construction alone.
+`runNonlinearFreeSurfaceBoussinesq` runs a deterministic 200-second, mixed-family inviscid case with adaptive `ode78` stepping (`absTolerance=1e-6`, `relTolerance=1e-3`). The example selects `tolerancePolicy="family"`: potential enstrophy for APV, separate endpoint displacement invariants for zero-APV, and positive reference energy for the other families. Omitted invariant scales match the energy floor at the first retained mode and lowest nonzero wavenumber, independently for each endpoint. Existing calls retain `tolerancePolicy="energy"`. It constructs the resolved adiabatic inventory with horizontal antialiasing and quadratic qualification, explicitly registers `WVNonlinearAdvection`, and uses ordinary `WVModel` NetCDF output. No nonlinear forcing is installed by Boussinesq construction alone.
 
 ```matlab
 addpath('Documentation/Examples');
@@ -46,4 +46,13 @@ Use a new output directory. The example writes native NetCDF, a diagnostic CSV, 
 
 `u/v/w` are physical velocities on `z_physical`; `u_hat/v_hat/w_hat` retain the modal variables. `eta` is total displacement and `eta_i=eta-(1+z/Lz)*ssh` uses the reference sample coordinate `z`. `p` is the reconstructed modal pressure used in the manuscript nonlinear terms. See the [field contract](../../tools/nonlinear-study/field-and-runtime-contract.md) for derivative and source meanings.
 
-This is a v5 development/beta prototype with measurable finite-inventory errors. Full nonlinear energy and material/APV moments are not asserted to be exactly conserved. The [direct manuscript refinement study](../Validation/NonlinearFreeSurface/manuscript-evolution-qualification.md) separates timestep error, spatial changes and energy-work accounting. Retained quadratic checks do not certify all rational geometry terms or every nonlinear interaction. Adaptive Boussinesq stepping, portable nonlinear execution and breaking remain outside this example. As with the QG example, this authoring directory is not part of the current MPM export.
+This is a v5 development/beta prototype with measurable finite-inventory errors. Full nonlinear energy and material/APV moments are not asserted to be exactly conserved. The [direct manuscript refinement study](../Validation/NonlinearFreeSurface/manuscript-evolution-qualification.md) separates timestep error, spatial changes and energy-work accounting. Retained quadratic checks do not certify all rational geometry terms or every nonlinear interaction. Portable nonlinear execution and breaking remain outside this example. See the [production tolerance qualification](../../tools/tolerance-study/production-qualification.md) for measured accuracy and limits. As with the QG example, this authoring directory is not part of the current MPM export.
+
+## Deforming zero-APV boundary vortex
+
+```matlab
+addpath('Documentation/Examples');
+history = runBoundaryVortex(fullfile(tempdir,'boundary-vortex'));
+```
+
+The default produces a four-panel PDF and PNG at `tU/L=[0 .5 1 4]` and saves the trajectory outside the source tree. It uses an elliptical surface endpoint anomaly, zero interior PV, and nonlinear advection only. The fourth panel shows contour deformation. The [figure and independent refinement results](../Validation/BoundaryVortex/README.md) qualify this bounded example; it does not set new QG defaults.

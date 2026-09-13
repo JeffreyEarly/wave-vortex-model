@@ -665,6 +665,10 @@ classdef WVModel < handle & WVModelAdaptiveTimeStepMethods & WVModelFixedTimeSte
             % - Parameter timeStepConstraint: (fixed) constraint to fix the time step. "advective" (default) ,"oscillatory","min"
             % - Parameter integrator: (adapative) function handle of integrator. @ode78 (default)
             % - Parameter absTolerance: (adapative) absolute tolerance for sqrt(energy). 1e-6 (default)
+            % - Parameter tolerancePolicy: "energy" (compatible default) or "family" (recommended v5 componentwise policy)
+            % - Parameter pvAbsTolerance: optional PV spectral amplitude scale; empty selects reference calibration
+            % - Parameter surfaceAbsTolerance: optional surface displacement spectral amplitude scale; empty selects reference calibration
+            % - Parameter bottomAbsTolerance: optional bottom displacement spectral amplitude scale; empty selects reference calibration
             % - Parameter relTolerance: relative tolerance, 1e-3 by default; coefficient error for adaptive stepping or reconstructed RMS error for exponential stepping
             % - Parameter shouldShowIntegrationStats: (adapative) whether to show integration output 0 or 1 (default)
             % - Parameter physicalAbsTolerance: (exponential) RMS floors [1e-13 1e-11 1e-8 1e-8] for QGPV, buoyancy, speed, and endpoint displacement
@@ -681,7 +685,11 @@ classdef WVModel < handle & WVModelAdaptiveTimeStepMethods & WVModelFixedTimeSte
                 fixedTimeStepOptions.timeStepConstraint char {mustBeMember(fixedTimeStepOptions.timeStepConstraint,["advective","oscillatory","min"])} = "min"
 
                 adaptiveTimeStepOptions.integrator = @ode78
-                adaptiveTimeStepOptions.absTolerance = 1e-6
+                adaptiveTimeStepOptions.absTolerance (1,1) double {mustBeReal,mustBeFinite,mustBePositive}
+                adaptiveTimeStepOptions.tolerancePolicy (1,1) string {mustBeMember(adaptiveTimeStepOptions.tolerancePolicy,["energy","family"])}
+                adaptiveTimeStepOptions.pvAbsTolerance double {mustBeReal,mustBeFinite,mustBePositive}
+                adaptiveTimeStepOptions.surfaceAbsTolerance double {mustBeReal,mustBeFinite,mustBePositive}
+                adaptiveTimeStepOptions.bottomAbsTolerance double {mustBeReal,mustBeFinite,mustBePositive}
                 adaptiveTimeStepOptions.relTolerance = 1e-3;
                 adaptiveTimeStepOptions.shouldShowIntegrationStats double {mustBeMember(adaptiveTimeStepOptions.shouldShowIntegrationStats,[0 1])} = 0
                 exponentialTimeStepOptions.physicalAbsTolerance (1,4) double {mustBePositive,mustBeFinite} = [1e-13 1e-11 1e-8 1e-8]
@@ -690,8 +698,28 @@ classdef WVModel < handle & WVModelAdaptiveTimeStepMethods & WVModelFixedTimeSte
                 exponentialTimeStepOptions.exponentialAdaptive (1,1) logical = true
             end
 
+            requestedFamilyOptions=isfield(adaptiveTimeStepOptions,'tolerancePolicy') && adaptiveTimeStepOptions.tolerancePolicy=="family";
+            for name=["pvAbsTolerance","surfaceAbsTolerance","bottomAbsTolerance"]
+                requestedFamilyOptions=requestedFamilyOptions || (isfield(adaptiveTimeStepOptions,name) && ~isempty(adaptiveTimeStepOptions.(name)));
+            end
+            toleranceDefaults=struct(absTolerance=1e-6,tolerancePolicy="energy",pvAbsTolerance=[],surfaceAbsTolerance=[],bottomAbsTolerance=[]);
+            for name=string(fieldnames(toleranceDefaults)).'
+                if ~isfield(adaptiveTimeStepOptions,name)
+                    if self.isDynamicsLinear
+                        adaptiveTimeStepOptions.(name)=toleranceDefaults.(name);
+                    else
+                        adaptiveTimeStepOptions.(name)=self.wvCoefficientFluxedObservingSystem.(name);
+                    end
+                end
+            end
             if isempty(options.integratorType)
                 if ~isempty(self.densityDiffusionIntegrator), options.integratorType='exponential'; else, options.integratorType='adaptive'; end
+            end
+            if requestedFamilyOptions && (~strcmp(options.integratorType,'adaptive') || self.isDynamicsLinear)
+                error('WVModel:InvalidTolerancePolicy','Family tolerances require prognostic coefficients and integratorType="adaptive".');
+            end
+            if strcmp(options.integratorType,'adaptive-cell') && adaptiveTimeStepOptions.tolerancePolicy=="family"
+                error('WVModel:InvalidTolerancePolicy','The cell integrator uses a different error criterion; select tolerancePolicy="energy" explicitly.');
             end
             if strcmp(options.integratorType,'exponential')
                 exponentialTimeStepOptions.relTolerance=adaptiveTimeStepOptions.relTolerance;
@@ -704,7 +732,9 @@ classdef WVModel < handle & WVModelAdaptiveTimeStepMethods & WVModelFixedTimeSte
             self.clearDensityDiffusionIntegrator();
 
             if self.isDynamicsLinear == false
-                self.wvCoefficientFluxedObservingSystem.absTolerance = adaptiveTimeStepOptions.absTolerance;
+                for name=["absTolerance","tolerancePolicy","pvAbsTolerance","surfaceAbsTolerance","bottomAbsTolerance"]
+                    self.wvCoefficientFluxedObservingSystem.(name)=adaptiveTimeStepOptions.(name);
+                end
             end
 
             % self.resetFixedTimeStepIntegrator();
@@ -712,11 +742,11 @@ classdef WVModel < handle & WVModelAdaptiveTimeStepMethods & WVModelFixedTimeSte
 
             self.integratorType = options.integratorType;
             if strcmp(self.integratorType,"adaptive")
-                adaptiveTimeStepOptions = rmfield(adaptiveTimeStepOptions,"absTolerance");
+                adaptiveTimeStepOptions = rmfield(adaptiveTimeStepOptions,["absTolerance","tolerancePolicy","pvAbsTolerance","surfaceAbsTolerance","bottomAbsTolerance"]);
                 optionArgs = namedargs2cell(adaptiveTimeStepOptions);
                 self.setupAdaptiveTimeStepIntegrator(optionArgs{:});
             elseif strcmp(self.integratorType,"adaptive-cell")
-                adaptiveTimeStepOptions = rmfield(adaptiveTimeStepOptions,"absTolerance");
+                adaptiveTimeStepOptions = rmfield(adaptiveTimeStepOptions,["absTolerance","tolerancePolicy","pvAbsTolerance","surfaceAbsTolerance","bottomAbsTolerance"]);
                 adaptiveTimeStepOptions = rmfield(adaptiveTimeStepOptions,"integrator");
                 optionArgs = namedargs2cell(adaptiveTimeStepOptions);
                 self.setupAdaptiveTimeStepCellIntegrator(optionArgs{:});

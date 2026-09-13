@@ -46,7 +46,7 @@ for name=string(fieldnames(state)).', wvt.(name)=state.(name); end
 wvt.t0=-17;
 wvt.addForcing(WVNonlinearAdvection(wvt));
 model=WVModel(wvt);
-model.setupIntegrator(integratorType="fixed",deltaT=5);
+model.setupIntegrator(integratorType="adaptive",tolerancePolicy="family",absTolerance=1e-6,relTolerance=1e-3);
 model.createNetCDFFileForModelOutput(fullfile(outputFolder,'nonlinear-free-surface.nc'),outputInterval=20);
 model.eulerianObservingSystem.addNetCDFOutputVariables('u','v','w','eta','eta_i','ssh','z_physical','p');
 closeFile=onCleanup(@()model.closeNetCDFFile());

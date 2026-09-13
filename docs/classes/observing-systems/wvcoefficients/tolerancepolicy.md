@@ -1,17 +1,21 @@
 ---
 layout: default
-title: errorTolerances
+title: tolerancePolicy
 parent: WVCoefficients
 grand_parent: Observing systems
-nav_order: 5
+nav_order: 9
 mathjax: true
 ---
 
-#  errorTolerances
+#  tolerancePolicy
 
-
+energy or family adaptive coefficient metric
 
 > Developer documentation: this item describes internal implementation details.
 
 
 ---
+
+## Type
++ Class: `string`
++ Size: `(1,1)`

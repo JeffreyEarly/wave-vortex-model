@@ -9,9 +9,9 @@ classdef WVTransformFreeSurfaceBoussinesq < WVGeometryDoublyPeriodicStratified &
     % Waves use exp(+/-i*omega*(t-t0)); Aio uses exp(i*f*(t-t0)).
     %
     % This experimental transform supports observable and volume-source
-    % projection, exact linear phases, fixed-step forced WVModel evolution,
+    % projection, exact linear phases, fixed and adaptive forced WVModel evolution,
     % and annotated restart using stored scientific operators. Use WVModel(wvt)
-    % and an explicit fixed deltaT to integrate registered sources;
+    % with ode78 or an explicit fixed deltaT to integrate registered sources;
     % shouldUseLinearDynamics=true advances unforced analytical phases only.
     % Resolution transfer preserves matching physical modes with independent
     % retained counts and reports positive physical reconstruction errors.
@@ -25,7 +25,8 @@ classdef WVTransformFreeSurfaceBoussinesq < WVGeometryDoublyPeriodicStratified &
     % Modal pressure supplies the quadratic-order approximation; finite
     % retained inventories can leave boundary and energy-budget residuals.
     % Bounded refinement and restart evidence are supplied with the example.
-    % Adaptive stepping and portable nonlinear execution remain unavailable.
+    % Adaptive stepping uses positive physical-energy-scaled family tolerances.
+    % Portable nonlinear execution remains unavailable.
     % Legacy rigid-lid Ap/Am/A0 initialization is not supported here.
     %
     % ```matlab

@@ -1,17 +1,20 @@
 ---
 layout: default
-title: errorTolerances
+title: surfaceAbsTolerance
 parent: WVCoefficients
 grand_parent: Observing systems
-nav_order: 5
+nav_order: 8
 mathjax: true
 ---
 
-#  errorTolerances
+#  surfaceAbsTolerance
 
-
+surface displacement spectral amplitude scale (m3/2); empty selects reference calibration
 
 > Developer documentation: this item describes internal implementation details.
 
 
 ---
+
+## Type
++ Class: `double`

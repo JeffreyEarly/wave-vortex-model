@@ -58,14 +58,26 @@ classdef WVModelFixedTimeStepMethods < handle
                 cfl = 0.25;
             end
 
-            U = self.wvt.uvMax;
+            if isa(self.wvt,'WVTransformFreeSurfaceBoussinesq')
+                fields = self.wvt.reconstructFields(["u","v"]);
+                U = max(hypot(fields.u,fields.v),[],"all");
+            else
+                U = self.wvt.uvMax;
+            end
             dx = self.wvt.effectiveHorizontalGridResolution;
             advectiveDT = cfl*dx/U;
             oscillatoryDT = Inf;
             period = Inf;
             if self.wvt.hasWaveComponent == true
-                omega = self.wvt.Omega;
-                omega(1,:) = []; % dump the 0 mode
+                if isa(self.wvt,'WVTransformFreeSurfaceBoussinesq')
+                    omega = self.wvt.waveFrequency(:);
+                    omega = omega(isfinite(omega) & omega~=0);
+                    if ~isempty(self.wvt.Aio), omega = [omega;abs(self.wvt.f)]; end
+                    if isempty(omega), omega=0; end
+                else
+                    omega = self.wvt.Omega;
+                    omega(1,:) = []; % dump the 0 mode
+                end
                 period = 2*pi/max(abs(omega(:)));
                 oscillatoryDT = cfl*period;
             end
