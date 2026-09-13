@@ -966,7 +966,7 @@ if options.studyId~="matched-model-runtime-v1"
     return
 end
 fixtureBytes = double([records.bytes]);
-measuredInterfaceCount = conditional(options.modelConfigurations=="constant-nonhydrostatic",3,2);
+measuredInterfaceCount = 3;
 requiredBytes = sum(fixtureBytes)*(1+measuredInterfaceCount)+2*max(fixtureBytes)+2*2^30;
 [status,output] = system("/bin/df -Pk "+shellQuote(pathname));
 lines = splitlines(strtrim(string(output)));
