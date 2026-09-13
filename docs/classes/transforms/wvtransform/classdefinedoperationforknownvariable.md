@@ -3,7 +3,7 @@ layout: default
 title: classDefinedOperationForKnownVariable
 parent: WVTransform
 grand_parent: Transforms
-nav_order: 19
+nav_order: 20
 mathjax: true
 ---
 

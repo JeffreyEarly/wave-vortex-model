@@ -3,7 +3,7 @@ layout: default
 title: totalEnergySpatiallyIntegrated
 parent: WVTransformStratifiedQG
 grand_parent: Transforms
-nav_order: 201
+nav_order: 203
 mathjax: true
 ---
 

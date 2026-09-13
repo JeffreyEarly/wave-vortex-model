@@ -9,7 +9,7 @@ mathjax: true
 
 #  computationalBackend
 
-Active nonlinear-flux implementation.
+Runtime numerical backend. MATLAB remains the default.
 
 
 ---
@@ -19,7 +19,3 @@ Active nonlinear-flux implementation.
 + Size: `(1,1)`
 
 ## Discussion
-
-`computationalBackend` is `"matlab"` unless the compiled preview
-was requested explicitly and constructed successfully. Backend
-selection is runtime-only and is not written to model files.

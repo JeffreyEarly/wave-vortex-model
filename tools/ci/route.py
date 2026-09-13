@@ -21,6 +21,13 @@ SHARED_TESTS = ['TestPortableStableForcing', 'TestPortableForcingCompatibility',
                 'TestPortableForwardIntegrationCatalog', 'TestPortableCompatibilityMatrix', 'TestPortableFieldSamplingMatrix', 'TestPortableNoMotionProfile',
                 'TestPortableNoMotionRecovery', 'TestPortableDensityEventEvaluation', 'TestPortableDensityOutput',
                 'TestPortableSamplingOutput']
+COMPILED_MATLAB_TESTS = [
+    'TestWVCompiledAdapterRestore', 'TestWVCompiledBackend',
+    'TestWVCompiledBarotropicPrimitives', 'TestWVCompiledConfiguration',
+    'TestWVCompiledConstantPrimitives', 'TestWVCompiledConsumers',
+    'TestWVCompiledEvaluationScope', 'TestWVCompiledPublicAdapters',
+    'TestWVCompiledSourceIdentity', 'TestWVCompiledStratifiedPrimitives',
+    'TestWVCompiledTransformBackend']
 PERSISTENCE_TESTS = ['TestPortableRuntimeCompatibility', 'TestPortableRunRequestWriter',
                      'TestPortableObserverContracts', 'TestPortableForcingContracts',
                      'TestWVModelOutputPersistence', 'TestNetCDF', 'TestNetCDFHandleOwnership',
@@ -145,6 +152,7 @@ def select(paths, *, complete=False, migration=False, source_commit=''):
         tests.update(FAMILY_TESTS[family])
     if families:
         tests.update(SHARED_TESTS)
+        tests.update(COMPILED_MATLAB_TESTS)
     if flags['persistence']:
         tests.update(PERSISTENCE_TESTS)
     if flags['matlabCore']:

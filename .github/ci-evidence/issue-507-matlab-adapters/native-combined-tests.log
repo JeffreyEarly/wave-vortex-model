@@ -1,0 +1,114 @@
+Internal ctest changing into directory: /tmp/wvm503/native-build
+Test project /tmp/wvm503/native-build
+      Start 24: forcing-tendencies
+      Start 12: stratified-modal-record
+      Start  8: density-field-evaluation
+      Start 34: field-evaluation
+ 1/54 Test #12: stratified-modal-record ....................   Passed    0.72 sec
+      Start 13: owned-stratified-modal-source
+ 2/54 Test  #8: density-field-evaluation ...................   Passed    0.80 sec
+      Start 38: runner-variable-policy
+ 3/54 Test #24: forcing-tendencies .........................   Passed    0.87 sec
+      Start  1: portable-implementation-contract
+ 4/54 Test #34: field-evaluation ...........................   Passed    0.94 sec
+      Start  2: portable-typed-record
+ 5/54 Test #13: owned-stratified-modal-source ..............   Passed    0.37 sec
+      Start  3: observation-schema-batch
+ 6/54 Test #38: runner-variable-policy .....................   Passed    0.40 sec
+      Start  4: portable-variable-catalog
+ 7/54 Test  #1: portable-implementation-contract ...........   Passed    0.49 sec
+      Start  5: no-motion-profile
+ 8/54 Test  #2: portable-typed-record ......................   Passed    0.58 sec
+      Start  6: no-motion-profile-recovery
+ 9/54 Test  #3: observation-schema-batch ...................   Passed    0.59 sec
+      Start  7: density-event-evaluation
+10/54 Test  #4: portable-variable-catalog ..................   Passed    0.62 sec
+      Start  9: observer-adapter
+11/54 Test  #5: no-motion-profile ..........................   Passed    0.63 sec
+      Start 10: extension-catalog
+12/54 Test  #6: no-motion-profile-recovery .................   Passed    0.61 sec
+      Start 11: forcing-compatibility-catalog
+13/54 Test  #7: density-event-evaluation ...................   Passed    0.62 sec
+      Start 14: matlab-raw-primitives
+14/54 Test #14: matlab-raw-primitives ......................   Passed    0.05 sec
+      Start 15: barotropic-matlab-primitives
+15/54 Test  #9: observer-adapter ...........................   Passed    0.63 sec
+      Start 16: constant-matlab-primitives
+16/54 Test #10: extension-catalog ..........................   Passed    0.66 sec
+      Start 17: allocation-probe
+17/54 Test #11: forcing-compatibility-catalog ..............   Passed    0.67 sec
+      Start 18: checkpoint-reader
+18/54 Test #15: barotropic-matlab-primitives ...............   Passed    0.62 sec
+      Start 19: checkpoint-writer
+19/54 Test #16: constant-matlab-primitives .................   Passed    0.68 sec
+      Start 20: variable-evaluation
+20/54 Test #17: allocation-probe ...........................   Passed    0.63 sec
+      Start 21: prepared-field-cache
+21/54 Test #18: checkpoint-reader ..........................   Passed    0.77 sec
+      Start 22: forcing-diagnostic-session
+22/54 Test #20: variable-evaluation ........................   Passed    0.64 sec
+      Start 23: forcing-and-rk4
+23/54 Test #19: checkpoint-writer ..........................   Passed    0.87 sec
+      Start 25: unified-integration
+24/54 Test #21: prepared-field-cache .......................   Passed    0.66 sec
+      Start 26: barotropic-qg-integration
+25/54 Test #22: forcing-diagnostic-session .................   Passed    0.53 sec
+      Start 27: barotropic-qg-forcing
+26/54 Test #23: forcing-and-rk4 ............................   Passed    0.60 sec
+      Start 28: barotropic-qg-model-output
+27/54 Test #25: unified-integration ........................   Passed    0.64 sec
+      Start 29: output-orchestration
+28/54 Test #26: barotropic-qg-integration ..................   Passed    0.77 sec
+      Start 30: output-occurrence
+29/54 Test #27: barotropic-qg-forcing ......................   Passed    0.79 sec
+      Start 31: model-output-netcdf
+30/54 Test #29: output-orchestration .......................   Passed    0.75 sec
+      Start 32: model-output-configuration
+31/54 Test #30: output-occurrence ..........................   Passed    0.67 sec
+      Start 33: model-facade
+32/54 Test #28: barotropic-qg-model-output .................   Passed    1.05 sec
+      Start 35: observer-output-evaluation
+33/54 Test #32: model-output-configuration .................   Passed    0.56 sec
+      Start 36: observation-occurrence
+34/54 Test #33: model-facade ...............................   Passed    0.71 sec
+      Start 37: lagrangian-particles
+35/54 Test #35: observer-output-evaluation .................   Passed    0.72 sec
+      Start 39: standalone-runner
+36/54 Test #36: observation-occurrence .....................   Passed    0.68 sec
+      Start 40: forward-integration-probe
+37/54 Test #37: lagrangian-particles .......................   Passed    0.43 sec
+      Start 41: barotropic-qg-native-fftw
+38/54 Test #40: forward-integration-probe ..................   Passed    0.70 sec
+      Start 42: extended-runner-composition
+39/54 Test #41: barotropic-qg-native-fftw ..................   Passed    0.70 sec
+      Start 43: run-request
+40/54 Test #42: extended-runner-composition ................   Passed    0.25 sec
+      Start 44: observer-dispatch-source-policy
+41/54 Test #43: run-request ................................   Passed    0.39 sec
+      Start 45: forcing-dispatch-source-policy
+42/54 Test #45: forcing-dispatch-source-policy .............   Passed    0.06 sec
+      Start 46: runtime-architecture-source-policy
+43/54 Test #44: observer-dispatch-source-policy ............   Passed    0.29 sec
+      Start 47: barotropic-qg-architecture-source-policy
+44/54 Test #47: barotropic-qg-architecture-source-policy ...   Passed    0.01 sec
+      Start 48: output-schedule-dispatch-source-policy
+45/54 Test #46: runtime-architecture-source-policy .........   Passed    0.09 sec
+      Start 49: observation-occurrence-source-policy
+46/54 Test #49: observation-occurrence-source-policy .......   Passed    0.06 sec
+      Start 50: stratified-qg-kernel
+47/54 Test #48: output-schedule-dispatch-source-policy .....   Passed    0.11 sec
+      Start 51: hydrostatic-kernel
+48/54 Test #31: model-output-netcdf ........................   Passed    3.12 sec
+      Start 52: hydrostatic-runtime
+49/54 Test #50: stratified-qg-kernel .......................   Passed    0.22 sec
+      Start 53: boussinesq-kernel
+50/54 Test #51: hydrostatic-kernel .........................   Passed    0.56 sec
+      Start 54: boussinesq-runtime
+51/54 Test #52: hydrostatic-runtime ........................   Passed    0.41 sec
+52/54 Test #54: boussinesq-runtime .........................   Passed    0.37 sec
+53/54 Test #53: boussinesq-kernel ..........................   Passed    0.81 sec
+54/54 Test #39: standalone-runner ..........................   Passed    5.11 sec
+
+100% tests passed, 0 tests failed out of 54
+
+Total Test time (real) =  11.28 sec

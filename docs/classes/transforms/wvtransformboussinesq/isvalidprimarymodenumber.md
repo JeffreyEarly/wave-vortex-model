@@ -3,7 +3,7 @@ layout: default
 title: isValidPrimaryModeNumber
 parent: WVTransformBoussinesq
 grand_parent: Transforms
-nav_order: 171
+nav_order: 173
 mathjax: true
 ---
 

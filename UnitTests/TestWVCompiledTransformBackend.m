@@ -162,7 +162,7 @@ classdef TestWVCompiledTransformBackend < matlab.unittest.TestCase
             testCase.verifyEqual(changed.metrics.liveEvaluationBytes,0);
             testCase.verifyError(@()backend.evaluate(other,names),"WaveVortexModel:CompiledTransformMismatch");
             testCase.verifyError(@()backend.prepare(42),"WaveVortexModel:CompiledTransformVariables");
-            testCase.verifyError(@()backend.prepare("unsupported-variable"),"WaveVortexModel:CompiledTransformInput");
+            testCase.verifyError(@()backend.prepare("unsupported-variable"),"WaveVortexModel:CompiledTransformExecution");
             backend.prepare(names);
             recovered = backend.evaluate(wvt,names);
             for index = 1:numel(names)

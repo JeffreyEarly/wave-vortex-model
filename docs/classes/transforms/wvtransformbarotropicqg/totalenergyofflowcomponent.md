@@ -3,7 +3,7 @@ layout: default
 title: totalEnergyOfFlowComponent
 parent: WVTransformBarotropicQG
 grand_parent: Transforms
-nav_order: 155
+nav_order: 157
 mathjax: true
 ---
 

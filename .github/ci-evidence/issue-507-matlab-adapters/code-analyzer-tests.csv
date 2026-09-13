@@ -1,0 +1,9 @@
+Name,Passed,Failed,Incomplete,Duration,Details
+TestProductionCodeAnalyzer/productionInventoryIsDeterministic,0,1,0,1.15212675,
+TestProductionCodeAnalyzer/authoringAndLegacyAreasAreExcluded,1,0,0,0.0171984583333333,
+TestProductionCodeAnalyzer/retiredFFTWRouteIsAbsentFromProduction,1,0,0,0.0824748333333333,
+TestProductionCodeAnalyzer/productionFindingsAreClassifiedAndNonblocking,1,0,0,0.02195475,
+TestProductionCodeAnalyzer/reportContainsReleaseLocationsAndDiagnostics,0,1,0,0.702622375,
+TestProductionCodeAnalyzer/unreachableStatementBlocks,1,0,0,0.172014041666667,
+TestProductionCodeAnalyzer/suppressedUnreachableStatementStillBlocks,1,0,0,0.108023666666667,
+TestProductionCodeAnalyzer/ordinaryUnusedAssignmentsRemainBlocking,1,0,0,0.125985958333333,

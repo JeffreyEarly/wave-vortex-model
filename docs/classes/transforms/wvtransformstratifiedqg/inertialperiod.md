@@ -3,7 +3,7 @@ layout: default
 title: inertialPeriod
 parent: WVTransformStratifiedQG
 grand_parent: Transforms
-nav_order: 101
+nav_order: 103
 mathjax: true
 ---
 

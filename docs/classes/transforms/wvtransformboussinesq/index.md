@@ -122,6 +122,8 @@ views are `Apt`, `Amt`, and `A0t`.
       + [`GMatrix`](/classes/transforms/wvtransformboussinesq/gmatrix.html) Transformation matrix $$G$$ projecting G-grid values onto vertical modes; shape `[Nj Nz]`.
       + [`GinvMatrix`](/classes/transforms/wvtransformboussinesq/ginvmatrix.html) Transformation matrix $$G^{-1}$$ reconstructing G-grid values from vertical modes; shape `[Nz Nj]`.
   + Transform configuration
+    + [`computationalBackend`](/classes/transforms/wvtransformboussinesq/computationalbackend.html) Runtime numerical backend. MATLAB remains the default.
+    + [`computationalBackendMetadata`](/classes/transforms/wvtransformboussinesq/computationalbackendmetadata.html) Provider identity, storage and execution metrics for this transform.
     + [`isHydrostatic`](/classes/transforms/wvtransformboussinesq/ishydrostatic.html) Whether the transform uses the hydrostatic approximation.
     + [`shouldAntialias`](/classes/transforms/wvtransformboussinesq/shouldantialias.html) Whether the spectral grid excludes modes that alias quadratic products.
 + Initialize the flow
@@ -405,11 +407,11 @@ These items document internal implementation details and are not part of the pri
   + [`transformFromSpatialDomainWithFio`](/classes/transforms/wvtransformboussinesq/transformfromspatialdomainwithfio.html)
   + [`transformFromSpatialDomainWithFourier`](/classes/transforms/wvtransformboussinesq/transformfromspatialdomainwithfourier.html)
   + [`transformFromSpatialDomainWithG_w`](/classes/transforms/wvtransformboussinesq/transformfromspatialdomainwithg_w.html)
-  + [`transformToSpatialDomainWithFg`](/classes/transforms/wvtransformboussinesq/transformtospatialdomainwithfg.html) arguments
+  + [`transformToSpatialDomainWithFg`](/classes/transforms/wvtransformboussinesq/transformtospatialdomainwithfg.html)
   + [`transformToSpatialDomainWithFourier`](/classes/transforms/wvtransformboussinesq/transformtospatialdomainwithfourier.html)
   + [`transformToSpatialDomainWithFourierAtPosition`](/classes/transforms/wvtransformboussinesq/transformtospatialdomainwithfourieratposition.html)
   + [`transformToSpatialDomainWithFw`](/classes/transforms/wvtransformboussinesq/transformtospatialdomainwithfw.html)
-  + [`transformToSpatialDomainWithGg`](/classes/transforms/wvtransformboussinesq/transformtospatialdomainwithgg.html) arguments
+  + [`transformToSpatialDomainWithGg`](/classes/transforms/wvtransformboussinesq/transformtospatialdomainwithgg.html)
   + [`transformToSpatialDomainWithGw`](/classes/transforms/wvtransformboussinesq/transformtospatialdomainwithgw.html)
   + [`transformWithG_wg`](/classes/transforms/wvtransformboussinesq/transformwithg_wg.html)
 + Nonlinear flux and forcing internals

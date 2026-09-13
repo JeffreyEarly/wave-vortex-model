@@ -3,7 +3,7 @@ layout: default
 title: dftPrimaryIndices2D
 parent: WVTransformStratifiedQG
 grand_parent: Transforms
-nav_order: 62
+nav_order: 64
 mathjax: true
 ---
 

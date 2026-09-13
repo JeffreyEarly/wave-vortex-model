@@ -3,7 +3,7 @@ layout: default
 title: summarizeDegreesOfFreedom
 parent: WVTransformHydrostatic
 grand_parent: Transforms
-nav_order: 242
+nav_order: 244
 mathjax: true
 ---
 

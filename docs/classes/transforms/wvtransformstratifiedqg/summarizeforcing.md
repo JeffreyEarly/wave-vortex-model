@@ -3,7 +3,7 @@ layout: default
 title: summarizeForcing
 parent: WVTransformStratifiedQG
 grand_parent: Transforms
-nav_order: 193
+nav_order: 195
 mathjax: true
 ---
 

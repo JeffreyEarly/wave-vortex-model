@@ -3,7 +3,7 @@ layout: default
 title: totalEnstrophy
 parent: WVTransformBoussinesq
 grand_parent: Transforms
-nav_order: 270
+nav_order: 272
 mathjax: true
 ---
 

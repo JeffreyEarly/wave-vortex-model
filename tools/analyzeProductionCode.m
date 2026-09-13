@@ -30,7 +30,7 @@ suppressedFindings = normalizedFindings(analysis.SuppressedIssues,true,repositor
 findings = [activeFindings; suppressedFindings];
 if ~isempty(findings)
     findings = sortrows(findings,["RelativeFile" "Line" "Column" "CheckID" "Suppressed"]);
-    [findings.Classification,findings.Rationale] = classifyFindings(findings);
+    [findings.Classification,findings.Rationale] = classifyFindings(findings,repositoryRoot);
 end
 
 blockingMask = startsWith(findings.Classification,"blocking");
@@ -110,7 +110,7 @@ relative(insideRoot) = extractAfter(files(insideRoot),strlength(rootPrefix));
 relative = replace(relative,filesep,"/");
 end
 
-function [classification,rationale] = classifyFindings(findings)
+function [classification,rationale] = classifyFindings(findings,repositoryRoot)
 classification = repmat("blocking-unclassified",height(findings),1);
 rationale = repmat("Unclassified findings require review before they can become nonblocking.",height(findings),1);
 
@@ -133,9 +133,57 @@ inheritedPropertyMask = inertialPropertyMask | mdaPropertyMask;
 classification(inheritedPropertyMask) = "accepted-false-positive";
 rationale(inheritedPropertyMask) = "Ap, Am, and A0 are supplied by the composed transform hierarchy and are not visible to analysis of the mixin alone.";
 
+scopedCleanupFiles = [
+    "@WVCompiledTransformBackend/WVCompiledTransformBackend.m"
+    "@WVModel/WVModel.m"
+    "@WVTransform/performOperation.m"
+    "@WVTransform/variableWithName.m"
+    "@WVTransformBarotropicQG/WVTransformBarotropicQG.m"
+    "@WVTransformBoussinesq/WVTransformBoussinesq.m"
+    "@WVTransformConstantStratification/WVTransformConstantStratification.m"
+    "@WVTransformHydrostatic/WVTransformHydrostatic.m"
+    "@WVTransformStratifiedQG/WVTransformStratifiedQG.m"
+    ];
+scopedLeaseLine = sourceLineMatches(findings,repositoryRoot, ...
+    '^\s*(scope|cleanup)\s*=\s*self\.(wvt\.)?scopedEvaluation\([^;]*\);\s*(%#ok<NASGU>)?\s*$');
+scopeReleaseLine = sourceLineMatches(findings,repositoryRoot, ...
+    '^\s*scope\s*=\s*\[\];\s*%#ok<NASGU>\s*$');
+scopedCleanupMask = findings.CheckID == "NASGU" & ismember(findings.RelativeFile,scopedCleanupFiles) & ...
+    (scopedLeaseLine | (findings.RelativeFile == "@WVModel/WVModel.m" & scopeReleaseLine));
+classification(scopedCleanupMask) = "accepted-false-positive";
+rationale(scopedCleanupMask) = "The scopedEvaluation result is intentionally retained as an onCleanup lease; WVModel also assigns [] to release that lease at an exact control-flow boundary.";
+
+rotatingPlaneGuardLine = sourceLineMatches(findings,repositoryRoot, ...
+    '^\s*if isa\(self,"WVTransform"\), self\.assertCompiledConfigurationMutable\(\); end\s*$');
+rotatingPlaneGuardMask = findings.CheckID == "MCNPN" & findings.RelativeFile == "WVRotatingFPlane.m" & ...
+    contains(findings.Diagnostic,"'assertCompiledConfigurationMutable'") & rotatingPlaneGuardLine;
+classification(rotatingPlaneGuardMask) = "accepted-false-positive";
+rationale(rotatingPlaneGuardMask) = "The call is guarded by isa(self,""WVTransform""); the method is supplied by WVTransform when the mixin is composed into a transform.";
+
+releaseVersionLine = sourceLineMatches(findings,repositoryRoot,'version\("-release"\)');
+releaseVersionMask = findings.CheckID == "CPROP" & findings.RelativeFile == "@WVTransform/WVTransform.m" & ...
+    contains(findings.Diagnostic,"property 'version'") & releaseVersionLine;
+classification(releaseVersionMask) = "accepted-false-positive";
+rationale(releaseVersionMask) = "version(""-release"") intentionally calls MATLAB's version function while constructing MATLAB-backend metadata.";
+
 errorMask = findings.Severity == "error";
 classification(errorMask) = "blocking-error";
 rationale(errorMask) = "MATLAB Code Analyzer errors always block, even when their identifier is otherwise nonblocking.";
+end
+
+function mask = sourceLineMatches(findings,repositoryRoot,expression)
+mask = false(height(findings),1);
+for iFinding = 1:height(findings)
+    pathname = fullfile(repositoryRoot,findings.RelativeFile(iFinding));
+    if ~isfile(pathname)
+        continue
+    end
+    lines = splitlines(string(fileread(pathname)));
+    line = findings.Line(iFinding);
+    if line >= 1 && line <= numel(lines)
+        mask(iFinding) = ~isempty(regexp(lines(line),expression,"once"));
+    end
+end
 end
 
 function printReport(report)

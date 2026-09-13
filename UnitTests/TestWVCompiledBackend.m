@@ -9,6 +9,22 @@ classdef TestWVCompiledBackend < matlab.unittest.TestCase
         end
     end
 
+    methods (TestMethodSetup)
+        function unloadUnusedCompiledModule(testCase)
+            % Other test classes may leave the owner-free MEX mapped after
+            % deleting their transforms. Build tests need an unloaded module
+            % so they exercise the requested build stage.
+            [~,mexFiles] = inmem("-completenames");
+            moduleIsLoaded = any(endsWith(string(mexFiles),filesep+"wv_compiled_backend_mex."+mexext));
+            if moduleIsLoaded
+                metrics = wv_compiled_backend_mex('moduleMetrics');
+                testCase.assertEqual(metrics.kernelCount,0,"A prior test leaked a compiled kernel owner.");
+                testCase.assertEqual(metrics.matlabTransformCount,0,"A prior test leaked a MATLAB transform owner.");
+            end
+            clear wv_compiled_backend_mex
+        end
+    end
+
     methods (Test, TestTags="smoke")
         function capabilitiesAreNonthrowingAndDoNotBuild(testCase)
             fixture = testCase.applyFixture(matlab.unittest.fixtures.TemporaryFolderFixture);
@@ -260,9 +276,9 @@ classdef TestWVCompiledBackend < matlab.unittest.TestCase
                 compiledWVT.removeAllForcing();
                 [expectedFp,expectedFm,expectedF0] = matlabWVT.nonlinearFlux();
                 [actualFp,actualFm,actualF0] = compiledWVT.nonlinearFlux();
-                testCase.verifyEqual(actualFp,expectedFp);
-                testCase.verifyEqual(actualFm,expectedFm);
-                testCase.verifyEqual(actualF0,expectedF0);
+                verifyExactComplexZero(testCase,actualFp,expectedFp);
+                verifyExactComplexZero(testCase,actualFm,expectedFm);
+                verifyExactComplexZero(testCase,actualF0,expectedF0);
                 clear transformCleanup
             end
             metrics = wv_compiled_backend_mex('moduleMetrics');
@@ -291,6 +307,11 @@ end
 
 function value = relativeError(actual,expected)
 value = max(abs(actual(:)-expected(:)),[],'omitmissing')/max(max(abs(expected(:)),[],'omitmissing'),realmin);
+end
+
+function verifyExactComplexZero(testCase,actual,expected)
+testCase.verifyEqual(real(actual),expected);
+testCase.verifyEqual(imag(actual),zeros(size(expected)));
 end
 
 function deleteIfPresent(pathname)

@@ -3,7 +3,7 @@ layout: default
 title: degreesOfFreedomForComplexMatrix
 parent: WVTransformHydrostatic
 grand_parent: Transforms
-nav_order: 85
+nav_order: 87
 mathjax: true
 ---
 

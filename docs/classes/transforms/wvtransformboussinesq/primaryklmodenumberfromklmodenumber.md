@@ -3,7 +3,7 @@ layout: default
 title: primaryKLModeNumberFromKLModeNumber
 parent: WVTransformBoussinesq
 grand_parent: Transforms
-nav_order: 212
+nav_order: 214
 mathjax: true
 ---
 

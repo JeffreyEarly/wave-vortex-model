@@ -49,13 +49,13 @@
       "id": "matlab-inventory",
       "path": "Documentation/WebsiteDocumentation/users-guide/supported-features.md",
       "schema": "MATLAB documented stable inventory",
-      "sha256": "9f06f6489931be4dca5213e5937311e0bd79efe973b410ed3c95b7e40d27d382"
+      "sha256": "217ee6dc5e1787fb28fc6c23f0860e0306891e383dd5f2799b3ff35b66b49d05"
     },
     {
       "id": "observer-WVCoefficients",
       "path": "ObservingSystems/WVCoefficients.m",
       "schema": "MATLAB observer class",
-      "sha256": "5cb33d3187306c14fbfc8128fc4966d72c75917d79a80b319e6b605d6425c790"
+      "sha256": "f0537e22fcc11cb76ff3b27d35f4a8d8607a27804996e3acabc8caa818d0262c"
     },
     {
       "id": "observer-WVEulerianFields",

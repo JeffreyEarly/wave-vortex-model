@@ -9,13 +9,9 @@ mathjax: true
 
 #  computationalBackendMetadata
 
-Identity, scope, and storage information for the active backend.
+Provider identity, storage and execution metrics for this transform.
 
 
 ---
 
 ## Discussion
-
-The returned structure is JSON-safe. For the compiled preview it
-includes the native FFTW and MEX identities, kernel contract,
-bounded-storage estimates, and current lifecycle metrics.

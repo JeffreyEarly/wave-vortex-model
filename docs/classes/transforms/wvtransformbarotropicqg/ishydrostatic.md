@@ -3,7 +3,7 @@ layout: default
 title: isHydrostatic
 parent: WVTransformBarotropicQG
 grand_parent: Transforms
-nav_order: 80
+nav_order: 82
 mathjax: true
 ---
 

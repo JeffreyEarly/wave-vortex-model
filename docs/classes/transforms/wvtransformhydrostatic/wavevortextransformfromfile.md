@@ -3,7 +3,7 @@ layout: default
 title: waveVortexTransformFromFile
 parent: WVTransformHydrostatic
 grand_parent: Transforms
-nav_order: 288
+nav_order: 290
 mathjax: true
 ---
 
@@ -22,6 +22,7 @@ Initialize a WVTransformHydrostatic instance from an existing file
 + `path`  path to a NetCDF file
 + `iTime`  (optional) time index to initialize from (default 1)
 + `shouldReadOnly`  (optional) open the returned NetCDFFile read-only (default true)
++ `computationalBackend`  runtime backend, `"matlab"` (default) or `"compiled"`
 
 ## Discussion
 

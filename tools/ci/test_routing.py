@@ -1,5 +1,5 @@
 import unittest
-from route import select, FAMILIES
+from route import select, FAMILIES, COMPILED_MATLAB_TESTS
 
 
 class RoutingTests(unittest.TestCase):
@@ -77,6 +77,14 @@ class RoutingTests(unittest.TestCase):
                              'TestSpectralOutputRestart'} <= set(plan['matlabTests']))
         self.assertFalse(select(['README.md'])['complete'])
         self.assertEqual(select(['README.md'], complete=True)['deferredMethods'], [])
+
+    def test_compiled_matlab_adapters_are_registered_for_native_changes(self):
+        for plan in [select(['CompiledKernel/src/WVTransformHydrostaticKernel.cpp']),
+                     select(['README.md'], complete=True)]:
+            self.assertTrue(set(COMPILED_MATLAB_TESTS) <= set(plan['matlabTests']))
+            flattened = [name for group in plan['matlabShards'] for name in group['classes']]
+            for name in COMPILED_MATLAB_TESTS:
+                self.assertEqual(flattened.count(name), 1)
 
     def test_matlab_regressions_follow_production_changes(self):
         cases = [

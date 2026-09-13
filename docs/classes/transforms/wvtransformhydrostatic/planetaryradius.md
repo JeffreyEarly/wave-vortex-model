@@ -3,7 +3,7 @@ layout: default
 title: planetaryRadius
 parent: WVTransformHydrostatic
 grand_parent: Transforms
-nav_order: 190
+nav_order: 192
 mathjax: true
 ---
 

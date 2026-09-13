@@ -3,7 +3,7 @@ layout: default
 title: conjugateDimension
 parent: WVTransformStratifiedQG
 grand_parent: Transforms
-nav_order: 55
+nav_order: 57
 mathjax: true
 ---
 

@@ -8,9 +8,9 @@ mathjax: true
 
 # Compiled kernel contract
 
-WaveVortexModel provides portable C++ numerical cores for the constant-stratification and equivalent-barotropic quasigeostrophic calculations. The contract deliberately contains no MATLAB, MEX, FFTW, or NetCDF types. Embeddings supply transform providers and ownership through separate adapters. The user-facing choice between those embeddings is summarized under [Compiled execution](/compiled-execution).
+WaveVortexModel provides portable C++ numerical cores for the six built-in v4 transform configurations. The contract deliberately contains no MATLAB, MEX, FFTW, or NetCDF types. Embeddings supply transform providers and ownership through separate adapters. The user-facing choice between those embeddings is summarized under [Compiled execution](/compiled-execution).
 
-The optimized MATLAB implementation remains the default and the public performance baseline. Constant-stratification transforms may explicitly select the compiled preview after locally building its native provider. The Barotropic QG implementation is not a new MATLAB backend selector; its source-level kernel is also composed into the standalone `WVModel`, observer, output, and restart path.
+The optimized MATLAB implementation remains the default and the public performance baseline. Any of the six built-in v4 configurations may explicitly select the compiled MATLAB backend after locally building and validating its native provider. MATLAB remains authoritative for model integration, callbacks, observers, output, and persistence; the standalone runtime has its separate process contract.
 
 ## Correspondence with MATLAB
 
@@ -119,7 +119,7 @@ The MEX adapter has four responsibilities:
 3. Pass non-owning views to the portable entry point.
 4. Translate `WVKernelStatus` into a stable `WaveVortexModel:CompiledKernel:*` error.
 
-It does not implement transforms, retain authoritative MATLAB model state, or duplicate the numerical algorithm. `WVCompiledConstantStratificationBackend` owns one MEX handle and exposes the core to `WVTransformConstantStratification` without moving numerical formulas into MATLAB.
+It does not implement transforms, retain authoritative MATLAB model state, or duplicate the numerical algorithm. The MATLAB bridge owns a native context for one immutable transform configuration and exposes supported operations without moving numerical formulas into MATLAB.
 
 ## Source-only native provider
 
@@ -136,9 +136,9 @@ The initial provider supports Apple-silicon `maca64` with MATLAB R2025b or later
 
 The repository distributes the core, adapter, and build sources only. The downloaded archive, extracted FFTW source, compiled libraries, build cache, and MEX module are ignored local products and are never exported as package payload.
 
-## MATLAB preview boundary
+## MATLAB compiled-backend boundary
 
-After building native support explicitly, select the preview with:
+After building native support explicitly, select the compiled path with:
 
 ```matlab
 WVCompiledBackend.build();
@@ -147,14 +147,14 @@ wvt = WVTransformConstantStratification(Lxyz,Nxyz,computationalBackend="compiled
 
 The default `computationalBackend="matlab"` path does not query or build native support. An explicit compiled request validates the provider, loaded libraries, contract, and numerical self-tests before creating a kernel. Failure is reported immediately and never falls back to MATLAB.
 
-The preview implements ordinary `nonlinearFlux` only when the forcing registry contains exactly the default `WVNonlinearAdvection`. The transform checks that invariant on every call, so later forcing changes cannot be silently omitted. Transform-level antialiasing remains part of the kernel configuration; conversion to a separate `WVAntialiasing` forcing is unsupported.
+The bridge supports the qualified operation set for all six built-in configurations, including built-in fields, wave-vortex transforms, derivatives, supported raw primitives, and native nonlinear calculations. MATLAB continues to orchestrate integration, custom operations, and forcing callbacks. A callback's supported primitive calls may dispatch compiled; an explicitly requested compiled primitive fails when unavailable and never silently falls back to MATLAB.
 
-Backend selection is runtime-only. Ordinary NetCDF restoration selects MATLAB, while `WVTransform.waveVortexTransformFromFile(path,computationalBackend="compiled")` is an explicit override for constant-stratification files. Provider paths, plans, handles, and backend metadata are never persisted.
+The native configuration and prepared modal values are immutable. State and time inputs are borrowed for each MEX call. During an outer event, the adapter copies one native coefficient snapshot and retains it until that scope ends; the optional `scopedEvaluation` cleanup scope permits reuse across its calls. Reconstructing or restoring a new configuration creates a new native configuration. Backend selection is runtime-only. Ordinary NetCDF restoration selects MATLAB, while `WVTransform.waveVortexTransformFromFile(path,computationalBackend="compiled")` is an explicit override for compatible files. Provider paths, plans, handles, and backend metadata are never persisted; the files themselves remain unchanged.
 
-`computationalBackendMetadata` reports the requested and active implementation, native identities, contract, thread count, storage estimates, and live kernel metrics. The compiled preview is known to use more memory than MATLAB; explicit selection accepts that documented limitation.
+`computationalBackendMetadata` and the capability surface report the requested and active implementation, runtime ownership identity, bridge version, contract, thread count, storage estimates, and live kernel metrics. They also report exact source and binary hashes used by the qualified provider checks. The runtime ownership identity distinguishes configuration owners; it is separate from the complete build-source manifest and does not make a MATLAB back-reference part of native state.
 
 ## Shared-runtime boundary
 
-The shared C++ core is used by both the MATLAB/MEX preview and the standalone portable runtime. It contains no MATLAB, MEX, NetCDF, FFTW, or Apple APIs. `WVFFTEngine` is the only transform boundary, and each embedding supplies its provider without carrying another embedding's ownership or capability machinery.
+The shared C++ core is used by both the compiled MATLAB bridge and the standalone portable runtime. It contains no MATLAB, MEX, NetCDF, FFTW, or Apple APIs. `WVFFTEngine` is the only transform boundary, and each embedding supplies its provider without carrying another embedding's ownership or capability machinery.
 
-The preview does not change package version or dependencies. Historical benchmark harnesses, provider sweeps, rejected schedules, and canonical engineering artifacts remain outside the production tree.
+Historical benchmark harnesses, provider sweeps, rejected schedules, and canonical engineering artifacts remain outside the production tree.

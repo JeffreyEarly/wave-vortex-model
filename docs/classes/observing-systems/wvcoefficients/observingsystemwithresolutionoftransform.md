@@ -3,7 +3,7 @@ layout: default
 title: observingSystemWithResolutionOfTransform
 parent: WVCoefficients
 grand_parent: Observing systems
-nav_order: 5
+nav_order: 6
 mathjax: true
 ---
 

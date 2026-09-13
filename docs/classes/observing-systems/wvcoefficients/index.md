@@ -35,6 +35,9 @@ These items document internal implementation details and are not part of the pri
   + [`classRequiredPropertyNames`](/classes/observing-systems/wvcoefficients/classrequiredpropertynames.html)
   + [`errorTolerances`](/classes/observing-systems/wvcoefficients/errortolerances.html)
   + [`observingSystemWithResolutionOfTransform`](/classes/observing-systems/wvcoefficients/observingsystemwithresolutionoftransform.html) create a new WVObservingSystem with a new resolution
++ Observer integration
+  + [`fluxForCurrentState`](/classes/observing-systems/wvcoefficients/fluxforcurrentstate.html) Evaluate after the enclosing model has opened its state scope.
+  + [`usesStandardCoefficientFlux`](/classes/observing-systems/wvcoefficients/usesstandardcoefficientflux.html) Preserve overridden RHS callbacks while sharing inherited ones.
 
 
 ---

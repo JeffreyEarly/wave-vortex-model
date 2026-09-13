@@ -3,7 +3,7 @@ layout: default
 title: isValidModeNumber
 parent: WVTransformBarotropicQG
 grand_parent: Transforms
-nav_order: 84
+nav_order: 86
 mathjax: true
 ---
 

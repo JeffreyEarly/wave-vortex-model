@@ -61,6 +61,8 @@ corresponding coefficients evaluated at the current transform time.
     + Resolution and shape
       + [`summarizeDegreesOfFreedom`](/classes/transforms/wvtransform/summarizedegreesoffreedom.html) Summarize the spatial grid and active spectral degrees of freedom.
   + Transform configuration
+    + [`computationalBackend`](/classes/transforms/wvtransform/computationalbackend.html) Runtime numerical backend. MATLAB remains the default.
+    + [`computationalBackendMetadata`](/classes/transforms/wvtransform/computationalbackendmetadata.html) Provider identity, storage and execution metrics for this transform.
     + [`isHydrostatic`](/classes/transforms/wvtransform/ishydrostatic.html) Whether the transform uses the hydrostatic approximation.
 + Initialize the flow
   + General initialization
@@ -166,6 +168,8 @@ These items document internal implementation details and are not part of the pri
     + [`spatialDimensionNames`](/classes/transforms/wvtransform/spatialdimensionnames.html)
     + [`spectralDimensionNames`](/classes/transforms/wvtransform/spectraldimensionnames.html)
 + Spectral transforms and operators
+  + [`advanceCompiledStateGeneration`](/classes/transforms/wvtransform/advancecompiledstategeneration.html) Record assignments even when their time or values are unchanged.
+  + [`hasCompiledStandardStateGraph`](/classes/transforms/wvtransform/hascompiledstandardstategraph.html) A replaced dependency must retain its MATLAB callback semantics.
   + [`optimizedTransformsForFlowComponent`](/classes/transforms/wvtransform/optimizedtransformsforflowcomponent.html) returns optimized transforms that avoid unnecessary computation
   + [`transformFromSpatialDomainWithFg`](/classes/transforms/wvtransform/transformfromspatialdomainwithfg.html) Required for transformUVEtaToWaveVortex
   + [`transformFromSpatialDomainWithGg`](/classes/transforms/wvtransform/transformfromspatialdomainwithgg.html)
@@ -173,6 +177,7 @@ These items document internal implementation details and are not part of the pri
   + [`transformToSpatialDomainWithFAllDerivatives`](/classes/transforms/wvtransform/transformtospatialdomainwithfallderivatives.html)
   + [`transformToSpatialDomainWithG`](/classes/transforms/wvtransform/transformtospatialdomainwithg.html)
   + [`transformToSpatialDomainWithGAllDerivatives`](/classes/transforms/wvtransform/transformtospatialdomainwithgallderivatives.html)
+  + [`usesCompiledTransform`](/classes/transforms/wvtransform/usescompiledtransform.html) - Developer: true
 + Nonlinear flux and forcing internals
   + [`energyFluxFromNonlinearFlux`](/classes/transforms/wvtransform/energyfluxfromnonlinearflux.html) converts nonlinear flux into energy flux
   + [`enstrophyFluxFromNonlinearFlux`](/classes/transforms/wvtransform/enstrophyfluxfromnonlinearflux.html) converts nonlinear flux into enstrophy flux
@@ -200,6 +205,7 @@ These items document internal implementation details and are not part of the pri
   + [`fetchFromVariableCache`](/classes/transforms/wvtransform/fetchfromvariablecache.html) retrieve a set of variables from the internal cache
   + [`flowComponentNameMap`](/classes/transforms/wvtransform/flowcomponentnamemap.html)
   + [`forcingNameMap`](/classes/transforms/wvtransform/forcingnamemap.html)
+  + [`isCompiledBuiltinOperation`](/classes/transforms/wvtransform/iscompiledbuiltinoperation.html) - Developer: true
   + [`operationForKnownVariable`](/classes/transforms/wvtransform/operationforknownvariable.html) This is one of two functions that returns operations for computing
   + [`operationNameMap`](/classes/transforms/wvtransform/operationnamemap.html)
   + [`operationVariableNameMap`](/classes/transforms/wvtransform/operationvariablenamemap.html)
@@ -214,8 +220,13 @@ These items document internal implementation details and are not part of the pri
   + [`variableCache`](/classes/transforms/wvtransform/variablecache.html)
   + [`wvCoefficientDependentVariablesNameMap`](/classes/transforms/wvtransform/wvcoefficientdependentvariablesnamemap.html)
 + Class internals
+  + [`compiledDensityRecoveryReport`](/classes/transforms/wvtransform/compileddensityrecoveryreport.html) - Developer: true
+  + [`compiledPrimitive`](/classes/transforms/wvtransform/compiledprimitive.html) - Developer: true
+  + [`compiledVariables`](/classes/transforms/wvtransform/compiledvariables.html) - Developer: true
   + [`hasPVComponent`](/classes/transforms/wvtransform/haspvcomponent.html)
   + [`hasWaveComponent`](/classes/transforms/wvtransform/haswavecomponent.html)
+  + [`invalidateCompiledRegistry`](/classes/transforms/wvtransform/invalidatecompiledregistry.html) Invalidate compiled derived values before a registry mutation.
+  + [`scopedEvaluation`](/classes/transforms/wvtransform/scopedevaluation.html) Reuse compiled dependencies while the MATLAB state is unchanged.
 + Construction internals
   + [`WVTransform`](/classes/transforms/wvtransform/wvtransform.html) Initialize the internal WVTransform state for a concrete subclass.
 
