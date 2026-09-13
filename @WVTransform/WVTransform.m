@@ -117,6 +117,16 @@ classdef WVTransform < matlab.mixin.indexing.RedefinesDot & CAAnnotatedClass
     %
     % - Declaration: classdef WVTransform < matlab.mixin.indexing.RedefinesDot & CAAnnotatedClass
     
+    properties (Hidden, Dependent, GetAccess=public, SetAccess=private)
+        % Runtime owner identity for compiled configuration views; never persisted.
+        % This identifies the object, not the state or an evaluation generation.
+        compiledSourceIdentity
+    end
+
+    properties (Transient, Access=private)
+        compiledSourceIdentityValue = []
+    end
+
     % Public read and write properties
     properties (GetAccess=public, SetAccess=public)
         % Current transform time in seconds.
@@ -351,6 +361,14 @@ classdef WVTransform < matlab.mixin.indexing.RedefinesDot & CAAnnotatedClass
         %
         % - Topic: Flow components
         val = primaryFlowComponentWithName(self,name)
+        function identity = get.compiledSourceIdentity(self)
+            % Assign lazily so restored MATLAB objects receive fresh owners too.
+            if isempty(self.compiledSourceIdentityValue) || ~isvalid(self.compiledSourceIdentityValue)
+                self.compiledSourceIdentityValue = WVCompiledSourceIdentity();
+            end
+            identity = self.compiledSourceIdentityValue;
+        end
+
         % Registered primary flow components.
         %
         % - Topic: Flow components

@@ -70,7 +70,9 @@
     "controlledEarlyTermination": "issue-288",
     "standardForwardIntegrationQualification": "issue-289",
     "adaptiveDampingEffectiveResolution": "issue-409",
-    "tiledHorizontalAdvection": "issue-489"
+    "tiledHorizontalAdvection": "issue-489",
+    "ownedStratifiedModalSource": "issue-503",
+    "nativeVariablePolicyExtraction": "issue-503"
   },
   "excluded": [
     "benchmark harnesses and payloads",
@@ -91,14 +93,44 @@
     "matrixScanBytes": 32768,
     "scientificInputs": "MATLAB-persisted numeric geometry and preconditioned F/G operators",
     "sourceSHA256": {
-      "PortableRuntime/include/WaveVortexRuntime/WVStratifiedModalRecord.hpp": "a0486a1e62dcc2269d70c7af951e7d545a3759b4edbe35a7bfc9119d1d47013e",
-      "PortableRuntime/src/WVStratifiedModalRecord.cpp": "4248a3f05f246de819d6ad6c7e6ec6d125349ec3471281d23b4ac9d5111be614",
+      "PortableRuntime/include/WaveVortexRuntime/WVStratifiedModalRecord.hpp": "f70601422f499ea0e2df1379468d7cba9e9c64c5a03bb14e2cb4ff19dde22ca6",
+      "PortableRuntime/src/WVStratifiedModalRecord.cpp": "af33628758b911bb43700a6f0af5c6268079b6359864d5edf8e219a613e17307",
       "@WVGeometryDoublyPeriodicStratified/WVGeometryDoublyPeriodicStratified.m": "4d6df4bb82feb550a20da25a8e34ae9370272f2268ea3660d571dfeddaa06cc8",
       "@WVTransform/writeToFile.m": "b362676f63e681327ed04708e99927aca07c0b602bf573840a4bb365d0694a0a",
       "WVModelOutputFile.m": "b1b546df8bc6c1a33c9c0ee75267d21a5104a2451250a94b222e97f3a83ba43f",
       "CompiledKernel/include/WaveVortexKernel/WVStratifiedModalSource.hpp": "e82dc0193e48edeae4b41ff8b9ef7cd3f8e74a38b024e019ecae6afffea65a22"
     },
-    "numericalSourceInterface": "WaveVortexKernel/WVStratifiedModalSource.hpp"
+    "numericalSourceInterface": "WaveVortexKernel/WVStratifiedModalSource.hpp",
+    "sharedPreparationImplementation": "wave-vortex-owned-stratified-modal-source-v1"
+  },
+  "ownedStratifiedModalSource": {
+    "issue": 503,
+    "identity": "wave-vortex-owned-stratified-modal-source-v1",
+    "interface": "wave-vortex-stratified-modal-source-v1",
+    "ownership": "by-value geometry and modal arrays retained by immutable shared ownership",
+    "transformClasses": [
+      "WVTransformStratifiedQG",
+      "WVTransformHydrostatic",
+      "WVTransformBoussinesq"
+    ],
+    "netCDFRecordDelegatesPreparation": true,
+    "sourceSHA256": {
+      "CompiledKernel/include/WaveVortexKernel/WVOwnedStratifiedModalSource.hpp": "9eb131d10eb8fa968ded995edd0ecbf484aae69ef2f7860c39da735e516462e4",
+      "CompiledKernel/src/WVOwnedStratifiedModalSource.cpp": "1467a3916dfa52094eba3f64d8e48f329d7e7028a36478cda21814f189e157b3",
+      "PortableRuntime/include/WaveVortexRuntime/WVStratifiedModalRecord.hpp": "f70601422f499ea0e2df1379468d7cba9e9c64c5a03bb14e2cb4ff19dde22ca6",
+      "PortableRuntime/src/WVStratifiedModalRecord.cpp": "af33628758b911bb43700a6f0af5c6268079b6359864d5edf8e219a613e17307"
+    }
+  },
+  "nativeVariablePolicyExtraction": {
+    "issue": 503,
+    "identity": "compact-native-variable-v1",
+    "scope": "The qualified issue-455 selection algorithm is shared by native runner and MATLAB host entry points; historical qualification hashes remain recorded in runnerVariablePolicy.",
+    "sourceSHA256": {
+      "PortableRuntime/include/WaveVortexRuntime/WVNativeVariablePolicy.hpp": "a9eb979e73d606ed55945e5add677c4901efc8a5263fe87fa24b798035c5c851",
+      "PortableRuntime/src/WVNativeVariablePolicy.cpp": "7c34a145e60c89471e3e8633aa9f0a73897379a32bb6fa5f44ce3150860405ba",
+      "PortableRuntime/app/WVRunnerVariablePolicy.hpp": "ca791ce09f743a0e298ce582e62a9e54fcdcdbff0042e92a1ca85b2c03e246c8",
+      "PortableRuntime/app/WVRunnerVariablePolicy.cpp": "ab79a0ab2e492645b14b980425c5187e1726128e103778b0ce2a5979ec02cfff"
+    }
   },
   "stratifiedQGRuntime": {
     "transform": "WVTransformStratifiedQG",

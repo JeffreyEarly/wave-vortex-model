@@ -1,7 +1,7 @@
 #pragma once
 
 #include "WaveVortexRuntime/WVCheckpointReader.hpp"
-#include "WaveVortexKernel/WVStratifiedModalSource.hpp"
+#include "WaveVortexKernel/WVOwnedStratifiedModalSource.hpp"
 #include <memory>
 
 namespace wavevortex::runtime {
@@ -16,27 +16,27 @@ public:
     WVStratifiedModalRecord& operator=(const WVStratifiedModalRecord&) = delete;
     WVStratifiedModalRecord(WVStratifiedModalRecord&&) = delete;
     WVStratifiedModalRecord& operator=(WVStratifiedModalRecord&&) = delete;
-    const WVStratifiedModalGeometry& geometry() const noexcept { return geometry_; }
+    const WVStratifiedModalGeometry& geometry() const noexcept { return source_->geometry(); }
     // Opaque MATLAB .mat payload, retained only for round-trip persistence.
     // Portable numerical execution never deserializes or executes this code.
     const std::vector<unsigned char>& N2FunctionPayload() const noexcept { return N2FunctionPayload_; }
-    const std::vector<double>& PF0inv() const noexcept { return PF0inv_; }
-    const std::vector<double>& QG0inv() const noexcept { return QG0inv_; }
-    const std::vector<double>& PF0() const noexcept { return PF0_; }
-    const std::vector<double>& QG0() const noexcept { return QG0_; }
-    const std::vector<double>& PFpmInv() const noexcept { return PFpmInv_; }
-    const std::vector<double>& QGpmInv() const noexcept { return QGpmInv_; }
-    const std::vector<double>& PFpm() const noexcept { return PFpm_; }
-    const std::vector<double>& QGpm() const noexcept { return QGpm_; }
-    const std::vector<double>& QGwg() const noexcept { return QGwg_; }
+    const std::vector<double>& PF0inv() const noexcept { return source_->PF0inv(); }
+    const std::vector<double>& QG0inv() const noexcept { return source_->QG0inv(); }
+    const std::vector<double>& PF0() const noexcept { return source_->PF0(); }
+    const std::vector<double>& QG0() const noexcept { return source_->QG0(); }
+    const std::vector<double>& PFpmInv() const noexcept { return source_->PFpmInv(); }
+    const std::vector<double>& QGpmInv() const noexcept { return source_->QGpmInv(); }
+    const std::vector<double>& PFpm() const noexcept { return source_->PFpm(); }
+    const std::vector<double>& QGpm() const noexcept { return source_->QGpm(); }
+    const std::vector<double>& QGwg() const noexcept { return source_->QGwg(); }
     // Exact identity of this immutable in-process scientific record. No reuse by
     // path, radius or approximate matrix values; rereading creates a new record.
-    const std::string& sourceIdentity() const noexcept { return sourceIdentity_; }
-    const std::string& modeSetIdentity() const noexcept { return modeSetIdentity_; }
+    const std::string& sourceIdentity() const noexcept { return source_->sourceIdentity(); }
+    const std::string& modeSetIdentity() const noexcept { return source_->modeSetIdentity(); }
     std::size_t persistentBytes() const noexcept;
     // Exact persisted wave-group membership for Boussinesq; one shared group
     // for Hydrostatic/SQG. Balanced operators always cover all columns.
-    const std::vector<WVScientificModalGroup>& groups() const noexcept { return groups_; }
+    const std::vector<WVScientificModalGroup>& groups() const noexcept { return source_->groups(); }
     // Borrowed const view of persisted preconditioned values, valid while this
     // scientific record lives. No normalization conversion or derived product.
     WVKernelStatus matrixView(WVStratifiedScientificMatrix matrix, WVVerticalMatrixRecord& result) const;
@@ -52,15 +52,8 @@ public:
 private:
     friend class WVStratifiedModalReader;
     WVStratifiedModalRecord() = default;
-    WVStratifiedModalGeometry geometry_;
     std::vector<unsigned char> N2FunctionPayload_;
-    std::vector<double> PF0inv_, QG0inv_, PF0_, QG0_;
-    std::vector<double> PFpmInv_, QGpmInv_, PFpm_, QGpm_, QGwg_;
-    WVKernelStatus prepareWaveVertical(WVStratifiedModalOperator, WVComplexLayout,
-        WVComplexLayout, std::unique_ptr<WVVerticalMatrixBackend>,
-        std::unique_ptr<WVPreparedVerticalOperator>&, WVAccumulation) const;
-    std::string sourceIdentity_, modeSetIdentity_;
-    std::vector<WVScientificModalGroup> groups_;
+    std::shared_ptr<const WVOwnedStratifiedModalSource> source_;
 };
 
 class WVStratifiedModalReader {

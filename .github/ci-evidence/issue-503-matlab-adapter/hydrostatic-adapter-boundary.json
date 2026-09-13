@@ -1,0 +1,169 @@
+{
+  "schemaVersion": "wvm503-hydrostatic-adapter-boundary-v1",
+  "classification": "bounded feasibility measurement; not production timing qualification",
+  "sourceCommit": "806ed7ef141c2f8baef451134f9b90f1f390c540",
+  "sourceTreeDirty": "M @WVCompiledBackend/private/wvCompiledBackendBuild.m\n M @WVCompiledBackend/private/wvCompiledBackendCapabilities.m\n M @WVTransform/WVTransform.m\n M CompiledKernel/CMakeLists.txt\n M CompiledKernel/adapters/native-fftw/wv_compiled_backend_mex.cpp\n M CompiledKernel/source-selection.json\n M PortableRuntime/CMakeLists.txt\n M PortableRuntime/app/WVRunnerVariablePolicy.cpp\n M PortableRuntime/app/WVRunnerVariablePolicy.hpp\n M PortableRuntime/include/WaveVortexRuntime/WVStratifiedModalRecord.hpp\n M PortableRuntime/source-selection.json\n M PortableRuntime/src/WVStratifiedModalRecord.cpp\n?? .github/planning/issue-503-matlab-adapter.md\n?? @WVCompiledTransformBackend/\n?? Benchmarks/matlab-adapter/\n?? CompiledKernel/adapters/native-fftw/WVMatlabTransformHost.cpp\n?? CompiledKernel/adapters/native-fftw/WVMatlabTransformHost.hpp\n?? CompiledKernel/include/WaveVortexKernel/WVOwnedStratifiedModalSource.hpp\n?? CompiledKernel/src/WVOwnedStratifiedModalSource.cpp\n?? PortableRuntime/include/WaveVortexRuntime/WVNativeVariablePolicy.hpp\n?? PortableRuntime/src/WVNativeVariablePolicy.cpp\n?? PortableRuntime/tests/TestWVOwnedStratifiedModalSource.cpp\n?? UnitTests/TestWVCompiledTransformBackend.m",
+  "matlabVersion": "25.2.0.3150157 (R2025b) Update 4",
+  "moduleSHA256": "25a7125bd3ac8340c1c7579317a0b50c84ff8b1c5c753266a14a66aa35996abe",
+  "configuration": {
+    "Lxyz": [
+      150000,
+      150000,
+      1300
+    ],
+    "Nxyz": [
+      256,
+      256,
+      28
+    ],
+    "Nj": 18,
+    "N2": "2e-5*exp(2*z/1300)",
+    "latitude": 45,
+    "shouldAntialias": true,
+    "seed": 503,
+    "t0": 37,
+    "t": 113,
+    "variableNames": [
+      "u",
+      "v",
+      "w",
+      "eta"
+    ]
+  },
+  "setup": {
+    "matlabConstructionAndInitializationSeconds": 1.9484348333333332,
+    "adapterCreateSeconds": 0.82173675,
+    "adapterPrepareSeconds": 0.0010989166666666667
+  },
+  "timing": {
+    "repeatCount": 3,
+    "compiledMixedSeconds": [
+      0.014421625,
+      0.012779666666666667,
+      0.012396791666666667
+    ],
+    "compiledFieldsOnlySeconds": [
+      0.0072484583333333333,
+      0.0066015833333333334,
+      0.0069579583333333334
+    ],
+    "matlabMixedSeconds": [
+      0.09052854166666667,
+      0.065557541666666663,
+      0.051834958333333334
+    ],
+    "matlabFieldsOnlySeconds": [
+      0.023645083333333334,
+      0.022725708333333334,
+      0.022534708333333334
+    ],
+    "medianCompiledMixedSeconds": 0.012779666666666667,
+    "medianCompiledFieldsOnlySeconds": 0.0069579583333333334,
+    "medianMatlabMixedSeconds": 0.065557541666666663,
+    "medianMatlabFieldsOnlySeconds": 0.022725708333333334
+  },
+  "transfer": {
+    "stateInputCopyBytes": 0,
+    "coefficientInputBytesPerEvaluation": 9.883296E+6,
+    "fieldResultBytesPerEvaluation": 5.8720256E+7,
+    "fluxResultBytesPerEvaluation": 9.883296E+6
+  },
+  "storage": {
+    "sourceBytes": 599274,
+    "kernelBytes": 2.81630004E+8,
+    "engineBytes": 4.23635911E+8,
+    "fieldServiceBytes": 8.9279266E+7,
+    "preparedPlanBytes": 1200,
+    "stablePreparedPlanBytes": 1200,
+    "ownershipNotes": [
+      "kernelBytes includes sourceBytes",
+      "engineBytes includes kernelBytes"
+    ],
+    "combinedScientificExecutionBytesLowerBound": 5.12916377E+8
+  },
+  "evaluationAccounting": {
+    "mixedMetrics": {
+      "transformClass": "WVTransformHydrostatic",
+      "scope": "call-scoped Hydrostatic field/nonlinear foundation",
+      "matrixBackend": "accelerate",
+      "policy": "compact-native-accelerate",
+      "horizontalWorkers": 12,
+      "pointwiseWorkers": 8,
+      "sourceBytes": 599274,
+      "kernelBytes": 2.81630004E+8,
+      "engineBytes": 4.23635911E+8,
+      "fieldServiceBytes": 8.9279266E+7,
+      "preparedPlanBytes": 1200,
+      "planPreparations": 1,
+      "evaluations": 7,
+      "stateInputBytes": 6.9183072E+7,
+      "stateInputCopyBytes": 0,
+      "outputBytes": 4.50574976E+8,
+      "stateValidations": 7,
+      "phasePreparations": 7,
+      "producerExecutions": 16,
+      "cacheHits": 16,
+      "duplicateExecutions": 0,
+      "liveEvaluationBytes": 0,
+      "peakEvaluationBytes": 5.8720256E+7,
+      "tiledNonlinearExecutions": 4
+    },
+    "fieldsMetrics": {
+      "transformClass": "WVTransformHydrostatic",
+      "scope": "call-scoped Hydrostatic field/nonlinear foundation",
+      "matrixBackend": "accelerate",
+      "policy": "compact-native-accelerate",
+      "horizontalWorkers": 12,
+      "pointwiseWorkers": 8,
+      "sourceBytes": 599274,
+      "kernelBytes": 2.81630004E+8,
+      "engineBytes": 4.23635911E+8,
+      "fieldServiceBytes": 8.9279266E+7,
+      "preparedPlanBytes": 1200,
+      "planPreparations": 1,
+      "evaluations": 8,
+      "stateInputBytes": 7.9066368E+7,
+      "stateInputCopyBytes": 0,
+      "outputBytes": 5.09295232E+8,
+      "stateValidations": 8,
+      "phasePreparations": 8,
+      "producerExecutions": 20,
+      "cacheHits": 16,
+      "duplicateExecutions": 0,
+      "liveEvaluationBytes": 0,
+      "peakEvaluationBytes": 5.8720256E+7,
+      "tiledNonlinearExecutions": 4
+    },
+    "producerExecutions": 16,
+    "stateValidations": 7,
+    "phasePreparations": 7,
+    "duplicateExecutions": 0
+  },
+  "parity": {
+    "fieldNames": [
+      "u",
+      "v",
+      "w",
+      "eta"
+    ],
+    "fieldRelativeErrors": [
+      4.9741557883622359E-16,
+      4.411001207078187E-16,
+      4.5822114574569756E-16,
+      4.58614885037403E-16
+    ],
+    "fluxRelativeErrors": [
+      1.9637494559373803E-15,
+      1.9670535680765351E-15,
+      9.0684601110569019E-16
+    ],
+    "maximumRelativeError": 1.9670535680765351E-15,
+    "allFinite": true,
+    "tolerance": 1E-12,
+    "passed": true
+  },
+  "limitations": [
+    "No direct standalone kernel call was added; existing HydrostaticKernelDump remains the independent native-call validation route.",
+    "Host was not asserted idle; timing fields are feasibility observations only."
+  ]
+}

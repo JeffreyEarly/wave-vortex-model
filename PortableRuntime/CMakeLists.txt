@@ -30,6 +30,8 @@ else()
 endif()
 
 add_library(WaveVortexPortableRuntime STATIC
+    include/WaveVortexRuntime/WVNativeVariablePolicy.hpp
+    src/WVNativeVariablePolicy.cpp
     include/WaveVortexRuntime/WVExtensionCatalog.hpp
     src/WVExtensionCatalog.cpp
     src/WVPortableImplementationContract.cpp
@@ -293,6 +295,12 @@ if(BUILD_TESTING)
         target_compile_options(TestWVStratifiedModalRecord PRIVATE -Wall -Wextra -Wpedantic -Werror)
     endif()
     add_test(NAME stratified-modal-record COMMAND TestWVStratifiedModalRecord)
+    add_executable(TestWVOwnedStratifiedModalSource tests/TestWVOwnedStratifiedModalSource.cpp)
+    target_link_libraries(TestWVOwnedStratifiedModalSource PRIVATE WaveVortex::PortableRuntime ${WAVEVORTEX_NETCDF_TARGET})
+    if(CMAKE_CXX_COMPILER_ID MATCHES "AppleClang|Clang|GNU")
+        target_compile_options(TestWVOwnedStratifiedModalSource PRIVATE -Wall -Wextra -Wpedantic -Werror)
+    endif()
+    add_test(NAME owned-stratified-modal-source COMMAND TestWVOwnedStratifiedModalSource)
     if(NOT TARGET TestWVAllocationProbe)
         add_executable(TestWVAllocationProbe
             ../tools/compiled-kernel/tests/TestWVAllocationProbe.cpp

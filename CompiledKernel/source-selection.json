@@ -47,7 +47,8 @@
     "standardForwardIntegrationQualification": "issue-289",
     "adaptiveDampingEffectiveResolution": "issue-409",
     "tiledHorizontalAdvection": "issue-489",
-    "tiledScratchAndArithmetic": "issue-491"
+    "tiledScratchAndArithmetic": "issue-491",
+    "matlabOwnedModalBridge": "issue-503"
   },
   "contract": {
     "version": 4,
@@ -79,8 +80,8 @@
     "kernel": "a07893470f3c9b27a2fe297473660b718f65947424ba879f2a7a91083c644681",
     "integrationSystem": "21d00e8a75de899425ff991896d9d9dedff2201228835d0f97e01bc9dab569eb",
     "nativeEngine": "76fe16ed98a7a4022663e2bbe1c42f10ad1638603a75d7584f58f7303fef3315",
-    "mexGateway": "b68cc36464bb6b46a3e10c69fa1964c76269aac717cedf88e9657f285a6c8ea6",
-    "buildOrchestrator": "d724445240b1b8832746ab8ab95cb8fceefcc86973acf189054949ad5002b0a9"
+    "mexGateway": "c995dc87e61cd6743f8b5872b7186c4ebf5c9ec754e1cfeb24eaf38250045a1f",
+    "buildOrchestrator": "f26c2e4db5a95a733d87a4f173cc810d7afc5e3f6c5bca2ec1aac6c38340e0c7"
   },
   "excluded": [
     "historical benchmark harnesses and canonical engineering artifacts",
@@ -161,7 +162,7 @@
       "CompiledKernel/include/WaveVortexKernel/WVTransformConstantStratificationKernel.hpp": "805b5b58fb6943b23f5301af3fb94c0790577b113b4636f163e34297dc969903",
       "CompiledKernel/adapters/native-fftw/WVNativeFFTWEngine.hpp": "7285f9989e604d2056a36eec275b95389bf386c3a5c7f5140086206f6ecf251b",
       "@WVCompiledBackend/private/wvCompiledBackendConstants.m": "6b8833c89efb0d55dca397bc752194e18c9cd7128aff4a9959b8dad12300ae78",
-      "@WVCompiledBackend/private/wvCompiledBackendCapabilities.m": "c453d0f3bce5089c9928dc00969f88ca236b5c34f64c7a732ac13282156a5620"
+      "@WVCompiledBackend/private/wvCompiledBackendCapabilities.m": "aaca34c95c35db79977d9c157a06d5a649f163b6ca71ffaa5c06f9f9c8cdb9c1"
     },
     "adoptionDecision": "accepted-large-grid-qualification-with-owner-accepted-small-grid-cost",
     "evidence": ".github/ci-evidence/issue-455-large-grid-adoption/decision.json",
@@ -240,6 +241,37 @@
     "sourceSHA256": {
       "CompiledKernel/src/WVTransformHydrostaticKernel.cpp": "3eb002fce3671081ccbd778d135959b8aff5482fdd3a812bd93189288802b31c",
       "CompiledKernel/src/WVTransformBoussinesqKernel.cpp": "4a8ae972beb4e8fd47811c640f27aa927e762a59a2d84532e1eb10c26e9ede35"
+    }
+  },
+  "matlabOwnedModalBridge": {
+    "issue": 503,
+    "status": "hydrostatic-foundation",
+    "ownedScientificSource": "wave-vortex-owned-stratified-modal-source-v1",
+    "matlabSchema": "wv-matlab-stratified-modal-source-v1",
+    "supportedTransformFamilies": [
+      "WVTransformHydrostatic"
+    ],
+    "ownedSourceInputFamilies": [
+      "WVTransformStratifiedQG",
+      "WVTransformHydrostatic",
+      "WVTransformBoussinesq"
+    ],
+    "nativeVariablePolicy": "compact-native-variable-v1",
+    "matrixBackend": "accelerate-gemm-v1",
+    "stateOwnership": "MATLAB coefficient arrays are borrowed for one MEX call; modal geometry and matrices are copied into an immutable shared source owned by the host session.",
+    "moduleSourceManifestBinding": false,
+    "moduleSourceManifestBindingGap": "issue-507",
+    "sourceSHA256": {
+      "CompiledKernel/include/WaveVortexKernel/WVOwnedStratifiedModalSource.hpp": "9eb131d10eb8fa968ded995edd0ecbf484aae69ef2f7860c39da735e516462e4",
+      "CompiledKernel/src/WVOwnedStratifiedModalSource.cpp": "1467a3916dfa52094eba3f64d8e48f329d7e7028a36478cda21814f189e157b3",
+      "CompiledKernel/adapters/native-fftw/WVMatlabTransformHost.hpp": "eeacdf24a60049504da25c639a8da0d934714beab3b8a7b963aa215f1f26fc30",
+      "CompiledKernel/adapters/native-fftw/WVMatlabTransformHost.cpp": "fc88d7e1f524f88db032527335406e0b27aba95d5842e5e14d133f8e4a64f2f4",
+      "CompiledKernel/adapters/native-fftw/wv_compiled_backend_mex.cpp": "c995dc87e61cd6743f8b5872b7186c4ebf5c9ec754e1cfeb24eaf38250045a1f",
+      "@WVCompiledTransformBackend/WVCompiledTransformBackend.m": "896e4af1d6e1f80a84ba661fd84290e6aee9dd641fb901c5de964440941148af",
+      "@WVCompiledTransformBackend/private/wvCompiledStratifiedModalConfiguration.m": "28b14a5a5413c7f5902b9c83702a4d446b18790af342d4ab5f684730618272f5",
+      "@WVTransform/WVTransform.m": "a64876ba54ead8bcbcd9a78a73cc913db6a75a291cd18daf11754c85dd64b583",
+      "@WVCompiledBackend/private/wvCompiledBackendCapabilities.m": "aaca34c95c35db79977d9c157a06d5a649f163b6ca71ffaa5c06f9f9c8cdb9c1",
+      "@WVCompiledSourceIdentity/WVCompiledSourceIdentity.m": "19bb7aef78f389ab7c466e54161be9b4389ec762b75a1efa0aee5082a156f929"
     }
   }
 }
