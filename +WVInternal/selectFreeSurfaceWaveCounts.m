@@ -12,7 +12,7 @@ if options.shouldCheckQuadraticAliasing && any(counts>0)
     maxTrials=min(128,sum(counts)+inertialCount+1);
     trials=cell(maxTrials,1);
     for trial=1:maxTrials
-        report=WVInternal.assessWaveCountMap(prepared,waveModeKappa=state.khUnique,waveModeCount=counts,inertialModeCount=inertialCount,quadraticTolerance=options.quadraticAliasingTolerance);
+        report=WVInternal.assessWaveCountMap(prepared,waveModeKappa=state.khUnique,waveModeCount=counts,inertialModeCount=inertialCount,quadraticTolerance=options.quadraticAliasingTolerance,productBudget=prepared.cost.productBudget);
         trials{trial}=struct(waveModeCount=counts,inertialModeCount=inertialCount,status=report.status,worstQuadraticError=max(report.pages.quadraticError));
         if report.requestedCountAccepted, break; end
         if report.status~="rejected"
