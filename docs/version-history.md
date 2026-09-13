@@ -8,6 +8,8 @@ nav_order: 100
 
 ## [Unreleased]
 
+## [4.4.1] - 2026-09-13
+
 ### Compiled execution
 
 - Reduced tracer derivative overhead with independent axis-only real horizontal FFTs and prepared real vertical derivative matrices for Hydrostatic and Boussinesq F/G calculus. Spatial vertical derivatives operate directly on the volume layout, preserving derivative orders, integrals, tracer evolution and MATLAB tolerances.
