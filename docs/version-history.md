@@ -8,6 +8,8 @@ nav_order: 100
 
 ## [Unreleased]
 
+## [4.4.0] - 2026-09-13
+
 ### Compiled execution
 
 - Extended standalone C++ execution to Hydrostatic, Boussinesq and stratified quasi-geostrophic models, alongside constant-stratification and barotropic configurations. Standard portable variables, forcing, observers, restart and sampling support are documented in the generated compatibility catalog; explicitly unsupported entries remain unavailable.
