@@ -1,0 +1,1045 @@
+{
+  "schemaVersion": "wvm-hydrostatic-provenance-audit-v1",
+  "publishedEvidence": {
+    "archive": {
+      "path": "/Users/jearly/Documents/OceanKitRepositories/wave-vortex-model-benchmark-artifacts/three-interface/20260913T134854458Z-three-interface-benchmark.json.gz",
+      "sha256": "43bec9ecaf0f93a6dcd1407b736c9f6d826a793c830e6b7a4daeb21fc07eda08",
+      "bytes": 328207
+    },
+    "summary": {
+      "path": "/Users/jearly/Documents/OceanKitRepositories/wave-vortex-model-benchmark-artifacts/three-model-final-024add42/hydrostatic-exponential-summary.json",
+      "sha256": "15ba50c22168b127e8b49436513ce64506999eb80b2b38fe3c6a60ac40294207",
+      "bytes": 6716114
+    },
+    "summaryArchiveReference": {
+      "fileName": "20260913T134854458Z-three-interface-benchmark.json.gz",
+      "sha256": "43bec9ecaf0f93a6dcd1407b736c9f6d826a793c830e6b7a4daeb21fc07eda08",
+      "compressedBytes": 328207,
+      "location": "external author archive; not distributed with source"
+    },
+    "archiveReferenceMatches": true,
+    "runId": "20260913T134854458Z",
+    "status": "complete",
+    "source": {
+      "repository": "JeffreyEarly/wave-vortex-model",
+      "commit": "024add423bf19c682ab5fd793821f398c5e7170f",
+      "tree": "0b27da796691af81b4f7d0bde783b37bac8a21dc",
+      "isDirty": false
+    },
+    "worker": {
+      "path": "/Users/jearly/Documents/OceanKitRepositories/wvm-v4-benchmark-final/Benchmarks/threeInterfaceMatlabWorker.m",
+      "sha256": "80fedd5dec4e1524e35c976e50b569b9cb3cfb19fa7f3bc42d25c6ab30c94980"
+    },
+    "provider": {
+      "id": "native-neon-pthreads",
+      "version": "3.3.11",
+      "module": {
+        "path": "/Users/jearly/Library/Caches/WaveVortexModel/compiled-backend-v1/maca64/R2025b/21ebfc89e75343aae7d673333f8417b91b2c0158d7ec4d85582ed67bb9ce21e3/module/wv_compiled_backend_mex.mexmaca64",
+        "sha256": "b78e920ebf95769b5c998449c75909d4f77bc07786d32caed8d89e6ae39c97ef",
+        "identityValidated": true,
+        "engine": "fftw"
+      },
+      "baseLibrary": {
+        "path": "/Users/jearly/Library/Caches/WaveVortexModel/compiled-backend-v1/maca64/R2025b/21ebfc89e75343aae7d673333f8417b91b2c0158d7ec4d85582ed67bb9ce21e3/provider/native-neon-pthreads/lib/libfftw3.3.dylib",
+        "sha256": "2a1969c627417941c84b477884568d4c55ea1d7f3d78ef47ab28fd8b541f9f00",
+        "version": "fftw-3.3.11-neon"
+      },
+      "threadLibrary": {
+        "path": "/Users/jearly/Library/Caches/WaveVortexModel/compiled-backend-v1/maca64/R2025b/21ebfc89e75343aae7d673333f8417b91b2c0158d7ec4d85582ed67bb9ce21e3/provider/native-neon-pthreads/lib/libfftw3_threads.3.dylib",
+        "sha256": "5d9e204040e6ecdedb2ea69956093caf382b3a44b9da79edcf90a5720630356b",
+        "version": "fftw-3.3.11-neon"
+      }
+    }
+  },
+  "fixtureComparisons": [
+    {
+      "workload": "coefficient-endpoint",
+      "reconstructed": {
+        "path": "/private/tmp/wvm-hydro-audit/fixtures/matched-hydrostatic-exponential-coefficient-endpoint-model.nc",
+        "sha256": "b41d76fd14a1e8b8c30fa7d18867906fe2eb377b6a6eb7bfc126a4126a2d39e1",
+        "bytes": 47382120.0
+      },
+      "published": {
+        "path": "external raw archive fixture: matched-hydrostatic-exponential-coefficient-endpoint-model.nc",
+        "sha256": "23ecd022cb7094db8bf2cfdb7b1b224e63b5b209a2241692e91a39498cad4f16",
+        "bytes": 47382119.0
+      },
+      "byteDifferenceReconstructedMinusPublished": 1,
+      "sha256Matches": false,
+      "receiptMatchesActualFile": true,
+      "actualFile": {
+        "exists": true,
+        "sha256": "b41d76fd14a1e8b8c30fa7d18867906fe2eb377b6a6eb7bfc126a4126a2d39e1",
+        "bytes": 47382120
+      }
+    },
+    {
+      "workload": "composite-dense-output",
+      "reconstructed": {
+        "path": "/private/tmp/wvm-hydro-audit/fixtures/matched-hydrostatic-exponential-composite-dense-output-model.nc",
+        "sha256": "f540cfccc98d9c4367760294d6dfc52b66ebfeb57363b35a543ac2fd7c64a4d0",
+        "bytes": 183771488.0
+      },
+      "published": {
+        "path": "external raw archive fixture: matched-hydrostatic-exponential-composite-dense-output-model.nc",
+        "sha256": "ec97d7a1fa48aca4fcbe456f18b9991d84c886c8b95150d3551fa964364f8a4b",
+        "bytes": 183771487.0
+      },
+      "byteDifferenceReconstructedMinusPublished": 1,
+      "sha256Matches": false,
+      "receiptMatchesActualFile": true,
+      "actualFile": {
+        "exists": true,
+        "sha256": "f540cfccc98d9c4367760294d6dfc52b66ebfeb57363b35a543ac2fd7c64a4d0",
+        "bytes": 183771488
+      }
+    }
+  ],
+  "initialConditionComparisons": [
+    {
+      "comparedValueCount": 29,
+      "allComparedValuesExact": true,
+      "maximumAbsoluteDifference": 0.0,
+      "publishedOnlyPaths": [
+        "model.N2ReferencePerSecondSquared",
+        "model.domainMeters[0]",
+        "model.domainMeters[1]",
+        "model.domainMeters[2]",
+        "model.exponentialScaleHeightMeters",
+        "model.grid[0]",
+        "model.grid[1]",
+        "model.grid[2]",
+        "model.id",
+        "model.isHydrostatic",
+        "model.latitudeDegrees",
+        "model.physicalConfiguration",
+        "model.shouldAntialias",
+        "model.stratificationProfile",
+        "model.transformClass"
+      ],
+      "reconstructedOnlyPaths": [],
+      "values": [
+        {
+          "path": "combinedHorizontalSpeedMaximum",
+          "reconstructed": 0.29865001770319444,
+          "published": 0.29865001770319444,
+          "exact": true,
+          "absoluteDifference": 0.0
+        },
+        {
+          "path": "combinedHorizontalSpeedRMS",
+          "reconstructed": 0.05716383004092858,
+          "published": 0.05716383004092858,
+          "exact": true,
+          "absoluteDifference": 0.0
+        },
+        {
+          "path": "combinedVerticalSpeedMaximum",
+          "reconstructed": 0.028175111473591655,
+          "published": 0.028175111473591655,
+          "exact": true,
+          "absoluteDifference": 0.0
+        },
+        {
+          "path": "deltaK",
+          "reconstructed": 4.188790204786391e-05,
+          "published": 4.188790204786391e-05,
+          "exact": true,
+          "absoluteDifference": 0.0
+        },
+        {
+          "path": "geostrophicEnergy",
+          "reconstructed": 0.6532800889948929,
+          "published": 0.6532800889948929,
+          "exact": true,
+          "absoluteDifference": 0.0
+        },
+        {
+          "path": "geostrophicHorizontalSpeedMaximum",
+          "reconstructed": 0.15,
+          "published": 0.15,
+          "exact": true,
+          "absoluteDifference": 0.0
+        },
+        {
+          "path": "geostrophicMaximumSpeedTarget",
+          "reconstructed": 0.15,
+          "published": 0.15,
+          "exact": true,
+          "absoluteDifference": 0.0
+        },
+        {
+          "path": "geostrophicScale",
+          "reconstructed": 51.08593826214888,
+          "published": 51.08593826214888,
+          "exact": true,
+          "absoluteDifference": 0.0
+        },
+        {
+          "path": "geostrophicSpectrum",
+          "reconstructed": "k^(3/2) below k_r, k^(-5/3) from k_r through k_f, and k_f^(4/3) k^(-3) above k_f",
+          "published": "k^(3/2) below k_r, k^(-5/3) from k_r through k_f, and k_f^(4/3) k^(-3) above k_f",
+          "exact": true,
+          "absoluteDifference": null
+        },
+        {
+          "path": "geostrophicVerticalMode",
+          "reconstructed": 1,
+          "published": 1,
+          "exact": true,
+          "absoluteDifference": 0.0
+        },
+        {
+          "path": "gmAmplitudePolicy",
+          "reconstructed": "exact spectrum amplitudes with deterministic random orientations",
+          "published": "exact spectrum amplitudes with deterministic random orientations",
+          "exact": true,
+          "absoluteDifference": null
+        },
+        {
+          "path": "gmEnergyLevel",
+          "reconstructed": 0.5,
+          "published": 0.5,
+          "exact": true,
+          "absoluteDifference": 0.0
+        },
+        {
+          "path": "id",
+          "reconstructed": "gm0p5-red-geostrophic-j1-v1",
+          "published": "gm0p5-red-geostrophic-j1-v1",
+          "exact": true,
+          "absoluteDifference": null
+        },
+        {
+          "path": "kRollOff",
+          "reconstructed": 0.00016755160819145564,
+          "published": 0.00016755160819145564,
+          "exact": true,
+          "absoluteDifference": 0.0
+        },
+        {
+          "path": "kTransition",
+          "reconstructed": 0.0006702064327658225,
+          "published": 0.0006702064327658225,
+          "exact": true,
+          "absoluteDifference": 0.0
+        },
+        {
+          "path": "rollOffMode",
+          "reconstructed": 4,
+          "published": 4,
+          "exact": true,
+          "absoluteDifference": 0.0
+        },
+        {
+          "path": "rollOffWavelength",
+          "reconstructed": 37500,
+          "published": 37500,
+          "exact": true,
+          "absoluteDifference": 0.0
+        },
+        {
+          "path": "seed",
+          "reconstructed": 4001,
+          "published": 4001,
+          "exact": true,
+          "absoluteDifference": 0.0
+        },
+        {
+          "path": "transitionMode",
+          "reconstructed": 16,
+          "published": 16,
+          "exact": true,
+          "absoluteDifference": 0.0
+        },
+        {
+          "path": "transitionWavelength",
+          "reconstructed": 9375,
+          "published": 9375,
+          "exact": true,
+          "absoluteDifference": 0.0
+        },
+        {
+          "path": "vortexCoefficientMaximum",
+          "reconstructed": 4.7111342772301276e-05,
+          "published": 4.7111342772301276e-05,
+          "exact": true,
+          "absoluteDifference": 0.0
+        },
+        {
+          "path": "vortexCoefficientMedian",
+          "reconstructed": 6.923290689605688e-06,
+          "published": 6.923290689605688e-06,
+          "exact": true,
+          "absoluteDifference": 0.0
+        },
+        {
+          "path": "vortexCoefficientMinimum",
+          "reconstructed": 4.984267993278176e-06,
+          "published": 4.984267993278176e-06,
+          "exact": true,
+          "absoluteDifference": 0.0
+        },
+        {
+          "path": "waveCoefficientMaximum",
+          "reconstructed": 0.7140725442372906,
+          "published": 0.7140725442372906,
+          "exact": true,
+          "absoluteDifference": 0.0
+        },
+        {
+          "path": "waveCoefficientMedian",
+          "reconstructed": 0.009170929282465465,
+          "published": 0.009170929282465465,
+          "exact": true,
+          "absoluteDifference": 0.0
+        },
+        {
+          "path": "waveCoefficientMinimum",
+          "reconstructed": 1.0168775758853409e-09,
+          "published": 1.0168775758853409e-09,
+          "exact": true,
+          "absoluteDifference": 0.0
+        },
+        {
+          "path": "waveEnergy",
+          "reconstructed": 1.539088144837851,
+          "published": 1.539088144837851,
+          "exact": true,
+          "absoluteDifference": 0.0
+        },
+        {
+          "path": "waveHorizontalSpeedMaximum",
+          "reconstructed": 0.2525841072689372,
+          "published": 0.2525841072689372,
+          "exact": true,
+          "absoluteDifference": 0.0
+        },
+        {
+          "path": "waveVerticalSpeedMaximum",
+          "reconstructed": 0.028175111473591655,
+          "published": 0.028175111473591655,
+          "exact": true,
+          "absoluteDifference": 0.0
+        }
+      ],
+      "workload": "coefficient-endpoint"
+    },
+    {
+      "comparedValueCount": 29,
+      "allComparedValuesExact": true,
+      "maximumAbsoluteDifference": 0.0,
+      "publishedOnlyPaths": [
+        "model.N2ReferencePerSecondSquared",
+        "model.domainMeters[0]",
+        "model.domainMeters[1]",
+        "model.domainMeters[2]",
+        "model.exponentialScaleHeightMeters",
+        "model.grid[0]",
+        "model.grid[1]",
+        "model.grid[2]",
+        "model.id",
+        "model.isHydrostatic",
+        "model.latitudeDegrees",
+        "model.physicalConfiguration",
+        "model.shouldAntialias",
+        "model.stratificationProfile",
+        "model.transformClass"
+      ],
+      "reconstructedOnlyPaths": [],
+      "values": [
+        {
+          "path": "combinedHorizontalSpeedMaximum",
+          "reconstructed": 0.29865001770319444,
+          "published": 0.29865001770319444,
+          "exact": true,
+          "absoluteDifference": 0.0
+        },
+        {
+          "path": "combinedHorizontalSpeedRMS",
+          "reconstructed": 0.05716383004092858,
+          "published": 0.05716383004092858,
+          "exact": true,
+          "absoluteDifference": 0.0
+        },
+        {
+          "path": "combinedVerticalSpeedMaximum",
+          "reconstructed": 0.028175111473591655,
+          "published": 0.028175111473591655,
+          "exact": true,
+          "absoluteDifference": 0.0
+        },
+        {
+          "path": "deltaK",
+          "reconstructed": 4.188790204786391e-05,
+          "published": 4.188790204786391e-05,
+          "exact": true,
+          "absoluteDifference": 0.0
+        },
+        {
+          "path": "geostrophicEnergy",
+          "reconstructed": 0.6532800889948929,
+          "published": 0.6532800889948929,
+          "exact": true,
+          "absoluteDifference": 0.0
+        },
+        {
+          "path": "geostrophicHorizontalSpeedMaximum",
+          "reconstructed": 0.15,
+          "published": 0.15,
+          "exact": true,
+          "absoluteDifference": 0.0
+        },
+        {
+          "path": "geostrophicMaximumSpeedTarget",
+          "reconstructed": 0.15,
+          "published": 0.15,
+          "exact": true,
+          "absoluteDifference": 0.0
+        },
+        {
+          "path": "geostrophicScale",
+          "reconstructed": 51.08593826214888,
+          "published": 51.08593826214888,
+          "exact": true,
+          "absoluteDifference": 0.0
+        },
+        {
+          "path": "geostrophicSpectrum",
+          "reconstructed": "k^(3/2) below k_r, k^(-5/3) from k_r through k_f, and k_f^(4/3) k^(-3) above k_f",
+          "published": "k^(3/2) below k_r, k^(-5/3) from k_r through k_f, and k_f^(4/3) k^(-3) above k_f",
+          "exact": true,
+          "absoluteDifference": null
+        },
+        {
+          "path": "geostrophicVerticalMode",
+          "reconstructed": 1,
+          "published": 1,
+          "exact": true,
+          "absoluteDifference": 0.0
+        },
+        {
+          "path": "gmAmplitudePolicy",
+          "reconstructed": "exact spectrum amplitudes with deterministic random orientations",
+          "published": "exact spectrum amplitudes with deterministic random orientations",
+          "exact": true,
+          "absoluteDifference": null
+        },
+        {
+          "path": "gmEnergyLevel",
+          "reconstructed": 0.5,
+          "published": 0.5,
+          "exact": true,
+          "absoluteDifference": 0.0
+        },
+        {
+          "path": "id",
+          "reconstructed": "gm0p5-red-geostrophic-j1-v1",
+          "published": "gm0p5-red-geostrophic-j1-v1",
+          "exact": true,
+          "absoluteDifference": null
+        },
+        {
+          "path": "kRollOff",
+          "reconstructed": 0.00016755160819145564,
+          "published": 0.00016755160819145564,
+          "exact": true,
+          "absoluteDifference": 0.0
+        },
+        {
+          "path": "kTransition",
+          "reconstructed": 0.0006702064327658225,
+          "published": 0.0006702064327658225,
+          "exact": true,
+          "absoluteDifference": 0.0
+        },
+        {
+          "path": "rollOffMode",
+          "reconstructed": 4,
+          "published": 4,
+          "exact": true,
+          "absoluteDifference": 0.0
+        },
+        {
+          "path": "rollOffWavelength",
+          "reconstructed": 37500,
+          "published": 37500,
+          "exact": true,
+          "absoluteDifference": 0.0
+        },
+        {
+          "path": "seed",
+          "reconstructed": 4001,
+          "published": 4001,
+          "exact": true,
+          "absoluteDifference": 0.0
+        },
+        {
+          "path": "transitionMode",
+          "reconstructed": 16,
+          "published": 16,
+          "exact": true,
+          "absoluteDifference": 0.0
+        },
+        {
+          "path": "transitionWavelength",
+          "reconstructed": 9375,
+          "published": 9375,
+          "exact": true,
+          "absoluteDifference": 0.0
+        },
+        {
+          "path": "vortexCoefficientMaximum",
+          "reconstructed": 4.7111342772301276e-05,
+          "published": 4.7111342772301276e-05,
+          "exact": true,
+          "absoluteDifference": 0.0
+        },
+        {
+          "path": "vortexCoefficientMedian",
+          "reconstructed": 6.923290689605688e-06,
+          "published": 6.923290689605688e-06,
+          "exact": true,
+          "absoluteDifference": 0.0
+        },
+        {
+          "path": "vortexCoefficientMinimum",
+          "reconstructed": 4.984267993278176e-06,
+          "published": 4.984267993278176e-06,
+          "exact": true,
+          "absoluteDifference": 0.0
+        },
+        {
+          "path": "waveCoefficientMaximum",
+          "reconstructed": 0.7140725442372906,
+          "published": 0.7140725442372906,
+          "exact": true,
+          "absoluteDifference": 0.0
+        },
+        {
+          "path": "waveCoefficientMedian",
+          "reconstructed": 0.009170929282465465,
+          "published": 0.009170929282465465,
+          "exact": true,
+          "absoluteDifference": 0.0
+        },
+        {
+          "path": "waveCoefficientMinimum",
+          "reconstructed": 1.0168775758853409e-09,
+          "published": 1.0168775758853409e-09,
+          "exact": true,
+          "absoluteDifference": 0.0
+        },
+        {
+          "path": "waveEnergy",
+          "reconstructed": 1.539088144837851,
+          "published": 1.539088144837851,
+          "exact": true,
+          "absoluteDifference": 0.0
+        },
+        {
+          "path": "waveHorizontalSpeedMaximum",
+          "reconstructed": 0.2525841072689372,
+          "published": 0.2525841072689372,
+          "exact": true,
+          "absoluteDifference": 0.0
+        },
+        {
+          "path": "waveVerticalSpeedMaximum",
+          "reconstructed": 0.028175111473591655,
+          "published": 0.028175111473591655,
+          "exact": true,
+          "absoluteDifference": 0.0
+        }
+      ],
+      "workload": "composite-dense-output"
+    }
+  ],
+  "controls": {
+    "model": {
+      "id": "hydrostatic-exponential",
+      "transformClass": "WVTransformHydrostatic",
+      "physicalConfiguration": "hydrostatic",
+      "isHydrostatic": true,
+      "domainMeters": [
+        150000,
+        150000,
+        1300
+      ],
+      "grid": [
+        256,
+        256,
+        129
+      ],
+      "latitudeDegrees": 45,
+      "shouldAntialias": true,
+      "stratificationProfile": "N2(z) = 2e-5 exp(2 z / 1300) s^-2",
+      "N2ReferencePerSecondSquared": 2e-05,
+      "exponentialScaleHeightMeters": 650
+    },
+    "cases": [
+      {
+        "id": "hydrostatic-exponential--adaptive-rk78--coefficient-endpoint",
+        "workload": "coefficient-endpoint",
+        "requestedIntegrator": "adaptive-rk78",
+        "finalTime": 7168,
+        "initialStep": 269.39985873487035,
+        "maximumStep": [],
+        "maximumStepPolicy": "matlab-default",
+        "relativeTolerance": 0.001,
+        "absoluteTolerance": 1e-06,
+        "outputInterval": 7168,
+        "outputScheduleSeconds": [
+          0,
+          7168
+        ],
+        "denseOutputRecordCount": 0,
+        "observerGraph": "coefficient-only state with endpoint-only output"
+      },
+      {
+        "id": "hydrostatic-exponential--adaptive-rk78--composite-dense-output",
+        "workload": "composite-dense-output",
+        "requestedIntegrator": "adaptive-rk78",
+        "finalTime": 7168,
+        "initialStep": 269.39985873487035,
+        "maximumStep": [],
+        "maximumStepPolicy": "matlab-default",
+        "relativeTolerance": 0.001,
+        "absoluteTolerance": 1e-06,
+        "outputInterval": 32,
+        "outputScheduleSeconds": [
+          0,
+          32,
+          64,
+          96,
+          128
+        ],
+        "denseOutputRecordCount": 5,
+        "observerGraph": "one persisted restart record plus four first-step records containing u, two 3-D particles with tracked u, one 3-D tracer, and one source-linked mooring; coefficients at endpoints"
+      }
+    ],
+    "absoluteToleranceFingerprints": {
+      "coefficient-endpoint": {
+        "hash": "7480293940019435225",
+        "componentHashes": [
+          "5594174166554281185",
+          "5594174166554281185",
+          "3242563528902739169"
+        ],
+        "clearedMantissaBits": 20
+      },
+      "composite-dense-output": {
+        "hash": "17407230464089877585",
+        "componentHashes": [
+          "5594174166554281185",
+          "5594174166554281185",
+          "3242563528902739169",
+          "5399737789812619515",
+          "5399737789812619515",
+          "13259821907563821307",
+          "8691403943112672131"
+        ],
+        "clearedMantissaBits": 20
+      }
+    }
+  },
+  "timingsAndCounters": {
+    "samples": [
+      {
+        "workload": "coefficient-endpoint",
+        "interface": "matlab-builtin",
+        "repeatIndex": 1,
+        "integrationSeconds": 37.108458041666665,
+        "acceptedStepCount": 15,
+        "rejectedStepCount": 0,
+        "rhsEvaluationCount": 195,
+        "denseOutputEvaluationCount": 0,
+        "outputRecordCounts": {
+          "waveVortex": 2,
+          "dense": 0,
+          "particles": 0,
+          "tracers": 0
+        }
+      },
+      {
+        "workload": "coefficient-endpoint",
+        "interface": "matlab-builtin",
+        "repeatIndex": 2,
+        "integrationSeconds": 36.98433154166667,
+        "acceptedStepCount": 15,
+        "rejectedStepCount": 0,
+        "rhsEvaluationCount": 195,
+        "denseOutputEvaluationCount": 0,
+        "outputRecordCounts": {
+          "waveVortex": 2,
+          "dense": 0,
+          "particles": 0,
+          "tracers": 0
+        }
+      },
+      {
+        "workload": "coefficient-endpoint",
+        "interface": "matlab-builtin",
+        "repeatIndex": 3,
+        "integrationSeconds": 36.691839083333335,
+        "acceptedStepCount": 15,
+        "rejectedStepCount": 0,
+        "rhsEvaluationCount": 195,
+        "denseOutputEvaluationCount": 0,
+        "outputRecordCounts": {
+          "waveVortex": 2,
+          "dense": 0,
+          "particles": 0,
+          "tracers": 0
+        }
+      },
+      {
+        "workload": "coefficient-endpoint",
+        "interface": "matlab-compiled",
+        "repeatIndex": 1,
+        "integrationSeconds": 13.232189041666667,
+        "acceptedStepCount": 15,
+        "rejectedStepCount": 0,
+        "rhsEvaluationCount": 195,
+        "denseOutputEvaluationCount": 0,
+        "outputRecordCounts": {
+          "waveVortex": 2,
+          "dense": 0,
+          "particles": 0,
+          "tracers": 0
+        }
+      },
+      {
+        "workload": "coefficient-endpoint",
+        "interface": "matlab-compiled",
+        "repeatIndex": 2,
+        "integrationSeconds": 13.1733655,
+        "acceptedStepCount": 15,
+        "rejectedStepCount": 0,
+        "rhsEvaluationCount": 195,
+        "denseOutputEvaluationCount": 0,
+        "outputRecordCounts": {
+          "waveVortex": 2,
+          "dense": 0,
+          "particles": 0,
+          "tracers": 0
+        }
+      },
+      {
+        "workload": "coefficient-endpoint",
+        "interface": "matlab-compiled",
+        "repeatIndex": 3,
+        "integrationSeconds": 13.339929875,
+        "acceptedStepCount": 15,
+        "rejectedStepCount": 0,
+        "rhsEvaluationCount": 195,
+        "denseOutputEvaluationCount": 0,
+        "outputRecordCounts": {
+          "waveVortex": 2,
+          "dense": 0,
+          "particles": 0,
+          "tracers": 0
+        }
+      },
+      {
+        "workload": "coefficient-endpoint",
+        "interface": "standalone-compiled",
+        "repeatIndex": 1,
+        "integrationSeconds": 10.606684875,
+        "acceptedStepCount": 15,
+        "rejectedStepCount": 0,
+        "rhsEvaluationCount": 195,
+        "denseOutputEvaluationCount": 0,
+        "outputRecordCounts": {
+          "waveVortex": 2,
+          "dense": 0,
+          "particles": 0,
+          "tracers": 0
+        }
+      },
+      {
+        "workload": "coefficient-endpoint",
+        "interface": "standalone-compiled",
+        "repeatIndex": 2,
+        "integrationSeconds": 10.447692292,
+        "acceptedStepCount": 15,
+        "rejectedStepCount": 0,
+        "rhsEvaluationCount": 195,
+        "denseOutputEvaluationCount": 0,
+        "outputRecordCounts": {
+          "waveVortex": 2,
+          "dense": 0,
+          "particles": 0,
+          "tracers": 0
+        }
+      },
+      {
+        "workload": "coefficient-endpoint",
+        "interface": "standalone-compiled",
+        "repeatIndex": 3,
+        "integrationSeconds": 10.386310583,
+        "acceptedStepCount": 15,
+        "rejectedStepCount": 0,
+        "rhsEvaluationCount": 195,
+        "denseOutputEvaluationCount": 0,
+        "outputRecordCounts": {
+          "waveVortex": 2,
+          "dense": 0,
+          "particles": 0,
+          "tracers": 0
+        }
+      },
+      {
+        "workload": "composite-dense-output",
+        "interface": "matlab-builtin",
+        "repeatIndex": 1,
+        "integrationSeconds": 55.770529833333335,
+        "acceptedStepCount": 15,
+        "rejectedStepCount": 0,
+        "rhsEvaluationCount": 199,
+        "denseOutputEvaluationCount": 4,
+        "outputRecordCounts": {
+          "waveVortex": 2,
+          "dense": 5,
+          "particles": 5,
+          "tracers": 5
+        }
+      },
+      {
+        "workload": "composite-dense-output",
+        "interface": "matlab-builtin",
+        "repeatIndex": 2,
+        "integrationSeconds": 55.89866141666667,
+        "acceptedStepCount": 15,
+        "rejectedStepCount": 0,
+        "rhsEvaluationCount": 199,
+        "denseOutputEvaluationCount": 4,
+        "outputRecordCounts": {
+          "waveVortex": 2,
+          "dense": 5,
+          "particles": 5,
+          "tracers": 5
+        }
+      },
+      {
+        "workload": "composite-dense-output",
+        "interface": "matlab-builtin",
+        "repeatIndex": 3,
+        "integrationSeconds": 55.811500583333334,
+        "acceptedStepCount": 15,
+        "rejectedStepCount": 0,
+        "rhsEvaluationCount": 199,
+        "denseOutputEvaluationCount": 4,
+        "outputRecordCounts": {
+          "waveVortex": 2,
+          "dense": 5,
+          "particles": 5,
+          "tracers": 5
+        }
+      },
+      {
+        "workload": "composite-dense-output",
+        "interface": "matlab-compiled",
+        "repeatIndex": 1,
+        "integrationSeconds": 57.436674708333335,
+        "acceptedStepCount": 15,
+        "rejectedStepCount": 0,
+        "rhsEvaluationCount": 199,
+        "denseOutputEvaluationCount": 4,
+        "outputRecordCounts": {
+          "waveVortex": 2,
+          "dense": 5,
+          "particles": 5,
+          "tracers": 5
+        }
+      },
+      {
+        "workload": "composite-dense-output",
+        "interface": "matlab-compiled",
+        "repeatIndex": 2,
+        "integrationSeconds": 57.716320125,
+        "acceptedStepCount": 15,
+        "rejectedStepCount": 0,
+        "rhsEvaluationCount": 199,
+        "denseOutputEvaluationCount": 4,
+        "outputRecordCounts": {
+          "waveVortex": 2,
+          "dense": 5,
+          "particles": 5,
+          "tracers": 5
+        }
+      },
+      {
+        "workload": "composite-dense-output",
+        "interface": "matlab-compiled",
+        "repeatIndex": 3,
+        "integrationSeconds": 57.581742375,
+        "acceptedStepCount": 15,
+        "rejectedStepCount": 0,
+        "rhsEvaluationCount": 199,
+        "denseOutputEvaluationCount": 4,
+        "outputRecordCounts": {
+          "waveVortex": 2,
+          "dense": 5,
+          "particles": 5,
+          "tracers": 5
+        }
+      },
+      {
+        "workload": "composite-dense-output",
+        "interface": "standalone-compiled",
+        "repeatIndex": 1,
+        "integrationSeconds": 52.124302042,
+        "acceptedStepCount": 15,
+        "rejectedStepCount": 0,
+        "rhsEvaluationCount": 199,
+        "denseOutputEvaluationCount": 4,
+        "outputRecordCounts": {
+          "waveVortex": 2,
+          "dense": 5,
+          "particles": 5,
+          "tracers": 5
+        }
+      },
+      {
+        "workload": "composite-dense-output",
+        "interface": "standalone-compiled",
+        "repeatIndex": 2,
+        "integrationSeconds": 52.523112125,
+        "acceptedStepCount": 15,
+        "rejectedStepCount": 0,
+        "rhsEvaluationCount": 199,
+        "denseOutputEvaluationCount": 4,
+        "outputRecordCounts": {
+          "waveVortex": 2,
+          "dense": 5,
+          "particles": 5,
+          "tracers": 5
+        }
+      },
+      {
+        "workload": "composite-dense-output",
+        "interface": "standalone-compiled",
+        "repeatIndex": 3,
+        "integrationSeconds": 53.330457625,
+        "acceptedStepCount": 15,
+        "rejectedStepCount": 0,
+        "rhsEvaluationCount": 199,
+        "denseOutputEvaluationCount": 4,
+        "outputRecordCounts": {
+          "waveVortex": 2,
+          "dense": 5,
+          "particles": 5,
+          "tracers": 5
+        }
+      }
+    ],
+    "medians": [
+      {
+        "workload": "coefficient-endpoint",
+        "interface": "matlab-builtin",
+        "medianIntegrationSeconds": 36.98433154166667
+      },
+      {
+        "workload": "coefficient-endpoint",
+        "interface": "matlab-compiled",
+        "medianIntegrationSeconds": 13.232189041666667
+      },
+      {
+        "workload": "coefficient-endpoint",
+        "interface": "standalone-compiled",
+        "medianIntegrationSeconds": 10.447692292
+      },
+      {
+        "workload": "composite-dense-output",
+        "interface": "matlab-builtin",
+        "medianIntegrationSeconds": 55.811500583333334
+      },
+      {
+        "workload": "composite-dense-output",
+        "interface": "matlab-compiled",
+        "medianIntegrationSeconds": 57.581742375
+      },
+      {
+        "workload": "composite-dense-output",
+        "interface": "standalone-compiled",
+        "medianIntegrationSeconds": 52.523112125
+      }
+    ]
+  },
+  "sourceIdentityComparison": {
+    "archivedCommit": "024add423bf19c682ab5fd793821f398c5e7170f",
+    "archivedTree": "0b27da796691af81b4f7d0bde783b37bac8a21dc",
+    "currentCommit": "39b2a2253976c75bbf746c55a94675155f9bc0ea",
+    "currentTree": "ad64a083da8027bf0adfcd7844a51b0e00fbb918",
+    "auditedHydrostaticPathCount": 10,
+    "allAuditedHydrostaticPathsUnchanged": true,
+    "paths": [
+      {
+        "path": "@WVCompiledTransformBackend/WVCompiledTransformBackend.m",
+        "archivedGitBlobSHA1": "2785603dbde20ac37630997efa8b013f70040970",
+        "currentGitBlobSHA1": "2785603dbde20ac37630997efa8b013f70040970",
+        "unchanged": true
+      },
+      {
+        "path": "@WVCompiledTransformBackend/private/wvCompiledStratifiedModalConfiguration.m",
+        "archivedGitBlobSHA1": "a309dcec4976492ca6f65e3b1ebd9bd168d1c6d9",
+        "currentGitBlobSHA1": "a309dcec4976492ca6f65e3b1ebd9bd168d1c6d9",
+        "unchanged": true
+      },
+      {
+        "path": "@WVTransform/WVTransform.m",
+        "archivedGitBlobSHA1": "75d1e103062b0b873644b56b5cd17f0fddb8eaf1",
+        "currentGitBlobSHA1": "75d1e103062b0b873644b56b5cd17f0fddb8eaf1",
+        "unchanged": true
+      },
+      {
+        "path": "@WVTransformHydrostatic/WVTransformHydrostatic.m",
+        "archivedGitBlobSHA1": "2b8a1f102c403e83ca46d0e8754f07d960484b04",
+        "currentGitBlobSHA1": "2b8a1f102c403e83ca46d0e8754f07d960484b04",
+        "unchanged": true
+      },
+      {
+        "path": "CompiledKernel/include/WaveVortexKernel/WVOwnedStratifiedModalSource.hpp",
+        "archivedGitBlobSHA1": "ee8bfb76b6151898edbca67bd834f858ef16243b",
+        "currentGitBlobSHA1": "ee8bfb76b6151898edbca67bd834f858ef16243b",
+        "unchanged": true
+      },
+      {
+        "path": "CompiledKernel/include/WaveVortexKernel/WVTransformHydrostaticKernel.hpp",
+        "archivedGitBlobSHA1": "f57e415980428df86f453ff988f95a201ad53f74",
+        "currentGitBlobSHA1": "f57e415980428df86f453ff988f95a201ad53f74",
+        "unchanged": true
+      },
+      {
+        "path": "CompiledKernel/src/WVOwnedStratifiedModalSource.cpp",
+        "archivedGitBlobSHA1": "cbc6a26e1aed18135857a3af0a2080a07f08e7be",
+        "currentGitBlobSHA1": "cbc6a26e1aed18135857a3af0a2080a07f08e7be",
+        "unchanged": true
+      },
+      {
+        "path": "CompiledKernel/src/WVStratifiedVerticalCalculus.hpp",
+        "archivedGitBlobSHA1": "fe008e23776123b87be75e430dc2b66a19c7d7bb",
+        "currentGitBlobSHA1": "fe008e23776123b87be75e430dc2b66a19c7d7bb",
+        "unchanged": true
+      },
+      {
+        "path": "CompiledKernel/src/WVTransformHydrostaticKernel.cpp",
+        "archivedGitBlobSHA1": "131aaa449192832f036d8d8729b97d243ed4e1d0",
+        "currentGitBlobSHA1": "131aaa449192832f036d8d8729b97d243ed4e1d0",
+        "unchanged": true
+      },
+      {
+        "path": "Benchmarks/threeInterfaceMatlabWorker.m",
+        "archivedGitBlobSHA1": "99f3552b375aaf8a67befaec22e8c07906093ee1",
+        "currentGitBlobSHA1": "99f3552b375aaf8a67befaec22e8c07906093ee1",
+        "unchanged": true
+      }
+    ]
+  },
+  "limitations": {
+    "fixtureHashesDiffer": true,
+    "fixtureByteDifferenceExplanation": "Each reconstructed NetCDF file is one byte larger and has a different hash. Scientific initial-condition diagnostics agree exactly; the result is consistent with differing mutable NetCDF history/provenance text, but byte identity is not established.",
+    "matlabRuntimeProducerPrimitiveCopyCountersArchived": false
+  }
+}

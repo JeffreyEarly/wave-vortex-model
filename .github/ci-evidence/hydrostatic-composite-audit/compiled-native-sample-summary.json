@@ -1,0 +1,869 @@
+{
+  "source": "/private/tmp/wvm-hydro-audit/compiled-native-sample.txt",
+  "samplingInterval": "2 ms",
+  "caveat": "Sample counts are wall-clock stack observations, include waits, and are not CPU-time measurements. Inclusive categories overlap, and physical-thread totals must not be added to the interpreter denominator.",
+  "interpreterThread": {
+    "threadIds": [
+      "42934564"
+    ],
+    "labels": {
+      "42934564": [
+        "Thread_42934564   DispatchQueue_13: com.apple.root.default-qos  (concurrent)",
+        "Thread_42934564: MCR 0 interpreter thread"
+      ]
+    },
+    "rootSamplesSummedAcrossAlternateLabels": 3646,
+    "verticalInclusive": {
+      "applyVerticalCalculus": 404
+    },
+    "verticalLeavesDisjoint": {
+      "vertical arithmetic/other": 300,
+      "BLAS/GEMM": 104
+    },
+    "horizontalLeafCategories": {
+      "FFTW": 708,
+      "vertical arithmetic/other": 527
+    }
+  },
+  "physicalThreads": {
+    "42934460": {
+      "labels": [
+        "Thread_42934460: MCR Main thread"
+      ],
+      "rootSamples": 3646,
+      "evidence": {
+        "synchronization": 3646
+      },
+      "horizontalLeafCategories": {}
+    },
+    "42934481": {
+      "labels": [
+        "Thread_42934481: fct_cef_plugin"
+      ],
+      "rootSamples": 3646,
+      "evidence": {
+        "synchronization": 3646
+      },
+      "horizontalLeafCategories": {}
+    },
+    "42934482": {
+      "labels": [
+        "Thread_42934482: fct_cef_plugin"
+      ],
+      "rootSamples": 3646,
+      "evidence": {
+        "synchronization": 3646
+      },
+      "horizontalLeafCategories": {}
+    },
+    "42934483": {
+      "labels": [
+        "Thread_42934483: fct_cef_plugin"
+      ],
+      "rootSamples": 3646,
+      "evidence": {
+        "synchronization": 3646
+      },
+      "horizontalLeafCategories": {}
+    },
+    "42934484": {
+      "labels": [
+        "Thread_42934484: fct_cef_plugin"
+      ],
+      "rootSamples": 3646,
+      "evidence": {
+        "synchronization": 3646
+      },
+      "horizontalLeafCategories": {}
+    },
+    "42934485": {
+      "labels": [
+        "Thread_42934485: fct_cef_plugin"
+      ],
+      "rootSamples": 3646,
+      "evidence": {
+        "synchronization": 3646
+      },
+      "horizontalLeafCategories": {}
+    },
+    "42934486": {
+      "labels": [
+        "Thread_42934486: fct_cef_plugin"
+      ],
+      "rootSamples": 3646,
+      "evidence": {
+        "synchronization": 3646
+      },
+      "horizontalLeafCategories": {}
+    },
+    "42934487": {
+      "labels": [
+        "Thread_42934487: fct_cef_plugin"
+      ],
+      "rootSamples": 3646,
+      "evidence": {
+        "synchronization": 3646
+      },
+      "horizontalLeafCategories": {}
+    },
+    "42934488": {
+      "labels": [
+        "Thread_42934488: fct_cef_plugin"
+      ],
+      "rootSamples": 3646,
+      "evidence": {
+        "synchronization": 3646
+      },
+      "horizontalLeafCategories": {}
+    },
+    "42934489": {
+      "labels": [
+        "Thread_42934489: fct_cef_plugin"
+      ],
+      "rootSamples": 3646,
+      "evidence": {
+        "synchronization": 3646
+      },
+      "horizontalLeafCategories": {}
+    },
+    "42934490": {
+      "labels": [
+        "Thread_42934490: fct_cef_plugin"
+      ],
+      "rootSamples": 3646,
+      "evidence": {
+        "synchronization": 3646
+      },
+      "horizontalLeafCategories": {}
+    },
+    "42934530": {
+      "labels": [
+        "Thread_42934530"
+      ],
+      "rootSamples": 3646,
+      "evidence": {
+        "synchronization": 3646
+      },
+      "horizontalLeafCategories": {}
+    },
+    "42934562": {
+      "labels": [
+        "Thread_42934562: ED 1 dispatch thread"
+      ],
+      "rootSamples": 3646,
+      "evidence": {
+        "synchronization": 3646
+      },
+      "horizontalLeafCategories": {}
+    },
+    "42934564": {
+      "labels": [
+        "Thread_42934564   DispatchQueue_13: com.apple.root.default-qos  (concurrent)",
+        "Thread_42934564: MCR 0 interpreter thread"
+      ],
+      "rootSamples": 3646,
+      "evidence": {
+        "BLAS/GEMM": 294,
+        "FFTW": 726,
+        "synchronization": 35
+      },
+      "horizontalLeafCategories": {
+        "FFTW": 708,
+        "vertical arithmetic/other": 527
+      }
+    },
+    "42934612": {
+      "labels": [
+        "Thread_42934612"
+      ],
+      "rootSamples": 3646,
+      "evidence": {
+        "synchronization": 3646
+      },
+      "horizontalLeafCategories": {}
+    },
+    "42934617": {
+      "labels": [
+        "Thread_42934617: PathManager async worker"
+      ],
+      "rootSamples": 3646,
+      "evidence": {
+        "synchronization": 3646
+      },
+      "horizontalLeafCategories": {}
+    },
+    "42934621": {
+      "labels": [
+        "Thread_42934621"
+      ],
+      "rootSamples": 3646,
+      "evidence": {
+        "synchronization": 3646
+      },
+      "horizontalLeafCategories": {}
+    },
+    "42934622": {
+      "labels": [
+        "Thread_42934622"
+      ],
+      "rootSamples": 3646,
+      "evidence": {
+        "synchronization": 3646
+      },
+      "horizontalLeafCategories": {}
+    },
+    "42934623": {
+      "labels": [
+        "Thread_42934623"
+      ],
+      "rootSamples": 3646,
+      "evidence": {
+        "synchronization": 3646
+      },
+      "horizontalLeafCategories": {}
+    },
+    "42934624": {
+      "labels": [
+        "Thread_42934624"
+      ],
+      "rootSamples": 3646,
+      "evidence": {
+        "synchronization": 3646
+      },
+      "horizontalLeafCategories": {}
+    },
+    "42934625": {
+      "labels": [
+        "Thread_42934625"
+      ],
+      "rootSamples": 3646,
+      "evidence": {
+        "synchronization": 3646
+      },
+      "horizontalLeafCategories": {}
+    },
+    "42934626": {
+      "labels": [
+        "Thread_42934626: fct_spf"
+      ],
+      "rootSamples": 3646,
+      "evidence": {
+        "synchronization": 3646
+      },
+      "horizontalLeafCategories": {}
+    },
+    "42934627": {
+      "labels": [
+        "Thread_42934627: fct_spf"
+      ],
+      "rootSamples": 3646,
+      "evidence": {
+        "synchronization": 3646
+      },
+      "horizontalLeafCategories": {}
+    },
+    "42934628": {
+      "labels": [
+        "Thread_42934628: fct_spf"
+      ],
+      "rootSamples": 3646,
+      "evidence": {
+        "synchronization": 3646
+      },
+      "horizontalLeafCategories": {}
+    },
+    "42934629": {
+      "labels": [
+        "Thread_42934629: fct_spf"
+      ],
+      "rootSamples": 3646,
+      "evidence": {
+        "synchronization": 3646
+      },
+      "horizontalLeafCategories": {}
+    },
+    "42934630": {
+      "labels": [
+        "Thread_42934630: fct_spf"
+      ],
+      "rootSamples": 3646,
+      "evidence": {
+        "synchronization": 3646
+      },
+      "horizontalLeafCategories": {}
+    },
+    "42934631": {
+      "labels": [
+        "Thread_42934631"
+      ],
+      "rootSamples": 3646,
+      "evidence": {
+        "synchronization": 3646
+      },
+      "horizontalLeafCategories": {}
+    },
+    "42934632": {
+      "labels": [
+        "Thread_42934632"
+      ],
+      "rootSamples": 3646,
+      "evidence": {
+        "synchronization": 3645
+      },
+      "horizontalLeafCategories": {}
+    },
+    "42934634": {
+      "labels": [
+        "Thread_42934634"
+      ],
+      "rootSamples": 3646,
+      "evidence": {
+        "synchronization": 3646
+      },
+      "horizontalLeafCategories": {}
+    },
+    "42934635": {
+      "labels": [
+        "Thread_42934635"
+      ],
+      "rootSamples": 3646,
+      "evidence": {
+        "synchronization": 1
+      },
+      "horizontalLeafCategories": {}
+    },
+    "42934636": {
+      "labels": [
+        "Thread_42934636"
+      ],
+      "rootSamples": 3646,
+      "evidence": {
+        "synchronization": 3646
+      },
+      "horizontalLeafCategories": {}
+    },
+    "42934637": {
+      "labels": [
+        "Thread_42934637"
+      ],
+      "rootSamples": 3646,
+      "evidence": {
+        "synchronization": 3646
+      },
+      "horizontalLeafCategories": {}
+    },
+    "42934638": {
+      "labels": [
+        "Thread_42934638"
+      ],
+      "rootSamples": 3646,
+      "evidence": {
+        "synchronization": 3646
+      },
+      "horizontalLeafCategories": {}
+    },
+    "42934642": {
+      "labels": [
+        "Thread_42934642: LXE compiler thread"
+      ],
+      "rootSamples": 3646,
+      "evidence": {
+        "synchronization": 3382
+      },
+      "horizontalLeafCategories": {}
+    },
+    "42934643": {
+      "labels": [
+        "Thread_42934643: LXE compiler thread"
+      ],
+      "rootSamples": 3646,
+      "evidence": {
+        "synchronization": 3429
+      },
+      "horizontalLeafCategories": {}
+    },
+    "42934644": {
+      "labels": [
+        "Thread_42934644: LXE compiler thread"
+      ],
+      "rootSamples": 3646,
+      "evidence": {
+        "synchronization": 3466
+      },
+      "horizontalLeafCategories": {}
+    },
+    "42934645": {
+      "labels": [
+        "Thread_42934645: LXE compiler thread"
+      ],
+      "rootSamples": 3646,
+      "evidence": {
+        "synchronization": 3484
+      },
+      "horizontalLeafCategories": {}
+    },
+    "42934658": {
+      "labels": [
+        "Thread_42934658: ED 0 dispatch thread"
+      ],
+      "rootSamples": 3646,
+      "evidence": {
+        "synchronization": 3646
+      },
+      "horizontalLeafCategories": {}
+    },
+    "42934684": {
+      "labels": [
+        "Thread_42934684"
+      ],
+      "rootSamples": 3646,
+      "evidence": {
+        "synchronization": 3646
+      },
+      "horizontalLeafCategories": {}
+    },
+    "42934690": {
+      "labels": [
+        "Thread_42934690"
+      ],
+      "rootSamples": 3646,
+      "evidence": {
+        "synchronization": 3646
+      },
+      "horizontalLeafCategories": {}
+    },
+    "42934691": {
+      "labels": [
+        "Thread_42934691"
+      ],
+      "rootSamples": 3646,
+      "evidence": {
+        "synchronization": 3646
+      },
+      "horizontalLeafCategories": {}
+    },
+    "42934750": {
+      "labels": [
+        "Thread_42934750: Connector[#1]"
+      ],
+      "rootSamples": 3646,
+      "evidence": {
+        "synchronization": 3646
+      },
+      "horizontalLeafCategories": {}
+    },
+    "42934751": {
+      "labels": [
+        "Thread_42934751: Connector[#2]"
+      ],
+      "rootSamples": 3646,
+      "evidence": {
+        "synchronization": 3646
+      },
+      "horizontalLeafCategories": {}
+    },
+    "42934752": {
+      "labels": [
+        "Thread_42934752: Connector[#3]"
+      ],
+      "rootSamples": 3646,
+      "evidence": {
+        "synchronization": 3646
+      },
+      "horizontalLeafCategories": {}
+    },
+    "42934753": {
+      "labels": [
+        "Thread_42934753: Connector[#4]"
+      ],
+      "rootSamples": 3646,
+      "evidence": {
+        "synchronization": 3646
+      },
+      "horizontalLeafCategories": {}
+    },
+    "42934766": {
+      "labels": [
+        "Thread_42934766: FTP_1_0"
+      ],
+      "rootSamples": 3646,
+      "evidence": {
+        "synchronization": 3646
+      },
+      "horizontalLeafCategories": {}
+    },
+    "42934874": {
+      "labels": [
+        "Thread_42934874: GrootUpdate 0"
+      ],
+      "rootSamples": 3646,
+      "evidence": {
+        "synchronization": 3646
+      },
+      "horizontalLeafCategories": {}
+    },
+    "42934898": {
+      "labels": [
+        "Thread_42934898: Java: G1 Main Marker"
+      ],
+      "rootSamples": 3646,
+      "evidence": {
+        "synchronization": 3646
+      },
+      "horizontalLeafCategories": {}
+    },
+    "42934900": {
+      "labels": [
+        "Thread_42934900: Java: G1 Refine#0"
+      ],
+      "rootSamples": 3646,
+      "evidence": {
+        "synchronization": 3646
+      },
+      "horizontalLeafCategories": {}
+    },
+    "42934901": {
+      "labels": [
+        "Thread_42934901: Java: G1 Young RemSet Sampling"
+      ],
+      "rootSamples": 3646,
+      "evidence": {
+        "synchronization": 3645
+      },
+      "horizontalLeafCategories": {}
+    },
+    "42934902": {
+      "labels": [
+        "Thread_42934902: Java: VM Thread"
+      ],
+      "rootSamples": 3646,
+      "evidence": {
+        "synchronization": 3646
+      },
+      "horizontalLeafCategories": {}
+    },
+    "42934903": {
+      "labels": [
+        "Thread_42934903: Java: Reference Handler"
+      ],
+      "rootSamples": 3646,
+      "evidence": {
+        "synchronization": 3646
+      },
+      "horizontalLeafCategories": {}
+    },
+    "42934904": {
+      "labels": [
+        "Thread_42934904: Java: Finalizer"
+      ],
+      "rootSamples": 3646,
+      "evidence": {
+        "synchronization": 3646
+      },
+      "horizontalLeafCategories": {}
+    },
+    "42934906": {
+      "labels": [
+        "Thread_42934906: Java: Service Thread"
+      ],
+      "rootSamples": 3646,
+      "evidence": {
+        "synchronization": 3646
+      },
+      "horizontalLeafCategories": {}
+    },
+    "42934907": {
+      "labels": [
+        "Thread_42934907: Java: C1 CompilerThread0"
+      ],
+      "rootSamples": 3646,
+      "evidence": {
+        "synchronization": 3646
+      },
+      "horizontalLeafCategories": {}
+    },
+    "42934908": {
+      "labels": [
+        "Thread_42934908: Java: Sweeper thread"
+      ],
+      "rootSamples": 3646,
+      "evidence": {
+        "synchronization": 3646
+      },
+      "horizontalLeafCategories": {}
+    },
+    "42934909": {
+      "labels": [
+        "Thread_42934909: Java: Common-Cleaner"
+      ],
+      "rootSamples": 3646,
+      "evidence": {
+        "synchronization": 3646
+      },
+      "horizontalLeafCategories": {}
+    },
+    "42934910": {
+      "labels": [
+        "Thread_42934910: Java: VM Periodic Task Thread"
+      ],
+      "rootSamples": 3646,
+      "evidence": {
+        "synchronization": 3644
+      },
+      "horizontalLeafCategories": {}
+    },
+    "42934911": {
+      "labels": [
+        "Thread_42934911: Java: MatlabKeepAlive Timer"
+      ],
+      "rootSamples": 3646,
+      "evidence": {
+        "synchronization": 3646
+      },
+      "horizontalLeafCategories": {}
+    },
+    "42934920": {
+      "labels": [
+        "Thread_42934920: Java: Settings Releaser"
+      ],
+      "rootSamples": 3646,
+      "evidence": {
+        "synchronization": 3646
+      },
+      "horizontalLeafCategories": {}
+    },
+    "42934925": {
+      "labels": [
+        "Thread_42934925: Java: Java2D Queue Flusher"
+      ],
+      "rootSamples": 3646,
+      "evidence": {
+        "synchronization": 3640
+      },
+      "horizontalLeafCategories": {}
+    },
+    "42934926": {
+      "labels": [
+        "Thread_42934926: Java: Java2D Disposer"
+      ],
+      "rootSamples": 3646,
+      "evidence": {
+        "synchronization": 3646
+      },
+      "horizontalLeafCategories": {}
+    },
+    "42934979": {
+      "labels": [
+        "Thread_42934979"
+      ],
+      "rootSamples": 3646,
+      "evidence": {
+        "synchronization": 3365,
+        "FFTW": 280
+      },
+      "horizontalLeafCategories": {
+        "FFTW": 280
+      }
+    },
+    "42934980": {
+      "labels": [
+        "Thread_42934980"
+      ],
+      "rootSamples": 3646,
+      "evidence": {
+        "synchronization": 3364,
+        "FFTW": 280
+      },
+      "horizontalLeafCategories": {
+        "FFTW": 280
+      }
+    },
+    "42934981": {
+      "labels": [
+        "Thread_42934981"
+      ],
+      "rootSamples": 3646,
+      "evidence": {
+        "synchronization": 3368,
+        "FFTW": 276
+      },
+      "horizontalLeafCategories": {
+        "FFTW": 276
+      }
+    },
+    "42934982": {
+      "labels": [
+        "Thread_42934982"
+      ],
+      "rootSamples": 3646,
+      "evidence": {
+        "synchronization": 3369,
+        "FFTW": 276
+      },
+      "horizontalLeafCategories": {
+        "FFTW": 276
+      }
+    },
+    "42934983": {
+      "labels": [
+        "Thread_42934983"
+      ],
+      "rootSamples": 3646,
+      "evidence": {
+        "synchronization": 3372,
+        "FFTW": 273
+      },
+      "horizontalLeafCategories": {
+        "FFTW": 273
+      }
+    },
+    "42934984": {
+      "labels": [
+        "Thread_42934984"
+      ],
+      "rootSamples": 3646,
+      "evidence": {
+        "synchronization": 3370,
+        "FFTW": 275
+      },
+      "horizontalLeafCategories": {
+        "FFTW": 275
+      }
+    },
+    "42934985": {
+      "labels": [
+        "Thread_42934985"
+      ],
+      "rootSamples": 3646,
+      "evidence": {
+        "synchronization": 3368,
+        "FFTW": 275
+      },
+      "horizontalLeafCategories": {
+        "FFTW": 275
+      }
+    },
+    "42934986": {
+      "labels": [
+        "Thread_42934986"
+      ],
+      "rootSamples": 3646,
+      "evidence": {
+        "synchronization": 3369,
+        "FFTW": 276
+      },
+      "horizontalLeafCategories": {
+        "FFTW": 276
+      }
+    },
+    "42934987": {
+      "labels": [
+        "Thread_42934987"
+      ],
+      "rootSamples": 3646,
+      "evidence": {
+        "synchronization": 3384,
+        "FFTW": 262
+      },
+      "horizontalLeafCategories": {
+        "FFTW": 262
+      }
+    },
+    "42934988": {
+      "labels": [
+        "Thread_42934988"
+      ],
+      "rootSamples": 3646,
+      "evidence": {
+        "synchronization": 3385,
+        "FFTW": 261
+      },
+      "horizontalLeafCategories": {
+        "FFTW": 261
+      }
+    },
+    "42934989": {
+      "labels": [
+        "Thread_42934989"
+      ],
+      "rootSamples": 3646,
+      "evidence": {
+        "synchronization": 3374,
+        "FFTW": 272
+      },
+      "horizontalLeafCategories": {
+        "FFTW": 272
+      }
+    },
+    "42934998": {
+      "labels": [
+        "Thread_42934998"
+      ],
+      "rootSamples": 3646,
+      "evidence": {
+        "synchronization": 3563
+      },
+      "horizontalLeafCategories": {}
+    },
+    "42934999": {
+      "labels": [
+        "Thread_42934999"
+      ],
+      "rootSamples": 3646,
+      "evidence": {
+        "synchronization": 3561
+      },
+      "horizontalLeafCategories": {}
+    },
+    "42935000": {
+      "labels": [
+        "Thread_42935000"
+      ],
+      "rootSamples": 3646,
+      "evidence": {
+        "synchronization": 3564
+      },
+      "horizontalLeafCategories": {}
+    },
+    "42935001": {
+      "labels": [
+        "Thread_42935001"
+      ],
+      "rootSamples": 3646,
+      "evidence": {
+        "synchronization": 3562
+      },
+      "horizontalLeafCategories": {}
+    },
+    "42935002": {
+      "labels": [
+        "Thread_42935002"
+      ],
+      "rootSamples": 3646,
+      "evidence": {
+        "synchronization": 3568
+      },
+      "horizontalLeafCategories": {}
+    },
+    "42935003": {
+      "labels": [
+        "Thread_42935003"
+      ],
+      "rootSamples": 3646,
+      "evidence": {
+        "synchronization": 3562
+      },
+      "horizontalLeafCategories": {}
+    },
+    "42935004": {
+      "labels": [
+        "Thread_42935004"
+      ],
+      "rootSamples": 3646,
+      "evidence": {
+        "synchronization": 3562
+      },
+      "horizontalLeafCategories": {}
+    }
+  }
+}

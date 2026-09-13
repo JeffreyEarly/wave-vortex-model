@@ -1,0 +1,884 @@
+{
+  "scope": "five diagnostic fresh-process profiles, one per configuration; not performance qualification; source-restored after hybrid",
+  "runs": [
+    {
+      "run": "compiled-coefficient-endpoint",
+      "integrationSeconds": 12.961479,
+      "integrator": {
+        "requested": "adaptive-rk78",
+        "actual": "adaptive-rk78",
+        "relativeTolerance": 0.001,
+        "absoluteToleranceHash": "7480293940019435225",
+        "absoluteToleranceHashClearedMantissaBits": 20,
+        "absoluteToleranceComponentHashes": [
+          "5594174166554281185",
+          "5594174166554281185",
+          "3242563528902739169"
+        ],
+        "requestedInitialStep": 269.39985873487035,
+        "effectiveInitialStep": 269.39985873487035,
+        "requestedMaximumStep": [],
+        "maximumStepPolicy": "matlab-default",
+        "effectiveMaximumStep": 716.8,
+        "acceptedStepCount": 15,
+        "rejectedStepCount": 0,
+        "reportedRightHandSideEvaluationCount": 195,
+        "rhsEvaluationCount": 195
+      },
+      "outputs": {
+        "waveVortex": 2,
+        "dense": 0,
+        "particles": 0,
+        "tracers": 0
+      },
+      "boundaries": {
+        "WVModelAdaptiveTimeStepMethods>WVModelAdaptiveTimeStepMethods.fluxArray": {
+          "totalTime": 11.235284624999998,
+          "selfTime": 1.377573374999999,
+          "numCalls": 195
+        },
+        "ode78": {
+          "totalTime": 12.869323291666667,
+          "selfTime": 1.3401074166666653,
+          "numCalls": 1
+        },
+        "WVModelOutputFile>WVModelOutputFile.writeTimeStepToOutputFile": {
+          "totalTime": 0.07623520833333335,
+          "selfTime": 0.0031680416666666905,
+          "numCalls": 16
+        },
+        "putVar": {
+          "totalTime": 0.0022746666666666666,
+          "selfTime": 0.0018851249999999999,
+          "numCalls": 7
+        },
+        "wv_compiled_backend_mex": {
+          "totalTime": 9.238924791666665,
+          "selfTime": 9.238924791666665,
+          "numCalls": 225
+        }
+      },
+      "tracerChildBoundaries": {},
+      "runtimeMetricsBefore": {
+        "transformClass": "WVTransformHydrostatic",
+        "scope": "call-scoped stratified fields, nonlinear flux and raw primitives",
+        "matrixBackend": "accelerate",
+        "policy": "compact-native-accelerate",
+        "effectiveFFTThreads": 1,
+        "horizontalWorkers": 12,
+        "pointwiseWorkers": 8,
+        "sourceBytes": 940210,
+        "kernelBytes": 987394516.0,
+        "engineBytes": 1642766039.0,
+        "fieldServiceBytes": 1894400931.0,
+        "preparedPlanBytes": 492,
+        "planPreparations": 2,
+        "evaluations": 2,
+        "stateInputBytes": 93342240.0,
+        "stateInputCopyBytes": 93342240.0,
+        "outputBytes": 67633160.0,
+        "stateValidations": 2,
+        "phasePreparations": 2,
+        "producerExecutions": 5,
+        "cacheHits": 0,
+        "duplicateExecutions": 0,
+        "liveEvaluationBytes": 0,
+        "peakEvaluationBytes": 150823352.0,
+        "tiledNonlinearExecutions": 0,
+        "primitiveExecutions": 0,
+        "nonlinearProducerExecutions": 0,
+        "physicalReconstructionExecutions": 3,
+        "stateStorageBytes": 46671120.0,
+        "scopedEvaluations": 2,
+        "coefficientOnlyEvaluations": 0,
+        "evaluationActive": 0,
+        "evaluationToken": 0,
+        "densityRecoveries": 0,
+        "densityProfileConstructions": 0,
+        "densityInversePasses": 0,
+        "densityAPEPasses": 0,
+        "plannedEvaluationBytes": 1440604257.0,
+        "densityRecovery": []
+      },
+      "runtimeMetricsAfter": {
+        "transformClass": "WVTransformHydrostatic",
+        "scope": "call-scoped stratified fields, nonlinear flux and raw primitives",
+        "matrixBackend": "accelerate",
+        "policy": "compact-native-accelerate",
+        "effectiveFFTThreads": 1,
+        "horizontalWorkers": 12,
+        "pointwiseWorkers": 8,
+        "sourceBytes": 940210,
+        "kernelBytes": 987394516.0,
+        "engineBytes": 1642766039.0,
+        "fieldServiceBytes": 1894400931.0,
+        "preparedPlanBytes": 492,
+        "planPreparations": 2,
+        "evaluations": 197,
+        "stateInputBytes": 9894277440.0,
+        "stateInputCopyBytes": 793409040.0,
+        "outputBytes": 9168501560.0,
+        "stateValidations": 212,
+        "phasePreparations": 212,
+        "producerExecutions": 200,
+        "cacheHits": 0,
+        "duplicateExecutions": 0,
+        "liveEvaluationBytes": 0,
+        "peakEvaluationBytes": 270532608.0,
+        "tiledNonlinearExecutions": 195,
+        "primitiveExecutions": 0,
+        "nonlinearProducerExecutions": 195,
+        "physicalReconstructionExecutions": 783,
+        "stateStorageBytes": 46671120.0,
+        "scopedEvaluations": 17,
+        "coefficientOnlyEvaluations": 195,
+        "evaluationActive": 0,
+        "evaluationToken": 0,
+        "densityRecoveries": 0,
+        "densityProfileConstructions": 0,
+        "densityInversePasses": 0,
+        "densityAPEPasses": 0,
+        "plannedEvaluationBytes": 1440604257.0,
+        "densityRecovery": []
+      },
+      "runtimeMetricDeltas": {
+        "effectiveFFTThreads": 0,
+        "horizontalWorkers": 0,
+        "pointwiseWorkers": 0,
+        "sourceBytes": 0,
+        "kernelBytes": 0,
+        "engineBytes": 0,
+        "fieldServiceBytes": 0,
+        "preparedPlanBytes": 0,
+        "planPreparations": 0,
+        "evaluations": 195,
+        "stateInputBytes": 9800935200.0,
+        "stateInputCopyBytes": 700066800.0,
+        "outputBytes": 9100868400.0,
+        "stateValidations": 210,
+        "phasePreparations": 210,
+        "producerExecutions": 195,
+        "cacheHits": 0,
+        "duplicateExecutions": 0,
+        "liveEvaluationBytes": 0,
+        "peakEvaluationBytes": 119709256.0,
+        "tiledNonlinearExecutions": 195,
+        "primitiveExecutions": 0,
+        "nonlinearProducerExecutions": 195,
+        "physicalReconstructionExecutions": 780,
+        "stateStorageBytes": 0,
+        "scopedEvaluations": 15,
+        "coefficientOnlyEvaluations": 195,
+        "evaluationActive": 0,
+        "evaluationToken": 0,
+        "densityRecoveries": 0,
+        "densityProfileConstructions": 0,
+        "densityInversePasses": 0,
+        "densityAPEPasses": 0,
+        "plannedEvaluationBytes": 0
+      },
+      "fixture": {
+        "path": "/private/tmp/wvm-hydro-audit/fixtures/matched-hydrostatic-exponential-coefficient-endpoint-model.nc",
+        "sha256": "b41d76fd14a1e8b8c30fa7d18867906fe2eb377b6a6eb7bfc126a4126a2d39e1",
+        "bytes": 47382120.0,
+        "workload": "coefficient-endpoint",
+        "matchesQualifiedArchiveHash": false
+      }
+    },
+    {
+      "run": "matlab-coefficient-endpoint",
+      "integrationSeconds": 37.20828420833333,
+      "integrator": {
+        "requested": "adaptive-rk78",
+        "actual": "adaptive-rk78",
+        "relativeTolerance": 0.001,
+        "absoluteToleranceHash": "7480293940019435225",
+        "absoluteToleranceHashClearedMantissaBits": 20,
+        "absoluteToleranceComponentHashes": [
+          "5594174166554281185",
+          "5594174166554281185",
+          "3242563528902739169"
+        ],
+        "requestedInitialStep": 269.39985873487035,
+        "effectiveInitialStep": 269.39985873487035,
+        "requestedMaximumStep": [],
+        "maximumStepPolicy": "matlab-default",
+        "effectiveMaximumStep": 716.8,
+        "acceptedStepCount": 15,
+        "rejectedStepCount": 0,
+        "reportedRightHandSideEvaluationCount": 195,
+        "rhsEvaluationCount": 195
+      },
+      "outputs": {
+        "waveVortex": 2,
+        "dense": 0,
+        "particles": 0,
+        "tracers": 0
+      },
+      "boundaries": {
+        "WVModelAdaptiveTimeStepMethods>WVModelAdaptiveTimeStepMethods.fluxArray": {
+          "totalTime": 34.94981141666666,
+          "selfTime": 1.258741708333325,
+          "numCalls": 195
+        },
+        "ode78": {
+          "totalTime": 36.45385275,
+          "selfTime": 1.374139249999999,
+          "numCalls": 1
+        },
+        "WVModelOutputFile>WVModelOutputFile.writeTimeStepToOutputFile": {
+          "totalTime": 0.026985125000000002,
+          "selfTime": 0.0031881666666666655,
+          "numCalls": 16
+        },
+        "putVar": {
+          "totalTime": 0.002188875,
+          "selfTime": 0.0017899166666666667,
+          "numCalls": 7
+        },
+        "WVTransformHydrostatic.WVTransformHydrostatic>WVTransformHydrostatic.nonlinearFlux": {
+          "totalTime": 33.179942708333336,
+          "selfTime": 0.1974045416666641,
+          "numCalls": 195
+        }
+      },
+      "tracerChildBoundaries": {},
+      "runtimeMetricsBefore": {},
+      "runtimeMetricsAfter": {},
+      "runtimeMetricDeltas": {},
+      "fixture": {
+        "path": "/private/tmp/wvm-hydro-audit/fixtures/matched-hydrostatic-exponential-coefficient-endpoint-model.nc",
+        "sha256": "b41d76fd14a1e8b8c30fa7d18867906fe2eb377b6a6eb7bfc126a4126a2d39e1",
+        "bytes": 47382120.0,
+        "workload": "coefficient-endpoint",
+        "matchesQualifiedArchiveHash": false
+      }
+    },
+    {
+      "run": "compiled-composite-dense-output",
+      "integrationSeconds": 60.814709125,
+      "integrator": {
+        "requested": "adaptive-rk78",
+        "actual": "adaptive-rk78",
+        "relativeTolerance": 0.001,
+        "absoluteToleranceHash": "17407230464089877585",
+        "absoluteToleranceHashClearedMantissaBits": 20,
+        "absoluteToleranceComponentHashes": [
+          "5594174166554281185",
+          "5594174166554281185",
+          "3242563528902739169",
+          "5399737789812619515",
+          "5399737789812619515",
+          "13259821907563821307",
+          "8691403943112672131"
+        ],
+        "requestedInitialStep": 269.39985873487035,
+        "effectiveInitialStep": 269.39985873487035,
+        "requestedMaximumStep": [],
+        "maximumStepPolicy": "matlab-default",
+        "effectiveMaximumStep": 716.8,
+        "acceptedStepCount": 15,
+        "rejectedStepCount": 0,
+        "reportedRightHandSideEvaluationCount": 199,
+        "rhsEvaluationCount": 199
+      },
+      "outputs": {
+        "waveVortex": 2,
+        "dense": 5,
+        "particles": 5,
+        "tracers": 5
+      },
+      "boundaries": {
+        "WVTracer>WVTracer.fluxAtTime": {
+          "totalTime": 30.420325895825258,
+          "selfTime": 0.7968421672121693,
+          "numCalls": 199
+        },
+        "WVLagrangianParticles>WVLagrangianParticles.fluxAtTime": {
+          "totalTime": 2.1435121681340803,
+          "selfTime": 0.013487916675900546,
+          "numCalls": 199
+        },
+        "WVModelAdaptiveTimeStepMethods>WVModelAdaptiveTimeStepMethods.fluxArray": {
+          "totalTime": 54.91165928759163,
+          "selfTime": 6.290743754306547,
+          "numCalls": 199
+        },
+        "ode78": {
+          "totalTime": 60.70192116655555,
+          "selfTime": 4.715481211561475,
+          "numCalls": 1
+        },
+        "WVModelOutputFile>WVModelOutputFile.writeTimeStepToOutputFile": {
+          "totalTime": 0.4801313753286901,
+          "selfTime": 0.006835708338012947,
+          "numCalls": 6
+        },
+        "putVar": {
+          "totalTime": 0.2989844168713465,
+          "selfTime": 0.29755229187036614,
+          "numCalls": 47
+        },
+        "ode78>computeCEStages": {
+          "totalTime": 1.368259667603355,
+          "selfTime": 0.17456862511950688,
+          "numCalls": 1
+        },
+        "funfun/private/ntrp78split": {
+          "totalTime": 0.2148725001470982,
+          "selfTime": 0.029378958353445672,
+          "numCalls": 4
+        },
+        "wv_compiled_backend_mex": {
+          "totalTime": 43.81252627999334,
+          "selfTime": 43.81252627999334,
+          "numCalls": 2203
+        },
+        "WVTransformHydrostatic.WVTransformHydrostatic>WVTransformHydrostatic.nonlinearFlux": {
+          "totalTime": 14.034765134607971,
+          "selfTime": 0.01309529167563106,
+          "numCalls": 199
+        }
+      },
+      "tracerChildBoundaries": {
+        "WVTracer>WVTracer.updateIntegratorValues": {
+          "totalTime": 0.2496829168375955,
+          "numCalls": 199
+        },
+        "IndexingContext>IndexingContext.IndexingContext": {
+          "totalTime": 2.858333335290102e-05,
+          "numCalls": 3
+        },
+        "WVTransform.WVTransform>WVTransform.dotListLength": {
+          "totalTime": 0.028722833352996514,
+          "numCalls": 597
+        },
+        "WVTransform.WVTransform>WVTransform.dotReference": {
+          "totalTime": 0.2041733334731071,
+          "numCalls": 597
+        },
+        "WVGeometryDoublyPeriodic.WVGeometryDoublyPeriodic>WVGeometryDoublyPeriodic.diffX": {
+          "totalTime": 9.942328965139689,
+          "numCalls": 199
+        },
+        "WVGeometryDoublyPeriodic.WVGeometryDoublyPeriodic>WVGeometryDoublyPeriodic.diffY": {
+          "totalTime": 8.4610555057923,
+          "numCalls": 199
+        },
+        "WVGeometryDoublyPeriodicStratified.diffZF": {
+          "totalTime": 9.365712214744947,
+          "numCalls": 199
+        },
+        "WVGeometryDoublyPeriodic.WVGeometryDoublyPeriodic>WVGeometryDoublyPeriodic.transformFromSpatialDomainWithFourier": {
+          "totalTime": 0.5175620003543145,
+          "numCalls": 199
+        },
+        "WVGeometryDoublyPeriodic.WVGeometryDoublyPeriodic>WVGeometryDoublyPeriodic.transformToSpatialDomainWithFourier": {
+          "totalTime": 0.8542173755847833,
+          "numCalls": 199
+        }
+      },
+      "runtimeMetricsBefore": {
+        "transformClass": "WVTransformHydrostatic",
+        "scope": "call-scoped stratified fields, nonlinear flux and raw primitives",
+        "matrixBackend": "accelerate",
+        "policy": "compact-native-accelerate",
+        "effectiveFFTThreads": 1,
+        "horizontalWorkers": 12,
+        "pointwiseWorkers": 8,
+        "sourceBytes": 940210,
+        "kernelBytes": 987394516.0,
+        "engineBytes": 1642766039.0,
+        "fieldServiceBytes": 1894400931.0,
+        "preparedPlanBytes": 492,
+        "planPreparations": 3,
+        "evaluations": 3,
+        "stateInputBytes": 140013360.0,
+        "stateInputCopyBytes": 140013360.0,
+        "outputBytes": 135266312.0,
+        "stateValidations": 3,
+        "phasePreparations": 3,
+        "producerExecutions": 6,
+        "cacheHits": 0,
+        "duplicateExecutions": 0,
+        "liveEvaluationBytes": 0,
+        "peakEvaluationBytes": 150823352.0,
+        "tiledNonlinearExecutions": 0,
+        "primitiveExecutions": 0,
+        "nonlinearProducerExecutions": 0,
+        "physicalReconstructionExecutions": 4,
+        "stateStorageBytes": 46671120.0,
+        "scopedEvaluations": 3,
+        "coefficientOnlyEvaluations": 0,
+        "evaluationActive": 0,
+        "evaluationToken": 0,
+        "densityRecoveries": 0,
+        "densityProfileConstructions": 0,
+        "densityInversePasses": 0,
+        "densityAPEPasses": 0,
+        "plannedEvaluationBytes": 1440604257.0,
+        "densityRecovery": []
+      },
+      "runtimeMetricsAfter": {
+        "transformClass": "WVTransformHydrostatic",
+        "scope": "call-scoped stratified fields, nonlinear flux and raw primitives",
+        "matrixBackend": "accelerate",
+        "policy": "compact-native-accelerate",
+        "effectiveFFTThreads": 1,
+        "horizontalWorkers": 12,
+        "pointwiseWorkers": 8,
+        "sourceBytes": 940210,
+        "kernelBytes": 987394516.0,
+        "engineBytes": 1642766039.0,
+        "fieldServiceBytes": 2164933683.0,
+        "preparedPlanBytes": 492,
+        "planPreparations": 600,
+        "evaluations": 803,
+        "stateInputBytes": 9660921840.0,
+        "stateInputCopyBytes": 9660921840.0,
+        "outputBytes": 108604741640.0,
+        "stateValidations": 207,
+        "phasePreparations": 207,
+        "producerExecutions": 408,
+        "cacheHits": 597,
+        "duplicateExecutions": 0,
+        "liveEvaluationBytes": 0,
+        "peakEvaluationBytes": 473432064.0,
+        "tiledNonlinearExecutions": 199,
+        "primitiveExecutions": 995,
+        "nonlinearProducerExecutions": 199,
+        "physicalReconstructionExecutions": 804,
+        "stateStorageBytes": 46671120.0,
+        "scopedEvaluations": 207,
+        "coefficientOnlyEvaluations": 0,
+        "evaluationActive": 0,
+        "evaluationToken": 0,
+        "densityRecoveries": 0,
+        "densityProfileConstructions": 0,
+        "densityInversePasses": 0,
+        "densityAPEPasses": 0,
+        "plannedEvaluationBytes": 1711137009.0,
+        "densityRecovery": []
+      },
+      "runtimeMetricDeltas": {
+        "effectiveFFTThreads": 0,
+        "horizontalWorkers": 0,
+        "pointwiseWorkers": 0,
+        "sourceBytes": 0,
+        "kernelBytes": 0,
+        "engineBytes": 0,
+        "fieldServiceBytes": 270532752.0,
+        "preparedPlanBytes": 0,
+        "planPreparations": 597,
+        "evaluations": 800,
+        "stateInputBytes": 9520908480.0,
+        "stateInputCopyBytes": 9520908480.0,
+        "outputBytes": 108469475328.0,
+        "stateValidations": 204,
+        "phasePreparations": 204,
+        "producerExecutions": 402,
+        "cacheHits": 597,
+        "duplicateExecutions": 0,
+        "liveEvaluationBytes": 0,
+        "peakEvaluationBytes": 322608712.0,
+        "tiledNonlinearExecutions": 199,
+        "primitiveExecutions": 995,
+        "nonlinearProducerExecutions": 199,
+        "physicalReconstructionExecutions": 800,
+        "stateStorageBytes": 0,
+        "scopedEvaluations": 204,
+        "coefficientOnlyEvaluations": 0,
+        "evaluationActive": 0,
+        "evaluationToken": 0,
+        "densityRecoveries": 0,
+        "densityProfileConstructions": 0,
+        "densityInversePasses": 0,
+        "densityAPEPasses": 0,
+        "plannedEvaluationBytes": 270532752.0
+      },
+      "fixture": {
+        "path": "/private/tmp/wvm-hydro-audit/fixtures/matched-hydrostatic-exponential-composite-dense-output-model.nc",
+        "sha256": "f540cfccc98d9c4367760294d6dfc52b66ebfeb57363b35a543ac2fd7c64a4d0",
+        "bytes": 183771488.0,
+        "workload": "composite-dense-output",
+        "matchesQualifiedArchiveHash": false
+      }
+    },
+    {
+      "run": "matlab-composite-dense-output",
+      "integrationSeconds": 56.83630733333333,
+      "integrator": {
+        "requested": "adaptive-rk78",
+        "actual": "adaptive-rk78",
+        "relativeTolerance": 0.001,
+        "absoluteToleranceHash": "17407230464089877585",
+        "absoluteToleranceHashClearedMantissaBits": 20,
+        "absoluteToleranceComponentHashes": [
+          "5594174166554281185",
+          "5594174166554281185",
+          "3242563528902739169",
+          "5399737789812619515",
+          "5399737789812619515",
+          "13259821907563821307",
+          "8691403943112672131"
+        ],
+        "requestedInitialStep": 269.39985873487035,
+        "effectiveInitialStep": 269.39985873487035,
+        "requestedMaximumStep": [],
+        "maximumStepPolicy": "matlab-default",
+        "effectiveMaximumStep": 716.8,
+        "acceptedStepCount": 15,
+        "rejectedStepCount": 0,
+        "reportedRightHandSideEvaluationCount": 199,
+        "rhsEvaluationCount": 199
+      },
+      "outputs": {
+        "waveVortex": 2,
+        "dense": 5,
+        "particles": 5,
+        "tracers": 5
+      },
+      "boundaries": {
+        "WVTracer>WVTracer.fluxAtTime": {
+          "totalTime": 9.020865269829942,
+          "selfTime": 0.7116380848976771,
+          "numCalls": 199
+        },
+        "WVLagrangianParticles>WVLagrangianParticles.fluxAtTime": {
+          "totalTime": 0.12535933360890208,
+          "selfTime": 0.01120666669130152,
+          "numCalls": 199
+        },
+        "WVModelAdaptiveTimeStepMethods>WVModelAdaptiveTimeStepMethods.fluxArray": {
+          "totalTime": 49.56494285895518,
+          "selfTime": 5.859834137881265,
+          "numCalls": 199
+        },
+        "ode78": {
+          "totalTime": 56.002075748105476,
+          "selfTime": 4.505194134903448,
+          "numCalls": 1
+        },
+        "WVModelOutputFile>WVModelOutputFile.writeTimeStepToOutputFile": {
+          "totalTime": 1.4649791698870287,
+          "selfTime": 0.005787708346055798,
+          "numCalls": 6
+        },
+        "putVar": {
+          "totalTime": 0.7797335017140341,
+          "selfTime": 0.7784429183778637,
+          "numCalls": 47
+        },
+        "ode78>computeCEStages": {
+          "totalTime": 1.1818317942646055,
+          "selfTime": 0.15226016700136946,
+          "numCalls": 1
+        },
+        "funfun/private/ntrp78split": {
+          "totalTime": 0.18447654207218867,
+          "selfTime": 0.02646175005816906,
+          "numCalls": 4
+        },
+        "WVTransformHydrostatic.WVTransformHydrostatic>WVTransformHydrostatic.nonlinearFlux": {
+          "totalTime": 34.021385699786855,
+          "selfTime": 0.19635745876497168,
+          "numCalls": 199
+        }
+      },
+      "tracerChildBoundaries": {
+        "WVTracer>WVTracer.updateIntegratorValues": {
+          "totalTime": 0.22963512550479095,
+          "numCalls": 199
+        },
+        "WVTransform.WVTransform>WVTransform.dotListLength": {
+          "totalTime": 0.022182500048762252,
+          "numCalls": 597
+        },
+        "WVTransform.WVTransform>WVTransform.dotReference": {
+          "totalTime": 0.06884025015132675,
+          "numCalls": 597
+        },
+        "WVGeometryDoublyPeriodic.WVGeometryDoublyPeriodic>WVGeometryDoublyPeriodic.diffX": {
+          "totalTime": 1.19728716929858,
+          "numCalls": 199
+        },
+        "WVGeometryDoublyPeriodic.WVGeometryDoublyPeriodic>WVGeometryDoublyPeriodic.diffY": {
+          "totalTime": 1.4887938782727124,
+          "numCalls": 199
+        },
+        "WVGeometryDoublyPeriodicStratified.diffZF": {
+          "totalTime": 2.2327649632414657,
+          "numCalls": 199
+        },
+        "WVGeometryDoublyPeriodic.WVGeometryDoublyPeriodic>WVGeometryDoublyPeriodic.transformFromSpatialDomainWithFourier": {
+          "totalTime": 1.730658628804387,
+          "numCalls": 199
+        },
+        "WVGeometryDoublyPeriodic.WVGeometryDoublyPeriodic>WVGeometryDoublyPeriodic.transformToSpatialDomainWithFourier": {
+          "totalTime": 1.3390646696102397,
+          "numCalls": 199
+        }
+      },
+      "runtimeMetricsBefore": {},
+      "runtimeMetricsAfter": {},
+      "runtimeMetricDeltas": {},
+      "fixture": {
+        "path": "/private/tmp/wvm-hydro-audit/fixtures/matched-hydrostatic-exponential-composite-dense-output-model.nc",
+        "sha256": "f540cfccc98d9c4367760294d6dfc52b66ebfeb57363b35a543ac2fd7c64a4d0",
+        "bytes": 183771488.0,
+        "workload": "composite-dense-output",
+        "matchesQualifiedArchiveHash": false
+      }
+    },
+    {
+      "run": "hybrid-horizontal-composite",
+      "integrationSeconds": 42.606892625,
+      "integrator": {
+        "requested": "adaptive-rk78",
+        "actual": "adaptive-rk78",
+        "relativeTolerance": 0.001,
+        "absoluteToleranceHash": "17407230464089877585",
+        "absoluteToleranceHashClearedMantissaBits": 20,
+        "absoluteToleranceComponentHashes": [
+          "5594174166554281185",
+          "5594174166554281185",
+          "3242563528902739169",
+          "5399737789812619515",
+          "5399737789812619515",
+          "13259821907563821307",
+          "8691403943112672131"
+        ],
+        "requestedInitialStep": 269.39985873487035,
+        "effectiveInitialStep": 269.39985873487035,
+        "requestedMaximumStep": [],
+        "maximumStepPolicy": "matlab-default",
+        "effectiveMaximumStep": 716.8,
+        "acceptedStepCount": 15,
+        "rejectedStepCount": 0,
+        "reportedRightHandSideEvaluationCount": 199,
+        "rhsEvaluationCount": 199
+      },
+      "outputs": {
+        "waveVortex": 2,
+        "dense": 5,
+        "particles": 5,
+        "tracers": 5
+      },
+      "boundaries": {
+        "WVTracer>WVTracer.fluxAtTime": {
+          "totalTime": 13.460587666666667,
+          "selfTime": 0.7244031666666686,
+          "numCalls": 199
+        },
+        "WVLagrangianParticles>WVLagrangianParticles.fluxAtTime": {
+          "totalTime": 1.8196834166666664,
+          "selfTime": 0.011876166666666244,
+          "numCalls": 199
+        },
+        "WVModelAdaptiveTimeStepMethods>WVModelAdaptiveTimeStepMethods.fluxArray": {
+          "totalTime": 35.79355470833333,
+          "selfTime": 5.6430355,
+          "numCalls": 199
+        },
+        "ode78": {
+          "totalTime": 42.507324708333336,
+          "selfTime": 4.550282708333334,
+          "numCalls": 1
+        },
+        "WVModelOutputFile>WVModelOutputFile.writeTimeStepToOutputFile": {
+          "totalTime": 1.6546153749999999,
+          "selfTime": 0.005642124999999831,
+          "numCalls": 6
+        },
+        "putVar": {
+          "totalTime": 1.3671287083333332,
+          "selfTime": 1.3659648333333332,
+          "numCalls": 47
+        },
+        "ode78>computeCEStages": {
+          "totalTime": 0.9099503333333333,
+          "selfTime": 0.15394462500000006,
+          "numCalls": 1
+        },
+        "funfun/private/ntrp78split": {
+          "totalTime": 0.18339220833333336,
+          "selfTime": 0.025765541666666697,
+          "numCalls": 4
+        },
+        "wv_compiled_backend_mex": {
+          "totalTime": 23.592754333333335,
+          "selfTime": 23.592754333333335,
+          "numCalls": 1805
+        },
+        "WVTransformHydrostatic.WVTransformHydrostatic>WVTransformHydrostatic.nonlinearFlux": {
+          "totalTime": 13.069674291666667,
+          "selfTime": 0.011639083333333744,
+          "numCalls": 199
+        }
+      },
+      "tracerChildBoundaries": {
+        "WVTracer>WVTracer.updateIntegratorValues": {
+          "totalTime": 0.21666875,
+          "numCalls": 199
+        },
+        "IndexingContext>IndexingContext.IndexingContext": {
+          "totalTime": 2.2625e-05,
+          "numCalls": 3
+        },
+        "WVTransform.WVTransform>WVTransform.dotListLength": {
+          "totalTime": 0.026234291666666666,
+          "numCalls": 597
+        },
+        "WVTransform.WVTransform>WVTransform.dotReference": {
+          "totalTime": 0.17634316666666666,
+          "numCalls": 597
+        },
+        "WVGeometryDoublyPeriodic.WVGeometryDoublyPeriodic>WVGeometryDoublyPeriodic.diffX": {
+          "totalTime": 1.1150835416666667,
+          "numCalls": 199
+        },
+        "WVGeometryDoublyPeriodic.WVGeometryDoublyPeriodic>WVGeometryDoublyPeriodic.diffY": {
+          "totalTime": 1.3532044166666668,
+          "numCalls": 199
+        },
+        "WVGeometryDoublyPeriodicStratified.diffZF": {
+          "totalTime": 8.589264291666666,
+          "numCalls": 199
+        },
+        "WVGeometryDoublyPeriodic.WVGeometryDoublyPeriodic>WVGeometryDoublyPeriodic.transformFromSpatialDomainWithFourier": {
+          "totalTime": 0.4856584166666667,
+          "numCalls": 199
+        },
+        "WVGeometryDoublyPeriodic.WVGeometryDoublyPeriodic>WVGeometryDoublyPeriodic.transformToSpatialDomainWithFourier": {
+          "totalTime": 0.773705,
+          "numCalls": 199
+        }
+      },
+      "runtimeMetricsBefore": {
+        "transformClass": "WVTransformHydrostatic",
+        "scope": "call-scoped stratified fields, nonlinear flux and raw primitives",
+        "matrixBackend": "accelerate",
+        "policy": "compact-native-accelerate",
+        "effectiveFFTThreads": 1,
+        "horizontalWorkers": 12,
+        "pointwiseWorkers": 8,
+        "sourceBytes": 940210,
+        "kernelBytes": 987394516.0,
+        "engineBytes": 1642766039.0,
+        "fieldServiceBytes": 1894400931.0,
+        "preparedPlanBytes": 492,
+        "planPreparations": 3,
+        "evaluations": 3,
+        "stateInputBytes": 140013360.0,
+        "stateInputCopyBytes": 140013360.0,
+        "outputBytes": 135266312.0,
+        "stateValidations": 3,
+        "phasePreparations": 3,
+        "producerExecutions": 6,
+        "cacheHits": 0,
+        "duplicateExecutions": 0,
+        "liveEvaluationBytes": 0,
+        "peakEvaluationBytes": 150823352.0,
+        "tiledNonlinearExecutions": 0,
+        "primitiveExecutions": 0,
+        "nonlinearProducerExecutions": 0,
+        "physicalReconstructionExecutions": 4,
+        "stateStorageBytes": 46671120.0,
+        "scopedEvaluations": 3,
+        "coefficientOnlyEvaluations": 0,
+        "evaluationActive": 0,
+        "evaluationToken": 0,
+        "densityRecoveries": 0,
+        "densityProfileConstructions": 0,
+        "densityInversePasses": 0,
+        "densityAPEPasses": 0,
+        "plannedEvaluationBytes": 1440604257.0,
+        "densityRecovery": []
+      },
+      "runtimeMetricsAfter": {
+        "transformClass": "WVTransformHydrostatic",
+        "scope": "call-scoped stratified fields, nonlinear flux and raw primitives",
+        "matrixBackend": "accelerate",
+        "policy": "compact-native-accelerate",
+        "effectiveFFTThreads": 1,
+        "horizontalWorkers": 12,
+        "pointwiseWorkers": 8,
+        "sourceBytes": 940210,
+        "kernelBytes": 987394516.0,
+        "engineBytes": 1642766039.0,
+        "fieldServiceBytes": 2164933683.0,
+        "preparedPlanBytes": 492,
+        "planPreparations": 600,
+        "evaluations": 803,
+        "stateInputBytes": 9660921840.0,
+        "stateInputCopyBytes": 9660921840.0,
+        "outputBytes": 81686747144.0,
+        "stateValidations": 207,
+        "phasePreparations": 207,
+        "producerExecutions": 408,
+        "cacheHits": 597,
+        "duplicateExecutions": 0,
+        "liveEvaluationBytes": 0,
+        "peakEvaluationBytes": 473432064.0,
+        "tiledNonlinearExecutions": 199,
+        "primitiveExecutions": 597,
+        "nonlinearProducerExecutions": 199,
+        "physicalReconstructionExecutions": 804,
+        "stateStorageBytes": 46671120.0,
+        "scopedEvaluations": 207,
+        "coefficientOnlyEvaluations": 0,
+        "evaluationActive": 0,
+        "evaluationToken": 0,
+        "densityRecoveries": 0,
+        "densityProfileConstructions": 0,
+        "densityInversePasses": 0,
+        "densityAPEPasses": 0,
+        "plannedEvaluationBytes": 1711137009.0,
+        "densityRecovery": []
+      },
+      "runtimeMetricDeltas": {
+        "effectiveFFTThreads": 0,
+        "horizontalWorkers": 0,
+        "pointwiseWorkers": 0,
+        "sourceBytes": 0,
+        "kernelBytes": 0,
+        "engineBytes": 0,
+        "fieldServiceBytes": 270532752.0,
+        "preparedPlanBytes": 0,
+        "planPreparations": 597,
+        "evaluations": 800,
+        "stateInputBytes": 9520908480.0,
+        "stateInputCopyBytes": 9520908480.0,
+        "outputBytes": 81551480832.0,
+        "stateValidations": 204,
+        "phasePreparations": 204,
+        "producerExecutions": 402,
+        "cacheHits": 597,
+        "duplicateExecutions": 0,
+        "liveEvaluationBytes": 0,
+        "peakEvaluationBytes": 322608712.0,
+        "tiledNonlinearExecutions": 199,
+        "primitiveExecutions": 597,
+        "nonlinearProducerExecutions": 199,
+        "physicalReconstructionExecutions": 800,
+        "stateStorageBytes": 0,
+        "scopedEvaluations": 204,
+        "coefficientOnlyEvaluations": 0,
+        "evaluationActive": 0,
+        "evaluationToken": 0,
+        "densityRecoveries": 0,
+        "densityProfileConstructions": 0,
+        "densityInversePasses": 0,
+        "densityAPEPasses": 0,
+        "plannedEvaluationBytes": 270532752.0
+      },
+      "fixture": {
+        "path": "/private/tmp/wvm-hydro-audit/fixtures/matched-hydrostatic-exponential-composite-dense-output-model.nc",
+        "sha256": "f540cfccc98d9c4367760294d6dfc52b66ebfeb57363b35a543ac2fd7c64a4d0",
+        "bytes": 183771488.0,
+        "workload": "composite-dense-output",
+        "matchesQualifiedArchiveHash": false
+      }
+    }
+  ]
+}
