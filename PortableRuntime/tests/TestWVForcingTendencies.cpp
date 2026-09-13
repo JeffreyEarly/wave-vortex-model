@@ -2060,10 +2060,19 @@ void builtinNonlinearPhysicalOrder(
         bool(service->prepareBuiltinNonlinearCoefficientEvaluation()),
         "Built-in physical-order service setup");
     WVFieldEvaluationPlan maximum,fields,waveField;
-    require(bool(service->createPlan({{"maximum","uvMax",{}}},maximum)) &&
-        bool(service->createPlan({{"u","u",{}},{"v","v",{}},
-            {"w","w",{}},{"eta","eta",{}}},fields)) &&
-        bool(service->createPlan({{"wave-u","u_w",{}}},waveField)),
+    std::vector<WVFieldRequest> maximumRequests(1),fieldRequests(4),waveRequests(1);
+    maximumRequests[0].identifier="maximum";
+    maximumRequests[0].fieldName="uvMax";
+    const std::array<const char*,4> physicalFieldNames{{"u","v","w","eta"}};
+    for(std::size_t field=0;field<physicalFieldNames.size();++field) {
+      fieldRequests[field].identifier=physicalFieldNames[field];
+      fieldRequests[field].fieldName=physicalFieldNames[field];
+    }
+    waveRequests[0].identifier="wave-u";
+    waveRequests[0].fieldName="u_w";
+    require(bool(service->createPlan(maximumRequests,maximum)) &&
+        bool(service->createPlan(fieldRequests,fields)) &&
+        bool(service->createPlan(waveRequests,waveField)),
         "Built-in physical-order field plans");
     WVIntegrationStateLayout layout;
     require(bool(service->createStateLayout({},layout)),
