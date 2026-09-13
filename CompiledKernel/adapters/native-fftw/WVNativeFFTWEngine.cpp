@@ -306,6 +306,53 @@ public:
         Context context{this,{},output,input,{},&consumer}; resources_->pool.run(inverseTask,&context);
         resources_->active.store(false); return WVKernelStatus::ok();
     }
+    bool supportsSpatialDerivative() const noexcept override { return true; }
+    WVKernelStatus prepareSpatialDerivative() override {
+        if (resources_->active.exchange(true)) return {WVKernelStatusCode::reentrantExecution,"Shared retained FFTW resource is active."};
+        ResourceRelease release{resources_->active};
+        if (derivativeYForward_ && derivativeYInverse_) return WVKernelStatus::ok();
+        derivativeYForward_.reset(); derivativeYInverse_.reset();
+        const auto nx=spec_.grid.Nx,ny=spec_.grid.Ny;
+        derivativePlaneSize_=RetainedFFTWResources::checked(nx,ny);
+        derivativeHalfSize_=std::max(RetainedFFTWResources::checked(nx/2+1,ny),RetainedFFTWResources::checked(ny/2+1,nx));
+        derivativeReal_.resize(RetainedFFTWResources::checked(workers_,derivativePlaneSize_));
+        derivativeHalf_.resize(RetainedFFTWResources::checked(workers_,derivativeHalfSize_));
+        derivativeFactors_.resize(std::max(nx,ny)/2+1);
+        fftw_iodim64 axis{static_cast<ptrdiff_t>(ny),1,1};
+        fftw_iodim64 batch{static_cast<ptrdiff_t>(nx),static_cast<ptrdiff_t>(ny),static_cast<ptrdiff_t>(ny/2+1)};
+        auto* half=reinterpret_cast<fftw_complex*>(derivativeHalf_.data());
+        bool success=true;
+        {
+            std::lock_guard<std::mutex> lock(planningMutex);
+            fftw_plan_with_nthreads(1);
+            auto take=[&](OwnedPlan& owner,fftw_plan raw) {
+                if (raw) { ++activePlans; ++totalPlansCreated; owner.reset(raw); }
+                else success=false;
+            };
+            const unsigned flags=FFTW_MEASURE|FFTW_UNALIGNED;
+            take(derivativeYForward_,fftw_plan_guru64_dft_r2c(1,&axis,1,&batch,derivativeReal_.data(),half,flags|FFTW_PRESERVE_INPUT));
+            std::swap(batch.is,batch.os);
+            take(derivativeYInverse_,fftw_plan_guru64_dft_c2r(1,&axis,1,&batch,half,derivativeReal_.data(),flags));
+        }
+        return success ? WVKernelStatus::ok() : WVKernelStatus{WVKernelStatusCode::fftPlanFailure,"Unable to prepare axis derivative plans."};
+    }
+    WVKernelStatus spatialDerivative(WVRealInput input,WVRealOutput output,bool x,unsigned order) override {
+        if (derivativeReal_.empty()) return {WVKernelStatusCode::unsupportedOperation,"Axis derivative was not prepared."};
+        const auto n=x?spec_.grid.Nx:spec_.grid.Ny;
+        const double wave=x?xWavenumberScale_:yWavenumberScale_;
+        if (!order) return {WVKernelStatusCode::invalidConfiguration,"Horizontal derivative order must be positive."};
+        if (!std::isfinite(std::pow(wave*static_cast<double>(n/2),order)))
+            return {WVKernelStatusCode::numericalFailure,"Horizontal derivative multiplier overflow."};
+        if (resources_->active.exchange(true)) return {WVKernelStatusCode::reentrantExecution,"Shared retained FFTW resource is active."};
+        ResourceRelease release{resources_->active};
+        for (std::size_t k=0;k<=n/2;++k) {
+            const double magnitude=(order%2 && n%2==0 && k==n/2)?0:std::pow(wave*static_cast<double>(k),order)/static_cast<double>(n);
+            derivativeFactors_[k]=magnitude;
+        }
+        DerivativeContext context{this,input,output,x,order};
+        resources_->pool.run(derivativeTask,&context);
+        return WVKernelStatus::ok();
+    }
     bool supportsAdvection(std::size_t targets) const noexcept override {
         return (targets==3 || targets==4) && !hasNyquist_ &&
             spec_.grid.xStride==1 && spec_.grid.yStride==spec_.grid.Nx &&
@@ -372,7 +419,8 @@ public:
             spec_.modes.capacity()*sizeof(WVRetainedModeKey)+spec_.grid.family.capacity()+
             spec_.retained.family.capacity()+spec_.retained.modeSet.capacity()+
             (advectionPacked_.capacity()+advectionStages_.capacity())*sizeof(WVComplex64)+
-            advectionReal_.capacity()*sizeof(double)+
+            (advectionReal_.capacity()+derivativeReal_.capacity()+derivativeFactors_.capacity())*sizeof(double)+
+            derivativeHalf_.capacity()*sizeof(WVComplex64)+
             advectionWorkerCounts_.capacity()*sizeof(WVRetainedAdvectionCounts);
     }
     // Shared resources include the four handles; opaque FFTW allocations and
@@ -381,6 +429,37 @@ public:
     const void* sharedResourceIdentity() const noexcept override { return resources_.get(); }
     std::size_t sharedResourceBytes() const noexcept override { return resources_->bytes(); }
 private:
+    struct ResourceRelease {
+        std::atomic<bool>& active;
+        ~ResourceRelease() { active.store(false); }
+    };
+    struct DerivativeContext { RetainedFFTWPlan* plan; WVRealInput input; WVRealOutput output; bool x; unsigned order; };
+    static void derivativeTask(void* opaque,std::size_t worker) noexcept {
+        auto& c=*static_cast<DerivativeContext*>(opaque); auto& p=*c.plan;
+        const auto& g=p.spec_.grid;
+        const auto n=c.x?g.Nx:g.Ny, batches=c.x?g.Ny:g.Nx, half=n/2+1;
+        auto* real=p.derivativeReal_.data()+worker*p.derivativePlaneSize_;
+        auto* spectrum=p.derivativeHalf_.data()+worker*p.derivativeHalfSize_;
+        auto* fftSpectrum=reinterpret_cast<fftw_complex*>(spectrum);
+        for (std::size_t plane=worker;plane<g.planes;plane+=p.workers_) {
+            for (std::size_t y=0;y<g.Ny;++y) for (std::size_t x=0;x<g.Nx;++x)
+                real[c.x?y*g.Nx+x:x*g.Ny+y]=c.input.data[plane*g.planeStride+y*g.yStride+x*g.xStride];
+            fftw_execute_dft_r2c(c.x?p.resources_->rowForward_.get():p.derivativeYForward_.get(),real,fftSpectrum);
+            for (std::size_t batch=0;batch<batches;++batch) for (std::size_t k=0;k<half;++k) {
+                auto& v=spectrum[batch*half+k]; const auto f=p.derivativeFactors_[k];
+                const auto a=v.real,b=v.imag;
+                switch (c.order%4) {
+                    case 0: v={f*a,f*b}; break;
+                    case 1: v={-f*b,f*a}; break;
+                    case 2: v={-f*a,-f*b}; break;
+                    default: v={f*b,-f*a}; break;
+                }
+            }
+            fftw_execute_dft_c2r(c.x?p.resources_->rowInverse_.get():p.derivativeYInverse_.get(),fftSpectrum,real);
+            for (std::size_t y=0;y<g.Ny;++y) for (std::size_t x=0;x<g.Nx;++x)
+                c.output.data[plane*g.planeStride+y*g.yStride+x*g.xStride]=real[c.x?y*g.Nx+x:x*g.Ny+y];
+        }
+    }
     struct Context { RetainedFFTWPlan* plan; WVRealInput realInput; WVRealOutput realOutput; WVComplexInput complexInput; WVComplexOutput complexOutput; const WVRealOutputConsumer* consumer=nullptr; };
     struct AdvectionContext { RetainedFFTWPlan* plan; const WVRetainedAdvectionWork* work; };
     static WVComplex64 read(WVComplexInput input,std::size_t i) noexcept {
@@ -609,6 +688,10 @@ private:
     double forwardScale_=1,inverseScale_=1;
     double xWavenumberScale_=0,yWavenumberScale_=0;
     std::shared_ptr<RetainedFFTWResources> resources_;
+    std::size_t derivativeHalfSize_=0,derivativePlaneSize_=0;
+    std::vector<double> derivativeReal_,derivativeFactors_;
+    std::vector<WVComplex64> derivativeHalf_;
+    OwnedPlan derivativeYForward_,derivativeYInverse_;
     bool hasNyquist_=false;
     std::size_t advectionTargets_=0,advectionDepth_=0;
     std::vector<WVComplex64> advectionPacked_,advectionStages_;

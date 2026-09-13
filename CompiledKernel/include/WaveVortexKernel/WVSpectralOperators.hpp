@@ -71,6 +71,10 @@ inline WVKernelStatus WVRetainedHorizontalPlan::inverseAndConsume(WVComplexInput
     WVRealOutput,const WVRealOutputConsumer&) {
     return {WVKernelStatusCode::unsupportedOperation,"Provider has no inverse consumer."};
 }
+inline WVKernelStatus WVRetainedHorizontalPlan::spatialDerivative(WVRealInput,
+    WVRealOutput, bool, unsigned) {
+    return {WVKernelStatusCode::unsupportedOperation,"Provider has no axis derivative."};
+}
 inline WVKernelStatus WVRetainedHorizontalPlan::prepareAdvection(std::size_t) {
     return {WVKernelStatusCode::unsupportedOperation,"Provider has no retained advection schedule."};
 }

@@ -1,0 +1,7 @@
+{
+  "path": "/private/tmp/wvm520/axis_composite.nc",
+  "bytes": 775710922,
+  "sha256": "f1ae6a0f816d9499bc163824fde7e8d41dbaea7a7bca762c33ae54609efa5416",
+  "comparison": "axis-comparison.json",
+  "disposition": "removed redundant diagnostic payload after successful full output comparison; timing/profile/comparison retained"
+}

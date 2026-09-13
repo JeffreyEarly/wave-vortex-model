@@ -164,7 +164,12 @@ WVKernelStatus WVRetainedHorizontalOperator::createWorkspace(std::unique_ptr<WVR
             if (status && !d.retained) return {WVKernelStatusCode::fftPlanFailure,"Provider returned an empty retained plan."};
         }
         d.batchedFullFFT = prepareSpatialDerivative && !d.retained;
-        if (prepareSpatialDerivative || !d.retained) {
+        const bool axisDerivative = prepareSpatialDerivative && d.retained && d.retained->supportsSpatialDerivative();
+        if (axisDerivative) {
+            auto status = d.retained->prepareSpatialDerivative();
+            if (!status) return status;
+        }
+        if ((prepareSpatialDerivative && !axisDerivative) || !d.retained) {
             const auto planes = d.batchedFullFFT ? data_->spec.grid.planes : 1;
             d.real.resize(product(data_->planeSize,planes));
             d.half.resize(product(data_->halfSize,planes));
@@ -378,6 +383,8 @@ WVKernelStatus WVRetainedHorizontalOperator::spatialDerivative(WVRetainedHorizon
         return {WVKernelStatusCode::invalidPointer,"Invalid derivative grid storage."};
     if (overlap(input.data,d.realSpan,output.data,d.realSpan)) return {WVKernelStatusCode::overlappingArrays,"Derivative input and output overlap."};
     ActiveCall guard(w.active); if (!guard.entered) return {WVKernelStatusCode::reentrantExecution,"Horizontal workspace is active."};
+    if (w.retained && w.retained->supportsSpatialDerivative())
+        return w.retained->spatialDerivative(input,output,xDerivative,order);
     const auto& g = d.spec.grid;
     const auto differentiate = [&](WVComplex64* values) {
         return kernel_detail::applyHorizontalDerivativeMultiplier(values,g.Nx,g.Ny,1,
