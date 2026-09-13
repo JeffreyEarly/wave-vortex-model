@@ -423,10 +423,20 @@ classdef WVGeometryDoublyPeriodic < CAAnnotatedClass
         end
 
         function u_bar = transformFromSpatialDomainWithFourier(self,u)
+            if isa(self,"WVTransform") && self.usesCompiledTransform()
+                values = self.compiledPrimitive("horizontalForward",{u},struct());
+                u_bar = values{1};
+                return
+            end
             u_bar = self.fastTransform.transformFromSpatialDomainWithFourier(u);
         end
 
         function u = transformToSpatialDomainWithFourier(self,u_bar)
+            if isa(self,"WVTransform") && self.usesCompiledTransform()
+                values = self.compiledPrimitive("horizontalInverse",{complex(u_bar)},struct());
+                u = values{1};
+                return
+            end
             u = self.fastTransform.transformToSpatialDomainWithFourier(u_bar);
         end
 
@@ -449,6 +459,11 @@ classdef WVGeometryDoublyPeriodic < CAAnnotatedClass
                 u 
                 options.n = 1
             end
+            if isa(self,"WVTransform") && self.usesCompiledTransform()
+                values = self.compiledPrimitive("differentiateHorizontal",{u},struct("direction",'x',"order",options.n));
+                u_x = values{1};
+                return
+            end
             u_x = self.fastTransform.diffX(u,n=options.n);
         end
 
@@ -470,6 +485,11 @@ classdef WVGeometryDoublyPeriodic < CAAnnotatedClass
                 self
                 u 
                 options.n = 1
+            end
+            if isa(self,"WVTransform") && self.usesCompiledTransform()
+                values = self.compiledPrimitive("differentiateHorizontal",{u},struct("direction",'y',"order",options.n));
+                u_y = values{1};
+                return
             end
             u_y = self.fastTransform.diffY(u,n=options.n);
         end

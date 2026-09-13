@@ -8,6 +8,10 @@ classdef WVCoefficients < WVObservingSystem
         absTolerance
     end
 
+    properties (Transient, Access=private)
+        standardCoefficientFlux = []
+    end
+
     methods
         function self = WVCoefficients(model,options)
             %create a new observing system
@@ -119,7 +123,27 @@ classdef WVCoefficients < WVObservingSystem
 
         function nlF = fluxAtTime(self,t,y0)
             self.updateIntegratorValues(t,y0)
+            nlF = self.fluxForCurrentState();
+        end
 
+        function flag = usesStandardCoefficientFlux(self)
+            % Preserve overridden RHS callbacks while sharing inherited ones.
+            %
+            % - Developer: true
+            % - Topic: Internal
+            if isempty(self.standardCoefficientFlux)
+                type = metaclass(self);
+                method = type.MethodList(strcmp({type.MethodList.Name},'fluxAtTime'));
+                self.standardCoefficientFlux = isscalar(method) && strcmp(method.DefiningClass.Name,'WVCoefficients');
+            end
+            flag = self.standardCoefficientFlux;
+        end
+
+        function nlF = fluxForCurrentState(self)
+            % Evaluate after the enclosing model has opened its state scope.
+            %
+            % - Developer: true
+            % - Topic: Internal
             nlF = cell(1,self.nFluxComponents);
             [nlF{:}] = self.wvt.nonlinearFlux();
         end

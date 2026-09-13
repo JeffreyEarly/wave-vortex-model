@@ -3,7 +3,7 @@ layout: default
 title: isValidKLModeNumber
 parent: WVTransformBoussinesq
 grand_parent: Transforms
-nav_order: 168
+nav_order: 170
 mathjax: true
 ---
 

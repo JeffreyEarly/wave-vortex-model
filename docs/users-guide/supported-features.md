@@ -20,7 +20,7 @@ WaveVortexModel provides five transform families together with model integration
 | `WVTransformStratifiedQG` | Stratified quasigeostrophic flow. |
 | `WVTransformBarotropicQG` | Equivalent-barotropic quasigeostrophic flow. |
 
-The rotating transforms accept either hemisphere for `5 <= abs(latitude) <= 85`, including the endpoints. Horizontal grids may contain independently chosen positive even or odd grid counts. MATLAB remains the default implementation. Constant-stratification transforms may explicitly select the narrower [compiled MATLAB backend preview](/users-guide/compiled-preview.html).
+The rotating transforms accept either hemisphere for `5 <= abs(latitude) <= 85`, including the endpoints. Horizontal grids may contain independently chosen positive even or odd grid counts. MATLAB remains the default implementation. All six built-in v4 configurations may explicitly select the [compiled MATLAB backend](/users-guide/compiled-preview.html) for their qualified numerical operations. An explicit compiled request reports unsupported operations or unavailable capabilities instead of silently selecting MATLAB.
 
 Mode/index mappings accept scalars and column vectors. Resolution conversion and explicit antialiasing preserve coefficients identified by common integer mode numbers and initialize newly introduced modes to zero. Energy and, where defined, enstrophy agree between spectral and spatial representations within the transform discretization tolerance.
 
@@ -42,11 +42,11 @@ The optional [standalone portable runtime](/users-guide/portable-runtime.html) p
 
 ## Execution compatibility
 
-| Capability | MATLAB | Compiled MATLAB preview | Standalone runtime |
+| Capability | MATLAB | Compiled MATLAB backend | Standalone runtime |
 | --- | --- | --- | --- |
-| Transform families | All five documented transforms | Constant stratification | All five documented transforms, with MATLAB-authored scientific state |
+| Transform families | All five documented transforms | All six built-in v4 configurations, with qualified family operation sets | All five documented transforms, with MATLAB-authored scientific state |
 | Integrators | Fixed and adaptive MATLAB integration | MATLAB owns integration | Fixed RK4 and MATLAB-compatible `ode23`, `ode45`, and `ode78` |
-| Forcing | Documented built-ins and custom `WVForcing` | Exactly default `WVNonlinearAdvection` | All twelve stable built-ins where MATLAB permits them |
+| Forcing | Documented built-ins and custom `WVForcing` | MATLAB owns built-in and custom forcing orchestration; supported primitive calls may dispatch compiled | All twelve stable built-ins where MATLAB permits them |
 | Observers and NetCDF | Full documented MATLAB model surface | MATLAB owns observers and persistence | Qualified coefficients, fields, moorings, particles, tracers, schedules, and restart subsets |
 | Provider | MATLAB builtin Fourier transforms | Explicit local native FFTW build | Explicit local native FFTW build; reference provider only when requested |
 | Platforms | Supported MATLAB platforms | Apple silicon, MATLAB R2025b or later | Portable reference source build on macOS/Linux; optimized runner on Apple silicon |
@@ -88,4 +88,4 @@ Portable C++ observers, schedules, and forcings are statically source-linked int
 
 Optimization Toolbox is optional. The default `WVNoMotionProfileOperation` recovery uses bounded damped least squares without that toolbox. Explicit `lsqnonlin` and `fminsearch` selections remain available. Displacement, available potential energy, and available potential vorticity use the actual no-motion density profile by default; explicit initial-profile selection remains an approximation.
 
-WaveVortexModel's ordinary transform methods use MATLAB's builtin Fourier transforms. The former fine-grained WaveVortex FFTW selector was retired after complete nonlinear-advection benchmarks did not justify its additional integration complexity. The compiled MATLAB backend preview is different: it evaluates the complete ordinary nonlinear flux in one coarse C++ call using a locally built native FFTW provider. The reusable FFTWTransforms package remains independent of WaveVortexModel. The low-level barotropic FINUFFT path remains development machinery and is not selected through the documented interpolation options; FINUFFT is not a required package dependency.
+WaveVortexModel's ordinary transform methods use MATLAB's builtin Fourier transforms. The former fine-grained WaveVortex FFTW selector was retired after complete nonlinear-advection benchmarks did not justify its additional integration complexity. The compiled MATLAB backend shares native kernels for its qualified built-in fields, transforms, derivatives, primitive operations, and nonlinear calculations while MATLAB retains model integration and callback orchestration. The reusable FFTWTransforms package remains independent of WaveVortexModel. The low-level barotropic FINUFFT path remains development machinery and is not selected through the documented interpolation options; FINUFFT is not a required package dependency.

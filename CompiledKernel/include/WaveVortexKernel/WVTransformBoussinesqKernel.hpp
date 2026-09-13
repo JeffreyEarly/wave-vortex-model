@@ -90,6 +90,11 @@ public:
 
     WVKernelStatus transformToSpatial(WVComplexConstView, WVBoussinesqFamily, WVRealVolumeView);
     WVKernelStatus transformFromSpatial(WVRealVolumeConstView, WVBoussinesqFamily, WVComplexView);
+    WVKernelStatus applyVertical(WVStratifiedModalOperator, WVComplexConstView, WVComplexView);
+    WVKernelStatus applyVerticalColumn(WVStratifiedModalOperator, std::size_t retainedColumn,
+        WVComplexConstView inputColumn, WVComplexView outputColumn);
+    WVKernelStatus horizontalForward(WVRealVolumeConstView, WVComplexView);
+    WVKernelStatus horizontalInverse(WVComplexConstView, WVRealVolumeView);
     WVKernelStatus transformUVEtaToWaveVortex(WVRealVolumeConstView u, WVRealVolumeConstView v,
         WVRealVolumeConstView eta, double t, double t0, WVMutableCoefficients);
     WVKernelStatus transformUVWEtaToWaveVortex(WVRealVolumeConstView u, WVRealVolumeConstView v,
@@ -126,7 +131,8 @@ public:
     // Produces the complete physical bundle and projected flux together. Caller
     // publishes evaluator nodes only after success; requires prepared native support.
     bool supportsTiledNonlinear() const noexcept { return tiledNonlinearPrepared_; }
-    WVKernelStatus nonlinearFluxAndFields(const WVState&, WVFlux&, WVRealFieldBundleView);
+    WVKernelStatus nonlinearFluxAndFields(const WVState&, WVFlux&, WVRealFieldBundleView,
+        WVRealFieldBundleView* spatialTendency = nullptr);
     WVKernelStatus nonlinearFlux(const WVState&, WVFlux&,
         WVRealFieldBundleView* spatialTendency = nullptr,
         const WVRealFieldBundleConstView* preparedFields = nullptr, bool projectFlux = true,
@@ -136,6 +142,8 @@ public:
     WVKernelStatus totalEnstrophy(const WVCoefficients&, double&) const;
     WVKernelStatus totalEnergySpatiallyIntegrated(const WVState&, double&,
         WVBoussinesqComponent = WVBoussinesqComponent::all);
+    WVKernelStatus applyVerticalCalculus(WVRealConstView input,bool inputIsF,
+        unsigned order,bool integral,WVRealView output);
     // F/G identify the balanced basis; Fw/Gw identify the grouped wave basis.
     // MATLAB diffZF/diffZG orders 1..4 and intZF/intZG order 1. These preserve
     // all horizontal grid columns rather than truncating through a Fourier map.
@@ -143,6 +151,8 @@ public:
         unsigned order, WVRealVolumeView);
     // Full-grid horizontal derivatives retain modes outside the compact map.
     WVKernelStatus differentiateHorizontal(WVRealVolumeConstView, bool xDerivative, WVRealVolumeView);
+    WVKernelStatus differentiateHorizontal(WVRealVolumeConstView, bool xDerivative,
+        unsigned order, WVRealVolumeView);
     WVKernelStatus integrateVertical(WVRealVolumeConstView, WVBoussinesqFamily, WVRealVolumeView);
     // Unpreconditioned wave F values at one vertical index, [Nj,Nkl].
     WVKernelStatus waveModeVerticalStructureAtIndex(std::size_t, WVRealView);
@@ -155,6 +165,7 @@ private:
     WVKernelStatus coefficients(const WVCoefficients&) const;
     WVKernelStatus outputs(WVMutableCoefficients) const;
     WVKernelStatus mutableOutputOutsidePreparedState(WVMutableCoefficients) const;
+    WVKernelStatus mutableOutputOutsidePreparedState(const void*,std::size_t) const;
     WVKernelStatus stateContents(const WVState&) const;
     WVKernelStatus state(const WVState&);
     bool matchesStateEvaluation(const WVState&) const noexcept;
@@ -177,7 +188,8 @@ private:
     WVKernelStatus projectFields(const double*,const double*,const double*,const double*,WVMutableCoefficients);
     WVKernelStatus projectSpectralFields(WVComplexInput,WVComplexInput,WVComplexInput,WVComplexInput,
         WVComplexOutput,bool,WVMutableCoefficients);
-    WVKernelStatus verticalCalculus(const double*,WVBoussinesqFamily,unsigned,bool,double*);
+    WVKernelStatus verticalCalculus(const double*,WVBoussinesqFamily,unsigned,bool,double*,
+        std::size_t columns,bool verticalFirst);
     bool tiledNonlinearPrepared_ = false;
     WVVariableExecutionOptions executionOptions_;
     std::shared_ptr<const WVStratifiedModalSource> source_;

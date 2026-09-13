@@ -56,6 +56,9 @@ struct WVRetainedAdvectionWork {
     std::array<WVComplexOutput,4> targetSpectra;
     // Four contiguous [Nx,Ny,Nz] volumes ordered u, v, w, eta.
     WVRealOutput fields;
+    // Optional completed physical tendencies. Three-target work is ordered
+    // u, v, eta; four-target work is ordered u, v, w, eta.
+    WVRealOutput tendencies;
     WVRealInput densityCorrection;
     std::size_t targets = 0;
 };
@@ -133,9 +136,12 @@ public:
     std::size_t persistentBytes() const noexcept;
     std::size_t providerBytesLowerBound() const noexcept;
     // Full-grid derivative before retained-mode projection (e.g. passive tracers).
-    // Uses all resolved Fourier modes, with a zero derivative on the selected
-    // even-grid Nyquist axis, independent of the retained spectral subset.
+    // Uses all resolved Fourier modes, with the selected even-grid Nyquist axis
+    // zeroed for odd orders and retained for even orders, independent of the
+    // retained spectral subset.
     WVKernelStatus spatialDerivative(WVRetainedHorizontalWorkspace&, WVRealInput, WVRealOutput, bool xDerivative) const;
+    WVKernelStatus spatialDerivative(WVRetainedHorizontalWorkspace&, WVRealInput, WVRealOutput,
+        bool xDerivative, unsigned order) const;
 private:
     WVRetainedHorizontalOperator() = default;
     std::shared_ptr<const spectral_detail::HorizontalData> data_;

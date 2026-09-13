@@ -3,7 +3,7 @@
   "schemaVersion": 1,
   "scope": "forward-integration",
   "status": "complete",
-  "sourceCommit": "e2b06942ffa38aa332c869457298706c00e7defb",
+  "sourceCommit": "114c73547211a5a623069bdb38b68dbc2943b013",
   "provider": "native-fftw",
   "matlabRelease": "2025b",
   "platform": "MACA64",
@@ -209,8 +209,8 @@
         }
       ],
       "timingSeconds": {
-        "sharedMatlabPreparation": 9.0792575416666672,
-        "providerLifecycle": 18.472384041666668
+        "sharedMatlabPreparation": 8.8976950833333337,
+        "providerLifecycle": 17.284766083333334
       },
       "runs": {
         "whole": {
@@ -242,7 +242,7 @@
             "selectedStep": 4,
             "effectiveIntegrationStep": 4,
             "transientWorkspaceMaximumLiveBytes": 10368,
-            "candidateEvaluationSeconds": 0.000195125,
+            "candidateEvaluationSeconds": 0.000151125,
             "noFallback": true
           },
           "termination": {
@@ -321,7 +321,7 @@
             "selectedStep": 4,
             "effectiveIntegrationStep": 4,
             "transientWorkspaceMaximumLiveBytes": 10368,
-            "candidateEvaluationSeconds": 0.000170417,
+            "candidateEvaluationSeconds": 0.000217875,
             "noFallback": true
           },
           "termination": {
@@ -400,7 +400,7 @@
             "selectedStep": 4,
             "effectiveIntegrationStep": 4,
             "transientWorkspaceMaximumLiveBytes": 10368,
-            "candidateEvaluationSeconds": 0.000184792,
+            "candidateEvaluationSeconds": 0.000175541,
             "noFallback": true
           },
           "termination": {
@@ -479,7 +479,7 @@
             "selectedStep": 4,
             "effectiveIntegrationStep": 4,
             "transientWorkspaceMaximumLiveBytes": 10368,
-            "candidateEvaluationSeconds": 0.000147708,
+            "candidateEvaluationSeconds": 0.000174333,
             "noFallback": true
           },
           "termination": {
@@ -558,7 +558,7 @@
             "selectedStep": 4,
             "effectiveIntegrationStep": 4,
             "transientWorkspaceMaximumLiveBytes": 10368,
-            "candidateEvaluationSeconds": 0.000179125,
+            "candidateEvaluationSeconds": 0.000178709,
             "noFallback": true
           },
           "termination": {
@@ -637,7 +637,7 @@
             "selectedStep": 4,
             "effectiveIntegrationStep": 4,
             "transientWorkspaceMaximumLiveBytes": 10368,
-            "candidateEvaluationSeconds": 0.000201375,
+            "candidateEvaluationSeconds": 0.000238667,
             "noFallback": true
           },
           "termination": {
@@ -889,8 +889,8 @@
         }
       ],
       "timingSeconds": {
-        "sharedMatlabPreparation": 5.4910285833333337,
-        "providerLifecycle": 18.456128583333335
+        "sharedMatlabPreparation": 5.0930644166666665,
+        "providerLifecycle": 16.089461208333333
       },
       "runs": {
         "whole": {
@@ -1569,8 +1569,8 @@
         }
       ],
       "timingSeconds": {
-        "sharedMatlabPreparation": 3.617551875,
-        "providerLifecycle": 10.294985625
+        "sharedMatlabPreparation": 3.6999775416666667,
+        "providerLifecycle": 10.039904541666667
       },
       "runs": {
         "whole": {
@@ -2231,8 +2231,8 @@
         }
       ],
       "timingSeconds": {
-        "sharedMatlabPreparation": 5.6360197916666666,
-        "providerLifecycle": 15.888581333333333
+        "sharedMatlabPreparation": 5.7117278333333337,
+        "providerLifecycle": 15.703469125
       },
       "runs": {
         "whole": {
@@ -2911,8 +2911,8 @@
         }
       ],
       "timingSeconds": {
-        "sharedMatlabPreparation": 7.5992380416666663,
-        "providerLifecycle": 20.228231541666666
+        "sharedMatlabPreparation": 7.6605249583333332,
+        "providerLifecycle": 23.335686166666665
       },
       "runs": {
         "whole": {
@@ -3591,8 +3591,8 @@
         }
       ],
       "timingSeconds": {
-        "sharedMatlabPreparation": 8.2041599583333333,
-        "providerLifecycle": 22.887716833333332
+        "sharedMatlabPreparation": 8.5194394166666658,
+        "providerLifecycle": 23.070259625
       },
       "runs": {
         "whole": {
@@ -4107,7 +4107,7 @@
     },
     {
       "path": "PortableRuntime/src/WVFieldEvaluationService.cpp",
-      "sha256": "fd0fe2c6b24dbc3ab3ad01ed8f00361635323e1a7f07903998d229d84397971c"
+      "sha256": "1c37ff9158247e9976d668e50c9455e8df07a14a47c0c2d05146ff9a99ed0190"
     },
     {
       "path": "PortableRuntime/src/WVStratifiedFieldEvaluationAdapter.cpp",
@@ -4119,7 +4119,7 @@
     },
     {
       "path": "CompiledKernel/src/WVTransformConstantStratificationKernel.cpp",
-      "sha256": "a07893470f3c9b27a2fe297473660b718f65947424ba879f2a7a91083c644681"
+      "sha256": "b0ed568518f3a5c2a96ac01f241336d100b22047312f86984ea03f9d1fc6f038"
     },
     {
       "path": "PortableRuntime/tests/WVForwardIntegrationProbe.cpp",
@@ -4131,7 +4131,7 @@
     },
     {
       "path": "PortableRuntime/CMakeLists.txt",
-      "sha256": "e63c90dd70eb3bf2d85884f1f443dbbe092fcf6d1023e0228d971f61590a5afb"
+      "sha256": "7594586991cb78bfff600b75bf5202fb612a767476534079467e62fcf68c3afe"
     },
     {
       "path": "CompiledKernel/CMakeLists.txt",
@@ -4147,47 +4147,47 @@
     }
   ],
   "buildSource": {
-    "root": "/Users/jearly/Documents/OceanKitRepositories/wvm-v4-adapter-foundation-ci",
-    "commit": "e2b06942ffa38aa332c869457298706c00e7defb"
+    "root": "/Users/jearly/Documents/OceanKitRepositories/wvm-v4-matlab-adapters",
+    "commit": "114c73547211a5a623069bdb38b68dbc2943b013"
   },
   "executionBinaries": [
     {
       "role": "runner",
-      "path": "/private/tmp/wvm503/foundation-forward-build/wave-vortex-run",
-      "sha256": "5ca49b0c7c0ce39b01445ddc2289610bb0e6bccd7fa2e3f0729166886b63fb02",
-      "sourceCommit": "e2b06942ffa38aa332c869457298706c00e7defb"
+      "path": "/private/tmp/wvm503/native-build/wave-vortex-run",
+      "sha256": "5813366fa77cabf8d0f9199329a144bd57c447dd12ac45f8a5f804249b559670",
+      "sourceCommit": "114c73547211a5a623069bdb38b68dbc2943b013"
     },
     {
       "role": "probe",
-      "path": "/private/tmp/wvm503/foundation-forward-build/WVForwardIntegrationProbe",
-      "sha256": "16ed1cb5cd5f2eba1ef4acb9dfaadb1a1844b1b7f0190a687a7ccf6bb98e5519",
-      "sourceCommit": "e2b06942ffa38aa332c869457298706c00e7defb"
+      "path": "/private/tmp/wvm503/native-build/WVForwardIntegrationProbe",
+      "sha256": "09878aed3b47488221b5a05a8b06ed1553cd1e322b07f00fa5ef6ad856e9d333",
+      "sourceCommit": "114c73547211a5a623069bdb38b68dbc2943b013"
     }
   ],
   "artifacts": [
     {
-      "path": "PortableRuntime/qualification/forward-integration-evidence-v1/forward-constant-hydrostatic-cfl-rk4-native-fftw-ddf45eca8721991cfe41fa5f3fb3d55ab03c860f2fcb196a6f6f633c365d4080.json",
-      "sha256": "ddf45eca8721991cfe41fa5f3fb3d55ab03c860f2fcb196a6f6f633c365d4080"
+      "path": "PortableRuntime/qualification/forward-integration-evidence-v1/forward-constant-hydrostatic-cfl-rk4-native-fftw-0ec6cad9e21f93e746bdf089c52ca1c010020381d48104cc1f66d891ec2aef93.json",
+      "sha256": "0ec6cad9e21f93e746bdf089c52ca1c010020381d48104cc1f66d891ec2aef93"
     },
     {
-      "path": "PortableRuntime/qualification/forward-integration-evidence-v1/forward-constant-nonhydrostatic-rk23-native-fftw-1681ebf42c1e72a80cf5836107d436825ca236448f06e38057f69647c5d94cfe.json",
-      "sha256": "1681ebf42c1e72a80cf5836107d436825ca236448f06e38057f69647c5d94cfe"
+      "path": "PortableRuntime/qualification/forward-integration-evidence-v1/forward-constant-nonhydrostatic-rk23-native-fftw-f122c0020e496681a6780f6d314624b9b050d112d33e063f104995c011b3da27.json",
+      "sha256": "f122c0020e496681a6780f6d314624b9b050d112d33e063f104995c011b3da27"
     },
     {
-      "path": "PortableRuntime/qualification/forward-integration-evidence-v1/forward-barotropic-qg-rk45-native-fftw-c34d1b53b6b4c50ed1d50f471862874578c1a72fc7bcc320d0e815f53a540f47.json",
-      "sha256": "c34d1b53b6b4c50ed1d50f471862874578c1a72fc7bcc320d0e815f53a540f47"
+      "path": "PortableRuntime/qualification/forward-integration-evidence-v1/forward-barotropic-qg-rk45-native-fftw-6c2d44b4eb4e13352504deb8eb10a6cc3b91cda36013bf4967689d1667b4bfa7.json",
+      "sha256": "6c2d44b4eb4e13352504deb8eb10a6cc3b91cda36013bf4967689d1667b4bfa7"
     },
     {
-      "path": "PortableRuntime/qualification/forward-integration-evidence-v1/forward-stratified-qg-rk45-native-fftw-f93fb6f449532bb07970d83c991b41191820a33a4f21d3407229c57f84bc2079.json",
-      "sha256": "f93fb6f449532bb07970d83c991b41191820a33a4f21d3407229c57f84bc2079"
+      "path": "PortableRuntime/qualification/forward-integration-evidence-v1/forward-stratified-qg-rk45-native-fftw-17d0c8fc2cce810ded5d64c6330cf36a534043e8051ced6acb74ae148b0d2b9a.json",
+      "sha256": "17d0c8fc2cce810ded5d64c6330cf36a534043e8051ced6acb74ae148b0d2b9a"
     },
     {
-      "path": "PortableRuntime/qualification/forward-integration-evidence-v1/forward-hydrostatic-rk45-native-fftw-3c840eb33f63554bfc91454e217f610f3fe8cf4dee8d4ce5e3297061067a50de.json",
-      "sha256": "3c840eb33f63554bfc91454e217f610f3fe8cf4dee8d4ce5e3297061067a50de"
+      "path": "PortableRuntime/qualification/forward-integration-evidence-v1/forward-hydrostatic-rk45-native-fftw-f58c01a3e51961885a4fd5bb679b7f00f0d23f9258701647f7f1f43d66ed84f5.json",
+      "sha256": "f58c01a3e51961885a4fd5bb679b7f00f0d23f9258701647f7f1f43d66ed84f5"
     },
     {
-      "path": "PortableRuntime/qualification/forward-integration-evidence-v1/forward-boussinesq-rk45-native-fftw-aea3ff539529001b958bdb67233fadca95d66e93b5eee2b1ad3fd4e8f5bdc2fd.json",
-      "sha256": "aea3ff539529001b958bdb67233fadca95d66e93b5eee2b1ad3fd4e8f5bdc2fd"
+      "path": "PortableRuntime/qualification/forward-integration-evidence-v1/forward-boussinesq-rk45-native-fftw-44b821d57ac0257f7bbe090c228c904992a844d76d314c1b2fca946fceecf580.json",
+      "sha256": "44b821d57ac0257f7bbe090c228c904992a844d76d314c1b2fca946fceecf580"
     }
   ],
   "catalogSHA256": "c9b669fa92d5556526ce9cefac8b9847f52c1ea15c8ab3b00db0f3454adfaef9"

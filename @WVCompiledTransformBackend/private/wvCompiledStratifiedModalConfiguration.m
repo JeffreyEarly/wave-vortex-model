@@ -2,7 +2,26 @@ function configuration = wvCompiledStratifiedModalConfiguration(wvt)
 % Build the immutable MATLAB ABI for a stratified modal source.
 
 arguments
-    wvt (1,1) WVTransformHydrostatic
+    wvt (1,1) WVTransform
+end
+
+if isa(wvt,"WVTransformConstantStratification")
+    configuration = wvCompiledConstantConfiguration(wvt);
+    return
+end
+
+if ~ismember(string(class(wvt)),["WVTransformHydrostatic" "WVTransformBoussinesq" "WVTransformStratifiedQG" "WVTransformBarotropicQG"])
+    error("WaveVortexModel:CompiledTransformUnsupportedFamily","Compiled MATLAB support currently covers Hydrostatic, Boussinesq and Stratified QG transforms.")
+end
+
+if isa(wvt,"WVTransformBarotropicQG")
+    configuration = struct("schemaVersion",'wv-matlab-stratified-modal-source-v1', ...
+        "transformClass",char(class(wvt)),"modelVersion",char(wvt.version), ...
+        "Nx",wvt.Nx,"Ny",wvt.Ny,"Nz",1,"Nj",1,"Nkl",wvt.Nkl, ...
+        "Lx",wvt.Lx,"Ly",wvt.Ly,"Lz",wvt.h,"g",wvt.g,"j",wvt.j, ...
+        "latitude",wvt.latitude,"rotationRate",wvt.rotationRate,"planetaryRadius",wvt.planetaryRadius, ...
+        "shouldAntialias",wvt.shouldAntialias);
+    return
 end
 
 configuration = struct( ...
@@ -18,4 +37,16 @@ configuration = struct( ...
     "N2",wvt.N2,"rho_nm0",wvt.rho_nm0,"dLnN2",wvt.dLnN2,"z_int",wvt.z_int, ...
     "P0",wvt.P0,"Q0",wvt.Q0,"h_0",wvt.h_0, ...
     "PF0inv",wvt.PF0inv,"QG0inv",wvt.QG0inv,"PF0",wvt.PF0,"QG0",wvt.QG0);
+if isa(wvt,"WVTransformBoussinesq")
+    configuration.K2unique = wvt.K2unique;
+    configuration.iK2unique = wvt.iK2unique;
+    configuration.h_pm = wvt.h_pm;
+    configuration.Ppm = wvt.Ppm;
+    configuration.Qpm = wvt.Qpm;
+    configuration.PFpmInv = wvt.PFpmInv;
+    configuration.QGpmInv = wvt.QGpmInv;
+    configuration.PFpm = wvt.PFpm;
+    configuration.QGpm = wvt.QGpm;
+    configuration.QGwg = wvt.QGwg;
+end
 end

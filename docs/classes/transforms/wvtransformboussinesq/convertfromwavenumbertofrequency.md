@@ -3,7 +3,7 @@ layout: default
 title: convertFromWavenumberToFrequency
 parent: WVTransformBoussinesq
 grand_parent: Transforms
-nav_order: 96
+nav_order: 98
 mathjax: true
 ---
 

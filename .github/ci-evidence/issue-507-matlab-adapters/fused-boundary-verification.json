@@ -1,0 +1,34 @@
+{
+  "schemaVersion": "wvm507-fused-boundary-verification-v1",
+  "status": "focused correctness passed; final performance and integration qualification pending",
+  "implementation": "One native coefficient entry shares the existing field/forcing evaluation context; optimized H/B nonlinear kernels optionally publish raw tendencies. Public MATLAB defaults and forcing callbacks remain unchanged.",
+  "review": [
+    "Resolved raw-first prefix/projection reuse",
+    "Verified preallocated physical publication and staged caller output",
+    "Restored public forcing engine interface; private binding-only fused entry",
+    "Validated output alignment/range, aliases and all state shapes against prepared geometry",
+    "Modified public nonlinear density correction selects MATLAB forcing arithmetic; all four wave-family parity checks passed"
+  ],
+  "checks": [
+    {
+      "path": "/private/tmp/wvm503/fused-boundary-native-tests.log",
+      "sha256": "8c222438871f564315239ec6da8fcf87c8f297b2c7cfe296bdd4771824bfb961"
+    },
+    {
+      "path": "/private/tmp/wvm503/fused-boundary-forcing-test-final.log",
+      "sha256": "d0e50ed7473b551af309a3b24097fb0b2f7a7b3323fe7b8b161b6740b7332043"
+    },
+    {
+      "path": "/private/tmp/wvm503/fused-boundary-final-matlab-tests.csv",
+      "sha256": "f8483d57315c9c20005d3f0dcb457b5d0f1293e6f53a4194b62ee10a80579ca7"
+    },
+    {
+      "path": "/private/tmp/wvm503/fused-boundary-guard-matlab-tests.csv",
+      "sha256": "5d6df2e60435ac7f71285514394700d295c5ea11f3ff37fe92be1b4c423a162e"
+    }
+  ],
+  "pending": [
+    "Frozen representative MEX performance comparison",
+    "Combined final integration/compiler and installed-package qualification against final source"
+  ]
+}

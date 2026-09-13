@@ -85,12 +85,35 @@ public:
         if constexpr(QG) return resolved.evaluateForcingTendencies(state.coefficients.A0,outputs,count,prepared,session);
         else return resolved.evaluateForcingTendencies(state,outputs,count,prepared,session);
       };
+      if constexpr(!QG) candidate->evaluateBuiltin_=[](void* pointer,const WVState& state,
+          const WVRealFieldBundleConstView* prepared,WVForcingDiagnosticWorkspace* session,
+          WVFlux& flux) {
+        return static_cast<Engine*>(pointer)->evaluateForcingTendenciesImpl(
+            state,nullptr,0,prepared,session,&flux);
+      };
       candidate->metrics_=[](const void* pointer)->const WVForcingTendencyMetrics& {return static_cast<const Engine*>(pointer)->tendencyMetrics();};
       candidate->instance_=[](const void* pointer,std::size_t index)->Identity {
         const auto* instance=static_cast<const Engine*>(pointer)->forcingInstance(index);
         return {instance->typeIdentifier(),instance->name(),instance->contractVersion(),
             instance->stage(),instance->priority(),instance->ordinal()};
       };
+      // The engine owns an immutable resolved schedule, so this setup-time
+      // identity remains valid for the lifetime of the borrowed binding.
+      if(candidate->evaluateBuiltin_ && candidate->bindings_.size()==1 &&
+          candidate->stages_.size()==1) {
+        const auto defaultNonlinear=defaultNonlinearAdvectionSchedule();
+        if(defaultNonlinear.entries.size()==1) {
+          const auto actual=candidate->instance_(candidate->engine_,0);
+          const auto& expected=defaultNonlinear.entries.front();
+          candidate->exactBuiltinNonlinear_=
+              actual.type==expected.typeIdentifier &&
+              actual.version==expected.contractVersion &&
+              actual.name==expected.name && actual.stage==expected.stage &&
+              candidate->stages_[0]==expected.stage &&
+              actual.priority==expected.priority &&
+              actual.ordinal==expected.ordinal;
+        }
+      }
       if constexpr(std::is_same_v<Engine,
           WVConstantStratificationForcingEngine>) {
         const auto& descriptor=engine.kernel().descriptor();
@@ -155,6 +178,17 @@ public:
   WVKernelStatus evaluate(const WVState& state,const WVForcingTendencyOutput* outputs,std::size_t count,const WVRealFieldBundleConstView* prepared,WVForcingDiagnosticWorkspace* session) const {
     return evaluate_(engine_,state,outputs,count,prepared,session);
   }
+  bool supportsExactBuiltinNonlinear() const noexcept {
+    return exactBuiltinNonlinear_;
+  }
+  WVKernelStatus evaluateBuiltinNonlinear(const WVState& state,
+      const WVRealFieldBundleConstView* prepared,
+      WVForcingDiagnosticWorkspace* session,WVFlux& flux) const {
+    if(!supportsExactBuiltinNonlinear())
+      return {WVKernelStatusCode::unsupportedOperation,
+          "The resolved forcing schedule is not the exact built-in nonlinear advection."};
+    return evaluateBuiltin_(engine_,state,prepared,session,flux);
+  }
   std::unique_ptr<WVForcingDiagnosticWorkspace> createWorkspace() const {
     auto workspace=std::make_unique<WVForcingDiagnosticWorkspace>(
         spectral_,spatial_,coefficientFamilies_,coefficientFamilies_==1 ? 2 : 4);
@@ -195,6 +229,8 @@ public:
 private:
   void* engine_=nullptr;
   WVKernelStatus (*evaluate_)(void*,const WVState&,const WVForcingTendencyOutput*,std::size_t,const WVRealFieldBundleConstView*,WVForcingDiagnosticWorkspace*)=nullptr;
+  WVKernelStatus (*evaluateBuiltin_)(void*,const WVState&,
+      const WVRealFieldBundleConstView*,WVForcingDiagnosticWorkspace*,WVFlux&)=nullptr;
   const WVForcingTendencyMetrics& (*metrics_)(const void*)=nullptr;
   Identity (*instance_)(const void*,std::size_t)=nullptr;
   std::vector<WVPortableForcingVariableBinding> bindings_;
@@ -209,5 +245,6 @@ private:
   std::array<std::size_t,2> constantLaplacianUseCount_{};
   bool requiresFourChannelTendencySelection_=false;
   bool horizontalMaximumNeeded_=false;
+  bool exactBuiltinNonlinear_=false;
 };
 }

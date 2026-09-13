@@ -3,7 +3,7 @@ layout: default
 title: shouldExcludeConjugates
 parent: WVTransformBoussinesq
 grand_parent: Transforms
-nav_order: 246
+nav_order: 248
 mathjax: true
 ---
 

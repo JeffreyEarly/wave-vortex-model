@@ -4,6 +4,7 @@
 #include "WaveVortexRuntime/WVRunner.hpp"
 
 #include <algorithm>
+#include <cerrno>
 #include <cstdlib>
 #include <chrono>
 #include <csignal>
@@ -20,6 +21,7 @@
 #include <vector>
 
 #if defined(__APPLE__) || defined(__linux__)
+#include <sys/wait.h>
 #include <unistd.h>
 #endif
 
@@ -481,15 +483,27 @@ int main() {
           processInput >> process;
           require(process > 0 && ::kill(process, SIGINT) == 0,
                   "unable to request graceful CLI stop");
+          int repeatedSignalResult = 0;
+          int repeatedSignalError = 0;
           if (scenario == 2) {
             std::this_thread::sleep_for(std::chrono::milliseconds(5));
-            require(::kill(process, SIGINT) == 0,
-                    "unable to force repeated interrupt");
+            repeatedSignalResult = ::kill(process, SIGINT);
+            repeatedSignalError = errno;
+            require(repeatedSignalResult == 0 || repeatedSignalError == ESRCH,
+                    "unable to issue repeated interrupt");
           }
           stopWorker.join();
-          if (scenario == 2) {
-            require(stopStatus != 0,
-                    "repeated SIGINT must permit ordinary process termination");
+          if (scenario == 2 && stopStatus != 0) {
+            // A successful kill can target a zombie whose graceful exit status
+            // is already fixed, so only an actual SIGINT status proves the
+            // repeated signal won the race.
+            const bool directSignal = WIFSIGNALED(stopStatus) &&
+                WTERMSIG(stopStatus) == SIGINT;
+            const bool shellSignal = WIFEXITED(stopStatus) &&
+                WEXITSTATUS(stopStatus) == 128 + SIGINT;
+            require(repeatedSignalResult == 0 &&
+                        (directSignal || shellSignal),
+                    "repeated SIGINT produced an unrelated process failure");
             continue;
           }
           require(stopStatus == 0, "graceful SIGINT must return success");

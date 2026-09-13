@@ -27,6 +27,16 @@ classdef WVNoMotionProfileOperation < WVOperation
 
         function varargout = compute(self,wvt,varargin)
             self.lastSolverOutput = struct();
+            if wvt.isCompiledBuiltinOperation(self) && self.solver == "dampedLeastSquares"
+                try
+                    varargout = wvt.compiledVariables({'rho_nm'});
+                catch exception
+                    self.lastSolverOutput = wvt.compiledDensityRecoveryReport();
+                    rethrow(exception)
+                end
+                self.lastSolverOutput = wvt.compiledDensityRecoveryReport();
+                return
+            end
             [rho_nm,exitflag,output] = WVNoMotionProfileOperation.find_rho_nm(wvt.z_int, wvt.Lz, wvt.rho_total, wvt.rho_nm0,solver=self.solver);
             output.exitflag = exitflag;
             output.solver = self.solver;

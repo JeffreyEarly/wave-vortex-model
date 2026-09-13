@@ -1,0 +1,3 @@
+Name,Passed,Failed,Incomplete,Duration,Details
+TestProductionCodeAnalyzer/productionInventoryIsDeterministic,1,0,0,1.02660595833333,
+TestProductionCodeAnalyzer/reportContainsReleaseLocationsAndDiagnostics,1,0,0,0.656538833333333,

@@ -3,7 +3,7 @@ layout: default
 title: shouldExcludeNyquist
 parent: WVTransformHydrostatic
 grand_parent: Transforms
-nav_order: 230
+nav_order: 232
 mathjax: true
 ---
 

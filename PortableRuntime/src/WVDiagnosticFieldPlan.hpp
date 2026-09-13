@@ -15,17 +15,23 @@ public:
   static std::string configurationIdentifier(const WVFieldEvaluationService&);
   static bool required(const std::vector<WVFieldRequest>&, bool stratified = false) noexcept;
   static WVKernelStatus create(const WVFieldEvaluationService&,
-      const std::vector<WVFieldRequest>&, WVFieldEvaluationPlan&, WVDensityDiagnosticContract = {});
+      const std::vector<WVFieldRequest>&, WVFieldEvaluationPlan&, WVDensityDiagnosticContract = {},
+      bool prepareScientificDependencies = true);
   // Private implementation qualification seam. Public field-plan construction
   // continues to enforce the catalog's unavailable density-output contracts.
   static WVKernelStatus createDensityQualification(const WVFieldEvaluationService&,
       const std::vector<WVFieldRequest>&, WVDensityDiagnosticContract,
       WVFieldEvaluationPlan&);
+  static WVKernelStatus createDensityQualificationForActiveEvaluation(
+      const WVFieldEvaluationService&,const std::vector<WVFieldRequest>&,
+      WVDensityDiagnosticContract,WVFieldEvaluationPlan&);
   WVKernelStatus rebind(const WVFieldEvaluationService&, WVFieldEvaluationPlan&) const;
   WVKernelStatus evaluate(WVFieldEvaluationService&, const WVIntegrationState&,
       WVFieldOutputView*, std::size_t, const std::uint8_t* activeOutputs = nullptr) const;
   std::size_t persistentBytes() const noexcept;
   WVKernelStatus prepareEventArena(const WVFieldEvaluationService&) const;
+  WVKernelStatus prepareEventArenaForActiveEvaluation(
+      const WVFieldEvaluationService&) const;
   bool hasForcingDiagnostics() const noexcept {return !forcingIndices_.empty();}
   bool hasDensityDiagnostics() const noexcept {return hasDensity_;}
 
@@ -47,9 +53,12 @@ private:
     std::vector<WVFieldRequest> requests;
   };
   WVKernelStatus configure(const WVFieldEvaluationService&);
+  WVKernelStatus prepareEventArenaImpl(
+      const WVFieldEvaluationService&,bool active) const;
   static WVKernelStatus createImpl(const WVFieldEvaluationService&,
       const std::vector<WVFieldRequest>&, WVFieldEvaluationPlan&,
-      bool densityQualification, WVDensityDiagnosticContract);
+      bool densityQualification, WVDensityDiagnosticContract,
+      bool prepareScientificDependencies);
   double omega(std::size_t) const noexcept;
   bool keep(std::size_t group, std::size_t family, std::size_t coefficient) const noexcept;
   double weight(std::size_t z) const noexcept;

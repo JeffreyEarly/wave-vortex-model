@@ -1,6 +1,7 @@
 #pragma once
 
 #include "WaveVortexRuntime/WVDensityDiagnosticContract.hpp"
+#include "WaveVortexRuntime/WVNoMotionProfileRecovery.hpp"
 
 #include "WaveVortexKernel/WVTransformConstantStratificationKernel.hpp"
 #include "WaveVortexKernel/WVTransformBarotropicQGKernel.hpp"
@@ -477,6 +478,15 @@ public:
   bool evaluationSessionActive() const noexcept { return eventWorkspace_ != nullptr; }
   WVKernelStatus beginEvaluationSession(const WVIntegrationState &state,
                                         WVFieldEvaluationSession &session);
+  // Prepare the event-owned physical, raw-tendency, and projected-coefficient
+  // cache nodes used by the exact built-in nonlinear-advection fast path.
+  // This is a setup operation and performs no scientific computation.
+  WVKernelStatus prepareBuiltinNonlinearCoefficientEvaluation();
+  // Evaluate the exact resolved built-in nonlinear spatial forcing in the
+  // active immutable-state event, publishing its physical fields, raw
+  // tendency, and projected coefficients through the ordinary event caches.
+  WVKernelStatus evaluateBuiltinNonlinearCoefficients(
+      const WVIntegrationState &state, WVFlux &flux);
 
   static std::vector<std::string> supportedFieldNames();
   const std::vector<WVPortableForcingVariableBinding>& forcingVariableBindings() const noexcept;
@@ -484,6 +494,13 @@ public:
   WVKernelStatus createPlan(const std::vector<WVFieldRequest> &requests,
                             WVFieldEvaluationPlan &plan,
                             WVDensityDiagnosticContract densityContract = {}) const;
+  // Extend the prepared workload of the active immutable-state event. This is
+  // intentionally distinct from createPlan: it is valid only between producer
+  // calls in an explicit reuse-policy evaluation session.
+  WVKernelStatus createPlanForActiveEvaluation(
+      const std::vector<WVFieldRequest> &requests,
+      WVFieldEvaluationPlan &plan,
+      WVDensityDiagnosticContract densityContract = {}) const;
   // A null selection evaluates every output. Otherwise one byte per output
   // selects its dependencies and writes; inactive output views are untouched.
   WVKernelStatus evaluate(const WVFieldEvaluationPlan &plan,
@@ -560,6 +577,9 @@ public:
   bool isCompatibleWith(
       const WVFieldEvaluationService &other) const noexcept;
   const WVFieldEvaluationMetrics &metrics() const noexcept;
+  WVVariableEvaluationMetrics activeVariableEvaluationMetrics() const noexcept;
+  bool activeDensityRecoveryReport(
+      WVNoMotionRecoveryReport& report) const noexcept;
   WVVariableProducerMetrics producerMetrics() const noexcept;
   std::size_t persistentBytes() const noexcept;
 
@@ -596,6 +616,15 @@ private:
   WVKernelStatus prepareDensityEventArena(std::size_t sampleCount,
       std::size_t profileCount,std::uint8_t demands,
       WVNoMotionReference reference,bool apvNeeded) const;
+  WVKernelStatus prepareEventArenaForActiveEvaluation(
+      const WVFieldEvaluationPlan&,std::uint32_t componentIdentity=0) const;
+  WVKernelStatus prepareEventArenaImpl(const WVFieldEvaluationPlan&,
+      std::uint32_t componentIdentity,bool activePreparation) const;
+  WVKernelStatus prepareEventFieldForActiveEvaluation(
+      const WVVariableEvaluationKey&,std::size_t elements,bool complex) const;
+  WVKernelStatus prepareDensityEventArenaForActiveEvaluation(
+      std::size_t sampleCount,std::size_t profileCount,std::uint8_t demands,
+      WVNoMotionReference reference,bool apvNeeded) const;
   WVKernelStatus createPlanImpl(const std::vector<WVFieldRequest>& requests,
       WVFieldEvaluationPlan& plan,WVDensityDiagnosticContract densityContract,
       bool prepareScientificDependencies) const;
@@ -629,6 +658,10 @@ private:
       barotropicQG_;
   std::unique_ptr<detail::WVStratifiedFieldEvaluationAdapter> stratified_;
   std::unique_ptr<detail::WVForcingDiagnosticBinding> forcing_;
+  WVFieldEvaluationPlan builtinNonlinearFieldsPlan_;
+  std::vector<double> builtinNonlinearPhysical_;
+  std::vector<WVComplex64> builtinNonlinearCoefficients_;
+  bool builtinNonlinearPrepared_ = false;
   std::unique_ptr<MovingWorkspace> movingWorkspace_;
   mutable std::unique_ptr<SampledMovingWorkspace> sampledMovingWorkspace_;
   std::vector<double> realScratch_;

@@ -3,7 +3,7 @@ layout: default
 title: planetaryRadius
 parent: WVTransformBarotropicQG
 grand_parent: Transforms
-nav_order: 115
+nav_order: 117
 mathjax: true
 ---
 

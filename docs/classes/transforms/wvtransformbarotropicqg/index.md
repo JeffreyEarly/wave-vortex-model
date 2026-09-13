@@ -95,6 +95,8 @@ The quasigeostrophic state is stored in
       + [`h_0`](/classes/transforms/wvtransformbarotropicqg/h_0.html) Geostrophic equivalent-depth scale for each vertical mode.
       + [`Lr2`](/classes/transforms/wvtransformbarotropicqg/lr2.html) Squared Rossby deformation radius in square meters.
   + Transform configuration
+    + [`computationalBackend`](/classes/transforms/wvtransformbarotropicqg/computationalbackend.html) Runtime numerical backend. MATLAB remains the default.
+    + [`computationalBackendMetadata`](/classes/transforms/wvtransformbarotropicqg/computationalbackendmetadata.html) Provider identity, storage and execution metrics for this transform.
     + [`isHydrostatic`](/classes/transforms/wvtransformbarotropicqg/ishydrostatic.html) Whether the transform uses the hydrostatic approximation.
     + [`shouldAntialias`](/classes/transforms/wvtransformbarotropicqg/shouldantialias.html) Whether the spectral grid excludes modes that alias quadratic products.
 + Initialize the flow

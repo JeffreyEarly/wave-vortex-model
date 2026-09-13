@@ -1,6 +1,7 @@
 #pragma once
 
 #include "WVFFTEngine.hpp"
+#include "WVStratifiedModalSource.hpp"
 #include "WVVariableExecutionOptions.hpp"
 
 #include <array>
@@ -122,9 +123,34 @@ public:
     // Prepare the optional two-channel inverse during model setup. The
     // transform itself never allocates plans in an evaluation scope.
     WVKernelStatus prepareHorizontalVelocityTransform();
+    // Prepare raw MATLAB vertical/Fourier/calculus plans explicitly. Kernel
+    // construction and existing constant-model storage remain unchanged until
+    // this setup operation is requested.
+    WVKernelStatus prepareMatlabPrimitives();
+
+    WVKernelStatus applyVertical(WVStratifiedModalOperator, WVComplexConstView,
+        WVComplexView);
+    WVKernelStatus applyVerticalColumn(WVStratifiedModalOperator,
+        std::size_t retainedColumn, WVComplexConstView inputColumn,
+        WVComplexView outputColumn);
+    WVKernelStatus applyVerticalCalculus(WVRealConstView input,
+        bool inputIsF, unsigned order, bool integral, WVRealView output);
+    WVKernelStatus horizontalForward(WVRealVolumeConstView, WVComplexView);
+    WVKernelStatus horizontalInverse(WVComplexConstView, WVRealVolumeView);
+    WVKernelStatus differentiateHorizontal(WVRealVolumeConstView,
+        bool xDerivative, WVRealVolumeView);
+    WVKernelStatus differentiateHorizontal(WVRealVolumeConstView,
+        bool xDerivative, unsigned order, WVRealVolumeView);
 
     WVKernelStatus transformUVEtaToWaveVortex(const WVRealFieldBundleConstView& fields, double t, double t0, WVMutableCoefficients& coefficients);
     WVKernelStatus transformUVWEtaToWaveVortex(const WVRealFieldBundleConstView& fields, double t, double t0, WVMutableCoefficients& coefficients);
+    WVKernelStatus transformUVEtaToWaveVortex(WVRealVolumeConstView u,
+        WVRealVolumeConstView v, WVRealVolumeConstView eta, double t, double t0,
+        WVMutableCoefficients& coefficients);
+    WVKernelStatus transformUVWEtaToWaveVortex(WVRealVolumeConstView u,
+        WVRealVolumeConstView v, WVRealVolumeConstView w,
+        WVRealVolumeConstView eta, double t, double t0,
+        WVMutableCoefficients& coefficients);
     WVKernelStatus transformWaveVortexToUVWEta(const WVState& state, WVRealFieldBundleView& fields);
     // Reconstruct a validated derived coefficient tendency without admitting it
     // as a primary state view in an active immutable evaluation.
@@ -169,6 +195,8 @@ private:
     WVKernelStatus validateStateForCall(const WVState&);
     WVKernelStatus validateStateAndFluxForCall(const WVState&,const WVFlux&);
     WVKernelStatus validateMutableOutputOutsidePreparedState(const WVMutableCoefficients&) const;
+    WVKernelStatus validateMutableOutputOutsidePreparedState(const void*,
+        std::size_t) const;
     bool matchesStateEvaluation(const WVState&) const noexcept;
     std::size_t stateEvaluationComponent(const WVState&) const noexcept;
     WVKernelStatus prepareStatePhase(const WVState&);
@@ -198,6 +226,8 @@ private:
     std::string engineLibraryIdentity_;
     std::vector<std::unique_ptr<WVFFTPlan>> plans_;
     std::unique_ptr<WVFFTPlan> scalarInversePlan_;
+    // Retained-row DCT/DST and one-column DCT/DST plans.
+    std::array<std::unique_ptr<WVFFTPlan>,4> matlabPlans_;
     std::unique_ptr<kernel_detail::WVCompactConstantSchedule> compact_;
     std::vector<std::uint8_t> scalarAntialiasRows_;
     std::vector<double> halfSpectrumScratch_;
@@ -210,6 +240,7 @@ private:
     const void* preparedStateOwner_ = nullptr;
     bool stateEvaluationActive_ = false;
     bool preparedPhaseReady_ = false;
+    bool matlabPrimitivesPrepared_ = false;
     mutable WVKernelMetrics metrics_;
     std::unique_ptr<kernel_detail::WVPreparedModeExecutor> coefficientExecutor_;
     bool executing_ = false;

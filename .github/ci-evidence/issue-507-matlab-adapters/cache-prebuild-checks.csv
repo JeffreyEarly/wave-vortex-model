@@ -1,0 +1,9 @@
+Name,Passed,Failed,Incomplete,Duration,Details
+TestWVCompiledBackend/compilerDownloadChecksumAndBuildFailuresAreStructured,1,0,0,1.19174179166667,
+TestWVCompiledBackend/loadedModuleReplacementIsRefused,1,0,0,0.0733857083333333,
+TestWVCompiledBackend/capabilitiesAreNonthrowingAndDoNotBuild,1,0,0,0.06829425,
+TestWVCompiledBackend/defaultCacheIsExternalAndPackageSpecific,1,0,0,0.112988541666667,
+TestWVCompiledBackend/activationRejectsIncompleteOrMissingModuleIdentity,1,0,0,0.044000625,
+TestWVCompiledBackend/unsupportedSystemsProduceStructuredUnavailability,1,0,0,0.08593125,
+TestWVCompiledBackend/portableLinuxPathHasNoDownloadBuildOrOutput,1,0,0,0.067048375,
+TestWVCompiledBackend/capabilityAndUnsupportedBuildRestoreState,1,0,0,0.1172805,

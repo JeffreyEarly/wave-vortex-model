@@ -3,7 +3,7 @@ layout: default
 title: waveVortexTransformFromFile
 parent: WVTransformBarotropicQG
 grand_parent: Transforms
-nav_order: 179
+nav_order: 181
 mathjax: true
 ---
 
@@ -22,6 +22,7 @@ Restore a WVTransformBarotropicQG instance from an existing file
 + `path`  path to a NetCDF file
 + `iTime`  (optional) time index to initialize from (default 1)
 + `shouldReadOnly`  (optional) open the returned NetCDFFile read-only (default true)
++ `computationalBackend`  runtime backend, `"matlab"` (default) or `"compiled"`
 
 ## Discussion
 

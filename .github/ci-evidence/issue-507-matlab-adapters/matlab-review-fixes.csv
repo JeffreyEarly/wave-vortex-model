@@ -1,0 +1,12 @@
+Name,Passed,Failed,Incomplete,Duration,Details
+TestWVCompiledConfiguration/compiledConfigurationRejectsPublicMutation,1,0,0,3.673204,
+TestWVCompiledConfiguration/rejectedMutationPreservesActiveEvaluation,1,0,0,1.634487625,
+TestWVCompiledConfiguration/matlabConfigurationRemainsWritable,1,0,0,1.15196408333333,
+TestWVCompiledConsumers/nonlinearAdaptiveFluxMatchesAcrossAllFamilies,1,0,0,6.32450833333333,
+TestWVCompiledConsumers/sampledObserversShareCompiledStateScope,1,0,0,3.475184625,
+TestWVCompiledConsumers/coefficientSubclassesPreserveCallbacks,1,0,0,2.27316120833333,
+TestWVCompiledConsumers/registryMutationInvalidatesOuterScope,1,0,0,0.578165458333333,
+TestWVCompiledPublicAdapters/verticalCalculusPreservesMatlabLayouts,1,0,0,4.4648535,
+TestWVCompiledPublicAdapters/densityReferencesShareOneImmutableState,1,0,0,4.26229304166667,
+TestWVCompiledPublicAdapters/allPublicFamiliesMatchMatlab,1,0,0,6.13498045833333,
+TestWVCompiledAdapterRestore/allFamiliesRestoreWithFreshRuntimeOwnership,1,0,0,18.2720549583333,

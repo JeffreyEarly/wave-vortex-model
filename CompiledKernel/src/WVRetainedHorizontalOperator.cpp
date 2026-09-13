@@ -1,4 +1,5 @@
 #include "WVSpectralValidation.hpp"
+#include "WVHorizontalDerivativeMultiplier.hpp"
 #include <new>
 
 namespace wavevortex {
@@ -305,11 +306,25 @@ WVKernelStatus WVRetainedHorizontalOperator::advection(
         return {WVKernelStatusCode::invalidPointer,"Invalid advection density-correction storage."};
     if (overlap(work.fields.data,fieldBytes,work.densityCorrection.data,correctionBytes))
         return {WVKernelStatusCode::overlappingArrays,"Advection fields overlap density correction."};
+    const auto tendencyBytes=work.targets*volumeBytes;
+    if ((work.tendencies.data==nullptr)!=(work.tendencies.bytes==0))
+        return {WVKernelStatusCode::invalidPointer,"Incomplete advection tendency storage."};
+    if (work.tendencies.data) {
+        if (work.tendencies.bytes<tendencyBytes)
+            return {WVKernelStatusCode::invalidShape,"Advection tendency capacity is too small."};
+        if (!addressFits(work.tendencies.data,tendencyBytes,alignof(double)))
+            return {WVKernelStatusCode::invalidPointer,"Invalid advection tendency storage."};
+        if (overlap(work.tendencies.data,tendencyBytes,work.fields.data,fieldBytes) ||
+            overlap(work.tendencies.data,tendencyBytes,work.densityCorrection.data,correctionBytes))
+            return {WVKernelStatusCode::overlappingArrays,"Advection tendencies overlap real input storage."};
+    }
     for (std::size_t field=0;field<4;++field) {
         auto status=validateStorage(d.spec.retained.representation,d.complexSpan,work.base[field]);
         if (!status) return status;
         if (realOverlap(work.fields.data,fieldBytes,work.base[field],d.complexSpan) ||
-            realOverlap(work.densityCorrection.data,correctionBytes,work.base[field],d.complexSpan))
+            realOverlap(work.densityCorrection.data,correctionBytes,work.base[field],d.complexSpan) ||
+            (work.tendencies.data && realOverlap(work.tendencies.data,tendencyBytes,
+                work.base[field],d.complexSpan)))
             return {WVKernelStatusCode::overlappingArrays,"Advection base spectra overlap real storage."};
     }
     for (std::size_t target=0;target<work.targets;++target) {
@@ -317,7 +332,9 @@ WVKernelStatus WVRetainedHorizontalOperator::advection(
         auto status=validateStorage(d.spec.retained.representation,d.complexSpan,output);
         if (!status) return status;
         if (realOverlap(work.fields.data,fieldBytes,output,d.complexSpan) ||
-            realOverlap(work.densityCorrection.data,correctionBytes,output,d.complexSpan))
+            realOverlap(work.densityCorrection.data,correctionBytes,output,d.complexSpan) ||
+            (work.tendencies.data && realOverlap(work.tendencies.data,tendencyBytes,
+                output,d.complexSpan)))
             return {WVKernelStatusCode::overlappingArrays,"Advection target spectra overlap real storage."};
         for (std::size_t field=0;field<4;++field)
             if (storageOverlap(output,d.complexSpan,work.base[field],d.complexSpan))
@@ -348,7 +365,12 @@ WVKernelStatus WVRetainedHorizontalOperator::advection(
     return w.retained->advection(work,counts);
 }
 WVKernelStatus WVRetainedHorizontalOperator::spatialDerivative(WVRetainedHorizontalWorkspace& workspace, WVRealInput input, WVRealOutput output, bool xDerivative) const {
+    return spatialDerivative(workspace,input,output,xDerivative,1);
+}
+WVKernelStatus WVRetainedHorizontalOperator::spatialDerivative(WVRetainedHorizontalWorkspace& workspace,
+    WVRealInput input,WVRealOutput output,bool xDerivative,unsigned order) const {
     auto& w = *workspace.data_; const auto& d = *data_;
+    if (!order) return {WVKernelStatusCode::invalidConfiguration,"Horizontal derivative order must be positive."};
     if (!w.derivativePrepared) return {WVKernelStatusCode::unsupportedOperation,"Workspace omitted full-grid derivative preparation."};
     if (w.owner != data_) return {WVKernelStatusCode::invalidConfiguration,"Workspace belongs to another horizontal operator."};
     if (input.bytes < d.realSpan || output.bytes < d.realSpan) return {WVKernelStatusCode::invalidShape,"Derivative grid capacity is too small."};
@@ -357,21 +379,16 @@ WVKernelStatus WVRetainedHorizontalOperator::spatialDerivative(WVRetainedHorizon
     if (overlap(input.data,d.realSpan,output.data,d.realSpan)) return {WVKernelStatusCode::overlappingArrays,"Derivative input and output overlap."};
     ActiveCall guard(w.active); if (!guard.entered) return {WVKernelStatusCode::reentrantExecution,"Horizontal workspace is active."};
     const auto& g = d.spec.grid;
-    const auto half = g.Nx/2+1;
     const auto differentiate = [&](WVComplex64* values) {
-        for (std::size_t y = 0; y < g.Ny; ++y) for (std::size_t x = 0; x < half; ++x) {
-            const auto i = xDerivative ? x : y, n = xDerivative ? g.Nx : g.Ny;
-            const auto mode = i <= n/2 ? static_cast<std::int64_t>(i) : static_cast<std::int64_t>(i)-static_cast<std::int64_t>(n);
-            const double k = n%2 == 0 && i == n/2 ? 0.0 : 2*std::acos(-1.0)*mode/(xDerivative ? d.spec.Lx : d.spec.Ly)/d.planeSize;
-            auto& value = values[y*half+x]; value = {-k*value.imag,k*value.real};
-        }
+        return kernel_detail::applyHorizontalDerivativeMultiplier(values,g.Nx,g.Ny,1,
+            0,1,d.spec.Lx,d.spec.Ly,xDerivative,order);
     };
     if (!w.batchedFullFFT) {
         for (std::size_t p = 0; p < g.planes; ++p) {
             for (std::size_t y = 0; y < g.Ny; ++y) for (std::size_t x = 0; x < g.Nx; ++x)
                 w.real[y*g.Nx+x] = input.data[p*g.planeStride+y*g.yStride+x*g.xStride];
             auto status = w.forward->execute(w.real.data(),w.half.data()); if (!status) return status;
-            differentiate(w.half.data());
+            status=differentiate(w.half.data()); if (!status) return status;
             status = w.inverse->execute(w.half.data(),w.real.data()); if (!status) return status;
             for (std::size_t y = 0; y < g.Ny; ++y) for (std::size_t x = 0; x < g.Nx; ++x)
                 output.data[p*g.planeStride+y*g.yStride+x*g.xStride] = w.real[y*g.Nx+x];
@@ -381,7 +398,9 @@ WVKernelStatus WVRetainedHorizontalOperator::spatialDerivative(WVRetainedHorizon
     for (std::size_t p = 0; p < g.planes; ++p) for (std::size_t y = 0; y < g.Ny; ++y) for (std::size_t x = 0; x < g.Nx; ++x)
         w.real[p*d.planeSize+y*g.Nx+x] = input.data[p*g.planeStride+y*g.yStride+x*g.xStride];
     auto status = w.forward->execute(w.real.data(),w.half.data()); if (!status) return status;
-    for (std::size_t p = 0; p < g.planes; ++p) differentiate(w.half.data()+p*d.halfSize);
+    for (std::size_t p = 0; p < g.planes; ++p) {
+        status=differentiate(w.half.data()+p*d.halfSize); if (!status) return status;
+    }
     status = w.inverse->execute(w.half.data(),w.real.data()); if (!status) return status;
     for (std::size_t p = 0; p < g.planes; ++p) for (std::size_t y = 0; y < g.Ny; ++y) for (std::size_t x = 0; x < g.Nx; ++x)
         output.data[p*g.planeStride+y*g.yStride+x*g.xStride] = w.real[p*d.planeSize+y*g.Nx+x];

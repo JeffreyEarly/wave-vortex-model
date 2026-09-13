@@ -31,7 +31,7 @@ function [wvt,ncfile] = waveVortexTransformFromFile(path,options)
 % - Parameter path: path to a NetCDF file
 % - Parameter iTime: (optional) time index to initialize from (default 1).
 % - Parameter shouldReadOnly: (optional) open the returned NetCDFFile read-only (default true).
-% - Parameter computationalBackend: runtime backend override for constant-stratification transforms; default `"matlab"`
+% - Parameter computationalBackend: runtime backend override for built-in transforms; default `"matlab"`
 % - Returns wvt: an instance of a WVTransform subclass
 % - Returns ncfile: a caller-owned NetCDFFile instance pointing to the file
 arguments (Input)
@@ -45,12 +45,13 @@ arguments (Output)
     ncfile NetCDFFile
 end
 wvtClassName = transformClassNameFromFile(path);
-if options.computationalBackend == "compiled"
-    if string(wvtClassName) ~= "WVTransformConstantStratification"
-        error("WaveVortexModel:CompiledBackendUnsupportedTransform","The compiled preview can restore only WVTransformConstantStratification files.")
-    end
+runtimeClasses = ["WVTransformHydrostatic" "WVTransformBoussinesq" "WVTransformStratifiedQG" "WVTransformBarotropicQG" "WVTransformConstantStratification"];
+if ismember(string(wvtClassName),runtimeClasses)
     [wvt,ncfile] = feval(strcat(wvtClassName,'.waveVortexTransformFromFile'),path,'iTime',options.iTime,'shouldReadOnly',options.shouldReadOnly,'computationalBackend',options.computationalBackend);
 else
+    if options.computationalBackend == "compiled"
+        error("WaveVortexModel:CompiledBackendUnsupportedTransform","The compiled backend is unavailable for transform class %s.",wvtClassName)
+    end
     [wvt,ncfile] = feval(strcat(wvtClassName,'.waveVortexTransformFromFile'),path,'iTime',options.iTime,'shouldReadOnly',options.shouldReadOnly);
 end
 

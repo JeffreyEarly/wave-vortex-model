@@ -3,7 +3,7 @@ layout: default
 title: totalEnstrophySpatiallyIntegrated
 parent: WVTransformStratifiedQG
 grand_parent: Transforms
-nav_order: 203
+nav_order: 205
 mathjax: true
 ---
 

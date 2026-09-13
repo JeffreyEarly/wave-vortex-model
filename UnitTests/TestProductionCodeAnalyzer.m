@@ -23,13 +23,15 @@ classdef TestProductionCodeAnalyzer < matlab.unittest.TestCase
     methods (Test,TestTags="full")
         function productionInventoryIsDeterministic(testCase)
             files = testCase.productionReport.Files;
-            testCase.verifyNumElements(files,181);
+            testCase.verifyNumElements(files,187);
             testCase.verifyEqual(files,sort(unique(files)));
             testCase.verifyTrue(all(isfile(fullfile(testCase.repositoryRoot,files))));
 
             expectedFiles = [
                 "WVOperation.m"
                 "@WVCompiledBackend/WVCompiledBackend.m"
+                "@WVCompiledBackend/activateModule.m"
+                "@WVCompiledBackend/private/wvCompiledBackendResolveModule.m"
                 "@WVCompiledTransformBackend/WVCompiledTransformBackend.m"
                 "@WVCompiledTransformBackend/private/wvCompiledStratifiedModalConfiguration.m"
                 "@WVCompiledSourceIdentity/WVCompiledSourceIdentity.m"
@@ -80,13 +82,24 @@ classdef TestProductionCodeAnalyzer < matlab.unittest.TestCase
             testCase.verifyTrue(any(findings.CheckID == "INUSD" & findings.Classification == "style"));
             testCase.verifyTrue(any(findings.CheckID == "CTOINW" & findings.Classification == "accepted-false-positive"));
             testCase.verifyTrue(any(findings.CheckID == "MCNPR" & findings.Classification == "accepted-false-positive"));
-            testCase.verifyFalse(any(findings.CheckID == "NASGU"));
+            scopedCleanupFindings = findings(findings.CheckID == "NASGU",:);
+            if ~isempty(scopedCleanupFindings)
+                testCase.verifyTrue(all(scopedCleanupFindings.Classification == "accepted-false-positive"));
+            end
+            rotatingPlaneFindings = findings(findings.CheckID == "MCNPN",:);
+            if ~isempty(rotatingPlaneFindings)
+                testCase.verifyTrue(all(rotatingPlaneFindings.Classification == "accepted-false-positive"));
+            end
+            releaseVersionFindings = findings(findings.CheckID == "CPROP",:);
+            if ~isempty(releaseVersionFindings)
+                testCase.verifyTrue(all(releaseVersionFindings.Classification == "accepted-false-positive"));
+            end
         end
 
         function reportContainsReleaseLocationsAndDiagnostics(testCase)
             output = evalc("analyzeProductionCode(testCase.repositoryRoot,ShouldFail=false);");
             testCase.verifySubstring(output,"MATLAB Code Analyzer: release=R");
-            testCase.verifySubstring(output,"files=181");
+            testCase.verifySubstring(output,"files=187");
             testCase.verifySubstring(output,"[AGROW, performance]");
             testCase.verifySubstring(output,"Variable appears to change size");
             testCase.verifyFalse(contains(output,testCase.repositoryRoot));
@@ -108,6 +121,16 @@ classdef TestProductionCodeAnalyzer < matlab.unittest.TestCase
             testCase.verifyTrue(report.BlockingFindings.Suppressed);
             testCase.verifyError(@()analyzeProductionCode(testCase.temporaryFolder,Files=fixturePath,ShouldPrint=false),"WaveVortexModel:CodeAnalyzerFailed");
         end
+
+        function ordinaryUnusedAssignmentsRemainBlocking(testCase)
+            for shouldSuppress = [false true]
+                fixturePath = testCase.writeUnusedFixture("unusedValue"+string(shouldSuppress)+".m",shouldSuppress);
+                report = analyzeProductionCode(testCase.temporaryFolder,Files=fixturePath,ShouldPrint=false,ShouldFail=false);
+                testCase.verifyEqual(report.BlockingFindings.CheckID,"NASGU");
+                testCase.verifyEqual(report.BlockingFindings.Classification,"blocking-unclassified");
+                testCase.verifyEqual(report.BlockingFindings.Suppressed,shouldSuppress);
+            end
+        end
     end
 
     methods (Access=private)
@@ -122,6 +145,20 @@ classdef TestProductionCodeAnalyzer < matlab.unittest.TestCase
                 "y = x;"
                 "return"
                 unreachableStatement
+                "end"
+                ],fixturePath);
+        end
+
+        function fixturePath = writeUnusedFixture(testCase,name,shouldSuppress)
+            unusedAssignment = "unusedValue = x + 1;";
+            if shouldSuppress
+                unusedAssignment = unusedAssignment + " %#ok<NASGU>";
+            end
+            fixturePath = fullfile(testCase.temporaryFolder,name);
+            writelines([
+                "function y = " + erase(name,".m") + "(x)"
+                unusedAssignment
+                "y = x;"
                 "end"
                 ],fixturePath);
         end

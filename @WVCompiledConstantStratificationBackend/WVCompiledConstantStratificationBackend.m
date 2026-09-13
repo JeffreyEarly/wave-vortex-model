@@ -113,7 +113,7 @@ classdef (Sealed) WVCompiledConstantStratificationBackend < handle
     methods (Access=private)
         function self = WVCompiledConstantStratificationBackend(wvt,capabilities)
             self.capabilities = capabilities;
-            self.moduleName = string(capabilities.module.name);
+            self.moduleName = WVCompiledBackend.activateModule(capabilities);
             self.configuration = WVCompiledConstantStratificationBackend.configurationForTransform(wvt);
             self.storageEstimate = feval(char(self.moduleName),'estimate',self.configuration);
             handle = [];

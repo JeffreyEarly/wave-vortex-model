@@ -53,6 +53,8 @@ public:
     const std::string& engineIdentifier() const noexcept { return engineIdentifier_; }
     WVShape2D spectralShape() const noexcept { return {geometry().Nj,geometry().Nkl}; }
     WVShape3D spatialShape() const noexcept { return {geometry().Nx,geometry().Ny,geometry().Nz}; }
+    // Prepare the additional spectral slot used only by MATLAB vertical calculus.
+    WVKernelStatus prepareMatlabPrimitives();
 
     // The borrowed A0 array remains immutable until endStateEvaluation().
     WVKernelStatus beginStateEvaluation(WVComplexConstView);
@@ -68,6 +70,15 @@ public:
     // Projection preserves the horizontal mean just as MATLAB's raw transform
     // does. Reconstructed QG fields mask all horizontal means as MATLAB does.
     WVKernelStatus transformQGPVToA0(WVRealVolumeConstView, WVComplexView);
+    WVKernelStatus applyVertical(WVStratifiedModalOperator, WVComplexConstView, WVComplexView);
+    WVKernelStatus applyVerticalColumn(WVStratifiedModalOperator, std::size_t retainedColumn,
+        WVComplexConstView inputColumn, WVComplexView outputColumn);
+    WVKernelStatus horizontalForward(WVRealVolumeConstView, WVComplexView);
+    WVKernelStatus horizontalInverse(WVComplexConstView, WVRealVolumeView);
+    WVKernelStatus differentiateHorizontal(WVRealVolumeConstView, bool xDerivative,
+        WVRealVolumeView);
+    WVKernelStatus differentiateHorizontal(WVRealVolumeConstView, bool xDerivative,
+        unsigned order, WVRealVolumeView);
     // Diagnostic modal inverse preserves the mean and projects self-conjugate
     // Fourier values to their real part; ordinary field masks are unchanged.
     WVKernelStatus transformSpectralTendencyToSpatial(WVComplexConstView, WVRealVolumeView);
@@ -98,6 +109,8 @@ public:
     WVKernelStatus totalEnstrophy(WVComplexConstView, double&) const;
     WVKernelStatus totalEnergySpatiallyIntegrated(WVComplexConstView, double&);
     WVKernelStatus totalEnstrophySpatiallyIntegrated(WVComplexConstView, double&);
+    WVKernelStatus applyVerticalCalculus(WVRealConstView input,bool inputIsF,
+        unsigned order,bool integral,WVRealView output);
     const std::string& engineLibraryIdentity() const noexcept { return engineLibraryIdentity_; }
     WVKernelStatus advectScalarWithAdvectionFields(WVRealVolumeConstView, WVRealFieldBundleConstView, bool antialias, WVRealVolumeView);
     WVKernelStatus uvMax(WVComplexConstView, double&);
@@ -107,6 +120,7 @@ private:
     WVKernelStatus validateState(WVComplexConstView) const;
     WVKernelStatus validateStateForCall(WVComplexConstView) const;
     WVKernelStatus mutableOutputOutsidePreparedState(WVComplexView) const;
+    WVKernelStatus mutableOutputOutsidePreparedState(const void*,std::size_t) const;
     bool matchesStateEvaluation(WVComplexConstView) const noexcept;
     std::size_t stateEvaluationComponent(WVComplexConstView) const noexcept;
     WVKernelStatus volume(WVRealVolumeConstView, bool surface = false) const;
@@ -116,6 +130,10 @@ private:
     WVKernelStatus project(const double*, WVComplexOutput, std::size_t operation = 1);
     WVKernelStatus reconstruct(WVComplexConstView, WVStratifiedQGField, WVStratifiedQGDerivative, double*);
     WVKernelStatus vertical(std::size_t operation, WVComplexInput, WVComplexOutput);
+    WVKernelStatus verticalColumn(std::size_t operation, WVComplexInput, WVComplexOutput,
+        std::size_t retainedColumn);
+    WVKernelStatus verticalCalculus(const double*,bool inputIsF,unsigned,bool,double*,
+        std::size_t columns,bool verticalFirst);
     WVVariableExecutionOptions executionOptions_;
     std::shared_ptr<const WVStratifiedModalSource> source_;
     WVStratifiedQGModeFactors factors_;

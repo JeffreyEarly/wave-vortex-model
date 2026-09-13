@@ -3,7 +3,7 @@ layout: default
 title: waveVortexTransformFromFile
 parent: WVTransformBoussinesq
 grand_parent: Transforms
-nav_order: 310
+nav_order: 312
 mathjax: true
 ---
 
@@ -22,6 +22,7 @@ Restore a WVTransformBoussinesq instance from an existing file
 + `path`  path to a NetCDF file
 + `iTime`  (optional) time index to initialize from (default 1)
 + `shouldReadOnly`  (optional) open the returned NetCDFFile read-only (default true)
++ `computationalBackend`  runtime backend, `"matlab"` (default) or `"compiled"`
 
 ## Discussion
 

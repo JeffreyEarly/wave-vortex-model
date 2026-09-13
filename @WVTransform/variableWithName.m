@@ -18,6 +18,7 @@ arguments (Repeating)
     variableNames char
 end
 
+scope = self.scopedEvaluation(); %#ok<NASGU>
 while ~all(isKey(self.variableCache,variableNames))
     missingIndex = find(~isKey(self.variableCache,variableNames),1);
     missingName = variableNames{missingIndex};

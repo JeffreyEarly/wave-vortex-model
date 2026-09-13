@@ -1,0 +1,1843 @@
+{
+  "schemaVersion": "wvm507-local-final-acceptance-v1",
+  "sourceCommit": "ebfd9cc94999e6a4f7a365562bc0c46da6bfbbdb",
+  "status": "local acceptance passed; final hosted and ATS qualification pending",
+  "performance": {
+    "schemaVersion": "wvm507-constant-regression-comparison-v2",
+    "status": "complete",
+    "threshold": 1.03,
+    "passed": true,
+    "decisionMetric": "geometric mean compiled candidate runtime divided by geometric mean compiled baseline runtime",
+    "normalizedCandidateToBaseline": 1.015327730398971,
+    "absoluteCompiledCandidateToBaseline": 1.0162240348000438,
+    "baselineSourceCommit": "895ad50623a72ab668e2c7f12ff363c3996eb15f",
+    "candidateSourceCommit": "ebfd9cc94999e6a4f7a365562bc0c46da6bfbbdb",
+    "pairCount": 4,
+    "protocol": {
+      "warmupCount": 20,
+      "sampleCount": 9,
+      "repeatsPerSample": 8,
+      "expectedTimedRHSCalls": 72,
+      "order": "AB,BA,AB,BA"
+    },
+    "baselineReceipts": [
+      "/private/tmp/wvm503/constant-steady-baseline-1.json",
+      "/private/tmp/wvm503/constant-steady-baseline-2.json",
+      "/private/tmp/wvm503/constant-steady-baseline-3.json",
+      "/private/tmp/wvm503/constant-steady-baseline-4.json"
+    ],
+    "candidateReceipts": [
+      "/private/tmp/wvm503/constant-steady-candidate-1.json",
+      "/private/tmp/wvm503/constant-steady-candidate-2.json",
+      "/private/tmp/wvm503/constant-steady-candidate-3.json",
+      "/private/tmp/wvm503/constant-steady-candidate-4.json"
+    ],
+    "observedOrder": [
+      {
+        "recordedAtUTC": "2026-09-13T08:26:26.934Z",
+        "role": "baseline",
+        "processID": 92620,
+        "sourceCommit": "895ad50623a72ab668e2c7f12ff363c3996eb15f"
+      },
+      {
+        "recordedAtUTC": "2026-09-13T08:27:08.898Z",
+        "role": "candidate",
+        "processID": 92752,
+        "sourceCommit": "ebfd9cc94999e6a4f7a365562bc0c46da6bfbbdb"
+      },
+      {
+        "recordedAtUTC": "2026-09-13T08:28:02.407Z",
+        "role": "candidate",
+        "processID": 92906,
+        "sourceCommit": "ebfd9cc94999e6a4f7a365562bc0c46da6bfbbdb"
+      },
+      {
+        "recordedAtUTC": "2026-09-13T08:28:53.274Z",
+        "role": "baseline",
+        "processID": 93049,
+        "sourceCommit": "895ad50623a72ab668e2c7f12ff363c3996eb15f"
+      },
+      {
+        "recordedAtUTC": "2026-09-13T08:29:56.118Z",
+        "role": "baseline",
+        "processID": 93187,
+        "sourceCommit": "895ad50623a72ab668e2c7f12ff363c3996eb15f"
+      },
+      {
+        "recordedAtUTC": "2026-09-13T08:30:35.754Z",
+        "role": "candidate",
+        "processID": 93291,
+        "sourceCommit": "ebfd9cc94999e6a4f7a365562bc0c46da6bfbbdb"
+      },
+      {
+        "recordedAtUTC": "2026-09-13T08:31:27.187Z",
+        "role": "candidate",
+        "processID": 93451,
+        "sourceCommit": "ebfd9cc94999e6a4f7a365562bc0c46da6bfbbdb"
+      },
+      {
+        "recordedAtUTC": "2026-09-13T08:32:19.008Z",
+        "role": "baseline",
+        "processID": 93570,
+        "sourceCommit": "895ad50623a72ab668e2c7f12ff363c3996eb15f"
+      }
+    ]
+  },
+  "processMedianSeconds": {
+    "baseline": [
+      0.08162822395833333,
+      0.07431258854166667,
+      0.08317821875,
+      0.07735329166666667
+    ],
+    "candidate": [
+      0.07713241666666666,
+      0.079183265625,
+      0.08762121875,
+      0.07778025520833333
+    ]
+  },
+  "geometricMeanSeconds": {
+    "baseline": 0.07904015585633643,
+    "candidate": 0.08032250609555051
+  },
+  "interpretation": "All eight processes are retained. The predeclared aggregate is +1.62%, within 3%; process variability remains visible, so this is not a claim of a precisely resolved millisecond difference or a speedup. Earlier failed short-window comparisons remain preserved.",
+  "installedQualification": {
+    "passed": true,
+    "readOnlyRoot": true,
+    "cases": [
+      {
+        "name": "constant-hydrostatic",
+        "maximumRelativeError": 4.606375119519858e-16,
+        "primitiveExecutions": 20
+      },
+      {
+        "name": "constant-nonhydrostatic",
+        "maximumRelativeError": 7.529037436408684e-16,
+        "primitiveExecutions": 20
+      },
+      {
+        "name": "hydrostatic",
+        "maximumRelativeError": 6.516529093396466e-16,
+        "primitiveExecutions": 20
+      },
+      {
+        "name": "boussinesq",
+        "maximumRelativeError": 1.081522061995114e-15,
+        "primitiveExecutions": 20
+      },
+      {
+        "name": "stratified-qg",
+        "maximumRelativeError": 6.376459550142924e-16,
+        "primitiveExecutions": 20
+      },
+      {
+        "name": "barotropic-qg",
+        "maximumRelativeError": 4.832659649045835e-16,
+        "primitiveExecutions": 9
+      }
+    ],
+    "sourceIdentity": {
+      "schemaVersion": "1.0.0",
+      "manifest": {
+        "schemaVersion": "1.0.0",
+        "algorithm": "sha256(path-tab-content-sha256-newline-v1)",
+        "aggregateSHA256": "3d565dff3d0e6881f47c206b853efc301fd4a0fd82976e3c89068268214a6123",
+        "fileCount": 319,
+        "files": [
+          {
+            "path": "@WVCompiledBackend/WVCompiledBackend.m",
+            "sha256": "67b4de8692f5295759ffb837e238abe3a4799ae901c01af6a5608a56ba1433f7",
+            "bytes": 1076
+          },
+          {
+            "path": "@WVCompiledBackend/activateModule.m",
+            "sha256": "c026c0905059f53a16827487373a425a3d99cf40d24a732a4d6e13ff483e704c",
+            "bytes": 1693
+          },
+          {
+            "path": "@WVCompiledBackend/build.m",
+            "sha256": "e233dca287f1fc22c7108fa1ca4c09aa50628f5bb114d042ee0e858b41be7c54",
+            "bytes": 705
+          },
+          {
+            "path": "@WVCompiledBackend/buildForTesting.m",
+            "sha256": "4f0e19a9c21111693c898b0d46360def937c0fa6eb2e2d6ad81d8da7c0592943",
+            "bytes": 471
+          },
+          {
+            "path": "@WVCompiledBackend/capabilities.m",
+            "sha256": "dff2fd56e87af35f1256db85e06bbd05cc96d32b6373d33aa5bd225a13c3837c",
+            "bytes": 602
+          },
+          {
+            "path": "@WVCompiledBackend/capabilitiesForTesting.m",
+            "sha256": "1072534717cac8da8e90b3f2f8daa9e269b2af28d7a2ea438beccb689d02056f",
+            "bytes": 501
+          },
+          {
+            "path": "@WVCompiledBackend/private/wvCompiledBackendBuild.m",
+            "sha256": "fba3361d36d43b43f88149b6856fe888dbeaa3b9a6c9601c14c07d0c67c70c92",
+            "bytes": 33744
+          },
+          {
+            "path": "@WVCompiledBackend/private/wvCompiledBackendCapabilities.m",
+            "sha256": "74709c55b0a91f21742e81d88f25ef72ba5e75c4ffbc8dec4977a8c05417e12d",
+            "bytes": 11372
+          },
+          {
+            "path": "@WVCompiledBackend/private/wvCompiledBackendConstants.m",
+            "sha256": "87cefa2195a43df047c732c948e7b717baf62468e2943a60db53a5ebdf8d59f1",
+            "bytes": 5400
+          },
+          {
+            "path": "@WVCompiledBackend/private/wvCompiledBackendFailure.m",
+            "sha256": "48fec872a24a25306c1c20a75839f8dcc28bb3ba64090b905aac7a93e85cf43d",
+            "bytes": 375
+          },
+          {
+            "path": "@WVCompiledBackend/private/wvCompiledBackendNewSourceManifest.m",
+            "sha256": "b98104b0b7df6645b58f593e7afa1be6fb10439efe3339daa0d19a1c7ace32e8",
+            "bytes": 4444
+          },
+          {
+            "path": "@WVCompiledBackend/private/wvCompiledBackendResolveModule.m",
+            "sha256": "c94802c96504c78db23bffb59c1ce57f6c70030c18a6ec1f487e950706e153a6",
+            "bytes": 1606
+          },
+          {
+            "path": "@WVCompiledBackend/private/wvCompiledBackendSupport.m",
+            "sha256": "7e6786ce6ccc79197c18ff56a402771dd03ee769a04d8f8a59beb7cc6fa67b6c",
+            "bytes": 2178
+          },
+          {
+            "path": "@WVCompiledBackend/qualifySourceIdentity.m",
+            "sha256": "b15a6733d284148d56f5a5c5db0c869ebd734f404d922da9baa25888a59e25c3",
+            "bytes": 1147
+          },
+          {
+            "path": "@WVCompiledBackend/sourceManifestForTesting.m",
+            "sha256": "ecaaaeb6578a612c74e3509329c652ed7a865865c2b0c35558cb8283d2761a8b",
+            "bytes": 377
+          },
+          {
+            "path": "@WVCompiledConstantStratificationBackend/WVCompiledConstantStratificationBackend.m",
+            "sha256": "35278e6b1f11ee5195cd19fee08e417cb3778e60fb9c54e530e5cb314e9c8520",
+            "bytes": 8804
+          },
+          {
+            "path": "@WVCompiledTransformBackend/WVCompiledTransformBackend.m",
+            "sha256": "132223e7780725bfa82374dac5f4b96a280ebdf2aa7dab25b3a64c3d5100e088",
+            "bytes": 19968
+          },
+          {
+            "path": "@WVCompiledTransformBackend/private/wvCompiledConstantConfiguration.m",
+            "sha256": "0b144e9fa8ec8cc5d563f5a9e9a9fa5727f96928040685bc9d6ddb5439f8ef0c",
+            "bytes": 716
+          },
+          {
+            "path": "@WVCompiledTransformBackend/private/wvCompiledStratifiedModalConfiguration.m",
+            "sha256": "399781a80267b8af504a332e57415d96caa5ebf2d36b8c95e51e7b6ed30d52d1",
+            "bytes": 2317
+          },
+          {
+            "path": "@WVGeometryCartesianXYZ/WVGeometryCartesianXYZ.m",
+            "sha256": "2189bef6d341793dc0527a95a90a7cffd1b9c0dbeb9322f0012e6fc78d7529c8",
+            "bytes": 7295
+          },
+          {
+            "path": "@WVGeometryCartesianXYZ/indexFromModeNumber.m",
+            "sha256": "95d8ef0b2dd9b1bddd006d1907fdd0ba033955cdab61f5c7ca1be734fcece7e9",
+            "bytes": 1277
+          },
+          {
+            "path": "@WVGeometryCartesianXYZ/isValidConjugateModeNumber.m",
+            "sha256": "7a3f0eb1ad53cf60a74b9b356df00fce6bb53ca222941ddba7be0836240d8453",
+            "bytes": 985
+          },
+          {
+            "path": "@WVGeometryCartesianXYZ/isValidModeNumber.m",
+            "sha256": "bf026644586fad93d9609e7d976d8ff30ac13133da57b2282a5a9e4758bc4bc2",
+            "bytes": 817
+          },
+          {
+            "path": "@WVGeometryCartesianXYZ/isValidPrimaryModeNumber.m",
+            "sha256": "c5e29589f54d71c2a6ad80fa38f6e5ecfc5f17d3bb391ba30dfbdb74ba4641ac",
+            "bytes": 933
+          },
+          {
+            "path": "@WVGeometryCartesianXYZ/modeNumberFromIndex.m",
+            "sha256": "43b9a77bdaafc9ba575adc4089b686b2e6a5d93971c1ed4e813cbb766d688936",
+            "bytes": 1061
+          },
+          {
+            "path": "@WVGeometryDoublyPeriodic/WVGeometryDoublyPeriodic.m",
+            "sha256": "5320cfdd47e9e6dee376d239dd35e7ee5b0969f25cdffda3eb8a9b86cf7ee8ba",
+            "bytes": 59495
+          },
+          {
+            "path": "@WVGeometryDoublyPeriodic/transformToKLAxes.m",
+            "sha256": "9cfc0fdd0ea8c16e9ea0e488b7990648cd5f892cde6984941faa2ce09c182d12",
+            "bytes": 1548
+          },
+          {
+            "path": "@WVGeometryDoublyPeriodic/transformToRadialWavenumber.m",
+            "sha256": "a428b02230f20ed05b923da8491a5e06823bee6d6f7e93e3427c10b8da649397",
+            "bytes": 3056
+          },
+          {
+            "path": "@WVGeometryDoublyPeriodicBarotropic/WVGeometryDoublyPeriodicBarotropic.m",
+            "sha256": "bb41f99fe28ca3ab406cd03d98368eaf9f5e3afaed9c6b5dd279d8c1c5645fa3",
+            "bytes": 15190
+          },
+          {
+            "path": "@WVGeometryDoublyPeriodicStratified/WVGeometryDoublyPeriodicStratified.m",
+            "sha256": "4452669cfb31c92cf768563fe95aae57e224360605e3642c19f5d3c314466ca6",
+            "bytes": 20848
+          },
+          {
+            "path": "@WVGeometryDoublyPeriodicStratified/crossSpectrumWithFgTransform.m",
+            "sha256": "8cc8e070765c081e5e2224f4275c4bc03c7ad0c1211fe569758663418564270b",
+            "bytes": 531
+          },
+          {
+            "path": "@WVGeometryDoublyPeriodicStratified/crossSpectrumWithGgTransform.m",
+            "sha256": "99b1a8b9b9ca61fd2a292c1ca55f65aa393dd214a5a818ae34b03a42228f178e",
+            "bytes": 479
+          },
+          {
+            "path": "@WVGeometryDoublyPeriodicStratified/diffZF.m",
+            "sha256": "ab9d8e0830d5a163673f2f9415299cf745850ed407cf384e59c3b452850417eb",
+            "bytes": 2064
+          },
+          {
+            "path": "@WVGeometryDoublyPeriodicStratified/diffZG.m",
+            "sha256": "6add1f958daace9ffd62118c446999bdfccbf027bf21e739bb61335ae5884643",
+            "bytes": 1756
+          },
+          {
+            "path": "@WVGeometryDoublyPeriodicStratified/intZF.m",
+            "sha256": "14afe2ea8abf1fa9ba54d213e701e3a03b23bf21a28152b3f288b86801c9559d",
+            "bytes": 1587
+          },
+          {
+            "path": "@WVGeometryDoublyPeriodicStratified/intZG.m",
+            "sha256": "4b6d959ee39f90ff3d21f394225bd4cac1f6e698862b483811a88c3e07ad982e",
+            "bytes": 1684
+          },
+          {
+            "path": "@WVGeometryDoublyPeriodicStratified/spectrumWithFgTransform.m",
+            "sha256": "5ffa5947e7485b56ab0d7c2a820b1b8c1e1271031c0c372d3392982aa81e7f86",
+            "bytes": 378
+          },
+          {
+            "path": "@WVGeometryDoublyPeriodicStratified/spectrumWithGgTransform.m",
+            "sha256": "be8987d416385295655bd422eb06668cbe1e385d613090c0ed466d4ab17c6797",
+            "bytes": 329
+          },
+          {
+            "path": "@WVGeometryDoublyPeriodicStratified/waveModeVerticalStructureAtIndex.m",
+            "sha256": "1f14537a8236d9d4a0dd41782fdbf1c3bea839f9651e246cc62938a395cc67f5",
+            "bytes": 1420
+          },
+          {
+            "path": "@WVGeometryDoublyPeriodicStratifiedBoussinesq/WVGeometryDoublyPeriodicStratifiedBoussinesq.m",
+            "sha256": "94fccfd9adbe35b2393678faa094587d947c18f4702d79b91398740782c55e4e",
+            "bytes": 27496
+          },
+          {
+            "path": "@WVGeometryDoublyPeriodicStratifiedBoussinesq/waveModeVerticalStructureAtIndex.m",
+            "sha256": "1f368cc709426144c7058f3ee0369cd58c959a43be72796159f08017ea736617",
+            "bytes": 1685
+          },
+          {
+            "path": "@WVGeometryDoublyPeriodicStratifiedConstant/CosineTransformBackMatrix.m",
+            "sha256": "092d4e6e91d8abb563b9dd8397c11c9c09abfe4526851044573ddd9e8cb1b789",
+            "bytes": 341
+          },
+          {
+            "path": "@WVGeometryDoublyPeriodicStratifiedConstant/CosineTransformForwardMatrix.m",
+            "sha256": "51b8438a76d959500a7a1347b620db743b0327bc83695974ea7b1540d0381705",
+            "bytes": 476
+          },
+          {
+            "path": "@WVGeometryDoublyPeriodicStratifiedConstant/SineTransformBackMatrix.m",
+            "sha256": "8c78ee8c312776f3abfd92b612e20f3ed2f94317e36358eb44c303f6ceff964c",
+            "bytes": 349
+          },
+          {
+            "path": "@WVGeometryDoublyPeriodicStratifiedConstant/SineTransformForwardMatrix.m",
+            "sha256": "1025ff50166e67f73a01fea3aa93914cc8afdc2d19f308fd5ff886571220a4aa",
+            "bytes": 336
+          },
+          {
+            "path": "@WVGeometryDoublyPeriodicStratifiedConstant/WVGeometryDoublyPeriodicStratifiedConstant.m",
+            "sha256": "12535600c28c436226cf79d85179d7336c39934297093069ef07a5c8c8d0782b",
+            "bytes": 31509
+          },
+          {
+            "path": "@WVGeometryDoublyPeriodicStratifiedConstant/crossSpectrumWithFgTransform.m",
+            "sha256": "659e61bc420c878d0e5e5666763e45733dcdf192941115f75a35528d3e3f60dd",
+            "bytes": 540
+          },
+          {
+            "path": "@WVGeometryDoublyPeriodicStratifiedConstant/crossSpectrumWithGgTransform.m",
+            "sha256": "aba38d5e0fedbfcedaca8fc3449f39518c0b4a7606ebae7fa30e60e63ccfd2df",
+            "bytes": 488
+          },
+          {
+            "path": "@WVGeometryDoublyPeriodicStratifiedConstant/diffZF.m",
+            "sha256": "d4c6e73535255cabec019c277dc323ca728b86821dddd830eeaa1eaa0ef77fc6",
+            "bytes": 1526
+          },
+          {
+            "path": "@WVGeometryDoublyPeriodicStratifiedConstant/diffZG.m",
+            "sha256": "b5c0ce2cb037afc001c933bab6fda6d9976da533f920c558509bbad8c979434a",
+            "bytes": 1524
+          },
+          {
+            "path": "@WVGeometryDoublyPeriodicStratifiedConstant/intZF.m",
+            "sha256": "4c58fe6770e13d440d2cce108aec2bb6e4b08463974be4df4c376d56693fdc7f",
+            "bytes": 1641
+          },
+          {
+            "path": "@WVGeometryDoublyPeriodicStratifiedConstant/intZG.m",
+            "sha256": "70d18d59d4b119baef895ecfbe7dd349455f40fcec6698d7d7dabe57a2d5bf34",
+            "bytes": 1636
+          },
+          {
+            "path": "@WVGeometryDoublyPeriodicStratifiedConstant/spectrumWithFgTransform.m",
+            "sha256": "56f23668d21f7311c64569c13618eee818f46873b9cb07e09a240f89e26e942b",
+            "bytes": 387
+          },
+          {
+            "path": "@WVGeometryDoublyPeriodicStratifiedConstant/spectrumWithGgTransform.m",
+            "sha256": "7c24874d5af82a915f409f5c93b55b270ccd900099527d39971fdae04f15ff99",
+            "bytes": 338
+          },
+          {
+            "path": "@WVGeometryDoublyPeriodicStratifiedConstant/waveModeVerticalStructureAtIndex.m",
+            "sha256": "77e8aabd778d96f4fe2c386888ea5b6399d1ed6613aa0ef95ac99d1b75e9d31f",
+            "bytes": 1384
+          },
+          {
+            "path": "@WVModel/WVModel.m",
+            "sha256": "9d7c3234d7d67d550a04091ba5043c4b090ca56a3456ec787772440055cd0751",
+            "bytes": 50140
+          },
+          {
+            "path": "@WVModel/modelFromFile.m",
+            "sha256": "d17dc344a6a1dc35af50c819c1db45e344e41b078aeb5e38c72219d898e2f0f1",
+            "bytes": 1766
+          },
+          {
+            "path": "@WVModel/writePortableRunRequest.m",
+            "sha256": "4eb46c32d27d86cff9bf06fec73a2060d9eff1389552508e3531a0197739f6a6",
+            "bytes": 4018
+          },
+          {
+            "path": "@WVModel/writePortableRunRequestForTesting.m",
+            "sha256": "968064bc695867d6a581cb611c72fbdf1431a58b56878be483fbdf7f34fbbe59",
+            "bytes": 664
+          },
+          {
+            "path": "@WVTransform/WVTransform.m",
+            "sha256": "690ff193868447d341c689e07b8b6637bb99f6fb01fae6025af5f564b61d5690",
+            "bytes": 67511
+          },
+          {
+            "path": "@WVTransform/addFlowComponent.m",
+            "sha256": "5c5f8f50d2ea3fb172f72ab744c05cab766282ae7d05a928e5c52c83f1334b91",
+            "bytes": 976
+          },
+          {
+            "path": "@WVTransform/addOperation.m",
+            "sha256": "820182c15e25d93fbdb4b255927f1f2a7c6df9aaafda5504ca731b2c320846a3",
+            "bytes": 6261
+          },
+          {
+            "path": "@WVTransform/addPrimaryFlowComponent.m",
+            "sha256": "5277764e512cd1fccffd1637081f6c4694bb04e22d7d00d91f7584a3f93d2c4a",
+            "bytes": 848
+          },
+          {
+            "path": "@WVTransform/addRandomFlow.m",
+            "sha256": "c104360790bec809eb42a63c36c8c6279a02bf6729ce2f6de26d58c143699a1a",
+            "bytes": 3528
+          },
+          {
+            "path": "@WVTransform/addToVariableCache.m",
+            "sha256": "f4599be34339acd62b8c88add13cb40ad3e25b1adb4920727e774f2556381b37",
+            "bytes": 161
+          },
+          {
+            "path": "@WVTransform/addUVEta.m",
+            "sha256": "e482da78ab4d96a3444ad419af8362a8502d355ada56ff348ce154da032b9f7a",
+            "bytes": 658
+          },
+          {
+            "path": "@WVTransform/classDefinedOperationForKnownVariable.m",
+            "sha256": "5c73b9a2d3609a2dedacc9a7287b949bb6156fc4bc4d0d3c3f15a4ef783f01f4",
+            "bytes": 10668
+          },
+          {
+            "path": "@WVTransform/clearVariableCacheOfApAmA0DependentVariables.m",
+            "sha256": "392c5c58a8f0635da407b5d42a5ac2c84f972207647a8d9a22b009d5707442e6",
+            "bytes": 222
+          },
+          {
+            "path": "@WVTransform/clearVariableCacheOfTimeDependentVariables.m",
+            "sha256": "3477a3e811d262fd0a232c2300de1c8eec42be91236fb203560326981fa71002",
+            "bytes": 256
+          },
+          {
+            "path": "@WVTransform/concatenateVariablesAlongTimeDimension.m",
+            "sha256": "e847d01f6ce45bb5060a5fc8b05b45886a02c5ffd417642b66a7af57e868c74a",
+            "bytes": 1834
+          },
+          {
+            "path": "@WVTransform/convertFromWavenumberToFrequency.m",
+            "sha256": "273463b5063e23d92794ecba466e7cfb62835e575dcfdf84514443f6f40de65a",
+            "bytes": 1504
+          },
+          {
+            "path": "@WVTransform/createNetCDFFileForTimeStepOutput.m",
+            "sha256": "85d934f86a06fe9ab60ae466902f62e5971c48c41dbafc58232583df2d7f467d",
+            "bytes": 3667
+          },
+          {
+            "path": "@WVTransform/defaultOperations.m",
+            "sha256": "e9b544484e218dc7b5844ca108453b7f73c437f1cd2a5044cc9dee69e7d89875",
+            "bytes": 5516
+          },
+          {
+            "path": "@WVTransform/energyFluxFromNonlinearFlux.m",
+            "sha256": "c6ee86c5ed77f9774e542b23de17c29b999e5726f37192b46817f91f403b12ba",
+            "bytes": 2205
+          },
+          {
+            "path": "@WVTransform/enstrophyFluxFromNonlinearFlux.m",
+            "sha256": "56dd93d064657d844c47aecc4df34dc7b6612cf1011dbd2eb5d693bb036ddfa9",
+            "bytes": 751
+          },
+          {
+            "path": "@WVTransform/fetchFromVariableCache.m",
+            "sha256": "b2a459036d1ad2f1cfbbda4b5cb637f6afc5f81e0cbb713f6ffb04da07af4baf",
+            "bytes": 361
+          },
+          {
+            "path": "@WVTransform/flowComponentNames.m",
+            "sha256": "ab0b246479f17fa18e92308346b0caf5abf72ab5133da82f261b4c3c21cf0b3a",
+            "bytes": 276
+          },
+          {
+            "path": "@WVTransform/flowComponentWithName.m",
+            "sha256": "4959c9fe82407ad5666509e530a0cece3a817c5f9fda3e92dcd3e68c72df37fd",
+            "bytes": 239
+          },
+          {
+            "path": "@WVTransform/flowComponents.m",
+            "sha256": "7c095b71c3658a1aceed85de26e2d503f38801c7e4f71029932397772d82e32f",
+            "bytes": 217
+          },
+          {
+            "path": "@WVTransform/initFromNetCDFFile.m",
+            "sha256": "bd88778f4f9fe7ab1825394d2a2ca0755d9e0eb8e96f3d775d76e06e8b66a2a0",
+            "bytes": 4594
+          },
+          {
+            "path": "@WVTransform/initWithRandomFlow.m",
+            "sha256": "1a4092f542f7727d7b2eaae22d86df448541110354f49f7398ae8fc7e47c096a",
+            "bytes": 1679
+          },
+          {
+            "path": "@WVTransform/initWithUVEta.m",
+            "sha256": "4a58c68fce163865004e9eeb08b816558d17163b8ae599da765074a19b19dabc",
+            "bytes": 644
+          },
+          {
+            "path": "@WVTransform/initWithUVRho.m",
+            "sha256": "8bedcccab6395e79c31ee4f245ebdcddef81606d1a9eb01d534004bcfea04177",
+            "bytes": 690
+          },
+          {
+            "path": "@WVTransform/interpolatedFieldAtPosition.m",
+            "sha256": "b456c3ae274d90f1617f743f9817055dbecd569c940a09d9597ee4839027518d",
+            "bytes": 4650
+          },
+          {
+            "path": "@WVTransform/nonlinearFluxForFlowComponents.m",
+            "sha256": "b2a9a918516183ceafa6a6907de26bd7d103e9ffad4239ebbba48f0d42e58cc6",
+            "bytes": 1235
+          },
+          {
+            "path": "@WVTransform/nonlinearFluxWithGradientMasks.m",
+            "sha256": "4659b8c4da4da373cab233a0a6740bf0913a13b9a42af01fc6dcfc21094dfe3f",
+            "bytes": 3536
+          },
+          {
+            "path": "@WVTransform/nonlinearFluxWithMask.m",
+            "sha256": "bf69d05b6145c8d6a1cd90298c263fc4b536b16ba3bad87f7e7ac0d991245be1",
+            "bytes": 2192
+          },
+          {
+            "path": "@WVTransform/operationForKnownVariable.m",
+            "sha256": "bcc8570bc0392581af22a753fe1f43af7eb9274ae3376cd5e387ce420abaf0f1",
+            "bytes": 669
+          },
+          {
+            "path": "@WVTransform/operationWithName.m",
+            "sha256": "e2ae8efd93a811f8e33042366bc2b569c1d990b83e1d4a4e9fb57f138dc4af1b",
+            "bytes": 413
+          },
+          {
+            "path": "@WVTransform/optimizedTransformsForFlowComponent.m",
+            "sha256": "21fa25c91c6a7999103798c504145daaf337fb7827b6db480da20cd41e374316",
+            "bytes": 5524
+          },
+          {
+            "path": "@WVTransform/performOperation.m",
+            "sha256": "c5ddcc51fead8d1f0e00ffeefdfca0942a4c2241f10374864285a3edb22ea720",
+            "bytes": 941
+          },
+          {
+            "path": "@WVTransform/performOperationWithName.m",
+            "sha256": "efe7cdea409017bf6a614bba588f36d125dbe16884ccc71176ca2e8f04f74afb",
+            "bytes": 351
+          },
+          {
+            "path": "@WVTransform/primaryFlowComponentNames.m",
+            "sha256": "3a66559ff82f235c70c9269939c00c08fe7fb194b8ea4b932c1d052526447223",
+            "bytes": 290
+          },
+          {
+            "path": "@WVTransform/primaryFlowComponentWithName.m",
+            "sha256": "d8860119c3959efc76a1e9cdb6b4ac6e01362e70051e22f506e84617675dc6e2",
+            "bytes": 260
+          },
+          {
+            "path": "@WVTransform/propertyAnnotationForKnownVariable.m",
+            "sha256": "2ad82f6fad1d34583c38ee5f3c899de5b189ad52abdd917fd39f7c5b593d7dc3",
+            "bytes": 916
+          },
+          {
+            "path": "@WVTransform/removeAll.m",
+            "sha256": "2fd5c6e71c170204fdfb6856b8b482edc91535a6fbe08bd5e4b957271e0c8740",
+            "bytes": 207
+          },
+          {
+            "path": "@WVTransform/removeFromVariableCache.m",
+            "sha256": "6896327e7edd69959aa7fe8764700b418b505a9541952a3df3a83e18be7a5b42",
+            "bytes": 189
+          },
+          {
+            "path": "@WVTransform/removeOperation.m",
+            "sha256": "3d841260aabe6507d09f7d3524b3ccb89719c440041af1254ef0b4df50b514d5",
+            "bytes": 1088
+          },
+          {
+            "path": "@WVTransform/spectralVariableWithResolution.m",
+            "sha256": "4180cf1d3047ecec6b3c23109389a1d4a435a8f133ef9e1508906447c996cef6",
+            "bytes": 1475
+          },
+          {
+            "path": "@WVTransform/summarizeDegreesOfFreedom.m",
+            "sha256": "67d5c9f16fc3eb44463b3689e14daf6ffc72e1f432e14f061eaf56b729254135",
+            "bytes": 2283
+          },
+          {
+            "path": "@WVTransform/summarizeEnergyContent.m",
+            "sha256": "8acb042a3d4a5f4820e9a25150b2161aba7963d4580633b3fa6093bb99bc4ffc",
+            "bytes": 646
+          },
+          {
+            "path": "@WVTransform/summarizeModeEnergy.m",
+            "sha256": "694d066f0e14e20cc526919ffa56e99fce46a9ca2db32895067ea58e06ba410b",
+            "bytes": 2360
+          },
+          {
+            "path": "@WVTransform/transformUVEtaToWaveVortex.m",
+            "sha256": "d77a62de27461f08eb2b01c405353c951d39eff0807721860c2598a04b1437fe",
+            "bytes": 1939
+          },
+          {
+            "path": "@WVTransform/transformWaveVortexToUVWEta.m",
+            "sha256": "5c74dd885cdb969ef00c95f168ca6e2daceaec0d46fc2bb40a7d4c01cd9ba3b8",
+            "bytes": 1622
+          },
+          {
+            "path": "@WVTransform/variableAtPositionWithName.m",
+            "sha256": "31478887fe99940fc09d38816498e3cfe74e9d204734976b335c20c0e6231107",
+            "bytes": 1628
+          },
+          {
+            "path": "@WVTransform/variableWithName.m",
+            "sha256": "71335cfa994c4729cb907d66d17020938a0b292e62971d202dadcf10228c72a1",
+            "bytes": 1182
+          },
+          {
+            "path": "@WVTransform/waveVortexTransformFromFile.m",
+            "sha256": "8db0799752100423aa5566314dadf825d9ff212bfb4697dd22815b222466f08a",
+            "bytes": 4396
+          },
+          {
+            "path": "@WVTransform/waveVortexTransformWithDoubleResolution.m",
+            "sha256": "0ebbb76716045b6db9e03a5c7a8daf29a9da6e8e92c6215fa6b3c673a8a248c9",
+            "bytes": 221
+          },
+          {
+            "path": "@WVTransform/writeToFile.m",
+            "sha256": "b362676f63e681327ed04708e99927aca07c0b602bf573840a4bb365d0694a0a",
+            "bytes": 2640
+          },
+          {
+            "path": "@WVTransformBarotropicQG/WVTransformBarotropicQG.m",
+            "sha256": "9b7a3f6baa96261bc48d8b4cb1b20a5ea301be4c6fbb8b0916af2af2aecdddd2",
+            "bytes": 23539
+          },
+          {
+            "path": "@WVTransformBarotropicQG/interpolatedFieldAtPosition.m",
+            "sha256": "1d190023b67f639926e1c5e9e272392ad110d3ceb5a8bcada5c293bf310bb74c",
+            "bytes": 2387
+          },
+          {
+            "path": "@WVTransformBoussinesq/WVTransformBoussinesq.m",
+            "sha256": "5b67363c20b42fb615b15f17344bb3237b69c801b8023d97762a3012b7a28f93",
+            "bytes": 28566
+          },
+          {
+            "path": "@WVTransformBoussinesq/transformUVEtaToWaveVortex.m",
+            "sha256": "8b8b63a4deb7c6a6471b282358c5bce13c81eb710db7cd9fb07ea0078f8e1ae5",
+            "bytes": 1878
+          },
+          {
+            "path": "@WVTransformBoussinesq/transformUVWEtaToWaveVortex.m",
+            "sha256": "f19bfced9ade98d7099296e4c0c750082f0ec91c7aa58799ccb384e51c8424a0",
+            "bytes": 1906
+          },
+          {
+            "path": "@WVTransformConstantStratification/WVTransformConstantStratification.m",
+            "sha256": "ca814b724ef30a009781cd3a558ef1117edc89f76f650d7280a5a3c293f0c0cc",
+            "bytes": 30330
+          },
+          {
+            "path": "@WVTransformConstantStratification/transformStorageLedger.m",
+            "sha256": "e63ac12d61ecd8bba28fa7dd7e456ec5d950a003ab8f19c31b34e50876ae2e80",
+            "bytes": 2759
+          },
+          {
+            "path": "@WVTransformConstantStratification/transformUVEtaToWaveVortex.m",
+            "sha256": "dd83df4fda093b380a89c3230b204e61c96962e26e255280c065a31ce44e29d6",
+            "bytes": 2068
+          },
+          {
+            "path": "@WVTransformConstantStratification/transformUVWEtaToWaveVortex.m",
+            "sha256": "9050ce652ae71172940d83ee7054fa30dbc5f7ed4a25a738f6d687bce82cc1ad",
+            "bytes": 1894
+          },
+          {
+            "path": "@WVTransformHydrostatic/WVTransformHydrostatic.m",
+            "sha256": "e80fb6b7c270dc4443e9dd67c1719bc3e3cf1f48d8dbf71337ee148617667fc7",
+            "bytes": 31286
+          },
+          {
+            "path": "@WVTransformHydrostatic/transformUVEtaToWaveVortex.m",
+            "sha256": "60aa5717ebcc481639bd624c9e83b59fb3d3f99a40f15d083bc1f66412f75cd8",
+            "bytes": 2046
+          },
+          {
+            "path": "@WVTransformStratifiedQG/WVTransformStratifiedQG.m",
+            "sha256": "1d2eea4642985a3b791bec22bed7097eb2b63b1980b972e279e64870103c149a",
+            "bytes": 22548
+          },
+          {
+            "path": "@WVTransformStratifiedQG/transformUVEtaToWaveVortex.m",
+            "sha256": "471de8cf44b37590e19e7dff563dea0a2bcd503f47cb8af91c97b164c5ec31d1",
+            "bytes": 1645
+          },
+          {
+            "path": "CompiledKernel/adapters/accelerate/WVAccelerateMatrixBackend.cpp",
+            "sha256": "1a79f66611d315e85d23446268de2125f0cd20d9866542881414152162289dd5",
+            "bytes": 2559
+          },
+          {
+            "path": "CompiledKernel/adapters/accelerate/WVAccelerateMatrixBackend.hpp",
+            "sha256": "775b2bd2415b1d6d697e37085305595a3955241047830b4a5da27edc4483c229",
+            "bytes": 333
+          },
+          {
+            "path": "CompiledKernel/adapters/native-fftw/WVMatlabTransformHost.cpp",
+            "sha256": "b1d6fe9dd2e2d1a989cbbb046e5df2c041a8d35f908e7cb45692c6f0e26cad86",
+            "bytes": 52758
+          },
+          {
+            "path": "CompiledKernel/adapters/native-fftw/WVMatlabTransformHost.hpp",
+            "sha256": "eeacdf24a60049504da25c639a8da0d934714beab3b8a7b963aa215f1f26fc30",
+            "bytes": 434
+          },
+          {
+            "path": "CompiledKernel/adapters/native-fftw/WVNativeAdvectionArithmetic.hpp",
+            "sha256": "432e0cd3b6958166a8c68788fa1e13d8283e330f0ba9a8abc5255517fdfafa35",
+            "bytes": 1291
+          },
+          {
+            "path": "CompiledKernel/adapters/native-fftw/WVNativeFFTWEngine.cpp",
+            "sha256": "886c726807375097579a61468092ad33e54b4fa57e5bf18a7e6b1694e5a7aac0",
+            "bytes": 44262
+          },
+          {
+            "path": "CompiledKernel/adapters/native-fftw/WVNativeFFTWEngine.hpp",
+            "sha256": "7285f9989e604d2056a36eec275b95389bf386c3a5c7f5140086206f6ecf251b",
+            "bytes": 1875
+          },
+          {
+            "path": "CompiledKernel/adapters/native-fftw/wv_compiled_backend_mex.cpp",
+            "sha256": "bb20d65a113c25bf31ddca66ae14c92f46f5d83815f114e5fd3abfb74bf067bd",
+            "bytes": 31781
+          },
+          {
+            "path": "CompiledKernel/include/WaveVortexKernel/WVFFTEngine.hpp",
+            "sha256": "73caf7ef882db428093ba692ae8d9b950dbc6bb760c2b488b1ed6d83576f74e9",
+            "bytes": 4185
+          },
+          {
+            "path": "CompiledKernel/include/WaveVortexKernel/WVKernelTypes.hpp",
+            "sha256": "8146ba3cdae911b7f283d9c7cf5207b22c077fdf14bb2533d0717fdd9b2112dd",
+            "bytes": 7786
+          },
+          {
+            "path": "CompiledKernel/include/WaveVortexKernel/WVOwnedStratifiedModalSource.hpp",
+            "sha256": "9eb131d10eb8fa968ded995edd0ecbf484aae69ef2f7860c39da735e516462e4",
+            "bytes": 3522
+          },
+          {
+            "path": "CompiledKernel/include/WaveVortexKernel/WVSpectralOperators.hpp",
+            "sha256": "c235806d72b510ce6101564697e0bec8605c397b93f6f08c742bc3856d15e705",
+            "bytes": 12486
+          },
+          {
+            "path": "CompiledKernel/include/WaveVortexKernel/WVStratifiedModalSource.hpp",
+            "sha256": "2577060312de3d9255b34d5398ce881c568216d622ac946627657f76fe982ff6",
+            "bytes": 2691
+          },
+          {
+            "path": "CompiledKernel/include/WaveVortexKernel/WVTransformBarotropicQGKernel.hpp",
+            "sha256": "33361825e5000fd7d299884650d0e0f98c9153d3e232512e4e48e085d88c2150",
+            "bytes": 14638
+          },
+          {
+            "path": "CompiledKernel/include/WaveVortexKernel/WVTransformBoussinesqKernel.hpp",
+            "sha256": "f3843eed62e2b2e8c85cb537c75ae013d03af8d70547f89231a7eae9ac0feffe",
+            "bytes": 14467
+          },
+          {
+            "path": "CompiledKernel/include/WaveVortexKernel/WVTransformConstantStratificationKernel.hpp",
+            "sha256": "7cdbf3e840064dbf4292fa0257e509914a6c6861b0d342698eaed62d849631ec",
+            "bytes": 15721
+          },
+          {
+            "path": "CompiledKernel/include/WaveVortexKernel/WVTransformHydrostaticKernel.hpp",
+            "sha256": "29e420ee3749f6ec6d3181d16dc814e1112c60b306d61e27cf2e4814d9d1fb2f",
+            "bytes": 14073
+          },
+          {
+            "path": "CompiledKernel/include/WaveVortexKernel/WVTransformStratifiedQGKernel.hpp",
+            "sha256": "8b3e5cfd964272204f4e84f12504605f1742315ef4807a85d9c92ca08d015ada",
+            "bytes": 10555
+          },
+          {
+            "path": "CompiledKernel/include/WaveVortexKernel/WVVariableExecutionOptions.hpp",
+            "sha256": "0db5edd4749386a95aa9049e64ed97dc30c32c40e9cd953ca2bf79f4342078d9",
+            "bytes": 2888
+          },
+          {
+            "path": "CompiledKernel/native-fftw-provider.env",
+            "sha256": "9e644f9f4baea4becd6f7eeb774fb5a98ca86d136077476672bdbe85e39eca63",
+            "bytes": 441
+          },
+          {
+            "path": "CompiledKernel/src/WVAdvectionConsumer.hpp",
+            "sha256": "f47c9b9454d83f8bf4c9affae8151dd89d809ba2c2e5553185c336c2ffbe20b4",
+            "bytes": 862
+          },
+          {
+            "path": "CompiledKernel/src/WVCoefficientFormulas.hpp",
+            "sha256": "78d647608d8919b33c278c280eb6d2b253dfb0acd8d3330141fbdc845e00864a",
+            "bytes": 5716
+          },
+          {
+            "path": "CompiledKernel/src/WVHorizontalDerivativeMultiplier.hpp",
+            "sha256": "a208f6f069f01a71b6d61b3ebca322da3a80e8f53f877a8aaa4abd46facbd84e",
+            "bytes": 2173
+          },
+          {
+            "path": "CompiledKernel/src/WVKernelTypes.cpp",
+            "sha256": "4b7cf55649b02eaae224bfaf618f756122a81c1caaff92c751b4e35f827ea1cc",
+            "bytes": 22046
+          },
+          {
+            "path": "CompiledKernel/src/WVOwnedStratifiedModalSource.cpp",
+            "sha256": "1467a3916dfa52094eba3f64d8e48f329d7e7028a36478cda21814f189e157b3",
+            "bytes": 27666
+          },
+          {
+            "path": "CompiledKernel/src/WVPreparedFieldCache.hpp",
+            "sha256": "22777b3b45f6403a0c1761901e5b7e30193ce2b226e8bacde31ece73aae4b94b",
+            "bytes": 4277
+          },
+          {
+            "path": "CompiledKernel/src/WVPreparedModeExecutor.hpp",
+            "sha256": "817d2a3cd791b51a38e0e427a1d6800d376aaa976ca7100f438599841fabce93",
+            "bytes": 4649
+          },
+          {
+            "path": "CompiledKernel/src/WVPreparedVerticalOperator.cpp",
+            "sha256": "8db94258b976e3ce3a0e45fc84646e7745b2b274d729e2ebba09ef79b0741031",
+            "bytes": 25137
+          },
+          {
+            "path": "CompiledKernel/src/WVRetainedHorizontalOperator.cpp",
+            "sha256": "5656140ee13cd5c0b5bd386f8f507dd7e872069f2b4c75f0ccf1f89e4643abc8",
+            "bytes": 28183
+          },
+          {
+            "path": "CompiledKernel/src/WVSpectralValidation.hpp",
+            "sha256": "eb416d6abc47d97d506b4c4fa65e8006b951d07d013c5d96db0f8043b417cc79",
+            "bytes": 4283
+          },
+          {
+            "path": "CompiledKernel/src/WVStratifiedVerticalCalculus.hpp",
+            "sha256": "1018d71e2defe0c2de4a784ef553dd361fb6b4f978dadbfcb17e9a9e95eff660",
+            "bytes": 3702
+          },
+          {
+            "path": "CompiledKernel/src/WVTransformBarotropicQGKernel.cpp",
+            "sha256": "523157aadc2705eae33425042cbe90478682a2e97eb1bd99e02852917cbe6185",
+            "bytes": 84076
+          },
+          {
+            "path": "CompiledKernel/src/WVTransformBoussinesqKernel.cpp",
+            "sha256": "421dc723de6bbf7354a706cb79cdc2541b14a3d95f51d975ba4cf7bd8af21a50",
+            "bytes": 84250
+          },
+          {
+            "path": "CompiledKernel/src/WVTransformConstantStratificationKernel.cpp",
+            "sha256": "b0ed568518f3a5c2a96ac01f241336d100b22047312f86984ea03f9d1fc6f038",
+            "bytes": 162922
+          },
+          {
+            "path": "CompiledKernel/src/WVTransformHydrostaticKernel.cpp",
+            "sha256": "72d0aeaeabe30801a7252cdca70e4d9a22a26a67441b28dc1a22a33d0125787d",
+            "bytes": 76961
+          },
+          {
+            "path": "CompiledKernel/src/WVTransformStratifiedQGKernel.cpp",
+            "sha256": "a506c476433f7440c2830d2de069c3d86e7529c81436ef3c542d79b1287b4403",
+            "bytes": 55983
+          },
+          {
+            "path": "CompiledKernel/src/WVVariableComplexBuffer.hpp",
+            "sha256": "53a81ca2c48811b39f62a59104cafea2330fd1a121f746ab06a14a1eea85aaf2",
+            "bytes": 1964
+          },
+          {
+            "path": "FlowComponents/WVGeostrophicComponent.m",
+            "sha256": "2d297c04d6bb2e52f17605c64688234154bdb54db534e30d07af3a737516a996",
+            "bytes": 19640
+          },
+          {
+            "path": "FlowComponents/WVGeostrophicMethods.m",
+            "sha256": "28bab01de79b3f62228d3a8007aebd8e3984b1862e5da8ea326ae69a730ef176",
+            "bytes": 22347
+          },
+          {
+            "path": "FlowComponents/WVInertialOscillationComponent.m",
+            "sha256": "9663377d6de85023f571600b6dadf7ff3945c171d6674ad10e129d7f8de88d11",
+            "bytes": 10429
+          },
+          {
+            "path": "FlowComponents/WVInertialOscillationMethods.m",
+            "sha256": "8d4fc277041cba21b5efaf0b0000a102b46c4816f2596e6f85efebfc1b442ae1",
+            "bytes": 7886
+          },
+          {
+            "path": "FlowComponents/WVInternalGravityWaveComponent.m",
+            "sha256": "5b2ac1f110076530bcd847ac5c1e685f19481c9295e013d63fc8e1039d276f0e",
+            "bytes": 15090
+          },
+          {
+            "path": "FlowComponents/WVInternalGravityWaveMethods.m",
+            "sha256": "23bb05fd3bf67796bb061c7111d263034094b79f8a070343c52824e3fcd0c02d",
+            "bytes": 36927
+          },
+          {
+            "path": "FlowComponents/WVMeanDensityAnomalyComponent.m",
+            "sha256": "d2e9a8ad440e7419b6d01ef400d2a7d50412bb553d2aa27314936464ed669cb0",
+            "bytes": 9618
+          },
+          {
+            "path": "FlowComponents/WVMeanDensityAnomalyMethods.m",
+            "sha256": "7182266ba52069c53c85b3f64835fa73f1070ccb1e4de5693a1a4efbd0e35098",
+            "bytes": 7537
+          },
+          {
+            "path": "Forcing/WVAdaptiveDamping.m",
+            "sha256": "61cf2738753ade972cca1de1eb3eb72f965554454e48be0b9ff509fc985a943d",
+            "bytes": 16682
+          },
+          {
+            "path": "Forcing/WVAntialiasing.m",
+            "sha256": "7abc5978545bc31c285dfb3383165585c7ffb1e344004a9d11a401f83a0390a2",
+            "bytes": 7658
+          },
+          {
+            "path": "Forcing/WVBetaPlanePVAdvection.m",
+            "sha256": "689f62b6e1d710f00431246fcecd6a2acddb6c46fa5dee11c872327c5fe5fb5d",
+            "bytes": 5532
+          },
+          {
+            "path": "Forcing/WVBottomFrictionLinear.m",
+            "sha256": "48138ee8761de22739885b77fcc46ff03b8d8fd2d2714803fa62ebcc01df8095",
+            "bytes": 6083
+          },
+          {
+            "path": "Forcing/WVBottomFrictionQuadratic.m",
+            "sha256": "47305cd30750cdcc5f6958603aa01ae08fb34e2503b18d7d89a5a74e7d82435b",
+            "bytes": 6357
+          },
+          {
+            "path": "Forcing/WVFixedAmplitudeForcing.m",
+            "sha256": "ceb094ae2d877805cba151596f9b30e3fb0a9c8a7f18bbf0a17dd56325d2af1c",
+            "bytes": 19907
+          },
+          {
+            "path": "Forcing/WVHorizontalDamping.m",
+            "sha256": "7f181d149066a47a6a946ba0281023458f96e46b178ff9e5ee080b064f4aceaf",
+            "bytes": 7148
+          },
+          {
+            "path": "Forcing/WVNarrowBandGeostrophicForcing.m",
+            "sha256": "f1f78bb4bdc560d5f498b7c4f6c029310a3e724d8b4f1e23c2444fce404ff03b",
+            "bytes": 16643
+          },
+          {
+            "path": "Forcing/WVNonlinearAdvection.m",
+            "sha256": "af913bab90cddca27b373f381d2a70e06fbc9c45309f76a0a2ede9cbd1509ecb",
+            "bytes": 7724
+          },
+          {
+            "path": "Forcing/WVPseudoTopographicWaveGeneration.m",
+            "sha256": "0a637d967d680525987f908e498247f7cfaaabf503d39d52326ad22d29a655e5",
+            "bytes": 41586
+          },
+          {
+            "path": "Forcing/WVThermalDamping.m",
+            "sha256": "9fe0b5b4826d45c0e42cfb78a45104a74f0333af75a8b75add82cab400f5306e",
+            "bytes": 3795
+          },
+          {
+            "path": "Forcing/WVVerticalDamping.m",
+            "sha256": "9315443fa78d2ba7d8e30c420e64ecd9ba84ab4579b044e4de0246fcc2147f73",
+            "bytes": 7195
+          },
+          {
+            "path": "Forcing/WVVerticalDiffusivity.m",
+            "sha256": "63362799fc062f104ef1f1e852c9648fb8ef989dbbf5e6cd267fce4ed5de2549",
+            "bytes": 8512
+          },
+          {
+            "path": "ObservingSystems/WVCoefficients.m",
+            "sha256": "f0537e22fcc11cb76ff3b27d35f4a8d8607a27804996e3acabc8caa818d0262c",
+            "bytes": 9766
+          },
+          {
+            "path": "ObservingSystems/WVEulerianFields.m",
+            "sha256": "6adc11562e05a59a05f584f604e399f6c0d7f5a74f10619c078dd29402957075",
+            "bytes": 13712
+          },
+          {
+            "path": "ObservingSystems/WVLagrangianParticles.m",
+            "sha256": "355ffdec48d69808a2c8e7aff9c85746158be1ad720ee861a14583ef8acfaea8",
+            "bytes": 16011
+          },
+          {
+            "path": "ObservingSystems/WVMooring.m",
+            "sha256": "c9315b789d422e3585bec207e2d5f86813bdf23d630014d07ed2bb0146c91bb0",
+            "bytes": 13191
+          },
+          {
+            "path": "ObservingSystems/WVTracer.m",
+            "sha256": "dff64ca6e8fca583028fd7155cfd0ebd865030a15878f05cccf214edfd3e79c1",
+            "bytes": 6636
+          },
+          {
+            "path": "Operations/@WVNoMotionProfile/WVNoMotionProfile.m",
+            "sha256": "fc297a6ec059521eedc108984f764f66b3667e20e8a6e99d204bb161e315f3a7",
+            "bytes": 8134
+          },
+          {
+            "path": "Operations/APEOperation.m",
+            "sha256": "2949a0df7676b34425a0e4fb6d650afb2026eb61a8c24a52f92a7d7434126020",
+            "bytes": 718
+          },
+          {
+            "path": "Operations/APVOperation.m",
+            "sha256": "07f7d2ea070ef7a38b0dd199c9b7e2bee2a8b10a0e919c940cab02defee9d3f0",
+            "bytes": 996
+          },
+          {
+            "path": "Operations/EtaTrueOperation.m",
+            "sha256": "560caed0a98b19be47f8996474e1a40ddf95a28051761de4c8d9edd7b143dfc1",
+            "bytes": 1972
+          },
+          {
+            "path": "Operations/SpatialForcingOperation.m",
+            "sha256": "554c28e21ddb174ca577dc9bbde6aceae9495c5a07c1968c1ec09dbf123a7d82",
+            "bytes": 10220
+          },
+          {
+            "path": "Operations/WVNoMotionProfileOperation.m",
+            "sha256": "f9470a09e343840915ff9c6618a175bb5c6739e4b4805ab92dcb895b70c011ea",
+            "bytes": 18323
+          },
+          {
+            "path": "PortableRuntime/include/WaveVortexRuntime/WVBarotropicQGForcingEngine.hpp",
+            "sha256": "8bb3576020ed891c299316c3a79fb28819484bd50c52b7afae70d03faf79c9b6",
+            "bytes": 7624
+          },
+          {
+            "path": "PortableRuntime/include/WaveVortexRuntime/WVBarotropicQGIntegrationSystem.hpp",
+            "sha256": "17ac55d8f94d4a419c8a9c84882c524a73dca9c2b4b9abe0ec901b907421ad22",
+            "bytes": 6014
+          },
+          {
+            "path": "PortableRuntime/include/WaveVortexRuntime/WVBoussinesqForcingEngine.hpp",
+            "sha256": "f10256d1ffc441b347f59befa92af159c405478f562a4055d70f4d36ad571436",
+            "bytes": 5908
+          },
+          {
+            "path": "PortableRuntime/include/WaveVortexRuntime/WVBoussinesqIntegrationSystem.hpp",
+            "sha256": "9553177ee589bcd390f1b3e87fc9db6b0f97abd922ec41d5836836fbd697fbe3",
+            "bytes": 4984
+          },
+          {
+            "path": "PortableRuntime/include/WaveVortexRuntime/WVCheckpointReader.hpp",
+            "sha256": "51ec6e69f24ac9f3873b17cefa002193fd95f50da229020de9ea407cc4a9b791",
+            "bytes": 8395
+          },
+          {
+            "path": "PortableRuntime/include/WaveVortexRuntime/WVCheckpointWriter.hpp",
+            "sha256": "63f33ac6f15801bbd1493014facdc6c361944090384b8fe56de8fef07b7b1953",
+            "bytes": 999
+          },
+          {
+            "path": "PortableRuntime/include/WaveVortexRuntime/WVConstantStratificationIntegrationSystem.hpp",
+            "sha256": "f0c59fb2c2d5bfc5c1c56f6e2fbda7435fad777014d5de45e53f3aca6e8366df",
+            "bytes": 5748
+          },
+          {
+            "path": "PortableRuntime/include/WaveVortexRuntime/WVDensityDiagnosticContract.hpp",
+            "sha256": "150c8ae5d1a732a22bee0c6ce4c765a4e440cda12f520319671337229f2633a0",
+            "bytes": 1013
+          },
+          {
+            "path": "PortableRuntime/include/WaveVortexRuntime/WVExtensionCatalog.hpp",
+            "sha256": "f0479c6c1546451e988ca2e9c83e4c6b01b6523c3b86c0f2becfc2a02cc3146a",
+            "bytes": 7974
+          },
+          {
+            "path": "PortableRuntime/include/WaveVortexRuntime/WVFieldEvaluationService.hpp",
+            "sha256": "f9cb131dcb14146fdcfc82a67aa115677b32410beb5cc1b4975fe191acdd8360",
+            "bytes": 29850
+          },
+          {
+            "path": "PortableRuntime/include/WaveVortexRuntime/WVForcing.hpp",
+            "sha256": "a94e173f3d8164dce04eb1fb5db488704d6fe67f45f88456901a78c7eec703ca",
+            "bytes": 4997
+          },
+          {
+            "path": "PortableRuntime/include/WaveVortexRuntime/WVForcingContracts.hpp",
+            "sha256": "4a1b100a8ab035175adda7feb36a9f65fedc54b73d09ae73f24665078f0715ee",
+            "bytes": 5052
+          },
+          {
+            "path": "PortableRuntime/include/WaveVortexRuntime/WVForcingEngine.hpp",
+            "sha256": "13e16379e70715fe81f5ce9ef4b63ed4c112e60eaf577a871e988bf7a3b54fad",
+            "bytes": 9886
+          },
+          {
+            "path": "PortableRuntime/include/WaveVortexRuntime/WVForcingSchedule.hpp",
+            "sha256": "5f255db064b224bf359f065b294506ea9ddc42f0edaf62cad4d359a987f4f48a",
+            "bytes": 1539
+          },
+          {
+            "path": "PortableRuntime/include/WaveVortexRuntime/WVForcingTendency.hpp",
+            "sha256": "966da8e0eee9fd49d751d9f4e8a3a0f944d97c20a0caea564af9e1030e1c3ef3",
+            "bytes": 1065
+          },
+          {
+            "path": "PortableRuntime/include/WaveVortexRuntime/WVHydrostaticForcingEngine.hpp",
+            "sha256": "3554df67dade90f8a2725446eccfe224852f9b25b92b93fcc218222a72b5e24b",
+            "bytes": 5917
+          },
+          {
+            "path": "PortableRuntime/include/WaveVortexRuntime/WVHydrostaticIntegrationSystem.hpp",
+            "sha256": "ef1ee226e514ddac40749ce2c38f2774f5a3e4b6bcfa95af9c8e1d3573b4e878",
+            "bytes": 4999
+          },
+          {
+            "path": "PortableRuntime/include/WaveVortexRuntime/WVIntegrationContracts.hpp",
+            "sha256": "649f29e05fdcd821920435686f4bd09c654e400e0d0504c9ffdea3c648b4e4e5",
+            "bytes": 8133
+          },
+          {
+            "path": "PortableRuntime/include/WaveVortexRuntime/WVIntegrationState.hpp",
+            "sha256": "67f17a04352c189ba231df74919aacaad73bb00bb2cf0c3a244688864f1fec20",
+            "bytes": 10688
+          },
+          {
+            "path": "PortableRuntime/include/WaveVortexRuntime/WVLagrangianParticles.hpp",
+            "sha256": "d347e95467b87c887bca7bd899131ada4dc31be2e4820cdf9d775f5d7e20374f",
+            "bytes": 1203
+          },
+          {
+            "path": "PortableRuntime/include/WaveVortexRuntime/WVModel.hpp",
+            "sha256": "9743f847cfd75a6d2789715ba346fa0e9d05face3286167a53bd62e5eac8ef81",
+            "bytes": 11499
+          },
+          {
+            "path": "PortableRuntime/include/WaveVortexRuntime/WVModelOutputConfiguration.hpp",
+            "sha256": "8737648cb221476a2f2e5e524852398b0c8c1b8c771277d84fce0e27bb336cda",
+            "bytes": 8313
+          },
+          {
+            "path": "PortableRuntime/include/WaveVortexRuntime/WVModelOutputNetCDF.hpp",
+            "sha256": "2b5149e0db45a137c31284d34ddde5a49cd897b99ddf36528ccbc009997087e1",
+            "bytes": 9866
+          },
+          {
+            "path": "PortableRuntime/include/WaveVortexRuntime/WVNativeVariablePolicy.hpp",
+            "sha256": "a9eb979e73d606ed55945e5add677c4901efc8a5263fe87fa24b798035c5c851",
+            "bytes": 1466
+          },
+          {
+            "path": "PortableRuntime/include/WaveVortexRuntime/WVNoMotionProfile.hpp",
+            "sha256": "fa9ee897d232e39bda85cc2c9af8c4dd20ed9d7540b192414eb616be121f0177",
+            "bytes": 2549
+          },
+          {
+            "path": "PortableRuntime/include/WaveVortexRuntime/WVNoMotionProfileRecovery.hpp",
+            "sha256": "ee9f3745e1f376fac3032c139bb27e056bd0d66287adc55f38a19bc2a23326f8",
+            "bytes": 3302
+          },
+          {
+            "path": "PortableRuntime/include/WaveVortexRuntime/WVObservation.hpp",
+            "sha256": "dc529e33fe3041869fd67bcc82327ca9d3cd7c5069c51f81f58e5a389d9d2643",
+            "bytes": 8476
+          },
+          {
+            "path": "PortableRuntime/include/WaveVortexRuntime/WVObserverContracts.hpp",
+            "sha256": "a3411d5c63d6169db3722128473a8590dfbdfff4eeb290c42c5f82e8b08c8728",
+            "bytes": 5959
+          },
+          {
+            "path": "PortableRuntime/include/WaveVortexRuntime/WVObserverOutputEvaluationService.hpp",
+            "sha256": "1a91879fee322ed37076fdadcc0fc535d958aa6ff131fe34446f1716c15cffcb",
+            "bytes": 4826
+          },
+          {
+            "path": "PortableRuntime/include/WaveVortexRuntime/WVObserverOutputProvider.hpp",
+            "sha256": "7afcd8bb9b45f3ca388096b9cc440e70a79dbd82ca0b0714555273eec5a5cf61",
+            "bytes": 8102
+          },
+          {
+            "path": "PortableRuntime/include/WaveVortexRuntime/WVObservingSystem.hpp",
+            "sha256": "859f5482c35d51056331f1055470f16594e772b466f0e26d3ac9a4b6538c02ad",
+            "bytes": 3304
+          },
+          {
+            "path": "PortableRuntime/include/WaveVortexRuntime/WVOutputOrchestration.hpp",
+            "sha256": "e83c1a05cb5c96cb8e0f8813ad4ddc342fa60b95fcb16b6ca3a3159d019465fd",
+            "bytes": 14915
+          },
+          {
+            "path": "PortableRuntime/include/WaveVortexRuntime/WVOutputSchedule.hpp",
+            "sha256": "3f746723d41555d69e1ada35eaee8fe6c07c38458e5d1587c4663ee6c146b85a",
+            "bytes": 7056
+          },
+          {
+            "path": "PortableRuntime/include/WaveVortexRuntime/WVPortableImplementationContract.hpp",
+            "sha256": "8a388243ef06cd5e55ec54c3123bf27c24f1b55e8f26d4082d3e5e8a5f0826f4",
+            "bytes": 1839
+          },
+          {
+            "path": "PortableRuntime/include/WaveVortexRuntime/WVPortableTypedRecord.hpp",
+            "sha256": "ed63e2fdc31ae7b7b6fd7fd0f32ed5d034c16882df33601bf2489ded3127e180",
+            "bytes": 2516
+          },
+          {
+            "path": "PortableRuntime/include/WaveVortexRuntime/WVPortableVariablePlan.hpp",
+            "sha256": "4307c51f5d1f3703417e10a0d622d57e8f9ba18ce22e792255dea6f94a773225",
+            "bytes": 9090
+          },
+          {
+            "path": "PortableRuntime/include/WaveVortexRuntime/WVRungeKutta.hpp",
+            "sha256": "24e5494ee76993439a364f9f3dac868c19756ed781e9077e80d16241b2149405",
+            "bytes": 17574
+          },
+          {
+            "path": "PortableRuntime/include/WaveVortexRuntime/WVRunner.hpp",
+            "sha256": "24112aa2984625c07e284da0b427259aa862f21cb9082e1e32f401f6aa25afdb",
+            "bytes": 943
+          },
+          {
+            "path": "PortableRuntime/include/WaveVortexRuntime/WVStratifiedModalRecord.hpp",
+            "sha256": "f70601422f499ea0e2df1379468d7cba9e9c64c5a03bb14e2cb4ff19dde22ca6",
+            "bytes": 4092
+          },
+          {
+            "path": "PortableRuntime/include/WaveVortexRuntime/WVStratifiedQGForcingEngine.hpp",
+            "sha256": "a935abde1ab35b4a50a0e97ad41e23d330f667d40f5f49421cb577d996832ffd",
+            "bytes": 8090
+          },
+          {
+            "path": "PortableRuntime/include/WaveVortexRuntime/WVStratifiedQGIntegrationSystem.hpp",
+            "sha256": "df944682e2b4f22eec0ec5ef962d738df7df7a6be5b550e0c64c81d8ba9b98ed",
+            "bytes": 5351
+          },
+          {
+            "path": "PortableRuntime/include/WaveVortexRuntime/WVTracer.hpp",
+            "sha256": "b443240e896462271c99d9076458ae8bbd9c0495d38b017812e3bc7be8c2b893",
+            "bytes": 822
+          },
+          {
+            "path": "PortableRuntime/include/WaveVortexRuntime/WVVariableEvaluation.hpp",
+            "sha256": "bdb812e70119023b43ca491cfbb594b4cac311ce5949286491918ab9f58054c0",
+            "bytes": 10663
+          },
+          {
+            "path": "PortableRuntime/include/WaveVortexRuntime/WVVariableEvaluationPolicy.hpp",
+            "sha256": "41658b910ca5c79dca1714b574d2682d7731ecb6df16a1b6dc08624eff72a16b",
+            "bytes": 362
+          },
+          {
+            "path": "PortableRuntime/include/WaveVortexRuntime/WVVariableKernelServices.hpp",
+            "sha256": "1ee03eea7f923f2cac06bc2518f3d9db9e67361d73f2886b4770bde9dea788df",
+            "bytes": 679
+          },
+          {
+            "path": "PortableRuntime/include/WaveVortexRuntime/generated/WVPortableVariableCatalog.hpp",
+            "sha256": "483628bbe99aae674ef5d06a67ef874e3bc13f82d3b298233fa875f6fd3bd7a8",
+            "bytes": 27501
+          },
+          {
+            "path": "PortableRuntime/include/WaveVortexRuntime/generated/WVPortableVariableContracts.hpp",
+            "sha256": "66d5189e29ded23c8a661349c1f4cbc672cd4f8d47ce0be532cf5fb7bcab0815",
+            "bytes": 618753
+          },
+          {
+            "path": "PortableRuntime/src/WVBarotropicQGFieldEvaluationAdapter.cpp",
+            "sha256": "da36644f53ad785c7b88789be6034ea95f2c28c43b1316bd0aa422829a06e0d6",
+            "bytes": 51759
+          },
+          {
+            "path": "PortableRuntime/src/WVBarotropicQGFieldEvaluationAdapter.hpp",
+            "sha256": "5a7d6c7d5faf3377df6d160e8d9038f406076b8a2b179773dd1a603585e60b2e",
+            "bytes": 4701
+          },
+          {
+            "path": "PortableRuntime/src/WVBarotropicQGForcingEngine.cpp",
+            "sha256": "1ef5c02891b2103ecde5bde19e8c9bffddcdf1adb9f87d402032789813c98f91",
+            "bytes": 47960
+          },
+          {
+            "path": "PortableRuntime/src/WVBarotropicQGIntegrationSystem.cpp",
+            "sha256": "2975fed6550ea0fb4b8b4651bf5708bdac14a9e112cd894d3ec974cb2c94e5bb",
+            "bytes": 28846
+          },
+          {
+            "path": "PortableRuntime/src/WVBoussinesqForcingEngine.cpp",
+            "sha256": "f6097848018c3a49aa56ed636887268334402dbcc3553b4636469ccaeebc2aea",
+            "bytes": 40914
+          },
+          {
+            "path": "PortableRuntime/src/WVBoussinesqIntegrationSystem.cpp",
+            "sha256": "1c43f0503bf701eb4dd59703f5a9ed7d5ea601a6bc064bef566c467acaf66466",
+            "bytes": 24678
+          },
+          {
+            "path": "PortableRuntime/src/WVCheckpointTransformAdapters.cpp",
+            "sha256": "8164ca316fd60b4b4ca8f8de9e014e6ebf17dd97c8d0cf89f8bf9b6ffa48c111",
+            "bytes": 52267
+          },
+          {
+            "path": "PortableRuntime/src/WVCheckpointWriter.cpp",
+            "sha256": "9cc3f50f54ac6f8d82177b0fcc156bd9119dbcdaec60a560dabfd137bd49f85c",
+            "bytes": 33036
+          },
+          {
+            "path": "PortableRuntime/src/WVCheckpointWriterTestHooks.hpp",
+            "sha256": "e6305469ddcb833229bf9a69289ff02330a373e6b00ada4b9179f08d3123b69f",
+            "bytes": 331
+          },
+          {
+            "path": "PortableRuntime/src/WVConstantStratificationIntegrationSystem.cpp",
+            "sha256": "21d00e8a75de899425ff991896d9d9dedff2201228835d0f97e01bc9dab569eb",
+            "bytes": 26583
+          },
+          {
+            "path": "PortableRuntime/src/WVDensityEventEvaluation.cpp",
+            "sha256": "5a2aab0f2f706ce41ccfc79ec0404ab8eb63dab6bb266f44e12a6810fb9daddb",
+            "bytes": 21474
+          },
+          {
+            "path": "PortableRuntime/src/WVDensityEventEvaluation.hpp",
+            "sha256": "ee890c682f393ff183955596269a6621613503a30221ffb6fa401fa3ccdda9dd",
+            "bytes": 6178
+          },
+          {
+            "path": "PortableRuntime/src/WVDiagnosticFieldPlan.cpp",
+            "sha256": "0db26c526f6f560a90513c403c8a4b3b4354e91e6c6d45fef40238918adbfbc3",
+            "bytes": 68325
+          },
+          {
+            "path": "PortableRuntime/src/WVDiagnosticFieldPlan.hpp",
+            "sha256": "0768733ee74907e79111f1cef52d7b5da6e57ce69f36b12cd1cca3f583ec603b",
+            "bytes": 4421
+          },
+          {
+            "path": "PortableRuntime/src/WVExtensionCatalog.cpp",
+            "sha256": "ca6eb58dadd0cd91e9057595ea440b9ee7ad1f658fe6621ca2e4136498253877",
+            "bytes": 29279
+          },
+          {
+            "path": "PortableRuntime/src/WVFieldEvaluationEventWorkspace.hpp",
+            "sha256": "cca7f1088d046814cd768234325710fff3665156b1c9e16af1bf871a216cce4f",
+            "bytes": 50786
+          },
+          {
+            "path": "PortableRuntime/src/WVFieldEvaluationService.cpp",
+            "sha256": "1c37ff9158247e9976d668e50c9455e8df07a14a47c0c2d05146ff9a99ed0190",
+            "bytes": 202687
+          },
+          {
+            "path": "PortableRuntime/src/WVForcingContracts.cpp",
+            "sha256": "442436074c6c6290c8a0c92480dd43674f85d3fe9c3ed6815cfb6d8b8b977ab4",
+            "bytes": 18051
+          },
+          {
+            "path": "PortableRuntime/src/WVForcingDiagnosticBinding.hpp",
+            "sha256": "42891c38a36fbe69d5457168f64d475d9b7d289a7090c22a3e01c8f0214dcb81",
+            "bytes": 13978
+          },
+          {
+            "path": "PortableRuntime/src/WVForcingDiagnosticWorkspace.hpp",
+            "sha256": "03e432f400511aa7fdb583e5944a511b60aca94a0beec498140c781ddaedb1ea",
+            "bytes": 36977
+          },
+          {
+            "path": "PortableRuntime/src/WVForcingEngine.cpp",
+            "sha256": "4c3fa923cc8913f38c823715f2a54b5dd1108147917b6053d90cfec5ab490abf",
+            "bytes": 115493
+          },
+          {
+            "path": "PortableRuntime/src/WVForcingImplementations.hpp",
+            "sha256": "f12a6937c53fb92777aa273fec5045bc5e16389299e1bf365b29c930fe527435",
+            "bytes": 10290
+          },
+          {
+            "path": "PortableRuntime/src/WVForcingScheduleDecoder.cpp",
+            "sha256": "2eef7a7f903bd1d4b228816d04f81944f4c3bdde0c2233586a14436e56398bc9",
+            "bytes": 27995
+          },
+          {
+            "path": "PortableRuntime/src/WVForcingScheduleDecoder.hpp",
+            "sha256": "0960956d2f5cc24b023f5eca9d4b5dfa1867404bdd47d20140752835efdba252",
+            "bytes": 1223
+          },
+          {
+            "path": "PortableRuntime/src/WVHydrostaticForcingEngine.cpp",
+            "sha256": "9053758115641dc0a9411cace5e811e580048416de120ed8a909c86be8405315",
+            "bytes": 41355
+          },
+          {
+            "path": "PortableRuntime/src/WVHydrostaticIntegrationSystem.cpp",
+            "sha256": "ac32728d1e871a81001197152458e78cbe17d945d633a3da7a4dbfffba2ac2c8",
+            "bytes": 24703
+          },
+          {
+            "path": "PortableRuntime/src/WVIntegrationState.cpp",
+            "sha256": "336f05fc957bf2c2e6c83900246e935cda15a5ac6ae456d552d7ee9c8f1d57c1",
+            "bytes": 27839
+          },
+          {
+            "path": "PortableRuntime/src/WVLegacyObservationNetCDFAdapter.cpp",
+            "sha256": "f2a09eeae014218946945b8d5521fb28e87df76a23b8533bad344ee3922b7bbe",
+            "bytes": 54354
+          },
+          {
+            "path": "PortableRuntime/src/WVLegacyObservationNetCDFAdapter.hpp",
+            "sha256": "433939c3cfd8afb54c15f6a03566d18c27e46a0453b5baa517e85205aa1dfdd3",
+            "bytes": 1978
+          },
+          {
+            "path": "PortableRuntime/src/WVLegacyObserverCompatibility.hpp",
+            "sha256": "52097e637ace915a5c50757c7055f8929e69fe42456aa7a502ff1b5b159bf40f",
+            "bytes": 2977
+          },
+          {
+            "path": "PortableRuntime/src/WVModel.cpp",
+            "sha256": "18f5b76db361e0388a76a65945e2dc1f6d390ed14079f6de6ce6c1589327b99c",
+            "bytes": 39841
+          },
+          {
+            "path": "PortableRuntime/src/WVModelInternalAccess.hpp",
+            "sha256": "f0418b0bb4eef1392d3950e7b1c32a5da11dc73fe22a15f746cb5e0c57656249",
+            "bytes": 651
+          },
+          {
+            "path": "PortableRuntime/src/WVModelOutputConfiguration.cpp",
+            "sha256": "d3a3ab1270766cf428d57c93d37b2db362161d94e81c3498ce1bbe421e007d51",
+            "bytes": 39095
+          },
+          {
+            "path": "PortableRuntime/src/WVModelOutputNetCDFReader.cpp",
+            "sha256": "4cdeac8d4adb5458f61f219ba617c0bbcbe2f7c24b80382232b3eac16fdbe079",
+            "bytes": 59988
+          },
+          {
+            "path": "PortableRuntime/src/WVModelOutputNetCDFWriter.cpp",
+            "sha256": "63fd048d8dc124808259f6ac6d9480bf76b74fcf9864565743d9f970257e46e2",
+            "bytes": 179714
+          },
+          {
+            "path": "PortableRuntime/src/WVModelOutputTransformAdapters.cpp",
+            "sha256": "2626f63130a867fde21655beec406b265ea9d64eb2f7c97fbf9a12126aa969b5",
+            "bytes": 45537
+          },
+          {
+            "path": "PortableRuntime/src/WVModelOutputTransformAdapters.hpp",
+            "sha256": "6113b58800f6088fdc7c7e6f92f07b276d1fdbaa0aa7d360f8c0107682fe5913",
+            "bytes": 3779
+          },
+          {
+            "path": "PortableRuntime/src/WVModelTransformAdapters.cpp",
+            "sha256": "4088225773dcae441dc9c0f419b50675ddc8bc25eac119eda8b5426bcc75da3e",
+            "bytes": 41842
+          },
+          {
+            "path": "PortableRuntime/src/WVModelTransformAdapters.hpp",
+            "sha256": "6b66c8b6197a00a3ca253dca8542675663740922553bb5b53ebedc33cb52cd9d",
+            "bytes": 3560
+          },
+          {
+            "path": "PortableRuntime/src/WVNativeVariablePolicy.cpp",
+            "sha256": "7c34a145e60c89471e3e8633aa9f0a73897379a32bb6fa5f44ce3150860405ba",
+            "bytes": 4865
+          },
+          {
+            "path": "PortableRuntime/src/WVNetCDF.cpp",
+            "sha256": "021953e8a2b9e5c683bcce1e02a22aa7c28329ea897171115c9a5f2a7b3640d0",
+            "bytes": 9653
+          },
+          {
+            "path": "PortableRuntime/src/WVNetCDF.hpp",
+            "sha256": "199348380b648f31c4e250350a9c242e503e12acd81521a17fc964a32859757f",
+            "bytes": 1820
+          },
+          {
+            "path": "PortableRuntime/src/WVNoMotionDensityMoments.cpp",
+            "sha256": "c00438f55038f38f8de91b2a6781041adf17221dd6e8fbd0e50cf5c3d40b1a19",
+            "bytes": 9901
+          },
+          {
+            "path": "PortableRuntime/src/WVNoMotionProfile.cpp",
+            "sha256": "0999b4d571a2a1deab55ff554b3af6a265506e5382c28d02127382cf6893340d",
+            "bytes": 12767
+          },
+          {
+            "path": "PortableRuntime/src/WVNoMotionProfileRecovery.cpp",
+            "sha256": "725c00b4c0611dc0e3569049a693553f86c7d0854cd56c3ce45e112a1c646105",
+            "bytes": 17991
+          },
+          {
+            "path": "PortableRuntime/src/WVObservation.cpp",
+            "sha256": "7d6e35bee07ba19daa82fc324d8d58f3f644be3f860445c4db580893b425cc77",
+            "bytes": 52680
+          },
+          {
+            "path": "PortableRuntime/src/WVObserverAdapter.cpp",
+            "sha256": "ead622c9fcfcd94606a4b7c5ee0dcfabebcd435a90620abe45af9c94138290b5",
+            "bytes": 48273
+          },
+          {
+            "path": "PortableRuntime/src/WVObserverAdapter.hpp",
+            "sha256": "0c80e36bb7494ef4c37f38355dfdb2177e266a745a7d866af62c85a80f0783be",
+            "bytes": 971
+          },
+          {
+            "path": "PortableRuntime/src/WVObserverContracts.cpp",
+            "sha256": "b482afc1b9dfdd79c153a067d4ae0165c1b5e8857819ef32d9c4cf410e1fa93f",
+            "bytes": 35572
+          },
+          {
+            "path": "PortableRuntime/src/WVObserverOutputEvaluationService.cpp",
+            "sha256": "c918a3e34ec40cb863ddc683fb628392a97a116cd65acfb1dc3497a4e24ea18f",
+            "bytes": 77447
+          },
+          {
+            "path": "PortableRuntime/src/WVObserverSampleSource.cpp",
+            "sha256": "b006d04a44c6dd2d067856abf572e755564117118aeb4d95f79e1b951fe61d1f",
+            "bytes": 2864
+          },
+          {
+            "path": "PortableRuntime/src/WVOrderedRKCombination.hpp",
+            "sha256": "d6f42e0f9ed7c014b477bd8835dc28aca32209ebb7e2c14589cfcc3784ff7816",
+            "bytes": 2122
+          },
+          {
+            "path": "PortableRuntime/src/WVOutputOrchestration.cpp",
+            "sha256": "03a3ad962ba28cc466a850b028a4664aae9ec58e7c3487e85e75407c8af4864b",
+            "bytes": 68360
+          },
+          {
+            "path": "PortableRuntime/src/WVOutputSchedule.cpp",
+            "sha256": "be34c83b77ef553b61a5bf519a96559a7ea74ea9e5aba51f381b8f87be32e594",
+            "bytes": 17795
+          },
+          {
+            "path": "PortableRuntime/src/WVOutputTransformAdapters.cpp",
+            "sha256": "678b35a5667029a97b8204c592280053356048f8f6e965097c0e4e3938301691",
+            "bytes": 4664
+          },
+          {
+            "path": "PortableRuntime/src/WVOutputTransformAdapters.hpp",
+            "sha256": "1e095895c5174866a44d87e01db94af9cb56ec5aafab4c1e6ab9c8e4527b900d",
+            "bytes": 1074
+          },
+          {
+            "path": "PortableRuntime/src/WVPortableImplementationContract.cpp",
+            "sha256": "9cb1c48cede0745bab4d8eb0130b276c00e8010072094e15dbf7770f76456e07",
+            "bytes": 2691
+          },
+          {
+            "path": "PortableRuntime/src/WVPortableTypedRecord.cpp",
+            "sha256": "682ec7762bdf13a1356fe95a4737dbf365d7782f9fb2e9bc1b6de32bfa084698",
+            "bytes": 14889
+          },
+          {
+            "path": "PortableRuntime/src/WVRungeKutta.cpp",
+            "sha256": "a7fffb91955e3a0c4db03b651507a022b8a5aeb7e72b422c39a80271da06616c",
+            "bytes": 133131
+          },
+          {
+            "path": "PortableRuntime/src/WVScopedStateEvaluation.hpp",
+            "sha256": "697c57aed987de96b562c8892ead271217bfca878804f02b07dc83e6a82feed5",
+            "bytes": 1007
+          },
+          {
+            "path": "PortableRuntime/src/WVStratifiedFieldEvaluationAdapter.cpp",
+            "sha256": "feef1a8eba7429fec715da67401e4ea3593514fa6f956a263b4c050dda05cd7a",
+            "bytes": 73986
+          },
+          {
+            "path": "PortableRuntime/src/WVStratifiedFieldEvaluationAdapter.hpp",
+            "sha256": "87ca5e64fb4e22164c2d564aea193d2a651f80e45df3cdff0280db5d352c442d",
+            "bytes": 5466
+          },
+          {
+            "path": "PortableRuntime/src/WVStratifiedModalRecord.cpp",
+            "sha256": "af33628758b911bb43700a6f0af5c6268079b6359864d5edf8e219a613e17307",
+            "bytes": 25189
+          },
+          {
+            "path": "PortableRuntime/src/WVStratifiedQGForcingEngine.cpp",
+            "sha256": "9c30904bb0e28863b4840c615d68978cc046f8b23b6010a3000a2b71b019df3c",
+            "bytes": 51648
+          },
+          {
+            "path": "PortableRuntime/src/WVStratifiedQGIntegrationSystem.cpp",
+            "sha256": "e79f6d933c8fb8b422a5f56ffcea12b49ce10e6538decc454df1500b82d251fa",
+            "bytes": 26236
+          },
+          {
+            "path": "WVArrayIntegrator.m",
+            "sha256": "39a1405fc5d8ccbb59299bc0e019a971aa530119e66eb6668abe38529d92b29b",
+            "bytes": 4327
+          },
+          {
+            "path": "WVCoefficientMatrix.m",
+            "sha256": "8440c59a9dbbcd3e11d716cea2c157db967492b1cf921bf8a07551f84a9fac86",
+            "bytes": 71
+          },
+          {
+            "path": "WVFlowComponent.m",
+            "sha256": "b1711c2dc447a9bf587d1ee90f1cace79810f47ba935c7c67de8e76fdacb057f",
+            "bytes": 12104
+          },
+          {
+            "path": "WVForcing.m",
+            "sha256": "57a2f41c16c9e71aaca07045807bb5de0a17120c032acf56476d01e052aa2bbb",
+            "bytes": 18277
+          },
+          {
+            "path": "WVForcingType.m",
+            "sha256": "7bb55360053bd004cba2c0b9dcd3f0d7c5f26fab0ced39b0b38bfe3376288e4f",
+            "bytes": 173
+          },
+          {
+            "path": "WVModelOutputFile.m",
+            "sha256": "b1b546df8bc6c1a33c9c0ee75267d21a5104a2451250a94b222e97f3a83ba43f",
+            "bytes": 23036
+          },
+          {
+            "path": "WVModelOutputGroup.m",
+            "sha256": "a39dbc626d08dafa90dd254b633063942c532334d803cf202147b0a3b83d917f",
+            "bytes": 16977
+          },
+          {
+            "path": "WVModelOutputGroupEvenlySpaced.m",
+            "sha256": "5d280724d0ac76484231515ffaa098b69bddf66eb62a98ba4cc2eca95c2b297b",
+            "bytes": 7003
+          },
+          {
+            "path": "WVObservingSystem.m",
+            "sha256": "105c95f014d1b528fcfdf68144e2a8f0f1896c18f43aa10edfc3ada1d74312f1",
+            "bytes": 8016
+          },
+          {
+            "path": "WVOperation.m",
+            "sha256": "180b37790cc61ee1e868f9677bd5aeb97335eb140cbd68fd48be9610198331a6",
+            "bytes": 4621
+          },
+          {
+            "path": "WVOrthogonalSolution.m",
+            "sha256": "3349fb8191c4e0708f31fcc5cc32fa19cd4ea41ba6339e4ac2326e5429037489",
+            "bytes": 4366
+          },
+          {
+            "path": "WVPrimaryFlowComponent.m",
+            "sha256": "755163ccad538ad71b09ce67efe509f02729013e370a4bb84ee9051d0ae0831f",
+            "bytes": 12287
+          },
+          {
+            "path": "WVRotatingFPlane.m",
+            "sha256": "9d3cba9c0260d5f5a3b32decf09f762a63e5d99c27d2d35abcbcd974b7de322f",
+            "bytes": 4228
+          },
+          {
+            "path": "WVTotalFlowComponent.m",
+            "sha256": "ecfd09a5b19971634335cdc54c61492b8d1a79660c88b5cdb0127514dd649048",
+            "bytes": 9975
+          },
+          {
+            "path": "WVVariableAnnotation.m",
+            "sha256": "e1f25c5add0e74bd07e6216107e9506089f1af3901cf17bcc42451ca79e048f7",
+            "bytes": 3868
+          },
+          {
+            "path": "buildfile.m",
+            "sha256": "793169da3739efb177f6be51e304b23e72d1423804270f0905cf2ce9fec6fa69",
+            "bytes": 8704
+          }
+        ]
+      },
+      "moduleSHA256": "d34290cc980713f97bf5244dc908e64d75e5748bd9c8cef1ff535276b2e0d74f",
+      "baseLibrarySHA256": "f469cadf0a7db644c4a03d668d4589265c1487ebef466487601dbcac507578dc",
+      "threadLibrarySHA256": "0022cb20f8601742609c8624bca4ea91c3e745d2b2b85926703328f79e4aeccf",
+      "providerId": "native-neon-pthreads",
+      "providerSourceSHA256": "5630c24cdeb33b131612f7eb4b1a9934234754f9f388ff8617458d0be6f239a1"
+    },
+    "module": {
+      "name": "wv_compiled_backend_mex",
+      "path": "/Users/jearly/Library/Caches/WaveVortexModel/compiled-backend-v1/maca64/R2025b/f019412891e4feceea002d08b2044a6ad9ab91d4a21ad03dee3d1295652093e2/module/wv_compiled_backend_mex.mexmaca64",
+      "sha256": "d34290cc980713f97bf5244dc908e64d75e5748bd9c8cef1ff535276b2e0d74f",
+      "engine": "fftw",
+      "isInstalled": true,
+      "identityValidated": true,
+      "loadedBeforeInspection": false,
+      "loadedAfterInspection": false,
+      "nonlinearFluxSchedule": "retained-compact-streamed-target-three-channel-v1",
+      "executionScheduleVersion": 1,
+      "workerPolicyIdentifier": "constant-stage-workers-v1",
+      "requestedHorizontalWorkers": 12,
+      "requestedPointwiseWorkers": 12,
+      "planCountMeaning": "logical-prepared-operation-slots",
+      "matlabTransformBridgeVersion": 9
+    },
+    "privateExportVersion": "4.3.1",
+    "releasePublished": false,
+    "metadataIsolation": "Copied .git worktree pointer moved outside the temporary package, with hash receipt; scientific files unchanged. Separate OceanKit helper issue draft awaiting ownership confirmation."
+  },
+  "sourceEquivalence": "C++ sources are identical to the 114c7354 native and dual-provider forward qualification. Subsequent changes are documentation/receipts and two equivalent numel(x)==1 to isscalar(x) MATLAB predicates; the rebuilt MEX source manifest and four affected all-family/routing tests pass.",
+  "receipts": [
+    {
+      "path": "/private/tmp/wvm503/constant-steady-comparison.json",
+      "sha256": "b00be4ae710ebb052eced200f9777e6d28a3961ec1acb0ddc2f3b03812f6c47e"
+    },
+    {
+      "path": "/private/tmp/wvm503/provider-equivalence.json",
+      "sha256": "51262f3d7a27c7ab7e1bc4feaf916843f4a5e85aa643c2a17ae02cd2e036b8bb"
+    },
+    {
+      "path": "/private/tmp/wvm503/runWVM507ConstantRegressionSteady.m",
+      "sha256": "c9c2d55eedada02ba3104d83c9b13815fdde52000b74951b1773f53ef8da4605"
+    },
+    {
+      "path": "/private/tmp/wvm503/compareWVM507ConstantRegressionSteady.py",
+      "sha256": "ccf428adab59daaea5e4e29e1ed6df952d0cb3fc34cfc862c5c679598a6bfdf8"
+    },
+    {
+      "path": "/private/tmp/wvm503/scalar-predicate-matlab-tests.csv",
+      "sha256": "ac41ae2810ab08084920a69860f3db668e12c9a56f50cd59646d699991b6bece"
+    },
+    {
+      "path": "/private/tmp/wvm503/final-ebfd9cc9-installed/export-preparation.json",
+      "sha256": "5863c21807e084e953b1fc6c28d4b33f6e857ce9fe82639eddabd497df3763aa"
+    },
+    {
+      "path": "/private/tmp/wvm503/final-ebfd9cc9-installed/export-metadata-isolation.json",
+      "sha256": "d9e364e99e0f1f80a7da06cb214977f4e0266bbd16391d44bb5b55f668662f96"
+    },
+    {
+      "path": "/private/tmp/wvm503/final-ebfd9cc9-installed/installed-export-qualification.json",
+      "sha256": "8382d46717b12e78166fbbcf912165f67b10d95cf566cefdb4e5a27f1af722f8"
+    },
+    {
+      "path": "/private/tmp/wvm503/final-ebfd9cc9-installed/installed-compiled-qualification.json",
+      "sha256": "c3f26cc62abb1a63a648b27548591a3affaf58a4972b5a6760b9469586589c7a"
+    },
+    {
+      "path": "/private/tmp/wvm503/constant-steady-baseline-1.json",
+      "sha256": "3d954360f64203cae5e016071ed1eea03ca27fd83d649d56b8af76ac6a1522e5"
+    },
+    {
+      "path": "/private/tmp/wvm503/constant-steady-baseline-2.json",
+      "sha256": "dd71daf4a29afd8c54469d615ca0657e1181c763e64facf6cc3e5bf8d0d7491a"
+    },
+    {
+      "path": "/private/tmp/wvm503/constant-steady-baseline-3.json",
+      "sha256": "647a8c3b0c80bd55317d77ee3bfd8f2668d8d8d49a1e4f986ce387c1cfde93bd"
+    },
+    {
+      "path": "/private/tmp/wvm503/constant-steady-baseline-4.json",
+      "sha256": "14a0ed9d96b50eba8bb8d33de128c7610a974b3ea1da2510beefcc6f2b20d94d"
+    },
+    {
+      "path": "/private/tmp/wvm503/constant-steady-candidate-1.json",
+      "sha256": "2ca794c7be209e5f50348e11c433bf2bdbeac868e3245e1da7eb225a813ac12f"
+    },
+    {
+      "path": "/private/tmp/wvm503/constant-steady-candidate-2.json",
+      "sha256": "8f3b178b71b97cfc7a0c18c7f438ae32134e5a6316e6a12fd8212cfd093d38ee"
+    },
+    {
+      "path": "/private/tmp/wvm503/constant-steady-candidate-3.json",
+      "sha256": "33f1509327ea778db293b76832b704bb64aa6f6717ad89061560d756700647c7"
+    },
+    {
+      "path": "/private/tmp/wvm503/constant-steady-candidate-4.json",
+      "sha256": "17a865170eea9b62c9879567a4b6dbca61331a6bd3b0b01c9b7455d72635cca9"
+    }
+  ]
+}

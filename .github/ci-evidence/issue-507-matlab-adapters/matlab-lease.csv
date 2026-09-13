@@ -1,0 +1,8 @@
+Name,Passed,Failed,Incomplete,Duration,Details
+TestWVCompiledConfiguration/compiledConfigurationRejectsPublicMutation,1,0,0,3.715941,
+TestWVCompiledConfiguration/rejectedMutationPreservesActiveEvaluation,1,0,0,1.63020991666667,
+TestWVCompiledConfiguration/privateBackendsLeaseMatlabConfiguration,1,0,0,1.116984875,
+TestWVCompiledConfiguration/failedPrivateBackendCreationDoesNotLease,1,0,0,1.191488125,
+TestWVCompiledConfiguration/matlabConfigurationRemainsWritable,1,0,0,1.13694183333333,
+TestWVCompiledBarotropicPrimitives/rawAndStateOperationsMatchMatlab,1,0,0,0.769291958333333,
+TestWVCompiledEvaluationScope/allFamiliesShareOneScopedStateAndCache,1,0,0,3.77655675,

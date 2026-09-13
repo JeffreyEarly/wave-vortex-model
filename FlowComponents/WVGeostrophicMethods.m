@@ -87,6 +87,36 @@ classdef WVGeostrophicMethods < handle
     end
 
     methods
+        function set.UA0(self,value)
+            if isa(self,"WVTransform"), self.assertCompiledConfigurationMutable(); end
+            self.UA0 = value;
+        end
+
+        function set.VA0(self,value)
+            if isa(self,"WVTransform"), self.assertCompiledConfigurationMutable(); end
+            self.VA0 = value;
+        end
+
+        function set.NA0(self,value)
+            if isa(self,"WVTransform"), self.assertCompiledConfigurationMutable(); end
+            self.NA0 = value;
+        end
+
+        function set.PA0(self,value)
+            if isa(self,"WVTransform"), self.assertCompiledConfigurationMutable(); end
+            self.PA0 = value;
+        end
+
+        function set.A0Z(self,value)
+            if isa(self,"WVTransform"), self.assertCompiledConfigurationMutable(); end
+            self.A0Z = value;
+        end
+
+        function set.A0N(self,value)
+            if isa(self,"WVTransform"), self.assertCompiledConfigurationMutable(); end
+            self.A0N = value;
+        end
+
         function flowComponent = get.geostrophicComponent(self)
             flowComponent = self.flowComponentWithName('geostrophic');
         end

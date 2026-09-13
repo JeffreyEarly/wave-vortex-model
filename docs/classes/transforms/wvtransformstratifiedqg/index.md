@@ -119,6 +119,8 @@ The quasigeostrophic state is stored in
       + [`GMatrix`](/classes/transforms/wvtransformstratifiedqg/gmatrix.html) Transformation matrix $$G$$ projecting G-grid values onto vertical modes; shape `[Nj Nz]`.
       + [`GinvMatrix`](/classes/transforms/wvtransformstratifiedqg/ginvmatrix.html) Transformation matrix $$G^{-1}$$ reconstructing G-grid values from vertical modes; shape `[Nz Nj]`.
   + Transform configuration
+    + [`computationalBackend`](/classes/transforms/wvtransformstratifiedqg/computationalbackend.html) Runtime numerical backend. MATLAB remains the default.
+    + [`computationalBackendMetadata`](/classes/transforms/wvtransformstratifiedqg/computationalbackendmetadata.html) Provider identity, storage and execution metrics for this transform.
     + [`isHydrostatic`](/classes/transforms/wvtransformstratifiedqg/ishydrostatic.html) Whether the transform uses the hydrostatic approximation.
     + [`shouldAntialias`](/classes/transforms/wvtransformstratifiedqg/shouldantialias.html) Whether the spectral grid excludes modes that alias quadratic products.
 + Initialize the flow

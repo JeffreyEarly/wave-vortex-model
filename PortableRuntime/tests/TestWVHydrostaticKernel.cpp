@@ -805,8 +805,10 @@ void tiledNonlinearParity(const std::shared_ptr<const WVStratifiedModalRecord>& 
         const WVState state{83,17,{{input[0].data(),shape},{input[1].data(),shape},{input[2].data(),shape}}};
         WVFlux a{{first[0].data(),shape},{first[1].data(),shape},{first[2].data(),shape}};
         WVFlux b{{second[0].data(),shape},{second[1].data(),shape},{second[2].data(),shape}};
-        std::vector<double> oldFields(4*R),newFields(4*R),scratch(R);
+        std::vector<double> oldFields(4*R),newFields(4*R),oldRaw(3*R),newRaw(3*R),scratch(R);
         const WVRealFieldBundleView output{newFields.data(),{g.Nx,g.Ny,g.Nz,4}};
+        WVRealFieldBundleView oldRawOutput{oldRaw.data(),{g.Nx,g.Ny,g.Nz,3}};
+        WVRealFieldBundleView newRawOutput{newRaw.data(),{g.Nx,g.Ny,g.Nz,3}};
         const WVRealFieldBundleConstView borrowed{oldFields.data(),{g.Nx,g.Ny,g.Nz,4}};
         const WVHydrostaticField names[]={WVHydrostaticField::u,WVHydrostaticField::v,WVHydrostaticField::w,WVHydrostaticField::eta};
         for (std::size_t pass=0;pass<3;++pass) {
@@ -816,10 +818,10 @@ void tiledNonlinearParity(const std::shared_ptr<const WVStratifiedModalRecord>& 
             baseline->resetMetrics();candidate->resetMetrics();
             require(bool(baseline->beginStateEvaluation(state)) && bool(candidate->beginStateEvaluation(state)),"Tiled scope begin failed");
             for (std::size_t f=0;f<4;++f) require(bool(baseline->transformStateField(state,names[f],{oldFields.data()+f*R,volume})),"Legacy fields failed");
-            require(bool(baseline->nonlinearFlux(state,a,nullptr,&borrowed)),"Legacy nonlinear failed");
+            require(bool(baseline->nonlinearFlux(state,a,&oldRawOutput,&borrowed)),"Legacy nonlinear failed");
             const auto bytes=candidate->persistentBytes();
             allocationProbe::calls=0;allocationProbe::counting=pass>0;
-            const auto status=candidate->nonlinearFluxAndFields(state,b,output);
+            const auto status=candidate->nonlinearFluxAndFields(state,b,output,&newRawOutput);
             allocationProbe::counting=false;
             require(bool(status),status.message.c_str());
             if (pass) require(allocationProbe::calls==0 && candidate->persistentBytes()==bytes,"Warmed tiled execution allocated");
@@ -828,6 +830,9 @@ void tiledNonlinearParity(const std::shared_ptr<const WVStratifiedModalRecord>& 
                 cm.tiledRowInverseCount==g.Nz*(4+3*3) && cm.tiledReusedColumnCount==g.Nz*3,"Tiled producer counts mismatch");
             require(cm.coefficientAssemblyCount==bm.coefficientAssemblyCount && cm.verticalOperatorExecutionCount==bm.verticalOperatorExecutionCount && cm.reconstructionCount==bm.reconstructionCount,"Tiled producer or vertical work changed");
             for (std::size_t i=0;i<4*R;++i) require(oldFields[i]==newFields[i],"Tiled physical field changed");
+            for (std::size_t i=0;i<3*R;++i)
+                require(std::abs(oldRaw[i]-newRaw[i])<=1e-12*(1+std::abs(oldRaw[i])),
+                    "Tiled raw physical tendency differs");
             for (std::size_t j=0;j<3;++j) for (std::size_t i=0;i<S;++i) {
                 require(std::abs(first[j][i].real-second[j][i].real)<=1e-12*(1+std::abs(first[j][i].real)) &&
                     std::abs(first[j][i].imag-second[j][i].imag)<=1e-12*(1+std::abs(first[j][i].imag)),"Tiled projected flux differs");
@@ -849,6 +854,12 @@ void tiledNonlinearParity(const std::shared_ptr<const WVStratifiedModalRecord>& 
         // Invalid public output is rejected before FFT execution, then retry works.
         candidate->resetMetrics();auto bad=output;bad.shape.fourth=3;
         require(!candidate->nonlinearFluxAndFields(state,b,bad) && candidate->metrics().tiledNonlinearCount==0,"Invalid tiled output executed");
+        auto badRaw=newRawOutput;badRaw.shape.fourth=4;
+        require(!candidate->nonlinearFluxAndFields(state,b,output,&badRaw) && candidate->metrics().tiledNonlinearCount==0,
+            "Invalid tiled tendency output executed");
+        auto aliasedRaw=newRawOutput;aliasedRaw.data=newFields.data();
+        require(candidate->nonlinearFluxAndFields(state,b,output,&aliasedRaw).code==WVKernelStatusCode::overlappingArrays &&
+            candidate->metrics().tiledNonlinearCount==0,"Aliased tiled tendency output executed");
         require(bool(candidate->nonlinearFluxAndFields(state,b,output)),"Tiled failure recovery failed");
         // Calling the established API remains valid even when tiling is prepared.
         candidate->resetMetrics();require(bool(candidate->nonlinearFlux(state,b,nullptr,&borrowed)) && candidate->metrics().tiledNonlinearCount==0,"Borrowed fields unexpectedly tiled");

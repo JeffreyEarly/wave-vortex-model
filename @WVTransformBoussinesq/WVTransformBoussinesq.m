@@ -149,6 +149,7 @@ classdef WVTransformBoussinesq < WVGeometryDoublyPeriodicStratifiedBoussinesq & 
                 Lxyz (1,3) double {mustBePositive}
                 Nxyz (1,3) double {mustBePositive}
                 options.shouldAntialias (1,1) logical = true
+                options.computationalBackend (1,1) string {mustBeMember(options.computationalBackend,["matlab" "compiled"])} = "matlab"
                 options.z (:,1) double {mustBeNonempty} % quadrature points!
                 options.j (:,1) double {mustBeNonempty}
                 options.Nj (1,1) double {mustBePositive}
@@ -181,6 +182,8 @@ classdef WVTransformBoussinesq < WVGeometryDoublyPeriodicStratifiedBoussinesq & 
                 options.iK2unique
             end
 
+            requestedBackend = options.computationalBackend;
+            options = rmfield(options,"computationalBackend");
             optionArgs = namedargs2cell(options);
             self@WVGeometryDoublyPeriodicStratifiedBoussinesq(Lxyz, Nxyz, optionArgs{:})
             self@WVTransform(WVForcingType(["NonhydrostaticSpatial","Spectral","SpectralAmplitude"]));
@@ -226,6 +229,8 @@ classdef WVTransformBoussinesq < WVGeometryDoublyPeriodicStratifiedBoussinesq & 
             self.ApmW = self.g*kappa./(self.N2 - self.f*self.f)/2;
 
             self.Ddelta = (self.N2./(self.N2 - self.f*self.f)) .* self.QG0inv*(squeeze(self.Q0 ./ self.P0).*self.PF0);  
+            self.captureCompiledOperations();
+            self.configureComputationalBackend(requestedBackend);
         end
 
         function set.shouldUseTrueNoMotionProfile(self,value)
@@ -258,6 +263,7 @@ classdef WVTransformBoussinesq < WVGeometryDoublyPeriodicStratifiedBoussinesq & 
             wvtX2.t0 = self.t0;
             wvtX2.t = self.t;
             [wvtX2.A0,wvtX2.Ap,wvtX2.Am] = self.spectralVariableWithResolution(wvtX2,self.A0,self.Ap,self.Am);
+            wvtX2.configureComputationalBackend(self.computationalBackend);
         end
 
         function energy = get.totalEnergySpatiallyIntegrated(self)
@@ -318,11 +324,16 @@ classdef WVTransformBoussinesq < WVGeometryDoublyPeriodicStratifiedBoussinesq & 
         % end
 
         function [Fp,Fm,F0] = nonlinearFlux(self)
-            Fu=zeros(self.spatialMatrixSize);Fv=zeros(self.spatialMatrixSize);Fw=zeros(self.spatialMatrixSize);Feta=zeros(self.spatialMatrixSize); % this isn't good, need to cached
-            for i=1:length(self.spatialFluxForcing)
-                [Fu, Fv, Fw, Feta] = self.spatialFluxForcing(i).addNonhydrostaticSpatialForcing(self, Fu, Fv, Fw, Feta);
+            scope = self.scopedEvaluation(); %#ok<NASGU>
+            if self.canUseCompiledNonlinearCoefficients()
+                [Fp,Fm,F0] = self.compiledNonlinearCoefficients();
+            else
+                Fu=zeros(self.spatialMatrixSize);Fv=zeros(self.spatialMatrixSize);Fw=zeros(self.spatialMatrixSize);Feta=zeros(self.spatialMatrixSize); % this isn't good, need to cached
+                for i=1:length(self.spatialFluxForcing)
+                    [Fu, Fv, Fw, Feta] = self.spatialFluxForcing(i).addNonhydrostaticSpatialForcing(self, Fu, Fv, Fw, Feta);
+                end
+                [Fp,Fm,F0] = self.transformUVWEtaToWaveVortex(Fu, Fv, Fw, Feta);
             end
-            [Fp,Fm,F0] = self.transformUVWEtaToWaveVortex(Fu, Fv, Fw, Feta);
             for i=1:length(self.spectralFluxForcing)
                 [Fp,Fm,F0] = self.spectralFluxForcing(i).addSpectralForcing(self,Fp, Fm, F0);
             end
@@ -338,6 +349,7 @@ classdef WVTransformBoussinesq < WVGeometryDoublyPeriodicStratifiedBoussinesq & 
             arguments (Output)
                 F dictionary
             end
+            scope = self.scopedEvaluation(); %#ok<NASGU>
             F = configureDictionary("string","cell");
             Fu=0;Fv=0;Fw=0;Feta=0; % this isn't good, need to cached
             for i=1:length(self.spatialFluxForcing)
@@ -421,6 +433,7 @@ classdef WVTransformBoussinesq < WVGeometryDoublyPeriodicStratifiedBoussinesq & 
             wvt2.t0 = self.t0;
             wvt2.t = self.t;
             [wvt2.A0,wvt2.Ap,wvt2.Am] = self.spectralVariableWithResolution(wvt2,self.A0,self.Ap,self.Am);
+            wvt2.configureComputationalBackend(self.computationalBackend);
 
         end
 
@@ -503,10 +516,12 @@ classdef WVTransformBoussinesq < WVGeometryDoublyPeriodicStratifiedBoussinesq & 
             % - Parameter path: path to a NetCDF file
             % - Parameter iTime: (optional) time index to initialize from (default 1)
             % - Parameter shouldReadOnly: (optional) open the returned NetCDFFile read-only (default true)
+            % - Parameter computationalBackend: runtime backend, `"matlab"` (default) or `"compiled"`
             arguments (Input)
                 path char {mustBeFile}
                 options.iTime (1,1) double {mustBePositive} = 1
                 options.shouldReadOnly logical = true
+                options.computationalBackend (1,1) string {mustBeMember(options.computationalBackend,["matlab" "compiled"])} = "matlab"
             end
             arguments (Output)
                 wvt WVTransform
@@ -517,6 +532,7 @@ classdef WVTransformBoussinesq < WVGeometryDoublyPeriodicStratifiedBoussinesq & 
                 wvt = WVTransformBoussinesq.transformFromGroup(ncfile);
                 wvt.initFromNetCDFFile(ncfile,iTime=options.iTime,shouldDisplayInit=1);
                 wvt.initForcingFromNetCDFFile(ncfile);
+                wvt.configureComputationalBackend(options.computationalBackend);
             catch exception
                 if ~isempty(ncfile.id)
                     ncfile.close();
@@ -529,15 +545,18 @@ classdef WVTransformBoussinesq < WVGeometryDoublyPeriodicStratifiedBoussinesq & 
         end
 
 
-        function wvt = transformFromGroup(group)
+        function wvt = transformFromGroup(group,runtimeOptions)
             arguments (Input)
                 group NetCDFGroup {mustBeNonempty}
+                runtimeOptions.computationalBackend (1,1) string {mustBeMember(runtimeOptions.computationalBackend,["matlab" "compiled"])} = "matlab"
             end
             arguments (Output)
                 wvt WVTransform {mustBeNonempty}
             end  
             [Lxy, Nxy, options] = WVTransformBoussinesq.requiredPropertiesForTransformFromGroup(group);
+            options = options(repelem(~strcmp(options(1:2:end),"computationalBackend"),2));
             wvt = WVTransformBoussinesq(Lxy,Nxy,options{:});
+            wvt.configureComputationalBackend(runtimeOptions.computationalBackend);
         end
 
     end

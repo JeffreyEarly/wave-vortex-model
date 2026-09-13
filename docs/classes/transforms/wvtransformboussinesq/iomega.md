@@ -3,7 +3,7 @@ layout: default
 title: iOmega
 parent: WVTransformBoussinesq
 grand_parent: Transforms
-nav_order: 141
+nav_order: 143
 mathjax: true
 ---
 

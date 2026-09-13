@@ -158,6 +158,51 @@ private:
   std::shared_ptr<std::size_t> active_;
 };
 
+struct ActivePlanProbe {
+  WVFieldEvaluationService* service=nullptr;
+  bool armed=false,attempted=false;
+  WVKernelStatus status;
+};
+class ActivePlanProbePlan final : public WVFFTPlan {
+public:
+  ActivePlanProbePlan(std::unique_ptr<WVFFTPlan> plan,
+      std::shared_ptr<ActivePlanProbe> probe)
+      :plan_(std::move(plan)),probe_(std::move(probe)) {}
+  WVKernelStatus execute(const void* input,void* output) override {
+    if(probe_->armed && !probe_->attempted) {
+      probe_->attempted=true;
+      WVFieldEvaluationPlan plan;
+      probe_->status=probe_->service->createPlanForActiveEvaluation(
+          {full("v")},plan);
+    }
+    return plan_->execute(input,output);
+  }
+  std::size_t persistentBytes() const noexcept override {
+    return sizeof(*this)+plan_->persistentBytes();
+  }
+private:
+  std::unique_ptr<WVFFTPlan> plan_;
+  std::shared_ptr<ActivePlanProbe> probe_;
+};
+class ActivePlanProbeEngine final : public WVFFTEngine {
+public:
+  explicit ActivePlanProbeEngine(std::shared_ptr<ActivePlanProbe> probe)
+      :probe_(std::move(probe)) {}
+  std::string identifier() const override {return "active-plan-probe";}
+  std::size_t persistentBytes() const noexcept override {return sizeof(*this);}
+  WVKernelStatus createPlan(const WVFFTPlanSpecification& specification,
+      std::unique_ptr<WVFFTPlan>& plan) override {
+    std::unique_ptr<WVFFTPlan> inner;
+    auto status=reference_.createPlan(specification,inner);
+    if(status) plan=std::make_unique<ActivePlanProbePlan>(
+        std::move(inner),probe_);
+    return status;
+  }
+private:
+  WVReferenceFFTEngine reference_;
+  std::shared_ptr<ActivePlanProbe> probe_;
+};
+
 class FailurePlan final : public WVFFTPlan {
 public:
   WVKernelStatus execute(const void *, void *) override {
@@ -1820,6 +1865,127 @@ void verifyVariableEvaluationSessions() {
       "pi/u/pi session did not reuse one complete fused F bundle");
 }
 
+void verifyActiveDemandPlanExtension() {
+  const auto config=configuration(6,5,false,true);
+  const auto owned=stateFor(config);
+  const WVIntegrationState state{owned.view()};
+  std::unique_ptr<WVFieldEvaluationService> service,reference;
+  require(bool(WVFieldEvaluationService::create(config,
+      std::make_unique<WVReferenceFFTEngine>(),service)),
+      "active demand service creation failed");
+  require(bool(WVFieldEvaluationService::create(config,
+      std::make_unique<WVReferenceFFTEngine>(),reference)),
+      "active demand reference creation failed");
+  WVFieldEvaluationPlan uPlan,unionPlan;
+  require(bool(service->createPlan({full("u")},uPlan)) &&
+      bool(reference->createPlan({full("u"),full("zeta_x")},unionPlan)),
+      "active demand initial plans failed");
+  WVFieldEvaluationPlan unchanged=uPlan;
+  auto status=service->createPlanForActiveEvaluation(
+      {full("zeta_x")},unchanged);
+  require(status.code==WVKernelStatusCode::invalidConfiguration &&
+      unchanged.outputCount()==uPlan.outputCount() &&
+      unchanged.outputs()[0].fieldName==uPlan.outputs()[0].fieldName,
+      "active demand plan was accepted without a session or replaced its output");
+
+  std::array<std::vector<double>,2> expected;
+  std::array<WVFieldOutputView,2> expectedViews;
+  for(std::size_t i=0;i<expected.size();++i) {
+    expected[i].resize(unionPlan.outputs()[i].elementCount);
+    expectedViews[i]={expected[i].data(),expected[i].size()};
+  }
+  require(bool(reference->evaluate(unionPlan,state,expectedViews.data(),2)),
+      "active demand union reference failed");
+
+  std::vector<double> u(uPlan.outputs()[0].elementCount);
+  WVFieldOutputView uView{u.data(),u.size()};
+  WVFieldEvaluationPlan zetaPlan;
+  const auto producersBefore=service->producerMetrics();
+  {
+    WVFieldEvaluationSession session;
+    require(bool(service->beginEvaluationSession(state,session)),
+        "active demand session failed");
+    require(bool(service->evaluate(uPlan,state,&uView,1)),
+        "active demand initial field failed");
+    const auto retainedU=u;
+    WVFieldEvaluationPlan failed=uPlan;
+    status=service->createPlanForActiveEvaluation(
+        {{"invalid-active","not_a_registered_variable",{}}},failed);
+    require(!status && failed.outputCount()==uPlan.outputCount() && u==retainedU,
+        "failed active demand changed its plan or published field copy");
+    status=service->createPlanForActiveEvaluation({full("zeta_x")},zetaPlan);
+    require(bool(status),status.message);
+    require(u==retainedU,"active demand preparation changed an earlier output copy");
+    std::vector<double> zeta(zetaPlan.outputs()[0].elementCount);
+    WVFieldOutputView zetaView{zeta.data(),zeta.size()};
+    require(bool(service->evaluate(zetaPlan,state,&zetaView,1)),
+        "active demand derivative field failed");
+    for(std::size_t i=0;i<u.size();++i) requireClose(u[i],expected[0][i],
+        "active demand changed the initial field");
+    for(std::size_t i=0;i<zeta.size();++i) requireClose(zeta[i],expected[1][i],
+        "active demand derivative differs from preplanned union");
+  }
+  const auto producersAfter=service->producerMetrics();
+  require(producersAfter.phasePreparations==producersBefore.phasePreparations+1 &&
+      producersAfter.reconstructions[0][0][0]==
+          producersBefore.reconstructions[0][0][0]+1,
+      "active demand extension repeated the retained velocity producer");
+  const auto retained=service->persistentBytes();
+  {
+    WVFieldEvaluationSession session;
+    require(bool(service->beginEvaluationSession(state,session)),
+        "active demand second event failed");
+    std::vector<double> zeta(zetaPlan.outputs()[0].elementCount);
+    WVFieldOutputView zetaView{zeta.data(),zeta.size()};
+    require(bool(service->evaluate(zetaPlan,state,&zetaView,1)),
+        "active demand retained plan failed in the next event");
+  }
+  require(service->persistentBytes()==retained,
+      "active demand retained capacity grew in the next event");
+
+  require(bool(service->setVariableEvaluationPolicy(
+      WVVariableEvaluationPolicy::lowMemory)),
+      "active demand low-memory setup failed");
+  {
+    WVFieldEvaluationSession session;
+    require(bool(service->beginEvaluationSession(state,session)),
+        "active demand low-memory session failed");
+    WVFieldEvaluationPlan rejected=uPlan;
+    status=service->createPlanForActiveEvaluation({full("v")},rejected);
+    require(status.code==WVKernelStatusCode::invalidConfiguration &&
+        rejected.outputCount()==uPlan.outputCount(),
+        "active demand accepted low-memory preparation");
+  }
+}
+
+void verifyActiveDemandReentrantRejection() {
+  const auto config=configuration(6,5,true,true);
+  const auto owned=stateFor(config);
+  const WVIntegrationState state{owned.view()};
+  const auto probe=std::make_shared<ActivePlanProbe>();
+  std::unique_ptr<WVFieldEvaluationService> service;
+  require(bool(WVFieldEvaluationService::create(config,
+      std::make_unique<ActivePlanProbeEngine>(probe),service)),
+      "active demand probe service failed");
+  probe->service=service.get();
+  WVFieldEvaluationPlan plan;
+  require(bool(service->createPlan({full("u")},plan)),
+      "active demand probe plan failed");
+  std::vector<double> values(plan.outputs()[0].elementCount);
+  WVFieldOutputView output{values.data(),values.size()};
+  {
+    WVFieldEvaluationSession session;
+    require(bool(service->beginEvaluationSession(state,session)),
+        "active demand probe session failed");
+    probe->armed=true;
+    require(bool(service->evaluate(plan,state,&output,1)),
+        "active demand probe outer evaluation failed");
+  }
+  require(probe->attempted &&
+      probe->status.code==WVKernelStatusCode::reentrantExecution,
+      "active demand plan was not rejected inside a producer");
+}
+
 void verifyFusedVariableEvaluationLedger() {
   const WVVariableEvaluationKey a{WVVariableEvaluationNode::forcingTendency,1};
   const WVVariableEvaluationKey b{WVVariableEvaluationNode::forcingTendency,2};
@@ -1859,6 +2025,8 @@ int main() {
     verifyBarotropicSplineExtrapolation();
     verifySmallGridSplineBoundaries();
     verifyVariableEvaluationSessions();
+    verifyActiveDemandPlanExtension();
+    verifyActiveDemandReentrantRejection();
     verifyFusedVariableEvaluationLedger();
     verifyCatalog();
     verifyPlanValidation();

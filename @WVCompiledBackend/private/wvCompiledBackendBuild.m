@@ -31,6 +31,7 @@ try
     ensureDirectory(constants.installDirectory);
     ensureDirectory(constants.stageDirectory);
     ensureDirectory(constants.stateDirectory);
+    ensureDirectory(constants.moduleDirectory);
     attempt.compiler = compiler;
     writeJSON(constants.attemptPath,attempt);
 
@@ -61,9 +62,20 @@ try
     injectFailure(overrides,stage);
     libraries = validateProviderLibraries(constants,overrides);
 
+    stage = "source-manifest";
+    injectFailure(overrides,stage);
+    sourceManifest = wvCompiledBackendNewSourceManifest(constants.packageRoot);
+
     stage = "mex-build";
     injectFailure(overrides,stage);
     stagedModule = buildStagedModule(constants,libraries,overrides);
+
+    stage = "source-validation";
+    injectFailure(overrides,stage);
+    sourceManifestAfterBuild = wvCompiledBackendNewSourceManifest(constants.packageRoot);
+    if sourceManifestAfterBuild.aggregateSHA256 ~= sourceManifest.aggregateSHA256
+        error("WaveVortexModel:CompiledBackendSourceChanged","Compiled-backend sources changed while the MEX module was being built.");
+    end
 
     stage = "stage-validation";
     injectFailure(overrides,stage);
@@ -76,6 +88,7 @@ try
     stage = "record";
     record = struct( ...
         "schemaVersion","1.0.0", ...
+        "sourceIdentity",sourceIdentityRecord(sourceManifest,module,libraries,constants), ...
         "provider",providerRecord(constants), ...
         "compiler",compiler, ...
         "module",module, ...
@@ -121,6 +134,17 @@ end
 
 function provider = providerRecord(constants)
 provider = struct("id",constants.providerId,"version",constants.providerVersion,"sourceURL",constants.sourceURL,"sourceURLs",constants.sourceURLs,"sourceSHA256",constants.sourceSHA256,"threadBackend",constants.threadBackend,"configureFlags",constants.configureFlags,"compilerFlags",constants.compilerFlags,"deploymentTarget",constants.deploymentTarget,"simd","NEON","openmp",false);
+end
+
+function identity = sourceIdentityRecord(manifest,module,libraries,constants)
+identity = struct( ...
+    "schemaVersion","1.0.0", ...
+    "manifest",manifest, ...
+    "moduleSHA256",module.sha256, ...
+    "baseLibrarySHA256",libraries.base.sha256, ...
+    "threadLibrarySHA256",libraries.thread.sha256, ...
+    "providerId",constants.providerId, ...
+    "providerSourceSHA256",constants.sourceSHA256);
 end
 
 function rejectLoadedModule(constants,overrides)
@@ -344,7 +368,7 @@ if any(~isfile(requiredSources))
 end
 compilerFlags = "CXXFLAGS=$CXXFLAGS -std=c++17 -pthread -O3 -mcpu=native -mmacosx-version-min="+constants.deploymentTarget+" -DWV_KERNEL_NATIVE_OPTIMIZATION=1 -DWV_KERNEL_COEFFICIENT_WORKERS=2 -DWV_MODEL_ENABLE_OUTPUT=0 -DWV_HAVE_ACCELERATE=1";
 compilerFlags = compilerFlags+" -DWV_KERNEL_COMPACT_CONSTANT_CANDIDATE="+double(constants.compactConstantDefault)+" -DWV_KERNEL_COMPACT_HORIZONTAL_WORKERS="+constants.horizontalOuterWorkers+" -DWV_KERNEL_COMPACT_POINTWISE_WORKERS="+constants.pointwiseWorkers;
-linkerFlags = "LDFLAGS=$LDFLAGS -pthread -framework Accelerate -mmacosx-version-min="+constants.deploymentTarget+" -Wl,-rpath,"+fileparts(libraries.base.path);
+linkerFlags = "LDFLAGS=$LDFLAGS -pthread -framework Accelerate -mmacosx-version-min="+constants.deploymentTarget+" -Wl,-rpath,"+shellQuote(fileparts(libraries.base.path));
 coreArguments = cellstr(coreSources);
 runtimeArguments = cellstr(runtimeSources);
 mex("-R2018a",compilerFlags,gateway,transformHost,accelerateSource,coreArguments{:},runtimeArguments{:},engine,"-I"+constants.coreIncludeDirectory,"-I"+constants.runtimeIncludeDirectory,"-I"+constants.runtimeSourceDirectory,"-I"+constants.adapterDirectory,"-I"+accelerateDirectory,"-I"+fullfile(constants.installDirectory,"include"),linkerFlags,libraries.thread.path,libraries.base.path,"-outdir",constants.stageDirectory,"-output",constants.moduleName);
@@ -463,6 +487,9 @@ if hadPrevious, movefile(constants.installedModule,backup,"f"); end
 installed = false;
 try
     copyfile(stagedModule,constants.installedModule,"f"); installed = true;
+    if sha256File(constants.installedModule) ~= sha256File(stagedModule)
+        error("WaveVortexModel:CompiledBackendIdentityMismatch","The installed MEX module does not match the validated staged module.");
+    end
     injectFailure(overrides,"install-validation");
     [~,validation,~] = validateModule(constants,constants.installedModule,libraries,threadCount);
     if string(validation.status) ~= "passed"

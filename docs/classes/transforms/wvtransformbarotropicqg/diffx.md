@@ -3,7 +3,7 @@ layout: default
 title: diffX
 parent: WVTransformBarotropicQG
 grand_parent: Transforms
-nav_order: 42
+nav_order: 44
 mathjax: true
 ---
 

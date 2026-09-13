@@ -3,7 +3,7 @@ layout: default
 title: totalEnergy
 parent: WVTransformBarotropicQG
 grand_parent: Transforms
-nav_order: 154
+nav_order: 156
 mathjax: true
 ---
 

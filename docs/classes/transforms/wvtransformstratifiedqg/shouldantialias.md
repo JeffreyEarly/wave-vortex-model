@@ -3,7 +3,7 @@ layout: default
 title: shouldAntialias
 parent: WVTransformStratifiedQG
 grand_parent: Transforms
-nav_order: 179
+nav_order: 181
 mathjax: true
 ---
 

@@ -42,6 +42,87 @@ WVFieldEvaluationPlan planFor(WVFieldEvaluationService& service,WVNoMotionRefere
   require(plan.hasDensityDiagnostics(),"ordinary density plan does not request event ownership");
   return plan;
 }
+WVFieldEvaluationPlan activePlanFor(WVFieldEvaluationService& service,
+    WVNoMotionReference reference,const std::vector<std::string>& names) {
+  std::vector<WVFieldRequest> requests;
+  for(std::size_t i=0;i<names.size();++i)
+    requests.push_back({"active-"+std::to_string(i),names[i],{}});
+  WVFieldEvaluationPlan plan;
+  const auto status=
+      WVDiagnosticFieldPlan::createDensityQualificationForActiveEvaluation(
+          service,requests,{reference},plan);
+  if(!status) throw std::runtime_error(
+      "active density qualification failed: "+status.message);
+  return plan;
+}
+
+void verifyActiveDensityDemandExtension() {
+  WVTransformConstantStratificationConfiguration c;
+  c.Nx=c.Ny=4;c.Nz=7;c.Nj=6;
+  c.Lx=15000;c.Ly=12000;c.Lz=2;c.N0=.1;c.rho0=1025;c.g=10;
+  c.planetaryRadius=6.371e6;c.rotationRate=7.2921e-5;c.latitude=33;
+  c.isHydrostatic=true;
+  std::unique_ptr<WVFieldEvaluationService> service;
+  require(bool(WVFieldEvaluationService::create(c,
+      std::make_unique<WVReferenceFFTEngine>(),service)),
+      "active density service creation failed");
+  WVTransformConstantStratificationDescriptor descriptor;
+  require(bool(WVTransformConstantStratificationDescriptor::create(c,descriptor)),
+      "active density descriptor creation failed");
+  const auto shape=descriptor.spectralShape();
+  std::vector<WVComplex64> Ap(shape.elementCount()),Am(Ap.size()),A0(Ap.size());
+  WVIntegrationState state;
+  state.waveVortex={37,-3,{{Ap.data(),shape},{Am.data(),shape},{A0.data(),shape}}};
+  auto rho=planFor(*service,WVNoMotionReference::actual,{"rho_nm"});
+  Outputs rhoValues(rho);
+  const auto before=service->metrics();
+  {
+    WVFieldEvaluationSession session;
+    require(bool(service->beginEvaluationSession(state,session)),
+        "active density session failed");
+    require(bool(service->evaluate(rho,state,rhoValues.views.data(),
+        rhoValues.views.size())),"active density rho query failed");
+    const auto afterRho=service->metrics();
+    auto eta=activePlanFor(*service,WVNoMotionReference::actual,{"eta_true"});
+    Outputs etaValues(eta);
+    require(bool(service->evaluate(eta,state,etaValues.views.data(),
+        etaValues.views.size())),"active density eta query failed");
+    const auto afterEta=service->metrics();
+    auto ape=activePlanFor(*service,WVNoMotionReference::actual,{"ape"});
+    Outputs apeValues(ape);
+    require(bool(service->evaluate(ape,state,apeValues.views.data(),
+        apeValues.views.size())),"active density APE query failed");
+    const auto afterAPE=service->metrics();
+    require(afterRho.densityRecoveryCount==before.densityRecoveryCount+1 &&
+        afterEta.densityRecoveryCount==afterRho.densityRecoveryCount &&
+        afterAPE.densityRecoveryCount==afterEta.densityRecoveryCount &&
+        afterAPE.densityInversePassCount==afterEta.densityInversePassCount &&
+        afterAPE.densityAPEPassCount==afterEta.densityAPEPassCount+1,
+        "active actual-reference extension recomputed a completed density stage");
+    auto initialEta=activePlanFor(*service,WVNoMotionReference::initial,
+        {"eta_true"});
+    Outputs initialEtaValues(initialEta);
+    require(bool(service->evaluate(initialEta,state,initialEtaValues.views.data(),
+        initialEtaValues.views.size())),"active initial-reference eta failed");
+    const auto afterInitialEta=service->metrics();
+    auto initialAPE=activePlanFor(*service,WVNoMotionReference::initial,{"ape"});
+    Outputs initialAPEValues(initialAPE);
+    require(bool(service->evaluate(initialAPE,state,initialAPEValues.views.data(),
+        initialAPEValues.views.size())),"active initial-reference APE failed");
+    const auto afterInitialAPE=service->metrics();
+    require(afterInitialEta.densityRecoveryCount==afterAPE.densityRecoveryCount &&
+        afterInitialAPE.densityRecoveryCount==afterAPE.densityRecoveryCount &&
+        afterInitialAPE.densityInversePassCount==
+            afterInitialEta.densityInversePassCount &&
+        afterInitialAPE.densityAPEPassCount==
+            afterInitialEta.densityAPEPassCount+1,
+        "active initial-reference extension recomputed a completed density stage");
+    for(const auto& values:{etaValues.values[0],apeValues.values[0],
+            initialEtaValues.values[0],initialAPEValues.values[0]})
+      for(const auto value:values) close(value,0,1e-10,
+          "active density rest-state result is nonzero");
+  }
+}
 std::vector<double> directDerivatives(const std::vector<double>& field,const WVTransformConstantStratificationConfiguration& c) {
   const auto R=c.Nx*c.Ny*c.Nz;
   std::vector<double> result(3*R);
@@ -580,6 +661,7 @@ int main() {
     verifyGCalculus();
     verifyBindingAllocationRetry(WVVariableEvaluationPolicy::reuse);
     verifyBindingAllocationRetry(WVVariableEvaluationPolicy::lowMemory);
+    verifyActiveDensityDemandExtension();
     for(bool hydro:{false,true}) for(bool antialias:{false,true}) verifyConfiguration(hydro,antialias);
     std::cout<<"Density field integration tests passed\n";
     return 0;

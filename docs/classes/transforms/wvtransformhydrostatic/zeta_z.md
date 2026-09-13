@@ -3,7 +3,7 @@ layout: default
 title: zeta_z
 parent: WVTransformHydrostatic
 grand_parent: Transforms
-nav_order: 300
+nav_order: 302
 mathjax: true
 ---
 

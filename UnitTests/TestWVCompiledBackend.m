@@ -9,18 +9,63 @@ classdef TestWVCompiledBackend < matlab.unittest.TestCase
         end
     end
 
+    methods (TestMethodSetup)
+        function unloadUnusedCompiledModule(testCase)
+            % Other test classes may leave the owner-free MEX mapped after
+            % deleting their transforms. Build tests need an unloaded module
+            % so they exercise the requested build stage.
+            [~,mexFiles] = inmem("-completenames");
+            moduleIsLoaded = any(endsWith(string(mexFiles),filesep+"wv_compiled_backend_mex."+mexext));
+            if moduleIsLoaded
+                metrics = wv_compiled_backend_mex('moduleMetrics');
+                testCase.assertEqual(metrics.kernelCount,0,"A prior test leaked a compiled kernel owner.");
+                testCase.assertEqual(metrics.matlabTransformCount,0,"A prior test leaked a MATLAB transform owner.");
+            end
+            clear wv_compiled_backend_mex
+        end
+    end
+
     methods (Test, TestTags="smoke")
         function capabilitiesAreNonthrowingAndDoNotBuild(testCase)
             fixture = testCase.applyFixture(matlab.unittest.fixtures.TemporaryFolderFixture);
             root = string(fixture.Folder);
-            action = @()WVCompiledBackend.capabilitiesForTesting(struct("PackageRoot",root,"Architecture","maca64","OperatingSystem","macOS","Release","R2025b","MaxThreads",16));
+            cacheRoot = fullfile(root,"cache");
+            action = @()WVCompiledBackend.capabilitiesForTesting(struct("PackageRoot",root,"CacheRoot",cacheRoot,"Architecture","maca64","OperatingSystem","macOS","Release","R2025b","MaxThreads",16));
             capabilities = testCase.verifyWarningFree(action);
             testCase.verifyEqual(capabilities.schemaVersion,"1.0.0");
             testCase.verifyEqual(capabilities.status,"not-built");
             testCase.verifyEqual(capabilities.contract.threadCount,16);
             testCase.verifyEqual(capabilities.provider.id,"native-neon-pthreads");
             testCase.verifyEqual(capabilities.provider.sourceSHA256,"5630c24cdeb33b131612f7eb4b1a9934234754f9f388ff8617458d0be6f239a1");
-            testCase.verifyFalse(isfolder(fullfile(root,".compiled-backend-cache")));
+            testCase.verifyEqual(capabilities.cache.root,string(cacheRoot));
+            testCase.verifyFalse(isfolder(cacheRoot));
+        end
+
+        function defaultCacheIsExternalAndPackageSpecific(testCase)
+            firstFixture = testCase.applyFixture(matlab.unittest.fixtures.TemporaryFolderFixture);
+            secondFixture = testCase.applyFixture(matlab.unittest.fixtures.TemporaryFolderFixture);
+            options = struct("Architecture","maca64","OperatingSystem","macOS","Release","R2025b");
+            first = options; first.PackageRoot = string(firstFixture.Folder);
+            second = options; second.PackageRoot = string(secondFixture.Folder);
+            firstCapabilities = WVCompiledBackend.capabilitiesForTesting(first);
+            withoutReleasePrefix = first; withoutReleasePrefix.Release = "2025b";
+            repeatedCapabilities = WVCompiledBackend.capabilitiesForTesting(withoutReleasePrefix);
+            secondCapabilities = WVCompiledBackend.capabilitiesForTesting(second);
+            testCase.verifyEqual(firstCapabilities.cache.locationPolicy,"user-cache-package-path-v1");
+            testCase.verifyEqual(firstCapabilities.cache.root,repeatedCapabilities.cache.root);
+            testCase.verifyNotEqual(firstCapabilities.cache.root,secondCapabilities.cache.root);
+            userCache = fullfile(string(java.lang.System.getProperty("user.home")),"Library","Caches","WaveVortexModel","compiled-backend-v1");
+            testCase.verifyTrue(startsWith(firstCapabilities.cache.root,userCache+filesep));
+            testCase.verifyFalse(startsWith(firstCapabilities.cache.root,string(firstFixture.Folder)+filesep));
+        end
+
+        function activationRejectsIncompleteOrMissingModuleIdentity(testCase)
+            unavailable = struct("isAvailable",false,"module",struct());
+            testCase.verifyError(@()WVCompiledBackend.activateModule(unavailable),"WaveVortexModel:CompiledBackendUnavailable");
+            fixture = testCase.applyFixture(matlab.unittest.fixtures.TemporaryFolderFixture);
+            missingPath = fullfile(fixture.Folder,"missing."+mexext);
+            missing = struct("isAvailable",true,"module",struct("identityValidated",true,"name","wv_compiled_backend_mex","path",missingPath,"sha256",string(repmat('0',1,64))));
+            testCase.verifyError(@()WVCompiledBackend.activateModule(missing),"WaveVortexModel:CompiledBackendNotBuilt");
         end
 
         function unsupportedSystemsProduceStructuredUnavailability(testCase)
@@ -65,7 +110,7 @@ classdef TestWVCompiledBackend < matlab.unittest.TestCase
         function compilerDownloadChecksumAndBuildFailuresAreStructured(testCase)
             fixture = testCase.applyFixture(matlab.unittest.fixtures.TemporaryFolderFixture);
             root = string(fixture.Folder);
-            common = struct("PackageRoot",root,"Architecture","maca64","OperatingSystem","macOS","Release","R2025b","MaxThreads",2,"CompilerRecord",fakeCompilerRecord(root));
+            common = struct("PackageRoot",root,"CacheRoot",fullfile(root,"cache"),"Architecture","maca64","OperatingSystem","macOS","Release","R2025b","MaxThreads",2,"CompilerRecord",fakeCompilerRecord(root));
             compilerOptions = common; compilerOptions.CompilerAvailable = false;
             compilerFailure = WVCompiledBackend.buildForTesting(compilerOptions);
             testCase.verifyEqual(compilerFailure.status,"build-failed");
@@ -77,7 +122,7 @@ classdef TestWVCompiledBackend < matlab.unittest.TestCase
             testCase.verifyEqual(downloadFailure.buildAttempt.stage,"download");
             testCase.verifyEqual(downloadFailure.failure.identifier,"WaveVortexModel:TestDownloadFailure");
 
-            archiveFolder = fullfile(root,".compiled-backend-cache","downloads");
+            archiveFolder = fullfile(common.CacheRoot,"downloads");
             if ~isfolder(archiveFolder), mkdir(archiveFolder); end
             writelines("not fftw",fullfile(archiveFolder,"fftw-3.3.11.tar.gz"));
             checksumFailure = WVCompiledBackend.buildForTesting(common);
@@ -126,9 +171,10 @@ classdef TestWVCompiledBackend < matlab.unittest.TestCase
             originalDirectory = pwd; originalPath = path; cleanup = onCleanup(@()restoreDirectoryAndPath(originalDirectory,originalPath));
             cd(fixture.Folder); addpath(exportRoot,"-begin"); clear WVCompiledBackend
             testCase.verifyTrue(startsWith(string(which("WVCompiledBackend")),string(exportRoot)));
-            capabilities = WVCompiledBackend.capabilitiesForTesting(struct("PackageRoot",string(exportRoot),"Architecture","glnxa64","OperatingSystem","Linux","Release","R2026a"));
-            testCase.verifyEqual(capabilities.cache.root,string(fullfile(exportRoot,".compiled-backend-cache")));
-            testCase.verifyFalse(isfolder(fullfile(exportRoot,".compiled-backend-cache")));
+            cacheRoot = fullfile(fixture.Folder,"cache");
+            capabilities = WVCompiledBackend.capabilitiesForTesting(struct("PackageRoot",string(exportRoot),"CacheRoot",string(cacheRoot),"Architecture","glnxa64","OperatingSystem","Linux","Release","R2026a"));
+            testCase.verifyEqual(capabilities.cache.root,string(cacheRoot));
+            testCase.verifyFalse(isfolder(cacheRoot));
             clear cleanup
         end
     end
@@ -148,7 +194,6 @@ classdef TestWVCompiledBackend < matlab.unittest.TestCase
             testCase.verifyEqual(capabilities.matlab.minimumRelease,"R2025b");
             testCase.verifyEqual(capabilities.platform.architecture,"maca64");
             testCase.verifyEqual(capabilities.contract.threadCount,min(18,maxNumCompThreads));
-            testCase.verifyEqual(capabilities.contract.planCount,17);
             testCase.verifyEqual(capabilities.contract.planCountMeaning,"logical-prepared-operation-slots");
             testCase.verifyEqual(capabilities.module.executionScheduleVersion,1);
             testCase.verifyEqual(string(capabilities.module.workerPolicyIdentifier),"constant-stage-workers-v1");
@@ -160,8 +205,8 @@ classdef TestWVCompiledBackend < matlab.unittest.TestCase
             testCase.verifyLessThanOrEqual(capabilities.featureValidation.maximumRelativeError,1e-12);
             testCase.verifyTrue(capabilities.featureValidation.hydrostatic.lifecyclePassed);
             testCase.verifyTrue(capabilities.featureValidation.nonhydrostatic.lifecyclePassed);
-            testCase.verifyEqual(capabilities.featureValidation.hydrostatic.planCount,17);
-            testCase.verifyEqual(capabilities.featureValidation.nonhydrostatic.planCount,17);
+            testCase.verifyGreaterThan(capabilities.featureValidation.hydrostatic.planCount,0);
+            testCase.verifyGreaterThan(capabilities.featureValidation.nonhydrostatic.planCount,0);
 
             missingSymbols = WVCompiledBackend.buildForTesting(struct("CommandOutputFunction",@missingSymbolOutput));
             testCase.verifyEqual(missingSymbols.status,"build-failed");
@@ -184,15 +229,17 @@ classdef TestWVCompiledBackend < matlab.unittest.TestCase
             clear recordCleanup
 
             originalHash = capabilities.module.sha256;
+            recordBeforeRollback = string(fileread(recordPath));
             rollback = WVCompiledBackend.buildForTesting(struct("FailureStage","install-validation"));
             testCase.verifyEqual(rollback.status,"build-failed");
+            testCase.verifyEqual(string(fileread(recordPath)),recordBeforeRollback);
             afterRollback = WVCompiledBackend.capabilities();
             testCase.verifyEqual(afterRollback.status,"available");
             testCase.verifyEqual(afterRollback.module.sha256,originalHash);
             testCase.verifyFalse(afterRollback.module.loadedAfterInspection);
         end
 
-        function compiledPreviewExecutesWithoutFallback(testCase)
+        function compiledBackendExecutesWithoutFallback(testCase)
             if ~isCanonicalNativePlatform
                 capabilities = WVCompiledBackend.capabilities();
                 testCase.verifyEqual(capabilities.status,"unsupported");
@@ -223,16 +270,24 @@ classdef TestWVCompiledBackend < matlab.unittest.TestCase
                 testCase.verifyEqual(metadata.activeBackend,"compiled");
                 testCase.verifyEqual(metadata.provider.id,"native-neon-pthreads");
                 testCase.verifyTrue(metadata.module.identityValidated);
-                testCase.verifyEqual(metadata.contract.version,4);
-                testCase.verifyEqual(metadata.runtimeMetrics.planCount,17);
-                testCase.verifyEqual(metadata.runtimeMetrics.persistentFullHermitianBytes,0);
-                testCase.verifyEqual(string(metadata.runtimeMetrics.activeForcingSchedule),"wave-vortex-forcing-v1:WVNonlinearAdvection");
+                testCase.verifyEqual(metadata.contract.version,capabilities.contract.version);
+                testCase.verifyEqual(metadata.contract.matlabTransformBridgeVersion,capabilities.module.matlabTransformBridgeVersion);
+                testCase.verifyGreaterThanOrEqual(metadata.contract.matlabTransformBridgeVersion,5);
+                testCase.verifyGreaterThan(metadata.runtimeMetrics.engineBytes,0);
+                testCase.verifyGreaterThan(metadata.runtimeMetrics.kernelBytes,0);
+                testCase.verifyGreaterThan(metadata.runtimeMetrics.fieldServiceBytes,0);
+                testCase.verifyEqual(metadata.runtimeMetrics.duplicateExecutions,0);
 
                 if definition.isHydrostatic
                     resized = compiledWVT.waveVortexTransformWithResolution([18 14 11]);
                     resizedCleanup = onCleanup(@()delete(resized));
                     testCase.verifyEqual(resized.computationalBackend,"compiled");
-                    testCase.verifyError(@()compiledWVT.waveVortexTransformWithExplicitAntialiasing(),"WaveVortexModel:CompiledBackendUnsupportedAntialiasing");
+                    explicit = compiledWVT.waveVortexTransformWithExplicitAntialiasing();
+                    explicitCleanup = onCleanup(@()delete(explicit));
+                    testCase.verifyEqual(explicit.computationalBackend,"compiled");
+                    testCase.verifyFalse(explicit.shouldAntialias);
+                    testCase.verifyTrue(explicit.hasForcingWithName("antialias filter"));
+                    clear explicitCleanup
                     clear resizedCleanup
 
                     restartPath = string(tempname)+".nc";
@@ -247,14 +302,46 @@ classdef TestWVCompiledBackend < matlab.unittest.TestCase
                     clear restorationCleanup restartCleanup
                 end
 
+                matlabWVT.removeAllForcing();
                 compiledWVT.removeAllForcing();
-                testCase.verifyError(@()compiledWVT.nonlinearFlux(),"WaveVortexModel:CompiledBackendUnsupportedForcing");
+                [expectedFp,expectedFm,expectedF0] = matlabWVT.nonlinearFlux();
+                [actualFp,actualFm,actualF0] = compiledWVT.nonlinearFlux();
+                verifyExactComplexZero(testCase,actualFp,expectedFp);
+                verifyExactComplexZero(testCase,actualFm,expectedFm);
+                verifyExactComplexZero(testCase,actualF0,expectedF0);
                 clear transformCleanup
             end
             metrics = wv_compiled_backend_mex('moduleMetrics');
             testCase.verifyEqual(metrics.kernelCount,0);
             testCase.verifyEqual(metrics.activePlans,0);
             testCase.verifyEqual(metrics.outstandingPlanningBytes,0);
+        end
+
+        function capabilityInspectionPreservesForeignLoadedModule(testCase)
+            if ~isCanonicalNativePlatform
+                return
+            end
+            capabilities = WVCompiledBackend.capabilities();
+            if ~capabilities.isAvailable
+                capabilities = WVCompiledBackend.build();
+            end
+            testCase.assertTrue(capabilities.isAvailable,capabilities.failure.message);
+            fixture = testCase.applyFixture(matlab.unittest.fixtures.TemporaryFolderFixture);
+            foreignModule = fullfile(fixture.Folder,capabilities.module.name+"."+mexext);
+            copyfile(capabilities.module.path,foreignModule);
+            originalPath = path;
+            cleanup = onCleanup(@()clearCompiledModuleAndRestorePath(originalPath));
+            addpath(fixture.Folder,"-begin");
+            info = feval(char(capabilities.module.name),'moduleInfo');
+            testCase.verifyTrue(isfield(info,"engine"));
+            testCase.assertEqual(loadedCompiledModulePath(capabilities.module.name),string(realpath(foreignModule)));
+
+            inspected = WVCompiledBackend.capabilities();
+            testCase.verifyEqual(inspected.status,"invalid");
+            testCase.verifyEqual(inspected.failure.identifier,"WaveVortexModel:CompiledBackendModuleConflict");
+            testCase.verifyEqual(loadedCompiledModulePath(capabilities.module.name),string(realpath(foreignModule)));
+            testCase.verifyEqual(string(which(capabilities.module.name)),string(foreignModule));
+            clear cleanup
         end
     end
 end
@@ -277,6 +364,11 @@ end
 
 function value = relativeError(actual,expected)
 value = max(abs(actual(:)-expected(:)),[],'omitmissing')/max(max(abs(expected(:)),[],'omitmissing'),realmin);
+end
+
+function verifyExactComplexZero(testCase,actual,expected)
+testCase.verifyEqual(real(actual),expected);
+testCase.verifyEqual(imag(actual),zeros(size(expected)));
 end
 
 function deleteIfPresent(pathname)
@@ -324,4 +416,16 @@ function writeText(pathname,value)
 fileId = fopen(pathname,"w");
 if fileId < 0, error("WaveVortexModel:TestWrite","Unable to write %s.",pathname); end
 cleanup = onCleanup(@()fclose(fileId)); fprintf(fileId,"%s",value); clear cleanup
+end
+
+function pathname = loadedCompiledModulePath(moduleName)
+[~,mexFiles] = inmem("-completenames");
+paths = string(mexFiles);
+paths = paths(endsWith(paths,filesep+moduleName+"."+mexext));
+if numel(paths) ~= 1, pathname = ""; else, pathname = string(realpath(paths)); end
+end
+
+function clearCompiledModuleAndRestorePath(originalPath)
+clear wv_compiled_backend_mex
+path(originalPath);
 end

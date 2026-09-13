@@ -11,7 +11,7 @@ nav_order: 2
 
 #  WVCompiledBackend
 
-Inspect and build the source-only compiled constant-stratification backend.
+Inspect and build the source-only compiled transform backend.
 
 
 ---

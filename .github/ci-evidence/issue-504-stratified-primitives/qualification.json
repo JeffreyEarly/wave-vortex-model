@@ -1,0 +1,183 @@
+{
+  "scope": "Private H/B/SQG raw primitive and field/flux boundary; not public compiled adapter completion",
+  "sourceBaseCommit": "e2b06942ffa38aa332c869457298706c00e7defb",
+  "sourceSHA256": {
+    "@WVCompiledTransformBackend/WVCompiledTransformBackend.m": "fc3dd3133420ccd38bfa8ff00964942423403c6fd83dd7b4729b7ffa18f2c566",
+    "@WVCompiledTransformBackend/private/wvCompiledStratifiedModalConfiguration.m": "3c1254e7759294c0efdc5d804f67f77fa5483dbb59ed30c195e1bb73d56dfb9c",
+    "CompiledKernel/adapters/native-fftw/WVMatlabTransformHost.cpp": "ec043de6ec88f9f5d8572456453b992ad1f426c4d9967c69b7d214c290a9ab1f",
+    "CompiledKernel/adapters/native-fftw/wv_compiled_backend_mex.cpp": "41f73d3d17e8dd87ef472f7a7ea979c092e7377aa8b49d5f51f792fb1f177f44",
+    "CompiledKernel/include/WaveVortexKernel/WVSpectralOperators.hpp": "a8c663a4352f30ab29e3964077720b2a202d272ad4b3a9dc306768c9412d2ac2",
+    "CompiledKernel/src/WVRetainedHorizontalOperator.cpp": "9394d8427b0feb80a9d4cad4b7d93d4571d4b3e18606528692acaabe40e89aec",
+    "PortableRuntime/tests/TestWVMatlabRawPrimitives.cpp": "454131a8c1f8bbd6bf8407ac3d59934d41f6dfc97edf4e724a382bb58c3fb40b",
+    "UnitTests/TestWVCompiledStratifiedPrimitives.m": "bfcd256cd2b74972bd9fd4369e2bb089c5ead320026e5cef02a55033d8bea5fd",
+    "UnitTests/TestWVCompiledTransformBackend.m": "5247485337285b89ce41b0ee18d161fee959167457f765a5e2834b1ac074b559",
+    "CompiledKernel/include/WaveVortexKernel/WVTransformHydrostaticKernel.hpp": "33edf1d9cd9bf9eec6ad6ec86d83415d4c615052fd3ae6e89d4fefe070767b1a",
+    "CompiledKernel/src/WVTransformHydrostaticKernel.cpp": "dc584afe9f41889c8527200637c0de6c05abb3d47b0fd25350c95df20af1a82e",
+    "CompiledKernel/include/WaveVortexKernel/WVTransformBoussinesqKernel.hpp": "841f03af5c11e66b658cf1395e1290420a72a34ca717b534a160998b16358493",
+    "CompiledKernel/src/WVTransformBoussinesqKernel.cpp": "fc0141c86b530f6d109b9661a4ae3d81a5e450a58bb8be8c028135a1bb20ee24",
+    "CompiledKernel/include/WaveVortexKernel/WVTransformStratifiedQGKernel.hpp": "fe5503b3482d9fac0916aad9dd3facca4fd635d06bd78c8a4a9c47297de4401b",
+    "CompiledKernel/src/WVTransformStratifiedQGKernel.cpp": "855eab1b6ad24ed4766b4abdbd5c85655c7d8e8974bde0f68fd4d9779ec29b63"
+  },
+  "matlab": {
+    "release": "R2025b",
+    "version": "25.2.0.3150157 (R2025b) Update 4",
+    "minimumRelease": "R2025b",
+    "isSupported": true
+  },
+  "module": {
+    "name": "wv_compiled_backend_mex",
+    "path": "/Users/jearly/Documents/OceanKitRepositories/wvm-v4-matlab-adapters/wv_compiled_backend_mex.mexmaca64",
+    "sha256": "fec20ed96b19a5678a042a5b057761d6ecd296e1a35e39d6af9e0a66d04d2d48",
+    "engine": "fftw",
+    "isInstalled": true,
+    "identityValidated": true,
+    "loadedBeforeInspection": false,
+    "loadedAfterInspection": false,
+    "nonlinearFluxSchedule": "retained-compact-streamed-target-three-channel-v1",
+    "executionScheduleVersion": 1,
+    "workerPolicyIdentifier": "constant-stage-workers-v1",
+    "requestedHorizontalWorkers": 12,
+    "requestedPointwiseWorkers": 12,
+    "planCountMeaning": "logical-prepared-operation-slots",
+    "matlabTransformBridgeVersion": 2
+  },
+  "nativeRawPrimitiveTest": {
+    "passed": true,
+    "configurations": [
+      "hydrostatic",
+      "boussinesq",
+      "stratified-qg"
+    ],
+    "schedules": [
+      "established-interleaved",
+      "compact-split"
+    ],
+    "verticalOperators": {
+      "hydrostatic": 4,
+      "stratified-qg": 4,
+      "boussinesq": 11
+    },
+    "columns": "all fixture retained columns",
+    "derivativeOrders": [
+      1,
+      2,
+      4
+    ],
+    "fullGridNyquist": true,
+    "memoryStable": true
+  },
+  "latestMatlabResults": [
+    {
+      "Name": "TestWVCompiledStratifiedPrimitives/hydrostaticVerticalAndLifecycle",
+      "Passed": "1",
+      "Failed": "0",
+      "Incomplete": "0",
+      "Duration": "2.38052466666667",
+      "Details": ""
+    },
+    {
+      "Name": "TestWVCompiledStratifiedPrimitives/boussinesqWavePrimitives",
+      "Passed": "1",
+      "Failed": "0",
+      "Incomplete": "0",
+      "Duration": "1.54076291666667",
+      "Details": ""
+    },
+    {
+      "Name": "TestWVCompiledStratifiedPrimitives/verticalColumnsAndHorizontalOrders",
+      "Passed": "1",
+      "Failed": "0",
+      "Incomplete": "0",
+      "Duration": "1.73935870833333",
+      "Details": ""
+    },
+    {
+      "Name": "TestWVCompiledStratifiedPrimitives/stateAndQGPVOperations",
+      "Passed": "1",
+      "Failed": "0",
+      "Incomplete": "0",
+      "Duration": "2.62586270833333",
+      "Details": ""
+    },
+    {
+      "Name": "TestWVCompiledStratifiedPrimitives/stratifiedFieldsAndFlux",
+      "Passed": "1",
+      "Failed": "0",
+      "Incomplete": "0",
+      "Duration": "3.95583566666667",
+      "Details": ""
+    },
+    {
+      "Name": "TestWVCompiledTransformBackend/compiledAndLegacyHandlesShareLifecycle",
+      "Passed": "1",
+      "Failed": "0",
+      "Incomplete": "0",
+      "Duration": "2.44529366666667",
+      "Details": ""
+    },
+    {
+      "Name": "TestWVCompiledTransformBackend/hydrostaticCallScopeReusesFieldsAndRecovers",
+      "Passed": "1",
+      "Failed": "0",
+      "Incomplete": "0",
+      "Duration": "1.30325104166667",
+      "Details": ""
+    },
+    {
+      "Name": "TestWVCompiledTransformBackend/compiledSourceIdentityIsDistinct",
+      "Passed": "1",
+      "Failed": "0",
+      "Incomplete": "0",
+      "Duration": "0.84863",
+      "Details": ""
+    },
+    {
+      "Name": "TestWVCompiledTransformBackend/compiledSourceIdentityIsFreshAfterMatReload",
+      "Passed": "1",
+      "Failed": "0",
+      "Incomplete": "0",
+      "Duration": "0.675259708333333",
+      "Details": ""
+    },
+    {
+      "Name": "TestWVCompiledTransformBackend/compiledSourceIdentitySurvivesClearFunctions",
+      "Passed": "1",
+      "Failed": "0",
+      "Incomplete": "0",
+      "Duration": "1.58773558333333",
+      "Details": ""
+    },
+    {
+      "Name": "TestWVCompiledTransformBackend/unsupportedTransformIsRejectedBeforeNativeCall",
+      "Passed": "1",
+      "Failed": "0",
+      "Incomplete": "0",
+      "Duration": "0.368655833333333",
+      "Details": ""
+    },
+    {
+      "Name": "TestWVCompiledTransformBackend/invalidInputsAreRejected",
+      "Passed": "1",
+      "Failed": "0",
+      "Incomplete": "0",
+      "Duration": "0.0276620416666667",
+      "Details": ""
+    }
+  ],
+  "docsCheck": {
+    "passed": true,
+    "routes": 4145,
+    "differences": 0
+  },
+  "codeAnalyzer": {
+    "productionFiles": 2,
+    "testFiles": 1,
+    "messages": 0
+  },
+  "remaining": [
+    "constant and Barotropic QG shared adapter",
+    "public routing and runtime restoration",
+    "common cross-MEX evaluation lifecycle and callback integration",
+    "full source-bound installed MEX qualification and release benchmark"
+  ]
+}

@@ -582,11 +582,17 @@ WVKernelStatus WVTransformBarotropicQGKernel::validateStateForCall(
 
 WVKernelStatus WVTransformBarotropicQGKernel::mutableOutputOutsidePreparedState(
     const WVComplexView& output) const {
+    return mutableOutputOutsidePreparedState(output.data,
+        descriptor_.spectralShape().elementCount()*sizeof(WVComplex64));
+}
+
+WVKernelStatus WVTransformBarotropicQGKernel::mutableOutputOutsidePreparedState(
+    const void* output,std::size_t outputBytes) const {
     if (!stateEvaluationActive_) return WVKernelStatus::ok();
     const auto bytes=descriptor_.spectralShape().elementCount()*sizeof(WVComplex64);
     for (std::size_t i=0;i<preparedStateViewCount_;++i)
-        if (overlaps(output.data,bytes,preparedStateViews_[i].data,bytes))
-            return {WVKernelStatusCode::overlappingArrays,"Mutable A0 output overlaps an active immutable Barotropic QG state view."};
+        if (overlaps(output,outputBytes,preparedStateViews_[i].data,bytes))
+            return {WVKernelStatusCode::overlappingArrays,"Mutable output overlaps an active immutable Barotropic QG state view."};
     return WVKernelStatus::ok();
 }
 
@@ -851,6 +857,16 @@ WVKernelStatus WVTransformBarotropicQGKernel::transformQGPVToA0(
     return forward(qgpv, A0);
 }
 
+WVKernelStatus WVTransformBarotropicQGKernel::horizontalForward(
+    const WVRealConstView& input,WVComplexView& output) {
+    return transformQGPVToA0(input,output);
+}
+
+WVKernelStatus WVTransformBarotropicQGKernel::horizontalInverse(
+    const WVComplexConstView& input,WVRealView& output) {
+    return transformSpectralTendencyToSpatial(input,output);
+}
+
 WVKernelStatus WVTransformBarotropicQGKernel::transformA0ToQGPV(
     const WVComplexConstView& A0, WVRealView& qgpv) {
     return transformA0ToField(A0, WVBarotropicQGField::qgpv, qgpv);
@@ -866,6 +882,8 @@ WVKernelStatus WVTransformBarotropicQGKernel::transformSpectralTendencyToSpatial
         input.shape.elementCount()*sizeof(WVComplex64)>UINTPTR_MAX-inputAddress ||
         output.shape.elementCount()*sizeof(double)>UINTPTR_MAX-outputAddress)
         return {WVKernelStatusCode::invalidPointer,"Invalid tendency storage."};
+    status=mutableOutputOutsidePreparedState(output.data,
+        output.shape.elementCount()*sizeof(double)); if (!status) return status;
     for (std::size_t i=0;i<input.shape.elementCount();++i)
         if (!std::isfinite(input.data[i].real) || !std::isfinite(input.data[i].imag))
             return {WVKernelStatusCode::invalidConfiguration,"Spectral tendency must be finite."};
@@ -1191,9 +1209,26 @@ double WVTransformBarotropicQGKernel::reduceHorizontalSpeedMaximum() const noexc
 
 WVKernelStatus WVTransformBarotropicQGKernel::spatialDerivative(
     const WVRealConstView& input, bool xDerivative, WVRealView& output) {
+    return spatialDerivative(input,xDerivative,1,output);
+}
+
+WVKernelStatus WVTransformBarotropicQGKernel::spatialDerivative(
+    const WVRealConstView& input, bool xDerivative, unsigned order,
+    WVRealView& output) {
+    if (!order)
+        return {WVKernelStatusCode::invalidConfiguration,
+                "Horizontal derivative order must be positive."};
     const auto& configuration = descriptor_.configuration();
     const auto& mappings = descriptor_.halfSpectrumMappings();
     const auto halfRows = mappings.NxHalf * configuration.Ny;
+    if (order>1) {
+        const auto n=xDerivative ? configuration.Nx : configuration.Ny;
+        const double maximum=2.0*pi*static_cast<double>(n/2)/
+            (xDerivative ? configuration.Lx : configuration.Ly);
+        if (!std::isfinite(std::pow(maximum,order)))
+            return {WVKernelStatusCode::numericalFailure,
+                    "Horizontal derivative multiplier overflow."};
+    }
     std::fill_n(halfSpectrumScratch_.data(), halfRows, WVComplex64{});
     auto status = plans_[forwardPlan]->execute(
         input.data, halfSpectrumScratch_.data());
@@ -1217,14 +1252,28 @@ WVKernelStatus WVTransformBarotropicQGKernel::spatialDerivative(
             xDerivative
                 ? configuration.Nx % 2 == 0 && iK == configuration.Nx / 2
                 : configuration.Ny % 2 == 0 && iL == configuration.Ny / 2;
-        const double wavenumber =
-            derivativeNyquist
-                ? 0.0
-                : 2.0 * pi *
-                      static_cast<double>(xDerivative ? kMode : lMode) /
-                      (xDerivative ? configuration.Lx : configuration.Ly);
-        halfSpectrumScratch_[row] = multiply(
-            halfSpectrumScratch_[row], {0.0, normalization * wavenumber});
+        const double wavenumber = 2.0*pi*
+            static_cast<double>(xDerivative ? kMode : lMode)/
+            (xDerivative ? configuration.Lx : configuration.Ly);
+        if (order==1) {
+            const double first=derivativeNyquist ? 0.0 : wavenumber;
+            halfSpectrumScratch_[row]=multiply(halfSpectrumScratch_[row],
+                {0.0,normalization*first});
+            continue;
+        }
+        if (derivativeNyquist && order%2) {
+            halfSpectrumScratch_[row]={};
+            continue;
+        }
+        const double magnitude=std::pow(wavenumber,order)*normalization;
+        WVComplex64 factor;
+        switch(order%4) {
+            case 0: factor={magnitude,0}; break;
+            case 1: factor={0,magnitude}; break;
+            case 2: factor={-magnitude,0}; break;
+            default: factor={0,-magnitude}; break;
+        }
+        halfSpectrumScratch_[row]=multiply(halfSpectrumScratch_[row],factor);
     }
     completeHermitianBoundaries(halfSpectrumScratch_.data(), mappings, 1);
     status = plans_[inversePlan]->execute(halfSpectrumScratch_.data(),
@@ -1235,6 +1284,30 @@ WVKernelStatus WVTransformBarotropicQGKernel::spatialDerivative(
     ++metrics_.executionCount;
     ++metrics_.inverseExecutionCount;
     return WVKernelStatus::ok();
+}
+
+WVKernelStatus WVTransformBarotropicQGKernel::differentiateHorizontal(
+    const WVRealConstView& input,bool xDerivative,WVRealView& output) {
+    return differentiateHorizontal(input,xDerivative,1,output);
+}
+
+WVKernelStatus WVTransformBarotropicQGKernel::differentiateHorizontal(
+    const WVRealConstView& input,bool xDerivative,unsigned order,
+    WVRealView& output) {
+    if (executing_)
+        return {WVKernelStatusCode::reentrantExecution,
+                "The Barotropic QG kernel is not reentrant."};
+    auto status=validateSpatial(input,descriptor_.spatialShape(),"Derivative input");
+    if (!status) return status;
+    status=validateSpatial(output,descriptor_.spatialShape(),"Derivative output");
+    if (!status) return status;
+    const auto bytes=descriptor_.spatialShape().elementCount()*sizeof(double);
+    status=mutableOutputOutsidePreparedState(output.data,bytes); if (!status) return status;
+    if (overlaps(input.data,bytes,output.data,bytes))
+        return {WVKernelStatusCode::overlappingArrays,
+                "Derivative input and output storage overlap."};
+    ExecutionGuard guard(executing_);
+    return spatialDerivative(input,xDerivative,order,output);
 }
 
 WVKernelStatus WVTransformBarotropicQGKernel::antialiasScalarInPlace(

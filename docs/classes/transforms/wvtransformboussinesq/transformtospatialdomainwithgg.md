@@ -3,23 +3,15 @@ layout: default
 title: transformToSpatialDomainWithGg
 parent: WVTransformBoussinesq
 grand_parent: Transforms
-nav_order: 288
+nav_order: 290
 mathjax: true
 ---
 
 #  transformToSpatialDomainWithGg
 
-arguments
+
 
 > Developer documentation: this item describes internal implementation details.
 
 
 ---
-
-## Discussion
-self WVTransform {mustBeNonempty}
-    w_bar
-end
-simply changing QG0inv to PF0inv dramatically increases the
-speed of the downstream function transformFromWVGridToDFTGrid.
-Why?

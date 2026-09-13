@@ -19,7 +19,13 @@ end
 if all(isKey(self.variableCache,varNames))
     [varargout{:}] = self.fetchFromVariableCache(varNames{:});
 else
-    [varargout{:}] = modelOp.compute(self);
+    scope = self.scopedEvaluation(); %#ok<NASGU>
+    if self.isCompiledBuiltinOperation(modelOp) && ~isa(modelOp,'WVNoMotionProfileOperation')
+        values = self.compiledVariables(varNames);
+        varargout = reshape(values,size(varargout));
+    else
+        [varargout{:}] = modelOp.compute(self);
+    end
     for iOpOut=1:length(varargout)
         self.addToVariableCache(varNames{iOpOut},varargout{iOpOut})
     end

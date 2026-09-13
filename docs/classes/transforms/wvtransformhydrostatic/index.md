@@ -122,6 +122,8 @@ views are `Apt`, `Amt`, and `A0t`.
       + [`GMatrix`](/classes/transforms/wvtransformhydrostatic/gmatrix.html) Transformation matrix $$G$$ projecting G-grid values onto vertical modes; shape `[Nj Nz]`.
       + [`GinvMatrix`](/classes/transforms/wvtransformhydrostatic/ginvmatrix.html) Transformation matrix $$G^{-1}$$ reconstructing G-grid values from vertical modes; shape `[Nz Nj]`.
   + Transform configuration
+    + [`computationalBackend`](/classes/transforms/wvtransformhydrostatic/computationalbackend.html) Runtime numerical backend. MATLAB remains the default.
+    + [`computationalBackendMetadata`](/classes/transforms/wvtransformhydrostatic/computationalbackendmetadata.html) Provider identity, storage and execution metrics for this transform.
     + [`isHydrostatic`](/classes/transforms/wvtransformhydrostatic/ishydrostatic.html) Whether the transform uses the hydrostatic approximation.
     + [`shouldAntialias`](/classes/transforms/wvtransformhydrostatic/shouldantialias.html) Whether the spectral grid excludes modes that alias quadratic products.
 + Initialize the flow

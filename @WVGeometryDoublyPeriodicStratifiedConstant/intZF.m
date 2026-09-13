@@ -31,6 +31,15 @@ else
     mustBeMember(size(u,1),self.Nz);
 end
 
+if self.usesCompiledTransform()
+    values = self.compiledPrimitive("verticalCalculus",{u},struct("inputIsF",true,"order",options.n,"integral",true));
+    U = values{1};
+    if didShift
+        U = permute(reshape(U,self.Nz,self.Nx,self.Ny),[2 3 1]);
+    end
+    return
+end
+
 m = reshape(pi*self.j/self.Lz,[],1);
 inverseM = zeros(size(m));
 inverseM(m ~= 0) = 1./m(m ~= 0);

@@ -119,6 +119,43 @@ WVKernelStatus WVDensityEventEvaluation::reserveStorage(
   }
 }
 
+WVKernelStatus WVDensityEventEvaluation::reserveAdditionalStorage(
+    std::size_t sampleCount,std::size_t profileCount,std::uint8_t demands,
+    WVNoMotionReference reference) {
+  if((demands&~(rhoNmDemand|etaTrueDemand|apeDemand))!=0)
+    return invalid("Density event storage demand is invalid.");
+  if(!initialized_)
+    return reserveStorage(sampleCount,profileCount,demands,reference);
+  if(lowMemoryStorage_ || reference!=contract_.reference ||
+      sampleCount!=sampleCount_ || !geometry_.heights ||
+      profileCount!=geometry_.heights->size())
+    return invalid("Active density storage extension does not match its immutable event binding.");
+  try {
+    if(((demands&rhoNmDemand) ||
+        (reference==WVNoMotionReference::actual &&
+         (demands&(etaTrueDemand|apeDemand)))) && !actualReady_)
+      actualProfile_.reserve(profileCount);
+    if((demands&etaTrueDemand) && !etaReady_) {
+      materialHeights_.reserve(sampleCount);
+      etaTrue_.reserve(sampleCount);
+    }
+    if((demands&apeDemand) && !apeReady_) {
+      materialHeights_.reserve(sampleCount);
+      ape_.reserve(sampleCount);
+    }
+    account();
+    return WVKernelStatus::ok();
+  } catch(const std::bad_alloc&) {
+    account();
+    return {WVKernelStatusCode::allocationFailure,
+        "Unable to extend active density event storage."};
+  } catch(const std::length_error&) {
+    account();
+    return {WVKernelStatusCode::sizeOverflow,
+        "Active density event storage exceeds vector capacity."};
+  }
+}
+
 WVKernelStatus WVDensityEventEvaluation::reserveLowMemoryStorage(
     std::size_t sampleCount,std::size_t profileCount,std::uint8_t demands,
     WVNoMotionReference reference) {

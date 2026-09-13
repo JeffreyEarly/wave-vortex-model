@@ -125,6 +125,28 @@ classdef WVTransform < matlab.mixin.indexing.RedefinesDot & CAAnnotatedClass
 
     properties (Transient, Access=private)
         compiledSourceIdentityValue = []
+        compiledTransformBackend = []
+        compiledBuiltinOperations = {}
+        compiledBuiltinOperationNames = strings(0,1)
+        compiledBuiltinOutputNames = {}
+    end
+
+    properties (Hidden, Transient, GetAccess=public, SetAccess=private)
+        % Explicit mutation generation for scoped native state snapshots.
+        compiledStateGeneration (1,1) uint64 = uint64(0)
+    end
+
+    properties (Transient, GetAccess=public, SetAccess=private)
+        % Runtime numerical backend. MATLAB remains the default.
+        %
+        % - Topic: Transform configuration
+        computationalBackend (1,1) string = "matlab"
+    end
+    properties (Dependent, GetAccess=public, SetAccess=private)
+        % Provider identity, storage and execution metrics for this transform.
+        %
+        % - Topic: Transform configuration
+        computationalBackendMetadata
     end
 
     % Public read and write properties
@@ -248,6 +270,22 @@ classdef WVTransform < matlab.mixin.indexing.RedefinesDot & CAAnnotatedClass
     end
 
     methods (Access=protected)
+        function captureCompiledOperations(self)
+            % Record the constructor's actual built-in operation instances.
+            %
+            % - Developer: true
+            % - Topic: Compiled transform internals
+            names = self.operationNameMap.keys;
+            names = names(~arrayfun(@(name) isa(self.operationNameMap{name},'SpatialForcingOperation'),names));
+            self.compiledBuiltinOperationNames = names;
+            self.compiledBuiltinOperations = cell(1,numel(names));
+            self.compiledBuiltinOutputNames = cell(1,numel(names));
+            for i=1:numel(names)
+                self.compiledBuiltinOperations{i} = self.operationNameMap{names(i)};
+                self.compiledBuiltinOutputNames{i} = string({self.compiledBuiltinOperations{i}.outputVariables.name});
+            end
+        end
+
         function varargout = dotReference(self,indexOp)
             % Typically the request will be directly for a WVOperation,
             % but sometimes it will be for a variable that can only be
@@ -361,6 +399,159 @@ classdef WVTransform < matlab.mixin.indexing.RedefinesDot & CAAnnotatedClass
         %
         % - Topic: Flow components
         val = primaryFlowComponentWithName(self,name)
+        function flag = usesCompiledTransform(self)
+            % - Developer: true
+            % - Topic: Compiled transform internals
+            flag = self.computationalBackend == "compiled" && ~isempty(self.compiledTransformBackend);
+        end
+
+        function flag = hasCompiledStandardStateGraph(self)
+            % A replaced dependency must retain its MATLAB callback semantics.
+            %
+            % - Developer: true
+            % - Topic: Compiled transform internals
+            flag = self.usesCompiledTransform();
+            if ~flag, return, end
+            for i=1:numel(self.compiledBuiltinOperations)
+                operation = self.compiledBuiltinOperations{i};
+                name = self.compiledBuiltinOperationNames(i);
+                if ~isKey(self.operationNameMap,name) || self.operationNameMap{name} ~= operation || ...
+                        string(operation.name) ~= name || ~isequal(string({operation.outputVariables.name}),self.compiledBuiltinOutputNames{i})
+                    flag = false;
+                    return
+                end
+            end
+        end
+
+        function flag = isCompiledBuiltinOperation(self,operation)
+            % - Developer: true
+            % - Topic: Compiled transform internals
+            flag = self.hasCompiledStandardStateGraph() && any(cellfun(@(known) known == operation,self.compiledBuiltinOperations));
+            if flag
+                flag = self.compiledTransformBackend.supportsVariables({operation.outputVariables.name});
+            end
+        end
+
+        function values = compiledPrimitive(self,operation,inputs,options)
+            % - Developer: true
+            % - Topic: Compiled transform internals
+            result = self.compiledTransformBackend.operation(self,operation,inputs,options);
+            values = result.values;
+        end
+
+        function values = compiledVariables(self,names)
+            % - Developer: true
+            % - Topic: Compiled transform internals
+            result = self.compiledTransformBackend.evaluateVariables(self,names);
+            values = result.values;
+        end
+
+        function flag = canUseCompiledNonlinearCoefficients(self)
+            % Use the native coefficient boundary for the exact spatial producer.
+            %
+            % - Developer: true
+            % - Topic: Compiled transform internals
+            flag = self.hasCompiledStandardStateGraph() && isscalar(self.spatialFluxForcing);
+            if ~flag, return, end
+            forcing = self.spatialFluxForcing(1);
+            flag = string(class(forcing)) == "WVNonlinearAdvection" && ...
+                string(forcing.name) == "nonlinear advection" && forcing.priority == 127;
+            if flag && isa(self,'WVStratification') && isprop(self,'dLnN2')
+                flag = isequal(forcing.dLnN2,shiftdim(self.dLnN2,-2));
+            elseif flag
+                flag = isequal(forcing.dLnN2,0);
+            end
+        end
+
+        function [Fp,Fm,F0] = compiledNonlinearCoefficients(self)
+            % Evaluate nonlinear coefficients in the enclosing native scope.
+            %
+            % - Developer: true
+            % - Topic: Compiled transform internals
+            result = self.compiledTransformBackend.nonlinearCoefficients(self);
+            [Fp,Fm,F0] = result.values{:};
+        end
+
+        function flag = canUseCompiledCoefficientOnlyRightHandSide(self)
+            % Check the sealed built-in coefficient-only workload.
+            %
+            % - Developer: true
+            % - Topic: Compiled transform internals
+            flag = self.canUseCompiledNonlinearCoefficients() && ...
+                isempty(self.spectralFluxForcing) && isempty(self.spectralAmplitudeForcing) && ...
+                self.compiledTransformBackend.canBeginCoefficientOnlyEvaluation();
+        end
+
+        function [used,values] = tryCompiledCoefficientOnlyRightHandSide(self)
+            % Use the sealed native leaf when its current workload remains eligible.
+            %
+            % - Developer: true
+            % - Topic: Compiled transform internals
+            [used,result] = self.compiledTransformBackend.tryCoefficientOnlyRightHandSide(self);
+            if used
+                values = reshape(result.values,1,[]);
+            else
+                values = {};
+            end
+        end
+
+        function values = compiledCoefficientOnlyRightHandSide(self)
+            % Evaluate a complete RHS with no other consumers in its event.
+            %
+            % - Developer: true
+            % - Topic: Compiled transform internals
+            result = self.compiledTransformBackend.coefficientOnlyRightHandSide(self);
+            values = reshape(result.values,1,[]);
+        end
+
+        function report = compiledDensityRecoveryReport(self)
+            % - Developer: true
+            % - Topic: Compiled transform internals
+            metadata = self.compiledTransformBackend.metadata();
+            report = metadata.densityRecovery;
+        end
+
+        function cleanup = scopedEvaluation(self)
+            % Reuse compiled dependencies while the MATLAB state is unchanged.
+            %
+            % Retain the returned onCleanup object until all consumers finish.
+            % Nested scopes share their enclosing evaluation.
+            %
+            % - Topic: State variables
+            if self.usesCompiledTransform()
+                cleanup = self.compiledTransformBackend.scopedEvaluation(self);
+            else
+                cleanup = [];
+            end
+        end
+
+        function metadata = get.computationalBackendMetadata(self)
+            if self.usesCompiledTransform()
+                native = self.compiledTransformBackend.metadata();
+                capabilities = self.compiledTransformBackend.capabilities;
+                contract = capabilities.contract;
+                contract.matlabTransformBridgeVersion = capabilities.module.matlabTransformBridgeVersion;
+                metadata = struct("schemaVersion","1.0.0","requestedBackend","compiled","activeBackend","compiled", ...
+                    "scope","shared compiled transform primitives and scoped variable evaluation", ...
+                    "provider",capabilities.provider,"libraries",capabilities.libraries,"module",capabilities.module, ...
+                    "contract",contract,"sourceIdentity",capabilities.sourceIdentity, ...
+                    "storage",native,"runtimeMetrics",native);
+            else
+                metadata = struct("schemaVersion","1.0.0","requestedBackend","matlab","activeBackend","matlab", ...
+                    "scope","all forcing configurations supported by the MATLAB implementation", ...
+                    "provider",struct("id","matlab-builtin","version",string(version("-release"))), ...
+                    "libraries",struct(),"module",struct(),"contract",struct(),"sourceIdentity",struct(), ...
+                    "storage",struct("status","not-estimated","reason","MATLAB storage is measured by the benchmark ledger."),"runtimeMetrics",struct());
+            end
+        end
+
+        function delete(self)
+            if ~isempty(self.compiledTransformBackend) && isvalid(self.compiledTransformBackend)
+                delete(self.compiledTransformBackend);
+            end
+            self.compiledTransformBackend = [];
+        end
+
         function identity = get.compiledSourceIdentity(self)
             % Assign lazily so restored MATLAB objects receive fresh owners too.
             if isempty(self.compiledSourceIdentityValue) || ~isvalid(self.compiledSourceIdentityValue)
@@ -612,23 +803,96 @@ classdef WVTransform < matlab.mixin.indexing.RedefinesDot & CAAnnotatedClass
         %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
         function set.t(self,value)
+            self.advanceCompiledStateGeneration();
             self.t = value;
             self.clearVariableCacheOfTimeDependentVariables();
         end
 
         function set.Ap(self,value)
+            self.advanceCompiledStateGeneration();
             self.Ap = value;
             self.clearVariableCacheOfApAmA0DependentVariables();
         end
 
         function set.Am(self,value)
+            self.advanceCompiledStateGeneration();
             self.Am = value;
             self.clearVariableCacheOfApAmA0DependentVariables();
         end
 
         function set.A0(self,value)
+            self.advanceCompiledStateGeneration();
             self.A0 = value;
             self.clearVariableCacheOfApAmA0DependentVariables();
+        end
+
+        function set.t0(self,value)
+            self.advanceCompiledStateGeneration();
+            self.t0 = value;
+            if self.usesCompiledTransform()
+                self.clearVariableCacheOfTimeDependentVariables();
+            end
+        end
+
+        function set.Apm_TE_factor(self,value)
+            self.assertCompiledConfigurationMutable();
+            self.Apm_TE_factor = value;
+        end
+
+        function set.A0_TE_factor(self,value)
+            self.assertCompiledConfigurationMutable();
+            self.A0_TE_factor = value;
+        end
+
+        function set.A0_TZ_factor(self,value)
+            self.assertCompiledConfigurationMutable();
+            self.A0_TZ_factor = value;
+        end
+
+        function set.A0_QGPV_factor(self,value)
+            self.assertCompiledConfigurationMutable();
+            self.A0_QGPV_factor = value;
+        end
+
+        function set.A0_Psi_factor(self,value)
+            self.assertCompiledConfigurationMutable();
+            self.A0_Psi_factor = value;
+        end
+
+        function set.A0_KE_factor(self,value)
+            self.assertCompiledConfigurationMutable();
+            self.A0_KE_factor = value;
+        end
+
+        function set.A0_PE_factor(self,value)
+            self.assertCompiledConfigurationMutable();
+            self.A0_PE_factor = value;
+        end
+
+        function invalidateCompiledRegistry(self)
+            % Invalidate compiled derived values before a registry mutation.
+            %
+            % - Developer: true
+            % - Topic: Compiled transform internals
+            if self.usesCompiledTransform()
+                self.advanceCompiledStateGeneration();
+                self.clearVariableCacheOfTimeDependentVariables();
+                self.clearVariableCacheOfApAmA0DependentVariables();
+            end
+        end
+
+        function advanceCompiledStateGeneration(self)
+            % Record assignments even when their time or values are unchanged.
+            %
+            % - Developer: true
+            % - Topic: Compiled transform internals
+            if self.compiledStateGeneration == intmax('uint64')
+                error("WaveVortexModel:CompiledStateGeneration","The compiled state generation is exhausted.")
+            end
+            if ~isempty(self.compiledTransformBackend)
+                self.compiledTransformBackend.invalidateEvaluation();
+            end
+            self.compiledStateGeneration = self.compiledStateGeneration + uint64(1);
         end
 
         [Ap,Am,A0] = transformUVEtaToWaveVortex(self,U,V,N)
@@ -1058,6 +1322,7 @@ classdef WVTransform < matlab.mixin.indexing.RedefinesDot & CAAnnotatedClass
                 return
             end
 
+            self.invalidateCompiledRegistry();
             self.spatialFluxForcing = spatialForcing;
             self.spectralFluxForcing = spectralForcing;
             self.spectralAmplitudeForcing = amplitudeForcing;
@@ -1074,7 +1339,38 @@ classdef WVTransform < matlab.mixin.indexing.RedefinesDot & CAAnnotatedClass
 
     methods (Access=protected)
         % protected — Access from methods in class or subclasses
+        function configureComputationalBackend(self,backend)
+            % Select the runtime backend after scientific construction.
+            arguments
+                self WVTransform
+                backend (1,1) string {mustBeMember(backend,["matlab" "compiled"])}
+            end
+            if backend == self.computationalBackend, return, end
+            candidate = [];
+            if backend == "compiled"
+                candidate = WVCompiledTransformBackend.create(self);
+            end
+            old = self.compiledTransformBackend;
+            self.compiledTransformBackend = candidate;
+            self.computationalBackend = backend;
+            if ~isempty(old), delete(old), end
+            self.clearVariableCacheOfTimeDependentVariables();
+            self.clearVariableCacheOfApAmA0DependentVariables();
+        end
+
         varargout = interpolatedFieldAtPosition(self,x,y,z,method,varargin);
+    end
+
+    methods (Hidden)
+        function assertCompiledConfigurationMutable(self)
+            % Shared guard for public scientific arrays captured by a native session.
+            identity = self.compiledSourceIdentityValue;
+            hasNativeLease = ~isempty(identity) && isvalid(identity) && identity.hasLease();
+            if self.usesCompiledTransform() || hasNativeLease
+                error("WaveVortexModel:CompiledTransformConfigurationLocked", ...
+                    "Compiled transform configuration is immutable. Create a fresh transform or a transform at the required resolution before changing scientific configuration arrays.")
+            end
+        end
     end
 
     methods (Static)

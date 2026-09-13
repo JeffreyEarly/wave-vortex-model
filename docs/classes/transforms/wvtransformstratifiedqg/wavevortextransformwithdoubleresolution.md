@@ -3,7 +3,7 @@ layout: default
 title: waveVortexTransformWithDoubleResolution
 parent: WVTransformStratifiedQG
 grand_parent: Transforms
-nav_order: 232
+nav_order: 234
 mathjax: true
 ---
 

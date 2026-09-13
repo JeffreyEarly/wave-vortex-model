@@ -87,6 +87,11 @@ public:
 
     WVKernelStatus transformToSpatial(WVComplexConstView, WVHydrostaticFamily, WVRealVolumeView);
     WVKernelStatus transformFromSpatial(WVRealVolumeConstView, WVHydrostaticFamily, WVComplexView);
+    WVKernelStatus applyVertical(WVStratifiedModalOperator, WVComplexConstView, WVComplexView);
+    WVKernelStatus applyVerticalColumn(WVStratifiedModalOperator, std::size_t retainedColumn,
+        WVComplexConstView inputColumn, WVComplexView outputColumn);
+    WVKernelStatus horizontalForward(WVRealVolumeConstView, WVComplexView);
+    WVKernelStatus horizontalInverse(WVComplexConstView, WVRealVolumeView);
     WVKernelStatus transformUVEtaToWaveVortex(WVRealVolumeConstView u, WVRealVolumeConstView v,
         WVRealVolumeConstView eta, double t, double t0, WVMutableCoefficients);
     // Surface fields use [Nx,Ny,1]. Horizontal vorticity supports value only;
@@ -121,7 +126,8 @@ public:
     // Produces the complete physical bundle and projected flux together. Caller
     // publishes evaluator nodes only after success; requires prepared native support.
     bool supportsTiledNonlinear() const noexcept { return tiledNonlinearPrepared_; }
-    WVKernelStatus nonlinearFluxAndFields(const WVState&, WVFlux&, WVRealFieldBundleView);
+    WVKernelStatus nonlinearFluxAndFields(const WVState&, WVFlux&, WVRealFieldBundleView,
+        WVRealFieldBundleView* spatialTendency = nullptr);
     WVKernelStatus nonlinearFlux(const WVState&, WVFlux&,
         WVRealFieldBundleView* spatialTendency = nullptr,
         const WVRealFieldBundleConstView* preparedFields = nullptr, bool projectFlux = true,
@@ -135,12 +141,16 @@ public:
     WVKernelStatus totalEnstrophy(const WVCoefficients&, double&) const;
     WVKernelStatus totalEnergySpatiallyIntegrated(const WVState&, double&,
         WVHydrostaticComponent = WVHydrostaticComponent::all);
+    WVKernelStatus applyVerticalCalculus(WVRealConstView input,bool inputIsF,
+        unsigned order,bool integral,WVRealView output);
     // MATLAB diffZF/diffZG orders 1..4 and intZF/intZG order 1. These preserve
     // all horizontal grid columns rather than truncating through a Fourier map.
     WVKernelStatus differentiateVertical(WVRealVolumeConstView, WVHydrostaticFamily,
         unsigned order, WVRealVolumeView);
     // Full-grid horizontal derivatives and three-dimensional passive advection.
     WVKernelStatus differentiateHorizontal(WVRealVolumeConstView, bool xDerivative, WVRealVolumeView);
+    WVKernelStatus differentiateHorizontal(WVRealVolumeConstView, bool xDerivative,
+        unsigned order, WVRealVolumeView);
     WVKernelStatus advectScalarWithAdvectionFields(WVRealVolumeConstView, WVRealFieldBundleConstView, bool antialias, WVRealVolumeView, bool xyOnly = false);
     WVKernelStatus integrateVertical(WVRealVolumeConstView, WVHydrostaticFamily, WVRealVolumeView);
 private:
@@ -150,6 +160,7 @@ private:
     WVKernelStatus coefficients(const WVCoefficients&) const;
     WVKernelStatus outputs(WVMutableCoefficients) const;
     WVKernelStatus mutableOutputOutsidePreparedState(WVMutableCoefficients) const;
+    WVKernelStatus mutableOutputOutsidePreparedState(const void*,std::size_t) const;
     WVKernelStatus stateContents(const WVState&) const;
     WVKernelStatus state(const WVState&);
     bool matchesStateEvaluation(const WVState&) const noexcept;
@@ -163,6 +174,7 @@ private:
     WVComplexOutput modalView(std::size_t slot = 0);
     WVComplexOutput gridView(std::size_t slot = 0);
     WVKernelStatus vertical(std::size_t,WVComplexInput,WVComplexOutput);
+    WVKernelStatus verticalColumn(std::size_t,WVComplexInput,WVComplexOutput,std::size_t);
     WVKernelStatus project(const double*,WVComplexOutput,WVHydrostaticFamily);
     WVKernelStatus reconstruct(const WVCoefficients&,WVHydrostaticField,
         WVHydrostaticDerivative,WVHydrostaticComponent,double*,bool countPrimary = true,
@@ -171,7 +183,8 @@ private:
     WVKernelStatus projectFields(const double*,const double*,const double*,WVMutableCoefficients);
     WVKernelStatus projectedFieldsToCoefficients(
         WVComplexInput,WVComplexInput,WVComplexInput,WVMutableCoefficients);
-    WVKernelStatus verticalCalculus(const double*,WVHydrostaticFamily,unsigned,bool,double*);
+    WVKernelStatus verticalCalculus(const double*,WVHydrostaticFamily,unsigned,bool,double*,
+        std::size_t columns,bool verticalFirst);
     bool tiledNonlinearPrepared_ = false;
     WVVariableExecutionOptions executionOptions_;
     std::shared_ptr<const WVStratifiedModalSource> source_;

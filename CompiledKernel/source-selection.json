@@ -48,7 +48,8 @@
     "adaptiveDampingEffectiveResolution": "issue-409",
     "tiledHorizontalAdvection": "issue-489",
     "tiledScratchAndArithmetic": "issue-491",
-    "matlabOwnedModalBridge": "issue-503"
+    "matlabOwnedModalBridge": "issue-503",
+    "matlabAllFamilyEvaluation": "issues-504-507"
   },
   "contract": {
     "version": 4,
@@ -77,11 +78,11 @@
   "keySourceSHA256": {
     "preparedModeExecutor": "817d2a3cd791b51a38e0e427a1d6800d376aaa976ca7100f438599841fabce93",
     "coefficientFormulas": "78d647608d8919b33c278c280eb6d2b253dfb0acd8d3330141fbdc845e00864a",
-    "kernel": "a07893470f3c9b27a2fe297473660b718f65947424ba879f2a7a91083c644681",
+    "kernel": "b0ed568518f3a5c2a96ac01f241336d100b22047312f86984ea03f9d1fc6f038",
     "integrationSystem": "21d00e8a75de899425ff991896d9d9dedff2201228835d0f97e01bc9dab569eb",
-    "nativeEngine": "76fe16ed98a7a4022663e2bbe1c42f10ad1638603a75d7584f58f7303fef3315",
-    "mexGateway": "c995dc87e61cd6743f8b5872b7186c4ebf5c9ec754e1cfeb24eaf38250045a1f",
-    "buildOrchestrator": "f26c2e4db5a95a733d87a4f173cc810d7afc5e3f6c5bca2ec1aac6c38340e0c7"
+    "nativeEngine": "886c726807375097579a61468092ad33e54b4fa57e5bf18a7e6b1694e5a7aac0",
+    "mexGateway": "bb20d65a113c25bf31ddca66ae14c92f46f5d83815f114e5fd3abfb74bf067bd",
+    "buildOrchestrator": "fba3361d36d43b43f88149b6856fe888dbeaa3b9a6c9601c14c07d0c67c70c92"
   },
   "excluded": [
     "historical benchmark harnesses and canonical engineering artifacts",
@@ -245,11 +246,15 @@
   },
   "matlabOwnedModalBridge": {
     "issue": 503,
-    "status": "hydrostatic-foundation",
+    "status": "all-six-implemented-qualification-in-progress",
     "ownedScientificSource": "wave-vortex-owned-stratified-modal-source-v1",
     "matlabSchema": "wv-matlab-stratified-modal-source-v1",
     "supportedTransformFamilies": [
-      "WVTransformHydrostatic"
+      "WVTransformConstantStratification",
+      "WVTransformHydrostatic",
+      "WVTransformBoussinesq",
+      "WVTransformStratifiedQG",
+      "WVTransformBarotropicQG"
     ],
     "ownedSourceInputFamilies": [
       "WVTransformStratifiedQG",
@@ -258,20 +263,25 @@
     ],
     "nativeVariablePolicy": "compact-native-variable-v1",
     "matrixBackend": "accelerate-gemm-v1",
-    "stateOwnership": "MATLAB coefficient arrays are borrowed for one MEX call; modal geometry and matrices are copied into an immutable shared source owned by the host session.",
-    "moduleSourceManifestBinding": false,
-    "moduleSourceManifestBindingGap": "issue-507",
+    "stateOwnership": "Modal geometry and matrices are copied into an immutable native source; each outer evaluation owns one coefficient snapshot shared by its consumers. MATLAB source configuration is leased until the last native owner is released.",
+    "moduleSourceManifestBinding": true,
     "sourceSHA256": {
       "CompiledKernel/include/WaveVortexKernel/WVOwnedStratifiedModalSource.hpp": "9eb131d10eb8fa968ded995edd0ecbf484aae69ef2f7860c39da735e516462e4",
       "CompiledKernel/src/WVOwnedStratifiedModalSource.cpp": "1467a3916dfa52094eba3f64d8e48f329d7e7028a36478cda21814f189e157b3",
       "CompiledKernel/adapters/native-fftw/WVMatlabTransformHost.hpp": "eeacdf24a60049504da25c639a8da0d934714beab3b8a7b963aa215f1f26fc30",
-      "CompiledKernel/adapters/native-fftw/WVMatlabTransformHost.cpp": "fc88d7e1f524f88db032527335406e0b27aba95d5842e5e14d133f8e4a64f2f4",
-      "CompiledKernel/adapters/native-fftw/wv_compiled_backend_mex.cpp": "c995dc87e61cd6743f8b5872b7186c4ebf5c9ec754e1cfeb24eaf38250045a1f",
-      "@WVCompiledTransformBackend/WVCompiledTransformBackend.m": "896e4af1d6e1f80a84ba661fd84290e6aee9dd641fb901c5de964440941148af",
-      "@WVCompiledTransformBackend/private/wvCompiledStratifiedModalConfiguration.m": "28b14a5a5413c7f5902b9c83702a4d446b18790af342d4ab5f684730618272f5",
-      "@WVTransform/WVTransform.m": "a64876ba54ead8bcbcd9a78a73cc913db6a75a291cd18daf11754c85dd64b583",
-      "@WVCompiledBackend/private/wvCompiledBackendCapabilities.m": "aaca34c95c35db79977d9c157a06d5a649f163b6ca71ffaa5c06f9f9c8cdb9c1",
-      "@WVCompiledSourceIdentity/WVCompiledSourceIdentity.m": "19bb7aef78f389ab7c466e54161be9b4389ec762b75a1efa0aee5082a156f929"
-    }
+      "CompiledKernel/adapters/native-fftw/WVMatlabTransformHost.cpp": "91b9e237205ec1b088fc09d2a83d68fe5fa202568fe60718db051d0903050c5f",
+      "CompiledKernel/adapters/native-fftw/wv_compiled_backend_mex.cpp": "a6ee61d41e25d2b0e784977ca3f1cd1a7bf3bf65a4f9963b8e2079a9c96fd782",
+      "@WVCompiledTransformBackend/WVCompiledTransformBackend.m": "fcb5e23d7eb8da428951805b33d3be97f7947105346c1da631ae3ae4fa69837d",
+      "@WVCompiledTransformBackend/private/wvCompiledStratifiedModalConfiguration.m": "399781a80267b8af504a332e57415d96caa5ebf2d36b8c95e51e7b6ed30d52d1",
+      "@WVTransform/WVTransform.m": "c9da0fdba44e8461b9fe77b680dcb45475fb9b8961c9217924975584a0b7be6b",
+      "@WVCompiledBackend/private/wvCompiledBackendCapabilities.m": "1a4b11c3d2c77bd93761a2acca7c2266c69ee21734eded64029d663ec96aab1f",
+      "@WVCompiledSourceIdentity/WVCompiledSourceIdentity.m": "587520e7c53381e92fc84e3fa0c4c44ac9d4bce445da91375851368d888c215f",
+      "CompiledKernel/src/WVStratifiedVerticalCalculus.hpp": "1018d71e2defe0c2de4a784ef553dd361fb6b4f978dadbfcb17e9a9e95eff660",
+      "@WVCompiledBackend/private/wvCompiledBackendNewSourceManifest.m": "b15917b68fad2586cd50437ad515678509bdcbf3ffcd4646a5ea3db91148b872",
+      "@WVCompiledBackend/qualifySourceIdentity.m": "b15a6733d284148d56f5a5c5db0c869ebd734f404d922da9baa25888a59e25c3",
+      "@WVCompiledTransformBackend/private/wvCompiledConstantConfiguration.m": "0b144e9fa8ec8cc5d563f5a9e9a9fa5727f96928040685bc9d6ddb5439f8ef0c"
+    },
+    "supportedConfigurations": 6,
+    "matlabTransformBridgeVersion": 6
   }
 }

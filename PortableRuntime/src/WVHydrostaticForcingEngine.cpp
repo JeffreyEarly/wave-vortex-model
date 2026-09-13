@@ -252,14 +252,32 @@ WVKernelStatus WVHydrostaticForcingEngine::addProjectedSpatialTendency(const WVS
 }
 WVKernelStatus WVHydrostaticForcingEngine::addNonlinearFlux(const WVState& state,WVFlux& flux) {
     if (diagnosticWorkspace_) {
+        if(diagnosticWorkspace_->captureBuiltinProjection &&
+            !diagnosticWorkspace_->physicalPrepared && kernel().supportsTiledNonlinear()) {
+            const auto shape=kernel().spatialShape();
+            WVRealFieldBundleView fields{diagnosticWorkspace_->physical.data(),
+                {shape.first,shape.second,shape.third,4}};
+            auto raw=diagnosticWorkspace_->rawView();
+            const auto status=kernel().nonlinearFluxAndFields(state,flux,fields,&raw);
+            if(status) {
+                diagnosticWorkspace_->physicalPrepared=true;
+                diagnosticWorkspace_->spatialCaptured=true;
+                ++metrics_.nonlinearProducerCount;
+                ++metrics_.physicalFieldReconstructionCount;
+            }
+            return status;
+        }
         WVRealFieldBundleConstView fields;
         auto status=physicalFields(state,fields); if (!status) return status;
         diagnosticWorkspace_->spatialCaptured=true;
         auto raw=diagnosticWorkspace_->rawView();
-        auto temporary=diagnosticWorkspace_->temporaryView();
+        auto temporary=diagnosticWorkspace_->captureBuiltinProjection ? flux :
+            diagnosticWorkspace_->temporaryView();
         return diagnosticWorkspace_->evaluateNonlinearRaw([&] {
             ++metrics_.nonlinearProducerCount;
-            return kernel().nonlinearFlux(state,temporary,&raw,&fields,false,diagnosticWorkspace_->stateDerivativeAccess());
+            return kernel().nonlinearFlux(state,temporary,&raw,&fields,
+                diagnosticWorkspace_->captureBuiltinProjection,
+                diagnosticWorkspace_->stateDerivativeAccess());
         });
     }
     const auto S=kernel().spectralShape().elementCount(); const auto shape=kernel().spectralShape();
@@ -489,13 +507,21 @@ WVKernelStatus WVHydrostaticForcingEngine::evaluateForcingTendencies(
     const WVState& state,const WVForcingTendencyOutput* outputs,std::size_t count,
     const WVRealFieldBundleConstView* preparedPhysical,
     detail::WVForcingDiagnosticWorkspace* session) {
+    return evaluateForcingTendenciesImpl(state,outputs,count,preparedPhysical,
+        session,nullptr);
+}
+WVKernelStatus WVHydrostaticForcingEngine::evaluateForcingTendenciesImpl(
+    const WVState& state,const WVForcingTendencyOutput* outputs,std::size_t count,
+    const WVRealFieldBundleConstView* preparedPhysical,
+    detail::WVForcingDiagnosticWorkspace* session,
+    WVFlux* builtinNonlinearProjection) {
     if (executing_) return {WVKernelStatusCode::reentrantExecution,"Forcing diagnostics require an idle engine."};
     tendencyMetrics_.workspaceLastPeakBytes=0;
     const auto shape=kernel().spatialShape();
     const auto R=shape.elementCount();
     const WVShape4D spatial{shape.first,shape.second,shape.third,3};
     auto status=detail::validateForcingTendencyOutputs(forcing_,kernel().spectralShape(),spatial,state,outputs,count);
-    if (!status || !count) return status;
+    if (!status || (!count && !builtinNonlinearProjection)) return status;
     status=detail::validatePreparedDiagnosticFields(preparedPhysical,spatial,4,state,outputs,count);
     if (!status) return status;
     detail::WVScopedStateEvaluation<WVTransformHydrostaticKernel> kernelScope(kernel(),state);
@@ -571,7 +597,7 @@ WVKernelStatus WVHydrostaticForcingEngine::evaluateForcingTendencies(
                 const WVState delta{state.t,state.t0,{{difference.data(),spectral},
                     {difference.data()+S,spectral},{difference.data()+2*S,spectral}}};
                 return kernel().transformCoefficientTendencyToUVEta(delta,destination);
-            });
+            },builtinNonlinearProjection);
     } catch (const std::bad_alloc&) {
         return {WVKernelStatusCode::allocationFailure,"Unable to allocate event forcing diagnostic workspace."};
     }

@@ -1,0 +1,144 @@
+{
+  "schemaVersion": "wvm507-final-source-qualification-progress-v1",
+  "nativeSourceCommit": "114c73547211a5a623069bdb38b68dbc2943b013",
+  "nativeTests": {
+    "passed": 54,
+    "failed": 0
+  },
+  "matlabAffectedTests": {
+    "passed": 11,
+    "failed": 0
+  },
+  "combinedMatlabAtEquivalentParent": {
+    "sourceCommit": "2a13fe93a896bc2398a82a1ba91955413ad053b7",
+    "passed": 57,
+    "laterChange": "Replace repeated literal with the identical immutable registered forcing identity at binding construction; covered by final native and affected MATLAB tests."
+  },
+  "forwardIntegration": {
+    "configurations": 6,
+    "providers": [
+      "reference",
+      "native-fftw"
+    ],
+    "executionMethodsPassed": 6,
+    "receiptValidationPassed": true
+  },
+  "documentation": {
+    "files": 2052,
+    "routes": 4197,
+    "failures": 0
+  },
+  "analyzer": {
+    "blockingFindings": 0,
+    "corrections": "Two numel(x)==1 predicates changed to exactly equivalent isscalar(x); original analyzer findings and partial repair receipt preserved."
+  },
+  "performance": {
+    "shortCampaignComparison": {
+      "schemaVersion": "wvm507-constant-regression-comparison-v1",
+      "status": "complete",
+      "threshold": 1.03,
+      "passed": false,
+      "decisionMetric": "geometric mean compiled candidate runtime divided by geometric mean compiled baseline runtime",
+      "normalizedCandidateToBaseline": 1.0411532153731842,
+      "absoluteCompiledCandidateToBaseline": 1.038809983095145,
+      "baselineSourceCommit": "895ad50623a72ab668e2c7f12ff363c3996eb15f",
+      "candidateSourceCommit": "114c73547211a5a623069bdb38b68dbc2943b013",
+      "pairCount": 3,
+      "baselineReceipts": [
+        "/private/tmp/wvm503/constant-single-baseline-1.json",
+        "/private/tmp/wvm503/constant-single-baseline-2.json",
+        "/private/tmp/wvm503/constant-single-baseline-3.json"
+      ],
+      "candidateReceipts": [
+        "/private/tmp/wvm503/constant-single-candidate-1.json",
+        "/private/tmp/wvm503/constant-single-candidate-2.json",
+        "/private/tmp/wvm503/constant-single-candidate-3.json"
+      ],
+      "observedOrder": [
+        {
+          "recordedAtUTC": "2026-09-13T08:05:48.875Z",
+          "role": "baseline",
+          "processID": 99296,
+          "sourceCommit": "895ad50623a72ab668e2c7f12ff363c3996eb15f"
+        },
+        {
+          "recordedAtUTC": "2026-09-13T08:06:26.693Z",
+          "role": "candidate",
+          "processID": 99441,
+          "sourceCommit": "114c73547211a5a623069bdb38b68dbc2943b013"
+        },
+        {
+          "recordedAtUTC": "2026-09-13T08:06:53.719Z",
+          "role": "candidate",
+          "processID": 99566,
+          "sourceCommit": "114c73547211a5a623069bdb38b68dbc2943b013"
+        },
+        {
+          "recordedAtUTC": "2026-09-13T08:07:19.743Z",
+          "role": "baseline",
+          "processID": 99694,
+          "sourceCommit": "895ad50623a72ab668e2c7f12ff363c3996eb15f"
+        },
+        {
+          "recordedAtUTC": "2026-09-13T08:07:35.636Z",
+          "role": "baseline",
+          "processID": 99798,
+          "sourceCommit": "895ad50623a72ab668e2c7f12ff363c3996eb15f"
+        },
+        {
+          "recordedAtUTC": "2026-09-13T08:07:51.551Z",
+          "role": "candidate",
+          "processID": 99891,
+          "sourceCommit": "114c73547211a5a623069bdb38b68dbc2943b013"
+        }
+      ]
+    },
+    "status": "Investigating short-window repeatability; no passing Constant performance gate claimed. One predeclared stronger four-pair protocol averages eight RHS calls per sample after 20 warmup calls; retains every process and the 3% threshold.",
+    "providerFinding": "Separate installation prefixes account for FFTW whole-file hash differences; executable text hashes are identical for both base and threaded libraries."
+  },
+  "receipts": [
+    {
+      "path": "/private/tmp/wvm503/native-qualification-114c7354/ctest.log",
+      "sha256": "4d8ca1eac706b4af48763cc5a437de847947088238c9f6120841dd0ded3be877"
+    },
+    {
+      "path": "/private/tmp/wvm503/contract-binding-matlab-tests.csv",
+      "sha256": "b6f345ec46430ad329af16b22e02f4a8e6ddc196452934c3495c6e232b2ab4b8"
+    },
+    {
+      "path": "/private/tmp/wvm503/forward-refresh-114c7354/execution-results.json",
+      "sha256": "b333479ed1fdc78d3c888eb0391e72ae09f00fe69822ed15e7cc2dade29d5a56"
+    },
+    {
+      "path": "/private/tmp/wvm503/forward-refresh-114c7354/catalog-results.json",
+      "sha256": "7e1947159ad80a0a30255d65c6936a906822cf4c89f4f55fe6d3ccb2992f0896"
+    },
+    {
+      "path": "/private/tmp/wvm503/code-analyzer-114c7354-final.csv",
+      "sha256": "e5dfb4b33d32c12d99b9c8c03e4d8105ae141c036d5e658d8aac43d09b1ae108"
+    },
+    {
+      "path": "/private/tmp/wvm503/docs-analyzer-final.log",
+      "sha256": "887092aa736d37304df49e68fc88e938ede191dc782537aa77eae1467738fe96"
+    },
+    {
+      "path": "/private/tmp/wvm503/constant-single-comparison.json",
+      "sha256": "499fbc92f080c3c8a0f9115d39479e457af5a9ef91712f83ebdd4ece92d69536"
+    },
+    {
+      "path": "/private/tmp/wvm503/mex-overhead-114c7354.json",
+      "sha256": "1cb836d01c37e19a09688094445a5b18a5f3bfa60d9548091473633d8f34bf98"
+    },
+    {
+      "path": "/private/tmp/wvm503/provider-equivalence.json",
+      "sha256": "51262f3d7a27c7ab7e1bc4feaf916843f4a5e85aa643c2a17ae02cd2e036b8bb"
+    }
+  ],
+  "remaining": [
+    "Rebuild MATLAB client source identity after equivalent scalar predicate corrections",
+    "Stronger fixed-work Constant performance comparison",
+    "Clean installed/export final qualification",
+    "Final ATS source pin and hosted checks",
+    "Release and 54-run website benchmark campaign"
+  ]
+}

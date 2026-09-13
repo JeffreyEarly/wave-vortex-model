@@ -19,6 +19,11 @@ function [Ap,Am,A0] = transformUVEtaToWaveVortex(self,U,V,N)
 % - Returns Ap: positive wave coefficients at reference time t0
 % - Returns Am: negative wave coefficients at reference time t0
 % - Returns A0: geostrophic coefficients at reference time t0
+if self.usesCompiledTransform()
+    values = self.compiledPrimitive("toWaveVortex",{U,V,N},struct("t",self.t,"t0",self.t0));
+    [Ap,Am,A0] = values{:};
+    return
+end
 u_hat = self.transformFromSpatialDomainWithFourier(U);
 v_hat = self.transformFromSpatialDomainWithFourier(V);
 n_hat = self.transformFromSpatialDomainWithFourier(N);

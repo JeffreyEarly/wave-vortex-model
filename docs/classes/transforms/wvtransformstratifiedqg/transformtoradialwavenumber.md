@@ -3,7 +3,7 @@ layout: default
 title: transformToRadialWavenumber
 parent: WVTransformStratifiedQG
 grand_parent: Transforms
-nav_order: 213
+nav_order: 215
 mathjax: true
 ---
 

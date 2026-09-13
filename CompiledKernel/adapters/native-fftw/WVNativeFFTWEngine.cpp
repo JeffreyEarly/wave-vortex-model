@@ -568,6 +568,11 @@ private:
                         else
                             native_detail::accumulateAdvection(plane,flux,velocity,derivative);
                     }
+                    if (work.tendencies.data) {
+                        const auto outputChannel=work.targets==3 ? target : field;
+                        std::copy_n(flux,plane,work.tendencies.data+
+                            outputChannel*volume+physicalOffset);
+                    }
                     fftw_execute_dft_r2c(plan.resources_->rowForward_.get(),flux,
                         reinterpret_cast<fftw_complex*>(scratch));
                     fftw_execute_dft(plan.resources_->columnForward_.get(),

@@ -935,6 +935,41 @@ void nonlinearVorticityEvaluationSession(Engine& engine,const WVState& state,
     require(bool(service->setVariableEvaluationPolicy(
         WVVariableEvaluationPolicy::reuse)),
         "Nonlinear/vorticity reuse restore");
+
+    WVFieldEvaluationPlan laterChannels;
+    std::vector<WVFieldRequest> laterRequests{{"later-v",
+        "Fv_nonlinear_advection",{}},{"later-eta",
+        "Feta_nonlinear_advection",{}}};
+    if(spatial.fourth==4)
+        laterRequests.push_back({"later-w","Fw_nonlinear_advection",{}});
+    std::vector<double> firstValues(nonlinear.outputs()[0].elementCount);
+    WVFieldOutputView firstView{firstValues.data(),firstValues.size()};
+    const auto nonlinearBefore=engine.metrics().nonlinearProducerCount;
+    {
+        WVFieldEvaluationSession session;
+        require(bool(service->beginEvaluationSession(integrationState,session)),
+            "Active forcing demand session");
+        require(bool(service->evaluate(nonlinear,integrationState,&firstView,1)),
+            "Active forcing demand Fu query");
+        const auto status=service->createPlanForActiveEvaluation(
+            laterRequests,laterChannels);
+        if(!status) throw std::runtime_error(
+            "Active forcing channel preparation: "+status.message);
+        std::vector<std::vector<double>> values(laterChannels.outputCount());
+        std::vector<WVFieldOutputView> views(laterChannels.outputCount());
+        for(std::size_t index=0;index<views.size();++index) {
+            values[index].resize(laterChannels.outputs()[index].elementCount);
+            views[index]={values[index].data(),values[index].size()};
+        }
+        require(bool(service->evaluate(laterChannels,integrationState,
+                    views.data(),views.size())),
+            "Active forcing demand later-channel query");
+        for(const auto& field:values) for(const auto value:field)
+            require(std::isfinite(value),
+                "Active forcing demand produced a nonfinite channel");
+    }
+    require(engine.metrics().nonlinearProducerCount==nonlinearBefore+1,
+        "Active forcing channels repeated the nonlinear producer");
 }
 
 template<class Engine>
@@ -1270,6 +1305,124 @@ void constant(bool hydrostatic) {
         "Spectral-only diagnostic unnecessarily reconstructed physical state");
     for(std::size_t index=0;index<R;++index) require(output[index]==0,"Filtering an empty accumulator produced forcing");
 
+}
+
+void builtinNonlinearCoefficientBoundary() {
+    WVTransformConstantStratificationConfiguration c;
+    c.Nx=5; c.Ny=4; c.Nz=6; c.Nj=4; c.Lx=9000; c.Ly=8000; c.Lz=900;
+    c.N0=5e-3; c.rho0=1027; c.g=9.80665; c.planetaryRadius=6.3712e6;
+    c.rotationRate=7.292115e-5; c.latitude=31; c.isHydrostatic=true;
+    auto counter=std::make_shared<FailureCounter>();
+    std::unique_ptr<WVConstantStratificationForcingEngine> engine;
+    require(bool(WVConstantStratificationForcingEngine::create(c,
+        defaultNonlinearAdvectionSchedule(),wavevortex::runtime::test::extensionCatalog(),
+        std::make_unique<FailingEngine>(counter),engine)),
+        "Built-in coefficient engine setup");
+    std::unique_ptr<WVFieldEvaluationService> service;
+    require(bool(WVFieldEvaluationService::createBorrowing(*engine,service)) &&
+        bool(service->prepareBuiltinNonlinearCoefficientEvaluation()),
+        "Built-in coefficient service preparation");
+    WVIntegrationStateLayout layout;
+    require(bool(service->createStateLayout({},layout)),"Built-in coefficient layout");
+    const auto spectral=engine->stateShape(); const auto S=spectral.elementCount();
+    std::vector<WVComplex64> coefficients(3*S);
+    for(std::size_t i=0;i<coefficients.size();++i)
+        coefficients[i]={2e-4*std::sin(.19*(i+1)),2e-4*std::cos(.11*(i+1))};
+    WVState state{7,2,{{coefficients.data(),spectral},{coefficients.data()+S,spectral},
+        {coefficients.data()+2*S,spectral}}};
+    std::array<WVCoefficientFamilyConstView,3> families;
+    for(std::size_t i=0;i<3;++i)
+        families[i]={&layout.coefficientFamilies()[i],coefficients.data()+i*S};
+    WVIntegrationState integration{state,nullptr,0,families.data(),families.size()};
+    std::vector<WVComplex64> values(3*S,{91,92});
+    WVFlux flux{{values.data(),spectral},{values.data()+S,spectral},
+        {values.data()+2*S,spectral}};
+    require(service->evaluateBuiltinNonlinearCoefficients(integration,flux).code==
+        WVKernelStatusCode::invalidConfiguration,
+        "Built-in coefficient evaluation accepted no active session");
+    require(bool(service->setVariableEvaluationPolicy(WVVariableEvaluationPolicy::lowMemory)),
+        "Built-in coefficient low-memory policy");
+    {
+        WVFieldEvaluationSession session;
+        require(bool(service->beginEvaluationSession(integration,session)) &&
+            service->evaluateBuiltinNonlinearCoefficients(integration,flux).code==
+                WVKernelStatusCode::invalidConfiguration,
+            "Built-in coefficient evaluation accepted low-memory policy");
+    }
+    require(bool(service->setVariableEvaluationPolicy(WVVariableEvaluationPolicy::reuse)) &&
+        bool(service->prepareBuiltinNonlinearCoefficientEvaluation()),
+        "Built-in coefficient reuse restore");
+    const auto sentinel=values;
+    std::vector<WVComplex64> coefficientReference;
+    counter->failAt=counter->calls+1;
+    {
+        WVFieldEvaluationSession session;
+        require(bool(service->beginEvaluationSession(integration,session)),
+            "Built-in coefficient failure session");
+        require(service->evaluateBuiltinNonlinearCoefficients(integration,flux).code==
+            WVKernelStatusCode::fftExecutionFailure && equal(values,sentinel),
+            "Built-in coefficient failure exposed partial output");
+        counter->failAt=0;
+        require(bool(service->evaluateBuiltinNonlinearCoefficients(integration,flux)),
+            "Built-in coefficient retry");
+        coefficientReference=values;
+        require(bool(service->evaluateBuiltinNonlinearCoefficients(integration,flux)) &&
+            equal(values,coefficientReference),"Built-in coefficient repeat changed cached result");
+        auto overlapping=flux; overlapping.Fp.data=coefficients.data();
+        require(service->evaluateBuiltinNonlinearCoefficients(integration,overlapping).code==
+            WVKernelStatusCode::overlappingArrays,
+            "Built-in coefficient output accepted immutable-state overlap");
+        std::vector<std::uint8_t> misalignedBytes(S*sizeof(WVComplex64)+1);
+        auto misaligned=flux;
+        misaligned.Fp.data=reinterpret_cast<WVComplex64*>(misalignedBytes.data()+1);
+        require(service->evaluateBuiltinNonlinearCoefficients(integration,misaligned).code==
+            WVKernelStatusCode::invalidPointer,
+            "Built-in coefficient output accepted a misaligned address");
+        auto forged=integration;
+        forged.waveVortex.coefficients.Ap.shape.rows++;
+        require(service->evaluateBuiltinNonlinearCoefficients(forged,flux).code==
+            WVKernelStatusCode::invalidShape,
+            "Built-in coefficient evaluation trusted a forged caller shape");
+    }
+    WVFieldEvaluationPlan rawPlan;
+    require(bool(service->createPlan({{"builtin-raw","Fu_nonlinear_advection",{}}},rawPlan)),
+        "Built-in coefficient raw plan");
+    std::vector<double> raw(rawPlan.outputs()[0].elementCount);
+    WVFieldOutputView rawView{raw.data(),raw.size()};
+    const auto producersBefore=engine->metrics().nonlinearProducerCount;
+    {
+        WVFieldEvaluationSession session;
+        require(bool(service->beginEvaluationSession(integration,session)) &&
+            bool(service->evaluate(rawPlan,integration,&rawView,1)) &&
+            bool(service->evaluateBuiltinNonlinearCoefficients(integration,flux)),
+            "Raw-first coefficient evaluation changed values");
+        double scale=0,error=0;
+        for(std::size_t i=0;i<values.size();++i) {
+            scale=std::max({scale,std::abs(coefficientReference[i].real),
+                std::abs(coefficientReference[i].imag)});
+            error=std::max({error,std::abs(values[i].real-coefficientReference[i].real),
+                std::abs(values[i].imag-coefficientReference[i].imag)});
+        }
+        require(error<=1e-12*std::max(scale,1e-30),
+            "Raw-first coefficient projection differs from fused projection");
+        if(engine->metrics().nonlinearProducerCount!=producersBefore+1)
+            throw std::runtime_error("Raw-first nonlinear producers: before="+
+                std::to_string(producersBefore)+" after="+
+                std::to_string(engine->metrics().nonlinearProducerCount));
+    }
+    auto foreignCoefficients=coefficients;
+    auto foreign=integration;
+    foreign.waveVortex.coefficients.Ap.data=foreignCoefficients.data();
+    auto foreignFamilies=families;
+    for(std::size_t i=0;i<3;++i)
+        foreignFamilies[i].data=foreignCoefficients.data()+i*S;
+    foreign.coefficientFamilies=foreignFamilies.data();
+    {
+        WVFieldEvaluationSession session;
+        require(bool(service->beginEvaluationSession(integration,session)) &&
+            !service->evaluateBuiltinNonlinearCoefficients(foreign,flux),
+            "Built-in coefficient evaluation accepted a foreign state");
+    }
 }
 
 void barotropic() {
@@ -1890,6 +2043,143 @@ void stratifiedQG() {
     testInjectedQG(source, scheduleValue);
 }
 
+template<bool Hydrostatic>
+void builtinNonlinearPhysicalOrder(
+    const std::shared_ptr<const WVStratifiedModalSource>& source) {
+    using Engine=std::conditional_t<Hydrostatic,WVHydrostaticForcingEngine,
+        WVBoussinesqForcingEngine>;
+    using Field=std::conditional_t<Hydrostatic,WVHydrostaticField,
+        WVBoussinesqField>;
+    std::unique_ptr<Engine> engine;
+    require(bool(Engine::create(source,defaultNonlinearAdvectionSchedule(),
+        wavevortex::runtime::test::extensionCatalog(),
+        std::make_unique<WVReferenceFFTEngine>(),engine)),
+        "Built-in physical-order engine setup");
+    std::unique_ptr<WVFieldEvaluationService> service;
+    require(bool(WVFieldEvaluationService::createBorrowing(*engine,service)) &&
+        bool(service->prepareBuiltinNonlinearCoefficientEvaluation()),
+        "Built-in physical-order service setup");
+    WVFieldEvaluationPlan maximum,fields,waveField;
+    std::vector<WVFieldRequest> maximumRequests(1),fieldRequests(4),waveRequests(1);
+    maximumRequests[0].identifier="maximum";
+    maximumRequests[0].fieldName="uvMax";
+    const std::array<const char*,4> physicalFieldNames{{"u","v","w","eta"}};
+    for(std::size_t field=0;field<physicalFieldNames.size();++field) {
+      fieldRequests[field].identifier=physicalFieldNames[field];
+      fieldRequests[field].fieldName=physicalFieldNames[field];
+    }
+    waveRequests[0].identifier="wave-u";
+    waveRequests[0].fieldName="u_w";
+    require(bool(service->createPlan(maximumRequests,maximum)) &&
+        bool(service->createPlan(fieldRequests,fields)) &&
+        bool(service->createPlan(waveRequests,waveField)),
+        "Built-in physical-order field plans");
+    WVIntegrationStateLayout layout;
+    require(bool(service->createStateLayout({},layout)),
+        "Built-in physical-order state layout");
+    const auto spectral=engine->kernel().spectralShape();
+    const auto spatial=engine->kernel().spatialShape();
+    const auto S=spectral.elementCount(),R=spatial.elementCount();
+    std::vector<WVComplex64> coefficients(3*S);
+    for(std::size_t index=0;index<coefficients.size();++index)
+      coefficients[index]={1e-5*std::sin(.17*(index+1)),
+          1e-5*std::cos(.23*(index+1))};
+    WVMutableCoefficients mutableCoefficients{{coefficients.data(),spectral},
+        {coefficients.data()+S,spectral},{coefficients.data()+2*S,spectral}};
+    require(bool(engine->kernel().constrainCoefficients(mutableCoefficients)),
+        "Built-in physical-order coefficient constraints");
+    const WVState state{3,-1,{{coefficients.data(),spectral},
+        {coefficients.data()+S,spectral},{coefficients.data()+2*S,spectral}}};
+    std::array<WVCoefficientFamilyConstView,3> families;
+    for(std::size_t family=0;family<3;++family)
+      families[family]={&layout.coefficientFamilies()[family],
+          coefficients.data()+family*S};
+    const WVIntegrationState integration{state,nullptr,0,families.data(),3};
+    std::array<std::vector<double>,4> reference;
+    constexpr Field fieldNames[]={Field::u,Field::v,Field::w,Field::eta};
+    for(std::size_t field=0;field<4;++field) {
+      reference[field].resize(R);
+      require(bool(engine->kernel().transformStateField(state,fieldNames[field],
+          {reference[field].data(),spatial})),
+          "Built-in physical-order field reference");
+    }
+    std::vector<double> waveReference(R),waveValue(R);
+    if constexpr(Hydrostatic) {
+      require(bool(engine->kernel().transformStateField(state,Field::u,
+          {waveReference.data(),spatial},WVHydrostaticDerivative::value,
+          WVHydrostaticComponent::wave)),
+          "Built-in physical-order wave reference");
+    } else {
+      require(bool(engine->kernel().transformStateField(state,Field::u,
+          {waveReference.data(),spatial},WVBoussinesqDerivative::value,
+          WVBoussinesqComponent::wave)),
+          "Built-in physical-order wave reference");
+    }
+    auto reconstructionCount=[&] {
+      const auto& counts=engine->kernel().metrics().reconstructionCount;
+      return counts[0][0][0]+counts[1][0][0]+counts[2][0][0]+counts[3][0][0];
+    };
+    std::vector<WVComplex64> coefficientValues(3*S);
+    WVFlux flux{{coefficientValues.data(),spectral},
+        {coefficientValues.data()+S,spectral},
+        {coefficientValues.data()+2*S,spectral}};
+    std::array<std::vector<double>,4> actual;
+    std::array<WVFieldOutputView,4> fieldViews;
+    for(std::size_t field=0;field<4;++field) {
+      actual[field].resize(R);
+      fieldViews[field]={actual[field].data(),R};
+    }
+    double maximumValue=0;
+    WVFieldOutputView maximumView{&maximumValue,1};
+    {
+      WVFieldEvaluationSession session;
+      require(bool(service->beginEvaluationSession(integration,session)),
+          "Built-in coefficient-first session");
+      const auto before=reconstructionCount();
+      require(bool(service->evaluateBuiltinNonlinearCoefficients(integration,flux)),
+          "Built-in coefficient-first evaluation");
+      const auto afterCoefficient=reconstructionCount();
+      if(afterCoefficient!=before+4)
+        throw std::runtime_error("Built-in coefficient-first reconstructions before="+
+            std::to_string(before)+" after="+std::to_string(afterCoefficient));
+      require(bool(service->evaluate(fields,integration,fieldViews.data(),4)) &&
+          bool(service->evaluate(maximum,integration,&maximumView,1)) &&
+          reconstructionCount()==afterCoefficient,
+          "Canonical physical slices were reconstructed by later field consumers");
+      for(std::size_t field=0;field<4;++field)
+        relative(actual[field],reference[field],
+            "Canonical physical bundle channel mapping");
+      WVFieldOutputView waveView{waveValue.data(),R};
+      const auto waveStatus=service->evaluate(waveField,integration,&waveView,1);
+      require(bool(waveStatus),"Canonical component field evaluation");
+      relative(waveValue,waveReference,"Canonical physical component identity");
+      double componentDifference=0;
+      for(std::size_t index=0;index<R;++index)
+        componentDifference=std::max(componentDifference,
+            std::abs(waveValue[index]-reference[0][index]));
+      require(componentDifference>0,
+          "Canonical component fixture did not distinguish total and wave fields");
+    }
+    {
+      WVFieldEvaluationSession session;
+      require(bool(service->beginEvaluationSession(integration,session)),
+          "Built-in maximum-first session");
+      const auto before=reconstructionCount();
+      require(bool(service->evaluate(maximum,integration,&maximumView,1)) &&
+          reconstructionCount()==before+2,
+          "Maximum-first path did not retain its two velocity fields");
+      require(bool(service->evaluateBuiltinNonlinearCoefficients(integration,flux)) &&
+          reconstructionCount()==before+4,
+          "Built-in coefficients repeated fields already retained by maximum speed");
+      require(bool(service->evaluate(fields,integration,fieldViews.data(),4)) &&
+          reconstructionCount()==before+4,
+          "Gathered canonical fields were not published for later consumers");
+      for(std::size_t field=0;field<4;++field)
+        relative(actual[field],reference[field],
+            "Gathered canonical physical bundle channel mapping");
+    }
+}
+
 template<bool Hydrostatic> void stratified(bool unpairedMean=false) {
     Temporary file;
     if constexpr (Hydrostatic) {
@@ -1904,6 +2194,7 @@ template<bool Hydrostatic> void stratified(bool unpairedMean=false) {
     const auto S=spectral.elementCount(),R=g.Nx*g.Ny*g.Nz;
     const WVShape4D spatial{g.Nx,g.Ny,g.Nz,Hydrostatic?3U:4U}; const WVShape3D volume{g.Nx,g.Ny,g.Nz};
     auto counter=std::make_shared<FailureCounter>(); std::unique_ptr<Engine> engine;
+    builtinNonlinearPhysicalOrder<Hydrostatic>(source);
     require(bool(Engine::create(source,schedule(S,unpairedMean),wavevortex::runtime::test::extensionCatalog(),std::make_unique<FailingEngine>(counter),engine)),"Stratified forcing setup");
     exercise(*engine,spectral,spatial,counter,
         [&](const WVState& state,const std::vector<double>& sum,std::vector<WVComplex64>& out) {
@@ -2049,6 +2340,7 @@ void repeatedGridCalculus() {
 }
 int main() {
     try {
+        builtinNonlinearCoefficientBoundary();
         repeatedGridCalculus<true>(); repeatedGridCalculus<false>();
         stratifiedQG(); barotropic(); constant(false); constant(true); stratified<true>(); stratified<false>(); stratified<true>(true); stratified<false>(true);
         std::cout<<"PASS: ordered forcing diagnostics, state isolation, and transactional retry\n";
