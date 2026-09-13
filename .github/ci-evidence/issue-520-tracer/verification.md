@@ -46,3 +46,7 @@ All twelve fresh-process runs passed with frozen runtime `e9cba052`, source aggr
 ## Durable archive
 
 The raw archive contains 163 files totaling 2,582,419,279 bytes; manifest SHA-256 `6ea247510c02531feae65f4ec263eaf0173f29f504f146b91979fbe5feb1b39c`. See `archive.json`. All timing samples and comparisons are retained. Successful repeat-two/three output payloads were hashed before removal; representative baseline/candidate outputs remain. Historical failed development checks and all intermediate profile observations are preserved.
+
+## Hosted fingerprint correction
+
+The first complete combined hosted submission passed 146/147 smoke tests on both MATLAB releases; `TestCompiledKernelIntegration/keyRuntimeHashesMatchTheSelection` identified the stale current `keySourceSHA256.nativeEngine` entry. The current-selection digest was updated to `4957bcced4e80061ad01be157628853df1090c4c41c704905ff5184488296b39`; historical adoption hashes were preserved. This metadata correction does not affect the 319 compiled inputs, MEX identity, provider or numerical qualification. The exact fingerprint test passed locally (1/1, zero incomplete) before resubmission. The changed selection JSON is absent from both the compiled source manifest and the forward-receipt source list; those results remain valid.
