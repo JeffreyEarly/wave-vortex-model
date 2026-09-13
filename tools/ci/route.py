@@ -25,7 +25,8 @@ COMPILED_MATLAB_TESTS = [
     'TestWVCompiledAdapterRestore', 'TestWVCompiledBackend',
     'TestWVCompiledBarotropicPrimitives', 'TestWVCompiledCoefficientOnlyRHS',
     'TestWVCompiledConfiguration',
-    'TestWVCompiledConstantPrimitives', 'TestWVCompiledConsumers',
+    'TestWVCompiledConstantPrimitives', 'TestWVCompiledConstantVerticalCalculus',
+    'TestWVCompiledConsumers',
     'TestWVCompiledEvaluationScope', 'TestWVCompiledPublicAdapters',
     'TestWVCompiledSourceIdentity', 'TestWVCompiledStratifiedPrimitives',
     'TestWVCompiledTransformBackend']

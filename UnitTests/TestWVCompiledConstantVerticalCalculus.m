@@ -66,6 +66,37 @@ classdef TestWVCompiledConstantVerticalCalculus < matlab.unittest.TestCase
                 end
             end
         end
+
+        function tracerEvolutionMatchesMatlab(testCase)
+            for isHydrostatic = [true false]
+                [matlabWVT,compiledWVT] = makeTransforms([8 6 9],isHydrostatic,true);
+                initializeInteractingState(matlabWVT);
+                initializeInteractingState(compiledWVT);
+                matlabModel = WVModel(matlabWVT);
+                compiledModel = WVModel(compiledWVT);
+                cleanup = onCleanup(@()deleteModelsAndTransforms(matlabModel,compiledModel,matlabWVT,compiledWVT));
+                diagnostic = "tracer evolution, hydrostatic="+string(isHydrostatic);
+
+                [X,Y,Z] = matlabWVT.xyzGrid;
+                initialTracer = 1+0.2*sin(2*pi*X/matlabWVT.Lx).*cos(pi*(Z+matlabWVT.Lz)/matlabWVT.Lz);
+                initialTracer = initialTracer+0.15*cos(2*pi*Y/matlabWVT.Ly).*sin(2*pi*(Z+matlabWVT.Lz)/matlabWVT.Lz);
+                matlabModel.addTracer(initialTracer,"dye");
+                compiledModel.addTracer(initialTracer,"dye");
+                matlabModel.setupIntegrator(integratorType="fixed",deltaT=1);
+                compiledModel.setupIntegrator(integratorType="fixed",deltaT=1);
+                matlabModel.integrateToTime(2,shouldShowIntegrationDiagnostics=false,callback=@(~)[]);
+                compiledModel.integrateToTime(2,shouldShowIntegrationDiagnostics=false,callback=@(~)[]);
+
+                expectedTracer = matlabModel.tracer("dye");
+                actualTracer = compiledModel.tracer("dye");
+                verifyNear(testCase,actualTracer,expectedTracer,1e-12,diagnostic+" tracer");
+                verifyNear(testCase,compiledWVT.Ap,matlabWVT.Ap,1e-12,diagnostic+" Ap");
+                verifyNear(testCase,compiledWVT.Am,matlabWVT.Am,1e-12,diagnostic+" Am");
+                verifyNear(testCase,compiledWVT.A0,matlabWVT.A0,1e-12,diagnostic+" A0");
+                testCase.verifyGreaterThan(norm(expectedTracer(:)-initialTracer(:)),1e-12*norm(initialTracer(:)),diagnostic+" nontrivial tracer change");
+                clear cleanup
+            end
+        end
     end
 end
 
@@ -101,6 +132,22 @@ end
 value = 0.25+cos(pi*row/max(rows-1,1))+0.1*sin(2*pi*(column+1)/max(columns,2));
 end
 
+function initializeInteractingState(wvt)
+wvt.Ap(:) = 0;
+wvt.Am(:) = 0;
+wvt.A0(:) = 0;
+first = wvt.indexFromModeNumber(1,0,1);
+second = wvt.indexFromModeNumber(0,1,2);
+third = wvt.indexFromModeNumber(1,1,1);
+wvt.Ap(first) = 2.0e-3+0.7e-3i;
+wvt.Am(second) = -1.3e-3+0.4e-3i;
+wvt.A0(third) = 1.1e-3-0.5e-3i;
+wvt.Ap(second) = 0.6e-3-0.3e-3i;
+wvt.A0(first) = -0.8e-3+0.2e-3i;
+wvt.t0 = 0;
+wvt.t = 0;
+end
+
 function verifyDerivative(testCase,matlabWVT,compiledWVT,method,input,order,diagnostic)
 original = input;
 expected = feval(method,matlabWVT,input,n=order);
@@ -132,4 +179,10 @@ function deleteTransforms(varargin)
 for transform = varargin
     if isvalid(transform{1}), delete(transform{1}), end
 end
+end
+
+function deleteModelsAndTransforms(matlabModel,compiledModel,matlabWVT,compiledWVT)
+if isvalid(matlabModel), delete(matlabModel), end
+if isvalid(compiledModel), delete(compiledModel), end
+deleteTransforms(matlabWVT,compiledWVT);
 end
