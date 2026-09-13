@@ -811,10 +811,15 @@ classdef WVModel < handle & WVModelAdaptiveTimeStepMethods & WVModelFixedTimeSte
                     scope = []; %#ok<NASGU>
                     if observer.usesStandardCoefficientFlux()
                         observer.updateIntegratorValues(t,y0(self.indicesForFluxedSystem{i}));
+                        usedCoefficientOnlyRHS = false;
                         if ~self.isDynamicsLinear && numel(self.fluxedObservingSystems) == 1 && ...
-                                string(class(observer)) == "WVCoefficients" && self.wvt.canUseCompiledCoefficientOnlyRightHandSide()
-                            F(self.indicesForFluxedSystem{i}) = self.wvt.compiledCoefficientOnlyRightHandSide();
-                        else
+                                string(class(observer)) == "WVCoefficients"
+                            [usedCoefficientOnlyRHS,values] = self.wvt.tryCompiledCoefficientOnlyRightHandSide();
+                            if usedCoefficientOnlyRHS
+                                F(self.indicesForFluxedSystem{i}) = values;
+                            end
+                        end
+                        if ~usedCoefficientOnlyRHS
                             scope = self.wvt.scopedEvaluation(); %#ok<NASGU>
                             F(self.indicesForFluxedSystem{i}) = observer.fluxForCurrentState();
                         end

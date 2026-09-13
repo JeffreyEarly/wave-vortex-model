@@ -142,13 +142,31 @@ classdef (Sealed) WVCompiledTransformBackend < handle
                 self (1,1) WVCompiledTransformBackend
                 wvt (1,1) WVTransform
             end
+            [used,result] = self.tryCoefficientOnlyRightHandSide(wvt);
+            if ~used
+                error("WaveVortexModel:CompiledCoefficientOnlyWorkload","A coefficient-only RHS requires the default nonlinear forcing and no active evaluation lease.");
+            end
+        end
+
+        function [used,result] = tryCoefficientOnlyRightHandSide(self,wvt)
+            % Execute the sealed native RHS when the receiver and workload allow it.
+            %
+            % - Developer: true
+            % - Topic: Compiled transform internals
+            arguments
+                self (1,1) WVCompiledTransformBackend
+                wvt (1,1) WVTransform
+            end
             self.assertActive(); self.assertMatchingTransform(wvt);
             self.assertScopeUsable(wvt);
+            used = false;
+            result = [];
             if ~self.canBeginCoefficientOnlyEvaluation() || ~wvt.canUseCompiledCoefficientOnlyRightHandSide()
-                error("WaveVortexModel:CompiledCoefficientOnlyWorkload","A coefficient-only RHS requires the default nonlinear forcing and no active evaluation lease.");
+                return
             end
             [Ap,Am,A0] = WVCompiledTransformBackend.stateArrays(wvt,self.Nj,self.Nkl);
             result = feval(char(self.moduleName),'transformCoefficientOnlyRightHandSide',self.transformHandle,Ap,Am,A0,wvt.t,wvt.t0);
+            used = true;
         end
 
         function prepare(self,variableNames)

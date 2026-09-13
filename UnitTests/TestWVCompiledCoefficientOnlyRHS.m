@@ -96,10 +96,19 @@ classdef TestWVCompiledCoefficientOnlyRHS < matlab.unittest.TestCase
             backendCleanup = onCleanup(@()delete(backend));
             scope = backend.scopedEvaluation(wvt);
             testCase.verifyFalse(backend.canBeginCoefficientOnlyEvaluation());
+            [used,result] = backend.tryCoefficientOnlyRightHandSide(wvt);
+            testCase.verifyFalse(used);
+            testCase.verifyEmpty(result);
             testCase.verifyError(@()backend.coefficientOnlyRightHandSide(wvt),"WaveVortexModel:CompiledCoefficientOnlyWorkload");
+            clear scope
+            scope = wvt.scopedEvaluation();
+            [used,result] = backend.tryCoefficientOnlyRightHandSide(wvt);
+            testCase.verifyFalse(used);
+            testCase.verifyEmpty(result);
             clear scope
             scope = backend.scopedEvaluation(wvt);
             wvt.t = wvt.t + 1;
+            testCase.verifyError(@()backend.tryCoefficientOnlyRightHandSide(wvt),"WaveVortexModel:CompiledTransformStateChanged");
             testCase.verifyError(@()backend.coefficientOnlyRightHandSide(wvt),"WaveVortexModel:CompiledTransformStateChanged");
             testCase.verifyError(@()backend.coefficientOnlyRightHandSide(wvt),"WaveVortexModel:CompiledTransformStateChanged");
             clear scope backendCleanup cleanup

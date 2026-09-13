@@ -482,6 +482,19 @@ classdef WVTransform < matlab.mixin.indexing.RedefinesDot & CAAnnotatedClass
                 self.compiledTransformBackend.canBeginCoefficientOnlyEvaluation();
         end
 
+        function [used,values] = tryCompiledCoefficientOnlyRightHandSide(self)
+            % Use the sealed native leaf when its current workload remains eligible.
+            %
+            % - Developer: true
+            % - Topic: Compiled transform internals
+            [used,result] = self.compiledTransformBackend.tryCoefficientOnlyRightHandSide(self);
+            if used
+                values = reshape(result.values,1,[]);
+            else
+                values = {};
+            end
+        end
+
         function values = compiledCoefficientOnlyRightHandSide(self)
             % Evaluate a complete RHS with no other consumers in its event.
             %

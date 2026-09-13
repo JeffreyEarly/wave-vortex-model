@@ -1,0 +1,103 @@
+{
+  "schemaVersion": "wvm507-shared-and-sealed-boundary-verification-v1",
+  "sourceCommit": "8aab84c176a0cc366ffa433b050a4dc35449d969",
+  "status": "focused correctness passed; constant paired performance gate requires investigation",
+  "sharedFieldResult": "Both nonlinear-first and speed-first use four physical reconstructions per wave-family context; no duplicate nonlinear producer.",
+  "sealedRHSResult": "All six families use the existing native RHS when exactly one default coefficient observer is the complete consumer set. Custom forcing, observers, damping, tracers, particles and active leases retain shared evaluation or MATLAB callback semantics.",
+  "testRepair": "The first coefficient-only suite passed the all-six-family method; later methods lost the dynamically activated MEX path through a test PathFixture. The test-only path repair passed the remaining ten methods. Original failing and repaired CSVs are both retained.",
+  "constantComparison": {
+    "schemaVersion": "wvm507-constant-regression-comparison-v1",
+    "status": "complete",
+    "threshold": 1.03,
+    "passed": false,
+    "decisionMetric": "geometric mean compiled candidate runtime divided by geometric mean compiled baseline runtime",
+    "normalizedCandidateToBaseline": 1.0354491236936623,
+    "absoluteCompiledCandidateToBaseline": 1.0376083174368311,
+    "baselineSourceCommit": "895ad50623a72ab668e2c7f12ff363c3996eb15f",
+    "candidateSourceCommit": "8aab84c176a0cc366ffa433b050a4dc35449d969",
+    "pairCount": 3,
+    "baselineReceipts": [
+      "/private/tmp/wvm503/constant-final-baseline-1.json",
+      "/private/tmp/wvm503/constant-final-baseline-2.json",
+      "/private/tmp/wvm503/constant-final-baseline-3.json"
+    ],
+    "candidateReceipts": [
+      "/private/tmp/wvm503/constant-final-candidate-1.json",
+      "/private/tmp/wvm503/constant-final-candidate-2.json",
+      "/private/tmp/wvm503/constant-final-candidate-3.json"
+    ],
+    "observedOrder": [
+      {
+        "recordedAtUTC": "2026-09-13T07:44:56.229Z",
+        "role": "baseline",
+        "processID": 87207,
+        "sourceCommit": "895ad50623a72ab668e2c7f12ff363c3996eb15f"
+      },
+      {
+        "recordedAtUTC": "2026-09-13T07:45:11.053Z",
+        "role": "candidate",
+        "processID": 87317,
+        "sourceCommit": "8aab84c176a0cc366ffa433b050a4dc35449d969"
+      },
+      {
+        "recordedAtUTC": "2026-09-13T07:45:37.084Z",
+        "role": "candidate",
+        "processID": 87441,
+        "sourceCommit": "8aab84c176a0cc366ffa433b050a4dc35449d969"
+      },
+      {
+        "recordedAtUTC": "2026-09-13T07:49:33.738Z",
+        "role": "baseline",
+        "processID": 87712,
+        "sourceCommit": "895ad50623a72ab668e2c7f12ff363c3996eb15f"
+      },
+      {
+        "recordedAtUTC": "2026-09-13T07:49:48.722Z",
+        "role": "baseline",
+        "processID": 87819,
+        "sourceCommit": "895ad50623a72ab668e2c7f12ff363c3996eb15f"
+      },
+      {
+        "recordedAtUTC": "2026-09-13T07:50:03.212Z",
+        "role": "candidate",
+        "processID": 87922,
+        "sourceCommit": "8aab84c176a0cc366ffa433b050a4dc35449d969"
+      }
+    ]
+  },
+  "nextInvestigation": "MATLAB profiling measures 30 eligibility scans across 15 RHS calls, totaling 36.6 ms. Consolidate the duplicate mutable-operation guard without changing native arithmetic or fallback behavior.",
+  "receipts": [
+    {
+      "path": "/private/tmp/wvm503/canonical-bundle-forcing-tests.log",
+      "sha256": "af8437b3566e9554101e55351eb283c2892c99b2ae70da68d549fd4f13c2f942"
+    },
+    {
+      "path": "/private/tmp/wvm503/canonical-bundle-matlab-tests.csv",
+      "sha256": "07cf262938fc2b11bb02a2ce06c5cd10f98d8ad3efcbacfa8dd9d541481c8a9e"
+    },
+    {
+      "path": "/private/tmp/wvm503/coefficient-only-matlab-tests.csv",
+      "sha256": "fd73be22766f4da9216b34acd062805c2229f1d8bcdc38d099af9d4455e9455c"
+    },
+    {
+      "path": "/private/tmp/wvm503/coefficient-only-matlab-repair-tests.csv",
+      "sha256": "496b07891f06d1ceedbbe57938cb6379d49bd2f53b0bcff38685ab6af143a397"
+    },
+    {
+      "path": "/private/tmp/wvm503/constant-final-comparison.json",
+      "sha256": "04b55df610497b6e5e00bb322ea234b93c4917af90681e5c3ced900dd93a6f14"
+    },
+    {
+      "path": "/private/tmp/wvm503/sealed-matlab-boundary-profile.json",
+      "sha256": "3230ecee1212064ac768f887bd825194d5b4159208897a6a0e719298ed239eff"
+    },
+    {
+      "path": "/private/tmp/wvm503/sealed-v2-constant-native.sample.txt",
+      "sha256": "786669f1be9530593d6102726f2d9a868a9d93f20417cec068b9454a5bedfcf6"
+    },
+    {
+      "path": "/private/tmp/wvm503/mex-overhead-canonical.json",
+      "sha256": "c13f4ecda8fdeeed3835bccff20a8e192a9a7ac512461b5b70c6f0eff55b5093"
+    }
+  ]
+}
