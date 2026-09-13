@@ -1,0 +1,36 @@
+{
+  "sourceIdentities": [
+    "209a99eeda112d7b4106821c859eba619a8f2745f44489dc4ed6fb2d8af81700",
+    "209a99eeda112d7b4106821c859eba619a8f2745f44489dc4ed6fb2d8af81700"
+  ],
+  "relativeErrorsToMatlab": [
+    [
+      1.4320281029078404E-12,
+      1.8862205478575949E-12
+    ],
+    [
+      1.4320281029078404E-12,
+      1.8862205478575949E-12
+    ]
+  ],
+  "candidateRelativeErrorsToBaseline": [
+    [
+      0,
+      0
+    ],
+    [
+      0,
+      0
+    ]
+  ],
+  "bitwiseEqualToBaseline": [
+    [
+      true,
+      true
+    ],
+    [
+      true,
+      true
+    ]
+  ]
+}

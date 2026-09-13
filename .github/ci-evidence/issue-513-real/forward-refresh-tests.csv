@@ -1,0 +1,7 @@
+Name,Passed,Failed,Incomplete,Duration,Details
+TestPortableForwardIntegration/representativeLifecycleMatchesMatlab(configuration=constantHydrostatic),1,0,0,47.9524830416667,
+TestPortableForwardIntegration/representativeLifecycleMatchesMatlab(configuration=constantNonhydrostatic),1,0,0,37.7166428333333,
+TestPortableForwardIntegration/representativeLifecycleMatchesMatlab(configuration=barotropic),1,0,0,24.455788,
+TestPortableForwardIntegration/representativeLifecycleMatchesMatlab(configuration=stratifiedQG),1,0,0,39.1143135,
+TestPortableForwardIntegration/representativeLifecycleMatchesMatlab(configuration=hydrostatic),1,0,0,49.9767735416667,
+TestPortableForwardIntegration/representativeLifecycleMatchesMatlab(configuration=boussinesq),1,0,0,55.6316724583333,

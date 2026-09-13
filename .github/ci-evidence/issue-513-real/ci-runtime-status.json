@@ -1,0 +1,117 @@
+{
+  "headSha": "8a1840a3129a3aed62efd8e4ac6277bdf063e873",
+  "url": "https://github.com/JeffreyEarly/wave-vortex-model/actions/runs/34774291513",
+  "status": "in_progress",
+  "conclusion": "",
+  "jobs": [
+    {
+      "name": "Repository and CI policy contracts",
+      "status": "completed",
+      "conclusion": "success",
+      "url": "https://github.com/JeffreyEarly/wave-vortex-model/actions/runs/34774291513/job/103769428920"
+    },
+    {
+      "name": "Select CI coverage",
+      "status": "completed",
+      "conclusion": "success",
+      "url": "https://github.com/JeffreyEarly/wave-vortex-model/actions/runs/34774291513/job/103769429101"
+    },
+    {
+      "name": "C++ / sanitized / build",
+      "status": "completed",
+      "conclusion": "success",
+      "url": "https://github.com/JeffreyEarly/wave-vortex-model/actions/runs/34774291513/job/103769460932"
+    },
+    {
+      "name": "C++ / release / build",
+      "status": "completed",
+      "conclusion": "success",
+      "url": "https://github.com/JeffreyEarly/wave-vortex-model/actions/runs/34774291513/job/103769460940"
+    },
+    {
+      "name": "Isolated package verification / Clean install / MATLAB R2025b",
+      "status": "completed",
+      "conclusion": "success",
+      "url": "https://github.com/JeffreyEarly/wave-vortex-model/actions/runs/34774291513/job/103769461110"
+    },
+    {
+      "name": "Isolated package verification / Exported package / MATLAB R2025b",
+      "status": "completed",
+      "conclusion": "success",
+      "url": "https://github.com/JeffreyEarly/wave-vortex-model/actions/runs/34774291513/job/103769461147"
+    },
+    {
+      "name": "MATLAB / R2025b / batch 0 / validate",
+      "status": "completed",
+      "conclusion": "failure",
+      "url": "https://github.com/JeffreyEarly/wave-vortex-model/actions/runs/34774291513/job/103769635765"
+    },
+    {
+      "name": "MATLAB / R2026a / batch 0 / validate",
+      "status": "completed",
+      "conclusion": "failure",
+      "url": "https://github.com/JeffreyEarly/wave-vortex-model/actions/runs/34774291513/job/103769635769"
+    },
+    {
+      "name": "MATLAB / R2026a / batch 2 / validate",
+      "status": "completed",
+      "conclusion": "success",
+      "url": "https://github.com/JeffreyEarly/wave-vortex-model/actions/runs/34774291513/job/103769635816"
+    },
+    {
+      "name": "MATLAB / R2026a / batch 1 / validate",
+      "status": "completed",
+      "conclusion": "success",
+      "url": "https://github.com/JeffreyEarly/wave-vortex-model/actions/runs/34774291513/job/103769635821"
+    },
+    {
+      "name": "MATLAB / R2025b / batch 1 / validate",
+      "status": "completed",
+      "conclusion": "success",
+      "url": "https://github.com/JeffreyEarly/wave-vortex-model/actions/runs/34774291513/job/103769635822"
+    },
+    {
+      "name": "MATLAB / R2025b / batch 2 / validate",
+      "status": "completed",
+      "conclusion": "success",
+      "url": "https://github.com/JeffreyEarly/wave-vortex-model/actions/runs/34774291513/job/103769635824"
+    },
+    {
+      "name": "MATLAB / R2025b / batch 3 / validate",
+      "status": "completed",
+      "conclusion": "success",
+      "url": "https://github.com/JeffreyEarly/wave-vortex-model/actions/runs/34774291513/job/103769635860"
+    },
+    {
+      "name": "MATLAB / R2026a / batch 3 / validate",
+      "status": "completed",
+      "conclusion": "success",
+      "url": "https://github.com/JeffreyEarly/wave-vortex-model/actions/runs/34774291513/job/103769635927"
+    },
+    {
+      "name": "MATLAB / sanitized probes / batch 0 / validate",
+      "status": "completed",
+      "conclusion": "success",
+      "url": "https://github.com/JeffreyEarly/wave-vortex-model/actions/runs/34774291513/job/103769939489"
+    },
+    {
+      "name": "MATLAB / sanitized probes / batch 1 / validate",
+      "status": "in_progress",
+      "conclusion": "",
+      "url": "https://github.com/JeffreyEarly/wave-vortex-model/actions/runs/34774291513/job/103769939514"
+    },
+    {
+      "name": "MATLAB / sanitized probes / batch 2 / validate",
+      "status": "completed",
+      "conclusion": "success",
+      "url": "https://github.com/JeffreyEarly/wave-vortex-model/actions/runs/34774291513/job/103769939563"
+    },
+    {
+      "name": "MATLAB / sanitized probes / batch 3 / validate",
+      "status": "completed",
+      "conclusion": "failure",
+      "url": "https://github.com/JeffreyEarly/wave-vortex-model/actions/runs/34774291513/job/103769939579"
+    }
+  ],
+  "observedFailure": "Committed forward-integration receipt has stale constant-kernel digest; fresh lifecycle receipts and focused contract now pass locally."
+}

@@ -1,0 +1,12 @@
+{
+  "calls": 160,
+  "stageSeconds": {
+    "pack": 0.723553916,
+    "forward": 2.346030238,
+    "forwardNormalize": 0.412812484,
+    "multipliers": 5.179430937,
+    "inverseNormalize": 0.280608274,
+    "inverse": 2.403321778,
+    "unpack": 0.316559082
+  }
+}

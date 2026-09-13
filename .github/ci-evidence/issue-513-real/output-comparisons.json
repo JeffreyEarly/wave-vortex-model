@@ -1,0 +1,1138 @@
+[
+  {
+    "kind": "baseline-candidate",
+    "reference": "/private/tmp/wvm513-real/qualification-v2/baseline-coefficient-endpoint-1.nc",
+    "candidate": "/private/tmp/wvm513-real/qualification-v2/candidate-coefficient-endpoint-1.nc",
+    "details": {
+      "passed": true,
+      "maximumRelativeError": 0,
+      "maximumAbsoluteError": 0,
+      "variableCount": 28,
+      "recordCount": 14,
+      "categories": [
+        {
+          "name": "metadata",
+          "variableCount": 21,
+          "maximumAbsoluteError": 0,
+          "maximumRelativeError": 0,
+          "passed": true
+        },
+        {
+          "name": "times",
+          "variableCount": 1,
+          "maximumAbsoluteError": 0,
+          "maximumRelativeError": 0,
+          "passed": true
+        },
+        {
+          "name": "coefficients",
+          "variableCount": 6,
+          "maximumAbsoluteError": 0,
+          "maximumRelativeError": 0,
+          "passed": true
+        }
+      ],
+      "differences": []
+    }
+  },
+  {
+    "kind": "baseline-candidate",
+    "reference": "/private/tmp/wvm513-real/qualification-v2/baseline-coefficient-endpoint-2.nc",
+    "candidate": "/private/tmp/wvm513-real/qualification-v2/candidate-coefficient-endpoint-2.nc",
+    "details": {
+      "passed": true,
+      "maximumRelativeError": 2.6813122819512783E-13,
+      "maximumAbsoluteError": 4.6178338930502605E-15,
+      "variableCount": 28,
+      "recordCount": 14,
+      "categories": [
+        {
+          "name": "metadata",
+          "variableCount": 21,
+          "maximumAbsoluteError": 0,
+          "maximumRelativeError": 0,
+          "passed": true
+        },
+        {
+          "name": "times",
+          "variableCount": 1,
+          "maximumAbsoluteError": 0,
+          "maximumRelativeError": 0,
+          "passed": true
+        },
+        {
+          "name": "coefficients",
+          "variableCount": 6,
+          "maximumAbsoluteError": 4.6178338930502605E-15,
+          "maximumRelativeError": 2.6813122819512783E-13,
+          "passed": true
+        }
+      ],
+      "differences": []
+    }
+  },
+  {
+    "kind": "baseline-candidate",
+    "reference": "/private/tmp/wvm513-real/qualification-v2/baseline-coefficient-endpoint-3.nc",
+    "candidate": "/private/tmp/wvm513-real/qualification-v2/candidate-coefficient-endpoint-3.nc",
+    "details": {
+      "passed": true,
+      "maximumRelativeError": 5.6651960421994244E-13,
+      "maximumAbsoluteError": 6.7645541945715593E-15,
+      "variableCount": 28,
+      "recordCount": 14,
+      "categories": [
+        {
+          "name": "metadata",
+          "variableCount": 21,
+          "maximumAbsoluteError": 0,
+          "maximumRelativeError": 0,
+          "passed": true
+        },
+        {
+          "name": "times",
+          "variableCount": 1,
+          "maximumAbsoluteError": 0,
+          "maximumRelativeError": 0,
+          "passed": true
+        },
+        {
+          "name": "coefficients",
+          "variableCount": 6,
+          "maximumAbsoluteError": 6.7645541945715593E-15,
+          "maximumRelativeError": 5.6651960421994244E-13,
+          "passed": true
+        }
+      ],
+      "differences": []
+    }
+  },
+  {
+    "kind": "repeatability",
+    "reference": "/private/tmp/wvm513-real/qualification-v2/baseline-coefficient-endpoint-1.nc",
+    "candidate": "/private/tmp/wvm513-real/qualification-v2/baseline-coefficient-endpoint-2.nc",
+    "details": {
+      "passed": true,
+      "maximumRelativeError": 9.2024498340520149E-13,
+      "maximumAbsoluteError": 1.1008555178548818E-14,
+      "variableCount": 28,
+      "recordCount": 14,
+      "categories": [
+        {
+          "name": "metadata",
+          "variableCount": 21,
+          "maximumAbsoluteError": 0,
+          "maximumRelativeError": 0,
+          "passed": true
+        },
+        {
+          "name": "times",
+          "variableCount": 1,
+          "maximumAbsoluteError": 0,
+          "maximumRelativeError": 0,
+          "passed": true
+        },
+        {
+          "name": "coefficients",
+          "variableCount": 6,
+          "maximumAbsoluteError": 1.1008555178548818E-14,
+          "maximumRelativeError": 9.2024498340520149E-13,
+          "passed": true
+        }
+      ],
+      "differences": []
+    }
+  },
+  {
+    "kind": "repeatability",
+    "reference": "/private/tmp/wvm513-real/qualification-v2/baseline-coefficient-endpoint-1.nc",
+    "candidate": "/private/tmp/wvm513-real/qualification-v2/baseline-coefficient-endpoint-3.nc",
+    "details": {
+      "passed": true,
+      "maximumRelativeError": 5.66519604219913E-13,
+      "maximumAbsoluteError": 6.7645541945715593E-15,
+      "variableCount": 28,
+      "recordCount": 14,
+      "categories": [
+        {
+          "name": "metadata",
+          "variableCount": 21,
+          "maximumAbsoluteError": 0,
+          "maximumRelativeError": 0,
+          "passed": true
+        },
+        {
+          "name": "times",
+          "variableCount": 1,
+          "maximumAbsoluteError": 0,
+          "maximumRelativeError": 0,
+          "passed": true
+        },
+        {
+          "name": "coefficients",
+          "variableCount": 6,
+          "maximumAbsoluteError": 6.7645541945715593E-15,
+          "maximumRelativeError": 5.66519604219913E-13,
+          "passed": true
+        }
+      ],
+      "differences": []
+    }
+  },
+  {
+    "kind": "repeatability",
+    "reference": "/private/tmp/wvm513-real/qualification-v2/candidate-coefficient-endpoint-1.nc",
+    "candidate": "/private/tmp/wvm513-real/qualification-v2/candidate-coefficient-endpoint-2.nc",
+    "details": {
+      "passed": true,
+      "maximumRelativeError": 1.0281615187211565E-12,
+      "maximumAbsoluteError": 1.1576677116931222E-14,
+      "variableCount": 28,
+      "recordCount": 14,
+      "categories": [
+        {
+          "name": "metadata",
+          "variableCount": 21,
+          "maximumAbsoluteError": 0,
+          "maximumRelativeError": 0,
+          "passed": true
+        },
+        {
+          "name": "times",
+          "variableCount": 1,
+          "maximumAbsoluteError": 0,
+          "maximumRelativeError": 0,
+          "passed": true
+        },
+        {
+          "name": "coefficients",
+          "variableCount": 6,
+          "maximumAbsoluteError": 1.1576677116931222E-14,
+          "maximumRelativeError": 1.0281615187211565E-12,
+          "passed": true
+        }
+      ],
+      "differences": []
+    }
+  },
+  {
+    "kind": "repeatability",
+    "reference": "/private/tmp/wvm513-real/qualification-v2/candidate-coefficient-endpoint-1.nc",
+    "candidate": "/private/tmp/wvm513-real/qualification-v2/candidate-coefficient-endpoint-3.nc",
+    "details": {
+      "passed": true,
+      "maximumRelativeError": 0,
+      "maximumAbsoluteError": 0,
+      "variableCount": 28,
+      "recordCount": 14,
+      "categories": [
+        {
+          "name": "metadata",
+          "variableCount": 21,
+          "maximumAbsoluteError": 0,
+          "maximumRelativeError": 0,
+          "passed": true
+        },
+        {
+          "name": "times",
+          "variableCount": 1,
+          "maximumAbsoluteError": 0,
+          "maximumRelativeError": 0,
+          "passed": true
+        },
+        {
+          "name": "coefficients",
+          "variableCount": 6,
+          "maximumAbsoluteError": 0,
+          "maximumRelativeError": 0,
+          "passed": true
+        }
+      ],
+      "differences": []
+    }
+  },
+  {
+    "kind": "baseline-candidate",
+    "reference": "/private/tmp/wvm513-real/qualification-v2/baseline-composite-dense-output-1.nc",
+    "candidate": "/private/tmp/wvm513-real/qualification-v2/candidate-composite-dense-output-1.nc",
+    "details": {
+      "passed": true,
+      "maximumRelativeError": 5.2005527987129117E-13,
+      "maximumAbsoluteError": 2.8421709430404007E-14,
+      "variableCount": 58,
+      "recordCount": 64,
+      "categories": [
+        {
+          "name": "metadata",
+          "variableCount": 36,
+          "maximumAbsoluteError": 0,
+          "maximumRelativeError": 0,
+          "passed": true
+        },
+        {
+          "name": "times",
+          "variableCount": 4,
+          "maximumAbsoluteError": 0,
+          "maximumRelativeError": 0,
+          "passed": true
+        },
+        {
+          "name": "coefficients",
+          "variableCount": 6,
+          "maximumAbsoluteError": 6.1669419570975492E-15,
+          "maximumRelativeError": 5.2005527987129117E-13,
+          "passed": true
+        },
+        {
+          "name": "eulerianFields",
+          "variableCount": 1,
+          "maximumAbsoluteError": 1.5612511283791264E-16,
+          "maximumRelativeError": 6.8675445524611341E-16,
+          "passed": true
+        },
+        {
+          "name": "moorings",
+          "variableCount": 5,
+          "maximumAbsoluteError": 6.591949208711867E-17,
+          "maximumRelativeError": 7.5403150110715482E-16,
+          "passed": true
+        },
+        {
+          "name": "particles",
+          "variableCount": 5,
+          "maximumAbsoluteError": 2.8421709430404007E-14,
+          "maximumRelativeError": 8.326538757649335E-16,
+          "passed": true
+        },
+        {
+          "name": "tracers",
+          "variableCount": 1,
+          "maximumAbsoluteError": 1.2212453270876722E-15,
+          "maximumRelativeError": 1.2212388882872172E-15,
+          "passed": true
+        }
+      ],
+      "differences": []
+    }
+  },
+  {
+    "kind": "baseline-candidate",
+    "reference": "/private/tmp/wvm513-real/qualification-v2/baseline-composite-dense-output-2.nc",
+    "candidate": "/private/tmp/wvm513-real/qualification-v2/candidate-composite-dense-output-2.nc",
+    "details": {
+      "passed": true,
+      "maximumRelativeError": 5.2005527987129117E-13,
+      "maximumAbsoluteError": 2.8421709430404007E-14,
+      "variableCount": 58,
+      "recordCount": 64,
+      "categories": [
+        {
+          "name": "metadata",
+          "variableCount": 36,
+          "maximumAbsoluteError": 0,
+          "maximumRelativeError": 0,
+          "passed": true
+        },
+        {
+          "name": "times",
+          "variableCount": 4,
+          "maximumAbsoluteError": 0,
+          "maximumRelativeError": 0,
+          "passed": true
+        },
+        {
+          "name": "coefficients",
+          "variableCount": 6,
+          "maximumAbsoluteError": 6.1669419570975492E-15,
+          "maximumRelativeError": 5.2005527987129117E-13,
+          "passed": true
+        },
+        {
+          "name": "eulerianFields",
+          "variableCount": 1,
+          "maximumAbsoluteError": 1.5612511283791264E-16,
+          "maximumRelativeError": 6.8675445524611341E-16,
+          "passed": true
+        },
+        {
+          "name": "moorings",
+          "variableCount": 5,
+          "maximumAbsoluteError": 6.591949208711867E-17,
+          "maximumRelativeError": 7.5403150110715482E-16,
+          "passed": true
+        },
+        {
+          "name": "particles",
+          "variableCount": 5,
+          "maximumAbsoluteError": 2.8421709430404007E-14,
+          "maximumRelativeError": 8.326538757649335E-16,
+          "passed": true
+        },
+        {
+          "name": "tracers",
+          "variableCount": 1,
+          "maximumAbsoluteError": 1.2212453270876722E-15,
+          "maximumRelativeError": 1.2212388882872172E-15,
+          "passed": true
+        }
+      ],
+      "differences": []
+    }
+  },
+  {
+    "kind": "baseline-candidate",
+    "reference": "/private/tmp/wvm513-real/qualification-v2/baseline-composite-dense-output-3.nc",
+    "candidate": "/private/tmp/wvm513-real/qualification-v2/candidate-composite-dense-output-3.nc",
+    "details": {
+      "passed": true,
+      "maximumRelativeError": 3.663684775345274E-13,
+      "maximumAbsoluteError": 1.8189894035458565E-12,
+      "variableCount": 58,
+      "recordCount": 64,
+      "categories": [
+        {
+          "name": "metadata",
+          "variableCount": 36,
+          "maximumAbsoluteError": 0,
+          "maximumRelativeError": 0,
+          "passed": true
+        },
+        {
+          "name": "times",
+          "variableCount": 4,
+          "maximumAbsoluteError": 0,
+          "maximumRelativeError": 0,
+          "passed": true
+        },
+        {
+          "name": "coefficients",
+          "variableCount": 6,
+          "maximumAbsoluteError": 4.5150515270986347E-15,
+          "maximumRelativeError": 3.663684775345274E-13,
+          "passed": true
+        },
+        {
+          "name": "eulerianFields",
+          "variableCount": 1,
+          "maximumAbsoluteError": 1.5265566588595902E-16,
+          "maximumRelativeError": 6.7149324512953313E-16,
+          "passed": true
+        },
+        {
+          "name": "moorings",
+          "variableCount": 5,
+          "maximumAbsoluteError": 5.5511151231257827E-17,
+          "maximumRelativeError": 6.34973895669183E-16,
+          "passed": true
+        },
+        {
+          "name": "particles",
+          "variableCount": 5,
+          "maximumAbsoluteError": 1.8189894035458565E-12,
+          "maximumRelativeError": 2.4979616272948013E-15,
+          "passed": true
+        },
+        {
+          "name": "tracers",
+          "variableCount": 1,
+          "maximumAbsoluteError": 1.5543122344752192E-15,
+          "maximumRelativeError": 1.5543040396382768E-15,
+          "passed": true
+        }
+      ],
+      "differences": []
+    }
+  },
+  {
+    "kind": "repeatability",
+    "reference": "/private/tmp/wvm513-real/qualification-v2/baseline-composite-dense-output-1.nc",
+    "candidate": "/private/tmp/wvm513-real/qualification-v2/baseline-composite-dense-output-2.nc",
+    "details": {
+      "passed": true,
+      "maximumRelativeError": 0,
+      "maximumAbsoluteError": 0,
+      "variableCount": 58,
+      "recordCount": 64,
+      "categories": [
+        {
+          "name": "metadata",
+          "variableCount": 36,
+          "maximumAbsoluteError": 0,
+          "maximumRelativeError": 0,
+          "passed": true
+        },
+        {
+          "name": "times",
+          "variableCount": 4,
+          "maximumAbsoluteError": 0,
+          "maximumRelativeError": 0,
+          "passed": true
+        },
+        {
+          "name": "coefficients",
+          "variableCount": 6,
+          "maximumAbsoluteError": 0,
+          "maximumRelativeError": 0,
+          "passed": true
+        },
+        {
+          "name": "eulerianFields",
+          "variableCount": 1,
+          "maximumAbsoluteError": 0,
+          "maximumRelativeError": 0,
+          "passed": true
+        },
+        {
+          "name": "moorings",
+          "variableCount": 5,
+          "maximumAbsoluteError": 0,
+          "maximumRelativeError": 0,
+          "passed": true
+        },
+        {
+          "name": "particles",
+          "variableCount": 5,
+          "maximumAbsoluteError": 0,
+          "maximumRelativeError": 0,
+          "passed": true
+        },
+        {
+          "name": "tracers",
+          "variableCount": 1,
+          "maximumAbsoluteError": 0,
+          "maximumRelativeError": 0,
+          "passed": true
+        }
+      ],
+      "differences": []
+    }
+  },
+  {
+    "kind": "repeatability",
+    "reference": "/private/tmp/wvm513-real/qualification-v2/baseline-composite-dense-output-1.nc",
+    "candidate": "/private/tmp/wvm513-real/qualification-v2/baseline-composite-dense-output-3.nc",
+    "details": {
+      "passed": true,
+      "maximumRelativeError": 8.04712575789876E-13,
+      "maximumAbsoluteError": 2.8421709430404007E-14,
+      "variableCount": 58,
+      "recordCount": 64,
+      "categories": [
+        {
+          "name": "metadata",
+          "variableCount": 36,
+          "maximumAbsoluteError": 0,
+          "maximumRelativeError": 0,
+          "passed": true
+        },
+        {
+          "name": "times",
+          "variableCount": 4,
+          "maximumAbsoluteError": 0,
+          "maximumRelativeError": 0,
+          "passed": true
+        },
+        {
+          "name": "coefficients",
+          "variableCount": 6,
+          "maximumAbsoluteError": 9.4984783927110072E-15,
+          "maximumRelativeError": 8.04712575789876E-13,
+          "passed": true
+        },
+        {
+          "name": "eulerianFields",
+          "variableCount": 1,
+          "maximumAbsoluteError": 1.5265566588595902E-16,
+          "maximumRelativeError": 6.7149324512953313E-16,
+          "passed": true
+        },
+        {
+          "name": "moorings",
+          "variableCount": 5,
+          "maximumAbsoluteError": 5.5511151231257827E-17,
+          "maximumRelativeError": 6.34973895669183E-16,
+          "passed": true
+        },
+        {
+          "name": "particles",
+          "variableCount": 5,
+          "maximumAbsoluteError": 2.8421709430404007E-14,
+          "maximumRelativeError": 5.94752768403524E-16,
+          "passed": true
+        },
+        {
+          "name": "tracers",
+          "variableCount": 1,
+          "maximumAbsoluteError": 1.5543122344752192E-15,
+          "maximumRelativeError": 1.5543040396382766E-15,
+          "passed": true
+        }
+      ],
+      "differences": []
+    }
+  },
+  {
+    "kind": "repeatability",
+    "reference": "/private/tmp/wvm513-real/qualification-v2/candidate-composite-dense-output-1.nc",
+    "candidate": "/private/tmp/wvm513-real/qualification-v2/candidate-composite-dense-output-2.nc",
+    "details": {
+      "passed": true,
+      "maximumRelativeError": 0,
+      "maximumAbsoluteError": 0,
+      "variableCount": 58,
+      "recordCount": 64,
+      "categories": [
+        {
+          "name": "metadata",
+          "variableCount": 36,
+          "maximumAbsoluteError": 0,
+          "maximumRelativeError": 0,
+          "passed": true
+        },
+        {
+          "name": "times",
+          "variableCount": 4,
+          "maximumAbsoluteError": 0,
+          "maximumRelativeError": 0,
+          "passed": true
+        },
+        {
+          "name": "coefficients",
+          "variableCount": 6,
+          "maximumAbsoluteError": 0,
+          "maximumRelativeError": 0,
+          "passed": true
+        },
+        {
+          "name": "eulerianFields",
+          "variableCount": 1,
+          "maximumAbsoluteError": 0,
+          "maximumRelativeError": 0,
+          "passed": true
+        },
+        {
+          "name": "moorings",
+          "variableCount": 5,
+          "maximumAbsoluteError": 0,
+          "maximumRelativeError": 0,
+          "passed": true
+        },
+        {
+          "name": "particles",
+          "variableCount": 5,
+          "maximumAbsoluteError": 0,
+          "maximumRelativeError": 0,
+          "passed": true
+        },
+        {
+          "name": "tracers",
+          "variableCount": 1,
+          "maximumAbsoluteError": 0,
+          "maximumRelativeError": 0,
+          "passed": true
+        }
+      ],
+      "differences": []
+    }
+  },
+  {
+    "kind": "repeatability",
+    "reference": "/private/tmp/wvm513-real/qualification-v2/candidate-composite-dense-output-1.nc",
+    "candidate": "/private/tmp/wvm513-real/qualification-v2/candidate-composite-dense-output-3.nc",
+    "details": {
+      "passed": true,
+      "maximumRelativeError": 5.1568459453691968E-13,
+      "maximumAbsoluteError": 1.8189894035458565E-12,
+      "variableCount": 58,
+      "recordCount": 64,
+      "categories": [
+        {
+          "name": "metadata",
+          "variableCount": 36,
+          "maximumAbsoluteError": 0,
+          "maximumRelativeError": 0,
+          "passed": true
+        },
+        {
+          "name": "times",
+          "variableCount": 4,
+          "maximumAbsoluteError": 0,
+          "maximumRelativeError": 0,
+          "passed": true
+        },
+        {
+          "name": "coefficients",
+          "variableCount": 6,
+          "maximumAbsoluteError": 6.4262831167560819E-15,
+          "maximumRelativeError": 5.1568459453691968E-13,
+          "passed": true
+        },
+        {
+          "name": "eulerianFields",
+          "variableCount": 1,
+          "maximumAbsoluteError": 1.8561541192951836E-16,
+          "maximumRelativeError": 8.1647474123704589E-16,
+          "passed": true
+        },
+        {
+          "name": "moorings",
+          "variableCount": 5,
+          "maximumAbsoluteError": 5.5511151231257827E-17,
+          "maximumRelativeError": 6.34973895669183E-16,
+          "passed": true
+        },
+        {
+          "name": "particles",
+          "variableCount": 5,
+          "maximumAbsoluteError": 1.8189894035458565E-12,
+          "maximumRelativeError": 2.6169121809755048E-15,
+          "passed": true
+        },
+        {
+          "name": "tracers",
+          "variableCount": 1,
+          "maximumAbsoluteError": 1.9984014443252818E-15,
+          "maximumRelativeError": 1.9983909081063555E-15,
+          "passed": true
+        }
+      ],
+      "differences": []
+    }
+  },
+  {
+    "kind": "endpoint-composite-control",
+    "reference": "/private/tmp/wvm513-real/qualification-v2/baseline-coefficient-endpoint-1.nc",
+    "candidate": "/private/tmp/wvm513-real/qualification-v2/baseline-composite-dense-output-1.nc",
+    "details": {
+      "passed": true,
+      "maximumRelativeError": 0
+    }
+  },
+  {
+    "kind": "endpoint-composite-control",
+    "reference": "/private/tmp/wvm513-real/qualification-v2/baseline-coefficient-endpoint-2.nc",
+    "candidate": "/private/tmp/wvm513-real/qualification-v2/baseline-composite-dense-output-2.nc",
+    "details": {
+      "passed": true,
+      "maximumRelativeError": 9.2024498340538567E-13
+    }
+  },
+  {
+    "kind": "endpoint-composite-control",
+    "reference": "/private/tmp/wvm513-real/qualification-v2/baseline-coefficient-endpoint-3.nc",
+    "candidate": "/private/tmp/wvm513-real/qualification-v2/baseline-composite-dense-output-3.nc",
+    "details": {
+      "passed": true,
+      "maximumRelativeError": 3.79818183048422E-13
+    }
+  },
+  {
+    "kind": "endpoint-composite-control",
+    "reference": "/private/tmp/wvm513-real/qualification-v2/candidate-coefficient-endpoint-1.nc",
+    "candidate": "/private/tmp/wvm513-real/qualification-v2/candidate-composite-dense-output-1.nc",
+    "details": {
+      "passed": true,
+      "maximumRelativeError": 5.2005527987129117E-13
+    }
+  },
+  {
+    "kind": "endpoint-composite-control",
+    "reference": "/private/tmp/wvm513-real/qualification-v2/candidate-coefficient-endpoint-2.nc",
+    "candidate": "/private/tmp/wvm513-real/qualification-v2/candidate-composite-dense-output-2.nc",
+    "details": {
+      "passed": true,
+      "maximumRelativeError": 6.213313748080809E-13
+    }
+  },
+  {
+    "kind": "endpoint-composite-control",
+    "reference": "/private/tmp/wvm513-real/qualification-v2/candidate-coefficient-endpoint-3.nc",
+    "candidate": "/private/tmp/wvm513-real/qualification-v2/candidate-composite-dense-output-3.nc",
+    "details": {
+      "passed": true,
+      "maximumRelativeError": 9.2024498340520149E-13
+    }
+  },
+  {
+    "kind": "supplement-repeatability",
+    "reference": "/private/tmp/wvm513-real/qualification-v2/baseline-coefficient-endpoint-1.nc",
+    "candidate": "/private/tmp/wvm513-real/qualification-idle-supplement/baseline-coefficient-endpoint-4.nc",
+    "details": {
+      "passed": true,
+      "maximumRelativeError": 3.0604176493652126E-13,
+      "maximumAbsoluteError": 4.2309905579074325E-15,
+      "variableCount": 28,
+      "recordCount": 14,
+      "categories": [
+        {
+          "name": "metadata",
+          "variableCount": 21,
+          "maximumAbsoluteError": 0,
+          "maximumRelativeError": 0,
+          "passed": true
+        },
+        {
+          "name": "times",
+          "variableCount": 1,
+          "maximumAbsoluteError": 0,
+          "maximumRelativeError": 0,
+          "passed": true
+        },
+        {
+          "name": "coefficients",
+          "variableCount": 6,
+          "maximumAbsoluteError": 4.2309905579074325E-15,
+          "maximumRelativeError": 3.0604176493652126E-13,
+          "passed": true
+        }
+      ],
+      "differences": []
+    }
+  },
+  {
+    "kind": "supplement-baseline-candidate",
+    "reference": "/private/tmp/wvm513-real/qualification-idle-supplement/baseline-coefficient-endpoint-4.nc",
+    "candidate": "/private/tmp/wvm513-real/qualification-v2/candidate-coefficient-endpoint-2.nc",
+    "details": {
+      "passed": true,
+      "maximumRelativeError": 1.0621890860882846E-12,
+      "maximumAbsoluteError": 1.2351231148954867E-14,
+      "variableCount": 28,
+      "recordCount": 14,
+      "categories": [
+        {
+          "name": "metadata",
+          "variableCount": 21,
+          "maximumAbsoluteError": 0,
+          "maximumRelativeError": 0,
+          "passed": true
+        },
+        {
+          "name": "times",
+          "variableCount": 1,
+          "maximumAbsoluteError": 0,
+          "maximumRelativeError": 0,
+          "passed": true
+        },
+        {
+          "name": "coefficients",
+          "variableCount": 6,
+          "maximumAbsoluteError": 1.2351231148954867E-14,
+          "maximumRelativeError": 1.0621890860882846E-12,
+          "passed": true
+        }
+      ],
+      "differences": []
+    }
+  },
+  {
+    "kind": "supplement-repeatability",
+    "reference": "/private/tmp/wvm513-real/qualification-v2/baseline-composite-dense-output-1.nc",
+    "candidate": "/private/tmp/wvm513-real/qualification-idle-supplement/baseline-composite-dense-output-4.nc",
+    "details": {
+      "passed": true,
+      "maximumRelativeError": 0,
+      "maximumAbsoluteError": 0,
+      "variableCount": 58,
+      "recordCount": 64,
+      "categories": [
+        {
+          "name": "metadata",
+          "variableCount": 36,
+          "maximumAbsoluteError": 0,
+          "maximumRelativeError": 0,
+          "passed": true
+        },
+        {
+          "name": "times",
+          "variableCount": 4,
+          "maximumAbsoluteError": 0,
+          "maximumRelativeError": 0,
+          "passed": true
+        },
+        {
+          "name": "coefficients",
+          "variableCount": 6,
+          "maximumAbsoluteError": 0,
+          "maximumRelativeError": 0,
+          "passed": true
+        },
+        {
+          "name": "eulerianFields",
+          "variableCount": 1,
+          "maximumAbsoluteError": 0,
+          "maximumRelativeError": 0,
+          "passed": true
+        },
+        {
+          "name": "moorings",
+          "variableCount": 5,
+          "maximumAbsoluteError": 0,
+          "maximumRelativeError": 0,
+          "passed": true
+        },
+        {
+          "name": "particles",
+          "variableCount": 5,
+          "maximumAbsoluteError": 0,
+          "maximumRelativeError": 0,
+          "passed": true
+        },
+        {
+          "name": "tracers",
+          "variableCount": 1,
+          "maximumAbsoluteError": 0,
+          "maximumRelativeError": 0,
+          "passed": true
+        }
+      ],
+      "differences": []
+    }
+  },
+  {
+    "kind": "supplement-baseline-candidate",
+    "reference": "/private/tmp/wvm513-real/qualification-idle-supplement/baseline-composite-dense-output-4.nc",
+    "candidate": "/private/tmp/wvm513-real/qualification-v2/candidate-composite-dense-output-2.nc",
+    "details": {
+      "passed": true,
+      "maximumRelativeError": 5.2005527987129117E-13,
+      "maximumAbsoluteError": 2.8421709430404007E-14,
+      "variableCount": 58,
+      "recordCount": 64,
+      "categories": [
+        {
+          "name": "metadata",
+          "variableCount": 36,
+          "maximumAbsoluteError": 0,
+          "maximumRelativeError": 0,
+          "passed": true
+        },
+        {
+          "name": "times",
+          "variableCount": 4,
+          "maximumAbsoluteError": 0,
+          "maximumRelativeError": 0,
+          "passed": true
+        },
+        {
+          "name": "coefficients",
+          "variableCount": 6,
+          "maximumAbsoluteError": 6.1669419570975492E-15,
+          "maximumRelativeError": 5.2005527987129117E-13,
+          "passed": true
+        },
+        {
+          "name": "eulerianFields",
+          "variableCount": 1,
+          "maximumAbsoluteError": 1.5612511283791264E-16,
+          "maximumRelativeError": 6.8675445524611341E-16,
+          "passed": true
+        },
+        {
+          "name": "moorings",
+          "variableCount": 5,
+          "maximumAbsoluteError": 6.591949208711867E-17,
+          "maximumRelativeError": 7.5403150110715482E-16,
+          "passed": true
+        },
+        {
+          "name": "particles",
+          "variableCount": 5,
+          "maximumAbsoluteError": 2.8421709430404007E-14,
+          "maximumRelativeError": 8.326538757649335E-16,
+          "passed": true
+        },
+        {
+          "name": "tracers",
+          "variableCount": 1,
+          "maximumAbsoluteError": 1.2212453270876722E-15,
+          "maximumRelativeError": 1.2212388882872172E-15,
+          "passed": true
+        }
+      ],
+      "differences": []
+    }
+  },
+  {
+    "kind": "supplement-repeatability",
+    "reference": "/private/tmp/wvm513-real/qualification-v2/baseline-composite-dense-output-1.nc",
+    "candidate": "/private/tmp/wvm513-real/qualification-idle-supplement/baseline-composite-dense-output-5.nc",
+    "details": {
+      "passed": true,
+      "maximumRelativeError": 1.6653257567552963E-15,
+      "maximumAbsoluteError": 1.6653345369377348E-15,
+      "variableCount": 58,
+      "recordCount": 64,
+      "categories": [
+        {
+          "name": "metadata",
+          "variableCount": 36,
+          "maximumAbsoluteError": 0,
+          "maximumRelativeError": 0,
+          "passed": true
+        },
+        {
+          "name": "times",
+          "variableCount": 4,
+          "maximumAbsoluteError": 0,
+          "maximumRelativeError": 0,
+          "passed": true
+        },
+        {
+          "name": "coefficients",
+          "variableCount": 6,
+          "maximumAbsoluteError": 0,
+          "maximumRelativeError": 0,
+          "passed": true
+        },
+        {
+          "name": "eulerianFields",
+          "variableCount": 1,
+          "maximumAbsoluteError": 0,
+          "maximumRelativeError": 0,
+          "passed": true
+        },
+        {
+          "name": "moorings",
+          "variableCount": 5,
+          "maximumAbsoluteError": 0,
+          "maximumRelativeError": 0,
+          "passed": true
+        },
+        {
+          "name": "particles",
+          "variableCount": 5,
+          "maximumAbsoluteError": 0,
+          "maximumRelativeError": 0,
+          "passed": true
+        },
+        {
+          "name": "tracers",
+          "variableCount": 1,
+          "maximumAbsoluteError": 1.6653345369377348E-15,
+          "maximumRelativeError": 1.6653257567552963E-15,
+          "passed": true
+        }
+      ],
+      "differences": []
+    }
+  },
+  {
+    "kind": "supplement-baseline-candidate",
+    "reference": "/private/tmp/wvm513-real/qualification-idle-supplement/baseline-composite-dense-output-5.nc",
+    "candidate": "/private/tmp/wvm513-real/qualification-v2/candidate-composite-dense-output-3.nc",
+    "details": {
+      "passed": true,
+      "maximumRelativeError": 9.2024498340520149E-13,
+      "maximumAbsoluteError": 1.8189894035458565E-12,
+      "variableCount": 58,
+      "recordCount": 64,
+      "categories": [
+        {
+          "name": "metadata",
+          "variableCount": 36,
+          "maximumAbsoluteError": 0,
+          "maximumRelativeError": 0,
+          "passed": true
+        },
+        {
+          "name": "times",
+          "variableCount": 4,
+          "maximumAbsoluteError": 0,
+          "maximumRelativeError": 0,
+          "passed": true
+        },
+        {
+          "name": "coefficients",
+          "variableCount": 6,
+          "maximumAbsoluteError": 1.1008555178548818E-14,
+          "maximumRelativeError": 9.2024498340520149E-13,
+          "passed": true
+        },
+        {
+          "name": "eulerianFields",
+          "variableCount": 1,
+          "maximumAbsoluteError": 1.6653345369377348E-16,
+          "maximumRelativeError": 7.3253808559585427E-16,
+          "passed": true
+        },
+        {
+          "name": "moorings",
+          "variableCount": 5,
+          "maximumAbsoluteError": 5.7245874707234634E-17,
+          "maximumRelativeError": 6.54816829908845E-16,
+          "passed": true
+        },
+        {
+          "name": "particles",
+          "variableCount": 5,
+          "maximumAbsoluteError": 1.8189894035458565E-12,
+          "maximumRelativeError": 2.1411099662526861E-15,
+          "passed": true
+        },
+        {
+          "name": "tracers",
+          "variableCount": 1,
+          "maximumAbsoluteError": 1.5543122344752192E-15,
+          "maximumRelativeError": 1.5543040396382768E-15,
+          "passed": true
+        }
+      ],
+      "differences": []
+    }
+  },
+  {
+    "kind": "supplement-endpoint-composite-control",
+    "reference": "/private/tmp/wvm513-real/qualification-idle-supplement/baseline-coefficient-endpoint-4.nc",
+    "candidate": "/private/tmp/wvm513-real/qualification-idle-supplement/baseline-composite-dense-output-4.nc",
+    "details": {
+      "passed": true,
+      "maximumRelativeError": 3.0604176493651859E-13
+    }
+  },
+  {
+    "kind": "supplement-endpoint-composite-control",
+    "reference": "/private/tmp/wvm513-real/qualification-idle-supplement/baseline-coefficient-endpoint-4.nc",
+    "candidate": "/private/tmp/wvm513-real/qualification-idle-supplement/baseline-composite-dense-output-5.nc",
+    "details": {
+      "passed": true,
+      "maximumRelativeError": 3.0604176493651859E-13
+    }
+  },
+  {
+    "kind": "retained-inspection-failure-output",
+    "reference": "/private/tmp/wvm513-real/qualification-v2/baseline-coefficient-endpoint-1.nc",
+    "candidate": "/private/tmp/wvm513-real/qualification/baseline-coefficient-endpoint-1.nc",
+    "details": {
+      "passed": true,
+      "maximumRelativeError": 3.7208976091209539E-13,
+      "maximumAbsoluteError": 4.8008472197658136E-15,
+      "variableCount": 28,
+      "recordCount": 14,
+      "categories": [
+        {
+          "name": "metadata",
+          "variableCount": 21,
+          "maximumAbsoluteError": 0,
+          "maximumRelativeError": 0,
+          "passed": true
+        },
+        {
+          "name": "times",
+          "variableCount": 1,
+          "maximumAbsoluteError": 0,
+          "maximumRelativeError": 0,
+          "passed": true
+        },
+        {
+          "name": "coefficients",
+          "variableCount": 6,
+          "maximumAbsoluteError": 4.8008472197658136E-15,
+          "maximumRelativeError": 3.7208976091209539E-13,
+          "passed": true
+        }
+      ],
+      "differences": []
+    }
+  }
+]

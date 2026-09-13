@@ -1,0 +1,982 @@
+{
+  "originalV2CohortMedians": {
+    "coefficient-endpoint": {
+      "baseline": 14.694529833333334,
+      "candidate": 14.378575958333334,
+      "medianReductionPercent": 2.150146201229819
+    },
+    "composite-dense-output": {
+      "baseline": 49.2038485,
+      "candidate": 41.769560291666664,
+      "medianReductionPercent": 15.109160025019863
+    }
+  },
+  "schemaVersion": "wvm-issue513-real-qualification-v1",
+  "identities": {
+    "baseline": {
+      "provider": {
+        "id": "native-neon-pthreads",
+        "version": "3.3.11",
+        "sourceURL": "https://fftw.org/pub/fftw/fftw-3.3.11.tar.gz",
+        "sourceURLs": [
+          "https://fftw.org/pub/fftw/fftw-3.3.11.tar.gz",
+          "http://fftw.org/pub/fftw/fftw-3.3.11.tar.gz"
+        ],
+        "sourceSHA256": "5630c24cdeb33b131612f7eb4b1a9934234754f9f388ff8617458d0be6f239a1",
+        "threadBackend": "pthreads",
+        "configureFlags": "--host=aarch64-apple-darwin --enable-neon --enable-threads --disable-fortran --disable-openmp --enable-shared --disable-static",
+        "compilerFlags": "-O3 -mcpu=native",
+        "deploymentTarget": "13.3",
+        "simd": "NEON",
+        "sharedLibraries": true,
+        "fortran": false,
+        "openmp": false,
+        "kernelScope": "constant hydrostatic/nonhydrostatic, Hydrostatic, Boussinesq, Stratified QG and Barotropic QG"
+      },
+      "libraries": {
+        "base": {
+          "path": "/Users/jearly/Library/Caches/WaveVortexModel/compiled-backend-v1/maca64/R2025b/d3107d86ae9a3ec98523b23f5a6f6c665d581bc4319c7799a5a19cef5988fec7/provider/native-neon-pthreads/lib/libfftw3.3.dylib",
+          "version": "fftw-3.3.11-neon",
+          "sha256": "b4fe0d1267a6aef6fc5d21b6acd5a40f909fbf6accdfb4acf9d1d22918b1d2ec"
+        },
+        "thread": {
+          "path": "/Users/jearly/Library/Caches/WaveVortexModel/compiled-backend-v1/maca64/R2025b/d3107d86ae9a3ec98523b23f5a6f6c665d581bc4319c7799a5a19cef5988fec7/provider/native-neon-pthreads/lib/libfftw3_threads.3.dylib",
+          "version": "fftw-3.3.11-neon",
+          "sha256": "c15954731a6cae62aef912be8c3596c56d5a243eb2077a500a011d6e2117bf01"
+        },
+        "openmp": {
+          "path": "",
+          "version": "",
+          "sha256": "",
+          "detected": false
+        }
+      },
+      "matlab": {
+        "release": "R2025b",
+        "version": "25.2.0.3150157 (R2025b) Update 4",
+        "minimumRelease": "R2025b",
+        "isSupported": true
+      },
+      "platform": {
+        "architecture": "maca64",
+        "operatingSystem": "macOS",
+        "isSupported": true
+      },
+      "sourceCommit": "81692f49a98ceb7b5ef75f345fb5567494eb8b86",
+      "sourceAggregateSHA256": "7cfa4cc82f7f1daec6afcc0b870be8210e4ba6aa4656f15998c79ef2adeea92a",
+      "moduleSHA256": "be0140d6edad9cf7dd6f77f46b45ad4aa1187185b7fcb77e96e304c05232a720",
+      "modulePath": "/Users/jearly/Library/Caches/WaveVortexModel/compiled-backend-v1/maca64/R2025b/0e6f90bd9ce2e366c0cd188b3fded515c3ca83b3dfaf2f4dba8a5d26136308f5/module/wv_compiled_backend_mex.mexmaca64"
+    },
+    "candidate": {
+      "provider": {
+        "id": "native-neon-pthreads",
+        "version": "3.3.11",
+        "sourceURL": "https://fftw.org/pub/fftw/fftw-3.3.11.tar.gz",
+        "sourceURLs": [
+          "https://fftw.org/pub/fftw/fftw-3.3.11.tar.gz",
+          "http://fftw.org/pub/fftw/fftw-3.3.11.tar.gz"
+        ],
+        "sourceSHA256": "5630c24cdeb33b131612f7eb4b1a9934234754f9f388ff8617458d0be6f239a1",
+        "threadBackend": "pthreads",
+        "configureFlags": "--host=aarch64-apple-darwin --enable-neon --enable-threads --disable-fortran --disable-openmp --enable-shared --disable-static",
+        "compilerFlags": "-O3 -mcpu=native",
+        "deploymentTarget": "13.3",
+        "simd": "NEON",
+        "sharedLibraries": true,
+        "fortran": false,
+        "openmp": false,
+        "kernelScope": "constant hydrostatic/nonhydrostatic, Hydrostatic, Boussinesq, Stratified QG and Barotropic QG"
+      },
+      "libraries": {
+        "base": {
+          "path": "/Users/jearly/Library/Caches/WaveVortexModel/compiled-backend-v1/maca64/R2025b/d3107d86ae9a3ec98523b23f5a6f6c665d581bc4319c7799a5a19cef5988fec7/provider/native-neon-pthreads/lib/libfftw3.3.dylib",
+          "version": "fftw-3.3.11-neon",
+          "sha256": "b4fe0d1267a6aef6fc5d21b6acd5a40f909fbf6accdfb4acf9d1d22918b1d2ec"
+        },
+        "thread": {
+          "path": "/Users/jearly/Library/Caches/WaveVortexModel/compiled-backend-v1/maca64/R2025b/d3107d86ae9a3ec98523b23f5a6f6c665d581bc4319c7799a5a19cef5988fec7/provider/native-neon-pthreads/lib/libfftw3_threads.3.dylib",
+          "version": "fftw-3.3.11-neon",
+          "sha256": "c15954731a6cae62aef912be8c3596c56d5a243eb2077a500a011d6e2117bf01"
+        },
+        "openmp": {
+          "path": "",
+          "version": "",
+          "sha256": "",
+          "detected": false
+        }
+      },
+      "matlab": {
+        "release": "R2025b",
+        "version": "25.2.0.3150157 (R2025b) Update 4",
+        "minimumRelease": "R2025b",
+        "isSupported": true
+      },
+      "platform": {
+        "architecture": "maca64",
+        "operatingSystem": "macOS",
+        "isSupported": true
+      },
+      "sourceCommit": "8a1840a3129a3aed62efd8e4ac6277bdf063e873",
+      "sourceAggregateSHA256": "209a99eeda112d7b4106821c859eba619a8f2745f44489dc4ed6fb2d8af81700",
+      "moduleSHA256": "414f573ce55b427dbb23d48f32b7f5bf986a9c921a8783d31986ebf83100e189",
+      "modulePath": "/Users/jearly/Library/Caches/WaveVortexModel/compiled-backend-v1/maca64/R2025b/bf4b5a5444dcf4b3022dd1d8704760d35d873aa4099e592c43e637bfa5745093/module/wv_compiled_backend_mex.mexmaca64"
+    }
+  },
+  "workloadInvariants": {
+    "coefficient-endpoint": {
+      "fixture": {
+        "path": "/private/tmp/wvm513/fixtures/matched-constant-nonhydrostatic-coefficient-endpoint-model.nc",
+        "sha256": "12db1772e88177348753e4c6b7fe40bcb1a1a4434f56c67e704f8ecf80cc5ab5",
+        "bytes": 46829069.0,
+        "workload": "coefficient-endpoint",
+        "matchesQualifiedArchiveHash": false
+      },
+      "controls": {
+        "integrator": "ode78",
+        "initialTime": 0,
+        "finalTime": 7168,
+        "initialStep": 418.31529239621887,
+        "relativeTolerance": 0.001,
+        "absoluteTolerance": 1e-06,
+        "maximumStep": 716.8,
+        "maximumStepPolicy": "MATLAB default: 0.1 integration span"
+      },
+      "integrator": {
+        "requested": "adaptive-rk78",
+        "actual": "adaptive-rk78",
+        "relativeTolerance": 0.001,
+        "absoluteToleranceHash": "16331232467474028249",
+        "absoluteToleranceHashClearedMantissaBits": 20,
+        "absoluteToleranceComponentHashes": [
+          "4274345950450975969",
+          "4274345950450975969",
+          "12519929816211948769"
+        ],
+        "requestedInitialStep": 418.31529239621887,
+        "effectiveInitialStep": 418.31529239621887,
+        "requestedMaximumStep": [],
+        "maximumStepPolicy": "matlab-default",
+        "effectiveMaximumStep": 716.8,
+        "acceptedStepCount": 12,
+        "rejectedStepCount": 0,
+        "reportedRightHandSideEvaluationCount": 156,
+        "rhsEvaluationCount": 156
+      },
+      "rhsEvaluationCount": 156,
+      "outputRecordCounts": {
+        "waveVortex": 2,
+        "dense": 0,
+        "particles": 0,
+        "tracers": 0
+      },
+      "runtimeMetricsBefore": {
+        "transformClass": "WVTransformConstantStratification",
+        "scope": "call-scoped stratified fields, nonlinear flux and raw primitives",
+        "matrixBackend": "scalar",
+        "policy": "non-variable-transform",
+        "effectiveFFTThreads": 16,
+        "horizontalWorkers": 12,
+        "pointwiseWorkers": 12,
+        "sourceBytes": 0,
+        "kernelBytes": 718238046.0,
+        "engineBytes": 718239401.0,
+        "fieldServiceBytes": 2398945291.0,
+        "preparedPlanBytes": 492,
+        "planPreparations": 2,
+        "evaluations": 2,
+        "stateInputBytes": 93342240.0,
+        "stateInputCopyBytes": 93342240.0,
+        "outputBytes": 67633160.0,
+        "stateValidations": 2,
+        "phasePreparations": 2,
+        "producerExecutions": 4,
+        "cacheHits": 0,
+        "duplicateExecutions": 0,
+        "liveEvaluationBytes": 0,
+        "peakEvaluationBytes": 286089656.0,
+        "tiledNonlinearExecutions": 0,
+        "primitiveExecutions": 0,
+        "nonlinearProducerExecutions": 0,
+        "physicalReconstructionExecutions": 8,
+        "stateStorageBytes": 46671120.0,
+        "scopedEvaluations": 2,
+        "coefficientOnlyEvaluations": 0,
+        "evaluationActive": 0,
+        "evaluationToken": 0,
+        "densityRecoveries": 0,
+        "densityProfileConstructions": 0,
+        "densityInversePasses": 0,
+        "densityAPEPasses": 0,
+        "plannedEvaluationBytes": 1643503249.0,
+        "densityRecovery": []
+      },
+      "runtimeMetricsAfter": {
+        "transformClass": "WVTransformConstantStratification",
+        "scope": "call-scoped stratified fields, nonlinear flux and raw primitives",
+        "matrixBackend": "scalar",
+        "policy": "non-variable-transform",
+        "effectiveFFTThreads": 16,
+        "horizontalWorkers": 12,
+        "pointwiseWorkers": 12,
+        "sourceBytes": 0,
+        "kernelBytes": 718238046.0,
+        "engineBytes": 718239401.0,
+        "fieldServiceBytes": 2398945291.0,
+        "preparedPlanBytes": 492,
+        "planPreparations": 2,
+        "evaluations": 158,
+        "stateInputBytes": 7934090400.0,
+        "stateInputCopyBytes": 653395680.0,
+        "outputBytes": 7348327880.0,
+        "stateValidations": 170,
+        "phasePreparations": 158,
+        "producerExecutions": 4,
+        "cacheHits": 0,
+        "duplicateExecutions": 0,
+        "liveEvaluationBytes": 0,
+        "peakEvaluationBytes": 286089656.0,
+        "tiledNonlinearExecutions": 0,
+        "primitiveExecutions": 0,
+        "nonlinearProducerExecutions": 156,
+        "physicalReconstructionExecutions": 476,
+        "stateStorageBytes": 46671120.0,
+        "scopedEvaluations": 14,
+        "coefficientOnlyEvaluations": 156,
+        "evaluationActive": 0,
+        "evaluationToken": 0,
+        "densityRecoveries": 0,
+        "densityProfileConstructions": 0,
+        "densityInversePasses": 0,
+        "densityAPEPasses": 0,
+        "plannedEvaluationBytes": 1643503249.0,
+        "densityRecovery": []
+      },
+      "runtimeMetricDeltas": {
+        "effectiveFFTThreads": 0,
+        "horizontalWorkers": 0,
+        "pointwiseWorkers": 0,
+        "sourceBytes": 0,
+        "kernelBytes": 0,
+        "engineBytes": 0,
+        "fieldServiceBytes": 0,
+        "preparedPlanBytes": 0,
+        "planPreparations": 0,
+        "evaluations": 156,
+        "stateInputBytes": 7840748160.0,
+        "stateInputCopyBytes": 560053440.0,
+        "outputBytes": 7280694720.0,
+        "stateValidations": 168,
+        "phasePreparations": 156,
+        "producerExecutions": 0,
+        "cacheHits": 0,
+        "duplicateExecutions": 0,
+        "liveEvaluationBytes": 0,
+        "peakEvaluationBytes": 0,
+        "tiledNonlinearExecutions": 0,
+        "primitiveExecutions": 0,
+        "nonlinearProducerExecutions": 156,
+        "physicalReconstructionExecutions": 468,
+        "stateStorageBytes": 0,
+        "scopedEvaluations": 12,
+        "coefficientOnlyEvaluations": 156,
+        "evaluationActive": 0,
+        "evaluationToken": 0,
+        "densityRecoveries": 0,
+        "densityProfileConstructions": 0,
+        "densityInversePasses": 0,
+        "densityAPEPasses": 0,
+        "plannedEvaluationBytes": 0
+      },
+      "producerPrimitiveCopyCounters": {
+        "stateInputCopyBytes": 653395680.0,
+        "producerExecutions": 4,
+        "primitiveExecutions": 0,
+        "nonlinearProducerExecutions": 156
+      },
+      "producerPrimitiveCopyCounterDeltas": {
+        "stateInputCopyBytes": 560053440.0,
+        "producerExecutions": 0,
+        "primitiveExecutions": 0,
+        "nonlinearProducerExecutions": 156
+      }
+    },
+    "composite-dense-output": {
+      "fixture": {
+        "path": "/private/tmp/wvm513/fixtures/matched-constant-nonhydrostatic-composite-dense-output-model.nc",
+        "sha256": "fc7514fbfa5df87f28c689a7c30ada39085c08f79bc01e1f842de8205e1cd9b1",
+        "bytes": 183218510.0,
+        "workload": "composite-dense-output",
+        "matchesQualifiedArchiveHash": false
+      },
+      "controls": {
+        "integrator": "ode78",
+        "initialTime": 0,
+        "finalTime": 7168,
+        "initialStep": 418.31529239621887,
+        "relativeTolerance": 0.001,
+        "absoluteTolerance": 1e-06,
+        "maximumStep": 716.8,
+        "maximumStepPolicy": "MATLAB default: 0.1 integration span"
+      },
+      "integrator": {
+        "requested": "adaptive-rk78",
+        "actual": "adaptive-rk78",
+        "relativeTolerance": 0.001,
+        "absoluteToleranceHash": "93615344982125649",
+        "absoluteToleranceHashClearedMantissaBits": 20,
+        "absoluteToleranceComponentHashes": [
+          "4274345950450975969",
+          "4274345950450975969",
+          "12519929816211948769",
+          "5399737789812619515",
+          "5399737789812619515",
+          "13259821907563821307",
+          "8691403943112672131"
+        ],
+        "requestedInitialStep": 418.31529239621887,
+        "effectiveInitialStep": 418.31529239621887,
+        "requestedMaximumStep": [],
+        "maximumStepPolicy": "matlab-default",
+        "effectiveMaximumStep": 716.8,
+        "acceptedStepCount": 12,
+        "rejectedStepCount": 0,
+        "reportedRightHandSideEvaluationCount": 160,
+        "rhsEvaluationCount": 160
+      },
+      "rhsEvaluationCount": 160,
+      "outputRecordCounts": {
+        "waveVortex": 2,
+        "dense": 5,
+        "particles": 5,
+        "tracers": 5
+      },
+      "runtimeMetricsBefore": {
+        "transformClass": "WVTransformConstantStratification",
+        "scope": "call-scoped stratified fields, nonlinear flux and raw primitives",
+        "matrixBackend": "scalar",
+        "policy": "non-variable-transform",
+        "effectiveFFTThreads": 16,
+        "horizontalWorkers": 12,
+        "pointwiseWorkers": 12,
+        "sourceBytes": 0,
+        "kernelBytes": 718238046.0,
+        "engineBytes": 718239401.0,
+        "fieldServiceBytes": 2398945291.0,
+        "preparedPlanBytes": 492,
+        "planPreparations": 3,
+        "evaluations": 3,
+        "stateInputBytes": 140013360.0,
+        "stateInputCopyBytes": 140013360.0,
+        "outputBytes": 135266312.0,
+        "stateValidations": 3,
+        "phasePreparations": 3,
+        "producerExecutions": 5,
+        "cacheHits": 0,
+        "duplicateExecutions": 0,
+        "liveEvaluationBytes": 0,
+        "peakEvaluationBytes": 286089656.0,
+        "tiledNonlinearExecutions": 0,
+        "primitiveExecutions": 0,
+        "nonlinearProducerExecutions": 0,
+        "physicalReconstructionExecutions": 12,
+        "stateStorageBytes": 46671120.0,
+        "scopedEvaluations": 3,
+        "coefficientOnlyEvaluations": 0,
+        "evaluationActive": 0,
+        "evaluationToken": 0,
+        "densityRecoveries": 0,
+        "densityProfileConstructions": 0,
+        "densityInversePasses": 0,
+        "densityAPEPasses": 0,
+        "plannedEvaluationBytes": 1643503249.0,
+        "densityRecovery": []
+      },
+      "runtimeMetricsAfter": {
+        "transformClass": "WVTransformConstantStratification",
+        "scope": "call-scoped stratified fields, nonlinear flux and raw primitives",
+        "matrixBackend": "scalar",
+        "policy": "non-variable-transform",
+        "effectiveFFTThreads": 16,
+        "horizontalWorkers": 12,
+        "pointwiseWorkers": 12,
+        "sourceBytes": 0,
+        "kernelBytes": 718238046.0,
+        "engineBytes": 718239401.0,
+        "fieldServiceBytes": 2398945291.0,
+        "preparedPlanBytes": 492,
+        "planPreparations": 483,
+        "evaluations": 647,
+        "stateInputBytes": 7840748160.0,
+        "stateInputCopyBytes": 7840748160.0,
+        "outputBytes": 87399923720.0,
+        "stateValidations": 168,
+        "phasePreparations": 167,
+        "producerExecutions": 329,
+        "cacheHits": 480,
+        "duplicateExecutions": 0,
+        "liveEvaluationBytes": 0,
+        "peakEvaluationBytes": 541065216.0,
+        "tiledNonlinearExecutions": 0,
+        "primitiveExecutions": 800,
+        "nonlinearProducerExecutions": 160,
+        "physicalReconstructionExecutions": 668,
+        "stateStorageBytes": 46671120.0,
+        "scopedEvaluations": 168,
+        "coefficientOnlyEvaluations": 0,
+        "evaluationActive": 0,
+        "evaluationToken": 0,
+        "densityRecoveries": 0,
+        "densityProfileConstructions": 0,
+        "densityInversePasses": 0,
+        "densityAPEPasses": 0,
+        "plannedEvaluationBytes": 1643503249.0,
+        "densityRecovery": []
+      },
+      "runtimeMetricDeltas": {
+        "effectiveFFTThreads": 0,
+        "horizontalWorkers": 0,
+        "pointwiseWorkers": 0,
+        "sourceBytes": 0,
+        "kernelBytes": 0,
+        "engineBytes": 0,
+        "fieldServiceBytes": 0,
+        "preparedPlanBytes": 0,
+        "planPreparations": 480,
+        "evaluations": 644,
+        "stateInputBytes": 7700734800.0,
+        "stateInputCopyBytes": 7700734800.0,
+        "outputBytes": 87264657408.0,
+        "stateValidations": 165,
+        "phasePreparations": 164,
+        "producerExecutions": 324,
+        "cacheHits": 480,
+        "duplicateExecutions": 0,
+        "liveEvaluationBytes": 0,
+        "peakEvaluationBytes": 254975560.0,
+        "tiledNonlinearExecutions": 0,
+        "primitiveExecutions": 800,
+        "nonlinearProducerExecutions": 160,
+        "physicalReconstructionExecutions": 656,
+        "stateStorageBytes": 0,
+        "scopedEvaluations": 165,
+        "coefficientOnlyEvaluations": 0,
+        "evaluationActive": 0,
+        "evaluationToken": 0,
+        "densityRecoveries": 0,
+        "densityProfileConstructions": 0,
+        "densityInversePasses": 0,
+        "densityAPEPasses": 0,
+        "plannedEvaluationBytes": 0
+      },
+      "producerPrimitiveCopyCounters": {
+        "stateInputCopyBytes": 7840748160.0,
+        "producerExecutions": 329,
+        "primitiveExecutions": 800,
+        "nonlinearProducerExecutions": 160
+      },
+      "producerPrimitiveCopyCounterDeltas": {
+        "stateInputCopyBytes": 7700734800.0,
+        "producerExecutions": 324,
+        "primitiveExecutions": 800,
+        "nonlinearProducerExecutions": 160
+      }
+    }
+  },
+  "samples": [
+    {
+      "selected": true,
+      "selectionReason": "Pre/post host gates pass",
+      "configuration": "baseline",
+      "workload": "coefficient-endpoint",
+      "repeat": 1,
+      "integrationSeconds": 14.609001583333333,
+      "process": {
+        "sourceCommit": "81692f49a98ceb7b5ef75f345fb5567494eb8b86",
+        "returncode": 0,
+        "processSeconds": 38.75504398345947,
+        "startUnix": 1789324172.66207,
+        "preRunIdlePercent": 97.2,
+        "hostCheckAttempts": 2
+      },
+      "preAndPostIdentityValidated": true,
+      "postRunIdlePercent": 97.26,
+      "postRunHotProcesses": [],
+      "rawPrefix": "/private/tmp/wvm513-real/qualification-v2/baseline-coefficient-endpoint-1",
+      "finalState": {
+        "t": 7168,
+        "ApNorm": 9.963265982173654,
+        "AmNorm": 9.974383340147346,
+        "A0Norm": 0.009923094687471731
+      }
+    },
+    {
+      "selected": true,
+      "selectionReason": "Pre/post host gates pass",
+      "configuration": "candidate",
+      "workload": "coefficient-endpoint",
+      "repeat": 1,
+      "integrationSeconds": 14.378575958333334,
+      "process": {
+        "sourceCommit": "8a1840a3129a3aed62efd8e4ac6277bdf063e873",
+        "returncode": 0,
+        "processSeconds": 39.65874791145325,
+        "startUnix": 1789324216.193392,
+        "preRunIdlePercent": 96.92,
+        "hostCheckAttempts": 1
+      },
+      "preAndPostIdentityValidated": true,
+      "postRunIdlePercent": 96.86,
+      "postRunHotProcesses": [],
+      "rawPrefix": "/private/tmp/wvm513-real/qualification-v2/candidate-coefficient-endpoint-1",
+      "finalState": {
+        "t": 7168,
+        "ApNorm": 9.963265982173654,
+        "AmNorm": 9.974383340147346,
+        "A0Norm": 0.009923094687471731
+      }
+    },
+    {
+      "selected": true,
+      "selectionReason": "Pre/post host gates pass",
+      "configuration": "baseline",
+      "workload": "composite-dense-output",
+      "repeat": 1,
+      "integrationSeconds": 49.2038485,
+      "process": {
+        "sourceCommit": "81692f49a98ceb7b5ef75f345fb5567494eb8b86",
+        "returncode": 0,
+        "processSeconds": 87.33744788169861,
+        "startUnix": 1789324260.625838,
+        "preRunIdlePercent": 96.18,
+        "hostCheckAttempts": 1
+      },
+      "preAndPostIdentityValidated": true,
+      "postRunIdlePercent": 96.52,
+      "postRunHotProcesses": [],
+      "rawPrefix": "/private/tmp/wvm513-real/qualification-v2/baseline-composite-dense-output-1",
+      "finalState": {
+        "t": 7168,
+        "ApNorm": 9.963265982173654,
+        "AmNorm": 9.974383340147346,
+        "A0Norm": 0.009923094687471731
+      }
+    },
+    {
+      "selected": true,
+      "selectionReason": "Pre/post host gates pass",
+      "configuration": "candidate",
+      "workload": "composite-dense-output",
+      "repeat": 1,
+      "integrationSeconds": 41.47840504166667,
+      "process": {
+        "sourceCommit": "8a1840a3129a3aed62efd8e4ac6277bdf063e873",
+        "returncode": 0,
+        "processSeconds": 81.73635721206665,
+        "startUnix": 1789324352.758098,
+        "preRunIdlePercent": 96.92,
+        "hostCheckAttempts": 1
+      },
+      "preAndPostIdentityValidated": true,
+      "postRunIdlePercent": 96.35,
+      "postRunHotProcesses": [],
+      "rawPrefix": "/private/tmp/wvm513-real/qualification-v2/candidate-composite-dense-output-1",
+      "finalState": {
+        "t": 7168,
+        "ApNorm": 9.963265982173672,
+        "AmNorm": 9.974383340147332,
+        "A0Norm": 0.009923094687471708
+      }
+    },
+    {
+      "selected": true,
+      "selectionReason": "Pre/post host gates pass",
+      "configuration": "candidate",
+      "workload": "composite-dense-output",
+      "repeat": 2,
+      "integrationSeconds": 41.769560291666664,
+      "process": {
+        "sourceCommit": "8a1840a3129a3aed62efd8e4ac6277bdf063e873",
+        "returncode": 0,
+        "processSeconds": 81.29275488853455,
+        "startUnix": 1789324439.2766132,
+        "preRunIdlePercent": 95.79,
+        "hostCheckAttempts": 1
+      },
+      "preAndPostIdentityValidated": true,
+      "postRunIdlePercent": 96.3,
+      "postRunHotProcesses": [],
+      "rawPrefix": "/private/tmp/wvm513-real/qualification-v2/candidate-composite-dense-output-2",
+      "finalState": {
+        "t": 7168,
+        "ApNorm": 9.963265982173672,
+        "AmNorm": 9.974383340147332,
+        "A0Norm": 0.009923094687471708
+      }
+    },
+    {
+      "selected": false,
+      "selectionReason": "Post-run host snapshot fails idle gate; retained separately before baseline-only supplements",
+      "configuration": "baseline",
+      "workload": "composite-dense-output",
+      "repeat": 2,
+      "integrationSeconds": 49.171966041666664,
+      "process": {
+        "sourceCommit": "81692f49a98ceb7b5ef75f345fb5567494eb8b86",
+        "returncode": 0,
+        "processSeconds": 88.06463313102722,
+        "startUnix": 1789324542.777459,
+        "preRunIdlePercent": 96.56,
+        "hostCheckAttempts": 2
+      },
+      "preAndPostIdentityValidated": true,
+      "postRunIdlePercent": 91.36,
+      "postRunHotProcesses": [
+        {
+          "process": "photoanalysisd",
+          "cpuPercent": 97.3
+        }
+      ],
+      "rawPrefix": "/private/tmp/wvm513-real/qualification-v2/baseline-composite-dense-output-2",
+      "finalState": {
+        "t": 7168,
+        "ApNorm": 9.963265982173654,
+        "AmNorm": 9.974383340147346,
+        "A0Norm": 0.009923094687471731
+      }
+    },
+    {
+      "selected": true,
+      "selectionReason": "Pre/post host gates pass",
+      "configuration": "candidate",
+      "workload": "coefficient-endpoint",
+      "repeat": 2,
+      "integrationSeconds": 14.731211833333333,
+      "process": {
+        "sourceCommit": "8a1840a3129a3aed62efd8e4ac6277bdf063e873",
+        "returncode": 0,
+        "processSeconds": 39.61429810523987,
+        "startUnix": 1789324740.174811,
+        "preRunIdlePercent": 95.62,
+        "hostCheckAttempts": 7
+      },
+      "preAndPostIdentityValidated": true,
+      "postRunIdlePercent": 94.23,
+      "postRunHotProcesses": [],
+      "rawPrefix": "/private/tmp/wvm513-real/qualification-v2/candidate-coefficient-endpoint-2",
+      "finalState": {
+        "t": 7168,
+        "ApNorm": 9.963265982173688,
+        "AmNorm": 9.974383340147341,
+        "A0Norm": 0.009923094687471686
+      }
+    },
+    {
+      "selected": true,
+      "selectionReason": "Pre/post host gates pass",
+      "configuration": "baseline",
+      "workload": "coefficient-endpoint",
+      "repeat": 2,
+      "integrationSeconds": 14.912715083333334,
+      "process": {
+        "sourceCommit": "81692f49a98ceb7b5ef75f345fb5567494eb8b86",
+        "returncode": 0,
+        "processSeconds": 39.3054358959198,
+        "startUnix": 1789324784.575156,
+        "preRunIdlePercent": 96.78,
+        "hostCheckAttempts": 1
+      },
+      "preAndPostIdentityValidated": true,
+      "postRunIdlePercent": 96.88,
+      "postRunHotProcesses": [],
+      "rawPrefix": "/private/tmp/wvm513-real/qualification-v2/baseline-coefficient-endpoint-2",
+      "finalState": {
+        "t": 7168,
+        "ApNorm": 9.963265982173688,
+        "AmNorm": 9.974383340147352,
+        "A0Norm": 0.009923094687471577
+      }
+    },
+    {
+      "selected": false,
+      "selectionReason": "Post-run host snapshot fails idle gate; retained separately before baseline-only supplements",
+      "configuration": "baseline",
+      "workload": "coefficient-endpoint",
+      "repeat": 3,
+      "integrationSeconds": 14.694529833333334,
+      "process": {
+        "sourceCommit": "81692f49a98ceb7b5ef75f345fb5567494eb8b86",
+        "returncode": 0,
+        "processSeconds": 38.93812608718872,
+        "startUnix": 1789324828.663413,
+        "preRunIdlePercent": 96.59,
+        "hostCheckAttempts": 1
+      },
+      "preAndPostIdentityValidated": true,
+      "postRunIdlePercent": 93.99,
+      "postRunHotProcesses": [],
+      "rawPrefix": "/private/tmp/wvm513-real/qualification-v2/baseline-coefficient-endpoint-3",
+      "finalState": {
+        "t": 7168,
+        "ApNorm": 9.963265982173663,
+        "AmNorm": 9.974383340147352,
+        "A0Norm": 0.00992309468747169
+      }
+    },
+    {
+      "selected": true,
+      "selectionReason": "Pre/post host gates pass",
+      "configuration": "candidate",
+      "workload": "coefficient-endpoint",
+      "repeat": 3,
+      "integrationSeconds": 14.282991458333333,
+      "process": {
+        "sourceCommit": "8a1840a3129a3aed62efd8e4ac6277bdf063e873",
+        "returncode": 0,
+        "processSeconds": 39.40454316139221,
+        "startUnix": 1789324872.369845,
+        "preRunIdlePercent": 96.89,
+        "hostCheckAttempts": 1
+      },
+      "preAndPostIdentityValidated": true,
+      "postRunIdlePercent": 96.99,
+      "postRunHotProcesses": [],
+      "rawPrefix": "/private/tmp/wvm513-real/qualification-v2/candidate-coefficient-endpoint-3",
+      "finalState": {
+        "t": 7168,
+        "ApNorm": 9.963265982173654,
+        "AmNorm": 9.974383340147346,
+        "A0Norm": 0.009923094687471731
+      }
+    },
+    {
+      "selected": false,
+      "selectionReason": "Post-run host snapshot fails idle gate; retained separately before baseline-only supplements",
+      "configuration": "baseline",
+      "workload": "composite-dense-output",
+      "repeat": 3,
+      "integrationSeconds": 49.344479125,
+      "process": {
+        "sourceCommit": "81692f49a98ceb7b5ef75f345fb5567494eb8b86",
+        "returncode": 0,
+        "processSeconds": 88.08886194229126,
+        "startUnix": 1789324916.5486841,
+        "preRunIdlePercent": 96.79,
+        "hostCheckAttempts": 1
+      },
+      "preAndPostIdentityValidated": true,
+      "postRunIdlePercent": 86.48,
+      "postRunHotProcesses": [],
+      "rawPrefix": "/private/tmp/wvm513-real/qualification-v2/baseline-composite-dense-output-3",
+      "finalState": {
+        "t": 7168,
+        "ApNorm": 9.963265982173692,
+        "AmNorm": 9.97438334014734,
+        "A0Norm": 0.00992309468747168
+      }
+    },
+    {
+      "selected": true,
+      "selectionReason": "Pre/post host gates pass",
+      "configuration": "candidate",
+      "workload": "composite-dense-output",
+      "repeat": 3,
+      "integrationSeconds": 41.82593325,
+      "process": {
+        "sourceCommit": "8a1840a3129a3aed62efd8e4ac6277bdf063e873",
+        "returncode": 0,
+        "processSeconds": 81.73646903038025,
+        "startUnix": 1789325026.865328,
+        "preRunIdlePercent": 96.95,
+        "hostCheckAttempts": 2
+      },
+      "preAndPostIdentityValidated": true,
+      "postRunIdlePercent": 97.12,
+      "postRunHotProcesses": [],
+      "rawPrefix": "/private/tmp/wvm513-real/qualification-v2/candidate-composite-dense-output-3",
+      "finalState": {
+        "t": 7168,
+        "ApNorm": 9.963265982173688,
+        "AmNorm": 9.974383340147352,
+        "A0Norm": 0.009923094687471577
+      }
+    },
+    {
+      "selected": true,
+      "selectionReason": "Pre/post host gates pass",
+      "configuration": "baseline",
+      "workload": "coefficient-endpoint",
+      "repeat": 4,
+      "integrationSeconds": 14.376724375,
+      "process": {
+        "sourceCommit": "81692f49a98ceb7b5ef75f345fb5567494eb8b86",
+        "returncode": 0,
+        "processSeconds": 38.65051603317261,
+        "startUnix": 1789325206.122522,
+        "preRunIdlePercent": 96.99,
+        "hostCheckAttempts": 3
+      },
+      "preAndPostIdentityValidated": true,
+      "postRunIdlePercent": 97.35,
+      "postRunHotProcesses": [],
+      "rawPrefix": "/private/tmp/wvm513-real/qualification-idle-supplement/baseline-coefficient-endpoint-4",
+      "finalState": {
+        "t": 7168,
+        "ApNorm": 9.96326598217368,
+        "AmNorm": 9.974383340147355,
+        "A0Norm": 0.00992309468747172
+      }
+    },
+    {
+      "selected": true,
+      "selectionReason": "Pre/post host gates pass",
+      "configuration": "baseline",
+      "workload": "composite-dense-output",
+      "repeat": 4,
+      "integrationSeconds": 48.84569470833333,
+      "process": {
+        "sourceCommit": "81692f49a98ceb7b5ef75f345fb5567494eb8b86",
+        "returncode": 0,
+        "processSeconds": 87.58107805252075,
+        "startUnix": 1789325260.403274,
+        "preRunIdlePercent": 97.29,
+        "hostCheckAttempts": 3
+      },
+      "preAndPostIdentityValidated": true,
+      "postRunIdlePercent": 97.17,
+      "postRunHotProcesses": [],
+      "rawPrefix": "/private/tmp/wvm513-real/qualification-idle-supplement/baseline-composite-dense-output-4",
+      "finalState": {
+        "t": 7168,
+        "ApNorm": 9.963265982173654,
+        "AmNorm": 9.974383340147346,
+        "A0Norm": 0.009923094687471731
+      }
+    },
+    {
+      "selected": true,
+      "selectionReason": "Pre/post host gates pass",
+      "configuration": "baseline",
+      "workload": "composite-dense-output",
+      "repeat": 5,
+      "integrationSeconds": 49.1195145,
+      "process": {
+        "sourceCommit": "81692f49a98ceb7b5ef75f345fb5567494eb8b86",
+        "returncode": 0,
+        "processSeconds": 87.58408379554749,
+        "startUnix": 1789325363.64611,
+        "preRunIdlePercent": 96.67,
+        "hostCheckAttempts": 3
+      },
+      "preAndPostIdentityValidated": true,
+      "postRunIdlePercent": 96.3,
+      "postRunHotProcesses": [],
+      "rawPrefix": "/private/tmp/wvm513-real/qualification-idle-supplement/baseline-composite-dense-output-5",
+      "finalState": {
+        "t": 7168,
+        "ApNorm": 9.963265982173654,
+        "AmNorm": 9.974383340147346,
+        "A0Norm": 0.009923094687471731
+      }
+    }
+  ],
+  "statistics": {
+    "baseline-coefficient-endpoint": {
+      "samplesSeconds": [
+        14.609001583333333,
+        14.912715083333334,
+        14.376724375
+      ],
+      "medianSeconds": 14.609001583333333,
+      "minSeconds": 14.376724375,
+      "maxSeconds": 14.912715083333334,
+      "spanPercentOfMedian": 3.6689071821637547
+    },
+    "candidate-coefficient-endpoint": {
+      "samplesSeconds": [
+        14.378575958333334,
+        14.731211833333333,
+        14.282991458333333
+      ],
+      "medianSeconds": 14.378575958333334,
+      "minSeconds": 14.282991458333333,
+      "maxSeconds": 14.731211833333333,
+      "spanPercentOfMedian": 3.1172793209763356
+    },
+    "baseline-composite-dense-output": {
+      "samplesSeconds": [
+        49.2038485,
+        48.84569470833333,
+        49.1195145
+      ],
+      "medianSeconds": 49.1195145,
+      "minSeconds": 48.84569470833333,
+      "maxSeconds": 49.2038485,
+      "spanPercentOfMedian": 0.7291476622120647
+    },
+    "candidate-composite-dense-output": {
+      "samplesSeconds": [
+        41.47840504166667,
+        41.769560291666664,
+        41.82593325
+      ],
+      "medianSeconds": 41.769560291666664,
+      "minSeconds": 41.47840504166667,
+      "maxSeconds": 41.82593325,
+      "spanPercentOfMedian": 0.8320130877764212
+    }
+  },
+  "changes": {
+    "coefficient-endpoint": {
+      "medianReductionPercent": 1.577285235309167,
+      "speedup": 1.0160256221247315,
+      "correspondingSelectedSampleChangePercent": [
+        -1.577285235309167,
+        -1.2171039880112144,
+        -0.6519768635869561
+      ]
+    },
+    "composite-dense-output": {
+      "medianReductionPercent": 14.963409722490917,
+      "speedup": 1.1759643663234758,
+      "correspondingSelectedSampleChangePercent": [
+        -15.700892702190416,
+        -14.486710566651928,
+        -14.8486427934869
+      ]
+    }
+  },
+  "extraRetainedSamples": [
+    {
+      "integrationSeconds": 14.690307916666667,
+      "process": {
+        "sourceCommit": "81692f49a98ceb7b5ef75f345fb5567494eb8b86",
+        "returncode": 1,
+        "processSeconds": 38.68001198768616,
+        "startUnix": 1789323838.991731,
+        "preRunIdlePercent": 96.46,
+        "hostCheckAttempts": 1
+      },
+      "rawPrefix": "/private/tmp/wvm513-real/qualification/baseline-coefficient-endpoint-1",
+      "selected": false,
+      "reason": "Integration completed; post-cleanup capabilities inspection resolved legacy path and process failed. Corrected runner restores qualified directory before post-inspection. No timed code changed."
+    }
+  ],
+  "controlsAndCounterAgreement": true,
+  "outputComparisonCount": 29,
+  "allOutputComparisonsPass": true,
+  "maximumOutputAbsoluteError": 1.8189894035458565e-12,
+  "maximumOutputRelativeError": 1.0621890860882846e-12,
+  "hostSelection": {
+    "minimumPreAndPostIdlePercent": 94,
+    "maximumNonexemptProcessCorePercent": 40,
+    "supplementDecision": "After V2 host audit, before supplementary runs; original baseline endpoint3 and composite2/3 retained but excluded for post-run host activity. No timing-based exclusions.",
+    "supplementPrecheck": "Three consecutive accepted pre-run checks"
+  },
+  "adoptionCriteria": {
+    "minimumCompositeReductionPercent": 10,
+    "maximumEndpointRegressionPercent": 3
+  },
+  "qualifies": true,
+  "totalProcessSecondsIncludingFailedInspection": 996.4284090995789,
+  "totalIntegrationSecondsIncludingFailedInspection": 487.4354595
+}
