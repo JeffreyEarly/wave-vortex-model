@@ -181,13 +181,13 @@ struct Host {
     // Destroy the session before its state storage and borrowed field service.
     std::unique_ptr<WVFieldEvaluationSession> session;
 
-    explicit Host(WVStratifiedModalArrays data,const mxArray* configuration) {
+    explicit Host(WVStratifiedModalArrays data,const mxArray* configuration,std::size_t fftThreads) {
         if(data.geometry.transformClass=="WVTransformBarotropicQG" || data.geometry.transformClass=="WVTransformConstantStratification") simpleGeometry=std::move(data.geometry);
         else require(WVOwnedStratifiedModalSource::create(std::move(data),source));
         const auto kind=isConstant()?WVPersistedTransformKind::constantStratification:isBarotropic()?WVPersistedTransformKind::barotropicQG:isQG()?WVPersistedTransformKind::stratifiedQG:
             geometry().transformClass=="WVTransformBoussinesq"?WVPersistedTransformKind::boussinesq:WVPersistedTransformKind::hydrostatic;
         policy=selectNativeVariablePolicy(true,kind,
-            "native-fftw",1,false,nativeHostTopology());
+            "native-fftw",fftThreads,false,nativeHostTopology());
         if(!isBarotropic() && !isConstant() && (policy.matrixBackend!=WVNativeMatrixBackend::accelerate || !policy.compact))
             invalid("The MATLAB variable backend requires the qualified native Accelerate policy.");
         WVVariableKernelServices services; services.execution=policy.execution;
@@ -278,7 +278,7 @@ Host& host(const mxArray* a) {
     return *i->second;
 }
 mxArray* metadata(const Host& h) {
-    const char* keys[]={"transformClass","scope","matrixBackend","policy","horizontalWorkers","pointwiseWorkers",
+    const char* keys[]={"transformClass","scope","matrixBackend","policy","effectiveFFTThreads","horizontalWorkers","pointwiseWorkers",
         "sourceBytes","kernelBytes","engineBytes","fieldServiceBytes","preparedPlanBytes","planPreparations","evaluations",
         "stateInputBytes","stateInputCopyBytes","outputBytes","stateValidations","phasePreparations",
         "producerExecutions","cacheHits","duplicateExecutions","liveEvaluationBytes","peakEvaluationBytes","tiledNonlinearExecutions","primitiveExecutions",
@@ -290,6 +290,7 @@ mxArray* metadata(const Host& h) {
     mxSetField(result.get(),0,"scope",mxCreateString("call-scoped stratified fields, nonlinear flux and raw primitives"));
     mxSetField(result.get(),0,"matrixBackend",mxCreateString(nativeMatrixBackendIdentifier(h.policy.matrixBackend)));
     mxSetField(result.get(),0,"policy",mxCreateString(std::string(h.policy.selection).c_str()));
+    put("effectiveFFTThreads",h.policy.effectiveFFTThreads);
     if(h.isConstant()) {
         const WVConstantKernelExecutionOptions options;
         put("horizontalWorkers",options.horizontalOuterWorkers); put("pointwiseWorkers",options.pointwiseWorkers);
@@ -648,8 +649,8 @@ bool WVDispatchMatlabTransform(const std::string& command,int nlhs,mxArray* plhs
     std::string errorId,errorMessage;
     try {
         if(command=="transformCreate") {
-            if(nrhs!=2 || nlhs!=1) invalid("transformCreate requires one modal struct and one output.");
-            auto candidate=std::make_unique<Host>(modalArrays(prhs[1]),prhs[1]);
+            if(nrhs!=3 || nlhs!=1) invalid("transformCreate requires a modal struct, validated FFT thread count and one output.");
+            auto candidate=std::make_unique<Host>(modalArrays(prhs[1]),prhs[1],extent(prhs[2]));
             Array output(mxCreateNumericMatrix(1,1,mxUINT64_CLASS,mxREAL));
             if(nextHandle==std::numeric_limits<std::uint64_t>::max()) invalid("Transform handle space exhausted.");
             const auto id=nextHandle++; *mxGetUint64s(output.get())=id;

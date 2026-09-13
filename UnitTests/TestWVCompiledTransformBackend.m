@@ -74,6 +74,11 @@ classdef TestWVCompiledTransformBackend < matlab.unittest.TestCase
                 testCase.verifyEqual(string(metadata.transformClass),definitions(index).transformClass,definitions(index).name);
                 testCase.verifyGreaterThan(metadata.engineBytes,0,definitions(index).name);
                 testCase.verifyEqual(metadata.duplicateExecutions,0,definitions(index).name);
+                expectedFFTThreads = 1;
+                if ismember(definitions(index).transformClass,["WVTransformConstantStratification" "WVTransformBarotropicQG"])
+                    expectedFFTThreads = capabilities.contract.threadCount;
+                end
+                testCase.verifyEqual(metadata.effectiveFFTThreads,expectedFFTThreads,definitions(index).name);
                 clear backendCleanup transformCleanup
             end
             final = wv_compiled_backend_mex('moduleMetrics');

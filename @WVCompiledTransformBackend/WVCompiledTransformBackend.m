@@ -249,7 +249,7 @@ classdef (Sealed) WVCompiledTransformBackend < handle
             configuration = wvCompiledStratifiedModalConfiguration(wvt);
             handle = [];
             try
-                handle = feval(char(self.moduleName),'transformCreate',configuration);
+                handle = feval(char(self.moduleName),'transformCreate',configuration,capabilities.contract.threadCount);
                 self.transformHandle = handle;
                 self.supportedVariableNames = string(feval(char(self.moduleName),'transformVariables',handle));
                 self.compiledSourceIdentity.acquireLease();
@@ -308,8 +308,14 @@ classdef (Sealed) WVCompiledTransformBackend < handle
                     ~isfield(capabilities.module,"identityValidated") || ~capabilities.module.identityValidated
                 error("WaveVortexModel:CompiledTransformCapabilityMismatch","The installed compiled module does not have a validated identity.")
             end
-            if ~isfield(capabilities.module,"matlabTransformBridgeVersion") || capabilities.module.matlabTransformBridgeVersion < 6
+            if ~isfield(capabilities.module,"matlabTransformBridgeVersion") || capabilities.module.matlabTransformBridgeVersion < 7
                 error("WaveVortexModel:CompiledTransformCapabilityMismatch","The installed module predates the MATLAB transform operation bridge. Rebuild with WVCompiledBackend.build().")
+            end
+            if ~isfield(capabilities,"contract") || ~isfield(capabilities.contract,"threadCount") || ...
+                    ~isnumeric(capabilities.contract.threadCount) || ~isscalar(capabilities.contract.threadCount) || ...
+                    ~isfinite(capabilities.contract.threadCount) || capabilities.contract.threadCount < 1 || ...
+                    capabilities.contract.threadCount ~= floor(capabilities.contract.threadCount)
+                error("WaveVortexModel:CompiledTransformCapabilityMismatch","The compiled capability record has no validated positive FFT thread count.")
             end
         end
 
