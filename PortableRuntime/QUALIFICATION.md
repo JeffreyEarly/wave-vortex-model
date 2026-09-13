@@ -26,7 +26,7 @@ This qualification covers the supported Boussinesq transform surface. It does no
 
 The recorded [Apple Silicon Boussinesq report](qualification/boussinesq-apple-silicon-v1.json) contains 44 passing tests, 47 catalog/provider rows, twelve longer continuation results and seven lifecycle results. Maximum coefficient-family error is `1.58e-07`; maximum particle-position error is `3.37e-09 m`. Every lifecycle reports zero retained growth, zero prepared allocations and released ownership. The largest native fixture retains `202,313,652` bytes, with a median `8.713 s` per sixteen RK4 steps. Its short horizontal domain produces MATLAB projection-conditioning warnings; this case qualifies finite state and lifecycle/storage behavior, while the declared smaller fixtures establish numerical parity. The report records its tested source commit before the artifact itself is added.
 
-Standard diagnostic catalog/evaluation and forcing-tendency diagnostics remain #314, #305 and #315; full compatibility-catalog assembly and the parity decision remain #306 and #307. This transform qualification does not close those gaps.
+Standard diagnostic catalog/evaluation and forcing-tendency diagnostics were completed in #314, #305 and #315. The completed compatibility matrix and [final source-bound parity decision](../.github/ci-evidence/issue-307-qualification/standard-parity-decision.json) are recorded through #306 and #307. This historical transform qualification supplies its family evidence; the final decision receipt combines it with subsequent changes and current-source qualification.
 
 ## Hydrostatic qualification
 
