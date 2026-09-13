@@ -5,7 +5,6 @@ timer=tic; D=state.Lxyz(3); N2=state.N2Function; f=2*state.rotationRate*sind(sta
 inventory=WVInternal.constructionInteractionInventory(state);
 % Measure the requested bounded inventory without a fixed study resource cap.
 % Physical convergence and quadratic-error qualification remain mandatory.
-nBoundary=state.activeEndpointCount;
 profile=chebfun(N2,[-D 0]); logarithmicDerivative=diff(log(profile)); dLogN2=@(z)logarithmicDerivative(z);
 nz=numel(state.z); nr=max(65,3*nz); nq=max(97,4*nz);
 rule=IMSolverSpectral(nEVP=nr,coordinateKind="wkb").configuredForEVP(vertical.apvProblem);
