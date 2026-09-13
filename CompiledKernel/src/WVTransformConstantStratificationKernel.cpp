@@ -1374,7 +1374,10 @@ WVKernelStatus WVTransformConstantStratificationKernel::horizontalForward(
             output.data[z+Nz*mode]=multiply(value,scale);
         }
     }
-    if (!status) return status; ++metrics_.executionCount; ++metrics_.horizontalExecutionCount; return WVKernelStatus::ok();
+    if (!status) return status;
+    ++metrics_.executionCount;
+    ++metrics_.horizontalExecutionCount;
+    return WVKernelStatus::ok();
 }
 
 WVKernelStatus WVTransformConstantStratificationKernel::horizontalInverse(
@@ -1404,7 +1407,10 @@ WVKernelStatus WVTransformConstantStratificationKernel::horizontalInverse(
     }
     completeHermitianBoundaries(half,mapping,c.Nz,1);
     status=scalarInversePlan_->execute(half,output.data);
-    if (!status) return status; ++metrics_.executionCount; ++metrics_.horizontalExecutionCount; return WVKernelStatus::ok();
+    if (!status) return status;
+    ++metrics_.executionCount;
+    ++metrics_.horizontalExecutionCount;
+    return WVKernelStatus::ok();
 }
 
 WVKernelStatus WVTransformConstantStratificationKernel::differentiateHorizontal(

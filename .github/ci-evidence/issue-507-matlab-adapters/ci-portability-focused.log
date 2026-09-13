@@ -1,0 +1,12 @@
+Internal ctest changing into directory: /tmp/wvm503/native-build
+Test project /tmp/wvm503/native-build
+    Start 16: constant-matlab-primitives
+1/3 Test #16: constant-matlab-primitives .......   Passed    0.30 sec
+    Start 22: forcing-diagnostic-session
+2/3 Test #22: forcing-diagnostic-session .......   Passed    0.20 sec
+    Start 24: forcing-tendencies
+3/3 Test #24: forcing-tendencies ...............   Passed    0.67 sec
+
+100% tests passed, 0 tests failed out of 3
+
+Total Test time (real) =   1.18 sec
