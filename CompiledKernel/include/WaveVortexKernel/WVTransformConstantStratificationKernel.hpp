@@ -133,6 +133,8 @@ public:
     WVKernelStatus applyVerticalColumn(WVStratifiedModalOperator,
         std::size_t retainedColumn, WVComplexConstView inputColumn,
         WVComplexView outputColumn);
+    WVKernelStatus applyVerticalCalculus(WVRealConstView input,
+        bool inputIsF, unsigned order, bool integral, WVRealView output);
     WVKernelStatus horizontalForward(WVRealVolumeConstView, WVComplexView);
     WVKernelStatus horizontalInverse(WVComplexConstView, WVRealVolumeView);
     WVKernelStatus differentiateHorizontal(WVRealVolumeConstView,
@@ -224,8 +226,8 @@ private:
     std::string engineLibraryIdentity_;
     std::vector<std::unique_ptr<WVFFTPlan>> plans_;
     std::unique_ptr<WVFFTPlan> scalarInversePlan_;
-    // Retained-row DCT/DST, one-column DCT/DST and compact retained inverse.
-    std::array<std::unique_ptr<WVFFTPlan>,5> matlabPlans_;
+    // Retained-row DCT/DST and one-column DCT/DST plans.
+    std::array<std::unique_ptr<WVFFTPlan>,4> matlabPlans_;
     std::unique_ptr<kernel_detail::WVCompactConstantSchedule> compact_;
     std::vector<std::uint8_t> scalarAntialiasRows_;
     std::vector<double> halfSpectrumScratch_;

@@ -4,6 +4,7 @@
 #include "WVSpectralValidation.hpp"
 #include "WVPreparedModeExecutor.hpp"
 #include "WVVariableComplexBuffer.hpp"
+#include "WVStratifiedVerticalCalculus.hpp"
 #include <algorithm>
 #include <cmath>
 #include <limits>
@@ -25,6 +26,10 @@ void copy(WVComplexInput source,WVComplex64* destination,std::size_t count) {
 }
 void copy(const WVComplex64* source,WVComplexOutput destination,std::size_t count) {
     for (std::size_t i=0;i<count;++i) write(destination,i,source[i]);
+}
+bool selfConjugate(std::int64_t mode,std::size_t count) {
+    return mode==0 || (count%2==0 &&
+        (mode==static_cast<std::int64_t>(count/2) || mode==-static_cast<std::int64_t>(count/2)));
 }
 WVCoefficients view(WVMutableCoefficients a) { return {{a.Ap.data,a.Ap.shape},{a.Am.data,a.Am.shape},{a.A0.data,a.A0.shape}}; }
 bool valid(WVBoussinesqFamily f) { return f>=WVBoussinesqFamily::F && f<=WVBoussinesqFamily::Gw; }
@@ -559,9 +564,15 @@ WVKernelStatus WVTransformBoussinesqKernel::horizontalInverse(WVComplexConstView
     status=mutableOutputOutsidePreparedState(b.data,R_*sizeof(double)); if (!status) return status;
     status=disjoint(a.data,H_*sizeof(WVComplex64),b.data,R_*sizeof(double)); if (!status) return status;
     ActiveCall guard(active_); if (!guard.entered) return reentrant();
-    auto values=input(a.data,H_);
-    if (executionOptions_.usesCompactSplitViews()) { auto grid=gridView(); copy(a.data,grid,H_); values=grid.input(); }
-    return horizontal_->inverse(*horizontalWorkspace_,values,{b.data,R_*sizeof(double)});
+    auto grid=gridView(); copy(a.data,grid,H_);
+    for (std::size_t mode=0;mode<g.Nkl;++mode)
+        if (selfConjugate(g.modes[mode].k,g.Nx) && selfConjugate(g.modes[mode].l,g.Ny))
+            for (std::size_t z=0;z<g.Nz;++z) {
+                const auto i=z+g.Nz*mode;
+                const auto value=read(grid.input(),i);
+                write(grid,i,{value.real,0});
+            }
+    return horizontal_->inverse(*horizontalWorkspace_,grid.input(),{b.data,R_*sizeof(double)});
 }
 WVKernelStatus WVTransformBoussinesqKernel::projectFields(const double* u,const double* v,const double* w,const double* eta,WVMutableCoefficients b) {
     const auto uh=gridView(),vh=gridView(1),nh=gridView(2),wh=gridView(3),work=gridView(4);
@@ -756,7 +767,8 @@ WVKernelStatus WVTransformBoussinesqKernel::reconstruct(const WVCoefficients& a,
         horizontal_->inverse(*horizontalWorkspace_,horizontalInput,{b,R_*sizeof(double)}); if (!s) return s;
     // v4 defines vertical derivatives through the shared F/G calculus, even
     // for wave fields. Preserve that finite-resolution MATLAB operation.
-    if (dz && !prepared) { s=verticalCalculus(b,G ? WVBoussinesqFamily::G : WVBoussinesqFamily::F,1,false,b); if (!s) return s; }
+    if (dz && !prepared) { s=verticalCalculus(b,G ? WVBoussinesqFamily::G : WVBoussinesqFamily::F,
+        1,false,b,R_/geometry().Nz,false); if (!s) return s; }
     if (consumer && !consumeInInverse) consumer->consume(consumer->context,0,R_,b);
     if (density) {
         const double* eta=nullptr;
@@ -1106,65 +1118,49 @@ WVKernelStatus WVTransformBoussinesqKernel::totalEnergySpatiallyIntegrated(const
     if (!std::isfinite(sum)) return {WVKernelStatusCode::numericalFailure,"Boussinesq spatial energy overflow."};
     value=sum; return WVKernelStatus::ok();
 }
-WVKernelStatus WVTransformBoussinesqKernel::verticalCalculus(const double* values,WVBoussinesqFamily family,unsigned order,bool integral,double* result) {
-    const auto& g=geometry(); const auto plane=R_/g.Nz;
-    // Boussinesq F/G matrices are independent of horizontal mode. Batch full
-    // physical columns through the same prepared matrices without a Fourier cut.
-    for (std::size_t begin=0;begin<plane;begin+=g.Nkl) {
-        auto a=gridView(),b=gridView(1); const auto count=std::min(g.Nkl,plane-begin);
-        for (std::size_t i=0;i<H_;++i) write(a,i,{});
-        for (std::size_t column=0;column<count;++column) for (std::size_t z=0;z<g.Nz;++z) {
-            double x=values[begin+column+plane*z];
-            if (integral && family==WVBoussinesqFamily::G) x/=g.N2[z];
-            write(a,z+g.Nz*column,{x,0});
-        }
-        // 0: DzF, 1: DzG, 2: DzzG, 3: IntF, 4: IntG after N2 division.
-        const auto apply=[&](unsigned operation) -> WVKernelStatus {
-            auto s=vertical(operation==0 || operation==3 ? 1 : 3,a.input(),modalView()); if (!s) return s;
-            for (std::size_t i=0;i<S_;++i) {
-                if (operation==1 || operation==2) write(modalView(),i,scale(read(modalView().input(),i),1/g.h_0[i%g.Nj]));
-                if (operation==3) write(modalView(),i,scale(read(modalView().input(),i),g.h_0[i%g.Nj]));
-            }
-            s=vertical(operation==1 || operation==4 ? 0 : 2,modalView().input(),b); if (!s) return s;
-            for (std::size_t column=0;column<g.Nkl;++column) {
-                const auto bottom=read(b.input(),g.Nz*column);
-                for (std::size_t z=0;z<g.Nz;++z) {
-                    auto x=read(b.input(),z+g.Nz*column);
-                    if (operation==0 || operation==2) x=scale(x,-g.N2[z]/g.g);
-                    if (operation==4) x=scale(subtract(x,bottom),-g.g);
-                    write(b,z+g.Nz*column,x);
-                }
-            }
-            std::swap(a,b); return WVKernelStatus::ok();
-        };
-        WVKernelStatus s;
-        if (integral) s=apply(family==WVBoussinesqFamily::F ? 3 : 4);
-        else if (family==WVBoussinesqFamily::F) {
-            s=apply(0); if (!s) return s;
-            if (order>=3) { s=apply(2); if (!s) return s; }
-            if (order==2 || order==4) s=apply(1);
-        } else {
-            if (order==1) s=apply(1);
-            else { s=apply(2); if (!s) return s; if (order==3) s=apply(1); if (order==4) s=apply(2); }
-        }
-        if (!s) return s;
-        for (std::size_t column=0;column<count;++column) for (std::size_t z=0;z<g.Nz;++z) result[begin+column+plane*z]=read(a.input(),z+g.Nz*column).real;
-    }
-    return WVKernelStatus::ok();
+WVKernelStatus WVTransformBoussinesqKernel::verticalCalculus(const double* values,WVBoussinesqFamily family,
+    unsigned order,bool integral,double* result,std::size_t columns,bool verticalFirst) {
+    const auto& g=geometry();
+    const auto index=[&](std::size_t column,std::size_t z) {
+        return verticalFirst ? z+g.Nz*column : column+columns*z;
+    };
+    return kernel_detail::applyStratifiedVerticalCalculus(g,columns,family==WVBoussinesqFamily::F,
+        order,integral,[&](std::size_t column,std::size_t z) { return values[index(column,z)]; },
+        [&](std::size_t column,std::size_t z,double value) { result[index(column,z)]=value; },
+        gridView(),gridView(1),modalView(),
+        [&](std::size_t operation,WVComplexInput input,WVComplexOutput output) { return vertical(operation,input,output); });
+}
+WVKernelStatus WVTransformBoussinesqKernel::applyVerticalCalculus(WVRealConstView a,bool inputIsF,
+    unsigned order,bool integral,WVRealView b) {
+    const auto& g=geometry();
+    if (order<1 || order>4 || (integral && order!=1)) return unsupported();
+    if (a.shape.rows!=g.Nz || !a.shape.columns || b.shape.rows!=g.Nz || b.shape.columns!=a.shape.columns)
+        return {WVKernelStatusCode::invalidShape,"Vertical calculus requires matching nonempty [Nz,Ncolumns] arrays."};
+    if (a.shape.columns>std::numeric_limits<std::size_t>::max()/g.Nz ||
+        a.shape.columns*g.Nz>std::numeric_limits<std::size_t>::max()/sizeof(double))
+        return {WVKernelStatusCode::sizeOverflow,"Vertical calculus extent overflow."};
+    const auto bytes=a.shape.columns*g.Nz*sizeof(double);
+    if (!addressFits(a.data,bytes,alignof(double)) || !addressFits(b.data,bytes,alignof(double)))
+        return {WVKernelStatusCode::invalidPointer,"Invalid vertical calculus storage."};
+    auto status=mutableOutputOutsidePreparedState(b.data,bytes); if (!status) return status;
+    status=disjoint(a.data,bytes,b.data,bytes); if (!status) return status;
+    ActiveCall guard(active_); if (!guard.entered) return reentrant();
+    return verticalCalculus(a.data,inputIsF ? WVBoussinesqFamily::F : WVBoussinesqFamily::G,
+        order,integral,b.data,a.shape.columns,true);
 }
 WVKernelStatus WVTransformBoussinesqKernel::differentiateVertical(WVRealVolumeConstView a,WVBoussinesqFamily family,unsigned order,WVRealVolumeView b) {
     if ((family!=WVBoussinesqFamily::F && family!=WVBoussinesqFamily::G) || order<1 || order>4) return unsupported();
     auto s=volume(a); if (!s) return s; s=volume({b.data,b.shape}); if (!s) return s;
     s=disjoint(a.data,R_*sizeof(double),b.data,R_*sizeof(double)); if (!s) return s;
     ActiveCall guard(active_); if (!guard.entered) return reentrant();
-    return verticalCalculus(a.data,family,order,false,b.data);
+    return verticalCalculus(a.data,family,order,false,b.data,R_/geometry().Nz,false);
 }
 WVKernelStatus WVTransformBoussinesqKernel::integrateVertical(WVRealVolumeConstView a,WVBoussinesqFamily family,WVRealVolumeView b) {
     if (family!=WVBoussinesqFamily::F && family!=WVBoussinesqFamily::G) return unsupported();
     auto s=volume(a); if (!s) return s; s=volume({b.data,b.shape}); if (!s) return s;
     s=disjoint(a.data,R_*sizeof(double),b.data,R_*sizeof(double)); if (!s) return s;
     ActiveCall guard(active_); if (!guard.entered) return reentrant();
-    return verticalCalculus(a.data,family,1,true,b.data);
+    return verticalCalculus(a.data,family,1,true,b.data,R_/geometry().Nz,false);
 }
 WVKernelStatus WVTransformBoussinesqKernel::differentiateHorizontal(WVRealVolumeConstView a,bool xDerivative,WVRealVolumeView b) {
     return differentiateHorizontal(a,xDerivative,1,b);
@@ -1202,7 +1198,7 @@ WVKernelStatus WVTransformBoussinesqKernel::advectScalarWithAdvectionFields(WVRe
     ActiveCall guard(active_); if (!guard.entered) return reentrant();
     s=horizontal_->spatialDerivative(*horizontalWorkspace_,{a.data,R_*sizeof(double)},{real_.data(),R_*sizeof(double)},true); if (!s) return s;
     s=horizontal_->spatialDerivative(*horizontalWorkspace_,{a.data,R_*sizeof(double)},{real_.data()+R_,R_*sizeof(double)},false); if (!s) return s;
-    if (!xyOnly) { s=verticalCalculus(a.data,WVBoussinesqFamily::F,1,false,real_.data()+2*R_); if (!s) return s; }
+    if (!xyOnly) { s=verticalCalculus(a.data,WVBoussinesqFamily::F,1,false,real_.data()+2*R_,R_/geometry().Nz,false); if (!s) return s; }
     for (std::size_t i=0;i<R_;++i) b.data[i]=-fields.data[i]*real_[i]-fields.data[R_+i]*real_[R_+i]-(xyOnly ? 0.0 : fields.data[2*R_+i]*real_[2*R_+i]);
     if (antialias) {
         s=horizontal_->forward(*horizontalWorkspace_,{b.data,R_*sizeof(double)},gridView()); if (!s) return s;

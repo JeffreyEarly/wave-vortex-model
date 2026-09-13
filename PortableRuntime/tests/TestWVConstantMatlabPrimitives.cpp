@@ -32,9 +32,19 @@ WVTransformConstantStratificationConfiguration configuration(bool hydrostatic) {
 }
 std::unique_ptr<WVTransformConstantStratificationKernel> kernel(bool hydrostatic,
     WVConstantNonlinearFluxSchedule schedule) {
+    auto c=configuration(hydrostatic);
     std::unique_ptr<WVTransformConstantStratificationKernel> result;
     WVConstantKernelExecutionOptions options; options.schedule=schedule; options.horizontalOuterWorkers=2; options.pointwiseWorkers=2;
-    require(bool(WVTransformConstantStratificationKernel::create(configuration(hydrostatic),
+    require(bool(WVTransformConstantStratificationKernel::create(c,
+        std::make_unique<WVReferenceFFTEngine>(),result,options)),"constant kernel creation");
+    return result;
+}
+std::unique_ptr<WVTransformConstantStratificationKernel> kernel(
+    WVTransformConstantStratificationConfiguration c,
+    WVConstantNonlinearFluxSchedule schedule) {
+    std::unique_ptr<WVTransformConstantStratificationKernel> result;
+    WVConstantKernelExecutionOptions options; options.schedule=schedule; options.horizontalOuterWorkers=2; options.pointwiseWorkers=2;
+    require(bool(WVTransformConstantStratificationKernel::create(c,
         std::make_unique<WVReferenceFFTEngine>(),result,options)),"constant kernel creation");
     return result;
 }
@@ -67,6 +77,108 @@ std::complex<double> inverseDst(const std::vector<WVComplex64>& a,std::size_t co
     for (std::size_t j=1;j<Nj;++j)
         sum+=value(a[Nj*column+j])*std::sin(pi*static_cast<double>(j*z)/6.0);
     return sum;
+}
+std::vector<double> verticalCalculusOracle(const std::vector<double>& input,
+    const WVTransformConstantStratificationConfiguration& c,std::size_t columns,
+    bool inputIsF,unsigned order,bool integral) {
+    std::vector<double> result(c.Nz*columns),coefficients(c.Nz);
+    const bool outputIsF=integral ? !inputIsF : ((order%2)==0 ? inputIsF : !inputIsF);
+    const double signsF[]={-1,-1,1,1},signsG[]={1,-1,-1,1};
+    for(std::size_t column=0;column<columns;++column) {
+        for(std::size_t j=0;j<c.Nz;++j) {
+            double sum=0;
+            if(inputIsF) {
+                sum=.5*input[c.Nz*column]+.5*input[c.Nz*column+c.Nz-1]*std::cos(pi*static_cast<double>(j));
+                for(std::size_t z=1;z+1<c.Nz;++z)
+                    sum+=input[z+c.Nz*column]*std::cos(pi*static_cast<double>(j*z)/static_cast<double>(c.Nz-1));
+            } else if(j!=0 && j+1!=c.Nz) {
+                for(std::size_t z=1;z+1<c.Nz;++z)
+                    sum+=input[z+c.Nz*column]*std::sin(pi*static_cast<double>(j*z)/static_cast<double>(c.Nz-1));
+            }
+            coefficients[j]=2*sum/static_cast<double>(c.Nz-1);
+            double multiplier=0;
+            if(j<c.Nj && j!=0) {
+                const double m=pi*static_cast<double>(j)/c.Lz;
+                multiplier=integral ? (inputIsF?1.0:-1.0)/m :
+                    (inputIsF?signsF[order-1]:signsG[order-1])*std::pow(m,static_cast<int>(order));
+            }
+            coefficients[j]*=multiplier;
+        }
+        for(std::size_t z=0;z<c.Nz;++z) {
+            double sum=outputIsF ? .5*coefficients[0] : 0;
+            for(std::size_t j=1;j<c.Nj;++j)
+                sum+=coefficients[j]*(outputIsF ?
+                    std::cos(pi*static_cast<double>(j*z)/static_cast<double>(c.Nz-1)) :
+                    std::sin(pi*static_cast<double>(j*z)/static_cast<double>(c.Nz-1)));
+            result[z+c.Nz*column]=sum;
+        }
+        if(integral && !inputIsF) {
+            const double bottom=result[c.Nz*column];
+            for(std::size_t z=0;z<c.Nz;++z) result[z+c.Nz*column]-=bottom;
+        }
+    }
+    return result;
+}
+void testVerticalCalculus(bool hydrostatic,WVConstantNonlinearFluxSchedule schedule) {
+    auto k=kernel(hydrostatic,schedule); const auto& c=k->descriptor().configuration();
+    std::vector<double> unprepared(c.Nz),unpreparedOutput(c.Nz);
+    require(k->applyVerticalCalculus({unprepared.data(),{c.Nz,1}},true,1,false,
+        {unpreparedOutput.data(),{c.Nz,1}}).code==WVKernelStatusCode::unsupportedOperation,
+        "vertical calculus ran before setup");
+    require(bool(k->prepareMatlabPrimitives()),"vertical calculus setup");
+    const auto stable=k->persistentBytes(),scratch=k->scratchBytes(),plans=k->metrics().planCount;
+    for(const std::size_t columns:{std::size_t{1},std::size_t{5}}) {
+        std::vector<double> input(c.Nz*columns),output(c.Nz*columns),original;
+        for(std::size_t q=0;q<input.size();++q)
+            input[q]=.37*std::sin(.41*static_cast<double>(q+1))+
+                .19*std::cos(.23*static_cast<double>((q%9)+2));
+        original=input;
+        for(const bool inputIsF:{true,false}) {
+            for(const unsigned order:{1U,2U,3U,4U}) {
+                const auto expected=verticalCalculusOracle(input,c,columns,inputIsF,order,false);
+                require(bool(k->applyVerticalCalculus({input.data(),{c.Nz,columns}},inputIsF,order,false,
+                    {output.data(),{c.Nz,columns}})),"constant vertical derivative");
+                for(std::size_t q=0;q<output.size();++q)
+                    require(std::abs(output[q]-expected[q])<2e-12*std::max(1.0,std::abs(expected[q])),
+                        "constant vertical derivative oracle");
+            }
+            const auto expected=verticalCalculusOracle(input,c,columns,inputIsF,1,true);
+            require(bool(k->applyVerticalCalculus({input.data(),{c.Nz,columns}},inputIsF,1,true,
+                {output.data(),{c.Nz,columns}})),"constant vertical integral");
+            for(std::size_t q=0;q<output.size();++q)
+                require(std::abs(output[q]-expected[q])<2e-11*std::max(1.0,std::abs(expected[q])),
+                    "constant vertical integral oracle");
+            if(!inputIsF) for(std::size_t column=0;column<columns;++column)
+                require(std::abs(output[c.Nz*column])<2e-13,"G integral bottom was not zero");
+        }
+        require(input==original,"vertical calculus mutated its input");
+        require(k->applyVerticalCalculus({input.data(),{c.Nz,columns}},true,0,false,
+            {output.data(),{c.Nz,columns}}).code==WVKernelStatusCode::invalidConfiguration,
+            "zero vertical derivative accepted");
+        require(k->applyVerticalCalculus({input.data(),{c.Nz,columns}},true,5,false,
+            {output.data(),{c.Nz,columns}}).code==WVKernelStatusCode::invalidConfiguration,
+            "fifth vertical derivative accepted");
+        require(k->applyVerticalCalculus({input.data(),{c.Nz,columns}},true,2,true,
+            {output.data(),{c.Nz,columns}}).code==WVKernelStatusCode::invalidConfiguration,
+            "higher vertical integral accepted");
+        require(k->applyVerticalCalculus({input.data(),{c.Nz,columns}},true,1,false,
+            {input.data(),{c.Nz,columns}}).code==WVKernelStatusCode::overlappingArrays,
+            "vertical calculus alias accepted");
+        require(k->applyVerticalCalculus({input.data(),{c.Nz-1,columns}},true,1,false,
+            {output.data(),{c.Nz,columns}}).code==WVKernelStatusCode::invalidShape,
+            "vertical calculus shape accepted");
+    }
+    const auto S=c.Nj*k->descriptor().Nkl(); std::vector<WVComplex64> stateStorage(3*S);
+    const WVShape2D stateShape{c.Nj,k->descriptor().Nkl()};
+    WVState state{0,0,{{stateStorage.data(),stateShape},{stateStorage.data()+S,stateShape},{stateStorage.data()+2*S,stateShape}}};
+    require(bool(k->beginStateEvaluation(state)),"begin active state for vertical calculus");
+    std::vector<double> stateInput(c.Nz);
+    require(k->applyVerticalCalculus({stateInput.data(),{c.Nz,1}},true,1,false,
+        {reinterpret_cast<double*>(stateStorage.data()),{c.Nz,1}}).code==WVKernelStatusCode::overlappingArrays,
+        "vertical calculus overwrote active state");
+    require(bool(k->endStateEvaluation()),"end active state for vertical calculus");
+    require(k->persistentBytes()==stable && k->scratchBytes()==scratch && k->metrics().planCount==plans,
+        "vertical calculus execution changed storage");
 }
 void testVertical(bool hydrostatic,WVConstantNonlinearFluxSchedule schedule) {
     auto k=kernel(hydrostatic,schedule); const auto& d=k->descriptor(); const auto& c=d.configuration();
@@ -161,6 +273,54 @@ void testHorizontal(bool hydrostatic,WVConstantNonlinearFluxSchedule schedule) {
     require(k->differentiateHorizontal({field.data(),{c.Nx,c.Ny,c.Nz}},true,2,{field.data(),{c.Nx,c.Ny,c.Nz}}).code==WVKernelStatusCode::overlappingArrays,"derivative alias accepted");
     require(k->persistentBytes()==stable && k->scratchBytes()==scratch && k->metrics().planCount==plans,"horizontal execution changed storage");
 }
+void testArbitraryHorizontal(std::size_t nx,std::size_t ny,std::size_t nz,
+    bool hydrostatic,bool antialias,WVConstantNonlinearFluxSchedule schedule) {
+    auto c=configuration(hydrostatic); c.Nx=nx; c.Ny=ny; c.Nz=nz;
+    c.Nj=antialias && nz-1>3 ? 2*(nz-1)/3 : nz-1;
+    c.shouldAntialias=antialias;
+    auto k=kernel(c,schedule); require(bool(k->prepareMatlabPrimitives()),"arbitrary horizontal setup");
+    const auto& d=k->descriptor(); const auto R=nx*ny*nz,H=nz*d.Nkl();
+    std::vector<double> field(R);
+    for(std::size_t q=0;q<R;++q)
+        field[q]=std::sin(.173*static_cast<double>(q+1))+
+            .31*std::cos(.071*static_cast<double>((q+3)*(q%7+1)));
+    std::vector<WVComplex64> spectrum(H);
+    require(bool(k->horizontalForward({field.data(),{nx,ny,nz}},{spectrum.data(),{nz,d.Nkl()}})),"arbitrary horizontal forward");
+    for(std::size_t mode=0;mode<d.Nkl();++mode) for(std::size_t z=0;z<nz;++z)
+        near(spectrum[z+nz*mode],dft(field,c,z,d.fourierModes()[mode].kMode,
+            d.fourierModes()[mode].lMode),5e-13,"arbitrary retained DFT oracle");
+    std::vector<double> restored(R);
+    require(bool(k->horizontalInverse({spectrum.data(),{nz,d.Nkl()}},{restored.data(),{nx,ny,nz}})),"arbitrary horizontal inverse");
+    for(std::size_t z=0;z<nz;++z) for(std::size_t y=0;y<ny;++y) for(std::size_t x=0;x<nx;++x) {
+        double expected=0;
+        for(std::size_t mode=0;mode<d.Nkl();++mode) {
+            const auto key=d.fourierModes()[mode];
+            const auto coefficient=value(spectrum[z+nz*mode]);
+            const auto phase=std::exp(std::complex<double>(0,key.kMode*coordinate(x,nx)+key.lMode*coordinate(y,ny)));
+            const bool self=(2*key.kMode)%static_cast<std::int64_t>(nx)==0 &&
+                (2*key.lMode)%static_cast<std::int64_t>(ny)==0;
+            expected+=(self ? 1.0 : 2.0)*std::real(coefficient*phase);
+        }
+        require(std::abs(restored[x+nx*y+nx*ny*z]-expected)<5e-12,"arbitrary retained inverse oracle");
+    }
+    std::vector<WVComplex64> general(H);
+    for(std::size_t q=0;q<H;++q)
+        general[q]={.019*static_cast<double>(q+1),-.013*static_cast<double>((q%17)+1)};
+    require(bool(k->horizontalInverse({general.data(),{nz,d.Nkl()}},{restored.data(),{nx,ny,nz}})),"general complex horizontal inverse");
+    for(std::size_t z=0;z<nz;++z) for(std::size_t y=0;y<ny;++y) for(std::size_t x=0;x<nx;++x) {
+        double expected=0;
+        for(std::size_t mode=0;mode<d.Nkl();++mode) {
+            const auto key=d.fourierModes()[mode];
+            auto coefficient=value(general[z+nz*mode]);
+            const bool self=(2*key.kMode)%static_cast<std::int64_t>(nx)==0 &&
+                (2*key.lMode)%static_cast<std::int64_t>(ny)==0;
+            if(self) coefficient=std::complex<double>(coefficient.real(),0);
+            const auto phase=std::exp(std::complex<double>(0,key.kMode*coordinate(x,nx)+key.lMode*coordinate(y,ny)));
+            expected+=(self ? 1.0 : 2.0)*std::real(coefficient*phase);
+        }
+        require(std::abs(restored[x+nx*y+nx*ny*z]-expected)<5e-12,"general complex retained inverse oracle");
+    }
+}
 void testSeparateProjection(bool hydrostatic,WVConstantNonlinearFluxSchedule schedule) {
     auto k=kernel(hydrostatic,schedule); const auto& d=k->descriptor(); const auto& c=d.configuration(); const auto R=c.Nx*c.Ny*c.Nz,S=c.Nj*d.Nkl(); const auto channels=hydrostatic?3U:4U;
     std::vector<double> fields(channels*R); for (std::size_t i=0;i<fields.size();++i) fields[i]=std::sin(.013*(i+1));
@@ -175,7 +335,12 @@ void testSeparateProjection(bool hydrostatic,WVConstantNonlinearFluxSchedule sch
 }
 int main() {
     for (const bool hydrostatic:{true,false}) for (const auto schedule:{WVConstantNonlinearFluxSchedule::frozenStreamed,WVConstantNonlinearFluxSchedule::compactCandidate}) {
-        testVertical(hydrostatic,schedule); testHorizontal(hydrostatic,schedule); testSeparateProjection(hydrostatic,schedule);
+        testVertical(hydrostatic,schedule); testVerticalCalculus(hydrostatic,schedule);
+        testHorizontal(hydrostatic,schedule); testSeparateProjection(hydrostatic,schedule);
+        for(const bool antialias:{false,true}) {
+            testArbitraryHorizontal(6,6,5,hydrostatic,antialias,schedule);
+            testArbitraryHorizontal(8,6,7,hydrostatic,antialias,schedule);
+        }
     }
     std::cout<<"Constant MATLAB primitive contracts passed\n";
 }

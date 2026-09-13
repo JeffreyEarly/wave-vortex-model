@@ -53,6 +53,8 @@ public:
     const std::string& engineIdentifier() const noexcept { return engineIdentifier_; }
     WVShape2D spectralShape() const noexcept { return {geometry().Nj,geometry().Nkl}; }
     WVShape3D spatialShape() const noexcept { return {geometry().Nx,geometry().Ny,geometry().Nz}; }
+    // Prepare the additional spectral slot used only by MATLAB vertical calculus.
+    WVKernelStatus prepareMatlabPrimitives();
 
     // The borrowed A0 array remains immutable until endStateEvaluation().
     WVKernelStatus beginStateEvaluation(WVComplexConstView);
@@ -107,6 +109,8 @@ public:
     WVKernelStatus totalEnstrophy(WVComplexConstView, double&) const;
     WVKernelStatus totalEnergySpatiallyIntegrated(WVComplexConstView, double&);
     WVKernelStatus totalEnstrophySpatiallyIntegrated(WVComplexConstView, double&);
+    WVKernelStatus applyVerticalCalculus(WVRealConstView input,bool inputIsF,
+        unsigned order,bool integral,WVRealView output);
     const std::string& engineLibraryIdentity() const noexcept { return engineLibraryIdentity_; }
     WVKernelStatus advectScalarWithAdvectionFields(WVRealVolumeConstView, WVRealFieldBundleConstView, bool antialias, WVRealVolumeView);
     WVKernelStatus uvMax(WVComplexConstView, double&);
@@ -128,6 +132,8 @@ private:
     WVKernelStatus vertical(std::size_t operation, WVComplexInput, WVComplexOutput);
     WVKernelStatus verticalColumn(std::size_t operation, WVComplexInput, WVComplexOutput,
         std::size_t retainedColumn);
+    WVKernelStatus verticalCalculus(const double*,bool inputIsF,unsigned,bool,double*,
+        std::size_t columns,bool verticalFirst);
     WVVariableExecutionOptions executionOptions_;
     std::shared_ptr<const WVStratifiedModalSource> source_;
     WVStratifiedQGModeFactors factors_;

@@ -140,6 +140,8 @@ public:
     WVKernelStatus totalEnstrophy(const WVCoefficients&, double&) const;
     WVKernelStatus totalEnergySpatiallyIntegrated(const WVState&, double&,
         WVHydrostaticComponent = WVHydrostaticComponent::all);
+    WVKernelStatus applyVerticalCalculus(WVRealConstView input,bool inputIsF,
+        unsigned order,bool integral,WVRealView output);
     // MATLAB diffZF/diffZG orders 1..4 and intZF/intZG order 1. These preserve
     // all horizontal grid columns rather than truncating through a Fourier map.
     WVKernelStatus differentiateVertical(WVRealVolumeConstView, WVHydrostaticFamily,
@@ -180,7 +182,8 @@ private:
     WVKernelStatus projectFields(const double*,const double*,const double*,WVMutableCoefficients);
     WVKernelStatus projectedFieldsToCoefficients(
         WVComplexInput,WVComplexInput,WVComplexInput,WVMutableCoefficients);
-    WVKernelStatus verticalCalculus(const double*,WVHydrostaticFamily,unsigned,bool,double*);
+    WVKernelStatus verticalCalculus(const double*,WVHydrostaticFamily,unsigned,bool,double*,
+        std::size_t columns,bool verticalFirst);
     bool tiledNonlinearPrepared_ = false;
     WVVariableExecutionOptions executionOptions_;
     std::shared_ptr<const WVStratifiedModalSource> source_;

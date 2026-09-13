@@ -10,7 +10,9 @@
 #include <complex>
 #include <filesystem>
 #include <iostream>
+#include <limits>
 #include <memory>
+#include <type_traits>
 #include <vector>
 
 using namespace wavevortex;
@@ -56,6 +58,45 @@ void horizontalRoundTripAndDerivatives(Kernel& kernel,const WVStratifiedModalGeo
     require(static_cast<bool>(kernel.horizontalForward({field.data(),volume},{spectrum.data(),retained})),"Raw horizontal forward failed.");
     require(static_cast<bool>(kernel.horizontalInverse({spectrum.data(),retained},{restored.data(),volume})),"Raw horizontal inverse failed.");
     for (std::size_t i=0;i<count;++i) require(std::abs(restored[i]-field[i])<1e-10,"Raw horizontal round trip changed values.");
+
+    std::vector<WVComplex64> general(retained.elementCount()),projected(general.size());
+    for (std::size_t mode=0;mode<geometry.Nkl;++mode) for (std::size_t z=0;z<geometry.Nz;++z) {
+        const auto i=z+geometry.Nz*mode;
+        general[i]={.13+.017*i,std::cos(.23*i+.4)};
+        projected[i]=general[i];
+        const auto& key=geometry.modes[mode];
+        const auto selfK=key.k==0 || (geometry.Nx%2==0 &&
+            (key.k==static_cast<std::int64_t>(geometry.Nx/2) || key.k==-static_cast<std::int64_t>(geometry.Nx/2)));
+        const auto selfL=key.l==0 || (geometry.Ny%2==0 &&
+            (key.l==static_cast<std::int64_t>(geometry.Ny/2) || key.l==-static_cast<std::int64_t>(geometry.Ny/2)));
+        if (selfK && selfL) projected[i].imag=0;
+    }
+    const auto original=general;
+    std::vector<double> projectedResult(count);
+    require(static_cast<bool>(kernel.horizontalInverse({general.data(),retained},{restored.data(),volume})),
+        "Raw horizontal inverse rejected general complex retained input.");
+    require(static_cast<bool>(kernel.horizontalInverse({projected.data(),retained},{projectedResult.data(),volume})),
+        "Raw horizontal inverse rejected projected retained input.");
+    for (std::size_t i=0;i<general.size();++i)
+        require(general[i].real==original[i].real && general[i].imag==original[i].imag,
+            "Raw horizontal inverse changed its retained input.");
+    for (std::size_t z=0;z<geometry.Nz;++z) for (std::size_t y=0;y<geometry.Ny;++y) for (std::size_t x=0;x<geometry.Nx;++x) {
+        double expected=0;
+        for (std::size_t mode=0;mode<geometry.Nkl;++mode) {
+            const auto& key=geometry.modes[mode]; const auto value=projected[z+geometry.Nz*mode];
+            const double phase=2*pi*(static_cast<double>(key.k)*x/geometry.Nx+
+                static_cast<double>(key.l)*y/geometry.Ny);
+            const auto selfK=key.k==0 || (geometry.Nx%2==0 &&
+                (key.k==static_cast<std::int64_t>(geometry.Nx/2) || key.k==-static_cast<std::int64_t>(geometry.Nx/2)));
+            const auto selfL=key.l==0 || (geometry.Ny%2==0 &&
+                (key.l==static_cast<std::int64_t>(geometry.Ny/2) || key.l==-static_cast<std::int64_t>(geometry.Ny/2)));
+            expected+=(selfK && selfL ? 1.0 : 2.0)*(value.real*std::cos(phase)-value.imag*std::sin(phase));
+        }
+        const auto i=x+geometry.Nx*(y+geometry.Ny*z);
+        require(std::abs(restored[i]-expected)<1e-10,"Raw inverse differs from the direct Hermitian Fourier sum.");
+        require(std::abs(restored[i]-projectedResult[i])<1e-12,
+            "Raw inverse did not discard imaginary self-conjugate values like MATLAB symmetric inverse.");
+    }
     const auto persistent=kernel.persistentBytes();
     for(std::size_t z=0;z<geometry.Nz;++z) for(std::size_t y=0;y<geometry.Ny;++y) for(std::size_t x=0;x<geometry.Nx;++x)
         field[x+geometry.Nx*(y+geometry.Ny*z)]=std::cos(2*pi*x/geometry.Nx)+std::cos(pi*x)+.4*std::sin(4*pi*y/geometry.Ny);
@@ -124,12 +165,120 @@ void verticalOperators(Kernel& kernel,
 }
 
 template<class Kernel>
+std::vector<double> elementaryVertical(Kernel& kernel,const WVStratifiedModalGeometry& g,
+    const std::vector<double>& input,unsigned operation) {
+    std::vector<WVComplex64> grid(g.Nz),modal(g.Nj),result(g.Nz);
+    for (std::size_t z=0;z<g.Nz;++z) grid[z]={input[z],0};
+    const auto projection=operation==0 || operation==3 ? WVStratifiedModalOperator::projectF : WVStratifiedModalOperator::projectG;
+    require(static_cast<bool>(kernel.applyVerticalColumn(projection,0,{grid.data(),{g.Nz,1}},{modal.data(),{g.Nj,1}})),
+        "Vertical-calculus oracle projection failed.");
+    for (std::size_t j=0;j<g.Nj;++j) {
+        const double factor=operation==1 || operation==2 ? 1/g.h_0[j] : operation==3 ? g.h_0[j] : 1;
+        modal[j].real*=factor; modal[j].imag*=factor;
+    }
+    const auto reconstruction=operation==1 || operation==4 ? WVStratifiedModalOperator::reconstructF : WVStratifiedModalOperator::reconstructG;
+    require(static_cast<bool>(kernel.applyVerticalColumn(reconstruction,0,{modal.data(),{g.Nj,1}},{result.data(),{g.Nz,1}})),
+        "Vertical-calculus oracle reconstruction failed.");
+    std::vector<double> output(g.Nz);
+    const auto bottom=result.front();
+    for (std::size_t z=0;z<g.Nz;++z) {
+        auto value=result[z].real;
+        if (operation==0 || operation==2) value*=(-g.N2[z]/g.g);
+        if (operation==4) value=(value-bottom.real)*(-g.g);
+        output[z]=value;
+    }
+    return output;
+}
+
+template<class Kernel>
+std::vector<double> verticalOracle(Kernel& kernel,const WVStratifiedModalGeometry& g,
+    const std::vector<double>& input,std::size_t columns,bool inputIsF,unsigned order,bool integral) {
+    std::vector<double> expected(input.size());
+    for (std::size_t column=0;column<columns;++column) {
+        std::vector<double> value(g.Nz);
+        for (std::size_t z=0;z<g.Nz;++z) {
+            value[z]=input[z+g.Nz*column];
+            if (integral && !inputIsF) value[z]/=g.N2[z];
+        }
+        const auto apply=[&](unsigned operation) { value=elementaryVertical(kernel,g,value,operation); };
+        if (integral) apply(inputIsF ? 3 : 4);
+        else if (inputIsF) {
+            apply(0); if (order>=3) apply(2); if (order==2 || order==4) apply(1);
+        } else {
+            if (order==1) apply(1); else { apply(2); if (order==3) apply(1); if (order==4) apply(2); }
+        }
+        for (std::size_t z=0;z<g.Nz;++z) expected[z+g.Nz*column]=value[z];
+    }
+    return expected;
+}
+
+template<class Kernel>
+void verticalCalculus(Kernel& kernel,const WVStratifiedModalGeometry& g) {
+    const auto persistent=kernel.persistentBytes();
+    for (const auto columns : {std::size_t{1},g.Nkl+2}) {
+        const WVShape2D shape{g.Nz,columns};
+        std::vector<double> input(shape.elementCount()),actual(input.size());
+        for (std::size_t i=0;i<input.size();++i) input[i]=std::sin(.19*i)+.03*i;
+        const auto original=input;
+        for (bool inputIsF : {true,false}) {
+            for (unsigned order=1;order<=4;++order) {
+                const auto expected=verticalOracle(kernel,g,input,columns,inputIsF,order,false);
+                require(static_cast<bool>(kernel.applyVerticalCalculus({input.data(),shape},inputIsF,order,false,{actual.data(),shape})),
+                    "Raw vertical derivative failed.");
+                for (std::size_t i=0;i<actual.size();++i)
+                    require(std::abs(actual[i]-expected[i])<1e-11*std::max(1.0,std::abs(expected[i])),
+                        "Raw vertical derivative differs from the independent column oracle.");
+            }
+            const auto expected=verticalOracle(kernel,g,input,columns,inputIsF,1,true);
+            require(static_cast<bool>(kernel.applyVerticalCalculus({input.data(),shape},inputIsF,1,true,{actual.data(),shape})),
+                "Raw vertical integral failed.");
+            for (std::size_t i=0;i<actual.size();++i)
+                require(std::abs(actual[i]-expected[i])<1e-11*std::max(1.0,std::abs(expected[i])),
+                    "Raw vertical integral differs from the independent column oracle.");
+            if (!inputIsF) for (std::size_t column=0;column<columns;++column)
+                require(std::abs(actual[g.Nz*column])<1e-12,"Raw G integral is not bottom-zero.");
+        }
+        for (std::size_t i=0;i<input.size();++i) require(input[i]==original[i],"Raw vertical calculus changed its input.");
+    }
+    std::vector<double> input(g.Nz*2),output(input.size()); const WVShape2D shape{g.Nz,2};
+    require(kernel.applyVerticalCalculus({input.data(),{g.Nz-1,2}},true,1,false,{output.data(),shape}).code==WVKernelStatusCode::invalidShape,
+        "Raw vertical calculus accepted incorrect input rows.");
+    require(kernel.applyVerticalCalculus({input.data(),shape},true,1,false,{output.data(),{g.Nz,1}}).code==WVKernelStatusCode::invalidShape,
+        "Raw vertical calculus accepted a mismatched output shape.");
+    require(kernel.applyVerticalCalculus({input.data(),shape},true,0,false,{output.data(),shape}).code==WVKernelStatusCode::unsupportedOperation,
+        "Raw vertical calculus accepted derivative order zero.");
+    require(kernel.applyVerticalCalculus({input.data(),shape},true,2,true,{output.data(),shape}).code==WVKernelStatusCode::unsupportedOperation,
+        "Raw vertical calculus accepted a higher-order integral.");
+    require(kernel.applyVerticalCalculus({input.data(),shape},true,1,false,{input.data(),shape}).code==WVKernelStatusCode::overlappingArrays,
+        "Raw vertical calculus accepted overlapping arrays.");
+    require(kernel.applyVerticalCalculus({nullptr,shape},true,1,false,{output.data(),shape}).code==WVKernelStatusCode::invalidPointer,
+        "Raw vertical calculus accepted null input storage.");
+    const WVShape2D huge{g.Nz,std::numeric_limits<std::size_t>::max()};
+    require(kernel.applyVerticalCalculus({input.data(),huge},true,1,false,{output.data(),huge}).code==WVKernelStatusCode::sizeOverflow,
+        "Raw vertical calculus accepted an overflowing extent.");
+    require(kernel.persistentBytes()==persistent,"Raw vertical calculus changed persistent storage.");
+}
+
+template<class Kernel>
 void check(const std::shared_ptr<const WVStratifiedModalRecord>& record) {
     for(bool split:{false,true}) {
         WVVariableExecutionOptions options;
         if(split) { options.spectralSchedule=WVVariableSpectralSchedule::compactSplitFusedViews; options.streamedNonlinear=true; options.horizontalSchedule=WVRetainedHorizontalSchedule::streamingPrunedTile16; }
         auto kernel=makeKernel<Kernel>(record,options);
-        verticalOperators(*kernel,record); horizontalRoundTripAndDerivatives(*kernel,record->geometry());
+        if constexpr (std::is_same_v<Kernel,WVTransformStratifiedQGKernel>) {
+            const auto& g=record->geometry(); const WVShape2D shape{g.Nz,1};
+            std::vector<double> input(g.Nz),output(g.Nz); const auto baseline=kernel->persistentBytes();
+            require(kernel->applyVerticalCalculus({input.data(),shape},true,1,false,{output.data(),shape}).code==WVKernelStatusCode::unsupportedOperation,
+                "QG raw vertical calculus ran before explicit preparation.");
+            require(kernel->persistentBytes()==baseline,"Unprepared QG vertical calculus changed storage.");
+            require(static_cast<bool>(kernel->prepareMatlabPrimitives()),"QG MATLAB primitive preparation failed.");
+            const auto prepared=kernel->persistentBytes();
+            require(prepared>baseline,"QG MATLAB primitive preparation did not account for its spectral slot.");
+            require(static_cast<bool>(kernel->prepareMatlabPrimitives()) && kernel->persistentBytes()==prepared,
+                "QG MATLAB primitive preparation is not idempotent.");
+        }
+        verticalOperators(*kernel,record); verticalCalculus(*kernel,record->geometry());
+        horizontalRoundTripAndDerivatives(*kernel,record->geometry());
     }
 }
 void families() {

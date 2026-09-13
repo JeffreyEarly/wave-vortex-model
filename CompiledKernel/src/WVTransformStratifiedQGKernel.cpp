@@ -2,8 +2,10 @@
 #include "WVSpectralValidation.hpp"
 #include "WVPreparedModeExecutor.hpp"
 #include "WVVariableComplexBuffer.hpp"
+#include "WVStratifiedVerticalCalculus.hpp"
 #include <algorithm>
 #include <cmath>
+#include <limits>
 #include <system_error>
 
 namespace wavevortex {
@@ -19,6 +21,10 @@ void copy(WVComplexInput source,WVComplex64* destination,std::size_t count) {
 }
 void copy(const WVComplex64* source,WVComplexOutput destination,std::size_t count) {
     for (std::size_t i=0;i<count;++i) write(destination,i,source[i]);
+}
+bool selfConjugate(std::int64_t mode,std::size_t count) {
+    return mode==0 || (count%2==0 &&
+        (mode==static_cast<std::int64_t>(count/2) || mode==-static_cast<std::int64_t>(count/2)));
 }
 bool surface(WVStratifiedQGField f) { return f==WVStratifiedQGField::ssh || f==WVStratifiedQGField::ssu || f==WVStratifiedQGField::ssv; }
 bool fieldValid(WVStratifiedQGField f) { return f>=WVStratifiedQGField::u && f<=WVStratifiedQGField::ssv; }
@@ -114,6 +120,24 @@ WVKernelStatus WVTransformStratifiedQGKernel::create(std::shared_ptr<const WVStr
     } catch (const std::bad_alloc&) { return {WVKernelStatusCode::allocationFailure,"QG setup allocation failed."}; }
       catch (const std::overflow_error& e) { return {WVKernelStatusCode::sizeOverflow,e.what()}; }
       catch (const std::system_error& e) { return {WVKernelStatusCode::allocationFailure,e.what()}; }
+}
+WVKernelStatus WVTransformStratifiedQGKernel::prepareMatlabPrimitives() {
+    ActiveCall guard(active_); if (!guard.entered) return reentrant();
+    if (stateEvaluationActive_)
+        return {WVKernelStatusCode::invalidConfiguration,"Prepare MATLAB primitives before beginning a state evaluation."};
+    if (gridSpectral_->size()>H_) return WVKernelStatus::ok();
+    try {
+        auto prepared=std::make_unique<WVVariableComplexBuffer>(product(2,H_),gridSpectral_->representation());
+        storage_.spectralScratchBytes=modalSpectral_->capacityBytes()+prepared->capacityBytes();
+        gridSpectral_=std::move(prepared);
+        return WVKernelStatus::ok();
+    } catch (const std::bad_alloc&) {
+        return {WVKernelStatusCode::allocationFailure,"Unable to prepare QG MATLAB primitive scratch."};
+    } catch (const std::overflow_error& error) {
+        return {WVKernelStatusCode::sizeOverflow,error.what()};
+    } catch (const std::system_error& error) {
+        return {WVKernelStatusCode::allocationFailure,error.what()};
+    }
 }
 WVKernelStatus WVTransformStratifiedQGKernel::spectral(WVComplexConstView a) const {
     if (a.shape.rows!=geometry().Nj || a.shape.columns!=geometry().Nkl) return {WVKernelStatusCode::invalidShape,"Expected canonical [Nj,Nkl] coefficients."};
@@ -377,9 +401,15 @@ WVKernelStatus WVTransformStratifiedQGKernel::horizontalInverse(WVComplexConstVi
     status=mutableOutputOutsidePreparedState(b.data,R_*sizeof(double)); if (!status) return status;
     status=disjoint(a.data,H_*sizeof(WVComplex64),b.data,R_*sizeof(double)); if (!status) return status;
     ActiveCall guard(active_); if (!guard.entered) return reentrant();
-    auto values=input(a.data,H_);
-    if (executionOptions_.usesCompactSplitViews()) { auto grid=gridSpectral_->output(0,H_); copy(a.data,grid,H_); values=grid.input(); }
-    return horizontal_->inverse(*horizontalWorkspace_,values,{b.data,R_*sizeof(double)});
+    auto grid=gridSpectral_->output(0,H_); copy(a.data,grid,H_);
+    for (std::size_t mode=0;mode<g.Nkl;++mode)
+        if (selfConjugate(g.modes[mode].k,g.Nx) && selfConjugate(g.modes[mode].l,g.Ny))
+            for (std::size_t z=0;z<g.Nz;++z) {
+                const auto i=z+g.Nz*mode;
+                const auto value=read(grid.input(),i);
+                write(grid,i,{value.real,0});
+            }
+    return horizontal_->inverse(*horizontalWorkspace_,grid.input(),{b.data,R_*sizeof(double)});
 }
 WVKernelStatus WVTransformStratifiedQGKernel::differentiateHorizontal(WVRealVolumeConstView a,
     bool xDerivative,WVRealVolumeView b) {
@@ -393,6 +423,38 @@ WVKernelStatus WVTransformStratifiedQGKernel::differentiateHorizontal(WVRealVolu
     ActiveCall guard(active_); if (!guard.entered) return reentrant();
     return horizontal_->spatialDerivative(*horizontalWorkspace_,{a.data,R_*sizeof(double)},
         {b.data,R_*sizeof(double)},xDerivative,order);
+}
+WVKernelStatus WVTransformStratifiedQGKernel::verticalCalculus(const double* values,bool inputIsF,
+    unsigned order,bool integral,double* result,std::size_t columns,bool verticalFirst) {
+    const auto& g=geometry();
+    const auto index=[&](std::size_t column,std::size_t z) {
+        return verticalFirst ? z+g.Nz*column : column+columns*z;
+    };
+    return kernel_detail::applyStratifiedVerticalCalculus(g,columns,inputIsF,order,integral,
+        [&](std::size_t column,std::size_t z) { return values[index(column,z)]; },
+        [&](std::size_t column,std::size_t z,double value) { result[index(column,z)]=value; },
+        gridSpectral_->output(0,H_),gridSpectral_->output(H_,H_),modalSpectral_->output(0,S_),
+        [&](std::size_t operation,WVComplexInput input,WVComplexOutput output) { return vertical(operation,input,output); });
+}
+WVKernelStatus WVTransformStratifiedQGKernel::applyVerticalCalculus(WVRealConstView a,bool inputIsF,
+    unsigned order,bool integral,WVRealView b) {
+    if (gridSpectral_->size()==H_)
+        return {WVKernelStatusCode::unsupportedOperation,"MATLAB primitives were not prepared."};
+    const auto& g=geometry();
+    if (order<1 || order>4 || (integral && order!=1))
+        return {WVKernelStatusCode::unsupportedOperation,"Vertical calculus supports derivative orders 1 through 4 and first integrals."};
+    if (a.shape.rows!=g.Nz || !a.shape.columns || b.shape.rows!=g.Nz || b.shape.columns!=a.shape.columns)
+        return {WVKernelStatusCode::invalidShape,"Vertical calculus requires matching nonempty [Nz,Ncolumns] arrays."};
+    if (a.shape.columns>std::numeric_limits<std::size_t>::max()/g.Nz ||
+        a.shape.columns*g.Nz>std::numeric_limits<std::size_t>::max()/sizeof(double))
+        return {WVKernelStatusCode::sizeOverflow,"Vertical calculus extent overflow."};
+    const auto bytes=a.shape.columns*g.Nz*sizeof(double);
+    if (!addressFits(a.data,bytes,alignof(double)) || !addressFits(b.data,bytes,alignof(double)))
+        return {WVKernelStatusCode::invalidPointer,"Invalid vertical calculus storage."};
+    auto status=mutableOutputOutsidePreparedState(b.data,bytes); if (!status) return status;
+    status=disjoint(a.data,bytes,b.data,bytes); if (!status) return status;
+    ActiveCall guard(active_); if (!guard.entered) return reentrant();
+    return verticalCalculus(a.data,inputIsF,order,integral,b.data,a.shape.columns,true);
 }
 WVKernelStatus WVTransformStratifiedQGKernel::reconstruct(WVComplexConstView a,WVStratifiedQGField field,WVStratifiedQGDerivative derivative,double* b) {
     ++metrics_.fieldReconstructionCount[static_cast<std::size_t>(field)];

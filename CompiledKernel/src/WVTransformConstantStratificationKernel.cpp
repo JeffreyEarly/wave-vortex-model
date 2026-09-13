@@ -92,7 +92,7 @@ enum PlanIndex : std::size_t {
 };
 enum MatlabPlanIndex : std::size_t {
     matlabRetainedDCT, matlabRetainedDST, matlabColumnDCT, matlabColumnDST,
-    matlabCompactHorizontalInverse, matlabPlanCount
+    matlabPlanCount
 };
 
 using detail::EvolvedWaveVortexCoefficients;
@@ -767,11 +767,8 @@ WVKernelStatus WVTransformConstantStratificationKernel::prepareMatlabPrimitives(
             prepared[matlabColumnDCT]); if (!status) return status;
         status=engine_->createPlan(verticalSpecification(c,1,1,1,true),
             prepared[matlabColumnDST]); if (!status) return status;
-        if (compact_)
-            prepared[matlabCompactHorizontalInverse]=
-                std::make_unique<WVCompactHorizontalPlan>(compact_->horizontal[0],false);
         const bool missingColumn=!prepared[matlabColumnDCT] || !prepared[matlabColumnDST];
-        const bool missingSchedulePlan=compact_ ? !prepared[matlabCompactHorizontalInverse] :
+        const bool missingSchedulePlan=!compact_ &&
             (!prepared[matlabRetainedDCT] || !prepared[matlabRetainedDST]);
         if (missingColumn || missingSchedulePlan)
             return {WVKernelStatusCode::fftPlanFailure,
@@ -1283,6 +1280,74 @@ WVKernelStatus WVTransformConstantStratificationKernel::applyVerticalColumn(
     return WVKernelStatus::ok();
 }
 
+WVKernelStatus WVTransformConstantStratificationKernel::applyVerticalCalculus(
+    WVRealConstView input,bool inputIsF,unsigned order,bool integral,WVRealView output) {
+    if (!matlabPrimitivesPrepared_)
+        return {WVKernelStatusCode::unsupportedOperation,"MATLAB primitives were not prepared."};
+    if ((integral && order!=1) || (!integral && (order<1 || order>4)))
+        return {WVKernelStatusCode::invalidConfiguration,
+            integral ? "Constant vertical integration supports only order one." :
+                "Constant vertical differentiation order must be from one through four."};
+    const auto& c=descriptor_.configuration();
+    if (input.shape.rows!=c.Nz || output.shape.rows!=c.Nz ||
+        input.shape.columns==0 || output.shape.columns!=input.shape.columns)
+        return {WVKernelStatusCode::invalidShape,
+            "Constant vertical calculus requires matching [Nz,Ncolumn] arrays."};
+    if (!input.data || reinterpret_cast<std::uintptr_t>(input.data)%alignof(double) ||
+        !output.data || reinterpret_cast<std::uintptr_t>(output.data)%alignof(double))
+        return {WVKernelStatusCode::invalidPointer,
+            "Constant vertical calculus requires aligned real storage."};
+    std::size_t count=0,bytes=0;
+    try {
+        count=checkedProduct(c.Nz,input.shape.columns);
+        bytes=checkedProduct(count,sizeof(double));
+    } catch (const std::overflow_error& error) {
+        return {WVKernelStatusCode::sizeOverflow,error.what()};
+    }
+    auto status=validateMutableOutputOutsidePreparedState(output.data,bytes); if (!status) return status;
+    if (memoryOverlaps(input.data,bytes,output.data,bytes))
+        return {WVKernelStatusCode::overlappingArrays,
+            "Constant vertical-calculus input and output overlap."};
+    ExecutionGuard guard(executing_);
+    if (!guard.entered())
+        return {WVKernelStatusCode::reentrantExecution,"Kernel operations are not reentrant."};
+
+    auto* working=reinterpret_cast<WVComplex64*>(halfSpectrumScratch_.data());
+    const bool outputIsF=integral ? !inputIsF : ((order%2)==0 ? inputIsF : !inputIsF);
+    const bool inputIsSine=!inputIsF,outputIsSine=!outputIsF;
+    auto* forward=matlabPlans_[inputIsSine ? matlabColumnDST : matlabColumnDCT].get();
+    auto* inverse=matlabPlans_[outputIsSine ? matlabColumnDST : matlabColumnDCT].get();
+    const double derivativeSignsF[]={-1.0,-1.0,1.0,1.0};
+    const double derivativeSignsG[]={1.0,-1.0,-1.0,1.0};
+    const double derivativeSign=(inputIsF ? derivativeSignsF : derivativeSignsG)[order-1];
+    for (std::size_t column=0;column<input.shape.columns;++column) {
+        for (std::size_t z=0;z<c.Nz;++z)
+            working[z]={input.data[z+c.Nz*column],0.0};
+        status=forward->execute(working+(inputIsSine?1:0),working+(inputIsSine?1:0));
+        if (!status) return status;
+        if (inputIsSine) normalizeForwardDST(working,c.Nz,1,1,0,1);
+        else normalizeForwardDCT(working,c.Nz,1,1,0,1);
+        for (std::size_t j=0;j<c.Nz;++j) {
+            double multiplier=0.0;
+            if (j<c.Nj && j!=0) {
+                const double m=pi*static_cast<double>(j)/c.Lz;
+                multiplier=integral ? (inputIsF ? 1.0 : -1.0)/m :
+                    derivativeSign*std::pow(m,static_cast<int>(order));
+            }
+            working[j]=multiply(working[j],multiplier);
+        }
+        if (outputIsSine) normalizeInverseDST(working,c.Nz,1,1,0,1);
+        else normalizeInverseDCT(working,c.Nz,1,1,0,1);
+        status=inverse->execute(working+(outputIsSine?1:0),working+(outputIsSine?1:0));
+        if (!status) return status;
+        const double bottom=integral && inputIsSine ? working[0].real : 0.0;
+        for (std::size_t z=0;z<c.Nz;++z)
+            output.data[z+c.Nz*column]=working[z].real-bottom;
+        metrics_.executionCount+=2; metrics_.verticalExecutionCount+=2;
+    }
+    return WVKernelStatus::ok();
+}
+
 WVKernelStatus WVTransformConstantStratificationKernel::horizontalForward(
     WVRealVolumeConstView input,WVComplexView output) {
     if (!matlabPrimitivesPrepared_)
@@ -1295,21 +1360,18 @@ WVKernelStatus WVTransformConstantStratificationKernel::horizontalForward(
     if (memoryOverlaps(input.data,inputBytes,output.data,outputBytes))
         return {WVKernelStatusCode::overlappingArrays,"Constant horizontal input and output overlap."};
     ExecutionGuard guard(executing_); if (!guard.entered()) return {WVKernelStatusCode::reentrantExecution,"Kernel operations are not reentrant."};
-    if (compact_) status=plans_[horizontalForward1]->execute(input.data,output.data);
-    else {
-        auto* half=reinterpret_cast<WVComplex64*>(halfSpectrumScratch_.data());
-        status=plans_[horizontalForward1]->execute(input.data,half); if (!status) return status;
-        const auto& mapping=descriptor_.halfSpectrumMappings(); const auto Nz=descriptor_.configuration().Nz;
-        const double scale=1.0/static_cast<double>(descriptor_.configuration().Nx*descriptor_.configuration().Ny);
-        for (std::size_t mode=0;mode<descriptor_.Nkl();++mode) {
-            const auto row=mapping.storageRowsByWVIndex[mode];
-            const bool self=std::find(mapping.selfConjugateRows.begin(),mapping.selfConjugateRows.end(),row)!=mapping.selfConjugateRows.end();
-            for (std::size_t z=0;z<Nz;++z) {
+    auto* half=reinterpret_cast<WVComplex64*>(halfSpectrumScratch_.data());
+    status=scalarPlan(horizontalForward1)->execute(input.data,half); if (!status) return status;
+    const auto& mapping=descriptor_.halfSpectrumMappings(); const auto Nz=descriptor_.configuration().Nz;
+    const double scale=1.0/static_cast<double>(descriptor_.configuration().Nx*descriptor_.configuration().Ny);
+    for (std::size_t mode=0;mode<descriptor_.Nkl();++mode) {
+        const auto row=mapping.storageRowsByWVIndex[mode];
+        const bool self=std::find(mapping.selfConjugateRows.begin(),mapping.selfConjugateRows.end(),row)!=mapping.selfConjugateRows.end();
+        for (std::size_t z=0;z<Nz;++z) {
             auto value=half[z+Nz*row];
             if (mapping.conjugatesStoredValueByWVIndex[mode]) value=conjugate(value);
             if (self) value.imag=0;
             output.data[z+Nz*mode]=multiply(value,scale);
-            }
         }
     }
     if (!status) return status; ++metrics_.executionCount; ++metrics_.horizontalExecutionCount; return WVKernelStatus::ok();
@@ -1327,25 +1389,21 @@ WVKernelStatus WVTransformConstantStratificationKernel::horizontalInverse(
     if (memoryOverlaps(input.data,inputBytes,output.data,outputBytes))
         return {WVKernelStatusCode::overlappingArrays,"Constant horizontal input and output overlap."};
     ExecutionGuard guard(executing_); if (!guard.entered()) return {WVKernelStatusCode::reentrantExecution,"Kernel operations are not reentrant."};
-    if (compact_) status=matlabPlans_[matlabCompactHorizontalInverse]->execute(input.data,output.data);
-    else {
-        const auto& c=descriptor_.configuration(); const auto& mapping=descriptor_.halfSpectrumMappings();
-        const auto rows=mapping.NxHalf*c.Ny; auto* half=reinterpret_cast<WVComplex64*>(halfSpectrumScratch_.data());
-        std::fill(half,half+c.Nz*rows,WVComplex64{});
-        for (std::size_t mode=0;mode<descriptor_.Nkl();++mode) {
-            const auto row=mapping.storageRowsByWVIndex[mode];
-            const bool self=std::find(mapping.selfConjugateRows.begin(),mapping.selfConjugateRows.end(),row)!=mapping.selfConjugateRows.end();
-            for (std::size_t z=0;z<c.Nz;++z) {
-                auto value=input.data[z+c.Nz*mode];
-                if (self && value.imag!=0.0)
-                    return {WVKernelStatusCode::invalidConfiguration,"Self-conjugate Fourier values must be real."};
-                if (mapping.conjugatesStoredValueByWVIndex[mode]) value=conjugate(value);
-                half[z+c.Nz*row]=value;
-            }
+    const auto& c=descriptor_.configuration(); const auto& mapping=descriptor_.halfSpectrumMappings();
+    const auto rows=mapping.NxHalf*c.Ny; auto* half=reinterpret_cast<WVComplex64*>(halfSpectrumScratch_.data());
+    std::fill(half,half+c.Nz*rows,WVComplex64{});
+    for (std::size_t mode=0;mode<descriptor_.Nkl();++mode) {
+        const auto row=mapping.storageRowsByWVIndex[mode];
+        const bool self=std::find(mapping.selfConjugateRows.begin(),mapping.selfConjugateRows.end(),row)!=mapping.selfConjugateRows.end();
+        for (std::size_t z=0;z<c.Nz;++z) {
+            auto value=input.data[z+c.Nz*mode];
+            if (self) value.imag=0;
+            if (mapping.conjugatesStoredValueByWVIndex[mode]) value=conjugate(value);
+            half[z+c.Nz*row]=value;
         }
-        completeHermitianBoundaries(half,mapping,c.Nz,1);
-        status=scalarInversePlan_->execute(half,output.data);
     }
+    completeHermitianBoundaries(half,mapping,c.Nz,1);
+    status=scalarInversePlan_->execute(half,output.data);
     if (!status) return status; ++metrics_.executionCount; ++metrics_.horizontalExecutionCount; return WVKernelStatus::ok();
 }
 
