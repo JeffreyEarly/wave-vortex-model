@@ -1,0 +1,5 @@
+Name,Passed,Failed,Incomplete,Duration,Details
+TestBoussinesqCompiledKernel/variableStratificationMatchesMatlab,1,0,0,45.3362051666667,
+TestHydrostaticCompiledKernel/variableStratificationMatchesMatlab,1,0,0,30.617436625,
+TestWVCompiledConsumers/sampledObserversShareCompiledStateScope,1,0,0,3.67485075,
+TestWVCompiledPublicAdapters/verticalCalculusPreservesMatlabLayouts,1,0,0,5.70324770833333,

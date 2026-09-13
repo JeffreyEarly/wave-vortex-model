@@ -1,0 +1,37 @@
+{
+  "schemaVersion": "wvm520-combined-freeze-v1",
+  "candidateCommit": "e9cba05235ce1a2f7988f3d402d1a56537067faf",
+  "baselineCommit": "939eb5797053a6c5a3a019e411ef807aa1fb3a4d",
+  "candidate": {
+    "moduleSHA256": "a16e7d1cc83707d028f1665dbdd5cff9f411e0c99072d9e7334b3cbeb25796fa",
+    "sourceAggregateSHA256": "91487ae2e6311d95e0d41aaa591247bba420c0a7ca943cee0e664c88873454e1"
+  },
+  "baseline": {
+    "moduleSHA256": "8fbd7e590b0b0274483540e7ceb966c8b24b20c9ac396f06764d95b2a3cb8c8a",
+    "sourceAggregateSHA256": "209a99eeda112d7b4106821c859eba619a8f2745f44489dc4ed6fb2d8af81700"
+  },
+  "protocol": "Three fresh processes per configuration and workload, balanced paired order, maxNumCompThreads(16), no profiling, 15 accepted/0 rejected,195 endpoint or199 composite RHS; existing output graph tolerance; preserve all samples; investigate >3% regression.",
+  "fixtures": [
+    {
+      "path": "/private/tmp/wvm-hydro-audit/fixtures/matched-hydrostatic-exponential-coefficient-endpoint-model.nc",
+      "sha256": "b41d76fd14a1e8b8c30fa7d18867906fe2eb377b6a6eb7bfc126a4126a2d39e1",
+      "bytes": 47382120
+    },
+    {
+      "path": "/private/tmp/wvm-hydro-audit/fixtures/matched-hydrostatic-exponential-composite-dense-output-model.nc",
+      "sha256": "f540cfccc98d9c4367760294d6dfc52b66ebfeb57363b35a543ac2fd7c64a4d0",
+      "bytes": 183771488
+    }
+  ],
+  "environment": {
+    "hardware": "Apple M4 Max",
+    "memoryBytes": 137438953472,
+    "macOS": "26.6.1 (25G76)",
+    "MATLAB": "R2025b",
+    "MATLABMaximumThreads": 16,
+    "provider": "native-neon-pthreads FFTW3.3.11",
+    "effectiveFFTThreads": 1,
+    "horizontalWorkers": 12,
+    "pointwiseWorkers": 8
+  }
+}

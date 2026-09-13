@@ -1,0 +1,7 @@
+{
+  "path": "wave-vortex-model-benchmark-artifacts/tracer-derivatives-20260913",
+  "manifestSHA256": "6ea247510c02531feae65f4ec263eaf0173f29f504f146b91979fbe5feb1b39c",
+  "fileCount": 163,
+  "bytes": 2582419279,
+  "contents": "frozen baseline/candidate source archives and MEX modules; candidate native runner/probe; qualified FFTW libraries; raw profiles, all timing samples/logs and comparisons; retained representative outputs; hashes for redundant successful outputs removed after comparison"
+}
