@@ -569,6 +569,9 @@ classdef TestThreeInterfaceBenchmark < matlab.unittest.TestCase
             testCase.verifyTrue(isfile(fullfile(archiveDirectory,result.externalArchive.fileName)))
             testCase.verifyEqual(strlength(result.externalArchive.sha256),64)
             testCase.verifyGreaterThan(result.externalArchive.compressedBytes,0)
+            retained = dir(fullfile(archiveDirectory,"failures"));
+            testCase.verifyEmpty(retained(~ismember({retained.name},{'.','..'})))
+            testCase.verifyTrue(all(arrayfun(@(run)isfield(run.diagnostics,"workerOutput"),result.runs)))
         end
     end
 
