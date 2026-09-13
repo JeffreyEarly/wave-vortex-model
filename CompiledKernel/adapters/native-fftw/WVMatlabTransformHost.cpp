@@ -171,7 +171,7 @@ struct Host {
     bool planPrepared=false;
     bool planActualDensity=true;
     std::size_t evaluations=0, inputBytes=0, outputBytes=0, planPreparations=0, primitiveExecutions=0;
-    std::size_t stateCopyBytes=0, scopedEvaluations=0;
+    std::size_t stateCopyBytes=0, scopedEvaluations=0, coefficientOnlyEvaluations=0;
     std::array<std::vector<WVComplex64>,3> stateStorage;
     std::array<WVCoefficientFamilyConstView,3> stateViews;
     WVIntegrationState ownedState;
@@ -237,7 +237,6 @@ struct Host {
         }
         visit([&](auto& e){require(WVFieldEvaluationService::createBorrowing(e,fields));});
         require(fields->createStateLayout({},stateLayout));
-        if(!isQG()) require(fields->prepareBuiltinNonlinearCoefficientEvaluation());
         for(std::size_t i=0;i<stateLayout.coefficientFamilyCount();++i)
             stateStorage[i].resize(stateLayout.coefficientFamilies()[i].elementCount);
     }
@@ -284,7 +283,7 @@ mxArray* metadata(const Host& h) {
         "sourceBytes","kernelBytes","engineBytes","fieldServiceBytes","preparedPlanBytes","planPreparations","evaluations",
         "stateInputBytes","stateInputCopyBytes","outputBytes","stateValidations","phasePreparations",
         "producerExecutions","cacheHits","duplicateExecutions","liveEvaluationBytes","peakEvaluationBytes","tiledNonlinearExecutions","primitiveExecutions","nonlinearProducerExecutions","physicalReconstructionExecutions",
-        "stateStorageBytes","scopedEvaluations","evaluationActive","evaluationToken",
+        "stateStorageBytes","scopedEvaluations","coefficientOnlyEvaluations","evaluationActive","evaluationToken",
         "densityRecoveries","densityProfileConstructions","densityInversePasses","densityAPEPasses","plannedEvaluationBytes","densityRecovery"};
     Array result(mxCreateStructMatrix(1,1,sizeof(keys)/sizeof(keys[0]),keys));
     auto put=[&](const char* key,double v){mxSetField(result.get(),0,key,mxCreateDoubleScalar(v));};
@@ -303,6 +302,7 @@ mxArray* metadata(const Host& h) {
     put("planPreparations",h.planPreparations); put("evaluations",h.evaluations);
     put("stateInputBytes",h.inputBytes); put("stateInputCopyBytes",h.stateCopyBytes); put("outputBytes",h.outputBytes);
     put("stateStorageBytes",h.stateStorageBytes()); put("scopedEvaluations",h.scopedEvaluations);
+    put("coefficientOnlyEvaluations",h.coefficientOnlyEvaluations);
     put("evaluationActive",h.session?1:0);
     auto* token=mxCreateNumericMatrix(1,1,mxUINT64_CLASS,mxREAL);
     *mxGetUint64s(token)=h.evaluationToken; mxSetField(result.get(),0,"evaluationToken",token);
@@ -385,6 +385,7 @@ mxArray* beginEvaluation(Host& h,const mxArray* const inputs[]) {
     if(h.isQG()) {
         if(mxGetNumberOfElements(inputs[0]) || mxGetNumberOfElements(inputs[1])) invalid("QG has only A0 coefficients.");
     } else { state.coefficients.Ap=coefficients(inputs[0],shape); state.coefficients.Am=coefficients(inputs[1],shape); }
+    if(!h.isQG()) require(h.fields->prepareBuiltinNonlinearCoefficientEvaluation());
     const auto& families=h.stateLayout.coefficientFamilies();
     const WVComplexConstView borrowed[]={state.coefficients.Ap,state.coefficients.Am,state.coefficients.A0};
     for(std::size_t i=0;i<families.size();++i) {
@@ -442,6 +443,41 @@ mxArray* nonlinearCoefficients(Host& h,const mxArray* token) {
     }
     require(h.fields->evaluateBuiltinNonlinearCoefficients(h.ownedState,flux));
     ++h.evaluations; h.outputBytes+=3*shape.elementCount()*sizeof(WVComplex64);
+    mxSetField(result.get(),0,"metrics",metadata(h));
+    return result.release();
+}
+mxArray* coefficientOnlyRightHandSide(Host& h,const mxArray* const inputs[]) {
+    if(h.session) invalid("A coefficient-only RHS requires no active field evaluation.");
+    const auto& g=h.geometry(); const WVShape2D shape{g.Nj,g.Nkl};
+    WVState state{scalar(inputs[3]),scalar(inputs[4]),{{},{},coefficients(inputs[2],shape)}};
+    if(h.isQG()) {
+        if(mxGetNumberOfElements(inputs[0]) || mxGetNumberOfElements(inputs[1])) invalid("QG has only A0 coefficients.");
+    } else {
+        state.coefficients.Ap=coefficients(inputs[0],shape);
+        state.coefficients.Am=coefficients(inputs[1],shape);
+    }
+    const std::size_t families=h.isQG()?1:3;
+    const char* keys[]={"values","metrics"};
+    Array result(mxCreateStructMatrix(1,1,2,keys));
+    auto* values=mxCreateCellMatrix(families,1); mxSetField(result.get(),0,"values",values);
+    WVFlux flux; WVComplexView* channels[]={&flux.Fp,&flux.Fm,&flux.F0};
+    for(std::size_t family=0;family<families;++family) {
+        auto* value=mxCreateDoubleMatrix(shape.rows,shape.columns,mxCOMPLEX);
+        mxSetCell(values,family,value);
+        *channels[h.isQG()?2:family]={reinterpret_cast<WVComplex64*>(mxGetComplexDoubles(value)),shape};
+    }
+    // This event has a closed demand set: only coefficient tendencies escape.
+    // The same resolved native RHS owns its temporary dependencies and context.
+    h.visit([&](auto& engine) {
+        using Engine=std::decay_t<decltype(engine)>;
+        if constexpr(std::is_same_v<Engine,WVBarotropicQGForcingEngine> ||
+                     std::is_same_v<Engine,WVStratifiedQGForcingEngine>)
+            require(engine.evaluateRightHandSide(state.coefficients.A0,flux.F0,nullptr));
+        else require(engine.nonlinearFlux(state,flux));
+    });
+    ++h.evaluations; ++h.coefficientOnlyEvaluations;
+    const auto bytes=families*shape.elementCount()*sizeof(WVComplex64);
+    h.inputBytes+=bytes; h.outputBytes+=bytes;
     mxSetField(result.get(),0,"metrics",metadata(h));
     return result.release();
 }
@@ -712,6 +748,9 @@ bool WVDispatchMatlabTransform(const std::string& command,int nlhs,mxArray* plhs
         } else if(command=="transformNonlinearCoefficients") {
             if(nrhs!=3 || nlhs!=1) invalid("transformNonlinearCoefficients takes handle and token with one output.");
             plhs[0]=nonlinearCoefficients(h,prhs[2]);
+        } else if(command=="transformCoefficientOnlyRightHandSide") {
+            if(nrhs!=7 || nlhs!=1) invalid("transformCoefficientOnlyRightHandSide takes handle, Ap, Am, A0, t and t0 with one output.");
+            plhs[0]=coefficientOnlyRightHandSide(h,prhs+2);
         } else if(command=="transformEndEvaluation") {
             if(nrhs!=3 || nlhs!=0) invalid("transformEndEvaluation takes handle and token with no output.");
             requireEvaluation(h,prhs[2]); h.endEvaluation();

@@ -206,6 +206,7 @@ classdef TestWVCompiledConsumers < matlab.unittest.TestCase
         end
 
         function coefficientSubclassesPreserveCallbacks(testCase)
+            WVCompiledBackend.activateModule(WVCompiledBackend.capabilities());
             testCase.applyFixture(matlab.unittest.fixtures.PathFixture(fileparts(mfilename('fullpath'))));
             definitions = configurations();
             for className = ["WVTestInheritedCoefficients","WVTestOverriddenCoefficients"]

@@ -125,6 +125,32 @@ classdef (Sealed) WVCompiledTransformBackend < handle
             self.endEvaluation(self.evaluationToken);
         end
 
+        function flag = canBeginCoefficientOnlyEvaluation(self)
+            % Preserve active and invalidated external evaluation leases.
+            %
+            % - Developer: true
+            % - Topic: Compiled transform internals
+            flag = self.evaluationToken == 0 && self.leasedEvaluationToken == 0;
+        end
+
+        function result = coefficientOnlyRightHandSide(self,wvt)
+            % Execute a sealed native RHS while borrowing inputs for this call.
+            %
+            % - Developer: true
+            % - Topic: Compiled transform internals
+            arguments
+                self (1,1) WVCompiledTransformBackend
+                wvt (1,1) WVTransform
+            end
+            self.assertActive(); self.assertMatchingTransform(wvt);
+            self.assertScopeUsable(wvt);
+            if ~self.canBeginCoefficientOnlyEvaluation() || ~wvt.canUseCompiledCoefficientOnlyRightHandSide()
+                error("WaveVortexModel:CompiledCoefficientOnlyWorkload","A coefficient-only RHS requires the default nonlinear forcing and no active evaluation lease.");
+            end
+            [Ap,Am,A0] = WVCompiledTransformBackend.stateArrays(wvt,self.Nj,self.Nkl);
+            result = feval(char(self.moduleName),'transformCoefficientOnlyRightHandSide',self.transformHandle,Ap,Am,A0,wvt.t,wvt.t0);
+        end
+
         function prepare(self,variableNames)
             % Prepare one immutable variable evaluation plan.
             %
@@ -321,7 +347,7 @@ classdef (Sealed) WVCompiledTransformBackend < handle
                     ~isfield(capabilities.module,"identityValidated") || ~capabilities.module.identityValidated
                 error("WaveVortexModel:CompiledTransformCapabilityMismatch","The installed compiled module does not have a validated identity.")
             end
-            if ~isfield(capabilities.module,"matlabTransformBridgeVersion") || capabilities.module.matlabTransformBridgeVersion < 8
+            if ~isfield(capabilities.module,"matlabTransformBridgeVersion") || capabilities.module.matlabTransformBridgeVersion < 9
                 error("WaveVortexModel:CompiledTransformCapabilityMismatch","The installed module predates the MATLAB transform operation bridge. Rebuild with WVCompiledBackend.build().")
             end
             if ~isfield(capabilities,"contract") || ~isfield(capabilities.contract,"threadCount") || ...

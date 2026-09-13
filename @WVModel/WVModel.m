@@ -811,8 +811,13 @@ classdef WVModel < handle & WVModelAdaptiveTimeStepMethods & WVModelFixedTimeSte
                     scope = []; %#ok<NASGU>
                     if observer.usesStandardCoefficientFlux()
                         observer.updateIntegratorValues(t,y0(self.indicesForFluxedSystem{i}));
-                        scope = self.wvt.scopedEvaluation(); %#ok<NASGU>
-                        F(self.indicesForFluxedSystem{i}) = observer.fluxForCurrentState();
+                        if ~self.isDynamicsLinear && numel(self.fluxedObservingSystems) == 1 && ...
+                                string(class(observer)) == "WVCoefficients" && self.wvt.canUseCompiledCoefficientOnlyRightHandSide()
+                            F(self.indicesForFluxedSystem{i}) = self.wvt.compiledCoefficientOnlyRightHandSide();
+                        else
+                            scope = self.wvt.scopedEvaluation(); %#ok<NASGU>
+                            F(self.indicesForFluxedSystem{i}) = observer.fluxForCurrentState();
+                        end
                     else
                         % An overridden callback controls its own state changes.
                         F(self.indicesForFluxedSystem{i}) = observer.fluxAtTime(t,y0(self.indicesForFluxedSystem{i}));

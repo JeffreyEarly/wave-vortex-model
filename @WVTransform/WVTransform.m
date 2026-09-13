@@ -472,6 +472,25 @@ classdef WVTransform < matlab.mixin.indexing.RedefinesDot & CAAnnotatedClass
             [Fp,Fm,F0] = result.values{:};
         end
 
+        function flag = canUseCompiledCoefficientOnlyRightHandSide(self)
+            % Check the sealed built-in coefficient-only workload.
+            %
+            % - Developer: true
+            % - Topic: Compiled transform internals
+            flag = self.canUseCompiledNonlinearCoefficients() && ...
+                isempty(self.spectralFluxForcing) && isempty(self.spectralAmplitudeForcing) && ...
+                self.compiledTransformBackend.canBeginCoefficientOnlyEvaluation();
+        end
+
+        function values = compiledCoefficientOnlyRightHandSide(self)
+            % Evaluate a complete RHS with no other consumers in its event.
+            %
+            % - Developer: true
+            % - Topic: Compiled transform internals
+            result = self.compiledTransformBackend.coefficientOnlyRightHandSide(self);
+            values = reshape(result.values,1,[]);
+        end
+
         function report = compiledDensityRecoveryReport(self)
             % - Developer: true
             % - Topic: Compiled transform internals
