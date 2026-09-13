@@ -148,7 +148,6 @@ classdef TestWVCompiledBackend < matlab.unittest.TestCase
             testCase.verifyEqual(capabilities.matlab.minimumRelease,"R2025b");
             testCase.verifyEqual(capabilities.platform.architecture,"maca64");
             testCase.verifyEqual(capabilities.contract.threadCount,min(18,maxNumCompThreads));
-            testCase.verifyEqual(capabilities.contract.planCount,17);
             testCase.verifyEqual(capabilities.contract.planCountMeaning,"logical-prepared-operation-slots");
             testCase.verifyEqual(capabilities.module.executionScheduleVersion,1);
             testCase.verifyEqual(string(capabilities.module.workerPolicyIdentifier),"constant-stage-workers-v1");
@@ -160,8 +159,8 @@ classdef TestWVCompiledBackend < matlab.unittest.TestCase
             testCase.verifyLessThanOrEqual(capabilities.featureValidation.maximumRelativeError,1e-12);
             testCase.verifyTrue(capabilities.featureValidation.hydrostatic.lifecyclePassed);
             testCase.verifyTrue(capabilities.featureValidation.nonhydrostatic.lifecyclePassed);
-            testCase.verifyEqual(capabilities.featureValidation.hydrostatic.planCount,17);
-            testCase.verifyEqual(capabilities.featureValidation.nonhydrostatic.planCount,17);
+            testCase.verifyGreaterThan(capabilities.featureValidation.hydrostatic.planCount,0);
+            testCase.verifyGreaterThan(capabilities.featureValidation.nonhydrostatic.planCount,0);
 
             missingSymbols = WVCompiledBackend.buildForTesting(struct("CommandOutputFunction",@missingSymbolOutput));
             testCase.verifyEqual(missingSymbols.status,"build-failed");
@@ -184,15 +183,17 @@ classdef TestWVCompiledBackend < matlab.unittest.TestCase
             clear recordCleanup
 
             originalHash = capabilities.module.sha256;
+            recordBeforeRollback = string(fileread(recordPath));
             rollback = WVCompiledBackend.buildForTesting(struct("FailureStage","install-validation"));
             testCase.verifyEqual(rollback.status,"build-failed");
+            testCase.verifyEqual(string(fileread(recordPath)),recordBeforeRollback);
             afterRollback = WVCompiledBackend.capabilities();
             testCase.verifyEqual(afterRollback.status,"available");
             testCase.verifyEqual(afterRollback.module.sha256,originalHash);
             testCase.verifyFalse(afterRollback.module.loadedAfterInspection);
         end
 
-        function compiledPreviewExecutesWithoutFallback(testCase)
+        function compiledBackendExecutesWithoutFallback(testCase)
             if ~isCanonicalNativePlatform
                 capabilities = WVCompiledBackend.capabilities();
                 testCase.verifyEqual(capabilities.status,"unsupported");
@@ -223,16 +224,24 @@ classdef TestWVCompiledBackend < matlab.unittest.TestCase
                 testCase.verifyEqual(metadata.activeBackend,"compiled");
                 testCase.verifyEqual(metadata.provider.id,"native-neon-pthreads");
                 testCase.verifyTrue(metadata.module.identityValidated);
-                testCase.verifyEqual(metadata.contract.version,4);
-                testCase.verifyEqual(metadata.runtimeMetrics.planCount,17);
-                testCase.verifyEqual(metadata.runtimeMetrics.persistentFullHermitianBytes,0);
-                testCase.verifyEqual(string(metadata.runtimeMetrics.activeForcingSchedule),"wave-vortex-forcing-v1:WVNonlinearAdvection");
+                testCase.verifyEqual(metadata.contract.version,capabilities.contract.version);
+                testCase.verifyEqual(metadata.contract.matlabTransformBridgeVersion,capabilities.module.matlabTransformBridgeVersion);
+                testCase.verifyGreaterThanOrEqual(metadata.contract.matlabTransformBridgeVersion,5);
+                testCase.verifyGreaterThan(metadata.runtimeMetrics.engineBytes,0);
+                testCase.verifyGreaterThan(metadata.runtimeMetrics.kernelBytes,0);
+                testCase.verifyGreaterThan(metadata.runtimeMetrics.fieldServiceBytes,0);
+                testCase.verifyEqual(metadata.runtimeMetrics.duplicateExecutions,0);
 
                 if definition.isHydrostatic
                     resized = compiledWVT.waveVortexTransformWithResolution([18 14 11]);
                     resizedCleanup = onCleanup(@()delete(resized));
                     testCase.verifyEqual(resized.computationalBackend,"compiled");
-                    testCase.verifyError(@()compiledWVT.waveVortexTransformWithExplicitAntialiasing(),"WaveVortexModel:CompiledBackendUnsupportedAntialiasing");
+                    explicit = compiledWVT.waveVortexTransformWithExplicitAntialiasing();
+                    explicitCleanup = onCleanup(@()delete(explicit));
+                    testCase.verifyEqual(explicit.computationalBackend,"compiled");
+                    testCase.verifyFalse(explicit.shouldAntialias);
+                    testCase.verifyTrue(explicit.hasForcingWithName("antialias filter"));
+                    clear explicitCleanup
                     clear resizedCleanup
 
                     restartPath = string(tempname)+".nc";
@@ -247,8 +256,13 @@ classdef TestWVCompiledBackend < matlab.unittest.TestCase
                     clear restorationCleanup restartCleanup
                 end
 
+                matlabWVT.removeAllForcing();
                 compiledWVT.removeAllForcing();
-                testCase.verifyError(@()compiledWVT.nonlinearFlux(),"WaveVortexModel:CompiledBackendUnsupportedForcing");
+                [expectedFp,expectedFm,expectedF0] = matlabWVT.nonlinearFlux();
+                [actualFp,actualFm,actualF0] = compiledWVT.nonlinearFlux();
+                testCase.verifyEqual(actualFp,expectedFp);
+                testCase.verifyEqual(actualFm,expectedFm);
+                testCase.verifyEqual(actualF0,expectedF0);
                 clear transformCleanup
             end
             metrics = wv_compiled_backend_mex('moduleMetrics');

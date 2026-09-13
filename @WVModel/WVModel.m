@@ -801,8 +801,26 @@ classdef WVModel < handle & WVModelAdaptiveTimeStepMethods & WVModelFixedTimeSte
             % Linear models have no coefficient observer to advance the transform time.
             self.wvt.t = t;
             F = cell(self.nFluxComponents,1);
+            scope = []; %#ok<NASGU>
+            if self.wvt.usesCompiledTransform() && ~any(arrayfun(@(observer) isa(observer,"WVCoefficients"),self.fluxedObservingSystems))
+                scope = self.wvt.scopedEvaluation();
+            end
             for i = 1:length(self.fluxedObservingSystems)
-                F(self.indicesForFluxedSystem{i}) = self.fluxedObservingSystems(i).fluxAtTime(t,y0(self.indicesForFluxedSystem{i}));
+                observer = self.fluxedObservingSystems(i);
+                if self.wvt.usesCompiledTransform() && isa(observer,"WVCoefficients")
+                    scope = []; %#ok<NASGU>
+                    if observer.usesStandardCoefficientFlux()
+                        observer.updateIntegratorValues(t,y0(self.indicesForFluxedSystem{i}));
+                        scope = self.wvt.scopedEvaluation(); %#ok<NASGU>
+                        F(self.indicesForFluxedSystem{i}) = observer.fluxForCurrentState();
+                    else
+                        % An overridden callback controls its own state changes.
+                        F(self.indicesForFluxedSystem{i}) = observer.fluxAtTime(t,y0(self.indicesForFluxedSystem{i}));
+                        scope = self.wvt.scopedEvaluation(); %#ok<NASGU>
+                    end
+                else
+                    F(self.indicesForFluxedSystem{i}) = observer.fluxAtTime(t,y0(self.indicesForFluxedSystem{i}));
+                end
             end
         end
 
@@ -1006,7 +1024,7 @@ classdef WVModel < handle & WVModelAdaptiveTimeStepMethods & WVModelFixedTimeSte
             % that callign outputTimesForIntegrationPeriod actually has the
             % side-effect of setting up the run
             integratorTimes = self.outputTimesForIntegrationPeriod(self.t,finalTime);
-            arrayfun( @(outputFile) outputFile.writeTimeStepToOutputFile(self.t), self.outputFiles);
+            self.writeTimeStepToNetCDFFile(self.t);
 
             self.finalIntegrationTime = finalTime;
             for iTime=1:length(integratorTimes)
@@ -1042,6 +1060,7 @@ classdef WVModel < handle & WVModelAdaptiveTimeStepMethods & WVModelFixedTimeSte
         end
 
         function writeTimeStepToNetCDFFile(self,t)
+            scope = self.wvt.scopedEvaluation(); %#ok<NASGU>
             outputFiles_ = self.outputFiles;
             for iFile = 1:length(outputFiles_)
                 outputFiles_(iFile).writeTimeStepToOutputFile(t);

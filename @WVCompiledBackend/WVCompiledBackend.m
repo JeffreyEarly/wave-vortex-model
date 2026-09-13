@@ -1,5 +1,5 @@
 classdef WVCompiledBackend
-    % Inspect and build the source-only compiled constant-stratification backend.
+    % Inspect and build the source-only compiled transform backend.
     %
     % `WVCompiledBackend` is a developer-facing capability and build surface.
     % It does not select a computational backend for model objects. Detection
@@ -24,5 +24,7 @@ classdef WVCompiledBackend
     methods (Static, Hidden)
         capabilities = capabilitiesForTesting(overrides)
         capabilities = buildForTesting(overrides)
+        qualification = qualifySourceIdentity()
+        manifest = sourceManifestForTesting(overrides)
     end
 end

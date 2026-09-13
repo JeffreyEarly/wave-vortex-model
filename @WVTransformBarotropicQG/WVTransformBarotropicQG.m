@@ -125,6 +125,7 @@ classdef WVTransformBarotropicQG < WVGeometryDoublyPeriodicBarotropic & WVTransf
                 Lxy (1,2) double {mustBePositive}
                 Nxy (1,2) double {mustBePositive}
                 options.shouldAntialias (1,1) logical = true
+                options.computationalBackend (1,1) string {mustBeMember(options.computationalBackend,["matlab" "compiled"])} = "matlab"
                 options.rotationRate (1,1) double = 7.2921E-5
                 options.planetaryRadius (1,1) double = 6.371e6
                 options.latitude (1,1) double {mustBeSupportedLatitude} = 33
@@ -132,6 +133,8 @@ classdef WVTransformBarotropicQG < WVGeometryDoublyPeriodicBarotropic & WVTransf
                 options.h (1,1) double = 0.8
                 options.j (1,1) double {mustBeMember(options.j,[0 1])} = 1
             end
+            requestedBackend = options.computationalBackend;
+            options = rmfield(options,"computationalBackend");
             optionCell = namedargs2cell(options);
             self@WVGeometryDoublyPeriodicBarotropic(Lxy,Nxy,optionCell{:});
             self@WVTransform(WVForcingType(["PVSpectral","PVSpatial","PVSpectralAmplitude"]));
@@ -153,6 +156,8 @@ classdef WVTransformBarotropicQG < WVGeometryDoublyPeriodicBarotropic & WVTransf
             if self.geostrophicComponent.normalization ~= "qgpv"
                 error("This transform requires the geostrophic component to be normalized the the qgpv norm.");
             end
+            self.captureCompiledOperations();
+            self.configureComputationalBackend(requestedBackend);
         end
 
         function val = get.h_0(self)
@@ -169,10 +174,16 @@ classdef WVTransformBarotropicQG < WVGeometryDoublyPeriodicBarotropic & WVTransf
         %
         %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
         function A0 = transformQGPVToWaveVortex(self,qgpv)
+            if self.usesCompiledTransform()
+                values = self.compiledPrimitive("qgPVToA0",{qgpv},struct());
+                A0 = values{1};
+                return
+            end
             A0 = self.transformFromSpatialDomainWithFourier(qgpv);
         end
 
         function F0 = nonlinearFlux(self)
+            scope = self.scopedEvaluation(); %#ok<NASGU>
             self.Fpv = 0*self.Fpv;
             for i=1:length(self.spatialFluxForcing)
                self.Fpv = self.spatialFluxForcing(i).addPotentialVorticitySpatialForcing(self,self.Fpv);
@@ -194,6 +205,7 @@ classdef WVTransformBarotropicQG < WVGeometryDoublyPeriodicBarotropic & WVTransf
             arguments (Output)
                 F0 dictionary
             end
+            scope = self.scopedEvaluation(); %#ok<NASGU>
             F0 = configureDictionary("string","cell");
             self.Fpv = 0*self.Fpv;
             for i=1:length(self.spatialFluxForcing)
@@ -267,6 +279,7 @@ classdef WVTransformBarotropicQG < WVGeometryDoublyPeriodicBarotropic & WVTransf
             wvtX2.t0 = self.t0;
             wvtX2.t = self.t;
             wvtX2.A0 = self.spectralVariableWithResolution(wvtX2,self.A0);
+            wvtX2.configureComputationalBackend(self.computationalBackend);
         end
 
         function wvtX2 = waveVortexTransformWithDoubleResolution(self)
@@ -445,10 +458,12 @@ classdef WVTransformBarotropicQG < WVGeometryDoublyPeriodicBarotropic & WVTransf
             % - Parameter path: path to a NetCDF file
             % - Parameter iTime: (optional) time index to initialize from (default 1)
             % - Parameter shouldReadOnly: (optional) open the returned NetCDFFile read-only (default true)
+            % - Parameter computationalBackend: runtime backend, `"matlab"` (default) or `"compiled"`
             arguments (Input)
                 path char {mustBeFile}
                 options.iTime (1,1) double {mustBePositive} = 1
                 options.shouldReadOnly logical = true
+                options.computationalBackend (1,1) string {mustBeMember(options.computationalBackend,["matlab" "compiled"])} = "matlab"
             end
             arguments (Output)
                 wvt WVTransform
@@ -459,6 +474,7 @@ classdef WVTransformBarotropicQG < WVGeometryDoublyPeriodicBarotropic & WVTransf
                 wvt = WVTransformBarotropicQG.transformFromGroup(ncfile);
                 wvt.initFromNetCDFFile(ncfile,iTime=options.iTime,shouldDisplayInit=1);
                 wvt.initForcingFromNetCDFFile(ncfile);
+                wvt.configureComputationalBackend(options.computationalBackend);
             catch exception
                 if ~isempty(ncfile.id)
                     ncfile.close();
@@ -471,15 +487,18 @@ classdef WVTransformBarotropicQG < WVGeometryDoublyPeriodicBarotropic & WVTransf
         end
 
 
-        function wvt = transformFromGroup(group)
+        function wvt = transformFromGroup(group,runtimeOptions)
             arguments (Input)
                 group NetCDFGroup {mustBeNonempty}
+                runtimeOptions.computationalBackend (1,1) string {mustBeMember(runtimeOptions.computationalBackend,["matlab" "compiled"])} = "matlab"
             end
             arguments (Output)
                 wvt WVTransform {mustBeNonempty}
             end  
             [Lxy, Nxy, options] = WVTransformBarotropicQG.requiredPropertiesForTransformFromGroup(group);
+            options = options(repelem(~strcmp(options(1:2:end),"computationalBackend"),2));
             wvt = WVTransformBarotropicQG(Lxy,Nxy,options{:});
+            wvt.configureComputationalBackend(runtimeOptions.computationalBackend);
         end
 
     end

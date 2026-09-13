@@ -46,6 +46,11 @@ classdef WVGeometryDoublyPeriodicBarotropic < WVGeometryDoublyPeriodic & WVRotat
     end
 
     methods
+        function set.h(self,value)
+            if isa(self,"WVTransform"), self.assertCompiledConfigurationMutable(); end
+            self.h = value;
+        end
+
         function self = WVGeometryDoublyPeriodicBarotropic(Lxy, Nxy, geomOptions, rotatingOptions,options)
             % create geometry for 2D barotropic flow
             %

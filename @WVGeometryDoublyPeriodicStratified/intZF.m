@@ -30,6 +30,15 @@ else
     mustBeMatrix(u);
     mustBeMember(size(u,1),self.Nz);
 end
+
+if self.usesCompiledTransform()
+    values = self.compiledPrimitive("verticalCalculus",{u},struct("inputIsF",true,"order",options.n,"integral",true));
+    U = values{1};
+    if didShift
+        U = permute(reshape(U,self.Nz,self.Nx,self.Ny),[2 3 1]);
+    end
+    return
+end
 IntZF = self.QG0inv*(squeeze(self.h_0 .* self.Q0 ./ self.P0).*self.PF0);
 U = IntZF*u;
 

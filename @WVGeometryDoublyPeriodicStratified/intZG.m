@@ -34,6 +34,15 @@ else
     mustBeMember(size(w,1),self.Nz);
 end
 
+if self.usesCompiledTransform()
+    values = self.compiledPrimitive("verticalCalculus",{w},struct("inputIsF",false,"order",options.n,"integral",true));
+    W = values{1};
+    if didShift
+        W = permute(reshape(W,self.Nz,self.Nx,self.Ny),[2 3 1]);
+    end
+    return
+end
+
 PF0inv = self.PF0inv - self.PF0inv(1,:);
 IntZG = - self.g*PF0inv*(squeeze(self.P0./self.Q0).*(self.QG0 .* shiftdim(1./self.N2,-1)));
 W = IntZG*w;

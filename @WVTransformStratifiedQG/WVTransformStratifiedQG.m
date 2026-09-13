@@ -133,6 +133,7 @@ classdef WVTransformStratifiedQG < WVGeometryDoublyPeriodicStratified & WVTransf
                 Lxyz (1,3) double {mustBePositive}
                 Nxyz (1,3) double {mustBePositive}
                 options.shouldAntialias (1,1) logical = true
+                options.computationalBackend (1,1) string {mustBeMember(options.computationalBackend,["matlab" "compiled"])} = "matlab"
                 options.z (:,1) double {mustBeNonempty} % quadrature points!
                 options.j (:,1) double {mustBeNonempty}
                 options.Nj (1,1) double {mustBePositive}
@@ -155,6 +156,8 @@ classdef WVTransformStratifiedQG < WVGeometryDoublyPeriodicStratified & WVTransf
                 options.z_int (:,1) double
             end
 
+            requestedBackend = options.computationalBackend;
+            options = rmfield(options,"computationalBackend");
             optionArgs = namedargs2cell(options);
             self@WVGeometryDoublyPeriodicStratified(Lxyz, Nxyz, optionArgs{:})
             self@WVTransform(WVForcingType(["PVSpectral","PVSpatial","PVSpectralAmplitude"]));
@@ -177,6 +180,8 @@ classdef WVTransformStratifiedQG < WVGeometryDoublyPeriodicStratified & WVTransf
                 error("This transform requires the geostrophic component to be normalized the the qgpv norm.");
                 % self.A0PV = self.geostrophicComponent.multiplierForVariable(WVCoefficientMatrix.A0,"qgpv-inv");
             end
+            self.captureCompiledOperations();
+            self.configureComputationalBackend(requestedBackend);
         end
 
         function wvtX2 = waveVortexTransformWithResolution(self,m)
@@ -196,6 +201,7 @@ classdef WVTransformStratifiedQG < WVGeometryDoublyPeriodicStratified & WVTransf
             wvtX2.t0 = self.t0;
             wvtX2.t = self.t;
             [wvtX2.A0] = self.spectralVariableWithResolution(wvtX2,self.A0);
+            wvtX2.configureComputationalBackend(self.computationalBackend);
         end
 
         function wvt = hydrostaticTransform(self)
@@ -236,10 +242,16 @@ classdef WVTransformStratifiedQG < WVGeometryDoublyPeriodicStratified & WVTransf
         %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
         function A0 = transformQGPVToWaveVortex(self,qgpv)
+            if self.usesCompiledTransform()
+                values = self.compiledPrimitive("qgPVToA0",{qgpv},struct());
+                A0 = values{1};
+                return
+            end
             A0 = self.transformFromSpatialDomainWithFg(self.transformFromSpatialDomainWithFourier(qgpv));
         end
 
         function F0 = nonlinearFlux(self)
+            scope = self.scopedEvaluation(); %#ok<NASGU>
             self.Fpv = 0*self.Fpv;
             for i=1:length(self.spatialFluxForcing)
                 self.Fpv = self.spatialFluxForcing(i).addPotentialVorticitySpatialForcing(self,self.Fpv);
@@ -261,6 +273,7 @@ classdef WVTransformStratifiedQG < WVGeometryDoublyPeriodicStratified & WVTransf
             arguments (Output)
                 F0 dictionary
             end
+            scope = self.scopedEvaluation(); %#ok<NASGU>
             F0 = configureDictionary("string","cell");
             self.Fpv = 0*self.Fpv;
             for i=1:length(self.spatialFluxForcing)
@@ -387,10 +400,12 @@ classdef WVTransformStratifiedQG < WVGeometryDoublyPeriodicStratified & WVTransf
             % - Parameter path: path to a NetCDF file
             % - Parameter iTime: (optional) time index to initialize from (default 1)
             % - Parameter shouldReadOnly: (optional) open the returned NetCDFFile read-only (default true)
+            % - Parameter computationalBackend: runtime backend, `"matlab"` (default) or `"compiled"`
             arguments (Input)
                 path char {mustBeFile}
                 options.iTime (1,1) double {mustBePositive} = 1
                 options.shouldReadOnly logical = true
+                options.computationalBackend (1,1) string {mustBeMember(options.computationalBackend,["matlab" "compiled"])} = "matlab"
             end
             arguments (Output)
                 wvt WVTransform
@@ -401,6 +416,7 @@ classdef WVTransformStratifiedQG < WVGeometryDoublyPeriodicStratified & WVTransf
                 wvt = WVTransformStratifiedQG.transformFromGroup(ncfile);
                 wvt.initFromNetCDFFile(ncfile,iTime=options.iTime,shouldDisplayInit=1);
                 wvt.initForcingFromNetCDFFile(ncfile);
+                wvt.configureComputationalBackend(options.computationalBackend);
             catch exception
                 if ~isempty(ncfile.id)
                     ncfile.close();
@@ -413,15 +429,18 @@ classdef WVTransformStratifiedQG < WVGeometryDoublyPeriodicStratified & WVTransf
         end
 
 
-        function wvt = transformFromGroup(group)
+        function wvt = transformFromGroup(group,runtimeOptions)
             arguments (Input)
                 group NetCDFGroup {mustBeNonempty}
+                runtimeOptions.computationalBackend (1,1) string {mustBeMember(runtimeOptions.computationalBackend,["matlab" "compiled"])} = "matlab"
             end
             arguments (Output)
                 wvt WVTransform {mustBeNonempty}
             end  
             [Lxy, Nxy, options] = WVTransformStratifiedQG.requiredPropertiesForTransformFromGroup(group);
+            options = options(repelem(~strcmp(options(1:2:end),"computationalBackend"),2));
             wvt = WVTransformStratifiedQG(Lxy,Nxy,options{:});
+            wvt.configureComputationalBackend(runtimeOptions.computationalBackend);
         end
 
     end

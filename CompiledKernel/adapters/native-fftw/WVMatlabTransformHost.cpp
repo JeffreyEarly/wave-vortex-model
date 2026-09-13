@@ -7,12 +7,15 @@
 #include "WaveVortexRuntime/WVBoussinesqForcingEngine.hpp"
 #include "WaveVortexRuntime/WVStratifiedQGForcingEngine.hpp"
 #include "WaveVortexRuntime/WVBarotropicQGForcingEngine.hpp"
+#include "WaveVortexRuntime/WVForcingEngine.hpp"
 #include "WaveVortexRuntime/WVFieldEvaluationService.hpp"
 #include "WaveVortexRuntime/WVIntegrationState.hpp"
+#include "WaveVortexRuntime/WVPortableVariablePlan.hpp"
 #include "WaveVortexRuntime/WVExtensionCatalog.hpp"
 #include "WVScopedStateEvaluation.hpp"
 
 #include <algorithm>
+#include <array>
 #include <cmath>
 #include <limits>
 #include <map>
@@ -83,7 +86,7 @@ WVStratifiedModalArrays modalArrays(const mxArray* a) {
     WVStratifiedModalArrays data; auto& g=data.geometry;
     g.transformClass=text(field(a,"transformClass"));
     if(g.transformClass!="WVTransformHydrostatic" && g.transformClass!="WVTransformBoussinesq" &&
-       g.transformClass!="WVTransformStratifiedQG" && g.transformClass!="WVTransformBarotropicQG")
+       g.transformClass!="WVTransformStratifiedQG" && g.transformClass!="WVTransformBarotropicQG" && g.transformClass!="WVTransformConstantStratification")
         invalid("This modal bridge requires a Hydrostatic, Boussinesq or Stratified QG transform.");
     g.modelVersion=text(field(a,"modelVersion"));
     g.Nx=extent(field(a,"Nx")); g.Ny=extent(field(a,"Ny"));
@@ -96,6 +99,7 @@ WVStratifiedModalArrays modalArrays(const mxArray* a) {
     const auto* antialias=field(a,"shouldAntialias");
     if(!mxIsLogicalScalar(antialias)) invalid("shouldAntialias must be a scalar logical.");
     g.shouldAntialias=mxIsLogicalScalarTrue(antialias);
+    if(g.transformClass=="WVTransformConstantStratification") return data;
     if(g.transformClass=="WVTransformBarotropicQG") {
         if(g.Nz!=1 || g.Nj!=1) invalid("Barotropic geometry requires Nz=Nj=1.");
         const auto j=scalar(field(a,"j")); if(j!=0 && j!=1) invalid("Barotropic mode index must be zero or one.");
@@ -147,11 +151,14 @@ std::vector<std::string> names(const mxArray* a) {
 struct Host {
     std::shared_ptr<const WVOwnedStratifiedModalSource> source;
     using Engines=std::variant<std::unique_ptr<WVHydrostaticForcingEngine>,
-        std::unique_ptr<WVBoussinesqForcingEngine>,std::unique_ptr<WVStratifiedQGForcingEngine>,std::unique_ptr<WVBarotropicQGForcingEngine>>;
+        std::unique_ptr<WVBoussinesqForcingEngine>,std::unique_ptr<WVStratifiedQGForcingEngine>,std::unique_ptr<WVBarotropicQGForcingEngine>,std::unique_ptr<WVConstantStratificationForcingEngine>>;
     Engines engine;
     WVStratifiedModalGeometry simpleGeometry;
     const WVStratifiedModalGeometry& geometry() const { return source?source->geometry():simpleGeometry; }
     bool isBarotropic() const { return geometry().transformClass=="WVTransformBarotropicQG"; }
+    bool isConstant() const { return geometry().transformClass=="WVTransformConstantStratification"; }
+    bool isNonhydrostatic() const { return geometry().transformClass=="WVTransformBoussinesq" || (isConstant() && !constantConfiguration.isHydrostatic); }
+    WVTransformConstantStratificationConfiguration constantConfiguration;
     bool isQG() const { return isBarotropic() || geometry().transformClass=="WVTransformStratifiedQG"; }
     template<class F> decltype(auto) visit(F&& f) { return std::visit([&](auto& e)->decltype(auto){return f(*e);},engine); }
     template<class F> decltype(auto) visit(F&& f) const { return std::visit([&](const auto& e)->decltype(auto){return f(*e);},engine); }
@@ -162,16 +169,26 @@ struct Host {
     WVFieldEvaluationPlan plan;
     WVIntegrationStateLayout stateLayout;
     bool planPrepared=false;
+    bool planActualDensity=true;
     std::size_t evaluations=0, inputBytes=0, outputBytes=0, planPreparations=0, primitiveExecutions=0;
+    std::size_t stateCopyBytes=0, scopedEvaluations=0;
+    std::array<std::vector<WVComplex64>,3> stateStorage;
+    std::array<WVCoefficientFamilyConstView,3> stateViews;
+    WVIntegrationState ownedState;
+    std::uint64_t evaluationToken=0;
+    WVNoMotionRecoveryReport densityReport;
+    bool densityReportAvailable=false;
+    // Destroy the session before its state storage and borrowed field service.
+    std::unique_ptr<WVFieldEvaluationSession> session;
 
-    explicit Host(WVStratifiedModalArrays data) {
-        if(data.geometry.transformClass=="WVTransformBarotropicQG") simpleGeometry=std::move(data.geometry);
+    explicit Host(WVStratifiedModalArrays data,const mxArray* configuration) {
+        if(data.geometry.transformClass=="WVTransformBarotropicQG" || data.geometry.transformClass=="WVTransformConstantStratification") simpleGeometry=std::move(data.geometry);
         else require(WVOwnedStratifiedModalSource::create(std::move(data),source));
-        const auto kind=isBarotropic()?WVPersistedTransformKind::barotropicQG:isQG()?WVPersistedTransformKind::stratifiedQG:
+        const auto kind=isConstant()?WVPersistedTransformKind::constantStratification:isBarotropic()?WVPersistedTransformKind::barotropicQG:isQG()?WVPersistedTransformKind::stratifiedQG:
             geometry().transformClass=="WVTransformBoussinesq"?WVPersistedTransformKind::boussinesq:WVPersistedTransformKind::hydrostatic;
         policy=selectNativeVariablePolicy(true,kind,
             "native-fftw",1,false,nativeHostTopology());
-        if(!isBarotropic() && (policy.matrixBackend!=WVNativeMatrixBackend::accelerate || !policy.compact))
+        if(!isBarotropic() && !isConstant() && (policy.matrixBackend!=WVNativeMatrixBackend::accelerate || !policy.compact))
             invalid("The MATLAB variable backend requires the qualified native Accelerate policy.");
         WVVariableKernelServices services; services.execution=policy.execution;
         services.matrixBackendFactory=WVCreateAccelerateMatrixBackend;
@@ -192,7 +209,8 @@ struct Host {
             require(WVBoussinesqForcingEngine::create(source,schedule,catalog,std::move(fft),e,services)); engine=std::move(e);
         } else if(kind==WVPersistedTransformKind::stratifiedQG) {
             std::unique_ptr<WVStratifiedQGForcingEngine> e;
-            require(WVStratifiedQGForcingEngine::create(source,schedule,catalog,std::move(fft),e,services)); engine=std::move(e);
+            require(WVStratifiedQGForcingEngine::create(source,schedule,catalog,std::move(fft),e,services));
+            require(e->kernel().prepareMatlabPrimitives()); engine=std::move(e);
         }
         if(isBarotropic()) {
             const auto& g=geometry(); WVTransformBarotropicQGConfiguration config;
@@ -203,23 +221,56 @@ struct Host {
             if(e->kernel().descriptor().Nkl()!=g.Nkl) invalid("Barotropic retained shape differs from MATLAB.");
             engine=std::move(e);
         }
+        if(isConstant()) {
+            const auto& g=geometry(); auto& c=constantConfiguration;
+            c.Nx=g.Nx; c.Ny=g.Ny; c.Nz=g.Nz; c.Nj=g.Nj; c.Lx=g.Lx; c.Ly=g.Ly; c.Lz=g.Lz;
+            c.g=g.g; c.rho0=g.rho0; c.latitude=g.latitude; c.rotationRate=g.rotationRate; c.planetaryRadius=g.planetaryRadius;
+            c.shouldAntialias=g.shouldAntialias; c.N0=scalar(field(configuration,"N0"));
+            const auto* hydrostatic=field(configuration,"isHydrostatic");
+            if(!mxIsLogicalScalar(hydrostatic)) invalid("isHydrostatic must be a scalar logical.");
+            c.isHydrostatic=mxIsLogicalScalarTrue(hydrostatic);
+            std::unique_ptr<WVConstantStratificationForcingEngine> e;
+            require(WVConstantStratificationForcingEngine::create(c,schedule,catalog,std::move(fft),e));
+            if(e->kernel().descriptor().spectralShape().columns!=g.Nkl) invalid("Constant retained shape differs from MATLAB.");
+            require(e->kernel().prepareMatlabPrimitives()); engine=std::move(e);
+        }
         visit([&](auto& e){require(WVFieldEvaluationService::createBorrowing(e,fields));});
         require(fields->createStateLayout({},stateLayout));
+        for(std::size_t i=0;i<stateLayout.coefficientFamilyCount();++i)
+            stateStorage[i].resize(stateLayout.coefficientFamilies()[i].elementCount);
     }
-    void prepare(std::vector<std::string> next) {
-        if(planPrepared && next==requested) return;
+    void prepare(std::vector<std::string> next,bool actualDensity=true) {
+        if(planPrepared && next==requested && actualDensity==planActualDensity) return;
         std::vector<WVFieldRequest> requests;
         for(std::size_t i=0;i<next.size();++i) {
-            if(next[i]!="u" && next[i]!="v" && next[i]!="w" && next[i]!="eta")
-                invalid("The prepared adapter currently supports u, v, w and eta.");
             requests.push_back({std::to_string(i),next[i],{}});
         }
-        WVFieldEvaluationPlan candidate; require(fields->createPlan(requests,candidate));
-        plan=std::move(candidate); requested=std::move(next); planPrepared=true; ++planPreparations;
+        WVFieldEvaluationPlan candidate;
+        WVDensityDiagnosticContract density;
+        density.reference=actualDensity?WVNoMotionReference::actual:WVNoMotionReference::initial;
+        require(session?fields->createPlanForActiveEvaluation(requests,candidate,density):fields->createPlan(requests,candidate,density));
+        plan=std::move(candidate); requested=std::move(next); planPrepared=true; planActualDensity=actualDensity; ++planPreparations;
+    }
+    void endEvaluation() noexcept {
+        refreshDensityReport();
+        session.reset(); evaluationToken=0; ownedState={};
+        stateViews={};
+    }
+    void refreshDensityReport() noexcept {
+        WVNoMotionRecoveryReport report;
+        if(fields->activeDensityRecoveryReport(report)) {
+            densityReport=report; densityReportAvailable=true;
+        }
+    }
+    std::size_t stateStorageBytes() const noexcept {
+        std::size_t bytes=0;
+        for(const auto& values:stateStorage) bytes+=values.capacity()*sizeof(WVComplex64);
+        return bytes;
     }
 };
 std::map<std::uint64_t,std::unique_ptr<Host>> hosts;
 std::uint64_t nextHandle=std::uint64_t{1}<<63;
+std::uint64_t nextEvaluationToken=1;
 Host& host(const mxArray* a) {
     if(!a || !mxIsUint64(a) || mxGetNumberOfElements(a)!=1) invalid("Expected a uint64 transform handle.");
     const auto i=hosts.find(*mxGetUint64s(a));
@@ -230,32 +281,75 @@ mxArray* metadata(const Host& h) {
     const char* keys[]={"transformClass","scope","matrixBackend","policy","horizontalWorkers","pointwiseWorkers",
         "sourceBytes","kernelBytes","engineBytes","fieldServiceBytes","preparedPlanBytes","planPreparations","evaluations",
         "stateInputBytes","stateInputCopyBytes","outputBytes","stateValidations","phasePreparations",
-        "producerExecutions","cacheHits","duplicateExecutions","liveEvaluationBytes","peakEvaluationBytes","tiledNonlinearExecutions","primitiveExecutions"};
+        "producerExecutions","cacheHits","duplicateExecutions","liveEvaluationBytes","peakEvaluationBytes","tiledNonlinearExecutions","primitiveExecutions",
+        "stateStorageBytes","scopedEvaluations","evaluationActive","evaluationToken",
+        "densityRecoveries","densityProfileConstructions","densityInversePasses","densityAPEPasses","plannedEvaluationBytes","densityRecovery"};
     Array result(mxCreateStructMatrix(1,1,sizeof(keys)/sizeof(keys[0]),keys));
     auto put=[&](const char* key,double v){mxSetField(result.get(),0,key,mxCreateDoubleScalar(v));};
     mxSetField(result.get(),0,"transformClass",mxCreateString(h.geometry().transformClass.c_str()));
     mxSetField(result.get(),0,"scope",mxCreateString("call-scoped stratified fields, nonlinear flux and raw primitives"));
     mxSetField(result.get(),0,"matrixBackend",mxCreateString(nativeMatrixBackendIdentifier(h.policy.matrixBackend)));
     mxSetField(result.get(),0,"policy",mxCreateString(std::string(h.policy.selection).c_str()));
-    put("horizontalWorkers",h.policy.execution.horizontalWorkers); put("pointwiseWorkers",h.policy.execution.pointwiseWorkers);
+    if(h.isConstant()) {
+        const WVConstantKernelExecutionOptions options;
+        put("horizontalWorkers",options.horizontalOuterWorkers); put("pointwiseWorkers",options.pointwiseWorkers);
+    } else { put("horizontalWorkers",h.policy.execution.horizontalWorkers); put("pointwiseWorkers",h.policy.execution.pointwiseWorkers); }
     put("sourceBytes",h.source?h.source->persistentBytes():0);
     h.visit([&](const auto& e){put("kernelBytes",e.kernel().persistentBytes()); put("engineBytes",e.persistentBytes());});
     put("fieldServiceBytes",h.fields->persistentBytes()); put("preparedPlanBytes",h.plan.persistentBytes());
     put("planPreparations",h.planPreparations); put("evaluations",h.evaluations);
-    put("stateInputBytes",h.inputBytes); put("stateInputCopyBytes",0); put("outputBytes",h.outputBytes);
+    put("stateInputBytes",h.inputBytes); put("stateInputCopyBytes",h.stateCopyBytes); put("outputBytes",h.outputBytes);
+    put("stateStorageBytes",h.stateStorageBytes()); put("scopedEvaluations",h.scopedEvaluations);
+    put("evaluationActive",h.session?1:0);
+    auto* token=mxCreateNumericMatrix(1,1,mxUINT64_CLASS,mxREAL);
+    *mxGetUint64s(token)=h.evaluationToken; mxSetField(result.get(),0,"evaluationToken",token);
     h.visit([&](const auto& engine) {
         const auto& k=engine.kernel().metrics(); const auto& e=engine.variableEvaluationMetrics();
         const auto& f=h.fields->metrics().variableEvaluation;
+        const auto active=h.fields->activeVariableEvaluationMetrics();
         put("stateValidations",k.stateValidationCount);
         if constexpr((std::is_same_v<std::decay_t<decltype(engine)>,WVStratifiedQGForcingEngine> || std::is_same_v<std::decay_t<decltype(engine)>,WVBarotropicQGForcingEngine>)) {
             put("phasePreparations",0); put("tiledNonlinearExecutions",0);
-        } else { put("phasePreparations",k.phasePreparationCount); put("tiledNonlinearExecutions",k.tiledNonlinearCount); }
-        put("producerExecutions",e.producerExecutions+f.producerExecutions);
-        put("cacheHits",e.cacheHits+f.cacheHits); put("duplicateExecutions",e.duplicateExecutions+f.duplicateExecutions);
-        put("liveEvaluationBytes",e.liveBytes+f.liveBytes);
-        put("peakEvaluationBytes",std::max(e.highWaterBytes,f.highWaterBytes));
+        } else {
+            put("phasePreparations",k.phasePreparationCount);
+            if constexpr(std::is_same_v<std::decay_t<decltype(engine)>,WVConstantStratificationForcingEngine>) put("tiledNonlinearExecutions",0);
+            else put("tiledNonlinearExecutions",k.tiledNonlinearCount);
+        }
+        put("producerExecutions",e.producerExecutions+f.producerExecutions+active.producerExecutions);
+        put("cacheHits",e.cacheHits+f.cacheHits+active.cacheHits); put("duplicateExecutions",e.duplicateExecutions+f.duplicateExecutions+active.duplicateExecutions);
+        put("liveEvaluationBytes",e.liveBytes+f.liveBytes+active.liveBytes);
+        put("peakEvaluationBytes",std::max({e.highWaterBytes,f.highWaterBytes,active.highWaterBytes}));
     });
     put("primitiveExecutions",h.primitiveExecutions);
+    const auto& f=h.fields->metrics();
+    put("densityRecoveries",f.densityRecoveryCount); put("densityProfileConstructions",f.densityProfileConstructionCount);
+    put("densityInversePasses",f.densityInversePassCount); put("densityAPEPasses",f.densityAPEPassCount);
+    put("plannedEvaluationBytes",f.eventFieldArenaPlannedBytes);
+    const char* reportNames[]={"solver","exitflag","iterations","funcCount","maximumResidual","algorithm","message","qualified"};
+    auto* report=mxCreateStructMatrix(h.densityReportAvailable?1:0,1,8,reportNames);
+    mxSetField(result.get(),0,"densityRecovery",report);
+    if(h.densityReportAvailable) {
+        const auto& r=h.densityReport;
+        mxSetField(report,0,"solver",mxCreateString("dampedLeastSquares"));
+        mxSetField(report,0,"exitflag",mxCreateDoubleScalar(r.exitFlag));
+        mxSetField(report,0,"iterations",mxCreateDoubleScalar(r.iterations));
+        mxSetField(report,0,"funcCount",mxCreateDoubleScalar(r.evaluations));
+        mxSetField(report,0,"maximumResidual",mxCreateDoubleScalar(r.maximumResidual));
+        mxSetField(report,0,"algorithm",mxCreateString(r.algorithm));
+        mxSetField(report,0,"message",mxCreateString(r.reason));
+        mxSetField(report,0,"qualified",mxCreateLogicalScalar(r.qualified));
+    }
+    return result.release();
+}
+mxArray* supportedVariables(const Host& h) {
+    std::vector<std::string> names;
+    for(const auto& row:WVPortableVariableContracts)
+        if(row.configuration==h.fields->portableVariableConfiguration() &&
+           row.runtime==WVPortableDiagnosticRuntime::implemented &&
+           std::string_view(row.authority)!="forcing-instance-template")
+            names.emplace_back(row.metadata.name);
+    Array result(mxCreateCellMatrix(names.size(),1));
+    for(std::size_t i=0;i<names.size();++i) mxSetCell(result.get(),i,mxCreateString(names[i].c_str()));
     return result.release();
 }
 WVComplexConstView coefficients(const mxArray* a,WVShape2D shape) {
@@ -264,7 +358,63 @@ WVComplexConstView coefficients(const mxArray* a,WVShape2D shape) {
     static_assert(sizeof(mxComplexDouble)==sizeof(WVComplex64),"Complex coefficient layout mismatch");
     return {reinterpret_cast<const WVComplex64*>(mxGetComplexDoubles(a)),shape};
 }
+void requireEvaluation(const Host& h,const mxArray* token) {
+    if(!token || !mxIsUint64(token) || mxGetNumberOfElements(token)!=1 || !h.session ||
+        *mxGetUint64s(token)!=h.evaluationToken)
+        throw BridgeError("WaveVortexModel:CompiledTransformEvaluation","The evaluation token is foreign, expired or invalid.");
+}
+mxArray* beginEvaluation(Host& h,const mxArray* const inputs[]) {
+    if(h.session) invalid("End the active evaluation before supplying a new state.");
+    if(nextEvaluationToken==std::numeric_limits<std::uint64_t>::max()) invalid("Evaluation token space exhausted.");
+    const auto& g=h.geometry(); const WVShape2D shape{g.Nj,g.Nkl};
+    WVState state{scalar(inputs[3]),scalar(inputs[4]),{{},{},coefficients(inputs[2],shape)}};
+    if(h.isQG()) {
+        if(mxGetNumberOfElements(inputs[0]) || mxGetNumberOfElements(inputs[1])) invalid("QG has only A0 coefficients.");
+    } else { state.coefficients.Ap=coefficients(inputs[0],shape); state.coefficients.Am=coefficients(inputs[1],shape); }
+    const auto& families=h.stateLayout.coefficientFamilies();
+    const WVComplexConstView borrowed[]={state.coefficients.Ap,state.coefficients.Am,state.coefficients.A0};
+    for(std::size_t i=0;i<families.size();++i) {
+        const auto source=borrowed[h.isQG()?2:i];
+        std::copy_n(source.data,families[i].elementCount,h.stateStorage[i].data());
+        h.stateViews[i]={&families[i],h.stateStorage[i].data()};
+    }
+    h.inputBytes+=families.size()*shape.elementCount()*sizeof(WVComplex64);
+    h.stateCopyBytes+=families.size()*shape.elementCount()*sizeof(WVComplex64);
+    h.ownedState={}; h.ownedState.waveVortex=state;
+    h.densityReportAvailable=false;
+    if(h.isQG()) h.ownedState.waveVortex.coefficients.A0={h.stateStorage[0].data(),shape};
+    else h.ownedState.waveVortex.coefficients={{h.stateStorage[0].data(),shape},{h.stateStorage[1].data(),shape},{h.stateStorage[2].data(),shape}};
+    h.ownedState.coefficientFamilies=h.stateViews.data(); h.ownedState.coefficientFamilyCount=families.size();
+    auto candidate=std::make_unique<WVFieldEvaluationSession>();
+    Array result(mxCreateNumericMatrix(1,1,mxUINT64_CLASS,mxREAL));
+    require(h.fields->beginEvaluationSession(h.ownedState,*candidate));
+    h.session=std::move(candidate); h.evaluationToken=nextEvaluationToken++; ++h.scopedEvaluations;
+    *mxGetUint64s(result.get())=h.evaluationToken; return result.release();
+}
+mxArray* queryEvaluation(Host& h,const mxArray* token,const mxArray* requests,const mxArray* actualDensity) {
+    requireEvaluation(h,token);
+    if(actualDensity && !mxIsLogicalScalar(actualDensity)) invalid("The actual-density selection must be a scalar logical.");
+    h.prepare(names(requests),!actualDensity || mxIsLogicalScalarTrue(actualDensity));
+    const char* keys[]={"values","metrics"}; Array result(mxCreateStructMatrix(1,1,2,keys));
+    auto* values=mxCreateCellMatrix(h.plan.outputCount(),1); mxSetField(result.get(),0,"values",values);
+    std::vector<WVFieldOutputView> outputs; outputs.reserve(h.plan.outputCount()); std::size_t bytes=0;
+    for(std::size_t i=0;i<h.plan.outputCount();++i) {
+        const auto& spec=h.plan.outputs()[i]; std::vector<mwSize> dims(spec.dimensions.begin(),spec.dimensions.end());
+        while(dims.size()<2) dims.push_back(1);
+        // MATLAB stores the one-dimensional barotropic coefficient family as a row.
+        if(h.isBarotropic() && h.requested[i]=="A0t") dims={1,h.geometry().Nkl};
+        auto* a=mxCreateNumericArray(dims.size(),dims.data(),mxDOUBLE_CLASS,spec.isComplex?mxCOMPLEX:mxREAL);
+        mxSetCell(values,i,a); WVFieldOutputView output; output.elementCount=spec.elementCount;
+        if(spec.isComplex) output.complexData=reinterpret_cast<WVComplex64*>(mxGetComplexDoubles(a)); else output.data=mxGetDoubles(a);
+        outputs.push_back(output); bytes+=spec.elementCount*(spec.isComplex?sizeof(WVComplex64):sizeof(double));
+    }
+    const auto status=h.fields->evaluate(h.plan,h.ownedState,outputs.data(),outputs.size());
+    h.refreshDensityReport(); require(status);
+    ++h.evaluations; h.outputBytes+=bytes;
+    mxSetField(result.get(),0,"metrics",metadata(h)); return result.release();
+}
 mxArray* evaluate(Host& h,const mxArray* const inputs[]) {
+    if(h.session) invalid("Use the active evaluation token to request variables in this scope.");
     const auto& g=h.geometry(); const WVShape2D shape{g.Nj,g.Nkl};
     WVState state{scalar(inputs[3]),scalar(inputs[4]),{{},{},coefficients(inputs[2],shape)}};
     if(h.isQG()) {
@@ -274,8 +424,6 @@ mxArray* evaluate(Host& h,const mxArray* const inputs[]) {
     if(!h.planPrepared || requested!=h.requested) invalid("Prepare these variables before evaluating the transform.");
     if(!mxIsLogicalScalar(inputs[6])) invalid("shouldEvaluateFlux must be a scalar logical.");
     const bool fluxRequested=mxIsLogicalScalarTrue(inputs[6]);
-    if(fluxRequested && h.isQG()) for(const auto& name:requested)
-        if(name!="u" && name!="v") invalid("Combined QG nonlinear flux currently shares only u and v; request other diagnostics in a fields-only evaluation.");
     const std::size_t familyCount=h.isQG()?1:3;
     const char* keys[]={"values","flux","metrics"};
     Array result(mxCreateStructMatrix(1,1,3,keys));
@@ -286,6 +434,8 @@ mxArray* evaluate(Host& h,const mxArray* const inputs[]) {
     for(std::size_t i=0;i<h.plan.outputCount();++i) {
         const auto& spec=h.plan.outputs()[i]; std::vector<mwSize> dims(spec.dimensions.begin(),spec.dimensions.end());
         while(dims.size()<2) dims.push_back(1);
+        // MATLAB stores the one-dimensional barotropic coefficient family as a row.
+        if(h.isBarotropic() && h.requested[i]=="A0t") dims={1,h.geometry().Nkl};
         auto* a=mxCreateNumericArray(dims.size(),dims.data(),mxDOUBLE_CLASS,spec.isComplex?mxCOMPLEX:mxREAL);
         mxSetCell(values,i,a); WVFieldOutputView out; out.elementCount=spec.elementCount;
         if(spec.isComplex) out.complexData=reinterpret_cast<WVComplex64*>(mxGetComplexDoubles(a)); else out.data=mxGetDoubles(a);
@@ -300,40 +450,48 @@ mxArray* evaluate(Host& h,const mxArray* const inputs[]) {
         }
         outputBytes+=familyCount*shape.elementCount()*sizeof(WVComplex64);
     }
-    // Borrowed MATLAB inputs live only during this invocation. Session teardown
-    // runs before outputs publish, including every C++ failure path.
+    // All fields and raw nonlinear tendencies use the same diagnostic event.
+    // Projection occurs once after raw spatial contributions are available.
+    WVIntegrationState integrationState; integrationState.waveVortex=state;
+    const auto& families=h.stateLayout.coefficientFamilies();
+    std::vector<WVCoefficientFamilyConstView> views;
+    if(h.isQG()) views.push_back({&families[0],state.coefficients.A0.data});
+    else { views.push_back({&families[0],state.coefficients.Ap.data}); views.push_back({&families[1],state.coefficients.Am.data}); views.push_back({&families[2],state.coefficients.A0.data}); }
+    integrationState.coefficientFamilies=views.data(); integrationState.coefficientFamilyCount=familyCount;
     if(fluxRequested) {
-        // RHS fields belong to the forcing engine's evaluation. Its physical
-        // fields accessor joins this scope and reuses the tiled advection inputs.
-        // A separate diagnostic session would attempt to own the same kernel.
-        auto copyPhysical=[&](WVRealFieldBundleConstView physical) {
-            const auto count=physical.shape.first*physical.shape.second*physical.shape.third;
-            for(std::size_t i=0;i<requested.size();++i) {
-                const auto channel=requested[i]=="u"?0:requested[i]=="v"?1:requested[i]=="w"?2:3;
-                std::copy_n(physical.data+channel*count,count,outputs[i].data);
-            }
-        };
+        std::vector<std::string> rawNames=h.isQG()?std::vector<std::string>{"Fqgpv_nonlinear_advection"}:
+            h.isNonhydrostatic()?std::vector<std::string>{"Fu_nonlinear_advection","Fv_nonlinear_advection","Fw_nonlinear_advection","Feta_nonlinear_advection"}:
+            std::vector<std::string>{"Fu_nonlinear_advection","Fv_nonlinear_advection","Feta_nonlinear_advection"};
+        std::vector<WVFieldRequest> requests;
+        for(const auto& name:requested) requests.push_back({std::to_string(requests.size()),name,{}});
+        for(const auto& name:rawNames) requests.push_back({std::to_string(requests.size()),name,{}});
+        WVFieldEvaluationPlan combined; require(h.fields->createPlan(requests,combined));
+        const auto count=g.Nx*g.Ny*g.Nz;
+        std::vector<double> raw(rawNames.size()*count);
+        for(std::size_t i=0;i<rawNames.size();++i) {
+            WVFieldOutputView out; out.elementCount=count; out.data=raw.data()+i*count; outputs.push_back(out);
+        }
+        WVFieldEvaluationSession session; require(h.fields->beginEvaluationSession(integrationState,session));
+        require(h.fields->evaluate(combined,integrationState,outputs.data(),outputs.size()));
         h.visit([&](auto& engine) {
             using Engine=std::decay_t<decltype(engine)>;
-            if constexpr((std::is_same_v<Engine,WVStratifiedQGForcingEngine> || std::is_same_v<Engine,WVBarotropicQGForcingEngine>)) {
-                require(engine.beginStateEvaluation(state.coefficients.A0));
-                struct Scope { Engine& e; ~Scope(){e.endStateEvaluation();} } scope{engine};
-                WVRealFieldBundleConstView physical;
-                require(engine.evaluateRightHandSide(state.coefficients.A0,flux.F0,outputs.empty()?nullptr:&physical));
-                if(!outputs.empty()) copyPhysical(physical);
-            } else {
-                detail::WVScopedStateEvaluation<Engine> session(engine,state); require(session.status());
-                require(engine.nonlinearFlux(state,flux));
-                if(!outputs.empty()) { WVRealFieldBundleConstView physical; require(engine.physicalFields(state,physical)); copyPhysical(physical); }
+            if constexpr(std::is_same_v<Engine,WVBarotropicQGForcingEngine>)
+                require(engine.kernel().transformQGPVToA0({raw.data(),{g.Nx,g.Ny}},flux.F0));
+            else if constexpr(std::is_same_v<Engine,WVStratifiedQGForcingEngine>)
+                require(engine.kernel().transformQGPVToA0({raw.data(),{g.Nx,g.Ny,g.Nz}},flux.F0));
+            else {
+                const WVShape3D volume{g.Nx,g.Ny,g.Nz};
+                WVRealVolumeConstView u{raw.data(),volume},v{raw.data()+count,volume},eta{raw.data()+(rawNames.size()-1)*count,volume};
+                WVMutableCoefficients out{flux.Fp,flux.Fm,flux.F0};
+                if constexpr(std::is_same_v<Engine,WVBoussinesqForcingEngine>)
+                    require(engine.kernel().transformUVWEtaToWaveVortex(u,v,{raw.data()+2*count,volume},eta,state.t,state.t0,out));
+                else if constexpr(std::is_same_v<Engine,WVConstantStratificationForcingEngine>) {
+                    if(h.isNonhydrostatic()) require(engine.kernel().transformUVWEtaToWaveVortex(u,v,{raw.data()+2*count,volume},eta,state.t,state.t0,out));
+                    else require(engine.kernel().transformUVEtaToWaveVortex(u,v,eta,state.t,state.t0,out));
+                } else require(engine.kernel().transformUVEtaToWaveVortex(u,v,eta,state.t,state.t0,out));
             }
         });
     } else {
-        WVIntegrationState integrationState; integrationState.waveVortex=state;
-        const auto& families=h.stateLayout.coefficientFamilies();
-        std::vector<WVCoefficientFamilyConstView> views;
-        if(h.isQG()) views.push_back({&families[0],state.coefficients.A0.data});
-        else { views.push_back({&families[0],state.coefficients.Ap.data}); views.push_back({&families[1],state.coefficients.Am.data}); views.push_back({&families[2],state.coefficients.A0.data}); }
-        integrationState.coefficientFamilies=views.data(); integrationState.coefficientFamilyCount=familyCount;
         WVFieldEvaluationSession session; require(h.fields->beginEvaluationSession(integrationState,session));
         if(!outputs.empty()) require(h.fields->evaluate(h.plan,integrationState,outputs.data(),outputs.size()));
     }
@@ -399,6 +557,36 @@ mxArray* operation(Host& h,const mxArray* nameArray,const mxArray* inputs,const 
             if(index>g.Nkl) invalid("Retained column exceeds the model spectrum.");
             h.visit([&](auto& e){if constexpr(std::is_same_v<std::decay_t<decltype(e)>,WVBarotropicQGForcingEngine>) invalid("Barotropic QG has no vertical matrix primitive."); else require(e.kernel().applyVerticalColumn(op,index-1,in,out));});
         } else h.visit([&](auto& e){if constexpr(std::is_same_v<std::decay_t<decltype(e)>,WVBarotropicQGForcingEngine>) invalid("Barotropic QG has no vertical matrix primitive."); else require(e.kernel().applyVertical(op,in,out));});
+    } else if(name=="verticalCalculus") {
+        expect(1);
+        if(h.isBarotropic()) invalid("Barotropic QG has no vertical calculus.");
+        const auto* a=input(0);
+        if(!a || !mxIsDouble(a) || mxIsSparse(a) || mxGetNumberOfDimensions(a)!=2 || mxGetM(a)!=g.Nz)
+            invalid("Vertical calculus requires a full double [Nz,Ncolumns] matrix.");
+        const auto* family=field(options,"inputIsF"); const auto* integral=field(options,"integral");
+        if(!mxIsLogicalScalar(family) || !mxIsLogicalScalar(integral)) invalid("Vertical calculus flags must be scalar logicals.");
+        const auto order=extent(field(options,"order")); const bool isIntegral=mxIsLogicalScalarTrue(integral);
+        if(order>4 || (isIntegral && order!=1)) invalid("Vertical calculus supports derivative orders 1..4 and first antiderivatives.");
+        const WVShape2D shape{g.Nz,mxGetN(a)};
+        auto* b=mxCreateDoubleMatrix(shape.rows,shape.columns,mxIsComplex(a)?mxCOMPLEX:mxREAL); mxSetCell(values,0,b);
+        bytes+=shape.elementCount()*(mxIsComplex(a)?sizeof(WVComplex64):sizeof(double));
+        const auto apply=[&](const double* in,double* out) {
+            h.visit([&](auto& e) {
+                if constexpr(!std::is_same_v<std::decay_t<decltype(e)>,WVBarotropicQGForcingEngine>)
+                    require(e.kernel().applyVerticalCalculus({in,shape},mxIsLogicalScalarTrue(family),static_cast<unsigned>(order),isIntegral,{out,shape}));
+            });
+        };
+        if(shape.columns && mxIsComplex(a)) {
+            // The scientific operator is real and linear. Preserve MATLAB's
+            // accepted complex input without retaining cross-call array views.
+            const auto* in=mxGetComplexDoubles(a); auto* out=mxGetComplexDoubles(b);
+            std::vector<double> part(shape.elementCount()),transformed(part.size());
+            for(std::size_t i=0;i<part.size();++i) part[i]=in[i].real;
+            apply(part.data(),transformed.data());
+            for(std::size_t i=0;i<part.size();++i) { out[i].real=transformed[i]; part[i]=in[i].imag; }
+            apply(part.data(),transformed.data());
+            for(std::size_t i=0;i<part.size();++i) out[i].imag=transformed[i];
+        } else if(shape.columns) apply(mxGetDoubles(a),mxGetDoubles(b));
     } else if(name=="horizontalForward") {
         expect(1); const auto in=spatial(input(0),volume); auto out=complexOutput(0,grid);
         h.visit([&](auto& e){if constexpr(std::is_same_v<std::decay_t<decltype(e)>,WVBarotropicQGForcingEngine>) require(e.kernel().horizontalForward({in.data,{g.Nx,g.Ny}},out)); else require(e.kernel().horizontalForward(in,out));});
@@ -413,7 +601,7 @@ mxArray* operation(Host& h,const mxArray* nameArray,const mxArray* inputs,const 
         const auto in=spatial(input(0),volume); auto out=realOutput();
         h.visit([&](auto& e){if constexpr(std::is_same_v<std::decay_t<decltype(e)>,WVBarotropicQGForcingEngine>) { WVRealView target{out.data,{g.Nx,g.Ny}}; require(e.kernel().differentiateHorizontal({in.data,{g.Nx,g.Ny}},direction=="x",static_cast<unsigned>(order),target)); } else require(e.kernel().differentiateHorizontal(in,direction=="x",static_cast<unsigned>(order),out));});
     } else if(name=="toWaveVortex") {
-        const bool bouss=g.transformClass=="WVTransformBoussinesq"; expect(bouss?4:3);
+        const bool bouss=h.isNonhydrostatic(); expect(bouss?4:3);
         const auto u=spatial(input(0),volume), v=spatial(input(1),volume), eta=spatial(input(bouss?3:2),volume);
         h.visit([&](auto& e) {
             using Engine=std::decay_t<decltype(e)>;
@@ -426,6 +614,10 @@ mxArray* operation(Host& h,const mxArray* nameArray,const mxArray* inputs,const 
                 WVMutableCoefficients output{complexOutput(0,modal),complexOutput(1,modal),complexOutput(2,modal)};
                 if constexpr(std::is_same_v<Engine,WVBoussinesqForcingEngine>)
                     require(e.kernel().transformUVWEtaToWaveVortex(u,v,spatial(input(2),volume),eta,t,t0,output));
+                else if constexpr(std::is_same_v<Engine,WVConstantStratificationForcingEngine>) {
+                    if(bouss) require(e.kernel().transformUVWEtaToWaveVortex(u,v,spatial(input(2),volume),eta,t,t0,output));
+                    else require(e.kernel().transformUVEtaToWaveVortex(u,v,eta,t,t0,output));
+                }
                 else require(e.kernel().transformUVEtaToWaveVortex(u,v,eta,t,t0,output));
             }
         });
@@ -457,7 +649,7 @@ bool WVDispatchMatlabTransform(const std::string& command,int nlhs,mxArray* plhs
     try {
         if(command=="transformCreate") {
             if(nrhs!=2 || nlhs!=1) invalid("transformCreate requires one modal struct and one output.");
-            auto candidate=std::make_unique<Host>(modalArrays(prhs[1]));
+            auto candidate=std::make_unique<Host>(modalArrays(prhs[1]),prhs[1]);
             Array output(mxCreateNumericMatrix(1,1,mxUINT64_CLASS,mxREAL));
             if(nextHandle==std::numeric_limits<std::uint64_t>::max()) invalid("Transform handle space exhausted.");
             const auto id=nextHandle++; *mxGetUint64s(output.get())=id;
@@ -473,9 +665,21 @@ bool WVDispatchMatlabTransform(const std::string& command,int nlhs,mxArray* plhs
         } else if(command=="transformMetadata") {
             if(nrhs!=2 || nlhs!=1) invalid("transformMetadata takes one handle and returns one struct.");
             plhs[0]=metadata(h);
+        } else if(command=="transformVariables") {
+            if(nrhs!=2 || nlhs!=1) invalid("transformVariables takes a handle and returns implemented variable names.");
+            plhs[0]=supportedVariables(h);
         } else if(command=="transformPrepare") {
             if(nrhs!=3 || nlhs!=0) invalid("transformPrepare takes handle and variable names with no output.");
             h.prepare(names(prhs[2]));
+        } else if(command=="transformBeginEvaluation") {
+            if(nrhs!=7 || nlhs!=1) invalid("transformBeginEvaluation takes handle, Ap, Am, A0, t and t0.");
+            plhs[0]=beginEvaluation(h,prhs+2);
+        } else if(command=="transformQueryEvaluation") {
+            if((nrhs!=4 && nrhs!=5) || nlhs!=1) invalid("transformQueryEvaluation takes handle, token, variable names and optional density reference.");
+            plhs[0]=queryEvaluation(h,prhs[2],prhs[3],nrhs==5?prhs[4]:nullptr);
+        } else if(command=="transformEndEvaluation") {
+            if(nrhs!=3 || nlhs!=0) invalid("transformEndEvaluation takes handle and token with no output.");
+            requireEvaluation(h,prhs[2]); h.endEvaluation();
         } else if(command=="transformOperation") {
             if(nrhs!=5 || nlhs!=1) invalid("transformOperation takes handle, operation name, inputs and options.");
             plhs[0]=operation(h,prhs[2],prhs[3],prhs[4]);

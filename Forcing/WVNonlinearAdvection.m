@@ -101,12 +101,22 @@ classdef WVNonlinearAdvection < WVForcing
         end
         
         function [Fu, Fv, Feta] = addHydrostaticSpatialForcing(self, wvt, Fu, Fv, Feta)
+            if self.canUseCompiledAdvection(wvt)
+                values = wvt.compiledVariables({'Fu_nonlinear_advection','Fv_nonlinear_advection','Feta_nonlinear_advection'});
+                Fu = Fu + values{1}; Fv = Fv + values{2}; Feta = Feta + values{3};
+                return
+            end
             Fu = Fu - (wvt.u .* wvt.diffX(wvt.u)   + wvt.v .* wvt.diffY(wvt.u)   + wvt.w .*  wvt.diffZF(wvt.u));
             Fv = Fv - (wvt.u .* wvt.diffX(wvt.v)   + wvt.v .* wvt.diffY(wvt.v)   + wvt.w .*  wvt.diffZF(wvt.v));
             Feta = Feta - (wvt.u .* wvt.diffX(wvt.eta) + wvt.v .* wvt.diffY(wvt.eta) + wvt.w .* (wvt.diffZG(wvt.eta) + wvt.eta .* self.dLnN2));
         end
 
         function [Fu, Fv, Fw, Feta] = addNonhydrostaticSpatialForcing(self, wvt, Fu, Fv, Fw, Feta)
+            if self.canUseCompiledAdvection(wvt)
+                values = wvt.compiledVariables({'Fu_nonlinear_advection','Fv_nonlinear_advection','Fw_nonlinear_advection','Feta_nonlinear_advection'});
+                Fu = Fu + values{1}; Fv = Fv + values{2}; Fw = Fw + values{3}; Feta = Feta + values{4};
+                return
+            end
             Fu = Fu - (wvt.u .* wvt.diffX(wvt.u)   + wvt.v .* wvt.diffY(wvt.u)   + wvt.w .*  wvt.diffZF(wvt.u));
             Fv = Fv - (wvt.u .* wvt.diffX(wvt.v)   + wvt.v .* wvt.diffY(wvt.v)   + wvt.w .*  wvt.diffZF(wvt.v));
             Fw = Fw - (wvt.u .* wvt.diffX(wvt.w)   + wvt.v .* wvt.diffY(wvt.w)   + wvt.w .*  wvt.diffZG(wvt.w));
@@ -114,11 +124,25 @@ classdef WVNonlinearAdvection < WVForcing
         end
 
         function Fpv = addPotentialVorticitySpatialForcing(self, wvt, Fpv)
+            if self.canUseCompiledAdvection(wvt)
+                values = wvt.compiledVariables({'Fqgpv_nonlinear_advection'});
+                Fpv = Fpv + values{1};
+                return
+            end
             Fpv = Fpv - (wvt.u.*wvt.diffX(wvt.qgpv) + wvt.v.*wvt.diffY(wvt.qgpv));
         end
 
         function force = forcingWithResolutionOfTransform(self,wvtX2)
             force = WVNonlinearAdvection(wvtX2);
+        end
+    end
+
+    methods (Access=private)
+        function flag = canUseCompiledAdvection(self,wvt)
+            flag = string(class(self)) == "WVNonlinearAdvection" && wvt.hasCompiledStandardStateGraph();
+            if flag && isa(wvt,'WVStratification') && isprop(wvt,'dLnN2')
+                flag = isequal(self.dLnN2,shiftdim(wvt.dLnN2,-2));
+            end
         end
     end
 

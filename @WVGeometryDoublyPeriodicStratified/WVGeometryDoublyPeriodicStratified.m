@@ -24,6 +24,51 @@ classdef WVGeometryDoublyPeriodicStratified < WVGeometryDoublyPeriodic & WVStrat
     end
 
     methods
+        function set.dLnN2(self,value)
+            if isa(self,"WVTransform"), self.assertCompiledConfigurationMutable(); end
+            self.dLnN2 = value;
+        end
+
+        function set.PF0inv(self,value)
+            if isa(self,"WVTransform"), self.assertCompiledConfigurationMutable(); end
+            self.PF0inv = value;
+        end
+
+        function set.QG0inv(self,value)
+            if isa(self,"WVTransform"), self.assertCompiledConfigurationMutable(); end
+            self.QG0inv = value;
+        end
+
+        function set.PF0(self,value)
+            if isa(self,"WVTransform"), self.assertCompiledConfigurationMutable(); end
+            self.PF0 = value;
+        end
+
+        function set.QG0(self,value)
+            if isa(self,"WVTransform"), self.assertCompiledConfigurationMutable(); end
+            self.QG0 = value;
+        end
+
+        function set.h_0(self,value)
+            if isa(self,"WVTransform"), self.assertCompiledConfigurationMutable(); end
+            self.h_0 = value;
+        end
+
+        function set.h_pm(self,value)
+            if isa(self,"WVTransform"), self.assertCompiledConfigurationMutable(); end
+            self.h_pm = value;
+        end
+
+        function set.P0(self,value)
+            if isa(self,"WVTransform"), self.assertCompiledConfigurationMutable(); end
+            self.P0 = value;
+        end
+
+        function set.Q0(self,value)
+            if isa(self,"WVTransform"), self.assertCompiledConfigurationMutable(); end
+            self.Q0 = value;
+        end
+
         function self = WVGeometryDoublyPeriodicStratified(Lxyz, Nxyz, geomOptions, stratOptions, directInit)
             % create geometry for 2D barotropic flow
             %
@@ -210,6 +255,11 @@ classdef WVGeometryDoublyPeriodicStratified < WVGeometryDoublyPeriodic & WVStrat
                 options.Apm double = 0
                 options.A0 double = 0
             end
+            if self.usesCompiledTransform() && ~(isscalar(options.Apm) && isscalar(options.A0))
+                values = self.compiledPrimitive("vertical",{complex(options.Apm + options.A0)},struct("operator",'reconstructF'));
+                u = self.transformToSpatialDomainWithFourier(values{1});
+                return
+            end
             u = self.transformToSpatialDomainWithFourier(self.PF0inv*(self.P0 .* (options.Apm + options.A0)));
         end
 
@@ -218,6 +268,11 @@ classdef WVGeometryDoublyPeriodicStratified < WVGeometryDoublyPeriodic & WVStrat
                 self WVTransform {mustBeNonempty}
                 options.Apm double = 0
                 options.A0 double = 0
+            end
+            if self.usesCompiledTransform() && ~(isscalar(options.Apm) && isscalar(options.A0))
+                values = self.compiledPrimitive("vertical",{complex(options.Apm + options.A0)},struct("operator",'reconstructG'));
+                w = self.transformToSpatialDomainWithFourier(values{1});
+                return
             end
             w = self.transformToSpatialDomainWithFourier(self.QG0inv*(self.Q0 .* (options.Apm + options.A0)));
         end
@@ -240,19 +295,40 @@ classdef WVGeometryDoublyPeriodicStratified < WVGeometryDoublyPeriodic & WVStrat
         %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
         function u_bar = transformFromSpatialDomainWithFio(self, u)
+            if isa(self,"WVTransform") && self.usesCompiledTransform()
+                if isa(self,"WVTransformBoussinesq")
+                    operator = 'projectFw';
+                else
+                    operator = 'projectF';
+                end
+                column = find(self.kMode_wv == 0 & self.lMode_wv == 0,1);
+                values = self.compiledPrimitive("verticalColumn",{complex(u)},struct("operator",operator,"column",column));
+                u_bar = values{1};
+                return
+            end
             u_bar = (self.PF0*u)./self.P0;
         end
 
         function u_bar = transformFromSpatialDomainWithFg(self, u)
+            if isa(self,"WVTransform") && self.usesCompiledTransform()
+                values = self.compiledPrimitive("vertical",{complex(u)},struct("operator",'projectF'));
+                u_bar = values{1};
+                return
+            end
             u_bar = (self.PF0*u)./self.P0;
         end
 
         function w_bar = transformFromSpatialDomainWithGg(self, w)
+            if isa(self,"WVTransform") && self.usesCompiledTransform()
+                values = self.compiledPrimitive("vertical",{complex(w)},struct("operator",'projectG'));
+                w_bar = values{1};
+                return
+            end
             w_bar = (self.QG0*w)./self.Q0;
         end
 
-        function w_bar = transformWithG_wg(~, w_bar )
-        end
+        function w_bar = transformWithG_wg(self, w_bar )
+            end
 
         %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
         %

@@ -30,9 +30,9 @@ classdef TestWVCompiledBarotropicPrimitives < matlab.unittest.TestCase
                     testCase.verifyEqual(after.engineBytes,before.engineBytes);
                     testCase.verifyEqual(after.sourceBytes,0); testCase.verifyEqual(after.phasePreparations,0);
                     testCase.verifyEqual(after.duplicateExecutions,0); testCase.verifyEqual(after.liveEvaluationBytes,0);
-                    oldDepth = wvt.h; wvt.h = 2*oldDepth;
-                    testCase.verifyError(@()backend.evaluate(wvt,{'u','v'}),"WaveVortexModel:CompiledTransformMismatch");
-                    wvt.h = oldDepth;
+                    oldDepth = wvt.h;
+                    testCase.verifyError(@()assignDepth(wvt,2*oldDepth),"WaveVortexModel:CompiledTransformConfigurationLocked");
+                    testCase.verifyEqual(wvt.h,oldDepth);
                     restored = backend.evaluate(wvt,{'u','v'});
                     verifyNear(testCase,restored.values{1},fields.values{1});
                     clear bcleanup cleanup
@@ -40,6 +40,10 @@ classdef TestWVCompiledBarotropicPrimitives < matlab.unittest.TestCase
             end
         end
     end
+end
+
+function assignDepth(wvt,value)
+wvt.h = value;
 end
 
 function verifyNear(testCase,actual,expected)

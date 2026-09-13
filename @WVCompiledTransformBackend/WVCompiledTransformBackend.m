@@ -1,8 +1,8 @@
 classdef (Sealed) WVCompiledTransformBackend < handle
     % Own one compiled variable-evaluation transform session.
     %
-    % This developer-facing adapter provides the in-memory Hydrostatic,
-    % Boussinesq and Stratified QG modal-source bridge. It owns only the native handle
+    % This developer-facing adapter provides the in-memory bridge for all
+    % six built-in v4 configurations. It owns only the native handle
     % and immutable shape/module identity; the native session owns modal data,
     % prepared operators, and evaluation workspaces.
     %
@@ -24,23 +24,28 @@ classdef (Sealed) WVCompiledTransformBackend < handle
         Nj (1,1) double = 0
         Nkl (1,1) double = 0
         compiledSourceIdentity = []
+        hasSourceIdentityLease (1,1) logical = false
         geometryValues = []
+        evaluationToken (1,1) uint64 = uint64(0)
+        leasedEvaluationToken (1,1) uint64 = uint64(0)
+        evaluationGeneration (1,1) uint64 = uint64(0)
+        supportedVariableNames = strings(0,1)
     end
 
     methods (Static)
         function backend = create(wvt)
-            % Create a compiled stratified transform session.
+            % Create a compiled transform session.
             %
             % - Developer: true
             % - Topic: Compiled transform internals
             % - Declaration: backend = WVCompiledTransformBackend.create(wvt)
-            % - Parameter wvt: stratified transform supplying its solved modal source
+            % - Parameter wvt: transform supplying its geometry and solved modal source
             % - Returns backend: owning compiled transform session
             arguments
                 wvt (1,1) WVTransform
             end
-            if ~ismember(string(class(wvt)),["WVTransformHydrostatic" "WVTransformBoussinesq" "WVTransformStratifiedQG" "WVTransformBarotropicQG"])
-                error("WaveVortexModel:CompiledTransformUnsupportedFamily","Compiled MATLAB support currently covers Hydrostatic, Boussinesq, Stratified QG and Barotropic QG transforms.")
+            if ~ismember(string(class(wvt)),["WVTransformHydrostatic" "WVTransformBoussinesq" "WVTransformStratifiedQG" "WVTransformBarotropicQG" "WVTransformConstantStratification"])
+                error("WaveVortexModel:CompiledTransformUnsupportedFamily","Compiled MATLAB support covers the five built-in transform families, including both constant-stratification configurations.")
             end
             capabilities = WVCompiledBackend.capabilities();
             WVCompiledTransformBackend.validateCapabilities(capabilities);
@@ -49,6 +54,64 @@ classdef (Sealed) WVCompiledTransformBackend < handle
     end
 
     methods
+        function cleanup = scopedEvaluation(self,wvt)
+            % Open or join one immutable state evaluation.
+            %
+            % Keep the returned onCleanup object alive for all queries. A new
+            % native-owned coefficient snapshot is copied once per outer scope.
+            % Mutating the MATLAB state invalidates further queries in that scope.
+            %
+            % - Developer: true
+            % - Topic: Compiled transform internals
+            arguments
+                self (1,1) WVCompiledTransformBackend
+                wvt (1,1) WVTransform
+            end
+            self.assertActive(); self.assertMatchingTransform(wvt);
+            self.assertScopeUsable(wvt);
+            if self.evaluationToken ~= 0
+                self.assertEvaluationGeneration(wvt);
+                cleanup = onCleanup(@()[]);
+                return
+            end
+            [Ap,Am,A0] = WVCompiledTransformBackend.stateArrays(wvt,self.Nj,self.Nkl);
+            token = feval(char(self.moduleName),'transformBeginEvaluation',self.transformHandle,Ap,Am,A0,wvt.t,wvt.t0);
+            self.evaluationToken = token;
+            self.leasedEvaluationToken = token;
+            self.evaluationGeneration = wvt.compiledStateGeneration;
+            cleanup = onCleanup(@()WVCompiledTransformBackend.finishScopeIfValid(self,token));
+        end
+
+        function result = evaluateVariables(self,wvt,variableNames)
+            % Query dependencies in an explicit scope, or use a fresh scope.
+            %
+            % - Developer: true
+            % - Topic: Compiled transform internals
+            arguments
+                self (1,1) WVCompiledTransformBackend
+                wvt (1,1) WVTransform
+                variableNames
+            end
+            cleanup = self.scopedEvaluation(wvt); %#ok<NASGU>
+            variableNames = WVCompiledTransformBackend.normalizeVariableNames(variableNames);
+            actualDensity = ~isprop(wvt,'shouldUseTrueNoMotionProfile') || wvt.shouldUseTrueNoMotionProfile;
+            result = feval(char(self.moduleName),'transformQueryEvaluation',self.transformHandle,self.evaluationToken,variableNames,logical(actualDensity));
+        end
+
+        function flag = supportsVariables(self,names)
+            % - Developer: true
+            % - Topic: Compiled transform internals
+            flag = all(ismember(string(names),self.supportedVariableNames));
+        end
+
+        function invalidateEvaluation(self)
+            % Close an event before its owning MATLAB state is changed.
+            %
+            % - Developer: true
+            % - Topic: Compiled transform internals
+            self.endEvaluation(self.evaluationToken);
+        end
+
         function prepare(self,variableNames)
             % Prepare one immutable variable evaluation plan.
             %
@@ -104,9 +167,10 @@ classdef (Sealed) WVCompiledTransformBackend < handle
             end
             self.assertActive();
             self.assertMatchingTransform(wvt);
-            if ~ismember(string(class(wvt)),["WVTransformHydrostatic" "WVTransformBoussinesq" "WVTransformStratifiedQG" "WVTransformBarotropicQG"])
+            if ~ismember(string(class(wvt)),["WVTransformHydrostatic" "WVTransformBoussinesq" "WVTransformStratifiedQG" "WVTransformBarotropicQG" "WVTransformConstantStratification"])
                 error("WaveVortexModel:CompiledTransformUnsupportedFamily","Compiled operation family is not supported.")
             end
+            self.assertScopeUsable(wvt);
             result = feval(char(self.moduleName),'transformOperation',self.transformHandle,char(operationName),inputs,options);
         end
 
@@ -125,20 +189,55 @@ classdef (Sealed) WVCompiledTransformBackend < handle
         end
 
         function delete(self)
-            if isempty(self.transformHandle)
+            if isempty(self.transformHandle) && ~self.hasSourceIdentityLease
                 return
             end
             handle = self.transformHandle;
             self.transformHandle = [];
-            try
-                feval(char(self.moduleName),'transformDelete',handle);
-            catch exception
-                warning("WaveVortexModel:CompiledTransformCleanup","Unable to delete the compiled transform cleanly: %s",exception.message)
+            self.evaluationToken = uint64(0);
+            self.leasedEvaluationToken = uint64(0);
+            if ~isempty(handle)
+                try
+                    feval(char(self.moduleName),'transformDelete',handle);
+                catch exception
+                    warning("WaveVortexModel:CompiledTransformCleanup","Unable to delete the compiled transform cleanly: %s",exception.message)
+                end
             end
+            self.releaseSourceIdentityLease();
         end
     end
 
     methods (Access=private)
+        function assertScopeUsable(self,wvt)
+            if self.leasedEvaluationToken ~= 0 && self.evaluationToken == 0
+                error("WaveVortexModel:CompiledTransformStateChanged","The enclosing evaluation was invalidated. Release its scope before starting a new evaluation.")
+            end
+            if self.evaluationToken ~= 0
+                self.assertEvaluationGeneration(wvt);
+            end
+        end
+
+        function finishEvaluationScope(self,token)
+            if token ~= self.leasedEvaluationToken, return, end
+            self.endEvaluation(token);
+            self.leasedEvaluationToken = uint64(0);
+        end
+
+        function assertEvaluationGeneration(self,wvt)
+            if self.evaluationGeneration ~= wvt.compiledStateGeneration
+                self.invalidateEvaluation();
+                error("WaveVortexModel:CompiledTransformStateChanged","The MATLAB state changed during the compiled evaluation. Start a new scope.")
+            end
+        end
+
+        function endEvaluation(self,token)
+            if token == 0 || isempty(self.transformHandle) || token ~= self.evaluationToken
+                return
+            end
+            feval(char(self.moduleName),'transformEndEvaluation',self.transformHandle,token);
+            self.evaluationToken = uint64(0);
+        end
+
         function self = WVCompiledTransformBackend(wvt,capabilities)
             self.capabilities = capabilities;
             self.moduleName = string(capabilities.module.name);
@@ -152,7 +251,11 @@ classdef (Sealed) WVCompiledTransformBackend < handle
             try
                 handle = feval(char(self.moduleName),'transformCreate',configuration);
                 self.transformHandle = handle;
+                self.supportedVariableNames = string(feval(char(self.moduleName),'transformVariables',handle));
+                self.compiledSourceIdentity.acquireLease();
+                self.hasSourceIdentityLease = true;
             catch exception
+                self.transformHandle = [];
                 if ~isempty(handle)
                     try
                         feval(char(self.moduleName),'transformDelete',handle);
@@ -169,6 +272,15 @@ classdef (Sealed) WVCompiledTransformBackend < handle
             end
         end
 
+        function releaseSourceIdentityLease(self)
+            if ~self.hasSourceIdentityLease, return, end
+            self.hasSourceIdentityLease = false;
+            identity = self.compiledSourceIdentity;
+            if ~isempty(identity) && isvalid(identity)
+                identity.releaseLease();
+            end
+        end
+
         function assertMatchingTransform(self,wvt)
             if string(class(wvt)) ~= self.transformClass || ~isvalid(self.compiledSourceIdentity) || ~(wvt.compiledSourceIdentity == self.compiledSourceIdentity) || wvt.Nx ~= self.Nx || wvt.Ny ~= self.Ny || ~isequal(WVCompiledTransformBackend.sourceGeometry(wvt),self.geometryValues) || wvt.Nj ~= self.Nj || wvt.Nkl ~= self.Nkl
                 error("WaveVortexModel:CompiledTransformMismatch","The evaluated transform does not match the compiled session configuration.")
@@ -177,6 +289,12 @@ classdef (Sealed) WVCompiledTransformBackend < handle
     end
 
     methods (Static, Access=private)
+        function finishScopeIfValid(backend,token)
+            if isvalid(backend)
+                backend.finishEvaluationScope(token);
+            end
+        end
+
         function values = sourceGeometry(wvt)
             if isa(wvt,"WVTransformBarotropicQG"), nz = 1; else, nz = wvt.Nz; end
             values = [wvt.Nx wvt.Ny nz wvt.Nj wvt.Nkl wvt.Lx wvt.Ly wvt.Lz wvt.g wvt.latitude wvt.rotationRate wvt.planetaryRadius double(wvt.shouldAntialias)];
@@ -190,7 +308,7 @@ classdef (Sealed) WVCompiledTransformBackend < handle
                     ~isfield(capabilities.module,"identityValidated") || ~capabilities.module.identityValidated
                 error("WaveVortexModel:CompiledTransformCapabilityMismatch","The installed compiled module does not have a validated identity.")
             end
-            if ~isfield(capabilities.module,"matlabTransformBridgeVersion") || capabilities.module.matlabTransformBridgeVersion < 3
+            if ~isfield(capabilities.module,"matlabTransformBridgeVersion") || capabilities.module.matlabTransformBridgeVersion < 6
                 error("WaveVortexModel:CompiledTransformCapabilityMismatch","The installed module predates the MATLAB transform operation bridge. Rebuild with WVCompiledBackend.build().")
             end
         end
@@ -212,7 +330,7 @@ classdef (Sealed) WVCompiledTransformBackend < handle
 
         function [Ap,Am,A0] = stateArrays(wvt,Nj,Nkl)
             empty = complex(zeros(0,0));
-            if ismember(string(class(wvt)),["WVTransformHydrostatic" "WVTransformBoussinesq"])
+            if ismember(string(class(wvt)),["WVTransformHydrostatic" "WVTransformBoussinesq" "WVTransformConstantStratification"])
                 Ap = complex(wvt.Ap); Am = complex(wvt.Am); A0 = complex(wvt.A0);
             else
                 Ap = empty; Am = empty; A0 = complex(wvt.A0);

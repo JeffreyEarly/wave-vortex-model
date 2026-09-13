@@ -10,6 +10,26 @@ classdef WVRotatingFPlane < handle
     end
 
     methods
+        function set.planetaryRadius(self,value)
+            if isa(self,"WVTransform"), self.assertCompiledConfigurationMutable(); end
+            self.planetaryRadius = value;
+        end
+
+        function set.rotationRate(self,value)
+            if isa(self,"WVTransform"), self.assertCompiledConfigurationMutable(); end
+            self.rotationRate = value;
+        end
+
+        function set.latitude(self,value)
+            if isa(self,"WVTransform"), self.assertCompiledConfigurationMutable(); end
+            self.latitude = value;
+        end
+
+        function set.g(self,value)
+            if isa(self,"WVTransform"), self.assertCompiledConfigurationMutable(); end
+            self.g = value;
+        end
+
         function self = WVRotatingFPlane(rotatingOptions)
             arguments
                 rotatingOptions.rotationRate (1,1) double = 7.2921E-5

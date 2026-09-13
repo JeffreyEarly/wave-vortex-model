@@ -5,6 +5,11 @@ arguments
     wvt (1,1) WVTransform
 end
 
+if isa(wvt,"WVTransformConstantStratification")
+    configuration = wvCompiledConstantConfiguration(wvt);
+    return
+end
+
 if ~ismember(string(class(wvt)),["WVTransformHydrostatic" "WVTransformBoussinesq" "WVTransformStratifiedQG" "WVTransformBarotropicQG"])
     error("WaveVortexModel:CompiledTransformUnsupportedFamily","Compiled MATLAB support currently covers Hydrostatic, Boussinesq and Stratified QG transforms.")
 end

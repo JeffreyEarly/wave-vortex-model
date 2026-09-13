@@ -69,6 +69,8 @@ if isempty(removedOperations) && isempty(addedOperations)
     return
 end
 
+self.invalidateCompiledRegistry();
+
 removedAnnotations = outputAnnotationsForOperations(removedOperations);
 if ~isempty(removedAnnotations)
     self.removePropertyAnnotation(removedAnnotations);

@@ -83,6 +83,61 @@ classdef WVInternalGravityWaveMethods < handle
     end
 
     methods
+        function set.UAp(self,value)
+            if isa(self,"WVTransform"), self.assertCompiledConfigurationMutable(); end
+            self.UAp = value;
+        end
+
+        function set.VAp(self,value)
+            if isa(self,"WVTransform"), self.assertCompiledConfigurationMutable(); end
+            self.VAp = value;
+        end
+
+        function set.WAp(self,value)
+            if isa(self,"WVTransform"), self.assertCompiledConfigurationMutable(); end
+            self.WAp = value;
+        end
+
+        function set.NAp(self,value)
+            if isa(self,"WVTransform"), self.assertCompiledConfigurationMutable(); end
+            self.NAp = value;
+        end
+
+        function set.UAm(self,value)
+            if isa(self,"WVTransform"), self.assertCompiledConfigurationMutable(); end
+            self.UAm = value;
+        end
+
+        function set.VAm(self,value)
+            if isa(self,"WVTransform"), self.assertCompiledConfigurationMutable(); end
+            self.VAm = value;
+        end
+
+        function set.WAm(self,value)
+            if isa(self,"WVTransform"), self.assertCompiledConfigurationMutable(); end
+            self.WAm = value;
+        end
+
+        function set.NAm(self,value)
+            if isa(self,"WVTransform"), self.assertCompiledConfigurationMutable(); end
+            self.NAm = value;
+        end
+
+        function set.ApmD(self,value)
+            if isa(self,"WVTransform"), self.assertCompiledConfigurationMutable(); end
+            self.ApmD = value;
+        end
+
+        function set.ApmN(self,value)
+            if isa(self,"WVTransform"), self.assertCompiledConfigurationMutable(); end
+            self.ApmN = value;
+        end
+
+        function set.iOmega(self,value)
+            if isa(self,"WVTransform"), self.assertCompiledConfigurationMutable(); end
+            self.iOmega = value;
+        end
+
         function flowComponent = get.waveComponent(self)
             flowComponent = self.flowComponentWithName('wave');
         end

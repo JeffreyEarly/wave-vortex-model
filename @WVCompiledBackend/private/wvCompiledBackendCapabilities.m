@@ -11,6 +11,8 @@ try
     if ~pathContains(constants.packageRoot), addpath(constants.packageRoot); end
     attempt = readRecord(constants.attemptPath,emptyAttempt);
     validatedBuild = readRecord(constants.recordPath,struct());
+    sourceIdentity = emptySourceIdentity;
+    if isfield(validatedBuild,"sourceIdentity"), sourceIdentity = validatedBuild.sourceIdentity; end
     provider = struct( ...
         "id",constants.providerId, ...
         "version",constants.providerVersion, ...
@@ -25,7 +27,7 @@ try
         "sharedLibraries",true, ...
         "fortran",false, ...
         "openmp",false, ...
-        "kernelScope","constant-stratification hydrostatic and nonhydrostatic preview");
+        "kernelScope","constant hydrostatic/nonhydrostatic, Hydrostatic, Boussinesq, Stratified QG and Barotropic QG");
     module = emptyModule(constants);
     libraries = emptyLibraries;
     validation = emptyValidation;
@@ -52,7 +54,7 @@ try
             failure = inspectionFailure;
         end
     end
-    capabilities = assembleCapabilities(constants,support,provider,compiler,module,libraries,validation,storageEstimates,attempt,status,failure);
+    capabilities = assembleCapabilities(constants,support,provider,compiler,module,libraries,sourceIdentity,validation,storageEstimates,attempt,status,failure);
 catch exception
     fallbackConstants = fallbackConstantsRecord;
     fallbackSupport = fallbackSupportRecord;
@@ -64,12 +66,12 @@ catch exception
         fallbackSupport = wvCompiledBackendSupport(overrides);
     catch
     end
-    capabilities = assembleCapabilities(fallbackConstants,fallbackSupport,struct(),struct(),emptyModule(fallbackConstants),emptyLibraries,emptyValidation,emptyStorageEstimates,emptyAttempt,"invalid",wvCompiledBackendFailure("inspection",exception));
+    capabilities = assembleCapabilities(fallbackConstants,fallbackSupport,struct(),struct(),emptyModule(fallbackConstants),emptyLibraries,emptySourceIdentity,emptyValidation,emptyStorageEstimates,emptyAttempt,"invalid",wvCompiledBackendFailure("inspection",exception));
 end
 clear pathCleanup warningCleanup
 end
 
-function capabilities = assembleCapabilities(constants,support,provider,compiler,module,libraries,validation,storageEstimates,attempt,status,failure)
+function capabilities = assembleCapabilities(constants,support,provider,compiler,module,libraries,sourceIdentity,validation,storageEstimates,attempt,status,failure)
 capabilities = struct( ...
     "schemaVersion","1.0.0", ...
     "status",string(status), ...
@@ -81,6 +83,7 @@ capabilities = struct( ...
     "compiler",compiler, ...
     "module",module, ...
     "libraries",libraries, ...
+    "sourceIdentity",sourceIdentity, ...
     "contract",struct("version",double(constants.contractVersion),"threadCount",double(support.threadCount),"defaultThreadRule","min(18,maxNumCompThreads)","planCount",17,"planCountMeaning","logical-prepared-operation-slots"), ...
     "featureValidation",validation, ...
     "storageEstimates",storageEstimates, ...
@@ -105,13 +108,13 @@ try
     libraries.openmp.detected = string(info.openMPRuntimeLibrary) ~= "";
     module.engine = string(info.engine);
     % Inspect the installed binary; never infer its schedule from newer source
-    % defaults. Older modules lacking additive metadata remain valid.
+    % defaults. Source and binary identity must match the validated build record.
     for name = ["nonlinearFluxSchedule","executionScheduleVersion","workerPolicyIdentifier","requestedHorizontalWorkers","requestedPointwiseWorkers","planCountMeaning","matlabTransformBridgeVersion"]
         if isfield(info,name), module.(name) = info.(name); end
     end
-    module.identityValidated = validateLibraryIdentities(constants,validatedBuild,libraries);
+    module.identityValidated = validateBinaryIdentities(constants,validatedBuild,module,libraries);
     if ~module.identityValidated
-        error("WaveVortexModel:CompiledBackendIdentityMismatch","The loaded FFTW identities do not match the validated native provider.");
+        error("WaveVortexModel:CompiledBackendIdentityMismatch","The installed module or native provider does not match the validated build record.");
     end
     module.isInstalled = true;
 catch exception
@@ -123,16 +126,26 @@ end
 module.loadedAfterInspection = moduleLoaded(constants.moduleName);
 end
 
-function tf = validateLibraryIdentities(constants,validatedBuild,libraries)
+function tf = validateBinaryIdentities(constants,validatedBuild,module,libraries)
 tf = libraries.base.path ~= "" && libraries.thread.path ~= "" && ~libraries.openmp.detected;
 tf = tf && ~startsWith(libraries.base.path,string(matlabroot)) && ~startsWith(libraries.thread.path,string(matlabroot));
-if isempty(fieldnames(validatedBuild)) || ~isfield(validatedBuild,"libraries")
+if isempty(fieldnames(validatedBuild)) || ~isfield(validatedBuild,"libraries") || ...
+        ~isfield(validatedBuild,"module") || ~isfield(validatedBuild,"sourceIdentity")
     tf = false;
     return
 end
 expected = validatedBuild.libraries;
 tf = tf && samePath(libraries.base.path,string(expected.base.path)) && samePath(libraries.thread.path,string(expected.thread.path));
 tf = tf && string(validatedBuild.provider.id) == constants.providerId;
+tf = tf && module.sha256 == string(validatedBuild.module.sha256);
+tf = tf && libraries.base.sha256 == string(expected.base.sha256) && ...
+    libraries.thread.sha256 == string(expected.thread.sha256);
+identity = validatedBuild.sourceIdentity;
+tf = tf && string(identity.moduleSHA256) == module.sha256 && ...
+    string(identity.baseLibrarySHA256) == libraries.base.sha256 && ...
+    string(identity.threadLibrarySHA256) == libraries.thread.sha256 && ...
+    string(identity.providerId) == constants.providerId && ...
+    string(identity.providerSourceSHA256) == constants.sourceSHA256;
 end
 
 function record = identityRecord(pathname,versionValue)
@@ -150,6 +163,12 @@ function libraries = emptyLibraries
 empty = struct("path","","version","","sha256","");
 openmp = empty; openmp.detected = false;
 libraries = struct("base",empty,"thread",empty,"openmp",openmp);
+end
+
+function identity = emptySourceIdentity
+identity = struct("schemaVersion","","manifest",struct(),"moduleSHA256","", ...
+    "baseLibrarySHA256","","threadLibrarySHA256","","providerId","", ...
+    "providerSourceSHA256","");
 end
 
 function validation = emptyValidation

@@ -54,19 +54,34 @@ classdef TestWVCompiledTransformBackend < matlab.unittest.TestCase
             clear secondCleanup cleanup
         end
 
-        function unsupportedTransformIsRejectedBeforeNativeCall(testCase)
-            transform = WVTransformConstantStratification([4000 3000 1000],[6 6 5],isHydrostatic=false,shouldAntialias=false);
-            cleanup = onCleanup(@()delete(transform));
-            testCase.verifyError(@()WVCompiledTransformBackend.create(transform),"WaveVortexModel:CompiledTransformUnsupportedFamily");
-            clear cleanup
-        end
-
         function invalidInputsAreRejected(testCase)
             testCase.verifyError(@()WVCompiledTransformBackend.create(1),"MATLAB:validation:UnableToConvert");
         end
     end
 
     methods (Test,TestTags="optional")
+        function allSupportedFamiliesCreateNativeSessions(testCase)
+            capabilities = WVCompiledBackend.capabilities();
+            testCase.assumeTrue(capabilities.isAvailable,capabilities.failure.message);
+            definitions = supportedConfigurations();
+            baseline = wv_compiled_backend_mex('moduleMetrics');
+            for index = 1:numel(definitions)
+                transform = definitions(index).create();
+                transformCleanup = onCleanup(@()deleteTransforms(transform));
+                backend = WVCompiledTransformBackend.create(transform);
+                backendCleanup = onCleanup(@()deleteBackends(backend));
+                metadata = backend.metadata();
+                testCase.verifyEqual(string(metadata.transformClass),definitions(index).transformClass,definitions(index).name);
+                testCase.verifyGreaterThan(metadata.engineBytes,0,definitions(index).name);
+                testCase.verifyEqual(metadata.duplicateExecutions,0,definitions(index).name);
+                clear backendCleanup transformCleanup
+            end
+            final = wv_compiled_backend_mex('moduleMetrics');
+            testCase.verifyEqual(final.kernelCount,baseline.kernelCount);
+            testCase.verifyEqual(final.matlabTransformCount,baseline.matlabTransformCount);
+            testCase.verifyEqual(final.activePlans,baseline.activePlans);
+        end
+
         function compiledAndLegacyHandlesShareLifecycle(testCase)
             capabilities = WVCompiledBackend.capabilities();
             testCase.assumeTrue(capabilities.isAvailable,capabilities.failure.message);
@@ -162,6 +177,17 @@ classdef TestWVCompiledTransformBackend < matlab.unittest.TestCase
             clear cleanup
         end
     end
+end
+
+function definitions = supportedConfigurations
+profile = @(z)1e-4*exp(z/700);
+definitions = [ ...
+    struct("name","constant-hydrostatic","transformClass","WVTransformConstantStratification","create",@()WVTransformConstantStratification([4000 3000 1000],[6 6 5],isHydrostatic=true,shouldAntialias=false)) ...
+    struct("name","constant-nonhydrostatic","transformClass","WVTransformConstantStratification","create",@()WVTransformConstantStratification([4000 3000 1000],[6 6 5],isHydrostatic=false,shouldAntialias=false)) ...
+    struct("name","hydrostatic","transformClass","WVTransformHydrostatic","create",@()WVTransformHydrostatic([4000 3000 1000],[6 6 5],Nj=3,N2Function=profile,shouldAntialias=false)) ...
+    struct("name","boussinesq","transformClass","WVTransformBoussinesq","create",@()WVTransformBoussinesq([4000 3000 1000],[6 6 5],Nj=3,N2Function=profile,shouldAntialias=false)) ...
+    struct("name","stratified-qg","transformClass","WVTransformStratifiedQG","create",@()WVTransformStratifiedQG([4000 3000 1000],[6 6 5],Nj=3,N2Function=profile,shouldAntialias=false)) ...
+    struct("name","barotropic-qg","transformClass","WVTransformBarotropicQG","create",@()WVTransformBarotropicQG([4000 3000],[6 6],h=1000,j=1,shouldAntialias=false))];
 end
 
 function deleteTransforms(varargin)

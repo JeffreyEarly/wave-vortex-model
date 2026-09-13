@@ -17,6 +17,7 @@ for iOutput = 1:operation.nVarOut
     end
 end
 
+self.invalidateCompiledRegistry();
 self.removePropertyAnnotation(operation.outputVariables);
 for iOutput = 1:operation.nVarOut
     outputName = operation.outputVariables(iOutput).name;
