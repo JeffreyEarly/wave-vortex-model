@@ -63,6 +63,7 @@ classdef TestWVCompiledTransformBackend < matlab.unittest.TestCase
         function allSupportedFamiliesCreateNativeSessions(testCase)
             capabilities = WVCompiledBackend.capabilities();
             testCase.assumeTrue(capabilities.isAvailable,capabilities.failure.message);
+            WVCompiledBackend.activateModule(capabilities);
             definitions = supportedConfigurations();
             baseline = wv_compiled_backend_mex('moduleMetrics');
             for index = 1:numel(definitions)
@@ -90,6 +91,7 @@ classdef TestWVCompiledTransformBackend < matlab.unittest.TestCase
         function compiledAndLegacyHandlesShareLifecycle(testCase)
             capabilities = WVCompiledBackend.capabilities();
             testCase.assumeTrue(capabilities.isAvailable,capabilities.failure.message);
+            WVCompiledBackend.activateModule(capabilities);
             profile = @(z) 1e-4*exp(z/700);
             hydrostatic = WVTransformHydrostatic([4000 3000 1000],[6 6 5],Nj=3,N2Function=profile,shouldAntialias=false);
             constant = WVTransformConstantStratification([4000 3000 1000],[6 6 5],isHydrostatic=true,shouldAntialias=false);
@@ -121,6 +123,7 @@ classdef TestWVCompiledTransformBackend < matlab.unittest.TestCase
         function hydrostaticCallScopeReusesFieldsAndRecovers(testCase)
             capabilities = WVCompiledBackend.capabilities();
             testCase.assumeTrue(capabilities.isAvailable,capabilities.failure.message);
+            WVCompiledBackend.activateModule(capabilities);
             profile = @(z) 1e-4*exp(z/700);
             wvt = WVTransformHydrostatic([4000 3000 1000],[6 6 5],Nj=3,N2Function=profile,shouldAntialias=false);
             other = WVTransformHydrostatic([4000 3000 1000],[6 6 5],Nj=3,N2Function=profile,shouldAntialias=false);
