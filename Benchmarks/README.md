@@ -63,6 +63,24 @@ The website presentation uses the post-optimization Donut record `three-interfac
 
 The detailed raw result and RSS samples are compressed beneath the external sibling archive `../wave-vortex-model-benchmark-artifacts/three-interface/`. They are never committed or copied into the generated website. The source tree contains only the compact normalized record and presentation; its provenance stores fixture hashes, the raw-artifact hash, and the external archive filename, SHA-256, compressed byte count, and location. The author-only standalone kernel worker is built only when `WV_RUNTIME_BUILD_BENCHMARKS=ON`; it is not part of the package or ordinary `wave-vortex-run` interface.
 
+### Matched model release campaign
+
+The `matched-model-runtime-v1` study refreshes the primary website comparison while retaining the earlier four-integrator study as historical evidence. It uses the same domain, grid, GM(1)/red-geostrophic initialization recipe and two output workloads, with RK8(7) only and a fixed 7168 s integration. Its model choices are `constant-nonhydrostatic`, `hydrostatic-exponential` and `boussinesq-exponential`. Both exponential models use `N2(z) = 2e-5 exp(2z/1300)` in SI units; constant stratification uses `N2 = 2e-5`.
+
+Run one model per artifact from the frozen candidate, for example:
+
+```matlab
+results = runThreeInterfaceBenchmark(studyId="matched-model-runtime-v1",modelConfigurations="hydrostatic-exponential",integrators="adaptive-rk78");
+```
+
+The constant model measures all three interfaces. Hydrostatic and Boussinesq measure MATLAB builtin and standalone C++; their MATLAB compiled-transform interface is explicitly unavailable. Three fresh-process repeats across the three models and two workloads require 42 measured runs. Unavailable interfaces are never counted as measurements, and genuine worker failures cannot be published as unavailable support.
+
+Mode construction, restoration, native FFT planning and prepared transform setup occur before integration timing. The timed interval includes the initial scientific RHS work and required output delivery. The primary memory metric remains total process-tree peak RSS during integration. The four early composite delivery times remain 32, 64, 96 and 128 s, independent of each model's initial CFL estimate.
+
+Use `processRunCount=1` and an explicit `pilotFinalTime` for a bounded exploratory run before the full campaign. Pilot and undersampled artifacts are not eligible for publication. Budget fixture copies and retained outputs using actual file sizes, include Boussinesq startup in the wall-time estimate, and run only one worker at a time on an idle host. Keep logs, source/provider identities, samples and numerical comparisons in the external archive.
+
+Publish through `publishedThreeInterfaceBenchmarkFromArtifact` only after the candidate passes its contract and release checks. Version labels refer to the qualified implementation; exact source/build identities remain in provenance. The website selects one matching source/environment cohort and shows missing models as unavailable rather than filling them from another campaign.
+
 ### Observer integration and dense-output decomposition
 
 `runWaveVortexObserverCostBenchmark` is a MATLAB authoring study that separates the two costs combined by the frozen v4.3 composite workload. It runs a matched two-by-two case matrix: coefficient state or coefficient-plus-tracer/particle state, crossed with endpoint-only delivery or first-step dense delivery. The coefficient dense-output case writes only interpolated coefficients; the full composite case retains the v4.3 field, mooring, particle, and tracer graph. The accepted v4.3 publication data and its schemas are not inputs or outputs of this study.

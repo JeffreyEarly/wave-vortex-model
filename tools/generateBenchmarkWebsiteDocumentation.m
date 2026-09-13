@@ -45,7 +45,7 @@ for iEntry = 1:numel(catalog.interfaceComparisons)
     artifactPath = repositoryFile(repositoryRoot,string(entry.artifact),"published interface comparison");
     dataset = jsondecode(fileread(artifactPath));
     datasetId = string(dataset.datasetId);
-    if ~ismember(string(dataset.schemaVersion),["published-three-interface-v1" "published-three-interface-v2" "published-three-interface-v3"]) || datasetId~=string(entry.datasetId) || isempty(regexp(datasetId,'^three-interface--[a-z0-9][a-z0-9-]*--\d{8}T\d{6}Z$','once')) || logical(dataset.source.sourceDirty)
+    if ~ismember(string(dataset.schemaVersion),["published-three-interface-v1" "published-three-interface-v2" "published-three-interface-v3" "published-three-interface-v4"]) || datasetId~=string(entry.datasetId) || isempty(regexp(datasetId,'^three-interface--[a-z0-9][a-z0-9-]*--\d{8}T\d{6}Z$','once')) || logical(dataset.source.sourceDirty)
         error("WaveVortexModel:InvalidThreeInterfaceBenchmark","Interface comparison %s is invalid.",string(entry.datasetId));
     end
     if any(seen==datasetId), error("WaveVortexModel:DuplicateThreeInterfaceBenchmark","Interface comparison %s is duplicated.",datasetId); end
@@ -59,6 +59,14 @@ for iEntry = 1:numel(catalog.interfaceComparisons)
         end
         if ~validInterfaceProvider(dataset.provider) || isempty(regexp(string(dataset.provenance.rawArtifactSHA256),'^[0-9a-f]{64}$','once')) || numel(dataset.provenance.fixtures)~=2
             error("WaveVortexModel:InvalidThreeInterfaceBenchmark","Integrator comparison %s lacks provider, raw-artifact, or fixture provenance.",datasetId);
+        end
+        validateInterfaceArchive(dataset.provenance.externalArchive,datasetId);
+    elseif string(dataset.schemaVersion)=="published-three-interface-v4"
+        if ~validCurrentCampaignCases(dataset)
+            error("WaveVortexModel:InvalidThreeInterfaceBenchmark","Current RK78 model campaign %s does not contain the two required workloads.",datasetId);
+        end
+        if ~validInterfaceProvider(dataset.provider) || isempty(regexp(string(dataset.provenance.rawArtifactSHA256),'^[0-9a-f]{64}$','once'))
+            error("WaveVortexModel:InvalidThreeInterfaceBenchmark","Current model campaign %s lacks provider or raw-artifact provenance.",datasetId);
         end
         validateInterfaceArchive(dataset.provenance.externalArchive,datasetId);
     elseif numel(dataset.cases)~=3
@@ -89,6 +97,28 @@ for iEntry = 1:numel(catalog.interfaceComparisons)
 end
 end
 
+function valid = validCurrentCampaignCases(dataset)
+% Current release campaigns contain RK78 measurements for two workloads.
+workloads = ["coefficient-endpoint" "composite-dense-output"];
+ids = arrayfun(@(index)string(itemAt(dataset.cases,index).id),1:numel(dataset.cases));
+declaredModel = modelConfiguration(dataset,itemAt(dataset.cases,1));
+valid = numel(dataset.cases)==2 && string(dataset.studyId)=="matched-model-runtime-v1" && all(arrayfun(@(workload)any(endsWith(ids,"--"+workload)),workloads)) && all(contains(ids,"adaptive-rk78"));
+for iCase = 1:numel(dataset.cases)
+    benchmarkCase = itemAt(dataset.cases,iCase);
+    valid = valid && numel(benchmarkCase.interfaces)==3 && logical(benchmarkCase.correctness.endpointTrajectoryAgreementPassed);
+    valid = valid && modelConfiguration(dataset,benchmarkCase)==declaredModel;
+    for iInterface = 1:numel(benchmarkCase.interfaces)
+        item = itemAt(benchmarkCase.interfaces,iInterface);
+        unavailable = isfield(item,"status") && string(item.status)=="unavailable";
+        allowedUnavailable = unavailable && declaredModel~="constant-nonhydrostatic" && string(item.id)=="matlab-compiled" && isfield(item,"unavailableReason") && strlength(string(item.unavailableReason))>0;
+        valid = valid && (isInterfaceComplete(item) || allowedUnavailable);
+        if string(item.id)~="matlab-compiled"
+            valid = valid && isInterfaceComplete(item);
+        end
+    end
+end
+end
+
 function valid = validIntegratorStudyCases(dataset)
 expected = strings(0,1);
 for integrator = ["fixed-rk4" "adaptive-rk23" "adaptive-rk45" "adaptive-rk78"]
@@ -113,6 +143,11 @@ if isempty(records)
     markdown = "No approved matched three-interface result has been published yet.";
     return
 end
+currentMask = arrayfun(@(record)string(record.dataset.schemaVersion)=="published-three-interface-v4",records);
+if any(currentMask)
+    markdown = currentCampaignSummaryMarkdown(records(currentMask));
+    return
+end
 v3Mask = arrayfun(@(record)string(record.dataset.schemaVersion)=="published-three-interface-v3",records);
 if any(v3Mask)
     requiredResolutions = [256 256 129];
@@ -121,6 +156,41 @@ if any(v3Mask)
     return
 end
 markdown = legacyInterfaceComparisonMarkdown(records);
+end
+
+function markdown = currentCampaignSummaryMarkdown(records)
+models = ["constant-nonhydrostatic" "hydrostatic-exponential" "boussinesq-exponential"];
+labels = ["Constant nonhydrostatic" "Hydrostatic exponential" "Boussinesq exponential"];
+keys = arrayfun(@(record)currentCampaignCohortKey(record.dataset),records);
+uniqueKeys = unique(keys,"stable");
+latest = -Inf;
+selectedKey = "";
+for key = uniqueKeys
+    candidates = records(keys==key);
+    time = max(arrayfun(@(record)datenum(collectionTime(record.dataset)),candidates)); %#ok<DATNM>
+    if time > latest, latest=time; selectedKey=key; end
+end
+
+records = records(keys==selectedKey);
+controls = strings(1,numel(models));
+panels = strings(1,numel(models));
+for iModel = 1:numel(models)
+    model = models(iModel);
+    controls(iModel) = "<label><input type=""radio"" name=""benchmark-model"" id=""benchmark-model-"+model+""""+conditional(iModel==1," checked","")+"> "+labels(iModel)+"</label>";
+    matching = records(arrayfun(@(record)modelConfiguration(record.dataset,itemAt(record.dataset.cases,1))==model,records));
+    if isempty(matching)
+        content = "<p>No approved RK78 measurements are available for this model.</p>";
+    else
+        selected = selectCompatibleInterfaceRecords(matching,[256 256 129]);
+        content = integratorSummaryMarkdown(selected(1).dataset,model);
+    end
+    panels(iModel) = "<section class=""benchmark-model-panel"" data-model="""+model+"""><h3>"+labels(iModel)+"</h3>"+content+"</section>";
+end
+markdown = "<div class=""benchmark-model-selector"" role=""group"" aria-label=""Select benchmark model"">"+strjoin(controls," ")+"</div>"+newline+"<div class=""benchmark-model-panels"">"+strjoin(panels,newline)+"</div>";
+end
+
+function key = currentCampaignCohortKey(dataset)
+key = strjoin([string(dataset.source.commit),string(dataset.source.tree),string(dataset.platform.id),string(dataset.platform.matlabVersion),string(dataset.platform.threadCount),string(dataset.provider.id),string(dataset.provider.version)],"|");
 end
 
 function markdown = legacyInterfaceComparisonMarkdown(records)
@@ -143,7 +213,11 @@ intro = interfaceRecordContextMarkdown(dataset)+" Each cell reports runtime foll
 markdown = intro+newline+newline+htmlTable(["Resolution" "Workload" "MATLAB builtin" "MATLAB + compiled core" "Standalone C++"],rows);
 end
 
-function markdown = integratorSummaryMarkdown(dataset)
+function markdown = integratorSummaryMarkdown(dataset,model)
+isCurrentCampaign = nargin >= 2;
+if nargin < 2
+    model = "constant-nonhydrostatic";
+end
 integrator = "adaptive-rk78";
 workloads = ["coefficient-endpoint" "composite-dense-output"];
 interfaceIds = ["matlab-builtin" "matlab-compiled" "standalone-compiled"];
@@ -155,29 +229,72 @@ lines = [ ...
     "</thead>"; ...
     "<tbody>"];
 for workload = workloads
-    benchmarkCase = interfaceCaseWithId(dataset,"nonhydrostatic--"+integrator+"--"+workload);
+    benchmarkCase = interfaceCaseForWorkload(dataset,integrator,workload,model);
     builtin = interfaceWithId(benchmarkCase,"matlab-builtin");
     items = cell(1,numel(interfaceIds));
     runtimes = zeros(1,numel(interfaceIds));
     memories = zeros(1,numel(interfaceIds));
     for iInterface = 1:numel(interfaceIds)
         items{iInterface} = interfaceWithId(benchmarkCase,interfaceIds(iInterface));
-        runtimes(iInterface) = double(items{iInterface}.integrationSeconds);
-        memories(iInterface) = double(items{iInterface}.totalPeakRSSBytes);
+        if isInterfaceComplete(items{iInterface})
+            runtimes(iInterface) = double(items{iInterface}.integrationSeconds);
+            memories(iInterface) = double(items{iInterface}.totalPeakRSSBytes);
+        else
+            runtimes(iInterface) = NaN;
+            memories(iInterface) = NaN;
+        end
     end
     for iInterface = 1:numel(interfaceIds)
         workloadCell = "";
         if iInterface == 1
             workloadCell = "<th scope=""rowgroup"" rowspan="""+string(numel(interfaceIds))+""">"+xmlEscape(displaySummaryWorkload(workload))+"</th>";
         end
-        runtimeCell = benchmarkMetricCell(formatSeconds(runtimes(iInterface)),runtimes(iInterface)==min(runtimes),"Fastest","benchmark-fastest");
-        memoryCell = benchmarkMetricCell(formatBytes(memories(iInterface)),memories(iInterface)==min(memories),"Lowest memory","benchmark-lowest-memory");
-        speedup = formatSpeedup(double(builtin.integrationSeconds)/runtimes(iInterface),iInterface==1);
+        runtimeCell = benchmarkMetricCell(formatMetric(runtimes(iInterface),"seconds",items{iInterface}),isfinite(runtimes(iInterface)) && runtimes(iInterface)==min(runtimes,[],"omitnan"),"Fastest","benchmark-fastest");
+        memoryCell = benchmarkMetricCell(formatMetric(memories(iInterface),"bytes",items{iInterface}),isfinite(memories(iInterface)) && memories(iInterface)==min(memories,[],"omitnan"),"Lowest memory","benchmark-lowest-memory");
+        if isInterfaceComplete(builtin) && isfinite(runtimes(iInterface))
+            speedup = formatSpeedup(double(builtin.integrationSeconds)/runtimes(iInterface),iInterface==1);
+        else
+            speedup = "Unavailable";
+        end
         lines(end+1,1) = "  <tr>"+workloadCell+"<th scope=""row"">"+xmlEscape(interfaceNames(iInterface))+"</th><td>"+runtimeCell+"</td><td class=""benchmark-number"">"+xmlEscape(speedup)+"</td><td>"+memoryCell+"</td></tr>"; %#ok<AGROW>
     end
 end
 lines = [lines; "</tbody>"; benchmarkTableEnd];
-markdown = interfaceRecordContextMarkdown(dataset)+newline+newline+strjoin(lines,newline);
+if isCurrentCampaign
+    [context,provenance] = currentInterfaceRecordContextMarkdown(dataset);
+    if model ~= "constant-nonhydrostatic"
+        lines(end+1,1) = "<p>MATLAB compiled core is unavailable for variable-stratification models.</p>";
+    end
+else
+    context = interfaceRecordContextMarkdown(dataset);
+    provenance = "";
+end
+markdown = context+newline+newline+strjoin(lines,newline)+newline+newline+provenance;
+end
+
+function [markdown,provenance] = currentInterfaceRecordContextMarkdown(dataset)
+release = "Release "+string(dataset.source.version)+" · "+string(dataset.platform.displayName)+" · collected "+extractBefore(string(dataset.collectedAt),"T");
+boundary = "Median integration time and peak process memory from three fresh runs; startup and preparation are excluded.";
+provenance = "<details markdown=""1""><summary>Record provenance</summary><p>Dataset <code>"+xmlEscape(dataset.datasetId)+"</code>; source commit <code>"+xmlEscape(dataset.source.commit)+"</code>; provider <code>"+xmlEscape(dataset.provider.id)+" "+xmlEscape(dataset.provider.version)+"</code>; "+string(itemAt(dataset.cases,1).contract.processRunCount)+" fresh processes.</p></details>";
+markdown = "<p>"+xmlEscape(release)+"</p><p>"+xmlEscape(boundary)+"</p>";
+end
+
+function benchmarkCase = interfaceCaseForWorkload(dataset,integrator,workload,model)
+exactId = "nonhydrostatic--"+integrator+"--"+workload;
+exact = arrayfun(@(index)string(itemAt(dataset.cases,index).id)==exactId,1:numel(dataset.cases));
+if nnz(exact)==1
+    benchmarkCase = itemAt(dataset.cases,find(exact,1));
+    return
+end
+matches = false(1,numel(dataset.cases));
+for iCase = 1:numel(dataset.cases)
+    item = itemAt(dataset.cases,iCase);
+    matches(iCase) = endsWith(string(item.id),"--"+workload) && contains(string(item.id),integrator) && modelConfiguration(dataset,item)==model;
+end
+if nnz(matches) ~= 1
+    error("WaveVortexModel:IncompleteInterfaceComparison","Model %s must contain exactly one %s %s case.",model,integrator,workload);
+end
+benchmarkCase = itemAt(dataset.cases,find(matches,1));
 end
 
 function markdown = interfaceRecordContextMarkdown(dataset)
@@ -257,6 +374,10 @@ line = "</table>"+newline+"</div>";
 end
 
 function value = benchmarkMetricCell(formattedValue,isWinner,label,cssClass)
+if startsWith(formattedValue,"Unavailable")
+    value = "Unavailable";
+    return
+end
 value = "<span class=""benchmark-number"">";
 if isWinner
     value = value+"<strong>"+xmlEscape(formattedValue)+"</strong><span class=""benchmark-winner "+cssClass+""">"+xmlEscape(label)+"</span>";
@@ -264,6 +385,26 @@ else
     value = value+xmlEscape(formattedValue);
 end
 value = value+"</span>";
+end
+
+function value = formatMetric(metric,kind,item)
+if ~isfinite(metric)
+    value = "Unavailable";
+    if isfield(item,"unavailableReason")
+        value = value+": "+string(item.unavailableReason);
+    end
+elseif kind=="seconds"
+    value = formatSeconds(metric);
+else
+    value = formatBytes(metric);
+end
+end
+
+function valid = isInterfaceComplete(item)
+valid = isfield(item,"integrationSeconds") && isfinite(item.integrationSeconds) && isfield(item,"totalPeakRSSBytes") && isfinite(item.totalPeakRSSBytes);
+if isfield(item,"status")
+    valid = valid && string(item.status)=="complete";
+end
 end
 
 function value = formatSpeedup(speedup,isBaseline)
@@ -971,7 +1112,7 @@ markdown = htmlTable(["Dataset" "Implementation" "Platform" "Suite" "Collected" 
 end
 
 function value = interfaceArchiveSummary(dataset)
-if ismember(string(dataset.schemaVersion),["published-three-interface-v1" "published-three-interface-v3"])
+if ismember(string(dataset.schemaVersion),["published-three-interface-v1" "published-three-interface-v3" "published-three-interface-v4"])
     value = "External archive: "+extractBefore(string(dataset.provenance.externalArchive.sha256),13)+"…";
     return
 end
@@ -1070,6 +1211,36 @@ if isempty(index)
 else
     displayName = names(index);
 end
+end
+
+function value = modelConfiguration(dataset,benchmarkCase)
+value = "";
+if isfield(dataset,"modelConfiguration")
+    value = string(dataset.modelConfiguration);
+elseif isfield(dataset,"configuration") && isfield(dataset.configuration,"modelConfiguration")
+    value = string(dataset.configuration.modelConfiguration);
+elseif isfield(benchmarkCase,"modelConfiguration")
+    value = string(benchmarkCase.modelConfiguration);
+elseif isfield(benchmarkCase,"configuration") && isfield(benchmarkCase.configuration,"modelConfiguration")
+    value = string(benchmarkCase.configuration.modelConfiguration);
+elseif isfield(benchmarkCase,"physicalConfiguration")
+    value = legacyModelConfiguration(benchmarkCase.physicalConfiguration);
+elseif isfield(benchmarkCase,"configuration") && isfield(benchmarkCase.configuration,"physicalConfiguration")
+    value = legacyModelConfiguration(benchmarkCase.configuration.physicalConfiguration);
+elseif string(benchmarkCase.transformId)=="constant-nonhydrostatic"
+    value = "constant-nonhydrostatic";
+end
+end
+
+function value = legacyModelConfiguration(configuration)
+value = "";
+if isstruct(configuration) && isfield(configuration,"isHydrostatic")
+    if logical(configuration.isHydrostatic), value = "hydrostatic-exponential"; else, value = "constant-nonhydrostatic"; end
+end
+end
+
+function value = conditional(condition,whenTrue,whenFalse)
+if condition, value=whenTrue; else, value=whenFalse; end
 end
 
 function value = formatSeconds(seconds)

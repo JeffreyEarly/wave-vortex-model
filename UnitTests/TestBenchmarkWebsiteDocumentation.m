@@ -8,6 +8,7 @@ classdef TestBenchmarkWebsiteDocumentation < matlab.unittest.TestCase
         function addToolsPath(testCase)
             testCase.repositoryRoot = string(fileparts(fileparts(mfilename("fullpath"))));
             testCase.applyFixture(matlab.unittest.fixtures.PathFixture(fullfile(testCase.repositoryRoot,"tools")));
+            testCase.applyFixture(matlab.unittest.fixtures.PathFixture(fullfile(testCase.repositoryRoot,"Benchmarks")));
         end
     end
 
@@ -207,6 +208,104 @@ classdef TestBenchmarkWebsiteDocumentation < matlab.unittest.TestCase
             testCase.verifyTrue(isfile(fullfile(buildFolder,"benchmarks","data",first.datasetId+".json")))
         end
 
+        function currentModelCampaignRendersSelectorAndUnavailableCoverage(testCase)
+            [root,buildFolder] = testCase.createFixture("current-model-campaign");
+            models = ["constant-nonhydrostatic" "hydrostatic-exponential" "boussinesq-exponential"];
+            entries = repmat(struct("datasetId","","artifact",""),1,numel(models));
+            for iModel = 1:numel(models)
+                [entry,dataset] = testCase.publishIntegratorStudyDataset(root,[256 256 129],"20260912T12000"+string(iModel)+"Z");
+                selected = [7 8];
+                dataset.cases = dataset.cases(selected);
+                for iCase = 1:numel(dataset.cases)
+                    dataset.cases{iCase}.modelConfiguration = models(iModel);
+                    dataset.cases{iCase}.id = models(iModel)+"--adaptive-rk78--"+dataset.cases{iCase}.workload;
+                    if iModel > 1
+                        dataset.cases{iCase}.interfaces{2} = struct("id","matlab-compiled","status","unavailable","unavailableReason","MATLAB compiled core is unavailable for this model.");
+                    end
+                end
+                dataset.modelConfiguration = models(iModel);
+                dataset.schemaVersion = "published-three-interface-v4";
+                dataset.studyId = "matched-model-runtime-v1";
+                dataset.source.version = "4.0.0";
+                dataset.provenance.rawSchemaVersion = "three-interface-benchmark-v3";
+                dataset.provenance.externalArchive.location = "temporary marked fixture";
+                dataset.provenance.fixtures = dataset.provenance.fixtures(1:2);
+                testCase.writeJson(fullfile(root,entry.artifact),dataset);
+                entries(iModel) = entry;
+            end
+            testCase.writeCatalog(root,struct([]),entries);
+
+            generateBenchmarkWebsiteDocumentation(root,buildFolder);
+
+            page = string(fileread(fullfile(buildFolder,"compiled-execution","benchmarks.md")));
+            testCase.verifySubstring(page,"benchmark-model-selector");
+            for model = models
+                testCase.verifySubstring(page,"id=""benchmark-model-"+model+"""");
+                testCase.verifySubstring(page,"data-model="""+model+"""");
+            end
+            testCase.verifySubstring(page,"Release 4.0.0");
+            testCase.verifySubstring(page,"MATLAB compiled core is unavailable for variable-stratification models.");
+            testCase.verifyFalse(contains(page,"Historical matched record"));
+            provenance = extractBetween(page,"<details markdown=""1""><summary>Record provenance</summary>","</details>");
+            testCase.verifyNotEmpty(provenance);
+            testCase.verifyTrue(all(contains(provenance,"source commit")));
+            testCase.verifyEqual(numel(strfind(page,"Coefficients only")),3);
+            testCase.verifyEqual(numel(strfind(page,"Composite dense output")),3);
+            testCase.verifyFalse(contains(page,"Recent native optimization evidence"));
+        end
+
+        function normalizedMatchedModelArtifactRendersCurrentCampaign(testCase)
+            [root,buildFolder] = testCase.createFixture("normalized-current-model");
+            raw = TestThreeInterfaceBenchmark.matchedModelFixture("hydrostatic-exponential");
+            rawPath = fullfile(root,"raw.json");
+            testCase.writeJson(rawPath,raw);
+            dataset = publishedThreeInterfaceBenchmarkFromArtifact(rawPath,archiveFileName="hydrostatic.json.gz",archiveSHA256=repmat('d',1,64),archiveCompressedBytes=4096,implementationVersion="4.4.0");
+            artifact = "Benchmarks/results/published/"+dataset.datasetId+".json";
+            testCase.writeJson(fullfile(root,artifact),dataset);
+            testCase.writeCatalog(root,struct([]),struct("datasetId",dataset.datasetId,"artifact",artifact));
+
+            generateBenchmarkWebsiteDocumentation(root,buildFolder);
+
+            page = string(fileread(fullfile(buildFolder,"compiled-execution","benchmarks.md")));
+            testCase.verifySubstring(page,"Hydrostatic exponential")
+            testCase.verifySubstring(page,"Unavailable")
+            testCase.verifySubstring(page,"MATLAB compiled core is unavailable for variable-stratification models.")
+        end
+
+        function currentSelectorDoesNotBackfillOlderModelCohort(testCase)
+            [root,buildFolder] = testCase.createFixture("cohort-selection");
+            [newEntry,newest] = testCase.publishIntegratorStudyDataset(root,[256 256 129],"20260912T120001Z");
+            [oldEntry,older] = testCase.publishIntegratorStudyDataset(root,[256 256 129],"20260911T120001Z");
+            newest = TestBenchmarkWebsiteDocumentation.currentV4Model(newest,"constant-nonhydrostatic","4.0.0");
+            older = TestBenchmarkWebsiteDocumentation.currentV4Model(older,"hydrostatic-exponential","3.9.0");
+            older.platform.id = "older-host";
+            older.platform.displayName = "Older host";
+            older.cases{1}.interfaces{1}.integrationSeconds = 99;
+            older.cases{2}.interfaces{1}.integrationSeconds = 99;
+            testCase.writeJson(fullfile(root,newEntry.artifact),newest);
+            testCase.writeJson(fullfile(root,oldEntry.artifact),older);
+            testCase.writeCatalog(root,struct([]),[newEntry oldEntry]);
+            generateBenchmarkWebsiteDocumentation(root,buildFolder);
+            page = string(fileread(fullfile(buildFolder,"compiled-execution","benchmarks.md")));
+            testCase.verifySubstring(page,"No approved RK78 measurements are available for this model.");
+            testCase.verifyFalse(contains(page,"99 s"));
+        end
+
+        function currentCampaignRejectsInvalidUnavailableInterfaces(testCase)
+            [root,buildFolder] = testCase.createFixture("invalid-unavailable");
+            [entry,dataset] = testCase.publishIntegratorStudyDataset(root,[256 256 129],"20260912T120001Z");
+            dataset = TestBenchmarkWebsiteDocumentation.currentV4Model(dataset,"hydrostatic-exponential","4.0.0");
+            valid = dataset;
+            dataset.cases{1}.interfaces{1} = struct("id","matlab-builtin","status","unavailable","unavailableReason","fixture rejection");
+            testCase.writeJson(fullfile(root,entry.artifact),dataset);
+            testCase.writeCatalog(root,struct([]),entry);
+            testCase.verifyError(@()generateBenchmarkWebsiteDocumentation(root,buildFolder),"WaveVortexModel:InvalidThreeInterfaceBenchmark");
+            dataset = valid;
+            dataset.cases{1}.interfaces{1} = struct("id","matlab-compiled","status","unavailable");
+            testCase.writeJson(fullfile(root,entry.artifact),dataset);
+            testCase.verifyError(@()generateBenchmarkWebsiteDocumentation(root,buildFolder),"WaveVortexModel:InvalidThreeInterfaceBenchmark");
+        end
+
         function incompleteOrIncompatibleInterfacePairFails(testCase)
             [root,buildFolder] = testCase.createFixture("incomplete-interfaces");
             [firstEntry,~] = testCase.publishInterfaceDataset(root,[256 256 129],"20260815T120000Z");
@@ -397,6 +496,22 @@ classdef TestBenchmarkWebsiteDocumentation < matlab.unittest.TestCase
             cleanup = onCleanup(@()fclose(fileId));
             fprintf(fileId,"%s\n",jsonencode(value,PrettyPrint=true));
             clear cleanup
+        end
+    end
+
+    methods (Static, Access=private)
+        function dataset = currentV4Model(dataset,model,version)
+            dataset.cases = dataset.cases([7 8]);
+            for iCase = 1:2
+                dataset.cases{iCase}.modelConfiguration = model;
+                dataset.cases{iCase}.id = model+"--adaptive-rk78--"+dataset.cases{iCase}.workload;
+            end
+            dataset.modelConfiguration = model;
+            dataset.schemaVersion = "published-three-interface-v4";
+            dataset.studyId = "matched-model-runtime-v1";
+            dataset.source.version = version;
+            dataset.provenance.rawSchemaVersion = "three-interface-benchmark-v3";
+            dataset.provenance.fixtures = dataset.provenance.fixtures(1:2);
         end
     end
 end

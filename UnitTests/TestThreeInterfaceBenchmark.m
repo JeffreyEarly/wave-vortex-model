@@ -71,6 +71,65 @@ classdef TestThreeInterfaceBenchmark < matlab.unittest.TestCase
             testCase.verifyTrue(dense.correctness.endpointTrajectoryAgreementPassed)
         end
 
+        function matchedModelStudyNormalizesConstantArtifact(testCase)
+            raw = matchedModelStudyFixture("constant-nonhydrostatic");
+            rawPath = writeRaw(testCase,raw,"matched-constant.json");
+            dataset = publishedThreeInterfaceBenchmarkFromArtifact(rawPath,platformId="m5-max",platformName="Apple M5 Max");
+            testCase.verifyEqual(dataset.schemaVersion,"published-three-interface-v4")
+            testCase.verifyEqual(dataset.studyId,"matched-model-runtime-v1")
+            testCase.verifyEqual(dataset.modelConfiguration,"constant-nonhydrostatic")
+            testCase.verifyNumElements(dataset.cases,2)
+            testCase.verifyEqual(dataset.cases{2}.contract.outputScheduleSeconds,[0 32 64 96 128])
+            testCase.verifyEqual(string(cellfun(@(item)item.status,dataset.cases{1}.interfaces,"UniformOutput",false)),repmat("complete",1,3))
+            testCase.verifyTrue(contains(dataset.cohortKey,string(raw.source.commit)))
+        end
+
+        function matchedVariableModelPublishesExplicitUnavailableInterface(testCase)
+            raw = matchedModelStudyFixture("hydrostatic-exponential");
+            rawPath = writeRaw(testCase,raw,"matched-hydrostatic.json");
+            dataset = publishedThreeInterfaceBenchmarkFromArtifact(rawPath);
+            compiled = dataset.cases{1}.interfaces{2};
+            testCase.verifyEqual(compiled.status,"unavailable")
+            testCase.verifyEqual(compiled.unavailableReason,"MATLAB compiled loading is unavailable for variable-stratification transforms; no runtime adapter is included in this benchmark.")
+            testCase.verifyEqual(dataset.cases{1}.interfaces{1}.status,"complete")
+            testCase.verifyEqual(dataset.cases{1}.interfaces{3}.status,"complete")
+        end
+
+        function matchedModelStudyRejectsArbitraryUnavailableFailure(testCase)
+            raw = matchedModelStudyFixture("boussinesq-exponential");
+            index = find(string({raw.runs.interface})=="matlab-compiled",1);
+            raw.runs(index).failure.identifier = "WaveVortexBenchmark:MatlabInterfaceWorkerFailed";
+            raw.runs(index).failure.message = "arbitrary failure";
+            testCase.verifyError(@()validateThreeInterfaceBenchmarkContract(raw),"WaveVortexBenchmark:InterfaceAvailability")
+        end
+
+        function matchedModelStudyRejectsSmokeArtifactForPublication(testCase)
+            raw = matchedModelStudyFixture("constant-nonhydrostatic");
+            raw.configuration.processRunCount = 1;
+            raw.configuration.publicationEligible = false;
+            raw.runs = raw.runs([raw.runs.repeatIndex]==1);
+            testCase.verifyError(@()validateThreeInterfaceBenchmarkContract(raw),"WaveVortexBenchmark:MatchedModelPublicationContract")
+        end
+
+        function matchedModelStudyRejectsChangedDurationOrSchedule(testCase)
+            raw = matchedModelStudyFixture("constant-nonhydrostatic");
+            raw.cases(2).finalTime = 128;
+            testCase.verifyError(@()validateThreeInterfaceBenchmarkContract(raw),"WaveVortexBenchmark:MatchedModelPublicationContract")
+            raw = matchedModelStudyFixture("constant-nonhydrostatic");
+            raw.cases(2).outputScheduleSeconds = [0 64 128];
+            testCase.verifyError(@()validateThreeInterfaceBenchmarkContract(raw),"WaveVortexBenchmark:MatchedModelPublicationContract")
+        end
+
+        function matchedModelCaseConstructionUsesFrozenSchedule(testCase)
+            options = struct("Nxyz",[32 32 17],"Lxyz",[150e3 150e3 1300],"deltaT",2048,"relativeTolerance",1e-3,"absoluteTolerance",1e-6,"adaptiveInitialStep",25.6,"modelConfigurations","boussinesq-exponential","pilotFinalTime",256);
+            definitions = matchedModelBenchmarkCaseDefinitions(options);
+            testCase.verifyNumElements(definitions,2)
+            testCase.verifyEqual(string({definitions.id}),["boussinesq-exponential--adaptive-rk78--coefficient-endpoint" "boussinesq-exponential--adaptive-rk78--composite-dense-output"])
+            testCase.verifyEqual([definitions.finalTime],[256 256])
+            testCase.verifyEqual(definitions(2).outputScheduleSeconds,[0 32 64 96 128])
+            testCase.verifyEqual(definitions(1).outputScheduleSeconds,[0 256])
+        end
+
         function integratorStudyRejectsWrongMemoryBoundary(testCase)
             raw = integratorStudyFixture;
             raw.runs(1).memory.boundary = "process-lifetime-rss";
@@ -438,6 +497,12 @@ classdef TestThreeInterfaceBenchmark < matlab.unittest.TestCase
             testCase.verifyGreaterThan(result.externalArchive.compressedBytes,0)
         end
     end
+
+    methods (Static)
+        function raw = matchedModelFixture(modelConfiguration)
+            raw = matchedModelStudyFixture(modelConfiguration);
+        end
+    end
 end
 
 function createOutputGraphFixture(pathname,reordered,wrongShape)
@@ -537,6 +602,83 @@ for iCase = 1:2
         raw.runs(end+1,1) = integratorStudyRun(interface,raw.cases(iCase)); %#ok<AGROW>
     end
 end
+end
+
+function raw = matchedModelStudyFixture(modelConfiguration)
+raw = integratorStudyFixture;
+raw.schemaVersion = "three-interface-benchmark-v3";
+raw.modelConfiguration = modelConfiguration;
+raw.configuration.studyId = "matched-model-runtime-v1";
+raw.configuration.processRunCount = 3;
+raw.configuration.publicationProcessRunCount = 3;
+raw.configuration.publicationEligible = true;
+raw.configuration.pilotFinalTime = NaN;
+raw.configuration.Nxyz = [256 256 129];
+raw.configuration.integrators = "adaptive-rk78";
+raw.configuration.workloads = ["coefficient-endpoint" "composite-dense-output"];
+raw.configuration.matlabWorker = struct("path","Benchmarks/threeInterfaceMatlabWorker.m","sha256",repmat('e',1,64));
+raw.configuration.standaloneWorkers = struct("runner",struct("path","wave-vortex-run","sha256",repmat('f',1,64)),"kernel",struct("path","","sha256",""));
+isHydrostatic = modelConfiguration=="hydrostatic-exponential";
+isExponential = modelConfiguration~="constant-nonhydrostatic";
+transformClass = conditional(modelConfiguration=="constant-nonhydrostatic","WVTransformConstantStratification",conditional(isHydrostatic,"WVTransformHydrostatic","WVTransformBoussinesq"));
+physicalConfiguration = conditional(isHydrostatic,"hydrostatic","nonhydrostatic");
+profile = conditional(isExponential,"N2(z) = 2e-5 exp(2 z / 1300) s^-2","N2 = 2e-5 s^-2");
+raw.configuration.physicalConfigurations = physicalConfiguration;
+raw.configuration.model = struct("id",modelConfiguration,"transformClass",transformClass,"physicalConfiguration",physicalConfiguration,"isHydrostatic",isHydrostatic,"domainMeters",[150e3 150e3 1300],"grid",[256 256 129],"latitudeDegrees",45,"shouldAntialias",true,"stratificationProfile",profile,"N2ReferencePerSecondSquared",2e-5,"exponentialScaleHeightMeters",conditional(isExponential,650,NaN));
+raw.configuration.initialCondition.seed = 4001;
+raw.configuration.initialCondition.geostrophicVerticalMode = 1;
+raw.configuration.stepControls.finalTime = 7168;
+for iCase = 1:2
+    raw.cases(iCase).modelConfiguration = modelConfiguration;
+    raw.cases(iCase).physicalConfiguration = physicalConfiguration;
+    raw.cases(iCase).isHydrostatic = isHydrostatic;
+    raw.cases(iCase).id = modelConfiguration+"--adaptive-rk78--"+raw.cases(iCase).workload;
+    raw.cases(iCase).seed = 4001;
+    raw.cases(iCase).Lxyz = [150e3 150e3 1300];
+    raw.cases(iCase).outputScheduleSeconds = conditional(raw.cases(iCase).workload=="composite-dense-output",[0 32 64 96 128],[0 7168]);
+    raw.comparison(iCase).id = raw.cases(iCase).id;
+end
+templateRuns = raw.runs;
+for iRun = 1:numel(templateRuns)
+    templateRuns(iRun).repeatIndex = 0;
+    templateRuns(iRun).sourceCommit = raw.source.commit;
+    templateRuns(iRun).worker = struct();
+    templateRuns(iRun).failure = struct("identifier","","message","","report","");
+end
+raw.runs = repmat(templateRuns(1),0,1);
+for iRepeat = 1:3
+    for iRun = 1:numel(templateRuns)
+        run = templateRuns(iRun);
+        caseIndex = conditional(run.case.workload=="coefficient-endpoint",1,2);
+        run.case = raw.cases(caseIndex);
+        run.repeatIndex = iRepeat;
+        run.sourceCommit = raw.source.commit;
+        run.worker = struct();
+        if startsWith(run.interface,"matlab-")
+            run.worker = raw.configuration.matlabWorker;
+        end
+        if run.interface=="matlab-compiled" && isExponential
+            run.status = "unavailable";
+            run.processWallSeconds = NaN;
+            run.integrationSeconds = NaN;
+            run.memory = struct();
+            run.provider = struct();
+            run.integrator = struct();
+            run.failure = struct("identifier","WaveVortexBenchmark:CompiledVariableModelUnavailable","message","MATLAB compiled loading is unavailable for variable-stratification transforms; no runtime adapter is included in this benchmark.","report","");
+        else
+            run.status = "complete";
+            run.failure = struct("identifier","","message","","report","");
+        end
+        raw.runs(end+1,1) = run; %#ok<AGROW>
+    end
+end
+for iCase = 1:2
+    if isExponential
+        raw.comparison(iCase).interfaces(2).integrationSeconds = NaN;
+        raw.comparison(iCase).interfaces(2).totalPeakRSSBytes = NaN;
+    end
+end
+raw.configuration.fixtures = [struct("modelConfiguration",modelConfiguration,"physicalConfiguration",physicalConfiguration,"stratificationProfile",profile,"workload","coefficient-endpoint","sha256",repmat('1',1,64),"bytes",1024); struct("modelConfiguration",modelConfiguration,"physicalConfiguration",physicalConfiguration,"stratificationProfile",profile,"workload","composite-dense-output","sha256",repmat('2',1,64),"bytes",2048)];
 end
 
 function value = integratorStudyDefinition(workload)

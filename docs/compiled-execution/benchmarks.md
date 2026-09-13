@@ -14,9 +14,9 @@ The usual starting point is MATLAB at low resolution: it keeps the model easy to
 
 ## MATLAB vs C++
 
-**Setup.** The benchmark evolves a nonhydrostatic, constant-stratification flow in a 150 km × 150 km × 1.3 km domain, initialized with GM(1) waves and a first-baroclinic red geostrophic spectrum, for 0.12 inertial periods. The numerics use a `256 × 256 × 129` grid and the adaptive `ode78 / RK8(7)` integrator. The model and integrator are fixed while the execution path and output workload vary.
+**Setup.** The primary release campaign uses RK78 for a 150 km × 150 km × 1.3 km domain, initialized with GM(1) waves and a first-baroclinic red geostrophic spectrum, for 7168 s. It uses a `256 × 256 × 129` grid. Select constant nonhydrostatic, Hydrostatic exponential, or Boussinesq exponential to view the corresponding measured model configuration; an unavailable panel means that model has not been measured in the selected campaign.
 
-**Conclusion.** Read the winner labels and ratios within the selected historical record. They describe the recorded source and environment rather than estimate the performance of later native revisions.
+**Conclusion.** Read the winner labels and ratios within the selected release campaign. They describe the recorded source and environment for that campaign.
 
 <!-- BENCHMARKS:INTERFACE_SUMMARY:START -->
 Historical matched record `three-interface--m5-max--20260828T143049Z`, collected 2026-08-28, measures WaveVortexModel unreleased-preview at source commit `6d41ce0b14abce0ac7d579385c5b90b255eb0f5d` on Apple M5 Max with 18 threads and MATLAB 26.1.0.3312084 (R2026a) Update 4. MATLAB builtin uses MATLAB transforms; MATLAB + compiled core and standalone C++ share validated `native-neon-pthreads` 3.3.11. Values are medians of 3 fresh processes. Runtime starts immediately before integration and ends after required output delivery; startup, construction, provider creation, planning, parsing, and cleanup are excluded. Peak memory is total live process tree RSS sampled during integration and output delivery; allocator and provider storage are not exactly attributable. This dated record does not include later native runtime changes.
@@ -36,6 +36,8 @@ Historical matched record `three-interface--m5-max--20260828T143049Z`, collected
 </tbody>
 </table>
 </div>
+
+
 <!-- BENCHMARKS:INTERFACE_SUMMARY:END -->
 
 ## MATLAB speed scaling
@@ -502,7 +504,7 @@ Historical matched record `three-interface--m5-max--20260828T143049Z`, collected
 
 ## Integrator comparison
 
-**Setup.** This historical comparison reuses the MATLAB-vs-C++ model, initial condition, 0.12 inertial-period duration, and `256 × 256 × 129` grid. Each table fixes the output workload, varies the integrator down the rows, and varies the execution path across the columns; the forcing and anti-aliasing remain fixed. Runtime and memory winners are identified independently within each execution-path column.
+**Setup.** This historical comparison reuses the nonhydrostatic MATLAB-vs-C++ model, initial condition, 0.12 inertial-period duration, and `256 × 256 × 129` grid. Each table fixes the output workload, varies the integrator down the rows, and varies the execution path across the columns; the forcing and anti-aliasing remain fixed. Runtime and memory winners are identified independently within each execution-path column.
 
 **Conclusion.** The highlighted cells identify the fastest runtime and lowest peak memory within each execution-path column of each workload table. These record-specific rankings compare integrators under one matched contract and should not be extrapolated to later source revisions or different workloads.
 
@@ -541,27 +543,6 @@ Historical matched record `three-interface--m5-max--20260828T143049Z`, collected
 </table>
 </div>
 <!-- BENCHMARKS:INTEGRATOR_COMPARISON:END -->
-
-## Recent native optimization evidence
-
-The following native runtime optimization evidence was measured on September 11–12, 2026. The [shared field and gradient pipeline](https://github.com/JeffreyEarly/wave-vortex-model/blob/main/Benchmarks/SHARED-GRADIENT-PIPELINE.md), [matrix scheduling and immediate advection pipeline](https://github.com/JeffreyEarly/wave-vortex-model/blob/main/Benchmarks/MATRIX-ADVECTION-PIPELINE.md), [tiled advection pipeline](https://github.com/JeffreyEarly/wave-vortex-model/blob/main/Benchmarks/TILED-ADVECTION-PIPELINE.md), and [RK78 combination study](https://github.com/JeffreyEarly/wave-vortex-model/blob/main/Benchmarks/rk78-combinations/RESULTS.md) compare each candidate with its own frozen standalone native baseline. These reports do not revise the selected matched interface record automatically. They use different fixtures and measurement boundaries, so their relative changes cannot be added or applied to the absolute MATLAB versus C++ times above.
-
-The latest native increment measured here is the [prepared projection and assembly pipeline](https://github.com/JeffreyEarly/wave-vortex-model/blob/main/Benchmarks/prepared-pipeline/RESULTS.md), recorded September 12, 2026. These standalone native comparisons use frozen source `ed6049a2` against the accepted `72fc2bdd` implementation from PR #494, with the reuse policy on an Apple M4 Max (16 logical cores, 128 GiB RAM), macOS 26.6.1 and Apple Clang 21. FFTW 3.3.11 NEON/pthreads and Accelerate use one internal FFTW thread, twelve horizontal workers, eight pointwise workers, and one Hydrostatic/eight Boussinesq vertical-group workers. They measure integration of the same saved state and controls, using eight alternating pairs after two warmup pairs per fixture; loading, preparation and final writing are excluded from the integration column.
-
-<div class="benchmark-table-scroll" role="region" aria-label="September 12 native integration comparison" tabindex="0">
-<table class="benchmark-results-table">
-<thead><tr><th scope="col">Native workload</th><th scope="col">Baseline integration</th><th scope="col">Candidate integration</th><th scope="col">Observed reduction</th></tr></thead>
-<tbody>
-<tr><td>EddyTide <code>256 × 256 × 28</code>, RK78</td><td>16.862 s</td><td>15.719 s</td><td>6.8%</td></tr>
-<tr><td>Composite Hydrostatic <code>256 × 256 × 129</code>, RK4</td><td>5.374 s</td><td>5.294 s</td><td>1.5%</td></tr>
-<tr><td>Boussinesq <code>256 × 256 × 129</code>, RK78</td><td>4.419 s</td><td>3.938 s</td><td>10.9% (order-sensitive)</td></tr>
-</tbody>
-</table>
-</div>
-
-EddyTide advances 96 capped 300-second RK78 steps; larger Hydrostatic advances eight 0.5-second RK4 steps; Boussinesq advances four capped 0.5-second RK78 steps. All 30 warmup/measured comparisons preserve scientific agreement and integration decisions, with no owned-memory growth. These workloads establish incremental native behavior and do not update the absolute MATLAB versus C++ comparison above.
-
-Every process passed an idle preflight, but intermittent desktop activity occurred. Boussinesq's ratio is 0.992 in baseline-first pairs and 0.800 in candidate-first pairs; the aggregate is therefore not a stable production-speedup estimate. Its complete-process improvement is only 0.9% because loading and preparation dominate this short continuation. The [full report and linked machine-readable results](https://github.com/JeffreyEarly/wave-vortex-model/blob/main/Benchmarks/prepared-pipeline/RESULTS.md#final-paired-acceptance-september-12) retain all timings, paired intervals, host observations, storage and producer checks.
 
 <details markdown="1">
 <summary>Benchmark conditions, environments, and downloads</summary>
