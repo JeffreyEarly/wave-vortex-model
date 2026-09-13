@@ -5,6 +5,9 @@ function [tendency,speed,diagnostics] = coefficientTendency(self)
 % Reconstruction already carries the analytical phases, so the complete
 % linear operator contributes zero to these reference-time rates.
 % Physical prescribed sources are mapped once into hatted accelerations.
+% Spectral closures add reference-time rates after projection, using one shared
+% physical horizontal speed. Their work is included in energyTendency but not
+% in prescribedWork, which describes the imposed volume sources.
 % Nonlinear activation requires the stored inventory's quadratic qualification.
 %
 % Optional diagnostics distinguish the actual directional derivative of
@@ -40,9 +43,12 @@ for forcing = self.spatialFluxForcing
 end
 tendency = self.projectSources(source);
 diagnostics = struct();
-if nargout>1
+if nargout>1 || ~isempty(self.spectralFluxForcing)
     fields = self.reconstructFields(["u","v"]);
     speed = max(hypot(fields.u,fields.v),[],'all');
+end
+for forcing = self.spectralFluxForcing
+    tendency = forcing.addBoussinesqSpectralForcing(self,tendency,struct(uvMax=speed));
 end
 if nargout>2 && hasAdvection
     diagnostics = energyDiagnostics(self,tendency,prescribed,self.thermodynamicContext());

@@ -3,7 +3,7 @@ layout: default
 title: spectralVanishingViscosityFilter
 parent: WVAdaptiveDamping
 grand_parent: Closures
-nav_order: 15
+nav_order: 16
 mathjax: true
 ---
 

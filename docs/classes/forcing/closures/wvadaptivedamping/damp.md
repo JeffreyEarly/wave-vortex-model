@@ -3,7 +3,7 @@ layout: default
 title: damp
 parent: WVAdaptiveDamping
 grand_parent: Closures
-nav_order: 6
+nav_order: 7
 mathjax: true
 ---
 
@@ -19,4 +19,5 @@ Unit-speed spectral damping operator in inverse meters.
 This array has `wvt.spectralMatrixSize`. The actual coefficient
 damping rate is `wvt.uvMax*damp` in inverse seconds. Free-surface
 QG applies its `klNonzero` subset through `dampAg_q` and uses the
-separate `dampAg_0` operator for active endpoints.
+separate `dampAg_0` operator for active endpoints. Boussinesq embeds its
+APV rates here; coefficientDampingOperator returns all six families.

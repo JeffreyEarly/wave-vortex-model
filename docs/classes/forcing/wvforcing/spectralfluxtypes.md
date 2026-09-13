@@ -3,7 +3,7 @@ layout: default
 title: spectralFluxTypes
 parent: WVForcing
 grand_parent: Forcing
-nav_order: 23
+nav_order: 24
 mathjax: true
 ---
 
@@ -21,6 +21,6 @@ Return the spectral-tendency forcing types.
  forceTypes = spectralFluxTypes()
 ```
 ## Returns
-+ `forceTypes`  `Spectral`, `PVSpectral`, and `QGSpectral`
++ `forceTypes`  `Spectral`, `PVSpectral`, `QGSpectral`, and `BoussinesqSpectral`
 
 ## Discussion

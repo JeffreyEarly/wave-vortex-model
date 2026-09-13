@@ -20,7 +20,7 @@ Create adaptive spectral damping for a transform.
 ```
 ## Parameters
 + `wvt`  transform that owns and evaluates the closure
-+ `options.apvCutoffFraction`  optional free-surface APV cutoff fraction; NaN uses the standard cutoff
++ `options.apvCutoffFraction`  optional free-surface QG APV cutoff fraction; NaN uses the standard cutoff
 
 ## Returns
 + `self`  adaptive-damping closure owned by `wvt`

@@ -8,6 +8,18 @@ nav_order: 100
 
 ## [Unreleased]
 
+### Free-surface Boussinesq adaptive damping
+
+- Support `WVAdaptiveDamping` with a common horizontal rate for every active Boussinesq mode at each wavenumber, including external surface waves. This preserves combined boundary-anomaly cancellations and dissipates positive quadratic budgets with their actual normalization.
+- Reuse the physical speed and rebuild operators on restart or resolution conversion. Boussinesq vertical damping is deferred; uniform inertial and MDA coefficients are unchanged. Existing QG and legacy filters are preserved. Damping remains explicitly registered.
+
+### Direct manuscript nonlinear free-surface dynamics
+
+- Evaluate the manuscript `-N-P` sources with reconstructed modal pressure, then project registered equation sources once into the six reference-time coefficient families. Keep exact linear phases, fixed retained counts and the existing forcing/integration lifecycle.
+- Remove the experimental weak mass, trace-constraint and pressure solvers, their caches, executable historical solver studies and dedicated tests. Use the ordinary modal-pressure variable `p`; remove unreleased `p_linear`, `p_full` and `fullPressure` without aliases.
+- Use upper-constant reference density, the stated `p(surface)=rho0*g*ssh` approximation and `g*ssh^2/2` surface energy. Keep quadratic `physicalEnergy`/`totalEnergy` separate from moving-volume `nonlinearEnergy`; distinguish actual resolved energy change from prescribed physical work.
+- Preserve supported source coordinates, absolute forcing clocks, observers and native restarts. Persist the explicit upper-constant field convention and reject incompatible beta files; no mode or pressure solve is needed to restore stored scientific operators.
+
 ### Linear mode qualification
 
 - The experimental linear Boussinesq constructor defaults to `shouldCheckQuadraticAliasing=false` and `shouldAntialias=false`; QG retains both nonlinear defaults. Linear selection preserves the independently converged, physical-grid-supported prefixes without APV, cross-family or wave-product filtering.

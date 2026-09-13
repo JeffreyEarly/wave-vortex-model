@@ -8,8 +8,8 @@ arguments (Input)
 end
 hasAdvection = any(arrayfun(@(force)isa(force,'WVNonlinearAdvection'),forcing));
 for force = forcing
-    if ~isa(force,'WVNonlinearAdvection') && ~isa(force,'WVPrescribedBoussinesqSource')
-        error('WVTransformFreeSurfaceBoussinesq:UnsupportedForcing','Free-surface Boussinesq evolution supports WVNonlinearAdvection and WVPrescribedBoussinesqSource only; %s is not qualified.',class(force));
+    if ~isa(force,'WVNonlinearAdvection') && ~isa(force,'WVPrescribedBoussinesqSource') && ~isa(force,'WVAdaptiveDamping')
+        error('WVTransformFreeSurfaceBoussinesq:UnsupportedForcing','Free-surface Boussinesq evolution supports WVNonlinearAdvection, WVPrescribedBoussinesqSource and WVAdaptiveDamping only; %s is not qualified.',class(force));
     end
     if isa(force,'WVPrescribedBoussinesqSource') && force.sourceCoordinates=="physical" && ~hasAdvection
         error('WVTransformFreeSurfaceBoussinesq:PhysicalSourceRequiresAdvection','Physical-coordinate sources require registered WVNonlinearAdvection. Add both together, or use a reference-coordinate source for linear evolution.');

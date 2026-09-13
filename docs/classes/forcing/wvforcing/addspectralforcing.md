@@ -3,7 +3,7 @@ layout: default
 title: addSpectralForcing
 parent: WVForcing
 grand_parent: Forcing
-nav_order: 8
+nav_order: 9
 mathjax: true
 ---
 

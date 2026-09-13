@@ -76,6 +76,7 @@ classdef WVForcing < handle & matlab.mixin.Heterogeneous & CAAnnotatedClass
         % | `Spectral` | `addSpectralForcing` |
         % | `PVSpectral` | `addPotentialVorticitySpectralForcing` |
         % | `QGSpectral` | `addQuasigeostrophicSpectralForcing` |
+        % | `BoussinesqSpectral` | `addBoussinesqSpectralForcing` |
         % | `SpectralAmplitude` | `setSpectralForcing` and `setSpectralAmplitude` |
         % | `PVSpectralAmplitude` | `setPotentialVorticitySpectralForcing` and `setPotentialVorticitySpectralAmplitude` |
         %
@@ -289,6 +290,16 @@ classdef WVForcing < handle & matlab.mixin.Heterogeneous & CAAnnotatedClass
             % - Developer: true
         end
 
+        function tendency = addBoussinesqSpectralForcing(self,wvt,tendency,physicalState)
+            % Add reference-time rates for the six free-surface Boussinesq families.
+            % - Topic: Implement forcing evaluation
+            % - Parameter wvt: owning free-surface Boussinesq transform
+            % - Parameter tendency: accumulated canonical coefficient rates
+            % - Parameter physicalState: shared physical diagnostics, including uvMax
+            % - Returns tendency: updated coefficient rates
+            % - Developer: true
+        end
+
         function tendency = addQuasigeostrophicSpectralForcing(self,wvt,tendency,physicalState)
             % Add a free-surface QG coefficient-family tendency.
             %
@@ -401,9 +412,9 @@ classdef WVForcing < handle & matlab.mixin.Heterogeneous & CAAnnotatedClass
             %
             % - Topic: Implement forcing evaluation
             % - Declaration: forceTypes = spectralFluxTypes()
-            % - Returns forceTypes: `Spectral`, `PVSpectral`, and `QGSpectral`
+            % - Returns forceTypes: `Spectral`, `PVSpectral`, `QGSpectral`, and `BoussinesqSpectral`
             % - Developer: true
-            forceTypes = WVForcingType(["Spectral","PVSpectral","QGSpectral"]);
+            forceTypes = WVForcingType(["Spectral","PVSpectral","QGSpectral","BoussinesqSpectral"]);
         end
 
         function forceTypes = spectralAmplitudeTypes()

@@ -3,7 +3,7 @@ layout: default
 title: quasigeostrophicDampingContributions
 parent: WVAdaptiveDamping
 grand_parent: Closures
-nav_order: 14
+nav_order: 15
 mathjax: true
 ---
 

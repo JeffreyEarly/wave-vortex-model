@@ -3,7 +3,7 @@ layout: default
 title: addPotentialVorticitySpatialForcing
 parent: WVForcing
 grand_parent: Forcing
-nav_order: 4
+nav_order: 5
 mathjax: true
 ---
 

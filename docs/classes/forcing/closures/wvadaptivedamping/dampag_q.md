@@ -3,7 +3,7 @@ layout: default
 title: dampAg_q
 parent: WVAdaptiveDamping
 grand_parent: Closures
-nav_order: 8
+nav_order: 9
 mathjax: true
 ---
 
@@ -19,5 +19,6 @@ Unit-speed damping operator for free-surface APV coefficients.
 ## Discussion
 
 This array has the shape of `wvt.Ag_q` for a
-`WVTransformFreeSurfaceQG` and is empty for other transforms. It
-combines horizontal and APV-mode spectral-vanishing damping.
+free-surface QG or Boussinesq transform and is empty otherwise. It
+combines horizontal and APV-mode damping for QG; Boussinesq uses
+horizontal damping only.

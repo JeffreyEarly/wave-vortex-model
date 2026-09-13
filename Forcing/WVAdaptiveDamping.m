@@ -22,6 +22,24 @@ classdef WVAdaptiveDamping < WVForcing
     % horizontal and APV-mode damping, `Ag_0` receives horizontal damping,
     % and the horizontally uniform `Amda` family is unchanged.
     %
+    % Free-surface Boussinesq damps small horizontal scales with one rate
+    % shared by every active mode at a given horizontal wavenumber:
+    % $$\partial_t A_j^{k\ell} = -r(\kappa) A_j^{k\ell},\qquad r(\kappa)=U\Delta\kappa^2 Q(\kappa)/\pi^2.$$
+    % Here U is the maximum physical horizontal speed, Delta is the effective
+    % horizontal grid spacing, and Q is the spectral-vanishing filter.
+    % This preserves cancellation between APV and zero-APV contributions to
+    % boundary anomalies. External surface waves use the same rate as internal
+    % waves. Horizontally uniform inertial and MDA coefficients are unchanged.
+    %
+    % For each positive quadratic block I_k, the damping contribution is
+    % $$\dot I_k=-2r(\kappa)I_k.$$
+    % This includes quadratic APV enstrophy, boundary-displacement variance
+    % and wave energy, with their actual normalization and cross terms.
+    % It does not assert monotone full nonlinear energy or exact nonlinear
+    % conservation of unweighted boundary variance. No vertical damping is
+    % supplied for Boussinesq; vertical underresolution needs separate control.
+    % The following horizontal-plus-vertical formulas describe legacy models.
+    %
     % $$
     % \begin{align}
     %     \partial_t A_\pm^{k\ell j} =& - \nu (k^2 + \ell^2 ) A_\pm^{k\ell j} - \nu_z \lambda_j^{-2} A_\pm^{k\ell j} \\
@@ -55,7 +73,7 @@ classdef WVAdaptiveDamping < WVForcing
     %
     % ### Notes
     %
-    % This currently damps the non-hydrostatic wavemodes the same as the
+    % The legacy implementation damps the non-hydrostatic wavemodes the same as the
     % hydrostatic geostrophic modes. The non-hydrostatic modes would have a
     % smaller deformation radius, and thus would be damped more strongly.
     % So arguably they're under-damped in a non-hydrostatic simulation.
@@ -72,7 +90,7 @@ classdef WVAdaptiveDamping < WVForcing
     properties
         % Fraction of the largest APV mode below which vertical damping is zero.
         %
-        % Applies to free-surface QG only. A finite value lies in [0,1).
+        % Applies only to free-surface QG. A finite value lies in [0,1).
         % The default NaN retains the standard spectral-vanishing cutoff.
         % Changing this setting rebuilds the operator and persists on restart.
         % - Topic: Inspect forcing configuration
@@ -82,7 +100,8 @@ classdef WVAdaptiveDamping < WVForcing
         % This array has `wvt.spectralMatrixSize`. The actual coefficient
         % damping rate is `wvt.uvMax*damp` in inverse seconds. Free-surface
         % QG applies its `klNonzero` subset through `dampAg_q` and uses the
-        % separate `dampAg_0` operator for active endpoints.
+        % separate `dampAg_0` operator for active endpoints. Boussinesq embeds its
+        % APV rates here; coefficientDampingOperator returns all six families.
         %
         % - Topic: Properties
         damp
@@ -90,8 +109,9 @@ classdef WVAdaptiveDamping < WVForcing
         % Unit-speed damping operator for free-surface APV coefficients.
         %
         % This array has the shape of `wvt.Ag_q` for a
-        % `WVTransformFreeSurfaceQG` and is empty for other transforms. It
-        % combines horizontal and APV-mode spectral-vanishing damping.
+        % free-surface QG or Boussinesq transform and is empty otherwise. It
+        % combines horizontal and APV-mode damping for QG; Boussinesq uses
+        % horizontal damping only.
         %
         % - Topic: Properties
         dampAg_q = []
@@ -99,7 +119,7 @@ classdef WVAdaptiveDamping < WVForcing
         % Unit-speed damping operator for free-surface zero-APV coefficients.
         %
         % This array has the shape of `wvt.Ag_0` for a
-        % `WVTransformFreeSurfaceQG` and is empty for other transforms. The
+        % free-surface QG or Boussinesq transform and is empty otherwise. The
         % endpoint family is damped horizontally because its rows identify
         % active boundaries rather than an ordered vertical-mode family.
         %
@@ -126,12 +146,14 @@ classdef WVAdaptiveDamping < WVForcing
         % This value is dimensionless. Free-surface QG uses the ordinal APV
         % family coordinate because its physical labels include a negative
         % surface mode. The filter is already nonzero below this estimate;
-        % use `j_no_damp` for the exact zero-damping cutoff.
+        % use `j_no_damp` for the exact zero-damping cutoff. Boussinesq uses Inf.
         %
         % - Topic: Properties
         j_damp
 
         % Vertical mode number below which damping is exactly zero.
+        %
+        % Boussinesq uses Inf because it has no vertical filter.
         %
         % This value is dimensionless. Free-surface QG uses the ordinal APV
         % family coordinate.
@@ -151,9 +173,37 @@ classdef WVAdaptiveDamping < WVForcing
 
     properties (Access = private, Transient)
         horizontalDamping_ = []
+        boussinesqDamping_ = struct()
     end
 
     methods (Access = private, Hidden)
+        function buildBoussinesqDampingOperator(self)
+            w = self.wvt;
+            delta = self.assumedEffectiveHorizontalGridResolution;
+            kmax = pi/delta;
+            dk = min(w.dk,w.dl);
+            self.k_no_damp = dk*(kmax/dk)^(3/4);
+            b = sqrt(-log(.1));
+            self.k_damp = (kmax+b*self.k_no_damp)/(1+b);
+            horizontal = -delta/pi^2*w.khNonzero.'.^2.*WVAdaptiveDamping.vanishingFilter(w.khNonzero.',kmax,self.k_no_damp);
+            operator = struct();
+            self.j_no_damp = Inf;
+            self.j_damp = Inf;
+            operator.Ag_q = repmat(horizontal,size(w.Ag_q,1),1);
+            operator.Ag_0 = repmat(horizontal,size(w.Ag_0,1),1);
+            operator.Aw_p = repmat(horizontal,size(w.Aw_p,1),1);
+            operator.Aw_p(~w.activeWaveModes) = 0;
+            operator.Aw_m = operator.Aw_p;
+            operator.Aio = zeros(size(w.Aio));
+            operator.Amda = zeros(size(w.Amda));
+            self.boussinesqDamping_ = operator;
+            self.dampAg_q = operator.Ag_q;
+            self.dampAg_0 = operator.Ag_0;
+            self.horizontalDamping_ = horizontal;
+            self.damp = zeros(w.Nj,w.Nkl);
+            self.damp(:,w.klNonzero) = operator.Ag_q;
+        end
+
         function apvCutoffFractionDidChange(self)
             % During construction the first operator is built explicitly.
             if ~isempty(self.damp)
@@ -176,6 +226,10 @@ classdef WVAdaptiveDamping < WVForcing
             % - Declaration: contract = portableImplementationContract(self)
             % - Returns contract: versioned data-only forcing contract
             % - Developer: true
+            if isa(self.wvt,"WVTransformFreeSurfaceBoussinesq")
+                contract = portableImplementationContract@WVForcing(self);
+                return
+            end
             payload = struct("name",string(self.name),"forcingTypes",string(self.forcingType),"priority",self.priority,"assumedEffectiveHorizontalGridResolution",double(self.assumedEffectiveHorizontalGridResolution),"kNoDamp",double(self.k_no_damp),"jNoDamp",double(self.j_no_damp));
             contract = self.supportedPortableImplementationContract("WVAdaptiveDamping",payload);
         end
@@ -186,7 +240,7 @@ classdef WVAdaptiveDamping < WVForcing
             % - Topic: Initialization
             % - Declaration: self = WVAdaptiveDamping(wvt,options)
             % - Parameter wvt: transform that owns and evaluates the closure
-            % - Parameter options.apvCutoffFraction: optional free-surface APV cutoff fraction; NaN uses the standard cutoff
+            % - Parameter options.apvCutoffFraction: optional free-surface QG APV cutoff fraction; NaN uses the standard cutoff
             % - Returns self: adaptive-damping closure owned by `wvt`
             arguments
                 wvt WVTransform {mustBeNonempty}
@@ -205,7 +259,7 @@ classdef WVAdaptiveDamping < WVForcing
                 error('WVAdaptiveDamping:APVCutoff','Use an APV cutoff fraction in [0,1), or NaN for the standard cutoff.');
             end
             if ~isnan(value) && ~isa(self.wvt,'WVTransformFreeSurfaceQG')
-                error('WVAdaptiveDamping:APVCutoff','The APV cutoff fraction applies only to WVTransformFreeSurfaceQG.');
+                error('WVAdaptiveDamping:APVCutoff','The APV cutoff fraction applies only to free-surface QG transforms.');
             end
             self.apvCutoffFraction = value;
             self.apvCutoffFractionDidChange();
@@ -229,6 +283,11 @@ classdef WVAdaptiveDamping < WVForcing
             self.dampAg_q = [];
             self.dampAg_0 = [];
             self.horizontalDamping_ = [];
+
+            if isa(self.wvt,"WVTransformFreeSurfaceBoussinesq")
+                self.buildBoussinesqDampingOperator();
+                return
+            end
 
             kl_max = pi/self.assumedEffectiveHorizontalGridResolution;
             if isa(self.wvt,"WVTransformFreeSurfaceQG")
@@ -376,7 +435,9 @@ classdef WVAdaptiveDamping < WVForcing
             arguments
                 self WVAdaptiveDamping {mustBeNonempty}
             end
-            dampingTimeScale = 1/max(abs(self.damp(:)));
+            values = self.damp(:);
+            for name = string(fieldnames(self.boussinesqDamping_)).', values = [values; self.boussinesqDamping_.(name)(:)]; end %#ok<AGROW>
+            dampingTimeScale = 1/max(abs(values));
         end
         
         function [Fp, Fm, F0] = addSpectralForcing(self, wvt, Fp, Fm, F0)
@@ -470,6 +531,40 @@ classdef WVAdaptiveDamping < WVForcing
                 Ag_0=zeros(size(wvt.Ag_0)),Amda=zeros(size(wvt.Amda)));
         end
 
+        function operator = coefficientDampingOperator(self)
+            % Return unit-speed damping rates for the Boussinesq families.
+            %
+            % Rates have units m^-1 and the shapes of coefficientState().
+            % Multiply by the current maximum physical horizontal speed.
+            % - Topic: Inspect forcing or damping scales
+            % - Returns operator: six-family rate structure, empty for other models
+            operator = self.boussinesqDamping_;
+        end
+
+        function tendency = addBoussinesqSpectralForcing(self,wvt,tendency,physicalState)
+            % Add adaptive damping without mixing families or oscillatory phases.
+            % - Topic: Implement forcing evaluation
+            % - Parameter wvt: owning Boussinesq transform
+            % - Parameter tendency: accumulated reference-time coefficient rates
+            % - Parameter physicalState: optional shared uvMax diagnostic
+            % - Returns tendency: coefficient rates including damping
+            arguments
+                self (1,1) WVAdaptiveDamping
+                wvt (1,1) WVTransformFreeSurfaceBoussinesq
+                tendency (1,1) struct
+                physicalState (1,1) struct = struct()
+            end
+            if isfield(physicalState,'uvMax')
+                speed = physicalState.uvMax;
+            else
+                fields = wvt.reconstructFields(["u","v"]);
+                speed = max(hypot(fields.u,fields.v),[],'all');
+            end
+            for name = string(fieldnames(self.boussinesqDamping_)).'
+                tendency.(name) = tendency.(name)+speed*self.boussinesqDamping_.(name).*wvt.(name);
+            end
+        end
+
         function force = forcingWithResolutionOfTransform(self, wvtX2)
             % Create equivalent adaptive damping for another resolution.
             %
@@ -485,8 +580,17 @@ classdef WVAdaptiveDamping < WVForcing
     end
 
     methods (Static, Access = private)
+        function value = vanishingFilter(coordinate,maximum,cutoff)
+            value = zeros(size(coordinate));
+            active = coordinate>cutoff;
+            value(active) = exp(-((coordinate(active)-maximum)./(coordinate(active)-cutoff)).^2);
+            value(coordinate>=maximum & active) = 1;
+        end
+
         function forcingTypes = forcingTypesForTransform(wvt)
-            if isa(wvt,"WVTransformFreeSurfaceQG")
+            if isa(wvt,"WVTransformFreeSurfaceBoussinesq")
+                forcingTypes = WVForcingType("BoussinesqSpectral");
+            elseif isa(wvt,"WVTransformFreeSurfaceQG")
                 forcingTypes = WVForcingType("QGSpectral");
             else
                 forcingTypes = WVForcingType(["Spectral","PVSpectral"]);
@@ -516,7 +620,7 @@ classdef WVAdaptiveDamping < WVForcing
                 propertyAnnotations CAPropertyAnnotation
             end
             propertyAnnotations = CAPropertyAnnotation.empty(0,0);
-            propertyAnnotations(end+1) = CANumericProperty('apvCutoffFraction',{},'1','free-surface APV cutoff fraction; NaN uses the standard cutoff');
+            propertyAnnotations(end+1) = CANumericProperty('apvCutoffFraction',{},'1','free-surface QG APV cutoff fraction; NaN uses the standard cutoff');
         end
     end
 end

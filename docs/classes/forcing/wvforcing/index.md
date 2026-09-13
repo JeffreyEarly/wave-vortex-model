@@ -84,6 +84,7 @@ These items document internal implementation details and are not part of the pri
 + Forcing persistence
   + [`forcingFromGroup`](/classes/forcing/wvforcing/forcingfromgroup.html) Restore a concrete forcing from a NetCDF group.
 + Forcing internals
+  + [`addBoussinesqSpectralForcing`](/classes/forcing/wvforcing/addboussinesqspectralforcing.html) Add reference-time rates for the six free-surface Boussinesq families.
   + [`didGetRemovedFromTransform`](/classes/forcing/wvforcing/didgetremovedfromtransform.html) Release resources when a forcing is removed from its transform.
   + [`portableImplementationContract`](/classes/forcing/wvforcing/portableimplementationcontract.html) Describe availability of the paired portable C++ implementation.
 

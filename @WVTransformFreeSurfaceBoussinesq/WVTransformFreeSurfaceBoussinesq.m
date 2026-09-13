@@ -324,7 +324,7 @@ classdef WVTransformFreeSurfaceBoussinesq < WVGeometryDoublyPeriodicStratified &
             geometry = struct(shouldAntialias=state.shouldAntialias,z=state.z,j=state.apvModeNumber,Nj=nq,N2Function=state.N2Function,rhoFunction=state.rhoFunction,rho0=state.rho0,planetaryRadius=state.planetaryRadius,rotationRate=state.rotationRate,latitude=state.latitude,g=state.g,dLnN2=state.dLnN2,PF0inv=state.PF0inv,QG0inv=state.QG0inv,PF0=state.PF0,QG0=state.QG0,P0=state.P0,Q0=state.Q0,h_0=state.h_0,z_int=state.z_int);
             geometryArguments = namedargs2cell(geometry);
             self@WVGeometryDoublyPeriodicStratified(state.Lxyz,state.Nxyz,geometryArguments{:});
-            self@WVTransform(WVForcingType("NonhydrostaticSpatial"));
+            self@WVTransform(WVForcingType(["NonhydrostaticSpatial","BoussinesqSpectral"]));
             for name = string(self.scientificPropertyNames()), self.(name) = state.(name); end
             self.hasWaveComponent = true; self.hasPVComponent = true;
             nc = length(self.klNonzero);

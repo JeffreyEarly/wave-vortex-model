@@ -3,7 +3,7 @@ layout: default
 title: addPotentialVorticitySpectralForcing
 parent: WVForcing
 grand_parent: Forcing
-nav_order: 5
+nav_order: 6
 mathjax: true
 ---
 

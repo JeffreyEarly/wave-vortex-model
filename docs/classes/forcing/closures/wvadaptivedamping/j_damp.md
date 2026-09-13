@@ -3,7 +3,7 @@ layout: default
 title: j_damp
 parent: WVAdaptiveDamping
 grand_parent: Closures
-nav_order: 10
+nav_order: 11
 mathjax: true
 ---
 
@@ -19,4 +19,4 @@ Estimated vertical mode number for significant damping.
 This value is dimensionless. Free-surface QG uses the ordinal APV
 family coordinate because its physical labels include a negative
 surface mode. The filter is already nonzero below this estimate;
-use `j_no_damp` for the exact zero-damping cutoff.
+use `j_no_damp` for the exact zero-damping cutoff. Boussinesq uses Inf.

@@ -23,6 +23,6 @@ Real valued property with no dimensions and is dimensionless.
 
 ## Discussion
 
-Applies to free-surface QG only. A finite value lies in [0,1).
+Applies only to free-surface QG. A finite value lies in [0,1).
 The default NaN retains the standard spectral-vanishing cutoff.
 Changing this setting rebuilds the operator and persists on restart.

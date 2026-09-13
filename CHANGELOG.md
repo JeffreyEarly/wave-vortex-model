@@ -2,6 +2,11 @@
 
 ## [Unreleased]
 
+### Free-surface Boussinesq adaptive damping
+
+- Support `WVAdaptiveDamping` with a common horizontal rate for every active Boussinesq mode at each wavenumber, including external surface waves. This preserves combined boundary-anomaly cancellations and dissipates positive quadratic budgets with their actual normalization.
+- Reuse the physical speed and rebuild operators on restart or resolution conversion. Boussinesq vertical damping is deferred; uniform inertial and MDA coefficients are unchanged. Existing QG and legacy filters are preserved. Damping remains explicitly registered.
+
 ### Direct manuscript nonlinear free-surface dynamics
 
 - Evaluate the manuscript `-N-P` sources with reconstructed modal pressure, then project registered equation sources once into the six reference-time coefficient families. Keep exact linear phases, fixed retained counts and the existing forcing/integration lifecycle.

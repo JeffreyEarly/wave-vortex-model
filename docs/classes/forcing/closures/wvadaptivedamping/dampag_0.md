@@ -3,7 +3,7 @@ layout: default
 title: dampAg_0
 parent: WVAdaptiveDamping
 grand_parent: Closures
-nav_order: 7
+nav_order: 8
 mathjax: true
 ---
 
@@ -19,6 +19,6 @@ Unit-speed damping operator for free-surface zero-APV coefficients.
 ## Discussion
 
 This array has the shape of `wvt.Ag_0` for a
-`WVTransformFreeSurfaceQG` and is empty for other transforms. The
+free-surface QG or Boussinesq transform and is empty otherwise. The
 endpoint family is damped horizontally because its rows identify
 active boundaries rather than an ordered vertical-mode family.

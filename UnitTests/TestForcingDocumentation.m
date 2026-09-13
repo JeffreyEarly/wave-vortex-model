@@ -18,10 +18,10 @@ classdef TestForcingDocumentation < matlab.unittest.TestCase
                 "wvbottomfrictionlinear", false, "self = WVBottomFrictionLinear(wvt,options)", ["`r`" "inverse seconds" "200-day"]
                 "wvbottomfrictionquadratic", false, "self = WVBottomFrictionQuadratic(wvt,options)", ["`Cd`" "dimensionless" "4000"]
                 "wvseasonalsurfacebuoyancyflux", false, "self = WVSeasonalSurfaceBuoyancyFlux(wvt,options)", ["`pattern`" "365.25 days" "`Amda`"]
-                "wvadaptivedamping", true, "self = WVAdaptiveDamping(wvt)", ["wvt.uvMax*damp" "k_no_damp" "significant damping"]
+                "wvadaptivedamping", true, "self = WVAdaptiveDamping(wvt,options)", ["wvt.uvMax*damp" "k_no_damp" "significant damping"]
                 "wvhorizontaldamping", true, "self = WVHorizontalDamping(wvt,options)", ["`nu`" "`kappa`" "square meters per second"]
                 "wvverticaldamping", true, "self = WVVerticalDamping(wvt,options)", ["`nu`" "`kappa`" "square meters per second"]
-                "wvverticaldiffusivity", true, "self = WVVerticalDiffusivity(wvt,options)", ["`kappa_z`" "`shouldForceMeanDensityAnomaly`" "barotropic QG"]
+                "wvverticaldiffusivity", true, "self = WVVerticalDiffusivity(wvt,options)", ["`kappa_z`" "`shouldForceMeanDensityAnomaly`" "Barotropic QG"]
                 "wvantialiasing", true, "self = WVAntialiasing(wvt,options)", ["`Nj`" "shouldAntialias=false" "discarded"]
                 "wvthermaldamping", true, "self = WVThermalDamping(wvt,options)", ["`alpha`" "alpha/wvt.Lr2" "Scott and Dritschel"]
                 };

@@ -3,7 +3,7 @@ layout: default
 title: forcingType
 parent: WVForcing
 grand_parent: Forcing
-nav_order: 11
+nav_order: 12
 mathjax: true
 ---
 
@@ -31,6 +31,7 @@ subclass implements:
 | `Spectral` | `addSpectralForcing` |
 | `PVSpectral` | `addPotentialVorticitySpectralForcing` |
 | `QGSpectral` | `addQuasigeostrophicSpectralForcing` |
+| `BoussinesqSpectral` | `addBoussinesqSpectralForcing` |
 | `SpectralAmplitude` | `setSpectralForcing` and `setSpectralAmplitude` |
 | `PVSpectralAmplitude` | `setPotentialVorticitySpectralForcing` and `setPotentialVorticitySpectralAmplitude` |
 

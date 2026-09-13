@@ -43,6 +43,24 @@ acts directly on the canonical coefficient families: `Ag_q` receives
 horizontal and APV-mode damping, `Ag_0` receives horizontal damping,
 and the horizontally uniform `Amda` family is unchanged.
 
+Free-surface Boussinesq damps small horizontal scales with one rate
+shared by every active mode at a given horizontal wavenumber:
+$$\partial_t A_j^{k\ell} = -r(\kappa) A_j^{k\ell},\qquad r(\kappa)=U\Delta\kappa^2 Q(\kappa)/\pi^2.$$
+Here U is the maximum physical horizontal speed, Delta is the effective
+horizontal grid spacing, and Q is the spectral-vanishing filter.
+This preserves cancellation between APV and zero-APV contributions to
+boundary anomalies. External surface waves use the same rate as internal
+waves. Horizontally uniform inertial and MDA coefficients are unchanged.
+
+For each positive quadratic block I_k, the damping contribution is
+$$\dot I_k=-2r(\kappa)I_k.$$
+This includes quadratic APV enstrophy, boundary-displacement variance
+and wave energy, with their actual normalization and cross terms.
+It does not assert monotone full nonlinear energy or exact nonlinear
+conservation of unweighted boundary variance. No vertical damping is
+supplied for Boussinesq; vertical underresolution needs separate control.
+The following horizontal-plus-vertical formulas describe legacy models.
+
 $$
 \begin{align}
     \partial_t A_\pm^{k\ell j} =& - \nu (k^2 + \ell^2 ) A_\pm^{k\ell j} - \nu_z \lambda_j^{-2} A_\pm^{k\ell j} \\
@@ -76,7 +94,7 @@ wvt.addForcing(WVAdaptiveDamping(wvt));
 
 ### Notes
 
-This currently damps the non-hydrostatic wavemodes the same as the
+The legacy implementation damps the non-hydrostatic wavemodes the same as the
 hydrostatic geostrophic modes. The non-hydrostatic modes would have a
 smaller deformation radius, and thus would be damped more strongly.
 So arguably they're under-damped in a non-hydrostatic simulation.
@@ -107,6 +125,7 @@ These items document internal implementation details and are not part of the pri
   + [`classRequiredPropertyNames`](/classes/forcing/closures/wvadaptivedamping/classrequiredpropertynames.html) Returns the required property names for the class
 + Forcing internals
   + [`buildDampingOperator`](/classes/forcing/closures/wvadaptivedamping/builddampingoperator.html) Build the unit-speed spectral damping operator.
+  + [`coefficientDampingOperator`](/classes/forcing/closures/wvadaptivedamping/coefficientdampingoperator.html) Return unit-speed damping rates for the Boussinesq families.
   + [`dampAg_0`](/classes/forcing/closures/wvadaptivedamping/dampag_0.html) Unit-speed damping operator for free-surface zero-APV coefficients.
   + [`dampAg_q`](/classes/forcing/closures/wvadaptivedamping/dampag_q.html) Unit-speed damping operator for free-surface APV coefficients.
   + [`spectralVanishingViscosityFilter`](/classes/forcing/closures/wvadaptivedamping/spectralvanishingviscosityfilter.html) Build horizontal and vertical spectral-vanishing filters.
