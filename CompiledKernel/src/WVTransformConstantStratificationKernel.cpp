@@ -1,6 +1,7 @@
 #include "WaveVortexKernel/WVTransformConstantStratificationKernel.hpp"
 #include "WVCoefficientFormulas.hpp"
 #include "WVPreparedModeExecutor.hpp"
+#include "WVHorizontalDerivativeMultiplier.hpp"
 #include "WaveVortexKernel/WVSpectralOperators.hpp"
 #include <array>
 
@@ -89,6 +90,10 @@ enum PlanIndex : std::size_t {
     horizontalForward1, verticalDCT1Storage1, verticalDST1Storage1,
     planCount
 };
+enum MatlabPlanIndex : std::size_t {
+    matlabRetainedDCT, matlabRetainedDST, matlabColumnDCT, matlabColumnDST,
+    matlabCompactHorizontalInverse, matlabPlanCount
+};
 
 using detail::EvolvedWaveVortexCoefficients;
 using detail::add;
@@ -129,6 +134,29 @@ WVKernelStatus validateBundle(const WVRealFieldBundleConstView& view, WVShape3D 
 
 WVKernelStatus validateBundle(const WVRealFieldBundleView& view, WVShape3D spatial, std::size_t channels, const char* name) {
     return validateBundle(WVRealFieldBundleConstView{view.data, view.shape}, spatial, channels, name);
+}
+
+WVKernelStatus validateVolume(const WVRealVolumeConstView& view, WVShape3D shape,
+    const char* name) {
+    if (view.shape.first!=shape.first || view.shape.second!=shape.second ||
+        view.shape.third!=shape.third)
+        return {WVKernelStatusCode::invalidShape,std::string(name)+" must have shape [Nx,Ny,Nz]."};
+    if (!view.data || reinterpret_cast<std::uintptr_t>(view.data)%alignof(double))
+        return {WVKernelStatusCode::invalidPointer,std::string(name)+" has invalid storage."};
+    return WVKernelStatus::ok();
+}
+WVKernelStatus validateVolume(const WVRealVolumeView& view, WVShape3D shape,
+    const char* name) {
+    return validateVolume(WVRealVolumeConstView{view.data,view.shape},shape,name);
+}
+template <typename T>
+WVKernelStatus validateComplexShape(const WVMatrixView<T>& view,WVShape2D shape,
+    const char* name) {
+    if (view.shape.rows!=shape.rows || view.shape.columns!=shape.columns)
+        return {WVKernelStatusCode::invalidShape,std::string(name)+" has the wrong matrix shape."};
+    if (!view.data || reinterpret_cast<std::uintptr_t>(view.data)%alignof(WVComplex64))
+        return {WVKernelStatusCode::invalidPointer,std::string(name)+" has invalid storage."};
+    return WVKernelStatus::ok();
 }
 
 template <typename T>
@@ -716,6 +744,51 @@ WVKernelStatus WVTransformConstantStratificationKernel::prepareHorizontalVelocit
     }
 }
 
+WVKernelStatus WVTransformConstantStratificationKernel::prepareMatlabPrimitives() {
+    ExecutionGuard guard(executing_);
+    if (!guard.entered())
+        return {WVKernelStatusCode::reentrantExecution,"Kernel operations are not reentrant."};
+    if (stateEvaluationActive_)
+        return {WVKernelStatusCode::invalidConfiguration,
+            "Prepare MATLAB primitives before beginning a state evaluation."};
+    if (matlabPrimitivesPrepared_) return WVKernelStatus::ok();
+    try {
+        auto status=ensureScalarPlans(); if (!status) return status;
+        status=ensureScalarInversePlan(); if (!status) return status;
+        const auto& c=descriptor_.configuration();
+        std::array<std::unique_ptr<WVFFTPlan>,matlabPlanCount> prepared;
+        if (!compact_) {
+            status=engine_->createPlan(verticalSpecification(c,descriptor_.Nkl(),1,1,false),
+                prepared[matlabRetainedDCT]); if (!status) return status;
+            status=engine_->createPlan(verticalSpecification(c,descriptor_.Nkl(),1,1,true),
+                prepared[matlabRetainedDST]); if (!status) return status;
+        }
+        status=engine_->createPlan(verticalSpecification(c,1,1,1,false),
+            prepared[matlabColumnDCT]); if (!status) return status;
+        status=engine_->createPlan(verticalSpecification(c,1,1,1,true),
+            prepared[matlabColumnDST]); if (!status) return status;
+        if (compact_)
+            prepared[matlabCompactHorizontalInverse]=
+                std::make_unique<WVCompactHorizontalPlan>(compact_->horizontal[0],false);
+        const bool missingColumn=!prepared[matlabColumnDCT] || !prepared[matlabColumnDST];
+        const bool missingSchedulePlan=compact_ ? !prepared[matlabCompactHorizontalInverse] :
+            (!prepared[matlabRetainedDCT] || !prepared[matlabRetainedDST]);
+        if (missingColumn || missingSchedulePlan)
+            return {WVKernelStatusCode::fftPlanFailure,
+                "FFT engine returned an empty MATLAB primitive plan."};
+        matlabPlans_=std::move(prepared);
+        matlabPrimitivesPrepared_=true;
+        return WVKernelStatus::ok();
+    } catch (const std::bad_alloc&) {
+        return {WVKernelStatusCode::allocationFailure,
+            "Unable to prepare MATLAB primitive plans."};
+    } catch (const std::overflow_error& error) {
+        return {WVKernelStatusCode::sizeOverflow,error.what()};
+    } catch (const std::system_error& error) {
+        return {WVKernelStatusCode::allocationFailure,error.what()};
+    }
+}
+
 std::size_t WVTransformConstantStratificationKernel::persistentBytes() const noexcept {
     const auto& current = metrics();
     return current.kernelManagementBytes + current.engineBytes +
@@ -736,6 +809,10 @@ WVTransformConstantStratificationKernel::metrics() const noexcept {
     }
     if (scalarInversePlan_ != nullptr) {
         metrics_.planBytes += scalarInversePlan_->persistentBytes();
+        ++metrics_.planCount;
+    }
+    for (const auto& plan:matlabPlans_) if (plan) {
+        metrics_.planBytes+=plan->persistentBytes();
         ++metrics_.planCount;
     }
     metrics_.kernelManagementBytes = sizeof(*this) - sizeof(descriptor_) +
@@ -929,6 +1006,20 @@ WVKernelStatus WVTransformConstantStratificationKernel::validateMutableOutputOut
     return WVKernelStatus::ok();
 }
 
+WVKernelStatus WVTransformConstantStratificationKernel::validateMutableOutputOutsidePreparedState(
+    const void* output,std::size_t outputBytes) const {
+    if (!stateEvaluationActive_) return WVKernelStatus::ok();
+    const auto bytes=descriptor_.spectralShape().elementCount()*sizeof(WVComplex64);
+    for (std::size_t stateIndex=0;stateIndex<preparedStateViewCount_;++stateIndex)
+        for (const auto input:{preparedStateViews_[stateIndex].coefficients.Ap,
+            preparedStateViews_[stateIndex].coefficients.Am,
+            preparedStateViews_[stateIndex].coefficients.A0})
+            if (memoryOverlaps(output,outputBytes,input.data,bytes))
+                return {WVKernelStatusCode::overlappingArrays,
+                    "Mutable output overlaps an active immutable constant-stratification state view."};
+    return WVKernelStatus::ok();
+}
+
 WVKernelStatus WVTransformConstantStratificationKernel::prepareStatePhase(const WVState& state) {
     const double elapsed=state.t-state.t0;
     if (!std::isfinite(state.t) || !std::isfinite(state.t0) || !std::isfinite(elapsed))
@@ -1059,6 +1150,228 @@ WVKernelStatus WVTransformConstantStratificationKernel::preparedPhase(
     return WVKernelStatus::ok();
 }
 
+WVKernelStatus WVTransformConstantStratificationKernel::applyVertical(
+    WVStratifiedModalOperator operation,WVComplexConstView input,WVComplexView output) {
+    if (!matlabPrimitivesPrepared_)
+        return {WVKernelStatusCode::unsupportedOperation,"MATLAB primitives were not prepared."};
+    using Op=WVStratifiedModalOperator;
+    const bool projection=operation==Op::projectF || operation==Op::projectG ||
+        operation==Op::projectFw || operation==Op::projectGw;
+    const bool reconstruction=operation==Op::reconstructF || operation==Op::reconstructG ||
+        operation==Op::reconstructFw || operation==Op::reconstructGw;
+    const bool balanced=operation==Op::balancedGToWaveG;
+    if (!projection && !reconstruction && !balanced)
+        return {WVKernelStatusCode::unsupportedOperation,"Unsupported constant vertical operation."};
+    const auto& c=descriptor_.configuration();
+    const WVShape2D inputShape{projection ? c.Nz : c.Nj,descriptor_.Nkl()};
+    const WVShape2D outputShape{reconstruction ? c.Nz : c.Nj,descriptor_.Nkl()};
+    auto status=validateComplexShape(input,inputShape,"Constant vertical input"); if (!status) return status;
+    status=validateComplexShape(output,outputShape,"Constant vertical output"); if (!status) return status;
+    const auto inputBytes=inputShape.elementCount()*sizeof(WVComplex64);
+    const auto outputBytes=outputShape.elementCount()*sizeof(WVComplex64);
+    status=validateMutableOutputOutsidePreparedState(output.data,outputBytes); if (!status) return status;
+    if (memoryOverlaps(input.data,inputBytes,output.data,outputBytes))
+        return {WVKernelStatusCode::overlappingArrays,"Constant vertical input and output overlap."};
+    ExecutionGuard guard(executing_);
+    if (!guard.entered()) return {WVKernelStatusCode::reentrantExecution,"Kernel operations are not reentrant."};
+    const auto& modes=descriptor_.verticalModes();
+    if (balanced) {
+        for (std::size_t column=0;column<descriptor_.Nkl();++column)
+            for (std::size_t j=0;j<c.Nj;++j)
+                output.data[j+c.Nj*column]=multiply(input.data[j+c.Nj*column],
+                    modes.Gg[j]/modes.gWaveScale[j]);
+        return WVKernelStatus::ok();
+    }
+    const bool sine=operation==Op::projectG || operation==Op::reconstructG ||
+        operation==Op::projectGw || operation==Op::reconstructGw;
+    const bool wave=operation==Op::projectFw || operation==Op::reconstructFw ||
+        operation==Op::projectGw || operation==Op::reconstructGw;
+    auto* working=reinterpret_cast<WVComplex64*>(halfSpectrumScratch_.data());
+    const auto workingCount=c.Nz*descriptor_.Nkl();
+    std::fill(working,working+workingCount,WVComplex64{});
+    if (projection) std::copy(input.data,input.data+workingCount,working);
+    else for (std::size_t column=0;column<descriptor_.Nkl();++column)
+        for (std::size_t j=0;j<c.Nj;++j) {
+            const double factor=sine ? (wave ? modes.gWaveScale[j] : modes.Gg[j]) :
+                (wave ? modes.fWaveScale[j+c.Nj*column] : modes.Fg[j]);
+            working[j+c.Nz*column]=multiply(input.data[j+c.Nj*column],factor);
+        }
+    WVFFTPlan* plan=compact_ ? plans_[sine ? verticalDST1Storage1 : verticalDCT1Storage1].get() :
+        matlabPlans_[sine ? matlabRetainedDST : matlabRetainedDCT].get();
+    if (projection) {
+        status=plan->execute(working+(sine ? 1 : 0),working+(sine ? 1 : 0)); if (!status) return status;
+        if (sine) normalizeForwardDST(working,c.Nz,descriptor_.Nkl(),1,0,1);
+        else normalizeForwardDCT(working,c.Nz,descriptor_.Nkl(),1,0,1);
+        for (std::size_t column=0;column<descriptor_.Nkl();++column)
+            for (std::size_t j=0;j<c.Nj;++j) {
+                const double factor=sine ? (wave ? modes.gWaveScale[j] : modes.Gg[j]) :
+                    (wave ? modes.fWaveScale[j+c.Nj*column] : modes.Fg[j]);
+                output.data[j+c.Nj*column]=multiply(working[j+c.Nz*column],1.0/factor);
+            }
+    } else {
+        if (sine) normalizeInverseDST(working,c.Nz,descriptor_.Nkl(),1,0,1);
+        else normalizeInverseDCT(working,c.Nz,descriptor_.Nkl(),1,0,1);
+        status=plan->execute(working+(sine ? 1 : 0),working+(sine ? 1 : 0)); if (!status) return status;
+        std::copy(working,working+workingCount,output.data);
+    }
+    ++metrics_.executionCount; ++metrics_.verticalExecutionCount;
+    return WVKernelStatus::ok();
+}
+
+WVKernelStatus WVTransformConstantStratificationKernel::applyVerticalColumn(
+    WVStratifiedModalOperator operation,std::size_t retainedColumn,
+    WVComplexConstView input,WVComplexView output) {
+    if (!matlabPrimitivesPrepared_)
+        return {WVKernelStatusCode::unsupportedOperation,"MATLAB primitives were not prepared."};
+    using Op=WVStratifiedModalOperator;
+    const bool projection=operation==Op::projectF || operation==Op::projectG ||
+        operation==Op::projectFw || operation==Op::projectGw;
+    const bool reconstruction=operation==Op::reconstructF || operation==Op::reconstructG ||
+        operation==Op::reconstructFw || operation==Op::reconstructGw;
+    const bool balanced=operation==Op::balancedGToWaveG;
+    if (!projection && !reconstruction && !balanced)
+        return {WVKernelStatusCode::unsupportedOperation,"Unsupported constant vertical-column operation."};
+    if (retainedColumn>=descriptor_.Nkl())
+        return {WVKernelStatusCode::invalidShape,"Constant retained column is out of range."};
+    const auto& c=descriptor_.configuration();
+    const WVShape2D inputShape{projection ? c.Nz : c.Nj,1};
+    const WVShape2D outputShape{reconstruction ? c.Nz : c.Nj,1};
+    auto status=validateComplexShape(input,inputShape,"Constant vertical-column input"); if (!status) return status;
+    status=validateComplexShape(output,outputShape,"Constant vertical-column output"); if (!status) return status;
+    const auto inputBytes=inputShape.elementCount()*sizeof(WVComplex64);
+    const auto outputBytes=outputShape.elementCount()*sizeof(WVComplex64);
+    status=validateMutableOutputOutsidePreparedState(output.data,outputBytes); if (!status) return status;
+    if (memoryOverlaps(input.data,inputBytes,output.data,outputBytes))
+        return {WVKernelStatusCode::overlappingArrays,"Constant vertical-column input and output overlap."};
+    ExecutionGuard guard(executing_);
+    if (!guard.entered()) return {WVKernelStatusCode::reentrantExecution,"Kernel operations are not reentrant."};
+    const auto& modes=descriptor_.verticalModes();
+    if (balanced) {
+        for (std::size_t j=0;j<c.Nj;++j)
+            output.data[j]=multiply(input.data[j],modes.Gg[j]/modes.gWaveScale[j]);
+        return WVKernelStatus::ok();
+    }
+    const bool sine=operation==Op::projectG || operation==Op::reconstructG ||
+        operation==Op::projectGw || operation==Op::reconstructGw;
+    const bool wave=operation==Op::projectFw || operation==Op::reconstructFw ||
+        operation==Op::projectGw || operation==Op::reconstructGw;
+    auto* working=reinterpret_cast<WVComplex64*>(halfSpectrumScratch_.data());
+    std::fill(working,working+c.Nz,WVComplex64{});
+    if (projection) std::copy(input.data,input.data+c.Nz,working);
+    else for (std::size_t j=0;j<c.Nj;++j) {
+        const double factor=sine ? (wave ? modes.gWaveScale[j] : modes.Gg[j]) :
+            (wave ? modes.fWaveScale[j+c.Nj*retainedColumn] : modes.Fg[j]);
+        working[j]=multiply(input.data[j],factor);
+    }
+    auto* plan=matlabPlans_[sine ? matlabColumnDST : matlabColumnDCT].get();
+    if (projection) {
+        status=plan->execute(working+(sine ? 1 : 0),working+(sine ? 1 : 0)); if (!status) return status;
+        if (sine) normalizeForwardDST(working,c.Nz,1,1,0,1);
+        else normalizeForwardDCT(working,c.Nz,1,1,0,1);
+        for (std::size_t j=0;j<c.Nj;++j) {
+            const double factor=sine ? (wave ? modes.gWaveScale[j] : modes.Gg[j]) :
+                (wave ? modes.fWaveScale[j+c.Nj*retainedColumn] : modes.Fg[j]);
+            output.data[j]=multiply(working[j],1.0/factor);
+        }
+    } else {
+        if (sine) normalizeInverseDST(working,c.Nz,1,1,0,1);
+        else normalizeInverseDCT(working,c.Nz,1,1,0,1);
+        status=plan->execute(working+(sine ? 1 : 0),working+(sine ? 1 : 0)); if (!status) return status;
+        std::copy(working,working+c.Nz,output.data);
+    }
+    ++metrics_.executionCount; ++metrics_.verticalExecutionCount;
+    return WVKernelStatus::ok();
+}
+
+WVKernelStatus WVTransformConstantStratificationKernel::horizontalForward(
+    WVRealVolumeConstView input,WVComplexView output) {
+    if (!matlabPrimitivesPrepared_)
+        return {WVKernelStatusCode::unsupportedOperation,"MATLAB primitives were not prepared."};
+    const auto spatial=descriptor_.spatialShape(); const WVShape2D shape{descriptor_.configuration().Nz,descriptor_.Nkl()};
+    auto status=validateVolume(input,spatial,"Constant horizontal input"); if (!status) return status;
+    status=validateComplexShape(output,shape,"Constant horizontal output"); if (!status) return status;
+    const auto inputBytes=spatial.elementCount()*sizeof(double),outputBytes=shape.elementCount()*sizeof(WVComplex64);
+    status=validateMutableOutputOutsidePreparedState(output.data,outputBytes); if (!status) return status;
+    if (memoryOverlaps(input.data,inputBytes,output.data,outputBytes))
+        return {WVKernelStatusCode::overlappingArrays,"Constant horizontal input and output overlap."};
+    ExecutionGuard guard(executing_); if (!guard.entered()) return {WVKernelStatusCode::reentrantExecution,"Kernel operations are not reentrant."};
+    if (compact_) status=plans_[horizontalForward1]->execute(input.data,output.data);
+    else {
+        auto* half=reinterpret_cast<WVComplex64*>(halfSpectrumScratch_.data());
+        status=plans_[horizontalForward1]->execute(input.data,half); if (!status) return status;
+        const auto& mapping=descriptor_.halfSpectrumMappings(); const auto Nz=descriptor_.configuration().Nz;
+        const double scale=1.0/static_cast<double>(descriptor_.configuration().Nx*descriptor_.configuration().Ny);
+        for (std::size_t mode=0;mode<descriptor_.Nkl();++mode) {
+            const auto row=mapping.storageRowsByWVIndex[mode];
+            const bool self=std::find(mapping.selfConjugateRows.begin(),mapping.selfConjugateRows.end(),row)!=mapping.selfConjugateRows.end();
+            for (std::size_t z=0;z<Nz;++z) {
+            auto value=half[z+Nz*row];
+            if (mapping.conjugatesStoredValueByWVIndex[mode]) value=conjugate(value);
+            if (self) value.imag=0;
+            output.data[z+Nz*mode]=multiply(value,scale);
+            }
+        }
+    }
+    if (!status) return status; ++metrics_.executionCount; ++metrics_.horizontalExecutionCount; return WVKernelStatus::ok();
+}
+
+WVKernelStatus WVTransformConstantStratificationKernel::horizontalInverse(
+    WVComplexConstView input,WVRealVolumeView output) {
+    if (!matlabPrimitivesPrepared_)
+        return {WVKernelStatusCode::unsupportedOperation,"MATLAB primitives were not prepared."};
+    const auto spatial=descriptor_.spatialShape(); const WVShape2D shape{descriptor_.configuration().Nz,descriptor_.Nkl()};
+    auto status=validateComplexShape(input,shape,"Constant horizontal input"); if (!status) return status;
+    status=validateVolume(output,spatial,"Constant horizontal output"); if (!status) return status;
+    const auto inputBytes=shape.elementCount()*sizeof(WVComplex64),outputBytes=spatial.elementCount()*sizeof(double);
+    status=validateMutableOutputOutsidePreparedState(output.data,outputBytes); if (!status) return status;
+    if (memoryOverlaps(input.data,inputBytes,output.data,outputBytes))
+        return {WVKernelStatusCode::overlappingArrays,"Constant horizontal input and output overlap."};
+    ExecutionGuard guard(executing_); if (!guard.entered()) return {WVKernelStatusCode::reentrantExecution,"Kernel operations are not reentrant."};
+    if (compact_) status=matlabPlans_[matlabCompactHorizontalInverse]->execute(input.data,output.data);
+    else {
+        const auto& c=descriptor_.configuration(); const auto& mapping=descriptor_.halfSpectrumMappings();
+        const auto rows=mapping.NxHalf*c.Ny; auto* half=reinterpret_cast<WVComplex64*>(halfSpectrumScratch_.data());
+        std::fill(half,half+c.Nz*rows,WVComplex64{});
+        for (std::size_t mode=0;mode<descriptor_.Nkl();++mode) {
+            const auto row=mapping.storageRowsByWVIndex[mode];
+            const bool self=std::find(mapping.selfConjugateRows.begin(),mapping.selfConjugateRows.end(),row)!=mapping.selfConjugateRows.end();
+            for (std::size_t z=0;z<c.Nz;++z) {
+                auto value=input.data[z+c.Nz*mode];
+                if (self && value.imag!=0.0)
+                    return {WVKernelStatusCode::invalidConfiguration,"Self-conjugate Fourier values must be real."};
+                if (mapping.conjugatesStoredValueByWVIndex[mode]) value=conjugate(value);
+                half[z+c.Nz*row]=value;
+            }
+        }
+        completeHermitianBoundaries(half,mapping,c.Nz,1);
+        status=scalarInversePlan_->execute(half,output.data);
+    }
+    if (!status) return status; ++metrics_.executionCount; ++metrics_.horizontalExecutionCount; return WVKernelStatus::ok();
+}
+
+WVKernelStatus WVTransformConstantStratificationKernel::differentiateHorizontal(
+    WVRealVolumeConstView input,bool xDerivative,WVRealVolumeView output) {
+    return differentiateHorizontal(input,xDerivative,1,output);
+}
+WVKernelStatus WVTransformConstantStratificationKernel::differentiateHorizontal(
+    WVRealVolumeConstView input,bool xDerivative,unsigned order,WVRealVolumeView output) {
+    if (!matlabPrimitivesPrepared_)
+        return {WVKernelStatusCode::unsupportedOperation,"MATLAB primitives were not prepared."};
+    if (!order) return {WVKernelStatusCode::invalidConfiguration,"Horizontal derivative order must be positive."};
+    const auto spatial=descriptor_.spatialShape(); auto status=validateVolume(input,spatial,"Constant derivative input"); if (!status) return status;
+    status=validateVolume(output,spatial,"Constant derivative output"); if (!status) return status;
+    const auto bytes=spatial.elementCount()*sizeof(double); status=validateMutableOutputOutsidePreparedState(output.data,bytes); if (!status) return status;
+    if (memoryOverlaps(input.data,bytes,output.data,bytes)) return {WVKernelStatusCode::overlappingArrays,"Constant derivative input and output overlap."};
+    ExecutionGuard guard(executing_); if (!guard.entered()) return {WVKernelStatusCode::reentrantExecution,"Kernel operations are not reentrant."};
+    const auto& c=descriptor_.configuration();
+    auto* values=reinterpret_cast<WVComplex64*>(halfSpectrumScratch_.data());
+    status=scalarPlan(horizontalForward1)->execute(input.data,values); if (!status) return status;
+    status=kernel_detail::applyHorizontalDerivativeMultiplier(values,c.Nx,c.Ny,c.Nz,
+        1,c.Nz,c.Lx,c.Ly,xDerivative,order); if (!status) return status;
+    status=scalarInversePlan_->execute(values,output.data); if (!status) return status;
+    metrics_.executionCount+=2; metrics_.horizontalExecutionCount+=2; return WVKernelStatus::ok();
+}
+
 WVKernelStatus WVTransformConstantStratificationKernel::transformUVEtaToWaveVortex(
     const WVRealFieldBundleConstView& fields, double t, double t0, WVMutableCoefficients& coefficients) {
     if (!descriptor_.configuration().isHydrostatic) return {WVKernelStatusCode::invalidConfiguration, "transformUVEtaToWaveVortex requires a hydrostatic kernel."};
@@ -1079,6 +1392,42 @@ WVKernelStatus WVTransformConstantStratificationKernel::transformUVEtaToWaveVort
         phaseValues=phaseForPreparedState();
     } else { auto phaseStatus=prepareStatePhase({t,t0,{}}); if (!phaseStatus) return phaseStatus; phaseValues=phaseForPreparedState(); }
     return transformUVEtaToWaveVortexImpl(fields,t,t0,coefficients,phaseValues);
+}
+
+WVKernelStatus WVTransformConstantStratificationKernel::transformUVEtaToWaveVortex(
+    WVRealVolumeConstView u,WVRealVolumeConstView v,WVRealVolumeConstView eta,
+    double t,double t0,WVMutableCoefficients& coefficients) {
+    if (!descriptor_.configuration().isHydrostatic)
+        return {WVKernelStatusCode::invalidConfiguration,"transformUVEtaToWaveVortex requires a hydrostatic kernel."};
+    const auto spatial=descriptor_.spatialShape();
+    for (const auto& item:std::array<std::pair<WVRealVolumeConstView,const char*>,3>{{{u,"u"},{v,"v"},{eta,"eta"}}}) {
+        auto status=validateVolume(item.first,spatial,item.second); if (!status) return status;
+    }
+    const auto spectral=descriptor_.spectralShape();
+    for (const auto& item:std::array<std::pair<WVComplexView,const char*>,3>{{{coefficients.Ap,"Ap"},{coefficients.Am,"Am"},{coefficients.A0,"A0"}}}) {
+        auto status=validateComplexShape(item.first,spectral,item.second); if (!status) return status;
+    }
+    const auto realBytes=spatial.elementCount()*sizeof(double),complexBytes=spectral.elementCount()*sizeof(WVComplex64);
+    const void* inputs[]={u.data,v.data,eta.data}; const void* outputs[]={coefficients.Ap.data,coefficients.Am.data,coefficients.A0.data};
+    for (std::size_t i=0;i<3;++i) {
+        for (const auto* input:inputs) if (memoryOverlaps(outputs[i],complexBytes,input,realBytes))
+            return {WVKernelStatusCode::overlappingArrays,"Projection outputs overlap physical inputs."};
+        for (std::size_t j=i+1;j<3;++j) if (memoryOverlaps(outputs[i],complexBytes,outputs[j],complexBytes))
+            return {WVKernelStatusCode::overlappingArrays,"Projection outputs overlap each other."};
+    }
+    auto status=validateMutableOutputOutsidePreparedState(coefficients); if (!status) return status;
+    ExecutionGuard guard(executing_); if (!guard.entered()) return {WVKernelStatusCode::reentrantExecution,"Kernel operations are not reentrant."};
+    const auto R=spatial.elementCount(); const WVRealVolumeConstView views[]={u,v,eta};
+    for (std::size_t channel=0;channel<3;++channel) std::copy(views[channel].data,views[channel].data+R,realScratch_.data()+channel*R);
+    metrics_.bytesCopied+=3*realBytes;
+    WVComplexConstView phaseValues;
+    if (stateEvaluationActive_) {
+        if (t!=preparedState_.t || t0!=preparedState_.t0) return {WVKernelStatusCode::invalidConfiguration,"Projection time does not match the active constant-stratification evaluation."};
+        if (!preparedPhaseReady_) { status=prepareStatePhase(preparedState_); if (!status) return status; }
+        phaseValues=phaseForPreparedState();
+    } else { status=prepareStatePhase({t,t0,{}}); if (!status) return status; phaseValues=phaseForPreparedState(); }
+    const WVRealFieldBundleConstView packed{realScratch_.data(),{spatial.first,spatial.second,spatial.third,3}};
+    return transformUVEtaToWaveVortexImpl(packed,t,t0,coefficients,phaseValues);
 }
 
 WVKernelStatus WVTransformConstantStratificationKernel::transformUVEtaToWaveVortexImpl(
@@ -1188,6 +1537,42 @@ WVKernelStatus WVTransformConstantStratificationKernel::transformUVWEtaToWaveVor
         phaseValues=phaseForPreparedState();
     } else { auto phaseStatus=prepareStatePhase({t,t0,{}}); if (!phaseStatus) return phaseStatus; phaseValues=phaseForPreparedState(); }
     return transformUVWEtaToWaveVortexImpl(fields,t,t0,coefficients,phaseValues);
+}
+
+WVKernelStatus WVTransformConstantStratificationKernel::transformUVWEtaToWaveVortex(
+    WVRealVolumeConstView u,WVRealVolumeConstView v,WVRealVolumeConstView w,
+    WVRealVolumeConstView eta,double t,double t0,WVMutableCoefficients& coefficients) {
+    if (descriptor_.configuration().isHydrostatic)
+        return {WVKernelStatusCode::invalidConfiguration,"transformUVWEtaToWaveVortex requires a nonhydrostatic kernel."};
+    const auto spatial=descriptor_.spatialShape();
+    for (const auto& item:std::array<std::pair<WVRealVolumeConstView,const char*>,4>{{{u,"u"},{v,"v"},{w,"w"},{eta,"eta"}}}) {
+        auto status=validateVolume(item.first,spatial,item.second); if (!status) return status;
+    }
+    const auto spectral=descriptor_.spectralShape();
+    for (const auto& item:std::array<std::pair<WVComplexView,const char*>,3>{{{coefficients.Ap,"Ap"},{coefficients.Am,"Am"},{coefficients.A0,"A0"}}}) {
+        auto status=validateComplexShape(item.first,spectral,item.second); if (!status) return status;
+    }
+    const auto realBytes=spatial.elementCount()*sizeof(double),complexBytes=spectral.elementCount()*sizeof(WVComplex64);
+    const void* inputs[]={u.data,v.data,w.data,eta.data}; const void* outputs[]={coefficients.Ap.data,coefficients.Am.data,coefficients.A0.data};
+    for (std::size_t i=0;i<3;++i) {
+        for (const auto* input:inputs) if (memoryOverlaps(outputs[i],complexBytes,input,realBytes))
+            return {WVKernelStatusCode::overlappingArrays,"Projection outputs overlap physical inputs."};
+        for (std::size_t j=i+1;j<3;++j) if (memoryOverlaps(outputs[i],complexBytes,outputs[j],complexBytes))
+            return {WVKernelStatusCode::overlappingArrays,"Projection outputs overlap each other."};
+    }
+    auto status=validateMutableOutputOutsidePreparedState(coefficients); if (!status) return status;
+    ExecutionGuard guard(executing_); if (!guard.entered()) return {WVKernelStatusCode::reentrantExecution,"Kernel operations are not reentrant."};
+    const auto R=spatial.elementCount(); const WVRealVolumeConstView views[]={u,v,w,eta};
+    for (std::size_t channel=0;channel<4;++channel) std::copy(views[channel].data,views[channel].data+R,realScratch_.data()+channel*R);
+    metrics_.bytesCopied+=4*realBytes;
+    WVComplexConstView phaseValues;
+    if (stateEvaluationActive_) {
+        if (t!=preparedState_.t || t0!=preparedState_.t0) return {WVKernelStatusCode::invalidConfiguration,"Projection time does not match the active constant-stratification evaluation."};
+        if (!preparedPhaseReady_) { status=prepareStatePhase(preparedState_); if (!status) return status; }
+        phaseValues=phaseForPreparedState();
+    } else { status=prepareStatePhase({t,t0,{}}); if (!status) return status; phaseValues=phaseForPreparedState(); }
+    const WVRealFieldBundleConstView packed{realScratch_.data(),{spatial.first,spatial.second,spatial.third,4}};
+    return transformUVWEtaToWaveVortexImpl(packed,t,t0,coefficients,phaseValues);
 }
 
 WVKernelStatus WVTransformConstantStratificationKernel::transformUVWEtaToWaveVortexImpl(

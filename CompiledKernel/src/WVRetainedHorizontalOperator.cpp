@@ -1,4 +1,5 @@
 #include "WVSpectralValidation.hpp"
+#include "WVHorizontalDerivativeMultiplier.hpp"
 #include <new>
 
 namespace wavevortex {
@@ -362,46 +363,16 @@ WVKernelStatus WVRetainedHorizontalOperator::spatialDerivative(WVRetainedHorizon
     if (overlap(input.data,d.realSpan,output.data,d.realSpan)) return {WVKernelStatusCode::overlappingArrays,"Derivative input and output overlap."};
     ActiveCall guard(w.active); if (!guard.entered) return {WVKernelStatusCode::reentrantExecution,"Horizontal workspace is active."};
     const auto& g = d.spec.grid;
-    const auto half = g.Nx/2+1;
-    if (order>1) {
-        const auto n=xDerivative ? g.Nx : g.Ny;
-        const double maximum=2*std::acos(-1.0)*static_cast<double>(n/2)/
-            (xDerivative ? d.spec.Lx : d.spec.Ly);
-        if (!std::isfinite(std::pow(maximum,order)))
-            return {WVKernelStatusCode::numericalFailure,"Horizontal derivative multiplier overflow."};
-    }
     const auto differentiate = [&](WVComplex64* values) {
-        for (std::size_t y = 0; y < g.Ny; ++y) for (std::size_t x = 0; x < half; ++x) {
-            const auto i = xDerivative ? x : y, n = xDerivative ? g.Nx : g.Ny;
-            const auto mode = i <= n/2 ? static_cast<std::int64_t>(i) : static_cast<std::int64_t>(i)-static_cast<std::int64_t>(n);
-            auto& value = values[y*half+x];
-            if (order==1) {
-                const double k = n%2 == 0 && i == n/2 ? 0.0 :
-                    2*std::acos(-1.0)*mode/(xDerivative ? d.spec.Lx : d.spec.Ly)/d.planeSize;
-                value = {-k*value.imag,k*value.real};
-                continue;
-            }
-            if (n%2==0 && i==n/2 && order%2) { value={}; continue; }
-            const double wave=2*std::acos(-1.0)*static_cast<double>(mode)/
-                (xDerivative ? d.spec.Lx : d.spec.Ly);
-            const double magnitude=std::pow(wave,order)/d.planeSize;
-            WVComplex64 factor;
-            switch (order%4) {
-                case 0: factor={magnitude,0}; break;
-                case 1: factor={0,magnitude}; break;
-                case 2: factor={-magnitude,0}; break;
-                default: factor={0,-magnitude}; break;
-            }
-            value={value.real*factor.real-value.imag*factor.imag,
-                value.real*factor.imag+value.imag*factor.real};
-        }
+        return kernel_detail::applyHorizontalDerivativeMultiplier(values,g.Nx,g.Ny,1,
+            0,1,d.spec.Lx,d.spec.Ly,xDerivative,order);
     };
     if (!w.batchedFullFFT) {
         for (std::size_t p = 0; p < g.planes; ++p) {
             for (std::size_t y = 0; y < g.Ny; ++y) for (std::size_t x = 0; x < g.Nx; ++x)
                 w.real[y*g.Nx+x] = input.data[p*g.planeStride+y*g.yStride+x*g.xStride];
             auto status = w.forward->execute(w.real.data(),w.half.data()); if (!status) return status;
-            differentiate(w.half.data());
+            status=differentiate(w.half.data()); if (!status) return status;
             status = w.inverse->execute(w.half.data(),w.real.data()); if (!status) return status;
             for (std::size_t y = 0; y < g.Ny; ++y) for (std::size_t x = 0; x < g.Nx; ++x)
                 output.data[p*g.planeStride+y*g.yStride+x*g.xStride] = w.real[y*g.Nx+x];
@@ -411,7 +382,9 @@ WVKernelStatus WVRetainedHorizontalOperator::spatialDerivative(WVRetainedHorizon
     for (std::size_t p = 0; p < g.planes; ++p) for (std::size_t y = 0; y < g.Ny; ++y) for (std::size_t x = 0; x < g.Nx; ++x)
         w.real[p*d.planeSize+y*g.Nx+x] = input.data[p*g.planeStride+y*g.yStride+x*g.xStride];
     auto status = w.forward->execute(w.real.data(),w.half.data()); if (!status) return status;
-    for (std::size_t p = 0; p < g.planes; ++p) differentiate(w.half.data()+p*d.halfSize);
+    for (std::size_t p = 0; p < g.planes; ++p) {
+        status=differentiate(w.half.data()+p*d.halfSize); if (!status) return status;
+    }
     status = w.inverse->execute(w.half.data(),w.real.data()); if (!status) return status;
     for (std::size_t p = 0; p < g.planes; ++p) for (std::size_t y = 0; y < g.Ny; ++y) for (std::size_t x = 0; x < g.Nx; ++x)
         output.data[p*g.planeStride+y*g.yStride+x*g.xStride] = w.real[p*d.planeSize+y*g.Nx+x];
