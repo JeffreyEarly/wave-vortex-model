@@ -1,0 +1,691 @@
+{
+  "baseline": {
+    "elapsedTime": 55.43598995833333,
+    "functions": [
+      {
+        "functionName": "WVModel.WVModel>WVModel.integrateToTime",
+        "numCalls": 1,
+        "totalTime": 55.43515241659394,
+        "selfTime": 0.0028345000021232636,
+        "childTime": 55.43231791659181
+      },
+      {
+        "functionName": "WVModelAdaptiveTimeStepMethods>WVModelAdaptiveTimeStepMethods.integrateToTimeWithAdaptiveTimeStep",
+        "numCalls": 1,
+        "totalTime": 55.36069124987141,
+        "selfTime": 0.034458916692528874,
+        "childTime": 55.32623233317888
+      },
+      {
+        "functionName": "WVTransform.variableAtPositionWithName",
+        "numCalls": 164,
+        "totalTime": 2.910256793850282,
+        "selfTime": 0.0402181250301763,
+        "childTime": 2.8700386688201056
+      },
+      {
+        "functionName": "WVTransform.variableWithName",
+        "numCalls": 652,
+        "totalTime": 3.05926625229542,
+        "selfTime": 0.10877220841494761,
+        "childTime": 2.9504940438804725
+      },
+      {
+        "functionName": "NetCDFRealVariable>NetCDFRealVariable.setValueAlongDimensionAtIndex",
+        "numCalls": 47,
+        "totalTime": 0.2865809168816932,
+        "selfTime": 0.024486250018372402,
+        "childTime": 0.2620946668633208
+      },
+      {
+        "functionName": "WVModel.WVModel>WVModel.writeTimeStepToNetCDFFile",
+        "numCalls": 5,
+        "totalTime": 0.5076545420475685,
+        "selfTime": 0.0017071666679475683,
+        "childTime": 0.505947375379621
+      },
+      {
+        "functionName": "WVModelOutputFile>WVModelOutputFile.writeTimeStepToOutputFile",
+        "numCalls": 6,
+        "totalTime": 0.4935319170369721,
+        "selfTime": 0.015038958344617326,
+        "childTime": 0.47849295869235475
+      },
+      {
+        "functionName": "WVModelOutputGroup>WVModelOutputGroup.writeTimeStepToNetCDFFile",
+        "numCalls": 13,
+        "totalTime": 0.4449312086671728,
+        "selfTime": 0.007946750005962622,
+        "childTime": 0.43698445866121016
+      },
+      {
+        "functionName": "WVEulerianFields>WVEulerianFields.writeTimeStepToFile",
+        "numCalls": 5,
+        "totalTime": 0.23493912517627882,
+        "selfTime": 0.004672333336839085,
+        "childTime": 0.23026679183943974
+      },
+      {
+        "functionName": "putVar",
+        "numCalls": 47,
+        "totalTime": 0.2435320001827262,
+        "selfTime": 0.24168375018133942,
+        "childTime": 0.0018482500013867734
+      },
+      {
+        "functionName": "WVTracer>WVTracer.fluxAtTime",
+        "numCalls": 160,
+        "totalTime": 22.336493225092784,
+        "selfTime": 0.6554237921584409,
+        "childTime": 21.681069432934343
+      },
+      {
+        "functionName": "WVModel.WVModel>WVModel.fluxAtTimeCellArray",
+        "numCalls": 160,
+        "totalTime": 45.33141665901294,
+        "selfTime": 0.09275066673626498,
+        "childTime": 45.23866599227667
+      },
+      {
+        "functionName": "WVTransform.WVTransform>WVTransform.scopedEvaluation",
+        "numCalls": 1621,
+        "totalTime": 0.48303041702909266,
+        "selfTime": 0.018023541680190103,
+        "childTime": 0.46500687534890256
+      },
+      {
+        "functionName": "WVGeometryDoublyPeriodic.WVGeometryDoublyPeriodic>WVGeometryDoublyPeriodic.diffX",
+        "numCalls": 160,
+        "totalTime": 1.1423300008571098,
+        "selfTime": 0.015697041678444545,
+        "childTime": 1.1266329591786652
+      },
+      {
+        "functionName": "WVGeometryDoublyPeriodic.WVGeometryDoublyPeriodic>WVGeometryDoublyPeriodic.diffY",
+        "numCalls": 160,
+        "totalTime": 1.210722334241759,
+        "selfTime": 0.013139291676525389,
+        "childTime": 1.1975830425652336
+      },
+      {
+        "functionName": "WVGeometryDoublyPeriodicStratifiedConstant.diffZF",
+        "numCalls": 160,
+        "totalTime": 17.72174547163026,
+        "selfTime": 1.2459698342682053,
+        "childTime": 16.475775637362055
+      },
+      {
+        "functionName": "WVGeometryDoublyPeriodic.WVGeometryDoublyPeriodic>WVGeometryDoublyPeriodic.transformFromSpatialDomainWithFourier",
+        "numCalls": 160,
+        "totalTime": 0.5851945421057481,
+        "selfTime": 0.01057220834126582,
+        "childTime": 0.5746223337644822
+      },
+      {
+        "functionName": "WVGeometryDoublyPeriodic.WVGeometryDoublyPeriodic>WVGeometryDoublyPeriodic.transformToSpatialDomainWithFourier",
+        "numCalls": 160,
+        "totalTime": 0.6576933338268119,
+        "selfTime": 0.009586666673859878,
+        "childTime": 0.6481066671529521
+      },
+      {
+        "functionName": "WVCompiledTransformBackend.WVCompiledTransformBackend>WVCompiledTransformBackend.scopedEvaluation",
+        "numCalls": 2265,
+        "totalTime": 0.4981002087070664,
+        "selfTime": 0.0755302083900049,
+        "childTime": 0.4225700003170615
+      },
+      {
+        "functionName": "WVCompiledTransformBackend.WVCompiledTransformBackend>WVCompiledTransformBackend.operation",
+        "numCalls": 800,
+        "totalTime": 19.963893264979248,
+        "selfTime": 0.05336454170670635,
+        "childTime": 19.91052872327254
+      },
+      {
+        "functionName": "WVCompiledTransformBackend.WVCompiledTransformBackend>WVCompiledTransformBackend.assertMatchingTransform",
+        "numCalls": 3065,
+        "totalTime": 0.22716370850377812,
+        "selfTime": 0.048029750036037516,
+        "childTime": 0.1791339584677406
+      },
+      {
+        "functionName": "WVCompiledTransformBackend.WVCompiledTransformBackend>WVCompiledTransformBackend.nonlinearCoefficients",
+        "numCalls": 160,
+        "totalTime": 19.07950826431568,
+        "selfTime": 0.022448291683513588,
+        "childTime": 19.057059972632167
+      },
+      {
+        "functionName": "WVCompiledTransformBackend.WVCompiledTransformBackend>WVCompiledTransformBackend.evaluateVariables",
+        "numCalls": 484,
+        "totalTime": 2.5167978352217295,
+        "selfTime": 0.029058750021802915,
+        "childTime": 2.4877390851999266
+      },
+      {
+        "functionName": "wv_compiled_backend_mex",
+        "numCalls": 1774,
+        "totalTime": 41.51545828114975,
+        "selfTime": 41.51545828114975,
+        "childTime": 0
+      },
+      {
+        "functionName": "WVTransformConstantStratification.WVTransformConstantStratification>WVTransformConstantStratification.nonlinearFlux",
+        "numCalls": 160,
+        "totalTime": 19.211913764415026,
+        "selfTime": 0.006350166671435176,
+        "childTime": 19.20556359774359
+      },
+      {
+        "functionName": "WVTransformConstantStratification.WVTransformConstantStratification>WVTransformConstantStratification.nonlinearFluxNonhydrostatic",
+        "numCalls": 160,
+        "totalTime": 19.186927847729613,
+        "selfTime": 0.015084291677982975,
+        "childTime": 19.17184355605163
+      },
+      {
+        "functionName": "WVTransform.performOperation",
+        "numCalls": 484,
+        "totalTime": 2.8283869187888535,
+        "selfTime": 0.032544250024418186,
+        "childTime": 2.7958426687644353
+      },
+      {
+        "functionName": "WVTransform.WVTransform>WVTransform.isCompiledBuiltinOperation",
+        "numCalls": 484,
+        "totalTime": 0.21792145849684352,
+        "selfTime": 0.05560541670838837,
+        "childTime": 0.16231604178845516
+      },
+      {
+        "functionName": "WVTransform.WVTransform>WVTransform.compiledVariables",
+        "numCalls": 484,
+        "totalTime": 2.5257000852284093,
+        "selfTime": 0.008902250006679768,
+        "childTime": 2.5167978352217295
+      },
+      {
+        "functionName": "WVTransform.WVTransform>WVTransform.dotReference",
+        "numCalls": 484,
+        "totalTime": 0.2693835418687897,
+        "selfTime": 0.012970000009731641,
+        "childTime": 0.25641354185905807
+      },
+      {
+        "functionName": "WVLagrangianParticles>WVLagrangianParticles.fluxAtTime",
+        "numCalls": 160,
+        "totalTime": 2.9213811688586286,
+        "selfTime": 0.011946458342296573,
+        "childTime": 2.909434710516332
+      },
+      {
+        "functionName": "ode78",
+        "numCalls": 1,
+        "totalTime": 55.18662170807413,
+        "selfTime": 3.9664752113094437,
+        "childTime": 51.220146496764684
+      },
+      {
+        "functionName": "WVCoefficients>WVCoefficients.updateIntegratorValues",
+        "numCalls": 165,
+        "totalTime": 0.36329925027258964,
+        "selfTime": 0.2682760418679588,
+        "childTime": 0.09502320840463085
+      },
+      {
+        "functionName": "WVTransform.WVTransform>WVTransform.compiledNonlinearCoefficients",
+        "numCalls": 160,
+        "totalTime": 19.09168938932482,
+        "selfTime": 0.012181125009139038,
+        "childTime": 19.07950826431568
+      },
+      {
+        "functionName": "WVTransformConstantStratification.WVTransformConstantStratification>@()self.nonlinearFluxNonhydrostatic()",
+        "numCalls": 160,
+        "totalTime": 19.189199097731315,
+        "selfTime": 0.0022712500017014747,
+        "childTime": 19.186927847729613
+      },
+      {
+        "functionName": "WVCoefficients>WVCoefficients.fluxForCurrentState",
+        "numCalls": 160,
+        "totalTime": 19.21904976442038,
+        "selfTime": 0.0071360000053530825,
+        "childTime": 19.211913764415026
+      },
+      {
+        "functionName": "WVTransform.WVTransform>WVTransform.compiledPrimitive",
+        "numCalls": 800,
+        "totalTime": 19.992007515000346,
+        "selfTime": 0.028114250021097575,
+        "childTime": 19.963893264979248
+      },
+      {
+        "functionName": "WVModelAdaptiveTimeStepMethods>WVModelAdaptiveTimeStepMethods.fluxArray",
+        "numCalls": 160,
+        "totalTime": 50.0457266208835,
+        "selfTime": 4.714309961870562,
+        "childTime": 45.33141665901294
+      },
+      {
+        "functionName": "WVModelAdaptiveTimeStepMethods>@(t,y)self.fluxArray(t,y)",
+        "numCalls": 160,
+        "totalTime": 50.052321579221775,
+        "selfTime": 0.006594958338276058,
+        "childTime": 50.0457266208835
+      },
+      {
+        "functionName": "funfun/private/odearguments",
+        "numCalls": 1,
+        "totalTime": 0.5475823754108604,
+        "selfTime": 0.02401166668468302,
+        "childTime": 0.5235707087261774
+      },
+      {
+        "functionName": "ode78>computeCEStages",
+        "numCalls": 1,
+        "totalTime": 1.6504013345716575,
+        "selfTime": 0.1961800834805305,
+        "childTime": 1.454221251091127
+      },
+      {
+        "functionName": "WVModelAdaptiveTimeStepMethods>WVModelAdaptiveTimeStepMethods.timeStepIncrementArray",
+        "numCalls": 4,
+        "totalTime": 0.6226657921338634,
+        "selfTime": 0.04652254170157333,
+        "childTime": 0.5761432504322901
+      },
+      {
+        "functionName": "WVModelAdaptiveTimeStepMethods>@(varargin)self.timeStepIncrementArray(varargin{:})",
+        "numCalls": 4,
+        "totalTime": 0.6231760421342463,
+        "selfTime": 0.0005102500003828503,
+        "childTime": 0.6226657921338634
+      },
+      {
+        "functionName": "funfun/private/ntrp78split",
+        "numCalls": 4,
+        "totalTime": 0.2554799585250243,
+        "selfTime": 0.03675962502758137,
+        "childTime": 0.21872033349744294
+      },
+      {
+        "functionName": "funfun/private/ntrp78split>yinterpWSS",
+        "numCalls": 4,
+        "totalTime": 0.21872033349744294,
+        "selfTime": 0.21872033349744294,
+        "childTime": 0
+      },
+      {
+        "functionName": "issue513Profile>runIntegration",
+        "numCalls": 1,
+        "totalTime": 55.43573429159437,
+        "selfTime": 0.0005818750004351614,
+        "childTime": 55.43515241659394
+      },
+      {
+        "functionName": "issue513Profile>@()runIntegration(model)",
+        "numCalls": 1,
+        "totalTime": 55.435843624927784,
+        "selfTime": 0.00010933333341256457,
+        "childTime": 55.43573429159437
+      },
+      {
+        "functionName": "profileCodeHotspots",
+        "numCalls": 1,
+        "totalTime": 55.5128488333189,
+        "selfTime": 0.07700520839111391,
+        "childTime": 55.435843624927784
+      },
+      {
+        "functionName": "issue513Profile",
+        "numCalls": 1,
+        "totalTime": 55.5128824999856,
+        "selfTime": 3.366666670245877e-05,
+        "childTime": 55.5128488333189
+      },
+      {
+        "functionName": "profileBaseline",
+        "numCalls": 1,
+        "totalTime": 55.512911708318946,
+        "selfTime": 2.920833334485451e-05,
+        "childTime": 55.5128824999856
+      },
+      {
+        "functionName": "run",
+        "numCalls": 1,
+        "totalTime": 55.51294533331898,
+        "selfTime": 3.36250000358973e-05,
+        "childTime": 55.512911708318946
+      }
+    ]
+  },
+  "candidate": {
+    "elapsedTime": 49.245031708333336,
+    "functions": [
+      {
+        "functionName": "WVModel.WVModel>WVModel.integrateToTime",
+        "numCalls": 1,
+        "totalTime": 49.24444191666667,
+        "selfTime": 0.002324166666667793,
+        "childTime": 49.242117750000006
+      },
+      {
+        "functionName": "WVModelAdaptiveTimeStepMethods>WVModelAdaptiveTimeStepMethods.integrateToTimeWithAdaptiveTimeStep",
+        "numCalls": 1,
+        "totalTime": 49.168795125,
+        "selfTime": 0.006121000000000265,
+        "childTime": 49.162674125
+      },
+      {
+        "functionName": "WVTransform.variableAtPositionWithName",
+        "numCalls": 164,
+        "totalTime": 2.828682833333333,
+        "selfTime": 0.03687179166666654,
+        "childTime": 2.7918110416666666
+      },
+      {
+        "functionName": "WVTransform.variableWithName",
+        "numCalls": 652,
+        "totalTime": 2.956168375,
+        "selfTime": 0.09524862499999998,
+        "childTime": 2.86091975
+      },
+      {
+        "functionName": "WVModel.WVModel>WVModel.writeTimeStepToNetCDFFile",
+        "numCalls": 5,
+        "totalTime": 0.3748698333333333,
+        "selfTime": 0.0016088749999998986,
+        "childTime": 0.3732609583333334
+      },
+      {
+        "functionName": "WVModelOutputFile>WVModelOutputFile.writeTimeStepToOutputFile",
+        "numCalls": 6,
+        "totalTime": 0.36239379166666663,
+        "selfTime": 0.0057055416666665915,
+        "childTime": 0.35668825000000004
+      },
+      {
+        "functionName": "WVModelOutputGroup>WVModelOutputGroup.writeTimeStepToNetCDFFile",
+        "numCalls": 13,
+        "totalTime": 0.33024250000000005,
+        "selfTime": 0.006817583333333321,
+        "childTime": 0.32342491666666673
+      },
+      {
+        "functionName": "WVTracer>WVTracer.fluxAtTime",
+        "numCalls": 160,
+        "totalTime": 16.92263075,
+        "selfTime": 0.5958817083333336,
+        "childTime": 16.326749041666666
+      },
+      {
+        "functionName": "WVModel.WVModel>WVModel.fluxAtTimeCellArray",
+        "numCalls": 160,
+        "totalTime": 39.96856575,
+        "selfTime": 0.07876970833333985,
+        "childTime": 39.88979604166666
+      },
+      {
+        "functionName": "WVTransform.WVTransform>WVTransform.scopedEvaluation",
+        "numCalls": 1621,
+        "totalTime": 0.44044895833333336,
+        "selfTime": 0.01308150000000008,
+        "childTime": 0.4273674583333333
+      },
+      {
+        "functionName": "WVGeometryDoublyPeriodic.WVGeometryDoublyPeriodic>WVGeometryDoublyPeriodic.diffX",
+        "numCalls": 160,
+        "totalTime": 1.085036125,
+        "selfTime": 0.01300291666666653,
+        "childTime": 1.0720332083333335
+      },
+      {
+        "functionName": "WVGeometryDoublyPeriodic.WVGeometryDoublyPeriodic>WVGeometryDoublyPeriodic.diffY",
+        "numCalls": 160,
+        "totalTime": 1.1567805833333333,
+        "selfTime": 0.011663291666666575,
+        "childTime": 1.1451172916666668
+      },
+      {
+        "functionName": "WVGeometryDoublyPeriodicStratifiedConstant.diffZF",
+        "numCalls": 160,
+        "totalTime": 12.61120525,
+        "selfTime": 1.1455877083333341,
+        "childTime": 11.465617541666665
+      },
+      {
+        "functionName": "WVGeometryDoublyPeriodic.WVGeometryDoublyPeriodic>WVGeometryDoublyPeriodic.transformFromSpatialDomainWithFourier",
+        "numCalls": 160,
+        "totalTime": 0.5307574583333333,
+        "selfTime": 0.009812874999999943,
+        "childTime": 0.5209445833333334
+      },
+      {
+        "functionName": "WVGeometryDoublyPeriodic.WVGeometryDoublyPeriodic>WVGeometryDoublyPeriodic.transformToSpatialDomainWithFourier",
+        "numCalls": 160,
+        "totalTime": 0.5992679583333334,
+        "selfTime": 0.008867666666666718,
+        "childTime": 0.5904002916666666
+      },
+      {
+        "functionName": "WVCompiledTransformBackend.WVCompiledTransformBackend>WVCompiledTransformBackend.scopedEvaluation",
+        "numCalls": 2265,
+        "totalTime": 0.45373795833333336,
+        "selfTime": 0.058006999999999975,
+        "childTime": 0.3957309583333334
+      },
+      {
+        "functionName": "WVCompiledTransformBackend.WVCompiledTransformBackend>WVCompiledTransformBackend.operation",
+        "numCalls": 800,
+        "totalTime": 14.748198249999998,
+        "selfTime": 0.048015333333328414,
+        "childTime": 14.70018291666667
+      },
+      {
+        "functionName": "WVCompiledTransformBackend.WVCompiledTransformBackend>WVCompiledTransformBackend.assertMatchingTransform",
+        "numCalls": 3065,
+        "totalTime": 0.207428875,
+        "selfTime": 0.03875141666666668,
+        "childTime": 0.16867745833333334
+      },
+      {
+        "functionName": "WVCompiledTransformBackend.WVCompiledTransformBackend>WVCompiledTransformBackend.nonlinearCoefficients",
+        "numCalls": 160,
+        "totalTime": 19.318315166666665,
+        "selfTime": 0.020441749999999814,
+        "childTime": 19.297873416666665
+      },
+      {
+        "functionName": "WVCompiledTransformBackend.WVCompiledTransformBackend>WVCompiledTransformBackend.evaluateVariables",
+        "numCalls": 484,
+        "totalTime": 2.464152666666667,
+        "selfTime": 0.025165750000000653,
+        "childTime": 2.4389869166666664
+      },
+      {
+        "functionName": "wv_compiled_backend_mex",
+        "numCalls": 1774,
+        "totalTime": 36.517504833333334,
+        "selfTime": 36.517504833333334,
+        "childTime": 0
+      },
+      {
+        "functionName": "WVTransformConstantStratification.WVTransformConstantStratification>WVTransformConstantStratification.nonlinearFlux",
+        "numCalls": 160,
+        "totalTime": 19.434899291666667,
+        "selfTime": 0.0057858750000008285,
+        "childTime": 19.429113416666667
+      },
+      {
+        "functionName": "WVTransformConstantStratification.WVTransformConstantStratification>WVTransformConstantStratification.nonlinearFluxNonhydrostatic",
+        "numCalls": 160,
+        "totalTime": 19.411934624999997,
+        "selfTime": 0.009733958333331572,
+        "childTime": 19.402200666666666
+      },
+      {
+        "functionName": "WVTransform.performOperation",
+        "numCalls": 484,
+        "totalTime": 2.7477365,
+        "selfTime": 0.02783354166666685,
+        "childTime": 2.719902958333333
+      },
+      {
+        "functionName": "WVTransform.WVTransform>WVTransform.isCompiledBuiltinOperation",
+        "numCalls": 484,
+        "totalTime": 0.203326625,
+        "selfTime": 0.05212662499999998,
+        "childTime": 0.15120000000000003
+      },
+      {
+        "functionName": "WVTransform.WVTransform>WVTransform.compiledVariables",
+        "numCalls": 484,
+        "totalTime": 2.4711408749999997,
+        "selfTime": 0.0069882083333325795,
+        "childTime": 2.464152666666667
+      },
+      {
+        "functionName": "WVTransform.WVTransform>WVTransform.dotReference",
+        "numCalls": 484,
+        "totalTime": 0.23815004166666665,
+        "selfTime": 0.01195033333333334,
+        "childTime": 0.2261997083333333
+      },
+      {
+        "functionName": "WVLagrangianParticles>WVLagrangianParticles.fluxAtTime",
+        "numCalls": 160,
+        "totalTime": 2.8393821666666668,
+        "selfTime": 0.011329333333333746,
+        "childTime": 2.828052833333333
+      },
+      {
+        "functionName": "ode78",
+        "numCalls": 1,
+        "totalTime": 49.141215333333335,
+        "selfTime": 3.7548903333333428,
+        "childTime": 45.38632499999999
+      },
+      {
+        "functionName": "WVCoefficients>WVCoefficients.updateIntegratorValues",
+        "numCalls": 165,
+        "totalTime": 0.330962,
+        "selfTime": 0.2574167083333333,
+        "childTime": 0.07354529166666667
+      },
+      {
+        "functionName": "WVTransform.WVTransform>WVTransform.compiledNonlinearCoefficients",
+        "numCalls": 160,
+        "totalTime": 19.328556499999998,
+        "selfTime": 0.010241333333333102,
+        "childTime": 19.318315166666665
+      },
+      {
+        "functionName": "WVTransformConstantStratification.WVTransformConstantStratification>@()self.nonlinearFluxNonhydrostatic()",
+        "numCalls": 160,
+        "totalTime": 19.414202208333332,
+        "selfTime": 0.0022675833333352102,
+        "childTime": 19.411934624999997
+      },
+      {
+        "functionName": "WVCoefficients>WVCoefficients.fluxForCurrentState",
+        "numCalls": 160,
+        "totalTime": 19.441260500000002,
+        "selfTime": 0.006361208333334645,
+        "childTime": 19.434899291666667
+      },
+      {
+        "functionName": "WVTransform.WVTransform>WVTransform.compiledPrimitive",
+        "numCalls": 800,
+        "totalTime": 14.766038375,
+        "selfTime": 0.01784012500000287,
+        "childTime": 14.748198249999998
+      },
+      {
+        "functionName": "WVModelAdaptiveTimeStepMethods>WVModelAdaptiveTimeStepMethods.fluxArray",
+        "numCalls": 160,
+        "totalTime": 44.53054920833333,
+        "selfTime": 4.56198345833333,
+        "childTime": 39.96856575
+      },
+      {
+        "functionName": "WVModelAdaptiveTimeStepMethods>@(t,y)self.fluxArray(t,y)",
+        "numCalls": 160,
+        "totalTime": 44.535819125,
+        "selfTime": 0.005269916666669872,
+        "childTime": 44.53054920833333
+      },
+      {
+        "functionName": "funfun/private/odearguments",
+        "numCalls": 1,
+        "totalTime": 0.35356679166666666,
+        "selfTime": 0.009119750000000038,
+        "childTime": 0.3444470416666666
+      },
+      {
+        "functionName": "ode78>computeCEStages",
+        "numCalls": 1,
+        "totalTime": 1.2951896666666667,
+        "selfTime": 0.1565302083333333,
+        "childTime": 1.1386594583333334
+      },
+      {
+        "functionName": "WVModelAdaptiveTimeStepMethods>WVModelAdaptiveTimeStepMethods.timeStepIncrementArray",
+        "numCalls": 4,
+        "totalTime": 0.47194887499999993,
+        "selfTime": 0.036951583333333315,
+        "childTime": 0.4349972916666666
+      },
+      {
+        "functionName": "WVModelAdaptiveTimeStepMethods>@(varargin)self.timeStepIncrementArray(varargin{:})",
+        "numCalls": 4,
+        "totalTime": 0.47246845833333334,
+        "selfTime": 0.0005195833333334066,
+        "childTime": 0.47194887499999993
+      },
+      {
+        "functionName": "issue513Profile>runIntegration",
+        "numCalls": 1,
+        "totalTime": 49.24488191666667,
+        "selfTime": 0.00043999999999755346,
+        "childTime": 49.24444191666667
+      },
+      {
+        "functionName": "issue513Profile>@()runIntegration(model)",
+        "numCalls": 1,
+        "totalTime": 49.24494120833333,
+        "selfTime": 5.9291666659078146e-05,
+        "childTime": 49.24488191666667
+      },
+      {
+        "functionName": "profileCodeHotspots",
+        "numCalls": 1,
+        "totalTime": 49.26165775,
+        "selfTime": 0.016716541666667695,
+        "childTime": 49.24494120833333
+      },
+      {
+        "functionName": "issue513Profile",
+        "numCalls": 1,
+        "totalTime": 49.261682875,
+        "selfTime": 2.512500000051432e-05,
+        "childTime": 49.26165775
+      },
+      {
+        "functionName": "profileCandidate",
+        "numCalls": 1,
+        "totalTime": 49.261708875,
+        "selfTime": 2.5999999998305157e-05,
+        "childTime": 49.261682875
+      },
+      {
+        "functionName": "run",
+        "numCalls": 1,
+        "totalTime": 49.26173795833333,
+        "selfTime": 2.908333333095925e-05,
+        "childTime": 49.261708875
+      }
+    ]
+  }
+}

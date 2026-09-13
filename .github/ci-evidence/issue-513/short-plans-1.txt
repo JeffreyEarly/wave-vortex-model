@@ -1,0 +1,91 @@
+workers=1 rows=1 nz=129 full_rows=65536 repetitions=65536 flags=MEASURE|UNALIGNED
+plan_begin=dct_tile
+(rdft-buffered-129-x2/2-5
+  (redft00e-splitradix-129-x2
+    (redft00e-splitradix-65
+      (redft00e-splitradix-33
+        (redft00e-r2hc-pad-17
+          (rdft-r2hc-direct-r2c-32 "r2cf_32")
+          (rdft-rank0-memcpy/17))
+        (rdft-r2hc-direct-r2c-16 "r2cf_16"))
+      (rdft-r2hc-direct-r2c-32 "r2cf_32"))
+    (rdft-r2hc-direct-r2c-64 "r2cf_64"))
+  (rdft-rank0-iter-ci/1-x2-x129)
+  (rdft-nop))plan_end=dct_tile
+plan_begin=dst_tile
+(rodft00e-r2hc-pad-127-x2
+  (rdft-ct-dit/16
+    (hc2hc-direct-16/8 "hf2_16"
+      (rdft-r2hc-direct-r2c-16 "r2cf_16")
+      (rdft-r2hc01-direct-r2c-16 "r2cfII_16"))
+    (rdft-r2hc-directbuf/18-r2c-16-x16 "r2cf_16"))
+  (rdft-rank0-iter-ci/1-x127))plan_end=dst_tile
+dct_roundtrip_seconds=0.069045791
+dst_roundtrip_seconds=0.073209833
+dct_roundtrip_seconds_per_call=1.05355516052e-06
+dst_roundtrip_seconds_per_call=1.11709339905e-06
+dct_finite=1
+dst_finite=1
+dst_parity_boundary_ok=1
+workers=1 rows=64 nz=129 full_rows=65536 repetitions=1024 flags=MEASURE|UNALIGNED
+plan_begin=dct_tile
+(rdft-vrank>=1-x64/1
+  (rdft-buffered-129-x2/2-5
+    (redft00e-splitradix-129-x2
+      (redft00e-splitradix-65
+        (redft00e-splitradix-33
+          (redft00e-r2hc-pad-17
+            (rdft-r2hc-direct-r2c-32 "r2cf_32")
+            (rdft-rank0-memcpy/17))
+          (rdft-r2hc-direct-r2c-16 "r2cf_16"))
+        (rdft-r2hc-direct-r2c-32 "r2cf_32"))
+      (rdft-r2hc-direct-r2c-64 "r2cf_64"))
+    (rdft-rank0-iter-ci/1-x2-x129)
+    (rdft-nop)))plan_end=dct_tile
+plan_begin=dst_tile
+(rdft-vrank>=1-x64/1
+  (rodft00e-r2hc-pad-127-x2
+    (rdft-ct-dit/16
+      (hc2hc-direct-16/8 "hf2_16"
+        (rdft-r2hc-direct-r2c-16 "r2cf_16")
+        (rdft-r2hc01-direct-r2c-16 "r2cfII_16"))
+      (rdft-r2hc-directbuf/18-r2c-16-x16 "r2cf_16"))
+    (rdft-rank0-iter-ci/1-x127)))plan_end=dst_tile
+dct_roundtrip_seconds=0.068193208
+dst_roundtrip_seconds=0.07300875
+dct_roundtrip_seconds_per_call=6.65949296875e-05
+dst_roundtrip_seconds_per_call=7.12976074219e-05
+dct_finite=1
+dst_finite=1
+dst_parity_boundary_ok=1
+workers=1 rows=256 nz=129 full_rows=65536 repetitions=256 flags=MEASURE|UNALIGNED
+plan_begin=dct_tile
+(rdft-vrank>=1-x256/1
+  (rdft-buffered-129-x2/2-5
+    (redft00e-splitradix-129-x2
+      (redft00e-splitradix-65
+        (redft00e-splitradix-33
+          (redft00e-r2hc-pad-17
+            (rdft-r2hc-direct-r2c-32 "r2cf_32")
+            (rdft-rank0-memcpy/17))
+          (rdft-r2hc-direct-r2c-16 "r2cf_16"))
+        (rdft-r2hc-direct-r2c-32 "r2cf_32"))
+      (rdft-r2hc-direct-r2c-64 "r2cf_64"))
+    (rdft-rank0-iter-ci/1-x2-x129)
+    (rdft-nop)))plan_end=dct_tile
+plan_begin=dst_tile
+(rdft-vrank>=1-x256/1
+  (rodft00e-r2hc-pad-127-x2
+    (rdft-ct-dit/16
+      (hc2hc-direct-16/8 "hf2_16"
+        (rdft-r2hc-direct-r2c-16 "r2cf_16")
+        (rdft-r2hc01-direct-r2c-16 "r2cfII_16"))
+      (rdft-r2hc-directbuf/18-r2c-16-x16 "r2cf_16"))
+    (rdft-rank0-iter-ci/1-x127)))plan_end=dst_tile
+dct_roundtrip_seconds=0.068831084
+dst_roundtrip_seconds=0.073866625
+dct_roundtrip_seconds_per_call=0.000268871421875
+dst_roundtrip_seconds_per_call=0.000288541503906
+dct_finite=1
+dst_finite=1
+dst_parity_boundary_ok=1

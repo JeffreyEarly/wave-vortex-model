@@ -1,0 +1,8 @@
+{
+  "dct": "(rdft-thr-vrank>=1-x2/1\n  (rdft-buffered-129/1-0\n    (redft00e-splitradix-129\n      (redft00e-splitradix-65\n        (redft00e-r2hc-pad-33\n          (rdft-r2hc-direct-r2c-64 \"r2cf_64\")\n          (rdft-rank0-memcpy/33))\n        (rdft-r2hc-direct-r2c-32 \"r2cf_32\"))\n      (rdft-r2hc-direct-r2c-64 \"r2cf_64\"))\n    (rdft-rank0-iter-ci/1-x129)\n    (rdft-nop))\n  (rdft-buffered-129/1-0\n    (redft00e-splitradix-129\n      (redft00e-splitradix-65\n        (redft00e-r2hc-pad-33\n          (rdft-r2hc-direct-r2c-64 \"r2cf_64\")\n          (rdft-rank0-memcpy/33))\n        (rdft-r2hc-direct-r2c-32 \"r2cf_32\"))\n      (rdft-r2hc-direct-r2c-64 \"r2cf_64\"))\n    (rdft-rank0-iter-ci/1-x129)\n    (rdft-nop)))",
+  "dst": "(rdft-buffered-127-x2/2-7\n  (rodft00e-splitradix-127-x2\n    (rodft00e-splitradix-63\n      (rodft00e-r2hc-pad-31\n        (rdft-r2hc-direct-r2c-64 \"r2cf_64\")\n        (rdft-rank0-iter-ci/1-x31))\n      (rdft-r2hc-direct-r2c-32 \"r2cf_32\"))\n    (rdft-r2hc-direct-r2c-64 \"r2cf_64\"))\n  (rdft-rank0-iter-ci/1-x2-x127)\n  (rdft-nop))",
+  "dctPresent": true,
+  "dstPresent": true,
+  "library": "/Users/jearly/Library/Caches/WaveVortexModel/compiled-backend-v1/maca64/R2025b/d3107d86ae9a3ec98523b23f5a6f6c665d581bc4319c7799a5a19cef5988fec7/provider/native-neon-pthreads/lib/libfftw3.3.dylib",
+  "executeLibrary": "/Users/jearly/Library/Caches/WaveVortexModel/compiled-backend-v1/maca64/R2025b/d3107d86ae9a3ec98523b23f5a6f6c665d581bc4319c7799a5a19cef5988fec7/provider/native-neon-pthreads/lib/libfftw3.3.dylib"
+}
