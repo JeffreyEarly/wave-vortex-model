@@ -124,6 +124,12 @@
     "completeInterface": {
       "type": "object",
       "required": ["id", "status", "providerId", "integrationSeconds", "totalPeakRSSBytes", "integrationRatio", "totalRSSRatio", "integrationSamplesSeconds", "totalPeakRSSSamplesBytes", "diagnostics"],
+      "allOf": [
+        {
+          "if": {"properties": {"id": {"enum": ["matlab-compiled", "standalone-compiled"]}}, "required": ["id"]},
+          "then": {"required": ["executionPolicy"]}
+        }
+      ],
       "properties": {
         "id": {"enum": ["matlab-builtin", "matlab-compiled", "standalone-compiled"]},
         "status": {"const": "complete"},
@@ -134,7 +140,29 @@
         "totalRSSRatio": {"type": "number", "exclusiveMinimum": 0},
         "integrationSamplesSeconds": {"type": "array", "minItems": 3, "maxItems": 3, "items": {"type": "number", "exclusiveMinimum": 0}},
         "totalPeakRSSSamplesBytes": {"type": "array", "minItems": 3, "maxItems": 3, "items": {"type": "number", "exclusiveMinimum": 0}},
+        "executionPolicy": {"$ref": "#/$defs/executionPolicy"},
         "diagnostics": {"type": "object"}
+      }
+    },
+    "executionPolicy": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["configuredThreadBudget", "actualFFTThreads", "requestedFFTThreads", "selection"],
+      "allOf": [
+        {
+          "if": {"properties": {"selection": {"const": "compact-native-accelerate"}}, "required": ["selection"]},
+          "then": {"required": ["matrixBackend", "compact", "horizontalWorkers", "pointwiseWorkers"]}
+        }
+      ],
+      "properties": {
+        "configuredThreadBudget": {"type": "integer", "minimum": 1},
+        "actualFFTThreads": {"type": "integer", "minimum": 1},
+        "requestedFFTThreads": {"oneOf": [{"type": "array", "maxItems": 0}, {"type": "integer", "minimum": 1}]},
+        "selection": {"enum": ["compact-native-accelerate", "non-variable-transform"]},
+        "matrixBackend": {"const": "accelerate"},
+        "compact": {"const": true},
+        "horizontalWorkers": {"type": "integer", "minimum": 1},
+        "pointwiseWorkers": {"type": "integer", "minimum": 1}
       }
     },
     "unavailableInterface": {

@@ -81,6 +81,14 @@ classdef TestThreeInterfaceBenchmark < matlab.unittest.TestCase
             testCase.verifyNumElements(dataset.cases,2)
             testCase.verifyEqual(dataset.cases{2}.contract.outputScheduleSeconds,[0 32 64 96 128])
             testCase.verifyEqual(string(cellfun(@(item)item.status,dataset.cases{1}.interfaces,"UniformOutput",false)),repmat("complete",1,3))
+            testCase.verifyFalse(isfield(dataset.cases{1}.interfaces{1},"executionPolicy"))
+            testCase.verifyEqual(dataset.cases{1}.interfaces{2}.executionPolicy.configuredThreadBudget,18)
+            testCase.verifyEqual(dataset.cases{1}.interfaces{2}.executionPolicy.actualFFTThreads,18)
+            testCase.verifyEqual(dataset.cases{1}.interfaces{2}.executionPolicy.selection,"non-variable-transform")
+            testCase.verifyEmpty(dataset.cases{1}.interfaces{2}.executionPolicy.requestedFFTThreads)
+            testCase.verifyFalse(isfield(dataset.cases{1}.interfaces{2}.executionPolicy,"matrixBackend"))
+            testCase.verifyEqual(dataset.cases{1}.interfaces{3}.executionPolicy.actualFFTThreads,18)
+            testCase.verifyEqual(dataset.cases{1}.interfaces{3}.executionPolicy.requestedFFTThreads,18)
             testCase.verifyTrue(contains(dataset.cohortKey,string(raw.source.commit)))
         end
 
@@ -95,20 +103,58 @@ classdef TestThreeInterfaceBenchmark < matlab.unittest.TestCase
 
         function matchedVariableModelAcceptsCompleteCompiledInterface(testCase)
             raw = matchedModelStudyFixture("hydrostatic-exponential");
-            constant = matchedModelStudyFixture("constant-nonhydrostatic");
-            for iCase = 1:numel(raw.cases)
-                raw.comparison(iCase) = constant.comparison(iCase);
-                raw.comparison(iCase).id = raw.cases(iCase).id;
-            end
-            variableCompiled = find(string({raw.runs.interface})=="matlab-compiled");
-            constantCompiled = find(string({constant.runs.interface})=="matlab-compiled");
-            for iRun = 1:numel(variableCompiled)
-                source = constant.runs(constantCompiled(iRun));
-                source.case = raw.runs(variableCompiled(iRun)).case;
-                source.repeatIndex = raw.runs(variableCompiled(iRun)).repeatIndex;
-                raw.runs(variableCompiled(iRun)) = source;
-            end
             testCase.verifyWarningFree(@()validateThreeInterfaceBenchmarkContract(raw))
+        end
+
+        function matchedVariableModelPublishesExecutionPolicy(testCase)
+            raw = matchedModelStudyFixture("hydrostatic-exponential");
+            rawPath = writeRaw(testCase,raw,"matched-hydrostatic.json");
+            dataset = publishedThreeInterfaceBenchmarkFromArtifact(rawPath,platformId="m5-max",platformName="Apple M5 Max");
+            for iInterface = 2:3
+                policy = dataset.cases{1}.interfaces{iInterface}.executionPolicy;
+                testCase.verifyEqual(policy.configuredThreadBudget,18)
+                testCase.verifyEqual(policy.actualFFTThreads,1)
+                testCase.verifyEmpty(policy.requestedFFTThreads)
+                testCase.verifyEqual(policy.selection,"compact-native-accelerate")
+                testCase.verifyEqual(policy.matrixBackend,"accelerate")
+                testCase.verifyTrue(policy.compact)
+                testCase.verifyEqual(policy.horizontalWorkers,12)
+                testCase.verifyEqual(policy.pointwiseWorkers,8)
+            end
+        end
+
+        function matchedVariableModelRejectsExplicitFFTThreadPolicy(testCase)
+            raw = matchedModelStudyFixture("hydrostatic-exponential");
+            index = find(string({raw.runs.interface})=="standalone-compiled",1);
+            raw.runs(index).provider.requestedFFTThreads = raw.configuration.threadCount;
+            raw.runs(index).provider.effectiveFFTThreads = raw.configuration.threadCount;
+            raw.runs(index).provider.threads = raw.configuration.threadCount;
+            raw.runs(index).provider.policy = "established-explicit-fft-threads";
+            raw.runs(index).provider.matrixBackend = "accelerate";
+            raw.runs(index).provider.compact = false;
+            testCase.verifyError(@()validateThreeInterfaceBenchmarkContract(raw),"WaveVortexBenchmark:ProviderMismatch")
+        end
+
+        function matchedVariableModelRequiresCommonNativePolicy(testCase)
+            raw = matchedModelStudyFixture("boussinesq-exponential");
+            index = find(string({raw.runs.interface})=="standalone-compiled",1);
+            raw.runs(index).provider.horizontalWorkers = raw.runs(index).provider.horizontalWorkers-1;
+            testCase.verifyError(@()validateThreeInterfaceBenchmarkContract(raw),"WaveVortexBenchmark:ProviderMismatch")
+        end
+
+        function matchedVariableModelRejectsScalarMatrixPolicy(testCase)
+            raw = matchedModelStudyFixture("hydrostatic-exponential");
+            index = find(string({raw.runs.interface})=="standalone-compiled",1);
+            raw.runs(index).provider.matrixBackend = "scalar";
+            testCase.verifyError(@()validateThreeInterfaceBenchmarkContract(raw),"WaveVortexBenchmark:ProviderMismatch")
+        end
+
+        function matchedConstantModelRetainsConfiguredFFTThreads(testCase)
+            raw = matchedModelStudyFixture("constant-nonhydrostatic");
+            index = find(string({raw.runs.interface})=="standalone-compiled",1);
+            raw.runs(index).provider.threads = 1;
+            raw.runs(index).provider.effectiveFFTThreads = 1;
+            testCase.verifyError(@()validateThreeInterfaceBenchmarkContract(raw),"WaveVortexBenchmark:ProviderMismatch")
         end
 
         function matchedModelStudyRejectsArbitraryUnavailableFailure(testCase)
@@ -689,6 +735,20 @@ for iRepeat = 1:3
         end
         run.status = "complete";
         run.failure = struct("identifier","","message","","report","");
+        if run.interface~="matlab-builtin"
+            isVariable = modelConfiguration~="constant-nonhydrostatic";
+            requestedFFTThreads = conditional(isVariable || run.interface=="matlab-compiled",[],raw.configuration.threadCount);
+            effectiveFFTThreads = conditional(isVariable,1,raw.configuration.threadCount);
+            policy = conditional(isVariable,"compact-native-accelerate","non-variable-transform");
+            matrixBackend = conditional(isVariable,"accelerate","scalar");
+            run.provider = struct("id","native-neon-pthreads","version","3.3.11", ...
+                "threads",effectiveFFTThreads,"configuredThreadBudget",raw.configuration.threadCount, ...
+                "requestedFFTThreads",requestedFFTThreads,"effectiveFFTThreads",effectiveFFTThreads, ...
+                "policy",policy,"matrixBackend",matrixBackend,"compact",isVariable, ...
+                "horizontalWorkers",conditional(isVariable || run.interface=="matlab-compiled",12,1), ...
+                "pointwiseWorkers",conditional(isVariable,8,conditional(run.interface=="matlab-compiled",12,1)), ...
+                "baseLibrary","/tmp/libfftw3.3.dylib","threadLibrary","/tmp/libfftw3_threads.3.dylib","noFallback",true);
+        end
         raw.runs(end+1,1) = run; %#ok<AGROW>
     end
 end

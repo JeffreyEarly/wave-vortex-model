@@ -267,7 +267,18 @@ end
 function value = providerRecord(wvt,backend,config)
 if backend == "compiled"
     metadata = wvt.computationalBackendMetadata;
-    value = struct("id",string(metadata.provider.id),"version",string(metadata.provider.version),"threads",double(config.threadCount),"baseLibrary",string(metadata.libraries.base.path),"threadLibrary",string(metadata.libraries.thread.path),"noFallback",true);
+    if isfield(config.case,"modelConfiguration")
+        native = metadata.runtimeMetrics;
+        value = struct("id",string(metadata.provider.id),"version",string(metadata.provider.version), ...
+            "threads",double(native.effectiveFFTThreads),"configuredThreadBudget",double(config.threadCount), ...
+            "requestedFFTThreads",[],"effectiveFFTThreads",double(native.effectiveFFTThreads), ...
+            "policy",string(native.policy),"matrixBackend",string(native.matrixBackend), ...
+            "compact",string(native.policy)=="compact-native-accelerate", ...
+            "horizontalWorkers",double(native.horizontalWorkers),"pointwiseWorkers",double(native.pointwiseWorkers), ...
+            "baseLibrary",string(metadata.libraries.base.path),"threadLibrary",string(metadata.libraries.thread.path),"noFallback",true);
+    else
+        value = struct("id",string(metadata.provider.id),"version",string(metadata.provider.version),"threads",double(config.threadCount),"baseLibrary",string(metadata.libraries.base.path),"threadLibrary",string(metadata.libraries.thread.path),"noFallback",true);
+    end
 else
     value = struct("id","matlab-builtin","version",string(version),"threads",double(config.threadCount),"baseLibrary","","threadLibrary","","noFallback",true);
 end
