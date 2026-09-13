@@ -935,6 +935,41 @@ void nonlinearVorticityEvaluationSession(Engine& engine,const WVState& state,
     require(bool(service->setVariableEvaluationPolicy(
         WVVariableEvaluationPolicy::reuse)),
         "Nonlinear/vorticity reuse restore");
+
+    WVFieldEvaluationPlan laterChannels;
+    std::vector<WVFieldRequest> laterRequests{{"later-v",
+        "Fv_nonlinear_advection",{}},{"later-eta",
+        "Feta_nonlinear_advection",{}}};
+    if(spatial.fourth==4)
+        laterRequests.push_back({"later-w","Fw_nonlinear_advection",{}});
+    std::vector<double> firstValues(nonlinear.outputs()[0].elementCount);
+    WVFieldOutputView firstView{firstValues.data(),firstValues.size()};
+    const auto nonlinearBefore=engine.metrics().nonlinearProducerCount;
+    {
+        WVFieldEvaluationSession session;
+        require(bool(service->beginEvaluationSession(integrationState,session)),
+            "Active forcing demand session");
+        require(bool(service->evaluate(nonlinear,integrationState,&firstView,1)),
+            "Active forcing demand Fu query");
+        const auto status=service->createPlanForActiveEvaluation(
+            laterRequests,laterChannels);
+        if(!status) throw std::runtime_error(
+            "Active forcing channel preparation: "+status.message);
+        std::vector<std::vector<double>> values(laterChannels.outputCount());
+        std::vector<WVFieldOutputView> views(laterChannels.outputCount());
+        for(std::size_t index=0;index<views.size();++index) {
+            values[index].resize(laterChannels.outputs()[index].elementCount);
+            views[index]={values[index].data(),values[index].size()};
+        }
+        require(bool(service->evaluate(laterChannels,integrationState,
+                    views.data(),views.size())),
+            "Active forcing demand later-channel query");
+        for(const auto& field:values) for(const auto value:field)
+            require(std::isfinite(value),
+                "Active forcing demand produced a nonfinite channel");
+    }
+    require(engine.metrics().nonlinearProducerCount==nonlinearBefore+1,
+        "Active forcing channels repeated the nonlinear producer");
 }
 
 template<class Engine>

@@ -97,8 +97,10 @@ std::string WVDiagnosticFieldPlan::configurationIdentifier(const WVFieldEvaluati
 }
 
 WVKernelStatus WVDiagnosticFieldPlan::create(const WVFieldEvaluationService& service,
-    const std::vector<WVFieldRequest>& requests,WVFieldEvaluationPlan& result,WVDensityDiagnosticContract contract) {
-  return createImpl(service,requests,result,false,contract);
+    const std::vector<WVFieldRequest>& requests,WVFieldEvaluationPlan& result,
+    WVDensityDiagnosticContract contract,bool prepareScientificDependencies) {
+  return createImpl(service,requests,result,false,contract,
+      prepareScientificDependencies);
 }
 
 WVKernelStatus WVDiagnosticFieldPlan::createDensityQualification(
@@ -110,12 +112,36 @@ WVKernelStatus WVDiagnosticFieldPlan::createDensityQualification(
       return unsupported("Density qualification accepts only rho_nm, eta_true, ape and apv.");
   if(contract.reference!=WVNoMotionReference::actual && contract.reference!=WVNoMotionReference::initial)
     return invalid("Density reference selection is invalid.");
-  return createImpl(service,requests,result,true,contract);
+  return createImpl(service,requests,result,true,contract,true);
+}
+
+WVKernelStatus WVDiagnosticFieldPlan::createDensityQualificationForActiveEvaluation(
+    const WVFieldEvaluationService& service,
+    const std::vector<WVFieldRequest>& requests,
+    WVDensityDiagnosticContract contract,WVFieldEvaluationPlan& result) {
+  if(!service.eventWorkspace_ || !service.stateEvaluationActive_)
+    return {WVKernelStatusCode::invalidConfiguration,
+        "Active density qualification requires an evaluation session."};
+  if(service.variableEvaluationPolicy_!=WVVariableEvaluationPolicy::reuse)
+    return {WVKernelStatusCode::invalidConfiguration,
+        "Active density qualification requires the reuse policy."};
+  if(service.executing_ || !service.eventWorkspace_->preparationIdle())
+    return {WVKernelStatusCode::reentrantExecution,
+        "Active density qualification is allowed only between producer calls."};
+  WVFieldEvaluationPlan candidate;
+  auto status=createImpl(service,requests,candidate,true,contract,false);
+  if(!status) return status;
+  status=service.prepareEventArenaForActiveEvaluation(candidate);
+  service.eventArena_->refreshAccounting();
+  if(!status) return status;
+  result=std::move(candidate);
+  return WVKernelStatus::ok();
 }
 
 WVKernelStatus WVDiagnosticFieldPlan::createImpl(const WVFieldEvaluationService& service,
     const std::vector<WVFieldRequest>& requests,WVFieldEvaluationPlan& result,
-    bool densityQualification,WVDensityDiagnosticContract densityContract) {
+    bool densityQualification,WVDensityDiagnosticContract densityContract,
+    bool prepareScientificDependencies) {
   if(densityContract.reference!=WVNoMotionReference::actual && densityContract.reference!=WVNoMotionReference::initial)
     return invalid("Density reference selection is invalid.");
   try {
@@ -177,8 +203,9 @@ WVKernelStatus WVDiagnosticFieldPlan::createImpl(const WVFieldEvaluationService&
                               ? "u"
                               : (plan->isBarotropic_ ? "qgpv" : "ssu");
       WVFieldEvaluationPlan sampler;
-      auto samplerStatus = service.createPlan(
-          {{"diagnostic-sampler", proxy, sampling}}, sampler);
+      auto samplerStatus = service.createPlanImpl(
+          {{"diagnostic-sampler", proxy, sampling}}, sampler,{},
+          prepareScientificDependencies);
       if (!samplerStatus)
         return samplerStatus;
       output.sampled = true;
@@ -317,7 +344,8 @@ WVKernelStatus WVDiagnosticFieldPlan::createImpl(const WVFieldEvaluationService&
       plan->forcingPhysicalDependencies_[channel]=dependency(0,physicalNames[channel],{});
     for(auto& group:plan->groups_) {
       if(group.requests.empty()) continue;
-      status=service.createPlan(group.requests,group.fields); if(!status) return status;
+      status=service.createPlanImpl(group.requests,group.fields,{},
+          prepareScientificDependencies); if(!status) return status;
     }
     WVFieldEvaluationPlan candidate;
     for(auto& output:plan->outputs_) {
@@ -336,8 +364,10 @@ WVKernelStatus WVDiagnosticFieldPlan::createImpl(const WVFieldEvaluationService&
       }
       candidate.outputs_.push_back(output.specification);
     }
-    status=plan->prepareEventArena(service);
-    if(!status) return status;
+    if(prepareScientificDependencies) {
+      status=plan->prepareEventArena(service);
+      if(!status) return status;
+    }
     candidate.diagnosticPlan_=std::move(plan);
     result=std::move(candidate);
     return WVKernelStatus::ok();
@@ -348,23 +378,43 @@ WVKernelStatus WVDiagnosticFieldPlan::createImpl(const WVFieldEvaluationService&
 
 WVKernelStatus WVDiagnosticFieldPlan::prepareEventArena(
     const WVFieldEvaluationService& service) const {
+  return prepareEventArenaImpl(service,false);
+}
+
+WVKernelStatus WVDiagnosticFieldPlan::prepareEventArenaForActiveEvaluation(
+    const WVFieldEvaluationService& service) const {
+  return prepareEventArenaImpl(service,true);
+}
+
+WVKernelStatus WVDiagnosticFieldPlan::prepareEventArenaImpl(
+    const WVFieldEvaluationService& service,bool active) const {
   const auto R=spatial_.elementCount();
   const auto S=spectral_.elementCount();
+  const auto preparePlan=[&](const WVFieldEvaluationPlan& plan,
+      std::uint32_t component=0) {
+    return active ? service.prepareEventArenaForActiveEvaluation(plan,component) :
+        service.prepareEventArena(plan,component);
+  };
+  const auto prepareField=[&](const WVVariableEvaluationKey& key,
+      std::size_t elements,bool complex) {
+    return active ? service.prepareEventFieldForActiveEvaluation(
+        key,elements,complex) : service.prepareEventField(key,elements,complex);
+  };
   for(std::size_t group=0;group<groups_.size();++group) {
     if(groups_[group].fields.outputCount()) {
-      const auto status=service.prepareEventArena(
-          groups_[group].fields,static_cast<std::uint32_t>(group));
+      const auto status=preparePlan(groups_[group].fields,
+          static_cast<std::uint32_t>(group));
       if(!status) return status;
     }
     for(std::size_t output=0;output<groups_[group].fields.outputCount();++output) {
-      const auto status=service.prepareEventField(scratchKey(
+      const auto status=prepareField(scratchKey(
           scratchSignature_,group,output,16),
           groups_[group].fields.outputs()[output].elementCount,false);
       if(!status) return status;
     }
     if(group && !groups_[group].requests.empty())
       for(std::uint32_t family=0;family<3;++family) {
-        const auto status=service.prepareEventField(
+        const auto status=prepareField(
             {WVVariableEvaluationNode::componentCoefficients,family,
               static_cast<std::uint32_t>(group)},S,true);
         if(!status) return status;
@@ -374,6 +424,10 @@ WVKernelStatus WVDiagnosticFieldPlan::prepareEventArena(
   std::uint8_t densityDemands=0;
   bool apvNeeded=false;
   for(const auto& output:outputs_) {
+    if(active && output.sampled) {
+      const auto status=preparePlan(output.sampler);
+      if(!status) return status;
+    }
     if(output.density) {
       densityDemands|=output.variable==Variable::rho_nm ?
           WVDensityEventEvaluation::rhoNmDemand :
@@ -389,7 +443,7 @@ WVKernelStatus WVDiagnosticFieldPlan::prepareEventArena(
     if(output.specification.isComplex) {
       const auto finalNode=output.execution.count ?
           output.execution.order[output.execution.count-1] : output.variable;
-      const auto status=service.prepareEventField(
+      const auto status=prepareField(
           {WVVariableEvaluationNode::registeredVariable,
             static_cast<std::uint32_t>(finalNode),
             static_cast<std::uint32_t>(output.group)},S,true);
@@ -397,7 +451,7 @@ WVKernelStatus WVDiagnosticFieldPlan::prepareEventArena(
     }
     if(output.variable==Variable::totalEnergySpatiallyIntegrated ||
         output.verticalMean || output.extrema) {
-      const auto status=service.prepareEventField(
+      const auto status=prepareField(
           {WVVariableEvaluationNode::reduction,
             static_cast<std::uint32_t>(output.variable)},
           output.specification.elementCount,false);
@@ -405,27 +459,28 @@ WVKernelStatus WVDiagnosticFieldPlan::prepareEventArena(
     }
   }
   if(phase) {
-    const auto status=service.prepareEventField(
+    const auto status=prepareField(
         {WVVariableEvaluationNode::phaseFactors},S,true);
     if(!status) return status;
   }
   if(densityDemands) {
-    const auto status=service.prepareDensityEventArena(
-        R,densityHeights_.size(),densityDemands,
-        densityContract_.reference,apvNeeded);
+    const auto status=active ? service.prepareDensityEventArenaForActiveEvaluation(
+        R,densityHeights_.size(),densityDemands,densityContract_.reference,
+        apvNeeded) : service.prepareDensityEventArena(R,densityHeights_.size(),
+        densityDemands,densityContract_.reference,apvNeeded);
     if(!status) return status;
   }
   if(!forcingIndices_.empty()) {
     service.eventArenaForcingPrepared_=true;
     if(service.forcing_->horizontalMaximumNeeded()) {
-      const auto status=service.prepareEventField(
+      const auto status=prepareField(
           {WVVariableEvaluationNode::reduction,
             static_cast<std::uint32_t>(WVPortableVariable::uvMax)},1,false);
       if(!status) return status;
     }
     const auto channels=isQG_ ? 1u : isHydrostatic_ ? 3u : 4u;
     for(const auto index:forcingIndices_) {
-      const auto status=service.prepareEventField(
+      const auto status=prepareField(
           {WVVariableEvaluationNode::forcingTendency,
             static_cast<std::uint32_t>(isQG_ ?
               WVPortableVariable::Fqgpv_portable_catalog_forcing :
@@ -434,13 +489,13 @@ WVKernelStatus WVDiagnosticFieldPlan::prepareEventArena(
       if(!status) return status;
     }
     for(std::size_t slot=0;slot<forcingIndices_.size();++slot) {
-      const auto status=service.prepareEventField(scratchKey(
+      const auto status=prepareField(scratchKey(
           scratchSignature_,0,slot,17),
           channels*R,false);
       if(!status) return status;
     }
     if(forcingPhysicalChannels_) {
-      const auto status=service.prepareEventField(scratchKey(
+      const auto status=prepareField(scratchKey(
           scratchSignature_,0,0,18),
           forcingPhysicalChannels_*R,false);
       if(!status) return status;
@@ -449,9 +504,17 @@ WVKernelStatus WVDiagnosticFieldPlan::prepareEventArena(
   if(std::any_of(outputs_.begin(),outputs_.end(),[](const auto& output) {
       return output.variable==Variable::apv;
     })) {
-    const auto status=service.prepareEventField(scratchKey(
+    const auto status=prepareField(scratchKey(
         scratchSignature_,0,0,19),3*R,false);
     if(!status) return status;
+  }
+  if(active) {
+    auto status=service.eventArena_->prepareGroupNodesForActive(
+        forcingIndices_.size());
+    if(status && service.forcing_ && service.eventArenaForcingPrepared_)
+      status=service.eventArena_->prepareForcingForActive(
+          *service.forcing_,service.variableEvaluationPolicy_);
+    return status;
   }
   return service.prepareEventArena(forcingIndices_.size());
 }

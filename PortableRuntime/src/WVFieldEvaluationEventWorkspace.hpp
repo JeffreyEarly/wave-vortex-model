@@ -11,6 +11,7 @@
 #include <limits>
 #include <memory>
 #include <new>
+#include <stdexcept>
 #include <utility>
 #include <vector>
 
@@ -33,6 +34,133 @@ struct WVFieldEvaluationComplexEntry {
 };
 class WVFieldEvaluationArena final {
 public:
+  WVKernelStatus prepareGroupNodesForActive(std::size_t count) {
+    if(!groupNodes.empty())
+      return {WVKernelStatusCode::reentrantExecution,
+          "Cannot extend field preparation during a fused producer."};
+    return prepareGroupNodes(count);
+  }
+  WVKernelStatus prepareRealForActive(const WVVariableEvaluationKey& key,
+      std::size_t elements) {
+    try {
+      for(auto& entry:realFields) if(entry->prepared && entry->preparedKey==key) {
+        if(entry->assigned && entry->values.size()!=elements)
+          return {WVKernelStatusCode::invalidConfiguration,
+              "Active field preparation would resize an assigned real field."};
+        if(!entry->assigned) entry->values.reserve(elements);
+        entry->preparedElements=std::max(entry->preparedElements,elements);
+        notePrepared(); return WVKernelStatus::ok();
+      }
+      for(auto& entry:realFields) if(entry->assigned && entry->key==key) {
+        if(entry->values.size()!=elements)
+          return {WVKernelStatusCode::invalidConfiguration,
+              "Active field preparation would resize an assigned real field."};
+        entry->prepared=true; entry->preparedKey=key;
+        entry->preparedElements=elements;
+        notePrepared(); return WVKernelStatus::ok();
+      }
+      auto entry=std::make_unique<WVFieldEvaluationRealEntry>();
+      entry->prepared=true; entry->preparedKey=key;
+      entry->preparedElements=elements; entry->values.reserve(elements);
+      realFields.push_back(std::move(entry)); notePrepared();
+      return WVKernelStatus::ok();
+    } catch(const std::bad_alloc&) {
+      return {WVKernelStatusCode::allocationFailure,
+          "Unable to extend active real field preparation."};
+    } catch(const std::length_error&) {
+      return {WVKernelStatusCode::sizeOverflow,
+          "Active real field preparation exceeds vector capacity."};
+    }
+  }
+  WVKernelStatus prepareComplexForActive(const WVVariableEvaluationKey& key,
+      std::size_t elements) {
+    try {
+      for(auto& entry:complexFields) if(entry->prepared && entry->preparedKey==key) {
+        if(entry->assigned && entry->values.size()!=elements)
+          return {WVKernelStatusCode::invalidConfiguration,
+              "Active field preparation would resize an assigned complex field."};
+        if(!entry->assigned) entry->values.reserve(elements);
+        entry->preparedElements=std::max(entry->preparedElements,elements);
+        notePrepared(); return WVKernelStatus::ok();
+      }
+      for(auto& entry:complexFields) if(entry->assigned && entry->key==key) {
+        if(entry->values.size()!=elements)
+          return {WVKernelStatusCode::invalidConfiguration,
+              "Active field preparation would resize an assigned complex field."};
+        entry->prepared=true; entry->preparedKey=key;
+        entry->preparedElements=elements;
+        notePrepared(); return WVKernelStatus::ok();
+      }
+      auto entry=std::make_unique<WVFieldEvaluationComplexEntry>();
+      entry->prepared=true; entry->preparedKey=key;
+      entry->preparedElements=elements; entry->values.reserve(elements);
+      complexFields.push_back(std::move(entry)); notePrepared();
+      return WVKernelStatus::ok();
+    } catch(const std::bad_alloc&) {
+      return {WVKernelStatusCode::allocationFailure,
+          "Unable to extend active complex field preparation."};
+    } catch(const std::length_error&) {
+      return {WVKernelStatusCode::sizeOverflow,
+          "Active complex field preparation exceeds vector capacity."};
+    }
+  }
+  WVKernelStatus prepareForcingForActive(
+      const WVForcingDiagnosticBinding& binding,
+      WVVariableEvaluationPolicy policy) {
+    try {
+      if(!forcingWorkspace) forcingWorkspace=binding.createWorkspace();
+      const auto status=forcingWorkspace->prepareScopedStorageForActive(
+          policy,binding.stages());
+      if(status) notePrepared();
+      return status;
+    } catch(const std::bad_alloc&) {
+      return {WVKernelStatusCode::allocationFailure,
+          "Unable to extend active forcing diagnostic preparation."};
+    }
+  }
+  WVKernelStatus prepareDensityForActive(std::size_t sampleCount,
+      std::size_t profileCount,std::uint8_t demands,
+      WVNoMotionReference reference,bool apvNeeded) {
+    try {
+      const bool bound=density[0].initialized() || density[1].initialized();
+      if(bound) {
+        if(densitySource.size()!=sampleCount ||
+            densityHeights.size()!=profileCount ||
+            densityWeights.size()!=profileCount ||
+            densityInitial.size()!=profileCount)
+          return {WVKernelStatusCode::invalidConfiguration,
+              "Active density preparation has incompatible event geometry."};
+      } else {
+        densitySource.reserve(sampleCount);
+        densityHeights.reserve(profileCount);
+        densityWeights.reserve(profileCount);
+        densityInitial.reserve(profileCount);
+      }
+      const auto selected=reference==WVNoMotionReference::initial ? 1u : 0u;
+      const auto derivedDemands=static_cast<std::uint8_t>(demands&
+          (WVDensityEventEvaluation::etaTrueDemand|
+           WVDensityEventEvaluation::apeDemand));
+      if(demands&WVDensityEventEvaluation::rhoNmDemand) {
+        const auto status=density[0].reserveAdditionalStorage(sampleCount,
+            profileCount,WVDensityEventEvaluation::rhoNmDemand,
+            WVNoMotionReference::actual);
+        if(!status) return status;
+      }
+      if(derivedDemands) {
+        const auto status=density[selected].reserveAdditionalStorage(
+            sampleCount,profileCount,derivedDemands,reference);
+        if(!status) return status;
+      }
+      if(apvNeeded) apv[selected].reserve(sampleCount);
+      notePrepared(); return WVKernelStatus::ok();
+    } catch(const std::bad_alloc&) {
+      return {WVKernelStatusCode::allocationFailure,
+          "Unable to extend active density preparation."};
+    } catch(const std::length_error&) {
+      return {WVKernelStatusCode::sizeOverflow,
+          "Active density preparation exceeds vector capacity."};
+    }
+  }
   WVKernelStatus prepareGroupNodes(std::size_t count) {
     try {
       groupNodes.reserve(count);
@@ -203,6 +331,7 @@ public:
     return bytes;
   }
   void notePeak() noexcept {peakBytes=std::max(peakBytes,persistentBytes());}
+  void refreshAccounting() noexcept {notePrepared();}
   std::vector<std::unique_ptr<WVFieldEvaluationRealEntry>> realFields;
   std::vector<std::unique_ptr<WVFieldEvaluationComplexEntry>> complexFields;
   std::vector<std::pair<WVVariableEvaluationKey,std::size_t>> groupNodes;
@@ -296,8 +425,14 @@ public:
         now.duplicateExecutions-evaluationMetricsBefore_.duplicateExecutions,
         now.liveBytes,variableHighWaterBytes_};
   }
+  bool densityRecoveryReport(WVNoMotionRecoveryReport& report) const noexcept {
+    if(density_[0].metrics().recoveryAttemptCount==0) return false;
+    report=density_[0].recoveryReport();
+    return true;
+  }
   WVVariableEvaluationPolicy policy() const noexcept {return evaluation_.policy();}
   std::uint64_t generation() const noexcept {return evaluation_.generation();}
+  bool preparationIdle() const noexcept {return groupNodes_.empty();}
   bool ready(const WVVariableEvaluationKey& key) const noexcept {
     return evaluation_.ready(key);
   }

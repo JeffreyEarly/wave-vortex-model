@@ -159,6 +159,9 @@ public:
     if(evaluation_ || initialized_ || owner_)
       return {WVKernelStatusCode::invalidConfiguration,"Cannot prepare active forcing diagnostic storage."};
     try {
+      const bool stagesChanged=!storagePrepared_ || preparedStages_!=stages;
+      std::vector<WVForcingStage> preparedStages;
+      if(stagesChanged) preparedStages=stages;
       // Low memory needs this one prefix scratch allocation. Reserve it before
       // releasing any reuse-policy storage so allocation failure leaves the
       // current policy's prepared workspace intact.
@@ -211,9 +214,25 @@ public:
       } else {
         std::vector<Prefix>().swap(prefix);
       }
+      preparedPolicy_=policy;
+      if(stagesChanged) preparedStages_.swap(preparedStages);
+      storagePrepared_=true;
     } catch(const std::bad_alloc&) {
       return {WVKernelStatusCode::allocationFailure,"Unable to prepare forcing prefix storage."};
+    } catch(const std::length_error&) {
+      return {WVKernelStatusCode::sizeOverflow,"Forcing prefix storage exceeds vector capacity."};
     }
+    return WVKernelStatus::ok();
+  }
+  WVKernelStatus prepareScopedStorageForActive(
+      WVVariableEvaluationPolicy policy,
+      const std::vector<WVForcingStage>& stages) {
+    if(!evaluation_ && !initialized_ && !owner_)
+      return prepareScopedStorage(policy,stages);
+    if(policy!=WVVariableEvaluationPolicy::reuse || !storagePrepared_ ||
+        preparedPolicy_!=policy || preparedStages_!=stages)
+      return {WVKernelStatusCode::invalidConfiguration,
+          "Active forcing diagnostic storage has an incompatible preparation signature."};
     return WVKernelStatus::ok();
   }
   WVKernelStatus beginScopedEvaluation(WVVariableEvaluationContext& context,
@@ -324,6 +343,7 @@ public:
          staged.capacity()+nonlinearRaw_.capacity()+gridCalculusValues_.capacity()+
          constantLaplacianValues_.capacity())*sizeof(double);
     bytes+=prefix.capacity()*sizeof(Prefix);
+    bytes+=preparedStages_.capacity()*sizeof(WVForcingStage);
     for(const auto& value:prefix)
       bytes+=value.fields.capacity()*sizeof(double)+value.coefficients.capacity()*sizeof(WVComplex64);
     return bytes;
@@ -345,6 +365,9 @@ public:
   bool projected=false;
 
 private:
+  std::vector<WVForcingStage> preparedStages_;
+  WVVariableEvaluationPolicy preparedPolicy_=WVVariableEvaluationPolicy::reuse;
+  bool storagePrepared_=false;
   std::vector<double> nonlinearRaw_;
   std::vector<double> gridCalculusValues_,constantLaplacianValues_;
   std::array<int,16> gridCalculusSlots_{};

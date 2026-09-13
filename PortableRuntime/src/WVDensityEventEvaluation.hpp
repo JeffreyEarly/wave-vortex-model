@@ -77,6 +77,11 @@ public:
   WVKernelStatus reserveStorage(std::size_t sampleCount,
       std::size_t profileCount,std::uint8_t demands,
       WVNoMotionReference reference);
+  // Reuse-policy event extension. Existing completed results and their backing
+  // storage remain unchanged; only storage for missing demands may grow.
+  WVKernelStatus reserveAdditionalStorage(std::size_t sampleCount,
+      std::size_t profileCount,std::uint8_t demands,
+      WVNoMotionReference reference);
   // Prepare the minimum reusable volume storage for low-memory execution.
   // One derived field uses one volume; simultaneous eta/APE uses two because
   // both published values must coexist. Material heights are overwritten in
