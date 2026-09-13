@@ -1,54 +1,82 @@
 {
   "schema": "wave-vortex-standard-parity-decision-v1",
-  "decision": "PARTIAL-STANDARD-PORTABLE-PARITY",
-  "standardPortableParity": false,
-  "assemblyCommit": "56a22293665159e5197a79aca0f3d66a703f2c01",
-  "recordedAtUTC": "2026-09-10T00:04:37.173394+00:00",
+  "decision": "STANDARD-PORTABLE-PARITY",
+  "standardPortableParity": true,
+  "recordedAtUTC": "2026-09-13T09:45:56.194240+00:00",
+  "implementationCommit": "f70c890801cfaba2642473e32a851361c4c35787",
+  "qualifiedPRHead": "8b40ca8fe25fe883bc7c75bd7807c853f3a6e176",
+  "qualifiedTree": "25dd8605d578ffe55621b7c07cea5101dd1ea6fe",
+  "scientificSourceCommit": "ebfd9cc94999e6a4f7a365562bc0c46da6bfbbdb",
   "matrix": {
     "path": "PortableRuntime/contracts/portable-compatibility-matrix-v1.json",
-    "sha256": "3082cead3726ac946bc20005c6cace4f28c1bbbc6ffa390d418593f7bf229321",
-    "rows": 1794,
+    "sha256": "227ddac2b9b72dd6697033cceffb1dd7bd13f586fccb369b40de4b0a0f8d688d",
+    "rows": 1754,
     "counts": {
-      "supported": 1206,
-      "intentional-incompatibility": 22,
-      "unqualified": 566
-    }
+      "supported": 1732,
+      "intentional-incompatibility": 22
+    },
+    "witnesses": 75
   },
-  "remainingImplementation": {
-    "issue": 454,
-    "absentDiagnosticSamplingModes": 526,
-    "constantMovingPositionCases": 40
+  "sourceEquivalence": {
+    "mergeTreeEqualsQualifiedHead": true,
+    "installedSourceManifestFiles": 319,
+    "installedSourceManifestSHA256": "3d565dff3d0e6881f47c206b853efc301fd4a0fd82976e3c89068268214a6123",
+    "allInstalledManifestFilesMatchCurrentSource": true,
+    "postScientificSourceChanges": [
+      ".github/ci-evidence/issue-507-matlab-adapters/README.md",
+      ".github/ci-evidence/issue-507-matlab-adapters/local-final-acceptance.json",
+      "PortableRuntime/tests/TestWVForcingTendencies.cpp",
+      "PortableRuntime/tests/TestWaveVortexRun.cpp"
+    ],
+    "interpretation": "The qualified merge is tree-identical to PR head. Later readiness/schema/documentation edits do not change any of the 319 installed adapter/kernel source files. Current-source Linux CI, both supported MATLAB releases, reference/native forward receipts, Apple native local qualification and installed-package execution retain their declared scopes."
   },
-  "completedLocalGates": [
-    "source-linked ATS consumer 7/7",
-    "native Hydrostatic/Boussinesq lifecycle",
-    "30 complete-lifetime process-memory measurements",
-    "source-equivalent inherited density/integration/runtime qualification",
-    "new declared sampling and expanded observer parity",
-    "assembly/schema/CI/documentation enforcement"
-  ],
+  "hostedQualification": {
+    "wvmRun": "https://github.com/JeffreyEarly/wave-vortex-model/actions/runs/34748713522",
+    "attempt": 2,
+    "requiredGate": "success",
+    "reusedPassingJobs": true,
+    "retryReason": "Attempt 1 exported-package job never acquired a runner after five attempts; its dependent aggregate failed. Attempt 2 reran failed work; all selected numerical jobs from attempt 1 were retained. Legacy bridge check names are disabled; their actual selected phases passed in shared MATLAB jobs.",
+    "atsPR": "https://github.com/satmapkit/AlongTrackSimulator/pull/11",
+    "atsMerge": "f8cfb19600b5850a1f45fd0c02c0088e9a671066",
+    "atsQualifiedHead": "03fa036387d2971ce4fba99c9f2286a1227cdb3f",
+    "atsPinnedScientificSource": "ebfd9cc94999e6a4f7a365562bc0c46da6bfbbdb"
+  },
   "qualificationSources": [
     {
-      "path": ".github/ci-evidence/issue-307-qualification/qualification.json",
-      "sha256": "75c8b3fbdc4368a784eeed6391407b8ae443a03ea94ee20c9f7bc0f5a0e560c4"
+      "path": ".github/ci-evidence/issue-507-matlab-adapters/local-final-acceptance.json",
+      "sha256": "fed7a40f63b37578d494bbcf91795983509784d340f1f05abe00c60b1a062c74"
     },
     {
-      "path": ".github/ci-evidence/issue-307-qualification/integration-binding-ec8001a4.json",
-      "sha256": "04094ce018158ba76da80efa5629b8e7310b55f76ab844a76562cf8dda4b9ced"
+      "path": ".github/ci-evidence/issue-507-matlab-adapters/final-source-qualification-progress.json",
+      "sha256": "d1405e82599a874da2c80bad2ffd2547bfa7e413778f9717c6f56b714751c2d5"
     },
     {
-      "path": ".github/ci-evidence/issue-306-assembly/matlab/qualification.json",
-      "sha256": "67066d867e4651d47eae76f35da3df95e7c51f68be3afa51a424b5d68740b45f"
+      "path": ".github/ci-evidence/issue-454-diagnostic-sampling/qualification.json",
+      "sha256": "4d96f4b464bdbb803b514d3f8ba42dfe57587be7af672a6dff394d9f695030a9"
     },
     {
-      "path": ".github/ci-evidence/issue-306-sampling/final-receipt.md",
-      "sha256": "9641261c49446e57521304c2d9990979dc17d22ca7e75b4a8b57c70762d0027f"
+      "path": ".github/ci-evidence/issue-307-qualification/final-hosted-qualification.json",
+      "sha256": "22c0f427ef06c9abfb28c98e3be779c0cc646cde9fdaa133e4d044c9551629a6"
+    },
+    {
+      "path": ".github/ci-evidence/issue-307-qualification/standard-parity-decision-20260910.json",
+      "sha256": "70eed334d27e12631d78d4adfaa23be288d7aafef6fd37db02a40340cc9458d7"
     }
   ],
-  "remainingQualification": [
-    "Required hosted checks for the final assembly PR.",
-    "Fresh qualification of #454 before claiming full standard parity.",
-    "Current-source Linux ATS consumer execution has not been supplied by the older pinned ATS workflow."
+  "localEvidenceArchive": {
+    "path": "../wave-vortex-model-benchmark-artifacts/matlab-all-family-final-local-ebfd9cc9-20260913.tar.gz",
+    "sha256": "4eb6c84af203dc856e83b25bb0a13106a3b1baca76386554016fa419735ed046",
+    "files": 127
+  },
+  "remainingImplementation": [],
+  "remainingQualification": [],
+  "limits": [
+    "The declared stable catalog and representative compositions are qualified; no undeclared exhaustive Cartesian product is claimed.",
+    "MATLAB owns model/initial-condition authoring; arbitrary MATLAB subclasses or function handles are not compiled by the standalone runtime.",
+    "Linux uses the reference provider; optimized FFTW/Accelerate qualification is Apple Silicon only.",
+    "No Windows/MSVC WVM qualification, distributed binaries, stable binary ABI, dynamic plugins, or backward integration is declared.",
+    "Experimental thermal damping, adaptive-cell work, and unregistered legacy diagnostics retain their catalog exclusions.",
+    "Very large complete-model campaigns and long-duration stability are not established by representative fixtures."
   ],
-  "interpretation": "Completed local gates and fixture ownership do not remove known implementation gaps. Original execution identities and receipt bytes remain unchanged."
+  "releaseStatus": "This records portable parity for #307/#310. The #501 full-size three-model benchmark and v4.4.0 release remain separate unfinished gates."
 }

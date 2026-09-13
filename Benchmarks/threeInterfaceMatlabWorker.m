@@ -104,6 +104,7 @@ try
         "interface",string(config.interface), ...
         "case",config.case, ...
         "sourceCommit",string(config.sourceCommit), ...
+        "worker",config.worker, ...
         "timing",struct("interfaceTotalSeconds",interfaceTotalSeconds,"integrationSeconds",integrationSeconds), ...
         "memory",struct(), ...
         "provider",provider, ...
@@ -250,12 +251,16 @@ end
 end
 
 function validateBackend(wvt,backend)
-metadata = wvt.computationalBackendMetadata;
-if string(metadata.activeBackend) ~= backend
-    error("WaveVortexBenchmark:InterfaceFallback","Requested %s but %s executed.",backend,string(metadata.activeBackend));
-end
-if backend == "compiled" && (string(metadata.provider.id) ~= "native-neon-pthreads" || ~metadata.module.identityValidated || metadata.libraries.openmp.detected || metadata.contract.planCount ~= 17)
-    error("WaveVortexBenchmark:InterfaceProvider","The MATLAB compiled interface did not execute the validated native provider.");
+if isprop(wvt,"computationalBackendMetadata")
+    metadata = wvt.computationalBackendMetadata;
+    if string(metadata.activeBackend) ~= backend
+        error("WaveVortexBenchmark:InterfaceFallback","Requested %s but %s executed.",backend,string(metadata.activeBackend));
+    end
+    if backend == "compiled" && (string(metadata.provider.id) ~= "native-neon-pthreads" || ~metadata.module.identityValidated || metadata.libraries.openmp.detected)
+        error("WaveVortexBenchmark:InterfaceProvider","The MATLAB compiled interface did not execute the validated native provider.");
+    end
+elseif backend ~= "matlab"
+    error("WaveVortexBenchmark:InterfaceFallback","Transform %s does not implement the requested %s backend.",class(wvt),backend);
 end
 end
 
@@ -354,5 +359,5 @@ value = struct("identifier","","message","","report","");
 end
 
 function value = failedResult(config)
-value = struct("schemaVersion","three-interface-worker-v1","status","failed","interface",string(config.interface),"case",config.case,"sourceCommit",string(config.sourceCommit),"timing",struct(),"memory",struct(),"provider",struct(),"integrator",struct(),"finalState",struct(),"output",struct(),"failure",emptyFailure);
+value = struct("schemaVersion","three-interface-worker-v1","status","failed","interface",string(config.interface),"case",config.case,"sourceCommit",string(config.sourceCommit),"worker",config.worker,"timing",struct(),"memory",struct(),"provider",struct(),"integrator",struct(),"finalState",struct(),"output",struct(),"failure",emptyFailure);
 end

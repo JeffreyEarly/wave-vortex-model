@@ -1,7 +1,7 @@
 function [state,evidence] = initializeThreeInterfaceIntegratorState(wvt,seed,options)
 % Initialize the deterministic physical state for the integrator benchmark.
 arguments
-    wvt WVTransformConstantStratification {mustBeNonempty}
+    wvt WVTransform {mustBeNonempty}
     seed (1,1) double {mustBeInteger,mustBeNonnegative}
     options.gmEnergyLevel (1,1) double {mustBePositive} = 1
     options.geostrophicMaximumSpeed (1,1) double {mustBePositive} = 0.15

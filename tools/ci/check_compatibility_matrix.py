@@ -31,8 +31,8 @@ def check(root, catalog=None):
     if (catalog['schema'], catalog['schemaVersion'], catalog['slice']) != (
             'portable-compatibility-matrix-v1', 1, 'standard'):
         raise ValueError('Unknown standard compatibility assembly')
-    if catalog['readiness']['standardParityReady'] is not False:
-        raise ValueError('A fixture catalog cannot declare executed standard parity')
+    if catalog['readiness']['standardParityReady'] is not True or catalog['readiness']['decision'] != 'STANDARD-PORTABLE-PARITY':
+        raise ValueError('Final standard parity requires the explicit STANDARD-PORTABLE-PARITY decision')
     source_ids = set()
     for source in catalog['sources']:
         if source['id'] in source_ids:
@@ -88,6 +88,8 @@ def check(root, catalog=None):
             raise ValueError(f'Contradictory fixture coverage: {witness["id"]}')
     if catalog['completion'] == 'complete' and any(r['status'] == 'unqualified' for r in catalog['rows']):
         raise ValueError('Incomplete qualification cannot declare complete coverage')
+    if catalog['completion'] != 'complete' or any(r['status'] == 'unqualified' for r in catalog['rows']):
+        raise ValueError('STANDARD-PORTABLE-PARITY requires zero unqualified rows')
     return len(keys), len(witnesses)
 
 
