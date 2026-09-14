@@ -6,7 +6,8 @@ arguments (Input)
     internalModesRoot (1,1) string
     outputFolder (1,1) string
 end
-workspace = fileparts(internalModesRoot);
+% The provider may be a released snapshot nested below the workspace.
+workspace = fileparts(wvmRoot);
 studyFolder = fileparts(mfilename('fullpath'));
 restoredefaultpath;
 packageRoots = [fullfile(workspace,["OceanKit/ClassAnnotations-1.2.1","OceanKit/Distributions-2.0.0","OceanKit/SplineCore-2.2.0","chebfun","OceanKit/NetCDF-1.0.2"]),internalModesRoot,wvmRoot];

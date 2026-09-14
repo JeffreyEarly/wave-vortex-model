@@ -2,7 +2,7 @@
 
 ## [Unreleased]
 
-- Require `InternalModes@^2.0.0-beta.5`, allowing beta.5 and later compatible 2.x versions while excluding older betas and 3.x. Routine CI and package verification use the immutable beta.5 OceanKit snapshot, including shared construction optimizations and mode-local MDA null-norm classification. Historical experiment pins and scientific tolerances are preserved.
+- Require `InternalModes@^2.0.0-beta.6`, allowing beta.6 and later compatible 2.x versions while excluding older betas and 3.x. Routine CI and package verification use the immutable beta.6 OceanKit snapshot, including cutoff-safe mode-sign orientation, shared construction optimizations and mode-local MDA null-norm classification. Historical experiment pins and scientific tolerances are preserved.
 
 - Add read-only thermal APV/zero-APV decomposition with an independently selected diagnostic band, original horizontal means, explicit physical residuals, complete self/cross inventories and directional rates. Reuse prepared stored-array maps across committed output records; restore and diagnose saved arrays without scientific construction. Modal power remains distinct from physical energy and damping coordinates.
 

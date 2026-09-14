@@ -13,7 +13,7 @@ concurrency:
   cancel-in-progress: true
 
 env:
-  OCEANKIT_COMMIT: 1873071fe2dfc2678490df1b0252e5071e9d9715
+  OCEANKIT_COMMIT: dc87744d8cb32d5aa1542daf0a01c8ff9fa10f31
 
 jobs:
   clean-install:

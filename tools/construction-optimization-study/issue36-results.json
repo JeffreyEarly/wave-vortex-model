@@ -1,0 +1,392 @@
+{
+  "providerBaseline": "8d9503e5c7c6e4b0432a5c30b42638829a8b3f37",
+  "providerImplementation": "dfd7d67155d204046426e16b493758d4731001eb",
+  "wvmBaseline": "d13099a68fd02604224f3bff93488fb95b6c8f1c",
+  "threadingNote": "Default16 computation threads showed substantial DenseLU variation; controlled runs set maxNumCompThreads(1) explicitly. No universal/default-thread constructor speedup is claimed.",
+  "runs": {
+    "baseline": {
+      "matlabVersion": "26.1.0.3346908 (R2026a) Update 5",
+      "wvmRoot": "/Users/jearly/Documents/OceanKitRepositories/wvm-v5-construction-issue36-baseline",
+      "internalModesRoot": "/Users/jearly/Documents/OceanKitRepositories/internal-modes",
+      "seconds": [
+        22.549643916666668,
+        19.83414975,
+        20.200931125
+      ],
+      "waveSeconds": [
+        17.307047125,
+        16.053648375,
+        16.051440833333334
+      ],
+      "medianSeconds": 20.200931125,
+      "medianWaveSeconds": 16.053648375,
+      "nEVP": 104,
+      "referenceNEVP": 156,
+      "distinctPositiveKappa": 569,
+      "waveEigensolves": 1140,
+      "profileHotspots": [
+        {
+          "functionName": "IMSolver.IMSolver>IMSolver.solveAssembledEVP",
+          "numCalls": "1144",
+          "totalTime": "13.5613707916667",
+          "selfTime": "7.47330979166667"
+        },
+        {
+          "functionName": "IMSolver.IMSolver>IMSolver.solveGeostrophicZeroAPVModes",
+          "numCalls": "2",
+          "totalTime": "3.68946358333333",
+          "selfTime": "0.090507791666667"
+        },
+        {
+          "functionName": "IMSolverSpectral.IMSolverSpectral>IMSolverSpectral.differentiateGridValues",
+          "numCalls": "1153",
+          "totalTime": "3.34937991666667",
+          "selfTime": "0.072274666666666"
+        },
+        {
+          "functionName": "IMInternalModesBasis.IMInternalModesBasis>IMInternalModesBasis.orientModeSigns",
+          "numCalls": "1144",
+          "totalTime": "4.21534270833333",
+          "selfTime": "0.0380048333333329"
+        },
+        {
+          "functionName": "IMMeanDensityAnomalyModesBasis.IMMeanDensityAnomalyModesBasis>IMMeanDensityAnomalyModesBasis.orientModeSigns",
+          "numCalls": "2",
+          "totalTime": "0.0347917083333333",
+          "selfTime": "0.000140291666666667"
+        }
+      ],
+      "waveCountSummary": {
+        "pages": 569,
+        "minimum": 38,
+        "maximum": 38
+      }
+    },
+    "candidate": {
+      "matlabVersion": "26.1.0.3346908 (R2026a) Update 5",
+      "wvmRoot": "/Users/jearly/Documents/OceanKitRepositories/wvm-v5-construction-optimization",
+      "internalModesRoot": "/Users/jearly/Documents/OceanKitRepositories/internal-modes-construction-optimization",
+      "seconds": [
+        30.026589125,
+        29.36471075,
+        28.6064175
+      ],
+      "waveSeconds": [
+        14.285229458333333,
+        13.755149125,
+        13.743608916666666
+      ],
+      "medianSeconds": 29.36471075,
+      "medianWaveSeconds": 13.755149125,
+      "nEVP": 104,
+      "referenceNEVP": 156,
+      "distinctPositiveKappa": 569,
+      "waveEigensolves": 1140,
+      "comparison": {
+        "baselineMedianSeconds": 20.200931125,
+        "candidateMedianSeconds": 29.36471075,
+        "secondsSaved": -9.163779625,
+        "percentReduction": -45.36315464022948,
+        "speedup": 0.6879322359747746,
+        "scientificStateExactlyEqual": true,
+        "assessmentExceptTimingExactlyEqual": true,
+        "baselineProfileSeconds": 29.836167125,
+        "candidateProfileSeconds": 37.02227108333334
+      },
+      "profileHotspots": [
+        {
+          "functionName": "IMSolver.IMSolver>IMSolver.solveAssembledEVP",
+          "numCalls": "1144",
+          "totalTime": "10.144859125",
+          "selfTime": "7.35678370833334"
+        },
+        {
+          "functionName": "IMSolver.IMSolver>IMSolver.solveGeostrophicZeroAPVModes",
+          "numCalls": "2",
+          "totalTime": "14.0996388333333",
+          "selfTime": "0.0801961250000023"
+        },
+        {
+          "functionName": "IMSolverSpectral.IMSolverSpectral>IMSolverSpectral.differentiateGridValues",
+          "numCalls": "13",
+          "totalTime": "0.0949245833333333",
+          "selfTime": "0.00127000000000002"
+        },
+        {
+          "functionName": "IMInternalModesBasis.IMInternalModesBasis>IMInternalModesBasis.orientModeSigns",
+          "numCalls": "1144",
+          "totalTime": "0.786267958333333",
+          "selfTime": "0.0563400416666668"
+        },
+        {
+          "functionName": "IMMeanDensityAnomalyModesBasis.IMMeanDensityAnomalyModesBasis>IMMeanDensityAnomalyModesBasis.orientModeSigns",
+          "numCalls": "2",
+          "totalTime": "0.0311955416666667",
+          "selfTime": "0.00015316666666667"
+        }
+      ],
+      "waveCountSummary": {
+        "pages": 569,
+        "minimum": 38,
+        "maximum": 38
+      }
+    },
+    "baseline-recheck": {
+      "matlabVersion": "26.1.0.3346908 (R2026a) Update 5",
+      "wvmRoot": "/Users/jearly/Documents/OceanKitRepositories/wvm-v5-construction-issue36-baseline",
+      "internalModesRoot": "/Users/jearly/Documents/OceanKitRepositories/internal-modes",
+      "seconds": [
+        36.21327554166667,
+        34.48292433333334,
+        34.068553
+      ],
+      "waveSeconds": [
+        22.259032416666667,
+        21.142963375,
+        21.18657
+      ],
+      "medianSeconds": 34.48292433333334,
+      "medianWaveSeconds": 21.18657,
+      "nEVP": 104,
+      "referenceNEVP": 156,
+      "distinctPositiveKappa": 569,
+      "waveEigensolves": 1140,
+      "profileHotspots": [
+        {
+          "functionName": "IMSolver.IMSolver>IMSolver.solveAssembledEVP",
+          "numCalls": "1144",
+          "totalTime": "18.1995259337481",
+          "selfTime": "7.53578492373949"
+        },
+        {
+          "functionName": "IMSolver.IMSolver>IMSolver.solveGeostrophicZeroAPVModes",
+          "numCalls": "2",
+          "totalTime": "12.7992045536795",
+          "selfTime": "0.0787505000739124"
+        },
+        {
+          "functionName": "IMSolverSpectral.IMSolverSpectral>IMSolverSpectral.differentiateGridValues",
+          "numCalls": "1153",
+          "totalTime": "7.54263734041259",
+          "selfTime": "0.084904833413022"
+        },
+        {
+          "functionName": "IMInternalModesBasis.IMInternalModesBasis>IMInternalModesBasis.orientModeSigns",
+          "numCalls": "1144",
+          "totalTime": "8.53149025800736",
+          "selfTime": "0.0452953333758472"
+        },
+        {
+          "functionName": "IMMeanDensityAnomalyModesBasis.IMMeanDensityAnomalyModesBasis>IMMeanDensityAnomalyModesBasis.orientModeSigns",
+          "numCalls": "2",
+          "totalTime": "0.0343387083655624",
+          "selfTime": "0.000210333333530738"
+        }
+      ],
+      "waveCountSummary": {
+        "pages": 569,
+        "minimum": 38,
+        "maximum": 38
+      }
+    },
+    "baseline-one-thread": {
+      "matlabVersion": "26.1.0.3346908 (R2026a) Update 5",
+      "wvmRoot": "/Users/jearly/Documents/OceanKitRepositories/wvm-v5-construction-issue36-baseline",
+      "internalModesRoot": "/Users/jearly/Documents/OceanKitRepositories/internal-modes",
+      "seconds": [
+        17.112316333333332,
+        16.582693916666667,
+        16.282122166666667
+      ],
+      "waveSeconds": [
+        14.510451875,
+        14.29551775,
+        14.266533083333334
+      ],
+      "medianSeconds": 16.582693916666667,
+      "medianWaveSeconds": 14.29551775,
+      "nEVP": 104,
+      "referenceNEVP": 156,
+      "distinctPositiveKappa": 569,
+      "waveEigensolves": 1140,
+      "profileHotspots": [
+        {
+          "functionName": "IMSolver.IMSolver>IMSolver.solveAssembledEVP",
+          "numCalls": "1144",
+          "totalTime": "10.5495142256404",
+          "selfTime": "7.63118922085273"
+        },
+        {
+          "functionName": "IMSolver.IMSolver>IMSolver.solveGeostrophicZeroAPVModes",
+          "numCalls": "2",
+          "totalTime": "2.22320262864729",
+          "selfTime": "0.0806236251322674"
+        },
+        {
+          "functionName": "IMSolverSpectral.IMSolverSpectral>IMSolverSpectral.differentiateGridValues",
+          "numCalls": "1153",
+          "totalTime": "0.175621416954783",
+          "selfTime": "0.0824083334685289"
+        },
+        {
+          "functionName": "IMInternalModesBasis.IMInternalModesBasis>IMInternalModesBasis.orientModeSigns",
+          "numCalls": "1144",
+          "totalTime": "1.08141721010746",
+          "selfTime": "0.0412286250676375"
+        },
+        {
+          "functionName": "IMMeanDensityAnomalyModesBasis.IMMeanDensityAnomalyModesBasis>IMMeanDensityAnomalyModesBasis.orientModeSigns",
+          "numCalls": "2",
+          "totalTime": "0.00875208334769162",
+          "selfTime": "0.000164250000269461"
+        }
+      ],
+      "waveCountSummary": {
+        "pages": 569,
+        "minimum": 38,
+        "maximum": 38
+      }
+    },
+    "candidate-one-thread": {
+      "matlabVersion": "26.1.0.3346908 (R2026a) Update 5",
+      "wvmRoot": "/Users/jearly/Documents/OceanKitRepositories/wvm-v5-construction-optimization",
+      "internalModesRoot": "/Users/jearly/Documents/OceanKitRepositories/internal-modes-construction-optimization",
+      "seconds": [
+        16.409962958333335,
+        15.550674583333333,
+        15.228887666666667
+      ],
+      "waveSeconds": [
+        13.918443708333333,
+        13.417521791666667,
+        13.340576208333333
+      ],
+      "medianSeconds": 15.550674583333333,
+      "medianWaveSeconds": 13.417521791666667,
+      "nEVP": 104,
+      "referenceNEVP": 156,
+      "distinctPositiveKappa": 569,
+      "waveEigensolves": 1140,
+      "comparison": {
+        "baselineMedianSeconds": 16.582693916666667,
+        "candidateMedianSeconds": 15.550674583333333,
+        "secondsSaved": 1.0320193333333343,
+        "percentReduction": 6.223472124128691,
+        "speedup": 1.0663649237724655,
+        "scientificStateExactlyEqual": true,
+        "assessmentExceptTimingExactlyEqual": true,
+        "baselineProfileSeconds": 25.350036833333334,
+        "candidateProfileSeconds": 23.120884333333333
+      },
+      "profileHotspots": [
+        {
+          "functionName": "IMSolver.IMSolver>IMSolver.solveAssembledEVP",
+          "numCalls": "1144",
+          "totalTime": "9.61891766666667",
+          "selfTime": "7.350902125"
+        },
+        {
+          "functionName": "IMSolver.IMSolver>IMSolver.solveGeostrophicZeroAPVModes",
+          "numCalls": "2",
+          "totalTime": "2.09271570833333",
+          "selfTime": "0.0774538333333332"
+        },
+        {
+          "functionName": "IMSolverSpectral.IMSolverSpectral>IMSolverSpectral.differentiateGridValues",
+          "numCalls": "13",
+          "totalTime": "0.00519191666666667",
+          "selfTime": "0.001168625"
+        },
+        {
+          "functionName": "IMInternalModesBasis.IMInternalModesBasis>IMInternalModesBasis.orientModeSigns",
+          "numCalls": "1144",
+          "totalTime": "0.711012208333333",
+          "selfTime": "0.0574715416666667"
+        },
+        {
+          "functionName": "IMMeanDensityAnomalyModesBasis.IMMeanDensityAnomalyModesBasis>IMMeanDensityAnomalyModesBasis.orientModeSigns",
+          "numCalls": "2",
+          "totalTime": "0.007634375",
+          "selfTime": "0.000129000000000002"
+        }
+      ],
+      "waveCountSummary": {
+        "pages": 569,
+        "minimum": 38,
+        "maximum": 38
+      }
+    }
+  },
+  "orientation": {
+    "baseline": {
+      "matlabVersion": "26.1.0.3346908 (R2026a) Update 5",
+      "providerRoot": "/Users/jearly/Documents/OceanKitRepositories/internal-modes",
+      "nBases": 1140,
+      "resolutions": [
+        104,
+        156
+      ],
+      "nModes": 64,
+      "seconds": [
+        0.4930260833333333,
+        0.5348930833333333,
+        0.5115384166666667
+      ],
+      "medianSeconds": 0.5115384166666667,
+      "checksums": [
+        2197.8006202487104,
+        2197.8006202487104,
+        2197.8006202487104
+      ],
+      "scope": "One warmup and three orientation-only trials over already-solved, already-oriented bases. Includes raw G/F evaluation, derivative, policy, sign application, metadata and checksum; excludes eigensolves, collection construction and full WVM construction."
+    },
+    "candidate": {
+      "matlabVersion": "26.1.0.3346908 (R2026a) Update 5",
+      "providerRoot": "/Users/jearly/Documents/OceanKitRepositories/internal-modes-construction-optimization",
+      "nBases": 1140,
+      "resolutions": [
+        104,
+        156
+      ],
+      "nModes": 64,
+      "seconds": [
+        0.3965005833333333,
+        0.39621795833333334,
+        0.40036154166666665
+      ],
+      "medianSeconds": 0.3965005833333333,
+      "checksums": [
+        2197.8006202487104,
+        2197.8006202487104,
+        2197.8006202487104
+      ],
+      "scope": "One warmup and three orientation-only trials over already-solved, already-oriented bases. Includes raw G/F evaluation, derivative, policy, sign application, metadata and checksum; excludes eigensolves, collection construction and full WVM construction."
+    }
+  },
+  "sourceSHA256": {
+    "@IMInternalModesBasis/IMInternalModesBasis.m": "a67b5e66bb0cf5de0cde183a77bbc22575cc9118ae0ef21b3c244855356c9ec3",
+    "IMModeOrientationTools.m": "fdb572cc4ada0179bc0a608428d0d74bc0bbf33cc8e505bfb0a8b71eb72d3695"
+  },
+  "providerRelease": "370162ddf71781689b560163bb3e3d2751d80c28",
+  "oceanKitRelease": "dc87744d8cb32d5aa1542daf0a01c8ff9fa10f31",
+  "verification": {
+    "providerFocusedTests": {
+      "total": 34,
+      "passed": 34,
+      "failed": 0,
+      "incomplete": 0,
+      "duration": 4.702019000000002
+    },
+    "providerExport": {
+      "files": 237,
+      "byteIdentical": true,
+      "excludedFoldersAbsent": true,
+      "omitted": "Untracked macOS .DS_Store metadata"
+    },
+    "wvmReleaseTests": {
+      "total": 9,
+      "passed": 9,
+      "failed": 0
+    }
+  }
+}
