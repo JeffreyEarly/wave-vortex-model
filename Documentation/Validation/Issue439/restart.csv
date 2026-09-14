@@ -1,0 +1,2 @@
+fullPhysics,checkpointTime,diagnosticTime,finalTime,restartError,outputError,coefficientChange,checkpointBytes,snapshotBytes,snapshotWriteSeconds,writeAndIntegrateSeconds,readSeconds
+1,207,227,367,3.14427146200768e-16,2.36136115192508e-16,0.000184710546073121,728591,157812,0.199899416666667,1.44516229166667,0.689134833333333

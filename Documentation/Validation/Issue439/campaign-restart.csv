@@ -1,0 +1,2 @@
+Nx,Ny,Nz,thermalCount,mdaCount,seedQgpvResidual,seedEndpointResidual,coefficientError,fieldError,energyError,setupSeconds,integrationSeconds,readSeconds,checkpointBytes
+18,18,385,257,4,6.04092762634595e-22,1.46335199802074e-16,1.08110648455303e-20,7.82419525820553e-16,0,105.136858333333,2.60072883333333,1.46425675,77258236

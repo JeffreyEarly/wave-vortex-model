@@ -1,6 +1,6 @@
 # Balanced diffusion 2: integration audit and revised sequence
 
-Audited 13 September 2026 against `feature/v5.0-free-surface-qg` at `aed3c284075b62a5a4412bef13913beefb37c33d`, including the uncommitted, qualified T4 implementation described in [Issue435 validation](../Validation/Issue435/README.md). This is a local planning revision; it does not implement T5 or change hosted issues. The scope is [Balanced diffusion 2: Nonlinear model and restart](https://github.com/JeffreyEarly/wave-vortex-model/milestone/24), with [T5](https://github.com/JeffreyEarly/wave-vortex-model/issues/436) as the next increment. T4–T8 remain open in the hosted milestone at this audit date; local implementation and tracker completion are different states.
+Audited 13 September 2026 against `feature/v5.0-free-surface-qg` at `aed3c284075b62a5a4412bef13913beefb37c33d`, including the uncommitted, qualified T4 implementation described in [Issue435 validation](../Validation/Issue435/README.md). This records the pre-implementation planning audit. Its resolved implementation and verification are recorded in the [milestone handoff](../Validation/BalancedDiffusionMilestone2.md). The scope is [Balanced diffusion 2: Nonlinear model and restart](https://github.com/JeffreyEarly/wave-vortex-model/milestone/24), with [T5](https://github.com/JeffreyEarly/wave-vortex-model/issues/436) as the next increment. T4–T8 were open in the hosted milestone when this audit was written; local implementation and tracker completion are different states.
 
 ## Recommendation
 

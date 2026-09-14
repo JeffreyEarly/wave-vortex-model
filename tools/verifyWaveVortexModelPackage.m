@@ -89,7 +89,7 @@ pathEntries = string(strsplit(path,pathsep));
 unitTestRoot = canonicalPath(fullfile(wvmRoot,"UnitTests"));
 require(~any(startsWith(canonicalExistingPaths(pathEntries),unitTestRoot)), ...
     "UnitTests is present on the installed WaveVortexModel path.");
-for symbol = ["TestDivergence" "WVTestForcing" "RunAllUnitTests"]
+for symbol = ["TestDivergence" "WVTestForcing" "RunAllUnitTests" "TestThermalOutputRestart" "thermalManufacturedState" "ThermalStageBoundForcing"]
     require(string(which(symbol)) == "", ...
         symbol + " is unexpectedly available from the installed package.");
 end
@@ -119,7 +119,13 @@ for iSymbol = 1:numel(representativeSymbols)
         representativeSymbols(iSymbol) + " did not resolve from the installed package graph.");
 end
 
+for symbol = ["WVTransformFreeSurfaceThermalQG","WVThermalAPVDamping","WVInternal.qgEvolutionAdapter","WVInternal.thermalNonlinearKernel","WVInternal.thermalConstrainedFit"]
+    resolvedPath=string(which(symbol));
+    require(resolvedPath~="" && startsWith(canonicalPath(resolvedPath),wvmRoot+filesep),symbol+" did not resolve from the installed WaveVortexModel root.");
+end
+
 consumer = exerciseInstalledPackage();
+consumer.thermal = exerciseInstalledThermalPackage();
 report = struct( ...
     "packageName","WaveVortexModel", ...
     "version",options.expectedVersion, ...
@@ -175,6 +181,39 @@ clear fileCleanup
 
 report = struct("finalTime",model.t,"maximumU",max(abs(u),[],"all"), ...
     "variableModeCount",nnz(variableWvt.Ap) + nnz(variableWvt.Am));
+end
+
+function report = exerciseInstalledThermalPackage()
+% Exercise the peer through public APIs; no authoring fixtures or data files.
+clock=tic;
+lengths=[1e5 1e5 1000]; grid=[8 8 65]; profile=@(z)1e-4+0*z;
+w=WVTransformFreeSurfaceThermalQG.fromStratification(lengths,grid,N2Function=profile,thermalModeCount=17,mdaModeCount=2,kappa_z=1e-5,shouldCheckQuadraticAliasing=true);
+w.Ath(2,1)=1e-4+2e-4i; w.Ath(3,2)=2e-4-1e-4i; w.Amda=[.01;-.02]; w.t=1234; w.t0=17;
+w.addForcing(WVNonlinearAdvection(w));
+w.addForcing(WVSeasonalSurfaceAnomalyForcing(w,pattern=repmat(sin(2*pi*w.y'/w.Ly),w.Nx,1),amplitude=1e-7,period=1000,phase=.3));
+w.addForcing(WVBottomFrictionQuadratic(w,Cd=1e-3));
+apv=WVTransformFreeSurfaceQG(lengths,grid,N2Function=profile,latitude=w.latitude,apvModeCount=3,mdaModeCount=2);
+closure=WVThermalAPVDamping.fromAPVTransform(w,apv,apvCutoffFraction=.5); w.addForcing(closure);
+model=WVModel(w); model.setupIntegrator(integratorType="exponential",initialStep=5,maximumStep=5,exponentialAdaptive=false);
+model.integrateToTime(1244,shouldShowIntegrationDiagnostics=false);
+[~,~,processes]=w.coefficientTendency(); inventory=w.quadraticDiagnostics(tendency=processes.tendencies);
+fields=w.reconstructFields(["u","qgpv","endpointAnomalies"]);
+require(w.t==1244 && w.totalEnergy>0 && numel(processes.labels)==6 && all(isfinite(fields.qgpv),'all') && all(isfinite(fields.endpointAnomalies),'all'),"Installed thermal nonlinear/forcing/diagnostic APIs did not produce finite physical state.");
+statePath=string(tempname)+".nc"; cleanup=onCleanup(@()deleteIfPresent(statePath));
+file=w.writeToFile(char(statePath)); handleCleanup=onCleanup(@()closeIfOpen(file)); file.close(); clear handleCleanup
+restored=WVTransform.waveVortexTransformFromFile(char(statePath),iTime=Inf);
+require(isequal(restored.coefficientState(),w.coefficientState()) && restored.t==w.t && restored.t0==w.t0 && numel(restored.forcing)==4,"Installed thermal snapshot lost canonical state, clocks or forcing.");
+restoredClosure=restored.forcing(arrayfun(@(force)isa(force,'WVThermalAPVDamping'),restored.forcing));
+require(isscalar(restoredClosure),"Installed thermal snapshot did not restore its named closure.");
+for name=string(closure.classRequiredPropertyNames())
+    require(isequaln(restoredClosure.(name),closure.(name)),"Restored thermal closure changed "+name+".");
+end
+[state,assessment]=w.coefficientStateForTransform(restored);
+require(assessment.relativeFieldError<1e-9 && norm(state.Ath-w.Ath,'fro')<1e-9,"Installed thermal physical transfer did not preserve its represented state.");
+continued=WVModel(restored); continued.setupIntegrator(integratorType="exponential",initialStep=5,maximumStep=5,exponentialAdaptive=false);
+continued.integrateToTime(1249,shouldShowIntegrationDiagnostics=false);
+require(restored.t==1249 && isfinite(restored.totalEnergy),"Restored installed thermal transform did not reattach and continue.");
+report=struct(finalTime=restored.t,energy=w.totalEnergy,inventory=inventory,processCount=numel(processes.labels),transferError=assessment.relativeFieldError,seconds=toc(clock));
 end
 
 function paths = canonicalExistingPaths(paths)

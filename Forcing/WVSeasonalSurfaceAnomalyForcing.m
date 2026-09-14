@@ -86,11 +86,11 @@ classdef WVSeasonalSurfaceAnomalyForcing < WVForcing
                 error('WVSeasonalSurfaceAnomalyForcing:UnresolvedTransfer','Target cannot preserve the pattern: relative RMS round-trip loss %.3g exceeds 1e-8.',relativeError);
             end
             if isequal([source.Nx source.Ny],[target.Nx target.Ny])
-                pattern=self.pattern;
+                targetPattern=self.pattern;
             else
-                pattern=target.transformToSpatialDomainWithFourier(T);
+                targetPattern=target.transformToSpatialDomainWithFourier(T);
             end
-            force=WVSeasonalSurfaceAnomalyForcing(wvt,pattern=pattern,amplitude=self.amplitude,period=self.period,phase=self.phase);
+            force=WVSeasonalSurfaceAnomalyForcing(wvt,pattern=targetPattern,amplitude=self.amplitude,period=self.period,phase=self.phase);
         end
         function writeToGroup(self,group,propertyAnnotations,attributes)
             % Persist the pattern on the parent transform's x-y axes.
