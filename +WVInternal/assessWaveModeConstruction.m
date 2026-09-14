@@ -20,6 +20,11 @@ reference=[];
 if ~isempty(referenceNEVP)
     f=2*state.rotationRate*sind(state.latitude);
     reference=IMSolverSpectral(nEVP=referenceNEVP,coordinateKind="wkb").solveWaveModesAtWavenumbers([0 state.khUnique(activePages).'],N2=state.N2Function,zDomain=[-state.Lxyz(3) 0],f0=f,g=state.g,surfaceBoundary=IMBoundaryCondition(a=0,b=1,c=1,d=0),nModes=requestedCount(activePages).',nInertialModes=length(state.inertialMode));
+    % All wave and inertial pages share N2 and zDomain, hence WKB quadrature.
+    nQuadrature=2*max(state.nEVP,referenceNEVP)+1;
+    inertialBasis=bases.bases{bases.basisIndex(1)};
+    rule=IMSolverSpectral(nEVP=nQuadrature,coordinateKind="wkb").configuredForEVP(inertialBasis.evp);
+    [z,w]=rule.nativeQuadratureRule(inertialBasis.zDomain);
 end
 for p=1:np
     count=requestedCount(p);
@@ -62,9 +67,6 @@ end
 assessment=struct(pages=table(kappa,requestedCount,convergedCount,gridSupportedCount,usableCount,status,candidateLimitReached),modeConvergence={modeConvergence},prefixGramError={prefixGramError},inertial=inertial,modeConvergenceTolerance=tolerance,gramTolerance=state.gramTolerance,nEVP=state.nEVP,referenceNEVP=referenceNEVP,coverage="Actual constructed modes at every supported kappa; linear convergence and fixed-grid Gram evidence only. Quadratic products are assessed separately. Two-resolution agreement is not a rigorous error bound.");
 
     function report=compare(basis,check,kh)
-        nQuadrature=2*max(state.nEVP,referenceNEVP)+1;
-        rule=IMSolverSpectral(nEVP=nQuadrature,coordinateKind="wkb").configuredForEVP(basis.evp);
-        [z,w]=rule.nativeQuadratureRule(basis.zDomain);
         candidate=prepare(basis,z,kh,state.nEVP,nQuadrature);
         refined=prepare(check,z,kh,referenceNEVP,nQuadrature);
         report=assessModeConvergence(candidate,refined,z,w);
