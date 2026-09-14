@@ -48,6 +48,8 @@ Choose indices from the file's actual committed prefix; invalid or ambiguous str
 
 ## Next increment: T10
 
+The [bounded diagnostic mode-capacity follow-up](ModeCapacity/README.md) provides a selection method and a provisional target choice: 64 APV modes on 129 stored depths with 513 physical integration points. It separately reports constructor limits, finer-grid physical mode agreement, quadrature agreement, state residuals and cost. The six-mode historical control is not a prescribed diagnostic band. Reapply this method if the scientific configuration changes; an optimal count or constructor redesign is not a prerequisite for T10.
+
 [T10/#441](https://github.com/JeffreyEarly/wave-vortex-model/issues/441) remains the nonlinear accuracy, complete-workload cost and campaign-readiness gate. Its first bounded increment should freeze the observable and reference-error allowances, then measure a seeded nonlinear pilot with the intended seasonal forcing, diffusivity, quadratic drag and explicit damping choice. Keep temporal refinement, thermal bandwidth, horizontal resolution, product sampling and closure changes as separate axes.
 
 Use the T9 residual and component inventories at recorded physical times, retain the ordered T7 process rates, and choose an offline APV band independently of the frozen online closure. Report each endpoint independently and carry the residual through every budget. Refine diagnostic stored sampling separately from integration quadrature; adding quadrature cannot repair an unresolved stored mode.

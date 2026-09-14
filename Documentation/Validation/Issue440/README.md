@@ -61,6 +61,8 @@ The target pass independently evaluates all physical residuals and source scales
 
 ## Analysis cost
 
+The later [mode-capacity follow-up](ModeCapacity/README.md) establishes a cheaper provisional target configuration and separates resolvable mode count from state coverage. Its 64-mode/129-depth transform constructs in about 3.24 seconds and leaves a 9.84% QGPV norm residual for the same manufactured state. The 1025-depth timing below describes the original qualification configuration; no evidence established that sampling count as necessary, and it is not a required setup cost for practical diagnostics.
+
 [TargetReference/resources.csv](TargetReference/resources.csv) records thermal construction at `4.277 s`, diagnostic APV construction at `911.678 s` and the initial numerical-map preparation plus scalar diagnosis at `0.6804 s`. The last quantity includes the first map application; it is not presented as isolated map-build time. The observed APV construction cost supports constructing and saving a reusable diagnostic transform rather than reconstructing it for every analysis session.
 
 The retained data-structure value payload is `59,415,634 bytes` (about 56.7 MiB), including copy-on-write canonical arrays. Requesting all eight physical products returns `159,547,816 bytes` (about 152.2 MiB). The [allocation profile](TargetReference/allocation-profile.csv) records public-method `PeakMem` values of `858,096 bytes` for cached scalar analysis and `10,633,248 bytes` when volumes are requested. These are named-function profiler statistics; they are neither a complete process high-water mark nor a sum of nested allocation rows. The full returned-field payload is reported separately.

@@ -58,3 +58,19 @@ The implementation PR enables `final-integration`, which requests full, exhausti
 Generated API pages include the new public method, class navigation ordering, corrected endpoint-response units and changelog. Other generated changes are deterministic navigation-order shifts. No hand-authored website pages, experiment-repository files, historical evidence, pinned trajectories or released package snapshots changed. The unrelated untracked `tools/free-surface-initialization-study/` remains outside the commit.
 
 All historical linear results, including the 129-direction failure and 257/385-direction qualification, remain intact. T9 uses deterministic self-contained inputs, so missing historical MAT/NetCDF assets do not block its tests. The full seasonal study, nonlinear campaign qualification, damping selection and whole-model performance remain [T10/#441](https://github.com/JeffreyEarly/wave-vortex-model/issues/441), with the concrete handoff in [ImplementationHandoff.md](ImplementationHandoff.md).
+
+## Bounded mode-capacity follow-up, 14 September 2026
+
+The [mode-capacity report](ModeCapacity/README.md) adds an authoring-only qualification driver and measured evidence on top of merged v5 `9d55ad2b6c0d16db529a39990aad4b89f9e835a8`. It establishes practical bands and a reusable selection method before T10. It does not change runtime, dependencies, exported behavior or original T9 numerical gates; the earlier final-integration policy above describes the completed production implementation.
+
+| Check | Result |
+| --- | --- |
+| Bounded qualification | Two batches of `qualifyThermalAPVModeCapacity`: six constructor cases, four accepted diagnostic bands, two preserved physical-shape failures at the automatic limits, 36 accepted-case residual rows |
+| CSV and report audit | Expected cases/statuses and source-normalized comparison allowances verified; report links resolve |
+| Shared diagnostic regressions | `runtests('UnitTests/TestThermalAPVDiagnostics.m')`: 9 passed, 0 failed, 0 incomplete on R2026a Update 4 |
+| Added MATLAB Code Analyzer | `checkcode('tools/qualifyThermalAPVModeCapacity.m','-id')`: zero messages |
+| Independent scientific audit | No blocking findings; retained explicit limits on automatic counts, one-state coverage, unqualified nonlinear products, coefficient magnitudes, source-scale convergence and caller-owned dependency setup |
+| Documentation consistency | One `buildtool("docs:check")` with ClassDocumentation 1.3.2: 2654 files, 5415 routes, zero failures and zero generated differences |
+| Scope | One authoring utility plus validation reports/CSV evidence; no runtime, website, manifest, snapshot or historical experiment changes |
+
+The study uses uniquely resolved InternalModes beta.5 through `configureCIEnvironment`, the same immutable dependency revisions as the T9 dependency qualification, and two computation threads. The initial package-path warnings are followed by sibling-checkout removal and unique-provider assertions. No local asset was missing. Whole-campaign and broad production suites were not repeated for this authoring-only follow-up. The nine regressions and documentation gate ran once after the coherent code/report batch; later verification-ledger updates do not affect generated documentation.
