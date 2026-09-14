@@ -1,5 +1,7 @@
 # Free-surface construction optimization
 
+The series continues in [issue 33: numeric prefix acceptance](issue33.md). The report below preserves issue 31's measurements and the priorities recommended at that step.
+
 ## Issue 31: share assessment quadrature
 
 On 14 September 2026, sharing one WKB quadrature preparation across wave and inertial comparisons reduced the matched constructor median from **29.450 to 26.323 seconds**: **3.127 seconds saved, 10.6% less elapsed time, 1.119× speedup**. This implements [InternalModes #31](https://github.com/JeffreyEarly/internal-modes/issues/31) in WVM's assessment orchestration using existing beta.5 provider APIs.
@@ -46,7 +48,7 @@ All **24 tests passed** in `TestPerKappaWaveAssessment`, `TestFreeSurfaceBulkCon
 
 Focused tests used immutable dependency snapshots from OceanKit `1873071fe2dfc2678490df1b0252e5071e9d9715`, including InternalModes beta.5. The ordinary local OceanKit checkout lacked that snapshot, so verification used an isolated checkout of the CI pin. MATLAB Code Analyzer reported zero blocking findings across all four changed MATLAB files; one nonblocking array-growth advisory concerns the benchmark's small package-path setup loop, outside measured construction. `buildtool docs:check` passed once with ClassDocumentation 1.3.2: 2,654 files, 5,415 routes, zero validation failures and zero generated differences. Whitespace and scope checks confirmed unchanged package metadata, released snapshots and generated documentation. GPT-6 Astra with extra-high reasoning reviewed production code, regressions and study helpers; no findings remain. A timer-exclusion omission in the comparison helper was corrected before the successful comparison.
 
-### Next target
+### Next target after issue 31
 
 Recommend **[InternalModes #33](https://github.com/JeffreyEarly/internal-modes/issues/33) before [#32](https://github.com/JeffreyEarly/internal-modes/issues/32)**, then [#34](https://github.com/JeffreyEarly/internal-modes/issues/34) and [#35](https://github.com/JeffreyEarly/internal-modes/issues/35). `acceptedPrefix` still performs 570 calls taking 7.235 profiled seconds, with 6.630 seconds at its repeated table/string scan. That is close to the 7.903 seconds in 1,140 `prepare` calls, while numeric acceptance is a smaller implementation with fewer numerical changes than batching evaluation/derivatives/normalization. This ranking is an engineering judgment, not a speedup estimate. Its apparent profiler increase from 5.632 seconds is not evidence of an unprofiled regression in unchanged acceptance code.
 

@@ -39,6 +39,14 @@ classdef TestFreeSurfaceLinearModePolicy < matlab.unittest.TestCase
                 min(linearReport.inertial.convergedCount,linearReport.inertial.gridSupportedCount))
             testCase.verifyEqual([linearReport.inertial.selectedCount nonlinearReport.inertial.selectedCount],[38 38])
             testCase.verifyGreaterThan(nonlinearReport.inertial.selectedCount,min(nonlinear.waveModeCountByKh))
+            for p=1:height(nonlinearReport.pages)
+                report=nonlinearReport.modeConvergence{p}; count=nonlinearReport.pages.selectedCount(p);
+                rows=ismember(report.measurements.columnLabel,report.identity.columnLabels(1:count)) & ismember(report.measurements.quantity,["equivalentDepth","h1"]);
+                testCase.verifyEqual(nonlinearReport.pages.modeConvergenceError(p),max(report.measurements.value(rows)))
+            end
+            report=nonlinearReport.inertial.convergence; count=nonlinearReport.inertial.selectedCount;
+            rows=ismember(report.measurements.columnLabel,report.identity.columnLabels(1:count)) & ismember(report.measurements.quantity,["equivalentDepth","h1"]);
+            testCase.verifyEqual(nonlinearReport.inertial.modeConvergenceError,max(report.measurements.value(rows)))
         end
 
         function linearBypassHasNoQuadraticPreparation(testCase)

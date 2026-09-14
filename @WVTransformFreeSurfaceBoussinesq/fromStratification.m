@@ -146,7 +146,7 @@ for attempt=1:3
     activePages=find(state.waveModeCountByKh>0);
     referenceNEVP=options.referenceNEVP;
     if isempty(referenceNEVP), referenceNEVP=max(options.nEVP+16,ceil(1.5*options.nEVP)); end
-    [assessment,reference]=WVInternal.assessWaveModeConstruction(state,bases,activePages,referenceNEVP,options.modeConvergenceTolerance);
+    [assessment,reference,convergence]=WVInternal.assessWaveModeConstruction(state,bases,activePages,referenceNEVP,options.modeConvergenceTolerance);
     solveCount=solveCount+2*(numel(activePages)+1);
     desired=assessment.pages.gridSupportedCount;
     if ~autoWave, desired=requestedMap; end
@@ -179,7 +179,7 @@ assessment.apv=balancedAssessment.apv; assessment.mda=balancedAssessment.mda;
 assessment.boundary=balancedAssessment.boundary;
 assessment.cost=struct(waveEigensolves=solveCount,waveConstructionSeconds=waveSeconds,selectionTrials=0);
 % The bounded interaction policy operates on the candidate snapshot once.
-[state,assessment]=WVInternal.selectFreeSurfaceWaveCounts(state,bases,reference,vertical,counts,options.inertialModeCount,assessment,options,autoWave,autoInertial);
+[state,assessment]=WVInternal.selectFreeSurfaceWaveCounts(state,bases,reference,vertical,counts,options.inertialModeCount,assessment,convergence,options,autoWave,autoInertial);
 state.mdaPressureMode=options.g*(state.mdaF-state.mdaF(end,:));
 self=WVTransformFreeSurfaceBoussinesq(state);
 assessment.cost.constructionSeconds=toc(constructionTimer);

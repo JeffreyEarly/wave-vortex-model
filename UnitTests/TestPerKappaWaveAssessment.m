@@ -24,6 +24,7 @@ classdef TestPerKappaWaveAssessment < matlab.unittest.TestCase
                     testCase.verifyEqual(a.pages.status(p),"not-requested")
                     testCase.verifyEmpty(a.modeConvergence{p})
                     testCase.verifyEmpty(a.prefixGramError{p})
+                    testCase.verifyEqual(a.pages.modeConvergenceError(p),0)
                 else
                     report = a.modeConvergence{p};
                     testCase.verifyEqual(report.identity.kappa,w.khUnique(p))
@@ -34,6 +35,8 @@ classdef TestPerKappaWaveAssessment < matlab.unittest.TestCase
                     testCase.verifyEqual(report.coverage.requestedColumnCount,counts(p))
                     testCase.verifyFalse(report.coverage.absoluteAccuracyGuarantee)
                     testCase.verifyEqual(a.pages.status(p),"accepted")
+                    rows = ismember(report.measurements.columnLabel,report.identity.columnLabels(1:counts(p))) & ismember(report.measurements.quantity,["equivalentDepth","h1"]);
+                    testCase.verifyEqual(a.pages.modeConvergenceError(p),max(report.measurements.value(rows)))
                 end
             end
             testCase.verifyEqual(a.inertial.requestedCount,numel(w.inertialMode))
@@ -58,6 +61,9 @@ classdef TestPerKappaWaveAssessment < matlab.unittest.TestCase
             testCase.verifyEqual(a.pages.usableCount,zeros(numel(w.khUnique),1))
             testCase.verifyFalse(any(a.pages.candidateLimitReached))
             testCase.verifyEqual(a.inertial.convergence.coverage.requestedColumnCount,3)
+            report = a.inertial.convergence;
+            rows = ismember(report.measurements.columnLabel,report.identity.columnLabels(1:a.inertial.selectedCount)) & ismember(report.measurements.quantity,["equivalentDepth","h1"]);
+            testCase.verifyEqual(a.inertial.modeConvergenceError,max(report.measurements.value(rows)))
         end
 
         function commonQuadraturePreservesIndependentPageReports(testCase)

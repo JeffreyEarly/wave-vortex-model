@@ -1,6 +1,6 @@
-function [state,assessment] = selectFreeSurfaceWaveCounts(state,bases,reference,vertical,counts,inertialCount,assessment,options,autoWave,autoInertial)
+function [state,assessment] = selectFreeSurfaceWaveCounts(state,bases,reference,vertical,counts,inertialCount,assessment,convergence,options,autoWave,autoInertial)
 % Test complete maps against one bounded snapshot; never mix pagewise optima.
-assessment=withSelectedConvergence(assessment,counts,inertialCount);
+assessment=withSelectedConvergence(assessment,counts,inertialCount,convergence);
 if options.shouldCheckQuadraticAliasing && any(counts>0)
     data=WVInternal.prepareConstructionProducts(state,bases,reference,vertical,counts,inertialCount,assessment,options);
     % Construction qualifies the complete requested bounded inventory. Study
@@ -60,7 +60,7 @@ else
     assessment.quadratic=struct(status="not-requested",coverage="Linear qualification only; no quadratic products were prepared or measured.");
 end
 assessment.shouldCheckQuadraticAliasing=options.shouldCheckQuadraticAliasing;
-assessment=withSelectedConvergence(assessment,counts,inertialCount);
+assessment=withSelectedConvergence(assessment,counts,inertialCount,convergence);
 assessment.pages.selectedCount=counts;
 assessment.pages.status=repmat("accepted",numel(counts),1);
 assessment.pages.status(counts==0)="not-requested";
@@ -103,17 +103,12 @@ state.inertialF=state.inertialF(:,1:inertialCount); state.inertialFForward=state
 state.inertialEquivalentDepth=state.inertialEquivalentDepth(1:inertialCount);
 state.inertialGramError=assessment.inertial.prefixGramError(inertialCount);
 end
-function value=selectedError(report,count)
-rows=ismember(report.measurements.columnLabel,report.identity.columnLabels(1:count)) & ismember(report.measurements.quantity,["equivalentDepth","h1"]);
-value=max(report.measurements.value(rows));
-end
-
-function assessment=withSelectedConvergence(assessment,counts,inertialCount)
+function assessment=withSelectedConvergence(assessment,counts,inertialCount,convergence)
 assessment.pages.modeConvergenceError=zeros(numel(counts),1);
 for p=1:numel(counts)
     if counts(p)>0
-        assessment.pages.modeConvergenceError(p)=selectedError(assessment.modeConvergence{p},counts(p));
+        assessment.pages.modeConvergenceError(p)=convergence.pages{p}.prefixError(counts(p));
     end
 end
-assessment.inertial.modeConvergenceError=selectedError(assessment.inertial.convergence,inertialCount);
+assessment.inertial.modeConvergenceError=convergence.inertial.prefixError(inertialCount);
 end
