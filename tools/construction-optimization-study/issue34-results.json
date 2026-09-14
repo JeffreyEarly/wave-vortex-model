@@ -1,0 +1,221 @@
+{
+  "decision": "Deferred; original production loop retained",
+  "threadControl": "maxNumCompThreads(1) in all #34 and cumulative processes",
+  "wvmBaseline": "6925d125",
+  "providerRelease": "370162ddf71781689b560163bb3e3d2751d80c28",
+  "oceanKitRelease": "dc87744d8cb32d5aa1542daf0a01c8ff9fa10f31",
+  "runs": {
+    "baseline": {
+      "matlabVersion": "26.1.0.3346908 (R2026a) Update 5",
+      "wvmRoot": "/Users/jearly/Documents/OceanKitRepositories/wvm-v5-construction-issue34-baseline",
+      "internalModesRoot": "/Users/jearly/Documents/OceanKitRepositories/oceankit-internal-modes-beta6/InternalModes-2.0.0-beta.6",
+      "seconds": [
+        16.341917041666665,
+        15.450600416666667,
+        15.203108916666666
+      ],
+      "waveSeconds": [
+        13.900895,
+        13.355286708333333,
+        13.345108791666666
+      ],
+      "medianSeconds": 15.450600416666667,
+      "medianWaveSeconds": 13.355286708333333,
+      "nEVP": 104,
+      "referenceNEVP": 156,
+      "distinctPositiveKappa": 569,
+      "waveEigensolves": 1140,
+      "waveCountSummary": {
+        "pages": 569,
+        "minimum": 38,
+        "maximum": 38
+      },
+      "profileLines": [
+        {
+          "functionName": "IMSolver.IMSolver>IMSolver.solveAssembledEVP",
+          "lineNumber": "250",
+          "lineTime": "7.19202395539834",
+          "lineText": "[V, D] = eig((A./rowScale).*columnScale, solveB.*columnScale);"
+        },
+        {
+          "functionName": "assessWaveModeConstruction",
+          "lineNumber": "46",
+          "lineTime": "1.57401942514333",
+          "lineText": "for n=1:count, errors(n)=norm(gram(1:n,1:n)-eye(n),2); end"
+        }
+      ]
+    },
+    "candidate": {
+      "matlabVersion": "26.1.0.3346908 (R2026a) Update 5",
+      "wvmRoot": "/Users/jearly/Documents/OceanKitRepositories/wvm-v5-construction-optimization",
+      "internalModesRoot": "/Users/jearly/Documents/OceanKitRepositories/oceankit-internal-modes-beta6/InternalModes-2.0.0-beta.6",
+      "seconds": [
+        16.371152333333335,
+        15.430471875,
+        15.182556416666667
+      ],
+      "waveSeconds": [
+        13.871995083333333,
+        13.293241625,
+        13.303457125
+      ],
+      "medianSeconds": 15.430471875,
+      "medianWaveSeconds": 13.303457125,
+      "nEVP": 104,
+      "referenceNEVP": 156,
+      "distinctPositiveKappa": 569,
+      "waveEigensolves": 1140,
+      "waveCountSummary": {
+        "pages": 569,
+        "minimum": 38,
+        "maximum": 38
+      },
+      "profileLines": [
+        {
+          "functionName": "IMSolver.IMSolver>IMSolver.solveAssembledEVP",
+          "lineNumber": "250",
+          "lineTime": "7.18549933333333",
+          "lineText": "[V, D] = eig((A./rowScale).*columnScale, solveB.*columnScale);"
+        },
+        {
+          "functionName": "assessWaveModeConstruction",
+          "lineNumber": "47",
+          "lineTime": "1.56183579166667",
+          "lineText": "for n=1:count, errors(n)=norm(gram(1:n,1:n),2); end"
+        }
+      ]
+    }
+  },
+  "comparison": {
+    "baselineMedianSeconds": 15.450600416666667,
+    "candidateMedianSeconds": 15.430471875,
+    "secondsSaved": 0.020128541666666777,
+    "percentReduction": 0.1302767602801635,
+    "speedup": 1.0013044670201745,
+    "scientificStateExactlyEqual": true,
+    "assessmentExceptTimingExactlyEqual": true,
+    "baselineProfileSeconds": 23.173685166666665,
+    "candidateProfileSeconds": 23.234000166666668
+  },
+  "candidateSource": {
+    "file": "wvm-v5-construction-optimization/+WVInternal/assessWaveModeConstruction.m",
+    "sha256": "c6b920c922368c6b288533e79683f08d0f7295834e9469e25df67a254cf36dde",
+    "patch": "tools/construction-optimization-study/issue34-candidate.patch"
+  },
+  "isolatedStudy": {
+    "matlabVersion": "26.1.0.3346908 (R2026a) Update 5",
+    "scientificResultPath": "/Users/jearly/Documents/OceanKitRepositories/free-surface-eigenmode-cost-2026-09-14/issue34/baseline/scientific-result.mat",
+    "wvmRoot": "/Users/jearly/Documents/OceanKitRepositories/wvm-v5-construction-optimization",
+    "internalModesRoot": "/Users/jearly/Documents/OceanKitRepositories/oceankit-internal-modes-beta6/InternalModes-2.0.0-beta.6",
+    "timingScope": "Complete 64-column positive-page and inertial Gram-prefix assessment from rebuilt beta.6 construction factors, including state validation, Gram products, identity subtraction, leading-block spectral norms, prefix threshold decisions and zero-count handling. MAT-file loading, package path setup, beta.6 basis reconstruction, saved-assessment comparison and adjacent-float boundary verification are outside timed trials.",
+    "threadControl": "Invoke maxNumCompThreads(1) before this study for the controlled comparison.",
+    "workload": {
+      "nPositivePages": 569,
+      "nZeroCountPages": 0,
+      "nWavePrefixes": 36416,
+      "nInertialPrefixes": 64,
+      "nTotalPrefixes": 36480,
+      "gramTolerance": 0.01
+    },
+    "variableWorkload": {
+      "nPositivePages": 568,
+      "nZeroCountPages": 1,
+      "nWavePrefixes": 36257,
+      "nInertialPrefixes": 64,
+      "nTotalPrefixes": 36321,
+      "gramTolerance": 0.01
+    },
+    "independentSeconds": [
+      1.566708,
+      1.5744227083333333,
+      1.572274125,
+      1.5649995,
+      1.5635565
+    ],
+    "reusedIdentitySeconds": [
+      1.5511603333333333,
+      1.557614,
+      1.5586152083333333,
+      1.5574024583333332,
+      1.546852125
+    ],
+    "independentMedianSeconds": 1.566708,
+    "reusedIdentityMedianSeconds": 1.5574024583333332,
+    "secondsSaved": 0.00930554166666675,
+    "speedup": 1.0059750397958311,
+    "exactPrefixParity": true,
+    "savedAssessment": {
+      "reconstructedWavePrefixLength": 64,
+      "reconstructedInertialPrefixLength": 64,
+      "totalPrefixCount": 36480,
+      "reconstructedFromReleasedBeta6Bases": true,
+      "savedPrefixArraysUsedAsTheWorkloadDefinition": true
+    },
+    "boundaryChecks": {
+      "usesAdjacentFloatingPointThresholds": true,
+      "inertialThresholdCount": 193,
+      "pageThresholdCountSummary": {
+        "pages": 569,
+        "minimum": 192,
+        "maximum": 193,
+        "sum": 109759
+      }
+    },
+    "variableBoundaryChecks": {
+      "usesAdjacentFloatingPointThresholds": true,
+      "inertialThresholdCount": 193,
+      "pageThresholdCountSummary": {
+        "pages": 569,
+        "minimum": 1,
+        "maximum": 193,
+        "sum": 109282
+      }
+    }
+  },
+  "cumulativeComparison": {
+    "baselineMedianSeconds": 23.575545166666668,
+    "candidateMedianSeconds": 15.450600416666667,
+    "secondsSaved": 8.124944750000001,
+    "percentReduction": 34.463443761579754,
+    "speedup": 1.5258659554249794,
+    "scientificStateExactlyEqual": true,
+    "assessmentExceptTimingExactlyEqual": true,
+    "baselineProfileSeconds": 39.433425625,
+    "candidateProfileSeconds": 23.173685166666665
+  },
+  "cumulativeBaseline": {
+    "matlabVersion": "26.1.0.3346908 (R2026a) Update 5",
+    "wvmRoot": "/Users/jearly/Documents/OceanKitRepositories/wvm-v5-construction-baseline",
+    "internalModesRoot": "/Users/jearly/Documents/OceanKitRepositories/internal-modes",
+    "seconds": [
+      24.824065083333334,
+      23.575545166666668,
+      23.439255541666668
+    ],
+    "waveSeconds": [
+      22.238262708333334,
+      21.553411416666666,
+      21.472189375
+    ],
+    "medianSeconds": 23.575545166666668,
+    "medianWaveSeconds": 21.553411416666666,
+    "nEVP": 104,
+    "referenceNEVP": 156,
+    "distinctPositiveKappa": 569,
+    "waveEigensolves": 1140,
+    "waveCountSummary": {
+      "pages": 569,
+      "minimum": 38,
+      "maximum": 38
+    },
+    "wvmRevision": "abe98510ba3ad24276c2af2bd89c80b24209b568",
+    "providerRevision": "8d9503e5c7c6e4b0432a5c30b42638829a8b3f37"
+  },
+  "retainedPrefixRegression": {
+    "total": 1,
+    "passed": 1,
+    "failed": 0,
+    "incomplete": 0
+  },
+  "retainedSourceSHA256": "da103a23dd1cab49c46b569e442496df47cc3d75f629b1893244589e35f65bd7"
+}
