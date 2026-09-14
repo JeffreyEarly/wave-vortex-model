@@ -123,6 +123,9 @@ classdef WVVerticalDiffusivity < WVForcing
                 options.kappa_z double = 1e-5
                 options.shouldForceMeanDensityAnomaly = true;
             end
+            if isa(wvt,"WVTransformFreeSurfaceThermalQG")
+                error('WV:ThermalDiffusionOwnership','The thermal transform owns diffusivity; use withDiffusivity instead of registering diffusion twice.');
+            end
             if isa(wvt,"WVTransformFreeSurfaceQG")
                 supportedTypes = "QGSpectral";
             elseif isa(wvt,"WVGeometryDoublyPeriodicBarotropic")

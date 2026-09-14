@@ -24,8 +24,8 @@ Reconstruct complete balanced thermal states with two active boundaries.
 
 Ath has velocity units and Amda retains the independent real MDA state.
 The scientific factory retains every requested polynomial direction.
-This increment supports construction, fields, projections and snapshots;
-model evolution and registered forcing are deliberately unavailable.
+Supports forced linear evolution through the existing exponential integrator.
+Select thermalLinearDynamics=true explicitly; nonlinear physics is downstream.
 
 ```matlab
 w = WVTransformFreeSurfaceThermalQG.fromStratification([1e5 1e5 1000],[8 8 65],N2Function=@(z)1e-4*ones(size(z)),thermalModeCount=17,mdaModeCount=4);
@@ -147,7 +147,7 @@ fields = w.reconstructFields(["qgpv","endpointAnomalies"]);
     + [`removeOperation`](/classes/transforms/wvtransformfreesurfacethermalqg/removeoperation.html) Remove the exact registered operation and its cached outputs.
 + Manage forcing and closures
   + Configure forcing
-    + [`addForcing`](/classes/transforms/wvtransformfreesurfacethermalqg/addforcing.html) Reject forcing until thermal physical adapters are qualified.
+    + [`addForcing`](/classes/transforms/wvtransformfreesurfacethermalqg/addforcing.html) Add forcing or closure objects to this transform.
     + [`setForcing`](/classes/transforms/wvtransformfreesurfacethermalqg/setforcing.html) Replace the complete forcing registry.
     + [`removeForcing`](/classes/transforms/wvtransformfreesurfacethermalqg/removeforcing.html) Remove the exact registered forcing objects.
     + [`removeAllForcing`](/classes/transforms/wvtransformfreesurfacethermalqg/removeallforcing.html) Remove every forcing and closure from this transform.
@@ -248,6 +248,7 @@ These items document internal implementation details and are not part of the pri
   + [`kappa_z`](/classes/transforms/wvtransformfreesurfacethermalqg/kappa_z.html) Immutable buoyancy diffusivity (m2 s-1).
   + [`khUnique`](/classes/transforms/wvtransformfreesurfacethermalqg/khunique.html) Distinct horizontal radii (m-1).
   + [`klNonzero`](/classes/transforms/wvtransformfreesurfacethermalqg/klnonzero.html) Compact nonzero Fourier indices (1).
+  + [`linearEvolutionData`](/classes/transforms/wvtransformfreesurfacethermalqg/linearevolutiondata.html) Build transient eigencoordinates and physical norms from authoritative arrays.
   + [`maxFg`](/classes/transforms/wvtransformfreesurfacethermalqg/maxfg.html)
   + [`maxFw`](/classes/transforms/wvtransformfreesurfacethermalqg/maxfw.html)
   + [`mdaBottomWeight`](/classes/transforms/wvtransformfreesurfacethermalqg/mdabottomweight.html) MDA basis bottom weight (m s-2).

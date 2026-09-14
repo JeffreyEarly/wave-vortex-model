@@ -9,7 +9,9 @@ mathjax: true
 
 #  addForcing
 
-Reject forcing until thermal physical adapters are qualified.
+Add forcing or closure objects to this transform.
 
 
 ---
+
+## Discussion

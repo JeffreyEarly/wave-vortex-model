@@ -1,6 +1,6 @@
 # T3: Thermal evolution through WVModel
 
-Status: implementation plan for [#434](https://github.com/JeffreyEarly/wave-vortex-model/issues/434), following the completed [T2 construction and evidence](../Validation/Issue433/README.md). T3 is planned, not implemented. Use the T2 commit containing this plan on `feature/v5.0-free-surface-qg`; record its exact hash at implementation start. Preserve InternalModes `v2.0.0-beta.4` (`f2ce3c143744ae00fbb25bd9d7b8c73fb358ca51`) and all installed dependency snapshots and experiment pins.
+Status: implementation plan for [#434](https://github.com/JeffreyEarly/wave-vortex-model/issues/434), following the completed [T2 construction and evidence](../Validation/Issue433/README.md). T3 is now implemented; see the [qualification and handoff](../Validation/Issue434/README.md). The sequence below records the implementation plan. Use the T2 commit containing this plan on `feature/v5.0-free-surface-qg`; record its exact hash at implementation start. Preserve InternalModes `v2.0.0-beta.4` (`f2ce3c143744ae00fbb25bd9d7b8c73fb358ca51`) and all installed dependency snapshots and experiment pins.
 
 ## Outcome and scope
 

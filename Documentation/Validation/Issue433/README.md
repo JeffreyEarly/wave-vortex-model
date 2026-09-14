@@ -85,7 +85,9 @@ assertSuccess(results);
 buildtool docs:check
 ```
 
-## Next increment: T3
+## T3 handoff (subsequently implemented)
+
+See the [T3 implementation report](../Issue434/README.md) for actual model evolution and its verification. The T2 evidence above remains a construction-only record.
 
 Connect these stored arrays to the existing exponential integrator through `linearEvolutionData()`. Keep thermal amplitudes in their current coordinates; provide the MDA eigencoordinate adapter from `mdaGeneratorPerDiffusivity`. Multiply the unit-diffusivity generators exactly once. Physical error control must use reconstructed observables and the retained full metric, including both endpoint errors.
 

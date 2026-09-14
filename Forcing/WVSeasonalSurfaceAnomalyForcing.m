@@ -40,7 +40,7 @@ classdef WVSeasonalSurfaceAnomalyForcing < WVForcing
                 options.period (1,1) double {mustBePositive,mustBeFinite} = 365.25*86400
                 options.phase (1,1) double {mustBeReal,mustBeFinite} = 0
             end
-            if ~isa(wvt,'WVTransformFreeSurfaceQG')
+            if ~isa(wvt,'WVTransformFreeSurfaceQG') && ~isa(wvt,'WVTransformFreeSurfaceThermalQG')
                 error('WVSeasonalSurfaceAnomalyForcing:UnsupportedTransform','Use a free-surface QG transform.');
             end
             if ~isequal(size(options.pattern),[wvt.Nx wvt.Ny]) || ~any(wvt.activeEndpoint==1)

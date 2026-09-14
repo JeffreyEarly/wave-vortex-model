@@ -8,6 +8,8 @@ nav_order: 100
 
 ## [Unreleased]
 
+- Connect the optional thermal QG peer to existing exponential integration with explicit linear selection, exact seasonal forcing, independent endpoint error control, and physical evolution tests. Nonlinear thermal dynamics and full restart remain downstream.
+
 - Add the optional `WVTransformFreeSurfaceThermalQG` construction/reconstruction peer with complete thermal modes, physical source projection, mapped Chebyshev calculus, independent MDA state, and canonical snapshots. Thermal time integration, nonlinear forcing, and campaign qualification remain unavailable pending their separate increments.
 
 - Enable MATLAB free-surface Boussinesq adaptive integration through the existing `WVModel`/`ode78` path with positive unit-coefficient energy tolerances, retained-wave frequency and physical-speed initial-step selection, and forced/nonlinear restart coverage. Existing v4 and QG defaults are unchanged.

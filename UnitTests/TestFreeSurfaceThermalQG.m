@@ -143,7 +143,7 @@ classdef TestFreeSurfaceThermalQG < matlab.unittest.TestCase
             w=newTransform(testCase.constantState);
             testCase.verifyError(@()w.coefficientTendency(),'WV:ThermalEvolutionUnavailable');
             testCase.verifyError(@()w.reconstructFields("w"),'WV:ThermalField');
-            testCase.verifyError(@()w.addForcing([]),'WV:ThermalForcingUnavailable');
+            testCase.verifyError(@()w.nonlinearFlux(),'WV:ThermalEvolutionUnavailable');
             s=w.scientificState; s.polynomialToThermal(1,1,1)=NaN;
             testCase.verifyError(@()newTransform(s),'WV:ThermalStoredState');
             testCase.verifyError(@()WVTransformFreeSurfaceThermalQG.fromStratification([1e5 1e5 1000],[4 4 65],N2Function=@(z)1e-4*(1+.1*cos(z/100)),thermalModeCount=17,mdaModeCount=4),'WV:ThermalStratification');

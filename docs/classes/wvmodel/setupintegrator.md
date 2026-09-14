@@ -31,7 +31,8 @@ Customize the time-stepping
 + `bottomAbsTolerance`  optional bottom displacement spectral amplitude scale; empty selects reference calibration
 + `relTolerance`  relative tolerance, 1e-3 by default; coefficient error for adaptive stepping or reconstructed RMS error for exponential stepping
 + `shouldShowIntegrationStats`  (adapative) whether to show integration output 0 or 1 (default)
-+ `physicalAbsTolerance`  (exponential) RMS floors [1e-13 1e-11 1e-8 1e-8] for QGPV, buoyancy, speed, and endpoint displacement
++ `thermalLinearDynamics`  explicitly select forced linear thermal evolution for the exponential integrator
++ `physicalAbsTolerance`  (exponential) RMS floors [1e-13 1e-11 1e-8 1e-8] for QGPV, buoyancy, speed, and endpoint displacement; thermal supports a fifth entry for a separate bottom floor
 + `initialStep`  (exponential) initial trial step in seconds, default 3600
 + `maximumStep`  (exponential) maximum trial step in seconds, default 86400
 + `exponentialAdaptive`  (exponential) use physical-norm step doubling, default true
@@ -46,6 +47,9 @@ The default is adaptive stepping. A canonical free-surface QG
 model with WVVerticalDiffusivity can opt into "exponential":
 density diffusion and strict seasonal forcing are evaluated
 analytically, and ETDRK4 advances the other registered forcings.
+Thermal integration requires thermalLinearDynamics=true. Supply five
+physicalAbsTolerance entries to control surface and bottom separately;
+a four-entry vector applies its endpoint floor to both.
 physicalAbsTolerance sets RMS floors for QGPV [s^-1], buoyancy
 [m s^-2], speed [m s^-1], and endpoint displacement [m].
 

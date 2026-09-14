@@ -5,6 +5,8 @@ classdef WVModelExponentialTimeStepMethods < handle
     % Departures from the exact seasonal response are integrator-local.
     % Physical absolute tolerances are RMS q [s^-1], buoyancy [m s^-2],
     % horizontal speed [m s^-1], and endpoint displacement [m], in order.
+    % Thermal linear evolution uses separate surface/bottom entries and requires
+    % thermalLinearDynamics=true; four supplied floors duplicate the endpoint floor.
     % Passive output observers are supported; other integrated observers
     % require a future coupled exponential/ordinary stepping interface.
     % Adaptive damping limits trial h*gammaMax to 1, with a 1.2 stage margin.
@@ -47,12 +49,26 @@ classdef WVModelExponentialTimeStepMethods < handle
             arguments
                 self WVModel
                 options.relTolerance (1,1) double {mustBePositive,mustBeFinite} = 1e-4
-                options.physicalAbsTolerance (1,4) double {mustBePositive,mustBeFinite} = [1e-13 1e-11 1e-8 1e-8]
+                options.physicalAbsTolerance (1,:) double {mustBePositive,mustBeFinite} = [1e-13 1e-11 1e-8 1e-8]
                 options.initialStep (1,1) double {mustBePositive,mustBeFinite} = 3600
                 options.maximumStep (1,1) double {mustBePositive,mustBeFinite} = 86400
+                options.thermalLinearDynamics (1,1) logical = false
                 options.exponentialAdaptive (1,1) logical = true
             end
             self.assertExponentialConfiguration();
+            thermal=isa(self.wvt,'WVTransformFreeSurfaceThermalQG');
+            if thermal && ~options.thermalLinearDynamics
+                error('WVModel:ThermalLinearSelection','Select thermalLinearDynamics=true explicitly; nonlinear thermal evolution requires T4.');
+            end
+            if ~thermal && options.thermalLinearDynamics
+                error('WVModel:ThermalLinearSelection','thermalLinearDynamics applies only to the thermal transform.');
+            end
+            if thermal && numel(options.physicalAbsTolerance)==4
+                options.physicalAbsTolerance=options.physicalAbsTolerance([1 2 3 4 4]);
+            end
+            if numel(options.physicalAbsTolerance)~=4+thermal
+                error('WVModel:PhysicalToleranceShape','Use four APV floors or five thermal floors (QGPV, buoyancy, speed, surface, bottom).');
+            end
             self.densityDiffusionIntegrator=WVDensityDiffusionIntegrator(self.wvt);
             self.exponentialOptions=options;
         end
@@ -71,7 +87,7 @@ classdef WVModelExponentialTimeStepMethods < handle
     end
     methods (Access = private)
         function assertExponentialConfiguration(self)
-            if ~isa(self.wvt,'WVTransformFreeSurfaceQG') || self.isDynamicsLinear
+            if (~isa(self.wvt,'WVTransformFreeSurfaceQG') && ~isa(self.wvt,'WVTransformFreeSurfaceThermalQG')) || self.isDynamicsLinear
                 error('WVModel:ExponentialTransformRequired','Use a canonical free-surface QG model with WVVerticalDiffusivity; remove nonlinear forcing for a diffusion-only run.');
             end
             if length(self.fluxedObservingSystems)~=1 || ~isa(self.fluxedObservingSystems(1),'WVCoefficients')

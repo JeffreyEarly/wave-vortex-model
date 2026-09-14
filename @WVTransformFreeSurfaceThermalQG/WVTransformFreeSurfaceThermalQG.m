@@ -3,8 +3,8 @@ classdef WVTransformFreeSurfaceThermalQG < WVGeometryDoublyPeriodicStratified & 
     %
     % Ath has velocity units and Amda retains the independent real MDA state.
     % The scientific factory retains every requested polynomial direction.
-    % This increment supports construction, fields, projections and snapshots;
-    % model evolution and registered forcing are deliberately unavailable.
+    % Supports forced linear evolution through the existing exponential integrator.
+    % Select thermalLinearDynamics=true explicitly; nonlinear physics is downstream.
     %
     % ```matlab
     % w = WVTransformFreeSurfaceThermalQG.fromStratification([1e5 1e5 1000],[8 8 65],N2Function=@(z)1e-4*ones(size(z)),thermalModeCount=17,mdaModeCount=4);
@@ -155,6 +155,7 @@ classdef WVTransformFreeSurfaceThermalQG < WVGeometryDoublyPeriodicStratified & 
     properties (Access=private)
         polynomialFields_ = []
         sourcePairing_ = []
+        linearEvolutionData_ = []
         endpointGeometry_ = []
     end
     methods
@@ -178,7 +179,7 @@ classdef WVTransformFreeSurfaceThermalQG < WVGeometryDoublyPeriodicStratified & 
             % Empty legacy F/G matrices disable rigid-lid modal bootstrap.
             % Thermal reconstruction never consumes them.
             self@WVGeometryDoublyPeriodicStratified(s.domainSize.',s.gridSize.',z=s.z,j=(0:n-1)',Nj=n,N2Function=N2Function,rhoFunction=rhoFunction,rho0=rho0,latitude=s.latitude,g=g,shouldAntialias=logical(s.shouldAntialias),dLnN2=2*a*ones(nz,1),PF0inv=[],QG0inv=[],PF0=[],QG0=[],P0=[],Q0=[],h_0=[],z_int=s.verticalQuadratureWeights);
-            self@WVTransform(WVForcingType.QGSpectral);
+            self@WVTransform([WVForcingType.QGSpatial WVForcingType.QGSpectral]);
             schema=WVInternal.thermalStateSchema();
             inherited=["z","latitude","g","rho0","shouldAntialias"];
             for k=1:size(schema,1)
@@ -249,20 +250,12 @@ classdef WVTransformFreeSurfaceThermalQG < WVGeometryDoublyPeriodicStratified & 
             annotations(end+1)=WVCoefficientAnnotation('Amda',{'mdaMode'},'m','Mean displacement amplitudes',canonicalBasis="signed-normalized MDA modes");
         end
         function out=coefficientAbsoluteTolerances(~,~) %#ok<STOUT>
-            % Reject adaptive integration until T3 supplies physical error control.
+            % Ordinary adaptive coefficient tolerances are not a thermal physical norm.
             % - Topic: Inspect supported operations
-            error('WV:ThermalEvolutionUnavailable','Thermal integration and error control require T3.');
+            error('WV:ThermalEvolutionUnavailable','Use exponential integration with thermalLinearDynamics=true and physical RMS tolerances.');
         end
-        function out=coefficientTendency(~,varargin) %#ok<STOUT>
-            % Reject an incomplete ordinary RHS rather than omit diffusion.
-            % - Topic: Inspect supported operations
-            error('WV:ThermalEvolutionUnavailable','Use construction and projection only; thermal evolution requires T3.');
-        end
-        function addForcing(~,varargin)
-            % Reject forcing until thermal physical adapters are qualified.
-            % - Topic: Inspect supported operations
-            error('WV:ThermalForcingUnavailable','Thermal forcing requires T3/T5; do not register a second diffusivity.');
-        end
+        [tendency,speed]=coefficientTendency(self,options)
+        data=linearEvolutionData(self)
         function out=waveVortexTransformWithResolution(~,varargin) %#ok<STOUT>
             % Reject unqualified resolution transfer.
             % - Topic: Inspect supported operations
@@ -299,6 +292,18 @@ classdef WVTransformFreeSurfaceThermalQG < WVGeometryDoublyPeriodicStratified & 
         tendency=projectQuasigeostrophicSpatialTendency(self,Fq,Fb)
         [q,u,v,b,ub,vb,phiHat]=quasigeostrophicSpatialState(self)
         derivative=diffZ(self,field,order)
+    end
+    methods (Access=protected)
+        function validateForcingInventory(~,forces)
+            for force=forces
+                if isa(force,'WVVerticalDiffusivity')
+                    error('WV:ThermalDiffusionOwnership','Thermal diffusivity belongs to the transform; use withDiffusivity.');
+                end
+                if ~isa(force,'WVSeasonalSurfaceAnomalyForcing') && (~any(force.forcingType==WVForcingType("QGSpectral")) || force.isClosure)
+                    error('WV:ThermalForcingUnavailable','T3 supports seasonal and coefficient-source adapters; physical nonlinear forcings require T4-T6.');
+                end
+            end
+        end
     end
     methods (Access=private)
         function validateCoefficientValue(self,value,name)

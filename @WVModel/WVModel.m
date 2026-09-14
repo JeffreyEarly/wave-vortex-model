@@ -638,6 +638,9 @@ classdef WVModel < handle & WVModelAdaptiveTimeStepMethods & WVModelFixedTimeSte
             % model with WVVerticalDiffusivity can opt into "exponential":
             % density diffusion and strict seasonal forcing are evaluated
             % analytically, and ETDRK4 advances the other registered forcings.
+            % Thermal integration requires thermalLinearDynamics=true. Supply five
+            % physicalAbsTolerance entries to control surface and bottom separately;
+            % a four-entry vector applies its endpoint floor to both.
             % physicalAbsTolerance sets RMS floors for QGPV [s^-1], buoyancy
             % [m s^-2], speed [m s^-1], and endpoint displacement [m].
             %
@@ -671,7 +674,8 @@ classdef WVModel < handle & WVModelAdaptiveTimeStepMethods & WVModelFixedTimeSte
             % - Parameter bottomAbsTolerance: optional bottom displacement spectral amplitude scale; empty selects reference calibration
             % - Parameter relTolerance: relative tolerance, 1e-3 by default; coefficient error for adaptive stepping or reconstructed RMS error for exponential stepping
             % - Parameter shouldShowIntegrationStats: (adapative) whether to show integration output 0 or 1 (default)
-            % - Parameter physicalAbsTolerance: (exponential) RMS floors [1e-13 1e-11 1e-8 1e-8] for QGPV, buoyancy, speed, and endpoint displacement
+            % - Parameter thermalLinearDynamics: explicitly select forced linear thermal evolution for the exponential integrator
+            % - Parameter physicalAbsTolerance: (exponential) RMS floors [1e-13 1e-11 1e-8 1e-8] for QGPV, buoyancy, speed, and endpoint displacement; thermal supports a fifth entry for a separate bottom floor
             % - Parameter initialStep: (exponential) initial trial step in seconds, default 3600
             % - Parameter maximumStep: (exponential) maximum trial step in seconds, default 86400
             % - Parameter exponentialAdaptive: (exponential) use physical-norm step doubling, default true
@@ -692,9 +696,10 @@ classdef WVModel < handle & WVModelAdaptiveTimeStepMethods & WVModelFixedTimeSte
                 adaptiveTimeStepOptions.bottomAbsTolerance double {mustBeReal,mustBeFinite,mustBePositive}
                 adaptiveTimeStepOptions.relTolerance = 1e-3;
                 adaptiveTimeStepOptions.shouldShowIntegrationStats double {mustBeMember(adaptiveTimeStepOptions.shouldShowIntegrationStats,[0 1])} = 0
-                exponentialTimeStepOptions.physicalAbsTolerance (1,4) double {mustBePositive,mustBeFinite} = [1e-13 1e-11 1e-8 1e-8]
+                exponentialTimeStepOptions.physicalAbsTolerance (1,:) double {mustBePositive,mustBeFinite} = [1e-13 1e-11 1e-8 1e-8]
                 exponentialTimeStepOptions.initialStep (1,1) double {mustBePositive,mustBeFinite} = 3600
                 exponentialTimeStepOptions.maximumStep (1,1) double {mustBePositive,mustBeFinite} = 86400
+                exponentialTimeStepOptions.thermalLinearDynamics (1,1) logical = false
                 exponentialTimeStepOptions.exponentialAdaptive (1,1) logical = true
             end
 
