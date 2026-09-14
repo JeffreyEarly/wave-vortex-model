@@ -596,7 +596,7 @@ classdef WVTransformFreeSurfaceQG < WVGeometryDoublyPeriodicStratified & WVTrans
             tolerances.Amda = absTolerance*sqrt(meanRadialWidth./mdaEnergyFactor);
         end
 
-        function [tendency,speed] = coefficientTendency(self,options)
+        function [tendency,speed,processes] = coefficientTendency(self,options)
             % Evaluate the family-keyed free-surface QG tendency.
             %
             % Every registered `QGSpatial` object contributes an interior
@@ -608,10 +608,11 @@ classdef WVTransformFreeSurfaceQG < WVGeometryDoublyPeriodicStratified & WVTrans
             % evaluation; it is not retained as transform cache state.
             %
             % - Topic: Transform coefficient state
-            % - Declaration: [tendency,speed] = coefficientTendency(self,options)
+            % - Declaration: [tendency,speed,processes] = coefficientTendency(self,options)
             % - Parameter options.excludingForcing: forcing names handled analytically by an integrator; empty evaluates every forcing
             % - Returns speed: maximum horizontal speed from the shared reconstruction
             % - Returns tendency: scalar structure with `Ag_q`, `Ag_0`, and `Amda` tendencies
+            % - Returns processes: ordered labels and actual family-keyed callback increments
             arguments
                 self WVTransformFreeSurfaceQG
                 options.excludingForcing (1,:) string = strings(1,0)
@@ -623,14 +624,46 @@ classdef WVTransformFreeSurfaceQG < WVGeometryDoublyPeriodicStratified & WVTrans
                 [q,uPhysical,vPhysical,b,ub,vb,phiHat] = self.quasigeostrophicSpatialState();
                 physicalState = struct('q',q,'u',uPhysical,'v',vPhysical,'b',b,'ub',ub,'vb',vb,'phiHat',phiHat,'uvMax',max(hypot(uPhysical,vPhysical),[],"all"));
             end
+            if nargout>2
+                blank=struct(Ag_q=zeros(size(self.Ag_q)),Ag_0=zeros(size(self.Ag_0)),Amda=zeros(size(self.Amda)));
+                processes=struct(labels=strings(1,0),tendencies=repmat(blank,1,0));
+            end
             for iForcing = 1:length(self.spatialFluxForcing)
                 if any(options.excludingForcing==string(self.spatialFluxForcing(iForcing).name)), continue; end
+                if nargout>2, beforeQ=Fq; beforeB=Fb; end
                 [Fq,Fb] = self.spatialFluxForcing(iForcing).addQuasigeostrophicSpatialForcing(self,Fq,Fb,physicalState);
+                if nargout>2
+                    processes.labels(end+1)=string(self.spatialFluxForcing(iForcing).name);
+                    processes.tendencies(end+1)=self.projectQuasigeostrophicSpatialTendency(Fq-beforeQ,Fb-beforeB);
+                end
             end
             tendency = self.projectQuasigeostrophicSpatialTendency(Fq,Fb);
             for iForcing = 1:length(self.spectralFluxForcing)
                 if any(options.excludingForcing==string(self.spectralFluxForcing(iForcing).name)), continue; end
-                tendency = self.spectralFluxForcing(iForcing).addQuasigeostrophicSpectralForcing(self,tendency,physicalState);
+                if nargout>2, before=tendency; end
+                force=self.spectralFluxForcing(iForcing);
+                if nargout>2 && isa(force,'WVAdaptiveDamping')
+                    [tendency,horizontal,~]=force.addQuasigeostrophicSpectralForcing(self,tendency,physicalState);
+                else
+                    tendency=force.addQuasigeostrophicSpectralForcing(self,tendency,physicalState);
+                end
+                if nargout>2
+                    increment=blank;
+                    for family=string(fieldnames(blank)).'
+                        increment.(family)=tendency.(family)-before.(family);
+                    end
+                    if isa(force,'WVAdaptiveDamping')
+                        vertical=blank;
+                        for family=string(fieldnames(blank)).'
+                            vertical.(family)=increment.(family)-horizontal.(family);
+                        end
+                        processes.labels(end+1:end+2)=string(force.name)+[": horizontal",": vertical"];
+                        processes.tendencies(end+1:end+2)=[horizontal,vertical];
+                    else
+                        processes.labels(end+1)=string(force.name);
+                        processes.tendencies(end+1)=increment;
+                    end
+                end
             end
             if nargout>1, speed=physicalState.uvMax; end
         end

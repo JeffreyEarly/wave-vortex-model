@@ -66,6 +66,9 @@ Each legacy transform installs this forcing by default. A
 nonlinear `WVModel` evaluates it automatically. Analytical linear
 evolution does not evaluate nonlinear forcing, so the object does not
 need to be removed when using linear evolution.
+Thermal QG requires explicit registration and qualified nonlinear product
+quadrature. Its complete interior and endpoint tendencies are integrated
+on that quadrature before projection through the thermal weak dual.
 Free-surface Boussinesq transforms remain linear by default. Adding
 this forcing requires horizontal antialiasing and an inventory
 constructed with quadratic-product qualification. Its callback adds

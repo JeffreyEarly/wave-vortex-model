@@ -3,7 +3,7 @@ layout: default
 title: isValidConjugateModeNumber
 parent: WVTransformFreeSurfaceThermalQG
 grand_parent: Transforms
-nav_order: 111
+nav_order: 114
 mathjax: true
 ---
 

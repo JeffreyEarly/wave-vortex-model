@@ -1,11 +1,11 @@
 classdef WVDensityDiffusionIntegrator < handle
     % Integrate canonical free-surface QG with exact linear density diffusion.
     %
-    % Accepted and trial coordinates are local to each integration. The transform's
-    % Ag_q, Ag_0, and Amda remain directly mutable and persist unchanged.
-    % Diffusion coordinates are square changes of basis, packed only for the
-    % integrator. Reattach explicitly after canonical snapshot restoration.
-    % Positive computed rates are reported, never clipped.
+    % APV coefficients Ag_q and Ag_0, thermal coefficients Ath, and the shared horizontal-mean family Amda remain canonical and directly mutable. Diffusion eigencoordinates are square changes of basis local to each integration. Reattach explicitly after canonical snapshot restoration. Positive computed rates are reported, never clipped.
+    %
+    % APV transforms obtain diffusivity from WVVerticalDiffusivity; thermal transforms use their stored kappa_z.
+    %
+    % For an APV transform with both endpoints active:
     %
     % ```matlab
     % wvt.addForcing(WVVerticalDiffusivity(wvt,kappa_z=1e-5));
@@ -27,55 +27,25 @@ classdef WVDensityDiffusionIntegrator < handle
         rates
     end
     properties (Access = private)
-        thermalEvolution_ = []
-        diffusionForcing_
-        columnGroups_
-        % Width-grouped matrices and columns derived from the fixed diffusion operators.
-        modeTransformBatches_ = {}
-        balancedShape_
-        balancedCount_
+        evolution_
         seasonalForcing_ = {}
         seasonalSource_ = {}
         seasonalSourceIndices_ = {}
         distinctRates_
         rateIndices_
-        % Positive norm factors depend only on this integrator's fixed operators.
-        physicalNormFactors_ = {}
     end
     methods
-        function self = WVDensityDiffusionIntegrator(wvt)
+        function self = WVDensityDiffusionIntegrator(wvt,options)
             % Obtain exact eigencoordinates from the registered diffusion forcing.
             % - Topic: Density diffusion integration
             arguments
                 wvt (1,1) WVTransform
+                options.thermalLinearDynamics (1,1) logical = true
             end
             self.wvt=wvt;
-            if isa(wvt,'WVTransformFreeSurfaceThermalQG')
-                self.thermalEvolution_=wvt.linearEvolutionData();
-                self.rates=self.thermalEvolution_.rates;
-                [self.distinctRates_,~,self.rateIndices_]=unique(self.rates);
-                self.updateSeasonalSources();
-                return
-            end
-            if ~isa(wvt,'WVTransformFreeSurfaceQG'), error('WV:DensityDiffusionTransform','Supply an adiabatic or thermal free-surface QG transform.'); end
-            if ~any(wvt.forcingNames()=="vertical diffusivity")
-                error('WV:DensityDiffusionForcingRequired','Register WVVerticalDiffusivity before selecting exponential integration.');
-            end
-            self.diffusionForcing_=wvt.forcingWithName('vertical diffusivity');
-            if ~isa(self.diffusionForcing_,'WVVerticalDiffusivity')
-                error('WV:DensityDiffusionForcingRequired','Exponential integration requires WVVerticalDiffusivity.');
-            end
-            self.operators=self.diffusionForcing_.densityDiffusionModes();
-            self.balancedShape_=[wvt.apvModeCount+wvt.activeEndpointCount,length(wvt.klNonzero)];
-            self.balancedCount_=prod(self.balancedShape_);
-            lambda=zeros(self.balancedShape_);
-            self.columnGroups_=cell(length(wvt.khUnique),1);
-            for p=1:length(wvt.khUnique)
-                columns=find(wvt.klNonzeroKhUniqueIndex==p);
-                self.columnGroups_{p}=columns;
-                lambda(:,columns)=repmat(self.operators.pages{p}.rates,1,length(columns));
-            end
-            self.rates=[lambda(:);self.operators.mda.rates];
+            self.evolution_=WVInternal.qgEvolutionAdapter(wvt,options.thermalLinearDynamics);
+            self.operators=self.evolution_.operators;
+            self.rates=self.evolution_.rates;
             [self.distinctRates_,~,self.rateIndices_]=unique(self.rates);
             self.updateSeasonalSources();
         end
@@ -99,6 +69,7 @@ classdef WVDensityDiffusionIntegrator < handle
             evolution=self;
             evolution.validateConfiguration();
             t=model.t;
+            acceptedState=w.coefficientState();
             acceptedTotal=evolution.modalState();
             try
                 times=model.outputTimesForIntegrationPeriod(t,finalTime);
@@ -108,13 +79,15 @@ classdef WVDensityDiffusionIntegrator < handle
                 nextOutput=2; state=acceptedTotal-evolution.seasonalCoefficients(t);
                 h=min(o.initialStep,o.maximumStep);
                 accepted=0; rejected=0; evaluations=0; outputEvaluations=0;
+                stageDampingRate=0;
                 steps=[]; maxCFL=0; maxDampingNumber=0; timer=tic;
                 gridSize=min(w.Lx/w.Nx,w.Ly/w.Ny);
                 while t<finalTime
                     h=min([h,finalTime-t,o.maximumStep]);
+                    stageDampingRate=0;
                     [N0,speed]=rhs(state,t);
                     h=min(h,.5*gridSize/max(speed,realmin));
-                    h=min(h,1/max(evolution.maximumExplicitDampingRate(speed),realmin));
+                    h=min(h,1/max(stageDampingRate,realmin));
                     c=evolution.exponentialCoefficients(h);
                     [whole,stageSpeed]=WVInternal.exponentialRK4Step(state,t,h,c,@rhs,N0,speed);
                     errorValue=0; trial=whole;
@@ -125,7 +98,7 @@ classdef WVDensityDiffusionIntegrator < handle
                         stageSpeed=max([stageSpeed s1 s2]);
                         difference=evolution.physicalErrorNorms(trial-whole)/15;
                         normStart=state; normEnd=trial;
-                        if ~isempty(self.thermalEvolution_)
+                        if self.evolution_.errorScaleUsesTotal
                             normStart=acceptedTotal;
                             normEnd=trial+evolution.seasonalCoefficients(t+h);
                         end
@@ -133,12 +106,14 @@ classdef WVDensityDiffusionIntegrator < handle
                         errorValue=max(difference./scale);
                     end
                     cfl=h*stageSpeed/gridSize;
-                    dampingNumber=h*evolution.maximumExplicitDampingRate(stageSpeed);
+                    dampingNumber=h*stageDampingRate;
                     finite=all(isfinite(trial),'all') && isfinite(errorValue);
                     accept=finite && errorValue<=1 && cfl<=.6 && dampingNumber<=1.2;
                     if accept
                         oldTime=t; oldState=state;
-                        t=t+h; state=trial; acceptedTotal=state+evolution.seasonalCoefficients(t);
+                        newTotal=trial+evolution.seasonalCoefficients(t+h);
+                        newState=evolution.fromModes(newTotal);
+                        t=t+h; state=trial; acceptedTotal=newTotal; acceptedState=newState;
                         accepted=accepted+1; steps(end+1)=h; %#ok<AGROW>
                         maxCFL=max(maxCFL,cfl);
                         maxDampingNumber=max(maxDampingNumber,dampingNumber);
@@ -196,6 +171,7 @@ classdef WVDensityDiffusionIntegrator < handle
                 setState(stageTime,c+evolution.seasonalCoefficients(stageTime));
                 [tendency,s]=model.explicitFlux();
                 value=tendency;
+                stageDampingRate=max(stageDampingRate,evolution.maximumExplicitDampingRate(s));
                 evaluations=evaluations+1;
             end
             function [value,s] = outputRHS(c,stageTime)
@@ -205,7 +181,8 @@ classdef WVDensityDiffusionIntegrator < handle
                 outputEvaluations=outputEvaluations+1;
             end
             function restoreAccepted()
-                setState(t,acceptedTotal);
+                w.t=t;
+                for name=reshape(string(fieldnames(acceptedState)),1,[]), w.(name)=acceptedState.(name); end
             end
             function setState(time,total)
                 w.t=time;
@@ -229,20 +206,13 @@ classdef WVDensityDiffusionIntegrator < handle
         function amplitudes = toModes(self,state)
             % Transform a family-keyed state or tendency without losing rows.
             % - Topic: Density diffusion integration
-            if ~isempty(self.thermalEvolution_), amplitudes=self.thermalEvolution_.toModes(state); return; end
-            balanced=[state.Ag_q;state.Ag_0];
-            transformed=self.applyModeTransformBatches(balanced,"toModes");
-            amplitudes=[transformed(:);self.operators.mda.toModes*state.Amda];
+            amplitudes=self.evolution_.toModes(state);
         end
 
         function state = fromModes(self,amplitudes)
             % Invert the complete modal coordinate change.
             % - Topic: Density diffusion integration
-            if ~isempty(self.thermalEvolution_), state=self.thermalEvolution_.fromModes(amplitudes); return; end
-            [transformed,meanState]=self.unpackModalState(amplitudes);
-            balanced=self.applyModeTransformBatches(transformed,"fromModes");
-            n=self.wvt.apvModeCount;
-            state=struct(Ag_q=balanced(1:n,:),Ag_0=balanced(n+1:end,:),Amda=meanState);
+            state=self.evolution_.fromModes(amplitudes);
         end
 
         function amplitudes = seasonalCoefficients(self,t)
@@ -265,127 +235,48 @@ classdef WVDensityDiffusionIntegrator < handle
             % - Topic: Density diffusion integration
             self.updateSeasonalSources();
             excluded=strings(1,0);
-            if isempty(self.thermalEvolution_), excluded=string(self.diffusionForcing_.name); end
             if excludeSeasonal
                 for k=1:length(self.seasonalForcing_)
                     excluded(end+1)=string(self.seasonalForcing_{k}.name); %#ok<AGROW>
                 end
             end
-            if isempty(self.thermalEvolution_)
-                [tendency,speed]=self.wvt.coefficientTendency(excludingForcing=excluded);
-            else
-                [tendency,speed]=self.wvt.coefficientTendency(linearDynamics=true,excludingHomogeneousEvolution=true,excludingForcing=excluded);
-            end
+            [tendency,speed]=self.evolution_.explicitRHS(excluded);
             amplitudes=self.toModes(tendency);
         end
 
         function validateConfiguration(self)
             % Require setup again after replacing or changing the diffusion forcing.
             % - Topic: Density diffusion integration
-            if ~isempty(self.thermalEvolution_), return; end
-            names=self.wvt.forcingNames();
-            force=self.diffusionForcing_;
-            if ~any(names==string(force.name)) || self.wvt.forcingWithName(force.name)~=force || ...
-                    force.kappa_z~=self.operators.kappa_z || ...
-                    force.shouldForceMeanDensityAnomaly~=self.operators.shouldForceMeanDensityAnomaly
-                error('WV:DensityDiffusionConfigurationChanged','Density diffusion changed; call model.setupIntegrator(integratorType="exponential") again.');
-            end
+            self.evolution_.validateConfiguration();
         end
 
         function norms = physicalErrorNorms(self,amplitudes)
-            % RMS full QGPV, buoyancy, speed, and active-endpoint displacement.
-            % Includes MDA means; compact nonzero Fourier entries count twice.
-            % Fixed QR factors preserve positive quadrature norms without
-            % repeatedly reconstructing fields on the vertical grid.
+            % Evaluate the owning transform's positive physical RMS norms.
             % - Topic: Density diffusion integration
-            if ~isempty(self.thermalEvolution_), norms=self.thermalEvolution_.physicalErrorNorms(amplitudes); return; end
-            [balanced,meanState]=self.unpackModalState(amplitudes);
-            if isempty(self.physicalNormFactors_), self.buildPhysicalNormFactors(); end
-            variance=zeros(1,4);
-            for p=1:length(self.columnGroups_)
-                a=balanced(:,self.columnGroups_{p});
-                for k=1:4
-                    variance(k)=variance(k)+2*sum(abs(self.physicalNormFactors_{p,k}*a).^2,'all');
-                end
-            end
-            for k=[1 2 4]
-                variance(k)=variance(k)+sum(abs(self.physicalNormFactors_{end,k}*meanState).^2);
-            end
-            norms=sqrt(variance);
+            norms=self.evolution_.physicalErrorNorms(amplitudes);
         end
 
         function rate = maximumExplicitDampingRate(self,speed)
-            % Bound existing parent-transform damping without changing its strength.
+            % Sum forcing-owned explicit bounds at the current physical stage.
             % - Topic: Density diffusion integration
             rate=0;
             for name=reshape(self.wvt.forcingNames(),1,[])
                 force=self.wvt.forcingWithName(name);
-                if isa(force,'WVAdaptiveDamping')
-                    rate=rate+speed*max(abs([force.dampAg_q(:);force.dampAg_0(:)]));
+                contribution=force.maximumExplicitDampingRate(struct(uvMax=speed));
+                if ~isscalar(contribution) || ~isreal(contribution) || ~isfinite(contribution) || contribution<0
+                    error('WV:ExplicitDampingBound','Forcing %s must supply a finite nonnegative stability bound.',force.name);
                 end
+                rate=rate+contribution;
             end
         end
     end
     methods (Access = private)
-        function output = applyModeTransformBatches(self,input,direction)
-            if isempty(self.modeTransformBatches_), self.buildModeTransformBatches(); end
-            output=zeros(size(input),'like',input);
-            for k=1:length(self.modeTransformBatches_)
-                batch=self.modeTransformBatches_{k};
-                values=reshape(input(:,batch.columns(:)),size(input,1),size(batch.columns,1),[]);
-                transformed=pagemtimes(batch.(direction),values);
-                output(:,batch.columns(:))=reshape(transformed,size(input,1),[]);
-            end
-        end
-
-        function buildModeTransformBatches(self)
-            widths=cellfun(@length,self.columnGroups_);
-            uniqueWidths=unique(widths);
-            batches=cell(length(uniqueWidths),1);
-            for k=1:length(uniqueWidths)
-                pageIndices=find(widths==uniqueWidths(k));
-                pages=[self.operators.pages{pageIndices}];
-                columns=reshape(cell2mat(self.columnGroups_(pageIndices).'),uniqueWidths(k),[]);
-                batches{k}=struct(columns=columns,toModes=cat(3,pages.toModes),fromModes=cat(3,pages.fromModes));
-            end
-            self.modeTransformBatches_=batches;
-        end
-
-        function [balanced,meanState] = unpackModalState(self,amplitudes)
-            if ~iscolumn(amplitudes) || length(amplitudes)~=length(self.rates) || any(~isfinite(amplitudes))
-                error('WV:DensityDiffusionState','Supply one finite packed diffusion-coordinate column.');
-            end
-            balanced=reshape(amplitudes(1:self.balancedCount_),self.balancedShape_);
-            meanState=self.operators.mda.fromModes*amplitudes(self.balancedCount_+1:end);
-            if norm(imag(meanState))>1e-12*max(norm(meanState),realmin)
-                error('WV:DensityDiffusionMeanReality','MDA coordinates must reconstruct a real horizontal mean.');
-            end
-            meanState=real(meanState);
-        end
-
         function c = exponentialCoefficients(self,h)
             % Evaluate repeated rates once, then restore packed state order.
             c=WVInternal.exponentialRK4Coefficients(self.distinctRates_,h);
             for name=string(fieldnames(c)).'
                 c.(name)=c.(name)(self.rateIndices_);
             end
-        end
-
-        function buildPhysicalNormFactors(self)
-            % For each weighted reconstruction B, B=Q*R gives ||B*a||=||R*a||.
-            % QR retains positivity even for rank-deficient physical fields.
-            weights=sqrt(self.operators.weights/self.wvt.Lz);
-            factors=cell(length(self.columnGroups_)+1,4);
-            for p=1:length(self.columnGroups_)
-                r=self.operators.reconstruction{p}; A=self.operators.pages{p}.fromModes;
-                maps={weights.*(r.q*A),weights.*(r.buoyancy*A),self.wvt.khUnique(p)*weights.*(r.phi*A),r.endpoint*A};
-                for k=1:4, [~,factors{p,k}]=qr(maps{k},0); end
-            end
-            % unpackModalState already recovers and validates real canonical MDA.
-            r=self.operators.mda.reconstruction;
-            maps={weights.*r.q,weights.*r.buoyancy,[],r.endpoint};
-            for k=[1 2 4], [~,factors{end,k}]=qr(maps{k},0); end
-            self.physicalNormFactors_=factors;
         end
 
         function updateSeasonalSources(self)
@@ -402,7 +293,7 @@ classdef WVDensityDiffusionIntegrator < handle
             for k=1:length(forces)
                 Fb=zeros(w.Nx,w.Ny,numel(w.activeEndpoint));
                 Fb(:,:,1)=forces{k}.amplitude*forces{k}.pattern;
-                source=w.projectQuasigeostrophicSpatialTendency(zeros(w.spatialMatrixSize),Fb);
+                source=self.evolution_.projectSource(zeros(w.spatialMatrixSize),Fb);
                 amplitudes=self.toModes(source);
                 % Keep every nonzero entry, including Fourier roundoff tails.
                 indices{k}=find(amplitudes~=0);

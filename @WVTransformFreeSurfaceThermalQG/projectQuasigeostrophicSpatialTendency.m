@@ -25,9 +25,5 @@ if isempty(self.sourcePairing_)
     nodes=-cos(pi*(0:self.Nz-1)'/(self.Nz-1));
     self.sourcePairing_=r.psi'*(w.*WVInternal.thermalInterpolation(nodes,targets));
 end
-tendency=struct(Ath=complex(zeros(size(self.Ath))),Amda=zeros(size(self.Amda)));
-for p=1:numel(self.khUnique)
-    columns=find(self.klNonzeroKhUniqueIndex==p); indices=self.klNonzero(columns);
-    tendency.Ath(:,columns)=-self.sourceDual(:,:,p)*(self.sourcePairing_*q(:,indices))+self.sourceEndpoint(:,:,p)*b(:,indices);
-end
+tendency=WVInternal.projectThermalWeak(self,self.sourcePairing_*q(:,self.klNonzero),b(:,self.klNonzero));
 end

@@ -134,6 +134,18 @@ classdef WVForcing < handle & matlab.mixin.Heterogeneous & CAAnnotatedClass
             self.forcingType = forcingType;
         end
 
+        function rate = maximumExplicitDampingRate(~,~)
+            % Return the forcing's explicit stability bound in inverse seconds.
+            %
+            % The exponential controller calls this at every actual trial state.
+            % The second argument supplies the evaluated physical uvMax; other
+            % state-dependent bounds may inspect the owning transform. Ordinary
+            % sources have no damping bound and return zero.
+            % - Topic: Inspect forcing or damping scales
+            % - Developer: true
+            rate=0;
+        end
+
         function contract = portableImplementationContract(self)
             % Describe availability of the paired portable C++ implementation.
             %

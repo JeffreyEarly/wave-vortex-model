@@ -3,7 +3,7 @@ layout: default
 title: convertFromWavenumberToFrequency
 parent: WVTransformFreeSurfaceThermalQG
 grand_parent: Transforms
-nav_order: 55
+nav_order: 58
 mathjax: true
 ---
 

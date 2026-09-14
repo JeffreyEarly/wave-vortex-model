@@ -27,7 +27,7 @@ if norm(qhat(:,meanIndex)-expectedMeanQ)>1e-13+1e-10*norm(expectedMeanQ) || norm
 end
 state=struct(Ath=complex(zeros(size(self.Ath))),Amda=meanState);
 r=WVInternal.thermalPolynomialFields(self.z,self.thermalModeCount,self.Lz,self.N20,self.inverseScale,0,self.f,self.g);
-sqrtWeights=sqrt(self.verticalQuadratureWeights/self.Lz);
+weights=self.verticalQuadratureWeights/self.Lz;
 qFit=complex(zeros(size(qhat))); bFit=complex(zeros(size(bhat)));
 qFit(:,meanIndex)=expectedMeanQ; bFit(:,meanIndex)=expectedMeanB;
 for p=1:numel(self.khUnique)
@@ -35,9 +35,7 @@ for p=1:numel(self.khUnique)
     C=self.thermalToPolynomial(:,:,p);
     A=(r.qgpv-self.khUnique(p)^2*r.psi)*C;
     B=r.eta_i([end 1],:)*C;
-    right=B'/(B*B'); Z=null(B);
-    baseline=right*bhat(:,horizontal);
-    amplitude=baseline+Z*((sqrtWeights.*(A*Z))\(sqrtWeights.*(qhat(:,horizontal)-A*baseline)));
+    amplitude=WVInternal.thermalConstrainedFit(A,qhat(:,horizontal),B,bhat(:,horizontal),weights);
     if norm(B*amplitude-bhat(:,horizontal),'fro')>1e-8*max(1,norm(bhat(:,horizontal),'fro'))
         error('WV:ThermalEndpointFit','Unable to satisfy the represented endpoint constraints.');
     end

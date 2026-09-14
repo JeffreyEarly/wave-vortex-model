@@ -21,7 +21,7 @@ for k=1:size(schema,1)
         if ~isequal(actual,expected), error('WV:ThermalStoredState','Invalid shape for scientific array %s.',name); end
     end
 end
-if s.schemaVersion~=1 || numel(s.domainSize)~=3 || any(s.domainSize<=0) || any(s.gridSize~=fix(s.gridSize)) || any(s.gridSize<4) || s.N20<=0 || s.g<=0 || s.rho0<=0 || s.kappa_z<0 || abs(s.latitude)>90 || abs(sind(s.latitude))<1e-8 || ~ismember(s.shouldAntialias,[0 1])
+if s.schemaVersion~=2 || numel(s.domainSize)~=3 || any(s.domainSize<=0) || any(s.gridSize~=fix(s.gridSize)) || any(s.gridSize<4) || s.N20<=0 || s.g<=0 || s.rho0<=0 || s.kappa_z<0 || abs(s.latitude)>90 || abs(sind(s.latitude))<1e-8 || ~ismember(s.shouldAntialias,[0 1])
     error('WV:ThermalStoredState','Invalid schema, geometry, stratification or diffusivity.');
 end
 n=numel(s.thermalDirection); m=numel(s.mdaMode); nr=numel(s.khUnique);
@@ -39,5 +39,12 @@ for p=1:nr
     if norm(s.polynomialToThermal(:,:,p)*s.thermalToPolynomial(:,:,p)-eye(n),'fro')/sqrt(n)>1e-8
         error('WV:ThermalStoredState','Stored thermal inverse does not match its reconstruction.');
     end
+end
+
+if ~ismember(s.shouldCheckQuadraticAliasing,[0 1]) || s.nonlinearQuadratureTolerance<=0 || s.nonlinearQuadratureCount<0 || s.nonlinearQuadratureCount~=fix(s.nonlinearQuadratureCount) || s.nonlinearQuadratureResidual<0 || s.nonlinearReferenceResidual<0
+    error('WV:ThermalStoredState','Invalid nonlinear quadrature policy.');
+end
+if s.shouldCheckQuadraticAliasing && (~s.shouldAntialias || s.nonlinearQuadratureCount<ceil(3*(n-1)/2)+1 || s.nonlinearQuadratureResidual>s.nonlinearQuadratureTolerance || s.nonlinearReferenceResidual>.2*s.nonlinearQuadratureTolerance)
+    error('WV:ThermalStoredState','Stored nonlinear quadrature qualification is inconsistent.');
 end
 end

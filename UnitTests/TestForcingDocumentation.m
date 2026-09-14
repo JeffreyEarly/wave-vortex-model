@@ -10,6 +10,16 @@ classdef TestForcingDocumentation < matlab.unittest.TestCase
     end
 
     methods (Test, TestTags="full")
+        function thermalClosureDocumentsItsPublicFactoryAndPhysicalDifference(testCase)
+            overview=testCase.generatedPage("wvthermalapvdamping","index.md",true);
+            factory=testCase.generatedPage("wvthermalapvdamping","fromapvtransform.md",true);
+            testCase.verifySubstring(overview,"Create the forcing");
+            testCase.verifySubstring(overview,"Inspect forcing configuration");
+            testCase.verifySubstring(overview,"Evaluate forcing budgets");
+            testCase.verifySubstring(overview,"not assumed negative");
+            testCase.verifySubstring(overview,"complement I-L*P");
+            testCase.verifyFalse(contains(factory,"Developer documentation"));
+        end
         function suppliedForcingPagesDescribeCurrentContracts(testCase)
             expectations = {
                 "wvnonlinearadvection", false, "self = WVNonlinearAdvection(wvt)", ["installs this forcing by default" "using linear evolution"]

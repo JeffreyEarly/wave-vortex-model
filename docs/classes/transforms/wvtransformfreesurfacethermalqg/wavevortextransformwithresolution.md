@@ -3,7 +3,7 @@ layout: default
 title: waveVortexTransformWithResolution
 parent: WVTransformFreeSurfaceThermalQG
 grand_parent: Transforms
-nav_order: 239
+nav_order: 252
 mathjax: true
 ---
 
@@ -19,10 +19,13 @@ Create the same transform family at a new resolution.
  wvtNew = waveVortexTransformWithResolution(resolution)
 ```
 ## Parameters
-+ `resolution`  positive integer spatial grid counts for the target transform
++ `Nxyz`  target horizontal Fourier sizes and vertical sample count
++ `options.thermalModeCount`  target complete thermal dimension
++ `options.mdaModeCount`  target independently retained mean dimension
 
 ## Returns
-+ `wvtNew`  transform of the same family at `resolution`
++ `other`  new transform with transferred state, clocks and forcing
++ `assessment`  physical discarded-content and projection residuals
 
 ## Discussion
 Create the same transform family at a new resolution.

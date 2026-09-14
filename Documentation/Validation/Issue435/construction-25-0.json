@@ -1,0 +1,21 @@
+{
+  "counts": [
+    257,
+    515,
+    1031
+  ],
+  "testPolynomialCount": 37,
+  "measureNames": [
+    "dz",
+    "dz/J"
+  ],
+  "residuals": [
+    2.5574662452928738E-14,
+    2.5168239135213321E-14
+  ],
+  "referenceResiduals": [
+    1.960908762228229E-14,
+    2.0145388920101787E-14
+  ],
+  "tolerance": 1E-8
+}

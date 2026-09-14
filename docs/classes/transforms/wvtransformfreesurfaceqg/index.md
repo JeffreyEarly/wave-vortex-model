@@ -375,6 +375,7 @@ These items document internal implementation details and are not part of the pri
 + Class internals
   + [`boundaryMomentumTendency`](/classes/transforms/wvtransformfreesurfaceqg/boundarymomentumtendency.html) Project momentum stress per unit density onto the signed balanced basis.
   + [`boundaryResolutionTolerance`](/classes/transforms/wvtransformfreesurfaceqg/boundaryresolutiontolerance.html) Physical derivative and energy accuracy of fixed zero-APV responses.
+  + [`boundaryStreamfunction`](/classes/transforms/wvtransformfreesurfaceqg/boundarystreamfunction.html) Reconstruct one endpoint streamfunction without a volume reconstruction.
   + [`chebfunForZArray`](/classes/transforms/wvtransformfreesurfaceqg/chebfunforzarray.html)
   + [`constructionAssessment`](/classes/transforms/wvtransformfreesurfaceqg/constructionassessment.html) Evidence produced by scientific construction; empty after canonical restore.
   + [`eta_i`](/classes/transforms/wvtransformfreesurfaceqg/eta_i.html) Interior displacement on the fixed reference grid, including MDA.

@@ -59,13 +59,38 @@ classdef WVSeasonalSurfaceAnomalyForcing < WVForcing
             i=find(wvt.activeEndpoint==1,1);
             Fb(:,:,i)=Fb(:,:,i)+self.amplitude*sin(2*pi*wvt.t/self.period+self.phase)*self.pattern;
         end
-        function force = forcingWithResolutionOfTransform(self,wvt)
-            % Require an explicitly resampled horizontal forcing pattern.
+        function [force,relativeError] = forcingWithResolutionOfTransform(self,wvt)
+            % Transfer the Fourier pattern while preserving its absolute clock.
+            % Content outside either retained Fourier space is measured by a
+            % sampled round trip; relative RMS loss above 1e-8 rejects conversion.
             % - Topic: Create the forcing
-            if ~isequal(size(self.pattern),[wvt.Nx wvt.Ny])
-                error('WVSeasonalSurfaceAnomalyForcing:ResolutionUnsupported','Supply a pattern on the new horizontal grid.');
+            % - Parameter wvt: compatible target with identical horizontal domain
+            % - Returns force: target-owned seasonal forcing with unchanged clock
+            % - Returns relativeError: sampled relative RMS round-trip pattern loss
+            arguments (Input)
+                self WVSeasonalSurfaceAnomalyForcing
+                wvt (1,1) WVTransform
             end
-            force=WVSeasonalSurfaceAnomalyForcing(wvt,pattern=self.pattern,amplitude=self.amplitude,period=self.period,phase=self.phase);
+            if ~isequal([self.wvt.Lx self.wvt.Ly],[wvt.Lx wvt.Ly])
+                error('WV:TransferIncompatible','Seasonal forcing conversion requires identical horizontal domains.');
+            end
+            source=WVGeometryDoublyPeriodic([self.wvt.Lx self.wvt.Ly],[self.wvt.Nx self.wvt.Ny],Nz=1,shouldAntialias=self.wvt.shouldAntialias,shouldExcludeNyquist=true,shouldExcludeConjugates=true,conjugateDimension=2);
+            target=WVGeometryDoublyPeriodic([wvt.Lx wvt.Ly],[wvt.Nx wvt.Ny],Nz=1,shouldAntialias=wvt.shouldAntialias,shouldExcludeNyquist=true,shouldExcludeConjugates=true,conjugateDimension=2);
+            S=source.transformFromSpatialDomainWithFourier(self.pattern);
+            [common,index]=ismember([target.kMode_wv,target.lMode_wv],[source.kMode_wv,source.lMode_wv],'rows');
+            T=complex(zeros(1,target.Nkl)); T(:,common)=S(:,index(common));
+            recovered=complex(zeros(size(S))); recovered(:,index(common))=T(:,common);
+            back=source.transformToSpatialDomainWithFourier(recovered);
+            relativeError=norm(back-self.pattern,'fro')/max(norm(self.pattern,'fro'),realmin);
+            if relativeError>1e-8
+                error('WVSeasonalSurfaceAnomalyForcing:UnresolvedTransfer','Target cannot preserve the pattern: relative RMS round-trip loss %.3g exceeds 1e-8.',relativeError);
+            end
+            if isequal([source.Nx source.Ny],[target.Nx target.Ny])
+                targetPattern=self.pattern;
+            else
+                targetPattern=target.transformToSpatialDomainWithFourier(T);
+            end
+            force=WVSeasonalSurfaceAnomalyForcing(wvt,pattern=targetPattern,amplitude=self.amplitude,period=self.period,phase=self.phase);
         end
         function writeToGroup(self,group,propertyAnnotations,attributes)
             % Persist the pattern on the parent transform's x-y axes.

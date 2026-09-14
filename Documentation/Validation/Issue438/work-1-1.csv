@@ -1,0 +1,17 @@
+process,inventory,integratedPower
+density diffusion,totalEnergy,-0.735131149631904
+density diffusion,potentialEnstrophy,-1.14315821189436e-08
+density diffusion,surfaceAnomalyVariance,-758.386908329487
+density diffusion,bottomAnomalyVariance,-1046.45432173518
+seasonal surface anomaly,totalEnergy,8.22779644443382e-06
+seasonal surface anomaly,potentialEnstrophy,2.02342112758616e-26
+seasonal surface anomaly,surfaceAnomalyVariance,0.000407282719772618
+seasonal surface anomaly,bottomAnomalyVariance,-8.79308828495827e-17
+nonlinear advection,totalEnergy,7.44933376746861e-17
+nonlinear advection,potentialEnstrophy,1.62478934433931e-13
+nonlinear advection,surfaceAnomalyVariance,0.00351096725175285
+nonlinear advection,bottomAnomalyVariance,0.0447572180137905
+quadratic bottom friction,totalEnergy,-1.31319004054794
+quadratic bottom friction,potentialEnstrophy,-8.22582075235993e-22
+quadratic bottom friction,surfaceAnomalyVariance,2.98663137896696e-12
+quadratic bottom friction,bottomAnomalyVariance,-141.304562953108

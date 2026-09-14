@@ -22,7 +22,8 @@ jobs:
     if: ${{ github.event.action != 'closed' && (github.event_name != 'pull_request' || github.base_ref == 'main' || contains(github.event.pull_request.labels.*.name, 'final-integration')) }}
     name: Full / MATLAB R2025b
     runs-on: ubuntu-latest
-    timeout-minutes: 45
+    # The v5 full suite includes the seasonal spatial-convergence studies.
+    timeout-minutes: 75
     steps:
       - name: Install portable-runtime build dependencies
         run: sudo apt-get update && sudo apt-get install --yes libnetcdf-dev pkg-config

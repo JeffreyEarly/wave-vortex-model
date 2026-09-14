@@ -24,8 +24,9 @@ Reconstruct complete balanced thermal states with two active boundaries.
 
 Ath has velocity units and Amda retains the independent real MDA state.
 The scientific factory retains every requested polynomial direction.
-Supports forced linear evolution through the existing exponential integrator.
-Select thermalLinearDynamics=true explicitly; nonlinear physics is downstream.
+Supports linear and qualified nonlinear evolution through the exponential integrator.
+Register WVNonlinearAdvection with qualified product quadrature, or select
+thermalLinearDynamics=true explicitly for a linear configuration.
 
 ```matlab
 w = WVTransformFreeSurfaceThermalQG.fromStratification([1e5 1e5 1000],[8 8 65],N2Function=@(z)1e-4*ones(size(z)),thermalModeCount=17,mdaModeCount=4);
@@ -37,7 +38,7 @@ fields = w.reconstructFields(["qgpv","endpointAnomalies"]);
 
 ## Topics
 + Create and restore a transform
-  + [`waveVortexTransformFromFile`](/classes/transforms/wvtransformfreesurfacethermalqg/wavevortextransformfromfile.html) Restore a canonical thermal snapshot without a scientific mode solve.
+  + [`waveVortexTransformFromFile`](/classes/transforms/wvtransformfreesurfacethermalqg/wavevortextransformfromfile.html) Restore thermal scientific state, a committed coefficient record and forcing.
 + Evaluate physical fields
   + Registered variables
     + [`hasVariableWithName`](/classes/transforms/wvtransformfreesurfacethermalqg/hasvariablewithname.html) Test whether state variables are registered by name.
@@ -152,7 +153,7 @@ fields = w.reconstructFields(["qgpv","endpointAnomalies"]);
     + [`removeForcing`](/classes/transforms/wvtransformfreesurfacethermalqg/removeforcing.html) Remove the exact registered forcing objects.
     + [`removeAllForcing`](/classes/transforms/wvtransformfreesurfacethermalqg/removeallforcing.html) Remove every forcing and closure from this transform.
   + Inspect forcing and closures
-    + [`forcing`](/classes/transforms/wvtransformfreesurfacethermalqg/forcing.html)
+    + [`forcing`](/classes/transforms/wvtransformfreesurfacethermalqg/forcing.html) Registered forcing configuration
     + [`forcingNames`](/classes/transforms/wvtransformfreesurfacethermalqg/forcingnames.html) Return forcing and closure names in application order.
     + [`forcingWithName`](/classes/transforms/wvtransformfreesurfacethermalqg/forcingwithname.html) Return registered forcing objects by name.
     + [`hasForcingWithName`](/classes/transforms/wvtransformfreesurfacethermalqg/hasforcingwithname.html) Test whether forcing objects are registered by name.
@@ -168,6 +169,11 @@ fields = w.reconstructFields(["qgpv","endpointAnomalies"]);
     + [`initWithUVEta`](/classes/transforms/wvtransformfreesurfacethermalqg/initwithuveta.html) initialize with fluid variables $$(u,v,\eta)$$
     + [`initWithUVRho`](/classes/transforms/wvtransformfreesurfacethermalqg/initwithuvrho.html) initialize with fluid variables $$(u,v,\rho)$$
     + [`removeAll`](/classes/transforms/wvtransformfreesurfacethermalqg/removeall.html) removes all energy from the model
++ Create a related transform
+  + [`coefficientStateForTransform`](/classes/transforms/wvtransformfreesurfacethermalqg/coefficientstatefortransform.html) Fit a compatible thermal target to physical QGPV, endpoints and mean density.
+  + [`spectralVariableWithResolution`](/classes/transforms/wvtransformfreesurfacethermalqg/spectralvariablewithresolution.html) create a new variable with different resolution
+  + [`waveVortexTransformWithDoubleResolution`](/classes/transforms/wvtransformfreesurfacethermalqg/wavevortextransformwithdoubleresolution.html) create a new WVTransform with double resolution
+  + [`waveVortexTransformWithResolution`](/classes/transforms/wvtransformfreesurfacethermalqg/wavevortextransformwithresolution.html) Create the same transform family at a new resolution.
 + Analyze the flow
   + Spectra
     + Frequency
@@ -187,6 +193,8 @@ fields = w.reconstructFields(["qgpv","endpointAnomalies"]);
     + [`hasMeanPressureDifference`](/classes/transforms/wvtransformfreesurfacethermalqg/hasmeanpressuredifference.html) Diagnose an MDA mean-pressure difference between the boundaries.
   + Density validity
     + [`isDensityInValidRange`](/classes/transforms/wvtransformfreesurfacethermalqg/isdensityinvalidrange.html) Test whether total density remains within the no-motion density range.
+  + Potential vorticity and enstrophy
+    + [`totalPotentialEnstrophy`](/classes/transforms/wvtransformfreesurfacethermalqg/totalpotentialenstrophy.html) Horizontally averaged, depth-integrated full QGPV enstrophy in m s-2.
 + Differentiate and integrate fields
   + [`diffX`](/classes/transforms/wvtransformfreesurfacethermalqg/diffx.html) Differentiate a gridded field in the periodic x direction.
   + [`diffY`](/classes/transforms/wvtransformfreesurfacethermalqg/diffy.html) Differentiate a gridded field in the periodic y direction.
@@ -207,11 +215,9 @@ fields = w.reconstructFields(["qgpv","endpointAnomalies"]);
     + [`primaryFlowComponentWithName`](/classes/transforms/wvtransformfreesurfacethermalqg/primaryflowcomponentwithname.html) retrieve a WVPrimaryFlowComponent by name
   + Summarize flow components
     + [`summarizeFlowComponents`](/classes/transforms/wvtransformfreesurfacethermalqg/summarizeflowcomponents.html) Print a table of registered primary and diagnostic components.
-+ Create a related transform
-  + [`spectralVariableWithResolution`](/classes/transforms/wvtransformfreesurfacethermalqg/spectralvariablewithresolution.html) create a new variable with different resolution
-  + [`waveVortexTransformWithDoubleResolution`](/classes/transforms/wvtransformfreesurfacethermalqg/wavevortextransformwithdoubleresolution.html) create a new WVTransform with double resolution
-  + [`waveVortexTransformWithResolution`](/classes/transforms/wvtransformfreesurfacethermalqg/wavevortextransformwithresolution.html) Create the same transform family at a new resolution.
 + Analyze energy
+  + Energy and enstrophy budgets
+    + [`quadraticDiagnostics`](/classes/transforms/wvtransformfreesurfacethermalqg/quadraticdiagnostics.html) Evaluate physical inventories and individual or batched directional rates.
   + Energy summaries
     + [`summarizeEnergyContent`](/classes/transforms/wvtransformfreesurfacethermalqg/summarizeenergycontent.html) displays a summary of the energy content of the fluid
     + [`summarizeModeEnergy`](/classes/transforms/wvtransformfreesurfacethermalqg/summarizemodeenergy.html) List the most energetic modes
@@ -237,7 +243,9 @@ These items document internal implementation details and are not part of the pri
   + [`N20`](/classes/transforms/wvtransformfreesurfacethermalqg/n20.html) Surface squared buoyancy frequency (s-2).
   + [`activeEndpoint`](/classes/transforms/wvtransformfreesurfacethermalqg/activeendpoint.html) Surface then bottom endpoint codes (1).
   + [`assemblyQuadratureCount`](/classes/transforms/wvtransformfreesurfacethermalqg/assemblyquadraturecount.html) Physical-depth assembly quadrature count (1).
+  + [`boundaryMomentumTendency`](/classes/transforms/wvtransformfreesurfacethermalqg/boundarymomentumtendency.html) Project boundary momentum stress with the physical-energy weak dual.
   + [`boundaryResolutionTolerance`](/classes/transforms/wvtransformfreesurfacethermalqg/boundaryresolutiontolerance.html) Boundary sampling allowance (1).
+  + [`boundaryStreamfunction`](/classes/transforms/wvtransformfreesurfacethermalqg/boundarystreamfunction.html) Reconstruct one endpoint streamfunction without a volume reconstruction.
   + [`chebfunForZArray`](/classes/transforms/wvtransformfreesurfacethermalqg/chebfunforzarray.html)
   + [`conjugateDirection`](/classes/transforms/wvtransformfreesurfacethermalqg/conjugatedirection.html) Conjugate eigenvector permutation (1).
   + [`constructionAssessment`](/classes/transforms/wvtransformfreesurfacethermalqg/constructionassessment.html) Construction evidence; empty after restoration.
@@ -258,6 +266,13 @@ These items document internal implementation details and are not part of the pri
   + [`mdaGZ`](/classes/transforms/wvtransformfreesurfacethermalqg/mdagz.html) MDA displacement derivative (m-1).
   + [`mdaGeneratorPerDiffusivity`](/classes/transforms/wvtransformfreesurfacethermalqg/mdageneratorperdiffusivity.html) Conservative mean diffusivity operator (m-2).
   + [`mdaSurfaceWeight`](/classes/transforms/wvtransformfreesurfacethermalqg/mdasurfaceweight.html) MDA basis surface weight (m s-2).
+  + [`nonlinearCoefficientTendency`](/classes/transforms/wvtransformfreesurfacethermalqg/nonlinearcoefficienttendency.html) Evaluate complete interior and both-endpoint Jacobians on product quadrature.
+  + [`nonlinearQuadratureCount`](/classes/transforms/wvtransformfreesurfacethermalqg/nonlinearquadraturecount.html) Nonlinear quadrature policy and construction evidence.
+  + [`nonlinearQuadratureResidual`](/classes/transforms/wvtransformfreesurfacethermalqg/nonlinearquadratureresidual.html) Nonlinear quadrature policy and construction evidence.
+  + [`nonlinearQuadratureTolerance`](/classes/transforms/wvtransformfreesurfacethermalqg/nonlinearquadraturetolerance.html) Nonlinear quadrature policy and construction evidence.
+  + [`nonlinearReferenceResidual`](/classes/transforms/wvtransformfreesurfacethermalqg/nonlinearreferenceresidual.html) Nonlinear quadrature policy and construction evidence.
+  + [`physicalDiagnostics`](/classes/transforms/wvtransformfreesurfacethermalqg/physicaldiagnostics.html) Measure physical RMS, native-grid peaks, radial spectra and horizontal tails.
+  + [`physicalMetricOperators`](/classes/transforms/wvtransformfreesurfacethermalqg/physicalmetricoperators.html) Build physical quadrature maps and full quadratic metrics from stored arrays.
   + [`polynomialDegree`](/classes/transforms/wvtransformfreesurfacethermalqg/polynomialdegree.html) Complete Legendre polynomial degrees (1).
   + [`polynomialToThermal`](/classes/transforms/wvtransformfreesurfacethermalqg/polynomialtothermal.html) Inverse polynomial map (m-1).
   + [`projectQuasigeostrophicSpatialTendency`](/classes/transforms/wvtransformfreesurfacethermalqg/projectquasigeostrophicspatialtendency.html) Project physical QGPV and strict endpoint-displacement rates with the weak dual.
@@ -266,6 +281,7 @@ These items document internal implementation details and are not part of the pri
   + [`quasigeostrophicSpatialState`](/classes/transforms/wvtransformfreesurfacethermalqg/quasigeostrophicspatialstate.html) Return interior and two-endpoint fields in the shared QG spatial convention.
   + [`schemaVersion`](/classes/transforms/wvtransformfreesurfacethermalqg/schemaversion.html) Thermal scientific state schema (1).
   + [`scientificState`](/classes/transforms/wvtransformfreesurfacethermalqg/scientificstate.html) Validated canonical arrays for cheap construction.
+  + [`shouldCheckQuadraticAliasing`](/classes/transforms/wvtransformfreesurfacethermalqg/shouldcheckquadraticaliasing.html) Nonlinear quadrature policy and construction evidence.
   + [`sourceDual`](/classes/transforms/wvtransformfreesurfacethermalqg/sourcedual.html) Weak source dual in polynomial trial coordinates (1).
   + [`sourceEndpoint`](/classes/transforms/wvtransformfreesurfacethermalqg/sourceendpoint.html) Strict displacement-source projection (s-1).
   + [`thermalDirection`](/classes/transforms/wvtransformfreesurfacethermalqg/thermaldirection.html) Ordinal complete thermal directions (1).

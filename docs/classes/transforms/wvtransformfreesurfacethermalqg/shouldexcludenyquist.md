@@ -3,7 +3,7 @@ layout: default
 title: shouldExcludeNyquist
 parent: WVTransformFreeSurfaceThermalQG
 grand_parent: Transforms
-nav_order: 189
+nav_order: 201
 mathjax: true
 ---
 

@@ -3,7 +3,7 @@ layout: default
 title: kappa_z
 parent: WVTransformFreeSurfaceThermalQG
 grand_parent: Transforms
-nav_order: 123
+nav_order: 126
 mathjax: true
 ---
 

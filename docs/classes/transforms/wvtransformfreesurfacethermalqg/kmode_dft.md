@@ -3,7 +3,7 @@ layout: default
 title: kMode_dft
 parent: WVTransformFreeSurfaceThermalQG
 grand_parent: Transforms
-nav_order: 119
+nav_order: 122
 mathjax: true
 ---
 

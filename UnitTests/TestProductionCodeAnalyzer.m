@@ -23,7 +23,6 @@ classdef TestProductionCodeAnalyzer < matlab.unittest.TestCase
     methods (Test,TestTags="full")
         function productionInventoryIsDeterministic(testCase)
             files = testCase.productionReport.Files;
-            testCase.verifyNumElements(files,198);
             testCase.verifyEqual(files,sort(unique(files)));
             testCase.verifyTrue(all(isfile(fullfile(testCase.repositoryRoot,files))));
 
@@ -34,7 +33,12 @@ classdef TestProductionCodeAnalyzer < matlab.unittest.TestCase
                 "@WVTransform/WVTransform.m"
                 "@WVTransform/coefficientStateAnnotations.m"
                 "@WVTransformFreeSurfaceQG/WVTransformFreeSurfaceQG.m"
-                "@WVTransformFreeSurfaceQG/buildScientificState.m"
+                "+WVInternal/buildFreeSurfaceBalancedModes.m"
+                "+WVInternal/thermalAPVDampingData.m"
+                "+WVInternal/@FreeSurfaceFieldOperation/FreeSurfaceFieldOperation.m"
+                "@WVTransformFreeSurfaceThermalQG/WVTransformFreeSurfaceThermalQG.m"
+                "@WVTransformFreeSurfaceThermalQG/coefficientTendency.m"
+                "Forcing/WVThermalAPVDamping.m"
                 "@WVTransformFreeSurfaceQG/initWithGaussianEddy.m"
                 "@WVTransformFreeSurfaceQG/projectQuasigeostrophicSpatialTendency.m"
                 "@WVTransformFreeSurfaceQG/quasigeostrophicSpatialState.m"
@@ -45,6 +49,10 @@ classdef TestProductionCodeAnalyzer < matlab.unittest.TestCase
                 "Integrators/WVModelAdaptiveTimeStepMethods.m"
                 ];
             testCase.verifyTrue(all(ismember(expectedFiles,files)));
+            namespaceEntries=dir(fullfile(testCase.repositoryRoot,"+WVInternal","**","*.m"));
+            namespaceFiles=string(fullfile({namespaceEntries.folder},{namespaceEntries.name})).';
+            namespaceFiles=replace(extractAfter(namespaceFiles,strlength(testCase.repositoryRoot)+1),filesep,"/");
+            testCase.verifyEqual(files(startsWith(files,"+WVInternal/")),sort(namespaceFiles));
         end
 
         function authoringAndLegacyAreasAreExcluded(testCase)
@@ -89,10 +97,41 @@ classdef TestProductionCodeAnalyzer < matlab.unittest.TestCase
         function reportContainsReleaseLocationsAndDiagnostics(testCase)
             output = evalc("analyzeProductionCode(testCase.repositoryRoot,ShouldFail=false);");
             testCase.verifySubstring(output,"MATLAB Code Analyzer: release=R");
-            testCase.verifySubstring(output,"files=198");
+            testCase.verifySubstring(output,compose("files=%d",numel(testCase.productionReport.Files)));
             testCase.verifySubstring(output,"[AGROW, performance]");
             testCase.verifySubstring(output,"Variable appears to change size");
             testCase.verifyFalse(contains(output,testCase.repositoryRoot));
+        end
+
+        function unconditionalThermalOutputsAreNarrowlyAccepted(testCase)
+            findings=testCase.productionReport.Findings;
+            throws=findings(findings.CheckID=="STOUT",:);
+            testCase.verifyNumElements(throws.CheckID,6);
+            testCase.verifyTrue(all(throws.RelativeFile=="@WVTransformFreeSurfaceThermalQG/WVTransformFreeSurfaceThermalQG.m"));
+            testCase.verifyTrue(all(throws.Classification=="accepted-false-positive"));
+            testCase.verifyTrue(all(throws.Suppressed));
+        end
+
+        function unrelatedSuppressedOutputStillBlocks(testCase)
+            file=fullfile(testCase.temporaryFolder,"unassignedOutput.m");
+            writelines(["function out=unassignedOutput(flag) %#ok<STOUT>"; ...
+                "if flag"; "error('Fixture:Failure','Deliberate error.');"; "end"; "end"],file);
+            report=analyzeProductionCode(testCase.temporaryFolder,Files=file,ShouldPrint=false,ShouldFail=false);
+            testCase.verifyEqual(report.BlockingFindings.CheckID,"STOUT");
+            testCase.verifyTrue(report.BlockingFindings.Suppressed);
+            testCase.verifyError(@()analyzeProductionCode(testCase.temporaryFolder,Files=file,ShouldPrint=false),"WaveVortexModel:CodeAnalyzerFailed");
+        end
+
+        function conditionalThermalOutputStillBlocks(testCase)
+            folder=fullfile(testCase.temporaryFolder,"@WVTransformFreeSurfaceThermalQG"); mkdir(folder);
+            file=fullfile(folder,"WVTransformFreeSurfaceThermalQG.m");
+            writelines(["classdef WVTransformFreeSurfaceThermalQG"; "methods"; ...
+                "function out=coefficientAbsoluteTolerances(~,flag) %#ok<STOUT>"; "if flag"; ...
+                "error('WV:ThermalEvolutionUnavailable','Deliberate conditional error.');"; ...
+                "end"; "end"; "end"; "end"],file);
+            report=analyzeProductionCode(testCase.temporaryFolder,Files=file,ShouldPrint=false,ShouldFail=false);
+            testCase.verifyEqual(report.BlockingFindings.CheckID,"STOUT");
+            testCase.verifyTrue(report.BlockingFindings.Suppressed);
         end
 
         function unreachableStatementBlocks(testCase)

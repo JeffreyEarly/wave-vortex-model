@@ -390,6 +390,10 @@ WVKernelStatus WVForcingCatalog::validateConfiguration(
     return invalid("Forcing configuration uses an unsupported schema.");
   std::set<std::string> allowed;
   for (const auto &field : value->persistence.fields) {
+    // Inactive MATLAB defaults are consumed at the NetCDF boundary only.
+    // They must never become active portable forcing configuration.
+    if (field.encoding == WVForcingPersistenceEncoding::inactiveNaNScalar)
+      continue;
     allowed.insert(field.recordName);
     if (!field.imaginaryRecordName.empty())
       allowed.insert(field.imaginaryRecordName);

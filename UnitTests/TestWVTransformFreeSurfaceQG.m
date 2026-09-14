@@ -199,7 +199,11 @@ classdef TestWVTransformFreeSurfaceQG < matlab.unittest.TestCase
             testCase.verifyEqual(assessment.z,wvt.z)
             testCase.verifyEqual(assessment.apvModeCount,length(wvt.apvMode))
             testCase.verifyEqual(assessment.mdaModeCount,length(wvt.mdaMode))
-            testCase.verifyEqual(assessment.apvGramError,wvt.apvGramError)
+            % Both paths measure a defect of the unit-normalized Gram matrix.
+            % Independent contractions need not produce bitwise-identical norms.
+            testCase.verifyEqual(assessment.apvGramError,wvt.apvGramError,AbsTol=16*eps)
+            testCase.verifyLessThanOrEqual(assessment.apvGramError,wvt.gramTolerance)
+            testCase.verifyLessThanOrEqual(wvt.apvGramError,wvt.gramTolerance)
         end
 
         function scientificGridAndModeCountsAreNotCallerSelected(testCase)

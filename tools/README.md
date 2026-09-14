@@ -6,9 +6,9 @@ The canonical production-source analysis command is:
 buildtool analyze
 ```
 
-The task analyzes root runtime files, root class folders, and runtime folders declared in `resources/mpackage.json`. It excludes `UnitTests`, documentation, benchmarks, developer experiments, legacy archives, released snapshots, and authoring tools.
+The task analyzes root runtime files, root class and namespace folders (including nested namespace classes), and runtime folders declared in `resources/mpackage.json`. It excludes `UnitTests`, documentation, benchmarks, developer experiments, legacy archives, released snapshots, and authoring tools.
 
-The analyzer uses MATLAB's factory configuration and reports active and suppressed findings. Preallocation and established interface-style advice are visible but nonblocking. The centralized policy in `analyzeProductionCode.m` also records the narrowly accepted multiple-inheritance false positives. Analyzer errors, correctness findings, and unfamiliar identifiers block until reviewed and classified.
+The analyzer uses MATLAB's factory configuration and reports active and suppressed findings. Preallocation and established interface-style advice are visible but nonblocking. The centralized policy in `analyzeProductionCode.m` also records the narrowly accepted multiple-inheritance false positives. The six named thermal compatibility methods that always throw also retain their inherited output signatures: their unset-output finding is accepted only while the declaration matches and the entire executable body remains one unconditional documented error. Unrelated or conditional unset outputs still block, including suppressed findings. Analyzer errors, correctness findings, and unfamiliar identifiers block until reviewed and classified.
 
 Do not add `%#ok` annotations merely to make this report empty. Suppressed correctness findings remain blocking.
 

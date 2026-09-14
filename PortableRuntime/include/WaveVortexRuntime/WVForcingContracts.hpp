@@ -19,7 +19,11 @@ enum class WVForcingPersistenceEncoding : std::uint8_t {
   logicalVariable,
   textAttribute,
   zeroBasedIndexVariable,
-  complexVariable
+  complexVariable,
+  // Optional MATLAB default that carries no active runtime configuration.
+  // Require scalar double NaN on input and emit that default on output.
+  // The sentinel never enters the active portable forcing configuration.
+  inactiveNaNScalar
 };
 
 enum class WVForcingDimensionRule : std::uint8_t {

@@ -2,7 +2,7 @@
 
 Status: implementation design for [T1 #432](https://github.com/JeffreyEarly/wave-vortex-model/issues/432). The public API below is proposed for T2–T10; it is not implemented by this document or its manufactured interface fixture. The existing complete thermal prototype already works for the declared linear seasonal problem. T1 specifies its production integration, not a replacement scientific formulation.
 
-T2 construction and reconstruction are now implemented; see the [T2 evidence and API clarifications](../Validation/Issue433/README.md). Integration and subsequent capabilities below remain downstream requirements.
+T2 construction and reconstruction are now implemented; see the [T2 evidence and API clarifications](../Validation/Issue433/README.md). [T3 integration](../Validation/Issue434/README.md) and [T4 nonlinear advection](../Validation/Issue435/README.md) are also implemented; their reports delimit the remaining downstream requirements.
 
 ## Baseline and evidence
 

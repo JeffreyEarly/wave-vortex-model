@@ -28,7 +28,7 @@ writeClassGroup(classes,buildFolder,websiteFolder,parentName,classFolderName,par
 
 parentName = "Closures";
 websiteFolder = "classes/forcing/closures";
-classes = ["WVAdaptiveDamping" "WVVerticalDiffusivity" "WVHorizontalDamping" "WVVerticalDamping" "WVThermalDamping" "WVAntialiasing"];
+classes = ["WVAdaptiveDamping" "WVVerticalDiffusivity" "WVHorizontalDamping" "WVVerticalDamping" "WVThermalDamping" "WVAntialiasing" "WVThermalAPVDamping"];
 writeClassGroup(classes,buildFolder,websiteFolder,parentName,"Forcing",parentName,1,{'handle','WVForcing','CAAnnotatedClass','matlab.mixin.Heterogeneous'},string.empty(0,1));
 
 parentName = "Model output";
@@ -165,9 +165,12 @@ function normalizeReflectedDocumentation(documentation)
 % metaclass API. Normalize it before ClassDocumentation writes Markdown so
 % one source tree produces the same documentation on every supported release.
 classMetadata = meta.class.fromName(documentation.name);
-classDescription = ClassDocumentation.trimDeclarationFromString(classMetadata.DetailedDescription);
+% Normalize before removing metadata lines: their newline removal must not
+% join reflected indentation onto the next line.
+classDescription = removeCommonIndent(classMetadata.DetailedDescription);
+classDescription = ClassDocumentation.trimDeclarationFromString(classDescription);
 classDescription = Topic.trimTopicsFromString(classDescription);
-documentation.detailedDescription = regexprep(removeCommonIndent(classDescription),'(?:\r?\n[ \t]*){3,}','\n\n');
+documentation.detailedDescription = regexprep(classDescription,'(?:\r?\n[ \t]*){3,}','\n\n');
 
 for iMethod = 1:numel(documentation.allMethodDocumentation)
     methodDocumentation = documentation.allMethodDocumentation(iMethod);

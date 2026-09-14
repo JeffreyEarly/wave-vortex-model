@@ -47,7 +47,8 @@ The default is adaptive stepping. A canonical free-surface QG
 model with WVVerticalDiffusivity can opt into "exponential":
 density diffusion and strict seasonal forcing are evaluated
 analytically, and ETDRK4 advances the other registered forcings.
-Thermal integration requires thermalLinearDynamics=true. Supply five
+Thermal linear integration requires thermalLinearDynamics=true; nonlinear
+thermal integration requires qualified registered advection. Supply five
 physicalAbsTolerance entries to control surface and bottom separately;
 a four-entry vector applies its endpoint floor to both.
 physicalAbsTolerance sets RMS floors for QGPV [s^-1], buoyancy

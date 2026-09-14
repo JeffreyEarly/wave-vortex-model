@@ -1,0 +1,12 @@
+{
+  "matlab": "26.1.0.3312084 (R2026a) Update 4",
+  "architecture": "maca64",
+  "threads": 18,
+  "precision": "double",
+  "horizontalGrid": [
+    12,
+    12
+  ],
+  "warmupCalls": 1,
+  "timedCalls": 5
+}

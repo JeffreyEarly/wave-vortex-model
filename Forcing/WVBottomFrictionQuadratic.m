@@ -38,9 +38,10 @@ classdef WVBottomFrictionQuadratic < WVForcing
     % \end{align}
     % $$
     %
-    % The free-surface QG transform projects the bottom stress
-    % into its canonical APV and active-endpoint families through a signed
-    % boundary load. Its stress products use a doubled horizontal grid.
+    % Free-surface QG peers project bottom stress through their own balanced
+    % boundary-momentum maps. APV uses its signed boundary load; thermal QG
+    % uses the positive physical-energy weak dual. Stress products use a
+    % doubled horizontal grid in both representations.
     %
     % ### Example
     %
@@ -64,7 +65,7 @@ classdef WVBottomFrictionQuadratic < WVForcing
         % The constructor default is `1e-3`.
         %
         % - Topic: Properties
-        Cd
+        Cd (1,1) double {mustBeReal,mustBeFinite,mustBeNonnegative}
 
         % Drag coefficient applied at the bottom in $$\mathrm{m^{-1}}$$.
         %
@@ -90,7 +91,7 @@ classdef WVBottomFrictionQuadratic < WVForcing
             % - Declaration: contract = portableImplementationContract(self)
             % - Returns contract: versioned data-only forcing contract
             % - Developer: true
-            if isa(self.wvt,'WVTransformFreeSurfaceQG')
+            if isa(self.wvt,'WVTransformFreeSurfaceQG') || isa(self.wvt,'WVTransformFreeSurfaceThermalQG')
                 contract=portableImplementationContract@WVForcing(self);
                 return
             end
@@ -112,18 +113,18 @@ classdef WVBottomFrictionQuadratic < WVForcing
             % - Returns self: quadratic bottom-friction forcing owned by `wvt`
             arguments
                 wvt WVTransform {mustBeNonempty}
-                options.Cd (1,1) double {mustBeNonnegative} = 1e-3 % https://www.nemo-ocean.eu/doc/node70.html
+                options.Cd (1,1) double {mustBeReal,mustBeFinite,mustBeNonnegative} = 1e-3 % https://www.nemo-ocean.eu/doc/node70.html
             end
             types=WVForcingType(["HydrostaticSpatial" "NonhydrostaticSpatial" "PVSpatial"]);
-            if isa(wvt,'WVTransformFreeSurfaceQG'), types=WVForcingType.QGSpectral; end
+            if isa(wvt,'WVTransformFreeSurfaceQG') || isa(wvt,'WVTransformFreeSurfaceThermalQG'), types=WVForcingType.QGSpectral; end
             self@WVForcing(wvt,"quadratic bottom friction",types);
             self.Cd = options.Cd;
             
-            if isa(wvt,'WVTransformFreeSurfaceQG')
+            if isa(wvt,'WVTransformFreeSurfaceQG') || isa(wvt,'WVTransformFreeSurfaceThermalQG')
                 self.cd=[];
                 self.bottomGeometry_=WVGeometryDoublyPeriodic([wvt.Lx wvt.Ly],2*[wvt.Nx wvt.Ny],Nz=1,shouldAntialias=false,shouldExcludeNyquist=true,shouldExcludeConjugates=true,conjugateDimension=2);
                 g=self.bottomGeometry_;
-                [found,self.bottomIndices_]=ismember(round([wvt.kNonzero*wvt.Lx wvt.lNonzero*wvt.Ly]/(2*pi)),round([g.k*wvt.Lx g.l*wvt.Ly]/(2*pi)),'rows');
+                [found,self.bottomIndices_]=ismember(round([wvt.k(wvt.klNonzero)*wvt.Lx wvt.l(wvt.klNonzero)*wvt.Ly]/(2*pi)),round([g.k*wvt.Lx g.l*wvt.Ly]/(2*pi)),'rows');
                 assert(all(found),'The doubled grid must contain every native Fourier entry.');
             elseif ~isa(self.wvt,"WVGeometryDoublyPeriodicBarotropic")
                 self.cd = self.Cd/wvt.z_int(1);
@@ -161,14 +162,14 @@ classdef WVBottomFrictionQuadratic < WVForcing
             % - Topic: Implement forcing evaluation
             % - Developer: true
             if self.Cd==0, return; end
+            % Reuse the supplied stage spectrum, or reconstruct only the endpoint.
             if nargin>=4 && isfield(physicalState,'phiHat')
-                phi=physicalState.phiHat;
+                psi=physicalState.phiHat(1,:);
             else
-                phi=wvt.reconstructSpectralState();
-                if isa(wvt,'WVTransformFreeSurfaceQG'), phi=phi(:,wvt.klNonzero); end
+                psi=wvt.boundaryStreamfunction("bottom");
             end
             g=self.bottomGeometry_; indices=self.bottomIndices_;
-            bottom=complex(zeros(1,g.Nkl)); bottom(indices)=phi(1,:);
+            bottom=complex(zeros(1,g.Nkl)); bottom(indices)=psi;
             u=g.transformToSpatialDomainWithFourier(-1i*g.l.'.*bottom);
             v=g.transformToSpatialDomainWithFourier(1i*g.k.'.*bottom);
             speed=hypot(u,v);

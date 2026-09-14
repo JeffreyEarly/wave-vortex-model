@@ -14,6 +14,10 @@ Configured dimensionless quadratic drag coefficient.
 
 ---
 
+## Type
++ Class: `double`
++ Size: `(1,1)`
+
 ## Description
 Real valued property with no dimensions and is dimensionless.
 

@@ -48,9 +48,15 @@ classdef TestFreeSurfaceQGPerformance < matlab.unittest.TestCase
             blank=struct(Ag_q=zeros(size(w.Ag_q)),Ag_0=zeros(size(w.Ag_0)),Amda=zeros(size(w.Amda)));
             [~,~,~,~,~,~,phiHat]=w.quasigeostrophicSpatialState();
             direct=force.addQuasigeostrophicSpectralForcing(w,blank);
+            reference=force.addQuasigeostrophicSpectralForcing(w,blank,struct(phiHat=phiHat));
+            % Selective and volume matrix contractions can round differently.
+            % Keep exact equality for reuse of the identical stage snapshot.
+            for name=string(fieldnames(blank)).'
+                testCase.verifyLessThanOrEqual(norm(direct.(name)-reference.(name),'fro'),16*eps*norm(reference.(name),'fro'))
+            end
             w.Ag_q(:)=0; w.Ag_0(:)=0;
             supplied=force.addQuasigeostrophicSpectralForcing(w,blank,struct(phiHat=phiHat));
-            testCase.verifyEqual(supplied,direct)
+            testCase.verifyEqual(supplied,reference)
             testCase.verifyGreaterThan(norm(supplied.Ag_q,'fro'),0)
             w.Ag_q=state.Ag_q; w.Ag_0=state.Ag_0;
             profile clear; profile on
@@ -59,20 +65,22 @@ classdef TestFreeSurfaceQGPerformance < matlab.unittest.TestCase
             profile off; info=profile('info'); clear cleanup
             entry=info.FunctionTable(strcmp({info.FunctionTable.FunctionName},'WVTransformFreeSurfaceQG.reconstructSpectralState'));
             testCase.verifyEqual(entry.NumCalls,1)
-            testCase.verifyEqual(actual,direct)
+            testCase.verifyEqual(actual,reference)
         end
 
         function widthBatchedModeTransformsMatchIndividualPagesAndCache(testCase)
             w=TestFreeSurfaceQGPerformance.transform(); w.removeAllForcing();
             w.addForcing(WVVerticalDiffusivity(w,kappa_z=1e-5));
+            profile clear; profile on
+            cleanup=onCleanup(@()profile('off'));
             e=WVDensityDiffusionIntegrator(w); state=TestFreeSurfaceQGPerformance.mixedState(w);
+            setup=profile('info');
             balanced=[state.Ag_q;state.Ag_0]; expected=zeros(size(balanced),'like',balanced);
             for p=1:length(e.operators.pages)
                 columns=find(w.klNonzeroKhUniqueIndex==p);
                 expected(:,columns)=e.operators.pages{p}.toModes*balanced(:,columns);
             end
-            profile clear; profile on
-            cleanup=onCleanup(@()profile('off'));
+            profile resume
             actual=e.toModes(state);
             restored=e.fromModes(actual);
             e.toModes(restored);
@@ -81,8 +89,10 @@ classdef TestFreeSurfaceQGPerformance < matlab.unittest.TestCase
             testCase.verifyEqual(transformed,expected,RelTol=2e-15)
             testCase.verifyLessThan(norm(restored.Ag_q-state.Ag_q,'fro')/norm(state.Ag_q,'fro'),1e-12)
             testCase.verifyLessThan(norm(restored.Ag_0-state.Ag_0,'fro')/norm(state.Ag_0,'fro'),1e-6)
-            selected=contains(string({info.FunctionTable.FunctionName}),'buildModeTransformBatches');
-            testCase.verifyEqual(sum([info.FunctionTable(selected).NumCalls]),1)
+            % The adapter prepares the batches once at setup; hot transforms
+            % reuse them after any coefficient-state change.
+            testCase.verifyEqual(TestFreeSurfaceQGPerformance.profileCalls(setup,"apvLinearEvolutionData"),1)
+            testCase.verifyEqual(TestFreeSurfaceQGPerformance.profileCalls(info,"apvLinearEvolutionData"),1)
         end
 
         function batchedBudgetsMatchEachDirectionalDerivative(testCase)
@@ -155,18 +165,31 @@ classdef TestFreeSurfaceQGPerformance < matlab.unittest.TestCase
         function normFactorsAreLazyAndRecreatedWithDiffusionOperators(testCase)
             w=TestFreeSurfaceQGPerformance.transform(); w.removeAllForcing();
             force=WVVerticalDiffusivity(w,kappa_z=1e-5); w.addForcing(force);
-            e=WVDensityDiffusionIntegrator(w); a=e.toModes(TestFreeSurfaceQGPerformance.mixedState(w));
-            profile clear; profile on
+            profilerSettings=profile('status');
+            testCase.addTeardown(@()profile('-detail',profilerSettings.DetailLevel));
+            profile clear; profile on -detail builtin
             cleanup=onCleanup(@()profile('off'));
+            e=WVDensityDiffusionIntegrator(w); a=e.toModes(TestFreeSurfaceQGPerformance.mixedState(w));
+            setup=profile('info');
+            profile resume
             expected=e.physicalErrorNorms(a);
+            first=profile('info');
+            profile resume
             w.t=123; e.setModalState(2*a);
-            testCase.verifyEqual(e.physicalErrorNorms(a),expected)
-            profile off; info=profile('info'); clear cleanup
-            selected=contains(string({info.FunctionTable.FunctionName}),'buildPhysicalNormFactors');
-            testCase.verifyEqual(sum([info.FunctionTable(selected).NumCalls]),1)
+            actual=e.physicalErrorNorms(a);
+            repeated=profile('info');
+            testCase.verifyEqual(actual,expected)
+            testCase.verifyEqual(TestFreeSurfaceQGPerformance.profileCalls(setup,"qr"),0)
+            built=TestFreeSurfaceQGPerformance.profileCalls(first,"qr");
+            testCase.verifyGreaterThan(built,0)
+            testCase.verifyEqual(TestFreeSurfaceQGPerformance.profileCalls(repeated,"qr"),built)
             force.kappa_z=2e-5;
             other=WVDensityDiffusionIntegrator(w); b=other.modalState();
-            testCase.verifyEqual(other.physicalErrorNorms(b),TestFreeSurfaceQGPerformance.quadratureNorms(other,b),RelTol=1e-10)
+            profile resume
+            actual=other.physicalErrorNorms(b);
+            replaced=profile('info'); clear cleanup
+            testCase.verifyEqual(TestFreeSurfaceQGPerformance.profileCalls(replaced,"qr"),2*built)
+            testCase.verifyEqual(actual,TestFreeSurfaceQGPerformance.quadratureNorms(other,b),RelTol=1e-10)
             force.shouldForceMeanDensityAnomaly=false;
             disabled=WVDensityDiffusionIntegrator(w); b=disabled.modalState();
             testCase.verifyEqual(disabled.physicalErrorNorms(b),TestFreeSurfaceQGPerformance.quadratureNorms(disabled,b),RelTol=1e-10)
@@ -199,6 +222,10 @@ classdef TestFreeSurfaceQGPerformance < matlab.unittest.TestCase
         end
     end
     methods (Static, Access=private)
+        function calls=profileCalls(info,name)
+            selected=strcmp(string({info.FunctionTable.FunctionName}),name);
+            calls=sum([info.FunctionTable(selected).NumCalls]);
+        end
         function w=transform()
             w=WVTransformFreeSurfaceQG([500e3 500e3 4000],[8 8 65],N2Function=@(z)(5.2e-3)^2*exp(2*z/1300));
         end

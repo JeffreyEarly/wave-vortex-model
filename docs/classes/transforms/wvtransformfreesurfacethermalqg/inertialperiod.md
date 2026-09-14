@@ -3,7 +3,7 @@ layout: default
 title: inertialPeriod
 parent: WVTransformFreeSurfaceThermalQG
 grand_parent: Transforms
-nav_order: 99
+nav_order: 102
 mathjax: true
 ---
 

@@ -10,6 +10,7 @@
 #include <chrono>
 #include <ctime>
 #include <iomanip>
+#include <limits>
 #include <sstream>
 #include <utility>
 #include <variant>
@@ -53,6 +54,13 @@ WVCheckpointStatus defineForcingEntry(int group,
       return result;
   }
   for (const auto &field : registration->persistence.fields) {
+    if (field.encoding == WVForcingPersistenceEncoding::inactiveNaNScalar) {
+      int variable = -1;
+      result = defineDoubleVariable(group, field.netcdfName, {}, variable, path);
+      if (!result)
+        return result;
+      continue;
+    }
     const auto *value = entry.configuration.value(field.recordName);
     if (value == nullptr && field.optional)
       continue;
@@ -183,6 +191,13 @@ WVCheckpointStatus writeForcingEntry(int group,
     return failed(WVCheckpointStatusCode::unsupportedForcing,
                   "Unsupported forcing reached output writing.", path);
   for (const auto &field : registration->persistence.fields) {
+    if (field.encoding == WVForcingPersistenceEncoding::inactiveNaNScalar) {
+      const auto result = writeDoubles(group, field.netcdfName,
+                                       {std::numeric_limits<double>::quiet_NaN()}, path);
+      if (!result)
+        return result;
+      continue;
+    }
     const auto *value = entry.configuration.value(field.recordName);
     if (value == nullptr && field.optional)
       continue;

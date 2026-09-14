@@ -3,7 +3,7 @@ layout: default
 title: verticalModes
 parent: WVTransformFreeSurfaceThermalQG
 grand_parent: Transforms
-nav_order: 233
+nav_order: 246
 mathjax: true
 ---
 

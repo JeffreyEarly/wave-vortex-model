@@ -3,7 +3,7 @@ layout: default
 title: planetaryRadius
 parent: WVTransformFreeSurfaceThermalQG
 grand_parent: Transforms
-nav_order: 160
+nav_order: 170
 mathjax: true
 ---
 

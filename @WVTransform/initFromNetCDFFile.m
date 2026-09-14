@@ -27,19 +27,32 @@ function initFromNetCDFFile(wvt,ncfile,options)
 % - Declaration: initFromNetCDFFile(ncfile,options)
 % - Parameter ncfile: a NetCDF file object
 % - Parameter options.iTime: time index to initialize from; default `1`
+% - Parameter options.shouldRequireCoefficientState: require a complete canonical coefficient stream; default `false`
 % - Parameter options.shouldDisplayInit: display the restored representation; default `false`
 arguments
     wvt WVTransform {mustBeNonempty}
     ncfile NetCDFFile {mustBeNonempty}
     options.iTime (1,1) double {mustBePositive} = 1
     options.shouldDisplayInit (1,1) = 0
+    options.shouldRequireCoefficientState (1,1) logical = false
 end
 
-wvt.t0 = ncfile.readVariables('t0');
+if ncfile.hasVariableWithName('t0')
+    wvt.t0 = ncfile.readVariables('t0');
+elseif isa(wvt,'WVTransformFreeSurfaceThermalQG')
+    % Original thermal snapshots did not store a reference clock. Their
+    % coefficients are physical amplitudes without an analytical phase.
+    wvt.t0 = 0;
+else
+    wvt.t0 = ncfile.readVariables('t0');
+end
 
 coefficientNames = wvt.coefficientStateVariableNamesForPersistence();
 stateVariableNames = coefficientNames;
 [stateGroup,hasState] = groupContainingCompleteVariableSet(ncfile,stateVariableNames);
+if ~hasState && options.shouldRequireCoefficientState
+    error('WVTransform:MissingRestartCoefficients','The file must contain one complete canonical coefficient state.');
+end
 if ~hasState
     stateVariableNames = {'u','v','eta'};
     [stateGroup,hasState] = groupContainingCompleteVariableSet(ncfile,stateVariableNames);
@@ -72,6 +85,9 @@ if stateGroup.hasDimensionWithName('t') && stateGroup.hasVariableWithName('t')
     end
     wvt.t = tDim(iTime);
 else
+    if options.shouldRequireCoefficientState && ~ismember(options.iTime,[1 Inf])
+        error('WVTransform:SnapshotTimeIndex','A scalar snapshot accepts only iTime=1 or Inf.');
+    end
     wvt.t = stateGroup.readVariables('t');
 end
 

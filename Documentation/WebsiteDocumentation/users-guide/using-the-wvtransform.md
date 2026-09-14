@@ -74,8 +74,7 @@ wvtFreeSurfaceQG = WVTransformFreeSurfaceQG(Lxyz,Nxyz,N2Function=N2,latitude=30)
 With an active endpoint, the transform also checks the APV/zero-APV product error at the largest horizontal wavenumber in the requested grid. Use the lightweight assessment before constructing a full transform when choosing horizontal and vertical resolution:
 
 ```matlab
-resolution = WVTransformFreeSurfaceQG.assessVerticalResolution( ...
-    Lxyz(3),Nxyz(3),N2Function=N2,latitude=30);
+resolution = WVTransformFreeSurfaceQG.assessVerticalResolution(Lxyz(3),Nxyz(3),N2Function=N2,latitude=30);
 minimumHorizontalWavelength = resolution.minimumHorizontalWavelength;
 ```
 
