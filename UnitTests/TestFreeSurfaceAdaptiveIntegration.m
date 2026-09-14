@@ -2,7 +2,7 @@ classdef TestFreeSurfaceAdaptiveIntegration < matlab.unittest.TestCase
     properties (TestParameter)
         policy = {"energy","family"}
     end
-    methods (Test)
+    methods (Test,TestTags="full")
         function reconstructedToleranceIsNormalizationInvariant(testCase)
             wvt=TestFreeSurfaceAdaptiveIntegration.transform();
             scientific=wvt.scientificState(); scale=8;
