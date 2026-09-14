@@ -4,6 +4,7 @@ classdef TestThermalDiagnostics < matlab.unittest.TestCase
     end
     methods (TestClassSetup)
         function construct(testCase)
+            testCase.applyFixture(matlab.unittest.fixtures.PathFixture(fullfile(fileparts(mfilename('fullpath')),'Fixtures')));
             testCase.scientificStates=cell(1,2);
             for j=1:2
                 a=(j-1)/1300;

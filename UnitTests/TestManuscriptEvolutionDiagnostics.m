@@ -25,7 +25,19 @@ classdef TestManuscriptEvolutionDiagnostics < matlab.unittest.TestCase
             end
             [dp,fp]=s.observe(time+dt,plus,rate); [dm,fm]=s.observe(time-dt,minus,rate);
             testCase.verifyEqual((dp.energy-dm.energy)/(2*dt),d.energyRate,AbsTol=2e-10)
-            testCase.verifyEqual((dp.label2-dm.label2)/(2*dt),d.label2Rate,AbsTol=2e-5)
+            % Difference the sampled moving-volume integrands before summing.
+            % The O(D^3) reference-depth inventory otherwise loses this small
+            % derivative to reduction roundoff. This is the same central
+            % difference, with no analytic rate used in its evaluation.
+            w=testCase.transform;
+            weights=reshape(w.verticalQuadratureWeights,1,1,[])/(size(fp.label,1)*size(fp.label,2));
+            alpha=reshape(1+w.z/w.Lz,1,1,[]);
+            diffSSH=fp.hatted.ssh-fm.hatted.ssh;
+            diffLabel=alpha.*diffSSH-(fp.hatted.eta-fm.hatted.eta);
+            meanGamma=1+(fp.hatted.ssh+fm.hatted.ssh)/(2*w.Lz);
+            diffGamma=diffSSH/w.Lz;
+            label2Difference=meanGamma.*diffLabel.*(fp.label+fm.label)+diffGamma.*(fp.label.^2+fm.label.^2)/2;
+            testCase.verifyEqual(sum(weights.*label2Difference,'all')/(2*dt),d.label2Rate,AbsTol=2e-5)
             testCase.verifyEqual((dp.apv2-dm.apv2)/(2*dt),d.apv2Rate,AbsTol=2e-19)
             testCase.verifyEqual((fp.apv-fm.apv)/(2*dt),detail.apvRate,AbsTol=2e-13)
             testCase.verifyEqual((fp.label-fm.label)/(2*dt),detail.labelRate,AbsTol=2e-9)

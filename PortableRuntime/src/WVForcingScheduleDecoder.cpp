@@ -303,7 +303,8 @@ WVCheckpointStatus decodeSupported(const WVForcingGroupSource& source, const WVT
                 entry.configuration.values.push_back({complex->imaginaryRecordName,{values.size()},std::move(imag)});
             }
             consumedComplex.insert(complex->recordName);
-        } else if (field.encoding == WVForcingPersistenceEncoding::realVariable) {
+        } else if (field.encoding == WVForcingPersistenceEncoding::realVariable ||
+                   field.encoding == WVForcingPersistenceEncoding::inactiveNaNScalar) {
             if (field.optional) {
                 int variable = -1;
                 const int inquiry = nc_inq_varid(
@@ -313,6 +314,17 @@ WVCheckpointStatus decodeSupported(const WVForcingGroupSource& source, const WVT
                     return netcdfFailure(
                         inquiry, "Optional forcing-variable inspection",
                         source.groupPath + "/" + field.netcdfName);
+            }
+            if (field.encoding == WVForcingPersistenceEncoding::inactiveNaNScalar) {
+                double value = 0.0;
+                result = readDoubleScalar(source.groupId, field.netcdfName, value, source.groupPath);
+                if (!result) return result;
+                if (!std::isnan(value))
+                    return status(WVCheckpointStatusCode::incompatibleForcing,
+                                  "Forcing scalar '" + field.netcdfName +
+                                      "' must remain NaN for the supported transform.",
+                                  source.groupPath + "/" + field.netcdfName);
+                continue;
             }
             std::vector<double> values;
             std::vector<std::size_t> dimensions;

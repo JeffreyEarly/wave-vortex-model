@@ -157,13 +157,17 @@ classdef WVBottomFrictionQuadratic < WVForcing
             Fpv(:,:,1) = Fpv(:,:,1) - self.cd * (wvt.diffX(uv_mag.*v_b) - wvt.diffY(uv_mag.*u_b));
         end
 
-        function tendency=addQuasigeostrophicSpectralForcing(self,wvt,tendency,~)
+        function tendency=addQuasigeostrophicSpectralForcing(self,wvt,tendency,physicalState)
             % Add the transform-owned projection of bottom momentum stress.
             % - Topic: Implement forcing evaluation
             % - Developer: true
             if self.Cd==0, return; end
-            % The endpoint hook avoids reconstructing a native volume for drag.
-            psi=wvt.boundaryStreamfunction("bottom");
+            % Reuse the supplied stage spectrum, or reconstruct only the endpoint.
+            if nargin>=4 && isfield(physicalState,'phiHat')
+                psi=physicalState.phiHat(1,:);
+            else
+                psi=wvt.boundaryStreamfunction("bottom");
+            end
             g=self.bottomGeometry_; indices=self.bottomIndices_;
             bottom=complex(zeros(1,g.Nkl)); bottom(indices)=psi;
             u=g.transformToSpatialDomainWithFourier(-1i*g.l.'.*bottom);

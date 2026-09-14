@@ -1,4 +1,9 @@
 classdef TestSharedResolvedContracts < matlab.unittest.TestCase
+    methods (TestClassSetup)
+        function prepareFixtures(testCase)
+            testCase.applyFixture(matlab.unittest.fixtures.PathFixture(fullfile(fileparts(mfilename('fullpath')),'Fixtures')));
+        end
+    end
     methods (Test, TestTags="full")
         function qgPureAndMixedFieldsUseOrdinaryOperations(testCase)
             w = newQG(.02,.03);

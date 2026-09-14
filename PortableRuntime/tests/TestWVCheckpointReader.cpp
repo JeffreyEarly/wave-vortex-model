@@ -1,4 +1,5 @@
 #include "WaveVortexRuntime/WVCheckpointReader.hpp"
+#include "WaveVortexRuntime/WVCheckpointWriter.hpp"
 #include "WaveVortexRuntime/WVForcingContracts.hpp"
 #include "WVForcingImplementations.hpp"
 #include "WVTestLinearCoefficientForcing.hpp"
@@ -234,6 +235,86 @@ void testSupportedForcingFixtures() {
     require(storedValue<std::vector<double>>(pseudo,"barotropicVelocityAmplitudeReal")[0] == 0.12 && storedValue<std::vector<double>>(pseudo,"barotropicVelocityAmplitudeImag")[1] == 0.02, "barotropic velocity amplitude mismatch");
     require(storedValue<std::vector<std::string>>(pseudo,"darwinSymbol").front() == "M2" && storedValue<std::vector<double>>(pseudo,"rampDuration").front() == 900.0 && storedValue<std::vector<double>>(pseudo,"startTime").front() == -50.0 && storedValue<std::vector<std::uint8_t>>(pseudo,"shouldAvoidAdaptiveDamping").front(), "pseudo-topographic scalar mismatch");
     require(storedValue<std::vector<double>>(pseudo,"maximumForcedVerticalMode").front() == 2.0, "pseudo-topographic vertical bound mismatch");
+}
+
+void testInactiveAdaptiveCutoffPersistence() {
+    const double nan = std::numeric_limits<double>::quiet_NaN();
+    const auto addVariable = [](const std::filesystem::path& path,
+                                const char* name, double value,
+                                nc_type type = NC_DOUBLE,
+                                bool vector = false) {
+        int id = -1;
+        requireNetCDF(nc_open(path.string().c_str(), NC_WRITE, &id), "open adaptive cutoff fixture");
+        int forcing = -1;
+        requireNetCDF(nc_inq_ncid(id, "forcing", &forcing), "find adaptive forcing");
+        requireNetCDF(nc_redef(id), "define adaptive cutoff");
+        int dimension = -1;
+        if (vector)
+            requireNetCDF(nc_def_dim(forcing, "cutoffShape", 1, &dimension), "define invalid cutoff shape");
+        int variable = -1;
+        requireNetCDF(nc_def_var(forcing, name, type, vector ? 1 : 0,
+                                 vector ? &dimension : nullptr, &variable), "define adaptive cutoff variable");
+        requireNetCDF(nc_enddef(id), "finish adaptive cutoff definition");
+        requireNetCDF(nc_put_var_double(forcing, variable, &value), "write adaptive cutoff");
+        requireNetCDF(nc_close(id), "close adaptive cutoff fixture");
+    };
+
+    const auto legacy = read("forcing-adaptive-damping.nc");
+    require(legacy.forcingSchedule.entries.front().configuration.values.empty(),
+            "legacy adaptive damping acquired configuration");
+    TemporaryFile current(temporaryCopy("forcing-adaptive-damping.nc"));
+    addVariable(current.path, "apvCutoffFraction", nan);
+    WVCheckpoint checkpoint;
+    auto result = WVCheckpointReader::read(current.path.string(), *test::extensionCatalog(), checkpoint);
+    require(static_cast<bool>(result), result.message);
+    require(checkpoint.forcingSchedule.entries.front().configuration.values.empty(),
+            "inactive MATLAB NaN propagated into runtime forcing configuration");
+    TemporaryFile restored(temporaryCopy("forcing-adaptive-damping.nc"));
+    result = WVCheckpointWriter::write(restored.path.string(), *test::extensionCatalog(), checkpoint);
+    require(static_cast<bool>(result), result.message);
+    int output = -1;
+    int forcing = -1;
+    int variable = -1;
+    double cutoff = 0.0;
+    requireNetCDF(nc_open(restored.path.string().c_str(), NC_NOWRITE, &output), "open restored adaptive cutoff");
+    requireNetCDF(nc_inq_ncid(output, "forcing", &forcing), "find restored adaptive forcing");
+    requireNetCDF(nc_inq_varid(forcing, "apvCutoffFraction", &variable), "find emitted inactive cutoff");
+    requireNetCDF(nc_get_var_double(forcing, variable, &cutoff), "read emitted inactive cutoff");
+    requireNetCDF(nc_close(output), "close restored adaptive cutoff");
+    require(std::isnan(cutoff), "portable writer did not restore the inactive MATLAB default");
+    WVCheckpoint roundTrip;
+    result = WVCheckpointReader::read(restored.path.string(), *test::extensionCatalog(), roundTrip);
+    require(static_cast<bool>(result), result.message);
+    require(roundTrip.forcingSchedule.entries.front().configuration.values.empty(),
+            "inactive adaptive cutoff changed during portable checkpoint restoration");
+
+    auto injected = checkpoint.forcingSchedule.entries.front();
+    injected.configuration.values.push_back({"apvCutoffFraction", {}, std::vector<double>{0.5}});
+    require(!test::extensionCatalog()->forcings().validateConfiguration(injected),
+            "persistence-only cutoff became active portable configuration");
+
+    struct InvalidCutoff {
+        const char* name;
+        double value;
+        nc_type type;
+        bool vector;
+        WVCheckpointStatusCode expected;
+    };
+    for (const auto& invalid : std::array<InvalidCutoff, 7>{{
+             {"apvCutoffFraction", 0.0, NC_DOUBLE, false, WVCheckpointStatusCode::incompatibleForcing},
+             {"apvCutoffFraction", 0.5, NC_DOUBLE, false, WVCheckpointStatusCode::incompatibleForcing},
+             {"apvCutoffFraction", std::numeric_limits<double>::infinity(), NC_DOUBLE, false, WVCheckpointStatusCode::incompatibleForcing},
+             {"apvCutoffFraction", -std::numeric_limits<double>::infinity(), NC_DOUBLE, false, WVCheckpointStatusCode::incompatibleForcing},
+             {"apvCutoffFraction", nan, NC_FLOAT, false, WVCheckpointStatusCode::typeMismatch},
+             {"apvCutoffFraction", nan, NC_DOUBLE, true, WVCheckpointStatusCode::typeMismatch},
+             {"unknownCutoff", nan, NC_DOUBLE, false, WVCheckpointStatusCode::malformedForcing}}}) {
+        TemporaryFile file(temporaryCopy("forcing-adaptive-damping.nc"));
+        addVariable(file.path, invalid.name, invalid.value, invalid.type, invalid.vector);
+        WVCheckpoint rejected;
+        result = WVCheckpointReader::read(file.path.string(), *test::extensionCatalog(), rejected);
+        require(result.code == invalid.expected && result.location == "/forcing/" + std::string(invalid.name),
+                "unsupported adaptive cutoff did not fail at its precise persistence boundary");
+    }
 }
 
 void testMixedForcingSchedules() {
@@ -552,6 +633,7 @@ int main() {
         testForcingCapabilities();
         testRegisteredFixedAmplitudePair();
         testSupportedForcingFixtures();
+        testInactiveAdaptiveCutoffPersistence();
         testMixedForcingSchedules();
         testUnsupportedVersionAndTransform();
         testMissingPartnerAndWrongType();

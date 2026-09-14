@@ -231,6 +231,12 @@ WVCheckpointStatus defineForcingEntry(int group, const WVFrozenForcingEntry& ent
         if (!result) return result;
     }
     for (const auto& field : registration->persistence.fields) {
+        if (field.encoding == WVForcingPersistenceEncoding::inactiveNaNScalar) {
+            int variable = -1;
+            result = defineDouble(group, field.netcdfName.c_str(), {}, variable, path);
+            if (!result) return result;
+            continue;
+        }
         const auto* value = entry.configuration.value(field.recordName);
         if (value == nullptr && field.optional) continue;
         if (value == nullptr) return status(WVCheckpointStatusCode::malformedForcing,"Required forcing configuration value is missing.",path+"/"+field.netcdfName);
@@ -347,6 +353,11 @@ WVCheckpointStatus writeForcingEntry(int group, const WVFrozenForcingEntry& entr
     const auto* registration = catalog.registration(entry.typeIdentifier, entry.contractVersion);
     if (registration == nullptr || !registration->isSupported) return status(WVCheckpointStatusCode::unsupportedForcing,"Unsupported forcing reached checkpoint writing.",path);
     for (const auto& field : registration->persistence.fields) {
+        if (field.encoding == WVForcingPersistenceEncoding::inactiveNaNScalar) {
+            const auto result = writeDoubles(group, field.netcdfName, {std::numeric_limits<double>::quiet_NaN()}, path);
+            if (!result) return result;
+            continue;
+        }
         const auto* value = entry.configuration.value(field.recordName);
         if (value == nullptr && field.optional) continue;
         if (value == nullptr) return status(WVCheckpointStatusCode::malformedForcing,"Required forcing value is missing.",path);
