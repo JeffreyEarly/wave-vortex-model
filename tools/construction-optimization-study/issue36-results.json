@@ -387,6 +387,21 @@
       "total": 9,
       "passed": 9,
       "failed": 0
-    }
+    },
+    "installedWVMConstructionTests": {
+      "total": 36,
+      "passed": 36,
+      "failed": 0,
+      "incomplete": 0
+    },
+    "installedPackageVersions": [
+      "1.2.1",
+      "2.0.0",
+      "2.0.0-beta.6",
+      "1.0.2",
+      "2.2.0",
+      "4.3.0",
+      "5.7.0"
+    ]
   }
 }

@@ -54,6 +54,8 @@ The saved numerical scientific state is exactly equal between before/after runs,
 
 Code Analyzer found zero active or blocking diagnostics in the six changed provider MATLAB files; two existing growth suppressions remain. The release version was assigned through `matlab.mpm.Package`; the pinned central OceanKit exporter produced 237 byte-identical payload files, excluding authoring directories and untracked macOS metadata. Documentation was built using ClassDocumentation 1.3.2. Unrelated generator formatting churn was discarded; the generated beta.6 version history was retained. No existing released snapshot was edited.
 
+The exported WVM package installed through native MPM with the exact seven-package graph, passed its installed consumer checks, and passed all **36** cases in the seven focused construction suites with runtime symbols asserted beneath the installed package. The current suite count is 36; a verification-harness expectation of 35 was corrected after the numerical tests passed, then the run was repeated successfully to retain structured results.
+
 WVM adoption also passes all nine release-verification tests. Its five changed MATLAB files have zero blocking diagnostics and one pre-existing informational array-growth advisory in benchmark path setup. `docs:build` and `docs:check` pass with 2,654 files, 5,415 routes and zero validation failures; only the intended version-history change is retained.
 
 ## Reassessment and reproduction
