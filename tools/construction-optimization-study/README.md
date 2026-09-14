@@ -1,6 +1,6 @@
 # Free-surface construction optimization
 
-The series continues in [issue 33: numeric prefix acceptance](issue33.md). The report below preserves issue 31's measurements and the priorities recommended at that step.
+The series continues through [issue 33: numeric prefix acceptance](issue33.md) and [issue 32: coupled convergence preparation](issue32.md). The latest report includes the refreshed profile and next-target reassessment. The report below preserves issue 31's measurements and the priorities recommended at that step.
 
 ## Issue 31: share assessment quadrature
 
