@@ -48,9 +48,15 @@ classdef TestFreeSurfaceQGPerformance < matlab.unittest.TestCase
             blank=struct(Ag_q=zeros(size(w.Ag_q)),Ag_0=zeros(size(w.Ag_0)),Amda=zeros(size(w.Amda)));
             [~,~,~,~,~,~,phiHat]=w.quasigeostrophicSpatialState();
             direct=force.addQuasigeostrophicSpectralForcing(w,blank);
+            reference=force.addQuasigeostrophicSpectralForcing(w,blank,struct(phiHat=phiHat));
+            % Selective and volume matrix contractions can round differently.
+            % Keep exact equality for reuse of the identical stage snapshot.
+            for name=string(fieldnames(blank)).'
+                testCase.verifyLessThanOrEqual(norm(direct.(name)-reference.(name),'fro'),16*eps*norm(reference.(name),'fro'))
+            end
             w.Ag_q(:)=0; w.Ag_0(:)=0;
             supplied=force.addQuasigeostrophicSpectralForcing(w,blank,struct(phiHat=phiHat));
-            testCase.verifyEqual(supplied,direct)
+            testCase.verifyEqual(supplied,reference)
             testCase.verifyGreaterThan(norm(supplied.Ag_q,'fro'),0)
             w.Ag_q=state.Ag_q; w.Ag_0=state.Ag_0;
             profile clear; profile on
@@ -59,7 +65,7 @@ classdef TestFreeSurfaceQGPerformance < matlab.unittest.TestCase
             profile off; info=profile('info'); clear cleanup
             entry=info.FunctionTable(strcmp({info.FunctionTable.FunctionName},'WVTransformFreeSurfaceQG.reconstructSpectralState'));
             testCase.verifyEqual(entry.NumCalls,1)
-            testCase.verifyEqual(actual,direct)
+            testCase.verifyEqual(actual,reference)
         end
 
         function widthBatchedModeTransformsMatchIndividualPagesAndCache(testCase)
