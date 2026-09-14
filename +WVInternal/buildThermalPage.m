@@ -18,7 +18,9 @@ N2=N20*exp(2*inverseScale*z);
 field=[sqrt(w)*kh.*r.psi;sqrt(w.*N2).*r.eta;sqrt(g)*r.ssh];
 [~,R]=qr(field,0); Q=eye(count)/R;
 generator=(r.etaZ*Q)'*(w.*(r.buoyancyZ*Q));
-[U,rates]=eig(generator,'vector');
+% The QR coordinates already use the positive physical-energy metric.
+% Diagonal balancing can destroy the stationary subspace at some radii.
+[U,rates]=eig(generator,'nobalance','vector');
 % Deterministic display order is not an identity between resolutions.
 [~,order]=sortrows([real(rates),imag(rates)],[1 2]); rates=rates(order); U=U(:,order);
 C=Q*U;
