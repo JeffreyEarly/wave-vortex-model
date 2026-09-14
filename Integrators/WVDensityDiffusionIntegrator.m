@@ -1,11 +1,11 @@
 classdef WVDensityDiffusionIntegrator < handle
     % Integrate canonical free-surface QG with exact linear density diffusion.
     %
-    % Accepted and trial coordinates are local to each integration. The transform's
-    % Ag_q, Ag_0, and Amda remain directly mutable and persist unchanged.
-    % Diffusion coordinates are square changes of basis, packed only for the
-    % integrator. Reattach explicitly after canonical snapshot restoration.
-    % Positive computed rates are reported, never clipped.
+    % APV coefficients Ag_q and Ag_0, thermal coefficients Ath, and the shared horizontal-mean family Amda remain canonical and directly mutable. Diffusion eigencoordinates are square changes of basis local to each integration. Reattach explicitly after canonical snapshot restoration. Positive computed rates are reported, never clipped.
+    %
+    % APV transforms obtain diffusivity from WVVerticalDiffusivity; thermal transforms use their stored kappa_z.
+    %
+    % For an APV transform with both endpoints active:
     %
     % ```matlab
     % wvt.addForcing(WVVerticalDiffusivity(wvt,kappa_z=1e-5));
