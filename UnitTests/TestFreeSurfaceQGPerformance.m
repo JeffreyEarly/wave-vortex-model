@@ -159,6 +159,8 @@ classdef TestFreeSurfaceQGPerformance < matlab.unittest.TestCase
         function normFactorsAreLazyAndRecreatedWithDiffusionOperators(testCase)
             w=TestFreeSurfaceQGPerformance.transform(); w.removeAllForcing();
             force=WVVerticalDiffusivity(w,kappa_z=1e-5); w.addForcing(force);
+            profilerSettings=profile('status');
+            testCase.addTeardown(@()profile('-detail',profilerSettings.DetailLevel));
             profile clear; profile on -detail builtin
             cleanup=onCleanup(@()profile('off'));
             e=WVDensityDiffusionIntegrator(w); a=e.toModes(TestFreeSurfaceQGPerformance.mixedState(w));
