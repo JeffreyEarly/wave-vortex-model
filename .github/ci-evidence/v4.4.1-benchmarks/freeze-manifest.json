@@ -1,0 +1,42 @@
+{
+  "schemaVersion": "v4.4.1-table-refresh-freeze-v1",
+  "createdUTC": "2026-09-14T00:44:12.954525+00:00",
+  "source": {
+    "repository": "JeffreyEarly/wave-vortex-model",
+    "commit": "c08b70471099682b5dc5d30c7ed0993b5c697c42",
+    "tree": "6a39278735e259683974e213b2037bcfd5e9bea0",
+    "sourceManifestSHA256": "91487ae2e6311d95e0d41aaa591247bba420c0a7ca943cee0e664c88873454e1",
+    "fileCount": 319
+  },
+  "provider": {
+    "id": "native-neon-pthreads",
+    "version": "3.3.11",
+    "sourceSHA256": "5630c24cdeb33b131612f7eb4b1a9934234754f9f388ff8617458d0be6f239a1"
+  },
+  "files": [
+    {
+      "file": "wv_compiled_backend_mex.mexmaca64",
+      "source": "/Users/jearly/Library/Caches/WaveVortexModel/compiled-backend-v1/maca64/R2025b/8dc99adff5ef98a5aa9877f6e07af29f433ae66f82634f6e1fe8d5c80ca1d1b3/module/wv_compiled_backend_mex.mexmaca64",
+      "sha256": "e8250162051682ea98ff3d1a1ce6bd6505ad4ce84049c7a98e9a464a2acff672",
+      "bytes": 3402848
+    },
+    {
+      "file": "libfftw3.3.dylib",
+      "source": "/Users/jearly/Library/Caches/WaveVortexModel/compiled-backend-v1/maca64/R2025b/21ebfc89e75343aae7d673333f8417b91b2c0158d7ec4d85582ed67bb9ce21e3/provider/native-neon-pthreads/lib/libfftw3.3.dylib",
+      "sha256": "2a1969c627417941c84b477884568d4c55ea1d7f3d78ef47ab28fd8b541f9f00",
+      "bytes": 1026336
+    },
+    {
+      "file": "libfftw3_threads.3.dylib",
+      "source": "/Users/jearly/Library/Caches/WaveVortexModel/compiled-backend-v1/maca64/R2025b/21ebfc89e75343aae7d673333f8417b91b2c0158d7ec4d85582ed67bb9ce21e3/provider/native-neon-pthreads/lib/libfftw3_threads.3.dylib",
+      "sha256": "5d9e204040e6ecdedb2ea69956093caf382b3a44b9da79edcf90a5720630356b",
+      "bytes": 73128
+    },
+    {
+      "file": "wave-vortex-run",
+      "source": "/private/tmp/wvm441-bench/native-build/wave-vortex-run",
+      "sha256": "5b871ac00d7f2f3c5720c18006d7f9a02a21ed5b835b6e0b955a2f303ed1a82d",
+      "bytes": 4904960
+    }
+  ]
+}

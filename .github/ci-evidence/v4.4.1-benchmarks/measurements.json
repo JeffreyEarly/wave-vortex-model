@@ -1,0 +1,398 @@
+[
+  {
+    "model": "hydrostatic-exponential",
+    "workload": "coefficient-endpoint",
+    "interface": "matlab-builtin",
+    "samplesSeconds": [
+      36.34616208333333,
+      36.83414783333333,
+      36.581407666666664
+    ],
+    "medianSeconds": 36.581407666666664,
+    "peakRSSSamplesBytes": [
+      4328128512.0,
+      4330176512.0,
+      4343382016.0
+    ],
+    "medianPeakRSSBytes": 4330176512.0,
+    "previousMedianSeconds": 36.98433154166667,
+    "runtimeChangePercent": -1.0894447951454,
+    "previousMedianPeakRSSBytes": 4331012096.0,
+    "sourceCommit": "c08b70471099682b5dc5d30c7ed0993b5c697c42",
+    "passed": true
+  },
+  {
+    "model": "hydrostatic-exponential",
+    "workload": "coefficient-endpoint",
+    "interface": "matlab-compiled",
+    "samplesSeconds": [
+      13.089962125,
+      13.108060958333333,
+      13.129458083333333
+    ],
+    "medianSeconds": 13.108060958333333,
+    "peakRSSSamplesBytes": [
+      6663307264.0,
+      6666895360.0,
+      6667632640.0
+    ],
+    "medianPeakRSSBytes": 6666895360.0,
+    "previousMedianSeconds": 13.232189041666667,
+    "runtimeChangePercent": -0.9380767078105423,
+    "previousMedianPeakRSSBytes": 6666452992.0,
+    "sourceCommit": "c08b70471099682b5dc5d30c7ed0993b5c697c42",
+    "passed": true
+  },
+  {
+    "model": "hydrostatic-exponential",
+    "workload": "coefficient-endpoint",
+    "interface": "standalone-compiled",
+    "samplesSeconds": [
+      10.533246416,
+      10.382011958,
+      10.307777625
+    ],
+    "medianSeconds": 10.382011958,
+    "peakRSSSamplesBytes": [
+      2545057792.0,
+      2544943104.0,
+      2544992256.0
+    ],
+    "medianPeakRSSBytes": 2544992256.0,
+    "previousMedianSeconds": 10.447692292,
+    "runtimeChangePercent": -0.6286587713756897,
+    "previousMedianPeakRSSBytes": 2529574912.0,
+    "sourceCommit": "c08b70471099682b5dc5d30c7ed0993b5c697c42",
+    "passed": true
+  },
+  {
+    "model": "hydrostatic-exponential",
+    "workload": "composite-dense-output",
+    "interface": "matlab-builtin",
+    "samplesSeconds": [
+      55.12981716666667,
+      55.54116208333333,
+      55.43324533333333
+    ],
+    "medianSeconds": 55.43324533333333,
+    "peakRSSSamplesBytes": [
+      10779017216.0,
+      10785882112.0,
+      10784014336.0
+    ],
+    "medianPeakRSSBytes": 10784014336.0,
+    "previousMedianSeconds": 55.811500583333334,
+    "runtimeChangePercent": -0.6777371080270878,
+    "previousMedianPeakRSSBytes": 10778656768.0,
+    "sourceCommit": "c08b70471099682b5dc5d30c7ed0993b5c697c42",
+    "passed": true
+  },
+  {
+    "model": "hydrostatic-exponential",
+    "workload": "composite-dense-output",
+    "interface": "matlab-compiled",
+    "samplesSeconds": [
+      33.98478175,
+      33.769188416666665,
+      33.902429125
+    ],
+    "medianSeconds": 33.902429125,
+    "peakRSSSamplesBytes": [
+      13867630592.0,
+      13874774016.0,
+      13868318720.0
+    ],
+    "medianPeakRSSBytes": 13868318720.0,
+    "previousMedianSeconds": 57.581742375,
+    "runtimeChangePercent": -41.12295368866909,
+    "previousMedianPeakRSSBytes": 14003716096.0,
+    "sourceCommit": "c08b70471099682b5dc5d30c7ed0993b5c697c42",
+    "passed": true
+  },
+  {
+    "model": "hydrostatic-exponential",
+    "workload": "composite-dense-output",
+    "interface": "standalone-compiled",
+    "samplesSeconds": [
+      17.16928325,
+      17.232081792,
+      17.123589292
+    ],
+    "medianSeconds": 17.16928325,
+    "peakRSSSamplesBytes": [
+      4164976640.0,
+      4165533696.0,
+      4165140480.0
+    ],
+    "medianPeakRSSBytes": 4165140480.0,
+    "previousMedianSeconds": 52.523112125,
+    "runtimeChangePercent": -67.31099404555705,
+    "previousMedianPeakRSSBytes": 4183588864.0,
+    "sourceCommit": "c08b70471099682b5dc5d30c7ed0993b5c697c42",
+    "passed": true
+  },
+  {
+    "model": "boussinesq-exponential",
+    "workload": "coefficient-endpoint",
+    "interface": "matlab-builtin",
+    "samplesSeconds": [
+      70.66859808333334,
+      70.474599625,
+      70.87192895833333
+    ],
+    "medianSeconds": 70.66859808333334,
+    "peakRSSSamplesBytes": [
+      5463212032.0,
+      5459214336.0,
+      5478596608.0
+    ],
+    "medianPeakRSSBytes": 5463212032.0,
+    "previousMedianSeconds": 71.67337866666666,
+    "runtimeChangePercent": -1.4018881236313563,
+    "previousMedianPeakRSSBytes": 5436637184.0,
+    "sourceCommit": "c08b70471099682b5dc5d30c7ed0993b5c697c42",
+    "passed": true
+  },
+  {
+    "model": "boussinesq-exponential",
+    "workload": "coefficient-endpoint",
+    "interface": "matlab-compiled",
+    "samplesSeconds": [
+      15.994461958333334,
+      16.016547541666668,
+      16.037461166666667
+    ],
+    "medianSeconds": 16.016547541666668,
+    "peakRSSSamplesBytes": [
+      10702077952.0,
+      10708697088.0,
+      10699702272.0
+    ],
+    "medianPeakRSSBytes": 10702077952.0,
+    "previousMedianSeconds": 16.039153333333335,
+    "runtimeChangePercent": -0.14094130280359884,
+    "previousMedianPeakRSSBytes": 10705551360.0,
+    "sourceCommit": "c08b70471099682b5dc5d30c7ed0993b5c697c42",
+    "passed": true
+  },
+  {
+    "model": "boussinesq-exponential",
+    "workload": "coefficient-endpoint",
+    "interface": "standalone-compiled",
+    "samplesSeconds": [
+      13.770785041,
+      13.826202584,
+      13.968533667
+    ],
+    "medianSeconds": 13.826202584,
+    "peakRSSSamplesBytes": [
+      6592217088.0,
+      6596755456.0,
+      6593003520.0
+    ],
+    "medianPeakRSSBytes": 6593003520.0,
+    "previousMedianSeconds": 14.037273875,
+    "runtimeChangePercent": -1.5036487346443472,
+    "previousMedianPeakRSSBytes": 6577209344.0,
+    "sourceCommit": "c08b70471099682b5dc5d30c7ed0993b5c697c42",
+    "passed": true
+  },
+  {
+    "model": "boussinesq-exponential",
+    "workload": "composite-dense-output",
+    "interface": "matlab-builtin",
+    "samplesSeconds": [
+      86.77615779166666,
+      87.06536979166667,
+      87.01292620833334
+    ],
+    "medianSeconds": 87.01292620833334,
+    "peakRSSSamplesBytes": [
+      11912331264.0,
+      11843747840.0,
+      11911725056.0
+    ],
+    "medianPeakRSSBytes": 11911725056.0,
+    "previousMedianSeconds": 87.20382754166667,
+    "runtimeChangePercent": -0.21891393843018747,
+    "previousMedianPeakRSSBytes": 11913527296.0,
+    "sourceCommit": "c08b70471099682b5dc5d30c7ed0993b5c697c42",
+    "passed": true
+  },
+  {
+    "model": "boussinesq-exponential",
+    "workload": "composite-dense-output",
+    "interface": "matlab-compiled",
+    "samplesSeconds": [
+      33.30442779166667,
+      33.322772416666666,
+      33.539760208333334
+    ],
+    "medianSeconds": 33.322772416666666,
+    "peakRSSSamplesBytes": [
+      18108399616.0,
+      17908793344.0,
+      18106810368.0
+    ],
+    "medianPeakRSSBytes": 18106810368.0,
+    "previousMedianSeconds": 52.719047875,
+    "runtimeChangePercent": -36.7917787595919,
+    "previousMedianPeakRSSBytes": 18040668160.0,
+    "sourceCommit": "c08b70471099682b5dc5d30c7ed0993b5c697c42",
+    "passed": true
+  },
+  {
+    "model": "boussinesq-exponential",
+    "workload": "composite-dense-output",
+    "interface": "standalone-compiled",
+    "samplesSeconds": [
+      19.314038542,
+      19.595608791,
+      19.182734666
+    ],
+    "medianSeconds": 19.314038542,
+    "peakRSSSamplesBytes": [
+      8213266432.0,
+      8218411008.0,
+      8217100288.0
+    ],
+    "medianPeakRSSBytes": 8217100288.0,
+    "previousMedianSeconds": 47.876817708,
+    "runtimeChangePercent": -59.6588924105273,
+    "previousMedianPeakRSSBytes": 8196702208.0,
+    "sourceCommit": "c08b70471099682b5dc5d30c7ed0993b5c697c42",
+    "passed": true
+  },
+  {
+    "model": "constant-nonhydrostatic",
+    "workload": "coefficient-endpoint",
+    "interface": "matlab-builtin",
+    "samplesSeconds": [
+      37.77853183333333,
+      36.933650875,
+      35.21834233333333
+    ],
+    "medianSeconds": 36.933650875,
+    "peakRSSSamplesBytes": [
+      4484284416.0,
+      4491624448.0,
+      4481417216.0
+    ],
+    "medianPeakRSSBytes": 4484284416.0,
+    "previousMedianSeconds": 37.363825875,
+    "runtimeChangePercent": -1.1513141117805992,
+    "previousMedianPeakRSSBytes": 4492951552.0,
+    "sourceCommit": "c08b70471099682b5dc5d30c7ed0993b5c697c42",
+    "passed": true
+  },
+  {
+    "model": "constant-nonhydrostatic",
+    "workload": "coefficient-endpoint",
+    "interface": "matlab-compiled",
+    "samplesSeconds": [
+      15.670140916666666,
+      15.887537208333333,
+      15.571369041666667
+    ],
+    "medianSeconds": 15.670140916666666,
+    "peakRSSSamplesBytes": [
+      6313345024.0,
+      6248677376.0,
+      6320635904.0
+    ],
+    "medianPeakRSSBytes": 6313345024.0,
+    "previousMedianSeconds": 15.607334958333333,
+    "runtimeChangePercent": 0.40241308654556107,
+    "previousMedianPeakRSSBytes": 6315917312.0,
+    "sourceCommit": "c08b70471099682b5dc5d30c7ed0993b5c697c42",
+    "passed": true
+  },
+  {
+    "model": "constant-nonhydrostatic",
+    "workload": "coefficient-endpoint",
+    "interface": "standalone-compiled",
+    "samplesSeconds": [
+      13.018427292,
+      13.324706083,
+      12.811731208
+    ],
+    "medianSeconds": 13.018427292,
+    "peakRSSSamplesBytes": [
+      2000306176.0,
+      2000453632.0,
+      2016460800.0
+    ],
+    "medianPeakRSSBytes": 2000453632.0,
+    "previousMedianSeconds": 12.983667167,
+    "runtimeChangePercent": 0.26772193520447907,
+    "previousMedianPeakRSSBytes": 2001141760.0,
+    "sourceCommit": "c08b70471099682b5dc5d30c7ed0993b5c697c42",
+    "passed": true
+  },
+  {
+    "model": "constant-nonhydrostatic",
+    "workload": "composite-dense-output",
+    "interface": "matlab-builtin",
+    "samplesSeconds": [
+      52.88702095833333,
+      52.86508070833333,
+      53.17452470833334
+    ],
+    "medianSeconds": 52.88702095833333,
+    "peakRSSSamplesBytes": [
+      10901159936.0,
+      10903486464.0,
+      10892836864.0
+    ],
+    "medianPeakRSSBytes": 10901159936.0,
+    "previousMedianSeconds": 53.492170083333335,
+    "runtimeChangePercent": -1.1312854274882933,
+    "previousMedianPeakRSSBytes": 10903863296.0,
+    "sourceCommit": "c08b70471099682b5dc5d30c7ed0993b5c697c42",
+    "passed": true
+  },
+  {
+    "model": "constant-nonhydrostatic",
+    "workload": "composite-dense-output",
+    "interface": "matlab-compiled",
+    "samplesSeconds": [
+      42.30159625,
+      42.400301541666664,
+      42.578938625
+    ],
+    "medianSeconds": 42.400301541666664,
+    "peakRSSSamplesBytes": [
+      13406912512.0,
+      13402112000.0,
+      13404880896.0
+    ],
+    "medianPeakRSSBytes": 13404880896.0,
+    "previousMedianSeconds": 55.64144575,
+    "runtimeChangePercent": -23.79726843875788,
+    "previousMedianPeakRSSBytes": 13405847552.0,
+    "sourceCommit": "c08b70471099682b5dc5d30c7ed0993b5c697c42",
+    "passed": true
+  },
+  {
+    "model": "constant-nonhydrostatic",
+    "workload": "composite-dense-output",
+    "interface": "standalone-compiled",
+    "samplesSeconds": [
+      21.144394167,
+      20.78261325,
+      20.374183292
+    ],
+    "medianSeconds": 20.78261325,
+    "peakRSSSamplesBytes": [
+      3778641920.0,
+      3794157568.0,
+      3778428928.0
+    ],
+    "medianPeakRSSBytes": 3778641920.0,
+    "previousMedianSeconds": 20.994542042,
+    "runtimeChangePercent": -1.0094470818940993,
+    "previousMedianPeakRSSBytes": 3778641920.0,
+    "sourceCommit": "c08b70471099682b5dc5d30c7ed0993b5c697c42",
+    "passed": true
+  }
+]
