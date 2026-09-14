@@ -1,0 +1,23 @@
+[
+  {
+    "model": "hydrostatic-exponential",
+    "archiveFileName": "20260913T234347653Z-three-interface-benchmark.json.gz",
+    "archiveSHA256": "9c6625d6ba6f53b42854d69d400cf76796a726c7b277fd5cdccd884f499eed73",
+    "archiveCompressedBytes": 316933,
+    "archiveLocation": "../wave-vortex-model-benchmark-artifacts/v4.4.1-table-refresh-20260913/hydrostatic-exponential-v2"
+  },
+  {
+    "model": "boussinesq-exponential",
+    "archiveFileName": "20260913T235744471Z-three-interface-benchmark.json.gz",
+    "archiveSHA256": "6ccb3645c633e482b483d23d1d2d61fe826734e9a64a9594370012c6c891dab4",
+    "archiveCompressedBytes": 418960,
+    "archiveLocation": "../wave-vortex-model-benchmark-artifacts/v4.4.1-table-refresh-20260913/boussinesq-exponential"
+  },
+  {
+    "model": "constant-nonhydrostatic",
+    "archiveFileName": "20260914T002703977Z-three-interface-benchmark.json.gz",
+    "archiveSHA256": "d63eda0dc56f08da69a378e13c145cc4af0e298a9e3a873c54497cf457e5ef53",
+    "archiveCompressedBytes": 338443,
+    "archiveLocation": "../wave-vortex-model-benchmark-artifacts/v4.4.1-table-refresh-20260913/constant-nonhydrostatic"
+  }
+]

@@ -75,6 +75,18 @@
     {
       "datasetId": "three-interface--boussinesq-exponential--m4-max--20260913T140607Z",
       "artifact": "Benchmarks/results/published/three-interface--boussinesq-exponential--m4-max--20260913T140607Z.json"
+    },
+    {
+      "datasetId": "three-interface--hydrostatic-exponential--m4-max--20260913T234347Z",
+      "artifact": "Benchmarks/results/published/three-interface--hydrostatic-exponential--m4-max--20260913T234347Z.json"
+    },
+    {
+      "datasetId": "three-interface--boussinesq-exponential--m4-max--20260913T235744Z",
+      "artifact": "Benchmarks/results/published/three-interface--boussinesq-exponential--m4-max--20260913T235744Z.json"
+    },
+    {
+      "datasetId": "three-interface--constant-nonhydrostatic--m4-max--20260914T002703Z",
+      "artifact": "Benchmarks/results/published/three-interface--constant-nonhydrostatic--m4-max--20260914T002703Z.json"
     }
   ]
 }

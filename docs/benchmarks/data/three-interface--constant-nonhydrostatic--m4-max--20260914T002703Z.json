@@ -1,0 +1,1163 @@
+{
+  "schemaVersion": "published-three-interface-v4",
+  "datasetId": "three-interface--constant-nonhydrostatic--m4-max--20260914T002703Z",
+  "collectedAt": "2026-09-14T00:27:03Z",
+  "studyId": "matched-model-runtime-v1",
+  "modelConfiguration": "constant-nonhydrostatic",
+  "cohortKey": "c08b70471099682b5dc5d30c7ed0993b5c697c42|6a39278735e259683974e213b2037bcfd5e9bea0|m4-max|25.2.0.3150157 (R2025b) Update 4|16|native-neon-pthreads|3.3.11",
+  "cohort": {
+    "sourceCommit": "c08b70471099682b5dc5d30c7ed0993b5c697c42",
+    "sourceTree": "6a39278735e259683974e213b2037bcfd5e9bea0",
+    "platformId": "m4-max",
+    "matlabVersion": "25.2.0.3150157 (R2025b) Update 4",
+    "threadCount": 16,
+    "providerId": "native-neon-pthreads",
+    "providerVersion": "3.3.11"
+  },
+  "source": {
+    "repository": "https://github.com/JeffreyEarly/wave-vortex-model",
+    "commit": "c08b70471099682b5dc5d30c7ed0993b5c697c42",
+    "tree": "6a39278735e259683974e213b2037bcfd5e9bea0",
+    "sourceDirty": false,
+    "version": "4.4.1"
+  },
+  "platform": {
+    "id": "m4-max",
+    "displayName": "Apple M4 Max",
+    "processor": "Apple M4 Max",
+    "physicalMemoryBytes": 1.37438953472E+11,
+    "os": "Darwin 25.6.0 Darwin Kernel Version 25.6.0: Sat Jul 11 15:27:27 PDT 2026; root:xnu-12377.161.13~4/RELEASE_ARM64_T6041 arm64",
+    "architecture": "maca64",
+    "matlabVersion": "25.2.0.3150157 (R2025b) Update 4",
+    "threadCount": 16
+  },
+  "provider": {
+    "id": "native-neon-pthreads",
+    "version": "3.3.11",
+    "threadBackend": "pthreads",
+    "scope": "compiled-interfaces-only",
+    "moduleSHA256": "e8250162051682ea98ff3d1a1ce6bd6505ad4ce84049c7a98e9a464a2acff672",
+    "identityValidated": true,
+    "openMPDetected": false
+  },
+  "provenance": {
+    "rawSchemaVersion": "three-interface-benchmark-v3",
+    "rawArtifactSHA256": "f0a1c6ad572503d4d9549560e5b3893b21215ae16c26c747f9d7dc9f09b0c912",
+    "externalArchive": {
+      "fileName": "20260914T002703977Z-three-interface-benchmark.json.gz",
+      "sha256": "d63eda0dc56f08da69a378e13c145cc4af0e298a9e3a873c54497cf457e5ef53",
+      "compressedBytes": 338443,
+      "location": "../wave-vortex-model-benchmark-artifacts/v4.4.1-table-refresh-20260913/constant-nonhydrostatic"
+    },
+    "fixtures": [
+      {
+        "key": "constant-nonhydrostatic--coefficient-endpoint",
+        "path": "external raw archive fixture: matched-constant-nonhydrostatic-coefficient-endpoint-model.nc",
+        "sha256": "fffcc740775abb29840e96da5964d711a44a666ca3e307314128dc63da939e37",
+        "bytes": 4.6829069E+7,
+        "modelConfiguration": "constant-nonhydrostatic",
+        "physicalConfiguration": "nonhydrostatic",
+        "stratificationProfile": "N2 = 2e-5 s^-2",
+        "workload": "coefficient-endpoint"
+      },
+      {
+        "key": "constant-nonhydrostatic--composite-dense-output",
+        "path": "external raw archive fixture: matched-constant-nonhydrostatic-composite-dense-output-model.nc",
+        "sha256": "726d71e82abd516dbc009e6b7a9207025c644738a7e7def94942740a5a4a167e",
+        "bytes": 1.8321851E+8,
+        "modelConfiguration": "constant-nonhydrostatic",
+        "physicalConfiguration": "nonhydrostatic",
+        "stratificationProfile": "N2 = 2e-5 s^-2",
+        "workload": "composite-dense-output"
+      }
+    ],
+    "initialCondition": {
+      "id": "gm0p5-red-geostrophic-j1-v1",
+      "seed": 4001,
+      "gmEnergyLevel": 0.5,
+      "gmAmplitudePolicy": "exact spectrum amplitudes with deterministic random orientations",
+      "geostrophicVerticalMode": 1,
+      "geostrophicSpectrum": "k^(3/2) below k_r, k^(-5/3) from k_r through k_f, and k_f^(4/3) k^(-3) above k_f",
+      "geostrophicMaximumSpeedTarget": 0.15,
+      "geostrophicHorizontalSpeedMaximum": 0.15,
+      "geostrophicScale": 61.91641054737137,
+      "deltaK": 4.1887902047863909E-5,
+      "rollOffMode": 4,
+      "transitionMode": 16,
+      "kRollOff": 0.00016755160819145564,
+      "kTransition": 0.00067020643276582254,
+      "rollOffWavelength": 37500,
+      "transitionWavelength": 9375,
+      "waveHorizontalSpeedMaximum": 0.19857721697151293,
+      "waveVerticalSpeedMaximum": 0.01820920162006693,
+      "combinedHorizontalSpeedMaximum": 0.26191262898120282,
+      "combinedHorizontalSpeedRMS": 0.059111183493923115,
+      "combinedVerticalSpeedMaximum": 0.01820920162006693,
+      "waveEnergy": 1.4832341610998916,
+      "geostrophicEnergy": 0.95963972108644058,
+      "waveCoefficientMinimum": 8.32053507750848E-10,
+      "waveCoefficientMedian": 0.0059325540851010612,
+      "waveCoefficientMaximum": 0.56362404113698683,
+      "vortexCoefficientMinimum": 3.8639362433324467E-6,
+      "vortexCoefficientMedian": 5.3662731036935439E-6,
+      "vortexCoefficientMaximum": 3.5101164528591287E-5,
+      "model": {
+        "id": "constant-nonhydrostatic",
+        "transformClass": "WVTransformConstantStratification",
+        "physicalConfiguration": "nonhydrostatic",
+        "isHydrostatic": false,
+        "domainMeters": [
+          150000,
+          150000,
+          1300
+        ],
+        "grid": [
+          256,
+          256,
+          129
+        ],
+        "latitudeDegrees": 45,
+        "shouldAntialias": true,
+        "stratificationProfile": "N2 = 2e-5 s^-2",
+        "N2ReferencePerSecondSquared": 2E-5,
+        "exponentialScaleHeightMeters": []
+      }
+    },
+    "model": {
+      "id": "constant-nonhydrostatic",
+      "transformClass": "WVTransformConstantStratification",
+      "physicalConfiguration": "nonhydrostatic",
+      "isHydrostatic": false,
+      "domainMeters": [
+        150000,
+        150000,
+        1300
+      ],
+      "grid": [
+        256,
+        256,
+        129
+      ],
+      "latitudeDegrees": 45,
+      "shouldAntialias": true,
+      "stratificationProfile": "N2 = 2e-5 s^-2",
+      "N2ReferencePerSecondSquared": 2E-5,
+      "exponentialScaleHeightMeters": []
+    },
+    "stepControls": {
+      "fixedStepPolicy": "largest power of two not exceeding the frozen-state CFL=0.25 candidate unless explicitly overridden",
+      "fixedStep": 128,
+      "fixedCFLCandidate": 209.15764619810943,
+      "fixedAdvectiveCFLCandidate": 209.15764619810943,
+      "fixedOscillatoryCFLCandidate": 423.93770665947255,
+      "adaptiveInitialStepPolicy": "minimum of the frozen-state CFL=0.5 candidate and MATLAB's default 0.1 integration-span maximum step",
+      "adaptiveInitialStep": 418.31529239621887,
+      "adaptiveCFLCandidate": 418.31529239621887,
+      "adaptiveAdvectiveCFLCandidate": 418.31529239621887,
+      "adaptiveOscillatoryCFLCandidate": 847.87541331894511,
+      "adaptiveMaximumStepPolicy": "MATLAB default; no user maximum step",
+      "finalTime": 7168
+    },
+    "matlabWorker": {
+      "path": "/Users/jearly/Documents/OceanKitRepositories/wvm-v4-benchmark-4.4.1/Benchmarks/threeInterfaceMatlabWorker.m",
+      "sha256": "80fedd5dec4e1524e35c976e50b569b9cb3cfb19fa7f3bc42d25c6ab30c94980"
+    },
+    "standaloneWorkers": {
+      "runner": {
+        "path": "/private/tmp/wvm441-bench/native-build/wave-vortex-run",
+        "sha256": "5b871ac00d7f2f3c5720c18006d7f9a02a21ed5b835b6e0b955a2f303ed1a82d"
+      },
+      "kernel": {
+        "path": "",
+        "sha256": ""
+      }
+    }
+  },
+  "cases": [
+    {
+      "id": "constant-nonhydrostatic--adaptive-rk78--coefficient-endpoint",
+      "modelConfiguration": "constant-nonhydrostatic",
+      "physicalConfiguration": "nonhydrostatic",
+      "isHydrostatic": false,
+      "workload": "coefficient-endpoint",
+      "integrator": "adaptive-rk78",
+      "contract": {
+        "Nxyz": [
+          256,
+          256,
+          129
+        ],
+        "Lxyz": [
+          150000,
+          150000,
+          1300
+        ],
+        "modelConfiguration": "constant-nonhydrostatic",
+        "physicalConfiguration": "nonhydrostatic",
+        "isHydrostatic": false,
+        "stratificationProfile": "N2 = 2e-5 s^-2",
+        "workload": "coefficient-endpoint",
+        "integrator": "adaptive-rk78",
+        "finalTime": 7168,
+        "outputScheduleSeconds": [
+          0,
+          7168
+        ],
+        "relativeTolerance": 0.001,
+        "absoluteToleranceScale": 1E-6,
+        "initialStep": 418.31529239621887,
+        "maximumStepPolicy": "matlab-default",
+        "processRunCount": 3
+      },
+      "interfaces": [
+        {
+          "id": "matlab-builtin",
+          "status": "complete",
+          "providerId": "matlab-builtin",
+          "integrationSeconds": 36.933650875,
+          "totalPeakRSSBytes": 4.484284416E+9,
+          "integrationRatio": 1,
+          "totalRSSRatio": 1,
+          "integrationSamplesSeconds": [
+            37.778531833333332,
+            36.933650875,
+            35.218342333333332
+          ],
+          "totalPeakRSSSamplesBytes": [
+            4.484284416E+9,
+            4.491624448E+9,
+            4.481417216E+9
+          ],
+          "diagnostics": {
+            "controls": {
+              "requested": "adaptive-rk78",
+              "actual": "adaptive-rk78",
+              "matched": true,
+              "controller": "matlab-ode78-v1",
+              "relativeTolerance": 0.001,
+              "requestedInitialStep": 418.31529239621887,
+              "effectiveInitialStep": 418.31529239621887,
+              "requestedMaximumStep": [],
+              "effectiveMaximumStep": 716.80000000000007,
+              "maximumStepPolicy": "matlab-default",
+              "absoluteToleranceHashes": [
+                "16331232467474028249",
+                "16331232467474028249",
+                "16331232467474028249"
+              ],
+              "absoluteToleranceComponentHashes": [
+                "4274345950450975969",
+                "4274345950450975969",
+                "12519929816211948769"
+              ]
+            },
+            "methodWork": {
+              "acceptedStepCounts": [
+                12,
+                12,
+                12
+              ],
+              "rejectedStepCounts": [
+                0,
+                0,
+                0
+              ],
+              "rhsEvaluationCounts": [
+                156,
+                156,
+                156
+              ],
+              "denseOutputEvaluationCounts": [
+                0,
+                0,
+                0
+              ],
+              "fsalReuse": [
+                "not-exposed-by-matlab",
+                "not-exposed-by-matlab",
+                "not-exposed-by-matlab"
+              ],
+              "fsalInvalidations": [
+                "not-exposed-by-matlab",
+                "not-exposed-by-matlab",
+                "not-exposed-by-matlab"
+              ]
+            },
+            "integratorStorage": {
+              "scope": "MATLAB solver, allocator, and copy-on-write storage are opaque",
+              "exact": false,
+              "persistentBytes": "not-exposed-by-matlab",
+              "workspaceMaximumLiveBytes": "not-exposed-by-matlab",
+              "denseHistoryBytes": "not-exposed-by-matlab",
+              "stateEquivalentBufferCount": "not-exposed-by-matlab",
+              "sharedAbstractionStateSizedCopyCount": []
+            },
+            "stateSizedBuffers": [],
+            "memory": {
+              "boundary": "integration-phase-total-live-process-tree-rss",
+              "steadyRetainedRSSBytes": 2.330443776E+9,
+              "operationPeakIncrementRSSBytes": 2.15384064E+9,
+              "finalRSSBytes": 8.15333376E+8,
+              "processLifetimePeakRSSBytes": 4.484284416E+9,
+              "allocatorAndProviderAttribution": "MATLAB allocator/COW and opaque FFT/provider storage are not exactly attributable from total RSS"
+            }
+          }
+        },
+        {
+          "id": "matlab-compiled",
+          "status": "complete",
+          "providerId": "native-neon-pthreads",
+          "integrationSeconds": 15.670140916666666,
+          "totalPeakRSSBytes": 6.313345024E+9,
+          "integrationRatio": 0.42427814595696034,
+          "totalRSSRatio": 1.4078823817405253,
+          "integrationSamplesSeconds": [
+            15.670140916666666,
+            15.887537208333333,
+            15.571369041666667
+          ],
+          "totalPeakRSSSamplesBytes": [
+            6.313345024E+9,
+            6.248677376E+9,
+            6.320635904E+9
+          ],
+          "diagnostics": {
+            "controls": {
+              "requested": "adaptive-rk78",
+              "actual": "adaptive-rk78",
+              "matched": true,
+              "controller": "matlab-ode78-v1",
+              "relativeTolerance": 0.001,
+              "requestedInitialStep": 418.31529239621887,
+              "effectiveInitialStep": 418.31529239621887,
+              "requestedMaximumStep": [],
+              "effectiveMaximumStep": 716.80000000000007,
+              "maximumStepPolicy": "matlab-default",
+              "absoluteToleranceHashes": [
+                "16331232467474028249",
+                "16331232467474028249",
+                "16331232467474028249"
+              ],
+              "absoluteToleranceComponentHashes": [
+                "4274345950450975969",
+                "4274345950450975969",
+                "12519929816211948769"
+              ]
+            },
+            "methodWork": {
+              "acceptedStepCounts": [
+                12,
+                12,
+                12
+              ],
+              "rejectedStepCounts": [
+                0,
+                0,
+                0
+              ],
+              "rhsEvaluationCounts": [
+                156,
+                156,
+                156
+              ],
+              "denseOutputEvaluationCounts": [
+                0,
+                0,
+                0
+              ],
+              "fsalReuse": [
+                "not-exposed-by-matlab",
+                "not-exposed-by-matlab",
+                "not-exposed-by-matlab"
+              ],
+              "fsalInvalidations": [
+                "not-exposed-by-matlab",
+                "not-exposed-by-matlab",
+                "not-exposed-by-matlab"
+              ]
+            },
+            "integratorStorage": {
+              "scope": "MATLAB solver, allocator, and copy-on-write storage are opaque",
+              "exact": false,
+              "persistentBytes": "not-exposed-by-matlab",
+              "workspaceMaximumLiveBytes": "not-exposed-by-matlab",
+              "denseHistoryBytes": "not-exposed-by-matlab",
+              "stateEquivalentBufferCount": "not-exposed-by-matlab",
+              "sharedAbstractionStateSizedCopyCount": []
+            },
+            "stateSizedBuffers": [],
+            "memory": {
+              "boundary": "integration-phase-total-live-process-tree-rss",
+              "steadyRetainedRSSBytes": 5.185527808E+9,
+              "operationPeakIncrementRSSBytes": 1.127817216E+9,
+              "finalRSSBytes": 9.43357952E+8,
+              "processLifetimePeakRSSBytes": 6.313345024E+9,
+              "allocatorAndProviderAttribution": "MATLAB allocator/COW and opaque FFT/provider storage are not exactly attributable from total RSS"
+            }
+          },
+          "executionPolicy": {
+            "configuredThreadBudget": 16,
+            "actualFFTThreads": 16,
+            "requestedFFTThreads": [],
+            "selection": "non-variable-transform"
+          }
+        },
+        {
+          "id": "standalone-compiled",
+          "status": "complete",
+          "providerId": "native-neon-pthreads",
+          "integrationSeconds": 13.018427292,
+          "totalPeakRSSBytes": 2.000453632E+9,
+          "integrationRatio": 0.35248146293633908,
+          "totalRSSRatio": 0.44610320096164036,
+          "integrationSamplesSeconds": [
+            13.018427292,
+            13.324706083,
+            12.811731208
+          ],
+          "totalPeakRSSSamplesBytes": [
+            2.000306176E+9,
+            2.000453632E+9,
+            2.0164608E+9
+          ],
+          "diagnostics": {
+            "controls": {
+              "requested": "adaptive-rk78",
+              "actual": "adaptive-rk78",
+              "matched": true,
+              "controller": "matlab-ode78-v1",
+              "relativeTolerance": 0.001,
+              "requestedInitialStep": 418.31529239621887,
+              "effectiveInitialStep": 418.31529239621887,
+              "requestedMaximumStep": [],
+              "effectiveMaximumStep": 716.80000000000007,
+              "maximumStepPolicy": "matlab-default",
+              "absoluteToleranceHashes": [
+                "16331232467474028249",
+                "16331232467474028249",
+                "16331232467474028249"
+              ],
+              "absoluteToleranceComponentHashes": [
+                "4274345950450975969",
+                "4274345950450975969",
+                "12519929816211948769"
+              ]
+            },
+            "methodWork": {
+              "acceptedStepCounts": [
+                12,
+                12,
+                12
+              ],
+              "rejectedStepCounts": [
+                0,
+                0,
+                0
+              ],
+              "rhsEvaluationCounts": [
+                156,
+                156,
+                156
+              ],
+              "denseOutputEvaluationCounts": [
+                0,
+                0,
+                0
+              ],
+              "fsalReuse": [
+                0,
+                0,
+                0
+              ],
+              "fsalInvalidations": [
+                0,
+                0,
+                0
+              ],
+              "continuousExtensionRightHandSideEvaluationCounts": [
+                0,
+                0,
+                0
+              ]
+            },
+            "integratorStorage": {
+              "scope": "exact portable integrator-owned storage",
+              "exact": true,
+              "persistentBytes": 5.28944272E+8,
+              "workspaceCapacityBytes": 5.13383472E+8,
+              "workspaceMaximumLiveBytes": 5.13383472E+8,
+              "stateCapacityBytes": 4.667112E+7,
+              "stateSizedWorkspaceBytes": 5.1338232E+8,
+              "workspaceNonStateBytes": 1152,
+              "denseHistoryBytes": 0,
+              "continuousExtensionBytes": 0,
+              "sharedAbstractionStateSizedCopyCount": 0,
+              "byteLedgerAgreement": true,
+              "workspaceStateEquivalentCount": 11,
+              "workspaceMaximumLiveStateEquivalentCount": 11,
+              "denseHistoryStateEquivalentCount": 0,
+              "continuousExtensionWorkspaceStateEquivalentCount": 0,
+              "continuousExtensionWorkspaceMaximumLiveStateEquivalentCount": 0
+            },
+            "stateSizedBuffers": [
+              {
+                "buffer": "stage",
+                "producer": "stage-state construction",
+                "stage": 17,
+                "lastUse": "accepted-state commit or continuous-extension scratch"
+              },
+              {
+                "buffer": "k1",
+                "producer": "initial right-hand side",
+                "stage": 17,
+                "lastUse": "accepted solution, error estimate, or continuous extension"
+              },
+              {
+                "buffer": "k2/k3/k5",
+                "producer": "stage right-hand side with lifecycle reuse",
+                "stage": 17,
+                "lastUse": "stage-13 construction or accepted initial state"
+              },
+              {
+                "buffer": "k4/k13",
+                "producer": "stage right-hand side with lifecycle reuse",
+                "stage": 13,
+                "lastUse": "embedded error estimate"
+              },
+              {
+                "buffer": "k6",
+                "producer": "sixth-stage right-hand side",
+                "stage": 17,
+                "lastUse": "accepted solution, error estimate, or continuous extension"
+              },
+              {
+                "buffer": "k7",
+                "producer": "seventh-stage right-hand side",
+                "stage": 17,
+                "lastUse": "accepted solution, error estimate, or continuous extension"
+              },
+              {
+                "buffer": "k8",
+                "producer": "eighth-stage right-hand side",
+                "stage": 17,
+                "lastUse": "accepted solution, error estimate, or continuous extension"
+              },
+              {
+                "buffer": "k9",
+                "producer": "ninth-stage right-hand side",
+                "stage": 17,
+                "lastUse": "accepted solution, error estimate, or continuous extension"
+              },
+              {
+                "buffer": "k10",
+                "producer": "tenth-stage right-hand side",
+                "stage": 17,
+                "lastUse": "accepted solution, error estimate, or continuous extension"
+              },
+              {
+                "buffer": "k11",
+                "producer": "eleventh-stage right-hand side",
+                "stage": 17,
+                "lastUse": "accepted solution, error estimate, or continuous extension"
+              },
+              {
+                "buffer": "k12",
+                "producer": "twelfth-stage right-hand side",
+                "stage": 17,
+                "lastUse": "accepted solution, error estimate, or continuous extension"
+              },
+              {
+                "buffer": "k14",
+                "producer": "lazy continuous-extension right-hand side",
+                "stage": 17,
+                "lastUse": "continuous-extension polynomial"
+              },
+              {
+                "buffer": "k15",
+                "producer": "lazy continuous-extension right-hand side",
+                "stage": 17,
+                "lastUse": "continuous-extension polynomial"
+              },
+              {
+                "buffer": "k16",
+                "producer": "lazy continuous-extension right-hand side",
+                "stage": 17,
+                "lastUse": "continuous-extension polynomial"
+              },
+              {
+                "buffer": "k17",
+                "producer": "lazy continuous-extension right-hand side",
+                "stage": 17,
+                "lastUse": "continuous-extension polynomial"
+              }
+            ],
+            "memory": {
+              "boundary": "integration-phase-total-live-process-tree-rss",
+              "steadyRetainedRSSBytes": 1.952546816E+9,
+              "operationPeakIncrementRSSBytes": 4.784128E+7,
+              "finalRSSBytes": 2.062893056E+9,
+              "processLifetimePeakRSSBytes": 2.062893056E+9,
+              "allocatorAndProviderAttribution": "MATLAB allocator/COW and opaque FFT/provider storage are not exactly attributable from total RSS"
+            }
+          },
+          "executionPolicy": {
+            "configuredThreadBudget": 16,
+            "actualFFTThreads": 16,
+            "requestedFFTThreads": 16,
+            "selection": "non-variable-transform"
+          }
+        }
+      ],
+      "correctness": {
+        "passed": true,
+        "maximumRelativeError": 2.4770906028292661E-12,
+        "outputAgreementPassed": true,
+        "endpointTrajectoryAgreementPassed": true,
+        "completeOutputGraph": {
+          "passed": true,
+          "variableCount": 28,
+          "recordCount": 14,
+          "maximumAbsoluteError": 4.8509807282215434E-14,
+          "maximumRelativeError": 2.4770906028292661E-12,
+          "categories": [
+            {
+              "name": "metadata",
+              "variableCount": 21,
+              "maximumAbsoluteError": 0,
+              "maximumRelativeError": 0,
+              "passed": true
+            },
+            {
+              "name": "times",
+              "variableCount": 1,
+              "maximumAbsoluteError": 0,
+              "maximumRelativeError": 0,
+              "passed": true
+            },
+            {
+              "name": "coefficients",
+              "variableCount": 6,
+              "maximumAbsoluteError": 4.8509807282215434E-14,
+              "maximumRelativeError": 2.4770906028292661E-12,
+              "passed": true
+            }
+          ]
+        }
+      }
+    },
+    {
+      "id": "constant-nonhydrostatic--adaptive-rk78--composite-dense-output",
+      "modelConfiguration": "constant-nonhydrostatic",
+      "physicalConfiguration": "nonhydrostatic",
+      "isHydrostatic": false,
+      "workload": "composite-dense-output",
+      "integrator": "adaptive-rk78",
+      "contract": {
+        "Nxyz": [
+          256,
+          256,
+          129
+        ],
+        "Lxyz": [
+          150000,
+          150000,
+          1300
+        ],
+        "modelConfiguration": "constant-nonhydrostatic",
+        "physicalConfiguration": "nonhydrostatic",
+        "isHydrostatic": false,
+        "stratificationProfile": "N2 = 2e-5 s^-2",
+        "workload": "composite-dense-output",
+        "integrator": "adaptive-rk78",
+        "finalTime": 7168,
+        "outputScheduleSeconds": [
+          0,
+          32,
+          64,
+          96,
+          128
+        ],
+        "relativeTolerance": 0.001,
+        "absoluteToleranceScale": 1E-6,
+        "initialStep": 418.31529239621887,
+        "maximumStepPolicy": "matlab-default",
+        "processRunCount": 3
+      },
+      "interfaces": [
+        {
+          "id": "matlab-builtin",
+          "status": "complete",
+          "providerId": "matlab-builtin",
+          "integrationSeconds": 52.887020958333331,
+          "totalPeakRSSBytes": 1.0901159936E+10,
+          "integrationRatio": 1,
+          "totalRSSRatio": 1,
+          "integrationSamplesSeconds": [
+            52.887020958333331,
+            52.865080708333331,
+            53.174524708333337
+          ],
+          "totalPeakRSSSamplesBytes": [
+            1.0901159936E+10,
+            1.0903486464E+10,
+            1.0892836864E+10
+          ],
+          "diagnostics": {
+            "controls": {
+              "requested": "adaptive-rk78",
+              "actual": "adaptive-rk78",
+              "matched": true,
+              "controller": "matlab-ode78-v1",
+              "relativeTolerance": 0.001,
+              "requestedInitialStep": 418.31529239621887,
+              "effectiveInitialStep": 418.31529239621887,
+              "requestedMaximumStep": [],
+              "effectiveMaximumStep": 716.80000000000007,
+              "maximumStepPolicy": "matlab-default",
+              "absoluteToleranceHashes": [
+                "93615344982125649",
+                "93615344982125649",
+                "93615344982125649"
+              ],
+              "absoluteToleranceComponentHashes": [
+                "4274345950450975969",
+                "4274345950450975969",
+                "12519929816211948769",
+                "5399737789812619515",
+                "5399737789812619515",
+                "13259821907563821307",
+                "8691403943112672131"
+              ]
+            },
+            "methodWork": {
+              "acceptedStepCounts": [
+                12,
+                12,
+                12
+              ],
+              "rejectedStepCounts": [
+                0,
+                0,
+                0
+              ],
+              "rhsEvaluationCounts": [
+                160,
+                160,
+                160
+              ],
+              "denseOutputEvaluationCounts": [
+                4,
+                4,
+                4
+              ],
+              "fsalReuse": [
+                "not-exposed-by-matlab",
+                "not-exposed-by-matlab",
+                "not-exposed-by-matlab"
+              ],
+              "fsalInvalidations": [
+                "not-exposed-by-matlab",
+                "not-exposed-by-matlab",
+                "not-exposed-by-matlab"
+              ]
+            },
+            "integratorStorage": {
+              "scope": "MATLAB solver, allocator, and copy-on-write storage are opaque",
+              "exact": false,
+              "persistentBytes": "not-exposed-by-matlab",
+              "workspaceMaximumLiveBytes": "not-exposed-by-matlab",
+              "denseHistoryBytes": "not-exposed-by-matlab",
+              "stateEquivalentBufferCount": "not-exposed-by-matlab",
+              "sharedAbstractionStateSizedCopyCount": []
+            },
+            "stateSizedBuffers": [],
+            "memory": {
+              "boundary": "integration-phase-total-live-process-tree-rss",
+              "steadyRetainedRSSBytes": 2.413469696E+9,
+              "operationPeakIncrementRSSBytes": 8.486387712E+9,
+              "finalRSSBytes": 8.25196544E+8,
+              "processLifetimePeakRSSBytes": 1.0901159936E+10,
+              "allocatorAndProviderAttribution": "MATLAB allocator/COW and opaque FFT/provider storage are not exactly attributable from total RSS"
+            }
+          }
+        },
+        {
+          "id": "matlab-compiled",
+          "status": "complete",
+          "providerId": "native-neon-pthreads",
+          "integrationSeconds": 42.400301541666664,
+          "totalPeakRSSBytes": 1.3404880896E+10,
+          "integrationRatio": 0.80171468865813877,
+          "totalRSSRatio": 1.229674729542469,
+          "integrationSamplesSeconds": [
+            42.30159625,
+            42.400301541666664,
+            42.578938625
+          ],
+          "totalPeakRSSSamplesBytes": [
+            1.3406912512E+10,
+            1.3402112E+10,
+            1.3404880896E+10
+          ],
+          "diagnostics": {
+            "controls": {
+              "requested": "adaptive-rk78",
+              "actual": "adaptive-rk78",
+              "matched": true,
+              "controller": "matlab-ode78-v1",
+              "relativeTolerance": 0.001,
+              "requestedInitialStep": 418.31529239621887,
+              "effectiveInitialStep": 418.31529239621887,
+              "requestedMaximumStep": [],
+              "effectiveMaximumStep": 716.80000000000007,
+              "maximumStepPolicy": "matlab-default",
+              "absoluteToleranceHashes": [
+                "93615344982125649",
+                "93615344982125649",
+                "93615344982125649"
+              ],
+              "absoluteToleranceComponentHashes": [
+                "4274345950450975969",
+                "4274345950450975969",
+                "12519929816211948769",
+                "5399737789812619515",
+                "5399737789812619515",
+                "13259821907563821307",
+                "8691403943112672131"
+              ]
+            },
+            "methodWork": {
+              "acceptedStepCounts": [
+                12,
+                12,
+                12
+              ],
+              "rejectedStepCounts": [
+                0,
+                0,
+                0
+              ],
+              "rhsEvaluationCounts": [
+                160,
+                160,
+                160
+              ],
+              "denseOutputEvaluationCounts": [
+                4,
+                4,
+                4
+              ],
+              "fsalReuse": [
+                "not-exposed-by-matlab",
+                "not-exposed-by-matlab",
+                "not-exposed-by-matlab"
+              ],
+              "fsalInvalidations": [
+                "not-exposed-by-matlab",
+                "not-exposed-by-matlab",
+                "not-exposed-by-matlab"
+              ]
+            },
+            "integratorStorage": {
+              "scope": "MATLAB solver, allocator, and copy-on-write storage are opaque",
+              "exact": false,
+              "persistentBytes": "not-exposed-by-matlab",
+              "workspaceMaximumLiveBytes": "not-exposed-by-matlab",
+              "denseHistoryBytes": "not-exposed-by-matlab",
+              "stateEquivalentBufferCount": "not-exposed-by-matlab",
+              "sharedAbstractionStateSizedCopyCount": []
+            },
+            "stateSizedBuffers": [],
+            "memory": {
+              "boundary": "integration-phase-total-live-process-tree-rss",
+              "steadyRetainedRSSBytes": 5.513314304E+9,
+              "operationPeakIncrementRSSBytes": 7.891083264E+9,
+              "finalRSSBytes": 9.55695104E+8,
+              "processLifetimePeakRSSBytes": 1.3404880896E+10,
+              "allocatorAndProviderAttribution": "MATLAB allocator/COW and opaque FFT/provider storage are not exactly attributable from total RSS"
+            }
+          },
+          "executionPolicy": {
+            "configuredThreadBudget": 16,
+            "actualFFTThreads": 16,
+            "requestedFFTThreads": [],
+            "selection": "non-variable-transform"
+          }
+        },
+        {
+          "id": "standalone-compiled",
+          "status": "complete",
+          "providerId": "native-neon-pthreads",
+          "integrationSeconds": 20.78261325,
+          "totalPeakRSSBytes": 3.77864192E+9,
+          "integrationRatio": 0.39296244850647644,
+          "totalRSSRatio": 0.34662750956633609,
+          "integrationSamplesSeconds": [
+            21.144394167,
+            20.78261325,
+            20.374183292
+          ],
+          "totalPeakRSSSamplesBytes": [
+            3.77864192E+9,
+            3.794157568E+9,
+            3.778428928E+9
+          ],
+          "diagnostics": {
+            "controls": {
+              "requested": "adaptive-rk78",
+              "actual": "adaptive-rk78",
+              "matched": true,
+              "controller": "matlab-ode78-v1",
+              "relativeTolerance": 0.001,
+              "requestedInitialStep": 418.31529239621887,
+              "effectiveInitialStep": 418.31529239621887,
+              "requestedMaximumStep": [],
+              "effectiveMaximumStep": 716.80000000000007,
+              "maximumStepPolicy": "matlab-default",
+              "absoluteToleranceHashes": [
+                "93615344982125649",
+                "93615344982125649",
+                "93615344982125649"
+              ],
+              "absoluteToleranceComponentHashes": [
+                "4274345950450975969",
+                "4274345950450975969",
+                "12519929816211948769",
+                "5399737789812619515",
+                "5399737789812619515",
+                "13259821907563821307",
+                "8691403943112672131"
+              ]
+            },
+            "methodWork": {
+              "acceptedStepCounts": [
+                12,
+                12,
+                12
+              ],
+              "rejectedStepCounts": [
+                0,
+                0,
+                0
+              ],
+              "rhsEvaluationCounts": [
+                160,
+                160,
+                160
+              ],
+              "denseOutputEvaluationCounts": [
+                4,
+                4,
+                4
+              ],
+              "fsalReuse": [
+                0,
+                0,
+                0
+              ],
+              "fsalInvalidations": [
+                0,
+                0,
+                0
+              ],
+              "continuousExtensionRightHandSideEvaluationCounts": [
+                4,
+                4,
+                4
+              ]
+            },
+            "integratorStorage": {
+              "scope": "exact portable integrator-owned storage",
+              "exact": true,
+              "persistentBytes": 1.272911872E+9,
+              "workspaceCapacityBytes": 1.257350976E+9,
+              "workspaceMaximumLiveBytes": 1.714569408E+9,
+              "stateCapacityBytes": 1.1430432E+8,
+              "stateSizedWorkspaceBytes": 1.25734752E+9,
+              "workspaceNonStateBytes": 3456,
+              "denseHistoryBytes": 9.1443456E+8,
+              "continuousExtensionBytes": 0,
+              "sharedAbstractionStateSizedCopyCount": 0,
+              "byteLedgerAgreement": true,
+              "workspaceStateEquivalentCount": 11,
+              "workspaceMaximumLiveStateEquivalentCount": 15,
+              "denseHistoryStateEquivalentCount": 8,
+              "continuousExtensionWorkspaceStateEquivalentCount": 0,
+              "continuousExtensionWorkspaceMaximumLiveStateEquivalentCount": 4
+            },
+            "stateSizedBuffers": [
+              {
+                "buffer": "stage",
+                "producer": "stage-state construction",
+                "stage": 17,
+                "lastUse": "accepted-state commit or continuous-extension scratch"
+              },
+              {
+                "buffer": "k1",
+                "producer": "initial right-hand side",
+                "stage": 17,
+                "lastUse": "accepted solution, error estimate, or continuous extension"
+              },
+              {
+                "buffer": "k2/k3/k5",
+                "producer": "stage right-hand side with lifecycle reuse",
+                "stage": 17,
+                "lastUse": "stage-13 construction or accepted initial state"
+              },
+              {
+                "buffer": "k4/k13",
+                "producer": "stage right-hand side with lifecycle reuse",
+                "stage": 13,
+                "lastUse": "embedded error estimate"
+              },
+              {
+                "buffer": "k6",
+                "producer": "sixth-stage right-hand side",
+                "stage": 17,
+                "lastUse": "accepted solution, error estimate, or continuous extension"
+              },
+              {
+                "buffer": "k7",
+                "producer": "seventh-stage right-hand side",
+                "stage": 17,
+                "lastUse": "accepted solution, error estimate, or continuous extension"
+              },
+              {
+                "buffer": "k8",
+                "producer": "eighth-stage right-hand side",
+                "stage": 17,
+                "lastUse": "accepted solution, error estimate, or continuous extension"
+              },
+              {
+                "buffer": "k9",
+                "producer": "ninth-stage right-hand side",
+                "stage": 17,
+                "lastUse": "accepted solution, error estimate, or continuous extension"
+              },
+              {
+                "buffer": "k10",
+                "producer": "tenth-stage right-hand side",
+                "stage": 17,
+                "lastUse": "accepted solution, error estimate, or continuous extension"
+              },
+              {
+                "buffer": "k11",
+                "producer": "eleventh-stage right-hand side",
+                "stage": 17,
+                "lastUse": "accepted solution, error estimate, or continuous extension"
+              },
+              {
+                "buffer": "k12",
+                "producer": "twelfth-stage right-hand side",
+                "stage": 17,
+                "lastUse": "accepted solution, error estimate, or continuous extension"
+              },
+              {
+                "buffer": "k14",
+                "producer": "lazy continuous-extension right-hand side",
+                "stage": 17,
+                "lastUse": "continuous-extension polynomial"
+              },
+              {
+                "buffer": "k15",
+                "producer": "lazy continuous-extension right-hand side",
+                "stage": 17,
+                "lastUse": "continuous-extension polynomial"
+              },
+              {
+                "buffer": "k16",
+                "producer": "lazy continuous-extension right-hand side",
+                "stage": 17,
+                "lastUse": "continuous-extension polynomial"
+              },
+              {
+                "buffer": "k17",
+                "producer": "lazy continuous-extension right-hand side",
+                "stage": 17,
+                "lastUse": "continuous-extension polynomial"
+              }
+            ],
+            "memory": {
+              "boundary": "integration-phase-total-live-process-tree-rss",
+              "steadyRetainedRSSBytes": 2.934718464E+9,
+              "operationPeakIncrementRSSBytes": 8.43923456E+8,
+              "finalRSSBytes": 3.840966656E+9,
+              "processLifetimePeakRSSBytes": 3.840966656E+9,
+              "allocatorAndProviderAttribution": "MATLAB allocator/COW and opaque FFT/provider storage are not exactly attributable from total RSS"
+            }
+          },
+          "executionPolicy": {
+            "configuredThreadBudget": 16,
+            "actualFFTThreads": 16,
+            "requestedFFTThreads": 16,
+            "selection": "non-variable-transform"
+          }
+        }
+      ],
+      "correctness": {
+        "passed": true,
+        "maximumRelativeError": 2.4460971914828773E-12,
+        "outputAgreementPassed": true,
+        "endpointTrajectoryAgreementPassed": true,
+        "completeOutputGraph": {
+          "passed": true,
+          "variableCount": 58,
+          "recordCount": 64,
+          "maximumAbsoluteError": 2.9103830456733704E-11,
+          "maximumRelativeError": 2.4460971914828773E-12,
+          "categories": [
+            {
+              "name": "metadata",
+              "variableCount": 36,
+              "maximumAbsoluteError": 0,
+              "maximumRelativeError": 0,
+              "passed": true
+            },
+            {
+              "name": "times",
+              "variableCount": 4,
+              "maximumAbsoluteError": 0,
+              "maximumRelativeError": 0,
+              "passed": true
+            },
+            {
+              "name": "coefficients",
+              "variableCount": 6,
+              "maximumAbsoluteError": 4.9689419245879662E-14,
+              "maximumRelativeError": 2.4460971914828773E-12,
+              "passed": true
+            },
+            {
+              "name": "eulerianFields",
+              "variableCount": 1,
+              "maximumAbsoluteError": 5.6898930012039273E-16,
+              "maximumRelativeError": 2.5028384591191687E-15,
+              "passed": true
+            },
+            {
+              "name": "moorings",
+              "variableCount": 5,
+              "maximumAbsoluteError": 2.9837243786801082E-16,
+              "maximumRelativeError": 3.4129846892218586E-15,
+              "passed": true
+            },
+            {
+              "name": "particles",
+              "variableCount": 5,
+              "maximumAbsoluteError": 2.9103830456733704E-11,
+              "maximumRelativeError": 5.709626576673818E-15,
+              "passed": true
+            },
+            {
+              "name": "tracers",
+              "variableCount": 1,
+              "maximumAbsoluteError": 3.6637359812630166E-15,
+              "maximumRelativeError": 3.6637166648616521E-15,
+              "passed": true
+            }
+          ]
+        }
+      }
+    }
+  ]
+}
