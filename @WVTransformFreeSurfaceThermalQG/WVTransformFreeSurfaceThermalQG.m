@@ -178,6 +178,7 @@ classdef WVTransformFreeSurfaceThermalQG < WVGeometryDoublyPeriodicStratified & 
         linearEvolutionData_ = []
         endpointGeometry_ = []
         physicalMetricOperators_ = []
+        apvDecompositionData_ = []
     end
     methods
         function self = WVTransformFreeSurfaceThermalQG(options)
@@ -258,6 +259,7 @@ classdef WVTransformFreeSurfaceThermalQG < WVGeometryDoublyPeriodicStratified & 
         operators=physicalMetricOperators(self)
         energy=totalEnergyOfFlowComponent(self,flowComponent)
         [diagnostics,radialSpectrum]=physicalDiagnostics(self,options)
+        [diagnosis,reconstruction]=apvDecomposition(self,apv,options)
         function other=withDiffusivity(self,kappa_z)
             % Copy the physical state and fixed basis with new scalar diffusivity.
             % - Topic: Create and restore a transform

@@ -15,4 +15,4 @@ APV endpoint responses for each active endpoint and page.
 ---
 
 ## Description
-Real valued property with dimensions $$(activeEndpoint,apvMode,khUnique)$$ and units of $$\mathrm{m}$$.
+Real valued property with dimensions $$(activeEndpoint,apvMode,khUnique)$$ and units of $$\mathrm{m\,s}$$.

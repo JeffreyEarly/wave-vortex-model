@@ -3,7 +3,7 @@ layout: default
 title: degreesOfFreedomForRealMatrix
 parent: WVTransformFreeSurfaceThermalQG
 grand_parent: Transforms
-nav_order: 63
+nav_order: 64
 mathjax: true
 ---
 
