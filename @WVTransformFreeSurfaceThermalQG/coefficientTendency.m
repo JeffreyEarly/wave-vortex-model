@@ -1,7 +1,7 @@
 function [tendency,speed]=coefficientTendency(self,options)
-% Evaluate explicitly selected linear thermal dynamics and registered sources.
+% Evaluate selected thermal dynamics and registered sources.
 % - Topic: Density diffusion integration
-% - Parameter options.linearDynamics: must be true until nonlinear T4 is qualified
+% - Parameter options.linearDynamics: true selects linear dynamics; false requires qualified nonlinear advection
 % - Parameter options.excludingHomogeneousEvolution: omit diffusion for exponential stages
 % - Parameter options.excludingForcing: names of analytically handled forcings
 arguments
@@ -10,10 +10,27 @@ arguments
     options.excludingHomogeneousEvolution (1,1) logical = false
     options.excludingForcing (1,:) string = strings(1,0)
 end
-if ~options.linearDynamics, error('WV:ThermalEvolutionUnavailable','Select linearDynamics=true explicitly; nonlinear thermal dynamics require T4.'); end
-[q,u,v,b,ub,vb,phiHat]=self.quasigeostrophicSpatialState();
-speed=max(hypot(u,v),[],'all');
-physical=struct(q=q,u=u,v=v,b=b,ub=ub,vb=vb,phiHat=phiHat,uvMax=speed);
+hasAdvection=self.hasForcingWithName('nonlinear advection');
+if options.linearDynamics && hasAdvection
+    error('WV:ThermalLinearConflict','Remove nonlinear advection before selecting linearDynamics=true.');
+elseif ~options.linearDynamics && ~hasAdvection
+    error('WV:ThermalEvolutionUnavailable','Register qualified nonlinear advection or explicitly select linearDynamics=true.');
+end
+needsNative=~hasAdvection;
+for force=self.forcing
+    needsNative=needsNative || (~isa(force,'WVNonlinearAdvection') && ~isa(force,'WVSeasonalSurfaceAnomalyForcing'));
+end
+if needsNative
+    [q,u,v,b,ub,vb,phiHat]=self.quasigeostrophicSpatialState();
+    speed=max(hypot(u,v),[],'all');
+    physical=struct(q=q,u=u,v=v,b=b,ub=ub,vb=vb,phiHat=phiHat,uvMax=speed);
+else
+    physical=struct(); speed=0;
+end
+if hasAdvection
+    [physical.thermalNonlinearTendency,nonlinearSpeed]=self.nonlinearCoefficientTendency();
+    speed=max(speed,nonlinearSpeed); physical.uvMax=speed;
+end
 tendency=struct(Ath=complex(zeros(size(self.Ath))),Amda=zeros(size(self.Amda)));
 if ~options.excludingHomogeneousEvolution
     tendency.Ath=self.kappa_z*self.thermalRatesPerDiffusivity(:,self.klNonzeroKhUniqueIndex).*self.Ath;

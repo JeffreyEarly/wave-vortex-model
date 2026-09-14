@@ -45,6 +45,9 @@ classdef WVNonlinearAdvection < WVForcing
     % nonlinear `WVModel` evaluates it automatically. Analytical linear
     % evolution does not evaluate nonlinear forcing, so the object does not
     % need to be removed when using linear evolution.
+    % Thermal QG requires explicit registration and qualified nonlinear product
+    % quadrature. Its complete interior and endpoint tendencies are integrated
+    % on that quadrature before projection through the thermal weak dual.
     % Free-surface Boussinesq transforms remain linear by default. Adding
     % this forcing requires horizontal antialiasing and an inventory
     % constructed with quadratic-product qualification. Its callback adds
@@ -82,8 +85,8 @@ classdef WVNonlinearAdvection < WVForcing
             % - Declaration: contract = portableImplementationContract(self)
             % - Returns contract: versioned data-only forcing contract
             % - Developer: true
-            if isa(self.wvt,'WVTransformFreeSurfaceBoussinesq')
-                contract = WVInternal.portableImplementationContract(string(class(self)),"WVNonlinearAdvection","unavailable","The mapped free-surface Boussinesq advection has no qualified portable implementation.",struct());
+            if isa(self.wvt,'WVTransformFreeSurfaceBoussinesq') || isa(self.wvt,'WVTransformFreeSurfaceThermalQG')
+                contract = WVInternal.portableImplementationContract(string(class(self)),"WVNonlinearAdvection","unavailable","This free-surface advection has no qualified portable implementation.",struct());
                 return
             end
             payload = struct("name",string(self.name),"forcingTypes",string(self.forcingType),"priority",self.priority);
@@ -104,13 +107,27 @@ classdef WVNonlinearAdvection < WVForcing
             arguments
                 wvt WVTransform {mustBeNonempty}
             end
-            self@WVForcing(wvt,"nonlinear advection",WVForcingType(["HydrostaticSpatial" "NonhydrostaticSpatial" "PVSpatial" "QGSpatial"]));
+            types=["HydrostaticSpatial" "NonhydrostaticSpatial" "PVSpatial" "QGSpatial"];
+            if isa(wvt,'WVTransformFreeSurfaceThermalQG'), types="QGSpectral"; end
+            self@WVForcing(wvt,"nonlinear advection",WVForcingType(types));
             self.priority = 127;
             if isa(wvt,'WVStratification') && isprop(wvt,'dLnN2')
                 self.dLnN2 = shiftdim(wvt.dLnN2,-2);
             end
         end
         
+        function tendency=addQuasigeostrophicSpectralForcing(~,wvt,tendency,physicalState)
+            % Add the independently overintegrated thermal nonlinear tendency.
+            % - Topic: Implement forcing evaluation
+            if isfield(physicalState,'thermalNonlinearTendency')
+                nonlinear=physicalState.thermalNonlinearTendency;
+            else
+                nonlinear=wvt.nonlinearCoefficientTendency();
+            end
+            tendency.Ath=tendency.Ath+nonlinear.Ath;
+            tendency.Amda=tendency.Amda+nonlinear.Amda;
+        end
+
         function [Fu, Fv, Feta] = addHydrostaticSpatialForcing(self, wvt, Fu, Fv, Feta)
             Fu = Fu - (wvt.u .* wvt.diffX(wvt.u)   + wvt.v .* wvt.diffY(wvt.u)   + wvt.w .*  wvt.diffZF(wvt.u));
             Fv = Fv - (wvt.u .* wvt.diffX(wvt.v)   + wvt.v .* wvt.diffY(wvt.v)   + wvt.w .*  wvt.diffZF(wvt.v));

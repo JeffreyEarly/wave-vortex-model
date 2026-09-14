@@ -3,8 +3,9 @@ classdef WVTransformFreeSurfaceThermalQG < WVGeometryDoublyPeriodicStratified & 
     %
     % Ath has velocity units and Amda retains the independent real MDA state.
     % The scientific factory retains every requested polynomial direction.
-    % Supports forced linear evolution through the existing exponential integrator.
-    % Select thermalLinearDynamics=true explicitly; nonlinear physics is downstream.
+    % Supports linear and qualified nonlinear evolution through the exponential integrator.
+    % Register WVNonlinearAdvection with qualified product quadrature, or select
+    % thermalLinearDynamics=true explicitly for a linear configuration.
     %
     % ```matlab
     % w = WVTransformFreeSurfaceThermalQG.fromStratification([1e5 1e5 1000],[8 8 65],N2Function=@(z)1e-4*ones(size(z)),thermalModeCount=17,mdaModeCount=4);
@@ -27,6 +28,21 @@ classdef WVTransformFreeSurfaceThermalQG < WVGeometryDoublyPeriodicStratified & 
         Amda
     end
     properties (SetAccess=private)
+        % Nonlinear quadrature policy and construction evidence.
+        % - Topic: Inspect supported operations
+        shouldCheckQuadraticAliasing
+        % Nonlinear quadrature policy and construction evidence.
+        % - Topic: Inspect supported operations
+        nonlinearQuadratureCount
+        % Nonlinear quadrature policy and construction evidence.
+        % - Topic: Inspect supported operations
+        nonlinearQuadratureTolerance
+        % Nonlinear quadrature policy and construction evidence.
+        % - Topic: Inspect supported operations
+        nonlinearQuadratureResidual
+        % Nonlinear quadrature policy and construction evidence.
+        % - Topic: Inspect supported operations
+        nonlinearReferenceResidual
         % Domain coordinate indices (1).
         % - Topic: Inspect scientific operators
         domainAxis
@@ -155,6 +171,7 @@ classdef WVTransformFreeSurfaceThermalQG < WVGeometryDoublyPeriodicStratified & 
     properties (Access=private)
         polynomialFields_ = []
         sourcePairing_ = []
+        nonlinearMaps_ = []
         linearEvolutionData_ = []
         endpointGeometry_ = []
     end
@@ -170,7 +187,7 @@ classdef WVTransformFreeSurfaceThermalQG < WVGeometryDoublyPeriodicStratified & 
                 options.coefficientState (1,1) struct = struct()
                 options.t (1,1) double {mustBeReal,mustBeFinite} = 0
             end
-            s=options.scientificState;
+            s=WVInternal.upgradeThermalState(options.scientificState);
             WVInternal.validateThermalState(s);
             nz=s.gridSize(3); n=numel(s.thermalDirection);
             N20=s.N20; a=s.inverseScale; g=s.g; rho0=s.rho0;
@@ -262,9 +279,9 @@ classdef WVTransformFreeSurfaceThermalQG < WVGeometryDoublyPeriodicStratified & 
             error('WV:ThermalTransferUnavailable','Construct a target explicitly; qualified transfer belongs to T8.');
         end
         function varargout=nonlinearFlux(~,varargin) %#ok<STOUT>
-            % Reject unqualified nonlinear evolution.
+            % Reject the legacy three-family flux signature.
             % - Topic: Inspect supported operations
-            error('WV:ThermalEvolutionUnavailable','Thermal nonlinear evolution requires T4.');
+            error('WV:ThermalEvolutionUnavailable','Use the family-keyed coefficientTendency with registered nonlinear advection.');
         end
         function out=transformFromSpatialDomainWithFg(~,varargin) %#ok<STOUT>
             % Reject legacy rigid-lid modal operations.
@@ -286,6 +303,7 @@ classdef WVTransformFreeSurfaceThermalQG < WVGeometryDoublyPeriodicStratified & 
             % - Topic: Inspect supported operations
             error('WV:ThermalLegacyOperation','Use reconstructFields or projectState for the thermal peer.');
         end
+        [tendency,speed,diagnostics]=nonlinearCoefficientTendency(self)
         fields=reconstructFields(self,variableNames,options)
         operation=operationForKnownVariable(self,variableName,options)
         [state,residual]=projectState(self,qgpv,endpointAnomalies,options)
@@ -294,10 +312,16 @@ classdef WVTransformFreeSurfaceThermalQG < WVGeometryDoublyPeriodicStratified & 
         derivative=diffZ(self,field,order)
     end
     methods (Access=protected)
-        function validateForcingInventory(~,forces)
+        function validateForcingInventory(self,forces)
             for force=forces
                 if isa(force,'WVVerticalDiffusivity')
                     error('WV:ThermalDiffusionOwnership','Thermal diffusivity belongs to the transform; use withDiffusivity.');
+                end
+                if isa(force,'WVNonlinearAdvection')
+                    if ~self.shouldCheckQuadraticAliasing || ~self.shouldAntialias
+                        error('WV:ThermalNonlinearQualification','Nonlinear advection requires qualified product quadrature and horizontal antialiasing.');
+                    end
+                    continue
                 end
                 if ~isa(force,'WVSeasonalSurfaceAnomalyForcing') && (~any(force.forcingType==WVForcingType("QGSpectral")) || force.isClosure)
                     error('WV:ThermalForcingUnavailable','T3 supports seasonal and coefficient-source adapters; physical nonlinear forcings require T4-T6.');

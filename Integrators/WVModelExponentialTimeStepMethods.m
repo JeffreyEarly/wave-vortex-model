@@ -6,7 +6,8 @@ classdef WVModelExponentialTimeStepMethods < handle
     % Physical absolute tolerances are RMS q [s^-1], buoyancy [m s^-2],
     % horizontal speed [m s^-1], and endpoint displacement [m], in order.
     % Thermal linear evolution uses separate surface/bottom entries and requires
-    % thermalLinearDynamics=true; four supplied floors duplicate the endpoint floor.
+    % thermalLinearDynamics=true for linear runs; qualified registered advection
+    % enables nonlinear runs. Four supplied floors duplicate the endpoint floor.
     % Passive output observers are supported; other integrated observers
     % require a future coupled exponential/ordinary stepping interface.
     % Adaptive damping limits trial h*gammaMax to 1, with a 1.2 stage margin.
@@ -57,8 +58,8 @@ classdef WVModelExponentialTimeStepMethods < handle
             end
             self.assertExponentialConfiguration();
             thermal=isa(self.wvt,'WVTransformFreeSurfaceThermalQG');
-            if thermal && ~options.thermalLinearDynamics
-                error('WVModel:ThermalLinearSelection','Select thermalLinearDynamics=true explicitly; nonlinear thermal evolution requires T4.');
+            if thermal && ~options.thermalLinearDynamics && ~self.wvt.hasForcingWithName('nonlinear advection')
+                error('WVModel:ThermalLinearSelection','Select thermalLinearDynamics=true or register qualified thermal nonlinear advection.');
             end
             if ~thermal && options.thermalLinearDynamics
                 error('WVModel:ThermalLinearSelection','thermalLinearDynamics applies only to the thermal transform.');
@@ -69,7 +70,7 @@ classdef WVModelExponentialTimeStepMethods < handle
             if numel(options.physicalAbsTolerance)~=4+thermal
                 error('WVModel:PhysicalToleranceShape','Use four APV floors or five thermal floors (QGPV, buoyancy, speed, surface, bottom).');
             end
-            self.densityDiffusionIntegrator=WVDensityDiffusionIntegrator(self.wvt);
+            self.densityDiffusionIntegrator=WVDensityDiffusionIntegrator(self.wvt,thermalLinearDynamics=options.thermalLinearDynamics);
             self.exponentialOptions=options;
         end
 

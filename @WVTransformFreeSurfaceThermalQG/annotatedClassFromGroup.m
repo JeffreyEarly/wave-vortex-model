@@ -6,9 +6,14 @@ function w=annotatedClassFromGroup(group)
 arguments
     group NetCDFGroup
 end
-CAAnnotatedClass.throwErrorIfMissingProperties(group,WVTransformFreeSurfaceThermalQG.classRequiredPropertyNames());
+version=CAAnnotatedClass.propertyValuesFromGroup(group,{'schemaVersion'});
 schema=WVInternal.thermalStateSchema();
-s=CAAnnotatedClass.propertyValuesFromGroup(group,schema(:,1).');
+names=schema(:,1).';
+if version.schemaVersion==1
+    names=names(~ismember(names,{'shouldCheckQuadraticAliasing','nonlinearQuadratureCount','nonlinearQuadratureTolerance','nonlinearQuadratureResidual','nonlinearReferenceResidual'}));
+end
+CAAnnotatedClass.throwErrorIfMissingProperties(group,[names,{'Ath','Amda','t'}]);
+s=CAAnnotatedClass.propertyValuesFromGroup(group,names);
 coefficients=CAAnnotatedClass.propertyValuesFromGroup(group,{'Ath','Amda'});
 time=CAAnnotatedClass.propertyValuesFromGroup(group,{'t'});
 w=WVTransformFreeSurfaceThermalQG(scientificState=s,coefficientState=coefficients,t=time.t);

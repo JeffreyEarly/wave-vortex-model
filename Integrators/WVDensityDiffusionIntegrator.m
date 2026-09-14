@@ -27,6 +27,7 @@ classdef WVDensityDiffusionIntegrator < handle
         rates
     end
     properties (Access = private)
+        thermalLinearDynamics_ = true
         thermalEvolution_ = []
         diffusionForcing_
         columnGroups_
@@ -43,13 +44,15 @@ classdef WVDensityDiffusionIntegrator < handle
         physicalNormFactors_ = {}
     end
     methods
-        function self = WVDensityDiffusionIntegrator(wvt)
+        function self = WVDensityDiffusionIntegrator(wvt,options)
             % Obtain exact eigencoordinates from the registered diffusion forcing.
             % - Topic: Density diffusion integration
             arguments
                 wvt (1,1) WVTransform
+                options.thermalLinearDynamics (1,1) logical = true
             end
             self.wvt=wvt;
+            self.thermalLinearDynamics_=options.thermalLinearDynamics;
             if isa(wvt,'WVTransformFreeSurfaceThermalQG')
                 self.thermalEvolution_=wvt.linearEvolutionData();
                 self.rates=self.thermalEvolution_.rates;
@@ -274,7 +277,7 @@ classdef WVDensityDiffusionIntegrator < handle
             if isempty(self.thermalEvolution_)
                 [tendency,speed]=self.wvt.coefficientTendency(excludingForcing=excluded);
             else
-                [tendency,speed]=self.wvt.coefficientTendency(linearDynamics=true,excludingHomogeneousEvolution=true,excludingForcing=excluded);
+                [tendency,speed]=self.wvt.coefficientTendency(linearDynamics=self.thermalLinearDynamics_,excludingHomogeneousEvolution=true,excludingForcing=excluded);
             end
             amplitudes=self.toModes(tendency);
         end
@@ -282,7 +285,13 @@ classdef WVDensityDiffusionIntegrator < handle
         function validateConfiguration(self)
             % Require setup again after replacing or changing the diffusion forcing.
             % - Topic: Density diffusion integration
-            if ~isempty(self.thermalEvolution_), return; end
+            if ~isempty(self.thermalEvolution_)
+                hasAdvection=self.wvt.hasForcingWithName('nonlinear advection');
+                if hasAdvection==self.thermalLinearDynamics_
+                    error('WV:ThermalLinearConflict','Nonlinear registration changed; configure the thermal linear/nonlinear integrator selection again.');
+                end
+                return
+            end
             names=self.wvt.forcingNames();
             force=self.diffusionForcing_;
             if ~any(names==string(force.name)) || self.wvt.forcingWithName(force.name)~=force || ...

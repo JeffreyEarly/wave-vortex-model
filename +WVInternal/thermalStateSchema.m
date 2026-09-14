@@ -14,6 +14,11 @@ schema = {
     'kappa_z', {}, 'm2 s-1', 'Immutable buoyancy diffusivity', false, false;
     'shouldAntialias', {}, '1', 'Horizontal antialiasing policy', false, false;
     'schemaVersion', {}, '1', 'Thermal scientific state schema', false, false;
+    'shouldCheckQuadraticAliasing', {}, '1', 'Qualified nonlinear quadrature policy', false, false;
+    'nonlinearQuadratureCount', {}, '1', 'Physical-depth nonlinear quadrature count', false, false;
+    'nonlinearQuadratureTolerance', {}, '1', 'Nonlinear moment Gram tolerance', false, false;
+    'nonlinearQuadratureResidual', {}, '1', 'Nonlinear quadrature residual', false, false;
+    'nonlinearReferenceResidual', {}, '1', 'Nonlinear reference quadrature residual', false, false;
     'thermalDirection', {}, '1', 'Ordinal complete thermal directions', true, false;
     'polynomialDegree', {}, '1', 'Complete Legendre polynomial degrees', true, false;
     'mdaMode', {}, '1', 'Independent MDA directions', true, false;

@@ -3,7 +3,7 @@ layout: default
 title: waveVortexTransformWithResolution
 parent: WVTransformFreeSurfaceThermalQG
 grand_parent: Transforms
-nav_order: 239
+nav_order: 245
 mathjax: true
 ---
 
