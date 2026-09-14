@@ -8,6 +8,8 @@ nav_order: 100
 
 ## [Unreleased]
 
+- Add the optional `WVTransformFreeSurfaceThermalQG` construction/reconstruction peer with complete thermal modes, physical source projection, mapped Chebyshev calculus, independent MDA state, and canonical snapshots. Thermal time integration, nonlinear forcing, and campaign qualification remain unavailable pending their separate increments.
+
 - Enable MATLAB free-surface Boussinesq adaptive integration through the existing `WVModel`/`ode78` path with positive unit-coefficient energy tolerances, retained-wave frequency and physical-speed initial-step selection, and forced/nonlinear restart coverage. Existing v4 and QG defaults are unchanged.
 - Add explicit `tolerancePolicy="family"` for v5 QG and Boussinesq, with independently calibrated or user-specified PV, surface, and bottom scales. Preserve the policy through restart; legacy scalar energy behavior remains the default.
 - Add a deforming zero-APV boundary-vortex example, a bounded policy comparison, and production-setting qualification.

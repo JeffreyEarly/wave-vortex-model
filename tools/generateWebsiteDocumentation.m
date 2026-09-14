@@ -15,7 +15,7 @@ transformSidecars = fullfile(repositoryRoot,"@WVTransform","detailedDescriptions
 parentName = "Transforms";
 websiteFolder = "classes/transforms";
 writeClassDocumentation("WVTransform",buildFolder,websiteFolder,parentName,classFolderName,parentName,1,{'handle','CAAnnotatedClass'},transformSidecars);
-classes = ["WVTransformBoussinesq" "WVTransformHydrostatic" "WVTransformConstantStratification" "WVTransformBarotropicQG" "WVTransformStratifiedQG" "WVTransformFreeSurfaceQG"];
+classes = ["WVTransformBoussinesq" "WVTransformHydrostatic" "WVTransformConstantStratification" "WVTransformBarotropicQG" "WVTransformStratifiedQG" "WVTransformFreeSurfaceQG" "WVTransformFreeSurfaceThermalQG"];
 writeClassGroup(classes,buildFolder,websiteFolder,parentName,classFolderName,parentName,2,{'handle','WVTransform','CAAnnotatedClass'},transformSidecars);
 
 writeClassDocumentation("WVModel",buildFolder,"classes",classFolderName,"",classFolderName,2,{'handle'},string.empty(0,1));

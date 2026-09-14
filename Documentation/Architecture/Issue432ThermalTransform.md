@@ -2,6 +2,8 @@
 
 Status: implementation design for [T1 #432](https://github.com/JeffreyEarly/wave-vortex-model/issues/432). The public API below is proposed for T2–T10; it is not implemented by this document or its manufactured interface fixture. The existing complete thermal prototype already works for the declared linear seasonal problem. T1 specifies its production integration, not a replacement scientific formulation.
 
+T2 construction and reconstruction are now implemented; see the [T2 evidence and API clarifications](../Validation/Issue433/README.md). Integration and subsequent capabilities below remain downstream requirements.
+
 ## Baseline and evidence
 
 The audited WVM v5 baseline is `92ad155da45adafc319e6cf3a3233d200e889493` on `feature/v5.0-free-surface-qg`. InternalModes is the released `v2.0.0-beta.4`, whose annotated tag resolves to `f2ce3c143744ae00fbb25bd9d7b8c73fb358ca51`. Use the existing `tools/configureCIEnvironment.m` with OceanKit snapshots, not the older sibling `internal-modes` or `internal-modes-evp` checkouts. The WVM manifest still reports 4.3.0; the commit identifies this unreleased v5 development baseline.

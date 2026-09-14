@@ -1,0 +1,22 @@
+---
+layout: default
+title: dftConjugateIndices2D
+parent: WVTransformFreeSurfaceThermalQG
+grand_parent: Transforms
+nav_order: 61
+mathjax: true
+---
+
+#  dftConjugateIndices2D
+
+index into the DFT grid of the conjugate of each WV mode
+
+> Developer documentation: this item describes internal implementation details.
+
+
+---
+
+## Type
++ Class: `uint64`
+
+## Discussion

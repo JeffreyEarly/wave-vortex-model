@@ -1,0 +1,19 @@
+---
+layout: default
+title: kMode_dft
+parent: WVTransformFreeSurfaceThermalQG
+grand_parent: Transforms
+nav_order: 119
+mathjax: true
+---
+
+#  kMode_dft
+
+k mode-number on the DFT grid
+
+> Developer documentation: this item describes internal implementation details.
+
+
+---
+
+## Discussion

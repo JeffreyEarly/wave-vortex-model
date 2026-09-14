@@ -1,0 +1,23 @@
+---
+layout: default
+title: FMatrix
+parent: WVTransformFreeSurfaceThermalQG
+grand_parent: Transforms
+nav_order: 6
+mathjax: true
+---
+
+#  FMatrix
+
+Transformation matrix $$F$$ projecting F-grid values onto vertical modes; shape `[Nj Nz]`.
+
+
+---
+
+## Description
+Real valued property with dimensions $$(j,z)$$ and is dimensionless.
+
+## Discussion
+Transformation matrix $$F$$ projecting F-grid values onto vertical modes; shape `[Nj Nz]`.
+
+`FMatrix` maps a column sampled on the physical vertical grid into coefficients of the F vertical-mode basis.
