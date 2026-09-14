@@ -549,7 +549,7 @@ classdef WVTransform < matlab.mixin.indexing.RedefinesDot & CAAnnotatedClass
             arguments (Output)
                 names (:,1) string
             end
-            names = [self.spatialFluxForcing.name, self.spectralFluxForcing.name, self.spectralAmplitudeForcing.name];
+            names = string({self.spatialFluxForcing.name, self.spectralFluxForcing.name, self.spectralAmplitudeForcing.name}).';
         end
 
         function forcing = forcingWithName(self,name)

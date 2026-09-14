@@ -30,7 +30,7 @@ suppressedFindings = normalizedFindings(analysis.SuppressedIssues,true,repositor
 findings = [activeFindings; suppressedFindings];
 if ~isempty(findings)
     findings = sortrows(findings,["RelativeFile" "Line" "Column" "CheckID" "Suppressed"]);
-    [findings.Classification,findings.Rationale] = classifyFindings(findings);
+    [findings.Classification,findings.Rationale] = classifyFindings(findings,repositoryRoot);
 end
 
 blockingMask = startsWith(findings.Classification,"blocking");
@@ -55,7 +55,7 @@ rootEntries = dir(fullfile(repositoryRoot,"*.m"));
 rootFiles = string(fullfile({rootEntries.folder},{rootEntries.name}))';
 rootFiles(endsWith(rootFiles,filesep+"buildfile.m")) = [];
 
-classDirectories = dir(fullfile(repositoryRoot,"@*"));
+classDirectories = [dir(fullfile(repositoryRoot,"@*")); dir(fullfile(repositoryRoot,"+*"))];
 classDirectories = classDirectories([classDirectories.isdir]);
 classFilesByDirectory = cell(numel(classDirectories),1);
 for iDirectory = 1:numel(classDirectories)
@@ -110,13 +110,13 @@ relative(insideRoot) = extractAfter(files(insideRoot),strlength(rootPrefix));
 relative = replace(relative,filesep,"/");
 end
 
-function [classification,rationale] = classifyFindings(findings)
+function [classification,rationale] = classifyFindings(findings,repositoryRoot)
 classification = repmat("blocking-unclassified",height(findings),1);
 rationale = repmat("Unclassified findings require review before they can become nonblocking.",height(findings),1);
 
-performanceMask = findings.CheckID == "AGROW";
+performanceMask = ismember(findings.CheckID,["AGROW" "FNDSB"]);
 classification(performanceMask) = "performance";
-rationale(performanceMask) = "Dynamic allocation is visible performance advice and is not a correctness failure.";
+rationale(performanceMask) = "Dynamic allocation and equivalent logical-indexing suggestions are visible performance advice, not correctness failures.";
 
 styleMask = ismember(findings.CheckID,["INUSA" "INUSD" "MANU" "PROP"]);
 classification(styleMask) = "style";
@@ -133,9 +133,40 @@ inheritedPropertyMask = inertialPropertyMask | mdaPropertyMask;
 classification(inheritedPropertyMask) = "accepted-false-positive";
 rationale(inheritedPropertyMask) = "Ap, Am, and A0 are supplied by the composed transform hierarchy and are not visible to analysis of the mixin alone.";
 
+unsupportedThermalMask = unsupportedThermalOutputFindings(findings,repositoryRoot);
+classification(unsupportedThermalMask) = "accepted-false-positive";
+rationale(unsupportedThermalMask) = "This named thermal compatibility method contains only an unconditional documented error; its required output signature never returns.";
+
 errorMask = findings.Severity == "error";
 classification(errorMask) = "blocking-error";
 rationale(errorMask) = "MATLAB Code Analyzer errors always block, even when their identifier is otherwise nonblocking.";
+end
+
+function accepted = unsupportedThermalOutputFindings(findings,repositoryRoot)
+% Accept only the six intentional rejecting interfaces, while checking that
+% the finding is on their declaration and the body still only throws. A new
+% method, conditional error, or fall-through body retains the blocking rule.
+accepted = false(height(findings),1);
+relativeFile = "@WVTransformFreeSurfaceThermalQG/WVTransformFreeSurfaceThermalQG.m";
+candidates = find(findings.CheckID == "STOUT" & findings.RelativeFile == relativeFile);
+if isempty(candidates), return; end
+lines = readlines(fullfile(repositoryRoot,relativeFile));
+methodNames = ["coefficientAbsoluteTolerances","nonlinearFlux","transformFromSpatialDomainWithFg", ...
+    "transformFromSpatialDomainWithGg","transformToSpatialDomainWithF","transformToSpatialDomainWithG"];
+for iFinding = reshape(candidates,1,[])
+    declaration = findings.Line(iFinding);
+    name = regexp(lines(declaration),'^\s*function\s+(?:out|varargout)\s*=\s*(\w+)\(','tokens','once');
+    if isempty(name) || ~ismember(string(name{1}),methodNames), continue; end
+    terminator = find(~cellfun(@isempty,regexp(cellstr(lines(declaration+1:end)),'^\s*end\s*$','once')),1);
+    if isempty(terminator), continue; end
+    body = strip(lines(declaration+1:declaration+terminator-1));
+    body(body == "" | startsWith(body,"%")) = [];
+    if numel(body)~=1, continue; end
+    expectedError = "WV:ThermalLegacyOperation";
+    if ismember(string(name{1}),methodNames(1:2)), expectedError = "WV:ThermalEvolutionUnavailable"; end
+    errorCall = regexp(body,'^error\(''([^'']+)'',''(?:[^'']|'''')*''\);$','tokens','once');
+    accepted(iFinding) = ~isempty(errorCall) && string(errorCall{1}) == expectedError;
+end
 end
 
 function printReport(report)

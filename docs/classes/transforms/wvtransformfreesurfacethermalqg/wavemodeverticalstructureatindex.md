@@ -3,7 +3,7 @@ layout: default
 title: waveModeVerticalStructureAtIndex
 parent: WVTransformFreeSurfaceThermalQG
 grand_parent: Transforms
-nav_order: 242
+nav_order: 249
 mathjax: true
 ---
 

@@ -3,7 +3,7 @@ layout: default
 title: totalEnergyOfFlowComponent
 parent: WVTransformFreeSurfaceThermalQG
 grand_parent: Transforms
-nav_order: 218
+nav_order: 224
 mathjax: true
 ---
 
@@ -19,10 +19,10 @@ Compute the energy carried by one flow component.
  energy = totalEnergyOfFlowComponent(flowComponent)
 ```
 ## Parameters
-+ `flowComponent`  component whose coefficient masks select the energy
++ `flowComponent`  component belonging to this transform
 
 ## Returns
-+ `energy`  horizontally averaged, depth-integrated energy per unit reference density
++ `energy`  horizontally averaged, depth-integrated physical energy
 
 ## Discussion
 Compute the energy carried by one flow component.

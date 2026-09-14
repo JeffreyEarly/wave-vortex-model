@@ -117,6 +117,22 @@ classdef TestSharedResolvedContracts < matlab.unittest.TestCase
             testCase.verifyEqual(w.reconstructionCount,before)
         end
 
+        function thermalPeerUsesSharedEnergyAndComponentUnits(testCase)
+            w = WVTransformFreeSurfaceThermalQG.fromStratification([1e5 1e5 1000],[8 8 65],N2Function=@(z)1e-4*ones(size(z)),thermalModeCount=17,mdaModeCount=4);
+            thermalManufacturedState(w,[2 3 4],10);
+            w.Amda = [.01;-.02;.03;-.01];
+            all = WVFlowComponent(w,coefficientMasks=struct(Ath=true,Amda=true));
+            fields = w.reconstructFields(["u" "v" "eta" "ssh"],flowComponent=all);
+            direct = sum(w.verticalQuadratureWeights.*squeeze(mean(fields.u.^2+fields.v.^2+reshape(w.N2,1,1,[]).*fields.eta.^2,[1 2])))/2;
+            direct = direct+w.g*mean(fields.ssh.^2,'all')/2;
+            testCase.verifyEqual(w.totalEnergy,direct,RelTol=1e-7)
+            testCase.verifyEqual(w.totalEnergySpatiallyIntegrated,direct,RelTol=1e-7)
+            testCase.verifyEqual(w.totalEnergyOfFlowComponent(all),direct,RelTol=1e-7)
+            testCase.verifyEqual(w.variableWithName('u'),fields.u)
+            w.Ath = 2*w.Ath;
+            testCase.verifyEqual(w.variableWithName('u'),2*fields.u,AbsTol=1e-13)
+        end
+
         function boussinesqRetainsPhysicalFamiliesAndPhaseEvolution(testCase)
             w = WVTransformBoussinesq([1e5 1e5 1000],[8 8 17],N2Function=@(z)1e-4*exp(z/1000),latitude=30);
             seedRandomNumberGenerator(testCase,355);

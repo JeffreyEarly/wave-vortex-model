@@ -349,9 +349,7 @@ classdef WVAdaptiveDamping < WVForcing
             end
             Kh = sqrt(K.^2 + L.^2);
 
-            Qkl = exp( - ((abs(Kh)-kl_max)./(abs(Kh)-kl_cutoff)).^2 );
-            Qkl(abs(Kh)<kl_cutoff) = 0;
-            Qkl(abs(Kh)>kl_max) = 1;
+            Qkl = WVInternal.horizontalVanishingFilter(Kh,kl_cutoff,kl_max);
 
             hasAPVCutoff = isa(wvt_,"WVTransformFreeSurfaceQG") && ~isnan(self.apvCutoffFraction);
             if wvt_.Nj > 2 || hasAPVCutoff
@@ -479,7 +477,7 @@ classdef WVAdaptiveDamping < WVForcing
             F0 = F0 + wvt.uvMax * self.damp .* wvt.A0;
         end
 
-        function tendency = addQuasigeostrophicSpectralForcing(self,wvt,tendency,physicalState)
+        function [tendency,horizontal,vertical] = addQuasigeostrophicSpectralForcing(self,wvt,tendency,physicalState)
             % Add adaptive damping to free-surface QG coefficient families.
             %
             % `Ag_q` receives horizontal and vertical-mode damping. `Ag_0`
@@ -489,11 +487,13 @@ classdef WVAdaptiveDamping < WVForcing
             % nonlinear transfer in the present free-surface QG model.
             %
             % - Topic: Implement forcing evaluation
-            % - Declaration: tendency = addQuasigeostrophicSpectralForcing(wvt,tendency,physicalState)
+            % - Declaration: [tendency,horizontal,vertical] = addQuasigeostrophicSpectralForcing(wvt,tendency,physicalState)
             % - Parameter wvt: free-surface QG transform evaluating the closure
             % - Parameter tendency: accumulated family-keyed coefficient tendency
             % - Parameter physicalState: optional shared physical reconstruction
             % - Returns tendency: coefficient tendency including adaptive damping
+            % - Returns horizontal: actual horizontal coefficient tendency
+            % - Returns vertical: actual APV-mode coefficient tendency
             arguments
                 self WVAdaptiveDamping {mustBeNonempty}
                 wvt WVTransform {mustBeNonempty}
@@ -529,6 +529,14 @@ classdef WVAdaptiveDamping < WVForcing
                 Ag_0=uvMax*self.dampAg_0.*wvt.Ag_0,Amda=zeros(size(wvt.Amda)));
             vertical = struct(Ag_q=uvMax*(self.dampAg_q-self.horizontalDamping_).*wvt.Ag_q, ...
                 Ag_0=zeros(size(wvt.Ag_0)),Amda=zeros(size(wvt.Amda)));
+        end
+
+        function rate = maximumExplicitDampingRate(self,stageState)
+            % Bound the diagonal APV closure at the current trial speed.
+            % - Topic: Inspect forcing or damping scales
+            % - Developer: true
+            rate=stageState.uvMax*max(abs([self.dampAg_q(:);self.dampAg_0(:)]),[],"all");
+            if isempty(rate), rate=0; end
         end
 
         function operator = coefficientDampingOperator(self)

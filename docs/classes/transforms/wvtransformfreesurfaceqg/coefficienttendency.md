@@ -3,7 +3,7 @@ layout: default
 title: coefficientTendency
 parent: WVTransformFreeSurfaceQG
 grand_parent: Transforms
-nav_order: 66
+nav_order: 67
 mathjax: true
 ---
 
@@ -16,7 +16,7 @@ Evaluate the family-keyed free-surface QG tendency.
 
 ## Declaration
 ```matlab
- [tendency,speed] = coefficientTendency(self,options)
+ [tendency,speed,processes] = coefficientTendency(self,options)
 ```
 ## Parameters
 + `options.excludingForcing`  forcing names handled analytically by an integrator; empty evaluates every forcing
@@ -24,6 +24,7 @@ Evaluate the family-keyed free-surface QG tendency.
 ## Returns
 + `speed`  maximum horizontal speed from the shared reconstruction
 + `tendency`  scalar structure with `Ag_q`, `Ag_0`, and `Amda` tendencies
++ `processes`  ordered labels and actual family-keyed callback increments
 
 ## Discussion
 

@@ -3,7 +3,7 @@ layout: default
 title: verticalQuadratureWeights
 parent: WVTransformFreeSurfaceThermalQG
 grand_parent: Transforms
-nav_order: 241
+nav_order: 248
 mathjax: true
 ---
 

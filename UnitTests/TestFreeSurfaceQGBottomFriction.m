@@ -65,10 +65,14 @@ classdef TestFreeSurfaceQGBottomFriction < matlab.unittest.TestCase
                 q(:,index)=-w.khNonzero(index)^2; b(1,index)=-w.f/w.g;
                 [w.Ag_q,w.Ag_0]=w.transformStateForward(q,b);
                 phi=w.reconstructSpectralState();
+                testCase.verifyEqual(w.boundaryStreamfunction("bottom"),phi(1,w.klNonzero),AbsTol=1e-11)
+                testCase.verifyEqual(w.boundaryStreamfunction("surface"),phi(end,w.klNonzero),AbsTol=1e-11)
                 factor=.05/(2*w.khNonzero(index)*abs(phi(1,w.klNonzero(index))));
                 w.Ag_q=factor*w.Ag_q; w.Ag_0=factor*w.Ag_0;
                 force=WVBottomFrictionQuadratic(w,Cd=1e-3); w.addForcing(force);
-                source=w.coefficientTendency();
+                [source,~,processes]=w.coefficientTendency();
+                testCase.verifyEqual(processes.labels,"quadratic bottom friction")
+                testCase.verifyEqual(processes.tendencies,source)
                 [phi,eta]=w.reconstructSpectralState();
                 [~,b]=w.transformStateBack(w.Ag_q,w.Ag_0);
                 file=fullfile(fixture.Folder,'drag.nc'); nc=w.writeToFile(file); nc.close();

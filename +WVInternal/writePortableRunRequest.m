@@ -25,7 +25,6 @@ end
 try
     written = fwrite(fileIdentifier,bytes,"uint8");
     closeStatus = fclose(fileIdentifier);
-    fileIdentifier = -1;
 catch exception
     if fileIdentifier >= 0
         fclose(fileIdentifier);

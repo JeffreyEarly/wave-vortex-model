@@ -9,14 +9,9 @@ mathjax: true
 
 #  physicalErrorNorms
 
-RMS full QGPV, buoyancy, speed, and active-endpoint displacement.
+Evaluate the owning transform's positive physical RMS norms.
 
 > Developer documentation: this item describes internal implementation details.
 
 
 ---
-
-## Discussion
-Includes MDA means; compact nonzero Fourier entries count twice.
-Fixed QR factors preserve positive quadrature norms without
-repeatedly reconstructing fields on the vertical grid.

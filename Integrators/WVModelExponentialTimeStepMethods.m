@@ -58,7 +58,8 @@ classdef WVModelExponentialTimeStepMethods < handle
             end
             self.assertExponentialConfiguration();
             thermal=isa(self.wvt,'WVTransformFreeSurfaceThermalQG');
-            if thermal && ~options.thermalLinearDynamics && ~self.wvt.hasForcingWithName('nonlinear advection')
+            hasAdvection=any(arrayfun(@(force)isa(force,'WVNonlinearAdvection'),self.wvt.forcing));
+            if thermal && ~options.thermalLinearDynamics && ~hasAdvection
                 error('WVModel:ThermalLinearSelection','Select thermalLinearDynamics=true or register qualified thermal nonlinear advection.');
             end
             if ~thermal && options.thermalLinearDynamics

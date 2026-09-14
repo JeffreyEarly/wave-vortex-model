@@ -3,7 +3,7 @@ layout: default
 title: effectiveJMax
 parent: WVTransformFreeSurfaceThermalQG
 grand_parent: Transforms
-nav_order: 73
+nav_order: 76
 mathjax: true
 ---
 

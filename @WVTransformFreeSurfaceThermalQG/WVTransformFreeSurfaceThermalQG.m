@@ -158,12 +158,15 @@ classdef WVTransformFreeSurfaceThermalQG < WVGeometryDoublyPeriodicStratified & 
         % Number of independent mean directions.
         % - Topic: Inspect coefficient families
         mdaModeCount
-        % Positive depth-averaged physical energy per unit mass.
+        % Horizontally averaged, depth-integrated physical energy in m3 s-2.
         % - Topic: Evaluate physical fields
         totalEnergy
-        % Volume-integrated physical energy per unit reference density.
+        % Horizontally averaged, depth-integrated physical energy in m3 s-2.
         % - Topic: Evaluate physical fields
         totalEnergySpatiallyIntegrated
+        % Horizontally averaged, depth-integrated full QGPV enstrophy in m s-2.
+        % - Topic: Evaluate physical fields
+        totalPotentialEnstrophy
         % True for the balanced hydrostatic reconstruction.
         % - Topic: Inspect supported operations
         isHydrostatic
@@ -174,6 +177,7 @@ classdef WVTransformFreeSurfaceThermalQG < WVGeometryDoublyPeriodicStratified & 
         nonlinearMaps_ = []
         linearEvolutionData_ = []
         endpointGeometry_ = []
+        physicalMetricOperators_ = []
     end
     methods
         function self = WVTransformFreeSurfaceThermalQG(options)
@@ -242,14 +246,18 @@ classdef WVTransformFreeSurfaceThermalQG < WVGeometryDoublyPeriodicStratified & 
         function n=get.mdaModeCount(self), n=numel(self.mdaMode); end
         function value=get.isHydrostatic(~), value=true; end
         function value=get.totalEnergy(self)
-            value=0;
-            for p=1:numel(self.khUnique)
-                c=self.Ath(:,self.klNonzeroKhUniqueIndex==p);
-                value=value+real(sum(conj(c).*(self.thermalEnergyGram(:,:,p)*c),'all'));
-            end
-            value=value+real(self.Amda'*self.mdaEnergyGram*self.Amda)/2;
+            diagnostics=self.quadraticDiagnostics();
+            value=diagnostics.totalEnergy;
         end
-        function value=get.totalEnergySpatiallyIntegrated(self), value=self.Lx*self.Ly*self.Lz*self.totalEnergy; end
+        function value=get.totalEnergySpatiallyIntegrated(self), value=self.totalEnergy; end
+        function value=get.totalPotentialEnstrophy(self)
+            diagnostics=self.quadraticDiagnostics();
+            value=diagnostics.potentialEnstrophy;
+        end
+        [diagnostics,byWavenumber,horizontalMean]=quadraticDiagnostics(self,options)
+        operators=physicalMetricOperators(self)
+        energy=totalEnergyOfFlowComponent(self,flowComponent)
+        [diagnostics,radialSpectrum]=physicalDiagnostics(self,options)
         function other=withDiffusivity(self,kappa_z)
             % Copy the physical state and fixed basis with new scalar diffusivity.
             % - Topic: Create and restore a transform
@@ -271,13 +279,12 @@ classdef WVTransformFreeSurfaceThermalQG < WVGeometryDoublyPeriodicStratified & 
             % - Topic: Inspect supported operations
             error('WV:ThermalEvolutionUnavailable','Use exponential integration with thermalLinearDynamics=true and physical RMS tolerances.');
         end
-        [tendency,speed]=coefficientTendency(self,options)
+        [tendency,speed,processes]=coefficientTendency(self,options)
         data=linearEvolutionData(self)
-        function out=waveVortexTransformWithResolution(~,varargin) %#ok<STOUT>
-            % Reject unqualified resolution transfer.
-            % - Topic: Inspect supported operations
-            error('WV:ThermalTransferUnavailable','Construct a target explicitly; qualified transfer belongs to T8.');
-        end
+        [other,assessment]=waveVortexTransformWithResolution(self,Nxyz,options)
+        [state,assessment]=coefficientStateForTransform(self,other,options)
+        psiHat=boundaryStreamfunction(self,endpoint)
+        tendency=boundaryMomentumTendency(self,tauXHat,tauYHat,endpoint)
         function varargout=nonlinearFlux(~,varargin) %#ok<STOUT>
             % Reject the legacy three-family flux signature.
             % - Topic: Inspect supported operations
@@ -317,6 +324,7 @@ classdef WVTransformFreeSurfaceThermalQG < WVGeometryDoublyPeriodicStratified & 
                 if isa(force,'WVVerticalDiffusivity')
                     error('WV:ThermalDiffusionOwnership','Thermal diffusivity belongs to the transform; use withDiffusivity.');
                 end
+                if isa(force,'WVThermalAPVDamping'), continue; end
                 if isa(force,'WVNonlinearAdvection')
                     if ~self.shouldCheckQuadraticAliasing || ~self.shouldAntialias
                         error('WV:ThermalNonlinearQualification','Nonlinear advection requires qualified product quadrature and horizontal antialiasing.');
@@ -364,7 +372,7 @@ classdef WVTransformFreeSurfaceThermalQG < WVGeometryDoublyPeriodicStratified & 
         function names=classRequiredPropertyNames()
             % List canonical flat arrays required for restoration.
             % - Topic: Inspect scientific operators
-            schema=WVInternal.thermalStateSchema(); names=[schema(:,1).',{'Ath','Amda','t'}];
+            schema=WVInternal.thermalStateSchema(); names=[schema(:,1).',{'Ath','Amda','t','t0','forcing','x','y'}];
         end
         function annotations=classDefinedPropertyAnnotations()
             % Describe scientific arrays and coefficients for NetCDF.
@@ -380,6 +388,8 @@ classdef WVTransformFreeSurfaceThermalQG < WVGeometryDoublyPeriodicStratified & 
                 annotations(end+1)=annotation; %#ok<AGROW> Bounded annotation metadata.
             end
             annotations(end+1)=WVCoefficientAnnotation('Ath',{'thermalDirection','klNonzero'},'m s-1','Complete thermal amplitudes',canonicalBasis="complete balanced thermal modes",isComplex=true);
+            annotations(end+1)=CANumericProperty('t0',{},'s','Reference time');
+            annotations(end+1)=CAObjectProperty('forcing','Registered forcing configuration');
             annotations(end+1)=WVCoefficientAnnotation('Amda',{'mdaMode'},'m','Mean displacement amplitudes',canonicalBasis="signed-normalized MDA modes");
             annotations(end+1)=CANumericProperty('t',{},'s','Physical time');
         end

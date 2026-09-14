@@ -86,6 +86,7 @@ These items document internal implementation details and are not part of the pri
 + Forcing internals
   + [`addBoussinesqSpectralForcing`](/classes/forcing/wvforcing/addboussinesqspectralforcing.html) Add reference-time rates for the six free-surface Boussinesq families.
   + [`didGetRemovedFromTransform`](/classes/forcing/wvforcing/didgetremovedfromtransform.html) Release resources when a forcing is removed from its transform.
+  + [`maximumExplicitDampingRate`](/classes/forcing/wvforcing/maximumexplicitdampingrate.html) Return the forcing's explicit stability bound in inverse seconds.
   + [`portableImplementationContract`](/classes/forcing/wvforcing/portableimplementationcontract.html) Describe availability of the paired portable C++ implementation.
 
 

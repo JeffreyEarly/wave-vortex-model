@@ -3,7 +3,7 @@ layout: default
 title: fromStratification
 parent: WVTransformFreeSurfaceThermalQG
 grand_parent: Transforms
-nav_order: 83
+nav_order: 86
 mathjax: true
 ---
 

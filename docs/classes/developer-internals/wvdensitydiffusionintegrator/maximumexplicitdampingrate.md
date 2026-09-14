@@ -9,7 +9,7 @@ mathjax: true
 
 #  maximumExplicitDampingRate
 
-Bound existing parent-transform damping without changing its strength.
+Sum forcing-owned explicit bounds at the current physical stage.
 
 > Developer documentation: this item describes internal implementation details.
 

@@ -59,9 +59,10 @@ $$
 \end{align}
 $$
 
-The free-surface QG transform projects the bottom stress
-into its canonical APV and active-endpoint families through a signed
-boundary load. Its stress products use a doubled horizontal grid.
+Free-surface QG peers project bottom stress through their own balanced
+boundary-momentum maps. APV uses its signed boundary load; thermal QG
+uses the positive physical-energy weak dual. Stress products use a
+doubled horizontal grid in both representations.
 
 ### Example
 

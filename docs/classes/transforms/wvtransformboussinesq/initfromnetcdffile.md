@@ -21,6 +21,7 @@ initialize the flow from a NetCDF file
 ## Parameters
 + `ncfile`  a NetCDF file object
 + `options.iTime`  time index to initialize from; default `1`
++ `options.shouldRequireCoefficientState`  require a complete canonical coefficient stream; default `false`
 + `options.shouldDisplayInit`  display the restored representation; default `false`
 
 ## Discussion

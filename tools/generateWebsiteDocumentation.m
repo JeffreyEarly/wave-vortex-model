@@ -28,7 +28,7 @@ writeClassGroup(classes,buildFolder,websiteFolder,parentName,classFolderName,par
 
 parentName = "Closures";
 websiteFolder = "classes/forcing/closures";
-classes = ["WVAdaptiveDamping" "WVVerticalDiffusivity" "WVHorizontalDamping" "WVVerticalDamping" "WVThermalDamping" "WVAntialiasing"];
+classes = ["WVAdaptiveDamping" "WVVerticalDiffusivity" "WVHorizontalDamping" "WVVerticalDamping" "WVThermalDamping" "WVAntialiasing" "WVThermalAPVDamping"];
 writeClassGroup(classes,buildFolder,websiteFolder,parentName,"Forcing",parentName,1,{'handle','WVForcing','CAAnnotatedClass','matlab.mixin.Heterogeneous'},string.empty(0,1));
 
 parentName = "Model output";

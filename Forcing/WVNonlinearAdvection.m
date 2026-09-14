@@ -116,14 +116,11 @@ classdef WVNonlinearAdvection < WVForcing
             end
         end
         
-        function tendency=addQuasigeostrophicSpectralForcing(~,wvt,tendency,physicalState)
+        function [tendency,speed]=addQuasigeostrophicSpectralForcing(~,wvt,tendency,~)
             % Add the independently overintegrated thermal nonlinear tendency.
+            % The optional speed shares the same single product-grid evaluation.
             % - Topic: Implement forcing evaluation
-            if isfield(physicalState,'thermalNonlinearTendency')
-                nonlinear=physicalState.thermalNonlinearTendency;
-            else
-                nonlinear=wvt.nonlinearCoefficientTendency();
-            end
+            [nonlinear,speed]=wvt.nonlinearCoefficientTendency();
             tendency.Ath=tendency.Ath+nonlinear.Ath;
             tendency.Amda=tendency.Amda+nonlinear.Amda;
         end

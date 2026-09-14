@@ -11,6 +11,17 @@ classdef TestForcingLifecycle < matlab.unittest.TestCase
     end
 
     methods (Test, TestTags="full")
+        function characterNamesRemainSeparateAcrossStages(testCase)
+            wvt=TestForcingLifecycle.constantTransform([8 6 5]); wvt.removeAllForcing();
+            first=WVTestForcing(wvt,'first char',WVForcingType.HydrostaticSpatial,uint8(1),1);
+            second=WVTestForcing(wvt,'second char',WVForcingType.Spectral,uint8(1),1);
+            wvt.addForcing([first second]);
+            names=wvt.forcingNames();
+            testCase.verifyEqual(names,["first char";"second char"]);
+            testCase.verifyEqual(wvt.forcingWithName(names(2)),second);
+            wvt.removeAllForcing();
+            testCase.verifySize(wvt.forcingNames(),[0 1]);
+        end
         function registryMutationsAreIdentityBasedAndAtomic(testCase)
             wvt = TestForcingLifecycle.constantTransform([8 6 5]);
             wvt.removeAllForcing();

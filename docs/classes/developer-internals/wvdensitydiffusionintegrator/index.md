@@ -43,10 +43,10 @@ These items document internal implementation details and are not part of the pri
   + [`explicitCoefficientTendency`](/classes/developer-internals/wvdensitydiffusionintegrator/explicitcoefficienttendency.html) Evaluate registered forcings except those integrated analytically.
   + [`fromModes`](/classes/developer-internals/wvdensitydiffusionintegrator/frommodes.html) Invert the complete modal coordinate change.
   + [`integrateToTime`](/classes/developer-internals/wvdensitydiffusionintegrator/integratetotime.html) Advance canonical coefficients with ETDRK4 and physical error control.
-  + [`maximumExplicitDampingRate`](/classes/developer-internals/wvdensitydiffusionintegrator/maximumexplicitdampingrate.html) Bound existing parent-transform damping without changing its strength.
+  + [`maximumExplicitDampingRate`](/classes/developer-internals/wvdensitydiffusionintegrator/maximumexplicitdampingrate.html) Sum forcing-owned explicit bounds at the current physical stage.
   + [`modalState`](/classes/developer-internals/wvdensitydiffusionintegrator/modalstate.html) Read current canonical properties in complete diffusion coordinates.
   + [`operators`](/classes/developer-internals/wvdensitydiffusionintegrator/operators.html) Galerkin operators, reconstruction arrays, and numerical diagnostics.
-  + [`physicalErrorNorms`](/classes/developer-internals/wvdensitydiffusionintegrator/physicalerrornorms.html) RMS full QGPV, buoyancy, speed, and active-endpoint displacement.
+  + [`physicalErrorNorms`](/classes/developer-internals/wvdensitydiffusionintegrator/physicalerrornorms.html) Evaluate the owning transform's positive physical RMS norms.
   + [`rates`](/classes/developer-internals/wvdensitydiffusionintegrator/rates.html) Packed homogeneous rates, including every MDA direction.
   + [`seasonalCoefficients`](/classes/developer-internals/wvdensitydiffusionintegrator/seasonalcoefficients.html) Exact zero-at-time-zero response to strict seasonal endpoint forcing.
   + [`setModalState`](/classes/developer-internals/wvdensitydiffusionintegrator/setmodalstate.html) Restore the canonical properties from integrator-local coordinates.

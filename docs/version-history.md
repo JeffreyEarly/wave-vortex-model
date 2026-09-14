@@ -8,11 +8,15 @@ nav_order: 100
 
 ## [Unreleased]
 
+- Complete thermal QG forcing, physical diagnostics and committed output/restart: reuse strict seasonal sources and endpoint-only quadratic stress, retain full energy cross terms, and transfer states through physical QGPV and endpoint constraints with reported loss.
+- Add explicit `WVThermalAPVDamping` with a frozen APV diagnostic band, a minimum-energy lift and an unchanged vertical complement. It matches selected APV coordinate rates; its vertical action can inject physical energy and is not a silent default closure.
+- Share the APV/thermal exponential evolution adapter and forcing-owned stage stability bounds, preserving diffusion ownership, physical tolerance policies and exact accepted-state recovery.
+
 - Add qualified nonlinear thermal QG advection with independent product quadrature, dealiased Fourier interactions, schema-2 policy persistence and cheap schema-1 linear restoration.
 
-- Connect the optional thermal QG peer to existing exponential integration with explicit linear selection, exact seasonal forcing, independent endpoint error control, and physical evolution tests. Full restart and campaign qualification remain downstream.
+- Connect the optional thermal QG peer to existing exponential integration with explicit linear selection, exact seasonal forcing, independent endpoint error control, and physical evolution tests. Long campaign qualification remains downstream.
 
-- Add the optional `WVTransformFreeSurfaceThermalQG` construction/reconstruction peer with complete thermal modes, physical source projection, mapped Chebyshev calculus, independent MDA state, and canonical snapshots. Complete restart and campaign qualification remain downstream.
+- Add the optional `WVTransformFreeSurfaceThermalQG` construction/reconstruction peer with complete thermal modes, physical source projection, mapped Chebyshev calculus, independent MDA state, and canonical snapshots. Campaign qualification remains downstream.
 
 - Enable MATLAB free-surface Boussinesq adaptive integration through the existing `WVModel`/`ode78` path with positive unit-coefficient energy tolerances, retained-wave frequency and physical-speed initial-step selection, and forced/nonlinear restart coverage. Existing v4 and QG defaults are unchanged.
 - Add explicit `tolerancePolicy="family"` for v5 QG and Boussinesq, with independently calibrated or user-specified PV, surface, and bottom scales. Preserve the policy through restart; legacy scalar energy behavior remains the default.
