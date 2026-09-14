@@ -1,0 +1,2 @@
+thermalConstructionSeconds,diagnosticConstructionSeconds,preparationSeconds,retainedValueBytes,Lx,Ly,Lz,Nx,Ny,sourceNz,thermalCount,N20,inverseScale,latitude,diagnosticNz,apvCount,quadratureCount,g0,gd,matlab,platform,maximumThreads
+4.27719445833333,911.67804,0.68040675,59415634,500000,500000,4000,18,18,385,257,2.704e-05,0.000769230769230769,24,1025,6,2051,-0.0175386458707801,0.0175386458707801,25.2.0.3177638 (R2025b) Update 5,MACA64,2

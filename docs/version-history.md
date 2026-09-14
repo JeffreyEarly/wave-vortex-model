@@ -8,6 +8,10 @@ nav_order: 100
 
 ## [Unreleased]
 
+- Require `InternalModes@^2.0.0-beta.5`, allowing beta.5 and later compatible 2.x versions while excluding older betas and 3.x. Routine CI and package verification use the immutable beta.5 OceanKit snapshot, including shared construction optimizations and mode-local MDA null-norm classification. Historical experiment pins and scientific tolerances are preserved.
+
+- Add read-only thermal APV/zero-APV decomposition with an independently selected diagnostic band, original horizontal means, explicit physical residuals, complete self/cross inventories and directional rates. Reuse prepared stored-array maps across committed output records; restore and diagnose saved arrays without scientific construction. Modal power remains distinct from physical energy and damping coordinates.
+
 - Complete thermal QG forcing, physical diagnostics and committed output/restart: reuse strict seasonal sources and endpoint-only quadratic stress, retain full energy cross terms, and transfer states through physical QGPV and endpoint constraints with reported loss.
 - Add explicit `WVThermalAPVDamping` with a frozen APV diagnostic band, a minimum-energy lift and an unchanged vertical complement. It matches selected APV coordinate rates; its vertical action can inject physical energy and is not a silent default closure.
 - Share the APV/thermal exponential evolution adapter and forcing-owned stage stability bounds, preserving diffusion ownership, physical tolerance policies and exact accepted-state recovery.

@@ -883,7 +883,7 @@ classdef WVTransformFreeSurfaceQG < WVGeometryDoublyPeriodicStratified & WVTrans
             propertyAnnotations(end+1) = CANumericProperty('apvGForward',{'apvMode','z'},'1','APV G forward matrix');
             propertyAnnotations(end+1) = CANumericProperty('apvEquivalentDepth',{'apvMode'},'m','APV equivalent depths');
             propertyAnnotations(end+1) = CANumericProperty('apvMu',{'apvMode','khUnique'},'m-2','APV inversion eigenvalues');
-            propertyAnnotations(end+1) = CANumericProperty('apvEndpointResponse',{'activeEndpoint','apvMode','khUnique'},'m','APV endpoint-displacement response');
+            propertyAnnotations(end+1) = CANumericProperty('apvEndpointResponse',{'activeEndpoint','apvMode','khUnique'},'m s','APV endpoint-displacement response per QGPV amplitude');
             propertyAnnotations(end+1) = CANumericProperty('apvFSourcePairing',{'apvMode','z'},'1','APV F source-pairing operator');
             propertyAnnotations(end+1) = CANumericProperty('apvGSourcePairing',{'apvMode','z'},'1','APV G source-pairing operator');
 

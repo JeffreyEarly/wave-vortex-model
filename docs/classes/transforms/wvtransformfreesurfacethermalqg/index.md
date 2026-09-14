@@ -169,6 +169,18 @@ fields = w.reconstructFields(["qgpv","endpointAnomalies"]);
     + [`initWithUVEta`](/classes/transforms/wvtransformfreesurfacethermalqg/initwithuveta.html) initialize with fluid variables $$(u,v,\eta)$$
     + [`initWithUVRho`](/classes/transforms/wvtransformfreesurfacethermalqg/initwithuvrho.html) initialize with fluid variables $$(u,v,\rho)$$
     + [`removeAll`](/classes/transforms/wvtransformfreesurfacethermalqg/removeall.html) removes all energy from the model
++ Analyze energy
+  + Energy and enstrophy budgets
+    + [`apvDecomposition`](/classes/transforms/wvtransformfreesurfacethermalqg/apvdecomposition.html) Diagnose a complete thermal state with an independent APV and zero-APV basis.
+    + [`quadraticDiagnostics`](/classes/transforms/wvtransformfreesurfacethermalqg/quadraticdiagnostics.html) Evaluate physical inventories and individual or batched directional rates.
+  + Energy summaries
+    + [`summarizeEnergyContent`](/classes/transforms/wvtransformfreesurfacethermalqg/summarizeenergycontent.html) displays a summary of the energy content of the fluid
+    + [`summarizeModeEnergy`](/classes/transforms/wvtransformfreesurfacethermalqg/summarizemodeenergy.html) List the most energetic modes
+  + Total energy
+    + [`totalEnergy`](/classes/transforms/wvtransformfreesurfacethermalqg/totalenergy.html) Total energy computed from wave-vortex coefficients.
+    + [`totalEnergySpatiallyIntegrated`](/classes/transforms/wvtransformfreesurfacethermalqg/totalenergyspatiallyintegrated.html) Total energy computed from physical-space fields.
+  + Component energy
+    + [`totalEnergyOfFlowComponent`](/classes/transforms/wvtransformfreesurfacethermalqg/totalenergyofflowcomponent.html) Compute the energy carried by one flow component.
 + Create a related transform
   + [`coefficientStateForTransform`](/classes/transforms/wvtransformfreesurfacethermalqg/coefficientstatefortransform.html) Fit a compatible thermal target to physical QGPV, endpoints and mean density.
   + [`spectralVariableWithResolution`](/classes/transforms/wvtransformfreesurfacethermalqg/spectralvariablewithresolution.html) create a new variable with different resolution
@@ -215,17 +227,6 @@ fields = w.reconstructFields(["qgpv","endpointAnomalies"]);
     + [`primaryFlowComponentWithName`](/classes/transforms/wvtransformfreesurfacethermalqg/primaryflowcomponentwithname.html) retrieve a WVPrimaryFlowComponent by name
   + Summarize flow components
     + [`summarizeFlowComponents`](/classes/transforms/wvtransformfreesurfacethermalqg/summarizeflowcomponents.html) Print a table of registered primary and diagnostic components.
-+ Analyze energy
-  + Energy and enstrophy budgets
-    + [`quadraticDiagnostics`](/classes/transforms/wvtransformfreesurfacethermalqg/quadraticdiagnostics.html) Evaluate physical inventories and individual or batched directional rates.
-  + Energy summaries
-    + [`summarizeEnergyContent`](/classes/transforms/wvtransformfreesurfacethermalqg/summarizeenergycontent.html) displays a summary of the energy content of the fluid
-    + [`summarizeModeEnergy`](/classes/transforms/wvtransformfreesurfacethermalqg/summarizemodeenergy.html) List the most energetic modes
-  + Total energy
-    + [`totalEnergy`](/classes/transforms/wvtransformfreesurfacethermalqg/totalenergy.html) Total energy computed from wave-vortex coefficients.
-    + [`totalEnergySpatiallyIntegrated`](/classes/transforms/wvtransformfreesurfacethermalqg/totalenergyspatiallyintegrated.html) Total energy computed from physical-space fields.
-  + Component energy
-    + [`totalEnergyOfFlowComponent`](/classes/transforms/wvtransformfreesurfacethermalqg/totalenergyofflowcomponent.html) Compute the energy carried by one flow component.
 + Convert representations
   + Physical fields and coefficients
     + [`transformUVEtaToWaveVortex`](/classes/transforms/wvtransformfreesurfacethermalqg/transformuvetatowavevortex.html) transform fluid variables $$(u,v,\eta)$$ to wave-vortex coefficients $$(A_+,A_-,A_0)$$.

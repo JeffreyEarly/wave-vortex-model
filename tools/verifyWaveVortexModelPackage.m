@@ -34,7 +34,7 @@ expectedNames = [
 expectedVersions = [
     "1.2.1"
     "2.0.0"
-    "2.0.0-beta.4"
+    "2.0.0-beta.5"
     "1.0.2"
     "2.2.0"
     options.expectedVersion
@@ -43,7 +43,7 @@ expectedVersions = [
 expectedSnapshotFolders = [
     "ClassAnnotations-1.2.1"
     "Distributions-2.0.0"
-    "InternalModes-2.0.0-beta.4"
+    "InternalModes-2.0.0-beta.5"
     "NetCDF-1.0.2"
     "SplineCore-2.2.0"
     ""
@@ -98,6 +98,7 @@ representativeSymbols = [
     "CAAnnotatedClass"
     "NormalDistribution"
     "InternalModesWKBSpectral"
+    "IMInternalModes"
     "NetCDFFile"
     "BSpline"
     "WVTransform"
@@ -106,6 +107,7 @@ representativeSymbols = [
 representativePackages = [
     "ClassAnnotations"
     "Distributions"
+    "InternalModes"
     "InternalModes"
     "NetCDF"
     "SplineCore"
@@ -119,7 +121,7 @@ for iSymbol = 1:numel(representativeSymbols)
         representativeSymbols(iSymbol) + " did not resolve from the installed package graph.");
 end
 
-for symbol = ["WVTransformFreeSurfaceThermalQG","WVThermalAPVDamping","WVInternal.qgEvolutionAdapter","WVInternal.thermalNonlinearKernel","WVInternal.thermalConstrainedFit"]
+for symbol = ["WVTransformFreeSurfaceThermalQG","WVThermalAPVDamping","WVInternal.qgEvolutionAdapter","WVInternal.thermalNonlinearKernel","WVInternal.thermalConstrainedFit","WVInternal.thermalAPVDecomposition","WVInternal.thermalAPVDecompositionData"]
     resolvedPath=string(which(symbol));
     require(resolvedPath~="" && startsWith(canonicalPath(resolvedPath),wvmRoot+filesep),symbol+" did not resolve from the installed WaveVortexModel root.");
 end
@@ -210,10 +212,18 @@ for name=string(closure.classRequiredPropertyNames())
 end
 [state,assessment]=w.coefficientStateForTransform(restored);
 require(assessment.relativeFieldError<1e-9 && norm(state.Ath-w.Ath,'fro')<1e-9,"Installed thermal physical transfer did not preserve its represented state.");
+original=w.coefficientState(); diagnosticOriginal=apv.coefficientState();
+[diagnosis,diagnosticFields]=w.apvDecomposition(apv,tendency=processes.tendencies,quadratureCount=257);
+restoredDiagnosis=restored.apvDecomposition(apv,quadratureCount=257);
+require(isequaln(diagnosis.coefficients,restoredDiagnosis.coefficients) && isequal(w.coefficientState(),original) && isequal(apv.coefficientState(),diagnosticOriginal),"Installed APV diagnosis changed source/target state or disagreed after restoration.");
+require(abs(diagnosis.inventories.totalEnergy.total-w.totalEnergy)<=1e-8*w.totalEnergy,"Installed APV decomposition lost the full physical energy.");
+require(norm(diagnosticFields.total.endpointAnomalies(:)-fields.endpointAnomalies(:))<=1e-10*norm(fields.endpointAnomalies(:))+1e-12,"Installed APV diagnosis changed physical endpoints.");
+rates=arrayfun(@(item)item.inventories.totalEnergy.total,diagnosis.directional).';
+require(norm(rates-inventory.totalEnergyTendency)<=1e-8*norm(inventory.totalEnergyTendency)+1e-20,"Installed APV directional budgets disagree with shared physical diagnostics.");
 continued=WVModel(restored); continued.setupIntegrator(integratorType="exponential",initialStep=5,maximumStep=5,exponentialAdaptive=false);
 continued.integrateToTime(1249,shouldShowIntegrationDiagnostics=false);
 require(restored.t==1249 && isfinite(restored.totalEnergy),"Restored installed thermal transform did not reattach and continue.");
-report=struct(finalTime=restored.t,energy=w.totalEnergy,inventory=inventory,processCount=numel(processes.labels),transferError=assessment.relativeFieldError,seconds=toc(clock));
+report=struct(finalTime=restored.t,energy=w.totalEnergy,inventory=inventory,processCount=numel(processes.labels),transferError=assessment.relativeFieldError,diagnosticResidual=diagnosis.residuals,seconds=toc(clock));
 end
 
 function paths = canonicalExistingPaths(paths)

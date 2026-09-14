@@ -3,7 +3,7 @@ layout: default
 title: maskForNyquistModes
 parent: WVTransformFreeSurfaceThermalQG
 grand_parent: Transforms
-nav_order: 142
+nav_order: 143
 mathjax: true
 ---
 

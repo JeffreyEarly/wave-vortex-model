@@ -3,7 +3,7 @@ layout: default
 title: conjugateDirection
 parent: WVTransformFreeSurfaceThermalQG
 grand_parent: Transforms
-nav_order: 56
+nav_order: 57
 mathjax: true
 ---
 

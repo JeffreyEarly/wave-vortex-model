@@ -217,7 +217,7 @@ elseif ismember(name,["geostrophicEnergy","waveEnergy","inertialEnergy", ...
 elseif ismember(name,["totalEnergy","totalEnergySpatiallyIntegrated", ...
         "exactTotalEnergy"])
     topicPath = "Analyze energy — Total energy";
-elseif name == "quadraticDiagnostics"
+elseif ismember(name,["quadraticDiagnostics","apvDecomposition"])
     topicPath = "Analyze energy — Energy and enstrophy budgets";
 elseif startsWith(name,"summarizeEnergy") || name == "summarizeModeEnergy"
     topicPath = "Analyze energy — Energy summaries";

@@ -109,8 +109,10 @@ classdef TestFreeSurfaceThermalQG < matlab.unittest.TestCase
             fileName=[tempname '.nc']; cleanup=onCleanup(@()delete(fileName));
             file=w.writeToFile(fileName); file.close();
             originalPath=path; pathCleanup=onCleanup(@()path(originalPath));
-            paths=string(strsplit(path,pathsep)); provider=contains(paths,'InternalModes-2.0.0-beta.4');
+            providerRoot=string(fileparts(fileparts(which('IMInternalModes'))));
+            paths=string(strsplit(path,pathsep)); provider=startsWith(paths,providerRoot+filesep) | paths==providerRoot;
             rmpath(char(join(paths(provider),pathsep)));
+            testCase.assertEmpty(which('IMInternalModes'));
             restored=WVTransform.waveVortexTransformFromFile(fileName);
             testCase.verifyEqual(restored.scientificState,w.scientificState);
             testCase.verifyEqual(restored.coefficientState(),w.coefficientState());
