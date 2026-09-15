@@ -342,9 +342,10 @@ end
 canonical=struct();
 state=force.thermalGeneralizedEnstrophyState;
 for name=string(state.classRequiredPropertyNames()), canonical.(name)=state.(name); end
-data=force.coefficientDampingData(); %#ok<NASGU> Retained-byte measurement below uses whos.
-sizes=whos('canonical','data'); report.canonicalArrayBytes=sizes(strcmp({sizes.name},'canonical')).bytes;
-report.applicationCacheBytes=sizes(strcmp({sizes.name},'data')).bytes;
+data=force.coefficientDampingData();
+sizes=whos('canonical'); report.canonicalArrayBytes=sizes.bytes;
+report.applicationCacheBytes=data.executionCacheBytes;
+clear canonical data
 w.addForcing(WVNonlinearAdvection(w)); model=WVModel(w); modelCleanup=onCleanup(@()delete(model));
 model.setupIntegrator(integratorType="exponential",maximumStep=450,initialStep=450,exponentialAdaptive=false);
 physical=struct(uvMax=w.uvMax);

@@ -196,6 +196,7 @@ classdef WVAdaptiveDamping < WVForcing
         horizontalDamping_ = []
         boussinesqDamping_ = struct()
         thermalDampingData_ = struct()
+        thermalDampingBatches_ = cell(0,1)
         thermalCacheBuildCount_ = 0
     end
 
@@ -246,12 +247,55 @@ classdef WVAdaptiveDamping < WVForcing
                     effectiveZeroCutoff=effectiveZeroCutoff,minimumActiveEigenvalue=minimumActiveEigenvalue,applicationKind=kind, ...
                     leftFactor=leftFactor,rightFactor=rightFactor,denseOperator=denseOperator,applicationDualResidual=applicationDualResidual);
             end
+            [batches,pages]=self.packThermalDampingPages(pages);
             self.horizontalDamping_=horizontal;
             self.thermalCacheBuildCount_=self.thermalCacheBuildCount_+1;
             self.thermalDampingData_=struct(horizontalRates=horizontal,pages={pages}, ...
                 nominalSelectiveCutoff=self.j_no_damp,selectiveSignificantOrdinal=self.j_damp, ...
                 maximumUnitSpeedRate=maximumUnitSpeedRate,cacheBuildCount=self.thermalCacheBuildCount_);
+            self.thermalDampingBatches_=batches;
             self.damp=[]; self.dampAg_q=[]; self.dampAg_0=[]; self.boussinesqDamping_=struct();
+        end
+
+        function [batches,pages]=packThermalDampingPages(self,pages)
+            % Equal column counts permit exact page-wise products. Factored
+            % pages also need equal active rank for their inner dimension.
+            nPages=numel(pages); columns=cell(nPages,1); keys=zeros(nPages,3);
+            active=false(nPages,1);
+            for p=1:nPages
+                columns{p}=reshape(find(self.wvt.klNonzeroKhUniqueIndex==p),[],1);
+                isDense=pages{p}.applicationKind=="dense";
+                keys(p,:)=[isDense,numel(columns{p}),(~isDense)*pages{p}.activeCount];
+                active(p)=pages{p}.activeCount>0;
+            end
+            activePages=find(active);
+            [batchKeys,~,membership]=unique(keys(active,:),"rows");
+            batches=cell(size(batchKeys,1),1);
+            for b=1:numel(batches)
+                pageIndices=activePages(membership==b);
+                batchColumns=cat(2,columns{pageIndices});
+                operators=cell(numel(pageIndices),1); duals=operators;
+                isDense=batchKeys(b,1)==1;
+                for j=1:numel(pageIndices)
+                    p=pageIndices(j);
+                    if isDense
+                        operators{j}=pages{p}.denseOperator;
+                        pages{p}.denseOperator=[];
+                    else
+                        operators{j}=pages{p}.leftFactor;
+                        duals{j}=pages{p}.rightFactor;
+                        pages{p}.leftFactor=[]; pages{p}.rightFactor=[];
+                    end
+                end
+                if isDense
+                    denseOperator=cat(3,operators{:}); leftFactor=[]; rightFactor=[];
+                else
+                    denseOperator=[]; leftFactor=cat(3,operators{:}); rightFactor=cat(3,duals{:});
+                end
+                batches{b}=struct(pageIndices=pageIndices,columns=batchColumns, ...
+                    applicationKind=pages{pageIndices(1)}.applicationKind, ...
+                    denseOperator=denseOperator,leftFactor=leftFactor,rightFactor=rightFactor);
+            end
         end
 
         function buildBoussinesqDampingOperator(self)
@@ -661,17 +705,21 @@ classdef WVAdaptiveDamping < WVForcing
             end
             if isa(wvt,'WVTransformFreeSurfaceThermalQG')
                 WVAdaptiveDamping.validateThermalSpeed(uvMax);
-                horizontal=struct(Ath=uvMax*self.thermalDampingData_.horizontalRates.*wvt.Ath,Amda=zeros(size(wvt.Amda)));
-                vertical=struct(Ath=complex(zeros(size(wvt.Ath))),Amda=zeros(size(wvt.Amda)));
-                for p=1:numel(self.thermalDampingData_.pages)
-                    columns=wvt.klNonzeroKhUniqueIndex==p;
-                    page=self.thermalDampingData_.pages{p};
-                    if page.applicationKind=="dense"
-                        vertical.Ath(:,columns)=uvMax*page.denseOperator*wvt.Ath(:,columns);
-                    elseif page.activeCount>0
-                        vertical.Ath(:,columns)=uvMax*page.leftFactor*(page.rightFactor*wvt.Ath(:,columns));
+                A=wvt.Ath; batches=self.thermalDampingBatches_;
+                horizontal=struct(Ath=uvMax*self.thermalDampingData_.horizontalRates.*A,Amda=zeros(size(wvt.Amda)));
+                vertical=struct(Ath=complex(zeros(size(A))),Amda=zeros(size(wvt.Amda)));
+                if uvMax==0, return; end
+                for b=1:numel(batches)
+                    batch=batches{b}; columns=batch.columns;
+                    block=reshape(A(:,columns(:)),size(A,1),size(columns,1),size(columns,2));
+                    if batch.applicationKind=="dense"
+                        product=pagemtimes(batch.denseOperator,block);
+                    else
+                        product=pagemtimes(batch.leftFactor,pagemtimes(batch.rightFactor,block));
                     end
+                    vertical.Ath(:,columns(:))=reshape(product,size(A,1),[]);
                 end
+                vertical.Ath=uvMax*vertical.Ath;
                 return
             end
             horizontal = struct(Ag_q=uvMax*self.horizontalDamping_.*wvt.Ag_q, ...
@@ -704,10 +752,30 @@ classdef WVAdaptiveDamping < WVForcing
         end
 
         function data=coefficientDampingData(self)
-            % Return the native thermal application cache and construction diagnostics.
+            % Materialize native thermal radius operators and construction diagnostics.
+            %
+            % Normal forcing evaluation uses the private batched operators.
+            % This inspection view reconstructs the per-radius matrices on
+            % request. executionCacheBytes reports retained application data,
+            % excluding these additional caller-owned inspection copies.
             % - Topic: Inspect forcing or damping scales
             % - Developer: true
             data=self.thermalDampingData_;
+            if isempty(fieldnames(data)), return; end
+            batches=self.thermalDampingBatches_;
+            storage=whos('data','batches'); data.executionCacheBytes=sum([storage.bytes]);
+            for b=1:numel(batches)
+                batch=batches{b};
+                for j=1:numel(batch.pageIndices)
+                    p=batch.pageIndices(j);
+                    if batch.applicationKind=="dense"
+                        data.pages{p}.denseOperator=batch.denseOperator(:,:,j);
+                    else
+                        data.pages{p}.leftFactor=batch.leftFactor(:,:,j);
+                        data.pages{p}.rightFactor=batch.rightFactor(:,:,j);
+                    end
+                end
+            end
         end
 
         function tendency = addBoussinesqSpectralForcing(self,wvt,tendency,physicalState)
