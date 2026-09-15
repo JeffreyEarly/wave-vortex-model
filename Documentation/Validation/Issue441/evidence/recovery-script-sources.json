@@ -1,0 +1,902 @@
+{
+  "schema": "t10-recovery-script-sources-v1",
+  "scope": "Retained source at collection time. Guard contracts prove requested commands, not that every script/helper line ran. Source bytes were not independently locked at each historical invocation; present-only scripts are not executed evidence.",
+  "scripts": [
+    {
+      "path": "recovery/activity.m",
+      "bytes": 444,
+      "sha256": "dbeb64836af57afd4df2b337aba7e46dd52851d5be9953b635d06ecc96e15e35",
+      "lastModifiedUTC": "2026-09-14T23:10:12.425117+00:00",
+      "requestedByGuardDirectories": [
+        "recovery/activity"
+      ],
+      "literalRunReferences": [
+        "/Users/jearly/Documents/OceanKitRepositories/thermal-readiness-t10-evidence/recovery/setup.m"
+      ],
+      "source": "run('/Users/jearly/Documents/OceanKitRepositories/thermal-readiness-t10-evidence/recovery/setup.m');\nevidence=fullfile(root,'thermal-readiness-t10-evidence');\nreport=runThermalReadinessStudy(fullfile(evidence,'windows'),\"activity\",scientificCache=fullfile(evidence,'scientific64.mat'),closureCache=fullfile(evidence,'closure64.mat'),durationSeconds=21600,observationCount=9,wallTimeBudgetSeconds=1500);disp(report.cases);disp(report.coverage);\n",
+      "invocationEvidence": "requested-in-recorded-guard-command"
+    },
+    {
+      "path": "recovery/activityThreeDays.m",
+      "bytes": 2774,
+      "sha256": "2943d9f706f952c4430a879a3457258a7a786c931fb36af08576617827a32d53",
+      "lastModifiedUTC": "2026-09-15T00:50:53.676960+00:00",
+      "requestedByGuardDirectories": [
+        "recovery/activity-three-days"
+      ],
+      "literalRunReferences": [
+        "/Users/jearly/Documents/OceanKitRepositories/thermal-readiness-t10-evidence/recovery/setup.m"
+      ],
+      "source": "run('/Users/jearly/Documents/OceanKitRepositories/thermal-readiness-t10-evidence/recovery/setup.m');\nevidence = fullfile(root,'thermal-readiness-t10-evidence');\noriginalFolder = fullfile(evidence,'windows','activity');\noutputFolder = fullfile(evidence,'windows-activity-three-days');\nassert(~isfolder(outputFolder),'The single extension uses a new immutable output directory.');\nactivity = readtable(fullfile(evidence,'window-comparisons','activity-six-hours','nonlinear-activity.csv'),TextType='string');\nassert(all(activity.status==\"NOT MEASURABLE AT THIS TIME\"), ...\n    'This extension follows the completed, resolved six-hour activity screen.');\nsaved = load(fullfile(originalFolder,'run-contract.mat'),'contract');\noriginal = saved.contract;\nassert(thermalReadinessIdentity(rmfield(original,'runId'))==original.runId);\nassert(isequal(string({original.cases.name}),[\"nonlinear\",\"companion\"]));\nassert(all([original.cases.step]==900) && ~any([original.cases.adaptive]));\nassert(all(string({original.cases.dampingVariant})==\"none\"));\ncache = load(fullfile(evidence,'scientific64.mat'),'scientificState');\nscientificHash = thermalReadinessIdentity(cache.scientificState);\ncases = rmfield(original.cases,{'scientificCacheHash','gravity'});\ninitialManifests = cell(1,numel(cases));\nfor j = 1:numel(cases)\n    assert(scientificHash==original.cases(j).scientificCacheHash);\n    cases(j).scientificState = cache.scientificState;\n    initial = load(fullfile(originalFolder,cases(j).name,'initial-case.mat'),'manifest');\n    assert(initial.manifest.configuration.productCount==1537);\n    initialManifests{j} = initial.manifest;\n    mkdir(fullfile(outputFolder,cases(j).name));\n    copyfile(fullfile(originalFolder,cases(j).name,'initial-case.mat'), ...\n        fullfile(outputFolder,cases(j).name,'initial-case.mat'));\nend\nclear cache saved initial\nreport = qualifyThermalReadiness(outputFolder,cases, ...\n    durationSeconds=3*86400,observationOffsets=linspace(0,3*86400,9), ...\n    pairs=original.options.pairs, ...\n    wallTimeBudgetSeconds=original.options.wallTimeBudgetSeconds, ...\n    caseWallTimeBudgetSeconds=original.options.caseWallTimeBudgetSeconds, ...\n    comparisonCount=original.options.comparisonCount, ...\n    canonicalDamping=original.options.canonicalDamping);\nfor j = 1:numel(cases)\n    initial = load(fullfile(outputFolder,cases(j).name,'initial-case.mat'),'manifest');\n    assert(isequaln(initial.manifest,initialManifests{j}));\n    before = load(fullfile(originalFolder,cases(j).name,'forcing-contract.mat'),'forcingContract');\n    after = load(fullfile(outputFolder,cases(j).name,'forcing-contract.mat'),'forcingContract');\n    assert(isequaln(before.forcingContract.forcing,after.forcingContract.forcing));\nend\ndisp(report.cases);\ndisp(report.budgets);\n",
+      "invocationEvidence": "requested-in-recorded-guard-command"
+    },
+    {
+      "path": "recovery/analyze.m",
+      "bytes": 2094,
+      "sha256": "7d6346aa5e01b1a11985de0efbff3e6eaad43ba09df8988ef1f23cb937c1ae7d",
+      "lastModifiedUTC": "2026-09-14T22:56:35.548651+00:00",
+      "requestedByGuardDirectories": [
+        "recovery/analyzer",
+        "recovery/analyzer-v2"
+      ],
+      "literalRunReferences": [],
+      "source": "restoredefaultpath;\nroot='/Users/jearly/Documents/OceanKitRepositories';cd(fullfile(root,'wave-vortex-model'));addpath('tools');\nconfigureCIEnvironment(pwd,fullfile(root,'OceanKit'));\np=string(strsplit(path,pathsep));bad=contains(p,'/internal-modes');if any(bad),rmpath(char(join(p(bad),pathsep)));end\nassert(contains(which('IMInternalModes'),'/InternalModes-2.0.0-beta.5/'));\nassert(numel(which('IMInternalModes','-all'))==1);maxNumCompThreads(4);\nevidence=fullfile(root,'thermal-readiness-t10-evidence');loaded=load(fullfile(evidence,'recovery','small-tests.mat'));r=loaded.results;rows=table(string({r.Name})',[r.Passed]',[r.Failed]',[r.Incomplete]',[r.Duration]',VariableNames={'test','passed','failed','incomplete','seconds'});writetable(rows,fullfile(evidence,'recovery','small-tests.csv'));disp(groupsummary(rows,'passed'));assertSuccess(r);\n\nfiles=[\"+WVInternal/buildThermalPage.m\" \"UnitTests/TestThermalCampaignResources.m\" \"UnitTests/TestThermalReadiness.m\" \"UnitTests/TestThermalReadinessConstruction.m\" \"UnitTests/TestThermalReadinessDamping.m\" \"UnitTests/TestThermalReadinessDiagnostics.m\" \"UnitTests/TestThermalReadinessRestart.m\" \"UnitTests/TestThermalReadinessWindows.m\" \"tools/ThermalReadinessInventoryObserver.m\" \"tools/auditThermalReadinessConstruction.m\" \"tools/benchmarkPinnedThermalReadinessAPV.m\" \"tools/benchmarkThermalWorkload.m\" \"tools/compareThermalReadinessDiagnostics.m\" \"tools/compareThermalReadinessFields.m\" \"tools/compareThermalReadinessWindows.m\" \"tools/estimateThermalCampaignResources.m\" \"tools/qualifyThermalReadiness.m\" \"tools/qualifyThermalReadinessDiagnostics.m\" \"tools/qualifyThermalReadinessRestart.m\" \"tools/runThermalReadinessStudy.m\" \"tools/thermalReadinessCase.m\" \"tools/thermalReadinessCriteria.m\" \"tools/thermalReadinessDamping.m\" \"tools/thermalReadinessIdentity.m\"];\nfindings=table();for f=files,m=checkcode(f,\"-id\");for j=1:numel(m),findings=[findings;table(f,string(m(j).id),m(j).line,string(m(j).message),VariableNames=[\"file\",\"id\",\"line\",\"message\"])];end;end;disp(findings);writetable(findings,fullfile(evidence,\"recovery\",\"analyzer.csv\"));\n",
+      "invocationEvidence": "requested-in-recorded-guard-command"
+    },
+    {
+      "path": "recovery/analyzerAll.m",
+      "bytes": 2579,
+      "sha256": "69ceeaacae954ba5c00999d1fceb3147b452b5e02b4b4de2cc142ba65869fc05",
+      "lastModifiedUTC": "2026-09-15T00:39:32.080231+00:00",
+      "requestedByGuardDirectories": [
+        "recovery/analyzer-all"
+      ],
+      "literalRunReferences": [
+        "/Users/jearly/Documents/OceanKitRepositories/thermal-readiness-t10-evidence/recovery/setup.m"
+      ],
+      "source": "% Strict final inventory supplied by the coordinator from the committed diff.\n% No source files are changed, and existing Analyzer suppressions are respected.\nrun('/Users/jearly/Documents/OceanKitRepositories/thermal-readiness-t10-evidence/recovery/setup.m');\nevidence=fullfile(root,'thermal-readiness-t10-evidence','recovery');\nfiles=strip(readlines(fullfile(evidence,'authored-matlab-files.txt')));files(files==\"\")=[];\nassert(~isempty(files) && numel(unique(files))==numel(files));\nassert(all(endsWith(files,\".m\")) && all(isfile(files)));\nassert(~any(contains(files,\"tools/free-surface-initialization-study/\")));\nscopeBaseline=\"abe98510ba3ad24276c2af2bd89c80b24209b568\";\nmessagesByFile=cell(numel(files),1);sourceIdentities=strings(numel(files),1);\nseconds=zeros(numel(files),1);findingCount=zeros(numel(files),1);\nfindings=table(strings(0,1),zeros(0,1),strings(0,1),strings(0,1),VariableNames={'file','line','id','message'});\nfor j=1:numel(files)\n    sourceIdentities(j)=thermalReadinessIdentity(fileread(files(j)));\n    clock=tic;messagesByFile{j}=checkcode(files(j),'-id');seconds(j)=toc(clock);\n    findingCount(j)=numel(messagesByFile{j});\n    fprintf('Analyzer %s: %d findings\\n',files(j),findingCount(j));\n    for k=1:findingCount(j)\n        item=messagesByFile{j}(k);\n        findings=[findings;table(files(j),item.line,string(item.id),string(item.message),VariableNames={'file','line','id','message'})]; %#ok<AGROW>\n    end\nend\ninventory=table(files,sourceIdentities,findingCount,seconds,VariableNames={'file','sourceIdentity','findingCount','seconds'});\nenvironment=struct(matlab=string(version),release=string(version('-release')),platform=string(computer),maximumThreads=maxNumCompThreads,providerPath=string(which('IMInternalModes')),scopeBaseline=scopeBaseline,inventoryIdentity=thermalReadinessIdentity(files),sourceIdentityDefinition=\"thermalReadinessIdentity of the exact MATLAB char text returned by fileread\");\nwritetable(inventory,fullfile(evidence,'analyzer-all-inventory.csv'));\nwritetable(findings,fullfile(evidence,'analyzer-all-findings.csv'));\nsave(fullfile(evidence,'analyzer-all.mat'),'inventory','findings','messagesByFile','environment');\nsummary=struct(fileCount=numel(files),findingCount=sum(findingCount),passed=all(findingCount==0),environment=environment);\nwritelines(jsonencode(summary,PrettyPrint=true),fullfile(evidence,'analyzer-all-summary.json'));\nfor j=1:numel(files)\n    assert(isempty(messagesByFile{j}),'Code Analyzer reported diagnostics for %s.',files(j));\nend\nfprintf('Strict Code Analyzer passed all %d files.\\n',numel(files));\n",
+      "invocationEvidence": "requested-in-recorded-guard-command"
+    },
+    {
+      "path": "recovery/analyzerFinal.m",
+      "bytes": 414,
+      "sha256": "19a7edebe9fe3eaa34cc473b89f6af54796d9f79ccb72c7e907bde6f90a880de",
+      "lastModifiedUTC": "2026-09-14T23:31:23.228993+00:00",
+      "requestedByGuardDirectories": [
+        "recovery/analyzer-final-v2"
+      ],
+      "literalRunReferences": [
+        "/Users/jearly/Documents/OceanKitRepositories/thermal-readiness-t10-evidence/recovery/setup.m"
+      ],
+      "source": "run('/Users/jearly/Documents/OceanKitRepositories/thermal-readiness-t10-evidence/recovery/setup.m');\nfiles=[\"tools/qualifyThermalReadiness.m\",\"tools/estimateThermalCampaignResources.m\",\"tools/benchmarkPinnedThermalReadinessAPV.m\",\"tools/runThermalReadinessStudy.m\"];\nclean=true;for file=files,m=checkcode(file,'-id');disp(file);if ~isempty(m),disp(struct2table(m));end;clean=clean && isempty(m);end\nassert(clean);\n",
+      "invocationEvidence": "requested-in-recorded-guard-command"
+    },
+    {
+      "path": "recovery/bootstrap.m",
+      "bytes": 889,
+      "sha256": "b3fbc4fb62181f6e8250498944879045fccc3423108a955cb905c7f1eb7b92fd",
+      "lastModifiedUTC": "2026-09-14T22:54:13.152938+00:00",
+      "requestedByGuardDirectories": [
+        "recovery/bootstrap"
+      ],
+      "literalRunReferences": [],
+      "source": "restoredefaultpath;\nroot='/Users/jearly/Documents/OceanKitRepositories';cd(fullfile(root,'wave-vortex-model'));addpath('tools');\nconfigureCIEnvironment(pwd,fullfile(root,'OceanKit'));\np=string(strsplit(path,pathsep));bad=contains(p,'/internal-modes');if any(bad),rmpath(char(join(p(bad),pathsep)));end\nassert(contains(which('IMInternalModes'),'/InternalModes-2.0.0-beta.5/'));\nassert(numel(which('IMInternalModes','-all'))==1);maxNumCompThreads(4);\nevidence=fullfile(root,'thermal-readiness-t10-evidence');\nclock=tic;[w,manifest]=thermalReadinessCase(struct(),cacheFile=fullfile(evidence,'scientific64.mat'));seconds=toc(clock);assessment=w.constructionAssessment;\nsave(fullfile(evidence,'construction64.mat'),'manifest','seconds','assessment');fprintf('Actual64 construction %.6gs\\n',seconds);\ndelete(w);clear w\nauditThermalReadinessConstruction(fullfile(evidence,'construction-audit'));\n",
+      "invocationEvidence": "requested-in-recorded-guard-command"
+    },
+    {
+      "path": "recovery/budget769.m",
+      "bytes": 687,
+      "sha256": "964d8332a0c8d8dc553a5603cbe7d7c2865fa1f78da36d0c0b4103da8e621af4",
+      "lastModifiedUTC": "2026-09-15T00:02:43.990882+00:00",
+      "requestedByGuardDirectories": [
+        "recovery/budget769"
+      ],
+      "literalRunReferences": [
+        "/Users/jearly/Documents/OceanKitRepositories/thermal-readiness-t10-evidence/recovery/setup.m"
+      ],
+      "source": "run('/Users/jearly/Documents/OceanKitRepositories/thermal-readiness-t10-evidence/recovery/setup.m');\nevidence=fullfile(root,'thermal-readiness-t10-evidence');cache=load(fullfile(evidence,'windows','product','product769','initial-case.mat'),'scientificState');\nc=struct(name=\"startup-refined\",configuration=struct(productCount=769,velocityRMS=.1,seasonalM=100,phase=pi/2),step=900,adaptive=false,scientificState=cache.scientificState);\noffsets=[0,logspace(-4,log10(21600),64)];offsets(end)=21600;\nreport=qualifyThermalReadiness(fullfile(evidence,'windows','budget-refinement-product769'),c,durationSeconds=21600,observationOffsets=offsets,wallTimeBudgetSeconds=900);disp(report.budgets);\n",
+      "invocationEvidence": "requested-in-recorded-guard-command"
+    },
+    {
+      "path": "recovery/budgetCold10.m",
+      "bytes": 86,
+      "sha256": "916447ec174a93f9db6cfc70399cf5072df36ef0979c620652be28be63e0f363",
+      "lastModifiedUTC": "2026-09-15T00:38:54.735429+00:00",
+      "requestedByGuardDirectories": [
+        "recovery/budget-cold10"
+      ],
+      "literalRunReferences": [],
+      "source": "addpath(fileparts(mfilename('fullpath')));\nreport = regimeBudgetRefinement(\"cold10\");\n",
+      "invocationEvidence": "requested-in-recorded-guard-command"
+    },
+    {
+      "path": "recovery/budgetCold100.m",
+      "bytes": 87,
+      "sha256": "2c08c2fa11cd077cfebefeb393b1e445875165706d606bd20e28c7c133f9ed63",
+      "lastModifiedUTC": "2026-09-15T00:38:54.792336+00:00",
+      "requestedByGuardDirectories": [
+        "recovery/budget-cold100"
+      ],
+      "literalRunReferences": [],
+      "source": "addpath(fileparts(mfilename('fullpath')));\nreport = regimeBudgetRefinement(\"cold100\");\n",
+      "invocationEvidence": "requested-in-recorded-guard-command"
+    },
+    {
+      "path": "recovery/budgetPeak10.m",
+      "bytes": 86,
+      "sha256": "f4f183ca59f24739cf4eabd5b379f50030c5ab5e677e3a89bb46916bcd2a2e78",
+      "lastModifiedUTC": "2026-09-15T00:38:54.845170+00:00",
+      "requestedByGuardDirectories": [
+        "recovery/budget-peak10"
+      ],
+      "literalRunReferences": [],
+      "source": "addpath(fileparts(mfilename('fullpath')));\nreport = regimeBudgetRefinement(\"peak10\");\n",
+      "invocationEvidence": "requested-in-recorded-guard-command"
+    },
+    {
+      "path": "recovery/budgetRefinement.m",
+      "bytes": 608,
+      "sha256": "9eaf34f62bed6443db191005090ae543bdbf542e78be41535360556702e3614e",
+      "lastModifiedUTC": "2026-09-14T23:39:21.465051+00:00",
+      "requestedByGuardDirectories": [
+        "recovery/budget-refinement"
+      ],
+      "literalRunReferences": [
+        "/Users/jearly/Documents/OceanKitRepositories/thermal-readiness-t10-evidence/recovery/setup.m"
+      ],
+      "source": "run('/Users/jearly/Documents/OceanKitRepositories/thermal-readiness-t10-evidence/recovery/setup.m');\nevidence=fullfile(root,'thermal-readiness-t10-evidence');cache=load(fullfile(evidence,'scientific64.mat'));\nc=struct(name=\"startup-refined\",configuration=struct(velocityRMS=.1,seasonalM=100,phase=pi/2),step=900,adaptive=false,scientificState=cache.scientificState);\noffsets=[0,logspace(-4,log10(21600),64)];offsets(end)=21600;\nreport=qualifyThermalReadiness(fullfile(evidence,'windows','budget-refinement'),c,durationSeconds=21600,observationOffsets=offsets,wallTimeBudgetSeconds=900);disp(report.budgets);\n",
+      "invocationEvidence": "requested-in-recorded-guard-command"
+    },
+    {
+      "path": "recovery/budgetZero10.m",
+      "bytes": 86,
+      "sha256": "e9611a6edd6cf1c7d78193414a39338bc18b45f9c37abeac8e763f8555415957",
+      "lastModifiedUTC": "2026-09-15T00:38:54.897046+00:00",
+      "requestedByGuardDirectories": [
+        "recovery/budget-zero10"
+      ],
+      "literalRunReferences": [],
+      "source": "addpath(fileparts(mfilename('fullpath')));\nreport = regimeBudgetRefinement(\"zero10\");\n",
+      "invocationEvidence": "requested-in-recorded-guard-command"
+    },
+    {
+      "path": "recovery/budgetZero100.m",
+      "bytes": 87,
+      "sha256": "746e96ca75494377f68ee6cceb39694a67929dd8373dac342e18798f5f17ae9e",
+      "lastModifiedUTC": "2026-09-15T00:38:54.953298+00:00",
+      "requestedByGuardDirectories": [
+        "recovery/budget-zero100"
+      ],
+      "literalRunReferences": [],
+      "source": "addpath(fileparts(mfilename('fullpath')));\nreport = regimeBudgetRefinement(\"zero100\");\n",
+      "invocationEvidence": "requested-in-recorded-guard-command"
+    },
+    {
+      "path": "recovery/checkFinalScope.py",
+      "bytes": 2464,
+      "sha256": "2f5450f79537087eff5b1f97de1a2933de3b6c42d0b3d972ee55e735ecf1fca5",
+      "lastModifiedUTC": "2026-09-15T00:56:53.211303+00:00",
+      "requestedByGuardDirectories": [],
+      "literalRunReferences": [],
+      "source": "import json, subprocess, re, hashlib\nfrom pathlib import Path\nroot=Path(__file__).resolve().parent.parent.parent\nrepo=root/'wave-vortex-model'\ndef git(*args):return subprocess.run(['git',*args],cwd=repo,check=True,capture_output=True,text=True).stdout\nbaseline='abe98510ba3ad24276c2af2bd89c80b24209b568'\nchanged=git('diff','--name-only',baseline).splitlines()\nallowed=lambda p:p.startswith(('Documentation/Validation/Issue441/','tools/','UnitTests/TestThermal')) or p in ['Documentation/Architecture/Issue441ThermalReadinessPlan.md','+WVInternal/buildThermalPage.m']\nassert all(allowed(p) for p in changed),[p for p in changed if not allowed(p)]\nassert not any(p.startswith('tools/free-surface-initialization-study/') for p in changed)\ngit('diff','--check')\nfor paths in [('resources/mpackage.json',),('docs','Documentation/WebsiteDocumentation')]:git('diff','--exit-code',baseline,'--',*paths)\nmanifest=json.loads((repo/'resources/mpackage.json').read_text())\npaths=[f['path'] for f in manifest['folders']]\nassert 'tools' not in paths and 'UnitTests' not in paths and 'Documentation' not in paths\nexport=(root/'OceanKit/tools/ci_release.m').read_text()\nassert 'options.excluded_dist_folders string = [\".git\", \".github\", \"docs\", \"tools\", \"Documentation\", \"OceanKit\"]' in export\nprovenance=json.loads((root/'thermal-readiness-t10-evidence/pinned/provenance.json').read_text())\nfiles=list((repo/'Documentation/Validation/Issue441').rglob('*'))\nfor p in files:\n if not p.is_file():continue\n assert p.suffix not in ['.mat','.nc'],str(p)\n if p.suffix in ['.md','.csv','.json']:\n  data=p.read_bytes();assert b'\\r' not in data,str(p)\n  assert all(line.rstrip(b' \\t')==line for line in data.splitlines()),str(p)\n  if p.suffix=='.json':json.loads(data)\nresult=dict(passed=True,sourceHead=git('rev-parse','HEAD').strip(),baseline=baseline,changedFiles=changed,checkedValidationFiles=sum(p.is_file() for p in files),localLinks=\"checked separately after final artifact collection\",packagePaths=paths,authoringExcludedFromRuntimePath=True,toolsAndDocumentationExcludedFromExport=True,testFilesMayRemainInExport=True,manifestAndGeneratedWebsiteUnchanged=True,unrelatedUntrackedExcluded='tools/free-surface-initialization-study/',scope='Source/repository and linked-artifact checks; scientific results remain in their own ledgers.')\n(root/'thermal-readiness-t10-evidence/recovery/final-scope.json').write_text(json.dumps(result,indent=2)+'\\n')\nprint(json.dumps(result,indent=2))\n",
+      "invocationEvidence": "present-without-recorded-invocation"
+    },
+    {
+      "path": "recovery/closures.m",
+      "bytes": 444,
+      "sha256": "4946a81737bc88dbf7f5f13a965ccd4779aaf6e2aa40d87677ee134fde586563",
+      "lastModifiedUTC": "2026-09-14T23:10:12.425065+00:00",
+      "requestedByGuardDirectories": [
+        "recovery/closures"
+      ],
+      "literalRunReferences": [
+        "/Users/jearly/Documents/OceanKitRepositories/thermal-readiness-t10-evidence/recovery/setup.m"
+      ],
+      "source": "run('/Users/jearly/Documents/OceanKitRepositories/thermal-readiness-t10-evidence/recovery/setup.m');\nevidence=fullfile(root,'thermal-readiness-t10-evidence');\nreport=runThermalReadinessStudy(fullfile(evidence,'windows'),\"closures\",scientificCache=fullfile(evidence,'scientific64.mat'),closureCache=fullfile(evidence,'closure64.mat'),durationSeconds=21600,observationCount=9,wallTimeBudgetSeconds=1500);disp(report.cases);disp(report.coverage);\n",
+      "invocationEvidence": "requested-in-recorded-guard-command"
+    },
+    {
+      "path": "recovery/cold10.m",
+      "bytes": 442,
+      "sha256": "e88b095d1af3f05b6068500a83b4b37b7ec263195dd099083649100eccb27bcc",
+      "lastModifiedUTC": "2026-09-14T23:10:12.425167+00:00",
+      "requestedByGuardDirectories": [
+        "recovery/cold10"
+      ],
+      "literalRunReferences": [
+        "/Users/jearly/Documents/OceanKitRepositories/thermal-readiness-t10-evidence/recovery/setup.m"
+      ],
+      "source": "run('/Users/jearly/Documents/OceanKitRepositories/thermal-readiness-t10-evidence/recovery/setup.m');\nevidence=fullfile(root,'thermal-readiness-t10-evidence');\nreport=runThermalReadinessStudy(fullfile(evidence,'windows'),\"cold10\",scientificCache=fullfile(evidence,'scientific64.mat'),closureCache=fullfile(evidence,'closure64.mat'),durationSeconds=86400,observationCount=9,wallTimeBudgetSeconds=1500);disp(report.cases);disp(report.coverage);\n",
+      "invocationEvidence": "requested-in-recorded-guard-command"
+    },
+    {
+      "path": "recovery/cold100.m",
+      "bytes": 443,
+      "sha256": "c2f2f7dacaf93745724f2aad6c19ec8a2be24bedc07f17bcae35bc55fa330659",
+      "lastModifiedUTC": "2026-09-14T23:10:12.425219+00:00",
+      "requestedByGuardDirectories": [
+        "recovery/cold100"
+      ],
+      "literalRunReferences": [
+        "/Users/jearly/Documents/OceanKitRepositories/thermal-readiness-t10-evidence/recovery/setup.m"
+      ],
+      "source": "run('/Users/jearly/Documents/OceanKitRepositories/thermal-readiness-t10-evidence/recovery/setup.m');\nevidence=fullfile(root,'thermal-readiness-t10-evidence');\nreport=runThermalReadinessStudy(fullfile(evidence,'windows'),\"cold100\",scientificCache=fullfile(evidence,'scientific64.mat'),closureCache=fullfile(evidence,'closure64.mat'),durationSeconds=86400,observationCount=9,wallTimeBudgetSeconds=1500);disp(report.cases);disp(report.coverage);\n",
+      "invocationEvidence": "requested-in-recorded-guard-command"
+    },
+    {
+      "path": "recovery/coldDiagnosticNormalization.m",
+      "bytes": 3562,
+      "sha256": "34e8aa36bce6c7782744ccf6da85eb52852e9d9af08bc09e588732c6d8766c35",
+      "lastModifiedUTC": "2026-09-15T00:53:01.082657+00:00",
+      "requestedByGuardDirectories": [
+        "recovery/cold-diagnostic-normalization"
+      ],
+      "literalRunReferences": [],
+      "source": "% Load-only explanation of the unchanged cold-initial diagnostic gate.\n% No transform, forcing, integrator or scientific provider is constructed.\nrestoredefaultpath;\nroot='/Users/jearly/Documents/OceanKitRepositories';\nsource=fullfile(root,'thermal-readiness-t10-evidence','diagnostic64-regimes');\ndestination=fullfile(root,'thermal-readiness-t10-evidence','cold-diagnostic-normalization');\nif isfolder(destination),error('WV:ColdDiagnosticEvidenceExists','Use the existing extraction or a new output directory.');end\nmkdir(destination);\nrecords=readtable(fullfile(source,'records.csv'),TextType=\"string\");\ncoefficients=table();sourceNorms=table();\nfor iRecord=[1 3]\n    recordId=records.recordId(iRecord);\n    assert(ismember(recordId,[\"cold10-observation1\",\"cold100-observation1\"]));\n    inputFile=fullfile(source,sprintf('diagnosis-record%d-Nz129.mat',iRecord));\n    saved=load(inputFile,'diagnosis');d=saved.diagnosis;\n    for comparison=[\"quadrature\",\"stored-grid\"]\n        if comparison==\"quadrature\"\n            candidate=d.candidate;reference=d.quadratureReference;\n        else\n            candidate=d.quadratureReference;reference=d.storedGridReference;\n        end\n        for family=[\"Ag_q\",\"Ag_0\"]\n            a=candidate.coefficients.(family);b=reference.coefficients.(family);\n            if comparison==\"stored-grid\"\n                alignment=d.modeAlignment.(family);\n                a=a(alignment.sourceRows,:).*alignment.scale;\n            end\n            absoluteChange=norm(a-b,'fro');candidateNorm=norm(a,'fro');referenceNorm=norm(b,'fro');\n            relativeChange=0;\n            if ~isfinite(absoluteChange) || ~isfinite(referenceNorm),relativeChange=Inf;elseif referenceNorm>0,relativeChange=absoluteChange/referenceNorm;elseif absoluteChange>0,relativeChange=Inf;end\n            row=table(recordId,comparison,family,\"s^-1\",candidateNorm,referenceNorm,absoluteChange,max(abs(a-b),[],'all'),relativeChange,VariableNames={'recordId','comparison','family','units','candidateCoefficientFrobeniusNorm','referenceCoefficientFrobeniusNorm','absoluteCoefficientFrobeniusChange','maximumAbsoluteCoefficientChange','unchangedRelativeCriterion'});\n            coefficients=[coefficients;row]; %#ok<AGROW>\n        end\n        for observable=string(fieldnames(reference.residuals)).'\n            a=candidate.residuals.(observable);b=reference.residuals.(observable);\n            for component=1:numel(b.reference)\n                row=table(recordId,comparison,observable,component,a.reference(component),b.reference(component),a.absolute(component),b.absolute(component),VariableNames={'recordId','comparison','observable','component','candidateSourceNorm','referenceSourceNorm','candidateResidualNorm','referenceResidualNorm'});\n                sourceNorms=[sourceNorms;row]; %#ok<AGROW>\n            end\n        end\n    end\n    clear saved d candidate reference a b alignment\nend\nwritetable(coefficients,fullfile(destination,'coefficient-normalization.csv'));\nwritetable(sourceNorms,fullfile(destination,'source-norms.csv'));\nnote=struct(scope=\"postprocessing saved diagnosis arrays only\",sourceDirectory=string(source),sourceRecords=[1 3],gateChanged=false,criterion=\"max across Ag_q and Ag_0 of norm(candidate-reference,'fro')/norm(reference,'fro'); zero/nonfinite cases retain the existing comparison rule\",coefficientUnits=\"s^-1; raw Frobenius norms, not physical field RMS\",matlab=string(version),release=string(version('-release')));\nwritelines(jsonencode(note,PrettyPrint=true),fullfile(destination,'extraction.json'));\ndisp(coefficients);\n",
+      "invocationEvidence": "requested-in-recorded-guard-command"
+    },
+    {
+      "path": "recovery/collectFinalArtifacts.py",
+      "bytes": 13261,
+      "sha256": "0b4ddaad4683a32ec3b62cb11f0e62227a3a74bd6675349421186815c13451d1",
+      "lastModifiedUTC": "2026-09-15T01:08:19.912019+00:00",
+      "requestedByGuardDirectories": [],
+      "literalRunReferences": [],
+      "source": "#!/usr/bin/env python3\n\"\"\"Collect immutable T10 evidence after all MATLAB/timing queues are idle.\n\nUses only Python's standard library. Source files are read without modification.\nNew report destinations must not exist. Run without redirecting this collector's\noutput into the evidence root: such a log would change during its own hash.\n\"\"\"\n\nimport argparse\nimport collections\nimport csv\nimport datetime\nimport hashlib\nimport json\nimport math\nimport os\nfrom pathlib import Path\nimport re\nimport shlex\nimport shutil\nimport subprocess\nimport sys\n\n\ndef utc_time(timestamp):\n    return datetime.datetime.fromtimestamp(timestamp, datetime.timezone.utc).isoformat()\n\n\ndef write_json(path, value):\n    path.write_text(json.dumps(value, indent=2, ensure_ascii=False, allow_nan=False) + \"\\n\", encoding=\"utf-8\")\n\n\ndef write_csv(path, rows, fields):\n    with path.open(\"w\", encoding=\"utf-8\", newline=\"\") as stream:\n        writer = csv.DictWriter(stream, fieldnames=fields, lineterminator=\"\\n\")\n        writer.writeheader()\n        writer.writerows(rows)\n\n\ndef assert_no_active_jobs():\n    result = subprocess.run([\"/bin/ps\", \"-axo\", \"pid=,comm=,args=\"], check=True, capture_output=True, text=True)\n    found = []\n    for line in result.stdout.splitlines():\n        parts = line.strip().split(None, 2)\n        if len(parts) != 3 or int(parts[0]) == os.getpid():\n            continue\n        try:\n            arguments = shlex.split(parts[2])\n        except ValueError:\n            continue\n        names = {Path(argument).name for argument in arguments}\n        matlab_batch = \"-batch\" in arguments and bool(names & {\"matlab\", \"MATLAB\"})\n        queue = bool(names & {\"guardThermalReadiness.py\", \"guard_matlab.py\", \"regimeQueue.py\", \"resolutionQueue.py\", \"completionQueue.py\", \"finalMeasurements.py\"})\n        if matlab_batch or queue:\n            found.append(line.strip())\n    if found:\n        raise RuntimeError(\"Wait until MATLAB batches and timing queues are idle before collecting:\\n\" + \"\\n\".join(found))\n\n\ndef source_files(root):\n    files, skipped = [], []\n    for directory, folders, names in os.walk(root, followlinks=False):\n        directory = Path(directory)\n        retained = []\n        for name in sorted(folders):\n            path = directory / name\n            if path.is_symlink() or name in {\".git\", \"__pycache__\"} or path == root / \"pinned\":\n                skipped.append(str(path.relative_to(root)))\n            else:\n                retained.append(name)\n        folders[:] = retained\n        for name in sorted(names):\n            path = directory / name\n            if path.is_symlink() or not path.is_file():\n                skipped.append(str(path.relative_to(root)))\n            else:\n                files.append(path)\n    provenance = root / \"pinned\" / \"provenance.json\"\n    if not provenance.is_file():\n        raise FileNotFoundError(\"Historical worktree tree is excluded; its required provenance is missing: \" + str(provenance))\n    files.append(provenance)\n    return sorted(files), skipped\n\n\ndef hash_file(path):\n    before = path.stat()\n    digest = hashlib.sha256()\n    with path.open(\"rb\") as stream:\n        for chunk in iter(lambda: stream.read(1024 * 1024), b\"\"):\n            digest.update(chunk)\n    after = path.stat()\n    if (before.st_size, before.st_mtime_ns) != (after.st_size, after.st_mtime_ns):\n        raise RuntimeError(\"Source changed while hashing; collection is not final: \" + str(path))\n    return after, digest.hexdigest()\n\n\ndef outcome(result):\n    if result is None:\n        return \"completion-unrecorded\"\n    reason, code = result.get(\"reason\"), result.get(\"returncode\")\n    if reason == \"memory-limit\":\n        return \"memory-cutoff\"\n    if reason == \"wall-limit\":\n        return \"wall-cutoff\"\n    if reason == \"cancelled\":\n        return \"cancelled\"\n    if reason == \"completed\" and code == 0:\n        return \"completed-process\"\n    if code not in (None, 0):\n        return \"failed-process\"\n    return \"guard-error-or-unresolved\"\n\n\ndef guard_records(root):\n    records = []\n    for path in sorted((root / \"recovery\").rglob(\"contract.json\")):\n        contract = json.loads(path.read_text())\n        if not isinstance(contract, dict) or not isinstance(contract.get(\"command\"), list):\n            continue\n        result_path = path.with_name(\"result.json\")\n        result = json.loads(result_path.read_text()) if result_path.is_file() else None\n        command = contract[\"command\"]\n        is_matlab = \"-batch\" in command and any(Path(str(token)).name in {\"matlab\", \"MATLAB\"} for token in command)\n        nested = any((parent / \"contract.json\").is_file() for parent in path.parent.parents if parent != root and root in parent.parents)\n        records.append(dict(directory=str(path.parent.relative_to(root)), contract=contract, result=result,\n                            outcome=outcome(result), matlabBatch=is_matlab, nestedUnderRecordedGuard=nested))\n    return records\n\n\ndef script_records(root, records):\n    direct = collections.defaultdict(list)\n    run_pattern = re.compile(r\"\\brun\\(\\s*(['\\\"])(.*?)\\1\\s*\\)\")\n    for record in records:\n        for argument in record[\"contract\"][\"command\"]:\n            for match in run_pattern.finditer(str(argument)):\n                requested = Path(match.group(2))\n                if requested.is_absolute():\n                    direct[str(requested)].append(record[\"directory\"])\n    scripts = []\n    for path in sorted((root / \"recovery\").rglob(\"*\")):\n        if not path.is_file() or path.is_symlink() or path.suffix not in {\".m\", \".py\"}:\n            continue\n        data = path.read_bytes()\n        source = data.decode(\"utf-8\")\n        references = [match.group(2) for match in run_pattern.finditer(source)]\n        scripts.append(dict(path=str(path.relative_to(root)), bytes=len(data), sha256=hashlib.sha256(data).hexdigest(),\n                            lastModifiedUTC=utc_time(path.stat().st_mtime), requestedByGuardDirectories=direct.get(str(path), []),\n                            literalRunReferences=references, source=source))\n    invoked = {str(root / script[\"path\"]) for script in scripts if script[\"requestedByGuardDirectories\"]}\n    reachable = set(invoked)\n    changed = True\n    while changed:\n        changed = False\n        for script in scripts:\n            if str(root / script[\"path\"]) in reachable:\n                for reference in script[\"literalRunReferences\"]:\n                    target = str(Path(reference)) if Path(reference).is_absolute() else str((root / script[\"path\"]).parent / reference)\n                    if target not in reachable:\n                        reachable.add(target)\n                        changed = True\n    for script in scripts:\n        path = str(root / script[\"path\"])\n        script[\"invocationEvidence\"] = \"requested-in-recorded-guard-command\" if path in invoked else \"literal-helper-of-requested-script\" if path in reachable else \"present-without-recorded-invocation\"\n    return scripts\n\n\ndef main():\n    parser = argparse.ArgumentParser(description=__doc__)\n    inferred = Path(__file__).resolve().parent.parent\n    parser.add_argument(\"--evidence-root\", type=Path, default=inferred)\n    parser.add_argument(\"--report-root\", type=Path, default=inferred.parent / \"wave-vortex-model/Documentation/Validation/Issue441\")\n    parser.add_argument(\"--copy-subdir\", default=\"evidence\")\n    parser.add_argument(\"--artifact-index\", default=\"artifacts.csv\")\n    parser.add_argument(\"--max-copy-bytes\", type=int, default=2 * 1024 * 1024)\n    args = parser.parse_args()\n    root, report = args.evidence_root.resolve(), args.report_root.resolve()\n    if not root.is_dir() or not report.is_dir() or args.max_copy_bytes <= 0:\n        parser.error(\"Use existing evidence/report roots and a positive copy limit.\")\n    if root == report or root in report.parents or report in root.parents:\n        parser.error(\"Evidence and report roots must be separate non-nested directories.\")\n    for value in (args.copy_subdir, args.artifact_index):\n        if Path(value).name != value or value in {\".\", \"..\"}:\n            parser.error(\"Output names must be single path components.\")\n    copies, index = report / args.copy_subdir, report / args.artifact_index\n    if copies == index:\n        parser.error(\"The evidence directory and artifact CSV need different names.\")\n    if copies.exists() or index.exists():\n        parser.error(\"Use new output names; existing evidence is never overwritten.\")\n    assert_no_active_jobs()\n    files, skipped = source_files(root)\n    records = guard_records(root)\n    scripts = script_records(root, records)\n    artifacts = []\n    for number, path in enumerate(files, 1):\n        stat, digest = hash_file(path)\n        artifacts.append(dict(path=str(path.relative_to(root)), bytes=stat.st_size, sha256=digest,\n                              lastModifiedUTC=utc_time(stat.st_mtime), fileType=path.suffix.lower().lstrip(\".\") or \"unclassified\"))\n        if number % 100 == 0:\n            print(f\"Hashed {number}/{len(files)} retained files\", flush=True)\n    indexed_hashes = {row[\"path\"]: row[\"sha256\"] for row in artifacts}\n    for script in scripts:\n        if indexed_hashes.get(script[\"path\"]) != script[\"sha256\"]:\n            raise RuntimeError(\"Script changed while collecting its source: \" + script[\"path\"])\n    assert_no_active_jobs()\n    copies.mkdir()\n    copied, omitted_small = [], []\n    for row in artifacts:\n        path = root / row[\"path\"]\n        if path.suffix.lower() not in {\".csv\", \".json\"}:\n            continue\n        if path.suffix.lower() == \".json\" and row[\"bytes\"] == 0:\n            omitted_small.append(dict(path=row[\"path\"], reason=\"empty-failed-json-retained-external\"))\n            continue\n        if row[\"bytes\"] > args.max_copy_bytes or path.name == \"memory.csv\":\n            omitted_small.append(dict(path=row[\"path\"], reason=\"size-limit\" if row[\"bytes\"] > args.max_copy_bytes else \"raw-memory-samples-remain-external\"))\n            continue\n        target = copies / \"raw\" / row[\"path\"]\n        target.parent.mkdir(parents=True, exist_ok=True)\n        shutil.copyfile(path, target)\n        copied_stat, copied_digest = hash_file(target)\n        if (copied_stat.st_size, copied_digest) != (row[\"bytes\"], row[\"sha256\"]):\n            raise RuntimeError(\"Source changed before copying; partial destination is retained: \" + str(path))\n        copied.append(dict(sourcePath=row[\"path\"], copiedPath=str(target.relative_to(report)), bytes=row[\"bytes\"], sourceSHA256=row[\"sha256\"], copySHA256=copied_digest))\n    write_csv(copies / \"source-copy-index.csv\", copied, [\"sourcePath\", \"copiedPath\", \"bytes\", \"sourceSHA256\", \"copySHA256\"])\n    write_json(copies / \"guard-executions.json\", dict(schema=\"t10-guard-executions-v1\", scope=\"Process outcomes only; inspect scientific CSV/JSON acceptance separately. A missing result is not completion.\", records=records))\n    write_json(copies / \"recovery-script-sources.json\", dict(schema=\"t10-recovery-script-sources-v1\",\n        scope=\"Retained source at collection time. Guard contracts prove requested commands, not that every script/helper line ran. Source bytes were not independently locked at each historical invocation; present-only scripts are not executed evidence.\", scripts=scripts))\n    totals = {\"recordedMatlabGuardElapsedSeconds\": 0.0, \"recordedOtherGuardElapsedSeconds\": 0.0}\n    outcome_counts = collections.Counter(record[\"outcome\"] for record in records)\n    for record in records:\n        elapsed = (record[\"result\"] or {}).get(\"elapsedSeconds\")\n        if record[\"nestedUnderRecordedGuard\"] or not isinstance(elapsed, (int, float)) or not math.isfinite(elapsed):\n            continue\n        key = \"recordedMatlabGuardElapsedSeconds\" if record[\"matlabBatch\"] else \"recordedOtherGuardElapsedSeconds\"\n        totals[key] += elapsed\n    write_json(copies / \"collection.json\", dict(schema=\"t10-final-artifacts-v1\", collectedAtUTC=utc_time(datetime.datetime.now().timestamp()),\n        evidenceRoot=str(root), reportRoot=str(report), filesHashed=len(artifacts), smallFilesCopied=len(copied), skippedTreesOrLinks=skipped,\n        omittedSmallFiles=omitted_small, guardOutcomeCounts=dict(outcome_counts), elapsed=totals,\n        elapsedScope=\"Sums of available post-restart, non-nested guard elapsed times, including startup, failures and cutoffs. Not CPU time, total task lifetime, or proof of the study budget; overlapping jobs and unguarded work are not reconstructed. Lost pre-reboot time is unmeasured here.\",\n        pinScope=\"Detached historical checkout payloads are excluded; pinned/provenance.json records their exact revisions and setup-file hashes.\",\n        artifactScope=\"All regular retained evidence files, including MAT/NetCDF/logs/scripts, are hashed outside git. Small CSV/JSON copies preserve original bytes; generated indexes use LF. No scientific outcome is promoted by process completion.\"))\n    write_csv(index, artifacts, [\"path\", \"bytes\", \"sha256\", \"lastModifiedUTC\", \"fileType\"])\n    print(f\"Collected {len(copied)} small evidence files; indexed {len(artifacts)} persistent artifacts.\")\n\n\nif __name__ == \"__main__\":\n    try:\n        main()\n    except Exception as exception:\n        print(f\"Collection failed: {type(exception).__name__}: {exception}\", file=sys.stderr)\n        sys.exit(1)\n",
+      "invocationEvidence": "present-without-recorded-invocation"
+    },
+    {
+      "path": "recovery/compareActivity.m",
+      "bytes": 431,
+      "sha256": "cf10baa0ef172904d83ff0f0decbb667928fb03c86b8ea66847be20f87c4f8cb",
+      "lastModifiedUTC": "2026-09-14T23:56:52.446942+00:00",
+      "requestedByGuardDirectories": [
+        "recovery/activity-comparison"
+      ],
+      "literalRunReferences": [
+        "/Users/jearly/Documents/OceanKitRepositories/thermal-readiness-t10-evidence/recovery/setup.m"
+      ],
+      "source": "run('/Users/jearly/Documents/OceanKitRepositories/thermal-readiness-t10-evidence/recovery/setup.m');\nevidence=fullfile(root,'thermal-readiness-t10-evidence');\nbase=fullfile(evidence,'windows','activity');report=compareThermalReadinessWindows(fullfile(base,'nonlinear','window.mat'),fullfile(base,'companion','window.mat'),fullfile(evidence,'window-comparisons','activity-six-hours'),kind=\"nonlinear activity\");disp(report.status);\n",
+      "invocationEvidence": "requested-in-recorded-guard-command"
+    },
+    {
+      "path": "recovery/compareActivityThreeDays.m",
+      "bytes": 485,
+      "sha256": "2abed09442461c46389bc985f1a672bf5c727c59c4ca849596c87284afded983",
+      "lastModifiedUTC": "2026-09-15T00:50:53.730978+00:00",
+      "requestedByGuardDirectories": [
+        "recovery/activity-three-days-comparison"
+      ],
+      "literalRunReferences": [
+        "/Users/jearly/Documents/OceanKitRepositories/thermal-readiness-t10-evidence/recovery/setup.m"
+      ],
+      "source": "run('/Users/jearly/Documents/OceanKitRepositories/thermal-readiness-t10-evidence/recovery/setup.m');\nevidence = fullfile(root,'thermal-readiness-t10-evidence');\nbase = fullfile(evidence,'windows-activity-three-days');\nreport = compareThermalReadinessWindows( ...\n    fullfile(base,'nonlinear','window.mat'), ...\n    fullfile(base,'companion','window.mat'), ...\n    fullfile(evidence,'window-comparisons','activity-three-days'), ...\n    kind=\"nonlinear activity\");\ndisp(report.status);\n",
+      "invocationEvidence": "requested-in-recorded-guard-command"
+    },
+    {
+      "path": "recovery/compareClosures.m",
+      "bytes": 450,
+      "sha256": "dfdc5959dc144db1a67a6f616aebd016fa4b91e49e14a4b30a090541206131a5",
+      "lastModifiedUTC": "2026-09-14T23:40:09.176292+00:00",
+      "requestedByGuardDirectories": [
+        "recovery/compare-closures"
+      ],
+      "literalRunReferences": [
+        "/Users/jearly/Documents/OceanKitRepositories/thermal-readiness-t10-evidence/recovery/setup.m"
+      ],
+      "source": "run('/Users/jearly/Documents/OceanKitRepositories/thermal-readiness-t10-evidence/recovery/setup.m');\nevidence=fullfile(root,'thermal-readiness-t10-evidence');\nbase=fullfile(evidence,'windows','closures');\nfor variant=[\"horizontal\",\"apv\"]\n report=compareThermalReadinessWindows(fullfile(base,variant,'window.mat'),fullfile(base,'none','window.mat'),fullfile(evidence,'window-comparisons',variant+\"-none\"),kind=\"closure bias\");disp(report.status);\nend\n",
+      "invocationEvidence": "requested-in-recorded-guard-command"
+    },
+    {
+      "path": "recovery/compareRetention.m",
+      "bytes": 815,
+      "sha256": "471d6cb97da558d6d750f18da0bf38ab5214b5e9341488a9b6f7402a328a5c46",
+      "lastModifiedUTC": "2026-09-14T23:57:22.830193+00:00",
+      "requestedByGuardDirectories": [
+        "recovery/retention-comparison"
+      ],
+      "literalRunReferences": [
+        "/Users/jearly/Documents/OceanKitRepositories/thermal-readiness-t10-evidence/recovery/setup.m"
+      ],
+      "source": "run('/Users/jearly/Documents/OceanKitRepositories/thermal-readiness-t10-evidence/recovery/setup.m');\nevidence=fullfile(root,'thermal-readiness-t10-evidence');rows=table();\nfor name=[\"step1800\",\"step900\"]\n a=load(fullfile(evidence,'windows','time',name,'window.mat'),'run');b=load(fullfile(evidence,'windows-v2','time',name,'window.mat'),'run');\n row=table(name,isequaln(a.run.scientificState,b.run.scientificState),isequaln(a.run.snapshots,b.run.snapshots),isequaln(a.run.acceptedStepSeconds,b.run.acceptedStepSeconds),VariableNames={'caseName','scientificArraysExact','allSnapshotsExact','acceptedStepsExact'});rows=[rows;row];clear a b\nend\nwritetable(rows,fullfile(evidence,'recovery','retention-comparison.csv'));assert(all(rows.scientificArraysExact&rows.allSnapshotsExact&rows.acceptedStepsExact));disp(rows);\n",
+      "invocationEvidence": "requested-in-recorded-guard-command"
+    },
+    {
+      "path": "recovery/completionQueue.py",
+      "bytes": 2275,
+      "sha256": "207ce8412a7ae35720d556e3717b55362fd69ef5888b23f6a0fa26ef5df5a98c",
+      "lastModifiedUTC": "2026-09-15T00:45:49.445831+00:00",
+      "requestedByGuardDirectories": [],
+      "literalRunReferences": [
+        "\"+str(base/script)+\""
+      ],
+      "source": "import json, subprocess, sys, time\nfrom pathlib import Path\nbase=Path(__file__).resolve().parent\nrepo=base.parent.parent/'wave-vortex-model'\njobs=[('activity-comparison','compareActivity.m',8,900),('diagnostic-regimes','diagnosticRegimes.m',16,900),('budget-cold10','budgetCold10.m',16,900),('budget-cold100','budgetCold100.m',16,900),('budget-peak10','budgetPeak10.m',16,900),('budget-zero10','budgetZero10.m',16,900),('budget-zero100','budgetZero100.m',16,900),('resources','resources.m',8,600),('resources769','resources769.m',8,600),('metadata','metadata.m',8,900),('legacy-forcing-export','exportLegacyForcings.m',16,900),('analyzer-all','analyzerAll.m',8,600)]\nrecorded=0.0\nfor result_path in base.rglob('result.json'):\n    contract_path=result_path.with_name('contract.json')\n    if not contract_path.is_file():continue\n    result=json.loads(result_path.read_text());contract=json.loads(contract_path.read_text())\n    if '-batch' in contract.get('command',[]):recorded+=result.get('elapsedSeconds',0)\nbudget=min(3600.0,max(0.0,4*3600-recorded))\nstarted=time.monotonic()\n(base/'completion-queue-contract.json').write_text(json.dumps(dict(recordedPostRestartMatlabGuardSeconds=recorded,remainingQueueWallSeconds=budget,budgetScope='Post-restart retained elapsed only; unavailable pre-reboot compute is not reconstructed'),indent=2)+'\\n')\nrows=[]\nfor name,script,limit,seconds in jobs:\n    remaining=int(budget-(time.monotonic()-started))\n    if remaining<1:print('STOP completion queue: elapsed budget exhausted',flush=True);break\n    seconds=min(seconds,remaining)\n    print('START '+name,flush=True)\n    command=[sys.executable,str(repo/'tools/guardThermalReadiness.py'),'--directory',str(base/name),'--limit-gib',str(limit),'--seconds',str(seconds),'--','matlab','-batch',\"run('\"+str(base/script)+\"')\"]\n    status=subprocess.run(command,cwd=repo).returncode\n    rows.append(dict(name=name,returncode=status));(base/'completion-queue.json').write_text(json.dumps(rows,indent=2)+'\\n')\n    print('END '+name+' status='+str(status),flush=True)\n    result_path=base/name/'result.json'\n    result=json.loads(result_path.read_text()) if result_path.is_file() else {}\n    if status in (130,143) or result.get('reason')=='cancelled' or result.get('cancellationSignals'):break\n",
+      "invocationEvidence": "present-without-recorded-invocation"
+    },
+    {
+      "path": "recovery/constantControl.m",
+      "bytes": 2458,
+      "sha256": "8713d67eed75be9cb4086303d4d772776b4afc44328161b8edf1260a37488730",
+      "lastModifiedUTC": "2026-09-14T23:12:38.076923+00:00",
+      "requestedByGuardDirectories": [
+        "recovery/constant-control"
+      ],
+      "literalRunReferences": [
+        "/Users/jearly/Documents/OceanKitRepositories/thermal-readiness-t10-evidence/recovery/setup.m"
+      ],
+      "source": "run('/Users/jearly/Documents/OceanKitRepositories/thermal-readiness-t10-evidence/recovery/setup.m');\nevidence=fullfile(root,'thermal-readiness-t10-evidence');addpath('UnitTests/Fixtures');\nc=struct(Nx=18,Ny=18,Nz=65,thermalCount=17,mdaCount=4,assemblyCount=0,productCount=0,inverseScale=0,domainSize=[5e5 5e5 1000],N0=.01,velocityRMS=.01,kappa_z=0,shouldIncludeSeasonal=false,shouldIncludeBottomDrag=false);\n[w,manifest]=thermalReadinessCase(c);\n% Explicit P0,...,P4 monomial coefficients connect this harness's declared\n% pressure to the independent signed Fourier-convolution reference.\nlegendreToMonomial=[0 0 0 0 1;0 0 0 1 0;0 0 1.5 0 -.5;0 2.5 0 -1.5 0;4.375 0 -3.75 0 .375];\nmodes=struct('k',{},'l',{},'p',{});\nfor j=1:3\n    k=2*pi*manifest.normalization.horizontalModes(j,1)/w.Lx;l=2*pi*manifest.normalization.horizontalModes(j,2)/w.Ly;\n    p=transpose(manifest.normalization.pressurePolynomial(:,j))*legendreToMonomial;\n    modes(end+1)=struct(k=k,l=l,p=p);modes(end+1)=struct(k=-k,l=-l,p=conj(p));\nend\nactual=w.nonlinearCoefficientTendency();a=thermalConvolutionReference(w,modes,65);b=thermalConvolutionReference(w,modes,129);adapter=w.linearEvolutionData();\nscale=adapter.physicalErrorNorms(adapter.toModes(b));allowance=[1e-22 1e-19 1e-19 1e-15 1e-15]+1e-8*scale;\nerror=adapter.physicalErrorNorms(adapter.toModes(struct(Ath=actual.Ath-b.Ath,Amda=actual.Amda-b.Amda)));\nuncertainty=adapter.physicalErrorNorms(adapter.toModes(struct(Ath=a.Ath-b.Ath,Amda=a.Amda-b.Amda)));\nfolder=fullfile(evidence,'constant-reference');mkdir(folder);save(fullfile(folder,'reference.mat'),'manifest','actual','a','b','scale','allowance','error','uncertainty');\nwritetable(table((1:5)',error(:),uncertainty(:),allowance(:),error(:)./allowance(:),uncertainty(:)./allowance(:),VariableNames={'physicalNormIndex','error','quadratureUncertainty','allowance','errorRatio','referenceRatio'}),fullfile(folder,'reference.csv'));\nassert(all(error<=allowance) && all(uncertainty<=.2*allowance));\ncases=repmat(struct(name=\"\",configuration=c,step=1800,scientificState=w.scientificState),1,3);\nfor j=1:3,cases(j).name=\"step\"+string(1800/2^(j-1));cases(j).step=1800/2^(j-1);end\ndelete(w);\nreport=qualifyThermalReadiness(fullfile(evidence,'windows','constant'),cases,durationSeconds=21600,observationOffsets=linspace(0,21600,9),pairs=struct(candidate=\"step1800\",reference=\"step900\",axis=\"time\",refinement=\"step450\"),comparisonCount=65,wallTimeBudgetSeconds=300);disp(report.cases);\n",
+      "invocationEvidence": "requested-in-recorded-guard-command"
+    },
+    {
+      "path": "recovery/diagnostic64.m",
+      "bytes": 1645,
+      "sha256": "391ac5c7c152520d58a56ff6b14e100e0db162950750125b6e98e2ac8dc4a901",
+      "lastModifiedUTC": "2026-09-14T23:00:47.105051+00:00",
+      "requestedByGuardDirectories": [
+        "recovery/diagnostic64"
+      ],
+      "literalRunReferences": [],
+      "source": "restoredefaultpath;\nroot='/Users/jearly/Documents/OceanKitRepositories';cd(fullfile(root,'wave-vortex-model'));addpath('tools');\nconfigureCIEnvironment(pwd,fullfile(root,'OceanKit'));\np=string(strsplit(path,pathsep));bad=contains(p,'/internal-modes');if any(bad),rmpath(char(join(p(bad),pathsep)));end\nassert(contains(which('IMInternalModes'),'/InternalModes-2.0.0-beta.5/'));\nassert(numel(which('IMInternalModes','-all'))==1);maxNumCompThreads(4);\nevidence=fullfile(root,'thermal-readiness-t10-evidence');\ncache=load(fullfile(evidence,'scientific64.mat'));w=WVTransformFreeSurfaceThermalQG(scientificState=cache.scientificState,coefficientState=cache.coefficientState,t=cache.manifest.configuration.t);\nrecord=struct(caseId=cache.manifest.caseId,recordId=\"manufactured-initial\",state=w.coefficientState(),time=w.t,forcingMultiplier=10,seasonalPhase=0,regime=\"capacity-only\");\nr=qualifyThermalReadinessDiagnostics(w,record,fullfile(evidence,'diagnostic64-initial'),diagnosticBasisDirectory=fullfile(evidence,'diagnostic-bases64'));disp(r.summary);\nclock=tic;integralN2=w.N20*(-expm1(-2*w.inverseScale*w.Lz))/(2*w.inverseScale);\napv=WVTransformFreeSurfaceQG([w.Lx w.Ly w.Lz],[64 64 129],N2Function=w.N2Function,g=w.g,latitude=w.latitude,rho0=w.rho0,g0=-integralN2,gd=integralN2,apvModeCount=6,mdaModeCount=1,shouldAntialias=true,shouldCheckQuadraticAliasing=false);\nf=WVThermalAPVDamping.fromAPVTransform(w,apv,apvCutoffFraction=.5);canonical=struct();for name=string(f.classRequiredPropertyNames()),canonical.(name)=f.(name);end;closureSetupSeconds=toc(clock);\nsave(fullfile(evidence,'closure64.mat'),'canonical','closureSetupSeconds','-v7.3');\n",
+      "invocationEvidence": "requested-in-recorded-guard-command"
+    },
+    {
+      "path": "recovery/diagnosticRegimes.m",
+      "bytes": 3511,
+      "sha256": "a356f1f2a1cc1aca38462a72cd13354bda3d26cb77d94177ae794e0874aac2f7",
+      "lastModifiedUTC": "2026-09-15T00:43:55.000722+00:00",
+      "requestedByGuardDirectories": [
+        "recovery/diagnostic-regimes"
+      ],
+      "literalRunReferences": [
+        "/Users/jearly/Documents/OceanKitRepositories/thermal-readiness-t10-evidence/recovery/setup.m"
+      ],
+      "source": "run('/Users/jearly/Documents/OceanKitRepositories/thermal-readiness-t10-evidence/recovery/setup.m');\nevidence=fullfile(root,'thermal-readiness-t10-evidence');\np=string(strsplit(path,pathsep));bad=contains(p,\"InternalModes\")|contains(p,\"internal-modes\");if any(bad),rmpath(char(join(p(bad),pathsep)));end\nassert(isempty(which('IMInternalModes')));assert(isempty(which('IMSolverSpectral')));\ncache=load(fullfile(evidence,'scientific64.mat'));w=WVTransformFreeSurfaceThermalQG(scientificState=cache.scientificState);clear cache\nrecords=struct('caseId',{},'recordId',{},'state',{},'time',{},'forcingMultiplier',{},'seasonalPhase',{},'regime',{});\nblocks=[\"cold10\",\"cold100\",\"peak10\",\"zero10\",\"closures\",\"zero100\"];\nnames=[\"cold10\",\"cold100\",\"peak10\",\"zero10\",\"none\",\"zero100\"];\nregimes=[\"cold\",\"cold\",\"developed-peak\",\"developed-zero\",\"developed-peak\",\"developed-zero\"];\nfor j=1:numel(blocks)\n saved=load(fullfile(evidence,'windows',blocks(j),names(j),'window.mat'),'run');window=saved.run;c=window.manifest.configuration;\n for k=[1 numel(window.snapshots)]\n  s=window.snapshots{k};records(end+1)=struct(caseId=window.initialCaseId,recordId=blocks(j)+\"-observation\"+string(k),state=s.state,time=s.t,forcingMultiplier=c.seasonalM,seasonalPhase=2*pi*s.t/c.period+c.phase,regime=regimes(j));\n end\n clear saved window s\nend\nfolder=fullfile(evidence,'diagnostic64-regimes');mkdir(folder);\ncopyfile(fullfile(evidence,'restart64-horizontal','checkpoint.nc'),fullfile(folder,'restored-input.nc'));\nclock=tic;m=WVModel.modelFromFile(char(fullfile(folder,'restored-input.nc')));readSeconds=toc(clock);\nr=load(fullfile(evidence,'restart64-horizontal','restart-reference.mat'),'checkpoint','contract');assert(isequal(m.wvt.coefficientState(),r.checkpoint.coefficients));\nrecords(end+1)=struct(caseId=r.contract.caseId,recordId=\"provider-free-checkpoint\",state=m.wvt.coefficientState(),time=m.wvt.t,forcingMultiplier=10,seasonalPhase=2*pi*m.wvt.t/(365.25*86400)+pi/2,regime=\"developed-peak\");\nrestored=m.wvt;m.closeNetCDFFile();delete(m);delete(restored);clear m restored r\nsave(fullfile(folder,'provider-free-check.mat'),'readSeconds');\nreport=qualifyThermalReadinessDiagnostics(w,records,folder,diagnosticBasisDirectory=fullfile(evidence,'diagnostic-bases64'),shouldConstructMissingBases=false);disp(report.summary);disp(report.regimes);\ndelete(w);\n\n% Diagnose the selected product769/no-optional-damping checkpoint using its\n% own restored scientific state, separately from the original1537 record set.\nfolder769=fullfile(evidence,'diagnostic64-product769-restored');mkdir(folder769);\ncopyfile(fullfile(evidence,'restart64-product769-none','checkpoint.nc'),fullfile(folder769,'restored-input.nc'));\nclock=tic;m=WVModel.modelFromFile(char(fullfile(folder769,'restored-input.nc')));readSeconds=toc(clock);\nr=load(fullfile(evidence,'restart64-product769-none','restart-reference.mat'),'checkpoint','contract');\nassert(isequal(m.wvt.coefficientState(),r.checkpoint.coefficients));\nrecord=struct(caseId=r.contract.caseId,recordId=\"provider-free-product769-checkpoint\",state=m.wvt.coefficientState(),time=m.wvt.t,forcingMultiplier=10,seasonalPhase=2*pi*m.wvt.t/(365.25*86400)+pi/2,regime=\"developed-peak\");\nw769=m.wvt;m.closeNetCDFFile();delete(m);clear m r\nsave(fullfile(folder769,'provider-free-check.mat'),'readSeconds');\nreport769=qualifyThermalReadinessDiagnostics(w769,record,folder769,diagnosticBasisDirectory=fullfile(evidence,'diagnostic-bases64'),shouldConstructMissingBases=false);disp(report769.summary);\ndelete(w769);\n",
+      "invocationEvidence": "requested-in-recorded-guard-command"
+    },
+    {
+      "path": "recovery/diskWindowTests.m",
+      "bytes": 534,
+      "sha256": "9aeb16b8fa833b7fd7843a2a541614da0f9c981c1f2720f09bdd8e57708bf5d4",
+      "lastModifiedUTC": "2026-09-14T23:28:39.170625+00:00",
+      "requestedByGuardDirectories": [
+        "recovery/disk-window-tests"
+      ],
+      "literalRunReferences": [
+        "/Users/jearly/Documents/OceanKitRepositories/thermal-readiness-t10-evidence/recovery/setup.m",
+        "/Users/jearly/Documents/OceanKitRepositories/thermal-readiness-t10-evidence/recovery/analyzerFinal.m"
+      ],
+      "source": "run('/Users/jearly/Documents/OceanKitRepositories/thermal-readiness-t10-evidence/recovery/setup.m');\naddpath('UnitTests','UnitTests/Fixtures');\nsuite=testsuite('UnitTests/TestThermalReadiness.m','Name','*boundedLinearComparisonRequiresIndependentReference*');assert(numel(suite)==1);results=run(suite);save(fullfile(root,'thermal-readiness-t10-evidence','recovery','disk-window-tests.mat'),'results');assertSuccess(results);\nrun('/Users/jearly/Documents/OceanKitRepositories/thermal-readiness-t10-evidence/recovery/analyzerFinal.m');\n",
+      "invocationEvidence": "requested-in-recorded-guard-command"
+    },
+    {
+      "path": "recovery/docsFinal.m",
+      "bytes": 482,
+      "sha256": "89dce96900848d339375258668e99a050bba6d0d202100938cf57a46406a022f",
+      "lastModifiedUTC": "2026-09-15T00:39:59.127671+00:00",
+      "requestedByGuardDirectories": [
+        "recovery/docs-final"
+      ],
+      "literalRunReferences": [
+        "/Users/jearly/Documents/OceanKitRepositories/thermal-readiness-t10-evidence/recovery/setup.m"
+      ],
+      "source": "run('/Users/jearly/Documents/OceanKitRepositories/thermal-readiness-t10-evidence/recovery/setup.m');\nconfigureCIEnvironment(pwd,fullfile(root,'OceanKit'),documentationPackageSpecifier=\"ClassDocumentation@1.3.2\");\np=string(strsplit(path,pathsep));bad=contains(p,'/internal-modes');if any(bad),rmpath(char(join(p(bad),pathsep)));end\nassert(contains(which('IMInternalModes'),'/InternalModes-2.0.0-beta.5/'));\nassert(numel(which('IMInternalModes','-all'))==1);\nbuildtool(\"docs:check\");\n",
+      "invocationEvidence": "requested-in-recorded-guard-command"
+    },
+    {
+      "path": "recovery/exportLegacyForcings.m",
+      "bytes": 5070,
+      "sha256": "eeb0b205f2f0112a961af7d5d7f4fab5c81201c4369e6691613fa6ccb871b5f8",
+      "lastModifiedUTC": "2026-09-15T00:26:02.389315+00:00",
+      "requestedByGuardDirectories": [
+        "recovery/legacy-forcing-export"
+      ],
+      "literalRunReferences": [
+        "/Users/jearly/Documents/OceanKitRepositories/thermal-readiness-t10-evidence/recovery/setup.m"
+      ],
+      "source": "% Reconstruct forcing sidecars without changing any original window artifact.\n% These records are explicitly post-run reconstructions, not pre-run captures.\nrun('/Users/jearly/Documents/OceanKitRepositories/thermal-readiness-t10-evidence/recovery/setup.m');\nevidence=fullfile(root,'thermal-readiness-t10-evidence');\ndestination=fullfile(evidence,'legacy-forcing-reconstruction');\nif isfolder(destination),error('WV:ReadinessForcingExportExists','Use the existing companion evidence or choose a new destination; no original record is overwritten.');end\npaths=string(strsplit(path,pathsep));selected=contains(paths,\"InternalModes\")|contains(paths,\"internal-modes\");\nif any(selected),rmpath(char(join(paths(selected),pathsep)));end\nassert(isempty(which('IMInternalModes')));assert(isempty(which('IMSolverSpectral')));\nsourceIdentities=struct(caseHelper=thermalReadinessIdentity(fileread(which('thermalReadinessCase'))),forcingHelper=thermalReadinessIdentity(fileread(which('thermalReadinessForcingState'))),closureHelper=thermalReadinessIdentity(fileread(which('thermalReadinessDamping'))),exporter=thermalReadinessIdentity(fileread([mfilename('fullpath') '.m'])));\nmkdir(destination);index=table();\nfor collection=[\"windows\",\"windows-v2\"]\n    files=dir(fullfile(evidence,collection,'*','*','window.mat'));\n    for iFile=1:numel(files)\n        caseFolder=string(files(iFile).folder);runFolder=fileparts(caseFolder);\n        [~,caseName]=fileparts(caseFolder);[~,block]=fileparts(runFolder);\n        if isfile(fullfile(caseFolder,'forcing-contract.mat')),continue;end\n        cases=readtable(fullfile(runFolder,'cases.csv'),TextType=\"string\");\n        row=find(cases.caseName==caseName);\n        if ~isscalar(row) || ~ismember(cases.status(row),[\"COMPLETE\",\"BUDGET FAIL\"]),continue;end\n        saved=load(fullfile(runFolder,'run-contract.mat'),'contract');contract=saved.contract;clear saved\n        assert(thermalReadinessIdentity(rmfield(contract,'runId'))==contract.runId);\n        executionId=thermalReadinessIdentity(struct(runId=contract.runId,caseName=caseName));\n        assert(executionId==cases.executionId(row));\n        selected=find([contract.cases.name]==caseName);assert(isscalar(selected));\n        cache=load(fullfile(caseFolder,'initial-case.mat'),'scientificState','coefficientState','manifest');\n        manifest=cache.manifest;\n        assert(thermalReadinessIdentity(rmfield(manifest,'caseId'))==manifest.caseId);\n        assert(thermalReadinessIdentity(cache.scientificState)==manifest.scientificStateHash);\n        assert(thermalReadinessIdentity(cache.coefficientState)==manifest.coefficientStateHash);\n        assert(manifest.caseId==cases.initialCaseId(row));\n        % Use the stored state as an exact-copy source. This avoids refitting\n        % or renormalizing a cold or transferred initial state during export.\n        source=WVTransformFreeSurfaceThermalQG(scientificState=cache.scientificState,coefficientState=cache.coefficientState,t=manifest.configuration.t);\n        source.t0=manifest.configuration.t0;sourceCleanup=onCleanup(@()deleteIfValid(source));\n        w=thermalReadinessCase(manifest.configuration,scientificState=cache.scientificState,source=source);\n        transformCleanup=onCleanup(@()deleteIfValid(w));\n        if contract.cases(selected).dampingVariant~=\"none\"\n            w.addForcing(thermalReadinessDamping(w,contract.options.canonicalDamping,variant=contract.cases(selected).dampingVariant));\n        end\n        assert(isequal(w.coefficientState(),cache.coefficientState));\n        assert(isempty(fieldnames(w.constructionAssessment)));\n        forcingContract=struct(capture=\"post-run reconstruction from recorded inputs\",executionId=executionId,initialCaseId=manifest.caseId,scientificStateHash=manifest.scientificStateHash,coefficientStateHash=manifest.coefficientStateHash,t=w.t,t0=w.t0,forcing={thermalReadinessForcingState(w)});\n        forcingContract.forcingHash=thermalReadinessIdentity(forcingContract.forcing);\n        provenance=struct(sourceWindow=fullfile(caseFolder,'window.mat'),initialCaseFile=fullfile(caseFolder,'initial-case.mat'),parentContractFile=fullfile(runFolder,'run-contract.mat'),runId=contract.runId,sourceIdentities=sourceIdentities,providerAvailable=~isempty(which('IMInternalModes')));\n        output=fullfile(destination,collection+\"-\"+block+\"-\"+caseName+\"-\"+executionId+\".mat\");\n        save(output,'forcingContract','provenance');\n        index=[index;table(collection,block,caseName,executionId,forcingContract.initialCaseId,forcingContract.forcingHash,string(output),VariableNames={'collection','block','caseName','executionId','initialCaseId','forcingHash','companionFile'})]; %#ok<AGROW>\n        writetable(index,fullfile(destination,'index.csv'));\n        fprintf('Exported post-run forcing reconstruction: %s/%s/%s\\n',collection,block,caseName);\n        clear transformCleanup sourceCleanup w source cache forcingContract contract cases manifest provenance\n    end\nend\ndisp(index);\n\nfunction deleteIfValid(value)\nif ~isempty(value) && isvalid(value),delete(value);end\nend\n",
+      "invocationEvidence": "requested-in-recorded-guard-command"
+    },
+    {
+      "path": "recovery/finalMeasurements.py",
+      "bytes": 2007,
+      "sha256": "3ee2672802b828c90083c75329808ff9d1b51559b7707492f7b4334c4dac5716",
+      "lastModifiedUTC": "2026-09-15T01:08:19.911002+00:00",
+      "requestedByGuardDirectories": [],
+      "literalRunReferences": [
+        "\"+str(base/script)+\""
+      ],
+      "source": "import json, subprocess, sys, time\nfrom pathlib import Path\nbase=Path(__file__).resolve().parent\nrepo=base.parent.parent/'wave-vortex-model'\njobs=[('cold-diagnostic-normalization','coldDiagnosticNormalization.m',8,600),('metadata-v2','metadataV2.m',8,900),('activity-three-days','activityThreeDays.m',16,1500),('activity-three-days-comparison','compareActivityThreeDays.m',8,900)]\nrecorded=0.0\nfor result_path in base.rglob('result.json'):\n    contract_path=result_path.with_name('contract.json')\n    if not contract_path.is_file():continue\n    result=json.loads(result_path.read_text());contract=json.loads(contract_path.read_text())\n    if '-batch' in contract.get('command',[]):recorded+=result.get('elapsedSeconds',0)\nbudget=min(1800.0,max(0.0,4*3600-recorded))\nstarted=time.monotonic()\n(base/'final-measurements-contract.json').write_text(json.dumps(dict(recordedPostRestartMatlabGuardSeconds=recorded,remainingQueueWallSeconds=budget,budgetScope='Post-restart retained elapsed only; unavailable pre-reboot compute is not reconstructed'),indent=2)+'\\n')\nrows=[]\nfor name,script,limit,seconds in jobs:\n    remaining=int(budget-(time.monotonic()-started))\n    if remaining<1:print('STOP final measurements queue: elapsed budget exhausted',flush=True);break\n    seconds=min(seconds,remaining)\n    print('START '+name,flush=True)\n    command=[sys.executable,str(repo/'tools/guardThermalReadiness.py'),'--directory',str(base/name),'--limit-gib',str(limit),'--seconds',str(seconds),'--','matlab','-batch',\"run('\"+str(base/script)+\"')\"]\n    status=subprocess.run(command,cwd=repo).returncode\n    rows.append(dict(name=name,returncode=status));(base/'final-measurements-queue.json').write_text(json.dumps(rows,indent=2)+'\\n')\n    print('END '+name+' status='+str(status),flush=True)\n    result_path=base/name/'result.json'\n    result=json.loads(result_path.read_text()) if result_path.is_file() else {}\n    if status in (130,143) or result.get('reason')=='cancelled' or result.get('cancellationSignals'):break\n",
+      "invocationEvidence": "present-without-recorded-invocation"
+    },
+    {
+      "path": "recovery/forcingCaptureTests.m",
+      "bytes": 858,
+      "sha256": "d5bb623ff824ff1c2d46d6b01dbda3feb4b3b18bdc094a2d11c35003b37e3248",
+      "lastModifiedUTC": "2026-09-15T00:25:52.749053+00:00",
+      "requestedByGuardDirectories": [
+        "recovery/forcing-capture-tests"
+      ],
+      "literalRunReferences": [
+        "/Users/jearly/Documents/OceanKitRepositories/thermal-readiness-t10-evidence/recovery/setup.m"
+      ],
+      "source": "run('/Users/jearly/Documents/OceanKitRepositories/thermal-readiness-t10-evidence/recovery/setup.m');assert(strcmp(version('-release'),'2025b'));addpath('UnitTests','UnitTests/Fixtures');\nsuite=[testsuite('UnitTests/TestThermalReadiness.m',Name='*boundedLinearComparisonRequiresIndependentReference'),testsuite('UnitTests/TestThermalReadinessRestart.m',Name='*clocksIndependentStreamsAndProviderFreeReplay')];results=run(suite);assert(numel(results)==2);\nt=table(string({results.Name})',[results.Passed]',[results.Failed]',[results.Incomplete]',[results.Duration]',VariableNames={'Name','Passed','Failed','Incomplete','Duration'});writetable(t,fullfile(root,'thermal-readiness-t10-evidence','recovery','forcing-capture-tests.csv'));save(fullfile(root,'thermal-readiness-t10-evidence','recovery','forcing-capture-tests.mat'),'results');assertSuccess(results);\n",
+      "invocationEvidence": "requested-in-recorded-guard-command"
+    },
+    {
+      "path": "recovery/guard_matlab.py",
+      "bytes": 3275,
+      "sha256": "ef5799008d72aff9c746febe8fceb82ec50a92eb4c99a5cd4ca790c3d8dde0d8",
+      "lastModifiedUTC": "2026-09-14T22:51:03.332666+00:00",
+      "requestedByGuardDirectories": [],
+      "literalRunReferences": [],
+      "source": "#!/usr/bin/env python3\n\"\"\"Run one MATLAB batch with macOS footprint and elapsed-time cutoffs.\n\nUses the SDK's rusage_info_v0 definition. Only signals the child process\nsession created here. The ledger is flushed after every sample.\n\"\"\"\nimport argparse, csv, ctypes, json, os, pathlib, signal, subprocess, sys, time\n\nclass Usage(ctypes.Structure):\n    _fields_ = [('uuid',ctypes.c_uint8*16)]+[(n,ctypes.c_uint64) for n in (\n        'user_time','system_time','pkg_idle_wkups','interrupt_wkups','pageins',\n        'wired_size','resident_size','phys_footprint','proc_start_abstime','proc_exit_abstime')]\n\ndef main():\n    parser=argparse.ArgumentParser()\n    parser.add_argument('--directory',required=True)\n    parser.add_argument('--limit-gib',type=float,default=12)\n    parser.add_argument('--seconds',type=float,default=1800)\n    parser.add_argument('command',nargs=argparse.REMAINDER)\n    args=parser.parse_args(); command=args.command\n    if command and command[0]=='--': command=command[1:]\n    if not command or args.limit_gib<=0 or args.seconds<=0: parser.error('Supply a command and positive limits.')\n    out=pathlib.Path(args.directory);out.mkdir(parents=True,exist_ok=False)\n    library=ctypes.CDLL('/usr/lib/libproc.dylib',use_errno=True)\n    library.proc_pid_rusage.argtypes=[ctypes.c_int,ctypes.c_int,ctypes.c_void_p]\n    library.proc_pid_rusage.restype=ctypes.c_int\n    start=time.monotonic();reason='completed';peak=0; rss_peak=0; successes=0\n    with open(out/'output.log','w') as log,open(out/'memory.csv','w') as stream:\n        process=subprocess.Popen(command,stdout=log,stderr=subprocess.STDOUT,start_new_session=True)\n        writer=csv.writer(stream);writer.writerow(['elapsedSeconds','pid','residentBytes','physicalFootprintBytes']);stream.flush()\n        (out/'contract.json').write_text(json.dumps(dict(command=command,pid=process.pid,limitGiB=args.limit_gib,maximumSeconds=args.seconds),indent=2))\n        while process.poll() is None:\n            elapsed=time.monotonic()-start; info=Usage()\n            status=library.proc_pid_rusage(process.pid,0,ctypes.byref(info))\n            if status==0:\n                successes+=1;peak=max(peak,info.phys_footprint);rss_peak=max(rss_peak,info.resident_size)\n                writer.writerow([elapsed,process.pid,info.resident_size,info.phys_footprint]);stream.flush()\n            if status!=0 and elapsed>10 and successes==0: reason='measurement-unavailable'\n            if info.phys_footprint>args.limit_gib*2**30: reason='memory-limit'\n            if elapsed>args.seconds: reason='wall-limit'\n            if reason!='completed':\n                os.killpg(process.pid,signal.SIGTERM)\n                try: process.wait(timeout=3)\n                except subprocess.TimeoutExpired: os.killpg(process.pid,signal.SIGKILL)\n                break\n            time.sleep(.25)\n        returncode=process.wait()\n    result=dict(reason=reason,returncode=returncode,elapsedSeconds=time.monotonic()-start,peakSampledFootprintBytes=peak,peakSampledResidentBytes=rss_peak,samples=successes,samplingIntervalSeconds=.25)\n    (out/'result.json').write_text(json.dumps(result,indent=2));print(json.dumps(result),flush=True)\n    return 0 if reason=='completed' and returncode==0 else 1\nif __name__=='__main__':sys.exit(main())\n",
+      "invocationEvidence": "present-without-recorded-invocation"
+    },
+    {
+      "path": "recovery/horizontal.m",
+      "bytes": 446,
+      "sha256": "40702ff2d7332b41ed40cb0da1a1491b0a511ff21b2c45950cc09d45f0681d78",
+      "lastModifiedUTC": "2026-09-14T23:10:12.424905+00:00",
+      "requestedByGuardDirectories": [
+        "recovery/horizontal"
+      ],
+      "literalRunReferences": [
+        "/Users/jearly/Documents/OceanKitRepositories/thermal-readiness-t10-evidence/recovery/setup.m"
+      ],
+      "source": "run('/Users/jearly/Documents/OceanKitRepositories/thermal-readiness-t10-evidence/recovery/setup.m');\nevidence=fullfile(root,'thermal-readiness-t10-evidence');\nreport=runThermalReadinessStudy(fullfile(evidence,'windows'),\"horizontal\",scientificCache=fullfile(evidence,'scientific64.mat'),closureCache=fullfile(evidence,'closure64.mat'),durationSeconds=21600,observationCount=9,wallTimeBudgetSeconds=1500);disp(report.cases);disp(report.coverage);\n",
+      "invocationEvidence": "requested-in-recorded-guard-command"
+    },
+    {
+      "path": "recovery/mean.m",
+      "bytes": 440,
+      "sha256": "2bfa995a462116b2ce4ce459a6aaab6f8c4ed2a35a37671e9a3de78b28017ffa",
+      "lastModifiedUTC": "2026-09-14T23:10:12.425012+00:00",
+      "requestedByGuardDirectories": [
+        "recovery/mean"
+      ],
+      "literalRunReferences": [
+        "/Users/jearly/Documents/OceanKitRepositories/thermal-readiness-t10-evidence/recovery/setup.m"
+      ],
+      "source": "run('/Users/jearly/Documents/OceanKitRepositories/thermal-readiness-t10-evidence/recovery/setup.m');\nevidence=fullfile(root,'thermal-readiness-t10-evidence');\nreport=runThermalReadinessStudy(fullfile(evidence,'windows'),\"mean\",scientificCache=fullfile(evidence,'scientific64.mat'),closureCache=fullfile(evidence,'closure64.mat'),durationSeconds=21600,observationCount=9,wallTimeBudgetSeconds=1500);disp(report.cases);disp(report.coverage);\n",
+      "invocationEvidence": "requested-in-recorded-guard-command"
+    },
+    {
+      "path": "recovery/metadata.m",
+      "bytes": 2034,
+      "sha256": "9a2454cc05215a594758cf6c184592d9f4cc3cb2ae2182b6016add4f6b5cecc6",
+      "lastModifiedUTC": "2026-09-15T00:39:59.127556+00:00",
+      "requestedByGuardDirectories": [
+        "recovery/metadata"
+      ],
+      "literalRunReferences": [
+        "/Users/jearly/Documents/OceanKitRepositories/thermal-readiness-t10-evidence/recovery/setup.m"
+      ],
+      "source": "run('/Users/jearly/Documents/OceanKitRepositories/thermal-readiness-t10-evidence/recovery/setup.m');\nevidence=fullfile(root,'thermal-readiness-t10-evidence');out=fullfile(evidence,'metadata');mkdir(out);\nconstruction=load(fullfile(evidence,'construction64.mat'),'constructionSeconds','manifest');\nf=fopen(fullfile(out,'construction64.json'),'w');fwrite(f,jsonencode(construction,PrettyPrint=true),'char');fclose(f);\nfiles=[dir(fullfile(evidence,'windows','**','initial-case.mat'));dir(fullfile(evidence,'windows-v2','**','initial-case.mat'))];entries=cell(1,numel(files));\nfor j=1:numel(files)\n path=fullfile(files(j).folder,files(j).name);d=load(path,'manifest');entries{j}=struct(path=string(path),manifest=d.manifest);\nend\nf=fopen(fullfile(out,'case-manifests.json'),'w');fwrite(f,jsonencode(entries,PrettyPrint=true),'char');fclose(f);\nrows=table();\nblocks=[\"cold10\",\"cold100\",\"peak10\",\"zero10\",\"closures\",\"zero100\",\"activity\"];\nnames=[\"cold10\",\"cold100\",\"peak10\",\"zero10\",\"none\",\"zero100\",\"nonlinear\"];\nfor j=1:numel(blocks)\n path=fullfile(evidence,'windows',blocks(j),names(j),'window.mat');if ~isfile(path),continue;end\n d=load(path,'run');window=d.run;\n for k=1:numel(window.snapshots)\n  snapshot=window.snapshots{k};w=WVTransformFreeSurfaceThermalQG(scientificState=window.scientificState,coefficientState=snapshot.state,t=snapshot.t);\n  fields=w.reconstructFields([\"eta\",\"eta_i\",\"u\",\"v\",\"ssu\",\"ssv\"]);\n  eta=max(abs(fields.eta),[],'all')/w.Lz;eta_i=max(abs(fields.eta_i),[],'all')/w.Lz;\n  vorticity=max(abs(w.diffX(fields.v)-w.diffY(fields.u)),[],'all')/abs(w.f);slope=abs(w.f)/w.g*max(hypot(fields.ssu,fields.ssv),[],'all');\n  row=table(blocks(j),window.executionId,w.t,eta,eta_i,vorticity,slope,max([eta eta_i vorticity slope])>=1,VariableNames={'caseName','executionId','time','maximumEtaOverDepth','maximumInteriorEtaOverDepth','maximumVorticityOverF','maximumSurfaceSlope','orderOneFlag'});rows=[rows;row];delete(w);clear w fields snapshot\n end\n clear d window\nend\nwritetable(rows,fullfile(out,'sampled-regimes.csv'));\n",
+      "invocationEvidence": "requested-in-recorded-guard-command"
+    },
+    {
+      "path": "recovery/metadataV2.m",
+      "bytes": 2971,
+      "sha256": "3df5281f8a67fc86aff06679f96864c461a59d717404f9f73c7f8f5586110879",
+      "lastModifiedUTC": "2026-09-15T01:05:38.872185+00:00",
+      "requestedByGuardDirectories": [
+        "recovery/metadata-v2"
+      ],
+      "literalRunReferences": [
+        "/Users/jearly/Documents/OceanKitRepositories/thermal-readiness-t10-evidence/recovery/setup.m"
+      ],
+      "source": "run('/Users/jearly/Documents/OceanKitRepositories/thermal-readiness-t10-evidence/recovery/setup.m');\nevidence=fullfile(root,'thermal-readiness-t10-evidence');out=fullfile(evidence,'metadata-v2');mkdir(out);\nloaded=load(fullfile(evidence,'construction64.mat'),'seconds','manifest');\nconstruction=struct(caseConstructionAndCacheWriteSeconds=loaded.seconds,caseId=loaded.manifest.caseId,configuration=loaded.manifest.configuration,scope=\"thermalReadinessCase including initialization and scientific64.mat write; not pure eigensolver time\");clear loaded\nf=fopen(fullfile(out,'construction64.json'),'w');fwrite(f,jsonencode(jsonReady(construction),PrettyPrint=true),'char');fclose(f);\nfiles=[dir(fullfile(evidence,'windows','**','initial-case.mat'));dir(fullfile(evidence,'windows-v2','**','initial-case.mat'))];entries=cell(1,numel(files));\nfor j=1:numel(files)\n path=fullfile(files(j).folder,files(j).name);d=load(path,'manifest');entries{j}=struct(path=string(path),manifest=d.manifest);\nend\nf=fopen(fullfile(out,'case-manifests.json'),'w');fwrite(f,jsonencode(jsonReady(entries),PrettyPrint=true),'char');fclose(f);\nrows=table();\nblocks=[\"cold10\",\"cold100\",\"peak10\",\"zero10\",\"closures\",\"zero100\",\"activity\"];\nnames=[\"cold10\",\"cold100\",\"peak10\",\"zero10\",\"none\",\"zero100\",\"nonlinear\"];\nfor j=1:numel(blocks)\n path=fullfile(evidence,'windows',blocks(j),names(j),'window.mat');if ~isfile(path),continue;end\n d=load(path,'run');window=d.run;\n for k=1:numel(window.snapshots)\n  snapshot=window.snapshots{k};w=WVTransformFreeSurfaceThermalQG(scientificState=window.scientificState,coefficientState=snapshot.state,t=snapshot.t);\n  fields=w.reconstructFields([\"eta\",\"eta_i\",\"u\",\"v\",\"ssu\",\"ssv\"]);\n  eta=max(abs(fields.eta),[],'all')/w.Lz;eta_i=max(abs(fields.eta_i),[],'all')/w.Lz;\n  vorticity=max(abs(w.diffX(fields.v)-w.diffY(fields.u)),[],'all')/abs(w.f);slope=abs(w.f)/w.g*max(hypot(fields.ssu,fields.ssv),[],'all');\n  row=table(blocks(j),window.executionId,w.t,eta,eta_i,vorticity,slope,max([eta eta_i vorticity slope])>=1,VariableNames={'caseName','executionId','time','maximumEtaOverDepth','maximumInteriorEtaOverDepth','maximumVorticityOverF','maximumSurfaceSlope','orderOneFlag'});rows=[rows;row];delete(w);clear w fields snapshot\n end\n clear d window\nend\nwritetable(rows,fullfile(out,'sampled-regimes.csv'));\n\nfunction value=jsonReady(value)\n% Original MAT files remain authoritative; preserve complex data explicitly.\nif isstruct(value)\n    names=fieldnames(value);\n    for k=1:numel(value)\n        for j=1:numel(names),value(k).(names{j})=jsonReady(value(k).(names{j}));end\n    end\nelseif iscell(value)\n    for k=1:numel(value),value{k}=jsonReady(value{k});end\nelseif isnumeric(value) && ~isreal(value)\n    value=struct(jsonEncoding=\"complex array\",shape=size(value),real=real(value),imaginary=imag(value));\nelseif isa(value,'function_handle')\n    value=struct(jsonEncoding=\"function text only; see authoritative MAT for closure\",text=string(func2str(value)));\nend\nend\n",
+      "invocationEvidence": "requested-in-recorded-guard-command"
+    },
+    {
+      "path": "recovery/native.m",
+      "bytes": 442,
+      "sha256": "7f1fb8c67d5d81f9b95f6c60298b5ebaab021e9580d18f22e76d51983511c609",
+      "lastModifiedUTC": "2026-09-14T23:10:12.424849+00:00",
+      "requestedByGuardDirectories": [
+        "recovery/native"
+      ],
+      "literalRunReferences": [
+        "/Users/jearly/Documents/OceanKitRepositories/thermal-readiness-t10-evidence/recovery/setup.m"
+      ],
+      "source": "run('/Users/jearly/Documents/OceanKitRepositories/thermal-readiness-t10-evidence/recovery/setup.m');\nevidence=fullfile(root,'thermal-readiness-t10-evidence');\nreport=runThermalReadinessStudy(fullfile(evidence,'windows'),\"native\",scientificCache=fullfile(evidence,'scientific64.mat'),closureCache=fullfile(evidence,'closure64.mat'),durationSeconds=21600,observationCount=9,wallTimeBudgetSeconds=1500);disp(report.cases);disp(report.coverage);\n",
+      "invocationEvidence": "requested-in-recorded-guard-command"
+    },
+    {
+      "path": "recovery/partialThermal.m",
+      "bytes": 2078,
+      "sha256": "815830c85ba9bdbb2779ab6fe9724b83464fab070920809fd7d35efc2d4168a0",
+      "lastModifiedUTC": "2026-09-15T00:23:53.549836+00:00",
+      "requestedByGuardDirectories": [
+        "recovery/thermal-partial"
+      ],
+      "literalRunReferences": [
+        "/Users/jearly/Documents/OceanKitRepositories/thermal-readiness-t10-evidence/recovery/setup.m"
+      ],
+      "source": "run('/Users/jearly/Documents/OceanKitRepositories/thermal-readiness-t10-evidence/recovery/setup.m');\nevidence=fullfile(root,'thermal-readiness-t10-evidence');a=load(fullfile(evidence,'windows','thermal','thermal257','window.mat'),'run');b=load(fullfile(evidence,'windows','thermal','thermal385','window.mat'),'run');\nassert(thermalReadinessIdentity(a.run.scientificState)==a.run.manifest.scientificStateHash);assert(thermalReadinessIdentity(b.run.scientificState)==b.run.manifest.scientificStateHash);\nassert(isequaln(rmfield(a.run.manifest.configuration,'thermalCount'),rmfield(b.run.manifest.configuration,'thermalCount')));assert(isequal(a.run.acceptedStepSeconds,b.run.acceptedStepSeconds));\ncriteria=thermalReadinessCriteria();rows=table();\nfor k=1:numel(a.run.snapshots)\n sa=a.run.snapshots{k};sb=b.run.snapshots{k};assert(sa.t==sb.t);\n wa=WVTransformFreeSurfaceThermalQG(scientificState=a.run.scientificState,coefficientState=sa.state,t=sa.t);wb=WVTransformFreeSurfaceThermalQG(scientificState=b.run.scientificState,coefficientState=sb.state,t=sb.t);\n lo=compareThermalReadinessFields(wa,wb,513,criteria);hi=compareThermalReadinessFields(wa,wb,1027,criteria);\n hi.quadratureUncertainty=abs(hi.error-lo.error)+hi.relativeAllowance.*abs(hi.referenceNorm-lo.referenceNorm);hi.allowance=hi.absoluteFloor+hi.relativeAllowance.*hi.referenceNorm;hi.errorRatio=hi.error./hi.allowance;\n hi.referenceError=nan(height(hi),1);hi.status=repmat(\"INCONCLUSIVE REFERENCE\",height(hi),1);hi.time=repmat(sa.t,height(hi),1);rows=[rows;hi];delete(wa);delete(wb);clear wa wb\nend\nfolder=fullfile(evidence,'thermal-partial-comparison');mkdir(folder);writetable(rows,fullfile(folder,'field-differences.csv'));provenance=struct(candidateExecutionId=a.run.executionId,referenceExecutionId=b.run.executionId,missingRefinement=\"thermal513 stopped by 32 GiB guard\",status=\"INCONCLUSIVE REFERENCE\");save(fullfile(folder,'comparison.mat'),'rows','provenance');f=fopen(fullfile(folder,'provenance.json'),'w');fwrite(f,jsonencode(provenance,PrettyPrint=true),'char');fclose(f);disp(max(rows.errorRatio));\n",
+      "invocationEvidence": "requested-in-recorded-guard-command"
+    },
+    {
+      "path": "recovery/peak10.m",
+      "bytes": 442,
+      "sha256": "f78e7fba26c45a1b873f0d65714384a4b7c284adb2f1bb95befc42057a4f9c25",
+      "lastModifiedUTC": "2026-09-14T23:10:12.425266+00:00",
+      "requestedByGuardDirectories": [
+        "recovery/peak10"
+      ],
+      "literalRunReferences": [
+        "/Users/jearly/Documents/OceanKitRepositories/thermal-readiness-t10-evidence/recovery/setup.m"
+      ],
+      "source": "run('/Users/jearly/Documents/OceanKitRepositories/thermal-readiness-t10-evidence/recovery/setup.m');\nevidence=fullfile(root,'thermal-readiness-t10-evidence');\nreport=runThermalReadinessStudy(fullfile(evidence,'windows'),\"peak10\",scientificCache=fullfile(evidence,'scientific64.mat'),closureCache=fullfile(evidence,'closure64.mat'),durationSeconds=21600,observationCount=9,wallTimeBudgetSeconds=1500);disp(report.cases);disp(report.coverage);\n",
+      "invocationEvidence": "requested-in-recorded-guard-command"
+    },
+    {
+      "path": "recovery/pinnedAPV.m",
+      "bytes": 2509,
+      "sha256": "8e2f9e154d6742e170df470d0a58a975821acb347a0fbbd34cd125a431689b33",
+      "lastModifiedUTC": "2026-09-14T23:08:26.315189+00:00",
+      "requestedByGuardDirectories": [
+        "recovery/pinned-apv"
+      ],
+      "literalRunReferences": [],
+      "source": "% Recreate the historical APV workload in a fresh guarded MATLAB process.\n% The released historical pins remain separate from the current beta.5 path.\nworkspaceRoot = \"/Users/jearly/Documents/OceanKitRepositories\";\nevidenceRoot = fullfile(workspaceRoot,\"thermal-readiness-t10-evidence\");\npinnedWorkspace = fullfile(evidenceRoot,\"pinned\");\nexperimentRoot = fullfile(workspaceRoot,\"free-surface-qg-experiments\");\nauthoringTools = fullfile(workspaceRoot,\"wave-vortex-model\",\"tools\");\noutputDirectory = fullfile(evidenceRoot,\"pinned-apv-cold\");\nif isfolder(outputDirectory)\n    error('WV:ReadinessPinnedEvidence','Choose a new output directory; existing evidence is immutable: %s.',outputDirectory);\nend\ncd(pinnedWorkspace);\nrestoredefaultpath;\naddpath(experimentRoot);\ndependencies = setupExperiment(pinnedWorkspace);\naddpath(authoringTools);\nresolvedPaths = strings(numel(dependencies),1);\nfor dependencyIndex = 1:numel(dependencies)\n    dependency = dependencies(dependencyIndex);\n    resolvedPaths(dependencyIndex) = string(which(dependency.symbol));\n    expectedPrefix = fullfile(pinnedWorkspace,dependency.directory)+filesep;\n    if ~startsWith(resolvedPaths(dependencyIndex),expectedPrefix)\n        error('WV:ReadinessPinnedEnvironment','%s resolves outside its isolated historical checkout: %s.',dependency.symbol,resolvedPaths(dependencyIndex));\n    end\n    fprintf('%s: %s\\n',dependency.symbol,resolvedPaths(dependencyIndex));\nend\nexpectedBenchmark = fullfile(authoringTools,\"benchmarkPinnedThermalReadinessAPV.m\");\nif string(which('benchmarkPinnedThermalReadinessAPV'))~=expectedBenchmark\n    error('WV:ReadinessPinnedEnvironment','The authoring benchmark does not resolve to %s.',expectedBenchmark);\nend\nmkdir(outputDirectory);\npathProvenance = struct(matlabVersion=string(version),platform=string(computer),dependencies=dependencies,resolvedPaths=resolvedPaths,benchmarkPath=expectedBenchmark);\nfid = fopen(fullfile(outputDirectory,\"resolved-paths.json\"),'w');\nif fid<0\n    error('WV:ReadinessPinnedEvidence','Cannot write resolved path provenance.');\nend\nfileCleanup = onCleanup(@()fclose(fid));\nfwrite(fid,jsonencode(pathProvenance,PrettyPrint=true));\nclear fileCleanup\nreport = benchmarkPinnedThermalReadinessAPV(outputDirectory,duration=21600,maximumWallSeconds=900);\nfprintf('Pinned APV status: %s\\nReason: %s\\n',report.status,report.reason);\nif report.status~=\"MEASURED CONTROL\"\n    error('WV:ReadinessPinnedIncomplete','Historical APV baseline was not fully measured: %s.',report.reason);\nend\n",
+      "invocationEvidence": "requested-in-recorded-guard-command"
+    },
+    {
+      "path": "recovery/pinnedAPVv2.m",
+      "bytes": 2512,
+      "sha256": "767e7329f0586bd0a8772ff488e23977ae15168efb7777b4a8c08079714fecf8",
+      "lastModifiedUTC": "2026-09-14T23:20:04.904430+00:00",
+      "requestedByGuardDirectories": [
+        "recovery/pinned-apv-v2"
+      ],
+      "literalRunReferences": [],
+      "source": "% Recreate the historical APV workload in a fresh guarded MATLAB process.\n% The released historical pins remain separate from the current beta.5 path.\nworkspaceRoot = \"/Users/jearly/Documents/OceanKitRepositories\";\nevidenceRoot = fullfile(workspaceRoot,\"thermal-readiness-t10-evidence\");\npinnedWorkspace = fullfile(evidenceRoot,\"pinned\");\nexperimentRoot = fullfile(workspaceRoot,\"free-surface-qg-experiments\");\nauthoringTools = fullfile(workspaceRoot,\"wave-vortex-model\",\"tools\");\noutputDirectory = fullfile(evidenceRoot,\"pinned-apv-cold-v2\");\nif isfolder(outputDirectory)\n    error('WV:ReadinessPinnedEvidence','Choose a new output directory; existing evidence is immutable: %s.',outputDirectory);\nend\ncd(pinnedWorkspace);\nrestoredefaultpath;\naddpath(experimentRoot);\ndependencies = setupExperiment(pinnedWorkspace);\naddpath(authoringTools);\nresolvedPaths = strings(numel(dependencies),1);\nfor dependencyIndex = 1:numel(dependencies)\n    dependency = dependencies(dependencyIndex);\n    resolvedPaths(dependencyIndex) = string(which(dependency.symbol));\n    expectedPrefix = fullfile(pinnedWorkspace,dependency.directory)+filesep;\n    if ~startsWith(resolvedPaths(dependencyIndex),expectedPrefix)\n        error('WV:ReadinessPinnedEnvironment','%s resolves outside its isolated historical checkout: %s.',dependency.symbol,resolvedPaths(dependencyIndex));\n    end\n    fprintf('%s: %s\\n',dependency.symbol,resolvedPaths(dependencyIndex));\nend\nexpectedBenchmark = fullfile(authoringTools,\"benchmarkPinnedThermalReadinessAPV.m\");\nif string(which('benchmarkPinnedThermalReadinessAPV'))~=expectedBenchmark\n    error('WV:ReadinessPinnedEnvironment','The authoring benchmark does not resolve to %s.',expectedBenchmark);\nend\nmkdir(outputDirectory);\npathProvenance = struct(matlabVersion=string(version),platform=string(computer),dependencies=dependencies,resolvedPaths=resolvedPaths,benchmarkPath=expectedBenchmark);\nfid = fopen(fullfile(outputDirectory,\"resolved-paths.json\"),'w');\nif fid<0\n    error('WV:ReadinessPinnedEvidence','Cannot write resolved path provenance.');\nend\nfileCleanup = onCleanup(@()fclose(fid));\nfwrite(fid,jsonencode(pathProvenance,PrettyPrint=true));\nclear fileCleanup\nreport = benchmarkPinnedThermalReadinessAPV(outputDirectory,duration=21600,maximumWallSeconds=900);\nfprintf('Pinned APV status: %s\\nReason: %s\\n',report.status,report.reason);\nif report.status~=\"MEASURED CONTROL\"\n    error('WV:ReadinessPinnedIncomplete','Historical APV baseline was not fully measured: %s.',report.reason);\nend\n",
+      "invocationEvidence": "requested-in-recorded-guard-command"
+    },
+    {
+      "path": "recovery/product.m",
+      "bytes": 443,
+      "sha256": "714e6172034160b3c14a233e34194a73c1f225f4dcef2d01e7a4b7e3d3342c08",
+      "lastModifiedUTC": "2026-09-14T23:10:12.424790+00:00",
+      "requestedByGuardDirectories": [
+        "recovery/product"
+      ],
+      "literalRunReferences": [
+        "/Users/jearly/Documents/OceanKitRepositories/thermal-readiness-t10-evidence/recovery/setup.m"
+      ],
+      "source": "run('/Users/jearly/Documents/OceanKitRepositories/thermal-readiness-t10-evidence/recovery/setup.m');\nevidence=fullfile(root,'thermal-readiness-t10-evidence');\nreport=runThermalReadinessStudy(fullfile(evidence,'windows'),\"product\",scientificCache=fullfile(evidence,'scientific64.mat'),closureCache=fullfile(evidence,'closure64.mat'),durationSeconds=21600,observationCount=9,wallTimeBudgetSeconds=1500);disp(report.cases);disp(report.coverage);\n",
+      "invocationEvidence": "requested-in-recorded-guard-command"
+    },
+    {
+      "path": "recovery/profile64.m",
+      "bytes": 1347,
+      "sha256": "a52b2fb14c580db9bb9ea29429a6ef71a555dd032ec32ed0fb82977216ee6dc3",
+      "lastModifiedUTC": "2026-09-14T23:13:16.593893+00:00",
+      "requestedByGuardDirectories": [
+        "recovery/profile64"
+      ],
+      "literalRunReferences": [
+        "/Users/jearly/Documents/OceanKitRepositories/thermal-readiness-t10-evidence/recovery/setup.m"
+      ],
+      "source": "run('/Users/jearly/Documents/OceanKitRepositories/thermal-readiness-t10-evidence/recovery/setup.m');\nevidence=fullfile(root,'thermal-readiness-t10-evidence');cache=load(fullfile(evidence,'scientific64.mat'));\n[w,manifest]=thermalReadinessCase(struct(velocityRMS=.01,seasonalM=10,phase=pi/2),scientificState=cache.scientificState);\nmodel=WVModel(w);model.setupIntegrator(integratorType=\"exponential\",initialStep=900,maximumStep=900,exponentialAdaptive=false);model.explicitFlux();\nfolder=fullfile(evidence,'profile64');mkdir(folder);\ntimings=table();for repetition=1:5\n    [~,~,t]=w.nonlinearCoefficientTendency();\n    timings=[timings;table(repetition,t.reconstructionSeconds,t.productSeconds,t.projectionSeconds,t.scratchBytesEstimate,t.radiusGroups,VariableNames={'repetition','reconstructionSeconds','productSeconds','projectionSeconds','scratchBytesEstimate','radiusGroups'})];\nend\nwritetable(timings,fullfile(folder,'nonlinear-components.csv'));\naddpath(fullfile(root,'OceanKit','tools','profiling'));\nanalysis=profileCodeHotspots(@()model.explicitFlux(),projectRoots=pwd,shouldPrintReport=false);\nsave(fullfile(folder,'profile.mat'),'analysis','manifest','-v7.3');\nfor name=[\"priorityTargets\",\"topProjectBySelfTime\",\"topProjectByNumCalls\",\"topActionableLines\",\"topCallsiteLines\"],writetable(analysis.(name),fullfile(folder,name+\".csv\"));end\n",
+      "invocationEvidence": "requested-in-recorded-guard-command"
+    },
+    {
+      "path": "recovery/regimeBudgetRefinement.m",
+      "bytes": 3379,
+      "sha256": "0d6cf5a7983a10cd12fca2d664d1223a9ef33b41d41a2b4e9858e0838504311a",
+      "lastModifiedUTC": "2026-09-15T00:41:25.822999+00:00",
+      "requestedByGuardDirectories": [],
+      "literalRunReferences": [],
+      "source": "function report = regimeBudgetRefinement(caseName)\n% Refine only the observation cadence of one completed regime window.\n% Each call belongs in a fresh, guarded MATLAB process. Original evidence is\n% immutable; the exact initial case is copied into a new output directory.\narguments\n    caseName (1,1) string {mustBeMember(caseName,[\"cold10\",\"cold100\",\"peak10\",\"zero10\",\"zero100\"])}\nend\nrecoveryFolder = fileparts(mfilename('fullpath'));\nrun(fullfile(recoveryFolder,'setup.m'));\nevidence = fullfile(root,'thermal-readiness-t10-evidence');\noriginalFolder = fullfile(evidence,'windows',caseName);\nassert(isfile(fullfile(originalFolder,'summary.json')),'Original window must be complete.');\nbudgets = readtable(fullfile(originalFolder,'budgets.csv'),TextType='string');\nif all(budgets.status==\"PASS\")\n    report = struct(status=\"NOT RERUN: original budgets all pass\",budgets=budgets);\n    disp(report);\n    return\nend\nassert(all(ismember(budgets.status,[\"PASS\",\"INCONCLUSIVE\"])), ...\n    'A failed budget requires separate diagnosis before a cadence rerun.');\nsaved = load(fullfile(originalFolder,'run-contract.mat'),'contract');\noriginal = saved.contract;\nassert(thermalReadinessIdentity(rmfield(original,'runId'))==original.runId);\nassert(isscalar(original.cases) && string(original.cases.name)==caseName);\nassert(string(original.cases.dampingVariant)==\"none\");\nduration = original.options.durationSeconds;\nif startsWith(caseName,\"cold\")\n    assert(duration==86400);\nelse\n    assert(duration==21600);\nend\nconfiguration = load(fullfile(originalFolder,caseName,'initial-case.mat'),'manifest');\nassert(configuration.manifest.configuration.productCount==1537);\ncache = load(fullfile(evidence,'scientific64.mat'),'scientificState');\nassert(thermalReadinessIdentity(cache.scientificState)==original.cases.scientificCacheHash);\ncases = rmfield(original.cases,{'scientificCacheHash','gravity'});\ncases.scientificState = cache.scientificState;\nclear cache saved\n\noffsets = [0,logspace(-4,log10(duration),64)];\noffsets(end) = duration;\nif startsWith(caseName,\"cold\")\n    % Resolve fast diffusive startup and the growing annual-source work.\n    offsets = unique([offsets,linspace(0,duration,65)]);\nend\noutputFolder = fullfile(evidence,'windows-budget-refined',caseName);\nassert(~isfolder(outputFolder),'Use a fresh output folder; refined evidence is immutable.');\nmkdir(fullfile(outputFolder,caseName));\ncopyfile(fullfile(originalFolder,caseName,'initial-case.mat'), ...\n    fullfile(outputFolder,caseName,'initial-case.mat'));\nreport = qualifyThermalReadiness(outputFolder,cases, ...\n    durationSeconds=duration,observationOffsets=offsets, ...\n    pairs=original.options.pairs, ...\n    wallTimeBudgetSeconds=original.options.wallTimeBudgetSeconds, ...\n    caseWallTimeBudgetSeconds=original.options.caseWallTimeBudgetSeconds, ...\n    comparisonCount=original.options.comparisonCount, ...\n    canonicalDamping=original.options.canonicalDamping);\n\nrefined = load(fullfile(outputFolder,caseName,'initial-case.mat'),'manifest');\nassert(isequaln(refined.manifest,configuration.manifest));\nbefore = load(fullfile(originalFolder,caseName,'forcing-contract.mat'),'forcingContract');\nafter = load(fullfile(outputFolder,caseName,'forcing-contract.mat'),'forcingContract');\nassert(isequaln(before.forcingContract.forcing,after.forcingContract.forcing));\ndisp(report.cases);\ndisp(report.budgets);\nend\n",
+      "invocationEvidence": "present-without-recorded-invocation"
+    },
+    {
+      "path": "recovery/regimeQueue.py",
+      "bytes": 1395,
+      "sha256": "de1b235a64aaeae8394ad6f39140a6c57d56b22966ffbc1f1b8f9dbe5b9507ad",
+      "lastModifiedUTC": "2026-09-15T00:23:53.549726+00:00",
+      "requestedByGuardDirectories": [],
+      "literalRunReferences": [
+        "\"+str(base/script)+\""
+      ],
+      "source": "import json, os, subprocess, sys, time\nfrom pathlib import Path\nbase=Path(__file__).resolve().parent\nrepo=base.parent.parent/'wave-vortex-model'\njobs=[('workload-cold10','workloadCold10.m',16,900,''),('cold10','cold10.m',16,1800,''),('cold100','cold100.m',16,1800,''),('peak10','peak10.m',16,1800,''),('zero10','zero10.m',16,1800,''),('zero100','zero100.m',16,1800,''),('activity','activity.m',16,1800,''),('workload-cold10-product769','workloadCold10Product769.m',16,900,''),('workload10-product769','workload10Product769.m',16,900,''),('workload100-product769','workload100Product769.m',16,900,''),('budget769','budget769.m',16,900,''),('restart769','restart769.m',16,900,''),('restart769-fresh','restart769Fresh.m',16,900,'')]\nrows=[]\nfor name,script,limit,seconds,matlab_bin in jobs:\n    env=os.environ.copy()\n    if matlab_bin: env['PATH']=matlab_bin+os.pathsep+env['PATH']\n    command=[sys.executable,str(repo/'tools/guardThermalReadiness.py'),'--directory',str(base/name),'--limit-gib',str(limit),'--seconds',str(seconds),'--','matlab','-batch',\"run('\"+str(base/script)+\"')\"]\n    print('START '+name,flush=True)\n    status=subprocess.run(command,cwd=repo,env=env).returncode\n    rows.append(dict(name=name,returncode=status)); (base/'regime-queue.json').write_text(json.dumps(rows,indent=2)+'\\n')\n    print('END '+name+' status='+str(status),flush=True)\n    if status in (130,143): break\n",
+      "invocationEvidence": "present-without-recorded-invocation"
+    },
+    {
+      "path": "recovery/resolutionQueue.py",
+      "bytes": 1038,
+      "sha256": "547e7d909a9bbaa31a37a7532466fe38e82265c10cfe0cf8ed379d8e310480fa",
+      "lastModifiedUTC": "2026-09-14T23:50:57.498474+00:00",
+      "requestedByGuardDirectories": [],
+      "literalRunReferences": [
+        "\"+str(base/script)+\""
+      ],
+      "source": "import json, os, subprocess, sys, time\nfrom pathlib import Path\nbase=Path(__file__).resolve().parent\nrepo=base.parent.parent/'wave-vortex-model'\njobs=[('r2025b-tests','verifyR2025b.m',8,600,'/Applications/MATLAB_R2025b.app/bin'),('product','product.m',24,1800,''),('mean','mean.m',24,1800,''),('native','native.m',24,1800,''),('horizontal','horizontal.m',32,1800,''),('thermal','thermal.m',32,1800,'')]\nrows=[]\nfor name,script,limit,seconds,matlab_bin in jobs:\n    env=os.environ.copy()\n    if matlab_bin: env['PATH']=matlab_bin+os.pathsep+env['PATH']\n    command=[sys.executable,str(repo/'tools/guardThermalReadiness.py'),'--directory',str(base/name),'--limit-gib',str(limit),'--seconds',str(seconds),'--','matlab','-batch',\"run('\"+str(base/script)+\"')\"]\n    print('START '+name,flush=True)\n    status=subprocess.run(command,cwd=repo,env=env).returncode\n    rows.append(dict(name=name,returncode=status)); (base/'resolution-queue.json').write_text(json.dumps(rows,indent=2)+'\\n')\n    print('END '+name+' status='+str(status),flush=True)\n",
+      "invocationEvidence": "present-without-recorded-invocation"
+    },
+    {
+      "path": "recovery/resources.m",
+      "bytes": 838,
+      "sha256": "76de92c7877faeddea31edc822fdff10dc90c014afac8d51f7a234fec7af4ea5",
+      "lastModifiedUTC": "2026-09-14T23:58:35.016251+00:00",
+      "requestedByGuardDirectories": [
+        "recovery/resources"
+      ],
+      "literalRunReferences": [
+        "/Users/jearly/Documents/OceanKitRepositories/thermal-readiness-t10-evidence/recovery/setup.m"
+      ],
+      "source": "run('/Users/jearly/Documents/OceanKitRepositories/thermal-readiness-t10-evidence/recovery/setup.m');\nevidence=fullfile(root,'thermal-readiness-t10-evidence');\nb=[struct(directory=fullfile(evidence,'workload-cold10'),forcingMultiplier=10,stateRegime=\"cold M10, no optional damping\"),struct(directory=fullfile(evidence,'workload10'),forcingMultiplier=10,stateRegime=\"manufactured 0.01 m/s M10 peak, no optional damping\"),struct(directory=fullfile(evidence,'workload100-horizontal'),forcingMultiplier=100,stateRegime=\"manufactured 0.1 m/s M100 peak, horizontal-only damping\")];\nr=estimateThermalCampaignResources(b,fullfile(evidence,'resources'),workloadDescription=\"64x64x385, N257/MDA4, Qassembly2057/Qproduct1537, h900, four threads; measured cold/manufactured controls only; sample I/O is not production cadence qualification\");disp(r);\n",
+      "invocationEvidence": "requested-in-recorded-guard-command"
+    },
+    {
+      "path": "recovery/resources769.m",
+      "bytes": 866,
+      "sha256": "a95b5489bada668aaf7c7f3b52d55288e0cbdde59dc68907f319d00ea6ad96b2",
+      "lastModifiedUTC": "2026-09-15T00:13:56.624872+00:00",
+      "requestedByGuardDirectories": [
+        "recovery/resources769"
+      ],
+      "literalRunReferences": [
+        "/Users/jearly/Documents/OceanKitRepositories/thermal-readiness-t10-evidence/recovery/setup.m"
+      ],
+      "source": "run('/Users/jearly/Documents/OceanKitRepositories/thermal-readiness-t10-evidence/recovery/setup.m');\nevidence=fullfile(root,'thermal-readiness-t10-evidence');\nb=[struct(directory=fullfile(evidence,'workload-cold10-product769'),forcingMultiplier=10,stateRegime=\"cold M10, no optional damping\"),struct(directory=fullfile(evidence,'workload10-product769'),forcingMultiplier=10,stateRegime=\"manufactured 0.01 m/s M10 peak, no optional damping\"),struct(directory=fullfile(evidence,'workload100-product769'),forcingMultiplier=100,stateRegime=\"manufactured 0.1 m/s M100 peak, no optional damping\")];\nr=estimateThermalCampaignResources(b,fullfile(evidence,'resources-product769'),workloadDescription=\"64x64x385, N257/MDA4, Qassembly2057/Qproduct769, h900, four threads; measured cold/manufactured controls only; sample I/O is not production cadence qualification\");disp(r);\n",
+      "invocationEvidence": "requested-in-recorded-guard-command"
+    },
+    {
+      "path": "recovery/restart64.m",
+      "bytes": 980,
+      "sha256": "b8aea571164f86fb579c3714e74e65465ca0a7c874e3f2e64e97213b72faecc3",
+      "lastModifiedUTC": "2026-09-14T23:00:47.105163+00:00",
+      "requestedByGuardDirectories": [
+        "recovery/restart64"
+      ],
+      "literalRunReferences": [],
+      "source": "restoredefaultpath;\nroot='/Users/jearly/Documents/OceanKitRepositories';cd(fullfile(root,'wave-vortex-model'));addpath('tools');\nconfigureCIEnvironment(pwd,fullfile(root,'OceanKit'));\np=string(strsplit(path,pathsep));bad=contains(p,'/internal-modes');if any(bad),rmpath(char(join(p(bad),pathsep)));end\nassert(contains(which('IMInternalModes'),'/InternalModes-2.0.0-beta.5/'));\nassert(numel(which('IMInternalModes','-all'))==1);maxNumCompThreads(4);\nevidence=fullfile(root,'thermal-readiness-t10-evidence');cache=load(fullfile(evidence,'scientific64.mat'));closure=load(fullfile(evidence,'closure64.mat'));\n[w,manifest]=thermalReadinessCase(struct(velocityRMS=.01,seasonalM=10,phase=pi/2,t=123,t0=45),scientificState=cache.scientificState);w.addForcing(thermalReadinessDamping(w,closure.canonical,variant=\"horizontal\"));\nr=qualifyThermalReadinessRestart(w,fullfile(evidence,'restart64-horizontal'),duration=5400,step=900,caseId=manifest.caseId);disp(r.setup);disp(r.continuation);\n",
+      "invocationEvidence": "requested-in-recorded-guard-command"
+    },
+    {
+      "path": "recovery/restart769.m",
+      "bytes": 597,
+      "sha256": "ed627548c1b6fdfab5b04457ba94946f1781f63eeb013b60a43909bbd02478a2",
+      "lastModifiedUTC": "2026-09-15T00:02:43.990273+00:00",
+      "requestedByGuardDirectories": [
+        "recovery/restart769"
+      ],
+      "literalRunReferences": [
+        "/Users/jearly/Documents/OceanKitRepositories/thermal-readiness-t10-evidence/recovery/setup.m"
+      ],
+      "source": "run('/Users/jearly/Documents/OceanKitRepositories/thermal-readiness-t10-evidence/recovery/setup.m');\nevidence=fullfile(root,'thermal-readiness-t10-evidence');cache=load(fullfile(evidence,'windows','product','product769','initial-case.mat'),'scientificState');\n[w,manifest]=thermalReadinessCase(struct(productCount=769,velocityRMS=.01,seasonalM=10,phase=pi/2,t=123,t0=45),scientificState=cache.scientificState);clear cache\nr=qualifyThermalReadinessRestart(w,fullfile(evidence,'restart64-product769-none'),duration=5400,step=900,caseId=manifest.caseId);disp(r.setup);disp(r.continuation);delete(w);\n",
+      "invocationEvidence": "requested-in-recorded-guard-command"
+    },
+    {
+      "path": "recovery/restart769Fresh.m",
+      "bytes": 850,
+      "sha256": "7caef05874cf9123eef78093ee37251ee889b33bde1345beb5cdd3638eb159ef",
+      "lastModifiedUTC": "2026-09-15T00:02:43.990615+00:00",
+      "requestedByGuardDirectories": [
+        "recovery/restart769-fresh"
+      ],
+      "literalRunReferences": [],
+      "source": "restoredefaultpath;\nroot='/Users/jearly/Documents/OceanKitRepositories';cd(fullfile(root,'wave-vortex-model'));addpath('tools');\nconfigureCIEnvironment(pwd,fullfile(root,'OceanKit'));\np=string(strsplit(path,pathsep));bad=contains(p,'/internal-modes');if any(bad),rmpath(char(join(p(bad),pathsep)));end\nassert(contains(which('IMInternalModes'),'/InternalModes-2.0.0-beta.5/'));\nassert(numel(which('IMInternalModes','-all'))==1);maxNumCompThreads(4);\np=string(strsplit(path,pathsep));bad=contains(p,\"InternalModes\") | contains(p,\"internal-modes\");if any(bad),rmpath(char(join(p(bad),pathsep)));end\nassert(isempty(which('IMInternalModes')));assert(isempty(which('IMSolverSpectral')));\nr=qualifyThermalReadinessRestart([],fullfile(root,'thermal-readiness-t10-evidence','restart64-product769-none'),restoreOnly=true);disp(r.continuation);disp(r.streams);\n",
+      "invocationEvidence": "requested-in-recorded-guard-command"
+    },
+    {
+      "path": "recovery/restartFresh.m",
+      "bytes": 845,
+      "sha256": "e63e298127c6935ce8150724db642b00674a2e392b7cc0ac34c94c76832efe20",
+      "lastModifiedUTC": "2026-09-14T23:00:47.105237+00:00",
+      "requestedByGuardDirectories": [
+        "recovery/restart-fresh"
+      ],
+      "literalRunReferences": [],
+      "source": "restoredefaultpath;\nroot='/Users/jearly/Documents/OceanKitRepositories';cd(fullfile(root,'wave-vortex-model'));addpath('tools');\nconfigureCIEnvironment(pwd,fullfile(root,'OceanKit'));\np=string(strsplit(path,pathsep));bad=contains(p,'/internal-modes');if any(bad),rmpath(char(join(p(bad),pathsep)));end\nassert(contains(which('IMInternalModes'),'/InternalModes-2.0.0-beta.5/'));\nassert(numel(which('IMInternalModes','-all'))==1);maxNumCompThreads(4);\np=string(strsplit(path,pathsep));bad=contains(p,\"InternalModes\") | contains(p,\"internal-modes\");if any(bad),rmpath(char(join(p(bad),pathsep)));end\nassert(isempty(which('IMInternalModes')));assert(isempty(which('IMSolverSpectral')));\nr=qualifyThermalReadinessRestart([],fullfile(root,'thermal-readiness-t10-evidence','restart64-horizontal'),restoreOnly=true);disp(r.continuation);disp(r.streams);\n",
+      "invocationEvidence": "requested-in-recorded-guard-command"
+    },
+    {
+      "path": "recovery/reviewedTests.m",
+      "bytes": 1676,
+      "sha256": "373060f400ba5af019d104e090c27c5a1d28500748698cf7a51e223dbcc9c62a",
+      "lastModifiedUTC": "2026-09-14T23:17:40.896314+00:00",
+      "requestedByGuardDirectories": [
+        "recovery/reviewed-tests"
+      ],
+      "literalRunReferences": [
+        "/Users/jearly/Documents/OceanKitRepositories/thermal-readiness-t10-evidence/recovery/setup.m"
+      ],
+      "source": "run('/Users/jearly/Documents/OceanKitRepositories/thermal-readiness-t10-evidence/recovery/setup.m');\naddpath('UnitTests','UnitTests/Fixtures');\nfiles=[\"TestThermalReadiness\",\"TestThermalReadinessWindows\",\"TestThermalCampaignResources\"];\nsuite=testsuite(\"UnitTests/\"+files(1)+\".m\");for name=files(2:end),suite=[suite,testsuite(\"UnitTests/\"+name+\".m\")];end\nresults=run(suite);save(fullfile(root,'thermal-readiness-t10-evidence','recovery','reviewed-tests.mat'),'results');\nrows=table(string({results.Name}).',[results.Passed].',[results.Failed].',[results.Incomplete].',[results.Duration].',VariableNames={'name','passed','failed','incomplete','seconds'});writetable(rows,fullfile(root,'thermal-readiness-t10-evidence','recovery','reviewed-tests.csv'));assertSuccess(results);\nfiles=[\"tools/qualifyThermalReadiness.m\",\"UnitTests/TestThermalReadiness.m\",\"tools/benchmarkThermalWorkload.m\",\"tools/benchmarkPinnedThermalReadinessAPV.m\",\"tools/compareThermalReadinessWindows.m\",\"tools/estimateThermalCampaignResources.m\",\"UnitTests/TestThermalCampaignResources.m\",\"tools/runThermalReadinessStudy.m\",\"tools/qualifyThermalReadinessDiagnostics.m\",\"tools/qualifyThermalReadinessRestart.m\"];\nfindings=table();for file=files\n    m=checkcode(file,'-id');\n    for j=1:numel(m),findings=[findings;table(file,m(j).line,string(m(j).id),string(m(j).message),VariableNames={'file','line','id','message'})];end\nend\nsave(fullfile(root,'thermal-readiness-t10-evidence','recovery','reviewed-analyzer.mat'),'findings','files');\nif ~isempty(findings),writetable(findings,fullfile(root,'thermal-readiness-t10-evidence','recovery','reviewed-analyzer.csv'));disp(findings);end\nassert(isempty(findings));\n",
+      "invocationEvidence": "requested-in-recorded-guard-command"
+    },
+    {
+      "path": "recovery/setup.m",
+      "bytes": 449,
+      "sha256": "ab0048e421eacc09e4afd13c2ef017c9eede5de14b45b45d393fe70aa6cd872e",
+      "lastModifiedUTC": "2026-09-14T22:54:13.152851+00:00",
+      "requestedByGuardDirectories": [],
+      "literalRunReferences": [],
+      "source": "restoredefaultpath;\nroot='/Users/jearly/Documents/OceanKitRepositories';cd(fullfile(root,'wave-vortex-model'));addpath('tools');\nconfigureCIEnvironment(pwd,fullfile(root,'OceanKit'));\np=string(strsplit(path,pathsep));bad=contains(p,'/internal-modes');if any(bad),rmpath(char(join(p(bad),pathsep)));end\nassert(contains(which('IMInternalModes'),'/InternalModes-2.0.0-beta.5/'));\nassert(numel(which('IMInternalModes','-all'))==1);maxNumCompThreads(4);\n",
+      "invocationEvidence": "literal-helper-of-requested-script"
+    },
+    {
+      "path": "recovery/thermal.m",
+      "bytes": 443,
+      "sha256": "fd9889fcc98c2ddd907308231a4a439aeaf5445da187f59fc459b46c3443b3e1",
+      "lastModifiedUTC": "2026-09-14T23:10:12.424960+00:00",
+      "requestedByGuardDirectories": [
+        "recovery/thermal"
+      ],
+      "literalRunReferences": [
+        "/Users/jearly/Documents/OceanKitRepositories/thermal-readiness-t10-evidence/recovery/setup.m"
+      ],
+      "source": "run('/Users/jearly/Documents/OceanKitRepositories/thermal-readiness-t10-evidence/recovery/setup.m');\nevidence=fullfile(root,'thermal-readiness-t10-evidence');\nreport=runThermalReadinessStudy(fullfile(evidence,'windows'),\"thermal\",scientificCache=fullfile(evidence,'scientific64.mat'),closureCache=fullfile(evidence,'closure64.mat'),durationSeconds=21600,observationCount=9,wallTimeBudgetSeconds=1500);disp(report.cases);disp(report.coverage);\n",
+      "invocationEvidence": "requested-in-recorded-guard-command"
+    },
+    {
+      "path": "recovery/time.m",
+      "bytes": 440,
+      "sha256": "d0923ea834cc29a73afaa90cb5222e204013ef9df7462f35650d22b4122a5ae8",
+      "lastModifiedUTC": "2026-09-14T23:10:12.424710+00:00",
+      "requestedByGuardDirectories": [
+        "recovery/time"
+      ],
+      "literalRunReferences": [
+        "/Users/jearly/Documents/OceanKitRepositories/thermal-readiness-t10-evidence/recovery/setup.m"
+      ],
+      "source": "run('/Users/jearly/Documents/OceanKitRepositories/thermal-readiness-t10-evidence/recovery/setup.m');\nevidence=fullfile(root,'thermal-readiness-t10-evidence');\nreport=runThermalReadinessStudy(fullfile(evidence,'windows'),\"time\",scientificCache=fullfile(evidence,'scientific64.mat'),closureCache=fullfile(evidence,'closure64.mat'),durationSeconds=21600,observationCount=9,wallTimeBudgetSeconds=1500);disp(report.cases);disp(report.coverage);\n",
+      "invocationEvidence": "requested-in-recorded-guard-command"
+    },
+    {
+      "path": "recovery/timeV2.m",
+      "bytes": 552,
+      "sha256": "a55abc822d51500f3877633e7eba8e73efcf7644afb3f401e911d3c663e41f99",
+      "lastModifiedUTC": "2026-09-14T23:31:23.229096+00:00",
+      "requestedByGuardDirectories": [
+        "recovery/time-v2"
+      ],
+      "literalRunReferences": [
+        "/Users/jearly/Documents/OceanKitRepositories/thermal-readiness-t10-evidence/recovery/analyzerFinal.m",
+        "/Users/jearly/Documents/OceanKitRepositories/thermal-readiness-t10-evidence/recovery/setup.m"
+      ],
+      "source": "run('/Users/jearly/Documents/OceanKitRepositories/thermal-readiness-t10-evidence/recovery/analyzerFinal.m');\nrun('/Users/jearly/Documents/OceanKitRepositories/thermal-readiness-t10-evidence/recovery/setup.m');\nevidence=fullfile(root,'thermal-readiness-t10-evidence');\nreport=runThermalReadinessStudy(fullfile(evidence,'windows-v2'),\"time\",scientificCache=fullfile(evidence,'scientific64.mat'),closureCache=fullfile(evidence,'closure64.mat'),durationSeconds=21600,observationCount=9,wallTimeBudgetSeconds=1500);disp(report.cases);disp(report.coverage);\n",
+      "invocationEvidence": "requested-in-recorded-guard-command"
+    },
+    {
+      "path": "recovery/verifyR2025b.m",
+      "bytes": 1460,
+      "sha256": "d05c22fba1fc6bd76cb90d13255067386b4b971824e466592461130e8d6d56bc",
+      "lastModifiedUTC": "2026-09-14T23:49:37.622591+00:00",
+      "requestedByGuardDirectories": [
+        "recovery/r2025b-tests"
+      ],
+      "literalRunReferences": [],
+      "source": "restoredefaultpath;\nroot='/Users/jearly/Documents/OceanKitRepositories';cd(fullfile(root,'wave-vortex-model'));addpath('tools');\nconfigureCIEnvironment(pwd,fullfile(root,'OceanKit'));\np=string(strsplit(path,pathsep));bad=contains(p,'/internal-modes');if any(bad),rmpath(char(join(p(bad),pathsep)));end\nassert(contains(which('IMInternalModes'),'/InternalModes-2.0.0-beta.5/'));\nassert(numel(which('IMInternalModes','-all'))==1);assert(strcmp(version('-release'),'2025b'));maxNumCompThreads(2);addpath('UnitTests','UnitTests/Fixtures');\nfiles=[\"TestThermalReadiness\",\"TestThermalReadinessConstruction\",\"TestThermalReadinessDamping\",\"TestThermalReadinessDiagnostics\",\"TestThermalReadinessRestart\",\"TestThermalReadinessWindows\",\"TestThermalCampaignResources\",\"TestFreeSurfaceThermalQG\",\"TestThermalIntegration\",\"TestThermalForcing\",\"TestThermalOutputRestart\",\"TestThermalNonlinear\",\"TestSharedResolvedContracts\"];\nsuite=testsuite(\"UnitTests/\"+files(1)+\".m\");for file=files(2:end),suite=[suite,testsuite(\"UnitTests/\"+file+\".m\")];end\nresults=run(suite);save(fullfile(root,'thermal-readiness-t10-evidence','recovery','r2025b-tests.mat'),'results');t=table(string({results.Name})',[results.Passed]',[results.Failed]',[results.Incomplete]',[results.Duration]',VariableNames={'Name','Passed','Failed','Incomplete','Duration'});writetable(t,fullfile(root,'thermal-readiness-t10-evidence','recovery','r2025b-tests.csv'));assert(numel(results)==62);assertSuccess(results);\n",
+      "invocationEvidence": "requested-in-recorded-guard-command"
+    },
+    {
+      "path": "recovery/verify_small.m",
+      "bytes": 1334,
+      "sha256": "b62b052579ebe406d0b23e1c5b6ee08019b882911cf40299a2b1d3f690f5d8f8",
+      "lastModifiedUTC": "2026-09-14T22:53:20.214467+00:00",
+      "requestedByGuardDirectories": [
+        "recovery/small-checks",
+        "recovery/small-checks-v2"
+      ],
+      "literalRunReferences": [],
+      "source": "restoredefaultpath;\nroot='/Users/jearly/Documents/OceanKitRepositories';cd(fullfile(root,'wave-vortex-model'));addpath('tools');\nconfigureCIEnvironment(pwd,fullfile(root,'OceanKit'));\np=string(strsplit(path,pathsep));bad=contains(p,'/internal-modes');if any(bad),rmpath(char(join(p(bad),pathsep)));end\nassert(contains(which('IMInternalModes'),'/InternalModes-2.0.0-beta.5/'));\nassert(numel(which('IMInternalModes','-all'))==1);maxNumCompThreads(2);addpath('UnitTests','UnitTests/Fixtures');\nfiles=[\"TestThermalReadiness\",\"TestThermalReadinessConstruction\",\"TestThermalReadinessDamping\",\"TestThermalReadinessDiagnostics\",\"TestThermalReadinessRestart\",\"TestThermalReadinessWindows\",\"TestThermalCampaignResources\",\"TestFreeSurfaceThermalQG\",\"TestThermalIntegration\",\"TestThermalForcing\",\"TestThermalOutputRestart\",\"TestThermalNonlinear\",\"TestSharedResolvedContracts\"];\nsuite=testsuite(\"UnitTests/\"+files(1)+\".m\");for file=files(2:end),suite=[suite,testsuite(\"UnitTests/\"+file+\".m\")];end\nresults=run(suite);save(fullfile(root,'thermal-readiness-t10-evidence','recovery','small-tests.mat'),'results');assertSuccess(results);\nfiles=[\"+WVInternal/buildThermalPage.m\",\"tools/auditThermalReadinessConstruction.m\",\"UnitTests/TestThermalReadinessConstruction.m\"];\nfor file=files,m=checkcode(file,'-id');disp(file);disp(m);assert(isempty(m));end\n",
+      "invocationEvidence": "requested-in-recorded-guard-command"
+    },
+    {
+      "path": "recovery/workload10.m",
+      "bytes": 622,
+      "sha256": "371b8cbb2136a479dd608f551dd513177962fe5e0105a0b9cdd56a25ed4167c4",
+      "lastModifiedUTC": "2026-09-14T23:07:39.630728+00:00",
+      "requestedByGuardDirectories": [
+        "recovery/workload10"
+      ],
+      "literalRunReferences": [
+        "/Users/jearly/Documents/OceanKitRepositories/thermal-readiness-t10-evidence/recovery/setup.m"
+      ],
+      "source": "run('/Users/jearly/Documents/OceanKitRepositories/thermal-readiness-t10-evidence/recovery/setup.m');\nevidence=fullfile(root,'thermal-readiness-t10-evidence');\ncache=load(fullfile(evidence,'scientific64.mat'));\n[w,manifest]=thermalReadinessCase(struct(velocityRMS=.01,seasonalM=10,phase=pi/2),scientificState=cache.scientificState);\nfolder=fullfile(evidence,'workload10');mkdir(folder);save(fullfile(folder,'initial-manifest.mat'),'manifest');\nresults=benchmarkThermalWorkload(w,folder,duration=21600,step=900,repetitions=3,maximumWallSeconds=900,shouldScreenThreads=true,caseId=manifest.caseId);disp(results.integration);\n",
+      "invocationEvidence": "requested-in-recorded-guard-command"
+    },
+    {
+      "path": "recovery/workload100.m",
+      "bytes": 765,
+      "sha256": "092f29d39f0674b8b4048f77b198f0dbc28f3cd7518ab4f79257f4edeaa9e9b6",
+      "lastModifiedUTC": "2026-09-14T23:07:39.682401+00:00",
+      "requestedByGuardDirectories": [
+        "recovery/workload100"
+      ],
+      "literalRunReferences": [
+        "/Users/jearly/Documents/OceanKitRepositories/thermal-readiness-t10-evidence/recovery/setup.m"
+      ],
+      "source": "run('/Users/jearly/Documents/OceanKitRepositories/thermal-readiness-t10-evidence/recovery/setup.m');\nevidence=fullfile(root,'thermal-readiness-t10-evidence');\ncache=load(fullfile(evidence,'scientific64.mat'));closure=load(fullfile(evidence,'closure64.mat'));\n[w,manifest]=thermalReadinessCase(struct(velocityRMS=.1,seasonalM=100,phase=pi/2),scientificState=cache.scientificState);\nw.addForcing(thermalReadinessDamping(w,closure.canonical,variant=\"horizontal\"));\nfolder=fullfile(evidence,'workload100-horizontal');mkdir(folder);save(fullfile(folder,'initial-manifest.mat'),'manifest');\nresults=benchmarkThermalWorkload(w,folder,duration=21600,step=900,repetitions=3,maximumWallSeconds=900,shouldScreenThreads=false,caseId=manifest.caseId);disp(results.integration);\n",
+      "invocationEvidence": "requested-in-recorded-guard-command"
+    },
+    {
+      "path": "recovery/workload100Product769.m",
+      "bytes": 724,
+      "sha256": "a07f0579c6b6f86bf38de4d2a9501e2b5088578a00da970136dab383bca0cb13",
+      "lastModifiedUTC": "2026-09-14T23:59:34.189045+00:00",
+      "requestedByGuardDirectories": [
+        "recovery/workload100-product769"
+      ],
+      "literalRunReferences": [
+        "/Users/jearly/Documents/OceanKitRepositories/thermal-readiness-t10-evidence/recovery/setup.m"
+      ],
+      "source": "run('/Users/jearly/Documents/OceanKitRepositories/thermal-readiness-t10-evidence/recovery/setup.m');\nevidence=fullfile(root,'thermal-readiness-t10-evidence');cache=load(fullfile(evidence,'windows','product','product769','initial-case.mat'),'scientificState');\n[w,manifest]=thermalReadinessCase(struct(productCount=769,velocityRMS=0.1,seasonalM=100,phase=pi/2),scientificState=cache.scientificState);clear cache\nfolder=fullfile(evidence,'workload100-product769');mkdir(folder);save(fullfile(folder,'initial-manifest.mat'),'manifest');\nresults=benchmarkThermalWorkload(w,folder,duration=21600,step=900,repetitions=3,maximumWallSeconds=900,shouldScreenThreads=false,caseId=manifest.caseId);disp(results.integration);delete(w);\n",
+      "invocationEvidence": "requested-in-recorded-guard-command"
+    },
+    {
+      "path": "recovery/workload10Product769.m",
+      "bytes": 723,
+      "sha256": "afecc6f380fb5597d3c9761c799f675f65687f3663176dc9c3232350282d2fe6",
+      "lastModifiedUTC": "2026-09-14T23:59:34.188963+00:00",
+      "requestedByGuardDirectories": [
+        "recovery/workload10-product769"
+      ],
+      "literalRunReferences": [
+        "/Users/jearly/Documents/OceanKitRepositories/thermal-readiness-t10-evidence/recovery/setup.m"
+      ],
+      "source": "run('/Users/jearly/Documents/OceanKitRepositories/thermal-readiness-t10-evidence/recovery/setup.m');\nevidence=fullfile(root,'thermal-readiness-t10-evidence');cache=load(fullfile(evidence,'windows','product','product769','initial-case.mat'),'scientificState');\n[w,manifest]=thermalReadinessCase(struct(productCount=769,velocityRMS=0.01,seasonalM=10,phase=pi/2),scientificState=cache.scientificState);clear cache\nfolder=fullfile(evidence,'workload10-product769');mkdir(folder);save(fullfile(folder,'initial-manifest.mat'),'manifest');\nresults=benchmarkThermalWorkload(w,folder,duration=21600,step=900,repetitions=3,maximumWallSeconds=900,shouldScreenThreads=false,caseId=manifest.caseId);disp(results.integration);delete(w);\n",
+      "invocationEvidence": "requested-in-recorded-guard-command"
+    },
+    {
+      "path": "recovery/workloadCold10.m",
+      "bytes": 612,
+      "sha256": "8abce5be653027ca7156bf25ddb0e5745988ff54542c3a91763d5da9976da0c3",
+      "lastModifiedUTC": "2026-09-14T23:17:40.842757+00:00",
+      "requestedByGuardDirectories": [
+        "recovery/workload-cold10"
+      ],
+      "literalRunReferences": [
+        "/Users/jearly/Documents/OceanKitRepositories/thermal-readiness-t10-evidence/recovery/setup.m"
+      ],
+      "source": "run('/Users/jearly/Documents/OceanKitRepositories/thermal-readiness-t10-evidence/recovery/setup.m');\nevidence=fullfile(root,'thermal-readiness-t10-evidence');cache=load(fullfile(evidence,'scientific64.mat'));\n[w,manifest]=thermalReadinessCase(struct(kind=\"cold\",seasonalM=10),scientificState=cache.scientificState);\nfolder=fullfile(evidence,'workload-cold10');mkdir(folder);save(fullfile(folder,'initial-manifest.mat'),'manifest');\nresults=benchmarkThermalWorkload(w,folder,duration=21600,step=900,repetitions=2,maximumWallSeconds=900,shouldScreenThreads=false,caseId=manifest.caseId);disp(results.integration);\n",
+      "invocationEvidence": "requested-in-recorded-guard-command"
+    },
+    {
+      "path": "recovery/workloadCold10Product769.m",
+      "bytes": 691,
+      "sha256": "668e927202ff578b7987cb2106381f3d7419fb5cd11b8e79c113a336d0f55a84",
+      "lastModifiedUTC": "2026-09-15T00:13:56.624326+00:00",
+      "requestedByGuardDirectories": [
+        "recovery/workload-cold10-product769"
+      ],
+      "literalRunReferences": [
+        "/Users/jearly/Documents/OceanKitRepositories/thermal-readiness-t10-evidence/recovery/setup.m"
+      ],
+      "source": "run('/Users/jearly/Documents/OceanKitRepositories/thermal-readiness-t10-evidence/recovery/setup.m');\nevidence=fullfile(root,'thermal-readiness-t10-evidence');cache=load(fullfile(evidence,'windows','product','product769','initial-case.mat'),'scientificState');\n[w,manifest]=thermalReadinessCase(struct(kind=\"cold\",seasonalM=10,productCount=769),scientificState=cache.scientificState);\nfolder=fullfile(evidence,'workload-cold10-product769');mkdir(folder);save(fullfile(folder,'initial-manifest.mat'),'manifest');\nresults=benchmarkThermalWorkload(w,folder,duration=21600,step=900,repetitions=2,maximumWallSeconds=900,shouldScreenThreads=false,caseId=manifest.caseId);disp(results.integration);\n",
+      "invocationEvidence": "requested-in-recorded-guard-command"
+    },
+    {
+      "path": "recovery/zero10.m",
+      "bytes": 371,
+      "sha256": "aeabd3e95bf29f1967f06c0d4f2a9f0917329862d67dcd1669c85be57f31565e",
+      "lastModifiedUTC": "2026-09-14T23:16:22.450271+00:00",
+      "requestedByGuardDirectories": [
+        "recovery/zero10"
+      ],
+      "literalRunReferences": [
+        "/Users/jearly/Documents/OceanKitRepositories/thermal-readiness-t10-evidence/recovery/setup.m"
+      ],
+      "source": "run('/Users/jearly/Documents/OceanKitRepositories/thermal-readiness-t10-evidence/recovery/setup.m');\nevidence=fullfile(root,'thermal-readiness-t10-evidence');\nreport=runThermalReadinessStudy(fullfile(evidence,'windows'),\"zero10\",scientificCache=fullfile(evidence,'scientific64.mat'),durationSeconds=21600,observationCount=9,wallTimeBudgetSeconds=900);disp(report.cases);\n",
+      "invocationEvidence": "requested-in-recorded-guard-command"
+    },
+    {
+      "path": "recovery/zero100.m",
+      "bytes": 443,
+      "sha256": "70742391c04d7b7a5f2850130e763f661a1ab765b5e413b0bc3c39750b68a2df",
+      "lastModifiedUTC": "2026-09-14T23:10:12.425320+00:00",
+      "requestedByGuardDirectories": [
+        "recovery/zero100"
+      ],
+      "literalRunReferences": [
+        "/Users/jearly/Documents/OceanKitRepositories/thermal-readiness-t10-evidence/recovery/setup.m"
+      ],
+      "source": "run('/Users/jearly/Documents/OceanKitRepositories/thermal-readiness-t10-evidence/recovery/setup.m');\nevidence=fullfile(root,'thermal-readiness-t10-evidence');\nreport=runThermalReadinessStudy(fullfile(evidence,'windows'),\"zero100\",scientificCache=fullfile(evidence,'scientific64.mat'),closureCache=fullfile(evidence,'closure64.mat'),durationSeconds=21600,observationCount=9,wallTimeBudgetSeconds=1500);disp(report.cases);disp(report.coverage);\n",
+      "invocationEvidence": "requested-in-recorded-guard-command"
+    }
+  ]
+}

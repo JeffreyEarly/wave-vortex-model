@@ -1,0 +1,23 @@
+{
+  "recordedAt": "2026-09-15T00:12:09.462754+00:00",
+  "loadAverage": [
+    2.8408203125,
+    2.77880859375,
+    2.6943359375
+  ],
+  "swap": {
+    "returncode": 0,
+    "stdout": "vm.swapusage: total = 0.00M  used = 0.00M  free = 0.00M  (encrypted)\n",
+    "stderr": ""
+  },
+  "virtualMemory": {
+    "returncode": 0,
+    "stdout": "Mach Virtual Memory Statistics: (page size of 16384 bytes)\nPages free:                                  1241552.\nPages active:                                 403889.\nPages inactive:                               573278.\nPages speculative:                             77939.\nPages throttled:                                   0.\nPages wired down:                             213015.\nPages purgeable:                               22650.\n\"Translation faults\":                       65538618.\nPages copy-on-write:                         1528293.\nPages zero filled:                          59580938.\nPages reactivated:                           1400573.\nPages purged:                                 602220.\nFile-backed pages:                            630972.\nAnonymous pages:                              424134.\nPages stored in compressor:                  1007610.\nPages occupied by compressor:                 556449.\nDecompressions:                              1212421.\nCompressions:                                3353402.\nPageins:                                     3855371.\nPageouts:                                      37266.\nSwapins:                                           0.\nSwapouts:                                          0.\nPages tagged:                                 132939.\nPages tagged resident:                         90152.\nPages tagged compressed:                       42787.\nPages tag-storage:                             98304.\nPages tag-storage holding tags:                 4897.\nPages tag-storage free:                        17295.\nPages tag-storage non-tag pageable:            76103.\nPages tag-storage non-tag wired:                   9.\nBytes of compressed tags:                    6656256.\nTagged compressions:                           67350.\nTagged decompressions:                         24097.\n",
+    "stderr": ""
+  },
+  "pressure": {
+    "returncode": 0,
+    "stdout": "The system has 51539607552 (3145728 pages with a page size of 16384).\nSystem-wide memory free percentage: 74%\n",
+    "stderr": ""
+  }
+}

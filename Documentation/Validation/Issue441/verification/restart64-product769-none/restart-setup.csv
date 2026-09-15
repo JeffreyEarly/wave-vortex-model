@@ -1,0 +1,2 @@
+controlOutputSetupSeconds,controlIntegrationSeconds,checkpointOutputSetupSeconds,checkpointIntegrationSeconds,checkpointSyncAndCloseSeconds,checkpointBytes,controlBytes,referenceMATBytes,totalWallSeconds
+0.646539333333333,10.7052587916667,0.290352541666667,5.86049708333333,0.0203668333333333,696584408,699725827,102873087,99.4066275416667

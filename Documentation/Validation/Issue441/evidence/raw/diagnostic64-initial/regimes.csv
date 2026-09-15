@@ -1,0 +1,9 @@
+forcingMultiplier,regime,accepted,recordIds
+10,cold,0,
+10,developed-zero,0,
+10,developed-peak,0,
+10,nonzero-mean,1,66874428a644f8e97d1ce74ac3e0738b20524b192add09651f3e7b8547f3233c/manufactured-initial
+100,cold,0,
+100,developed-zero,0,
+100,developed-peak,0,
+100,nonzero-mean,0,

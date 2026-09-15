@@ -1,0 +1,12 @@
+axis,status
+time,NOT RUN
+product sampling,NOT RUN
+thermal bandwidth,NOT RUN
+native sampling,MEASURED SUBSET
+horizontal bandwidth,NOT RUN
+mean bandwidth,NOT RUN
+diagnostic sampling,NOT RUN
+restart,NOT RUN
+nonlinear activity,NOT RUN
+closure bias,NOT RUN
+resource feasibility,NOT RUN

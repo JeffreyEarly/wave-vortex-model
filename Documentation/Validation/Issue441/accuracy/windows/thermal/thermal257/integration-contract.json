@@ -1,0 +1,63 @@
+{
+  "executionId": "d9c9fa846014dedd86c770eeb08006eb350064cd3cc842ecd13e08d611ddccfd",
+  "initialCaseId": "79ee6bfba21314d9f0cda97e4b6a1dd088d1fc0604e0e3f079e907837159b2a9",
+  "gravity": 9.81,
+  "inventoryFloors": [
+    4.9780339693526495E-8,
+    2E-21,
+    5E-9,
+    5.0000000000000008E-11
+  ],
+  "inventoryNames": [
+    "totalEnergy",
+    "potentialEnstrophy",
+    "surfaceAnomalyVariance",
+    "bottomAnomalyVariance"
+  ],
+  "fieldCriteria": {
+    "observable": [
+      "qgpv",
+      "buoyancy",
+      "velocity",
+      "ssh",
+      "surfaceAnomaly",
+      "bottomAnomaly",
+      "energyNorm",
+      "upperBuoyancyGradient",
+      "surfaceBuoyancyGradient"
+    ],
+    "units": [
+      "s^-1",
+      "m s^-2",
+      "m s^-1",
+      "m",
+      "m",
+      "m",
+      "m^(3/2) s^-1",
+      "s^-2",
+      "s^-2"
+    ],
+    "relativeAllowance": [
+      0.01,
+      0.01,
+      0.01,
+      0.01,
+      0.01,
+      0.01,
+      0.01,
+      0.05,
+      0.05
+    ],
+    "absoluteFloor": [
+      1E-12,
+      1E-10,
+      1E-7,
+      0.0001,
+      0.0001,
+      1E-5,
+      1E-6,
+      1E-11,
+      1E-11
+    ]
+  }
+}

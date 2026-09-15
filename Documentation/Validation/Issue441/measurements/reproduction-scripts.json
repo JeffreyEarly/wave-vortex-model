@@ -1,7 +1,7 @@
 {
   "schema": "t10-measurement-reproduction-scripts-v1",
   "evidenceRoot": "/Users/jearly/Documents/OceanKitRepositories/thermal-readiness-t10-evidence",
-  "scope": "Text copies of the exact executed bootstrap scripts; scripts contain local absolute paths. Driver implementations are versioned in the authoring repository. Use new output directories on rerun.",
+  "scope": "Retained text copies of invoked bootstrap scripts, captured during reporting; original absolute paths must be replaced for reproduction. Source bytes were not independently hash-locked at each historical invocation. Driver implementations are versioned in the authoring repository. Use new output directories on rerun.",
   "scripts": [
     {
       "sourceRelativeToEvidenceRoot": "recovery/setup.m",
@@ -37,6 +37,26 @@
       "sourceRelativeToEvidenceRoot": "recovery/pinnedAPVv2.m",
       "sha256": "767e7329f0586bd0a8772ff488e23977ae15168efb7777b4a8c08079714fecf8",
       "source": "% Recreate the historical APV workload in a fresh guarded MATLAB process.\n% The released historical pins remain separate from the current beta.5 path.\nworkspaceRoot = \"/Users/jearly/Documents/OceanKitRepositories\";\nevidenceRoot = fullfile(workspaceRoot,\"thermal-readiness-t10-evidence\");\npinnedWorkspace = fullfile(evidenceRoot,\"pinned\");\nexperimentRoot = fullfile(workspaceRoot,\"free-surface-qg-experiments\");\nauthoringTools = fullfile(workspaceRoot,\"wave-vortex-model\",\"tools\");\noutputDirectory = fullfile(evidenceRoot,\"pinned-apv-cold-v2\");\nif isfolder(outputDirectory)\n    error('WV:ReadinessPinnedEvidence','Choose a new output directory; existing evidence is immutable: %s.',outputDirectory);\nend\ncd(pinnedWorkspace);\nrestoredefaultpath;\naddpath(experimentRoot);\ndependencies = setupExperiment(pinnedWorkspace);\naddpath(authoringTools);\nresolvedPaths = strings(numel(dependencies),1);\nfor dependencyIndex = 1:numel(dependencies)\n    dependency = dependencies(dependencyIndex);\n    resolvedPaths(dependencyIndex) = string(which(dependency.symbol));\n    expectedPrefix = fullfile(pinnedWorkspace,dependency.directory)+filesep;\n    if ~startsWith(resolvedPaths(dependencyIndex),expectedPrefix)\n        error('WV:ReadinessPinnedEnvironment','%s resolves outside its isolated historical checkout: %s.',dependency.symbol,resolvedPaths(dependencyIndex));\n    end\n    fprintf('%s: %s\\n',dependency.symbol,resolvedPaths(dependencyIndex));\nend\nexpectedBenchmark = fullfile(authoringTools,\"benchmarkPinnedThermalReadinessAPV.m\");\nif string(which('benchmarkPinnedThermalReadinessAPV'))~=expectedBenchmark\n    error('WV:ReadinessPinnedEnvironment','The authoring benchmark does not resolve to %s.',expectedBenchmark);\nend\nmkdir(outputDirectory);\npathProvenance = struct(matlabVersion=string(version),platform=string(computer),dependencies=dependencies,resolvedPaths=resolvedPaths,benchmarkPath=expectedBenchmark);\nfid = fopen(fullfile(outputDirectory,\"resolved-paths.json\"),'w');\nif fid<0\n    error('WV:ReadinessPinnedEvidence','Cannot write resolved path provenance.');\nend\nfileCleanup = onCleanup(@()fclose(fid));\nfwrite(fid,jsonencode(pathProvenance,PrettyPrint=true));\nclear fileCleanup\nreport = benchmarkPinnedThermalReadinessAPV(outputDirectory,duration=21600,maximumWallSeconds=900);\nfprintf('Pinned APV status: %s\\nReason: %s\\n',report.status,report.reason);\nif report.status~=\"MEASURED CONTROL\"\n    error('WV:ReadinessPinnedIncomplete','Historical APV baseline was not fully measured: %s.',report.reason);\nend\n"
+    },
+    {
+      "sourceRelativeToEvidenceRoot": "recovery/workloadCold10.m",
+      "sha256": "8abce5be653027ca7156bf25ddb0e5745988ff54542c3a91763d5da9976da0c3",
+      "source": "run('/Users/jearly/Documents/OceanKitRepositories/thermal-readiness-t10-evidence/recovery/setup.m');\nevidence=fullfile(root,'thermal-readiness-t10-evidence');cache=load(fullfile(evidence,'scientific64.mat'));\n[w,manifest]=thermalReadinessCase(struct(kind=\"cold\",seasonalM=10),scientificState=cache.scientificState);\nfolder=fullfile(evidence,'workload-cold10');mkdir(folder);save(fullfile(folder,'initial-manifest.mat'),'manifest');\nresults=benchmarkThermalWorkload(w,folder,duration=21600,step=900,repetitions=2,maximumWallSeconds=900,shouldScreenThreads=false,caseId=manifest.caseId);disp(results.integration);\n"
+    },
+    {
+      "sourceRelativeToEvidenceRoot": "recovery/workloadCold10Product769.m",
+      "sha256": "668e927202ff578b7987cb2106381f3d7419fb5cd11b8e79c113a336d0f55a84",
+      "source": "run('/Users/jearly/Documents/OceanKitRepositories/thermal-readiness-t10-evidence/recovery/setup.m');\nevidence=fullfile(root,'thermal-readiness-t10-evidence');cache=load(fullfile(evidence,'windows','product','product769','initial-case.mat'),'scientificState');\n[w,manifest]=thermalReadinessCase(struct(kind=\"cold\",seasonalM=10,productCount=769),scientificState=cache.scientificState);\nfolder=fullfile(evidence,'workload-cold10-product769');mkdir(folder);save(fullfile(folder,'initial-manifest.mat'),'manifest');\nresults=benchmarkThermalWorkload(w,folder,duration=21600,step=900,repetitions=2,maximumWallSeconds=900,shouldScreenThreads=false,caseId=manifest.caseId);disp(results.integration);\n"
+    },
+    {
+      "sourceRelativeToEvidenceRoot": "recovery/workload10Product769.m",
+      "sha256": "afecc6f380fb5597d3c9761c799f675f65687f3663176dc9c3232350282d2fe6",
+      "source": "run('/Users/jearly/Documents/OceanKitRepositories/thermal-readiness-t10-evidence/recovery/setup.m');\nevidence=fullfile(root,'thermal-readiness-t10-evidence');cache=load(fullfile(evidence,'windows','product','product769','initial-case.mat'),'scientificState');\n[w,manifest]=thermalReadinessCase(struct(productCount=769,velocityRMS=0.01,seasonalM=10,phase=pi/2),scientificState=cache.scientificState);clear cache\nfolder=fullfile(evidence,'workload10-product769');mkdir(folder);save(fullfile(folder,'initial-manifest.mat'),'manifest');\nresults=benchmarkThermalWorkload(w,folder,duration=21600,step=900,repetitions=3,maximumWallSeconds=900,shouldScreenThreads=false,caseId=manifest.caseId);disp(results.integration);delete(w);\n"
+    },
+    {
+      "sourceRelativeToEvidenceRoot": "recovery/workload100Product769.m",
+      "sha256": "a07f0579c6b6f86bf38de4d2a9501e2b5088578a00da970136dab383bca0cb13",
+      "source": "run('/Users/jearly/Documents/OceanKitRepositories/thermal-readiness-t10-evidence/recovery/setup.m');\nevidence=fullfile(root,'thermal-readiness-t10-evidence');cache=load(fullfile(evidence,'windows','product','product769','initial-case.mat'),'scientificState');\n[w,manifest]=thermalReadinessCase(struct(productCount=769,velocityRMS=0.1,seasonalM=100,phase=pi/2),scientificState=cache.scientificState);clear cache\nfolder=fullfile(evidence,'workload100-product769');mkdir(folder);save(fullfile(folder,'initial-manifest.mat'),'manifest');\nresults=benchmarkThermalWorkload(w,folder,duration=21600,step=900,repetitions=3,maximumWallSeconds=900,shouldScreenThreads=false,caseId=manifest.caseId);disp(results.integration);delete(w);\n"
     }
   ]
 }
