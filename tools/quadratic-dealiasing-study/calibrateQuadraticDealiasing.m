@@ -126,7 +126,7 @@ function N2 = stratification(profile)
 switch profile
     case "constant", N2=@(z)1e-4+zeros(size(z));
     case "exponential", N2=@(z)1e-4*exp(2*z/700);
-    case "sharp", N2=@(z)1e-6+9.9e-5*exp(-((z+200)/70).^2);
+    case "sharp", N2=@(z)1e-5+9e-5*exp(-((z+200)/100).^2);
     otherwise, error('DealiasingStudy:UnknownProfile','Unknown study profile %s.',profile)
 end
 end
