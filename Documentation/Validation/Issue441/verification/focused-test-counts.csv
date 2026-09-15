@@ -1,0 +1,14 @@
+class,uniquePassedMethods
+TestFreeSurfaceThermalQG,8
+TestSharedResolvedContracts,6
+TestThermalCampaignResources,3
+TestThermalForcing,4
+TestThermalIntegration,6
+TestThermalNonlinear,6
+TestThermalOutputRestart,7
+TestThermalReadiness,9
+TestThermalReadinessConstruction,2
+TestThermalReadinessDamping,4
+TestThermalReadinessDiagnostics,3
+TestThermalReadinessRestart,1
+TestThermalReadinessWindows,3

@@ -1,0 +1,2 @@
+caseId,recordId,time,forcingMultiplier,seasonalPhase,regime,hasNonzeroMean,stateSHA256
+66874428a644f8e97d1ce74ac3e0738b20524b192add09651f3e7b8547f3233c,manufactured-initial,0,10,0,capacity-only,1,15613f510f052d5e841c1f481efdb4f72e71f7fa6b03c41d3048e61ee2212cf8

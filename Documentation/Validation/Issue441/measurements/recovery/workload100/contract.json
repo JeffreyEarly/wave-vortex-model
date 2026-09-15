@@ -1,0 +1,14 @@
+{
+  "command": [
+    "matlab",
+    "-batch",
+    "run('/Users/jearly/Documents/OceanKitRepositories/thermal-readiness-t10-evidence/recovery/workload100.m')"
+  ],
+  "pid": 6296,
+  "processGroup": 6296,
+  "limitGiB": 16.0,
+  "maximumSeconds": 1200.0,
+  "samplingIntervalSeconds": 0.25,
+  "termGraceSeconds": 0.5,
+  "footprintAggregation": "sum over owned group and observed descendants"
+}
