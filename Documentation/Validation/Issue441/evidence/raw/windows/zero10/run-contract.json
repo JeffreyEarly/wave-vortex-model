@@ -1,0 +1,99 @@
+{
+  "schema": "thermal-readiness-window-v2",
+  "cases": {
+    "name": "zero10",
+    "configuration": {
+      "velocityRMS": 0.01,
+      "seasonalM": 10,
+      "phase": 0
+    },
+    "step": 900,
+    "adaptive": false,
+    "relTolerance": 1E-6,
+    "physicalAbsTolerance": [
+      1E-13,
+      1E-11,
+      1E-8,
+      1E-8,
+      1E-9
+    ],
+    "sharedInitialState": true,
+    "dampingVariant": "none",
+    "scientificCacheHash": "6f30b8071e7bca3e30443b10b1690567619506dead8eba6544769b16a590b1c8",
+    "gravity": 9.81
+  },
+  "options": {
+    "durationSeconds": 21600,
+    "observationOffsets": [
+      0,
+      2700,
+      5400,
+      8100,
+      10800,
+      13500,
+      16200,
+      18900,
+      21600
+    ],
+    "pairs": [],
+    "wallTimeBudgetSeconds": 900,
+    "caseWallTimeBudgetSeconds": 900,
+    "comparisonCount": 513,
+    "canonicalDamping": {}
+  },
+  "observationSemantics": "hard boundaries at observations and blocks of at most twice the requested maximum step",
+  "energyNormDefinition": "sqrt(2*positive physical energy)",
+  "readinessScope": "bounded windows; missing reference/regime/resource gates remain conditional",
+  "fieldCriteria": {
+    "observable": [
+      "qgpv",
+      "buoyancy",
+      "velocity",
+      "ssh",
+      "surfaceAnomaly",
+      "bottomAnomaly",
+      "energyNorm",
+      "upperBuoyancyGradient",
+      "surfaceBuoyancyGradient"
+    ],
+    "units": [
+      "s^-1",
+      "m s^-2",
+      "m s^-1",
+      "m",
+      "m",
+      "m",
+      "m^(3/2) s^-1",
+      "s^-2",
+      "s^-2"
+    ],
+    "relativeAllowance": [
+      0.01,
+      0.01,
+      0.01,
+      0.01,
+      0.01,
+      0.01,
+      0.01,
+      0.05,
+      0.05
+    ],
+    "absoluteFloor": [
+      1E-12,
+      1E-10,
+      1E-7,
+      0.0001,
+      0.0001,
+      1E-5,
+      1E-6,
+      1E-11,
+      1E-11
+    ]
+  },
+  "initialAndTemporalAllowanceFraction": 0.1,
+  "maximumUncertaintyFraction": 0.2,
+  "inventoryRelativeAllowance": 0.002,
+  "inventoryFloorRecipe": "E_floor = D*u_floor^2/2 + (sqrt(D/min(N2))*b_floor + sqrt(integral(N2*(1+z/D)^2 dz))*ssh_floor)^2/2 + g*ssh_floor^2/2; Z_floor = D*q_floor^2/2; endpoint floors = displacement_floor^2/2. The energy bound retains the affine SSH lift and is conservative for volume RMS buoyancy error.",
+  "executionIdentity": "thermalReadinessIdentity(struct(runId=contract.runId,caseName=caseName)); manifest.caseId identifies the initial case only",
+  "runId": "76cc5bb436bd9ee2b47c3f436f82d7a02409f1a1fd960c63776c9ff13fcd04e6"
+}

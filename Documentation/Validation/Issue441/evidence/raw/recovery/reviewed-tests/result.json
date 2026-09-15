@@ -1,0 +1,18 @@
+{
+  "reason": "command-failed",
+  "returncode": 1,
+  "elapsedSeconds": 19.871695792000082,
+  "peakSampledFootprintBytes": 1023921008,
+  "peakSampledResidentBytes": 1473331200,
+  "osAccountedChildMaxResidentBytes": 1478737920,
+  "osResidentAccounting": "macOS ru_maxrss bytes for children reaped by this guard; not a simultaneous family-memory sum",
+  "samples": 78,
+  "observedPids": [
+    7326,
+    7410,
+    7426
+  ],
+  "cancellationSignals": [],
+  "samplingIntervalSeconds": 0.25,
+  "detail": ""
+}

@@ -1,0 +1,6 @@
+{
+  "candidateExecutionId": "d9c9fa846014dedd86c770eeb08006eb350064cd3cc842ecd13e08d611ddccfd",
+  "referenceExecutionId": "a93afebcba8bf7f96a608dc38fcd50d7ecc60c7ebe383401fd3541be446c454b",
+  "missingRefinement": "thermal513 stopped by 32 GiB guard",
+  "status": "INCONCLUSIVE REFERENCE"
+}

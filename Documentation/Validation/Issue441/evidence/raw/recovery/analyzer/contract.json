@@ -1,0 +1,10 @@
+{
+  "command": [
+    "matlab",
+    "-batch",
+    "run('/Users/jearly/Documents/OceanKitRepositories/thermal-readiness-t10-evidence/recovery/analyze.m')"
+  ],
+  "pid": 3142,
+  "limitGiB": 8.0,
+  "maximumSeconds": 600.0
+}

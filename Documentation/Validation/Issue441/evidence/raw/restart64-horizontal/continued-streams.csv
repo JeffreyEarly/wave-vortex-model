@@ -1,0 +1,13 @@
+group,variable,committedRecords,absoluteError,referenceNorm,relativeError
+wave-vortex,t,4,0,6933.7807868435,0
+wave-vortex,Amda,4,0,0.774592768839228,0
+wave-vortex,Ath,4,0,0.122179105857556,0
+fields,t,6,0,7394.09385929067,0
+fields,ssh,6,0,1.21142756896337,0
+fields,surfaceAnomaly,6,0,1938.66810335146,0
+fields,bottomAnomaly,6,0,36095.9561714918,0
+inventory,t,9,0,9660.43275428177,0
+inventory,totalEnergy,9,0,7.40483745755937,0
+inventory,potentialEnstrophy,9,0,1.66392344333817e-07,0
+inventory,surfaceAnomalyVariance,9,0,229.375855267861,0
+inventory,bottomAnomalyVariance,9,0,79524.2451331893,0

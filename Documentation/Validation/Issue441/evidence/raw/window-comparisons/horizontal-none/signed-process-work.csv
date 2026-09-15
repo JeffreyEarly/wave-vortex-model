@@ -1,0 +1,41 @@
+role,dampingVariant,inventory,process,signedIntegratedWork,positiveIntegratedWork,negativeIntegratedWork,samplingUncertainty
+candidate,horizontal,totalEnergy,density diffusion,-0.000242846396026852,0,-0.000242846396026852,2.46486932747945e-08
+candidate,horizontal,totalEnergy,seasonal surface anomaly,5.25481164084784e-05,5.25481164084784e-05,-1.99321846071603e-20,2.31150026373193e-09
+candidate,horizontal,totalEnergy,nonlinear advection,-2.16093110784562e-16,2.15992599205703e-16,-4.32085709990265e-16,4.38191316573847e-16
+candidate,horizontal,totalEnergy,quadratic bottom friction,-0.0370660838809583,0,-0.0370660838809583,2.42594314817102e-07
+candidate,horizontal,totalEnergy,APV-mapped thermal damping: horizontal,-5.10759547668768e-12,0,-5.10759547668768e-12,9.1439236969912e-14
+candidate,horizontal,totalEnergy,APV-mapped thermal damping: vertical,4.30071816943967e-28,5.5459996394359e-28,-1.24528146999623e-28,1.05737906462229e-28
+candidate,horizontal,potentialEnstrophy,density diffusion,3.5326720498008e-09,4.01632515845117e-09,-4.83653108650363e-10,7.71029802284174e-10
+candidate,horizontal,potentialEnstrophy,seasonal surface anomaly,3.8193505603705e-25,3.8193505603705e-25,-2.98196301771352e-41,9.78070900414935e-29
+candidate,horizontal,potentialEnstrophy,nonlinear advection,-7.83119755878031e-16,0,-7.83119755878031e-16,9.58706306170344e-18
+candidate,horizontal,potentialEnstrophy,quadratic bottom friction,2.76264346811043e-21,2.76264346811043e-21,0,2.97820190656409e-25
+candidate,horizontal,potentialEnstrophy,APV-mapped thermal damping: horizontal,-3.10947138864655e-22,0,-3.10947138864655e-22,1.97871358402244e-23
+candidate,horizontal,potentialEnstrophy,APV-mapped thermal damping: vertical,-4.51126480456282e-38,1.39806723787966e-37,-1.84919371833594e-37,2.01780595524238e-37
+candidate,horizontal,surfaceAnomalyVariance,density diffusion,-78.4141465246171,0,-78.4141465246171,46.7407583832281
+candidate,horizontal,surfaceAnomalyVariance,seasonal surface anomaly,0.0115283272520696,0.0115283272520696,-3.25848715676744e-18,7.28717230707304e-07
+candidate,horizontal,surfaceAnomalyVariance,nonlinear advection,-2.76727623730579e-07,0,-2.76727623730579e-07,7.4962586645531e-09
+candidate,horizontal,surfaceAnomalyVariance,quadratic bottom friction,6.37137272044705e-13,6.37137272044705e-13,0,1.21634919659496e-15
+candidate,horizontal,surfaceAnomalyVariance,APV-mapped thermal damping: horizontal,-3.41649644054802e-22,0,-3.41649644054802e-22,1.31761080963327e-22
+candidate,horizontal,surfaceAnomalyVariance,APV-mapped thermal damping: vertical,5.39295839620817e-33,6.63062239526453e-33,-1.23766399905636e-33,7.22038856749434e-33
+candidate,horizontal,bottomAnomalyVariance,density diffusion,1211.18517468937,1211.18517468937,0,6.01336923954682
+candidate,horizontal,bottomAnomalyVariance,seasonal surface anomaly,1.73248554587809e-17,1.73248554587929e-17,-1.20497068936487e-29,2.61229798831139e-19
+candidate,horizontal,bottomAnomalyVariance,nonlinear advection,-0.000163513461496171,7.05784888243262e-14,-0.00016351346156675,1.82169100905959e-06
+candidate,horizontal,bottomAnomalyVariance,quadratic bottom friction,-177.213178741384,0,-177.213178741384,0.00142423853685614
+candidate,horizontal,bottomAnomalyVariance,APV-mapped thermal damping: horizontal,-5.68732168669739e-08,0,-5.68732168669739e-08,1.00805874424419e-09
+candidate,horizontal,bottomAnomalyVariance,APV-mapped thermal damping: vertical,2.19487817386841e-24,3.75463608497645e-24,-1.55975791110804e-24,1.84564200175007e-24
+reference,none,totalEnergy,density diffusion,-0.000242846396026853,0,-0.000242846396026853,2.46486932748216e-08
+reference,none,totalEnergy,seasonal surface anomaly,5.25481164084816e-05,5.25481164084816e-05,-1.99321846071603e-20,2.31150026358963e-09
+reference,none,totalEnergy,nonlinear advection,3.88239777932624e-16,6.13370173877231e-16,-2.25130395944607e-16,1.00214577537662e-16
+reference,none,totalEnergy,quadratic bottom friction,-0.0370660838717079,0,-0.0370660838717079,2.42594116829642e-07
+reference,none,potentialEnstrophy,density diffusion,3.53267204980082e-09,4.01632515845119e-09,-4.83653108650363e-10,7.71029802284173e-10
+reference,none,potentialEnstrophy,seasonal surface anomaly,3.81935056037074e-25,3.81935056037074e-25,-2.98196301771352e-41,9.78070900420445e-29
+reference,none,potentialEnstrophy,nonlinear advection,-7.83119746354511e-16,0,-7.83119746354511e-16,9.58706992664349e-18
+reference,none,potentialEnstrophy,quadratic bottom friction,2.76345100814887e-21,2.76345100814887e-21,0,9.68514324015797e-25
+reference,none,surfaceAnomalyVariance,density diffusion,-78.4141465246171,0,-78.4141465246171,46.7407583832281
+reference,none,surfaceAnomalyVariance,seasonal surface anomaly,0.0115283272520696,0.0115283272520696,-3.25848715676744e-18,7.28717230710774e-07
+reference,none,surfaceAnomalyVariance,nonlinear advection,-2.76727627133438e-07,0,-2.76727627133438e-07,7.49625949120342e-09
+reference,none,surfaceAnomalyVariance,quadratic bottom friction,6.3733898469287e-13,6.3733898469287e-13,0,1.24476751086429e-15
+reference,none,bottomAnomalyVariance,density diffusion,1211.18517468938,1211.18517468938,0,6.01336923954636
+reference,none,bottomAnomalyVariance,seasonal surface anomaly,1.73248559995455e-17,1.73248559995576e-17,-1.20497068936487e-29,2.61229828150184e-19
+reference,none,bottomAnomalyVariance,nonlinear advection,-0.0001635134576659,7.05784888243262e-14,-0.000163513457736479,1.82169271511617e-06
+reference,none,bottomAnomalyVariance,quadratic bottom friction,-177.213178679313,0,-177.213178679313,0.00142423720825491

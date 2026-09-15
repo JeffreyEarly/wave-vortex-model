@@ -1,0 +1,6 @@
+file,id,line,message
+tools/benchmarkThermalWorkload.m,FEATGPID,122,"'feature('getpid')' is unsupported and not recommended. With appropriate code changes, use the function 'matlabProcessID' instead."
+tools/qualifyThermalReadiness.m,AGROW,231,"Variable appears to change size on every loop iteration. Consider preallocating for speed."
+tools/qualifyThermalReadinessDiagnostics.m,MSNU,113,"A Code Analyzer message was once suppressed here, but the message is no longer generated."
+tools/qualifyThermalReadinessDiagnostics.m,NASGU,183,"Value assigned to variable might be unused."
+tools/qualifyThermalReadinessRestart.m,MSNU,139,"A Code Analyzer message was once suppressed here, but the message is no longer generated."

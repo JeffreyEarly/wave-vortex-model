@@ -1,0 +1,10 @@
+{
+  "command": [
+    "matlab",
+    "-batch",
+    "run('/Users/jearly/Documents/OceanKitRepositories/thermal-readiness-t10-evidence/recovery/bootstrap.m')"
+  ],
+  "pid": 3613,
+  "limitGiB": 8.0,
+  "maximumSeconds": 900.0
+}

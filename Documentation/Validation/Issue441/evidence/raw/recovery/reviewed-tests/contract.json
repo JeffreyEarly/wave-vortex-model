@@ -1,0 +1,14 @@
+{
+  "command": [
+    "matlab",
+    "-batch",
+    "run('/Users/jearly/Documents/OceanKitRepositories/thermal-readiness-t10-evidence/recovery/reviewedTests.m')"
+  ],
+  "pid": 7326,
+  "processGroup": 7326,
+  "limitGiB": 8.0,
+  "maximumSeconds": 600.0,
+  "samplingIntervalSeconds": 0.25,
+  "termGraceSeconds": 0.5,
+  "footprintAggregation": "sum over owned group and observed descendants"
+}

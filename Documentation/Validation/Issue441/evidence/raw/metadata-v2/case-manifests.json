@@ -1,0 +1,3873 @@
+[
+  {
+    "path": "/Users/jearly/Documents/OceanKitRepositories/thermal-readiness-t10-evidence/windows/activity/companion/initial-case.mat",
+    "manifest": {
+      "schema": "thermal-readiness-case-v1",
+      "configuration": {
+        "kind": "developed",
+        "Nx": 64,
+        "Ny": 64,
+        "Nz": 385,
+        "thermalCount": 257,
+        "mdaCount": 4,
+        "assemblyCount": 2057,
+        "productCount": 1537,
+        "domainSize": [
+          500000,
+          500000,
+          4000
+        ],
+        "latitude": 24,
+        "N0": 0.0052,
+        "inverseScale": 0.00076923076923076923,
+        "kappa_z": 1E-5,
+        "seasonalM": 100,
+        "period": 3.15576E+7,
+        "phase": 1.5707963267948966,
+        "t": 0,
+        "t0": 0,
+        "seedRMS": 0.01,
+        "velocityRMS": 0.1,
+        "meanAmplitude": 0.1,
+        "normalizationCount": 513,
+        "shouldIncludeAdvection": false,
+        "shouldIncludeSeasonal": true,
+        "shouldIncludeBottomDrag": true,
+        "Cd": 0.001
+      },
+      "requestHash": "fc4761627892a4aa7865ae0e7802ef82a056140e8ad7f0a663935666c7e88a3e",
+      "sourceStateHash": "cccbe2b8f544536783f45747401d976ea09b02f2d1a6a52ecdb4fbcfe6246387",
+      "normalization": {
+        "method": "authoritative physical transfer; no target renormalization",
+        "factor": null,
+        "sourceStateHash": "cccbe2b8f544536783f45747401d976ea09b02f2d1a6a52ecdb4fbcfe6246387"
+      },
+      "initialFit": {
+        "method": "identical scientific arrays; exact canonical copy",
+        "relativeFieldError": 0,
+        "qgpvRMS": 0,
+        "buoyancyRMS": 0,
+        "velocityRMS": 0,
+        "endpointRMS": [
+          0,
+          0
+        ],
+        "sshRMS": 0,
+        "meanDisplacementRMS": 0,
+        "errorEnergy": 0,
+        "discardedFourierCount": 0
+      },
+      "scientificStateHash": "6f30b8071e7bca3e30443b10b1690567619506dead8eba6544769b16a590b1c8",
+      "coefficientStateHash": "2ba81008529234b1bcb67129e3c8831701c3150d62f23c58fe77877fcfce9e98",
+      "actualAssemblyCount": 2057,
+      "actualProductCount": 1537,
+      "activeEndpoints": [
+        1,
+        2
+      ],
+      "seasonalArgument": 1.5707963267948966,
+      "caseId": "ecf60be2f6031b9a473fc68d6ff2aad149ce824fc6e43b0dd28c50323f1ada2f"
+    }
+  },
+  {
+    "path": "/Users/jearly/Documents/OceanKitRepositories/thermal-readiness-t10-evidence/windows/activity/nonlinear/initial-case.mat",
+    "manifest": {
+      "schema": "thermal-readiness-case-v1",
+      "configuration": {
+        "kind": "developed",
+        "Nx": 64,
+        "Ny": 64,
+        "Nz": 385,
+        "thermalCount": 257,
+        "mdaCount": 4,
+        "assemblyCount": 2057,
+        "productCount": 1537,
+        "domainSize": [
+          500000,
+          500000,
+          4000
+        ],
+        "latitude": 24,
+        "N0": 0.0052,
+        "inverseScale": 0.00076923076923076923,
+        "kappa_z": 1E-5,
+        "seasonalM": 100,
+        "period": 3.15576E+7,
+        "phase": 1.5707963267948966,
+        "t": 0,
+        "t0": 0,
+        "seedRMS": 0.01,
+        "velocityRMS": 0.1,
+        "meanAmplitude": 0.1,
+        "normalizationCount": 513,
+        "shouldIncludeAdvection": true,
+        "shouldIncludeSeasonal": true,
+        "shouldIncludeBottomDrag": true,
+        "Cd": 0.001
+      },
+      "requestHash": "24cf0fb638e7ac4678cd328106c94623536a205a95f1b4032c37d70be4290fca",
+      "sourceStateHash": "",
+      "normalization": {
+        "method": "fixed physical quadrature of prescribed pressure; applied once",
+        "factor": 2944.8516324077868,
+        "unnormalizedRMS": 3.3957568150296734E-5,
+        "targetRMS": 0.1,
+        "quadratureCount": 513,
+        "horizontalModes": [
+          [
+            1,
+            0
+          ],
+          [
+            0,
+            2
+          ],
+          [
+            1,
+            1
+          ]
+        ],
+        "pressurePolynomial": {
+          "jsonEncoding": "complex array",
+          "shape": [
+            5,
+            3
+          ],
+          "real": [
+            [
+              2944.8516324077868,
+              2061.3961426854507,
+              -1177.9406529631149
+            ],
+            [
+              883.455489722336,
+              618.41884280563522,
+              -353.3821958889344
+            ],
+            [
+              2944.8516324077868,
+              0,
+              0
+            ],
+            [
+              0,
+              2061.3961426854507,
+              0
+            ],
+            [
+              0,
+              0,
+              -1177.9406529631149
+            ]
+          ],
+          "imaginary": [
+            [
+              0,
+              588.97032648155744,
+              883.455489722336
+            ],
+            [
+              0,
+              176.6910979444672,
+              265.03664691670082
+            ],
+            [
+              0,
+              0,
+              0
+            ],
+            [
+              0,
+              588.97032648155744,
+              0
+            ],
+            [
+              0,
+              0,
+              883.455489722336
+            ]
+          ]
+        },
+        "polynomialCoordinate": "normalized WKB coordinate",
+        "meanCoefficients": [
+          0.1,
+          -0.2,
+          0.30000000000000004,
+          -0.1
+        ]
+      },
+      "initialFit": {
+        "method": "declared low-degree pressure in the thermal WKB polynomial space",
+        "qgpvRMS": null,
+        "endpointRMS": [
+          null,
+          null
+        ]
+      },
+      "scientificStateHash": "6f30b8071e7bca3e30443b10b1690567619506dead8eba6544769b16a590b1c8",
+      "coefficientStateHash": "2ba81008529234b1bcb67129e3c8831701c3150d62f23c58fe77877fcfce9e98",
+      "actualAssemblyCount": 2057,
+      "actualProductCount": 1537,
+      "activeEndpoints": [
+        1,
+        2
+      ],
+      "seasonalArgument": 1.5707963267948966,
+      "caseId": "abeeb5121144fbdae0f17ac6f0c774c3de8ac052c583951e69cea8b12150fc6c"
+    }
+  },
+  {
+    "path": "/Users/jearly/Documents/OceanKitRepositories/thermal-readiness-t10-evidence/windows/budget-refinement-product769/startup-refined/initial-case.mat",
+    "manifest": {
+      "schema": "thermal-readiness-case-v1",
+      "configuration": {
+        "kind": "developed",
+        "Nx": 64,
+        "Ny": 64,
+        "Nz": 385,
+        "thermalCount": 257,
+        "mdaCount": 4,
+        "assemblyCount": 2057,
+        "productCount": 769,
+        "domainSize": [
+          500000,
+          500000,
+          4000
+        ],
+        "latitude": 24,
+        "N0": 0.0052,
+        "inverseScale": 0.00076923076923076923,
+        "kappa_z": 1E-5,
+        "seasonalM": 100,
+        "period": 3.15576E+7,
+        "phase": 1.5707963267948966,
+        "t": 0,
+        "t0": 0,
+        "seedRMS": 0.01,
+        "velocityRMS": 0.1,
+        "meanAmplitude": 0.1,
+        "normalizationCount": 513,
+        "shouldIncludeAdvection": true,
+        "shouldIncludeSeasonal": true,
+        "shouldIncludeBottomDrag": true,
+        "Cd": 0.001
+      },
+      "requestHash": "52a05d73d0dd78120885c8fc09e6b015aa3f7639704d01175c0ab1b1ff8d5bff",
+      "sourceStateHash": "",
+      "normalization": {
+        "method": "fixed physical quadrature of prescribed pressure; applied once",
+        "factor": 2944.8516324077868,
+        "unnormalizedRMS": 3.3957568150296734E-5,
+        "targetRMS": 0.1,
+        "quadratureCount": 513,
+        "horizontalModes": [
+          [
+            1,
+            0
+          ],
+          [
+            0,
+            2
+          ],
+          [
+            1,
+            1
+          ]
+        ],
+        "pressurePolynomial": {
+          "jsonEncoding": "complex array",
+          "shape": [
+            5,
+            3
+          ],
+          "real": [
+            [
+              2944.8516324077868,
+              2061.3961426854507,
+              -1177.9406529631149
+            ],
+            [
+              883.455489722336,
+              618.41884280563522,
+              -353.3821958889344
+            ],
+            [
+              2944.8516324077868,
+              0,
+              0
+            ],
+            [
+              0,
+              2061.3961426854507,
+              0
+            ],
+            [
+              0,
+              0,
+              -1177.9406529631149
+            ]
+          ],
+          "imaginary": [
+            [
+              0,
+              588.97032648155744,
+              883.455489722336
+            ],
+            [
+              0,
+              176.6910979444672,
+              265.03664691670082
+            ],
+            [
+              0,
+              0,
+              0
+            ],
+            [
+              0,
+              588.97032648155744,
+              0
+            ],
+            [
+              0,
+              0,
+              883.455489722336
+            ]
+          ]
+        },
+        "polynomialCoordinate": "normalized WKB coordinate",
+        "meanCoefficients": [
+          0.1,
+          -0.2,
+          0.30000000000000004,
+          -0.1
+        ]
+      },
+      "initialFit": {
+        "method": "declared low-degree pressure in the thermal WKB polynomial space",
+        "qgpvRMS": null,
+        "endpointRMS": [
+          null,
+          null
+        ]
+      },
+      "scientificStateHash": "3934d749f3df7cbc561b630741979285eca5539ac94032aa3aed00938fd6e47f",
+      "coefficientStateHash": "2ba81008529234b1bcb67129e3c8831701c3150d62f23c58fe77877fcfce9e98",
+      "actualAssemblyCount": 2057,
+      "actualProductCount": 769,
+      "activeEndpoints": [
+        1,
+        2
+      ],
+      "seasonalArgument": 1.5707963267948966,
+      "caseId": "e54567d50f9641ad6de7a7a0714fc03cb2fa4476e862613bebb98115ee811383"
+    }
+  },
+  {
+    "path": "/Users/jearly/Documents/OceanKitRepositories/thermal-readiness-t10-evidence/windows/budget-refinement/startup-refined/initial-case.mat",
+    "manifest": {
+      "schema": "thermal-readiness-case-v1",
+      "configuration": {
+        "kind": "developed",
+        "Nx": 64,
+        "Ny": 64,
+        "Nz": 385,
+        "thermalCount": 257,
+        "mdaCount": 4,
+        "assemblyCount": 2057,
+        "productCount": 1537,
+        "domainSize": [
+          500000,
+          500000,
+          4000
+        ],
+        "latitude": 24,
+        "N0": 0.0052,
+        "inverseScale": 0.00076923076923076923,
+        "kappa_z": 1E-5,
+        "seasonalM": 100,
+        "period": 3.15576E+7,
+        "phase": 1.5707963267948966,
+        "t": 0,
+        "t0": 0,
+        "seedRMS": 0.01,
+        "velocityRMS": 0.1,
+        "meanAmplitude": 0.1,
+        "normalizationCount": 513,
+        "shouldIncludeAdvection": true,
+        "shouldIncludeSeasonal": true,
+        "shouldIncludeBottomDrag": true,
+        "Cd": 0.001
+      },
+      "requestHash": "24cf0fb638e7ac4678cd328106c94623536a205a95f1b4032c37d70be4290fca",
+      "sourceStateHash": "",
+      "normalization": {
+        "method": "fixed physical quadrature of prescribed pressure; applied once",
+        "factor": 2944.8516324077868,
+        "unnormalizedRMS": 3.3957568150296734E-5,
+        "targetRMS": 0.1,
+        "quadratureCount": 513,
+        "horizontalModes": [
+          [
+            1,
+            0
+          ],
+          [
+            0,
+            2
+          ],
+          [
+            1,
+            1
+          ]
+        ],
+        "pressurePolynomial": {
+          "jsonEncoding": "complex array",
+          "shape": [
+            5,
+            3
+          ],
+          "real": [
+            [
+              2944.8516324077868,
+              2061.3961426854507,
+              -1177.9406529631149
+            ],
+            [
+              883.455489722336,
+              618.41884280563522,
+              -353.3821958889344
+            ],
+            [
+              2944.8516324077868,
+              0,
+              0
+            ],
+            [
+              0,
+              2061.3961426854507,
+              0
+            ],
+            [
+              0,
+              0,
+              -1177.9406529631149
+            ]
+          ],
+          "imaginary": [
+            [
+              0,
+              588.97032648155744,
+              883.455489722336
+            ],
+            [
+              0,
+              176.6910979444672,
+              265.03664691670082
+            ],
+            [
+              0,
+              0,
+              0
+            ],
+            [
+              0,
+              588.97032648155744,
+              0
+            ],
+            [
+              0,
+              0,
+              883.455489722336
+            ]
+          ]
+        },
+        "polynomialCoordinate": "normalized WKB coordinate",
+        "meanCoefficients": [
+          0.1,
+          -0.2,
+          0.30000000000000004,
+          -0.1
+        ]
+      },
+      "initialFit": {
+        "method": "declared low-degree pressure in the thermal WKB polynomial space",
+        "qgpvRMS": null,
+        "endpointRMS": [
+          null,
+          null
+        ]
+      },
+      "scientificStateHash": "6f30b8071e7bca3e30443b10b1690567619506dead8eba6544769b16a590b1c8",
+      "coefficientStateHash": "2ba81008529234b1bcb67129e3c8831701c3150d62f23c58fe77877fcfce9e98",
+      "actualAssemblyCount": 2057,
+      "actualProductCount": 1537,
+      "activeEndpoints": [
+        1,
+        2
+      ],
+      "seasonalArgument": 1.5707963267948966,
+      "caseId": "abeeb5121144fbdae0f17ac6f0c774c3de8ac052c583951e69cea8b12150fc6c"
+    }
+  },
+  {
+    "path": "/Users/jearly/Documents/OceanKitRepositories/thermal-readiness-t10-evidence/windows/closures/apv/initial-case.mat",
+    "manifest": {
+      "schema": "thermal-readiness-case-v1",
+      "configuration": {
+        "kind": "developed",
+        "Nx": 64,
+        "Ny": 64,
+        "Nz": 385,
+        "thermalCount": 257,
+        "mdaCount": 4,
+        "assemblyCount": 2057,
+        "productCount": 1537,
+        "domainSize": [
+          500000,
+          500000,
+          4000
+        ],
+        "latitude": 24,
+        "N0": 0.0052,
+        "inverseScale": 0.00076923076923076923,
+        "kappa_z": 1E-5,
+        "seasonalM": 100,
+        "period": 3.15576E+7,
+        "phase": 1.5707963267948966,
+        "t": 0,
+        "t0": 0,
+        "seedRMS": 0.01,
+        "velocityRMS": 0.1,
+        "meanAmplitude": 0.1,
+        "normalizationCount": 513,
+        "shouldIncludeAdvection": true,
+        "shouldIncludeSeasonal": true,
+        "shouldIncludeBottomDrag": true,
+        "Cd": 0.001
+      },
+      "requestHash": "f0575e4b1ae35f535dc6eaa5f0180fecef9f2875f6f1438b147f50f46a084492",
+      "sourceStateHash": "cccbe2b8f544536783f45747401d976ea09b02f2d1a6a52ecdb4fbcfe6246387",
+      "normalization": {
+        "method": "authoritative physical transfer; no target renormalization",
+        "factor": null,
+        "sourceStateHash": "cccbe2b8f544536783f45747401d976ea09b02f2d1a6a52ecdb4fbcfe6246387"
+      },
+      "initialFit": {
+        "method": "identical scientific arrays; exact canonical copy",
+        "relativeFieldError": 0,
+        "qgpvRMS": 0,
+        "buoyancyRMS": 0,
+        "velocityRMS": 0,
+        "endpointRMS": [
+          0,
+          0
+        ],
+        "sshRMS": 0,
+        "meanDisplacementRMS": 0,
+        "errorEnergy": 0,
+        "discardedFourierCount": 0
+      },
+      "scientificStateHash": "6f30b8071e7bca3e30443b10b1690567619506dead8eba6544769b16a590b1c8",
+      "coefficientStateHash": "2ba81008529234b1bcb67129e3c8831701c3150d62f23c58fe77877fcfce9e98",
+      "actualAssemblyCount": 2057,
+      "actualProductCount": 1537,
+      "activeEndpoints": [
+        1,
+        2
+      ],
+      "seasonalArgument": 1.5707963267948966,
+      "caseId": "954d35b6d7d677ec6677bc059136a1cbd6c81d5a91b6ca2beff016007bf8933d"
+    }
+  },
+  {
+    "path": "/Users/jearly/Documents/OceanKitRepositories/thermal-readiness-t10-evidence/windows/closures/horizontal/initial-case.mat",
+    "manifest": {
+      "schema": "thermal-readiness-case-v1",
+      "configuration": {
+        "kind": "developed",
+        "Nx": 64,
+        "Ny": 64,
+        "Nz": 385,
+        "thermalCount": 257,
+        "mdaCount": 4,
+        "assemblyCount": 2057,
+        "productCount": 1537,
+        "domainSize": [
+          500000,
+          500000,
+          4000
+        ],
+        "latitude": 24,
+        "N0": 0.0052,
+        "inverseScale": 0.00076923076923076923,
+        "kappa_z": 1E-5,
+        "seasonalM": 100,
+        "period": 3.15576E+7,
+        "phase": 1.5707963267948966,
+        "t": 0,
+        "t0": 0,
+        "seedRMS": 0.01,
+        "velocityRMS": 0.1,
+        "meanAmplitude": 0.1,
+        "normalizationCount": 513,
+        "shouldIncludeAdvection": true,
+        "shouldIncludeSeasonal": true,
+        "shouldIncludeBottomDrag": true,
+        "Cd": 0.001
+      },
+      "requestHash": "f0575e4b1ae35f535dc6eaa5f0180fecef9f2875f6f1438b147f50f46a084492",
+      "sourceStateHash": "cccbe2b8f544536783f45747401d976ea09b02f2d1a6a52ecdb4fbcfe6246387",
+      "normalization": {
+        "method": "authoritative physical transfer; no target renormalization",
+        "factor": null,
+        "sourceStateHash": "cccbe2b8f544536783f45747401d976ea09b02f2d1a6a52ecdb4fbcfe6246387"
+      },
+      "initialFit": {
+        "method": "identical scientific arrays; exact canonical copy",
+        "relativeFieldError": 0,
+        "qgpvRMS": 0,
+        "buoyancyRMS": 0,
+        "velocityRMS": 0,
+        "endpointRMS": [
+          0,
+          0
+        ],
+        "sshRMS": 0,
+        "meanDisplacementRMS": 0,
+        "errorEnergy": 0,
+        "discardedFourierCount": 0
+      },
+      "scientificStateHash": "6f30b8071e7bca3e30443b10b1690567619506dead8eba6544769b16a590b1c8",
+      "coefficientStateHash": "2ba81008529234b1bcb67129e3c8831701c3150d62f23c58fe77877fcfce9e98",
+      "actualAssemblyCount": 2057,
+      "actualProductCount": 1537,
+      "activeEndpoints": [
+        1,
+        2
+      ],
+      "seasonalArgument": 1.5707963267948966,
+      "caseId": "954d35b6d7d677ec6677bc059136a1cbd6c81d5a91b6ca2beff016007bf8933d"
+    }
+  },
+  {
+    "path": "/Users/jearly/Documents/OceanKitRepositories/thermal-readiness-t10-evidence/windows/closures/none/initial-case.mat",
+    "manifest": {
+      "schema": "thermal-readiness-case-v1",
+      "configuration": {
+        "kind": "developed",
+        "Nx": 64,
+        "Ny": 64,
+        "Nz": 385,
+        "thermalCount": 257,
+        "mdaCount": 4,
+        "assemblyCount": 2057,
+        "productCount": 1537,
+        "domainSize": [
+          500000,
+          500000,
+          4000
+        ],
+        "latitude": 24,
+        "N0": 0.0052,
+        "inverseScale": 0.00076923076923076923,
+        "kappa_z": 1E-5,
+        "seasonalM": 100,
+        "period": 3.15576E+7,
+        "phase": 1.5707963267948966,
+        "t": 0,
+        "t0": 0,
+        "seedRMS": 0.01,
+        "velocityRMS": 0.1,
+        "meanAmplitude": 0.1,
+        "normalizationCount": 513,
+        "shouldIncludeAdvection": true,
+        "shouldIncludeSeasonal": true,
+        "shouldIncludeBottomDrag": true,
+        "Cd": 0.001
+      },
+      "requestHash": "24cf0fb638e7ac4678cd328106c94623536a205a95f1b4032c37d70be4290fca",
+      "sourceStateHash": "",
+      "normalization": {
+        "method": "fixed physical quadrature of prescribed pressure; applied once",
+        "factor": 2944.8516324077868,
+        "unnormalizedRMS": 3.3957568150296734E-5,
+        "targetRMS": 0.1,
+        "quadratureCount": 513,
+        "horizontalModes": [
+          [
+            1,
+            0
+          ],
+          [
+            0,
+            2
+          ],
+          [
+            1,
+            1
+          ]
+        ],
+        "pressurePolynomial": {
+          "jsonEncoding": "complex array",
+          "shape": [
+            5,
+            3
+          ],
+          "real": [
+            [
+              2944.8516324077868,
+              2061.3961426854507,
+              -1177.9406529631149
+            ],
+            [
+              883.455489722336,
+              618.41884280563522,
+              -353.3821958889344
+            ],
+            [
+              2944.8516324077868,
+              0,
+              0
+            ],
+            [
+              0,
+              2061.3961426854507,
+              0
+            ],
+            [
+              0,
+              0,
+              -1177.9406529631149
+            ]
+          ],
+          "imaginary": [
+            [
+              0,
+              588.97032648155744,
+              883.455489722336
+            ],
+            [
+              0,
+              176.6910979444672,
+              265.03664691670082
+            ],
+            [
+              0,
+              0,
+              0
+            ],
+            [
+              0,
+              588.97032648155744,
+              0
+            ],
+            [
+              0,
+              0,
+              883.455489722336
+            ]
+          ]
+        },
+        "polynomialCoordinate": "normalized WKB coordinate",
+        "meanCoefficients": [
+          0.1,
+          -0.2,
+          0.30000000000000004,
+          -0.1
+        ]
+      },
+      "initialFit": {
+        "method": "declared low-degree pressure in the thermal WKB polynomial space",
+        "qgpvRMS": null,
+        "endpointRMS": [
+          null,
+          null
+        ]
+      },
+      "scientificStateHash": "6f30b8071e7bca3e30443b10b1690567619506dead8eba6544769b16a590b1c8",
+      "coefficientStateHash": "2ba81008529234b1bcb67129e3c8831701c3150d62f23c58fe77877fcfce9e98",
+      "actualAssemblyCount": 2057,
+      "actualProductCount": 1537,
+      "activeEndpoints": [
+        1,
+        2
+      ],
+      "seasonalArgument": 1.5707963267948966,
+      "caseId": "abeeb5121144fbdae0f17ac6f0c774c3de8ac052c583951e69cea8b12150fc6c"
+    }
+  },
+  {
+    "path": "/Users/jearly/Documents/OceanKitRepositories/thermal-readiness-t10-evidence/windows/cold10/cold10/initial-case.mat",
+    "manifest": {
+      "schema": "thermal-readiness-case-v1",
+      "configuration": {
+        "kind": "cold",
+        "Nx": 64,
+        "Ny": 64,
+        "Nz": 385,
+        "thermalCount": 257,
+        "mdaCount": 4,
+        "assemblyCount": 2057,
+        "productCount": 1537,
+        "domainSize": [
+          500000,
+          500000,
+          4000
+        ],
+        "latitude": 24,
+        "N0": 0.0052,
+        "inverseScale": 0.00076923076923076923,
+        "kappa_z": 1E-5,
+        "seasonalM": 10,
+        "period": 3.15576E+7,
+        "phase": 0,
+        "t": 0,
+        "t0": 0,
+        "seedRMS": 0.01,
+        "velocityRMS": 0.01,
+        "meanAmplitude": 0,
+        "normalizationCount": 513,
+        "shouldIncludeAdvection": true,
+        "shouldIncludeSeasonal": true,
+        "shouldIncludeBottomDrag": true,
+        "Cd": 0.001
+      },
+      "requestHash": "5d481b8901fcbb41c8535ac651878c5cbc07ec708376196aac1b176963eb41ee",
+      "sourceStateHash": "",
+      "normalization": {
+        "method": "analytic common-support surface RMS; applied once",
+        "factor": 0.011250879009260238,
+        "unnormalizedRMS": 0.88881944173155891,
+        "targetRMS": 0.01,
+        "horizontalModes": [
+          [
+            1,
+            0
+          ],
+          [
+            0,
+            2
+          ],
+          [
+            1,
+            1
+          ]
+        ]
+      },
+      "initialFit": {
+        "qgpvRMS": 1.7857526591739206E-21,
+        "endpointRMS": [
+          1.2573685529924924E-17,
+          1.6734254989890743E-16
+        ],
+        "meanDisplacementRMS": 0
+      },
+      "scientificStateHash": "6f30b8071e7bca3e30443b10b1690567619506dead8eba6544769b16a590b1c8",
+      "coefficientStateHash": "3e9353a1243982f4144d1c02e65ecd1c0bfc8f49088e72fd2f441e9371124faa",
+      "actualAssemblyCount": 2057,
+      "actualProductCount": 1537,
+      "activeEndpoints": [
+        1,
+        2
+      ],
+      "seasonalArgument": 0,
+      "caseId": "4c80122ebcf5a3f2aaa6839bf96764005f496c3e398d8a3c7ea4bfba8574243b"
+    }
+  },
+  {
+    "path": "/Users/jearly/Documents/OceanKitRepositories/thermal-readiness-t10-evidence/windows/cold100/cold100/initial-case.mat",
+    "manifest": {
+      "schema": "thermal-readiness-case-v1",
+      "configuration": {
+        "kind": "cold",
+        "Nx": 64,
+        "Ny": 64,
+        "Nz": 385,
+        "thermalCount": 257,
+        "mdaCount": 4,
+        "assemblyCount": 2057,
+        "productCount": 1537,
+        "domainSize": [
+          500000,
+          500000,
+          4000
+        ],
+        "latitude": 24,
+        "N0": 0.0052,
+        "inverseScale": 0.00076923076923076923,
+        "kappa_z": 1E-5,
+        "seasonalM": 100,
+        "period": 3.15576E+7,
+        "phase": 0,
+        "t": 0,
+        "t0": 0,
+        "seedRMS": 0.01,
+        "velocityRMS": 0.01,
+        "meanAmplitude": 0,
+        "normalizationCount": 513,
+        "shouldIncludeAdvection": true,
+        "shouldIncludeSeasonal": true,
+        "shouldIncludeBottomDrag": true,
+        "Cd": 0.001
+      },
+      "requestHash": "3bc230f9adc118c4b10f89c3c4db13541042b4452b3ce41b5b29423128c3900c",
+      "sourceStateHash": "",
+      "normalization": {
+        "method": "analytic common-support surface RMS; applied once",
+        "factor": 0.011250879009260238,
+        "unnormalizedRMS": 0.88881944173155891,
+        "targetRMS": 0.01,
+        "horizontalModes": [
+          [
+            1,
+            0
+          ],
+          [
+            0,
+            2
+          ],
+          [
+            1,
+            1
+          ]
+        ]
+      },
+      "initialFit": {
+        "qgpvRMS": 1.7857526591739206E-21,
+        "endpointRMS": [
+          1.2573685529924924E-17,
+          1.6734254989890743E-16
+        ],
+        "meanDisplacementRMS": 0
+      },
+      "scientificStateHash": "6f30b8071e7bca3e30443b10b1690567619506dead8eba6544769b16a590b1c8",
+      "coefficientStateHash": "3e9353a1243982f4144d1c02e65ecd1c0bfc8f49088e72fd2f441e9371124faa",
+      "actualAssemblyCount": 2057,
+      "actualProductCount": 1537,
+      "activeEndpoints": [
+        1,
+        2
+      ],
+      "seasonalArgument": 0,
+      "caseId": "d48655fe8173503c251bd0569e216a80afb451628cdcc27e736c738122784801"
+    }
+  },
+  {
+    "path": "/Users/jearly/Documents/OceanKitRepositories/thermal-readiness-t10-evidence/windows/constant/step1800/initial-case.mat",
+    "manifest": {
+      "schema": "thermal-readiness-case-v1",
+      "configuration": {
+        "kind": "developed",
+        "Nx": 18,
+        "Ny": 18,
+        "Nz": 65,
+        "thermalCount": 17,
+        "mdaCount": 4,
+        "assemblyCount": 0,
+        "productCount": 0,
+        "domainSize": [
+          500000,
+          500000,
+          1000
+        ],
+        "latitude": 24,
+        "N0": 0.01,
+        "inverseScale": 0,
+        "kappa_z": 0,
+        "seasonalM": 10,
+        "period": 3.15576E+7,
+        "phase": 0,
+        "t": 0,
+        "t0": 0,
+        "seedRMS": 0.01,
+        "velocityRMS": 0.01,
+        "meanAmplitude": 0.1,
+        "normalizationCount": 513,
+        "shouldIncludeAdvection": true,
+        "shouldIncludeSeasonal": false,
+        "shouldIncludeBottomDrag": false,
+        "Cd": 0.001
+      },
+      "requestHash": "0b3525f69d184414c1ac714f393d48f5538ff2995cf096a02fe8d4d5bd24c2c8",
+      "sourceStateHash": "",
+      "normalization": {
+        "method": "fixed physical quadrature of prescribed pressure; applied once",
+        "factor": 271.76764635554173,
+        "unnormalizedRMS": 3.6796138665150148E-5,
+        "targetRMS": 0.01,
+        "quadratureCount": 513,
+        "horizontalModes": [
+          [
+            1,
+            0
+          ],
+          [
+            0,
+            2
+          ],
+          [
+            1,
+            1
+          ]
+        ],
+        "pressurePolynomial": {
+          "jsonEncoding": "complex array",
+          "shape": [
+            5,
+            3
+          ],
+          "real": [
+            [
+              271.76764635554173,
+              190.23735244887919,
+              -108.7070585422167
+            ],
+            [
+              81.530293906662521,
+              57.071205734663764,
+              -32.612117562665006
+            ],
+            [
+              271.76764635554173,
+              0,
+              0
+            ],
+            [
+              0,
+              190.23735244887919,
+              0
+            ],
+            [
+              0,
+              0,
+              -108.7070585422167
+            ]
+          ],
+          "imaginary": [
+            [
+              0,
+              54.35352927110835,
+              81.530293906662521
+            ],
+            [
+              0,
+              16.306058781332503,
+              24.459088171998754
+            ],
+            [
+              0,
+              0,
+              0
+            ],
+            [
+              0,
+              54.35352927110835,
+              0
+            ],
+            [
+              0,
+              0,
+              81.530293906662521
+            ]
+          ]
+        },
+        "polynomialCoordinate": "normalized WKB coordinate",
+        "meanCoefficients": [
+          0.1,
+          -0.2,
+          0.30000000000000004,
+          -0.1
+        ]
+      },
+      "initialFit": {
+        "method": "declared low-degree pressure in the thermal WKB polynomial space",
+        "qgpvRMS": null,
+        "endpointRMS": [
+          null,
+          null
+        ]
+      },
+      "scientificStateHash": "1a0b22457991911dc130ce51b67212b71e552a6393bf0a870e3a7ceab16c477c",
+      "coefficientStateHash": "56967208c928915572cd887bded24b8df08668575639ccd99accfabffc35611b",
+      "actualAssemblyCount": 257,
+      "actualProductCount": 257,
+      "activeEndpoints": [
+        1,
+        2
+      ],
+      "seasonalArgument": 0,
+      "caseId": "2b50a63d0c7505b14d03b5cb9ce0ae845daf95b4e96223efe194513aa7dbc619"
+    }
+  },
+  {
+    "path": "/Users/jearly/Documents/OceanKitRepositories/thermal-readiness-t10-evidence/windows/constant/step450/initial-case.mat",
+    "manifest": {
+      "schema": "thermal-readiness-case-v1",
+      "configuration": {
+        "kind": "developed",
+        "Nx": 18,
+        "Ny": 18,
+        "Nz": 65,
+        "thermalCount": 17,
+        "mdaCount": 4,
+        "assemblyCount": 0,
+        "productCount": 0,
+        "domainSize": [
+          500000,
+          500000,
+          1000
+        ],
+        "latitude": 24,
+        "N0": 0.01,
+        "inverseScale": 0,
+        "kappa_z": 0,
+        "seasonalM": 10,
+        "period": 3.15576E+7,
+        "phase": 0,
+        "t": 0,
+        "t0": 0,
+        "seedRMS": 0.01,
+        "velocityRMS": 0.01,
+        "meanAmplitude": 0.1,
+        "normalizationCount": 513,
+        "shouldIncludeAdvection": true,
+        "shouldIncludeSeasonal": false,
+        "shouldIncludeBottomDrag": false,
+        "Cd": 0.001
+      },
+      "requestHash": "2d7be8f5030bd3d9a9569642fc3c61b97b85bd8de7e2a0ea01d8a4a2e433af9b",
+      "sourceStateHash": "8df9f69ae2fc17e839e0766c1edc8c21ffd8985064b12c9aba80ab3fd6c84ca4",
+      "normalization": {
+        "method": "authoritative physical transfer; no target renormalization",
+        "factor": null,
+        "sourceStateHash": "8df9f69ae2fc17e839e0766c1edc8c21ffd8985064b12c9aba80ab3fd6c84ca4"
+      },
+      "initialFit": {
+        "method": "identical scientific arrays; exact canonical copy",
+        "relativeFieldError": 0,
+        "qgpvRMS": 0,
+        "buoyancyRMS": 0,
+        "velocityRMS": 0,
+        "endpointRMS": [
+          0,
+          0
+        ],
+        "sshRMS": 0,
+        "meanDisplacementRMS": 0,
+        "errorEnergy": 0,
+        "discardedFourierCount": 0
+      },
+      "scientificStateHash": "1a0b22457991911dc130ce51b67212b71e552a6393bf0a870e3a7ceab16c477c",
+      "coefficientStateHash": "56967208c928915572cd887bded24b8df08668575639ccd99accfabffc35611b",
+      "actualAssemblyCount": 257,
+      "actualProductCount": 257,
+      "activeEndpoints": [
+        1,
+        2
+      ],
+      "seasonalArgument": 0,
+      "caseId": "0572c81862ff08ac5f7f1d364296e738852ec52d929d37d129c7fceed8c40fdd"
+    }
+  },
+  {
+    "path": "/Users/jearly/Documents/OceanKitRepositories/thermal-readiness-t10-evidence/windows/constant/step900/initial-case.mat",
+    "manifest": {
+      "schema": "thermal-readiness-case-v1",
+      "configuration": {
+        "kind": "developed",
+        "Nx": 18,
+        "Ny": 18,
+        "Nz": 65,
+        "thermalCount": 17,
+        "mdaCount": 4,
+        "assemblyCount": 0,
+        "productCount": 0,
+        "domainSize": [
+          500000,
+          500000,
+          1000
+        ],
+        "latitude": 24,
+        "N0": 0.01,
+        "inverseScale": 0,
+        "kappa_z": 0,
+        "seasonalM": 10,
+        "period": 3.15576E+7,
+        "phase": 0,
+        "t": 0,
+        "t0": 0,
+        "seedRMS": 0.01,
+        "velocityRMS": 0.01,
+        "meanAmplitude": 0.1,
+        "normalizationCount": 513,
+        "shouldIncludeAdvection": true,
+        "shouldIncludeSeasonal": false,
+        "shouldIncludeBottomDrag": false,
+        "Cd": 0.001
+      },
+      "requestHash": "2d7be8f5030bd3d9a9569642fc3c61b97b85bd8de7e2a0ea01d8a4a2e433af9b",
+      "sourceStateHash": "8df9f69ae2fc17e839e0766c1edc8c21ffd8985064b12c9aba80ab3fd6c84ca4",
+      "normalization": {
+        "method": "authoritative physical transfer; no target renormalization",
+        "factor": null,
+        "sourceStateHash": "8df9f69ae2fc17e839e0766c1edc8c21ffd8985064b12c9aba80ab3fd6c84ca4"
+      },
+      "initialFit": {
+        "method": "identical scientific arrays; exact canonical copy",
+        "relativeFieldError": 0,
+        "qgpvRMS": 0,
+        "buoyancyRMS": 0,
+        "velocityRMS": 0,
+        "endpointRMS": [
+          0,
+          0
+        ],
+        "sshRMS": 0,
+        "meanDisplacementRMS": 0,
+        "errorEnergy": 0,
+        "discardedFourierCount": 0
+      },
+      "scientificStateHash": "1a0b22457991911dc130ce51b67212b71e552a6393bf0a870e3a7ceab16c477c",
+      "coefficientStateHash": "56967208c928915572cd887bded24b8df08668575639ccd99accfabffc35611b",
+      "actualAssemblyCount": 257,
+      "actualProductCount": 257,
+      "activeEndpoints": [
+        1,
+        2
+      ],
+      "seasonalArgument": 0,
+      "caseId": "0572c81862ff08ac5f7f1d364296e738852ec52d929d37d129c7fceed8c40fdd"
+    }
+  },
+  {
+    "path": "/Users/jearly/Documents/OceanKitRepositories/thermal-readiness-t10-evidence/windows/horizontal/horizontal32/initial-case.mat",
+    "manifest": {
+      "schema": "thermal-readiness-case-v1",
+      "configuration": {
+        "kind": "developed",
+        "Nx": 32,
+        "Ny": 32,
+        "Nz": 385,
+        "thermalCount": 257,
+        "mdaCount": 4,
+        "assemblyCount": 2057,
+        "productCount": 1537,
+        "domainSize": [
+          500000,
+          500000,
+          4000
+        ],
+        "latitude": 24,
+        "N0": 0.0052,
+        "inverseScale": 0.00076923076923076923,
+        "kappa_z": 1E-5,
+        "seasonalM": 100,
+        "period": 3.15576E+7,
+        "phase": 1.5707963267948966,
+        "t": 0,
+        "t0": 0,
+        "seedRMS": 0.01,
+        "velocityRMS": 0.1,
+        "meanAmplitude": 0.1,
+        "normalizationCount": 513,
+        "shouldIncludeAdvection": true,
+        "shouldIncludeSeasonal": true,
+        "shouldIncludeBottomDrag": true,
+        "Cd": 0.001
+      },
+      "requestHash": "acd98b6b49d904bc7a1b0d0a128ca1e6b33c59d81c200a56d202c12dad59bc56",
+      "sourceStateHash": "",
+      "normalization": {
+        "method": "fixed physical quadrature of prescribed pressure; applied once",
+        "factor": 2944.8516324077868,
+        "unnormalizedRMS": 3.3957568150296734E-5,
+        "targetRMS": 0.1,
+        "quadratureCount": 513,
+        "horizontalModes": [
+          [
+            1,
+            0
+          ],
+          [
+            0,
+            2
+          ],
+          [
+            1,
+            1
+          ]
+        ],
+        "pressurePolynomial": {
+          "jsonEncoding": "complex array",
+          "shape": [
+            5,
+            3
+          ],
+          "real": [
+            [
+              2944.8516324077868,
+              2061.3961426854507,
+              -1177.9406529631149
+            ],
+            [
+              883.455489722336,
+              618.41884280563522,
+              -353.3821958889344
+            ],
+            [
+              2944.8516324077868,
+              0,
+              0
+            ],
+            [
+              0,
+              2061.3961426854507,
+              0
+            ],
+            [
+              0,
+              0,
+              -1177.9406529631149
+            ]
+          ],
+          "imaginary": [
+            [
+              0,
+              588.97032648155744,
+              883.455489722336
+            ],
+            [
+              0,
+              176.6910979444672,
+              265.03664691670082
+            ],
+            [
+              0,
+              0,
+              0
+            ],
+            [
+              0,
+              588.97032648155744,
+              0
+            ],
+            [
+              0,
+              0,
+              883.455489722336
+            ]
+          ]
+        },
+        "polynomialCoordinate": "normalized WKB coordinate",
+        "meanCoefficients": [
+          0.1,
+          -0.2,
+          0.30000000000000004,
+          -0.1
+        ]
+      },
+      "initialFit": {
+        "method": "declared low-degree pressure in the thermal WKB polynomial space",
+        "qgpvRMS": null,
+        "endpointRMS": [
+          null,
+          null
+        ]
+      },
+      "scientificStateHash": "404bf97c66ec1e537741b8168bce17513af98b539244a3200954584a71eab0db",
+      "coefficientStateHash": "72aeb72c8d6167b33364ea3089d250eccdc7048f5a057ee70f6d127a38fdc06f",
+      "actualAssemblyCount": 2057,
+      "actualProductCount": 1537,
+      "activeEndpoints": [
+        1,
+        2
+      ],
+      "seasonalArgument": 1.5707963267948966,
+      "caseId": "8feddb9161c4f09b3bc4b56fc1111095ea1ad8358b178ea2b07c48916cccd800"
+    }
+  },
+  {
+    "path": "/Users/jearly/Documents/OceanKitRepositories/thermal-readiness-t10-evidence/windows/horizontal/horizontal64/initial-case.mat",
+    "manifest": {
+      "schema": "thermal-readiness-case-v1",
+      "configuration": {
+        "kind": "developed",
+        "Nx": 64,
+        "Ny": 64,
+        "Nz": 385,
+        "thermalCount": 257,
+        "mdaCount": 4,
+        "assemblyCount": 2057,
+        "productCount": 1537,
+        "domainSize": [
+          500000,
+          500000,
+          4000
+        ],
+        "latitude": 24,
+        "N0": 0.0052,
+        "inverseScale": 0.00076923076923076923,
+        "kappa_z": 1E-5,
+        "seasonalM": 100,
+        "period": 3.15576E+7,
+        "phase": 1.5707963267948966,
+        "t": 0,
+        "t0": 0,
+        "seedRMS": 0.01,
+        "velocityRMS": 0.1,
+        "meanAmplitude": 0.1,
+        "normalizationCount": 513,
+        "shouldIncludeAdvection": true,
+        "shouldIncludeSeasonal": true,
+        "shouldIncludeBottomDrag": true,
+        "Cd": 0.001
+      },
+      "requestHash": "dbfb84f89320ec637a53c40353963f0a95f84783191750847b197f3206b7ee6c",
+      "sourceStateHash": "5d69f0d4a0faddd9adc7c3c077afc3a19c19f927b13018759bdb5ccd8e1e1def",
+      "normalization": {
+        "method": "authoritative physical transfer; no target renormalization",
+        "factor": null,
+        "sourceStateHash": "5d69f0d4a0faddd9adc7c3c077afc3a19c19f927b13018759bdb5ccd8e1e1def"
+      },
+      "initialFit": {
+        "quadratureCount": 771,
+        "sourceEnergy": 199.2036988593313,
+        "targetEnergy": 199.20369886393235,
+        "errorEnergy": 3.1560718870914036E-19,
+        "relativeFieldError": 3.9803819142019326E-11,
+        "qgpvRMS": 9.767663118762721E-16,
+        "buoyancyRMS": 6.0761718435778052E-15,
+        "velocityRMS": 1.1943546911475782E-11,
+        "endpointRMS": [
+          6.425811544448506E-10,
+          1.1728382935131617E-8
+        ],
+        "sshRMS": 4.4939502505708616E-12,
+        "meanDisplacementRMS": 2.8092511848017555E-15,
+        "meanBuoyancyInventoryError": 6.8118152990434132E-17,
+        "matchedFourierCount": 178,
+        "discardedFourierCount": 0
+      },
+      "scientificStateHash": "6f30b8071e7bca3e30443b10b1690567619506dead8eba6544769b16a590b1c8",
+      "coefficientStateHash": "c485dee84fe2454ee6a1ee81e3dae717eed103c854ef63a53367249941ccd40a",
+      "actualAssemblyCount": 2057,
+      "actualProductCount": 1537,
+      "activeEndpoints": [
+        1,
+        2
+      ],
+      "seasonalArgument": 1.5707963267948966,
+      "caseId": "76a7f9646029cbc02123ceaf1750ff4b57bd8a15c82a621214345bceff3e252d"
+    }
+  },
+  {
+    "path": "/Users/jearly/Documents/OceanKitRepositories/thermal-readiness-t10-evidence/windows/horizontal/horizontal96/initial-case.mat",
+    "manifest": {
+      "schema": "thermal-readiness-case-v1",
+      "configuration": {
+        "kind": "developed",
+        "Nx": 96,
+        "Ny": 96,
+        "Nz": 385,
+        "thermalCount": 257,
+        "mdaCount": 4,
+        "assemblyCount": 2057,
+        "productCount": 1537,
+        "domainSize": [
+          500000,
+          500000,
+          4000
+        ],
+        "latitude": 24,
+        "N0": 0.0052,
+        "inverseScale": 0.00076923076923076923,
+        "kappa_z": 1E-5,
+        "seasonalM": 100,
+        "period": 3.15576E+7,
+        "phase": 1.5707963267948966,
+        "t": 0,
+        "t0": 0,
+        "seedRMS": 0.01,
+        "velocityRMS": 0.1,
+        "meanAmplitude": 0.1,
+        "normalizationCount": 513,
+        "shouldIncludeAdvection": true,
+        "shouldIncludeSeasonal": true,
+        "shouldIncludeBottomDrag": true,
+        "Cd": 0.001
+      },
+      "requestHash": "47fca31763f5d29a6334509e5b7cdc64393beea1bb543357d84870a2cb1adccd",
+      "sourceStateHash": "5d69f0d4a0faddd9adc7c3c077afc3a19c19f927b13018759bdb5ccd8e1e1def",
+      "normalization": {
+        "method": "authoritative physical transfer; no target renormalization",
+        "factor": null,
+        "sourceStateHash": "5d69f0d4a0faddd9adc7c3c077afc3a19c19f927b13018759bdb5ccd8e1e1def"
+      },
+      "initialFit": {
+        "quadratureCount": 771,
+        "sourceEnergy": 199.2036988593313,
+        "targetEnergy": 199.20369886393235,
+        "errorEnergy": 3.1560718870914036E-19,
+        "relativeFieldError": 3.9803819142019326E-11,
+        "qgpvRMS": 9.767663118762721E-16,
+        "buoyancyRMS": 6.0761718435778052E-15,
+        "velocityRMS": 1.1943546911475782E-11,
+        "endpointRMS": [
+          6.425811544448506E-10,
+          1.1728382935131617E-8
+        ],
+        "sshRMS": 4.4939502505708616E-12,
+        "meanDisplacementRMS": 2.8092511848017555E-15,
+        "meanBuoyancyInventoryError": 6.8118152990434132E-17,
+        "matchedFourierCount": 178,
+        "discardedFourierCount": 0
+      },
+      "scientificStateHash": "3d448d10e6ee876624bf310a3f085611f82bdd1b8914822bfe5f266430b82c2b",
+      "coefficientStateHash": "b241a727dcf7c86151af04e7c538de8e03a3e0e4e9bd78ce8eb3542d17c63cf9",
+      "actualAssemblyCount": 2057,
+      "actualProductCount": 1537,
+      "activeEndpoints": [
+        1,
+        2
+      ],
+      "seasonalArgument": 1.5707963267948966,
+      "caseId": "bbbe3f0c8821859e86376f5299f6de3b23f31844100516acdb85d6155ec804e8"
+    }
+  },
+  {
+    "path": "/Users/jearly/Documents/OceanKitRepositories/thermal-readiness-t10-evidence/windows/mean/mean16/initial-case.mat",
+    "manifest": {
+      "schema": "thermal-readiness-case-v1",
+      "configuration": {
+        "kind": "developed",
+        "Nx": 64,
+        "Ny": 64,
+        "Nz": 385,
+        "thermalCount": 257,
+        "mdaCount": 16,
+        "assemblyCount": 2057,
+        "productCount": 1537,
+        "domainSize": [
+          500000,
+          500000,
+          4000
+        ],
+        "latitude": 24,
+        "N0": 0.0052,
+        "inverseScale": 0.00076923076923076923,
+        "kappa_z": 1E-5,
+        "seasonalM": 100,
+        "period": 3.15576E+7,
+        "phase": 1.5707963267948966,
+        "t": 0,
+        "t0": 0,
+        "seedRMS": 0.01,
+        "velocityRMS": 0.1,
+        "meanAmplitude": 0.1,
+        "normalizationCount": 513,
+        "shouldIncludeAdvection": true,
+        "shouldIncludeSeasonal": true,
+        "shouldIncludeBottomDrag": true,
+        "Cd": 0.001
+      },
+      "requestHash": "fa6bf1baba73e88c79c7d70567ed7950f74deb9d640185d5580ee16c3ef253cc",
+      "sourceStateHash": "cccbe2b8f544536783f45747401d976ea09b02f2d1a6a52ecdb4fbcfe6246387",
+      "normalization": {
+        "method": "authoritative physical transfer; no target renormalization",
+        "factor": null,
+        "sourceStateHash": "cccbe2b8f544536783f45747401d976ea09b02f2d1a6a52ecdb4fbcfe6246387"
+      },
+      "initialFit": {
+        "quadratureCount": 771,
+        "sourceEnergy": 199.2036988593313,
+        "targetEnergy": 199.20369886393235,
+        "errorEnergy": 3.1560718870906091E-19,
+        "relativeFieldError": 3.9803819142014311E-11,
+        "qgpvRMS": 9.7676631187732622E-16,
+        "buoyancyRMS": 6.0761718435220264E-15,
+        "velocityRMS": 1.1943546911475782E-11,
+        "endpointRMS": [
+          6.4258115442336686E-10,
+          1.1728382935131483E-8
+        ],
+        "sshRMS": 4.4939502505708616E-12,
+        "meanDisplacementRMS": 2.2165460563285136E-15,
+        "meanBuoyancyInventoryError": 2.1097767981688214E-17,
+        "matchedFourierCount": 716,
+        "discardedFourierCount": 0
+      },
+      "scientificStateHash": "833b06803f3e111055485207766d8fe5365aaa6188ad7b97465ac0ae9529737e",
+      "coefficientStateHash": "a80460040b0471217869686dee1296220e34a3835f45fcddd11d12551c3b05ef",
+      "actualAssemblyCount": 2057,
+      "actualProductCount": 1537,
+      "activeEndpoints": [
+        1,
+        2
+      ],
+      "seasonalArgument": 1.5707963267948966,
+      "caseId": "b33c91e198ceaa40744525d1bccfd5b476e481335ada53354d937c0145e31b7f"
+    }
+  },
+  {
+    "path": "/Users/jearly/Documents/OceanKitRepositories/thermal-readiness-t10-evidence/windows/mean/mean4/initial-case.mat",
+    "manifest": {
+      "schema": "thermal-readiness-case-v1",
+      "configuration": {
+        "kind": "developed",
+        "Nx": 64,
+        "Ny": 64,
+        "Nz": 385,
+        "thermalCount": 257,
+        "mdaCount": 4,
+        "assemblyCount": 2057,
+        "productCount": 1537,
+        "domainSize": [
+          500000,
+          500000,
+          4000
+        ],
+        "latitude": 24,
+        "N0": 0.0052,
+        "inverseScale": 0.00076923076923076923,
+        "kappa_z": 1E-5,
+        "seasonalM": 100,
+        "period": 3.15576E+7,
+        "phase": 1.5707963267948966,
+        "t": 0,
+        "t0": 0,
+        "seedRMS": 0.01,
+        "velocityRMS": 0.1,
+        "meanAmplitude": 0.1,
+        "normalizationCount": 513,
+        "shouldIncludeAdvection": true,
+        "shouldIncludeSeasonal": true,
+        "shouldIncludeBottomDrag": true,
+        "Cd": 0.001
+      },
+      "requestHash": "24cf0fb638e7ac4678cd328106c94623536a205a95f1b4032c37d70be4290fca",
+      "sourceStateHash": "",
+      "normalization": {
+        "method": "fixed physical quadrature of prescribed pressure; applied once",
+        "factor": 2944.8516324077868,
+        "unnormalizedRMS": 3.3957568150296734E-5,
+        "targetRMS": 0.1,
+        "quadratureCount": 513,
+        "horizontalModes": [
+          [
+            1,
+            0
+          ],
+          [
+            0,
+            2
+          ],
+          [
+            1,
+            1
+          ]
+        ],
+        "pressurePolynomial": {
+          "jsonEncoding": "complex array",
+          "shape": [
+            5,
+            3
+          ],
+          "real": [
+            [
+              2944.8516324077868,
+              2061.3961426854507,
+              -1177.9406529631149
+            ],
+            [
+              883.455489722336,
+              618.41884280563522,
+              -353.3821958889344
+            ],
+            [
+              2944.8516324077868,
+              0,
+              0
+            ],
+            [
+              0,
+              2061.3961426854507,
+              0
+            ],
+            [
+              0,
+              0,
+              -1177.9406529631149
+            ]
+          ],
+          "imaginary": [
+            [
+              0,
+              588.97032648155744,
+              883.455489722336
+            ],
+            [
+              0,
+              176.6910979444672,
+              265.03664691670082
+            ],
+            [
+              0,
+              0,
+              0
+            ],
+            [
+              0,
+              588.97032648155744,
+              0
+            ],
+            [
+              0,
+              0,
+              883.455489722336
+            ]
+          ]
+        },
+        "polynomialCoordinate": "normalized WKB coordinate",
+        "meanCoefficients": [
+          0.1,
+          -0.2,
+          0.30000000000000004,
+          -0.1
+        ]
+      },
+      "initialFit": {
+        "method": "declared low-degree pressure in the thermal WKB polynomial space",
+        "qgpvRMS": null,
+        "endpointRMS": [
+          null,
+          null
+        ]
+      },
+      "scientificStateHash": "6f30b8071e7bca3e30443b10b1690567619506dead8eba6544769b16a590b1c8",
+      "coefficientStateHash": "2ba81008529234b1bcb67129e3c8831701c3150d62f23c58fe77877fcfce9e98",
+      "actualAssemblyCount": 2057,
+      "actualProductCount": 1537,
+      "activeEndpoints": [
+        1,
+        2
+      ],
+      "seasonalArgument": 1.5707963267948966,
+      "caseId": "abeeb5121144fbdae0f17ac6f0c774c3de8ac052c583951e69cea8b12150fc6c"
+    }
+  },
+  {
+    "path": "/Users/jearly/Documents/OceanKitRepositories/thermal-readiness-t10-evidence/windows/mean/mean8/initial-case.mat",
+    "manifest": {
+      "schema": "thermal-readiness-case-v1",
+      "configuration": {
+        "kind": "developed",
+        "Nx": 64,
+        "Ny": 64,
+        "Nz": 385,
+        "thermalCount": 257,
+        "mdaCount": 8,
+        "assemblyCount": 2057,
+        "productCount": 1537,
+        "domainSize": [
+          500000,
+          500000,
+          4000
+        ],
+        "latitude": 24,
+        "N0": 0.0052,
+        "inverseScale": 0.00076923076923076923,
+        "kappa_z": 1E-5,
+        "seasonalM": 100,
+        "period": 3.15576E+7,
+        "phase": 1.5707963267948966,
+        "t": 0,
+        "t0": 0,
+        "seedRMS": 0.01,
+        "velocityRMS": 0.1,
+        "meanAmplitude": 0.1,
+        "normalizationCount": 513,
+        "shouldIncludeAdvection": true,
+        "shouldIncludeSeasonal": true,
+        "shouldIncludeBottomDrag": true,
+        "Cd": 0.001
+      },
+      "requestHash": "3d57a7a240dd87f1bce052681d8a435801fa872e19ad0a0140920b5ab91399a4",
+      "sourceStateHash": "cccbe2b8f544536783f45747401d976ea09b02f2d1a6a52ecdb4fbcfe6246387",
+      "normalization": {
+        "method": "authoritative physical transfer; no target renormalization",
+        "factor": null,
+        "sourceStateHash": "cccbe2b8f544536783f45747401d976ea09b02f2d1a6a52ecdb4fbcfe6246387"
+      },
+      "initialFit": {
+        "quadratureCount": 771,
+        "sourceEnergy": 199.2036988593313,
+        "targetEnergy": 199.20369886393235,
+        "errorEnergy": 3.1560718870961558E-19,
+        "relativeFieldError": 3.9803819142049292E-11,
+        "qgpvRMS": 9.7676631187757274E-16,
+        "buoyancyRMS": 6.0761718439396005E-15,
+        "velocityRMS": 1.1943546911475782E-11,
+        "endpointRMS": [
+          6.4258115442520826E-10,
+          1.1728382935131483E-8
+        ],
+        "sshRMS": 4.4939502505708616E-12,
+        "meanDisplacementRMS": 4.5396446684393E-15,
+        "meanBuoyancyInventoryError": 1.2609320725956859E-16,
+        "matchedFourierCount": 716,
+        "discardedFourierCount": 0
+      },
+      "scientificStateHash": "ad6846dd9f437f601406e5d48f679d47c9b872ed89d8879564a010b4f7d09cd1",
+      "coefficientStateHash": "d59afa3202ef51d6cb2fd61b9a94b593e28437db69a634da52a31dc94fbeff73",
+      "actualAssemblyCount": 2057,
+      "actualProductCount": 1537,
+      "activeEndpoints": [
+        1,
+        2
+      ],
+      "seasonalArgument": 1.5707963267948966,
+      "caseId": "7a4e7ad225844a6fe2e19057e6814613e80157dc13746c067e37289de1a431ba"
+    }
+  },
+  {
+    "path": "/Users/jearly/Documents/OceanKitRepositories/thermal-readiness-t10-evidence/windows/native/native385/initial-case.mat",
+    "manifest": {
+      "schema": "thermal-readiness-case-v1",
+      "configuration": {
+        "kind": "developed",
+        "Nx": 64,
+        "Ny": 64,
+        "Nz": 385,
+        "thermalCount": 257,
+        "mdaCount": 4,
+        "assemblyCount": 2057,
+        "productCount": 1537,
+        "domainSize": [
+          500000,
+          500000,
+          4000
+        ],
+        "latitude": 24,
+        "N0": 0.0052,
+        "inverseScale": 0.00076923076923076923,
+        "kappa_z": 1E-5,
+        "seasonalM": 100,
+        "period": 3.15576E+7,
+        "phase": 1.5707963267948966,
+        "t": 0,
+        "t0": 0,
+        "seedRMS": 0.01,
+        "velocityRMS": 0.1,
+        "meanAmplitude": 0.1,
+        "normalizationCount": 513,
+        "shouldIncludeAdvection": true,
+        "shouldIncludeSeasonal": true,
+        "shouldIncludeBottomDrag": true,
+        "Cd": 0.001
+      },
+      "requestHash": "24cf0fb638e7ac4678cd328106c94623536a205a95f1b4032c37d70be4290fca",
+      "sourceStateHash": "",
+      "normalization": {
+        "method": "fixed physical quadrature of prescribed pressure; applied once",
+        "factor": 2944.8516324077868,
+        "unnormalizedRMS": 3.3957568150296734E-5,
+        "targetRMS": 0.1,
+        "quadratureCount": 513,
+        "horizontalModes": [
+          [
+            1,
+            0
+          ],
+          [
+            0,
+            2
+          ],
+          [
+            1,
+            1
+          ]
+        ],
+        "pressurePolynomial": {
+          "jsonEncoding": "complex array",
+          "shape": [
+            5,
+            3
+          ],
+          "real": [
+            [
+              2944.8516324077868,
+              2061.3961426854507,
+              -1177.9406529631149
+            ],
+            [
+              883.455489722336,
+              618.41884280563522,
+              -353.3821958889344
+            ],
+            [
+              2944.8516324077868,
+              0,
+              0
+            ],
+            [
+              0,
+              2061.3961426854507,
+              0
+            ],
+            [
+              0,
+              0,
+              -1177.9406529631149
+            ]
+          ],
+          "imaginary": [
+            [
+              0,
+              588.97032648155744,
+              883.455489722336
+            ],
+            [
+              0,
+              176.6910979444672,
+              265.03664691670082
+            ],
+            [
+              0,
+              0,
+              0
+            ],
+            [
+              0,
+              588.97032648155744,
+              0
+            ],
+            [
+              0,
+              0,
+              883.455489722336
+            ]
+          ]
+        },
+        "polynomialCoordinate": "normalized WKB coordinate",
+        "meanCoefficients": [
+          0.1,
+          -0.2,
+          0.30000000000000004,
+          -0.1
+        ]
+      },
+      "initialFit": {
+        "method": "declared low-degree pressure in the thermal WKB polynomial space",
+        "qgpvRMS": null,
+        "endpointRMS": [
+          null,
+          null
+        ]
+      },
+      "scientificStateHash": "6f30b8071e7bca3e30443b10b1690567619506dead8eba6544769b16a590b1c8",
+      "coefficientStateHash": "2ba81008529234b1bcb67129e3c8831701c3150d62f23c58fe77877fcfce9e98",
+      "actualAssemblyCount": 2057,
+      "actualProductCount": 1537,
+      "activeEndpoints": [
+        1,
+        2
+      ],
+      "seasonalArgument": 1.5707963267948966,
+      "caseId": "abeeb5121144fbdae0f17ac6f0c774c3de8ac052c583951e69cea8b12150fc6c"
+    }
+  },
+  {
+    "path": "/Users/jearly/Documents/OceanKitRepositories/thermal-readiness-t10-evidence/windows/native/native513/initial-case.mat",
+    "manifest": {
+      "schema": "thermal-readiness-case-v1",
+      "configuration": {
+        "kind": "developed",
+        "Nx": 64,
+        "Ny": 64,
+        "Nz": 513,
+        "thermalCount": 257,
+        "mdaCount": 4,
+        "assemblyCount": 2057,
+        "productCount": 1537,
+        "domainSize": [
+          500000,
+          500000,
+          4000
+        ],
+        "latitude": 24,
+        "N0": 0.0052,
+        "inverseScale": 0.00076923076923076923,
+        "kappa_z": 1E-5,
+        "seasonalM": 100,
+        "period": 3.15576E+7,
+        "phase": 1.5707963267948966,
+        "t": 0,
+        "t0": 0,
+        "seedRMS": 0.01,
+        "velocityRMS": 0.1,
+        "meanAmplitude": 0.1,
+        "normalizationCount": 513,
+        "shouldIncludeAdvection": true,
+        "shouldIncludeSeasonal": true,
+        "shouldIncludeBottomDrag": true,
+        "Cd": 0.001
+      },
+      "requestHash": "58ac7498be978fb290852affac923da8f816e260945e30e7b8a9f3771d194e16",
+      "sourceStateHash": "cccbe2b8f544536783f45747401d976ea09b02f2d1a6a52ecdb4fbcfe6246387",
+      "normalization": {
+        "method": "authoritative physical transfer; no target renormalization",
+        "factor": null,
+        "sourceStateHash": "cccbe2b8f544536783f45747401d976ea09b02f2d1a6a52ecdb4fbcfe6246387"
+      },
+      "initialFit": {
+        "quadratureCount": 1027,
+        "sourceEnergy": 199.20369885933135,
+        "targetEnergy": 199.20369886395761,
+        "errorEnergy": 3.2226386718256949E-19,
+        "relativeFieldError": 4.0221393044058387E-11,
+        "qgpvRMS": 1.4368169161504995E-15,
+        "buoyancyRMS": 6.0579787068733972E-15,
+        "velocityRMS": 1.2081872724502578E-11,
+        "endpointRMS": [
+          7.1548939271765935E-10,
+          1.1813180655874622E-8
+        ],
+        "sshRMS": 4.6123200223028378E-12,
+        "meanDisplacementRMS": 1.5012068171219007E-14,
+        "meanBuoyancyInventoryError": 2.0466074823048614E-17,
+        "matchedFourierCount": 716,
+        "discardedFourierCount": 0
+      },
+      "scientificStateHash": "acb621e45cedf5854f9345f98ef08ef0899075b126c6d4942310f11360b28a7e",
+      "coefficientStateHash": "f8392069051487537fe5ea0b1642b28d501dcb84d7f264c7ea802c29cb29f39d",
+      "actualAssemblyCount": 2057,
+      "actualProductCount": 1537,
+      "activeEndpoints": [
+        1,
+        2
+      ],
+      "seasonalArgument": 1.5707963267948966,
+      "caseId": "f8d09a4250c015e832a457a8bc85d8938ebc6809c5a28e16dcd48958b6b6efde"
+    }
+  },
+  {
+    "path": "/Users/jearly/Documents/OceanKitRepositories/thermal-readiness-t10-evidence/windows/native/native769/initial-case.mat",
+    "manifest": {
+      "schema": "thermal-readiness-case-v1",
+      "configuration": {
+        "kind": "developed",
+        "Nx": 64,
+        "Ny": 64,
+        "Nz": 769,
+        "thermalCount": 257,
+        "mdaCount": 4,
+        "assemblyCount": 2057,
+        "productCount": 1537,
+        "domainSize": [
+          500000,
+          500000,
+          4000
+        ],
+        "latitude": 24,
+        "N0": 0.0052,
+        "inverseScale": 0.00076923076923076923,
+        "kappa_z": 1E-5,
+        "seasonalM": 100,
+        "period": 3.15576E+7,
+        "phase": 1.5707963267948966,
+        "t": 0,
+        "t0": 0,
+        "seedRMS": 0.01,
+        "velocityRMS": 0.1,
+        "meanAmplitude": 0.1,
+        "normalizationCount": 513,
+        "shouldIncludeAdvection": true,
+        "shouldIncludeSeasonal": true,
+        "shouldIncludeBottomDrag": true,
+        "Cd": 0.001
+      },
+      "requestHash": "02923a6c841716605be331db01c5c2360754f309f6d2369428fbb1a503faf579",
+      "sourceStateHash": "cccbe2b8f544536783f45747401d976ea09b02f2d1a6a52ecdb4fbcfe6246387",
+      "normalization": {
+        "method": "authoritative physical transfer; no target renormalization",
+        "factor": null,
+        "sourceStateHash": "cccbe2b8f544536783f45747401d976ea09b02f2d1a6a52ecdb4fbcfe6246387"
+      },
+      "initialFit": {
+        "quadratureCount": 1539,
+        "sourceEnergy": 199.20369885933118,
+        "targetEnergy": 199.2036988637735,
+        "errorEnergy": 2.9276468857711142E-19,
+        "relativeFieldError": 3.8336339967833874E-11,
+        "qgpvRMS": 2.6822081909465461E-15,
+        "buoyancyRMS": 5.8731108587319743E-15,
+        "velocityRMS": 1.1511960546242393E-11,
+        "endpointRMS": [
+          6.4916990180203055E-10,
+          1.3436830457117535E-8
+        ],
+        "sshRMS": 4.42035139682378E-12,
+        "meanDisplacementRMS": 1.5807550086129538E-14,
+        "meanBuoyancyInventoryError": 4.7090128383942113E-17,
+        "matchedFourierCount": 716,
+        "discardedFourierCount": 0
+      },
+      "scientificStateHash": "e2e640e8762a02cff067d647f896503ebf7665dcecc101cf9188bc07a9d2f461",
+      "coefficientStateHash": "9edb7600205a4a68cedd545157529a86a08001bb2d9f17ef95fa2d3a014dcbf9",
+      "actualAssemblyCount": 2057,
+      "actualProductCount": 1537,
+      "activeEndpoints": [
+        1,
+        2
+      ],
+      "seasonalArgument": 1.5707963267948966,
+      "caseId": "ab7b93d7d13e4a9aeb8182774319bacc3d5329aa923ec023c7a4d76bf7474882"
+    }
+  },
+  {
+    "path": "/Users/jearly/Documents/OceanKitRepositories/thermal-readiness-t10-evidence/windows/peak10/peak10/initial-case.mat",
+    "manifest": {
+      "schema": "thermal-readiness-case-v1",
+      "configuration": {
+        "kind": "developed",
+        "Nx": 64,
+        "Ny": 64,
+        "Nz": 385,
+        "thermalCount": 257,
+        "mdaCount": 4,
+        "assemblyCount": 2057,
+        "productCount": 1537,
+        "domainSize": [
+          500000,
+          500000,
+          4000
+        ],
+        "latitude": 24,
+        "N0": 0.0052,
+        "inverseScale": 0.00076923076923076923,
+        "kappa_z": 1E-5,
+        "seasonalM": 10,
+        "period": 3.15576E+7,
+        "phase": 1.5707963267948966,
+        "t": 0,
+        "t0": 0,
+        "seedRMS": 0.01,
+        "velocityRMS": 0.01,
+        "meanAmplitude": 0.1,
+        "normalizationCount": 513,
+        "shouldIncludeAdvection": true,
+        "shouldIncludeSeasonal": true,
+        "shouldIncludeBottomDrag": true,
+        "Cd": 0.001
+      },
+      "requestHash": "dcaf483c9e2b6df551f1e653bb8b19d4b5188e2bc389628e760eedf85e9218dc",
+      "sourceStateHash": "",
+      "normalization": {
+        "method": "fixed physical quadrature of prescribed pressure; applied once",
+        "factor": 294.48516324077866,
+        "unnormalizedRMS": 3.3957568150296734E-5,
+        "targetRMS": 0.01,
+        "quadratureCount": 513,
+        "horizontalModes": [
+          [
+            1,
+            0
+          ],
+          [
+            0,
+            2
+          ],
+          [
+            1,
+            1
+          ]
+        ],
+        "pressurePolynomial": {
+          "jsonEncoding": "complex array",
+          "shape": [
+            5,
+            3
+          ],
+          "real": [
+            [
+              294.48516324077866,
+              206.13961426854505,
+              -117.79406529631147
+            ],
+            [
+              88.3455489722336,
+              61.841884280563519,
+              -35.338219588893438
+            ],
+            [
+              294.48516324077866,
+              0,
+              0
+            ],
+            [
+              0,
+              206.13961426854505,
+              0
+            ],
+            [
+              0,
+              0,
+              -117.79406529631147
+            ]
+          ],
+          "imaginary": [
+            [
+              0,
+              58.897032648155736,
+              88.3455489722336
+            ],
+            [
+              0,
+              17.669109794446719,
+              26.503664691670078
+            ],
+            [
+              0,
+              0,
+              0
+            ],
+            [
+              0,
+              58.897032648155736,
+              0
+            ],
+            [
+              0,
+              0,
+              88.3455489722336
+            ]
+          ]
+        },
+        "polynomialCoordinate": "normalized WKB coordinate",
+        "meanCoefficients": [
+          0.1,
+          -0.2,
+          0.30000000000000004,
+          -0.1
+        ]
+      },
+      "initialFit": {
+        "method": "declared low-degree pressure in the thermal WKB polynomial space",
+        "qgpvRMS": null,
+        "endpointRMS": [
+          null,
+          null
+        ]
+      },
+      "scientificStateHash": "6f30b8071e7bca3e30443b10b1690567619506dead8eba6544769b16a590b1c8",
+      "coefficientStateHash": "15613f510f052d5e841c1f481efdb4f72e71f7fa6b03c41d3048e61ee2212cf8",
+      "actualAssemblyCount": 2057,
+      "actualProductCount": 1537,
+      "activeEndpoints": [
+        1,
+        2
+      ],
+      "seasonalArgument": 1.5707963267948966,
+      "caseId": "4bb620dd6b3112577199a83f3418a55799b6a50f8af136b6c52df30925060c53"
+    }
+  },
+  {
+    "path": "/Users/jearly/Documents/OceanKitRepositories/thermal-readiness-t10-evidence/windows/product/product1537/initial-case.mat",
+    "manifest": {
+      "schema": "thermal-readiness-case-v1",
+      "configuration": {
+        "kind": "developed",
+        "Nx": 64,
+        "Ny": 64,
+        "Nz": 385,
+        "thermalCount": 257,
+        "mdaCount": 4,
+        "assemblyCount": 2057,
+        "productCount": 1537,
+        "domainSize": [
+          500000,
+          500000,
+          4000
+        ],
+        "latitude": 24,
+        "N0": 0.0052,
+        "inverseScale": 0.00076923076923076923,
+        "kappa_z": 1E-5,
+        "seasonalM": 100,
+        "period": 3.15576E+7,
+        "phase": 1.5707963267948966,
+        "t": 0,
+        "t0": 0,
+        "seedRMS": 0.01,
+        "velocityRMS": 0.1,
+        "meanAmplitude": 0.1,
+        "normalizationCount": 513,
+        "shouldIncludeAdvection": true,
+        "shouldIncludeSeasonal": true,
+        "shouldIncludeBottomDrag": true,
+        "Cd": 0.001
+      },
+      "requestHash": "d2d7162f7932ce98b26cdb45200706ff01910a286118d08bc3155703f83c44df",
+      "sourceStateHash": "b43569f1b0bb5c92740c5524e7934dea86fca1090fdc09ffed20721dcadb1ac8",
+      "normalization": {
+        "method": "authoritative physical transfer; no target renormalization",
+        "factor": null,
+        "sourceStateHash": "b43569f1b0bb5c92740c5524e7934dea86fca1090fdc09ffed20721dcadb1ac8"
+      },
+      "initialFit": {
+        "quadratureCount": 771,
+        "sourceEnergy": 199.2036988593313,
+        "targetEnergy": 199.20369886393235,
+        "errorEnergy": 3.1560718870914036E-19,
+        "relativeFieldError": 3.9803819142019326E-11,
+        "qgpvRMS": 9.767663118762721E-16,
+        "buoyancyRMS": 6.0761718435778052E-15,
+        "velocityRMS": 1.1943546911475782E-11,
+        "endpointRMS": [
+          6.425811544448506E-10,
+          1.1728382935131617E-8
+        ],
+        "sshRMS": 4.4939502505708616E-12,
+        "meanDisplacementRMS": 2.8092511848017555E-15,
+        "meanBuoyancyInventoryError": 6.8118152990434132E-17,
+        "matchedFourierCount": 716,
+        "discardedFourierCount": 0
+      },
+      "scientificStateHash": "6f30b8071e7bca3e30443b10b1690567619506dead8eba6544769b16a590b1c8",
+      "coefficientStateHash": "c485dee84fe2454ee6a1ee81e3dae717eed103c854ef63a53367249941ccd40a",
+      "actualAssemblyCount": 2057,
+      "actualProductCount": 1537,
+      "activeEndpoints": [
+        1,
+        2
+      ],
+      "seasonalArgument": 1.5707963267948966,
+      "caseId": "23dff9e4b3c4383f9dcc4423927d7e3192d5da9adcad59e47f85f80a748458d7"
+    }
+  },
+  {
+    "path": "/Users/jearly/Documents/OceanKitRepositories/thermal-readiness-t10-evidence/windows/product/product3074/initial-case.mat",
+    "manifest": {
+      "schema": "thermal-readiness-case-v1",
+      "configuration": {
+        "kind": "developed",
+        "Nx": 64,
+        "Ny": 64,
+        "Nz": 385,
+        "thermalCount": 257,
+        "mdaCount": 4,
+        "assemblyCount": 2057,
+        "productCount": 3074,
+        "domainSize": [
+          500000,
+          500000,
+          4000
+        ],
+        "latitude": 24,
+        "N0": 0.0052,
+        "inverseScale": 0.00076923076923076923,
+        "kappa_z": 1E-5,
+        "seasonalM": 100,
+        "period": 3.15576E+7,
+        "phase": 1.5707963267948966,
+        "t": 0,
+        "t0": 0,
+        "seedRMS": 0.01,
+        "velocityRMS": 0.1,
+        "meanAmplitude": 0.1,
+        "normalizationCount": 513,
+        "shouldIncludeAdvection": true,
+        "shouldIncludeSeasonal": true,
+        "shouldIncludeBottomDrag": true,
+        "Cd": 0.001
+      },
+      "requestHash": "2ca145461a9f108ac97ce8e07858967bd0a0fb648f4382e273c52b0d95af6835",
+      "sourceStateHash": "b43569f1b0bb5c92740c5524e7934dea86fca1090fdc09ffed20721dcadb1ac8",
+      "normalization": {
+        "method": "authoritative physical transfer; no target renormalization",
+        "factor": null,
+        "sourceStateHash": "b43569f1b0bb5c92740c5524e7934dea86fca1090fdc09ffed20721dcadb1ac8"
+      },
+      "initialFit": {
+        "quadratureCount": 771,
+        "sourceEnergy": 199.2036988593313,
+        "targetEnergy": 199.20369886393235,
+        "errorEnergy": 3.1560718870914036E-19,
+        "relativeFieldError": 3.9803819142019326E-11,
+        "qgpvRMS": 9.767663118762721E-16,
+        "buoyancyRMS": 6.0761718435778052E-15,
+        "velocityRMS": 1.1943546911475782E-11,
+        "endpointRMS": [
+          6.425811544448506E-10,
+          1.1728382935131617E-8
+        ],
+        "sshRMS": 4.4939502505708616E-12,
+        "meanDisplacementRMS": 2.8092511848017555E-15,
+        "meanBuoyancyInventoryError": 6.8118152990434132E-17,
+        "matchedFourierCount": 716,
+        "discardedFourierCount": 0
+      },
+      "scientificStateHash": "a5ae70186302dbe290d554ecdc04274a237584cf32035fad37c3e61a18245d4c",
+      "coefficientStateHash": "c485dee84fe2454ee6a1ee81e3dae717eed103c854ef63a53367249941ccd40a",
+      "actualAssemblyCount": 2057,
+      "actualProductCount": 3074,
+      "activeEndpoints": [
+        1,
+        2
+      ],
+      "seasonalArgument": 1.5707963267948966,
+      "caseId": "e486eca35c8683a69b91c64d3c25f0c670c85caba0c89703b845b981a86c57bc"
+    }
+  },
+  {
+    "path": "/Users/jearly/Documents/OceanKitRepositories/thermal-readiness-t10-evidence/windows/product/product769/initial-case.mat",
+    "manifest": {
+      "schema": "thermal-readiness-case-v1",
+      "configuration": {
+        "kind": "developed",
+        "Nx": 64,
+        "Ny": 64,
+        "Nz": 385,
+        "thermalCount": 257,
+        "mdaCount": 4,
+        "assemblyCount": 2057,
+        "productCount": 769,
+        "domainSize": [
+          500000,
+          500000,
+          4000
+        ],
+        "latitude": 24,
+        "N0": 0.0052,
+        "inverseScale": 0.00076923076923076923,
+        "kappa_z": 1E-5,
+        "seasonalM": 100,
+        "period": 3.15576E+7,
+        "phase": 1.5707963267948966,
+        "t": 0,
+        "t0": 0,
+        "seedRMS": 0.01,
+        "velocityRMS": 0.1,
+        "meanAmplitude": 0.1,
+        "normalizationCount": 513,
+        "shouldIncludeAdvection": true,
+        "shouldIncludeSeasonal": true,
+        "shouldIncludeBottomDrag": true,
+        "Cd": 0.001
+      },
+      "requestHash": "52a05d73d0dd78120885c8fc09e6b015aa3f7639704d01175c0ab1b1ff8d5bff",
+      "sourceStateHash": "",
+      "normalization": {
+        "method": "fixed physical quadrature of prescribed pressure; applied once",
+        "factor": 2944.8516324077868,
+        "unnormalizedRMS": 3.3957568150296734E-5,
+        "targetRMS": 0.1,
+        "quadratureCount": 513,
+        "horizontalModes": [
+          [
+            1,
+            0
+          ],
+          [
+            0,
+            2
+          ],
+          [
+            1,
+            1
+          ]
+        ],
+        "pressurePolynomial": {
+          "jsonEncoding": "complex array",
+          "shape": [
+            5,
+            3
+          ],
+          "real": [
+            [
+              2944.8516324077868,
+              2061.3961426854507,
+              -1177.9406529631149
+            ],
+            [
+              883.455489722336,
+              618.41884280563522,
+              -353.3821958889344
+            ],
+            [
+              2944.8516324077868,
+              0,
+              0
+            ],
+            [
+              0,
+              2061.3961426854507,
+              0
+            ],
+            [
+              0,
+              0,
+              -1177.9406529631149
+            ]
+          ],
+          "imaginary": [
+            [
+              0,
+              588.97032648155744,
+              883.455489722336
+            ],
+            [
+              0,
+              176.6910979444672,
+              265.03664691670082
+            ],
+            [
+              0,
+              0,
+              0
+            ],
+            [
+              0,
+              588.97032648155744,
+              0
+            ],
+            [
+              0,
+              0,
+              883.455489722336
+            ]
+          ]
+        },
+        "polynomialCoordinate": "normalized WKB coordinate",
+        "meanCoefficients": [
+          0.1,
+          -0.2,
+          0.30000000000000004,
+          -0.1
+        ]
+      },
+      "initialFit": {
+        "method": "declared low-degree pressure in the thermal WKB polynomial space",
+        "qgpvRMS": null,
+        "endpointRMS": [
+          null,
+          null
+        ]
+      },
+      "scientificStateHash": "3934d749f3df7cbc561b630741979285eca5539ac94032aa3aed00938fd6e47f",
+      "coefficientStateHash": "2ba81008529234b1bcb67129e3c8831701c3150d62f23c58fe77877fcfce9e98",
+      "actualAssemblyCount": 2057,
+      "actualProductCount": 769,
+      "activeEndpoints": [
+        1,
+        2
+      ],
+      "seasonalArgument": 1.5707963267948966,
+      "caseId": "e54567d50f9641ad6de7a7a0714fc03cb2fa4476e862613bebb98115ee811383"
+    }
+  },
+  {
+    "path": "/Users/jearly/Documents/OceanKitRepositories/thermal-readiness-t10-evidence/windows/thermal/thermal257/initial-case.mat",
+    "manifest": {
+      "schema": "thermal-readiness-case-v1",
+      "configuration": {
+        "kind": "developed",
+        "Nx": 64,
+        "Ny": 64,
+        "Nz": 769,
+        "thermalCount": 257,
+        "mdaCount": 4,
+        "assemblyCount": 2057,
+        "productCount": 1537,
+        "domainSize": [
+          500000,
+          500000,
+          4000
+        ],
+        "latitude": 24,
+        "N0": 0.0052,
+        "inverseScale": 0.00076923076923076923,
+        "kappa_z": 1E-5,
+        "seasonalM": 100,
+        "period": 3.15576E+7,
+        "phase": 1.5707963267948966,
+        "t": 0,
+        "t0": 0,
+        "seedRMS": 0.01,
+        "velocityRMS": 0.1,
+        "meanAmplitude": 0.1,
+        "normalizationCount": 513,
+        "shouldIncludeAdvection": true,
+        "shouldIncludeSeasonal": true,
+        "shouldIncludeBottomDrag": true,
+        "Cd": 0.001
+      },
+      "requestHash": "10bb4cd5aaeae5b43a551c6078ebbf8a093dc2956df452c3135d3aab2146fec3",
+      "sourceStateHash": "",
+      "normalization": {
+        "method": "fixed physical quadrature of prescribed pressure; applied once",
+        "factor": 2944.8516324077868,
+        "unnormalizedRMS": 3.3957568150296734E-5,
+        "targetRMS": 0.1,
+        "quadratureCount": 513,
+        "horizontalModes": [
+          [
+            1,
+            0
+          ],
+          [
+            0,
+            2
+          ],
+          [
+            1,
+            1
+          ]
+        ],
+        "pressurePolynomial": {
+          "jsonEncoding": "complex array",
+          "shape": [
+            5,
+            3
+          ],
+          "real": [
+            [
+              2944.8516324077868,
+              2061.3961426854507,
+              -1177.9406529631149
+            ],
+            [
+              883.455489722336,
+              618.41884280563522,
+              -353.3821958889344
+            ],
+            [
+              2944.8516324077868,
+              0,
+              0
+            ],
+            [
+              0,
+              2061.3961426854507,
+              0
+            ],
+            [
+              0,
+              0,
+              -1177.9406529631149
+            ]
+          ],
+          "imaginary": [
+            [
+              0,
+              588.97032648155744,
+              883.455489722336
+            ],
+            [
+              0,
+              176.6910979444672,
+              265.03664691670082
+            ],
+            [
+              0,
+              0,
+              0
+            ],
+            [
+              0,
+              588.97032648155744,
+              0
+            ],
+            [
+              0,
+              0,
+              883.455489722336
+            ]
+          ]
+        },
+        "polynomialCoordinate": "normalized WKB coordinate",
+        "meanCoefficients": [
+          0.1,
+          -0.2,
+          0.30000000000000004,
+          -0.1
+        ]
+      },
+      "initialFit": {
+        "method": "declared low-degree pressure in the thermal WKB polynomial space",
+        "qgpvRMS": null,
+        "endpointRMS": [
+          null,
+          null
+        ]
+      },
+      "scientificStateHash": "e2e640e8762a02cff067d647f896503ebf7665dcecc101cf9188bc07a9d2f461",
+      "coefficientStateHash": "2ba81008529234b1bcb67129e3c8831701c3150d62f23c58fe77877fcfce9e98",
+      "actualAssemblyCount": 2057,
+      "actualProductCount": 1537,
+      "activeEndpoints": [
+        1,
+        2
+      ],
+      "seasonalArgument": 1.5707963267948966,
+      "caseId": "79ee6bfba21314d9f0cda97e4b6a1dd088d1fc0604e0e3f079e907837159b2a9"
+    }
+  },
+  {
+    "path": "/Users/jearly/Documents/OceanKitRepositories/thermal-readiness-t10-evidence/windows/thermal/thermal385/initial-case.mat",
+    "manifest": {
+      "schema": "thermal-readiness-case-v1",
+      "configuration": {
+        "kind": "developed",
+        "Nx": 64,
+        "Ny": 64,
+        "Nz": 769,
+        "thermalCount": 385,
+        "mdaCount": 4,
+        "assemblyCount": 2057,
+        "productCount": 1537,
+        "domainSize": [
+          500000,
+          500000,
+          4000
+        ],
+        "latitude": 24,
+        "N0": 0.0052,
+        "inverseScale": 0.00076923076923076923,
+        "kappa_z": 1E-5,
+        "seasonalM": 100,
+        "period": 3.15576E+7,
+        "phase": 1.5707963267948966,
+        "t": 0,
+        "t0": 0,
+        "seedRMS": 0.01,
+        "velocityRMS": 0.1,
+        "meanAmplitude": 0.1,
+        "normalizationCount": 513,
+        "shouldIncludeAdvection": true,
+        "shouldIncludeSeasonal": true,
+        "shouldIncludeBottomDrag": true,
+        "Cd": 0.001
+      },
+      "requestHash": "9006e00bca5cbda8380720b492970fc296c20cff9966efd05c9b02b24b066a46",
+      "sourceStateHash": "8e4fa33c8b2e98a3fa4e290796515b641c83d3ab8c55815e40b3b099c509b96b",
+      "normalization": {
+        "method": "authoritative physical transfer; no target renormalization",
+        "factor": null,
+        "sourceStateHash": "8e4fa33c8b2e98a3fa4e290796515b641c83d3ab8c55815e40b3b099c509b96b"
+      },
+      "initialFit": {
+        "quadratureCount": 1539,
+        "sourceEnergy": 199.20369885933118,
+        "targetEnergy": 199.20369885912771,
+        "errorEnergy": 2.3731106081160161E-19,
+        "relativeFieldError": 3.4515191810180516E-11,
+        "qgpvRMS": 5.5417258380985938E-15,
+        "buoyancyRMS": 2.9316904631662861E-14,
+        "velocityRMS": 6.9694800157593294E-12,
+        "endpointRMS": [
+          4.4089130398220078E-9,
+          7.4287170263563531E-9
+        ],
+        "sshRMS": 3.611827874001368E-12,
+        "meanDisplacementRMS": 1.9947900831837892E-15,
+        "meanBuoyancyInventoryError": 4.8025023286546107E-17,
+        "matchedFourierCount": 716,
+        "discardedFourierCount": 0
+      },
+      "scientificStateHash": "6371c234e7b6673957f512ab03575944f1c3ae7170fdbe18e3343b3aeba47ba6",
+      "coefficientStateHash": "22157dc3cb95086d8929c6b175dff8ea6d38e434a1ce7e167d354d89c34c37c6",
+      "actualAssemblyCount": 2057,
+      "actualProductCount": 1537,
+      "activeEndpoints": [
+        1,
+        2
+      ],
+      "seasonalArgument": 1.5707963267948966,
+      "caseId": "1bb91f81bf88fd2ce2cc99e2074176f7f6de4f5890b1147d8fcd2a9a651c803f"
+    }
+  },
+  {
+    "path": "/Users/jearly/Documents/OceanKitRepositories/thermal-readiness-t10-evidence/windows/thermal/thermal513/initial-case.mat",
+    "manifest": {
+      "schema": "thermal-readiness-case-v1",
+      "configuration": {
+        "kind": "developed",
+        "Nx": 64,
+        "Ny": 64,
+        "Nz": 769,
+        "thermalCount": 513,
+        "mdaCount": 4,
+        "assemblyCount": 2057,
+        "productCount": 1537,
+        "domainSize": [
+          500000,
+          500000,
+          4000
+        ],
+        "latitude": 24,
+        "N0": 0.0052,
+        "inverseScale": 0.00076923076923076923,
+        "kappa_z": 1E-5,
+        "seasonalM": 100,
+        "period": 3.15576E+7,
+        "phase": 1.5707963267948966,
+        "t": 0,
+        "t0": 0,
+        "seedRMS": 0.01,
+        "velocityRMS": 0.1,
+        "meanAmplitude": 0.1,
+        "normalizationCount": 513,
+        "shouldIncludeAdvection": true,
+        "shouldIncludeSeasonal": true,
+        "shouldIncludeBottomDrag": true,
+        "Cd": 0.001
+      },
+      "requestHash": "54559337532ac369cd126cc422051a1270b8b1e34c9267dc09731fd0e59ac7c5",
+      "sourceStateHash": "8e4fa33c8b2e98a3fa4e290796515b641c83d3ab8c55815e40b3b099c509b96b",
+      "normalization": {
+        "method": "authoritative physical transfer; no target renormalization",
+        "factor": null,
+        "sourceStateHash": "8e4fa33c8b2e98a3fa4e290796515b641c83d3ab8c55815e40b3b099c509b96b"
+      },
+      "initialFit": {
+        "quadratureCount": 1539,
+        "sourceEnergy": 199.20369885933118,
+        "targetEnergy": 199.20369882783126,
+        "errorEnergy": 1.9750004780613015E-17,
+        "relativeFieldError": 3.14872624036704E-10,
+        "qgpvRMS": 4.3182407369279782E-14,
+        "buoyancyRMS": 7.35220965772944E-14,
+        "velocityRMS": 9.1755413387208566E-11,
+        "endpointRMS": [
+          4.4178491609197653E-9,
+          1.1945422292082438E-7
+        ],
+        "sshRMS": 2.4140605480069685E-11,
+        "meanDisplacementRMS": 1.9947900831837892E-15,
+        "meanBuoyancyInventoryError": 4.8025023286546107E-17,
+        "matchedFourierCount": 716,
+        "discardedFourierCount": 0
+      },
+      "scientificStateHash": "3d434560efbae7f7339fd523ea59e537d5cc188261f9a1aa4553cbc0753f4a6a",
+      "coefficientStateHash": "b63cbfc1088387b787be1d53911999a360f2febbe5b56380bf196daf4c7da23d",
+      "actualAssemblyCount": 2057,
+      "actualProductCount": 1537,
+      "activeEndpoints": [
+        1,
+        2
+      ],
+      "seasonalArgument": 1.5707963267948966,
+      "caseId": "6e85a397e99ce10caf3dda9b1e3ca6f026e3a20eb5d6986a4943ab8532b39a8f"
+    }
+  },
+  {
+    "path": "/Users/jearly/Documents/OceanKitRepositories/thermal-readiness-t10-evidence/windows/time/adaptive/initial-case.mat",
+    "manifest": {
+      "schema": "thermal-readiness-case-v1",
+      "configuration": {
+        "kind": "developed",
+        "Nx": 64,
+        "Ny": 64,
+        "Nz": 385,
+        "thermalCount": 257,
+        "mdaCount": 4,
+        "assemblyCount": 2057,
+        "productCount": 1537,
+        "domainSize": [
+          500000,
+          500000,
+          4000
+        ],
+        "latitude": 24,
+        "N0": 0.0052,
+        "inverseScale": 0.00076923076923076923,
+        "kappa_z": 1E-5,
+        "seasonalM": 100,
+        "period": 3.15576E+7,
+        "phase": 1.5707963267948966,
+        "t": 0,
+        "t0": 0,
+        "seedRMS": 0.01,
+        "velocityRMS": 0.1,
+        "meanAmplitude": 0.1,
+        "normalizationCount": 513,
+        "shouldIncludeAdvection": true,
+        "shouldIncludeSeasonal": true,
+        "shouldIncludeBottomDrag": true,
+        "Cd": 0.001
+      },
+      "requestHash": "f0575e4b1ae35f535dc6eaa5f0180fecef9f2875f6f1438b147f50f46a084492",
+      "sourceStateHash": "cccbe2b8f544536783f45747401d976ea09b02f2d1a6a52ecdb4fbcfe6246387",
+      "normalization": {
+        "method": "authoritative physical transfer; no target renormalization",
+        "factor": null,
+        "sourceStateHash": "cccbe2b8f544536783f45747401d976ea09b02f2d1a6a52ecdb4fbcfe6246387"
+      },
+      "initialFit": {
+        "method": "identical scientific arrays; exact canonical copy",
+        "relativeFieldError": 0,
+        "qgpvRMS": 0,
+        "buoyancyRMS": 0,
+        "velocityRMS": 0,
+        "endpointRMS": [
+          0,
+          0
+        ],
+        "sshRMS": 0,
+        "meanDisplacementRMS": 0,
+        "errorEnergy": 0,
+        "discardedFourierCount": 0
+      },
+      "scientificStateHash": "6f30b8071e7bca3e30443b10b1690567619506dead8eba6544769b16a590b1c8",
+      "coefficientStateHash": "2ba81008529234b1bcb67129e3c8831701c3150d62f23c58fe77877fcfce9e98",
+      "actualAssemblyCount": 2057,
+      "actualProductCount": 1537,
+      "activeEndpoints": [
+        1,
+        2
+      ],
+      "seasonalArgument": 1.5707963267948966,
+      "caseId": "954d35b6d7d677ec6677bc059136a1cbd6c81d5a91b6ca2beff016007bf8933d"
+    }
+  },
+  {
+    "path": "/Users/jearly/Documents/OceanKitRepositories/thermal-readiness-t10-evidence/windows/time/step1800/initial-case.mat",
+    "manifest": {
+      "schema": "thermal-readiness-case-v1",
+      "configuration": {
+        "kind": "developed",
+        "Nx": 64,
+        "Ny": 64,
+        "Nz": 385,
+        "thermalCount": 257,
+        "mdaCount": 4,
+        "assemblyCount": 2057,
+        "productCount": 1537,
+        "domainSize": [
+          500000,
+          500000,
+          4000
+        ],
+        "latitude": 24,
+        "N0": 0.0052,
+        "inverseScale": 0.00076923076923076923,
+        "kappa_z": 1E-5,
+        "seasonalM": 100,
+        "period": 3.15576E+7,
+        "phase": 1.5707963267948966,
+        "t": 0,
+        "t0": 0,
+        "seedRMS": 0.01,
+        "velocityRMS": 0.1,
+        "meanAmplitude": 0.1,
+        "normalizationCount": 513,
+        "shouldIncludeAdvection": true,
+        "shouldIncludeSeasonal": true,
+        "shouldIncludeBottomDrag": true,
+        "Cd": 0.001
+      },
+      "requestHash": "24cf0fb638e7ac4678cd328106c94623536a205a95f1b4032c37d70be4290fca",
+      "sourceStateHash": "",
+      "normalization": {
+        "method": "fixed physical quadrature of prescribed pressure; applied once",
+        "factor": 2944.8516324077868,
+        "unnormalizedRMS": 3.3957568150296734E-5,
+        "targetRMS": 0.1,
+        "quadratureCount": 513,
+        "horizontalModes": [
+          [
+            1,
+            0
+          ],
+          [
+            0,
+            2
+          ],
+          [
+            1,
+            1
+          ]
+        ],
+        "pressurePolynomial": {
+          "jsonEncoding": "complex array",
+          "shape": [
+            5,
+            3
+          ],
+          "real": [
+            [
+              2944.8516324077868,
+              2061.3961426854507,
+              -1177.9406529631149
+            ],
+            [
+              883.455489722336,
+              618.41884280563522,
+              -353.3821958889344
+            ],
+            [
+              2944.8516324077868,
+              0,
+              0
+            ],
+            [
+              0,
+              2061.3961426854507,
+              0
+            ],
+            [
+              0,
+              0,
+              -1177.9406529631149
+            ]
+          ],
+          "imaginary": [
+            [
+              0,
+              588.97032648155744,
+              883.455489722336
+            ],
+            [
+              0,
+              176.6910979444672,
+              265.03664691670082
+            ],
+            [
+              0,
+              0,
+              0
+            ],
+            [
+              0,
+              588.97032648155744,
+              0
+            ],
+            [
+              0,
+              0,
+              883.455489722336
+            ]
+          ]
+        },
+        "polynomialCoordinate": "normalized WKB coordinate",
+        "meanCoefficients": [
+          0.1,
+          -0.2,
+          0.30000000000000004,
+          -0.1
+        ]
+      },
+      "initialFit": {
+        "method": "declared low-degree pressure in the thermal WKB polynomial space",
+        "qgpvRMS": null,
+        "endpointRMS": [
+          null,
+          null
+        ]
+      },
+      "scientificStateHash": "6f30b8071e7bca3e30443b10b1690567619506dead8eba6544769b16a590b1c8",
+      "coefficientStateHash": "2ba81008529234b1bcb67129e3c8831701c3150d62f23c58fe77877fcfce9e98",
+      "actualAssemblyCount": 2057,
+      "actualProductCount": 1537,
+      "activeEndpoints": [
+        1,
+        2
+      ],
+      "seasonalArgument": 1.5707963267948966,
+      "caseId": "abeeb5121144fbdae0f17ac6f0c774c3de8ac052c583951e69cea8b12150fc6c"
+    }
+  },
+  {
+    "path": "/Users/jearly/Documents/OceanKitRepositories/thermal-readiness-t10-evidence/windows/time/step450/initial-case.mat",
+    "manifest": {
+      "schema": "thermal-readiness-case-v1",
+      "configuration": {
+        "kind": "developed",
+        "Nx": 64,
+        "Ny": 64,
+        "Nz": 385,
+        "thermalCount": 257,
+        "mdaCount": 4,
+        "assemblyCount": 2057,
+        "productCount": 1537,
+        "domainSize": [
+          500000,
+          500000,
+          4000
+        ],
+        "latitude": 24,
+        "N0": 0.0052,
+        "inverseScale": 0.00076923076923076923,
+        "kappa_z": 1E-5,
+        "seasonalM": 100,
+        "period": 3.15576E+7,
+        "phase": 1.5707963267948966,
+        "t": 0,
+        "t0": 0,
+        "seedRMS": 0.01,
+        "velocityRMS": 0.1,
+        "meanAmplitude": 0.1,
+        "normalizationCount": 513,
+        "shouldIncludeAdvection": true,
+        "shouldIncludeSeasonal": true,
+        "shouldIncludeBottomDrag": true,
+        "Cd": 0.001
+      },
+      "requestHash": "f0575e4b1ae35f535dc6eaa5f0180fecef9f2875f6f1438b147f50f46a084492",
+      "sourceStateHash": "cccbe2b8f544536783f45747401d976ea09b02f2d1a6a52ecdb4fbcfe6246387",
+      "normalization": {
+        "method": "authoritative physical transfer; no target renormalization",
+        "factor": null,
+        "sourceStateHash": "cccbe2b8f544536783f45747401d976ea09b02f2d1a6a52ecdb4fbcfe6246387"
+      },
+      "initialFit": {
+        "method": "identical scientific arrays; exact canonical copy",
+        "relativeFieldError": 0,
+        "qgpvRMS": 0,
+        "buoyancyRMS": 0,
+        "velocityRMS": 0,
+        "endpointRMS": [
+          0,
+          0
+        ],
+        "sshRMS": 0,
+        "meanDisplacementRMS": 0,
+        "errorEnergy": 0,
+        "discardedFourierCount": 0
+      },
+      "scientificStateHash": "6f30b8071e7bca3e30443b10b1690567619506dead8eba6544769b16a590b1c8",
+      "coefficientStateHash": "2ba81008529234b1bcb67129e3c8831701c3150d62f23c58fe77877fcfce9e98",
+      "actualAssemblyCount": 2057,
+      "actualProductCount": 1537,
+      "activeEndpoints": [
+        1,
+        2
+      ],
+      "seasonalArgument": 1.5707963267948966,
+      "caseId": "954d35b6d7d677ec6677bc059136a1cbd6c81d5a91b6ca2beff016007bf8933d"
+    }
+  },
+  {
+    "path": "/Users/jearly/Documents/OceanKitRepositories/thermal-readiness-t10-evidence/windows/time/step900/initial-case.mat",
+    "manifest": {
+      "schema": "thermal-readiness-case-v1",
+      "configuration": {
+        "kind": "developed",
+        "Nx": 64,
+        "Ny": 64,
+        "Nz": 385,
+        "thermalCount": 257,
+        "mdaCount": 4,
+        "assemblyCount": 2057,
+        "productCount": 1537,
+        "domainSize": [
+          500000,
+          500000,
+          4000
+        ],
+        "latitude": 24,
+        "N0": 0.0052,
+        "inverseScale": 0.00076923076923076923,
+        "kappa_z": 1E-5,
+        "seasonalM": 100,
+        "period": 3.15576E+7,
+        "phase": 1.5707963267948966,
+        "t": 0,
+        "t0": 0,
+        "seedRMS": 0.01,
+        "velocityRMS": 0.1,
+        "meanAmplitude": 0.1,
+        "normalizationCount": 513,
+        "shouldIncludeAdvection": true,
+        "shouldIncludeSeasonal": true,
+        "shouldIncludeBottomDrag": true,
+        "Cd": 0.001
+      },
+      "requestHash": "f0575e4b1ae35f535dc6eaa5f0180fecef9f2875f6f1438b147f50f46a084492",
+      "sourceStateHash": "cccbe2b8f544536783f45747401d976ea09b02f2d1a6a52ecdb4fbcfe6246387",
+      "normalization": {
+        "method": "authoritative physical transfer; no target renormalization",
+        "factor": null,
+        "sourceStateHash": "cccbe2b8f544536783f45747401d976ea09b02f2d1a6a52ecdb4fbcfe6246387"
+      },
+      "initialFit": {
+        "method": "identical scientific arrays; exact canonical copy",
+        "relativeFieldError": 0,
+        "qgpvRMS": 0,
+        "buoyancyRMS": 0,
+        "velocityRMS": 0,
+        "endpointRMS": [
+          0,
+          0
+        ],
+        "sshRMS": 0,
+        "meanDisplacementRMS": 0,
+        "errorEnergy": 0,
+        "discardedFourierCount": 0
+      },
+      "scientificStateHash": "6f30b8071e7bca3e30443b10b1690567619506dead8eba6544769b16a590b1c8",
+      "coefficientStateHash": "2ba81008529234b1bcb67129e3c8831701c3150d62f23c58fe77877fcfce9e98",
+      "actualAssemblyCount": 2057,
+      "actualProductCount": 1537,
+      "activeEndpoints": [
+        1,
+        2
+      ],
+      "seasonalArgument": 1.5707963267948966,
+      "caseId": "954d35b6d7d677ec6677bc059136a1cbd6c81d5a91b6ca2beff016007bf8933d"
+    }
+  },
+  {
+    "path": "/Users/jearly/Documents/OceanKitRepositories/thermal-readiness-t10-evidence/windows/zero10/zero10/initial-case.mat",
+    "manifest": {
+      "schema": "thermal-readiness-case-v1",
+      "configuration": {
+        "kind": "developed",
+        "Nx": 64,
+        "Ny": 64,
+        "Nz": 385,
+        "thermalCount": 257,
+        "mdaCount": 4,
+        "assemblyCount": 2057,
+        "productCount": 1537,
+        "domainSize": [
+          500000,
+          500000,
+          4000
+        ],
+        "latitude": 24,
+        "N0": 0.0052,
+        "inverseScale": 0.00076923076923076923,
+        "kappa_z": 1E-5,
+        "seasonalM": 10,
+        "period": 3.15576E+7,
+        "phase": 0,
+        "t": 0,
+        "t0": 0,
+        "seedRMS": 0.01,
+        "velocityRMS": 0.01,
+        "meanAmplitude": 0.1,
+        "normalizationCount": 513,
+        "shouldIncludeAdvection": true,
+        "shouldIncludeSeasonal": true,
+        "shouldIncludeBottomDrag": true,
+        "Cd": 0.001
+      },
+      "requestHash": "3a7713727dd8c06ed9194cff95e9b07a4496f66b7b0a71e22d02dfd08597f366",
+      "sourceStateHash": "",
+      "normalization": {
+        "method": "fixed physical quadrature of prescribed pressure; applied once",
+        "factor": 294.48516324077866,
+        "unnormalizedRMS": 3.3957568150296734E-5,
+        "targetRMS": 0.01,
+        "quadratureCount": 513,
+        "horizontalModes": [
+          [
+            1,
+            0
+          ],
+          [
+            0,
+            2
+          ],
+          [
+            1,
+            1
+          ]
+        ],
+        "pressurePolynomial": {
+          "jsonEncoding": "complex array",
+          "shape": [
+            5,
+            3
+          ],
+          "real": [
+            [
+              294.48516324077866,
+              206.13961426854505,
+              -117.79406529631147
+            ],
+            [
+              88.3455489722336,
+              61.841884280563519,
+              -35.338219588893438
+            ],
+            [
+              294.48516324077866,
+              0,
+              0
+            ],
+            [
+              0,
+              206.13961426854505,
+              0
+            ],
+            [
+              0,
+              0,
+              -117.79406529631147
+            ]
+          ],
+          "imaginary": [
+            [
+              0,
+              58.897032648155736,
+              88.3455489722336
+            ],
+            [
+              0,
+              17.669109794446719,
+              26.503664691670078
+            ],
+            [
+              0,
+              0,
+              0
+            ],
+            [
+              0,
+              58.897032648155736,
+              0
+            ],
+            [
+              0,
+              0,
+              88.3455489722336
+            ]
+          ]
+        },
+        "polynomialCoordinate": "normalized WKB coordinate",
+        "meanCoefficients": [
+          0.1,
+          -0.2,
+          0.30000000000000004,
+          -0.1
+        ]
+      },
+      "initialFit": {
+        "method": "declared low-degree pressure in the thermal WKB polynomial space",
+        "qgpvRMS": null,
+        "endpointRMS": [
+          null,
+          null
+        ]
+      },
+      "scientificStateHash": "6f30b8071e7bca3e30443b10b1690567619506dead8eba6544769b16a590b1c8",
+      "coefficientStateHash": "15613f510f052d5e841c1f481efdb4f72e71f7fa6b03c41d3048e61ee2212cf8",
+      "actualAssemblyCount": 2057,
+      "actualProductCount": 1537,
+      "activeEndpoints": [
+        1,
+        2
+      ],
+      "seasonalArgument": 0,
+      "caseId": "66874428a644f8e97d1ce74ac3e0738b20524b192add09651f3e7b8547f3233c"
+    }
+  },
+  {
+    "path": "/Users/jearly/Documents/OceanKitRepositories/thermal-readiness-t10-evidence/windows/zero100/zero100/initial-case.mat",
+    "manifest": {
+      "schema": "thermal-readiness-case-v1",
+      "configuration": {
+        "kind": "developed",
+        "Nx": 64,
+        "Ny": 64,
+        "Nz": 385,
+        "thermalCount": 257,
+        "mdaCount": 4,
+        "assemblyCount": 2057,
+        "productCount": 1537,
+        "domainSize": [
+          500000,
+          500000,
+          4000
+        ],
+        "latitude": 24,
+        "N0": 0.0052,
+        "inverseScale": 0.00076923076923076923,
+        "kappa_z": 1E-5,
+        "seasonalM": 100,
+        "period": 3.15576E+7,
+        "phase": 0,
+        "t": 0,
+        "t0": 0,
+        "seedRMS": 0.01,
+        "velocityRMS": 0.1,
+        "meanAmplitude": 0.1,
+        "normalizationCount": 513,
+        "shouldIncludeAdvection": true,
+        "shouldIncludeSeasonal": true,
+        "shouldIncludeBottomDrag": true,
+        "Cd": 0.001
+      },
+      "requestHash": "ecfcd0bf4fc3d04422ca9eefa40ffb0e282795cf804be20f798082771f6e74e8",
+      "sourceStateHash": "",
+      "normalization": {
+        "method": "fixed physical quadrature of prescribed pressure; applied once",
+        "factor": 2944.8516324077868,
+        "unnormalizedRMS": 3.3957568150296734E-5,
+        "targetRMS": 0.1,
+        "quadratureCount": 513,
+        "horizontalModes": [
+          [
+            1,
+            0
+          ],
+          [
+            0,
+            2
+          ],
+          [
+            1,
+            1
+          ]
+        ],
+        "pressurePolynomial": {
+          "jsonEncoding": "complex array",
+          "shape": [
+            5,
+            3
+          ],
+          "real": [
+            [
+              2944.8516324077868,
+              2061.3961426854507,
+              -1177.9406529631149
+            ],
+            [
+              883.455489722336,
+              618.41884280563522,
+              -353.3821958889344
+            ],
+            [
+              2944.8516324077868,
+              0,
+              0
+            ],
+            [
+              0,
+              2061.3961426854507,
+              0
+            ],
+            [
+              0,
+              0,
+              -1177.9406529631149
+            ]
+          ],
+          "imaginary": [
+            [
+              0,
+              588.97032648155744,
+              883.455489722336
+            ],
+            [
+              0,
+              176.6910979444672,
+              265.03664691670082
+            ],
+            [
+              0,
+              0,
+              0
+            ],
+            [
+              0,
+              588.97032648155744,
+              0
+            ],
+            [
+              0,
+              0,
+              883.455489722336
+            ]
+          ]
+        },
+        "polynomialCoordinate": "normalized WKB coordinate",
+        "meanCoefficients": [
+          0.1,
+          -0.2,
+          0.30000000000000004,
+          -0.1
+        ]
+      },
+      "initialFit": {
+        "method": "declared low-degree pressure in the thermal WKB polynomial space",
+        "qgpvRMS": null,
+        "endpointRMS": [
+          null,
+          null
+        ]
+      },
+      "scientificStateHash": "6f30b8071e7bca3e30443b10b1690567619506dead8eba6544769b16a590b1c8",
+      "coefficientStateHash": "2ba81008529234b1bcb67129e3c8831701c3150d62f23c58fe77877fcfce9e98",
+      "actualAssemblyCount": 2057,
+      "actualProductCount": 1537,
+      "activeEndpoints": [
+        1,
+        2
+      ],
+      "seasonalArgument": 0,
+      "caseId": "a3951a5ee09bdaed836900e13a90a9cfea0c87df3b11cf950f6b9ab67550a9d6"
+    }
+  },
+  {
+    "path": "/Users/jearly/Documents/OceanKitRepositories/thermal-readiness-t10-evidence/windows-v2/time/adaptive/initial-case.mat",
+    "manifest": {
+      "schema": "thermal-readiness-case-v1",
+      "configuration": {
+        "kind": "developed",
+        "Nx": 64,
+        "Ny": 64,
+        "Nz": 385,
+        "thermalCount": 257,
+        "mdaCount": 4,
+        "assemblyCount": 2057,
+        "productCount": 1537,
+        "domainSize": [
+          500000,
+          500000,
+          4000
+        ],
+        "latitude": 24,
+        "N0": 0.0052,
+        "inverseScale": 0.00076923076923076923,
+        "kappa_z": 1E-5,
+        "seasonalM": 100,
+        "period": 3.15576E+7,
+        "phase": 1.5707963267948966,
+        "t": 0,
+        "t0": 0,
+        "seedRMS": 0.01,
+        "velocityRMS": 0.1,
+        "meanAmplitude": 0.1,
+        "normalizationCount": 513,
+        "shouldIncludeAdvection": true,
+        "shouldIncludeSeasonal": true,
+        "shouldIncludeBottomDrag": true,
+        "Cd": 0.001
+      },
+      "requestHash": "f0575e4b1ae35f535dc6eaa5f0180fecef9f2875f6f1438b147f50f46a084492",
+      "sourceStateHash": "cccbe2b8f544536783f45747401d976ea09b02f2d1a6a52ecdb4fbcfe6246387",
+      "normalization": {
+        "method": "authoritative physical transfer; no target renormalization",
+        "factor": null,
+        "sourceStateHash": "cccbe2b8f544536783f45747401d976ea09b02f2d1a6a52ecdb4fbcfe6246387"
+      },
+      "initialFit": {
+        "method": "identical scientific arrays; exact canonical copy",
+        "relativeFieldError": 0,
+        "qgpvRMS": 0,
+        "buoyancyRMS": 0,
+        "velocityRMS": 0,
+        "endpointRMS": [
+          0,
+          0
+        ],
+        "sshRMS": 0,
+        "meanDisplacementRMS": 0,
+        "errorEnergy": 0,
+        "discardedFourierCount": 0
+      },
+      "scientificStateHash": "6f30b8071e7bca3e30443b10b1690567619506dead8eba6544769b16a590b1c8",
+      "coefficientStateHash": "2ba81008529234b1bcb67129e3c8831701c3150d62f23c58fe77877fcfce9e98",
+      "actualAssemblyCount": 2057,
+      "actualProductCount": 1537,
+      "activeEndpoints": [
+        1,
+        2
+      ],
+      "seasonalArgument": 1.5707963267948966,
+      "caseId": "954d35b6d7d677ec6677bc059136a1cbd6c81d5a91b6ca2beff016007bf8933d"
+    }
+  },
+  {
+    "path": "/Users/jearly/Documents/OceanKitRepositories/thermal-readiness-t10-evidence/windows-v2/time/step1800/initial-case.mat",
+    "manifest": {
+      "schema": "thermal-readiness-case-v1",
+      "configuration": {
+        "kind": "developed",
+        "Nx": 64,
+        "Ny": 64,
+        "Nz": 385,
+        "thermalCount": 257,
+        "mdaCount": 4,
+        "assemblyCount": 2057,
+        "productCount": 1537,
+        "domainSize": [
+          500000,
+          500000,
+          4000
+        ],
+        "latitude": 24,
+        "N0": 0.0052,
+        "inverseScale": 0.00076923076923076923,
+        "kappa_z": 1E-5,
+        "seasonalM": 100,
+        "period": 3.15576E+7,
+        "phase": 1.5707963267948966,
+        "t": 0,
+        "t0": 0,
+        "seedRMS": 0.01,
+        "velocityRMS": 0.1,
+        "meanAmplitude": 0.1,
+        "normalizationCount": 513,
+        "shouldIncludeAdvection": true,
+        "shouldIncludeSeasonal": true,
+        "shouldIncludeBottomDrag": true,
+        "Cd": 0.001
+      },
+      "requestHash": "24cf0fb638e7ac4678cd328106c94623536a205a95f1b4032c37d70be4290fca",
+      "sourceStateHash": "",
+      "normalization": {
+        "method": "fixed physical quadrature of prescribed pressure; applied once",
+        "factor": 2944.8516324077868,
+        "unnormalizedRMS": 3.3957568150296734E-5,
+        "targetRMS": 0.1,
+        "quadratureCount": 513,
+        "horizontalModes": [
+          [
+            1,
+            0
+          ],
+          [
+            0,
+            2
+          ],
+          [
+            1,
+            1
+          ]
+        ],
+        "pressurePolynomial": {
+          "jsonEncoding": "complex array",
+          "shape": [
+            5,
+            3
+          ],
+          "real": [
+            [
+              2944.8516324077868,
+              2061.3961426854507,
+              -1177.9406529631149
+            ],
+            [
+              883.455489722336,
+              618.41884280563522,
+              -353.3821958889344
+            ],
+            [
+              2944.8516324077868,
+              0,
+              0
+            ],
+            [
+              0,
+              2061.3961426854507,
+              0
+            ],
+            [
+              0,
+              0,
+              -1177.9406529631149
+            ]
+          ],
+          "imaginary": [
+            [
+              0,
+              588.97032648155744,
+              883.455489722336
+            ],
+            [
+              0,
+              176.6910979444672,
+              265.03664691670082
+            ],
+            [
+              0,
+              0,
+              0
+            ],
+            [
+              0,
+              588.97032648155744,
+              0
+            ],
+            [
+              0,
+              0,
+              883.455489722336
+            ]
+          ]
+        },
+        "polynomialCoordinate": "normalized WKB coordinate",
+        "meanCoefficients": [
+          0.1,
+          -0.2,
+          0.30000000000000004,
+          -0.1
+        ]
+      },
+      "initialFit": {
+        "method": "declared low-degree pressure in the thermal WKB polynomial space",
+        "qgpvRMS": null,
+        "endpointRMS": [
+          null,
+          null
+        ]
+      },
+      "scientificStateHash": "6f30b8071e7bca3e30443b10b1690567619506dead8eba6544769b16a590b1c8",
+      "coefficientStateHash": "2ba81008529234b1bcb67129e3c8831701c3150d62f23c58fe77877fcfce9e98",
+      "actualAssemblyCount": 2057,
+      "actualProductCount": 1537,
+      "activeEndpoints": [
+        1,
+        2
+      ],
+      "seasonalArgument": 1.5707963267948966,
+      "caseId": "abeeb5121144fbdae0f17ac6f0c774c3de8ac052c583951e69cea8b12150fc6c"
+    }
+  },
+  {
+    "path": "/Users/jearly/Documents/OceanKitRepositories/thermal-readiness-t10-evidence/windows-v2/time/step450/initial-case.mat",
+    "manifest": {
+      "schema": "thermal-readiness-case-v1",
+      "configuration": {
+        "kind": "developed",
+        "Nx": 64,
+        "Ny": 64,
+        "Nz": 385,
+        "thermalCount": 257,
+        "mdaCount": 4,
+        "assemblyCount": 2057,
+        "productCount": 1537,
+        "domainSize": [
+          500000,
+          500000,
+          4000
+        ],
+        "latitude": 24,
+        "N0": 0.0052,
+        "inverseScale": 0.00076923076923076923,
+        "kappa_z": 1E-5,
+        "seasonalM": 100,
+        "period": 3.15576E+7,
+        "phase": 1.5707963267948966,
+        "t": 0,
+        "t0": 0,
+        "seedRMS": 0.01,
+        "velocityRMS": 0.1,
+        "meanAmplitude": 0.1,
+        "normalizationCount": 513,
+        "shouldIncludeAdvection": true,
+        "shouldIncludeSeasonal": true,
+        "shouldIncludeBottomDrag": true,
+        "Cd": 0.001
+      },
+      "requestHash": "f0575e4b1ae35f535dc6eaa5f0180fecef9f2875f6f1438b147f50f46a084492",
+      "sourceStateHash": "cccbe2b8f544536783f45747401d976ea09b02f2d1a6a52ecdb4fbcfe6246387",
+      "normalization": {
+        "method": "authoritative physical transfer; no target renormalization",
+        "factor": null,
+        "sourceStateHash": "cccbe2b8f544536783f45747401d976ea09b02f2d1a6a52ecdb4fbcfe6246387"
+      },
+      "initialFit": {
+        "method": "identical scientific arrays; exact canonical copy",
+        "relativeFieldError": 0,
+        "qgpvRMS": 0,
+        "buoyancyRMS": 0,
+        "velocityRMS": 0,
+        "endpointRMS": [
+          0,
+          0
+        ],
+        "sshRMS": 0,
+        "meanDisplacementRMS": 0,
+        "errorEnergy": 0,
+        "discardedFourierCount": 0
+      },
+      "scientificStateHash": "6f30b8071e7bca3e30443b10b1690567619506dead8eba6544769b16a590b1c8",
+      "coefficientStateHash": "2ba81008529234b1bcb67129e3c8831701c3150d62f23c58fe77877fcfce9e98",
+      "actualAssemblyCount": 2057,
+      "actualProductCount": 1537,
+      "activeEndpoints": [
+        1,
+        2
+      ],
+      "seasonalArgument": 1.5707963267948966,
+      "caseId": "954d35b6d7d677ec6677bc059136a1cbd6c81d5a91b6ca2beff016007bf8933d"
+    }
+  },
+  {
+    "path": "/Users/jearly/Documents/OceanKitRepositories/thermal-readiness-t10-evidence/windows-v2/time/step900/initial-case.mat",
+    "manifest": {
+      "schema": "thermal-readiness-case-v1",
+      "configuration": {
+        "kind": "developed",
+        "Nx": 64,
+        "Ny": 64,
+        "Nz": 385,
+        "thermalCount": 257,
+        "mdaCount": 4,
+        "assemblyCount": 2057,
+        "productCount": 1537,
+        "domainSize": [
+          500000,
+          500000,
+          4000
+        ],
+        "latitude": 24,
+        "N0": 0.0052,
+        "inverseScale": 0.00076923076923076923,
+        "kappa_z": 1E-5,
+        "seasonalM": 100,
+        "period": 3.15576E+7,
+        "phase": 1.5707963267948966,
+        "t": 0,
+        "t0": 0,
+        "seedRMS": 0.01,
+        "velocityRMS": 0.1,
+        "meanAmplitude": 0.1,
+        "normalizationCount": 513,
+        "shouldIncludeAdvection": true,
+        "shouldIncludeSeasonal": true,
+        "shouldIncludeBottomDrag": true,
+        "Cd": 0.001
+      },
+      "requestHash": "f0575e4b1ae35f535dc6eaa5f0180fecef9f2875f6f1438b147f50f46a084492",
+      "sourceStateHash": "cccbe2b8f544536783f45747401d976ea09b02f2d1a6a52ecdb4fbcfe6246387",
+      "normalization": {
+        "method": "authoritative physical transfer; no target renormalization",
+        "factor": null,
+        "sourceStateHash": "cccbe2b8f544536783f45747401d976ea09b02f2d1a6a52ecdb4fbcfe6246387"
+      },
+      "initialFit": {
+        "method": "identical scientific arrays; exact canonical copy",
+        "relativeFieldError": 0,
+        "qgpvRMS": 0,
+        "buoyancyRMS": 0,
+        "velocityRMS": 0,
+        "endpointRMS": [
+          0,
+          0
+        ],
+        "sshRMS": 0,
+        "meanDisplacementRMS": 0,
+        "errorEnergy": 0,
+        "discardedFourierCount": 0
+      },
+      "scientificStateHash": "6f30b8071e7bca3e30443b10b1690567619506dead8eba6544769b16a590b1c8",
+      "coefficientStateHash": "2ba81008529234b1bcb67129e3c8831701c3150d62f23c58fe77877fcfce9e98",
+      "actualAssemblyCount": 2057,
+      "actualProductCount": 1537,
+      "activeEndpoints": [
+        1,
+        2
+      ],
+      "seasonalArgument": 1.5707963267948966,
+      "caseId": "954d35b6d7d677ec6677bc059136a1cbd6c81d5a91b6ca2beff016007bf8933d"
+    }
+  }
+]

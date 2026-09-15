@@ -1,0 +1,5 @@
+withOutput,repeat,threads,simulatedSeconds,wallSeconds,simulatedSecondsPerWallSecond,acceptedSteps,rejectedSteps,rhsEvaluations,outputRhsEvaluations,minimumStep,maximumStep,maximumCFL,maximumDampingNumber,outputSetupSeconds,outputCloseSeconds,scalarInterval,coefficientInterval,status
+0,1,4,21600,7.84202575,2754.39034359202,24,0,96,0,900,900,7.47112420437868e-06,0,0,0.000797291666666667,NaN,NaN,complete
+0,2,4,21600,7.41434808333333,2913.27029122823,24,0,96,0,900,900,7.47112420437868e-06,0,0,5.5625e-05,NaN,NaN,complete
+1,1,4,21600,7.919127125,2727.57333719403,24,0,96,0,900,900,7.47112420437868e-06,0,4.35759725,0.006462625,5400,10800,complete
+1,2,4,21600,8.35146008333333,2586.37409320871,24,0,96,0,900,900,7.47112420437868e-06,0,0.366600333333333,0.0194555,5400,10800,complete

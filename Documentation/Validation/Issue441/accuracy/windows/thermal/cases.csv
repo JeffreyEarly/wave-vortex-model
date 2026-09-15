@@ -1,0 +1,3 @@
+caseName,executionId,initialCaseId,status,reason,wallSeconds,finalTime,acceptedSteps,rejectedSteps,rhsEvaluations,outputRhsEvaluations
+thermal257,d9c9fa846014dedd86c770eeb08006eb350064cd3cc842ecd13e08d611ddccfd,79ee6bfba21314d9f0cda97e4b6a1dd088d1fc0604e0e3f079e907837159b2a9,COMPLETE,finite bounded window; readiness gates remain separate,85.9509754444445,21600,24,0,96,0
+thermal385,a93afebcba8bf7f96a608dc38fcd50d7ecc60c7ebe383401fd3541be446c454b,1bb91f81bf88fd2ce2cc99e2074176f7f6de4f5890b1147d8fcd2a9a651c803f,COMPLETE,finite bounded window; readiness gates remain separate,164.169672902778,21600,24,0,96,0

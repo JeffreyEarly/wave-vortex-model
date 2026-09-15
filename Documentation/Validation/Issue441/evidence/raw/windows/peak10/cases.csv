@@ -1,0 +1,2 @@
+caseName,executionId,initialCaseId,status,reason,wallSeconds,finalTime,acceptedSteps,rejectedSteps,rhsEvaluations,outputRhsEvaluations
+peak10,7f30bb133f7dcb5123d6ce84034c445b0b4a27cb05c5c71d86642e0b2c438449,4bb620dd6b3112577199a83f3418a55799b6a50f8af136b6c52df30925060c53,COMPLETE,finite bounded window; readiness gates remain separate,67.11145375,21600,24,0,96,0

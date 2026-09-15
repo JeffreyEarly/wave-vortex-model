@@ -1,0 +1,59 @@
+{
+  "schema": "pinned-apv-cold-workload-v1",
+  "waveVortexModelCommit": "4ec07256476ee57ceee23d70422baec65d1f31a4",
+  "internalModesCommit": "f2ce3c143744ae00fbb25bd9d7b8c73fb358ca51",
+  "internalModesVersion": "2.0.0-beta.4",
+  "gridSize": [
+    64,
+    64,
+    513
+  ],
+  "domainSize": [
+    500000,
+    500000,
+    4000
+  ],
+  "apvModeCount": 217,
+  "mdaModeCount": 321,
+  "latitude": 24,
+  "N0": 0.0052,
+  "inverseScale": 0.00076923076923076923,
+  "g": 9.81,
+  "kappa_z": 1E-5,
+  "Cd": 0.001,
+  "forcingMultiplier": 10,
+  "seasonalPeriod": 3.15576E+7,
+  "seasonalPhase": 0,
+  "seasonalMode": 5,
+  "seedRMS": 0.01,
+  "seedModes": [
+    [
+      1,
+      0
+    ],
+    [
+      0,
+      2
+    ],
+    [
+      1,
+      1
+    ]
+  ],
+  "step": 900,
+  "threadCount": 4,
+  "repetitions": 2,
+  "duration": 21600,
+  "maximumWallSeconds": 900,
+  "exponentialAdaptive": false,
+  "physicalAbsoluteTolerance": [
+    1E-13,
+    1E-11,
+    1E-8,
+    1E-8
+  ],
+  "relativeTolerance": 1E-5,
+  "scope": "matched cold-start workload only; mature seasonal and cross-representation accuracy remain unqualified",
+  "outputScope": "sample coefficients at duration/2 and four physical inventories at duration/4; production cadence differs",
+  "diffusionScope": "public WVVerticalDiffusivity Galerkin density diffusion, both insulating active endpoints, mean diffusion enabled"
+}
