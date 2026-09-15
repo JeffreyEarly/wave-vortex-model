@@ -14,7 +14,7 @@ The study subclass is a qualification tool, not a proposed public API. Any adopt
 
 ## Protocol
 
-Fixtures use constant N²=1e-4 s^-2 and exponential N²=1e-4 exp(z/650) s^-2, a 100 km ×100 km ×1 km domain, nEVP=256, and explicitly qualified nonlinear inventories (`shouldAntialias=true`, `shouldCheckQuadraticAliasing=true`). Grids and APV/wave/MDA/inertial counts are:
+Fixtures use constant N²=1e-4 s^-2 and exponential N²=1e-4 exp(z/650) s^-2, a 100 km ×100 km ×1 km domain, nEVP=256, and horizontally antialiased inventories with fixed-fraction vertical filtering (`shouldAntialias=true`, `quadraticDealiasing="fixedFraction"`). Grids and APV/wave/MDA/inertial counts are:
 
 | Grid | Counts |
 | --- | --- |

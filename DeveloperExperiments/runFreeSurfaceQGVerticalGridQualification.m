@@ -71,12 +71,11 @@ for profileId = options.profileIds
                 record.horizontalWavenumberScale = assessment.horizontalWavenumberScale;
                 record.maximumSupportedKh = assessment.maximumSupportedKh;
                 record.firstRejectedKh = assessment.firstRejectedKh;
-                record.maximumSupportedError = assessment.maximumSupportedError;
-                record.firstRejectedError = assessment.firstRejectedError;
+                record.maximumSupportedBoundaryError = assessment.maximumSupportedBoundaryError;
+                record.firstRejectedBoundaryError = assessment.firstRejectedBoundaryError;
                 record.minimumHorizontalWavelength = assessment.minimumHorizontalWavelength;
                 record.scalingCoefficient = assessment.maximumSupportedKh/assessment.horizontalWavenumberScale;
                 record.limitingEndpoint = assessment.limitingEndpoint;
-                record.limitingAPVModeNumber = assessment.limitingAPVModeNumber;
                 record.status = "complete";
             catch exception
                 record.elapsedSeconds = toc(timer);
@@ -142,6 +141,6 @@ record = struct(profile="",Nz=NaN,endpointConfiguration="",status="",elapsedSeco
     apvModeCount=NaN,mdaModeCount=NaN,apvGramError=NaN,mdaGramError=NaN, ...
     apvLinearCount=NaN,apvFilteringCount=NaN,quadraticDealiasing="", ...
     minimumWeight=NaN,depthClosureError=NaN,horizontalWavenumberScale=NaN,maximumSupportedKh=NaN, ...
-    firstRejectedKh=NaN,maximumSupportedError=NaN,firstRejectedError=NaN,minimumHorizontalWavelength=NaN, ...
-    scalingCoefficient=NaN,limitingEndpoint="",limitingAPVModeNumber=NaN,failureIdentifier="",failureMessage="");
+    firstRejectedKh=NaN,maximumSupportedBoundaryError=NaN,firstRejectedBoundaryError=NaN,minimumHorizontalWavelength=NaN, ...
+    scalingCoefficient=NaN,limitingEndpoint="",failureIdentifier="",failureMessage="");
 end

@@ -176,6 +176,15 @@ classdef TestFreeSurfaceLinearModePolicy < matlab.unittest.TestCase
                 [1e4 1e4 1000],[8 8 17],N2Function=@(z)1e-4+0*z,latitude=30,quadraticDealiasing="none", ...
                 waveModeCount=0,inertialModeCount=1,apvModeCount=3,mdaModeCount=2),'WV:UnderresolvedBoundaryGrid')
         end
+
+        function retiredSurveyOptionsAreRejectedClearly(testCase)
+            qg=@()WVTransformFreeSurfaceQG([1e5 1e5 1000],[8 8 33], ...
+                N2Function=@(z)1e-4+0*z,shouldCheckQuadraticAliasing=false);
+            boussinesq=@()WVTransformFreeSurfaceBoussinesq.fromStratification( ...
+                [1e5 1e5 1000],[8 8 33],N2Function=@(z)1e-4+0*z,quadraticAliasingTolerance=.1);
+            verifyRejectedOption(testCase,qg,"shouldCheckQuadraticAliasing")
+            verifyRejectedOption(testCase,boussinesq,"quadraticAliasingTolerance")
+        end
     end
 end
 
@@ -190,4 +199,15 @@ for p=1:height(assessment.pages)
     testCase.verifyEqual(assessment.pages.dealiasing{p}.coordinateKind,assessment.dealiasing.coordinateKind)
 end
 testCase.verifyEqual(assessment.inertial.dealiasing.coordinateKind,assessment.dealiasing.coordinateKind)
+end
+
+function verifyRejectedOption(testCase,constructor,optionName)
+exception=MException.empty;
+try
+    constructor();
+catch caught
+    exception=caught;
+end
+testCase.assertNotEmpty(exception,"Retired option " + optionName + " was silently accepted.")
+testCase.verifySubstring(string(exception.message),optionName)
 end

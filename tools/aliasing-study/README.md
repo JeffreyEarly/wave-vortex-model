@@ -1,56 +1,16 @@
-# Sparse quadratic-product assessment (issue 400)
+# Historical sparse quadratic-product study
 
-The reusable numerical functions are now packaged under `WVInternal`; the study scripts remain in this authoring directory. For ordinary model initialization, use the v5 constructors and their `constructionAssessment` report; see [automatic mode selection](../../Documentation/Validation/AutomaticModeSelection.md).
+This directory preserves the frozen evidence from the issue 400 sampled-product study. The diagnostic and its reusable WVM wrappers were retired in issue 42 after free-surface construction adopted the simpler `quadraticDealiasing` policies. The MATLAB and Python drivers have been removed, so this archive is not a runnable or current API guide.
 
-This reproducible authoring study compares linear, fixed sparse, and targeted sparse checks against a bounded dense survey of physical wave and mixed-family source products. See `REPORT.md` for findings, `API-PROPOSAL.md` for the proposed advisory interface, and `results/comparison-v1` for consolidated machine-readable evidence. Runtime defaults, coefficient shapes, and physical grids are unchanged. The current authoring code uses the released InternalModes beta dependency declared by WVM.
-
-The first working advisory API is documented in [ADVISORY-API.md](ADVISORY-API.md). It reuses prepared modes and returns strict-count, reference, coverage, and budget diagnostics in memory.
-
-## Reproduce
-
-Use the current authoring checkout alongside OceanKit `65d9aa2c3de941406dc6bf2cf1937ba5b3dcd1d5`, which exports `InternalModes@2.0.0-beta.4` from provider tag `f2ce3c143744ae00fbb25bd9d7b8c73fb358ca51`. The commands below run from the WVM repository with that OceanKit checkout named `../wvm400-oceankit`. `configureStudyPath` adds only the pinned packages and their manifest-listed folders and records the actual WVM Git revision. On this local Apple Silicon host, MATLAB must run outside the Codex sandbox under the shared workspace policy.
-
-The preserved historical tables were generated with WVM `9fefcc9a528de65e2f348706c45b13f741754a78` and OceanKit `80006f5040da787465860249f975def9831624c8` (InternalModes `4086f978b36a4100e7419688ab355591c8253ef1`, version `2.0.0-beta.1`). Reproducing that historical implementation exactly requires those source/dependency revisions; current-code comparisons keep the recorded historical provenance unchanged.
-
-For a full reproduction, first use a disposable checkout and move its published result tables aside. A fresh Git checkout contains those tables but omits the large MAT files, so it is not an empty numerical output directory. The following two setup commands preserve the published tables; do not run them in the original study working copy.
-
-```sh
-mv tools/aliasing-study/results tools/aliasing-study/results-published
-mkdir tools/aliasing-study/results
-```
-
-```sh
-matlab -batch "restoredefaultpath; addpath('tools/aliasing-study'); configureStudyPath('../wvm400-oceankit'); runStudyCases('calibration','tools/aliasing-study/results/calibration-v1');"
-matlab -batch "restoredefaultpath; addpath('tools/aliasing-study'); configureStudyPath('../wvm400-oceankit'); runStudyCases('withheld','tools/aliasing-study/results/withheld-v1');"
-matlab -batch "restoredefaultpath; addpath('tools/aliasing-study'); configureStudyPath('../wvm400-oceankit'); runReferenceRefinements('tools/aliasing-study/results/withheld-refined-v1');"
-python3 tools/aliasing-study/runCostMatrix.py
-matlab -batch "restoredefaultpath; addpath('tools/aliasing-study'); configureStudyPath('../wvm400-oceankit'); verifyStudyResults();"
-python3 tools/aliasing-study/captureStudyProvenance.py
-python3 tools/aliasing-study/assembleStudyResults.py
-```
-
-The calibration score paths have suffix `-scores-v2`; withheld and refined paths use `-scores`. Version 2 separates the quadratic-only dense count from the joint Gram/quadratic count. Historical version-1 calibration score files are preserved as superseded diagnostics; the reproduction driver writes the final version-2 paths.
-
-On the recorded host, `verifyStudyResults` reports 12/12 study tests and 3/4 existing wave controls passing, then exits unsuccessfully on the known baseline differentiated-pressure residual check. Its replay evidence and diagnostics are written before that assertion. See `REPORT.md` and the preserved `baseline-control` logs for the identical baseline reproduction; do not interpret that exit as a successful test suite.
-
-Run into fresh result directories as described above. Survey drivers preserve completed outputs and can resume missing scoring; cost runs refuse to overwrite partial output. Investigate any failed run before resuming. The cost matrix runs each case/policy in a fresh MATLAB process and uses macOS `/usr/bin/time -l` for process wall time and peak RSS. Run it without other numerical jobs. Assessment timings include independent validation references and measure one observation, not a statistical benchmark or optimized production implementation. The reproduction covers the final physical comparison; historical pilots remain in the preserved published tables and are described separately in `SOURCE-PILOT.md`.
+The recorded tables retain their original field names and numerical values. Their provenance identifies the exact WVM, OceanKit, and InternalModes revisions used to produce them; use those revisions from repository history if exact reproduction is required. Current construction behavior and evidence are documented in [automatic mode selection](../../Documentation/Validation/AutomaticModeSelection.md) and the [quadratic-dealiasing study](../quadratic-dealiasing-study/README.md).
 
 ## Evidence map
 
-- `case-inventory.json`, `POLICIES.md`, and `policy-freeze.json`: predeclared cases, deterministic rules, budgets, zero count margin, and hashes frozen before withheld access.
-- `reference-refinements.json`: reference-only resolution changes for two withheld pycnocline cases and a separately identified model-resolution follow-up. Original inconclusive results remain preserved.
-- `results/comparison-v1`: effective case configurations, actual policy decisions, quadratic-only diagnostics, reference gates, APV controls, measured costs, larger independent-sample comparisons, and provenance.
-- `results/prefix-comparison.png`: per-prefix dense/fixed/targeted errors with the common wave Gram boundary.
-- `results/calibration-v1`, `results/withheld-v1`, `results/withheld-refined-v1`: original complete inventories, summary CSV/JSON, per-channel maxima, limiting input labels/signs/wavevectors, and prefix scores. Use the effective paths in `results/comparison-v1/cases.json` for final scoring.
-- `results/cost-matrix-v1`: actual sparse replays, comparisons against every matching saved dense error, and fresh-process timing/memory logs. The larger independent sample uses seed 400 and 64 vector interactions without consulting sparse selections or errors.
-- `SOURCE-PILOT.md`, `PLAN.md`, and `VERIFICATION.md`: scientific decisions, initial plan, and chronological verification ledger. Earlier pending statements in the ledger describe earlier checkpoints.
+- `case-inventory.json`, `POLICIES.md`, and `policy-freeze.json`: predeclared cases and historical sampling rules.
+- `reference-refinements.json`: historical reference-only refinements.
+- `results/comparison-v1`: consolidated configurations, decisions, errors, costs, and provenance.
+- `results/calibration-v1`, `results/withheld-v1`, and `results/withheld-refined-v1`: frozen detailed product-survey outputs.
+- `results/cost-matrix-v1`: historical replay timing and memory logs.
+- `SOURCE-PILOT.md`, `PLAN.md`, `REPORT.md`, and `VERIFICATION.md`: the original scientific decisions, findings, and verification ledger.
 
-Full per-product MAT files are retained locally and listed with SHA-256 checksums in `results/mat-artifact-manifest.json`. Large MAT files are excluded from Git; a fresh checkout recreates them with the commands above. The source, complete bounded interaction inventories, CSV/JSON result tables, are versioned; the original scalar-control MAT is also retained locally. Exact numerical logs are preserved as gzip files under `results/raw-logs`; readable copies remove trailing whitespace only. `archiveStudyLogs.py` performs that archival step after runs terminate.
-
-## Scope
-
-The metric measures aliasing into retained coefficients with physical signed projections and positive error norms. It excludes exterior product content and explicitly handles structural zeros. The physical inventory contains 13 individual volume terms, eight ordered input-family pairs, both wave signs, and actual mean/inertial outputs. APV same-family assessment remains a separate control. APV/boundary output source coefficients, boundary sheet evolution, arbitrary superpositions, and full nonlinear-operator/trajectory qualification are outside the inventory. Counts are bounded by the declared candidate band and cannot certify all possible interactions.
-
-## Fast trials of explicit wave-count maps
-
-The [advisory API](ADVISORY-API.md#repeated-explicit-count-map-assessment) supports a fixed evidence snapshot for repeated per-kappa count-map assessments. Start with `WVInternal.prepareWaveQuadraticAssessment`, then reuse the result with `assessWaveQuadraticResolution`. Run `waveQuadraticResolutionExample` to preserve the original 1 km, 24-candidate linear count curve and add quadratic samples at three explicitly selected outputs; `benchmarkWaveQuadraticAssessment` records preparation/reuse costs and small dense controls. See the [performance and verification record](../../Documentation/Validation/Issue425/README.md). These authoring functions do not add runtime dependencies or trigger assessment during ordinary model construction.
+Large MAT files remain excluded from Git. The versioned CSV, JSON, plots, compressed logs, and manifests are retained as historical evidence.

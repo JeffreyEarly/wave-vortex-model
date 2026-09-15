@@ -1,5 +1,7 @@
 # Mixed reference qualification: recorded result
 
+> Historical archive. This evidence describes the retired sampled-product diagnostic. Its WVM helpers and runnable authoring study were removed in issue 42; current construction uses the simple quadratic-dealiasing policies.
+
 ![Original kappa-dependent counts with mixed-qualified references](example/count-map-quadratic.png)
 
 The unchanged 1 km / 16² full FFT / 25-point / 24-candidate linear sweep still gives **13 → 8** supported wave modes. Its CSV is byte-for-byte identical to the original. The sampled quadratic errors are also unchanged. Three explicit triads remain the nonlinear coverage; the figure marks WVM's smaller dealiased limit.

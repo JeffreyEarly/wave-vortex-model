@@ -1,5 +1,7 @@
 function report = runConstructionOptimizationStudy(wvmRoot,internalModesRoot,outputFolder)
 % Measure and profile one pinned free-surface construction in a fresh process.
+% Historical beta.5/beta.6 protocol: use the source revisions pinned in the
+% adjacent issue records. Current policies use quadratic-dealiasing-study.
 % The repositories and released supporting packages share an OceanKit workspace.
 arguments (Input)
     wvmRoot (1,1) string

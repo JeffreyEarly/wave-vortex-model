@@ -1,5 +1,7 @@
 # Verification ledger
 
+> Historical archive. The sampled-product diagnostic and its runnable code were retired in issue 42. This document records the former study and does not describe the current construction API.
+
 - Read shared OceanKit instructions, MATLAB style and focused MATLAB guide, package design/release guide, and documentation style guide. No more local AGENTS.md exists in the WVM worktree.
 - Confirmed authenticated GitHub identity JeffreyEarly and ownership of WVM. PR 397 is merged; independent authoring worktree starts at its merge commit.
 - Recovered the initially missing InternalModes beta snapshot in the separate `wvm400-oceankit` dependency worktree; original OceanKit and package authoring checkouts are unchanged.

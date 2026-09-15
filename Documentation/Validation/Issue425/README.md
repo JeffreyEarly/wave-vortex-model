@@ -1,5 +1,7 @@
 # Explicit count-map quadratic assessment
 
+> Historical archive. This evidence describes the retired sampled-product diagnostic. Its WVM helpers and runnable authoring study were removed in issue 42; current construction uses the simple quadratic-dealiasing policies.
+
 The historical figures below preserve their original relative-only reference qualification. See the subsequent [mixed-reference correction and updated kappa-dependent example](../ShortWaveProductReferences/README.md#implemented-reference-correction) for the current behavior.
 
 ## Performance contract established before expansion

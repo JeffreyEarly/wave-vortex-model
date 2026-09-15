@@ -652,7 +652,7 @@ classdef TestWVTransformFreeSurfaceQG < matlab.unittest.TestCase
             crossTendencies = cell(size(NzValues));
             limitingEndpointCode = find(["surface" "bottom"] == assessment.limitingEndpoint,1);
             testCase.assertNotEmpty(limitingEndpointCode)
-            apvModeNumber=assessment.limitingAPVModeNumber;
+            apvModeNumber=NaN;
             for iResolution = 1:length(NzValues)
                 transforms{iResolution} = WVTransformFreeSurfaceQG([L L D],[16 16 NzValues(iResolution)], ...
                     N2Function=N2,latitude=30,g0=NaN,gd=gd);
@@ -713,6 +713,19 @@ classdef TestWVTransformFreeSurfaceQG < matlab.unittest.TestCase
                 [scientific.Nx scientific.Ny scientific.Nz],directArguments{:});
             TestWVTransformFreeSurfaceQG.verifySameRepresentation(testCase,direct,scientific)
             testCase.verifyEmpty(direct.verticalModes)
+        end
+
+        function prePolicySavedMetadataHasNoCompatibilityAdapter(testCase)
+            path=fullfile(testCase.temporaryFolder,"pre-policy.nc");
+            wvt=TestWVTransformFreeSurfaceQG.newTransform(0.02,0.03);
+            policyNames={'quadraticDealiasing','retainedFraction','energyFraction','bandwidthFraction'};
+            properties=setdiff(wvt.requiredProperties,policyNames);
+            ncfile=wvt.writeToFile(char(path),properties{:},shouldAddRequiredProperties=false);
+            ncfile.addVariable('shouldCheckQuadraticAliasing',{},false);
+            ncfile.addVariable('quadraticAliasingTolerance',{},.1);
+            ncfile.close();
+            testCase.verifyError(@()WVTransformFreeSurfaceQG.waveVortexTransformFromFile(char(path)), ...
+                'WVTransformFreeSurfaceQG:UnsupportedLegacyScientificState')
         end
 
         function inactiveZeroFamilyIsPhysicallyOmitted(testCase)

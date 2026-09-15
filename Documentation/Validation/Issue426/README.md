@@ -1,5 +1,7 @@
 # Issue 426 evidence
 
+> Historical archive. This evidence describes the retired sampled-product diagnostic. Its WVM helpers and runnable authoring study were removed in issue 42; current construction uses the simple quadratic-dealiasing policies.
+
 Generated from WVM source `3063e69e821544a58143e4851b8dc67287f0e119`, with the pinned exported InternalModes 2.0.0-beta.4 graph. The [operator and API specification](../Issue426QGQuadraticAssessment.md) defines the norms and limits. Reproduce with `runQGQuadraticAssessmentStudy(newOutputDirectory)` after `configureStudyPath`.
 
 ![QG vertical refinement](qg-refinement.png)

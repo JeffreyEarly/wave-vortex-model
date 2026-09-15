@@ -1,5 +1,7 @@
 # Sparse quadratic-aliasing study: issue 400
 
+> Historical archive. The sampled-product diagnostic and its runnable code were retired in issue 42. This document records the former study and does not describe the current construction API.
+
 ## Recommendation
 
 Use the fixed sparse rule as the simplest **advisory research policy** to carry into a separately reviewed assessment API. Keep the current constructor defaults and strict Gram gates. This study supports inexpensive sampled quadratic diagnostics; it does not establish a reason to relax the linear gate or automatically increase the wave count. The targeted additions cost more and do not improve any retained-count decision on this matrix.

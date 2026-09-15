@@ -1,5 +1,7 @@
 # Physical-source pilot decisions before calibration
 
+> Historical archive. The sampled-product diagnostic and its runnable code were retired in issue 42. This document records the former study and does not describe the current construction API.
+
 The 13 source terms are the individual x, y, and z advection terms for u, v, w, and eta, plus w*eta*d(log N2)/dz. Each source component projects into both wave frequency signs with the actual WVM generalized-energy dual. At zero output, u/v project into inertial modes and eta into MDA; the mean w source has no retained incompressible family. Individual channels have a real vertical shape times a constant phase, so zero-output products are phase-aligned to represent real conjugate-pair forcing. No sums of different channels or arbitrary superpositions are scored.
 
 Inputs are wave-wave, wave-APV in both orders, wave-boundary in both orders, APV-boundary in both orders, and boundary-boundary. APV and boundary amplitudes use the streamfunction normalization; their nonzero canonical coefficient conversion cancels in the normalized individual-product error. The existing signed APV same-family assessment remains a separate control. Boundary and APV output source coefficients, boundary sheet evolution, and qualification of the complete nonlinear operator are outside this bounded channel inventory.

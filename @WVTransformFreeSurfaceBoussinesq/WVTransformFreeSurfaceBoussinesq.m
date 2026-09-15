@@ -234,7 +234,7 @@ classdef WVTransformFreeSurfaceBoussinesq < WVGeometryDoublyPeriodicStratified &
         % Wave and inertial eigenproblem coefficient count.
         % - Topic: Inspect scientific operators
         nEVP
-        % Requested per-family quadrature qualification tolerance.
+        % Normalized-Gram tolerance shared by retained mode families.
         % - Topic: Inspect scientific operators
         gramTolerance
         % Vertical quadratic-dealiasing policy.
@@ -289,6 +289,11 @@ classdef WVTransformFreeSurfaceBoussinesq < WVGeometryDoublyPeriodicStratified &
             % - Returns self: transform with zero coefficient state
             arguments (Input)
                 state (1,1) struct
+            end
+            retired = intersect(string(fieldnames(state)),["shouldCheckQuadraticAliasing","quadraticAliasingTolerance"],"stable");
+            if ~isempty(retired)
+                error('WVTransformFreeSurfaceBoussinesq:UnsupportedLegacyScientificState', ...
+                    'The scientific state contains retired quadratic-qualification field %s. Reconstruct the transform with a current quadraticDealiasing policy.',retired(1));
             end
             % Historical uniform scientific states did not store a count map.
             if ~isfield(state,'waveModeCountByKh') && all(isfield(state,{'waveMode','khUnique'}))

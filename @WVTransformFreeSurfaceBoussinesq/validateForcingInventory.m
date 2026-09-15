@@ -1,7 +1,7 @@
 function validateForcingInventory(self,forcing)
 % Validate the complete effective forcing inventory before its atomic commit.
-% Construction-time quadratic qualification belongs to the stored inventory;
-% registration neither changes retained counts nor reconstructs modes.
+% Construction fixes the retained vertical inventory; registration neither
+% changes retained counts nor reconstructs modes.
 arguments (Input)
     self (1,1) WVTransformFreeSurfaceBoussinesq
     forcing WVForcing

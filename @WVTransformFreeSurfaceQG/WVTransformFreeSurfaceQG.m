@@ -923,6 +923,13 @@ classdef WVTransformFreeSurfaceQG < WVGeometryDoublyPeriodicStratified & WVTrans
             arguments
                 group (1,1) NetCDFGroup
             end
+            retired = {'shouldCheckQuadraticAliasing','quadraticAliasingTolerance','quadraticAliasingError', ...
+                'quadraticAliasingLimitingChannel','quadraticAliasingLimitingModeNumberI','quadraticAliasingLimitingModeNumberJ', ...
+                'apvZeroAPVQuadraticError','apvZeroAPVLimitingEndpoint','apvZeroAPVLimitingModeNumber'};
+            if any(WVTransformFreeSurfaceQG.hasLocalVariables(group,retired))
+                error('WVTransformFreeSurfaceQG:UnsupportedLegacyScientificState', ...
+                    'The saved transform contains retired sampled-product qualification metadata. Reconstruct it with a current quadraticDealiasing policy.');
+            end
             [Lxyz,Nxyz,geometryArguments] = WVGeometryDoublyPeriodicStratified.requiredPropertiesForGeometryFromGroup(group);
             names = WVTransformFreeSurfaceQG.newRequiredPropertyNames();
             names = setdiff(names,{'Ag_q','Amda','t0','t','forcing'});

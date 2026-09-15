@@ -31,7 +31,7 @@ The APV physical reconstruction methods currently read the transform's own coeff
 
 Require matching physical domain, horizontal grid/support and Fourier conventions, gravity, Coriolis parameter and stratification, with both endpoints active in the order `[surface; bottom]`. Match Fourier integer pairs explicitly; do not assume compact columns have identical positions. Reject unsupported horizontal truncation or changed physics in T9. Resolution transfer is a separate operation.
 
-The caller constructs or restores the APV transform and explicitly records `g0`, `gd`, requested and actual APV counts, physical mode labels, normalization, `Nz`, `gramTolerance`, `modeConvergenceTolerance`, `boundaryResolutionTolerance`, `muTolerance`, `shouldAntialias` and `shouldCheckQuadraticAliasing`. Use `shouldCheckQuadraticAliasing=false` for a new diagnostic-only transform; preserve the source's horizontal support. Accept an already qualified compatible transform with the switch true. Disabling nonlinear-product assessment does not disable mode, Gram, boundary or inversion-separation checks.
+The caller constructs or restores the APV transform and explicitly records `g0`, `gd`, requested and actual APV counts, physical mode labels, normalization, `Nz`, `gramTolerance`, `modeConvergenceTolerance`, `boundaryResolutionTolerance`, `muTolerance`, `shouldAntialias`, and `quadraticDealiasing` with its parameters. Use `quadraticDealiasing="none"` for a diagnostic transform that should retain the complete accepted linear prefix; preserve the source's horizontal support. This choice does not disable mode, Gram, boundary, or inversion-separation checks.
 
 For the first comparison, use the existing signed endpoint convention, with explicit values equal to the negative and positive stratification integrals. Also test an alternative admissible pair to demonstrate that decomposition depends on diagnostic weights while the reconstructed total remains the same to its reported accuracy. Signed equivalent depths and modes must be retained. Do not assume a positive generalized energy or silently drop a difficult mode.
 
@@ -151,7 +151,7 @@ The documented example should have this shape; the new method and options below 
 ```matlab
 [thermal,file] = WVTransform.waveVortexTransformFromFile(inputPath,iTime=1,shouldReadOnly=true);
 cleanup = onCleanup(@() file.close());
-apv = WVTransformFreeSurfaceQG([thermal.Lx thermal.Ly thermal.Lz],[thermal.Nx thermal.Ny diagnosticNz],N2Function=thermal.N2Function,latitude=thermal.latitude,g=thermal.g,rho0=thermal.rho0,g0=diagnosticG0,gd=diagnosticGd,apvModeCount=diagnosticModeCount,mdaModeCount=1,shouldAntialias=thermal.shouldAntialias,shouldCheckQuadraticAliasing=false,gramTolerance=gramTolerance,modeConvergenceTolerance=modeConvergenceTolerance,boundaryResolutionTolerance=boundaryResolutionTolerance);
+apv = WVTransformFreeSurfaceQG([thermal.Lx thermal.Ly thermal.Lz],[thermal.Nx thermal.Ny diagnosticNz],N2Function=thermal.N2Function,latitude=thermal.latitude,g=thermal.g,rho0=thermal.rho0,g0=diagnosticG0,gd=diagnosticGd,apvModeCount=diagnosticModeCount,mdaModeCount=1,shouldAntialias=thermal.shouldAntialias,quadraticDealiasing="none",gramTolerance=gramTolerance,modeConvergenceTolerance=modeConvergenceTolerance,boundaryResolutionTolerance=boundaryResolutionTolerance);
 [diagnosis,fields] = thermal.apvDecomposition(apv,quadratureCount=nQuad,fieldNames=["ssh","endpointAnomalies"]);
 for iTime = committedIndices
     thermal.initFromNetCDFFile(file,iTime=iTime,shouldRequireCoefficientState=true);

@@ -71,7 +71,7 @@ The transform obtains one WKB-stretched Chebyshev--Lobatto quadrature rule from 
 wvtFreeSurfaceQG = WVTransformFreeSurfaceQG(Lxyz,Nxyz,N2Function=N2,latitude=30);
 ```
 
-With an active endpoint, the transform also checks the APV/zero-APV product error at the largest horizontal wavenumber in the requested grid. Use the lightweight assessment before constructing a full transform when choosing horizontal and vertical resolution:
+With an active endpoint, the transform also checks each fixed zero-APV boundary response at the largest horizontal wavenumber in the requested grid. Use the lightweight assessment before constructing a full transform when choosing horizontal and vertical resolution:
 
 ```matlab
 resolution = WVTransformFreeSurfaceQG.assessVerticalResolution(Lxyz(3),Nxyz(3),N2Function=N2,latitude=30);
@@ -80,7 +80,7 @@ minimumHorizontalWavelength = resolution.minimumHorizontalWavelength;
 
 `maximumSupportedKh` is the largest passing wavenumber found within a one-percent bracket, and `firstRejectedKh` is the adjacent failing value. Construction fails with an actionable resolution error when the requested horizontal grid exceeds this limit. The limit does not apply when both endpoint families are inactive.
 
-The default negative surface acceleration normally produces an APV mode with physical label `-1`. That negative mode is expected and is retained in projection and all applicable coupled quadratic product pairs. Modal projection and coefficient recovery use the signed Pontryagin pairing. The reported `quadraticAliasingError` instead measures the difference between discrete and continuous signed projections in the induced positive Hilbert majorant, divided by the product's majorant norm. Its default acceptance tolerance is `0.1`; the negative mode therefore does not imply a negative or imaginary error magnitude. Never use the square root of a signed self-pairing, even after taking its absolute value, as a general state norm.
+The default negative surface acceleration normally produces an APV mode with physical label `-1`. That negative mode is expected and is retained in projection. Modal projection and coefficient recovery use the signed Pontryagin pairing. Vertical quadratic dealiasing applies `none`, `fixedFraction`, or `effectiveBandwidth` to the independently accepted linear prefix and reports the linear, filtering, and selected counts. These practical filters do not certify every nonlinear interaction. Never use the square root of a signed self-pairing, even after taking its absolute value, as a general state norm.
 
 The transform supports scientific construction, projection and reconstruction, nonlinear QGPV and active-endpoint advection, snapshots, model-output persistence, and restart. Periodic horizontal advection leaves `Amda` unchanged. Milestone work still in progress includes the complete diagnostic suite, beta-plane qualification, buoyancy diffusion and surface-flux forcing, resolution transfer, and end-to-end qualification.
 

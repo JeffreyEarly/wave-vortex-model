@@ -61,6 +61,6 @@ These rates need not coincide: finite spatial/modal errors and the pressure appr
 
 ## Activation and persistence
 
-Linear dynamics remain the default. Explicit nonlinear registration requires `shouldAntialias=true` and `shouldCheckQuadraticAliasing=true`; registration never reselects modes. `WVModel` uses the existing family-aware fixed-step integrator. Physical-position observations and reference-grid tracer transport retain their qualified coordinate contracts; adaptive and portable nonlinear evolution remain unsupported.
+Linear dynamics remain the default. Explicit nonlinear registration requires `shouldAntialias=true`; the stored vertical `quadraticDealiasing` policy is independent and may be `none`. Registration never reselects modes. `WVModel` uses the existing family-aware fixed-step integrator. Physical-position observations and reference-grid tracer transport retain their qualified coordinate contracts; adaptive and portable nonlinear evolution remain unsupported.
 
 Native files store `fieldConvention="physical-velocity-upper-constant"`, the scientific operators, coefficient families, wave counts, both clocks and forcing inventory. A mismatched convention is rejected rather than interpreted under different physics. No compatibility migration is supplied for the retired beta convention. Restart requires no EVP or pressure solve; only derived thermodynamic primitives are rebuilt. Pressure is reconstructed from the restored coefficients through ordinary operations.

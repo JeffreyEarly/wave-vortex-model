@@ -8,7 +8,6 @@ arguments (Input)
     options.chebfunRoot (1,1) string
     options.policies (1,:) string = ["none","fixedFraction","effectiveBandwidth"]
     options.repetitions (1,1) double {mustBeInteger,mustBePositive} = 3
-    options.shouldUseLegacyLinear (1,1) logical = false
     options.shouldProfile (1,1) logical = true
     options.sourceRevision (1,1) string = "uncommitted study candidate"
     options.providerRevision (1,1) string = "uncommitted study candidate"
@@ -22,7 +21,6 @@ profile clear
 if ~isfolder(outputFolder), mkdir(outputFolder); end
 N2 = @(z) 1e-4*exp(2*z/700);
 policies = options.policies;
-if options.shouldUseLegacyLinear, policies = "legacyLinear"; end
 summary = struct(environment=environment,sourceRevision=options.sourceRevision,providerRevision=options.providerRevision,threads=1,gridSize=options.gridSize,nEVP=options.nEVP,policies=struct([]));
 for policy = policies
     rows = struct([]);
@@ -78,10 +76,6 @@ if options.shouldProfile
 end
 
     function [wvt,assessment] = construct(policy)
-        if options.shouldUseLegacyLinear
-            [wvt,assessment] = WVTransformFreeSurfaceBoussinesq.fromStratification([1e5 1e5 1000],options.gridSize,N2Function=N2,nEVP=options.nEVP,shouldAntialias=true,shouldCheckQuadraticAliasing=false);
-        else
-            [wvt,assessment] = WVTransformFreeSurfaceBoussinesq.fromStratification([1e5 1e5 1000],options.gridSize,N2Function=N2,nEVP=options.nEVP,shouldAntialias=true,quadraticDealiasing=policy);
-        end
+        [wvt,assessment] = WVTransformFreeSurfaceBoussinesq.fromStratification([1e5 1e5 1000],options.gridSize,N2Function=N2,nEVP=options.nEVP,shouldAntialias=true,quadraticDealiasing=policy);
     end
 end

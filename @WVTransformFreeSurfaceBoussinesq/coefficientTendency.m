@@ -8,7 +8,7 @@ function [tendency,speed,diagnostics] = coefficientTendency(self)
 % Spectral closures add reference-time rates after projection, using one shared
 % physical horizontal speed. Their work is included in energyTendency but not
 % in prescribedWork, which describes the imposed volume sources.
-% Nonlinear activation requires the stored inventory's quadratic qualification.
+% Nonlinear activation requires a horizontally antialiased stored inventory.
 %
 % Optional diagnostics distinguish the actual directional derivative of
 % nonlinearEnergy from prescribedWork, the unprojected physical source work.
