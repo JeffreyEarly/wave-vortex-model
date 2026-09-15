@@ -2,165 +2,192 @@ classdef TestFreeSurfaceLinearModePolicy < matlab.unittest.TestCase
     properties (SetAccess=private)
         linearTransform
         linearAssessment
-        nonlinearTransform
-        nonlinearAssessment
+        filteredTransform
+        filteredAssessment
     end
 
     methods (TestClassSetup)
         function constructMatchedPolicies(testCase)
             N2=@(z)1e-4+0*z;
             [testCase.linearTransform,testCase.linearAssessment]=WVTransformFreeSurfaceBoussinesq.fromStratification( ...
-                [1e5 1e5 1000],[8 8 65],N2Function=N2,latitude=30,shouldAntialias=true);
-            [testCase.nonlinearTransform,testCase.nonlinearAssessment]=WVTransformFreeSurfaceBoussinesq.fromStratification( ...
-                [1e5 1e5 1000],[8 8 65],N2Function=N2,latitude=30,shouldAntialias=true,shouldCheckQuadraticAliasing=true);
+                [1e5 1e5 1000],[8 8 65],N2Function=N2,latitude=30,nEVP=69,shouldAntialias=true,quadraticDealiasing="none");
+            [testCase.filteredTransform,testCase.filteredAssessment]=WVTransformFreeSurfaceBoussinesq.fromStratification( ...
+                [1e5 1e5 1000],[8 8 65],N2Function=N2,latitude=30,nEVP=69,shouldAntialias=true,quadraticDealiasing="fixedFraction");
         end
     end
 
     methods (Test, TestTags="full")
-        function defaultsAndMatchedHorizontalPoliciesAreExplicit(testCase)
-            linear=testCase.linearTransform; nonlinear=testCase.nonlinearTransform;
-            linearReport=testCase.linearAssessment; nonlinearReport=testCase.nonlinearAssessment;
-            qg=WVTransformFreeSurfaceQG([1e5 1e5 1000],[8 8 65], ...
-                N2Function=@(z)1e-4+0*z,latitude=30,apvModeCount=3,mdaModeCount=2);
-
-            testCase.verifyFalse(linear.shouldCheckQuadraticAliasing)
-            defaultLinear=WVTransformFreeSurfaceBoussinesq.fromStratification( ...
+        function defaultAndNonePoliciesExposeTheirLimits(testCase)
+            linear=testCase.linearTransform; filtered=testCase.filteredTransform;
+            linearReport=testCase.linearAssessment; filteredReport=testCase.filteredAssessment;
+            qgNone=WVTransformFreeSurfaceQG([1e5 1e5 1000],[8 8 65], ...
+                N2Function=@(z)1e-4+0*z,latitude=30,quadraticDealiasing="none");
+            defaultSmall=WVTransformFreeSurfaceBoussinesq.fromStratification( ...
                 [1e5 1e5 1000],[8 8 65],N2Function=@(z)1e-4+0*z,latitude=30, ...
                 waveModeCount=1,inertialModeCount=1,apvModeCount=1,mdaModeCount=1);
-            testCase.verifyFalse(defaultLinear.shouldAntialias)
-            testCase.verifyTrue(qg.shouldCheckQuadraticAliasing)
-            testCase.verifyTrue(qg.shouldAntialias)
+
+            testCase.verifyEqual(linear.quadraticDealiasing,"none")
+            testCase.verifyEqual(filtered.quadraticDealiasing,"fixedFraction")
+            testCase.verifyEqual(defaultSmall.quadraticDealiasing,"fixedFraction")
+            testCase.verifyEqual([filtered.retainedFraction filtered.energyFraction filtered.bandwidthFraction],[2/3 .99 2/3])
+            testCase.verifyFalse(defaultSmall.shouldAntialias)
+            testCase.verifyEqual(qgNone.quadraticDealiasing,"none")
+            testCase.verifyTrue(qgNone.shouldAntialias)
+            testCase.verifyEqual([numel(qgNone.apvMode) numel(qgNone.mdaMode)], ...
+                [numel(linear.apvMode) numel(linear.mdaMode)])
+            testCase.verifyEqual(qgNone.constructionAssessment.apv.selectedCount, ...
+                qgNone.constructionAssessment.apv.linearCount)
             testCase.verifyEqual(linear.waveModeCountByKh,38*ones(4,1))
-            testCase.verifyEqual(nonlinear.waveModeCountByKh,[10;19;19;10])
-            testCase.verifyEqual(linearReport.pages.selectedCount, ...
-                min(linearReport.pages.convergedCount,linearReport.pages.gridSupportedCount))
-            testCase.verifyEqual(linearReport.pages.selectedCount,linearReport.pages.usableCount)
-            testCase.verifyEqual(linearReport.inertial.selectedCount, ...
-                min(linearReport.inertial.convergedCount,linearReport.inertial.gridSupportedCount))
-            testCase.verifyEqual([linearReport.inertial.selectedCount nonlinearReport.inertial.selectedCount],[38 38])
-            testCase.verifyGreaterThan(nonlinearReport.inertial.selectedCount,min(nonlinear.waveModeCountByKh))
-            for p=1:height(nonlinearReport.pages)
-                report=nonlinearReport.modeConvergence{p}; count=nonlinearReport.pages.selectedCount(p);
-                rows=ismember(report.measurements.columnLabel,report.identity.columnLabels(1:count)) & ismember(report.measurements.quantity,["equivalentDepth","h1"]);
-                testCase.verifyEqual(nonlinearReport.pages.modeConvergenceError(p),max(report.measurements.value(rows)))
-            end
-            report=nonlinearReport.inertial.convergence; count=nonlinearReport.inertial.selectedCount;
-            rows=ismember(report.measurements.columnLabel,report.identity.columnLabels(1:count)) & ismember(report.measurements.quantity,["equivalentDepth","h1"]);
-            testCase.verifyEqual(nonlinearReport.inertial.modeConvergenceError,max(report.measurements.value(rows)))
+            testCase.verifyEqual(linearReport.pages.linearCount,linearReport.pages.selectedCount)
+            testCase.verifyEqual(linearReport.pages.filteringCount,linearReport.pages.linearCount)
+            testCase.verifyEqual(linearReport.inertial.filteringCount,linearReport.inertial.linearCount)
+            testCase.verifyEqual(filteredReport.pages.filteringCount,floor((2/3)*filteredReport.pages.linearCount))
+            testCase.verifyEqual(filteredReport.inertial.filteringCount,floor((2/3)*filteredReport.inertial.linearCount))
+            testCase.verifyEqual(filtered.waveModeCountByKh,filteredReport.pages.selectedCount)
+            testCase.verifyEqual(numel(filtered.inertialMode),filteredReport.inertial.selectedCount)
+            testCase.verifyEqual(numel(filtered.apvMode),filteredReport.apv.dealiasing.selectedCount)
+            verifyDealiasingMetadata(testCase,linearReport,"none")
+            verifyDealiasingMetadata(testCase,filteredReport,"fixedFraction")
+            testCase.verifyEqual(filteredReport.apv.dealiasing.coordinateKind,"wkb-chebyshev-lobatto")
+            testCase.verifyEqual(filteredReport.apv.dealiasing.filteringCount, ...
+                floor((2/3)*filteredReport.apv.dealiasing.linearCount))
         end
 
-        function linearBypassHasNoQuadraticPreparation(testCase)
-            linear=testCase.linearTransform; nonlinear=testCase.nonlinearTransform;
-            assessment=testCase.linearAssessment;
-            testCase.verifyEqual(assessment.quadratic.status,"not-requested")
-            testCase.verifyFalse(assessment.shouldCheckQuadraticAliasing)
-            testCase.verifyEqual(assessment.cost.selectionTrials,0)
-            testCase.verifyFalse(isfield(assessment.cost,'quadratic'))
-            testCase.verifyFalse(isfield(assessment.quadratic,'pages'))
-            testCase.verifyGreaterThanOrEqual(numel(linear.apvMode),numel(nonlinear.apvMode))
-
-            [changed,changedAssessment]=WVTransformFreeSurfaceBoussinesq.fromStratification( ...
-                [1e5 1e5 1000],[8 8 65],N2Function=@(z)1e-4+0*z,latitude=30, ...
-                shouldAntialias=true,quadraticAliasingTolerance=1e-12);
+        function noneIgnoresFilteringParametersAndSurvivesPersistence(testCase)
+            linear=testCase.linearTransform;
+            [changed,assessment]=WVTransformFreeSurfaceBoussinesq.fromStratification( ...
+                [1e5 1e5 1000],[8 8 65],N2Function=@(z)1e-4+0*z,latitude=30,shouldAntialias=true, ...
+                quadraticDealiasing="none",retainedFraction=.4,energyFraction=.9,bandwidthFraction=.5);
             testCase.verifyEqual(changed.waveModeCountByKh,linear.waveModeCountByKh)
             testCase.verifyEqual([numel(changed.inertialMode) numel(changed.apvMode) numel(changed.mdaMode)], ...
                 [numel(linear.inertialMode) numel(linear.apvMode) numel(linear.mdaMode)])
-            testCase.verifyEqual(changedAssessment.quadratic.status,"not-requested")
+            testCase.verifyEqual(assessment.pages.selectedCount,assessment.pages.linearCount)
+            testCase.verifyEqual(assessment.inertial.selectedCount,assessment.inertial.linearCount)
+            testCase.verifyEqual(assessment.apv.dealiasing.selectedCount,assessment.apv.dealiasing.linearCount)
 
-            propagated=WVTransformFreeSurfaceBoussinesq(linear.scientificState());
-            propagated.Aw_p(end,1)=2e-3+1e-3i;
-            modalEnergy=propagated.totalEnergy;
-            physicalAtZero=propagated.physicalEnergy();
-            propagated.t=1234;
-            physicalLater=propagated.physicalEnergy();
-            testCase.verifyLessThan(abs(physicalAtZero.totalEnergy-modalEnergy)/modalEnergy,2*propagated.gramTolerance)
-            testCase.verifyLessThan(abs(physicalLater.totalEnergy-physicalAtZero.totalEnergy)/physicalAtZero.totalEnergy,1e-5)
-        end
-
-        function strictLinearPrefixesSurvivePersistenceAndTransfer(testCase)
-            linear=testCase.linearTransform;
-            state=linear.scientificState();
-            restored=WVTransformFreeSurfaceBoussinesq(state);
-            testCase.verifyFalse(restored.shouldCheckQuadraticAliasing)
+            state=changed.scientificState(); restored=WVTransformFreeSurfaceBoussinesq(state);
             testCase.verifyEqual(restored.scientificState(),state)
+            testCase.verifyEqual(restored.quadraticDealiasing,"none")
+            testCase.verifyEqual([restored.retainedFraction restored.energyFraction restored.bandwidthFraction],[.4 .9 .5])
+            transferred=changed.waveVortexTransformWithResolution([8 8 65]);
+            testCase.verifyEqual(transferred.quadraticDealiasing,"none")
+            testCase.verifyEqual([transferred.retainedFraction transferred.energyFraction transferred.bandwidthFraction],[.4 .9 .5])
+            testCase.verifyEqual(transferred.waveModeCountByKh,changed.waveModeCountByKh)
+        end
 
-            transferred=linear.waveVortexTransformWithResolution([8 8 65]);
-            testCase.verifyFalse(transferred.shouldCheckQuadraticAliasing)
-            testCase.verifyEqual(transferred.waveModeCountByKh,linear.waveModeCountByKh)
-            testCase.verifyEqual(numel(transferred.inertialMode),numel(linear.inertialMode))
+        function explicitCountsUseFullLinearFilteringCapacity(testCase)
+            filtered=testCase.filteredAssessment;
+            keys=testCase.filteredTransform.khUnique;
+            requested=min(filtered.pages.filteringCount,[0;2;3;0]);
+            [w,assessment]=WVTransformFreeSurfaceBoussinesq.fromStratification( ...
+                [1e5 1e5 1000],[8 8 65],N2Function=@(z)1e-4+0*z,latitude=30,nEVP=69,shouldAntialias=true,quadraticDealiasing="fixedFraction", ...
+                waveModeKappa=keys,waveModeCount=requested,inertialModeCount=2,apvModeCount=2,mdaModeCount=2);
+            testCase.verifyEqual(w.waveModeCountByKh,requested)
+            testCase.verifyEqual(assessment.pages.selectedCount,requested)
+            testCase.verifyGreaterThanOrEqual(assessment.pages.filteringCount,requested)
+            testCase.verifyGreaterThan(assessment.pages.linearCount(requested>0),requested(requested>0))
+            testCase.verifyEqual(assessment.pages.linearCount,filtered.pages.linearCount)
+            testCase.verifyEqual(assessment.pages.filteringCount,filtered.pages.filteringCount)
+            testCase.verifyEqual(assessment.inertial.selectedCount,2)
+            testCase.verifyGreaterThan(assessment.inertial.linearCount,assessment.inertial.selectedCount)
+            testCase.verifyEqual(assessment.inertial.linearCount,filtered.inertial.linearCount)
+            testCase.verifyEqual(assessment.inertial.filteringCount,filtered.inertial.filteringCount)
+            testCase.verifyEqual(assessment.apv.dealiasing.selectedCount,2)
+            testCase.verifyGreaterThan(assessment.apv.dealiasing.linearCount,assessment.apv.dealiasing.selectedCount)
+            testCase.verifyEqual(assessment.nEVP,filtered.nEVP)
+            testCase.verifyEqual(assessment.referenceNEVP,filtered.referenceNEVP)
+            testCase.verifyGreaterThan(assessment.nEVP,w.Nz+4)
+            testCase.verifyTrue(any(requested==2))
+            testCase.verifyNotEqual(requested(requested==2),floor((2/3)*requested(requested==2)))
+            testCase.verifyEqual(assessment.pages.status(requested==0),repmat("not-requested",nnz(requested==0),1))
+            testCase.verifyTrue(all(cellfun(@isempty,assessment.modeConvergence(requested==0))))
+        end
 
-            nonlinear=testCase.nonlinearTransform;
+        function filteringRejectsOnlyCountsAboveIndependentLimits(testCase)
+            filtered=testCase.filteredAssessment; linear=testCase.linearAssessment;
             testCase.verifyError(@()WVTransformFreeSurfaceBoussinesq.fromStratification( ...
-                [1e5 1e5 1000],[8 8 65],N2Function=@(z)1e-4+0*z,latitude=30,shouldAntialias=true, ...
-                shouldCheckQuadraticAliasing=true,waveModeCount=38,inertialModeCount=38, ...
-                apvModeCount=numel(nonlinear.apvMode),mdaModeCount=numel(nonlinear.mdaMode)), ...
-                'WV:QuadraticModeCountRejected')
-        end
-
-        function balancedEndpointsDoNotChangeWavePolarization(testCase)
-            free=testCase.linearTransform;
-            withoutEndpoints=WVTransformFreeSurfaceBoussinesq.fromStratification( ...
-                [1e5 1e5 1000],[8 8 65],N2Function=@(z)1e-4+0*z,latitude=30,shouldAntialias=true, ...
-                g0=Inf,gd=Inf,nEVP=free.nEVP,waveModeCount=1,inertialModeCount=1,apvModeCount=3,mdaModeCount=2);
-            testCase.verifyEqual(withoutEndpoints.waveFrequency,free.waveFrequency(1,:),RelTol=1e-13)
-            testCase.verifyEqual(withoutEndpoints.waveEquivalentDepth,free.waveEquivalentDepth(1,:),RelTol=1e-13)
-            testCase.verifyEqual(withoutEndpoints.waveF,free.waveF(:,1,:),AbsTol=1e-12)
-            testCase.verifyEqual(withoutEndpoints.waveG,free.waveG(:,1,:),AbsTol=1e-12)
-            testCase.verifyEqual(withoutEndpoints.waveGForward,free.waveGForward(1,:,:),AbsTol=1e-12)
-        end
-
-        function fixedBoundaryResolutionStillAppliesToLinearPolicy(testCase)
+                [1e5 1e5 1000],[8 8 65],N2Function=@(z)1e-4+0*z,quadraticDealiasing="fixedFraction", ...
+                waveModeCount=linear.pages.linearCount(1),inertialModeCount=1,apvModeCount=1,mdaModeCount=1), ...
+                'WV:QuadraticDealiasingWaveCountRejected')
             testCase.verifyError(@()WVTransformFreeSurfaceBoussinesq.fromStratification( ...
-                [1e4 1e4 1000],[8 8 17],N2Function=@(z)1e-4+0*z,latitude=30, ...
-                shouldCheckQuadraticAliasing=false,waveModeCount=0,inertialModeCount=1, ...
-                apvModeCount=3,mdaModeCount=2),'WV:UnderresolvedBoundaryGrid')
+                [1e5 1e5 1000],[8 8 65],N2Function=@(z)1e-4+0*z,quadraticDealiasing="fixedFraction", ...
+                waveModeCount=0,inertialModeCount=linear.inertial.linearCount,apvModeCount=1,mdaModeCount=1), ...
+                'WV:QuadraticDealiasingInertialCountRejected')
+            testCase.verifyError(@()WVTransformFreeSurfaceQG([1e5 1e5 1000],[8 8 65], ...
+                N2Function=@(z)1e-4+0*z,quadraticDealiasing="fixedFraction", ...
+                apvModeCount=linear.apv.dealiasing.linearCount,mdaModeCount=1), ...
+                'WV:QuadraticDealiasingAPVCountRejected')
+            testCase.verifyLessThan(filtered.pages.filteringCount,linear.pages.linearCount)
+            testCase.verifyLessThan(filtered.inertial.filteringCount,linear.inertial.linearCount)
         end
 
-        function qgLinearPolicyBypassesProductsButRetainsBoundaryLimit(testCase)
-            qg=WVTransformFreeSurfaceQG([1e5 1e5 1000],[8 8 65], ...
-                N2Function=@(z)1e-4+0*z,latitude=30,shouldCheckQuadraticAliasing=false);
-            report=qg.constructionAssessment;
-            testCase.verifyFalse(qg.shouldCheckQuadraticAliasing)
-            testCase.verifyEqual([numel(qg.apvMode) numel(qg.mdaMode)], ...
-                [numel(testCase.linearTransform.apvMode) numel(testCase.linearTransform.mdaMode)])
-            testCase.verifyEqual(report.quadratic.status,"not-requested")
-            testCase.verifyTrue(isnan(qg.quadraticAliasingError))
-            testCase.verifyTrue(isnan(qg.apvZeroAPVQuadraticError))
-            testCase.verifyEqual(numel(qg.activeEndpoint),2)
-            testCase.verifySize(qg.Ag_0,[2 length(qg.klNonzero)])
-
-            limit=WVTransformFreeSurfaceQG.assessVerticalResolution(1000,33, ...
-                N2Function=@(z)1e-4+0*z,latitude=30,shouldCheckQuadraticAliasing=false);
-            testCase.verifyFalse(limit.shouldCheckQuadraticAliasing)
-            testCase.verifyTrue(limit.isHorizontalLimitApplicable)
-            testCase.verifyTrue(isnan(limit.quadraticAliasingError))
-            testCase.verifyTrue(isnan(limit.maximumSupportedError))
-            testCase.verifyTrue(isnan(limit.firstRejectedError))
-            testCase.verifyTrue(all(isfinite([limit.maximumSupportedBoundaryError limit.firstRejectedBoundaryError])))
-            testCase.verifyEqual(limit.limitingMetric,"boundary-resolution")
-            testCase.verifyNotEmpty(limit.limitingEndpoint)
+        function effectiveBandwidthUsesCommonWKBShapes(testCase)
+            [w,assessment]=WVTransformFreeSurfaceBoussinesq.fromStratification( ...
+                [1e5 1e5 1000],[8 8 33],N2Function=@(z)1e-4*exp(2*z/700), ...
+                quadraticDealiasing="effectiveBandwidth",energyFraction=.97,bandwidthFraction=.6);
+            testCase.verifyEqual(w.quadraticDealiasing,"effectiveBandwidth")
+            testCase.verifyEqual([w.energyFraction w.bandwidthFraction],[.97 .6])
+            testCase.verifyEqual(assessment.dealiasing.coordinateKind,"wkb-chebyshev-lobatto")
+            testCase.verifyEqual(assessment.pages.selectedCount,assessment.pages.filteringCount)
+            testCase.verifyEqual(assessment.inertial.selectedCount,assessment.inertial.filteringCount)
+            testCase.verifyEqual(assessment.apv.dealiasing.selectedCount,assessment.apv.dealiasing.filteringCount)
+            testCase.verifySize(w.waveF,[w.Nz numel(w.waveMode) numel(w.khUnique)])
+            testCase.verifySize(w.waveG,[w.Nz numel(w.waveMode) numel(w.khUnique)])
+            testCase.verifySize(w.apvF,[w.Nz numel(w.apvMode)])
+            testCase.verifySize(w.apvG,[w.Nz numel(w.apvMode)])
+            for p=1:height(assessment.pages)
+                report=assessment.pages.dealiasing{p};
+                testCase.verifyEqual(report.coordinateKind,assessment.dealiasing.coordinateKind)
+                testCase.verifyEqual(numel(report.effectiveDegreeF),assessment.pages.linearCount(p))
+                testCase.verifyEqual(numel(report.effectiveDegreeG),assessment.pages.linearCount(p))
+            end
+            testCase.verifyEqual(assessment.inertial.dealiasing.coordinateKind,assessment.dealiasing.coordinateKind)
+            testCase.verifyEqual(assessment.apv.dealiasing.coordinateKind,assessment.dealiasing.coordinateKind)
         end
 
-        function boundedQuadraticAPVSearchMatchesFullCandidateSelection(testCase)
-            w=testCase.nonlinearTransform;
-            report=testCase.nonlinearAssessment.apv.candidateConstruction;
-            fullCandidateCount=w.Nz+4;
-            problem=IMInternalModes.geostrophicAPVModes(N2=w.N2Function,zDomain=[-w.Lz 0], ...
-                g=w.g,g0=w.g0,gd=w.gd,surfaceBoundary="freeSurface");
-            basis=IMSolverSpectral(nEVP=w.balancedNEVP).solveEVP(problem,nModes=fullCandidateCount);
-            [direct,directAssessment]=basis.discreteTransform(z=w.z,weights=w.verticalQuadratureWeights, ...
-                variables=["F","G"],gramTolerance=w.gramTolerance, ...
-                quadraticAliasingTolerance=w.quadraticAliasingTolerance);
+        function automaticZeroFilteringHasDistinctStatus(testCase)
+            [w,assessment]=WVTransformFreeSurfaceBoussinesq.fromStratification( ...
+                [1e3 1e3 1000],[8 8 33],N2Function=@(z)1e-4*exp(2*z/700),g0=Inf,gd=Inf, ...
+                shouldAntialias=true,quadraticDealiasing="effectiveBandwidth", ...
+                energyFraction=.9,bandwidthFraction=.05);
+            filteredOut=assessment.pages.filteringCount==0 & assessment.pages.linearCount>0;
+            testCase.verifyTrue(any(filteredOut))
+            testCase.verifyEqual(w.waveModeCountByKh(filteredOut),zeros(nnz(filteredOut),1))
+            testCase.verifyEqual(assessment.pages.status(filteredOut),repmat("filtered-out",nnz(filteredOut),1))
+            testCase.verifyEqual(assessment.pages.limitingMetric(filteredOut), ...
+                repmat("quadratic-dealiasing",nnz(filteredOut),1))
+            testCase.verifyTrue(all(cellfun(@(report)~isempty(report),assessment.modeConvergence(filteredOut))))
+        end
 
-            testCase.verifyEqual(numel(direct.h),numel(w.apvMode))
-            testCase.verifyEqual(report.attemptedCounts(1),min(32,fullCandidateCount))
-            testCase.verifyEqual(report.candidateCount,report.attemptedCounts(end))
-            testCase.verifyLessThan(report.candidateCount,fullCandidateCount)
-            testCase.verifyEqual(report.attemptedCounts(2:end), ...
-                min(2*report.attemptedCounts(1:end-1),fullCandidateCount))
-            selected=numel(w.apvMode);
-            testCase.verifyEqual(testCase.nonlinearAssessment.apv.prefixDiagnostics(selected,:), ...
-                directAssessment.prefixDiagnostics(selected,:),AbsTol=64*eps)
+        function explicitAPVHeadSurvivesUnconvergedIndependentTail(testCase)
+            qg=WVTransformFreeSurfaceQG([1e9 1e9 1000],[4 4 33], ...
+                N2Function=@(z)1e-4*exp(2*z/700),g0=.02,gd=.03,quadraticDealiasing="none", ...
+                modeConvergenceTolerance=1e-12,apvModeCount=1);
+            assessment=qg.constructionAssessment;
+            testCase.verifyEqual(qg.apvModeCount,1)
+            testCase.verifyEqual(assessment.apv.selectedCount,1)
+            testCase.verifyGreaterThan(assessment.apv.linearCount,assessment.apv.selectedCount)
+            testCase.verifyGreaterThan(numel(assessment.apv.convergence.identity.columnLabels), ...
+                assessment.apv.linearCount)
+        end
+
+        function fixedBoundaryResolutionStillAppliesToNone(testCase)
+            testCase.verifyError(@()WVTransformFreeSurfaceBoussinesq.fromStratification( ...
+                [1e4 1e4 1000],[8 8 17],N2Function=@(z)1e-4+0*z,latitude=30,quadraticDealiasing="none", ...
+                waveModeCount=0,inertialModeCount=1,apvModeCount=3,mdaModeCount=2),'WV:UnderresolvedBoundaryGrid')
         end
     end
+end
+
+function verifyDealiasingMetadata(testCase,assessment,policy)
+testCase.verifyEqual(assessment.dealiasing.quadraticDealiasing,policy)
+testCase.verifyEqual(assessment.dealiasing.retainedFraction,2/3)
+testCase.verifyEqual(assessment.dealiasing.energyFraction,.99)
+testCase.verifyEqual(assessment.dealiasing.bandwidthFraction,2/3)
+testCase.verifyEqual(assessment.dealiasing.gridDegree,64)
+testCase.verifyEqual(assessment.dealiasing.coordinateKind,"wkb-chebyshev-lobatto")
+for p=1:height(assessment.pages)
+    testCase.verifyEqual(assessment.pages.dealiasing{p}.coordinateKind,assessment.dealiasing.coordinateKind)
+end
+testCase.verifyEqual(assessment.inertial.dealiasing.coordinateKind,assessment.dealiasing.coordinateKind)
 end

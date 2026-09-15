@@ -16,7 +16,7 @@ for scenario=["waves","balanced","mixed"]
         file=fullfile(workFolder,profile+"-inventory"+j+".mat");
         if isfile(file), data=load(file,'scientificState'); inventory{j}=data.scientificState; continue; end
         spec=specifications(j,:);
-        w=WVTransformFreeSurfaceBoussinesq.fromStratification([1e5 1e5 1000],[spec(1) spec(1) spec(2)],N2Function=N2,apvModeCount=spec(3),waveModeCount=spec(4),mdaModeCount=spec(5),inertialModeCount=spec(6),nEVP=256,shouldAntialias=true,shouldCheckQuadraticAliasing=true);
+        w=WVTransformFreeSurfaceBoussinesq.fromStratification([1e5 1e5 1000],[spec(1) spec(1) spec(2)],N2Function=N2,apvModeCount=spec(3),waveModeCount=spec(4),mdaModeCount=spec(5),inertialModeCount=spec(6),nEVP=256,shouldAntialias=true,quadraticDealiasing="fixedFraction");
         scientificState=w.scientificState(); inventory{j}=scientificState; save(file,'scientificState');
     end
     w=WVTransformFreeSurfaceBoussinesq(inventory{1}); w.t0=-17;

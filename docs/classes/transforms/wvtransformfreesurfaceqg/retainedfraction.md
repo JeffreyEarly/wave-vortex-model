@@ -1,15 +1,15 @@
 ---
 layout: default
-title: quadraticAliasingLimitingModeNumberI
+title: retainedFraction
 parent: WVTransformFreeSurfaceQG
 grand_parent: Transforms
-nav_order: 189
+nav_order: 197
 mathjax: true
 ---
 
-#  quadraticAliasingLimitingModeNumberI
+#  retainedFraction
 
-First physical mode label in the limiting product.
+Linear-prefix share retained by fixedFraction.
 
 > Developer documentation: this item describes internal implementation details.
 

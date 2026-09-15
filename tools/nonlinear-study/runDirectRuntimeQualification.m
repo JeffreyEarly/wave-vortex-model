@@ -9,7 +9,7 @@ rows = cell(0,1);
 for profile = ["constant","exponential"]
     N2Function = @(z)1e-4+zeros(size(z));
     if profile=="exponential", N2Function=@(z)1e-4*exp(z/650); end
-    wvt = WVTransformFreeSurfaceBoussinesq.fromStratification([1e5 1e5 1000],[12 12 129],N2Function=N2Function,apvModeCount=8,waveModeCount=12,mdaModeCount=8,inertialModeCount=8,nEVP=256,shouldAntialias=true,shouldCheckQuadraticAliasing=true);
+    wvt = WVTransformFreeSurfaceBoussinesq.fromStratification([1e5 1e5 1000],[12 12 129],N2Function=N2Function,apvModeCount=8,waveModeCount=12,mdaModeCount=8,inertialModeCount=8,nEVP=256,shouldAntialias=true,quadraticDealiasing="fixedFraction");
     wvt.t0 = -17;
     study = manuscriptEvolutionOperators(wvt,profile,padding=2);
     nativeGridStudy = manuscriptEvolutionOperators(wvt,profile,padding=1);

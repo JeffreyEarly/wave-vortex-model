@@ -45,7 +45,7 @@ results.kernels = array2table(rows,VariableNames={'horizontalSide','Z','complexI
 writetable(results.kernels,fullfile(outputFolder,'kernels.csv'));
 rows = zeros(3,10); row = 0;
 for Z = [33 65 129]
-    base = WVTransformFreeSurfaceBoussinesq.fromStratification([1e5 1e5 1000],[8 8 Z],N2Function=@(z)1e-4*exp(z/650),apvModeCount=2,mdaModeCount=2,inertialModeCount=2,waveModeCount=3,nEVP=128,shouldAntialias=true,shouldCheckQuadraticAliasing=true);
+    base = WVTransformFreeSurfaceBoussinesq.fromStratification([1e5 1e5 1000],[8 8 Z],N2Function=@(z)1e-4*exp(z/650),apvModeCount=2,mdaModeCount=2,inertialModeCount=2,waveModeCount=3,nEVP=128,shouldAntialias=true,quadraticDealiasing="fixedFraction");
     setupStart = tic;
     wvt = DerivativeStudyBoussinesq(base.scientificState());
     setupSeconds = toc(setupStart);

@@ -42,9 +42,29 @@ Pair samples grow linearly with the available inventory: self, neighboring, refl
 
 ## Recorded evidence
 
+The calibrated production default is **`fixedFraction`, `retainedFraction=2/3`**. The optional effective-bandwidth defaults remain **`energyFraction=.99`, `bandwidthFraction=2/3`**. Across nine resolved cases, fixed fraction retains 65.8–66.7% of the linear inventory with maximum sampled error **0.008284**; effective bandwidth retains 67.9–72.2% with maximum **0.028620**. No filtering reaches **0.716635**. Raising effective-bandwidth energy coverage to .999 gives the same worst error as fixed fraction with slightly lower average retention; this does not justify a more complex default. A fixed half retains fewer modes and lowers error further; two thirds is an empirical retention/error tradeoff, not an error-minimizing optimum.
+
+| Policy | Full constructor median (s) | Policy/report timer (ms) | Waves per sign, each k | APV |
+|---|---:|---:|---:|---:|
+| `none` | 15.6649 | 20.045 | 38 | 38 |
+| `fixedFraction` | 15.3164 | 19.746 | 25 | 25 |
+| `effectiveBandwidth` | 15.4796 | 217.958 | 26 | 26 |
+
+These are fresh-process medians after one warmup and three measured calls per policy. The `none` timer includes policy dispatch, validation, and reporting, so the fixed-fraction timer is essentially the same small overhead. Differences of a few tenths of a second in full construction should not be overinterpreted as speedups. Every policy performs the same 1,140 wave/inertial candidate/reference solves. Bandwidth scoring uses existing fine samples and adds no eigensolve.
+
+The first measurement sequence interleaved profiler passes between timing batches and produced inflated later timings. Those trials are preserved in `results/construction-profile-sequence` but excluded from the comparison above. The script now completes **all unprofiled batches before any profiling**. The separate profiles are 23.39, 23.47, and 23.96 seconds respectively; they use unchanged runtime code. Eigenpair solution is the largest remaining hotspot (about 7.3 seconds self time within the profiled solver), followed by the wave-assessment loop. None of these overlapping profiler times is added into promised savings.
+
+The calibration contains **702 policy records and 35,124 unique product samples**. Every selected sample count, maximum, and percentile was reconciled against the raw products during Astra review. Maximum fine-to-reference full-spectrum error is **2.3932e-13**, and reconstructed coarse mode shapes match the constructor's stored arrays exactly in these recorded cases. This sampled F/G study does not certify all mode pairs, physical derivatives, or interactions with inertial, MDA, and boundary families.
+
 - `results/baseline`: matched pre-change linear-only construction at WVM `2c3c216593415ee6c909ae64e4b8fe97d25ad57f`, provider beta.6 `370162ddf71781689b560163bb3e3d2751d80c28`. Median 15.6113 seconds, 38 waves per wavenumber and 38 APV modes, 569 positive wavenumbers and 1,140 wave/inertial candidate/reference solves. This control explicitly disabled the old quadratic assessment.
 - `results/verification`: focused scientific, persistence, nonlinear, and exported-provider test evidence, including initial failures and their targeted reruns.
 - Calibration and final construction outputs record revisions, resolved dependency roots, raw timings, retained counts, and sampled errors. The workspace Chebfun checkout used for matched timing is `1fe01297a74d9ee765a466c3068b7fb474bee053`.
+
+The eight constant/exponential cases ran with study revision `ffb349ec500a3104a0859f1a0d578a2c1c1af9bc`; the resolved sharp case uses `f80167e7072a435b433672d4bb20e9cd33e219a6`. The consolidated files exactly concatenate the preserved `calibration-main` and `calibration-sharp` records. Final timing/figure sequencing is implemented in `ced7dc0b`; numerical runtime code remains pinned to `ffb349ec500a3104a0859f1a0d578a2c1c1af9bc` throughout.
+
+Verification: **85 distinct focused WVM tests** have passing latest results in the consolidated ledger (not a fresh full-suite run). The final targeted batch passed 28/28, including all four corrected initial failures, strict-count/refinement edges, persistence, nonlinear evolution and adaptive restart, and Thermal APV diagnostics/output. The release metadata suite passed 9/9; native MPM installation verified the full declared dependency graph and passed five nonlinear-policy tests using installed production code. Released-provider verification passed 42 tests, including 11 scoring tests. Documentation build/check has zero drift across 2,649 files and 5,405 routes. Code Analyzer reports zero blocking findings across 349 production files; changed authoring files have only five existing/permitted growth advisories. GPT-6 Astra extra-high correctness/simplicity and scientific reviews are clear.
+
+The energy test retains its original 1e-5 physical temporal-invariance criterion. A redundant 1e-13 assertion had mislabeled `totalEnergy` as a separate modal invariant even though its getter directly returns `physicalEnergy().totalEnergy`; that assertion was removed. Production scientific tolerances were not changed.
 
 The historical motivation was about **17.57 seconds** for linear-only construction versus **650.75 seconds before rejection** with the old quadratic assessment. The latter was a failed diagnostic run, not a successful-construction baseline, and is not used to claim a speedup. Its pinned reproduction is preserved in the linked milestone and earlier construction study.
 
@@ -56,6 +76,8 @@ After recording the study, generate the note inputs with Python and Matplotlib:
 python generateFigures.py results /path/to/literature/ape-apv-free-surface/notes/quadratic-dealiasing-data
 ```
 
-Compile `notes/quadratic-dealiasing.tex` from the literature project with `latexmk -pdf -interaction=nonstopmode -halt-on-error notes/quadratic-dealiasing.tex`. The note includes policy definitions, common coordinates, complexity, limitations, retained wave counts versus wavenumber with APV counts, and the recorded timing/error comparison. The generator uses recorded data only.
+Compile `notes/quadratic-dealiasing.tex` from the literature project with `latexmk -pdf -outdir=notes -interaction=nonstopmode -halt-on-error notes/quadratic-dealiasing.tex`. The note includes policy definitions, common coordinates, complexity, limitations, retained wave counts versus wavenumber with APV counts, and the recorded timing/error comparison. The generator uses recorded data only.
 
-The live construction path uses the new policies. Removal of remaining dedicated legacy survey helpers and obsolete documentation is the separate final issue [#42](https://github.com/JeffreyEarly/internal-modes/issues/42).
+The generator also works directly from the copied note data directory (`python generateFigures.py . .`). Figure generation used Python 3.12 and Matplotlib 3.11.2. The three-page PDF was compiled with TeX Live 2025 and every rendered page was visually inspected, with no overfull boxes or unresolved references.
+
+The live construction path uses the new policies. Removal of remaining dedicated legacy survey helpers and obsolete documentation is the separate final issue [#42](https://github.com/JeffreyEarly/internal-modes/issues/42). That is the next recommended target: the replacement behavior, calibration, and note are now available, so cleanup can establish the final API boundary. Revisit toolbox-free parallel eigensolves after that cleanup using the refreshed profile; no parallel speedup is claimed by this study.

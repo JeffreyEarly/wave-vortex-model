@@ -94,7 +94,7 @@ classdef TestPrescribedBoussinesqSourceCoordinates < matlab.unittest.TestCase
 end
 
 function wvt = newTransform(Nxyz)
-wvt = WVTransformFreeSurfaceBoussinesq.fromStratification([1e5 1e5 1000],Nxyz,N2Function=@(z)1e-4+zeros(size(z)),apvModeCount=2,mdaModeCount=2,waveModeCount=2,inertialModeCount=2,shouldAntialias=true,shouldCheckQuadraticAliasing=true);
+wvt = WVTransformFreeSurfaceBoussinesq.fromStratification([1e5 1e5 1000],Nxyz,N2Function=@(z)1e-4+zeros(size(z)),apvModeCount=2,mdaModeCount=2,waveModeCount=2,inertialModeCount=2,shouldAntialias=true,quadraticDealiasing="fixedFraction");
 end
 
 function options = sourceOptions(wvt)

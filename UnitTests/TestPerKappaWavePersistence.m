@@ -18,6 +18,9 @@ classdef TestPerKappaWavePersistence < matlab.unittest.TestCase
                 end
                 verifyState(testCase,restored.coefficientState(),w.coefficientState());
                 testCase.verifyEqual([restored.t restored.t0],[w.t w.t0])
+                testCase.verifyEqual(restored.quadraticDealiasing,w.quadraticDealiasing)
+                testCase.verifyEqual([restored.retainedFraction restored.energyFraction restored.bandwidthFraction], ...
+                    [w.retainedFraction w.energyFraction w.bandwidthFraction])
                 testCase.verifyEqual(nc.hasDimensionWithName('waveMode'),~zeroWaves)
                 testCase.verifyEqual(nc.hasVariableWithName('Aw_p'),~zeroWaves)
                 testCase.verifyEqual(restored.reconstructFields(["u","v","w","eta","ssh"]),w.reconstructFields(["u","v","w","eta","ssh"]))

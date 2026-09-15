@@ -7,7 +7,7 @@ for profile=["constant","exponential"]
     for nx=[8 24]
         counts=[17 65]; if nx==24, counts=[33 65]; end
         for nz=counts
-            base=WVTransformFreeSurfaceBoussinesq.fromStratification([1e5 1e5 1000],[nx nx nz],N2Function=N2,apvModeCount=3,waveModeCount=4,mdaModeCount=2,inertialModeCount=3,nEVP=256,shouldAntialias=true,shouldCheckQuadraticAliasing=true);
+            base=WVTransformFreeSurfaceBoussinesq.fromStratification([1e5 1e5 1000],[nx nx nz],N2Function=N2,apvModeCount=3,waveModeCount=4,mdaModeCount=2,inertialModeCount=3,nEVP=256,shouldAntialias=true,quadraticDealiasing="fixedFraction");
             study=manuscriptEvolutionOperators(base,profile,padding=1); initial=study.seed("mixed",.01);
             objects={base,CrossingProjectionCandidate(base.scientificState())};
             for j=1:2

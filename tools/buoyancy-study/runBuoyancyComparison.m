@@ -10,7 +10,7 @@ addpath(fullfile(root,'UnitTests','ReferenceImplementations'),fullfile(root,'too
 rows={}; rhsRows={};
 for degree=[0 8 32 64]
     profile=@(z)1e-4*(1+.2*(1+z/1000).^degree);
-    w=WVTransformFreeSurfaceBoussinesq.fromStratification([1e5 1e5 1000],[8 8 65],N2Function=profile,apvModeCount=3,mdaModeCount=2,inertialModeCount=3,waveModeCount=4,nEVP=256,shouldAntialias=true,shouldCheckQuadraticAliasing=true);
+    w=WVTransformFreeSurfaceBoussinesq.fromStratification([1e5 1e5 1000],[8 8 65],N2Function=profile,apvModeCount=3,mdaModeCount=2,inertialModeCount=3,waveModeCount=4,nEVP=256,shouldAntialias=true,quadraticDealiasing="fixedFraction");
     start=tic; direct=WVInternal.freeSurfaceThermodynamics(w); setupDirect=toc(start);
     start=tic; reference=quadratureThermodynamicsReference(w); setupReference=toc(start);
     represented=length(chebfun(w.N2Function,[-w.Lz,0],'splitting','off'))-1;

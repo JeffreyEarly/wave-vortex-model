@@ -11,7 +11,7 @@ addpath(fullfile(fileparts(root),'OceanKit','tools','profiling'));
 rows={}; gradients=[];
 for grid=[8 8 33;8 8 65;8 8 129;16 16 65].'
     Nx=grid(1); Ny=grid(2); Z=grid(3);
-    w=WVTransformFreeSurfaceBoussinesq.fromStratification([1e5 1e5 1000],[Nx Ny Z],N2Function=@(z)1e-4*exp(z/650),apvModeCount=3,mdaModeCount=2,inertialModeCount=3,waveModeCount=4,nEVP=128,shouldAntialias=true,shouldCheckQuadraticAliasing=true);
+    w=WVTransformFreeSurfaceBoussinesq.fromStratification([1e5 1e5 1000],[Nx Ny Z],N2Function=@(z)1e-4*exp(z/650),apvModeCount=3,mdaModeCount=2,inertialModeCount=3,waveModeCount=4,nEVP=128,shouldAntialias=true,quadraticDealiasing="fixedFraction");
     old=RHSReuseReference(w.scientificState());
     study=manuscriptEvolutionOperators(w,"exponential",padding=1);
     state=study.seed("mixed",1);

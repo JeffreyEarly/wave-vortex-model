@@ -1,20 +1,18 @@
 # Automatic resolved-mode selection in v5
 
-The free-surface constructors use one `gramTolerance`, with default `1e-2`. The v5 API is unreleased: the former family-specific and projection tolerance names are removed directly, including constructor options, saved fields, resolution transfer, examples, and tests. There are no aliases or migration paths for those names.
+The free-surface constructors first establish an independent linear prefix with one `gramTolerance`, whose default is `1e-2`, and an independently solved higher-resolution reference. They then apply one vertical quadratic-dealiasing policy to that complete prefix. Boussinesq wave, inertial, and APV families and QG APV use the same policy and parameters. MDA selection remains linear. Horizontal `shouldAntialias` is a separate Fourier-bandwidth choice.
 
 ```matlab
 N2 = @(z) 1e-4*ones(size(z));
 [wvt, assessment] = WVTransformFreeSurfaceBoussinesq.fromStratification( ...
     [1e5 1e5 1000],[8 8 65],N2Function=N2,latitude=30);
-assessment.pages(:,["kappa","selectedCount","gridSupportedCount", ...
-    "convergedCount","limitingMetric"])
+assessment.pages(:,["kappa","linearCount","filteringCount", ...
+    "selectedCount","limitingMetric"])
 ```
 
-The current linear Boussinesq constructor defaults to `shouldCheckQuadraticAliasing=false` and `shouldAntialias=false`. QG defaults both to `true`. These options are independent: the first requests quadratic-product qualification of vertical families; the second applies the existing horizontal dealiasing bandwidth restriction. Linear dynamics may use the full supported non-Nyquist horizontal band.
+The default policy is `quadraticDealiasing="fixedFraction"` with `retainedFraction=2/3`. `quadraticDealiasing="none"` retains the complete linear prefix and deliberately allows nonlinear registration; its report records that no spectral-bandwidth measurement was made. `quadraticDealiasing="effectiveBandwidth"` uses `energyFraction=0.99` to measure each normalized F/G mode's effective degree on a shared WKB Chebyshev-Lobatto sample grid, then accepts the contiguous prefix whose degrees do not exceed `floor(bandwidthFraction*(Nz-1))`, with `bandwidthFraction=2/3` by default. These policies are filtering heuristics rather than rigorous nonlinear qualification claims.
 
-With quadratic checking disabled, automatic counts retain each linearly qualified leading prefix: the smaller of its independent EVP-convergence and fixed-grid Gram limits, within the tested candidate band. APV self-products, APV/zero-APV cross-products, and sampled wave products are neither prepared nor measured. No count is reduced for an unrequested quadratic policy. The report marks this evidence `not-requested`, not passed. Explicit counts remain strict under the enabled checks. Configured endpoint families retain their physical resolution gate even if their amplitudes are initially zero.
-
-Omitting a count selects it automatically. APV and MDA use the same builder and policy as `WVTransformFreeSurfaceQG`, independently of the wave and inertial counts. Each positive horizontal wavenumber has its own wave prefix, shared by the two frequency signs. The inertial prefix is independent. Every configured zero-APV endpoint remains present.
+Omitting a count selects it automatically. APV and MDA use the same builder and linear policy as `WVTransformFreeSurfaceQG`, independently of wave and inertial counts. Each positive horizontal wavenumber has its own wave prefix, shared by the two frequency signs. The inertial prefix is independent. Every configured zero-APV endpoint remains present and retains its physical boundary-resolution gate.
 
 Explicit counts are strict and independently configurable:
 
@@ -24,55 +22,43 @@ Explicit counts are strict and independently configurable:
     apvModeCount=3,mdaModeCount=2,inertialModeCount=3,waveModeCount=4);
 ```
 
-A scalar wave count broadcasts to all positive pages. A vector uses `waveModeKappa` keys and must cover the complete supported positive-wavenumber inventory. Explicit zero counts omit waves on those pages. A failed explicit count is rejected rather than silently reduced. Other omitted family counts remain automatic.
+A scalar wave count broadcasts to all positive pages. A vector uses `waveModeKappa` keys and must cover the complete supported positive-wavenumber inventory. Explicit zero counts omit waves on those pages. The constructor still determines the full independent linear and filtering capacities before checking an explicit positive request, so the filter fraction is never applied to the smaller requested count. A request above either limit is rejected rather than silently reduced. Other omitted family counts remain automatic.
 
 ## Independent checks
 
 - `gramTolerance=1e-2` bounds fixed-physical-quadrature normalized-Gram error. The resolved bases and prescribed physical pairings are preserved; weights are not fitted.
 - `modeConvergenceTolerance=1e-6` checks equivalent depths and physical H1 fields against an independently solved, higher-resolution EVP. References are computed even when the caller requests only the model. Agreement between two resolutions is evidence, not a rigorous absolute error bound.
-- When `shouldCheckQuadraticAliasing=true`, `quadraticAliasingTolerance=0.1` controls APV self-products, APV/zero-APV cross-products and the bounded physical wave-interaction policy. This tolerance has no effect on selection or construction cost when checking is disabled.
+- `quadraticDealiasing`, `retainedFraction`, `energyFraction`, and `bandwidthFraction` select a contiguous sub-prefix after the linear checks. The `none` and `fixedFraction` policies do not compute spectral bandwidths. `effectiveBandwidth` evaluates normalized F/G shapes in a common simulation WKB coordinate.
 - `boundaryResolutionTolerance=1e-2` checks each fixed endpoint at every retained positive wavenumber: physical derivatives, endpoint normalization, and coupled physical and signed energy. Reducing other mode counts cannot hide an unresolved endpoint response.
 
-QG's `assessVerticalResolution` brackets a horizontal limit using the boundary-resolution check and, when requested, its APV/zero-APV cross-product check. The reported quadratic and boundary errors remain separate; when the boundary sets the limit, there is no limiting APV mode label.
+QG's `assessVerticalResolution` applies the same APV prefix policy and brackets a horizontal limit with the boundary-resolution check. Vertical filtering and the boundary limit remain separate evidence.
 
-Wave/inertial candidates extend through `Nz-1`. `nEVP` is a starting solve resolution, raised to at least `Nz+4` for automatic candidates. At most three candidate/reference resolution pairs are tried before the automatic policy uses the converged prefix. An explicit `referenceNEVP` fixes the comparison pair. Balanced families retain the existing more conservative EVP sizing rule and independently check its convergence.
+Wave and inertial candidates extend through `Nz-1`. `nEVP` is a starting solve resolution, raised to at least `Nz+4` for the full candidate inventory. At most three candidate/reference resolution pairs are tried before construction accepts the converged prefix. An explicit `referenceNEVP` fixes the comparison pair. Balanced families preserve their independent linear candidate solve and reference comparison.
 
-## Bounded quadratic policy
+## Quadratic-dealiasing policies
 
-When `shouldCheckQuadraticAliasing=true`, the constructor prepares actual resolved fields and independent references once. It chooses up to two closed Fourier interactions for every output wavenumber, including the horizontal mean. It samples low, geometric-interior, and cutoff input modes, keeps every configured endpoint, and measures the existing 13 physical advection channels into wave, inertial, and MDA outputs. APV self-products remain qualified by the provider's separate full-prefix test.
+For `fixedFraction`, a family with linear capacity M has filtering capacity `floor(retainedFraction*M)`, including zero when M is zero or the fraction removes the sole mode. There is no implicit minimum. `none` has filtering capacity M. Both policies skip the shape bandwidth calculation.
 
-Only the declared candidate count levels are projected and tried. A failed complete map triggers deterministic reductions of the wave input/output pages or inertial output implicated by its worst sampled interaction. Each trial reuses the same measured products and performs no new eigensolve or product evaluation. The result is conservative; it is not a maximal independently selectable count at each wavenumber.
+For `effectiveBandwidth`, WVM reuses the fine candidate fields already prepared for the independent convergence comparison. APV likewise reuses its prepared reference-grid values. The provider measures the Chebyshev coefficient tail of each normalized F and G column on that common coordinate; WVM cumulatively accepts modes only through the first rejected column. The calculation is shared and bounded, and the production path does not call the retired sampled-product survey.
 
-Missing interaction coverage, an unmeasured output prefix, or an unqualified reference cannot accept a map. A page is classified as structurally zero only after verifying that the retained nonzero Fourier vectors cannot form an input pair for that output. This statement excludes mean-input interactions, which are outside this sampled policy.
-
-The policy is not an exhaustive quadratic-aliasing test, a bound on coherent superpositions, or qualification of a full nonlinear Boussinesq RHS. Inertial/MDA input interactions, Boussinesq APV and boundary outputs, and mean vertical-velocity output are outside its coverage. The separate QG assembled-flux experiment remains available in `tools/aliasing-study/runQGQuadraticAssessmentStudy.m`.
-
-Preparation admits at most 500,000 sampled scalar products and 128 count-map trials. Reference-field storage and additional product workspace each have a 512 MiB estimate limit; these estimates exclude the stored model operators and provider solver internals. Output pages are streamed during measurement. Requests exceeding an assessment budget fail explicitly before product evaluation. Large horizontal grids still require a construction-cost trial; these limits do not establish production-grid throughput.
+The same filtering rule covers inertial modes. A page explicitly requested with count zero is reported `not-requested`. An automatic page with a positive linear capacity and zero filtering capacity is instead `filtered-out`, and its limiting metric remains `quadratic-dealiasing`.
 
 ## Inspection and reproducibility
 
-`assessment.pages` separates the candidate ceiling, linear convergence limit, Gram limit, and final count. An automatic request has `requestedCount=NaN`; `selectedCount` is the number actually stored in the model. `candidateLimitReached` never implies that all possible modes were tested. `assessment.apv`, `.mda`, `.inertial`, `.boundary`, `.quadratic`, and `.cost` expose family evidence, coverage, trial history, and timing.
+`assessment.pages` separates `candidateCount`, `convergedCount`, `gridSupportedCount`, `linearCount`, `filteringCount`, and `selectedCount`. An automatic request has `requestedCount=NaN`; `selectedCount` is the number stored in the model. Each page's `dealiasing` report preserves the policy inputs and applicable per-mode evidence. `assessment.inertial` and `assessment.apv` use the same linear/filtering/selected count vocabulary. Top-level `assessment.dealiasing` records the policy, parameters, vertical grid degree, and common coordinate kind. `assessment.cost.quadraticDealiasingSeconds` reports construction time attributable to vertical filtering.
 
-Both models expose `constructionAssessment` after scientific construction. The selected counts, operators, Gram errors, tolerances, and requested quadratic policy are persisted as canonical scientific state. The full construction report is transient and empty after canonical restore; save it separately when retaining the detailed qualification provenance. Restore does not solve modes or rerun selection.
+Both models expose `constructionAssessment` after scientific construction. The selected counts, operators, Gram errors, convergence and boundary tolerances, and quadratic-dealiasing policy parameters persist as canonical scientific state. The complete construction report is transient and empty after canonical restore; save it separately when retaining detailed provenance. Restore does not solve modes or rerun selection.
 
-Run `DeveloperExperiments/freeSurfaceModeSelectionExample.m` from the authoring checkout for a figure and optional CSV/MAT output. It uses the same constructor and report as ordinary initialization. The numerical product helpers live in `+WVInternal`; existing authoring study scripts call those shared implementations.
+Run `DeveloperExperiments/freeSurfaceModeSelectionExample.m` from the authoring checkout for a figure and optional CSV/MAT output. It uses the same constructor and report as ordinary initialization.
 
-## Recorded quadratic-policy result and verification ledger
+## Historical sampled-product evidence
 
-![Automatic mode counts versus horizontal wavenumber](AutomaticModeSelection/mode-counts.png)
-
-The following recorded example predates the linear-default separation. Reproduce its policy with `shouldCheckQuadraticAliasing=true, shouldAntialias=true`. For that constant-stratification case, the 65-point grid selects 27 APV modes, 39 MDA modes, 38 inertial modes, and wave counts `[10 19 19 10]` per frequency sign. The independently converged candidate prefix is 51 and the physical-grid Gram limit is 38 at each wavenumber. The nonuniform final curve comes from the coupled sampled interaction check; it is not a curve of independent per-wavenumber maxima. A separate provider example retains the earlier case with wavenumber-dependent linear accuracy limits.
-
-The recorded local run took 7.42 seconds, including 20 wave/inertial eigenproblems and 12 complete-map trials. The final map reassessment took 0.006 seconds with no new eigensolve or product evaluation. Its additional product-workspace estimate was 217 MiB and its retained evidence was about 20.5 MiB. These are small-domain construction measurements, not a production-grid performance guarantee. The [measurement record](AutomaticModeSelection/summary.json), [wave counts](AutomaticModeSelection/wave-counts.csv), [family counts](AutomaticModeSelection/family-counts.csv), and [PDF figure](AutomaticModeSelection/mode-counts.pdf) accompany the reusable example.
-
-The [focused verification ledger](AutomaticModeSelection/verification.csv) contains 159 passing tests on MATLAB R2025b Update 4 / Apple Silicon with InternalModes 2.0.0-beta.4. It consolidates the latest successful result for each test, including targeted retests after corrections. Coverage includes shared balanced defaults, strict counts, per-kappa and zero-wave maps, fixed endpoint rejection, independent references, one/two-output equivalence, reconstruction and linear evolution, NetCDF restore and resolution transfer, and the existing quadratic-reference controls. An additional runtime-path construction excludes the authoring assessment tools. This is not a fresh exported-package installation or the complete beta scientific suite.
-
-Documentation generation/check has zero drift. Code Analyzer was run on changed MATLAB sources; new numerical helpers have no findings, while existing moved-code style suggestions and legacy test property-name warnings remain. Whitespace and package-manifest scope checks pass. No dependency, release metadata, or versioned package payload changed. The complete-map result must always be interpreted together with its finite coverage.
+The artifacts in `Documentation/Validation/AutomaticModeSelection/` and their beta.4 verification ledger describe the retired sampled coupled-product policy. Counts such as `[10 19 19 10]`, the 12 map trials, and the reported product workspace are retained as historical evidence and are not results from any current `quadraticDealiasing` policy. They cannot be reproduced by translating the removed option names.
 
 ## Linear experiment configuration
 
-A free-surface gravity-wave experiment can retain one explicit external mode without requesting nonlinear qualification. When the experiment does not represent balanced endpoint anomalies, `g0=Inf, gd=Inf` explicitly omit those zero-APV coordinates. This does not change the external wave EVP's free-surface boundary condition. It is a model configuration decision, never an inference from zero initial amplitudes. Retain the experiment's independently justified Gram tolerance (for example `1e-8`) and physical wave validation.
+A free-surface gravity-wave experiment can retain one explicit external mode with `quadraticDealiasing="none"`. When the experiment does not represent balanced endpoint anomalies, `g0=Inf, gd=Inf` explicitly omit those zero-APV coordinates. This does not change the external wave EVP's free-surface boundary condition. It is a model configuration decision, never an inference from zero initial amplitudes. Retain the experiment's independently justified Gram tolerance and physical wave validation.
 
-The policy defaults and family coverage describe construction; they do not certify a later nonlinear forcing or arbitrary nonlinear trajectory. Nonlinear use should explicitly enable the appropriate quadratic assessment and horizontal dealiasing. No additional mode families or class hierarchy are introduced.
+The policy and family coverage describe construction; they do not certify a later nonlinear forcing or arbitrary nonlinear trajectory. Nonlinear registration separately requires `shouldAntialias=true`. No additional mode families or class hierarchy are introduced.
 
-The [linear-policy adoption ledger](LinearModePolicy.md) records the matched-policy comparison and the subsequent focused checks. Automatic APV quadratic qualification doubles candidate bands from at most 32 modes until the first cumulative prefix rejection is established, preserving every required product within each tested band; `assessment.apv.candidateConstruction` records the search. Automatic MDA construction brackets a valid candidate band if normalization fails in an unused tail. A shortened search is accepted only after its Gram cutoff lies strictly inside a valid candidate band; a failed normalization cannot silently define the retained count. `assessment.mda.candidateConstruction` records attempted and rejected candidate counts. Independent balanced references need only cover the selected prefixes.
+The [linear-policy adoption ledger](LinearModePolicy.md) records the present policy contract and marks the earlier sampled-product comparison as historical evidence.

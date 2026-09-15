@@ -35,8 +35,8 @@ Omitted endpoints use $$g_0=-\int_{-D}^{0}N^2\,dz$$ and
 $$g_d=+\int_{-D}^{0}N^2\,dz$$, activating both endpoints.
 Use `gd=Inf` for an inactive bottom. The APV family normally includes
 a negative mode. InternalModes retains that mode and uses its signed
-Pontryagin pairing for projection; coupled quadratic errors are
-positive magnitudes in the induced Hilbert majorant.
+Pontryagin pairing for projection. Vertical quadratic dealiasing
+filters the independently resolved APV prefix by a shared simple policy.
 
 Scientific construction solves the InternalModesEVP problems once and
 stores every sampled mode and projection operator. Persisted-state
@@ -132,9 +132,6 @@ wvt = WVTransformFreeSurfaceQG([100e3 100e3 4000],[32 32 33],N2Function=N2,latit
       + [`apvModeNumber`](/classes/transforms/wvtransformfreesurfaceqg/apvmodenumber.html) Physical APV mode labels.
       + [`apvMu`](/classes/transforms/wvtransformfreesurfaceqg/apvmu.html) APV inversion eigenvalues for each horizontal page.
       + [`apvRoundTripError`](/classes/transforms/wvtransformfreesurfaceqg/apvroundtriperror.html) Worst retained APV sampled round-trip error.
-      + [`apvZeroAPVLimitingEndpoint`](/classes/transforms/wvtransformfreesurfaceqg/apvzeroapvlimitingendpoint.html) Active endpoint limiting the APV/zero-APV product error.
-      + [`apvZeroAPVLimitingModeNumber`](/classes/transforms/wvtransformfreesurfaceqg/apvzeroapvlimitingmodenumber.html) APV physical mode label limiting the APV/zero-APV product error.
-      + [`apvZeroAPVQuadraticError`](/classes/transforms/wvtransformfreesurfaceqg/apvzeroapvquadraticerror.html) APV/zero-APV quadratic-product error at maximum horizontal wavenumber.
       + [`g0`](/classes/transforms/wvtransformfreesurfaceqg/g0.html) Effective surface acceleration; omitted default is `-integral(N2,-Lz,0)`.
       + [`gd`](/classes/transforms/wvtransformfreesurfaceqg/gd.html) Effective bottom acceleration; omitted default is `integral(N2,-Lz,0)`.
       + [`kNonzero`](/classes/transforms/wvtransformfreesurfaceqg/knonzero.html) X wavenumber associated with `klNonzero`.
@@ -352,8 +349,6 @@ These items document internal implementation details and are not part of the pri
     + [`primaryKLModeNumberFromKLModeNumber`](/classes/transforms/wvtransformfreesurfaceqg/primaryklmodenumberfromklmodenumber.html) takes any valid WV mode number and returns the primary mode number
   + Additional geometry utilities
     + [`modeConvergenceTolerance`](/classes/transforms/wvtransformfreesurfaceqg/modeconvergencetolerance.html) Physical H1 and equivalent-depth agreement between independent solves.
-    + [`quadraticAliasingLimitingModeNumberI`](/classes/transforms/wvtransformfreesurfaceqg/quadraticaliasinglimitingmodenumberi.html) First physical mode label in the limiting product.
-    + [`quadraticAliasingLimitingModeNumberJ`](/classes/transforms/wvtransformfreesurfaceqg/quadraticaliasinglimitingmodenumberj.html) Second physical mode label in the limiting product.
 + Spectral transforms and operators
   + [`P0`](/classes/transforms/wvtransformfreesurfaceqg/p0.html) Preconditioner for F, size(P)=[Nj 1]. F*u = uhat, (PF)*u = P*uhat, so ubar==P*uhat
   + [`PF0`](/classes/transforms/wvtransformfreesurfaceqg/pf0.html) size(PF,PG)=[Nj x Nz]
@@ -370,14 +365,14 @@ These items document internal implementation details and are not part of the pri
   + [`transformToSpatialDomainWithFourierAtPosition`](/classes/transforms/wvtransformfreesurfaceqg/transformtospatialdomainwithfourieratposition.html)
   + [`transformWithG_wg`](/classes/transforms/wvtransformfreesurfaceqg/transformwithg_wg.html)
   + [`verticalDerivativeMatrix`](/classes/transforms/wvtransformfreesurfaceqg/verticalderivativematrix.html) Physical first-derivative matrix on the shared increasing-z grid.
-+ Nonlinear flux and forcing internals
-  + [`boundaryBuoyancyFluxTendency`](/classes/transforms/wvtransformfreesurfaceqg/boundarybuoyancyfluxtendency.html) Project prescribed inward buoyancy fluxes onto the canonical families.
 + Class internals
+  + [`bandwidthFraction`](/classes/transforms/wvtransformfreesurfaceqg/bandwidthfraction.html) Vertical grid-degree share used by effectiveBandwidth.
   + [`boundaryMomentumTendency`](/classes/transforms/wvtransformfreesurfaceqg/boundarymomentumtendency.html) Project momentum stress per unit density onto the signed balanced basis.
   + [`boundaryResolutionTolerance`](/classes/transforms/wvtransformfreesurfaceqg/boundaryresolutiontolerance.html) Physical derivative and energy accuracy of fixed zero-APV responses.
   + [`boundaryStreamfunction`](/classes/transforms/wvtransformfreesurfaceqg/boundarystreamfunction.html) Reconstruct one endpoint streamfunction without a volume reconstruction.
   + [`chebfunForZArray`](/classes/transforms/wvtransformfreesurfaceqg/chebfunforzarray.html)
   + [`constructionAssessment`](/classes/transforms/wvtransformfreesurfaceqg/constructionassessment.html) Evidence produced by scientific construction; empty after canonical restore.
+  + [`energyFraction`](/classes/transforms/wvtransformfreesurfaceqg/energyfraction.html) Cumulative spectral-energy fraction used by effectiveBandwidth.
   + [`eta_i`](/classes/transforms/wvtransformfreesurfaceqg/eta_i.html) Interior displacement on the fixed reference grid, including MDA.
   + [`gramTolerance`](/classes/transforms/wvtransformfreesurfaceqg/gramtolerance.html) Normalized Gram tolerance shared by all retained mode families.
   + [`maxFg`](/classes/transforms/wvtransformfreesurfaceqg/maxfg.html)
@@ -385,14 +380,14 @@ These items document internal implementation details and are not part of the pri
   + [`muTolerance`](/classes/transforms/wvtransformfreesurfaceqg/mutolerance.html) Relative singularity tolerance used for APV inversion.
   + [`physicalMetricOperators`](/classes/transforms/wvtransformfreesurfaceqg/physicalmetricoperators.html) Return quadrature reconstruction and physical quadratic and endpoint-variance metrics.
   + [`projectQuasigeostrophicSpatialTendency`](/classes/transforms/wvtransformfreesurfaceqg/projectquasigeostrophicspatialtendency.html) Project physical QG tendencies into canonical coefficient families.
-  + [`quadraticAliasingError`](/classes/transforms/wvtransformfreesurfaceqg/quadraticaliasingerror.html) Coupled quadratic-aliasing error at the selected APV count.
-  + [`quadraticAliasingLimitingChannel`](/classes/transforms/wvtransformfreesurfaceqg/quadraticaliasinglimitingchannel.html) Product channel limiting the selected APV prefix.
-  + [`quadraticAliasingTolerance`](/classes/transforms/wvtransformfreesurfaceqg/quadraticaliasingtolerance.html) Coupled quadratic-aliasing tolerance used for APV selection.
+  + [`quadraticDealiasing`](/classes/transforms/wvtransformfreesurfaceqg/quadraticdealiasing.html) Vertical quadratic-dealiasing policy.
   + [`quadraturePointsForStratifiedFlow`](/classes/transforms/wvtransformfreesurfaceqg/quadraturepointsforstratifiedflow.html) return the quadrature points for a given stratification
   + [`quasigeostrophicSpatialState`](/classes/transforms/wvtransformfreesurfaceqg/quasigeostrophicspatialstate.html) Reconstruct the physical state used by QG spatial forcing.
-  + [`shouldCheckQuadraticAliasing`](/classes/transforms/wvtransformfreesurfaceqg/shouldcheckquadraticaliasing.html) Whether scientific construction checks quadratic products.
+  + [`retainedFraction`](/classes/transforms/wvtransformfreesurfaceqg/retainedfraction.html) Linear-prefix share retained by fixedFraction.
   + [`throwErrorIfDensityViolation`](/classes/transforms/wvtransformfreesurfaceqg/throwerrorifdensityviolation.html) checks if the proposed coefficients are a valid adiabatic re-arrangement of the base state
   + [`verticalProjectionOperatorsWithRigidLid`](/classes/transforms/wvtransformfreesurfaceqg/verticalprojectionoperatorswithrigidlid.html) return the normalized projection operators with prefactors
++ Nonlinear flux and forcing internals
+  + [`boundaryBuoyancyFluxTendency`](/classes/transforms/wvtransformfreesurfaceqg/boundarybuoyancyfluxtendency.html) Project prescribed inward buoyancy fluxes onto the canonical families.
 + Persistence internals
   + [`classRequiredPropertyNames`](/classes/transforms/wvtransformfreesurfaceqg/classrequiredpropertynames.html)
   + [`geometryFromGroup`](/classes/transforms/wvtransformfreesurfaceqg/geometryfromgroup.html)

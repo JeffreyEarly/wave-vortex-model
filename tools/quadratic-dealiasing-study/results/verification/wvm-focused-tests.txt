@@ -1,0 +1,506 @@
+[Warning: Directory access failure: /Users/jearly/Documents/MATLAB]
+[> In restoredefaultpath (line 65)
+In setupDealiasingStudy (line 13)
+In run_issue39_wvm_regressions (line 9)]
+ Running TestFreeSurfaceLinearModePolicy
+  Setting up TestFreeSurfaceLinearModePolicy
+BLAS: trying environment BLAS_VERSION...
+BLAS: loading libmwAF_BLAS_ilp64.dylib
+BLAS: loaded libmwAF_BLAS_ilp64.dylib@0x95b7b830
+  Done setting up TestFreeSurfaceLinearModePolicy in 5.6476 seconds
+   Running TestFreeSurfaceLinearModePolicy/defaultAndNonePoliciesExposeTheirLimits
+   Done TestFreeSurfaceLinearModePolicy/defaultAndNonePoliciesExposeTheirLimits in 2.9572 seconds
+   Running TestFreeSurfaceLinearModePolicy/noneIgnoresFilteringParametersAndSurvivesPersistence
+   Done TestFreeSurfaceLinearModePolicy/noneIgnoresFilteringParametersAndSurvivesPersistence in 3.1703 seconds
+   Running TestFreeSurfaceLinearModePolicy/explicitCountsUseFullLinearFilteringCapacity
+   Done TestFreeSurfaceLinearModePolicy/explicitCountsUseFullLinearFilteringCapacity in 1.1612 seconds
+   Running TestFreeSurfaceLinearModePolicy/filteringRejectsOnlyCountsAboveIndependentLimits
+   Done TestFreeSurfaceLinearModePolicy/filteringRejectsOnlyCountsAboveIndependentLimits in 3.3227 seconds
+   Running TestFreeSurfaceLinearModePolicy/effectiveBandwidthUsesCommonWKBShapes
+   Done TestFreeSurfaceLinearModePolicy/effectiveBandwidthUsesCommonWKBShapes in 0.84911 seconds
+   Running TestFreeSurfaceLinearModePolicy/fixedBoundaryResolutionStillAppliesToNone
+   Done TestFreeSurfaceLinearModePolicy/fixedBoundaryResolutionStillAppliesToNone in 0.28582 seconds
+  Tearing down TestFreeSurfaceLinearModePolicy
+  Done tearing down TestFreeSurfaceLinearModePolicy in 0 seconds
+ Done TestFreeSurfaceLinearModePolicy in 17.3939 seconds
+__________
+
+ Running TestFreeSurfaceNonlinearAdvectionGuard
+  Setting up TestFreeSurfaceNonlinearAdvectionGuard
+  Done setting up TestFreeSurfaceNonlinearAdvectionGuard in 0 seconds
+   Running TestFreeSurfaceNonlinearAdvectionGuard/horizontalAliasingActivationRejectsWithoutChangingForcing
+   Done TestFreeSurfaceNonlinearAdvectionGuard/horizontalAliasingActivationRejectsWithoutChangingForcing in 0.79276 seconds
+   Running TestFreeSurfaceNonlinearAdvectionGuard/noneAndFilteringPoliciesPermitNonlinearRegistration
+   Done TestFreeSurfaceNonlinearAdvectionGuard/noneAndFilteringPoliciesPermitNonlinearRegistration in 2.9927 seconds
+   Running TestFreeSurfaceNonlinearAdvectionGuard/qgRequiresHorizontalAntialiasingForNonlinearRegistration
+   Done TestFreeSurfaceNonlinearAdvectionGuard/qgRequiresHorizontalAntialiasingForNonlinearRegistration in 0.32137 seconds
+   Running TestFreeSurfaceNonlinearAdvectionGuard/conversionAndRestorationStillRequireQualifiedActivation
+   Done TestFreeSurfaceNonlinearAdvectionGuard/conversionAndRestorationStillRequireQualifiedActivation in 1.7502 seconds
+   Running TestFreeSurfaceNonlinearAdvectionGuard/quasigeostrophicTransformsRetainNonlinearAdvection
+   Done TestFreeSurfaceNonlinearAdvectionGuard/quasigeostrophicTransformsRetainNonlinearAdvection in 0.69499 seconds
+  Tearing down TestFreeSurfaceNonlinearAdvectionGuard
+  Done tearing down TestFreeSurfaceNonlinearAdvectionGuard in 0 seconds
+ Done TestFreeSurfaceNonlinearAdvectionGuard in 6.552 seconds
+__________
+
+ Running TestAutomaticFreeSurfaceModeSelection
+  Setting up TestAutomaticFreeSurfaceModeSelection
+  Done setting up TestAutomaticFreeSurfaceModeSelection in 0 seconds
+   Running TestAutomaticFreeSurfaceModeSelection/automaticFamiliesShareBalancedPolicyAndExposeEvidence
+   Done TestAutomaticFreeSurfaceModeSelection/automaticFamiliesShareBalancedPolicyAndExposeEvidence in 1.0547 seconds
+   Running TestAutomaticFreeSurfaceModeSelection/finerGridUsesTheFixedFractionOfEachLinearPrefix
+
+================================================================================
+Verification failed in TestAutomaticFreeSurfaceModeSelection/finerGridUsesTheFixedFractionOfEachLinearPrefix.
+    ---------------------
+    Framework Diagnostic:
+    ---------------------
+    verifyEqual failed.
+    --> The numeric values are not equal using "isequaln".
+    --> The error was not within relative tolerance.
+    --> Failure table:
+                  Actual               Expected                 Error                RelativeError        RelativeTolerance
+            __________________    __________________    _____________________    _____________________    _________________
+
+            0.0250146710390126    0.0250146710390212    -8.52443116095003e-15    -3.40777264176391e-13          1e-13
+
+    Actual Value:
+       0.025014671039013
+    Expected Value:
+       0.025014671039021
+    ------------------
+    Stack Information:
+    ------------------
+    In /Users/jearly/Documents/OceanKitRepositories/wvm-v5-construction-optimization/UnitTests/TestAutomaticFreeSurfaceModeSelection.m (TestAutomaticFreeSurfaceModeSelection.finerGridUsesTheFixedFractionOfEachLinearPrefix) at 50
+================================================================================
+   Done TestAutomaticFreeSurfaceModeSelection/finerGridUsesTheFixedFractionOfEachLinearPrefix in 1.8002 seconds
+   Running TestAutomaticFreeSurfaceModeSelection/explicitCountsAreStrictAndIndependent
+   Done TestAutomaticFreeSurfaceModeSelection/explicitCountsAreStrictAndIndependent in 1.6405 seconds
+   Running TestAutomaticFreeSurfaceModeSelection/fixedBoundariesCannotBeHiddenBySmallWaveCounts
+   Done TestAutomaticFreeSurfaceModeSelection/fixedBoundariesCannotBeHiddenBySmallWaveCounts in 0.42164 seconds
+   Running TestAutomaticFreeSurfaceModeSelection/requestingAReportDoesNotChangeConstruction
+   Done TestAutomaticFreeSurfaceModeSelection/requestingAReportDoesNotChangeConstruction in 0.87363 seconds
+  Tearing down TestAutomaticFreeSurfaceModeSelection
+  Done tearing down TestAutomaticFreeSurfaceModeSelection in 0 seconds
+ Done TestAutomaticFreeSurfaceModeSelection in 5.7907 seconds
+__________
+
+ Running TestWVTransformFreeSurfaceQG
+  Setting up TestWVTransformFreeSurfaceQG
+  Done setting up TestWVTransformFreeSurfaceQG in 0 seconds
+   Running TestWVTransformFreeSurfaceQG/coefficientAnnotationsDriveIntegratorState
+[Warning: The nonlinear flux has no damping and may not be stable.]
+[> In WVModel (line 121)
+In TestWVTransformFreeSurfaceQG/coefficientAnnotationsDriveIntegratorState (line 24)]
+   Done TestWVTransformFreeSurfaceQG/coefficientAnnotationsDriveIntegratorState in 0.9629 seconds
+   Running TestWVTransformFreeSurfaceQG/coefficientAbsoluteTolerancesRespectPhysicalEnergyNormalization
+   Done TestWVTransformFreeSurfaceQG/coefficientAbsoluteTolerancesRespectPhysicalEnergyNormalization in 1.1192 seconds
+   Running TestWVTransformFreeSurfaceQG/endpointConfigurationsHaveCanonicalShapesAndMDAConstraints
+   Done TestWVTransformFreeSurfaceQG/endpointConfigurationsHaveCanonicalShapesAndMDAConstraints in 1.4092 seconds
+   Running TestWVTransformFreeSurfaceQG/automaticModeCountsAreSelectedIndependently
+   Done TestWVTransformFreeSurfaceQG/automaticModeCountsAreSelectedIndependently in 0.33414 seconds
+   Running TestWVTransformFreeSurfaceQG/storedTransformsMatchOnePassFixedQuadratureSelection
+   Done TestWVTransformFreeSurfaceQG/storedTransformsMatchOnePassFixedQuadratureSelection in 0.55544 seconds
+   Running TestWVTransformFreeSurfaceQG/verticalResolutionAssessmentBracketsTheHorizontalLimit
+
+================================================================================
+Verification failed in TestWVTransformFreeSurfaceQG/verticalResolutionAssessmentBracketsTheHorizontalLimit.
+    ---------------------
+    Framework Diagnostic:
+    ---------------------
+    verifyError failed.
+    --> The function threw the wrong exception.
+
+        Actual Exception:
+            'WV:UnconvergedBoundaryModes'
+        Expected Exception:
+            'WVTransformFreeSurfaceQG:UnderresolvedVerticalGrid'
+    --> Actual Error Report:
+            Error using WVInternal.assessFreeSurfaceBoundaryGrid (line 34)
+            Independent zero-APV solves disagree by 0.00904; increase the
+            balanced EVP
+            resolution before assessing the physical grid.
+
+            Error in WVInternal.buildFreeSurfaceBalancedState (line 211)
+                [assessment.boundary,vertical.zeroReference]=WVInternal.assessFreeSurfaceBoundaryGrid(zeroModes,zeroProblem,vertical,inputs,options);
+
+            Error in WVTransformFreeSurfaceQG (line 454)
+                            [state,assessment] =
+                            WVInternal.buildFreeSurfaceBalancedState(Lxyz,Nxyz,options);
+
+            Error in
+            TestWVTransformFreeSurfaceQG>@()WVTransformFreeSurfaceQG([150e3,150e3,4000],[256,256,17],N2Function=N2,latitude=30,g0=0.02,gd=Inf)
+            (line 183)
+                        testCase.verifyError(@()WVTransformFreeSurfaceQG([150e3
+                        150e3 4000],[256 256 17], ...
+
+    Evaluated Function:
+      function_handle with value:
+
+        @()WVTransformFreeSurfaceQG([150e3,150e3,4000],[256,256,17],N2Function=N2,latitude=30,g0=0.02,gd=Inf)
+    ------------------
+    Stack Information:
+    ------------------
+    In /Users/jearly/Documents/OceanKitRepositories/wvm-v5-construction-optimization/UnitTests/TestWVTransformFreeSurfaceQG.m (TestWVTransformFreeSurfaceQG.verticalResolutionAssessmentBracketsTheHorizontalLimit) at 183
+================================================================================
+   Done TestWVTransformFreeSurfaceQG/verticalResolutionAssessmentBracketsTheHorizontalLimit in 3.3447 seconds
+   Running TestWVTransformFreeSurfaceQG/omittedEndpointDefaultsRetainSignedAPVAndUseMajorant
+   Done TestWVTransformFreeSurfaceQG/omittedEndpointDefaultsRetainSignedAPVAndUseMajorant in 1.0057 seconds
+   Running TestWVTransformFreeSurfaceQG/scientificGridAndModeCountsAreNotCallerSelected
+   Done TestWVTransformFreeSurfaceQG/scientificGridAndModeCountsAreNotCallerSelected in 0.064657 seconds
+   Running TestWVTransformFreeSurfaceQG/initializationTolerancesArePersisted
+   Done TestWVTransformFreeSurfaceQG/initializationTolerancesArePersisted in 0.4307 seconds
+   Running TestWVTransformFreeSurfaceQG/densityOnlyConstructionUsesDomainSafeStratification
+   Done TestWVTransformFreeSurfaceQG/densityOnlyConstructionUsesDomainSafeStratification in 0.46079 seconds
+   Running TestWVTransformFreeSurfaceQG/canonicalFamiliesRoundTripIndependentlyAndTogether
+   Done TestWVTransformFreeSurfaceQG/canonicalFamiliesRoundTripIndependentlyAndTogether in 0.31456 seconds
+   Running TestWVTransformFreeSurfaceQG/nonlinearAdvectionSuppliesAndProjectsTheCompleteQGState
+   Done TestWVTransformFreeSurfaceQG/nonlinearAdvectionSuppliesAndProjectsTheCompleteQGState in 0.34426 seconds
+   Running TestWVTransformFreeSurfaceQG/sharedPhysicalStateMatchesDirectForcingEvaluation
+   Done TestWVTransformFreeSurfaceQG/sharedPhysicalStateMatchesDirectForcingEvaluation in 0.4135 seconds
+   Running TestWVTransformFreeSurfaceQG/manufacturedPhysicalTendencyRecoversBothCanonicalFamilies
+   Done TestWVTransformFreeSurfaceQG/manufacturedPhysicalTendencyRecoversBothCanonicalFamilies in 0.48335 seconds
+   Running TestWVTransformFreeSurfaceQG/nonlinearTendencyRespectsEveryEndpointConfiguration
+   Done TestWVTransformFreeSurfaceQG/nonlinearTendencyRespectsEveryEndpointConfiguration in 1.3013 seconds
+   Running TestWVTransformFreeSurfaceQG/shiftedGaussianEddyPopulatesEveryCanonicalFamily
+   Done TestWVTransformFreeSurfaceQG/shiftedGaussianEddyPopulatesEveryCanonicalFamily in 1.3553 seconds
+   Running TestWVTransformFreeSurfaceQG/gaussianVerticalCenterExposesSurfaceDisplacement
+   Done TestWVTransformFreeSurfaceQG/gaussianVerticalCenterExposesSurfaceDisplacement in 0.32307 seconds
+   Running TestWVTransformFreeSurfaceQG/adaptiveGaussianEvolutionUsesDirectSpeedDiagnostic
+dX/U = 582220.2 s (9703.7 min). The highest frequency resolved IGW has period of Inf s (Inf min).
+   Done TestWVTransformFreeSurfaceQG/adaptiveGaussianEvolutionUsesDirectSpeedDiagnostic in 0.9567 seconds
+   Running TestWVTransformFreeSurfaceQG/adaptiveDampingActsOnFreeSurfaceCoefficientFamilies
+   Done TestWVTransformFreeSurfaceQG/adaptiveDampingActsOnFreeSurfaceCoefficientFamilies in 1.0587 seconds
+   Running TestWVTransformFreeSurfaceQG/betaPlaneGaussianEvolutionConvergesUnderRefinement
+[Warning: The nonlinear flux has no damping and may not be stable.]
+[> In WVModel (line 121)
+In TestWVTransformFreeSurfaceQG/betaPlaneGaussianEvolutionConvergesUnderRefinement (line 514)]
+[Warning: The nonlinear flux has no damping and may not be stable.]
+[> In WVModel (line 121)
+In TestWVTransformFreeSurfaceQG/betaPlaneGaussianEvolutionConvergesUnderRefinement (line 514)]
+[Warning: The nonlinear flux has no damping and may not be stable.]
+[> In WVModel (line 121)
+In TestWVTransformFreeSurfaceQG/betaPlaneGaussianEvolutionConvergesUnderRefinement (line 514)]
+[Warning: The nonlinear flux has no damping and may not be stable.]
+[> In WVModel (line 121)
+In TestWVTransformFreeSurfaceQG/betaPlaneGaussianEvolutionConvergesUnderRefinement (line 525)]
+   Done TestWVTransformFreeSurfaceQG/betaPlaneGaussianEvolutionConvergesUnderRefinement in 6.9059 seconds
+   Running TestWVTransformFreeSurfaceQG/axialAndObliqueEntriesReuseTheirKhPage
+   Done TestWVTransformFreeSurfaceQG/axialAndObliqueEntriesReuseTheirKhPage in 0.32742 seconds
+   Running TestWVTransformFreeSurfaceQG/maximumKhZeroAPVResponsesRemainBoundaryNormalized
+   Done TestWVTransformFreeSurfaceQG/maximumKhZeroAPVResponsesRemainBoundaryNormalized in 0.88275 seconds
+   Running TestWVTransformFreeSurfaceQG/constantStratificationZeroAPVModesMatchAnalyticSolution
+   Done TestWVTransformFreeSurfaceQG/constantStratificationZeroAPVModesMatchAnalyticSolution in 0.4422 seconds
+   Running TestWVTransformFreeSurfaceQG/variableStratificationZeroAPVModesConvergeSpectrally
+   Done TestWVTransformFreeSurfaceQG/variableStratificationZeroAPVModesConvergeSpectrally in 0.71659 seconds
+   Running TestWVTransformFreeSurfaceQG/selectedNonlinearTendencyIsStableUnderGridRefinement
+   Done TestWVTransformFreeSurfaceQG/selectedNonlinearTendencyIsStableUnderGridRefinement in 1.3878 seconds
+   Running TestWVTransformFreeSurfaceQG/nearLimitAPVEndpointCrossTendencyConvergesWithVerticalRefinement
+   Done TestWVTransformFreeSurfaceQG/nearLimitAPVEndpointCrossTendencyConvergesWithVerticalRefinement in 4.5814 seconds
+   Running TestWVTransformFreeSurfaceQG/snapshotPersistsRepresentationAndDirectConstructionSkipsModeSolver
+WVTransformFreeSurfaceQG initialized from Ag_q, Ag_0, Amda.
+   Done TestWVTransformFreeSurfaceQG/snapshotPersistsRepresentationAndDirectConstructionSkipsModeSolver in 1.8178 seconds
+   Running TestWVTransformFreeSurfaceQG/inactiveZeroFamilyIsPhysicallyOmitted
+WVTransformFreeSurfaceQG initialized from Ag_q, Amda.
+   Done TestWVTransformFreeSurfaceQG/inactiveZeroFamilyIsPhysicallyOmitted in 0.9855 seconds
+   Running TestWVTransformFreeSurfaceQG/modelOutputUsesOneFlatCommittedCoefficientStream
+[Warning: The nonlinear flux has no damping and may not be stable.]
+[> In WVModel (line 121)
+In TestWVTransformFreeSurfaceQG/modelOutputUsesOneFlatCommittedCoefficientStream (line 742)]
+Ending simulation. Wrote 3 time points to wave-vortex group
+Ending simulation. Wrote 2 time points to fields group
+WVTransformFreeSurfaceQG initialized from Ag_q, Ag_0, Amda.
+[Warning: The nonlinear flux has no damping and may not be stable.]
+[> In WVModel (line 121)
+In WVModel.modelFromFile (line 28)
+In TestWVTransformFreeSurfaceQG/modelOutputUsesOneFlatCommittedCoefficientStream (line 765)]
+Ending simulation. Wrote 3 time points to wave-vortex group
+Ending simulation. Wrote 2 time points to fields group
+   Done TestWVTransformFreeSurfaceQG/modelOutputUsesOneFlatCommittedCoefficientStream in 1.5376 seconds
+   Running TestWVTransformFreeSurfaceQG/partialRecordIsIgnoredAndOverwrittenOnResume
+[Warning: The nonlinear flux has no damping and may not be stable.]
+[> In WVModel (line 121)
+In TestWVTransformFreeSurfaceQG/partialRecordIsIgnoredAndOverwrittenOnResume (line 782)]
+Ending simulation. Wrote 1 time points to wave-vortex group
+WVTransformFreeSurfaceQG initialized from Ag_q, Ag_0, Amda.
+[Warning: The nonlinear flux has no damping and may not be stable.]
+[> In WVModel (line 121)
+In WVModel.modelFromFile (line 28)
+In TestWVTransformFreeSurfaceQG/partialRecordIsIgnoredAndOverwrittenOnResume (line 795)]
+Ending simulation. Wrote 2 time points to wave-vortex group
+   Done TestWVTransformFreeSurfaceQG/partialRecordIsIgnoredAndOverwrittenOnResume in 1.2604 seconds
+   Running TestWVTransformFreeSurfaceQG/finiteTimePrefixRejectsHoles
+   Done TestWVTransformFreeSurfaceQG/finiteTimePrefixRejectsHoles in 0.055427 seconds
+   Running TestWVTransformFreeSurfaceQG/timeCommitIsAcceptedWithoutAnExplicitFinalSync
+   Done TestWVTransformFreeSurfaceQG/timeCommitIsAcceptedWithoutAnExplicitFinalSync in 0.041242 seconds
+   Running TestWVTransformFreeSurfaceQG/multipleCompleteStreamsAreRejectedBeforeCreation
+[Warning: The nonlinear flux has no damping and may not be stable.]
+[> In WVModel (line 121)
+In TestWVTransformFreeSurfaceQG/multipleCompleteStreamsAreRejectedBeforeCreation (line 866)]
+   Done TestWVTransformFreeSurfaceQG/multipleCompleteStreamsAreRejectedBeforeCreation in 0.35452 seconds
+  Tearing down TestWVTransformFreeSurfaceQG
+  Done tearing down TestWVTransformFreeSurfaceQG in 0 seconds
+ Done TestWVTransformFreeSurfaceQG in 37.5348 seconds
+__________
+
+ Running TestPerKappaWavePersistence
+  Setting up TestPerKappaWavePersistence
+  Done setting up TestPerKappaWavePersistence in 0 seconds
+   Running TestPerKappaWavePersistence/storedOperatorsAndCountsRoundTrip
+
+================================================================================
+Verification failed in TestPerKappaWavePersistence/storedOperatorsAndCountsRoundTrip.
+    ---------------------
+    Framework Diagnostic:
+    ---------------------
+    verifyEqual failed.
+    --> Classes do not match.
+
+        Actual Class:
+            char
+        Expected Class:
+            string
+
+    Actual char:
+        fixedFraction
+    Expected Value:
+        "fixedFraction"
+    ------------------
+    Stack Information:
+    ------------------
+    In /Users/jearly/Documents/OceanKitRepositories/wvm-v5-construction-optimization/UnitTests/TestPerKappaWavePersistence.m (TestPerKappaWavePersistence.storedOperatorsAndCountsRoundTrip) at 16
+================================================================================
+
+================================================================================
+Verification failed in TestPerKappaWavePersistence/storedOperatorsAndCountsRoundTrip.
+    ---------------------
+    Framework Diagnostic:
+    ---------------------
+    verifyEqual failed.
+    --> Classes do not match.
+
+        Actual Class:
+            char
+        Expected Class:
+            string
+
+    Actual char:
+        fixedFraction
+    Expected Value:
+        "fixedFraction"
+    ------------------
+    Stack Information:
+    ------------------
+    In /Users/jearly/Documents/OceanKitRepositories/wvm-v5-construction-optimization/UnitTests/TestPerKappaWavePersistence.m (TestPerKappaWavePersistence.storedOperatorsAndCountsRoundTrip) at 21
+================================================================================
+
+================================================================================
+Verification failed in TestPerKappaWavePersistence/storedOperatorsAndCountsRoundTrip.
+    ---------------------
+    Framework Diagnostic:
+    ---------------------
+    verifyEqual failed.
+    --> Classes do not match.
+
+        Actual Class:
+            char
+        Expected Class:
+            string
+
+    Actual char:
+        fixedFraction
+    Expected Value:
+        "fixedFraction"
+    ------------------
+    Stack Information:
+    ------------------
+    In /Users/jearly/Documents/OceanKitRepositories/wvm-v5-construction-optimization/UnitTests/TestPerKappaWavePersistence.m (TestPerKappaWavePersistence.storedOperatorsAndCountsRoundTrip) at 16
+================================================================================
+
+================================================================================
+Verification failed in TestPerKappaWavePersistence/storedOperatorsAndCountsRoundTrip.
+    ---------------------
+    Framework Diagnostic:
+    ---------------------
+    verifyEqual failed.
+    --> Classes do not match.
+
+        Actual Class:
+            char
+        Expected Class:
+            string
+
+    Actual char:
+        fixedFraction
+    Expected Value:
+        "fixedFraction"
+    ------------------
+    Stack Information:
+    ------------------
+    In /Users/jearly/Documents/OceanKitRepositories/wvm-v5-construction-optimization/UnitTests/TestPerKappaWavePersistence.m (TestPerKappaWavePersistence.storedOperatorsAndCountsRoundTrip) at 21
+================================================================================
+   Done TestPerKappaWavePersistence/storedOperatorsAndCountsRoundTrip in 5.8528 seconds
+   Running TestPerKappaWavePersistence/legacyUniformFileDefaultsToFullPrefixes
+   Done TestPerKappaWavePersistence/legacyUniformFileDefaultsToFullPrefixes in 0.98317 seconds
+   Running TestPerKappaWavePersistence/countTransferAccountsForDiscardedModes
+   Done TestPerKappaWavePersistence/countTransferAccountsForDiscardedModes in 5.3139 seconds
+   Running TestPerKappaWavePersistence/horizontalRefinementNeedsNewCounts
+   Done TestPerKappaWavePersistence/horizontalRefinementNeedsNewCounts in 3.3953 seconds
+   Running TestPerKappaWavePersistence/modelOutputRestartsWithInactiveStorage
+[Warning: The nonlinear flux has no damping and may not be stable.]
+[> In WVModel (line 121)
+In TestPerKappaWavePersistence/modelOutputRestartsWithInactiveStorage (line 94)]
+[Warning: The nonlinear flux has no damping and may not be stable.]
+[> In WVModel (line 121)
+In TestPerKappaWavePersistence/modelOutputRestartsWithInactiveStorage (line 97)]
+Ending simulation. Wrote 5 time points to wave-vortex group
+[Warning: The nonlinear flux has no damping and may not be stable.]
+[> In WVModel (line 121)
+In WVModel.modelFromFile (line 28)
+In TestPerKappaWavePersistence/modelOutputRestartsWithInactiveStorage (line 103)]
+Ending simulation. Wrote 9 time points to wave-vortex group
+[Warning: The nonlinear flux has no damping and may not be stable.]
+[> In WVModel (line 121)
+In TestPerKappaWavePersistence/modelOutputRestartsWithInactiveStorage (line 94)]
+[Warning: The nonlinear flux has no damping and may not be stable.]
+[> In WVModel (line 121)
+In TestPerKappaWavePersistence/modelOutputRestartsWithInactiveStorage (line 97)]
+Ending simulation. Wrote 5 time points to wave-vortex group
+[Warning: The nonlinear flux has no damping and may not be stable.]
+[> In WVModel (line 121)
+In WVModel.modelFromFile (line 28)
+In TestPerKappaWavePersistence/modelOutputRestartsWithInactiveStorage (line 103)]
+Ending simulation. Wrote 9 time points to wave-vortex group
+   Done TestPerKappaWavePersistence/modelOutputRestartsWithInactiveStorage in 7.5989 seconds
+  Tearing down TestPerKappaWavePersistence
+  Done tearing down TestPerKappaWavePersistence in 0 seconds
+ Done TestPerKappaWavePersistence in 23.144 seconds
+__________
+
+ Running TestFreeSurfaceResolutionTransfer
+  Setting up TestFreeSurfaceResolutionTransfer
+  Done setting up TestFreeSurfaceResolutionTransfer in 0 seconds
+   Running TestFreeSurfaceResolutionTransfer/samplingRefinementPreservesResolvedContent
+   Done TestFreeSurfaceResolutionTransfer/samplingRefinementPreservesResolvedContent in 17.694 seconds
+   Running TestFreeSurfaceResolutionTransfer/independentCountsAndDiscardedPhysicalField
+   Done TestFreeSurfaceResolutionTransfer/independentCountsAndDiscardedPhysicalField in 7.7094 seconds
+   Running TestFreeSurfaceResolutionTransfer/phaseNormalizationAndPhysicalLabels
+   Done TestFreeSurfaceResolutionTransfer/phaseNormalizationAndPhysicalLabels in 0.92358 seconds
+   Running TestFreeSurfaceResolutionTransfer/incompatibleRepresentationsRejectWithoutMutation
+   Done TestFreeSurfaceResolutionTransfer/incompatibleRepresentationsRejectWithoutMutation in 1.7961 seconds
+   Running TestFreeSurfaceResolutionTransfer/pureFamiliesAndStrictRequests
+
+================================================================================
+Verification failed in TestFreeSurfaceResolutionTransfer/pureFamiliesAndStrictRequests.
+    ---------------------
+    Framework Diagnostic:
+    ---------------------
+    verifyError failed.
+    --> The function threw the wrong exception.
+
+        Actual Exception:
+            'WV:StrictAPVModeCountRejected'
+        Expected Exception:
+            'IMBasisSet:InsufficientDiscreteSamples'
+    --> Actual Error Report:
+            Error using WVInternal.buildFreeSurfaceBalancedModes (line 61)
+            The explicit APV count 100 exceeds the converged or fixed-grid Gram
+            prefix 38.
+
+            Error in WVInternal.buildFreeSurfaceBalancedState (line 33)
+            vertical =
+            WVInternal.buildFreeSurfaceBalancedModes(Lz,Nxyz(3),N2Function,verticalOptions);
+
+            Error in WVTransformFreeSurfaceQG (line 454)
+                            [state,assessment] =
+                            WVInternal.buildFreeSurfaceBalancedState(Lxyz,Nxyz,options);
+
+            Error in WVTransformFreeSurfaceQG/waveVortexTransformWithResolution
+            (line 35)
+            other=WVTransformFreeSurfaceQG([self.Lx self.Ly
+            self.Lz],Nxyz,args{:});
+
+            Error in
+            TestFreeSurfaceResolutionTransfer>@()qg.waveVortexTransformWithResolution([8,8,65],apvModeCount=100)
+            (line 124)
+                        testCase.verifyError(@()qg.waveVortexTransformWithResolution([8
+                        8
+                        65],apvModeCount=100),'IMBasisSet:InsufficientDiscreteSamples')
+
+    Evaluated Function:
+      function_handle with value:
+
+        @()qg.waveVortexTransformWithResolution([8,8,65],apvModeCount=100)
+    ------------------
+    Stack Information:
+    ------------------
+    In /Users/jearly/Documents/OceanKitRepositories/wvm-v5-construction-optimization/UnitTests/TestFreeSurfaceResolutionTransfer.m (TestFreeSurfaceResolutionTransfer.pureFamiliesAndStrictRequests) at 124
+================================================================================
+   Done TestFreeSurfaceResolutionTransfer/pureFamiliesAndStrictRequests in 4.7505 seconds
+   Running TestFreeSurfaceResolutionTransfer/activeAndInactiveEndpointsSurviveTransfer
+   Done TestFreeSurfaceResolutionTransfer/activeAndInactiveEndpointsSurviveTransfer in 14.2256 seconds
+   Running TestFreeSurfaceResolutionTransfer/forcingConversionIsExplicitAndAtomic
+   Done TestFreeSurfaceResolutionTransfer/forcingConversionIsExplicitAndAtomic in 6.5922 seconds
+   Running TestFreeSurfaceResolutionTransfer/transferredStateRestartsAndContinues
+Ending simulation. Wrote 3 time points to wave-vortex group
+WVTransformFreeSurfaceQG initialized from Ag_q, Ag_0, Amda.
+Ending simulation. Wrote 5 time points to wave-vortex group
+Ending simulation. Wrote 3 time points to wave-vortex group
+WVTransformFreeSurfaceQG initialized from Ag_q, Ag_0, Amda.
+Ending simulation. Wrote 5 time points to wave-vortex group
+[Warning: The nonlinear flux has no damping and may not be stable.]
+[> In WVModel (line 121)
+In TestFreeSurfaceResolutionTransfer.runStudy (line 190)
+In TestFreeSurfaceResolutionTransfer/transferredStateRestartsAndContinues (line 167)]
+[Warning: The nonlinear flux has no damping and may not be stable.]
+[> In WVModel (line 121)
+In TestFreeSurfaceResolutionTransfer.runStudy (line 193)
+In TestFreeSurfaceResolutionTransfer/transferredStateRestartsAndContinues (line 167)]
+Ending simulation. Wrote 3 time points to wave-vortex group
+[Warning: The nonlinear flux has no damping and may not be stable.]
+[> In WVModel (line 121)
+In WVModel.modelFromFile (line 28)
+In TestFreeSurfaceResolutionTransfer.runStudy (line 201)
+In TestFreeSurfaceResolutionTransfer/transferredStateRestartsAndContinues (line 167)]
+Ending simulation. Wrote 5 time points to wave-vortex group
+[Warning: The nonlinear flux has no damping and may not be stable.]
+[> In WVModel (line 121)
+In TestFreeSurfaceResolutionTransfer.runStudy (line 190)
+In TestFreeSurfaceResolutionTransfer/transferredStateRestartsAndContinues (line 167)]
+[Warning: The nonlinear flux has no damping and may not be stable.]
+[> In WVModel (line 121)
+In TestFreeSurfaceResolutionTransfer.runStudy (line 193)
+In TestFreeSurfaceResolutionTransfer/transferredStateRestartsAndContinues (line 167)]
+Ending simulation. Wrote 3 time points to wave-vortex group
+[Warning: The nonlinear flux has no damping and may not be stable.]
+[> In WVModel (line 121)
+In WVModel.modelFromFile (line 28)
+In TestFreeSurfaceResolutionTransfer.runStudy (line 201)
+In TestFreeSurfaceResolutionTransfer/transferredStateRestartsAndContinues (line 167)]
+Ending simulation. Wrote 5 time points to wave-vortex group
+   Done TestFreeSurfaceResolutionTransfer/transferredStateRestartsAndContinues in 22.7491 seconds
+  Tearing down TestFreeSurfaceResolutionTransfer
+  Done tearing down TestFreeSurfaceResolutionTransfer in 0 seconds
+ Done TestFreeSurfaceResolutionTransfer in 76.4404 seconds
+__________
+
+Failure Summary:
+
+     Name                                                                                   Failed  Incomplete  Reason(s)
+    ====================================================================================================================================
+     TestAutomaticFreeSurfaceModeSelection/finerGridUsesTheFixedFractionOfEachLinearPrefix    X                 Failed by verification.
+    ------------------------------------------------------------------------------------------------------------------------------------
+     TestWVTransformFreeSurfaceQG/verticalResolutionAssessmentBracketsTheHorizontalLimit      X                 Failed by verification.
+    ------------------------------------------------------------------------------------------------------------------------------------
+     TestPerKappaWavePersistence/storedOperatorsAndCountsRoundTrip                            X                 Failed by verification.
+    ------------------------------------------------------------------------------------------------------------------------------------
+     TestFreeSurfaceResolutionTransfer/pureFamiliesAndStrictRequests                          X                 Failed by verification.
+        environment: [1×1 struct]
+              files: [1×6 string]
+          startedAt: "14-Sep-2026 17:38:00"
+              count: 62
+             passed: 58
+             failed: 4
+         incomplete: 0
+    durationSeconds: 166.86 sec
+            results: [1×62 struct]

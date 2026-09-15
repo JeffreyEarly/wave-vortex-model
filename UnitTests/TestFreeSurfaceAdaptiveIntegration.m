@@ -183,7 +183,7 @@ classdef TestFreeSurfaceAdaptiveIntegration < matlab.unittest.TestCase
 
         function nonlinearDampedRestartAgreesWithContinuation(testCase,policy)
             fixture=testCase.applyFixture(matlab.unittest.fixtures.TemporaryFolderFixture);
-            wvt=WVTransformFreeSurfaceBoussinesq.fromStratification([1e5 1e5 1000],[8 8 65],N2Function=@(z)1e-4+0*z,apvModeCount=2,mdaModeCount=2,inertialModeCount=2,waveModeCount=3,nEVP=128,shouldAntialias=true,shouldCheckQuadraticAliasing=true);
+            wvt=WVTransformFreeSurfaceBoussinesq.fromStratification([1e5 1e5 1000],[8 8 65],N2Function=@(z)1e-4+0*z,apvModeCount=2,mdaModeCount=2,inertialModeCount=2,waveModeCount=3,nEVP=128,shouldAntialias=true,quadraticDealiasing="fixedFraction");
             wvt.Amda(1:2)=wvt.mdaG([end 1],1:2)\[2;-2];
             wvt.Aw_p(1,1)=1e-4*exp(.3i); wvt.Aw_m(2,2)=2e-4*exp(.7i);
             wvt.Ag_q(1,2)=1e-9; wvt.Ag_0(1,1)=1e-10;

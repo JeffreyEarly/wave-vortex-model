@@ -8,7 +8,10 @@ nav_order: 100
 
 ## [Unreleased]
 
-- Require `InternalModes@^2.0.0-beta.6`, allowing beta.6 and later compatible 2.x versions while excluding older betas and 3.x. Routine CI and package verification use the immutable beta.6 OceanKit snapshot, including cutoff-safe mode-sign orientation, shared construction optimizations and mode-local MDA null-norm classification. Historical experiment pins and scientific tolerances are preserved.
+- Require `InternalModes@^2.0.0-beta.7` for common-coordinate quadratic-filtering evidence, retaining the existing orientation and construction optimizations. Routine CI and package verification use the immutable beta.7 OceanKit snapshot. Historical experiment pins and independent linear scientific tolerances are preserved.
+
+- Add `quadraticDealiasing="none"`, `"fixedFraction"`, and `"effectiveBandwidth"` to free-surface Boussinesq and shared QG/APV construction. Use the same policy and parameters for wave/APV prefixes, preserve strict explicit counts, and reuse existing fine-grid convergence samples for spectral scoring.
+- Persist policy parameters through reconstruction and resolution changes. Explicit `"none"` permits nonlinear registration; horizontal antialiasing remains separate. New files use the new policy metadata without an adapter for older experimental files.
 
 - Add read-only thermal APV/zero-APV decomposition with an independently selected diagnostic band, original horizontal means, explicit physical residuals, complete self/cross inventories and directional rates. Reuse prepared stored-array maps across committed output records; restore and diagnose saved arrays without scientific construction. Modal power remains distinct from physical energy and damping coordinates.
 
@@ -26,8 +29,6 @@ nav_order: 100
 - Add explicit `tolerancePolicy="family"` for v5 QG and Boussinesq, with independently calibrated or user-specified PV, surface, and bottom scales. Preserve the policy through restart; legacy scalar energy behavior remains the default.
 - Add a deforming zero-APV boundary-vortex example, a bounded policy comparison, and production-setting qualification.
 
-- Qualify the complete bounded product inventory during free-surface Boussinesq construction without applying study resource caps. This permits larger horizontal grids while preserving mode-convergence and quadratic-error checks; standalone study budgets remain unchanged.
-
 ### Free-surface Boussinesq adaptive damping
 
 - Support `WVAdaptiveDamping` with a common horizontal rate for every active Boussinesq mode at each wavenumber, including external surface waves. This preserves combined boundary-anomaly cancellations and dissipates positive quadratic budgets with their actual normalization.
@@ -40,11 +41,10 @@ nav_order: 100
 - Use upper-constant reference density, the stated `p(surface)=rho0*g*ssh` approximation and `g*ssh^2/2` surface energy. Keep quadratic `physicalEnergy`/`totalEnergy` separate from moving-volume `nonlinearEnergy`; distinguish actual resolved energy change from prescribed physical work.
 - Preserve supported source coordinates, absolute forcing clocks, observers and native restarts. Persist the explicit upper-constant field convention and reject incompatible beta files; no mode or pressure solve is needed to restore stored scientific operators.
 
-### Linear mode qualification
+### Linear mode acceptance and quadratic filtering
 
-- The experimental linear Boussinesq constructor defaults to `shouldCheckQuadraticAliasing=false` and `shouldAntialias=false`; QG retains both nonlinear defaults. Linear selection preserves the independently converged, physical-grid-supported prefixes without APV, cross-family or wave-product filtering.
-- Quadratic qualification is an explicit persisted construction choice. Unrequested products are not computed and are reported as unassessed. Configured endpoint-resolution checks and strict explicit counts remain active.
-- Bound automatic APV quadratic candidate growth, stopping after a measured cumulative prefix rejection instead of evaluating an unusable high-mode tail.
+- Independent convergence and physical-grid Gram checks establish linear prefixes before optional quadratic filtering. Configured endpoint-resolution checks and strict explicit counts remain active.
+- Quadratic filtering replaces construction-time product qualification with a practical heuristic. It reports the linear limit, filtering limit, and selected count without claiming exhaustive nonlinear certification. Thermal QG retains its separate mapped-quadrature check.
 - Avoid normalizing an unusable MDA candidate tail when a shorter physical-grid-qualified prefix exists. A bounded candidate search must establish a measured Gram cutoff; independent references cover the selected balanced prefixes. The provider normalization guard and scientific tolerances are unchanged.
 
 
@@ -52,13 +52,13 @@ nav_order: 100
 
 - Select omitted free-surface family counts automatically: shared QG/Boussinesq APV and MDA policy, per-wavenumber wave prefixes, and independent inertial modes. Explicit counts remain strict.
 - Use `gramTolerance` throughout the unreleased API and canonical saved fields, without renamed-tolerance aliases or migration. Always check independent mode convergence, and qualify fixed zero-APV derivatives and energy separately from scalar Gram matrices.
-- Reuse packaged internal product measurements for bounded complete-map quadratic checks. Stream output pages, reuse evidence across count trials, report unknown coverage explicitly, and expose construction evidence and costs. Add a reproducible mode-count example; this does not qualify full nonlinear Boussinesq dynamics.
+- Expose construction evidence and costs for independent linear acceptance and inexpensive quadratic filtering. Add a reproducible mode-count example; this does not qualify full nonlinear Boussinesq dynamics.
 
 ### Per-kappa retained wave counts
 
 - Accept explicit physical-wavenumber/count maps in the experimental free-surface Boussinesq transform, including zero-wave pages. Keep scalar counts, independent inertial/balanced families and the existing rectangular coefficient arrays; inactive entries remain zero and do not enter polarization or projection.
 - Preserve count maps through output, restart and resolution transfer. Older uniform-count files load as full prefixes. New horizontal wavenumbers require explicit counts when transferring a nonuniform source map; discarded content is reported through the existing physical transfer assessment.
-- Expose candidate and selected counts with independent-reference, fixed-grid and bounded quadratic evidence. Preserve the resolved adiabatic families and reject explicit counts that fail their qualification.
+- Expose candidate, linear, filtering, and selected counts with independent-reference and fixed-grid evidence. Preserve the resolved adiabatic families and reject explicit counts above the applicable limits.
 
 ### InternalModes beta dependency
 

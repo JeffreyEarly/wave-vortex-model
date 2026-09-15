@@ -125,7 +125,7 @@ classdef TestFreeSurfaceNonlinearEvolution < matlab.unittest.TestCase
 end
 
 function [wvt,study,state] = fixture()
-wvt = WVTransformFreeSurfaceBoussinesq.fromStratification([1e5 1e5 1000],[8 8 65],N2Function=@(z)1e-4+zeros(size(z)),apvModeCount=2,mdaModeCount=2,inertialModeCount=2,waveModeCount=3,nEVP=128,shouldAntialias=true,shouldCheckQuadraticAliasing=true);
+wvt = WVTransformFreeSurfaceBoussinesq.fromStratification([1e5 1e5 1000],[8 8 65],N2Function=@(z)1e-4+zeros(size(z)),apvModeCount=2,mdaModeCount=2,inertialModeCount=2,waveModeCount=3,nEVP=128,shouldAntialias=true,quadraticDealiasing="fixedFraction");
 wvt.t0 = -17;
 study = manuscriptEvolutionOperators(wvt,"constant",padding=1);
 state = study.seed("mixed",1);

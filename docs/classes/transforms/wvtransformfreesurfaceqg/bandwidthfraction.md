@@ -1,15 +1,17 @@
 ---
 layout: default
-title: apvZeroAPVLimitingModeNumber
+title: bandwidthFraction
 parent: WVTransformFreeSurfaceQG
 grand_parent: Transforms
 nav_order: 53
 mathjax: true
 ---
 
-#  apvZeroAPVLimitingModeNumber
+#  bandwidthFraction
 
-APV physical mode label limiting the APV/zero-APV product error.
+Vertical grid-degree share used by effectiveBandwidth.
+
+> Developer documentation: this item describes internal implementation details.
 
 
 ---

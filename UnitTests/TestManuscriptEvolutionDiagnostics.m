@@ -8,7 +8,7 @@ classdef TestManuscriptEvolutionDiagnostics < matlab.unittest.TestCase
         function prepare(testCase)
             root=fileparts(fileparts(mfilename('fullpath')));
             testCase.applyFixture(matlab.unittest.fixtures.PathFixture(fullfile(root,'tools','nonlinear-study')));
-            w=WVTransformFreeSurfaceBoussinesq.fromStratification([1e5 1e5 1000],[8 8 129],N2Function=@(z)1e-4*exp(z/650),apvModeCount=4,waveModeCount=6,mdaModeCount=4,inertialModeCount=4,nEVP=256,shouldAntialias=true,shouldCheckQuadraticAliasing=true);
+            w=WVTransformFreeSurfaceBoussinesq.fromStratification([1e5 1e5 1000],[8 8 129],N2Function=@(z)1e-4*exp(z/650),apvModeCount=4,waveModeCount=6,mdaModeCount=4,inertialModeCount=4,nEVP=256,shouldAntialias=true,quadraticDealiasing="fixedFraction");
             w.t0=-17;
             testCase.transform=w;
             testCase.study=manuscriptEvolutionOperators(w,"exponential");

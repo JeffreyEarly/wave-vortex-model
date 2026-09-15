@@ -11,7 +11,7 @@ classdef TestThermalAPVDiagnostics < matlab.unittest.TestCase
                 a=(j-1)/1300; N2=@(z)1e-4*exp(2*a*z);
                 w=WVTransformFreeSurfaceThermalQG.fromStratification([1e5 1e5 1000],[8 8 129],N2Function=N2,thermalModeCount=33,mdaModeCount=4);
                 testCase.thermalStates{j}=w.scientificState;
-                testCase.diagnosticTransforms{j}=WVTransformFreeSurfaceQG([1e5 1e5 1000],[8 8 129],N2Function=N2,apvModeCount=6,mdaModeCount=1,shouldCheckQuadraticAliasing=false);
+                testCase.diagnosticTransforms{j}=WVTransformFreeSurfaceQG([1e5 1e5 1000],[8 8 129],N2Function=N2,apvModeCount=6,mdaModeCount=1,quadraticDealiasing="none");
             end
         end
     end
@@ -120,7 +120,7 @@ classdef TestThermalAPVDiagnostics < matlab.unittest.TestCase
         end
         function richerBandDoesNotRequireThermalRightInverse(testCase)
             source=WVTransformFreeSurfaceThermalQG.fromStratification([1e5 1e5 1000],[8 8 129],N2Function=@(z)1e-4+zeros(size(z)),thermalModeCount=17,mdaModeCount=2);
-            apv=WVTransformFreeSurfaceQG([1e5 1e5 1000],[8 8 257],N2Function=source.N2Function,apvModeCount=20,mdaModeCount=1,shouldCheckQuadraticAliasing=false); thermalManufacturedState(source,[2 3 4],100);
+            apv=WVTransformFreeSurfaceQG([1e5 1e5 1000],[8 8 257],N2Function=source.N2Function,apvModeCount=20,mdaModeCount=1,quadraticDealiasing="none"); thermalManufacturedState(source,[2 3 4],100);
             d=source.apvDecomposition(apv,quadratureCount=513);
             testCase.verifySize(d.coefficients.Ag_q,[20 numel(source.klNonzero)]);
             testCase.verifyGreaterThan(apv.apvModeCount+2,source.thermalModeCount);
@@ -144,7 +144,7 @@ classdef TestThermalAPVDiagnostics < matlab.unittest.TestCase
             testCase.verifyEqual(preparationCalls(info),1);
             testCase.verifyEqual(changed.coefficients.Ag_q,2*first.coefficients.Ag_q);
             w.Ath=original.Ath; apv.t=0; w.t=0;
-            other=WVTransformFreeSurfaceQG([w.Lx w.Ly w.Lz],[w.Nx w.Ny 129],N2Function=w.N2Function,g0=1.2*apv.g0,gd=.8*apv.gd,apvModeCount=8,mdaModeCount=1,shouldCheckQuadraticAliasing=false);
+            other=WVTransformFreeSurfaceQG([w.Lx w.Ly w.Lz],[w.Nx w.Ny 129],N2Function=w.N2Function,g0=1.2*apv.g0,gd=.8*apv.gd,apvModeCount=8,mdaModeCount=1,quadraticDealiasing="none");
             profile resume
             w.apvDecomposition(other,quadratureCount=257);
             w.apvDecomposition(other,quadratureCount=513);

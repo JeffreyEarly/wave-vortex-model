@@ -3,7 +3,7 @@ layout: default
 title: indicesOfFourierConjugates
 parent: WVTransformFreeSurfaceQG
 grand_parent: Transforms
-nav_order: 111
+nav_order: 110
 mathjax: true
 ---
 

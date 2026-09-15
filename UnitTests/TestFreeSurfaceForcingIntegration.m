@@ -107,7 +107,7 @@ classdef TestFreeSurfaceForcingIntegration < matlab.unittest.TestCase
 end
 
 function wvt = newTransform()
-wvt = WVTransformFreeSurfaceBoussinesq.fromStratification([1e5 1e5 1000],[8 8 65],N2Function=@(z)1e-4+zeros(size(z)),shouldAntialias=true,shouldCheckQuadraticAliasing=true,apvModeCount=2,mdaModeCount=2,waveModeCount=3,inertialModeCount=2,nEVP=128);
+wvt = WVTransformFreeSurfaceBoussinesq.fromStratification([1e5 1e5 1000],[8 8 65],N2Function=@(z)1e-4+zeros(size(z)),shouldAntialias=true,quadraticDealiasing="fixedFraction",apvModeCount=2,mdaModeCount=2,waveModeCount=3,inertialModeCount=2,nEVP=128);
 end
 
 function [wvt,study,state] = seededTransform()

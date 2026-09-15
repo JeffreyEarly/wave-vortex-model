@@ -1,15 +1,15 @@
 ---
 layout: default
-title: shouldCheckQuadraticAliasing
+title: energyFraction
 parent: WVTransformFreeSurfaceQG
 grand_parent: Transforms
-nav_order: 209
+nav_order: 85
 mathjax: true
 ---
 
-#  shouldCheckQuadraticAliasing
+#  energyFraction
 
-Whether scientific construction checks quadratic products.
+Cumulative spectral-energy fraction used by effectiveBandwidth.
 
 > Developer documentation: this item describes internal implementation details.
 

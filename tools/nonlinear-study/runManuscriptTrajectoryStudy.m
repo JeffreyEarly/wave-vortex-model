@@ -22,7 +22,7 @@ referenceInitial=[]; referenceFinal=[]; tStart=327;
 for configuration=options.configurations
     c=counts(configuration,:);
     N2=@(z)1e-4+0*z; if options.profile=="exponential", N2=@(z)1e-4*exp(z/650); end
-    constructor=struct(N2Function=N2,apvModeCount=c(1),waveModeCount=c(2),mdaModeCount=c(3),inertialModeCount=c(4),nEVP=256,shouldAntialias=true,shouldCheckQuadraticAliasing=true);
+    constructor=struct(N2Function=N2,apvModeCount=c(1),waveModeCount=c(2),mdaModeCount=c(3),inertialModeCount=c(4),nEVP=256,shouldAntialias=true,quadraticDealiasing="fixedFraction");
     clock=tic; args=namedargs2cell(constructor);
     w=WVTransformFreeSurfaceBoussinesq.fromStratification([1e5 1e5 1000],[options.Nxy options.Nxy options.Nz],args{:});
     if options.shouldUseRaggedWaves

@@ -3,7 +3,7 @@ layout: default
 title: transformToSpatialDomainWithFourier
 parent: WVTransformFreeSurfaceQG
 grand_parent: Transforms
-nav_order: 246
+nav_order: 241
 mathjax: true
 ---
 

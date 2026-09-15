@@ -17,7 +17,7 @@ checkpointPath = fullfile(outputFolder,'variable-count-checkpoint.nc');
 referencePath = fullfile(outputFolder,'variable-count-reference.mat');
 if stage=="write"
     if ~isfolder(outputFolder), mkdir(outputFolder); end
-    options = struct(N2Function=@(z)1e-4+zeros(size(z)),apvModeCount=2,mdaModeCount=2,inertialModeCount=2,waveModeCount=3,shouldCheckQuadraticAliasing=true,shouldAntialias=true);
+    options = struct(N2Function=@(z)1e-4+zeros(size(z)),apvModeCount=2,mdaModeCount=2,inertialModeCount=2,waveModeCount=3,quadraticDealiasing="fixedFraction",shouldAntialias=true);
     args = namedargs2cell(options);
     base = WVTransformFreeSurfaceBoussinesq.fromStratification([1e5 1e5 1000],[8 8 65],args{:});
     choices = [3;2;0];

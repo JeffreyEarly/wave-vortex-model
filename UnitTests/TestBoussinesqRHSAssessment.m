@@ -74,7 +74,7 @@ classdef TestBoussinesqRHSAssessment < matlab.unittest.TestCase
             again=WVInternal.evaluateBoussinesqRHSAssessment(p,[8 6 33]);
             testCase.verifyEqual(again.tendency,e.tendency)
             testCase.verifyEqual(p.transform.coefficientState(),state)
-            testCase.verifyFalse(w.shouldCheckQuadraticAliasing)
+            testCase.verifyEqual(w.quadraticDealiasing,"fixedFraction")
             h=e; h.grid=[16 12 33]; v=e; v.grid=[8 6 65];
             report=WVInternal.assessBoussinesqRHSResolution(e,e,{h,v}); testCase.verifyTrue(report.accepted)
             report=WVInternal.assessBoussinesqRHSResolution(e,e,{h}); testCase.verifyEqual(report.status,"reference-inconclusive")

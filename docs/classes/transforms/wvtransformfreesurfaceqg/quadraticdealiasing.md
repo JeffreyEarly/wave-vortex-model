@@ -1,15 +1,15 @@
 ---
 layout: default
-title: quadraticAliasingLimitingChannel
+title: quadraticDealiasing
 parent: WVTransformFreeSurfaceQG
 grand_parent: Transforms
-nav_order: 188
+nav_order: 186
 mathjax: true
 ---
 
-#  quadraticAliasingLimitingChannel
+#  quadraticDealiasing
 
-Product channel limiting the selected APV prefix.
+Vertical quadratic-dealiasing policy.
 
 > Developer documentation: this item describes internal implementation details.
 
