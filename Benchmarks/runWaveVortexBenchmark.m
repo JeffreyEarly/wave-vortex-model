@@ -3,7 +3,7 @@ function results = runWaveVortexBenchmark(options)
 %
 % This authoring benchmark measures state-advanced nonlinear-advection
 % evaluations while retaining production caches. Ordinary runs are written
-% beneath Benchmarks/results/runs. Reference generation is explicit.
+% beneath the system temporary directory. Reference generation is explicit.
 arguments
     options.suites (1,:) string = "core-v1"
     options.backends (1,:) string = "builtin"
@@ -34,16 +34,13 @@ backends = waveVortexBenchmarkBackends(options.backends);
 if options.runId == ""
     options.runId = string(datetime("now","TimeZone","UTC","Format","yyyyMMdd'T'HHmmss'Z'"));
 end
-if options.catalogPath == ""
-    options.catalogPath = fullfile(benchmarkFolder,"results","catalog.json");
-end
 if options.shouldCreateReference && options.referenceDirectory == ""
     error("WaveVortexBenchmark:ReferenceDirectoryRequired","referenceDirectory is required when shouldCreateReference is true.");
 elseif ~options.shouldCreateReference && options.referenceDirectory ~= ""
     error("WaveVortexBenchmark:ReferenceDirectoryNotApplicable","referenceDirectory is used only when shouldCreateReference is true.");
 end
 if options.outputDirectory == ""
-    options.outputDirectory = fullfile(benchmarkFolder,"results","runs",options.runId + "-" + computer("arch") + "-" + version("-release"));
+    options.outputDirectory = fullfile(tempdir,"wave-vortex-model-benchmarks",options.runId + "-" + computer("arch") + "-" + version("-release"));
 end
 
 results = struct("schemaVersion","1.1.0","status","complete","runId",options.runId,"environment",benchmarkEnvironment(repositoryRoot),"configuration",struct("suiteIds",options.suites,"backendIds",options.backends,"caseIds",options.caseIds,"correctnessTolerance",options.correctnessTolerance,"shouldMeasureMemory",options.shouldMeasureMemory),"suites",emptySuiteResults());
@@ -62,7 +59,7 @@ clear stateCleanup
 end
 
 function suiteResult = runSuite(suite,backends,options,benchmarkFolder,repositoryRoot)
-[referenceFile,referenceArtifact,referenceOutputDirectory] = referenceLocations(suite,options,repositoryRoot);
+[referenceFile,referenceArtifact,referenceOutputDirectory] = referenceLocations(suite,options);
 if suite.kind == "transform-layout"
     suiteResult = runWaveVortexTransformLayoutSuite(suite,options.correctnessTolerance,repositoryRoot);
     suiteResult.referenceArtifact = referenceArtifact;
@@ -100,7 +97,7 @@ if options.shouldCreateReference
 end
 end
 
-function [referenceFile,referenceArtifact,referenceOutputDirectory] = referenceLocations(suite,options,repositoryRoot)
+function [referenceFile,referenceArtifact,referenceOutputDirectory] = referenceLocations(suite,options)
 referenceFile = "";
 referenceArtifact = "";
 referenceOutputDirectory = "";
@@ -109,11 +106,14 @@ if options.shouldCreateReference
     referenceFile = fullfile(referenceOutputDirectory,"benchmark.json");
     referenceArtifact = referenceOutputDirectory;
 elseif suite.isScored
-    [referenceFile,referenceArtifact] = scoringReferenceFromCatalog(options.catalogPath,suite.id,repositoryRoot);
+    [referenceFile,referenceArtifact] = scoringReferenceFromCatalog(options.catalogPath,suite.id);
 end
 end
 
-function [absolutePath,relativePath] = scoringReferenceFromCatalog(catalogPath,suiteId,repositoryRoot)
+function [absolutePath,relativePath] = scoringReferenceFromCatalog(catalogPath,suiteId)
+if catalogPath == ""
+    error("WaveVortexBenchmark:CatalogRequired","catalogPath is required for scored benchmark suites. Store the catalog and its referenced artifacts outside the source tree.");
+end
 if ~isfile(catalogPath)
     error("WaveVortexBenchmark:MissingCatalog","Benchmark catalog does not exist: %s.",catalogPath);
 end
@@ -133,9 +133,9 @@ end
 relativePath = string(reference.rawArtifact);
 parts = split(relativePath,"/");
 if startsWith(relativePath,["/" "\\"]) || ~isempty(regexp(relativePath,"^[A-Za-z]:","once")) || contains(relativePath,"\\") || any(parts == "..") || any(parts == "")
-    error("WaveVortexBenchmark:InvalidCatalog","Scoring reference paths must be repository-relative and cannot contain traversal.");
+    error("WaveVortexBenchmark:InvalidCatalog","Scoring reference paths must be relative to the catalog directory and cannot contain traversal.");
 end
-absolutePath = fullfile(repositoryRoot,relativePath);
+absolutePath = fullfile(fileparts(catalogPath),relativePath);
 if ~isfile(absolutePath)
     error("WaveVortexBenchmark:MissingScoringReference","Scoring reference does not exist: %s.",relativePath);
 end

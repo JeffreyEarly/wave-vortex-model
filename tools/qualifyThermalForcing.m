@@ -2,7 +2,7 @@ function results=qualifyThermalForcing(outputDirectory)
 % Qualify short nonlinear source/drag controls under time refinement.
 % Run with the pinned OceanKit path configured; this is authoring-only code.
 arguments
-    outputDirectory (1,1) string = "Documentation/Validation/Issue436"
+    outputDirectory (1,1) string = fullfile(tempdir,"wave-vortex-model-studies","thermal-forcing")
 end
 if ~isfolder(outputDirectory), mkdir(outputDirectory); end
 addpath(fullfile(fileparts(fileparts(mfilename('fullpath'))),'UnitTests','Fixtures'));

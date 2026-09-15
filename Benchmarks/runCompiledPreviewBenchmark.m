@@ -26,7 +26,7 @@ originalRng = rng;
 stateCleanup = onCleanup(@()restoreState(originalDirectory,originalPath,originalRng));
 addRepositoryPaths(repositoryRoot,benchmarkFolder);
 if options.outputDirectory == ""
-    options.outputDirectory = fullfile(benchmarkFolder,"results","runs",options.runId+"-compiled-preview-"+computer("arch")+"-"+version("-release"));
+    options.outputDirectory = fullfile(tempdir,"wave-vortex-model-benchmarks",options.runId+"-compiled-preview-"+computer("arch")+"-"+version("-release"));
 end
 if options.shouldWriteArtifacts && isfolder(options.outputDirectory)
     error("WaveVortexBenchmark:CompiledPreviewOutputExists","Output already exists: %s",options.outputDirectory);

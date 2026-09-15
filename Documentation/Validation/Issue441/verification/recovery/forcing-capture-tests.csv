@@ -1,3 +1,0 @@
-Name,Passed,Failed,Incomplete,Duration
-TestThermalReadiness/boundedLinearComparisonRequiresIndependentReference,1,0,0,7.92619941666667
-TestThermalReadinessRestart/clocksIndependentStreamsAndProviderFreeReplay,1,0,0,5.53236170833333

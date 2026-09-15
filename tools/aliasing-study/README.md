@@ -1,16 +1,7 @@
-# Historical sparse quadratic-product study
+# Sparse quadratic-product study
 
-This directory preserves the frozen evidence from the issue 400 sampled-product study. The diagnostic and its reusable WVM wrappers were retired in issue 42 after free-surface construction adopted the simpler `quadraticDealiasing` policies. The MATLAB and Python drivers have been removed, so this archive is not a runnable or current API guide.
+This directory retains the predeclared methodology for the retired sampled-product diagnostic from [issue #400](https://github.com/JeffreyEarly/wave-vortex-model/issues/400). The diagnostic and its runnable implementation are no longer part of the current construction path.
 
-The recorded tables retain their original field names and numerical values. Their provenance identifies the exact WVM, OceanKit, and InternalModes revisions used to produce them; use those revisions from repository history if exact reproduction is required. Current construction behavior and evidence are documented in [automatic mode selection](../../Documentation/Validation/AutomaticModeSelection.md) and the [quadratic-dealiasing study](../quadratic-dealiasing-study/README.md).
+`PLAN.md` defines the bounded scientific question and reference controls. `POLICIES.md` preserves the sampling rules, and `API-PROPOSAL.md` records the proposed separation between preparation, signed projection, positive error measurement, and WVM orchestration. The exact historical case records remain available in Git history and on the linked issue.
 
-## Evidence map
-
-- `case-inventory.json`, `POLICIES.md`, and `policy-freeze.json`: predeclared cases and historical sampling rules.
-- `reference-refinements.json`: historical reference-only refinements.
-- `results/comparison-v1`: consolidated configurations, decisions, errors, costs, and provenance.
-- `results/calibration-v1`, `results/withheld-v1`, and `results/withheld-refined-v1`: frozen detailed product-survey outputs.
-- `results/cost-matrix-v1`: historical replay timing and memory logs.
-- `SOURCE-PILOT.md`, `PLAN.md`, `REPORT.md`, and `VERIFICATION.md`: the original scientific decisions, findings, and verification ledger.
-
-Large MAT files remain excluded from Git. The versioned CSV, JSON, plots, compressed logs, and manifests are retained as historical evidence.
+Recorded results, verification logs, figures, and archives are excluded from the repository. Historical implementation and output can be inspected through the Git history when needed; current free-surface construction uses the `quadraticDealiasing` policies documented by the production API.

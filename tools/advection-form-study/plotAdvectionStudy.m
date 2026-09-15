@@ -1,6 +1,8 @@
 function plotAdvectionStudy
 % Export scientific evidence; budgets and accuracy are distinct quantities.
-folder=fileparts(mfilename('fullpath')); output=fullfile(folder,'results');
+output=fullfile(tempdir,"wave-vortex-model-studies","advection-form-study");
+if ~isfolder(output), mkdir(output); end
+
 m=readtable(fullfile(output,'manufactured.csv'),TextType="string");
 t=readtable(fullfile(output,'rhs-timings.csv'),TextType="string");
 forms=["divergence","advective","split","compatible"];

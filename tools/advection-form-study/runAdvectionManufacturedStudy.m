@@ -1,6 +1,8 @@
 function runAdvectionManufacturedStudy
 % Analytic scalar transport references and endpoint-sensitive budget identities.
-folder=fileparts(mfilename('fullpath')); rows=struct([]);
+output=fullfile(tempdir,"wave-vortex-model-studies","advection-form-study");
+if ~isfolder(output), mkdir(output); end
+rows=struct([]);
 for nx=[8 16 32 64]
     for nz=[9 17 33 65]
         a=thermodynamicFormulationFixture("constant",.1,nx,nz);
@@ -35,5 +37,5 @@ for nx=[8 16 32 64]
         end
     end
 end
-writetable(struct2table(rows),fullfile(folder,'results','manufactured.csv'));
+writetable(struct2table(rows),fullfile(output,'manufactured.csv'));
 end

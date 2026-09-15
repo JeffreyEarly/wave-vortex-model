@@ -1,3 +1,0 @@
-caseName,executionId,initialCaseId,status,reason,wallSeconds,finalTime,acceptedSteps,rejectedSteps,rhsEvaluations,outputRhsEvaluations
-step1800,b16238bc908eacbeb8026bc579dae4d293584743aa73eaf25c594cf76f159d1a,abeeb5121144fbdae0f17ac6f0c774c3de8ac052c583951e69cea8b12150fc6c,COMPLETE,finite bounded window; readiness gates remain separate,62.4700059722222,21600,16,0,64,0
-step900,5c344e1f4cbe805351a09192ecccaed749b1710a4f814053000d7ed38e0819b9,954d35b6d7d677ec6677bc059136a1cbd6c81d5a91b6ca2beff016007bf8933d,COMPLETE,finite bounded window; readiness gates remain separate,72.776504125,21600,24,0,96,0

@@ -1,6 +1,8 @@
 function runRHSSchedulingTrajectories(folder)
 % Short RK4 trajectories through the registered complete coefficient callback.
-output=fullfile(fileparts(mfilename('fullpath')),'results'); rows=struct([]);
+output=fullfile(tempdir,"wave-vortex-model-studies","rhs-scheduling-study");
+if ~isfolder(output), mkdir(output); end
+rows=struct([]);
 for profile=["constant","exponential"]
     data=load(fullfile(folder,profile+"-3.mat"));
     objects={RHSSchedulingReference(data.scientificState),WVTransformFreeSurfaceBoussinesq(data.scientificState)};

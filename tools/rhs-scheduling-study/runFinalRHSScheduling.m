@@ -1,6 +1,8 @@
 function runFinalRHSScheduling(folder)
 % Compare integrated production with the frozen pre-change complete RHS.
-output=fullfile(fileparts(mfilename('fullpath')),'results'); rows=struct([]);
+output=fullfile(tempdir,"wave-vortex-model-studies","rhs-scheduling-study");
+if ~isfolder(output), mkdir(output); end
+rows=struct([]);
 for profile=["constant","exponential"]
     for config=1:4
         data=load(fullfile(folder,profile+"-"+config+".mat"));

@@ -1,11 +1,12 @@
 """Summarize declared matched-error targets without changing tolerances."""
 import csv
 import json
+import tempfile
 from pathlib import Path
 
 root = Path(__file__).resolve().parent
 protocol = json.loads((root / 'comparison-protocol.json').read_text())
-results = root / 'results'
+results = Path(tempfile.gettempdir()) / 'wave-vortex-model-studies' / 'thermodynamic-formulation-study'
 rows = []
 selected_path = results / 'selected-trajectory-timings.csv'
 selected = []

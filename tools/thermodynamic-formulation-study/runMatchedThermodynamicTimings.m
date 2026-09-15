@@ -1,6 +1,8 @@
 function runMatchedThermodynamicTimings
 % Repeated complete-trajectory timing of the selected qualifying inventories.
-folder=fileparts(mfilename('fullpath')); rows=struct([]);
+output=fullfile(tempdir,"wave-vortex-model-studies","thermodynamic-formulation-study");
+if ~isfolder(output), mkdir(output); end
+rows=struct([]);
 for profile=["constant","exponential"]
     if profile=="constant", N2=@(z)1e-4+zeros(size(z)); else, N2=@(z)1e-4*exp(z/650); end
     w=WVTransformFreeSurfaceBoussinesq.fromStratification([1e5 1e5 1000],[8 8 33],N2Function=N2,apvModeCount=3,waveModeCount=4,mdaModeCount=2,inertialModeCount=3,nEVP=256,shouldAntialias=false);
@@ -35,5 +37,5 @@ for profile=["constant","exponential"]
         end
     end
 end
-writetable(struct2table(rows),fullfile(folder,'results','selected-trajectory-timings.csv'));
+writetable(struct2table(rows),fullfile(output,'selected-trajectory-timings.csv'));
 end

@@ -23,7 +23,7 @@ The packed adapter changes no transform, tendency, forcing, or NetCDF interface.
 
 ## Canonical evidence
 
-The immutable artifact is [`free-surface-qg-coefficient-storage-v1-m5-max-r2026a`](../../Benchmarks/results/reference/free-surface-qg-coefficient-storage-v1-m5-max-r2026a/summary.md). It was produced on MATLAB R2026a Update 4 (`maca64`) with the active `InternalModesEVP` checkout at `b0ab431f8b1ed2f36c1b1acad10684ac80b669a3`. The runner, adapter, tests, artifact, and this decision are co-committed so the WaveVortexModel source identity is the containing commit.
+The immutable artifact is [`free-surface-qg-coefficient-storage-v1-m5-max-r2026a`](https://github.com/JeffreyEarly/wave-vortex-model/blob/7680110e93a123b5d65b08792ed928fec4e7c221/Benchmarks/results/reference/free-surface-qg-coefficient-storage-v1-m5-max-r2026a/summary.md). It was produced on MATLAB R2026a Update 4 (`maca64`) with the active `InternalModesEVP` checkout at `b0ab431f8b1ed2f36c1b1acad10684ac80b669a3`. The runner, adapter, tests, artifact, and this decision are co-committed so the WaveVortexModel source identity is the containing commit.
 
 The matrix uses a 150 km by 150 km by 1000 m domain and constant `N2=1e-4 s-2`:
 

@@ -1,6 +1,8 @@
 function runAdvectionBudgetControls
 % Integrate analytic inventory rates alongside each discrete RHS, without repair.
-folder=fileparts(mfilename('fullpath')); rows=struct([]);
+output=fullfile(tempdir,"wave-vortex-model-studies","advection-form-study");
+if ~isfolder(output), mkdir(output); end
+rows=struct([]);
 for profile=["constant","exponential"]
     for spec=[8 33 3 4 2 3;16 65 6 8 4 6].'
         w=makeAdvectionStudyTransform(profile,spec.');
@@ -26,7 +28,7 @@ for profile=["constant","exponential"]
         end
     end
 end
-writetable(struct2table(rows),fullfile(folder,'results','budgets.csv'));
+writetable(struct2table(rows),fullfile(output,'budgets.csv'));
 end
 function state=add(state,rate,scale)
 for family=string(fieldnames(state)).', state.(family)=state.(family)+scale*rate.(family); end

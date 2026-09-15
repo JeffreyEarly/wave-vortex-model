@@ -4,7 +4,10 @@ arguments
     options.profiles (1,:) string = ["constant","exponential"]
     options.cases (1,:) string = ["linear","waves","mixed"]
 end
-folder=fileparts(mfilename('fullpath')); protocol=jsondecode(fileread(fullfile(folder,'comparison-protocol.json')));
+folder=fileparts(mfilename('fullpath'));
+output=fullfile(tempdir,"wave-vortex-model-studies","thermodynamic-formulation-study");
+if ~isfolder(output), mkdir(output); end
+protocol=jsondecode(fileread(fullfile(folder,'comparison-protocol.json')));
 configs=[protocol.grids(:,1),protocol.grids(:,3),protocol.mode_counts_apv_wave_mda_io];
 for profile=options.profiles
     objects=cell(1,6); setup=zeros(1,6);
@@ -23,7 +26,7 @@ for profile=options.profiles
         w=objects{6}; a=seed(w,profile,caseSpec); op=thermodynamicComparisonOperators(w,profile,"displacement");
         spaceCheck=runThermodynamicTrajectory(op,a,protocol.start_s,protocol.duration_s,protocol.reference_timestep_s,reference.checkpoints);
         checks=struct(timeVelocity=timeCheck.summary.velocityError,timeDensity=timeCheck.summary.densityError,timeSSH=timeCheck.summary.sshError,spaceVelocity=spaceCheck.summary.velocityError,spaceDensity=spaceCheck.summary.densityError,spaceSSH=spaceCheck.summary.sshError);
-        writetable(struct2table(checks),fullfile(folder,'results',tag+'-reference.csv'));
+        writetable(struct2table(checks),fullfile(output,tag+'-reference.csv'));
         for config=1:5
             w=objects{config}; a=seed(w,profile,caseSpec);
             for variant=["displacement","density"]
@@ -40,8 +43,8 @@ for profile=options.profiles
                         d.profile=profile; d.caseName=caseName; d.variant=variant; d.config=config; d.deltaT=dt;
                         if isempty(histories), histories=d; else, histories(end+1)=d; end %#ok<AGROW>
                     end
-                    writetable(struct2table(rows),fullfile(folder,'results',tag+'-trajectories.csv'));
-                    writetable(struct2table(histories),fullfile(folder,'results',tag+'-history.csv'));
+                    writetable(struct2table(rows),fullfile(output,tag+'-trajectories.csv'));
+                    writetable(struct2table(histories),fullfile(output,tag+'-history.csv'));
                 end
             end
         end
@@ -55,7 +58,7 @@ for profile=options.profiles
         equivalent=runThermodynamicTrajectory(op,b,protocol.start_s,40,5,control.checkpoints);
         r=equivalent.summary; r.inverseIterations=inverse.iterations; r.inverseResidual=inverse.residual;
         r.displacementSeconds=control.summary.evolutionSeconds;
-        writetable(struct2table(r),fullfile(folder,'results',tag+'-inverse-control.csv'));
+        writetable(struct2table(r),fullfile(output,tag+'-inverse-control.csv'));
         fprintf('DONE %s\n',tag);
     end
 end

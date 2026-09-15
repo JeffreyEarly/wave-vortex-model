@@ -5,7 +5,9 @@ arguments
     options.prefix (1,1) string = "candidate"
 end
 % Isolated paired complete-RHS timing, preserving production cache ownership.
-output=fullfile(fileparts(mfilename('fullpath')),'results'); rows=struct([]); checks=struct([]);
+output=fullfile(tempdir,"wave-vortex-model-studies","rhs-scheduling-study");
+if ~isfolder(output), mkdir(output); end
+rows=struct([]); checks=struct([]);
 strategies=options.strategies;
 for profile=["constant","exponential"]
     for config=1:4

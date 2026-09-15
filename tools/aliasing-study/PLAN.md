@@ -2,7 +2,7 @@
 
 > Historical archive. The sampled-product diagnostic and its runnable code were retired in issue 42. This document records the former study and does not describe the current construction API.
 
-Status: historical pre-pilot plan. The completed comparison and its limitations are in `REPORT.md`. The current case inventory and final pre-withheld policy freeze are recorded in `case-inventory.json` and `policy-freeze.json`.
+Status: historical pre-pilot plan. The completed comparison and its limitations are recorded on [issue #400](https://github.com/JeffreyEarly/wave-vortex-model/issues/400). Exact case inventories and result records remain available in Git history.
 
 ## Provenance and scope
 

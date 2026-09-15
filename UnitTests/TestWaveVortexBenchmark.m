@@ -98,20 +98,20 @@ classdef TestWaveVortexBenchmark < matlab.unittest.TestCase
 
         function catalogScoringPreservesReferenceCalculation(testCase)
             caseId = "barotropic-qg-128x128";
-            results = runWaveVortexBenchmark(suites="scaling-standard-v1",caseIds=caseId,shouldMeasureMemory=false,shouldWriteArtifacts=false);
+            referenceMedian = 2;
+            referencePath = fullfile(testCase.temporaryFolder,"reference.json");
+            reference = struct(suites=struct(cases=struct(id=caseId,backends=struct(id="builtin",medianSeconds=referenceMedian))));
+            writelines(jsonencode(reference),referencePath);
+            catalog = struct(schemaVersion="benchmark-catalog-v1",scoringReferences=struct(suiteId="scaling-standard-v1",backendId="builtin",rawArtifact="reference.json"));
+            catalogPath = fullfile(testCase.temporaryFolder,"catalog.json");
+            writelines(jsonencode(catalog),catalogPath);
+            results = runWaveVortexBenchmark(suites="scaling-standard-v1",caseIds=caseId,catalogPath=catalogPath,shouldMeasureMemory=false,shouldWriteArtifacts=false);
             backend = results.suites.cases.backends;
-            catalog = jsondecode(fileread(fullfile(testCase.benchmarkFolder,"results","catalog.json")));
-            reference = catalog.scoringReferences(string({catalog.scoringReferences.suiteId}) == "scaling-standard-v1");
-            relativePath = string(reference.rawArtifact);
-            referencePath = fullfile(testCase.repositoryRoot,relativePath);
-            reference = jsondecode(fileread(referencePath));
-            referenceIndex = find(string({reference.suites.cases.id}) == caseId,1);
-            referenceMedian = reference.suites.cases(referenceIndex).backends.medianSeconds;
-
-            testCase.verifyEqual(results.suites.referenceArtifact,relativePath);
+            testCase.verifyEqual(results.suites.referenceArtifact,"reference.json");
             testCase.verifyEqual(backend.referenceMedianSeconds,referenceMedian);
             testCase.verifyEqual(backend.caseScore,100*referenceMedian/backend.medianSeconds,RelTol=1e-14);
             testCase.verifyTrue(isfinite(backend.caseScore));
+            testCase.verifyError(@()runWaveVortexBenchmark(suites="scaling-standard-v1",caseIds=caseId,shouldMeasureMemory=false,shouldWriteArtifacts=false),"WaveVortexBenchmark:CatalogRequired");
         end
 
         function freshProcessMemoryIsRecorded(testCase)

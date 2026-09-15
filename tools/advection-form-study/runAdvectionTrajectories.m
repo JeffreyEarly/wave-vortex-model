@@ -1,6 +1,8 @@
 function runAdvectionTrajectories
 % Independent grid, mode and timestep refinement on a declared fixed protocol.
-folder=fileparts(mfilename('fullpath')); output=fullfile(folder,'results');
+output=fullfile(tempdir,"wave-vortex-model-studies","advection-form-study");
+if ~isfolder(output), mkdir(output); end
+
 specs=[8 33 3 4 2 3;16 33 3 4 2 3;16 65 3 4 2 3;16 65 6 8 4 6;24 129 10 12 8 8;24 129 14 18 12 12];
 for profile=["constant","exponential"]
     objects=cell(1,6);

@@ -1,7 +1,11 @@
 function prepareRHSSchedulingStudy(folder)
 % Save task-local scientific fixtures so qualification avoids repeated EVP solves.
 if ~isfolder(folder), mkdir(folder); end
-output=fullfile(fileparts(mfilename('fullpath')),'results');
+studyDirectory=fileparts(mfilename('fullpath'));
+repositoryRoot=fileparts(fileparts(studyDirectory));
+output=fullfile(tempdir,"wave-vortex-model-studies","rhs-scheduling-study");
+if ~isfolder(output), mkdir(output); end
+
 specs=[8 33 3 4 2 3;8 65 3 4 2 3;16 65 6 8 4 6;24 129 10 12 8 8];
 for profile=["constant","exponential"]
     for config=1:size(specs,1)
@@ -17,7 +21,7 @@ for profile=["constant","exponential"]
             candidate.t=327;
             run=@()evaluate(candidate);
             run();
-            report=profileCodeHotspots(run,projectRoots=fileparts(fileparts(fileparts(output))),maxFunctions=25,maxLines=30);
+            report=profileCodeHotspots(run,projectRoots=repositoryRoot,maxFunctions=25,maxLines=30);
             writetable(report.topProjectBySelfTime,fullfile(output,profile+'-profile-functions.csv'));
             writetable(report.topActionableLines,fullfile(output,profile+'-profile-lines.csv'));
         end

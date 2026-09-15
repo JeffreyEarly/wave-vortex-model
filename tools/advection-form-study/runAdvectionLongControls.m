@@ -1,6 +1,8 @@
 function runAdvectionLongControls
 % Two external-wave-period controls with independent time/mode references.
-folder=fileparts(mfilename('fullpath')); rows=struct([]); checks=struct([]);
+output=fullfile(tempdir,"wave-vortex-model-studies","advection-form-study");
+if ~isfolder(output), mkdir(output); end
+rows=struct([]); checks=struct([]);
 profile="exponential";
 specs=[8 33 3 4 2 3;16 65 6 8 4 6;24 129 10 12 8 8;24 129 14 18 12 12];
 objects=cell(1,4); for j=1:4, objects{j}=makeAdvectionStudyTransform(profile,specs(j,:)); end
@@ -12,7 +14,7 @@ for scenario=["waves","mixed"]
     spaceCheck=runThermodynamicTrajectory(op,a,327,2000,5,reference.checkpoints);
     row=struct(scenario=scenario,timeVelocity=timeCheck.summary.velocityError,timeDensity=timeCheck.summary.densityError,timeSSH=timeCheck.summary.sshError,spaceVelocity=spaceCheck.summary.velocityError,spaceDensity=spaceCheck.summary.densityError,spaceSSH=spaceCheck.summary.sshError);
     if isempty(checks), checks=row; else, checks(end+1)=row; end %#ok<AGROW>
-    writetable(struct2table(checks),fullfile(folder,'results','long-references.csv'));
+    writetable(struct2table(checks),fullfile(output,'long-references.csv'));
     for config=1:2
         w=objects{config}; a=seed(w,scenario);
         for form=["divergence","advective","split","compatible"]
@@ -24,7 +26,7 @@ for scenario=["waves","mixed"]
             end
         end
         fprintf('long %s config%d done\n',scenario,config);
-        writetable(struct2table(rows),fullfile(folder,'results','long-trajectories.csv'));
+        writetable(struct2table(rows),fullfile(output,'long-trajectories.csv'));
     end
 end
 end

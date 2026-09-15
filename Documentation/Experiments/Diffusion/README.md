@@ -10,6 +10,6 @@ results = runtests("Documentation/Experiments/Diffusion/TestCompleteThermalModes
 assertSuccess(results)
 ```
 
-The class also supplies `runCompleteThermalStudy` and `compareCompleteThermalStudies`. Its private physical-depth reference and observation helpers are self-contained research copies; core tests do not call into this experiment. Scientific results, tolerances, refinement controls and full reproduction are in [the validation report](../../Validation/Issue353CompleteThermalModes.md).
+The class also supplies `runCompleteThermalStudy` and `compareCompleteThermalStudies`. Its private physical-depth reference and observation helpers are self-contained research copies; core tests do not call into this experiment. Scientific results, tolerances, refinement controls and full reproduction are in [the validation report](https://github.com/JeffreyEarly/wave-vortex-model/blob/7680110e93a123b5d65b08792ed928fec4e7c221/Documentation/Validation/Issue353CompleteThermalModes.md).
 
 The primary WVM remains entirely in adiabatic modes. Thermal-mode results do not set its milestone completion criteria. Preserve the strict-source/flux distinction, both endpoint settings and saved-run provenance when extending this experiment.

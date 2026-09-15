@@ -1,9 +1,0 @@
-{
-  "reason": "completed",
-  "returncode": 1,
-  "elapsedSeconds": 71.032663792,
-  "peakSampledFootprintBytes": 2274135664,
-  "peakSampledResidentBytes": 2710208512,
-  "samples": 279,
-  "samplingIntervalSeconds": 0.25
-}
