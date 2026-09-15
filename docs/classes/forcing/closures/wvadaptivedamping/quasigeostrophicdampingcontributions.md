@@ -3,13 +3,13 @@ layout: default
 title: quasigeostrophicDampingContributions
 parent: WVAdaptiveDamping
 grand_parent: Closures
-nav_order: 15
+nav_order: 18
 mathjax: true
 ---
 
 #  quasigeostrophicDampingContributions
 
-Return the horizontal and vertical tendencies used by this forcing.
+Return the horizontal and selective tendencies used by this forcing.
 
 
 ---
@@ -20,9 +20,11 @@ Return the horizontal and vertical tendencies used by this forcing.
 
 ## Returns
 + `horizontal`  horizontal coefficient tendency
-+ `vertical`  APV-mode coefficient tendency
++ `vertical`  APV-mode or native generalized-enstrophy coefficient tendency
 
 ## Discussion
 
 Their sum is the complete damping tendency, including any
-configured APV cutoff. Both contributions leave MDA unchanged.
+configured cutoff. Thermal selective damping acts in complete
+generalized-enstrophy coordinates. Both contributions leave MDA
+unchanged.

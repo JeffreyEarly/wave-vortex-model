@@ -42,6 +42,9 @@ the wave-vortex coefficients. For free-surface QG, the same closure
 acts directly on the canonical coefficient families: `Ag_q` receives
 horizontal and APV-mode damping, `Ag_0` receives horizontal damping,
 and the horizontally uniform `Amda` family is unchanged.
+Native thermal transforms use a complete energy-normalized generalized-
+enstrophy basis. The selective contribution dissipates both physical
+energy and the combined interior-plus-endpoint quadratic invariant.
 
 Free-surface Boussinesq damps small horizontal scales with one rate
 shared by every active mode at a given horizontal wavenumber:
@@ -116,7 +119,7 @@ So arguably they're under-damped in a non-hydrostatic simulation.
   + [`dampingTimeScale`](/classes/forcing/closures/wvadaptivedamping/dampingtimescale.html) Return the inverse maximum unit-speed damping coefficient.
   + [`damp`](/classes/forcing/closures/wvadaptivedamping/damp.html) Unit-speed spectral damping operator in inverse meters.
 + Evaluate forcing budgets
-  + [`quasigeostrophicDampingContributions`](/classes/forcing/closures/wvadaptivedamping/quasigeostrophicdampingcontributions.html) Return the horizontal and vertical tendencies used by this forcing.
+  + [`quasigeostrophicDampingContributions`](/classes/forcing/closures/wvadaptivedamping/quasigeostrophicdampingcontributions.html) Return the horizontal and selective tendencies used by this forcing.
 
 
 ## Developer Topics
@@ -125,10 +128,14 @@ These items document internal implementation details and are not part of the pri
   + [`classRequiredPropertyNames`](/classes/forcing/closures/wvadaptivedamping/classrequiredpropertynames.html) Returns the required property names for the class
 + Forcing internals
   + [`buildDampingOperator`](/classes/forcing/closures/wvadaptivedamping/builddampingoperator.html) Build the unit-speed spectral damping operator.
+  + [`coefficientDampingData`](/classes/forcing/closures/wvadaptivedamping/coefficientdampingdata.html) Return the native thermal application cache and construction diagnostics.
   + [`coefficientDampingOperator`](/classes/forcing/closures/wvadaptivedamping/coefficientdampingoperator.html) Return unit-speed damping rates for the Boussinesq families.
   + [`dampAg_0`](/classes/forcing/closures/wvadaptivedamping/dampag_0.html) Unit-speed damping operator for free-surface zero-APV coefficients.
   + [`dampAg_q`](/classes/forcing/closures/wvadaptivedamping/dampag_q.html) Unit-speed damping operator for free-surface APV coefficients.
+  + [`fromThermalGeneralizedEnstrophy`](/classes/forcing/closures/wvadaptivedamping/fromthermalgeneralizedenstrophy.html) Construct native thermal generalized-enstrophy damping.
+  + [`generalizedEnstrophyCutoffFraction`](/classes/forcing/closures/wvadaptivedamping/generalizedenstrophycutofffraction.html) Fraction of the ordered native generalized spectrum left undamped.
   + [`spectralVanishingViscosityFilter`](/classes/forcing/closures/wvadaptivedamping/spectralvanishingviscosityfilter.html) Build horizontal and vertical spectral-vanishing filters.
+  + [`thermalGeneralizedEnstrophyState`](/classes/forcing/closures/wvadaptivedamping/thermalgeneralizedenstrophystate.html) Immutable canonical native thermal closure state.
 
 
 ---

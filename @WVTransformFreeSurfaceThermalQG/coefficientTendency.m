@@ -63,7 +63,7 @@ for force=self.spectralFluxForcing
             if ~hasNonlinearSpeed, speed=nativeSpeed; end
             physical.uvMax=speed;
         end
-        if nargout>2 && isa(force,'WVThermalAPVDamping')
+        if nargout>2 && (isa(force,'WVThermalAPVDamping') || isa(force,'WVAdaptiveDamping'))
             [tendency,horizontal,~]=force.addQuasigeostrophicSpectralForcing(self,tendency,physical);
         else
             tendency=force.addQuasigeostrophicSpectralForcing(self,tendency,physical);
@@ -76,6 +76,10 @@ for force=self.spectralFluxForcing
             vertical=struct(Ath=increment.Ath-horizontal.Ath,Amda=increment.Amda-horizontal.Amda);
             processes=append(processes,string(force.name)+": horizontal",horizontal);
             processes=append(processes,string(force.name)+": vertical",vertical);
+        elseif isa(force,'WVAdaptiveDamping')
+            selective=struct(Ath=increment.Ath-horizontal.Ath,Amda=increment.Amda-horizontal.Amda);
+            processes=append(processes,string(force.name)+": horizontal",horizontal);
+            processes=append(processes,string(force.name)+": generalized enstrophy",selective);
         else
             processes=append(processes,string(force.name),increment);
         end
