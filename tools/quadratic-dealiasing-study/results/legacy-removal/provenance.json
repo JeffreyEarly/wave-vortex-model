@@ -1,0 +1,28 @@
+{
+  "beforeWVM": "ec0c5f23e37ab815665d96ae40605cd852428d6d",
+  "afterWVM": "9e44657561eeec1a03548cdec2261de8c30bb7e4",
+  "oceanKitCheckout": "75bce622d096dd582be49855bb6c718dd163672b",
+  "oceanKitDistribution": "0f2dae987eb777dd54a15f9b910ddb7f221b5852",
+  "chebfun": "1fe01297a74d9ee765a466c3068b7fb474bee053",
+  "literatureNote": "65617131539c0c6f73e5da2189daf970cb281de8",
+  "internalModesRelease": "f7f78b59f73c1f6c4052f3c5f0feb5aca7d6aa81",
+  "hardware": "Apple M4 Max, 128 GiB",
+  "matlab": "R2026a Update 5",
+  "threads": 1,
+  "workload": {
+    "Lxyz": [
+      100000,
+      100000,
+      1000
+    ],
+    "Nxyz": [
+      128,
+      128,
+      65
+    ],
+    "N2Function": "@(z)1e-4*exp(2*z/700)",
+    "nEVP": 104,
+    "shouldAntialias": true
+  },
+  "repetitions": "one warmup and three unprofiled trials per policy; all unprofiled batches precede the separate fixedFraction profile"
+}

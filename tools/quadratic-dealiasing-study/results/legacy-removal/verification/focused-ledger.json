@@ -1,0 +1,496 @@
+{
+  "count": 61,
+  "passed": 61,
+  "failed": 0,
+  "description": "Consolidated latest results, not a new full-suite run",
+  "results": [
+    {
+      "name": "TestFreeSurfaceLinearModePolicy/defaultAndNonePoliciesExposeTheirLimits",
+      "passed": true,
+      "failed": false,
+      "incomplete": false,
+      "duration": "9.0911",
+      "source": "wvm-focused-tests.json"
+    },
+    {
+      "name": "TestFreeSurfaceLinearModePolicy/noneIgnoresFilteringParametersAndSurvivesPersistence",
+      "passed": true,
+      "failed": false,
+      "incomplete": false,
+      "duration": "3.2063",
+      "source": "wvm-focused-tests.json"
+    },
+    {
+      "name": "TestFreeSurfaceLinearModePolicy/explicitCountsUseFullLinearFilteringCapacity",
+      "passed": true,
+      "failed": false,
+      "incomplete": false,
+      "duration": "1.4014",
+      "source": "wvm-focused-tests.json"
+    },
+    {
+      "name": "TestFreeSurfaceLinearModePolicy/filteringRejectsOnlyCountsAboveIndependentLimits",
+      "passed": true,
+      "failed": false,
+      "incomplete": false,
+      "duration": "3.325",
+      "source": "wvm-focused-tests.json"
+    },
+    {
+      "name": "TestFreeSurfaceLinearModePolicy/effectiveBandwidthUsesCommonWKBShapes",
+      "passed": true,
+      "failed": false,
+      "incomplete": false,
+      "duration": "0.8547",
+      "source": "wvm-focused-tests.json"
+    },
+    {
+      "name": "TestFreeSurfaceLinearModePolicy/automaticZeroFilteringHasDistinctStatus",
+      "passed": true,
+      "failed": false,
+      "incomplete": false,
+      "duration": "0.55128",
+      "source": "wvm-focused-tests.json"
+    },
+    {
+      "name": "TestFreeSurfaceLinearModePolicy/explicitAPVHeadSurvivesUnconvergedIndependentTail",
+      "passed": true,
+      "failed": false,
+      "incomplete": false,
+      "duration": "1.6801",
+      "source": "wvm-focused-tests.json"
+    },
+    {
+      "name": "TestFreeSurfaceLinearModePolicy/fixedBoundaryResolutionStillAppliesToNone",
+      "passed": true,
+      "failed": false,
+      "incomplete": false,
+      "duration": "0.3449",
+      "source": "wvm-focused-tests.json"
+    },
+    {
+      "name": "TestFreeSurfaceLinearModePolicy/retiredSurveyOptionsAreRejectedClearly",
+      "passed": true,
+      "failed": false,
+      "incomplete": false,
+      "duration": "0.085186",
+      "source": "wvm-focused-tests.json"
+    },
+    {
+      "name": "TestFreeSurfaceNonlinearAdvectionGuard/horizontalAliasingActivationRejectsWithoutChangingForcing",
+      "passed": true,
+      "failed": false,
+      "incomplete": false,
+      "duration": "1.0671",
+      "source": "wvm-focused-tests.json"
+    },
+    {
+      "name": "TestFreeSurfaceNonlinearAdvectionGuard/noneAndFilteringPoliciesPermitNonlinearRegistration",
+      "passed": true,
+      "failed": false,
+      "incomplete": false,
+      "duration": "2.753",
+      "source": "wvm-focused-tests.json"
+    },
+    {
+      "name": "TestFreeSurfaceNonlinearAdvectionGuard/qgRequiresHorizontalAntialiasingForNonlinearRegistration",
+      "passed": true,
+      "failed": false,
+      "incomplete": false,
+      "duration": "0.34084",
+      "source": "wvm-focused-tests.json"
+    },
+    {
+      "name": "TestFreeSurfaceNonlinearAdvectionGuard/conversionAndRestorationStillRequireQualifiedActivation",
+      "passed": true,
+      "failed": false,
+      "incomplete": false,
+      "duration": "1.8168",
+      "source": "wvm-focused-tests.json"
+    },
+    {
+      "name": "TestFreeSurfaceNonlinearAdvectionGuard/quasigeostrophicTransformsRetainNonlinearAdvection",
+      "passed": true,
+      "failed": false,
+      "incomplete": false,
+      "duration": "0.74676",
+      "source": "wvm-focused-tests.json"
+    },
+    {
+      "name": "TestAutomaticFreeSurfaceModeSelection/automaticFamiliesShareBalancedPolicyAndExposeEvidence",
+      "passed": true,
+      "failed": false,
+      "incomplete": false,
+      "duration": "1.1666",
+      "source": "wvm-focused-tests.json"
+    },
+    {
+      "name": "TestAutomaticFreeSurfaceModeSelection/finerGridUsesTheFixedFractionOfEachLinearPrefix",
+      "passed": true,
+      "failed": false,
+      "incomplete": false,
+      "duration": "1.2477",
+      "source": "wvm-focused-tests.json"
+    },
+    {
+      "name": "TestAutomaticFreeSurfaceModeSelection/explicitCountsAreStrictAndIndependent",
+      "passed": true,
+      "failed": false,
+      "incomplete": false,
+      "duration": "1.1897",
+      "source": "wvm-focused-tests.json"
+    },
+    {
+      "name": "TestAutomaticFreeSurfaceModeSelection/fixedBoundariesCannotBeHiddenBySmallWaveCounts",
+      "passed": true,
+      "failed": false,
+      "incomplete": false,
+      "duration": "0.40314",
+      "source": "wvm-focused-tests.json"
+    },
+    {
+      "name": "TestAutomaticFreeSurfaceModeSelection/requestingAReportDoesNotChangeConstruction",
+      "passed": true,
+      "failed": false,
+      "incomplete": false,
+      "duration": "0.79542",
+      "source": "wvm-focused-tests.json"
+    },
+    {
+      "name": "TestWVTransformFreeSurfaceQG/storedTransformsMatchOnePassFixedQuadratureSelection",
+      "passed": true,
+      "failed": false,
+      "incomplete": false,
+      "duration": "0.52185",
+      "source": "wvm-focused-tests.json"
+    },
+    {
+      "name": "TestWVTransformFreeSurfaceQG/verticalResolutionAssessmentBracketsTheHorizontalLimit",
+      "passed": true,
+      "failed": false,
+      "incomplete": false,
+      "duration": "3.1218",
+      "source": "wvm-focused-tests.json"
+    },
+    {
+      "name": "TestWVTransformFreeSurfaceQG/omittedEndpointDefaultsRetainSignedAPVAndUseMajorant",
+      "passed": true,
+      "failed": false,
+      "incomplete": false,
+      "duration": "0.97636",
+      "source": "wvm-focused-tests.json"
+    },
+    {
+      "name": "TestWVTransformFreeSurfaceQG/initializationTolerancesArePersisted",
+      "passed": true,
+      "failed": false,
+      "incomplete": false,
+      "duration": "0.3441",
+      "source": "wvm-focused-tests.json"
+    },
+    {
+      "name": "TestWVTransformFreeSurfaceQG/nearLimitAPVEndpointCrossTendencyConvergesWithVerticalRefinement",
+      "passed": true,
+      "failed": false,
+      "incomplete": false,
+      "duration": "5.2295",
+      "source": "wvm-focused-tests.json"
+    },
+    {
+      "name": "TestWVTransformFreeSurfaceQG/snapshotPersistsRepresentationAndDirectConstructionSkipsModeSolver",
+      "passed": true,
+      "failed": false,
+      "incomplete": false,
+      "duration": "1.8684",
+      "source": "wvm-focused-tests.json"
+    },
+    {
+      "name": "TestWVTransformFreeSurfaceQG/prePolicySavedMetadataHasNoCompatibilityAdapter",
+      "passed": true,
+      "failed": false,
+      "incomplete": false,
+      "duration": "1.0036",
+      "source": "wvm-focused-tests.json"
+    },
+    {
+      "name": "TestPerKappaWavePersistence/storedOperatorsAndCountsRoundTrip",
+      "passed": true,
+      "failed": false,
+      "incomplete": false,
+      "duration": "10.8385",
+      "source": "wvm-post-merge-rerun.json"
+    },
+    {
+      "name": "TestPerKappaWavePersistence/prePolicySavedMetadataHasNoCompatibilityAdapter",
+      "passed": true,
+      "failed": false,
+      "incomplete": false,
+      "duration": "2.6773",
+      "source": "wvm-post-merge-rerun.json"
+    },
+    {
+      "name": "TestPerKappaWavePersistence/legacyUniformFileDefaultsToFullPrefixes",
+      "passed": true,
+      "failed": false,
+      "incomplete": false,
+      "duration": "1.123",
+      "source": "wvm-focused-tests.json"
+    },
+    {
+      "name": "TestPerKappaWavePersistence/countTransferAccountsForDiscardedModes",
+      "passed": true,
+      "failed": false,
+      "incomplete": false,
+      "duration": "6.5051",
+      "source": "wvm-focused-tests.json"
+    },
+    {
+      "name": "TestPerKappaWavePersistence/horizontalRefinementNeedsNewCounts",
+      "passed": true,
+      "failed": false,
+      "incomplete": false,
+      "duration": "3.5848",
+      "source": "wvm-focused-tests.json"
+    },
+    {
+      "name": "TestFreeSurfaceResolutionTransfer/samplingRefinementPreservesResolvedContent",
+      "passed": true,
+      "failed": false,
+      "incomplete": false,
+      "duration": "19.545",
+      "source": "wvm-focused-tests.json"
+    },
+    {
+      "name": "TestFreeSurfaceResolutionTransfer/pureFamiliesAndStrictRequests",
+      "passed": true,
+      "failed": false,
+      "incomplete": false,
+      "duration": "5.6607",
+      "source": "wvm-focused-tests.json"
+    },
+    {
+      "name": "TestFreeSurfaceResolutionTransfer/activeAndInactiveEndpointsSurviveTransfer",
+      "passed": true,
+      "failed": false,
+      "incomplete": false,
+      "duration": "14.9515",
+      "source": "wvm-focused-tests.json"
+    },
+    {
+      "name": "TestFreeSurfaceNonlinearEvolution/explicitActivationUsesDirectRHSAndPreservesLinearDefault",
+      "passed": true,
+      "failed": false,
+      "incomplete": false,
+      "duration": "1.3687",
+      "source": "wvm-focused-tests.json"
+    },
+    {
+      "name": "TestFreeSurfaceNonlinearEvolution/stableCorrectionsReachEverySourceAndCoefficientFamily",
+      "passed": true,
+      "failed": false,
+      "incomplete": false,
+      "duration": "1.776",
+      "source": "wvm-focused-tests.json"
+    },
+    {
+      "name": "TestFreeSurfaceNonlinearEvolution/nonlinearEnergyUsesPhysicalVolumeAndQuadraticSurface",
+      "passed": true,
+      "failed": false,
+      "incomplete": false,
+      "duration": "1.0438",
+      "source": "wvm-focused-tests.json"
+    },
+    {
+      "name": "TestFreeSurfaceNonlinearEvolution/reportedEnergyTendencyMatchesStateAndClockDifference",
+      "passed": true,
+      "failed": false,
+      "incomplete": false,
+      "duration": "1.0641",
+      "source": "wvm-focused-tests.json"
+    },
+    {
+      "name": "TestFreeSurfaceAdaptiveIntegration/nonlinearDampedRestartAgreesWithContinuation(policy=energy)",
+      "passed": true,
+      "failed": false,
+      "incomplete": false,
+      "duration": "5.1823",
+      "source": "wvm-focused-tests.json"
+    },
+    {
+      "name": "TestFreeSurfaceAdaptiveIntegration/nonlinearDampedRestartAgreesWithContinuation(policy=family)",
+      "passed": true,
+      "failed": false,
+      "incomplete": false,
+      "duration": "4.3387",
+      "source": "wvm-focused-tests.json"
+    },
+    {
+      "name": "TestThermalNonlinear/nonparallelInteractionsAndQuadrature",
+      "passed": true,
+      "failed": false,
+      "incomplete": false,
+      "duration": "1.87",
+      "source": "wvm-focused-tests.json"
+    },
+    {
+      "name": "TestThermalNonlinear/retainedCutoffInteractions",
+      "passed": true,
+      "failed": false,
+      "incomplete": false,
+      "duration": "0.082275",
+      "source": "wvm-focused-tests.json"
+    },
+    {
+      "name": "TestThermalNonlinear/nullControlsAndCacheMutation",
+      "passed": true,
+      "failed": false,
+      "incomplete": false,
+      "duration": "0.10004",
+      "source": "wvm-focused-tests.json"
+    },
+    {
+      "name": "TestThermalNonlinear/policyAndLinearCompatibility",
+      "passed": true,
+      "failed": false,
+      "incomplete": false,
+      "duration": "0.20471",
+      "source": "wvm-focused-tests.json"
+    },
+    {
+      "name": "TestThermalNonlinear/nonlinearLifecycleAndSeasonalCompatibility",
+      "passed": true,
+      "failed": false,
+      "incomplete": false,
+      "duration": "2.0476",
+      "source": "wvm-focused-tests.json"
+    },
+    {
+      "name": "TestThermalNonlinear/cheapPolicyPersistenceAndMigration",
+      "passed": true,
+      "failed": false,
+      "incomplete": false,
+      "duration": "0.84836",
+      "source": "wvm-focused-tests.json"
+    },
+    {
+      "name": "TestThermalOutputRestart/snapshotRestoresClockScientificStateAndForcing",
+      "passed": true,
+      "failed": false,
+      "incomplete": false,
+      "duration": "1.1114",
+      "source": "wvm-focused-tests.json"
+    },
+    {
+      "name": "TestThermalOutputRestart/physicalTransferRefinesAndQuantifiesCoarsening",
+      "passed": true,
+      "failed": false,
+      "incomplete": false,
+      "duration": "1.0333",
+      "source": "wvm-focused-tests.json"
+    },
+    {
+      "name": "TestThermalAPVDiagnostics/independentProjectionAndPhysicalAccounting",
+      "passed": true,
+      "failed": false,
+      "incomplete": false,
+      "duration": "7.0437",
+      "source": "wvm-focused-tests.json"
+    },
+    {
+      "name": "TestThermalAPVOutput/snapshotAgreesAndPreservesObjectsAndBytes",
+      "passed": true,
+      "failed": false,
+      "incomplete": false,
+      "duration": "5.2026",
+      "source": "wvm-focused-tests.json"
+    },
+    {
+      "name": "TestThermalAPVOutput/basisIdentityIgnoresStateAndIncludesProjectionGrid",
+      "passed": true,
+      "failed": false,
+      "incomplete": false,
+      "duration": "0.78417",
+      "source": "wvm-focused-tests.json"
+    },
+    {
+      "name": "TestThermalAPVOutput/nestedCommittedStreamIgnoresStagedTail",
+      "passed": true,
+      "failed": false,
+      "incomplete": false,
+      "duration": "0.89738",
+      "source": "wvm-focused-tests.json"
+    },
+    {
+      "name": "TestThermalAPVOutput/selectionsAreExplicitAndBounded",
+      "passed": true,
+      "failed": false,
+      "incomplete": false,
+      "duration": "1.037",
+      "source": "wvm-focused-tests.json"
+    },
+    {
+      "name": "TestThermalAPVOutput/malformedStreamsPreserveSharedErrorsAndReleaseReaders",
+      "passed": true,
+      "failed": false,
+      "incomplete": false,
+      "duration": "1.0113",
+      "source": "wvm-focused-tests.json"
+    },
+    {
+      "name": "TestThermalAPVOutput/diagnosisFailureReleasesReader",
+      "passed": true,
+      "failed": false,
+      "incomplete": false,
+      "duration": "0.37735",
+      "source": "wvm-focused-tests.json"
+    },
+    {
+      "name": "TestPerKappaWavePersistence/nestedLegacyNameDoesNotRejectCurrentState",
+      "passed": true,
+      "failed": false,
+      "incomplete": false,
+      "duration": "2.7627",
+      "source": "wvm-post-merge-rerun.json"
+    },
+    {
+      "name": "TestThermalReadinessDiagnostics/sourceNormUncertaintyRejectsAnOtherwiseIdenticalDiagnosis",
+      "passed": true,
+      "failed": false,
+      "incomplete": false,
+      "duration": "0.13506",
+      "source": "wvm-post-merge-rerun.json"
+    },
+    {
+      "name": "TestThermalReadinessDiagnostics/nearZeroReferencesKeepUnitsAndUndefinedRelativeValues",
+      "passed": true,
+      "failed": false,
+      "incomplete": false,
+      "duration": "0.03323",
+      "source": "wvm-post-merge-rerun.json"
+    },
+    {
+      "name": "TestThermalReadinessDiagnostics/storedBasesRestoreWithoutScientificConstruction",
+      "passed": true,
+      "failed": false,
+      "incomplete": false,
+      "duration": "27.3144",
+      "source": "wvm-provider-free-rerun.json"
+    },
+    {
+      "name": "TestThermalReadinessConstruction/completePageMatchesIndependentAugmentedExponential",
+      "passed": true,
+      "failed": false,
+      "incomplete": false,
+      "duration": "0.61066",
+      "source": "wvm-post-merge-rerun.json"
+    },
+    {
+      "name": "TestThermalReadinessConstruction/assemblyRefinementPreservesPhysicalResponses",
+      "passed": true,
+      "failed": false,
+      "incomplete": false,
+      "duration": "0.032198",
+      "source": "wvm-post-merge-rerun.json"
+    }
+  ]
+}

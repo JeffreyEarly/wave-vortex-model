@@ -1,0 +1,32 @@
+[
+  {
+    "policy": "none",
+    "scientificFieldCount": 74,
+    "scientificStateExactlyEqual": true,
+    "assessmentExceptTimersExactlyEqual": true,
+    "beforeMedianSeconds": 15.670164375,
+    "afterMedianSeconds": 15.679536625,
+    "beforeFilteringSeconds": 0.01973704166666667,
+    "afterFilteringSeconds": 0.019488833333333313
+  },
+  {
+    "policy": "fixedFraction",
+    "scientificFieldCount": 74,
+    "scientificStateExactlyEqual": true,
+    "assessmentExceptTimersExactlyEqual": true,
+    "beforeMedianSeconds": 15.450742583333334,
+    "afterMedianSeconds": 15.461089083333333,
+    "beforeFilteringSeconds": 0.020147375000000006,
+    "afterFilteringSeconds": 0.019991625000000006
+  },
+  {
+    "policy": "effectiveBandwidth",
+    "scientificFieldCount": 74,
+    "scientificStateExactlyEqual": true,
+    "assessmentExceptTimersExactlyEqual": true,
+    "beforeMedianSeconds": 15.655070125,
+    "afterMedianSeconds": 15.58973425,
+    "beforeFilteringSeconds": 0.21905629166666674,
+    "afterFilteringSeconds": 0.21741016666666649
+  }
+]

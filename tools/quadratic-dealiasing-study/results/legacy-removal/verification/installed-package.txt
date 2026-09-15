@@ -1,0 +1,39 @@
+
+The following packages will be installed:
+    WaveVortexModel@4.3.0  (Repository: N/A, Digest: b176f91b4ee30ca9fc7a4ade3d72b9ca33a94182a8dea003dd4012348e9772cf)
+        NetCDF@1.0.2  (Repository: OceanKit, Digest: ca7e1c452feaa3352f851878d6002166672aa81d759c004881b121ff8564cf54)
+        chebfun@5.7.0  (Repository: OceanKit, Digest: dd88e8bd6d05739627dcf4238215ab45851259d71c403a00b64345a46fef82fd)
+        SplineCore@2.2.0  (Repository: OceanKit, Digest: 1f31407704685548dee617bb6aa4c0ddeaa13557ebb7c472b01a06f8f0650bae)
+        Distributions@2.0.0  (Repository: OceanKit, Digest: 11ed0abc84e5e6202633e4551659a759431a17d74d2ecfe536e6f3f318c526b8)
+        ClassAnnotations@1.2.1  (Repository: OceanKit, Digest: 76b793898a2935b584e31b39f26321725531db266a559a8921ca2413d76c468e)
+        InternalModes@2.0.0-beta.7  (Repository: OceanKit, Digest: da6b72beca8009d7d056269c9e06f06eff8224b9e33556b58b6793f99906af26)
+
+Fetching package 'WaveVortexModel@4.3.0' from '/Users/jearly/Documents/OceanKitRepositories/wvm-v5-construction-optimization' to '/private/tmp/wvm42-installed-addons/WaveVortexModel@4.3.0' ...Done.
+Fetching package 'NetCDF@1.0.2' from '/Users/jearly/Documents/OceanKitRepositories/oceankit-internal-modes-beta7/NetCDF-1.0.2' to '/private/tmp/wvm42-installed-addons/NetCDF@1.0.2' ...Done.
+Fetching package 'chebfun@5.7.0' from '/Users/jearly/Documents/OceanKitRepositories/oceankit-internal-modes-beta7/chebfun-5.7.0' to '/private/tmp/wvm42-installed-addons/chebfun@5.7.0' ...Done.
+Fetching package 'Distributions@2.0.0' from '/Users/jearly/Documents/OceanKitRepositories/oceankit-internal-modes-beta7/Distributions-2.0.0' to '/private/tmp/wvm42-installed-addons/Distributions@2.0.0' ...Done.
+Fetching package 'SplineCore@2.2.0' from '/Users/jearly/Documents/OceanKitRepositories/oceankit-internal-modes-beta7/SplineCore-2.2.0' to '/private/tmp/wvm42-installed-addons/SplineCore@2.2.0' ...Done.
+Fetching package 'ClassAnnotations@1.2.1' from '/Users/jearly/Documents/OceanKitRepositories/oceankit-internal-modes-beta7/ClassAnnotations-1.2.1' to '/private/tmp/wvm42-installed-addons/ClassAnnotations@1.2.1' ...Done.
+Fetching package 'InternalModes@2.0.0-beta.7' from '/Users/jearly/Documents/OceanKitRepositories/oceankit-internal-modes-beta7/InternalModes-2.0.0-beta.7' to '/private/tmp/wvm42-installed-addons/InternalModes@2.0.0' ...Done.
+
+Successfully added the following packages to the path:
+    WaveVortexModel@4.3.0  (<a href="matlab: help('WaveVortexModel@4.3.0')" style="font-weight:bold">help</a>)
+    NetCDF@1.0.2  (<a href="matlab: help('NetCDF@1.0.2')" style="font-weight:bold">help</a>)
+    chebfun@5.7.0  (<a href="matlab: help('chebfun@5.7.0')" style="font-weight:bold">help</a>)
+    Distributions@2.0.0  (<a href="matlab: help('Distributions@2.0.0')" style="font-weight:bold">help</a>)
+    SplineCore@2.2.0  (<a href="matlab: help('SplineCore@2.2.0')" style="font-weight:bold">help</a>)
+    ClassAnnotations@1.2.1  (<a href="matlab: help('ClassAnnotations@1.2.1')" style="font-weight:bold">help</a>)
+    InternalModes@2.0.0-beta.7  (<a href="matlab: help('InternalModes@2.0.0-beta.7')" style="font-weight:bold">help</a>)
+
+Installation complete.
+
+BLAS: trying environment BLAS_VERSION...
+BLAS: loading libmwAF_BLAS_ilp64.dylib
+BLAS: loaded libmwAF_BLAS_ilp64.dylib@0x97f8b830
+dX/U = 66666.7 s (1111.1 min). dZ/W = 45000.0 s (750.0 min). The highest frequency resolved IGW has period of 1349.9 s (22.5 min).
+WVTransformConstantStratification initialized from Ap, Am, A0.
+Verified installed WaveVortexModel 4.3.0 and its six-package dependency graph.
+Running TestFreeSurfaceNonlinearAdvectionGuard
+.....
+Done TestFreeSurfaceNonlinearAdvectionGuard
+__________

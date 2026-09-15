@@ -45,6 +45,7 @@ nav_order: 100
 
 - Independent convergence and physical-grid Gram checks establish linear prefixes before optional quadratic filtering. Configured endpoint-resolution checks and strict explicit counts remain active.
 - Quadratic filtering replaces construction-time product qualification with a practical heuristic. It reports the linear limit, filtering limit, and selected count without claiming exhaustive nonlinear certification. Thermal QG retains its separate mapped-quadrature check.
+- Remove the superseded sampled-product survey, WVM product-prefix helpers, legacy constructor options, persisted metadata, and combined QG horizontal-limit report fields. Existing experimental saved transforms carrying the retired metadata are rejected; no compatibility adapter is provided.
 - Avoid normalizing an unusable MDA candidate tail when a shorter physical-grid-qualified prefix exists. A bounded candidate search must establish a measured Gram cutoff; independent references cover the selected balanced prefixes. The provider normalization guard and scientific tolerances are unchanged.
 
 
