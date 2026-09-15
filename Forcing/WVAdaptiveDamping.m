@@ -21,6 +21,9 @@ classdef WVAdaptiveDamping < WVForcing
     % acts directly on the canonical coefficient families: `Ag_q` receives
     % horizontal and APV-mode damping, `Ag_0` receives horizontal damping,
     % and the horizontally uniform `Amda` family is unchanged.
+    % Native thermal transforms use a complete energy-normalized generalized-
+    % enstrophy basis. The selective contribution dissipates both physical
+    % energy and the combined interior-plus-endpoint quadratic invariant.
     %
     % Free-surface Boussinesq damps small horizontal scales with one rate
     % shared by every active mode at a given horizontal wavenumber:
@@ -95,6 +98,14 @@ classdef WVAdaptiveDamping < WVForcing
         % Changing this setting rebuilds the operator and persists on restart.
         % - Topic: Inspect forcing configuration
         apvCutoffFraction (1,1) double = NaN
+
+        % Fraction of the ordered native generalized spectrum left undamped.
+        %
+        % Applies only to the native thermal closure. A finite value lies in
+        % [0,1); NaN selects the standard spectral-vanishing cutoff.
+        % Changing this value rebuilds only the transient application cache.
+        % - Topic: Inspect forcing configuration
+        generalizedEnstrophyCutoffFraction (1,1) double = NaN
         % Unit-speed spectral damping operator in inverse meters.
         %
         % This array has `wvt.spectralMatrixSize`. The actual coefficient
@@ -171,21 +182,85 @@ classdef WVAdaptiveDamping < WVForcing
         forcingListener
     end
 
+    properties (SetAccess=private)
+        % Immutable canonical native thermal closure state.
+        %
+        % Annotated restoration validates this retained basis, dual, spectrum,
+        % uncertainty and physical identity without scientific construction.
+        % Nonthermal adaptive damping stores a typed empty state.
+        % - Topic: Inspect forcing configuration
+        thermalGeneralizedEnstrophyState = WVInternal.ThermalGeneralizedEnstrophyState.empty(0,1)
+    end
+
     properties (Access = private, Transient)
         horizontalDamping_ = []
         boussinesqDamping_ = struct()
+        thermalDampingData_ = struct()
+        thermalCacheBuildCount_ = 0
     end
 
     methods (Access = private, Hidden)
+        function buildThermalDampingOperator(self)
+            w=self.wvt; state=self.thermalGeneralizedEnstrophyState;
+            delta=self.assumedEffectiveHorizontalGridResolution;
+            maximum=pi/delta; spacing=min(w.dk,w.dl);
+            kh=hypot(w.k(w.klNonzero),w.l(w.klNonzero)).';
+            [horizontal,self.k_no_damp,self.k_damp]=WVInternal.adaptiveSVVFilter(kh,maximum,spacing,NaN);
+            horizontal=-delta/pi^2*kh.^2.*horizontal;
+            n=w.thermalModeCount;
+            [selectiveShape,self.j_no_damp,self.j_damp]=WVInternal.adaptiveSVVFilter((1:n)',n,1,self.generalizedEnstrophyCutoffFraction);
+            pages=cell(numel(w.khUnique),1); maximumUnitSpeedRate=0;
+            for p=1:numel(pages)
+                upper=state.clusterUpperOrdinal(:,p);
+                rateEigenvalues=state.generalizedEigenvalues(upper,p);
+                selectiveRates=-(1/delta)*(rateEigenvalues/state.eigenvalueNormalization(p)).*selectiveShape(upper);
+                active=find(selectiveRates~=0); r=numel(active);
+                zero=find(selectiveRates==0,1,'last');
+                if isempty(zero), effectiveZeroCutoff=0; else, effectiveZeroCutoff=zero; end
+                if isempty(active), minimumActiveEigenvalue=Inf; else, minimumActiveEigenvalue=min(state.generalizedEigenvalues(active,p)); end
+                left=w.polynomialToThermal(:,:,p)*state.polynomialEigenvectors(:,active,p);
+                right=state.polynomialDuals(active,:,p)*w.thermalToPolynomial(:,:,p);
+                if r==0
+                    applicationDualResidual=0;
+                else
+                    applicationDualResidual=norm(right*left-eye(r),2);
+                    if applicationDualResidual>1e-8
+                        error('WV:ThermalGeneralizedEnstrophyApplication','The mapped thermal eigenbasis failed its 1e-8 duality gate.');
+                    end
+                end
+                if 2*r>=n
+                    kind="dense";
+                    denseOperator=(left.*reshape(selectiveRates(active),1,[]))*right;
+                    leftFactor=[]; rightFactor=[];
+                else
+                    kind="factored";
+                    denseOperator=[]; leftFactor=left.*reshape(selectiveRates(active),1,[]); rightFactor=right;
+                end
+                columns=w.klNonzeroKhUniqueIndex==p;
+                maximumUnitSpeedRate=max(maximumUnitSpeedRate,max(abs(horizontal(columns)))+max(abs(selectiveRates),[],"all"));
+                pages{p}=struct(eigenvalues=state.generalizedEigenvalues(:,p), ...
+                    eigenvalueUncertainty=state.eigenvalueUncertainty(:,p), ...
+                    singularValueUncertainty=state.singularValueUncertainty(:,p), ...
+                    rateEigenvalues=rateEigenvalues,clusterUpperOrdinal=upper, ...
+                    selectiveRates=selectiveRates,activeDirections=active,activeCount=r, ...
+                    effectiveZeroCutoff=effectiveZeroCutoff,minimumActiveEigenvalue=minimumActiveEigenvalue,applicationKind=kind, ...
+                    leftFactor=leftFactor,rightFactor=rightFactor,denseOperator=denseOperator,applicationDualResidual=applicationDualResidual);
+            end
+            self.horizontalDamping_=horizontal;
+            self.thermalCacheBuildCount_=self.thermalCacheBuildCount_+1;
+            self.thermalDampingData_=struct(horizontalRates=horizontal,pages={pages}, ...
+                nominalSelectiveCutoff=self.j_no_damp,selectiveSignificantOrdinal=self.j_damp, ...
+                maximumUnitSpeedRate=maximumUnitSpeedRate,cacheBuildCount=self.thermalCacheBuildCount_);
+            self.damp=[]; self.dampAg_q=[]; self.dampAg_0=[]; self.boussinesqDamping_=struct();
+        end
+
         function buildBoussinesqDampingOperator(self)
             w = self.wvt;
             delta = self.assumedEffectiveHorizontalGridResolution;
             kmax = pi/delta;
             dk = min(w.dk,w.dl);
-            self.k_no_damp = dk*(kmax/dk)^(3/4);
-            b = sqrt(-log(.1));
-            self.k_damp = (kmax+b*self.k_no_damp)/(1+b);
-            horizontal = -delta/pi^2*w.khNonzero.'.^2.*WVAdaptiveDamping.vanishingFilter(w.khNonzero.',kmax,self.k_no_damp);
+            [filter,self.k_no_damp,self.k_damp]=WVInternal.adaptiveSVVFilter(w.khNonzero.',kmax,dk,NaN);
+            horizontal = -delta/pi^2*w.khNonzero.'.^2.*filter;
             operator = struct();
             self.j_no_damp = Inf;
             self.j_damp = Inf;
@@ -211,6 +286,27 @@ classdef WVAdaptiveDamping < WVForcing
             end
         end
 
+
+        function generalizedEnstrophyCutoffFractionDidChange(self)
+            if ~isempty(self.thermalGeneralizedEnstrophyState) && ~isempty(fieldnames(self.thermalDampingData_))
+                self.buildDampingOperator();
+            end
+        end
+
+
+        function validateThermalStateCompatibility(~,state,w)
+            expected=[w.N20,w.inverseScale,w.Lz,w.latitude,w.f,w.g,w.Lx,w.Ly];
+            actual=[state.sourceN20,state.sourceInverseScale,state.sourceDepth,state.sourceLatitude,state.sourceCoriolis,state.sourceGravity,state.sourceHorizontalDomain(:).'];
+            scale=max(abs(expected),realmin);
+            if any(abs(expected-actual)>1e-12*scale) || ...
+                    numel(state.generalizedDirection)~=w.thermalModeCount || ...
+                    numel(state.generalizedRadius)~=numel(w.khUnique) || ...
+                    any(abs(state.generalizedRadius-w.khUnique(:))>1e-12*max(abs(w.khUnique(:)),realmin)) || ...
+                    ~isequal(state.generalizedEndpoint,[1;2])
+                error('WV:ThermalGeneralizedEnstrophyPhysics','The canonical closure state must match the transform profile, geometry, Coriolis parameter, gravity, polynomial order and radius grid.');
+            end
+        end
+
         function forcingDidChangeNotification(self,~,~)
             if self.wvt.effectiveHorizontalGridResolution ~= self.assumedEffectiveHorizontalGridResolution
                 self.buildDampingOperator();
@@ -226,7 +322,7 @@ classdef WVAdaptiveDamping < WVForcing
             % - Declaration: contract = portableImplementationContract(self)
             % - Returns contract: versioned data-only forcing contract
             % - Developer: true
-            if isa(self.wvt,"WVTransformFreeSurfaceBoussinesq")
+            if isa(self.wvt,"WVTransformFreeSurfaceBoussinesq") || isa(self.wvt,"WVTransformFreeSurfaceThermalQG")
                 contract = portableImplementationContract@WVForcing(self);
                 return
             end
@@ -241,15 +337,32 @@ classdef WVAdaptiveDamping < WVForcing
             % - Declaration: self = WVAdaptiveDamping(wvt,options)
             % - Parameter wvt: transform that owns and evaluates the closure
             % - Parameter options.apvCutoffFraction: optional free-surface QG APV cutoff fraction; NaN uses the standard cutoff
+            % - Parameter options.generalizedEnstrophyCutoffFraction: native thermal ordinal cutoff fraction; NaN uses the standard cutoff
+            % - Parameter options.thermalGeneralizedEnstrophyState: authoritative canonical thermal state used for restoration
             % - Returns self: adaptive-damping closure owned by `wvt`
             arguments
                 wvt WVTransform {mustBeNonempty}
                 options.apvCutoffFraction (1,1) double = NaN
+                options.generalizedEnstrophyCutoffFraction (1,1) double = NaN
+                options.thermalGeneralizedEnstrophyState WVInternal.ThermalGeneralizedEnstrophyState = WVInternal.ThermalGeneralizedEnstrophyState.empty(0,1)
             end
             self@WVForcing(wvt,"adaptive damping",WVAdaptiveDamping.forcingTypesForTransform(wvt));
             self.wvt = wvt;
             self.isClosure = true;
+            isThermal=isa(wvt,'WVTransformFreeSurfaceThermalQG');
+            if isThermal
+                if isempty(options.thermalGeneralizedEnstrophyState)
+                    error('WVAdaptiveDamping:ThermalStateRequired','Use fromThermalGeneralizedEnstrophy to construct native thermal adaptive damping.');
+                elseif ~isnan(options.apvCutoffFraction) || ~isscalar(options.thermalGeneralizedEnstrophyState)
+                    error('WV:ThermalGeneralizedEnstrophyConfiguration','Thermal adaptive damping requires one canonical native state and does not accept an APV cutoff.');
+                end
+                self.validateThermalStateCompatibility(options.thermalGeneralizedEnstrophyState,wvt);
+            elseif ~isempty(options.thermalGeneralizedEnstrophyState) || ~isnan(options.generalizedEnstrophyCutoffFraction)
+                error('WV:ThermalGeneralizedEnstrophyConfiguration','Native generalized-enstrophy state and cutoff apply only to thermal transforms.');
+            end
+            self.thermalGeneralizedEnstrophyState=options.thermalGeneralizedEnstrophyState;
             self.apvCutoffFraction = options.apvCutoffFraction;
+            self.generalizedEnstrophyCutoffFraction = options.generalizedEnstrophyCutoffFraction;
             self.buildDampingOperator();
             self.forcingListener = addlistener(self.wvt,'forcingDidChange',@self.forcingDidChangeNotification);
         end
@@ -263,6 +376,17 @@ classdef WVAdaptiveDamping < WVForcing
             end
             self.apvCutoffFraction = value;
             self.apvCutoffFractionDidChange();
+        end
+
+        function set.generalizedEnstrophyCutoffFraction(self,value)
+            if ~isreal(value) || ~(isnan(value) || (isfinite(value) && value>=0 && value<1))
+                error('WVAdaptiveDamping:GeneralizedEnstrophyCutoff','Use a generalized-enstrophy cutoff fraction in [0,1), or NaN for the standard cutoff.');
+            end
+            if ~isnan(value) && ~isa(self.wvt,'WVTransformFreeSurfaceThermalQG')
+                error('WVAdaptiveDamping:GeneralizedEnstrophyCutoff','The generalized-enstrophy cutoff applies only to native thermal transforms.');
+            end
+            self.generalizedEnstrophyCutoffFraction=value;
+            self.generalizedEnstrophyCutoffFractionDidChange();
         end
 
         function didGetRemovedFromTransform(self, wvt)
@@ -283,6 +407,11 @@ classdef WVAdaptiveDamping < WVForcing
             self.dampAg_q = [];
             self.dampAg_0 = [];
             self.horizontalDamping_ = [];
+
+            if isa(self.wvt,"WVTransformFreeSurfaceThermalQG")
+                self.buildThermalDampingOperator();
+                return
+            end
 
             if isa(self.wvt,"WVTransformFreeSurfaceBoussinesq")
                 self.buildBoussinesqDampingOperator();
@@ -336,11 +465,6 @@ classdef WVAdaptiveDamping < WVForcing
             end
             wvt_ = self.wvt;
             dkl_min = min(wvt_.dk, wvt_.dl);
-            kl_cutoff = dkl_min*(kl_max/dkl_min)^(3/4);
-
-            b = sqrt(-log(0.1));
-            kl_damp = (kl_max+b*kl_cutoff)/(1+b); % approximately
-
             [K,L,J] = wvt_.kljGrid;
             verticalMode = wvt_.j;
             if isa(wvt_,"WVTransformFreeSurfaceQG")
@@ -348,21 +472,18 @@ classdef WVAdaptiveDamping < WVForcing
                 J = repmat(verticalMode,1,wvt_.Nkl);
             end
             Kh = sqrt(K.^2 + L.^2);
-
-            Qkl = WVInternal.horizontalVanishingFilter(Kh,kl_cutoff,kl_max);
+            [Qkl,kl_cutoff,kl_damp]=WVInternal.adaptiveSVVFilter(Kh,kl_max,dkl_min,NaN);
 
             hasAPVCutoff = isa(wvt_,"WVTransformFreeSurfaceQG") && ~isnan(self.apvCutoffFraction);
             if wvt_.Nj > 2 || hasAPVCutoff
+                cutoffFraction=NaN;
                 if hasAPVCutoff
-                    j_cutoff = self.apvCutoffFraction*j_max;
+                    cutoffFraction=self.apvCutoffFraction;
+                    dj=1;
                 else
-                    dj = verticalMode(2)-verticalMode(1);
-                    j_cutoff = dj*(j_max/dj)^(3/4);
+                    dj=verticalMode(2)-verticalMode(1);
                 end
-                j_damp = (j_max+b*j_cutoff)/(1+b); % approximately
-                Qj = exp( - ((J-j_max)./(J-j_cutoff)).^2 );
-                Qj(J<=j_cutoff) = 0;
-                Qj(J>j_max) = 1;
+                [Qj,j_cutoff,j_damp]=WVInternal.adaptiveSVVFilter(J,j_max,dj,cutoffFraction);
             else
                 j_cutoff = 0;
                 j_damp = 0;
@@ -433,6 +554,10 @@ classdef WVAdaptiveDamping < WVForcing
             arguments
                 self WVAdaptiveDamping {mustBeNonempty}
             end
+            if isa(self.wvt,'WVTransformFreeSurfaceThermalQG')
+                dampingTimeScale=1/self.thermalDampingData_.maximumUnitSpeedRate;
+                return
+            end
             values = self.damp(:);
             for name = string(fieldnames(self.boussinesqDamping_)).', values = [values; self.boussinesqDamping_.(name)(:)]; end %#ok<AGROW>
             dampingTimeScale = 1/max(abs(values));
@@ -501,29 +626,53 @@ classdef WVAdaptiveDamping < WVForcing
                 physicalState (1,1) struct = struct()
             end
             [horizontal,vertical] = self.quasigeostrophicDampingContributions(wvt,physicalState);
+            if isa(wvt,'WVTransformFreeSurfaceThermalQG')
+                tendency.Ath=tendency.Ath+horizontal.Ath+vertical.Ath;
+                return
+            end
             tendency.Ag_q = tendency.Ag_q+horizontal.Ag_q+vertical.Ag_q;
             tendency.Ag_0 = tendency.Ag_0+horizontal.Ag_0;
         end
 
         function [horizontal,vertical] = quasigeostrophicDampingContributions(self,wvt,physicalState)
-            % Return the horizontal and vertical tendencies used by this forcing.
+            % Return the horizontal and selective tendencies used by this forcing.
             %
             % Their sum is the complete damping tendency, including any
-            % configured APV cutoff. Both contributions leave MDA unchanged.
+            % configured cutoff. Thermal selective damping acts in complete
+            % generalized-enstrophy coordinates. Both contributions leave MDA
+            % unchanged.
             % - Topic: Implement forcing evaluation
             % - Parameter wvt: free-surface QG transform evaluating the closure
             % - Parameter physicalState: optional shared reconstruction containing uvMax
             % - Returns horizontal: horizontal coefficient tendency
-            % - Returns vertical: APV-mode coefficient tendency
+            % - Returns vertical: APV-mode or native generalized-enstrophy coefficient tendency
             arguments
                 self (1,1) WVAdaptiveDamping
-                wvt (1,1) WVTransformFreeSurfaceQG
+                wvt (1,1) WVTransform
                 physicalState (1,1) struct = struct()
+            end
+            if wvt~=self.wvt
+                error('WVAdaptiveDamping:Owner','Evaluate this forcing only on its owning transform.');
             end
             if isfield(physicalState,'uvMax')
                 uvMax = physicalState.uvMax;
             else
                 uvMax = wvt.uvMax;
+            end
+            if isa(wvt,'WVTransformFreeSurfaceThermalQG')
+                WVAdaptiveDamping.validateThermalSpeed(uvMax);
+                horizontal=struct(Ath=uvMax*self.thermalDampingData_.horizontalRates.*wvt.Ath,Amda=zeros(size(wvt.Amda)));
+                vertical=struct(Ath=complex(zeros(size(wvt.Ath))),Amda=zeros(size(wvt.Amda)));
+                for p=1:numel(self.thermalDampingData_.pages)
+                    columns=wvt.klNonzeroKhUniqueIndex==p;
+                    page=self.thermalDampingData_.pages{p};
+                    if page.applicationKind=="dense"
+                        vertical.Ath(:,columns)=uvMax*page.denseOperator*wvt.Ath(:,columns);
+                    elseif page.activeCount>0
+                        vertical.Ath(:,columns)=uvMax*page.leftFactor*(page.rightFactor*wvt.Ath(:,columns));
+                    end
+                end
+                return
             end
             horizontal = struct(Ag_q=uvMax*self.horizontalDamping_.*wvt.Ag_q, ...
                 Ag_0=uvMax*self.dampAg_0.*wvt.Ag_0,Amda=zeros(size(wvt.Amda)));
@@ -532,9 +681,14 @@ classdef WVAdaptiveDamping < WVForcing
         end
 
         function rate = maximumExplicitDampingRate(self,stageState)
-            % Bound the diagonal APV closure at the current trial speed.
+            % Bound the complete closure at the current trial speed.
             % - Topic: Inspect forcing or damping scales
             % - Developer: true
+            if isa(self.wvt,'WVTransformFreeSurfaceThermalQG')
+                WVAdaptiveDamping.validateThermalSpeed(stageState.uvMax);
+                rate=stageState.uvMax*self.thermalDampingData_.maximumUnitSpeedRate;
+                return
+            end
             rate=stageState.uvMax*max(abs([self.dampAg_q(:);self.dampAg_0(:)]),[],"all");
             if isempty(rate), rate=0; end
         end
@@ -547,6 +701,13 @@ classdef WVAdaptiveDamping < WVForcing
             % - Topic: Inspect forcing or damping scales
             % - Returns operator: six-family rate structure, empty for other models
             operator = self.boussinesqDamping_;
+        end
+
+        function data=coefficientDampingData(self)
+            % Return the native thermal application cache and construction diagnostics.
+            % - Topic: Inspect forcing or damping scales
+            % - Developer: true
+            data=self.thermalDampingData_;
         end
 
         function tendency = addBoussinesqSpectralForcing(self,wvt,tendency,physicalState)
@@ -576,6 +737,11 @@ classdef WVAdaptiveDamping < WVForcing
         function force = forcingWithResolutionOfTransform(self, wvtX2)
             % Create equivalent adaptive damping for another resolution.
             %
+            % Native thermal transfer reuses the immutable spectrum when the
+            % target polynomial order and radius grid match. A compatible new
+            % order or radius grid is scientifically reconstructed with the
+            % same cutoff and endpoint-weight multiplier.
+            %
             % - Declaration: forcingWithResolutionOfTransform(self, wvtX2)
             % - Parameter wvtX2: compatible transform at the target resolution
             % - Returns force: adaptive damping owned by `wvtX2`
@@ -583,22 +749,42 @@ classdef WVAdaptiveDamping < WVForcing
                 self WVAdaptiveDamping {mustBeNonempty}
                 wvtX2 WVTransform {mustBeNonempty}
             end
+            if isa(self.wvt,'WVTransformFreeSurfaceThermalQG')
+                if ~isa(wvtX2,'WVTransformFreeSurfaceThermalQG')
+                    error('WV:ThermalGeneralizedEnstrophyTransfer','Transfer native thermal damping only to a thermal transform.');
+                end
+                state=self.thermalGeneralizedEnstrophyState;
+                expected=[self.wvt.N20,self.wvt.inverseScale,self.wvt.Lz,self.wvt.latitude,self.wvt.f,self.wvt.g,self.wvt.Lx,self.wvt.Ly];
+                actual=[wvtX2.N20,wvtX2.inverseScale,wvtX2.Lz,wvtX2.latitude,wvtX2.f,wvtX2.g,wvtX2.Lx,wvtX2.Ly];
+                if any(abs(expected-actual)>1e-12*max(abs(expected),realmin))
+                    error('WV:ThermalGeneralizedEnstrophyTransfer','Target profile, geometry, Coriolis parameter and gravity must match the source closure.');
+                end
+                if wvtX2.thermalModeCount==numel(state.generalizedDirection) && ...
+                        numel(wvtX2.khUnique)==numel(state.generalizedRadius) && ...
+                        all(abs(wvtX2.khUnique(:)-state.generalizedRadius)<=1e-12*max(abs(state.generalizedRadius),realmin))
+                    force=WVAdaptiveDamping(wvtX2,generalizedEnstrophyCutoffFraction=self.generalizedEnstrophyCutoffFraction,thermalGeneralizedEnstrophyState=state);
+                else
+                    force=WVAdaptiveDamping.fromThermalGeneralizedEnstrophy(wvtX2, ...
+                        generalizedEnstrophyCutoffFraction=self.generalizedEnstrophyCutoffFraction, ...
+                        boundaryWeightMultiplier=state.boundaryWeightMultiplier);
+                end
+                return
+            end
             force = WVAdaptiveDamping(wvtX2,apvCutoffFraction=self.apvCutoffFraction);
         end
     end
 
     methods (Static, Access = private)
-        function value = vanishingFilter(coordinate,maximum,cutoff)
-            value = zeros(size(coordinate));
-            active = coordinate>cutoff;
-            value(active) = exp(-((coordinate(active)-maximum)./(coordinate(active)-cutoff)).^2);
-            value(coordinate>=maximum & active) = 1;
+        function validateThermalSpeed(speed)
+            if ~isnumeric(speed) || ~isscalar(speed) || ~isreal(speed) || ~isfinite(speed) || speed<0
+                error('WV:ThermalGeneralizedEnstrophySpeed','Thermal adaptive damping requires a finite nonnegative scalar stage speed.');
+            end
         end
 
         function forcingTypes = forcingTypesForTransform(wvt)
             if isa(wvt,"WVTransformFreeSurfaceBoussinesq")
                 forcingTypes = WVForcingType("BoussinesqSpectral");
-            elseif isa(wvt,"WVTransformFreeSurfaceQG")
+            elseif isa(wvt,"WVTransformFreeSurfaceThermalQG") || isa(wvt,"WVTransformFreeSurfaceQG")
                 forcingTypes = WVForcingType("QGSpectral");
             else
                 forcingTypes = WVForcingType(["Spectral","PVSpectral"]);
@@ -607,6 +793,27 @@ classdef WVAdaptiveDamping < WVForcing
     end
 
     methods (Static)
+        function self=fromThermalGeneralizedEnstrophy(wvt,options)
+            % Construct native thermal generalized-enstrophy damping.
+            %
+            % This factory assembles a complete positive generalized spectrum
+            % in the transform's polynomial space. The endpoint multiplier
+            % applies equally to surface and bottom variance weights.
+            % - Topic: Create the forcing
+            % - Declaration: self = fromThermalGeneralizedEnstrophy(wvt,options)
+            % - Parameter wvt: thermal transform that owns the closure
+            % - Parameter options.generalizedEnstrophyCutoffFraction: ordinal cutoff fraction in [0,1), or NaN for the standard cutoff
+            % - Parameter options.boundaryWeightMultiplier: positive common multiplier for both endpoint weights
+            % - Returns self: native thermal adaptive-damping closure
+            arguments
+                wvt (1,1) WVTransformFreeSurfaceThermalQG
+                options.generalizedEnstrophyCutoffFraction (1,1) double = NaN
+                options.boundaryWeightMultiplier (1,1) double {mustBeReal,mustBeFinite,mustBePositive} = 1
+            end
+            state=WVInternal.ThermalGeneralizedEnstrophyState.fromTransform(wvt,boundaryWeightMultiplier=options.boundaryWeightMultiplier);
+            self=WVAdaptiveDamping(wvt,generalizedEnstrophyCutoffFraction=options.generalizedEnstrophyCutoffFraction,thermalGeneralizedEnstrophyState=state);
+        end
+
         function vars = classRequiredPropertyNames()
             % Returns the required property names for the class
             %
@@ -615,7 +822,7 @@ classdef WVAdaptiveDamping < WVForcing
             % - Returns: vars
             arguments
             end
-            vars = {'apvCutoffFraction'};
+            vars = {'apvCutoffFraction','generalizedEnstrophyCutoffFraction','thermalGeneralizedEnstrophyState'};
         end
 
         function propertyAnnotations = classDefinedPropertyAnnotations()
@@ -629,6 +836,8 @@ classdef WVAdaptiveDamping < WVForcing
             end
             propertyAnnotations = CAPropertyAnnotation.empty(0,0);
             propertyAnnotations(end+1) = CANumericProperty('apvCutoffFraction',{},'1','free-surface QG APV cutoff fraction; NaN uses the standard cutoff');
+            propertyAnnotations(end+1) = CANumericProperty('generalizedEnstrophyCutoffFraction',{},'1','native thermal generalized-enstrophy cutoff fraction; NaN uses the standard cutoff');
+            propertyAnnotations(end+1) = CAObjectProperty('thermalGeneralizedEnstrophyState','immutable canonical native thermal closure state');
         end
     end
 end

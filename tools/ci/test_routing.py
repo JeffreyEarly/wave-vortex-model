@@ -80,6 +80,21 @@ class RoutingTests(unittest.TestCase):
         self.assertEqual(plan["tests"], ["TestThermalDiagnostics"])
         self.assertTrue(plan["matlab"])
 
+    def test_native_thermal_closure_runs_its_compact_scientific_contract(self):
+        for path in (
+            "UnitTests/TestNativeThermalAdaptiveDamping.m",
+            "Forcing/WVAdaptiveDamping.m",
+            "+WVInternal/adaptiveSVVFilter.m",
+            "+WVInternal/buildThermalGeneralizedEnstrophyState.m",
+            "+WVInternal/thermalGeneralizedEnstrophyFactors.m",
+            "+WVInternal/@ThermalGeneralizedEnstrophyState/ThermalGeneralizedEnstrophyState.m",
+        ):
+            with self.subTest(path=path):
+                plan = classify_changes([path])
+                self.assertEqual(plan["errors"], [])
+                self.assertIn("TestNativeThermalAdaptiveDamping", plan["tests"])
+                self.assertTrue(plan["matlab"])
+
     def test_benchmark_fixture_change_excludes_native_workers(self):
         plan = classify_changes(["UnitTests/TestCompiledPreviewBenchmark.m"])
         self.assertEqual(plan["tests"], ["TestCompiledPreviewBenchmark/publicNormalizationCarriesExactAndRSSMemory"])

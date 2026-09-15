@@ -326,7 +326,7 @@ classdef WVTransformFreeSurfaceThermalQG < WVGeometryDoublyPeriodicStratified & 
                 if isa(force,'WVVerticalDiffusivity')
                     error('WV:ThermalDiffusionOwnership','Thermal diffusivity belongs to the transform; use withDiffusivity.');
                 end
-                if isa(force,'WVThermalAPVDamping'), continue; end
+                if isa(force,'WVThermalAPVDamping') || isa(force,'WVAdaptiveDamping'), continue; end
                 if isa(force,'WVNonlinearAdvection')
                     if ~self.shouldCheckQuadraticAliasing || ~self.shouldAntialias
                         error('WV:ThermalNonlinearQualification','Nonlinear advection requires qualified product quadrature and horizontal antialiasing.');

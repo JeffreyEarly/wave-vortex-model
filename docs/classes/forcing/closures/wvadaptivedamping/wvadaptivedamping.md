@@ -21,6 +21,8 @@ Create adaptive spectral damping for a transform.
 ## Parameters
 + `wvt`  transform that owns and evaluates the closure
 + `options.apvCutoffFraction`  optional free-surface QG APV cutoff fraction; NaN uses the standard cutoff
++ `options.generalizedEnstrophyCutoffFraction`  native thermal ordinal cutoff fraction; NaN uses the standard cutoff
++ `options.thermalGeneralizedEnstrophyState`  authoritative canonical thermal state used for restoration
 
 ## Returns
 + `self`  adaptive-damping closure owned by `wvt`

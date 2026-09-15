@@ -33,7 +33,10 @@ COMPILED = ("TestCompiledKernelIntegration", "TestWVCompiledBackend")
 # Concrete closures also need their numerical equations checked, beyond the
 # common forcing registration/persistence contract.
 FORCING_REGRESSIONS = {
-    "WVAdaptiveDamping": ("TestBoussinesqAdaptiveDamping/ratesProtectLargeScalesAndShareHorizontalFilter",),
+    "WVAdaptiveDamping": (
+        "TestBoussinesqAdaptiveDamping/ratesProtectLargeScalesAndShareHorizontalFilter",
+        "TestNativeThermalAdaptiveDamping",
+    ),
     "WVBottomFrictionQuadratic": ("TestFreeSurfaceQGBottomFriction/nondiffusiveSignedProjection",),
     "WVHorizontalDamping": ("TestTraditionalDamping/horizontalTendencyMatchesResolvedLaplacian",),
     "WVVerticalDamping": ("TestTraditionalDamping/verticalTendencyMatchesResolvedLaplacian",),
@@ -52,7 +55,8 @@ ROUTINE_TESTS = {
     for selector in CORE + INTEGRATION + FORCING + OPERATIONS + THERMAL
     + PERSISTENCE + COMPILED + DOC_TESTS + QG + BOUSSINESQ
 } | {"TestCoreTransformInvariantSmoke", "TestFourierTransformXY", "TestFreeSurfaceQGVerticalCalculus",
-     "TestPublishedWaveVortexBenchmark", "TestThreeInterfaceBenchmark"}
+     "TestPublishedWaveVortexBenchmark", "TestThreeInterfaceBenchmark",
+     "TestNativeThermalAdaptiveDamping"}
 
 # A changed study test still gets smoke, analyzer and compact scientific checks.
 # Its long evidence run belongs to Extended CI. New test names do not silently
@@ -109,6 +113,10 @@ CPP_SUFFIXES = {".c", ".cc", ".cpp", ".cxx", ".h", ".hh", ".hpp", ".cmake"}
 
 def scientific_tests(path):
     """Small numerical contracts selected by the implementation's domain."""
+    if "thermalgeneralizedenstrophy" in path.lower():
+        return ("TestNativeThermalAdaptiveDamping",)
+    if path == "+WVInternal/adaptiveSVVFilter.m":
+        return FORCING + FORCING_REGRESSIONS["WVAdaptiveDamping"]
     if path.startswith("Forcing/") and PurePosixPath(path).stem in FORCING_REGRESSIONS:
         return FORCING + FORCING_REGRESSIONS[PurePosixPath(path).stem]
     if "Thermal" in path:
