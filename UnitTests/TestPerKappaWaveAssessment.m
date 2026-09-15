@@ -2,12 +2,32 @@ classdef TestPerKappaWaveAssessment < matlab.unittest.TestCase
     methods (Test, TestTags="full")
         function defaultReferenceChecksEveryRequestedPrefix(testCase)
             [w,a]=newTransform();
+            candidateCount=(w.Nz-1)*ones(numel(w.khUnique),1);
             testCase.verifyEqual(a.pages.requestedCount,w.waveModeCountByKh)
             testCase.verifyEqual(a.pages.selectedCount,w.waveModeCountByKh)
             testCase.verifyEqual(a.pages.status,repmat("accepted",numel(w.khUnique),1))
-            testCase.verifyEqual(a.pages.convergedCount,w.waveModeCountByKh)
+            testCase.verifyEqual(a.pages.candidateCount,candidateCount)
+            testCase.verifyGreaterThanOrEqual(a.pages.convergedCount,a.pages.linearCount)
+            testCase.verifyGreaterThanOrEqual(a.pages.gridSupportedCount,a.pages.linearCount)
+            testCase.verifyEqual(a.pages.usableCount,a.pages.linearCount)
+            testCase.verifyGreaterThanOrEqual(a.pages.filteringCount,a.pages.selectedCount)
+            testCase.verifyGreaterThanOrEqual(a.pages.linearCount,a.pages.selectedCount)
+            for p=1:numel(w.khUnique)
+                report=a.modeConvergence{p};
+                testCase.verifyEqual(report.identity.columnLabels,string(1:candidateCount(p)))
+                testCase.verifyEqual(report.coverage.requestedColumnCount,candidateCount(p))
+                testCase.verifyEqual(report.identity.columnLabels(1:a.pages.selectedCount(p)),string(w.waveModeNumber).')
+                selectedError=selectedConvergenceError(report,a.pages.selectedCount(p));
+                testCase.verifyEqual(a.pages.modeConvergenceError(p),selectedError)
+                testCase.verifyLessThanOrEqual(selectedError,a.modeConvergenceTolerance)
+            end
             testCase.verifyNotEmpty(a.referenceNEVP)
             testCase.verifyNotEmpty(a.inertial.convergence)
+            testCase.verifyEqual(a.inertial.convergence.coverage.requestedColumnCount,a.inertial.candidateCount)
+            testCase.verifyEqual(a.inertial.convergence.identity.columnLabels,string(1:a.inertial.candidateCount))
+            testCase.verifyEqual(a.inertial.convergence.identity.columnLabels(1:a.inertial.selectedCount),string(w.inertialModeNumber).')
+            testCase.verifyEqual(a.inertial.modeConvergenceError,selectedConvergenceError(a.inertial.convergence,a.inertial.selectedCount))
+            testCase.verifyLessThanOrEqual(a.inertial.modeConvergenceError,a.modeConvergenceTolerance)
         end
 
         function explicitReferenceAssessesActualPageIdentities(testCase)
@@ -15,55 +35,79 @@ classdef TestPerKappaWaveAssessment < matlab.unittest.TestCase
             counts = mod(2*(0:numel(baseline.khUnique)-1).',5);
             [w,a] = newTransform(waveModeKappa=flipud(baseline.khUnique),waveModeCount=flipud(counts),referenceNEVP=128);
             testCase.verifyEqual(a.pages.requestedCount,counts)
-            testCase.verifyEqual(a.pages.convergedCount,counts)
-            testCase.verifyEqual(a.pages.gridSupportedCount,counts)
-            testCase.verifyEqual(a.pages.usableCount,counts)
-            testCase.verifyEqual(a.pages.candidateLimitReached,counts>0)
+            testCase.verifyEqual(a.pages.selectedCount,counts)
+            testCase.verifyEqual(a.pages.candidateCount,(w.Nz-1)*ones(numel(w.khUnique),1))
+            testCase.verifyGreaterThanOrEqual(a.pages.convergedCount,a.pages.linearCount)
+            testCase.verifyGreaterThanOrEqual(a.pages.gridSupportedCount,a.pages.linearCount)
+            testCase.verifyEqual(a.pages.usableCount,a.pages.linearCount)
+            testCase.verifyGreaterThanOrEqual(a.pages.filteringCount,counts)
+            testCase.verifyGreaterThanOrEqual(a.pages.linearCount,counts)
+            testCase.verifyEqual(a.pages.candidateLimitReached,a.pages.linearCount==a.pages.candidateCount & a.pages.linearCount>0)
             for p = 1:numel(counts)
+                testCase.verifyEqual(numel(a.prefixGramError{p}),a.pages.candidateCount(p))
                 if counts(p)==0
                     testCase.verifyEqual(a.pages.status(p),"not-requested")
                     testCase.verifyEmpty(a.modeConvergence{p})
-                    testCase.verifyEmpty(a.prefixGramError{p})
+                    testCase.verifyGreaterThan(a.pages.linearCount(p),0)
                     testCase.verifyEqual(a.pages.modeConvergenceError(p),0)
                 else
                     report = a.modeConvergence{p};
                     testCase.verifyEqual(report.identity.kappa,w.khUnique(p))
-                    testCase.verifyEqual(report.identity.columnLabels,string(w.waveModeNumber(1:counts(p))).')
+                    testCase.verifyEqual(report.identity.columnLabels,string(1:a.pages.candidateCount(p)))
+                    testCase.verifyEqual(report.identity.columnLabels(1:counts(p)),string(w.waveModeNumber(1:counts(p))).')
                     testCase.verifyEqual(report.provenance.candidate.nEVP,w.nEVP)
                     testCase.verifyEqual(report.provenance.reference.nEVP,128)
                     testCase.verifyEqual(report.provenance.candidate.source,"explicit construction basis")
-                    testCase.verifyEqual(report.coverage.requestedColumnCount,counts(p))
+                    testCase.verifyEqual(report.coverage.requestedColumnCount,a.pages.candidateCount(p))
                     testCase.verifyFalse(report.coverage.absoluteAccuracyGuarantee)
                     testCase.verifyEqual(a.pages.status(p),"accepted")
-                    rows = ismember(report.measurements.columnLabel,report.identity.columnLabels(1:counts(p))) & ismember(report.measurements.quantity,["equivalentDepth","h1"]);
-                    testCase.verifyEqual(a.pages.modeConvergenceError(p),max(report.measurements.value(rows)))
+                    selectedError=selectedConvergenceError(report,counts(p));
+                    testCase.verifyEqual(a.pages.modeConvergenceError(p),selectedError)
+                    testCase.verifyLessThanOrEqual(selectedError,a.modeConvergenceTolerance)
                 end
             end
             testCase.verifyEqual(a.inertial.requestedCount,numel(w.inertialMode))
+            testCase.verifyEqual(a.inertial.selectedCount,numel(w.inertialMode))
             testCase.verifyEqual(a.inertial.convergence.identity.kappa,0)
-            testCase.verifyEqual(a.inertial.convergence.identity.columnLabels,string(w.inertialModeNumber).')
-            rows = ismember(a.inertial.convergence.measurements.quantity,["h1","equivalentDepth"]);
-            testCase.verifyLessThan(max(a.inertial.convergence.measurements.value(rows)),1e-6)
+            testCase.verifyEqual(a.inertial.convergence.identity.columnLabels,string(1:a.inertial.candidateCount))
+            testCase.verifyEqual(a.inertial.convergence.identity.columnLabels(1:a.inertial.selectedCount),string(w.inertialModeNumber).')
+            testCase.verifyEqual(a.inertial.convergence.coverage.requestedColumnCount,a.inertial.candidateCount)
+            selectedError=selectedConvergenceError(a.inertial.convergence,a.inertial.selectedCount);
+            testCase.verifyEqual(a.inertial.modeConvergenceError,selectedError)
+            testCase.verifyLessThanOrEqual(selectedError,a.modeConvergenceTolerance)
         end
 
         function convergenceToleranceIsAConstructionRequirement(testCase)
             testCase.verifyError(@()newTransform(referenceNEVP=128,modeConvergenceTolerance=1e-16),'WV:UnconvergedBalancedModes')
-            [w,a]=newTransform(referenceNEVP=128); plain=newTransform();
+            [w,a]=newTransform(referenceNEVP=128); plain=newTransform(referenceNEVP=128);
+            % Holding the reference fixed tests construction repeatability without
+            % comparing distinct automatic candidate-refinement resolutions.
             original=w.scientificState(); without=plain.scientificState();
             testCase.verifyEqual(rmfield(original,{'N2Function','rhoFunction'}),rmfield(without,{'N2Function','rhoFunction'}))
             testCase.verifyTrue(all(a.pages.status=="accepted"))
+            testCase.verifyLessThanOrEqual(a.pages.modeConvergenceError,a.modeConvergenceTolerance)
+            testCase.verifyLessThanOrEqual(a.inertial.modeConvergenceError,a.modeConvergenceTolerance)
         end
 
         function absentWavesStillAssessIndependentInertialFamily(testCase)
             [w,a] = newTransform(waveModeCount=0,referenceNEVP=128);
             testCase.verifyEmpty(w.waveMode)
             testCase.verifyEqual(a.pages.status,repmat("not-requested",numel(w.khUnique),1))
-            testCase.verifyEqual(a.pages.usableCount,zeros(numel(w.khUnique),1))
-            testCase.verifyFalse(any(a.pages.candidateLimitReached))
-            testCase.verifyEqual(a.inertial.convergence.coverage.requestedColumnCount,3)
+            testCase.verifyEqual(a.pages.requestedCount,zeros(numel(w.khUnique),1))
+            testCase.verifyEqual(a.pages.selectedCount,zeros(numel(w.khUnique),1))
+            testCase.verifyTrue(all(cellfun(@isempty,a.modeConvergence)))
+            testCase.verifyTrue(all(cellfun(@numel,a.prefixGramError)==a.pages.candidateCount))
+            testCase.verifyGreaterThan(a.pages.usableCount,zeros(numel(w.khUnique),1))
+            testCase.verifyEqual(a.pages.usableCount,a.pages.linearCount)
+            testCase.verifyEqual(a.pages.candidateLimitReached,a.pages.linearCount==a.pages.candidateCount & a.pages.linearCount>0)
+            testCase.verifyEqual(a.inertial.candidateCount,w.Nz-1)
+            testCase.verifyEqual(a.inertial.convergence.coverage.requestedColumnCount,a.inertial.candidateCount)
             report = a.inertial.convergence;
-            rows = ismember(report.measurements.columnLabel,report.identity.columnLabels(1:a.inertial.selectedCount)) & ismember(report.measurements.quantity,["equivalentDepth","h1"]);
-            testCase.verifyEqual(a.inertial.modeConvergenceError,max(report.measurements.value(rows)))
+            testCase.verifyEqual(report.identity.columnLabels,string(1:a.inertial.candidateCount))
+            testCase.verifyEqual(report.identity.columnLabels(1:a.inertial.selectedCount),string(w.inertialModeNumber).')
+            selectedError=selectedConvergenceError(report,a.inertial.selectedCount);
+            testCase.verifyEqual(a.inertial.modeConvergenceError,selectedError)
+            testCase.verifyLessThanOrEqual(selectedError,a.modeConvergenceTolerance)
         end
 
         function commonQuadraturePreservesIndependentPageReports(testCase)
@@ -173,4 +217,10 @@ testCase.verifyEqual(actual.measurements.value(measured),expected.measurements.v
 testCase.verifyEqual(actual.provenance,expected.provenance)
 testCase.verifyEqual(actual.coverage,expected.coverage)
 testCase.verifyEqual(string(fieldnames(actual.costs)),string(fieldnames(expected.costs)))
+end
+
+function value = selectedConvergenceError(report,count)
+labels=report.identity.columnLabels(1:count);
+rows=ismember(report.measurements.columnLabel,labels) & ismember(report.measurements.quantity,["equivalentDepth","h1"]);
+value=max(report.measurements.value(rows));
 end

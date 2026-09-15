@@ -1,0 +1,99 @@
+[Warning: Directory access failure: /Users/jearly/Documents/MATLAB] 
+[> In restoredefaultpath (line 65)
+In setupDealiasingStudy (line 13)
+In run_per_kappa_assessment_rerun (line 9)] 
+ Running TestPerKappaWaveAssessment
+  Setting up TestPerKappaWaveAssessment
+  Done setting up TestPerKappaWaveAssessment in 0 seconds
+   Running TestPerKappaWaveAssessment/defaultReferenceChecksEveryRequestedPrefix
+BLAS: trying environment BLAS_VERSION...
+BLAS: loading libmwAF_BLAS_ilp64.dylib
+BLAS: loaded libmwAF_BLAS_ilp64.dylib@0xa9203830
+
+================================================================================
+Error occurred in TestPerKappaWaveAssessment/defaultReferenceChecksEveryRequestedPrefix and it did not run to completion.
+    ---------
+    Error ID:
+    ---------
+    'WVTransform:UnknownVariable'
+    --------------
+    Error Details:
+    --------------
+    Error using . (line 257)
+    The variable Nxyz does not exist
+    
+    Error in
+    TestPerKappaWaveAssessment/defaultReferenceChecksEveryRequestedPrefix (line
+    5)
+                candidateCount=(w.Nxyz(3)-1)*ones(numel(w.khUnique),1);
+================================================================================
+   Done TestPerKappaWaveAssessment/defaultReferenceChecksEveryRequestedPrefix in 3.7339 seconds
+   Running TestPerKappaWaveAssessment/explicitReferenceAssessesActualPageIdentities
+
+================================================================================
+Error occurred in TestPerKappaWaveAssessment/explicitReferenceAssessesActualPageIdentities and it did not run to completion.
+    ---------
+    Error ID:
+    ---------
+    'WVTransform:UnknownVariable'
+    --------------
+    Error Details:
+    --------------
+    Error using . (line 257)
+    The variable Nxyz does not exist
+    
+    Error in
+    TestPerKappaWaveAssessment/explicitReferenceAssessesActualPageIdentities
+    (line 39)
+                testCase.verifyEqual(a.pages.candidateCount,(w.Nxyz(3)-1)*ones(numel(w.khUnique),1))
+================================================================================
+   Done TestPerKappaWaveAssessment/explicitReferenceAssessesActualPageIdentities in 3.4125 seconds
+   Running TestPerKappaWaveAssessment/convergenceToleranceIsAConstructionRequirement
+   Done TestPerKappaWaveAssessment/convergenceToleranceIsAConstructionRequirement in 6.5586 seconds
+   Running TestPerKappaWaveAssessment/absentWavesStillAssessIndependentInertialFamily
+
+================================================================================
+Error occurred in TestPerKappaWaveAssessment/absentWavesStillAssessIndependentInertialFamily and it did not run to completion.
+    ---------
+    Error ID:
+    ---------
+    'WVTransform:UnknownVariable'
+    --------------
+    Error Details:
+    --------------
+    Error using . (line 257)
+    The variable Nxyz does not exist
+    
+    Error in
+    TestPerKappaWaveAssessment/absentWavesStillAssessIndependentInertialFamily
+    (line 103)
+                testCase.verifyEqual(a.inertial.candidateCount,w.Nxyz(3)-1)
+================================================================================
+   Done TestPerKappaWaveAssessment/absentWavesStillAssessIndependentInertialFamily in 1.1583 seconds
+   Running TestPerKappaWaveAssessment/commonQuadraturePreservesIndependentPageReports
+   Done TestPerKappaWaveAssessment/commonQuadraturePreservesIndependentPageReports in 2.3198 seconds
+   Running TestPerKappaWaveAssessment/referenceResolutionMustActuallyRefine
+   Done TestPerKappaWaveAssessment/referenceResolutionMustActuallyRefine in 0.027218 seconds
+  Tearing down TestPerKappaWaveAssessment
+  Done tearing down TestPerKappaWaveAssessment in 0 seconds
+ Done TestPerKappaWaveAssessment in 17.2104 seconds
+__________
+
+Failure Summary:
+
+     Name                                                                        Failed  Incomplete  Reason(s)
+    ===========================================================================================================
+     TestPerKappaWaveAssessment/defaultReferenceChecksEveryRequestedPrefix         X         X       Errored.
+    -----------------------------------------------------------------------------------------------------------
+     TestPerKappaWaveAssessment/explicitReferenceAssessesActualPageIdentities      X         X       Errored.
+    -----------------------------------------------------------------------------------------------------------
+     TestPerKappaWaveAssessment/absentWavesStillAssessIndependentInertialFamily    X         X       Errored.
+      environment: [1×1 struct]
+    selectedNames: [1×6 string]
+      completedAt: "14-Sep-2026 20:51:11"
+            count: 6
+           passed: 3
+           failed: 3
+       incomplete: 3
+         duration: "17.2104"
+

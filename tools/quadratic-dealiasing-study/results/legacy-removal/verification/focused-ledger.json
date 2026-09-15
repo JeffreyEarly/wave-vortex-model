@@ -1,6 +1,6 @@
 {
-  "count": 61,
-  "passed": 61,
+  "count": 67,
+  "passed": 67,
   "failed": 0,
   "description": "Consolidated latest results, not a new full-suite run",
   "results": [
@@ -491,6 +491,54 @@
       "incomplete": false,
       "duration": "0.032198",
       "source": "wvm-post-merge-rerun.json"
+    },
+    {
+      "name": "TestPerKappaWaveAssessment/defaultReferenceChecksEveryRequestedPrefix",
+      "passed": true,
+      "failed": false,
+      "incomplete": false,
+      "duration": "3.7643",
+      "source": "per-kappa-wave-assessment-correction-rerun.json"
+    },
+    {
+      "name": "TestPerKappaWaveAssessment/explicitReferenceAssessesActualPageIdentities",
+      "passed": true,
+      "failed": false,
+      "incomplete": false,
+      "duration": "3.4781",
+      "source": "per-kappa-wave-assessment-correction-rerun.json"
+    },
+    {
+      "name": "TestPerKappaWaveAssessment/convergenceToleranceIsAConstructionRequirement",
+      "passed": true,
+      "failed": false,
+      "incomplete": false,
+      "duration": "6.5586",
+      "source": "per-kappa-wave-assessment-rerun.json"
+    },
+    {
+      "name": "TestPerKappaWaveAssessment/absentWavesStillAssessIndependentInertialFamily",
+      "passed": true,
+      "failed": false,
+      "incomplete": false,
+      "duration": "1.1944",
+      "source": "per-kappa-wave-assessment-correction-rerun.json"
+    },
+    {
+      "name": "TestPerKappaWaveAssessment/commonQuadraturePreservesIndependentPageReports",
+      "passed": true,
+      "failed": false,
+      "incomplete": false,
+      "duration": "2.3198",
+      "source": "per-kappa-wave-assessment-rerun.json"
+    },
+    {
+      "name": "TestPerKappaWaveAssessment/referenceResolutionMustActuallyRefine",
+      "passed": true,
+      "failed": false,
+      "incomplete": false,
+      "duration": "0.027218",
+      "source": "per-kappa-wave-assessment-rerun.json"
     }
   ]
 }

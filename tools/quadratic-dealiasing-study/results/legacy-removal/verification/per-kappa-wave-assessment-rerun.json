@@ -1,0 +1,23 @@
+{
+  "environment": {
+    "matlabVersion": "26.1.0.3346908 (R2026a) Update 5",
+    "wvmRoot": "/Users/jearly/Documents/OceanKitRepositories/wvm-v5-construction-optimization",
+    "internalModesRoot": "/Users/jearly/Documents/OceanKitRepositories/oceankit-internal-modes-beta7/InternalModes-2.0.0-beta.7",
+    "dependencyRoot": "/Users/jearly/Documents/OceanKitRepositories/OceanKit",
+    "chebfunRoot": "/Users/jearly/Documents/OceanKitRepositories/OceanKit/chebfun-5.7.0"
+  },
+  "selectedNames": [
+    "TestPerKappaWaveAssessment/defaultReferenceChecksEveryRequestedPrefix",
+    "TestPerKappaWaveAssessment/explicitReferenceAssessesActualPageIdentities",
+    "TestPerKappaWaveAssessment/convergenceToleranceIsAConstructionRequirement",
+    "TestPerKappaWaveAssessment/absentWavesStillAssessIndependentInertialFamily",
+    "TestPerKappaWaveAssessment/commonQuadraturePreservesIndependentPageReports",
+    "TestPerKappaWaveAssessment/referenceResolutionMustActuallyRefine"
+  ],
+  "completedAt": "14-Sep-2026 20:51:11",
+  "count": 6,
+  "passed": 3,
+  "failed": 3,
+  "incomplete": 3,
+  "duration": "17.2104"
+}
