@@ -52,9 +52,12 @@ classdef TestThermalReadinessDiagnostics < matlab.unittest.TestCase
             testCase.verifyEqual(height(first.observables),18);
             testCase.verifyEqual(w.coefficientState(),before);testCase.verifyEqual(w.t,time);
             originalPath=path;cleanup=onCleanup(@()path(originalPath));
-            providerRoot=string(fileparts(fileparts(which('IMInternalModes'))));
-            paths=string(strsplit(path,pathsep));provider=startsWith(paths,providerRoot+filesep) | paths==providerRoot;
-            rmpath(char(join(paths(provider),pathsep)));
+            while ~isempty(which('IMInternalModes'))
+                providerRoot=string(fileparts(fileparts(which('IMInternalModes'))));
+                paths=string(strsplit(path,pathsep));provider=startsWith(paths,providerRoot+filesep) | paths==providerRoot;
+                testCase.assertTrue(any(provider),"The resolved InternalModes root is absent from the MATLAB path.")
+                rmpath(char(join(paths(provider),pathsep)));
+            end
             testCase.assertEmpty(which('IMInternalModes'));
             second=qualifyThermalReadinessDiagnostics(w,record,fullfile(folder.Folder,'second'),apvModeCount=3,diagnosticBasisDirectory=basisDirectory,shouldConstructMissingBases=false);
             testCase.verifyTrue(second.summary.basisAccepted);
