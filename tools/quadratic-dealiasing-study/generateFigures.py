@@ -2,6 +2,7 @@
 
 Usage: python generateFigures.py RESULTS_ROOT NOTE_DATA_DIRECTORY
 Requires matplotlib; performs no numerical-mode solves or timing runs.
+RESULTS_ROOT may also be a previously generated note data directory.
 """
 
 import csv
@@ -18,8 +19,12 @@ import matplotlib.pyplot as plt
 
 def main(results_root, destination):
     destination.mkdir(parents=True, exist_ok=True)
-    benchmark = json.loads((results_root / "construction/summary.json").read_text())
-    calibration = list(csv.DictReader((results_root / "calibration/calibration.csv").open()))
+    full_study = (results_root / "construction").is_dir()
+    construction_root = results_root / "construction" if full_study else results_root
+    summary_path = construction_root / ("summary.json" if full_study else "construction-summary.json")
+    calibration_path = results_root / ("calibration/calibration.csv" if full_study else "calibration-calibration.csv")
+    benchmark = json.loads(summary_path.read_text())
+    calibration = list(csv.DictReader(calibration_path.open()))
     names = {"none": "None", "fixedFraction": "Fixed fraction", "effectiveBandwidth": "Effective bandwidth"}
     colors = {"none": "#536171", "fixedFraction": "#007c91", "effectiveBandwidth": "#c15b24"}
     styles = {"none": "-", "fixedFraction": "--", "effectiveBandwidth": ":"}
@@ -29,7 +34,7 @@ def main(results_root, destination):
         policy = entry["policy"]
         if entry["status"] != "constructed":
             raise ValueError(f"Cannot graph a rejected construction: {policy}")
-        counts_path = results_root / "construction" / f"{policy}-counts.csv"
+        counts_path = construction_root / f"{policy}-counts.csv"
         counts = list(csv.DictReader(counts_path.open()))
         kappa = [float(row["kappa"]) for row in counts]
         waves = [int(row["waveCount"]) for row in counts]
@@ -44,7 +49,7 @@ def main(results_root, destination):
         error = max(float(row["maximumAliasError"]) for row in selected)
         table_rows.append(f"{names[policy]} & {entry['medianSeconds']:.2f} & "
                           f"{1000 * entry['medianFilteringSeconds']:.1f} & {100 * error:.3g}\\% \\\\")
-        shutil.copy2(counts_path, destination / counts_path.name)
+        copy_if_distinct(counts_path, destination / counts_path.name)
     ax.set_xscale("log")
     ax.set_xlabel(r"Horizontal wavenumber $k$ (m$^{-1}$)")
     ax.set_ylabel("Retained wave modes")
@@ -67,8 +72,15 @@ def main(results_root, destination):
     ])
     (destination / "comparison-table.tex").write_text(table)
     for filename in ["calibration.csv", "summary.json"]:
-        shutil.copy2(results_root / "calibration" / filename, destination / f"calibration-{filename}")
-    shutil.copy2(results_root / "construction/summary.json", destination / "construction-summary.json")
+        source = results_root / "calibration" / filename if full_study else results_root / f"calibration-{filename}"
+        copy_if_distinct(source, destination / f"calibration-{filename}")
+    copy_if_distinct(summary_path, destination / "construction-summary.json")
+    copy_if_distinct(Path(__file__), destination / "generateFigures.py")
+
+
+def copy_if_distinct(source, destination):
+    if source.resolve() != destination.resolve():
+        shutil.copy2(source, destination)
 
 
 if __name__ == "__main__":

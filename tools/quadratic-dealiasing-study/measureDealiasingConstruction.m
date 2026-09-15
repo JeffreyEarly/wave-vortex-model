@@ -17,6 +17,8 @@ arguments (Input)
 end
 environment = setupDealiasingStudy(options.wvmRoot,options.internalModesRoot,options.dependencyRoot,options.chebfunRoot);
 maxNumCompThreads(1);
+profile off
+profile clear
 if ~isfolder(outputFolder), mkdir(outputFolder); end
 N2 = @(z) 1e-4*exp(2*z/700);
 policies = options.policies;
@@ -58,14 +60,21 @@ for policy = policies
     save(fullfile(outputFolder,policy+"-assessment.mat"),'assessment');
     record.medianSeconds = median([rows(2:end).seconds]);
     record.medianFilteringSeconds = median([rows(2:end).filteringSeconds]);
-    if options.shouldProfile
-        profile = profileCodeHotspots(@() construct(policy),projectRoots=[options.wvmRoot,options.internalModesRoot],shouldPrintReport=false,maxFunctions=40,maxLines=40,label="quadratic-dealiasing-"+policy);
-        record.profileSeconds = profile.elapsedTime;
-        writetable(profile.functionMetrics,fullfile(outputFolder,policy+"-profile-functions.csv"));
-        writetable(profile.topActionableLines,fullfile(outputFolder,policy+"-profile-lines.csv"));
-    end
     summary.policies = [summary.policies;record];
     writelines(jsonencode(summary,PrettyPrint=true),fullfile(outputFolder,'summary.json'));
+end
+% Profiling can leave the active caller instrumented. Complete every
+% unprofiled timing before the first profiler pass.
+if options.shouldProfile
+    for policyIndex = 1:numel(summary.policies)
+        if summary.policies(policyIndex).status~="constructed", continue; end
+        policy = summary.policies(policyIndex).policy;
+        hotspots = profileCodeHotspots(@() construct(policy),projectRoots=[options.wvmRoot,options.internalModesRoot],shouldPrintReport=false,maxFunctions=40,maxLines=40,label="quadratic-dealiasing-"+policy);
+        summary.policies(policyIndex).profileSeconds = hotspots.elapsedTime;
+        writetable(hotspots.functionMetrics,fullfile(outputFolder,policy+"-profile-functions.csv"));
+        writetable(hotspots.topActionableLines,fullfile(outputFolder,policy+"-profile-lines.csv"));
+        writelines(jsonencode(summary,PrettyPrint=true),fullfile(outputFolder,'summary.json'));
+    end
 end
 
     function [wvt,assessment] = construct(policy)
