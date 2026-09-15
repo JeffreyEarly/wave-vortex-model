@@ -1,0 +1,50 @@
+[
+  {
+    "name": "activity-comparison",
+    "returncode": 0
+  },
+  {
+    "name": "diagnostic-regimes",
+    "returncode": 0
+  },
+  {
+    "name": "budget-cold10",
+    "returncode": 1
+  },
+  {
+    "name": "budget-cold100",
+    "returncode": 0
+  },
+  {
+    "name": "budget-peak10",
+    "returncode": 0
+  },
+  {
+    "name": "budget-zero10",
+    "returncode": 0
+  },
+  {
+    "name": "budget-zero100",
+    "returncode": 0
+  },
+  {
+    "name": "resources",
+    "returncode": 0
+  },
+  {
+    "name": "resources769",
+    "returncode": 0
+  },
+  {
+    "name": "metadata",
+    "returncode": 1
+  },
+  {
+    "name": "legacy-forcing-export",
+    "returncode": 0
+  },
+  {
+    "name": "analyzer-all",
+    "returncode": 0
+  }
+]

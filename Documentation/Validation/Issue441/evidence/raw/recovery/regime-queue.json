@@ -1,0 +1,54 @@
+[
+  {
+    "name": "workload-cold10",
+    "returncode": 0
+  },
+  {
+    "name": "cold10",
+    "returncode": 0
+  },
+  {
+    "name": "cold100",
+    "returncode": 0
+  },
+  {
+    "name": "peak10",
+    "returncode": 0
+  },
+  {
+    "name": "zero10",
+    "returncode": 0
+  },
+  {
+    "name": "zero100",
+    "returncode": 0
+  },
+  {
+    "name": "activity",
+    "returncode": 0
+  },
+  {
+    "name": "workload-cold10-product769",
+    "returncode": 0
+  },
+  {
+    "name": "workload10-product769",
+    "returncode": 0
+  },
+  {
+    "name": "workload100-product769",
+    "returncode": 0
+  },
+  {
+    "name": "budget769",
+    "returncode": 0
+  },
+  {
+    "name": "restart769",
+    "returncode": 0
+  },
+  {
+    "name": "restart769-fresh",
+    "returncode": 0
+  }
+]

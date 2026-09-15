@@ -1,0 +1,5 @@
+{
+  "recordedPostRestartMatlabGuardSeconds": 5068.732219918997,
+  "remainingQueueWallSeconds": 3600.0,
+  "budgetScope": "Post-restart retained elapsed only; unavailable pre-reboot compute is not reconstructed"
+}

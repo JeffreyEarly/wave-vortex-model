@@ -1,0 +1,37 @@
+{
+  "schema": "thermal-readiness-restart-v1",
+  "caseId": "fa7d4d0e8434b17cdb12a11485f8fa8d0d592ec904bab1847bf40feb0449e791",
+  "initialTime": 123,
+  "t0": 45,
+  "duration": 5400,
+  "step": 900,
+  "finalTime": 5523,
+  "checkpointTime": 1923,
+  "interruptedTime": 2823,
+  "coefficientInterval": 1800,
+  "fieldInitialTime": 348,
+  "fieldInterval": 900,
+  "inventoryInitialTime": 423,
+  "inventoryInterval": 600,
+  "domainSize": [
+    500000,
+    500000,
+    4000
+  ],
+  "gridSize": [
+    64,
+    64,
+    385
+  ],
+  "thermalCount": 257,
+  "mdaCount": 4,
+  "scientificHash": "3934d749f3df7cbc561b630741979285eca5539ac94032aa3aed00938fd6e47f",
+  "initialStateHash": "15613f510f052d5e841c1f481efdb4f72e71f7fa6b03c41d3048e61ee2212cf8",
+  "forcingHash": "988e15d9b5fe328328a2c472153657b78e4efb5ef62929d3d42d708f923ca94b",
+  "relativeAllowance": 1E-10,
+  "absoluteAllowance": 1E-12,
+  "endpointComparison": "surface and bottom independently",
+  "integrationBoundarySemantics": "all paths stop at interruptedTime and at blocks of at most two requested maximum steps",
+  "wallBudgetSemantics": "cooperative between setup and integration blocks of two requested maximum steps; no preemption within an RHS or file operation",
+  "runId": "12e823bf25304f788ec009585c8582608af1100906ab45731a6085f0e59dec8f"
+}

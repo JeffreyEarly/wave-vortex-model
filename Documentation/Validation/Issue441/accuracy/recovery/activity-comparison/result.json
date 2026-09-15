@@ -1,0 +1,18 @@
+{
+  "reason": "completed",
+  "returncode": 0,
+  "elapsedSeconds": 22.24520137499985,
+  "peakSampledFootprintBytes": 3066138896,
+  "peakSampledResidentBytes": 3478159360,
+  "osAccountedChildMaxResidentBytes": 3477815296,
+  "osResidentAccounting": "macOS ru_maxrss bytes for children reaped by this guard; not a simultaneous family-memory sum",
+  "samples": 86,
+  "observedPids": [
+    17063,
+    17136,
+    17145
+  ],
+  "cancellationSignals": [],
+  "samplingIntervalSeconds": 0.25,
+  "detail": ""
+}

@@ -1,0 +1,10 @@
+{
+  "command": [
+    "matlab",
+    "-batch",
+    "run('/Users/jearly/Documents/OceanKitRepositories/thermal-readiness-t10-evidence/recovery/verify_small.m')"
+  ],
+  "pid": 2702,
+  "limitGiB": 8.0,
+  "maximumSeconds": 1200.0
+}

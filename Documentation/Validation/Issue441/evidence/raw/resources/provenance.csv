@@ -1,0 +1,10 @@
+benchmarkIndex,path,present,bytes,sha256
+1,/Users/jearly/Documents/OceanKitRepositories/thermal-readiness-t10-evidence/workload-cold10/integration.csv,1,805,22dee61630a4694d0c6d2dbfd74024e65fec7d54fbed837ad4113f26e18a3ce8
+1,/Users/jearly/Documents/OceanKitRepositories/thermal-readiness-t10-evidence/workload-cold10/setup.csv,1,437,512332433b97ffa0694d49df103ca290a716bbf93c7368ced59464b0679ad181
+1,/Users/jearly/Documents/OceanKitRepositories/thermal-readiness-t10-evidence/workload-cold10/io.csv,1,300,9b9bed145ed153e7cbe0133c4e6249b3c5ed48af4b051f939b71468c34138f64
+2,/Users/jearly/Documents/OceanKitRepositories/thermal-readiness-t10-evidence/workload10/integration.csv,1,1050,8fe2531dc88670296ede618e1db66efe70394a940afb4e7d79c7fa47b549c370
+2,/Users/jearly/Documents/OceanKitRepositories/thermal-readiness-t10-evidence/workload10/setup.csv,1,448,4a82b24e1835949e93c2b8a8df4b0482a3216102aff3835799c9c1b3d99a1d4e
+2,/Users/jearly/Documents/OceanKitRepositories/thermal-readiness-t10-evidence/workload10/io.csv,1,353,2fa72f697d91d217659a3700d8592d85f82d7dd69c702e4f227bad83282f6dcc
+3,/Users/jearly/Documents/OceanKitRepositories/thermal-readiness-t10-evidence/workload100-horizontal/integration.csv,1,1161,1102603ee21defd88e66808d3dd6e0ff473c7b88851515a250c132f76a96c207
+3,/Users/jearly/Documents/OceanKitRepositories/thermal-readiness-t10-evidence/workload100-horizontal/setup.csv,1,438,5369e97937d991d9f22db86d453bece6b8ba029ba63f220f4f952829db6456a9
+3,/Users/jearly/Documents/OceanKitRepositories/thermal-readiness-t10-evidence/workload100-horizontal/io.csv,1,355,c56e6eeebd604c7d87bd7db2c54223237b8fccfa07783f8d3a17e17a9501119f

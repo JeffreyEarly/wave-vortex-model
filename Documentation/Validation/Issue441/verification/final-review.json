@@ -1,0 +1,17 @@
+{
+  "passed": true,
+  "sourceHead": "9fc8bd98ca2ef6007eaa6ef947ea3756f063a51a",
+  "verifiedCopyCounts": {
+    "evidence/source-copy-index.csv": 531,
+    "accuracy/artifact-index.csv": 311,
+    "measurements/source-files.csv": 116,
+    "verification/artifact-index.csv": 72
+  },
+  "verifiedUniqueCopies": 1030,
+  "localMarkdownFileLinks": 265,
+  "checkedReportFiles": 1048,
+  "allReportJSONParsed": true,
+  "noBinaryArtifactsInReport": true,
+  "whitespaceAndLF": true,
+  "manifestAndGeneratedWebsiteUnchanged": true
+}

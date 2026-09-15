@@ -1,0 +1,14 @@
+{
+  "command": [
+    "matlab",
+    "-batch",
+    "run('/Users/jearly/Documents/OceanKitRepositories/thermal-readiness-t10-evidence/recovery/budgetPeak10.m')"
+  ],
+  "pid": 17889,
+  "processGroup": 17889,
+  "limitGiB": 16.0,
+  "maximumSeconds": 900.0,
+  "samplingIntervalSeconds": 0.25,
+  "termGraceSeconds": 0.5,
+  "footprintAggregation": "sum over owned group and observed descendants"
+}

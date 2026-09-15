@@ -1,0 +1,26 @@
+[
+  {
+    "name": "r2025b-tests",
+    "returncode": 0
+  },
+  {
+    "name": "product",
+    "returncode": 0
+  },
+  {
+    "name": "mean",
+    "returncode": 0
+  },
+  {
+    "name": "native",
+    "returncode": 0
+  },
+  {
+    "name": "horizontal",
+    "returncode": 0
+  },
+  {
+    "name": "thermal",
+    "returncode": 1
+  }
+]

@@ -1,0 +1,36 @@
+{
+  "schema": "thermal-campaign-resource-scenarios-v1",
+  "benchmarks": [
+    {
+      "directory": "/Users/jearly/Documents/OceanKitRepositories/thermal-readiness-t10-evidence/workload-cold10",
+      "forcingMultiplier": 10,
+      "stateRegime": "cold M10, no optional damping"
+    },
+    {
+      "directory": "/Users/jearly/Documents/OceanKitRepositories/thermal-readiness-t10-evidence/workload10",
+      "forcingMultiplier": 10,
+      "stateRegime": "manufactured 0.01 m/s M10 peak, no optional damping"
+    },
+    {
+      "directory": "/Users/jearly/Documents/OceanKitRepositories/thermal-readiness-t10-evidence/workload100-horizontal",
+      "forcingMultiplier": 100,
+      "stateRegime": "manufactured 0.1 m/s M100 peak, horizontal-only damping"
+    }
+  ],
+  "options": {
+    "years": [
+      1,
+      5,
+      20
+    ],
+    "seasonalPeriod": 3.15576E+7,
+    "workloadDescription": "64x64x385, N257/MDA4, Qassembly2057/Qproduct1537, h900, four threads; measured cold/manufactured controls only; sample I/O is not production cadence qualification"
+  },
+  "throughputScope": "arithmetic scaling of observed workload samples; mature seasonal throughput is not established",
+  "setupScope": "integration wall excludes setup; canonical restoration, integrator setup, first RHS and sample output setup are added once in a measured-only subtotal, with missing counts; scientific construction and initial snapshot writing remain separate alternative/optional costs",
+  "ioScope": "withOutput identifies the timing samples; storage always uses planned T/48 and T/384 cadences, whose wall cost is not qualified by sample cadence",
+  "payloadScope": "measured initial file including first records plus shape-derived payload for subsequent records; future format/chunk growth is excluded",
+  "checkpointScope": "extra checkpoint count/cadence unspecified; component measurements are reported separately",
+  "combinedScope": "serial execution of independent M10 and M100 campaigns; unknown inputs propagate as NaN",
+  "acceptance": "CONDITIONAL: production wall/disk limits and unmeasured regime/analysis/checkpoint costs remain unresolved"
+}

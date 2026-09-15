@@ -1,0 +1,10 @@
+{
+  "command": [
+    "python3",
+    "-c",
+    "import time; x=bytearray(80*1024*1024); time.sleep(10)"
+  ],
+  "pid": 2644,
+  "limitGiB": 0.02,
+  "maximumSeconds": 20.0
+}

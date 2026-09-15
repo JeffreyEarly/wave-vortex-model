@@ -1,0 +1,13 @@
+{
+  "scope": "postprocessing saved diagnosis arrays only",
+  "sourceDirectory": "/Users/jearly/Documents/OceanKitRepositories/thermal-readiness-t10-evidence/diagnostic64-regimes",
+  "sourceRecords": [
+    1,
+    3
+  ],
+  "gateChanged": false,
+  "criterion": "max across Ag_q and Ag_0 of norm(candidate-reference,'fro')/norm(reference,'fro'); zero/nonfinite cases retain the existing comparison rule",
+  "coefficientUnits": "s^-1; raw Frobenius norms, not physical field RMS",
+  "matlab": "26.1.0.3312084 (R2026a) Update 4",
+  "release": "2026a"
+}

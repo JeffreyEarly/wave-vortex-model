@@ -1,0 +1,15 @@
+{
+  "fileCount": 25,
+  "findingCount": 0,
+  "passed": true,
+  "environment": {
+    "matlab": "26.1.0.3312084 (R2026a) Update 4",
+    "release": "2026a",
+    "platform": "MACA64",
+    "maximumThreads": 4,
+    "providerPath": "/Users/jearly/Documents/OceanKitRepositories/OceanKit/InternalModes-2.0.0-beta.5/@IMInternalModes/IMInternalModes.m",
+    "scopeBaseline": "abe98510ba3ad24276c2af2bd89c80b24209b568",
+    "inventoryIdentity": "b3a9512ab5a1bd692a322cf4c195a3d5f114d0e6f5d506aac2c4b4068299a20f",
+    "sourceIdentityDefinition": "thermalReadinessIdentity of the exact MATLAB char text returned by fileread"
+  }
+}
