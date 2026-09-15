@@ -1,8 +1,9 @@
 """Audit the declared references and summarize all recorded comparisons."""
 import csv
+import tempfile
 from pathlib import Path
 
-ROOT = Path(__file__).resolve().parent / "results"
+ROOT = Path(tempfile.gettempdir()) / "wave-vortex-model-studies" / "advection-form-study"
 
 def read(name):
     with (ROOT / name).open() as stream:

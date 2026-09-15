@@ -1,6 +1,8 @@
 function runAdvectionSourceStudy
 % Independent sampled-source and modal projection refinement, fixed inventories.
-folder=fileparts(mfilename('fullpath')); rows=struct([]); familyRows=struct([]); metricRows=struct([]);
+output=fullfile(tempdir,"wave-vortex-model-studies","advection-form-study");
+if ~isfolder(output), mkdir(output); end
+rows=struct([]); familyRows=struct([]); metricRows=struct([]);
 specs=[8 17;8 33;16 33;16 65;32 129;48 129;32 257];
 for profile=["constant","exponential"]
     objects=cell(1,size(specs,1));
@@ -51,9 +53,9 @@ for profile=["constant","exponential"]
                 end
             end
             fprintf('sources %s amplitude %g time %g done\n',profile,amplitude,time);
-            writetable(struct2table(rows),fullfile(folder,'results','sources.csv'));
-            writetable(struct2table(familyRows),fullfile(folder,'results','families.csv'));
-            writetable(struct2table(metricRows),fullfile(folder,'results','metrics.csv'));
+            writetable(struct2table(rows),fullfile(output,'sources.csv'));
+            writetable(struct2table(familyRows),fullfile(output,'families.csv'));
+            writetable(struct2table(metricRows),fullfile(output,'metrics.csv'));
         end
     end
 end

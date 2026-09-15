@@ -30,20 +30,6 @@ classdef TestFreeSurfaceQGCoefficientStorageBenchmark < matlab.unittest.TestCase
     end
 
     methods (Test,TestTags="full")
-        function canonicalArtifactRetainsSeparateBacking(testCase)
-            root = fileparts(fileparts(mfilename("fullpath")));
-            artifactPath = fullfile(root,"Benchmarks","results","reference", ...
-                "free-surface-qg-coefficient-storage-v1-m5-max-r2026a","benchmark.json");
-            artifact = jsondecode(fileread(artifactPath));
-            testCase.verifyEqual(string(artifact.studyId),"free-surface-qg-coefficient-storage-v1")
-            testCase.verifyEqual(string(artifact.decision.selectedStrategy),"separate")
-            testCase.verifyEqual(numel(artifact.cases),6)
-            testCase.verifyEqual([artifact.cases.activeEndpointCount],[0 1 2 0 1 2])
-            testCase.verifyTrue(all(arrayfun( ...
-                @(benchmarkCase)benchmarkCase.comparison.allCorrectnessPassed,artifact.cases)))
-            testCase.verifyFalse(any(arrayfun( ...
-                @(benchmarkCase)benchmarkCase.comparison.packedRK4MeaningfullyFaster,artifact.cases)))
-        end
 
         function reducedMatrixIsCorrectAndAccountsForStorage(testCase)
             results = runFreeSurfaceQGCoefficientStorageBenchmark( ...

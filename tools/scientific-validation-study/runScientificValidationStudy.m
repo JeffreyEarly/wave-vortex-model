@@ -4,7 +4,10 @@ arguments
     workFolder (1,1) string
 end
 if ~isfolder(workFolder), mkdir(workFolder); end
-folder=fileparts(mfilename('fullpath')); output=fullfile(folder,'results');
+folder=fileparts(mfilename('fullpath'));
+output=fullfile(tempdir,"wave-vortex-model-studies","scientific-validation-study");
+if ~isfolder(output), mkdir(output); end
+
 addpath(fullfile(fileparts(folder),'nonlinear-study'),fullfile(fileparts(folder),'thermodynamic-formulation-study'));
 summary=struct([]); cases=struct([]);
 for scenario=["waves","balanced","mixed"]

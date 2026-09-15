@@ -2,6 +2,7 @@ classdef TestWVFourierStorageLayoutIntegrationBenchmark < matlab.unittest.TestCa
     properties
         benchmarkFolder
         temporaryFolder
+        referencePath
     end
 
     methods (TestClassSetup)
@@ -16,13 +17,19 @@ classdef TestWVFourierStorageLayoutIntegrationBenchmark < matlab.unittest.TestCa
         function createTemporaryFolder(testCase)
             fixture = testCase.applyFixture(matlab.unittest.fixtures.TemporaryFolderFixture);
             testCase.temporaryFolder = string(fixture.Folder);
+            operationIds = ["extract" "insert-primary" "insert-conjugate" "insert-complete" "forward-complete" "inverse-complete"];
+            operations = arrayfun(@(id)struct(id=id,medianSeconds=1),operationIds);
+            strategy = struct(id="wv-sorted-linear",operations=operations);
+            cases = arrayfun(@(id)struct(id=id,strategies=strategy),["full-layout-64x48x17-antialias-0" "full-layout-64x48x17-antialias-1"]);
+            testCase.referencePath = fullfile(testCase.temporaryFolder,"reference.json");
+            writelines(jsonencode(struct(suites=struct(cases=cases))),testCase.referencePath);
         end
     end
 
     methods (Test,TestTags="full")
         function reducedRunComparesProductionWithFrozenReference(testCase)
             caseId = "full-layout-64x48x17-antialias-0";
-            result = runWVFourierStorageLayoutIntegrationBenchmark(caseIds=caseId,shouldWriteArtifacts=false,runId="storage-layout-integration-test");
+            result = runWVFourierStorageLayoutIntegrationBenchmark(referencePath=testCase.referencePath,caseIds=caseId,shouldWriteArtifacts=false,runId="storage-layout-integration-test");
 
             testCase.verifyEqual(result.status,"complete");
             testCase.verifyEqual(result.reference.issue,69);
@@ -59,7 +66,7 @@ classdef TestWVFourierStorageLayoutIntegrationBenchmark < matlab.unittest.TestCa
             originalPath = path;
             originalRng = rng;
             outputDirectory = fullfile(testCase.temporaryFolder,"artifacts");
-            result = runWVFourierStorageLayoutIntegrationBenchmark(caseIds="full-layout-64x48x17-antialias-1",outputDirectory=outputDirectory,runId="storage-layout-integration-artifact");
+            result = runWVFourierStorageLayoutIntegrationBenchmark(referencePath=testCase.referencePath,caseIds="full-layout-64x48x17-antialias-1",outputDirectory=outputDirectory,runId="storage-layout-integration-artifact");
 
             testCase.verifyTrue(isfile(fullfile(outputDirectory,"benchmark.json")));
             testCase.verifyTrue(isfile(fullfile(outputDirectory,"summary.md")));
@@ -74,29 +81,12 @@ classdef TestWVFourierStorageLayoutIntegrationBenchmark < matlab.unittest.TestCa
             testCase.verifyEqual(rng,originalRng);
         end
 
-        function releaseCandidateArtifactPassed(testCase)
-            artifactPath = fullfile(testCase.benchmarkFolder,"results","reference", ...
-                "transform-layout-v4.2.1-release-m5-max-r2026a-builtin","benchmark.json");
-            artifact = jsondecode(fileread(artifactPath));
-
-            testCase.verifyEqual(string(artifact.status),"complete");
-            testCase.verifyEqual(string(artifact.runId),"transform-layout-v4.2.1-release-m5-max-r2026a-builtin");
-            testCase.verifyEqual(strlength(string(artifact.environment.sourceCommit)),40);
-            testCase.verifyEqual(strlength(string(artifact.environment.sourceTree)),40);
-            testCase.verifyTrue(artifact.readiness.passed);
-            testCase.verifyTrue(artifact.readiness.completeGateSet);
-            testCase.verifyEqual(artifact.readiness.gateCaseCount,4);
-            gateCases = artifact.cases([artifact.cases.isGate]);
-            operations = [gateCases.operations];
-            testCase.verifyTrue(all([operations.correctnessPassed]));
-            testCase.verifyTrue(all([operations.performancePassed]));
-        end
 
         function invalidCaseRestoresState(testCase)
             originalDirectory = pwd;
             originalPath = path;
             originalRng = rng;
-            testCase.verifyError(@()runWVFourierStorageLayoutIntegrationBenchmark(caseIds="missing-layout-case",shouldWriteArtifacts=false),"WaveVortexBenchmark:UnknownCase");
+            testCase.verifyError(@()runWVFourierStorageLayoutIntegrationBenchmark(referencePath=testCase.referencePath,caseIds="missing-layout-case",shouldWriteArtifacts=false),"WaveVortexBenchmark:UnknownCase");
             testCase.verifyEqual(pwd,originalDirectory);
             testCase.verifyEqual(path,originalPath);
             testCase.verifyEqual(rng,originalRng);

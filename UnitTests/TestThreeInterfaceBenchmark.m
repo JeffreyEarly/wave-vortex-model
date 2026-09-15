@@ -339,21 +339,6 @@ classdef TestThreeInterfaceBenchmark < matlab.unittest.TestCase
             testCase.verifySubstring(cmake,"wv-standalone-nonlinear-flux-benchmark")
         end
 
-        function verboseThreeInterfaceArtifactsAreNotTracked(testCase)
-            [status,output] = system("git -C "+shellQuote(testCase.RepositoryRoot)+" ls-files");
-            testCase.assertEqual(status,0)
-            tracked = splitlines(strtrim(string(output)));
-            forbidden = endsWith(tracked,"/three-interface-benchmark.json") | endsWith(tracked,"-rss.tsv") | endsWith(tracked,"worker.json") | endsWith(tracked,"three-interface-benchmark.json.gz") | startsWith(tracked,"docs/benchmarks/raw/three-interface--");
-            testCase.verifyFalse(any(forbidden),"Verbose three-interface results must remain in the external compressed archive.")
-            compact = tracked(startsWith(tracked,"Benchmarks/results/published/three-interface--") | startsWith(tracked,"docs/benchmarks/data/three-interface--"));
-            for path = reshape(compact,1,[])
-                if ~isfile(fullfile(testCase.RepositoryRoot,path))
-                    continue
-                end
-                information = dir(fullfile(testCase.RepositoryRoot,path));
-                testCase.verifyLessThanOrEqual(information.bytes,512*1024,"Published three-interface records must remain compact.")
-            end
-        end
 
         function completeOutputGraphRejectsPayloadAndMetadataDifferences(testCase)
             reference = fullfile(testCase.TemporaryFolder,"reference.nc");
@@ -534,7 +519,7 @@ for iCase = 1:2
         raw.comparison(iCase).outputGraph = endpointOutputGraph;
     end
     for interface = ["matlab-builtin" "matlab-compiled" "standalone-compiled"]
-        raw.runs(end+1,1) = integratorStudyRun(interface,raw.cases(iCase)); %#ok<AGROW>
+        raw.runs(end+1,1) = integratorStudyRun(interface,raw.cases(iCase));
     end
 end
 end

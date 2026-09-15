@@ -1,6 +1,9 @@
 function runCrossingProjectionStudy
 % Compare the same frozen modal state with and without crossing quadrature.
-folder=fileparts(mfilename('fullpath')); output=fullfile(folder,'results');
+folder=fileparts(mfilename('fullpath'));
+output=fullfile(tempdir,"wave-vortex-model-studies","crossing-projection-study");
+if ~isfolder(output), mkdir(output); end
+
 addpath(fullfile(fileparts(folder),'nonlinear-study'));
 rows=struct([]); references=struct([]);
 for profile=["constant","exponential"]

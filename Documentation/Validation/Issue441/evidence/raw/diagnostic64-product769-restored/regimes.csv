@@ -1,9 +1,0 @@
-forcingMultiplier,regime,accepted,recordIds
-10,cold,0,
-10,developed-zero,0,
-10,developed-peak,1,fa7d4d0e8434b17cdb12a11485f8fa8d0d592ec904bab1847bf40feb0449e791/provider-free-product769-checkpoint
-10,nonzero-mean,1,fa7d4d0e8434b17cdb12a11485f8fa8d0d592ec904bab1847bf40feb0449e791/provider-free-product769-checkpoint
-100,cold,0,
-100,developed-zero,0,
-100,developed-peak,0,
-100,nonzero-mean,0,

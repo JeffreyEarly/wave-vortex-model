@@ -4,7 +4,10 @@ arguments
     workFolder (1,1) string {mustBeFolder}
     options.scenarios string = ["waves","balanced","mixed"]
 end
-folder=fileparts(mfilename('fullpath')); output=fullfile(folder,'results');
+folder=fileparts(mfilename('fullpath'));
+output=fullfile(tempdir,"wave-vortex-model-studies","scientific-validation-study");
+if ~isfolder(output), mkdir(output); end
+
 addpath(fullfile(fileparts(folder),'nonlinear-study'));
 for scenario=options.scenarios
     resolution=struct([]); energyRows=struct([]); spectralRows=struct([]);

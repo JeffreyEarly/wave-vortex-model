@@ -1,9 +1,0 @@
-process,inventory,integratedPower
-density diffusion,totalEnergy,0
-density diffusion,potentialEnstrophy,0
-density diffusion,surfaceAnomalyVariance,0
-density diffusion,bottomAnomalyVariance,0
-nonlinear advection,totalEnergy,4.43761397193454e-17
-nonlinear advection,potentialEnstrophy,1.35638842800915e-13
-nonlinear advection,surfaceAnomalyVariance,0.00293404774643979
-nonlinear advection,bottomAnomalyVariance,-0.000125280626822967

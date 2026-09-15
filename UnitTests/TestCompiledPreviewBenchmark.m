@@ -42,7 +42,7 @@ classdef TestCompiledPreviewBenchmark < matlab.unittest.TestCase
             raw = rawFixture();
             rawPath = fullfile(testCase.temporaryFolder,"compiled-preview-benchmark.json");
             writelines(jsonencode(raw),rawPath);
-            [matlabDataset,compiledDataset] = publishedWaveVortexBenchmarksFromCompiledPreviewArtifact(rawPath,platformId="m5-max",platformName="Apple M5 Max",provenancePath="Benchmarks/results/reference/compiled-preview-v1-m5-max-r2026a/compiled-preview-benchmark.json");
+            [matlabDataset,compiledDataset] = publishedWaveVortexBenchmarksFromCompiledPreviewArtifact(rawPath,platformId="m5-max",platformName="Apple M5 Max",provenancePath="external/compiled-preview-benchmark.json");
             testCase.verifyEqual(matlabDataset.datasetId,"core-v1--matlab-builtin--m5-max--20260812T120000Z");
             testCase.verifyEqual(compiledDataset.datasetId,"core-v1--cpp-native-fftw--m5-max--20260812T120000Z");
             testCase.verifyEqual(compiledDataset.implementation.id,"cpp");

@@ -1,6 +1,9 @@
 function runBoussinesqResolutionStudy
 % Frozen input/output modes; separate horizontal/vertical evaluation sweeps.
-folder=fileparts(mfilename('fullpath')); output=fullfile(folder,'results');
+folder=fileparts(mfilename('fullpath'));
+output=fullfile(tempdir,"wave-vortex-model-studies","nonlinear-resolution-study");
+if ~isfolder(output), mkdir(output); end
+
 addpath(fullfile(fileparts(folder),'nonlinear-study'));
 rows=struct([]); references=struct([]); sourceRows=struct([]);
 for profile=["constant","exponential"]

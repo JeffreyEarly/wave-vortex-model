@@ -31,7 +31,7 @@ if options.runId == ""
     options.runId = string(datetime("now","TimeZone","UTC","Format","yyyyMMdd'T'HHmmss'Z'"));
 end
 if options.outputDirectory == ""
-    options.outputDirectory = fullfile(benchmarkFolder,"results","runs",options.runId + "-builtin-storage-" + computer("arch") + "-" + version("-release"));
+    options.outputDirectory = fullfile(tempdir,"wave-vortex-model-benchmarks",options.runId + "-builtin-storage-" + computer("arch") + "-" + version("-release"));
 end
 
 caseResults = emptyCases();

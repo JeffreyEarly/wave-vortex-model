@@ -1,6 +1,0 @@
-{
-  "runId": "826420ecde2d591ff7d2834c44b293807456bac7f5bbe0afec8bab3984901aab",
-  "readiness": "CONDITIONAL",
-  "resourceReadiness": "CONDITIONAL: production time/disk limits not supplied",
-  "wallSeconds": 125.05302775
-}

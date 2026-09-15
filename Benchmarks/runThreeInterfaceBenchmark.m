@@ -43,7 +43,7 @@ stateCleanup = onCleanup(@()restoreState(originalDirectory,originalPath,original
 addRepositoryPaths(repositoryRoot,benchmarkFolder);
 [options,physicalState,physicalEvidence,stepControlEvidence] = resolveBenchmarkContract(options);
 if options.outputDirectory == ""
-    options.outputDirectory = fullfile(benchmarkFolder,"results","runs",options.runId+"-three-interface");
+    options.outputDirectory = fullfile(tempdir,"wave-vortex-model-benchmarks",options.runId+"-three-interface");
 end
 if options.archiveDirectory == ""
     options.archiveDirectory = fullfile(fileparts(repositoryRoot),"wave-vortex-model-benchmark-artifacts","three-interface");

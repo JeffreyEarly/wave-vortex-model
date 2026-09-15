@@ -1,6 +1,8 @@
 function runLongThermodynamicControls
 % Extend the variable-stratification cases to roughly two external-wave periods.
-folder=fileparts(mfilename('fullpath')); specs=[8 33 3 4 2 3;8 33 10 12 8 8;24 129 10 12 8 8;24 129 14 18 12 12]; objects=cell(1,4);
+output=fullfile(tempdir,"wave-vortex-model-studies","thermodynamic-formulation-study");
+if ~isfolder(output), mkdir(output); end
+specs=[8 33 3 4 2 3;8 33 10 12 8 8;24 129 10 12 8 8;24 129 14 18 12 12]; objects=cell(1,4);
 for j=1:4
     s=specs(j,:); objects{j}=WVTransformFreeSurfaceBoussinesq.fromStratification([1e5 1e5 1000],[s(1) s(1) s(2)],N2Function=@(z)1e-4*exp(z/650),apvModeCount=s(3),waveModeCount=s(4),mdaModeCount=s(5),inertialModeCount=s(6),nEVP=256,shouldAntialias=false);
 end
@@ -25,10 +27,10 @@ for scenario=["waves","mixed"]
             end
         end
     end
-    writetable(struct2table(rows),fullfile(folder,'results','long-'+scenario+'-trajectories.csv'));
+    writetable(struct2table(rows),fullfile(output,'long-'+scenario+'-trajectories.csv'));
     time=checkTime.summary; space=checkSpace.summary;
     checks=struct(timeVelocity=time.velocityError,timeDensity=time.densityError,timeSSH=time.sshError,spaceVelocity=space.velocityError,spaceDensity=space.densityError,spaceSSH=space.sshError);
-    writetable(struct2table(checks),fullfile(folder,'results','long-'+scenario+'-reference.csv'));
+    writetable(struct2table(checks),fullfile(output,'long-'+scenario+'-reference.csv'));
 end
 end
 function a=seed(w,scenario)

@@ -1,7 +1,9 @@
 function runRationalGeometryControls
 % Analytic full-source control: eta=alpha*ssh keeps labels exactly at xi.
 % The large velocity is a nondimensional stress scaling, not an ocean scenario.
-folder=fileparts(mfilename('fullpath')); rows=struct([]);
+output=fullfile(tempdir,"wave-vortex-model-studies","nonlinear-resolution-study");
+if ~isfolder(output), mkdir(output); end
+rows=struct([]);
 w=WVTransformFreeSurfaceBoussinesq.fromStratification([1e5 1e5 1000],[8 8 33],N2Function=@(z)1e-4+zeros(size(z)),apvModeCount=3,waveModeCount=4,mdaModeCount=2,inertialModeCount=3,nEVP=256,shouldAntialias=false);
 k=2*pi/w.Lx; U=sqrt(w.g*w.Lz); [inputX,~,inputZ]=ndgrid(w.x,w.y,w.z);
 for ratio=[.05 .2 .5]
@@ -28,9 +30,9 @@ for ratio=[.05 .2 .5]
         end
         errors(end+1)=maximum; %#ok<AGROW>
     end
-    writetable(struct2table(rows),fullfile(folder,'results','rational-controls.csv'));
+    writetable(struct2table(rows),fullfile(output,'rational-controls.csv'));
     fprintf('rational ratio %g max at n64 %.6g\n',ratio,errors(end));
     assert(errors(end)<1e-9 && errors(end)<errors(1)*1e-4,'Rational source differentiation must converge to its independent analytic expression.');
 end
-writetable(struct2table(rows),fullfile(folder,'results','rational-controls.csv'));
+writetable(struct2table(rows),fullfile(output,'rational-controls.csv'));
 end

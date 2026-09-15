@@ -1,6 +1,0 @@
-field,initialDifferenceRMS,coarseDifferenceRMS,fineDifferenceRMS,referenceRMS,fineRelative,physicalAbsoluteFloor,contractionRoundoffEnvelope
-qgpv,0,0,0,1.25198605829549e-07,0,1e-13,8.04463710328441e-18
-buoyancy,0,0,0,2.62741573333884e-05,0,1e-11,1.53515253527642e-18
-speed,0,0,0,0.00507304531788386,0,1e-08,9.88564550640272e-16
-surfaceAnomaly,0,0,0,6.2309626316168,0,1e-08,3.5560173673345e-13
-bottomAnomaly,0,0,0,0.000442895106240102,0,1e-08,1.40219269447515e-10

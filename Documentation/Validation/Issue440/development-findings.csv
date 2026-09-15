@@ -1,6 +1,0 @@
-stage,control,observation,resolution,scientificToleranceChanged
-independent-reference-development,known APV and endpoint pressure,"Chebfun values were initially reversed; relative known-coordinate errors were order one despite a tiny pressure-fit residual","Corrected the independent fixture to Chebfun's ascending node order before production comparison",false
-fixture-development,accounting table,"struct2array was unavailable in the clean supported MATLAB installation","Use base-MATLAB cell2mat(struct2cell(...))",false
-fixture-development,thermal5 with diagnostic6,"Scientific construction rejected endpoint-source error 0.402 with native Gram error 1.05e-15","Use qualified thermal17 with diagnostic20; the diagnostic band still exceeds source rank",false
-fixture-development,frozen closure cache,"Complete RHS requires explicit linearDynamics=true when nonlinear advection is absent","Use the intended explicit linear control; actual nonlinear process ordering is tested separately",false
-fixture-development,nonlinear registration,"Unqualified diagnostic-only thermal fixture cannot register nonlinear advection","Actual process test constructs a separate source with shouldCheckQuadraticAliasing=true",false

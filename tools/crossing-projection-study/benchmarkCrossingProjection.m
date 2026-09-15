@@ -1,6 +1,9 @@
 function benchmarkCrossingProjection
 % Complete production callback with a source-load candidate, including cache invalidation.
-folder=fileparts(mfilename('fullpath')); addpath(fullfile(fileparts(folder),'nonlinear-study'));
+folder=fileparts(mfilename('fullpath'));
+output=fullfile(tempdir,"wave-vortex-model-studies","crossing-projection-study");
+if ~isfolder(output), mkdir(output); end
+addpath(fullfile(fileparts(folder),'nonlinear-study'));
 rows=struct([]); checks=struct([]);
 for profile=["constant","exponential"]
     if profile=="constant", N2=@(z)1e-4+zeros(size(z)); else, N2=@(z)1e-4*exp(z/650); end
@@ -36,8 +39,8 @@ for profile=["constant","exponential"]
                 if isempty(rows), rows=item; else, rows(end+1)=item; end %#ok<AGROW>
             end
             fprintf('callback %s %dx%dx%d baseline %.3g split %.3g ms\n',profile,nx,nx,nz,1000*median(costs(1,:)),1000*median(costs(2,:)));
-            writetable(struct2table(rows),fullfile(folder,'results','runtime.csv'));
-            writetable(struct2table(checks),fullfile(folder,'results','runtime-accuracy.csv'));
+            writetable(struct2table(rows),fullfile(output,'runtime.csv'));
+            writetable(struct2table(checks),fullfile(output,'runtime-accuracy.csv'));
         end
     end
 end

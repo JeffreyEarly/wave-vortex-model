@@ -13,3 +13,17 @@ Benchmarks/results/runs/
 .compiled-backend-cache/
 *.nc
 !PortableRuntime/tests/fixtures/*.nc
+
+# Recorded authoring outputs belong outside the checkout.
+**/results/
+**/verification/
+**/profile-results/
+**/profiling-output/
+**/test-results/
+**/TestResults/
+*.log
+*.prof
+*.profile
+*.gz
+__pycache__/
+.pytest_cache/

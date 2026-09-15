@@ -1,6 +1,8 @@
 function runThermodynamicEquivalenceStudy
 % Reproduce the grid-level gate for issue #487; no modal pressure solve.
-studyDirectory=fileparts(mfilename('fullpath'));
+output=fullfile(tempdir,"wave-vortex-model-studies","thermodynamic-formulation-study");
+if ~isfolder(output), mkdir(output); end
+
 rows=struct([]);
 for profile=["constant","exponential"]
     for amplitude=[1e-6,.01,1]
@@ -12,7 +14,7 @@ for profile=["constant","exponential"]
         end
     end
 end
-writetable(struct2table(rows),fullfile(studyDirectory,'results','analytic.csv'));
+writetable(struct2table(rows),fullfile(output,'analytic.csv'));
 rows=struct([]);
 for grid=[4 8 16 32 64 128 128 128 128 128 128;129 129 129 129 129 5 9 17 33 65 129]
     a=thermodynamicFormulationFixture("exponential",1,grid(1),grid(2));
@@ -20,5 +22,5 @@ for grid=[4 8 16 32 64 128 128 128 128 128 128;129 129 129 129 129 5 9 17 33 65 
     row.Nx=grid(1); row.Nz=grid(2);
     if isempty(rows), rows=row; else, rows(end+1)=row; end %#ok<AGROW>
 end
-writetable(struct2table(rows),fullfile(studyDirectory,'results','refinement.csv'));
+writetable(struct2table(rows),fullfile(output,'refinement.csv'));
 end

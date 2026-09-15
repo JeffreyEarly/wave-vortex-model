@@ -1,6 +1,8 @@
 function runThermodynamicTangentStudy
 % Directional derivatives, amplitude scaling, and retained-mode assessment.
-folder=fileparts(mfilename('fullpath'));
+output=fullfile(tempdir,"wave-vortex-model-studies","thermodynamic-formulation-study");
+if ~isfolder(output), mkdir(output); end
+
 finiteRows=struct([]); comparisonRows=struct([]);
 for profile=["constant","exponential"]
     if profile=="constant", N2=@(z)1e-4+zeros(size(z)); else, N2=@(z)1e-4*exp(z/650); end
@@ -22,6 +24,6 @@ for profile=["constant","exponential"]
         end
     end
 end
-writetable(struct2table(finiteRows),fullfile(folder,'results','coefficient-tangent-convergence.csv'));
-writetable(struct2table(comparisonRows),fullfile(folder,'results','coefficient-tangent-comparison.csv'));
+writetable(struct2table(finiteRows),fullfile(output,'coefficient-tangent-convergence.csv'));
+writetable(struct2table(comparisonRows),fullfile(output,'coefficient-tangent-comparison.csv'));
 end

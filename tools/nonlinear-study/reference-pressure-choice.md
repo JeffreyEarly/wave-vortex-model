@@ -1,6 +1,6 @@
 # Reference pressure and parcel-label domains
 
-> Historical evidence. This report describes the retired weak/pressure implementation or its comparison studies. The executable solvers have been removed; see the [direct runtime qualification](../../Documentation/Validation/NonlinearFreeSurface/direct-runtime-qualification.md) for the current implementation. Historical source links refer to revision `7b9ccda7`.
+> Historical formulation note. The weak/pressure implementation was retired in [commit `84c9346a`](https://github.com/JeffreyEarly/wave-vortex-model/commit/84c9346a). Historical source links refer to revision `7b9ccda7`.
 
 This records the formulation comparison and the selected internal nonlinear convention. The runtime now uses this full convention; the manuscript itself is unchanged. It addresses a numerical difficulty in evaluating the full equations at positive surface crests. It does not resolve modal constraint reaction work or authorize parcel labels outside their density domain.
 

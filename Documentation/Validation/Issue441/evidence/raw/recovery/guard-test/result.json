@@ -1,9 +1,0 @@
-{
-  "reason": "memory-limit",
-  "returncode": -15,
-  "elapsedSeconds": 0.2617494590000433,
-  "peakSampledFootprintBytes": 90866096,
-  "peakSampledResidentBytes": 99090432,
-  "samples": 2,
-  "samplingIntervalSeconds": 0.25
-}

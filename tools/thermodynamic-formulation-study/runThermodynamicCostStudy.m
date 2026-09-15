@@ -1,6 +1,8 @@
 function runThermodynamicCostStudy
 % Paired complete-RHS timing, including label validity and density inversion.
-folder=fileparts(mfilename('fullpath')); rows=struct([]); kernels=struct([]);
+output=fullfile(tempdir,"wave-vortex-model-studies","thermodynamic-formulation-study");
+if ~isfolder(output), mkdir(output); end
+rows=struct([]); kernels=struct([]);
 for profile=["constant","exponential"]
     if profile=="constant", N2=@(z)1e-4+zeros(size(z)); else, N2=@(z)1e-4*exp(z/650); end
     representedDegree=length(chebfun(N2,[-1000 0],'splitting','off'))-1;
@@ -48,11 +50,11 @@ for profile=["constant","exponential"]
         end
     end
 end
-writetable(struct2table(rows),fullfile(folder,'results','rhs-costs.csv'));
-writetable(struct2table(kernels),fullfile(folder,'results','kernel-costs.csv'));
+writetable(struct2table(rows),fullfile(output,'rhs-costs.csv'));
+writetable(struct2table(kernels),fullfile(output,'kernel-costs.csv'));
 [~,cpu]=system('sysctl -n machdep.cpu.brand_string');
 metadata=struct(matlab=version,computer=computer,cpu=strtrim(cpu),sourceRevision='cf343b95523240a5de658dcfd309401032b9ad80',timing='Five alternating-order trials; five RHS evaluations per sample; contexts warmed; coefficient assignments invalidate state caches normally.');
-fid=fopen(fullfile(folder,'results','runtime.json'),'w'); cleanup=onCleanup(@()fclose(fid)); fwrite(fid,jsonencode(metadata,PrettyPrint=true));
+fid=fopen(fullfile(output,'runtime.json'),'w'); cleanup=onCleanup(@()fclose(fid)); fwrite(fid,jsonencode(metadata,PrettyPrint=true));
 end
 function fields=coldReconstruct(w)
 w.clearVariableCacheOfApAmA0DependentVariables();

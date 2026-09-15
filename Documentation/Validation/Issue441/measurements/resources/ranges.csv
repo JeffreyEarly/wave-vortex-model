@@ -1,5 +1,0 @@
-forcingMultiplier,withOutput,sampleCount,minimumSimulatedSecondsPerWallSecond,maximumSimulatedSecondsPerWallSecond,stateRegimes
-10,0,5,1750.3499619461,1843.44073205762,"cold M10, no optional damping; manufactured 0.01 m/s M10 peak, no optional damping"
-10,1,5,1704.50789269026,1824.23167472013,"cold M10, no optional damping; manufactured 0.01 m/s M10 peak, no optional damping"
-100,0,3,1728.49586513213,1826.00930885737,"manufactured 0.1 m/s M100 peak, horizontal-only damping"
-100,1,3,1673.03646901935,1765.79682813227,"manufactured 0.1 m/s M100 peak, horizontal-only damping"

@@ -1,2 +1,0 @@
-phase,checkpointCoefficientError,checkpointFieldError,coefficientError,fieldError,energyError,readSeconds,continuationSeconds,continuedBytes,acceptedSteps,rhsEvaluations,outputRhsEvaluations
-fresh,0,0,0,0,0,4.821393625,6.00927633333333,699744805,4,16,24

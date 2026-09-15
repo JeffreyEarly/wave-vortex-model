@@ -1,6 +1,8 @@
 function plotScientificValidation
 % Separate resolved energy variation, timestep sensitivity, and field refinement.
-folder=fileparts(mfilename('fullpath')); output=fullfile(folder,'results');
+output=fullfile(tempdir,"wave-vortex-model-studies","scientific-validation-study");
+if ~isfolder(output), mkdir(output); end
+
 cases=readtable(fullfile(output,'cases.csv'),TextType="string");
 energy=table();
 for scenario=["waves","balanced","mixed"]

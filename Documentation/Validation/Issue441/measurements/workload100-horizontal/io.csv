@@ -1,4 +1,0 @@
-repeat,sampleFileBytes,initialFileBytesIncludingFirstRecords,additionalSampleBytes,coefficientRecordPayloadBytes,scalarRecordPayloadBytes,restorationSeconds,restoredTime
-1,696192362,690301538,5890824,2944232,40,3.8771085,21600
-2,696190593,690299769,5890824,2944232,40,3.51221320833333,21600
-3,696190593,690299769,5890824,2944232,40,3.39940345833333,21600

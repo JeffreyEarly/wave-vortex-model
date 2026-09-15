@@ -3,6 +3,7 @@ function results = runWVFourierStorageLayoutIntegrationBenchmark(options)
 arguments
     options.caseIds (1,:) string = strings(1,0)
     options.outputDirectory (1,1) string = ""
+    options.referencePath (1,1) string = ""
     options.shouldWriteArtifacts (1,1) logical = true
     options.runId (1,1) string = ""
     options.correctnessTolerance (1,1) double {mustBePositive} = 1e-12
@@ -26,13 +27,16 @@ if ~isempty(options.caseIds)
     end
     suite.cases = suite.cases(selected);
 end
-referencePath = fullfile(benchmarkFolder,"results","reference","transform-layout-v1-m5-max-r2026a-builtin","benchmark.json");
+if options.referencePath == ""
+    error("WaveVortexBenchmark:ReferenceRequired","referencePath is required and must identify an external benchmark artifact.");
+end
+referencePath = options.referencePath;
 reference = loadReference(referencePath);
 if options.runId == ""
     options.runId = string(datetime("now","TimeZone","UTC","Format","yyyyMMdd'T'HHmmss'Z'"));
 end
 if options.outputDirectory == ""
-    options.outputDirectory = fullfile(benchmarkFolder,"results","runs",options.runId + "-storage-layout-integration-" + computer("arch") + "-" + version("-release"));
+    options.outputDirectory = fullfile(tempdir,"wave-vortex-model-benchmarks",options.runId + "-storage-layout-integration-" + computer("arch") + "-" + version("-release"));
 end
 
 operationIds = ["extract" "insert-primary" "insert-conjugate" "insert-complete" "forward-complete" "inverse-complete"];

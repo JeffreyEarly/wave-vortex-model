@@ -1,6 +1,8 @@
 function runProjectedThermodynamicStudy
 % Fixed-state amplitude and resolution study; no trajectories or timing.
-folder=fileparts(mfilename('fullpath'));
+output=fullfile(tempdir,"wave-vortex-model-studies","thermodynamic-formulation-study");
+if ~isfolder(output), mkdir(output); end
+
 rows=struct([]); families=struct([]);
 for profile=["constant","exponential"]
     if profile=="constant", N2=@(z)1e-4+zeros(size(z)); else, N2=@(z)1e-4*exp(z/650); end
@@ -23,6 +25,6 @@ for profile=["constant","exponential"]
         end
     end
 end
-writetable(struct2table(rows),fullfile(folder,'results','projected-states.csv'));
-writetable(struct2table(families),fullfile(folder,'results','projected-families.csv'));
+writetable(struct2table(rows),fullfile(output,'projected-states.csv'));
+writetable(struct2table(families),fullfile(output,'projected-families.csv'));
 end

@@ -1,5 +1,8 @@
 function countAdvectionDerivatives
 % Count source-kernel calls in distinct volume and surface derivative units.
+output=fullfile(tempdir,"wave-vortex-model-studies","advection-form-study");
+if ~isfolder(output), mkdir(output); end
+
 w=makeAdvectionStudyTransform("constant",[8 33 3 4 2 3]);
 seed=manuscriptEvolutionOperators(w,"constant",padding=1); state=seed.seed("mixed",.1);
 base=advectionStudyOperators(w,"constant","divergence"); base.rhs(327,state);
@@ -17,7 +20,7 @@ for form=["divergence","advective","split","compatible"]
     row=struct(form=form,volumeX=counts(1,1),volumeY=counts(1,2),volumeXi=counts(1,3),volumeAdjointXi=counts(1,4),surfaceX=counts(2,1),surfaceY=counts(2,2));
     if isempty(rows), rows=row; else, rows(end+1)=row; end %#ok<AGROW>
 end
-writetable(struct2table(rows),fullfile(fileparts(mfilename('fullpath')),'results','derivative-counts.csv'));
+writetable(struct2table(rows),fullfile(output,'derivative-counts.csv'));
     function out=derivative(a,direction)
         level=1+(size(a,3)==1); counts(level,direction)=counts(level,direction)+1;
         switch direction

@@ -1,6 +1,6 @@
 # Direct manuscript field and runtime contract
 
-The beta free-surface Boussinesq transform uses the ordinary WVM forcing, operation, integration and annotated-persistence lifecycle. Its nonlinear callback evaluates Appendix C and the projected amplitude equation directly. The [runtime qualification](../../Documentation/Validation/NonlinearFreeSurface/direct-runtime-qualification.md) records verification and limits.
+The beta free-surface Boussinesq transform uses the ordinary WVM forcing, operation, integration and annotated-persistence lifecycle. Its nonlinear callback evaluates Appendix C and the projected amplitude equation directly. The implementation history and review are available in [commit `84c9346a`](https://github.com/JeffreyEarly/wave-vortex-model/commit/84c9346a).
 
 ## Fields and caches
 

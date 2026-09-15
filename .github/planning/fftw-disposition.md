@@ -72,4 +72,4 @@ The compiled constant-stratification kernel milestone now compares against this 
 | #96 | `b9bbb1c6556a0a968e5840ae6e10ccd50ae69582` | `20260810T054714Z` |
 | #94 | `97b7e71` through `1bc9806` | `20260810T151002Z` |
 
-Fixed artifact hashes and the original branch inventory remain in [`fftw-integration-inventory.json`](fftw-integration-inventory.json).
+The historical branch inventory and evidence are recorded in [issue #95](https://github.com/JeffreyEarly/wave-vortex-model/issues/95); recorded artifacts are not retained in the source tree.

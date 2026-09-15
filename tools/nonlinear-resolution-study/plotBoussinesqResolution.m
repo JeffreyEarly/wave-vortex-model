@@ -1,6 +1,8 @@
 function plotBoussinesqResolution
 % Plot fixed-basis convergence, retaining measured reference changes.
-folder=fileparts(mfilename('fullpath')); output=fullfile(folder,'results');
+output=fullfile(tempdir,"wave-vortex-model-studies","nonlinear-resolution-study");
+if ~isfolder(output), mkdir(output); end
+
 rows=readtable(fullfile(output,'convergence.csv'),TextType="string");
 figureHandle=figure(Visible="off",Color="w",Position=[100 100 900 420]);
 cleanup=onCleanup(@()close(figureHandle));

@@ -1,6 +1,8 @@
 function runAdvectionTimings
 % Five alternating-order measurements; run without other simulation processes.
-folder=fileparts(mfilename('fullpath')); rows=struct([]); trajectoryRows=struct([]); equivalenceRows=struct([]);
+output=fullfile(tempdir,"wave-vortex-model-studies","advection-form-study");
+if ~isfolder(output), mkdir(output); end
+rows=struct([]); trajectoryRows=struct([]); equivalenceRows=struct([]);
 for profile=["constant","exponential"]
     for spec=[8 33 3 4 2 3;16 65 3 4 2 3;16 65 6 8 4 6;24 129 10 12 8 8].'
         setup=tic; w=makeAdvectionStudyTransform(profile,spec.'); setupSeconds=toc(setup);
@@ -43,11 +45,11 @@ for profile=["constant","exponential"]
             end
         end
         fprintf('timing %s %dx%d modes %d done\n',profile,w.Nx,w.Nz,spec(4));
-        writetable(struct2table(rows),fullfile(folder,'results','rhs-timings.csv'));
-        writetable(struct2table(equivalenceRows),fullfile(folder,'results','same-grid-tendencies.csv'));
-        writetable(struct2table(trajectoryRows),fullfile(folder,'results','trajectory-timings.csv'));
+        writetable(struct2table(rows),fullfile(output,'rhs-timings.csv'));
+        writetable(struct2table(equivalenceRows),fullfile(output,'same-grid-tendencies.csv'));
+        writetable(struct2table(trajectoryRows),fullfile(output,'trajectory-timings.csv'));
     end
 end
 runtime=struct(matlab=version,computer=computer,baseline="2ee008de824a9ff8ba0c943bf47098b20a14ca1c",date=string(datetime('now')));
-file=fopen(fullfile(folder,'results','runtime.json'),'w'); fprintf(file,'%s\n',jsonencode(runtime,PrettyPrint=true)); fclose(file);
+file=fopen(fullfile(output,'runtime.json'),'w'); fprintf(file,'%s\n',jsonencode(runtime,PrettyPrint=true)); fclose(file);
 end

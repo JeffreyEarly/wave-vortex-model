@@ -1,6 +1,8 @@
 function plotCrossingProjection
 % Compare unsplit and split quadrature at fixed modal inventory.
-folder=fileparts(mfilename('fullpath')); output=fullfile(folder,'results');
+output=fullfile(tempdir,"wave-vortex-model-studies","crossing-projection-study");
+if ~isfolder(output), mkdir(output); end
+
 rows=readtable(fullfile(output,'convergence.csv'),TextType="string");
 f=figure(Visible="off",Color="w",Position=[100 100 900 400]); cleanup=onCleanup(@()close(f));
 layout=tiledlayout(f,1,2,TileSpacing="compact",Padding="compact");
