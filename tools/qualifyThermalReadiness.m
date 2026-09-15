@@ -177,6 +177,10 @@ for j = 1:numel(cases)
             writeJSON(fullfile(folder,'integration-contract.json'),caseContract);
             model = WVModel(w);
             modelCleanup=onCleanup(@()releaseModel(model));
+            forcingContract=struct(capture="pre-integration",executionId=executionId,initialCaseId=initialCaseId,scientificStateHash=manifest.scientificStateHash,coefficientStateHash=thermalReadinessIdentity(w.coefficientState()),t=w.t,t0=w.t0,forcing={thermalReadinessForcingState(w)});
+            forcingContract.forcingHash=thermalReadinessIdentity(forcingContract.forcing);
+            save(fullfile(folder,'forcing-contract.mat'),'forcingContract');
+            clear forcingContract
             model.setupIntegrator(integratorType="exponential",thermalLinearDynamics=~manifest.configuration.shouldIncludeAdvection,initialStep=cases(j).step,maximumStep=cases(j).step,exponentialAdaptive=cases(j).adaptive,relTolerance=cases(j).relTolerance,physicalAbsTolerance=cases(j).physicalAbsTolerance);
             snapshots = cell(1,numel(options.observationOffsets)); steps = [];
             for k = 1:numel(snapshots)

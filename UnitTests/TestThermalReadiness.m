@@ -102,6 +102,32 @@ classdef TestThermalReadiness < matlab.unittest.TestCase
             testCase.verifyEqual(height(report.processWork),24);
             testCase.verifyTrue(any(report.processWork.process=="density diffusion"));
             testCase.verifyTrue(all(isfinite(report.processWork.integratedWork)));
+            expected=thermalReadinessCase(c,scientificState=testCase.scientificState);
+            expectedCleanup=onCleanup(@()delete(expected));
+            seasonal=expected.forcingWithName('seasonal surface anomaly');
+            saved=load(fullfile(folder.Folder,'window','run-contract.mat'),'contract');
+            testCase.verifyEqual(saved.contract.runId,thermalReadinessIdentity(rmfield(saved.contract,'runId')));
+            for j=1:numel(cases)
+                caseFolder=fullfile(folder.Folder,'window',cases(j).name);
+                cache=load(fullfile(caseFolder,'initial-case.mat'));
+                capture=load(fullfile(caseFolder,'forcing-contract.mat'),'forcingContract');
+                f=capture.forcingContract;
+                testCase.verifyEqual(f.capture,"pre-integration");
+                testCase.verifyEqual(f.executionId,report.cases.executionId(j));
+                testCase.verifyEqual(f.initialCaseId,cache.manifest.caseId);
+                testCase.verifyEqual(cache.manifest.caseId,thermalReadinessIdentity(rmfield(cache.manifest,'caseId')));
+                testCase.verifyEqual(f.executionId,thermalReadinessIdentity(struct(runId=saved.contract.runId,caseName=cases(j).name)));
+                testCase.verifyEqual(f.scientificStateHash,thermalReadinessIdentity(cache.scientificState));
+                testCase.verifyEqual(f.coefficientStateHash,thermalReadinessIdentity(cache.coefficientState));
+                testCase.verifyEqual([f.t f.t0],[cache.manifest.configuration.t cache.manifest.configuration.t0]);
+                testCase.verifyEqual(f.forcingHash,thermalReadinessIdentity(f.forcing));
+                testCase.verifyEqual(f.forcing,thermalReadinessForcingState(expected));
+                index=find(cellfun(@(entry)entry.class=="WVSeasonalSurfaceAnomalyForcing",f.forcing));
+                testCase.assertNumElements(index,1);
+                testCase.verifyEqual(f.forcing{index}.pattern,seasonal.pattern);
+                testCase.verifySize(f.forcing{index}.pattern,[c.Nx c.Ny]);
+                testCase.verifyEqual([f.forcing{index}.amplitude f.forcing{index}.period f.forcing{index}.phase],[seasonal.amplitude seasonal.period seasonal.phase]);
+            end
         end
         function initialRepresentationFailureStopsBeforeTrajectory(testCase)
             folder=testCase.applyFixture(matlab.unittest.fixtures.TemporaryFolderFixture);

@@ -48,7 +48,7 @@ if isfile(fullfile(outputFolder,'restart-contract.mat'))
     error('WV:ReadinessRestartExists','Use a new directory; an existing lifecycle contract is immutable.');
 end
 if ~isfolder(outputFolder), mkdir(outputFolder); end
-initialState=initial.coefficientState(); initialForcing=forcingConfiguration(initial);
+initialState=initial.coefficientState(); initialForcing=thermalReadinessForcingState(initial);
 contract=struct(schema="thermal-readiness-restart-v1",caseId=options.caseId,initialTime=initial.t,t0=initial.t0,duration=options.duration,step=options.step,finalTime=initial.t+options.duration,checkpointTime=initial.t+2*options.step,interruptedTime=initial.t+3*options.step,coefficientInterval=2*options.step,fieldInitialTime=initial.t+options.step/4,fieldInterval=options.step,inventoryInitialTime=initial.t+options.step/3,inventoryInterval=2*options.step/3,domainSize=initial.domainSize,gridSize=initial.gridSize,thermalCount=initial.thermalModeCount,mdaCount=initial.mdaModeCount,scientificHash=thermalReadinessIdentity(initial.scientificState),initialStateHash=thermalReadinessIdentity(initialState),forcingHash=thermalReadinessIdentity(initialForcing),relativeAllowance=1e-10,absoluteAllowance=1e-12,endpointComparison="surface and bottom independently",integrationBoundarySemantics="all paths stop at interruptedTime and at blocks of at most two requested maximum steps",wallBudgetSemantics="cooperative between setup and integration blocks of two requested maximum steps; no preemption within an RHS or file operation");
 contract.runId=thermalReadinessIdentity(contract);
 save(fullfile(outputFolder,'restart-contract.mat'),'contract');
@@ -90,7 +90,7 @@ reference=struct(contract=contract,checkpoint=checkpoint,final=final,prefix=pref
 checkpointInfo=dir(fullfile(outputFolder,'checkpoint.nc')); controlInfo=dir(fullfile(outputFolder,'control.nc')); referenceInfo=dir(fullfile(outputFolder,'restart-reference.mat'));
 setup=table(controlOutputSetupSeconds,controlSeconds,checkpointSetupSeconds,checkpointSeconds,syncAndCloseSeconds,checkpointInfo.bytes,controlInfo.bytes,referenceInfo.bytes,toc(clock),VariableNames={'controlOutputSetupSeconds','controlIntegrationSeconds','checkpointOutputSetupSeconds','checkpointIntegrationSeconds','checkpointSyncAndCloseSeconds','checkpointBytes','controlBytes','referenceMATBytes','totalWallSeconds'});
 writetable(setup,fullfile(outputFolder,'restart-setup.csv'));
-if ~isequal(initial.coefficientState(),initialState) || initial.t~=contract.initialTime || initial.t0~=contract.t0 || ~isequal(forcingConfiguration(initial),initialForcing)
+if ~isequal(initial.coefficientState(),initialState) || initial.t~=contract.initialTime || initial.t0~=contract.t0 || ~isequal(thermalReadinessForcingState(initial),initialForcing)
     error('WV:ReadinessRestartMutation','Lifecycle qualification must leave the authoritative initial transform unchanged.');
 end
 results=struct(contract=contract,setup=setup,continuation=row,streams=streams,controlStatistics=controlStats,checkpointStatistics=checkpointStats,status="CONDITIONAL: fresh-process provider-unavailable replay required");
@@ -146,17 +146,9 @@ fields=w.reconstructFields(["u","v","qgpv","buoyancy","ssh","endpointAnomalies"]
 fprintf('T10 restart snapshot t=%.9g: fields complete %.3gs; physical energy start\n',w.t,toc(timer));
 energy=w.totalEnergy;
 fprintf('T10 restart snapshot t=%.9g: physical energy complete %.3gs\n',w.t,toc(timer));
-value=struct(t=w.t,t0=w.t0,coefficients=w.coefficientState(),fields=fields,energy=energy,scientificHash=thermalReadinessIdentity(w.scientificState),forcing={forcingConfiguration(w)});
+value=struct(t=w.t,t0=w.t0,coefficients=w.coefficientState(),fields=fields,energy=energy,scientificHash=thermalReadinessIdentity(w.scientificState),forcing={thermalReadinessForcingState(w)});
 if value.scientificHash~=c.scientificHash || thermalReadinessIdentity(value.forcing)~=c.forcingHash
     error('WV:ReadinessRestartIdentity','Scientific arrays or frozen forcing changed during the lifecycle run.');
-end
-end
-function value=forcingConfiguration(w)
-value=cell(1,numel(w.forcing));
-for j=1:numel(w.forcing)
-    f=w.forcing(j); entry=struct(class=string(class(f)),name=string(f.name),priority=f.priority);
-    for name=string(f.requiredProperties), entry.(name)=f.(name); end
-    value{j}=entry;
 end
 end
 function [row,streams]=continueCheckpoint(folder,phase,reference,clock,budget)
