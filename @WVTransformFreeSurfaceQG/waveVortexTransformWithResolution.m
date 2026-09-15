@@ -27,7 +27,7 @@ arguments (Output)
     assessment (1,1) struct
 end
 configuration=struct();
-for name=["shouldAntialias","N2Function","rho0","planetaryRadius","rotationRate","latitude","g","g0","gd","gramTolerance","modeConvergenceTolerance","boundaryResolutionTolerance","shouldCheckQuadraticAliasing","quadraticAliasingTolerance","muTolerance"]
+for name=["shouldAntialias","N2Function","rho0","planetaryRadius","rotationRate","latitude","g","g0","gd","gramTolerance","modeConvergenceTolerance","boundaryResolutionTolerance","quadraticDealiasing","retainedFraction","energyFraction","bandwidthFraction","muTolerance"]
     configuration.(name)=self.(name);
 end
 configuration.apvModeCount=options.apvModeCount; configuration.mdaModeCount=options.mdaModeCount;

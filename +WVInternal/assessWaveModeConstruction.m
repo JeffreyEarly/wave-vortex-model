@@ -1,4 +1,4 @@
-function [assessment,reference,convergence] = assessWaveModeConstruction(state,bases,activePages,referenceNEVP,tolerance)
+function [assessment,reference,convergence] = assessWaveModeConstruction(state,bases,activePages,referenceNEVP,tolerance,dealiasingOptions)
 % Compare the actual constructed wave bases with an explicitly requested solve.
 % Zero-count pages contain no tested waves. A full passing prefix reaches
 % the candidate ceiling; it is not a measured maximum available mode count.
@@ -8,6 +8,7 @@ arguments (Input)
     activePages (:,1) double
     referenceNEVP (:,1) double
     tolerance (1,1) double
+    dealiasingOptions (1,1) struct = struct(quadraticDealiasing="none",retainedFraction=2/3,energyFraction=.99,bandwidthFraction=2/3)
 end
 np=length(state.khUnique);
 kappa=state.khUnique;
@@ -16,9 +17,11 @@ convergedCount=nan(np,1); gridSupportedCount=zeros(np,1); usableCount=nan(np,1);
 status=repmat("reference-not-requested",np,1);
 candidateLimitReached=false(np,1);
 modeConvergence=cell(np,1); prefixGramError=cell(np,1);
-modeSummary=cell(np,1);
+modeSummary=cell(np,1); dealiasing=cell(np,1);
 reference=[];
 reports={};
+dealiasingReports={};
+quadraticDealiasingSeconds=0;
 if ~isempty(referenceNEVP)
     f=2*state.rotationRate*sind(state.latitude);
     reference=IMSolverSpectral(nEVP=referenceNEVP,coordinateKind="wkb").solveWaveModesAtWavenumbers([0 state.khUnique(activePages).'],N2=state.N2Function,zDomain=[-state.Lxyz(3) 0],f0=f,g=state.g,surfaceBoundary=IMBoundaryCondition(a=0,b=1,c=1,d=0),nModes=requestedCount(activePages).',nInertialModes=length(state.inertialMode));
@@ -49,6 +52,7 @@ for p=1:np
     if isempty(reference), continue; end
     page=find(activePages==p)+1;
     report=reports{page}; modeConvergence{p}=report;
+    dealiasing{p}=dealiasingReports{page};
     modeSummary{p}=WVInternal.summarizeModeConvergence(report,count,tolerance);
     convergedCount(p)=modeSummary{p}.acceptedCount;
     complete=modeSummary{p}.complete;
@@ -68,6 +72,7 @@ for n=1:count, errors(n)=norm(gram(1:n,1:n)-eye(n),2); end
 inertial=struct(requestedCount=count,gramError=state.inertialGramError,prefixGramError=errors,gridSupportedCount=sum(cumprod(errors<=state.gramTolerance)),convergence=[],convergedCount=NaN,usableCount=NaN);
 if ~isempty(reference)
     inertial.convergence=reports{1};
+    inertial.dealiasing=dealiasingReports{1};
     inertialSummary=WVInternal.summarizeModeConvergence(inertial.convergence,count,tolerance);
     inertial.convergedCount=inertialSummary.acceptedCount;
     complete=inertialSummary.complete;
@@ -75,12 +80,16 @@ if ~isempty(reference)
 else
     inertialSummary=[];
 end
-assessment=struct(pages=table(kappa,requestedCount,convergedCount,gridSupportedCount,usableCount,status,candidateLimitReached),modeConvergence={modeConvergence},prefixGramError={prefixGramError},inertial=inertial,modeConvergenceTolerance=tolerance,gramTolerance=state.gramTolerance,nEVP=state.nEVP,referenceNEVP=referenceNEVP,coverage="Actual constructed modes at every supported kappa; linear convergence and fixed-grid Gram evidence only. Quadratic products are assessed separately. Two-resolution agreement is not a rigorous error bound.");
+assessment=struct(pages=table(kappa,requestedCount,convergedCount,gridSupportedCount,usableCount,status,candidateLimitReached,dealiasing),modeConvergence={modeConvergence},prefixGramError={prefixGramError},inertial=inertial,modeConvergenceTolerance=tolerance,gramTolerance=state.gramTolerance,nEVP=state.nEVP,referenceNEVP=referenceNEVP,quadraticDealiasingSeconds=quadraticDealiasingSeconds,coverage="Actual constructed modes at every supported kappa; linear convergence and fixed-grid Gram evidence only. Quadratic-dealiasing evidence uses the same prepared candidate shapes. Two-resolution agreement is not a rigorous error bound.");
 convergence=struct(pages={modeSummary},inertial=inertialSummary);
 
     function acceptPrepared(candidate,refined,positions,~,~)
         for iPosition=1:numel(positions)
             reports{positions(iPosition)}=assessModeConvergence(candidate{iPosition},refined{iPosition},z,w);
+            timer=tic;
+            dealiasingReports{positions(iPosition)}=WVInternal.quadraticDealiasingPrefix( ...
+                candidate{iPosition}.values.F,candidate{iPosition}.values.G,state.Nxyz(3)-1,dealiasingOptions);
+            quadraticDealiasingSeconds=quadraticDealiasingSeconds+toc(timer);
         end
     end
 end

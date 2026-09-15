@@ -4,10 +4,8 @@ function assessment = assessVerticalResolution(Lz,Nz,options)
 % This method performs the scientific vertical solve without constructing a
 % complete horizontal transform. For active endpoint families it returns a
 % conservative maximum horizontal wavenumber whose fixed boundary responses
-% satisfy `boundaryResolutionTolerance`. When `shouldCheckQuadraticAliasing`
-% is true, APV/zero-APV products must also satisfy `quadraticAliasingTolerance`.
-% The two relative errors and their tolerances remain separate; unrequested
-% quadratic errors are NaN.
+% satisfy boundaryResolutionTolerance. APV count selection uses the same
+% quadratic-dealiasing policy as full QG and Boussinesq construction.
 %
 % - Topic: Create and restore a transform
 % - Declaration: assessment = WVTransformFreeSurfaceQG.assessVerticalResolution(Lz,Nz,options)
@@ -21,8 +19,10 @@ function assessment = assessVerticalResolution(Lz,Nz,options)
 % - Parameter options.gramTolerance: shared normalized-Gram tolerance; default 1e-2
 % - Parameter options.modeConvergenceTolerance: independent physical H1 and equivalent-depth agreement; default 1e-6
 % - Parameter options.boundaryResolutionTolerance: fixed zero-APV physical derivative and energy tolerance; default 1e-2
-% - Parameter options.shouldCheckQuadraticAliasing: qualify quadratic products during construction; default true
-% - Parameter options.quadraticAliasingTolerance: APV quadratic-product tolerance
+% - Parameter options.quadraticDealiasing: vertical policy none, fixedFraction, or effectiveBandwidth
+% - Parameter options.retainedFraction: fixedFraction retained share of the linear APV prefix
+% - Parameter options.energyFraction: effectiveBandwidth cumulative spectral-energy fraction
+% - Parameter options.bandwidthFraction: effectiveBandwidth share of the vertical grid degree
 % - Returns assessment: data-only vertical-resolution diagnostics
 arguments
     Lz (1,1) double {mustBePositive}
@@ -38,8 +38,10 @@ arguments
     options.gramTolerance (1,1) double {mustBeReal,mustBeFinite,mustBeNonnegative} = 1e-2
     options.modeConvergenceTolerance (1,1) double {mustBeReal,mustBeFinite,mustBePositive} = 1e-6
     options.boundaryResolutionTolerance (1,1) double {mustBeReal,mustBeFinite,mustBePositive} = 1e-2
-    options.shouldCheckQuadraticAliasing (1,1) logical = true
-    options.quadraticAliasingTolerance (1,1) double {mustBeReal,mustBeFinite,mustBePositive} = 0.1
+    options.quadraticDealiasing (1,1) string {mustBeMember(options.quadraticDealiasing,["none","fixedFraction","effectiveBandwidth"])} = "fixedFraction"
+    options.retainedFraction (1,1) double {mustBeReal,mustBeFinite,mustBeGreaterThanOrEqual(options.retainedFraction,0),mustBeLessThanOrEqual(options.retainedFraction,1)} = 2/3
+    options.energyFraction (1,1) double {mustBeReal,mustBeFinite,mustBeGreaterThan(options.energyFraction,0),mustBeLessThanOrEqual(options.energyFraction,1)} = .99
+    options.bandwidthFraction (1,1) double {mustBeReal,mustBeFinite,mustBeGreaterThanOrEqual(options.bandwidthFraction,0),mustBeLessThanOrEqual(options.bandwidthFraction,1)} = 2/3
 end
 
 inputs = WVInternal.resolveFreeSurfaceInputs(Lz,options);
@@ -52,7 +54,7 @@ endpointNames = ["surface","bottom"];
 integratedN = integral(@(z) sqrt(inputs.N2Function(z)),-Lz,0);
 horizontalWavenumberScale = abs(inputs.f0)*(Nz-1)^2/integratedN;
 limit = WVInternal.supportedFreeSurfaceHorizontalWavenumber(vertical.apvBasis,vertical.apvTransform,inputs.N2Function, ...
-    inputs.f0,options.g,endpointNames(activeMask),vertical.nEVP,options.quadraticAliasingTolerance,seedKh=horizontalWavenumberScale,shouldCheckQuadraticAliasing=options.shouldCheckQuadraticAliasing,vertical=vertical,inputs=inputs,boundaryResolutionTolerance=options.boundaryResolutionTolerance,modeConvergenceTolerance=options.modeConvergenceTolerance);
+    inputs.f0,options.g,endpointNames(activeMask),vertical.nEVP,options.boundaryResolutionTolerance,seedKh=horizontalWavenumberScale,shouldCheckQuadraticAliasing=false,vertical=vertical,inputs=inputs,boundaryResolutionTolerance=options.boundaryResolutionTolerance,modeConvergenceTolerance=options.modeConvergenceTolerance);
 
 apvModeCount = length(vertical.apvTransform.modeNumber);
 mdaModeCount = length(vertical.mdaTransform.modeNumber);
@@ -60,8 +62,8 @@ apvDiagnostics = vertical.apvAssessment.prefixDiagnostics(apvModeCount,:);
 mdaDiagnostics = vertical.mdaAssessment.prefixDiagnostics(mdaModeCount,:);
 assessment = struct(z=vertical.z,weights=vertical.weights,apvModeCount=apvModeCount,mdaModeCount=mdaModeCount, ...
     apvGramError=apvDiagnostics.gramError,mdaGramError=mdaDiagnostics.gramError, ...
-    quadraticAliasingError=apvDiagnostics.quadraticAliasingError,gramTolerance=options.gramTolerance, ...
-    quadraticAliasingTolerance=options.quadraticAliasingTolerance,shouldCheckQuadraticAliasing=options.shouldCheckQuadraticAliasing, ...
+    apvLinearCount=vertical.apvDealiasing.linearCount,apvFilteringCount=vertical.apvDealiasing.filteringCount, ...
+    gramTolerance=options.gramTolerance,dealiasing=vertical.apvDealiasing, ...
     horizontalWavenumberScale=horizontalWavenumberScale,isHorizontalLimitApplicable=limit.isApplicable, ...
     maximumSupportedKh=limit.maximumSupportedKh,firstRejectedKh=limit.firstRejectedKh, ...
     maximumSupportedError=limit.maximumSupportedError,firstRejectedError=limit.firstRejectedError, ...

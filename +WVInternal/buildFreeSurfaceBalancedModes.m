@@ -33,15 +33,13 @@ end
 apvCount = []; mdaCount = [];
 if isfield(options,"apvModeCount"), apvCount = options.apvModeCount; end
 if isfield(options,"mdaModeCount"), mdaCount = options.mdaModeCount; end
-quadraticTolerance = zeros(0,1);
-if options.shouldCheckQuadraticAliasing, quadraticTolerance=options.quadraticAliasingTolerance; end
 [apvBasis,apvTransform,apvAssessment,apvCandidateConstruction] = buildAPV();
 [mdaBasis,mdaTransform,mdaAssessment,mdaCandidateConstruction] = buildMDA();
 referenceNEVP=ceil(1.5*nEVP);
 referenceSolver=IMSolverSpectral(nEVP=referenceNEVP);
 apvReference=referenceSolver.solveEVP(apvProblem,nModes=numel(apvTransform.h));
 mdaReference=referenceSolver.solveEVP(mdaProblem,nModes=numel(mdaTransform.h));
-[apvConvergence,apvErrors]=WVInternal.compareResolvedModes(apvBasis,apvReference,N2Function,2*referenceNEVP+1,numel(apvTransform.h));
+[apvConvergence,apvErrors,apvPrepared]=WVInternal.compareResolvedModes(apvBasis,apvReference,N2Function,2*referenceNEVP+1,numel(apvTransform.h));
 [mdaConvergence,mdaErrors]=WVInternal.compareResolvedModes(mdaBasis,mdaReference,N2Function,2*referenceNEVP+1,numel(mdaTransform.h));
 if any(apvErrors(1:numel(apvTransform.h))>options.modeConvergenceTolerance) || any(mdaErrors(1:numel(mdaTransform.h))>options.modeConvergenceTolerance)
     attempt=1; if isfield(options,'balancedAttempt'), attempt=options.balancedAttempt; end
@@ -49,9 +47,6 @@ if any(apvErrors(1:numel(apvTransform.h))>options.modeConvergenceTolerance) || a
         options.balancedAttempt=attempt+1; options.balancedNEVP=referenceNEVP;
         vertical=WVInternal.buildFreeSurfaceBalancedModes(Lz,Nz,N2Function,options);
         return
-    end
-    if options.shouldCheckQuadraticAliasing
-        error('WV:UnconvergedBalancedModes','The retained APV/MDA band did not converge after three EVP resolutions (last %d/%d) at modeConvergenceTolerance %.3g.',nEVP,referenceNEVP,options.modeConvergenceTolerance)
     end
     % Automatic linear counts retain the converged leading prefix. Explicit
     % requests remain strict even when the bounded solve budget is exhausted.
@@ -61,12 +56,30 @@ if any(apvErrors(1:numel(apvTransform.h))>options.modeConvergenceTolerance) || a
     mdaTransform=mdaBasis.discreteTransform(z=z,weights=weights,variables="G",gramTolerance=options.gramTolerance,nModes=mdaLimit);
 end
 
-quadraticPolicy = apvAssessment.quadraticAliasingPolicy;
-hasProjectionContract = isfield(quadraticPolicy,'projectionPairing') && isequal(string(quadraticPolicy.projectionPairing),"signedPontryagin");
-hasErrorContract = isfield(quadraticPolicy,'errorNorm') && isequal(string(quadraticPolicy.errorNorm),"inducedHilbertMajorant");
-if options.shouldCheckQuadraticAliasing && (~hasProjectionContract || ~hasErrorContract)
-    error('WVTransformFreeSurfaceQG:UnsupportedQuadraticAliasingContract', ...
-        'The active InternalModes checkout must use signed Pontryagin projection and the induced Hilbert majorant for coupled quadratic-aliasing errors.');
+linearCount=numel(apvTransform.h);
+if ~isempty(apvCount) && apvCount>linearCount
+    error('WV:StrictAPVModeCountRejected', ...
+        'The explicit APV count %d exceeds the converged or fixed-grid Gram prefix %d.',apvCount,linearCount)
+end
+timer=tic;
+apvDealiasing=WVInternal.quadraticDealiasingPrefix(apvPrepared.values.F(:,1:linearCount), ...
+    apvPrepared.values.G(:,1:linearCount),Nz-1,options);
+quadraticDealiasingSeconds=toc(timer);
+if ~isempty(apvCount) && apvCount>apvDealiasing.filteringCount
+    error('WV:QuadraticDealiasingAPVCountRejected', ...
+        'The explicit APV count %d exceeds the quadratic-dealiasing limit %d under policy %s.', ...
+        apvCount,apvDealiasing.filteringCount,options.quadraticDealiasing)
+end
+selectedCount=apvDealiasing.filteringCount;
+if ~isempty(apvCount), selectedCount=apvCount; end
+if selectedCount<1
+    error('WV:NoResolvedAPVModes', ...
+        'No APV mode passes the linear and quadratic-dealiasing limits. Increase Nz or change quadraticDealiasing.')
+end
+apvDealiasing.selectedCount=selectedCount;
+if selectedCount~=linearCount
+    apvTransform=apvBasis.discreteTransform(z=z,weights=weights,variables=["F","G"], ...
+        gramTolerance=options.gramTolerance,nModes=selectedCount);
 end
 if apvTransform.hasNegativeWeights || mdaTransform.hasNegativeWeights ...
         || max(abs(apvTransform.weights-weights)) > 0 || max(abs(mdaTransform.weights-weights)) > 0
@@ -77,22 +90,17 @@ if ~isempty(apvAssessment.weightFit) || ~isempty(mdaAssessment.weightFit)
 end
 
 vertical = struct(z=z,weights=weights,Dz=Dz,N2Values=N2Values,nEVP=nEVP,solver=solver,apvProblem=apvProblem,mdaProblem=mdaProblem, ...
-    apvBasis=apvBasis,apvCandidateConstruction=apvCandidateConstruction,mdaBasis=mdaBasis,mdaCandidateConstruction=mdaCandidateConstruction,apvConvergence=apvConvergence,mdaConvergence=mdaConvergence,apvReference=apvReference,mdaReference=mdaReference,referenceNEVP=referenceNEVP,apvTransform=apvTransform,mdaTransform=mdaTransform,apvAssessment=apvAssessment,mdaAssessment=mdaAssessment);
+    apvBasis=apvBasis,apvCandidateConstruction=apvCandidateConstruction,mdaBasis=mdaBasis,mdaCandidateConstruction=mdaCandidateConstruction,apvConvergence=apvConvergence,mdaConvergence=mdaConvergence,apvReference=apvReference,mdaReference=mdaReference,referenceNEVP=referenceNEVP,apvTransform=apvTransform,mdaTransform=mdaTransform,apvAssessment=apvAssessment,mdaAssessment=mdaAssessment,apvDealiasing=apvDealiasing,quadraticDealiasingSeconds=quadraticDealiasingSeconds);
     function [basis,transform,assessment,candidateConstruction]=buildAPV()
-        % Cumulative prefix acceptance lets automatic quadratic qualification
-        % stop at the first rejected prefix without evaluating a larger tail.
+        % The complete candidate establishes the independent linear limit
+        % before filtering.
         count=nSolve;
-        if ~isempty(apvCount)
-            count=apvCount;
-        elseif options.shouldCheckQuadraticAliasing
-            count=min(32,nSolve);
-        end
         attemptedCounts=[];
         while true
             attemptedCounts(end+1)=count; %#ok<AGROW>
             basis=solver.solveEVP(apvProblem,nModes=count);
-            [transform,assessment]=basis.discreteTransform(z=z,weights=weights,variables=["F","G"],gramTolerance=options.gramTolerance,quadraticAliasingTolerance=quadraticTolerance,nModes=apvCount);
-            if ~isempty(apvCount) || count==nSolve || numel(transform.h)<numel(basis.h)
+            [transform,assessment]=basis.discreteTransform(z=z,weights=weights,variables=["F","G"],gramTolerance=options.gramTolerance);
+            if count==nSolve || numel(transform.h)<numel(basis.h)
                 candidateConstruction=struct(attemptedCounts=attemptedCounts,candidateCount=numel(basis.h));
                 return
             end
@@ -141,10 +149,11 @@ end
 function count=qualifiedPrefix(errors,count,requested,tolerance,family)
 firstRejected=find(~isfinite(errors(1:count)) | errors(1:count)>tolerance,1);
 if isempty(firstRejected), return; end
-if ~isempty(requested)
+linearLimit=firstRejected-1;
+if ~isempty(requested) && requested>linearLimit
     error('WV:UnconvergedBalancedModes','The explicit %s count %d exceeds the independently converged prefix %d. Increase the EVP resolution or reduce the requested count.',family,requested,firstRejected-1)
 end
-count=firstRejected-1;
+count=linearLimit;
 if count<1
     error('WV:UnconvergedBalancedModes','No %s mode passes independent convergence at tolerance %.3g.',family,tolerance)
 end

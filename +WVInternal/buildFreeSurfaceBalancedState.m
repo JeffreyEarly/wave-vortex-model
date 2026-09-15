@@ -37,7 +37,6 @@ verticalDerivativeMatrix = vertical.Dz;
 N2Values = vertical.N2Values;
 nEVP = vertical.nEVP;
 solver = vertical.solver;
-apvBasis = vertical.apvBasis;
 apvTransform = vertical.apvTransform;
 mdaTransform = vertical.mdaTransform;
 apvAssessment = vertical.apvAssessment;
@@ -75,26 +74,6 @@ if activeEndpointCount > 0
     zeroAPVG = zeroModes.G(z);
     apvEndpointResponse = geostrophicTransform.apvEndpointResponse;
     minimumRelativeMuSeparation = geostrophicTransform.compatibilityDiagnostics.minimumRelativeMuSeparation;
-    if nKh > 0 && options.shouldCheckQuadraticAliasing
-        crossAssessment = WVInternal.measureFreeSurfaceCrossProductError(apvBasis,apvTransform,zeroModes,nKh,2*nEVP);
-        apvZeroAPVQuadraticError = crossAssessment.error;
-        apvZeroAPVLimitingEndpoint = crossAssessment.limitingEndpoint;
-        apvZeroAPVLimitingModeNumber = crossAssessment.limitingModeNumber;
-        if apvZeroAPVQuadraticError > options.quadraticAliasingTolerance
-            limit = WVInternal.supportedFreeSurfaceHorizontalWavenumber(apvBasis,apvTransform,N2Function,f0,options.g, ...
-                endpointNames(activeMask),nEVP,options.quadraticAliasingTolerance,rejectedKh=khUnique(end));
-            error('WVTransformFreeSurfaceQG:UnderresolvedVerticalGrid', ...
-                ['Nz=%d resolves APV/zero-APV products through kh approximately %.6g rad m^-1 at tolerance %.3g, ' ...
-                'but the horizontal grid retains %.6g rad m^-1 with error %.3g. The first rejected bracket is %.6g rad m^-1, ' ...
-                'and the corresponding minimum horizontal wavelength is %.6g m. Increase Nz or reduce horizontal resolution.'], ...
-                Nxyz(3),limit.maximumSupportedKh,options.quadraticAliasingTolerance,khUnique(end),apvZeroAPVQuadraticError, ...
-                limit.firstRejectedKh,limit.minimumHorizontalWavelength);
-        end
-    else
-        apvZeroAPVQuadraticError = NaN;
-        apvZeroAPVLimitingEndpoint = "";
-        apvZeroAPVLimitingModeNumber = NaN;
-    end
 
     endpointZ = [0;-Lz];
     zeroFEndpoints = zeroModes.F(endpointZ);
@@ -146,9 +125,6 @@ else
     zeroAPVGramRelativeSeparation = zeros(0,1);
     minimumRelativeMuSeparation = min(relativeMuSeparation,[],'all');
     Ag_0 = complex(zeros(0,length(klNonzero)));
-    apvZeroAPVQuadraticError = NaN;
-    apvZeroAPVLimitingEndpoint = "";
-    apvZeroAPVLimitingModeNumber = NaN;
 end
 
 identitySamples = eye(length(z));
@@ -213,32 +189,23 @@ state.apvGramError = max(apvFDiagnostics.relativeGramOperatorError,apvGDiagnosti
 state.apvRoundTripError = max(apvFDiagnostics.roundTripError,apvGDiagnostics.roundTripError);
 state.mdaGramError = mdaDiagnostics.relativeGramOperatorError;
 state.mdaRoundTripError = mdaDiagnostics.roundTripError;
-quadraticDiagnostics = apvAssessment.prefixDiagnostics(apvModeCount,:);
 state.gramTolerance = options.gramTolerance;
 state.modeConvergenceTolerance=options.modeConvergenceTolerance;
 state.boundaryResolutionTolerance=options.boundaryResolutionTolerance;
-state.shouldCheckQuadraticAliasing = options.shouldCheckQuadraticAliasing;
-state.quadraticAliasingTolerance = options.quadraticAliasingTolerance;
-state.quadraticAliasingError = quadraticDiagnostics.quadraticAliasingError;
-state.quadraticAliasingLimitingChannel = quadraticDiagnostics.quadraticLimitingChannel;
-state.quadraticAliasingLimitingModeNumberI = quadraticDiagnostics.quadraticLimitingModeNumberI;
-state.quadraticAliasingLimitingModeNumberJ = quadraticDiagnostics.quadraticLimitingModeNumberJ;
+state.quadraticDealiasing = options.quadraticDealiasing;
+state.retainedFraction = options.retainedFraction;
+state.energyFraction = options.energyFraction;
+state.bandwidthFraction = options.bandwidthFraction;
 state.minimumRelativeMuSeparation = minimumRelativeMuSeparation;
 state.muTolerance = options.muTolerance;
 state.zeroAPVGramReciprocalCondition = zeroAPVGramReciprocalCondition;
 state.zeroAPVGramRelativeSeparation = zeroAPVGramRelativeSeparation;
-state.apvZeroAPVQuadraticError = apvZeroAPVQuadraticError;
-state.apvZeroAPVLimitingEndpoint = apvZeroAPVLimitingEndpoint;
-state.apvZeroAPVLimitingModeNumber = apvZeroAPVLimitingModeNumber;
-state.modeSelectionMethod = "resolved-prefix-selection";
-assessment=struct(apv=struct(selectedCount=apvModeCount,prefixDiagnostics=apvAssessment.prefixDiagnostics,convergence=vertical.apvConvergence),mda=struct(selectedCount=mdaModeCount,prefixDiagnostics=mdaAssessment.prefixDiagnostics,convergence=vertical.mdaConvergence),boundary=struct(status="not-applicable"),gramTolerance=options.gramTolerance,modeConvergenceTolerance=options.modeConvergenceTolerance,boundaryResolutionTolerance=options.boundaryResolutionTolerance);
+state.modeSelectionMethod = "linear-prefix-plus-quadratic-dealiasing";
+apvDealiasing=vertical.apvDealiasing;
+assessment=struct(apv=struct(linearCount=apvDealiasing.linearCount,filteringCount=apvDealiasing.filteringCount,selectedCount=apvModeCount,dealiasing=apvDealiasing,prefixDiagnostics=apvAssessment.prefixDiagnostics,convergence=vertical.apvConvergence),mda=struct(selectedCount=mdaModeCount,prefixDiagnostics=mdaAssessment.prefixDiagnostics,convergence=vertical.mdaConvergence),boundary=struct(status="not-applicable"),gramTolerance=options.gramTolerance,modeConvergenceTolerance=options.modeConvergenceTolerance,boundaryResolutionTolerance=options.boundaryResolutionTolerance,dealiasing=struct(quadraticDealiasing=options.quadraticDealiasing,retainedFraction=options.retainedFraction,energyFraction=options.energyFraction,bandwidthFraction=options.bandwidthFraction,gridDegree=Nxyz(3)-1,coordinateKind="wkb-chebyshev-lobatto"),cost=struct(quadraticDealiasingSeconds=vertical.quadraticDealiasingSeconds));
+assessment.coverage="APV linear convergence and fixed-grid Gram evidence precede a stated quadratic-dealiasing filtering heuristic; this is not a rigorous nonlinear qualification. Fixed boundary responses are assessed separately.";
 assessment.apv.candidateConstruction=vertical.apvCandidateConstruction;
 assessment.mda.candidateConstruction=vertical.mdaCandidateConstruction;
-assessment.shouldCheckQuadraticAliasing=options.shouldCheckQuadraticAliasing;
-assessment.quadratic=struct(status="not-requested");
-if options.shouldCheckQuadraticAliasing
-    assessment.quadratic=struct(status="accepted",coverage="APV self-products and APV/zero-APV cross-products; broader assembled QG checks remain separate.");
-end
 vertical.zeroReference=[];
 if activeEndpointCount>0 && nKh>0
     [assessment.boundary,vertical.zeroReference]=WVInternal.assessFreeSurfaceBoundaryGrid(zeroModes,zeroProblem,vertical,inputs,options);

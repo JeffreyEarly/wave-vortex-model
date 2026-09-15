@@ -19,8 +19,8 @@ classdef WVTransformFreeSurfaceBoussinesq < WVGeometryDoublyPeriodicStratified &
     % expose the modal variables. p is the reconstructed modal pressure.
     % Existing physicalEnergy/totalEnergy are quadratic; nonlinearEnergy uses
     % moving-volume kinetic energy, parcel APE and g*ssh^2/2 surface energy.
-    % Nonlinear evolution is explicit: construct with shouldAntialias=true and
-    % shouldCheckQuadraticAliasing=true, then add WVNonlinearAdvection(wvt).
+    % Nonlinear evolution is explicit: construct with shouldAntialias=true,
+    % then add WVNonlinearAdvection(wvt).
     % The callback projects the manuscript nonlinear sources directly.
     % Modal pressure supplies the quadratic-order approximation; finite
     % retained inventories can leave boundary and energy-budget residuals.
@@ -237,12 +237,18 @@ classdef WVTransformFreeSurfaceBoussinesq < WVGeometryDoublyPeriodicStratified &
         % Requested per-family quadrature qualification tolerance.
         % - Topic: Inspect scientific operators
         gramTolerance
-        % Allowed bounded physical-product sampling error.
+        % Vertical quadratic-dealiasing policy.
         % - Topic: Inspect scientific operators
-        quadraticAliasingTolerance
-        % Whether scientific construction checks quadratic products.
+        quadraticDealiasing
+        % Linear-prefix share retained by fixedFraction.
         % - Topic: Inspect scientific operators
-        shouldCheckQuadraticAliasing
+        retainedFraction
+        % Cumulative spectral-energy fraction used by effectiveBandwidth.
+        % - Topic: Inspect scientific operators
+        energyFraction
+        % Vertical grid-degree share used by effectiveBandwidth.
+        % - Topic: Inspect scientific operators
+        bandwidthFraction
         % Physical H1 and equivalent-depth agreement between independent solves.
         % - Topic: Inspect scientific operators
         modeConvergenceTolerance
@@ -292,6 +298,7 @@ classdef WVTransformFreeSurfaceBoussinesq < WVGeometryDoublyPeriodicStratified &
             if ~all(isfield(state,required))
                 error('WVTransformFreeSurfaceBoussinesq:IncompleteScientificState','Supply the complete structure returned by scientificState or use fromStratification.')
             end
+            state.quadraticDealiasing=string(state.quadraticDealiasing);
             nz = state.Nxyz(3); nq = length(state.apvMode); nw = length(state.waveMode);
             if size(state.apvF,1) ~= nz || size(state.apvF,2) ~= nq || size(state.waveF,1) ~= nz || size(state.waveF,2) ~= nw || ~isequal(size(state.waveF),size(state.waveG)) || length(state.z) ~= nz || any(diff(state.z)<=0) || any(state.verticalQuadratureWeights<=0)
                 error('WVTransformFreeSurfaceBoussinesq:InvalidScientificState','Stored mode shapes and positive increasing-grid quadrature must match the declared geometry.')
@@ -497,7 +504,7 @@ classdef WVTransformFreeSurfaceBoussinesq < WVGeometryDoublyPeriodicStratified &
             names = {'activeEndpoint','Ag_0','apvEndpointResponse','zeroAPVF','zeroAPVG','zeroAPVFPairing','zeroAPVGPairing','zeroAPVSourceSolve'};
         end
         function names = scientificPropertyNames()
-            names = {'g0','gd','apvMode','mdaMode','waveMode','waveModeCountByKh','inertialMode','apvModeNumber','mdaModeNumber','waveModeNumber','inertialModeNumber','activeEndpoint','klNonzero','kNonzero','lNonzero','khNonzero','khUnique','klNonzeroKhUniqueIndex','apvF','apvG','apvFForward','apvMu','apvEndpointResponse','apvFSourcePairing','apvGSourcePairing','zeroAPVFPairing','zeroAPVGPairing','zeroAPVSourceSolve','zeroAPVF','zeroAPVG','mdaG','mdaGForward','mdaPressureMode','waveF','waveG','waveGForward','waveEquivalentDepth','waveFrequency','inertialF','inertialFForward','inertialEquivalentDepth','verticalQuadratureWeights','verticalDerivativeMatrix','waveGramError','inertialGramError','apvGramError','mdaGramError','balancedNEVP','nEVP','gramTolerance','shouldCheckQuadraticAliasing','quadraticAliasingTolerance','modeConvergenceTolerance','boundaryResolutionTolerance'};
+            names = {'g0','gd','apvMode','mdaMode','waveMode','waveModeCountByKh','inertialMode','apvModeNumber','mdaModeNumber','waveModeNumber','inertialModeNumber','activeEndpoint','klNonzero','kNonzero','lNonzero','khNonzero','khUnique','klNonzeroKhUniqueIndex','apvF','apvG','apvFForward','apvMu','apvEndpointResponse','apvFSourcePairing','apvGSourcePairing','zeroAPVFPairing','zeroAPVGPairing','zeroAPVSourceSolve','zeroAPVF','zeroAPVG','mdaG','mdaGForward','mdaPressureMode','waveF','waveG','waveGForward','waveEquivalentDepth','waveFrequency','inertialF','inertialFForward','inertialEquivalentDepth','verticalQuadratureWeights','verticalDerivativeMatrix','waveGramError','inertialGramError','apvGramError','mdaGramError','balancedNEVP','nEVP','gramTolerance','quadraticDealiasing','retainedFraction','energyFraction','bandwidthFraction','modeConvergenceTolerance','boundaryResolutionTolerance'};
         end
         function names = geometryStateNames()
             names = {'Lxyz','Nxyz','shouldAntialias','z','N2Function','rhoFunction','rho0','planetaryRadius','rotationRate','latitude','g','dLnN2','PF0inv','QG0inv','PF0','QG0','P0','Q0','h_0','z_int'};
