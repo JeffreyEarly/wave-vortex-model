@@ -92,6 +92,10 @@ Assign a **common entire rate** to every cluster `a:b`, using `(U/Delta)*(lambda
 
 For active directions `J`, the selective tendency is `-V_J*(unitRates.*(P_J*a))*U`. Map both factors into thermal coefficient coordinates once. Use the exact dense selective matrix when `2*numel(J)>=n`; otherwise retain factors. This deterministic work-count rule avoids runtime timing and does not approximate the operator. As in the shared legacy filter, ordinary floating-point exponential underflow can make the first few values above the nominal onset exactly zero; the reported effective cutoff and active count describe the computed rates. Add the scalar horizontal action once. The explicit bound is `U*max(r_h_unit+r_G_unit)` over all radii and directions.
 
+Store the execution matrices in batches with equal Fourier-column counts; factored batches also require equal active rank. Cache the gather/scatter column indices and apply the batches with `pagemtimes`. Multiply the resulting selective tendency by stage speed once, avoiding a scaled copy of each large matrix. Zero speed returns exact zeros before any matrix products. Retain complex entries and every nonzero-rate direction.
+
+The batches own the only retained execution matrices. Compact per-radius metadata remains available for rate bounds and diagnostics. `coefficientDampingData()` materializes the existing per-radius matrix view only when explicitly requested; its `executionCacheBytes` field reports retained application storage before this materialization. Release inspection views before measuring runtime memory. Cutoff changes, construction, and restoration rebuild batch membership and column indices along with the rates.
+
 Process accounting records `adaptive damping: horizontal` and `adaptive damping: generalized enstrophy` separately. Existing APV and historical thermal labels remain unchanged.
 
 ## Guarantees and diagnostics

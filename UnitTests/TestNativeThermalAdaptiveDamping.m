@@ -95,9 +95,9 @@ classdef TestNativeThermalAdaptiveDamping < matlab.unittest.TestCase
 
     methods (Test, TestTags="full")
         function factoryBuildsPositiveNativeStateAndActualProcesses(testCase)
-            w = thermalTransform("constant");
+            w = thermalTransform("constant",8);
             force = WVAdaptiveDamping.fromThermalGeneralizedEnstrophy(w);
-            populateOneThermalBlock(w,force);
+            populateAllThermalBlocks(w);
             w.addForcing(WVNonlinearAdvection(w));
             w.addForcing(force);
 
@@ -114,6 +114,9 @@ classdef TestNativeThermalAdaptiveDamping < matlab.unittest.TestCase
             end
 
             data = force.coefficientDampingData();
+            columnCounts = arrayfun(@(p) nnz(w.klNonzeroKhUniqueIndex==p),1:numel(w.khUnique));
+            testCase.verifyGreaterThan(numel(unique(columnCounts)),1);
+            testCase.verifyGreaterThan(numel(columnCounts),numel(unique(columnCounts)));
             testCase.verifyGreaterThan(data.maximumUnitSpeedRate,0);
             testCase.verifyEqual(data.nominalSelectiveCutoff,w.thermalModeCount^(3/4),RelTol=1e-12);
             for p = 1:numel(data.pages)
@@ -209,29 +212,45 @@ classdef TestNativeThermalAdaptiveDamping < matlab.unittest.TestCase
         end
 
         function cacheAndTransferRetainCanonicalScience(testCase)
-            w = thermalTransform("constant");
+            w = thermalTransform("constant",8);
             force = WVAdaptiveDamping.fromThermalGeneralizedEnstrophy(w);
-            populateOneThermalBlock(w,force);
+            populateAllThermalBlocks(w);
             first = force.coefficientDampingData();
             initialBuilds = first.cacheBuildCount;
             [stageHorizontal, stageSelective] = force.quasigeostrophicDampingContributions(w,struct(uvMax=.3));
             [fallbackHorizontal, fallbackSelective] = force.quasigeostrophicDampingContributions(w);
+            w.Ath(:) = 1e300*(1+1i);
             [zeroHorizontal, zeroSelective] = force.quasigeostrophicDampingContributions(w,struct(uvMax=0));
+            populateAllThermalBlocks(w);
             testCase.verifyEqual(stageHorizontal.Ath,.3/w.uvMax*fallbackHorizontal.Ath,RelTol=1e-12,AbsTol=1e-16);
             testCase.verifyEqual(stageSelective.Ath,.3/w.uvMax*fallbackSelective.Ath,RelTol=1e-12,AbsTol=1e-16);
-            testCase.verifyEqual(zeroHorizontal.Ath,zeros(size(w.Ath)));
-            testCase.verifyEqual(zeroSelective.Ath,zeros(size(w.Ath)));
+            testCase.verifyEqual(nnz(zeroHorizontal.Ath),0);
+            testCase.verifyEqual(nnz(zeroSelective.Ath),0);
             testCase.verifyEqual(stageHorizontal.Amda,zeros(size(w.Amda)));
             testCase.verifyEqual(stageSelective.Amda,zeros(size(w.Amda)));
+            primaryIndices = w.dftPrimaryIndices2D(w.klNonzero);
             for j = 1:numel(w.klNonzero)
                 partner = w.dftConjugateIndices2D(w.klNonzero(j));
-                partner = find(w.klNonzero==partner,1);
+                partner = find(primaryIndices==partner,1);
                 if ~isempty(partner)
                     testCase.verifyEqual(stageHorizontal.Ath(:,partner),conj(stageHorizontal.Ath(:,j)),AbsTol=1e-14);
                     testCase.verifyEqual(stageSelective.Ath(:,partner),conj(stageSelective.Ath(:,j)),AbsTol=1e-14);
                 end
             end
             testCase.verifyEqual(force.coefficientDampingData().cacheBuildCount,initialBuilds);
+            diagnostic = force.coefficientDampingData();
+            diagnostic.horizontalRates(:) = NaN;
+            for p = 1:numel(diagnostic.pages)
+                if diagnostic.pages{p}.applicationKind == "dense"
+                    diagnostic.pages{p}.denseOperator(:) = NaN;
+                else
+                    diagnostic.pages{p}.leftFactor(:) = NaN;
+                end
+            end
+            [afterMutationHorizontal, afterMutationSelective] = force.quasigeostrophicDampingContributions(w,struct(uvMax=.3));
+            testCase.verifyEqual(afterMutationHorizontal,stageHorizontal,AbsTol=1e-16);
+            testCase.verifyEqual(afterMutationSelective,stageSelective,AbsTol=1e-16);
+            testCase.verifyTrue(all(isfinite(force.coefficientDampingData().horizontalRates)));
             force.generalizedEnstrophyCutoffFraction = .5;
             changed = force.coefficientDampingData();
             testCase.verifyGreaterThan(changed.cacheBuildCount,initialBuilds);
@@ -269,7 +288,7 @@ classdef TestNativeThermalAdaptiveDamping < matlab.unittest.TestCase
         function persistenceAndAdaptiveSingleDirectionEvolution(testCase)
             fixture = testCase.applyFixture(matlab.unittest.fixtures.TemporaryFolderFixture);
             w = thermalTransform("constant");
-            force = WVAdaptiveDamping.fromThermalGeneralizedEnstrophy(w,generalizedEnstrophyCutoffFraction=0);
+            force = WVAdaptiveDamping.fromThermalGeneralizedEnstrophy(w,generalizedEnstrophyCutoffFraction=.9);
             [column, amplitude] = populateOneThermalBlock(w,force);
             w.addForcing(force);
             [closure, speed] = w.coefficientTendency(linearDynamics=true);
@@ -289,6 +308,25 @@ classdef TestNativeThermalAdaptiveDamping < matlab.unittest.TestCase
             direct = WVAdaptiveDamping(w,apvCutoffFraction=NaN,generalizedEnstrophyCutoffFraction=force.generalizedEnstrophyCutoffFraction,thermalGeneralizedEnstrophyState=force.thermalGeneralizedEnstrophyState);
             testCase.verifyEqual(direct.thermalGeneralizedEnstrophyState,force.thermalGeneralizedEnstrophyState);
             testCase.verifyEqual(direct.coefficientDampingData().maximumUnitSpeedRate,force.coefficientDampingData().maximumUnitSpeedRate,AbsTol=1e-14);
+
+            dense = w.withDiffusivity(0);
+            denseForce = WVAdaptiveDamping(dense,apvCutoffFraction=NaN,generalizedEnstrophyCutoffFraction=0,thermalGeneralizedEnstrophyState=force.thermalGeneralizedEnstrophyState);
+            dense.addForcing(denseForce);
+            densePath = fullfile(fixture.Folder,'native-thermal-damping-dense.nc');
+            nc = dense.writeToFile(densePath); nc.close();
+            denseRestored = WVTransform.waveVortexTransformFromFile(densePath);
+            denseCopy = denseRestored.forcingWithName("adaptive damping");
+            testCase.verifyEqual(denseCopy.thermalGeneralizedEnstrophyState,force.thermalGeneralizedEnstrophyState);
+            testCase.verifyEqual(denseCopy.coefficientDampingData().maximumUnitSpeedRate,denseForce.coefficientDampingData().maximumUnitSpeedRate,AbsTol=1e-14);
+            testCase.verifyTrue(all(cellfun(@(page) page.applicationKind=="dense",denseCopy.coefficientDampingData().pages)));
+            [denseHorizontal,denseSelective] = denseForce.quasigeostrophicDampingContributions(dense,struct(uvMax=.3));
+            [restoredHorizontal,restoredSelective] = denseCopy.quasigeostrophicDampingContributions(denseRestored,struct(uvMax=.3));
+            testCase.verifyEqual(restoredHorizontal,denseHorizontal,AbsTol=1e-15);
+            testCase.verifyEqual(restoredSelective,denseSelective,AbsTol=1e-15);
+            [denseTendency,denseSpeed] = dense.coefficientTendency(linearDynamics=true);
+            [restoredTendency,restoredSpeed] = denseRestored.coefficientTendency(linearDynamics=true);
+            testCase.verifyEqual(restoredSpeed,denseSpeed,AbsTol=1e-15);
+            testCase.verifyEqual(restoredTendency,denseTendency,AbsTol=1e-15);
 
             qg = WVTransformFreeSurfaceQG([1e5 1e5 1000],[4 4 65],N2Function=@(z) 1e-4+zeros(size(z)),apvModeCount=2,mdaModeCount=2);
             qg.addForcing(WVAdaptiveDamping(qg));
@@ -507,7 +545,8 @@ for j = 2:count-1
 end
 end
 
-function w = thermalTransform(profile)
+function w = thermalTransform(profile,horizontalGridCount)
+if nargin < 2, horizontalGridCount = 4; end
 if profile == "constant"
     N2 = @(z) 1e-4+zeros(size(z));
     count = 9;
@@ -515,7 +554,12 @@ else
     N2 = @(z) 1e-4*exp(2*z/1300);
     count = 11;
 end
-w = WVTransformFreeSurfaceThermalQG.fromStratification([1e5 1e5 1000],[4 4 65],N2Function=N2,thermalModeCount=count,mdaModeCount=2,kappa_z=0,shouldCheckQuadraticAliasing=true);
+if horizontalGridCount > 4
+    count = 17;
+    w = WVTransformFreeSurfaceThermalQG.fromStratification([1e5 1e5 1000],[horizontalGridCount horizontalGridCount 129],N2Function=N2,thermalModeCount=count,mdaModeCount=2,kappa_z=0,assemblyQuadratureCount=257,nonlinearQuadratureCount=257,shouldCheckQuadraticAliasing=true);
+else
+    w = WVTransformFreeSurfaceThermalQG.fromStratification([1e5 1e5 1000],[horizontalGridCount horizontalGridCount 65],N2Function=N2,thermalModeCount=count,mdaModeCount=2,kappa_z=0,shouldCheckQuadraticAliasing=true);
+end
 end
 
 function [column, amplitude] = populateOneThermalBlock(w,force)
@@ -527,9 +571,39 @@ column = find(w.klNonzeroKhUniqueIndex==pageIndex,1);
 amplitude = w.polynomialToThermal(:,:,pageIndex)*force.thermalGeneralizedEnstrophyState.polynomialEigenvectors(:,direction,pageIndex);
 w.Ath(:) = 0;
 w.Ath(:,column) = amplitude;
+primaryIndices = w.dftPrimaryIndices2D(w.klNonzero);
 partner = w.dftConjugateIndices2D(w.klNonzero(column));
-conjugateColumn = find(w.klNonzero==partner,1);
+conjugateColumn = find(primaryIndices==partner,1);
 if ~isempty(conjugateColumn) && conjugateColumn~=column, w.Ath(:,conjugateColumn) = conj(amplitude); end
+end
+
+function populateAllThermalBlocks(w)
+% Exercise each radial page with a nontrivial state while preserving reality.
+w.Ath(:) = 0;
+assigned = false(1,numel(w.klNonzero));
+primaryIndices = w.dftPrimaryIndices2D(w.klNonzero);
+mode = (1:w.thermalModeCount).';
+for column = 1:numel(w.klNonzero)
+    if assigned(column)
+        continue
+    end
+    pageIndex = w.klNonzeroKhUniqueIndex(column);
+    coefficients = (mode+1i*flipud(mode)).*(1+.07*pageIndex+.03*column);
+    amplitude = w.polynomialToThermal(:,:,pageIndex)*coefficients;
+    partnerIndex = w.dftConjugateIndices2D(w.klNonzero(column));
+    conjugateColumn = find(primaryIndices==partnerIndex,1);
+    if isempty(conjugateColumn)
+        w.Ath(:,column) = amplitude;
+        assigned(column) = true;
+    elseif conjugateColumn==column
+        w.Ath(:,column) = real(amplitude);
+        assigned(column) = true;
+    else
+        w.Ath(:,column) = amplitude;
+        w.Ath(:,conjugateColumn) = conj(amplitude);
+        assigned([column conjugateColumn]) = true;
+    end
+end
 end
 
 function [energyPower, invariantPower] = generalizedPowers(w,state,tendency)

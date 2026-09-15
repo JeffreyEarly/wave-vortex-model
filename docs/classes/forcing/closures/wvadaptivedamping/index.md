@@ -128,7 +128,7 @@ These items document internal implementation details and are not part of the pri
   + [`classRequiredPropertyNames`](/classes/forcing/closures/wvadaptivedamping/classrequiredpropertynames.html) Returns the required property names for the class
 + Forcing internals
   + [`buildDampingOperator`](/classes/forcing/closures/wvadaptivedamping/builddampingoperator.html) Build the unit-speed spectral damping operator.
-  + [`coefficientDampingData`](/classes/forcing/closures/wvadaptivedamping/coefficientdampingdata.html) Return the native thermal application cache and construction diagnostics.
+  + [`coefficientDampingData`](/classes/forcing/closures/wvadaptivedamping/coefficientdampingdata.html) Materialize native thermal radius operators and construction diagnostics.
   + [`coefficientDampingOperator`](/classes/forcing/closures/wvadaptivedamping/coefficientdampingoperator.html) Return unit-speed damping rates for the Boussinesq families.
   + [`dampAg_0`](/classes/forcing/closures/wvadaptivedamping/dampag_0.html) Unit-speed damping operator for free-surface zero-APV coefficients.
   + [`dampAg_q`](/classes/forcing/closures/wvadaptivedamping/dampag_q.html) Unit-speed damping operator for free-surface APV coefficients.
