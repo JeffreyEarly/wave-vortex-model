@@ -1,5 +1,7 @@
 # Advisory API verification
 
+> Historical archive. The sampled-product diagnostic and its runnable code were retired in issue 42. This document records the former study and does not describe the current construction API.
+
 - Base: merged PR #402, integration commit `6299ba351e65c8c104436cdc675a33b70eddb610`. Required hosted checks passed after preserving the scalar pilot MAT locally instead of tracking it. Issue #400 is closed; the integration checkout is synchronized and the merged branch is removed. All original study MAT data remain in the detached study worktree.
 - Read applicable shared MATLAB, package-design/release, and documentation guides. No repository-local AGENTS.md adds requirements. This authoring increment uses existing dependencies and does not modify package exports, runtime defaults, website sources, persistence, or versioned snapshots.
 - All twelve shared scientific tests and the initial six advisory tests passed after extraction. The reference-allowance validation and independent quadratic rejection test were then added; all seven final advisory tests passed. They cover frozen-study equivalence, explicit count rejection without replacement, fixed-family rejection, inconclusive references, budget rejection before projection, invalid requests, and independent Gram/quadratic decisions.

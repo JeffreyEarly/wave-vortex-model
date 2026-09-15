@@ -3,7 +3,7 @@ layout: default
 title: assessVerticalResolution
 parent: WVTransformFreeSurfaceQG
 grand_parent: Transforms
-nav_order: 55
+nav_order: 52
 mathjax: true
 ---
 
@@ -29,8 +29,10 @@ Assess vertical-mode accuracy and the active-endpoint horizontal limit.
 + `options.gramTolerance`  shared normalized-Gram tolerance; default 1e-2
 + `options.modeConvergenceTolerance`  independent physical H1 and equivalent-depth agreement; default 1e-6
 + `options.boundaryResolutionTolerance`  fixed zero-APV physical derivative and energy tolerance; default 1e-2
-+ `options.shouldCheckQuadraticAliasing`  qualify quadratic products during construction; default true
-+ `options.quadraticAliasingTolerance`  APV quadratic-product tolerance
++ `options.quadraticDealiasing`  vertical policy none, fixedFraction, or effectiveBandwidth
++ `options.retainedFraction`  fixedFraction retained share of the linear APV prefix
++ `options.energyFraction`  effectiveBandwidth cumulative spectral-energy fraction
++ `options.bandwidthFraction`  effectiveBandwidth share of the vertical grid degree
 
 ## Returns
 + `assessment`  data-only vertical-resolution diagnostics
@@ -40,7 +42,5 @@ Assess vertical-mode accuracy and the active-endpoint horizontal limit.
 This method performs the scientific vertical solve without constructing a
 complete horizontal transform. For active endpoint families it returns a
 conservative maximum horizontal wavenumber whose fixed boundary responses
-satisfy `boundaryResolutionTolerance`. When `shouldCheckQuadraticAliasing`
-is true, APV/zero-APV products must also satisfy `quadraticAliasingTolerance`.
-The two relative errors and their tolerances remain separate; unrequested
-quadratic errors are NaN.
+satisfy boundaryResolutionTolerance. APV count selection uses the same
+quadratic-dealiasing policy as full QG and Boussinesq construction.

@@ -1,0 +1,41 @@
+{
+  "resolvedWVM": "/private/tmp/wvm42-installed-addons/WaveVortexModel@4.3.0/@WVTransformFreeSurfaceBoussinesq/WVTransformFreeSurfaceBoussinesq.m",
+  "resolvedIM": "/private/tmp/wvm42-installed-addons/InternalModes@2.0.0/assessQuadraticDealiasing.m",
+  "tests": [
+    {
+      "name": "TestFreeSurfaceNonlinearAdvectionGuard/horizontalAliasingActivationRejectsWithoutChangingForcing",
+      "passed": true,
+      "failed": false,
+      "incomplete": false,
+      "seconds": 2.104703875
+    },
+    {
+      "name": "TestFreeSurfaceNonlinearAdvectionGuard/noneAndFilteringPoliciesPermitNonlinearRegistration",
+      "passed": true,
+      "failed": false,
+      "incomplete": false,
+      "seconds": 4.1686340416666665
+    },
+    {
+      "name": "TestFreeSurfaceNonlinearAdvectionGuard/qgRequiresHorizontalAntialiasingForNonlinearRegistration",
+      "passed": true,
+      "failed": false,
+      "incomplete": false,
+      "seconds": 0.37430654166666666
+    },
+    {
+      "name": "TestFreeSurfaceNonlinearAdvectionGuard/conversionAndRestorationStillRequireQualifiedActivation",
+      "passed": true,
+      "failed": false,
+      "incomplete": false,
+      "seconds": 1.2050295416666668
+    },
+    {
+      "name": "TestFreeSurfaceNonlinearAdvectionGuard/quasigeostrophicTransformsRetainNonlinearAdvection",
+      "passed": true,
+      "failed": false,
+      "incomplete": false,
+      "seconds": 0.75283883333333335
+    }
+  ]
+}

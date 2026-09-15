@@ -6,7 +6,7 @@ arguments (Input)
 end
 L=1e4;
 if options.activeBoundary=="surface", g0=-.1; gd=Inf; else, g0=Inf; gd=.1; end
-wvt=WVTransformFreeSurfaceBoussinesq.fromStratification([8*L 8*L 1000],options.gridSize,N2Function=@(z)1e-4+0*z,g0=g0,gd=gd,apvModeCount=4,mdaModeCount=2,inertialModeCount=2,waveModeCount=4,nEVP=128,shouldAntialias=true,shouldCheckQuadraticAliasing=true);
+wvt=WVTransformFreeSurfaceBoussinesq.fromStratification([8*L 8*L 1000],options.gridSize,N2Function=@(z)1e-4+0*z,g0=g0,gd=gd,apvModeCount=4,mdaModeCount=2,inertialModeCount=2,waveModeCount=4,nEVP=128,shouldAntialias=true,quadraticDealiasing="fixedFraction");
 empty=wvt.coefficientState();
 [X,Y]=ndgrid(wvt.x-4*L,wvt.y-4*L);
 b=zeros(size(X));

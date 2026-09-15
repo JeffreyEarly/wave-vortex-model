@@ -1,0 +1,26 @@
+diff --git a/+WVInternal/assessWaveModeConstruction.m b/+WVInternal/assessWaveModeConstruction.m
+index 67283847..62a8d0ee 100644
+--- a/+WVInternal/assessWaveModeConstruction.m
++++ b/+WVInternal/assessWaveModeConstruction.m
+@@ -42,8 +42,9 @@
+     end
+     G=state.waveG(:,1:count,p);
+     gram=state.waveGForward(1:count,:,p)*G;
++    gram=gram-eye(count);
+     errors=zeros(count,1);
+-    for n=1:count, errors(n)=norm(gram(1:n,1:n)-eye(n),2); end
++    for n=1:count, errors(n)=norm(gram(1:n,1:n),2); end
+     prefixGramError{p}=errors;
+     gridSupportedCount(p)=sum(cumprod(errors<=state.gramTolerance));
+     if isempty(reference), continue; end
+@@ -63,8 +64,9 @@
+ end
+ count=length(state.inertialMode);
+ gram=state.inertialFForward*state.inertialF;
++gram=gram-eye(count);
+ errors=zeros(count,1);
+-for n=1:count, errors(n)=norm(gram(1:n,1:n)-eye(n),2); end
++for n=1:count, errors(n)=norm(gram(1:n,1:n),2); end
+ inertial=struct(requestedCount=count,gramError=state.inertialGramError,prefixGramError=errors,gridSupportedCount=sum(cumprod(errors<=state.gramTolerance)),convergence=[],convergedCount=NaN,usableCount=NaN);
+ if ~isempty(reference)
+     inertial.convergence=reports{1};

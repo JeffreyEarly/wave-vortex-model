@@ -17,7 +17,7 @@ for profile=options.profiles
     if profile=="exponential", N2=@(z)1e-4*exp(z/650); end
     for configuration=options.configurations
         c=counts(configuration,:); clock=tic;
-        w=WVTransformFreeSurfaceBoussinesq.fromStratification([1e5 1e5 1000],[8 8 options.Nz],N2Function=N2,apvModeCount=c(1),waveModeCount=c(2),mdaModeCount=c(3),inertialModeCount=c(4),nEVP=256,shouldAntialias=true,shouldCheckQuadraticAliasing=true);
+        w=WVTransformFreeSurfaceBoussinesq.fromStratification([1e5 1e5 1000],[8 8 options.Nz],N2Function=N2,apvModeCount=c(1),waveModeCount=c(2),mdaModeCount=c(3),inertialModeCount=c(4),nEVP=256,shouldAntialias=true,quadraticDealiasing="fixedFraction");
         constructionSeconds=toc(clock); w.t0=-17;
         study=manuscriptEvolutionOperators(w,profile);
         for scenario=options.scenarios

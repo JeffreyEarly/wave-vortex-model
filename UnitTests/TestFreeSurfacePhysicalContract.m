@@ -171,10 +171,10 @@ end
 function wvt = fixture()
 persistent scientific
 if isempty(scientific)
-    base = WVTransformFreeSurfaceBoussinesq.fromStratification([1e5 1e5 1000],[8 8 65],N2Function=@(z)1e-4+0*z,apvModeCount=2,waveModeCount=3,mdaModeCount=2,inertialModeCount=2,nEVP=128,shouldAntialias=true,shouldCheckQuadraticAliasing=true);
+    base = WVTransformFreeSurfaceBoussinesq.fromStratification([1e5 1e5 1000],[8 8 65],N2Function=@(z)1e-4+0*z,apvModeCount=2,waveModeCount=3,mdaModeCount=2,inertialModeCount=2,nEVP=128,shouldAntialias=true,quadraticDealiasing="fixedFraction");
     choices = [3;2;0];
     counts = choices(1+mod((0:numel(base.khUnique)-1).',3));
-    wvt = WVTransformFreeSurfaceBoussinesq.fromStratification([1e5 1e5 1000],[8 8 65],N2Function=@(z)1e-4+0*z,apvModeCount=2,waveModeCount=counts,waveModeKappa=base.khUnique,mdaModeCount=2,inertialModeCount=2,nEVP=128,shouldAntialias=true,shouldCheckQuadraticAliasing=true);
+    wvt = WVTransformFreeSurfaceBoussinesq.fromStratification([1e5 1e5 1000],[8 8 65],N2Function=@(z)1e-4+0*z,apvModeCount=2,waveModeCount=counts,waveModeKappa=base.khUnique,mdaModeCount=2,inertialModeCount=2,nEVP=128,shouldAntialias=true,quadraticDealiasing="fixedFraction");
     scientific = wvt.scientificState();
 else
     wvt = WVTransformFreeSurfaceBoussinesq(scientific);

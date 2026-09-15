@@ -7,7 +7,7 @@ for profile=["constant","exponential"]
     for config=1:size(specs,1)
         spec=specs(config,:);
         if profile=="constant", N2=@(z)1e-4+zeros(size(z)); else, N2=@(z)1e-4*exp(z/650); end
-        w=WVTransformFreeSurfaceBoussinesq.fromStratification([1e5 1e5 1000],[spec(1) spec(1) spec(2)],N2Function=N2,apvModeCount=spec(3),waveModeCount=spec(4),mdaModeCount=spec(5),inertialModeCount=spec(6),nEVP=256,shouldAntialias=true,shouldCheckQuadraticAliasing=true);
+        w=WVTransformFreeSurfaceBoussinesq.fromStratification([1e5 1e5 1000],[spec(1) spec(1) spec(2)],N2Function=N2,apvModeCount=spec(3),waveModeCount=spec(4),mdaModeCount=spec(5),inertialModeCount=spec(6),nEVP=256,shouldAntialias=true,quadraticDealiasing="fixedFraction");
         scientificState=w.scientificState(); seed=manuscriptEvolutionOperators(w,profile,padding=1); initial=seed.seed("mixed",.1);
         save(fullfile(folder,profile+"-"+config+".mat"),'scientificState','initial','profile','config');
         if config==1

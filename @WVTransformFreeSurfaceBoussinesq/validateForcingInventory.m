@@ -1,7 +1,7 @@
 function validateForcingInventory(self,forcing)
 % Validate the complete effective forcing inventory before its atomic commit.
-% Construction-time quadratic qualification belongs to the stored inventory;
-% registration neither changes retained counts nor reconstructs modes.
+% Construction fixes the retained vertical inventory; registration neither
+% changes retained counts nor reconstructs modes.
 arguments (Input)
     self (1,1) WVTransformFreeSurfaceBoussinesq
     forcing WVForcing
@@ -15,7 +15,7 @@ for force = forcing
         error('WVTransformFreeSurfaceBoussinesq:PhysicalSourceRequiresAdvection','Physical-coordinate sources require registered WVNonlinearAdvection. Add both together, or use a reference-coordinate source for linear evolution.');
     end
 end
-if hasAdvection && (~self.shouldAntialias || ~self.shouldCheckQuadraticAliasing)
-    error('WVTransformFreeSurfaceBoussinesq:NonlinearInventoryUnqualified','Nonlinear advection requires shouldAntialias=true and an inventory constructed with shouldCheckQuadraticAliasing=true. Reconstruct a qualified transform explicitly; registration does not change retained modes.');
+if hasAdvection && ~self.shouldAntialias
+    error('WVTransformFreeSurfaceBoussinesq:NonlinearInventoryUnqualified','Nonlinear advection requires shouldAntialias=true. Vertical quadraticDealiasing is an independent retained-mode policy and may be none.');
 end
 end

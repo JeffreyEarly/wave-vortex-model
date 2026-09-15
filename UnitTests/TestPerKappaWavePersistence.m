@@ -18,11 +18,51 @@ classdef TestPerKappaWavePersistence < matlab.unittest.TestCase
                 end
                 verifyState(testCase,restored.coefficientState(),w.coefficientState());
                 testCase.verifyEqual([restored.t restored.t0],[w.t w.t0])
+                testCase.verifyEqual(restored.quadraticDealiasing,w.quadraticDealiasing)
+                testCase.verifyEqual([restored.retainedFraction restored.energyFraction restored.bandwidthFraction], ...
+                    [w.retainedFraction w.energyFraction w.bandwidthFraction])
                 testCase.verifyEqual(nc.hasDimensionWithName('waveMode'),~zeroWaves)
                 testCase.verifyEqual(nc.hasVariableWithName('Aw_p'),~zeroWaves)
                 testCase.verifyEqual(restored.reconstructFields(["u","v","w","eta","ssh"]),w.reconstructFields(["u","v","w","eta","ssh"]))
                 clear cleanup
             end
+        end
+
+        function prePolicySavedMetadataHasNoCompatibilityAdapter(testCase)
+            fixture=testCase.applyFixture(matlab.unittest.fixtures.TemporaryFolderFixture);
+            w=makeTransform(false);
+            file=fullfile(fixture.Folder,'pre-policy.nc');
+            policyNames={'quadraticDealiasing','retainedFraction','energyFraction','bandwidthFraction'};
+            properties=setdiff(w.requiredProperties,policyNames);
+            nc=w.writeToFile(file,properties{:},shouldAddRequiredProperties=false);
+            nc.addVariable('shouldCheckQuadraticAliasing',{},false);
+            nc.addVariable('quadraticAliasingTolerance',{},.1);
+            nc.close();
+            testCase.verifyError(@()WVTransformFreeSurfaceBoussinesq.waveVortexTransformFromFile(file), ...
+                'WVTransformFreeSurfaceBoussinesq:UnsupportedLegacyScientificState')
+
+            state=w.scientificState();
+            state.shouldCheckQuadraticAliasing=false;
+            testCase.verifyError(@()WVTransformFreeSurfaceBoussinesq(state), ...
+                'WVTransformFreeSurfaceBoussinesq:UnsupportedLegacyScientificState')
+        end
+
+        function nestedLegacyNameDoesNotRejectCurrentState(testCase)
+            fixture=testCase.applyFixture(matlab.unittest.fixtures.TemporaryFolderFixture);
+            w=makeTransform(false); populate(w);
+            file=fullfile(fixture.Folder,'nested-unrelated-metadata.nc');
+            nc=w.writeToFile(file,shouldOverwriteExisting=true);
+            analysis=nc.addGroup('analysis');
+            nested=analysis.addGroup('historical-inputs');
+            nested.addVariable('shouldCheckQuadraticAliasing',{},false);
+            nc.close();
+
+            [restored,nc]=WVTransformFreeSurfaceBoussinesq.waveVortexTransformFromFile(file);
+            cleanup=onCleanup(@()nc.close());
+            verifyState(testCase,restored.coefficientState(),w.coefficientState())
+            testCase.verifyEqual(restored.quadraticDealiasing,w.quadraticDealiasing)
+            testCase.verifyEqual(restored.waveModeCountByKh,w.waveModeCountByKh)
+            clear cleanup
         end
 
         function legacyUniformFileDefaultsToFullPrefixes(testCase)

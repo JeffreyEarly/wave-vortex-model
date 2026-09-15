@@ -108,7 +108,7 @@ end
 function apv=newAPV(w,Nz,count)
 integralN2=w.N20*(-expm1(-2*w.inverseScale*w.Lz))/(2*w.inverseScale);
 if isnan(count),count=[];end
-apv=WVTransformFreeSurfaceQG([w.Lx w.Ly w.Lz],[w.Nx w.Ny Nz],N2Function=w.N2Function,g=w.g,latitude=w.latitude,rho0=w.rho0,g0=-integralN2,gd=integralN2,apvModeCount=count,mdaModeCount=1,shouldAntialias=w.shouldAntialias,shouldCheckQuadraticAliasing=false);
+apv=WVTransformFreeSurfaceQG([w.Lx w.Ly w.Lz],[w.Nx w.Ny Nz],N2Function=w.N2Function,g=w.g,latitude=w.latitude,rho0=w.rho0,g0=-integralN2,gd=integralN2,apvModeCount=count,mdaModeCount=1,shouldAntialias=w.shouldAntialias,quadraticDealiasing="none");
 end
 
 function state=surfaceLayerState(w)

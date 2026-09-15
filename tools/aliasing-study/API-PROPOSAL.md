@@ -1,5 +1,7 @@
 # Advisory assessment integration proposal
 
+> Historical archive. The sampled-product diagnostic and its runnable code were retired in issue 42. This document records the former study and does not describe the current construction API.
+
 This proposal introduces no runtime API or default change. It describes a separately reviewable increment if the completed comparison justifies one.
 
 ## Reuse the existing calculation contracts

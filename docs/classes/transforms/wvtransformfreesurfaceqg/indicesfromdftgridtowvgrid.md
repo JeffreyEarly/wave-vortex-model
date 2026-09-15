@@ -3,7 +3,7 @@ layout: default
 title: indicesFromDFTGridToWVGrid
 parent: WVTransformFreeSurfaceQG
 grand_parent: Transforms
-nav_order: 109
+nav_order: 108
 mathjax: true
 ---
 

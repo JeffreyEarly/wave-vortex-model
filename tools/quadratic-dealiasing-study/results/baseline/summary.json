@@ -1,0 +1,69 @@
+{
+  "environment": {
+    "matlabVersion": "26.1.0.3346908 (R2026a) Update 5",
+    "wvmRoot": "/private/tmp/wvm-quadratic-dealiasing-baseline",
+    "internalModesRoot": "/Users/jearly/Documents/OceanKitRepositories/oceankit-internal-modes-beta6/InternalModes-2.0.0-beta.6",
+    "dependencyRoot": "/Users/jearly/Documents/OceanKitRepositories/OceanKit",
+    "chebfunRoot": "/Users/jearly/Documents/OceanKitRepositories/chebfun"
+  },
+  "sourceRevision": "2c3c216593415ee6c909ae64e4b8fe97d25ad57f",
+  "providerRevision": "370162ddf71781689b560163bb3e3d2751d80c28",
+  "threads": 1,
+  "gridSize": [
+    128,
+    128,
+    65
+  ],
+  "nEVP": 104,
+  "policies": {
+    "policy": "legacyLinear",
+    "medianSeconds": 15.611327791666668,
+    "medianFilteringSeconds": null,
+    "trials": [
+      {
+        "repetition": 0,
+        "seconds": 20.485103875,
+        "filteringSeconds": null,
+        "apvCount": 38,
+        "waveCountRange": [
+          38,
+          38
+        ],
+        "waveEigensolves": 1140
+      },
+      {
+        "repetition": 1,
+        "seconds": 16.499284958333334,
+        "filteringSeconds": null,
+        "apvCount": 38,
+        "waveCountRange": [
+          38,
+          38
+        ],
+        "waveEigensolves": 1140
+      },
+      {
+        "repetition": 2,
+        "seconds": 15.611327791666668,
+        "filteringSeconds": null,
+        "apvCount": 38,
+        "waveCountRange": [
+          38,
+          38
+        ],
+        "waveEigensolves": 1140
+      },
+      {
+        "repetition": 3,
+        "seconds": 15.272088333333333,
+        "filteringSeconds": null,
+        "apvCount": 38,
+        "waveCountRange": [
+          38,
+          38
+        ],
+        "waveEigensolves": 1140
+      }
+    ]
+  }
+}

@@ -1,0 +1,473 @@
+{
+  "environment": {
+    "matlabVersion": "26.1.0.3346908 (R2026a) Update 5",
+    "wvmRoot": "/Users/jearly/Documents/OceanKitRepositories/wvm-v5-construction-optimization",
+    "internalModesRoot": "/Users/jearly/Documents/OceanKitRepositories/oceankit-internal-modes-beta7/InternalModes-2.0.0-beta.7",
+    "dependencyRoot": "/Users/jearly/Documents/OceanKitRepositories/OceanKit",
+    "chebfunRoot": "/Users/jearly/Documents/OceanKitRepositories/OceanKit/chebfun-5.7.0"
+  },
+  "files": [
+    "TestFreeSurfaceLinearModePolicy.m",
+    "TestFreeSurfaceNonlinearAdvectionGuard.m",
+    "TestAutomaticFreeSurfaceModeSelection.m",
+    "TestWVTransformFreeSurfaceQG.m",
+    "TestPerKappaWavePersistence.m",
+    "TestFreeSurfaceResolutionTransfer.m",
+    "TestFreeSurfaceNonlinearEvolution.m",
+    "TestFreeSurfaceAdaptiveIntegration.m",
+    "TestThermalNonlinear.m",
+    "TestThermalOutputRestart.m",
+    "TestThermalAPVDiagnostics.m",
+    "TestThermalAPVOutput.m"
+  ],
+  "selectedNames": [
+    "TestFreeSurfaceLinearModePolicy/defaultAndNonePoliciesExposeTheirLimits",
+    "TestFreeSurfaceLinearModePolicy/noneIgnoresFilteringParametersAndSurvivesPersistence",
+    "TestFreeSurfaceLinearModePolicy/explicitCountsUseFullLinearFilteringCapacity",
+    "TestFreeSurfaceLinearModePolicy/filteringRejectsOnlyCountsAboveIndependentLimits",
+    "TestFreeSurfaceLinearModePolicy/effectiveBandwidthUsesCommonWKBShapes",
+    "TestFreeSurfaceLinearModePolicy/automaticZeroFilteringHasDistinctStatus",
+    "TestFreeSurfaceLinearModePolicy/explicitAPVHeadSurvivesUnconvergedIndependentTail",
+    "TestFreeSurfaceLinearModePolicy/fixedBoundaryResolutionStillAppliesToNone",
+    "TestFreeSurfaceLinearModePolicy/retiredSurveyOptionsAreRejectedClearly",
+    "TestFreeSurfaceNonlinearAdvectionGuard/horizontalAliasingActivationRejectsWithoutChangingForcing",
+    "TestFreeSurfaceNonlinearAdvectionGuard/noneAndFilteringPoliciesPermitNonlinearRegistration",
+    "TestFreeSurfaceNonlinearAdvectionGuard/qgRequiresHorizontalAntialiasingForNonlinearRegistration",
+    "TestFreeSurfaceNonlinearAdvectionGuard/conversionAndRestorationStillRequireQualifiedActivation",
+    "TestFreeSurfaceNonlinearAdvectionGuard/quasigeostrophicTransformsRetainNonlinearAdvection",
+    "TestAutomaticFreeSurfaceModeSelection/automaticFamiliesShareBalancedPolicyAndExposeEvidence",
+    "TestAutomaticFreeSurfaceModeSelection/finerGridUsesTheFixedFractionOfEachLinearPrefix",
+    "TestAutomaticFreeSurfaceModeSelection/explicitCountsAreStrictAndIndependent",
+    "TestAutomaticFreeSurfaceModeSelection/fixedBoundariesCannotBeHiddenBySmallWaveCounts",
+    "TestAutomaticFreeSurfaceModeSelection/requestingAReportDoesNotChangeConstruction",
+    "TestWVTransformFreeSurfaceQG/storedTransformsMatchOnePassFixedQuadratureSelection",
+    "TestWVTransformFreeSurfaceQG/verticalResolutionAssessmentBracketsTheHorizontalLimit",
+    "TestWVTransformFreeSurfaceQG/omittedEndpointDefaultsRetainSignedAPVAndUseMajorant",
+    "TestWVTransformFreeSurfaceQG/initializationTolerancesArePersisted",
+    "TestWVTransformFreeSurfaceQG/nearLimitAPVEndpointCrossTendencyConvergesWithVerticalRefinement",
+    "TestWVTransformFreeSurfaceQG/snapshotPersistsRepresentationAndDirectConstructionSkipsModeSolver",
+    "TestWVTransformFreeSurfaceQG/prePolicySavedMetadataHasNoCompatibilityAdapter",
+    "TestPerKappaWavePersistence/storedOperatorsAndCountsRoundTrip",
+    "TestPerKappaWavePersistence/prePolicySavedMetadataHasNoCompatibilityAdapter",
+    "TestPerKappaWavePersistence/legacyUniformFileDefaultsToFullPrefixes",
+    "TestPerKappaWavePersistence/countTransferAccountsForDiscardedModes",
+    "TestPerKappaWavePersistence/horizontalRefinementNeedsNewCounts",
+    "TestFreeSurfaceResolutionTransfer/samplingRefinementPreservesResolvedContent",
+    "TestFreeSurfaceResolutionTransfer/pureFamiliesAndStrictRequests",
+    "TestFreeSurfaceResolutionTransfer/activeAndInactiveEndpointsSurviveTransfer",
+    "TestFreeSurfaceNonlinearEvolution/explicitActivationUsesDirectRHSAndPreservesLinearDefault",
+    "TestFreeSurfaceNonlinearEvolution/stableCorrectionsReachEverySourceAndCoefficientFamily",
+    "TestFreeSurfaceNonlinearEvolution/nonlinearEnergyUsesPhysicalVolumeAndQuadraticSurface",
+    "TestFreeSurfaceNonlinearEvolution/reportedEnergyTendencyMatchesStateAndClockDifference",
+    "TestFreeSurfaceAdaptiveIntegration/nonlinearDampedRestartAgreesWithContinuation(policy=energy)",
+    "TestFreeSurfaceAdaptiveIntegration/nonlinearDampedRestartAgreesWithContinuation(policy=family)",
+    "TestThermalNonlinear/nonparallelInteractionsAndQuadrature",
+    "TestThermalNonlinear/retainedCutoffInteractions",
+    "TestThermalNonlinear/nullControlsAndCacheMutation",
+    "TestThermalNonlinear/policyAndLinearCompatibility",
+    "TestThermalNonlinear/nonlinearLifecycleAndSeasonalCompatibility",
+    "TestThermalNonlinear/cheapPolicyPersistenceAndMigration",
+    "TestThermalOutputRestart/snapshotRestoresClockScientificStateAndForcing",
+    "TestThermalOutputRestart/physicalTransferRefinesAndQuantifiesCoarsening",
+    "TestThermalAPVDiagnostics/independentProjectionAndPhysicalAccounting",
+    "TestThermalAPVOutput/snapshotAgreesAndPreservesObjectsAndBytes",
+    "TestThermalAPVOutput/basisIdentityIgnoresStateAndIncludesProjectionGrid",
+    "TestThermalAPVOutput/nestedCommittedStreamIgnoresStagedTail",
+    "TestThermalAPVOutput/selectionsAreExplicitAndBounded",
+    "TestThermalAPVOutput/malformedStreamsPreserveSharedErrorsAndReleaseReaders",
+    "TestThermalAPVOutput/diagnosisFailureReleasesReader"
+  ],
+  "completedAt": "14-Sep-2026 19:38:00",
+  "count": 55,
+  "passed": 55,
+  "failed": 0,
+  "incomplete": 0,
+  "duration": "142.8099",
+  "results": [
+    {
+      "name": "TestFreeSurfaceLinearModePolicy/defaultAndNonePoliciesExposeTheirLimits",
+      "passed": true,
+      "failed": false,
+      "incomplete": false,
+      "duration": "9.0911"
+    },
+    {
+      "name": "TestFreeSurfaceLinearModePolicy/noneIgnoresFilteringParametersAndSurvivesPersistence",
+      "passed": true,
+      "failed": false,
+      "incomplete": false,
+      "duration": "3.2063"
+    },
+    {
+      "name": "TestFreeSurfaceLinearModePolicy/explicitCountsUseFullLinearFilteringCapacity",
+      "passed": true,
+      "failed": false,
+      "incomplete": false,
+      "duration": "1.4014"
+    },
+    {
+      "name": "TestFreeSurfaceLinearModePolicy/filteringRejectsOnlyCountsAboveIndependentLimits",
+      "passed": true,
+      "failed": false,
+      "incomplete": false,
+      "duration": "3.325"
+    },
+    {
+      "name": "TestFreeSurfaceLinearModePolicy/effectiveBandwidthUsesCommonWKBShapes",
+      "passed": true,
+      "failed": false,
+      "incomplete": false,
+      "duration": "0.8547"
+    },
+    {
+      "name": "TestFreeSurfaceLinearModePolicy/automaticZeroFilteringHasDistinctStatus",
+      "passed": true,
+      "failed": false,
+      "incomplete": false,
+      "duration": "0.55128"
+    },
+    {
+      "name": "TestFreeSurfaceLinearModePolicy/explicitAPVHeadSurvivesUnconvergedIndependentTail",
+      "passed": true,
+      "failed": false,
+      "incomplete": false,
+      "duration": "1.6801"
+    },
+    {
+      "name": "TestFreeSurfaceLinearModePolicy/fixedBoundaryResolutionStillAppliesToNone",
+      "passed": true,
+      "failed": false,
+      "incomplete": false,
+      "duration": "0.3449"
+    },
+    {
+      "name": "TestFreeSurfaceLinearModePolicy/retiredSurveyOptionsAreRejectedClearly",
+      "passed": true,
+      "failed": false,
+      "incomplete": false,
+      "duration": "0.085186"
+    },
+    {
+      "name": "TestFreeSurfaceNonlinearAdvectionGuard/horizontalAliasingActivationRejectsWithoutChangingForcing",
+      "passed": true,
+      "failed": false,
+      "incomplete": false,
+      "duration": "1.0671"
+    },
+    {
+      "name": "TestFreeSurfaceNonlinearAdvectionGuard/noneAndFilteringPoliciesPermitNonlinearRegistration",
+      "passed": true,
+      "failed": false,
+      "incomplete": false,
+      "duration": "2.753"
+    },
+    {
+      "name": "TestFreeSurfaceNonlinearAdvectionGuard/qgRequiresHorizontalAntialiasingForNonlinearRegistration",
+      "passed": true,
+      "failed": false,
+      "incomplete": false,
+      "duration": "0.34084"
+    },
+    {
+      "name": "TestFreeSurfaceNonlinearAdvectionGuard/conversionAndRestorationStillRequireQualifiedActivation",
+      "passed": true,
+      "failed": false,
+      "incomplete": false,
+      "duration": "1.8168"
+    },
+    {
+      "name": "TestFreeSurfaceNonlinearAdvectionGuard/quasigeostrophicTransformsRetainNonlinearAdvection",
+      "passed": true,
+      "failed": false,
+      "incomplete": false,
+      "duration": "0.74676"
+    },
+    {
+      "name": "TestAutomaticFreeSurfaceModeSelection/automaticFamiliesShareBalancedPolicyAndExposeEvidence",
+      "passed": true,
+      "failed": false,
+      "incomplete": false,
+      "duration": "1.1666"
+    },
+    {
+      "name": "TestAutomaticFreeSurfaceModeSelection/finerGridUsesTheFixedFractionOfEachLinearPrefix",
+      "passed": true,
+      "failed": false,
+      "incomplete": false,
+      "duration": "1.2477"
+    },
+    {
+      "name": "TestAutomaticFreeSurfaceModeSelection/explicitCountsAreStrictAndIndependent",
+      "passed": true,
+      "failed": false,
+      "incomplete": false,
+      "duration": "1.1897"
+    },
+    {
+      "name": "TestAutomaticFreeSurfaceModeSelection/fixedBoundariesCannotBeHiddenBySmallWaveCounts",
+      "passed": true,
+      "failed": false,
+      "incomplete": false,
+      "duration": "0.40314"
+    },
+    {
+      "name": "TestAutomaticFreeSurfaceModeSelection/requestingAReportDoesNotChangeConstruction",
+      "passed": true,
+      "failed": false,
+      "incomplete": false,
+      "duration": "0.79542"
+    },
+    {
+      "name": "TestWVTransformFreeSurfaceQG/storedTransformsMatchOnePassFixedQuadratureSelection",
+      "passed": true,
+      "failed": false,
+      "incomplete": false,
+      "duration": "0.52185"
+    },
+    {
+      "name": "TestWVTransformFreeSurfaceQG/verticalResolutionAssessmentBracketsTheHorizontalLimit",
+      "passed": true,
+      "failed": false,
+      "incomplete": false,
+      "duration": "3.1218"
+    },
+    {
+      "name": "TestWVTransformFreeSurfaceQG/omittedEndpointDefaultsRetainSignedAPVAndUseMajorant",
+      "passed": true,
+      "failed": false,
+      "incomplete": false,
+      "duration": "0.97636"
+    },
+    {
+      "name": "TestWVTransformFreeSurfaceQG/initializationTolerancesArePersisted",
+      "passed": true,
+      "failed": false,
+      "incomplete": false,
+      "duration": "0.3441"
+    },
+    {
+      "name": "TestWVTransformFreeSurfaceQG/nearLimitAPVEndpointCrossTendencyConvergesWithVerticalRefinement",
+      "passed": true,
+      "failed": false,
+      "incomplete": false,
+      "duration": "5.2295"
+    },
+    {
+      "name": "TestWVTransformFreeSurfaceQG/snapshotPersistsRepresentationAndDirectConstructionSkipsModeSolver",
+      "passed": true,
+      "failed": false,
+      "incomplete": false,
+      "duration": "1.8684"
+    },
+    {
+      "name": "TestWVTransformFreeSurfaceQG/prePolicySavedMetadataHasNoCompatibilityAdapter",
+      "passed": true,
+      "failed": false,
+      "incomplete": false,
+      "duration": "1.0036"
+    },
+    {
+      "name": "TestPerKappaWavePersistence/storedOperatorsAndCountsRoundTrip",
+      "passed": true,
+      "failed": false,
+      "incomplete": false,
+      "duration": "5.896"
+    },
+    {
+      "name": "TestPerKappaWavePersistence/prePolicySavedMetadataHasNoCompatibilityAdapter",
+      "passed": true,
+      "failed": false,
+      "incomplete": false,
+      "duration": "1.9865"
+    },
+    {
+      "name": "TestPerKappaWavePersistence/legacyUniformFileDefaultsToFullPrefixes",
+      "passed": true,
+      "failed": false,
+      "incomplete": false,
+      "duration": "1.123"
+    },
+    {
+      "name": "TestPerKappaWavePersistence/countTransferAccountsForDiscardedModes",
+      "passed": true,
+      "failed": false,
+      "incomplete": false,
+      "duration": "6.5051"
+    },
+    {
+      "name": "TestPerKappaWavePersistence/horizontalRefinementNeedsNewCounts",
+      "passed": true,
+      "failed": false,
+      "incomplete": false,
+      "duration": "3.5848"
+    },
+    {
+      "name": "TestFreeSurfaceResolutionTransfer/samplingRefinementPreservesResolvedContent",
+      "passed": true,
+      "failed": false,
+      "incomplete": false,
+      "duration": "19.545"
+    },
+    {
+      "name": "TestFreeSurfaceResolutionTransfer/pureFamiliesAndStrictRequests",
+      "passed": true,
+      "failed": false,
+      "incomplete": false,
+      "duration": "5.6607"
+    },
+    {
+      "name": "TestFreeSurfaceResolutionTransfer/activeAndInactiveEndpointsSurviveTransfer",
+      "passed": true,
+      "failed": false,
+      "incomplete": false,
+      "duration": "14.9515"
+    },
+    {
+      "name": "TestFreeSurfaceNonlinearEvolution/explicitActivationUsesDirectRHSAndPreservesLinearDefault",
+      "passed": true,
+      "failed": false,
+      "incomplete": false,
+      "duration": "1.3687"
+    },
+    {
+      "name": "TestFreeSurfaceNonlinearEvolution/stableCorrectionsReachEverySourceAndCoefficientFamily",
+      "passed": true,
+      "failed": false,
+      "incomplete": false,
+      "duration": "1.776"
+    },
+    {
+      "name": "TestFreeSurfaceNonlinearEvolution/nonlinearEnergyUsesPhysicalVolumeAndQuadraticSurface",
+      "passed": true,
+      "failed": false,
+      "incomplete": false,
+      "duration": "1.0438"
+    },
+    {
+      "name": "TestFreeSurfaceNonlinearEvolution/reportedEnergyTendencyMatchesStateAndClockDifference",
+      "passed": true,
+      "failed": false,
+      "incomplete": false,
+      "duration": "1.0641"
+    },
+    {
+      "name": "TestFreeSurfaceAdaptiveIntegration/nonlinearDampedRestartAgreesWithContinuation(policy=energy)",
+      "passed": true,
+      "failed": false,
+      "incomplete": false,
+      "duration": "5.1823"
+    },
+    {
+      "name": "TestFreeSurfaceAdaptiveIntegration/nonlinearDampedRestartAgreesWithContinuation(policy=family)",
+      "passed": true,
+      "failed": false,
+      "incomplete": false,
+      "duration": "4.3387"
+    },
+    {
+      "name": "TestThermalNonlinear/nonparallelInteractionsAndQuadrature",
+      "passed": true,
+      "failed": false,
+      "incomplete": false,
+      "duration": "1.87"
+    },
+    {
+      "name": "TestThermalNonlinear/retainedCutoffInteractions",
+      "passed": true,
+      "failed": false,
+      "incomplete": false,
+      "duration": "0.082275"
+    },
+    {
+      "name": "TestThermalNonlinear/nullControlsAndCacheMutation",
+      "passed": true,
+      "failed": false,
+      "incomplete": false,
+      "duration": "0.10004"
+    },
+    {
+      "name": "TestThermalNonlinear/policyAndLinearCompatibility",
+      "passed": true,
+      "failed": false,
+      "incomplete": false,
+      "duration": "0.20471"
+    },
+    {
+      "name": "TestThermalNonlinear/nonlinearLifecycleAndSeasonalCompatibility",
+      "passed": true,
+      "failed": false,
+      "incomplete": false,
+      "duration": "2.0476"
+    },
+    {
+      "name": "TestThermalNonlinear/cheapPolicyPersistenceAndMigration",
+      "passed": true,
+      "failed": false,
+      "incomplete": false,
+      "duration": "0.84836"
+    },
+    {
+      "name": "TestThermalOutputRestart/snapshotRestoresClockScientificStateAndForcing",
+      "passed": true,
+      "failed": false,
+      "incomplete": false,
+      "duration": "1.1114"
+    },
+    {
+      "name": "TestThermalOutputRestart/physicalTransferRefinesAndQuantifiesCoarsening",
+      "passed": true,
+      "failed": false,
+      "incomplete": false,
+      "duration": "1.0333"
+    },
+    {
+      "name": "TestThermalAPVDiagnostics/independentProjectionAndPhysicalAccounting",
+      "passed": true,
+      "failed": false,
+      "incomplete": false,
+      "duration": "7.0437"
+    },
+    {
+      "name": "TestThermalAPVOutput/snapshotAgreesAndPreservesObjectsAndBytes",
+      "passed": true,
+      "failed": false,
+      "incomplete": false,
+      "duration": "5.2026"
+    },
+    {
+      "name": "TestThermalAPVOutput/basisIdentityIgnoresStateAndIncludesProjectionGrid",
+      "passed": true,
+      "failed": false,
+      "incomplete": false,
+      "duration": "0.78417"
+    },
+    {
+      "name": "TestThermalAPVOutput/nestedCommittedStreamIgnoresStagedTail",
+      "passed": true,
+      "failed": false,
+      "incomplete": false,
+      "duration": "0.89738"
+    },
+    {
+      "name": "TestThermalAPVOutput/selectionsAreExplicitAndBounded",
+      "passed": true,
+      "failed": false,
+      "incomplete": false,
+      "duration": "1.037"
+    },
+    {
+      "name": "TestThermalAPVOutput/malformedStreamsPreserveSharedErrorsAndReleaseReaders",
+      "passed": true,
+      "failed": false,
+      "incomplete": false,
+      "duration": "1.0113"
+    },
+    {
+      "name": "TestThermalAPVOutput/diagnosisFailureReleasesReader",
+      "passed": true,
+      "failed": false,
+      "incomplete": false,
+      "duration": "0.37735"
+    }
+  ]
+}

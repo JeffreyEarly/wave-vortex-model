@@ -1,6 +1,6 @@
 classdef TestFreeSurfaceNonlinearAdvectionGuard < matlab.unittest.TestCase
     methods (Test, TestTags="full")
-        function unqualifiedActivationRejectsWithoutChangingForcing(testCase)
+        function horizontalAliasingActivationRejectsWithoutChangingForcing(testCase)
             wvt = TestFreeSurfaceNonlinearAdvectionGuard.freeSurfaceTransform();
             source = WVPrescribedBoussinesqSource(wvt,uRate=1e-7*ones(wvt.spatialMatrixSize));
             wvt.addForcing(source);
@@ -12,6 +12,28 @@ classdef TestFreeSurfaceNonlinearAdvectionGuard < matlab.unittest.TestCase
             testCase.verifyEqual(wvt.forcing,expected)
             testCase.verifyTrue(wvt.forcingWithName(source.name) == source)
             testCase.verifyFalse(wvt.hasForcingWithName("nonlinear advection"))
+        end
+
+        function noneAndFilteringPoliciesPermitNonlinearRegistration(testCase)
+            for policy=["none","fixedFraction","effectiveBandwidth"]
+                boussinesq=WVTransformFreeSurfaceBoussinesq.fromStratification([1e5 1e5 1000],[8 8 33], ...
+                    N2Function=@(z)1e-4+0*z,quadraticDealiasing=policy,shouldAntialias=true, ...
+                    waveModeCount=3,inertialModeCount=2,apvModeCount=2,mdaModeCount=2);
+                boussinesq.setForcing(WVNonlinearAdvection(boussinesq));
+                testCase.verifyTrue(boussinesq.hasForcingWithName("nonlinear advection"))
+                qg=WVTransformFreeSurfaceQG([1e5 1e5 1000],[8 8 33],N2Function=@(z)1e-4+0*z, ...
+                    quadraticDealiasing=policy,shouldAntialias=true,apvModeCount=2,mdaModeCount=2);
+                qg.setForcing(WVNonlinearAdvection(qg));
+                testCase.verifyTrue(qg.hasForcingWithName("nonlinear advection"))
+            end
+        end
+
+        function qgRequiresHorizontalAntialiasingForNonlinearRegistration(testCase)
+            qg=WVTransformFreeSurfaceQG([1e5 1e5 1000],[8 8 33],N2Function=@(z)1e-4+0*z, ...
+                quadraticDealiasing="none",shouldAntialias=false,apvModeCount=2,mdaModeCount=2);
+            testCase.verifyError(@()qg.setForcing(WVNonlinearAdvection(qg)), ...
+                'WVTransformFreeSurfaceQG:NonlinearInventoryUnqualified')
+            testCase.verifyEmpty(qg.forcing)
         end
 
         function conversionAndRestorationStillRequireQualifiedActivation(testCase)
@@ -45,7 +67,7 @@ classdef TestFreeSurfaceNonlinearAdvectionGuard < matlab.unittest.TestCase
 
     methods (Static, Access=private)
         function wvt = freeSurfaceTransform()
-            wvt = WVTransformFreeSurfaceBoussinesq.fromStratification([1e5 1e5 1000],[8 8 33],N2Function=@(z)1e-4+0*z,apvModeCount=3,mdaModeCount=2,waveModeCount=4,inertialModeCount=3);
+            wvt = WVTransformFreeSurfaceBoussinesq.fromStratification([1e5 1e5 1000],[8 8 33],N2Function=@(z)1e-4+0*z,quadraticDealiasing="none",apvModeCount=3,mdaModeCount=2,waveModeCount=4,inertialModeCount=3);
         end
     end
 end

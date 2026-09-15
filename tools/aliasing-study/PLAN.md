@@ -1,5 +1,7 @@
 # Issue 400: sparse quadratic-product assessment
 
+> Historical archive. The sampled-product diagnostic and its runnable code were retired in issue 42. This document records the former study and does not describe the current construction API.
+
 Status: historical pre-pilot plan. The completed comparison and its limitations are in `REPORT.md`. The current case inventory and final pre-withheld policy freeze are recorded in `case-inventory.json` and `policy-freeze.json`.
 
 ## Provenance and scope

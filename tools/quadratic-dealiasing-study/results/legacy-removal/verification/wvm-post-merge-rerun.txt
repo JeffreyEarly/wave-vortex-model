@@ -1,0 +1,81 @@
+[Warning: Directory access failure: /Users/jearly/Documents/MATLAB]
+[> In restoredefaultpath (line 65)
+In setupDealiasingStudy (line 13)
+In run_issue42_post_merge_regressions (line 10)]
+ Running TestPerKappaWavePersistence
+  Setting up TestPerKappaWavePersistence
+  Done setting up TestPerKappaWavePersistence in 0 seconds
+   Running TestPerKappaWavePersistence/storedOperatorsAndCountsRoundTrip
+BLAS: trying environment BLAS_VERSION...
+BLAS: loading libmwAF_BLAS_ilp64.dylib
+BLAS: loaded libmwAF_BLAS_ilp64.dylib@0xa8f1b830
+   Done TestPerKappaWavePersistence/storedOperatorsAndCountsRoundTrip in 10.8385 seconds
+   Running TestPerKappaWavePersistence/prePolicySavedMetadataHasNoCompatibilityAdapter
+   Done TestPerKappaWavePersistence/prePolicySavedMetadataHasNoCompatibilityAdapter in 2.6773 seconds
+   Running TestPerKappaWavePersistence/nestedLegacyNameDoesNotRejectCurrentState
+   Done TestPerKappaWavePersistence/nestedLegacyNameDoesNotRejectCurrentState in 2.7627 seconds
+  Tearing down TestPerKappaWavePersistence
+  Done tearing down TestPerKappaWavePersistence in 0 seconds
+ Done TestPerKappaWavePersistence in 16.2785 seconds
+__________
+
+ Running TestThermalReadinessDiagnostics
+  Setting up TestThermalReadinessDiagnostics
+  Done setting up TestThermalReadinessDiagnostics in 0.030138 seconds
+   Running TestThermalReadinessDiagnostics/sourceNormUncertaintyRejectsAnOtherwiseIdenticalDiagnosis
+   Done TestThermalReadinessDiagnostics/sourceNormUncertaintyRejectsAnOtherwiseIdenticalDiagnosis in 0.10492 seconds
+   Running TestThermalReadinessDiagnostics/nearZeroReferencesKeepUnitsAndUndefinedRelativeValues
+   Done TestThermalReadinessDiagnostics/nearZeroReferencesKeepUnitsAndUndefinedRelativeValues in 0.03323 seconds
+   Running TestThermalReadinessDiagnostics/storedBasesRestoreWithoutScientificConstruction
+T10 diagnostic basis: 8x8, Nz=129, APV=3.
+T10 diagnostic basis: 8x8, Nz=257, APV=3.
+
+================================================================================
+Assertion failed in TestThermalReadinessDiagnostics/storedBasesRestoreWithoutScientificConstruction and it did not run to completion.
+    ---------------------
+    Framework Diagnostic:
+    ---------------------
+    assertEmpty failed.
+    --> The value must be empty.
+    --> The value has a size of [1  94].
+
+    Actual char:
+        /Users/jearly/Documents/OceanKitRepositories/internal-modes/@IMInternalModes/IMInternalModes.m
+    ------------------
+    Stack Information:
+    ------------------
+    In /Users/jearly/Documents/OceanKitRepositories/wvm-v5-construction-optimization/UnitTests/TestThermalReadinessDiagnostics.m (TestThermalReadinessDiagnostics.storedBasesRestoreWithoutScientificConstruction) at 58
+================================================================================
+   Done TestThermalReadinessDiagnostics/storedBasesRestoreWithoutScientificConstruction in 24.7702 seconds
+  Tearing down TestThermalReadinessDiagnostics
+  Done tearing down TestThermalReadinessDiagnostics in 0.0099714 seconds
+ Done TestThermalReadinessDiagnostics in 24.9485 seconds
+__________
+
+ Running TestThermalReadinessConstruction
+  Setting up TestThermalReadinessConstruction
+  Done setting up TestThermalReadinessConstruction in 0.58616 seconds
+   Running TestThermalReadinessConstruction/completePageMatchesIndependentAugmentedExponential
+   Done TestThermalReadinessConstruction/completePageMatchesIndependentAugmentedExponential in 0.024498 seconds
+   Running TestThermalReadinessConstruction/assemblyRefinementPreservesPhysicalResponses
+   Done TestThermalReadinessConstruction/assemblyRefinementPreservesPhysicalResponses in 0.017922 seconds
+  Tearing down TestThermalReadinessConstruction
+  Done tearing down TestThermalReadinessConstruction in 0.014276 seconds
+ Done TestThermalReadinessConstruction in 0.64286 seconds
+__________
+
+Failure Summary:
+
+     Name                                                                             Failed  Incomplete  Reason(s)
+    ===========================================================================================================================
+     TestThermalReadinessDiagnostics/storedBasesRestoreWithoutScientificConstruction    X         X       Failed by assertion.
+      environment: [1×1 struct]
+            files: ["TestPerKappaWavePersistence.m"    …    ] (1×3 string)
+    selectedNames: [1×8 string]
+      completedAt: "14-Sep-2026 19:43:59"
+            count: 8
+           passed: 7
+           failed: 1
+       incomplete: 1
+         duration: "41.8698"
+          results: [1×8 struct]

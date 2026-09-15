@@ -1,5 +1,7 @@
 # Short-wave product-reference diagnosis and correction
 
+> Historical archive. This evidence describes the retired sampled-product diagnostic. Its WVM helpers and runnable authoring study were removed in issue 42; current construction uses the simple quadratic-dealiasing policies.
+
 The restored 1 km example's large reference discrepancies are caused by **opposite-boundary products dominated by small spectral tail errors**. The boundary modes themselves agree closely with independent analytical solutions. Their physical surface–bottom overlap is so small that normalizing by the product's own norm demands relative accuracy far beyond what the spectral representation supplies in those tails.
 
 The original investigation below changed no numerical solver, mode, count-map decision or acceptance threshold. Its historical evidence is preserved. The subsequent correction changes reference qualification as described next. It adds a reproducible per-product diagnosis with separate normalization and coefficient discrepancies. The original linear 13-to-8 count curve and the existing reference-inconclusive outcome remain valid statements of their respective tests.

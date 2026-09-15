@@ -10,7 +10,7 @@ classdef TestFreeSurfaceRHSScheduling < matlab.unittest.TestCase
             testCase.applyFixture(matlab.unittest.fixtures.PathFixture(fullfile(fileparts(root),'OceanKit','tools','profiling')));
             for profile=["constant","exponential"]
                 if profile=="constant", N2=@(z)1e-4+zeros(size(z)); else, N2=@(z)1e-4*exp(z/650); end
-                w=WVTransformFreeSurfaceBoussinesq.fromStratification([1e5 1e5 1000],[8 6 33],N2Function=N2,apvModeCount=3,mdaModeCount=2,inertialModeCount=3,waveModeCount=4,nEVP=256,shouldAntialias=true,shouldCheckQuadraticAliasing=true);
+                w=WVTransformFreeSurfaceBoussinesq.fromStratification([1e5 1e5 1000],[8 6 33],N2Function=N2,apvModeCount=3,mdaModeCount=2,inertialModeCount=3,waveModeCount=4,nEVP=256,shouldAntialias=true,quadraticDealiasing="fixedFraction");
                 testCase.scientificStates.(profile)=w.scientificState();
             end
         end
@@ -68,7 +68,7 @@ classdef TestFreeSurfaceRHSScheduling < matlab.unittest.TestCase
         function unequalWaveCountsMatchFrozenBaseline(testCase)
             base=WVTransformFreeSurfaceBoussinesq(testCase.scientificStates.exponential);
             counts=2+mod((1:numel(base.khUnique)).',3);
-            w=WVTransformFreeSurfaceBoussinesq.fromStratification([1e5 1e5 1000],[8 6 33],N2Function=@(z)1e-4*exp(z/650),apvModeCount=3,mdaModeCount=2,inertialModeCount=3,waveModeKappa=base.khUnique,waveModeCount=counts,nEVP=256,shouldAntialias=true,shouldCheckQuadraticAliasing=true);
+            w=WVTransformFreeSurfaceBoussinesq.fromStratification([1e5 1e5 1000],[8 6 33],N2Function=@(z)1e-4*exp(z/650),apvModeCount=3,mdaModeCount=2,inertialModeCount=3,waveModeKappa=base.khUnique,waveModeCount=counts,nEVP=256,shouldAntialias=true,quadraticDealiasing="fixedFraction");
             reference=RHSSchedulingReference(w.scientificState());
             study=manuscriptEvolutionOperators(w,"exponential",padding=1); initial=study.seed("mixed",.1);
             assign(w,initial); assign(reference,initial); w.t=901; reference.t=901;

@@ -1,5 +1,7 @@
 # QG APV and active-boundary assessment
 
+> Historical archive. This evidence describes the retired sampled-product diagnostic. Its WVM helpers and runnable authoring study were removed in issue 42; current construction uses the simple quadratic-dealiasing policies.
+
 Issue [#426](https://github.com/JeffreyEarly/wave-vortex-model/issues/426) extends the optional authoring assessment to the implemented small-amplitude QG dynamics. It reuses the resolved adiabatic modes from `prepareSourceStudy`; no runtime class, constructor policy, coefficient count, checkpoint, dependency version, or packaged API changes.
 
 ## Physical operators

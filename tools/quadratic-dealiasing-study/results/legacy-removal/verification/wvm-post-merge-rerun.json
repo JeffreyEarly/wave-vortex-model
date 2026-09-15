@@ -1,0 +1,88 @@
+{
+  "environment": {
+    "matlabVersion": "26.1.0.3346908 (R2026a) Update 5",
+    "wvmRoot": "/Users/jearly/Documents/OceanKitRepositories/wvm-v5-construction-optimization",
+    "internalModesRoot": "/Users/jearly/Documents/OceanKitRepositories/oceankit-internal-modes-beta7/InternalModes-2.0.0-beta.7",
+    "dependencyRoot": "/Users/jearly/Documents/OceanKitRepositories/OceanKit",
+    "chebfunRoot": "/Users/jearly/Documents/OceanKitRepositories/OceanKit/chebfun-5.7.0"
+  },
+  "files": [
+    "TestPerKappaWavePersistence.m",
+    "TestThermalReadinessDiagnostics.m",
+    "TestThermalReadinessConstruction.m"
+  ],
+  "selectedNames": [
+    "TestPerKappaWavePersistence/storedOperatorsAndCountsRoundTrip",
+    "TestPerKappaWavePersistence/prePolicySavedMetadataHasNoCompatibilityAdapter",
+    "TestPerKappaWavePersistence/nestedLegacyNameDoesNotRejectCurrentState",
+    "TestThermalReadinessDiagnostics/sourceNormUncertaintyRejectsAnOtherwiseIdenticalDiagnosis",
+    "TestThermalReadinessDiagnostics/nearZeroReferencesKeepUnitsAndUndefinedRelativeValues",
+    "TestThermalReadinessDiagnostics/storedBasesRestoreWithoutScientificConstruction",
+    "TestThermalReadinessConstruction/completePageMatchesIndependentAugmentedExponential",
+    "TestThermalReadinessConstruction/assemblyRefinementPreservesPhysicalResponses"
+  ],
+  "completedAt": "14-Sep-2026 19:43:59",
+  "count": 8,
+  "passed": 7,
+  "failed": 1,
+  "incomplete": 1,
+  "duration": "41.8698",
+  "results": [
+    {
+      "name": "TestPerKappaWavePersistence/storedOperatorsAndCountsRoundTrip",
+      "passed": true,
+      "failed": false,
+      "incomplete": false,
+      "duration": "10.8385"
+    },
+    {
+      "name": "TestPerKappaWavePersistence/prePolicySavedMetadataHasNoCompatibilityAdapter",
+      "passed": true,
+      "failed": false,
+      "incomplete": false,
+      "duration": "2.6773"
+    },
+    {
+      "name": "TestPerKappaWavePersistence/nestedLegacyNameDoesNotRejectCurrentState",
+      "passed": true,
+      "failed": false,
+      "incomplete": false,
+      "duration": "2.7627"
+    },
+    {
+      "name": "TestThermalReadinessDiagnostics/sourceNormUncertaintyRejectsAnOtherwiseIdenticalDiagnosis",
+      "passed": true,
+      "failed": false,
+      "incomplete": false,
+      "duration": "0.13506"
+    },
+    {
+      "name": "TestThermalReadinessDiagnostics/nearZeroReferencesKeepUnitsAndUndefinedRelativeValues",
+      "passed": true,
+      "failed": false,
+      "incomplete": false,
+      "duration": "0.03323"
+    },
+    {
+      "name": "TestThermalReadinessDiagnostics/storedBasesRestoreWithoutScientificConstruction",
+      "passed": false,
+      "failed": true,
+      "incomplete": true,
+      "duration": "24.7802"
+    },
+    {
+      "name": "TestThermalReadinessConstruction/completePageMatchesIndependentAugmentedExponential",
+      "passed": true,
+      "failed": false,
+      "incomplete": false,
+      "duration": "0.61066"
+    },
+    {
+      "name": "TestThermalReadinessConstruction/assemblyRefinementPreservesPhysicalResponses",
+      "passed": true,
+      "failed": false,
+      "incomplete": false,
+      "duration": "0.032198"
+    }
+  ]
+}

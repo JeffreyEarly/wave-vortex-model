@@ -1,6 +1,6 @@
 function wvt = makeToleranceBoussinesq()
 % Reuse the documented nonlinear mixed-family initial state.
-wvt=WVTransformFreeSurfaceBoussinesq.fromStratification([1e5 1e5 1000],[8 8 129],N2Function=@(z)1e-4+0*z,apvModeCount=4,mdaModeCount=4,inertialModeCount=4,waveModeCount=6,nEVP=256,shouldAntialias=true,shouldCheckQuadraticAliasing=true);
+wvt=WVTransformFreeSurfaceBoussinesq.fromStratification([1e5 1e5 1000],[8 8 129],N2Function=@(z)1e-4+0*z,apvModeCount=4,mdaModeCount=4,inertialModeCount=4,waveModeCount=6,nEVP=256,shouldAntialias=true,quadraticDealiasing="fixedFraction");
 state=wvt.coefficientState();
 column=find(wvt.kNonzero>0 & wvt.lNonzero==0,1); index=wvt.klNonzero(column);
 for mode=1:2

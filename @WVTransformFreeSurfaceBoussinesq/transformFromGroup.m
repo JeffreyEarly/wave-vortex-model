@@ -14,6 +14,18 @@ end
 arguments (Output)
     wvt (1,1) WVTransformFreeSurfaceBoussinesq
 end
+retired = ["shouldCheckQuadraticAliasing","quadraticAliasingTolerance"];
+for name = retired
+    if strlength(group.groupPath) == 0
+        localPath = name;
+    else
+        localPath = string(group.groupPath) + "/" + name;
+    end
+    if any(group.variablePathsWithName(name) == localPath)
+        error('WVTransformFreeSurfaceBoussinesq:UnsupportedLegacyScientificState', ...
+            'The saved transform contains retired quadratic-qualification field %s. Reconstruct it with a current quadraticDealiasing policy.',name);
+    end
+end
 convention = CAAnnotatedClass.propertyValuesFromGroup(group,{'fieldConvention'});
 if string(convention.fieldConvention)~=WVTransformFreeSurfaceBoussinesq.fieldConvention
     error('WVTransform:UnsupportedFieldConvention','The saved field interpretation does not match the physical-velocity upper-constant beta convention.');

@@ -1,5 +1,7 @@
 # Fixed sparse advisory API: first implementation increment
 
+> Historical archive. The sampled-product diagnostic and its runnable code were retired in issue 42. This document records the former study and does not describe the current construction API.
+
 The reusable numerical functions are now packaged under `WVInternal`; the study scripts remain in this authoring directory. For ordinary model initialization, use the v5 constructors and their `constructionAssessment` report; see [automatic mode selection](../../Documentation/Validation/AutomaticModeSelection.md).
 
 `assessWaveQuadraticResolution` assesses already prepared modes in memory and returns an advisory report. It uses the fixed policy supported by issue 400. This first implementation is an authoring API under `tools/aliasing-study`; it is excluded from the runtime package. Constructor defaults, model state, persistence, and the independent family counts are unchanged.

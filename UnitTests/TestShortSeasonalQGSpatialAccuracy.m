@@ -108,7 +108,7 @@ classdef TestShortSeasonalQGSpatialAccuracy < matlab.unittest.TestCase
                     b=snapshots{i,j}.budgets; b.caseId=repmat(i,height(b),1); b.day=repmat(j*32,height(b),1); budgets=[budgets;b]; %#ok<AGROW>
                     s=snapshots{i,j}.spectrum; s.caseId=repmat(i,height(s),1); s.day=repmat(j*32,height(s),1); spectra=[spectra;s]; %#ok<AGROW>
                 end
-                configurations=[configurations;struct(caseId=i,Nx=c(1),Ny=c(1),Nz=c(2),apvModeCount=c(3),mdaModeCount=w.mdaModeCount,adaptiveDamping=logical(c(4)),stepDays=c(5),apvGramError=w.apvGramError,quadraticAliasingError=w.quadraticAliasingError,seconds=toc)]; %#ok<AGROW>
+                configurations=[configurations;struct(caseId=i,Nx=c(1),Ny=c(1),Nz=c(2),apvModeCount=c(3),mdaModeCount=w.mdaModeCount,adaptiveDamping=logical(c(4)),stepDays=c(5),apvGramError=w.apvGramError,quadraticDealiasing=w.quadraticDealiasing,seconds=toc)]; %#ok<AGROW>
                 fprintf('Spatial case %d/%d: %gx%gx%g, APV %g, damping %g, %.1f s\n',i,size(matrix,1),c(1),c(1),c(2),c(3),c(4),toc);
             end
             % Final pairs in each family explicitly measure reference change.

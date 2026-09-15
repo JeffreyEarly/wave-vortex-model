@@ -1,4 +1,4 @@
-function [report,errors] = compareResolvedModes(basis,reference,N2,nQuadrature,nModes)
+function [report,errors,candidate] = compareResolvedModes(basis,reference,N2,nQuadrature,nModes)
 % Independent EVP agreement in equivalent depth and physical H1 fields.
 if nargin<5, nModes=numel(basis.modeNumber); end
 profile=chebfun(N2,basis.zDomain);
@@ -7,8 +7,8 @@ rule=IMSolverSpectral(nEVP=nQuadrature,coordinateKind="wkb").configuredForEVP(ba
 [z,w]=rule.nativeQuadratureRule(basis.zDomain);
 identity=struct(family=string(basis.evp.modeFamily),columnLabels=string(basis.modeNumber(1:nModes)),normalization=string(basis.normalization),zDomain=basis.zDomain);
 if isfield(basis.evp.parameters,'k'), identity.kappa=basis.evp.parameters.k; end
-A=prepare(basis); B=prepare(reference);
-report=assessModeConvergence(A,B,z,w);
+candidate=prepare(basis); refined=prepare(reference);
+report=assessModeConvergence(candidate,refined,z,w);
 errors=inf(nModes,1);
 for j=1:numel(errors)
     rows=report.measurements.columnLabel==report.identity.columnLabels(j) & ismember(report.measurements.quantity,["equivalentDepth","h1"]);

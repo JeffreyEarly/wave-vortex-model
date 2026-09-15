@@ -1,0 +1,115 @@
+{
+  "environment": {
+    "matlabVersion": "26.1.0.3346908 (R2026a) Update 5",
+    "wvmRoot": "/private/tmp/wvm42-before",
+    "internalModesRoot": "/Users/jearly/Documents/OceanKitRepositories/oceankit-internal-modes-beta7/InternalModes-2.0.0-beta.7",
+    "dependencyRoot": "/Users/jearly/Documents/OceanKitRepositories/oceankit-internal-modes-beta7",
+    "chebfunRoot": "/Users/jearly/Documents/OceanKitRepositories/chebfun"
+  },
+  "threads": 1,
+  "policies": [
+    {
+      "policy": "none",
+      "trials": [
+        {
+          "repetition": 0,
+          "seconds": 19.867834083333332,
+          "filteringSeconds": 0.072855166666666638
+        },
+        {
+          "repetition": 1,
+          "seconds": 16.639990958333332,
+          "filteringSeconds": 0.0279068333333333
+        },
+        {
+          "repetition": 2,
+          "seconds": 15.670164375,
+          "filteringSeconds": 0.01973704166666667
+        },
+        {
+          "repetition": 3,
+          "seconds": 15.380523416666666,
+          "filteringSeconds": 0.019082541666666657
+        }
+      ],
+      "medianSeconds": 15.670164375,
+      "medianFilteringSeconds": 0.01973704166666667,
+      "waveEigensolves": 1140,
+      "positiveWavenumbers": 569,
+      "waveCountRange": [
+        38,
+        38
+      ],
+      "apvCount": 38
+    },
+    {
+      "policy": "fixedFraction",
+      "trials": [
+        {
+          "repetition": 0,
+          "seconds": 16.050469583333335,
+          "filteringSeconds": 0.026939083333333325
+        },
+        {
+          "repetition": 1,
+          "seconds": 15.656239833333334,
+          "filteringSeconds": 0.02175
+        },
+        {
+          "repetition": 2,
+          "seconds": 15.414180041666667,
+          "filteringSeconds": 0.020147375000000006
+        },
+        {
+          "repetition": 3,
+          "seconds": 15.450742583333334,
+          "filteringSeconds": 0.020007791666666667
+        }
+      ],
+      "medianSeconds": 15.450742583333334,
+      "medianFilteringSeconds": 0.020147375000000006,
+      "waveEigensolves": 1140,
+      "positiveWavenumbers": 569,
+      "waveCountRange": [
+        25,
+        25
+      ],
+      "apvCount": 25
+    },
+    {
+      "policy": "effectiveBandwidth",
+      "trials": [
+        {
+          "repetition": 0,
+          "seconds": 16.206316041666668,
+          "filteringSeconds": 0.3693443333333335
+        },
+        {
+          "repetition": 1,
+          "seconds": 15.655070125,
+          "filteringSeconds": 0.22210591666666676
+        },
+        {
+          "repetition": 2,
+          "seconds": 15.672225958333334,
+          "filteringSeconds": 0.21905629166666674
+        },
+        {
+          "repetition": 3,
+          "seconds": 15.56145325,
+          "filteringSeconds": 0.21804641666666669
+        }
+      ],
+      "medianSeconds": 15.655070125,
+      "medianFilteringSeconds": 0.21905629166666674,
+      "waveEigensolves": 1140,
+      "positiveWavenumbers": 569,
+      "waveCountRange": [
+        26,
+        26
+      ],
+      "apvCount": 26
+    }
+  ],
+  "profileSeconds": 23.674380791666668
+}

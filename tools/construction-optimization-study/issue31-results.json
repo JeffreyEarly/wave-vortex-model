@@ -1,0 +1,227 @@
+{
+  "date": "2026-09-14",
+  "wvmBaselineCommit": "abe98510ba3ad24276c2af2bd89c80b24209b568",
+  "internalModesCommit": "8d9503e5c7c6e4b0432a5c30b42638829a8b3f37",
+  "internalModesVersion": "2.0.0-beta.5",
+  "verificationOceanKitCommit": "1873071fe2dfc2678490df1b0252e5071e9d9715",
+  "candidateAssessmentSHA256": "fb0b6a8e0b405f3a7eb27731acbb6aa0593944aa1f8ee091564511c01898a892",
+  "environment": {
+    "cpu": "Apple M4 Max",
+    "performanceCores": 12,
+    "efficiencyCores": 4,
+    "memoryGiB": 128,
+    "matlab": "26.1.0.3346908 (R2026a) Update 5"
+  },
+  "workload": {
+    "Lxyz": [
+      100000.0,
+      100000.0,
+      1000
+    ],
+    "Nxyz": [
+      128,
+      128,
+      65
+    ],
+    "N2": "@(z) 1e-4*exp(2*z/700)",
+    "shouldAntialias": true,
+    "shouldCheckQuadraticAliasing": false,
+    "countPolicy": "automatic"
+  },
+  "comparison": {
+    "baselineMedianSeconds": 29.45018341666667,
+    "candidateMedianSeconds": 26.323115833333333,
+    "secondsSaved": 3.1270675833333357,
+    "percentReduction": 10.618159958771741,
+    "speedup": 1.1187954953027819,
+    "scientificStateExactlyEqual": true,
+    "assessmentExceptTimingExactlyEqual": true,
+    "baselineProfileSeconds": 48.198275083333336,
+    "candidateProfileSeconds": 40.444187541666665
+  },
+  "tests": {
+    "total": 24,
+    "passed": 24,
+    "failed": 0,
+    "incomplete": 0,
+    "duration": 76.10316074999999
+  },
+  "analyzer": {
+    "files": 4,
+    "blockingFindings": 0,
+    "nonblockingFindings": 1,
+    "nonblockingDetail": "AGROW in benchmark package path setup, outside measured construction"
+  },
+  "review": {
+    "model": "gpt-6-astra",
+    "reasoningEffort": "xhigh",
+    "remainingFindings": 0
+  },
+  "recommendedRemainingIssueOrder": [
+    33,
+    32,
+    34,
+    35
+  ],
+  "baseline": {
+    "matlabVersion": "26.1.0.3346908 (R2026a) Update 5",
+    "seconds": [
+      34.02515783333333,
+      29.45018341666667,
+      29.35949116666667
+    ],
+    "waveSeconds": [
+      27.524707875,
+      26.244190458333332,
+      26.089212625
+    ],
+    "medianSeconds": 29.45018341666667,
+    "medianWaveSeconds": 26.244190458333332,
+    "nEVP": 104,
+    "referenceNEVP": 156,
+    "distinctPositiveKappa": 569,
+    "waveEigensolves": 1140,
+    "selectedWaveCountOnEveryPositivePage": 38,
+    "profileFunctions": [
+      {
+        "name": "IMSolver.IMSolver>IMSolver.nativeQuadratureRule",
+        "calls": 573,
+        "inclusiveSeconds": 0.232337292068015,
+        "selfSeconds": 0.010069250017394
+      },
+      {
+        "name": "IMSolver.IMSolver>IMSolver.solveAssembledEVP",
+        "calls": 1144,
+        "inclusiveSeconds": 12.4226792297928,
+        "selfSeconds": 7.51583976298317
+      },
+      {
+        "name": "IMSolverSpectral.IMSolverSpectral>IMSolverSpectral.setupCoordinate",
+        "calls": 590,
+        "inclusiveSeconds": 2.64642671290488,
+        "selfSeconds": 0.104886250181184
+      },
+      {
+        "name": "assessWaveModeConstruction>acceptedPrefix",
+        "calls": 570,
+        "inclusiveSeconds": 5.63199588472894,
+        "selfSeconds": 0.334892625578506
+      },
+      {
+        "name": "assessWaveModeConstruction>compare",
+        "calls": 570,
+        "inclusiveSeconds": 17.8585157391829,
+        "selfSeconds": 0.0413428334047552
+      },
+      {
+        "name": "IMSolverSpectral.IMSolverSpectral>IMSolverSpectral.configuredForEVP",
+        "calls": 588,
+        "inclusiveSeconds": 8.66130280662855,
+        "selfSeconds": 0.0267212500461618
+      },
+      {
+        "name": "IMSolverSpectral.IMSolverSpectral>IMSolverSpectral.setupNativeGrid",
+        "calls": 590,
+        "inclusiveSeconds": 6.0169385103939,
+        "selfSeconds": 0.360679250623053
+      },
+      {
+        "name": "DenseLU>DenseLU.DenseLU",
+        "calls": 1728,
+        "inclusiveSeconds": 2.39973496247873,
+        "selfSeconds": 2.39973496247873
+      },
+      {
+        "name": "assessWaveModeConstruction>prepare",
+        "calls": 1140,
+        "inclusiveSeconds": 7.969787805434,
+        "selfSeconds": 0.154576875267023
+      }
+    ],
+    "assessmentQuadraturePreparations": 570
+  },
+  "candidate": {
+    "matlabVersion": "26.1.0.3346908 (R2026a) Update 5",
+    "seconds": [
+      27.527998916666668,
+      26.323115833333333,
+      26.144145958333333
+    ],
+    "waveSeconds": [
+      23.472887,
+      22.825909875,
+      22.953672291666667
+    ],
+    "medianSeconds": 26.323115833333333,
+    "medianWaveSeconds": 22.953672291666667,
+    "nEVP": 104,
+    "referenceNEVP": 156,
+    "distinctPositiveKappa": 569,
+    "waveEigensolves": 1140,
+    "selectedWaveCountOnEveryPositivePage": 38,
+    "profileFunctions": [
+      {
+        "name": "IMSolver.IMSolver>IMSolver.nativeQuadratureRule",
+        "calls": 4,
+        "inclusiveSeconds": 0.00369662500760869,
+        "selfSeconds": 0.00115379166904149
+      },
+      {
+        "name": "IMSolver.IMSolver>IMSolver.solveAssembledEVP",
+        "calls": 1144,
+        "inclusiveSeconds": 11.6403130656257,
+        "selfSeconds": 7.43646647363967
+      },
+      {
+        "name": "IMSolverSpectral.IMSolverSpectral>IMSolverSpectral.setupCoordinate",
+        "calls": 21,
+        "inclusiveSeconds": 0.223558208793479,
+        "selfSeconds": 0.0125234583591101
+      },
+      {
+        "name": "assessWaveModeConstruction>acceptedPrefix",
+        "calls": 570,
+        "inclusiveSeconds": 7.23479438989124,
+        "selfSeconds": 0.39716908415082
+      },
+      {
+        "name": "IMSolverSpectral.IMSolverSpectral>IMSolverSpectral.configuredForEVP",
+        "calls": 19,
+        "inclusiveSeconds": 0.512796292722146,
+        "selfSeconds": 0.00390533334137155
+      },
+      {
+        "name": "IMSolverSpectral.IMSolverSpectral>IMSolverSpectral.setupNativeGrid",
+        "calls": 21,
+        "inclusiveSeconds": 0.316548500651546,
+        "selfSeconds": 0.0195600417069267
+      },
+      {
+        "name": "DenseLU>DenseLU.DenseLU",
+        "calls": 1159,
+        "inclusiveSeconds": 1.16824287740457,
+        "selfSeconds": 1.16824287740457
+      },
+      {
+        "name": "assessWaveModeConstruction>prepare",
+        "calls": 1140,
+        "inclusiveSeconds": 7.90282984959958,
+        "selfSeconds": 0.149828416975057
+      },
+      {
+        "name": "assessWaveModeConstruction>compare",
+        "calls": 570,
+        "inclusiveSeconds": 9.36178018593584,
+        "selfSeconds": 0.0117696250242236
+      }
+    ],
+    "assessmentQuadraturePreparations": 1
+  },
+  "documentationCheck": {
+    "files": 2654,
+    "routes": 5415,
+    "validationFailures": 0,
+    "generatedDifferences": 0,
+    "seconds": 63.886
+  }
+}

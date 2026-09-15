@@ -1,36 +1,43 @@
 # Linear mode qualification and experiment adoption
 
-The current linear Boussinesq constructor defaults to `shouldCheckQuadraticAliasing=false` and `shouldAntialias=false`. QG defaults both to `true`. They are independent choices: vertical product qualification and horizontal bandwidth, respectively. Disabling quadratic qualification skips APV self-products, APV/zero-APV cross-products, and sampled wave-product preparation and selection. It preserves independent convergence, fixed-grid Gram checks, explicit count strictness, and physical qualification of every configured endpoint. The construction report says `not-requested` for the omitted evidence.
+Free-surface Boussinesq and QG construction separate linear qualification, vertical quadratic dealiasing, and horizontal antialiasing. The linear prefix is established first by independent resolution comparison and fixed-grid Gram checks. The selected vertical prefix then follows `quadraticDealiasing`, whose default is `"fixedFraction"`. `shouldAntialias` independently controls the horizontal Fourier bandwidth used by nonlinear dynamics.
 
-## Matched-policy comparison
+Use `quadraticDealiasing="none"` when an experiment needs the complete linearly qualified prefix. This skips spectral-bandwidth measurement and records a filtering count equal to the linear count. It preserves convergence, fixed-grid Gram checks, explicit-count strictness, and physical qualification of configured endpoints. The policy intentionally allows nonlinear registration; registration still requires `shouldAntialias=true`.
 
-With constant `N2=1e-4`, domain `[1e5 1e5 1000]` m, grid `[8 8 65]`, latitude 30 degrees, and **the same horizontal antialiasing setting (`true`)**:
+`fixedFraction` retains `floor(retainedFraction*linearCount)` modes, with default fraction `2/3` and no implicit minimum. `effectiveBandwidth` measures normalized F/G shapes on the shared WKB Chebyshev-Lobatto grid. It retains the contiguous prefix whose effective degrees, evaluated at cumulative energy fraction `energyFraction`, fit within `floor(bandwidthFraction*(Nz-1))`. The default fractions are `energyFraction=0.99` and `bandwidthFraction=2/3`.
 
-| Qualification | Wave counts at four positive kappa pages | Inertial | APV | MDA | Quadratic selection trials |
-|---|---|---:|---:|---:|---:|
-| Linear | 38, 38, 38, 38 | 38 | 38 | 39 | 0 |
-| Quadratic | 10, 19, 19, 10 | 38 | 27 | 39 | 12 |
+These rules are stated filtering heuristics. They do not certify every quadratic product, coherent superposition, or nonlinear trajectory.
 
-The [machine-readable comparison](LinearModePolicy/matched-policy-counts.csv) records these counts. Its 15.03 s is the combined wall time for both constructions under concurrent local work, not a per-construction timing or a benchmark. That timing predates the bounded APV search; the final regression rerun reproduces the counts. The matching horizontal setting isolates the effect of vertical quadratic qualification; it is an explicit override of the new linear default.
+## Explicit and automatic counts
 
-The linear test retains an explicit 38-wave prefix, evolves its high modes with conserved linear energy, and verifies persistence and same-resolution transfer. The same explicit prefix fails the quadratic policy. Changing `quadraticAliasingTolerance` while checks are disabled does not change any family count or trigger product preparation. QG can also explicitly use the linear policy; its separate fixed-boundary resolution limit still applies.
+Automatic selection uses the filtering capacity after determining the complete independent linear capacity. Explicit wave, inertial, and APV counts are compared with those same full capacities; their requested size does not become the denominator for `fixedFraction`. A positive request above the linear or filtering limit is rejected. An explicit zero wave page is `not-requested`, while an automatic positive linear prefix reduced to zero is `filtered-out` with limiting metric `quadratic-dealiasing`.
 
-## Balanced candidate construction
+MDA selection remains linear. Configured zero-APV endpoint families retain their separate boundary-response checks. QG `assessVerticalResolution` reports `apvLinearCount`, `apvFilteringCount`, the selected `apvModeCount`, and the complete `dealiasing` evidence independently of its horizontal boundary limit.
 
-Automatic APV quadratic qualification starts with at most 32 candidate modes and doubles the candidate band until a cumulative Gram/quadratic rejection lies inside it, or the original `Nz+4` candidate ceiling is reached. Every product required by the tested prefix is still measured. Acceptance is cumulative, so a rejected prefix rules out every longer prefix; evaluating a larger tail cannot restore acceptance. This changes the search cost, not the product inventory or tolerance defining a prefix. Explicit APV requests solve and strictly assess exactly their requested band. Linear automatic APV selection retains its original candidate ceiling. `assessment.apv.candidateConstruction` records the attempted bands.
+## Balanced MDA candidate construction
 
 The 513-point exponential-stratification QG experiment exposed a candidate-tail failure in the provider: asking for 517 MDA candidates encountered a zero-norm guard before WVM could select the usable physical-grid prefix. A separate 385-candidate probe at `nEVP=1551` selected 321 modes with Gram error about 0.0054; its full candidate band failed the 0.01 Gram criterion. The usable band was therefore strictly inside a valid candidate band.
 
-WVM now catches only that specific normalization failure for automatic MDA candidate construction and brackets a valid candidate count. A shortened search is accepted only when its physical-grid Gram cutoff lies strictly inside the valid candidate band. Exhausting a valid band without establishing a cutoff is an error. Explicit requests remain strict. The construction report records attempted counts and normalization failures; no arbitrary mode cap or weakened provider norm threshold is introduced. Independent balanced references cover the selected prefixes, avoiding an unnecessary invalid reference tail. After bounded convergence refinement, reports may retain rejected candidate evidence beyond the final selected count.
+WVM catches only that specific normalization failure for automatic MDA candidate construction and brackets a valid candidate count. A shortened search is accepted only when its physical-grid Gram cutoff lies strictly inside the valid candidate band. Exhausting a valid band without establishing a cutoff is an error. Explicit requests remain strict. The construction report records attempted counts and normalization failures; no arbitrary mode cap or weakened provider norm threshold is introduced. Independent balanced references cover the selected prefixes, avoiding an unnecessary invalid reference tail. After bounded convergence refinement, reports may retain rejected candidate evidence beyond the final selected count.
 
-## Verification and scope
+## Inspection and persistence
 
-The [focused regression ledger](LinearModePolicy/verification.csv) records **108 passing tests** and combines the existing transform, convergence, variable-count, evolution, persistence, transfer, output/restart and shared-contract checks with seven new policy tests. A direct 69-candidate provider comparison reproduces the bounded 32-candidate APV selection and retained-prefix diagnostics. The final candidate-construction changes were followed by a fresh run of the seven policy tests and six automatic-selection tests. Each ledger row identifies its evidence run; this is a consolidation of focused checks, not a fresh full scientific suite.
+Wave page reports and the inertial and APV reports expose `linearCount`, `filteringCount`, and `selectedCount`. Top-level `assessment.dealiasing` records `quadraticDealiasing`, `retainedFraction`, `energyFraction`, `bandwidthFraction`, the grid degree, and `coordinateKind="wkb-chebyshev-lobatto"`. The selected scientific state persists the same policy and parameters through native restoration and resolution changes. Detailed construction evidence remains transient.
 
-Testing uses MATLAB R2025b Update 4 on Apple Silicon, WVM based on `96962bab5e85fbfeef94cb224075262d05b54504`, InternalModes `2.0.0-beta.4`, and the declared dependency snapshots at OceanKit `65d9aa2c3de941406dc6bf2cf1937ba5b3dcd1d5`. Tests reset the MATLAB path and load this graph explicitly. These are authoring-consumer checks against released dependencies, not a new exported WVM installation or a WVM release.
+For a linear-only experiment, choose the policy explicitly:
 
-Code Analyzer reports zero findings in the 22 files checked together and the subsequently changed balanced-construction helpers. Documentation generation/check has zero drift (2,361 files and 4,825 routes). Whitespace and manifest/snapshot scope checks pass.
+```matlab
+[wvt,assessment] = WVTransformFreeSurfaceBoussinesq.fromStratification( ...
+    [1e5 1e5 1000],[8 8 65],N2Function=@(z)1e-4+zeros(size(z)), ...
+    quadraticDealiasing="none",shouldAntialias=false);
+```
 
-The experiment adoption PRs separately record their exact WVM commit pins, reduced evolution/restart checks, construction trials, and saved assessment provenance. QG keeps both endpoints and nonlinear checks. The surface-gravity-wave experiment explicitly omits balanced endpoint anomalies (`g0=Inf, gd=Inf`), preserves its `gramTolerance=1e-8`, and requests the external wave mode only inside its prescribed 30 m wavelength cutoff. Omitting these balanced coordinates leaves the external wave free-surface EVP unchanged. Unpopulated shorter wavelengths do not require wave construction; this does not alter any populated Fourier pair.
+When an experiment does not represent balanced endpoint anomalies, `g0=Inf, gd=Inf` explicitly omits those zero-APV coordinates without changing the free-surface wave boundary condition. Retain any independently justified Gram tolerance and physical wave validation.
 
-The policy is neither exhaustive nonlinear qualification nor evidence for stable v5. Nonlinear Boussinesq dynamics, full beta scientific/install/export gates, and long experiment movies remain separate work.
+## Historical comparison
+
+The CSV, counts, timing, and beta.4 verification ledger under `Documentation/Validation/LinearModePolicy/` compare the old linear path with a retired sampled coupled-product survey. The former “quadratic” counts, product trials, candidate-band doubling, and `quadraticAliasingTolerance` behavior are historical and do not describe `fixedFraction` or `effectiveBandwidth`. The files remain useful for provenance but are not a current-policy calibration or release result.
+
+Current calibration, package verification, and release evidence must use the new policy names and report the linear, filtering, and selected limits separately.
+
+The [quadratic-dealiasing study](../../tools/quadratic-dealiasing-study/README.md) defines the current calibration and construction-cost evidence.

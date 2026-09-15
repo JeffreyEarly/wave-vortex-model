@@ -1,0 +1,124 @@
+{
+  "headSha": "3638594f3056ca943880f3eec41f9ce27ee83222",
+  "description": "Initial final-integration run, before the test-only full-discovery assertion correction",
+  "full": {
+    "total": 1212,
+    "passed": 1208,
+    "failed": 4,
+    "incomplete": 0,
+    "seconds": 2805.535,
+    "failedMethods": [
+      "TestPerKappaWaveAssessment/defaultReferenceChecksEveryRequestedPrefix",
+      "TestPerKappaWaveAssessment/explicitReferenceAssessesActualPageIdentities",
+      "TestPerKappaWaveAssessment/convergenceToleranceIsAConstructionRequirement",
+      "TestPerKappaWaveAssessment/absentWavesStillAssessIndependentInertialFamily"
+    ]
+  },
+  "workflows": [
+    {
+      "name": "main",
+      "url": "https://github.com/JeffreyEarly/wave-vortex-model/actions/runs/34923025051",
+      "conclusion": "success",
+      "jobs": [
+        {
+          "name": "Portable C++ kernel contract",
+          "conclusion": "success",
+          "startedAt": "2026-09-15T02:55:52Z",
+          "completedAt": "2026-09-15T02:58:29Z",
+          "url": "https://github.com/JeffreyEarly/wave-vortex-model/actions/runs/34923025051/job/104235126237"
+        },
+        {
+          "name": "Portable C++ ASan and UBSan",
+          "conclusion": "success",
+          "startedAt": "2026-09-15T02:55:52Z",
+          "completedAt": "2026-09-15T03:00:16Z",
+          "url": "https://github.com/JeffreyEarly/wave-vortex-model/actions/runs/34923025051/job/104235126425"
+        },
+        {
+          "name": "Smoke / MATLAB R2025b",
+          "conclusion": "success",
+          "startedAt": "2026-09-15T02:55:52Z",
+          "completedAt": "2026-09-15T02:57:49Z",
+          "url": "https://github.com/JeffreyEarly/wave-vortex-model/actions/runs/34923025051/job/104235126437"
+        },
+        {
+          "name": "Documentation / MATLAB R2025b",
+          "conclusion": "success",
+          "startedAt": "2026-09-15T02:55:52Z",
+          "completedAt": "2026-09-15T03:02:13Z",
+          "url": "https://github.com/JeffreyEarly/wave-vortex-model/actions/runs/34923025051/job/104235126574"
+        },
+        {
+          "name": "Code Analyzer / MATLAB R2025b",
+          "conclusion": "success",
+          "startedAt": "2026-09-15T02:55:52Z",
+          "completedAt": "2026-09-15T02:56:48Z",
+          "url": "https://github.com/JeffreyEarly/wave-vortex-model/actions/runs/34923025051/job/104235126598"
+        },
+        {
+          "name": "Focused MATLAB / R2025b",
+          "conclusion": "skipped",
+          "startedAt": "2026-09-15T02:55:50Z",
+          "completedAt": "2026-09-15T02:55:50Z",
+          "url": "https://github.com/JeffreyEarly/wave-vortex-model/actions/runs/34923025051/job/104235127205"
+        },
+        {
+          "name": "Required / WaveVortexModel",
+          "conclusion": "success",
+          "startedAt": "2026-09-15T03:02:15Z",
+          "completedAt": "2026-09-15T03:02:17Z",
+          "url": "https://github.com/JeffreyEarly/wave-vortex-model/actions/runs/34923025051/job/104236328559"
+        }
+      ]
+    },
+    {
+      "name": "package",
+      "url": "https://github.com/JeffreyEarly/wave-vortex-model/actions/runs/34923025060",
+      "conclusion": "success",
+      "jobs": [
+        {
+          "name": "Exported package / MATLAB R2025b",
+          "conclusion": "success",
+          "startedAt": "2026-09-15T02:55:30Z",
+          "completedAt": "2026-09-15T02:59:20Z",
+          "url": "https://github.com/JeffreyEarly/wave-vortex-model/actions/runs/34923025060/job/104235060005"
+        },
+        {
+          "name": "Clean install / MATLAB R2025b",
+          "conclusion": "success",
+          "startedAt": "2026-09-15T02:55:30Z",
+          "completedAt": "2026-09-15T02:56:48Z",
+          "url": "https://github.com/JeffreyEarly/wave-vortex-model/actions/runs/34923025060/job/104235060169"
+        }
+      ]
+    },
+    {
+      "name": "extended",
+      "url": "https://github.com/JeffreyEarly/wave-vortex-model/actions/runs/34923025065",
+      "conclusion": "failure",
+      "jobs": [
+        {
+          "name": "Exhaustive / MATLAB R2025b",
+          "conclusion": "success",
+          "startedAt": "2026-09-15T02:55:30Z",
+          "completedAt": "2026-09-15T02:57:25Z",
+          "url": "https://github.com/JeffreyEarly/wave-vortex-model/actions/runs/34923025065/job/104235060219"
+        },
+        {
+          "name": "Optional / MATLAB R2025b",
+          "conclusion": "success",
+          "startedAt": "2026-09-15T02:55:30Z",
+          "completedAt": "2026-09-15T02:56:57Z",
+          "url": "https://github.com/JeffreyEarly/wave-vortex-model/actions/runs/34923025065/job/104235060296"
+        },
+        {
+          "name": "Full / MATLAB R2025b",
+          "conclusion": "failure",
+          "startedAt": "2026-09-15T02:55:29Z",
+          "completedAt": "2026-09-15T03:43:56Z",
+          "url": "https://github.com/JeffreyEarly/wave-vortex-model/actions/runs/34923025065/job/104235060384"
+        }
+      ]
+    }
+  ]
+}

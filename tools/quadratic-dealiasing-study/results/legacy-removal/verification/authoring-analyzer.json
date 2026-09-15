@@ -1,0 +1,6 @@
+{
+  "file": "tools/construction-optimization-study/runConstructionOptimizationStudy.m",
+  "id": "AGROW",
+  "line": 20,
+  "message": "Variable appears to change size on every loop iteration. Consider preallocating for speed."
+}

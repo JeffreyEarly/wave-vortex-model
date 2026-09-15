@@ -6,7 +6,7 @@
 
 ## Configuration and independent integration control
 
-The retained grid is 8 by 8 by 65 on a 100 km by 100 km by 1 km domain with constant N2 = 1e-4 s^-2. APV, MDA, and inertial counts are two; each wave sign retains three modes on every nonzero wavenumber page. Both `shouldCheckQuadraticAliasing` and `shouldAntialias` are true. The existing weak-study mixed seed supplies positive/negative mean endpoint margins, balanced anomalies, and inertial motion. The test adds independent x/y wave columns and both wave signs.
+The retained grid is 8 by 8 by 65 on a 100 km by 100 km by 1 km domain with constant N2 = 1e-4 s^-2. APV, MDA, and inertial counts are two; each wave sign retains three modes on every nonzero wavenumber page. Construction uses `quadraticDealiasing="fixedFraction"` and `shouldAntialias=true`. The existing weak-study mixed seed supplies positive/negative mean endpoint margins, balanced anomalies, and inertial motion. The test adds independent x/y wave columns and both wave signs.
 
 The reference clock is t0 = -17 s, initial time is 327 s, final time is 367 s, and the fixed step is 5 s. An explicit four-stage RK4 loop calls `WVInternal.freeSurfaceNonlinearStage.evaluate` with supplied coefficient states and `includeForcing=true`. It changes the evaluation clock at each stage while verifying that supplied-state evaluation does not mutate stored coefficients. This is an independent control of integration/state/clock plumbing; it shares the already-qualified spatial equations with the production tendency and is not a second derivation of those equations.
 

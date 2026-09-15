@@ -99,13 +99,11 @@ classdef TestWVTransformFreeSurfaceQG < matlab.unittest.TestCase
                 testCase.verifyEqual(size(wvt.Ag_0),[expectedCounts(iCase),length(wvt.klNonzero)])
                 testCase.verifyEqual(wvt.apvMode,(1:wvt.apvModeCount).')
                 testCase.verifyEqual(wvt.mdaMode,(1:wvt.mdaModeCount).')
-                if expectedCounts(iCase) == 0
-                    testCase.verifyTrue(isnan(wvt.apvZeroAPVQuadraticError))
-                    testCase.verifyEqual(wvt.apvZeroAPVLimitingEndpoint,"")
-                else
-                    testCase.verifyLessThanOrEqual(wvt.apvZeroAPVQuadraticError,wvt.quadraticAliasingTolerance)
-                    testCase.verifyTrue(ismember(wvt.apvZeroAPVLimitingEndpoint,["surface" "bottom"]))
-                end
+                assessment = wvt.constructionAssessment;
+                testCase.verifyEqual(assessment.apv.selectedCount,wvt.apvModeCount)
+                testCase.verifyEqual(assessment.apv.dealiasing.filteringCount, ...
+                    floor(wvt.retainedFraction*assessment.apv.linearCount))
+                testCase.verifyEqual(assessment.apv.dealiasing.coordinateKind,"wkb-chebyshev-lobatto")
                 if isinf(endpointValues(iCase,1))
                     testCase.verifyEqual(wvt.mdaG(end,:),zeros(1,wvt.mdaModeCount),AbsTol=2e-12)
                 end
@@ -131,17 +129,21 @@ classdef TestWVTransformFreeSurfaceQG < matlab.unittest.TestCase
             testCase.verifySize(wvt.Ag_q,[wvt.apvModeCount length(wvt.klNonzero)])
             testCase.verifySize(wvt.Amda,[wvt.mdaModeCount 1])
             testCase.verifyEqual(wvt.gramTolerance,0.1,AbsTol=0)
-            testCase.verifyEqual(wvt.gramTolerance,0.1,AbsTol=0)
-            testCase.verifyEqual(wvt.quadraticAliasingTolerance,0.1,AbsTol=0)
+            testCase.verifyEqual(wvt.quadraticDealiasing,"fixedFraction")
+            testCase.verifyEqual([wvt.retainedFraction wvt.energyFraction wvt.bandwidthFraction],[2/3 .99 2/3])
             testCase.verifyEqual(wvt.muTolerance,sqrt(eps),AbsTol=0)
-            testCase.verifyLessThanOrEqual(wvt.quadraticAliasingError,wvt.quadraticAliasingTolerance)
-            testCase.verifyTrue(ismember(wvt.quadraticAliasingLimitingChannel,["FF->F" "FG->G" "GG->F"]))
+            assessment = wvt.constructionAssessment;
+            testCase.verifyEqual(assessment.apv.linearCount,assessment.apv.dealiasing.linearCount)
+            testCase.verifyEqual(assessment.apv.selectedCount,assessment.apv.dealiasing.filteringCount)
+            testCase.verifyEqual(assessment.apv.selectedCount,floor((2/3)*assessment.apv.linearCount))
+            testCase.verifyEqual(assessment.dealiasing.coordinateKind,"wkb-chebyshev-lobatto")
+            testCase.verifyGreaterThanOrEqual(assessment.cost.quadraticDealiasingSeconds,0)
             testCase.verifyTrue(all(wvt.verticalQuadratureWeights > 0))
             testCase.verifyLessThanOrEqual(wvt.apvGramError,wvt.gramTolerance)
             testCase.verifyLessThanOrEqual(wvt.mdaGramError,wvt.gramTolerance)
             testCase.verifyEqual(wvt.verticalGridKind,"chebyshevLobatto")
             testCase.verifyEqual(wvt.verticalGridCoordinate,"wkb")
-            testCase.verifyEqual(wvt.modeSelectionMethod,"resolved-prefix-selection")
+            testCase.verifyEqual(wvt.modeSelectionMethod,"linear-prefix-plus-quadratic-dealiasing")
             testCase.verifyEqual(wvt.z_int,wvt.verticalQuadratureWeights,AbsTol=0)
             testCase.verifyEqual(sum(wvt.verticalQuadratureWeights),wvt.Lz,AbsTol=64*eps(wvt.Lz))
         end
@@ -157,7 +159,7 @@ classdef TestWVTransformFreeSurfaceQG < matlab.unittest.TestCase
             apvBasis = solver.solveEVP(IMInternalModes.geostrophicAPVModes(N2=N2,zDomain=[-D 0],g=wvt.g,g0=g0,gd=gd,surfaceBoundary="freeSurface"),nModes=Nz+4);
             mdaBasis = solver.solveEVP(IMInternalModes.meanDensityAnomalyModes(N2=N2,zDomain=[-D 0],g=wvt.g,g0=g0,gd=gd),nModes=Nz+4);
             apvTransform = apvBasis.discreteTransform(z=wvt.z,weights=wvt.verticalQuadratureWeights,variables=["F","G"], ...
-                gramTolerance=wvt.gramTolerance,quadraticAliasingTolerance=wvt.quadraticAliasingTolerance);
+                gramTolerance=wvt.gramTolerance,nModes=wvt.apvModeCount);
             mdaTransform = mdaBasis.discreteTransform(z=wvt.z,weights=wvt.verticalQuadratureWeights,variables="G",gramTolerance=wvt.gramTolerance);
 
             testCase.verifyEqual(wvt.apvModeNumber,apvTransform.modeNumber(:),AbsTol=0)
@@ -171,12 +173,15 @@ classdef TestWVTransformFreeSurfaceQG < matlab.unittest.TestCase
             N2 = @(z) 1e-4*ones(size(z));
             assessment = WVTransformFreeSurfaceQG.assessVerticalResolution(4000,17,N2Function=N2,latitude=30,g0=0.02,gd=Inf);
             testCase.verifyTrue(assessment.isHorizontalLimitApplicable)
-            testCase.verifyLessThanOrEqual(assessment.maximumSupportedError,assessment.quadraticAliasingTolerance)
-            testCase.verifyTrue(assessment.firstRejectedError>assessment.quadraticAliasingTolerance || assessment.firstRejectedBoundaryError>assessment.boundaryResolutionTolerance)
+            testCase.verifyLessThanOrEqual(assessment.maximumSupportedBoundaryError,assessment.boundaryResolutionTolerance)
+            testCase.verifyGreaterThan(assessment.firstRejectedBoundaryError,assessment.boundaryResolutionTolerance)
             testCase.verifyLessThanOrEqual(assessment.firstRejectedKh/assessment.maximumSupportedKh-1,0.01)
             testCase.verifyEqual(assessment.minimumHorizontalWavelength,2*pi/assessment.maximumSupportedKh,RelTol=10*eps)
+            testCase.verifyEqual(assessment.apvFilteringCount,floor((2/3)*assessment.apvLinearCount))
+            testCase.verifyEqual(assessment.apvModeCount,assessment.apvFilteringCount)
+            testCase.verifyEqual(assessment.dealiasing.coordinateKind,"wkb-chebyshev-lobatto")
             testCase.verifyError(@()WVTransformFreeSurfaceQG([150e3 150e3 4000],[256 256 17], ...
-                N2Function=N2,latitude=30,g0=0.02,gd=Inf),'WVTransformFreeSurfaceQG:UnderresolvedVerticalGrid')
+                N2Function=N2,latitude=30,g0=0.02,gd=Inf),'WV:UnconvergedBoundaryModes')
         end
 
         function omittedEndpointDefaultsRetainSignedAPVAndUseMajorant(testCase)
@@ -190,11 +195,9 @@ classdef TestWVTransformFreeSurfaceQG < matlab.unittest.TestCase
             testCase.verifyEqual(wvt.gd,-expectedG0,AbsTol=0)
             testCase.verifyEqual(wvt.activeEndpoint,[1;2])
             testCase.verifyEqual(wvt.latitude,24)
-            testCase.verifyEqual(wvt.quadraticAliasingTolerance,0.1,AbsTol=0)
+            testCase.verifyEqual(wvt.quadraticDealiasing,"fixedFraction")
             testCase.verifyEqual(wvt.apvModeNumber(1),-1,AbsTol=0)
-            testCase.verifyTrue(isfinite(wvt.quadraticAliasingError))
-            testCase.verifyLessThanOrEqual(wvt.quadraticAliasingError,0.1)
-            testCase.verifyEqual(wvt.modeSelectionMethod,"resolved-prefix-selection")
+            testCase.verifyEqual(wvt.modeSelectionMethod,"linear-prefix-plus-quadratic-dealiasing")
             assessment = WVTransformFreeSurfaceQG.assessVerticalResolution(D,33,N2Function=N2);
             testCase.verifyEqual(assessment.z,wvt.z)
             testCase.verifyEqual(assessment.apvModeCount,length(wvt.apvMode))
@@ -219,9 +222,14 @@ classdef TestWVTransformFreeSurfaceQG < matlab.unittest.TestCase
         function initializationTolerancesArePersisted(testCase)
             wvt = WVTransformFreeSurfaceQG([100e3 100e3 1000],[8 8 33], ...
                 N2Function=@(z)1e-4*ones(size(z)),latitude=30,g0=0.02,gd=0.03, ...
-                gramTolerance=0.02,quadraticAliasingTolerance=0.2,muTolerance=1e-7);
+                gramTolerance=0.02,modeConvergenceTolerance=2e-6,boundaryResolutionTolerance=.03, ...
+                quadraticDealiasing="effectiveBandwidth",retainedFraction=.4,energyFraction=.97, ...
+                bandwidthFraction=.55,muTolerance=1e-7);
             testCase.verifyEqual(wvt.gramTolerance,0.02,AbsTol=0)
-            testCase.verifyEqual(wvt.quadraticAliasingTolerance,0.2,AbsTol=0)
+            testCase.verifyEqual(wvt.modeConvergenceTolerance,2e-6,AbsTol=0)
+            testCase.verifyEqual(wvt.boundaryResolutionTolerance,.03,AbsTol=0)
+            testCase.verifyEqual(wvt.quadraticDealiasing,"effectiveBandwidth")
+            testCase.verifyEqual([wvt.retainedFraction wvt.energyFraction wvt.bandwidthFraction],[.4 .97 .55])
             testCase.verifyEqual(wvt.muTolerance,1e-7,AbsTol=0)
             testCase.verifyLessThanOrEqual(wvt.apvGramError,wvt.gramTolerance)
             testCase.verifyLessThanOrEqual(wvt.mdaGramError,wvt.gramTolerance)
@@ -620,7 +628,7 @@ classdef TestWVTransformFreeSurfaceQG < matlab.unittest.TestCase
             end
         end
 
-        function nearLimitAPVEndpointCrossTendencyMeetsVerticalTolerance(testCase)
+        function nearLimitAPVEndpointCrossTendencyConvergesWithVerticalRefinement(testCase)
             D = 4000;
             N2 = @(z) (5.2e-3)^2*exp(2*z/1300);
             gd = 0.03;
@@ -644,7 +652,7 @@ classdef TestWVTransformFreeSurfaceQG < matlab.unittest.TestCase
             crossTendencies = cell(size(NzValues));
             limitingEndpointCode = find(["surface" "bottom"] == assessment.limitingEndpoint,1);
             testCase.assertNotEmpty(limitingEndpointCode)
-            apvModeNumber=assessment.limitingAPVModeNumber;
+            apvModeNumber=NaN;
             for iResolution = 1:length(NzValues)
                 transforms{iResolution} = WVTransformFreeSurfaceQG([L L D],[16 16 NzValues(iResolution)], ...
                     N2Function=N2,latitude=30,g0=NaN,gd=gd);
@@ -672,7 +680,6 @@ classdef TestWVTransformFreeSurfaceQG < matlab.unittest.TestCase
                 testCase.verifyGreaterThan(norm(referenceAg0),0)
                 relativeErrors(iResolution,1) = norm(tendency.Ag_q(:,outputIndex)-referenceAgq)/norm(referenceAgq);
                 relativeErrors(iResolution,2) = norm(tendency.Ag_0(:,outputIndex)-referenceAg0)/norm(referenceAg0);
-                testCase.verifyLessThanOrEqual(relativeErrors(iResolution,:),wvt.quadraticAliasingTolerance)
                 testCase.verifyEqual(tendency.Amda,zeros(size(wvt.Amda)),AbsTol=0)
             end
             testCase.verifyLessThan(relativeErrors(2,:),relativeErrors(1,:))
@@ -708,6 +715,19 @@ classdef TestWVTransformFreeSurfaceQG < matlab.unittest.TestCase
             testCase.verifyEmpty(direct.verticalModes)
         end
 
+        function prePolicySavedMetadataHasNoCompatibilityAdapter(testCase)
+            path=fullfile(testCase.temporaryFolder,"pre-policy.nc");
+            wvt=TestWVTransformFreeSurfaceQG.newTransform(0.02,0.03);
+            policyNames={'quadraticDealiasing','retainedFraction','energyFraction','bandwidthFraction'};
+            properties=setdiff(wvt.requiredProperties,policyNames);
+            ncfile=wvt.writeToFile(char(path),properties{:},shouldAddRequiredProperties=false);
+            ncfile.addVariable('shouldCheckQuadraticAliasing',{},false);
+            ncfile.addVariable('quadraticAliasingTolerance',{},.1);
+            ncfile.close();
+            testCase.verifyError(@()WVTransformFreeSurfaceQG.waveVortexTransformFromFile(char(path)), ...
+                'WVTransformFreeSurfaceQG:UnsupportedLegacyScientificState')
+        end
+
         function inactiveZeroFamilyIsPhysicallyOmitted(testCase)
             path = fullfile(testCase.temporaryFolder,"no-endpoints.nc");
             wvt = TestWVTransformFreeSurfaceQG.newTransform(Inf,Inf);
@@ -715,8 +735,7 @@ classdef TestWVTransformFreeSurfaceQG < matlab.unittest.TestCase
             cleanup = onCleanup(@()TestWVTransformFreeSurfaceQG.closeIfOpen(ncfile));
             omittedNames = {'activeEndpoint','sourceEndpoint','Ag_0','apvEndpointResponse', ...
                 'zeroAPVF','zeroAPVG','zeroAPVFPairing','zeroAPVGPairing', ...
-                'zeroAPVSourceSolve','zeroAPVGramReciprocalCondition','zeroAPVGramRelativeSeparation', ...
-                'apvZeroAPVQuadraticError','apvZeroAPVLimitingEndpoint','apvZeroAPVLimitingModeNumber'};
+                'zeroAPVSourceSolve','zeroAPVGramReciprocalCondition','zeroAPVGramRelativeSeparation'};
             for iName = 1:length(omittedNames)
                 testCase.verifyFalse(ncfile.hasVariableWithName(omittedNames{iName}),omittedNames{iName})
             end
@@ -1008,14 +1027,10 @@ classdef TestWVTransformFreeSurfaceQG < matlab.unittest.TestCase
                 'verticalGridKind','verticalGridCoordinate','zeroAPVF','zeroAPVG', ...
                 'zeroAPVFPairing','zeroAPVGPairing','zeroAPVSourceSolve', ...
                 'apvGramError','apvRoundTripError','mdaGramError','mdaRoundTripError', ...
-                'gramTolerance', ...
-                'quadraticAliasingTolerance','quadraticAliasingError', ...
-                'quadraticAliasingLimitingChannel','quadraticAliasingLimitingModeNumberI', ...
-                'quadraticAliasingLimitingModeNumberJ', ...
+                'gramTolerance','modeConvergenceTolerance','boundaryResolutionTolerance', ...
+                'quadraticDealiasing','retainedFraction','energyFraction','bandwidthFraction', ...
                 'minimumRelativeMuSeparation','muTolerance','zeroAPVGramReciprocalCondition', ...
-                'zeroAPVGramRelativeSeparation','apvZeroAPVQuadraticError', ...
-                'apvZeroAPVLimitingEndpoint','apvZeroAPVLimitingModeNumber', ...
-                'modeSelectionMethod','Ag_q','Ag_0','Amda'};
+                'zeroAPVGramRelativeSeparation','modeSelectionMethod','Ag_q','Ag_0','Amda'};
             for iName = 1:length(names)
                 testCase.verifyEqual(actual.(names{iName}),expected.(names{iName}),names{iName})
             end
@@ -1034,13 +1049,10 @@ classdef TestWVTransformFreeSurfaceQG < matlab.unittest.TestCase
                 'verticalQuadratureWeights','verticalDerivativeMatrix','verticalGridKind','verticalGridCoordinate', ...
                 'zeroAPVFPairing','zeroAPVGPairing','zeroAPVSourceSolve', ...
                 'apvGramError','apvRoundTripError','mdaGramError','mdaRoundTripError', ...
-                'gramTolerance', ...
-                'quadraticAliasingTolerance','quadraticAliasingError', ...
-                'quadraticAliasingLimitingChannel','quadraticAliasingLimitingModeNumberI', ...
-                'quadraticAliasingLimitingModeNumberJ', ...
+                'gramTolerance','modeConvergenceTolerance','boundaryResolutionTolerance', ...
+                'quadraticDealiasing','retainedFraction','energyFraction','bandwidthFraction', ...
                 'minimumRelativeMuSeparation','muTolerance','zeroAPVGramReciprocalCondition', ...
-                'zeroAPVGramRelativeSeparation','apvZeroAPVQuadraticError', ...
-                'apvZeroAPVLimitingEndpoint','apvZeroAPVLimitingModeNumber','modeSelectionMethod'};
+                'zeroAPVGramRelativeSeparation','modeSelectionMethod'};
             options = struct();
             for iName = 1:length(names)
                 options.(names{iName}) = wvt.(names{iName});

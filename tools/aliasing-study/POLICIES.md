@@ -1,5 +1,7 @@
 # Candidate policies before calibration
 
+> Historical archive. The sampled-product diagnostic and its runnable code were retired in issue 42. This document records the former study and does not describe the current construction API.
+
 Version 1. The bounded case inventory is fixed in `case-inventory.json`. Four calibration cases, four withheld cases, and one larger sparse/spot-sample case are declared before scoring. The wider-domain choice and independent fixed counts follow the documented source pilots. No withheld nonlinear errors have been examined. Changes to the reference apparatus require a recorded numerical reason; they do not authorize retuning a policy using withheld outcomes.
 
 The physical dense inventory is every retained vector-closed ordered interaction with nonzero inputs on each actual Fourier grid, eight declared ordered family pairs, all input modes and both wave signs, and the 13 volume channels in `sourceChannelInventory`. Mean-w outputs are structurally absent. The independent APV control is unchanged. Only the common wave prefix varies; each case's APV, MDA, and inertial counts remain strict and independent.

@@ -158,7 +158,7 @@ end
 function [w,apv]=construct()
 N2=@(z)1e-4+zeros(size(z));
 w=WVTransformFreeSurfaceThermalQG.fromStratification([5e5 5e5 1000],[8 8 65],N2Function=N2,thermalModeCount=17,mdaModeCount=3,kappa_z=1e-5);
-apv=WVTransformFreeSurfaceQG([w.Lx w.Ly w.Lz],[w.Nx w.Ny 129],N2Function=N2,latitude=w.latitude,g=w.g,rho0=w.rho0,apvModeCount=6,mdaModeCount=2,shouldCheckQuadraticAliasing=false);
+apv=WVTransformFreeSurfaceQG([w.Lx w.Ly w.Lz],[w.Nx w.Ny 129],N2Function=N2,latitude=w.latitude,g=w.g,rho0=w.rho0,apvModeCount=6,mdaModeCount=2,quadraticDealiasing="none");
 end
 
 function w=populated(scientificState)

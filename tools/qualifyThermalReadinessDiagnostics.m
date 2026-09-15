@@ -7,6 +7,8 @@ function results = qualifyThermalReadinessDiagnostics(thermal,records,outputDire
 % assessments and a byte hash in a companion MAT file. A matching stored
 % basis restores without InternalModes; an incomplete or changed cache fails
 % visibly rather than silently replacing the evidence.
+% The diagnostic QG basis uses quadraticDealiasing="none" so its explicit
+% band is checked against the complete accepted linear prefix.
 %
 % Each row of records names caseId, recordId, state, time, forcingMultiplier,
 % seasonalPhase and regime. Regime is cold, developed-zero, developed-peak,
@@ -205,7 +207,7 @@ try
         clock=tic;
         apv=WVTransformFreeSurfaceQG(request.Lxyz,request.Nxyz,N2Function=thermal.N2Function,g=request.g,latitude=request.latitude,rho0=request.rho0, ...
             rotationRate=request.rotationRate,planetaryRadius=request.planetaryRadius,g0=request.g0,gd=request.gd, ...
-            apvModeCount=request.apvModeCount,mdaModeCount=1,shouldAntialias=request.shouldAntialias,shouldCheckQuadraticAliasing=false);
+            apvModeCount=request.apvModeCount,mdaModeCount=1,shouldAntialias=request.shouldAntialias,quadraticDealiasing="none");
         constructionSeconds=toc(clock);assessment=apv.constructionAssessment;
         file=apv.writeToFile(char(basisPath));file.close();basisSHA256=hashFile(basisPath);
         save(metadataPath,'request','basisSHA256','assessment','constructionSeconds');

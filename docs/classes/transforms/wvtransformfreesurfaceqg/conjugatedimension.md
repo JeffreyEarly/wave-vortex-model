@@ -3,7 +3,7 @@ layout: default
 title: conjugateDimension
 parent: WVTransformFreeSurfaceQG
 grand_parent: Transforms
-nav_order: 68
+nav_order: 66
 mathjax: true
 ---
 

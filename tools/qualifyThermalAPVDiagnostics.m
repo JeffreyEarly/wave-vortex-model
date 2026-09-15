@@ -86,7 +86,7 @@ end
 function apv=newAPV(w,Nz,count,multiplier)
 integralN2=w.N20*w.Lz;
 if w.inverseScale~=0,integralN2=w.N20*(-expm1(-2*w.inverseScale*w.Lz))/(2*w.inverseScale);end
-apv=WVTransformFreeSurfaceQG([w.Lx w.Ly w.Lz],[w.Nx w.Ny Nz],N2Function=w.N2Function,g=w.g,latitude=w.latitude,rho0=w.rho0,g0=-multiplier*integralN2,gd=integralN2/multiplier,apvModeCount=count,mdaModeCount=1,shouldAntialias=w.shouldAntialias,shouldCheckQuadraticAliasing=false);
+apv=WVTransformFreeSurfaceQG([w.Lx w.Ly w.Lz],[w.Nx w.Ny Nz],N2Function=w.N2Function,g=w.g,latitude=w.latitude,rho0=w.rho0,g0=-multiplier*integralN2,gd=integralN2/multiplier,apvModeCount=count,mdaModeCount=1,shouldAntialias=w.shouldAntialias,quadraticDealiasing="none");
 end
 function [row,residualRows]=measureCase(w,apv,state,Q,label,a,basisSeconds)
 fprintf('T9 %s a=%g thermal=%d diagnostic=%d/%d Q=%d\n',label,a,w.thermalModeCount,apv.apvModeCount,apv.Nz,Q);

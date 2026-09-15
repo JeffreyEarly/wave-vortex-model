@@ -121,7 +121,7 @@ classdef TestFreeSurfaceResolutionTransfer < matlab.unittest.TestCase
             testCase.verifyEqual([a.sourceEnergy a.targetEnergy a.errorEnergy a.relativeFieldError],[0 0 0 0])
             testCase.verifyError(@()w.coefficientStateForTransform(target,modeTolerance=1e-12),'WV:TransferModeMismatch')
             qg=newTransform("qg","exponential");
-            testCase.verifyError(@()qg.waveVortexTransformWithResolution([8 8 65],apvModeCount=100),'IMBasisSet:InsufficientDiscreteSamples')
+            testCase.verifyError(@()qg.waveVortexTransformWithResolution([8 8 65],apvModeCount=100),'WV:StrictAPVModeCountRejected')
             testCase.verifyEqual(qg.apvModeCount,3)
         end
         function activeAndInactiveEndpointsSurviveTransfer(testCase)
@@ -254,6 +254,9 @@ function verifyCounts(testCase,source,target)
 for name=["apvModeNumber","mdaModeNumber","activeEndpoint"]
     testCase.verifyEqual(target.(name),source.(name))
 end
+testCase.verifyEqual(target.quadraticDealiasing,source.quadraticDealiasing)
+testCase.verifyEqual([target.retainedFraction target.energyFraction target.bandwidthFraction], ...
+    [source.retainedFraction source.energyFraction source.bandwidthFraction])
 if isa(source,'WVTransformFreeSurfaceBoussinesq')
     testCase.verifyEqual(target.waveModeNumber,source.waveModeNumber)
     testCase.verifyEqual(target.inertialModeNumber,source.inertialModeNumber)

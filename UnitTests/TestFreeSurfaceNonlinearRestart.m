@@ -9,7 +9,7 @@ classdef TestFreeSurfaceNonlinearRestart < matlab.unittest.TestCase
     methods (Test, TestTags="full")
         function nonlinearParticleAndTracerContinuationAgree(testCase)
             fixture = testCase.applyFixture(matlab.unittest.fixtures.TemporaryFolderFixture);
-            base = WVTransformFreeSurfaceBoussinesq.fromStratification([1e5 1e5 1000],[8 8 65],N2Function=@(z)1e-4+zeros(size(z)),apvModeCount=2,mdaModeCount=2,inertialModeCount=2,waveModeCount=3,shouldCheckQuadraticAliasing=true,shouldAntialias=true);
+            base = WVTransformFreeSurfaceBoussinesq.fromStratification([1e5 1e5 1000],[8 8 65],N2Function=@(z)1e-4+zeros(size(z)),apvModeCount=2,mdaModeCount=2,inertialModeCount=2,waveModeCount=3,quadraticDealiasing="fixedFraction",shouldAntialias=true);
             scientific = base.scientificState();
             seed = mixedSeed(base); source = physicalSourceOptions(base);
             uninterrupted = observerModel(scientific,seed,source);
@@ -58,7 +58,7 @@ classdef TestFreeSurfaceNonlinearRestart < matlab.unittest.TestCase
 
         function fixedRK4AndProviderFreeNativeContinuationAgree(testCase)
             fixture = testCase.applyFixture(matlab.unittest.fixtures.TemporaryFolderFixture);
-            base = WVTransformFreeSurfaceBoussinesq.fromStratification([1e5 1e5 1000],[8 8 65],N2Function=@(z)1e-4+zeros(size(z)),apvModeCount=2,mdaModeCount=2,inertialModeCount=2,waveModeCount=3,shouldCheckQuadraticAliasing=true,shouldAntialias=true);
+            base = WVTransformFreeSurfaceBoussinesq.fromStratification([1e5 1e5 1000],[8 8 65],N2Function=@(z)1e-4+zeros(size(z)),apvModeCount=2,mdaModeCount=2,inertialModeCount=2,waveModeCount=3,quadraticDealiasing="fixedFraction",shouldAntialias=true);
             scientific = base.scientificState();
             initial = mixedSeed(base);
             source = physicalSourceOptions(base);
@@ -111,7 +111,7 @@ classdef TestFreeSurfaceNonlinearRestart < matlab.unittest.TestCase
             end
             testCase.verifyEqual(resumed.wvt.activeWaveModes,base.activeWaveModes)
             testCase.verifyEqual(resumed.wvt.waveModeCountByKh,3+zeros(size(base.khUnique)))
-            testCase.verifyTrue(resumed.wvt.shouldCheckQuadraticAliasing)
+            testCase.verifyEqual(resumed.wvt.quadraticDealiasing,"fixedFraction")
             testCase.verifyTrue(resumed.wvt.shouldAntialias)
             testCase.verifyTrue(isa(resumed.wvt.forcingWithName("nonlinear advection"),'WVNonlinearAdvection'))
             restoredSource = resumed.wvt.forcingWithName("prescribed Boussinesq source");

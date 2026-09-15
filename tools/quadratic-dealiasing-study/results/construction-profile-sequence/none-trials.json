@@ -1,0 +1,46 @@
+[
+  {
+    "repetition": 0,
+    "seconds": 18.119548583333334,
+    "filteringSeconds": 0.034931083333333321,
+    "apvCount": 38,
+    "waveCountRange": [
+      38,
+      38
+    ],
+    "waveEigensolves": 1140
+  },
+  {
+    "repetition": 1,
+    "seconds": 16.178845708333334,
+    "filteringSeconds": 0.023655541666666672,
+    "apvCount": 38,
+    "waveCountRange": [
+      38,
+      38
+    ],
+    "waveEigensolves": 1140
+  },
+  {
+    "repetition": 2,
+    "seconds": 15.452410166666667,
+    "filteringSeconds": 0.019947208333333324,
+    "apvCount": 38,
+    "waveCountRange": [
+      38,
+      38
+    ],
+    "waveEigensolves": 1140
+  },
+  {
+    "repetition": 3,
+    "seconds": 15.284074916666667,
+    "filteringSeconds": 0.019389749999999997,
+    "apvCount": 38,
+    "waveCountRange": [
+      38,
+      38
+    ],
+    "waveEigensolves": 1140
+  }
+]

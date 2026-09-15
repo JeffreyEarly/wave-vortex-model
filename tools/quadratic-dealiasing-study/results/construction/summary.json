@@ -1,0 +1,188 @@
+{
+  "environment": {
+    "matlabVersion": "26.1.0.3346908 (R2026a) Update 5",
+    "wvmRoot": "/Users/jearly/Documents/OceanKitRepositories/wvm-v5-construction-optimization",
+    "internalModesRoot": "/Users/jearly/Documents/OceanKitRepositories/oceankit-internal-modes-beta7/InternalModes-2.0.0-beta.7",
+    "dependencyRoot": "/Users/jearly/Documents/OceanKitRepositories/OceanKit",
+    "chebfunRoot": "/Users/jearly/Documents/OceanKitRepositories/chebfun"
+  },
+  "sourceRevision": "ffb349ec500a3104a0859f1a0d578a2c1c1af9bc",
+  "providerRevision": "f7f78b59f73c1f6c4052f3c5f0feb5aca7d6aa81",
+  "threads": 1,
+  "gridSize": [
+    128,
+    128,
+    65
+  ],
+  "nEVP": 104,
+  "policies": [
+    {
+      "policy": "none",
+      "status": "constructed",
+      "errorIdentifier": "",
+      "errorMessage": "",
+      "medianSeconds": 15.664922291666667,
+      "medianFilteringSeconds": 0.02004479166666666,
+      "trials": [
+        {
+          "repetition": 0,
+          "seconds": 19.588337791666667,
+          "filteringSeconds": 0.07344366666666653,
+          "apvCount": 38,
+          "waveCountRange": [
+            38,
+            38
+          ],
+          "waveEigensolves": 1140
+        },
+        {
+          "repetition": 1,
+          "seconds": 16.527659791666668,
+          "filteringSeconds": 0.028914208333333323,
+          "apvCount": 38,
+          "waveCountRange": [
+            38,
+            38
+          ],
+          "waveEigensolves": 1140
+        },
+        {
+          "repetition": 2,
+          "seconds": 15.664922291666667,
+          "filteringSeconds": 0.02004479166666666,
+          "apvCount": 38,
+          "waveCountRange": [
+            38,
+            38
+          ],
+          "waveEigensolves": 1140
+        },
+        {
+          "repetition": 3,
+          "seconds": 15.294501333333333,
+          "filteringSeconds": 0.01867929166666665,
+          "apvCount": 38,
+          "waveCountRange": [
+            38,
+            38
+          ],
+          "waveEigensolves": 1140
+        }
+      ],
+      "profileSeconds": 23.391500041666667
+    },
+    {
+      "policy": "fixedFraction",
+      "status": "constructed",
+      "errorIdentifier": "",
+      "errorMessage": "",
+      "medianSeconds": 15.316361416666666,
+      "medianFilteringSeconds": 0.019745833333333334,
+      "trials": [
+        {
+          "repetition": 0,
+          "seconds": 15.888079083333333,
+          "filteringSeconds": 0.026596125000000023,
+          "apvCount": 25,
+          "waveCountRange": [
+            25,
+            25
+          ],
+          "waveEigensolves": 1140
+        },
+        {
+          "repetition": 1,
+          "seconds": 15.474054583333333,
+          "filteringSeconds": 0.02223762499999999,
+          "apvCount": 25,
+          "waveCountRange": [
+            25,
+            25
+          ],
+          "waveEigensolves": 1140
+        },
+        {
+          "repetition": 2,
+          "seconds": 15.260485833333334,
+          "filteringSeconds": 0.019745833333333334,
+          "apvCount": 25,
+          "waveCountRange": [
+            25,
+            25
+          ],
+          "waveEigensolves": 1140
+        },
+        {
+          "repetition": 3,
+          "seconds": 15.316361416666666,
+          "filteringSeconds": 0.01960783333333334,
+          "apvCount": 25,
+          "waveCountRange": [
+            25,
+            25
+          ],
+          "waveEigensolves": 1140
+        }
+      ],
+      "profileSeconds": 23.467716541666668
+    },
+    {
+      "policy": "effectiveBandwidth",
+      "status": "constructed",
+      "errorIdentifier": "",
+      "errorMessage": "",
+      "medianSeconds": 15.479583708333333,
+      "medianFilteringSeconds": 0.2179583333333333,
+      "trials": [
+        {
+          "repetition": 0,
+          "seconds": 15.999983666666667,
+          "filteringSeconds": 0.3645909166666667,
+          "apvCount": 26,
+          "waveCountRange": [
+            26,
+            26
+          ],
+          "waveEigensolves": 1140
+        },
+        {
+          "repetition": 1,
+          "seconds": 15.536518958333334,
+          "filteringSeconds": 0.22100991666666653,
+          "apvCount": 26,
+          "waveCountRange": [
+            26,
+            26
+          ],
+          "waveEigensolves": 1140
+        },
+        {
+          "repetition": 2,
+          "seconds": 15.479583708333333,
+          "filteringSeconds": 0.2179583333333333,
+          "apvCount": 26,
+          "waveCountRange": [
+            26,
+            26
+          ],
+          "waveEigensolves": 1140
+        },
+        {
+          "repetition": 3,
+          "seconds": 15.470219833333333,
+          "filteringSeconds": 0.21654116666666648,
+          "apvCount": 26,
+          "waveCountRange": [
+            26,
+            26
+          ],
+          "waveEigensolves": 1140
+        }
+      ],
+      "profileSeconds": 23.961195583333332
+    }
+  ],
+  "studyRevision": "ced7dc0b",
+  "timingProtocol": "Fresh MATLAB process; every warmup and repeated unprofiled timing completed without a preceding profiler pass. Profiles were recorded in a separate earlier process against unchanged runtime code.",
+  "profileEvidenceDirectory": "../construction-profile-sequence"
+}

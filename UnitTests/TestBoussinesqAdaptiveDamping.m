@@ -73,7 +73,7 @@ classdef TestBoussinesqAdaptiveDamping < matlab.unittest.TestCase
         function raggedWavePrefixesAndMinimalFamilies(testCase)
             base=newTransform();
             counts=5*ones(size(base.khUnique)); counts(1)=0; counts(2)=3;
-            w=WVTransformFreeSurfaceBoussinesq.fromStratification([1e5 1e5 1000],[8 8 65],N2Function=@(z)1e-4+0*z,apvModeCount=2,waveModeCount=counts,waveModeKappa=base.khUnique,inertialModeCount=1,mdaModeCount=2,shouldAntialias=true,shouldCheckQuadraticAliasing=true);
+            w=WVTransformFreeSurfaceBoussinesq.fromStratification([1e5 1e5 1000],[8 8 65],N2Function=@(z)1e-4+0*z,apvModeCount=2,waveModeCount=counts,waveModeKappa=base.khUnique,inertialModeCount=1,mdaModeCount=2,shouldAntialias=true,quadraticDealiasing="fixedFraction");
             force=WVAdaptiveDamping(w); w.addForcing(force); d=force.coefficientDampingOperator();
             testCase.verifyEqual(d.Aio,0); testCase.verifyEqual(d.Amda,[0;0]);
             testCase.verifyEqual(d.Aw_p(~w.activeWaveModes),zeros(nnz(~w.activeWaveModes),1));
@@ -138,5 +138,5 @@ classdef TestBoussinesqAdaptiveDamping < matlab.unittest.TestCase
 end
 
 function w=newTransform()
-w=WVTransformFreeSurfaceBoussinesq.fromStratification([1e5 1e5 1000],[8 8 65],N2Function=@(z)1e-4+0*z,apvModeCount=4,waveModeCount=5,inertialModeCount=4,mdaModeCount=4,shouldAntialias=true,shouldCheckQuadraticAliasing=true);
+w=WVTransformFreeSurfaceBoussinesq.fromStratification([1e5 1e5 1000],[8 8 65],N2Function=@(z)1e-4+0*z,apvModeCount=4,waveModeCount=5,inertialModeCount=4,mdaModeCount=4,shouldAntialias=true,quadraticDealiasing="fixedFraction");
 end

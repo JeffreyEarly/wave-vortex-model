@@ -71,7 +71,7 @@ classdef TestFreeSurfaceNonlinearStage < matlab.unittest.TestCase
 
         function variableWavePagesRemainFiniteAtChangingClocks(testCase)
             profileFunction = @(z)1e-4*exp(z/650);
-            options = struct(N2Function=profileFunction,apvModeCount=2,waveModeCount=3,mdaModeCount=2,inertialModeCount=2,nEVP=128,shouldAntialias=true,shouldCheckQuadraticAliasing=true);
+            options = struct(N2Function=profileFunction,apvModeCount=2,waveModeCount=3,mdaModeCount=2,inertialModeCount=2,nEVP=128,shouldAntialias=true,quadraticDealiasing="fixedFraction");
             args = namedargs2cell(options);
             uniform = WVTransformFreeSurfaceBoussinesq.fromStratification([1e5 1e5 1000],[8 8 65],args{:});
             counts = mod(3-(0:length(uniform.khUnique)-1).',4);
@@ -106,7 +106,7 @@ end
 function [wvt,study,state] = fixture(profile)
 N2Function = @(z)1e-4+zeros(size(z));
 if profile=="exponential", N2Function=@(z)1e-4*exp(z/650); end
-wvt = WVTransformFreeSurfaceBoussinesq.fromStratification([1e5 1e5 1000],[8 8 65],N2Function=N2Function,apvModeCount=2,waveModeCount=3,mdaModeCount=2,inertialModeCount=2,nEVP=128,shouldAntialias=true,shouldCheckQuadraticAliasing=true);
+wvt = WVTransformFreeSurfaceBoussinesq.fromStratification([1e5 1e5 1000],[8 8 65],N2Function=N2Function,apvModeCount=2,waveModeCount=3,mdaModeCount=2,inertialModeCount=2,nEVP=128,shouldAntialias=true,quadraticDealiasing="fixedFraction");
 wvt.t0 = -17;
 study = manuscriptEvolutionOperators(wvt,profile,padding=1);
 state = study.seed("mixed",1);
