@@ -915,6 +915,7 @@ classdef WVTransform < matlab.mixin.indexing.RedefinesDot & CAAnnotatedClass
             % forcingGroupName = join( [string(class(self)),"forcing"],"-");
             % group = ncfile.groupWithName(class(self));
             group = ncfile;
+            f = @(className,group) feval(strcat(className,'.forcingFromGroup'),group, self);
             if group.hasGroupWithName('forcing')
                 forcingGroup=group.groupWithName('forcing');
             else
@@ -924,9 +925,8 @@ classdef WVTransform < matlab.mixin.indexing.RedefinesDot & CAAnnotatedClass
                 % Pinned ClassAnnotations 1.2.1 treats any annotated object
                 % containing child object groups as an object array. Preserve
                 % the scalar forcing identity before reading its nested state.
-                vars=struct(forcing=WVForcing.forcingFromGroup(forcingGroup,self));
+                vars=struct(forcing=f(forcingGroup.attributes('AnnotatedClass'),forcingGroup));
             else
-                f = @(className,group) feval(strcat(className,'.forcingFromGroup'),group, self);
                 vars = CAAnnotatedClass.propertyValuesFromGroup(group,{"forcing"},classConstructor=f,shouldIgnoreMissingProperties=true);
             end
             if isfield(vars,"forcing")
