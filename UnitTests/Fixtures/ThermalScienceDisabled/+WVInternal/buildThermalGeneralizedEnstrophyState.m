@@ -1,4 +1,5 @@
-function state = buildThermalGeneralizedEnstrophyState(varargin) %#ok<STOUT> This fixture always throws.
+function failure = buildThermalGeneralizedEnstrophyState(varargin)
 % Test-only shadow: canonical restart must not invoke scientific assembly.
-error('TestNativeThermalAdaptiveDamping:ScientificConstructionDisabled','The restored canonical damping state attempted scientific construction.');
+failure = MException('TestNativeThermalAdaptiveDamping:ScientificConstructionDisabled','The restored canonical damping state attempted scientific construction.');
+throw(failure);
 end

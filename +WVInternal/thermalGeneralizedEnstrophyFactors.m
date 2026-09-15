@@ -22,7 +22,7 @@ end
 ACoarse=generalizedCoarse/RCoarse; AFine=generalizedFine/RFine;
 [UCoarse,SCoarse,WCoarse]=svd(ACoarse,'econ');
 [UFine,SFine,WFine]=svd(AFine,'econ');
-[sigmaCoarse,UCoarse,WCoarse]=ascendingSVD(SCoarse,UCoarse,WCoarse); %#ok<ASGLU>
+[sigmaCoarse,~,~]=ascendingSVD(SCoarse,UCoarse,WCoarse);
 [sigmaFine,UFine,WFine]=ascendingSVD(SFine,UFine,WFine);
 [UFine,WFine]=canonicalizeSigns(UFine,WFine);
 rows=size(AFine,1); gamma=(rows+n)*eps/(1-(rows+n)*eps);
