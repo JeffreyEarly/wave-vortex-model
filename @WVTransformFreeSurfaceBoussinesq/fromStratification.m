@@ -143,21 +143,26 @@ requestedMap=state.waveModeCountByKh;
 requestedInertial=options.inertialModeCount;
 state.waveModeCountByKh=repmat(candidateCount,numel(state.khUnique),1);
 options.inertialModeCount=candidateCount;
-waveTimer=tic; solveCount=0; waveDealiasingSeconds=0;
-for attempt=1:3
+waveTimer=tic;
+pilot=WVInternal.assessFreeSurfaceWavePilot(state,options);
+solveCount=pilot.waveEigensolves; waveDealiasingSeconds=pilot.quadraticDealiasingSeconds;
+if pilot.rejected, options.nEVP=max(options.nEVP+16,ceil(1.5*options.nEVP)); end
+candidateReference=[];
+for attempt=(1+pilot.rejected):3
     state.nEVP=options.nEVP;
-    [state,bases]=WVInternal.buildFreeSurfaceWaveState(state,options);
+    [state,bases,candidateSolves]=WVInternal.buildFreeSurfaceWaveState(state,options,candidateReference);
     activePages=find(state.waveModeCountByKh>0);
     referenceNEVP=options.referenceNEVP;
     if isempty(referenceNEVP), referenceNEVP=max(options.nEVP+16,ceil(1.5*options.nEVP)); end
     [assessment,reference,convergence]=WVInternal.assessWaveModeConstruction(state,bases,activePages,referenceNEVP,options.modeConvergenceTolerance,options);
     waveDealiasingSeconds=waveDealiasingSeconds+assessment.quadraticDealiasingSeconds;
-    solveCount=solveCount+2*(numel(activePages)+1);
+    solveCount=solveCount+candidateSolves+numel(activePages)+1;
     desired=assessment.pages.gridSupportedCount;
     desiredInertial=assessment.inertial.gridSupportedCount;
     converged=all(assessment.pages.convergedCount>=desired) && assessment.inertial.convergedCount>=desiredInertial;
     if converged || attempt==3 || ~isempty(options.referenceNEVP), break; end
     options.nEVP=referenceNEVP;
+    candidateReference=reference;
 end
 waveSeconds=toc(waveTimer);
 counts=assessment.pages.usableCount;
@@ -182,6 +187,8 @@ if ~autoInertial, assessment.inertial.requestedCount=requestedInertial; end
 assessment.apv=balancedAssessment.apv; assessment.mda=balancedAssessment.mda;
 assessment.boundary=balancedAssessment.boundary;
 assessment.cost=struct(waveEigensolves=solveCount,waveConstructionSeconds=waveSeconds,selectionTrials=0,quadraticDealiasingSeconds=waveDealiasingSeconds+balancedAssessment.cost.quadraticDealiasingSeconds);
+assessment.cost.pilotPages=pilot.pages;
+assessment.cost.pilotRejectedAttempts=double(pilot.rejected);
 assessment=rmfield(assessment,'quadraticDealiasingSeconds');
 [state,assessment]=WVInternal.selectFreeSurfaceWaveCounts(state,bases,reference,vertical,counts,options.inertialModeCount,assessment,convergence,options,autoWave,autoInertial);
 state.mdaPressureMode=options.g*(state.mdaF-state.mdaF(end,:));
