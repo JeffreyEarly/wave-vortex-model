@@ -17,6 +17,8 @@ from typing import Iterable, Mapping
 SCHEMA = "wvm-artifact-baseline-v1"
 REGISTERED_ROLES = frozenset({
     "fixture",
+    "source-configuration",
+    "published-asset",
     "source-schema",
     "contract",
     "benchmark-reference",
@@ -88,17 +90,19 @@ def _valid_commit(value: object) -> bool:
     return isinstance(value, str) and len(value) == 40 and all(c in "0123456789abcdef" for c in value)
 
 
-def validate_baseline_transition(previous: object, current: object, base_commit: str) -> list[str]:
+def validate_baseline_transition(previous: object, current: object, base_commit: str, *, verified_sources: Iterable[str] = ()) -> list[str]:
     """Reject unrecorded baseline removals or rewritten retirement history.
 
     ``base_commit`` is the immutable revision against which the head change is
     reviewed. Newly retired rows must preserve the prior digest and record this
-    exact commit as their source. Existing retirement rows are append-only.
+    exact commit, or a caller-verified pre-deletion descendant, as their source.
+    Existing retirement rows are append-only.
     """
     previous_entries, previous_retired = parse_baseline(previous)
     current_entries, current_retired = parse_baseline(current)
     if not _valid_commit(base_commit):
         raise ArtifactPolicyError("Base commit must be a lowercase 40-character SHA-1")
+    allowed_sources = {base_commit, *verified_sources}
     errors = []
     for path in sorted(current_entries.keys() - previous_entries.keys()):
         errors.append(f"Historical baseline entry added after initial registration: {path}")
@@ -113,7 +117,7 @@ def validate_baseline_transition(previous: object, current: object, base_commit:
             errors.append(f"Baseline entry removed without retirement record: {path}")
         elif retirement["sha256"] != old["sha256"]:
             errors.append(f"Retirement digest does not match prior baseline: {path}")
-        elif retirement["sourceCommit"] != base_commit:
+        elif retirement["sourceCommit"] not in allowed_sources:
             errors.append(f"Retirement source commit does not match base revision: {path}")
     for path, old in sorted(previous_retired.items()):
         if current_retired.get(path) != old:

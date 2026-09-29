@@ -97,6 +97,7 @@ jobs:
     steps:
       - uses: actions/checkout@v6
         with:
+          fetch-depth: 0
           persist-credentials: false
       - run: python3 -m pip install --disable-pip-version-check --retries 1 --timeout 20 -r tools/ci/requirements.txt
       - name: Lint workflow execution and expressions
@@ -107,6 +108,10 @@ jobs:
           "$RUNNER_TEMP/actionlint" -shellcheck=""
       - run: python3 -m unittest discover -s tools/ci -p 'test_*.py' -v
       - name: Verify source boundaries and tracked artifacts
+        env:
+          PR_BASE_SHA: ${{ github.event.pull_request.base.sha }}
+          PUSH_BASE_SHA: ${{ github.event.before }}
+          HEAD_SHA: ${{ github.event.pull_request.head.sha || github.sha }}
         run: python3 tools/ci/check_repository.py
 
   cpp-release:
