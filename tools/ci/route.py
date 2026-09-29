@@ -187,6 +187,8 @@ def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument('--base')
     parser.add_argument('--head', default='HEAD')
+    parser.add_argument('--merge-base', action='store_true',
+                        help='Compare from the common ancestor for a complete pull-request diff')
     parser.add_argument('--paths-json')
     parser.add_argument('--complete', action='store_true')
     parser.add_argument('--migration', action='store_true')
@@ -196,7 +198,10 @@ def main():
     if args.paths_json:
         paths = json.loads(Path(args.paths_json).read_text())
     elif args.base:
-        paths = subprocess.check_output(['git', 'diff', '--name-only', '--no-renames', '-z', args.base, args.head]).decode().rstrip('\0').split('\0')
+        base = args.base
+        if args.merge_base:
+            base = subprocess.check_output(['git', 'merge-base', base, args.head], text=True).strip()
+        paths = subprocess.check_output(['git', 'diff', '--name-only', '--no-renames', '-z', base, args.head]).decode().rstrip('\0').split('\0')
         paths = [p for p in paths if p]
     else:
         paths = []
