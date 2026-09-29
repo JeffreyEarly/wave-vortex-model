@@ -4,7 +4,7 @@ from pathlib import Path
 import unittest
 
 from diff_content import documentation_changed, matlab_documentation_signature
-from route import FAMILIES, PRODUCTION_DEPENDENCIES, select
+from route import FAMILIES, PRODUCTION_DEPENDENCIES, SHARED_TESTS, COMPILED_MATLAB_TESTS, select
 
 
 class ProductionDependencyRoutingTests(unittest.TestCase):
@@ -12,6 +12,12 @@ class ProductionDependencyRoutingTests(unittest.TestCase):
         registry = PRODUCTION_DEPENDENCIES
         self.assertEqual(registry['schema'], 'wvm-ci-dependencies-v4')
         review = (Path(__file__).parents[2] / '.github/CI-routing-coverage-v4.md').read_text()
+        for name, families in registry['testConsumers'].items():
+            with self.subTest(consumer=name):
+                self.assertIn(name, SHARED_TESTS + COMPILED_MATLAB_TESTS)
+                self.assertTrue(families)
+                self.assertEqual(len(families), len(set(families)))
+                self.assertLessEqual(set(families), set(FAMILIES))
         names = [rule['id'] for rule in registry['rules']]
         self.assertEqual(len(names), len(set(names)))
         for rule in registry['rules']:
