@@ -89,6 +89,8 @@ end
         self.assertTrue(documentation_changed(before, before.replace('self, input', 'self, input, options')))
         continued = before.replace('methods (Abstract)', 'methods (Static, ...\n            Abstract)')
         self.assertIsNone(matlab_documentation_signature(continued))
+        external = before.replace('methods (Abstract)', 'methods')
+        self.assertTrue(documentation_changed(external, external.replace('self, input', 'self, input, options')))
 
     def test_scripts_dynamic_annotations_and_uncertain_declarations_are_conservative(self):
         script = """% Script help

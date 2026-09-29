@@ -15,7 +15,9 @@ def matlab_documentation_signature(source):
     not a MATLAB parser. Uncertain syntax and dynamic annotation construction
     require documentation validation. Inline-comment changes are conservative.
     """
-    if DYNAMIC_DOCUMENTATION.search(source) or re.search(r'\bmethods\s*\([^)]*\bAbstract\b', source):
+    # Class reflection also consumes bare external/abstract method prototypes.
+    # A line scanner cannot prove arbitrary class-body edits documentation-free.
+    if DYNAMIC_DOCUMENTATION.search(source) or re.search(r'^\s*classdef\b', source, re.MULTILINE):
         return None
     lines = source.splitlines()
     signature = []

@@ -60,6 +60,6 @@ The following are the exact class-set reductions for each rule across its regist
 
 ## Documentation and analyzer selection
 
-API help/comments, function/class/method declarations, property/argument/event/enumeration blocks, dynamic annotations, sidecars, generators and website sources retain documentation checks. Only a proven implementation-only MATLAB diff can omit generation; new/deleted/renamed files and uncertain syntax are conservative. The required gate recomputes these facts from the immutable Git diff.
+API help/comments, function/class/method declarations, property/argument/event/enumeration blocks, dynamic annotations, sidecars, generators and website sources retain documentation checks. Class-definition files retain generation because reflection can consume bare external or abstract method prototypes. Only a proven implementation-only MATLAB function diff can omit generation; new/deleted/renamed files and uncertain syntax are conservative. The required gate recomputes these facts from the immutable Git diff.
 
 Changed surviving MATLAB files use `analyzeProductionCode(...,Files=...)`. Policy, package/dependency, complete and unknown selections retain production-wide analysis. Empty changed-file inventories never invoke the analyzer with an empty `Files` argument, which would mean production-wide analysis. Reports name analyzed files, and the gate enforces exact changed-file coverage.
