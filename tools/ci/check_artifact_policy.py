@@ -11,8 +11,8 @@ from artifact_policy import check_repository, parse_baseline, validate_baseline_
 
 BASELINE = '.github/artifact-baseline.json'
 REGISTRY = '.github/artifact-inputs.json'
-# Filled with the merged second PR before this policy's one-time bootstrap.
-INITIAL_BASE_REVISION = 'PENDING_MERGED_PR2'
+# Merged PR541: the immutable base of this policy's one-time bootstrap.
+INITIAL_BASE_REVISION = '4d0c04a99177d7ca74cc9ffba240546ed3b410d6'
 HISTORICAL_ROOTS = ('.github/ci-evidence/', 'PortableRuntime/qualification/',
                     'Benchmarks/results/', 'docs/benchmarks/')
 OUTPUT_SUFFIXES = {'.json', '.log', '.out', '.err', '.mat', '.nc', '.csv', '.tsv',
