@@ -30,13 +30,13 @@ if binaryDirectory ~= ""
         setenv(names(index),value);
     end
 end
-assert(string(selection.schema)=="wvm-ci-selection-v2","WaveVortexModel:CISelection","Unsupported CI selection format.");
-report = struct(schema="wvm-ci-matlab-v2",sourceCommit=string(selection.sourceCommit), ...
+assert(string(selection.schema)=="wvm-ci-selection-v3","WaveVortexModel:CISelection","Unsupported CI selection format.");
+report = struct(schema="wvm-ci-matlab-v3",sourceCommit=string(selection.sourceCommit), ...
     matlabRelease=release,configuration=configuration,shard=shard,passed=false, ...
     requestedClasses={cell(0,1)},expectedTests={cell(0,1)},smokeExpectedTests={cell(0,1)},deferredMethods={selection.deferredMethods}, ...
     excludedTags={selection.excludedTags},excludedTests={cell(0,1)},excludedClasses={cell(0,1)}, ...
     phases=struct(smoke=false,analyzer=false,documentation=false), ...
-    phaseSeconds=struct,tests=struct(name={},passed={},incomplete={},seconds={}));
+    analyzerMode="none",analyzedFiles={cell(0,1)},phaseSeconds=struct,tests=struct(name={},passed={},incomplete={},seconds={}));
 if configuration=="release"
     assert(selection.matlab,"WaveVortexModel:CISelection","MATLAB was not selected.");
     groups = selection.matlabShards;
@@ -65,7 +65,17 @@ if ~isempty(suite)
 end
 if configuration=="release" && release=="R2025b" && shard==0
     if selection.analyzer
-        started = tic; buildtool analyze; report.phaseSeconds.analyzer = toc(started); report.phases.analyzer = true;
+        started = tic;
+        report.analyzerMode = string(selection.analyzerMode);
+        if report.analyzerMode=="changed"
+            assert(~isempty(selection.analyzerFiles),"WaveVortexModel:CIAnalyzer","Changed-file analysis requires a nonempty file inventory.");
+            analysis = analyzeProductionCode(root,Files=fullfile(root,string(selection.analyzerFiles)));
+        else
+            assert(report.analyzerMode=="production","WaveVortexModel:CIAnalyzer","Unsupported analyzer selection.");
+            analysis = analyzeProductionCode(root);
+        end
+        report.analyzedFiles = cellstr(analysis.Files);
+        report.phaseSeconds.analyzer = toc(started); report.phases.analyzer = true;
     end
     if selection.documentation
         started = tic; buildtool docs:check; report.phaseSeconds.documentation = toc(started); report.phases.documentation = true;

@@ -1,0 +1,447 @@
+{
+  "schema": "wvm-ci-dependencies-v4",
+  "rules": [
+    {
+      "id": "family-constant-matlab",
+      "paths": [],
+      "prefixes": [
+        "@WVTransformConstantStratification/"
+      ],
+      "families": [
+        "constant"
+      ],
+      "matlabCore": true,
+      "persistence": false,
+      "rationale": "Family transform regressions plus shared MATLAB transform/invariant contracts; common mixed-family consumers remain selected."
+    },
+    {
+      "id": "family-constant-native",
+      "paths": [
+        "CompiledKernel/src/WVTransformConstantStratificationKernel.cpp",
+        "CompiledKernel/include/WaveVortexKernel/WVTransformConstantStratificationKernel.hpp",
+        "PortableRuntime/src/WVConstantStratificationIntegrationSystem.cpp",
+        "PortableRuntime/include/WaveVortexRuntime/WVConstantStratificationIntegrationSystem.hpp"
+      ],
+      "prefixes": [],
+      "families": [
+        "constant"
+      ],
+      "matlabCore": false,
+      "persistence": false,
+      "rationale": "Family numerical/continuation qualification and affected shared contracts; all native CTest contracts still execute in release and sanitizer builds."
+    },
+    {
+      "id": "family-barotropic-matlab",
+      "paths": [],
+      "prefixes": [
+        "@WVTransformBarotropicQG/"
+      ],
+      "families": [
+        "barotropic"
+      ],
+      "matlabCore": true,
+      "persistence": false,
+      "rationale": "Family transform regressions plus shared MATLAB transform/invariant contracts; common mixed-family consumers remain selected."
+    },
+    {
+      "id": "family-barotropic-native",
+      "paths": [
+        "CompiledKernel/src/WVTransformBarotropicQGKernel.cpp",
+        "CompiledKernel/include/WaveVortexKernel/WVTransformBarotropicQGKernel.hpp",
+        "PortableRuntime/src/WVBarotropicQGIntegrationSystem.cpp",
+        "PortableRuntime/include/WaveVortexRuntime/WVBarotropicQGIntegrationSystem.hpp"
+      ],
+      "prefixes": [],
+      "families": [
+        "barotropic"
+      ],
+      "matlabCore": false,
+      "persistence": false,
+      "rationale": "Family numerical/continuation qualification and affected shared contracts; all native CTest contracts still execute in release and sanitizer builds."
+    },
+    {
+      "id": "family-barotropic-forcing",
+      "paths": [
+        "PortableRuntime/src/WVBarotropicQGForcingEngine.cpp",
+        "PortableRuntime/include/WaveVortexRuntime/WVBarotropicQGForcingEngine.hpp"
+      ],
+      "prefixes": [],
+      "families": [
+        "barotropic"
+      ],
+      "matlabCore": false,
+      "persistence": true,
+      "rationale": "Family forcing implementation plus shared forcing, restart/output and persistence contracts; other family engines remain covered by all native CTest contracts."
+    },
+    {
+      "id": "family-sqg-matlab",
+      "paths": [],
+      "prefixes": [
+        "@WVTransformStratifiedQG/"
+      ],
+      "families": [
+        "sqg"
+      ],
+      "matlabCore": true,
+      "persistence": false,
+      "rationale": "Family transform regressions plus shared MATLAB transform/invariant contracts; common mixed-family consumers remain selected."
+    },
+    {
+      "id": "family-sqg-native",
+      "paths": [
+        "CompiledKernel/src/WVTransformStratifiedQGKernel.cpp",
+        "CompiledKernel/include/WaveVortexKernel/WVTransformStratifiedQGKernel.hpp",
+        "PortableRuntime/src/WVStratifiedQGIntegrationSystem.cpp",
+        "PortableRuntime/include/WaveVortexRuntime/WVStratifiedQGIntegrationSystem.hpp"
+      ],
+      "prefixes": [],
+      "families": [
+        "sqg"
+      ],
+      "matlabCore": false,
+      "persistence": false,
+      "rationale": "Family numerical/continuation qualification and affected shared contracts; all native CTest contracts still execute in release and sanitizer builds."
+    },
+    {
+      "id": "family-sqg-forcing",
+      "paths": [
+        "PortableRuntime/src/WVStratifiedQGForcingEngine.cpp",
+        "PortableRuntime/include/WaveVortexRuntime/WVStratifiedQGForcingEngine.hpp"
+      ],
+      "prefixes": [],
+      "families": [
+        "sqg"
+      ],
+      "matlabCore": false,
+      "persistence": true,
+      "rationale": "Family forcing implementation plus shared forcing, restart/output and persistence contracts; other family engines remain covered by all native CTest contracts."
+    },
+    {
+      "id": "family-hydrostatic-matlab",
+      "paths": [],
+      "prefixes": [
+        "@WVTransformHydrostatic/"
+      ],
+      "families": [
+        "hydrostatic"
+      ],
+      "matlabCore": true,
+      "persistence": false,
+      "rationale": "Family transform regressions plus shared MATLAB transform/invariant contracts; common mixed-family consumers remain selected."
+    },
+    {
+      "id": "family-hydrostatic-native",
+      "paths": [
+        "CompiledKernel/src/WVTransformHydrostaticKernel.cpp",
+        "CompiledKernel/include/WaveVortexKernel/WVTransformHydrostaticKernel.hpp",
+        "PortableRuntime/src/WVHydrostaticIntegrationSystem.cpp",
+        "PortableRuntime/include/WaveVortexRuntime/WVHydrostaticIntegrationSystem.hpp"
+      ],
+      "prefixes": [],
+      "families": [
+        "hydrostatic"
+      ],
+      "matlabCore": false,
+      "persistence": false,
+      "rationale": "Family numerical/continuation qualification and affected shared contracts; all native CTest contracts still execute in release and sanitizer builds."
+    },
+    {
+      "id": "family-hydrostatic-forcing",
+      "paths": [
+        "PortableRuntime/src/WVHydrostaticForcingEngine.cpp",
+        "PortableRuntime/include/WaveVortexRuntime/WVHydrostaticForcingEngine.hpp"
+      ],
+      "prefixes": [],
+      "families": [
+        "hydrostatic"
+      ],
+      "matlabCore": false,
+      "persistence": true,
+      "rationale": "Family forcing implementation plus shared forcing, restart/output and persistence contracts; other family engines remain covered by all native CTest contracts."
+    },
+    {
+      "id": "family-boussinesq-matlab",
+      "paths": [],
+      "prefixes": [
+        "@WVTransformBoussinesq/"
+      ],
+      "families": [
+        "boussinesq"
+      ],
+      "matlabCore": true,
+      "persistence": false,
+      "rationale": "Family transform regressions plus shared MATLAB transform/invariant contracts; common mixed-family consumers remain selected."
+    },
+    {
+      "id": "family-boussinesq-native",
+      "paths": [
+        "CompiledKernel/src/WVTransformBoussinesqKernel.cpp",
+        "CompiledKernel/include/WaveVortexKernel/WVTransformBoussinesqKernel.hpp",
+        "PortableRuntime/src/WVBoussinesqIntegrationSystem.cpp",
+        "PortableRuntime/include/WaveVortexRuntime/WVBoussinesqIntegrationSystem.hpp"
+      ],
+      "prefixes": [],
+      "families": [
+        "boussinesq"
+      ],
+      "matlabCore": false,
+      "persistence": false,
+      "rationale": "Family numerical/continuation qualification and affected shared contracts; all native CTest contracts still execute in release and sanitizer builds."
+    },
+    {
+      "id": "family-boussinesq-forcing",
+      "paths": [
+        "PortableRuntime/src/WVBoussinesqForcingEngine.cpp",
+        "PortableRuntime/include/WaveVortexRuntime/WVBoussinesqForcingEngine.hpp"
+      ],
+      "prefixes": [],
+      "families": [
+        "boussinesq"
+      ],
+      "matlabCore": false,
+      "persistence": true,
+      "rationale": "Family forcing implementation plus shared forcing, restart/output and persistence contracts; other family engines remain covered by all native CTest contracts."
+    },
+    {
+      "id": "persistence",
+      "paths": [
+        "WVModelOutputGroup.m",
+        "WVModelOutputFile.m",
+        "WVModelOutputGroupEvenlySpaced.m",
+        "WVObservingSystem.m",
+        "@WVTransform/writeToFile.m",
+        "@WVTransform/initFromNetCDFFile.m",
+        "@WVTransform/waveVortexTransformFromFile.m",
+        "@WVTransform/createNetCDFFileForTimeStepOutput.m"
+      ],
+      "prefixes": [
+        "@WVModel/",
+        "ObservingSystems/"
+      ],
+      "families": [
+        "constant",
+        "barotropic",
+        "sqg",
+        "hydrostatic",
+        "boussinesq"
+      ],
+      "matlabCore": true,
+      "persistence": true,
+      "rationale": "Persisted state and observers cross every transform family; retain all family, MATLAB core and persistence consumers."
+    },
+    {
+      "id": "shared-transform",
+      "paths": [],
+      "prefixes": [
+        "@WVTransform/"
+      ],
+      "families": [
+        "constant",
+        "barotropic",
+        "sqg",
+        "hydrostatic",
+        "boussinesq"
+      ],
+      "matlabCore": true,
+      "persistence": false,
+      "rationale": "Shared transform state, operations and conversions serve every family; retain all transform and common consumer inventories."
+    },
+    {
+      "id": "geometry",
+      "paths": [
+        "WVRotatingFPlane.m",
+        "WVOrthogonalSolution.m",
+        "WVCoefficientMatrix.m"
+      ],
+      "prefixes": [
+        "@WVGeometryCartesianXYZ/",
+        "@WVGeometryDoublyPeriodic/",
+        "@WVGeometryDoublyPeriodicBarotropic/",
+        "@WVGeometryDoublyPeriodicStratified/",
+        "@WVGeometryDoublyPeriodicStratifiedBoussinesq/",
+        "@WVGeometryDoublyPeriodicStratifiedConstant/",
+        "@WVStratification/",
+        "FastTransforms/",
+        "ArgumentValidationFunctions/"
+      ],
+      "families": [
+        "constant",
+        "barotropic",
+        "sqg",
+        "hydrostatic",
+        "boussinesq"
+      ],
+      "matlabCore": true,
+      "persistence": true,
+      "rationale": "Geometry and stratification affect all transform and serialized-state consumers; preserve broad scientific coverage without implying a package-boundary change."
+    },
+    {
+      "id": "integration",
+      "paths": [
+        "WVArrayIntegrator.m"
+      ],
+      "prefixes": [
+        "Integrators/"
+      ],
+      "families": [
+        "constant",
+        "barotropic",
+        "sqg",
+        "hydrostatic",
+        "boussinesq"
+      ],
+      "matlabCore": true,
+      "persistence": true,
+      "rationale": "Shared stepping and state evaluation affect every family and restart contract; retain all families, core and persistence tests."
+    },
+    {
+      "id": "forcing",
+      "paths": [
+        "WVForcing.m",
+        "WVForcingType.m",
+        "Operations/SpatialForcingOperation.m"
+      ],
+      "prefixes": [
+        "Forcing/"
+      ],
+      "families": [
+        "constant",
+        "barotropic",
+        "sqg",
+        "hydrostatic",
+        "boussinesq"
+      ],
+      "matlabCore": true,
+      "persistence": true,
+      "rationale": "Shared MATLAB forcing and lifecycle behavior crosses families and persisted output; retain every existing scientific inventory."
+    },
+    {
+      "id": "diagnostics",
+      "paths": [],
+      "prefixes": [
+        "Operations/",
+        "FlowComponents/"
+      ],
+      "families": [
+        "constant",
+        "barotropic",
+        "sqg",
+        "hydrostatic",
+        "boussinesq"
+      ],
+      "matlabCore": true,
+      "persistence": false,
+      "rationale": "Shared diagnostics and flow components cross transform families; preserve all family and MATLAB core consumers including density/recovery contracts."
+    },
+    {
+      "id": "diagnostic-interfaces",
+      "paths": [
+        "WVOperation.m",
+        "WVVariableAnnotation.m",
+        "WVFlowComponent.m",
+        "WVTotalFlowComponent.m",
+        "WVPrimaryFlowComponent.m"
+      ],
+      "prefixes": [],
+      "families": [
+        "constant",
+        "barotropic",
+        "sqg",
+        "hydrostatic",
+        "boussinesq"
+      ],
+      "matlabCore": true,
+      "persistence": true,
+      "rationale": "Diagnostic annotation and operation interfaces also participate in persisted observations; retain broad science and persistence coverage."
+    },
+    {
+      "id": "compiled-adapter",
+      "paths": [],
+      "prefixes": [
+        "@WVCompiledBackend/",
+        "@WVCompiledTransformBackend/",
+        "@WVCompiledSourceIdentity/",
+        "@WVCompiledConstantStratificationBackend/",
+        "CompiledKernel/adapters/",
+        "tools/compiled-kernel/"
+      ],
+      "families": [
+        "constant",
+        "barotropic",
+        "sqg",
+        "hydrostatic",
+        "boussinesq"
+      ],
+      "matlabCore": true,
+      "persistence": true,
+      "rationale": "Provider, MEX and source identity changes cross all family adapters and lifecycle consumers; retain broad scientific coverage."
+    },
+    {
+      "id": "shared-native-kernel",
+      "paths": [],
+      "prefixes": [
+        "CompiledKernel/src/",
+        "CompiledKernel/include/"
+      ],
+      "families": [
+        "constant",
+        "barotropic",
+        "sqg",
+        "hydrostatic",
+        "boussinesq"
+      ],
+      "matlabCore": false,
+      "persistence": false,
+      "rationale": "Shared kernel primitives, buffers and headers affect every family; retain all native/MATLAB parity and common adapter consumers."
+    },
+    {
+      "id": "shared-native-runtime",
+      "paths": [],
+      "prefixes": [
+        "PortableRuntime/src/",
+        "PortableRuntime/include/",
+        "PortableRuntime/app/"
+      ],
+      "families": [
+        "constant",
+        "barotropic",
+        "sqg",
+        "hydrostatic",
+        "boussinesq"
+      ],
+      "matlabCore": false,
+      "persistence": true,
+      "rationale": "Shared runtime integration, diagnostics, forcing, observers and persistence fan out across every family; retain all family, adapter and persistence consumers."
+    }
+  ],
+  "testConsumers": {
+    "TestWVCompiledBarotropicPrimitives": [
+      "barotropic"
+    ],
+    "TestWVCompiledConstantPrimitives": [
+      "constant"
+    ],
+    "TestWVCompiledConstantVerticalCalculus": [
+      "constant"
+    ],
+    "TestWVCompiledStratifiedPrimitives": [
+      "sqg",
+      "hydrostatic",
+      "boussinesq"
+    ],
+    "TestPortableDensityEventEvaluation": [
+      "constant",
+      "hydrostatic",
+      "boussinesq"
+    ],
+    "TestPortableDensityOutput": [
+      "constant",
+      "hydrostatic",
+      "boussinesq"
+    ],
+    "TestPortableSamplingOutput": [
+      "constant",
+      "hydrostatic"
+    ]
+  }
+}

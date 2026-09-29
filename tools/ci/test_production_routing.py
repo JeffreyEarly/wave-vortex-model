@@ -1,12 +1,36 @@
 """Regression fixtures for production dependency and analyzer routing."""
 import copy
+from pathlib import Path
 import unittest
 
 from diff_content import documentation_changed, matlab_documentation_signature
-from route import FAMILIES, select
+from route import FAMILIES, PRODUCTION_DEPENDENCIES, select
 
 
 class ProductionDependencyRoutingTests(unittest.TestCase):
+    def test_registry_rules_have_explicit_contracts_and_coverage_review(self):
+        registry = PRODUCTION_DEPENDENCIES
+        self.assertEqual(registry['schema'], 'wvm-ci-dependencies-v4')
+        review = (Path(__file__).parents[2] / '.github/CI-routing-coverage-v4.md').read_text()
+        names = [rule['id'] for rule in registry['rules']]
+        self.assertEqual(len(names), len(set(names)))
+        for rule in registry['rules']:
+            with self.subTest(rule=rule['id']):
+                self.assertTrue(rule['paths'] or rule['prefixes'])
+                self.assertTrue(rule['families'])
+                self.assertLessEqual(set(rule['families']), set(FAMILIES))
+                self.assertIsInstance(rule['matlabCore'], bool)
+                self.assertIsInstance(rule['persistence'], bool)
+                self.assertTrue(rule['rationale'])
+                self.assertIn('`' + rule['id'] + '`', review)
+
+    def test_deleted_test_keeps_consumer_coverage_without_requesting_missing_class(self):
+        deleted = 'UnitTests/TestFocusedCISelection.m'
+        plan = select([deleted], surviving_matlab=[])
+        self.assertNotIn('TestFocusedCISelection', plan['matlabTests'])
+        self.assertEqual(set(plan['families']), set(FAMILIES))
+        self.assertFalse(plan['analyzer'])
+
     def test_family_native_and_matlab_sources_select_their_family(self):
         native_path = 'CompiledKernel/src/WVTransformHydrostaticKernel.cpp'
         matlab_path = '@WVTransformHydrostatic/WVTransformHydrostatic.m'
@@ -37,8 +61,9 @@ class ProductionDependencyRoutingTests(unittest.TestCase):
 
     def test_shared_forcing_integration_and_persistence_fan_out(self):
         cases = [
-            ('Forcing/WVForcingType.m', 'forcing'),
-            ('Integrators/WVArrayIntegrator.m', 'integration'),
+            ('WVForcingType.m', 'forcing'),
+            ('WVArrayIntegrator.m', 'integration'),
+            ('Operations/SpatialForcingOperation.m', 'forcing'),
             ('WVModelOutputGroup.m', 'persistence'),
         ]
         for path, rule in cases:
@@ -106,7 +131,7 @@ class ProductionDependencyRoutingTests(unittest.TestCase):
                 self.assertTrue(plan['analyzer'])
                 self.assertEqual(plan['analyzerMode'], 'production')
                 self.assertEqual(plan['analyzerFiles'], [])
-                if 'verifyWaveVortexModelPackage.m' in paths or complete:
+                if 'tools/verifyWaveVortexModelPackage.m' in paths or complete:
                     self.assertTrue(plan['packaging'])
 
     def test_direct_test_selection_survives_family_consumer_filtering(self):
