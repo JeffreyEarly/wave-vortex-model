@@ -100,6 +100,8 @@ def validate_baseline_transition(previous: object, current: object, base_commit:
     if not _valid_commit(base_commit):
         raise ArtifactPolicyError("Base commit must be a lowercase 40-character SHA-1")
     errors = []
+    for path in sorted(current_entries.keys() - previous_entries.keys()):
+        errors.append(f"Historical baseline entry added after initial registration: {path}")
     for path, old in sorted(previous_entries.items()):
         new = current_entries.get(path)
         if new is not None:
@@ -143,6 +145,12 @@ def check_repository(
         if normalized in registration:
             raise ArtifactPolicyError(f"Duplicate registered path: {normalized}")
         registration[normalized] = role
+
+    overlaps = registration.keys() & (entries.keys() | retired.keys())
+    if overlaps:
+        raise ArtifactPolicyError(
+            "Registered paths cannot also be baseline or retired artifacts: " + ", ".join(sorted(overlaps))
+        )
 
     paths = [_safe_path(path) for path in tracked_paths]
     if len(set(paths)) != len(paths):

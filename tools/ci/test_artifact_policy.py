@@ -111,6 +111,16 @@ class ArtifactPolicyTests(unittest.TestCase):
             "Retirement source commit does not match base revision: ci-evidence/old/run.log"
         ])
 
+    def test_base_to_head_transition_rejects_new_historical_entries(self):
+        self.write("ci-evidence/old/new-output.log", "late output\n")
+        added = build_baseline(self.root, [
+            "ci-evidence/old/run.log",
+            "ci-evidence/old/new-output.log",
+        ])
+        self.assertEqual(validate_baseline_transition(self.baseline, added, self.BASE_COMMIT), [
+            "Historical baseline entry added after initial registration: ci-evidence/old/new-output.log"
+        ])
+
     def test_existing_retirement_rows_are_append_only(self):
         entry = self.baseline["entries"][0]
         retired = {
@@ -143,6 +153,31 @@ class ArtifactPolicyTests(unittest.TestCase):
     def test_registered_role_must_be_known(self):
         with self.assertRaisesRegex(ArtifactPolicyError, "Unknown registered role"):
             check_repository(self.root, self.tracked(), {"fixtures/input.json": "anything"}, self.baseline)
+
+    def test_registered_paths_cannot_overlap_historical_or_retired_entries(self):
+        with self.assertRaisesRegex(ArtifactPolicyError, "Registered paths cannot also be baseline"):
+            check_repository(
+                self.root,
+                self.tracked(),
+                {**self.registered, "ci-evidence/old/run.log": "fixture"},
+                self.baseline,
+            )
+
+        entry = self.baseline["entries"][0]
+        retired = {
+            "path": entry["path"],
+            "sha256": entry["sha256"],
+            "reason": "Removed.",
+            "sourceCommit": self.BASE_COMMIT,
+        }
+        retired_manifest = {"schema": self.baseline["schema"], "entries": [], "retired": [retired]}
+        with self.assertRaisesRegex(ArtifactPolicyError, "Registered paths cannot also be baseline"):
+            check_repository(
+                self.root,
+                self.tracked(),
+                {**self.registered, "ci-evidence/old/run.log": "fixture"},
+                retired_manifest,
+            )
 
 
 if __name__ == "__main__":
