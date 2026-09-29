@@ -35,13 +35,13 @@ class RoutingTests(unittest.TestCase):
         self.assertEqual(set(plan['families']), set(FAMILIES))
         self.assertIn('TestPortableRuntimeCompatibility', plan['matlabTests'])
         self.assertIn('TestWVModelOutputPersistence', plan['matlabTests'])
-        self.assertTrue(plan['crossRelease'])
+        self.assertFalse(plan['crossRelease'])
 
     def test_matlab_source_preserves_compatibility_and_documentation(self):
         plan = select(['@WVTransformHydrostatic/WVTransformHydrostatic.m'])
         self.assertTrue(plan['analyzer'])
         self.assertTrue(plan['documentation'])
-        self.assertEqual(plan['releases'], ['R2025b', 'R2026a'])
+        self.assertEqual(plan['releases'], ['R2025b'])
         self.assertEqual(plan['families'], ['hydrostatic'])
 
     def test_ci_and_unknown_paths_are_conservative(self):
@@ -99,7 +99,7 @@ class RoutingTests(unittest.TestCase):
             with self.subTest(path=path):
                 plan = select([path])
                 self.assertIn(regression, plan['matlabTests'])
-                self.assertEqual(plan['releases'], ['R2025b', 'R2026a'])
+                self.assertEqual(plan['releases'], ['R2025b'])
                 batches = [name for group in plan['matlabShards'] for name in group['classes']]
                 self.assertEqual(batches.count(regression), 1)
 
@@ -163,7 +163,7 @@ class RoutingTests(unittest.TestCase):
                 self.assertNotIn(helper, flattened)
                 self.assertTrue(plan['matlabCore'])
                 self.assertTrue(plan['analyzer'])
-                self.assertEqual(plan['releases'], ['R2025b', 'R2026a'])
+                self.assertEqual(plan['releases'], ['R2025b'])
                 self.assertIn('TestDensityDiagnosticReference', plan['matlabTests'])
                 self.assertIn('TestOperationRegistrationAndCaching', plan['matlabTests'])
         plan = select(['UnitTests/TestDensityDiagnosticReference.m'])
@@ -178,7 +178,7 @@ class RoutingTests(unittest.TestCase):
                 self.assertEqual(len(flattened), len(set(flattened)))
                 self.assertLessEqual(len(plan[groups]), 4)
                 self.assertEqual([group['id'] for group in plan[groups]], list(range(len(plan[groups]))))
-        self.assertEqual(len(select(['README.md'])['matlabShards']), 1)
+        self.assertEqual(len(select(['README.md'])['matlabShards']), 0)
         self.assertGreater(len(select(['CompiledKernel/src/WVTransformBoussinesqKernel.cpp'])['matlabShards']), 1)
 
 

@@ -30,47 +30,30 @@ if binaryDirectory ~= ""
         setenv(names(index),value);
     end
 end
-report = struct(schema="wvm-ci-matlab-v1",sourceCommit=string(selection.sourceCommit), ...
+assert(string(selection.schema)=="wvm-ci-selection-v2","WaveVortexModel:CISelection","Unsupported CI selection format.");
+report = struct(schema="wvm-ci-matlab-v2",sourceCommit=string(selection.sourceCommit), ...
     matlabRelease=release,configuration=configuration,shard=shard,passed=false, ...
-    requestedClasses={cell(0,1)},expectedTests={cell(0,1)},deferredMethods={selection.deferredMethods}, ...
+    requestedClasses={cell(0,1)},expectedTests={cell(0,1)},smokeExpectedTests={cell(0,1)},deferredMethods={selection.deferredMethods}, ...
     excludedTags={selection.excludedTags},excludedTests={cell(0,1)},excludedClasses={cell(0,1)}, ...
     phases=struct(smoke=false,analyzer=false,documentation=false), ...
     phaseSeconds=struct,tests=struct(name={},passed={},incomplete={},seconds={}));
 if configuration=="release"
+    assert(selection.matlab,"WaveVortexModel:CISelection","MATLAB was not selected.");
     groups = selection.matlabShards;
-    if shard==0
-        started = tic; buildtool test:smoke; report.phaseSeconds.smoke = toc(started); report.phases.smoke = true;
-    end
 else
+    assert(selection.sanitized,"WaveVortexModel:CISelection","Sanitized MATLAB was not selected.");
     groups = selection.sanitizedShards;
 end
 assert(shard<numel(groups) && groups(shard+1).id==shard,"WaveVortexModel:CIShard","Unselected CI test batch.");
-classes = string(groups(shard+1).classes);
-classes = reshape(classes,[],1);
+classes = reshape(string(groups(shard+1).classes),[],1);
 report.requestedClasses = cellstr(classes);
-suite = matlab.unittest.Test.empty;
-for name = reshape(classes,1,[])
-    testPath = fullfile(root,"UnitTests",name+".m");
-    assert(isfile(testPath),"WaveVortexModel:CIMissingTest","Missing selected test class: %s",name);
-    part = testsuite(testPath);
-    assert(~isempty(part),"WaveVortexModel:CIEmptyTest","No test methods discovered for %s",name);
-    originalNames = string({part.Name});
-    for tag = reshape(string(selection.excludedTags),1,[])
-        part = part.selectIf(~matlab.unittest.selectors.HasTag(tag));
-    end
-    excluded = originalNames(~ismember(originalNames,string({part.Name})));
-    report.excludedTests = [report.excludedTests;reshape(cellstr(excluded),[],1)];
-    if isempty(part)
-        report.excludedClasses{end+1,1} = char(name);
-        continue
-    end
-    deferred = ismember(string({part.Name}),string(selection.deferredMethods));
-    part = part(~deferred);
-    assert(~isempty(part),"WaveVortexModel:CIEmptyTest","No selected methods for %s",name);
-    suite = [suite,part]; %#ok<AGROW>
-end
+report.phases.smoke = configuration=="release" && shard==0 && selection.smoke;
+[suite,coverage] = selectFocusedCISuite(fullfile(root,"UnitTests"),classes,string(selection.matlabTests), ...
+    string(selection.excludedTags),string(selection.deferredMethods),report.phases.smoke);
+report.excludedTests = coverage.excludedTests;
+report.excludedClasses = coverage.excludedClasses;
+report.smokeExpectedTests = coverage.smokeExpectedTests;
 if ~isempty(suite)
-    [~,indices] = unique(string({suite.Name}),'stable'); suite = suite(indices);
     report.expectedTests = cellstr(string({suite.Name}));
     results = run(suite);
     for result = reshape(results,1,[])

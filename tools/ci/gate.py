@@ -3,16 +3,18 @@
 import argparse
 import json
 from pathlib import Path
-from route import select
+import subprocess
+from route import select, content_only_workflows
 
 
 def validate(plan, jobs, reports):
     expected = select(plan['paths'], complete=plan['complete'], migration=plan['migration'],
-                      source_commit=plan['sourceCommit'])
+                      source_commit=plan['sourceCommit'], content_only_workflows=plan['contentOnlyWorkflows'],
+                      diff_base=plan['diffBase'], diff_head=plan['diffHead'])
     if plan != expected:
         raise ValueError('Selection is incomplete or differs from the current routing policy')
-    selected = {'route': True, 'repository': True, 'cpp-release': plan['cpp'], 'cpp-sanitized': plan['cpp'], 'matlab': True,
-                'matlab-sanitized': plan['cpp'], 'packages': plan['packaging']}
+    selected = {'route': True, 'repository': True, 'cpp-release': plan['cpp'], 'cpp-sanitized': plan['cpp'], 'matlab': plan['matlab'],
+                'matlab-sanitized': plan['sanitized'], 'packages': plan['packaging']}
     for name, required in selected.items():
         result = jobs.get(name, {}).get('result')
         allowed = {'success'} if required else {'skipped'}
@@ -20,7 +22,7 @@ def validate(plan, jobs, reports):
             raise ValueError(f'{name}: expected {sorted(allowed)}, got {result!r}')
     expected_reports = {(release, 'release', group['id']): group['classes']
                         for release in plan['releases'] for group in plan['matlabShards']}
-    if plan['cpp']:
+    if plan['sanitized']:
         expected_reports.update({('R2025b', 'sanitized', group['id']): group['classes']
                                  for group in plan['sanitizedShards']})
     by_identity = {}
@@ -32,10 +34,11 @@ def validate(plan, jobs, reports):
     if set(by_identity) != set(expected_reports):
         raise ValueError('Missing or unexpected MATLAB release/configuration evidence')
     executed_by_configuration = {}
+    smoke_by_release = {}
     for identity, report in by_identity.items():
         release, configuration, shard = identity
         tests = expected_reports[identity]
-        if report.get('schema') != 'wvm-ci-matlab-v1' or report.get('sourceCommit') != plan['sourceCommit']:
+        if report.get('schema') != 'wvm-ci-matlab-v2' or report.get('sourceCommit') != plan['sourceCommit']:
             raise ValueError(f'{identity}: stale or malformed MATLAB evidence')
         if (report.get('requestedClasses') != tests or report.get('deferredMethods') != plan['deferredMethods']
                 or report.get('excludedTags') != plan['excludedTags']):
@@ -43,11 +46,20 @@ def validate(plan, jobs, reports):
         if report.get('passed') is not True:
             raise ValueError(f'{identity}: validation did not pass')
         phases = report.get('phases', {})
-        expected_phases = {'smoke': configuration == 'release' and shard == 0,
+        expected_phases = {'smoke': configuration == 'release' and shard == 0 and plan['smoke'],
                            'analyzer': configuration == 'release' and release == 'R2025b' and shard == 0 and plan['analyzer'],
                            'documentation': configuration == 'release' and release == 'R2025b' and shard == 0 and plan['documentation']}
         if any(phases.get(key) is not value for key, value in expected_phases.items()):
             raise ValueError(f'{identity}: missing selected MATLAB phase')
+        smoke = report.get('smokeExpectedTests')
+        if not isinstance(smoke, list) or len(smoke) != len(set(smoke)):
+            raise ValueError(f'{identity}: malformed smoke discovery')
+        if expected_phases['smoke']:
+            if not smoke:
+                raise ValueError(f'{identity}: missing smoke discovery')
+            smoke_by_release[release] = set(smoke)
+        elif smoke:
+            raise ValueError(f'{identity}: unexpected smoke discovery')
         actual_tests = report.get('tests', [])
         if isinstance(actual_tests, dict):
             actual_tests = [actual_tests]
@@ -76,6 +88,11 @@ def validate(plan, jobs, reports):
                 raise ValueError(f'{identity}: no executed tests for {name}')
         if any(test.get('passed') is not True or test.get('incomplete') is not False for test in actual_tests):
             raise ValueError(f'{identity}: failed or incomplete numerical tests')
+    for release, smoke in smoke_by_release.items():
+        if not smoke <= executed_by_configuration[(release, 'release')]:
+            raise ValueError(f'{release}: expected smoke methods did not all execute')
+    if len({tuple(sorted(smoke)) for smoke in smoke_by_release.values()}) > 1:
+        raise ValueError('Smoke discovery differs between MATLAB releases')
     return True
 
 
@@ -86,7 +103,18 @@ def main():
     parser.add_argument('--reports', required=True, type=Path)
     args = parser.parse_args()
     reports = [json.loads(path.read_text()) for path in sorted(args.reports.rglob('matlab-*.json'))]
-    validate(json.loads(args.selection.read_text()), json.loads(args.jobs.read_text()), reports)
+    plan = json.loads(args.selection.read_text())
+    commit = subprocess.check_output(['git', 'rev-parse', 'HEAD'], text=True).strip()
+    if plan['sourceCommit'] != commit:
+        raise ValueError('Selection belongs to a different checkout revision')
+    if plan['diffBase']:
+        paths = subprocess.check_output(['git', 'diff', '--name-only', '--no-renames', '-z', plan['diffBase'], plan['diffHead']]).decode().rstrip('\0').split('\0')
+        paths = sorted(p for p in paths if p)
+        if paths != plan['paths'] or content_only_workflows(plan['diffBase'], plan['diffHead'], paths) != plan['contentOnlyWorkflows']:
+            raise ValueError('Selection does not match its exact Git diff')
+    elif plan['contentOnlyWorkflows']:
+        raise ValueError('Content classification requires an exact Git diff')
+    validate(plan, json.loads(args.jobs.read_text()), reports)
     print('All selected CI jobs and exact-revision MATLAB evidence passed.')
 
 
