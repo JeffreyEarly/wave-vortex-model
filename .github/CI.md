@@ -1,6 +1,6 @@
 # CI policy for v4
 
-Ordinary pull requests use the `Required / WaveVortexModel` aggregate check. The selector records changed paths, source revision, selected test classes, MATLAB releases, and reasons in the `ci-selection` artifact. A failed, cancelled, missing, or unexpectedly skipped selected job fails the aggregate. MATLAB reports must cover every selected release/configuration and every discovered method. Failures are never retried as though they were infrastructure failures.
+Ordinary pull requests use the `Required / WaveVortexModel` aggregate check. CI runs when a PR is opened, updated, or reopened, and on pushes to `main`; label changes do not start or expand validation. No workflow runs on a recurring schedule. The selector records changed paths, source revision, selected test classes, MATLAB releases, and reasons in the `ci-selection` artifact. A failed, cancelled, missing, or unexpectedly skipped selected job fails the aggregate. MATLAB reports must cover every selected release/configuration and every discovered method. Failures are never retried as though they were infrastructure failures.
 
 ## Routing
 
@@ -14,7 +14,7 @@ Ordinary pull requests use the `Required / WaveVortexModel` aggregate check. The
 | MATLAB source | Relevant scientific groups plus Code Analyzer and documentation checks; MATLAB public behavior must remain backward compatible |
 | Packaging, dependencies, unknown paths or CI implementation | Conservative shared coverage; isolated clean installation and package export where selected |
 
-The executable policy is `tools/ci/route.py`. Matches are unioned; deleted files are included and renames supply both paths. Unknown paths select broad coverage. An unavailable or empty inventory also selects broad coverage. There are no workflow-level path filters on the aggregate, so documentation-only and unrelated changes still produce a required result.
+The executable policy is `tools/ci/route.py`. Pull requests compare their head with the merge base of the target branch, covering every PR commit without treating unrelated target-branch changes as part of the PR. Pushes compare the before and after revisions. Matches are unioned; deleted files are included and renames supply both paths. Unknown paths select broad coverage. An unavailable or empty inventory also selects broad coverage. There are no workflow-level path filters on the aggregate, so documentation-only and unrelated changes still produce a required result.
 
 ## Build and setup reuse
 
@@ -28,9 +28,9 @@ Ubuntu downloads have bounded connection timeouts and one apt retry. MATLAB prov
 
 ## Broader qualification
 
-The focused driver excludes the existing `optional` and `exhaustive` test categories; their dedicated Extended jobs retain them. Reports list excluded methods and any classes wholly belonging to those categories; a class cannot be silently omitted or both excluded and executed. An assumption failure in any selected test fails both its MATLAB job and the aggregate. The central workflow runs complete focused qualification weekly, or explicitly with `complete=true`, or on a `final-integration` PR. This includes all transform groups and the three `longerContinuationMatchesMatlab` methods. Ordinary focused runs retain lifecycle/storage checks and shorter MATLAB–C++–MATLAB continuation fixtures. Hydrostatic and Boussinesq long continuation was already explicit; SQG's long continuation moves off ordinary PRs.
+The focused driver excludes the existing `optional` and `exhaustive` test categories; their dedicated Extended jobs retain them. Reports list excluded methods and any classes wholly belonging to those categories; a class cannot be silently omitted or both excluded and executed. An assumption failure in any selected test fails both its MATLAB job and the aggregate. Dispatch the central workflow with `complete=true` for complete focused qualification, including all transform groups and the three `longerContinuationMatchesMatlab` methods. Ordinary focused runs retain lifecycle/storage checks and shorter MATLAB–C++–MATLAB continuation fixtures.
 
-The existing transform qualification workflows remain available for explicit campaigns with their original machine-readable qualification reports. Extended full, exhaustive and optional suites remain scheduled and manually dispatchable. They are not ordinary merge requirements. Package/release work selects isolated package verification; publication continues through the existing release workflow.
+The existing transform qualification workflows remain available for explicit campaigns with their original machine-readable qualification reports. Extended full, exhaustive and optional suites run on published releases or manual dispatch. They are not ordinary merge requirements. The published-release trigger validates the release after publication; it is not a pre-publication gate. Package/release work selects isolated package verification; publication continues through the existing release workflow.
 
 ## Required-check migration
 

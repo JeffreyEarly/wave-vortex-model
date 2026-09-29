@@ -46,12 +46,16 @@ class WorkflowContracts(unittest.TestCase):
 
     def test_full_qualification_is_retained_outside_ordinary_prs(self):
         main = workflow('ci.yml')
-        self.assertIn('schedule', main['on'])
+        self.assertEqual(set(main['on']), {'pull_request', 'push', 'workflow_dispatch'})
+        self.assertEqual(main['on']['pull_request']['types'], ['opened', 'synchronize', 'reopened'])
         self.assertIn('complete', main['on']['workflow_dispatch']['inputs'])
-        env = main['jobs']['route']['steps'][1]['env']
-        self.assertIn("github.event_name == 'schedule'", env['COMPLETE'])
+        selection = main['jobs']['route']['steps'][1]
+        self.assertEqual(selection['env']['COMPLETE'], '${{ inputs.complete }}')
+        self.assertIn('--base "$PR_BASE_SHA" --head "$HEAD_SHA" --merge-base', selection['run'])
+        self.assertIn('--base "$PUSH_BASE_SHA" --head "$HEAD_SHA")', selection['run'])
         extended = workflow('extended-ci.yml')
-        self.assertNotIn('pull_request', extended['on'])
+        self.assertEqual(set(extended['on']), {'release', 'workflow_dispatch'})
+        self.assertEqual(extended['on']['release']['types'], ['published'])
         self.assertEqual(set(extended['jobs']), {'full', 'exhaustive', 'optional'})
         for name in ['hydrostatic-kernel.yml', 'boussinesq-kernel.yml', 'sqg-qualification.yml']:
             triggers = workflow(name)['on']

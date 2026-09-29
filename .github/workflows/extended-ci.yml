@@ -1,15 +1,15 @@
 name: WaveVortexModel Extended CI
 
 on:
-  schedule:
-    - cron: "0 9 * * 1"
+  release:
+    types: [published]
   workflow_dispatch:
 
 permissions:
   contents: read
 
 concurrency:
-  group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}-${{ github.event_name == 'pull_request' && github.event.action == 'closed' && (github.base_ref == 'main' || contains(github.event.pull_request.labels.*.name, 'final-integration')) && 'retain-final' || 'active' }}
+  group: ${{ github.workflow }}-${{ github.ref }}
   cancel-in-progress: true
 
 env:

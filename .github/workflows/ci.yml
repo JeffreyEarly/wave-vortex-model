@@ -2,11 +2,9 @@ name: WaveVortexModel CI
 
 on:
   pull_request:
-    types: [opened, synchronize, reopened, labeled, unlabeled]
+    types: [opened, synchronize, reopened]
   push:
     branches: [main]
-  schedule:
-    - cron: '0 9 * * 2'
   workflow_dispatch:
     inputs:
       complete:
@@ -43,14 +41,17 @@ jobs:
       - name: Resolve changed paths and dependency coverage
         id: select
         env:
-          BASE_SHA: ${{ github.event.pull_request.base.sha || github.event.before }}
+          PR_BASE_SHA: ${{ github.event.pull_request.base.sha }}
+          PUSH_BASE_SHA: ${{ github.event.before }}
           HEAD_SHA: ${{ github.event.pull_request.head.sha || github.sha }}
-          COMPLETE: ${{ github.event_name == 'schedule' || inputs.complete || contains(github.event.pull_request.labels.*.name, 'final-integration') }}
+          COMPLETE: ${{ inputs.complete }}
           LEGACY_CHECKS: ${{ vars.WVM_CI_LEGACY_REQUIRED_CHECKS != 'false' }}
         run: |
           args=()
-          if [[ -n "$BASE_SHA" && "$BASE_SHA" != 0000000000000000000000000000000000000000 ]]; then
-            args+=(--base "$BASE_SHA" --head "$HEAD_SHA")
+          if [[ -n "$PR_BASE_SHA" ]]; then
+            args+=(--base "$PR_BASE_SHA" --head "$HEAD_SHA" --merge-base)
+          elif [[ -n "$PUSH_BASE_SHA" && "$PUSH_BASE_SHA" != 0000000000000000000000000000000000000000 ]]; then
+            args+=(--base "$PUSH_BASE_SHA" --head "$HEAD_SHA")
           fi
           if [[ "$COMPLETE" == true ]]; then args+=(--complete); fi
           if [[ "$LEGACY_CHECKS" == true ]]; then args+=(--migration); fi
