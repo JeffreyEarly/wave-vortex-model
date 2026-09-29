@@ -1,4 +1,5 @@
 classdef TestPublicInterpolationContract < matlab.unittest.TestCase
+    % Bounded CI proof for exact changed-file analyzer evidence.
 
     properties
         wvt
