@@ -49,3 +49,5 @@ If WaveVortexModel contributes to your work, cite the software and the scientifi
 - Early, J. J., Hernández-Dueñas, G., Smith, L. M., & Lelong, M.-P. (2024). [Available potential vorticity and the wave-vortex decomposition for arbitrary stratification](https://doi.org/10.48550/arXiv.2403.20269). arXiv.
 
 Additional acknowledgements and BibTeX downloads are available at [wavevortexmodel.org/acknowledgements](https://wavevortexmodel.org/acknowledgements).
+
+<!-- Temporary CI routing proof: prose-only change. -->
