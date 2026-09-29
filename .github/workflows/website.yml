@@ -45,6 +45,8 @@ jobs:
       - name: Verify rendered downloads and custom domain
         run: |
           python3 source/tools/website_downloads.py --root source --manifest source/docs/benchmarks/downloads.json --destination rendered-site --verify-staged
+          # Jekyll's Pages build excludes CNAME; Actions preserves the domain in repository settings.
+          cp source/docs/CNAME rendered-site/CNAME
           cmp source/docs/CNAME rendered-site/CNAME
       - name: Upload website artifact
         uses: actions/upload-pages-artifact@v4

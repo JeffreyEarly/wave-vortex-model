@@ -34,6 +34,7 @@ class WebsitePublicationContracts(unittest.TestCase):
         self.assertLess(stage, render)
         self.assertLess(render, verify)
         self.assertLess(verify, upload)
+        self.assertIn('cp source/docs/CNAME rendered-site/CNAME', steps[verify]['run'])
         self.assertIn('cmp source/docs/CNAME rendered-site/CNAME', steps[verify]['run'])
         deploy = page['jobs']['deploy']
         self.assertEqual(deploy['needs'], 'build')
