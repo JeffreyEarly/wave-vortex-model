@@ -47,7 +47,10 @@ class WorkflowContracts(unittest.TestCase):
     def test_full_qualification_is_retained_outside_ordinary_prs(self):
         main = workflow('ci.yml')
         self.assertEqual(set(main['on']), {'pull_request', 'push', 'workflow_dispatch'})
-        self.assertEqual(main['on']['pull_request']['types'], ['opened', 'synchronize', 'reopened'])
+        self.assertEqual(main['on']['pull_request'], {'types': ['opened', 'synchronize', 'reopened']})
+        self.assertEqual(main['on']['push'], {'branches': ['main']})
+        for file in WORKFLOWS.glob('*.yml'):
+            self.assertNotIn('schedule', workflow(file.name).get('on', {}), file.name)
         self.assertIn('complete', main['on']['workflow_dispatch']['inputs'])
         selection = next(step for step in main['jobs']['route']['steps'] if step.get('id') == 'select')
         self.assertEqual(selection['env']['COMPLETE'], '${{ inputs.complete }}')
