@@ -174,7 +174,7 @@ class GateSelectionTests(unittest.TestCase):
             }.items()
         }
         report = {
-            'schema': 'wvm-ci-matlab-v2',
+            'schema': 'wvm-ci-matlab-v3',
             'sourceCommit': plan['sourceCommit'],
             'matlabRelease': 'R2025b',
             'configuration': 'release',
@@ -212,16 +212,19 @@ def _gate_reports(plan, smoke_by_release=None):
     for release, configuration, group in identities:
         classes = group['classes']
         shard = group['id']
+        analyzer = configuration == 'release' and release == 'R2025b' and shard == 0 and plan['analyzer']
         expects_smoke = configuration == 'release' and shard == 0 and plan['smoke']
         smoke = list(smoke_by_release.get(release, ['TestSmoke/baseline'])) if expects_smoke else []
         names = [name + '/method' for name in classes] + (smoke if expects_smoke else [])
         reports.append({
-            'schema': 'wvm-ci-matlab-v2',
+            'schema': 'wvm-ci-matlab-v3',
             'sourceCommit': plan['sourceCommit'],
             'matlabRelease': release,
             'configuration': configuration,
             'shard': shard,
             'passed': True,
+            'analyzerMode': plan['analyzerMode'] if analyzer else 'none',
+            'analyzedFiles': (plan['analyzerFiles'] if plan['analyzerMode'] == 'changed' else ['Production.m']) if analyzer else [],
             'requestedClasses': classes,
             'deferredMethods': plan['deferredMethods'],
             'excludedTags': plan['excludedTags'],

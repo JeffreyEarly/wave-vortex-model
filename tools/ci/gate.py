@@ -5,12 +5,14 @@ import json
 from pathlib import Path
 import subprocess
 from route import select, content_only_workflows
+from diff_content import matlab_diff_facts
 
 
 def validate(plan, jobs, reports):
     expected = select(plan['paths'], complete=plan['complete'], migration=plan['migration'],
                       source_commit=plan['sourceCommit'], content_only_workflows=plan['contentOnlyWorkflows'],
-                      diff_base=plan['diffBase'], diff_head=plan['diffHead'])
+                      diff_base=plan['diffBase'], diff_head=plan['diffHead'],
+                      implementation_only_matlab=plan['implementationOnlyMatlab'], surviving_matlab=plan['survivingMatlab'])
     if plan != expected:
         raise ValueError('Selection is incomplete or differs from the current routing policy')
     selected = {'route': True, 'repository': True, 'cpp-release': plan['cpp'], 'cpp-sanitized': plan['cpp'], 'matlab': plan['matlab'],
@@ -38,7 +40,7 @@ def validate(plan, jobs, reports):
     for identity, report in by_identity.items():
         release, configuration, shard = identity
         tests = expected_reports[identity]
-        if report.get('schema') != 'wvm-ci-matlab-v2' or report.get('sourceCommit') != plan['sourceCommit']:
+        if report.get('schema') != 'wvm-ci-matlab-v3' or report.get('sourceCommit') != plan['sourceCommit']:
             raise ValueError(f'{identity}: stale or malformed MATLAB evidence')
         if (report.get('requestedClasses') != tests or report.get('deferredMethods') != plan['deferredMethods']
                 or report.get('excludedTags') != plan['excludedTags']):
@@ -51,6 +53,14 @@ def validate(plan, jobs, reports):
                            'documentation': configuration == 'release' and release == 'R2025b' and shard == 0 and plan['documentation']}
         if any(phases.get(key) is not value for key, value in expected_phases.items()):
             raise ValueError(f'{identity}: missing selected MATLAB phase')
+        analyzer_mode = plan['analyzerMode'] if expected_phases['analyzer'] else 'none'
+        analyzed = report.get('analyzedFiles')
+        if report.get('analyzerMode') != analyzer_mode or not isinstance(analyzed, list) or len(analyzed) != len(set(analyzed)):
+            raise ValueError(f'{identity}: malformed analyzer evidence')
+        if ((analyzer_mode == 'changed' and sorted(analyzed) != plan['analyzerFiles'])
+                or (analyzer_mode == 'none' and analyzed)
+                or (analyzer_mode == 'production' and not analyzed)):
+            raise ValueError(f'{identity}: analyzer coverage differs from selection')
         smoke = report.get('smokeExpectedTests')
         if not isinstance(smoke, list) or len(smoke) != len(set(smoke)):
             raise ValueError(f'{identity}: malformed smoke discovery')
@@ -110,9 +120,12 @@ def main():
     if plan['diffBase']:
         paths = subprocess.check_output(['git', 'diff', '--name-only', '--no-renames', '-z', plan['diffBase'], plan['diffHead']]).decode().rstrip('\0').split('\0')
         paths = sorted(p for p in paths if p)
+        surviving, implementation_only = matlab_diff_facts(plan['diffBase'], plan['diffHead'], paths)
+        if surviving != plan['survivingMatlab'] or implementation_only != plan['implementationOnlyMatlab']:
+            raise ValueError('MATLAB content classification differs from the exact Git diff')
         if paths != plan['paths'] or content_only_workflows(plan['diffBase'], plan['diffHead'], paths) != plan['contentOnlyWorkflows']:
             raise ValueError('Selection does not match its exact Git diff')
-    elif plan['contentOnlyWorkflows']:
+    elif plan['contentOnlyWorkflows'] or plan['implementationOnlyMatlab'] or plan['survivingMatlab'] is not None:
         raise ValueError('Content classification requires an exact Git diff')
     validate(plan, json.loads(args.jobs.read_text()), reports)
     print('All selected CI jobs and exact-revision MATLAB evidence passed.')

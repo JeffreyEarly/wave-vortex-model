@@ -1,0 +1,65 @@
+# Reviewed v4 CI coverage changes
+
+Baseline: merged PR #539, commit `b294c9b72212108b349a678704a898bac1b668c8`. The table covers every production registry rule and every currently tracked source path matching that rule, with both sides selected independently. Slash-separated counts indicate different old path classifications inside a rule. Counts describe selected classes, including excluded optional classes; they are not runtime savings.
+
+All rows retain release and ASan/UBSan CTest contracts, affected MATLAB parity/integration tests, the validated smoke baseline, source-revision checks and the required aggregate. Shared routes retain all families. Unknown production paths retain complete conservative coverage.
+
+| Registry rule | Source paths | MATLAB classes, before → after | Sanitizer classes, before → after | Contracts retained |
+| --- | ---: | --- | --- | --- |
+| `family-constant-matlab` | 4 | 32 → 48 | 19 → 19 | Family transform regressions plus shared MATLAB transform/invariant contracts; common mixed-family consumers remain selected. |
+| `family-constant-native` | 4 | 32 → 30 | 19 → 19 | Family numerical/continuation qualification and affected shared contracts; all native CTest contracts still execute in release and sanitizer builds. |
+| `family-barotropic-matlab` | 2 | 32 → 45 | 19 → 16 | Family transform regressions plus shared MATLAB transform/invariant contracts; common mixed-family consumers remain selected. |
+| `family-barotropic-native` | 4 | 32 → 26 | 19 → 16 | Family numerical/continuation qualification and affected shared contracts; all native CTest contracts still execute in release and sanitizer builds. |
+| `family-barotropic-forcing` | 2 | 58 → 38 | 34 → 17 | Family forcing implementation plus shared forcing, restart/output and persistence contracts; other family engines remain covered by all native CTest contracts. |
+| `family-sqg-matlab` | 2 | 34 → 47 | 21 → 18 | Family transform regressions plus shared MATLAB transform/invariant contracts; common mixed-family consumers remain selected. |
+| `family-sqg-native` | 4 | 34 → 28 | 21 → 18 | Family numerical/continuation qualification and affected shared contracts; all native CTest contracts still execute in release and sanitizer builds. |
+| `family-sqg-forcing` | 2 | 58 → 40 | 34 → 19 | Family forcing implementation plus shared forcing, restart/output and persistence contracts; other family engines remain covered by all native CTest contracts. |
+| `family-hydrostatic-matlab` | 2 | 34 → 50 | 21 → 21 | Family transform regressions plus shared MATLAB transform/invariant contracts; common mixed-family consumers remain selected. |
+| `family-hydrostatic-native` | 4 | 34 → 31 | 21 → 21 | Family numerical/continuation qualification and affected shared contracts; all native CTest contracts still execute in release and sanitizer builds. |
+| `family-hydrostatic-forcing` | 2 | 58 → 43 | 34 → 22 | Family forcing implementation plus shared forcing, restart/output and persistence contracts; other family engines remain covered by all native CTest contracts. |
+| `family-boussinesq-matlab` | 3 | 34 → 49 | 21 → 20 | Family transform regressions plus shared MATLAB transform/invariant contracts; common mixed-family consumers remain selected. |
+| `family-boussinesq-native` | 4 | 34 → 30 | 21 → 20 | Family numerical/continuation qualification and affected shared contracts; all native CTest contracts still execute in release and sanitizer builds. |
+| `family-boussinesq-forcing` | 2 | 58 → 42 | 34 → 21 | Family forcing implementation plus shared forcing, restart/output and persistence contracts; other family engines remain covered by all native CTest contracts. |
+| `persistence` | 17 | 64/76 → 76 | 33/34 → 34 | Persisted state and observers cross every transform family; retain all family, MATLAB core and persistence consumers. |
+| `shared-transform` | 46 | 64 → 64 | 33 → 33 | Shared transform state, operations and conversions serve every family; retain all transform and common consumer inventories. |
+| `geometry` | 52 | 32/34/76 → 76 | 19/21/34 → 34 | Geometry and stratification affect all transform and serialized-state consumers; preserve broad scientific coverage without implying a package-boundary change. |
+| `integration` | 5 | 76 → 76 | 34 → 34 | Shared stepping and state evaluation affect every family and restart contract; retain all families, core and persistence tests. |
+| `forcing` | 16 | 76 → 76 | 34 → 34 | Shared MATLAB forcing and lifecycle behavior crosses families and persisted output; retain every existing scientific inventory. |
+| `diagnostics` | 13 | 64 → 64 | 33 → 33 | Shared diagnostics and flow components cross transform families; preserve all family and MATLAB core consumers including density/recovery contracts. |
+| `diagnostic-interfaces` | 5 | 76 → 76 | 34 → 34 | Diagnostic annotation and operation interfaces also participate in persisted observations; retain broad science and persistence coverage. |
+| `compiled-adapter` | 46 | 32/46/76 → 76 | 19/33/34 → 34 | Provider, MEX and source identity changes cross all family adapters and lifecycle consumers; retain broad scientific coverage. |
+| `shared-native-kernel` | 18 | 46 → 46 | 33 → 33 | Shared kernel primitives, buffers and headers affect every family; retain all native/MATLAB parity and common adapter consumers. |
+| `shared-native-runtime` | 100 | 32/46/58 → 58 | 19/33/34 → 34 | Shared runtime integration, diagnostics, forcing, observers and persistence fan out across every family; retain all family, adapter and persistence consumers. |
+
+## Review of every removed class
+
+The following are the exact class-set reductions for each rule across its registered source paths. Other rows remove no scientific classes. Direct edits to a test class still select that class, even when a simultaneous production change belongs to another family.
+
+- `family-constant-matlab`: `TestWVCompiledBarotropicPrimitives`, `TestWVCompiledStratifiedPrimitives`.
+- `family-constant-native`: `TestWVCompiledBarotropicPrimitives`, `TestWVCompiledStratifiedPrimitives`.
+- `family-barotropic-matlab`: `TestPortableDensityEventEvaluation`, `TestPortableDensityOutput`, `TestPortableSamplingOutput`, `TestWVCompiledConstantPrimitives`, `TestWVCompiledConstantVerticalCalculus`, `TestWVCompiledStratifiedPrimitives`.
+- `family-barotropic-native`: `TestPortableDensityEventEvaluation`, `TestPortableDensityOutput`, `TestPortableSamplingOutput`, `TestWVCompiledConstantPrimitives`, `TestWVCompiledConstantVerticalCalculus`, `TestWVCompiledStratifiedPrimitives`.
+- `family-barotropic-forcing`: `TestBoussinesqCompiledKernel`, `TestCompiledKernelContract`, `TestCoreTransformInvariants`, `TestHydrostaticCompiledKernel`, `TestPortableBoussinesq`, `TestPortableBoussinesqQualification`, `TestPortableBoussinesqQualificationEvidence`, `TestPortableDensityEventEvaluation`, `TestPortableDensityOutput`, `TestPortableHydrostatic`, `TestPortableHydrostaticQualification`, `TestPortableHydrostaticQualificationEvidence`, `TestPortableSamplingOutput`, `TestPortableStratifiedQG`, `TestPortableStratifiedQGQualification`, `TestPortableStratifiedQGQualificationEvidence`, `TestStratifiedQGCompiledKernel`, `TestWVCompiledConstantPrimitives`, `TestWVCompiledConstantVerticalCalculus`, `TestWVCompiledStratifiedPrimitives`.
+- `family-sqg-matlab`: `TestPortableDensityEventEvaluation`, `TestPortableDensityOutput`, `TestPortableSamplingOutput`, `TestWVCompiledBarotropicPrimitives`, `TestWVCompiledConstantPrimitives`, `TestWVCompiledConstantVerticalCalculus`.
+- `family-sqg-native`: `TestPortableDensityEventEvaluation`, `TestPortableDensityOutput`, `TestPortableSamplingOutput`, `TestWVCompiledBarotropicPrimitives`, `TestWVCompiledConstantPrimitives`, `TestWVCompiledConstantVerticalCalculus`.
+- `family-sqg-forcing`: `TestBarotropicQGCompiledKernel`, `TestBarotropicQGPortableQualificationEvidence`, `TestBoussinesqCompiledKernel`, `TestCompiledKernelContract`, `TestCoreTransformInvariants`, `TestHydrostaticCompiledKernel`, `TestPortableBoussinesq`, `TestPortableBoussinesqQualification`, `TestPortableBoussinesqQualificationEvidence`, `TestPortableDensityEventEvaluation`, `TestPortableDensityOutput`, `TestPortableHydrostatic`, `TestPortableHydrostaticQualification`, `TestPortableHydrostaticQualificationEvidence`, `TestPortableSamplingOutput`, `TestWVCompiledBarotropicPrimitives`, `TestWVCompiledConstantPrimitives`, `TestWVCompiledConstantVerticalCalculus`.
+- `family-hydrostatic-matlab`: `TestWVCompiledBarotropicPrimitives`, `TestWVCompiledConstantPrimitives`, `TestWVCompiledConstantVerticalCalculus`.
+- `family-hydrostatic-native`: `TestWVCompiledBarotropicPrimitives`, `TestWVCompiledConstantPrimitives`, `TestWVCompiledConstantVerticalCalculus`.
+- `family-hydrostatic-forcing`: `TestBarotropicQGCompiledKernel`, `TestBarotropicQGPortableQualificationEvidence`, `TestBoussinesqCompiledKernel`, `TestCompiledKernelContract`, `TestCoreTransformInvariants`, `TestPortableBoussinesq`, `TestPortableBoussinesqQualification`, `TestPortableBoussinesqQualificationEvidence`, `TestPortableStratifiedQG`, `TestPortableStratifiedQGQualification`, `TestPortableStratifiedQGQualificationEvidence`, `TestStratifiedQGCompiledKernel`, `TestWVCompiledBarotropicPrimitives`, `TestWVCompiledConstantPrimitives`, `TestWVCompiledConstantVerticalCalculus`.
+- `family-boussinesq-matlab`: `TestPortableSamplingOutput`, `TestWVCompiledBarotropicPrimitives`, `TestWVCompiledConstantPrimitives`, `TestWVCompiledConstantVerticalCalculus`.
+- `family-boussinesq-native`: `TestPortableSamplingOutput`, `TestWVCompiledBarotropicPrimitives`, `TestWVCompiledConstantPrimitives`, `TestWVCompiledConstantVerticalCalculus`.
+- `family-boussinesq-forcing`: `TestBarotropicQGCompiledKernel`, `TestBarotropicQGPortableQualificationEvidence`, `TestCompiledKernelContract`, `TestCoreTransformInvariants`, `TestHydrostaticCompiledKernel`, `TestPortableHydrostatic`, `TestPortableHydrostaticQualification`, `TestPortableHydrostaticQualificationEvidence`, `TestPortableSamplingOutput`, `TestPortableStratifiedQG`, `TestPortableStratifiedQGQualification`, `TestPortableStratifiedQGQualificationEvidence`, `TestStratifiedQGCompiledKernel`, `TestWVCompiledBarotropicPrimitives`, `TestWVCompiledConstantPrimitives`, `TestWVCompiledConstantVerticalCalculus`.
+
+## Consumer evidence
+
+- `TestWVCompiledBarotropicPrimitives` constructs only `WVTransformBarotropicQG`; `TestWVCompiledConstantPrimitives` and `TestWVCompiledConstantVerticalCalculus` construct constant-stratification transforms, including both hydrostatic settings. `TestWVCompiledStratifiedPrimitives` explicitly covers SQG, hydrostatic and Boussinesq. These four suites are optional and remain excluded from focused CI; their narrower registration does not reduce ordinary executed numerical coverage. Extended optional qualification remains unchanged.
+- `TestPortableDensityEventEvaluation` and `TestPortableDensityOutput` explicitly construct constant-stratification, hydrostatic and Boussinesq configurations. `TestPortableSamplingOutput` constructs constant-stratification and hydrostatic configurations. Their dedicated shared runtime/diagnostic paths retain every class; family routes omit only suites without that family consumer.
+- Both no-motion suites remain shared. Their synthetic density-profile/recovery algorithms are used by multiple transform families, so a constant-only integration fixture does not justify narrowing them.
+- A family forcing engine selects its own family qualification plus shared forcing, diagnostics, forward integration, compatibility, adapter, output and restart contracts. Other family engine qualification classes are omitted only for those exact family engine source/header paths; shared forcing continues to select all families.
+- Shared MATLAB transform, geometry, integration, forcing, persistence, diagnostic and adapter rules retain their scientific consumers. Some explicit rules add core or persistence classes previously missed by filename routing. CI/analyzer policy, package/dependency and unknown changes retain broad analysis and qualification.
+
+## Documentation and analyzer selection
+
+API help/comments, function/class/method declarations, property/argument/event/enumeration blocks, dynamic annotations, sidecars, generators and website sources retain documentation checks. Class-definition files retain generation because reflection can consume bare external or abstract method prototypes. Only a proven implementation-only MATLAB function diff can omit generation; new/deleted/renamed files and uncertain syntax are conservative. The required gate recomputes these facts from the immutable Git diff.
+
+Changed surviving MATLAB files use `analyzeProductionCode(...,Files=...)`. Policy, package/dependency, complete and unknown selections retain production-wide analysis. Empty changed-file inventories never invoke the analyzer with an empty `Files` argument, which would mean production-wide analysis. Reports name analyzed files, and the gate enforces exact changed-file coverage.

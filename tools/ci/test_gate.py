@@ -11,9 +11,12 @@ def evidence(plan):
     reports = []
     for release, configuration, group in identities:
         classes, shard = group['classes'], group['id']
+        analyzer = configuration == 'release' and release == 'R2025b' and shard == 0 and plan['analyzer']
         smoke = configuration == 'release' and shard == 0 and plan['smoke']
-        reports.append(dict(schema='wvm-ci-matlab-v2', sourceCommit=plan['sourceCommit'],
+        reports.append(dict(schema='wvm-ci-matlab-v3', sourceCommit=plan['sourceCommit'],
                             matlabRelease=release, configuration=configuration, shard=shard, passed=True,
+                            analyzerMode=plan['analyzerMode'] if analyzer else 'none',
+                            analyzedFiles=(plan['analyzerFiles'] if plan['analyzerMode'] == 'changed' else ['Production.m']) if analyzer else [],
                             requestedClasses=classes, deferredMethods=plan['deferredMethods'], excludedTags=plan['excludedTags'],
                             excludedClasses=[], excludedTests=[], expectedTests=[name+'/parity' for name in classes] + (['TestSmoke/baseline'] if smoke else []),
                             smokeExpectedTests=['TestSmoke/baseline'] if smoke else [],

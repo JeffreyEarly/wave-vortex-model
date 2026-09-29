@@ -6,6 +6,7 @@ import math
 import os
 from pathlib import Path, PurePosixPath
 import subprocess
+from diff_content import matlab_diff_facts
 
 FAMILIES = ('constant', 'barotropic', 'sqg', 'hydrostatic', 'boussinesq')
 FAMILY_TESTS = {
@@ -49,6 +50,31 @@ MATLAB_CORE_TESTS = ['TestWVTransformInitialization', 'TestCoreTransformInvarian
 TEST_COSTS = json.loads(Path(__file__).with_name('test_costs.json').read_text())['seconds']
 
 
+PRODUCTION_DEPENDENCIES = json.loads(Path(__file__).with_name('production_dependencies.json').read_text())
+DOCUMENTATION_TOOLS = {
+    'tools/' + name + '.m' for name in (
+        'replaceDocumentationTree', 'validateClassDocumentationDependency',
+        'documentationRepositoryRoot', 'compareDocumentationTrees',
+        'generateBenchmarkWebsiteDocumentation', 'check_website_documentation',
+        'build_website_documentation', 'applyDocumentationTaxonomy',
+        'validateWebsiteDocumentation', 'validateRenderedWebsite',
+        'WVTransformSubclassDocumentation', 'generateWebsiteDocumentation',
+        'WVTransformDocumentation')}
+PACKAGE_TOOLS = {'tools/verifyWaveVortexModelPackage.m', 'tools/prepareWaveVortexModelReleaseCandidate.m'}
+
+
+def production_rule(path):
+    for rule in PRODUCTION_DEPENDENCIES['rules']:
+        if path in rule['paths'] or any(path.startswith(prefix) for prefix in rule['prefixes']):
+            return rule
+    return None
+
+
+def affected_consumers(classes, families):
+    consumers = PRODUCTION_DEPENDENCIES['testConsumers']
+    return [name for name in classes if name not in consumers or set(consumers[name]).intersection(families)]
+
+
 def partition_tests(classes, phase_seconds=0):
     """Balance unchanged class inventories; estimates affect placement, not coverage."""
     count = max(1, min(4, math.ceil((phase_seconds + sum(TEST_COSTS.get(c, 60) for c in classes)) / 300)))
@@ -62,12 +88,23 @@ def partition_tests(classes, phase_seconds=0):
     return groups
 
 
-def select(paths, *, complete=False, migration=False, source_commit='', content_only_workflows=(), diff_base='', diff_head=''):
+def select(paths, *, complete=False, migration=False, source_commit='', content_only_workflows=(), diff_base='', diff_head='',
+           implementation_only_matlab=(), surviving_matlab=None):
     """Union requests. Unrecognized paths select every focused scientific group."""
     flags = dict(cpp=False, diagnostics=False, documentation=False, analyzer=False,
                  packaging=False, crossRelease=False, persistence=False, matlabCore=False)
     families, tests, reasons = set(), set(), []
     direct_native_tests = set()
+    full_analyzer = False
+    production_rules = set()
+    implementation_only_matlab = sorted(set(implementation_only_matlab))
+    if surviving_matlab is not None:
+        surviving_matlab = sorted(set(surviving_matlab))
+    changed_matlab = {p for p in paths if p.endswith('.m')}
+    if (not set(implementation_only_matlab) <= changed_matlab
+            or surviving_matlab is not None and not set(surviving_matlab) <= changed_matlab
+            or surviving_matlab is not None and not set(implementation_only_matlab) <= set(surviving_matlab)):
+        raise ValueError('MATLAB content facts must refer to changed, surviving MATLAB files')
     content_only_workflows = sorted(set(content_only_workflows))
     if any(p not in paths or not p.startswith('.github/workflows/') or not p.endswith(('.yml', '.yaml')) for p in content_only_workflows):
         raise ValueError('Content-only workflow classification must refer to changed workflows')
@@ -84,10 +121,11 @@ def select(paths, *, complete=False, migration=False, source_commit='', content_
         path = str(PurePosixPath(raw))
         if path.startswith('/') or '..' in PurePosixPath(path).parts or '\n' in path or '\r' in path:
             raise ValueError(f'Invalid repository-relative path: {raw!r}')
-        lower = path.lower()
         if path.startswith(('.github/ci-evidence/', '.github/planning/')):
             reasons.append(f'{path}: evidence/planning; repository and provenance checks')
             continue
+        if path.endswith('.m'):
+            flags['analyzer'] = True
         if path == 'PortableRuntime/COMPATIBILITY.md':
             tests.add('TestPortableCompatibilityMatrix')
             reasons.append(f'{path}: generated compatibility documentation must match its catalog')
@@ -95,22 +133,28 @@ def select(paths, *, complete=False, migration=False, source_commit='', content_
         if path in content_only_workflows:
             reasons.append(f'{path}: trigger/comment-only workflow change; lint and policy checks')
             continue
-        if path.startswith(('tools/ci/', '.github/workflows/', '.github/actions/')) or path in ('buildfile.m', 'tools/runFocusedCI.m', 'tools/discoverTestCategory.m', 'tools/selectFocusedCISuite.m'):
-            scientific(f'{path}: CI implementation exercises all routes')
+        if path.startswith(('tools/ci/', '.github/workflows/', '.github/actions/')) or path in ('buildfile.m', 'tools/runFocusedCI.m', 'tools/discoverTestCategory.m', 'tools/selectFocusedCISuite.m', 'tools/analyzeProductionCode.m', 'tools/configureCIEnvironment.m'):
+            full_analyzer = True
+            scientific(f'{path}: CI/analyzer implementation exercises all routes')
             flags.update(documentation=True, analyzer=True, packaging=True, persistence=True, matlabCore=True)
             continue
         if path.startswith(('Documentation/', 'docs/')) or path in ('Gemfile', 'Gemfile.lock'):
             flags['documentation'] = True
             reasons.append(f'{path}: documentation generation/rendering')
             continue
+        if path.endswith('.md') and (path.startswith('@') or production_rule(path)):
+            flags['documentation'] = True
+            reasons.append(f'{path}: API sidecar documentation')
+            continue
         if path.endswith('.md') or path in ('.gitignore', 'LICENSE'):
             reasons.append(f'{path}: prose/repository metadata; repository and provenance checks')
             continue
-        if path.startswith(('resources/', '.mpm/')) or any(word in lower for word in ('package-manifest', 'releaseverification', 'verifywavevortexmodelpackage', 'exportwavevortexmodel')):
+        if path.startswith(('resources/', '.mpm/')) or path in PACKAGE_TOOLS:
+            full_analyzer = True
             scientific(f'{path}: package boundary')
             flags.update(packaging=True, persistence=True, analyzer=True, documentation=True)
             continue
-        if path.startswith('tools/') and any(word in lower for word in ('documentation', 'renderedwebsite')):
+        if path in DOCUMENTATION_TOOLS:
             flags.update(documentation=True, analyzer=True)
             tests.update(('TestDocumentationTools', 'TestUserDocumentation'))
             continue
@@ -119,7 +163,8 @@ def select(paths, *, complete=False, migration=False, source_commit='', content_
             # UnitTests also contains fixtures and helper classes. Only the
             # repository's top-level Test*.m entries are executable suites.
             test_path = PurePosixPath(path)
-            if test_path.parent == PurePosixPath('UnitTests') and test_path.stem.startswith('Test'):
+            survives = surviving_matlab is None or path in surviving_matlab
+            if survives and test_path.parent == PurePosixPath('UnitTests') and test_path.stem.startswith('Test'):
                 tests.add(test_path.stem)
                 if test_path.stem in dependencies:
                     if dependencies[test_path.stem]['nativeProbes']:
@@ -127,50 +172,36 @@ def select(paths, *, complete=False, migration=False, source_commit='', content_
                         direct_native_tests.add(test_path.stem)
                     reasons.append(f'{path}: registered test class and smoke baseline')
                     continue
-            # Tests and helpers still exercise their numerical dependencies.
-        if path.endswith('.m') and not path.startswith('UnitTests/'):
-            flags['analyzer'] = flags['documentation'] = True
-        if any(word in lower for word in ('model', 'observer', 'observing', 'checkpoint', 'netcdf', 'runrequest', 'runge', 'integrator', 'integrationstate', 'output', 'forcing', 'modalrecord')):
-            scientific(f'{path}: shared state/forcing/persistence boundary')
-            flags['persistence'] = True
-            if path.endswith('.m'):
-                flags['matlabCore'] = True
+            scientific(f'{path}: unclassified test/helper; conservative consumer coverage')
+            flags.update(matlabCore=True, persistence=True)
             continue
-        selected = next((family for tokens, family in [
-            (('boussinesq',), 'boussinesq'), (('hydrostatic',), 'hydrostatic'),
-            (('stratifiedqg', 'stratified-qg', 'sqg'), 'sqg'), (('barotropic',), 'barotropic'),
-            (('constantstratification', 'constant-stratification'), 'constant')]
-            if any(token in lower for token in tokens)), None)
-        if selected:
-            scientific(f'{path}: {selected} numerical surface', (selected,))
+        if path.endswith('.m'):
+            flags['analyzer'] = True
+            flags['documentation'] |= path not in implementation_only_matlab
+        rule = production_rule(path)
+        if rule:
+            scientific(f"{path}: {rule['id']}", rule['families'])
+            production_rules.add(rule['id'])
+            flags['persistence'] |= rule['persistence']
+            flags['matlabCore'] |= rule['matlabCore']
             continue
-        if any(word in lower for word in ('variablecatalog', 'variable-catalog', 'variable-supplement', 'variablecontracts', 'variableannotations', 'diagnostic')) or path.startswith(('Operations/', 'FlowComponents/')):
-            scientific(f'{path}: shared diagnostic contracts')
-            flags['matlabCore'] |= path.endswith('.m')
-            continue
-        if path.startswith(('CompiledKernel/', 'PortableRuntime/', 'tools/compiled-kernel/', '@WVTransform', 'Geometry/', 'Stratification/')):
-            scientific(f'{path}: shared numerical dependency')
-            flags['matlabCore'] |= path.endswith('.m')
-            continue
-        if path.startswith('UnitTests/') and path.endswith('.m'):
-            # Standalone MATLAB test names outside the known portable groups.
-            scientific(f'{path}: conservatively cover MATLAB test dependencies')
-            flags['matlabCore'] = True
-            continue
+        full_analyzer = True
         scientific(f'{path}: unrecognized path; conservative shared coverage')
         flags.update(persistence=True, matlabCore=True, analyzer=True, documentation=True, packaging=True)
     if not paths or complete:
+        full_analyzer = True
         scientific('Explicit complete qualification or unavailable/empty change inventory')
         flags.update(documentation=True, analyzer=True, packaging=True, persistence=True, matlabCore=True)
     if migration:
+        full_analyzer = True
         # Executes each old required check before protection is switched.
         flags.update(documentation=True, analyzer=True)
         reasons.append('Migration: execute all legacy required MATLAB phases')
     for family in families:
         tests.update(FAMILY_TESTS[family])
     if families:
-        tests.update(SHARED_TESTS)
-        tests.update(COMPILED_MATLAB_TESTS)
+        tests.update(affected_consumers(SHARED_TESTS, families))
+        tests.update(affected_consumers(COMPILED_MATLAB_TESTS, families))
     if flags['persistence']:
         tests.update(PERSISTENCE_TESTS)
     if flags['matlabCore']:
@@ -181,18 +212,30 @@ def select(paths, *, complete=False, migration=False, source_commit='', content_
     for family in families:
         sanitized_tests.update(FAMILY_TESTS[family])
     if families:
-        sanitized_tests.update(SHARED_TESTS)
+        sanitized_tests.update(affected_consumers(SHARED_TESTS, families))
     if flags['diagnostics']:
         sanitized_tests.update(('TestPortableVariableCatalog', 'TestPortableDiagnostics'))
     if flags['persistence']:
         sanitized_tests.add('TestPortableRuntimeCompatibility')
+    analyzer_mode = 'none'
+    analyzer_files = []
+    if flags['analyzer']:
+        if full_analyzer or surviving_matlab is None:
+            analyzer_mode = 'production'
+        elif surviving_matlab:
+            analyzer_mode = 'changed'
+            analyzer_files = surviving_matlab
+        else:
+            flags['analyzer'] = False
     flags['matlab'] = bool(tests or flags['documentation'] or flags['analyzer'] or migration)
     flags['smoke'] = bool(tests or migration)
     flags['sanitized'] = bool(sanitized_tests)
     flags['crossRelease'] = bool(complete)
     releases = (['R2025b', 'R2026a'] if complete else ['R2025b']) if flags['matlab'] else []
-    return dict(schema='wvm-ci-selection-v2', sourceCommit=source_commit,
+    return dict(schema='wvm-ci-selection-v3', sourceCommit=source_commit,
                 contentOnlyWorkflows=content_only_workflows, diffBase=diff_base, diffHead=diff_head,
+                implementationOnlyMatlab=implementation_only_matlab, survivingMatlab=surviving_matlab,
+                analyzerMode=analyzer_mode, analyzerFiles=analyzer_files, productionRules=sorted(production_rules),
                 paths=sorted(set(paths)), complete=complete, migration=migration,
                 **flags, families=sorted(families), matlabTests=sorted(tests), sanitizedTests=sorted(sanitized_tests),
                 releases=releases, reasons=reasons, excludedTags=['optional', 'exhaustive'],
@@ -266,6 +309,7 @@ def main():
     head = subprocess.check_output(['git', 'rev-parse', args.head], text=True).strip()
     base = ''
     content_only = []
+    surviving, implementation_only = None, []
     if args.paths_json:
         paths = json.loads(Path(args.paths_json).read_text())
     elif args.base:
@@ -275,9 +319,11 @@ def main():
         paths = subprocess.check_output(['git', 'diff', '--name-only', '--no-renames', '-z', base, head]).decode().rstrip('\0').split('\0')
         paths = [p for p in paths if p]
         content_only = content_only_workflows(base, head, paths)
+        surviving, implementation_only = matlab_diff_facts(base, head, paths)
     else:
         paths = []
-    result = select(paths, complete=args.complete, migration=args.migration, source_commit=commit, content_only_workflows=content_only, diff_base=base, diff_head=head if base else '')
+    result = select(paths, complete=args.complete, migration=args.migration, source_commit=commit, content_only_workflows=content_only, diff_base=base, diff_head=head if base else '',
+                    surviving_matlab=surviving, implementation_only_matlab=implementation_only)
     Path(args.output).write_text(json.dumps(result, indent=2) + '\n')
     if os.getenv('GITHUB_OUTPUT'):
         with open(os.environ['GITHUB_OUTPUT'], 'a') as stream:

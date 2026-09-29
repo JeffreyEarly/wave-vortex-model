@@ -1,5 +1,5 @@
 import unittest
-from route import select, FAMILIES, COMPILED_MATLAB_TESTS
+from route import select, FAMILIES, COMPILED_MATLAB_TESTS, affected_consumers
 
 
 class RoutingTests(unittest.TestCase):
@@ -81,9 +81,10 @@ class RoutingTests(unittest.TestCase):
     def test_compiled_matlab_adapters_are_registered_for_native_changes(self):
         for plan in [select(['CompiledKernel/src/WVTransformHydrostaticKernel.cpp']),
                      select(['README.md'], complete=True)]:
-            self.assertTrue(set(COMPILED_MATLAB_TESTS) <= set(plan['matlabTests']))
+            applicable = affected_consumers(COMPILED_MATLAB_TESTS, plan['families'])
+            self.assertTrue(set(applicable) <= set(plan['matlabTests']))
             flattened = [name for group in plan['matlabShards'] for name in group['classes']]
-            for name in COMPILED_MATLAB_TESTS:
+            for name in applicable:
                 self.assertEqual(flattened.count(name), 1)
 
     def test_matlab_regressions_follow_production_changes(self):
