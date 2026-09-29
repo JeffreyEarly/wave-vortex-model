@@ -102,6 +102,7 @@ value = input;
 """
 
         self.assertIsNone(matlab_documentation_signature(script))
+        self.assertIsNone(matlab_documentation_signature(script + FUNCTION_BEFORE))
         self.assertTrue(documentation_changed(FUNCTION_BEFORE, script))
         self.assertTrue(documentation_changed(FUNCTION_BEFORE, dynamic))
         self.assertTrue(documentation_changed(FUNCTION_BEFORE, malformed))

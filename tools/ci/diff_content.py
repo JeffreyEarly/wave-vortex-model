@@ -20,6 +20,9 @@ def matlab_documentation_signature(source):
     if DYNAMIC_DOCUMENTATION.search(source) or re.search(r'^\s*classdef\b', source, re.MULTILINE):
         return None
     lines = source.splitlines()
+    first_code = next((line.strip() for line in lines if line.strip() and not line.lstrip().startswith("%")), "")
+    if not re.match(r"^function\b", first_code):
+        return None
     signature = []
     has_declaration = False
     declaration_lines = []
