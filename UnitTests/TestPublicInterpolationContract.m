@@ -1,4 +1,5 @@
 classdef TestPublicInterpolationContract < matlab.unittest.TestCase
+    % Temporary CI proof: select this class and the smoke baseline.
 
     properties
         wvt
