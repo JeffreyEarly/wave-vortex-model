@@ -95,7 +95,7 @@ def validate_baseline_transition(previous: object, current: object, base_commit:
 
     ``base_commit`` is the immutable revision against which the head change is
     reviewed. Newly retired rows must preserve the prior digest and record this
-    exact commit, or a caller-verified pre-deletion descendant, as their source.
+    exact commit, or a caller-verified pre-deletion revision, as their source.
     Existing retirement rows are append-only.
     """
     previous_entries, previous_retired = parse_baseline(previous)
@@ -104,6 +104,8 @@ def validate_baseline_transition(previous: object, current: object, base_commit:
         raise ArtifactPolicyError("Base commit must be a lowercase 40-character SHA-1")
     allowed_sources = {base_commit, *verified_sources}
     errors = []
+    for path in sorted(current_retired.keys() - previous_retired.keys() - previous_entries.keys()):
+        errors.append(f'Retirement is not a previously baselined historical output: {path}')
     for path in sorted(current_entries.keys() - previous_entries.keys()):
         errors.append(f"Historical baseline entry added after initial registration: {path}")
     for path, old in sorted(previous_entries.items()):

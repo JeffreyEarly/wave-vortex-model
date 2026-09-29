@@ -222,6 +222,28 @@ class ArtifactGuardIntegrationTests(unittest.TestCase):
         self.assertTrue(guard.validate_history(self.root, bad_digest, base))
         self.assertTrue(guard.validate_history(self.root, unrelated, base))
 
+    def test_registered_input_cannot_be_retired_as_historical_output(self):
+        self.write(HISTORICAL_PATH, 'historical output\n')
+        fixture = self.write(FIXTURE_PATH, 'scientific input\n')
+        digest = hashlib.sha256(fixture.read_bytes()).hexdigest()
+        baseline = build_baseline(self.root, [HISTORICAL_PATH])
+        self.write_policy(baseline)
+        base = self.commit('policy with registered scientific input')
+        self.git('rm', '-q', FIXTURE_PATH)
+        registry = self.registry()
+        del registry['paths'][FIXTURE_PATH]
+        baseline['retired'] = [dict(path=FIXTURE_PATH, sha256=digest,
+                                    sourceCommit=base, reason='Unjustified input retirement.')]
+        self.write_policy(baseline, registry)
+        self.commit('attempt to retire an input')
+        errors = guard.validate(self.root, self.tracked(), base)
+        self.assertIn(f'Retirement is not a previously baselined historical output: {FIXTURE_PATH}', errors)
+
+    def test_generated_media_outside_historical_directories_requires_registration(self):
+        for suffix in ['png', 'pdf', 'jpg', 'jpeg', 'webp', 'eps', 'fig', 'svg', 'gif', 'mp4']:
+            path = 'results/new-output.' + suffix
+            self.assertIn(path, guard.artifact_paths([path]))
+
     def test_pull_request_uses_merge_base_and_push_uses_its_declared_base(self):
         self.write('README.md', 'common ancestor\n')
         common = self.commit('common ancestor')

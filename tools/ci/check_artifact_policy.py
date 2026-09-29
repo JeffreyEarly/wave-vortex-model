@@ -16,7 +16,8 @@ INITIAL_BASE_REVISION = 'PENDING_MERGED_PR2'
 HISTORICAL_ROOTS = ('.github/ci-evidence/', 'PortableRuntime/qualification/',
                     'Benchmarks/results/', 'docs/benchmarks/')
 OUTPUT_SUFFIXES = {'.json', '.log', '.out', '.err', '.mat', '.nc', '.csv', '.tsv',
-                   '.xml', '.gz', '.zip', '.h5', '.hdf5', '.bin', '.dat', '.txt', '.text', '.jsonl'}
+                   '.xml', '.gz', '.zip', '.h5', '.hdf5', '.bin', '.dat', '.txt', '.text', '.jsonl',
+                   '.png', '.pdf', '.jpg', '.jpeg', '.webp', '.eps', '.fig', '.svg', '.gif', '.mp4'}
 
 
 def artifact_paths(paths):
@@ -53,7 +54,7 @@ def validate_history(root, baseline, base):
         if path in previous_retired:
             continue
         source = record['sourceCommit']
-        if not ancestor(root, base, source) or not ancestor(root, source, 'HEAD'):
+        if not ancestor(root, source, 'HEAD'):
             errors.append(f'Retirement source is not a reachable pre-deletion revision: {path}')
             continue
         content = git_bytes(root, source, path)
