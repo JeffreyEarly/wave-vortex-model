@@ -1,0 +1,11 @@
+# Receipt retirement review
+
+The audit started from the 156 receipt candidates identified on 2026-09-29 (candidate-list SHA-256 `12726497033a9e788076eed45500c9db3c92c216d9e3b7e739ac6e63e44cabfb`). Eligibility was recomputed against the clean guard implementation at `1f0cda485e4b80d0ba0d0b22405ab06c03052407`, immediately before deletion. The path, digest, reason, and that immutable source revision for each retired receipt are in the `retired` section of `artifact-baseline.json`.
+
+Only 132 receipts were eligible: 3,474,240 bytes (3.31 MiB). The remaining 24 candidates are retained because their hashes appear in historical records: 12 in `.github/ci-evidence/tiled-scratch-simd/executable-provenance.json`, and 12 in `.github/ci-evidence/issue-513-real/archive-manifest.sha256`. Even the latter content aliases were retained conservatively. No historical record was rewritten to manufacture deletion eligibility.
+
+Review included structured JSON path/digest references, plain-text full paths/basenames/hashes, source manifests, historical reports, and directory readers. The finite artifact baseline's own path/hash inventory is an administrative registration and was excluded from dependency classification. All 23 compressed historical archives were readable; their 68,200,265 decompressed bytes contained no candidate path, basename, digest, or receipt bytes.
+
+Directory-reader review found no consumer of the complete retained-receipt directory. Native integration tests scan native source directories; qualification wildcard readers operate on fresh temporary campaign directories. The forward-integration collector reads six explicitly named catalog/provider fragments and writes content-addressed copies. Current report validators load and verify their explicitly named artifacts. Those 12 current receipts remain unchanged.
+
+The pre-deletion implementation commit must remain reachable through a normal merge. No history rewrite is used. Current qualification receipts, pinned historical family reports, fixture/schema/contract data, scoring references, benchmark downloads, and all surviving historical output bytes remain unchanged. Historically referenced campaigns and website deduplication remain separate work.
