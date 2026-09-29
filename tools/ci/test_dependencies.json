@@ -1,0 +1,342 @@
+{
+  "schema": "wvm-ci-test-dependencies-v1",
+  "description": "Explicit native C++ probe dependencies for formal top-level MATLAB test classes. Classes absent from this registry require conservative broad routing.",
+  "classes": {
+    "TestAdaptiveDampingResolution": {
+      "nativeProbes": false
+    },
+    "TestBarotropicQGCompiledKernel": {
+      "nativeProbes": true
+    },
+    "TestBarotropicQGPortableQualificationEvidence": {
+      "nativeProbes": false
+    },
+    "TestBenchmarkWebsiteDocumentation": {
+      "nativeProbes": false
+    },
+    "TestBoussinesqCompiledKernel": {
+      "nativeProbes": true
+    },
+    "TestCompiledKernelContract": {
+      "nativeProbes": true
+    },
+    "TestCompiledKernelIntegration": {
+      "nativeProbes": false
+    },
+    "TestCompiledPreview": {
+      "nativeProbes": false
+    },
+    "TestCompiledPreviewBenchmark": {
+      "nativeProbes": false
+    },
+    "TestCoreAPIDocumentation": {
+      "nativeProbes": false
+    },
+    "TestCoreTransformInvariantSmoke": {
+      "nativeProbes": false
+    },
+    "TestCoreTransformInvariants": {
+      "nativeProbes": false
+    },
+    "TestDegreesOfFreedomSummary": {
+      "nativeProbes": false
+    },
+    "TestDensityDiagnosticReference": {
+      "nativeProbes": false
+    },
+    "TestDivergence": {
+      "nativeProbes": false
+    },
+    "TestDocumentationTools": {
+      "nativeProbes": false
+    },
+    "TestEnergyDiagnostics": {
+      "nativeProbes": false
+    },
+    "TestEtaTrueOperation": {
+      "nativeProbes": false
+    },
+    "TestFlowComponentSurfaceDiagnostics": {
+      "nativeProbes": false
+    },
+    "TestForcingDocumentation": {
+      "nativeProbes": false
+    },
+    "TestForcingLifecycle": {
+      "nativeProbes": false
+    },
+    "TestForcingMathematicalContracts": {
+      "nativeProbes": false
+    },
+    "TestFourierTransformXY": {
+      "nativeProbes": false
+    },
+    "TestGeostrophicMethods": {
+      "nativeProbes": false
+    },
+    "TestHydrostaticCompiledKernel": {
+      "nativeProbes": true
+    },
+    "TestInertialOscillationMethods": {
+      "nativeProbes": false
+    },
+    "TestInternalGravityWaveMethods": {
+      "nativeProbes": false
+    },
+    "TestInternalRuntimeArtifacts": {
+      "nativeProbes": false
+    },
+    "TestInterpolatedFieldAtPosition": {
+      "nativeProbes": false
+    },
+    "TestMeanPressureDifference": {
+      "nativeProbes": false
+    },
+    "TestNarrowBandGeostrophicForcing": {
+      "nativeProbes": false
+    },
+    "TestNetCDF": {
+      "nativeProbes": false
+    },
+    "TestNetCDFHandleOwnership": {
+      "nativeProbes": false
+    },
+    "TestNoMotionProfileSolver": {
+      "nativeProbes": false
+    },
+    "TestNonlinearFlux": {
+      "nativeProbes": false
+    },
+    "TestObservingSystems": {
+      "nativeProbes": false
+    },
+    "TestOperationRegistrationAndCaching": {
+      "nativeProbes": false
+    },
+    "TestOrthogonalSolutionGroups": {
+      "nativeProbes": false
+    },
+    "TestPhysicalUnitMetadata": {
+      "nativeProbes": false
+    },
+    "TestPortableBoussinesq": {
+      "nativeProbes": true
+    },
+    "TestPortableBoussinesqQualification": {
+      "nativeProbes": true
+    },
+    "TestPortableBoussinesqQualificationEvidence": {
+      "nativeProbes": false
+    },
+    "TestPortableCompatibilityMatrix": {
+      "nativeProbes": false
+    },
+    "TestPortableDensityEventEvaluation": {
+      "nativeProbes": true
+    },
+    "TestPortableDensityOutput": {
+      "nativeProbes": true
+    },
+    "TestPortableDiagnostics": {
+      "nativeProbes": true
+    },
+    "TestPortableFieldSamplingMatrix": {
+      "nativeProbes": true
+    },
+    "TestPortableForcingCompatibility": {
+      "nativeProbes": false
+    },
+    "TestPortableForcingContracts": {
+      "nativeProbes": false
+    },
+    "TestPortableForwardIntegration": {
+      "nativeProbes": true
+    },
+    "TestPortableForwardIntegrationCatalog": {
+      "nativeProbes": false
+    },
+    "TestPortableHistoricalQualification": {
+      "nativeProbes": false
+    },
+    "TestPortableHydrostatic": {
+      "nativeProbes": true
+    },
+    "TestPortableHydrostaticQualification": {
+      "nativeProbes": true
+    },
+    "TestPortableHydrostaticQualificationEvidence": {
+      "nativeProbes": false
+    },
+    "TestPortableNoMotionProfile": {
+      "nativeProbes": true
+    },
+    "TestPortableNoMotionRecovery": {
+      "nativeProbes": true
+    },
+    "TestPortableObserverContracts": {
+      "nativeProbes": false
+    },
+    "TestPortableQualificationCatalog": {
+      "nativeProbes": false
+    },
+    "TestPortableRunRequestWriter": {
+      "nativeProbes": false
+    },
+    "TestPortableRuntimeCompatibility": {
+      "nativeProbes": true
+    },
+    "TestPortableSamplingOutput": {
+      "nativeProbes": true
+    },
+    "TestPortableStableForcing": {
+      "nativeProbes": true
+    },
+    "TestPortableStratifiedQG": {
+      "nativeProbes": true
+    },
+    "TestPortableStratifiedQGQualification": {
+      "nativeProbes": true
+    },
+    "TestPortableStratifiedQGQualificationEvidence": {
+      "nativeProbes": false
+    },
+    "TestPortableVariableCatalog": {
+      "nativeProbes": false
+    },
+    "TestProductionCodeAnalyzer": {
+      "nativeProbes": false
+    },
+    "TestPublicInterpolationContract": {
+      "nativeProbes": false
+    },
+    "TestPublishedWaveVortexBenchmark": {
+      "nativeProbes": false
+    },
+    "TestRadialTransformation": {
+      "nativeProbes": false
+    },
+    "TestRandomFlow": {
+      "nativeProbes": false
+    },
+    "TestReleaseVerification": {
+      "nativeProbes": false
+    },
+    "TestSQGTracerConvenience": {
+      "nativeProbes": false
+    },
+    "TestShouldExcludeConjugatesPersistence": {
+      "nativeProbes": false
+    },
+    "TestSpectralDifferentiationXY": {
+      "nativeProbes": false
+    },
+    "TestSpectralDifferentiationZ": {
+      "nativeProbes": false
+    },
+    "TestSpectralOutputRestart": {
+      "nativeProbes": false
+    },
+    "TestStratifiedModalRecord": {
+      "nativeProbes": false
+    },
+    "TestStratifiedQGCompiledKernel": {
+      "nativeProbes": true
+    },
+    "TestThreeInterfaceBenchmark": {
+      "nativeProbes": false
+    },
+    "TestThreeInterfaceBenchmarkRetention": {
+      "nativeProbes": false
+    },
+    "TestTotalFlowComponent": {
+      "nativeProbes": false
+    },
+    "TestTraditionalDamping": {
+      "nativeProbes": false
+    },
+    "TestUserDocumentation": {
+      "nativeProbes": false
+    },
+    "TestVerticalCalculus": {
+      "nativeProbes": false
+    },
+    "TestWVCompiledAdapterRestore": {
+      "nativeProbes": false
+    },
+    "TestWVCompiledBackend": {
+      "nativeProbes": false
+    },
+    "TestWVCompiledBarotropicPrimitives": {
+      "nativeProbes": false
+    },
+    "TestWVCompiledCoefficientOnlyRHS": {
+      "nativeProbes": false
+    },
+    "TestWVCompiledConfiguration": {
+      "nativeProbes": false
+    },
+    "TestWVCompiledConstantPrimitives": {
+      "nativeProbes": false
+    },
+    "TestWVCompiledConstantVerticalCalculus": {
+      "nativeProbes": false
+    },
+    "TestWVCompiledConsumers": {
+      "nativeProbes": false
+    },
+    "TestWVCompiledEvaluationScope": {
+      "nativeProbes": false
+    },
+    "TestWVCompiledPublicAdapters": {
+      "nativeProbes": false
+    },
+    "TestWVCompiledSourceIdentity": {
+      "nativeProbes": false
+    },
+    "TestWVCompiledStratifiedPrimitives": {
+      "nativeProbes": false
+    },
+    "TestWVCompiledTransformBackend": {
+      "nativeProbes": false
+    },
+    "TestWVFourierStorageLayout": {
+      "nativeProbes": false
+    },
+    "TestWVFourierStorageLayoutIntegrationBenchmark": {
+      "nativeProbes": false
+    },
+    "TestWVModelIntegration": {
+      "nativeProbes": false
+    },
+    "TestWVModelOutputPersistence": {
+      "nativeProbes": false
+    },
+    "TestWVPseudoTopographicWaveGeneration": {
+      "nativeProbes": false
+    },
+    "TestWVPseudoTopographicWaveGenerationProduction": {
+      "nativeProbes": false
+    },
+    "TestWVTransformInitialization": {
+      "nativeProbes": false
+    },
+    "TestWVTransformVersion": {
+      "nativeProbes": false
+    },
+    "TestWaveModeVerticalStructureAtIndex": {
+      "nativeProbes": false
+    },
+    "TestWaveVortexBenchmark": {
+      "nativeProbes": false
+    },
+    "TestWaveVortexBuiltinStorageBenchmark": {
+      "nativeProbes": false
+    },
+    "TestWaveVortexObserverCostBenchmark": {
+      "nativeProbes": false
+    },
+    "TestWaveVortexTransformLayoutBenchmark": {
+      "nativeProbes": false
+    }
+  }
+}
