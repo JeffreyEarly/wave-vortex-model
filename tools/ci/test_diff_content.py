@@ -79,6 +79,17 @@ end
 
         self.assertTrue(documentation_changed(before, changed))
 
+    def test_abstract_method_prototypes_are_conservative_api_definitions(self):
+        before = """classdef AbstractAPI
+    methods (Abstract)
+        value = compute(self, input)
+    end
+end
+"""
+        self.assertTrue(documentation_changed(before, before.replace('self, input', 'self, input, options')))
+        continued = before.replace('methods (Abstract)', 'methods (Static, ...\n            Abstract)')
+        self.assertIsNone(matlab_documentation_signature(continued))
+
     def test_scripts_dynamic_annotations_and_uncertain_declarations_are_conservative(self):
         script = """% Script help
 value = 1;

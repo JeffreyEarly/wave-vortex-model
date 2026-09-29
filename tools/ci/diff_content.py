@@ -15,7 +15,7 @@ def matlab_documentation_signature(source):
     not a MATLAB parser. Uncertain syntax and dynamic annotation construction
     require documentation validation. Inline-comment changes are conservative.
     """
-    if DYNAMIC_DOCUMENTATION.search(source):
+    if DYNAMIC_DOCUMENTATION.search(source) or re.search(r'\bmethods\s*\([^)]*\bAbstract\b', source):
         return None
     lines = source.splitlines()
     signature = []
