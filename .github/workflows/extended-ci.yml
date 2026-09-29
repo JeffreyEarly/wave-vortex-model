@@ -17,9 +17,13 @@ env:
 
 jobs:
   full:
-    name: Full / MATLAB R2025b
+    name: Full / MATLAB ${{ matrix.release }}
     runs-on: ubuntu-latest
     timeout-minutes: 45
+    strategy:
+      fail-fast: false
+      matrix:
+        release: [R2025b, R2026a]
     steps:
       - name: Check out WaveVortexModel
         uses: actions/checkout@v6
@@ -44,7 +48,7 @@ jobs:
         timeout-minutes: 5
         uses: matlab-actions/setup-matlab@v3
         with:
-          release: R2025b
+          release: ${{ matrix.release }}
           cache: true
       - name: Retry MATLAB provisioning once
         id: retry
@@ -52,7 +56,7 @@ jobs:
         timeout-minutes: 5
         uses: matlab-actions/setup-matlab@v3
         with:
-          release: R2025b
+          release: ${{ matrix.release }}
           cache: true
       - name: Require successful provisioning
         env:

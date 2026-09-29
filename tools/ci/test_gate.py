@@ -6,22 +6,24 @@ from route import select
 
 def evidence(plan):
     identities = [(release, 'release', group) for release in plan['releases'] for group in plan['matlabShards']]
-    if plan['cpp']:
+    if plan['sanitized']:
         identities.extend(('R2025b', 'sanitized', group) for group in plan['sanitizedShards'])
     reports = []
     for release, configuration, group in identities:
         classes, shard = group['classes'], group['id']
-        reports.append(dict(schema='wvm-ci-matlab-v1', sourceCommit=plan['sourceCommit'],
+        smoke = configuration == 'release' and shard == 0 and plan['smoke']
+        reports.append(dict(schema='wvm-ci-matlab-v2', sourceCommit=plan['sourceCommit'],
                             matlabRelease=release, configuration=configuration, shard=shard, passed=True,
                             requestedClasses=classes, deferredMethods=plan['deferredMethods'], excludedTags=plan['excludedTags'],
-                            excludedClasses=[], excludedTests=[], expectedTests=[name+'/parity' for name in classes],
-                            phases=dict(smoke=configuration == 'release' and shard == 0,
+                            excludedClasses=[], excludedTests=[], expectedTests=[name+'/parity' for name in classes] + (['TestSmoke/baseline'] if smoke else []),
+                            smokeExpectedTests=['TestSmoke/baseline'] if smoke else [],
+                            phases=dict(smoke=smoke,
                                         analyzer=configuration == 'release' and release == 'R2025b' and shard == 0 and plan['analyzer'],
                                         documentation=configuration == 'release' and release == 'R2025b' and shard == 0 and plan['documentation']),
-                            tests=[dict(name=name+'/parity', passed=True, incomplete=False) for name in classes]))
+                            tests=[dict(name=name+'/parity', passed=True, incomplete=False) for name in classes] + ([dict(name='TestSmoke/baseline', passed=True, incomplete=False)] if smoke else [])))
     jobs = {name: {'result': 'success' if selected else 'skipped'} for name, selected in
-            dict(route=True, repository=True, matlab=True,
-                 **{'cpp-release': plan['cpp'], 'cpp-sanitized': plan['cpp'], 'matlab-sanitized': plan['cpp'], 'packages': plan['packaging']}).items()}
+            dict(route=True, repository=True, matlab=plan['matlab'],
+                 **{'cpp-release': plan['cpp'], 'cpp-sanitized': plan['cpp'], 'matlab-sanitized': plan['sanitized'], 'packages': plan['packaging']}).items()}
     return jobs, reports
 
 

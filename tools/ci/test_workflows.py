@@ -38,7 +38,7 @@ class WorkflowContracts(unittest.TestCase):
     def test_focused_driver_respects_existing_optional_and_exhaustive_categories(self):
         for complete in [False, True]:
             self.assertEqual(select(['buildfile.m'], complete=complete)['excludedTags'], ['optional', 'exhaustive'])
-        driver = (ROOT / 'tools/runFocusedCI.m').read_text()
+        driver = (ROOT / 'tools/runFocusedCI.m').read_text() + (ROOT / 'tools/selectFocusedCISuite.m').read_text()
         self.assertIn('part.selectIf(~matlab.unittest.selectors.HasTag(tag))', driver)
         self.assertIn('all([results.Passed]) && ~any([results.Incomplete])', driver)
         self.assertIn('buildtool test:optional', str(workflow('extended-ci.yml')))
@@ -49,7 +49,7 @@ class WorkflowContracts(unittest.TestCase):
         self.assertEqual(set(main['on']), {'pull_request', 'push', 'workflow_dispatch'})
         self.assertEqual(main['on']['pull_request']['types'], ['opened', 'synchronize', 'reopened'])
         self.assertIn('complete', main['on']['workflow_dispatch']['inputs'])
-        selection = main['jobs']['route']['steps'][1]
+        selection = next(step for step in main['jobs']['route']['steps'] if step.get('id') == 'select')
         self.assertEqual(selection['env']['COMPLETE'], '${{ inputs.complete }}')
         self.assertIn('--base "$PR_BASE_SHA" --head "$HEAD_SHA" --merge-base', selection['run'])
         self.assertIn('--base "$PUSH_BASE_SHA" --head "$HEAD_SHA")', selection['run'])
@@ -162,7 +162,7 @@ class WorkflowContracts(unittest.TestCase):
         plan = select(['PortableRuntime/src/anything.cpp'])
         self.assertIn('TestPortableVariableCatalog', plan['matlabTests'])
         self.assertIn('TestPortableDiagnostics', plan['matlabTests'])
-        self.assertEqual(plan['releases'], ['R2025b', 'R2026a'])
+        self.assertEqual(plan['releases'], ['R2025b'])
         self.assertEqual(len(plan['deferredMethods']), 3)
         self.assertEqual(select(['README.md'], complete=True)['deferredMethods'], [])
 

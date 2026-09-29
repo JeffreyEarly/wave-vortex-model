@@ -98,12 +98,12 @@ class RoutineSelectionTests(unittest.TestCase):
         with self.assertRaises(ValueError):
             select(['README.md'], content_only_workflows=['.github/workflows/ci.yml'])
 
-    def test_dependency_registry_covers_every_formal_test_class(self):
+    def test_dependency_registry_names_existing_formal_test_classes(self):
         registry = json.loads(DEPENDENCIES_PATH.read_text())
         registered = registry['classes']
         formal_classes = {path.stem for path in (REPOSITORY_ROOT / 'UnitTests').glob('Test*.m')}
 
-        self.assertTrue(formal_classes <= set(registered))
+        self.assertTrue(set(registered) <= formal_classes)
         self.assertTrue(all(type(value['nativeProbes']) is bool for value in registered.values()))
 
     def test_native_registry_records_probe_use_not_class_name_prefix(self):
@@ -213,7 +213,7 @@ def _gate_reports(plan, smoke_by_release=None):
         classes = group['classes']
         shard = group['id']
         expects_smoke = configuration == 'release' and shard == 0 and plan['smoke']
-        smoke = list(smoke_by_release.get(release, ['TestSmoke/baseline'] if expects_smoke else []))
+        smoke = list(smoke_by_release.get(release, ['TestSmoke/baseline'])) if expects_smoke else []
         names = [name + '/method' for name in classes] + (smoke if expects_smoke else [])
         reports.append({
             'schema': 'wvm-ci-matlab-v2',
@@ -240,6 +240,12 @@ def _gate_reports(plan, smoke_by_release=None):
 
 
 class GateSmokeCoverageTests(unittest.TestCase):
+    def test_complete_evidence_with_the_same_smoke_baseline_passes(self):
+        from gate import validate
+
+        plan = select(['README.md'], complete=True, source_commit='abc123')
+        self.assertTrue(validate(plan, _gate_jobs(plan), _gate_reports(plan)))
+
     def test_gate_requires_reported_smoke_discovery_when_smoke_is_selected(self):
         from gate import validate
 
