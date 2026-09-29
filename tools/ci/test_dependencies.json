@@ -59,6 +59,9 @@
     "TestFlowComponentSurfaceDiagnostics": {
       "nativeProbes": false
     },
+    "TestFocusedCISelection": {
+      "nativeProbes": false
+    },
     "TestForcingDocumentation": {
       "nativeProbes": false
     },
@@ -237,7 +240,7 @@
       "nativeProbes": false
     },
     "TestStratifiedModalRecord": {
-      "nativeProbes": false
+      "nativeProbes": true
     },
     "TestStratifiedQGCompiledKernel": {
       "nativeProbes": true
