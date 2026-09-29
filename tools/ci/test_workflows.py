@@ -16,6 +16,16 @@ def workflow(name):
 
 
 class WorkflowContracts(unittest.TestCase):
+    def test_artifact_history_guard_uses_complete_revision_context(self):
+        job = workflow('ci.yml')['jobs']['repository']
+        checkout = next(step for step in job['steps'] if step.get('uses') == 'actions/checkout@v6')
+        self.assertEqual(checkout['with']['fetch-depth'], '0')
+        guard = next(step for step in job['steps'] if step.get('name') == 'Verify source boundaries and tracked artifacts')
+        self.assertEqual(guard['env']['PR_BASE_SHA'], '${{ github.event.pull_request.base.sha }}')
+        self.assertEqual(guard['env']['PUSH_BASE_SHA'], '${{ github.event.before }}')
+        self.assertEqual(guard['env']['HEAD_SHA'], '${{ github.event.pull_request.head.sha || github.sha }}')
+        self.assertIn('check_artifact_policy.py', (ROOT / 'tools/ci/check_repository.py').read_text())
+
     def test_gate_waits_for_every_selected_job_and_cannot_be_skipped(self):
         jobs = workflow('ci.yml')['jobs']
         gate = jobs['required-gate']
