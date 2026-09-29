@@ -13,3 +13,4 @@ Benchmarks/results/runs/
 .compiled-backend-cache/
 *.nc
 !PortableRuntime/tests/fixtures/*.nc
+__pycache__/

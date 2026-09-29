@@ -80,6 +80,12 @@ def comparison_base(root):
     return subprocess.check_output(['git', 'rev-parse', 'HEAD'], cwd=root, text=True).strip()
 
 
+def publication_output_errors(paths, registered):
+    forbidden = sorted(path for path in set(paths) | set(registered)
+                       if path.startswith(('docs/benchmarks/data/', 'docs/benchmarks/raw/')))
+    return [f'Benchmark download must be staged, not tracked or registered: {path}' for path in forbidden]
+
+
 def validate(root, paths, base):
     registry = json.loads((root / REGISTRY).read_text())
     if set(registry) != {'schema', 'paths'} or registry['schema'] != 'wvm-artifact-inputs-v1':
@@ -88,7 +94,8 @@ def validate(root, paths, base):
     baseline = json.loads((root / BASELINE).read_text())
     # Registered assets (including non-output extensions) must remain real files.
     missing = sorted(set(registered) - set(paths))
-    errors = [f'Registered input is no longer tracked: {path}' for path in missing]
+    errors = publication_output_errors(paths, registered)
+    errors += [f'Registered input is no longer tracked: {path}' for path in missing]
     errors.extend(f'Registered input is missing: {path}' for path in registered if not (root / path).is_file())
     governed = sorted(set(artifact_paths(paths)) | (set(registered) & set(paths)))
     errors.extend(check_repository(root, governed, registered, baseline))

@@ -1,0 +1,70 @@
+name: Publish website
+
+on:
+  pull_request:
+    paths:
+      - 'docs/**'
+      - 'Benchmarks/results/**'
+      - 'tools/website_downloads.py'
+      - '.github/workflows/website.yml'
+  push:
+    branches: [main]
+    paths:
+      - 'docs/**'
+      - 'Benchmarks/results/**'
+      - 'tools/website_downloads.py'
+      - '.github/workflows/website.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: website-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  build:
+    name: Build and verify website downloads
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          path: source
+          persist-credentials: false
+      - name: Stage website downloads
+        run: |
+          cp -R source/docs website-source
+          python3 source/tools/website_downloads.py --root source --manifest source/docs/benchmarks/downloads.json --destination website-source
+      - name: Build rendered website
+        uses: actions/jekyll-build-pages@v1
+        with:
+          source: ./website-source
+          destination: ./rendered-site
+      - name: Verify rendered downloads and custom domain
+        run: |
+          python3 source/tools/website_downloads.py --root source --manifest source/docs/benchmarks/downloads.json --destination rendered-site --verify-staged
+          cmp source/docs/CNAME rendered-site/CNAME
+      - name: Upload website artifact
+        uses: actions/upload-pages-artifact@v4
+        with:
+          path: rendered-site
+          retention-days: 1
+
+  deploy:
+    name: Deploy website
+    if: github.ref == 'refs/heads/main' && github.event_name != 'pull_request'
+    needs: build
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    permissions:
+      pages: write
+      id-token: write
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - name: Deploy verified website artifact
+        id: deployment
+        uses: actions/deploy-pages@v4

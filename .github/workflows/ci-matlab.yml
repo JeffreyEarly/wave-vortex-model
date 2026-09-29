@@ -99,12 +99,20 @@ jobs:
             binaries="";
             if getenv("WVM_CI_HAS_BINARIES")=="true", binaries=fullfile(getenv("RUNNER_TEMP"),"binaries"); end;
             runFocusedCI(fullfile(getenv("RUNNER_TEMP"),"selection","selection.json"),binaries,fullfile(getenv("RUNNER_TEMP"),"matlab-results.json"),getenv("WVM_CI_CONFIGURATION"),str2double(getenv("WVM_CI_SHARD")));
+      - name: Stage website downloads
+        if: inputs.render
+        run: |
+          cp -R source/docs website-source
+          python3 source/tools/website_downloads.py --root source --manifest source/docs/benchmarks/downloads.json --destination website-source
       - name: Build rendered website
         if: inputs.render
         uses: actions/jekyll-build-pages@v1
         with:
-          source: ./source/docs
+          source: ./website-source
           destination: ./rendered-site
+      - name: Verify rendered downloads
+        if: inputs.render
+        run: python3 source/tools/website_downloads.py --root source --manifest source/docs/benchmarks/downloads.json --destination rendered-site --verify-staged
       - name: Verify rendered website
         if: inputs.render
         uses: matlab-actions/run-command@v3

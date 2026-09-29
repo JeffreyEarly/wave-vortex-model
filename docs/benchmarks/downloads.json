@@ -1,0 +1,149 @@
+{
+  "schema": "wvm-benchmark-downloads-v1",
+  "entries": [
+    {
+      "url": "/benchmarks/data/core-v1--cpp-native-fftw--m5-max--20260812T195257Z.json",
+      "source": "Benchmarks/results/published/core-v1--cpp-native-fftw--m5-max--20260812T195257Z.json",
+      "sha256": "b101b55cbf704cd01726608341276280e27424825ff1190dcd329ca1940cf544",
+      "bytes": 7781
+    },
+    {
+      "url": "/benchmarks/data/core-v1--matlab-builtin--m5-max--20260812T195257Z.json",
+      "source": "Benchmarks/results/published/core-v1--matlab-builtin--m5-max--20260812T195257Z.json",
+      "sha256": "01779bae48979069faf639096a93fa9ae03a11f153a954530b4fe3ee03616b41",
+      "bytes": 7600
+    },
+    {
+      "url": "/benchmarks/data/scaling-large-v1--matlab-builtin--lyra--20260811T213524Z.json",
+      "source": "Benchmarks/results/published/scaling-large-v1--matlab-builtin--lyra--20260811T213524Z.json",
+      "sha256": "047e8407f6285f74beb11038eb09b98b472f08487122e978ab9f9ba6db16847a",
+      "bytes": 20008
+    },
+    {
+      "url": "/benchmarks/data/scaling-large-v1--matlab-builtin--m5-max--20260812T023122Z.json",
+      "source": "Benchmarks/results/published/scaling-large-v1--matlab-builtin--m5-max--20260812T023122Z.json",
+      "sha256": "947372ffbc3bf7087961c949c9a1da50ceb39d343a8547cc57a5fea8e7135c9d",
+      "bytes": 18940
+    },
+    {
+      "url": "/benchmarks/data/scaling-standard-v1--matlab-builtin--lyra--20260811T204835Z.json",
+      "source": "Benchmarks/results/published/scaling-standard-v1--matlab-builtin--lyra--20260811T204835Z.json",
+      "sha256": "8d263eb60d7d2cd38f7e154171140b266a5fd1b00020972cf32cabdd4b97c90c",
+      "bytes": 38755
+    },
+    {
+      "url": "/benchmarks/data/scaling-standard-v1--matlab-builtin--m5-max--20260812T020708Z.json",
+      "source": "Benchmarks/results/published/scaling-standard-v1--matlab-builtin--m5-max--20260812T020708Z.json",
+      "sha256": "e46ef995b29c31545e7405ab65d37c82db24d49ec2942a873d9fcda1e31e216b",
+      "bytes": 38673
+    },
+    {
+      "url": "/benchmarks/data/scaling-standard-v1--matlab-builtin--matilda--20260811T205115Z.json",
+      "source": "Benchmarks/results/published/scaling-standard-v1--matlab-builtin--matilda--20260811T205115Z.json",
+      "sha256": "54ec123012a5863cb16402b65d3d8aec7f01a8cfa1a217f8c17c98fda5ecff23",
+      "bytes": 38449
+    },
+    {
+      "url": "/benchmarks/data/three-interface--boussinesq-exponential--m4-max--20260913T140607Z.json",
+      "source": "Benchmarks/results/published/three-interface--boussinesq-exponential--m4-max--20260913T140607Z.json",
+      "sha256": "6c482023624dd8480733a33798dd563c453559486448d54a7255a2d7233e8564",
+      "bytes": 43024
+    },
+    {
+      "url": "/benchmarks/data/three-interface--boussinesq-exponential--m4-max--20260913T235744Z.json",
+      "source": "Benchmarks/results/published/three-interface--boussinesq-exponential--m4-max--20260913T235744Z.json",
+      "sha256": "df1da6607c5a7fb4e8db178c7e5feabd656a642e4f92a9f0e163d9f9bfcd363d",
+      "bytes": 43023
+    },
+    {
+      "url": "/benchmarks/data/three-interface--constant-nonhydrostatic--m4-max--20260913T133115Z.json",
+      "source": "Benchmarks/results/published/three-interface--constant-nonhydrostatic--m4-max--20260913T133115Z.json",
+      "sha256": "41f5120ac5496b688053438d2499988d1afe4dedf25b99a33783854be0fbeaa9",
+      "bytes": 42370
+    },
+    {
+      "url": "/benchmarks/data/three-interface--constant-nonhydrostatic--m4-max--20260914T002703Z.json",
+      "source": "Benchmarks/results/published/three-interface--constant-nonhydrostatic--m4-max--20260914T002703Z.json",
+      "sha256": "bfcee241653b3a401b0f4b5dd215756018d158dbc8434fb6d833a163eacd38a5",
+      "bytes": 42348
+    },
+    {
+      "url": "/benchmarks/data/three-interface--hydrostatic-exponential--m4-max--20260913T134854Z.json",
+      "source": "Benchmarks/results/published/three-interface--hydrostatic-exponential--m4-max--20260913T134854Z.json",
+      "sha256": "baf4e5ad316139baf8f2fc9bed7332107f6978c6f01f313506dd5535708f0689",
+      "bytes": 43034
+    },
+    {
+      "url": "/benchmarks/data/three-interface--hydrostatic-exponential--m4-max--20260913T234347Z.json",
+      "source": "Benchmarks/results/published/three-interface--hydrostatic-exponential--m4-max--20260913T234347Z.json",
+      "sha256": "ec375ef4da4fa680a73549f3bc1b9d7e170a95b22226da1aaa840077a8c375d5",
+      "bytes": 43010
+    },
+    {
+      "url": "/benchmarks/data/three-interface--lyra--20260816T034908Z.json",
+      "source": "Benchmarks/results/published/three-interface--lyra--20260816T034908Z.json",
+      "sha256": "04e760387b67978c7de532bc2b214feb8e3116567bae6413ab27201fd36abb49",
+      "bytes": 22369
+    },
+    {
+      "url": "/benchmarks/data/three-interface--lyra--20260816T044250Z.json",
+      "source": "Benchmarks/results/published/three-interface--lyra--20260816T044250Z.json",
+      "sha256": "e3e58ebac95a861c5c45c92b1ee0a2a165f1d904d4dbe28022f6559d0d59e567",
+      "bytes": 22341
+    },
+    {
+      "url": "/benchmarks/data/three-interface--m5-max--20260827T151230Z.json",
+      "source": "Benchmarks/results/published/three-interface--m5-max--20260827T151230Z.json",
+      "sha256": "957c2b82afaa827acf4ee29b899bac24f38027c4fc85c4a2f18e715a94cf86d1",
+      "bytes": 128723
+    },
+    {
+      "url": "/benchmarks/data/three-interface--m5-max--20260828T143049Z.json",
+      "source": "Benchmarks/results/published/three-interface--m5-max--20260828T143049Z.json",
+      "sha256": "1884214b9ac3733b04d6762f053d6e11ae6c31b35f7d05f29812f2e2f2c1b6cf",
+      "bytes": 124907
+    },
+    {
+      "url": "/benchmarks/raw/core-v1--cpp-native-fftw--m5-max--20260812T195257Z.json",
+      "source": "Benchmarks/results/reference/compiled-preview-v1-m5-max-r2026a/compiled-preview-benchmark.json",
+      "sha256": "8856822eac3c90514db3d79064650ab82e586cc265e6c272fec803f226ec11a8",
+      "bytes": 7402618
+    },
+    {
+      "url": "/benchmarks/raw/core-v1--matlab-builtin--m5-max--20260812T195257Z.json",
+      "source": "Benchmarks/results/reference/compiled-preview-v1-m5-max-r2026a/compiled-preview-benchmark.json",
+      "sha256": "8856822eac3c90514db3d79064650ab82e586cc265e6c272fec803f226ec11a8",
+      "bytes": 7402618
+    },
+    {
+      "url": "/benchmarks/raw/scaling-large-v1--matlab-builtin--lyra--20260811T213524Z.json",
+      "source": "Benchmarks/results/published/raw/scaling-large-v1--matlab-builtin--lyra--20260811T213524Z.json",
+      "sha256": "a20b420b52b210b0f23ecdeed63f6c73cde71ee31290b6aacc5f319788fcc124",
+      "bytes": 36420
+    },
+    {
+      "url": "/benchmarks/raw/scaling-large-v1--matlab-builtin--m5-max--20260812T023122Z.json",
+      "source": "Benchmarks/results/published/raw/scaling-large-v1--matlab-builtin--m5-max--20260812T023122Z.json",
+      "sha256": "92cd51644d123d68af07bb1207e9e6257372a65a1339157effa5687d840ce08d",
+      "bytes": 31344
+    },
+    {
+      "url": "/benchmarks/raw/scaling-standard-v1--matlab-builtin--lyra--20260811T204835Z.json",
+      "source": "Benchmarks/results/published/raw/scaling-standard-v1--matlab-builtin--lyra--20260811T204835Z.json",
+      "sha256": "783a9f81a2d865a3f581f4dc09d2dd4942d4044a9ad4e6f20658f3ec315ea977",
+      "bytes": 69552
+    },
+    {
+      "url": "/benchmarks/raw/scaling-standard-v1--matlab-builtin--m5-max--20260812T020708Z.json",
+      "source": "Benchmarks/results/published/raw/scaling-standard-v1--matlab-builtin--m5-max--20260812T020708Z.json",
+      "sha256": "841de1fd4c2780c6a2071d44181333fe270658a24ddeb85cbf6c2b363539c448",
+      "bytes": 69414
+    },
+    {
+      "url": "/benchmarks/raw/scaling-standard-v1--matlab-builtin--matilda--20260811T205115Z.json",
+      "source": "Benchmarks/results/published/raw/scaling-standard-v1--matlab-builtin--matilda--20260811T205115Z.json",
+      "sha256": "dcee26fd286fe4b20c257581067f0071cef5670272b3e9bb8a7e5f9070bf92a0",
+      "bytes": 69225
+    }
+  ]
+}

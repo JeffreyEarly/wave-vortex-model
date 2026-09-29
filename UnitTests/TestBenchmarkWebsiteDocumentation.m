@@ -36,6 +36,36 @@ classdef TestBenchmarkWebsiteDocumentation < matlab.unittest.TestCase
             testCase.verifyFalse(contains(page,"Performance across releases"));
         end
 
+        function sharedRawReportPreservesBothDownloadURLs(testCase)
+            [root,buildFolder] = testCase.createFixture("shared raw report");
+            first = publishedDataset("scaling-standard-v1--matlab-builtin--m5-max--20260810T120000Z","matlab","builtin","m5-max","M5 Max","4.2.1","2026-08-10T12:00:00Z",standardCases(1));
+            second = publishedDataset("scaling-standard-v1--cpp-fftw--m5-max--20260810T120000Z","cpp","fftw","m5-max","M5 Max","0.1.0","2026-08-10T12:00:00Z",standardCases(0.6));
+            entries = testCase.publishDatasets(root,{first,second});
+            firstPath = fullfile(root,entries(1).artifact);
+            secondPath = fullfile(root,entries(2).artifact);
+            first = jsondecode(fileread(firstPath));
+            second = jsondecode(fileread(secondPath));
+            testCase.writeJson(fullfile(root,first.provenance.rawArtifact),struct("padding",repmat('x',1,1000000)));
+            second.provenance.rawArtifact = first.provenance.rawArtifact;
+            testCase.writeJson(secondPath,second);
+            testCase.writeCatalog(root,entries);
+
+            generateBenchmarkWebsiteDocumentation(root,buildFolder);
+
+            manifest = jsondecode(fileread(fullfile(buildFolder,"benchmarks","downloads.json")));
+            raw = manifest.entries(startsWith(string({manifest.entries.url}),"/benchmarks/raw/"));
+            testCase.verifyNumElements(raw,2);
+            testCase.verifyEqual(string(raw(1).source),string(raw(2).source));
+            testCase.verifyEqual(string(raw(1).sha256),string(raw(2).sha256));
+            testCase.verifyFalse(isfolder(fullfile(buildFolder,"benchmarks","raw")));
+            stageBenchmarkWebsiteDownloads(root,buildFolder);
+            for iRecord = 1:numel(raw)
+                record = raw(iRecord);
+                downloaded = fullfile(buildFolder,extractAfter(string(record.url),1));
+                testCase.verifyEqual(fileread(downloaded),fileread(fullfile(root,record.source)));
+            end
+        end
+
         function matlabCppAndMissingCasesRenderDeterministically(testCase)
             [root,firstBuild] = testCase.createFixture("multi-platform");
             cases = standardCases(1);
@@ -89,6 +119,11 @@ classdef TestBenchmarkWebsiteDocumentation < matlab.unittest.TestCase
             testCase.verifySubstring(horizontalChart,"Median nonlinear-flux evaluation time (s)");
             verticalChart = string(fileread(fullfile(firstBuild,"assets","benchmarks","runtime-vertical.svg")));
             testCase.verifySubstring(verticalChart,"Vertical grid size (Nz)");
+            manifest = jsondecode(fileread(fullfile(firstBuild,"benchmarks","downloads.json")));
+            testCase.verifyEqual(string(manifest.schema),"wvm-benchmark-downloads-v1");
+            testCase.verifyNumElements(manifest.entries,6);
+            testCase.verifyFalse(isfolder(fullfile(firstBuild,"benchmarks","data")));
+            stageBenchmarkWebsiteDownloads(root,firstBuild);
             for dataset = [first second third]
                 testCase.verifyTrue(isfile(fullfile(firstBuild,"benchmarks","data",dataset.datasetId + ".json")));
                 testCase.verifyTrue(isfile(fullfile(firstBuild,"benchmarks","raw",dataset.datasetId + ".json")));
@@ -144,6 +179,8 @@ classdef TestBenchmarkWebsiteDocumentation < matlab.unittest.TestCase
             testCase.verifySubstring(page,"/benchmarks/data/"+first.datasetId+".json");
             testCase.verifySubstring(page,"/benchmarks/data/"+second.datasetId+".json");
             testCase.verifySubstring(page,"External archives:");
+            testCase.verifyFalse(isfolder(fullfile(buildFolder,"benchmarks","data")));
+            stageBenchmarkWebsiteDownloads(root,buildFolder);
             testCase.verifyTrue(isfile(fullfile(buildFolder,"benchmarks","data",first.datasetId+".json")));
             testCase.verifyTrue(isfile(fullfile(buildFolder,"benchmarks","data",second.datasetId+".json")));
             testCase.verifyFalse(isfile(fullfile(buildFolder,"benchmarks","raw",first.datasetId+".json")));
@@ -205,6 +242,7 @@ classdef TestBenchmarkWebsiteDocumentation < matlab.unittest.TestCase
             testCase.verifyFalse(contains(comparison,"incremental","IgnoreCase",true))
             testCase.verifyFalse(contains(comparison,"process wall","IgnoreCase",true))
             testCase.verifyFalse(contains(comparison,"fresh processes"))
+            stageBenchmarkWebsiteDownloads(root,buildFolder);
             testCase.verifyTrue(isfile(fullfile(buildFolder,"benchmarks","data",first.datasetId+".json")))
         end
 
@@ -484,7 +522,7 @@ classdef TestBenchmarkWebsiteDocumentation < matlab.unittest.TestCase
                 struct("suiteId","core-v1","backendId","builtin","rawArtifact","Benchmarks/results/reference/core.json"), ...
                 struct("suiteId","scaling-standard-v1","backendId","builtin","rawArtifact","Benchmarks/results/reference/standard.json"), ...
                 struct("suiteId","scaling-large-v1","backendId","builtin","rawArtifact","Benchmarks/results/reference/large.json")];
-            catalog = struct("schemaVersion","benchmark-catalog-v1","scoringReferences",references,"publishedDatasets",publishedDatasets,"interfaceComparisons",interfaceComparisons);
+            catalog = struct("schemaVersion","benchmark-catalog-v1","scoringReferences",references,"publishedDatasets",{num2cell(publishedDatasets)},"interfaceComparisons",{num2cell(interfaceComparisons)});
             testCase.writeJson(fullfile(root,"Benchmarks","results","catalog.json"),catalog);
         end
 
