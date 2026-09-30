@@ -34,8 +34,11 @@ class WebsitePublicationContracts(unittest.TestCase):
         self.assertLess(stage, render)
         self.assertLess(render, verify)
         self.assertLess(verify, upload)
-        self.assertIn('cp source/docs/CNAME rendered-site/CNAME', steps[verify]['run'])
-        self.assertIn('cmp source/docs/CNAME rendered-site/CNAME', steps[verify]['run'])
+        self.assertIn('cp -R rendered-site publish-site', steps[verify]['run'])
+        self.assertIn('cp source/docs/CNAME publish-site/CNAME', steps[verify]['run'])
+        self.assertIn('--destination publish-site --verify-staged', steps[verify]['run'])
+        self.assertIn('cmp source/docs/CNAME publish-site/CNAME', steps[verify]['run'])
+        self.assertEqual(steps[upload]['with']['path'], 'publish-site')
         deploy = page['jobs']['deploy']
         self.assertEqual(deploy['needs'], 'build')
         self.assertEqual(deploy['if'], "github.ref == 'refs/heads/main' && github.event_name != 'pull_request'")
