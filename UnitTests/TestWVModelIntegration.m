@@ -15,6 +15,66 @@ classdef TestWVModelIntegration < matlab.unittest.TestCase
     end
 
     methods (Test, TestTags = "full")
+        function fixedStepOutputAcceptsRoundedEndpoint(testCase)
+            outputTimes = [];
+            outputValues = [];
+            % A CFL-derived five-second step can land one ulp below five.
+            % At t=67 the stored endpoint rounds up, so (t-previousT)/dt > 1.
+            dt = 5-eps(5);
+            integrator = WVArrayIntegrator(@(~,~) {2},[17 42 67],{3},dt,OutputFcn=@collectOutput);
+
+            testCase.verifyEqual(outputTimes,[42 67])
+            testCase.verifyEqual(outputValues,[53 103],AbsTol=64*eps(103))
+            testCase.verifyEqual(integrator.totalIterations,10)
+            testCase.verifyEqual(integrator.currentTime,67)
+
+            function collectOutput(t,y,flag)
+                if isempty(flag)
+                    outputTimes(end+1) = t;
+                    outputValues(end+1) = y{1};
+                elseif strcmp(flag,"done")
+                    testCase.verifyEqual(t,67)
+                    testCase.verifyEqual(y{1},103,AbsTol=64*eps(103))
+                end
+            end
+        end
+
+        function fixedStepInterpolationPreservesEndpointStates(testCase)
+            initialState = {[1 2;3 4],complex([5;6],[7;8])};
+            rate = {[2 3;4 5],complex([6;7],[8;9])};
+            for dt = [5-eps(5),5+eps(5)]
+                integrator = WVArrayIntegrator(@(~,~) rate,[17 67],initialState,dt);
+                testCase.verifyEqual(integrator.valueAtTime(integrator.previousT),integrator.previousY)
+                testCase.verifyEqual(integrator.valueAtTime(integrator.currentTime),integrator.currentY)
+            end
+        end
+
+        function fixedStepInterpolationPreservesInteriorValues(testCase)
+            integrator = WVArrayIntegrator(@(t,~) {2*t,complex([2;4]*t,[6;8]*t)},[0 2],{0,complex([0;0])},1);
+            for t = [1.125 1.5 1.875]
+                actual = integrator.valueAtTime(t);
+                testCase.verifyEqual(actual{1},t^2,AbsTol=8*eps(t^2))
+                expected = complex([1;2],[3;4])*t^2;
+                testCase.verifyEqual(actual{2},expected,AbsTol=8*eps(max(abs(expected))))
+            end
+        end
+
+        function fixedStepInterpolationAcceptsRoundedInteriorTime(testCase)
+            integrator = WVArrayIntegrator(@(~,~) {2},[-17,-17+11*1.1],{0},1.1);
+            t = integrator.currentTime-eps(integrator.currentTime);
+            testCase.verifyGreaterThan(t,integrator.previousT)
+            testCase.verifyLessThan(t,integrator.currentTime)
+            actual = integrator.valueAtTime(t);
+            testCase.verifyEqual(actual{1},2*(t+17),AbsTol=8*eps(2*(t+17)))
+        end
+
+        function fixedStepInterpolationRejectsOutsideStep(testCase)
+            integrator = WVArrayIntegrator(@(~,~) {2},[17 67],{3},5-eps(5));
+            for t = [integrator.previousT-eps(integrator.previousT),integrator.currentTime+eps(integrator.currentTime),NaN,Inf,-Inf]
+                testCase.verifyError(@()integrator.valueAtTime(t),"WaveVortexModel:InvalidInterpolationTime")
+            end
+        end
+
         function fixedStepConvergesToAdaptiveReference(testCase)
             adaptiveModel = TestWVModelIntegration.newModel("adaptive");
             coarseFixedModel = TestWVModelIntegration.newModel("fixed",deltaT=20);
