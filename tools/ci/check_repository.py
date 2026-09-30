@@ -18,4 +18,5 @@ for name in paths:
 subprocess.run(['git', 'diff', '--check'], check=True)
 subprocess.run(['python3', 'tools/ci/check_compatibility_matrix.py'], check=True)
 subprocess.run(['python3', 'tools/ci/check_artifact_policy.py'], check=True)
+subprocess.run(['python3', 'tools/website_downloads.py', '--root', '.', '--manifest', 'docs/benchmarks/downloads.json', '--check'], check=True)
 print('Repository boundaries and tracked artifacts pass.')

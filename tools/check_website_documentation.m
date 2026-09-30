@@ -11,7 +11,6 @@ mkdir(stagingRoot);
 stagingCleanup = onCleanup(@()rmdir(stagingRoot,"s"));
 stagingFolder = fullfile(stagingRoot,"docs");
 generateWebsiteDocumentation(repositoryRoot,stagingFolder);
-validateWebsiteDocumentation(stagingFolder);
 
 comparison = compareDocumentationTrees(fullfile(repositoryRoot,"docs"),stagingFolder);
 printComparison(comparison);
@@ -19,6 +18,8 @@ if ~comparison.IsEqual
     preserveDiagnostics(stagingFolder);
     error("WaveVortexModel:DocumentationOutOfDate","Committed documentation does not match a clean ClassDocumentation 1.3.2 build.");
 end
+stageBenchmarkWebsiteDownloads(repositoryRoot,stagingFolder);
+validateWebsiteDocumentation(stagingFolder);
 clear stagingCleanup
 end
 

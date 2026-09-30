@@ -55,11 +55,11 @@ DOCUMENTATION_TOOLS = {
     'tools/' + name + '.m' for name in (
         'replaceDocumentationTree', 'validateClassDocumentationDependency',
         'documentationRepositoryRoot', 'compareDocumentationTrees',
-        'generateBenchmarkWebsiteDocumentation', 'check_website_documentation',
+        'generateBenchmarkWebsiteDocumentation', 'stageBenchmarkWebsiteDownloads', 'check_website_documentation',
         'build_website_documentation', 'applyDocumentationTaxonomy',
         'validateWebsiteDocumentation', 'validateRenderedWebsite',
         'WVTransformSubclassDocumentation', 'generateWebsiteDocumentation',
-        'WVTransformDocumentation')}
+        'WVTransformDocumentation')} | {'tools/website_downloads.py'}
 PACKAGE_TOOLS = {'tools/verifyWaveVortexModelPackage.m', 'tools/prepareWaveVortexModelReleaseCandidate.m'}
 
 
@@ -156,7 +156,7 @@ def select(paths, *, complete=False, migration=False, source_commit='', content_
             continue
         if path in DOCUMENTATION_TOOLS:
             flags.update(documentation=True, analyzer=True)
-            tests.update(('TestDocumentationTools', 'TestUserDocumentation'))
+            tests.update(('TestDocumentationTools', 'TestUserDocumentation', 'TestBenchmarkWebsiteDocumentation', 'TestPublishedWaveVortexBenchmark'))
             continue
         if path.startswith('UnitTests/') and path.endswith('.m'):
             flags['analyzer'] = flags['crossRelease'] = True

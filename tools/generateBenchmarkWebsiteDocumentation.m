@@ -19,8 +19,7 @@ allowedSuites = string({catalog.scoringReferences.suiteId});
 records = loadPublishedRecords(repositoryRoot,catalog,allowedSuites);
 interfaceRecords = loadInterfaceRecords(repositoryRoot,catalog);
 validateComparableCases(records);
-copyPublishedRecords(records,buildFolder);
-copyInterfaceRecords(interfaceRecords,buildFolder);
+writeDownloadManifest(repositoryRoot,records,interfaceRecords,buildFolder);
 
 latestRecords = latestPublishedRecords(records);
 pageText = string(fileread(pagePath));
@@ -162,7 +161,7 @@ latest = -Inf;
 selectedKey = "";
 for key = uniqueKeys
     candidates = records(keys==key);
-    time = max(arrayfun(@(record)datenum(collectionTime(record.dataset)),candidates)); %#ok<DATNM>
+    time = max(arrayfun(@(record)posixtime(collectionTime(record.dataset)),candidates));
     if time > latest, latest=time; selectedKey=key; end
 end
 
@@ -489,7 +488,7 @@ for key = candidateKeys
             break
         end
         matching = candidate(matches);
-        times = arrayfun(@(record)datenum(collectionTime(record.dataset)),matching); %#ok<DATNM>
+        times = arrayfun(@(record)posixtime(collectionTime(record.dataset)),matching);
         [timeValue,index] = max(times);
         current(iResolution) = matching(index);
         latestTime = max(latestTime,timeValue);
@@ -612,16 +611,6 @@ switch identifier
 end
 end
 
-function copyInterfaceRecords(records,buildFolder)
-if isempty(records), return, end
-dataFolder=fullfile(buildFolder,"benchmarks","data");
-if ~isfolder(dataFolder), mkdir(dataFolder); end
-for iRecord=1:numel(records)
-    datasetId=string(records(iRecord).dataset.datasetId);
-    copyfile(records(iRecord).artifactPath,fullfile(dataFolder,datasetId+".json"),"f");
-end
-end
-
 function records = loadPublishedRecords(repositoryRoot,catalog,allowedSuites)
 records = struct("dataset",{},"artifactPath",{},"rawPath",{});
 if isempty(catalog.publishedDatasets)
@@ -715,19 +704,37 @@ function key = comparisonCaseKey(dataset,benchmarkCase)
 key = char(string(dataset.benchmark.suiteId) + "|" + string(dataset.benchmark.suiteVersion) + "|" + string(benchmarkCase.id));
 end
 
-function copyPublishedRecords(records,buildFolder)
-if isempty(records)
-    return
-end
-dataFolder = fullfile(buildFolder,"benchmarks","data");
-rawFolder = fullfile(buildFolder,"benchmarks","raw");
-mkdir(dataFolder);
-mkdir(rawFolder);
+function writeDownloadManifest(repositoryRoot,records,interfaceRecords,buildFolder)
+entries = struct("url",{},"source",{},"sha256",{},"bytes",{});
 for iRecord = 1:numel(records)
     datasetId = string(records(iRecord).dataset.datasetId);
-    copyfile(records(iRecord).artifactPath,fullfile(dataFolder,datasetId + ".json"),"f");
-    copyfile(records(iRecord).rawPath,fullfile(rawFolder,datasetId + ".json"),"f");
+    entries(end+1) = downloadEntry(repositoryRoot,records(iRecord).artifactPath,"/benchmarks/data/" + datasetId + ".json"); %#ok<AGROW>
+    entries(end+1) = downloadEntry(repositoryRoot,records(iRecord).rawPath,"/benchmarks/raw/" + datasetId + ".json"); %#ok<AGROW>
 end
+for iRecord = 1:numel(interfaceRecords)
+    datasetId = string(interfaceRecords(iRecord).dataset.datasetId);
+    entries(end+1) = downloadEntry(repositoryRoot,interfaceRecords(iRecord).artifactPath,"/benchmarks/data/" + datasetId + ".json"); %#ok<AGROW>
+end
+[~,order] = sort(string({entries.url}));
+entries = entries(order);
+manifest = struct("schema","wvm-benchmark-downloads-v1","entries",{num2cell(entries)});
+manifestFolder = fullfile(buildFolder,"benchmarks");
+if ~isfolder(manifestFolder), mkdir(manifestFolder); end
+writeText(fullfile(manifestFolder,"downloads.json"),string(jsonencode(manifest,PrettyPrint=true)) + newline);
+end
+
+function entry = downloadEntry(repositoryRoot,sourcePath,url)
+fileId = fopen(sourcePath,"rb");
+if fileId < 0
+    error("WaveVortexModel:DocumentationReadFailed","Unable to read %s.",sourcePath);
+end
+cleanup = onCleanup(@()fclose(fileId));
+bytes = fread(fileId,Inf,"*uint8");
+digest = java.security.MessageDigest.getInstance('SHA-256');
+digest.update(bytes);
+sha256 = string(lower(reshape(dec2hex(typecast(digest.digest(),'uint8'),2)',1,[])));
+source = replace(extractAfter(sourcePath,strlength(repositoryRoot) + 1),filesep,"/");
+entry = struct("url",url,"source",source,"sha256",sha256,"bytes",uint64(numel(bytes)));
 end
 
 function records = latestPublishedRecords(records)

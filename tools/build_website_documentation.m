@@ -13,7 +13,10 @@ stagingCleanup = onCleanup(@()removeFolderIfPresent(stagingRoot));
 stagingFolder = fullfile(stagingRoot,"docs");
 
 generateWebsiteDocumentation(repositoryRoot,stagingFolder);
-validateWebsiteDocumentation(stagingFolder);
+validationFolder = fullfile(stagingRoot,"validation");
+copyfile(stagingFolder,validationFolder);
+stageBenchmarkWebsiteDownloads(repositoryRoot,validationFolder);
+validateWebsiteDocumentation(validationFolder);
 
 replaceDocumentationTree(stagingFolder,destinationFolder);
 clear stagingCleanup
