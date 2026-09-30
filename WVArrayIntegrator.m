@@ -111,11 +111,22 @@ classdef WVArrayIntegrator < handle
         end
 
         function yo = valueAtTime(self,t)
-            % Hermite interpolation
-            theta = (t - self.previousT)/self.stepSize;
-            if theta < -eps || theta > 1+eps
-                error("invalid time for interpolation");
+            % Use the same stored interval as the output scheduler. Subtracting
+            % rounded times can put theta above one even for an in-step time.
+            if ~isfinite(t) || t < self.previousT || t > self.currentTime
+                error("WaveVortexModel:InvalidInterpolationTime", ...
+                    "Interpolation time must be within the current step [%g, %g].",self.previousT,self.currentTime);
             end
+            if t == self.previousT
+                yo = self.previousY;
+                return
+            elseif t == self.currentTime
+                yo = self.currentY;
+                return
+            end
+
+            % Hermite interpolation; bound roundoff only after checking time.
+            theta = min((t - self.previousT)/self.stepSize,1);
             alpha_2 = 3*theta*theta - 2*theta*theta*theta;
             alpha_1 = 1 - alpha_2;
             alpha_3 = self.stepSize*(theta - 2*theta*theta + theta*theta*theta);
