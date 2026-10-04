@@ -6,7 +6,7 @@ import math
 import os
 from pathlib import Path, PurePosixPath
 import subprocess
-from diff_content import matlab_diff_facts
+from diff_content import ARTIFACT_INPUTS, matlab_diff_facts, published_asset_only_registry
 
 FAMILIES = ('constant', 'barotropic', 'sqg', 'hydrostatic', 'boussinesq')
 FAMILY_TESTS = {
@@ -132,6 +132,9 @@ def select(paths, *, complete=False, migration=False, source_commit='', content_
             continue
         if path in content_only_workflows:
             reasons.append(f'{path}: trigger/comment-only workflow change; lint and policy checks')
+            continue
+        if path == ARTIFACT_INPUTS and diff_base and diff_head and published_asset_only_registry(diff_base, diff_head):
+            reasons.append(f'{path}: published-asset registrations only; repository and artifact checks')
             continue
         if path.startswith(('tools/ci/', '.github/workflows/', '.github/actions/')) or path in ('buildfile.m', 'tools/runFocusedCI.m', 'tools/discoverTestCategory.m', 'tools/selectFocusedCISuite.m', 'tools/analyzeProductionCode.m', 'tools/configureCIEnvironment.m'):
             full_analyzer = True
