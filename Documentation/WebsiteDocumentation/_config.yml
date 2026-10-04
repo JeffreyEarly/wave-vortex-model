@@ -1,6 +1,18 @@
 remote_theme: just-the-docs/just-the-docs
 title: WaveVortexModel
 description: Decompose and model rotating stratified flow with wave-vortex modes
+url: https://wavevortexmodel.org
+logo: /assets/branding/logo-horizontal-light.svg
+favicon_ico: /assets/branding/favicon.ico
+defaults:
+  - scope:
+      path: ""
+    values:
+      image:
+        path: /assets/branding/social-card.png
+        width: 1200
+        height: 630
+        alt: WaveVortexModel with a coral Kelvin–Helmholtz vortex and cyan wave contours
 search_enabled: true
 compress_html:
   blanklines: true

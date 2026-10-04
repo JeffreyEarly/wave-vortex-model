@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" width="1254" height="1254" viewBox="0 0 1254 1254" role="img" aria-labelledby="title desc">
+  <title id="title">WaveVortexModel small icon</title>
+  <desc id="desc">A broad coral Kelvin–Helmholtz roll-up between two cyan wave contours, simplified for browser tabs and small links.</desc>
+  <defs>
+    <clipPath id="container">
+      <path d="M 285 0 H 969 C 1144 0 1254 110 1254 285 V 969 C 1254 1144 1144 1254 969 1254 H 285 C 110 1254 0 1144 0 969 V 285 C 0 110 110 0 285 0 Z"/>
+    </clipPath>
+  </defs>
+  <path id="background" d="M 285 0 H 969 C 1144 0 1254 110 1254 285 V 969 C 1254 1144 1144 1254 969 1254 H 285 C 110 1254 0 1144 0 969 V 285 C 0 110 110 0 285 0 Z" fill="#041a50"/>
+  <g id="flow" clip-path="url(#container)">
+    <path id="upper-wave" fill="#88efff" d="M 0 418 C 144 345 253 378 324 459 C 357 507 408 522 447 493 C 508 457 543 376 602 317 C 663 257 745 235 820 252 C 906 270 971 319 1029 395 C 944 334 867 315 794 325 C 704 337 668 385 610 469 C 557 544 505 592 441 600 C 344 610 277 510 226 458 C 175 409 105 423 0 492 Z"/>
+    <path id="coral-roll-up" fill="#ff937f" d="M 0 582 C 139 501 238 529 315 587 C 393 647 470 656 536 588 C 603 516 630 430 708 377 C 784 324 887 340 957 389 C 1036 456 1057 560 1000 648 C 958 713 872 723 809 693 C 748 662 733 604 765 560 C 769 606 801 636 842 637 C 895 641 931 611 937 565 C 946 508 911 460 864 445 C 818 428 768 441 734 475 C 683 526 659 573 614 629 C 531 724 421 742 318 696 C 212 643 179 550 0 628 Z"/>
+    <path id="lower-wave" fill="#41c8f0" d="M 0 650 C 117 588 206 655 287 720 C 354 771 420 792 513 778 C 613 757 654 804 733 850 C 808 894 880 904 957 886 C 1043 869 1148 813 1254 851 L 1254 933 C 1153 895 1058 948 957 969 C 860 987 771 976 693 919 C 636 873 598 847 525 858 C 413 873 338 843 260 788 C 172 725 107 667 0 728 Z"/>
+  </g>
+</svg>
