@@ -1,6 +1,20 @@
 
 @import "./sidebar-upgrades";
 
+.site-title {
+  min-width: 0;
+}
+
+.site-logo {
+  height: 2.5rem;
+  max-width: 20rem;
+
+  // Follow the rendered theme's sidebar, including JTD's theme switcher.
+  @if lightness($sidebar-color) < 50% {
+    background-image: url("../branding/logo-horizontal-dark.svg");
+  }
+}
+
 body,
 .site-title,
 .site-button,
