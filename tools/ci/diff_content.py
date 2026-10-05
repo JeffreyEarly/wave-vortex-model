@@ -1,6 +1,12 @@
 """Conservative content facts used by both the selector and its required gate."""
+import json
+from pathlib import PurePosixPath
 import re
 import subprocess
+
+from artifact_policy import REGISTERED_ROLES
+
+ARTIFACT_INPUTS = '.github/artifact-inputs.json'
 
 DECLARATION = re.compile(r'^\s*(?:function|classdef|methods)\b')
 API_BLOCK = re.compile(r'^\s*(?:properties|arguments|enumeration|events)\b')
@@ -86,6 +92,41 @@ def git_source(revision, path):
         return result.stdout.decode('utf-8')
     except UnicodeDecodeError:
         return None
+
+
+def published_asset_only_registry_change(before, after):
+    """Prove that a valid registry diff changes only published-asset entries."""
+    def unique_object(pairs):
+        value = {}
+        for key, item in pairs:
+            if key in value:
+                raise ValueError('Duplicate JSON key')
+            value[key] = item
+        return value
+
+    try:
+        registries = [json.loads(source, object_pairs_hook=unique_object) for source in (before, after)]
+    except (TypeError, ValueError):
+        return False
+    for registry in registries:
+        if (not isinstance(registry, dict) or set(registry) != {'schema', 'paths'}
+                or registry['schema'] != 'wvm-artifact-inputs-v1' or not isinstance(registry['paths'], dict)):
+            return False
+        for path, role in registry['paths'].items():
+            relative = PurePosixPath(path)
+            if (not relative.parts or relative.is_absolute() or relative.as_posix() != path
+                    or '..' in relative.parts or any(character in path for character in ('\\', '\n', '\r', '\0'))
+                    or not isinstance(role, str) or role not in REGISTERED_ROLES):
+                return False
+    previous, current = (registry['paths'] for registry in registries)
+    changed = {path for path in previous.keys() | current.keys() if previous.get(path) != current.get(path)}
+    return all(previous.get(path, 'published-asset') == current.get(path, 'published-asset') == 'published-asset'
+               for path in changed)
+
+
+def published_asset_only_registry(base, head):
+    """Read exact Git revisions so selection and the gate share the same proof."""
+    return published_asset_only_registry_change(git_source(base, ARTIFACT_INPUTS), git_source(head, ARTIFACT_INPUTS))
 
 
 def matlab_diff_facts(base, head, paths):
