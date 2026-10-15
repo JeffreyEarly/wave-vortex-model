@@ -2,6 +2,10 @@
 
 ## [Unreleased]
 
+- Designate this development package `5.0.0-beta.1` and rename its branch to `feature/v5.0-free-surface`. Runtime version reporting and saved model provenance follow the package manifest.
+- Accept v4 and v5 model provenance for the existing portable constant-stratification and barotropic QG checkpoint encodings, retaining the supported-transform and schema checks.
+- Export prerelease verification candidates at their current beta version without promoting the Unreleased changelog or preparing a stable patch release.
+
 - Require `InternalModes@^2.0.0-beta.7` for common-coordinate quadratic-filtering evidence, retaining the existing orientation and construction optimizations. Routine CI and package verification use the immutable beta.7 OceanKit snapshot. Historical experiment pins and independent linear scientific tolerances are preserved.
 
 - Add `quadraticDealiasing="none"`, `"fixedFraction"`, and `"effectiveBandwidth"` to free-surface Boussinesq and shared QG/APV construction. Use the same policy and parameters for wave/APV prefixes, preserve strict explicit counts, and reuse existing fine-grid convergence samples for spectral scoring.

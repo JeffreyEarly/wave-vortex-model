@@ -35,15 +35,19 @@ configureCIEnvironment(repositoryRoot,oceanKitRoot);
 
 oceankitrelease.runDocumentationCheck(repositoryRoot,"docs:check");
 changelogPath = fullfile(repositoryRoot,"CHANGELOG.md");
-try
-    expectedBody = oceankitrelease.unreleasedBody(changelogPath);
-    shouldPromoteUnreleased = true;
-catch exception
-    if exception.identifier ~= "OceanKitRelease:EmptyUnreleasedSection"
-        rethrow(exception);
+expectedBody = "";
+shouldPromoteUnreleased = false;
+% A prerelease export verifies the named beta without promoting Unreleased
+% or converting its version to the next stable patch.
+if ~any(strlength(packageBefore.Version.Prerelease)>0)
+    try
+        expectedBody = oceankitrelease.unreleasedBody(changelogPath);
+        shouldPromoteUnreleased = true;
+    catch exception
+        if exception.identifier ~= "OceanKitRelease:EmptyUnreleasedSection"
+            rethrow(exception);
+        end
     end
-    expectedBody = "";
-    shouldPromoteUnreleased = false;
 end
 if shouldPromoteUnreleased
     candidateVersion = nextPatchVersion(currentVersion);

@@ -80,6 +80,22 @@ class RoutingTests(unittest.TestCase):
         self.assertEqual(plan["tests"], ["TestThermalDiagnostics"])
         self.assertTrue(plan["matlab"])
 
+    def test_version_compatibility_tests_select_their_focused_regressions(self):
+        for name, selector in (
+            ("TestPortableRunRequestWriter", "TestPortableRunRequestWriter"),
+            ("TestReleaseVerification", "TestReleaseVerification/runtimeManifestExcludesAuthoringTests"),
+        ):
+            with self.subTest(name=name):
+                path = f"UnitTests/{name}.m"
+                plan = classify_changes([path])
+                self.assertEqual(plan["errors"], [])
+                self.assertTrue(plan["matlab"])
+                self.assertEqual(plan["tests"], [selector])
+                self.assertEqual(plan["analyzer_files"], [path])
+                self.assertFalse(plan["cpp"])
+                self.assertFalse(plan["documentation"])
+                self.assertFalse(plan["package"])
+
     def test_initialization_integration_runs_both_regression_classes(self):
         matlab_paths = [
             "+WVInternal/assessFreeSurfaceWavePilot.m",

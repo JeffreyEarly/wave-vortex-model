@@ -347,19 +347,20 @@ void testUnsupportedVersionAndTransform() {
         TemporaryFile file(temporaryCopy("root-nonhydrostatic.nc"));
         int id = -1;
         requireNetCDF(nc_open(file.path.string().c_str(), NC_WRITE, &id), "open version fixture");
-        overwriteTextAttribute(id, "model_version", "5.0.0");
+        overwriteTextAttribute(id, "model_version", "6.0.0");
         requireNetCDF(nc_close(id), "close version fixture");
         WVCheckpoint checkpoint;
         const auto result = WVCheckpointReader::read(file.path.string(), *test::extensionCatalog(), checkpoint);
-        require(result.code == WVCheckpointStatusCode::unsupportedModelVersion, "non-4.x model version was accepted");
+        require(result.code == WVCheckpointStatusCode::unsupportedModelVersion, "unsupported model version was accepted");
         verifyWritableAfterFailure(file.path);
     }
-    {
+    for (const std::string transformClass : {"WVTransformStratifiedQG", "WVTransformFreeSurfaceBoussinesq"}) {
         TemporaryFile file(temporaryCopy("root-nonhydrostatic.nc"));
         int id = -1;
         requireNetCDF(nc_open(file.path.string().c_str(), NC_WRITE, &id), "open transform fixture");
-        overwriteTextAttribute(id, "WVTransform", "WVTransformStratifiedQG");
-        overwriteTextAttribute(id, "AnnotatedClass", "WVTransformStratifiedQG");
+        overwriteTextAttribute(id, "model_version", "5.0.0-beta.1");
+        overwriteTextAttribute(id, "WVTransform", transformClass);
+        overwriteTextAttribute(id, "AnnotatedClass", transformClass);
         requireNetCDF(nc_close(id), "close transform fixture");
         WVCheckpoint checkpoint;
         const auto result = WVCheckpointReader::read(file.path.string(), *test::extensionCatalog(), checkpoint);

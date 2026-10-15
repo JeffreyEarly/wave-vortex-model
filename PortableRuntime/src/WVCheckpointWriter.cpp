@@ -52,7 +52,8 @@ bool sameComplex(const std::vector<WVComplex64>& left, const std::vector<WVCompl
 
 bool compatibleModelVersion(const std::string& version) {
     const auto separator = version.find('.');
-    return !version.empty() && (separator == std::string::npos ? version : version.substr(0, separator)) == "4";
+    const auto major = separator == std::string::npos ? version : version.substr(0, separator);
+    return major == "4" || major == "5";
 }
 
 WVCheckpointStatus validateEntry(
@@ -72,7 +73,7 @@ WVCheckpointStatus validateEntry(
 
 WVCheckpointStatus validateCheckpoint(const WVCheckpoint& checkpoint, const WVForcingCatalog& catalog, std::vector<const WVFrozenForcingEntry*>& sourceOrder) {
     if (checkpoint.metadata.profileIdentifier != WVCheckpointProfileIdentifier || checkpoint.metadata.profileVersion != WVCheckpointProfileVersion) return status(WVCheckpointStatusCode::invalidValue, "Unsupported checkpoint profile.", "/");
-    if (!compatibleModelVersion(checkpoint.metadata.modelVersion)) return status(WVCheckpointStatusCode::unsupportedModelVersion, "The writer accepts only WaveVortexModel 4.x checkpoints.", "/@model_version");
+    if (!compatibleModelVersion(checkpoint.metadata.modelVersion)) return status(WVCheckpointStatusCode::unsupportedModelVersion, "The writer accepts only WaveVortexModel 4.x and 5.x checkpoints.", "/@model_version");
     if (checkpoint.metadata.transformClass != "WVTransformConstantStratification") return status(WVCheckpointStatusCode::unsupportedTransform, "The writer supports only WVTransformConstantStratification.", "/");
     if (checkpoint.forcingSchedule.profileIdentifier != WVForcingScheduleProfileIdentifier || checkpoint.forcingSchedule.profileVersion != WVForcingScheduleProfileVersion) return status(WVCheckpointStatusCode::unsupportedForcing, "Unsupported frozen forcing schedule profile.", "/forcing");
     if (!std::isfinite(checkpoint.state.t) || !std::isfinite(checkpoint.state.t0)) return status(WVCheckpointStatusCode::invalidValue, "Checkpoint times must be finite.", "/t");

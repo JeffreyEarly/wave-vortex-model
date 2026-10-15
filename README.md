@@ -2,6 +2,8 @@
 
 WaveVortexModel represents rotating, stratified Boussinesq flow on an energetically orthogonal basis of internal waves, inertial oscillations, geostrophic motions, and mean-density anomalies. It can decompose a fluid state into wave–vortex coefficients, reconstruct physical fields, diagnose the resulting flow, and integrate nonlinear dynamics, with analytical linear evolution available when needed.
 
+**v5 beta development:** This checkout is `5.0.0-beta.1` on `feature/v5.0-free-surface`, including free-surface Boussinesq, QG, and thermal QG development. The MPM installation below installs the published package; use this branch checkout for the unpublished beta.
+
 **Complete documentation:** [wavevortexmodel.org](https://wavevortexmodel.org)
 
 ## Installation

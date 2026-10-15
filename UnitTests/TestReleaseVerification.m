@@ -40,7 +40,9 @@ classdef TestReleaseVerification < matlab.unittest.TestCase
                 testCase.verifyEqual(compatibleVersions(iDependency),expected(dependencies(iDependency)));
             end
             testCase.verifyEqual(string(manifest.releaseCompatibility),">=R2025b");
-            testCase.verifyMatches(string(manifest.version),"^\d+\.\d+\.\d+$");
+            packageVersion = matlab.mpm.Version(string(manifest.version));
+            testCase.verifyFalse(ismissing(packageVersion));
+            testCase.verifyEqual(string(packageVersion),string(manifest.version));
         end
 
         function packageWorkflowHasIsolatedR2025bGates(testCase)

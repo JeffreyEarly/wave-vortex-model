@@ -55,6 +55,43 @@ classdef TestPortableRunRequestWriter < matlab.unittest.TestCase
             testCase.verifyEqual(document.execution.threads,1)
         end
 
+        function writesV5BetaRequestsForSupportedTransforms(testCase)
+            modelPaths = [testCase.ModelPath testCase.BarotropicQGPath];
+            for iModel = 1:numel(modelPaths)
+                modelPath = modelPaths(iModel);
+                ncwriteatt(modelPath,"/","model_version","5.0.0-beta.1");
+                request = fullfile(testCase.TemporaryFolder,"v5-beta-"+iModel+".json");
+                WVModel.writePortableRunRequest(request,modelPath,schemaVersion=2,method="fixed-rk4",finalTime=.01,initialStep=.0025);
+
+                document = jsondecode(fileread(request));
+                testCase.verifyEqual(string(document.schemaIdentifier),"wave-vortex-run-request-v2")
+                testCase.verifyEqual(document.schemaVersion,2)
+                testCase.verifyEqual(string(document.modelFiles),modelPath)
+                testCase.verifyEqual(string(document.integration.method),"fixed-rk4")
+            end
+        end
+
+        function rejectsV5FreeSurfaceTransformIdentities(testCase)
+            request = fullfile(testCase.TemporaryFolder,"free-surface-request.json");
+            unsupported = fullfile(testCase.TemporaryFolder,"free-surface.nc");
+            copyfile(testCase.ModelPath,unsupported);
+            ncwriteatt(unsupported,"/","model_version","5.0.0-beta.1");
+            for transformClass = ["WVTransformFreeSurfaceBoussinesq" "WVTransformFreeSurfaceQG" "WVTransformFreeSurfaceThermalQG"]
+                ncwriteatt(unsupported,"/","AnnotatedClass",transformClass);
+                ncwriteatt(unsupported,"/","WVTransform",transformClass);
+                exception = MException.empty;
+                try
+                    WVModel.writePortableRunRequest(request,unsupported,schemaVersion=2,method="fixed-rk4",finalTime=.01,initialStep=.0025);
+                catch caught
+                    exception = caught;
+                end
+                testCase.assertNotEmpty(exception)
+                testCase.verifyEqual(string(exception.identifier),"WaveVortexModel:PortableRunRequestContract")
+                testCase.verifySubstring(string(exception.message),"does not support transform "+transformClass)
+                testCase.verifyFalse(isfile(request))
+            end
+        end
+
         function writesEveryAcceptedSchemaFormDeterministically(testCase)
             requestFolder = fullfile(testCase.TemporaryFolder,"requests with Ω");
             mkdir(requestFolder)
@@ -246,7 +283,7 @@ classdef TestPortableRunRequestWriter < matlab.unittest.TestCase
 
             invalidVersion = fullfile(testCase.TemporaryFolder,"qg-invalid-version.nc");
             copyfile(testCase.BarotropicQGPath,invalidVersion)
-            ncwriteatt(invalidVersion,"/","model_version","5.0.0")
+            ncwriteatt(invalidVersion,"/","model_version","6.0.0")
             testCase.verifyError(@()testCase.writeFixedQGRequest(request,invalidVersion), ...
                 "WaveVortexModel:PortableRunRequestContract")
 
@@ -287,7 +324,7 @@ classdef TestPortableRunRequestWriter < matlab.unittest.TestCase
 
             unsupported = fullfile(testCase.TemporaryFolder,"unsupported.nc");
             copyfile(testCase.ModelPath,unsupported);
-            ncwriteatt(unsupported,"/","model_version","5.0.0");
+            ncwriteatt(unsupported,"/","model_version","6.0.0");
             testCase.verifyError(@()WVModel.writePortableRunRequest(request,unsupported, ...
                 schemaVersion=2,method="fixed-rk4",finalTime=1,initialStep=.1), ...
                 "WaveVortexModel:PortableRunRequestContract")

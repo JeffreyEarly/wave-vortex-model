@@ -57,7 +57,7 @@ ROUTINE_TESTS = {
 } | {"TestCoreTransformInvariantSmoke", "TestFourierTransformXY", "TestFreeSurfaceQGVerticalCalculus",
      "TestPublishedWaveVortexBenchmark", "TestThreeInterfaceBenchmark",
      "TestNativeThermalAdaptiveDamping", "TestFreeSurfaceInitializationPilot",
-     "TestFreeSurfaceInitializationReuse"}
+     "TestFreeSurfaceInitializationReuse", "TestPortableRunRequestWriter"}
 
 # A changed study test still gets smoke, analyzer and compact scientific checks.
 # Its long evidence run belongs to Extended CI. New test names do not silently
@@ -74,6 +74,7 @@ DEFERRED_TESTS = {
 # Mixed benchmark classes include external worker/performance runs. Routine CI
 # exercises their parsing, validation and small synthetic-fixture contracts.
 PARTIAL_TESTS = {
+    "TestReleaseVerification": ("TestReleaseVerification/runtimeManifestExcludesAuthoringTests",),
     "TestCompiledPreviewBenchmark": ("TestCompiledPreviewBenchmark/publicNormalizationCarriesExactAndRSSMemory",),
     "TestWaveVortexBenchmark": (
         "TestWaveVortexBenchmark/suiteRegistryIsVersionedAndTransformSpecific",

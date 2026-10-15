@@ -73,9 +73,9 @@ WVCheckpointStatus validateVersion(const std::string& version) {
     const std::string majorText = separator == std::string::npos ? version : version.substr(0, separator);
     int major = -1;
     const auto conversion = std::from_chars(majorText.data(), majorText.data() + majorText.size(), major);
-    if (majorText.empty() || conversion.ec != std::errc{} || conversion.ptr != majorText.data() + majorText.size() || major != 4) {
+    if (majorText.empty() || conversion.ec != std::errc{} || conversion.ptr != majorText.data() + majorText.size() || (major != 4 && major != 5)) {
         return status(WVCheckpointStatusCode::unsupportedModelVersion,
-            "The structural checkpoint profile accepts WaveVortexModel 4.x files; found model_version '" + version + "'.",
+            "The structural checkpoint profile accepts WaveVortexModel 4.x and 5.x files; found model_version '" + version + "'.",
             "/@model_version");
     }
     return WVCheckpointStatus::ok();

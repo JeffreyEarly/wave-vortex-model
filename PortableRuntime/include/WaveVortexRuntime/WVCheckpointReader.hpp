@@ -14,7 +14,7 @@ namespace wavevortex::runtime {
 
 class WVExtensionCatalog;
 
-// Version of the reader contract. This identifier is not written into 4.x files.
+// Version of the reader contract. This identifier is not written into model files.
 inline constexpr std::uint32_t WVCheckpointProfileVersion = 1;
 inline constexpr const char* WVCheckpointProfileIdentifier = "wave-vortex-4x-v1";
 
@@ -192,7 +192,7 @@ struct WVCheckpointInspection {
     WVFrozenForcingSchedule forcingSchedule;
 };
 
-// Read and structurally validate existing WaveVortexModel 4.x NetCDF checkpoints.
+// Read and structurally validate supported WaveVortexModel 4.x and 5.x NetCDF checkpoints.
 class WVCheckpointReader final {
 public:
     // Inspect structure, configuration, the selected state shape, and forcing

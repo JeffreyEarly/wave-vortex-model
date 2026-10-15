@@ -317,9 +317,9 @@ if strlength(transformClass) == 0
     transformClass = wvTransform;
 end
 modelVersion = textAttribute(information.Attributes,"model_version","");
-majorVersion = regexp(modelVersion,"^4(?:\.|$)","once");
+majorVersion = regexp(modelVersion,"^[45](?:\.|$)","once");
 if isempty(majorVersion)
-    error("WaveVortexModel:PortableRunRequestContract","The structural portable profile requires a WaveVortexModel 4.x file.");
+    error("WaveVortexModel:PortableRunRequestContract","The structural portable profile requires a WaveVortexModel 4.x or 5.x file.");
 end
 
 dynamicsMode = numericAttribute(information.Attributes,"WVModelIsDynamicsLinear",0);

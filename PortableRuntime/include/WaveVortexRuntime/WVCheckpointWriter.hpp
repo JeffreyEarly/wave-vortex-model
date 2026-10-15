@@ -12,7 +12,7 @@ enum class WVCheckpointCommitPolicy {
     createNew
 };
 
-// Write one compatible root-level WaveVortexModel 4.x checkpoint.
+// Write one compatible root-level WaveVortexModel 4.x or 5.x constant-stratification checkpoint.
 //
 // The writer validates and writes a same-directory temporary file, reads that
 // file through WVCheckpointReader, and commits it only after every operation

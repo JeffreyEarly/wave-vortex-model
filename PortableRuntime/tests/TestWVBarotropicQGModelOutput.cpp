@@ -301,7 +301,8 @@ WVModelIntegratorConfiguration integratorConfiguration(
 
 void exerciseIntegrator(WVModelIntegratorKind kind, std::size_t ordinal,
                         const std::shared_ptr<const WVExtensionCatalog> &extensions,
-                        const std::filesystem::path &directory) {
+                        const std::filesystem::path &directory,
+                        const std::string &modelVersion = "4.3.0") {
   const auto configuration = qgConfiguration();
   WVTransformBarotropicQGDescriptor transform;
   auto status = WVTransformBarotropicQGDescriptor::create(configuration,
@@ -321,10 +322,11 @@ void exerciseIntegrator(WVModelIntegratorKind kind, std::size_t ordinal,
                            integratorConfiguration(kind), model);
   require(static_cast<bool>(status), status.message);
   const auto description = descriptionFor(model.stateLayout());
+  auto checkpoint = checkpointFor(configuration, description, forcing);
+  checkpoint.metadata.modelVersion = modelVersion;
   WVModelState state;
   status = WVModelState::create(
-      checkpointFor(configuration, description, forcing), model.stateLayout(),
-      state);
+      std::move(checkpoint), model.stateLayout(), state);
   require(static_cast<bool>(status), status.message);
   initializeAdditionalState(model, state);
   require(state.constView().coefficientFamilyCount == 1 &&
@@ -349,6 +351,8 @@ void exerciseIntegrator(WVModelIntegratorKind kind, std::size_t ordinal,
   auto persistence = WVModelOutputNetCDFSink::inspect(
       {path.string()}, *extensions, inspection);
   require(static_cast<bool>(persistence), persistence.message);
+  require(inspection.latestRestart.metadata.modelVersion == modelVersion,
+          "QG model-output inspection changed the package version");
   require(inspection.latestRestart.transformKind ==
                   WVPersistedTransformKind::barotropicQG &&
               inspection.latestRestart.stateDescription.coefficientFamilies
@@ -371,6 +375,8 @@ void exerciseIntegrator(WVModelIntegratorKind kind, std::size_t ordinal,
   require(static_cast<bool>(status), status.message);
   require(relativeStateDifference(state, restored) == 0.0,
           "QG model-output restore did not reproduce the complete state");
+  require(restored.checkpoint().metadata.modelVersion == modelVersion,
+          "QG model-output restore changed the package version");
   status = model.prepareStateAfterRestart(state);
   require(static_cast<bool>(status), status.message);
   status = continued.prepareStateAfterRestart(restored);
@@ -667,6 +673,8 @@ int main() {
     for (std::size_t index = 0; index < integrators.size(); ++index)
       exerciseIntegrator(integrators[index], index, extensions,
                          directory.path);
+    exerciseIntegrator(WVModelIntegratorKind::fixedRK4, integrators.size(),
+                       extensions, directory.path, "5.0.0-beta.1");
     exerciseSiblingSelection(extensions, directory.path);
     rejectUnsupportedObservers(extensions, directory.path);
     inspectOptionalMatlabFixture(extensions);

@@ -112,6 +112,25 @@ void testRoundTrips() {
     }
 }
 
+void testV5BetaRoundTrips() {
+    const auto directory = temporaryDirectory();
+    DirectoryCleanup cleanup{directory};
+    for (const char* name : {"root-hydrostatic.nc", "root-nonhydrostatic.nc"}) {
+        auto expected = read(fixture(name));
+        expected.metadata.modelVersion = "5.0.0-beta.1";
+        const auto output = directory / name;
+        const auto result = WVCheckpointWriter::write(output.string(), *test::extensionCatalog(), expected);
+        require(static_cast<bool>(result), result.message);
+        const auto actual = read(output);
+        requireSameCheckpoint(expected, actual);
+        require(actual.metadata.modelVersion == expected.metadata.modelVersion &&
+                    actual.metadata.profileIdentifier == expected.metadata.profileIdentifier &&
+                    actual.metadata.profileVersion == expected.metadata.profileVersion &&
+                    actual.metadata.transformClass == expected.metadata.transformClass,
+                "v5 beta round-trip changed the package version or checkpoint identity");
+    }
+}
+
 std::unique_ptr<WVConstantStratificationIntegrationSystem> system(const WVCheckpoint& checkpoint) {
     std::unique_ptr<WVConstantStratificationIntegrationSystem> result;
     const auto creation = WVConstantStratificationIntegrationSystem::create(checkpoint.configuration, checkpoint.forcingSchedule, test::extensionCatalog(), std::make_unique<WVReferenceFFTEngine>(), result);
@@ -241,7 +260,7 @@ void testValidation() {
     const auto directory = temporaryDirectory();
     DirectoryCleanup cleanup{directory};
     auto malformed = checkpoint;
-    malformed.metadata.modelVersion = "5.0.0";
+    malformed.metadata.modelVersion = "6.0.0";
     require(WVCheckpointWriter::write((directory / "version.nc").string(), *test::extensionCatalog(), malformed).code == WVCheckpointStatusCode::unsupportedModelVersion, "unsupported model version was accepted");
     malformed = checkpoint;
     malformed.forcingSchedule.entries.front().ordinal = 9;
@@ -277,6 +296,7 @@ void testRegisteredLinearCoefficientRoundTrip() {
 int main() {
     try {
         testRoundTrips();
+        testV5BetaRoundTrips();
         testRestartContinuation();
         testTransactionalFailures();
         testCreateNewCommitPolicy();
