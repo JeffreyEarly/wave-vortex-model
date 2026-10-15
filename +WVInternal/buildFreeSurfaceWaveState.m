@@ -1,5 +1,7 @@
-function [state,bases] = buildFreeSurfaceWaveState(state,options)
+function [state,bases,solveCount] = buildFreeSurfaceWaveState(state,options,bases)
 % Evaluate the resolved wave candidates without modifying their physical duals.
+% A complete independent reference may supply the next candidate collection.
+if nargin < 3, bases = []; end
 f=2*options.rotationRate*sind(options.latitude);
 Lxyz=state.Lxyz;
 state.waveMode = (1:max([state.waveModeCountByKh;0])).';
@@ -8,11 +10,38 @@ nz = length(state.z); nw = length(state.waveMode); np = length(state.khUnique);
 state.waveF = zeros(nz,nw,np); state.waveG = zeros(nz,nw,np);
 state.waveGForward = zeros(nw,nz,np); state.waveEquivalentDepth = zeros(nw,np);
 state.waveFrequency = zeros(nw,np); state.waveGramError = zeros(np,1);
-solver = IMSolverSpectral(nEVP=options.nEVP,coordinateKind="wkb");
 % Share coordinate preparation across the exact requested wave pencils.
 % Zero wavenumber has its own count and must be evaluated separately.
 activePages = find(state.waveModeCountByKh > 0);
-bases = solver.solveWaveModesAtWavenumbers([0 state.khUnique(activePages).'],N2=state.N2Function,zDomain=[-Lxyz(3) 0],f0=f,g=options.g,surfaceBoundary=IMBoundaryCondition(a=0,b=1,c=1,d=0),nModes=state.waveModeCountByKh(activePages).',nInertialModes=options.inertialModeCount);
+kappa = [0 state.khUnique(activePages).'];
+counts = [options.inertialModeCount state.waveModeCountByKh(activePages).'];
+surface = IMBoundaryCondition(a=0,b=1,c=1,d=0);
+solveCount = 0;
+if isempty(bases)
+    solver = IMSolverSpectral(nEVP=options.nEVP,coordinateKind="wkb");
+    bases = solver.solveWaveModesAtWavenumbers(kappa,N2=state.N2Function,zDomain=[-Lxyz(3) 0],f0=f,g=options.g,surfaceBoundary=surface,nModes=counts(2:end),nInertialModes=counts(1));
+    solveCount = numel(kappa);
+else
+    if ~isa(bases,'IMBasisCollection') || ~isscalar(bases) || ~isequal(bases.kappa,kappa)
+        error('WV:IncompatibleWaveReference','The reused reference must cover the exact candidate wavenumber pages.')
+    end
+    for page = 1:numel(kappa)
+        basis = bases.bases{bases.basisIndex(page)};
+        if ~isa(basis,'IMBasisSet') || ~isa(basis.evp,'IMInternalModes')
+            error('WV:IncompatibleWaveReference','The reused reference must contain spectral internal-mode bases.')
+        end
+        evp = basis.evp;
+        compatible = isa(basis.solver,'IMSolverSpectral') && basis.solver.nEVP==options.nEVP && basis.solver.coordinateKind=="wkb" ...
+            && numel(basis.h)==counts(page) && string(basis.normalization)=="kConstant" ...
+            && string(evp.name)=="waveModesAtWavenumber" && isequal(evp.N2,state.N2Function) ...
+            && isequal(evp.zDomain,[-Lxyz(3) 0]) && evp.f0==f && evp.g==options.g ...
+            && evp.parameters.k==kappa(page) && isequal(evp.surfaceBoundary,surface) ...
+            && isequal(evp.bottomBoundary,IMBoundaryCondition.dirichlet());
+        if ~compatible
+            error('WV:IncompatibleWaveReference','The reused reference must match candidate resolution, counts, normalization, stratification and boundary configuration.')
+        end
+    end
+end
 for iPage = 1:numel(activePages)+1
     if iPage == 1, p = 0; else, p = activePages(iPage-1); end
     basis = bases.bases{bases.basisIndex(iPage)};
