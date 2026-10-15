@@ -50,7 +50,82 @@ classdef TestFreeSurfaceInitializationPilot < matlab.unittest.TestCase
             testCase.verifyEqual(rmfield(w.scientificState(),{'N2Function','rhoFunction'}),rmfield(control.scientificState(),{'N2Function','rhoFunction'}))
             testCase.verifyEqual(withoutAssessmentTimers(rmfield(a,'cost')),withoutAssessmentTimers(rmfield(b,'cost')))
         end
+
+        function inconclusivePilotFallsBackToCompleteAssessment(testCase)
+            [factory,assessmentTrace]=initializationFactoryWithFault(testCase,"inconclusive");
+            N2=@(z)1e-4*exp(2*z/700);
+            [w,a]=factory([1e5 1e5 1000],[16 16 65],N2Function=N2);
+            trace=assessmentTrace();
+            testCase.verifyEqual([trace.nPages],[7 numel(w.khUnique) numel(w.khUnique)])
+            testCase.verifyEqual([trace.nEVP],[69 69 104])
+            testCase.verifyEqual([trace.referenceNEVP],[104 104 156])
+            testCase.verifyEqual([trace.faultApplied],[true false false])
+            testCase.verifyEqual(a.cost.pilotRejectedAttempts,0)
+            testCase.verifyEqual(a.cost.pilotPages,8)
+            testCase.verifyEqual(a.cost.waveEigensolves,3*(numel(w.khUnique)+1)+16)
+            [control,b]=WVTransformFreeSurfaceBoussinesq.fromStratification([1e5 1e5 1000],[16 16 65],N2Function=N2,nEVP=104,referenceNEVP=156);
+            testCase.verifyEqual(rmfield(w.scientificState(),{'N2Function','rhoFunction'}),rmfield(control.scientificState(),{'N2Function','rhoFunction'}))
+            testCase.verifyEqual(withoutAssessmentTimers(rmfield(a,'cost')),withoutAssessmentTimers(rmfield(b,'cost')))
+        end
+
+        function unsampledFailureAfterPassingPilotForcesRefinement(testCase)
+            [factory,assessmentTrace]=initializationFactoryWithFault(testCase,"unsampled-failure");
+            N2=@(z)1e-4+0*z;
+            [w,a]=factory([1e5 1e5 1000],[16 16 33],N2Function=N2);
+            trace=assessmentTrace();
+            testCase.verifyEqual([trace.nPages],[7 numel(w.khUnique) numel(w.khUnique)])
+            testCase.verifyEqual([trace.nEVP],[64 64 96])
+            testCase.verifyEqual([trace.referenceNEVP],[96 96 144])
+            testCase.verifyTrue(trace(1).convergedBeforeFault)
+            testCase.verifyFalse(ismember(w.khUnique(2),trace(1).kappa))
+            testCase.verifyEqual([trace.faultApplied],[false true false])
+            testCase.verifyEqual(a.cost.pilotRejectedAttempts,0)
+            testCase.verifyEqual(a.cost.pilotPages,8)
+            testCase.verifyEqual(a.cost.waveEigensolves,3*(numel(w.khUnique)+1)+16)
+            testCase.verifyTrue(all(a.pages.convergedCount>=a.pages.gridSupportedCount))
+            testCase.verifyEqual(a.pages.status,repmat("accepted",numel(w.khUnique),1))
+            [control,b]=WVTransformFreeSurfaceBoussinesq.fromStratification([1e5 1e5 1000],[16 16 33],N2Function=N2,nEVP=96,referenceNEVP=144);
+            testCase.verifyEqual(rmfield(w.scientificState(),{'N2Function','rhoFunction'}),rmfield(control.scientificState(),{'N2Function','rhoFunction'}))
+            testCase.verifyEqual(withoutAssessmentTimers(rmfield(a,'cost')),withoutAssessmentTimers(rmfield(b,'cost')))
+        end
     end
+end
+
+function [factory,assessmentTrace]=initializationFactoryWithFault(testCase,fault)
+% Redirect copied entry points to an isolated fault wrapper, preserving real solvers.
+folder=testCase.applyFixture(matlab.unittest.fixtures.TemporaryFolderFixture);
+[~,suffix]=fileparts(folder.Folder);
+namespace=matlab.lang.makeValidName("WVInitializationFault_"+string(suffix));
+packageFolder=fullfile(folder.Folder,"+"+namespace);
+mkdir(packageFolder);
+root=fileparts(fileparts(mfilename('fullpath')));
+source=string(fileread(fullfile(root,'@WVTransformFreeSurfaceBoussinesq','fromStratification.m')));
+testCase.assertEqual(count(source,"WVInternal.assessFreeSurfaceWavePilot"),1)
+testCase.assertEqual(count(source,"WVInternal.assessWaveModeConstruction"),1)
+source=replace(source,"WVInternal.assessFreeSurfaceWavePilot",namespace+".assessFreeSurfaceWavePilot");
+source=replace(source,"WVInternal.assessWaveModeConstruction",namespace+".assessWaveModeConstruction");
+% The copied factory cannot attach a class-private transient report. Its
+% complete returned assessment is compared below, independently of storage.
+testCase.assertEqual(count(source,"self.constructionAssessment=assessment;"),1)
+source=replace(source,"self.constructionAssessment=assessment;","");
+writelines(source,fullfile(packageFolder,'fromStratification.m'));
+source=string(fileread(fullfile(root,'+WVInternal','assessFreeSurfaceWavePilot.m')));
+testCase.assertEqual(count(source,"WVInternal.assessWaveModeConstruction"),1)
+source=replace(source,"WVInternal.assessWaveModeConstruction",namespace+".assessWaveModeConstruction");
+writelines(source,fullfile(packageFolder,'assessFreeSurfaceWavePilot.m'));
+wrapper=[
+    "function [assessment,reference,convergence]=assessWaveModeConstruction(varargin)"
+    "persistent calls"
+    "if nargin==0, assessment=calls; reference=[]; convergence=[]; return; end"
+    "[assessment,reference,convergence,entry]=assessInitializationWithFault("""+fault+""",varargin{:});"
+    "if isempty(calls), calls=entry; else, calls(end+1,1)=entry; end"
+    "end"
+    ];
+writelines(wrapper,fullfile(packageFolder,'assessWaveModeConstruction.m'));
+testCase.applyFixture(matlab.unittest.fixtures.PathFixture(fullfile(root,'UnitTests','Fixtures')));
+testCase.applyFixture(matlab.unittest.fixtures.PathFixture(folder.Folder));
+factory=str2func(namespace+".fromStratification");
+assessmentTrace=str2func(namespace+".assessWaveModeConstruction");
 end
 
 function value=withoutAssessmentTimers(value)

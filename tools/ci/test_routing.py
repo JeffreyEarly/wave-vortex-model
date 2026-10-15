@@ -80,6 +80,29 @@ class RoutingTests(unittest.TestCase):
         self.assertEqual(plan["tests"], ["TestThermalDiagnostics"])
         self.assertTrue(plan["matlab"])
 
+    def test_initialization_integration_runs_both_regression_classes(self):
+        matlab_paths = [
+            "+WVInternal/assessFreeSurfaceWavePilot.m",
+            "+WVInternal/buildFreeSurfaceWaveState.m",
+            "@WVTransformFreeSurfaceBoussinesq/fromStratification.m",
+            "UnitTests/TestFreeSurfaceInitializationPilot.m",
+            "UnitTests/TestFreeSurfaceInitializationReuse.m",
+            "UnitTests/Fixtures/assessInitializationWithFault.m",
+        ]
+        paths = matlab_paths + [
+            "tools/ci/classify_changes.py", "tools/ci/test_routing.py",
+        ]
+        plan = classify_changes(paths, api_changed=matlab_paths[:2])
+        self.assertEqual(plan["errors"], [])
+        self.assertTrue(plan["matlab"])
+        self.assertTrue(plan["documentation"])
+        self.assertFalse(plan["cpp"])
+        self.assertFalse(plan["package"])
+        self.assertEqual(set(plan["tests"]), set(CORE + INTEGRATION + BOUSSINESQ) | {
+            "TestFreeSurfaceInitializationPilot", "TestFreeSurfaceInitializationReuse",
+        })
+        self.assertEqual(plan["analyzer_files"], sorted(matlab_paths))
+
     def test_native_thermal_closure_runs_its_compact_scientific_contract(self):
         for path in (
             "UnitTests/TestNativeThermalAdaptiveDamping.m",

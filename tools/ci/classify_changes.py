@@ -56,7 +56,8 @@ ROUTINE_TESTS = {
     + PERSISTENCE + COMPILED + DOC_TESTS + QG + BOUSSINESQ
 } | {"TestCoreTransformInvariantSmoke", "TestFourierTransformXY", "TestFreeSurfaceQGVerticalCalculus",
      "TestPublishedWaveVortexBenchmark", "TestThreeInterfaceBenchmark",
-     "TestNativeThermalAdaptiveDamping"}
+     "TestNativeThermalAdaptiveDamping", "TestFreeSurfaceInitializationPilot",
+     "TestFreeSurfaceInitializationReuse"}
 
 # A changed study test still gets smoke, analyzer and compact scientific checks.
 # Its long evidence run belongs to Extended CI. New test names do not silently
