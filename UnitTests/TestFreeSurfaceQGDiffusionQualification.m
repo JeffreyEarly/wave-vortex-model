@@ -226,7 +226,7 @@ classdef TestFreeSurfaceQGDiffusionQualification < matlab.unittest.TestCase
                 refCoefficients{j}=response(ref.A,amplitude*ref.source,omega,options.days(j)*86400);
                 refStates{j}=studyState(ref,refCoefficients{j});
             end
-            solution=IMExponentialStratificationSolution(N0=N0,b=scale,zDomain=[-D 0],g=g,f0=f);
+            solution=IMExponentialStratificationSolution(N0=N0,b=scale,zDomain=[-D 0],g=g,rotationRate=7.2921e-5,latitude=asind(f/(2*7.2921e-5)));
             zero=solution.geostrophicZeroAPVModesAtWavenumber(kh,endpoints=["surface","bottom"],surfaceBoundary="freeSurface");
             ZF=zero.F(z); ZG=zero.G(z); rows=table(); diagnostics=table();
             for surfaceLength=options.surfaceLengths
@@ -277,7 +277,7 @@ classdef TestFreeSurfaceQGDiffusionQualification < matlab.unittest.TestCase
             kh=2*pi/100e3; T=365.25*86400; omega=2*pi/T; amplitude=10*pi/T; kappa=1e-5;
             N2=@(z)N0^2*exp(2*z/scale); I=integral(N2,-D,0);
             evp=IMInternalModes.geostrophicAPVModes(N2=N2,zDomain=[-D 0],g=g,g0=-I,gd=I,surfaceBoundary="freeSurface");
-            solution=IMExponentialStratificationSolution(N0=N0,b=scale,zDomain=[-D 0],g=g,f0=f);
+            solution=IMExponentialStratificationSolution(N0=N0,b=scale,zDomain=[-D 0],g=g,rotationRate=7.2921e-5,latitude=asind(f/(2*7.2921e-5)));
             basis=solution.internalModes(evp,nModes=max(options.bands));
             basis=basis.addNormalization("raw",@(~,~)1); basis.normalization="raw";
             zero=solution.geostrophicZeroAPVModesAtWavenumber(kh,endpoints=["surface","bottom"],surfaceBoundary="freeSurface");
@@ -359,7 +359,7 @@ classdef TestFreeSurfaceQGDiffusionQualification < matlab.unittest.TestCase
             kh=2*pi/100e3; T=365.25*86400; times=[64*86400 T/4]; kappa=1e-5;
             N2=@(z)N0^2*exp(2*z/scale); I=integral(N2,-D,0);
             evp=IMInternalModes.geostrophicAPVModes(N2=N2,zDomain=[-D 0],g=g,g0=-I,gd=I,surfaceBoundary="freeSurface");
-            solution=IMExponentialStratificationSolution(N0=N0,b=scale,zDomain=[-D 0],g=g,f0=f);
+            solution=IMExponentialStratificationSolution(N0=N0,b=scale,zDomain=[-D 0],g=g,rotationRate=7.2921e-5,latitude=asind(f/(2*7.2921e-5)));
             basis=solution.internalModes(evp,nModes=1729);
             % Avoid repeated all-mode evaluations in analytical normalization.
             % A column rescaling leaves the physical response invariant; the

@@ -41,7 +41,7 @@ if f0 == 0
     error('WVTransformFreeSurfaceQG:ZeroCoriolis','Free-surface QG construction requires nonzero Coriolis frequency.');
 end
 
-inputs = struct(N2Function=N2Function,rhoFunction=rhoFunction,g0=g0,gd=gd,f0=f0,zDomain=zDomain);
+inputs = struct(N2Function=N2Function,rhoFunction=rhoFunction,g0=g0,gd=gd,f0=f0,rotationRate=options.rotationRate,latitude=options.latitude,zDomain=zDomain);
 end
 
 function rho = densityFromStratification(z,N2Function,rho0,g)

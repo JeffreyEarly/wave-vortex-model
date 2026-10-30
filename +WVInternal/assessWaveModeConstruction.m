@@ -23,8 +23,7 @@ reports={};
 dealiasingReports={};
 quadraticDealiasingSeconds=0;
 if ~isempty(referenceNEVP)
-    f=2*state.rotationRate*sind(state.latitude);
-    reference=IMSolverSpectral(nEVP=referenceNEVP,coordinateKind="wkb").solveWaveModesAtWavenumbers([0 state.khUnique(activePages).'],N2=state.N2Function,zDomain=[-state.Lxyz(3) 0],f0=f,g=state.g,surfaceBoundary=IMBoundaryCondition(a=0,b=1,c=1,d=0),nModes=requestedCount(activePages).',nInertialModes=length(state.inertialMode));
+    reference=IMSolverSpectral(nEVP=referenceNEVP,coordinateKind="wkb").solveWaveModesAtWavenumbers([0 state.khUnique(activePages).'],N2=state.N2Function,zDomain=[-state.Lxyz(3) 0],rotationRate=state.rotationRate,latitude=state.latitude,g=state.g,surfaceBoundary=IMBoundaryCondition(a=0,b=1,c=1,d=0),nModes=requestedCount(activePages).',nInertialModes=length(state.inertialMode));
     % All wave and inertial pages share N2 and zDomain, hence WKB quadrature.
     nQuadrature=2*max(state.nEVP,referenceNEVP)+1;
     inertialBasis=bases.bases{bases.basisIndex(1)};

@@ -19,7 +19,7 @@ surface = IMBoundaryCondition(a=0,b=1,c=1,d=0);
 solveCount = 0;
 if isempty(bases)
     solver = IMSolverSpectral(nEVP=options.nEVP,coordinateKind="wkb");
-    bases = solver.solveWaveModesAtWavenumbers(kappa,N2=state.N2Function,zDomain=[-Lxyz(3) 0],f0=f,g=options.g,surfaceBoundary=surface,nModes=counts(2:end),nInertialModes=counts(1));
+    bases = solver.solveWaveModesAtWavenumbers(kappa,N2=state.N2Function,zDomain=[-Lxyz(3) 0],rotationRate=options.rotationRate,latitude=options.latitude,g=options.g,surfaceBoundary=surface,nModes=counts(2:end),nInertialModes=counts(1));
     solveCount = numel(kappa);
 else
     if ~isa(bases,'IMBasisCollection') || ~isscalar(bases) || ~isequal(bases.kappa,kappa)

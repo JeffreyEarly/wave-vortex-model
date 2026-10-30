@@ -11,8 +11,8 @@ I = N0^2*b*(1-exp(-2*D/b))/2;
 evp = IMInternalModes.geostrophicAPVModes(N2=N2,zDomain=[-D 0], ...
     g=g,g0=-I,gd=I,surfaceBoundary="freeSurface");
 zeroProblem = IMGeostrophicZeroAPVModes.atWavenumber(N2=N2, ...
-    zDomain=[-D 0],f0=f,g=g,k=kh,endpoints=["surface","bottom"],surfaceBoundary="freeSurface");
-solution = IMExponentialStratificationSolution(N0=N0,b=b,zDomain=[-D 0],g=g,f0=f);
+    zDomain=[-D 0],rotationRate=7.2921e-5,latitude=asind(f/(2*7.2921e-5)),g=g,k=kh,endpoints=["surface","bottom"],surfaceBoundary="freeSurface");
+solution = IMExponentialStratificationSolution(N0=N0,b=b,zDomain=[-D 0],g=g,rotationRate=7.2921e-5,latitude=asind(f/(2*7.2921e-5)));
 exact = solution.internalModes(evp,nModes=84);
 exactZero = solution.geostrophicZeroAPVModesAtWavenumber(kh, ...
     endpoints=["surface","bottom"],surfaceBoundary="freeSurface");

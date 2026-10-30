@@ -585,7 +585,7 @@ classdef TestWVTransformFreeSurfaceQG < matlab.unittest.TestCase
             N2 = @(z) N0^2*exp(2*z/1300);
             wvt = WVTransformFreeSurfaceQG([150e3 150e3 D],[64 64 Nz],N2Function=N2,latitude=30,g0=NaN,gd=Inf);
             kh = wvt.khUnique(end);
-            problem = IMGeostrophicZeroAPVModes.atWavenumber(N2=N2,zDomain=[-D 0],f0=wvt.f,g=wvt.g,k=kh,endpoints="surface",surfaceBoundary="freeSurface");
+            problem = IMGeostrophicZeroAPVModes.atWavenumber(N2=N2,zDomain=[-D 0],rotationRate=wvt.rotationRate,latitude=wvt.latitude,g=wvt.g,k=kh,endpoints="surface",surfaceBoundary="freeSurface");
             productionOrder = max(96,3*(Nz+4));
             actualModes = IMSolverSpectral(nEVP=productionOrder).solveGeostrophicZeroAPVModes(problem);
             referenceSolver = IMSolverSpectral(nEVP=2*productionOrder).configuredForGeostrophicZeroAPVModes(problem);

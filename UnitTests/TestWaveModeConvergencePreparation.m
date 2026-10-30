@@ -90,9 +90,9 @@ classdef TestWaveModeConvergencePreparation < matlab.unittest.TestCase
             N2 = @(z) 7e-5*(1+0.15*exp(z/250));
             surface = IMBoundaryCondition(a=0,b=1,c=1,d=0);
             candidate = IMSolverFiniteDifference(z=linspace(-depth,0,41).').solveWaveModesAtWavenumbers(2e-4, ...
-                N2=N2,zDomain=[-depth 0],f0=1e-4,g=9.81,surfaceBoundary=surface,nModes=3);
+                N2=N2,zDomain=[-depth 0],rotationRate=7.2921e-5,latitude=asind(1e-4/(2*7.2921e-5)),g=9.81,surfaceBoundary=surface,nModes=3);
             reference = IMSolverFiniteDifference(z=linspace(-depth,0,61).').solveWaveModesAtWavenumbers(2e-4, ...
-                N2=N2,zDomain=[-depth 0],f0=1e-4,g=9.81,surfaceBoundary=surface,nModes=3);
+                N2=N2,zDomain=[-depth 0],rotationRate=7.2921e-5,latitude=asind(1e-4/(2*7.2921e-5)),g=9.81,surfaceBoundary=surface,nModes=3);
             z = linspace(-depth,0,19).';
             actualCandidate = [];
             actualReference = [];
@@ -140,15 +140,15 @@ function [candidate,reference] = waveCollections(profile,depth,candidateNEVP,ref
 N2 = stratification(profile,depth);
 surface = IMBoundaryCondition(a=0,b=1,c=1,d=0);
 candidate = IMSolverSpectral(nEVP=candidateNEVP,coordinateKind="wkb").solveWaveModesAtWavenumbers([0 1e-9 3e-4], ...
-    N2=N2,zDomain=[-depth 0],f0=1e-4,g=9.81,surfaceBoundary=surface,nModes=[3 2],nInertialModes=2);
+    N2=N2,zDomain=[-depth 0],rotationRate=7.2921e-5,latitude=asind(1e-4/(2*7.2921e-5)),g=9.81,surfaceBoundary=surface,nModes=[3 2],nInertialModes=2);
 reference = IMSolverSpectral(nEVP=referenceNEVP,coordinateKind="wkb").solveWaveModesAtWavenumbers([3e-4 0 1e-9], ...
-    N2=N2,zDomain=[-depth 0],f0=1e-4,g=9.81,surfaceBoundary=surface,nModes=[2 3],nInertialModes=2);
+    N2=N2,zDomain=[-depth 0],rotationRate=7.2921e-5,latitude=asind(1e-4/(2*7.2921e-5)),g=9.81,surfaceBoundary=surface,nModes=[2 3],nInertialModes=2);
 end
 
 function [candidate,reference] = singleWavePair(configuration)
 N2 = stratification(configuration.profile,configuration.depth);
 surface = IMBoundaryCondition(a=0,b=1,c=1,d=0);
-solverArguments = {"N2",N2,"zDomain",[-configuration.depth 0],"f0",1e-4,"g",9.81,"surfaceBoundary",surface,"nModes",3};
+solverArguments = {"N2",N2,"zDomain",[-configuration.depth 0],"rotationRate",7.2921e-5,"latitude",asind(1e-4/(2*7.2921e-5)),"g",9.81,"surfaceBoundary",surface,"nModes",3};
 candidate = IMSolverSpectral(nEVP=configuration.candidateNEVP,coordinateKind="wkb").solveWaveModesAtWavenumbers(configuration.kappa,solverArguments{:});
 reference = IMSolverSpectral(nEVP=configuration.referenceNEVP,coordinateKind="wkb").solveWaveModesAtWavenumbers(configuration.kappa,solverArguments{:});
 end

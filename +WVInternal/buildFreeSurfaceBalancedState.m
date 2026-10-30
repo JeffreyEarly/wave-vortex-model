@@ -66,7 +66,7 @@ sourceEndpoint = activeEndpoint;
 nKh = length(khUnique);
 if activeEndpointCount > 0
     endpointNames = ["surface","bottom"];
-    zeroProblem = IMGeostrophicZeroAPVModes.atWavenumber(N2=N2Function,zDomain=zDomain,f0=f0,g=options.g,k=khUnique,endpoints=endpointNames(activeMask),surfaceBoundary="freeSurface");
+    zeroProblem = IMGeostrophicZeroAPVModes.atWavenumber(N2=N2Function,zDomain=zDomain,rotationRate=options.rotationRate,latitude=options.latitude,g=options.g,k=khUnique,endpoints=endpointNames(activeMask),surfaceBoundary="freeSurface");
     zeroModes = solver.solveGeostrophicZeroAPVModes(zeroProblem);
     geostrophicTransform = IMGeostrophicTransform(apvTransform=apvTransform,zeroAPVModes=zeroModes, ...
         g0=g0,gd=gd,muTolerance=options.muTolerance);

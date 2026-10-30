@@ -152,7 +152,7 @@ end
 end
 
 function evp = makeEVP(N2,kh)
-evp = IMInternalModes.waveModesAtWavenumber(N2=N2,zDomain=[-1000 0],k=kh,f0=1e-4,g=9.81,surfaceBoundary=IMBoundaryCondition(a=0,b=1,c=1,d=0));
+evp = IMInternalModes.waveModesAtWavenumber(N2=N2,zDomain=[-1000 0],k=kh,rotationRate=7.2921e-5,latitude=asind(1e-4/(2*7.2921e-5)),g=9.81,surfaceBoundary=IMBoundaryCondition(a=0,b=1,c=1,d=0));
 end
 
 function B = fieldMatrix(p)

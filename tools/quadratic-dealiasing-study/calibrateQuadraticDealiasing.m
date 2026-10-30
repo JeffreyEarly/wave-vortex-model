@@ -39,7 +39,7 @@ for studyCase = cases
         apv = sampleBasis(apvBasis,wvt.z,fineZ,referenceZ);
         apv.coarseAgreement = relativeShapeError(apv.coarseF,wvt.apvF,apv.coarseG,wvt.apvG);
         assert(apv.coarseAgreement<1e-9,'Reconstructed APV modes do not match the constructor inventory.');
-        waves = IMSolverSpectral(nEVP=wvt.nEVP,coordinateKind="wkb").solveWaveModesAtWavenumbers(wvt.khUnique(pages).',N2=N2,zDomain=[-1000 0],f0=wvt.f,g=wvt.g,surfaceBoundary=IMBoundaryCondition(a=0,b=1,c=1,d=0),nModes=wvt.waveModeCountByKh(pages).');
+        waves = IMSolverSpectral(nEVP=wvt.nEVP,coordinateKind="wkb").solveWaveModesAtWavenumbers(wvt.khUnique(pages).',N2=N2,zDomain=[-1000 0],rotationRate=wvt.rotationRate,latitude=wvt.latitude,g=wvt.g,surfaceBoundary=IMBoundaryCondition(a=0,b=1,c=1,d=0),nModes=wvt.waveModeCountByKh(pages).');
         for pageIndex = 0:numel(pages)
             if pageIndex==0
                 family = "apv"; kappa = 0; samples = apv;

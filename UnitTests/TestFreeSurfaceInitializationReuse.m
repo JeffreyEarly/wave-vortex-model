@@ -61,7 +61,7 @@ classdef TestFreeSurfaceInitializationReuse < matlab.unittest.TestCase
                 if changedPart=="coordinate", coordinate="z"; end
                 if changedPart=="surface", surface=IMBoundaryCondition.dirichlet(); end
                 if changedPart=="bottom", bottom=IMBoundaryCondition(a=0,b=1,c=1,d=0); end
-                evp=IMInternalModes.waveModesAtWavenumber(N2=state.N2Function,zDomain=[-w.Lz 0],k=bases.kappa(2),f0=w.f,g=w.g,surfaceBoundary=surface,bottomBoundary=bottom);
+                evp=IMInternalModes.waveModesAtWavenumber(N2=state.N2Function,zDomain=[-w.Lz 0],k=bases.kappa(2),rotationRate=w.rotationRate,latitude=w.latitude,g=w.g,surfaceBoundary=surface,bottomBoundary=bottom);
                 entries=bases.bases;
                 entries{2}=IMSolverSpectral(nEVP=options.nEVP,coordinateKind=coordinate).solveEVP(evp,nModes=state.waveModeCountByKh(1));
                 changed=IMBasisCollection(entries,kappa=bases.kappa);

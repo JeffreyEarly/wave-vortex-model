@@ -68,7 +68,7 @@ state = wvt.scientificState();
 solver = IMSolverSpectral(nEVP=wvt.nEVP,coordinateKind="wkb");
 for p = 0:numel(wvt.khUnique)
     if p == 0, kh = 0; count = numel(wvt.inertialMode); else, kh = wvt.khUnique(p); count = numel(wvt.waveMode); end
-    evp = IMInternalModes.waveModesAtWavenumber(N2=wvt.N2Function,zDomain=[-wvt.Lz 0],k=kh,f0=wvt.f,g=wvt.g,surfaceBoundary=IMBoundaryCondition(a=0,b=1,c=1,d=0));
+    evp = IMInternalModes.waveModesAtWavenumber(N2=wvt.N2Function,zDomain=[-wvt.Lz 0],k=kh,rotationRate=wvt.rotationRate,latitude=wvt.latitude,g=wvt.g,surfaceBoundary=IMBoundaryCondition(a=0,b=1,c=1,d=0));
     basis = solver.solveEVP(evp,nModes=count);
     F = basis.F(wvt.z); G = basis.G(wvt.z); h = basis.h(:);
     if p == 0
