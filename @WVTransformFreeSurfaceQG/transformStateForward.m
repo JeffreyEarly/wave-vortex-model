@@ -1,5 +1,8 @@
 function [Ag_q,Ag_0] = transformStateForward(self,APV,endpointAnomalies)
-% Project sampled APV first and residual endpoint anomalies second.
+% Recover coefficients from sampled APV and endpoint anomalies.
+%
+% This sampled inversion uses the APV F inversion matrix. The physical
+% QGPV projection functional is used by `projectQuasigeostrophicSpatialTendency`.
 %
 % - Topic: Transform coefficient state
 % - Declaration: [Ag_q,Ag_0] = transformStateForward(self,APV,endpointAnomalies)
@@ -27,12 +30,5 @@ if ~isExpectedEndpointShape
 end
 
 Ag_q = self.apvFForward*APV;
-Ag_0 = complex(zeros(expectedEndpointSize));
-if self.activeEndpointCount > 0
-    nNonzero = length(self.klNonzero);
-    responsePages = pagemtimes(self.apvEndpointResponse(:,:,self.klNonzeroKhUniqueIndex), ...
-        reshape(Ag_q,length(self.apvMode),1,nNonzero));
-    residual = endpointAnomalies-reshape(responsePages,self.activeEndpointCount,nNonzero);
-    Ag_0 = -(self.g/self.f)*reshape(self.khNonzero.^2,1,[]).*residual;
-end
+Ag_0 = self.zeroAPVCoefficientsFromEndpoints(Ag_q,endpointAnomalies);
 end

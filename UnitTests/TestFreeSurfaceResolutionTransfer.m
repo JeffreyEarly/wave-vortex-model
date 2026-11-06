@@ -70,7 +70,7 @@ classdef TestFreeSurfaceResolutionTransfer < matlab.unittest.TestCase
             % An equivalent inertial representation with reordered physical labels.
             order=[3 1 2]; scale=[-2 3 -.5];
             scientific.inertialF=scientific.inertialF(:,order).*scale;
-            scientific.inertialFForward=scientific.inertialFForward(order,:)./scale.';
+            scientific.inertialFProjection=scientific.inertialFProjection(order,:)./scale.';
             scientific.inertialModeNumber=scientific.inertialModeNumber(order);
             scientific.inertialEquivalentDepth=scientific.inertialEquivalentDepth(order);
             target=WVTransformFreeSurfaceBoussinesq(scientific); target.t0=-917; target.t=9;

@@ -20,7 +20,7 @@ classdef TestFreeSurfaceBulkConstruction < matlab.unittest.TestCase
             scalarState = independentlySolvedState(bulk);
             scalar = WVTransformFreeSurfaceBoussinesq(scalarState);
             bulkState = bulk.scientificState();
-            changed = ["waveF","waveG","waveGForward","waveEquivalentDepth","waveFrequency","waveGramError","inertialF","inertialFForward","inertialEquivalentDepth","inertialGramError"];
+            changed = ["waveF","waveG","waveGForward","waveEquivalentDepth","waveFrequency","waveGramError","inertialF","inertialFProjection","inertialEquivalentDepth","inertialGramError"];
             for name = string(fieldnames(bulkState)).'
                 if ismember(name,changed)
                     actual = bulkState.(name); expected = scalarState.(name);
@@ -75,10 +75,10 @@ for p = 0:numel(wvt.khUnique)
     F = basis.F(wvt.z); G = basis.G(wvt.z); h = basis.h(:);
     if p == 0
         state.inertialF = F;
-        state.inertialFForward = (F'.*wvt.verticalQuadratureWeights.')/wvt.Lz;
+        state.inertialFProjection = (F'.*wvt.verticalQuadratureWeights.')/wvt.Lz;
         state.inertialEquivalentDepth = h;
         state.inertialModeNumber = basis.modeNumber(:);
-        state.inertialGramError = norm(state.inertialFForward*F-eye(count),2);
+        state.inertialGramError = norm(state.inertialFProjection*F-eye(count),2);
     else
         forward = G'.*(wvt.verticalQuadratureWeights.*((wvt.N2Function(wvt.z)-wvt.f^2)/wvt.g)).';
         forward(:,end) = forward(:,end)+G(end,:).';

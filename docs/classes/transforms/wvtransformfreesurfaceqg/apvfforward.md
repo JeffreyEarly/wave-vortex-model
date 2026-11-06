@@ -9,10 +9,10 @@ mathjax: true
 
 #  apvFForward
 
-APV F projection matrix.
+APV F sampled inversion matrix.
 
 
 ---
 
 ## Description
-Real valued property with dimensions $$(apvMode,z)$$ and units of $$\mathrm{m^{-1}}$$.
+Real valued property with dimensions $$(apvMode,z)$$ and is dimensionless.

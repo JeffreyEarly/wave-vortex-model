@@ -2,12 +2,10 @@ function [state,assessment] = projectFields(self,fields)
 % Project an admissible instantaneous state into stored reference-time modes.
 %
 % Invert the moving-mesh map for physical u/v/w using the supplied SSH.
-% Recover APV from hatted curl(u,v)-f*d(eta)/dz, then residual endpoint density
-% anomalies, and finally waves from w and the remaining displacement.
-% Balanced families reuse the provider's signed Galerkin matrices on the
-% qualified fixed quadrature. Wave and inertial families use the sampled
-% continuous functionals without Gram correction. Every projection retains
-% the original resolved modes. This is not a generic source projector.
+% Use the PV functionals on transformed vorticity, interior displacement
+% and free-surface stretching, then remove the PV endpoint anomalies before
+% computing the boundary-buoyancy amplitudes. Waves use the energy projection
+% with observed SSH and the three transformed velocity components.
 %
 % - Topic: Reconstruct and project fields
 % - Declaration: [state,assessment] = projectFields(fields)
@@ -44,33 +42,27 @@ sshVolume = repmat(fields.ssh,1,1,self.Nz);
 sshSpectral = self.transformFromSpatialDomainWithFourier(sshVolume);
 indices = self.klNonzero;
 curl = 1i*self.kNonzero.'.*spectral.v(:,indices)-1i*self.lNonzero.'.*spectral.u(:,indices);
-apv = curl-self.f*self.verticalDerivativeMatrix*spectral.eta(:,indices);
-state.Ag_q = self.apvFForward*apv;
-endpointValues = [spectral.eta(end,indices)-sshSpectral(end,indices);spectral.eta(1,indices)];
-state.Ag_0 = complex(zeros(length(self.activeEndpoint),length(indices)));
-state.Aw_p = complex(zeros(length(self.waveMode),length(indices)));
+spectral.ssh = sshSpectral(end,:);
+etaInterior = spectral.eta-alpha(:)*spectral.ssh;
+state.Ag_q = self.apvFProjection*curl-(self.f/self.Lz) * ...
+    (self.apvGProjection*etaInterior(:,indices)+self.apvStretchingMoment*spectral.ssh(indices));
+endpointValues = etaInterior([end 1],indices);
+state.Ag_0 = complex(zeros(size(self.Ag_0)));
+state.Aw_p = complex(zeros(size(self.Aw_p)));
 state.Aw_m = state.Aw_p;
-for p = 1:length(self.khUnique)
-    columns = find(self.klNonzeroKhUniqueIndex==p); index = indices(columns);
+for p = 1:numel(self.khUnique)
+    columns = find(self.klNonzeroKhUniqueIndex==p);
     endpointResidual = endpointValues(self.activeEndpoint,columns)-self.apvEndpointResponse(:,:,p)*state.Ag_q(:,columns);
     state.Ag_0(:,columns) = -(self.g/self.f)*self.khUnique(p)^2*endpointResidual;
-    aq = -state.Ag_q(:,columns)./self.apvMu(:,p);
-    a0 = -state.Ag_0(:,columns)/self.khUnique(p)^2;
-    etaBalanced = (self.f/self.g)*(self.apvG*aq+self.zeroAPVG(:,:,p)*a0);
     count = self.waveModeCountByKh(p);
     if count == 0, continue; end
     modes = 1:count;
-    projectedW = self.waveGForward(modes,:,p)*spectral.w(:,index);
-    projectedEta = self.waveGForward(modes,:,p)*(spectral.eta(:,index)-etaBalanced);
-    omega = self.waveFrequency(modes,p);
-    phase = exp(1i*omega*(self.t-self.t0));
-    waveScale = 2*self.khUnique(p)*self.Lz;
-    state.Aw_p(modes,columns) = (1i*projectedW-omega.*projectedEta)./waveScale./phase;
-    state.Aw_m(modes,columns) = (1i*projectedW+omega.*projectedEta)./waveScale.*phase;
+    [state.Aw_p(modes,columns),state.Aw_m(modes,columns)] = WVInternal.projectFreeSurfaceWaves( ...
+        self,p,columns,spectral,self.waveF(:,modes,p),self.waveG(:,modes,p),self.verticalQuadratureWeights,self.N2);
 end
 meanIndex = find(self.k==0 & self.l==0,1);
-state.Aio = .5*exp(-1i*self.f*(self.t-self.t0))*self.inertialFForward*(spectral.u(:,meanIndex)-1i*spectral.v(:,meanIndex));
-state.Amda = real(self.mdaGForward*spectral.eta(:,meanIndex));
+state.Aio = .5*exp(-1i*self.f*(self.t-self.t0))*self.inertialFProjection*(spectral.u(:,meanIndex)-1i*spectral.v(:,meanIndex));
+state.Amda = real(self.mdaGProjection*etaInterior(:,meanIndex));
 if nargout < 2, return; end
 reconstructed = self.reconstructSpectralState(state=state);
 weights = reshape(self.verticalQuadratureWeights,1,1,[]);

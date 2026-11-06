@@ -152,7 +152,7 @@ classdef WVTransformFreeSurfaceBoussinesq < WVGeometryDoublyPeriodicStratified &
         % Stored APV displacement modes.
         % - Topic: Inspect scientific operators
         apvG
-        % Resolved APV projection functional.
+        % Sampled inversion for APV profiles.
         % - Topic: Inspect scientific operators
         apvFForward
         % APV inversion eigenvalues.
@@ -167,27 +167,41 @@ classdef WVTransformFreeSurfaceBoussinesq < WVGeometryDoublyPeriodicStratified &
         % Stored boundary-normalized zero-APV displacement modes.
         % - Topic: Inspect scientific operators
         zeroAPVG
-        % Stored resolved balanced source operator apvFSourcePairing.
+        % Physical PV projection of transformed vorticity.
         % - Topic: Inspect scientific operators
-        apvFSourcePairing
-        % Stored resolved balanced source operator apvGSourcePairing.
+        apvFProjection
+        % Vertical PV displacement functional, including both endpoint traces.
         % - Topic: Inspect scientific operators
-        apvGSourcePairing
-        % Stored resolved balanced source operator zeroAPVFPairing.
+        apvGProjection
+
+        % Transport response to unit free-surface stretching.
         % - Topic: Inspect scientific operators
-        zeroAPVFPairing
-        % Stored resolved balanced source operator zeroAPVGPairing.
+        apvStretchingMoment
+        % Inverse continuous PV normalization multiplied by the column depth.
         % - Topic: Inspect scientific operators
-        zeroAPVGPairing
-        % Stored resolved balanced source operator zeroAPVSourceSolve.
+        apvProjectionNormalization
+        % Boundary-buoyancy source vorticity functional before the signed solve.
+        % - Topic: Inspect scientific operators
+        zeroAPVFProjection
+        % Boundary-buoyancy source displacement functional before the signed solve.
+        % - Topic: Inspect scientific operators
+        zeroAPVGProjection
+        % Signed generalized-energy inverse in boundary-normalized coordinates.
         % - Topic: Inspect scientific operators
         zeroAPVSourceSolve
         % Stored mean-density-anomaly displacement modes.
         % - Topic: Inspect scientific operators
         mdaG
-        % Signed resolved mean-density-anomaly projection.
+        % Sampled inversion for retained mean-density-anomaly profiles.
         % - Topic: Inspect scientific operators
         mdaGForward
+
+        % Signed physical projection of mean displacement or its source.
+        % - Topic: Inspect scientific operators
+        mdaGProjection
+        % Inverse continuous MDA generalized-energy normalization.
+        % - Topic: Inspect scientific operators
+        mdaProjectionNormalization
         % Hydrostatic mean pressure per unit displacement coefficient, divided by rho0.
         % - Topic: Inspect scientific operators
         mdaPressureMode
@@ -211,7 +225,7 @@ classdef WVTransformFreeSurfaceBoussinesq < WVGeometryDoublyPeriodicStratified &
         inertialF
         % Inertial projection using the depth-averaged F inner product.
         % - Topic: Inspect scientific operators
-        inertialFForward
+        inertialFProjection
         % Inertial equivalent depths.
         % - Topic: Inspect scientific operators
         inertialEquivalentDepth
@@ -328,8 +342,8 @@ classdef WVTransformFreeSurfaceBoussinesq < WVGeometryDoublyPeriodicStratified &
             end
             nc = length(state.klNonzero); np = length(state.khUnique); ne = length(state.activeEndpoint);
             nm = length(state.mdaMode); ni = length(state.inertialMode);
-            shapeNames = ["apvF","apvG","apvFForward","apvMu","apvEndpointResponse","zeroAPVF","zeroAPVG","mdaG","mdaGForward","mdaPressureMode","waveF","waveG","waveGForward","waveEquivalentDepth","waveFrequency","inertialF","inertialFForward","inertialEquivalentDepth","verticalQuadratureWeights","verticalDerivativeMatrix","apvFSourcePairing","apvGSourcePairing","zeroAPVFPairing","zeroAPVGPairing","zeroAPVSourceSolve"];
-            shapes = {[nz nq],[nz nq],[nq nz],[nq np],[ne nq np],[nz ne np],[nz ne np],[nz nm],[nm nz],[nz nm],[nz nw np],[nz nw np],[nw nz np],[nw np],[nw np],[nz ni],[ni nz],[ni 1],[nz 1],[nz nz],[nq nz],[nq nz],[ne nz np],[ne nz np],[ne ne np]};
+            shapeNames = ["apvF","apvG","apvFForward","apvMu","apvEndpointResponse","zeroAPVF","zeroAPVG","mdaG","mdaGForward","mdaPressureMode","waveF","waveG","waveGForward","waveEquivalentDepth","waveFrequency","inertialF","inertialFProjection","inertialEquivalentDepth","verticalQuadratureWeights","verticalDerivativeMatrix","apvFProjection","apvGProjection","apvStretchingMoment","apvProjectionNormalization","mdaGProjection","mdaProjectionNormalization","zeroAPVFProjection","zeroAPVGProjection","zeroAPVSourceSolve"];
+            shapes = {[nz nq],[nz nq],[nq nz],[nq np],[ne nq np],[nz ne np],[nz ne np],[nz nm],[nm nz],[nz nm],[nz nw np],[nz nw np],[nw nz np],[nw np],[nw np],[nz ni],[ni nz],[ni 1],[nz 1],[nz nz],[nq nz],[nq nz],[nq 1],[nq nq],[nm nz],[nm nm],[ne nz np],[ne nz np],[ne ne np]};
             for iShape=1:length(shapeNames)
                 value=state.(shapeNames(iShape)); expected=shapes{iShape}; actual=size(value,1:length(expected));
                 if ~isa(value,'double') || ~isreal(value) || any(~isfinite(value),'all') || ~isequal(actual,expected) || ndims(value)>max(2,length(expected))
@@ -526,10 +540,10 @@ classdef WVTransformFreeSurfaceBoussinesq < WVGeometryDoublyPeriodicStratified &
             names = {'waveMode','waveModeNumber','waveF','waveG','waveGForward','waveEquivalentDepth','waveFrequency','Aw_p','Aw_m'};
         end
         function names = optionalEndpointPropertyNames()
-            names = {'activeEndpoint','Ag_0','apvEndpointResponse','zeroAPVF','zeroAPVG','zeroAPVFPairing','zeroAPVGPairing','zeroAPVSourceSolve'};
+            names = {'activeEndpoint','Ag_0','apvEndpointResponse','zeroAPVF','zeroAPVG','zeroAPVFProjection','zeroAPVGProjection','zeroAPVSourceSolve'};
         end
         function names = scientificPropertyNames()
-            names = {'g0','gd','apvMode','mdaMode','waveMode','waveModeCountByKh','inertialMode','apvModeNumber','mdaModeNumber','waveModeNumber','inertialModeNumber','activeEndpoint','klNonzero','kNonzero','lNonzero','khNonzero','khUnique','klNonzeroKhUniqueIndex','apvF','apvG','apvFForward','apvMu','apvEndpointResponse','apvFSourcePairing','apvGSourcePairing','zeroAPVFPairing','zeroAPVGPairing','zeroAPVSourceSolve','zeroAPVF','zeroAPVG','mdaG','mdaGForward','mdaPressureMode','waveF','waveG','waveGForward','waveEquivalentDepth','waveFrequency','inertialF','inertialFForward','inertialEquivalentDepth','verticalQuadratureWeights','verticalDerivativeMatrix','verticalGridSnapshot','waveGramError','inertialGramError','apvGramError','mdaGramError','balancedNEVP','nEVP','gramTolerance','quadraticDealiasing','retainedFraction','energyFraction','bandwidthFraction','modeConvergenceTolerance','boundaryResolutionTolerance'};
+            names = {'g0','gd','apvMode','mdaMode','waveMode','waveModeCountByKh','inertialMode','apvModeNumber','mdaModeNumber','waveModeNumber','inertialModeNumber','activeEndpoint','klNonzero','kNonzero','lNonzero','khNonzero','khUnique','klNonzeroKhUniqueIndex','apvF','apvG','apvFForward','apvMu','apvEndpointResponse','apvFProjection','apvGProjection','apvStretchingMoment','apvProjectionNormalization','mdaGProjection','mdaProjectionNormalization','zeroAPVFProjection','zeroAPVGProjection','zeroAPVSourceSolve','zeroAPVF','zeroAPVG','mdaG','mdaGForward','mdaPressureMode','waveF','waveG','waveGForward','waveEquivalentDepth','waveFrequency','inertialF','inertialFProjection','inertialEquivalentDepth','verticalQuadratureWeights','verticalDerivativeMatrix','verticalGridSnapshot','waveGramError','inertialGramError','apvGramError','mdaGramError','balancedNEVP','nEVP','gramTolerance','quadraticDealiasing','retainedFraction','energyFraction','bandwidthFraction','modeConvergenceTolerance','boundaryResolutionTolerance'};
         end
         function names = geometryStateNames()
             names = {'Lxyz','Nxyz','shouldAntialias','z','N2Function','rhoFunction','rho0','planetaryRadius','rotationRate','latitude','g','dLnN2','PF0inv','QG0inv','PF0','QG0','P0','Q0','h_0','z_int'};

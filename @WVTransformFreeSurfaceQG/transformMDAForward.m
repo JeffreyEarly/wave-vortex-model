@@ -1,5 +1,5 @@
 function Amda = transformMDAForward(self,etaMean)
-% Project horizontal-mean displacement onto the MDA family.
+% Recover MDA coefficients from sampled horizontal-mean displacement.
 %
 % - Topic: Transform coefficient state
 % - Declaration: Amda = transformMDAForward(self,etaMean)

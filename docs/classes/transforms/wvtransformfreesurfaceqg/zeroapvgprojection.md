@@ -1,15 +1,15 @@
 ---
 layout: default
-title: zeroAPVFPairing
+title: zeroAPVGProjection
 parent: WVTransformFreeSurfaceQG
 grand_parent: Transforms
-nav_order: 267
+nav_order: 273
 mathjax: true
 ---
 
-#  zeroAPVFPairing
+#  zeroAPVGProjection
 
-Zero-APV F source-pairing matrices.
+Zero-APV G source moments before the signed page solve.
 
 
 ---

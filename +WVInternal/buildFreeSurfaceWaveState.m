@@ -61,8 +61,8 @@ for iPage = 1:numel(activePages)+1
     end
 end
 state.inertialF = bases.evaluate(state.z,variable="F",pages=1);
-state.inertialFForward = (state.inertialF'.*state.verticalQuadratureWeights.')/D;
-state.inertialGramError = norm(state.inertialFForward*state.inertialF-eye(options.inertialModeCount),2);
+state.inertialFProjection = (state.inertialF'.*state.verticalQuadratureWeights.')/D;
+state.inertialGramError = norm(state.inertialFProjection*state.inertialF-eye(options.inertialModeCount),2);
 % Homogeneous count groups share evaluation while preserving exact prefixes.
 for count = unique(state.waveModeCountByKh(activePages)).'
     collectionPages = find(state.waveModeCountByKh(activePages) == count).'+1;

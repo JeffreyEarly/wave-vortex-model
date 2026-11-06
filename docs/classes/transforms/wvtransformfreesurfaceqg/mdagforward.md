@@ -3,16 +3,16 @@ layout: default
 title: mdaGForward
 parent: WVTransformFreeSurfaceQG
 grand_parent: Transforms
-nav_order: 156
+nav_order: 158
 mathjax: true
 ---
 
 #  mdaGForward
 
-MDA G projection matrix.
+MDA G sampled inversion matrix.
 
 
 ---
 
 ## Description
-Real valued property with dimensions $$(mdaMode,z)$$ and units of $$\mathrm{m^{-1}}$$.
+Real valued property with dimensions $$(mdaMode,z)$$ and is dimensionless.

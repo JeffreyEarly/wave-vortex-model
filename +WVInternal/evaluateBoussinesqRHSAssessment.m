@@ -1,5 +1,5 @@
 function evidence = evaluateBoussinesqRHSAssessment(prepared,Nxyz,options)
-% Evaluate the complete nonlinear source and fixed modal dual on another grid.
+% Evaluate the complete nonlinear source and fixed modal projection on another grid.
 % No eigensolve, modal fit, closure change, or source filtering is performed.
 % crossingOrder=0 keeps native quadrature; a positive order integrates the
 % buoyancy crossing layer separately. evidence.source always retains the
@@ -19,10 +19,17 @@ end
 if options.crossingOrder>0 && w.verticalGrid.kind~="wkb"
     error('WV:CrossingProjectionGrid','Crossing projection requires a WKB grid. Use crossingOrder=0 for this evolution grid.')
 end
-calculus = w.verticalGrid.calculus;
-% Vary the sampling without rebuilding the coordinate map or its smoothing.
-[z,q,Dz] = calculus.lobattoRule(nz);
-M = calculus.interpolationMatrix(z);
+if nz == w.Nz
+    z = w.z;
+    q = w.verticalQuadratureWeights;
+    Dz = w.verticalDerivativeMatrix;
+    M = eye(nz);
+else
+    calculus = w.verticalGrid.calculus;
+    % Vary the sampling without rebuilding the map or its smoothing.
+    [z,q,Dz] = calculus.lobattoRule(nz);
+    M = calculus.interpolationMatrix(z);
+end
 geometry=WVGeometryDoublyPeriodic([w.Lx w.Ly],Nxyz(1:2),Nz=nz,shouldAntialias=false,shouldExcludeNyquist=true,shouldExcludeConjugates=w.shouldExcludeConjugates,conjugateDimension=w.conjugateDimension);
 keys=round([w.k(:)*w.Lx,w.l(:)*w.Ly]/(2*pi));
 otherKeys=round([geometry.k(:)*w.Lx,geometry.l(:)*w.Ly]/(2*pi));
@@ -59,7 +66,17 @@ if options.crossingOrder>0
     values=geometry.transformFromSpatialDomainWithFourier(splitW);
     projectionSource.w=values(:,indices);
 end
-rate=project(projectionSource); advection=project(advective);
+if nz == w.Nz
+    projection = w;
+    waveF = w.waveF;
+    waveG = w.waveG;
+else
+    projection = projectionOnRule(w,M,q,N2);
+    waveF = pagemtimes(M,w.waveF);
+    waveG = pagemtimes(M,w.waveG);
+end
+rate = project(projectionSource);
+advection = project(advective);
 zero=zeros(size(spectral.u)); buoyancy=struct(u=zero,v=zero,w=zero,eta=zero);
 values=geometry.transformFromSpatialDomainWithFourier(-thermal.buoyancyRemainder); buoyancy.w=values(:,indices);
 if options.crossingOrder>0
@@ -70,33 +87,31 @@ evidence=struct(crossingOrder=options.crossingOrder,snapshot=w,grid=Nxyz,z=z,sou
     function value=verticalDerivative(a)
         value=reshape(reshape(a,[],nz)*Dz.',size(a));
     end
-    function matrix=pairing(part)
-        basis=M*part.basis; density=basis.';
-        if part.stratified, density=density.*N2.'; end
-        matrix=(part.mix*density).*q.';
-        matrix(:,[1 end])=matrix(:,[1 end])+part.endpoint;
+    function tendency = project(s)
+        tendency = WVInternal.projectBoussinesqSpectralSources(w,s,projection,q,N2,waveF,waveG);
     end
-    function tendency=project(s)
-        columns=w.klNonzero;
-        curl=1i*w.kNonzero.'.*s.v(:,columns)-1i*w.lNonzero.'.*s.u(:,columns);
-        tendency.Ag_q=pairing(prepared.pairings.apvF)*curl-(w.f/w.Lz)*pairing(prepared.pairings.apvG)*s.eta(:,columns);
-        tendency.Ag_0=complex(zeros(size(w.Ag_0))); tendency.Aw_p=complex(zeros(size(w.Aw_p))); tendency.Aw_m=tendency.Aw_p;
-        for p=1:numel(w.khUnique)
-            c=find(w.klNonzeroKhUniqueIndex==p);
-            tendency.Ag_0(:,c)=w.zeroAPVSourceSolve(:,:,p)*(pairing(prepared.pairings.zeroF{p})*curl(:,c)-(w.f/w.Lz)*pairing(prepared.pairings.zeroG{p})*s.eta(:,columns(c)));
-            count=w.waveModeCountByKh(p); if count==0, continue; end
-            modes=1:count; F=M*w.waveF(:,modes,p); G=M*w.waveG(:,modes,p);
-            U=F'*(q.*s.u(:,columns(c))); V=F'*(q.*s.v(:,columns(c)));
-            W=G'*(q.*s.w(:,columns(c))); E=G'*((q.*N2).*s.eta(:,columns(c)));
-            k=w.kNonzero(c).'; l=w.lNonzero(c).'; kh=w.khUnique(p); omega=w.waveFrequency(modes,p);
-            common=(k.*U+l.*V)/kh+1i*kh*w.Lz*W;
-            signed=(1i*w.f./(omega*kh)).*(l.*U-k.*V)-(kh*w.Lz./omega).*E;
-            phase=exp(1i*omega*(w.t-w.t0));
-            tendency.Aw_p(modes,c)=((common+signed)/(2*w.Lz))./phase;
-            tendency.Aw_m(modes,c)=((common-signed)/(2*w.Lz)).*phase;
-        end
-        meanIndex=find(w.k==0 & w.l==0,1);
-        tendency.Aio=.5*exp(-1i*w.f*(w.t-w.t0))*pairing(prepared.pairings.inertial)*(s.u(:,meanIndex)-1i*s.v(:,meanIndex));
-        tendency.Amda=real(pairing(prepared.pairings.mda)*s.eta(:,meanIndex));
-    end
+end
+
+function projection = projectionOnRule(w,M,weights,N2)
+% Resample mode values before applying the continuous normalization.
+% Endpoint values contribute directly to the first and last columns.
+F = M*w.apvF;
+G = M*w.apvG;
+projection.apvFProjection = w.apvProjectionNormalization*(F'.*(weights.'/w.Lz));
+projection.apvGProjection = WVInternal.freeSurfaceAPVDisplacementProjection(F,G,weights,N2,w.g,w.apvProjectionNormalization);
+projection.inertialFProjection = (M*w.inertialF)'.*(weights.'/w.Lz);
+
+measure = weights.*N2/w.g;
+if isfinite(w.g0), measure(end) = measure(end)+w.g0/w.g; end
+if isfinite(w.gd), measure(1) = measure(1)+w.gd/w.g; end
+projection.mdaGProjection = w.mdaProjectionNormalization*((M*w.mdaG)'.*measure.');
+
+nEndpoint = numel(w.activeEndpoint);
+projection.zeroAPVFProjection = zeros(nEndpoint,numel(weights),numel(w.khUnique));
+projection.zeroAPVGProjection = zeros(size(projection.zeroAPVFProjection));
+for p = 1:numel(w.khUnique)
+    [projection.zeroAPVFProjection(:,:,p),projection.zeroAPVGProjection(:,:,p)] = ...
+        WVInternal.freeSurfaceBoundarySourceProjections(M*w.zeroAPVF(:,:,p),M*w.zeroAPVG(:,:,p), ...
+        weights,N2,w.Lz,w.g,w.g0,w.gd);
+end
 end

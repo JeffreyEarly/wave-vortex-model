@@ -40,14 +40,32 @@ for name = ["u","v","w","eta"]
 end
 indices = self.klNonzero;
 curl = 1i*self.kNonzero.'.*spectral.v(:,indices)-1i*self.lNonzero.'.*spectral.u(:,indices);
-tendency.Ag_q = self.apvFSourcePairing*curl-(self.f/self.Lz)*self.apvGSourcePairing*spectral.eta(:,indices);
+weights = self.verticalQuadratureWeights;
+displacement = spectral.eta(:,indices);
+weightedN2 = weights.*self.N2;
+pvDisplacement = self.apvG'*(weightedN2.*displacement)/self.g ...
+    +self.apvF(end,:).'*displacement(end,:)-self.apvF(1,:).'*displacement(1,:);
+tendency.Ag_q = (self.apvF'*(weights.*curl)-self.f*pvDisplacement)/self.Lz;
 tendency.Ag_0 = complex(zeros(length(self.activeEndpoint),length(indices)));
 tendency.Aw_p = complex(zeros(length(self.waveMode),length(indices)));
 tendency.Aw_m = tendency.Aw_p;
-weights = self.verticalQuadratureWeights;
+g0 = self.g0; if isinf(g0), g0=0; end
+gd = self.gd; if isinf(gd), gd=0; end
 for p = 1:length(self.khUnique)
     columns = find(self.klNonzeroKhUniqueIndex==p);
-    tendency.Ag_0(:,columns) = self.zeroAPVSourceSolve(:,:,p)*(self.zeroAPVFPairing(:,:,p)*curl(:,columns)-(self.f/self.Lz)*self.zeroAPVGPairing(:,:,p)*spectral.eta(:,indices(columns)));
+    if ~isempty(self.activeEndpoint)
+        F = self.zeroAPVF(:,:,p);
+        G = self.zeroAPVG(:,:,p);
+        B = G(end,:)-F(end,:);
+        % The continuous boundary-buoyancy Gram reduces to endpoint traces.
+        form = -F(end,:).'*B+F(1,:).'*G(1,:) ...
+            +(g0/self.g)*(B.'*B)+(gd/self.g)*(G(1,:).'*G(1,:));
+        gram = (self.f^2/(self.g*self.khUnique(p)^2))*(form+form.')/2;
+        b = displacement(:,columns);
+        pair = F'*(weights.*curl(:,columns))-(self.f/self.g)* ...
+            (G'*(weightedN2.*b)+g0*B.'*b(end,:)+gd*G(1,:).'*b(1,:));
+        tendency.Ag_0(:,columns) = gram\pair;
+    end
     count = self.waveModeCountByKh(p);
     if count == 0, continue; end
     modes = 1:count;
@@ -67,6 +85,12 @@ for p = 1:length(self.khUnique)
     end
 end
 meanIndex = find(self.k==0 & self.l==0,1);
-tendency.Aio = .5*exp(-1i*self.f*(self.t-self.t0))*self.inertialFForward*(spectral.u(:,meanIndex)-1i*spectral.v(:,meanIndex));
-tendency.Amda = real(self.mdaGForward*spectral.eta(:,meanIndex));
+meanVelocity = spectral.u(:,meanIndex)-1i*spectral.v(:,meanIndex);
+tendency.Aio = exp(-1i*self.f*(self.t-self.t0))*(self.inertialF'*(weights.*meanVelocity))/(2*self.Lz);
+measure = weightedN2;
+measure(end) = measure(end)+g0;
+measure(1) = measure(1)+gd;
+signature = sign(self.mdaModeNumber);
+signature(signature==0) = sign(integral(self.N2Function,-self.Lz,0)+g0+gd);
+tendency.Amda = real(signature.*(self.mdaG'*(measure.*spectral.eta(:,meanIndex)))/self.g);
 end

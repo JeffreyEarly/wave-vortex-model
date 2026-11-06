@@ -75,7 +75,7 @@ for p=1:np
     end
 end
 count=length(state.inertialMode);
-gram=state.inertialFForward*state.inertialF;
+gram=state.inertialFProjection*state.inertialF;
 errors=zeros(count,1);
 for n=1:count, errors(n)=norm(gram(1:n,1:n)-eye(n),2); end
 inertial=struct(requestedCount=count,gramError=state.inertialGramError,prefixGramError=errors,gridSupportedCount=sum(cumprod(errors<=state.gramTolerance)),convergence=[],convergedCount=NaN,usableCount=NaN);

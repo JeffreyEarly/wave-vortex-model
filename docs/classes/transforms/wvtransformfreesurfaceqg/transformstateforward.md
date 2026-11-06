@@ -3,13 +3,13 @@ layout: default
 title: transformStateForward
 parent: WVTransformFreeSurfaceQG
 grand_parent: Transforms
-nav_order: 236
+nav_order: 240
 mathjax: true
 ---
 
 #  transformStateForward
 
-Project sampled APV first and residual endpoint anomalies second.
+Recover coefficients from sampled APV and endpoint anomalies.
 
 
 ---
@@ -27,3 +27,6 @@ Project sampled APV first and residual endpoint anomalies second.
 + `Ag_0`  boundary-normalized zero-APV coefficients
 
 ## Discussion
+
+This sampled inversion uses the APV F inversion matrix. The physical
+QGPV projection functional is used by `projectQuasigeostrophicSpatialTendency`.

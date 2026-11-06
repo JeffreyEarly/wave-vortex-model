@@ -31,10 +31,19 @@ classdef TestFreeSurfaceQGPerformance < matlab.unittest.TestCase
                         spatial=zeros(w.spatialMatrixSize); spatial(:,:,1:w.activeEndpointCount)=b;
                         projected=w.transformFromSpatialDomainWithFourier(spatial);
                         interior=w.transformFromSpatialDomainWithFourier(q);
-                        [expectedQ,expectedZero]=w.transformStateForward(interior(:,w.klNonzero),projected(1:w.activeEndpointCount,w.klNonzero));
+                        moments=w.apvF.'*(w.verticalQuadratureWeights.*interior(:,w.klNonzero))/w.Lz;
+                        expectedQ=w.apvProjectionNormalization*moments;
+                        expectedZero=zeros(size(w.Ag_0),'like',w.Ag_0);
+                        for iKl=1:length(w.klNonzero)
+                            page=w.klNonzeroKhUniqueIndex(iKl);
+                            residual=projected(1:w.activeEndpointCount,w.klNonzero(iKl))-w.apvEndpointResponse(:,:,page)*expectedQ(:,iKl);
+                            expectedZero(:,iKl)=-(w.g/w.f)*w.khNonzero(iKl)^2*residual;
+                        end
                         actual=w.projectQuasigeostrophicSpatialTendency(q,b);
-                        testCase.verifyEqual(actual.Ag_q,expectedQ)
-                        testCase.verifyEqual(actual.Ag_0,expectedZero)
+                        testCase.verifyLessThanOrEqual(norm(actual.Ag_q-expectedQ,'fro'),5e-14*norm(expectedQ,'fro'))
+                        % The residual can be much smaller than either endpoint term.
+                        endpointScale=norm((w.g/w.f)*reshape(w.khNonzero.^2,1,[]).*projected(1:w.activeEndpointCount,w.klNonzero),'fro');
+                        testCase.verifyLessThanOrEqual(norm(actual.Ag_0-expectedZero,'fro'),5e-14*(endpointScale+norm(expectedZero,'fro')))
                     end
                 end
             end

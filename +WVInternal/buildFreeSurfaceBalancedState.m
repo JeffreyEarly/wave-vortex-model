@@ -74,25 +74,11 @@ if activeEndpointCount > 0
     apvEndpointResponse = geostrophicTransform.apvEndpointResponse;
     minimumRelativeMuSeparation = geostrophicTransform.compatibilityDiagnostics.minimumRelativeMuSeparation;
 
-    endpointZ = [0;-Lz];
-    zeroFEndpoints = zeroModes.F(endpointZ);
-    zeroGEndpoints = zeroModes.G(endpointZ);
-    zeroAPVFPairing = zeros(activeEndpointCount,length(z),nKh);
-    zeroAPVGPairing = zeros(activeEndpointCount,length(z),nKh);
-    FWeights = reshape(apvTransform.weights/apvTransform.depth,1,[]);
-    GWeights = reshape(apvTransform.weights.*apvTransform.N2Values/g,1,[]);
-    surfaceIndex = find(abs(z) <= sqrt(eps)*max(1,Lz),1);
-    bottomIndex = find(abs(z+Lz) <= sqrt(eps)*max(1,Lz),1);
+    zeroAPVFProjection = zeros(activeEndpointCount,length(z),nKh);
+    zeroAPVGProjection = zeros(activeEndpointCount,length(z),nKh);
     for iKh = 1:nKh
-        zeroAPVFPairing(:,:,iKh) = zeroAPVF(:,:,iKh).'.*FWeights;
-        zeroAPVGPairing(:,:,iKh) = zeroAPVG(:,:,iKh).'.*GWeights;
-        if isfinite(g0) && g0 ~= 0
-            surfaceResponse = zeroGEndpoints(1,:,iKh)-zeroFEndpoints(1,:,iKh);
-            zeroAPVGPairing(:,surfaceIndex,iKh) = zeroAPVGPairing(:,surfaceIndex,iKh)+(g0/g)*surfaceResponse.';
-        end
-        if isfinite(gd) && gd ~= 0
-            zeroAPVGPairing(:,bottomIndex,iKh) = zeroAPVGPairing(:,bottomIndex,iKh)+(gd/g)*zeroGEndpoints(2,:,iKh).';
-        end
+        [zeroAPVFProjection(:,:,iKh),zeroAPVGProjection(:,:,iKh)] = WVInternal.freeSurfaceBoundarySourceProjections( ...
+            zeroAPVF(:,:,iKh),zeroAPVG(:,:,iKh),verticalQuadratureWeights,N2Values,Lz,g,g0,gd);
     end
 
     matrixG0 = g0;
@@ -117,8 +103,8 @@ else
     zeroAPVF = zeros(length(z),0,nKh);
     zeroAPVG = zeros(length(z),0,nKh);
     apvEndpointResponse = zeros(0,apvModeCount,nKh);
-    zeroAPVFPairing = zeros(0,length(z),nKh);
-    zeroAPVGPairing = zeros(0,length(z),nKh);
+    zeroAPVFProjection = zeros(0,length(z),nKh);
+    zeroAPVGProjection = zeros(0,length(z),nKh);
     zeroAPVSourceSolve = zeros(0,0,nKh);
     zeroAPVGramReciprocalCondition = zeros(0,1);
     zeroAPVGramRelativeSeparation = zeros(0,1);
@@ -126,9 +112,15 @@ else
     Ag_0 = complex(zeros(0,length(klNonzero)));
 end
 
-identitySamples = eye(length(z));
-apvFSourcePairing = apvTransform.modeProjectionFunctional(identitySamples,variable="F")/apvTransform.depth;
-apvGSourcePairing = apvTransform.modeProjectionFunctional(identitySamples,variable="G");
+pvF = apvTransform.physicalProjection(variable="F");
+mda = mdaTransform.physicalProjection(variable="G");
+if pvF.physicalDualStatus ~= "available" || mda.physicalDualStatus ~= "available"
+    error('WV:UnavailablePhysicalProjection','Retained PV and MDA modes require a finite continuous projection normalization.');
+end
+apvProjectionNormalization = Lz*(pvF.targetGramMatrix\eye(apvModeCount));
+mdaProjectionNormalization = mda.targetGramMatrix\eye(mdaModeCount);
+apvFProjection = pvF.physicalDualMatrix;
+apvGProjection = WVInternal.freeSurfaceAPVDisplacementProjection(apvF,apvG,verticalQuadratureWeights,N2Values,g,apvProjectionNormalization);
 apvFDiagnostics = apvTransform.channelDiagnostics(variable="F");
 apvGDiagnostics = apvTransform.channelDiagnostics(variable="G");
 mdaDiagnostics = mdaTransform.channelDiagnostics(variable="G");
@@ -175,19 +167,23 @@ state.apvGForward = apvGForward;
 state.apvEquivalentDepth = reshape(apvTransform.h,[],1);
 state.apvMu = apvMu;
 state.apvEndpointResponse = apvEndpointResponse;
-state.apvFSourcePairing = apvFSourcePairing;
-state.apvGSourcePairing = apvGSourcePairing;
+state.apvFProjection = apvFProjection;
+state.apvGProjection = apvGProjection;
+state.apvStretchingMoment = sum(apvFProjection,2);
+state.apvProjectionNormalization = apvProjectionNormalization;
 state.mdaF = mdaF;
 state.mdaG = mdaG;
 state.mdaGForward = mdaGForward;
+state.mdaGProjection = mda.physicalDualMatrix;
+state.mdaProjectionNormalization = mdaProjectionNormalization;
 state.mdaEquivalentDepth = reshape(mdaTransform.h,[],1);
 state.verticalGridKind = "chebyshevLobatto";
 state.verticalGridCoordinate = vertical.grid.kind;
 state.verticalGridSnapshot = string(jsonencode(vertical.grid.snapshot()));
 state.zeroAPVF = zeroAPVF;
 state.zeroAPVG = zeroAPVG;
-state.zeroAPVFPairing = zeroAPVFPairing;
-state.zeroAPVGPairing = zeroAPVGPairing;
+state.zeroAPVFProjection = zeroAPVFProjection;
+state.zeroAPVGProjection = zeroAPVGProjection;
 state.zeroAPVSourceSolve = zeroAPVSourceSolve;
 state.apvGramError = max(apvFDiagnostics.relativeGramOperatorError,apvGDiagnostics.relativeGramOperatorError);
 state.apvRoundTripError = max(apvFDiagnostics.roundTripError,apvGDiagnostics.roundTripError);

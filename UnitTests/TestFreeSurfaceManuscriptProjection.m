@@ -43,6 +43,60 @@ classdef TestFreeSurfaceManuscriptProjection < matlab.unittest.TestCase
             testCase.verifyEqual(actual.Aw_m(~w.activeWaveModes),zeros(nnz(~w.activeWaveModes),1))
         end
 
+        function depthConstantDisplacementHasNoAPVAtEndpointLimits(testCase)
+            g = 9.81;
+            for endpoints = [Inf,Inf; -g,.03].'
+                w = WVTransformFreeSurfaceBoussinesq.fromStratification([1e5 1e5 1000],[6 6 17], ...
+                    N2Function=@(z)1e-4*exp(z/400),g=g,g0=endpoints(1),gd=endpoints(2), ...
+                    apvModeCount=2,mdaModeCount=3,waveModeCount=0,inertialModeCount=1,nEVP=64,gramTolerance=.15);
+                [X,Y,~] = ndgrid(w.x,w.y,w.z);
+                zero = zeros(w.spatialMatrixSize);
+                eta = cos(2*pi*(X/w.Lx+Y/w.Ly));
+                rate = w.projectSources(struct(u=zero,v=zero,w=zero,eta=eta));
+
+                % The linear APV source is zero because both the vorticity
+                % source and the depth derivative of this displacement vanish.
+                testCase.verifyEqual(rate.Ag_q,zeros(size(rate.Ag_q)),AbsTol=2e-12)
+            end
+        end
+
+        function offSpanMeanDisplacementUsesSignedPhysicalProjection(testCase)
+            w = WVTransformFreeSurfaceBoussinesq.fromStratification([1e6 1e6 1000],[6 6 9], ...
+                N2Function=@(z)1e-4*exp(z/400),g0=-.14,gd=.03,apvModeCount=2,mdaModeCount=4, ...
+                waveModeCount=0,inertialModeCount=1,nEVP=64,gramTolerance=.15);
+            b = 1+.3*sin(7*pi*(1+w.z/w.Lz));
+            eta = repmat(reshape(b,1,1,[]),w.Nx,w.Ny,1);
+            zero = zeros(w.spatialMatrixSize);
+            sources = struct(u=zero,v=zero,w=zero,eta=eta);
+            rate = w.projectSources(sources);
+
+            G = w.mdaG;
+            N2 = 1e-4*exp(w.z/400);
+            measure = w.verticalQuadratureWeights.*N2/w.g;
+            measure(end) = measure(end)+w.g0/w.g;
+            measure(1) = measure(1)+w.gd/w.g;
+            signature = sign(sum(measure.*G.^2,1)).';
+            testCase.assertEqual(signature,[-1;1;1;1])
+            testCase.assertGreaterThan(norm(b-G*(G\b)),0.1)
+            expected = signature.*(G.'*(measure.*b));
+
+            testCase.verifyEqual(rate.Amda,expected,AbsTol=1e-12)
+            testCase.verifyEqual(w.mdaGForward*G,eye(size(G,2)),AbsTol=1e-12)
+
+            scientific = w.scientificState();
+            scientific.mdaGForward(:) = 0;
+            direct = WVTransformFreeSurfaceBoussinesq(scientific);
+            testCase.verifyEqual(direct.projectSources(sources),rate)
+
+            folder = testCase.applyFixture(matlab.unittest.fixtures.TemporaryFolderFixture);
+            path = fullfile(folder.Folder,"signed-mda-projection.nc");
+            file = w.writeToFile(path);
+            file.close();
+            restored = WVTransformFreeSurfaceBoussinesq.waveVortexTransformFromFile(path);
+            testCase.verifyEmpty(restored.verticalModes)
+            testCase.verifyEqual(restored.projectSources(sources),rate)
+        end
+
         function pressureGradientsLeaveOnlyWaveSurfaceTerm(testCase,inventory)
             w = transform(testCase,inventory);
             [X,Y,Z] = ndgrid(w.x,w.y,w.z);
