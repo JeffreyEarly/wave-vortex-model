@@ -102,7 +102,7 @@ classdef TestFreeSurfaceBoussinesqTransform < matlab.unittest.TestCase
                     unit = emptyState;
                     unit.(family)(mode,column) = 1;
                     testWave = target.reconstructSpectralState(state=unit);
-                    expected = waveEnergyPairing(target,testWave,spectral,index);
+                    expected = waveEnergyProjectionReference(target,testWave,spectral,index);
                     testCase.verifyEqual(expected,source.(family)(mode,column),AbsTol=2e-10);
                     testCase.verifyEqual(actual.(family)(mode,column),expected,AbsTol=2e-10);
                 end
@@ -340,7 +340,7 @@ trace = [w.apvG(end,:)-w.apvF(end,:); w.apvG(1,:)];
 residual = observed+(w.f/w.g)*trace*(apv./mu);
 amplitude = -(w.g*k^2/w.f)*residual(w.activeEndpoint);
 end
-function value = waveEnergyPairing(w,testWave,observed,index)
+function value = waveEnergyProjectionReference(w,testWave,observed,index)
 kinetic = conj(testWave.u(:,index)).*observed.u(:,index) ...
     + conj(testWave.v(:,index)).*observed.v(:,index) ...
     + conj(testWave.w(:,index)).*observed.w(:,index);
