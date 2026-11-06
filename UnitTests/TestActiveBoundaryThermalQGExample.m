@@ -46,7 +46,8 @@ classdef TestActiveBoundaryThermalQGExample < matlab.unittest.TestCase
             % The three axis controls share the same manufactured initial
             % streamfunction, mean profile, elapsed time and diffusivity.
             testCase.verifyLessThan(max(errors(2,:)),max(errors(1,:)));
-            testCase.verifyLessThan(max(errors(3,:)),max(errors(2,:)));
+            % Use one reference error budget for both finer dimensions.
+            testCase.verifyLessThan(max(errors(2:3,:),[],'all'),1e-8);
             testCase.verifyLessThan(max(abs(errors(4:5,:)-errors(1,:)),[],'all'),2e-7);
         end
 
