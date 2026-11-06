@@ -336,6 +336,7 @@ classdef WVTransformFreeSurfaceBoussinesq < WVGeometryDoublyPeriodicStratified &
                 error('WVTransformFreeSurfaceBoussinesq:IncompleteScientificState','Supply the complete structure returned by scientificState or use fromStratification.')
             end
             state.quadraticDealiasing=string(state.quadraticDealiasing);
+            state.verticalGridSnapshot=string(state.verticalGridSnapshot);
             nz = state.Nxyz(3); nq = length(state.apvMode); nw = length(state.waveMode);
             if size(state.apvF,1) ~= nz || size(state.apvF,2) ~= nq || size(state.waveF,1) ~= nz || size(state.waveF,2) ~= nw || ~isequal(size(state.waveF),size(state.waveG)) || length(state.z) ~= nz || any(diff(state.z)<=0) || any(state.verticalQuadratureWeights<=0)
                 error('WVTransformFreeSurfaceBoussinesq:InvalidScientificState','Stored mode shapes and positive increasing-grid quadrature must match the declared geometry.')

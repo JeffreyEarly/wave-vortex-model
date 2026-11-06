@@ -177,6 +177,7 @@ end
         if ~isempty(selection), key=key+"_"+string(selection.abbreviatedName); end
         if ~isKey(self.operationVariableNameMap,key), key=""; return; end
         annotation=self.operationVariableNameMap(key);
+        if ~isa(annotation,'WVVariableAnnotation'), key=""; return; end
         op=annotation.modelOp;
         if ~isa(op,'WVInternal.FreeSurfaceFieldOperation') || ~isequal(op.component,selection), key=""; end
     end

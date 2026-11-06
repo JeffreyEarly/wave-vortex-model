@@ -131,6 +131,7 @@ end
 consumer = exerciseInstalledPackage();
 consumer.freeSurface = exerciseInstalledFreeSurfacePackage();
 consumer.thermal = exerciseInstalledThermalPackage();
+consumer.activeBoundaryExamples = exerciseActiveBoundaryExamples(wvmRoot);
 report = struct( ...
     "packageName","WaveVortexModel", ...
     "version",options.expectedVersion, ...
@@ -141,6 +142,31 @@ report = struct( ...
     "packageRoots",packageRoots, ...
     "consumer",consumer);
 fprintf("Verified installed WaveVortexModel %s and its six-package dependency graph.\n",options.expectedVersion);
+end
+
+function report = exerciseActiveBoundaryExamples(wvmRoot)
+exampleRoot = canonicalPath(fullfile(wvmRoot,"Examples"));
+require(isfolder(exampleRoot),"The installed WaveVortexModel package is missing its Examples folder.");
+originalPath = path;
+pathCleanup = onCleanup(@()path(originalPath));
+addpath(exampleRoot);
+for name = ["activeBoundaryBoussinesq","activeBoundaryQGBuoyancyFlux","activeBoundaryThermalQG"]
+    resolved = string(which(name));
+    require(resolved~="" && startsWith(canonicalPath(resolved),exampleRoot+filesep), ...
+        name + " must resolve from the installed examples.");
+end
+boussinesq = activeBoundaryBoussinesq();
+qg = activeBoundaryQGBuoyancyFlux();
+thermal = activeBoundaryThermalQG();
+require(boussinesq.time>0 && any(boussinesq.fields.w_hat~=0,"all") && ...
+    any(boussinesq.fields.ssh~=0,"all"),"The installed linear example did not reconstruct waves.");
+relativeInputError = abs(qg.columnBuoyancy-qg.expectedColumnBuoyancy)/abs(qg.expectedColumnBuoyancy);
+require(relativeInputError<2e-6 && norm(qg.transform.Ag_q,"fro")>0 && norm(qg.transform.Ag_0,"fro")>0, ...
+    "The installed buoyancy-flux example did not reproduce its column input and balanced response.");
+require(thermal.time>0 && thermal.transform.totalEnergy>0 && all(isfinite(thermal.fields.qgpv),"all"), ...
+    "The installed unforced thermal-diffusion example did not reconstruct a finite state.");
+report = struct(boussinesqTime=boussinesq.time,qgTime=qg.time,thermalTime=thermal.time, ...
+    qgColumnInputRelativeError=relativeInputError);
 end
 
 function report = exerciseInstalledFreeSurfacePackage()

@@ -4,15 +4,11 @@ function page = densityDiffusionPage(phi,eta,etaZ,buoyancyZ,phiSurface,weights,N
 % QR changes coordinates in the positive physical-energy metric; it does
 % not replace the signed normalization of the public coefficients.
 % - Topic: Developer utilities
-field=[sqrt(weights)*kh.*phi; sqrt(weights.*N2).*eta; (f/sqrt(g))*phiSurface];
-columnScale=vecnorm(field);
-[~,R]=qr(field./columnScale,0);
+[field,columnScale,R,energyMetric]=WVInternal.densityDiffusionEnergyCoordinates(phi,eta,phiSurface,weights,N2,kh,f,g);
 fromEnergy=diag(1./columnScale)/R;
 toEnergy=R.*columnScale;
 etaZEnergy=(etaZ./columnScale)/R;
 buoyancyZEnergy=(buoyancyZ./columnScale)/R;
-energyField=(field./columnScale)/R;
-energyMetric=energyField'*energyField;
 weakMatrix=-etaZEnergy'*(kappa_z*weights.*buoyancyZEnergy);
 generator=-(energyMetric\weakMatrix);
 page=struct(generator=fromEnergy*generator*toEnergy,energy=field'*field, ...
