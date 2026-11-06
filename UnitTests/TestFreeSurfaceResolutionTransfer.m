@@ -110,6 +110,10 @@ classdef TestFreeSurfaceResolutionTransfer < matlab.unittest.TestCase
         function pureFamiliesAndStrictRequests(testCase)
             w=newTransform("boussinesq","exponential"); populate(w); initial=w.coefficientState();
             target=w.waveVortexTransformWithResolution([12 10 97]);
+            testCase.verifyEqual(target.Nz,97)
+            testCase.verifyEqual(target.apvModeNumber,[-1;1;2])
+            % Analytical equivalent depth for the signed mode with default endpoints.
+            testCase.verifyEqual(target.h_0(1),-2.131069429888769,AbsTol=1e-8)
             for name=string(fieldnames(initial)).'
                 clearState(w); w.(name)=initial.(name);
                 [state,a]=w.coefficientStateForTransform(target); adopt(target,state);
@@ -119,10 +123,19 @@ classdef TestFreeSurfaceResolutionTransfer < matlab.unittest.TestCase
             end
             clearState(w); [~,a]=w.coefficientStateForTransform(target);
             testCase.verifyEqual([a.sourceEnergy a.targetEnergy a.errorEnergy a.relativeFieldError],[0 0 0 0])
-            testCase.verifyError(@()w.coefficientStateForTransform(target,modeTolerance=1e-12),'WV:TransferModeMismatch')
             qg=newTransform("qg","exponential");
             testCase.verifyError(@()qg.waveVortexTransformWithResolution([8 8 65],apvModeCount=100),'WV:StrictAPVModeCountRejected')
             testCase.verifyEqual(qg.apvModeCount,3)
+        end
+        function strictTransferRejectsControlledShapeMismatch(testCase)
+            % Give the strict-tolerance check a resolved mismatch independent of solver roundoff.
+            w = newTransform("boussinesq","constant",[.02 .03]);
+            perturbed = w.scientificState();
+            perturbed.waveF(:,1,1) = perturbed.waveF(:,1,1)+1e-8*sin(pi*(1+w.z/w.Lz));
+            strictTarget = WVTransformFreeSurfaceBoussinesq(perturbed);
+            [~,a] = w.coefficientStateForTransform(strictTarget);
+            testCase.verifyGreaterThan(a.maximumModeShapeError,1e-12)
+            testCase.verifyError(@()w.coefficientStateForTransform(strictTarget,modeTolerance=1e-12),'WV:TransferModeMismatch')
         end
         function activeAndInactiveEndpointsSurviveTransfer(testCase)
             for type=["qg","boussinesq"]

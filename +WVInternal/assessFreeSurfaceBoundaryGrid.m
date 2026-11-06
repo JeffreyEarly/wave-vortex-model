@@ -1,12 +1,13 @@
 function [report,reference] = assessFreeSurfaceBoundaryGrid(zero,problem,vertical,inputs,options)
 % Qualify fixed endpoint responses without using a scalar-family Gram test.
+background=inputs.background;
 z=vertical.z; w=vertical.weights; Dz=vertical.Dz;
 reference=IMSolverSpectral(nEVP=vertical.referenceNEVP).solveGeostrophicZeroAPVModes(problem);
 rule=IMSolverSpectral(nEVP=2*vertical.referenceNEVP+1,coordinateKind="wkb").configuredForEVP(vertical.apvProblem);
-[zq,wq]=rule.nativeQuadratureRule(inputs.zDomain);
+[zq,wq]=rule.nativeQuadratureRule(background.zDomain);
 F=zero.F(z); G=zero.G(z); Fr=reference.F(z); Gr=reference.G(z);
-Fq=zero.F(zq); Gq=zero.G(zq); N2=inputs.N2Function(z); N2q=inputs.N2Function(zq);
-f=inputs.f0; g=options.g; kappa=problem.k(:);
+Fq=zero.F(zq); Gq=zero.G(zq); N2=background.N2(z); N2q=background.N2(zq);
+f=background.f0; g=background.g; kappa=problem.k(:);
 records=cell(numel(kappa),1);
 for p=1:numel(kappa)
     kh=kappa(p); A=F(:,:,p); B=G(:,:,p);

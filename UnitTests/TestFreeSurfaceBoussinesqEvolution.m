@@ -26,7 +26,7 @@ classdef TestFreeSurfaceBoussinesqEvolution < matlab.unittest.TestCase
                 divergence=1i*w.kNonzero(j)*Su(:,index);
                 b=(w.verticalDerivativeMatrix*divergence)./(w.N2-w.f^2);
                 h=w.waveEquivalentDepth(:,p); G=w.waveG(:,:,p);
-                expected=(1i*w.g*h.*(w.waveGForward(:,:,p)*b)-1i*h.*G(end,:).'*(divergence(end)+w.g*b(end)))./(2*w.khNonzero(j)*h);
+                expected=1i*(w.g*(h/w.Lz).*(w.waveGForward(:,:,p)*b)-G(end,:).'*(divergence(end)+w.g*b(end)))/(2*w.khNonzero(j));
                 testCase.verifyEqual(actual.Aw_p(:,j),expected,AbsTol=1e-14)
                 testCase.verifyEqual(actual.Aw_m(:,j),expected,AbsTol=1e-14)
             end

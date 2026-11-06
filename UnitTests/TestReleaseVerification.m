@@ -34,7 +34,7 @@ classdef TestReleaseVerification < matlab.unittest.TestCase
             compatibleVersions = string({manifest.dependencies.compatibleVersions});
             expected = dictionary( ...
                 ["ClassAnnotations" "InternalModes" "NetCDF" "SplineCore" "chebfun"], ...
-                ["^1.2.1" "^2.0.0-beta.7" "^1.0.2" "^2.2.0" ""]);
+                ["^1.2.1" "^2.0.0-beta.10" "^1.0.2" "^2.2.0" ""]);
             testCase.verifyEqual(sort(reshape(dependencies,[],1)),sort(reshape(keys(expected),[],1)));
             for iDependency = 1:numel(dependencies)
                 testCase.verifyEqual(compatibleVersions(iDependency),expected(dependencies(iDependency)));
@@ -55,7 +55,7 @@ classdef TestReleaseVerification < matlab.unittest.TestCase
                     "Exported package / MATLAB R2025b"
                     "release: R2025b"
                     "contents: read"
-                    "0f2dae987eb777dd54a15f9b910ddb7f221b5852"
+                    "a8e0bb783de1e7dc5de82a71464db6f5052894f8"
                     "MATLAB_PREFDIR"
                     "Temporary=true"
                     "ClassDocumentation@1.3.2"
@@ -69,7 +69,8 @@ classdef TestReleaseVerification < matlab.unittest.TestCase
                 testCase.verifySubstring(contract,required);
             end
             testCase.verifySubstring(workflow,"workflow_dispatch:");
-            testCase.verifySubstring(workflow,"pull_request:");
+            testCase.verifySubstring(workflow,"workflow_call:");
+            testCase.verifySubstring(workflow,"types: [published]");
             testCase.verifyFalse(contains(workflow,newline + "  push:"));
             testCase.verifyFalse(contains(workflow,'- "UnitTests/**"'));
             testCase.verifyFalse(contains(workflow,'- "Benchmarks/**"'));
@@ -79,8 +80,6 @@ classdef TestReleaseVerification < matlab.unittest.TestCase
             testCase.verifySubstring(workflow,"candidate.report.exportPath");
             testCase.verifySubstring(workflow,"candidate.report.version");
             testCase.verifyFalse(contains(workflow,newline + "    paths:"));
-            testCase.verifySubstring(workflow,"final-integration");
-            testCase.verifySubstring(workflow,"types: [opened, synchronize, reopened, labeled, unlabeled, closed]");
             testCase.verifySubstring(workflow,"Build and inspect the exported reference runtime");
             testCase.verifySubstring(workflow,"-DBUILD_TESTING=OFF");
             testCase.verifyFalse(contains(contract,'expectedVersion="4.2.0"'));
@@ -91,43 +90,39 @@ classdef TestReleaseVerification < matlab.unittest.TestCase
             requiredWorkflow = testCase.readFile(fullfile(".github","workflows","ci.yml"));
             packageWorkflow = testCase.readFile(fullfile(".github","workflows","release-verification.yml"));
             extendedWorkflow = testCase.readFile(fullfile(".github","workflows","extended-ci.yml"));
-            focusedJob = testCase.sectionBetween(requiredWorkflow,"  focused-matlab:","  smoke:");
+            focusedJob = testCase.sectionBetween(requiredWorkflow, ...
+                newline + "  focused-matlab:" + newline,newline + "  documentation:" + newline);
 
             for required = [
                     "Focused MATLAB / R2025b"
                     "Required / WaveVortexModel"
                     "Portable C++ kernel contract"
-                    "final-integration"
-                    "buildtool(taskArguments{:})"
-                    "WVM_RUN_ANALYZER"
-                    "WVM_RUN_DOCUMENTATION"
-                    "MATLAB provisioning incident"
+                    "uses: ./.github/workflows/release-verification.yml"
+                    "python3 tools/ci/check_required_gate.py"
                     "timeout-minutes: 10"
-                    "cache restore/populate details only in its step log"
                     ]'
                 testCase.verifySubstring(requiredWorkflow,required);
             end
             testCase.verifyEqual(count(focusedJob,"matlab-actions/setup-matlab@v3"),1);
             testCase.verifyEqual(count(focusedJob,"matlab-actions/run-command@v3"),1);
-            testCase.verifyEqual(count(focusedJob,"buildtool test:smoke"),0);
-            testCase.verifySubstring(focusedJob,'tasks = "test:smoke"');
-            testCase.verifyEqual(count(focusedJob,"end;"),3);
+            testCase.verifyEqual(count(focusedJob,"buildtool test:smoke"),1);
+            testCase.verifySubstring(focusedJob,"selection.tests");
+            testCase.verifySubstring(focusedJob,"analyzeProductionCode");
 
             for workflow = [requiredWorkflow packageWorkflow extendedWorkflow]
                 testCase.verifySubstring(workflow,"workflow_dispatch:");
-                testCase.verifySubstring(workflow,"pull_request:");
-                testCase.verifySubstring(workflow,"types: [opened, synchronize, reopened, labeled, unlabeled, closed]");
                 testCase.verifySubstring(workflow,"cancel-in-progress: true");
-                testCase.verifySubstring(workflow,"retain-final");
-                testCase.verifySubstring(workflow,"github.base_ref == 'main'");
-                testCase.verifySubstring(workflow,"final-integration");
             end
+            testCase.verifySubstring(requiredWorkflow,"pull_request:");
+            testCase.verifySubstring(requiredWorkflow,"types: [opened, synchronize, reopened]");
+            testCase.verifySubstring(packageWorkflow,"workflow_call:");
+            testCase.verifySubstring(extendedWorkflow,"schedule:");
+            testCase.verifyFalse(contains(extendedWorkflow,"pull_request:"));
             testCase.verifyFalse(contains(packageWorkflow,newline + "    paths:"));
             testCase.verifyFalse(contains(extendedWorkflow,newline + "    paths:"));
             for context = [
-                    "Smoke / MATLAB R2025b"
+                    "Focused MATLAB / R2025b"
                     "Documentation / MATLAB R2025b"
-                    "Code Analyzer / MATLAB R2025b"
                     "Clean install / MATLAB R2025b"
                     "Exported package / MATLAB R2025b"
                     "Full / MATLAB R2025b"
@@ -203,15 +198,14 @@ classdef TestReleaseVerification < matlab.unittest.TestCase
             requiredWorkflow = testCase.readFile(fullfile(".github","workflows","ci.yml"));
             extendedWorkflow = testCase.readFile(fullfile(".github","workflows","extended-ci.yml"));
             for workflow = [requiredWorkflow extendedWorkflow]
-                testCase.verifySubstring(workflow,"0f2dae987eb777dd54a15f9b910ddb7f221b5852");
+                testCase.verifySubstring(workflow,"a8e0bb783de1e7dc5de82a71464db6f5052894f8");
                 testCase.verifySubstring(workflow,"release: R2025b");
                 testCase.verifyFalse(contains(workflow,"eb71bc7b05e74776afd678b27c964cf53cd9d547"));
                 testCase.verifyFalse(contains(workflow,"R2024b"));
             end
             for context = [
-                    "Smoke / MATLAB R2025b"
+                    "Focused MATLAB / R2025b"
                     "Documentation / MATLAB R2025b"
-                    "Code Analyzer / MATLAB R2025b"
                     ]'
                 testCase.verifySubstring(requiredWorkflow,context);
             end

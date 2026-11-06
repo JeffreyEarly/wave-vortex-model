@@ -143,13 +143,13 @@ for mode=1:w.waveModeCountByKh(page)
     F=I*w.waveF(:,mode,page); G=I*w.waveG(:,mode,page);
     h=w.waveEquivalentDepth(mode,page); omega=sqrt(w.f^2+w.g*h*kh^2);
     for sigma=[1,-1]
-        pair=sum(q.*(F.*((k*omega+1i*sigma*w.f*l)*values(:,1)+(l*omega-1i*sigma*w.f*k)*values(:,2))/(omega*kh)+1i*kh*h*G.*values(:,3)-sigma*kh*h*1e-4*G.*values(:,4)/omega));
+        pair=sum(q.*(F.*((k*omega+1i*sigma*w.f*l)*values(:,1)+(l*omega-1i*sigma*w.f*k)*values(:,2))/(omega*kh)+1i*kh*w.Lz*G.*values(:,3)-sigma*kh*w.Lz*1e-4*G.*values(:,4)/omega));
         name="Aw_p"; if sigma<0, name="Aw_m"; end
-        expected.(name)(mode,column)=exp(-sigma*1i*omega*(w.t-w.t0))*pair/(2*h);
+        expected.(name)(mode,column)=exp(-sigma*1i*omega*(w.t-w.t0))*pair/(2*w.Lz);
     end
 end
 F=I*w.inertialF;
-expected.Aio=.5*exp(-1i*w.f*(w.t-w.t0))*(F.'*(q.*(meanValues(:,1)-1i*meanValues(:,2))))./w.inertialEquivalentDepth;
+expected.Aio=.5*exp(-1i*w.f*(w.t-w.t0))*(F.'*(q.*(meanValues(:,1)-1i*meanValues(:,2))))/w.Lz;
 G=I*w.mdaG;
 gram=(G.'*(q.*1e-4.*G)+w.g0*w.mdaG(end,:).'*w.mdaG(end,:)+w.gd*w.mdaG(1,:).'*w.mdaG(1,:))/w.g;
 pair=(G.'*(q.*1e-4.*meanValues(:,4))+w.g0*w.mdaG(end,:).'*meanEnds(1,4)+w.gd*w.mdaG(1,:).'*meanEnds(2,4))/w.g;

@@ -37,8 +37,8 @@ for p = 1:length(self.khUnique)
     F = self.waveF(rows,modes,p); G = self.waveG(rows,modes,p);
     if selected(1), fields.u(:,indices)=fields.u(:,indices)+F*((k/kh).*sumAmplitude-(1i*self.f*l./(omega*kh)).*differenceAmplitude); end
     if selected(2), fields.v(:,indices)=fields.v(:,indices)+F*((l/kh).*sumAmplitude+(1i*self.f*k./(omega*kh)).*differenceAmplitude); end
-    if selected(3), fields.w(:,indices)=G*((-1i*kh*h).*sumAmplitude); end
-    if selected(4), fields.eta(:,indices)=fields.eta(:,indices)+G*((-kh*h./omega).*differenceAmplitude); end
+    if selected(3), fields.w(:,indices)=G*((-1i*kh*self.Lz).*sumAmplitude); end
+    if selected(4), fields.eta(:,indices)=fields.eta(:,indices)+G*((-kh*self.Lz./omega).*differenceAmplitude); end
     if selected(5), fields.p(:,indices)=fields.p(:,indices)+F*((-self.rho0*self.g*kh*h./omega).*differenceAmplitude); end
 end
 meanIndex = find(self.k==0 & self.l==0,1);

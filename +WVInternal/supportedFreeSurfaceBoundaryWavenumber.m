@@ -1,9 +1,6 @@
-function assessment = supportedFreeSurfaceBoundaryWavenumber(zDomain,N2Function,g,endpoints,nEVP,tolerance,vertical,inputs,options)
+function assessment = supportedFreeSurfaceBoundaryWavenumber(endpoints,nEVP,tolerance,vertical,inputs,options)
 % Find a conservative zero-APV boundary-resolution wavenumber limit.
 arguments
-    zDomain (1,2) double {mustBeReal,mustBeFinite}
-    N2Function function_handle
-    g (1,1) double {mustBePositive}
     endpoints (1,:) string
     nEVP (1,1) double {mustBeInteger,mustBeGreaterThanOrEqual(nEVP,4)}
     tolerance (1,1) double {mustBePositive}
@@ -96,9 +93,9 @@ assessment = struct(isApplicable=true,maximumSupportedKh=lowerKh,firstRejectedKh
     maximumSupportedBoundaryError=lower.error,firstRejectedBoundaryError=upper.error);
 
     function result = evaluate(kh)
-        problem = IMGeostrophicZeroAPVModes.atWavenumber(N2=N2Function,zDomain=zDomain,rotationRate=inputs.rotationRate,latitude=inputs.latitude,g=g,k=kh,endpoints=endpoints,surfaceBoundary="freeSurface");
+        problem = IMGeostrophicZeroAPVModes.atWavenumber(inputs.background,kh,endpoints=endpoints);
         zeroModes = IMSolverSpectral(nEVP=nEVP).solveGeostrophicZeroAPVModes(problem);
-        settings=struct(g=g,boundaryResolutionTolerance=tolerance,modeConvergenceTolerance=options.modeConvergenceTolerance,boundaryReportOnly=true);
+        settings=struct(boundaryResolutionTolerance=tolerance,modeConvergenceTolerance=options.modeConvergenceTolerance,boundaryReportOnly=true);
         boundary=WVInternal.assessFreeSurfaceBoundaryGrid(zeroModes,problem,vertical,inputs,settings);
         [boundaryError,index]=max(boundary.pages.gridError);
         result=struct(error=boundaryError,accepted=boundary.status=="accepted",limitingEndpoint=boundary.pages.endpoint(index));

@@ -145,8 +145,9 @@ classdef TestFreeSurfacePhysicalContract < matlab.unittest.TestCase
             folder = testCase.applyFixture(matlab.unittest.fixtures.TemporaryFolderFixture);
             path = fullfile(folder.Folder,'physical-contract.nc');
             file = wvt.writeToFile(path);
-            convention = CAAnnotatedClass.propertyValuesFromGroup(file,{'fieldConvention'});
+            convention = CAAnnotatedClass.propertyValuesFromGroup(file,{'fieldConvention','waveNormalization'});
             testCase.verifyEqual(string(convention.fieldConvention),"physical-velocity-upper-constant")
+            testCase.verifyEqual(string(convention.waveNormalization),"waveEnergy")
             file.close();
             restored = WVTransform.waveVortexTransformFromFile(path);
             testCase.verifyEqual(restored.fieldConvention,wvt.fieldConvention)
@@ -160,7 +161,14 @@ classdef TestFreeSurfacePhysicalContract < matlab.unittest.TestCase
             testCase.verifyEqual(restored.reconstructFields(names),wvt.reconstructFields(names))
             testCase.verifyEqual(restored.nonlinearEnergy().totalEnergy,wvt.nonlinearEnergy().totalEnergy,RelTol=2e-13)
             testCase.verifyEqual(restored.p,wvt.p)
+            legacyState = rmfield(wvt.scientificState(),'waveNormalization');
+            testCase.verifyError(@()WVTransformFreeSurfaceBoussinesq(legacyState),'WVTransformFreeSurfaceBoussinesq:UnsupportedWaveNormalization')
             legacy = NetCDFFile(path,shouldReadOnly=false);
+            legacy.addAttribute('waveNormalization','kConstant');
+            legacy.close();
+            testCase.verifyError(@()WVTransform.waveVortexTransformFromFile(path),'WVTransformFreeSurfaceBoussinesq:UnsupportedWaveNormalization')
+            legacy = NetCDFFile(path,shouldReadOnly=false);
+            legacy.addAttribute('waveNormalization','waveEnergy');
             legacy.addAttribute('fieldConvention','physical-velocity-full-c1');
             legacy.close();
             testCase.verifyError(@()WVTransform.waveVortexTransformFromFile(path),'WVTransform:UnsupportedFieldConvention')

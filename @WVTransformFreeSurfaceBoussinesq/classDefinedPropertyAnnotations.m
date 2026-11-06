@@ -6,6 +6,7 @@ function annotations = classDefinedPropertyAnnotations()
 annotations = WVGeometryDoublyPeriodicStratified.propertyAnnotationsForGeometry();
 annotations = cat(2,annotations,WVTransform.propertyAnnotationsForTransform());
 annotations(end+1) = CAPropertyAnnotation('fieldConvention','physical field and parcel thermodynamic convention');
+annotations(end+1) = CAPropertyAnnotation('waveNormalization','wave and inertial profile normalization');
 for name = ["waveMode","inertialMode","apvMode","mdaMode","activeEndpoint","klNonzero","khUnique"]
     annotations(end+1) = CADimensionProperty(char(name),'1',char(name));
 end

@@ -20,7 +20,7 @@ nModes=64;
 nQuadrature=2*referenceNEVP+1;
 N2=@(z) 1e-4*exp(2*z/700);
 surface=IMBoundaryCondition(a=0,b=1,c=1,d=0);
-solveOptions={"N2",N2,"zDomain",[-1000 0],"rotationRate",7.2921e-5,"latitude",30,"g",9.81,"surfaceBoundary",surface,"nModes",nModes,"nInertialModes",nModes};
+solveOptions={"N2",N2,"zDomain",[-1000 0],"rotationRate",7.2921e-5,"latitude",30,"g",9.81,"surfaceBoundary",surface,"nModes",nModes};
 requestedKappa=[0 positiveKappa];
 candidate=IMSolverSpectral(nEVP=candidateNEVP,coordinateKind="wkb").solveWaveModesAtWavenumbers(requestedKappa,solveOptions{:});
 reference=IMSolverSpectral(nEVP=referenceNEVP,coordinateKind="wkb").solveWaveModesAtWavenumbers(requestedKappa,solveOptions{:});
@@ -88,9 +88,8 @@ WVInternal.prepareWaveModeConvergenceBatches(candidate,reference,z,kappa,@consum
 end
 
 function prepared=scalarPreparation(basis,z,kappa,nEVP,nQuadrature)
-factors=basis.normalizationFactors(basis.normalization);
-dG=basis.solver.evaluatePhysicalDerivative(basis.nativeModes,z,1)./factors;
-dF=basis.solver.evaluatePhysicalDerivative(basis.nativeModes,z,2)./factors.*basis.h(:).';
+dF=basis.Fz(z);
+dG=basis.Gz(z);
 identity=struct(family=string(basis.evp.modeFamily),columnLabels=string(basis.modeNumber),normalization=string(basis.normalization),zDomain=basis.zDomain,kappa=kappa);
 provenance=struct(solverClass="IMSolverSpectral",coordinateKind="wkb",nEVP=nEVP,quadratureCount=nQuadrature,source="explicit construction basis");
 prepared=struct(identity=identity,values=struct(F=basis.F(z),G=basis.G(z)),derivatives=struct(F=dF,G=dG),equivalentDepths=basis.h,provenance=provenance);
@@ -103,15 +102,15 @@ end
 function allocation=allocationEstimate(nSamples,nModes,nPages,candidateNEVP,referenceNEVP,pageChunkSize)
 bytesPerDouble=8;
 batchPages=min(pageChunkSize,nPages);
-operatorBytes=3*nSamples*(candidateNEVP+referenceNEVP)*bytesPerDouble;
+operatorBytes=nSamples*max(candidateNEVP,referenceNEVP)*bytesPerDouble;
 preparedFieldBytes=3*4*nSamples*nModes*batchPages*bytesPerDouble;
-currentRawBatchBytes=2*nSamples*nModes*batchPages*bytesPerDouble;
+currentRawBatchBytes=4*nSamples*nModes*batchPages*bytesPerDouble;
 currentNativeBatchBytes=max(candidateNEVP,referenceNEVP)*nModes*batchPages*bytesPerDouble;
-factorBytes=2*nPages*nModes*bytesPerDouble;
+factorBytes=batchPages*nModes*bytesPerDouble;
 estimatedModeledBytes=operatorBytes+preparedFieldBytes+currentRawBatchBytes+currentNativeBatchBytes+factorBytes;
 allocation=struct(kind="modeled array allocation estimate; not measured peak memory or RSS",bytesPerDouble=bytesPerDouble,operatorBytes=operatorBytes, ...
     preparedFieldBytes=preparedFieldBytes,currentRawBatchBytes=currentRawBatchBytes,currentNativeBatchBytes=currentNativeBatchBytes, ...
     factorBytes=factorBytes,estimatedModeledBytes=estimatedModeledBytes,estimatedModeledMiB=estimatedModeledBytes/1024^2, ...
-    scope="Call-local value/first/second operators for both resolutions, up to three four-field page-batch outputs across MATLAB assignment RHS evaluation, up to two sampled raw batches across raw reassignment, one current native batch and all per-basis factors.", ...
+    scope="One current collection evaluation operator, up to three four-field page-batch outputs across MATLAB assignment RHS evaluation, one four-field sampled group, one current native batch and normalization factors for that group.", ...
     exclusions="Existing basis/native-mode storage, convergence reports, MATLAB object/cell bookkeeping, allocator overhead, BLAS workspace and short-lived elementwise expression temporaries.");
 end

@@ -15,7 +15,7 @@ end
 arguments (Output)
     state (1,1) struct
 end
-state = struct();
+state = struct(waveNormalization=self.waveNormalization);
 for name = string(self.scientificPropertyNames()), state.(name) = self.(name); end
 for name = string(self.geometryStateNames())
     switch name

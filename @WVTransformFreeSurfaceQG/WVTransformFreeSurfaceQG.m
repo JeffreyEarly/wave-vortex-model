@@ -320,8 +320,9 @@ classdef WVTransformFreeSurfaceQG < WVGeometryDoublyPeriodicStratified & WVTrans
             % - Declaration: wvt = WVTransformFreeSurfaceQG(Lxyz,Nxyz,options)
             % - Parameter Lxyz: domain lengths `[Lx Ly Lz]` in meters
             % - Parameter Nxyz: grid counts `[Nx Ny Nz]`
-            % - Parameter options.N2Function: squared buoyancy-frequency function
+            % - Parameter options.N2Function: squared buoyancy-frequency function; supply one of N2Function and rhoFunction
             % - Parameter options.rhoFunction: no-motion density function
+            % - Parameter options.rho0: surface density, inferred from rhoFunction or defaulting to 1025 for N2Function
             % - Parameter options.g0: surface acceleration; default negative stratification integral
             % - Parameter options.gd: bottom acceleration; default positive stratification integral
             % - Parameter options.latitude: latitude in degrees; default 24
@@ -342,7 +343,7 @@ classdef WVTransformFreeSurfaceQG < WVGeometryDoublyPeriodicStratified & WVTrans
                 options.shouldAntialias (1,1) logical = true
                 options.N2Function function_handle = @isempty
                 options.rhoFunction function_handle = @isempty
-                options.rho0 (1,1) double {mustBePositive} = 1025
+                options.rho0 (1,1) double {mustBePositive}
                 options.planetaryRadius (1,1) double {mustBePositive} = 6.371e6
                 options.rotationRate (1,1) double {mustBePositive} = 7.2921e-5
                 options.latitude (1,1) double {mustBeSupportedLatitude} = 24
@@ -428,6 +429,9 @@ classdef WVTransformFreeSurfaceQG < WVGeometryDoublyPeriodicStratified & WVTrans
             assessment=struct();
             if isDirect
                 state = options;
+                if ~isfield(state,"rho0")
+                    state.rho0 = 1025;
+                end
                 if state.activeEndpointCount > 0
                     requiredZeroNames = setdiff(WVTransformFreeSurfaceQG.optionalZeroAPVPropertyNames(),{'Ag_0'});
                     if ~all(isfield(state,requiredZeroNames))
@@ -451,11 +455,12 @@ classdef WVTransformFreeSurfaceQG < WVGeometryDoublyPeriodicStratified & WVTrans
                     state.zeroAPVGramRelativeSeparation = zeros(0,1);
                 end
             else
-                [state,assessment] = WVInternal.buildFreeSurfaceBalancedState(Lxyz,Nxyz,options);
+                inputs = WVInternal.resolveFreeSurfaceInputs(Lxyz(3),options);
+                [state,assessment] = WVInternal.buildFreeSurfaceBalancedState(Lxyz,Nxyz,inputs,options);
             end
             state.quadraticDealiasing=string(state.quadraticDealiasing);
 
-            geometryOptions = struct(shouldAntialias=options.shouldAntialias,z=state.z,j=state.apvModeNumber,Nj=length(state.apvMode),N2Function=state.N2Function,rhoFunction=state.rhoFunction,rho0=options.rho0,planetaryRadius=options.planetaryRadius,rotationRate=options.rotationRate,latitude=options.latitude,g=options.g,dLnN2=state.dLnN2,PF0inv=state.PF0inv,QG0inv=state.QG0inv,PF0=state.PF0,QG0=state.QG0,P0=state.P0,Q0=state.Q0,h_0=state.h_0,z_int=state.z_int);
+            geometryOptions = struct(shouldAntialias=options.shouldAntialias,z=state.z,j=state.apvModeNumber,Nj=length(state.apvMode),N2Function=state.N2Function,rhoFunction=state.rhoFunction,rho0=state.rho0,planetaryRadius=options.planetaryRadius,rotationRate=state.rotationRate,latitude=state.latitude,g=state.g,dLnN2=state.dLnN2,PF0inv=state.PF0inv,QG0inv=state.QG0inv,PF0=state.PF0,QG0=state.QG0,P0=state.P0,Q0=state.Q0,h_0=state.h_0,z_int=state.z_int);
             geometryArguments = namedargs2cell(geometryOptions);
             self@WVGeometryDoublyPeriodicStratified(Lxyz,Nxyz,geometryArguments{:});
             self@WVTransform(WVForcingType(["QGSpatial" "QGSpectral"]));

@@ -73,5 +73,5 @@ end
 function bases = realBasisCollection()
 solver = IMSolverSpectral(nEVP=16,coordinateKind="wkb");
 bases = solver.solveWaveModesAtWavenumbers([0 1e-4],N2=@(z)1e-4*ones(size(z)),zDomain=[-1000 0],rotationRate=7.2921e-5,latitude=asind(1e-4/(2*7.2921e-5)),g=9.81, ...
-    surfaceBoundary=IMBoundaryCondition(a=0,b=1,c=1,d=0),nModes=1,nInertialModes=1);
+    surfaceBoundary=IMBoundaryCondition(a=0,b=1,c=1,d=0),nModes=[1 1]);
 end

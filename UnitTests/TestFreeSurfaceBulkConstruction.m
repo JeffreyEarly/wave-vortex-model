@@ -66,20 +66,23 @@ function state = independentlySolvedState(wvt)
 % Solve each distinct pencil separately to check shared preparation/evaluation.
 state = wvt.scientificState();
 solver = IMSolverSpectral(nEVP=wvt.nEVP,coordinateKind="wkb");
+background = IMBackground(N2=wvt.N2Function,rho0=wvt.rho0,zDomain=[-wvt.Lz 0], ...
+    rotationRate=wvt.rotationRate,latitude=wvt.latitude,g=wvt.g,surfaceCondition="freeSurface");
 for p = 0:numel(wvt.khUnique)
     if p == 0, kh = 0; count = numel(wvt.inertialMode); else, kh = wvt.khUnique(p); count = numel(wvt.waveMode); end
-    evp = IMInternalModes.waveModesAtWavenumber(N2=wvt.N2Function,zDomain=[-wvt.Lz 0],k=kh,rotationRate=wvt.rotationRate,latitude=wvt.latitude,g=wvt.g,surfaceBoundary=IMBoundaryCondition(a=0,b=1,c=1,d=0));
-    basis = solver.solveEVP(evp,nModes=count);
+    evp = IMInternalModes.waveModesAtWavenumber(background,k=kh);
+    basis = solver.solveEVP(evp,nModes=count,normalization="waveEnergy");
     F = basis.F(wvt.z); G = basis.G(wvt.z); h = basis.h(:);
     if p == 0
         state.inertialF = F;
-        state.inertialFForward = (F'.*wvt.verticalQuadratureWeights.')./h;
+        state.inertialFForward = (F'.*wvt.verticalQuadratureWeights.')/wvt.Lz;
         state.inertialEquivalentDepth = h;
         state.inertialModeNumber = basis.modeNumber(:);
         state.inertialGramError = norm(state.inertialFForward*F-eye(count),2);
     else
         forward = G'.*(wvt.verticalQuadratureWeights.*((wvt.N2Function(wvt.z)-wvt.f^2)/wvt.g)).';
         forward(:,end) = forward(:,end)+G(end,:).';
+        forward = (wvt.Lz./h).*forward;
         state.waveF(:,:,p) = F; state.waveG(:,:,p) = G;
         state.waveGForward(:,:,p) = forward; state.waveEquivalentDepth(:,p) = h;
         state.waveFrequency(:,p) = sqrt(wvt.f^2+wvt.g*h*kh^2);

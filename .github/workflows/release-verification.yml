@@ -14,12 +14,12 @@ concurrency:
   cancel-in-progress: true
 
 env:
-  OCEANKIT_COMMIT: 0f2dae987eb777dd54a15f9b910ddb7f221b5852
+  OCEANKIT_COMMIT: a8e0bb783de1e7dc5de82a71464db6f5052894f8
 
 jobs:
   clean-install:
     name: Clean install / MATLAB R2025b
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     timeout-minutes: 45
     steps:
       - name: Check out WaveVortexModel
@@ -63,7 +63,7 @@ jobs:
 
   exported-package:
     name: Exported package / MATLAB R2025b
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     timeout-minutes: 45
     steps:
       - name: Install portable-runtime build dependencies

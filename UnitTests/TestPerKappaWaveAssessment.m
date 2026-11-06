@@ -186,8 +186,10 @@ end
 function [state,bases] = assessmentFixture(w,counts)
 state = w.scientificState();
 state.waveModeCountByKh = counts;
-options = struct(rotationRate=w.rotationRate,latitude=w.latitude,g=w.g,nEVP=w.nEVP,inertialModeCount=numel(w.inertialMode));
-[state,bases] = WVInternal.buildFreeSurfaceWaveState(state,options);
+options = struct(nEVP=w.nEVP,inertialModeCount=numel(w.inertialMode));
+background = IMBackground(N2=w.N2Function,zDomain=[-w.Lz 0],rotationRate=w.rotationRate,latitude=w.latitude,g=w.g, ...
+    rho0=w.rho0,surfaceCondition="freeSurface");
+[state,bases] = WVInternal.buildFreeSurfaceWaveState(state,options,background);
 end
 
 function report = independentPageReport(candidate,reference,kappa,nEVP,referenceNEVP)
@@ -197,9 +199,8 @@ rule = IMSolverSpectral(nEVP=nQuadrature,coordinateKind="wkb").configuredForEVP(
 report = assessModeConvergence(prepare(candidate,nEVP),prepare(reference,referenceNEVP),z,weights);
 
     function value = prepare(basis,basisNEVP)
-        factors = basis.normalizationFactors(basis.normalization);
-        dG = basis.solver.evaluatePhysicalDerivative(basis.nativeModes,z,1)./factors;
-        dF = basis.solver.evaluatePhysicalDerivative(basis.nativeModes,z,2)./factors.*basis.h(:).';
+        dF = basis.Fz(z);
+        dG = basis.Gz(z);
         identity = struct(family=string(basis.evp.modeFamily),columnLabels=string(basis.modeNumber),normalization=string(basis.normalization),zDomain=basis.zDomain,kappa=kappa);
         provenance = struct(solverClass="IMSolverSpectral",coordinateKind="wkb",nEVP=basisNEVP,quadratureCount=nQuadrature,source="explicit construction basis");
         value = struct(identity=identity,values=struct(F=basis.F(z),G=basis.G(z)),derivatives=struct(F=dF,G=dG),equivalentDepths=basis.h,provenance=provenance);

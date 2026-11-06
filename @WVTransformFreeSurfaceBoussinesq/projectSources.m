@@ -11,7 +11,7 @@ function tendency = projectSources(self,sources)
 % loading may be supplied through its horizontal acceleration.
 %
 % Wave projection uses the continuous generalized-energy dual directly:
-% integral(conj(U)*Su+conj(V)*Sv+conj(W)*Sw+N2*conj(Eta)*Seta)/(2*h).
+% integral(conj(U)*Su+conj(V)*Sv+conj(W)*Sw+N2*conj(Eta)*Seta)/(2*D).
 % The wave endpoint density anomalies vanish. This form avoids subtracting
 % an incomplete retained balanced expansion in the equivalent G formula.
 % APV and zero-APV source pairings preserve the existing signed balanced
@@ -45,6 +45,7 @@ tendency.Ag_0 = complex(zeros(length(self.activeEndpoint),length(indices)));
 tendency.Aw_p = complex(zeros(length(self.waveMode),length(indices)));
 tendency.Aw_m = tendency.Aw_p;
 weights = self.verticalQuadratureWeights;
+D = self.Lz;
 for p = 1:length(self.khUnique)
     columns = find(self.klNonzeroKhUniqueIndex==p);
     tendency.Ag_0(:,columns) = self.zeroAPVSourceSolve(:,:,p)*(self.zeroAPVFPairing(:,:,p)*curl(:,columns)-(self.f/self.Lz)*self.zeroAPVGPairing(:,:,p)*spectral.eta(:,indices(columns)));
@@ -60,12 +61,12 @@ for p = 1:length(self.khUnique)
     W = G'*(weights.*spectral.w(:,indices(columns)));
     E = G'*((weights.*self.N2).*spectral.eta(:,indices(columns)));
     k = self.kNonzero(columns).'; l = self.lNonzero(columns).';
-    kh = self.khUnique(p); h = self.waveEquivalentDepth(modes,p);
+    kh = self.khUnique(p);
     omega = self.waveFrequency(modes,p);
-    common = (k.*U+l.*V)/kh+1i*kh*h.*W;
-    signed = (1i*self.f./(omega*kh)).*(l.*U-k.*V)-(kh*h./omega).*E;
-    tendency.Aw_p(modes,columns) = ((common+signed)./(2*h))./phase;
-    tendency.Aw_m(modes,columns) = ((common-signed)./(2*h)).*phase;
+    common = (k.*U+l.*V)/kh+1i*kh*D.*W;
+    signed = (1i*self.f./(omega*kh)).*(l.*U-k.*V)-(kh*D./omega).*E;
+    tendency.Aw_p(modes,columns) = ((common+signed)./(2*D))./phase;
+    tendency.Aw_m(modes,columns) = ((common-signed)./(2*D)).*phase;
 end
 meanIndex = find(self.k==0 & self.l==0,1);
 tendency.Aio = .5*exp(-1i*self.f*(self.t-self.t0))*self.inertialFForward*(spectral.u(:,meanIndex)-1i*spectral.v(:,meanIndex));

@@ -1,5 +1,6 @@
 function report=runGramPrefixStudy(scientificResultPath,outputJSON,options)
 % Compare independent and reused-identity Gram-prefix norms on saved construction data.
+% Use WVM revision 2c3c2165 with the released InternalModes beta.6 snapshot.
 arguments (Input)
     scientificResultPath (1,1) string
     outputJSON (1,1) string
@@ -288,6 +289,9 @@ for root=packageRoots
 end
 if ~startsWith(string(which('WVInternal.buildFreeSurfaceWaveState')),wvmRoot+filesep)
     error('WVStudy:WrongWVMResolution','The study resolved WVInternal from a different WVM checkout.')
+end
+if nargin('WVInternal.buildFreeSurfaceWaveState')~=2
+    error('WVStudy:WrongWVMRevision','Supply wvmRoot at WVM revision 2c3c2165 to reproduce the beta.6 wave normalization and saved Gram assessment.')
 end
 if ~startsWith(string(which('IMSolverSpectral')),internalModesRoot+filesep)
     error('WVStudy:WrongInternalModesResolution','The study resolved InternalModes from a different checkout.')

@@ -85,12 +85,12 @@ evidence=struct(crossingOrder=options.crossingOrder,snapshot=w,grid=Nxyz,z=z,sou
             modes=1:count; F=M*w.waveF(:,modes,p); G=M*w.waveG(:,modes,p);
             U=F'*(q.*s.u(:,columns(c))); V=F'*(q.*s.v(:,columns(c)));
             W=G'*(q.*s.w(:,columns(c))); E=G'*((q.*N2).*s.eta(:,columns(c)));
-            k=w.kNonzero(c).'; l=w.lNonzero(c).'; kh=w.khUnique(p); depth=w.waveEquivalentDepth(modes,p); omega=w.waveFrequency(modes,p);
-            common=(k.*U+l.*V)/kh+1i*kh*depth.*W;
-            signed=(1i*w.f./(omega*kh)).*(l.*U-k.*V)-(kh*depth./omega).*E;
+            k=w.kNonzero(c).'; l=w.lNonzero(c).'; kh=w.khUnique(p); omega=w.waveFrequency(modes,p);
+            common=(k.*U+l.*V)/kh+1i*kh*w.Lz*W;
+            signed=(1i*w.f./(omega*kh)).*(l.*U-k.*V)-(kh*w.Lz./omega).*E;
             phase=exp(1i*omega*(w.t-w.t0));
-            tendency.Aw_p(modes,c)=((common+signed)./(2*depth))./phase;
-            tendency.Aw_m(modes,c)=((common-signed)./(2*depth)).*phase;
+            tendency.Aw_p(modes,c)=((common+signed)/(2*w.Lz))./phase;
+            tendency.Aw_m(modes,c)=((common-signed)/(2*w.Lz)).*phase;
         end
         meanIndex=find(w.k==0 & w.l==0,1);
         tendency.Aio=.5*exp(-1i*w.f*(w.t-w.t0))*pairing(prepared.pairings.inertial)*(s.u(:,meanIndex)-1i*s.v(:,meanIndex));

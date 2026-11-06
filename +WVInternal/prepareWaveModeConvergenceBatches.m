@@ -28,12 +28,10 @@ if any(candidatePages>numel(candidate.basisIndex)) || any(referencePages>numel(r
 end
 validateKappa(candidate,candidatePages,kappa,"candidate");
 validateKappa(reference,referencePages,kappa,"reference");
-candidatePlan=preparePlan(candidate,candidatePages,z,options.candidateNEVP);
-referencePlan=preparePlan(reference,referencePages,z,options.referenceNEVP);
 for firstPage=1:options.pageChunkSize:numel(kappa)
     positions=firstPage:min(numel(kappa),firstPage+options.pageChunkSize-1);
-    candidateChunk=prepareChunk(candidate,candidatePlan,candidatePages(positions),z,kappa(positions),options.candidateNEVP,options.nQuadrature);
-    referenceChunk=prepareChunk(reference,referencePlan,referencePages(positions),z,kappa(positions),options.referenceNEVP,options.nQuadrature);
+    candidateChunk=prepareChunk(candidate,candidatePages(positions),z,kappa(positions),options.candidateNEVP,options.nQuadrature);
+    referenceChunk=prepareChunk(reference,referencePages(positions),z,kappa(positions),options.referenceNEVP,options.nQuadrature);
     consumer(candidateChunk,referenceChunk,positions,candidatePages(positions),referencePages(positions));
 end
 end
@@ -44,107 +42,33 @@ if ~isempty(collection.kappa) && any(collection.kappa(pages)~=kappa)
 end
 end
 
-function plan=preparePlan(collection,pages,z,nEVP)
-indices=unique(collection.basisIndex(pages),"stable");
-plan.factors=cell(size(collection.bases));
-plan.basisGroup=zeros(size(collection.bases));
-plan.groups={};
-for iBasis=indices
-    basis=collection.bases{iBasis};
-    plan.factors{iBasis}=basis.normalizationFactors(basis.normalization);
-    sourcePages=unique(collection.sourcePage(pages(collection.basisIndex(pages)==iBasis)));
-    if ~isFastWaveBasis(basis,sourcePages,nEVP), continue; end
-    nPolynomials=size(basis.nativeModes,1);
-    iGroup=find(cellfun(@(group) group.nPolynomials==nPolynomials && isequal(group.solver,basis.solver),plan.groups),1);
-    if isempty(iGroup)
-        % Public solver evaluation on identity columns exposes reusable
-        % physical operators without duplicating coordinate-map formulas.
-        identity=eye(nPolynomials);
-        operators=struct(value=basis.solver.evaluateNativeModes(identity,z), ...
-            first=basis.solver.evaluatePhysicalDerivative(identity,z,1), ...
-            second=basis.solver.evaluatePhysicalDerivative(identity,z,2));
-        plan.groups{end+1}=struct(solver=basis.solver,nPolynomials=nPolynomials,operators=operators);
-        iGroup=numel(plan.groups);
-    end
-    plan.basisGroup(iBasis)=iGroup;
-end
-end
-
-function tf=isFastWaveBasis(basis,sourcePages,nEVP)
-% Exact classes preserve custom subclass evaluation and recovery dispatch.
-tf=string(class(basis))=="IMInternalModesBasis" && string(class(basis.solver))=="IMSolverSpectral" && ...
-    string(class(basis.evp))=="IMInternalModes" && basis.evp.formulation=="G" && basis.evp.name=="waveModesAtWavenumber" && ...
-    basis.solver.coordinateKind=="wkb" && basis.solver.nEVP==nEVP && isequal(sourcePages,1);
-end
-
-function prepared=prepareChunk(collection,plan,pages,z,kappa,nEVP,nQuadrature)
+function prepared=prepareChunk(collection,pages,z,kappa,nEVP,nQuadrature)
 prepared=cell(1,numel(pages));
-storedIndices=unique(collection.basisIndex(pages),"stable");
-for iGroup=unique(plan.basisGroup(storedIndices))
-    if iGroup==0, continue; end
-    members=storedIndices(plan.basisGroup(storedIndices)==iGroup);
-    memberCounts=arrayfun(@(iBasis) size(collection.bases{iBasis}.nativeModes,2),members);
-    native=cell(1,numel(members));
-    for iMember=1:numel(members)
-        native{iMember}=collection.bases{members(iMember)}.nativeModes;
+columnCounts=zeros(size(pages));
+for iPage=1:numel(pages)
+    basis=collection.bases{collection.basisIndex(pages(iPage))};
+    value=basePreparation(basis,kappa(iPage),nEVP,nQuadrature);
+    if string(class(basis))=="IMInternalModesBasis"
+        columnCounts(iPage)=numel(basis.modeNumber);
+    else
+        % Preserve overridden evaluators for custom basis classes.
+        value.values=struct(F=basis.F(z),G=basis.G(z));
+        value.derivatives=struct(F=basis.Fz(z),G=basis.Gz(z));
     end
-    native=cat(2,native{:});
-    firstColumn=[1 cumsum(memberCounts(1:end-1))+1];
-    lastColumn=cumsum(memberCounts);
-    raw=plan.groups{iGroup}.operators.value*native;
-    for iMember=1:numel(members)
-        iBasis=members(iMember);
-        columns=firstColumn(iMember):lastColumn(iMember);
-        basis=collection.bases{iBasis};
-        factors=plan.factors{iBasis};
-        value=basePreparation(basis,kappa(find(collection.basisIndex(pages)==iBasis,1)),nEVP,nQuadrature);
-        value.values.G=raw(:,columns)./factors;
-        selected=collection.basisIndex(pages)==iBasis;
-        prepared(selected)=repmat({value},1,nnz(selected));
-    end
-    raw=plan.groups{iGroup}.operators.first*native;
-    for iMember=1:numel(members)
-        iBasis=members(iMember);
-        columns=firstColumn(iMember):lastColumn(iMember);
-        basis=collection.bases{iBasis};
-        factors=plan.factors{iBasis};
-        context=basis.evp.contextForSolver(basis.solver);
-        value=prepared{find(collection.basisIndex(pages)==iBasis,1)};
-        % Recover raw F through the EVP before normalization. The same raw
-        % first derivative supplies normalized dG.
-        value.values.F=basis.evp.FfromGz(z,raw(:,columns),basis.h,context)./factors;
-        value.derivatives.G=raw(:,columns)./factors;
-        selected=collection.basisIndex(pages)==iBasis;
-        prepared(selected)=repmat({value},1,nnz(selected));
-    end
-    raw=plan.groups{iGroup}.operators.second*native;
-    for iMember=1:numel(members)
-        iBasis=members(iMember);
-        columns=firstColumn(iMember):lastColumn(iMember);
-        basis=collection.bases{iBasis};
-        value=prepared{find(collection.basisIndex(pages)==iBasis,1)};
-        value.derivatives.F=raw(:,columns)./plan.factors{iBasis}.*basis.h(:).';
-        selected=collection.basisIndex(pages)==iBasis;
-        prepared(selected)=repmat({value},1,nnz(selected));
+    prepared{iPage}=value;
+end
+for count=unique(columnCounts(columnCounts>0))
+    positions=find(columnCounts==count);
+    selectedPages=pages(positions);
+    F=collection.evaluate(z,variable="F",pages=selectedPages);
+    G=collection.evaluate(z,variable="G",pages=selectedPages);
+    Fz=collection.evaluate(z,variable="F",derivativeOrder=1,pages=selectedPages);
+    Gz=collection.evaluate(z,variable="G",derivativeOrder=1,pages=selectedPages);
+    for iPage=1:numel(positions)
+        prepared{positions(iPage)}.values=struct(F=F(:,:,iPage),G=G(:,:,iPage));
+        prepared{positions(iPage)}.derivatives=struct(F=Fz(:,:,iPage),G=Gz(:,:,iPage));
     end
 end
-for position=find(plan.basisGroup(collection.basisIndex(pages))==0)
-    iBasis=collection.basisIndex(pages(position));
-    prepared{position}=prepareScalar(collection.bases{iBasis},plan.factors{iBasis},z,kappa(position),nEVP,nQuadrature);
-end
-end
-
-function prepared=prepareScalar(basis,factors,z,kappa,nEVP,nQuadrature)
-dG=basis.solver.evaluatePhysicalDerivative(basis.nativeModes,z,1)./factors;
-dF=basis.solver.evaluatePhysicalDerivative(basis.nativeModes,z,2)./factors.*basis.h(:).';
-prepared=basePreparation(basis,kappa,nEVP,nQuadrature);
-% Subclasses must retain their overridden F/G methods in the scalar path.
-if string(class(basis))=="IMInternalModesBasis"
-    prepared.values=struct(F=basis.rawVariable("F",z)./factors,G=basis.rawVariable("G",z)./factors);
-else
-    prepared.values=struct(F=basis.F(z),G=basis.G(z));
-end
-prepared.derivatives=struct(F=dF,G=dG);
 end
 
 function prepared=basePreparation(basis,kappa,nEVP,nQuadrature)

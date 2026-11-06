@@ -1,23 +1,22 @@
-function [state,assessment,vertical] = buildFreeSurfaceBalancedState(Lxyz,Nxyz,options)
+function [state,assessment,vertical] = buildFreeSurfaceBalancedState(Lxyz,Nxyz,inputs,options)
 % Build stored balanced operators shared by free-surface QG and Boussinesq.
 arguments
     Lxyz (1,3) double
     Nxyz (1,3) double
+    inputs (1,1) struct
     options struct
 end
 
-Lz = Lxyz(3);
 if ~isempty(options.z)
     error('WVTransformFreeSurfaceQG:CustomVerticalGridUnavailable', ...
         'Scientific construction uses the WKB-stretched Chebyshev-Lobatto rule determined by Nz. Restore custom points only through complete persisted-state construction.');
 end
-inputs = WVInternal.resolveFreeSurfaceInputs(Lz,options);
-N2Function = inputs.N2Function;
-rhoFunction = inputs.rhoFunction;
+background = inputs.background;
+Lz = background.D;
 g0 = inputs.g0;
 gd = inputs.gd;
-f0 = inputs.f0;
-zDomain = inputs.zDomain;
+f0 = background.f0;
+g = background.g;
 
 horizontalGeometry = WVGeometryDoublyPeriodic(Lxyz(1:2),Nxyz(1:2),shouldAntialias=options.shouldAntialias,Nz=Nxyz(3),shouldExcludeNyquist=true,shouldExcludeConjugates=true,conjugateDimension=2);
 kh = hypot(horizontalGeometry.k,horizontalGeometry.l);
@@ -30,7 +29,7 @@ khNonzero = kh(klNonzero);
 verticalOptions = options;
 verticalOptions.g0 = g0;
 verticalOptions.gd = gd;
-vertical = WVInternal.buildFreeSurfaceBalancedModes(Lz,Nxyz(3),N2Function,verticalOptions);
+vertical = WVInternal.buildFreeSurfaceBalancedModes(background,Nxyz(3),verticalOptions);
 z = vertical.z;
 verticalQuadratureWeights = vertical.weights;
 verticalDerivativeMatrix = vertical.Dz;
@@ -52,7 +51,7 @@ mdaF = mdaTransform.inverseMatrix(variable="F");
 mdaG = mdaTransform.inverseMatrix(variable="G");
 mdaGForward = mdaTransform.forwardMatrix(variable="G");
 
-frequencyTerm = (f0^2/options.g)./reshape(apvTransform.h,[],1);
+frequencyTerm = (f0^2/g)./reshape(apvTransform.h,[],1);
 apvMu = frequencyTerm+reshape(khUnique,1,[]).^2;
 relativeMuSeparation = abs(apvMu)./(abs(frequencyTerm)+reshape(khUnique,1,[]).^2);
 if any(~isfinite(apvMu),'all') || any(relativeMuSeparation <= options.muTolerance,'all')
@@ -66,7 +65,7 @@ sourceEndpoint = activeEndpoint;
 nKh = length(khUnique);
 if activeEndpointCount > 0
     endpointNames = ["surface","bottom"];
-    zeroProblem = IMGeostrophicZeroAPVModes.atWavenumber(N2=N2Function,zDomain=zDomain,rotationRate=options.rotationRate,latitude=options.latitude,g=options.g,k=khUnique,endpoints=endpointNames(activeMask),surfaceBoundary="freeSurface");
+    zeroProblem = IMGeostrophicZeroAPVModes.atWavenumber(background,khUnique,endpoints=endpointNames(activeMask));
     zeroModes = solver.solveGeostrophicZeroAPVModes(zeroProblem);
     geostrophicTransform = IMGeostrophicTransform(apvTransform=apvTransform,zeroAPVModes=zeroModes, ...
         g0=g0,gd=gd,muTolerance=options.muTolerance);
@@ -81,7 +80,7 @@ if activeEndpointCount > 0
     zeroAPVFPairing = zeros(activeEndpointCount,length(z),nKh);
     zeroAPVGPairing = zeros(activeEndpointCount,length(z),nKh);
     FWeights = reshape(apvTransform.weights/apvTransform.depth,1,[]);
-    GWeights = reshape(apvTransform.weights.*apvTransform.N2Values/options.g,1,[]);
+    GWeights = reshape(apvTransform.weights.*apvTransform.N2Values/g,1,[]);
     surfaceIndex = find(abs(z) <= sqrt(eps)*max(1,Lz),1);
     bottomIndex = find(abs(z+Lz) <= sqrt(eps)*max(1,Lz),1);
     for iKh = 1:nKh
@@ -89,10 +88,10 @@ if activeEndpointCount > 0
         zeroAPVGPairing(:,:,iKh) = zeroAPVG(:,:,iKh).'.*GWeights;
         if isfinite(g0) && g0 ~= 0
             surfaceResponse = zeroGEndpoints(1,:,iKh)-zeroFEndpoints(1,:,iKh);
-            zeroAPVGPairing(:,surfaceIndex,iKh) = zeroAPVGPairing(:,surfaceIndex,iKh)+(g0/options.g)*surfaceResponse.';
+            zeroAPVGPairing(:,surfaceIndex,iKh) = zeroAPVGPairing(:,surfaceIndex,iKh)+(g0/g)*surfaceResponse.';
         end
         if isfinite(gd) && gd ~= 0
-            zeroAPVGPairing(:,bottomIndex,iKh) = zeroAPVGPairing(:,bottomIndex,iKh)+(gd/options.g)*zeroGEndpoints(2,:,iKh).';
+            zeroAPVGPairing(:,bottomIndex,iKh) = zeroAPVGPairing(:,bottomIndex,iKh)+(gd/g)*zeroGEndpoints(2,:,iKh).';
         end
     end
 
@@ -136,8 +135,12 @@ mdaDiagnostics = mdaTransform.channelDiagnostics(variable="G");
 
 state = struct();
 state.balancedNEVP = nEVP;
-state.N2Function = N2Function;
-state.rhoFunction = rhoFunction;
+state.N2Function = background.N2;
+state.rhoFunction = background.rho;
+state.rho0 = background.rho0;
+state.rotationRate = background.rotationRate;
+state.latitude = background.latitude;
+state.g = g;
 state.z = z;
 state.dLnN2 = gradient(log(N2Values),z);
 state.PF0inv = apvF;

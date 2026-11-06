@@ -1,25 +1,26 @@
-function vertical = buildFreeSurfaceBalancedModes(Lz,Nz,N2Function,options)
+function vertical = buildFreeSurfaceBalancedModes(background,Nz,options)
 % Build APV and MDA transforms on one fixed WKB quadrature rule.
 arguments
-    Lz (1,1) double {mustBePositive}
+    background (1,1) IMBackground
     Nz (1,1) double {mustBeInteger,mustBeGreaterThanOrEqual(Nz,4)}
-    N2Function function_handle
     options struct
 end
 
-zDomain = [-Lz 0];
+zDomain = background.zDomain;
+Lz = background.D;
+N2Function = background.N2;
 nSolve = Nz+4;
 nEVP = max(96,3*nSolve);
 if isfield(options,"balancedNEVP"), nEVP=options.balancedNEVP; end
 solver = IMSolverSpectral(nEVP=nEVP);
-apvProblem = IMInternalModes.geostrophicAPVModes(N2=N2Function,zDomain=zDomain,g=options.g,g0=options.g0,gd=options.gd,surfaceBoundary="freeSurface");
-mdaProblem = IMInternalModes.meanDensityAnomalyModes(N2=N2Function,zDomain=zDomain,g=options.g,g0=options.g0,gd=options.gd);
+apvProblem = IMInternalModes.geostrophicAPVModes(background,g0=options.g0,gd=options.gd);
+mdaProblem = IMInternalModes.meanDensityAnomalyModes(background,g0=options.g0,gd=options.gd);
 
 gridSolver = IMSolverSpectral(nEVP=Nz,coordinateKind="wkb").configuredForEVP(apvProblem);
 [z,weights,Dz] = gridSolver.nativeDifferentiationRule(zDomain);
 weights = weights*(Lz/sum(weights));
-if length(z) ~= Nz || any(diff(z) <= 0) || abs(z(1)+Lz) > sqrt(eps)*max(1,Lz) || abs(z(end)) > sqrt(eps)*max(1,Lz)
-    error('WVTransformFreeSurfaceQG:InvalidVerticalGrid','The WKB quadrature must contain Nz increasing points spanning exactly [-Lz,0].');
+if length(z) ~= Nz || any(diff(z) <= 0) || any(abs([z(1) z(end)]-zDomain) > sqrt(eps)*max(1,Lz))
+    error('WVTransformFreeSurfaceQG:InvalidVerticalGrid','The WKB quadrature must contain Nz increasing points spanning the vertical domain.');
 end
 if any(~isfinite(weights)) || any(weights <= 0) || abs(sum(weights)-Lz) > 64*eps(max(1,Lz))
     error('WVTransformFreeSurfaceQG:InvalidVerticalQuadrature','The WKB quadrature must have finite positive weights that integrate the exact depth.');
@@ -39,13 +40,13 @@ referenceNEVP=ceil(1.5*nEVP);
 referenceSolver=IMSolverSpectral(nEVP=referenceNEVP);
 apvReference=referenceSolver.solveEVP(apvProblem,nModes=numel(apvTransform.h));
 mdaReference=referenceSolver.solveEVP(mdaProblem,nModes=numel(mdaTransform.h));
-[apvConvergence,apvErrors,apvPrepared]=WVInternal.compareResolvedModes(apvBasis,apvReference,N2Function,2*referenceNEVP+1,numel(apvTransform.h));
-[mdaConvergence,mdaErrors]=WVInternal.compareResolvedModes(mdaBasis,mdaReference,N2Function,2*referenceNEVP+1,numel(mdaTransform.h));
+[apvConvergence,apvErrors,apvPrepared]=WVInternal.compareResolvedModes(apvBasis,apvReference,2*referenceNEVP+1,numel(apvTransform.h));
+[mdaConvergence,mdaErrors]=WVInternal.compareResolvedModes(mdaBasis,mdaReference,2*referenceNEVP+1,numel(mdaTransform.h));
 if any(apvErrors(1:numel(apvTransform.h))>options.modeConvergenceTolerance) || any(mdaErrors(1:numel(mdaTransform.h))>options.modeConvergenceTolerance)
     attempt=1; if isfield(options,'balancedAttempt'), attempt=options.balancedAttempt; end
     if attempt<3
         options.balancedAttempt=attempt+1; options.balancedNEVP=referenceNEVP;
-        vertical=WVInternal.buildFreeSurfaceBalancedModes(Lz,Nz,N2Function,options);
+        vertical=WVInternal.buildFreeSurfaceBalancedModes(background,Nz,options);
         return
     end
     % Automatic linear counts retain the converged leading prefix. Explicit
