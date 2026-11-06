@@ -72,18 +72,19 @@ classdef TestShortSeasonalQG < matlab.unittest.TestCase
             writetable(struct2table(rows),fullfile(folder,'issue-353-restart.csv'));
             mechanismStudy(folder);
         end
-        function verifyRestartWithoutProvider(folder)
-            assert(isempty(which('IMSolverSpectral')));
+        function verifyStoredRestart(folder)
+            assert(~isempty(which('IMLobattoCalculus')),'Add InternalModes 2.0.0-beta.11 or later to restore the stored grid.')
             for day=[32 31]
                 key="restart-"+day; reference=load(fullfile(folder,key+".mat"));
                 model=WVModel.modelFromFile(char(fullfile(folder,key+".nc"))); cleanup=onCleanup(@()model.closeNetCDFFile());
+                assert(isempty(model.wvt.verticalModes));
                 assert(snapshotError(snapshot(model.wvt),reference.checkpoint)<1e-12);
                 model.setupIntegrator(integratorType="exponential",initialStep=2*86400,maximumStep=2*86400,exponentialAdaptive=false);
                 model.integrateToTime(64*86400,shouldShowIntegrationDiagnostics=false);
                 residual=snapshotError(snapshot(model.wvt),reference.final); assert(residual<1e-6);
                 model.closeNetCDFFile(); clear cleanup
                 outputError=compareOutput(fullfile(folder,key+".nc"),fullfile(folder,key+"-control.nc")); assert(outputError<1e-6);
-                fprintf('day %g provider-free state/output %.9g %.9g\n',day,residual,outputError);
+                fprintf('day %g stored-state restart and output errors %.9g %.9g\n',day,residual,outputError);
             end
         end
     end

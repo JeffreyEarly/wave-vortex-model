@@ -27,12 +27,11 @@ if ~isempty(self.physicalMetricOperators_)
     return
 end
 count = max(129,2*self.Nz+1);
-rule = WVInternal.qgVerticalOperators(self.z,count);
-P = rule.phiToQuadrature;
-weights = rule.quadratureWeights;
-z = rule.zQuadrature;
+calculus = self.verticalGrid.calculus;
+[z,weights] = calculus.quadratureRule(count);
+P = calculus.interpolationMatrix(z);
 N2 = P*self.N2;
-N2z = P*(self.verticalDerivativeMatrix*self.N2);
+N2z = P*(calculus.firstDerivativeMatrix()*self.N2);
 if any(N2<=0)
     error('WV:DiagnosticStratification','Spectral reconstruction must preserve positive N2.');
 end

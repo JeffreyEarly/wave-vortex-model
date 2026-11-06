@@ -3,8 +3,8 @@ function [values,relativeError] = freeSurfaceSpatialTransfer(source,target,value
 if ~isequal([source.Lx source.Ly source.Lz],[target.Lx target.Ly target.Lz])
     error('WV:TransferIncompatible','Spatial source transfer requires identical physical domains.')
 end
-P=WVInternal.qgVerticalInterpolation(source.z,target.z);
-back=WVInternal.qgVerticalInterpolation(target.z,source.z);
+P = source.verticalGrid.calculus.interpolationMatrix(target.z);
+back = target.verticalGrid.calculus.interpolationMatrix(source.z);
 S=source.transformFromSpatialDomainWithFourier(values);
 [common,index]=ismember([target.kMode_wv,target.lMode_wv],[source.kMode_wv,source.lMode_wv],'rows');
 T=complex(zeros(target.Nz,target.Nkl)); T(:,common)=P*S(:,index(common));

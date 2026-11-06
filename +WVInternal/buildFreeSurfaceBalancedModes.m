@@ -1,5 +1,5 @@
 function vertical = buildFreeSurfaceBalancedModes(background,Nz,options)
-% Build APV and MDA transforms on one fixed WKB quadrature rule.
+% Build APV and MDA transforms on one fixed provider quadrature rule.
 arguments
     background (1,1) IMBackground
     Nz (1,1) double {mustBeInteger,mustBeGreaterThanOrEqual(Nz,4)}
@@ -16,14 +16,21 @@ solver = IMSolverSpectral(nEVP=nEVP);
 apvProblem = IMInternalModes.geostrophicAPVModes(background,g0=options.g0,gd=options.gd);
 mdaProblem = IMInternalModes.meanDensityAnomalyModes(background,g0=options.g0,gd=options.gd);
 
-gridSolver = IMSolverSpectral(nEVP=Nz,coordinateKind="wkb").configuredForEVP(apvProblem);
-[z,weights,Dz] = gridSolver.nativeDifferentiationRule(zDomain);
-weights = weights*(Lz/sum(weights));
+if isfield(options,"balancedGrid")
+    grid = options.balancedGrid;
+elseif isfield(options,"verticalGridRule") && options.verticalGridRule == "wkb"
+    grid = IMVerticalGrid.wkb(background,Nz);
+else
+    grid = IMVerticalGrid.smoothedBandwidth(background,Nz);
+end
+z = grid.z;
+weights = grid.weights;
+Dz = grid.calculus.firstDerivativeMatrix();
 if length(z) ~= Nz || any(diff(z) <= 0) || any(abs([z(1) z(end)]-zDomain) > sqrt(eps)*max(1,Lz))
-    error('WVTransformFreeSurfaceQG:InvalidVerticalGrid','The WKB quadrature must contain Nz increasing points spanning the vertical domain.');
+    error('WVTransformFreeSurfaceQG:InvalidVerticalGrid','The vertical quadrature must contain Nz increasing points spanning the vertical domain.');
 end
 if any(~isfinite(weights)) || any(weights <= 0) || abs(sum(weights)-Lz) > 64*eps(max(1,Lz))
-    error('WVTransformFreeSurfaceQG:InvalidVerticalQuadrature','The WKB quadrature must have finite positive weights that integrate the exact depth.');
+    error('WVTransformFreeSurfaceQG:InvalidVerticalQuadrature','The vertical quadrature must have finite positive weights that integrate the exact depth.');
 end
 N2Values = N2Function(z);
 N2Values = N2Values(:);
@@ -46,6 +53,7 @@ if any(apvErrors(1:numel(apvTransform.h))>options.modeConvergenceTolerance) || a
     attempt=1; if isfield(options,'balancedAttempt'), attempt=options.balancedAttempt; end
     if attempt<3
         options.balancedAttempt=attempt+1; options.balancedNEVP=referenceNEVP;
+        options.balancedGrid=grid;
         vertical=WVInternal.buildFreeSurfaceBalancedModes(background,Nz,options);
         return
     end
@@ -63,8 +71,14 @@ if ~isempty(apvCount) && apvCount>linearCount
         'The explicit APV count %d exceeds the converged or fixed-grid Gram prefix %d.',apvCount,linearCount)
 end
 timer=tic;
-apvDealiasing=WVInternal.quadraticDealiasingPrefix(apvPrepared.values.F(:,1:linearCount), ...
-    apvPrepared.values.G(:,1:linearCount),Nz-1,options);
+F=apvPrepared.values.F;
+G=apvPrepared.values.G;
+if grid.kind ~= "wkb" && options.quadraticDealiasing == "effectiveBandwidth"
+    zFilter=grid.calculus.lobattoRule(size(F,1));
+    F=apvBasis.F(zFilter);
+    G=apvBasis.G(zFilter);
+end
+apvDealiasing=WVInternal.quadraticDealiasingPrefix(F(:,1:linearCount),G(:,1:linearCount),Nz-1,options,grid.kind);
 quadraticDealiasingSeconds=toc(timer);
 if ~isempty(apvCount) && apvCount>apvDealiasing.filteringCount
     error('WV:QuadraticDealiasingAPVCountRejected', ...
@@ -90,7 +104,7 @@ if ~isempty(apvAssessment.weightFit) || ~isempty(mdaAssessment.weightFit)
     error('WVTransformFreeSurfaceQG:ModeSelectionInconsistency','InternalModesEVP did not use the supplied fixed quadrature rule.');
 end
 
-vertical = struct(z=z,weights=weights,Dz=Dz,N2Values=N2Values,nEVP=nEVP,solver=solver,apvProblem=apvProblem,mdaProblem=mdaProblem, ...
+vertical = struct(grid=grid,z=z,weights=weights,Dz=Dz,N2Values=N2Values,nEVP=nEVP,solver=solver,apvProblem=apvProblem,mdaProblem=mdaProblem, ...
     apvBasis=apvBasis,apvCandidateConstruction=apvCandidateConstruction,mdaBasis=mdaBasis,mdaCandidateConstruction=mdaCandidateConstruction,apvConvergence=apvConvergence,mdaConvergence=mdaConvergence,apvReference=apvReference,mdaReference=mdaReference,referenceNEVP=referenceNEVP,apvTransform=apvTransform,mdaTransform=mdaTransform,apvAssessment=apvAssessment,mdaAssessment=mdaAssessment,apvDealiasing=apvDealiasing,quadraticDealiasingSeconds=quadraticDealiasingSeconds);
     function [basis,transform,assessment,candidateConstruction]=buildAPV()
         % The complete candidate establishes the independent linear limit

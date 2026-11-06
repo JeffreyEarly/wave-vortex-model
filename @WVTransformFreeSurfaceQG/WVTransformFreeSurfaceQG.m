@@ -156,12 +156,15 @@ classdef WVTransformFreeSurfaceQG < WVGeometryDoublyPeriodicStratified & WVTrans
         % - Topic: Inspect modes and operators
         verticalDerivativeMatrix
 
-        % Shared vertical-grid design kind, `chebyshevLobatto`.
+        % Shared vertical-grid node family, `chebyshevLobatto`.
         % - Topic: Inspect modes and operators
         verticalGridKind
         % Coordinate in which the vertical-grid rule is native.
         % - Topic: Inspect modes and operators
         verticalGridCoordinate
+        % InternalModes grid defining the samples, weights and vertical calculus.
+        % - Topic: Inspect modes and operators
+        verticalGrid
 
         % Sampled boundary-normalized zero-APV F pages.
         % - Topic: Inspect modes and operators
@@ -227,6 +230,11 @@ classdef WVTransformFreeSurfaceQG < WVGeometryDoublyPeriodicStratified & WVTrans
         % Persisted mode-selection method identifier.
         % - Topic: Inspect modes and operators
         modeSelectionMethod
+    end
+
+    properties (Hidden, SetAccess = private)
+        % Serialized provider geometry and map for annotated scientific state.
+        verticalGridSnapshot
     end
 
     properties (Access = private, Transient)
@@ -331,6 +339,7 @@ classdef WVTransformFreeSurfaceQG < WVGeometryDoublyPeriodicStratified & WVTrans
             % - Parameter options.gramTolerance: shared normalized-Gram tolerance; default 1e-2
             % - Parameter options.modeConvergenceTolerance: independent physical H1 and equivalent-depth agreement; default 1e-6
             % - Parameter options.boundaryResolutionTolerance: fixed zero-APV physical derivative and energy tolerance; default 1e-2
+            % - Parameter options.verticalGridRule: smoothedBandwidth (default) or wkb
             % - Parameter options.quadraticDealiasing: vertical policy none, fixedFraction, or effectiveBandwidth; default fixedFraction
             % - Parameter options.retainedFraction: fixedFraction retained share of the linear APV prefix; default 2/3
             % - Parameter options.energyFraction: effectiveBandwidth cumulative spectral-energy fraction; default 0.99
@@ -357,6 +366,7 @@ classdef WVTransformFreeSurfaceQG < WVGeometryDoublyPeriodicStratified & WVTrans
                 options.gramTolerance (1,1) double {mustBeReal,mustBeFinite,mustBeNonnegative} = 1e-2
                 options.modeConvergenceTolerance (1,1) double {mustBeReal,mustBeFinite,mustBePositive} = 1e-6
                 options.boundaryResolutionTolerance (1,1) double {mustBeReal,mustBeFinite,mustBePositive} = 1e-2
+                options.verticalGridRule (1,1) string {mustBeMember(options.verticalGridRule,["smoothedBandwidth","wkb"])} = "smoothedBandwidth"
                 options.quadraticDealiasing (1,1) string {mustBeMember(options.quadraticDealiasing,["none","fixedFraction","effectiveBandwidth"])} = "fixedFraction"
                 options.retainedFraction (1,1) double {mustBeReal,mustBeFinite,mustBeGreaterThanOrEqual(options.retainedFraction,0),mustBeLessThanOrEqual(options.retainedFraction,1)} = 2/3
                 options.energyFraction (1,1) double {mustBeReal,mustBeFinite,mustBeGreaterThan(options.energyFraction,0),mustBeLessThanOrEqual(options.energyFraction,1)} = .99
@@ -406,6 +416,7 @@ classdef WVTransformFreeSurfaceQG < WVGeometryDoublyPeriodicStratified & WVTrans
                 options.verticalDerivativeMatrix double
                 options.verticalGridKind (1,1) string
                 options.verticalGridCoordinate (1,1) string
+                options.verticalGridSnapshot (1,1) string
                 options.zeroAPVF double
                 options.zeroAPVG double
                 options.zeroAPVFPairing double
@@ -426,6 +437,9 @@ classdef WVTransformFreeSurfaceQG < WVGeometryDoublyPeriodicStratified & WVTrans
             end
             directNames = WVTransformFreeSurfaceQG.directConstructionPropertyNames();
             isDirect = all(isfield(options,directNames));
+            if ~isDirect && (isfield(options,"verticalGridSnapshot") || isfield(options,"verticalGridCoordinate"))
+                error('WVTransformFreeSurfaceQG:IncompletePersistedState','Direct construction requires the complete saved mode, operator and grid state.');
+            end
             assessment=struct();
             if isDirect
                 state = options;
@@ -454,9 +468,14 @@ classdef WVTransformFreeSurfaceQG < WVGeometryDoublyPeriodicStratified & WVTrans
                     state.zeroAPVGramReciprocalCondition = zeros(0,1);
                     state.zeroAPVGramRelativeSeparation = zeros(0,1);
                 end
+                verticalGrid = WVInternal.restoreFreeSurfaceVerticalGrid(state);
+                if state.verticalGridKind ~= "chebyshevLobatto" || state.verticalGridCoordinate ~= verticalGrid.kind
+                    error('WV:InconsistentVerticalGrid','The saved vertical-grid labels must match the provider grid.');
+                end
             else
                 inputs = WVInternal.resolveFreeSurfaceInputs(Lxyz(3),options);
-                [state,assessment] = WVInternal.buildFreeSurfaceBalancedState(Lxyz,Nxyz,inputs,options);
+                [state,assessment,vertical] = WVInternal.buildFreeSurfaceBalancedState(Lxyz,Nxyz,inputs,options);
+                verticalGrid = vertical.grid;
             end
             state.quadraticDealiasing=string(state.quadraticDealiasing);
 
@@ -469,6 +488,7 @@ classdef WVTransformFreeSurfaceQG < WVGeometryDoublyPeriodicStratified & WVTrans
             for iProperty = 1:length(stateNames)
                 self.(stateNames{iProperty}) = state.(stateNames{iProperty});
             end
+            self.verticalGrid = verticalGrid;
             self.constructionAssessment=assessment;
             self.hasWaveComponent = false;
             self.hasPVComponent = true;
@@ -880,6 +900,7 @@ classdef WVTransformFreeSurfaceQG < WVGeometryDoublyPeriodicStratified & WVTrans
 
             propertyAnnotations(end+1) = CAPropertyAnnotation('verticalGridKind','shared vertical-grid design kind');
             propertyAnnotations(end+1) = CAPropertyAnnotation('verticalGridCoordinate','native coordinate of the shared vertical grid');
+            propertyAnnotations(end+1) = CAPropertyAnnotation('verticalGridSnapshot','provider grid and calculus state');
 
             propertyAnnotations(end+1) = CANumericProperty('zeroAPVF',{'z','activeEndpoint','khUnique'},'1','sampled boundary-normalized zero-APV F pages');
             propertyAnnotations(end+1) = CANumericProperty('zeroAPVG',{'z','activeEndpoint','khUnique'},'1','sampled boundary-normalized zero-APV G pages');
@@ -970,7 +991,7 @@ classdef WVTransformFreeSurfaceQG < WVGeometryDoublyPeriodicStratified & WVTrans
         end
 
         function names = persistedScientificPropertyNames()
-            names = {'g0','gd','activeEndpointCount','activeEndpoint','sourceEndpoint','apvMode','apvModeNumber','mdaMode','mdaModeNumber','klNonzero','kNonzero','lNonzero','khNonzero','khUnique','klNonzeroKhUniqueIndex','apvF','apvG','apvFForward','apvGForward','apvEquivalentDepth','apvMu','apvEndpointResponse','apvFSourcePairing','apvGSourcePairing','mdaF','mdaG','mdaGForward','mdaEquivalentDepth','verticalQuadratureWeights','verticalDerivativeMatrix','verticalGridKind','verticalGridCoordinate','zeroAPVF','zeroAPVG','zeroAPVFPairing','zeroAPVGPairing','zeroAPVSourceSolve','apvGramError','apvRoundTripError','mdaGramError','mdaRoundTripError','gramTolerance','modeConvergenceTolerance','boundaryResolutionTolerance','quadraticDealiasing','retainedFraction','energyFraction','bandwidthFraction','minimumRelativeMuSeparation','muTolerance','zeroAPVGramReciprocalCondition','zeroAPVGramRelativeSeparation','modeSelectionMethod'};
+            names = {'g0','gd','activeEndpointCount','activeEndpoint','sourceEndpoint','apvMode','apvModeNumber','mdaMode','mdaModeNumber','klNonzero','kNonzero','lNonzero','khNonzero','khUnique','klNonzeroKhUniqueIndex','apvF','apvG','apvFForward','apvGForward','apvEquivalentDepth','apvMu','apvEndpointResponse','apvFSourcePairing','apvGSourcePairing','mdaF','mdaG','mdaGForward','mdaEquivalentDepth','verticalQuadratureWeights','verticalDerivativeMatrix','verticalGridKind','verticalGridCoordinate','verticalGridSnapshot','zeroAPVF','zeroAPVG','zeroAPVFPairing','zeroAPVGPairing','zeroAPVSourceSolve','apvGramError','apvRoundTripError','mdaGramError','mdaRoundTripError','gramTolerance','modeConvergenceTolerance','boundaryResolutionTolerance','quadraticDealiasing','retainedFraction','energyFraction','bandwidthFraction','minimumRelativeMuSeparation','muTolerance','zeroAPVGramReciprocalCondition','zeroAPVGramRelativeSeparation','modeSelectionMethod'};
         end
 
         function names = optionalZeroAPVPropertyNames()

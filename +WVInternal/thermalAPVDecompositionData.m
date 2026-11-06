@@ -33,7 +33,7 @@ N2=w.N2Function(z); diagnosticN2=apv.N2Function(z);
 if any(~isfinite(diagnosticN2) | diagnosticN2<=0) || max(abs(diagnosticN2./N2-1))>1e-9
     error('WV:APVDiagnosticStratification','Stratification must agree on the physical diagnostic quadrature.');
 end
-P=WVInternal.qgVerticalInterpolation(apv.z,z);
+P=apv.verticalGrid.calculus.interpolationMatrix(z);
 F=P*apv.apvF; G=P*apv.apvG;
 [Q,R]=qr(sqrt(weights).*F,0); condition=rcond(R);
 if ~isfinite(condition) || condition<1e-12

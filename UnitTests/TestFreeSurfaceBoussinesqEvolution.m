@@ -182,7 +182,7 @@ classdef TestFreeSurfaceBoussinesqEvolution < matlab.unittest.TestCase
                 m.integrateToTime(927,shouldShowIntegrationDiagnostics=false); m.closeNetCDFFile();
                 savedState=checkpoint.coefficientState();
                 save(fullfile(outputFolder,profile+"-reference.mat"),'finalState','savedState');
-                % Keep the checkpoint untouched for a separate provider-free process.
+                % Keep the checkpoint untouched for a separate restart process.
                 continuationFile=fullfile(outputFolder,profile+"-continued.nc");
                 copyfile(checkpointFile,continuationFile);
                 resumed=WVModel.modelFromFile(char(continuationFile));
@@ -195,9 +195,9 @@ classdef TestFreeSurfaceBoussinesqEvolution < matlab.unittest.TestCase
             results=struct2table(rows);
             writetable(results,fullfile(outputFolder,'issue-366-forced-evolution.csv'));
         end
-        function verifyRestartWithoutProvider(outputFolder)
-            % Run in a fresh MATLAB process with no InternalModes path entries.
-            assert(isempty(which('IMSolverSpectral')),'The mode solver must be unavailable in this process.')
+        function verifyStoredRestart(outputFolder)
+            % Run in a fresh MATLAB process with the grid calculus available.
+            assert(~isempty(which('IMLobattoCalculus')),'Add InternalModes 2.0.0-beta.11 or later to restore the stored grid.')
             for profile=["constant","exponential"]
                 ref=load(fullfile(outputFolder,profile+"-reference.mat"));
                 file=fullfile(outputFolder,profile+".nc");
@@ -207,7 +207,7 @@ classdef TestFreeSurfaceBoussinesqEvolution < matlab.unittest.TestCase
                 m.setupIntegrator(integratorType="fixed",deltaT=20);
                 m.integrateToTime(1727,shouldShowIntegrationDiagnostics=false);
                 error=familyError(m.wvt,m.wvt.coefficientState(),ref.finalState);
-                assert(error<1e-12); fprintf('%s provider-free continuation error %.6g\n',profile,error);
+                assert(error<1e-12); fprintf('%s stored-state continuation error %.6g\n',profile,error);
                 clear closeFile
             end
         end

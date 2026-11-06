@@ -30,6 +30,7 @@ configuration=struct();
 for name=["shouldAntialias","N2Function","rho0","planetaryRadius","rotationRate","latitude","g","g0","gd","gramTolerance","modeConvergenceTolerance","boundaryResolutionTolerance","quadraticDealiasing","retainedFraction","energyFraction","bandwidthFraction","muTolerance"]
     configuration.(name)=self.(name);
 end
+configuration.verticalGridRule=self.verticalGrid.kind;
 configuration.apvModeCount=options.apvModeCount; configuration.mdaModeCount=options.mdaModeCount;
 args=namedargs2cell(configuration);
 other=WVTransformFreeSurfaceQG([self.Lx self.Ly self.Lz],Nxyz,args{:});

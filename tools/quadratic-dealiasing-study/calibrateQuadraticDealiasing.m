@@ -24,7 +24,7 @@ for studyCase = cases
         N2 = stratification(profile);
         nEVP = max(104,ceil(1.6*nz));
         started = tic;
-        wvt = WVTransformFreeSurfaceBoussinesq.fromStratification([studyCase.Lxy studyCase.Lxy 1000],[16 16 nz],N2Function=N2,nEVP=nEVP,shouldAntialias=true,quadraticDealiasing="none");
+        wvt = WVTransformFreeSurfaceBoussinesq.fromStratification([studyCase.Lxy studyCase.Lxy 1000],[16 16 nz],N2Function=N2,nEVP=nEVP,shouldAntialias=true,quadraticDealiasing="none",verticalGridRule="wkb");
         constructionSeconds = toc(started);
         pages = unique(round(linspace(1,numel(wvt.khUnique),5)));
         apvProblem = IMInternalModes.geostrophicAPVModes(N2=N2,zDomain=[-1000 0],g=wvt.g,g0=wvt.g0,gd=wvt.gd,surfaceBoundary="freeSurface");

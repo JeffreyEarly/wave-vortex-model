@@ -149,14 +149,15 @@ classdef TestFreeSurfaceOutputRestart < matlab.unittest.TestCase
             results=struct2table(rows);
             writetable(results,fullfile(outputFolder,'issue-352-output-restart.csv'));
         end
-        function verifyRestartWithoutProvider(outputFolder)
-            assert(isempty(which('IMSolverSpectral')),'InternalModes must be unavailable.')
+        function verifyStoredRestart(outputFolder)
+            assert(~isempty(which('IMLobattoCalculus')),'Add InternalModes 2.0.0-beta.11 or later to restore the stored grid.')
             for type=["qg","boussinesq"]
                 for profile=["constant","exponential"]
                     key=type+"-"+profile;
                     reference=load(fullfile(outputFolder,key+"-reference.mat"));
                     file=fullfile(outputFolder,key+"-checkpoint.nc");
                     model=WVModel.modelFromFile(char(file)); cleanup=onCleanup(@()model.closeNetCDFFile());
+                    assert(isempty(model.wvt.verticalModes));
                     assertSnapshot(snapshot(model),reference.checkpoint);
                     model.setupIntegrator(integratorType="fixed",deltaT=5);
                     model.integrateToTime(367,shouldShowIntegrationDiagnostics=false);
@@ -164,7 +165,7 @@ classdef TestFreeSurfaceOutputRestart < matlab.unittest.TestCase
                     model.closeNetCDFFile(); clear cleanup
                     outputError=compareOutputFiles(file,fullfile(outputFolder,key+"-control.nc"));
                     assert(outputError<1e-12);
-                    fprintf('%s provider-free output/restart error %.6g / %.6g\n',key,error,outputError)
+                    fprintf('%s stored-state output/restart error %.6g / %.6g\n',key,error,outputError)
                 end
             end
         end

@@ -20,10 +20,16 @@ end
 if options.quadratureCount<2*max(source.Nz,target.Nz)+1
     error('WV:TransferQuadrature','Use at least 2*max(source.Nz,target.Nz)+1 quadrature points.')
 end
-if source.Nz>=target.Nz, grid=source.z; else, grid=target.z; end
-rule=WVInternal.qgVerticalOperators(grid,options.quadratureCount);
-z=rule.zQuadrature; weights=rule.quadratureWeights;
-Ps=WVInternal.qgVerticalInterpolation(source.z,z); Pt=WVInternal.qgVerticalInterpolation(target.z,z);
+sourceCalculus = source.verticalGrid.calculus;
+targetCalculus = target.verticalGrid.calculus;
+% Use the finer map for quadrature and sample each interpolant at those depths.
+comparisonCalculus = sourceCalculus;
+if target.Nz > source.Nz
+    comparisonCalculus = targetCalculus;
+end
+[z,weights] = comparisonCalculus.quadratureRule(options.quadratureCount);
+Ps = sourceCalculus.interpolationMatrix(z);
+Pt = targetCalculus.interpolationMatrix(z);
 N2s=source.N2Function(z); N2t=target.N2Function(z);
 if max(abs(N2s-N2t)./max(abs(N2s),realmin))>1e-10
     error('WV:TransferIncompatible','Source and target stratifications differ on the comparison quadrature.')

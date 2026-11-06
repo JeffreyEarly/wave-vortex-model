@@ -6,7 +6,8 @@
 - Accept v4 and v5 model provenance for the existing portable constant-stratification and barotropic QG checkpoint encodings, retaining the supported-transform and schema checks.
 - Export prerelease verification candidates at their current beta version without promoting the Unreleased changelog or preparing a stable patch release.
 
-- Require `InternalModes@^2.0.0-beta.10` for shared free-surface background construction and the finite spectral APV solve used during resolution refinement. Density and squared buoyancy frequency are alternative inputs, with the reference density anchored at the surface. Routine CI and package verification use the immutable beta.10 OceanKit snapshot.
+- Require `InternalModes@^2.0.0-beta.11` for explicit mapped vertical calculus in free-surface Boussinesq and QG. Both transforms default to smoothed-bandwidth sampling and accept `verticalGridRule="wkb"` for WKB sampling. Checkpoints retain the provider's map for reconstruction and transfer.
+- Use a shared InternalModes background and the finite spectral APV solve during resolution refinement. Density and squared buoyancy frequency are alternative inputs, with the reference density anchored at the surface. Routine CI and package verification use the immutable beta.11 OceanKit snapshot.
 - Construct free-surface Boussinesq waves and inertial oscillations with the provider's wave-energy normalization. Store profiles with `F = D G_z` and record the normalization in Boussinesq checkpoints.
 - Use common-coordinate quadratic-filtering evidence from InternalModes while retaining the existing orientation and construction optimizations.
 

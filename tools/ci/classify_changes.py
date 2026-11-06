@@ -56,7 +56,7 @@ ROUTINE_TESTS = {
     + PERSISTENCE + COMPILED + DOC_TESTS + QG + BOUSSINESQ
 } | {"TestCoreTransformInvariantSmoke", "TestFourierTransformXY", "TestFreeSurfaceQGVerticalCalculus",
      "TestPublishedWaveVortexBenchmark", "TestThreeInterfaceBenchmark",
-     "TestNativeThermalAdaptiveDamping", "TestFreeSurfaceInitializationPilot",
+     "TestNativeThermalAdaptiveDamping", "TestFreeSurfaceInitializationPilot", "TestFreeSurfaceProviderGrid",
      "TestFreeSurfaceInitializationReuse", "TestPortableRunRequestWriter"}
 
 # A changed study test still gets smoke, analyzer and compact scientific checks.
@@ -75,6 +75,17 @@ DEFERRED_TESTS = {
 # exercises their parsing, validation and small synthetic-fixture contracts.
 PARTIAL_TESTS = {
     "TestReleaseVerification": ("TestReleaseVerification/runtimeManifestExcludesAuthoringTests",),
+    "TestBuoyancyCrossingProjection": (
+        "TestBuoyancyCrossingProjection/projectionLeavesPointwiseSourcesAndOtherFamiliesUnchanged",
+    ),
+    "TestFFTWKBDerivative": ("TestFFTWKBDerivative/storedOperatorsPreserveAliasesAndBoundaryMode",),
+    "TestFreeSurfaceLinearModePolicy": (
+        "TestFreeSurfaceLinearModePolicy/defaultAndNonePoliciesExposeTheirLimits",
+        "TestFreeSurfaceLinearModePolicy/effectiveBandwidthUsesCommonWKBShapes",
+    ),
+    "TestManuscriptEvolutionDiagnostics": (
+        "TestManuscriptEvolutionDiagnostics/physicalReferenceCheckpointRespectsWKBMapping",
+    ),
     "TestFreeSurfaceWaveModes": (
         "TestFreeSurfaceWaveModes/realFieldsHaveTheDeclaredPositiveEnergy",
         "TestFreeSurfaceWaveModes/inertialPageUsesDepthNormalizedVelocity",
@@ -86,9 +97,16 @@ PARTIAL_TESTS = {
     "TestFreeSurfacePhysicalContract": (
         "TestFreeSurfacePhysicalContract/nativeFileRetainsFieldConventionAndStoredModes",
     ),
+    "TestFreeSurfaceOutputRestart": ("TestFreeSurfaceOutputRestart/scheduledOutputsAndContinuationAgree",),
     "TestFreeSurfaceResolutionTransfer": (
         "TestFreeSurfaceResolutionTransfer/pureFamiliesAndStrictRequests",
+        "TestFreeSurfaceResolutionTransfer/samplingRefinementPreservesResolvedContent",
         "TestFreeSurfaceResolutionTransfer/strictTransferRejectsControlledShapeMismatch",
+    ),
+    "TestWVTransformFreeSurfaceQG": (
+        "TestWVTransformFreeSurfaceQG/automaticModeCountsAreSelectedIndependently",
+        "TestWVTransformFreeSurfaceQG/initializationTolerancesArePersisted",
+        "TestWVTransformFreeSurfaceQG/snapshotPersistsRepresentationAndDirectConstructionSkipsModeSolver",
     ),
     "TestFreeSurfaceManuscriptProjection": (
         "TestFreeSurfaceManuscriptProjection/arbitrarySourcesMatchManuscriptQuadrature",
@@ -143,6 +161,8 @@ CPP_SUFFIXES = {".c", ".cc", ".cpp", ".cxx", ".h", ".hh", ".hpp", ".cmake"}
 
 def scientific_tests(path):
     """Small numerical contracts selected by the implementation's domain."""
+    if path in {"+WVInternal/buildFreeSurfaceBalancedModes.m", "+WVInternal/freeSurfaceCoefficientTransfer.m"}:
+        return ("TestFreeSurfaceProviderGrid",) + PARTIAL_TESTS["TestFreeSurfaceResolutionTransfer"]
     if "thermalgeneralizedenstrophy" in path.lower():
         return ("TestNativeThermalAdaptiveDamping",)
     if path == "+WVInternal/adaptiveSVVFilter.m":

@@ -75,7 +75,7 @@ assessment.inertial.dealiasing=inertialReport;
 assessment.dealiasing=struct(quadraticDealiasing=options.quadraticDealiasing, ...
     retainedFraction=options.retainedFraction,energyFraction=options.energyFraction, ...
     bandwidthFraction=options.bandwidthFraction,gridDegree=state.Nxyz(3)-1, ...
-    coordinateKind="wkb-chebyshev-lobatto");
+    coordinateKind=inertialReport.coordinateKind);
 assessment.coverage="Selected contiguous prefixes. Linear convergence and fixed-grid Gram evidence cover every retained mode. The quadratic-dealiasing policy is a stated filtering heuristic, not a rigorous nonlinear qualification. Fixed configured boundary resolution is checked separately.";
 
 state.waveModeCountByKh=selectedCount;
@@ -108,7 +108,7 @@ end
 
 function report=limitReport(report,linearCount,options)
 if isempty(report)
-    report=WVInternal.quadraticDealiasingPrefix(zeros(2,0),zeros(2,0),0,options);
+    report=WVInternal.quadraticDealiasingPrefix(zeros(2,0),zeros(2,0),0,options,options.verticalGridRule);
 end
 fields=["accepted","effectiveDegreeF","effectiveDegreeG","effectiveDegree", ...
     "tailEnergyFractionF","tailEnergyFractionG"];

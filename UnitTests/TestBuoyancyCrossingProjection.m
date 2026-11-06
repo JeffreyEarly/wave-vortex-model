@@ -57,9 +57,9 @@ classdef TestBuoyancyCrossingProjection < matlab.unittest.TestCase
         function unequalWaveCountsAndParcelGuardsRemainEffective(testCase)
             root=fileparts(fileparts(mfilename('fullpath')));
             testCase.applyFixture(matlab.unittest.fixtures.PathFixture(fullfile(root,'tools','nonlinear-study')));
-            base=WVTransformFreeSurfaceBoussinesq.fromStratification([1e5 1e5 1000],[8 6 33],N2Function=@(z)1e-4+zeros(size(z)),apvModeCount=3,waveModeCount=4,mdaModeCount=2,inertialModeCount=3,nEVP=256,shouldAntialias=false);
+            base=WVTransformFreeSurfaceBoussinesq.fromStratification([1e5 1e5 1000],[8 6 33],N2Function=@(z)1e-4+zeros(size(z)),apvModeCount=3,waveModeCount=4,mdaModeCount=2,inertialModeCount=3,nEVP=256,shouldAntialias=false,verticalGridRule="wkb");
             counts=mod((0:numel(base.khUnique)-1).',5);
-            w=WVTransformFreeSurfaceBoussinesq.fromStratification([1e5 1e5 1000],[8 6 33],N2Function=@(z)1e-4+zeros(size(z)),apvModeCount=3,waveModeCount=counts,waveModeKappa=base.khUnique,mdaModeCount=2,inertialModeCount=3,nEVP=256,shouldAntialias=false);
+            w=WVTransformFreeSurfaceBoussinesq.fromStratification([1e5 1e5 1000],[8 6 33],N2Function=@(z)1e-4+zeros(size(z)),apvModeCount=3,waveModeCount=counts,waveModeKappa=base.khUnique,mdaModeCount=2,inertialModeCount=3,nEVP=256,shouldAntialias=false,verticalGridRule="wkb");
             study=manuscriptEvolutionOperators(base,"constant",padding=1); initial=study.seed("mixed",.01);
             initial.Aw_p=initial.Aw_p.*w.activeWaveModes; initial.Aw_m=initial.Aw_m.*w.activeWaveModes;
             for name=string(fieldnames(initial)).', w.(name)=initial.(name); end
@@ -79,7 +79,7 @@ classdef TestBuoyancyCrossingProjection < matlab.unittest.TestCase
             testCase.applyFixture(matlab.unittest.fixtures.PathFixture(fullfile(root,'tools','nonlinear-study')));
             for profile=["constant","exponential"]
                 if profile=="constant", N2=@(z)1e-4+zeros(size(z)); else, N2=@(z)1e-4*exp(z/650); end
-                w=WVTransformFreeSurfaceBoussinesq.fromStratification([1e5 1e5 1000],[8 6 33],N2Function=N2,apvModeCount=3,waveModeCount=4,mdaModeCount=2,inertialModeCount=3,nEVP=256,shouldAntialias=false);
+                w=WVTransformFreeSurfaceBoussinesq.fromStratification([1e5 1e5 1000],[8 6 33],N2Function=N2,apvModeCount=3,waveModeCount=4,mdaModeCount=2,inertialModeCount=3,nEVP=256,shouldAntialias=false,verticalGridRule="wkb");
                 study=manuscriptEvolutionOperators(w,profile,padding=1); state=study.seed("mixed",.01);
                 for name=string(fieldnames(state)).', w.(name)=state.(name); end
                 for time=[327 901]

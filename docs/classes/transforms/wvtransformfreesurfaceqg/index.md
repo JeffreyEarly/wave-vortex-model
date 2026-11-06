@@ -153,7 +153,7 @@ wvt = WVTransformFreeSurfaceQG([100e3 100e3 4000],[32 32 33],N2Function=N2,latit
       + [`modeSelectionMethod`](/classes/transforms/wvtransformfreesurfaceqg/modeselectionmethod.html) Persisted mode-selection method identifier.
       + [`sourceEndpoint`](/classes/transforms/wvtransformfreesurfaceqg/sourceendpoint.html) Matching source-endpoint coordinate codes.
       + [`verticalGridCoordinate`](/classes/transforms/wvtransformfreesurfaceqg/verticalgridcoordinate.html) Coordinate in which the vertical-grid rule is native.
-      + [`verticalGridKind`](/classes/transforms/wvtransformfreesurfaceqg/verticalgridkind.html) Shared vertical-grid design kind, `chebyshevLobatto`.
+      + [`verticalGridKind`](/classes/transforms/wvtransformfreesurfaceqg/verticalgridkind.html) Shared vertical-grid node family, `chebyshevLobatto`.
       + [`verticalQuadratureWeights`](/classes/transforms/wvtransformfreesurfaceqg/verticalquadratureweights.html) Shared positive physical quadrature weights.
       + [`zeroAPVF`](/classes/transforms/wvtransformfreesurfaceqg/zeroapvf.html) Sampled boundary-normalized zero-APV F pages.
       + [`zeroAPVFPairing`](/classes/transforms/wvtransformfreesurfaceqg/zeroapvfpairing.html) Zero-APV F source-pairing matrices.
@@ -349,6 +349,7 @@ These items document internal implementation details and are not part of the pri
     + [`primaryKLModeNumberFromKLModeNumber`](/classes/transforms/wvtransformfreesurfaceqg/primaryklmodenumberfromklmodenumber.html) takes any valid WV mode number and returns the primary mode number
   + Additional geometry utilities
     + [`modeConvergenceTolerance`](/classes/transforms/wvtransformfreesurfaceqg/modeconvergencetolerance.html) Physical H1 and equivalent-depth agreement between independent solves.
+    + [`verticalGrid`](/classes/transforms/wvtransformfreesurfaceqg/verticalgrid.html) InternalModes grid defining the samples, weights and vertical calculus.
 + Spectral transforms and operators
   + [`P0`](/classes/transforms/wvtransformfreesurfaceqg/p0.html) Preconditioner for F, size(P)=[Nj 1]. F*u = uhat, (PF)*u = P*uhat, so ubar==P*uhat
   + [`PF0`](/classes/transforms/wvtransformfreesurfaceqg/pf0.html) size(PF,PG)=[Nj x Nz]

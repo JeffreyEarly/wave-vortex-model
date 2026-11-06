@@ -30,6 +30,7 @@ Assess vertical-mode accuracy and the active-endpoint horizontal limit.
 + `options.gramTolerance`  shared normalized-Gram tolerance; default 1e-2
 + `options.modeConvergenceTolerance`  independent physical H1 and equivalent-depth agreement; default 1e-6
 + `options.boundaryResolutionTolerance`  fixed zero-APV physical derivative and energy tolerance; default 1e-2
++ `options.verticalGridRule`  smoothedBandwidth (default) or wkb
 + `options.quadraticDealiasing`  vertical policy none, fixedFraction, or effectiveBandwidth
 + `options.retainedFraction`  fixedFraction retained share of the linear APV prefix
 + `options.energyFraction`  effectiveBandwidth cumulative spectral-energy fraction
