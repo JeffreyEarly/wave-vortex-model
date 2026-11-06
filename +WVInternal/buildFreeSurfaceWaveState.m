@@ -1,5 +1,5 @@
 function [state,bases,solveCount] = buildFreeSurfaceWaveState(state,options,background,bases)
-% Evaluate the resolved wave candidates without modifying their physical duals.
+% Evaluate the wave candidates and their sampled physical projection matrices.
 % A complete independent reference may supply the next candidate collection.
 if nargin < 4, bases = []; end
 f = background.f0;
@@ -62,15 +62,13 @@ for iPage = 1:numel(activePages)+1
 end
 state.inertialF = bases.evaluate(state.z,variable="F",pages=1);
 state.inertialFProjection = (state.inertialF'.*state.verticalQuadratureWeights.')/D;
-state.inertialGramError = norm(state.inertialFProjection*state.inertialF-eye(options.inertialModeCount),2);
 % Homogeneous count groups share evaluation while preserving exact prefixes.
 for count = unique(state.waveModeCountByKh(activePages)).'
     collectionPages = find(state.waveModeCountByKh(activePages) == count).'+1;
     bases.evaluateChunks(state.z,@acceptWaveF,variable="F",pages=collectionPages);
     bases.evaluateChunks(state.z,@acceptWaveG,variable="G",pages=collectionPages);
 end
-% The weak wave equation gives this G pairing norm h/D under waveEnergy
-% normalization. The dual recovers G coefficients on the prescribed grid.
+% The weak wave equation gives the G norm h/D under waveEnergy normalization.
 weightedN2 = state.verticalQuadratureWeights.*((background.N2(state.z)-f^2)/background.g);
 for p = 1:np
     count = state.waveModeCountByKh(p);
@@ -80,7 +78,6 @@ for p = 1:np
     forward(:,end) = forward(:,end)+G(end,:).';
     forward = (D./state.waveEquivalentDepth(1:count,p)).*forward;
     state.waveGForward(1:count,:,p) = forward;
-    state.waveGramError(p) = norm(forward*G-eye(count),2);
 end
 if nw == 0, state.waveModeNumber = state.waveMode; end
     function acceptWaveF(values,rows,~,pages)

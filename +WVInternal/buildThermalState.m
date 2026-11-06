@@ -74,7 +74,7 @@ reference=IMSolverSpectral(nEVP=ceil(1.5*nEVP)).solveEVP(problem,nModes=m);
 if any(modeErrors>o.modeConvergenceTolerance)
     error('WV:ThermalMeanConvergence','The requested MDA family has unresolved provider modes; no modes were removed.');
 end
-transform=basis.discreteTransform(z=z,weights=weights,variables="G",nModes=m,gramTolerance=o.gramTolerance);
+[transform,mdaAssessment]=basis.discreteTransform(z=z,weights=weights,variables="G",nModes=m,gramTolerance=o.gramTolerance);
 s.mdaG=transform.inverseMatrix(variable="G"); s.mdaGForward=transform.forwardMatrix(variable="G");
 F=transform.inverseMatrix(variable="F");
 s.mdaGZ=(F+(s.mdaSurfaceWeight/g)*s.mdaG(end,:))./reshape(transform.h,1,[]);
@@ -86,4 +86,9 @@ meanPage=WVInternal.densityDiffusionMDA(-N2a.*Ga,-N2a.*(Gza+2*a*Ga),wa,1);
 s.mdaGeneratorPerDiffusivity=real(meanPage.generator);
 s.mdaEnergyGram=(Ga'*(wa.*N2a.*Ga))/D;
 assessment=struct(thermal={reports},mda=meanPage.diagnostics,mdaConvergence=mdaConvergence,quadraticProducts="not-qualified-T4",samplingCount=nz,thermalCount=n,mdaCount=m,assemblyCount=o.assemblyQuadratureCount);
+assessment.mdaResolution=struct(requestKind="strict",requestedCount=m,candidateCount=m, ...
+    initialNEVP=nEVP,candidateNEVP=nEVP,referenceNEVP=reference.solver.nEVP,convergedCount=m, ...
+    fixedGridCount=m,linearCount=m,filteringCount=NaN,selectedCount=m,selectedLabels=basis.modeNumber(:), ...
+    candidateLimitReached=true,firstUnassessedCount=m+1,sampledInversionSpanCount=m, ...
+    sampledInversionSpan="selected",prefixDiagnostics=mdaAssessment.prefixDiagnostics);
 end

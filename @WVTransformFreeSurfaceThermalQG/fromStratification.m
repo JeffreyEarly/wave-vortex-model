@@ -50,5 +50,10 @@ if options.shouldCheckQuadraticAliasing
     assessment.quadraticProducts=report;
 end
 w=WVTransformFreeSurfaceThermalQG(scientificState=s);
+assessment.grid=WVInternal.freeSurfaceGridAssessment("wkb",s.z,s.khUnique);
+assessment.thermalModeCount=numel(s.polynomialDegree);
+assessment.polynomialDegree=s.polynomialDegree;
+assessment.assemblyQuadratureCount=s.assemblyQuadratureCount;
+assessment.nonlinearQuadratureCount=w.nonlinearQuadratureCount;
 w.constructionAssessment=assessment;
 end

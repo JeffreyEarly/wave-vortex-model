@@ -34,9 +34,9 @@ classdef TestFreeSurfaceInitializationPilot < matlab.unittest.TestCase
                 if nx==16, referenceNEVP=96; end
                 [w,a]=WVTransformFreeSurfaceBoussinesq.fromStratification([1e5 1e5 1000],[nx nx 33],N2Function=@(z)1e-4+0*z,waveModeCount=0,inertialModeCount=2,referenceNEVP=referenceNEVP);
                 testCase.verifyEqual(a.cost.pilotPages,0)
-                testCase.verifyEqual(a.cost.waveEigensolves,2*(numel(w.khUnique)+1))
+                testCase.verifyEqual(a.cost.waveEigensolves,2)
                 testCase.verifyEmpty(w.waveMode)
-                testCase.verifyEqual(a.pages.candidateCount,32*ones(size(w.khUnique)))
+                testCase.verifyEqual(a.pages.candidateCount,zeros(size(w.khUnique)))
             end
         end
 
@@ -129,8 +129,9 @@ assessmentTrace=str2func(namespace+".assessWaveModeConstruction");
 end
 
 function value=withoutAssessmentTimers(value)
-% Only elapsed assessment time varies inside the scientific reports.
+% Ignore elapsed times and the distinct search inputs for the fixed control.
 if isstruct(value)
+    if isfield(value,'waveEVP'), value.waveEVP=rmfield(value.waveEVP,{'requestedNEVP','initialNEVP'}); end
     if isfield(value,'assessmentSeconds'), value=rmfield(value,'assessmentSeconds'); end
     for i=1:numel(value)
         for name=string(fieldnames(value)).'

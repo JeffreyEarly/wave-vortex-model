@@ -6,6 +6,8 @@ function assessment = assessVerticalResolution(Lz,Nz,options)
 % conservative maximum horizontal wavenumber whose fixed boundary responses
 % satisfy boundaryResolutionTolerance. APV count selection uses the same
 % quadratic-dealiasing policy as full QG and Boussinesq construction.
+% The boundary report distinguishes a measured grid rejection from an
+% inconclusive independent reference and preserves known passing trials.
 %
 % - Topic: Create and restore a transform
 % - Declaration: assessment = WVTransformFreeSurfaceQG.assessVerticalResolution(Lz,Nz,options)
@@ -75,4 +77,8 @@ assessment = struct(z=vertical.z,weights=vertical.weights,verticalGridRule=verti
     maximumSupportedBoundaryError=limit.maximumSupportedBoundaryError, ...
     firstRejectedBoundaryError=limit.firstRejectedBoundaryError, ...
     modeConvergenceTolerance=options.modeConvergenceTolerance,boundaryResolutionTolerance=options.boundaryResolutionTolerance);
+assessment.grid=WVInternal.freeSurfaceGridAssessment(vertical.grid.kind,vertical.z);
+assessment.apv=vertical.apv;
+assessment.mda=vertical.mda;
+assessment.boundary=limit;
 end

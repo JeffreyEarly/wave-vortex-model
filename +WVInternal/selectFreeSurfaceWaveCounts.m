@@ -1,74 +1,70 @@
-function [state,assessment] = selectFreeSurfaceWaveCounts(state,~,~,~,~,~,assessment,convergence,options,autoWave,autoInertial)
+function [state,assessment] = selectFreeSurfaceWaveCounts(state,assessment,convergence,options,autoWave,autoInertial)
 % Apply one vertical quadratic-dealiasing policy after independent linear checks.
 np=height(assessment.pages);
 linearCount=assessment.pages.usableCount;
 filteringCount=zeros(np,1);
 selectedCount=zeros(np,1);
+selectedLabels=cell(np,1);
+selectedColumnKind=cell(np,1);
 for p=1:np
-    report=limitReport(assessment.pages.dealiasing{p},linearCount(p),options);
+    [selectedCount(p),report]=selectCount(assessment.pages.requestedCount(p),linearCount(p), ...
+        assessment.pages.fixedGridCount(p),assessment.pages.candidateLabels{p},assessment.pages.linearLimitingMetric(p), ...
+        assessment.pages.dealiasing{p},options,assessment.pages.kappa(p));
     filteringCount(p)=report.filteringCount;
-    requested=assessment.pages.requestedCount(p);
-    if ~autoWave && requested>filteringCount(p)
-        error('WV:QuadraticDealiasingWaveCountRejected', ...
-            'The explicit wave count %d at kappa %.17g exceeds the quadratic-dealiasing limit %d under policy %s.', ...
-            requested,assessment.pages.kappa(p),filteringCount(p),options.quadraticDealiasing)
-    end
-    if autoWave
-        selectedCount(p)=filteringCount(p);
-    else
-        selectedCount(p)=requested;
-    end
-    report.selectedCount=selectedCount(p);
     assessment.pages.dealiasing{p}=report;
+    selectedLabels{p}=assessment.pages.candidateLabels{p}(1:selectedCount(p));
+    selectedColumnKind{p}=repmat("internal",size(selectedLabels{p}));
+    selectedColumnKind{p}(selectedLabels{p}==1)="external";
 end
 
-inertialReport=limitReport(assessment.inertial.dealiasing,assessment.inertial.usableCount,options);
-requestedInertial=assessment.inertial.requestedCount;
-if ~autoInertial && requestedInertial>inertialReport.filteringCount
-    error('WV:QuadraticDealiasingInertialCountRejected', ...
-        'The explicit inertial count %d exceeds the quadratic-dealiasing limit %d under policy %s.', ...
-        requestedInertial,inertialReport.filteringCount,options.quadraticDealiasing)
-end
-if autoInertial
-    inertialCount=inertialReport.filteringCount;
-else
-    inertialCount=requestedInertial;
-end
+[inertialCount,inertialReport]=selectCount(assessment.inertial.requestedCount,assessment.inertial.usableCount, ...
+    assessment.inertial.fixedGridCount,assessment.inertial.candidateLabels,assessment.inertial.linearLimitingMetric, ...
+    assessment.inertial.dealiasing,options,0);
 if inertialCount<1
     error('WV:NoResolvedInertialModes', ...
         'No inertial mode passes the linear and quadratic-dealiasing limits. Increase Nz/nEVP or change quadraticDealiasing.')
 end
-inertialReport.selectedCount=inertialCount;
-
 assessment.pages.linearCount=linearCount;
 assessment.pages.filteringCount=filteringCount;
+assessment.pages.filteringIsLowerBound=isnan(linearCount);
 assessment.pages.selectedCount=selectedCount;
-assessment.pages.status=repmat("accepted",np,1);
+assessment.pages.selectedLabels=selectedLabels;
+assessment.pages.selectedColumnKind=selectedColumnKind;
+assessment.pages.requestKind=repmat(requestKind(autoWave),np,1);
+assessment.pages.sampledInversionSpan=repmat("none",np,1);
+assessment.pages.sampledInversionSpanCount=zeros(np,1);
+assessment.pages.qualificationStatus=assessment.pages.status;
+qualified=~isnan(linearCount);
+assessment.pages.status(qualified)="accepted";
 explicitZero=~autoWave & assessment.pages.requestedCount==0;
 filteredOut=autoWave & selectedCount==0 & filteringCount<linearCount;
 assessment.pages.status(explicitZero)="not-requested";
 assessment.pages.status(filteredOut)="filtered-out";
-assessment.pages.status(selectedCount==0 & ~explicitZero & ~filteredOut)="rejected";
-assessment.modeConvergence(explicitZero)=repmat({[]},nnz(explicitZero),1);
-assessment.pages.candidateLimitReached=linearCount==assessment.pages.candidateCount & linearCount>0;
-assessment.pages.limitingMetric=repmat("candidate-ceiling",np,1);
-assessment.pages.limitingMetric(assessment.pages.gridSupportedCount<assessment.pages.candidateCount)="gram";
-assessment.pages.limitingMetric(assessment.pages.convergedCount<assessment.pages.gridSupportedCount)="mode-convergence";
+assessment.pages.status(qualified & selectedCount==0 & ~explicitZero & ~filteredOut)="rejected";
+assessment.pages.limitingMetric=assessment.pages.linearLimitingMetric;
 assessment.pages.limitingMetric(filteringCount<linearCount)="quadratic-dealiasing";
-assessment.pages.limitingMetric(explicitZero)="not-requested";
-assessment.pages.gramError=zeros(np,1);
+assessment.pages.gramError=nan(np,1);
 for p=1:np
     if selectedCount(p)>0
         assessment.pages.gramError(p)=assessment.prefixGramError{p}(selectedCount(p));
     end
 end
-if autoWave, assessment.pages.requestedCount(:)=NaN; end
 assessment=withSelectedConvergence(assessment,selectedCount,inertialCount,convergence);
 
 assessment.inertial.linearCount=assessment.inertial.usableCount;
 assessment.inertial.filteringCount=inertialReport.filteringCount;
-if autoInertial, assessment.inertial.requestedCount=NaN; end
+assessment.inertial.filteringIsLowerBound=isnan(assessment.inertial.linearCount);
 assessment.inertial.selectedCount=inertialCount;
+assessment.inertial.selectedLabels=assessment.inertial.candidateLabels(1:inertialCount);
+assessment.inertial.requestKind=requestKind(autoInertial);
+assessment.inertial.sampledInversionSpan="none";
+assessment.inertial.sampledInversionSpanCount=0;
+assessment.inertial.qualificationStatus=assessment.inertial.status;
+if ~isnan(assessment.inertial.usableCount), assessment.inertial.status="accepted"; end
+assessment.inertial.limitingMetric=assessment.inertial.linearLimitingMetric;
+if assessment.inertial.filteringCount<assessment.inertial.linearCount
+    assessment.inertial.limitingMetric="quadratic-dealiasing";
+end
 assessment.inertial.candidateGramError=assessment.inertial.gramError;
 assessment.inertial.gramError=assessment.inertial.prefixGramError(inertialCount);
 assessment.inertial.dealiasing=inertialReport;
@@ -76,7 +72,7 @@ assessment.dealiasing=struct(quadraticDealiasing=options.quadraticDealiasing, ..
     retainedFraction=options.retainedFraction,energyFraction=options.energyFraction, ...
     bandwidthFraction=options.bandwidthFraction,gridDegree=state.Nxyz(3)-1, ...
     coordinateKind=inertialReport.coordinateKind);
-assessment.coverage="Selected contiguous prefixes. Linear convergence and fixed-grid Gram evidence cover every retained mode. The quadratic-dealiasing policy is a stated filtering heuristic, not a rigorous nonlinear qualification. Fixed configured boundary resolution is checked separately.";
+assessment.coverage="Selected contiguous prefixes. Independent convergence and physical Gram evidence cover every retained mode. A passing candidate ceiling leaves larger counts unassessed. The quadratic-dealiasing policy supplies a filtering heuristic. Configured boundary responses are qualified separately.";
 
 state.waveModeCountByKh=selectedCount;
 nw=max([selectedCount;0]);
@@ -106,6 +102,43 @@ state.inertialEquivalentDepth=state.inertialEquivalentDepth(1:inertialCount);
 state.inertialGramError=assessment.inertial.prefixGramError(inertialCount);
 end
 
+function [selected,report]=selectCount(requested,linearCount,verifiedCount,labels,metric,report,options,kappa)
+if kappa==0
+    family="inertial";
+    identifierFamily="Inertial";
+else
+    family=compose("wave at kappa %.17g rad/m",kappa);
+    identifierFamily="Wave";
+end
+report=limitReport(report,verifiedCount,options);
+if isnan(linearCount) && (isnan(requested) || requested>report.filteringCount)
+    error('WV:InconclusiveModeResolution', ...
+        'The independent EVP reference did not qualify the %s prefix above %d modes. Increase nEVP/referenceNEVP or reduce the explicit request.', ...
+        family,verifiedCount)
+end
+if isnan(requested)
+    selected=report.filteringCount;
+else
+    if requested>verifiedCount
+        error("WV:Strict"+identifierFamily+"ModeCountRejected", ...
+            'The explicit %s count %d exceeds the qualified prefix %d. The next mode label %d fails %s. Increase Nz or nEVP, or reduce the request.', ...
+            family,requested,verifiedCount,labels(verifiedCount+1),metric)
+    end
+    if requested>report.filteringCount
+        error("WV:QuadraticDealiasing"+identifierFamily+"CountRejected", ...
+            'The explicit %s count %d exceeds the quadratic-dealiasing limit %d under policy %s.', ...
+            family,requested,report.filteringCount,options.quadraticDealiasing)
+    end
+    selected=requested;
+end
+report.selectedCount=selected;
+end
+
+function kind=requestKind(automatic)
+kind="strict";
+if automatic, kind="automatic"; end
+end
+
 function report=limitReport(report,linearCount,options)
 if isempty(report)
     report=WVInternal.quadraticDealiasingPrefix(zeros(2,0),zeros(2,0),0,options,options.verticalGridRule);
@@ -129,7 +162,7 @@ report.selectedCount=report.filteringCount;
 end
 
 function assessment=withSelectedConvergence(assessment,counts,inertialCount,convergence)
-assessment.pages.modeConvergenceError=zeros(numel(counts),1);
+assessment.pages.modeConvergenceError=nan(numel(counts),1);
 for p=1:numel(counts)
     if counts(p)>0
         assessment.pages.modeConvergenceError(p)=convergence.pages{p}.prefixError(counts(p));

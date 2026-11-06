@@ -38,8 +38,6 @@ nEVP = vertical.nEVP;
 solver = vertical.solver;
 apvTransform = vertical.apvTransform;
 mdaTransform = vertical.mdaTransform;
-apvAssessment = vertical.apvAssessment;
-mdaAssessment = vertical.mdaAssessment;
 apvModeCount = length(apvTransform.modeNumber);
 mdaModeCount = length(mdaTransform.modeNumber);
 
@@ -63,10 +61,23 @@ activeEndpoint = find(activeMask).';
 activeEndpointCount = length(activeEndpoint);
 sourceEndpoint = activeEndpoint;
 nKh = length(khUnique);
+vertical.zeroReference=[];
+boundaryAssessment=struct(status="not-applicable");
 if activeEndpointCount > 0
     endpointNames = ["surface","bottom"];
-    zeroProblem = IMGeostrophicZeroAPVModes.atWavenumber(background,khUnique,endpoints=endpointNames(activeMask));
+    endpointNames = endpointNames(activeMask);
+    % Avoid constructing a large page set when its largest required radius
+    % already fails. Passing this check still requires assessing all pages.
+    if nKh>=32
+        maxProblem = IMGeostrophicZeroAPVModes.atWavenumber(background,khUnique(end),endpoints=endpointNames);
+        maxModes = solver.solveGeostrophicZeroAPVModes(maxProblem);
+        WVInternal.assessFreeSurfaceBoundaryGrid(maxModes,maxProblem,vertical,inputs,options);
+    end
+    zeroProblem = IMGeostrophicZeroAPVModes.atWavenumber(background,khUnique,endpoints=endpointNames);
     zeroModes = solver.solveGeostrophicZeroAPVModes(zeroProblem);
+    if nKh>0
+        [boundaryAssessment,vertical.zeroReference]=WVInternal.assessFreeSurfaceBoundaryGrid(zeroModes,zeroProblem,vertical,inputs,options);
+    end
     geostrophicTransform = IMGeostrophicTransform(apvTransform=apvTransform,zeroAPVModes=zeroModes, ...
         g0=g0,gd=gd,muTolerance=options.muTolerance);
     zeroAPVF = zeroModes.F(z);
@@ -202,24 +213,19 @@ state.zeroAPVGramReciprocalCondition = zeroAPVGramReciprocalCondition;
 state.zeroAPVGramRelativeSeparation = zeroAPVGramRelativeSeparation;
 state.modeSelectionMethod = "linear-prefix-plus-quadratic-dealiasing";
 apvDealiasing=vertical.apvDealiasing;
-assessment=struct(apv=struct(linearCount=apvDealiasing.linearCount,filteringCount=apvDealiasing.filteringCount,selectedCount=apvModeCount,dealiasing=apvDealiasing,prefixDiagnostics=apvAssessment.prefixDiagnostics,convergence=vertical.apvConvergence),mda=struct(selectedCount=mdaModeCount,prefixDiagnostics=mdaAssessment.prefixDiagnostics,convergence=vertical.mdaConvergence),boundary=struct(status="not-applicable"),gramTolerance=options.gramTolerance,modeConvergenceTolerance=options.modeConvergenceTolerance,boundaryResolutionTolerance=options.boundaryResolutionTolerance,dealiasing=struct(quadraticDealiasing=options.quadraticDealiasing,retainedFraction=options.retainedFraction,energyFraction=options.energyFraction,bandwidthFraction=options.bandwidthFraction,gridDegree=Nxyz(3)-1,coordinateKind=apvDealiasing.coordinateKind),cost=struct(quadraticDealiasingSeconds=vertical.quadraticDealiasingSeconds));
-assessment.coverage="APV linear convergence and fixed-grid Gram evidence precede a stated quadratic-dealiasing filtering heuristic; this is not a rigorous nonlinear qualification. Fixed boundary responses are assessed separately.";
-assessment.apv.candidateConstruction=vertical.apvCandidateConstruction;
-assessment.mda.candidateConstruction=vertical.mdaCandidateConstruction;
-vertical.zeroReference=[];
-if activeEndpointCount>0 && nKh>0
-    [assessment.boundary,vertical.zeroReference]=WVInternal.assessFreeSurfaceBoundaryGrid(zeroModes,zeroProblem,vertical,inputs,options);
-end
+assessment=struct(apv=vertical.apv,mda=vertical.mda,boundary=boundaryAssessment,gramTolerance=options.gramTolerance, ...
+    modeConvergenceTolerance=options.modeConvergenceTolerance,boundaryResolutionTolerance=options.boundaryResolutionTolerance, ...
+    dealiasing=struct(quadraticDealiasing=options.quadraticDealiasing,retainedFraction=options.retainedFraction, ...
+    energyFraction=options.energyFraction,bandwidthFraction=options.bandwidthFraction,gridDegree=Nxyz(3)-1, ...
+    coordinateKind=apvDealiasing.coordinateKind),cost=struct(quadraticDealiasingSeconds=vertical.quadraticDealiasingSeconds));
+assessment.grid=WVInternal.freeSurfaceGridAssessment(vertical.grid.kind,z,khUnique);
+assessment.coverage="Independent APV and MDA convergence, fixed-grid Gram evidence, and fixed boundary resolution. "+ ...
+    "APV quadratic filtering applies the selected heuristic to the linearly qualified modes. Nonlinear product errors require separate assessment.";
 vertical.zeroModes=[];
 if activeEndpointCount>0, vertical.zeroModes=zeroModes; end
 state.Ag_q = complex(zeros(apvModeCount,length(klNonzero)));
 state.Ag_0 = Ag_0;
 state.Amda = zeros(mdaModeCount,1);
-
-if ~isempty(apvAssessment.weightFit) || ~isempty(mdaAssessment.weightFit) ...
-        || length(apvTransform.modeNumber) ~= apvModeCount || length(mdaTransform.modeNumber) ~= mdaModeCount
-    error('WVTransformFreeSurfaceQG:ModeSelectionInconsistency','InternalModesEVP did not use the supplied fixed quadrature rule.');
-end
 end
 
 function [uniqueValues,index] = uniqueWavenumberPages(values)

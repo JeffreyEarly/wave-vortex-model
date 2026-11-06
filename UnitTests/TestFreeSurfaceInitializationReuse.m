@@ -95,8 +95,9 @@ background=IMBackground(N2=w.N2Function,zDomain=[-w.Lz 0],latitude=w.latitude,ro
 end
 
 function value=withoutAssessmentTimers(value)
-% Only elapsed assessment time varies inside the scientific reports.
+% Ignore elapsed times and the distinct search inputs for the fixed control.
 if isstruct(value)
+    if isfield(value,'waveEVP'), value.waveEVP=rmfield(value.waveEVP,{'requestedNEVP','initialNEVP'}); end
     if isfield(value,'assessmentSeconds'), value=rmfield(value,'assessmentSeconds'); end
     for i=1:numel(value)
         for name=string(fieldnames(value)).'
