@@ -1,10 +1,11 @@
-function report = quadraticDealiasingPrefix(F,G,gridDegree,options)
+function report = quadraticDealiasingPrefix(F,G,gridDegree,options,gridRule)
 % Apply the shared quadratic-dealiasing policy to one linear mode prefix.
 arguments
     F double
     G double
     gridDegree (1,1) double {mustBeInteger,mustBeNonnegative}
     options (1,1) struct
+    gridRule (1,1) string = "wkb"
 end
 if isempty(F)
     linearCount=size(G,2);
@@ -20,7 +21,7 @@ report=assessQuadraticDealiasing(F,G,gridDegree, ...
     energyFraction=options.energyFraction, ...
     bandwidthFraction=options.bandwidthFraction, ...
     representation="values");
-report.coordinateKind="wkb-chebyshev-lobatto";
+report.coordinateKind=gridRule+"-chebyshev-lobatto";
 report.linearCount=linearCount;
 report.filteringCount=sum(cumprod(report.accepted));
 report.selectedCount=report.filteringCount;

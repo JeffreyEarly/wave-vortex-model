@@ -61,6 +61,7 @@ end
 for name=["shouldAntialias","N2Function","rho0","planetaryRadius","rotationRate","latitude","g","g0","gd","nEVP","gramTolerance","quadraticDealiasing","retainedFraction","energyFraction","bandwidthFraction","modeConvergenceTolerance","boundaryResolutionTolerance"]
     configuration.(name)=self.(name);
 end
+configuration.verticalGridRule=self.verticalGrid.kind;
 args=namedargs2cell(configuration);
 other=WVTransformFreeSurfaceBoussinesq.fromStratification([self.Lx self.Ly self.Lz],Nxyz,args{:});
 other.t=self.t; other.t0=self.t0;

@@ -9,7 +9,7 @@ end
 
 if ~isempty(options.z)
     error('WVTransformFreeSurfaceQG:CustomVerticalGridUnavailable', ...
-        'Scientific construction uses the WKB-stretched Chebyshev-Lobatto rule determined by Nz. Restore custom points only through complete persisted-state construction.');
+        'Scientific construction uses the selected Chebyshev-Lobatto rule and Nz. Restore the saved points through complete persisted-state construction.');
 end
 background = inputs.background;
 Lz = background.D;
@@ -142,7 +142,7 @@ state.rotationRate = background.rotationRate;
 state.latitude = background.latitude;
 state.g = g;
 state.z = z;
-state.dLnN2 = gradient(log(N2Values),z);
+state.dLnN2 = verticalDerivativeMatrix*log(N2Values/N2Values(end));
 state.PF0inv = apvF;
 state.QG0inv = apvG;
 state.PF0 = apvFForward;
@@ -182,7 +182,8 @@ state.mdaG = mdaG;
 state.mdaGForward = mdaGForward;
 state.mdaEquivalentDepth = reshape(mdaTransform.h,[],1);
 state.verticalGridKind = "chebyshevLobatto";
-state.verticalGridCoordinate = "wkb";
+state.verticalGridCoordinate = vertical.grid.kind;
+state.verticalGridSnapshot = string(jsonencode(vertical.grid.snapshot()));
 state.zeroAPVF = zeroAPVF;
 state.zeroAPVG = zeroAPVG;
 state.zeroAPVFPairing = zeroAPVFPairing;
@@ -205,7 +206,7 @@ state.zeroAPVGramReciprocalCondition = zeroAPVGramReciprocalCondition;
 state.zeroAPVGramRelativeSeparation = zeroAPVGramRelativeSeparation;
 state.modeSelectionMethod = "linear-prefix-plus-quadratic-dealiasing";
 apvDealiasing=vertical.apvDealiasing;
-assessment=struct(apv=struct(linearCount=apvDealiasing.linearCount,filteringCount=apvDealiasing.filteringCount,selectedCount=apvModeCount,dealiasing=apvDealiasing,prefixDiagnostics=apvAssessment.prefixDiagnostics,convergence=vertical.apvConvergence),mda=struct(selectedCount=mdaModeCount,prefixDiagnostics=mdaAssessment.prefixDiagnostics,convergence=vertical.mdaConvergence),boundary=struct(status="not-applicable"),gramTolerance=options.gramTolerance,modeConvergenceTolerance=options.modeConvergenceTolerance,boundaryResolutionTolerance=options.boundaryResolutionTolerance,dealiasing=struct(quadraticDealiasing=options.quadraticDealiasing,retainedFraction=options.retainedFraction,energyFraction=options.energyFraction,bandwidthFraction=options.bandwidthFraction,gridDegree=Nxyz(3)-1,coordinateKind="wkb-chebyshev-lobatto"),cost=struct(quadraticDealiasingSeconds=vertical.quadraticDealiasingSeconds));
+assessment=struct(apv=struct(linearCount=apvDealiasing.linearCount,filteringCount=apvDealiasing.filteringCount,selectedCount=apvModeCount,dealiasing=apvDealiasing,prefixDiagnostics=apvAssessment.prefixDiagnostics,convergence=vertical.apvConvergence),mda=struct(selectedCount=mdaModeCount,prefixDiagnostics=mdaAssessment.prefixDiagnostics,convergence=vertical.mdaConvergence),boundary=struct(status="not-applicable"),gramTolerance=options.gramTolerance,modeConvergenceTolerance=options.modeConvergenceTolerance,boundaryResolutionTolerance=options.boundaryResolutionTolerance,dealiasing=struct(quadraticDealiasing=options.quadraticDealiasing,retainedFraction=options.retainedFraction,energyFraction=options.energyFraction,bandwidthFraction=options.bandwidthFraction,gridDegree=Nxyz(3)-1,coordinateKind=apvDealiasing.coordinateKind),cost=struct(quadraticDealiasingSeconds=vertical.quadraticDealiasingSeconds));
 assessment.coverage="APV linear convergence and fixed-grid Gram evidence precede a stated quadratic-dealiasing filtering heuristic; this is not a rigorous nonlinear qualification. Fixed boundary responses are assessed separately.";
 assessment.apv.candidateConstruction=vertical.apvCandidateConstruction;
 assessment.mda.candidateConstruction=vertical.mdaCandidateConstruction;

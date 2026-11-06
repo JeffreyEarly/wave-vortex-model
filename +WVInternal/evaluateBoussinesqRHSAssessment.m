@@ -16,10 +16,13 @@ w=prepared.transform; nz=Nxyz(3);
 if any(Nxyz(1:2)<[w.Nx w.Ny]) || nz<5
     error('WV:InvalidAssessmentGrid','Use at least the original horizontal grid and five vertical samples.')
 end
-problem=IMInternalModes.geostrophicAPVModes(N2=w.N2Function,zDomain=[-w.Lz 0],g=w.g,g0=w.g0,gd=w.gd,surfaceBoundary="freeSurface");
-solver=IMSolverSpectral(nEVP=nz,coordinateKind="wkb").configuredForEVP(problem);
-[z,q,Dz]=solver.nativeDifferentiationRule([-w.Lz 0]); q=q*(w.Lz/sum(q));
-M=interpolation(w.Nz,nz);
+if options.crossingOrder>0 && w.verticalGrid.kind~="wkb"
+    error('WV:CrossingProjectionGrid','Crossing projection requires a WKB grid. Use crossingOrder=0 for this evolution grid.')
+end
+calculus = w.verticalGrid.calculus;
+% Vary the sampling without rebuilding the coordinate map or its smoothing.
+[z,q,Dz] = calculus.lobattoRule(nz);
+M = calculus.interpolationMatrix(z);
 geometry=WVGeometryDoublyPeriodic([w.Lx w.Ly],Nxyz(1:2),Nz=nz,shouldAntialias=false,shouldExcludeNyquist=true,shouldExcludeConjugates=w.shouldExcludeConjugates,conjugateDimension=w.conjugateDimension);
 keys=round([w.k(:)*w.Lx,w.l(:)*w.Ly]/(2*pi));
 otherKeys=round([geometry.k(:)*w.Lx,geometry.l(:)*w.Ly]/(2*pi));
@@ -96,12 +99,4 @@ evidence=struct(crossingOrder=options.crossingOrder,snapshot=w,grid=Nxyz,z=z,sou
         tendency.Aio=.5*exp(-1i*w.f*(w.t-w.t0))*pairing(prepared.pairings.inertial)*(s.u(:,meanIndex)-1i*s.v(:,meanIndex));
         tendency.Amda=real(pairing(prepared.pairings.mda)*s.eta(:,meanIndex));
     end
-end
-function M=interpolation(n,m)
-x=-cos(pi*(0:n-1)'/(n-1)); y=-cos(pi*(0:m-1)'/(m-1));
-b=(-1).^(0:n-1)'; b([1 end])=b([1 end])/2; M=zeros(m,n);
-for j=1:m
-    [distance,k]=min(abs(y(j)-x));
-    if distance<32*eps, M(j,k)=1; else, row=b./(y(j)-x); M(j,:)=row.'/sum(row); end
-end
 end

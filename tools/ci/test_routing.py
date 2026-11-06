@@ -88,6 +88,14 @@ class RoutingTests(unittest.TestCase):
         ])
         self.assertTrue(plan["matlab"])
 
+    def test_free_surface_grid_changes_run_grid_and_refinement_regressions(self):
+        for path in ("+WVInternal/buildFreeSurfaceBalancedModes.m", "+WVInternal/freeSurfaceCoefficientTransfer.m"):
+            with self.subTest(path=path):
+                plan = classify_changes([path])
+                self.assertTrue(plan["matlab"])
+                self.assertIn("TestFreeSurfaceProviderGrid", plan["tests"])
+                self.assertTrue(set(PARTIAL_TESTS["TestFreeSurfaceResolutionTransfer"]).issubset(plan["tests"]))
+
     def test_version_compatibility_tests_select_their_focused_regressions(self):
         for name, selector in (
             ("TestPortableRunRequestWriter", "TestPortableRunRequestWriter"),

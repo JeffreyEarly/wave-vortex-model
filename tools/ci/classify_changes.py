@@ -56,7 +56,7 @@ ROUTINE_TESTS = {
     + PERSISTENCE + COMPILED + DOC_TESTS + QG + BOUSSINESQ
 } | {"TestCoreTransformInvariantSmoke", "TestFourierTransformXY", "TestFreeSurfaceQGVerticalCalculus",
      "TestPublishedWaveVortexBenchmark", "TestThreeInterfaceBenchmark",
-     "TestNativeThermalAdaptiveDamping", "TestFreeSurfaceInitializationPilot",
+     "TestNativeThermalAdaptiveDamping", "TestFreeSurfaceInitializationPilot", "TestFreeSurfaceProviderGrid",
      "TestFreeSurfaceInitializationReuse", "TestPortableRunRequestWriter"}
 
 # A changed study test still gets smoke, analyzer and compact scientific checks.
@@ -89,6 +89,9 @@ PARTIAL_TESTS = {
     "TestFreeSurfaceResolutionTransfer": (
         "TestFreeSurfaceResolutionTransfer/pureFamiliesAndStrictRequests",
         "TestFreeSurfaceResolutionTransfer/strictTransferRejectsControlledShapeMismatch",
+    ),
+    "TestWVTransformFreeSurfaceQG": (
+        "TestWVTransformFreeSurfaceQG/snapshotPersistsRepresentationAndDirectConstructionSkipsModeSolver",
     ),
     "TestFreeSurfaceManuscriptProjection": (
         "TestFreeSurfaceManuscriptProjection/arbitrarySourcesMatchManuscriptQuadrature",
@@ -143,6 +146,8 @@ CPP_SUFFIXES = {".c", ".cc", ".cpp", ".cxx", ".h", ".hh", ".hpp", ".cmake"}
 
 def scientific_tests(path):
     """Small numerical contracts selected by the implementation's domain."""
+    if path in {"+WVInternal/buildFreeSurfaceBalancedModes.m", "+WVInternal/freeSurfaceCoefficientTransfer.m"}:
+        return ("TestFreeSurfaceProviderGrid",) + PARTIAL_TESTS["TestFreeSurfaceResolutionTransfer"]
     if "thermalgeneralizedenstrophy" in path.lower():
         return ("TestNativeThermalAdaptiveDamping",)
     if path == "+WVInternal/adaptiveSVVFilter.m":

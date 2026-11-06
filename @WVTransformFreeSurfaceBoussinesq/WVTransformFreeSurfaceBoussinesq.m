@@ -4,7 +4,7 @@ classdef WVTransformFreeSurfaceBoussinesq < WVGeometryDoublyPeriodicStratified &
     % Create scientific operators with `fromStratification`. The primary
     % constructor accepts the complete structure returned by `scientificState`
     % and performs no scientific mode solve. Each coefficient family has its
-    % own retained count on one WKB-Chebyshev physical grid. Nonzero Fourier
+    % own retained count on one mapped Chebyshev-Lobatto grid. Nonzero Fourier
     % columns represent a Hermitian half plane; real fields include conjugates.
     % Waves use exp(+/-i*omega*(t-t0)); Aio uses exp(i*f*(t-t0)).
     %
@@ -221,6 +221,9 @@ classdef WVTransformFreeSurfaceBoussinesq < WVGeometryDoublyPeriodicStratified &
         % Physical vertical differentiation on the common grid.
         % - Topic: Inspect scientific operators
         verticalDerivativeMatrix
+        % InternalModes grid defining the samples, weights and vertical calculus.
+        % - Topic: Inspect scientific operators
+        verticalGrid
         % Wave Gram error on each horizontal-wavenumber page.
         % - Topic: Inspect scientific operators
         waveGramError
@@ -260,6 +263,11 @@ classdef WVTransformFreeSurfaceBoussinesq < WVGeometryDoublyPeriodicStratified &
         % Fixed zero-APV derivative and energy accuracy.
         % - Topic: Inspect scientific operators
         boundaryResolutionTolerance
+    end
+
+    properties (Hidden, SetAccess = private)
+        % Serialized provider geometry and map for annotated scientific state.
+        verticalGridSnapshot
     end
 
     properties (Dependent)
@@ -344,11 +352,13 @@ classdef WVTransformFreeSurfaceBoussinesq < WVGeometryDoublyPeriodicStratified &
             if length(state.klNonzeroKhUniqueIndex)~=nc || any(state.klNonzeroKhUniqueIndex<1 | state.klNonzeroKhUniqueIndex>np) || any(state.inertialEquivalentDepth<=0)
                 error('WVTransformFreeSurfaceBoussinesq:InvalidScientificState','Wave depths and horizontal page indices must be positive and match the stored families.')
             end
+            verticalGrid = WVInternal.restoreFreeSurfaceVerticalGrid(state);
             geometry = struct(shouldAntialias=state.shouldAntialias,z=state.z,j=state.apvModeNumber,Nj=nq,N2Function=state.N2Function,rhoFunction=state.rhoFunction,rho0=state.rho0,planetaryRadius=state.planetaryRadius,rotationRate=state.rotationRate,latitude=state.latitude,g=state.g,dLnN2=state.dLnN2,PF0inv=state.PF0inv,QG0inv=state.QG0inv,PF0=state.PF0,QG0=state.QG0,P0=state.P0,Q0=state.Q0,h_0=state.h_0,z_int=state.z_int);
             geometryArguments = namedargs2cell(geometry);
             self@WVGeometryDoublyPeriodicStratified(state.Lxyz,state.Nxyz,geometryArguments{:});
             self@WVTransform(WVForcingType(["NonhydrostaticSpatial","BoussinesqSpectral"]));
             for name = string(self.scientificPropertyNames()), self.(name) = state.(name); end
+            self.verticalGrid = verticalGrid;
             self.hasWaveComponent = true; self.hasPVComponent = true;
             nc = length(self.klNonzero);
             self.Aw_p = complex(zeros(nw,nc)); self.Aw_m = complex(zeros(nw,nc));
@@ -519,7 +529,7 @@ classdef WVTransformFreeSurfaceBoussinesq < WVGeometryDoublyPeriodicStratified &
             names = {'activeEndpoint','Ag_0','apvEndpointResponse','zeroAPVF','zeroAPVG','zeroAPVFPairing','zeroAPVGPairing','zeroAPVSourceSolve'};
         end
         function names = scientificPropertyNames()
-            names = {'g0','gd','apvMode','mdaMode','waveMode','waveModeCountByKh','inertialMode','apvModeNumber','mdaModeNumber','waveModeNumber','inertialModeNumber','activeEndpoint','klNonzero','kNonzero','lNonzero','khNonzero','khUnique','klNonzeroKhUniqueIndex','apvF','apvG','apvFForward','apvMu','apvEndpointResponse','apvFSourcePairing','apvGSourcePairing','zeroAPVFPairing','zeroAPVGPairing','zeroAPVSourceSolve','zeroAPVF','zeroAPVG','mdaG','mdaGForward','mdaPressureMode','waveF','waveG','waveGForward','waveEquivalentDepth','waveFrequency','inertialF','inertialFForward','inertialEquivalentDepth','verticalQuadratureWeights','verticalDerivativeMatrix','waveGramError','inertialGramError','apvGramError','mdaGramError','balancedNEVP','nEVP','gramTolerance','quadraticDealiasing','retainedFraction','energyFraction','bandwidthFraction','modeConvergenceTolerance','boundaryResolutionTolerance'};
+            names = {'g0','gd','apvMode','mdaMode','waveMode','waveModeCountByKh','inertialMode','apvModeNumber','mdaModeNumber','waveModeNumber','inertialModeNumber','activeEndpoint','klNonzero','kNonzero','lNonzero','khNonzero','khUnique','klNonzeroKhUniqueIndex','apvF','apvG','apvFForward','apvMu','apvEndpointResponse','apvFSourcePairing','apvGSourcePairing','zeroAPVFPairing','zeroAPVGPairing','zeroAPVSourceSolve','zeroAPVF','zeroAPVG','mdaG','mdaGForward','mdaPressureMode','waveF','waveG','waveGForward','waveEquivalentDepth','waveFrequency','inertialF','inertialFForward','inertialEquivalentDepth','verticalQuadratureWeights','verticalDerivativeMatrix','verticalGridSnapshot','waveGramError','inertialGramError','apvGramError','mdaGramError','balancedNEVP','nEVP','gramTolerance','quadraticDealiasing','retainedFraction','energyFraction','bandwidthFraction','modeConvergenceTolerance','boundaryResolutionTolerance'};
         end
         function names = geometryStateNames()
             names = {'Lxyz','Nxyz','shouldAntialias','z','N2Function','rhoFunction','rho0','planetaryRadius','rotationRate','latitude','g','dLnN2','PF0inv','QG0inv','PF0','QG0','P0','Q0','h_0','z_int'};

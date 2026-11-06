@@ -34,7 +34,7 @@ expectedNames = [
 expectedVersions = [
     "1.2.1"
     "2.0.0"
-    "2.0.0-beta.10"
+    "2.0.0-beta.11"
     "1.0.2"
     "2.2.0"
     options.expectedVersion
@@ -43,7 +43,7 @@ expectedVersions = [
 expectedSnapshotFolders = [
     "ClassAnnotations-1.2.1"
     "Distributions-2.0.0"
-    "InternalModes-2.0.0-beta.10"
+    "InternalModes-2.0.0-beta.11"
     "NetCDF-1.0.2"
     "SplineCore-2.2.0"
     ""
@@ -99,6 +99,7 @@ representativeSymbols = [
     "NormalDistribution"
     "InternalModesWKBSpectral"
     "IMInternalModes"
+    "IMLobattoCalculus"
     "NetCDFFile"
     "BSpline"
     "WVTransform"
@@ -107,6 +108,7 @@ representativeSymbols = [
 representativePackages = [
     "ClassAnnotations"
     "Distributions"
+    "InternalModes"
     "InternalModes"
     "InternalModes"
     "NetCDF"
@@ -144,7 +146,10 @@ end
 function report = exerciseInstalledFreeSurfacePackage()
 N2 = @(z) 1e-4*ones(size(z));
 wvt = WVTransformFreeSurfaceBoussinesq.fromStratification([1e5 1e5 1000],[8 8 33], ...
-    N2Function=N2,g0=.02,gd=Inf,apvModeCount=2,mdaModeCount=2,waveModeCount=2,inertialModeCount=2);
+    N2Function=N2,g0=.02,gd=Inf,apvModeCount=2,mdaModeCount=2,waveModeCount=2,inertialModeCount=2, ...
+    verticalGridRule="smoothedBandwidth");
+require(wvt.verticalGrid.kind == "smoothedBandwidth" && isa(wvt.verticalGrid.calculus,"IMLobattoCalculus"), ...
+    "The installed free-surface transform did not construct the selected mapped calculus.");
 waves = wvt.Aw_p;
 waves(1,1) = .01+.02i;
 wvt.Aw_p = waves;

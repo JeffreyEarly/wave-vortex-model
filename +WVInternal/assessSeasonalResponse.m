@@ -24,14 +24,12 @@ if count==0
 elseif count<2*transforms{3}.Nz+1
     error('WV:ResponseQuadrature','quadratureCount must be at least 2*finestNz+1.');
 end
-rule = WVInternal.qgVerticalOperators(transforms{3}.z,count);
-z = rule.zQuadrature;
-weights = rule.quadratureWeights;
+[z,weights] = transforms{3}.verticalGrid.calculus.quadratureRule(count);
 P = cell(1,3);
 N2 = cell(1,3);
 operators = cell(1,3);
 for j = 1:3
-    P{j} = WVInternal.qgVerticalInterpolation(transforms{j}.z,z);
+    P{j} = transforms{j}.verticalGrid.calculus.interpolationMatrix(z);
     N2{j} = P{j}*transforms{j}.N2;
 end
 profileDifference = cellfun(@(n)max(abs(n-N2{3})./N2{3}),N2);
