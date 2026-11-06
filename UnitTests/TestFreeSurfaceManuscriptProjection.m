@@ -75,8 +75,12 @@ classdef TestFreeSurfaceManuscriptProjection < matlab.unittest.TestCase
             measure = w.verticalQuadratureWeights.*N2/w.g;
             measure(end) = measure(end)+w.g0/w.g;
             measure(1) = measure(1)+w.gd/w.g;
-            signature = sign(sum(measure.*G.^2,1)).';
-            testCase.assertEqual(signature,[-1;1;1;1])
+            testCase.assertEqual(w.mdaModeNumber,[0;1;2;3])
+            % The constant mode has negative energy. For the positive
+            % eigenvalues, integration by parts gives positive energy.
+            constantNorm = (0.04*(-expm1(-w.Lz/400))+w.g0+w.gd)/w.g;
+            testCase.assertLessThan(constantNorm,0)
+            signature = [-1;1;1;1];
             testCase.assertGreaterThan(norm(b-G*(G\b)),0.1)
             expected = signature.*(G.'*(measure.*b));
 
