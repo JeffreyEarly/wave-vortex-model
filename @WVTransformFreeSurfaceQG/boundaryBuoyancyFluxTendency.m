@@ -1,14 +1,16 @@
 function tendency = boundaryBuoyancyFluxTendency(self,options)
 % Project prescribed inward buoyancy fluxes onto the canonical families.
 %
-% Each boundary load has displacement tendency -Q/(w*N2) at its endpoint.
-% Projection retains the interior APV response, residual endpoint response,
-% and horizontally uniform MDA source. A nonzero load requires an active
-% endpoint. These projections are independent of homogeneous diffusion.
+% At each nonzero horizontal wavenumber the load uses the positive energy
+% matrix and the total-displacement traces of the balanced modes.
+% $$E\dot a=-\boldsymbol{\eta}(0)^*\widehat Q_0-\boldsymbol{\eta}(-D)^*\widehat Q_d.$$
+% The mean load uses buoyancy variance and supplies the prescribed
+% column buoyancy input through the MDA inventory coordinate. A nonzero
+% inward flux requires an active endpoint.
 %
 % - Topic: Transform coefficient state
-% - Parameter options.surfaceBuoyancyFlux: inward surface buoyancy flux on the horizontal grid
-% - Parameter options.bottomBuoyancyFlux: inward bottom buoyancy flux on the horizontal grid
+% - Parameter options.surfaceBuoyancyFlux: inward surface buoyancy flux on the horizontal grid in $$\mathrm{m^{2}\,s^{-3}}$$
+% - Parameter options.bottomBuoyancyFlux: inward bottom buoyancy flux on the horizontal grid in $$\mathrm{m^{2}\,s^{-3}}$$
 % - Returns tendency: structure with Ag_q, Ag_0, and Amda tendencies
 % - Developer: true
 arguments
@@ -19,27 +21,29 @@ end
 
 surfaceFlux = validateFlux(options.surfaceBuoyancyFlux,self,"surfaceBuoyancyFlux");
 bottomFlux = validateFlux(options.bottomBuoyancyFlux,self,"bottomBuoyancyFlux");
-surfaceIsActive = any(self.activeEndpoint == 1);
-bottomIsActive = any(self.activeEndpoint == 2);
-if ~surfaceIsActive && ~isempty(surfaceFlux) && any(surfaceFlux ~= 0,"all")
+hasSurfaceFlux = any(surfaceFlux ~= 0,"all");
+hasBottomFlux = any(bottomFlux ~= 0,"all");
+if hasSurfaceFlux && ~any(self.activeEndpoint == 1)
     error('WVTransformFreeSurfaceQG:InactiveSurfaceFlux','A nonzero surface buoyancy flux requires an active surface endpoint.');
 end
-if ~bottomIsActive && ~isempty(bottomFlux) && any(bottomFlux ~= 0,"all")
+if hasBottomFlux && ~any(self.activeEndpoint == 2)
     error('WVTransformFreeSurfaceQG:InactiveBottomFlux','A nonzero bottom buoyancy flux requires an active bottom endpoint.');
 end
 
-self.ensureBoundaryBuoyancyFluxOperators();
+if hasSurfaceFlux || hasBottomFlux
+    self.ensureBoundaryBuoyancyFluxOperators();
+end
 nState = self.apvModeCount+self.activeEndpointCount;
 nNonzero = length(self.klNonzero);
 stateTendency = complex(zeros(nState,nNonzero));
 Amda = zeros(size(self.Amda));
 
-if ~isempty(surfaceFlux) && any(surfaceFlux ~= 0,"all")
+if hasSurfaceFlux
     spectralFlux = horizontalTransform(self,surfaceFlux);
     stateTendency = stateTendency+self.surfaceBuoyancyFluxOperatorByKh_(:,self.klNonzeroKhUniqueIndex).*spectralFlux(self.klNonzero);
     Amda = Amda+self.surfaceBuoyancyMDAFluxOperator_*real(spectralFlux(meanIndex(self)));
 end
-if ~isempty(bottomFlux) && any(bottomFlux ~= 0,"all")
+if hasBottomFlux
     spectralFlux = horizontalTransform(self,bottomFlux);
     stateTendency = stateTendency+self.bottomBuoyancyFluxOperatorByKh_(:,self.klNonzeroKhUniqueIndex).*spectralFlux(self.klNonzero);
     Amda = Amda+self.bottomBuoyancyMDAFluxOperator_*real(spectralFlux(meanIndex(self)));

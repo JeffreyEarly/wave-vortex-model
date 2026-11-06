@@ -29,14 +29,18 @@ $$
 =Q_*P(x,y)\sin\left(\frac{2\pi t}{T}+\phi\right).
 $$
 
-`pattern` is stored and used exactly as supplied: it is not
-normalized and its horizontal mean is not removed. Consequently, a
-nonzero pattern mean forces the `Amda` family. The default pattern is
-$$P=\sin(2\pi y/L_y)$$. The surface endpoint must be active.
+The flux enters the balanced equation as a weak boundary load
+using total displacement. The supplied `pattern` retains its
+amplitude and mean. Its mean drives the column buoyancy inventory
+through the `Amda` family. The default is $$P=\sin(2\pi y/L_y)$$.
+The surface endpoint must be active.
 
 ```matlab
-wvt = WVTransformFreeSurfaceQG([100e3 100e3 1000],[8 8 33],N2Function=@(z)1e-4*ones(size(z)),g0=0.02);
-wvt.addForcing(WVSeasonalSurfaceBuoyancyFlux(wvt,amplitude=1e-8));
+wvt = WVTransformFreeSurfaceQG([100e3 100e3 100],[8 8 65], ...
+    N2Function=@(z)1e-4*ones(size(z)),g0=.02,gd=.03,shouldAntialias=false, ...
+    quadraticDealiasing="none",apvModeCount=24,mdaModeCount=24);
+wvt.addForcing(WVVerticalDiffusivity(wvt,kappa_z=1e-2));
+wvt.addForcing(WVSeasonalSurfaceBuoyancyFlux(wvt,amplitude=1e-8,period=10*86400));
 ```
 
 

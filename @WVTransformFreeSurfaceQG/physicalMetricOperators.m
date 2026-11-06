@@ -51,6 +51,7 @@ for p = 1:length(pages)
     phi = [-F./mu,-ZF/kh^2];
     phiSurface = [-self.apvF(end,:)./mu,-self.zeroAPVF(end,:,p)/kh^2];
     eta = (f/g)*[-G./mu,-ZG/kh^2];
+    etaTrace = (f/g)*[-self.apvG([end 1],:)./mu,-self.zeroAPVG([end 1],:,p)/kh^2];
     etaZ = [-(f/g)*F./(self.apvEquivalentDepth(:).'.*mu),ZF/f];
     interiorEta = eta-(f/g)*a*phiSurface;
     interiorEtaZ = etaZ-(f/(g*D))*phiSurface;
@@ -58,7 +59,7 @@ for p = 1:length(pages)
     buoyancyZ = -N2z.*interiorEta-N2.*interiorEtaZ;
     endpoint = [self.apvEndpointResponse(:,:,p),-(f/g)*eye(self.activeEndpointCount)/kh^2];
     reconstruction{p} = struct(phi=phi,eta=eta,etaZ=etaZ,buoyancy=buoyancy,buoyancyZ=buoyancyZ, ...
-        q=[F,zeros(size(ZF))],endpoint=endpoint,phiSurface=phiSurface);
+        q=[F,zeros(size(ZF))],endpoint=endpoint,etaTrace=etaTrace,phiSurface=phiSurface);
     kinetic = phi'*(weights*kh^2.*phi);
     interiorPotential = eta'*(weights.*N2.*eta);
     surfacePotential = (f^2/g)*(phiSurface'*phiSurface);

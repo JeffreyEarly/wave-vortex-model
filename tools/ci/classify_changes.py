@@ -59,7 +59,8 @@ ROUTINE_TESTS = {
      "TestNativeThermalAdaptiveDamping", "TestFreeSurfaceInitializationPilot", "TestFreeSurfaceProviderGrid",
      "TestFreeSurfaceInitializationReuse", "TestPortableRunRequestWriter",
      "TestBalancedResolutionEvidence", "TestFreeSurfaceJointResolution",
-     "TestFreeSurfaceResolutionContract", "TestWaveModeConvergenceSummary"}
+     "TestFreeSurfaceResolutionContract", "TestWaveModeConvergenceSummary",
+     "TestFreeSurfaceQGBuoyancyFlux", "TestFreeSurfaceQGDensityForcing"}
 
 # A changed study test still gets smoke, analyzer and compact scientific checks.
 # Its long evidence run belongs to Extended CI. New test names do not silently
@@ -173,6 +174,11 @@ CPP_SUFFIXES = {".c", ".cc", ".cpp", ".cxx", ".h", ".hh", ".hpp", ".cmake"}
 
 def scientific_tests(path):
     """Small numerical contracts selected by the implementation's domain."""
+    if path in {"Forcing/WVSeasonalSurfaceBuoyancyFlux.m",
+                "@WVTransformFreeSurfaceQG/boundaryBuoyancyFluxTendency.m",
+                "+WVInternal/densityDiffusionPage.m", "+WVInternal/densityDiffusionMDA.m"}:
+        return ("TestFreeSurfaceQGBuoyancyFlux", "TestFreeSurfaceQGDensityForcing",
+                "TestFreeSurfaceQGDiffusionQualification/strictForcingHasZeroIndependentPV")
     if path in {"+WVInternal/prepareBoussinesqRHSAssessment.m", "+WVInternal/evaluateBoussinesqRHSAssessment.m"}:
         return ("TestBoussinesqRHSAssessment", "TestFreeSurfaceRHSReuse/sourcesAndProjectionMatchAcrossStates")
     if path in {"+WVInternal/buildFreeSurfaceBalancedModes.m", "+WVInternal/freeSurfaceCoefficientTransfer.m"}:

@@ -790,46 +790,38 @@ classdef WVTransformFreeSurfaceQG < WVGeometryDoublyPeriodicStratified & WVTrans
                 return
             end
 
-            N2 = reshape(self.N2,[],1);
-            weights = self.verticalQuadratureWeights;
-            nAPV = self.apvModeCount;
-            nEndpoint = self.activeEndpointCount;
-            nState = nAPV+nEndpoint;
-            nPage = length(self.khUnique);
-            surfaceOperator = zeros(nState,nPage);
-            bottomOperator = zeros(nState,nPage);
-            surfaceEtaTendency = zeros(self.Nz,1);
-            bottomEtaTendency = zeros(self.Nz,1);
-            if any(self.activeEndpoint == 1)
-                surfaceEtaTendency(end) = -1/(weights(end)*N2(end));
-            end
-            if any(self.activeEndpoint == 2)
-                bottomEtaTendency(1) = -1/(weights(1)*N2(1));
+            metrics = self.physicalMetricOperators();
+            active = self.activeEndpoint;
+            nState = self.apvModeCount+self.activeEndpointCount;
+            nPages = numel(self.khUnique);
+            operators = zeros(nState,2,nPages);
+            for iPage = 1:nPages
+                r = metrics.reconstruction{iPage};
+                kh = self.khUnique(iPage);
+                [~,columnScale,R,energyMetric] = WVInternal.densityDiffusionEnergyCoordinates( ...
+                    r.phi,r.eta,r.phiSurface,metrics.weights,metrics.N2,kh,self.f,self.g);
+                trace = (r.etaTrace(active,:)./columnScale)/R;
+                operators(:,active,iPage) = -(R\(energyMetric\trace'))./columnScale.';
             end
 
-            for iPage = 1:nPage
-                surfaceOperator(:,iPage) = self.projectBoundaryEtaTendencyOnPage(surfaceEtaTendency,iPage);
-                bottomOperator(:,iPage) = self.projectBoundaryEtaTendencyOnPage(bottomEtaTendency,iPage);
-            end
+            r = metrics.mda.reconstruction;
+            [field,fromVariance,~,~,buoyancyIntegral] = WVInternal.densityDiffusionMeanCoordinates(r.buoyancy,metrics.weights);
+            N2 = self.N2(:);
+            buoyancyTrace = -N2([end 1]).*r.endpoint;
+            varianceField = field*fromVariance;
+            load = (varianceField'*varianceField)\(buoyancyTrace(active,:)*fromVariance)';
+            % Correct only the inventory coordinate so each inward unit load
+            % supplies one unit of column buoyancy for any retained MDA span.
+            inventory = buoyancyIntegral'*fromVariance;
+            load(1,:) = (1-inventory(2:end)*load(2:end,:))/inventory(1);
+            meanOperator = zeros(numel(self.Amda),2);
+            meanOperator(:,active) = real(fromVariance*load);
 
-            self.surfaceBuoyancyFluxOperatorByKh_ = surfaceOperator;
-            self.bottomBuoyancyFluxOperatorByKh_ = bottomOperator;
-            self.surfaceBuoyancyMDAFluxOperator_ = real(self.mdaGForward*surfaceEtaTendency);
-            self.bottomBuoyancyMDAFluxOperator_ = real(self.mdaGForward*bottomEtaTendency);
+            self.surfaceBuoyancyFluxOperatorByKh_ = reshape(operators(:,1,:),nState,nPages);
+            self.bottomBuoyancyFluxOperatorByKh_ = reshape(operators(:,2,:),nState,nPages);
+            self.surfaceBuoyancyMDAFluxOperator_ = meanOperator(:,1);
+            self.bottomBuoyancyMDAFluxOperator_ = meanOperator(:,2);
             self.hasBoundaryBuoyancyFluxOperators_ = true;
-        end
-
-        function stateTendency = projectBoundaryEtaTendencyOnPage(self,etaTendency,pageIndex)
-            qTendency = -self.f*(self.verticalDerivativeMatrix*etaTendency);
-            AgqTendency = self.apvFForward*qTendency;
-            if self.activeEndpointCount > 0
-                endpointRows = self.Nz-(self.activeEndpoint-1)*(self.Nz-1);
-                endpointTendency = etaTendency(endpointRows,:);
-                Ag0Tendency = -(self.g/self.f)*self.khUnique(pageIndex)^2*(endpointTendency-self.apvEndpointResponse(:,:,pageIndex)*AgqTendency);
-            else
-                Ag0Tendency = zeros(0,size(etaTendency,2));
-            end
-            stateTendency = [AgqTendency;Ag0Tendency];
         end
 
         function validateAgq(self,value)
