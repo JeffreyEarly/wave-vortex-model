@@ -7,6 +7,7 @@
 - Export prerelease verification candidates at their current beta version without promoting the Unreleased changelog or preparing a stable patch release.
 
 - Require `InternalModes@^2.0.0-beta.9` for shared free-surface background construction. Density and squared buoyancy frequency are alternative inputs, with the reference density anchored at the surface. Routine CI and package verification use the immutable beta.9 OceanKit snapshot.
+- Construct free-surface Boussinesq waves and inertial oscillations with the provider's wave-energy normalization. Store profiles with `F = D G_z` and record the normalization in Boussinesq checkpoints.
 - Use common-coordinate quadratic-filtering evidence from InternalModes while retaining the existing orientation and construction optimizations.
 
 - Add `quadraticDealiasing="none"`, `"fixedFraction"`, and `"effectiveBandwidth"` to free-surface Boussinesq and shared QG/APV construction. Use the same policy and parameters for wave/APV prefixes, preserve strict explicit counts, and reuse existing fine-grid convergence samples for spectral scoring.

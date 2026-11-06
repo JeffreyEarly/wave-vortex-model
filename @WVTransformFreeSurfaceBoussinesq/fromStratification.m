@@ -7,6 +7,7 @@ function [self,assessment] = fromStratification(Lxyz,Nxyz,options)
 % Explicit counts are strict under both limits. No basis or quadrature
 % weights are fitted.
 % Wave/inertial references are always computed, independently of nargout.
+% Wave profiles use the provider's energy normalization with F = D G_z.
 % This experimental implementation requires N2>f^2.
 %
 % - Topic: Create a transform
@@ -146,13 +147,13 @@ requestedInertial=options.inertialModeCount;
 state.waveModeCountByKh=repmat(candidateCount,numel(state.khUnique),1);
 options.inertialModeCount=candidateCount;
 waveTimer=tic;
-pilot=WVInternal.assessFreeSurfaceWavePilot(state,options);
+pilot=WVInternal.assessFreeSurfaceWavePilot(state,options,background);
 solveCount=pilot.waveEigensolves; waveDealiasingSeconds=pilot.quadraticDealiasingSeconds;
 if pilot.rejected, options.nEVP=max(options.nEVP+16,ceil(1.5*options.nEVP)); end
 candidateReference=[];
 for attempt=(1+pilot.rejected):3
     state.nEVP=options.nEVP;
-    [state,bases,candidateSolves]=WVInternal.buildFreeSurfaceWaveState(state,options,candidateReference);
+    [state,bases,candidateSolves]=WVInternal.buildFreeSurfaceWaveState(state,options,background,candidateReference);
     activePages=find(state.waveModeCountByKh>0);
     referenceNEVP=options.referenceNEVP;
     if isempty(referenceNEVP), referenceNEVP=max(options.nEVP+16,ceil(1.5*options.nEVP)); end
@@ -194,6 +195,7 @@ assessment.cost.pilotRejectedAttempts=double(pilot.rejected);
 assessment=rmfield(assessment,'quadraticDealiasingSeconds');
 [state,assessment]=WVInternal.selectFreeSurfaceWaveCounts(state,bases,reference,vertical,counts,options.inertialModeCount,assessment,convergence,options,autoWave,autoInertial);
 state.mdaPressureMode=background.g*(state.mdaF-state.mdaF(end,:));
+state.waveNormalization=WVTransformFreeSurfaceBoussinesq.waveNormalization;
 self=WVTransformFreeSurfaceBoussinesq(state);
 assessment.cost.constructionSeconds=toc(constructionTimer);
 self.constructionAssessment=assessment;

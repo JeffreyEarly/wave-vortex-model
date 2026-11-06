@@ -24,7 +24,7 @@ switch family
         % there, rather than at the last interior quadrature point.
         F=[P*w.waveF(:,rows,p);w.waveF(end,rows,p)];
         G=[P*w.waveG(:,rows,p);w.waveG(end,rows,p)];
-        fields=WVInternal.freeSurfaceWavePolarization(F,G,w.waveEquivalentDepth(rows,p),k,l,f=w.f,g=w.g,rho0=w.rho0);
+        fields=WVInternal.freeSurfaceWavePolarization(F,G,w.waveEquivalentDepth(rows,p),w.Lz,k,l,f=w.f,g=w.g,rho0=w.rho0);
         phase=exp(sign*1i*w.waveFrequency(rows,p).'*(time-w.t0));
         M=[fields.u(1:n,:,page);fields.v(1:n,:,page);fields.w(1:n,:,page);fields.eta(1:n,:,page);fields.ssh(:,:,page)].*phase;
     case "Aio"

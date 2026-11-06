@@ -14,48 +14,58 @@ classdef TestFreeSurfaceInitializationReuse < matlab.unittest.TestCase
             w=makeTransform();
             state=w.scientificState();
             state.waveModeCountByKh=mod((1:numel(w.khUnique)).',4);
-            options=waveOptions(w);
-            [fresh,bases,solves]=WVInternal.buildFreeSurfaceWaveState(state,options);
-            [reused,~,reuseSolves]=WVInternal.buildFreeSurfaceWaveState(state,options,bases);
+            options=waveOptions(w); background=waveBackground(w);
+            [fresh,bases,solves]=WVInternal.buildFreeSurfaceWaveState(state,options,background);
+            [reused,~,reuseSolves]=WVInternal.buildFreeSurfaceWaveState(state,options,background,bases);
             testCase.verifyEqual(reused,fresh)
             testCase.verifyEqual(solves,nnz(state.waveModeCountByKh)+1)
             testCase.verifyEqual(reuseSolves,0)
             reordered=IMBasisCollection(fliplr(bases.bases),kappa=bases.kappa,basisIndex=numel(bases.bases):-1:1);
-            mapped=WVInternal.buildFreeSurfaceWaveState(state,options,reordered);
+            mapped=WVInternal.buildFreeSurfaceWaveState(state,options,background,reordered);
             testCase.verifyEqual(mapped,fresh)
             state.waveModeCountByKh(:)=0;
-            [fresh,bases,solves]=WVInternal.buildFreeSurfaceWaveState(state,options);
-            [reused,~,reuseSolves]=WVInternal.buildFreeSurfaceWaveState(state,options,bases);
+            [fresh,bases,solves]=WVInternal.buildFreeSurfaceWaveState(state,options,background);
+            [reused,~,reuseSolves]=WVInternal.buildFreeSurfaceWaveState(state,options,background,bases);
             testCase.verifyEqual(reused,fresh)
             testCase.verifyEqual([solves reuseSolves],[1 0])
         end
 
         function incompatibleScientificConfigurationIsRejected(testCase)
-            w=makeTransform(); state=w.scientificState(); options=waveOptions(w);
-            [~,bases]=WVInternal.buildFreeSurfaceWaveState(state,options);
-            for name=["nEVP","inertialModeCount","latitude","rotationRate","g"]
+            w=makeTransform(); state=w.scientificState(); options=waveOptions(w); background=waveBackground(w);
+            [~,bases]=WVInternal.buildFreeSurfaceWaveState(state,options,background);
+            for name=["nEVP","inertialModeCount"]
                 changed=options; changed.(name)=changed.(name)+1;
-                testCase.verifyError(@()WVInternal.buildFreeSurfaceWaveState(state,changed,bases),'WV:IncompatibleWaveReference')
+                testCase.verifyError(@()WVInternal.buildFreeSurfaceWaveState(state,changed,background,bases),'WV:IncompatibleWaveReference')
             end
-            changed=state; changed.N2Function=@(z)2e-4+0*z;
-            testCase.verifyError(@()WVInternal.buildFreeSurfaceWaveState(changed,options,bases),'WV:IncompatibleWaveReference')
-            changed=state; changed.Lxyz(3)=changed.Lxyz(3)+1;
-            testCase.verifyError(@()WVInternal.buildFreeSurfaceWaveState(changed,options,bases),'WV:IncompatibleWaveReference')
+            physical=struct(N2=background.N2,zDomain=background.zDomain,latitude=background.latitude, ...
+                rotationRate=background.rotationRate,g=background.g,surfaceCondition="freeSurface");
+            for name=["latitude","rotationRate","g"]
+                changed=physical; changed.(name)=changed.(name)+1;
+                argumentsForBackground=namedargs2cell(changed);
+                other=IMBackground(argumentsForBackground{:});
+                testCase.verifyError(@()WVInternal.buildFreeSurfaceWaveState(state,options,other,bases),'WV:IncompatibleWaveReference')
+            end
+            other=IMBackground(N2=@(z)2e-4+0*z,zDomain=background.zDomain,latitude=background.latitude, ...
+                rotationRate=background.rotationRate,g=background.g,surfaceCondition="freeSurface");
+            testCase.verifyError(@()WVInternal.buildFreeSurfaceWaveState(state,options,other,bases),'WV:IncompatibleWaveReference')
+            other=IMBackground(N2=background.N2,zDomain=background.zDomain+[-1 0],latitude=background.latitude, ...
+                rotationRate=background.rotationRate,g=background.g,surfaceCondition="freeSurface");
+            testCase.verifyError(@()WVInternal.buildFreeSurfaceWaveState(state,options,other,bases),'WV:IncompatibleWaveReference')
             changed=state; changed.khUnique(1)=changed.khUnique(1)+eps(changed.khUnique(1));
-            testCase.verifyError(@()WVInternal.buildFreeSurfaceWaveState(changed,options,bases),'WV:IncompatibleWaveReference')
+            testCase.verifyError(@()WVInternal.buildFreeSurfaceWaveState(changed,options,background,bases),'WV:IncompatibleWaveReference')
             changed=state; changed.waveModeCountByKh(1)=1;
-            testCase.verifyError(@()WVInternal.buildFreeSurfaceWaveState(changed,options,bases),'WV:IncompatibleWaveReference')
+            testCase.verifyError(@()WVInternal.buildFreeSurfaceWaveState(changed,options,background,bases),'WV:IncompatibleWaveReference')
             changed=state; changed.waveModeCountByKh(1)=0;
-            testCase.verifyError(@()WVInternal.buildFreeSurfaceWaveState(changed,options,bases),'WV:IncompatibleWaveReference')
-            testCase.verifyError(@()WVInternal.buildFreeSurfaceWaveState(state,options,struct()),'WV:IncompatibleWaveReference')
+            testCase.verifyError(@()WVInternal.buildFreeSurfaceWaveState(changed,options,background,bases),'WV:IncompatibleWaveReference')
+            testCase.verifyError(@()WVInternal.buildFreeSurfaceWaveState(state,options,background,struct()),'WV:IncompatibleWaveReference')
         end
 
         function normalizationCoordinatesAndBoundariesAreRejected(testCase)
-            w=makeTransform(); state=w.scientificState(); options=waveOptions(w);
-            [~,bases]=WVInternal.buildFreeSurfaceWaveState(state,options);
-            entries=bases.bases; entries{1}.normalization="unity";
+            w=makeTransform(); state=w.scientificState(); options=waveOptions(w); background=waveBackground(w);
+            [~,bases]=WVInternal.buildFreeSurfaceWaveState(state,options,background);
+            entries=bases.bases; entries{1}.normalization="rmsF";
             changed=IMBasisCollection(entries,kappa=bases.kappa);
-            testCase.verifyError(@()WVInternal.buildFreeSurfaceWaveState(state,options,changed),'WV:IncompatibleWaveReference')
+            testCase.verifyError(@()WVInternal.buildFreeSurfaceWaveState(state,options,background,changed),'WV:IncompatibleWaveReference')
             for changedPart=["coordinate","surface","bottom"]
                 coordinate="wkb"; surface=IMBoundaryCondition(a=0,b=1,c=1,d=0); bottom=IMBoundaryCondition.dirichlet();
                 if changedPart=="coordinate", coordinate="z"; end
@@ -65,7 +75,7 @@ classdef TestFreeSurfaceInitializationReuse < matlab.unittest.TestCase
                 entries=bases.bases;
                 entries{2}=IMSolverSpectral(nEVP=options.nEVP,coordinateKind=coordinate).solveEVP(evp,nModes=state.waveModeCountByKh(1));
                 changed=IMBasisCollection(entries,kappa=bases.kappa);
-                testCase.verifyError(@()WVInternal.buildFreeSurfaceWaveState(state,options,changed),'WV:IncompatibleWaveReference')
+                testCase.verifyError(@()WVInternal.buildFreeSurfaceWaveState(state,options,background,changed),'WV:IncompatibleWaveReference')
             end
         end
     end
@@ -76,7 +86,12 @@ w=WVTransformFreeSurfaceBoussinesq.fromStratification([1e5 8e4 1000],[8 6 33],N2
 end
 
 function options=waveOptions(w)
-options=struct(nEVP=w.nEVP,inertialModeCount=numel(w.inertialMode),latitude=w.latitude,rotationRate=w.rotationRate,g=w.g);
+options=struct(nEVP=w.nEVP,inertialModeCount=numel(w.inertialMode));
+end
+
+function background=waveBackground(w)
+background=IMBackground(N2=w.N2Function,zDomain=[-w.Lz 0],latitude=w.latitude,rotationRate=w.rotationRate,g=w.g, ...
+    rho0=w.rho0,surfaceCondition="freeSurface");
 end
 
 function value=withoutAssessmentTimers(value)

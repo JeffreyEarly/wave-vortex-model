@@ -23,14 +23,16 @@ reports={};
 dealiasingReports={};
 quadraticDealiasingSeconds=0;
 if ~isempty(referenceNEVP)
-    reference=IMSolverSpectral(nEVP=referenceNEVP,coordinateKind="wkb").solveWaveModesAtWavenumbers([0 state.khUnique(activePages).'],N2=state.N2Function,zDomain=[-state.Lxyz(3) 0],rotationRate=state.rotationRate,latitude=state.latitude,g=state.g,surfaceBoundary=IMBoundaryCondition(a=0,b=1,c=1,d=0),nModes=requestedCount(activePages).',nInertialModes=length(state.inertialMode));
+    inertialBasis=bases.bases{bases.basisIndex(1)};
+    reportKappa=[0 state.khUnique(activePages).'];
+    counts=[length(state.inertialMode) requestedCount(activePages).'];
+    solver=IMSolverSpectral(nEVP=referenceNEVP,coordinateKind="wkb");
+    reference=solver.solveWaveModesAtWavenumbers(inertialBasis.evp.background,reportKappa,nModes=counts,normalization="waveEnergy");
     % All wave and inertial pages share N2 and zDomain, hence WKB quadrature.
     nQuadrature=2*max(state.nEVP,referenceNEVP)+1;
-    inertialBasis=bases.bases{bases.basisIndex(1)};
     rule=IMSolverSpectral(nEVP=nQuadrature,coordinateKind="wkb").configuredForEVP(inertialBasis.evp);
     [z,w]=rule.nativeQuadratureRule(inertialBasis.zDomain);
     pages=1:(numel(activePages)+1);
-    reportKappa=[0 state.khUnique(activePages).'];
     reports=cell(size(pages));
     WVInternal.prepareWaveModeConvergenceBatches(bases,reference,z,reportKappa,@acceptPrepared, ...
         candidatePages=pages,referencePages=pages,candidateNEVP=state.nEVP,referenceNEVP=referenceNEVP,nQuadrature=nQuadrature);

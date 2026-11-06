@@ -76,7 +76,7 @@ classdef TestFreeSurfaceBoussinesqTransform < matlab.unittest.TestCase
             selected=w.reconstructFields(["u","v","w","eta","ssh"],flowComponent=components(1)+components(2));
             testCase.verifyEqual(combined,physicalEnergyOfFields(w,selected),RelTol=2e-13)
             w.removeAll(); w.Aw_p(1,1)=.01+.02i;
-            expected=2*w.waveEquivalentDepth(1,w.klNonzeroKhUniqueIndex(1))*abs(w.Aw_p(1,1))^2;
+            expected=2*w.Lz*abs(w.Aw_p(1,1))^2;
             testCase.verifyEqual(w.totalEnergy,expected,RelTol=1e-7)
         end
 
@@ -138,8 +138,20 @@ classdef TestFreeSurfaceBoussinesqTransform < matlab.unittest.TestCase
         end
 
         function inactiveEndpointsAndSouthernHemisphereRemainConsistent(testCase)
+            rho0=1030; g=9.7;
+            rho=@(z) rho0-(rho0/g)*1e-4*z;
             for boundary=[Inf Inf;-.1 Inf].'
-                w=WVTransformFreeSurfaceBoussinesq.fromStratification([1e5 1e5 1000],[8 8 33],shouldAntialias=true,N2Function=@(z)1e-4*ones(size(z)),g0=boundary(1),gd=boundary(2),latitude=-30,apvModeCount=3,mdaModeCount=2,waveModeCount=4,inertialModeCount=3);
+                Lxyz=[1e5 1e5 1000]; Nxyz=[8 8 33];
+                args=namedargs2cell(struct(shouldAntialias=true,rhoFunction=rho,g=g, ...
+                    rotationRate=6.8e-5,latitude=-30,g0=boundary(1),gd=boundary(2),apvModeCount=3,mdaModeCount=2));
+                w=WVTransformFreeSurfaceBoussinesq.fromStratification(Lxyz,Nxyz,args{:},waveModeCount=4,inertialModeCount=3);
+                qg=WVTransformFreeSurfaceQG(Lxyz,Nxyz,args{:});
+                testCase.verifyEqual(w.rho0,rho0)
+                testCase.verifyEqual(w.f,qg.f)
+                testCase.verifyEqual(w.N2,qg.N2)
+                testCase.verifyEqual(w.apvF,qg.apvF,AbsTol=1e-12)
+                testCase.verifyEqual(w.mdaG,qg.mdaG,AbsTol=1e-12)
+                testCase.verifyEqual(w.zeroAPVF,qg.zeroAPVF,AbsTol=1e-12)
                 assignState(w,mixedState(w));
                 testCase.verifySize(w.Ag_0,[sum(isfinite(boundary)),length(w.klNonzero)])
                 fields=w.reconstructFields(["u","v","w","eta","ssh"]);

@@ -62,10 +62,11 @@ for p = 1:length(self.khUnique)
     modes = 1:count;
     projectedW = self.waveGForward(modes,:,p)*spectral.w(:,index);
     projectedEta = self.waveGForward(modes,:,p)*(spectral.eta(:,index)-etaBalanced);
-    omega = self.waveFrequency(modes,p); h = self.waveEquivalentDepth(modes,p);
+    omega = self.waveFrequency(modes,p);
     phase = exp(1i*omega*(self.t-self.t0));
-    state.Aw_p(modes,columns) = (1i*projectedW-omega.*projectedEta)./(2*self.khUnique(p)*h)./phase;
-    state.Aw_m(modes,columns) = (1i*projectedW+omega.*projectedEta)./(2*self.khUnique(p)*h).*phase;
+    waveScale = 2*self.khUnique(p)*self.Lz;
+    state.Aw_p(modes,columns) = (1i*projectedW-omega.*projectedEta)./waveScale./phase;
+    state.Aw_m(modes,columns) = (1i*projectedW+omega.*projectedEta)./waveScale.*phase;
 end
 meanIndex = find(self.k==0 & self.l==0,1);
 state.Aio = .5*exp(-1i*self.f*(self.t-self.t0))*self.inertialFForward*(spectral.u(:,meanIndex)-1i*spectral.v(:,meanIndex));

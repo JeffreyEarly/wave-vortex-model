@@ -69,6 +69,11 @@ classdef WVTransformFreeSurfaceBoussinesq < WVGeometryDoublyPeriodicStratified &
         % Persisted interpretation of physical fields and parcel thermodynamics.
         % - Topic: Save transform state
         fieldConvention = "physical-velocity-upper-constant"
+
+        % Persisted normalization of wave and inertial mode profiles.
+        % Wave profiles use $$F=DG_z$$ with depth-normalized wave energy.
+        % - Topic: Save transform state
+        waveNormalization = "waveEnergy"
     end
 
     properties (Transient, Access=private)
@@ -186,7 +191,7 @@ classdef WVTransformFreeSurfaceBoussinesq < WVGeometryDoublyPeriodicStratified &
         % Hydrostatic mean pressure per unit displacement coefficient, divided by rho0.
         % - Topic: Inspect scientific operators
         mdaPressureMode
-        % Stored wave F modes, Nz by waveMode by khUnique.
+        % Stored wave F modes, $$F=DG_z$$, Nz by waveMode by khUnique.
         % - Topic: Inspect scientific operators
         waveF
         % Stored wave G modes, Nz by waveMode by khUnique.
@@ -204,7 +209,7 @@ classdef WVTransformFreeSurfaceBoussinesq < WVGeometryDoublyPeriodicStratified &
         % Stored inertial velocity modes.
         % - Topic: Inspect scientific operators
         inertialF
-        % Inertial projection using the continuous h normalization.
+        % Inertial projection using the depth-averaged F inner product.
         % - Topic: Inspect scientific operators
         inertialFForward
         % Inertial equivalent depths.
@@ -282,6 +287,7 @@ classdef WVTransformFreeSurfaceBoussinesq < WVGeometryDoublyPeriodicStratified &
             % `state` is returned by `scientificState`; it includes geometry,
             % stratification functions, and every resolved matrix. Coefficients
             % start at zero and are set separately through their named properties.
+            % Wave and inertial profiles must use the waveEnergy normalization.
             %
             % - Topic: Create a transform
             % - Declaration: self = WVTransformFreeSurfaceBoussinesq(state)
@@ -294,6 +300,10 @@ classdef WVTransformFreeSurfaceBoussinesq < WVGeometryDoublyPeriodicStratified &
             if ~isempty(retired)
                 error('WVTransformFreeSurfaceBoussinesq:UnsupportedLegacyScientificState', ...
                     'The scientific state contains retired quadratic-qualification field %s. Reconstruct the transform with a current quadraticDealiasing policy.',retired(1));
+            end
+            if ~isfield(state,"waveNormalization") || ~isequal(state.waveNormalization,WVTransformFreeSurfaceBoussinesq.waveNormalization)
+                error('WVTransformFreeSurfaceBoussinesq:UnsupportedWaveNormalization', ...
+                    'Scientific state requires waveEnergy-normalized wave and inertial profiles. Reconstruct the transform with fromStratification.')
             end
             % Historical uniform scientific states did not store a count map.
             if ~isfield(state,'waveModeCountByKh') && all(isfield(state,{'waveMode','khUnique'}))
@@ -481,7 +491,7 @@ classdef WVTransformFreeSurfaceBoussinesq < WVGeometryDoublyPeriodicStratified &
         wvt = transformFromGroup(group)
         function names = classRequiredPropertyNames()
             names = union(WVGeometryDoublyPeriodicStratified.namesOfRequiredPropertiesForGeometry(),WVTransformFreeSurfaceBoussinesq.scientificPropertyNames());
-            names = union(names,{'activeEndpointCount','rhoFunction','Aw_p','Aw_m','Ag_q','Aio','Amda','t','t0','forcing','fieldConvention'});
+            names = union(names,{'activeEndpointCount','rhoFunction','Aw_p','Aw_m','Ag_q','Aio','Amda','t','t0','forcing','fieldConvention','waveNormalization'});
             names = setdiff(names,[WVTransformFreeSurfaceBoussinesq.optionalEndpointPropertyNames(),WVTransformFreeSurfaceBoussinesq.optionalWavePropertyNames()]);
         end
     end

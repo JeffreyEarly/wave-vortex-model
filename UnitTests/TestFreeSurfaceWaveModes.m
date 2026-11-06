@@ -23,16 +23,15 @@ classdef TestFreeSurfaceWaveModes < matlab.unittest.TestCase
 
         function realFieldsHaveTheDeclaredPositiveEnergy(testCase)
             N2 = @(z)1e-4*ones(size(z));
-            kh = 2*pi/1e4; f = 1e-4; g = 9.81;
+            kh = 2*pi/1e4; f = 1e-4; g = 9.81; D = 1000;
             evp = makeEVP(N2,kh);
             basis = IMSolverSpectral(nEVP=96,coordinateKind="wkb").solveEVP(evp,nModes=6);
-            [z,weights] = basis.solver.nativeQuadratureRule([-1000 0]);
-            [p,omega] = WVInternal.freeSurfaceWavePolarization(basis.F(z),basis.G(z),basis.h(:),.6*kh,.8*kh,f=f);
+            [z,weights] = basis.solver.nativeQuadratureRule([-D 0]);
+            [p,omega] = WVInternal.freeSurfaceWavePolarization(basis.F(z),basis.G(z),basis.h(:),D,.6*kh,.8*kh,f=f);
             energyWeights = [weights;weights;weights;weights.*N2(z);g];
             B = fieldMatrix(p);
-            h = repmat(basis.h(:),2,1);
-            amplitudes = exp(1i*(1:12)')./sqrt(2*h.*(1:12)');
-            expected = sum(2*h.*abs(amplitudes).^2);
+            amplitudes = exp(1i*(1:12)')./sqrt(2*D*(1:12)');
+            expected = 2*D*sum(abs(amplitudes).^2);
             [x,y] = ndgrid(2*pi*(0:7)/8);
             phase = exp(1i*(x(:)+y(:))).';
             for t = [0 1e3 1e5]
@@ -43,9 +42,25 @@ classdef TestFreeSurfaceWaveModes < matlab.unittest.TestCase
             end
         end
 
+        function inertialPageUsesDepthNormalizedVelocity(testCase)
+            D = 1000; f = 1e-4; g = 9.81; N0 = .01;
+            N2 = @(z) N0^2*ones(size(z));
+            basis = IMSolverSpectral(nEVP=64,coordinateKind="wkb").solveEVP(makeEVP(N2,0),nModes=4);
+            [z,weights] = basis.solver.nativeQuadratureRule([-D 0]);
+            reference = constantReference(0,f,g,N0,D,4);
+            fields = reference.evaluate(z);
+            F = basis.F(z);
+            orientation = sign(sum(weights.*F.*fields.F,1));
+
+            testCase.verifyEqual(basis.normalization,"waveEnergy")
+            testCase.verifyEqual(basis.h(:),reference.h,RelTol=1e-7)
+            testCase.verifyEqual(F,fields.F.*orientation,AbsTol=1e-8)
+            testCase.verifyEqual((F'*(weights.*F))/D,eye(4),AbsTol=1e-10)
+        end
+
         function polarizationRejectsInvalidModeLayouts(testCase)
-            testCase.verifyError(@()WVInternal.freeSurfaceWavePolarization(ones(5,2),ones(5,1),[1;2],1,1,f=1e-4),'WV:WaveModeShape')
-            testCase.verifyError(@()WVInternal.freeSurfaceWavePolarization(ones(5,2),ones(5,2),[1;2],0,0,f=1e-4),'WV:ZeroWaveWavenumber')
+            testCase.verifyError(@()WVInternal.freeSurfaceWavePolarization(ones(5,2),ones(5,1),[1;2],1000,1,1,f=1e-4),'WV:WaveModeShape')
+            testCase.verifyError(@()WVInternal.freeSurfaceWavePolarization(ones(5,2),ones(5,2),[1;2],1000,0,0,f=1e-4),'WV:ZeroWaveWavenumber')
         end
     end
 
@@ -119,18 +134,18 @@ for nGrid = gridCounts
     calculus = IMSolverSpectral(nEVP=nGrid,coordinateKind="wkb").configuredForEVP(evp);
     [z,weights,Dz] = calculus.nativeDifferentiationRule([-D 0]);
     F = basis.F(z); G = basis.G(z);
-    [p,~] = WVInternal.freeSurfaceWavePolarization(F,G,h,.6*kh,.8*kh,f=f,g=g,rho0=rho0);
+    [p,~] = WVInternal.freeSurfaceWavePolarization(F,G,h,D,.6*kh,.8*kh,f=f,g=g,rho0=rho0);
     exact = reference.evaluate(z);
     orientation = sign(sum(weights.*F.*exact.F,1));
     orientation(orientation==0) = 1;
     Fref = exact.F.*orientation; Gref = exact.G.*orientation;
-    pref = WVInternal.freeSurfaceWavePolarization(Fref,Gref,reference.h,.6*kh,.8*kh,f=f,g=g,rho0=rho0);
+    pref = WVInternal.freeSurfaceWavePolarization(Fref,Gref,reference.h,D,.6*kh,.8*kh,f=f,g=g,rho0=rho0);
     B = fieldMatrix(p); Bref = fieldMatrix(pref);
     energyWeights = [weights;weights;weights;weights.*N2(z);g];
-    modalEnergy = 2*repmat(h,2,1);
+    modalEnergy = 2*D;
     scaledB = B./sqrt(modalEnergy.');
     energyGram = scaledB'*(energyWeights.*scaledB);
-    normalization = G'*(weights.*((N2(z)-f^2)/g).*G)+G(end,:)'*G(end,:);
+    normalization = (F'*(weights.*F)+(kh*D)^2*(G'*(weights.*G)))/D;
     row = physicalResiduals(p,z,weights,Dz,N2(z),kh,f,g,rho0,D,omega);
     row.profile = profile; row.kh = kh; row.D = D; row.f = f; row.g = g; row.rho0 = rho0;
     row.nEVP = nEVP; row.nModesPerSign = nModes; row.nGrid = nGrid;
@@ -152,7 +167,8 @@ end
 end
 
 function evp = makeEVP(N2,kh)
-evp = IMInternalModes.waveModesAtWavenumber(N2=N2,zDomain=[-1000 0],k=kh,rotationRate=7.2921e-5,latitude=asind(1e-4/(2*7.2921e-5)),g=9.81,surfaceBoundary=IMBoundaryCondition(a=0,b=1,c=1,d=0));
+background = IMBackground(N2=N2,zDomain=[-1000 0],rotationRate=7.2921e-5,latitude=asind(1e-4/(2*7.2921e-5)),g=9.81,surfaceCondition="freeSurface");
+evp = IMInternalModes.waveModesAtWavenumber(background,k=kh);
 end
 
 function B = fieldMatrix(p)
@@ -210,29 +226,32 @@ norms = zeros(1,nModes);
 for j = 1:nModes
     x = roots(j);
     if kind(j) == 0
-        integralG2 = D/3; surfaceG = 1;
+        integralG2 = D/3;
+        integralF2 = D;
     elseif kind(j) == 1
-        integralG2 = D*(.5-sin(2*x)/(4*x)); surfaceG = sin(x);
+        integralG2 = D*(.5-sin(2*x)/(4*x));
+        integralF2 = D*x^2*(.5+sin(2*x)/(4*x));
     else
-        integralG2 = D*(sinh(2*x)/(4*x)-.5)/sinh(x)^2; surfaceG = 1;
+        integralG2 = D*(sinh(2*x)/(4*x)-.5)/sinh(x)^2;
+        integralF2 = D*x^2*(sinh(2*x)/(4*x)+.5)/sinh(x)^2;
     end
-    norms(j) = sqrt((N0^2-f^2)*integralG2/g+surfaceG^2);
+    norms(j) = sqrt((integralF2+K^2*integralG2)/D);
 end
 reference.h = h;
-reference.evaluate = @(z)constantFields(z,D,h,roots,kind,norms);
+reference.evaluate = @(z)constantFields(z,D,roots,kind,norms);
 end
 
-function fields = constantFields(z,D,h,roots,kind,norms)
+function fields = constantFields(z,D,roots,kind,norms)
 s = (z(:)+D)/D;
-G = zeros(length(z),length(h)); F = G;
-for j = 1:length(h)
+G = zeros(length(z),length(roots)); F = G;
+for j = 1:length(roots)
     x = roots(j);
     if kind(j) == 0
-        G(:,j) = s; F(:,j) = h(j)/D;
+        G(:,j) = s; F(:,j) = 1;
     elseif kind(j) == 1
-        G(:,j) = sin(x*s); F(:,j) = h(j)*x/D*cos(x*s);
+        G(:,j) = sin(x*s); F(:,j) = x*cos(x*s);
     else
-        G(:,j) = sinh(x*s)/sinh(x); F(:,j) = h(j)*x/D*cosh(x*s)/sinh(x);
+        G(:,j) = sinh(x*s)/sinh(x); F(:,j) = x*cosh(x*s)/sinh(x);
     end
 end
 fields = struct(F=F./norms,G=G./norms);
@@ -246,11 +265,11 @@ for j = 1:length(h)
     root = fzero(@(logH)shootingResidual(exp(logH),N2,kh,f,g,D,options),log(seedH(j))+[-.05 .05],optimset(TolX=1e-13));
     h(j) = exp(root);
     solutions{j} = shoot(h(j),N2,kh,f,g,D,options);
-    values = deval(solutions{j},z); surface = deval(solutions{j},0);
-    norms(j) = sqrt(sum(weights.*((N2(z)-f^2)/g).*values(1,:).'.^2)+surface(1)^2);
+    values = deval(solutions{j},z);
+    norms(j) = sqrt(D*sum(weights.*(values(2,:).'.^2+kh^2*values(1,:).'.^2)));
 end
 reference.h = h;
-reference.evaluate = @(z)shootingFields(z,h,solutions,norms);
+reference.evaluate = @(z)shootingFields(z,D,solutions,norms);
 end
 
 function value = shootingResidual(h,N2,kh,f,g,D,options)
@@ -263,12 +282,12 @@ function solution = shoot(h,N2,kh,f,g,D,options)
 solution = ode113(@(z,y)[y(2);(kh^2-(N2(z)-f^2)/(g*h))*y(1)],[-D 0],[0;1],options);
 end
 
-function fields = shootingFields(z,h,solutions,norms)
-F = zeros(length(z),length(h)); G = F;
-for j = 1:length(h)
+function fields = shootingFields(z,D,solutions,norms)
+F = zeros(length(z),length(solutions)); G = F;
+for j = 1:length(solutions)
     values = deval(solutions{j},z);
     G(:,j) = values(1,:).'/norms(j);
-    F(:,j) = h(j)*values(2,:).'/norms(j);
+    F(:,j) = D*values(2,:).'/norms(j);
 end
 fields = struct(F=F,G=G);
 end

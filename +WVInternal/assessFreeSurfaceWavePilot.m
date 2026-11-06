@@ -1,4 +1,4 @@
-function cost = assessFreeSurfaceWavePilot(state,options)
+function cost = assessFreeSurfaceWavePilot(state,options,background)
 % A conclusive sampled failure may reject only the first resolution pair.
 % Passing or inconclusive samples cannot qualify the complete inventory.
 cost = struct(waveEigensolves=0,pages=0,rejected=false,quadraticDealiasingSeconds=0);
@@ -8,7 +8,7 @@ positions = active(unique(round(linspace(1,numel(active),7))));
 state.nEVP = options.nEVP;
 state.khUnique = state.khUnique(positions);
 state.waveModeCountByKh = state.waveModeCountByKh(positions);
-[state,bases] = WVInternal.buildFreeSurfaceWaveState(state,options);
+[state,bases] = WVInternal.buildFreeSurfaceWaveState(state,options,background);
 referenceNEVP = max(options.nEVP+16,ceil(1.5*options.nEVP));
 assessment = WVInternal.assessWaveModeConstruction(state,bases,(1:numel(positions)).',referenceNEVP,options.modeConvergenceTolerance,options);
 values = [assessment.pages.convergedCount;assessment.inertial.convergedCount];

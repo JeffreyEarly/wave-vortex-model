@@ -11,7 +11,7 @@ function tendency = fullBoussinesqProjectionReference(self,sources)
 % loading may be supplied through its horizontal acceleration.
 %
 % Wave projection uses the continuous generalized-energy dual directly:
-% integral(conj(U)*Su+conj(V)*Sv+conj(W)*Sw+N2*conj(Eta)*Seta)/(2*h).
+% integral(conj(U)*Su+conj(V)*Sv+conj(W)*Sw+N2*conj(Eta)*Seta)/(2*D).
 % The wave endpoint density anomalies vanish. This form avoids subtracting
 % an incomplete retained balanced expansion in the equivalent G formula.
 % APV and zero-APV source pairings preserve the existing signed balanced
@@ -54,14 +54,14 @@ for p = 1:length(self.khUnique)
     phase = exp(1i*self.waveFrequency(modes,p)*(self.t-self.t0));
     for j = columns.'
         index = indices(j);
-        pol = WVInternal.freeSurfaceWavePolarization(self.waveF(:,modes,p),self.waveG(:,modes,p),self.waveEquivalentDepth(modes,p),self.kNonzero(j),self.lNonzero(j),f=self.f,g=self.g,rho0=self.rho0);
+        pol = fullBoussinesqWaveReference(self.waveF(:,modes,p),self.waveG(:,modes,p),self.waveEquivalentDepth(modes,p),self.Lz,self.kNonzero(j),self.lNonzero(j),f=self.f,g=self.g,rho0=self.rho0);
         pair = complex(zeros(2*count,1));
         for name = ["u","v","w","eta"]
             metric = weights;
             if name=="eta", metric=metric.*self.N2; end
             pair = pair+reshape(pol.(name),self.Nz,[])'*(metric.*spectral.(name)(:,index));
         end
-        pair = reshape(pair,[],2)./(2*self.waveEquivalentDepth(modes,p));
+        pair = reshape(pair,[],2)/(2*self.Lz);
         tendency.Aw_p(modes,j) = pair(:,1)./phase;
         tendency.Aw_m(modes,j) = pair(:,2).*phase;
     end
