@@ -68,7 +68,7 @@ else
     nz=Nxyz(3); np=length(state.khUnique); nq=length(state.apvMode);
     state.activeEndpoint=zeros(0,1); state.apvEndpointResponse=zeros(0,nq,np);
     state.zeroAPVF=zeros(nz,0,np); state.zeroAPVG=zeros(nz,0,np);
-    state.zeroAPVFPairing=zeros(0,nz,np); state.zeroAPVGPairing=zeros(0,nz,np);
+    state.zeroAPVFProjection=zeros(0,nz,np); state.zeroAPVGProjection=zeros(0,nz,np);
     state.zeroAPVSourceSolve=zeros(0,0,np);
 end
 wvt = WVTransformFreeSurfaceBoussinesq(state);

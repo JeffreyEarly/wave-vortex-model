@@ -9,6 +9,7 @@
 - Require `InternalModes@^2.0.0-beta.11` for explicit mapped vertical calculus in free-surface Boussinesq and QG. Both transforms default to smoothed-bandwidth sampling and accept `verticalGridRule="wkb"` for WKB sampling. Checkpoints retain the provider's map for reconstruction and transfer.
 - Use a shared InternalModes background and the finite spectral APV solve during resolution refinement. Density and squared buoyancy frequency are alternative inputs, with the reference density anchored at the surface. Routine CI and package verification use the immutable beta.11 OceanKit snapshot.
 - Construct free-surface Boussinesq waves and inertial oscillations with the provider's wave-energy normalization. Store profiles with `F = D G_z` and record the normalization in Boussinesq checkpoints.
+- Project free-surface Boussinesq observations and hatted sources with the manuscript's PV, boundary-buoyancy, wave, inertial, and signed MDA functionals. Persist physical projection matrices separately from sampled inversion, and use the physical PV projection for supplied QG tendencies.
 - Use common-coordinate quadratic-filtering evidence from InternalModes while retaining the existing orientation and construction optimizations.
 
 - Add `quadraticDealiasing="none"`, `"fixedFraction"`, and `"effectiveBandwidth"` to free-surface Boussinesq and shared QG/APV construction. Use the same policy and parameters for wave/APV prefixes, preserve strict explicit counts, and reuse existing fine-grid convergence samples for spectral scoring.

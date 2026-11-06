@@ -28,9 +28,9 @@ function initWithGaussianEddy(self,options)
 %
 % and the active surface and bottom anomalies
 % $$b_0=\eta(0)-(f/g)\psi_{\mathrm{raw}}(0)$$ and
-% $$b_d=\eta(-D)$$. Nonzero horizontal wavenumbers are projected into
-% `Ag_q` followed by the residual `Ag_0`. The raw Gaussian's discrete
-% horizontal-mean displacement is projected independently into `Amda`.
+% $$b_d=\eta(-D)$$. Sampled inversion recovers `Ag_q` and the residual
+% `Ag_0` at nonzero horizontal wavenumbers. The raw Gaussian's discrete
+% horizontal-mean displacement is inverted independently for `Amda`.
 % Initialization replaces all three canonical coefficient families.
 %
 % ```matlab

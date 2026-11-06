@@ -101,7 +101,7 @@ end
 state.inertialMode=(1:inertialCount).';
 state.inertialModeNumber=state.inertialModeNumber(1:inertialCount);
 state.inertialF=state.inertialF(:,1:inertialCount);
-state.inertialFForward=state.inertialFForward(1:inertialCount,:);
+state.inertialFProjection=state.inertialFProjection(1:inertialCount,:);
 state.inertialEquivalentDepth=state.inertialEquivalentDepth(1:inertialCount);
 state.inertialGramError=assessment.inertial.prefixGramError(inertialCount);
 end

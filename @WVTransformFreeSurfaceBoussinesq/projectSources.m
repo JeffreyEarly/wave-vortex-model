@@ -10,12 +10,10 @@ function tendency = projectSources(self,sources)
 % surface mass flux or boundary sheet source is included. Surface pressure
 % loading may be supplied through its horizontal acceleration.
 %
-% Wave projection uses the continuous generalized-energy dual directly:
-% integral(conj(U)*Su+conj(V)*Sv+conj(W)*Sw+N2*conj(Eta)*Seta)/(2*D).
-% The wave endpoint density anomalies vanish. This form avoids subtracting
-% an incomplete retained balanced expansion in the equivalent G formula.
-% APV and zero-APV source pairings preserve the existing signed balanced
-% normalization. All oscillating tendencies are returned at reference t0.
+% The projection functionals use the continuous mode normalization,
+% physical quadrature and the required endpoint values. Wave projection
+% uses all three supplied momentum components. MDA uses the signed
+% generalized-energy normalization. All oscillating tendencies refer to t0.
 %
 % - Topic: Project physical sources
 % - Declaration: tendency = projectSources(sources)
@@ -38,37 +36,5 @@ for name = ["u","v","w","eta"]
     end
     spectral.(name) = self.transformFromSpatialDomainWithFourier(value);
 end
-indices = self.klNonzero;
-curl = 1i*self.kNonzero.'.*spectral.v(:,indices)-1i*self.lNonzero.'.*spectral.u(:,indices);
-tendency.Ag_q = self.apvFSourcePairing*curl-(self.f/self.Lz)*self.apvGSourcePairing*spectral.eta(:,indices);
-tendency.Ag_0 = complex(zeros(length(self.activeEndpoint),length(indices)));
-tendency.Aw_p = complex(zeros(length(self.waveMode),length(indices)));
-tendency.Aw_m = tendency.Aw_p;
-weights = self.verticalQuadratureWeights;
-D = self.Lz;
-for p = 1:length(self.khUnique)
-    columns = find(self.klNonzeroKhUniqueIndex==p);
-    tendency.Ag_0(:,columns) = self.zeroAPVSourceSolve(:,:,p)*(self.zeroAPVFPairing(:,:,p)*curl(:,columns)-(self.f/self.Lz)*self.zeroAPVGPairing(:,:,p)*spectral.eta(:,indices(columns)));
-    count = self.waveModeCountByKh(p);
-    if count == 0, continue; end
-    modes = 1:count;
-    phase = exp(1i*self.waveFrequency(modes,p)*(self.t-self.t0));
-    % Apply each vertical basis once to the whole wavenumber group. The
-    % two propagation signs share these four pairings.
-    F = self.waveF(:,modes,p); G = self.waveG(:,modes,p);
-    U = F'*(weights.*spectral.u(:,indices(columns)));
-    V = F'*(weights.*spectral.v(:,indices(columns)));
-    W = G'*(weights.*spectral.w(:,indices(columns)));
-    E = G'*((weights.*self.N2).*spectral.eta(:,indices(columns)));
-    k = self.kNonzero(columns).'; l = self.lNonzero(columns).';
-    kh = self.khUnique(p);
-    omega = self.waveFrequency(modes,p);
-    common = (k.*U+l.*V)/kh+1i*kh*D.*W;
-    signed = (1i*self.f./(omega*kh)).*(l.*U-k.*V)-(kh*D./omega).*E;
-    tendency.Aw_p(modes,columns) = ((common+signed)./(2*D))./phase;
-    tendency.Aw_m(modes,columns) = ((common-signed)./(2*D)).*phase;
-end
-meanIndex = find(self.k==0 & self.l==0,1);
-tendency.Aio = .5*exp(-1i*self.f*(self.t-self.t0))*self.inertialFForward*(spectral.u(:,meanIndex)-1i*spectral.v(:,meanIndex));
-tendency.Amda = real(self.mdaGForward*spectral.eta(:,meanIndex));
+tendency = WVInternal.projectBoussinesqSpectralSources(self,spectral,self,self.verticalQuadratureWeights,self.N2,self.waveF,self.waveG);
 end

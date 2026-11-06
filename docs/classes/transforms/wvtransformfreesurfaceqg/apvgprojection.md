@@ -1,15 +1,15 @@
 ---
 layout: default
-title: apvFSourcePairing
+title: apvGProjection
 parent: WVTransformFreeSurfaceQG
 grand_parent: Transforms
-nav_order: 42
+nav_order: 45
 mathjax: true
 ---
 
-#  apvFSourcePairing
+#  apvGProjection
 
-APV F source-pairing operator.
+Physical APV G projection functional for the displacement term.
 
 
 ---

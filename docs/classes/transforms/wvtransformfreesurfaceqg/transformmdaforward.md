@@ -3,13 +3,13 @@ layout: default
 title: transformMDAForward
 parent: WVTransformFreeSurfaceQG
 grand_parent: Transforms
-nav_order: 234
+nav_order: 238
 mathjax: true
 ---
 
 #  transformMDAForward
 
-Project horizontal-mean displacement onto the MDA family.
+Recover MDA coefficients from sampled horizontal-mean displacement.
 
 
 ---

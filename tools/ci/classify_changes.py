@@ -75,6 +75,12 @@ DEFERRED_TESTS = {
 # exercises their parsing, validation and small synthetic-fixture contracts.
 PARTIAL_TESTS = {
     "TestReleaseVerification": ("TestReleaseVerification/runtimeManifestExcludesAuthoringTests",),
+    "TestFreeSurfaceAdaptiveIntegration": (
+        "TestFreeSurfaceAdaptiveIntegration/reconstructedToleranceIsNormalizationInvariant",
+    ),
+    "TestFreeSurfaceQGPerformance": (
+        "TestFreeSurfaceQGPerformance/endpointPlanesMatchPaddedTransformsAndFollowState",
+    ),
     "TestBuoyancyCrossingProjection": (
         "TestBuoyancyCrossingProjection/projectionLeavesPointwiseSourcesAndOtherFamiliesUnchanged",
     ),
@@ -106,10 +112,14 @@ PARTIAL_TESTS = {
     "TestWVTransformFreeSurfaceQG": (
         "TestWVTransformFreeSurfaceQG/automaticModeCountsAreSelectedIndependently",
         "TestWVTransformFreeSurfaceQG/initializationTolerancesArePersisted",
+        "TestWVTransformFreeSurfaceQG/manufacturedPhysicalTendencyProjectsInteriorAndResidualEndpoints",
         "TestWVTransformFreeSurfaceQG/snapshotPersistsRepresentationAndDirectConstructionSkipsModeSolver",
     ),
     "TestFreeSurfaceManuscriptProjection": (
         "TestFreeSurfaceManuscriptProjection/arbitrarySourcesMatchManuscriptQuadrature",
+        "TestFreeSurfaceManuscriptProjection/depthConstantDisplacementHasNoAPVAtEndpointLimits",
+        "TestFreeSurfaceManuscriptProjection/offSpanMeanDisplacementUsesSignedPhysicalProjection",
+        "TestFreeSurfaceManuscriptProjection/pressureGradientsLeaveOnlyWaveSurfaceTerm",
     ),
     "TestPerKappaWaveAssessment": (
         "TestPerKappaWaveAssessment/absentWavesStillAssessIndependentInertialFamily",
@@ -161,6 +171,8 @@ CPP_SUFFIXES = {".c", ".cc", ".cpp", ".cxx", ".h", ".hh", ".hpp", ".cmake"}
 
 def scientific_tests(path):
     """Small numerical contracts selected by the implementation's domain."""
+    if path in {"+WVInternal/prepareBoussinesqRHSAssessment.m", "+WVInternal/evaluateBoussinesqRHSAssessment.m"}:
+        return ("TestBoussinesqRHSAssessment", "TestFreeSurfaceRHSReuse/sourcesAndProjectionMatchAcrossStates")
     if path in {"+WVInternal/buildFreeSurfaceBalancedModes.m", "+WVInternal/freeSurfaceCoefficientTransfer.m"}:
         return ("TestFreeSurfaceProviderGrid",) + PARTIAL_TESTS["TestFreeSurfaceResolutionTransfer"]
     if "thermalgeneralizedenstrophy" in path.lower():

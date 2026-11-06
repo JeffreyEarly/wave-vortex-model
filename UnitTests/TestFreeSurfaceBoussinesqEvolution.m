@@ -270,44 +270,62 @@ x=omega*(b-a)/2; ratio=ones(size(x)); nonzero=x~=0; ratio(nonzero)=sin(x(nonzero
 value=(b-a)*exp(1i*omega*(a+b)/2).*ratio;
 end
 function result=energyPairings(w,s)
-% Independent definition: full polarizations and generalized-energy Gram.
+% Pair the full modal fields with the source and apply the manuscript norms.
 for name=["u","v","w","eta"], S.(name)=w.transformFromSpatialDomainWithFourier(s.(name)); end
 result=structfun(@(a)zeros(size(a)),w.coefficientState(),UniformOutput=false);
 zero=result;
+weights=w.verticalQuadratureWeights;
+g0=w.g0; if isinf(g0), g0=0; end
+gd=w.gd; if isinf(gd), gd=0; end
 for j=1:length(w.klNonzero)
     index=w.klNonzero(j);
+    page=w.klNonzeroKhUniqueIndex(j);
+    kh=w.khUnique(page);
+    F=w.zeroAPVF(:,:,page); G=w.zeroAPVG(:,:,page);
+    B=G(end,:)-F(end,:);
+    boundaryForm=-F(end,:).'*B+F(1,:).'*G(1,:)+(g0/w.g)*(B.'*B)+(gd/w.g)*(G(1,:).'*G(1,:));
+    boundaryGram=(w.f^2/(w.g*kh^4))*(boundaryForm+boundaryForm.')/2;
     for family=["Aw_p","Aw_m","Ag_q","Ag_0"]
-        count=size(result.(family),1); norms=zeros(count); pair=complex(zeros(count,1)); states=cell(count,1);
+        count=size(result.(family),1);
+        if family=="Aw_p" || family=="Aw_m", count=w.waveModeCountByKh(page); end
+        pair=complex(zeros(count,1));
         for m=1:count
-            a=zero; a.(family)(m,j)=1; R=w.reconstructSpectralState(state=a); states{m}=R;
-            pair(m)=sum(w.verticalQuadratureWeights.*(conj(R.u(:,index)).*S.u(:,index)+conj(R.v(:,index)).*S.v(:,index)+conj(R.w(:,index)).*S.w(:,index)+w.N2.*conj(R.eta(:,index)).*S.eta(:,index)));
-            if isfinite(w.g0), pair(m)=pair(m)+w.g0*conj(R.eta(end,index)-R.ssh(end,index))*S.eta(end,index); end
-            if isfinite(w.gd), pair(m)=pair(m)+w.gd*conj(R.eta(1,index))*S.eta(1,index); end
-        end
-        for m=1:count
-            for n=1:count
-                norms(m,n)=pairFields(w,states{m},states{n},index,true);
+            a=zero; a.(family)(m,j)=1; R=w.reconstructSpectralState(state=a);
+            pair(m)=sum(weights.*(conj(R.u(:,index)).*S.u(:,index)+conj(R.v(:,index)).*S.v(:,index)+conj(R.w(:,index)).*S.w(:,index)+w.N2.*conj(R.eta(:,index)).*S.eta(:,index)));
+            if family=="Ag_q"
+                trace=w.apvF(end,m)*S.eta(end,index)-w.apvF(1,m)*S.eta(1,index);
+                pair(m)=pair(m)-w.f*trace/w.apvMu(m,page);
+            elseif family=="Ag_0"
+                pair(m)=pair(m)+g0*conj(R.eta(end,index)-R.ssh(end,index))*S.eta(end,index)+gd*conj(R.eta(1,index))*S.eta(1,index);
             end
         end
-        result.(family)(:,j)=norms\pair;
+        if family=="Ag_q"
+            result.Ag_q(:,j)=w.apvMu(:,page).*pair/w.Lz;
+        elseif family=="Ag_0"
+            result.Ag_0(:,j)=boundaryGram\pair;
+        else
+            result.(family)(1:count,j)=pair/(2*w.Lz);
+        end
     end
 end
 index=find(w.k==0 & w.l==0,1);
-result.Aio=.5*exp(-1i*w.f*(w.t-w.t0))*((w.inertialF'*(w.verticalQuadratureWeights.*w.inertialF))\(w.inertialF'*(w.verticalQuadratureWeights.*(S.u(:,index)-1i*S.v(:,index)))));
-metric=diag(w.verticalQuadratureWeights.*w.N2); if isfinite(w.g0), metric(end,end)=metric(end,end)+w.g0; end; if isfinite(w.gd), metric(1,1)=metric(1,1)+w.gd; end
-result.Amda=real((w.mdaG'*metric*w.mdaG)\(w.mdaG'*metric*S.eta(:,index)));
+result.Aio=.5*exp(-1i*w.f*(w.t-w.t0))*(w.inertialF'*(weights.*(S.u(:,index)-1i*S.v(:,index))))/w.Lz;
+metric=weights.*w.N2;
+metric(end)=metric(end)+g0;
+metric(1)=metric(1)+gd;
+% Nonconstant MDA eigenvalues have the sign of their energy norms. For
+% the constant mode the signed norm is set by the column and both endpoints.
+signature=sign(w.mdaModeNumber);
+signature(signature==0)=sign(integral(w.N2Function,-w.Lz,0)+g0+gd);
+result.Amda=real(signature.*(w.mdaG'*(metric.*S.eta(:,index)))/w.g);
 end
-function value=pairFields(w,A,B,index,generalized)
+function value=pairFields(w,A,B,index)
 value=0;
 for name=["u","v","w","eta"]
     metric=w.verticalQuadratureWeights; if name=="eta", metric=metric.*w.N2; end
     value=value+sum(metric.*conj(A.(name)(:,index)).*B.(name)(:,index));
 end
 value=value+w.g*conj(A.ssh(end,index))*B.ssh(end,index);
-if generalized
-    if isfinite(w.g0), value=value+w.g0*conj(A.eta(end,index)-A.ssh(end,index))*(B.eta(end,index)-B.ssh(end,index)); end
-    if isfinite(w.gd), value=value+w.gd*conj(A.eta(1,index))*B.eta(1,index); end
-end
 end
 function value=familyError(w,actual,expected)
 zero=structfun(@(a)zeros(size(a)),expected,UniformOutput=false); d=0; r=0;
@@ -316,7 +334,7 @@ for name=string(fieldnames(expected)).'
     D=w.reconstructSpectralState(state=D); R=w.reconstructSpectralState(state=R);
     for j=1:w.Nkl
         factor=1; if w.k(j)==0 && w.l(j)==0, factor=.5; end
-        d=d+factor*real(pairFields(w,D,D,j,false)); r=r+factor*real(pairFields(w,R,R,j,false));
+        d=d+factor*real(pairFields(w,D,D,j)); r=r+factor*real(pairFields(w,R,R,j));
     end
 end
 value=sqrt(d/max(r,realmin));
@@ -340,7 +358,7 @@ testCase.verifyLessThan(norm(R.w(1,:)),1e-12)
 work=0; energyRate=0;
 for j=1:w.Nkl
     factor=2; if w.k(j)==0 && w.l(j)==0, factor=1; end
-    energyRate=energyRate+factor*real(pairFields(w,R,D,j,false));
+    energyRate=energyRate+factor*real(pairFields(w,R,D,j));
     for name=["u","v","w","eta"]
         metric=w.verticalQuadratureWeights; if name=="eta", metric=metric.*w.N2; end
         work=work+factor*real(sum(metric.*conj(R.(name)(:,j)).*S.(name)(:,j)));

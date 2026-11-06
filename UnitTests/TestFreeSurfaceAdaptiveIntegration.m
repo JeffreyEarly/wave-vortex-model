@@ -11,7 +11,7 @@ classdef TestFreeSurfaceAdaptiveIntegration < matlab.unittest.TestCase
             for name=["apvF","apvG","apvEndpointResponse","zeroAPVF","zeroAPVG","waveF","waveG","inertialF","mdaG","mdaPressureMode"]
                 scientific.(name)=scale*scientific.(name);
             end
-            for name=["apvFForward","waveGForward","inertialFForward","mdaGForward"]
+            for name=["apvFForward","waveGForward","inertialFProjection","mdaGForward"]
                 scientific.(name)=scientific.(name)/scale;
             end
             rescaled=WVTransformFreeSurfaceBoussinesq(scientific);

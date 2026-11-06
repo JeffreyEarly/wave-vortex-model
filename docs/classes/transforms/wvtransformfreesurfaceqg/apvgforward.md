@@ -9,7 +9,7 @@ mathjax: true
 
 #  apvGForward
 
-APV G projection matrix.
+APV G sampled inversion matrix.
 
 
 ---

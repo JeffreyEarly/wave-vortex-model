@@ -121,17 +121,19 @@ wvt = WVTransformFreeSurfaceQG([100e3 100e3 4000],[32 32 33],N2Function=N2,latit
       + [`apvEndpointResponse`](/classes/transforms/wvtransformfreesurfaceqg/apvendpointresponse.html) APV endpoint responses for each active endpoint and page.
       + [`apvEquivalentDepth`](/classes/transforms/wvtransformfreesurfaceqg/apvequivalentdepth.html) APV equivalent depths.
       + [`apvF`](/classes/transforms/wvtransformfreesurfaceqg/apvf.html) Sampled APV F modes.
-      + [`apvFForward`](/classes/transforms/wvtransformfreesurfaceqg/apvfforward.html) APV F projection matrix.
-      + [`apvFSourcePairing`](/classes/transforms/wvtransformfreesurfaceqg/apvfsourcepairing.html) APV F source-pairing operator.
+      + [`apvFForward`](/classes/transforms/wvtransformfreesurfaceqg/apvfforward.html) APV F sampled inversion matrix.
+      + [`apvFProjection`](/classes/transforms/wvtransformfreesurfaceqg/apvfprojection.html) Physical APV F projection functional for interior QGPV.
       + [`apvG`](/classes/transforms/wvtransformfreesurfaceqg/apvg.html) Sampled APV G modes.
-      + [`apvGForward`](/classes/transforms/wvtransformfreesurfaceqg/apvgforward.html) APV G projection matrix.
-      + [`apvGSourcePairing`](/classes/transforms/wvtransformfreesurfaceqg/apvgsourcepairing.html) APV G source-pairing operator.
+      + [`apvGForward`](/classes/transforms/wvtransformfreesurfaceqg/apvgforward.html) APV G sampled inversion matrix.
+      + [`apvGProjection`](/classes/transforms/wvtransformfreesurfaceqg/apvgprojection.html) Physical APV G projection functional for the displacement term.
       + [`apvGramError`](/classes/transforms/wvtransformfreesurfaceqg/apvgramerror.html) Worst retained APV Gram error.
       + [`apvMode`](/classes/transforms/wvtransformfreesurfaceqg/apvmode.html) Ordinal APV family coordinate.
       + [`apvModeCount`](/classes/transforms/wvtransformfreesurfaceqg/apvmodecount.html) Number of retained APV modes.
       + [`apvModeNumber`](/classes/transforms/wvtransformfreesurfaceqg/apvmodenumber.html) Physical APV mode labels.
       + [`apvMu`](/classes/transforms/wvtransformfreesurfaceqg/apvmu.html) APV inversion eigenvalues for each horizontal page.
+      + [`apvProjectionNormalization`](/classes/transforms/wvtransformfreesurfaceqg/apvprojectionnormalization.html) Signed APV normalization applied to depth-normalized moments.
       + [`apvRoundTripError`](/classes/transforms/wvtransformfreesurfaceqg/apvroundtriperror.html) Worst retained APV sampled round-trip error.
+      + [`apvStretchingMoment`](/classes/transforms/wvtransformfreesurfaceqg/apvstretchingmoment.html) Physical APV F projection of the vertically constant profile.
       + [`g0`](/classes/transforms/wvtransformfreesurfaceqg/g0.html) Effective surface acceleration; omitted default is `-integral(N2,-Lz,0)`.
       + [`gd`](/classes/transforms/wvtransformfreesurfaceqg/gd.html) Effective bottom acceleration; omitted default is `integral(N2,-Lz,0)`.
       + [`kNonzero`](/classes/transforms/wvtransformfreesurfaceqg/knonzero.html) X wavenumber associated with `klNonzero`.
@@ -143,11 +145,13 @@ wvt = WVTransformFreeSurfaceQG([100e3 100e3 4000],[32 32 33],N2Function=N2,latit
       + [`mdaEquivalentDepth`](/classes/transforms/wvtransformfreesurfaceqg/mdaequivalentdepth.html) MDA equivalent depths.
       + [`mdaF`](/classes/transforms/wvtransformfreesurfaceqg/mdaf.html) Sampled MDA F modes.
       + [`mdaG`](/classes/transforms/wvtransformfreesurfaceqg/mdag.html) Sampled MDA G modes.
-      + [`mdaGForward`](/classes/transforms/wvtransformfreesurfaceqg/mdagforward.html) MDA G projection matrix.
+      + [`mdaGForward`](/classes/transforms/wvtransformfreesurfaceqg/mdagforward.html) MDA G sampled inversion matrix.
+      + [`mdaGProjection`](/classes/transforms/wvtransformfreesurfaceqg/mdagprojection.html) Physical MDA projection functional for horizontal-mean displacement.
       + [`mdaGramError`](/classes/transforms/wvtransformfreesurfaceqg/mdagramerror.html) Retained MDA Gram error.
       + [`mdaMode`](/classes/transforms/wvtransformfreesurfaceqg/mdamode.html) Ordinal MDA family coordinate.
       + [`mdaModeCount`](/classes/transforms/wvtransformfreesurfaceqg/mdamodecount.html) Number of retained MDA modes.
       + [`mdaModeNumber`](/classes/transforms/wvtransformfreesurfaceqg/mdamodenumber.html) Physical MDA mode labels.
+      + [`mdaProjectionNormalization`](/classes/transforms/wvtransformfreesurfaceqg/mdaprojectionnormalization.html) Signed MDA normalization applied to displacement moments.
       + [`mdaRoundTripError`](/classes/transforms/wvtransformfreesurfaceqg/mdaroundtriperror.html) Retained MDA sampled round-trip error.
       + [`minimumRelativeMuSeparation`](/classes/transforms/wvtransformfreesurfaceqg/minimumrelativemuseparation.html) Minimum relative APV inversion-eigenvalue separation.
       + [`modeSelectionMethod`](/classes/transforms/wvtransformfreesurfaceqg/modeselectionmethod.html) Persisted mode-selection method identifier.
@@ -156,9 +160,9 @@ wvt = WVTransformFreeSurfaceQG([100e3 100e3 4000],[32 32 33],N2Function=N2,latit
       + [`verticalGridKind`](/classes/transforms/wvtransformfreesurfaceqg/verticalgridkind.html) Shared vertical-grid node family, `chebyshevLobatto`.
       + [`verticalQuadratureWeights`](/classes/transforms/wvtransformfreesurfaceqg/verticalquadratureweights.html) Shared positive physical quadrature weights.
       + [`zeroAPVF`](/classes/transforms/wvtransformfreesurfaceqg/zeroapvf.html) Sampled boundary-normalized zero-APV F pages.
-      + [`zeroAPVFPairing`](/classes/transforms/wvtransformfreesurfaceqg/zeroapvfpairing.html) Zero-APV F source-pairing matrices.
+      + [`zeroAPVFProjection`](/classes/transforms/wvtransformfreesurfaceqg/zeroapvfprojection.html) Zero-APV F source moments before the signed page solve.
       + [`zeroAPVG`](/classes/transforms/wvtransformfreesurfaceqg/zeroapvg.html) Sampled boundary-normalized zero-APV G pages.
-      + [`zeroAPVGPairing`](/classes/transforms/wvtransformfreesurfaceqg/zeroapvgpairing.html) Zero-APV G source-pairing matrices.
+      + [`zeroAPVGProjection`](/classes/transforms/wvtransformfreesurfaceqg/zeroapvgprojection.html) Zero-APV G source moments before the signed page solve.
       + [`zeroAPVGramReciprocalCondition`](/classes/transforms/wvtransformfreesurfaceqg/zeroapvgramreciprocalcondition.html) Pagewise zero-APV generalized-energy reciprocal condition.
       + [`zeroAPVGramRelativeSeparation`](/classes/transforms/wvtransformfreesurfaceqg/zeroapvgramrelativeseparation.html) Pagewise zero-APV generalized-energy relative separation.
       + [`zeroAPVSourceSolve`](/classes/transforms/wvtransformfreesurfaceqg/zeroapvsourcesolve.html) Pagewise zero-APV source-solve matrices.
@@ -294,9 +298,9 @@ wvt = WVTransformFreeSurfaceQG([100e3 100e3 4000],[32 32 33],N2Function=N2,latit
   + Physical fields and coefficients
     + [`reconstructSpectralState`](/classes/transforms/wvtransformfreesurfaceqg/reconstructspectralstate.html) Reconstruct compact spectral streamfunction, displacement, and full QGPV.
     + [`transformMDABack`](/classes/transforms/wvtransformfreesurfaceqg/transformmdaback.html) Reconstruct horizontal-mean displacement from the MDA family.
-    + [`transformMDAForward`](/classes/transforms/wvtransformfreesurfaceqg/transformmdaforward.html) Project horizontal-mean displacement onto the MDA family.
+    + [`transformMDAForward`](/classes/transforms/wvtransformfreesurfaceqg/transformmdaforward.html) Recover MDA coefficients from sampled horizontal-mean displacement.
     + [`transformStateBack`](/classes/transforms/wvtransformfreesurfaceqg/transformstateback.html) Reconstruct sampled APV and active endpoint anomalies.
-    + [`transformStateForward`](/classes/transforms/wvtransformfreesurfaceqg/transformstateforward.html) Project sampled APV first and residual endpoint anomalies second.
+    + [`transformStateForward`](/classes/transforms/wvtransformfreesurfaceqg/transformstateforward.html) Recover coefficients from sampled APV and endpoint anomalies.
 + Get package information
   + [`version`](/classes/transforms/wvtransformfreesurfaceqg/version.html) Installed WaveVortexModel version.
 

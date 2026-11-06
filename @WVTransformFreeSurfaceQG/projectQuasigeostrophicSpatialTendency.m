@@ -1,8 +1,9 @@
 function tendency = projectQuasigeostrophicSpatialTendency(self,Fq,Fb)
 % Project physical QG tendencies into canonical coefficient families.
 %
-% Interior QGPV is projected into `Ag_q` first. The active-endpoint
-% tendency remaining after that APV response is projected into `Ag_0`.
+% The physical APV F projection functional gives `Ag_q` from interior
+% QGPV. The active-endpoint tendency remaining after that APV response
+% determines `Ag_0`.
 % Periodic horizontal advection gives the horizontal-mean `Amda` family an
 % exact zero tendency.
 %
@@ -32,6 +33,7 @@ if self.activeEndpointCount > 0
 else
     FbHat = complex(zeros(0,self.Nkl));
 end
-[Ag_q,Ag_0] = self.transformStateForward(FqHat(:,self.klNonzero),FbHat(:,self.klNonzero));
+Ag_q = self.apvFProjection*FqHat(:,self.klNonzero);
+Ag_0 = self.zeroAPVCoefficientsFromEndpoints(Ag_q,FbHat(:,self.klNonzero));
 tendency = struct('Ag_q',Ag_q,'Ag_0',Ag_0,'Amda',zeros(size(self.Amda)));
 end

@@ -154,7 +154,10 @@ classdef TestFreeSurfacePhysicalContract < matlab.unittest.TestCase
             testCase.verifyEqual(restored.coefficientState(),wvt.coefficientState())
             testCase.verifyEqual([restored.t,restored.t0],[wvt.t,wvt.t0])
             testCase.verifyEmpty(restored.verticalModes)
-            for name = ["apvF","waveF","waveG","waveFrequency","verticalDerivativeMatrix"]
+            for name = ["apvF","waveF","waveG","waveFrequency","verticalDerivativeMatrix", ...
+                    "apvFProjection","apvGProjection","apvStretchingMoment","apvProjectionNormalization", ...
+                    "zeroAPVFProjection","zeroAPVGProjection","zeroAPVSourceSolve", ...
+                    "mdaGProjection","mdaProjectionNormalization","inertialFProjection"]
                 testCase.verifyEqual(restored.(name),wvt.(name))
             end
             names = ["u","v","w","u_hat","v_hat","w_hat","eta","ssh","p","w_i","z_physical"];

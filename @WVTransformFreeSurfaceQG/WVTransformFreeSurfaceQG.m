@@ -115,10 +115,10 @@ classdef WVTransformFreeSurfaceQG < WVGeometryDoublyPeriodicStratified & WVTrans
         % Sampled APV G modes.
         % - Topic: Inspect modes and operators
         apvG
-        % APV F projection matrix.
+        % APV F sampled inversion matrix.
         % - Topic: Inspect modes and operators
         apvFForward
-        % APV G projection matrix.
+        % APV G sampled inversion matrix.
         % - Topic: Inspect modes and operators
         apvGForward
         % APV equivalent depths.
@@ -130,12 +130,18 @@ classdef WVTransformFreeSurfaceQG < WVGeometryDoublyPeriodicStratified & WVTrans
         % APV endpoint responses for each active endpoint and page.
         % - Topic: Inspect modes and operators
         apvEndpointResponse
-        % APV F source-pairing operator.
+        % Physical APV F projection functional for interior QGPV.
         % - Topic: Inspect modes and operators
-        apvFSourcePairing
-        % APV G source-pairing operator.
+        apvFProjection
+        % Physical APV G projection functional for the displacement term.
         % - Topic: Inspect modes and operators
-        apvGSourcePairing
+        apvGProjection
+        % Physical APV F projection of the vertically constant profile.
+        % - Topic: Inspect modes and operators
+        apvStretchingMoment
+        % Signed APV normalization applied to depth-normalized moments.
+        % - Topic: Inspect modes and operators
+        apvProjectionNormalization
 
         % Sampled MDA F modes.
         % - Topic: Inspect modes and operators
@@ -143,9 +149,15 @@ classdef WVTransformFreeSurfaceQG < WVGeometryDoublyPeriodicStratified & WVTrans
         % Sampled MDA G modes.
         % - Topic: Inspect modes and operators
         mdaG
-        % MDA G projection matrix.
+        % MDA G sampled inversion matrix.
         % - Topic: Inspect modes and operators
         mdaGForward
+        % Physical MDA projection functional for horizontal-mean displacement.
+        % - Topic: Inspect modes and operators
+        mdaGProjection
+        % Signed MDA normalization applied to displacement moments.
+        % - Topic: Inspect modes and operators
+        mdaProjectionNormalization
         % MDA equivalent depths.
         % - Topic: Inspect modes and operators
         mdaEquivalentDepth
@@ -172,12 +184,12 @@ classdef WVTransformFreeSurfaceQG < WVGeometryDoublyPeriodicStratified & WVTrans
         % Sampled boundary-normalized zero-APV G pages.
         % - Topic: Inspect modes and operators
         zeroAPVG
-        % Zero-APV F source-pairing matrices.
+        % Zero-APV F source moments before the signed page solve.
         % - Topic: Inspect modes and operators
-        zeroAPVFPairing
-        % Zero-APV G source-pairing matrices.
+        zeroAPVFProjection
+        % Zero-APV G source moments before the signed page solve.
         % - Topic: Inspect modes and operators
-        zeroAPVGPairing
+        zeroAPVGProjection
         % Pagewise zero-APV source-solve matrices.
         % - Topic: Inspect modes and operators
         zeroAPVSourceSolve
@@ -406,11 +418,15 @@ classdef WVTransformFreeSurfaceQG < WVGeometryDoublyPeriodicStratified & WVTrans
                 options.apvEquivalentDepth (:,1) double
                 options.apvMu double
                 options.apvEndpointResponse double
-                options.apvFSourcePairing double
-                options.apvGSourcePairing double
+                options.apvFProjection double
+                options.apvGProjection double
+                options.apvStretchingMoment (:,1) double
+                options.apvProjectionNormalization double
                 options.mdaF double
                 options.mdaG double
                 options.mdaGForward double
+                options.mdaGProjection double
+                options.mdaProjectionNormalization double
                 options.mdaEquivalentDepth (:,1) double
                 options.verticalQuadratureWeights (:,1) double
                 options.verticalDerivativeMatrix double
@@ -419,8 +435,8 @@ classdef WVTransformFreeSurfaceQG < WVGeometryDoublyPeriodicStratified & WVTrans
                 options.verticalGridSnapshot (1,1) string
                 options.zeroAPVF double
                 options.zeroAPVG double
-                options.zeroAPVFPairing double
-                options.zeroAPVGPairing double
+                options.zeroAPVFProjection double
+                options.zeroAPVGProjection double
                 options.zeroAPVSourceSolve double
                 options.apvGramError (1,1) double
                 options.apvRoundTripError (1,1) double
@@ -462,8 +478,8 @@ classdef WVTransformFreeSurfaceQG < WVGeometryDoublyPeriodicStratified & WVTrans
                     state.apvEndpointResponse = zeros(0,length(state.apvMode),length(state.khUnique));
                     state.zeroAPVF = zeros(length(state.z),0,length(state.khUnique));
                     state.zeroAPVG = zeros(length(state.z),0,length(state.khUnique));
-                    state.zeroAPVFPairing = zeros(0,length(state.z),length(state.khUnique));
-                    state.zeroAPVGPairing = zeros(0,length(state.z),length(state.khUnique));
+                    state.zeroAPVFProjection = zeros(0,length(state.z),length(state.khUnique));
+                    state.zeroAPVGProjection = zeros(0,length(state.z),length(state.khUnique));
                     state.zeroAPVSourceSolve = zeros(0,0,length(state.khUnique));
                     state.zeroAPVGramReciprocalCondition = zeros(0,1);
                     state.zeroAPVGramRelativeSeparation = zeros(0,1);
@@ -754,6 +770,7 @@ classdef WVTransformFreeSurfaceQG < WVGeometryDoublyPeriodicStratified & WVTrans
     methods (Access = private)
         endpointAnomalies = reconstructEndpointAnomalies(self,Ag_q,Ag_0)
         derivative = mdaDisplacementDerivative(self)
+        Ag_0 = zeroAPVCoefficientsFromEndpoints(self,Ag_q,endpointAnomalies)
 
         function geometry = endpointGeometry(self)
             if isempty(self.endpointGeometry_)
@@ -883,17 +900,21 @@ classdef WVTransformFreeSurfaceQG < WVGeometryDoublyPeriodicStratified & WVTrans
 
             propertyAnnotations(end+1) = CANumericProperty('apvF',{'z','apvMode'},'1','sampled APV F modes');
             propertyAnnotations(end+1) = CANumericProperty('apvG',{'z','apvMode'},'1','sampled APV G modes');
-            propertyAnnotations(end+1) = CANumericProperty('apvFForward',{'apvMode','z'},'m-1','APV F forward matrix');
-            propertyAnnotations(end+1) = CANumericProperty('apvGForward',{'apvMode','z'},'1','APV G forward matrix');
+            propertyAnnotations(end+1) = CANumericProperty('apvFForward',{'apvMode','z'},'1','APV F sampled inversion matrix');
+            propertyAnnotations(end+1) = CANumericProperty('apvGForward',{'apvMode','z'},'1','APV G sampled inversion matrix');
             propertyAnnotations(end+1) = CANumericProperty('apvEquivalentDepth',{'apvMode'},'m','APV equivalent depths');
             propertyAnnotations(end+1) = CANumericProperty('apvMu',{'apvMode','khUnique'},'m-2','APV inversion eigenvalues');
             propertyAnnotations(end+1) = CANumericProperty('apvEndpointResponse',{'activeEndpoint','apvMode','khUnique'},'m s','APV endpoint-displacement response per QGPV amplitude');
-            propertyAnnotations(end+1) = CANumericProperty('apvFSourcePairing',{'apvMode','z'},'1','APV F source-pairing operator');
-            propertyAnnotations(end+1) = CANumericProperty('apvGSourcePairing',{'apvMode','z'},'1','APV G source-pairing operator');
+            propertyAnnotations(end+1) = CANumericProperty('apvFProjection',{'apvMode','z'},'1','physical APV F projection functional for interior QGPV');
+            propertyAnnotations(end+1) = CANumericProperty('apvGProjection',{'apvMode','z'},'1','physical APV G projection functional for the displacement term');
+            propertyAnnotations(end+1) = CANumericProperty('apvStretchingMoment',{'apvMode'},'1','physical APV F projection of the vertically constant profile');
+            propertyAnnotations(end+1) = CANumericProperty('apvProjectionNormalization',{'apvMode','apvMode'},'1','signed APV normalization applied to depth-normalized moments');
 
             propertyAnnotations(end+1) = CANumericProperty('mdaF',{'z','mdaMode'},'1','sampled MDA F modes');
             propertyAnnotations(end+1) = CANumericProperty('mdaG',{'z','mdaMode'},'1','sampled MDA G modes');
-            propertyAnnotations(end+1) = CANumericProperty('mdaGForward',{'mdaMode','z'},'m-1','MDA G forward matrix');
+            propertyAnnotations(end+1) = CANumericProperty('mdaGForward',{'mdaMode','z'},'1','MDA G sampled inversion matrix');
+            propertyAnnotations(end+1) = CANumericProperty('mdaGProjection',{'mdaMode','z'},'1','physical MDA projection functional for horizontal-mean displacement');
+            propertyAnnotations(end+1) = CANumericProperty('mdaProjectionNormalization',{'mdaMode','mdaMode'},'1','signed MDA normalization applied to displacement moments');
             propertyAnnotations(end+1) = CANumericProperty('mdaEquivalentDepth',{'mdaMode'},'m','MDA equivalent depths');
             propertyAnnotations(end+1) = CANumericProperty('verticalQuadratureWeights',{'z'},'m','shared positive physical quadrature weights');
             propertyAnnotations(end+1) = CANumericProperty('verticalDerivativeMatrix',{'z','z'},'m-1','physical first-derivative matrix on the shared increasing-z grid');
@@ -904,8 +925,8 @@ classdef WVTransformFreeSurfaceQG < WVGeometryDoublyPeriodicStratified & WVTrans
 
             propertyAnnotations(end+1) = CANumericProperty('zeroAPVF',{'z','activeEndpoint','khUnique'},'1','sampled boundary-normalized zero-APV F pages');
             propertyAnnotations(end+1) = CANumericProperty('zeroAPVG',{'z','activeEndpoint','khUnique'},'1','sampled boundary-normalized zero-APV G pages');
-            propertyAnnotations(end+1) = CANumericProperty('zeroAPVFPairing',{'activeEndpoint','z','khUnique'},'1','zero-APV F source-pairing matrices');
-            propertyAnnotations(end+1) = CANumericProperty('zeroAPVGPairing',{'activeEndpoint','z','khUnique'},'1','zero-APV G source-pairing matrices');
+            propertyAnnotations(end+1) = CANumericProperty('zeroAPVFProjection',{'activeEndpoint','z','khUnique'},'1','zero-APV F source moments before the signed page solve');
+            propertyAnnotations(end+1) = CANumericProperty('zeroAPVGProjection',{'activeEndpoint','z','khUnique'},'1','zero-APV G source moments before the signed page solve');
             propertyAnnotations(end+1) = CANumericProperty('zeroAPVSourceSolve',{'activeEndpoint','sourceEndpoint','khUnique'},'1','zero-APV source-solve matrices');
 
             scalarNames = {'apvGramError','apvRoundTripError','mdaGramError','mdaRoundTripError','gramTolerance','modeConvergenceTolerance','boundaryResolutionTolerance','retainedFraction','energyFraction','bandwidthFraction','minimumRelativeMuSeparation','muTolerance'};
@@ -991,11 +1012,11 @@ classdef WVTransformFreeSurfaceQG < WVGeometryDoublyPeriodicStratified & WVTrans
         end
 
         function names = persistedScientificPropertyNames()
-            names = {'g0','gd','activeEndpointCount','activeEndpoint','sourceEndpoint','apvMode','apvModeNumber','mdaMode','mdaModeNumber','klNonzero','kNonzero','lNonzero','khNonzero','khUnique','klNonzeroKhUniqueIndex','apvF','apvG','apvFForward','apvGForward','apvEquivalentDepth','apvMu','apvEndpointResponse','apvFSourcePairing','apvGSourcePairing','mdaF','mdaG','mdaGForward','mdaEquivalentDepth','verticalQuadratureWeights','verticalDerivativeMatrix','verticalGridKind','verticalGridCoordinate','verticalGridSnapshot','zeroAPVF','zeroAPVG','zeroAPVFPairing','zeroAPVGPairing','zeroAPVSourceSolve','apvGramError','apvRoundTripError','mdaGramError','mdaRoundTripError','gramTolerance','modeConvergenceTolerance','boundaryResolutionTolerance','quadraticDealiasing','retainedFraction','energyFraction','bandwidthFraction','minimumRelativeMuSeparation','muTolerance','zeroAPVGramReciprocalCondition','zeroAPVGramRelativeSeparation','modeSelectionMethod'};
+            names = {'g0','gd','activeEndpointCount','activeEndpoint','sourceEndpoint','apvMode','apvModeNumber','mdaMode','mdaModeNumber','klNonzero','kNonzero','lNonzero','khNonzero','khUnique','klNonzeroKhUniqueIndex','apvF','apvG','apvFForward','apvGForward','apvEquivalentDepth','apvMu','apvEndpointResponse','apvFProjection','apvGProjection','apvStretchingMoment','apvProjectionNormalization','mdaF','mdaG','mdaGForward','mdaGProjection','mdaProjectionNormalization','mdaEquivalentDepth','verticalQuadratureWeights','verticalDerivativeMatrix','verticalGridKind','verticalGridCoordinate','verticalGridSnapshot','zeroAPVF','zeroAPVG','zeroAPVFProjection','zeroAPVGProjection','zeroAPVSourceSolve','apvGramError','apvRoundTripError','mdaGramError','mdaRoundTripError','gramTolerance','modeConvergenceTolerance','boundaryResolutionTolerance','quadraticDealiasing','retainedFraction','energyFraction','bandwidthFraction','minimumRelativeMuSeparation','muTolerance','zeroAPVGramReciprocalCondition','zeroAPVGramRelativeSeparation','modeSelectionMethod'};
         end
 
         function names = optionalZeroAPVPropertyNames()
-            names = {'activeEndpoint','sourceEndpoint','Ag_0','apvEndpointResponse','zeroAPVF','zeroAPVG','zeroAPVFPairing','zeroAPVGPairing','zeroAPVSourceSolve','zeroAPVGramReciprocalCondition','zeroAPVGramRelativeSeparation'};
+            names = {'activeEndpoint','sourceEndpoint','Ag_0','apvEndpointResponse','zeroAPVF','zeroAPVG','zeroAPVFProjection','zeroAPVGProjection','zeroAPVSourceSolve','zeroAPVGramReciprocalCondition','zeroAPVGramRelativeSeparation'};
         end
 
         function annotations = prototypeCoefficientAnnotations()

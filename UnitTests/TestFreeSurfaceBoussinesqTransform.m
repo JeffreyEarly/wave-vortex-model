@@ -26,6 +26,89 @@ classdef TestFreeSurfaceBoussinesqTransform < matlab.unittest.TestCase
             end
         end
 
+        function observableAPVIncludesStretchingAndBothEndpointTraces(testCase)
+            cases = [30 .02 .03; -30 Inf .03; -30 .02 Inf; -30 Inf Inf];
+            for parameters = cases.'
+                w = WVTransformFreeSurfaceBoussinesq.fromStratification([100e3 100e3 1000],[8 8 17], ...
+                    N2Function=@(z)1e-4*exp(z/500),latitude=parameters(1),g0=parameters(2),gd=parameters(3), ...
+                    apvModeCount=2,mdaModeCount=2,waveModeCount=0,inertialModeCount=1);
+                column = find(w.kNonzero>0 & w.lNonzero==0,1);
+                k = w.kNonzero(column);
+                [X,~] = ndgrid(w.x,w.y);
+                horizontal = cos(k*X);
+                alpha = 1+w.z/w.Lz;
+                sshAmplitude = .8;
+                ssh = sshAmplitude*horizontal;
+                zero = zeros(w.spatialMatrixSize);
+                fields = struct(u=zero,v=zero,w=zero,eta=ssh.*reshape(alpha,1,1,[]),ssh=ssh);
+                actual = w.projectFields(fields);
+                apv = observableAPVReference(w,zeros(w.Nz,1),zeros(w.Nz,1),sshAmplitude/2);
+                endpoint = boundaryAmplitudeReference(w,k,apv,[0;0]);
+                testCase.verifyEqual(actual.Ag_q(:,column),apv,AbsTol=2e-14);
+                testCase.verifyEqual(actual.Ag_0(:,column),endpoint,AbsTol=2e-14);
+
+                % The highest native Chebyshev degree exposes the difference
+                % between differentiating samples and integrating weakly.
+                interior = .25*(-1).^(0:w.Nz-1).';
+                if isinf(w.g0), interior(end) = 0; end
+                if isinf(w.gd), interior(1) = 0; end
+                vHat = .003+.004*alpha;
+                fields.v = horizontal.*reshape(vHat,1,1,[])./(1+ssh/w.Lz);
+                fields.eta = horizontal.*reshape(interior+sshAmplitude*alpha,1,1,[]);
+                actual = w.projectFields(fields);
+                apv = observableAPVReference(w,1i*k*vHat/2,interior/2,sshAmplitude/2);
+                endpoint = boundaryAmplitudeReference(w,k,apv,interior([end 1])/2);
+                testCase.verifyEqual(actual.Ag_q(:,column),apv,AbsTol=2e-14);
+                testCase.verifyEqual(actual.Ag_0(:,column),endpoint,AbsTol=2e-14);
+                testCase.verifySize(actual.Ag_0,[nnz(isfinite(parameters(2:3))) length(w.klNonzero)]);
+                if parameters(1)>0
+                    % The stored sampled-q inverse has a separate contract.
+                    sampledAPV = w.apvF(:,1);
+                    testCase.verifyEqual(w.transformFromSpatialDomainWithFg(sampledAPV),[1;0],AbsTol=1e-12);
+                    stored = w.scientificState();
+                    stored.apvFForward = 1.25*stored.apvFForward;
+                    probe = WVTransformFreeSurfaceBoussinesq(stored);
+                    testCase.verifyEqual(probe.transformFromSpatialDomainWithFg(sampledAPV),[1.25;0],AbsTol=1e-12);
+                    projected = probe.projectFields(fields);
+                    testCase.verifyEqual(projected.Ag_q,actual.Ag_q);
+                    testCase.verifyEqual(projected.Ag_0,actual.Ag_0);
+                end
+            end
+        end
+
+        function observableWaveProjectionRejectsOmittedBalancedContent(testCase)
+            Lxyz = [100e3 100e3 1000];
+            Nxyz = [8 8 65];
+            N2 = @(z)1e-4*exp(2*z/700);
+            source = WVTransformFreeSurfaceBoussinesq.fromStratification(Lxyz,Nxyz,N2Function=N2,shouldAntialias=true, ...
+                apvModeCount=3,mdaModeCount=2,waveModeCount=3,inertialModeCount=2);
+            target = WVTransformFreeSurfaceBoussinesq.fromStratification(Lxyz,Nxyz,N2Function=N2,shouldAntialias=true, ...
+                apvModeCount=1,mdaModeCount=2,waveModeCount=3,inertialModeCount=2);
+            column = find(source.kNonzero>0 & source.lNonzero>0,1);
+            index = source.klNonzero(column);
+            testCase.assertEqual(target.klNonzero,source.klNonzero);
+            testCase.assertEqual(target.z,source.z);
+            source.t0 = -17; source.t = 901;
+            target.t0 = source.t0; target.t = source.t;
+            source.Ag_q(3,column) = 3e-5+1e-5i;
+            source.Aw_p(2,column) = .009+.003i;
+            source.Aw_m(1,column) = -.004+.007i;
+            fields = source.reconstructFields(["u","v","w","eta","ssh"]);
+            spectral = source.reconstructSpectralState();
+            actual = target.projectFields(fields);
+            emptyState = target.coefficientState();
+            for family = ["Aw_p","Aw_m"]
+                for mode = 1:3
+                    unit = emptyState;
+                    unit.(family)(mode,column) = 1;
+                    testWave = target.reconstructSpectralState(state=unit);
+                    expected = waveEnergyProjectionReference(target,testWave,spectral,index);
+                    testCase.verifyEqual(expected,source.(family)(mode,column),AbsTol=2e-10);
+                    testCase.verifyEqual(actual.(family)(mode,column),expected,AbsTol=2e-10);
+                end
+            end
+        end
+
         function operationsAndComponentsAgree(testCase)
             w = newTransform("exponential",65); assignState(w,mixedState(w));
             names = ["u","v","w","eta","eta_i","p","ssh","qgpv"];
@@ -238,6 +321,33 @@ function assignState(w,state)
 for name=string(fieldnames(state)).', w.(name)=state.(name); end
 end
 function assignFamily(w,name,value), w.(name)=value; end
+function amplitude = observableAPVReference(w,vorticity,etaInterior,ssh)
+% Integrate each physical APV mode against the observable state.
+amplitude = zeros(numel(w.apvMode),1);
+for mode = 1:numel(w.apvMode)
+    F = w.apvF(:,mode);
+    G = w.apvG(:,mode);
+    curlMoment = sum(w.verticalQuadratureWeights.*F.*vorticity)/w.Lz;
+    displacementMoment = sum(w.verticalQuadratureWeights.*w.N2.*G.*etaInterior)/w.g ...
+        + F(end)*etaInterior(end)-F(1)*etaInterior(1);
+    stretchingMoment = ssh*sum(w.verticalQuadratureWeights.*F)/w.Lz;
+    amplitude(mode) = curlMoment-w.f/w.Lz*(displacementMoment+stretchingMoment);
+end
+end
+function amplitude = boundaryAmplitudeReference(w,k,apv,observed)
+mu = k^2+w.f^2./(w.g*w.h_0);
+trace = [w.apvG(end,:)-w.apvF(end,:); w.apvG(1,:)];
+residual = observed+(w.f/w.g)*trace*(apv./mu);
+amplitude = -(w.g*k^2/w.f)*residual(w.activeEndpoint);
+end
+function value = waveEnergyProjectionReference(w,testWave,observed,index)
+kinetic = conj(testWave.u(:,index)).*observed.u(:,index) ...
+    + conj(testWave.v(:,index)).*observed.v(:,index) ...
+    + conj(testWave.w(:,index)).*observed.w(:,index);
+potential = w.N2.*conj(testWave.eta(:,index)).*observed.eta(:,index);
+surface = w.g*conj(testWave.ssh(end,index))*observed.ssh(end,index);
+value = (sum(w.verticalQuadratureWeights.*(kinetic+potential))+surface)/(2*w.Lz);
+end
 function value=physicalEnergyOfFields(w,fields)
 weights=reshape(w.verticalQuadratureWeights,1,1,[]); N2=reshape(w.N2,1,1,[]);
 ssh=w.ssh; gamma=1+ssh/w.Lz; alpha=reshape(1+w.z/w.Lz,1,1,[]);

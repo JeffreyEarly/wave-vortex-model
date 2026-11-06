@@ -3,7 +3,7 @@ layout: default
 title: projectQuasigeostrophicSpatialTendency
 parent: WVTransformFreeSurfaceQG
 grand_parent: Transforms
-nav_order: 181
+nav_order: 185
 mathjax: true
 ---
 
@@ -29,7 +29,8 @@ Project physical QG tendencies into canonical coefficient families.
 
 ## Discussion
 
-Interior QGPV is projected into `Ag_q` first. The active-endpoint
-tendency remaining after that APV response is projected into `Ag_0`.
+The physical APV F projection functional gives `Ag_q` from interior
+QGPV. The active-endpoint tendency remaining after that APV response
+determines `Ag_0`.
 Periodic horizontal advection gives the horizontal-mean `Amda` family an
 exact zero tendency.
