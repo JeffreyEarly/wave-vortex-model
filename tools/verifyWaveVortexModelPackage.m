@@ -146,10 +146,9 @@ end
 function report = exerciseInstalledFreeSurfacePackage()
 N2 = @(z) 1e-4*ones(size(z));
 wvt = WVTransformFreeSurfaceBoussinesq.fromStratification([1e5 1e5 1000],[8 8 33], ...
-    N2Function=N2,g0=.02,gd=Inf,apvModeCount=2,mdaModeCount=2,waveModeCount=2,inertialModeCount=2, ...
-    verticalGridRule="smoothedBandwidth");
+    N2Function=N2,g0=.02,gd=Inf,apvModeCount=2,mdaModeCount=2,waveModeCount=2,inertialModeCount=2);
 require(wvt.verticalGrid.kind == "smoothedBandwidth" && isa(wvt.verticalGrid.calculus,"IMLobattoCalculus"), ...
-    "The installed free-surface transform did not construct the selected mapped calculus.");
+    "The installed free-surface transform did not construct the default smoothed-bandwidth calculus.");
 waves = wvt.Aw_p;
 waves(1,1) = .01+.02i;
 wvt.Aw_p = waves;

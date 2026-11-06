@@ -100,7 +100,7 @@ classdef TestFreeSurfaceQGVerticalCalculus < matlab.unittest.TestCase
             % exp(3*z/B) is a cubic polynomial in the exact native coordinate,
             % yet all its physical derivatives, including the fourth, are nonzero.
             B = 4000;
-            w = WVTransformFreeSurfaceQG([500e3 500e3 1000],[8 6 9],N2Function=@(z)1e-4*exp(2*z/B),g0=.02,gd=.03,gramTolerance=.1);
+            w = WVTransformFreeSurfaceQG([500e3 500e3 1000],[8 6 9],N2Function=@(z)1e-4*exp(2*z/B),g0=.02,gd=.03,gramTolerance=.1,verticalGridRule="wkb");
             [X,Y] = ndgrid(w.x,w.y);
             horizontal = cos(2*pi*X/w.Lx)+1i*sin(2*pi*Y/w.Ly);
             values = horizontal.*reshape(exp(3*w.z/B),1,1,[]);

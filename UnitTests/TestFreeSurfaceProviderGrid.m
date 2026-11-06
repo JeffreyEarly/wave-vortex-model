@@ -6,8 +6,8 @@ classdef TestFreeSurfaceProviderGrid < matlab.unittest.TestCase
             N2 = @(z) 1e-5+6e-5*exp(z/200);
             options = struct(N2Function=N2,latitude=-35,rotationRate=6.8e-5,g0=.02,gd=.03,apvModeCount=2,mdaModeCount=2,quadraticDealiasing="none",shouldAntialias=true);
             args = namedargs2cell(options);
-            smoothed = WVTransformFreeSurfaceQG(Lxyz,Nxyz,args{:},verticalGridRule="smoothedBandwidth");
-            wkb = WVTransformFreeSurfaceQG(Lxyz,Nxyz,args{:});
+            smoothed = WVTransformFreeSurfaceQG(Lxyz,Nxyz,args{:});
+            wkb = WVTransformFreeSurfaceQG(Lxyz,Nxyz,args{:},verticalGridRule="wkb");
             testCase.verifyEqual(smoothed.verticalGrid.kind,"smoothedBandwidth");
             testCase.verifyEqual(wkb.verticalGrid.kind,"wkb");
             testCase.verifyGreaterThan(norm(smoothed.z-wkb.z,inf),1);
@@ -48,7 +48,7 @@ classdef TestFreeSurfaceProviderGrid < matlab.unittest.TestCase
             N2 = @(z) 1e-4*exp(z/800);
             wvt = WVTransformFreeSurfaceBoussinesq.fromStratification(Lxyz,Nxyz,N2Function=N2,g0=.02,gd=.03, ...
                 apvModeCount=2,mdaModeCount=2,waveModeCount=3,inertialModeCount=2,nEVP=96, ...
-                shouldAntialias=true,quadraticDealiasing="none",verticalGridRule="smoothedBandwidth");
+                shouldAntialias=true,quadraticDealiasing="none");
             testCase.verifyEqual(wvt.verticalGrid.kind,"smoothedBandwidth");
             testCase.verifyEqual(wvt.z,wvt.verticalGrid.z);
             testCase.verifyEqual(wvt.verticalQuadratureWeights,wvt.verticalGrid.weights);

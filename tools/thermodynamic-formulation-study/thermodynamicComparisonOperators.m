@@ -76,15 +76,19 @@ op=struct(rhs=@rhs,observe=@observe,fields=@fields,checkpoint=@checkpoint);
     end
 
     function c=checkpoint(time,state)
-        % Interpolate primitive physical fields in analytic WKB coordinate.
+        % Interpolate primitive fields on a common reference-depth grid.
         f=fields(time,state); target=linspace(-w.Lz,0,101).';
-        if lambda==0, nodes=(w.z+w.Lz)/w.Lz; x=(target+w.Lz)/w.Lz;
-        else, nodes=expm1((w.z+w.Lz)/1300)/expm1(w.Lz/1300); x=expm1((target+w.Lz)/1300)/expm1(w.Lz/1300); end
-        n=numel(nodes); bw=(-1).^(0:n-1)'; bw([1 end])=bw([1 end])/2;
-        M=zeros(numel(x),n);
-        for j=1:numel(x)
-            [distance,k]=min(abs(x(j)-nodes));
-            if distance<1e-13, M(j,k)=1; else, row=bw./(x(j)-nodes); M(j,:)=row'/sum(row); end
+        if w.verticalGrid.kind=="wkb"
+            if lambda==0, nodes=(w.z+w.Lz)/w.Lz; x=(target+w.Lz)/w.Lz;
+            else, nodes=expm1((w.z+w.Lz)/1300)/expm1(w.Lz/1300); x=expm1((target+w.Lz)/1300)/expm1(w.Lz/1300); end
+            n=numel(nodes); bw=(-1).^(0:n-1)'; bw([1 end])=bw([1 end])/2;
+            M=zeros(numel(x),n);
+            for j=1:numel(x)
+                [distance,k]=min(abs(x(j)-nodes));
+                if distance<1e-13, M(j,k)=1; else, row=bw./(x(j)-nodes); M(j,:)=row'/sum(row); end
+            end
+        else
+            M=w.verticalGrid.calculus.interpolationMatrix(target);
         end
         c=struct();
         for name=["u","v","w","density","eta"]

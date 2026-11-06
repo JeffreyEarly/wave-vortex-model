@@ -8,7 +8,7 @@ addpath(fullfile(fileparts(folder),'nonlinear-study'));
 rows=struct([]); references=struct([]);
 for profile=["constant","exponential"]
     if profile=="constant", N2=@(z)1e-4+zeros(size(z)); else, N2=@(z)1e-4*exp(z/650); end
-    w=WVTransformFreeSurfaceBoussinesq.fromStratification([1e5 1e5 1000],[8 8 129],N2Function=N2,apvModeCount=3,waveModeCount=4,mdaModeCount=2,inertialModeCount=3,nEVP=256,shouldAntialias=false);
+    w=WVTransformFreeSurfaceBoussinesq.fromStratification([1e5 1e5 1000],[8 8 129],N2Function=N2,apvModeCount=3,waveModeCount=4,mdaModeCount=2,inertialModeCount=3,nEVP=256,shouldAntialias=false,verticalGridRule="wkb");
     seed=manuscriptEvolutionOperators(w,profile,padding=1); initial=seed.seed("mixed",1);
     for amplitude=[.01 .1 1]
         for time=[327 901]

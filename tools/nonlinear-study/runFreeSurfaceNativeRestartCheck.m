@@ -3,16 +3,15 @@ function result = runFreeSurfaceNativeRestartCheck(stage,outputFolder,dependency
 %
 % Start each process with restoredefaultpath, add this script's folder, and
 % call stage="write" followed by stage="read" against the same output folder.
-% The read stage loads only WVM and non-provider dependencies before restoring
-% the checkpoint. Run it once per newly written checkpoint because continuation
-% appends the final record to the native file. No class definitions or mode
-% provider objects are shared between the two processes.
+% Both processes use the released InternalModes provider for grid calculus.
+% The read stage restores the saved grid and mode operators without solving
+% modes. Run it once per checkpoint because it appends the final record.
 arguments (Input)
     stage (1,1) string {mustBeMember(stage,["write","read"])}
     outputFolder (1,1) string
     dependencyRoot (1,1) string
 end
-configurePath(dependencyRoot,stage=="write");
+configurePath(dependencyRoot);
 checkpointPath = fullfile(outputFolder,'variable-count-checkpoint.nc');
 referencePath = fullfile(outputFolder,'variable-count-reference.mat');
 if stage=="write"
@@ -50,7 +49,6 @@ if stage=="write"
     save(referencePath,'expected');
     result = struct(stage=stage,checkpointTime=347,finalTime=367,waveModeCounts=counts.',zeroWavePages=nnz(counts==0),inactiveWaveEntries=nnz(~wvt.activeWaveModes));
 else
-    assert(isempty(which('IMInternalModes')) && isempty(which('IMSolverSpectral')),'The fresh read process must not have a mode provider on its path.')
     data = load(referencePath,'expected');
     expected = data.expected;
     resumed = WVModel.modelFromFile(char(checkpointPath));
@@ -80,13 +78,12 @@ else
     for name = ["Aw_p","Aw_m"], assert(all(state.(name)(~expected.active)==0)); end
     assert(isreal(state.Amda) && isempty(resumed.wvt.verticalModes))
     assert(isequal([resumed.wvt.t,resumed.wvt.t0],[367,-17]))
-    assert(isempty(which('IMInternalModes')) && isempty(which('IMSolverSpectral')))
     resumed.wvt.coefficientTendency();
     labelFields = resumed.wvt.reconstructFields(["eta","z_physical"]);
     label = labelFields.z_physical-labelFields.eta;
     minimumLabel = min(label,[],'all'); maximumLabel = max(label,[],'all');
     assert(minimumLabel>-resumed.wvt.Lz && maximumLabel<0)
-    result = struct(stage=stage,coefficientError=coefficientError,physicalFieldError=physicalFieldError,energyError=energyError,minimumLabel=minimumLabel,maximumLabel=maximumLabel,waveModeCounts=expected.counts.',zeroWavePages=nnz(expected.counts==0),inactiveWaveEntries=nnz(~expected.active),modeProviderAvailable=false);
+    result = struct(stage=stage,coefficientError=coefficientError,physicalFieldError=physicalFieldError,energyError=energyError,minimumLabel=minimumLabel,maximumLabel=maximumLabel,waveModeCounts=expected.counts.',zeroWavePages=nnz(expected.counts==0),inactiveWaveEntries=nnz(~expected.active),verticalGridRule=resumed.wvt.verticalGrid.kind,restoredStoredModes=isempty(resumed.wvt.verticalModes));
     clear cleanup
 end
 fprintf('%s\n',jsonencode(result))
@@ -119,9 +116,9 @@ for name = string(fieldnames(expected)).'
 end
 end
 
-function configurePath(dependencyRoot,includeProvider)
-packages = ["ClassAnnotations-1.2.1","SplineCore-2.2.0","Distributions-2.0.0","chebfun-5.7.0","NetCDF-1.0.2"];
-if includeProvider, packages(end+1)="InternalModes-2.0.0-beta.4"; end
+function configurePath(dependencyRoot)
+providerPackage = "InternalModes-2.0.0-beta.11";
+packages = ["ClassAnnotations-1.2.1","SplineCore-2.2.0","Distributions-2.0.0","chebfun-5.7.0","NetCDF-1.0.2",providerPackage];
 repositoryRoot = fileparts(fileparts(fileparts(mfilename('fullpath'))));
 for root = [fullfile(dependencyRoot,packages),string(repositoryRoot)]
     manifestPath = fullfile(root,'resources','mpackage.json');
@@ -130,14 +127,6 @@ for root = [fullfile(dependencyRoot,packages),string(repositoryRoot)]
     addpath(root);
     for index = 1:numel(manifest.folders), addpath(fullfile(root,manifest.folders(index).path)); end
 end
-if ~includeProvider
-    % Installed MATLAB packages can survive restoredefaultpath. Remove
-    % their provider folders before any checkpoint object is loaded.
-    entries = string(strsplit(path,pathsep));
-    provider = contains(lower(entries),'internalmodes') | contains(lower(entries),'internal-modes');
-    if any(provider)
-        removed = cellstr(entries(provider));
-        rmpath(removed{:});
-    end
-end
+providerPath = fullfile(dependencyRoot,providerPackage) + filesep;
+assert(startsWith(string(which('IMLobattoCalculus')),providerPath),'The grid calculus provider must resolve to the released beta.11 snapshot.');
 end

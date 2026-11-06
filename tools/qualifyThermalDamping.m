@@ -298,9 +298,9 @@ end
 
 function [closure,rows]=seasonalClosure(w)
 % Refine quadrature of one qualified scientific APV basis using its own API.
-apv=WVTransformFreeSurfaceQG([w.Lx w.Ly w.Lz],[w.Nx w.Ny 129],N2Function=@(z)w.N20*exp(2*w.inverseScale*z),latitude=w.latitude,g=w.g,apvModeCount=6,mdaModeCount=4,gramTolerance=.1);
+apv=WVTransformFreeSurfaceQG([w.Lx w.Ly w.Lz],[w.Nx w.Ny 129],N2Function=@(z)w.N20*exp(2*w.inverseScale*z),latitude=w.latitude,g=w.g,apvModeCount=6,mdaModeCount=4,gramTolerance=.1,verticalGridRule="wkb");
 coarse=WVThermalAPVDamping.fromAPVTransform(w,apv,apvCutoffFraction=.5);
-options=struct(g0=apv.g0,gd=apv.gd,apvModeCount=6,mdaModeCount=4,gramTolerance=.1,modeConvergenceTolerance=1e-6,quadraticDealiasing="none",retainedFraction=2/3,energyFraction=.99,bandwidthFraction=2/3);
+options=struct(g0=apv.g0,gd=apv.gd,apvModeCount=6,mdaModeCount=4,gramTolerance=.1,modeConvergenceTolerance=1e-6,verticalGridRule="wkb",quadraticDealiasing="none",retainedFraction=2/3,energyFraction=.99,bandwidthFraction=2/3);
 background=IMBackground(N2=apv.N2Function,rho0=apv.rho0,zDomain=[-apv.Lz 0], ...
     latitude=apv.latitude,rotationRate=apv.rotationRate,g=apv.g,surfaceCondition="freeSurface");
 vertical=WVInternal.buildFreeSurfaceBalancedModes(background,129,options);

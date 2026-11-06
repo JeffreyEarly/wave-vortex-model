@@ -25,7 +25,7 @@ function [self,assessment] = fromStratification(Lxyz,Nxyz,options)
 % - Parameter options.referenceNEVP: optional fixed higher reference resolution; empty uses a bounded automatically refined reference
 % - Parameter options.modeConvergenceTolerance: equivalent-depth and joint field/derivative convergence tolerance
 % - Parameter options.gramTolerance: shared fixed-quadrature normalized-Gram tolerance; default 1e-2
-% - Parameter options.verticalGridRule: wkb or smoothedBandwidth; default wkb
+% - Parameter options.verticalGridRule: smoothedBandwidth (default) or wkb
 % - Parameter options.quadraticDealiasing: vertical policy none, fixedFraction, or effectiveBandwidth; default fixedFraction
 % - Parameter options.retainedFraction: fixedFraction retained share of the independently qualified linear prefix; default 2/3
 % - Parameter options.energyFraction: effectiveBandwidth cumulative spectral-energy fraction; default 0.99
@@ -55,7 +55,7 @@ arguments (Input)
     options.referenceNEVP (:,1) double {mustBeInteger,mustBePositive,mustBeFinite} = zeros(0,1)
     options.modeConvergenceTolerance (1,1) double {mustBeReal,mustBeFinite,mustBePositive} = 1e-6
     options.gramTolerance (1,1) double {mustBeReal,mustBeFinite,mustBePositive} = 1e-2
-    options.verticalGridRule (1,1) string {mustBeMember(options.verticalGridRule,["wkb","smoothedBandwidth"])} = "wkb"
+    options.verticalGridRule (1,1) string {mustBeMember(options.verticalGridRule,["smoothedBandwidth","wkb"])} = "smoothedBandwidth"
     options.quadraticDealiasing (1,1) string {mustBeMember(options.quadraticDealiasing,["none","fixedFraction","effectiveBandwidth"])} = "fixedFraction"
     options.retainedFraction (1,1) double {mustBeReal,mustBeFinite,mustBeGreaterThanOrEqual(options.retainedFraction,0),mustBeLessThanOrEqual(options.retainedFraction,1)} = 2/3
     options.energyFraction (1,1) double {mustBeReal,mustBeFinite,mustBeGreaterThan(options.energyFraction,0),mustBeLessThanOrEqual(options.energyFraction,1)} = .99

@@ -65,7 +65,7 @@ g_0=-\int_{-L_z}^{0}N^2(z)\,dz,
 g_d=\mathop{\rm Inf}.
 $$
 
-The transform obtains one WKB-stretched Chebyshev--Lobatto quadrature rule from InternalModesEVP and uses the same points and positive weights for both APV and MDA projection. It selects the APV and MDA mode counts independently from the requested Gram-error tolerances; the counts are results rather than constructor options. A finite endpoint activates one row of the boundary-normalized `Ag_0` family; an infinite endpoint is inactive.
+Free-surface QG and Boussinesq use the InternalModes smoothed-bandwidth Chebyshev–Lobatto grid by default. Pass `verticalGridRule="wkb"` to select WKB sampling. Each transform uses its selected grid for vertical calculus and the same points and positive weights for both APV and MDA projection. It selects the APV and MDA mode counts independently from the requested Gram-error tolerances; the counts are results rather than constructor options. A finite endpoint activates one row of the boundary-normalized `Ag_0` family; an infinite endpoint is inactive.
 
 ```matlab
 wvtFreeSurfaceQG = WVTransformFreeSurfaceQG(Lxyz,Nxyz,N2Function=N2,latitude=30);

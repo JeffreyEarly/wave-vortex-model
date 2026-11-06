@@ -75,6 +75,17 @@ DEFERRED_TESTS = {
 # exercises their parsing, validation and small synthetic-fixture contracts.
 PARTIAL_TESTS = {
     "TestReleaseVerification": ("TestReleaseVerification/runtimeManifestExcludesAuthoringTests",),
+    "TestBuoyancyCrossingProjection": (
+        "TestBuoyancyCrossingProjection/projectionLeavesPointwiseSourcesAndOtherFamiliesUnchanged",
+    ),
+    "TestFFTWKBDerivative": ("TestFFTWKBDerivative/storedOperatorsPreserveAliasesAndBoundaryMode",),
+    "TestFreeSurfaceLinearModePolicy": (
+        "TestFreeSurfaceLinearModePolicy/defaultAndNonePoliciesExposeTheirLimits",
+        "TestFreeSurfaceLinearModePolicy/effectiveBandwidthUsesCommonWKBShapes",
+    ),
+    "TestManuscriptEvolutionDiagnostics": (
+        "TestManuscriptEvolutionDiagnostics/physicalReferenceCheckpointRespectsWKBMapping",
+    ),
     "TestFreeSurfaceWaveModes": (
         "TestFreeSurfaceWaveModes/realFieldsHaveTheDeclaredPositiveEnergy",
         "TestFreeSurfaceWaveModes/inertialPageUsesDepthNormalizedVelocity",
@@ -86,11 +97,15 @@ PARTIAL_TESTS = {
     "TestFreeSurfacePhysicalContract": (
         "TestFreeSurfacePhysicalContract/nativeFileRetainsFieldConventionAndStoredModes",
     ),
+    "TestFreeSurfaceOutputRestart": ("TestFreeSurfaceOutputRestart/scheduledOutputsAndContinuationAgree",),
     "TestFreeSurfaceResolutionTransfer": (
         "TestFreeSurfaceResolutionTransfer/pureFamiliesAndStrictRequests",
+        "TestFreeSurfaceResolutionTransfer/samplingRefinementPreservesResolvedContent",
         "TestFreeSurfaceResolutionTransfer/strictTransferRejectsControlledShapeMismatch",
     ),
     "TestWVTransformFreeSurfaceQG": (
+        "TestWVTransformFreeSurfaceQG/automaticModeCountsAreSelectedIndependently",
+        "TestWVTransformFreeSurfaceQG/initializationTolerancesArePersisted",
         "TestWVTransformFreeSurfaceQG/snapshotPersistsRepresentationAndDirectConstructionSkipsModeSolver",
     ),
     "TestFreeSurfaceManuscriptProjection": (

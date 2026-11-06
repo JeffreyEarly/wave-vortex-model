@@ -32,7 +32,7 @@ Create a free-surface QG transform scientifically or directly.
 + `options.gramTolerance`  shared normalized-Gram tolerance; default 1e-2
 + `options.modeConvergenceTolerance`  independent physical H1 and equivalent-depth agreement; default 1e-6
 + `options.boundaryResolutionTolerance`  fixed zero-APV physical derivative and energy tolerance; default 1e-2
-+ `options.verticalGridRule`  wkb or smoothedBandwidth; default wkb
++ `options.verticalGridRule`  smoothedBandwidth (default) or wkb
 + `options.quadraticDealiasing`  vertical policy none, fixedFraction, or effectiveBandwidth; default fixedFraction
 + `options.retainedFraction`  fixedFraction retained share of the linear APV prefix; default 2/3
 + `options.energyFraction`  effectiveBandwidth cumulative spectral-energy fraction; default 0.99

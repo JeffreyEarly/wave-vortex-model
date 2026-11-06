@@ -48,7 +48,7 @@ classdef TestFreeSurfaceLinearModePolicy < matlab.unittest.TestCase
             testCase.verifyEqual(numel(filtered.apvMode),filteredReport.apv.dealiasing.selectedCount)
             verifyDealiasingMetadata(testCase,linearReport,"none")
             verifyDealiasingMetadata(testCase,filteredReport,"fixedFraction")
-            testCase.verifyEqual(filteredReport.apv.dealiasing.coordinateKind,"wkb-chebyshev-lobatto")
+            testCase.verifyEqual(filteredReport.apv.dealiasing.coordinateKind,"smoothedBandwidth-chebyshev-lobatto")
             testCase.verifyEqual(filteredReport.apv.dealiasing.filteringCount, ...
                 floor((2/3)*filteredReport.apv.dealiasing.linearCount))
         end
@@ -124,7 +124,7 @@ classdef TestFreeSurfaceLinearModePolicy < matlab.unittest.TestCase
         function effectiveBandwidthUsesCommonWKBShapes(testCase)
             [w,assessment]=WVTransformFreeSurfaceBoussinesq.fromStratification( ...
                 [1e5 1e5 1000],[8 8 33],N2Function=@(z)1e-4*exp(2*z/700), ...
-                quadraticDealiasing="effectiveBandwidth",energyFraction=.97,bandwidthFraction=.6);
+                quadraticDealiasing="effectiveBandwidth",energyFraction=.97,bandwidthFraction=.6,verticalGridRule="wkb");
             testCase.verifyEqual(w.quadraticDealiasing,"effectiveBandwidth")
             testCase.verifyEqual([w.energyFraction w.bandwidthFraction],[.97 .6])
             testCase.verifyEqual(assessment.dealiasing.coordinateKind,"wkb-chebyshev-lobatto")
@@ -194,7 +194,7 @@ testCase.verifyEqual(assessment.dealiasing.retainedFraction,2/3)
 testCase.verifyEqual(assessment.dealiasing.energyFraction,.99)
 testCase.verifyEqual(assessment.dealiasing.bandwidthFraction,2/3)
 testCase.verifyEqual(assessment.dealiasing.gridDegree,64)
-testCase.verifyEqual(assessment.dealiasing.coordinateKind,"wkb-chebyshev-lobatto")
+testCase.verifyEqual(assessment.dealiasing.coordinateKind,"smoothedBandwidth-chebyshev-lobatto")
 for p=1:height(assessment.pages)
     testCase.verifyEqual(assessment.pages.dealiasing{p}.coordinateKind,assessment.dealiasing.coordinateKind)
 end

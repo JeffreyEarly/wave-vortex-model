@@ -108,9 +108,10 @@ classdef TestFreeSurfaceResolutionTransfer < matlab.unittest.TestCase
             testCase.verifyEqual(w.coefficientState(),original)
         end
         function pureFamiliesAndStrictRequests(testCase)
-            w=newTransform("boussinesq","exponential"); populate(w); initial=w.coefficientState();
+            w=newTransform("boussinesq","exponential",[NaN NaN],"wkb"); populate(w); initial=w.coefficientState();
             target=w.waveVortexTransformWithResolution([12 10 97]);
             testCase.verifyEqual(target.Nz,97)
+            testCase.verifyEqual(target.verticalGrid.kind,"wkb")
             testCase.verifyEqual(target.apvModeNumber,[-1;1;2])
             % Analytical equivalent depth for the signed mode with default endpoints.
             testCase.verifyEqual(target.h_0(1),-2.131069429888769,AbsTol=1e-8)
@@ -223,17 +224,18 @@ classdef TestFreeSurfaceResolutionTransfer < matlab.unittest.TestCase
             end
             results=struct2table(rows); writetable(results,fullfile(outputFolder,'issue-352-resolution-transfer.csv'));
         end
-        function verifyRestartWithoutProvider(outputFolder)
-            assert(isempty(which('IMSolverSpectral')),'The mode provider must be absent.')
+        function verifyStoredRestart(outputFolder)
+            assert(~isempty(which('IMLobattoCalculus')),'Add InternalModes 2.0.0-beta.11 or later to restore the stored grid.')
             for type=["qg","boussinesq"]
                 for profile=["constant","exponential"]
                     key=type+"-"+profile; ref=load(fullfile(outputFolder,key+"-reference.mat"));
                     m=WVModel.modelFromFile(char(fullfile(outputFolder,key+".nc"))); closeFile=onCleanup(@()m.closeNetCDFFile());
+                    assert(isempty(m.wvt.verticalModes));
                     assert(isequal(m.wvt.coefficientState(),ref.savedState)); assert(m.wvt.t==1434 && m.wvt.t0==31);
                     m.setupIntegrator(integratorType="fixed",deltaT=10);
                     m.integrateToTime(1634,shouldShowIntegrationDiagnostics=false);
                     residual=stateError(m.wvt.coefficientState(),ref.finalState);
-                    assert(residual<1e-12); fprintf('%s provider-free transfer continuation %.6g\n',key,residual);
+                    assert(residual<1e-12); fprintf('%s stored-state transfer continuation %.6g\n',key,residual);
                     clear closeFile
                 end
             end
@@ -241,10 +243,12 @@ classdef TestFreeSurfaceResolutionTransfer < matlab.unittest.TestCase
     end
 end
 
-function w=newTransform(type,profile,endpoints)
+function w=newTransform(type,profile,endpoints,gridRule)
 if nargin<3, endpoints=[NaN NaN]; end
 if profile=="constant", N2=@(z)1e-4+0*z; else, N2=@(z)1e-4*exp(2*z/700); end
-args=namedargs2cell(struct(N2Function=N2,g0=endpoints(1),gd=endpoints(2),apvModeCount=3,mdaModeCount=2));
+configuration=struct(N2Function=N2,g0=endpoints(1),gd=endpoints(2),apvModeCount=3,mdaModeCount=2);
+if nargin==4, configuration.verticalGridRule=gridRule; end
+args=namedargs2cell(configuration);
 if type=="qg", w=WVTransformFreeSurfaceQG([1e5 1e5 1000],[8 8 65],args{:});
 else, w=WVTransformFreeSurfaceBoussinesq.fromStratification([1e5 1e5 1000],[8 8 65],args{:},shouldAntialias=true,waveModeCount=4,inertialModeCount=3); end
 end

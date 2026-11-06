@@ -7,7 +7,7 @@ function du = diffZ(self,u,options)
 % of the preceding sampled derivative on the same reference grid.
 %
 % The provider's mapped Chebyshev derivative includes the metric of the
-% selected vertical coordinate. For the default WKB map, that coordinate is
+% selected vertical coordinate. For the WKB map, that coordinate is
 % $$s=\int_{-L_z}^\xi N\,d\xi'$$ and the metric is $$ds/d\xi=N$$.
 % Successive application therefore differentiates the variable metric too;
 % it is not a constant-metric multiple of an nth coordinate derivative.

@@ -84,6 +84,7 @@ class RoutingTests(unittest.TestCase):
         plan = classify_changes(["UnitTests/TestFreeSurfaceResolutionTransfer.m"])
         self.assertEqual(plan["tests"], [
             "TestFreeSurfaceResolutionTransfer/pureFamiliesAndStrictRequests",
+            "TestFreeSurfaceResolutionTransfer/samplingRefinementPreservesResolvedContent",
             "TestFreeSurfaceResolutionTransfer/strictTransferRejectsControlledShapeMismatch",
         ])
         self.assertTrue(plan["matlab"])

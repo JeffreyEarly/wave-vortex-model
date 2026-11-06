@@ -103,7 +103,7 @@ classdef TestWVTransformFreeSurfaceQG < matlab.unittest.TestCase
                 testCase.verifyEqual(assessment.apv.selectedCount,wvt.apvModeCount)
                 testCase.verifyEqual(assessment.apv.dealiasing.filteringCount, ...
                     floor(wvt.retainedFraction*assessment.apv.linearCount))
-                testCase.verifyEqual(assessment.apv.dealiasing.coordinateKind,"wkb-chebyshev-lobatto")
+                testCase.verifyEqual(assessment.apv.dealiasing.coordinateKind,"smoothedBandwidth-chebyshev-lobatto")
                 if isinf(endpointValues(iCase,1))
                     testCase.verifyEqual(wvt.mdaG(end,:),zeros(1,wvt.mdaModeCount),AbsTol=2e-12)
                 end
@@ -136,13 +136,13 @@ classdef TestWVTransformFreeSurfaceQG < matlab.unittest.TestCase
             testCase.verifyEqual(assessment.apv.linearCount,assessment.apv.dealiasing.linearCount)
             testCase.verifyEqual(assessment.apv.selectedCount,assessment.apv.dealiasing.filteringCount)
             testCase.verifyEqual(assessment.apv.selectedCount,floor((2/3)*assessment.apv.linearCount))
-            testCase.verifyEqual(assessment.dealiasing.coordinateKind,"wkb-chebyshev-lobatto")
+            testCase.verifyEqual(assessment.dealiasing.coordinateKind,"smoothedBandwidth-chebyshev-lobatto")
             testCase.verifyGreaterThanOrEqual(assessment.cost.quadraticDealiasingSeconds,0)
             testCase.verifyTrue(all(wvt.verticalQuadratureWeights > 0))
             testCase.verifyLessThanOrEqual(wvt.apvGramError,wvt.gramTolerance)
             testCase.verifyLessThanOrEqual(wvt.mdaGramError,wvt.gramTolerance)
             testCase.verifyEqual(wvt.verticalGridKind,"chebyshevLobatto")
-            testCase.verifyEqual(wvt.verticalGridCoordinate,"wkb")
+            testCase.verifyEqual(wvt.verticalGridCoordinate,"smoothedBandwidth")
             testCase.verifyEqual(wvt.modeSelectionMethod,"linear-prefix-plus-quadratic-dealiasing")
             testCase.verifyEqual(wvt.z_int,wvt.verticalQuadratureWeights,AbsTol=0)
             testCase.verifyEqual(sum(wvt.verticalQuadratureWeights),wvt.Lz,AbsTol=64*eps(wvt.Lz))
@@ -179,7 +179,7 @@ classdef TestWVTransformFreeSurfaceQG < matlab.unittest.TestCase
             testCase.verifyEqual(assessment.minimumHorizontalWavelength,2*pi/assessment.maximumSupportedKh,RelTol=10*eps)
             testCase.verifyEqual(assessment.apvFilteringCount,floor((2/3)*assessment.apvLinearCount))
             testCase.verifyEqual(assessment.apvModeCount,assessment.apvFilteringCount)
-            testCase.verifyEqual(assessment.dealiasing.coordinateKind,"wkb-chebyshev-lobatto")
+            testCase.verifyEqual(assessment.dealiasing.coordinateKind,"smoothedBandwidth-chebyshev-lobatto")
             testCase.verifyError(@()WVTransformFreeSurfaceQG([150e3 150e3 4000],[256 256 17], ...
                 N2Function=N2,latitude=30,g0=0.02,gd=Inf),'WV:UnconvergedBoundaryModes')
         end
@@ -235,7 +235,7 @@ classdef TestWVTransformFreeSurfaceQG < matlab.unittest.TestCase
             testCase.verifyLessThanOrEqual(wvt.mdaGramError,wvt.gramTolerance)
             testCase.verifyGreaterThan(wvt.minimumRelativeMuSeparation,wvt.muTolerance)
             testCase.verifyEqual(wvt.verticalGridKind,"chebyshevLobatto")
-            testCase.verifyEqual(wvt.verticalGridCoordinate,"wkb")
+            testCase.verifyEqual(wvt.verticalGridCoordinate,"smoothedBandwidth")
         end
 
         function densityOnlyConstructionUsesDomainSafeStratification(testCase)

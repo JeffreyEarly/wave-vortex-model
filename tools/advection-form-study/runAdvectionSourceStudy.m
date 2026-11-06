@@ -62,12 +62,16 @@ end
 end
 function out=sample(value,from,to,profile)
 % Interpolate the independently refined source, without re-evaluating it.
-if profile=="constant", nodes=from.z/from.Lz; x=to.z/to.Lz;
-else, nodes=expm1((from.z+from.Lz)/1300); x=expm1((to.z+to.Lz)/1300); end
-n=numel(nodes); bw=(-1).^(0:n-1)'; bw([1 end])=bw([1 end])/2; M=zeros(numel(x),n);
-for j=1:numel(x)
-    [distance,k]=min(abs(x(j)-nodes));
-    if distance<1e-13, M(j,k)=1; else, row=bw./(x(j)-nodes); M(j,:)=row'/sum(row); end
+if from.verticalGrid.kind=="wkb"
+    if profile=="constant", nodes=from.z/from.Lz; x=to.z/to.Lz;
+    else, nodes=expm1((from.z+from.Lz)/1300); x=expm1((to.z+to.Lz)/1300); end
+    n=numel(nodes); bw=(-1).^(0:n-1)'; bw([1 end])=bw([1 end])/2; M=zeros(numel(x),n);
+    for j=1:numel(x)
+        [distance,k]=min(abs(x(j)-nodes));
+        if distance<1e-13, M(j,k)=1; else, row=bw./(x(j)-nodes); M(j,:)=row'/sum(row); end
+    end
+else
+    M=from.verticalGrid.calculus.interpolationMatrix(to.z);
 end
 value=real(interpft(interpft(value,to.Nx,1),to.Ny,2));
 out=reshape(reshape(value,[],from.Nz)*M.',to.Nx,to.Ny,to.Nz);

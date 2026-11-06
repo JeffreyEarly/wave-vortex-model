@@ -13,7 +13,11 @@ for scenario=options.scenarios
     resolution=struct([]); energyRows=struct([]); spectralRows=struct([]);
     profile="exponential"; if scenario=="waves", profile="constant"; end
     data=load(fullfile(workFolder,profile+"-inventory1.mat"));
-    w=WVTransformFreeSurfaceBoussinesq(data.scientificState); w.t0=-17; w.addForcing(WVNonlinearAdvection(w));
+    w=WVTransformFreeSurfaceBoussinesq(data.scientificState);
+    if w.verticalGrid.kind~="wkb"
+        error("WVStudy:UnsupportedVerticalGrid","The crossing and energy audits require WKB snapshots. Generate them with runScientificValidationStudy.");
+    end
+    w.t0=-17; w.addForcing(WVNonlinearAdvection(w));
     data=load(fullfile(workFolder,scenario+"-baseline.mat")); result=data.result;
     energy=prepareValidationEnergy(w,[32 32 513]); energyControl=prepareValidationEnergy(w,[48 48 769]);
     nativeEnergy=prepareValidationEnergy(w,[w.Nx w.Ny w.Nz]);

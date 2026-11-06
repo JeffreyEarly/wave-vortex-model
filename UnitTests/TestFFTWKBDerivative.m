@@ -28,7 +28,7 @@ classdef TestFFTWKBDerivative < matlab.unittest.TestCase
         end
 
         function storedOperatorsPreserveAliasesAndBoundaryMode(testCase)
-            base = WVTransformFreeSurfaceBoussinesq.fromStratification([1e5 1e5 1000],[8 8 65],N2Function=@(z)1e-4*exp(z/650),apvModeCount=2,mdaModeCount=2,inertialModeCount=2,waveModeCount=3,nEVP=128,shouldAntialias=true);
+            base = WVTransformFreeSurfaceBoussinesq.fromStratification([1e5 1e5 1000],[8 8 65],N2Function=@(z)1e-4*exp(z/650),apvModeCount=2,mdaModeCount=2,inertialModeCount=2,waveModeCount=3,nEVP=128,shouldAntialias=true,verticalGridRule="wkb");
             folder = testCase.applyFixture(matlab.unittest.fixtures.TemporaryFolderFixture);
             file = fullfile(folder.Folder,'derivative-state.nc');
             nc = base.writeToFile(file); nc.close();

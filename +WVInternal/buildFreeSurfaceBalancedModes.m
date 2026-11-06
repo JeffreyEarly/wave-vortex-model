@@ -18,10 +18,10 @@ mdaProblem = IMInternalModes.meanDensityAnomalyModes(background,g0=options.g0,gd
 
 if isfield(options,"balancedGrid")
     grid = options.balancedGrid;
-elseif isfield(options,"verticalGridRule") && options.verticalGridRule == "smoothedBandwidth"
-    grid = IMVerticalGrid.smoothedBandwidth(background,Nz);
-else
+elseif isfield(options,"verticalGridRule") && options.verticalGridRule == "wkb"
     grid = IMVerticalGrid.wkb(background,Nz);
+else
+    grid = IMVerticalGrid.smoothedBandwidth(background,Nz);
 end
 z = grid.z;
 weights = grid.weights;

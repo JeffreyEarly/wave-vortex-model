@@ -45,7 +45,7 @@ results.kernels = array2table(rows,VariableNames={'horizontalSide','Z','complexI
 writetable(results.kernels,fullfile(outputFolder,'kernels.csv'));
 rows = zeros(3,10); row = 0;
 for Z = [33 65 129]
-    base = WVTransformFreeSurfaceBoussinesq.fromStratification([1e5 1e5 1000],[8 8 Z],N2Function=@(z)1e-4*exp(z/650),apvModeCount=2,mdaModeCount=2,inertialModeCount=2,waveModeCount=3,nEVP=128,shouldAntialias=true,quadraticDealiasing="fixedFraction");
+    base = WVTransformFreeSurfaceBoussinesq.fromStratification([1e5 1e5 1000],[8 8 Z],N2Function=@(z)1e-4*exp(z/650),apvModeCount=2,mdaModeCount=2,inertialModeCount=2,waveModeCount=3,nEVP=128,shouldAntialias=true,quadraticDealiasing="fixedFraction",verticalGridRule="wkb");
     setupStart = tic;
     wvt = DerivativeStudyBoussinesq(base.scientificState());
     setupSeconds = toc(setupStart);
@@ -74,7 +74,7 @@ for Z = [33 65 129]
 end
 results.rhs = array2table(rows,VariableNames=[{'Z','restorationAndMetricSeconds','denseSeconds','fftSeconds'},fieldnames(state)']);
 writetable(results.rhs,fullfile(outputFolder,'rhs.csv'));
-qg = WVTransformFreeSurfaceQG([1e5 1e5 1000],[8 8 65],N2Function=@(z)1e-4*exp(z/650),g0=.02,gd=.03,gramTolerance=.1);
+qg = WVTransformFreeSurfaceQG([1e5 1e5 1000],[8 8 65],N2Function=@(z)1e-4*exp(z/650),g0=.02,gd=.03,gramTolerance=.1,verticalGridRule="wkb");
 qg.initWithGaussianEddy(maximumSpeed=.05,horizontalRadius=20e3,verticalScale=250,zCenter=75);
 qgSeconds = timeit(@()qg.coefficientTendency());
 qgProfile = profileCodeHotspots(@()qg.coefficientTendency(),projectRoots=root);

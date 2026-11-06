@@ -158,22 +158,26 @@ study=struct(rhs=@rhs,observe=@observe,seed=@seed,sample=@sample,phaseRate=@phas
     end
 
     function [vector,minimumLabel,maximumLabel] = checkpoint(time,state)
-        % Independent barycentric evaluation in the analytic WKB coordinate
-        % on one fixed physical-reference grid for all vertical inventories.
+        % Compare all inventories on one fixed physical reference grid.
+        % WKB retains its independently evaluated analytic map.
         h=sample(time,state,2);
         if wvt.Nx~=8 || wvt.Ny~=8
             for name=string(fieldnames(h)).', h.(name)=real(interpft(interpft(h.(name),16,1),16,2)); end
         end
         target=linspace(-wvt.Lz,0,101).';
-        if profile=="constant"
-            nodes=(wvt.z+wvt.Lz)/wvt.Lz; targetCoordinate=(target+wvt.Lz)/wvt.Lz;
+        if wvt.verticalGrid.kind=="wkb"
+            if profile=="constant"
+                nodes=(wvt.z+wvt.Lz)/wvt.Lz; targetCoordinate=(target+wvt.Lz)/wvt.Lz;
+            else
+                nodes=expm1((wvt.z+wvt.Lz)/1300)/expm1(wvt.Lz/1300);
+                targetCoordinate=expm1((target+wvt.Lz)/1300)/expm1(wvt.Lz/1300);
+            end
+            expected=(1-cos(pi*(0:wvt.Nz-1).'/(wvt.Nz-1)))/2;
+            assert(max(abs(nodes-expected))<1e-10,'The independent analytic WKB map does not match the native samples.');
+            matrix=barycentricMatrix(nodes,targetCoordinate);
         else
-            nodes=expm1((wvt.z+wvt.Lz)/1300)/expm1(wvt.Lz/1300);
-            targetCoordinate=expm1((target+wvt.Lz)/1300)/expm1(wvt.Lz/1300);
+            matrix=wvt.verticalGrid.calculus.interpolationMatrix(target);
         end
-        expected=(1-cos(pi*(0:wvt.Nz-1).'/(wvt.Nz-1)))/2;
-        assert(max(abs(nodes-expected))<1e-10,'The independent analytic WKB map does not match the native samples.');
-        matrix=barycentricMatrix(nodes,targetCoordinate);
         for name=["u","v","w","eta"]
             h.(name)=reshape(reshape(h.(name),[],wvt.Nz)*matrix.',16,16,[]);
         end

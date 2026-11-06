@@ -20,7 +20,7 @@ function assessment = assessVerticalResolution(Lz,Nz,options)
 % - Parameter options.gramTolerance: shared normalized-Gram tolerance; default 1e-2
 % - Parameter options.modeConvergenceTolerance: independent physical H1 and equivalent-depth agreement; default 1e-6
 % - Parameter options.boundaryResolutionTolerance: fixed zero-APV physical derivative and energy tolerance; default 1e-2
-% - Parameter options.verticalGridRule: wkb or smoothedBandwidth; default wkb
+% - Parameter options.verticalGridRule: smoothedBandwidth (default) or wkb
 % - Parameter options.quadraticDealiasing: vertical policy none, fixedFraction, or effectiveBandwidth
 % - Parameter options.retainedFraction: fixedFraction retained share of the linear APV prefix
 % - Parameter options.energyFraction: effectiveBandwidth cumulative spectral-energy fraction
@@ -40,7 +40,7 @@ arguments
     options.gramTolerance (1,1) double {mustBeReal,mustBeFinite,mustBeNonnegative} = 1e-2
     options.modeConvergenceTolerance (1,1) double {mustBeReal,mustBeFinite,mustBePositive} = 1e-6
     options.boundaryResolutionTolerance (1,1) double {mustBeReal,mustBeFinite,mustBePositive} = 1e-2
-    options.verticalGridRule (1,1) string {mustBeMember(options.verticalGridRule,["wkb","smoothedBandwidth"])} = "wkb"
+    options.verticalGridRule (1,1) string {mustBeMember(options.verticalGridRule,["smoothedBandwidth","wkb"])} = "smoothedBandwidth"
     options.quadraticDealiasing (1,1) string {mustBeMember(options.quadraticDealiasing,["none","fixedFraction","effectiveBandwidth"])} = "fixedFraction"
     options.retainedFraction (1,1) double {mustBeReal,mustBeFinite,mustBeGreaterThanOrEqual(options.retainedFraction,0),mustBeLessThanOrEqual(options.retainedFraction,1)} = 2/3
     options.energyFraction (1,1) double {mustBeReal,mustBeFinite,mustBeGreaterThan(options.energyFraction,0),mustBeLessThanOrEqual(options.energyFraction,1)} = .99
