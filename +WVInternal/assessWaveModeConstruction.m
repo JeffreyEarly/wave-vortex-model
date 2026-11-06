@@ -13,11 +13,10 @@ end
 np=length(state.khUnique);
 kappa=state.khUnique;
 requestedCount=state.waveModeCountByKh;
-convergedCount=nan(np,1); gridSupportedCount=zeros(np,1); usableCount=nan(np,1);
-status=repmat("reference-not-requested",np,1);
-candidateLimitReached=false(np,1);
+candidateCount=requestedCount;
 modeConvergence=cell(np,1); prefixGramError=cell(np,1);
 modeSummary=cell(np,1); dealiasing=cell(np,1);
+candidateLabels=repmat({zeros(0,1)},np,1);
 reference=[];
 reports={};
 dealiasingReports={};
@@ -42,54 +41,53 @@ if ~isempty(referenceNEVP)
     end
     pages=1:(numel(activePages)+1);
     reports=cell(size(pages));
+    dealiasingReports=cell(size(pages));
     WVInternal.prepareWaveModeConvergenceBatches(bases,reference,z,reportKappa,@acceptPrepared, ...
         candidatePages=pages,referencePages=pages,candidateNEVP=state.nEVP,referenceNEVP=referenceNEVP,nQuadrature=nQuadrature);
 end
+qualifications=repmat(qualifyPrefix([],0,0,tolerance),np,1);
 for p=1:np
-    count=requestedCount(p);
+    count=candidateCount(p);
     if count==0
-        convergedCount(p)=0; usableCount(p)=0; status(p)="not-requested";
         prefixGramError{p}=zeros(0,1);
         continue
     end
-    G=state.waveG(:,1:count,p);
-    gram=state.waveGForward(1:count,:,p)*G;
-    errors=zeros(count,1);
-    for n=1:count, errors(n)=norm(gram(1:n,1:n)-eye(n),2); end
-    prefixGramError{p}=errors;
-    gridSupportedCount(p)=sum(cumprod(errors<=state.gramTolerance));
-    if isempty(reference), continue; end
-    page=find(activePages==p)+1;
-    report=reports{page}; modeConvergence{p}=report;
-    dealiasing{p}=dealiasingReports{page};
-    modeSummary{p}=WVInternal.summarizeModeConvergence(report,count,tolerance);
-    convergedCount(p)=modeSummary{p}.acceptedCount;
-    complete=modeSummary{p}.complete;
-    usableCount(p)=min(convergedCount(p),gridSupportedCount(p));
-    if ~complete
-        status(p)="reference-inconclusive"; usableCount(p)=NaN;
-    elseif usableCount(p)==count
-        status(p)="accepted"; candidateLimitReached(p)=true;
-    else
-        status(p)="rejected";
+    if ~isempty(reference)
+        page=find(activePages==p)+1;
+        modeConvergence{p}=reports{page};
+        candidateLabels{p}=bases.bases{bases.basisIndex(page)}.modeNumber(:);
+        dealiasing{p}=dealiasingReports{page};
     end
+    G=state.waveG(:,1:count,p);
+    errors=prefixErrors(state.waveGForward(1:count,:,p)*G);
+    prefixGramError{p}=errors;
+    % The full Gram survey informs retries. Qualification uses its converged head.
+    rawGridCount=sum(cumprod(errors<=state.gramTolerance));
+    [qualifications(p),modeSummary{p}]=qualifyPrefix(modeConvergence{p},rawGridCount,count,tolerance);
 end
 count=length(state.inertialMode);
-gram=state.inertialFProjection*state.inertialF;
-errors=zeros(count,1);
-for n=1:count, errors(n)=norm(gram(1:n,1:n)-eye(n),2); end
-inertial=struct(requestedCount=count,gramError=state.inertialGramError,prefixGramError=errors,gridSupportedCount=sum(cumprod(errors<=state.gramTolerance)),convergence=[],convergedCount=NaN,usableCount=NaN);
+errors=prefixErrors(state.inertialFProjection*state.inertialF);
+inertialConvergence=[];
+inertialDealiasing=[];
+inertialLabels=zeros(0,1);
 if ~isempty(reference)
-    inertial.convergence=reports{1};
-    inertial.dealiasing=dealiasingReports{1};
-    inertialSummary=WVInternal.summarizeModeConvergence(inertial.convergence,count,tolerance);
-    inertial.convergedCount=inertialSummary.acceptedCount;
-    complete=inertialSummary.complete;
-    if complete, inertial.usableCount=min(inertial.convergedCount,inertial.gridSupportedCount); end
-else
-    inertialSummary=[];
+    inertialConvergence=reports{1};
+    inertialDealiasing=dealiasingReports{1};
+    inertialLabels=inertialBasis.modeNumber(:);
 end
-assessment=struct(pages=table(kappa,requestedCount,convergedCount,gridSupportedCount,usableCount,status,candidateLimitReached,dealiasing),modeConvergence={modeConvergence},prefixGramError={prefixGramError},inertial=inertial,modeConvergenceTolerance=tolerance,gramTolerance=state.gramTolerance,nEVP=state.nEVP,referenceNEVP=referenceNEVP,comparisonQuadratureCoordinateKind="wkb",quadraticDealiasingSeconds=quadraticDealiasingSeconds,coverage="Convergence compares the constructed and reference modes at every supported kappa. Gram checks use the evolution grid. Effective bandwidth measures the constructed modes in the evolution coordinate. Two-resolution agreement is not a rigorous error bound.");
+[inertial,inertialSummary]=qualifyPrefix(inertialConvergence,sum(cumprod(errors<=state.gramTolerance)),count,tolerance);
+inertial.requestedCount=count;
+inertial.candidateCount=count;
+inertial.candidateLabels=inertialLabels;
+inertial.gramError=errors(end);
+inertial.prefixGramError=errors;
+inertial.convergence=inertialConvergence;
+inertial.dealiasing=inertialDealiasing;
+pages=[table(kappa,requestedCount,candidateCount,candidateLabels,dealiasing) struct2table(qualifications,AsArray=true)];
+assessment=struct(pages=pages,modeConvergence={modeConvergence},prefixGramError={prefixGramError},inertial=inertial, ...
+    modeConvergenceTolerance=tolerance,gramTolerance=state.gramTolerance,nEVP=state.nEVP,referenceNEVP=referenceNEVP, ...
+    comparisonQuadratureCoordinateKind="wkb",quadraticDealiasingSeconds=quadraticDealiasingSeconds, ...
+    coverage="The fixed-grid qualification uses the independently converged prefix. Raw candidate Gram diagnostics also guide EVP refinement. Two-resolution agreement is not a rigorous error bound.");
 convergence=struct(pages={modeSummary},inertial=inertialSummary);
 
     function acceptPrepared(candidate,refined,positions,candidatePages,~)
@@ -106,4 +104,57 @@ convergence=struct(pages={modeSummary},inertial=inertialSummary);
             quadraticDealiasingSeconds=quadraticDealiasingSeconds+toc(timer);
         end
     end
+end
+
+function [record,summary]=qualifyPrefix(report,rawGridCount,count,tolerance)
+record=struct(convergenceAssessedCount=0,convergedCount=NaN,gridSupportedCount=rawGridCount,gridAssessedCount=0, ...
+    fixedGridCount=0,usableCount=NaN,status="reference-not-requested",candidateLimitReached=false, ...
+    firstUnassessedCount=NaN,linearCoverage="reference-not-requested",linearLimitingMetric="independent-reference",limitingLabel=NaN);
+summary=[];
+if count==0
+    record.convergedCount=0;
+    record.usableCount=0;
+    record.status="not-requested";
+    record.linearCoverage="not-requested";
+    record.linearLimitingMetric="not-requested";
+    return
+end
+if isempty(report)
+    record.firstUnassessedCount=1;
+    return
+end
+summary=WVInternal.summarizeModeConvergence(report,count,tolerance);
+record.convergenceAssessedCount=nnz(summary.measured);
+record.convergedCount=summary.acceptedCount;
+record.gridAssessedCount=summary.acceptedCount;
+record.fixedGridCount=min(rawGridCount,summary.acceptedCount);
+record.usableCount=record.fixedGridCount;
+record.status="rejected";
+record.linearCoverage="measured-cutoff";
+if record.fixedGridCount<count
+    record.limitingLabel=str2double(report.identity.columnLabels(record.fixedGridCount+1));
+end
+if rawGridCount<summary.acceptedCount
+    record.linearLimitingMetric="gram";
+elseif summary.acceptedCount==count
+    record.status="accepted";
+    record.candidateLimitReached=true;
+    record.firstUnassessedCount=count+1;
+    record.linearCoverage="candidate-ceiling";
+    record.linearLimitingMetric="candidate-ceiling";
+elseif summary.measured(summary.acceptedCount+1)
+    record.linearLimitingMetric="mode-convergence";
+else
+    record.status="reference-inconclusive";
+    record.usableCount=NaN;
+    record.firstUnassessedCount=summary.acceptedCount+1;
+    record.linearCoverage="reference-inconclusive";
+end
+end
+
+function errors=prefixErrors(gram)
+errors=zeros(size(gram,1),1);
+for n=1:numel(errors)
+    errors(n)=norm(gram(1:n,1:n)-eye(n),2);
+end
 end

@@ -46,3 +46,5 @@ complete horizontal transform. For active endpoint families it returns a
 conservative maximum horizontal wavenumber whose fixed boundary responses
 satisfy boundaryResolutionTolerance. APV count selection uses the same
 quadratic-dealiasing policy as full QG and Boussinesq construction.
+The boundary report distinguishes a measured grid rejection from an
+inconclusive independent reference and preserves known passing trials.

@@ -57,7 +57,9 @@ ROUTINE_TESTS = {
 } | {"TestCoreTransformInvariantSmoke", "TestFourierTransformXY", "TestFreeSurfaceQGVerticalCalculus",
      "TestPublishedWaveVortexBenchmark", "TestThreeInterfaceBenchmark",
      "TestNativeThermalAdaptiveDamping", "TestFreeSurfaceInitializationPilot", "TestFreeSurfaceProviderGrid",
-     "TestFreeSurfaceInitializationReuse", "TestPortableRunRequestWriter"}
+     "TestFreeSurfaceInitializationReuse", "TestPortableRunRequestWriter",
+     "TestBalancedResolutionEvidence", "TestFreeSurfaceJointResolution",
+     "TestFreeSurfaceResolutionContract", "TestWaveModeConvergenceSummary"}
 
 # A changed study test still gets smoke, analyzer and compact scientific checks.
 # Its long evidence run belongs to Extended CI. New test names do not silently

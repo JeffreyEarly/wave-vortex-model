@@ -11,93 +11,77 @@ arguments
     options.modeConvergenceTolerance (1,1) double {mustBePositive} = 1e-6
 end
 
-if isempty(endpoints)
-    assessment = struct(isApplicable=false,maximumSupportedKh=NaN,firstRejectedKh=NaN, ...
-        minimumHorizontalWavelength=NaN,limitingEndpoint="", ...
-        maximumSupportedBoundaryError=NaN,firstRejectedBoundaryError=NaN);
-    return
-end
+assessment=struct(status="not-applicable",isApplicable=~isempty(endpoints),maximumSupportedKh=NaN,firstRejectedKh=NaN, ...
+    minimumHorizontalWavelength=NaN,limitingEndpoint="",maximumSupportedBoundaryError=NaN, ...
+    firstRejectedBoundaryError=NaN,firstInconclusiveKh=NaN,firstInconclusiveReferenceError=NaN,inconclusiveEndpoint="");
+if isempty(endpoints), return; end
 
-maximumBracketSteps = 24;
-if isempty(options.rejectedKh)
-    trialKh = options.seedKh;
-    trial = evaluate(trialKh);
-    if trial.accepted
-        lowerKh = trialKh;
-        lower = trial;
-        for iStep = 1:maximumBracketSteps
-            upperKh = 2*lowerKh;
-            upper = evaluate(upperKh);
-            if ~upper.accepted
-                break
-            end
-            lowerKh = upperKh;
-            lower = upper;
-        end
-        if upper.accepted
-            error('WVTransformFreeSurfaceQG:HorizontalLimitNotBracketed','The zero-APV boundary error did not exceed tolerance after %d wavenumber doublings.',maximumBracketSteps);
-        end
-    else
-        upperKh = trialKh;
-        upper = trial;
-        for iStep = 1:maximumBracketSteps
-            lowerKh = upperKh/2;
-            lower = evaluate(lowerKh);
-            if lower.accepted
-                break
-            end
-            upperKh = lowerKh;
-            upper = lower;
-        end
-        if ~lower.accepted
-            error('WVTransformFreeSurfaceQG:NoSupportedHorizontalWavenumber','No passing zero-APV boundary wavenumber was found after %d halvings.',maximumBracketSteps);
-        end
+maximumBracketSteps=24;
+solver=IMSolverSpectral(nEVP=nEVP);
+settings=struct(boundaryResolutionTolerance=tolerance,modeConvergenceTolerance=options.modeConvergenceTolerance,boundaryReportOnly=true);
+trialKh=options.seedKh;
+if ~isempty(options.rejectedKh), trialKh=options.rejectedKh; end
+status=evaluate(trialKh);
+if status=="reference-inconclusive", return; end
+if status=="accepted" && ~isempty(options.rejectedKh)
+    error('WVTransformFreeSurfaceQG:InvalidRejectedHorizontalWavenumber','The supplied rejected wavenumber does not exceed the zero-APV boundary tolerance.');
+end
+if status=="accepted"
+    for iStep=1:maximumBracketSteps
+        status=evaluate(2*assessment.maximumSupportedKh);
+        if status=="reference-inconclusive", return; end
+        if status=="rejected", break; end
+    end
+    if isnan(assessment.firstRejectedKh)
+        assessment.status="candidate-ceiling";
+        return
     end
 else
-    upperKh = options.rejectedKh;
-    upper = evaluate(upperKh);
-    if upper.accepted
-        error('WVTransformFreeSurfaceQG:InvalidRejectedHorizontalWavenumber','The supplied rejected wavenumber does not exceed the zero-APV boundary tolerance.');
+    for iStep=1:maximumBracketSteps
+        status=evaluate(assessment.firstRejectedKh/2);
+        if status=="reference-inconclusive", return; end
+        if status=="accepted", break; end
     end
-    for iStep = 1:maximumBracketSteps
-        lowerKh = upperKh/2;
-        lower = evaluate(lowerKh);
-        if lower.accepted
-            break
-        end
-        upperKh = lowerKh;
-        upper = lower;
-    end
-    if ~lower.accepted
-        error('WVTransformFreeSurfaceQG:NoSupportedHorizontalWavenumber','No passing zero-APV boundary wavenumber was found after %d halvings.',maximumBracketSteps);
+    if isnan(assessment.maximumSupportedKh)
+        assessment.status="no-supported-wavenumber";
+        return
     end
 end
 
-for iStep = 1:20
-    if upperKh/lowerKh-1 <= 0.01
-        break
-    end
-    trialKh = sqrt(lowerKh*upperKh);
-    trial = evaluate(trialKh);
-    if trial.accepted
-        lowerKh = trialKh;
-        lower = trial;
-    else
-        upperKh = trialKh;
-        upper = trial;
-    end
+for iStep=1:20
+    if assessment.firstRejectedKh/assessment.maximumSupportedKh-1<=0.01, break; end
+    status=evaluate(sqrt(assessment.maximumSupportedKh*assessment.firstRejectedKh));
+    if status=="reference-inconclusive", return; end
 end
+assessment.status="bracketed";
 
-assessment = struct(isApplicable=true,maximumSupportedKh=lowerKh,firstRejectedKh=upperKh, ...
-    minimumHorizontalWavelength=2*pi/lowerKh,limitingEndpoint=upper.limitingEndpoint, ...
-    maximumSupportedBoundaryError=lower.error,firstRejectedBoundaryError=upper.error);
-
-    function result = evaluate(kh)
-        problem = IMGeostrophicZeroAPVModes.atWavenumber(inputs.background,kh,endpoints=endpoints);
-        zeroModes = IMSolverSpectral(nEVP=nEVP).solveGeostrophicZeroAPVModes(problem);
-        settings=struct(boundaryResolutionTolerance=tolerance,modeConvergenceTolerance=options.modeConvergenceTolerance,boundaryReportOnly=true);
+    function status=evaluate(kh)
+        problem=IMGeostrophicZeroAPVModes.atWavenumber(inputs.background,kh,endpoints=endpoints);
+        zeroModes=solver.solveGeostrophicZeroAPVModes(problem);
         boundary=WVInternal.assessFreeSurfaceBoundaryGrid(zeroModes,problem,vertical,inputs,settings);
-        [boundaryError,index]=max(boundary.pages.gridError);
-        result=struct(error=boundaryError,accepted=boundary.status=="accepted",limitingEndpoint=boundary.pages.endpoint(index));
+        status=boundary.status;
+        if status=="reference-inconclusive"
+            referenceErrors=boundary.pages.modeConvergenceError;
+            index=find(~isfinite(referenceErrors),1);
+            if isempty(index), [~,index]=max(referenceErrors); end
+            assessment.status=status;
+            assessment.firstInconclusiveKh=kh;
+            assessment.firstInconclusiveReferenceError=referenceErrors(index);
+            assessment.inconclusiveEndpoint=boundary.pages.endpoint(index);
+            if isnan(assessment.firstRejectedKh)
+                assessment.limitingEndpoint=assessment.inconclusiveEndpoint;
+            end
+        else
+            [boundaryError,index]=max(boundary.pages.gridError);
+            if status=="accepted"
+                assessment.maximumSupportedKh=kh;
+                assessment.minimumHorizontalWavelength=2*pi/kh;
+                assessment.maximumSupportedBoundaryError=boundaryError;
+            else
+                assessment.firstRejectedKh=kh;
+                assessment.firstRejectedBoundaryError=boundaryError;
+                assessment.limitingEndpoint=boundary.pages.endpoint(index);
+            end
+        end
     end
 end

@@ -97,18 +97,19 @@ end
 function summary = scalarTableSummary(report,n,tolerance)
 passed = false(n,1);
 prefixError = zeros(n,1);
-complete = true;
+modeError = nan(n,1);
+measured = false(n,1);
 for j = 1:n
     rows = report.measurements.columnLabel==report.identity.columnLabels(j) & ismember(report.measurements.quantity,["equivalentDepth","h1"]);
-    if any(report.measurements.status(rows)~="measured")
-        complete = false;
-    else
+    measured(j) = nnz(rows)==numel(report.coverage.variables)+1 && all(report.measurements.status(rows)=="measured");
+    modeError(j) = max(report.measurements.value(rows));
+    if measured(j)
         passed(j) = all(report.measurements.value(rows)<=tolerance);
     end
     selected = ismember(report.measurements.columnLabel,report.identity.columnLabels(1:j)) & ismember(report.measurements.quantity,["equivalentDepth","h1"]);
     prefixError(j) = max(report.measurements.value(selected));
 end
-summary = struct(passed=passed,complete=complete,acceptedCount=sum(cumprod(passed)),prefixError=prefixError);
+summary = struct(passed=passed,measured=measured,complete=all(measured),acceptedCount=sum(cumprod(passed)),modeError=modeError,prefixError=prefixError);
 end
 
 function [prepared,z,w] = preparedModes(n)

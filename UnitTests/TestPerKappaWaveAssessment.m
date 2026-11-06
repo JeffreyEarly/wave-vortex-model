@@ -36,7 +36,7 @@ classdef TestPerKappaWaveAssessment < matlab.unittest.TestCase
             [w,a] = newTransform(waveModeKappa=flipud(baseline.khUnique),waveModeCount=flipud(counts),referenceNEVP=128);
             testCase.verifyEqual(a.pages.requestedCount,counts)
             testCase.verifyEqual(a.pages.selectedCount,counts)
-            testCase.verifyEqual(a.pages.candidateCount,(w.Nz-1)*ones(numel(w.khUnique),1))
+            testCase.verifyEqual(a.pages.candidateCount,(w.Nz-1)*double(counts>0))
             testCase.verifyGreaterThanOrEqual(a.pages.convergedCount,a.pages.linearCount)
             testCase.verifyGreaterThanOrEqual(a.pages.gridSupportedCount,a.pages.linearCount)
             testCase.verifyEqual(a.pages.usableCount,a.pages.linearCount)
@@ -48,8 +48,9 @@ classdef TestPerKappaWaveAssessment < matlab.unittest.TestCase
                 if counts(p)==0
                     testCase.verifyEqual(a.pages.status(p),"not-requested")
                     testCase.verifyEmpty(a.modeConvergence{p})
-                    testCase.verifyGreaterThan(a.pages.linearCount(p),0)
-                    testCase.verifyEqual(a.pages.modeConvergenceError(p),0)
+                    testCase.verifyEqual(a.pages.linearCount(p),0)
+                    testCase.verifyEqual(a.pages.requestKind(p),"strict")
+                    testCase.verifyTrue(isnan(a.pages.modeConvergenceError(p)))
                 else
                     report = a.modeConvergence{p};
                     testCase.verifyEqual(report.identity.kappa,w.khUnique(p))
@@ -97,7 +98,8 @@ classdef TestPerKappaWaveAssessment < matlab.unittest.TestCase
             testCase.verifyEqual(a.pages.selectedCount,zeros(numel(w.khUnique),1))
             testCase.verifyTrue(all(cellfun(@isempty,a.modeConvergence)))
             testCase.verifyTrue(all(cellfun(@numel,a.prefixGramError)==a.pages.candidateCount))
-            testCase.verifyGreaterThan(a.pages.usableCount,zeros(numel(w.khUnique),1))
+            testCase.verifyEqual(a.pages.candidateCount,zeros(numel(w.khUnique),1))
+            testCase.verifyEqual(a.pages.usableCount,zeros(numel(w.khUnique),1))
             testCase.verifyEqual(a.pages.usableCount,a.pages.linearCount)
             testCase.verifyEqual(a.pages.candidateLimitReached,a.pages.linearCount==a.pages.candidateCount & a.pages.linearCount>0)
             testCase.verifyEqual(a.inertial.candidateCount,w.Nz-1)
@@ -108,6 +110,60 @@ classdef TestPerKappaWaveAssessment < matlab.unittest.TestCase
             selectedError=selectedConvergenceError(report,a.inertial.selectedCount);
             testCase.verifyEqual(a.inertial.modeConvergenceError,selectedError)
             testCase.verifyLessThanOrEqual(selectedError,a.modeConvergenceTolerance)
+        end
+
+        function explicitUnfilteredRequestReportsTestedCeiling(testCase)
+            baseline=newTransform(waveModeCount=0,quadraticDealiasing="none");
+            counts=zeros(size(baseline.khUnique));
+            counts(1:2)=[1;3];
+            [w,a]=newTransform(waveModeKappa=baseline.khUnique,waveModeCount=counts,quadraticDealiasing="none",referenceNEVP=128);
+            tested=counts>0;
+            testCase.verifyEqual(a.pages.candidateCount,counts)
+            testCase.verifyEqual(a.pages.selectedCount,counts)
+            testCase.verifyEqual(a.pages.candidateLimitReached,tested)
+            testCase.verifyEqual(a.pages.firstUnassessedCount(tested),counts(tested)+1)
+            testCase.verifyEqual(a.pages.limitingMetric(tested),["candidate-ceiling";"candidate-ceiling"])
+            testCase.verifyEqual(a.pages.selectedLabels{2},w.waveModeNumber(1:3))
+            testCase.verifyEqual(a.pages.selectedColumnKind{2},["external";"internal";"internal"])
+            testCase.verifyEqual(a.inertial.candidateCount,3)
+            testCase.verifyEqual(a.inertial.firstUnassessedCount,4)
+            testCase.verifyEqual(a.cost.waveEigensolves,6)
+        end
+
+        function inconclusiveReferenceDistinguishesProvenStrictPrefix(testCase)
+            w=newTransform(Nxyz=[8 8 33],waveModeCount=0,quadraticDealiasing="none");
+            counts=zeros(size(w.khUnique));
+            counts(1)=4;
+            [state,bases]=assessmentFixture(w,counts);
+            % The independent three-column solve has no reference for label 4.
+            rows=[1 2 4];
+            entries=bases.bases;
+            page=bases.basisIndex(2);
+            entries{page}=entries{page}.selectColumns(rows);
+            bases=IMBasisCollection(entries,kappa=bases.kappa,basisIndex=bases.basisIndex);
+            state.waveModeCountByKh(1)=numel(rows);
+            state.waveMode=(1:numel(rows)).';
+            state.waveModeNumber=state.waveModeNumber(rows);
+            state.waveG=state.waveG(:,rows,:);
+            state.waveF=state.waveF(:,rows,:);
+            state.waveGForward=state.waveGForward(rows,:,:);
+            state.waveEquivalentDepth=state.waveEquivalentDepth(rows,:);
+            state.waveFrequency=state.waveFrequency(rows,:);
+            options=struct(quadraticDealiasing="none",retainedFraction=2/3,energyFraction=.99, ...
+                bandwidthFraction=2/3,verticalGridRule="smoothedBandwidth");
+            [report,~,convergence]=WVInternal.assessWaveModeConstruction(state,bases,1,128,w.modeConvergenceTolerance,options);
+            testCase.verifyEqual(report.pages.fixedGridCount(1),2)
+            testCase.verifyEqual(report.pages.candidateLabels{1},rows.')
+            testCase.verifyEqual(report.modeConvergence{1}.matches.status,["matched";"matched";"inconclusive"])
+            testCase.verifyError(@()WVInternal.selectFreeSurfaceWaveCounts(state,report,convergence,options,false,false), ...
+                'WV:InconclusiveModeResolution')
+            report.pages.requestedCount(1)=2;
+            [~,qualified]=WVInternal.selectFreeSurfaceWaveCounts(state,report,convergence,options,false,false);
+            testCase.verifyEqual(qualified.pages.selectedCount(1),2)
+            testCase.verifyTrue(isnan(qualified.pages.linearCount(1)))
+            testCase.verifyTrue(qualified.pages.filteringIsLowerBound(1))
+            testCase.verifyEqual(qualified.pages.status(1),"reference-inconclusive")
+            testCase.verifyEqual(qualified.pages.firstUnassessedCount(1),3)
         end
 
         function commonQuadraturePreservesIndependentPageReports(testCase)
@@ -174,6 +230,7 @@ arguments (Input)
     options.waveModeKappa (:,1) double = zeros(0,1)
     options.referenceNEVP (:,1) double = zeros(0,1)
     options.modeConvergenceTolerance (1,1) double = 1e-6
+    options.quadraticDealiasing (1,1) string = "fixedFraction"
 end
 Lxyz = options.Lxyz;
 Nxyz = options.Nxyz;

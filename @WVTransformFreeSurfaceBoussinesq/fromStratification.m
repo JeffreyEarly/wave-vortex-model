@@ -21,7 +21,7 @@ function [self,assessment] = fromStratification(Lxyz,Nxyz,options)
 % - Parameter options.apvModeCount: strict APV count; empty uses the shared QG automatic policy
 % - Parameter options.mdaModeCount: strict MDA count; empty uses the shared QG automatic policy
 % - Parameter options.inertialModeCount: strict inertial count; empty selects its own qualified prefix
-% - Parameter options.nEVP: initial wave/inertial EVP resolution; automatic candidates require at least Nz+4; at most three resolution pairs
+% - Parameter options.nEVP: initial wave/inertial EVP resolution. The search uses at least five more points than the largest candidate band and at most three resolution pairs.
 % - Parameter options.referenceNEVP: optional fixed higher reference resolution; empty uses a bounded automatically refined reference
 % - Parameter options.modeConvergenceTolerance: equivalent-depth and joint field/derivative convergence tolerance
 % - Parameter options.gramTolerance: shared fixed-quadrature normalized-Gram tolerance; default 1e-2
@@ -40,7 +40,7 @@ function [self,assessment] = fromStratification(Lxyz,Nxyz,options)
 % - Parameter options.planetaryRadius: planetary radius in meters
 % - Parameter options.shouldAntialias: restrict horizontal bandwidth for nonlinear products; default false for linear dynamics
 % - Returns self: zero-state experimental free-surface Boussinesq transform
-% - Returns assessment: linear, filtering and selected counts, convergence, Gram, fixed-boundary and quadratic-dealiasing evidence, coverage and construction costs
+% - Returns assessment: grid, EVP search, family counts, boundary, projection, sampled inversion and filtering evidence
 arguments (Input)
     Lxyz (1,3) double {mustBeReal,mustBeFinite,mustBePositive}
     Nxyz (1,3) double {mustBeInteger,mustBePositive}
@@ -106,10 +106,7 @@ if autoWave && ~isempty(options.waveModeKappa)
     error('WVTransformFreeSurfaceBoussinesq:InvalidWaveCountMap','Supply waveModeCount with waveModeKappa, or omit both for automatic selection.')
 end
 candidateCount=Nxyz(3)-1;
-options.nEVP=max(options.nEVP,Nxyz(3)+4);
-if ~isempty(options.referenceNEVP) && options.referenceNEVP<=options.nEVP
-    error('WVTransformFreeSurfaceBoussinesq:InvalidReferenceResolution','referenceNEVP must exceed the candidate solve resolution, at least Nz+4.')
-end
+requestedNEVP=options.nEVP;
 % Explicit physical keys make the count map independent of Fourier ordering.
 if isempty(options.waveModeKappa)
     if autoWave
@@ -147,8 +144,19 @@ else
 end
 requestedMap=state.waveModeCountByKh;
 requestedInertial=options.inertialModeCount;
-state.waveModeCountByKh=repmat(candidateCount,numel(state.khUnique),1);
-options.inertialModeCount=candidateCount;
+if autoWave || options.quadraticDealiasing=="fixedFraction"
+    state.waveModeCountByKh(requestedMap>0)=candidateCount;
+end
+if autoInertial || options.quadraticDealiasing=="fixedFraction"
+    options.inertialModeCount=candidateCount;
+end
+candidateNEVP=max([state.waveModeCountByKh;options.inertialModeCount])+5;
+options.nEVP=max(options.nEVP,candidateNEVP);
+if ~isempty(options.referenceNEVP) && options.referenceNEVP<=options.nEVP
+    error('WVTransformFreeSurfaceBoussinesq:InvalidReferenceResolution', ...
+        'referenceNEVP must exceed the initial candidate resolution %d for this wave and inertial inventory.',options.nEVP)
+end
+initialNEVP=options.nEVP;
 waveTimer=tic;
 pilot=WVInternal.assessFreeSurfaceWavePilot(state,options,background);
 solveCount=pilot.waveEigensolves; waveDealiasingSeconds=pilot.quadraticDealiasingSeconds;
@@ -166,40 +174,31 @@ for attempt=(1+pilot.rejected):3
     desired=assessment.pages.gridSupportedCount;
     desiredInertial=assessment.inertial.gridSupportedCount;
     converged=all(assessment.pages.convergedCount>=desired) && assessment.inertial.convergedCount>=desiredInertial;
-    if converged || attempt==3 || ~isempty(options.referenceNEVP), break; end
+    hasInconclusiveReference=any(isnan(assessment.pages.usableCount)) || isnan(assessment.inertial.usableCount);
+    if (converged && ~hasInconclusiveReference) || attempt==3 || ~isempty(options.referenceNEVP), break; end
     options.nEVP=referenceNEVP;
     candidateReference=reference;
 end
 waveSeconds=toc(waveTimer);
-counts=assessment.pages.usableCount;
-if any(isnan(counts)) || isnan(assessment.inertial.usableCount)
-    error('WV:InconclusiveModeResolution','Independent EVP comparison did not establish a leading prefix. No automatic count is accepted without a measured reference.')
-end
-if ~autoWave && any(counts<requestedMap)
-    error('WV:StrictWaveModeCountRejected','The explicit wave count map exceeds its converged or fixed-grid Gram prefix. Increase Nz/nEVP or reduce the requested counts; explicit counts are never truncated.')
-end
-if ~autoInertial && assessment.inertial.usableCount<requestedInertial
-    error('WV:StrictInertialModeCountRejected','The explicit inertial count exceeds its converged or fixed-grid Gram prefix. Increase Nz/nEVP or reduce inertialModeCount.')
-end
-if autoInertial, options.inertialModeCount=assessment.inertial.usableCount; end
-if options.inertialModeCount<1
-    error('WV:NoResolvedInertialModes','No inertial mode passes the physical-grid and independent convergence checks. Increase Nz/nEVP.')
-end
-if ~autoWave, counts=requestedMap; end
-assessment.pages.candidateCount=repmat(candidateCount,numel(state.khUnique),1);
-assessment.inertial.candidateCount=assessment.inertial.requestedCount;
+if autoWave, requestedMap(:)=NaN; end
+if autoInertial, requestedInertial=NaN; end
 assessment.pages.requestedCount=requestedMap;
-if ~autoInertial, assessment.inertial.requestedCount=requestedInertial; end
+assessment.inertial.requestedCount=requestedInertial;
+assessment.grid=balancedAssessment.grid;
+assessment.waveEVP=struct(requestedNEVP=requestedNEVP,initialNEVP=initialNEVP, ...
+    candidateNEVP=assessment.nEVP,referenceNEVP=assessment.referenceNEVP);
 assessment.apv=balancedAssessment.apv; assessment.mda=balancedAssessment.mda;
 assessment.boundary=balancedAssessment.boundary;
 assessment.cost=struct(waveEigensolves=solveCount,waveConstructionSeconds=waveSeconds,selectionTrials=0,quadraticDealiasingSeconds=waveDealiasingSeconds+balancedAssessment.cost.quadraticDealiasingSeconds);
 assessment.cost.pilotPages=pilot.pages;
 assessment.cost.pilotRejectedAttempts=double(pilot.rejected);
 assessment=rmfield(assessment,'quadraticDealiasingSeconds');
-[state,assessment]=WVInternal.selectFreeSurfaceWaveCounts(state,bases,reference,vertical,counts,options.inertialModeCount,assessment,convergence,options,autoWave,autoInertial);
+[state,assessment]=WVInternal.selectFreeSurfaceWaveCounts(state,assessment,convergence,options,autoWave,autoInertial);
 state.mdaPressureMode=background.g*(state.mdaF-state.mdaF(end,:));
 state.waveNormalization=WVTransformFreeSurfaceBoussinesq.waveNormalization;
 self=WVTransformFreeSurfaceBoussinesq(state);
+assessment.joint=WVInternal.assessFreeSurfaceJointResolution(self,vertical,waveReference=reference,failureMode="error");
+assessment.verticalProducts=WVInternal.assessFreeSurfaceVerticalProducts(vertical,self,bases);
 assessment.cost.constructionSeconds=toc(constructionTimer);
 self.constructionAssessment=assessment;
 end

@@ -505,12 +505,16 @@ classdef WVTransformFreeSurfaceQG < WVGeometryDoublyPeriodicStratified & WVTrans
                 self.(stateNames{iProperty}) = state.(stateNames{iProperty});
             end
             self.verticalGrid = verticalGrid;
-            self.constructionAssessment=assessment;
             self.hasWaveComponent = false;
             self.hasPVComponent = true;
             self.Ag_q = state.Ag_q;
             self.Ag_0 = state.Ag_0;
             self.Amda = state.Amda;
+            if ~isDirect
+                assessment.joint = WVInternal.assessFreeSurfaceJointResolution(self,vertical,failureMode="error");
+                assessment.verticalProducts = WVInternal.assessFreeSurfaceVerticalProducts(vertical,self);
+            end
+            self.constructionAssessment=assessment;
             if self.shouldAntialias
                 self.addForcing(WVNonlinearAdvection(self));
             end
