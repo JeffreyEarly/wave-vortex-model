@@ -21,8 +21,9 @@ Create a free-surface QG transform scientifically or directly.
 ## Parameters
 + `Lxyz`  domain lengths `[Lx Ly Lz]` in meters
 + `Nxyz`  grid counts `[Nx Ny Nz]`
-+ `options.N2Function`  squared buoyancy-frequency function
++ `options.N2Function`  squared buoyancy-frequency function; supply one of N2Function and rhoFunction
 + `options.rhoFunction`  no-motion density function
++ `options.rho0`  surface density, inferred from rhoFunction or defaulting to 1025 for N2Function
 + `options.g0`  surface acceleration; default negative stratification integral
 + `options.gd`  bottom acceleration; default positive stratification integral
 + `options.latitude`  latitude in degrees; default 24

@@ -127,6 +127,7 @@ for symbol = ["WVTransformFreeSurfaceThermalQG","WVThermalAPVDamping","WVInterna
 end
 
 consumer = exerciseInstalledPackage();
+consumer.freeSurface = exerciseInstalledFreeSurfacePackage();
 consumer.thermal = exerciseInstalledThermalPackage();
 report = struct( ...
     "packageName","WaveVortexModel", ...
@@ -138,6 +139,21 @@ report = struct( ...
     "packageRoots",packageRoots, ...
     "consumer",consumer);
 fprintf("Verified installed WaveVortexModel %s and its six-package dependency graph.\n",options.expectedVersion);
+end
+
+function report = exerciseInstalledFreeSurfacePackage()
+N2 = @(z) 1e-4*ones(size(z));
+wvt = WVTransformFreeSurfaceBoussinesq.fromStratification([1e5 1e5 1000],[8 8 33], ...
+    N2Function=N2,g0=.02,gd=Inf,apvModeCount=2,mdaModeCount=2,waveModeCount=2,inertialModeCount=2);
+waves = wvt.Aw_p;
+waves(1,1) = .01+.02i;
+wvt.Aw_p = waves;
+fields = wvt.reconstructFields(["u","v","w","eta","ssh"]);
+[state,assessment] = wvt.projectFields(fields);
+require(any(abs(fields.w)>0,"all") && assessment.relativeFieldEnergyError < 1e-6 && ...
+    norm(state.Aw_p-waves,"fro") < 1e-6*norm(waves,"fro"), ...
+    "The installed free-surface transform did not round-trip a resolved wave.");
+report = struct(waveNormalization=wvt.waveNormalization,relativeFieldEnergyError=assessment.relativeFieldEnergyError);
 end
 
 function report = exerciseInstalledPackage()

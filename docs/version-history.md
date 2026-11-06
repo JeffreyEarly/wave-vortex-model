@@ -12,7 +12,9 @@ nav_order: 100
 - Accept v4 and v5 model provenance for the existing portable constant-stratification and barotropic QG checkpoint encodings, retaining the supported-transform and schema checks.
 - Export prerelease verification candidates at their current beta version without promoting the Unreleased changelog or preparing a stable patch release.
 
-- Require `InternalModes@^2.0.0-beta.7` for common-coordinate quadratic-filtering evidence, retaining the existing orientation and construction optimizations. Routine CI and package verification use the immutable beta.7 OceanKit snapshot. Historical experiment pins and independent linear scientific tolerances are preserved.
+- Require `InternalModes@^2.0.0-beta.9` for shared free-surface background construction. Density and squared buoyancy frequency are alternative inputs, with the reference density anchored at the surface. Routine CI and package verification use the immutable beta.9 OceanKit snapshot.
+- Construct free-surface Boussinesq waves and inertial oscillations with the provider's wave-energy normalization. Store profiles with `F = D G_z` and record the normalization in Boussinesq checkpoints.
+- Use common-coordinate quadratic-filtering evidence from InternalModes while retaining the existing orientation and construction optimizations.
 
 - Add `quadraticDealiasing="none"`, `"fixedFraction"`, and `"effectiveBandwidth"` to free-surface Boussinesq and shared QG/APV construction. Use the same policy and parameters for wave/APV prefixes, preserve strict explicit counts, and reuse existing fine-grid convergence samples for spectral scoring.
 - Persist policy parameters through reconstruction and resolution changes. Explicit `"none"` permits nonlinear registration; horizontal antialiasing remains separate. New files use the new policy metadata without an adapter for older experimental files.

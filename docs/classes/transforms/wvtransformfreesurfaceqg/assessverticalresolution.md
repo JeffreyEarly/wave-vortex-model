@@ -21,8 +21,9 @@ Assess vertical-mode accuracy and the active-endpoint horizontal limit.
 ## Parameters
 + `Lz`  vertical domain depth in meters
 + `Nz`  number of physical vertical quadrature points
-+ `options.N2Function`  squared buoyancy-frequency function
++ `options.N2Function`  squared buoyancy-frequency function; supply one of N2Function and rhoFunction
 + `options.rhoFunction`  no-motion density function
++ `options.rho0`  surface density, inferred from rhoFunction or defaulting to 1025 for N2Function
 + `options.g0`  surface acceleration; default negative stratification integral
 + `options.gd`  bottom acceleration; default positive stratification integral; use Inf to omit the bottom endpoint
 + `options.latitude`  latitude in degrees; default 24

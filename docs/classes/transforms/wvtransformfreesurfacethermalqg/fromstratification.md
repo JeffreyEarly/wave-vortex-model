@@ -31,3 +31,5 @@ Construct a complete thermal basis and independently resolved MDA modes.
 
 ## Discussion
 Native sampling and assembly quadrature do not truncate thermal directions.
+The profile is fixed in time. The thermal basis uses Earth rotation, nonzero
+Coriolis frequency, and a surface density of 1025 kg per cubic meter.

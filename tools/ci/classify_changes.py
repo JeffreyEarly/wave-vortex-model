@@ -75,6 +75,30 @@ DEFERRED_TESTS = {
 # exercises their parsing, validation and small synthetic-fixture contracts.
 PARTIAL_TESTS = {
     "TestReleaseVerification": ("TestReleaseVerification/runtimeManifestExcludesAuthoringTests",),
+    "TestFreeSurfaceWaveModes": (
+        "TestFreeSurfaceWaveModes/realFieldsHaveTheDeclaredPositiveEnergy",
+        "TestFreeSurfaceWaveModes/inertialPageUsesDepthNormalizedVelocity",
+    ),
+    "TestFreeSurfaceBoussinesqEvolution": (
+        "TestFreeSurfaceBoussinesqEvolution/genericSourcesAgreeWithIndependentEnergyPairings",
+        "TestFreeSurfaceBoussinesqEvolution/divergentWaveSourceAgreesWithGenericGFormula",
+    ),
+    "TestFreeSurfacePhysicalContract": (
+        "TestFreeSurfacePhysicalContract/nativeFileRetainsFieldConventionAndStoredModes",
+    ),
+    "TestFreeSurfaceManuscriptProjection": (
+        "TestFreeSurfaceManuscriptProjection/arbitrarySourcesMatchManuscriptQuadrature",
+    ),
+    "TestPerKappaWaveAssessment": (
+        "TestPerKappaWaveAssessment/absentWavesStillAssessIndependentInertialFamily",
+    ),
+    "TestGramPrefixAssessment": ("TestGramPrefixAssessment/prefixDiagnosticsPreserveCutoffSemantics",),
+    "TestFreeSurfaceBulkConstruction": (
+        "TestFreeSurfaceBulkConstruction/bulkConstructionPreservesResolvedRepresentation",
+    ),
+    "TestWaveModeConvergencePreparation": (
+        "TestWaveModeConvergencePreparation/pairedBatchesMatchIndependentScalarPreparation",
+    ),
     "TestCompiledPreviewBenchmark": ("TestCompiledPreviewBenchmark/publicNormalizationCarriesExactAndRSSMemory",),
     "TestWaveVortexBenchmark": (
         "TestWaveVortexBenchmark/suiteRegistryIsVersionedAndTransformSpecific",
