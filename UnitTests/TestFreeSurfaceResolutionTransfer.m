@@ -119,7 +119,13 @@ classdef TestFreeSurfaceResolutionTransfer < matlab.unittest.TestCase
             end
             clearState(w); [~,a]=w.coefficientStateForTransform(target);
             testCase.verifyEqual([a.sourceEnergy a.targetEnergy a.errorEnergy a.relativeFieldError],[0 0 0 0])
-            testCase.verifyError(@()w.coefficientStateForTransform(target,modeTolerance=1e-12),'WV:TransferModeMismatch')
+            % Give the strict-tolerance check a resolved mismatch independent of solver roundoff.
+            perturbed = target.scientificState();
+            perturbed.waveF(:,1,1) = perturbed.waveF(:,1,1)+1e-8*sin(pi*(1+target.z/target.Lz));
+            strictTarget = WVTransformFreeSurfaceBoussinesq(perturbed);
+            [~,a] = w.coefficientStateForTransform(strictTarget);
+            testCase.verifyGreaterThan(a.maximumModeShapeError,1e-12)
+            testCase.verifyError(@()w.coefficientStateForTransform(strictTarget,modeTolerance=1e-12),'WV:TransferModeMismatch')
             qg=newTransform("qg","exponential");
             testCase.verifyError(@()qg.waveVortexTransformWithResolution([8 8 65],apvModeCount=100),'WV:StrictAPVModeCountRejected')
             testCase.verifyEqual(qg.apvModeCount,3)

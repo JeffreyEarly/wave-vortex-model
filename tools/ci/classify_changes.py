@@ -86,6 +86,9 @@ PARTIAL_TESTS = {
     "TestFreeSurfacePhysicalContract": (
         "TestFreeSurfacePhysicalContract/nativeFileRetainsFieldConventionAndStoredModes",
     ),
+    "TestFreeSurfaceResolutionTransfer": (
+        "TestFreeSurfaceResolutionTransfer/pureFamiliesAndStrictRequests",
+    ),
     "TestFreeSurfaceManuscriptProjection": (
         "TestFreeSurfaceManuscriptProjection/arbitrarySourcesMatchManuscriptQuadrature",
     ),
