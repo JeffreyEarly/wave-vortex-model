@@ -95,13 +95,13 @@ classdef TestFreeSurfaceBoussinesqTransform < matlab.unittest.TestCase
             testCase.verifyEqual(after,reference)
             testCase.verifyGreaterThan(norm(after.u-before.u,'fro'),1e-5)
             for name=string(fieldnames(original)).'
-                prior=w.u; %#ok<NASGU>
+                testCase.verifySize(w.u,w.spatialMatrixSize)
                 testCase.verifyTrue(isKey(w.variableCache,'u'))
                 w.(name)=2*w.(name);
                 testCase.verifyFalse(isKey(w.variableCache,'u'))
                 testCase.verifyEqual(w.u,w.reconstructFields("u").u)
             end
-            prior=w.u; %#ok<NASGU>
+            testCase.verifySize(w.u,w.spatialMatrixSize)
             w.t=111; testCase.verifyFalse(isKey(w.variableCache,'u'))
             at111=w.u;
             w.t0=111; testCase.verifyFalse(isKey(w.variableCache,'u'))
