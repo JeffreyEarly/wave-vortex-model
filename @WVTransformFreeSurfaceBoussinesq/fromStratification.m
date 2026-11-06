@@ -13,7 +13,8 @@ function [self,assessment] = fromStratification(Lxyz,Nxyz,options)
 % - Declaration: [self,assessment] = fromStratification(Lxyz,Nxyz,options)
 % - Parameter Lxyz: positive domain lengths in meters
 % - Parameter Nxyz: horizontal Fourier sizes and vertical sample count
-% - Parameter options.N2Function: positive squared buoyancy frequency versus depth
+% - Parameter options.N2Function: positive squared buoyancy frequency versus depth; supply one of N2Function and rhoFunction
+% - Parameter options.rhoFunction: no-motion density function
 % - Parameter options.waveModeCount: strict nonnegative prefixes per sign; empty selects automatically; scalar or keyed counts
 % - Parameter options.waveModeKappa: physical positive wavenumbers in radians per meter for an explicit complete count map
 % - Parameter options.apvModeCount: strict APV count; empty uses the shared QG automatic policy
@@ -32,7 +33,7 @@ function [self,assessment] = fromStratification(Lxyz,Nxyz,options)
 % - Parameter options.gd: bottom acceleration for balanced basis; default positive stratification integral
 % - Parameter options.latitude: nonzero latitude in degrees
 % - Parameter options.g: gravitational acceleration
-% - Parameter options.rho0: reference density
+% - Parameter options.rho0: surface density, inferred from rhoFunction or defaulting to 1025 for N2Function
 % - Parameter options.rotationRate: planetary rotation rate
 % - Parameter options.planetaryRadius: planetary radius in meters
 % - Parameter options.shouldAntialias: restrict horizontal bandwidth for nonlinear products; default false for linear dynamics
@@ -41,7 +42,8 @@ function [self,assessment] = fromStratification(Lxyz,Nxyz,options)
 arguments (Input)
     Lxyz (1,3) double {mustBeReal,mustBeFinite,mustBePositive}
     Nxyz (1,3) double {mustBeInteger,mustBePositive}
-    options.N2Function function_handle
+    options.N2Function function_handle = @isempty
+    options.rhoFunction function_handle = @isempty
     options.waveModeCount (:,1) double {mustBeReal,mustBeInteger,mustBeNonnegative,mustBeFinite} = zeros(0,1)
     options.waveModeKappa (:,1) double {mustBeReal,mustBeFinite,mustBePositive} = zeros(0,1)
     options.apvModeCount (:,1) double {mustBeInteger,mustBePositive} = zeros(0,1)
@@ -60,7 +62,7 @@ arguments (Input)
     options.gd (1,1) double = NaN
     options.latitude (1,1) double {mustBeSupportedLatitude} = 30
     options.g (1,1) double {mustBeReal,mustBeFinite,mustBePositive} = 9.81
-    options.rho0 (1,1) double {mustBeReal,mustBeFinite,mustBePositive} = 1025
+    options.rho0 (1,1) double {mustBeReal,mustBeFinite,mustBePositive}
     options.rotationRate (1,1) double {mustBeReal,mustBeFinite,mustBePositive} = 7.2921e-5
     options.planetaryRadius (1,1) double {mustBeReal,mustBeFinite,mustBePositive} = 6.371e6
     options.shouldAntialias (1,1) logical = false
@@ -81,19 +83,19 @@ counts = [options.waveModeCount; options.apvModeCount; options.mdaModeCount; opt
 if any(counts >= Nxyz(3))
     error('WVTransformFreeSurfaceBoussinesq:InvalidModeCount','Each retained count must be smaller than Nz.')
 end
-f = 2*options.rotationRate*sind(options.latitude);
-profile = chebfun(options.N2Function,[-Lxyz(3) 0]);
-if f == 0 || min(profile) <= f^2
+inputs = WVInternal.resolveFreeSurfaceInputs(Lxyz(3),options);
+background = inputs.background;
+profile = chebfun(background.N2,background.zDomain);
+if min(profile) <= background.f0^2
     error('WVTransformFreeSurfaceBoussinesq:UnsupportedStratification','The qualified wave band requires nonzero f and N2>f^2 throughout the domain.')
 end
 balancedOptions = options;
-balancedOptions.rhoFunction = @isempty;
 balancedOptions.z = zeros(0,1);
 balancedOptions.gramTolerance = options.gramTolerance;
 balancedOptions.muTolerance = sqrt(eps);
-[state,balancedAssessment,vertical] = WVInternal.buildFreeSurfaceBalancedState(Lxyz,Nxyz,balancedOptions);
+[state,balancedAssessment,vertical] = WVInternal.buildFreeSurfaceBalancedState(Lxyz,Nxyz,inputs,balancedOptions);
 state.Lxyz = Lxyz; state.Nxyz = Nxyz;
-for name = ["shouldAntialias","rho0","planetaryRadius","rotationRate","latitude","g","nEVP","gramTolerance","modeConvergenceTolerance","quadraticDealiasing","retainedFraction","energyFraction","bandwidthFraction","boundaryResolutionTolerance"]
+for name = ["shouldAntialias","planetaryRadius","nEVP","gramTolerance","modeConvergenceTolerance","quadraticDealiasing","retainedFraction","energyFraction","bandwidthFraction","boundaryResolutionTolerance"]
     state.(name) = options.(name);
 end
 if autoWave && ~isempty(options.waveModeKappa)
@@ -191,7 +193,7 @@ assessment.cost.pilotPages=pilot.pages;
 assessment.cost.pilotRejectedAttempts=double(pilot.rejected);
 assessment=rmfield(assessment,'quadraticDealiasingSeconds');
 [state,assessment]=WVInternal.selectFreeSurfaceWaveCounts(state,bases,reference,vertical,counts,options.inertialModeCount,assessment,convergence,options,autoWave,autoInertial);
-state.mdaPressureMode=options.g*(state.mdaF-state.mdaF(end,:));
+state.mdaPressureMode=background.g*(state.mdaF-state.mdaF(end,:));
 self=WVTransformFreeSurfaceBoussinesq(state);
 assessment.cost.constructionSeconds=toc(constructionTimer);
 self.constructionAssessment=assessment;

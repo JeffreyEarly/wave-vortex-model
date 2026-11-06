@@ -1,6 +1,8 @@
 function w = fromStratification(domainSize,gridSize,options)
 % Construct a complete thermal basis and independently resolved MDA modes.
 % Native sampling and assembly quadrature do not truncate thermal directions.
+% The profile is fixed in time. The thermal basis uses Earth rotation, nonzero
+% Coriolis frequency, and a surface density of 1025 kg per cubic meter.
 % - Topic: Create and restore a transform
 % - Parameter domainSize: three physical lengths in m
 % - Parameter gridSize: horizontal grid counts and increasing WKB Lobatto count
@@ -33,7 +35,7 @@ if options.assemblyQuadratureCount==0, options.assemblyQuadratureCount=max(257,4
 if options.assemblyQuadratureCount<2*options.thermalModeCount+1
     error('WV:ThermalAssemblyQuadrature','Use at least 2*thermalModeCount+1 physical-depth assembly points.');
 end
-[s,assessment]=WVInternal.buildThermalState(domainSize,gridSize,options);
+[s,assessment,background]=WVInternal.buildThermalState(domainSize,gridSize,options);
 s=WVInternal.upgradeThermalState(s);
 s.nonlinearQuadratureTolerance=options.nonlinearQuadratureTolerance;
 if options.shouldCheckQuadraticAliasing
@@ -41,7 +43,8 @@ if options.shouldCheckQuadraticAliasing
     count=options.nonlinearQuadratureCount;
     if count==0, count=max(257,3*options.thermalModeCount+1); end
     if count<ceil(3*(options.thermalModeCount-1)/2)+1, error('WV:ThermalNonlinearQuadrature','The product rule has fewer points than its assessment polynomial dimension.'); end
-    report=WVInternal.assessThermalQuadrature(options.thermalModeCount,domainSize(3),s.N20,s.inverseScale,2*7.2921e-5*sind(s.latitude),s.g,count,options.nonlinearQuadratureTolerance);
+    report=WVInternal.assessThermalQuadrature(options.thermalModeCount,background.D,s.N20,s.inverseScale, ...
+        background.f0,background.g,count,options.nonlinearQuadratureTolerance);
     s.shouldCheckQuadraticAliasing=true; s.nonlinearQuadratureCount=count;
     s.nonlinearQuadratureResidual=max(report.residuals); s.nonlinearReferenceResidual=max(report.referenceResiduals);
     assessment.quadraticProducts=report;

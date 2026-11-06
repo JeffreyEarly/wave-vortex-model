@@ -16,7 +16,7 @@ concurrency:
 
 env:
   PYTHONDONTWRITEBYTECODE: "1"
-  OCEANKIT_COMMIT: 0f2dae987eb777dd54a15f9b910ddb7f221b5852
+  OCEANKIT_COMMIT: c8daa3bf854527a1baa8fcbf3c5e82467ed8b8f8
 
 jobs:
   changes:

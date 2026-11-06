@@ -1,5 +1,56 @@
 classdef TestFreeSurfaceQGVerticalCalculus < matlab.unittest.TestCase
     methods (Test, TestTags="full")
+        function densityAndN2ProduceEquivalentBackgrounds(testCase)
+            rho0 = 1030;
+            g = 9.7;
+            N2 = @(z) 1e-4*ones(size(z));
+            rho = @(z) rho0-(rho0/g)*1e-4*z;
+            Lxyz = [100e3 100e3 1000];
+            Nxyz = [8 8 33];
+            args = namedargs2cell(struct(g=g,latitude=-30,rotationRate=6.8e-5,g0=0.02,gd=Inf, ...
+                apvModeCount=4,mdaModeCount=4,gramTolerance=0.1));
+
+            fromRho = WVTransformFreeSurfaceQG(Lxyz,Nxyz,args{:},rhoFunction=rho);
+            testCase.assertEqual(fromRho.rho0,rho0)
+            fromN2 = WVTransformFreeSurfaceQG(Lxyz,Nxyz,args{:},N2Function=N2,rho0=rho0);
+            testCase.verifyEqual(fromN2.rho0,rho0)
+            testCase.verifyEqual(fromRho.f,-6.8e-5,AbsTol=eps(6.8e-5))
+            testCase.verifyEqual(fromN2.f,fromRho.f)
+            testCase.verifyEqual(fromRho.rho_nm0(end),rho0)
+            testCase.verifyEqual(fromRho.N2,fromN2.N2,RelTol=3e-9)
+            testCase.verifyEqual(fromRho.rho_nm0,fromN2.rho_nm0,AbsTol=1e-9)
+            testCase.verifyEqual(fromRho.z,fromN2.z,AbsTol=1e-8)
+            testCase.verifyEqual(fromRho.verticalQuadratureWeights,fromN2.verticalQuadratureWeights,AbsTol=1e-8)
+            testCase.verifyEqual(fromRho.verticalDerivativeMatrix,fromN2.verticalDerivativeMatrix,RelTol=5e-9,AbsTol=1e-10)
+            testCase.verifyEqual(fromRho.apvModeNumber,fromN2.apvModeNumber)
+            testCase.verifyEqual(fromRho.mdaModeNumber,fromN2.mdaModeNumber)
+            testCase.verifyEqual(fromRho.apvFForward,fromN2.apvFForward,RelTol=5e-9,AbsTol=1e-10)
+            testCase.verifyEqual(fromRho.mdaGForward,fromN2.mdaGForward,RelTol=5e-9,AbsTol=1e-10)
+            testCase.verifyEqual(fromRho.zeroAPVF,fromN2.zeroAPVF,RelTol=5e-9,AbsTol=1e-10)
+
+            fixture = testCase.applyFixture(matlab.unittest.fixtures.TemporaryFolderFixture);
+            file = fullfile(fixture.Folder,'density-background.nc');
+            nc = fromRho.writeToFile(file); nc.close();
+            restored = WVTransformFreeSurfaceQG.waveVortexTransformFromFile(file);
+            testCase.verifyEmpty(restored.verticalModes)
+            testCase.verifyEqual(restored.rho0,rho0)
+            testCase.verifyEqual(restored.N2,fromRho.N2)
+            testCase.verifyEqual(restored.rho_nm0,fromRho.rho_nm0)
+        end
+
+        function scientificConstructionRejectsConflictingBackgroundInputs(testCase)
+            rho = @(z) 1030-z/100;
+            N2 = @(z) (9.81/1030)*0.01*ones(size(z));
+            Lxyz = [100e3 100e3 1000];
+            Nxyz = [8 8 33];
+            testCase.verifyError(@() WVTransformFreeSurfaceQG(Lxyz,Nxyz,rhoFunction=rho,rho0=1025), ...
+                "IMBackground:ConflictingSurfaceDensity")
+            testCase.verifyError(@() WVTransformFreeSurfaceQG(Lxyz,Nxyz,rhoFunction=rho,N2Function=N2), ...
+                "IMBackground:InvalidProfileSource")
+            testCase.verifyError(@() WVTransformFreeSurfaceQG(Lxyz,Nxyz), ...
+                "WVTransformFreeSurfaceQG:MissingStratification")
+        end
+
         function zeroAPVModesDifferentiateWithoutAPVProjection(testCase)
             w = WVTransformFreeSurfaceQG([100e3 100e3 1000],[8 8 33],N2Function=@(z)1e-4*ones(size(z)),g0=.02,gd=.03,gramTolerance=.1);
             for endpoint = 1:w.activeEndpointCount
