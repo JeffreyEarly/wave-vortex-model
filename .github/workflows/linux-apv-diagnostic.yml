@@ -39,4 +39,4 @@ jobs:
             addpath(fullfile(sourceRoot,"tools"));
             configureCIEnvironment(sourceRoot,oceanKitRoot);
             addpath(fullfile(sourceRoot,"tools","apv-refinement-diagnostic"));
-            stressAPVRefinement
+            confirmAPVFailure
