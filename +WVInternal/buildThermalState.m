@@ -70,7 +70,7 @@ problem=IMInternalModes.meanDensityAnomalyModes(background,g0=s.mdaSurfaceWeight
 nEVP=max(96,3*(m+4));
 basis=IMSolverSpectral(nEVP=nEVP).solveEVP(problem,nModes=m);
 reference=IMSolverSpectral(nEVP=ceil(1.5*nEVP)).solveEVP(problem,nModes=m);
-[mdaConvergence,modeErrors]=WVInternal.compareResolvedModes(basis,reference,background.N2,3*nEVP+1,m);
+[mdaConvergence,modeErrors]=WVInternal.compareResolvedModes(basis,reference,3*nEVP+1,m);
 if any(modeErrors>o.modeConvergenceTolerance)
     error('WV:ThermalMeanConvergence','The requested MDA family has unresolved provider modes; no modes were removed.');
 end

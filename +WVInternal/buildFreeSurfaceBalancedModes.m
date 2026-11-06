@@ -40,8 +40,8 @@ referenceNEVP=ceil(1.5*nEVP);
 referenceSolver=IMSolverSpectral(nEVP=referenceNEVP);
 apvReference=referenceSolver.solveEVP(apvProblem,nModes=numel(apvTransform.h));
 mdaReference=referenceSolver.solveEVP(mdaProblem,nModes=numel(mdaTransform.h));
-[apvConvergence,apvErrors,apvPrepared]=WVInternal.compareResolvedModes(apvBasis,apvReference,N2Function,2*referenceNEVP+1,numel(apvTransform.h));
-[mdaConvergence,mdaErrors]=WVInternal.compareResolvedModes(mdaBasis,mdaReference,N2Function,2*referenceNEVP+1,numel(mdaTransform.h));
+[apvConvergence,apvErrors,apvPrepared]=WVInternal.compareResolvedModes(apvBasis,apvReference,2*referenceNEVP+1,numel(apvTransform.h));
+[mdaConvergence,mdaErrors]=WVInternal.compareResolvedModes(mdaBasis,mdaReference,2*referenceNEVP+1,numel(mdaTransform.h));
 if any(apvErrors(1:numel(apvTransform.h))>options.modeConvergenceTolerance) || any(mdaErrors(1:numel(mdaTransform.h))>options.modeConvergenceTolerance)
     attempt=1; if isfield(options,'balancedAttempt'), attempt=options.balancedAttempt; end
     if attempt<3

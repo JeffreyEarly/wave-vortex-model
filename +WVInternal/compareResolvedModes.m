@@ -1,8 +1,6 @@
-function [report,errors,candidate] = compareResolvedModes(basis,reference,N2,nQuadrature,nModes)
+function [report,errors,candidate] = compareResolvedModes(basis,reference,nQuadrature,nModes)
 % Independent EVP agreement in equivalent depth and physical H1 fields.
-if nargin<5, nModes=numel(basis.modeNumber); end
-profile=chebfun(N2,basis.zDomain);
-dProfile=diff(log(profile)); dLogN2=@(z)dProfile(z);
+if nargin<4, nModes=numel(basis.modeNumber); end
 rule=IMSolverSpectral(nEVP=nQuadrature,coordinateKind="wkb").configuredForEVP(basis.evp);
 [z,w]=rule.nativeQuadratureRule(basis.zDomain);
 identity=struct(family=string(basis.evp.modeFamily),columnLabels=string(basis.modeNumber(1:nModes)),normalization=string(basis.normalization),zDomain=basis.zDomain);
@@ -17,7 +15,8 @@ for j=1:numel(errors)
     end
 end
     function value=prepare(source)
-        fields=WVInternal.evaluateResolvedModes(source,z,N2,dLogN2);
+        % Differentiate each stored profile in its native spectral representation.
+        fields=struct(F=source.F(z),G=source.G(z),dF=source.Fz(z),dG=source.Gz(z));
         value=struct(identity=identity,values=struct(F=fields.F(:,1:nModes),G=fields.G(:,1:nModes)),derivatives=struct(F=fields.dF(:,1:nModes),G=fields.dG(:,1:nModes)),equivalentDepths=source.h(1:nModes),provenance=struct(solverClass="IMSolverSpectral",coordinateKind=string(source.solver.coordinateKind),nEVP=source.solver.nEVP,quadratureCoordinateKind="wkb",quadratureCount=nQuadrature,source="actual construction basis"));
     end
 end
