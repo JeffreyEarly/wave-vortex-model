@@ -28,6 +28,11 @@ BOUSSINESQ = (
     "TestFreeSurfaceNonlinearStage/nonlinearTendencyMatchesDirectStudyProjection",
 )
 THERMAL = ("TestFreeSurfaceThermalQG", "TestThermalNonlinear", "TestThermalDiagnostics")
+ACTIVE_BOUNDARY_EXAMPLES = {
+    "activeBoundaryBoussinesq": "TestActiveBoundaryBoussinesqExample",
+    "activeBoundaryQGBuoyancyFlux": "TestActiveBoundaryQGFluxExample",
+    "activeBoundaryThermalQG": "TestActiveBoundaryThermalQGExample",
+}
 PERSISTENCE = ("TestWVModelOutputPersistence", "TestShouldExcludeConjugatesPersistence")
 COMPILED = ("TestCompiledKernelIntegration", "TestWVCompiledBackend")
 # Concrete closures also need their numerical equations checked, beyond the
@@ -60,7 +65,7 @@ ROUTINE_TESTS = {
      "TestFreeSurfaceInitializationReuse", "TestPortableRunRequestWriter",
      "TestBalancedResolutionEvidence", "TestFreeSurfaceJointResolution",
      "TestFreeSurfaceResolutionContract", "TestWaveModeConvergenceSummary",
-     "TestFreeSurfaceQGBuoyancyFlux", "TestFreeSurfaceQGDensityForcing"}
+     "TestFreeSurfaceQGBuoyancyFlux", "TestFreeSurfaceQGDensityForcing"} | set(ACTIVE_BOUNDARY_EXAMPLES.values())
 
 # A changed study test still gets smoke, analyzer and compact scientific checks.
 # Its long evidence run belongs to Extended CI. New test names do not silently
@@ -102,6 +107,7 @@ PARTIAL_TESTS = {
     "TestFreeSurfaceBoussinesqEvolution": (
         "TestFreeSurfaceBoussinesqEvolution/genericSourcesAgreeWithIndependentEnergyPairings",
         "TestFreeSurfaceBoussinesqEvolution/divergentWaveSourceAgreesWithGenericGFormula",
+        "TestFreeSurfaceBoussinesqEvolution/fixedStepConvergenceAndRestart",
     ),
     "TestFreeSurfacePhysicalContract": (
         "TestFreeSurfacePhysicalContract/nativeFileRetainsFieldConventionAndStoredModes",
@@ -174,6 +180,8 @@ CPP_SUFFIXES = {".c", ".cc", ".cpp", ".cxx", ".h", ".hh", ".hpp", ".cmake"}
 
 def scientific_tests(path):
     """Small numerical contracts selected by the implementation's domain."""
+    if path == "@WVTransformFreeSurfaceBoussinesq/reconstructFields.m":
+        return BOUSSINESQ + PARTIAL_TESTS["TestFreeSurfaceBoussinesqEvolution"]
     if path in {"Forcing/WVSeasonalSurfaceBuoyancyFlux.m",
                 "@WVTransformFreeSurfaceQG/boundaryBuoyancyFluxTendency.m",
                 "+WVInternal/densityDiffusionPage.m", "+WVInternal/densityDiffusionMDA.m"}:
@@ -257,6 +265,10 @@ def classify_changes(paths, *, deleted=(), api_changed=(), dependency_changed=Fa
                 reason = "shared test helper: conservative compact invariant and integration regressions"
             if name in DOC_TESTS:
                 plan["documentation"] = True
+        elif first == "Examples" and p.stem in ACTIVE_BOUNDARY_EXAMPLES and p.suffix == ".m":
+            plan["matlab"] = True
+            tests.add(ACTIVE_BOUNDARY_EXAMPLES[p.stem])
+            reason = "runnable active-boundary example: its scientific regression plus smoke"
         elif runtime or path == "buildfile.m":
             plan["matlab"] = True
             tests.update(scientific_tests(path))
