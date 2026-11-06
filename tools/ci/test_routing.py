@@ -80,6 +80,14 @@ class RoutingTests(unittest.TestCase):
         self.assertEqual(plan["tests"], ["TestThermalDiagnostics"])
         self.assertTrue(plan["matlab"])
 
+    def test_resolution_transfer_runs_refinement_and_controlled_mismatch(self):
+        plan = classify_changes(["UnitTests/TestFreeSurfaceResolutionTransfer.m"])
+        self.assertEqual(plan["tests"], [
+            "TestFreeSurfaceResolutionTransfer/pureFamiliesAndStrictRequests",
+            "TestFreeSurfaceResolutionTransfer/strictTransferRejectsControlledShapeMismatch",
+        ])
+        self.assertTrue(plan["matlab"])
+
     def test_version_compatibility_tests_select_their_focused_regressions(self):
         for name, selector in (
             ("TestPortableRunRequestWriter", "TestPortableRunRequestWriter"),

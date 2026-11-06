@@ -110,6 +110,10 @@ classdef TestFreeSurfaceResolutionTransfer < matlab.unittest.TestCase
         function pureFamiliesAndStrictRequests(testCase)
             w=newTransform("boussinesq","exponential"); populate(w); initial=w.coefficientState();
             target=w.waveVortexTransformWithResolution([12 10 97]);
+            testCase.verifyEqual(target.Nz,97)
+            testCase.verifyEqual(target.apvModeNumber,[-1;1;2])
+            % Analytical equivalent depth for the signed mode with default endpoints.
+            testCase.verifyEqual(target.h_0(1),-2.131069429888769,AbsTol=1e-8)
             for name=string(fieldnames(initial)).'
                 clearState(w); w.(name)=initial.(name);
                 [state,a]=w.coefficientStateForTransform(target); adopt(target,state);

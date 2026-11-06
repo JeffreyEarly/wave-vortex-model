@@ -19,7 +19,7 @@ env:
 jobs:
   clean-install:
     name: Clean install / MATLAB R2025b
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     timeout-minutes: 45
     steps:
       - name: Check out WaveVortexModel
@@ -63,7 +63,7 @@ jobs:
 
   exported-package:
     name: Exported package / MATLAB R2025b
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     timeout-minutes: 45
     steps:
       - name: Install portable-runtime build dependencies

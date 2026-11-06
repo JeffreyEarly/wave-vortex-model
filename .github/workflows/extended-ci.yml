@@ -20,7 +20,7 @@ env:
 jobs:
   full:
     name: Full / MATLAB R2025b
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     # The v5 full suite includes the seasonal spatial-convergence studies.
     timeout-minutes: 75
     steps:
@@ -66,7 +66,7 @@ jobs:
 
   exhaustive:
     name: Exhaustive / MATLAB R2025b
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     timeout-minutes: 45
     steps:
       - name: Check out WaveVortexModel
@@ -108,7 +108,7 @@ jobs:
 
   optional:
     name: Optional / MATLAB R2025b
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     timeout-minutes: 45
     steps:
       - name: Check out WaveVortexModel

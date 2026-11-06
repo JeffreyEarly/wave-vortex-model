@@ -149,7 +149,7 @@ jobs:
     needs: changes
     if: needs.changes.outputs.matlab == 'true'
     name: Focused MATLAB / R2025b
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     timeout-minutes: 20
     steps:
       - name: Check out WaveVortexModel
@@ -215,7 +215,7 @@ jobs:
     needs: changes
     if: needs.changes.outputs.documentation == 'true'
     name: Documentation / MATLAB R2025b
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     timeout-minutes: 20
     steps:
       - name: Check out WaveVortexModel
