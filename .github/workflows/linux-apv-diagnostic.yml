@@ -1,0 +1,42 @@
+name: Linux APV refinement diagnostic
+
+on:
+  push:
+    branches: [diagnostics/linux-apv-beta9]
+
+permissions:
+  contents: read
+
+jobs:
+  reproduce:
+    strategy:
+      fail-fast: false
+      matrix:
+        runner: [ubuntu-latest, ubuntu-24.04]
+    runs-on: ${{ matrix.runner }}
+    timeout-minutes: 22
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          path: source
+          persist-credentials: false
+      - uses: actions/checkout@v6
+        with:
+          repository: JeffreyEarly/OceanKit
+          ref: c8daa3bf854527a1baa8fcbf3c5e82467ed8b8f8
+          path: OceanKit
+          persist-credentials: false
+      - uses: matlab-actions/setup-matlab@v3
+        timeout-minutes: 10
+        with:
+          release: R2025b
+          cache: true
+      - uses: matlab-actions/run-command@v3
+        with:
+          command: >-
+            sourceRoot = fullfile(pwd,"source");
+            oceanKitRoot = fullfile(pwd,"OceanKit");
+            addpath(fullfile(sourceRoot,"tools"));
+            configureCIEnvironment(sourceRoot,oceanKitRoot);
+            addpath(fullfile(sourceRoot,"tools","apv-refinement-diagnostic"));
+            diagnoseAPVRefinement(sourceRoot)
