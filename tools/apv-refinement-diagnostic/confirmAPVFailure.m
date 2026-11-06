@@ -1,5 +1,8 @@
-function confirmAPVFailure
+function confirmAPVFailure(options)
 % Compare the paired APV pencil with its static equations eliminated.
+arguments
+    options.requireSuccess (1,1) logical = false
+end
 previousThreads = maxNumCompThreads(1);
 restoreThreads = onCleanup(@()maxNumCompThreads(previousThreads));
 N2 = @(z) 1e-4*exp(2*z/700);
@@ -21,6 +24,7 @@ for nEVP = [303 455]
         transform = basis.discreteTransform(z=z,weights=w,variables=["F","G"],gramTolerance=.01);
         fprintf("FULL nEVP=%d Gram passed with %d modes\n",nEVP,numel(transform.modeNumber));
     catch exception
+        if options.requireSuccess, rethrow(exception); end
         fprintf("FULL nEVP=%d Gram failed (%s)\n",nEVP,exception.identifier);
     end
     [A,B,map] = problem.prepareSolvePencil(solver,[],[]);
@@ -45,8 +49,13 @@ try
         N2Function=N2,g0=-I,gd=I,shouldAntialias=true,apvModeCount=3,mdaModeCount=2,waveModeCount=4,inertialModeCount=3);
     fprintf("WVM source passed at Nz=%d with labels %s\n",source.Nz,mat2str(source.apvModeNumber.'));
     target = source.waveVortexTransformWithResolution([12 10 97]);
+    if options.requireSuccess
+        assert(target.Nz==97 && isequal(target.apvModeNumber(:).',[-1 1 2]), ...
+            "The target must retain the signed APV mode and the first two positive modes on the 97-point grid.")
+    end
     fprintf("WVM target passed at Nz=%d with labels %s\n",target.Nz,mat2str(target.apvModeNumber.'));
 catch exception
+    if options.requireSuccess, rethrow(exception); end
     fprintf("WVM path failed (%s)\n%s\n",exception.identifier,getReport(exception,"extended"));
 end
 end

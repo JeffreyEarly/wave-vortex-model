@@ -26,17 +26,33 @@ jobs:
           ref: c8daa3bf854527a1baa8fcbf3c5e82467ed8b8f8
           path: OceanKit
           persist-credentials: false
+      - uses: actions/checkout@v6
+        with:
+          repository: JeffreyEarly/internal-modes
+          ref: fix/finite-apv-pencil
+          path: provider
+          persist-credentials: false
+      - name: Record source revisions
+        run: |
+          git -C source rev-parse HEAD
+          git -C OceanKit rev-parse HEAD
+          git -C provider rev-parse HEAD
       - uses: matlab-actions/setup-matlab@v3
         timeout-minutes: 10
         with:
           release: R2025b
           cache: true
-      - uses: matlab-actions/run-command@v3
+      - name: Confirm the regression fails with beta.9
+        uses: matlab-actions/run-command@v3
         with:
           command: >-
             sourceRoot = fullfile(pwd,"source");
-            oceanKitRoot = fullfile(pwd,"OceanKit");
-            addpath(fullfile(sourceRoot,"tools"));
-            configureCIEnvironment(sourceRoot,oceanKitRoot);
             addpath(fullfile(sourceRoot,"tools","apv-refinement-diagnostic"));
-            confirmAPVFailure
+            verifyAPVProviderIntegration(sourceRoot,fullfile(pwd,"OceanKit"),fullfile(pwd,"provider"),"baseline")
+      - name: Verify the fixed provider and full WVM refinement
+        uses: matlab-actions/run-command@v3
+        with:
+          command: >-
+            sourceRoot = fullfile(pwd,"source");
+            addpath(fullfile(sourceRoot,"tools","apv-refinement-diagnostic"));
+            verifyAPVProviderIntegration(sourceRoot,fullfile(pwd,"OceanKit"),fullfile(pwd,"provider"),"provider")
