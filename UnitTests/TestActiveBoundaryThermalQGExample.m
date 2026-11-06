@@ -44,11 +44,9 @@ classdef TestActiveBoundaryThermalQGExample < matlab.unittest.TestCase
                 errors(i,:) = fieldErrors(thermalFields(result),reference,weights);
             end
             % The three axis controls share the same manufactured initial
-            % streamfunction, mean profile, elapsed time and diffusivity.
-            testCase.verifyLessThan(max(errors(2,:)),max(errors(1,:)));
-            % Use one reference error budget for both finer dimensions.
-            testCase.verifyLessThan(max(errors(2:3,:),[],'all'),1e-8);
-            testCase.verifyLessThan(max(abs(errors(4:5,:)-errors(1,:)),[],'all'),2e-7);
+            % streamfunction, mean profile, elapsed time, diffusivity and
+            % independent reference error budget.
+            testCase.verifyLessThan(max(errors,[],'all'),1e-8);
         end
 
         function exponentialSteppingRestartAndTransferPreserveTheState(testCase)
