@@ -21,9 +21,10 @@ Create a free-surface QG transform scientifically or directly.
 ## Parameters
 + `Lxyz`  domain lengths `[Lx Ly Lz]` in meters
 + `Nxyz`  grid counts `[Nx Ny Nz]`
-+ `options.N2Function`  squared buoyancy-frequency function; supply one of N2Function and rhoFunction
++ `options.N2Function`  squared buoyancy-frequency function. Supply one of N2Function, rhoFunction, and rhoSpline.
 + `options.rhoFunction`  no-motion density function
-+ `options.rho0`  surface density, inferred from rhoFunction or defaulting to 1025 for N2Function
++ `options.rhoSpline`  no-motion density BSpline in kg m^{-3} on [-Lz,0]. Its analytic derivative defines N2 and its interior knots guide the smoothed-bandwidth filter.
++ `options.rho0`  Boussinesq reference density. Defaults to the supplied surface density for rhoFunction or rhoSpline and to 1025 for N2Function.
 + `options.g0`  surface acceleration; default negative stratification integral
 + `options.gd`  bottom acceleration; default positive stratification integral
 + `options.latitude`  latitude in degrees; default 24

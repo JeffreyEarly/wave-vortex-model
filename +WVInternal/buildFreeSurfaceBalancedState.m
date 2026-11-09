@@ -140,6 +140,9 @@ state = struct();
 state.balancedNEVP = nEVP;
 state.N2Function = background.N2;
 state.rhoFunction = background.rho;
+if isfield(inputs,"rhoSplineRecord")
+    state.rhoSplineSnapshot = string(jsonencode(inputs.rhoSplineRecord));
+end
 state.rho0 = background.rho0;
 state.rotationRate = background.rotationRate;
 state.latitude = background.latitude;

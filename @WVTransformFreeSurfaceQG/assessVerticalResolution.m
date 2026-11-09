@@ -13,9 +13,10 @@ function assessment = assessVerticalResolution(Lz,Nz,options)
 % - Declaration: assessment = WVTransformFreeSurfaceQG.assessVerticalResolution(Lz,Nz,options)
 % - Parameter Lz: vertical domain depth in meters
 % - Parameter Nz: number of physical vertical quadrature points
-% - Parameter options.N2Function: squared buoyancy-frequency function; supply one of N2Function and rhoFunction
+% - Parameter options.N2Function: squared buoyancy-frequency function. Supply one of N2Function, rhoFunction, and rhoSpline.
 % - Parameter options.rhoFunction: no-motion density function
-% - Parameter options.rho0: surface density, inferred from rhoFunction or defaulting to 1025 for N2Function
+% - Parameter options.rhoSpline: no-motion density BSpline in kg m^{-3} on [-Lz,0]. Its analytic derivative defines N2 and its interior knots guide the smoothed-bandwidth filter.
+% - Parameter options.rho0: Boussinesq reference density. Defaults to the supplied surface density for rhoFunction or rhoSpline and to 1025 for N2Function.
 % - Parameter options.g0: surface acceleration; default negative stratification integral
 % - Parameter options.gd: bottom acceleration; default positive stratification integral; use Inf to omit the bottom endpoint
 % - Parameter options.latitude: latitude in degrees; default 24
@@ -33,6 +34,7 @@ arguments
     Nz (1,1) double {mustBeInteger,mustBeGreaterThanOrEqual(Nz,4)}
     options.N2Function function_handle = @isempty
     options.rhoFunction function_handle = @isempty
+    options.rhoSpline BSpline = BSpline.empty(0,1)
     options.rho0 (1,1) double {mustBePositive}
     options.rotationRate (1,1) double {mustBePositive} = 7.2921e-5
     options.latitude (1,1) double {mustBeSupportedLatitude} = 24

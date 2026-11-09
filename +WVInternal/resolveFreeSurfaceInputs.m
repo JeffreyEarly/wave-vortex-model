@@ -7,8 +7,9 @@ end
 
 hasN2 = ~isequal(options.N2Function,@isempty);
 hasDensity = ~isequal(options.rhoFunction,@isempty);
-if ~hasN2 && ~hasDensity
-    error('WVTransformFreeSurfaceQG:MissingStratification','Supply either N2Function or rhoFunction.');
+hasSpline = isfield(options,"rhoSpline") && ~isempty(options.rhoSpline);
+if ~hasN2 && ~hasDensity && ~hasSpline
+    error('WVTransformFreeSurfaceQG:MissingStratification','Supply N2Function, rhoFunction, or rhoSpline.');
 end
 physics = struct(zDomain=[-Lz 0],rotationRate=options.rotationRate,latitude=options.latitude,g=options.g,surfaceCondition="freeSurface");
 if hasN2
@@ -16,6 +17,12 @@ if hasN2
 end
 if hasDensity
     physics.rho = options.rhoFunction;
+end
+if hasSpline
+    if ~ismember('rhoSplineRecord',properties('IMBackground'))
+        error('WV:DensitySplineProviderRequired','Supply an InternalModes version that supports the rhoSpline background input.');
+    end
+    physics.rhoSpline = options.rhoSpline;
 end
 if isfield(options,"rho0")
     physics.rho0 = options.rho0;
@@ -26,7 +33,11 @@ background = IMBackground(backgroundArguments{:});
 g0 = options.g0;
 gd = options.gd;
 if isnan(g0) || isnan(gd)
-    columnGravity = integral(background.N2,background.zDomain(1),background.zDomain(2));
+    if hasSpline
+        columnGravity = (background.g/background.rho0)*(background.rho(-Lz)-background.rho(0));
+    else
+        columnGravity = integral(background.N2,background.zDomain(1),background.zDomain(2));
+    end
     if isnan(g0), g0 = -columnGravity; end
     if isnan(gd), gd = columnGravity; end
 end
@@ -43,4 +54,5 @@ if background.f0 == 0
 end
 
 inputs = struct(background=background,g0=g0,gd=gd);
+if hasSpline, inputs.rhoSplineRecord = background.rhoSplineRecord; end
 end

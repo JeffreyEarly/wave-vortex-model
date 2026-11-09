@@ -58,8 +58,14 @@ if isempty(options.waveModeCount)
         configuration.waveModeCount=counts;
     end
 end
-for name=["shouldAntialias","N2Function","rho0","planetaryRadius","rotationRate","latitude","g","g0","gd","nEVP","gramTolerance","quadraticDealiasing","retainedFraction","energyFraction","bandwidthFraction","modeConvergenceTolerance","boundaryResolutionTolerance"]
+for name=["shouldAntialias","rho0","planetaryRadius","rotationRate","latitude","g","g0","gd","nEVP","gramTolerance","quadraticDealiasing","retainedFraction","energyFraction","bandwidthFraction","modeConvergenceTolerance","boundaryResolutionTolerance"]
     configuration.(name)=self.(name);
+end
+spline = self.rhoSpline;
+if isempty(spline)
+    configuration.N2Function = self.N2Function;
+else
+    configuration.rhoSpline = spline;
 end
 configuration.verticalGridRule=self.verticalGrid.kind;
 args=namedargs2cell(configuration);

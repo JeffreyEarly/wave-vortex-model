@@ -389,6 +389,7 @@ These items document internal implementation details and are not part of the pri
   + [`quadraturePointsForStratifiedFlow`](/classes/transforms/wvtransformfreesurfaceqg/quadraturepointsforstratifiedflow.html) return the quadrature points for a given stratification
   + [`quasigeostrophicSpatialState`](/classes/transforms/wvtransformfreesurfaceqg/quasigeostrophicspatialstate.html) Reconstruct the physical state used by QG spatial forcing.
   + [`retainedFraction`](/classes/transforms/wvtransformfreesurfaceqg/retainedfraction.html) Linear-prefix share retained by fixedFraction.
+  + [`rhoSpline`](/classes/transforms/wvtransformfreesurfaceqg/rhospline.html) Independent copy of the density spline, or empty for function input.
   + [`throwErrorIfDensityViolation`](/classes/transforms/wvtransformfreesurfaceqg/throwerrorifdensityviolation.html) checks if the proposed coefficients are a valid adiabatic re-arrangement of the base state
   + [`verticalProjectionOperatorsWithRigidLid`](/classes/transforms/wvtransformfreesurfaceqg/verticalprojectionoperatorswithrigidlid.html) return the normalized projection operators with prefactors
 + Nonlinear flux and forcing internals

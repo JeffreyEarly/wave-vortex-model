@@ -14,5 +14,10 @@ function context = freeSurfaceThermodynamics(wvt)
 arguments (Input)
     wvt (1,1) WVTransformFreeSurfaceBoussinesq
 end
-context = WVInternal.freeSurfaceThermodynamicContext(wvt.N2Function,wvt.Lz,wvt.g,wvt.rho0);
+rhoSpline = wvt.rhoSpline;
+if isempty(rhoSpline)
+    context = WVInternal.freeSurfaceThermodynamicContext(wvt.N2Function,wvt.Lz,wvt.g,wvt.rho0);
+else
+    context = WVInternal.freeSurfaceThermodynamicContext(wvt.N2Function,wvt.Lz,wvt.g,wvt.rho0,rhoSpline=rhoSpline);
+end
 end

@@ -24,4 +24,5 @@ for name = string(self.geometryStateNames())
         otherwise, state.(name) = self.(name);
     end
 end
+if strlength(self.rhoSplineSnapshot)>0, state.rhoSplineSnapshot = self.rhoSplineSnapshot; end
 end

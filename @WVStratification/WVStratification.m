@@ -312,7 +312,6 @@ classdef WVStratification < WVRotatingFPlane
             propertyAnnotations(end+1) = CANumericProperty('GMatrix',{'j','z'},'1', 'dimensionless transformation matrix $$G_g$$');
             propertyAnnotations(end+1) = CANumericProperty('z_int',{'z'},'m', 'quadrature weights for vertical integration');
             propertyAnnotations(end+1) = CANumericProperty('rho0',{},'kg m-3', 'Boussinesq reference density', detailedDescription='- topic: Domain Attributes');
-            propertyAnnotations(end).attributes('standard_name') = 'sea_surface_density';
 
             propertyAnnotations(end+1) = CANumericProperty('Lz',{},'m', 'domain size in the z-direction', detailedDescription='- topic: Domain Attributes — Grid — Spatial');
             propertyAnnotations(end+1) = CANumericProperty('Nz',{},'1', 'number of points in the z-coordinate, `length(z)`', detailedDescription='- topic: Domain Attributes — Grid — Spatial');

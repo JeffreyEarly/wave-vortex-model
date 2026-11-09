@@ -27,8 +27,14 @@ arguments (Output)
     assessment (1,1) struct
 end
 configuration=struct();
-for name=["shouldAntialias","N2Function","rho0","planetaryRadius","rotationRate","latitude","g","g0","gd","gramTolerance","modeConvergenceTolerance","boundaryResolutionTolerance","quadraticDealiasing","retainedFraction","energyFraction","bandwidthFraction","muTolerance"]
+for name=["shouldAntialias","rho0","planetaryRadius","rotationRate","latitude","g","g0","gd","gramTolerance","modeConvergenceTolerance","boundaryResolutionTolerance","quadraticDealiasing","retainedFraction","energyFraction","bandwidthFraction","muTolerance"]
     configuration.(name)=self.(name);
+end
+spline = self.rhoSpline;
+if isempty(spline)
+    configuration.N2Function = self.N2Function;
+else
+    configuration.rhoSpline = spline;
 end
 configuration.verticalGridRule=self.verticalGrid.kind;
 configuration.apvModeCount=options.apvModeCount; configuration.mdaModeCount=options.mdaModeCount;

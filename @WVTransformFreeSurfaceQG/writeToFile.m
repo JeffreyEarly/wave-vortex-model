@@ -25,6 +25,9 @@ selected = properties;
 if options.shouldAddRequiredProperties
     selected = union(selected,self.requiredProperties);
 end
+if strlength(self.rhoSplineSnapshot)>0
+    selected = union(selected,{'rhoSplineSnapshot'});
+end
 if self.activeEndpointCount > 0
     representationNames = setdiff(WVTransformFreeSurfaceQG.optionalZeroAPVPropertyNames(),{'Ag_0'});
     selected = union(selected,representationNames);

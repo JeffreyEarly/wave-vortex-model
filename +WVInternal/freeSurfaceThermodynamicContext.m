@@ -1,4 +1,4 @@
-function context = freeSurfaceThermodynamicContext(N2Function,Lz,g,rho0)
+function context = freeSurfaceThermodynamicContext(N2Function,Lz,g,rho0,options)
 % Prepare profile-only buoyancy and APE evaluation, independently of modes.
 % The transform owns and reuses this immutable derived context.
 arguments (Input)
@@ -6,6 +6,7 @@ arguments (Input)
     Lz (1,1) double {mustBeReal,mustBeFinite,mustBePositive}
     g (1,1) double {mustBeReal,mustBeFinite,mustBePositive}
     rho0 (1,1) double {mustBeReal,mustBeFinite,mustBePositive}
+    options.rhoSpline (1,1) BSpline
 end
 % One polynomial piece supports interval recurrences independently of global
 % Chebfun splitting settings.
@@ -22,6 +23,16 @@ coefficientCount = max(length(integralCoefficients),length(energyCoefficients));
 integralCoefficients(end+1:coefficientCount) = 0;
 energyCoefficients(end+1:coefficientCount) = 0;
 parameters = struct(integralCoefficients=integralCoefficients,energyCoefficients=energyCoefficients,Lz=Lz,g=g,rho0=rho0,profile=profile,I=I,J=J);
+if isfield(options,"rhoSpline")
+    % The fitted density and the Boussinesq scale have independent values
+    % at the surface. Integrate the fitted density for hydrostatic pressure.
+    rhoSpline = options.rhoSpline;
+    primitive = cumsum(rhoSpline);
+    surfacePrimitive = primitive(0);
+    surfaceDensity = rhoSpline(0);
+    parameters.rhoSpline = rhoSpline;
+    parameters.referencePressure = @(z) -g*(primitive(min(z,0))-surfacePrimitive+surfaceDensity*max(z,0));
+end
 context = struct(evaluate=@(z,eta,ssh)evaluate(parameters,z,eta,ssh),referenceConvention="upper-constant-density",minimumLabel=-Lz,maximumLabel=0);
 context.evaluateNonlinear = @(z,eta,ssh,N2)evaluate(parameters,z,eta,ssh,N2);
 context.evaluateCrossingSplit = @(z,eta,ssh,N2)evaluate(parameters,z,eta,ssh,N2,includeSmoothRemainder=true);
@@ -53,10 +64,6 @@ end
 label = min(0,max(-parameters.Lz,rawLabel));
 labelAdjustment = label-rawLabel;
 effectiveEta = eta-labelAdjustment;
-labelI = sample(parameters.I,label);
-
-physicalI = referencePrimitive(parameters,z,1);
-physicalJ = referencePrimitive(parameters,z,2);
 fields = struct();
 fields.label = rawLabel;
 fields.densityLabel = label;
@@ -93,9 +100,18 @@ fields.apeEta = effectiveEta.*fields.N2AtLabel;
 fields.apeZ = -fields.apeEta-fields.buoyancy;
 fields.pressureSurface = parameters.g*ssh;
 fields.energySurface = 0.5*parameters.g*ssh.^2;
-fields.density = parameters.rho0-(parameters.rho0/parameters.g)*labelI;
-fields.referenceDensity = parameters.rho0-(parameters.rho0/parameters.g)*physicalI;
-fields.referencePressure = parameters.rho0*(-parameters.g*z+physicalJ);
+if isfield(parameters,"rhoSpline")
+    fields.density = parameters.rhoSpline(label);
+    fields.referenceDensity = parameters.rhoSpline(min(z,0));
+    fields.referencePressure = parameters.referencePressure(z);
+else
+    labelI = sample(parameters.I,label);
+    physicalI = referencePrimitive(parameters,z,1);
+    physicalJ = referencePrimitive(parameters,z,2);
+    fields.density = parameters.rho0-(parameters.rho0/parameters.g)*labelI;
+    fields.referenceDensity = parameters.rho0-(parameters.rho0/parameters.g)*physicalI;
+    fields.referencePressure = parameters.rho0*(-parameters.g*z+physicalJ);
+end
 end
 
 function value = referencePrimitive(parameters,z,order)

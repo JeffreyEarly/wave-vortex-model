@@ -40,6 +40,32 @@ classdef TestFreeSurfaceThermodynamics < matlab.unittest.TestCase
             testCase.verifyEqual(context.evaluate(z,eta,ssh),fields)
         end
 
+        function splineDensityAndPressureUseTheFittedSurface(testCase)
+            D = 1000;
+            rhoSurface = 1023.125;
+            rho0 = 1027.5;
+            slope = 0.01;
+            model = BSpline(S=1,knotPoints=[-D -D -400 0 0],xi=slope*[D;400;0],xMean=rhoSurface);
+            wvt = WVTransformFreeSurfaceBoussinesq.fromStratification([1e5 1e5 D],[4 4 33], ...
+                rhoSpline=model,rho0=rho0,apvModeCount=2,waveModeCount=2,mdaModeCount=2, ...
+                inertialModeCount=2,shouldAntialias=true);
+            z = reshape([-D -510 -400 0 -2 1 2 4],2,2,2);
+            label = reshape([-D -600 -380 0 -3 -1 -2 0],2,2,2);
+            eta = z-label;
+            ssh = 5*ones(2);
+            context = WVInternal.freeSurfaceThermodynamics(wvt);
+            fields = context.evaluate(z,eta,ssh);
+            interior = min(z,0);
+            columnAcceleration = (wvt.g/rho0)*slope*D;
+            testCase.verifyEqual(wvt.rho0,rho0)
+            testCase.verifyEqual([wvt.g0 wvt.gd],[-columnAcceleration columnAcceleration],AbsTol=1e-14)
+            testCase.verifyEqual(fields.density,rhoSurface-slope*label,AbsTol=2e-12)
+            testCase.verifyEqual(fields.referenceDensity,rhoSurface-slope*interior,AbsTol=2e-12)
+            testCase.verifyEqual(fields.referencePressure,-wvt.g*(rhoSurface*z-slope*interior.^2/2),AbsTol=2e-8)
+            testCase.verifyEqual(fields.buoyancy,(wvt.g/rho0)*slope*(label-interior),AbsTol=2e-13)
+            testCase.verifyEqual(fields.pressureSurface,wvt.g*ssh)
+        end
+
         function highDegreeProfileUsesSufficientIntegralQuadrature(testCase)
             D = 1000; N2 = 1e-4; degree = 18; a = 0.3;
             wvt = newTransform(@(z)N2*(1+a*(1+z/D).^degree));

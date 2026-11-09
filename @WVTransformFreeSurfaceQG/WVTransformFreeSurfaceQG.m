@@ -247,6 +247,8 @@ classdef WVTransformFreeSurfaceQG < WVGeometryDoublyPeriodicStratified & WVTrans
     properties (Hidden, SetAccess = private)
         % Serialized provider geometry and map for annotated scientific state.
         verticalGridSnapshot
+        % Canonical density spline data for spline-backed scientific state.
+        rhoSplineSnapshot (1,1) string = ""
     end
 
     properties (Access = private, Transient)
@@ -285,6 +287,9 @@ classdef WVTransformFreeSurfaceQG < WVGeometryDoublyPeriodicStratified & WVTrans
     end
 
     properties (Dependent, SetAccess = private)
+        % Independent copy of the density spline, or empty for function input.
+        % - Topic: Inspect modes and operators
+        rhoSpline
         % Number of retained APV modes.
         %
         % This is `length(apvMode)` and equals the inherited `Nj` value.
@@ -340,9 +345,10 @@ classdef WVTransformFreeSurfaceQG < WVGeometryDoublyPeriodicStratified & WVTrans
             % - Declaration: wvt = WVTransformFreeSurfaceQG(Lxyz,Nxyz,options)
             % - Parameter Lxyz: domain lengths `[Lx Ly Lz]` in meters
             % - Parameter Nxyz: grid counts `[Nx Ny Nz]`
-            % - Parameter options.N2Function: squared buoyancy-frequency function; supply one of N2Function and rhoFunction
+            % - Parameter options.N2Function: squared buoyancy-frequency function. Supply one of N2Function, rhoFunction, and rhoSpline.
             % - Parameter options.rhoFunction: no-motion density function
-            % - Parameter options.rho0: surface density, inferred from rhoFunction or defaulting to 1025 for N2Function
+            % - Parameter options.rhoSpline: no-motion density BSpline in kg m^{-3} on [-Lz,0]. Its analytic derivative defines N2 and its interior knots guide the smoothed-bandwidth filter.
+            % - Parameter options.rho0: Boussinesq reference density. Defaults to the supplied surface density for rhoFunction or rhoSpline and to 1025 for N2Function.
             % - Parameter options.g0: surface acceleration; default negative stratification integral
             % - Parameter options.gd: bottom acceleration; default positive stratification integral
             % - Parameter options.latitude: latitude in degrees; default 24
@@ -364,6 +370,7 @@ classdef WVTransformFreeSurfaceQG < WVGeometryDoublyPeriodicStratified & WVTrans
                 options.shouldAntialias (1,1) logical = true
                 options.N2Function function_handle = @isempty
                 options.rhoFunction function_handle = @isempty
+                options.rhoSpline BSpline = BSpline.empty(0,1)
                 options.rho0 (1,1) double {mustBePositive}
                 options.planetaryRadius (1,1) double {mustBePositive} = 6.371e6
                 options.rotationRate (1,1) double {mustBePositive} = 7.2921e-5
@@ -433,6 +440,7 @@ classdef WVTransformFreeSurfaceQG < WVGeometryDoublyPeriodicStratified & WVTrans
                 options.verticalGridKind (1,1) string
                 options.verticalGridCoordinate (1,1) string
                 options.verticalGridSnapshot (1,1) string
+                options.rhoSplineSnapshot (1,1) string
                 options.zeroAPVF double
                 options.zeroAPVG double
                 options.zeroAPVFProjection double
@@ -453,14 +461,26 @@ classdef WVTransformFreeSurfaceQG < WVGeometryDoublyPeriodicStratified & WVTrans
             end
             directNames = WVTransformFreeSurfaceQG.directConstructionPropertyNames();
             isDirect = all(isfield(options,directNames));
-            if ~isDirect && (isfield(options,"verticalGridSnapshot") || isfield(options,"verticalGridCoordinate"))
+            if ~isDirect && (isfield(options,"verticalGridSnapshot") || isfield(options,"verticalGridCoordinate") || isfield(options,"rhoSplineSnapshot"))
                 error('WVTransformFreeSurfaceQG:IncompletePersistedState','Direct construction requires the complete saved mode, operator and grid state.');
             end
             assessment=struct();
             if isDirect
+                if ~isempty(options.rhoSpline)
+                    error('WVTransformFreeSurfaceQG:ConflictingSplineState','Supply rhoSpline to scientific construction or rhoSplineSnapshot with complete stored operators.');
+                end
                 state = options;
                 if ~isfield(state,"rho0")
                     state.rho0 = 1025;
+                end
+                if isfield(state,"rhoSplineSnapshot")
+                    spline = WVInternal.densitySplineFromSnapshot(state.rhoSplineSnapshot);
+                    if ~isempty(spline)
+                        background = IMBackground(rhoSpline=spline,zDomain=[-Lxyz(3) 0], ...
+                            g=state.g,rho0=state.rho0,surfaceCondition="freeSurface");
+                        state.N2Function = background.N2;
+                        state.rhoFunction = background.rho;
+                    end
                 end
                 if state.activeEndpointCount > 0
                     requiredZeroNames = setdiff(WVTransformFreeSurfaceQG.optionalZeroAPVPropertyNames(),{'Ag_0'});
@@ -504,6 +524,7 @@ classdef WVTransformFreeSurfaceQG < WVGeometryDoublyPeriodicStratified & WVTrans
             for iProperty = 1:length(stateNames)
                 self.(stateNames{iProperty}) = state.(stateNames{iProperty});
             end
+            if isfield(state,"rhoSplineSnapshot"), self.rhoSplineSnapshot = state.rhoSplineSnapshot; end
             self.verticalGrid = verticalGrid;
             self.hasWaveComponent = false;
             self.hasPVComponent = true;
@@ -695,6 +716,10 @@ classdef WVTransformFreeSurfaceQG < WVGeometryDoublyPeriodicStratified & WVTrans
             Fq = tendency.Ag_q;
             Fzero = tendency.Ag_0;
             Fmda = tendency.Amda;
+        end
+
+        function value = get.rhoSpline(self)
+            value = WVInternal.densitySplineFromSnapshot(self.rhoSplineSnapshot);
         end
 
         function value = get.apvModeCount(self)
@@ -918,6 +943,7 @@ classdef WVTransformFreeSurfaceQG < WVGeometryDoublyPeriodicStratified & WVTrans
             propertyAnnotations(end+1) = CAPropertyAnnotation('verticalGridKind','shared vertical-grid design kind');
             propertyAnnotations(end+1) = CAPropertyAnnotation('verticalGridCoordinate','native coordinate of the shared vertical grid');
             propertyAnnotations(end+1) = CAPropertyAnnotation('verticalGridSnapshot','provider grid and calculus state');
+            propertyAnnotations(end+1) = CAPropertyAnnotation('rhoSplineSnapshot','Canonical no-motion density spline');
 
             propertyAnnotations(end+1) = CANumericProperty('zeroAPVF',{'z','activeEndpoint','khUnique'},'1','sampled boundary-normalized zero-APV F pages');
             propertyAnnotations(end+1) = CANumericProperty('zeroAPVG',{'z','activeEndpoint','khUnique'},'1','sampled boundary-normalized zero-APV G pages');
@@ -977,6 +1003,9 @@ classdef WVTransformFreeSurfaceQG < WVGeometryDoublyPeriodicStratified & WVTrans
             names = WVTransformFreeSurfaceQG.newRequiredPropertyNames();
             names = setdiff(names,{'Ag_q','Amda','t0','t','forcing'});
             values = CAAnnotatedClass.propertyValuesFromGroup(group,names);
+            if group.hasAttributeWithName('rhoSplineSnapshot')
+                values.rhoSplineSnapshot = string(group.attributes('rhoSplineSnapshot'));
+            end
             if all(WVTransformFreeSurfaceQG.hasLocalVariables(group,{'Ag_q','Amda'}))
                 [values.Ag_q,values.Amda] = group.readVariables('Ag_q','Amda');
             else

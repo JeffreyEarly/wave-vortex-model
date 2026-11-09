@@ -282,9 +282,14 @@ classdef WVTransformFreeSurfaceBoussinesq < WVGeometryDoublyPeriodicStratified &
     properties (Hidden, SetAccess = private)
         % Serialized provider geometry and map for annotated scientific state.
         verticalGridSnapshot
+        % Canonical density spline data for spline-backed scientific state.
+        rhoSplineSnapshot (1,1) string = ""
     end
 
     properties (Dependent)
+        % Independent copy of the density spline, or empty for function input.
+        % - Topic: Inspect scientific operators
+        rhoSpline
         % Active entries in the rectangular wave coefficient arrays.
         % - Topic: Inspect coefficient families
         activeWaveModes
@@ -368,12 +373,24 @@ classdef WVTransformFreeSurfaceBoussinesq < WVGeometryDoublyPeriodicStratified &
                 error('WVTransformFreeSurfaceBoussinesq:InvalidScientificState','Wave depths and horizontal page indices must be positive and match the stored families.')
             end
             verticalGrid = WVInternal.restoreFreeSurfaceVerticalGrid(state);
+            rhoSplineSnapshot = "";
+            if isfield(state,"rhoSplineSnapshot")
+                rhoSplineSnapshot = string(state.rhoSplineSnapshot);
+                spline = WVInternal.densitySplineFromSnapshot(rhoSplineSnapshot);
+                if ~isempty(spline)
+                    background = IMBackground(rhoSpline=spline,zDomain=[-state.Lxyz(3) 0], ...
+                        g=state.g,rho0=state.rho0,surfaceCondition="freeSurface");
+                    state.N2Function = background.N2;
+                    state.rhoFunction = background.rho;
+                end
+            end
             geometry = struct(shouldAntialias=state.shouldAntialias,z=state.z,j=state.apvModeNumber,Nj=nq,N2Function=state.N2Function,rhoFunction=state.rhoFunction,rho0=state.rho0,planetaryRadius=state.planetaryRadius,rotationRate=state.rotationRate,latitude=state.latitude,g=state.g,dLnN2=state.dLnN2,PF0inv=state.PF0inv,QG0inv=state.QG0inv,PF0=state.PF0,QG0=state.QG0,P0=state.P0,Q0=state.Q0,h_0=state.h_0,z_int=state.z_int);
             geometryArguments = namedargs2cell(geometry);
             self@WVGeometryDoublyPeriodicStratified(state.Lxyz,state.Nxyz,geometryArguments{:});
             self@WVTransform(WVForcingType(["NonhydrostaticSpatial","BoussinesqSpectral"]));
             for name = string(self.scientificPropertyNames()), self.(name) = state.(name); end
             self.verticalGrid = verticalGrid;
+            self.rhoSplineSnapshot = rhoSplineSnapshot;
             self.hasWaveComponent = true; self.hasPVComponent = true;
             nc = length(self.klNonzero);
             self.Aw_p = complex(zeros(nw,nc)); self.Aw_m = complex(zeros(nw,nc));
@@ -400,6 +417,10 @@ classdef WVTransformFreeSurfaceBoussinesq < WVGeometryDoublyPeriodicStratified &
         [state,assessment] = projectFields(self,fields)
         operation = operationForKnownVariable(self,variableName,options)
         diagnostics = physicalEnergy(self,options)
+
+        function value = get.rhoSpline(self)
+            value = WVInternal.densitySplineFromSnapshot(self.rhoSplineSnapshot);
+        end
 
         function value = get.activeWaveModes(self), value = self.waveMode <= self.waveModeCountByKh(self.klNonzeroKhUniqueIndex).'; end
         function value = get.activeEndpointCount(self), value = length(self.activeEndpoint); end

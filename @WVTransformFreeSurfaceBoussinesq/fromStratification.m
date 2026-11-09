@@ -14,8 +14,9 @@ function [self,assessment] = fromStratification(Lxyz,Nxyz,options)
 % - Declaration: [self,assessment] = fromStratification(Lxyz,Nxyz,options)
 % - Parameter Lxyz: positive domain lengths in meters
 % - Parameter Nxyz: horizontal Fourier sizes and vertical sample count
-% - Parameter options.N2Function: positive squared buoyancy frequency versus depth; supply one of N2Function and rhoFunction
+% - Parameter options.N2Function: positive squared buoyancy frequency versus depth. Supply one of N2Function, rhoFunction, and rhoSpline.
 % - Parameter options.rhoFunction: no-motion density function
+% - Parameter options.rhoSpline: no-motion density BSpline in kg m^{-3} on [-Lz,0]. Its analytic derivative defines N2 and its interior knots guide the smoothed-bandwidth filter.
 % - Parameter options.waveModeCount: strict nonnegative prefixes per sign; empty selects automatically; scalar or keyed counts
 % - Parameter options.waveModeKappa: physical positive wavenumbers in radians per meter for an explicit complete count map
 % - Parameter options.apvModeCount: strict APV count; empty uses the shared QG automatic policy
@@ -35,7 +36,7 @@ function [self,assessment] = fromStratification(Lxyz,Nxyz,options)
 % - Parameter options.gd: bottom acceleration for balanced basis; default positive stratification integral
 % - Parameter options.latitude: nonzero latitude in degrees
 % - Parameter options.g: gravitational acceleration
-% - Parameter options.rho0: surface density, inferred from rhoFunction or defaulting to 1025 for N2Function
+% - Parameter options.rho0: Boussinesq reference density. Defaults to the supplied surface density for rhoFunction or rhoSpline and to 1025 for N2Function.
 % - Parameter options.rotationRate: planetary rotation rate
 % - Parameter options.planetaryRadius: planetary radius in meters
 % - Parameter options.shouldAntialias: restrict horizontal bandwidth for nonlinear products; default false for linear dynamics
@@ -46,6 +47,7 @@ arguments (Input)
     Nxyz (1,3) double {mustBeInteger,mustBePositive}
     options.N2Function function_handle = @isempty
     options.rhoFunction function_handle = @isempty
+    options.rhoSpline BSpline = BSpline.empty(0,1)
     options.waveModeCount (:,1) double {mustBeReal,mustBeInteger,mustBeNonnegative,mustBeFinite} = zeros(0,1)
     options.waveModeKappa (:,1) double {mustBeReal,mustBeFinite,mustBePositive} = zeros(0,1)
     options.apvModeCount (:,1) double {mustBeInteger,mustBePositive} = zeros(0,1)

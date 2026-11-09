@@ -38,6 +38,9 @@ normalization = CAAnnotatedClass.propertyValuesFromGroup(group,{'waveNormalizati
 [Lxyz,Nxyz,args] = WVGeometryDoublyPeriodicStratified.requiredPropertiesForGeometryFromGroup(group);
 state = struct(args{:});
 state.Lxyz = Lxyz; state.Nxyz = Nxyz;
+if group.hasAttributeWithName('rhoSplineSnapshot')
+    state.rhoSplineSnapshot = string(group.attributes('rhoSplineSnapshot'));
+end
 state.waveNormalization = string(normalization.waveNormalization);
 optional = [WVTransformFreeSurfaceBoussinesq.optionalEndpointPropertyNames(),WVTransformFreeSurfaceBoussinesq.optionalWavePropertyNames(),{'waveModeCountByKh'}];
 names = setdiff(WVTransformFreeSurfaceBoussinesq.scientificPropertyNames(),optional);

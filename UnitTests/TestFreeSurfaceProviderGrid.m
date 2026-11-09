@@ -1,5 +1,62 @@
 classdef TestFreeSurfaceProviderGrid < matlab.unittest.TestCase
     methods (Test, TestTags="full")
+        function splineInputSurvivesRestartAndResolutionChange(testCase)
+            Lxyz = [200e3 180e3 1024];
+            Nxyz = [6 6 33];
+            knots = [-1024;-1024;-768;-512;-256;0;0];
+            spline = BSpline(S=1,knotPoints=knots,xi=[1;.75;.5;.25;0],xMean=1023,xStd=4);
+            rho0 = 1027.5;
+            options = struct(rhoSpline=spline,rho0=rho0,g0=.02,gd=.03,apvModeCount=2,mdaModeCount=2,quadraticDealiasing="none");
+            args = namedargs2cell(options);
+            fixture = testCase.applyFixture(matlab.unittest.fixtures.TemporaryFolderFixture);
+            zQuery = [-1024;-921;-583;-7;0];
+            for kind = ["qg","boussinesq"]
+                if kind=="qg"
+                    wvt = WVTransformFreeSurfaceQG(Lxyz,Nxyz,args{:});
+                else
+                    wvt = WVTransformFreeSurfaceBoussinesq.fromStratification(Lxyz,Nxyz,args{:},waveModeCount=2,inertialModeCount=2);
+                    clone = WVTransformFreeSurfaceBoussinesq(wvt.scientificState());
+                    testCase.verifyEqual(clone.rhoFunction(zQuery),spline(zQuery));
+                    testCase.verifyEqual(clone.rhoSpline.knotPoints,knots);
+                end
+                testCase.verifyEqual(wvt.rho0,rho0);
+                testCase.verifyEqual(wvt.rhoFunction(zQuery),spline(zQuery));
+                testCase.verifyEqual(wvt.N2Function(zQuery),-(wvt.g/rho0)*spline.valueAtPoints(zQuery,D=1));
+                testCase.verifyEqual(wvt.verticalGrid.design.breakpoints(:),unique(knots));
+                sourceCopy = wvt.rhoSpline;
+                sourceCopy.xi = zeros(size(sourceCopy.xi));
+                testCase.verifyEqual(wvt.rhoSpline.xi,spline.xi);
+                testCase.verifyEqual(wvt.rhoFunction(zQuery),spline(zQuery));
+
+                wvt.Amda(1) = .02;
+                filePath = fullfile(fixture.Folder,char(kind+"-spline.nc"));
+                file = wvt.writeToFile(filePath);
+                testCase.verifyTrue(file.hasAttributeWithName('rhoSplineSnapshot'));
+                file.close();
+                restored = WVTransform.waveVortexTransformFromFile(filePath);
+                testCase.verifyEmpty(restored.verticalModes);
+                testCase.verifyEqual(restored.coefficientState(),wvt.coefficientState());
+                testCase.verifyEqual(restored.rhoSpline.knotPoints,knots);
+                testCase.verifyEqual(restored.rhoFunction(zQuery),spline(zQuery));
+                testCase.verifyEqual(restored.N2Function(zQuery),wvt.N2Function(zQuery));
+                testCase.verifyEqual(restored.z,wvt.z);
+                testCase.verifyEqual(restored.verticalQuadratureWeights,wvt.verticalQuadratureWeights);
+                testCase.verifyEqual(restored.verticalGrid.design.breakpoints(:),unique(knots));
+                resized = restored.waveVortexTransformWithResolution([6 6 49]);
+                testCase.verifyEqual(resized.rhoFunction(zQuery),spline(zQuery));
+                testCase.verifyEqual(resized.N2Function(zQuery),wvt.N2Function(zQuery));
+                testCase.verifyEqual(resized.verticalGrid.design.breakpoints(:),unique(knots));
+            end
+        end
+
+        function verticalAssessmentAcceptsDensitySpline(testCase)
+            knots = [-1024;-1024;-512;0;0];
+            spline = BSpline(S=1,knotPoints=knots,xi=[1027;1025;1023]);
+            assessment = WVTransformFreeSurfaceQG.assessVerticalResolution(1024,17,rhoSpline=spline,rho0=1027.5,g0=Inf,gd=Inf);
+            testCase.verifyEqual(assessment.verticalGridRule,"smoothedBandwidth");
+            testCase.verifyNumElements(assessment.z,17);
+        end
+
         function smoothedQGPreservesBoundaryResponsesAndTransfersAcrossMaps(testCase)
             Lxyz = [220e3 175e3 1000];
             Nxyz = [8 6 49];
@@ -66,9 +123,11 @@ classdef TestFreeSurfaceProviderGrid < matlab.unittest.TestCase
             fixture = testCase.applyFixture(matlab.unittest.fixtures.TemporaryFolderFixture);
             filePath = fullfile(fixture.Folder,'mapped-boussinesq.nc');
             file = wvt.writeToFile(filePath);
+            testCase.verifyFalse(file.hasAttributeWithName('rhoSplineSnapshot'));
             file.close();
             restored = WVTransform.waveVortexTransformFromFile(filePath);
             testCase.verifyEmpty(restored.verticalModes);
+            testCase.verifyEmpty(restored.rhoSpline);
             testCase.verifyEqual(restored.coefficientState(),wvt.coefficientState());
             testCase.verifyEqual(restored.verticalGrid.kind,wvt.verticalGrid.kind);
             testCase.verifyEqual(restored.verticalGrid.calculus.snapshot(),wvt.verticalGrid.calculus.snapshot());
